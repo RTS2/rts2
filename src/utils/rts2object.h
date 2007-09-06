@@ -36,7 +36,6 @@ public:
    * Ussuall implementation looks like:
    *
 @code
-
 void
 MyObject::postEvent (Rts2Event * event)
 {
@@ -50,11 +49,13 @@ MyObject::postEvent (Rts2Event * event)
       do_something_with_event_2;
       break;
   }
-  // without this call, event will not be deleted and will hang in memory!
   MyParent::postEvent (event);
 }
-
 @endcode
+   *
+   * @warning { If you do not call parent postEvent method, and you do not delete event, event object
+   * will stay in memory indefinitly. Most propably your application will shortly run out of memory and
+   * core dump. }
    *
    * @param event Event to process.
    *

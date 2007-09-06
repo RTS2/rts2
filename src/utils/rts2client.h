@@ -17,7 +17,7 @@
  * This class is used in Rts2Client to represent connections
  * which client establish to other RTS2 components.
  *
- * @addgroup RTS2Client
+ * @ingroup RTS2Client
  */
 class Rts2ConnClient:public Rts2Conn
 {
@@ -49,7 +49,7 @@ public:
  * This class is used to represent conection between central
  * server and client. It is used to handle key management etc.
  *
- * @addgroup RTS2Client
+ * @ingroup RTS2Client
  */
 class Rts2ConnCentraldClient:public Rts2Conn
 {
@@ -98,8 +98,7 @@ public:
  * Connect to centrald, get names of all devices.
  * Works similary to Rts2Device
  *
- * @addgroup RTS2Block
- * @addgroup RTS2Client
+ * @ingroup RTS2Block RTS2Client
  */
 class Rts2Client:public Rts2Block
 {
