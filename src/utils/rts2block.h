@@ -57,17 +57,17 @@ class Rts2DevClient;
 
 class Rts2LogStream;
 
-/**
- * Hold list of connections. It is used to store \see Rts2Conn objects.
- */
+/** Hold list of connections. It is used to store @see Rts2Conn objects. */
 typedef
   std::list <
 Rts2Conn * >
   connections_t;
 
 /**
- * Base class of RTS2 devices and clients. Contain RTS2 related management functions - manage list of connections, and basic commands
- * which are passed on conditions (e.g. status messages).
+ * Base class of RTS2 devices and clients.
+ *
+ * Contain RTS2 related management functions - manage list of connections, 
+ * and basic commands which are passed on conditions (e.g. status messages).
  *
  * @ingroup RTS2Block
  */
@@ -122,6 +122,12 @@ protected:
   addSelectSocks (fd_set * read_set);
   virtual void
   selectSuccess (fd_set * read_set);
+
+  /**
+   * Set which messages will be accepted by connection.
+   *
+   * @see Rts2Centrald
+   */
   void
   setMessageMask (int new_mask);
 
@@ -276,23 +282,26 @@ public:
   postEvent (Rts2Event * event);
 
   /**
-   * Used to create new connection - so childrens can
-   * create childrens of Rts2Conn
+   * Create new connection.
+   * This function is used in descenadants to override class of connections being created.
+   *
+   * @param in_sock Socket file descriptor which holds connection.
+   *
+   * @return Rts2Conn or descenand object.
    */
   virtual Rts2Conn *
   createConnection (int in_sock);
 
   /**
-   * Create data connection. Various parameters determine connection which
-   * requeired data connection, data connection originator, 
-   *
+   * Create data connection. Various parameters determines how data
+   * will be retrieved.
    *
    * @see Rts2ClientTCPDataConn
    *
-   * @param in_conn
-   * @param in_hostname
-   * @param in_port
-   * @param in_size
+   * @param in_conn Connection which is asking for creation of DataConn.
+   * @param in_hostname Name of host from which data will be downloaded.
+   * @param in_port Port which will be open on host for listening, and from which data will be downloaded.
+   * @param in_size Size of data.
    *
    * @return Rts2ClientTCPDataConn instance, which represent newly created data
    * connection.
@@ -301,11 +310,19 @@ public:
   addDataConnection (Rts2Conn * in_conn, char *in_hostname,
 		     int in_port, int in_size);
 
-
+  /**
+   * Finds connection with given name.
+   *
+   * @param in_name Name of connection which will be looked for.
+   *
+   * @return NULL if connection cannot be found, otherwise reference to connection object.
+   */
   Rts2Conn *
   findName (const char *in_name);
+
   Rts2Conn *
   findCentralId (int in_id);
+
   int
   sendStatusMessage (int state);
   int

@@ -774,9 +774,10 @@ Rts2Conn::sendPriorityInfo ()
 }
 
 int
-Rts2Conn::queCommand (Rts2Command * cmd)
+Rts2Conn::queCommand (Rts2Command * cmd, int notBop)
 {
   cmd->setConnection (this);
+  cmd->setBopMask (notBop);
   if (runningCommand
       || isConnState (CONN_CONNECTING)
       || isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))

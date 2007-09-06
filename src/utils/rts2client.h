@@ -6,11 +6,19 @@
 #include "rts2devclient.h"
 
 /**
- * Defines client specific thinks (client connections, handle client
- * thread management, ..
+ * @defgroup RTS2Client
  *
+ * This module includes infrastructure needed for client applications.
  */
 
+/**
+ * Represents connection between device and client.
+ *
+ * This class is used in Rts2Client to represent connections
+ * which client establish to other RTS2 components.
+ *
+ * @addgroup RTS2Client
+ */
 class Rts2ConnClient:public Rts2Conn
 {
 private:
@@ -25,9 +33,24 @@ public:
   virtual void setAddress (Rts2Address * in_addr);
   void connLogin ();
 
+  /**
+   * Set celient key.
+   *
+   * Keys are distributed from Rts2Centrald to client connection.
+   *
+   * @param in_key New client key.
+   */
   virtual void setKey (int in_key);
 };
 
+/**
+ * Represents connection between centrald and client.
+ *
+ * This class is used to represent conection between central
+ * server and client. It is used to handle key management etc.
+ *
+ * @addgroup RTS2Client
+ */
 class Rts2ConnCentraldClient:public Rts2Conn
 {
 private:
@@ -69,15 +92,15 @@ public:
   virtual int commandReturnOK ();
 };
 
-/**************************************************
- *
- * Common block for client aplication.
+/**
+ * Common class for client aplication.
  *
  * Connect to centrald, get names of all devices.
  * Works similary to Rts2Device
  *
- *************************************************/
-
+ * @addgroup RTS2Block
+ * @addgroup RTS2Client
+ */
 class Rts2Client:public Rts2Block
 {
 private:

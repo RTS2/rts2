@@ -8,15 +8,25 @@
 #include <vector>
 #include <iostream>
 
+/** Value is string (character array). */
 #define RTS2_VALUE_STRING	0x00000001
+/** Value is integer number. */
 #define RTS2_VALUE_INTEGER	0x00000002
+/** Value is time (date and time, distributed as double precission floating point
+ * number, representing number of seconds from 1.1.1970) */
 #define RTS2_VALUE_TIME		0x00000003
+/** Value is double precission floating point number. */
 #define RTS2_VALUE_DOUBLE	0x00000004
+/** Value is single precission floating point number. */
 #define RTS2_VALUE_FLOAT	0x00000005
+/** Value is boolean value (true or false). */
 #define RTS2_VALUE_BOOL		0x00000006
+/** Value is selection value. Ussuall represnetation is integer number, but string representation is provided as well. */
 #define RTS2_VALUE_SELECTION	0x00000007
 
+/** Value have statistics nature (include mean, average, min and max values and number of measurements taken for value). */
 #define RTS2_VALUE_DOUBLE_STAT	0x00000014
+/** Value is min-max value, which puts boundaries on minimal and maximal values. */
 #define RTS2_VALUE_DOUBLE_MMAX  0x00000024
 
 #define RTS2_VALUE_MASK		0x000000ff
@@ -39,7 +49,10 @@
 
 #define RTS2_VALUE_INFOTIME	"infotime"
 
-// script value, when we will display it, we might look for scriptPosition and scriptLen, which will show current script position
+/**
+ * Script value, when we will display it, we might look for scriptPosition and
+ * scriptLen, which will show current script position.
+ */
 #define RTS2_DT_SCRIPT		0x00100000
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)
@@ -48,12 +61,14 @@
 
 class Rts2Conn;
 
-/***********************************
- *
+/**
  * Holds values send over TCP/IP.
- * 
- **********************************/
-
+ * Values which are in RTS2 system belongs to one component. They are
+ * distributed with metainformations over TCP/IP network, and stored in
+ * receiving devices.
+ *
+ * @ingroup RTS2Block
+ */
 class Rts2Value
 {
 private:

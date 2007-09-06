@@ -39,6 +39,17 @@ class Rts2Event;
 
 class Rts2Value;
 
+/**
+ * Holds one connection. It keeps connection running, check it states, and handles 
+ * various TCP/IP issues.
+ * Connection is primary network connection, but there are descendand classes
+ * which holds forked instance output.
+ *
+ * Rts2Conn is used primarly in @see Rts2Block, which holds list of connections
+ * and provide function to manage them.
+ *
+ * @addgroup RTS2Block
+ */
 class Rts2Conn:public Rts2Object
 {
 private:
@@ -73,19 +84,33 @@ private:
 protected:
     Rts2ServerState * serverState;
 
+  /**
+   * Pointer to master object.
+   */
   Rts2Block *master;
   char *command_start;
   int sock;
 
   virtual int acceptConn ();
 
+  /**
+   * Set connection state.
+   */
   virtual void setState (int in_value);
 
   Rts2DevClient *otherDevice;
   int otherType;
 
+  /**
+   * Called when we sucessfully send some data over connection.
+   */
   void successfullSend ();
+
+  /**
+   * Return time when some data were sucessfully sended.
+   */
   void getSuccessSend (time_t * in_t);
+
   int reachedSendTimeout ();
   void successfullRead ();
 
@@ -148,6 +173,7 @@ public:
   {
     return !strcmp (cmd, getCommand ());
   }
+
   virtual int send (const char *msg);
   int send (std::string msg);
   virtual int sendMessage (Rts2Message & msg);
@@ -232,20 +258,59 @@ public:
     return -1;
   }
 
-  int queCommand (Rts2Command * cmd);
+  /**
+   * Que command on connection.
+   * Commands are send over TCP/IP ordered, and next command is send only after
+   * last command was received.  The optional notBop parameter describe at
+   * which system states commands should not be send, and rather kept in que.
+   *
+   * @see Rts2Command
+   *
+   * @param cmd Command which will be send.
+   * @param notBop Block of OPeration bitfield. Put BOP bits ored in this one.
+   *
+   * @return 0 when sucessfull, -1 on error.
+   */
+  int queCommand (Rts2Command * cmd, int notBop = 0);
+
+  /**
+   * Send immediatelly command to connection.
+   * This call is different from @see Rts2Conn::queCommand, that it will send
+   * command immediatly, and will not wait for end of previous command block.
+   * As command is send immeditely, BOP mask does not make any sence in such case.
+   *
+   * @param cmd Command which will be qued.
+   *
+   * @return 0 when sucessfull, -1 on error.
+   */
   int queSend (Rts2Command * cmd);
+
   virtual int commandReturn (Rts2Command * cmd, int in_status);
-  int queEmpty ()
+
+  /**
+   * Determines if que is empty and there is not any running command.
+   * This is usefull to check if all commands were processed by the connection.
+   *
+   * @return True if command que is empty, false if it is not empty or some command is running.
+   */
+  bool queEmpty ()
   {
     return (runningCommand == NULL && commandQue.size () == 0);
   }
+
   /**
    * Query if list of command (including running command) contains given command.
    *
-   * \param cmd Rts2Command * we ask for
-   * \return true if we containt given command, false otherwise
+   * @aram cmd Rts2Command * we ask for
+   *
+   * @return true if we containt given command, false otherwise
    */
   bool commandPending (Rts2Command * cmd);
+
+  /**
+   * Clear que of pending command.
+   * This is usefull when reseting connection.
+   */
   void queClear ();
 
   virtual void addressUpdated (Rts2Address * in_addr)

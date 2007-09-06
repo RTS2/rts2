@@ -14,10 +14,22 @@ typedef enum
   IN_WAIT_STATE, WHILE_EXPOSING
 } commandCondType;
 
+/**
+ * Base class which represents commands send over network to other component.
+ * This object is usually send through Rts2Conn::queCommand to connection,
+ * which process it, wait for the other side to reply, pass return code to
+ * Rts2Conn::commandReturn callback and delete it.
+ *
+ * @see Rts2Conn
+ *
+ * @ingroup RTS2Block
+ */
 class Rts2Command
 {
+private:
+  int bopMask;
 protected:
-  Rts2Block * owner;
+    Rts2Block * owner;
   Rts2Conn *connection;
   char *text;
   commandCondType commandCond;
@@ -30,6 +42,7 @@ public:
     connection = in_command->connection;
     setCommand (in_command->getText ());
     commandCond = in_command->getCommandCond ();
+    bopMask = 0;
   }
   virtual ~ Rts2Command (void);
   int setCommand (char *in_text);
@@ -51,6 +64,29 @@ public:
   {
     return commandCond;
   }
+
+  /**
+   * Set command Block of OPeration mask.
+   *
+   * @param in_bopMask New BOP mask.
+   */
+  void setBopMask (int in_bopMask)
+  {
+    bopMask = in_bopMask;
+  }
+
+  /**
+   * Return command BOP mask.
+   *
+   * @see Rts2Command::setBopMask
+   *
+   * @return Commmand BOP mask.
+   */
+  int getBopMask ()
+  {
+    return bopMask;
+  }
+
   virtual int commandReturnOK ();
   virtual int commandReturnQued ();
   virtual int commandReturnFailed (int status);
