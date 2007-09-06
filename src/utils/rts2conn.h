@@ -19,10 +19,29 @@
 typedef enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
 
+/**
+ * Connection states.
+ */
 typedef enum
-{ CONN_UNKNOW, CONN_RESOLVING_DEVICE, CONN_CONNECTING,
-  CONN_CONNECTED, CONN_BROKEN, CONN_DELETE, CONN_AUTH_PENDING,
-  CONN_AUTH_OK, CONN_AUTH_FAILED
+{
+  /** Unknow connection state. */
+  CONN_UNKNOW,
+  /** Connection waits for address of device. */
+  CONN_RESOLVING_DEVICE,
+  /** Socket to device is opened, connection waits for other side to reply to connect call. */
+  CONN_CONNECTING,
+  /** Connection is connected and everything works. */
+  CONN_CONNECTED,
+  /** Connection is broken, other side does not replied to previous commands before timeout on command reply expires. */
+  CONN_BROKEN,
+  /** Connection is marked for deletion and will be deleted. */
+  CONN_DELETE,
+  /** Connection waits for authorization, which is routed through central server. */
+  CONN_AUTH_PENDING,
+  /** Connection was sucessufylly authorized. */
+  CONN_AUTH_OK,
+  /** Connection was not authorized, it will be deleted. */
+  CONN_AUTH_FAILED
 } conn_state_t;
 
 class Rts2Address;
@@ -253,6 +272,11 @@ public:
   void setCentraldId (int in_centrald_id);
   int sendPriorityInfo ();
 
+  /**
+   * Sends information about client.
+   *
+   * As client does not have any additional informations, -1 is returned.
+   */
   virtual int sendInfo (Rts2Conn * conn)
   {
     return -1;
@@ -285,6 +309,19 @@ public:
    */
   int queSend (Rts2Command * cmd);
 
+  /**
+   * Hook for command return.
+   *
+   * This metthod is called when command is performed by the other
+   * side of connection and return code is returned.
+   *
+   * It is called after +000 or -<error code> message is received.
+   *
+   * @param cmd Finished command.
+   * @param in_status Command return status.
+   *
+   * @return Should return 0, all other returns value can cause problems.
+   */
   virtual int commandReturn (Rts2Command * cmd, int in_status);
 
   /**
@@ -313,12 +350,25 @@ public:
    */
   void queClear ();
 
+  /**
+   * Called when new device connect to the system.
+   *
+   * @param in_addr New device address.
+   */
   virtual void addressUpdated (Rts2Address * in_addr)
   {
   }
 
   virtual void setConnState (conn_state_t new_conn_state);
+
+
   int isConnState (conn_state_t in_conn_state);
+
+  /**
+   * Return connection state.
+   *
+   * @return Connection state.
+   */
   conn_state_t getConnState ()
   {
     return conn_state;
