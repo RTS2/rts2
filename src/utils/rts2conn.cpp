@@ -829,8 +829,7 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-bool
-Rts2Conn::commandPending (Rts2Command * cmd)
+bool Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -986,6 +985,7 @@ void
 Rts2Conn::sendCommand ()
 {
   Rts2CommandStatusInfo *statInfoCall;
+  Rts2Conn *c_conn;
   // we require some special state before command can be executed
   if (runningCommand->getBopMask ())
     {
@@ -993,12 +993,23 @@ Rts2Conn::sendCommand ()
 	{
 	case 0:
 	  statInfoCall = new Rts2CommandStatusInfo (getMaster (), this);
-	  getMaster ()->getCentraldConn ()->queCommand (statInfoCall);
+	  c_conn = getMaster ()->getCentraldConn ();
+	  // we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
+	  if (c_conn == this)
+	    {
+	      statInfoCall->setConnection (this);
+	      statInfoCall->send ();
+	    }
+	  else
+	    {
+	      c_conn->queCommand (statInfoCall);
+	    }
 	  runningCommand->setStatusCallProgress (1);
 	  break;
 	case 1:
 	  // if the bock bit is still set..
 	  runningCommand->setStatusCallProgress (2);
+	case 2:
 	  if (getMaster ()->getMasterState () & runningCommand->
 	      getBopMask () & BOP_MASK)
 	    break;
@@ -1132,10 +1143,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool Rts2Conn::reachedSendTimeout ()
+bool
+Rts2Conn::reachedSendTimeout ()
 {
-  time_t
-    now;
+  time_t now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }

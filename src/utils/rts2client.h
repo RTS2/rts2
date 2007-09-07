@@ -34,7 +34,7 @@ public:
   void connLogin ();
 
   /**
-   * Set celient key.
+   * Set client key.
    *
    * Keys are distributed from Rts2Centrald to client connection.
    *

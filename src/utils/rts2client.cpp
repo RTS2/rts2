@@ -250,12 +250,6 @@ std::string Rts2Client::getMasterStateString ()
   return Rts2CentralState (getMasterState ()).getString ();
 }
 
-/**
- * Centrald connection.
- *
- * Used for putting devices names query etc..
- */
-
 Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):
 Rts2Conn (in_master)
 {
