@@ -384,10 +384,8 @@ public:
   deviceIdle (Rts2Conn * conn);
 
   virtual int
-  changeMasterState (int new_state)
-  {
-    return 0;
-  }
+  changeMasterState (int new_state);
+
   int
   setMasterState (int new_state)
   {

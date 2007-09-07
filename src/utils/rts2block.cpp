@@ -379,6 +379,17 @@ Rts2Block::deviceIdle (Rts2Conn * conn)
 {
 }
 
+int
+Rts2Block::changeMasterState (int new_state)
+{
+  // send message to all connections that they can possibly continue executing..
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      (*iter)->masterStateChanged ();
+    }
+}
+
 void
 Rts2Block::childReturned (pid_t child_pid)
 {

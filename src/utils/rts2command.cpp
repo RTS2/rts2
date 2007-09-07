@@ -14,6 +14,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
   owner = in_owner;
   text = NULL;
   commandCond = NO_COND;
+  bopMask = 0;
 }
 
 Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
@@ -21,6 +22,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
   owner = in_owner;
   setCommand (in_text);
   commandCond = NO_COND;
+  bopMask = 0;
 }
 
 int
@@ -76,12 +78,6 @@ Rts2Command::commandReturnFailed (int status)
   return -1;
 }
 
-/**************************************************************
- *
- * Rts2CommandSendKey implementation.
- *
- *************************************************************/
-
 Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * in_master, int in_key):Rts2Command
   (in_master)
 {
@@ -99,12 +95,6 @@ Rts2CommandSendKey::send ()
   return Rts2Command::send ();
 }
 
-/**************************************************************
- * 
- * Rts2CommandAuthorize command
- *
- *************************************************************/
-
 Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name):Rts2Command
   (in_master)
 {
@@ -114,12 +104,6 @@ Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *d
   setCommand (command);
   free (command);
 }
-
-/**************************************************************
- *
- * Rts2 device commands
- * 
- *************************************************************/
 
 Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera):Rts2Command (in_camera->
 	     getMaster

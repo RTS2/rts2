@@ -77,9 +77,9 @@ protected:
     Rts2DevClientCameraImage::setWaitMove ();
   }
 
-  virtual int queCommandFromScript (Rts2Command * com)
+  virtual void queCommandFromScript (Rts2Command * com)
   {
-    return queCommand (com);
+    queCommand (com);
   }
 
   virtual int getFailedCount ()

@@ -3,7 +3,11 @@
 
 #include "rts2block.h"
 
+/** @defgroup RTS2Command */
+
+/** Keep command, do not delete it from after it return. @ingroup RTS2Command */
 #define RTS2_COMMAND_KEEP	-2
+/** Send command again to device. @ingroup RTS2Command */
 #define RTS2_COMMAND_REQUE	-5
 
 typedef enum
@@ -23,6 +27,7 @@ typedef enum
  * @see Rts2Conn
  *
  * @ingroup RTS2Block
+ * @ingroup RTS2Command
  */
 class Rts2Command
 {
@@ -102,11 +107,55 @@ public:
     return bopMask & 0xff;
   }
 
+  void setStatusCallProgress (int call_progress)
+  {
+    bopMask = (bopMask & ~0xff) | (call_progress & 0xff);
+  }
+
+  /**
+   * Called when command returns without error.
+   *
+   * This function is overwritten in childrens to react on 
+   * command returning OK.
+   *
+   * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
+   *
+   * @callgraph
+   */
   virtual int commandReturnOK ();
+
+  /** 
+   * Called when command returns with status indicating that it will be
+   * executed later.
+   *
+   * Is is called when device state will allow execution of such command. This
+   * function is overwritten in childrens to react on command which will be
+   * executed later.
+   *
+   * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
+   *
+   * @callgraph
+   */
   virtual int commandReturnQued ();
+
+  /**
+   * Called when command returns with error.
+   *
+   * This function is overwritten in childrens to react on 
+   * command returning OK.
+   *
+   * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
+   *
+   * @callback
+   */
   virtual int commandReturnFailed (int status);
 };
 
+/**
+ * Command send to central daemon.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CentraldCommand:public Rts2Command
 {
 
@@ -117,6 +166,11 @@ public:
   }
 };
 
+/**
+ * Send and process authorization request.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandSendKey:public Rts2Command
 {
 private:
@@ -137,14 +191,23 @@ public:
   }
 };
 
+/**
+ * Receive authorization reply from centrald daemon.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandAuthorize:public Rts2Command
 {
 public:
   Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name);
 };
 
-// common class for all command, which changed camera settings
-// that will call at the end settingsOK or seetingsFailed
+/**
+ * Common class for all command, which changed camera settings
+ * that will call at the end settingsOK or seetingsFailed.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandCameraSettings:public Rts2Command
 {
 private:
@@ -157,7 +220,6 @@ public:
 };
 
 // devices commands
-
 class Rts2CommandBinning:public Rts2CommandCameraSettings
 {
 public:
@@ -214,6 +276,8 @@ public:
 
 /**
  * Issue command to change value, but do not send return status.
+ *
+ * @ingroup RTS2Command
  */
 class Rts2CommandChangeValueDontReturn:public Rts2Command
 {
@@ -239,6 +303,8 @@ public:
 
 /**
  * Issue command to change value, send return status and handle it.
+ *
+ * @ingroup RTS2Command
  */
 class Rts2CommandChangeValue:public Rts2CommandChangeValueDontReturn
 {
@@ -260,6 +326,11 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
+/**
+ * Command for telescope movement.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandMove:public Rts2Command
 {
   Rts2DevClientTelescope *tel;
@@ -271,6 +342,11 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
+/**
+ * Move telescope without modelling corrections.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandMoveUnmodelled:public Rts2CommandMove
 {
 public:
@@ -279,6 +355,11 @@ public:
 			     double dec);
 };
 
+/**
+ * Move telescope to fixed location.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandMoveFixed:public Rts2Command
 {
   Rts2DevClientTelescope *tel;
@@ -450,6 +531,11 @@ public:
   Rts2CommandMessageMask (Rts2Block * in_master, int in_mask);
 };
 
+/**
+ * Send info command to central server.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandInfo:public Rts2Command
 {
 public:

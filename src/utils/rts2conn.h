@@ -320,7 +320,7 @@ public:
    *
    * @return 0 when sucessfull, -1 on error.
    */
-  int queCommand (Rts2Command * cmd, int notBop = 0);
+  void queCommand (Rts2Command * cmd, int notBop = 0);
 
   /**
    * Send immediatelly command to connection.
@@ -332,7 +332,7 @@ public:
    *
    * @return 0 when sucessfull, -1 on error.
    */
-  int queSend (Rts2Command * cmd);
+  void queSend (Rts2Command * cmd);
 
   /**
    * Hook for command return.
@@ -363,7 +363,7 @@ public:
   /**
    * Query if list of command (including running command) contains given command.
    *
-   * @aram cmd Rts2Command * we ask for
+   * @param cmd Rts2Command * we ask for
    *
    * @return true if we containt given command, false otherwise
    */
@@ -445,6 +445,7 @@ public:
   }
 
   virtual void updateStatusWait ();
+  virtual void masterStateChanged ();
 
 protected:
   virtual int command ();

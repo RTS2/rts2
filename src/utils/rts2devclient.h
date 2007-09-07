@@ -99,9 +99,9 @@ public:
     return connection->getMaster ();
   }
 
-  int queCommand (Rts2Command * cmd)
+  void queCommand (Rts2Command * cmd)
   {
-    return connection->queCommand (cmd);
+    connection->queCommand (cmd);
   }
 
   int commandReturn (Rts2Command * cmd, int status)

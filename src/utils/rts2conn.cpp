@@ -511,6 +511,15 @@ Rts2Conn::getOtherType ()
 void
 Rts2Conn::updateStatusWait ()
 {
+  if (runningCommand && runningCommand->getStatusCallProgress () == 1)
+    sendCommand ();
+}
+
+void
+Rts2Conn::masterStateChanged ()
+{
+  if (runningCommand && runningCommand->getStatusCallProgress () == 2)
+    sendCommand ();
 }
 
 int
@@ -781,7 +790,7 @@ Rts2Conn::sendPriorityInfo ()
   return ret;
 }
 
-int
+void
 Rts2Conn::queCommand (Rts2Command * cmd, int notBop)
 {
   cmd->setConnection (this);
@@ -791,25 +800,25 @@ Rts2Conn::queCommand (Rts2Command * cmd, int notBop)
       || isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
     {
       commandQue.push_back (cmd);
-      return 0;
+      return;
     }
   runningCommand = cmd;
-  return cmd->send ();
+  sendCommand ();
 }
 
-int
+void
 Rts2Conn::queSend (Rts2Command * cmd)
 {
   cmd->setConnection (this);
   if (isConnState (CONN_CONNECTING) || isConnState (CONN_UNKNOW))
     {
       commandQue.push_front (cmd);
-      return 0;
+      return;
     }
   if (runningCommand)
     commandQue.push_front (runningCommand);
   runningCommand = cmd;
-  return runningCommand->send ();
+  sendCommand ();
 }
 
 int
@@ -976,12 +985,24 @@ Rts2Conn::message ()
 void
 Rts2Conn::sendCommand ()
 {
+  Rts2CommandStatusInfo *statInfoCall;
   // we require some special state before command can be executed
   if (runningCommand->getBopMask ())
     {
       switch (runningCommand->getStatusCallProgress ())
 	{
 	case 0:
+	  statInfoCall = new Rts2CommandStatusInfo (getMaster (), this);
+	  getMaster ()->getCentraldConn ()->queCommand (statInfoCall);
+	  runningCommand->setStatusCallProgress (1);
+	  break;
+	case 1:
+	  // if the bock bit is still set..
+	  runningCommand->setStatusCallProgress (2);
+	  if (getMaster ()->getMasterState () & runningCommand->
+	      getBopMask () & BOP_MASK)
+	    break;
+	  runningCommand->send ();
 	  break;
 	}
     }
@@ -999,7 +1020,7 @@ Rts2Conn::sendNextCommand ()
     {
       runningCommand = *(commandQue.begin ());
       commandQue.erase (commandQue.begin ());
-      runningCommand->send ();
+      sendCommand ();
       return 0;
     }
   runningCommand = NULL;
@@ -1023,7 +1044,7 @@ Rts2Conn::commandReturn ()
     {
     case RTS2_COMMAND_REQUE:
       if (runningCommand)
-	runningCommand->send ();
+	sendCommand ();
       break;
     case -1:
       delete runningCommand;
