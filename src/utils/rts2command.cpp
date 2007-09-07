@@ -779,3 +779,29 @@ Rts2CommandInfo::commandReturnFailed (int status)
     connection->getOtherDevClient ()->infoFailed ();
   return Rts2Command::commandReturnFailed (status);
 }
+
+Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn, bool in_keep):Rts2Command
+  (master)
+{
+  control_conn = in_control_conn;
+  keep = in_keep;
+  setCommand ("status_info");
+}
+
+int
+Rts2CommandStatusInfo::commandReturnOK ()
+{
+  control_conn->updateStatusWait ();
+  if (keep)
+    return RTS2_COMMAND_KEEP;
+  return Rts2Command::commandReturnOK ();
+}
+
+int
+Rts2CommandStatusInfo::commandReturnFailed ()
+{
+  control_conn->updateStatusWait ();
+  if (keep)
+    return RTS2_COMMAND_KEEP;
+  return Rts2Command::commandReturnOK ();
+}

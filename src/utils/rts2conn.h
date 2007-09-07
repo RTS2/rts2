@@ -53,6 +53,7 @@ class Rts2Address;
 class Rts2Block;
 
 class Rts2Command;
+class Rts2CommandStatusInfo;
 
 class Rts2ClientTCPDataConn;
 
@@ -102,6 +103,15 @@ private:
   conn_state_t conn_state;
 
   int message ();
+
+  /**
+   * Determine, if it's save to send command over network to other side.
+   * It sends runningCommand, which must be filled before sendCommand
+   * is called.
+   *
+   * @pre runningCommand != NULL
+   */
+  void sendCommand ();
 
 protected:
     Rts2ServerState * serverState;
@@ -433,6 +443,8 @@ public:
   {
     return otherDevice;
   }
+
+  virtual void updateStatusWait ();
 
 protected:
   virtual int command ();

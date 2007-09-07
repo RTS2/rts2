@@ -508,6 +508,11 @@ Rts2Conn::getOtherType ()
   return -1;
 }
 
+void
+Rts2Conn::updateStatusWait ()
+{
+}
+
 int
 Rts2Conn::processLine ()
 {
@@ -966,6 +971,24 @@ Rts2Conn::message ()
   master->message (rts2Message);
   // message is always processed and do not need OK return
   return -1;
+}
+
+void
+Rts2Conn::sendCommand ()
+{
+  // we require some special state before command can be executed
+  if (runningCommand->getBopMask ())
+    {
+      switch (runningCommand->getStatusCallProgress ())
+	{
+	case 0:
+	  break;
+	}
+    }
+  else
+    {
+      runningCommand->send ();
+    }
 }
 
 int

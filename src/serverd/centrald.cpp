@@ -29,7 +29,7 @@
  */
 
 #include "centrald.h"
-#include "rts2commandstatusinfo.h"
+#include "../utils/rts2command.h"
 
 void
 Rts2ConnCentrald::setState (int in_value)
@@ -770,7 +770,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
   Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
   c_conn->deleteStatusCommand ();
   Rts2CommandStatusInfo *statusCommand =
-    new Rts2CommandStatusInfo (this, c_conn);
+    new Rts2CommandStatusInfo (this, c_conn, true);
   // update system status
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)

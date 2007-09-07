@@ -168,6 +168,7 @@ private:
   int sendStatusInfo ();
   int sendAValue (char *name, int value);
   int messageMask;
+
   Rts2CommandStatusInfo *statusCommand;
 protected:
     virtual void setState (int in_value);
@@ -177,13 +178,13 @@ public:
     virtual ~ Rts2ConnCentrald (void);
   virtual int sendMessage (Rts2Message & msg);
   virtual int sendInfo (Rts2Conn * conn);
+
   void deleteStatusCommand ();
   void setStatusCommand (Rts2CommandStatusInfo * cmd)
   {
     statusCommand = cmd;
   }
-  void sendStatusCommand ();
-  void updateStatusWait ();
+  virtual void updateStatusWait ();
 };
 
 #endif /*! __RTS2_CENTRALD__ */

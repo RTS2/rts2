@@ -87,6 +87,21 @@ public:
     return bopMask;
   }
 
+  /**
+   * Returns status of info call, issued against central server.
+   *
+   * States are:
+   *  - status command was not issued
+   *  - status command was issued
+   *  - status command sucessfulle ended
+   *
+   * @return Status of info call.
+   */
+  int getStatusCallProgress ()
+  {
+    return bopMask & 0xff;
+  }
+
   virtual int commandReturnOK ();
   virtual int commandReturnQued ();
   virtual int commandReturnFailed (int status);
@@ -441,6 +456,18 @@ public:
   Rts2CommandInfo (Rts2Block * in_master);
   virtual int commandReturnOK ();
   virtual int commandReturnFailed (int status);
+};
+
+class Rts2CommandStatusInfo:public Rts2Command
+{
+private:
+  Rts2Conn * control_conn;
+  bool keep;
+public:
+    Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn,
+			   bool in_keep = false);
+  virtual int commandReturnOK ();
+  virtual int commandReturnFailed ();
 };
 
 #endif /* !__RTS2_COMMAND__ */
