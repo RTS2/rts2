@@ -461,6 +461,8 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   logFileSource = LOGFILE_DEF;
   fileLog = NULL;
 
+  priority_client = -1;
+
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
   addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
@@ -771,6 +773,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
   c_conn->deleteStatusCommand ();
   Rts2CommandStatusInfo *statusCommand =
     new Rts2CommandStatusInfo (this, c_conn, true);
+  int s_count = 0;
   // update system status
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -780,6 +783,12 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	{
 	  test_conn->queCommand (statusCommand);
 	}
+    }
+  // command was not send at all..
+  if (s_count == 0)
+    {
+      delete statusCommand;
+      return 0;
     }
   // c_conn will keep that command..
   c_conn->setStatusCommand (statusCommand);
