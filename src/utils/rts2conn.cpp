@@ -829,7 +829,8 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
+bool
+Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -998,7 +999,11 @@ Rts2Conn::sendCommand ()
 	  if (c_conn == this)
 	    {
 	      statInfoCall->setConnection (this);
+	      statInfoCall->setStatusCallProgress (3);
 	      statInfoCall->send ();
+	      runningCommand->setStatusCallProgress (2);
+	      commandQue.push_front (runningCommand);
+	      runningCommand = statInfoCall;
 	    }
 	  else
 	    {
@@ -1014,6 +1019,9 @@ Rts2Conn::sendCommand ()
 	      getBopMask () & BOP_MASK)
 	    break;
 	  runningCommand->send ();
+	  break;
+	case 3:
+	  // do nothing, it's status command, which return back
 	  break;
 	}
     }
@@ -1143,10 +1151,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool
-Rts2Conn::reachedSendTimeout ()
+bool Rts2Conn::reachedSendTimeout ()
 {
-  time_t now;
+  time_t
+    now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
