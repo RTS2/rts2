@@ -190,7 +190,7 @@ Rts2ConnCentrald::updateStatusWait ()
   if (commandPending (statusCommand))
     return;
 
-  master->sendStatusMessage (getState (), this);
+  master->sendStatusMessage (master->getState (), this);
   sendCommandEnd (DEVDEM_OK, "OK");
 }
 
@@ -782,6 +782,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
       if (test_conn != conn)
 	{
 	  test_conn->queCommand (statusCommand);
+	  s_count++;
 	}
     }
   // command was not send at all..
