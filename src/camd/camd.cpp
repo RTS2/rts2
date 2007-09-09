@@ -435,7 +435,8 @@ CameraChip::cancelPriorityOperations ()
   box (-1, -1, -1, -1);
 }
 
-bool CameraChip::supportFrameTransfer ()
+bool
+CameraChip::supportFrameTransfer ()
 {
   return false;
 }
@@ -828,13 +829,16 @@ Rts2DevCamera::changeMasterState (int new_state)
     case SERVERD_DUSK:
     case SERVERD_NIGHT:
     case SERVERD_DAWN:
-      return camCoolHold ();
+      camCoolHold ();
+      break;
     case SERVERD_EVENING | SERVERD_STANDBY:
     case SERVERD_EVENING:
-      return camCoolMax ();
+      camCoolMax ();
+      break;
     default:
-      return camCoolShutdown ();
+      camCoolShutdown ();
     }
+  return Rts2ScriptDevice::changeMasterState (new_state);
 }
 
 int
@@ -1228,14 +1232,16 @@ Rts2DevCamera::endFocusing ()
   return 0;
 }
 
-bool Rts2DevCamera::isIdle ()
+bool
+Rts2DevCamera::isIdle ()
 {
   return ((getStateChip (0) &
 	   (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 	  (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 
-bool Rts2DevCamera::isFocusing ()
+bool
+Rts2DevCamera::isFocusing ()
 {
   return ((getStateChip (0) & CAM_MASK_FOCUSING) == CAM_FOCUSING);
 }
