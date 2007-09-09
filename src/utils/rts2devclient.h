@@ -327,7 +327,6 @@ class Rts2DevClientImgproc:public Rts2DevClient
 {
 public:
   Rts2DevClientImgproc (Rts2Conn * in_connection);
-  virtual int command ();
 };
 
 class Rts2DevClientGrb:public Rts2DevClient

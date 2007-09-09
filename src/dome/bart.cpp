@@ -801,23 +801,30 @@ Rts2DevDomeBart::changeMasterState (int new_state)
 	case SERVERD_DUSK:
 	case SERVERD_NIGHT:
 	case SERVERD_DAWN:
-	  return standby ();
+	  standby ();
+	  break;
 	default:
-	  return off ();
+	  off ();
 	}
     }
-  switch (new_state)
+  else
     {
-    case SERVERD_EVENING:
-    case SERVERD_NIGHT:
-    case SERVERD_DUSK:
-    case SERVERD_DAWN:
-      return observing ();
-    case SERVERD_MORNING:
-      return standby ();
-    default:
-      return off ();
+      switch (new_state)
+	{
+	case SERVERD_EVENING:
+	case SERVERD_NIGHT:
+	case SERVERD_DUSK:
+	case SERVERD_DAWN:
+	  observing ();
+	  break;
+	case SERVERD_MORNING:
+	  standby ();
+	  break;
+	default:
+	  off ();
+	}
     }
+  return Rts2DevDome::changeMasterState (new_state);
 }
 
 int

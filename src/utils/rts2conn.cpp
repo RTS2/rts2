@@ -36,6 +36,8 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 
   connectionTimeout = 300;	// 5 minutes timeout
 
+  commandInProgress = false;
+
   time (&lastGoodSend);
   lastData = lastGoodSend;
   lastSendReady = lastGoodSend - connectionTimeout;
@@ -63,6 +65,8 @@ Rts2Object ()
   otherType = -1;
 
   connectionTimeout = 300;	// 5 minutes timeout (150 + 150)
+
+  commandInProgress = false;
 
   time (&lastGoodSend);
   lastData = lastGoodSend;
@@ -628,6 +632,7 @@ Rts2Conn::processLine ()
     }
   else
     {
+      commandInProgress = true;
       ret = command ();
     }
 #ifdef DEBUG_ALL
@@ -692,7 +697,8 @@ Rts2Conn::receive (fd_set * set)
       data_size += buf_top - buf;
       buf_top = buf;
       command_start = buf;
-      while (*buf_top)
+      // do not call processLine if command is pending..
+      while (*buf_top)		// && !commandInProgress)
 	{
 	  while (isspace (*buf_top) || (*buf_top && *buf_top == '\n'))
 	    buf_top++;
@@ -829,8 +835,7 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-bool
-Rts2Conn::commandPending (Rts2Command * cmd)
+bool Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -877,6 +882,7 @@ Rts2Conn::command ()
 	  || paramNextInteger (&p_device_type) || !paramEnd ())
 	return -2;
       master->addAddress (p_name, p_host, p_port, p_device_type);
+      commandInProgress = false;
       return -1;
     }
   else if (isCommand ("user"))
@@ -891,6 +897,7 @@ Rts2Conn::command ()
 	return -2;
       master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
 		       p_login);
+      commandInProgress = false;
       return -1;
     }
   else if (isCommand ("status_info"))
@@ -916,6 +923,7 @@ Rts2Conn::command ()
 	      || paramNextInteger (&p_size) || !paramEnd ())
 	    return -2;
 	  master->addDataConnection (this, p_hostname, p_port, p_size);
+	  commandInProgress = false;
 	  return -1;
 	}
       return -2;
@@ -926,7 +934,10 @@ Rts2Conn::command ()
       int ret;
       ret = otherDevice->command ();
       if (ret == 0)
-	return -1;
+	{
+	  commandInProgress = false;
+	  return -1;
+	}
     }
   // don't respond to values with error - otherDevice does respond to
   // values, if there is no other device, we have to take resposibility
@@ -1008,8 +1019,8 @@ Rts2Conn::sendCommand ()
 	  else
 	    {
 	      c_conn->queCommand (statInfoCall);
+	      runningCommand->setStatusCallProgress (1);
 	    }
-	  runningCommand->setStatusCallProgress (1);
 	  break;
 	case 1:
 	  // if the bock bit is still set..
@@ -1151,10 +1162,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool Rts2Conn::reachedSendTimeout ()
+bool
+Rts2Conn::reachedSendTimeout ()
 {
-  time_t
-    now;
+  time_t now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
@@ -1290,6 +1301,7 @@ Rts2Conn::sendCommandEnd (int num, char *in_msg)
   asprintf (&msg, "%+04i \"%s\"", num, in_msg);
   send (msg);
   free (msg);
+  commandInProgress = false;
   return 0;
 }
 

@@ -626,6 +626,7 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 	return -2;
       conn->setName (deviceName);
       conn->setOtherType (deviceType);
+      conn->commandInProgress = false;
       return -1;
     }
   // we need to try that - due to other device commands

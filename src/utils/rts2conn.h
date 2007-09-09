@@ -171,6 +171,13 @@ public:
     Rts2Conn (int in_sock, Rts2Block * in_master);
     virtual ~ Rts2Conn (void);
 
+  /**
+   * If the connection is sending command.
+   *
+   * @invariant True if command is pending (e.g. the connection does not send end of command), otherwise false.
+   */
+  bool commandInProgress;
+
   virtual void postEvent (Rts2Event * event);
 
   virtual int add (fd_set * set);

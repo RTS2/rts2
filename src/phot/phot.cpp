@@ -230,7 +230,7 @@ Rts2DevPhot::changeMasterState (int new_state)
       disableMove ();
       break;
     }
-  return 0;
+  return Rts2ScriptDevice::changeMasterState (new_state);
 }
 
 void

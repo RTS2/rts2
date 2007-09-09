@@ -601,7 +601,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
   if (status == SERVERD_DAY || new_state == SERVERD_OFF
       || ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
     startPark (NULL);
-  return 0;
+  return Rts2Device::changeMasterState (new_state);
 }
 
 int

@@ -57,7 +57,8 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool Rts2Block::commandQueEmpty ()
+bool
+Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -390,6 +391,18 @@ Rts2Block::changeMasterState (int new_state)
   return 0;
 }
 
+int
+Rts2Block::changeBopState (int new_state)
+{
+  // send message to all connections that they can possibly continue executing..
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      (*iter)->masterStateChanged ();
+    }
+  return 0;
+}
+
 void
 Rts2Block::childReturned (pid_t child_pid)
 {
@@ -679,8 +692,7 @@ Rts2Block::statusInfo (Rts2Conn * conn)
   return -1;
 }
 
-bool
-Rts2Block::commandPending (Rts2Command * cmd)
+bool Rts2Block::commandPending (Rts2Command * cmd)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
