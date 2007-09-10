@@ -1,3 +1,20 @@
+0.7.1
+====
+ * new blocking operations API
+
+2007-09-10
+ * Values moved from Rts2DevClient to Rts2Conn
+ * significant changes in Rts2Conn infrastructure, more work on BOP
+   client-side mechanism
+ * fixed problem with rts2-xfocusc - made it single thread (with help of
+   ConnectionNumber, which returns X11 socket descriptor).
+
+2007-09-03
+ * BOP (blocking operations) core implemented
+
+2007-09-01
+ * Paramount driver park when not homed (MOTOR_HOMED is not set)
+
 2007-07-19
  * Rts2SWaitFor and Rts2SSleep
 

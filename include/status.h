@@ -18,12 +18,34 @@
 // device not ready..
 #define DEVICE_NOT_READY	0x00040000
 
-// used to deal blocking functions
-// BOP is for Block OPeration
+/**
+ * Used to deal blocking functions.
+ * BOP is for Block OPeration. BOP is used maynly in @see Rts2Command and @see
+ * Rts2Value.
+ *
+ * @ingroup RTS2Block
+ */
 #define BOP_MASK		0xff000000
 
+/**
+ * Block exposures.
+ *
+ * @ingroup RTS2Block
+ */
 #define BOP_EXPOSURE		0x01000000
+
+/**
+ * Block readout of CCD.
+ *
+ * @ingroup RTS2Block
+ */
 #define BOP_READOUT		0x02000000
+
+/**
+ * Block telescope movement.
+ *
+ * @ingroup RTS2Block
+ */
 #define BOP_TEL_MOVE		0x04000000
 
 #define DEVICE_STATUS_MASK	0x0000ffff
