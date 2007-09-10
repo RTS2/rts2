@@ -10,24 +10,19 @@ class Rts2Command;
 class Rts2ClientTCPDataConn;
 class Rts2ServerState;
 
-/**************************************
- *
+class Rts2Block;
+
+/**
  * Defines default classes for handling device information.
  * 
  * Descendants of rts2client can (by overloading method getConnection)
  * specify devices classes, which e.g. allow X11 printout of device
  * information etc..
- * 
- *************************************/
-
-class Rts2Block;
-
+ */
 class Rts2DevClient:public Rts2Object
 {
 private:
   int failedCount;
-  Rts2ValueVector values;
-  Rts2ValueTime *info_time;
 protected:
     Rts2Conn * connection;
   enum
@@ -62,19 +57,6 @@ public:
 
   virtual void postEvent (Rts2Event * event);
 
-  void addValue (Rts2Value * value);
-
-  int metaInfo (int rts2Type, std::string name, std::string desc);
-  int selMetaInfo (const char *value_name, char *sel_name);
-
-  Rts2Value *getValue (const char *value_name);
-  const char *getValueChar (const char *value_name);
-  double getValueDouble (const char *value_name);
-  int getValueInteger (const char *value_name);
-  const char *getValueSelection (const char *value_name, int val);
-  const char *getValueSelection (const char *value_name);
-
-  virtual int commandValue (const char *name);
   virtual int command ();
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn)
@@ -83,6 +65,11 @@ public:
 
   virtual void stateChanged (Rts2ServerState * state);
   void priorityInfo (bool have);
+
+  Rts2Conn *getConnection ()
+  {
+    return connection;
+  }
 
   const char *getName ()
   {
@@ -115,24 +102,6 @@ public:
 
   int getStatus ();
 
-  Rts2ValueVector::iterator valueBegin ()
-  {
-    return values.begin ();
-  }
-  Rts2ValueVector::iterator valueEnd ()
-  {
-    return values.end ();
-  }
-  Rts2Value *valueAt (int index)
-  {
-    if ((size_t) index < values.size ())
-      return values[index];
-    return NULL;
-  }
-  int valueSize ()
-  {
-    return values.size ();
-  }
   virtual void settingsOK ()
   {
   }
@@ -148,24 +117,14 @@ public:
   }
 
   virtual void idle ();
-
-  /**
-   * Returns true if we hold any value with given write type.
-   */
-  bool existWriteType (int w_type);
-
-  double getInfoTime ();
 };
 
-/**************************************
- *
+/**
  * Classes for devices connections.
  *
  * Please note that we cannot use descendants of Rts2ConnClient,
  * since we can connect to device as server.
- * 
- *************************************/
-
+ */
 class Rts2DevClientCamera:public Rts2DevClient
 {
 protected:

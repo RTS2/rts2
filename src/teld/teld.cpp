@@ -337,11 +337,11 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   ra = ln_range_degrees (lst - hadec.ra);
 
   // calculate change
-  model_change->ra = pos->ra - ra;
+  model_change->ra = ln_range_degrees (pos->ra - ra);
   model_change->dec = pos->dec - hadec.dec;
 
   // change above 5 degrees are strange - reject them
-  if (fabs (model_change->ra) > 5 || fabs (model_change->dec) > 5)
+  if (model_change->ra > 5 || fabs (model_change->dec) > 5)
     {
       logStream (MESSAGE_WARNING)
 	<< "telescope applyModel big change - rejecting "

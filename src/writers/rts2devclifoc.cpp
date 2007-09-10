@@ -65,7 +65,7 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
       eventConn = (Rts2ConnFocus *) event->getArg ();
       focus =
 	connection->getMaster ()->
-	getOpenConnection (getValueChar ("focuser"));
+	getOpenConnection (getConnection ()->getValueChar ("focuser"));
       if (eventConn && eventConn == focConn)
 	{
 	  focusChange (focus);
@@ -77,9 +77,10 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 	break;
       focuser = (Rts2DevClientFocusFoc *) event->getArg ();
       focName = focuser->getName ();
-      cameraFoc = getValueChar ("focuser");
+      cameraFoc = getConnection ()->getValueChar ("focuser");
       if (focName && cameraFoc
-	  && !strcmp (focuser->getName (), getValueChar ("focuser")))
+	  && !strcmp (focuser->getName (),
+		      getConnection ()->getValueChar ("focuser")))
 	{
 	  isFocusing = 0;
 	  exposureCount = 1;
@@ -292,7 +293,7 @@ Rts2DevClientPhotFoc::~Rts2DevClientPhotFoc (void)
 void
 Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
 {
-  int currFilter = getValueInteger ("filter");
+  int currFilter = getConnection ()->getValueInteger ("filter");
   connection->getMaster ()->
     logStream (MESSAGE_DEBUG) << "Count on " << connection->
     getName () << ": filter: " << currFilter << " count " << count << " exp: "
@@ -303,7 +304,7 @@ Rts2DevClientPhotFoc::addCount (int count, float exp, int is_ov)
     {
       os << Timestamp (time (NULL))
 	<< " " << connection->getName ()
-	<< " " << getValueInteger ("filter")
+	<< " " << getConnection ()->getValueInteger ("filter")
 	<< " " << count << " " << exp << " " << is_ov << std::endl;
       os.flush ();
     }

@@ -109,7 +109,8 @@ Rts2DevClientCameraImage::writeFilter ()
 {
   int camFilter = getTopImage ()->getFilterNum ();
   char imageFilter[4];
-  strncpy (imageFilter, getValueSelection ("filter", camFilter), 4);
+  strncpy (imageFilter,
+	   getConnection ()->getValueSelection ("filter", camFilter), 4);
   imageFilter[4] = '\0';
   getTopImage ()->setFilter (imageFilter);
 }
@@ -189,7 +190,7 @@ Rts2DevClientCameraImage::exposureFailed (int status)
 void
 Rts2DevClientCameraImage::exposureStarted ()
 {
-  exposureTime = getValueDouble ("exposure");
+  exposureTime = getConnection ()->getValueDouble ("exposure");
   struct timeval expStart;
   const char *focuser;
   gettimeofday (&expStart, NULL);
@@ -219,7 +220,7 @@ Rts2DevClientCameraImage::exposureStarted ()
   image->setConfigRotang (config_rotang);
   image->setValue ("FLIP", flip,
 		   "camera flip (since most astrometry devices works as mirrors");
-  focuser = getValueChar ("focuser");
+  focuser = getConnection ()->getValueChar ("focuser");
   if (focuser)
     {
       image->setFocuserName (focuser);
@@ -242,7 +243,7 @@ Rts2DevClientCameraImage::exposureEnd ()
   CameraImage *ci = getTop ();
 
   ci->setExEnd (getMaster ()->getNow ());
-  ci->image->writeClient (this, EXPOSURE_START);
+  ci->image->writeConn (getConnection (), EXPOSURE_START);
 
   connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, ci));
   setIsExposing (false);
@@ -287,8 +288,8 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
       image->setMountName (connection->getName ());
       getEqu (&object);
       getObs (&obs);
-      image->writeClient (this, EXPOSURE_START);
-      infotime = getValueDouble ("infotime");
+      image->writeConn (getConnection (), EXPOSURE_START);
+      infotime = getConnection ()->getValueDouble ("infotime");
       image->setValue ("MNT_INFO", infotime,
 		       "time when mount informations were collected");
       ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
@@ -311,22 +312,22 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("CUR_RA");
-  tel->dec = getValueDouble ("CUR_DEC");
+  tel->ra = getConnection ()->getValueDouble ("CUR_RA");
+  tel->dec = getConnection ()->getValueDouble ("CUR_DEC");
 }
 
 void
 Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("MNT_RA");
-  tel->dec = getValueDouble ("MNT_DEC");
+  tel->ra = getConnection ()->getValueDouble ("MNT_RA");
+  tel->dec = getConnection ()->getValueDouble ("MNT_DEC");
 }
 
 void
 Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
 {
-  tar->ra = getValueDouble ("RASC");
-  tar->dec = getValueDouble ("DECL");
+  tar->ra = getConnection ()->getValueDouble ("RASC");
+  tar->dec = getConnection ()->getValueDouble ("DECL");
 }
 
 void
@@ -347,14 +348,14 @@ Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
 void
 Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
 {
-  obs->lng = getValueDouble ("LONG");
-  obs->lat = getValueDouble ("LAT");
+  obs->lng = getConnection ()->getValueDouble ("LONG");
+  obs->lat = getConnection ()->getValueDouble ("LAT");
 }
 
 double
 Rts2DevClientTelescopeImage::getLocalSiderealDeg ()
 {
-  return getValueDouble ("siderealtime") * 15.0;
+  return getConnection ()->getValueDouble ("siderealtime") * 15.0;
 }
 
 double
@@ -383,7 +384,7 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 	  || !connection->getName ()
 	  || strcmp (image->getFocuserName (), connection->getName ()))
 	break;
-      image->writeClient (this, EXPOSURE_START);
+      image->writeConn (getConnection (), EXPOSURE_START);
       break;
     }
   Rts2DevClientFocus::postEvent (event);
@@ -402,9 +403,9 @@ Rts2DevClientWriteImage::postEvent (Rts2Event * event)
     {
     case EVENT_WRITE_TO_IMAGE:
       ci = (CameraImage *) event->getArg ();
-      ci->image->writeClient (this, EXPOSURE_START);
+      ci->image->writeConn (getConnection (), EXPOSURE_START);
       // and check if we should trigger info call
-      if (existWriteType (RTS2_VWHEN_BEFORE_END))
+      if (connection->existWriteType (RTS2_VWHEN_BEFORE_END))
 	{
 	  queCommand (new Rts2CommandInfo (getMaster ()));
 	  ci->waitForDevice (this, getMaster ()->getNow ());

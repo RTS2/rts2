@@ -91,7 +91,7 @@ private:
   void initData ();
 
   // writes one value to image
-  void writeClientValue (Rts2DevClient * client, Rts2Value * val);
+  void writeConnValue (Rts2Conn * conn, Rts2Value * val);
 protected:
   int targetId;
   int targetIdSel;
@@ -583,8 +583,7 @@ public:
     return setValue ("ORIGIN", orig, "organisation responsible for data");
   }
 
-  void writeClient (Rts2DevClient * client, imageWriteWhich_t which =
-		    EXPOSURE_START);
+  void writeConn (Rts2Conn * conn, imageWriteWhich_t which = EXPOSURE_START);
 
   /**
    * This will create WCS from record available at the FITS file.

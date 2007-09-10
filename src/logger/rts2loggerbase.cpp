@@ -27,7 +27,7 @@ Rts2DevClientLogger::fillLogValues ()
   for (std::list < std::string >::iterator iter = logNames.begin ();
        iter != logNames.end (); iter++)
     {
-      Rts2Value *val = getValue ((*iter).c_str ());
+      Rts2Value *val = getConnection ()->getValue ((*iter).c_str ());
       if (val)
 	{
 	  logValues.push_back (val);

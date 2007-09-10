@@ -95,7 +95,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
   d_count_usec = now.tv_usec;
   d_count_value = count;
   d_count_exposure = exp;
-  d_count_filter = getValueInteger ("filter") + '0';
+  d_count_filter = getConnection ()->getValueInteger ("filter") + '0';
   d_count_ra = actRaDec.ra;
   d_count_dec = actRaDec.dec;
 

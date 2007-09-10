@@ -307,7 +307,7 @@ Rts2ConnCentraldClient::command ()
 	return -2;
       setCentraldId (p_centrald_id);
       master->centraldConnRunning ();
-      commandInProgress = false;
+      setCommandInProgress (false);
       return -1;
     }
   if (isCommand ("authorization_key"))
@@ -321,7 +321,7 @@ Rts2ConnCentraldClient::command ()
       conn = master->getConnection (p_device_name);
       if (conn)
 	conn->setKey (p_key);
-      commandInProgress = false;
+      setCommandInProgress (false);
       return -1;
     }
   return Rts2Conn::command ();

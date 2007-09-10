@@ -39,17 +39,19 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
     case EVENT_SOAP_TEL_GET:
       resTel = (rts2__getTelescopeResponse *) event->getArg ();
 
-      resTel->tel->target->ra = getValueDouble ("RASC");
-      resTel->tel->target->dec = getValueDouble ("DECL");
+      resTel->tel->target->ra = getConnection ()->getValueDouble ("RASC");
+      resTel->tel->target->dec = getConnection ()->getValueDouble ("DECL");
 
-      resTel->tel->mount->ra = getValueDouble ("MNT_RA");
-      resTel->tel->mount->dec = getValueDouble ("MNT_DEC");
+      resTel->tel->mount->ra = getConnection ()->getValueDouble ("MNT_RA");
+      resTel->tel->mount->dec = getConnection ()->getValueDouble ("MNT_DEC");
 
-      resTel->tel->astrometry->ra = getValueDouble ("CUR_RA");
-      resTel->tel->astrometry->dec = getValueDouble ("CUR_DEC");
+      resTel->tel->astrometry->ra =
+	getConnection ()->getValueDouble ("CUR_RA");
+      resTel->tel->astrometry->dec =
+	getConnection ()->getValueDouble ("CUR_DEC");
 
-      resTel->tel->err->ra = getValueDouble ("RA_CORR");
-      resTel->tel->err->dec = getValueDouble ("DEC_CORR");
+      resTel->tel->err->ra = getConnection ()->getValueDouble ("RA_CORR");
+      resTel->tel->err->dec = getConnection ()->getValueDouble ("DEC_CORR");
 
       break;
     }
@@ -60,21 +62,21 @@ Rts2DevClientTelescopeSoap::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeSoap::getObs (struct ln_lnlat_posn *obs)
 {
-  obs->lng = getValueDouble ("LONG");
-  obs->lat = getValueDouble ("LAT");
+  obs->lng = getConnection ()->getValueDouble ("LONG");
+  obs->lat = getConnection ()->getValueDouble ("LAT");
 }
 
 void
 Rts2DevClientTelescopeSoap::getEqu (struct ln_equ_posn *tel)
 {
-  tel->ra = getValueDouble ("CUR_RA");
-  tel->dec = getValueDouble ("CUR_DEC");
+  tel->ra = getConnection ()->getValueDouble ("CUR_RA");
+  tel->dec = getConnection ()->getValueDouble ("CUR_DEC");
 }
 
 double
 Rts2DevClientTelescopeSoap::getLocalSiderealDeg ()
 {
-  return getValueDouble ("siderealtime") * 15.0;
+  return getConnection ()->getValueDouble ("siderealtime") * 15.0;
 }
 
 void
@@ -109,9 +111,11 @@ Rts2DevClientExecutorSoap::postEvent (Rts2Event * event)
     case EVENT_SOAP_EXEC_GETST:
       gets = (soapExecGetst *) event->getArg ();
       g_res = gets->res;
-      g_res->obsid = getValueInteger ("obsid");
-      fillTarget (getValueInteger ("current"), gets->in_soap, g_res->current);
-      fillTarget (getValueInteger ("next"), gets->in_soap, g_res->next);
+      g_res->obsid = getConnection ()->getValueInteger ("obsid");
+      fillTarget (getConnection ()->getValueInteger ("current"),
+		  gets->in_soap, g_res->current);
+      fillTarget (getConnection ()->getValueInteger ("next"), gets->in_soap,
+		  g_res->next);
       break;
     case EVENT_SOAP_EXEC_SET_NEXT:
       nexts = (soapExecNext *) event->getArg ();
@@ -141,9 +145,9 @@ Rts2DevClientDomeSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_DOME_GETST:
       res = (rts2__getDomeResponse *) event->getArg ();
-      res->dome->temp = getValueDouble ("DOME_TMP");
-      res->dome->humi = getValueDouble ("DOME_HUM");
-      res->dome->wind = getValueDouble ("WINDSPED");
+      res->dome->temp = getConnection ()->getValueDouble ("DOME_TMP");
+      res->dome->humi = getConnection ()->getValueDouble ("DOME_HUM");
+      res->dome->wind = getConnection ()->getValueDouble ("WINDSPED");
       break;
     }
 }
@@ -163,7 +167,7 @@ Rts2DevClientFocusSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_FOC_GET:
       res = (rts2__getFocusResponse *) event->getArg ();
-      res->focus->pos = getValueInteger ("pos");
+      res->focus->pos = getConnection ()->getValueInteger ("pos");
       break;
     case EVENT_SOAP_FOC_SET:
       set = (soapFocusSet *) event->getArg ();
@@ -189,10 +193,12 @@ Rts2DevClientImgprocSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_IMG_GET:
       res = (rts2__getImgprocResponse *) event->getArg ();
-      res->imgproc->que = getValueInteger ("que_size");
-      res->imgproc->good = getValueInteger ("good_images");
-      res->imgproc->trash = getValueInteger ("trash_images");
-      res->imgproc->morning = getValueInteger ("morning_images");
+      res->imgproc->que = getConnection ()->getValueInteger ("que_size");
+      res->imgproc->good = getConnection ()->getValueInteger ("good_images");
+      res->imgproc->trash =
+	getConnection ()->getValueInteger ("trash_images");
+      res->imgproc->morning =
+	getConnection ()->getValueInteger ("morning_images");
       break;
     }
 }
@@ -211,7 +217,7 @@ Rts2DevClientFilterSoap::postEvent (Rts2Event * event)
     {
     case EVENT_SOAP_FW_GET:
       res = (rts2__getFilterResponse *) event->getArg ();
-      res->filter->filter = getValueInteger ("filter");
+      res->filter->filter = getConnection ()->getValueInteger ("filter");
       break;
     case EVENT_SOAP_FW_SET:
       filters = (soapFilterSet *) event->getArg ();
@@ -256,10 +262,10 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
     {
       int status = getStatus ();
       cam->name = getName ();
-      cam->exposure = getValueDouble ("exposure");
-      cam->focpos = getValueInteger ("focpos");
-      cam->temp = getValueDouble ("CCD_TEMP");
-      cam->filter = getValueInteger ("filter");
+      cam->exposure = getConnection ()->getValueDouble ("exposure");
+      cam->focpos = getConnection ()->getValueInteger ("focpos");
+      cam->temp = getConnection ()->getValueDouble ("CCD_TEMP");
+      cam->filter = getConnection ()->getValueInteger ("filter");
       if (status & DEVICE_ERROR_MASK)
 	{
 	  if (status & DEVICE_ERROR_MASK == DEVICE_ERROR_KILL)
@@ -272,7 +278,8 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
 	  {
 	  case CAM_EXPOSING:
 	  case CAM_DATA:
-	    if (getValueInteger ("shutter") == SHUTTER_CLOSED)
+	    if (getConnection ()->getValueInteger ("shutter") ==
+		SHUTTER_CLOSED)
 	      cam->status = rts2__cameraStatus__DARK;
 	    else
 	      cam->status = rts2__cameraStatus__IMAGE;

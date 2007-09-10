@@ -51,6 +51,7 @@ Rts2DevConn::command ()
 	  return -1;
 	}
       setConnState (CONN_AUTH_PENDING);
+      setCommandInProgress (false);
       return -1;
     }
   return Rts2Conn::command ();
@@ -223,6 +224,7 @@ Rts2DevConn::setKey (int in_key)
 	  // que to begining, send command
 	  // kill all runinng commands
 	  queSend (new Rts2CommandSendKey (master, in_key));
+	  setCommandInProgress (false);
 	}
       else
 	{
@@ -399,6 +401,7 @@ Rts2DevConnMaster::command ()
 	  auth_conn = master->findCentralId (auth_id);
 	  if (auth_conn)
 	    auth_conn->authorizationOK ();
+	  setCommandInProgress (false);
 	  return -1;
 	}
       else if (!strcmp ("authorization_failed", a_type))
@@ -409,6 +412,7 @@ Rts2DevConnMaster::command ()
 	  auth_conn = master->findCentralId (auth_id);
 	  if (auth_conn)
 	    auth_conn->authorizationFailed ();
+	  setCommandInProgress (false);
 	  return -1;
 	}
       if (!strcmp ("registered_as", a_type))
@@ -418,6 +422,7 @@ Rts2DevConnMaster::command ()
 	    return -2;
 	  setCentraldId (clientId);
 	  master->centraldConnRunning ();
+	  setCommandInProgress (false);
 	  return -1;
 	}
     }
@@ -432,6 +437,7 @@ Rts2DevConnMaster::command ()
       conn = master->getOpenConnection (p_device_name);
       if (conn)
 	conn->setKey (p_key);
+      setCommandInProgress (false);
       return -1;
     }
 
@@ -626,7 +632,7 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 	return -2;
       conn->setName (deviceName);
       conn->setOtherType (deviceType);
-      conn->commandInProgress = false;
+      conn->setCommandInProgress (false);
       return -1;
     }
   // we need to try that - due to other device commands

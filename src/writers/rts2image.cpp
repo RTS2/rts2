@@ -1842,17 +1842,16 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 }
 
 void
-Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
+Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 {
   char *desc = (char *) val->getDescription ().c_str ();
   char *name = (char *) val->getName ().c_str ();
   char *name_stat;
   char *n_top;
-  if (client->getOtherType () == DEVICE_TYPE_SENSOR
-      || val->prefixWithDevice ())
+  if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
     {
-      name = new char[strlen (name) + strlen (client->getName ()) + 2];
-      strcpy (name, client->getName ());
+      name = new char[strlen (name) + strlen (conn->getName ()) + 2];
+      strcpy (name, conn->getName ());
       strcat (name, ".");
       strcat (name, val->getName ().c_str ());
     }
@@ -1907,18 +1906,17 @@ Rts2Image::writeClientValue (Rts2DevClient * client, Rts2Value * val)
 	<< "' of type " << val->getValueType () << sendLog;
       break;
     }
-  if (client->getOtherType () == DEVICE_TYPE_SENSOR
-      || val->prefixWithDevice ())
+  if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
     {
       delete[]name;
     }
 }
 
 void
-Rts2Image::writeClient (Rts2DevClient * client, imageWriteWhich_t which)
+Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 {
-  for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
-       iter != client->valueEnd (); iter++)
+  for (Rts2ValueVector::iterator iter = conn->valueBegin ();
+       iter != conn->valueEnd (); iter++)
     {
       Rts2Value *val = *iter;
       if (val->getWriteToFits ())
@@ -1927,11 +1925,11 @@ Rts2Image::writeClient (Rts2DevClient * client, imageWriteWhich_t which)
 	    {
 	    case EXPOSURE_START:
 	      if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
-		writeClientValue (client, val);
+		writeConnValue (conn, val);
 	      break;
 	    case EXPOSURE_END:
 	      if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
-		writeClientValue (client, val);
+		writeConnValue (conn, val);
 	      break;
 	    }
 	}

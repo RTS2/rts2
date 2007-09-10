@@ -181,24 +181,20 @@ Rts2Indi::ISPoll ()
   Rts2Conn *tel = getOpenConnection ("T0");
   if (tel)
     {
-      Rts2DevClient *telD = tel->getOtherDevClient ();
-      if (telD)
-	{
-	  eqNum.np[0].value = telD->getValueDouble ("MNT_RA") / 15.0;
-	  eqNum.np[1].value = telD->getValueDouble ("MNT_DEC");
-	  eqNum.s = IPS_OK;
-	  IDSetNumber (&eqNum, NULL);
+      eqNum.np[0].value = tel->getValueDouble ("MNT_RA") / 15.0;
+      eqNum.np[1].value = tel->getValueDouble ("MNT_DEC");
+      eqNum.s = IPS_OK;
+      IDSetNumber (&eqNum, NULL);
 
-	  horNum.np[0].value = telD->getValueDouble ("ALT");
-	  horNum.np[1].value = telD->getValueDouble ("AZ");
-	  horNum.s = IPS_OK;
-	  IDSetNumber (&horNum, NULL);
+      horNum.np[0].value = tel->getValueDouble ("ALT");
+      horNum.np[1].value = tel->getValueDouble ("AZ");
+      horNum.s = IPS_OK;
+      IDSetNumber (&horNum, NULL);
 
-	  PowerS[0].s = ISS_ON;
-	  PowerS[1].s = ISS_OFF;
-	  PowerSP.s = IPS_OK;
-	  IDSetSwitch (&PowerSP, NULL);
-	}
+      PowerS[0].s = ISS_ON;
+      PowerS[1].s = ISS_OFF;
+      PowerSP.s = IPS_OK;
+      IDSetSwitch (&PowerSP, NULL);
     }
 }
 

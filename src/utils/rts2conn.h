@@ -17,6 +17,7 @@
 #include "rts2serverstate.h"
 #include "rts2message.h"
 #include "rts2logstream.h"
+#include "rts2valuelist.h"
 
 #define MAX_DATA		200
 
@@ -113,6 +114,23 @@ private:
    */
   void sendCommand ();
 
+  /**
+   * If the connection is sending command.
+   *
+   * @invariant True if command is pending (e.g. the connection does not send end of command), otherwise false.
+   */
+  bool commandInProgress;
+
+  /**
+   * Holds connection values.
+   */
+  Rts2ValueVector values;
+
+  /**
+   * Holds info_time variable.
+   */
+  Rts2ValueTime *info_time;
+
 protected:
     Rts2ServerState * serverState;
 
@@ -171,16 +189,20 @@ public:
     Rts2Conn (int in_sock, Rts2Block * in_master);
     virtual ~ Rts2Conn (void);
 
-  /**
-   * If the connection is sending command.
-   *
-   * @invariant True if command is pending (e.g. the connection does not send end of command), otherwise false.
-   */
-  bool commandInProgress;
-
   virtual void postEvent (Rts2Event * event);
 
   virtual int add (fd_set * set);
+
+  /**
+   * Set if command is in progress.
+   *
+   * @param in_progress True if command is in progress and running.
+   */
+  void setCommandInProgress (bool in_progress)
+  {
+    commandInProgress = in_progress;
+  }
+
   int getState ()
   {
     return serverState->getValue ();
@@ -472,6 +494,46 @@ protected:
   {
     return (*(getCommand ()) == '+' || *(getCommand ()) == '-');
   }
+
+public:
+  // value management functions
+  void addValue (Rts2Value * value);
+
+  int metaInfo (int rts2Type, std::string m_name, std::string desc);
+  int selMetaInfo (const char *value_name, char *sel_name);
+
+  const char *getValueChar (const char *value_name);
+  double getValueDouble (const char *value_name);
+  int getValueInteger (const char *value_name);
+  const char *getValueSelection (const char *value_name, int val);
+  const char *getValueSelection (const char *value_name);
+
+  virtual int commandValue (const char *v_name);
+
+  Rts2ValueVector::iterator valueBegin ()
+  {
+    return values.begin ();
+  }
+  Rts2ValueVector::iterator valueEnd ()
+  {
+    return values.end ();
+  }
+  Rts2Value *valueAt (int index)
+  {
+    if ((size_t) index < values.size ())
+      return values[index];
+    return NULL;
+  }
+  int valueSize ()
+  {
+    return values.size ();
+  }
+  double getInfoTime ();
+
+  /**
+   * Returns true if we hold any value with given write type.
+   */
+  bool existWriteType (int w_type);
 };
 
 #endif /* ! __RTS2_CONN__ */

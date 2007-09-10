@@ -29,8 +29,9 @@ bool CameraImage::waitingFor (Rts2DevClient * devClient)
       ImageDeviceWait *
 	idw = *iter;
       if (idw->getClient () == devClient
-	  && (isnan (devClient->getInfoTime ())
-	      || idw->getAfter () < devClient->getInfoTime ()))
+	  && (isnan (devClient->getConnection ()->getInfoTime ())
+	      || idw->getAfter () <
+	      devClient->getConnection ()->getInfoTime ()))
 	{
 	  delete
 	    idw;
@@ -41,9 +42,9 @@ bool CameraImage::waitingFor (Rts2DevClient * devClient)
 	{
 	  logStream (MESSAGE_DEBUG) << "waitingFor " << (idw->getClient () ==
 							 devClient) <<
-	    Timestamp (devClient->getInfoTime ()) << " " << Timestamp (idw->
-								       getAfter
-								       ()) <<
+	    Timestamp (devClient->getConnection ()->
+		       getInfoTime ()) << " " << Timestamp (idw->
+							    getAfter ()) <<
 	    sendLog;
 	  iter++;
 	}
@@ -94,7 +95,7 @@ CameraImages::infoOK (Rts2DevClientCameraImage * master,
       CameraImage *ci = *iter;
       if (ci->waitingFor (client))
 	{
-	  ci->image->writeClient (client, EXPOSURE_END);
+	  ci->image->writeConn (client->getConnection (), EXPOSURE_END);
 	  if (ci->canDelete ())
 	    {
 	      iter = master->processCameraImage (iter);
@@ -116,7 +117,7 @@ CameraImages::infoFailed (Rts2DevClientCameraImage * master,
       CameraImage *ci = *iter;
       if (ci->waitingFor (client))
 	{
-	  ci->image->writeClient (client, EXPOSURE_END);
+	  ci->image->writeConn (client->getConnection (), EXPOSURE_END);
 	  iter = master->processCameraImage (iter);
 	}
       else

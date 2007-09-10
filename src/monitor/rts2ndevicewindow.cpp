@@ -36,13 +36,11 @@ Rts2NDeviceWindow::printState ()
 void
 Rts2NDeviceWindow::drawValuesList ()
 {
-  Rts2DevClient *client = connection->getOtherDevClient ();
-  if (client)
-    drawValuesList (client);
+  drawValuesList (connection);
 }
 
 void
-Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
+Rts2NDeviceWindow::drawValuesList (Rts2Conn * conn)
 {
   struct timeval tv;
   gettimeofday (&tv, NULL);
@@ -50,8 +48,8 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 
   maxrow = 0;
 
-  for (std::vector < Rts2Value * >::iterator iter = client->valueBegin ();
-       iter != client->valueEnd (); iter++)
+  for (Rts2ValueVector::iterator iter = conn->valueBegin ();
+       iter != conn->valueEnd (); iter++)
     {
       maxrow++;
 
@@ -71,9 +69,9 @@ Rts2NDeviceWindow::drawValuesList (Rts2DevClient * client)
 	  if (!valStart)
 	    continue;
 	  const char *valTop = valStart;
-	  int scriptPosition = client->getValueInteger ("scriptPosition");
+	  int scriptPosition = conn->getValueInteger ("scriptPosition");
 	  int scriptEnd =
-	    client->getValueInteger ("scriptLen") + scriptPosition;
+	    conn->getValueInteger ("scriptLen") + scriptPosition;
 	  while (*valTop && (valTop - valStart < scriptPosition))
 	    {
 	      waddch (getWriteWindow (), *valTop);
@@ -131,8 +129,8 @@ Rts2Value *
 Rts2NDeviceWindow::getSelValue ()
 {
   int s = getSelRow ();
-  if (s >= 0 && connection->getOtherDevClient ())
-    return connection->getOtherDevClient ()->valueAt (s);
+  if (s >= 0)
+    return connection->valueAt (s);
   return NULL;
 }
 
@@ -156,9 +154,9 @@ void
 Rts2NDeviceWindow::createValueBox ()
 {
   int s = getSelRow ();
-  if (s >= 0 && connection->getOtherDevClient ())
+  if (s >= 0)
     {
-      Rts2Value *val = connection->getOtherDevClient ()->valueAt (s);
+      Rts2Value *val = connection->valueAt (s);
       if (!val)
 	return;
       s -= getPadoffY ();
@@ -197,10 +195,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -244,8 +242,7 @@ Rts2NDeviceWindow::draw ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();

@@ -42,7 +42,7 @@ Rts2DevClientFilterCamera::postEvent (Rts2Event * event)
     case EVENT_FILTER_GET:
       fs = (filterStart *) event->getArg ();
       if (!strcmp (getName (), fs->filterName))
-	fs->filter = getValueInteger ("filter");
+	fs->filter = getConnection ()->getValueInteger ("filter");
       break;
     }
   Rts2DevClientFilter::postEvent (event);

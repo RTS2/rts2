@@ -27,9 +27,8 @@ Rts2CMonitorConnection::printStatus ()
   cout << "============================== \n\
   " << getName () << " status OK \n";
   // get values..
-  std::vector < Rts2Value * >::iterator val_iter;
-  for (val_iter = otherDevice->valueBegin ();
-       val_iter != otherDevice->valueEnd (); val_iter++)
+  Rts2ValueVector::iterator val_iter;
+  for (val_iter = valueBegin (); val_iter != valueEnd (); val_iter++)
     {
       Rts2Value *val = (*val_iter);
       const char *val_buf;

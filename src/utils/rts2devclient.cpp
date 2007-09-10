@@ -10,7 +10,6 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
   processedBaseInfo = NOT_PROCESED;
 
   waiting = NOT_WAITING;
-  info_time = NULL;
 
   failedCount = 0;
 }
@@ -39,169 +38,9 @@ Rts2DevClient::postEvent (Rts2Event * event)
   Rts2Object::postEvent (event);
 }
 
-void
-Rts2DevClient::addValue (Rts2Value * value)
-{
-  if (value->isValue (RTS2_VALUE_INFOTIME))
-    info_time = (Rts2ValueTime *) value;
-  values.push_back (value);
-}
-
-int
-Rts2DevClient::metaInfo (int rts2Type, std::string name, std::string desc)
-{
-  Rts2Value *newValue;
-  switch (rts2Type & RTS2_VALUE_MASK)
-    {
-    case RTS2_VALUE_STRING:
-      newValue =
-	new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS,
-			     rts2Type);
-      break;
-    case RTS2_VALUE_INTEGER:
-      newValue =
-	new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS,
-			      rts2Type);
-      break;
-    case RTS2_VALUE_TIME:
-      newValue =
-	new Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
-      break;
-    case RTS2_VALUE_DOUBLE:
-      newValue =
-	new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS,
-			     rts2Type);
-      break;
-    case RTS2_VALUE_FLOAT:
-      newValue =
-	new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
-      break;
-    case RTS2_VALUE_BOOL:
-      newValue =
-	new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
-      break;
-    case RTS2_VALUE_SELECTION:
-      newValue =
-	new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-      break;
-    case RTS2_VALUE_DOUBLE_STAT:
-      newValue =
-	new Rts2ValueDoubleStat (name, desc, rts2Type & RTS2_VALUE_FITS,
-				 rts2Type);
-      break;
-    case RTS2_VALUE_DOUBLE_MMAX:
-      newValue =
-	new Rts2ValueDoubleMinMax (name, desc, rts2Type & RTS2_VALUE_FITS,
-				   rts2Type);
-      break;
-    default:
-      logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
-	sendLog;
-      return -2;
-    }
-  addValue (newValue);
-  return -1;
-}
-
-int
-Rts2DevClient::selMetaInfo (const char *value_name, char *sel_name)
-{
-  Rts2Value *val = getValue (value_name);
-  if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
-    return -1;
-  ((Rts2ValueSelection *) val)->addSelVal (sel_name);
-  return 0;
-}
-
-Rts2Value *
-Rts2DevClient::getValue (const char *value_name)
-{
-  std::vector < Rts2Value * >::iterator val_iter;
-  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
-    {
-      Rts2Value *val;
-      val = (*val_iter);
-      if (val->isValue (value_name))
-	return val;
-    }
-  return NULL;
-}
-
-const char *
-Rts2DevClient::getValueChar (const char *value_name)
-{
-  Rts2Value *val;
-  val = getValue (value_name);
-  if (val)
-    return val->getValue ();
-  return NULL;
-}
-
-double
-Rts2DevClient::getValueDouble (const char *value_name)
-{
-  Rts2Value *val;
-  val = getValue (value_name);
-  if (val)
-    return val->getValueDouble ();
-  return nan ("f");
-}
-
-int
-Rts2DevClient::getValueInteger (const char *value_name)
-{
-  Rts2Value *val;
-  val = getValue (value_name);
-  if (val)
-    return val->getValueInteger ();
-  return -1;
-}
-
-const char *
-Rts2DevClient::getValueSelection (const char *value_name)
-{
-  Rts2Value *val;
-  val = getValue (value_name);
-  if (val->getValueType () != RTS2_VALUE_SELECTION)
-    return "UNK";
-  return ((Rts2ValueSelection *) val)->getSelVal ().c_str ();
-}
-
-const char *
-Rts2DevClient::getValueSelection (const char *value_name, int val_num)
-{
-  Rts2Value *val;
-  val = getValue (value_name);
-  if (val->getValueType () != RTS2_VALUE_SELECTION)
-    return "UNK";
-  return ((Rts2ValueSelection *) val)->getSelVal (val_num).c_str ();
-}
-
-int
-Rts2DevClient::commandValue (const char *name)
-{
-  std::vector < Rts2Value * >::iterator val_iter;
-  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
-    {
-      Rts2Value *value;
-      value = (*val_iter);
-      if (value->isValue (name))
-	return value->setValue (connection);
-    }
-  return -2;
-}
-
 int
 Rts2DevClient::command ()
 {
-  char *name;
-  if (connection->isCommand (PROTO_VALUE))
-    {
-      if (connection->paramNextString (&name))
-	return -1;
-      return commandValue (name);
-    }
   return -2;
 }
 
@@ -293,26 +132,6 @@ Rts2DevClient::getStatus ()
 void
 Rts2DevClient::idle ()
 {
-}
-
-bool
-Rts2DevClient::existWriteType (int w_type)
-{
-  for (std::vector < Rts2Value * >::iterator iter = values.begin ();
-       iter != values.end (); iter++)
-    {
-      if ((*iter)->getValueWriteFlags () == w_type)
-	return true;
-    }
-  return false;
-}
-
-double
-Rts2DevClient::getInfoTime ()
-{
-  if (info_time)
-    return info_time->getValueDouble ();
-  return getMaster ()->getNow ();
 }
 
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
@@ -601,7 +420,7 @@ Rts2DevClientPhot::commandValue (const char *name)
       addCount (count, exp, is_ov);
       return 0;
     }
-  return Rts2DevClient::commandValue (name);
+//  return Rts2DevClient::commandValue (name);
 }
 
 void

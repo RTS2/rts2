@@ -11,7 +11,7 @@ private:
   Rts2Conn *connection;
   void printState ();
   void drawValuesList ();
-  void drawValuesList (Rts2DevClient * client);
+  void drawValuesList (Rts2Conn * conn);
   Rts2Value *getSelValue ();
   void printValueDesc (Rts2Value * val);
   void endValueBox ();

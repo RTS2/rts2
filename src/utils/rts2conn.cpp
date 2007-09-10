@@ -37,6 +37,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
   connectionTimeout = 300;	// 5 minutes timeout
 
   commandInProgress = false;
+  info_time = NULL;
 
   time (&lastGoodSend);
   lastData = lastGoodSend;
@@ -67,6 +68,7 @@ Rts2Object ()
   connectionTimeout = 300;	// 5 minutes timeout (150 + 150)
 
   commandInProgress = false;
+  info_time = NULL;
 
   time (&lastGoodSend);
   lastData = lastGoodSend;
@@ -173,42 +175,39 @@ std::string Rts2Conn::getStateString ()
 	_os << " | NEED_FLIP";
       break;
     case DEVICE_TYPE_CCD:
-      if (otherDevice)
+      chipN = getValueInteger ("chips");
+      for (int i = 0; i < chipN; i++)
+	_os << std::hex << getCameraChipState (i);
+      if (real_state & CAM_FOCUSING)
+	_os << " | FOCUSING";
+      switch (real_state & CAM_MASK_SHUTTER)
 	{
-	  chipN = otherDevice->getValueInteger ("chips");
-	  for (int i = 0; i < chipN; i++)
-	    _os << std::hex << getCameraChipState (i);
-	  if (real_state & CAM_FOCUSING)
-	    _os << " | FOCUSING";
-	  switch (real_state & CAM_MASK_SHUTTER)
-	    {
-	    case CAM_SHUT_CLEARED:
-	      _os << " | SHUTTER_CLEARED";
-	      break;
-	    case CAM_SHUT_SET:
-	      _os << " | SHUTTER_SET";
-	      break;
-	    case CAM_SHUT_TRANS:
-	      _os << " | SHUTTER_TRANS";
-	      break;
-	    default:
-	      _os << " | shutter unknow";
-	    }
-	  switch (real_state & CAM_MASK_COOLING)
-	    {
-	    case CAM_COOL_OFF:
-	      _os << " | COOLING_OFF ";
-	      break;
-	    case CAM_COOL_FAN:
-	      _os << " | COOLING_FAN ";
-	      break;
-	    case CAM_COOL_PWR:
-	      _os << " | COOLING_ON_SET_POWER ";
-	      break;
-	    case CAM_COOL_TEMP:
-	      _os << " | COOLING_ON_SET_TEMP ";
-	      break;
-	    }
+	case CAM_SHUT_CLEARED:
+	  _os << " | SHUTTER_CLEARED";
+	  break;
+	case CAM_SHUT_SET:
+	  _os << " | SHUTTER_SET";
+	  break;
+	case CAM_SHUT_TRANS:
+	  _os << " | SHUTTER_TRANS";
+	  break;
+	default:
+	  _os << " | shutter unknow";
+	}
+      switch (real_state & CAM_MASK_COOLING)
+	{
+	case CAM_COOL_OFF:
+	  _os << " | COOLING_OFF ";
+	  break;
+	case CAM_COOL_FAN:
+	  _os << " | COOLING_FAN ";
+	  break;
+	case CAM_COOL_PWR:
+	  _os << " | COOLING_ON_SET_POWER ";
+	  break;
+	case CAM_COOL_TEMP:
+	  _os << " | COOLING_ON_SET_TEMP ";
+	  break;
 	}
       break;
     case DEVICE_TYPE_DOME:
@@ -600,10 +599,17 @@ Rts2Conn::processLine ()
 	      || paramNextString (&m_name)
 	      || paramNextString (&m_descr) || !paramEnd ())
 	    return -2;
-	  return otherDevice->metaInfo (m_type, std::string (m_name),
-					std::string (m_descr));
+	  return metaInfo (m_type, std::string (m_name),
+			   std::string (m_descr));
 	}
       ret = -2;
+    }
+  else if (isCommand (PROTO_VALUE))
+    {
+      char *m_name;
+      if (paramNextString (&m_name))
+	return -1;
+      return commandValue (m_name);
     }
   else if (isCommand (PROTO_SELMETAINFO))
     {
@@ -614,7 +620,7 @@ Rts2Conn::processLine ()
 	  if (paramNextString (&m_name)
 	      || paramNextString (&sel_name) || !paramEnd ())
 	    return -2;
-	  return otherDevice->selMetaInfo (m_name, sel_name);
+	  return selMetaInfo (m_name, sel_name);
 	}
       ret = -2;
     }
@@ -632,7 +638,7 @@ Rts2Conn::processLine ()
     }
   else
     {
-      commandInProgress = true;
+      setCommandInProgress (true);
       ret = command ();
     }
 #ifdef DEBUG_ALL
@@ -698,7 +704,7 @@ Rts2Conn::receive (fd_set * set)
       buf_top = buf;
       command_start = buf;
       // do not call processLine if command is pending..
-      while (*buf_top)		// && !commandInProgress)
+      while (*buf_top && !commandInProgress)
 	{
 	  while (isspace (*buf_top) || (*buf_top && *buf_top == '\n'))
 	    buf_top++;
@@ -882,7 +888,7 @@ Rts2Conn::command ()
 	  || paramNextInteger (&p_device_type) || !paramEnd ())
 	return -2;
       master->addAddress (p_name, p_host, p_port, p_device_type);
-      commandInProgress = false;
+      setCommandInProgress (false);
       return -1;
     }
   else if (isCommand ("user"))
@@ -897,7 +903,7 @@ Rts2Conn::command ()
 	return -2;
       master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
 		       p_login);
-      commandInProgress = false;
+      setCommandInProgress (false);
       return -1;
     }
   else if (isCommand ("status_info"))
@@ -923,7 +929,7 @@ Rts2Conn::command ()
 	      || paramNextInteger (&p_size) || !paramEnd ())
 	    return -2;
 	  master->addDataConnection (this, p_hostname, p_port, p_size);
-	  commandInProgress = false;
+	  setCommandInProgress (false);
 	  return -1;
 	}
       return -2;
@@ -935,7 +941,7 @@ Rts2Conn::command ()
       ret = otherDevice->command ();
       if (ret == 0)
 	{
-	  commandInProgress = false;
+	  setCommandInProgress (false);
 	  return -1;
 	}
     }
@@ -1301,7 +1307,7 @@ Rts2Conn::sendCommandEnd (int num, char *in_msg)
   asprintf (&msg, "%+04i \"%s\"", num, in_msg);
   send (msg);
   free (msg);
-  commandInProgress = false;
+  setCommandInProgress (false);
   return 0;
 }
 
@@ -1465,9 +1471,169 @@ Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
 Rts2Value *
 Rts2Conn::getValue (const char *value_name)
 {
-  if (otherDevice)
+  Rts2ValueVector::iterator val_iter;
+  for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
     {
-      return otherDevice->getValue (value_name);
+      Rts2Value *val;
+      val = (*val_iter);
+      if (val->isValue (value_name))
+	return val;
     }
   return NULL;
+}
+
+void
+Rts2Conn::addValue (Rts2Value * value)
+{
+  if (value->isValue (RTS2_VALUE_INFOTIME))
+    info_time = (Rts2ValueTime *) value;
+  values.push_back (value);
+}
+
+int
+Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
+{
+  Rts2Value *newValue;
+  switch (rts2Type & RTS2_VALUE_MASK)
+    {
+    case RTS2_VALUE_STRING:
+      newValue =
+	new Rts2ValueString (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			     rts2Type);
+      break;
+    case RTS2_VALUE_INTEGER:
+      newValue =
+	new Rts2ValueInteger (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			      rts2Type);
+      break;
+    case RTS2_VALUE_TIME:
+      newValue =
+	new Rts2ValueTime (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			   rts2Type);
+      break;
+    case RTS2_VALUE_DOUBLE:
+      newValue =
+	new Rts2ValueDouble (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			     rts2Type);
+      break;
+    case RTS2_VALUE_FLOAT:
+      newValue =
+	new Rts2ValueFloat (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			    rts2Type);
+      break;
+    case RTS2_VALUE_BOOL:
+      newValue =
+	new Rts2ValueBool (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			   rts2Type);
+      break;
+    case RTS2_VALUE_SELECTION:
+      newValue =
+	new Rts2ValueSelection (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+				rts2Type);
+      break;
+    case RTS2_VALUE_DOUBLE_STAT:
+      newValue =
+	new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+				 rts2Type);
+      break;
+    case RTS2_VALUE_DOUBLE_MMAX:
+      newValue =
+	new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+				   rts2Type);
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
+	sendLog;
+      return -2;
+    }
+  addValue (newValue);
+  return -1;
+}
+
+int
+Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
+{
+  Rts2Value *val = getValue (value_name);
+  if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
+    return -1;
+  ((Rts2ValueSelection *) val)->addSelVal (sel_name);
+  return 0;
+}
+
+const char *
+Rts2Conn::getValueChar (const char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValue ();
+  return NULL;
+}
+
+double
+Rts2Conn::getValueDouble (const char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValueDouble ();
+  return nan ("f");
+}
+
+int
+Rts2Conn::getValueInteger (const char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val)
+    return val->getValueInteger ();
+  return -1;
+}
+
+const char *
+Rts2Conn::getValueSelection (const char *value_name)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val->getValueType () != RTS2_VALUE_SELECTION)
+    return "UNK";
+  return ((Rts2ValueSelection *) val)->getSelVal ().c_str ();
+}
+
+const char *
+Rts2Conn::getValueSelection (const char *value_name, int val_num)
+{
+  Rts2Value *val;
+  val = getValue (value_name);
+  if (val->getValueType () != RTS2_VALUE_SELECTION)
+    return "UNK";
+  return ((Rts2ValueSelection *) val)->getSelVal (val_num).c_str ();
+}
+
+int
+Rts2Conn::commandValue (const char *v_name)
+{
+  Rts2Value *value = getValue (v_name);
+  if (value)
+    return value->setValue (this);
+  return -2;
+}
+
+bool Rts2Conn::existWriteType (int w_type)
+{
+  for (Rts2ValueVector::iterator iter = values.begin ();
+       iter != values.end (); iter++)
+    {
+      if ((*iter)->getValueWriteFlags () == w_type)
+	return true;
+    }
+  return false;
+}
+
+double
+Rts2Conn::getInfoTime ()
+{
+  if (info_time)
+    return info_time->getValueDouble ();
+  return getMaster ()->getNow ();
 }
