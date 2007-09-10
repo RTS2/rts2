@@ -325,7 +325,7 @@ Rts2Image::~Rts2Image (void)
   delete[]mountName;
   delete[]focName;
   if (!(flags & IMAGE_DONT_DELETE_DATA))
-    delete imageData;
+    delete[]imageData;
   imageData = NULL;
   imageType = RTS2_DATA_USHORT;
   delete[]filter;
@@ -1054,7 +1054,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
   naxis[0] = im_h->sizes[0];
   naxis[1] = im_h->sizes[1];
 
-  delete imageData;
+  delete[]imageData;
   if (flags & IMAGE_KEEP_DATA)
     {
       imageData = new char[dataConn->getSize ()];
@@ -1447,13 +1447,13 @@ Rts2Image::loadData ()
     default:
       logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType <<
 	sendLog;
-      delete imageData;
+      delete[]imageData;
       imageData = NULL;
       return -1;
     }
   if (fits_status)
     {
-      delete imageData;
+      delete[]imageData;
       imageData = NULL;
       imageType = RTS2_DATA_USHORT;
     }
@@ -1488,7 +1488,7 @@ Rts2Image::getDataUShortInt ()
 void
 Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
-  delete imageData;
+  delete[]imageData;
   imageData = (char *) in_data;
   imageType = RTS2_DATA_USHORT;
   naxis[0] = in_naxis[0];

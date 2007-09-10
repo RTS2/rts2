@@ -44,7 +44,7 @@ Rts2DevClientPhotExec::integrationFailed (int status)
 
 
 void
-Rts2DevClientPhotExec::addCount (int count, float exp, int is_ov)
+Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
 {
   EXEC SQL BEGIN DECLARE SECTION;
     int d_obs_id;

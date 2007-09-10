@@ -94,7 +94,7 @@ private:
     std::vector < int >skipFilters;
   int newFilter;
 protected:
-    virtual void addCount (int count, float exp, int is_ov);
+    virtual void addCount (int count, float exp, bool is_ov);
 public:
     Rts2DevClientPhotFoc (Rts2Conn * in_conn, char *in_photometerFile,
 			  float in_photometerTime,

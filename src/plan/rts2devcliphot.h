@@ -59,7 +59,7 @@ protected:
 
   virtual void integrationStart ();
   virtual void integrationEnd ();
-  virtual void addCount (int count, float exp, int is_ov);
+  virtual void addCount (int count, float exp, bool is_ov);
 
   virtual int getNextCommand ();
 

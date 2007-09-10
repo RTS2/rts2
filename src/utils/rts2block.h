@@ -71,10 +71,8 @@ Rts2Conn * >
  *
  * @ingroup RTS2Block
  */
-class
-  Rts2Block:
-  public
-  Rts2App
+class Rts2Block:
+public Rts2App
 {
 private:
   int
@@ -84,24 +82,17 @@ private:
   int
     priority_client;
 
-  connections_t
-    connections;
+  connections_t connections;
 
-  std::list <
-  Rts2Address * >
-    blockAddress;
-  std::list <
-  Rts2User * >
-    blockUsers;
+  std::list < Rts2Address * >blockAddress;
+  std::list < Rts2User * >blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual
-    Rts2Conn *
-  createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -118,8 +109,26 @@ protected:
    **/
   virtual int
   addAddress (Rts2Address * in_addr);
+
+  /**
+   * Enable application to add arbitary sockets.
+   * 
+   * This hook is usefull for various applications that gets input from other then connection sockets,
+   * and for which creating extra Rts2Conn instance will be too heavy solution.
+   *
+   * @param  read_set  Read set, application can use FD_SET macro to register its sockets.
+   */
   virtual void
   addSelectSocks (fd_set * read_set);
+
+  /**
+   * Called when select call suceed.
+   *
+   * This method is called when select call on registered sockects succeed.
+   *
+   * @param read_set fd_set structure holding selected sockets. Inside this function, developer can use
+   *   FD_ISSET to query if socket of his/her interests is inside modified socket set.
+   */
   virtual void
   selectSuccess (fd_set * read_set);
 
@@ -170,8 +179,7 @@ public:
   /**
    * Delete list of conncection, clear Rts2Block structure.
    */
-  virtual ~
-  Rts2Block (void);
+  virtual ~ Rts2Block (void);
 
   /**
    * Set port number of listening socket.
@@ -204,8 +212,7 @@ public:
    *
    * @return connections.begin() iterator.
    */
-  connections_t::iterator
-  connectionBegin ()
+  connections_t::iterator connectionBegin ()
   {
     return connections.begin ();
   }
@@ -217,8 +224,7 @@ public:
    *
    * @return connections.end() iterator.
    */
-  connections_t::iterator
-  connectionEnd ()
+  connections_t::iterator connectionEnd ()
   {
     return connections.end ();
   }
@@ -265,8 +271,7 @@ public:
    * @return True if command que is empty and new command will be executed
    * immediately (after running command returns), otherwise returns false.
    */
-  bool
-  commandQueEmpty ();
+  bool commandQueEmpty ();
 
   /**
    * Event handling mechanism.
@@ -515,8 +520,7 @@ public:
   virtual int
   statusInfo (Rts2Conn * conn);
 
-  bool
-  commandPending (Rts2Command * cmd);
+  bool commandPending (Rts2Command * cmd);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */
