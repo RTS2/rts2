@@ -12,8 +12,6 @@
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 
-#include <pthread.h>
-
 #include <math.h>
 
 #include <iostream>
@@ -41,6 +39,16 @@ private:
   double changeVal;
 
   virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
+protected:
+  /**
+   * Add XWin connection socket, obtained by ConnectionNumber macro.
+   */
+    virtual void addSelectSocks (fd_set * read_set);
+
+  /**
+   * Query and process possible XWin event from top of XWin event loop.
+   */
+  virtual void selectSuccess (fd_set * read_set);
 public:
     Rts2xfocus (int argc, char **argv);
     virtual ~ Rts2xfocus (void);
@@ -82,8 +90,6 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 private:
   Rts2xfocus * master;
 
-  pthread_t XeventThread;
-
   // X11 stuff
   Window window;
   GC gc;
@@ -111,11 +117,6 @@ private:
   void redrawMouse ();
   // thread entry function..
   void XeventLoop ();
-  static void *staticXEventLoop (void *arg)
-  {
-    ((Rts2xfocusCamera *) arg)->XeventLoop ();
-    return NULL;
-  }
 
   int crossType;
   int lastImage;
@@ -140,12 +141,12 @@ private:
 
   int mouseTelChange_x, mouseTelChange_y;
 protected:
-  virtual void printFWHMTable ();
+    virtual void printFWHMTable ();
 
 public:
-  Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
-		    Rts2xfocus * in_master);
-  virtual ~ Rts2xfocusCamera (void);
+    Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val,
+		      Rts2xfocus * in_master);
+    virtual ~ Rts2xfocusCamera (void);
 
   virtual void postEvent (Rts2Event * event);
 
@@ -188,11 +189,6 @@ Rts2GenFocCamera (in_connection, in_master)
 
 Rts2xfocusCamera::~Rts2xfocusCamera (void)
 {
-  if (XeventThread)
-    {
-      pthread_cancel (XeventThread);
-      pthread_join (XeventThread, NULL);
-    }
 }
 
 void
@@ -224,8 +220,6 @@ Rts2xfocusCamera::buildWindow ()
 
   XStringListToTextProperty (&cameraName, 1, &window_title);
   XSetWMName (master->getDisplay (), window, &window_title);
-
-  pthread_create (&XeventThread, NULL, staticXEventLoop, this);
 }
 
 // called to 
@@ -486,11 +480,10 @@ Rts2xfocusCamera::XeventLoop ()
   KeySym ks;
   struct ln_equ_posn change;
 
-  while (1)
+  if (XCheckWindowEvent (master->getDisplay (), window,
+			 KeyPressMask | ButtonPressMask | ExposureMask |
+			 PointerMotionMask, &event))
     {
-      XWindowEvent (master->getDisplay (), window,
-		    KeyPressMask | ButtonPressMask | ExposureMask |
-		    PointerMotionMask, &event);
       switch (event.type)
 	{
 	case Expose:
@@ -660,7 +653,10 @@ Rts2xfocusCamera::postEvent (Rts2Event * event)
       buildWindow ();
       if (connection->havePriority ())
 	queExposure ();
-      return;
+      break;
+    case EVENT_XWIN_SOCK:
+      XeventLoop ();
+      break;
     }
   Rts2GenFocCamera::postEvent (event);
 }
@@ -786,8 +782,6 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
   XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0,
 	     pixmapWidth, pixmapHeight);
 
-  if (!lastImage)
-    lastImage = 1;
   // some info values
   image->getValue ("X", lastX);
   image->getValue ("Y", lastY);
@@ -798,6 +792,9 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
   exposureStart.tv_sec = image->getExposureSec ();
   exposureStart.tv_usec = image->getExposureUsec ();
+
+  if (!lastImage)
+    lastImage = 1;
 
   // process mouse change events..
 
@@ -960,6 +957,23 @@ Rts2xfocus::createFocCamera (Rts2Conn * conn)
   cam = new Rts2xfocusCamera (conn, changeVal, this);
   cam->setCrossType (crossType);
   return cam;
+}
+
+void
+Rts2xfocus::addSelectSocks (fd_set * read_set)
+{
+  FD_SET (ConnectionNumber (display), read_set);
+  Rts2GenFocClient::addSelectSocks (read_set);
+}
+
+void
+Rts2xfocus::selectSuccess (fd_set * read_set)
+{
+  if (FD_ISSET (ConnectionNumber (display), read_set))
+    {
+      postEvent (new Rts2Event (EVENT_XWIN_SOCK));
+    }
+  Rts2GenFocClient::selectSuccess (read_set);
 }
 
 int

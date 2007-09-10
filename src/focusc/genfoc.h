@@ -22,6 +22,8 @@
 #define EVENT_INTEGRATE_START   RTS2_LOCAL_EVENT + 302
 #define EVENT_INTEGRATE_STOP    RTS2_LOCAL_EVENT + 303
 
+#define EVENT_XWIN_SOCK		RTS2_LOCAL_EVENT + 304
+
 class Rts2GenFocCamera;
 
 class Rts2GenFocClient:public Rts2Client
