@@ -57,8 +57,7 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool
-Rts2Block::commandQueEmpty ()
+bool Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -154,17 +153,6 @@ Rts2Block::sendValueAll (char *val_name, char *value)
     {
       Rts2Conn *conn = *iter;
       conn->sendValue (val_name, value);
-    }
-}
-
-void
-Rts2Block::sendValueRawAll (char *val_name, char *value)
-{
-  connections_t::iterator iter;
-  for (iter = connections.begin (); iter != connections.end (); iter++)
-    {
-      Rts2Conn *conn = *iter;
-      conn->sendValueRaw (val_name, value);
     }
 }
 
@@ -692,7 +680,8 @@ Rts2Block::statusInfo (Rts2Conn * conn)
   return -1;
 }
 
-bool Rts2Block::commandPending (Rts2Command * cmd)
+bool
+Rts2Block::commandPending (Rts2Command * cmd)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
