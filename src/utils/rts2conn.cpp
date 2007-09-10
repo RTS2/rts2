@@ -934,17 +934,6 @@ Rts2Conn::command ()
 	}
       return -2;
     }
-  // try otherDevice
-  if (otherDevice)
-    {
-      int ret;
-      ret = otherDevice->command ();
-      if (ret == 0)
-	{
-	  setCommandInProgress (false);
-	  return -1;
-	}
-    }
   // don't respond to values with error - otherDevice does respond to
   // values, if there is no other device, we have to take resposibility
   // as it can fails (V without value), not with else
@@ -1615,7 +1604,16 @@ Rts2Conn::commandValue (const char *v_name)
 {
   Rts2Value *value = getValue (v_name);
   if (value)
-    return value->setValue (this);
+    {
+      int ret;
+      ret = value->setValue (this);
+      // notice other type..
+      if (getOtherDevClient ())
+	{
+	  getOtherDevClient ()->valueChanged (value);
+	}
+      return ret;
+    }
   return -2;
 }
 

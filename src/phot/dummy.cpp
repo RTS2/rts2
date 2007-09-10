@@ -57,7 +57,7 @@ Rts2DevPhotDummy::scriptEnds ()
 long
 Rts2DevPhotDummy::getCount ()
 {
-  sendCount (random (), req_time, 0);
+  sendCount (random (), req_time, false);
   return (long (req_time * USEC_SEC));
 }
 

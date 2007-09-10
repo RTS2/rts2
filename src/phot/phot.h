@@ -11,6 +11,10 @@ class Rts2DevPhot:public Rts2ScriptDevice
 private:
   int req_count;
   struct timeval nextCountDue;
+  Rts2ValueInteger *count;
+  Rts2ValueFloat *exp;
+  Rts2ValueBool *is_ov;
+
 protected:
     Rts2Conn * integrateConn;
 
@@ -23,7 +27,7 @@ protected:
 
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-  int sendCount (int count, float exp, int is_ov);
+  void sendCount (int in_count, float in_exp, bool in_is_ov);
   virtual int startIntegrate ();
   virtual int endIntegrate ();
 

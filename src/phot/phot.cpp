@@ -25,6 +25,9 @@ Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
   createValue (filter, "filter", "used filter", false);
+  createValue (count, "count", "count of the photometer", false);
+  createValue (exp, "exposure", "exposure time in sec", false);
+  createValue (is_ov, "is_ov", "if photometer overflow", false);
 
   photType = NULL;
   serial = NULL;
@@ -256,19 +259,20 @@ Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
   return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
-int
-Rts2DevPhot::sendCount (int count, float exp, int is_ov)
+void
+Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 {
-  char *msg;
-  int ret;
-  asprintf (&msg, "%i %f %i", count, exp, is_ov);
-  sendValueRawAll ("count", msg);
+  count->setValueInteger (in_count);
+  exp->setValueFloat (in_exp);
+  is_ov->setValueBool (in_is_ov);
+  // send value..
+  sendValueAll (exp);
+  sendValueAll (is_ov);
+  sendValueAll (count);
   if (req_count > 0)
     req_count--;
   if (req_count == 0)
     endIntegrate ();
-  free (msg);
-  return ret;
 }
 
 int

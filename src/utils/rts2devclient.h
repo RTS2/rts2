@@ -4,7 +4,6 @@
 #include "rts2object.h"
 #include "rts2block.h"
 #include "rts2value.h"
-#include "rts2valuelist.h"
 
 class Rts2Command;
 class Rts2ClientTCPDataConn;
@@ -56,8 +55,6 @@ public:
   virtual ~ Rts2DevClient (void);
 
   virtual void postEvent (Rts2Event * event);
-
-  virtual int command ();
 
   virtual void dataReceived (Rts2ClientTCPDataConn * dataConn)
   {
@@ -117,6 +114,11 @@ public:
   }
 
   virtual void idle ();
+
+  virtual void valueChanged (Rts2Value * value)
+  {
+
+  }
 };
 
 /**
@@ -226,14 +228,13 @@ protected:
   virtual void filterMoveEnd ();
   virtual void integrationStart ();
   virtual void integrationEnd ();
-  virtual void addCount (int count, float exp, int is_ov);
+  virtual void addCount (int count, float exp, bool is_ov);
   int lastCount;
   float lastExp;
   bool integrating;
 public:
     Rts2DevClientPhot (Rts2Conn * in_connection);
     virtual ~ Rts2DevClientPhot (void);
-  virtual int commandValue (const char *name);
   virtual void integrationFailed (int status);
   virtual void filterMoveFailed (int status);
   virtual void stateChanged (Rts2ServerState * state);
@@ -243,6 +244,8 @@ public:
   }
 
   bool isIntegrating ();
+
+  virtual void valueChanged (Rts2Value * value);
 };
 
 class Rts2DevClientFilter:public Rts2DevClient

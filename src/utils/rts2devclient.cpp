@@ -38,12 +38,6 @@ Rts2DevClient::postEvent (Rts2Event * event)
   Rts2Object::postEvent (event);
 }
 
-int
-Rts2DevClient::command ()
-{
-  return -2;
-}
-
 void
 Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
@@ -405,24 +399,6 @@ Rts2DevClientPhot::~Rts2DevClientPhot ()
   integrationFailed (DEVICE_ERROR_HW);
 }
 
-int
-Rts2DevClientPhot::commandValue (const char *name)
-{
-  int count;
-  float exp;
-  int is_ov;
-  if (!strcmp (name, "count"))
-    {
-      if (connection->paramNextInteger (&count)
-	  || connection->paramNextFloat (&exp)
-	  || connection->paramNextInteger (&is_ov))
-	return -3;
-      addCount (count, exp, is_ov);
-      return 0;
-    }
-//  return Rts2DevClient::commandValue (name);
-}
-
 void
 Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
 {
@@ -493,7 +469,7 @@ Rts2DevClientPhot::integrationFailed (int status)
 }
 
 void
-Rts2DevClientPhot::addCount (int count, float exp, int is_ov)
+Rts2DevClientPhot::addCount (int count, float exp, bool is_ov)
 {
   lastCount = count;
   lastExp = exp;
@@ -503,6 +479,24 @@ bool
 Rts2DevClientPhot::isIntegrating ()
 {
   return integrating;
+}
+
+void
+Rts2DevClientPhot::valueChanged (Rts2Value * value)
+{
+  if (value->isValue ("count"))
+    {
+      Rts2Value *v_count = getConnection ()->getValue ("count");
+      Rts2Value *v_exp = getConnection ()->getValue ("exposure");
+      Rts2Value *v_is_ov = getConnection ()->getValue ("is_ov");
+      if (v_count && v_exp && v_is_ov
+	  && v_is_ov->getValueType () == RTS2_VALUE_BOOL)
+	{
+	  addCount (v_count->getValueInteger (), v_exp->getValueFloat (),
+		    ((Rts2ValueBool *) v_is_ov)->getValueBool ());
+	}
+    }
+  Rts2DevClient::valueChanged (value);
 }
 
 Rts2DevClientFilter::Rts2DevClientFilter (Rts2Conn * in_connection):Rts2DevClient
