@@ -107,6 +107,13 @@ public:
     return bopMask & 0xff;
   }
 
+  /**
+   * Sets status of info call.
+   *
+   * @param call_progress Call progress.
+   *
+   * @see Rts2Command::getStatusCallProgress
+   */
   void setStatusCallProgress (int call_progress)
   {
     bopMask = (bopMask & ~0xff) | (call_progress & 0xff);
@@ -227,6 +234,11 @@ public:
 		      int binning_h);
 };
 
+/**
+ * Start exposure on camera.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandExposure:public Rts2Command
 {
 private:
@@ -238,12 +250,22 @@ public:
   virtual int commandReturnFailed (int status);
 };
 
+/**
+ * Start data readout.
+ *
+ * @ingourp RTS2Command
+ */
 class Rts2CommandReadout:public Rts2Command
 {
 public:
   Rts2CommandReadout (Rts2Block * in_master, int chip);
 };
 
+/**
+ * Set filter.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandFilter:public Rts2Command
 {
 private:
@@ -501,6 +523,11 @@ public:
   Rts2CommandExecNow (Rts2Block * in_master, int now_id);
 };
 
+/**
+ * Execute GRB observation.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandExecGrb:public Rts2Command
 {
 public:
@@ -519,6 +546,11 @@ public:
   Rts2CommandKillAll (Rts2Block * in_master);
 };
 
+/**
+ * Sends script end command.
+ *
+ * @ingroup RTS2Command
+ */
 class Rts2CommandScriptEnds:public Rts2Command
 {
 public:

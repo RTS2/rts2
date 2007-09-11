@@ -349,7 +349,18 @@ public:
    *
    * @return 0 when sucessfull, -1 on error.
    */
-  void queCommand (Rts2Command * cmd, int notBop = 0);
+  void queCommand (Rts2Command * cmd, int notBop);
+
+  /**
+   * Que command on connection.
+   *
+   * @see Rts2Conn::queCommand(Rts2Command*,int)
+   *
+   * @param cmd Command which will be send.
+   *
+   * @return 0 when sucessfull, -1 on error.
+   */
+  void queCommand (Rts2Command * cmd);
 
   /**
    * Send immediatelly command to connection.

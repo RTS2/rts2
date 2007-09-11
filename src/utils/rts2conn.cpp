@@ -805,8 +805,14 @@ Rts2Conn::sendPriorityInfo ()
 void
 Rts2Conn::queCommand (Rts2Command * cmd, int notBop)
 {
-  cmd->setConnection (this);
   cmd->setBopMask (notBop);
+  queCommand (cmd);
+}
+
+void
+Rts2Conn::queCommand (Rts2Command * cmd)
+{
+  cmd->setConnection (this);
   if (runningCommand
       || isConnState (CONN_CONNECTING)
       || isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
@@ -841,7 +847,8 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
   return 0;
 }
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
+bool
+Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -1157,10 +1164,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool
-Rts2Conn::reachedSendTimeout ()
+bool Rts2Conn::reachedSendTimeout ()
 {
-  time_t now;
+  time_t
+    now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
@@ -1617,7 +1624,8 @@ Rts2Conn::commandValue (const char *v_name)
   return -2;
 }
 
-bool Rts2Conn::existWriteType (int w_type)
+bool
+Rts2Conn::existWriteType (int w_type)
 {
   for (Rts2ValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
