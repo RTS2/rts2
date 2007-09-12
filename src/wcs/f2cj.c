@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <jpeglib.h>
 #include <wcslib/wcs.h>
-#include <fitsfile.h>
+#include <wcslib/fitsfile.h>
 #include <getopt.h>
 #include <math.h>
 
