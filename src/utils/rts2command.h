@@ -210,20 +210,14 @@ public:
 };
 
 /**
- * Common class for all command, which changed camera settings
- * that will call at the end settingsOK or seetingsFailed.
+ * Common class for all command, which changed camera settings.
  *
  * @ingroup RTS2Command
  */
 class Rts2CommandCameraSettings:public Rts2Command
 {
-private:
-  Rts2DevClientCamera * camera;
 public:
   Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera);
-
-  virtual int commandReturnOK ();
-  virtual int commandReturnFailed (int status);
 };
 
 // devices commands
@@ -344,8 +338,6 @@ public:
     Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
 			    char op, std::string in_operand,
 			    commandCondType in_commandCond = NO_COND);
-  virtual int commandReturnOK ();
-  virtual int commandReturnFailed (int status);
 };
 
 /**

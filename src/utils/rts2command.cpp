@@ -107,25 +107,10 @@ Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_c
 	     getMaster
 	     ())
 {
-  camera = in_camera;
 }
 
-int
-Rts2CommandCameraSettings::commandReturnOK ()
-{
-  camera->settingsOK ();
-  return Rts2Command::commandReturnOK ();
-}
-
-int
-Rts2CommandCameraSettings::commandReturnFailed (int status)
-{
-  camera->settingsFailed (status);
-  return Rts2Command::commandReturnFailed (status);
-}
-
-
-Rts2CommandBinning::Rts2CommandBinning (Rts2DevClientCamera * in_camera, int binning_v, int binning_h):
+Rts2CommandBinning::Rts2CommandBinning (Rts2DevClientCamera * in_camera,
+					int binning_v, int binning_h):
 Rts2CommandCameraSettings (in_camera)
 {
   char *command;
@@ -367,27 +352,15 @@ Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand,
   client = in_client;
 }
 
-int
-Rts2CommandChangeValue::commandReturnOK ()
-{
-  client->settingsOK ();
-  return Rts2Command::commandReturnOK ();
-}
-
-int
-Rts2CommandChangeValue::commandReturnFailed (int status)
-{
-  client->settingsFailed (status);
-  return Rts2Command::commandReturnFailed (status);
-}
-
 Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel):
 Rts2Command (in_master)
 {
   tel = in_tel;
 }
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
+Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
+				  Rts2DevClientTelescope * in_tel, double ra,
+				  double dec):
 Rts2Command (in_master)
 {
   char *command;

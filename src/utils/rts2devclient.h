@@ -98,13 +98,6 @@ public:
 
   int getStatus ();
 
-  virtual void settingsOK ()
-  {
-  }
-  virtual void settingsFailed (int status)
-  {
-  }
-
   virtual void infoOK ()
   {
   }

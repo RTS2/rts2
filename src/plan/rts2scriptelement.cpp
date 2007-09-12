@@ -114,6 +114,7 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
   *new_command =
     new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
 			     expTime);
+  (*new_command)->setBopMask (BOP_EXPOSURE);
   getDevice (new_device);
   return 0;
 }
