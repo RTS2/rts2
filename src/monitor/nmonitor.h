@@ -144,7 +144,7 @@ public:
     master = in_master;
   }
 
-  virtual int commandReturn (Rts2Command * cmd, int in_status)
+  virtual void commandReturn (Rts2Command * cmd, int in_status)
   {
     master->commandReturn (cmd, in_status);
     return Rts2ConnClient::commandReturn (cmd, in_status);
@@ -173,10 +173,10 @@ public:
     master = in_master;
   }
 
-  virtual int commandReturn (Rts2Command * cmd, int in_status)
+  virtual void commandReturn (Rts2Command * cmd, int in_status)
   {
     master->commandReturn (cmd, in_status);
-    return Rts2ConnCentraldClient::commandReturn (cmd, in_status);
+    Rts2ConnCentraldClient::commandReturn (cmd, in_status);
   }
 };
 

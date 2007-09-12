@@ -839,12 +839,11 @@ Rts2Conn::queSend (Rts2Command * cmd)
   sendCommand ();
 }
 
-int
+void
 Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
 {
   if (otherDevice)
     otherDevice->commandReturn (cmd, in_status);
-  return 0;
 }
 
 bool
@@ -1063,6 +1062,7 @@ int
 Rts2Conn::commandReturn ()
 {
   int ret;
+  int status = atoi (getCommand ());
   // ignore (for the moment) retuns recieved without command
   if (!runningCommand)
     {
@@ -1071,7 +1071,8 @@ Rts2Conn::commandReturn ()
 #endif
       return -1;
     }
-  ret = runningCommand->commandReturn (atoi (getCommand ()));
+  commandReturn (runningCommand, status);
+  ret = runningCommand->commandReturn (status);
   switch (ret)
     {
     case RTS2_COMMAND_REQUE:
@@ -1083,7 +1084,6 @@ Rts2Conn::commandReturn ()
     case RTS2_COMMAND_KEEP:
       sendNextCommand ();
       break;
-
     }
   return -1;
 }

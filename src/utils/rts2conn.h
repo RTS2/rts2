@@ -384,10 +384,8 @@ public:
    *
    * @param cmd Finished command.
    * @param in_status Command return status.
-   *
-   * @return Should return 0, all other returns value can cause problems.
    */
-  virtual int commandReturn (Rts2Command * cmd, int in_status);
+  virtual void commandReturn (Rts2Command * cmd, int in_status);
 
   /**
    * Determines if que is empty and there is not any running command.

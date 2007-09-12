@@ -88,13 +88,12 @@ public:
     connection->queCommand (cmd);
   }
 
-  int commandReturn (Rts2Command * cmd, int status)
+  void commandReturn (Rts2Command * cmd, int status)
   {
     if (status)
       incFailedCount ();
     else
       clearFailedCount ();
-    return 0;
   }
 
   int getStatus ();

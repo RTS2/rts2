@@ -47,8 +47,6 @@ Rts2Command::send ()
 int
 Rts2Command::commandReturn (int status)
 {
-  if (connection)
-    connection->commandReturn (this, status);
   switch (status)
     {
     case 0:

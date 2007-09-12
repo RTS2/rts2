@@ -18,7 +18,7 @@ public:
 			    char *in_name):Rts2ConnClient (in_master, in_name)
   {
   }
-  virtual int commandReturn (Rts2Command * command, int cmd_status);
+  virtual void commandReturn (Rts2Command * command, int cmd_status);
 };
 
 void
@@ -40,7 +40,7 @@ Rts2CMonitorConnection::printStatus ()
     }
 }
 
-int
+void
 Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
 {
   // if command failed..
@@ -52,14 +52,13 @@ Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
 	"===================================" << endl
 	<< getName () << " FAILED! " << endl << endl
 	<< cmd->getText () << "'returned : " << cmd_status << endl;
-      return -1;
+      return;
     }
   // command OK..
   if (!strcmp (cmd->getText (), "info"))
     {
       printStatus ();
     }
-  return 0;
 }
 
 class CommandInfo:public Rts2Command
