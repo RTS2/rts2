@@ -33,6 +33,7 @@ class Rts2Command
 {
 private:
   int bopMask;
+  Rts2Object *originator;
 protected:
     Rts2Block * owner;
   Rts2Conn *connection;
@@ -41,15 +42,8 @@ protected:
 public:
     Rts2Command (Rts2Block * in_owner);
     Rts2Command (Rts2Block * in_owner, char *in_text);
-    Rts2Command (Rts2Command * in_command)
-  {
-    owner = in_command->owner;
-    connection = in_command->connection;
-    setCommand (in_command->getText ());
-    commandCond = in_command->getCommandCond ();
-    bopMask = 0;
-  }
-  virtual ~ Rts2Command (void);
+    Rts2Command (Rts2Command * in_command);
+    virtual ~ Rts2Command (void);
   int setCommand (char *in_text);
   void setConnection (Rts2Conn * conn)
   {
@@ -90,6 +84,21 @@ public:
   int getBopMask ()
   {
     return bopMask;
+  }
+
+  /**
+   * Set call originator.
+   *
+   * @param in_originator Call originator. Call originator is issued
+   *   EVENT_COMMAND_OK or EVENT_COMMAND_FAILED event.
+   *
+   * @see Rts2Conn::queCommand
+   *
+   * @callergraph
+   */
+  void setOriginator (Rts2Object * in_originator)
+  {
+    originator = in_originator;
   }
 
   /**
@@ -156,6 +165,7 @@ public:
    * @callback
    */
   virtual int commandReturnFailed (int status);
+
 };
 
 /**

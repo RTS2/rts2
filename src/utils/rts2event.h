@@ -21,6 +21,10 @@
 #define EVENT_INFO_DEVCLI_OK	14
 #define EVENT_INFO_DEVCLI_FAILED	15
 
+/** Event issued when command return with OK state. */
+#define EVENT_COMMAND_OK	16
+/** Event issued when command failed. */
+#define EVENT_COMMAND_FAILED	17
 
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000

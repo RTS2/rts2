@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <iostream>
 #include <fstream>
 
@@ -15,6 +11,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
   text = NULL;
   commandCond = NO_COND;
   bopMask = 0;
+  originator = NULL;
 }
 
 Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
@@ -23,6 +20,17 @@ Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
   setCommand (in_text);
   commandCond = NO_COND;
   bopMask = 0;
+  originator = NULL;
+}
+
+Rts2Command::Rts2Command (Rts2Command * in_command)
+{
+  owner = in_command->owner;
+  connection = in_command->connection;
+  setCommand (in_command->getText ());
+  commandCond = in_command->getCommandCond ();
+  bopMask = 0;
+  originator = NULL;
 }
 
 int
@@ -61,18 +69,25 @@ Rts2Command::commandReturn (int status)
 int
 Rts2Command::commandReturnOK ()
 {
+  if (originator)
+    originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
   return -1;
 }
 
 int
 Rts2Command::commandReturnQued ()
 {
+  if (originator)
+    originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
   return commandReturnOK ();
 }
 
 int
 Rts2Command::commandReturnFailed (int status)
 {
+  if (originator)
+    originator->
+      postEvent (new Rts2Event (EVENT_COMMAND_FAILED, (void *) this));
   return -1;
 }
 

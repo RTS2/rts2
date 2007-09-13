@@ -343,13 +343,20 @@ public:
    * which system states commands should not be send, and rather kept in que.
    *
    * @see Rts2Command
+   * @see EVENT_COMMAND_OK
+   * @see EVENT_COMMAND_FAILED
    *
    * @param cmd Command which will be send.
    * @param notBop Block of OPeration bitfield. Put BOP bits ored in this one.
+   * @param originator Originator of the command request. If fill, it will be
+   *   sent EVENT_COMMAND_xxx messgae.
    *
    * @return 0 when sucessfull, -1 on error.
+   *
+   * @callergraph
    */
-  void queCommand (Rts2Command * cmd, int notBop);
+  void queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator =
+		   NULL);
 
   /**
    * Que command on connection.

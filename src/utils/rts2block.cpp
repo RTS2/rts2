@@ -57,7 +57,8 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool Rts2Block::commandQueEmpty ()
+bool
+Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -677,17 +678,22 @@ Rts2Block::getValue (const char *device_name, const char *value_name)
 int
 Rts2Block::statusInfo (Rts2Conn * conn)
 {
-  return -1;
+  return 0;
 }
 
-bool
-Rts2Block::commandPending (Rts2Command * cmd)
+bool Rts2Block::commandPending (Rts2Command * cmd)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
     {
       if ((*iter)->commandPending (cmd))
-	return true;
+	{
+#ifdef DEBUG_EXTRA
+	  logStream (MESSAGE_DEBUG) << "command pending on " << (*iter)->
+	    getName () << sendLog;
+#endif /* DEBUG_EXTRA */
+	  return true;
+	}
     }
   return false;
 }

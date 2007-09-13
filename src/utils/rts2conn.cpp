@@ -6,6 +6,9 @@
 #include "rts2dataconn.h"
 #include "rts2event.h"
 #include "rts2value.h"
+
+// #define DEBUG_ALL
+
 #ifdef DEBUG_ALL
 #include <iostream>
 #endif /* DEBUG_ALL */
@@ -803,9 +806,10 @@ Rts2Conn::sendPriorityInfo ()
 }
 
 void
-Rts2Conn::queCommand (Rts2Command * cmd, int notBop)
+Rts2Conn::queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator)
 {
   cmd->setBopMask (notBop);
+  cmd->setOriginator (originator);
   queCommand (cmd);
 }
 
@@ -846,8 +850,7 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
     otherDevice->commandReturn (cmd, in_status);
 }
 
-bool
-Rts2Conn::commandPending (Rts2Command * cmd)
+bool Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -1062,7 +1065,7 @@ int
 Rts2Conn::commandReturn ()
 {
   int ret;
-  int status = atoi (getCommand ());
+  int stat = atoi (getCommand ());
   // ignore (for the moment) retuns recieved without command
   if (!runningCommand)
     {
@@ -1071,13 +1074,16 @@ Rts2Conn::commandReturn ()
 #endif
       return -1;
     }
-  commandReturn (runningCommand, status);
-  ret = runningCommand->commandReturn (status);
+  commandReturn (runningCommand, stat);
+  // remove running command temporaly from que, so commandPending will not report it
+  Rts2Command *rc = runningCommand;
+  runningCommand = NULL;
+  ret = rc->commandReturn (stat);
+  runningCommand = rc;
   switch (ret)
     {
     case RTS2_COMMAND_REQUE:
-      if (runningCommand)
-	sendCommand ();
+      sendCommand ();
       break;
     case -1:
       delete runningCommand;
@@ -1164,10 +1170,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool Rts2Conn::reachedSendTimeout ()
+bool
+Rts2Conn::reachedSendTimeout ()
 {
-  time_t
-    now;
+  time_t now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
@@ -1624,8 +1630,7 @@ Rts2Conn::commandValue (const char *v_name)
   return -2;
 }
 
-bool
-Rts2Conn::existWriteType (int w_type)
+bool Rts2Conn::existWriteType (int w_type)
 {
   for (Rts2ValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
