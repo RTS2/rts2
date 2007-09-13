@@ -68,12 +68,12 @@ public:
   CommandInfo (Rts2Block * in_owner):Rts2Command (in_owner, "info")
   {
   }
-  virtual int commandReturnOK ()
+  virtual int commandReturnOK (Rts2Conn * conn)
   {
     owner->queAll ("ready");
     owner->queAll ("base_info");
     owner->queAll ("info");
-    return Rts2Command::commandReturnOK ();
+    return Rts2Command::commandReturnOK (conn);
   }
 };
 
