@@ -187,7 +187,7 @@ Rts2ConnCentrald::deleteStatusCommand ()
 void
 Rts2ConnCentrald::updateStatusWait ()
 {
-  if (commandPending (statusCommand))
+  if (getMaster ()->commandPending (statusCommand))
     return;
 
   master->sendStatusMessage (master->getState (), this);
@@ -260,7 +260,7 @@ Rts2ConnCentrald::commandDevice ()
     {
       return master->changeStateOff (getName ());
     }
-  return -1;
+  return Rts2Conn::command ();
 }
 
 /*!
