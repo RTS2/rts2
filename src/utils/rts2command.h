@@ -54,7 +54,7 @@ public:
     return connection;
   }
   virtual int send ();
-  int commandReturn (int status);
+  int commandReturn (int status, Rts2Conn * conn);
   char *getText ()
   {
     return text;
@@ -134,11 +134,13 @@ public:
    * This function is overwritten in childrens to react on 
    * command returning OK.
    *
+   * @param conn Connection on which command returns.
+   *
    * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
    *
    * @callgraph
    */
-  virtual int commandReturnOK ();
+  virtual int commandReturnOK (Rts2Conn * conn);
 
   /** 
    * Called when command returns with status indicating that it will be
@@ -148,11 +150,13 @@ public:
    * function is overwritten in childrens to react on command which will be
    * executed later.
    *
+   * @param conn Connection on which command returns.
+   *
    * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
    *
    * @callgraph
    */
-  virtual int commandReturnQued ();
+  virtual int commandReturnQued (Rts2Conn * conn);
 
   /**
    * Called when command returns with error.
@@ -160,11 +164,13 @@ public:
    * This function is overwritten in childrens to react on 
    * command returning OK.
    *
+   * @param conn Connection on which command returns.
+   *
    * @return -1, @ref RTS2_COMMAND_KEEP or @ref RTS2_COMMAND_REQUE.
    *
    * @callback
    */
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 
 };
 
@@ -196,12 +202,12 @@ public:
     Rts2CommandSendKey (Rts2Block * in_master, int in_key);
   virtual int send ();
 
-  virtual int commandReturnOK ()
+  virtual int commandReturnOK (Rts2Conn * conn)
   {
     connection->setConnState (CONN_AUTH_OK);
     return -1;
   }
-  virtual int commandReturnFailed (int status)
+  virtual int commandReturnFailed (int status, Rts2Conn * conn)
   {
     connection->setConnState (CONN_AUTH_FAILED);
     return -1;
@@ -251,7 +257,7 @@ public:
   Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
 		       int chip, exposureType exp_type, float exp_time,
 		       bool readout = false);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 /**
@@ -282,8 +288,8 @@ public:
     Rts2CommandFilter (Rts2DevClientPhot * in_phot, int filter);
     Rts2CommandFilter (Rts2DevClientFilter * in_filter, int filter);
 
-  virtual int commandReturnOK ();
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnOK (Rts2Conn * conn);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandBox:public Rts2CommandCameraSettings
@@ -363,7 +369,7 @@ protected:
 public:
     Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel,
 		     double ra, double dec);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 /**
@@ -391,7 +397,7 @@ public:
     Rts2CommandMoveFixed (Rts2Block * in_master,
 			  Rts2DevClientTelescope * in_tel, double ra,
 			  double dec);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandResyncMove:public Rts2Command
@@ -401,7 +407,7 @@ public:
     Rts2CommandResyncMove (Rts2Block * in_master,
 			   Rts2DevClientTelescope * in_tel, double ra,
 			   double dec);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandSearch:public Rts2Command
@@ -410,7 +416,7 @@ class Rts2CommandSearch:public Rts2Command
 public:
     Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double searchRadius,
 		       double searchSpeed);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandSearchStop:public Rts2Command
@@ -428,7 +434,7 @@ public:
 		       double dec);
     Rts2CommandChange (Rts2CommandChange * in_command,
 		       Rts2DevClientTelescope * in_tel);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandCorrect:public Rts2Command
@@ -465,7 +471,7 @@ class Rts2CommandCupolaMove:public Rts2Command
 public:
     Rts2CommandCupolaMove (Rts2DevClientCupola * in_copula, double ra,
 			   double dec);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandChangeFocus:public Rts2Command
@@ -477,7 +483,7 @@ private:
 public:
     Rts2CommandChangeFocus (Rts2DevClientFocus * in_focuser, int in_steps);
     Rts2CommandChangeFocus (Rts2DevClientCamera * in_camera, int in_steps);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandSetFocus:public Rts2Command
@@ -489,7 +495,7 @@ private:
 public:
     Rts2CommandSetFocus (Rts2DevClientFocus * in_focuser, int in_steps);
     Rts2CommandSetFocus (Rts2DevClientCamera * in_camera, int in_steps);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandMirror:public Rts2Command
@@ -498,7 +504,7 @@ private:
   Rts2DevClientMirror * mirror;
 public:
   Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_pos);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandIntegrate:public Rts2Command
@@ -510,7 +516,7 @@ public:
 			float in_exp, int in_count);
     Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, float in_exp,
 			  int in_count);
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandExecNext:public Rts2Command
@@ -574,8 +580,8 @@ class Rts2CommandInfo:public Rts2Command
 {
 public:
   Rts2CommandInfo (Rts2Block * in_master);
-  virtual int commandReturnOK ();
-  virtual int commandReturnFailed (int status);
+  virtual int commandReturnOK (Rts2Conn * conn);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
 class Rts2CommandStatusInfo:public Rts2Command
@@ -586,8 +592,8 @@ private:
 public:
     Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn,
 			   bool in_keep = false);
-  virtual int commandReturnOK ();
-  virtual int commandReturnFailed ();
+  virtual int commandReturnOK (Rts2Conn * conn);
+  virtual int commandReturnFailed (Rts2Conn * conn);
 };
 
 #endif /* !__RTS2_COMMAND__ */

@@ -489,7 +489,7 @@ public:
     return otherDevice;
   }
 
-  virtual void updateStatusWait ();
+  virtual void updateStatusWait (Rts2Conn * conn);
   virtual void masterStateChanged ();
 
 protected:

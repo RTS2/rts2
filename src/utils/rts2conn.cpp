@@ -6,9 +6,6 @@
 #include "rts2dataconn.h"
 #include "rts2event.h"
 #include "rts2value.h"
-
-// #define DEBUG_ALL
-
 #ifdef DEBUG_ALL
 #include <iostream>
 #endif /* DEBUG_ALL */
@@ -515,7 +512,7 @@ Rts2Conn::getOtherType ()
 }
 
 void
-Rts2Conn::updateStatusWait ()
+Rts2Conn::updateStatusWait (Rts2Conn * conn)
 {
   if (runningCommand && runningCommand->getStatusCallProgress () == 1)
     sendCommand ();
@@ -611,7 +608,7 @@ Rts2Conn::processLine ()
     {
       char *m_name;
       if (paramNextString (&m_name))
-	return -1;
+	return -2;
       return commandValue (m_name);
     }
   else if (isCommand (PROTO_SELMETAINFO))
@@ -645,8 +642,8 @@ Rts2Conn::processLine ()
       ret = command ();
     }
 #ifdef DEBUG_ALL
-  logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" << getCentraldId ()
-    << "] command: " << getCommand () << " ret: " << ret << sendLog;
+  std::cerr << "Rts2Conn::processLine [" << getCentraldId ()
+    << "] command: " << getCommand () << " ret: " << ret << std::endl;
 #endif
   if (!ret)
     sendCommandEnd (DEVDEM_OK, "OK");
@@ -698,9 +695,9 @@ Rts2Conn::receive (fd_set * set)
       buf_top[data_size] = '\0';
       successfullRead ();
 #ifdef DEBUG_ALL
-      logStream (MESSAGE_DEBUG) << "Rts2Conn::receive name " << getName () <<
+      std::cerr << "Rts2Conn::receive name " << getName () <<
 	" reas: " << buf_top << " full_buf: " << buf << " size: " << data_size
-	<< sendLog;
+	<< std::endl;
 #endif
       // put old data size into account..
       data_size += buf_top - buf;
@@ -1069,17 +1066,13 @@ Rts2Conn::commandReturn ()
   // ignore (for the moment) retuns recieved without command
   if (!runningCommand)
     {
-#ifdef DEBUG_EXTRA
-      logStream (MESSAGE_DEBUG) << "Rts2Conn::commandReturn null!" << sendLog;
-#endif
+#ifdef DEBUG_ALL
+      std::cerr << "Rts2Conn::commandReturn null!" << std::endl;
+#endif /* DEBUG_ALL */
       return -1;
     }
   commandReturn (runningCommand, stat);
-  // remove running command temporaly from que, so commandPending will not report it
-  Rts2Command *rc = runningCommand;
-  runningCommand = NULL;
-  ret = rc->commandReturn (stat);
-  runningCommand = rc;
+  ret = runningCommand->commandReturn (stat, this);
   switch (ret)
     {
     case RTS2_COMMAND_REQUE:

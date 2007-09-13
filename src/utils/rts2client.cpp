@@ -361,7 +361,7 @@ Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login,
 }
 
 int
-Rts2CommandLogin::commandReturnOK ()
+Rts2CommandLogin::commandReturnOK (Rts2Conn * conn)
 {
   char *command;
   switch (state)

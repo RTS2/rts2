@@ -89,7 +89,7 @@ private:
 public:
     Rts2CommandLogin (Rts2Block * master, const char *in_login,
 		      const char *in_password);
-  virtual int commandReturnOK ();
+  virtual int commandReturnOK (Rts2Conn * conn);
 };
 
 /**

@@ -53,21 +53,21 @@ Rts2Command::send ()
 }
 
 int
-Rts2Command::commandReturn (int status)
+Rts2Command::commandReturn (int status, Rts2Conn * conn)
 {
   switch (status)
     {
     case 0:
-      return commandReturnOK ();
+      return commandReturnOK (conn);
     case 1:
-      return commandReturnQued ();
+      return commandReturnQued (conn);
     default:
-      return commandReturnFailed (status);
+      return commandReturnFailed (status, conn);
     }
 }
 
 int
-Rts2Command::commandReturnOK ()
+Rts2Command::commandReturnOK (Rts2Conn * conn)
 {
   if (originator)
     originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
@@ -75,15 +75,15 @@ Rts2Command::commandReturnOK ()
 }
 
 int
-Rts2Command::commandReturnQued ()
+Rts2Command::commandReturnQued (Rts2Conn * conn)
 {
   if (originator)
     originator->postEvent (new Rts2Event (EVENT_COMMAND_OK, (void *) this));
-  return commandReturnOK ();
+  return commandReturnOK (conn);
 }
 
 int
-Rts2Command::commandReturnFailed (int status)
+Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (originator)
     originator->
@@ -158,10 +158,10 @@ Rts2Command (in_master)
 }
 
 int
-Rts2CommandExposure::commandReturnFailed (int status)
+Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 {
   camera->exposureFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandReadout::Rts2CommandReadout (Rts2Block * in_master, int chip):
@@ -213,7 +213,7 @@ Rts2Command (in_filter->getMaster ())
 }
 
 int
-Rts2CommandFilter::commandReturnOK ()
+Rts2CommandFilter::commandReturnOK (Rts2Conn * conn)
 {
   if (camera)
     camera->filterOK ();
@@ -221,11 +221,11 @@ Rts2CommandFilter::commandReturnOK ()
     phot->filterOK ();
   if (filterCli)
     filterCli->filterOK ();
-  return Rts2Command::commandReturnOK ();
+  return Rts2Command::commandReturnOK (conn);
 }
 
 int
-Rts2CommandFilter::commandReturnFailed (int status)
+Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (camera)
     camera->filterFailed (status);
@@ -233,7 +233,7 @@ Rts2CommandFilter::commandReturnFailed (int status)
     phot->filterMoveFailed (status);
   if (filterCli)
     filterCli->filterMoveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int chip, int x, int y, int w, int h):Rts2CommandCameraSettings
@@ -386,10 +386,10 @@ Rts2Command (in_master)
 }
 
 int
-Rts2CommandMove::commandReturnFailed (int status)
+Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
   tel->moveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
@@ -414,10 +414,10 @@ Rts2Command (in_master)
 }
 
 int
-Rts2CommandMoveFixed::commandReturnFailed (int status)
+Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
 {
   tel->moveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
@@ -431,10 +431,10 @@ Rts2Command (in_master)
 }
 
 int
-Rts2CommandResyncMove::commandReturnFailed (int status)
+Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
   tel->moveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double searchRadius, double searchSpeed):Rts2Command (in_tel->
@@ -450,10 +450,10 @@ Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double se
 }
 
 int
-Rts2CommandSearch::commandReturnFailed (int status)
+Rts2CommandSearch::commandReturnFailed (int status, Rts2Conn * conn)
 {
   tel->searchFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel):Rts2Command (in_tel->getMaster (),
@@ -491,11 +491,11 @@ Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * in_command, Rts2DevCli
 }
 
 int
-Rts2CommandChange::commandReturnFailed (int status)
+Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (tel)
     tel->moveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 
@@ -540,11 +540,11 @@ Rts2Command (in_copula->getMaster ())
 }
 
 int
-Rts2CommandCupolaMove::commandReturnFailed (int status)
+Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (copula)
     copula->syncFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 void
@@ -575,13 +575,13 @@ Rts2Command (in_camera->getMaster ())
 }
 
 int
-Rts2CommandChangeFocus::commandReturnFailed (int status)
+Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (focuser)
     focuser->focusingFailed (status);
   if (camera)
     camera->focuserFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 void
@@ -612,13 +612,13 @@ Rts2Command (in_camera->getMaster ())
 }
 
 int
-Rts2CommandSetFocus::commandReturnFailed (int status)
+Rts2CommandSetFocus::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (focuser)
     focuser->focusingFailed (status);
   if (camera)
     camera->focuserFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_pos):Rts2Command (in_mirror->
@@ -634,11 +634,11 @@ Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_po
 }
 
 int
-Rts2CommandMirror::commandReturnFailed (int status)
+Rts2CommandMirror::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (mirror)
     mirror->moveFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_filter, float in_exp, int in_count):Rts2Command (in_phot->
@@ -666,11 +666,11 @@ Rts2Command (in_phot->getMaster ())
 
 
 int
-Rts2CommandIntegrate::commandReturnFailed (int status)
+Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (phot)
     phot->integrationFailed (status);
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):
@@ -735,19 +735,19 @@ Rts2CommandInfo::Rts2CommandInfo (Rts2Block * in_master):Rts2Command
 }
 
 int
-Rts2CommandInfo::commandReturnOK ()
+Rts2CommandInfo::commandReturnOK (Rts2Conn * conn)
 {
   if (connection && connection->getOtherDevClient ())
     connection->getOtherDevClient ()->infoOK ();
-  return Rts2Command::commandReturnOK ();
+  return Rts2Command::commandReturnOK (conn);
 }
 
 int
-Rts2CommandInfo::commandReturnFailed (int status)
+Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
 {
   if (connection && connection->getOtherDevClient ())
     connection->getOtherDevClient ()->infoFailed ();
-  return Rts2Command::commandReturnFailed (status);
+  return Rts2Command::commandReturnFailed (status, conn);
 }
 
 Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn, bool in_keep):Rts2Command
@@ -759,19 +759,19 @@ Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_
 }
 
 int
-Rts2CommandStatusInfo::commandReturnOK ()
+Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
-  control_conn->updateStatusWait ();
+  control_conn->updateStatusWait (conn);
   if (keep)
     return RTS2_COMMAND_KEEP;
-  return Rts2Command::commandReturnOK ();
+  return Rts2Command::commandReturnOK (conn);
 }
 
 int
-Rts2CommandStatusInfo::commandReturnFailed ()
+Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
 {
-  control_conn->updateStatusWait ();
+  control_conn->updateStatusWait (conn);
   if (keep)
     return RTS2_COMMAND_KEEP;
-  return Rts2Command::commandReturnOK ();
+  return Rts2Command::commandReturnOK (conn);
 }

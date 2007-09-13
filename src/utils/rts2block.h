@@ -71,8 +71,10 @@ Rts2Conn * >
  *
  * @ingroup RTS2Block
  */
-class Rts2Block:
-public Rts2App
+class
+  Rts2Block:
+  public
+  Rts2App
 {
 private:
   int
@@ -82,17 +84,24 @@ private:
   int
     priority_client;
 
-  connections_t connections;
+  connections_t
+    connections;
 
-  std::list < Rts2Address * >blockAddress;
-  std::list < Rts2User * >blockUsers;
+  std::list <
+  Rts2Address * >
+    blockAddress;
+  std::list <
+  Rts2User * >
+    blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
+  virtual
+    Rts2Conn *
+  createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -179,7 +188,8 @@ public:
   /**
    * Delete list of conncection, clear Rts2Block structure.
    */
-  virtual ~ Rts2Block (void);
+  virtual ~
+  Rts2Block (void);
 
   /**
    * Set port number of listening socket.
@@ -212,7 +222,8 @@ public:
    *
    * @return connections.begin() iterator.
    */
-  connections_t::iterator connectionBegin ()
+  connections_t::iterator
+  connectionBegin ()
   {
     return connections.begin ();
   }
@@ -224,7 +235,8 @@ public:
    *
    * @return connections.end() iterator.
    */
-  connections_t::iterator connectionEnd ()
+  connections_t::iterator
+  connectionEnd ()
   {
     return connections.end ();
   }
@@ -271,7 +283,8 @@ public:
    * @return True if command que is empty and new command will be executed
    * immediately (after running command returns), otherwise returns false.
    */
-  bool commandQueEmpty ();
+  bool
+  commandQueEmpty ();
 
   /**
    * Event handling mechanism.
@@ -520,7 +533,18 @@ public:
   virtual int
   statusInfo (Rts2Conn * conn);
 
-  bool commandPending (Rts2Command * cmd);
+  /**
+   * Check if command was not replied.
+   *
+   * @param cmd Command which will be checked.
+   * @param exclude_conn Connection which should be excluded from check.
+   *
+   * @return True if command was not send or command reply was not heard, false otherwise.
+   *
+   * @callergraph
+   */
+  bool
+  commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

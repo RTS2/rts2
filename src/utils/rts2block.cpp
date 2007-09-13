@@ -57,8 +57,7 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool
-Rts2Block::commandQueEmpty ()
+bool Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -681,12 +680,13 @@ Rts2Block::statusInfo (Rts2Conn * conn)
   return 0;
 }
 
-bool Rts2Block::commandPending (Rts2Command * cmd)
+bool
+Rts2Block::commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
     {
-      if ((*iter)->commandPending (cmd))
+      if ((*iter) != exclude_conn && (*iter)->commandPending (cmd))
 	{
 #ifdef DEBUG_EXTRA
 	  logStream (MESSAGE_DEBUG) << "command pending on " << (*iter)->
