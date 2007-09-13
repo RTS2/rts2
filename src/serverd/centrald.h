@@ -184,7 +184,7 @@ public:
   {
     statusCommand = cmd;
   }
-  virtual void updateStatusWait ();
+  virtual void updateStatusWait (Rts2Conn * conn);
 };
 
 #endif /*! __RTS2_CENTRALD__ */

@@ -185,9 +185,9 @@ Rts2ConnCentrald::deleteStatusCommand ()
 }
 
 void
-Rts2ConnCentrald::updateStatusWait ()
+Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 {
-  if (getMaster ()->commandPending (statusCommand))
+  if (getMaster ()->commandPending (statusCommand, conn))
     return;
 
   master->sendStatusMessage (master->getState (), this);
