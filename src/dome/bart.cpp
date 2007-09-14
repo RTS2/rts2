@@ -720,7 +720,7 @@ Rts2DevDomeBart::checkCloud ()
     }
 
   // check that master is in right state..
-  switch (getMasterState () & ~SERVERD_STANDBY_MASK)
+  switch (getMasterState () & SERVERD_STATUS_MASK)
     {
     case SERVERD_EVENING:
     case SERVERD_DUSK:
@@ -809,7 +809,7 @@ Rts2DevDomeBart::changeMasterState (int new_state)
     }
   else
     {
-      switch (new_state)
+      switch (new_state & SERVERD_STATUS_MASK)
 	{
 	case SERVERD_EVENING:
 	case SERVERD_NIGHT:
