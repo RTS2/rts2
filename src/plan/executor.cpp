@@ -408,7 +408,7 @@ Rts2Executor::changeMasterState (int new_state)
   if (ignoreDay)
     return Rts2DeviceDb::changeMasterState (new_state);
 
-  switch (new_state & SERVERD_STATUS_MASK)
+  switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
     {
     case SERVERD_EVENING:
     case SERVERD_DAWN:
