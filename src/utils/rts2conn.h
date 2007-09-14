@@ -402,7 +402,7 @@ public:
    */
   bool queEmpty ()
   {
-    return (runningCommand == NULL && commandQue.size () == 0);
+    return (runningCommand == NULL && commandQue.empty ());
   }
 
   /**
