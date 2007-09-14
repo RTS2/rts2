@@ -11,7 +11,7 @@
  * That class provide scripting interface for devices, so they can 
  * run scrips..
  */
-class Rts2DevScript:public Rts2Object
+class Rts2DevScript
 {
 private:
   Rts2Conn * script_connection;
@@ -80,7 +80,7 @@ protected:
 public:
     Rts2DevScript (Rts2Conn * in_script_connection);
   virtual ~ Rts2DevScript (void);
-  virtual void postEvent (Rts2Event * event);
+  void postEvent (Rts2Event * event);
   virtual void nextCommand () = 0;
 
   void setScript (Rts2Script * in_script)

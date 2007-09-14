@@ -248,10 +248,18 @@ Rts2Executor::postEvent (Rts2Event * event)
       updateScriptCount ();
       // that was last script running
       if (scriptCount->getValueInteger () == 0)
-	maskState (EXEC_STATE_MASK, EXEC_LASTREAD);
+	{
+	  maskState (EXEC_STATE_MASK, EXEC_LASTREAD);
+	  switchTarget ();
+	}
       break;
     case EVENT_SCRIPT_ENDED:
       updateScriptCount ();
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) <<
+	"EVENT_SCRIPT_ENDED Rts2Executor currentTarget " << currentTarget <<
+	" nextTarget " << nextTarget << sendLog;
+#endif /* DEBUG_EXTRA */
       if (currentTarget)
 	{
 	  if (scriptCount->getValueInteger () == 0

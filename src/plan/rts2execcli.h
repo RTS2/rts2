@@ -120,9 +120,6 @@ public:
 
   virtual void filterOK ();
   virtual void filterFailed (int status);
-
-  virtual void settingsOK ();
-  virtual void settingsFailed (int status);
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage

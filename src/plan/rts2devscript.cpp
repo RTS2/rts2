@@ -1,7 +1,7 @@
 #include "rts2devscript.h"
 #include "rts2execcli.h"
 
-Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection):Rts2Object ()
+Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
 {
   currentTarget = NULL;
   nextComd = NULL;
@@ -28,7 +28,8 @@ Rts2DevScript::startTarget ()
   // deleteScript
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget this " << this <<
-    " currentTarget " << currentTarget << sendLog;
+    " currentTarget " << currentTarget << " nextTarget " << nextTarget <<
+    sendLog;
 #endif /* DEBUG_EXTRA */
   if (!currentTarget)
     {
@@ -87,6 +88,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  delete tmp_script;
 	}
       nextTarget = NULL;
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "EVENT_KILL_ALL" << sendLog;
+#endif /* DEBUG_EXTRA */
       // stop actual observation..
       blockMove = 0;
       unsetWait ();
@@ -122,11 +126,20 @@ Rts2DevScript::postEvent (Rts2Event * event)
       break;
     case EVENT_LAST_READOUT:
     case EVENT_SCRIPT_ENDED:
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) <<
+	"EVENT_SCRIPT_ENDED Rts2DevScript currentTarget " << currentTarget <<
+	" nextTarget " << nextTarget << sendLog;
+#endif /* DEBUG_EXTRA */
       if (event->getArg ())
 	// we get new target..handle that same way as EVENT_OBSERVE command,
 	// telescope will not move
 	setNextTarget ((Rts2Target *) event->getArg ());
       // we still have something to do
+#ifdef DEBUG_EXTRA
+      logStream (MESSAGE_DEBUG) << "EVENT_LAST_READOUT " << currentTarget <<
+	" next " << nextTarget << " arg " << event->getArg () << sendLog;
+#endif /* DEBUG_EXTRA */
       if (currentTarget)
 	break;
       // currentTarget is defined - tested in if (event->getArg ())
@@ -139,7 +152,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	  break;
 	}
 #ifdef DEBUG_EXTRA
-      logStream (MESSAGE_DEBUG) << "EVENT_OBSERVE " << this << sendLog;
+      logStream (MESSAGE_DEBUG) << "EVENT_OBSERVE " << this << " current " <<
+	currentTarget << " next " << nextTarget << sendLog;
 #endif /* DEBUG_EXTRA */
       startTarget ();
       nextCommand ();
@@ -257,7 +271,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
       nextCommand ();
       break;
     }
-  Rts2Object::postEvent (event);
 }
 
 void
@@ -394,6 +407,9 @@ Rts2DevScript::setNextTarget (Rts2Target * in_target)
 	new Rts2Script (script_connection->getMaster (),
 			script_connection->getName (), nextTarget);
     }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "setNextTarget " << nextTarget << sendLog;
+#endif /* DEBUG_EXTRA */
 }
 
 int

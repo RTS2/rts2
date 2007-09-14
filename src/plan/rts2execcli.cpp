@@ -30,8 +30,14 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       if (!strcmp (image->getCameraName (), getName ()))
 	queImage (image);
       break;
+    case EVENT_COMMAND_OK:
+      nextCommand ();
+      break;
+    case EVENT_COMMAND_FAILED:
+      deleteScript ();
+      break;
     }
-  Rts2DevScript::postEvent (new Rts2Event (event));
+  Rts2DevScript::postEvent (event);
   Rts2DevClientCameraImage::postEvent (event);
 }
 
@@ -44,7 +50,10 @@ Rts2DevClientCameraExec::startTarget ()
 int
 Rts2DevClientCameraExec::getNextCommand ()
 {
-  return getScript ()->nextCommand (*this, &nextComd, cmd_device);
+  int ret = getScript ()->nextCommand (*this, &nextComd, cmd_device);
+  if (nextComd)
+    nextComd->setOriginator (this);
+  return ret;
 }
 
 void
@@ -156,6 +165,10 @@ Rts2DevClientCameraExec::nextCommand ()
 	sendLog;
 #endif /* DEBUG_EXTRA */
     }
+#ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "For " << getName () << " queing " <<
+    nextComd->getText () << sendLog;
+#endif /* DEBUG_EXTRA */
   queCommand (nextComd);
   nextComd = NULL;		// after command execute, it will be deleted
   blockMove = 1;		// as we run a script..
@@ -178,10 +191,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes
-Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int ret;
+  int
+    ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
@@ -261,21 +274,6 @@ Rts2DevClientCameraExec::filterFailed (int status)
   nextCommand ();
   Rts2DevClientCameraImage::filterFailed (status);
 }
-
-void
-Rts2DevClientCameraExec::settingsOK ()
-{
-  nextCommand ();
-  Rts2DevClientCameraImage::settingsOK ();
-}
-
-void
-Rts2DevClientCameraExec::settingsFailed (int status)
-{
-  deleteScript ();
-  Rts2DevClientCameraImage::settingsFailed (status);
-}
-
 
 void
 Rts2DevClientCameraExec::readoutEnd ()
