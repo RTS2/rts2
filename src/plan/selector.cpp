@@ -256,7 +256,7 @@ Rts2SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 int
 Rts2SelectorDev::changeMasterState (int new_master_state)
 {
-  switch (new_master_state)
+  switch (new_master_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
     {
     case SERVERD_MORNING:
     case SERVERD_MORNING | SERVERD_STANDBY:

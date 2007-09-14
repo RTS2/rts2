@@ -187,7 +187,7 @@ Rts2ImageProc::info ()
 int
 Rts2ImageProc::changeMasterState (int new_state)
 {
-  switch (new_state)
+  switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
     {
     case SERVERD_DUSK:
     case SERVERD_DUSK | SERVERD_STANDBY_MASK:

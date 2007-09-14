@@ -242,7 +242,7 @@ Rts2DevFilterdIfw::init (void)
 int
 Rts2DevFilterdIfw::changeMasterState (int new_state)
 {
-  switch (new_state)
+  switch (new_state & SERVERD_STATUS_MASK)
     {
     case SERVERD_DUSK:
     case SERVERD_NIGHT:

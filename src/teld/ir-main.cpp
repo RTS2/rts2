@@ -281,7 +281,7 @@ Rts2DevTelescopeIr::stopWorm ()
 int
 Rts2DevTelescopeIr::changeMasterState (int new_state)
 {
-  switch (new_state)
+  switch (new_state & SERVERD_STATUS_MASK)
     {
     case SERVERD_DUSK:
     case SERVERD_NIGHT:
