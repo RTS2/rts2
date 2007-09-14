@@ -61,7 +61,7 @@ Rts2Selector::selectNext (int masterState)
   int ret;
   // take care of state - select to make darks when we are able to
   // make darks.
-  switch (masterState)
+  switch (masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
   {
     case SERVERD_NIGHT:
       return selectNextNight ();
