@@ -340,6 +340,9 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
   model_change->ra = ln_range_degrees (pos->ra - ra);
   model_change->dec = pos->dec - hadec.dec;
 
+  if (model_change->ra > 180)
+    model_change->ra -= 360.0;
+
   hadec.ra = ra;
 
   double sep = ln_get_angular_separation (&hadec, pos);
