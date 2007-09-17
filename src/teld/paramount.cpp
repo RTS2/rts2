@@ -309,7 +309,7 @@ Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
       msg = "motor maximum position error exceeded";
       break;
     case MOTOR_STILL_ON:
-      msg = "motor still slewing but command needs it stopped";
+      msg = "motor is on but command needs it at off state";
       break;
     case MOTOR_NOT_ON:
       msg = "motor off";
@@ -1086,7 +1086,7 @@ int
 Rts2DevTelParamount::stopMove ()
 {
   int ret;
-  // if we issue startMove after abor, we will get to position after homing is performed
+  // if we issue startMove after abort, we will get to position after homing is performed
   if ((moveState & TEL_FORCED_HOMING0) || (moveState & TEL_FORCED_HOMING1))
     return 0;
   // check if we are homing..
@@ -1116,6 +1116,7 @@ Rts2DevTelParamount::startPark ()
   ret = checkRet ();
   if (ret)
     return -1;
+
   ret0 = MKS3Home (axis0, 0);
   ret1 = MKS3Home (axis1, 0);
   moveState = TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1;
