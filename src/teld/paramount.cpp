@@ -1105,6 +1105,10 @@ Rts2DevTelParamount::startPark ()
 {
   int ret;
 
+  // if parking is currently going on, do not park again
+  if (getState () & TEL_PARKING)
+    return 0;
+
   delete track0;
   delete track1;
 
