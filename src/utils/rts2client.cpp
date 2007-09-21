@@ -247,7 +247,7 @@ Rts2Client::run ()
 
 std::string Rts2Client::getMasterStateString ()
 {
-  return Rts2CentralState (getMasterState ()).getString ();
+  return Rts2CentralState (getMasterStateFull ()).getString ();
 }
 
 Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):

@@ -847,7 +847,8 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
     otherDevice->commandReturn (cmd, in_status);
 }
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
+bool
+Rts2Conn::commandPending (Rts2Command * cmd)
 {
   if (cmd == runningCommand)
     return true;
@@ -1027,7 +1028,7 @@ Rts2Conn::sendCommand ()
 	  // if the bock bit is still set..
 	  runningCommand->setStatusCallProgress (2);
 	case 2:
-	  if (getMaster ()->getMasterState () & runningCommand->
+	  if (getMaster ()->getMasterStateFull () & runningCommand->
 	      getBopMask () & BOP_MASK)
 	    break;
 	  runningCommand->send ();
@@ -1163,10 +1164,10 @@ Rts2Conn::getSuccessSend (time_t * in_t)
   *in_t = lastGoodSend;
 }
 
-bool
-Rts2Conn::reachedSendTimeout ()
+bool Rts2Conn::reachedSendTimeout ()
 {
-  time_t now;
+  time_t
+    now;
   time (&now);
   return now > lastGoodSend + getConnTimeout ();
 }
@@ -1623,7 +1624,8 @@ Rts2Conn::commandValue (const char *v_name)
   return -2;
 }
 
-bool Rts2Conn::existWriteType (int w_type)
+bool
+Rts2Conn::existWriteType (int w_type)
 {
   for (Rts2ValueVector::iterator iter = values.begin ();
        iter != values.end (); iter++)
