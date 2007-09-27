@@ -1401,7 +1401,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
     }
   else if (conn->isCommand ("move"))
     {
-      CHECK_PRIORITY;
       if (conn->paramNextDouble (&tar_ra) || conn->paramNextDouble (&tar_dec)
 	  || !conn->paramEnd ())
 	return -2;
