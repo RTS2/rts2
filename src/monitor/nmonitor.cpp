@@ -64,6 +64,25 @@ Rts2NMonitor::processOption (int in_opt)
   return 0;
 }
 
+int
+Rts2NMonitor::processArgs (const char *arg)
+{
+  tarArg = new Rts2SimbadTarget (arg);
+  int ret = tarArg->load ();
+  if (ret)
+    {
+      std::cerr << "Cannot resolve target " << arg << std::endl;
+      return -1;
+    }
+
+  std::cout << "Type Y and press enter.." << std::endl;
+
+  char c;
+  std::cin >> c;
+
+  return 0;
+}
+
 void
 Rts2NMonitor::addSelectSocks (fd_set * read_set)
 {
@@ -200,16 +219,6 @@ Rts2NMonitor::changeListConnection ()
     }
 }
 
-int
-Rts2NMonitor::addAddress (Rts2Address * in_addr)
-{
-  int ret;
-  ret = Rts2Client::addAddress (in_addr);
-  if (ret)
-    return ret;
-  return ret;
-}
-
 Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
 Rts2Client (in_argc, in_argv)
 {
@@ -231,6 +240,8 @@ Rts2Client (in_argc, in_argv)
   old_lines = 0;
   old_cols = 0;
 
+  tarArg = NULL;
+
   addOption ('c', NULL, 0, "don't use colors");
 }
 
@@ -247,6 +258,8 @@ Rts2NMonitor::~Rts2NMonitor (void)
   delete statusWindow;
 
   delete masterLayout;
+
+  delete tarArg;
 }
 
 int
@@ -373,7 +386,24 @@ Rts2NMonitor::idle ()
 Rts2ConnClient *
 Rts2NMonitor::createClientConnection (char *in_deviceName)
 {
-  return new Rts2NMonConn (this, in_deviceName);
+  Rts2ConnClient *cliConn = new Rts2NMonConn (this, in_deviceName);
+  return cliConn;
+}
+
+Rts2DevClient *
+Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+  Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
+  if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
+    {
+      struct ln_equ_posn tarPos;
+      tarArg->getPosition (&tarPos);
+      conn->
+	queCommand (new
+		    Rts2CommandMove (this, (Rts2DevClientTelescope *) retC,
+				     tarPos.ra, tarPos.dec));
+    }
+  return retC;
 }
 
 int

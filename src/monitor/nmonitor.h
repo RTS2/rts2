@@ -8,6 +8,8 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
 
+#include "../db/simbad/rts2simbadtarget.h"
+
 #include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
 #include "rts2ndevicewindow.h"
@@ -100,13 +102,14 @@ private:
 
   void sendCommand ();
 
+  Rts2SimbadTarget *tarArg;
+
 protected:
   virtual int processOption (int in_opt);
+  virtual int processArgs (const char *arg);
 
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);
-
-  virtual int addAddress (Rts2Address * in_addr);
 
   virtual Rts2ConnCentraldClient *createCentralConn ();
 
@@ -118,6 +121,8 @@ public:
   virtual int idle ();
 
   virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
+  virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+					  int other_device_type);
 
   virtual int deleteConnection (Rts2Conn * conn);
 
