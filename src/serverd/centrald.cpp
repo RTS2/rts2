@@ -51,12 +51,6 @@ Rts2Conn (in_sock, in_master)
   statusCommand = NULL;
 }
 
-/*!
- * Called on connection exit.
- *
- * Delete client|device login|name, updates priorities, detach shared
- * memory.
- */
 Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
   setPriority (-1);
@@ -85,7 +79,6 @@ Rts2ConnCentrald::priorityCommand ()
     }
 
   sendValue ("old_priority", getPriority (), getCentraldId ());
-
   sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
 
   setPriority (new_priority);
@@ -144,7 +137,7 @@ Rts2ConnCentrald::sendInfo ()
   for (iter = master->connectionBegin ();
        iter != master->connectionEnd (); iter++)
     {
-      Rts2Conn *conn = *iter;
+      Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
       conn->sendInfo (this);
     }
   return 0;
@@ -174,7 +167,10 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
     default:
       break;
     }
-  return ret;
+  if (ret)
+    return ret;
+  // send connection values
+  return ((Rts2Centrald *) getMaster ())->sendInfo (conn);
 }
 
 void
@@ -242,6 +238,7 @@ Rts2ConnCentrald::commandDevice ()
     }
   if (isCommand ("info"))
     {
+      master->info ();
       return sendInfo ();
     }
   if (isCommand ("on"))
@@ -263,11 +260,6 @@ Rts2ConnCentrald::commandDevice ()
   return Rts2Conn::command ();
 }
 
-/*!
- * Print standart status header.
- *
- * It needs to be called after establishing of every new connection.
- */
 int
 Rts2ConnCentrald::sendStatusInfo ()
 {
@@ -326,6 +318,7 @@ Rts2ConnCentrald::commandClient ()
 
       if (isCommand ("info"))
 	{
+	  master->info ();
 	  return sendInfo ();
 	}
       if (isCommand ("priority") || isCommand ("prioritydeferred"))
@@ -352,11 +345,6 @@ Rts2ConnCentrald::commandClient ()
   return Rts2Conn::command ();
 }
 
-/*! 
- * Handle serverd commands.
- *
- * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
- */
 int
 Rts2ConnCentrald::command ()
 {
@@ -462,6 +450,9 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   fileLog = NULL;
 
   priority_client = -1;
+
+  createValue (nextStateChange, "next_state_change",
+	       "time of next state change");
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
@@ -575,6 +566,23 @@ Rts2Centrald::init ()
   return lockFile ();
 }
 
+int
+Rts2Centrald::initValues ()
+{
+  time_t curr_time;
+
+  int call_state;
+
+  curr_time = time (NULL);
+
+  next_event (observer, &curr_time, &call_state, &next_event_type,
+	      &next_event_time);
+
+  nextStateChange->setValueTime (next_event_time);
+
+  return Rts2Daemon::initValues ();
+}
+
 void
 Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
@@ -613,9 +621,6 @@ Rts2Centrald::getConnection (int conn_num)
   return NULL;
 }
 
-/*!
- * @param new_state		new state, if -1 -> 3
- */
 int
 Rts2Centrald::changeState (int new_state, const char *user)
 {
@@ -625,14 +630,6 @@ Rts2Centrald::changeState (int new_state, const char *user)
   return sendStatusMessage (getState ());
 }
 
-/*!
- * Made priority update, distribute messages to devices
- * about priority update.
- *
- * @param timeout	time to wait for priority change.. 
- *
- * @return 0 on success, -1 and set errno otherwise
- */
 int
 Rts2Centrald::changePriority (time_t timeout)
 {
@@ -693,6 +690,8 @@ Rts2Centrald::idle ()
 
   if (getState () != call_state)
     {
+      nextStateChange->setValueTime (next_event_time);
+
       old_current_state = getState ();
       if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
 	  && (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)

@@ -1,3 +1,22 @@
+/** 
+ * Centrald - RTS2 coordinator
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_CENTRALD__
 #define __RTS2_CENTRALD__
 
@@ -73,17 +92,26 @@ private:
   int reloadConfig ();
 
   int connNum;
+
+  Rts2ValueTime *nextStateChange;
 protected:
+  /**
+   * @param new_state	new state, if -1 -> 3
+   */
   int changeState (int new_state, const char *user);
 
   virtual int processOption (int in_opt);
 
-  // those callbacks are now empty; they can be used in future
-  // to link two centrald to enable cooperative observation
+  /**
+   * Those callbacks are for current centrald implementation empty and returns
+   * NULL. They can be used in future to link two centrald to enable
+   * cooperative observation.
+   */
   virtual Rts2Conn *createClientConnection (char *in_deviceName)
   {
     return NULL;
   }
+
   virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
   {
     return NULL;
@@ -95,6 +123,7 @@ protected:
   }
 
   virtual int init ();
+  virtual int initValues ();
 
   virtual void connectionRemoved (Rts2Conn * conn);
 
@@ -104,6 +133,14 @@ public:
 
   virtual int idle ();
 
+  /**
+   * Made priority update, distribute messages to devices
+   * about priority update.
+   *
+   * @param timeout	time to wait for priority change.. 
+   *
+   * @return 0 on success, -1 and set errno otherwise
+   */
   int changePriority (time_t timeout);
 
   int changeStateOn (const char *user)
@@ -158,6 +195,11 @@ private:
   int port;
   int device_type;
 
+  /**
+   * Handle serverd commands.
+   *
+   * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
+   */
   int command ();
   int commandDevice ();
   int commandClient ();
@@ -165,6 +207,12 @@ private:
   int priorityCommand ();
   int sendDeviceKey ();
   int sendInfo ();
+
+  /**
+   * Prints standard status header.
+   *
+   * It needs to be called after establishing of every new connection.
+   */
   int sendStatusInfo ();
   int sendAValue (char *name, int value);
   int messageMask;
@@ -175,6 +223,12 @@ protected:
 public:
     Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 		      int in_centrald_id);
+    /**
+     * Called on connection exit.
+     *
+     * Delete client|device login|name, updates priorities, detach shared
+     * memory.
+     */
     virtual ~ Rts2ConnCentrald (void);
   virtual int sendMessage (Rts2Message & msg);
   virtual int sendInfo (Rts2Conn * conn);
