@@ -717,6 +717,8 @@ Rts2Centrald::idle ()
 	    old_current_state << " to " << getState () << sendLog;
 	  sendStatusMessage (getState ());
 	}
+      // send update about next state transits..
+      infoAll ();
     }
   return Rts2Daemon::idle ();
 }
