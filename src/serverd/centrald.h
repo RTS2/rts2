@@ -20,7 +20,7 @@
 #ifndef __RTS2_CENTRALD__
 #define __RTS2_CENTRALD__
 
-#include "riseset.h"
+#include "../utils/riseset.h"
 
 #include <errno.h>
 #include <stdlib.h>

@@ -16,7 +16,7 @@
 
 #include "riseset.h"
 #include "status.h"
-#include "../utils/rts2config.h"
+#include "rts2config.h"
 
 int
 next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,

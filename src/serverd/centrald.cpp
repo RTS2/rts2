@@ -452,7 +452,7 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   priority_client = -1;
 
   createValue (nextStateChange, "next_state_change",
-	       "time of next state change");
+	       "time of next state change", false);
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");

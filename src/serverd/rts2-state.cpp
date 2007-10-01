@@ -22,7 +22,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "riseset.h"
+#include "../utils/riseset.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2app.h"
 #include "../utils/rts2config.h"
