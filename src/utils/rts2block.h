@@ -71,8 +71,10 @@ Rts2Conn * >
  *
  * @ingroup RTS2Block
  */
-class Rts2Block:
-public Rts2App
+class
+  Rts2Block:
+  public
+  Rts2App
 {
 private:
   int
@@ -82,17 +84,24 @@ private:
   int
     priority_client;
 
-  connections_t connections;
+  connections_t
+    connections;
 
-  std::list < Rts2Address * >blockAddress;
-  std::list < Rts2User * >blockUsers;
+  std::list <
+  Rts2Address * >
+    blockAddress;
+  std::list <
+  Rts2User * >
+    blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
+  virtual
+    Rts2Conn *
+  createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -179,7 +188,8 @@ public:
   /**
    * Delete list of conncection, clear Rts2Block structure.
    */
-  virtual ~ Rts2Block (void);
+  virtual ~
+  Rts2Block (void);
 
   /**
    * Set port number of listening socket.
@@ -212,7 +222,8 @@ public:
    *
    * @return connections.begin() iterator.
    */
-  connections_t::iterator connectionBegin ()
+  connections_t::iterator
+  connectionBegin ()
   {
     return connections.begin ();
   }
@@ -224,7 +235,8 @@ public:
    *
    * @return connections.end() iterator.
    */
-  connections_t::iterator connectionEnd ()
+  connections_t::iterator
+  connectionEnd ()
   {
     return connections.end ();
   }
@@ -271,7 +283,8 @@ public:
    * @return True if command que is empty and new command will be executed
    * immediately (after running command returns), otherwise returns false.
    */
-  bool commandQueEmpty ();
+  bool
+  commandQueEmpty ();
 
   /**
    * Event handling mechanism.
@@ -447,30 +460,35 @@ public:
   int
   addUser (Rts2User * in_user);
 
-  /***************************************************************
-   * 
+  /**
    * Return established connection to device with given name.
    *
-   * Returns connection to device with deviceName. Device must be know to system.
+   * Returns connection to device with deviceName. Device must be know to
+   * system and connection to it must be opened.
    *
-   ***************************************************************/
-
+   * @param deviceName Device which will be looked on.
+   *
+   * @return Rts2Conn pointer to opened device connection.
+   */
   Rts2Conn *
   getOpenConnection (const char *deviceName);
 
-  /***************************************************************
-   *
+  /**
    * Return connection to given device.
    * 
    * Create and return new connection if if device name isn't found
    * among connections, but is in address list.
    *
-   * Cann return 'fake' client connection, which will not resolve 
-   * to device name (even after 'info' call on master device).
-   * For every command enqued to fake devices error handler will be
-   * runned.
+   * This function can return 'fake' client connection, which will not resolve
+   * to device name (even after 'info' call on master device).  For every
+   * command enqued to fake devices error handler will be runned.
    *
-   ***************************************************************/
+   * @param deviceName Device which will be looked on.
+   *
+   * @return Rts2Conn pointer to device connection.
+   *
+   * @callgraph
+   */
   Rts2Conn *
   getConnection (char *deviceName);
 
@@ -551,7 +569,8 @@ public:
    *
    * @callergraph
    */
-  bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
+  bool
+  commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

@@ -327,16 +327,6 @@ public:
   int sendPriorityInfo ();
 
   /**
-   * Sends information about client.
-   *
-   * As client does not have any additional informations, -1 is returned.
-   */
-  virtual int sendInfo (Rts2Conn * conn)
-  {
-    return -1;
-  }
-
-  /**
    * Que command on connection.
    * Commands are send over TCP/IP ordered, and next command is send only after
    * last command was received.  The optional notBop parameter describe at
