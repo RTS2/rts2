@@ -354,7 +354,7 @@ Rts2NMonitor::init ()
   msgwindow = new Rts2NMsgWindow ();
   windowStack.push_back (deviceList);
   statusWindow = new Rts2NStatusWindow (comWindow, this);
-  daemonWindow = new Rts2NCentraldWindow (this);
+  daemonWindow = new Rts2NDeviceWindow (getCentraldConn ());
 
   // init layout
   daemonLayout =
