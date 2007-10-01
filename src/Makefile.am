@@ -11,7 +11,6 @@ SUBDIRS = \
 	writers \
 	camd	\
 	teld \
-	monitor \
 	focusc \
 	serverd \
 	plan \
@@ -20,6 +19,7 @@ SUBDIRS = \
 	bckimages \
 	sql \
 	db \
+	monitor \
 	soap \
 	sensord \
 	indi \

@@ -203,20 +203,16 @@ Rts2NMonitor::changeListConnection ()
   Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
   if (conn)
     {
-      if (conn->getName () == std::string (""))
-	{
-	  delete daemonWindow;
-	  daemonWindow = new Rts2NCentraldWindow (this);
-	  daemonLayout->setLayoutA (daemonWindow);
-	}
-      else
-	{
-	  delete daemonWindow;
-	  daemonWindow = new Rts2NDeviceWindow (conn);
-	  daemonLayout->setLayoutA (daemonWindow);
-	}
-      resize ();
+      delete daemonWindow;
+      daemonWindow = new Rts2NDeviceWindow (conn);
     }
+  else
+    {
+      delete daemonWindow;
+      daemonWindow = new Rts2NCentraldWindow (this);
+    }
+  daemonLayout->setLayoutA (daemonWindow);
+  resize ();
 }
 
 Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):

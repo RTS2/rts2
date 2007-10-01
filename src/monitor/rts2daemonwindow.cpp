@@ -20,7 +20,8 @@ Rts2NSelWindow::~Rts2NSelWindow (void)
   delwin (scrolpad);
 }
 
-keyRet Rts2NSelWindow::injectKey (int key)
+keyRet
+Rts2NSelWindow::injectKey (int key)
 {
   switch (key)
     {
@@ -133,11 +134,13 @@ Rts2NDevListWindow::draw ()
       Rts2Conn *conn = *iter;
       const char *name = conn->getName ();
       if (*name == '\0')
-	wprintw (scrolpad, "status\n");
+	wprintw (scrolpad, "centrald\n");
       else
 	wprintw (scrolpad, "%s\n", conn->getName ());
       maxrow++;
     }
+  wprintw (scrolpad, "status");
+  maxrow++;
   refresh ();
 }
 
