@@ -204,7 +204,10 @@ Rts2NMonitor::changeListConnection ()
   if (conn)
     {
       delete daemonWindow;
-      daemonWindow = new Rts2NDeviceWindow (conn);
+      if (conn == getCentraldConn ())
+	daemonWindow = new Rts2NDeviceCentralWindow (conn);
+      else
+	daemonWindow = new Rts2NDeviceWindow (conn);
     }
   else
     {
@@ -354,7 +357,7 @@ Rts2NMonitor::init ()
   msgwindow = new Rts2NMsgWindow ();
   windowStack.push_back (deviceList);
   statusWindow = new Rts2NStatusWindow (comWindow, this);
-  daemonWindow = new Rts2NDeviceWindow (getCentraldConn ());
+  daemonWindow = new Rts2NDeviceCentralWindow (getCentraldConn ());
 
   // init layout
   daemonLayout =
