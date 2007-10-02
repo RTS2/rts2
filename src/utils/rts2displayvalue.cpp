@@ -1,5 +1,6 @@
 #include "rts2displayvalue.h"
 #include <sstream>
+#include <iomanip>
 
 std::string
 getDisplayValue (Rts2Value * value)
@@ -19,6 +20,9 @@ getDisplayValue (Rts2Value * value)
       break;
     case RTS2_DT_DEG_DIST:
       _os << LibnovaDegDist (value->getValueDouble ());
+      break;
+    case RTS2_DT_PERCENTS:
+      _os << std::setw (6) << value->getValueDouble () << "%";
       break;
     default:
       tmp_val = value->getDisplayValue ();

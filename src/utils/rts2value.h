@@ -46,6 +46,7 @@
 #define RTS2_DT_DEC		0x00020000
 #define RTS2_DT_DEGREES		0x00030000
 #define RTS2_DT_DEG_DIST	0x00040000
+#define RTS2_DT_PERCENTS	0x00050000
 
 #define RTS2_VALUE_INFOTIME	"infotime"
 
@@ -291,6 +292,7 @@ public:
   {
     Rts2ValueDouble::setValueDouble (in_value);
   }
+  void setValueJD (double JD);
   virtual const char *getDisplayValue ();
 };
 
@@ -350,6 +352,7 @@ public:
   {
     return getValueInteger () == 2 ? true : false;
   }
+  virtual const char *getDisplayValue ();
 };
 
 /**
@@ -397,6 +400,11 @@ public:
   }
   void copySel (Rts2ValueSelection * sel);
 
+  /**
+   * Adds selection value.
+   *
+   * @param sel_name String identifing new selection value.
+   */
   void addSelVal (char *sel_name)
   {
     addSelVal (std::string (sel_name));

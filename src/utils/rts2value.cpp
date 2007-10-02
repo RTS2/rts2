@@ -5,6 +5,8 @@
 #include "rts2block.h"
 #include "rts2value.h"
 
+#include <libnova/libnova.h>
+
 Rts2Value::Rts2Value (std::string in_val_name)
 {
   valueName = in_val_name;
@@ -265,6 +267,14 @@ Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
+void
+Rts2ValueTime::setValueJD (double JD)
+{
+  time_t t;
+  ln_get_timet_from_julian (JD, &t);
+  setValueTime (t);
+}
+
 const char *
 Rts2ValueTime::getDisplayValue ()
 {
@@ -369,6 +379,12 @@ Rts2ValueBool::setValueString (const char *in_value)
   else
     return -1;
   return 0;
+}
+
+const char *
+Rts2ValueBool::getDisplayValue ()
+{
+  return getValueBool ()? "true" : "false";
 }
 
 Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueInteger
