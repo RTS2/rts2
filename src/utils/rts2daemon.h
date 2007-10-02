@@ -236,6 +236,7 @@ public:
   virtual int info ();
   int info (Rts2Conn * conn);
   int infoAll ();
+  void constInfoAll ();
   int sendInfo (Rts2Conn * conn);
   int sendMetaInfo (Rts2Conn * conn);
 

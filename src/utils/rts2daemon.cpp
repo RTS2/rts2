@@ -792,6 +792,17 @@ Rts2Daemon::infoAll ()
   return 0;
 }
 
+void
+Rts2Daemon::constInfoAll ()
+{
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      Rts2Conn *conn = *iter;
+      sendBaseInfo (conn);
+    }
+}
+
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
