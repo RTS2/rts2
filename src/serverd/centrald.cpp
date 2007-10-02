@@ -529,8 +529,6 @@ Rts2Centrald::reloadConfig ()
   observerLng->setValueDouble (observer->lng);
   observerLat->setValueDouble (observer->lat);
 
-  double t_h = nan ("f");
-
   nightHorizon->setValueDouble (config->
 				getDouble ("observatory", "night_horizon"));
   dayHorizon->setValueDouble (config->
