@@ -29,6 +29,7 @@ Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow
    LINES - 25)
 {
   connection = in_connection;
+  connection->resetInfoTime ();
   valueBox = NULL;
   valueBegins = 20;
   draw ();
@@ -202,10 +203,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -262,7 +263,8 @@ Rts2NDeviceWindow::refresh ()
     valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool
+Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
@@ -316,9 +318,35 @@ Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
 }
 
 void
+Rts2NDeviceCentralWindow::printValues ()
+{
+  printValue (nightStart);
+  printValue (nightStop);
+
+  printValue (sunAlt);
+  printValue (sunAz);
+
+  printValue (sunRise);
+  printValue (sunSet);
+
+  printValue (moonAlt);
+  printValue (moonAz);
+  printValue (moonPhase);
+
+  printValue (moonRise);
+  printValue (moonSet);
+}
+
+void
 Rts2NDeviceCentralWindow::drawValuesList ()
 {
   Rts2NDeviceWindow::drawValuesList ();
+
+  if (!getConnection ()->infoTimeChanged ())
+    {
+      printValues ();
+      return;
+    }
 
   Rts2Value *valLng = getConnection ()->getValue ("longitude");
   Rts2Value *valLat = getConnection ()->getValue ("latitude");
@@ -368,9 +396,6 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 	  nightStop->setValueTime (ev_time);
 	}
 
-      printValue (nightStart);
-      printValue (nightStop);
-
       ln_get_solar_equ_coords (JD, &pos);
       ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), &observer, 1700,
 		       JD, &parallax);
@@ -381,16 +406,10 @@ Rts2NDeviceCentralWindow::drawValuesList ()
       sunAlt->setValueDouble (hrz.alt);
       sunAz->setValueDouble (hrz.az);
 
-      printValue (sunAlt);
-      printValue (sunAz);
-
       ln_get_solar_rst (JD, &observer, &rst);
 
       sunRise->setValueDouble (timetFromJD (rst.rise));
       sunSet->setValueDouble (timetFromJD (rst.set));
-
-      printValue (sunRise);
-      printValue (sunSet);
 
       ln_get_lunar_equ_coords (JD, &pos);
       ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), &observer, 1700,
@@ -404,16 +423,11 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 
       moonPhase->setValueDouble (ln_get_lunar_phase (JD) / 1.8);
 
-      printValue (moonAlt);
-      printValue (moonAz);
-      printValue (moonPhase);
-
       ln_get_lunar_rst (JD, &observer, &rst);
 
       moonRise->setValueDouble (timetFromJD (rst.rise));
       moonSet->setValueDouble (timetFromJD (rst.set));
 
-      printValue (moonRise);
-      printValue (moonSet);
     }
+  printValues ();
 }

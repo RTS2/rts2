@@ -92,6 +92,8 @@ private:
 
   Rts2ValueTime *moonRise;
   Rts2ValueTime *moonSet;
+
+  void printValues ();
 protected:
     virtual void drawValuesList ();
 
