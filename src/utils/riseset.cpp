@@ -20,7 +20,8 @@
 
 int
 next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
-	   struct ln_rst_time *rst_naut, int *sun_rs)
+	   struct ln_rst_time *rst_naut, int *sun_rs, double night_horizon,
+	   double day_horizon)
 {
   double t_jd = jd - 1;
   int sun_naut;
@@ -30,10 +31,6 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
   rst_naut->rise = rst_naut->transit = rst_naut->set = 0;
   rst->rise = rst->transit = rst->set = 0;
   *sun_rs = 0;
-  double night_horizon = -10;
-  config->getDouble ("observatory", "night_horizon", night_horizon);
-  double day_horizon = 0;
-  config->getDouble ("observatory", "day_horizon", day_horizon);
   // find first next day, on which nautic sunset is occuring
   do
     {
@@ -67,7 +64,8 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
 
 int
 next_event (struct ln_lnlat_posn *observer, time_t * start_time,
-	    int *curr_type, int *type, time_t * ev_time)
+	    int *curr_type, int *type, time_t * ev_time, double night_horizon,
+	    double day_horizon)
 {
   double jd_time = ln_get_julian_from_timet (start_time);
   struct ln_rst_time rst, rst_naut;
@@ -79,7 +77,8 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
   Rts2Config *config;
   config = Rts2Config::instance ();
 
-  next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs);
+  next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs, night_horizon,
+	     day_horizon);
 
   // jd_time < rst_naut.rise && jd_time < rst_naut.transit && jd_time < rst_naut.set
   if (rst_naut.rise <= rst_naut.set)

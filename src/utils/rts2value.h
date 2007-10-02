@@ -292,7 +292,6 @@ public:
   {
     Rts2ValueDouble::setValueDouble (in_value);
   }
-  void setValueJD (double JD);
   virtual const char *getDisplayValue ();
 };
 

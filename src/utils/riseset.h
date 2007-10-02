@@ -10,7 +10,8 @@ extern "C"
 #endif
 
   int next_event (struct ln_lnlat_posn *observer, time_t * start_time,
-		  int *curr_type, int *type, time_t * ev_time);
+		  int *curr_type, int *type, time_t * ev_time,
+		  double night_horizon, double day_horizon);
 
 #ifdef __cplusplus
 };

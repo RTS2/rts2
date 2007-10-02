@@ -267,14 +267,6 @@ Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
   rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-void
-Rts2ValueTime::setValueJD (double JD)
-{
-  time_t t;
-  ln_get_timet_from_julian (JD, &t);
-  setValueTime (t);
-}
-
 const char *
 Rts2ValueTime::getDisplayValue ()
 {
