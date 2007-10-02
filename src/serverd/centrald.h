@@ -94,6 +94,10 @@ private:
   int connNum;
 
   Rts2ValueTime *nextStateChange;
+  Rts2ValueSelection *nextState;
+  Rts2ValueDouble *observerLng;
+  Rts2ValueDouble *observerLat;
+
 protected:
   /**
    * @param new_state	new state, if -1 -> 3

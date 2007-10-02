@@ -453,6 +453,18 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
 
   createValue (nextStateChange, "next_state_change",
 	       "time of next state change", false);
+  createValue (nextState, "next_state", "next server state", false);
+  nextState->addSelVal ("day");
+  nextState->addSelVal ("evening");
+  nextState->addSelVal ("dusk");
+  nextState->addSelVal ("night");
+  nextState->addSelVal ("dawn");
+  nextState->addSelVal ("morning");
+
+  createValue (observerLng, "longitude", "observatory longitude", false,
+	       RTS2_DT_DEGREES);
+  createValue (observerLat, "latitude", "observatory latitude", false,
+	       RTS2_DT_DEC);
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
@@ -508,6 +520,9 @@ Rts2Centrald::reloadConfig ()
   openLog ();
 
   observer = config->getObserver ();
+
+  observerLng->setValueDouble (observer->lng);
+  observerLat->setValueDouble (observer->lat);
 
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
@@ -579,6 +594,7 @@ Rts2Centrald::initValues ()
 	      &next_event_time);
 
   nextStateChange->setValueTime (next_event_time);
+  nextState->setValueInteger (next_event_type);
 
   return Rts2Daemon::initValues ();
 }
@@ -691,6 +707,7 @@ Rts2Centrald::idle ()
   if (getState () != call_state)
     {
       nextStateChange->setValueTime (next_event_time);
+      nextState->setValueInteger (next_event_type);
 
       old_current_state = getState ();
       if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
