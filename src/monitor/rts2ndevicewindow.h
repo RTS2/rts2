@@ -47,9 +47,19 @@ protected:
   }
 
   /**
-   * Prints out one value.
+   * Prints value name and value. Adds newline, so next value will be printed
+   * on next line.
    *
-   * @param value	Value.
+   * @param name Name of variable.
+   * @param value Value of variable.
+   */
+  void printValue (const char *name, const char *value);
+
+  /**
+   * Prints out one value. Adds newline, so next value will be
+   * printed on next line.
+   *
+   * @param value  Value to print.
    */
   void printValue (Rts2Value * value);
 

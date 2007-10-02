@@ -55,6 +55,12 @@ Rts2NDeviceWindow::printState ()
 }
 
 void
+Rts2NDeviceWindow::printValue (const char *name, const char *value)
+{
+  wprintw (getWriteWindow (), "%-20s %30s\n", name, value);
+}
+
+void
 Rts2NDeviceWindow::printValue (Rts2Value * value)
 {
   // customize value display
@@ -101,8 +107,7 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
       _os << LibnovaDateDouble (value->
 				getValueDouble ()) << " (" <<
 	TimeDiff (now, value->getValueDouble ()) << ")";
-      wprintw (getWriteWindow (), "%-20s %30s\n",
-	       value->getName ().c_str (), _os.str ().c_str ());
+      printValue (value->getName ().c_str (), _os.str ().c_str ());
       break;
     case RTS2_VALUE_SELECTION:
       wprintw (getWriteWindow (), "%-20s %5i %24s\n",
@@ -111,8 +116,8 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	       ((Rts2ValueSelection *) value)->getSelVal ().c_str ());
       break;
     default:
-      wprintw (getWriteWindow (), "%-20s %30s\n",
-	       value->getName ().c_str (), getDisplayValue (value).c_str ());
+      printValue (value->getName ().c_str (),
+		  getDisplayValue (value).c_str ());
     }
 }
 
@@ -203,10 +208,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -263,8 +268,7 @@ Rts2NDeviceWindow::refresh ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
