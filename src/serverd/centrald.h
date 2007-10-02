@@ -98,6 +98,9 @@ private:
   Rts2ValueDouble *observerLng;
   Rts2ValueDouble *observerLat;
 
+  Rts2ValueDouble *nightHorizon;
+  Rts2ValueDouble *dayHorizon;
+
 protected:
   /**
    * @param new_state	new state, if -1 -> 3

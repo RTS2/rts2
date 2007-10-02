@@ -461,10 +461,15 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   nextState->addSelVal ("dawn");
   nextState->addSelVal ("morning");
 
-  createValue (observerLng, "longitude", "observatory longitude", false,
-	       RTS2_DT_DEGREES);
-  createValue (observerLat, "latitude", "observatory latitude", false,
-	       RTS2_DT_DEC);
+  createConstValue (observerLng, "longitude", "observatory longitude", false,
+		    RTS2_DT_DEGREES);
+  createConstValue (observerLat, "latitude", "observatory latitude", false,
+		    RTS2_DT_DEC);
+
+  createConstValue (nightHorizon, "night_horizon",
+		    "observatory night horizon", false, RTS2_DT_DEC);
+  createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
+		    false, RTS2_DT_DEC);
 
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
@@ -524,10 +529,19 @@ Rts2Centrald::reloadConfig ()
   observerLng->setValueDouble (observer->lng);
   observerLat->setValueDouble (observer->lat);
 
+  double t_h = nan ("f");
+
+  nightHorizon->setValueDouble (config->
+				getDouble ("observatory", "night_horizon"));
+  dayHorizon->setValueDouble (config->
+			      getDouble ("observatory", "day_horizon"));
+
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
 
   next_event_time = 0;
+
+  constInfoAll ();
 
   return 0;
 }
