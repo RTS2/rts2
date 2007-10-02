@@ -47,6 +47,8 @@ private:
   int verbose;			// verbosity level
   double lng;
   double lat;
+  double night_horizon;
+  double day_horizon;
   time_t currTime;
   double JD;
   void printAltTable (std::ostream & _os, double jd_start, double h_start,
@@ -140,7 +142,7 @@ Rts2StateApp::printDayStates (std::ostream & _os)
     {
       if (next_event
 	  (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
-	   &next_type, &ev_time))
+	   &next_type, &ev_time, night_horizon, day_horizon))
 	{
 	  std::cerr << "Error getting next type" << std::endl;
 	  return;
@@ -241,6 +243,13 @@ Rts2StateApp::init ()
   if (lat != -1000)
     config->getObserver ()->lat = lat;
 
+  night_horizon = -10;
+  Rts2Config::instance ()->getDouble ("observatory", "night_horizon",
+				      night_horizon);
+  day_horizon = 0;
+  Rts2Config::instance ()->getDouble ("observatory", "day_horizon",
+				      day_horizon);
+
   return 0;
 }
 
@@ -265,7 +274,9 @@ Rts2StateApp::run ()
       << LibnovaPos (obs)
       << " Time: " << LibnovaDate (&currTime) << std::endl;
 
-  if (next_event (obs, &currTime, &curr_type, &next_type, &ev_time))
+  if (next_event
+      (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon,
+       day_horizon))
     {
       std::cerr << "Error getting next type" << std::endl;
       return -1;

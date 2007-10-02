@@ -529,10 +529,13 @@ Rts2Centrald::reloadConfig ()
   observerLng->setValueDouble (observer->lng);
   observerLat->setValueDouble (observer->lat);
 
-  nightHorizon->setValueDouble (config->
-				getDouble ("observatory", "night_horizon"));
-  dayHorizon->setValueDouble (config->
-			      getDouble ("observatory", "day_horizon"));
+  double t_h = -10;
+  config->getDouble ("observatory", "night_horizon", t_h);
+  nightHorizon->setValueDouble (t_h);
+
+  t_h = 0;
+  config->getDouble ("observatory", "day_horizon", t_h);
+  dayHorizon->setValueDouble (t_h);
 
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
@@ -603,7 +606,8 @@ Rts2Centrald::initValues ()
   curr_time = time (NULL);
 
   next_event (observer, &curr_time, &call_state, &next_event_type,
-	      &next_event_time);
+	      &next_event_time, nightHorizon->getValueDouble (),
+	      dayHorizon->getValueDouble ());
 
   nextStateChange->setValueTime (next_event_time);
   nextState->setValueInteger (next_event_type);
@@ -714,7 +718,8 @@ Rts2Centrald::idle ()
     return Rts2Daemon::idle ();
 
   next_event (observer, &curr_time, &call_state, &next_event_type,
-	      &next_event_time);
+	      &next_event_time, nightHorizon->getValueDouble (),
+	      dayHorizon->getValueDouble ());
 
   if (getState () != call_state)
     {
