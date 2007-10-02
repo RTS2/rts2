@@ -11,7 +11,8 @@ extern "C"
 
   int next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 		  int *curr_type, int *type, time_t * ev_time,
-		  double night_horizon, double day_horizon);
+		  double night_horizon, double day_horizon, int in_eve_time,
+		  int in_mor_time);
 
 #ifdef __cplusplus
 };

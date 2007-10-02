@@ -49,6 +49,10 @@ private:
   double lat;
   double night_horizon;
   double day_horizon;
+
+  int eve_time;
+  int mor_time;
+
   time_t currTime;
   double JD;
   void printAltTable (std::ostream & _os, double jd_start, double h_start,
@@ -142,7 +146,8 @@ Rts2StateApp::printDayStates (std::ostream & _os)
     {
       if (next_event
 	  (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
-	   &next_type, &ev_time, night_horizon, day_horizon))
+	   &next_type, &ev_time, night_horizon, day_horizon, eve_time,
+	   mor_time))
 	{
 	  std::cerr << "Error getting next type" << std::endl;
 	  return;
@@ -250,6 +255,13 @@ Rts2StateApp::init ()
   Rts2Config::instance ()->getDouble ("observatory", "day_horizon",
 				      day_horizon);
 
+  eve_time = 7200;
+  Rts2Config::instance ()->getInteger ("observatory", "evening_time",
+				       eve_time);
+  mor_time = 1800;
+  Rts2Config::instance ()->getInteger ("observatory", "morning_time",
+				       mor_time);
+
   return 0;
 }
 
@@ -276,7 +288,7 @@ Rts2StateApp::run ()
 
   if (next_event
       (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon,
-       day_horizon))
+       day_horizon, eve_time, mor_time))
     {
       std::cerr << "Error getting next type" << std::endl;
       return -1;

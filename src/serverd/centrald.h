@@ -101,6 +101,9 @@ private:
   Rts2ValueDouble *nightHorizon;
   Rts2ValueDouble *dayHorizon;
 
+  Rts2ValueInteger *eveningTime;
+  Rts2ValueInteger *morningTime;
+
 protected:
   /**
    * @param new_state	new state, if -1 -> 3

@@ -202,10 +202,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -262,8 +262,7 @@ Rts2NDeviceWindow::refresh ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
@@ -341,9 +340,14 @@ Rts2NDeviceCentralWindow::drawValuesList ()
       Rts2Value *valNightHorizon =
 	getConnection ()->getValue ("night_horizon");
       Rts2Value *valDayHorizon = getConnection ()->getValue ("day_horizon");
+
+      Rts2Value *valEveningTime = getConnection ()->getValue ("evening_time");
+      Rts2Value *valMorningTime = getConnection ()->getValue ("morning_time");
+
       if (isnan (nightStart->getValueDouble ()) && valNightHorizon
 	  && valDayHorizon && !isnan (valNightHorizon->getValueDouble ())
-	  && !isnan (valDayHorizon->getValueDouble ()))
+	  && !isnan (valDayHorizon->getValueDouble ()) && valEveningTime
+	  && valMorningTime)
 	{
 	  int curr_type = -1, next_type = -1;
 	  time_t t_start;
@@ -355,7 +359,9 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 	      t_start_t = ev_time + 1;
 	      next_event (&observer, &t_start_t, &curr_type, &next_type,
 			  &ev_time, valNightHorizon->getValueDouble (),
-			  valDayHorizon->getValueDouble ());
+			  valDayHorizon->getValueDouble (),
+			  valEveningTime->getValueInteger (),
+			  valMorningTime->getValueInteger ());
 	    }
 	  while (curr_type != SERVERD_NIGHT);
 	  nightStart->setValueTime (t_start);

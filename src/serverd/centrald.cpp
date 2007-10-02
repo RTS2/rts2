@@ -471,6 +471,11 @@ Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
   createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
 		    false, RTS2_DT_DEC);
 
+  createConstValue (eveningTime, "evening_time",
+		    "time needed to cool down cameras", false);
+  createConstValue (morningTime, "morning_time",
+		    "time needed to heat up cameras", false);
+
   addOption (OPT_CONFIG, "config", 1, "configuration file");
   addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
   addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
@@ -536,6 +541,14 @@ Rts2Centrald::reloadConfig ()
   t_h = 0;
   config->getDouble ("observatory", "day_horizon", t_h);
   dayHorizon->setValueDouble (t_h);
+
+  int t_t = 7200;
+  config->getInteger ("observatory", "evening_time", t_t);
+  eveningTime->setValueInteger (t_t);
+
+  t_t = 1800;
+  config->getInteger ("observatory", "morning_time", t_t);
+  morningTime->setValueInteger (t_t);
 
   morning_off = config->getBoolean ("centrald", "morning_off");
   morning_standby = config->getBoolean ("centrald", "morning_standby");
@@ -607,7 +620,8 @@ Rts2Centrald::initValues ()
 
   next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time, nightHorizon->getValueDouble (),
-	      dayHorizon->getValueDouble ());
+	      dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
+	      morningTime->getValueInteger ());
 
   nextStateChange->setValueTime (next_event_time);
   nextState->setValueInteger (next_event_type);
@@ -719,7 +733,8 @@ Rts2Centrald::idle ()
 
   next_event (observer, &curr_time, &call_state, &next_event_type,
 	      &next_event_time, nightHorizon->getValueDouble (),
-	      dayHorizon->getValueDouble ());
+	      dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
+	      morningTime->getValueInteger ());
 
   if (getState () != call_state)
     {

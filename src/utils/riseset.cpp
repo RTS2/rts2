@@ -16,7 +16,6 @@
 
 #include "riseset.h"
 #include "status.h"
-#include "rts2config.h"
 
 int
 next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
@@ -25,8 +24,6 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
 {
   double t_jd = jd - 1;
   int sun_naut;
-  Rts2Config *config;
-  config = Rts2Config::instance ();
 
   rst_naut->rise = rst_naut->transit = rst_naut->set = 0;
   rst->rise = rst->transit = rst->set = 0;
@@ -65,17 +62,12 @@ next_naut (double jd, struct ln_lnlat_posn *observer, struct ln_rst_time *rst,
 int
 next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	    int *curr_type, int *type, time_t * ev_time, double night_horizon,
-	    double day_horizon)
+	    double day_horizon, int in_eve_time, int in_mor_time)
 {
   double jd_time = ln_get_julian_from_timet (start_time);
   struct ln_rst_time rst, rst_naut;
 
   int sun_rs;
-  double eve_time = 7200;	// seconds
-  double mor_time = 1800;	// seconds
-
-  Rts2Config *config;
-  config = Rts2Config::instance ();
 
   next_naut (jd_time, observer, &rst, &rst_naut, &sun_rs, night_horizon,
 	     day_horizon);
@@ -93,10 +85,8 @@ next_event (struct ln_lnlat_posn *observer, time_t * start_time,
 	{
 	  if (rst.set < rst.rise)
 	    {
-	      config->getDouble ("observatory", "evening_time", eve_time);
-	      eve_time /= 86400.0;	// get from config, convert to days 
-	      config->getDouble ("observatory", "morning_time", mor_time);
-	      mor_time /= 86400.0;
+	      double eve_time = ((double) in_eve_time) / 86400.0;
+	      double mor_time = ((double) in_mor_time) / 86400.0;
 	      if (jd_time > rst.set - eve_time)
 		{
 		  *curr_type = SERVERD_EVENING;
