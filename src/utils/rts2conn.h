@@ -127,6 +127,11 @@ private:
   Rts2ValueVector values;
 
   /**
+   * Time when last information was received.
+   */
+  double last_info_time;
+
+  /**
    * Holds info_time variable.
    */
   Rts2ValueTime *info_time;
@@ -534,7 +539,28 @@ public:
   {
     return values.size ();
   }
+
+  /**
+   * Return time when values were valid.
+   *
+   * @return Time (as double seconds from 1-1-1970).
+   */
   double getInfoTime ();
+
+  /**
+   * Check if info time has changed.
+   *
+   * @return True if info time changed from last check.
+   */
+  bool infoTimeChanged ();
+
+  /**
+   * Set last info time to 0, so when infoTimeChanged will be called, it will return true.
+   */
+  void resetInfoTime ()
+  {
+    last_info_time = 0;
+  }
 
   /**
    * Returns true if we hold any value with given write type.

@@ -32,8 +32,9 @@ Rts2Block (in_argc, in_argv)
 
   state = 0;
 
-  createValue (info_time, RTS2_VALUE_INFOTIME,
-	       "time when this informations were correct", false);
+  info_time =
+    new Rts2ValueTime (RTS2_VALUE_INFOTIME,
+		       "time when this informations were correct", false);
 
   idleInfoInterval = -1;
   nextIdleInfo = 0;
@@ -50,6 +51,7 @@ Rts2Daemon::~Rts2Daemon (void)
     close (listen_sock);
   if (lockf)
     close (lockf);
+  delete info_time;
 }
 
 int
@@ -815,7 +817,7 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
       if (ret)
 	return ret;
     }
-  return 0;
+  return info_time->sendInfo (conn);
 }
 
 void

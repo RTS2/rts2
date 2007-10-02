@@ -38,6 +38,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 
   commandInProgress = false;
   info_time = NULL;
+  last_info_time = 0;
 
   time (&lastGoodSend);
   lastData = lastGoodSend;
@@ -1642,4 +1643,17 @@ Rts2Conn::getInfoTime ()
   if (info_time)
     return info_time->getValueDouble ();
   return getMaster ()->getNow ();
+}
+
+bool Rts2Conn::infoTimeChanged ()
+{
+  if (info_time)
+    {
+      if (last_info_time != info_time->getValueDouble ())
+	{
+	  last_info_time = info_time->getValueDouble ();
+	  return true;
+	}
+    }
+  return false;
 }
