@@ -110,8 +110,11 @@ public:
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class Rts2ConfigRaw:
-public std::vector < Rts2ConfigSection * >
+class
+  Rts2ConfigRaw:
+  public
+  std::vector <
+Rts2ConfigSection * >
 {
 private:
   void
@@ -124,7 +127,8 @@ private:
   Rts2ConfigValue *
   getValue (const char *section, const char *param);
 protected:
-  std::ifstream * configStream;
+  std::ifstream *
+    configStream;
   virtual void
   getSpecialValues ()
   {
@@ -140,9 +144,12 @@ public:
   getInteger (const char *section, const char *param, int &value);
   int
   getFloat (const char *section, const char *param, float &value);
+  double
+  getDouble (const char *section, const char *param);
   int
   getDouble (const char *section, const char *param, double &value);
-  bool getBoolean (const char *section, const char *param, bool def = false);
+  bool
+  getBoolean (const char *section, const char *param, bool def = false);
 };
 
 #endif /*! __RTS2_CONFIG_RAW__ */

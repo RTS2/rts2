@@ -7,6 +7,7 @@
 #endif /* DEBUG_EXTRA */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -319,6 +320,18 @@ Rts2ConfigRaw::getFloat (const char *section, const char *param, float &value)
       return -1;
     }
   return 0;
+}
+
+double
+Rts2ConfigRaw::getDouble (const char *section, const char *param)
+{
+  std::string valbuf;
+  char *retv;
+  int ret;
+  ret = getString (section, param, valbuf);
+  if (ret)
+    return nan ("f");
+  return strtod (valbuf.c_str (), &retv);
 }
 
 int
