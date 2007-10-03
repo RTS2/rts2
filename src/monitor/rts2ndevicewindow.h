@@ -37,8 +37,8 @@ private:
   /** Index from which start value box */
   int valueBegins;
 
-  double now;
 protected:
+  double now;
   struct timeval tvNow;
 
   Rts2Conn *getConnection ()
@@ -80,6 +80,32 @@ public:
 };
 
 /**
+ * Helper class, which holds informations about future state changes.
+ */
+class FutureStateChange
+{
+private:
+  int state;
+  double endTime;
+public:
+    FutureStateChange (int in_state, double in_endTime)
+  {
+    state = in_state;
+    endTime = in_endTime;
+  }
+
+  int getState ()
+  {
+    return state;
+  }
+
+  double getEndTime ()
+  {
+    return endTime;
+  }
+};
+
+/**
  * Class used to display extra centrald values, which are calculated on client side.
  */
 class Rts2NDeviceCentralWindow:public Rts2NDeviceWindow
@@ -102,6 +128,8 @@ private:
 
   Rts2ValueTime *moonRise;
   Rts2ValueTime *moonSet;
+
+    std::vector < FutureStateChange > stateChanges;
 
   void printValues ();
 protected:

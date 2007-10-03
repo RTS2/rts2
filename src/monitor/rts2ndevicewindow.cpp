@@ -208,10 +208,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet
-Rts2NDeviceWindow::injectKey (int key)
+keyRet Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet ret;
+  keyRet
+    ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -268,7 +268,8 @@ Rts2NDeviceWindow::refresh ()
     valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool
+Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
@@ -324,6 +325,27 @@ Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
 void
 Rts2NDeviceCentralWindow::printValues ()
 {
+  // print statusChanges
+
+  Rts2Value *nextState = getConnection ()->getValue ("next_state");
+  if (nextState && nextState->getValueType () == RTS2_VALUE_SELECTION)
+    {
+      for (std::vector < FutureStateChange >::iterator iter =
+	   stateChanges.begin (); iter != stateChanges.end (); iter++)
+	{
+	  std::ostringstream _os;
+	  _os << LibnovaDateDouble ((*iter).
+				    getEndTime ()) << " (" << TimeDiff (now,
+									(*iter).
+									getEndTime
+									()) <<
+	    ")";
+	  printValue (((Rts2ValueSelection *) nextState)->
+		      getSelVal ((*iter).getState ()).c_str (),
+		      _os.str ().c_str ());
+	}
+    }
+
   printValue (nightStart);
   printValue (nightStop);
 
@@ -376,16 +398,19 @@ Rts2NDeviceCentralWindow::drawValuesList ()
       Rts2Value *valEveningTime = getConnection ()->getValue ("evening_time");
       Rts2Value *valMorningTime = getConnection ()->getValue ("morning_time");
 
-      if (isnan (nightStart->getValueDouble ()) && valNightHorizon
-	  && valDayHorizon && !isnan (valNightHorizon->getValueDouble ())
+      if (valNightHorizon && valDayHorizon
+	  && !isnan (valNightHorizon->getValueDouble ())
 	  && !isnan (valDayHorizon->getValueDouble ()) && valEveningTime
 	  && valMorningTime)
 	{
+	  stateChanges.clear ();
+
 	  int curr_type = -1, next_type = -1;
 	  time_t t_start;
 	  time_t t_start_t;
 	  time_t ev_time = tvNow.tv_sec;
-	  do
+
+	  while (ev_time < (tvNow.tv_sec + 86400))
 	    {
 	      t_start = ev_time;
 	      t_start_t = ev_time + 1;
@@ -394,10 +419,16 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 			  valDayHorizon->getValueDouble (),
 			  valEveningTime->getValueInteger (),
 			  valMorningTime->getValueInteger ());
+	      if (curr_type == SERVERD_DUSK)
+		{
+		  nightStart->setValueTime (ev_time);
+		}
+	      if (curr_type == SERVERD_NIGHT)
+		{
+		  nightStop->setValueTime (ev_time);
+		}
+	      stateChanges.push_back (FutureStateChange (curr_type, t_start));
 	    }
-	  while (curr_type != SERVERD_NIGHT);
-	  nightStart->setValueTime (t_start);
-	  nightStop->setValueTime (ev_time);
 	}
 
       ln_get_solar_equ_coords (JD, &pos);
