@@ -250,7 +250,8 @@ int
 PossibleDarks::dbDark ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-    VARCHAR d_camera_name[DEVICE_NAME_SIZE];
+    // cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
+    VARCHAR d_camera_name[50];
     float d_img_exposure;
     int d_dark_count;
   EXEC SQL END DECLARE SECTION;
@@ -594,7 +595,8 @@ CalibrationTarget::load ()
     double db_tar_dec;
     int db_tar_id;
     char db_type_id;
-    VARCHAR db_tar_name[TARGET_NAME_LEN];
+    // cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+    VARCHAR db_tar_name[150];
   EXEC SQL END DECLARE SECTION;
 
   double JD = ln_get_julian_from_sys ();

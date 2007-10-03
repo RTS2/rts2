@@ -64,7 +64,8 @@ int
 Rts2Obs::load ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-    VARCHAR db_tar_name[TARGET_NAME_LEN];
+    // cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+    VARCHAR db_tar_name[150];
     int db_tar_id;
     char db_tar_type;
     int db_obs_id = obs_id;

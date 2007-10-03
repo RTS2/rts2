@@ -41,8 +41,10 @@ Rts2ImgSet::load (std::string in_where)
     VARCHAR d_img_filter[3];
     float d_img_alt;
     float d_img_az;
-    VARCHAR d_camera_name[DEVICE_NAME_SIZE];
-    VARCHAR d_mount_name[DEVICE_NAME_SIZE];
+    // cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
+    VARCHAR d_camera_name[50];
+    // cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
+    VARCHAR d_mount_name[50];
     bool d_delete_flag;
     int d_process_bitfield;
     double d_img_err_ra;

@@ -50,7 +50,8 @@ Rts2TarUser::load ()
     char db_type_id = type_id;
 
     int db_usr_id;
-    VARCHAR db_usr_email[USER_EMAIL_LEN];
+    // cannot use USER_EMAIL_LEN, as it does not work with some ecpg versions
+    VARCHAR db_usr_email[200];
     int db_event_mask;
   EXEC SQL END DECLARE SECTION;
 

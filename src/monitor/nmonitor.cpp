@@ -83,6 +83,7 @@ Rts2NMonitor::processOption (int in_opt)
   return 0;
 }
 
+#ifdef HAVE_PGSQL_SOAP
 int
 Rts2NMonitor::processArgs (const char *arg)
 {
@@ -101,6 +102,7 @@ Rts2NMonitor::processArgs (const char *arg)
 
   return 0;
 }
+#endif /* HAVE_PGSQL_SOAP */
 
 void
 Rts2NMonitor::addSelectSocks (fd_set * read_set)
@@ -258,7 +260,9 @@ Rts2Client (in_argc, in_argv)
   old_lines = 0;
   old_cols = 0;
 
+#ifdef HAVE_PGSQL_SOAP
   tarArg = NULL;
+#endif /* HAVE_PGSQL_SOAP */
 
   addOption ('c', NULL, 0, "don't use colors");
 }
@@ -277,7 +281,9 @@ Rts2NMonitor::~Rts2NMonitor (void)
 
   delete masterLayout;
 
+#ifdef HAVE_PGSQL_SOAP
   delete tarArg;
+#endif /* HAVE_PGSQL_SOAP */
 }
 
 int
@@ -412,6 +418,7 @@ Rts2DevClient *
 Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
   Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
+#ifdef HAVE_PGSQL_SOAP
   if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
     {
       struct ln_equ_posn tarPos;
@@ -421,6 +428,7 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 		    Rts2CommandMove (this, (Rts2DevClientTelescope *) retC,
 				     tarPos.ra, tarPos.dec));
     }
+#endif /* HAVE_PGSQL_SOAP */
   return retC;
 }
 

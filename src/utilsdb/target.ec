@@ -346,7 +346,8 @@ int
 Target::loadTarget (int in_tar_id)
 {
   EXEC SQL BEGIN DECLARE SECTION;
-    VARCHAR d_tar_name[TARGET_NAME_LEN];
+    // cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
+    VARCHAR d_tar_name[150];
     float d_tar_priority;
     int d_tar_priority_ind;
     float d_tar_bonus;

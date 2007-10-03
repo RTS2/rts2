@@ -12,7 +12,8 @@ Rts2ObsSet::load (std::string in_where)
   EXEC SQL BEGIN DECLARE SECTION;
     char *stmp_c;
 
-    VARCHAR db_tar_name[TARGET_NAME_LEN];
+    // cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+    VARCHAR db_tar_name[150];
     int db_tar_id;
     int db_obs_id;
     double db_obs_ra;

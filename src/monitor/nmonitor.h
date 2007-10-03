@@ -27,7 +27,9 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
 
+#ifdef HAVE_PGSQL_SOAP
 #include "../db/simbad/rts2simbadtarget.h"
+#endif /* HAVE_PGSQL_SOAP */
 
 #include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
@@ -121,11 +123,15 @@ private:
 
   void sendCommand ();
 
+#ifdef HAVE_PGSQL_SOAP
   Rts2SimbadTarget *tarArg;
+#endif /* HAVE_PGSQL_SOAP */
 
 protected:
   virtual int processOption (int in_opt);
+#ifdef HAVE_PGSQL_SOAP
   virtual int processArgs (const char *arg);
+#endif /* HAVE_PGSQL_SOAP */
 
   virtual void addSelectSocks (fd_set * read_set);
   virtual void selectSuccess (fd_set * read_set);

@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.7.0, petr@kubanek.net)
+AC_INIT(rts2, 0.7.1, petr@kubanek.net)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -444,6 +444,14 @@ AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 # Check for gsoap
 AC_GSOAP
 
+AH_TEMPLATE([HAVE_PGSQL_SOAP],[Whenever PGSQL and SOAP libraries are installed])
+
+AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap == xyes )
+
+if test x$psql = xyes -a x$gsoap == xyes ; then 
+  AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
+fi
+
 AC_CHECK_HEADERS
 
 # Checks for library functions.
@@ -478,6 +486,8 @@ AC_OUTPUT([Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
+	   doc/Makefile
+	   doc/doxyfile
 	   src/dome/Makefile
 	   src/indi/Makefile
 	   src/filterd/Makefile
