@@ -594,11 +594,6 @@ Rts2Centrald::init ()
   if (ret)
     return ret;
 
-  Rts2Config *config = Rts2Config::instance ();
-
-  setState (config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF,
-	    "init");
-
   centraldConnRunning ();
   ret = checkLockFile (LOCK_PREFIX "centrald");
   if (ret)
@@ -622,6 +617,17 @@ Rts2Centrald::initValues ()
 	      &next_event_time, nightHorizon->getValueDouble (),
 	      dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
 	      morningTime->getValueInteger ());
+
+  Rts2Config *config = Rts2Config::instance ();
+
+  if (config->getBoolean ("centrald", "reboot_on"))
+    {
+      setState (call_state, "switched on centrald reboot");
+    }
+  else
+    {
+      setState (SERVERD_OFF, "switched on centrald reboot");
+    }
 
   nextStateChange->setValueTime (next_event_time);
   nextState->setValueInteger (next_event_type);
