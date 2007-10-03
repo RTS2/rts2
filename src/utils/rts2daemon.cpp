@@ -834,11 +834,14 @@ Rts2Daemon::sendValueAll (Rts2Value * value)
 int
 Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
+  int ret;
+  ret = info_time->sendMetaInfo (conn);
+  if (ret < 0)
+    return -1;
   for (Rts2ValueVector::iterator iter = constValues.begin ();
        iter != constValues.end (); iter++)
     {
       Rts2Value *val = *iter;
-      int ret;
       ret = val->sendMetaInfo (conn);
       if (ret < 0)
 	{
@@ -849,7 +852,6 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
        iter != values.end (); iter++)
     {
       Rts2Value *val = (*iter)->getValue ();
-      int ret;
       ret = val->sendMetaInfo (conn);
       if (ret < 0)
 	{
