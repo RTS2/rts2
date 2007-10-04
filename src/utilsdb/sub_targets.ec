@@ -1477,8 +1477,8 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
   _os
     << InfoVal<const char *> ("NAME", swiftName)
     << InfoVal<int> ("SwiftFOW ID", swiftId)
-    << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
-<< InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+    << InfoVal<TimeDiff> ("FROM", TimeDiff (swiftTimeStart))
+<< InfoVal<TimeDiff> ("TO", TimeDiff (swiftTimeEnd))
     << InfoVal<double> ("ROLL", swiftRoll)
     << std::endl;
 
