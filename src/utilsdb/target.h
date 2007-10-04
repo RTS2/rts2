@@ -700,6 +700,11 @@ private:
   double swiftOnBonus;
   char *swiftName;
   double swiftRoll;
+
+  char *swiftLastTarName;
+  int swiftLastTar;
+  time_t swiftLastTarTimeStart;
+  time_t swiftLastTarTimeEnd;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetSwiftFOV (void);

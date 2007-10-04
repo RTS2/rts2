@@ -1179,12 +1179,16 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
   oldSwiftId = -1;
   swiftName = NULL;
   target_name = new char[200];
+
+  swiftLastTar = -1;
+  swiftLastTarName = NULL;
 }
 
 
 TargetSwiftFOV::~TargetSwiftFOV (void)
 {
   delete[] swiftName;
+  delete[] swiftLastTarName;
 }
 
 
@@ -1212,6 +1216,9 @@ TargetSwiftFOV::load ()
   ret = Target::load();
   if (ret)
     return ret;
+
+  delete[] swiftLastTarName;
+  swiftLastTarName = NULL;
 
   EXEC SQL DECLARE find_swift_poiniting CURSOR FOR
     SELECT
@@ -1242,6 +1249,15 @@ TargetSwiftFOV::load ()
         :d_swift_name;
     if (sqlca.sqlcode)
       break;
+    // fill last values
+    if (swiftLastTarName == NULL)
+    {
+      swiftLastTar = d_swift_id;
+      swiftLastTarName = new char[d_swift_name.len + 1];
+      strcpy (swiftLastTarName, d_swift_name.arr);
+      swiftLastTarTimeStart = d_swift_time;
+      swiftLastTarTimeEnd = d_swift_time + (int) d_swift_obstime;
+    }
     // check for our altitude..
     testEqu.ra = d_swift_ra;
     testEqu.dec = d_swift_dec;
@@ -1463,6 +1479,16 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
     << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
     << InfoVal<double> ("ROLL", swiftRoll)
     << std::endl;
+
+  if (swiftLastTarName != NULL)
+  {
+    _os
+      << InfoVal<const char *> ("LAST NAME", swiftLastTarName)
+      << InfoVal<int> ("LAST ID", swiftLastTar)
+      << InfoVal<Timestamp> ("LAST START", Timestamp (swiftLastTarTimeStart))
+      << InfoVal<Timestamp> ("LAST END", Timestamp (swiftLastTarTimeEnd))
+      << std::endl;
+  }
 }
 
 
