@@ -151,7 +151,8 @@ Rts2Selector::checkTargetBonus ()
       tar_bonus = 0,
       tar_bonus_time = NULL
     WHERE
-      tar_bonus_time < now ();
+        tar_bonus_time < now ()
+      AND tar_bonus_time is not NULL;
   EXEC SQL COMMIT;
 }
 
