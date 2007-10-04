@@ -705,6 +705,7 @@ private:
   int swiftLastTar;
   time_t swiftLastTarTimeStart;
   time_t swiftLastTarTimeEnd;
+  struct ln_equ_posn swiftLastTarPos;
 public:
     TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs);
     virtual ~ TargetSwiftFOV (void);

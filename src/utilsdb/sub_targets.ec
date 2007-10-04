@@ -1257,6 +1257,8 @@ TargetSwiftFOV::load ()
       strcpy (swiftLastTarName, d_swift_name.arr);
       swiftLastTarTimeStart = d_swift_time;
       swiftLastTarTimeEnd = d_swift_time + (int) d_swift_obstime;
+      swiftLastTarPos.ra = d_swift_ra;
+      swiftLastTarPos.dec = d_swift_dec;
     }
     // check for our altitude..
     testEqu.ra = d_swift_ra;
@@ -1476,17 +1478,23 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
     << InfoVal<const char *> ("NAME", swiftName)
     << InfoVal<int> ("SwiftFOW ID", swiftId)
     << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
-    << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+<< InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
     << InfoVal<double> ("ROLL", swiftRoll)
     << std::endl;
 
   if (swiftLastTarName != NULL)
   {
+    struct ln_hrz_posn lastHrz;
+    ln_get_hrz_from_equ (&swiftLastTarPos, observer, JD, &lastHrz);
     _os
       << InfoVal<const char *> ("LAST NAME", swiftLastTarName)
       << InfoVal<int> ("LAST ID", swiftLastTar)
       << InfoVal<Timestamp> ("LAST START", Timestamp (swiftLastTarTimeStart))
       << InfoVal<Timestamp> ("LAST END", Timestamp (swiftLastTarTimeEnd))
+      << InfoVal<LibnovaRaJ2000> ("LAST RA", LibnovaRaJ2000 (swiftLastTarPos.ra))
+      << InfoVal<LibnovaDecJ2000> ("LAST DEC", LibnovaDecJ2000 (swiftLastTarPos.dec))
+      << InfoVal<LibnovaDeg90> ("LAST ALT", LibnovaDeg90 (lastHrz.alt))
+      << InfoVal<LibnovaDeg360> ("LAST AZ", LibnovaDeg360 (lastHrz.az))
       << std::endl;
   }
 }
