@@ -551,7 +551,7 @@ Target::save (bool overwrite, int tar_id)
         tar_comment = :db_tar_comment,
         tar_priority = :db_tar_priority,
         tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
-        tar_bonus_time = abstime(:db_tar_bonus_time :db_tar_bonus_time),
+        tar_bonus_time = abstime(:db_tar_bonus_time :db_tar_bonus_time_ind),
         tar_enabled = :db_tar_enabled
       WHERE
         tar_id = :db_tar_id;
