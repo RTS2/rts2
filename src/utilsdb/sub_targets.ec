@@ -1474,11 +1474,14 @@ void
 TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
 {
   Target::printExtra (_os, JD);
+  double now = timetFromJD (JD);
   _os
     << InfoVal<const char *> ("NAME", swiftName)
     << InfoVal<int> ("SwiftFOW ID", swiftId)
-    << InfoVal<TimeDiff> ("FROM", TimeDiff (swiftTimeStart))
-<< InfoVal<TimeDiff> ("TO", TimeDiff (swiftTimeEnd))
+    << InfoVal<Timestamp> ("FROM", Timestamp (swiftTimeStart))
+    << InfoVal<TimeDiff> ("FROM DIFF", TimeDiff (now, swiftTimeStart))
+    << InfoVal<Timestamp> ("TO", Timestamp (swiftTimeEnd))
+    << InfoVal<TimeDiff> ("TO DIFF", TimeDiff (now, swiftTimeEnd))
     << InfoVal<double> ("ROLL", swiftRoll)
     << std::endl;
 
@@ -1489,8 +1492,10 @@ TargetSwiftFOV::printExtra (std::ostream &_os, double JD)
     _os
       << InfoVal<const char *> ("LAST NAME", swiftLastTarName)
       << InfoVal<int> ("LAST ID", swiftLastTar)
-      << InfoVal<TimeDiff> ("LAST START", TimeDiff (swiftLastTarTimeStart))
-      << InfoVal<TimeDiff> ("LAST END", TimeDiff (swiftLastTarTimeEnd))
+      << InfoVal<Timestamp> ("LAST START", Timestamp (swiftLastTarTimeStart))
+      << InfoVal<TimeDiff> ("LAST START DIFF", TimeDiff (now, swiftLastTarTimeStart))
+      << InfoVal<Timestamp> ("LAST END", Timestamp (swiftLastTarTimeEnd))
+      << InfoVal<TimeDiff> ("LAST END DIFF", TimeDiff (now, swiftLastTarTimeEnd))
       << InfoVal<LibnovaRaJ2000> ("LAST RA", LibnovaRaJ2000 (swiftLastTarPos.ra))
       << InfoVal<LibnovaDecJ2000> ("LAST DEC", LibnovaDecJ2000 (swiftLastTarPos.dec))
       << InfoVal<LibnovaDeg90> ("LAST ALT", LibnovaDeg90 (lastHrz.alt))
