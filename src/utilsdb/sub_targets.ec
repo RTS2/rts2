@@ -1433,7 +1433,7 @@ TargetSwiftFOV::getBonus (double JD)
     return swiftOnBonus;
   if (now > swiftTimeStart - 300 && now < swiftTimeEnd + 300)
     return swiftOnBonus / 2.0;
-  return 1;
+  return getTargetPriority ();
 }
 
 
