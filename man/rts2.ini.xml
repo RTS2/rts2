@@ -578,6 +578,39 @@
       </variablelist>
     </refsect2>
 
+    <refsect2>
+      <title>swiftfov</title>
+        <para>
+	  Provides parameters for Swift target - target 10.
+        </para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>min_horizon</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Minimal height above horizon for target to be considered.
+	      Defaults to 0. A Swift FOV with heigh lover then the min_horizon
+	      parameter will not be considered for observation.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>soft_horizon</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Targets with altitude bellow soft_horizon will be assigned
+	      altitude of soft_horizon. This is interesting for widefield
+	      systems, which would like to follow Swift which center is bellow
+	      horizon. Defaults to the "min_horizon" parameter.
+            </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>
