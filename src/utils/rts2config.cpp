@@ -48,6 +48,12 @@ Rts2Config::getSpecialValues ()
   getFloat ("swift", "min_horizon", swift_min_horizon);
   swift_soft_horizon = swift_min_horizon;
   getFloat ("swift", "soft_horizon", swift_soft_horizon);
+
+  // GRD section
+  grbd_follow_fake = true;
+  getBoolean ("grbd", "follow_fake", grbd_follow_fake);
+  grbd_validity = 0;
+  getInteger ("grbd", "validity", grbd_validity);
 }
 
 Rts2Config::Rts2Config ():Rts2ConfigRaw ()
