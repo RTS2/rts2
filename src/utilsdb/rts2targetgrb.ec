@@ -1,3 +1,22 @@
+/**
+ * Class for GRB target.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2targetgrb.h"
 
 #include "../utils/rts2config.h"
@@ -110,6 +129,10 @@ TargetGRB::load ()
   else
     errorbox = db_grb_errorbox;
   shouldUpdate = 0;
+
+  // check if we are still valid target
+  checkValidity ();
+
   return ConstTarget::load ();
 }
 
@@ -147,6 +170,28 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
   return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }
 
+double
+TargetGRB::getPostSec ()
+{
+  time_t now;
+  time (&now);
+  return now - (time_t) grbDate;
+}
+
+void
+TargetGRB::checkValidity ()
+{
+  if (isGrb () == false && Rts2Config::instance()->grbdFollowFake () == false)
+  {
+    logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB" << sendLog;
+    setTargetEnabled (false);
+  }
+  if (Rts2Config::instance()->grbdValidity () > 0 && getPostSec () > Rts2Config::instance()->grbdValidity ())
+  {
+    logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is not valid GRB" << sendLog;
+    setTargetEnabled (false);
+  }
+}
 
 int
 TargetGRB::getDBScript (const char *camera_name, std::string &script)
@@ -158,21 +203,15 @@ TargetGRB::getDBScript (const char *camera_name, std::string &script)
     VARCHAR d_camera_name[8];
   EXEC SQL END DECLARE SECTION;
 
-  time_t now;
   int ret;
-  int post_sec;
 
   // use target script, if such exist..
   ret = ConstTarget::getDBScript (camera_name, script);
   if (!ret)
     return ret;
 
-  time (&now);
-
   d_camera_name.len = strlen (camera_name);
   strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
-
-  post_sec = now - (time_t) grbDate;
 
   // grb_script_script is NOT NULL
 
@@ -194,7 +233,7 @@ TargetGRB::getDBScript (const char *camera_name, std::string &script)
         :sc_script;
     if (sqlca.sqlcode)
       break;
-    if (post_sec < d_post_sec || d_pos_ind < 0)
+    if (getPostSec () < d_post_sec || d_pos_ind < 0)
     {
       sc_script.arr[sc_script.len] = '\0';
       script = std::string (sc_script.arr);
@@ -426,7 +465,7 @@ TargetGRB::printExtra (std::ostream &_os, double JD)
   _os
     << getSatelite () << std::endl
     << InfoVal<int> ("TYPE", gcnPacketType)
-    << (grb_is_grb ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
+    << (isGrb () ? "IS GRB flag is set" : "not GRB - is grb flag is not set") << std::endl
     << InfoVal<Timestamp> ("GRB DATE", Timestamp (grbDate))
     << InfoVal<Timestamp> ("GCN FIRST PACKET", Timestamp (firstPacket))
     << InfoVal<TimeDiff> ("GRB->GCN", TimeDiff (grbDate, firstPacket))
