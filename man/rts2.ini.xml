@@ -437,6 +437,20 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>follow_fake</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      True if GRB marked by GCN are labelled as fake, e.g. originating
+	      from know source variability, should be followed. Defaults to
+	      true. This option should be left true while system is in testing
+	      phase, as fake grb provide good tests of the system, but once it
+	      reach maturity, it is wise to switch follow_fake to false.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>validity</option>
 	  </term>
 	  <listitem>
