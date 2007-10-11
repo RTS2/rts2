@@ -546,8 +546,7 @@ Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
   else
     {
       *new_command =
-	new Rts2CommandChangeValue (client, valName, op, operand,
-				    NO_EXPOSURE_NO_MOVE);
+	new Rts2CommandChangeValue (client, valName, op, operand);
     }
   getDevice (new_device);
   return 0;

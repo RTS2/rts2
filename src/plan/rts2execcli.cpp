@@ -34,7 +34,8 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
       nextCommand ();
       break;
     case EVENT_COMMAND_FAILED:
-      deleteScript ();
+      nextCommand ();
+      //deleteScript ();
       break;
     }
   Rts2DevScript::postEvent (event);
@@ -191,10 +192,10 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
   minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 }
 
-imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
+imageProceRes
+Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-  int
-    ret;
+  int ret;
   // try processing in script..
   if (getScript () && !queCurrentImage)
     {
