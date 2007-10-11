@@ -282,7 +282,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 	return ret;
       actual.
 	setRa (ln_range_degrees
-	       (mean_sidereal - (aux0 - ra_offset) / ra_step));
+	       (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
     }
   if (!isnan (dec_step))
     {
