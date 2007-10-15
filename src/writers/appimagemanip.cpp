@@ -62,7 +62,7 @@ protected:
 
   virtual void help ();
 public:
-    Rts2AppImageManip (int in_argc, char **in_argv);
+    Rts2AppImageManip (int in_argc, char **in_argv, bool in_readOnly);
 };
 
 void
@@ -202,6 +202,7 @@ Rts2AppImageManip::processOption (int in_opt)
       break;
     case OPT_ADDDATE:
       operation |= IMAGEOP_ADDDATE;
+      readOnly = false;
       break;
 #ifdef HAVE_PGSQL
     case 'i':
@@ -220,6 +221,7 @@ Rts2AppImageManip::processOption (int in_opt)
       break;
     case 'w':
       operation |= IMAGEOP_CREATEWCS;
+      readOnly = false;
       break;
     case 'o':
       off_sep = index (optarg, ':');
@@ -301,11 +303,12 @@ Rts2AppImageManip::help ()
     << std::endl;
 }
 
-Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv):
+Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv,
+				      bool in_readOnly):
 #ifdef HAVE_PGSQL
-Rts2AppDbImage (in_argc, in_argv)
+Rts2AppDbImage (in_argc, in_argv, in_readOnly)
 #else
-Rts2AppImage (in_argc, in_argv)
+Rts2AppImage (in_argc, in_argv, in_readOnly)
 #endif
 {
   operation = IMAGEOP_NOOP;
@@ -331,6 +334,6 @@ Rts2AppImage (in_argc, in_argv)
 int
 main (int argc, char **argv)
 {
-  Rts2AppImageManip app = Rts2AppImageManip (argc, argv);
+  Rts2AppImageManip app = Rts2AppImageManip (argc, argv, true);
   return app.run ();
 }

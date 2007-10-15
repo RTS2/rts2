@@ -61,7 +61,7 @@ Rts2Image (currTarget, camera, expStart)
 }
 
 
-Rts2ImageDb::Rts2ImageDb (const char *in_filename, bool verbose) : Rts2Image (in_filename, verbose)
+Rts2ImageDb::Rts2ImageDb (const char *in_filename, bool verbose, bool readOnly) : Rts2Image (in_filename, verbose, readOnly)
 {
   initDbImage ();
 }

@@ -10,13 +10,16 @@ class Rts2AppDbImage:public Rts2AppDb
 {
 protected:
   std::list < const char *>imageNames;
+  bool readOnly;
   virtual int processImage (Rts2ImageDb * image)
   {
     return 0;
   }
 public:
-    Rts2AppDbImage (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+    Rts2AppDbImage (int in_argc, char **in_argv,
+		    bool in_readOnly):Rts2AppDb (in_argc, in_argv)
   {
+    readOnly = in_readOnly;
   }
   virtual ~ Rts2AppDbImage (void)
   {
@@ -36,7 +39,7 @@ public:
 	 img_iter++)
       {
 	const char *an_name = *img_iter;
-	Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false);
+	Rts2ImageDb *imagedb = new Rts2ImageDb (an_name, false, readOnly);
 	Rts2ImageDb *image = getValueImageType (imagedb);
 	ret = processImage (image);
 	delete image;
