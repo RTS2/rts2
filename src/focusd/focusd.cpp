@@ -225,8 +225,7 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
   focusTimeout += timeout;
 }
 
-bool
-Rts2DevFocuser::isAtStartPosition ()
+bool Rts2DevFocuser::isAtStartPosition ()
 {
   return false;
 }
@@ -246,7 +245,7 @@ Rts2DevFocuser::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
   if (old_value == focPos)
     {
-      return setTo (NULL, new_value->getValueInteger ())? -2 : 0;
+      return setTo (NULL, new_value->getValueInteger ())? -2 : 1;
     }
   return Rts2Device::setValue (old_value, new_value);
 }

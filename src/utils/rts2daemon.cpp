@@ -691,11 +691,12 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
     }
   // call hook
   ret = setValue (old_value, new_value);
-  if (ret)
+  if (ret < 0)
     goto err;
 
   // set value after sucessfull return..
-  old_value->setFromValue (new_value);
+  if (ret == 0)
+    old_value->setFromValue (new_value);
 
   // if in previous step we put ignore load, reset it now
   if (old_cond_value->ignoreLoad ())

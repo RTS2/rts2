@@ -64,7 +64,7 @@ private:
 
   /**
    * Holds vector of values which are indendet to be saved. There are two methods, saveValues and loadValues.
-   * saveValues is called from \see setValue(Rts2Value,char,Rts2ValueVector) before first value value is changed. Once values are saved,
+   * saveValues is called from setValue(Rts2Value,char,Rts2ValueVector) before first value value is changed. Once values are saved,
    * values_were_saved turns to true and we don't call saveValues before loadValues is called.
    * loadValues reset values_were_saved flag, load all values from savedValues
    */
@@ -178,7 +178,9 @@ protected:
    * 	accesed th with pointer stored in object.
    * @param  new_value	New value.
    *
-   * @return 0 when value can be set, -1 when value set was qued and -2 on an error.
+   * @return 1 when value can be set, but it will take longer time to perform,
+   * 0 when value can be se imedietly, -1 when value set was qued and -2 on an
+   * error.
    */
   virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
