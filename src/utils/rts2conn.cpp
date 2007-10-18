@@ -1,3 +1,22 @@
+/* 
+ * Connection class.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2block.h"
 #include "rts2centralstate.h"
 #include "rts2conn.h"
@@ -1007,7 +1026,8 @@ Rts2Conn::sendCommand ()
       switch (runningCommand->getStatusCallProgress ())
 	{
 	case 0:
-	  statInfoCall = new Rts2CommandStatusInfo (getMaster (), this);
+	  statInfoCall =
+	    new Rts2CommandStatusInfo (getMaster (), this, false);
 	  c_conn = getMaster ()->getCentraldConn ();
 	  // we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
 	  if (c_conn == this)
@@ -1401,6 +1421,19 @@ Rts2Conn::paramNextInteger (int *num)
 }
 
 int
+Rts2Conn::paramNextLong (long int *num)
+{
+  char *str_num;
+  char *num_end;
+  if (paramNextString (&str_num))
+    return -1;
+  *num = strtol (str_num, &num_end, 10);
+  if (*num_end)
+    return -1;
+  return 0;
+}
+
+int
 Rts2Conn::paramNextSizeT (size_t * num)
 {
   char *str_num;
@@ -1527,6 +1560,11 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
       newValue =
 	new Rts2ValueSelection (m_name, desc, rts2Type & RTS2_VALUE_FITS,
 				rts2Type);
+      break;
+    case RTS2_VALUE_LONGINT:
+      newValue =
+	new Rts2ValueLong (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+			   rts2Type);
       break;
     case RTS2_VALUE_DOUBLE_STAT:
       newValue =

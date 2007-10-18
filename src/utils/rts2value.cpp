@@ -1,3 +1,22 @@
+/* 
+ * Various value classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <sstream>
@@ -484,4 +503,63 @@ Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
     {
       addSelVal (*iter);
     }
+}
+
+Rts2ValueLong::Rts2ValueLong (std::string in_val_name):
+Rts2Value (in_val_name)
+{
+  value = 0;
+  rts2Type |= RTS2_VALUE_LONGINT;
+}
+
+Rts2ValueLong::Rts2ValueLong (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
+Rts2Value (in_val_name, in_description, writeToFits, flags)
+{
+  value = 0;
+  rts2Type |= RTS2_VALUE_LONGINT;
+}
+
+
+const char *
+Rts2ValueLong::getValue ()
+{
+  sprintf (buf, "%li", value);
+  return buf;
+}
+
+int
+Rts2ValueLong::setValue (Rts2Conn * connection)
+{
+  long int new_value;
+  if (connection->paramNextLong (&new_value) || !connection->paramEnd ())
+    return -2;
+  value = new_value;
+  return 0;
+}
+
+int
+Rts2ValueLong::setValueString (const char *in_value)
+{
+  return setValueLong (atol (in_value));
+}
+
+int
+Rts2ValueLong::doOpValue (char op, Rts2Value * old_value)
+{
+  switch (op)
+    {
+    case '+':
+      return setValueLong (old_value->getValueLong () + getValueLong ());
+    case '-':
+      return setValueLong (old_value->getValueLong () - getValueLong ());
+    case '=':
+      return setValueLong (getValueLong ());
+    }
+  return Rts2Value::doOpValue (op, old_value);
+}
+
+void
+Rts2ValueLong::setFromValue (Rts2Value * newValue)
+{
+  setValueLong (newValue->getValueLong ());
 }

@@ -1,3 +1,22 @@
+/* 
+ * Various value classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_VALUE__
 #define __RTS2_VALUE__
 
@@ -7,6 +26,10 @@
 #include <time.h>
 #include <vector>
 #include <iostream>
+
+/**
+ * @file Various value classes.
+ */
 
 /** Value is string (character array). */
 #define RTS2_VALUE_STRING	0x00000001
@@ -23,6 +46,8 @@
 #define RTS2_VALUE_BOOL		0x00000006
 /** Value is selection value. Ussuall represnetation is integer number, but string representation is provided as well. */
 #define RTS2_VALUE_SELECTION	0x00000007
+/** Value is long integer value. */
+#define RTS2_VALUE_LONGINT	0x00000008
 
 /** Value have statistics nature (include mean, average, min and max values and number of measurements taken for value). */
 #define RTS2_VALUE_DOUBLE_STAT	0x00000014
@@ -151,6 +176,10 @@ public:
   {
     return -1;
   }
+  virtual long int getValueLong ()
+  {
+    return getValueInteger ();
+  }
 
   std::string getDescription ()
   {
@@ -278,6 +307,12 @@ public:
     if (isnan (value))
       return -1;
     return (int) value;
+  }
+  virtual long int getValueLong ()
+  {
+    if (isnan (value))
+      return -1;
+    return (long int) value;
   }
   virtual void setFromValue (Rts2Value * newValue);
 };
@@ -444,6 +479,58 @@ public:
   }
 
   void duplicateSelVals (Rts2ValueSelection * otherValue);
+};
+
+/**
+ * Class for long int value.
+ */
+class Rts2ValueLong:public Rts2Value
+{
+private:
+  long int value;
+public:
+    Rts2ValueLong (std::string in_val_name);
+    Rts2ValueLong (std::string in_val_name, std::string in_description,
+		   bool writeToFits = true, int32_t flags = 0);
+  virtual int setValue (Rts2Conn * connection);
+  virtual int setValueString (const char *in_value);
+  virtual int doOpValue (char op, Rts2Value * old_value);
+  /**
+   * Returns -1 on error
+   *
+   */
+  virtual int setValueInteger (int in_value)
+  {
+    value = in_value;
+    return 0;
+  }
+  virtual const char *getValue ();
+  virtual double getValueDouble ()
+  {
+    return value;
+  }
+  virtual float getValueFloat ()
+  {
+    return value;
+  }
+  virtual int getValueInteger ()
+  {
+    return (int) value;
+  }
+  virtual long int getValueLong ()
+  {
+    return value;
+  }
+  int inc ()
+  {
+    return value++;
+  }
+  int setValueLong (long in_value)
+  {
+    value = in_value;
+    return 0;
+  }
+  virtual void setFromValue (Rts2Value * newValue);
 };
 
 #endif /* !__RTS2_VALUE__ */
