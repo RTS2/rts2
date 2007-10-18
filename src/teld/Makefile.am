@@ -1,6 +1,6 @@
 SUBDIRS = model
 
-bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-teld-d50
 
 noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h
 
@@ -15,6 +15,8 @@ rts2_teld_dummy_SOURCES = dummy.cpp
 rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
+
+rts2_teld_d50_SOURCES = d50.cpp
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
