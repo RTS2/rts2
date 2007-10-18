@@ -1,6 +1,13 @@
 0.7.1
 ====
  * new blocking operations API
+ * futher customatization, more configuration
+
+2007-10-18
+ * D50 mount driver
+
+2007-10-16
+ * blocking API device_status command
 
 2007-09-10
  * Values moved from Rts2DevClient to Rts2Conn
