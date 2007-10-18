@@ -1,3 +1,22 @@
+/* 
+ * Driver for Gemini systems.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #define DEBUG_EXTRA
 /*! 
  * @file Driver file for LOSMANDY Gemini telescope systems 
@@ -99,6 +118,18 @@ private:
   char *geminiConfig;
   int tel_desc;
   // utility I/O functions
+  /**
+   * Reads some data directly from port.
+   * 
+   * Log all flow as LOG_DEBUG to logStream
+   * 
+   * @exception EIO when there aren't data from port
+   * 
+   * @param buf 		buffer to read in data
+   * @param count 	how much data will be readed
+   * 
+   * @return -1 on failure, otherwise number of read data 
+   */
   int tel_read (char *buf, int count);
   int tel_read_hash (char *buf, int count);
   int tel_write (char *buf, int count);
@@ -266,19 +297,6 @@ public:
   virtual int stopGuideAll ();
   virtual int getFlip ();
 };
-
-/*! 
- * Reads some data directly from port.
- * 
- * Log all flow as LOG_DEBUG to logStream
- * 
- * @exception EIO when there aren't data from port
- * 
- * @param buf 		buffer to read in data
- * @param count 	how much data will be readed
- * 
- * @return -1 on failure, otherwise number of read data 
- */
 
 int
 Rts2DevTelescopeGemini::tel_read (char *buf, int count)
@@ -2282,11 +2300,12 @@ Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
 }
 
 #ifdef L4_GUIDE
-bool
-Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
-  int ret;
-  char guiding;
+  int
+    ret;
+  char
+    guiding;
   ret = tel_write_read (":Gv#", 4, &guiding, 1);
   if (guiding == 'G')
     guideDetected = true;
