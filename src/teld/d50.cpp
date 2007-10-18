@@ -42,14 +42,33 @@ private:
   int tel_write (const char command, long value);
 
   int tel_write_unit (int unit, const char *command);
+  int tel_write_unit (int unit, const char command, long value);
 
-  int tel_read (const char command, long &value, int &proc);
+  int tel_read (const char command, Rts2ValueLong * value,
+		Rts2ValueInteger * proc);
+  int tel_read_unit (int unit, const char command, Rts2ValueLong * value,
+		     Rts2ValueInteger * proc);
+
+  Rts2ValueBool *motorRa;
+  Rts2ValueBool *motorDec;
+
+  Rts2ValueBool *wormRa;
+  Rts2ValueBool *wormDec;
+
+  Rts2ValueLong *unitRa;
+  Rts2ValueLong *unitDec;
+
+  Rts2ValueInteger *procRa;
+  Rts2ValueInteger *procDec;
+
 protected:
     virtual int processOption (int in_opt);
   virtual int isMoving ();
   virtual int isParking ();
 
   virtual void updateTrack ();
+
+  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 public:
     Rts2DevTelD50 (int in_argc, char **in_argv);
     virtual ~ Rts2DevTelD50 (void);
@@ -125,14 +144,26 @@ Rts2DevTelD50::tel_write_unit (int unit, const char *command)
 {
   int ret;
   // switch unit
-  ret = tel_write ('x', 1);
+  ret = tel_write ('x', unit);
   if (ret)
     return ret;
   return tel_write (command);
 }
 
 int
-Rts2DevTelD50::tel_read (const char command, long &value, int &proc)
+Rts2DevTelD50::tel_write_unit (int unit, const char command, long value)
+{
+  int ret;
+  // switch unit
+  ret = tel_write ('x', unit);
+  if (ret)
+    return ret;
+  return tel_write (command, value);
+}
+
+int
+Rts2DevTelD50::tel_read (const char command, Rts2ValueLong * value,
+			 Rts2ValueInteger * proc)
 {
   int ret;
   static char buf[15];
@@ -156,13 +187,28 @@ Rts2DevTelD50::tel_read (const char command, long &value, int &proc)
 #ifdef DEBUG_EXTRA
   logStream (MESSAGE_DEBUG) << "Readed from D50 " << buf << sendLog;
 #endif
-  ret = sscanf (buf, "#%li&%i\x0d\x0a", &value, &proc);
+  long int vall;
+  int ppro;
+  ret = sscanf (buf, "#%li&%i\x0d\x0a", &vall, &ppro);
   if (ret != 2)
     {
       logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
       return -1;
     }
+  value->setValueLong (vall);
+  proc->setValueInteger (ppro);
   return 0;
+}
+
+int
+Rts2DevTelD50::tel_read_unit (int unit, const char command,
+			      Rts2ValueLong * value, Rts2ValueInteger * proc)
+{
+  int ret;
+  ret = tel_write ('x', unit);
+  if (ret)
+    return ret;
+  return tel_read (command, value, proc);
 }
 
 Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
@@ -172,6 +218,22 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv):Rts2DevTelescope (in_
 
   device_name = "/dev/ttyS0";
   addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
+
+  createValue (motorRa, "ra_motor", "power of RA motor", false);
+  motorRa->setValueBool (false);
+  createValue (motorDec, "dec_motor", "power of DEC motor", false);
+  motorDec->setValueBool (false);
+
+  createValue (wormRa, "ra_worm", "RA worm drive", false);
+  wormRa->setValueBool (true);
+  createValue (wormDec, "dec_worm", "DEC worm drive", false);
+  wormDec->setValueBool (false);
+
+  createValue (unitRa, "axis_ra", "RA axis raw counts", false);
+  createValue (unitDec, "axis_dec", "DEC axis raw counts", false);
+
+  createValue (procRa, "proc_ra", "state for RA processor", false);
+  createValue (procDec, "proc_dec", "state for DEC processor", false);
 
   // apply all correction for paramount
   corrections->
@@ -258,8 +320,60 @@ Rts2DevTelD50::updateTrack ()
 }
 
 int
+Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+  if (old_value == motorRa)
+    {
+      return tel_write_unit (1,
+			     ((Rts2ValueBool *) new_value)->
+			     getValueBool ()? "E\x0d" : "D\x0d") ==
+	0 ? 0 : -2;
+    }
+  if (old_value == motorDec)
+    {
+      return tel_write_unit (2,
+			     ((Rts2ValueBool *) new_value)->
+			     getValueBool ()? "E\x0d" : "D\x0d") ==
+	0 ? 0 : -2;
+    }
+  if (old_value == wormRa)
+    {
+      return tel_write_unit (1,
+			     ((Rts2ValueBool *) new_value)->
+			     getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+
+    }
+  if (old_value == wormDec)
+    {
+      return tel_write_unit (2,
+			     ((Rts2ValueBool *) new_value)->
+			     getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+
+    }
+  if (old_value == unitRa)
+    {
+      return tel_write_unit (1, 't',
+			     new_value->getValueLong ()) == 0 ? 0 : -2;
+    }
+  if (old_value == unitDec)
+    {
+      return tel_write_unit (2, 't',
+			     new_value->getValueLong ()) == 0 ? 0 : -2;
+    }
+  return Rts2DevTelescope::setValue (old_value, new_value);
+}
+
+int
 Rts2DevTelD50::info ()
 {
+  int ret;
+  ret = tel_read_unit (1, 'u', unitRa, procRa);
+  if (ret)
+    return ret;
+  ret = tel_read_unit (2, 'u', unitDec, procDec);
+  if (ret)
+    return ret;
+
   return Rts2DevTelescope::info ();
 }
 
