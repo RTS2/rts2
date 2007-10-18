@@ -22,7 +22,8 @@ protected:
   }
 public:
     Rts2MoveArchive (int in_argc, char **in_argv):Rts2AppDbImage (in_argc,
-								  in_argv)
+								  in_argv,
+								  true)
   {
     Rts2Config *config;
     config = Rts2Config::instance ();
