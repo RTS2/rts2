@@ -192,7 +192,7 @@ Rts2App::processOption (int in_opt)
 	"(C) 2001-2007 Petr Kubanek and others, see AUTHORS file for complete list"
 	<< std::endl << std::
 	endl <<
-	"This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org.  This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for them."
+	"This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org.  This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
 	<< std::endl << std::endl;
       exit (EXIT_SUCCESS);
     case '?':

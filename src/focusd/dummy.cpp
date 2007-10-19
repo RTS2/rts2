@@ -22,6 +22,7 @@ public:
 Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
+  focStepSec = 1;
   strcpy (focType, "Dummy");
   createFocTemp ();
 }
@@ -48,7 +49,7 @@ Rts2DevFocuserDummy::ready ()
 int
 Rts2DevFocuserDummy::stepOut (int num)
 {
-  steps = 125;
+  steps = 1;
   if (num < 0)
     steps *= -1;
   return 0;

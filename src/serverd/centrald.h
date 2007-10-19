@@ -153,14 +153,31 @@ public:
    */
   int changePriority (time_t timeout);
 
+  /**
+   * Switch centrald state to ON.
+   *
+   * @param user Name of user who initiated state change.
+   */
   int changeStateOn (const char *user)
   {
     return changeState ((next_event_type + 5) % 6, user);
   }
+
+  /**
+   * Switch centrald to standby.
+   *
+   * @param user Name of user who initiated state change.
+   */
   int changeStateStandby (const char *user)
   {
     return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6), user);
   }
+
+  /**
+   * Switch centrald to off.
+   *
+   * @param user Name of user who initiated state change.
+   */
   int changeStateOff (const char *user)
   {
     return changeState (SERVERD_OFF, user);
@@ -188,6 +205,21 @@ public:
   void bopMaskChanged ();
 
   virtual int statusInfo (Rts2Conn * conn);
+
+  /**
+   * Return state of system, as seen rrom device identified by connection.
+   * 
+   * This command return state. It is similar to Rts2Daemon::getState() call.
+   * It result only differ when connection which is asking for state is a
+   * device connection. In this case, BOP mask is composed only from devices
+   * which can block querying device.
+   *
+   * The blocking devices are specified by blocking_by parameter in rts2.ini
+   * file.
+   *
+   * @param conn Connection which is asking for state.
+   */
+  int getStateForConnection (Rts2Conn * conn);
 };
 
 /**

@@ -1,3 +1,22 @@
+/* 
+ * Basic RTS2 devices and clients building block.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_BLOCK__
 #define __RTS2_BLOCK__
 
@@ -71,10 +90,8 @@ Rts2Conn * >
  *
  * @ingroup RTS2Block
  */
-class
-  Rts2Block:
-  public
-  Rts2App
+class Rts2Block:
+public Rts2App
 {
 private:
   int
@@ -84,24 +101,17 @@ private:
   int
     priority_client;
 
-  connections_t
-    connections;
+  connections_t connections;
 
-  std::list <
-  Rts2Address * >
-    blockAddress;
-  std::list <
-  Rts2User * >
-    blockUsers;
+  std::list < Rts2Address * >blockAddress;
+  std::list < Rts2User * >blockUsers;
 
   int
     masterState;
 
 protected:
 
-  virtual
-    Rts2Conn *
-  createClientConnection (char *in_deviceName) = 0;
+  virtual Rts2Conn * createClientConnection (char *in_deviceName) = 0;
   virtual Rts2Conn *
   createClientConnection (Rts2Address * in_addr) = 0;
 
@@ -188,8 +198,7 @@ public:
   /**
    * Delete list of conncection, clear Rts2Block structure.
    */
-  virtual ~
-  Rts2Block (void);
+  virtual ~ Rts2Block (void);
 
   /**
    * Set port number of listening socket.
@@ -222,8 +231,7 @@ public:
    *
    * @return connections.begin() iterator.
    */
-  connections_t::iterator
-  connectionBegin ()
+  connections_t::iterator connectionBegin ()
   {
     return connections.begin ();
   }
@@ -235,8 +243,7 @@ public:
    *
    * @return connections.end() iterator.
    */
-  connections_t::iterator
-  connectionEnd ()
+  connections_t::iterator connectionEnd ()
   {
     return connections.end ();
   }
@@ -283,8 +290,7 @@ public:
    * @return True if command que is empty and new command will be executed
    * immediately (after running command returns), otherwise returns false.
    */
-  bool
-  commandQueEmpty ();
+  bool commandQueEmpty ();
 
   /**
    * Event handling mechanism.
@@ -404,18 +410,12 @@ public:
   int
   changeBopState (int new_state);
 
-  int
-  setMasterState (int new_state)
-  {
-    if ((masterState & ~BOP_MASK) != (new_state & ~BOP_MASK))
-      {
-	masterState = new_state;
-	// call changeMasterState only if something except BOP_MASK changed
-	return changeMasterState (new_state);
-      }
-    masterState = new_state;
-    return changeBopState (new_state);
-  }
+  /**
+   * Called when new state information arrives.
+   */
+  virtual int
+  setMasterState (int new_state);
+
   /**
    * Returns master state. This does not returns master BOP mask. Usually you
    * will need this call to check if master is in day etc..
@@ -424,7 +424,6 @@ public:
    *
    * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
    */
-
   const int
   getMasterState ()
   {
@@ -565,12 +564,11 @@ public:
    * @param cmd Command which will be checked.
    * @param exclude_conn Connection which should be excluded from check.
    *
-   * @return True if command was not send or command reply was not heard, false otherwise.
+   * @return True if command was not send or command reply was not received, false otherwise.
    *
    * @callergraph
    */
-  bool
-  commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
+  bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
 };
 
 #endif /*! __RTS2_NETBLOCK__ */

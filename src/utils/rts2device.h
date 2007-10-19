@@ -1,3 +1,22 @@
+/* 
+ * Device basic class.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_DEVICE__
 #define __RTS2_DEVICE__
 
@@ -13,6 +32,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "rts2command.h"
 #include "rts2daemon.h"
 #include "rts2configraw.h"
 
@@ -91,7 +111,7 @@ class Rts2DevConnData:public Rts2Conn
   int sendHeader ();
   Rts2Conn *dataConn;
 protected:
-  int command ()
+    virtual int command ()
   {
     logStream (MESSAGE_DEBUG) << "Rts2DevConnData::command badCommand " <<
       getCommand () << sendLog;
@@ -107,6 +127,45 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
   virtual int init ();
   virtual int send (const char *msg);
   int send (char *data, size_t data_size);
+};
+
+/**
+ * Send status_info command from device to master, and wait for reply.
+ *
+ * This command works with Rts2CommandStatusInfo to ensure, that proper device
+ * state is retrieved.
+ *
+ * @msc
+ * 
+ * Block, Device, Centrald, Devices;
+ *
+ * Block->Device [label="device_status"];
+ * Device->Centrald [label="status_info"]; 
+ * Centrald->Devices [label="status_info"];
+ * Devices->Centrald [label="S xxxx"];
+ * Centrald->Device [label="S xxxx"];
+ * Device->Block [label="S xxxx"];
+ * Device->Block [label="OK"];
+ * Centrald->Device [label="OK"];
+ * Devices->Centrald [label="OK"];
+ *
+ * @endmsc
+ *
+ * @ingroup RTS2Command
+ */
+class Rts2CommandDeviceStatus:public Rts2Command
+{
+private:
+  Rts2Conn * owner_conn;
+public:
+  Rts2CommandDeviceStatus (Rts2Device * master, Rts2Conn * in_owner_conn);
+  virtual int commandReturnOK (Rts2Conn * conn);
+  virtual int commandReturnFailed (int status, Rts2Conn * conn);
+
+  Rts2Conn *getOwnerConn ()
+  {
+    return owner_conn;
+  }
 };
 
 class Rts2Device:public Rts2Daemon
@@ -133,6 +192,8 @@ private:
 
   int setMode (int new_mode);
 
+  Rts2CommandDeviceStatus *deviceStatusCommand;
+
 protected:
   /**
    * Process on option, when received from getopt () call.
@@ -142,6 +203,7 @@ protected:
    */
     virtual int processOption (int in_opt);
   virtual int init ();
+
   void clearStatesPriority ();
 
   // sends operation block commands to master
@@ -193,6 +255,18 @@ public:
   virtual ~ Rts2Device (void);
   virtual Rts2DevConn *createConnection (int in_sock);
 
+  /**
+   * Called for commands when connection is authorized. Command processing is
+   * responsible for sending back error message when -1 is returned. Connection
+   * command handling sends out OK acknowledgement when 0 is returned.
+   *
+   * @param conn Connection which is sending the command.
+   *
+   * @return -1 when an error occured while processing command, 0 when command
+   * was accepted and performed, -5 when command was not accepted, but should
+   * be left to processing.
+   *
+   */
   virtual int commandAuthorized (Rts2Conn * conn);
 
   int authorize (Rts2DevConn * conn);
@@ -231,6 +305,18 @@ public:
   };
 
   virtual int statusInfo (Rts2Conn * conn);
+
+  virtual int setMasterState (int new_state);
+
+  void endDeviceStatusCommand ()
+  {
+    if (deviceStatusCommand)
+      {
+	deviceStatusCommand->getOwnerConn ()->sendCommandEnd (DEVDEM_OK,
+							      "device status updated");
+	deviceStatusCommand = NULL;
+      }
+  }
 };
 
 #endif /* !__RTS2_DEVICE__ */

@@ -1,3 +1,22 @@
+/* 
+ * Device basic class.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -546,6 +565,27 @@ Rts2DevConnData::sendHeader ()
   return 0;
 }
 
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Device * master, Rts2Conn * in_owner_conn):Rts2Command
+  (master)
+{
+  owner_conn = in_owner_conn;
+  setCommand ("status_info");
+}
+
+int
+Rts2CommandDeviceStatus::commandReturnOK (Rts2Conn * conn)
+{
+  ((Rts2Device *) owner)->endDeviceStatusCommand ();
+  return Rts2Command::commandReturnOK (conn);
+}
+
+int
+Rts2CommandDeviceStatus::commandReturnFailed (int status, Rts2Conn * conn)
+{
+  ((Rts2Device *) owner)->endDeviceStatusCommand ();
+  return Rts2Command::commandReturnFailed (status, conn);
+}
+
 Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
 Rts2Daemon (in_argc, in_argv)
 {
@@ -568,6 +608,8 @@ Rts2Daemon (in_argc, in_argv)
 
   mailAddress = NULL;
 
+  deviceStatusCommand = NULL;
+
   // now add options..
   addOption (OPT_LOCALHOST, "localhost", 1,
 	     "hostname, if it different from return of gethostname()");
@@ -581,6 +623,7 @@ Rts2Daemon (in_argc, in_argv)
 
 Rts2Device::~Rts2Device (void)
 {
+  delete deviceStatusCommand;
   delete modeconf;
 }
 
@@ -633,6 +676,13 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
       conn->setName (deviceName);
       conn->setOtherType (deviceType);
       conn->setCommandInProgress (false);
+      return -1;
+    }
+  else if (conn->isCommand ("device_status"))
+    {
+      deviceStatusCommand = new Rts2CommandDeviceStatus (this, conn);
+      getCentraldConn ()->queCommand (deviceStatusCommand);
+      // OK will be returned when command return from centrald
       return -1;
     }
   // we need to try that - due to other device commands
@@ -946,4 +996,17 @@ int
 Rts2Device::statusInfo (Rts2Conn * conn)
 {
   return sendStatusMessage (getState (), conn);
+}
+
+int
+Rts2Device::setMasterState (int new_state)
+{
+  if (deviceStatusCommand)
+    {
+      // or our device state BOP with new_state
+      sendStatusMessage ((new_state & BOP_MASK) | getState (),
+			 deviceStatusCommand->getOwnerConn ());
+      endDeviceStatusCommand ();
+    }
+  return Rts2Daemon::setMasterState (new_state);
 }

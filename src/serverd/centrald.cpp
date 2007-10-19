@@ -186,7 +186,7 @@ Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
   if (getMaster ()->commandPending (statusCommand, conn))
     return;
 
-  master->sendStatusMessage (master->getState (), this);
+  master->sendStatusMessage (master->getStateForConnection (this), this);
   sendCommandEnd (DEVDEM_OK, "OK");
 }
 
@@ -837,6 +837,13 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
       Rts2ConnCentrald *test_conn = (Rts2ConnCentrald *) * iter;
       if (test_conn != conn)
 	{
+	  if (conn->getType () == DEVICE_SERVER)
+	    {
+	      if (Rts2Config::instance ()->
+		  blockDevice (conn->getName (),
+			       test_conn->getName ()) == false)
+		continue;
+	    }
 	  test_conn->queCommand (statusCommand);
 	  s_count++;
 	}
@@ -852,6 +859,27 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 
   // indicate command pending, we will send command end once we will get reply from all devices
   return -1;
+}
+
+int
+Rts2Centrald::getStateForConnection (Rts2Conn * conn)
+{
+  if (conn->getType () != DEVICE_SERVER)
+    return getState ();
+  int sta = getState ();
+  // get rid of BOP mask
+  sta &= ~BOP_MASK;
+  // cretae BOP mask for device
+  for (connections_t::iterator iter = connectionBegin ();
+       iter != connectionEnd (); iter++)
+    {
+      Rts2Conn *test_conn = *iter;
+      if (Rts2Config::instance ()->
+	  blockDevice (conn->getName (), test_conn->getName ()) == false)
+	continue;
+      sta |= test_conn->getBopState ();
+    }
+  return sta;
 }
 
 int
