@@ -361,7 +361,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
 
   logStream (MESSAGE_DEBUG)
     << "Rts2DevTelescope::applyModel offsets ra: "
-    << model_change->ra << " dec: " << model_change->dec << sendLog;
+    << model_change->ra << " dec: " << model_change->
+    dec << " flip " << flip << sendLog;
 
   pos->ra = ra;
   pos->dec = hadec.dec;
