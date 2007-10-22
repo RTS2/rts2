@@ -31,7 +31,7 @@ public:
 
   virtual void printExtra (std::ostream & _os, double JD);
 
-  virtual void writeToImage (Rts2Image * image);
+  virtual void writeToImage (Rts2Image * image, double JD);
 };
 
 #endif /* !__RTS2_TARGET_AUGER__ */

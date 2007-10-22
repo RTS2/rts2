@@ -246,7 +246,7 @@ Rts2Expander (in_exposureStart)
 
   setValue ("CCD_NAME", camera->getName (), "camera name");
 
-  currTarget->writeToImage (this);
+  currTarget->writeToImage (this, getExposureJD ());
 }
 
 Rts2Image::Rts2Image (const char *in_filename, bool verbose, bool readOnly):

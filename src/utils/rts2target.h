@@ -275,7 +275,7 @@ public:
     acquired = -1;
   }
 
-  virtual void writeToImage (Rts2Image * image) = 0;
+  virtual void writeToImage (Rts2Image * image, double JD) = 0;
 
   int getEpoch ()
   {

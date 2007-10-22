@@ -23,7 +23,7 @@ public:
 
   virtual void printExtra (std::ostream & _os, double JD);
 
-  virtual void writeToImage (Rts2Image * image);
+  virtual void writeToImage (Rts2Image * image, double JD);
 
   double getEarthDistance (double JD);
   double getSolarDistance (double JD);

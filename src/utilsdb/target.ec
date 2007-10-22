@@ -1939,8 +1939,19 @@ Target::getCalTargets (double JD)
 
 
 void
-Target::writeToImage (Rts2Image * image)
+Target::writeToImage (Rts2Image * image, double JD)
 {
+  // write lunar distance
+  struct ln_equ_posn moon;
+  struct ln_hrz_posn hmoon;
+  ln_get_lunar_equ_coords (JD, &moon);
+  ln_get_hrz_from_equ (&moon, observer, JD, &hmoon);
+  image->setValue ("MOONDIST", getDistance (&moon, JD), "moon angular distance");
+  image->setValue ("MOONRA", moon.ra, "lunar RA");
+  image->setValue ("MOONDEC", moon.dec, "lunar DEC");
+  image->setValue ("MOONPHA", ln_get_lunar_phase (JD) / 1.8, "moon phase");
+  image->setValue ("MOONALT", moon.ra, "lunar altitude");
+  image->setValue ("MOONAZ", moon.dec, "lunar azimuth");
 }
 
 

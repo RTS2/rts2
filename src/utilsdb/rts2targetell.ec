@@ -172,9 +172,9 @@ EllTarget::printExtra (std::ostream & _os, double JD)
 
 
 void
-EllTarget::writeToImage (Rts2Image * image)
+EllTarget::writeToImage (Rts2Image * image, double JD)
 {
-  Target::writeToImage (image);
+  Target::writeToImage (image, JD);
   image->setValue ("ELL_EPO", orbit.JD, "epoch of the orbit");
   if (orbit.e < 1.0)
   {

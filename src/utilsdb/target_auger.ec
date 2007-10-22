@@ -138,8 +138,8 @@ TargetAuger::printExtra (std::ostream & _os, double JD)
 
 
 void
-TargetAuger::writeToImage (Rts2Image * image)
+TargetAuger::writeToImage (Rts2Image * image, double JD)
 {
-  ConstTarget::writeToImage (image);
+  ConstTarget::writeToImage (image, JD);
   image->setValue ("AGR_T3ID", t3id, "Auger target id");
 }

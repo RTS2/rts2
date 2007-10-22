@@ -518,9 +518,9 @@ TargetGRB::printGrbList (std::ostream & _os)
 
 
 void
-TargetGRB::writeToImage (Rts2Image * image)
+TargetGRB::writeToImage (Rts2Image * image, double JD)
 {
-  ConstTarget::writeToImage (image);
+  ConstTarget::writeToImage (image, JD);
   image->setValue ("GRB_RA", grb.ra, "GRB RA know at time of exposure");
   image->setValue ("GRB_DEC", grb.dec, "GRB DEC know at time of exposure");
   image->setValue ("GRB_ERR", errorbox, "GRB errorbox diameter");

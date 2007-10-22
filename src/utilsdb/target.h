@@ -468,7 +468,7 @@ public:
 
   virtual Rts2TargetSet *getCalTargets (double JD);
 
-  virtual void writeToImage (Rts2Image * image);
+  virtual void writeToImage (Rts2Image * image, double JD);
 };
 
 class ConstTarget:public Target

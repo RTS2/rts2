@@ -33,7 +33,7 @@ public:
 
   virtual moveType startSlew (struct ln_equ_posn *position);
   virtual int startObservation (Rts2Block * master);
-  virtual void writeToImage (Rts2Image * image);
+  virtual void writeToImage (Rts2Image * image, double JD);
 };
 
 #endif /* !__RTS2_TARGESCR__ */

@@ -68,6 +68,6 @@ Rts2TargetScr::startObservation (Rts2Block * in_master)
 }
 
 void
-Rts2TargetScr::writeToImage (Rts2Image * image)
+Rts2TargetScr::writeToImage (Rts2Image * image, double JD)
 {
 }

@@ -93,7 +93,7 @@ public:
 
   void printGrbList (std::ostream & _os);
 
-  virtual void writeToImage (Rts2Image * image);
+  virtual void writeToImage (Rts2Image * image, double JD);
 };
 
 #endif /* !__RTS2_TARGETGRB__ */
