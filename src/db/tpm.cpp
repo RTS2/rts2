@@ -314,8 +314,8 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
   // change DEC to 90-180, and HA by 180 degs
   if (selFlip == -1 && imageFlip != 0)
     {
-      actual.getDecObj ()->flip ();
-      target.getDecObj ()->flip ();
+      actual.getDecObj ()->flip (&obs);
+      target.getDecObj ()->flip (&obs);
     }
 
   LibnovaHaM lst (mean_sidereal);
