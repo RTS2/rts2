@@ -1,3 +1,22 @@
+/* 
+ * Night reporting utility.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "imgdisplay.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
@@ -9,6 +28,11 @@
 #include <time.h>
 #include <iostream>
 
+/**
+ * Produces night report output.
+ *
+ * @addgroup RTS2DbApps
+ */
 class Rts2NightReport:public Rts2AppDb
 {
 private:
@@ -48,7 +72,8 @@ Rts2AppDb (in_argc, in_argv)
   addOption ('t', "to", 1,
 	     "date to which show measurements; default to from + 24 hours");
   addOption ('n', "night-date", 1, "report for night around given date");
-  addOption ('i', "images", 0, "print image listing");
+  addOption ('l', NULL, 0, "print full image names");
+  addOption ('i', NULL, 0, "print image listing");
   addOption ('I', "images_summary", 0, "print image summary row");
   addOption ('p', "photometer", 2,
 	     "print counts listing; can be followed by format, txt for plain");
@@ -75,6 +100,9 @@ Rts2NightReport::processOption (int in_opt)
     case 'n':
       tm_night = new struct ln_date;
       return Rts2CliApp::parseDate (optarg, tm_night);
+    case 'l':
+      printImages |= DISPLAY_FILENAME;
+      break;
     case 'i':
       printImages |= DISPLAY_ALL;
       break;
