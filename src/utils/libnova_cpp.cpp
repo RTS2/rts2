@@ -409,7 +409,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
   _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
   if (deg_dms.degrees == 0 && deg_dms.minutes == 0)
     {
-      _os << "   0'";
+      _os << "    0'";
     }
   else
     {
