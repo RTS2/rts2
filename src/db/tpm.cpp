@@ -1,3 +1,22 @@
+/* 
+ * TPoint input builder.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <string>
 #include <vector>
 #include <stdlib.h>
@@ -292,6 +311,13 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
       actual.setDec ((aux1 - dec_offset) / dec_step);
     }
 
+  // change DEC to 90-180, and HA by 180 degs
+  if (selFlip == -1 && imageFlip != 0)
+    {
+      actual.getDecObj ()->flip ();
+      target.getDecObj ()->flip ();
+    }
+
   LibnovaHaM lst (mean_sidereal);
 
   _os << actual;
@@ -306,6 +332,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
       // geocentric..
       break;
     }
+
   _os << target << " " << lst << " " << imageFlip << " " << aux1 << std::endl;
   return 0;
 }
