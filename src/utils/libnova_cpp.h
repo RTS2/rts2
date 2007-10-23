@@ -62,6 +62,9 @@ public:
     return ra;
   }
 
+  /**
+   * Flip by 12 hours.
+   */
   void flip ();
 
   friend std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
@@ -206,7 +209,7 @@ public:
     return getDeg ();
   }
 
-  void flip ();
+  void flip (struct ln_lnlat_posn *obs);
 
   friend std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 };
@@ -356,8 +359,10 @@ public:
 
   /**
    * Flip current RA and DEC.
+   *
+   * @param obs Coordinates of the observing station.
    */
-  void flip ();
+  void flip (struct ln_lnlat_posn *obs);
 
   friend std::ostream & operator << (std::ostream & _os,
 				     LibnovaRaDec l_radec);

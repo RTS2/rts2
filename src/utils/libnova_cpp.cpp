@@ -304,9 +304,9 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
 }
 
 void
-LibnovaDec::flip ()
+LibnovaDec::flip (struct ln_lnlat_posn *obs)
 {
-  if (deg > 0)
+  if (obs->lat > 0)
     deg = 180 - deg;
   else
     deg = -180 - deg;
@@ -482,12 +482,12 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
 }
 
 void
-LibnovaRaDec::flip ()
+LibnovaRaDec::flip (struct ln_lnlat_posn *obs)
 {
   if (ra)
     ra->flip ();
   if (dec)
-    dec->flip ();
+    dec->flip (obs);
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
