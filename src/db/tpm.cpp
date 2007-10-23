@@ -311,11 +311,10 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
       actual.setDec ((aux1 - dec_offset) / dec_step);
     }
 
-  // change DEC to 90-180, and HA by 180 degs
+  // change DEC to 90-180, and RA by 180 degs
   if (selFlip == -1 && imageFlip != 0)
     {
-      actual.getDecObj ()->flip (&obs);
-      target.getDecObj ()->flip (&obs);
+      target.flip (&obs);
     }
 
   LibnovaHaM lst (mean_sidereal);
@@ -325,11 +324,8 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
     {
     case TARGET:
     case BEST:
-      _os << " 0 0 2000.0 ";
-      break;
     case MOUNT:
-      _os << " ";
-      // geocentric..
+      _os << " 0 0 2000.0 ";
       break;
     }
 
