@@ -344,6 +344,16 @@ public:
     dec = new LibnovaDec (pos->dec);
   }
 
+  LibnovaRa *getRaObj ()
+  {
+    return ra;
+  }
+
+  LibnovaDec *getDecObj ()
+  {
+    return dec;
+  }
+
   /**
    * Flip current RA and DEC.
    */
