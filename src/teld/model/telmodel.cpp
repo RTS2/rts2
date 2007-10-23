@@ -1,6 +1,6 @@
 /* 
  * Telescope model reader.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -167,6 +167,9 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 	}
       // correction is in degrees to speed up a calculation
       corr /= 3600.0;
+      // get rid of fixed terms
+      if (name[0] == '=')
+	name = name.substr (1);
       if (name == "ME")
 	{
 	  term = new Rts2TermME (corr, sigma);

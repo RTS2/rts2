@@ -1,7 +1,7 @@
 /* 
  * Telescope model terms.
- * Copyright (C) 2003-2006 Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2006 Martin Jelinek <mates@iaa.es>
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
