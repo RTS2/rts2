@@ -1,3 +1,22 @@
+/* 
+ * Dry run for telescope model.
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "model/telmodel.h"
 #include "../utils/libnova_cpp.h"
 #include "../writers/rts2imagedb.h"
@@ -190,6 +209,9 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
   char firstChar;
   bool latLine = false;
 
+  double rms = 0;
+  int rms_n = 0;
+
   is.getline (caption, 80);
   os << caption << std::endl;
   while (!is.eof ())
@@ -207,6 +229,17 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 	  is >> nd;
 	  if (nd == "END")
 	    {
+	      if (errors)
+		{
+		  rms = sqrt (rms / (double) rms_n);
+		  double rms_e = rms - model->getRMS ();
+		  os << "RMS: " << (rms *
+				    3600.0) << " (" << LibnovaDegDist (rms) <<
+		    ") n: " << rms_n << " RMS error: " << (rms_e *
+							   3600.0) << " (" <<
+		    ((fabs (rms_e) / model->getRMS ()) *
+		     100) << "%)" << std::endl;
+		}
 	      os << "END" << std::endl;
 	      return;
 	    }
@@ -304,16 +337,31 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 	      struct ln_equ_posn pos_in, pos_out;
 	      _in.getPos (&pos_in);
 	      _out_in.getPos (&pos_out);
-	      std::
-		cout <<
-		LibnovaDegDist (ln_get_angular_separation
-				(&pos_in, &pos_out));
+
+	      double err = ln_get_angular_separation (&pos_in, &pos_out);
+
+	      // do some statistics
+	      rms += err * err;
+	      rms_n++;
+
+	      std::cout << LibnovaDegDist (err);
+
 	      if (errors > 1)
 		{
-		  std::cout << LibnovaDegArcMin (pos_in.ra -
-						 pos_out.
-						 ra) << " " <<
-		    LibnovaDegArcMin (pos_in.dec - pos_out.dec);
+		  double rd, dd;
+		  if (fabs (pos_out.dec) < 90)
+		    {
+		      rd = pos_in.ra - pos_out.ra;
+		      dd = pos_in.dec - pos_out.dec;
+		    }
+		  else
+		    {
+		      rd = pos_in.ra - ln_range_degrees (pos_out.ra + 180.0);
+		      dd = pos_in.dec - 180.0 + pos_out.dec;
+		    }
+
+		  std::cout << LibnovaDegArcMin (rd) << " " <<
+		    LibnovaDegArcMin (dd);
 		}
 	    }
 

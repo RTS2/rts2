@@ -72,6 +72,10 @@ public:
  * When we pass ln_equ_posn, ra is hour angle (in degrees), not RA value.
  *
  * Supported terms can be seen from #RTS2TpointTerm listing.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPoint
  */
 class Rts2TelModel
 {
@@ -99,6 +103,16 @@ public:
   int reverse (struct ln_equ_posn *pos);
   int reverseVerbose (struct ln_equ_posn *pos);
   int reverse (struct ln_equ_posn *pos, double sid);
+
+  /**
+   * Return RMS in degrees.
+   *
+   * @return RMS error in degrees.
+   */
+  double getRMS ()
+  {
+    return rms / 3600;
+  }
 
   friend std::istream & operator >> (std::istream & is, Rts2TelModel * model);
   friend std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
