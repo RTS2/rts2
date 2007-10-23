@@ -26,10 +26,22 @@
 #include <math.h>
 
 /**
+ * @file
+ * Libnova utility classes.
+ *
+ * @defgroup LibnovaCPP Libnova clases.
+ */
+
+/**
  * Returns time from JD in number of seconds from 1-1-1970.
  */
 double timetFromJD (double JD);
 
+/**
+ * Holds RA of an target.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class LibnovaRa
 {
 protected:
@@ -49,6 +61,9 @@ public:
   {
     return ra;
   }
+
+  void flip ();
+
   friend std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
   friend std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra);
 };
@@ -191,6 +206,8 @@ public:
     return getDeg ();
   }
 
+  void flip ();
+
   friend std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 };
 
@@ -252,6 +269,11 @@ public:
 				     LibnovaDegDist & l_deg);
 };
 
+/**
+ * Holds RA and DEC of an object.
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaRaDec
 {
 private:
@@ -321,6 +343,11 @@ public:
     ra = new LibnovaRa (pos->ra);
     dec = new LibnovaDec (pos->dec);
   }
+
+  /**
+   * Flip current RA and DEC.
+   */
+  void flip ();
 
   friend std::ostream & operator << (std::ostream & _os,
 				     LibnovaRaDec l_radec);

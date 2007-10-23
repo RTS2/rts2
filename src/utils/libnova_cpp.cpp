@@ -43,6 +43,12 @@ LibnovaRa::fromHms (struct ln_hms *ra_hms)
   ra = ln_hms_to_deg (ra_hms);
 }
 
+void
+LibnovaRa::flip ()
+{
+  ra = ln_range_degrees (ra + 180);
+}
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 {
   if (isnan (l_ra.ra))
@@ -161,12 +167,11 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 }
 
 
-/***************************************************
+/*
  * operator >>
  *
  * Behaves sensibly if given deg >= 360, min >= 60, sec >= 60
  */
-
 std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 {
   double res = 0;
@@ -296,6 +301,15 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
   _os.precision (old_precison);
   _os.fill (old_fill);
   return _os;
+}
+
+void
+LibnovaDec::flip ()
+{
+  if (deg > 0)
+    deg = 180 - deg;
+  else
+    deg = -180 - deg;
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
@@ -465,6 +479,15 @@ std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg)
       out += val / step;
       step *= 60.0;
     }
+}
+
+void
+LibnovaRaDec::flip ()
+{
+  if (ra)
+    ra->flip ();
+  if (dec)
+    dec->flip ();
 }
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
