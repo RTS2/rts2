@@ -1,15 +1,44 @@
+/* 
+ * Telescope model terms.
+ * Copyright (C) 2003-2006 Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_MODELTERM__
 #define __RTS2_MODELTERM__
 
 #include "telmodel.h"
 
+/**
+ * @file
+ * Include classes for various TPoint terms.
+ *
+ * @defgroup RTS2TPointTerm Modelling terms for TPOINT.
+ */
+
 class Rts2ObsConditions;
 
-/*!
+/**
  * Represents model term. Child of that class are created
  * in Rts2TelModel::load, and used in apply functions.
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2ModelTerm
 {
@@ -47,10 +76,12 @@ public:
 
 std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
 
-/*!
+/**
  * Polar axis misalignment in elevation term.
  *
- * @author mates
+ * @author Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermME:public Rts2ModelTerm
 {
@@ -63,10 +94,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Polar axis misalignment in azimuth term.
  *
- * @author mates
+ * @author Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>a
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermMA:public Rts2ModelTerm
 {
@@ -79,10 +112,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Index error in hour angle.
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermIH:public Rts2ModelTerm
 {
@@ -95,10 +130,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Index error in declination.
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermID:public Rts2ModelTerm
 {
@@ -111,10 +148,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * East-west collimation error.
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermCH:public Rts2ModelTerm
 {
@@ -127,10 +166,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * HA/Dec non-perpendicularity.
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermNP:public Rts2ModelTerm
 {
@@ -143,10 +184,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Step size in h (for Paramount, where it's unsure).
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermPHH:public Rts2ModelTerm
 {
@@ -159,10 +202,10 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Step size in declination (for Paramount, where it's unsure).
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
  */
 class Rts2TermPDD:public Rts2ModelTerm
 {
@@ -175,10 +218,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Aux1 to h (for Paramount, where it's unsure).
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermA1H:public Rts2ModelTerm
 {
@@ -191,10 +236,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Aux1 to in declination (for Paramount, where it's unsure).
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermA1D:public Rts2ModelTerm
 {
@@ -207,10 +254,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
+/**
  * Tube flexture.
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermTF:public Rts2ModelTerm
 {
@@ -223,10 +272,12 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
-/*!
- * Tube ?
+/**
+ * Tube flexure (tangent)
  *
- * @author mates
+ * @author Martin Jelinek <mates@iaa.es>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermTX:public Rts2ModelTerm
 {
@@ -239,6 +290,13 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+/**
+ * HA centering error, cosine component.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
 class Rts2TermHCEC:public Rts2ModelTerm
 {
 public:
@@ -251,6 +309,13 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+/**
+ * HA centering error, sine component.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
 class Rts2TermHCES:public Rts2ModelTerm
 {
 public:
@@ -263,6 +328,13 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+/**
+ * Dec centering error, cosine component.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
 class Rts2TermDCEC:public Rts2ModelTerm
 {
 public:
@@ -275,6 +347,13 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+/**
+ * Dec centering error, sine component.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
 class Rts2TermDCES:public Rts2ModelTerm
 {
 public:
@@ -287,12 +366,53 @@ public:
 		      Rts2ObsConditions * obs_conditions);
 };
 
+/**
+ * Declination axis bending.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
+class Rts2TermDAB:public Rts2ModelTerm
+{
+public:
+  Rts2TermDAB (double in_corr, double in_sigma):Rts2ModelTerm ("DAB", in_corr,
+							       in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+/**
+ * Declination axis flop.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
+ */
+class Rts2TermDAF:public Rts2ModelTerm
+{
+public:
+  Rts2TermDAF (double in_corr, double in_sigma):Rts2ModelTerm ("DAF", in_corr,
+							       in_sigma)
+  {
+  }
+  virtual void apply (struct ln_equ_posn *pos,
+		      Rts2ObsConditions * obs_conditions);
+};
+
+
 typedef enum
 { SIN, COS, NOT } sincos_t;
 
 /**
  * Class which calculate harmonics terms.
  * It have to construct function from name, using sin & cos etc..
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup RTS2TPointTerm
  */
 class Rts2TermHarmonics:public Rts2ModelTerm
 {

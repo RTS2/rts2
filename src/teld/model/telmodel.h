@@ -1,16 +1,30 @@
+/* 
+ * Telescope model reader.
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek,net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_TELMODEL__
 #define __RTS2_TELMODEL__
+
 /**
- * This class describe telescope model interface.
+ * @file
+ * Basic TPoint routines.
  *
- * Model takes care of converting sky coordinates send to teld to coordinates that
- * will be send to telescope. It doesn't handle issues such as moving targets
- * (bodies in solar system) and proper motions of stars.
- *
- * It can include calculation of refraction, depending on site location and
- * actual athmospheric conditions.
- * 
- * @author petr
+ * @defgroup RTS2TPoint TPoint interface.
  */
 
 #include "../telescope.h"
@@ -32,7 +46,6 @@ class Rts2ModelTerm;
  * those will be changed in course of model calculation. Holds mount
  * geographics position, current time etc.
  */
-
 class Rts2ObsConditions
 {
 private:
@@ -57,6 +70,8 @@ public:
  * Performs on terms apply and reverse calls.
  *
  * When we pass ln_equ_posn, ra is hour angle (in degrees), not RA value.
+ *
+ * Supported terms can be seen from #RTS2TpointTerm listing.
  */
 class Rts2TelModel
 {

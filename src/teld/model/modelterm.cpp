@@ -221,6 +221,35 @@ Rts2TermDCES::apply (struct ln_equ_posn *pos,
   pos->dec += corr * sin (ln_deg_to_rad (pos->dec));
 }
 
+void
+Rts2TermDAB::apply (struct ln_equ_posn *pos,
+		    Rts2ObsConditions * obs_conditions)
+{
+  double d, h, f;
+  d = ln_deg_to_rad (pos->dec);
+  h = ln_deg_to_rad (pos->ra);
+  f = ln_deg_to_rad (obs_conditions->getLatitude ());
+
+  double sh = sin (h);
+  double sf = sin (f);
+  double ch = cos (h);
+
+  pos->ra -=
+    corr * (sh * sh * sf * sf + ch * ch) * (sf * tan (d) + cos (f) * ch);
+}
+
+void
+Rts2TermDAF::apply (struct ln_equ_posn *pos,
+		    Rts2ObsConditions * obs_conditions)
+{
+  double d, h, f;
+  d = ln_deg_to_rad (pos->dec);
+  h = ln_deg_to_rad (pos->ra);
+  f = ln_deg_to_rad (obs_conditions->getLatitude ());
+
+  pos->ra -= corr * (sin (f) * tan (d) + cos (f) * cos (h));
+}
+
 Rts2TermHarmonics::Rts2TermHarmonics (double in_corr, double in_sigma,
 				      const char *in_name):
 Rts2ModelTerm (in_name, in_corr, in_sigma)
