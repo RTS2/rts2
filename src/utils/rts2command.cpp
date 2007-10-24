@@ -1,6 +1,6 @@
 /* 
  * Command classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -793,4 +793,10 @@ Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
   if (keep)
     return RTS2_COMMAND_KEEP;
   return Rts2Command::commandReturnOK (conn);
+}
+
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn, bool in_keep):Rts2CommandStatusInfo (master, in_control_conn,
+		       in_keep)
+{
+  setCommand ("device_status");
 }

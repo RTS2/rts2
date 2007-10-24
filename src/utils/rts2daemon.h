@@ -261,7 +261,15 @@ public:
   int getState ()
   {
     return state;
-  };
+  }
+
+  /**
+   * Return daemon state without ERROR information.
+   */
+  int getDaemonState ()
+  {
+    return state & ~DEVICE_ERROR_MASK;
+  }
 
   /**
    * Called from idle loop after HUP signal occured.
@@ -271,7 +279,6 @@ public:
    * reloacte memory location - if you read pointer before HUP signal and use
    * it after HUP signal, RTS2 does not guarantee that it will be still valid.
    */
-
   virtual void signaledHUP ();
   virtual void sigHUP (int sig);
 };

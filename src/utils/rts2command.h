@@ -1,6 +1,6 @@
 /* 
  * Command classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -637,5 +637,18 @@ public:
   virtual int commandReturnOK (Rts2Conn * conn);
   virtual int commandReturnFailed (Rts2Conn * conn);
 };
+
+/**
+ * Send device_status command instead of status_info command.
+ *
+ * @ingroup RTS2Command
+ */
+class Rts2CommandDeviceStatus:public Rts2CommandStatusInfo
+{
+public:
+  Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn,
+			   bool in_keep);
+};
+
 
 #endif /* !__RTS2_COMMAND__ */

@@ -1,6 +1,6 @@
 /* 
  * Device basic class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -565,7 +565,7 @@ Rts2DevConnData::sendHeader ()
   return 0;
 }
 
-Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Device * master, Rts2Conn * in_owner_conn):Rts2Command
+Rts2CommandDeviceStatusInfo::Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn):Rts2Command
   (master)
 {
   owner_conn = in_owner_conn;
@@ -573,14 +573,14 @@ Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Device * master, Rts2Conn 
 }
 
 int
-Rts2CommandDeviceStatus::commandReturnOK (Rts2Conn * conn)
+Rts2CommandDeviceStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
   ((Rts2Device *) owner)->endDeviceStatusCommand ();
   return Rts2Command::commandReturnOK (conn);
 }
 
 int
-Rts2CommandDeviceStatus::commandReturnFailed (int status, Rts2Conn * conn)
+Rts2CommandDeviceStatusInfo::commandReturnFailed (int status, Rts2Conn * conn)
 {
   ((Rts2Device *) owner)->endDeviceStatusCommand ();
   return Rts2Command::commandReturnFailed (status, conn);
@@ -680,7 +680,7 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
     }
   else if (conn->isCommand ("device_status"))
     {
-      deviceStatusCommand = new Rts2CommandDeviceStatus (this, conn);
+      deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, conn);
       getCentraldConn ()->queCommand (deviceStatusCommand);
       // OK will be returned when command return from centrald
       return -1;
@@ -1004,7 +1004,7 @@ Rts2Device::setMasterState (int new_state)
   if (deviceStatusCommand)
     {
       // or our device state BOP with new_state
-      sendStatusMessage ((new_state & BOP_MASK) | getState (),
+      sendStatusMessage ((new_state & BOP_MASK) | getDaemonState (),
 			 deviceStatusCommand->getOwnerConn ());
       endDeviceStatusCommand ();
     }

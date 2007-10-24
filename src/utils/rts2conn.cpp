@@ -1,6 +1,6 @@
 /* 
  * Connection class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1018,8 +1018,8 @@ Rts2Conn::message ()
 void
 Rts2Conn::sendCommand ()
 {
-  Rts2CommandStatusInfo *statInfoCall;
-  Rts2Conn *c_conn;
+  Rts2CommandDeviceStatus *statInfoCall;
+  Rts2Conn *conn;
   // we require some special state before command can be executed
   if (runningCommand->getBopMask ())
     {
@@ -1027,23 +1027,15 @@ Rts2Conn::sendCommand ()
 	{
 	case 0:
 	  statInfoCall =
-	    new Rts2CommandStatusInfo (getMaster (), this, false);
-	  c_conn = getMaster ()->getCentraldConn ();
+	    new Rts2CommandDeviceStatus (getMaster (), this, false);
+	  conn = runningCommand->getConnection ();
 	  // we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
-	  if (c_conn == this)
-	    {
-	      statInfoCall->setConnection (this);
-	      statInfoCall->setStatusCallProgress (3);
-	      statInfoCall->send ();
-	      runningCommand->setStatusCallProgress (2);
-	      commandQue.push_front (runningCommand);
-	      runningCommand = statInfoCall;
-	    }
-	  else
-	    {
-	      c_conn->queCommand (statInfoCall);
-	      runningCommand->setStatusCallProgress (1);
-	    }
+	  statInfoCall->setConnection (this);
+	  statInfoCall->setStatusCallProgress (3);
+	  statInfoCall->send ();
+	  runningCommand->setStatusCallProgress (2);
+	  commandQue.push_front (runningCommand);
+	  runningCommand = statInfoCall;
 	  break;
 	case 1:
 	  // if the bock bit is still set..

@@ -1,6 +1,6 @@
 /* 
  * Device basic class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -153,12 +153,12 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
  *
  * @ingroup RTS2Command
  */
-class Rts2CommandDeviceStatus:public Rts2Command
+class Rts2CommandDeviceStatusInfo:public Rts2Command
 {
 private:
   Rts2Conn * owner_conn;
 public:
-  Rts2CommandDeviceStatus (Rts2Device * master, Rts2Conn * in_owner_conn);
+  Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn);
   virtual int commandReturnOK (Rts2Conn * conn);
   virtual int commandReturnFailed (int status, Rts2Conn * conn);
 
@@ -192,7 +192,7 @@ private:
 
   int setMode (int new_mode);
 
-  Rts2CommandDeviceStatus *deviceStatusCommand;
+  Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 
 protected:
   /**
