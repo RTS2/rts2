@@ -868,7 +868,7 @@ Rts2Centrald::getStateForConnection (Rts2Conn * conn)
     return getState ();
   int sta = getState ();
   // get rid of BOP mask
-  sta &= ~BOP_MASK;
+  sta &= ~BOP_MASK & ~DEVICE_ERROR_MASK;
   // cretae BOP mask for device
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
