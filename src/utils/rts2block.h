@@ -129,15 +129,31 @@ protected:
   addAddress (Rts2Address * in_addr);
 
   /**
+   * Socket set containing descriptors which can be read.
+   */
+  fd_set
+    read_set;
+
+  /**
+   * Socket set containing descriptors which can be write.
+   */
+  fd_set
+    write_set;
+
+  /**
+   * Socket set containing descriptors which can produce exception.
+   */
+  fd_set
+    exp_set;
+
+  /**
    * Enable application to add arbitary sockets.
    * 
    * This hook is usefull for various applications that gets input from other then connection sockets,
    * and for which creating extra Rts2Conn instance will be too heavy solution.
-   *
-   * @param  read_set  Read set, application can use FD_SET macro to register its sockets.
    */
   virtual void
-  addSelectSocks (fd_set * read_set);
+  addSelectSocks ();
 
   /**
    * Called when select call suceed.
@@ -148,7 +164,7 @@ protected:
    *   FD_ISSET to query if socket of his/her interests is inside modified socket set.
    */
   virtual void
-  selectSuccess (fd_set * read_set);
+  selectSuccess ();
 
   /**
    * Set which messages will be accepted by connection.

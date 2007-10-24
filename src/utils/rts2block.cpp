@@ -243,19 +243,19 @@ Rts2Block::idle ()
 }
 
 void
-Rts2Block::addSelectSocks (fd_set * read_set)
+Rts2Block::addSelectSocks ()
 {
   Rts2Conn *conn;
   connections_t::iterator iter;
   for (iter = connections.begin (); iter != connections.end (); iter++)
     {
       conn = *iter;
-      conn->add (read_set);
+      conn->add (&read_set);
     }
 }
 
 void
-Rts2Block::selectSuccess (fd_set * read_set)
+Rts2Block::selectSuccess ()
 {
   Rts2Conn *conn;
   int ret;
@@ -265,7 +265,7 @@ Rts2Block::selectSuccess (fd_set * read_set)
   for (iter = connections.begin (); iter != connections.end ();)
     {
       conn = *iter;
-      if (conn->receive (read_set) == -1)
+      if (conn->receive (&read_set) == -1)
 	{
 #ifdef DEBUG_EXTRA
 	  logStream (MESSAGE_DEBUG) <<
@@ -306,17 +306,19 @@ Rts2Block::oneRunLoop ()
 {
   int ret;
   struct timeval read_tout;
-  fd_set read_set;
 
   read_tout.tv_sec = idle_timeout / USEC_SEC;
   read_tout.tv_usec = idle_timeout % USEC_SEC;
 
   FD_ZERO (&read_set);
-  addSelectSocks (&read_set);
-  ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+  FD_ZERO (&write_set);
+  FD_ZERO (&exp_set);
+
+  addSelectSocks ();
+  ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
   if (ret > 0)
     {
-      selectSuccess (&read_set);
+      selectSuccess ();
     }
   ret = idle ();
   if (ret == -1)

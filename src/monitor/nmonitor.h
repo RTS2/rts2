@@ -133,8 +133,8 @@ protected:
   virtual int processArgs (const char *arg);
 #endif /* HAVE_PGSQL_SOAP */
 
-  virtual void addSelectSocks (fd_set * read_set);
-  virtual void selectSuccess (fd_set * read_set);
+  virtual void addSelectSocks ();
+  virtual void selectSuccess ();
 
   virtual Rts2ConnCentraldClient *createCentralConn ();
 

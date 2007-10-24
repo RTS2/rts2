@@ -43,12 +43,12 @@ protected:
   /**
    * Add XWin connection socket, obtained by ConnectionNumber macro.
    */
-    virtual void addSelectSocks (fd_set * read_set);
+    virtual void addSelectSocks ();
 
   /**
    * Query and process possible XWin event from top of XWin event loop.
    */
-  virtual void selectSuccess (fd_set * read_set);
+  virtual void selectSuccess ();
 public:
     Rts2xfocus (int argc, char **argv);
     virtual ~ Rts2xfocus (void);
@@ -960,20 +960,20 @@ Rts2xfocus::createFocCamera (Rts2Conn * conn)
 }
 
 void
-Rts2xfocus::addSelectSocks (fd_set * read_set)
+Rts2xfocus::addSelectSocks ()
 {
-  FD_SET (ConnectionNumber (display), read_set);
-  Rts2GenFocClient::addSelectSocks (read_set);
+  FD_SET (ConnectionNumber (display), &read_set);
+  Rts2GenFocClient::addSelectSocks ();
 }
 
 void
-Rts2xfocus::selectSuccess (fd_set * read_set)
+Rts2xfocus::selectSuccess ()
 {
-  if (FD_ISSET (ConnectionNumber (display), read_set))
+  if (FD_ISSET (ConnectionNumber (display), &read_set))
     {
       postEvent (new Rts2Event (EVENT_XWIN_SOCK));
     }
-  Rts2GenFocClient::selectSuccess (read_set);
+  Rts2GenFocClient::selectSuccess ();
 }
 
 int

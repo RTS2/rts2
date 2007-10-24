@@ -338,18 +338,18 @@ Rts2Daemon::centraldConnBroken ()
 }
 
 void
-Rts2Daemon::addSelectSocks (fd_set * read_set)
+Rts2Daemon::addSelectSocks ()
 {
-  FD_SET (listen_sock, read_set);
-  Rts2Block::addSelectSocks (read_set);
+  FD_SET (listen_sock, &read_set);
+  Rts2Block::addSelectSocks ();
 }
 
 void
-Rts2Daemon::selectSuccess (fd_set * read_set)
+Rts2Daemon::selectSuccess ()
 {
   int client;
   // accept connection on master
-  if (FD_ISSET (listen_sock, read_set))
+  if (FD_ISSET (listen_sock, &read_set))
     {
       struct sockaddr_in other_side;
       socklen_t addr_size = sizeof (struct sockaddr_in);
@@ -365,7 +365,7 @@ Rts2Daemon::selectSuccess (fd_set * read_set)
 	  addConnectionSock (client);
 	}
     }
-  Rts2Block::selectSuccess (read_set);
+  Rts2Block::selectSuccess ();
 }
 
 void

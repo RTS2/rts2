@@ -13,3 +13,5 @@ focusd		Focuser
 bckimages	Thinks for image archive management
 sensors		Various sensor devices
 indi		INDI (KStars) device driver
+logger		logd and logger (client)
+xmlrpc		xmlrpc daemon

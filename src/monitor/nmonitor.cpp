@@ -105,11 +105,11 @@ Rts2NMonitor::processArgs (const char *arg)
 #endif /* HAVE_PGSQL_SOAP */
 
 void
-Rts2NMonitor::addSelectSocks (fd_set * read_set)
+Rts2NMonitor::addSelectSocks ()
 {
   // add stdin for ncurses input
-  FD_SET (1, read_set);
-  Rts2Client::addSelectSocks (read_set);
+  FD_SET (1, &read_set);
+  Rts2Client::addSelectSocks ();
 }
 
 Rts2ConnCentraldClient *
@@ -121,9 +121,9 @@ Rts2NMonitor::createCentralConn ()
 }
 
 void
-Rts2NMonitor::selectSuccess (fd_set * read_set)
+Rts2NMonitor::selectSuccess ()
 {
-  Rts2Client::selectSuccess (read_set);
+  Rts2Client::selectSuccess ();
   while (1)
     {
       int input = getch ();

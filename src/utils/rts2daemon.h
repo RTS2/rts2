@@ -88,8 +88,8 @@ protected:
   }
   int doDeamonize ();
   int lockFile ();
-  virtual void addSelectSocks (fd_set * read_set);
-  virtual void selectSuccess (fd_set * read_set);
+  virtual void addSelectSocks ();
+  virtual void selectSuccess ();
 
   Rts2ValueQueVector queValues;
 
