@@ -56,6 +56,7 @@ namespace XmlRpc
     //! Add sockets to file descriptor set
     void addToFd (fd_set * inFd, fd_set * outFd, fd_set * excFd);
 
+    //! Check sockets
     void checkFd (fd_set * inFd, fd_set * outFd, fd_set * excFd);
 
     //! Exit from work routine

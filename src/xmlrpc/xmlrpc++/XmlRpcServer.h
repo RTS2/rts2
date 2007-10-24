@@ -61,6 +61,12 @@ namespace XmlRpc
     //! Process client requests for the specified time
     void work (double msTime);
 
+    //! Add sockets to file descriptor set
+    void addToFd (fd_set * inFd, fd_set * outFd, fd_set * excFd);
+
+    //! Check sockets
+    void checkFd (fd_set * inFd, fd_set * outFd, fd_set * excFd);
+
     //! Temporarily stop processing client requests and exit the work() method.
     void exit ();
 

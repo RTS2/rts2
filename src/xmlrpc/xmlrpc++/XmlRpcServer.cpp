@@ -143,7 +143,17 @@ XmlRpcServer::work (double msTime)
   _disp.work (msTime);
 }
 
+void
+XmlRpcServer::addToFd (fd_set * inFd, fd_set * outFd, fd_set * excFd)
+{
+  _disp.addToFd (inFd, outFd, excFd);
+}
 
+void
+XmlRpcServer::checkFd (fd_set * inFd, fd_set * outFd, fd_set * excFd)
+{
+  _disp.checkFd (inFd, outFd, excFd);
+}
 
 // Handle input on the server socket by accepting the connection
 // and reading the rpc request.
