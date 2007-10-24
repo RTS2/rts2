@@ -1,6 +1,6 @@
 /* 
  * Basic RTS2 devices and clients building block.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -76,7 +76,8 @@ Rts2Block::getPort (void)
   return port;
 }
 
-bool Rts2Block::commandQueEmpty ()
+bool
+Rts2Block::commandQueEmpty ()
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)
@@ -716,8 +717,7 @@ Rts2Block::statusInfo (Rts2Conn * conn)
   return 0;
 }
 
-bool
-Rts2Block::commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn)
+bool Rts2Block::commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn)
 {
   for (connections_t::iterator iter = connectionBegin ();
        iter != connectionEnd (); iter++)

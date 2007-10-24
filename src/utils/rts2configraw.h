@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -169,8 +169,11 @@ public:
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class Rts2ConfigRaw:
-public std::vector < Rts2ConfigSection * >
+class
+  Rts2ConfigRaw:
+  public
+  std::vector <
+Rts2ConfigSection * >
 {
 private:
   void
@@ -183,7 +186,8 @@ private:
   Rts2ConfigValue *
   getValue (const char *section, const char *valueName);
 protected:
-  std::ifstream * configStream;
+  std::ifstream *
+    configStream;
   virtual void
   getSpecialValues ()
   {
