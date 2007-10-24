@@ -59,7 +59,6 @@
 #define PROTO_AUTH		"A"
 #define PROTO_PRIORITY		"P"
 #define PROTO_PRIORITY_INFO	"Q"
-#define PROTO_INFO		"I"
 #define PROTO_STATUS		"S"
 #define PROTO_TECHNICAL		"T"
 #define PROTO_MESSAGE		"M"

@@ -68,7 +68,6 @@ public:
   virtual int init ();
 
   virtual int command ();
-  virtual int informations ();
   virtual int status ();
 };
 

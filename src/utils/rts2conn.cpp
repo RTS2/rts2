@@ -572,11 +572,6 @@ Rts2Conn::processLine ()
     {
       ret = priorityInfo ();
     }
-  // informations..
-  else if (isCommand (PROTO_INFO))
-    {
-      ret = informations ();
-    }
   // status
   else if (isCommand (PROTO_STATUS))
     {
@@ -972,17 +967,6 @@ Rts2Conn::command ()
     getName () << sendLog;
   sendCommandEnd (-4, "Unknow command");
   return -4;
-}
-
-int
-Rts2Conn::informations ()
-{
-  int value;
-  if (paramNextInteger (&value) || !paramEnd ())
-    return -2;
-  // set initial state & name
-  setState (value);
-  return -1;
 }
 
 int

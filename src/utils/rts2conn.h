@@ -512,7 +512,6 @@ protected:
   virtual void priorityChanged ();
   virtual int priorityChange ();
   int priorityInfo ();
-  virtual int informations ();
   virtual int status ();
   int sendNextCommand ();
 

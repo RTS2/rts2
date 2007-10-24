@@ -865,7 +865,7 @@ Rts2Device::sendStateInfo (Rts2Conn * conn)
 {
   int ret;
   char *msg;
-  asprintf (&msg, PROTO_INFO " %i", getState ());
+  asprintf (&msg, PROTO_STATUS " %i", getState ());
   ret = conn->send (msg);
   free (msg);
   return ret;

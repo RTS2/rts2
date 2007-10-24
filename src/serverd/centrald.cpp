@@ -266,7 +266,7 @@ Rts2ConnCentrald::sendStatusInfo ()
   char *msg;
   int ret;
 
-  asprintf (&msg, PROTO_INFO " %i", master->getState ());
+  asprintf (&msg, PROTO_STATUS " %i", master->getState ());
   ret = send (msg);
   free (msg);
   return ret;

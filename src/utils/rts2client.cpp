@@ -328,16 +328,6 @@ Rts2ConnCentraldClient::command ()
 }
 
 int
-Rts2ConnCentraldClient::informations ()
-{
-  int state_value;
-  if (paramNextInteger (&state_value) || !paramEnd ())
-    return 0;
-  setState (state_value);
-  return master->setMasterState (state_value);
-}
-
-int
 Rts2ConnCentraldClient::status ()
 {
   int new_state;
