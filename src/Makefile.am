@@ -23,4 +23,5 @@ SUBDIRS = \
 	soap \
 	sensord \
 	indi \
-	logger
+	logger \
+	xmlrpc
