@@ -1,6 +1,6 @@
 /* 
  * Device window display. 
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek,net>
+ * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -208,10 +208,10 @@ Rts2NDeviceWindow::createValueBox ()
     }
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet
+Rts2NDeviceWindow::injectKey (int key)
 {
-  keyRet
-    ret;
+  keyRet ret;
   switch (key)
     {
     case KEY_ENTER:
@@ -268,8 +268,7 @@ Rts2NDeviceWindow::refresh ()
     valueBox->draw ();
 }
 
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
   if (valueBox)
     return valueBox->setCursor ();
