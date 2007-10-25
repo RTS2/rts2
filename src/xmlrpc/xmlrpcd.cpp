@@ -78,6 +78,9 @@ Rts2XmlRpcd::init ()
 	if (ret)
 		return ret;
 
+	if (printDebug ())
+		XmlRpc::setVerbosity (5);
+
 	xmlrpc_server.bindAndListen (rpcPort);
 	xmlrpc_server.enableIntrospection (true);
 
@@ -104,7 +107,8 @@ Rts2XmlRpcd::selectSuccess ()
 Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv): Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "XMLRPC")
 {
 	rpcPort = 8888;
-	XmlRpc::setVerbosity (5);
+	addOption ('p', NULL, 1, "XML-RPC port. Default to 8888");
+	XmlRpc::setVerbosity (0);
 }
 
 
