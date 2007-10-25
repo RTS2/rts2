@@ -31,11 +31,39 @@ int main(int argc, char* argv[])
 	else
 		std::cout << "Error calling 'methodHelp'\n\n";
 
-	// Call the Hello method
+	// Call the DeviceCount method
 	if (c.execute("DeviceCount", noArgs, result))
 		std::cout << result << "\n\n";
 	else
 		std::cout << "Error calling 'DeviceCount'\n\n";
+
+	// Call system.listDevices method
+	if (c.execute("system.listDevices", noArgs, result))
+	{
+		std::cout << "Devices: " << std::endl;
+		for (int i = 0; i < result.size(); i++)
+		{
+			std::cout << " " << result[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "Error calling 'system.listDevices'\n\n";
+	}
+
+	// Call system.listVariables method
+	if (c.execute("system.listValues", noArgs, result))
+	{
+		std::cout << "Devices + values: " << std::endl;
+		for (int i = 0; i < result.size(); i++)
+		{
+			std::cout << " " << result[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "Error calling 'system.listValues'\n\n";
+	}
 
 	return 0;
 }

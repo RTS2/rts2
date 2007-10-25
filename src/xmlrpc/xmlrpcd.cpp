@@ -108,6 +108,13 @@ Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv): Rts2DeviceDb (in_argc, i
 }
 
 
+/**
+ * Returns number of devices connected to the system.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
 class DeviceCount: public XmlRpcServerMethod
 {
 	public:
@@ -125,6 +132,71 @@ class DeviceCount: public XmlRpcServerMethod
 			return std::string ("Returns number of devices connected to XMLRPC");
 		}
 } deviceSum (&xmlrpc_server);
+
+/**
+ * List name of devices connected to the server.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class ListDevices: public XmlRpcServerMethod
+{
+	public:
+		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod ("system.listDevices", s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			int i = 0;
+			for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++, i++)
+			{
+				result[i] = (*iter)->getName ();
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns name of devices conencted to the system");
+		}
+} listDevices (&xmlrpc_server);
+
+/**
+ * List name of all values accessible from server.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class ListValues: public XmlRpcServerMethod
+{
+	public:
+		ListValues (XmlRpcServer* s): XmlRpcServerMethod ("system.listValues", s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			int i = 0;
+			for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++)
+			{
+				Rts2Conn *conn = *iter;
+				std::string deviceName = (*iter)->getName ();
+				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				{
+					result[i] = deviceName + "." + (*variter)->getName ();
+				}
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns name of devices conencted to the system");
+		}
+} listValues (&xmlrpc_server);
 
 int
 main (int argc, char **argv)
