@@ -65,5 +65,55 @@ int main(int argc, char* argv[])
 		std::cout << "Error calling 'system.listValues'\n\n";
 	}
 
+	oneArg[0] = "C0";
+
+	// Call system.listVariables method with one device
+	if (c.execute("system.listValuesDevice", oneArg, result))
+	{
+		std::cout << "Devices + values for C0: " << std::endl;
+		for (int i = 0; i < result.size(); i++)
+		{
+			std::cout << " " << result[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "Error calling 'system.listValuesDevice'\n\n";
+	}
+
+	oneArg[0] = "C0";
+	oneArg[1] = "C1";
+
+	// Call system.listVariables method with one device
+	if (c.execute("system.listValuesDevice", oneArg, result))
+	{
+		std::cout << "Devices + values for C0 and C1: " << std::endl;
+		for (int i = 0; i < result.size(); i++)
+		{
+			std::cout << " " << result[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "Error calling 'system.listValuesDevice'\n\n";
+	}
+
+	XmlRpcValue notDevice;
+	notDevice[0] = "CXXX";
+
+	// Call system.listVariables method with one device
+	if (c.execute("system.listValuesDevice", notDevice, result))
+	{
+		std::cout << "Devices + values for CXX: " << std::endl;
+		for (int i = 0; i < result.size(); i++)
+		{
+			std::cout << " " << result[i] << std::endl;
+		}
+	}
+	else
+	{
+		std::cout << "Error calling 'system.listValuesDevice'\n\n";
+	}
+
 	return 0;
 }

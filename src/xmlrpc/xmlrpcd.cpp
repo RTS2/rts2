@@ -172,6 +172,11 @@ class ListDevices: public XmlRpcServerMethod
  */
 class ListValues: public XmlRpcServerMethod
 {
+	protected:
+		ListValues (const char *in_name, XmlRpcServer* s): XmlRpcServerMethod (in_name, s)
+		{
+		}
+
 	public:
 		ListValues (XmlRpcServer* s): XmlRpcServerMethod ("system.listValues", s)
 		{
@@ -180,11 +185,14 @@ class ListValues: public XmlRpcServerMethod
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn;
 			int i = 0;
+			// print results for single device..
 			for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++)
 			{
-				Rts2Conn *conn = *iter;
+				conn = *iter;
 				std::string deviceName = (*iter)->getName ();
+				// filter device list
 				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
 				{
 					result[i] = deviceName + "." + (*variter)->getName ();
@@ -197,6 +205,65 @@ class ListValues: public XmlRpcServerMethod
 			return std::string ("Returns name of devices conencted to the system");
 		}
 } listValues (&xmlrpc_server);
+
+/**
+ * List name of all values accessible from server.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class ListValuesDevice: public ListValues
+{
+	public:
+		ListValuesDevice (XmlRpcServer* s): ListValues ("system.listValuesDevice", s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn;
+			int i = 0;
+			// print results for single device..
+			if (params.size() == 1)
+			{
+				conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+				if (!conn)
+				{
+					throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
+				}
+				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				{
+					result[i] = (*variter)->getName ();
+				}
+			}
+			// print from all
+			else for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++)
+			{
+				conn = *iter;
+				std::string deviceName = (*iter)->getName ();
+				// filter device list
+				int v;
+				for (v = 0; v < params.size (); v++)
+				{
+					if (((std::string) params[v]) == deviceName)
+						break;
+				}
+				if (v == params.size ())
+					continue;
+				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				{
+					result[i] = deviceName + "." + (*variter)->getName ();
+				}
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns name of devices conencted to the system for given device(s)");
+		}
+} listValuesDevice (&xmlrpc_server);
 
 int
 main (int argc, char **argv)
