@@ -1129,8 +1129,19 @@ Rts2DevCameraAndor::camCoolHold ()
 int
 Rts2DevCameraAndor::camCoolTemp (float new_temp)
 {
-	CoolerON ();
-	SetTemperature ((int) new_temp);
+	int status;
+	status = CoolerON ();
+	if (status != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot switch cooler to on, status: " << status << sendLog;
+		return -1;
+	}
+	status = SetTemperature ((int) new_temp);
+	if (status != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set cooling tempereture, status: " << status << sendLog;
+		return -1;
+	}
 	tempSet->setValueDouble (new_temp);
 	return 0;
 }
