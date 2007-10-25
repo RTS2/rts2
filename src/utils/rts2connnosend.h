@@ -8,12 +8,11 @@ class Rts2Conn;
 
 class Rts2ConnNoSend:public Rts2Conn
 {
-public:
-  Rts2ConnNoSend (Rts2Block * in_master);
-  Rts2ConnNoSend (int in_sock, Rts2Block * in_master);
-    virtual ~ Rts2ConnNoSend (void);
+	public:
+		Rts2ConnNoSend (Rts2Block * in_master);
+		Rts2ConnNoSend (int in_sock, Rts2Block * in_master);
+		virtual ~ Rts2ConnNoSend (void);
 
-  virtual int send (const char *msg);
+		virtual int send (const char *msg);
 };
-
-#endif /* !__RTS2_CONN_NOSEND__ */
+#endif							 /* !__RTS2_CONN_NOSEND__ */

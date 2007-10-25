@@ -17,7 +17,8 @@ EXTRA_DIST = \
     rts2-logger.xml \
     rts2-logd.xml \
     rts2-image.xml \
-    rts2-tpm.xml
+    rts2-tpm.xml \
+    rts2-nightreport.xml
 
 man_MANS = \
     rts2.7 \
@@ -36,7 +37,9 @@ man_MANS = \
     rts2-logger.1 \
     rts2-logd.1 \
     rts2-image.1 \
-    rts2-tpm.1
+    rts2-tpm.1 \
+    rts2-nightreport.1
+
 
 doc_FOP = \
     rts2-man.fop \

@@ -21,109 +21,110 @@ using namespace OpenTPL;
 
 class Rts2TelescopeIr:public Rts2DevTelescope
 {
-private:
-  std::string * ir_ip;
-  int ir_port;
-  Client *tplc;
-  enum
-  { OPENED, OPENING, CLOSING, CLOSED } cover_state;
-  enum
-  { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED } dome_state;
+	private:
+		std::string * ir_ip;
+		int ir_port;
+		Client *tplc;
+		enum
+		{ OPENED, OPENING, CLOSING, CLOSED }
+		cover_state;
+		enum
+		{ D_OPENED, D_OPENING, D_CLOSING, D_CLOSED }
+		dome_state;
 
-  void checkErrors ();
-  void checkCover ();
-  void checkPower ();
+		void checkErrors ();
+		void checkCover ();
+		void checkPower ();
 
-  bool doCheckPower;
+		bool doCheckPower;
 
-  void getCover ();
-  void getDome ();
-  void initCoverState ();
+		void getCover ();
+		void getDome ();
+		void initCoverState ();
 
-    std::string errorList;
+		std::string errorList;
 
-  Rts2ValueBool *cabinetPower;
-  Rts2ValueFloat *cabinetPowerState;
+		Rts2ValueBool *cabinetPower;
+		Rts2ValueFloat *cabinetPowerState;
 
-  Rts2ValueDouble *derotatorOffset;
-  Rts2ValueDouble *derotatorCurrpos;
+		Rts2ValueDouble *derotatorOffset;
+		Rts2ValueDouble *derotatorCurrpos;
 
-  Rts2ValueBool *derotatorPower;
+		Rts2ValueBool *derotatorPower;
 
-  Rts2ValueDouble *targetDist;
-  Rts2ValueDouble *targetTime;
+		Rts2ValueDouble *targetDist;
+		Rts2ValueDouble *targetTime;
 
-  Rts2ValueInteger *mountTrack;
+		Rts2ValueInteger *mountTrack;
 
-  Rts2ValueFloat *domeUp;
-  Rts2ValueFloat *domeDown;
+		Rts2ValueFloat *domeUp;
+		Rts2ValueFloat *domeDown;
 
-  Rts2ValueDouble *domeCurrAz;
-  Rts2ValueDouble *domeTargetAz;
-  Rts2ValueBool *domePower;
-  Rts2ValueDouble *domeTarDist;
+		Rts2ValueDouble *domeCurrAz;
+		Rts2ValueDouble *domeTargetAz;
+		Rts2ValueBool *domePower;
+		Rts2ValueDouble *domeTarDist;
 
-  Rts2ValueDouble *cover;
+		Rts2ValueDouble *cover;
 
-  // model values
-  Rts2ValueString *model_dumpFile;
-  Rts2ValueDouble *model_aoff;
-  Rts2ValueDouble *model_zoff;
-  Rts2ValueDouble *model_ae;
-  Rts2ValueDouble *model_an;
-  Rts2ValueDouble *model_npae;
-  Rts2ValueDouble *model_ca;
-  Rts2ValueDouble *model_flex;
+		// model values
+		Rts2ValueString *model_dumpFile;
+		Rts2ValueDouble *model_aoff;
+		Rts2ValueDouble *model_zoff;
+		Rts2ValueDouble *model_ae;
+		Rts2ValueDouble *model_an;
+		Rts2ValueDouble *model_npae;
+		Rts2ValueDouble *model_ca;
+		Rts2ValueDouble *model_flex;
 
-  int infoModel ();
+		int infoModel ();
 
-protected:
-    time_t timeout;
+	protected:
+		time_t timeout;
 
-    template < typename T > int tpl_get (const char *name, T & val,
-					 int *status);
-    template < typename T > int tpl_set (const char *name, T val,
-					 int *status);
-    template < typename T > int tpl_setw (const char *name, T val,
-					  int *status);
-  virtual int processOption (int in_opt);
+		template < typename T > int tpl_get (const char *name, T & val,
+			int *status);
+		template < typename T > int tpl_set (const char *name, T val,
+			int *status);
+		template < typename T > int tpl_setw (const char *name, T val,
+			int *status);
+		virtual int processOption (int in_opt);
 
-  Rts2ValueBool *domeAutotrack;
+		Rts2ValueBool *domeAutotrack;
 
-  int coverClose ();
-  int coverOpen ();
+		int coverClose ();
+		int coverOpen ();
 
-  int domeOpen ();
-  int domeClose ();
+		int domeOpen ();
+		int domeClose ();
 
-  int setTrack (int new_track);
-  int setTrack (int new_track, bool autoEn);
+		int setTrack (int new_track);
+		int setTrack (int new_track, bool autoEn);
 
-  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-  bool getDerotatorPower ()
-  {
-    return derotatorPower->getValueBool ();
-  }
-public:
-    Rts2TelescopeIr (int argc, char **argv);
-  virtual ~ Rts2TelescopeIr (void);
-  virtual int initIrDevice ();
-  virtual int init ();
-  virtual int initValues ();
-  virtual int idle ();
-  virtual int ready ();
+		bool getDerotatorPower ()
+		{
+			return derotatorPower->getValueBool ();
+		}
+	public:
+		Rts2TelescopeIr (int argc, char **argv);
+		virtual ~ Rts2TelescopeIr (void);
+		virtual int initIrDevice ();
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+		virtual int ready ();
 
-  virtual int getAltAz ();
+		virtual int getAltAz ();
 
-  virtual int info ();
-  virtual int correct (double cor_ra, double cor_dec, double real_ra,
-		       double real_dec);
-  virtual int saveModel ();
-  virtual int loadModel ();
-  virtual int resetMount (resetStates reset_mount);
+		virtual int info ();
+		virtual int correct (double cor_ra, double cor_dec, double real_ra,
+			double real_dec);
+		virtual int saveModel ();
+		virtual int loadModel ();
+		virtual int resetMount (resetStates reset_mount);
 
-  virtual int getError (int in_error, std::string & desc);
+		virtual int getError (int in_error, std::string & desc);
 };
-
-#endif /* !__RTS2_TELD_IR__ */
+#endif							 /* !__RTS2_TELD_IR__ */

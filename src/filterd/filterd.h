@@ -31,40 +31,39 @@
  */
 class Rts2DevFilterd:public Rts2Device
 {
-private:
-  /**
-   * Set filter names from space separated argument list.
-   *
-   * @return -1 on error, otherwise 0.
-   */
-  int setFilters (char *filters);
-  int setFilterNumMask (int new_filter);
-protected:
-  char *filterType;
-  char *serialNumber;
+	private:
+		/**
+		 * Set filter names from space separated argument list.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int setFilters (char *filters);
+		int setFilterNumMask (int new_filter);
+	protected:
+		char *filterType;
+		char *serialNumber;
 
-  Rts2ValueSelection *filter;
+		Rts2ValueSelection *filter;
 
-  virtual int processOption (int in_opt);
+		virtual int processOption (int in_opt);
 
-  virtual int initValues ();
+		virtual int initValues ();
 
-  virtual int getFilterNum (void);
-  virtual int setFilterNum (int new_filter);
+		virtual int getFilterNum (void);
+		virtual int setFilterNum (int new_filter);
 
-  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-public:
-    Rts2DevFilterd (int in_argc, char **in_argv);
-    virtual ~ Rts2DevFilterd (void);
+	public:
+		Rts2DevFilterd (int in_argc, char **in_argv);
+		virtual ~ Rts2DevFilterd (void);
 
-  virtual int info ();
+		virtual int info ();
 
-  int setFilterNum (Rts2Conn * conn, int new_filter);
+		int setFilterNum (Rts2Conn * conn, int new_filter);
 
-  virtual int homeFilter ();
+		virtual int homeFilter ();
 
-  virtual int commandAuthorized (Rts2Conn * conn);
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
-
-#endif /* !__RTS2_FILTERD__ */
+#endif							 /* !__RTS2_FILTERD__ */

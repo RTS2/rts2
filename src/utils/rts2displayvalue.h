@@ -5,5 +5,4 @@
 #include "libnova_cpp.h"
 
 std::string getDisplayValue (Rts2Value * value);
-
-#endif /* !__RTS2_DISPLAYVALUE__ */
+#endif							 /* !__RTS2_DISPLAYVALUE__ */

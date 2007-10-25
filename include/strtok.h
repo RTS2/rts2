@@ -47,23 +47,21 @@
  * -end example]
  *
  * pedwards@jaj.com  May 1999
-*/
-
+ */
 
 #include <string>
-#include <cstring>		// for strchr
-
+#include <cstring>				 // for strchr
 
 /*****************************************************************
  * This is the only part of the implementation that I don't like.
  * It can probably be improved upon by the reader...
-*/
+ */
 namespace
 {
-  inline bool isws (char c, char const *const wstr)
-  {
-    return (strchr (wstr, c) != NULL);
-  }
+	inline bool isws (char c, char const *const wstr)
+	{
+		return (strchr (wstr, c) != NULL);
+	}
 }
 
 
@@ -74,31 +72,31 @@ namespace
  * I had hoped that "whitespace" would be a trait, but it isn't, so
  * the user must supply it.  Enh, this lets them break up strings on
  * different things easier than traits would anyhow.
-*/
+ */
 template < typename Container > void
 stringtok (Container & l, std::string const &s, char const *const ws =
-	   " \t\n")
+" \t\n")
 {
-  const std::string::size_type S = s.size ();
-  std::string::size_type i = 0;
+	const std::string::size_type S = s.size ();
+	std::string::size_type i = 0;
 
-  while (i < S)
-    {
-      // eat leading whitespace
-      while ((i < S) && (isws (s[i], ws)))
-	++i;
-      if (i == S)
-	return;			// nothing left but WS
+	while (i < S)
+	{
+		// eat leading whitespace
+		while ((i < S) && (isws (s[i], ws)))
+			++i;
+		if (i == S)
+			return;				 // nothing left but WS
 
-      // find end of word
-      std::string::size_type j = i + 1;
-      while ((j < S) && (!isws (s[j], ws)))
-	++j;
+		// find end of word
+		std::string::size_type j = i + 1;
+		while ((j < S) && (!isws (s[j], ws)))
+			++j;
 
-      // add word
-      l.push_back (s.substr (i, j - i));
+		// add word
+		l.push_back (s.substr (i, j - i));
 
-      // set up for next loop
-      i = j + 1;
-    }
+		// set up for next loop
+		i = j + 1;
+	}
 }

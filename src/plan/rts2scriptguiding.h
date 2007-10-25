@@ -15,44 +15,44 @@
  */
 class Rts2ScriptElementGuiding:public Rts2ScriptElement
 {
-private:
-  float expTime;
-  int endSignal;
+	private:
+		float expTime;
+		int endSignal;
 
-  int obsId;
-  int imgId;
+		int obsId;
+		int imgId;
 
-    std::string defaultImgProccess;
-  enum
-  { NO_IMAGE, NEED_IMAGE, WAITING_IMAGE, FAILED
-  } processingState;
+		std::string defaultImgProccess;
+		enum
+		{
+			NO_IMAGE, NEED_IMAGE, WAITING_IMAGE, FAILED
+		} processingState;
 
-  // will become -1 in case guiding goes other way then we wanted
-  double ra_mult;
-  double dec_mult;
+		// will become -1 in case guiding goes other way then we wanted
+		double ra_mult;
+		double dec_mult;
 
-  double last_ra;
-  double last_dec;
+		double last_ra;
+		double last_dec;
 
-  double min_change;
-  double bad_change;
+		double min_change;
+		double bad_change;
 
-  // this will check sign..
-  void checkGuidingSign (double &last, double &mult, double act);
-public:
-    Rts2ScriptElementGuiding (Rts2Script * in_script, float init_exposure,
-			      int in_endSignal);
-    virtual ~ Rts2ScriptElementGuiding (void);
+		// this will check sign..
+		void checkGuidingSign (double &last, double &mult, double act);
+	public:
+		Rts2ScriptElementGuiding (Rts2Script * in_script, float init_exposure,
+			int in_endSignal);
+		virtual ~ Rts2ScriptElementGuiding (void);
 
-  virtual void postEvent (Rts2Event * event);
+		virtual void postEvent (Rts2Event * event);
 
-  virtual int nextCommand (Rts2DevClientCamera * client,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (Rts2DevClientCamera * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 
-  virtual int processImage (Rts2Image * image);
-  virtual int waitForSignal (int in_sig);
-  virtual void cancelCommands ();
+		virtual int processImage (Rts2Image * image);
+		virtual int waitForSignal (int in_sig);
+		virtual void cancelCommands ();
 };
-
-#endif /* !__RTS2_SCRIPT_GUIDING__ */
+#endif							 /* !__RTS2_SCRIPT_GUIDING__ */

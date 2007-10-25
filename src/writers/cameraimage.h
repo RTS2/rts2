@@ -12,25 +12,25 @@ class Rts2DevClientCameraImage;
  */
 class ImageDeviceWait
 {
-private:
-  Rts2DevClient * devclient;
-  double after;
-public:
-    ImageDeviceWait (Rts2DevClient * in_devclient, double in_after)
-  {
-    devclient = in_devclient;
-    after = in_after;
-  }
+	private:
+		Rts2DevClient * devclient;
+		double after;
+	public:
+		ImageDeviceWait (Rts2DevClient * in_devclient, double in_after)
+		{
+			devclient = in_devclient;
+			after = in_after;
+		}
 
-  Rts2DevClient *getClient ()
-  {
-    return devclient;
-  }
+		Rts2DevClient *getClient ()
+		{
+			return devclient;
+		}
 
-  double getAfter ()
-  {
-    return after;
-  }
+		double getAfter ()
+		{
+			return after;
+		}
 };
 
 /**
@@ -38,37 +38,37 @@ public:
  */
 class CameraImage
 {
-private:
-  std::vector < ImageDeviceWait * >deviceWaits;
-public:
-  double exStart;
-  double exEnd;
-  bool dataWriten;
-  Rts2Image *image;
+	private:
+		std::vector < ImageDeviceWait * >deviceWaits;
+	public:
+		double exStart;
+		double exEnd;
+		bool dataWriten;
+		Rts2Image *image;
 
-    CameraImage (Rts2Image * in_image, double in_exStart)
-  {
-    image = in_image;
-    exStart = in_exStart;
-    exEnd = nan ("f");
-    dataWriten = false;
-  }
-  virtual ~ CameraImage (void);
+		CameraImage (Rts2Image * in_image, double in_exStart)
+		{
+			image = in_image;
+			exStart = in_exStart;
+			exEnd = nan ("f");
+			dataWriten = false;
+		}
+		virtual ~ CameraImage (void);
 
-  void waitForDevice (Rts2DevClient * devClient, double after);
-  bool waitingFor (Rts2DevClient * devClient);
+		void waitForDevice (Rts2DevClient * devClient, double after);
+		bool waitingFor (Rts2DevClient * devClient);
 
-  void setExEnd (double in_exEnd)
-  {
-    exEnd = in_exEnd;
-  }
+		void setExEnd (double in_exEnd)
+		{
+			exEnd = in_exEnd;
+		}
 
-  void setDataWriten ()
-  {
-    dataWriten = true;
-  }
+		void setDataWriten ()
+		{
+			dataWriten = true;
+		}
 
-  bool canDelete ();
+		bool canDelete ();
 };
 
 /**
@@ -76,23 +76,22 @@ public:
  * collected, then they are put to processing.
  */
 class CameraImages:public
-  std::vector <
+std::vector <
 CameraImage * >
 {
-public:
-  CameraImages ()
-  {
-  }
-  virtual ~
-  CameraImages (void);
+	public:
+		CameraImages ()
+		{
+		}
+		virtual ~
+			CameraImages (void);
 
-  void
-  deleteOld ();
+		void
+			deleteOld ();
 
-  void
-  infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client);
-  void
-  infoFailed (Rts2DevClientCameraImage * master, Rts2DevClient * client);
+		void
+			infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client);
+		void
+			infoFailed (Rts2DevClientCameraImage * master, Rts2DevClient * client);
 };
-
-#endif /* !__RTS2_CAMERA_IMAGE__ */
+#endif							 /* !__RTS2_CAMERA_IMAGE__ */

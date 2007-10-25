@@ -391,7 +391,7 @@ Rts2AppDb::initDB ()
 {
   std::string cs;
   EXEC SQL BEGIN DECLARE SECTION;
-  const char *conn_str;
+    const char *conn_str;
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 
@@ -454,6 +454,7 @@ Rts2AppDb::parseDate (const char *in_date, double &JD)
   JD = ln_get_julian_day (&l_date);
   return 0;
 }
+
 
 int
 Rts2AppDb::parseDate (const char *in_date, time_t *out_time)

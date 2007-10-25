@@ -12,10 +12,10 @@
 */
 #include <sdvlib.h>
 
-#define	SDV	0
-#define	PDV	1
+#define SDV 0
+#define PDV 1
 
 /*
 void sdv_start_hardware_continuous();
 */
-#endif /*  INCLUDE_sdvpci_h */
+#endif							 /*  INCLUDE_sdvpci_h */

@@ -9,20 +9,20 @@
  */
 class Rts2SWaitFor:public Rts2ScriptElement
 {
-private:
-  std::string deviceName;
-  std::string valueName;
-  double tarval;
-  double range;
-protected:
-    virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
-public:
-    Rts2SWaitFor (Rts2Script * in_script, const char *new_device,
-		  char *valueName, double value, double range);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  virtual int idle ();
+	private:
+		std::string deviceName;
+		std::string valueName;
+		double tarval;
+		double range;
+	protected:
+		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
+	public:
+		Rts2SWaitFor (Rts2Script * in_script, const char *new_device,
+			char *valueName, double value, double range);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int idle ();
 };
 
 /**
@@ -31,14 +31,13 @@ public:
  */
 class Rts2SSleep:public Rts2ScriptElement
 {
-private:
-  double sec;
-public:
-    Rts2SSleep (Rts2Script * in_script, double in_sec);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  virtual int idle ();
+	private:
+		double sec;
+	public:
+		Rts2SSleep (Rts2Script * in_script, double in_sec);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int idle ();
 };
-
-#endif /* !__RTS2_WAITFOR__ */
+#endif							 /* !__RTS2_WAITFOR__ */

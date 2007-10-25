@@ -67,6 +67,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
   }
 }
 
+
 void
 Target::writeAirmass (std::ostream & _os, double jd)
 {
@@ -76,6 +77,7 @@ Target::writeAirmass (std::ostream & _os, double jd)
   else
     _os << std::setw (3) << getAirmass (jd);
 }
+
 
 void
 Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
@@ -1145,6 +1147,7 @@ Target::isGood (double lst, double JD, struct ln_equ_posn * pos)
   return isAboveHorizon (&hrz);
 }
 
+
 bool
 Target::isGood (double JD)
 {
@@ -1153,6 +1156,7 @@ Target::isGood (double JD)
   return isGood (ln_get_mean_sidereal_time (JD) + observer->lng / 15.0, JD, &pos);
 }
 
+
 bool
 Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 {
@@ -1160,6 +1164,7 @@ Target::isAboveHorizon (struct ln_hrz_posn *hrz)
     return 0;
   return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
 }
+
 
 /****
  *
@@ -1545,7 +1550,7 @@ Target::printShortBonusInfo (std::ostream & _os, double JD)
     << std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
     << raDec << SEP;
   writeAirmass (_os, JD);
-  _os 
+  _os
     << SEP << hrzP;
   _os.precision (old_prec);
 }

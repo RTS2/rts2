@@ -7,21 +7,20 @@
 
 class Rts2CentralState:public Rts2ServerState
 {
-private:
+	private:
 
-public:
-  Rts2CentralState (int in_state):Rts2ServerState ()
-  {
-    setValue (in_state);
-  }
+	public:
+		Rts2CentralState (int in_state):Rts2ServerState ()
+		{
+			setValue (in_state);
+		}
 
-  const char *getStringShort ();
-  std::string getString ();
+		const char *getStringShort ();
+		std::string getString ();
 
-  friend std::ostream & operator << (std::ostream & _os,
-				     Rts2CentralState c_state);
+		friend std::ostream & operator << (std::ostream & _os,
+			Rts2CentralState c_state);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2CentralState c_state);
-
-#endif /* !__RTS2_CENTRALSTATE__ */
+#endif							 /* !__RTS2_CENTRALSTATE__ */

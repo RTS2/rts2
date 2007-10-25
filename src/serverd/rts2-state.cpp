@@ -31,7 +31,7 @@
 /*!
  * Prints current state on STDERR
  * States are (as described in ../../include/state.h):
- * 
+ *
  * 0 - day
  * 1 - evening
  * 2 - dusk
@@ -43,273 +43,280 @@
  */
 class Rts2StateApp:public Rts2App
 {
-private:
-  int verbose;			// verbosity level
-  double lng;
-  double lat;
-  double night_horizon;
-  double day_horizon;
+	private:
+		int verbose;			 // verbosity level
+		double lng;
+		double lat;
+		double night_horizon;
+		double day_horizon;
 
-  int eve_time;
-  int mor_time;
+		int eve_time;
+		int mor_time;
 
-  time_t currTime;
-  double JD;
-  void printAltTable (std::ostream & _os, double jd_start, double h_start,
-		      double h_end, double h_step = 1.0);
-  void printAltTable (std::ostream & _os);
-  void printDayStates (std::ostream & _os);
-protected:
-    virtual void help ();
-  virtual int processOption (int in_opt);
-public:
-    Rts2StateApp (int in_argc, char **in_argv);
+		time_t currTime;
+		double JD;
+		void printAltTable (std::ostream & _os, double jd_start, double h_start,
+			double h_end, double h_step = 1.0);
+		void printAltTable (std::ostream & _os);
+		void printDayStates (std::ostream & _os);
+	protected:
+		virtual void help ();
+		virtual int processOption (int in_opt);
+	public:
+		Rts2StateApp (int in_argc, char **in_argv);
 
-  virtual int init ();
-  virtual int run ();
+		virtual int init ();
+		virtual int run ();
 };
 
 void
 Rts2StateApp::printAltTable (std::ostream & _os, double jd_start,
-			     double h_start, double h_end, double h_step)
+double h_start, double h_end, double h_step)
 {
-  double i;
-  struct ln_hrz_posn hrz;
-  struct ln_equ_posn pos;
-  double jd;
-  int old_precison = _os.precision (0);
-  std::ios_base::fmtflags old_settings = _os.flags ();
-  _os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	double i;
+	struct ln_hrz_posn hrz;
+	struct ln_equ_posn pos;
+	double jd;
+	int old_precison = _os.precision (0);
+	std::ios_base::fmtflags old_settings = _os.flags ();
+	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
-  char old_fill = _os.fill ('0');
+	char old_fill = _os.fill ('0');
 
-  jd_start += h_start / 24.0;
+	jd_start += h_start / 24.0;
 
-  _os << "H   ";
+	_os << "H   ";
 
-  for (i = h_start; i <= h_end; i += h_step)
-    {
-      _os << "  " << std::setw (2) << i;
-    }
-  _os.fill (old_fill);
-  _os << std::endl;
+	for (i = h_start; i <= h_end; i += h_step)
+	{
+		_os << "  " << std::setw (2) << i;
+	}
+	_os.fill (old_fill);
+	_os << std::endl;
 
-  // print sun position
-  std::ostringstream _os3;
+	// print sun position
+	std::ostringstream _os3;
 
-  _os << "SAL ";
-  _os3 << "SAZ ";
+	_os << "SAL ";
+	_os3 << "SAZ ";
 
-  _os3.precision (0);
-  _os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	_os3.precision (0);
+	_os3.setf (std::ios_base::fixed, std::ios_base::floatfield);
 
-  jd = jd_start;
-  for (i = h_start; i <= h_end; i += h_step, jd += h_step / 24.0)
-    {
-      ln_get_solar_equ_coords (jd, &pos);
-      ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd,
-			   &hrz);
-      _os << " " << std::setw (3) << hrz.alt;
-      _os3 << " " << std::setw (3) << hrz.az;
-    }
+	jd = jd_start;
+	for (i = h_start; i <= h_end; i += h_step, jd += h_step / 24.0)
+	{
+		ln_get_solar_equ_coords (jd, &pos);
+		ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), jd,
+			&hrz);
+		_os << " " << std::setw (3) << hrz.alt;
+		_os3 << " " << std::setw (3) << hrz.az;
+	}
 
-  _os << std::endl << _os3.str () << std::endl << std::endl;
+	_os << std::endl << _os3.str () << std::endl << std::endl;
 
-  _os.setf (old_settings);
-  _os.precision (old_precison);
+	_os.setf (old_settings);
+	_os.precision (old_precison);
 }
+
 
 void
 Rts2StateApp::printAltTable (std::ostream & _os)
 {
-  double jd_start = ((int) JD) - 0.5;
+	double jd_start = ((int) JD) - 0.5;
 
-  _os
-    << std::endl
-    << "** SUN POSITION table from "
-    << LibnovaDate (jd_start) << " **" << std::endl << std::endl;
+	_os
+		<< std::endl
+		<< "** SUN POSITION table from "
+		<< LibnovaDate (jd_start) << " **" << std::endl << std::endl;
 
-  printAltTable (_os, jd_start, -1, 11);
-  _os << std::endl;
-  printAltTable (_os, jd_start, 12, 24);
+	printAltTable (_os, jd_start, -1, 11);
+	_os << std::endl;
+	printAltTable (_os, jd_start, 12, 24);
 }
+
 
 void
 Rts2StateApp::printDayStates (std::ostream & _os)
 {
-  time_t ev_time, curr_time;
-  int curr_type, next_type;
+	time_t ev_time, curr_time;
+	int curr_type, next_type;
 
-  curr_time = currTime;
+	curr_time = currTime;
 
-  while (curr_time < (currTime + 87000.0))
-    {
-      if (next_event
-	  (Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
-	   &next_type, &ev_time, night_horizon, day_horizon, eve_time,
-	   mor_time))
+	while (curr_time < (currTime + 87000.0))
 	{
-	  std::cerr << "Error getting next type" << std::endl;
-	  return;
-	}
-      if (curr_time == currTime)
-	{
-	  _os
-	    << LibnovaDate (&currTime)
-	    << " " << Rts2CentralState (curr_type)
-	    << " (current)" << std::endl;
-	}
-      _os
-	<< LibnovaDate (&ev_time)
-	<< " " << Rts2CentralState (next_type) << std::endl;
+		if (next_event
+			(Rts2Config::instance ()->getObserver (), &curr_time, &curr_type,
+			&next_type, &ev_time, night_horizon, day_horizon, eve_time,
+			mor_time))
+		{
+			std::cerr << "Error getting next type" << std::endl;
+			return;
+		}
+		if (curr_time == currTime)
+		{
+			_os
+				<< LibnovaDate (&currTime)
+				<< " " << Rts2CentralState (curr_type)
+				<< " (current)" << std::endl;
+		}
+		_os
+			<< LibnovaDate (&ev_time)
+			<< " " << Rts2CentralState (next_type) << std::endl;
 
-      curr_time = ev_time + 1;
-    }
+		curr_time = ev_time + 1;
+	}
 }
 
 
 void
 Rts2StateApp::help ()
 {
-  std::cout << "Observing state display tool." << std::endl;
-  Rts2App::help ();
+	std::cout << "Observing state display tool." << std::endl;
+	Rts2App::help ();
 }
+
 
 int
 Rts2StateApp::processOption (int in_opt)
 {
-  switch (in_opt)
-    {
-    case 'a':
-      lat = atof (optarg);
-      break;
-    case 'c':
-      verbose = -1;
-      break;
-    case 'l':
-      lng = atof (optarg);
-      break;
-    case 't':
-      currTime = atoi (optarg);
-      if (!currTime)
+	switch (in_opt)
 	{
-	  std::cerr << "Invalid time: " << optarg << std::endl;
-	  return -1;
+		case 'a':
+			lat = atof (optarg);
+			break;
+		case 'c':
+			verbose = -1;
+			break;
+		case 'l':
+			lng = atof (optarg);
+			break;
+		case 't':
+			currTime = atoi (optarg);
+			if (!currTime)
+			{
+				std::cerr << "Invalid time: " << optarg << std::endl;
+				return -1;
+			}
+			break;
+		case 'v':
+			verbose++;
+			break;
+		default:
+			return Rts2App::processOption (in_opt);
 	}
-      break;
-    case 'v':
-      verbose++;
-      break;
-    default:
-      return Rts2App::processOption (in_opt);
-    }
-  return 0;
+	return 0;
 }
+
 
 Rts2StateApp::Rts2StateApp (int in_argc, char **in_argv):Rts2App (in_argc,
-	 in_argv)
+in_argv)
 {
-  lng = lat = -1000;
-  verbose = 0;
+	lng = lat = -1000;
+	verbose = 0;
 
-  time (&currTime);
+	time (&currTime);
 
-  addOption ('a', "latitude", 1, "set latitude (overwrites config file)");
-  addOption ('l', "longtitude", 1,
-	     "set longtitude (overwrites config file). Negative for west from Greenwich)");
-  addOption ('c', "clear", 0,
-	     "just print current state (one number) and exists");
-  addOption ('t', "time", 1, "set time (int unix time)");
-  addOption ('v', "verbose", 0, "be verbose");
+	addOption ('a', "latitude", 1, "set latitude (overwrites config file)");
+	addOption ('l', "longtitude", 1,
+		"set longtitude (overwrites config file). Negative for west from Greenwich)");
+	addOption ('c', "clear", 0,
+		"just print current state (one number) and exists");
+	addOption ('t', "time", 1, "set time (int unix time)");
+	addOption ('v', "verbose", 0, "be verbose");
 }
+
 
 int
 Rts2StateApp::init ()
 {
-  Rts2Config *config;
-  int ret;
+	Rts2Config *config;
+	int ret;
 
-  ret = Rts2App::init ();
-  if (ret)
-    return ret;
+	ret = Rts2App::init ();
+	if (ret)
+		return ret;
 
-  JD = ln_get_julian_from_timet (&currTime);
+	JD = ln_get_julian_from_timet (&currTime);
 
-  config = Rts2Config::instance ();
+	config = Rts2Config::instance ();
 
-  if (config->loadFile () == -1)
-    {
-      std::cerr << "Cannot read configuration file, exiting." << std::endl;
-      return -1;
-    }
+	if (config->loadFile () == -1)
+	{
+		std::cerr << "Cannot read configuration file, exiting." << std::endl;
+		return -1;
+	}
 
-  if (lng != -1000)
-    config->getObserver ()->lng = lng;
-  if (lat != -1000)
-    config->getObserver ()->lat = lat;
+	if (lng != -1000)
+		config->getObserver ()->lng = lng;
+	if (lat != -1000)
+		config->getObserver ()->lat = lat;
 
-  night_horizon = -10;
-  Rts2Config::instance ()->getDouble ("observatory", "night_horizon",
-				      night_horizon);
-  day_horizon = 0;
-  Rts2Config::instance ()->getDouble ("observatory", "day_horizon",
-				      day_horizon);
+	night_horizon = -10;
+	Rts2Config::instance ()->getDouble ("observatory", "night_horizon",
+		night_horizon);
+	day_horizon = 0;
+	Rts2Config::instance ()->getDouble ("observatory", "day_horizon",
+		day_horizon);
 
-  eve_time = 7200;
-  Rts2Config::instance ()->getInteger ("observatory", "evening_time",
-				       eve_time);
-  mor_time = 1800;
-  Rts2Config::instance ()->getInteger ("observatory", "morning_time",
-				       mor_time);
+	eve_time = 7200;
+	Rts2Config::instance ()->getInteger ("observatory", "evening_time",
+		eve_time);
+	mor_time = 1800;
+	Rts2Config::instance ()->getInteger ("observatory", "morning_time",
+		mor_time);
 
-  return 0;
+	return 0;
 }
+
 
 int
 Rts2StateApp::run ()
 {
-  int ret;
-  time_t ev_time;
-  int curr_type, next_type;
+	int ret;
+	time_t ev_time;
+	int curr_type, next_type;
 
-  struct ln_lnlat_posn *obs;
+	struct ln_lnlat_posn *obs;
 
-  ret = init ();
-  if (ret)
-    return ret;
+	ret = init ();
+	if (ret)
+		return ret;
 
-  obs = Rts2Config::instance ()->getObserver ();
+	obs = Rts2Config::instance ()->getObserver ();
 
-  if (verbose > 0)
-    std::cout
-      << "Position: "
-      << LibnovaPos (obs)
-      << " Time: " << LibnovaDate (&currTime) << std::endl;
+	if (verbose > 0)
+		std::cout
+			<< "Position: "
+			<< LibnovaPos (obs)
+			<< " Time: " << LibnovaDate (&currTime) << std::endl;
 
-  if (next_event
-      (obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon,
-       day_horizon, eve_time, mor_time))
-    {
-      std::cerr << "Error getting next type" << std::endl;
-      return -1;
-    }
-  switch (verbose)
-    {
-    case -1:
-      std::cout << curr_type << std::endl;
-      break;
-    default:
-      printAltTable (std::cout);
-      printDayStates (std::cout);
-      std::cout << std::endl;
-      break;
-    }
-  return 0;
+	if (next_event
+		(obs, &currTime, &curr_type, &next_type, &ev_time, night_horizon,
+		day_horizon, eve_time, mor_time))
+	{
+		std::cerr << "Error getting next type" << std::endl;
+		return -1;
+	}
+	switch (verbose)
+	{
+		case -1:
+			std::cout << curr_type << std::endl;
+			break;
+		default:
+			printAltTable (std::cout);
+			printDayStates (std::cout);
+			std::cout << std::endl;
+			break;
+	}
+	return 0;
 }
+
 
 int
 main (int argc, char **argv)
 {
-  Rts2StateApp app (argc, argv);
-  return app.run ();
+	Rts2StateApp app (argc, argv);
+	return app.run ();
 }

@@ -6,27 +6,28 @@
 #include "../utilsdb/rts2obs.h"
 
 typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT } astrometry_stat_t;
+{ NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT }
+astrometry_stat_t;
 
 class Rts2ConnProcess:public Rts2ConnFork
 {
-protected:
-  Rts2Conn * reqConn;
-  astrometry_stat_t astrometryStat;
-public:
-    Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		     const char *in_exe, int in_timeout);
+	protected:
+		Rts2Conn * reqConn;
+		astrometry_stat_t astrometryStat;
+	public:
+		Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+			const char *in_exe, int in_timeout);
 
-  void deleteConnection (Rts2Conn * conn)
-  {
-    if (conn == reqConn)
-      reqConn = NULL;
-  }
+		void deleteConnection (Rts2Conn * conn)
+		{
+			if (conn == reqConn)
+				reqConn = NULL;
+		}
 
-  astrometry_stat_t getAstrometryStat ()
-  {
-    return astrometryStat;
-  }
+		astrometry_stat_t getAstrometryStat ()
+		{
+			return astrometryStat;
+		}
 };
 
 /**
@@ -41,57 +42,56 @@ public:
  */
 class Rts2ConnImgProcess:public Rts2ConnProcess
 {
-private:
-  char *imgPath;
+	private:
+		char *imgPath;
 
-  long id;
-  double ra, dec, ra_err, dec_err;
+		long id;
+		double ra, dec, ra_err, dec_err;
 
-  void sendOKMail (Rts2ImageDb * image);
-  void sendProcEndMail (Rts2ImageDb * image);
+		void sendOKMail (Rts2ImageDb * image);
+		void sendProcEndMail (Rts2ImageDb * image);
 
-protected:
-    virtual void connectionError (int last_data_size);
+	protected:
+		virtual void connectionError (int last_data_size);
 
-public:
-    Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+	public:
+		Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,
 			const char *in_exe, const char *in_path,
 			int in_timeout);
-    virtual ~ Rts2ConnImgProcess (void);
+		virtual ~ Rts2ConnImgProcess (void);
 
-  virtual int newProcess ();
-  virtual int processLine ();
+		virtual int newProcess ();
+		virtual int processLine ();
 };
 
 class Rts2ConnObsProcess:public Rts2ConnProcess
 {
-private:
-  int obsId;
-  Rts2Obs *obs;
-public:
-    Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+	private:
+		int obsId;
+		Rts2Obs *obs;
+	public:
+		Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
 			const char *in_exe, int in_obsId, int in_timeout);
 
-  virtual int newProcess ();
-  virtual int processLine ();
+		virtual int newProcess ();
+		virtual int processLine ();
 };
 
 class Rts2ConnDarkProcess:public Rts2ConnProcess
 {
-public:
-  Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		       const char *in_exe, int in_timeout);
+	public:
+		Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+			const char *in_exe, int in_timeout);
 
-  virtual int processLine ();
+		virtual int processLine ();
 };
 
 class Rts2ConnFlatProcess:public Rts2ConnProcess
 {
-public:
-  Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn,
-		       const char *in_exe, int in_timeout);
+	public:
+		Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+			const char *in_exe, int in_timeout);
 
-  virtual int processLine ();
+		virtual int processLine ();
 };
-
-#endif /* !__RTS2CONNIMGPROCESS__ */
+#endif							 /* !__RTS2CONNIMGPROCESS__ */

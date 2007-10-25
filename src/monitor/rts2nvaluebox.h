@@ -12,21 +12,21 @@
  */
 class Rts2NValueBox
 {
-private:
-  Rts2NWindow * topWindow;
-  Rts2Value *val;
-protected:
-    Rts2Value * getValue ()
-  {
-    return val;
-  }
-public:
-    Rts2NValueBox (Rts2NWindow * top, Rts2Value * in_val);
-  virtual ~ Rts2NValueBox (void);
-  virtual keyRet injectKey (int key) = 0;
-  virtual void draw () = 0;
-  virtual void sendValue (Rts2Conn * connection) = 0;
-  virtual bool setCursor () = 0;
+	private:
+		Rts2NWindow * topWindow;
+		Rts2Value *val;
+	protected:
+		Rts2Value * getValue ()
+		{
+			return val;
+		}
+	public:
+		Rts2NValueBox (Rts2NWindow * top, Rts2Value * in_val);
+		virtual ~ Rts2NValueBox (void);
+		virtual keyRet injectKey (int key) = 0;
+		virtual void draw () = 0;
+		virtual void sendValue (Rts2Conn * connection) = 0;
+		virtual bool setCursor () = 0;
 };
 
 /**
@@ -34,13 +34,13 @@ public:
  */
 class Rts2NValueBoxBool:public Rts2NValueBox, public Rts2NSelWindow
 {
-public:
-  Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int in_x,
-		     int in_y);
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+	public:
+		Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int in_x,
+			int in_y);
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
 
 /**
@@ -48,29 +48,29 @@ public:
  */
 class Rts2NValueBoxString:public Rts2NValueBox, Rts2NWindowEdit
 {
-public:
-  Rts2NValueBoxString (Rts2NWindow * top, Rts2ValueString * in_val, int in_x,
-		       int in_y);
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+	public:
+		Rts2NValueBoxString (Rts2NWindow * top, Rts2ValueString * in_val, int in_x,
+			int in_y);
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
 
 /**
  * Holds edit box for integer value.
  */
 class Rts2NValueBoxInteger:public Rts2NValueBox,
-  public Rts2NWindowEditIntegers
+public Rts2NWindowEditIntegers
 {
-public:
-  Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val,
+	public:
+		Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val,
 			int in_x, int in_y);
 
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
 
 /**
@@ -78,14 +78,14 @@ public:
  */
 class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
-public:
-  Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int in_x,
-		      int in_y);
+	public:
+		Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int in_x,
+			int in_y);
 
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
 
 /**
@@ -93,14 +93,14 @@ public:
  */
 class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEditDigits
 {
-public:
-  Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int in_x,
-		       int in_y);
+	public:
+		Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int in_x,
+			int in_y);
 
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
 
 /**
@@ -108,13 +108,12 @@ public:
  */
 class Rts2NValueBoxSelection:public Rts2NValueBox, public Rts2NSelWindow
 {
-public:
-  Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val,
-			  int in_x, int in_y);
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void sendValue (Rts2Conn * connection);
-  virtual bool setCursor ();
+	public:
+		Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val,
+			int in_x, int in_y);
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
 };
-
-#endif /* !__RTS2_NVALUEBOX__ */
+#endif							 /* !__RTS2_NVALUEBOX__ */

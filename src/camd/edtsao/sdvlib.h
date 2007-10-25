@@ -13,19 +13,19 @@
  */
 
 #ifndef _SDVLIB_H
-#define	_SDVLIB_H
+#define _SDVLIB_H
 
 #include "edtinc.h"
 
-#define SDV_NOLOCKDEV	PDV_NOLOCKDEV
-#define SDV_LOCKDEV	PDV_LOCKDEV
+#define SDV_NOLOCKDEV PDV_NOLOCKDEV
+#define SDV_LOCKDEV PDV_LOCKDEV
 
-#define SDV_LOCK_NONE	PDV_LOCK_NONE
-#define SDV_LOCK_VCO	PDV_LOCK_VCO
-#define SDV_LOCK_DIG	PDV_LOCK_DIG
+#define SDV_LOCK_NONE PDV_LOCK_NONE
+#define SDV_LOCK_VCO  PDV_LOCK_VCO
+#define SDV_LOCK_DIG  PDV_LOCK_DIG
 
 /* system flags -- N/A for PCI but dv checks for it so needs to be defined */
-#define SDV_FSUN4M	0x1
+#define SDV_FSUN4M  0x1
 
 /* typedef dvu_window sdv_window; */
 typedef PdvDev SdvDev;
@@ -104,15 +104,14 @@ int sdv_foi_set_serial_bits (SdvDev * sdv_p, int bits);
 int sdv_foi_get_serial_bits (SdvDev * sdv_p);
 
 #ifdef _MERGED_
-#define sdv_format_width(sd)	(sd->dd_p->width)
-#define sdv_format_height(sd)	(sd->dd_p->height)
-#define sdv_format_depth(sd)	(sd->dd_p->depth)
-#define sdv_interlace(sd)	(sd->dd_p->interlace)
+#define sdv_format_width(sd)  (sd->dd_p->width)
+#define sdv_format_height(sd) (sd->dd_p->height)
+#define sdv_format_depth(sd)  (sd->dd_p->depth)
+#define sdv_interlace(sd) (sd->dd_p->interlace)
 #else
-#define sdv_format_width(sd)	(sd->x_size)
-#define sdv_format_height(sd)	(sd->y_size)
-#define sdv_format_depth(sd)	(sd->depth)
-#define sdv_interlace(sd)	(sd->interlace)
+#define sdv_format_width(sd)  (sd->x_size)
+#define sdv_format_height(sd) (sd->y_size)
+#define sdv_format_depth(sd)  (sd->depth)
+#define sdv_interlace(sd) (sd->interlace)
 #endif
-
-#endif /* !_SDVLIB_H */
+#endif							 /* !_SDVLIB_H */

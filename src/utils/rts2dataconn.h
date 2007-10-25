@@ -21,37 +21,36 @@
 
 class Rts2ClientTCPDataConn:public Rts2ConnNoSend
 {
-private:
-  char *data;
-  char *dataTop;
-  int receivedSize;
-  int totalSize;
-  Rts2Conn *ownerConnection;
-public:
-    Rts2ClientTCPDataConn (Rts2Block * in_master, Rts2Conn * in_owner_conn,
-			   char *hostname, int in_port, int in_totalSize);
-    virtual ~ Rts2ClientTCPDataConn (void);
+	private:
+		char *data;
+		char *dataTop;
+		int receivedSize;
+		int totalSize;
+		Rts2Conn *ownerConnection;
+	public:
+		Rts2ClientTCPDataConn (Rts2Block * in_master, Rts2Conn * in_owner_conn,
+			char *hostname, int in_port, int in_totalSize);
+		virtual ~ Rts2ClientTCPDataConn (void);
 
-  virtual int receive (fd_set * set);
-  virtual int idle ();
+		virtual int receive (fd_set * set);
+		virtual int idle ();
 
-  virtual void dataReceived ();
-  char *getData ()
-  {
-    return data + sizeof (imghdr);
-  }
-  int getSize ()
-  {
-    return receivedSize - sizeof (imghdr);
-  }
-  unsigned short *getTop ()
-  {
-    return (unsigned short *) (data + receivedSize);
-  }
-  struct imghdr *getImageHeader ()
-  {
-    return (struct imghdr *) data;
-  }
+		virtual void dataReceived ();
+		char *getData ()
+		{
+			return data + sizeof (imghdr);
+		}
+		int getSize ()
+		{
+			return receivedSize - sizeof (imghdr);
+		}
+		unsigned short *getTop ()
+		{
+			return (unsigned short *) (data + receivedSize);
+		}
+		struct imghdr *getImageHeader ()
+		{
+			return (struct imghdr *) data;
+		}
 };
-
-#endif /* !__RTS2_DATACONN__ */
+#endif							 /* !__RTS2_DATACONN__ */

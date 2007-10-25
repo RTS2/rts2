@@ -8,90 +8,89 @@
 #include "../utils/rts2target.h"
 
 /**
- * That class provide scripting interface for devices, so they can 
+ * That class provide scripting interface for devices, so they can
  * run scrips..
  */
 class Rts2DevScript
 {
-private:
-  Rts2Conn * script_connection;
-  Rts2Script *script;
-  Rts2Script *nextScript;
-  Rts2Target *nextTarget;
-  int dont_execute_for;
-  int scriptLoopCount;
-  int lastTargetObsID;
-  void setNextTarget (Rts2Target * in_target);
+	private:
+		Rts2Conn * script_connection;
+		Rts2Script *script;
+		Rts2Script *nextScript;
+		Rts2Target *nextTarget;
+		int dont_execute_for;
+		int scriptLoopCount;
+		int lastTargetObsID;
+		void setNextTarget (Rts2Target * in_target);
 
-  void scriptBegin ();
-protected:
-    Rts2Target * currentTarget;
-  Rts2Command *nextComd;
-  char cmd_device[DEVICE_NAME_SIZE];
+		void scriptBegin ();
+	protected:
+		Rts2Target * currentTarget;
+		Rts2Command *nextComd;
+		char cmd_device[DEVICE_NAME_SIZE];
 
-  enum
-  { NO_WAIT, WAIT_SLAVE, WAIT_MASTER, WAIT_SIGNAL, WAIT_MIRROR,
-    WAIT_SEARCH
-  } waitScript;
+		enum
+		{
+			NO_WAIT, WAIT_SLAVE, WAIT_MASTER, WAIT_SIGNAL, WAIT_MIRROR,
+			WAIT_SEARCH
+		} waitScript;
 
-  int blockMove;
-//  enum
-//  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
-  virtual void startTarget ();
+		int blockMove;
+		//  enum
+		//  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
+		virtual void startTarget ();
 
-  virtual int getNextCommand () = 0;
-  int nextPreparedCommand ();
-  /**
-   * Entry point for script execution.
-   * 
-   * That's entry point to script execution. It's called when device
-   * is free to do new job - e.g when camera finish exposure (as we
-   * can move filter wheel during chip readout).
-   *
-   * It can be called more then once for one command - hence we keep
-   * in nextComd prepared next command, and return it from
-   * nextPreparedCommand when it's wise to return it.
-   *
-   * @return 0 when there isn't any next command to execute, 1 when
-   * there is next command available.
-   */
-  int haveNextCommand ();
-  virtual void unblockWait () = 0;
-  virtual void unsetWait () = 0;
-  virtual void clearWait () = 0;
-  virtual int isWaitMove () = 0;
-  virtual void setWaitMove () = 0;
-  virtual void queCommandFromScript (Rts2Command * comm) = 0;
+		virtual int getNextCommand () = 0;
+		int nextPreparedCommand ();
+		/**
+		 * Entry point for script execution.
+		 *
+		 * That's entry point to script execution. It's called when device
+		 * is free to do new job - e.g when camera finish exposure (as we
+		 * can move filter wheel during chip readout).
+		 *
+		 * It can be called more then once for one command - hence we keep
+		 * in nextComd prepared next command, and return it from
+		 * nextPreparedCommand when it's wise to return it.
+		 *
+		 * @return 0 when there isn't any next command to execute, 1 when
+		 * there is next command available.
+		 */
+		int haveNextCommand ();
+		virtual void unblockWait () = 0;
+		virtual void unsetWait () = 0;
+		virtual void clearWait () = 0;
+		virtual int isWaitMove () = 0;
+		virtual void setWaitMove () = 0;
+		virtual void queCommandFromScript (Rts2Command * comm) = 0;
 
-  virtual int getFailedCount () = 0;
-  virtual void clearFailedCount () = 0;
-  void idle ();
+		virtual int getFailedCount () = 0;
+		virtual void clearFailedCount () = 0;
+		void idle ();
 
-  virtual void deleteScript ();
+		virtual void deleteScript ();
 
-  // called when we find source..
-  virtual void searchSucess ();
+		// called when we find source..
+		virtual void searchSucess ();
 
-  virtual void clearBlockMove ()
-  {
-    blockMove = 0;
-  }
+		virtual void clearBlockMove ()
+		{
+			blockMove = 0;
+		}
 
-public:
-    Rts2DevScript (Rts2Conn * in_script_connection);
-  virtual ~ Rts2DevScript (void);
-  void postEvent (Rts2Event * event);
-  virtual void nextCommand () = 0;
+	public:
+		Rts2DevScript (Rts2Conn * in_script_connection);
+		virtual ~ Rts2DevScript (void);
+		void postEvent (Rts2Event * event);
+		virtual void nextCommand () = 0;
 
-  void setScript (Rts2Script * in_script)
-  {
-    script = in_script;
-  }
-  Rts2Script *getScript ()
-  {
-    return script;
-  }
+		void setScript (Rts2Script * in_script)
+		{
+			script = in_script;
+		}
+		Rts2Script *getScript ()
+		{
+			return script;
+		}
 };
-
-
-#endif /* !__RTS2_DEVSCRIPT__ */
+#endif							 /* !__RTS2_DEVSCRIPT__ */

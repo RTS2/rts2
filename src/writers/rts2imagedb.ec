@@ -608,6 +608,7 @@ Rts2ImageSkyDb::saveImage ()
   return 0;
 }
 
+
 int
 Rts2ImageSkyDb::deleteImage ()
 {

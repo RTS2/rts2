@@ -1,30 +1,30 @@
 #ifndef __RTS2_EVENT__
 #define __RTS2_EVENT__
 
-#define EVENT_SET_TARGET_ID	1
-#define EVENT_WRITE_TO_IMAGE		2
-#define EVENT_WRITE_TO_IMAGE_ENDS	13
-#define EVENT_SET_TARGET	3
+#define EVENT_SET_TARGET_ID 1
+#define EVENT_WRITE_TO_IMAGE    2
+#define EVENT_WRITE_TO_IMAGE_ENDS 13
+#define EVENT_SET_TARGET  3
 #define EVENT_OBSERVE           4
-#define EVENT_IMAGE_OK		5
+#define EVENT_IMAGE_OK    5
 
-#define EVENT_QUERY_WAIT	6
-#define EVENT_ENTER_WAIT	7
-#define EVENT_CLEAR_WAIT	8
+#define EVENT_QUERY_WAIT  6
+#define EVENT_ENTER_WAIT  7
+#define EVENT_CLEAR_WAIT  8
 
-#define EVENT_GET_RADEC		10
-#define EVENT_MOUNT_CHANGE	11
+#define EVENT_GET_RADEC   10
+#define EVENT_MOUNT_CHANGE  11
 
-#define EVENT_QUICK_ENABLE	12
+#define EVENT_QUICK_ENABLE  12
 
 // info failed/sucess calls
-#define EVENT_INFO_DEVCLI_OK	14
-#define EVENT_INFO_DEVCLI_FAILED	15
+#define EVENT_INFO_DEVCLI_OK  14
+#define EVENT_INFO_DEVCLI_FAILED  15
 
 /** Event issued when command return with OK state. */
-#define EVENT_COMMAND_OK	16
+#define EVENT_COMMAND_OK  16
 /** Event issued when command failed. */
-#define EVENT_COMMAND_FAILED	17
+#define EVENT_COMMAND_FAILED  17
 
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT   1000
@@ -42,42 +42,41 @@
 // augershooter.h          700-749
 // rts2devclifocuser.h     750-799
 // rts2loggerbase.h        800-849
-// rts2soapclient.h       1000-1200 
+// rts2soapclient.h       1000-1200
 
 class Rts2Event
 {
-private:
-  int type;
-  void *arg;
-public:
-    Rts2Event (int in_type)
-  {
-    type = in_type;
-    arg = 0;
-  }
-  Rts2Event (int in_type, void *in_arg)
-  {
-    type = in_type;
-    arg = in_arg;
-  }
-  Rts2Event (Rts2Event * event)
-  {
-    type = event->getType ();
-    arg = event->getArg ();
-  }
+	private:
+		int type;
+		void *arg;
+	public:
+		Rts2Event (int in_type)
+		{
+			type = in_type;
+			arg = 0;
+		}
+		Rts2Event (int in_type, void *in_arg)
+		{
+			type = in_type;
+			arg = in_arg;
+		}
+		Rts2Event (Rts2Event * event)
+		{
+			type = event->getType ();
+			arg = event->getArg ();
+		}
 
-  int getType ()
-  {
-    return type;
-  }
-  void *getArg ()
-  {
-    return arg;
-  }
-  void setArg (void *in_arg)
-  {
-    arg = in_arg;
-  }
+		int getType ()
+		{
+			return type;
+		}
+		void *getArg ()
+		{
+			return arg;
+		}
+		void setArg (void *in_arg)
+		{
+			arg = in_arg;
+		}
 };
-
-#endif /*! __RTS2_EVENT__ */
+#endif							 /*! __RTS2_EVENT__ */

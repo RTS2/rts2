@@ -7,15 +7,13 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif
+	#endif
 
-  int next_event (struct ln_lnlat_posn *observer, time_t * start_time,
-		  int *curr_type, int *type, time_t * ev_time,
-		  double night_horizon, double day_horizon, int in_eve_time,
-		  int in_mor_time);
+	int next_event (struct ln_lnlat_posn *observer, time_t * start_time,
+		int *curr_type, int *type, time_t * ev_time,
+		double night_horizon, double day_horizon, int in_eve_time, int in_mor_time);
 
-#ifdef __cplusplus
+	#ifdef __cplusplus
 };
 #endif
-
-#endif /* __RTS_RISESET__ */
+#endif							 /* __RTS_RISESET__ */

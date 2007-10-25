@@ -43,90 +43,92 @@ XmlRpcServer xmlrpc_server;
  */
 class Rts2XmlRpcd:public Rts2DeviceDb
 {
-private:
-  int rpcPort;
-protected:
-    virtual int processOption (int in_opt);
-  virtual int init ();
-  virtual void addSelectSocks ();
-  virtual void selectSuccess ();
+	private:
+		int rpcPort;
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+		virtual void addSelectSocks ();
+		virtual void selectSuccess ();
 
-public:
-    Rts2XmlRpcd (int in_argc, char **in_argv);
+	public:
+		Rts2XmlRpcd (int in_argc, char **in_argv);
 };
 
 int
 Rts2XmlRpcd::processOption (int in_opt)
 {
-  switch (in_opt)
-    {
-    case 'p':
-      rpcPort = atoi (optarg);
-      break;
-    default:
-      return Rts2DeviceDb::processOption (in_opt);
-    }
-  return 0;
+	switch (in_opt)
+	{
+		case 'p':
+			rpcPort = atoi (optarg);
+			break;
+		default:
+			return Rts2DeviceDb::processOption (in_opt);
+	}
+	return 0;
 }
+
 
 int
 Rts2XmlRpcd::init ()
 {
-  int ret;
-  ret = Rts2DeviceDb::init ();
-  if (ret)
-    return ret;
+	int ret;
+	ret = Rts2DeviceDb::init ();
+	if (ret)
+		return ret;
 
-  xmlrpc_server.bindAndListen (rpcPort);
-  xmlrpc_server.enableIntrospection (true);
+	xmlrpc_server.bindAndListen (rpcPort);
+	xmlrpc_server.enableIntrospection (true);
 
-  return ret;
+	return ret;
 }
+
 
 void
 Rts2XmlRpcd::addSelectSocks ()
 {
-  Rts2DeviceDb::addSelectSocks ();
-  xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
+	Rts2DeviceDb::addSelectSocks ();
+	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
 }
+
 
 void
 Rts2XmlRpcd::selectSuccess ()
 {
-  Rts2DeviceDb::selectSuccess ();
-  xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
+	Rts2DeviceDb::selectSuccess ();
+	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
 
-Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "XMLRPC")
+
+Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv): Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "XMLRPC")
 {
-  rpcPort = 8888;
-  XmlRpc::setVerbosity (5);
+	rpcPort = 8888;
+	XmlRpc::setVerbosity (5);
 }
 
-class DeviceCount:public XmlRpcServerMethod
+
+class DeviceCount: public XmlRpcServerMethod
 {
-public:
-  DeviceCount (XmlRpcServer * s):XmlRpcServerMethod ("DeviceCount", s)
-  {
-  }
+	public:
+		DeviceCount (XmlRpcServer* s) : XmlRpcServerMethod ("DeviceCount", s)
+		{
+		}
 
-  void execute (XmlRpcValue & params, XmlRpcValue & result)
-  {
-    result = ((Rts2XmlRpcd *) getMasterApp ())->connectionSize ();
-  }
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			result = ((Rts2XmlRpcd *) getMasterApp ())->connectionSize ();
+		}
 
-  std::string help ()
-  {
-    return std::string ("Returns number of devices connected to XMLRPC");
-  }
-}
-
-deviceSum (&xmlrpc_server);
+		std::string help ()
+		{
+			return std::string ("Returns number of devices connected to XMLRPC");
+		}
+} deviceSum (&xmlrpc_server);
 
 int
 main (int argc, char **argv)
 {
-  Rts2XmlRpcd device = Rts2XmlRpcd (argc, argv);
-  return device.run ();
+	Rts2XmlRpcd device = Rts2XmlRpcd (argc, argv);
+	return device.run ();
 }

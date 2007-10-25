@@ -4,125 +4,131 @@
 
 CameraImage::~CameraImage (void)
 {
-  for (std::vector < ImageDeviceWait * >::iterator iter =
-       deviceWaits.begin (); iter != deviceWaits.end (); iter++)
-    {
-      delete *iter;
-    }
-  deviceWaits.clear ();
-  delete image;
+	for (std::vector < ImageDeviceWait * >::iterator iter =
+		deviceWaits.begin (); iter != deviceWaits.end (); iter++)
+	{
+		delete *iter;
+	}
+	deviceWaits.clear ();
+	delete image;
 }
+
 
 void
 CameraImage::waitForDevice (Rts2DevClient * devClient, double after)
 {
-  deviceWaits.push_back (new ImageDeviceWait (devClient, after));
+	deviceWaits.push_back (new ImageDeviceWait (devClient, after));
 }
 
-bool CameraImage::waitingFor (Rts2DevClient * devClient)
+
+bool
+CameraImage::waitingFor (Rts2DevClient * devClient)
 {
-  bool
-    ret = false;
-  for (std::vector < ImageDeviceWait * >::iterator iter =
-       deviceWaits.begin (); iter != deviceWaits.end ();)
-    {
-      ImageDeviceWait *
-	idw = *iter;
-      if (idw->getClient () == devClient
-	  && (isnan (devClient->getConnection ()->getInfoTime ())
-	      || idw->getAfter () <
-	      devClient->getConnection ()->getInfoTime ()))
+	bool ret = false;
+	for (std::vector < ImageDeviceWait * >::iterator iter =
+		deviceWaits.begin (); iter != deviceWaits.end ();)
 	{
-	  delete
-	    idw;
-	  iter = deviceWaits.erase (iter);
-	  ret = true;
+		ImageDeviceWait *idw = *iter;
+		if (idw->getClient () == devClient
+			&& (isnan (devClient->getConnection ()->getInfoTime ())
+			|| idw->getAfter () <
+			devClient->getConnection ()->getInfoTime ()))
+		{
+			delete idw;
+			iter = deviceWaits.erase (iter);
+			ret = true;
+		}
+		else
+		{
+			logStream (MESSAGE_DEBUG) << "waitingFor " << (idw->getClient () ==
+				devClient) <<
+				Timestamp (devClient->getConnection ()->
+				getInfoTime ()) << " " << Timestamp (idw->
+				getAfter ()) <<
+				sendLog;
+			iter++;
+		}
 	}
-      else
-	{
-	  logStream (MESSAGE_DEBUG) << "waitingFor " << (idw->getClient () ==
-							 devClient) <<
-	    Timestamp (devClient->getConnection ()->
-		       getInfoTime ()) << " " << Timestamp (idw->
-							    getAfter ()) <<
-	    sendLog;
-	  iter++;
-	}
-    }
-  return ret;
+	return ret;
 }
 
-bool CameraImage::canDelete ()
+
+bool
+CameraImage::canDelete ()
 {
-  if (isnan (exEnd) || !dataWriten)
-    return false;
-  return deviceWaits.empty ();
+	if (isnan (exEnd) || !dataWriten)
+		return false;
+	return deviceWaits.empty ();
 }
+
 
 CameraImages::~CameraImages (void)
 {
-  for (CameraImages::iterator iter = begin (); iter != end (); iter++)
-    {
-      delete (*iter);
-    }
-  clear ();
+	for (CameraImages::iterator iter = begin (); iter != end (); iter++)
+	{
+		delete (*iter);
+	}
+	clear ();
 }
+
 
 void
 CameraImages::deleteOld ()
 {
-  for (CameraImages::iterator iter = begin (); iter != end ();)
-    {
-      CameraImage *ci = *iter;
-      if (ci->canDelete ())
+	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-	  delete ci;
-	  iter = erase (iter);
+		CameraImage *ci = *iter;
+		if (ci->canDelete ())
+		{
+			delete ci;
+			iter = erase (iter);
+		}
+		else
+		{
+			iter++;
+		}
 	}
-      else
-	{
-	  iter++;
-	}
-    }
 }
+
 
 void
 CameraImages::infoOK (Rts2DevClientCameraImage * master,
-		      Rts2DevClient * client)
+Rts2DevClient * client)
 {
-  for (CameraImages::iterator iter = begin (); iter != end ();)
-    {
-      CameraImage *ci = *iter;
-      if (ci->waitingFor (client))
+	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-	  ci->image->writeConn (client->getConnection (), EXPOSURE_END);
-	  if (ci->canDelete ())
-	    {
-	      iter = master->processCameraImage (iter);
-	    }
+		CameraImage *ci = *iter;
+		if (ci->waitingFor (client))
+		{
+			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
+			if (ci->canDelete ())
+			{
+				iter = master->processCameraImage (iter);
+			}
+		}
+		else
+		{
+			iter++;
+		}
 	}
-      else
-	{
-	  iter++;
-	}
-    }
 }
+
 
 void
 CameraImages::infoFailed (Rts2DevClientCameraImage * master,
-			  Rts2DevClient * client)
+Rts2DevClient * client)
 {
-  for (CameraImages::iterator iter = begin (); iter != end ();)
-    {
-      CameraImage *ci = *iter;
-      if (ci->waitingFor (client))
+	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-	  ci->image->writeConn (client->getConnection (), EXPOSURE_END);
-	  iter = master->processCameraImage (iter);
+		CameraImage *ci = *iter;
+		if (ci->waitingFor (client))
+		{
+			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
+			iter = master->processCameraImage (iter);
+		}
+		else
+		{
+			iter++;
+		}
 	}
-      else
-	{
-	  iter++;
-	}
-    }
 }

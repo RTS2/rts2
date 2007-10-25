@@ -170,6 +170,7 @@ TargetGRB::compareWithTarget (Target *in_target, double in_sep_limit)
   return ConstTarget::compareWithTarget (in_target, in_sep_limit);
 }
 
+
 double
 TargetGRB::getPostSec ()
 {
@@ -177,6 +178,7 @@ TargetGRB::getPostSec ()
   time (&now);
   return now - (time_t) grbDate;
 }
+
 
 void
 TargetGRB::checkValidity ()
@@ -192,6 +194,7 @@ TargetGRB::checkValidity ()
     setTargetEnabled (false);
   }
 }
+
 
 int
 TargetGRB::getDBScript (const char *camera_name, std::string &script)

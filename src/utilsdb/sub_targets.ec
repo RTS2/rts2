@@ -477,6 +477,7 @@ FlatTarget::getScript (const char *deviceName, std::string &buf)
   return 0;
 }
 
+
 // we will try to find target, that is among empty fields, and is at oposite location from sun
 // that target will then become our target_id, so entries in observation log
 // will refer to that id, not to generic flat target_id
@@ -578,6 +579,7 @@ FlatTarget::considerForObserving (double JD)
   return ConstTarget::considerForObserving (JD);
 }
 
+
 void
 FlatTarget::printExtra (std::ostream & _os, double JD)
 {
@@ -590,6 +592,7 @@ FlatTarget::printExtra (std::ostream & _os, double JD)
     << InfoVal<LibnovaDeg180> ("ANTISOL_DIST", ln_get_angular_separation (&pos, &antisol))
     << std::endl;
 }
+
 
 CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
@@ -1012,7 +1015,7 @@ ModelTarget::calPosition ()
       hrz_poz.alt = 2 + 88 * ((double) random () / RAND_MAX);
       hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / 90.0));
       if (!isAboveHorizon (&hrz_poz))
-	hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
+        hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
       ra_noise = 0;
       dec_noise = 0;
       break;
@@ -1069,7 +1072,7 @@ ModelTarget::afterSlewProcessed ()
   {
     EXEC SQL COMMIT;
   }
-//  return OBS_MOVE_UNMODELLED;
+  //  return OBS_MOVE_UNMODELLED;
   return OBS_MOVE;
 }
 

@@ -50,83 +50,83 @@ class Rts2Device;
 
 class Rts2DevConn:public Rts2Conn
 {
-private:
-  // in case we know address of other side..
-  Rts2Address * address;
+	private:
+		// in case we know address of other side..
+		Rts2Address * address;
 
-  Rts2Device *master;
+		Rts2Device *master;
 
-  int doDeamonize ();
-protected:
-    virtual int command ();
-public:
-    Rts2DevConn (int in_sock, Rts2Device * in_master);
+		int doDeamonize ();
+	protected:
+		virtual int command ();
+	public:
+		Rts2DevConn (int in_sock, Rts2Device * in_master);
 
-  virtual int init ();
-  virtual int idle ();
+		virtual int init ();
+		virtual int idle ();
 
-  virtual int authorizationOK ();
-  virtual int authorizationFailed ();
-  void setHavePriority (int in_have_priority);
+		virtual int authorizationOK ();
+		virtual int authorizationFailed ();
+		void setHavePriority (int in_have_priority);
 
-  virtual void setDeviceAddress (Rts2Address * in_addr);
-  void setDeviceName (char *in_name);
+		virtual void setDeviceAddress (Rts2Address * in_addr);
+		void setDeviceName (char *in_name);
 
-  void connAuth ();
+		void connAuth ();
 
-  virtual void setKey (int in_key);
-  virtual void setConnState (conn_state_t new_conn_state);
+		virtual void setKey (int in_key);
+		virtual void setConnState (conn_state_t new_conn_state);
 };
 
 class Rts2DevConnMaster:public Rts2Conn
 {
-  char *device_host;
-  char master_host[HOST_NAME_MAX];
-  int master_port;
-  char device_name[DEVICE_NAME_SIZE];
-  int device_type;
-  int device_port;
-  time_t nextTime;
-protected:
-    virtual int command ();
-  virtual int priorityChange ();
-  virtual int informations ();
-  virtual int status ();
-  virtual void connectionError (int last_data_size);
-public:
-    Rts2DevConnMaster (Rts2Block * in_master,
-		       char *in_device_host, int in_device_port,
-		       char *in_device_name, int in_device_type,
-		       char *in_master_host, int in_master_port);
-    virtual ~ Rts2DevConnMaster (void);
-  int registerDevice ();
-  virtual int init ();
-  virtual int idle ();
-  int authorize (Rts2DevConn * conn);
-  void setHavePriority (int in_have_priority);
+	char *device_host;
+	char master_host[HOST_NAME_MAX];
+	int master_port;
+	char device_name[DEVICE_NAME_SIZE];
+	int device_type;
+	int device_port;
+	time_t nextTime;
+	protected:
+		virtual int command ();
+		virtual int priorityChange ();
+		virtual int informations ();
+		virtual int status ();
+		virtual void connectionError (int last_data_size);
+	public:
+		Rts2DevConnMaster (Rts2Block * in_master,
+			char *in_device_host, int in_device_port,
+			char *in_device_name, int in_device_type,
+			char *in_master_host, int in_master_port);
+		virtual ~ Rts2DevConnMaster (void);
+		int registerDevice ();
+		virtual int init ();
+		virtual int idle ();
+		int authorize (Rts2DevConn * conn);
+		void setHavePriority (int in_have_priority);
 };
 
 class Rts2DevConnData:public Rts2Conn
 {
-  int sendHeader ();
-  Rts2Conn *dataConn;
-protected:
-    virtual int command ()
-  {
-    logStream (MESSAGE_DEBUG) << "Rts2DevConnData::command badCommand " <<
-      getCommand () << sendLog;
-    // there isn't any command possible on data connection
-    return -1;
-  };
-public:
-Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
-    (in_master)
-  {
-    dataConn = conn;
-  }
-  virtual int init ();
-  virtual int send (const char *msg);
-  int send (char *data, size_t data_size);
+	int sendHeader ();
+	Rts2Conn *dataConn;
+	protected:
+		virtual int command ()
+		{
+			logStream (MESSAGE_DEBUG) << "Rts2DevConnData::command badCommand " <<
+				getCommand () << sendLog;
+			// there isn't any command possible on data connection
+			return -1;
+		};
+	public:
+		Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
+			(in_master)
+		{
+			dataConn = conn;
+		}
+		virtual int init ();
+		virtual int send (const char *msg);
+		int send (char *data, size_t data_size);
 };
 
 /**
@@ -136,11 +136,11 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
  * state is retrieved.
  *
  * @msc
- * 
+ *
  * Block, Device, Centrald, Devices;
  *
  * Block->Device [label="device_status"];
- * Device->Centrald [label="status_info"]; 
+ * Device->Centrald [label="status_info"];
  * Centrald->Devices [label="status_info"];
  * Devices->Centrald [label="S xxxx"];
  * Centrald->Device [label="S xxxx"];
@@ -155,168 +155,167 @@ Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
  */
 class Rts2CommandDeviceStatusInfo:public Rts2Command
 {
-private:
-  Rts2Conn * owner_conn;
-public:
-  Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn);
-  virtual int commandReturnOK (Rts2Conn * conn);
-  virtual int commandReturnFailed (int status, Rts2Conn * conn);
+	private:
+		Rts2Conn * owner_conn;
+	public:
+		Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn);
+		virtual int commandReturnOK (Rts2Conn * conn);
+		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 
-  Rts2Conn *getOwnerConn ()
-  {
-    return owner_conn;
-  }
+		Rts2Conn *getOwnerConn ()
+		{
+			return owner_conn;
+		}
 };
 
 class Rts2Device:public Rts2Daemon
 {
-private:
-  Rts2DevConnMaster * conn_master;
-  char *centrald_host;
-  int centrald_port;
+	private:
+		Rts2DevConnMaster * conn_master;
+		char *centrald_host;
+		int centrald_port;
 
-  // mode related variable
-  char *modefile;
-  Rts2ConfigRaw *modeconf;
-  Rts2ValueSelection *modesel;
+		// mode related variable
+		char *modefile;
+		Rts2ConfigRaw *modeconf;
+		Rts2ValueSelection *modesel;
 
-  int device_port;
-  char *device_name;
-  int device_type;
+		int device_port;
+		char *device_name;
+		int device_type;
 
-  int log_option;
+		int log_option;
 
-  char *device_host;
+		char *device_host;
 
-  char *mailAddress;
+		char *mailAddress;
 
-  int setMode (int new_mode);
+		int setMode (int new_mode);
 
-  Rts2CommandDeviceStatusInfo *deviceStatusCommand;
+		Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 
-protected:
-  /**
-   * Process on option, when received from getopt () call.
-   * 
-   * @param in_opt  return value of getopt
-   * @return 0 on success, -1 if option wasn't processed
-   */
-    virtual int processOption (int in_opt);
-  virtual int init ();
+	protected:
+		/**
+		 * Process on option, when received from getopt () call.
+		 *
+		 * @param in_opt  return value of getopt
+		 * @return 0 on success, -1 if option wasn't processed
+		 */
+		virtual int processOption (int in_opt);
+		virtual int init ();
 
-  void clearStatesPriority ();
+		void clearStatesPriority ();
 
-  // sends operation block commands to master
-  // this functions should mark critical blocks during device execution
-  void blockExposure ()
-  {
-    maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible");
-  }
-  void clearExposure ()
-  {
-    maskState (BOP_EXPOSURE, ~BOP_EXPOSURE, "exposure possible");
-  }
+		// sends operation block commands to master
+		// this functions should mark critical blocks during device execution
+		void blockExposure ()
+		{
+			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible");
+		}
+		void clearExposure ()
+		{
+			maskState (BOP_EXPOSURE, ~BOP_EXPOSURE, "exposure possible");
+		}
 
-  void blockReadout ()
-  {
-    maskState (BOP_READOUT, BOP_READOUT, "readout not possible");
-  }
-  void clearReadout ()
-  {
-    maskState (BOP_READOUT, ~BOP_READOUT, "readout possible");
-  }
+		void blockReadout ()
+		{
+			maskState (BOP_READOUT, BOP_READOUT, "readout not possible");
+		}
+		void clearReadout ()
+		{
+			maskState (BOP_READOUT, ~BOP_READOUT, "readout possible");
+		}
 
-  void blockTelMove ()
-  {
-    maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible");
-  }
-  void clearTelMove ()
-  {
-    maskState (BOP_TEL_MOVE, ~BOP_TEL_MOVE, "telescope move possible");
-  }
+		void blockTelMove ()
+		{
+			maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible");
+		}
+		void clearTelMove ()
+		{
+			maskState (BOP_TEL_MOVE, ~BOP_TEL_MOVE, "telescope move possible");
+		}
 
-  virtual Rts2Conn *createClientConnection (char *in_deviceName);
-  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
+		virtual Rts2Conn *createClientConnection (char *in_deviceName);
+		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
-  virtual void stateChanged (int new_state, int old_state,
-			     const char *description);
+		virtual void stateChanged (int new_state, int old_state,
+			const char *description);
 
-  virtual void cancelPriorityOperations ();
+		virtual void cancelPriorityOperations ();
 
-  virtual bool queValueChange (Rts2CondValue * old_value)
-  {
-    return old_value->queValueChange (getState ());
-  }
+		virtual bool queValueChange (Rts2CondValue * old_value)
+		{
+			return old_value->queValueChange (getState ());
+		}
 
-  virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-public:
-  Rts2Device (int in_argc, char **in_argv, int in_device_type,
-	      char *default_name);
-  virtual ~ Rts2Device (void);
-  virtual Rts2DevConn *createConnection (int in_sock);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+	public:
+		Rts2Device (int in_argc, char **in_argv, int in_device_type,
+			char *default_name);
+		virtual ~ Rts2Device (void);
+		virtual Rts2DevConn *createConnection (int in_sock);
 
-  /**
-   * Called for commands when connection is authorized. Command processing is
-   * responsible for sending back error message when -1 is returned. Connection
-   * command handling sends out OK acknowledgement when 0 is returned.
-   *
-   * @param conn Connection which is sending the command.
-   *
-   * @return -1 when an error occured while processing command, 0 when command
-   * was accepted and performed, -5 when command was not accepted, but should
-   * be left to processing.
-   *
-   */
-  virtual int commandAuthorized (Rts2Conn * conn);
+		/**
+		 * Called for commands when connection is authorized. Command processing is
+		 * responsible for sending back error message when -1 is returned. Connection
+		 * command handling sends out OK acknowledgement when 0 is returned.
+		 *
+		 * @param conn Connection which is sending the command.
+		 *
+		 * @return -1 when an error occured while processing command, 0 when command
+		 * was accepted and performed, -5 when command was not accepted, but should
+		 * be left to processing.
+		 *
+		 */
+		virtual int commandAuthorized (Rts2Conn * conn);
 
-  int authorize (Rts2DevConn * conn);
-  int sendMaster (char *msg)
-  {
-    return conn_master->send (msg);
-  }
+		int authorize (Rts2DevConn * conn);
+		int sendMaster (char *msg)
+		{
+			return conn_master->send (msg);
+		}
 
-  // callback functions for device 
-  virtual int ready ();
+		// callback functions for device
+		virtual int ready ();
 
-  virtual int ready (Rts2Conn * conn);
+		virtual int ready (Rts2Conn * conn);
 
-  int sendStateInfo (Rts2Conn * conn);
+		int sendStateInfo (Rts2Conn * conn);
 
-  // only devices can send messages
-  virtual void sendMessage (messageType_t in_messageType,
-			    const char *in_messageString);
+		// only devices can send messages
+		virtual void sendMessage (messageType_t in_messageType,
+			const char *in_messageString);
 
-  int sendMail (char *subject, char *text);
+		int sendMail (char *subject, char *text);
 
-  int killAll ();
-  virtual int scriptEnds ();
+		int killAll ();
+		virtual int scriptEnds ();
 
-  virtual Rts2Conn *getCentraldConn ()
-  {
-    return conn_master;
-  };
-  char *getDeviceName ()
-  {
-    return device_name;
-  };
-  int getDeviceType ()
-  {
-    return device_type;
-  };
+		virtual Rts2Conn *getCentraldConn ()
+		{
+			return conn_master;
+		};
+		char *getDeviceName ()
+		{
+			return device_name;
+		};
+		int getDeviceType ()
+		{
+			return device_type;
+		};
 
-  virtual int statusInfo (Rts2Conn * conn);
+		virtual int statusInfo (Rts2Conn * conn);
 
-  virtual int setMasterState (int new_state);
+		virtual int setMasterState (int new_state);
 
-  void endDeviceStatusCommand ()
-  {
-    if (deviceStatusCommand)
-      {
-	deviceStatusCommand->getOwnerConn ()->sendCommandEnd (DEVDEM_OK,
-							      "device status updated");
-	deviceStatusCommand = NULL;
-      }
-  }
+		void endDeviceStatusCommand ()
+		{
+			if (deviceStatusCommand)
+			{
+				deviceStatusCommand->getOwnerConn ()->sendCommandEnd (DEVDEM_OK,
+					"device status updated");
+				deviceStatusCommand = NULL;
+			}
+		}
 };
-
-#endif /* !__RTS2_DEVICE__ */
+#endif							 /* !__RTS2_DEVICE__ */

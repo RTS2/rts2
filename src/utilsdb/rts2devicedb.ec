@@ -72,7 +72,7 @@ Rts2DeviceDb::initDB ()
   int ret;
   std::string cs;
   EXEC SQL BEGIN DECLARE SECTION;
-  const char *conn_str;
+    const char *conn_str;
   EXEC SQL END DECLARE SECTION;
   // try to connect to DB
 

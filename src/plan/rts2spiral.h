@@ -11,15 +11,14 @@
 
 class Rts2Spiral
 {
-private:
-  int step;
-  int step_size_x;
-  int step_size_y;
-  int step_size;
-  int up_d;
-public:
-    Rts2Spiral ();
-  void getNextStep (short &x, short &y);
+	private:
+		int step;
+		int step_size_x;
+		int step_size_y;
+		int step_size;
+		int up_d;
+	public:
+		Rts2Spiral ();
+		void getNextStep (short &x, short &y);
 };
-
-#endif /* !__RTS2_SPIRAL__ */
+#endif							 /* !__RTS2_SPIRAL__ */

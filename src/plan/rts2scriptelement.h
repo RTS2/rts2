@@ -9,49 +9,49 @@
 
 #include "status.h"
 
-#define EVENT_PRECISION_REACHED		RTS2_LOCAL_EVENT + 250
+#define EVENT_PRECISION_REACHED   RTS2_LOCAL_EVENT + 250
 
-#define EVENT_MIRROR_SET		RTS2_LOCAL_EVENT + 251
-#define EVENT_MIRROR_FINISH		RTS2_LOCAL_EVENT + 252
+#define EVENT_MIRROR_SET    RTS2_LOCAL_EVENT + 251
+#define EVENT_MIRROR_FINISH   RTS2_LOCAL_EVENT + 252
 
-#define EVENT_ACQUIRE_START		RTS2_LOCAL_EVENT + 253
-#define EVENT_ACQUIRE_WAIT		RTS2_LOCAL_EVENT + 254
-#define EVENT_ACQUIRE_QUERY		RTS2_LOCAL_EVENT + 255
+#define EVENT_ACQUIRE_START   RTS2_LOCAL_EVENT + 253
+#define EVENT_ACQUIRE_WAIT    RTS2_LOCAL_EVENT + 254
+#define EVENT_ACQUIRE_QUERY   RTS2_LOCAL_EVENT + 255
 
 // send some signal to other device..so they will
 // know that something is going on
-#define EVENT_SIGNAL			RTS2_LOCAL_EVENT + 256
+#define EVENT_SIGNAL      RTS2_LOCAL_EVENT + 256
 
-#define EVENT_SIGNAL_QUERY		RTS2_LOCAL_EVENT + 257
+#define EVENT_SIGNAL_QUERY    RTS2_LOCAL_EVENT + 257
 
-// send when data we received 
-#define EVENT_STAR_DATA			RTS2_LOCAL_EVENT + 258
+// send when data we received
+#define EVENT_STAR_DATA     RTS2_LOCAL_EVENT + 258
 
-#define EVENT_ADD_FIXED_OFFSET		RTS2_LOCAL_EVENT + 259
+#define EVENT_ADD_FIXED_OFFSET    RTS2_LOCAL_EVENT + 259
 
-#define EVENT_TEL_SEARCH_START		RTS2_LOCAL_EVENT + 260
-#define EVENT_TEL_SEARCH_STOP		RTS2_LOCAL_EVENT + 261
-#define EVENT_TEL_SEARCH_END		RTS2_LOCAL_EVENT + 262
+#define EVENT_TEL_SEARCH_START    RTS2_LOCAL_EVENT + 260
+#define EVENT_TEL_SEARCH_STOP   RTS2_LOCAL_EVENT + 261
+#define EVENT_TEL_SEARCH_END    RTS2_LOCAL_EVENT + 262
 // successfull search
-#define EVENT_TEL_SEARCH_SUCCESS	RTS2_LOCAL_EVENT + 263
+#define EVENT_TEL_SEARCH_SUCCESS  RTS2_LOCAL_EVENT + 263
 // guiding data available
-#define EVENT_GUIDING_DATA		RTS2_LOCAL_EVENT + 264
+#define EVENT_GUIDING_DATA    RTS2_LOCAL_EVENT + 264
 // ask for acquire state..
-#define EVENT_GET_ACQUIRE_STATE		RTS2_LOCAL_EVENT + 265
+#define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 265
 
 /**
  * Helper class for EVENT_ACQUIRE_QUERY
  */
 class AcquireQuery
 {
-public:
-  int tar_id;
-  int count;
-    AcquireQuery (int in_tar_id)
-  {
-    tar_id = in_tar_id;
-    count = 0;
-  }
+	public:
+		int tar_id;
+		int count;
+		AcquireQuery (int in_tar_id)
+		{
+			tar_id = in_tar_id;
+			count = 0;
+		}
 };
 
 class Rts2Script;
@@ -63,245 +63,245 @@ class Rts2Script;
  */
 class Rts2ScriptElement:public Rts2Object
 {
-private:
-  int startPos;
-  int len;
-  struct timeval nextIdle;
-  struct timeval idleTimeout;
-protected:
-    Rts2Script * script;
-  virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
-public:
-    Rts2ScriptElement (Rts2Script * in_script);
-    virtual ~ Rts2ScriptElement (void);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
-  virtual int nextCommand (Rts2DevClientPhot * phot,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
-  virtual int processImage (Rts2Image * image);
-  /**
-   * Returns 1 if we are waiting for that signal.
-   * Signal is > 0
-   */
-  virtual int waitForSignal (int in_sig)
-  {
-    return 0;
-  }
-  /**
-   * That method will be called when we currently run that
-   * command and we would like to cancel observation.
-   *
-   * Should be used in children when appopriate.
-   */
-  virtual void cancelCommands ()
-  {
-  }
-  /**
-   * This method will be called once after whole script is finished
-   * and before first item in script should be execute
-   */
-  virtual void beforeExecuting ()
-  {
-  }
-  virtual int getStartPos ();
-  void setLen (int in_len)
-  {
-    len = in_len;
-  }
-  virtual int getLen ();
+	private:
+		int startPos;
+		int len;
+		struct timeval nextIdle;
+		struct timeval idleTimeout;
+	protected:
+		Rts2Script * script;
+		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
+	public:
+		Rts2ScriptElement (Rts2Script * in_script);
+		virtual ~ Rts2ScriptElement (void);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (Rts2DevClientPhot * phot,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int processImage (Rts2Image * image);
+		/**
+		 * Returns 1 if we are waiting for that signal.
+		 * Signal is > 0
+		 */
+		virtual int waitForSignal (int in_sig)
+		{
+			return 0;
+		}
+		/**
+		 * That method will be called when we currently run that
+		 * command and we would like to cancel observation.
+		 *
+		 * Should be used in children when appopriate.
+		 */
+		virtual void cancelCommands ()
+		{
+		}
+		/**
+		 * This method will be called once after whole script is finished
+		 * and before first item in script should be execute
+		 */
+		virtual void beforeExecuting ()
+		{
+		}
+		virtual int getStartPos ();
+		void setLen (int in_len)
+		{
+			len = in_len;
+		}
+		virtual int getLen ();
 
-  int idleCall ();
+		int idleCall ();
 
-  void setIdleTimeout (double sec);
+		void setIdleTimeout (double sec);
 
-  /**
-   * called every n-second, defined by setIdleTimeout function. Return
-   * NEXT_COMMAND_KEEP when we should KEEP command or NEXT_COMMAND_NEXT when
-   * script should advance to next command.
-   */
-  virtual int idle ();
+		/**
+		 * called every n-second, defined by setIdleTimeout function. Return
+		 * NEXT_COMMAND_KEEP when we should KEEP command or NEXT_COMMAND_NEXT when
+		 * script should advance to next command.
+		 */
+		virtual int idle ();
 };
 
 class Rts2ScriptElementExpose:public Rts2ScriptElement
 {
-private:
-  float expTime;
-public:
-    Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		float expTime;
+	public:
+		Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementDark:public Rts2ScriptElement
 {
-private:
-  float expTime;
-public:
-    Rts2ScriptElementDark (Rts2Script * in_script, float in_expTime);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		float expTime;
+	public:
+		Rts2ScriptElementDark (Rts2Script * in_script, float in_expTime);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementBinning:public Rts2ScriptElement
 {
-private:
-  int bin;
-public:
-    Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int bin;
+	public:
+		Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementBox:public Rts2ScriptElement
 {
-private:
-  int x, y, w, h;
-public:
-    Rts2ScriptElementBox (Rts2Script * in_script, int in_x, int in_y,
-			  int in_w, int in_h);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int x, y, w, h;
+	public:
+		Rts2ScriptElementBox (Rts2Script * in_script, int in_x, int in_y,
+			int in_w, int in_h);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementCenter:public Rts2ScriptElement
 {
-private:
-  int w, h;
-public:
-    Rts2ScriptElementCenter (Rts2Script * in_script, int in_w, int in_h);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int w, h;
+	public:
+		Rts2ScriptElementCenter (Rts2Script * in_script, int in_w, int in_h);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementChange:public Rts2ScriptElement
 {
-private:
-  double ra;
-  double dec;
-public:
-    Rts2ScriptElementChange (Rts2Script * in_script, double in_ra,
-			     double in_dec);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  void setChangeRaDec (double in_ra, double in_dec)
-  {
-    ra = in_ra;
-    dec = in_dec;
-  }
+	private:
+		double ra;
+		double dec;
+	public:
+		Rts2ScriptElementChange (Rts2Script * in_script, double in_ra,
+			double in_dec);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		void setChangeRaDec (double in_ra, double in_dec)
+		{
+			ra = in_ra;
+			dec = in_dec;
+		}
 };
 
 class Rts2ScriptElementWait:public Rts2ScriptElement
 {
-public:
-  Rts2ScriptElementWait (Rts2Script * in_script);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
+	public:
+		Rts2ScriptElementWait (Rts2Script * in_script);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementFilter:public Rts2ScriptElement
 {
-private:
-  int filter;
-public:
-    Rts2ScriptElementFilter (Rts2Script * in_script, int in_filter);
-  virtual int nextCommand (Rts2DevClientCamera * camera,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
-  virtual int nextCommand (Rts2DevClientPhot * phot,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int filter;
+	public:
+		Rts2ScriptElementFilter (Rts2Script * in_script, int in_filter);
+		virtual int nextCommand (Rts2DevClientCamera * camera,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int nextCommand (Rts2DevClientPhot * phot,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementWaitAcquire:public Rts2ScriptElement
 {
-private:
-  // for which target shall we wait
-  int tar_id;
-public:
-    Rts2ScriptElementWaitAcquire (Rts2Script * in_script, int in_tar_id);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
+	private:
+		// for which target shall we wait
+		int tar_id;
+	public:
+		Rts2ScriptElementWaitAcquire (Rts2Script * in_script, int in_tar_id);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementMirror:public Rts2ScriptElement
 {
-private:
-  int mirror_pos;
-  char *mirror_name;
-public:
-    Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name,
-			     int in_mirror_pos);
-    virtual ~ Rts2ScriptElementMirror (void);
-  virtual void postEvent (Rts2Event * event);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  void takeJob ()
-  {
-    mirror_pos = -1;
-  }
-  int getMirrorPos ()
-  {
-    return mirror_pos;
-  }
-  int isMirrorName (const char *in_name)
-  {
-    return !strcmp (mirror_name, in_name);
-  }
+	private:
+		int mirror_pos;
+		char *mirror_name;
+	public:
+		Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name,
+			int in_mirror_pos);
+		virtual ~ Rts2ScriptElementMirror (void);
+		virtual void postEvent (Rts2Event * event);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		void takeJob ()
+		{
+			mirror_pos = -1;
+		}
+		int getMirrorPos ()
+		{
+			return mirror_pos;
+		}
+		int isMirrorName (const char *in_name)
+		{
+			return !strcmp (mirror_name, in_name);
+		}
 };
 
 class Rts2ScriptElementPhotometer:public Rts2ScriptElement
 {
-private:
-  int filter;
-  float exposure;
-  int count;
-public:
-    Rts2ScriptElementPhotometer (Rts2Script * in_script, int in_filter,
-				 float in_exposure, int in_count);
-  virtual int nextCommand (Rts2DevClientPhot * client,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int filter;
+		float exposure;
+		int count;
+	public:
+		Rts2ScriptElementPhotometer (Rts2Script * in_script, int in_filter,
+			float in_exposure, int in_count);
+		virtual int nextCommand (Rts2DevClientPhot * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementSendSignal:public Rts2ScriptElement
 {
-private:
-  int sig;
-  bool askedFor;
-public:
-    Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
-    virtual ~ Rts2ScriptElementSendSignal (void);
-  virtual void postEvent (Rts2Event * event);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
+	private:
+		int sig;
+		bool askedFor;
+	public:
+		Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig);
+		virtual ~ Rts2ScriptElementSendSignal (void);
+		virtual void postEvent (Rts2Event * event);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 
 class Rts2ScriptElementWaitSignal:public Rts2ScriptElement
 {
-private:
-  int sig;
-public:
-  // in_sig must be > 0
-    Rts2ScriptElementWaitSignal (Rts2Script * in_script, int in_sig);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
-  virtual int waitForSignal (int in_sig);
+	private:
+		int sig;
+	public:
+		// in_sig must be > 0
+		Rts2ScriptElementWaitSignal (Rts2Script * in_script, int in_sig);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		virtual int waitForSignal (int in_sig);
 };
 
 /**
@@ -309,32 +309,33 @@ public:
  */
 class Rts2ScriptElementSearch:public Rts2ScriptElement
 {
-private:
-  double searchRadius;
-  double searchSpeed;
-  enum
-  { NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED,
-    SEARCH_FAILED2
-  } processingState;
-public:
-    Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius,
-			     double in_searchSpeed);
-  virtual void postEvent (Rts2Event * event);
-  virtual int nextCommand (Rts2DevClientPhot * phot,
-			   Rts2Command ** new_command,
-			   char new_device[DEVICE_NAME_SIZE]);
-  double getSearchRadius ()
-  {
-    return searchRadius;
-  }
-  double getSearchSpeed ()
-  {
-    return searchSpeed;
-  }
-  void getJob ()
-  {
-    searchRadius = nan ("f");
-  }
+	private:
+		double searchRadius;
+		double searchSpeed;
+		enum
+		{
+			NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED,
+			SEARCH_FAILED2
+		} processingState;
+	public:
+		Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius,
+			double in_searchSpeed);
+		virtual void postEvent (Rts2Event * event);
+		virtual int nextCommand (Rts2DevClientPhot * phot,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+		double getSearchRadius ()
+		{
+			return searchRadius;
+		}
+		double getSearchSpeed ()
+		{
+			return searchSpeed;
+		}
+		void getJob ()
+		{
+			searchRadius = nan ("f");
+		}
 };
 
 /**
@@ -342,21 +343,20 @@ public:
  */
 class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 {
-private:
-  char *deviceName;
-    std::string valName;
-  char op;
-    std::string operand;
-protected:
-    virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
-public:
-    Rts2ScriptElementChangeValue (Rts2Script * in_script,
-				  const char *in_device_value,
-				  const char *chng_str);
-    virtual ~ Rts2ScriptElementChangeValue (void);
-  virtual int defnextCommand (Rts2DevClient * client,
-			      Rts2Command ** new_command,
-			      char new_device[DEVICE_NAME_SIZE]);
+	private:
+		char *deviceName;
+		std::string valName;
+		char op;
+		std::string operand;
+	protected:
+		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
+	public:
+		Rts2ScriptElementChangeValue (Rts2Script * in_script,
+			const char *in_device_value,
+			const char *chng_str);
+		virtual ~ Rts2ScriptElementChangeValue (void);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
-
-#endif /* !__RTS2_SCRIPTELEMENT__ */
+#endif							 /* !__RTS2_SCRIPTELEMENT__ */

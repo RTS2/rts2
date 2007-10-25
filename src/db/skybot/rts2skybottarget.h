@@ -14,10 +14,9 @@
 
 class Rts2SkyBoTTarget:public EllTarget
 {
-public:
-  Rts2SkyBoTTarget (const char *in_name);
+	public:
+		Rts2SkyBoTTarget (const char *in_name);
 
-  virtual int load ();
+		virtual int load ();
 };
-
-#endif /* !__RTS2__SKYBOTTARGET__ */
+#endif							 /* !__RTS2__SKYBOTTARGET__ */

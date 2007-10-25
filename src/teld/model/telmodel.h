@@ -48,21 +48,21 @@ class Rts2ModelTerm;
  */
 class Rts2ObsConditions
 {
-private:
-  Rts2DevTelescope * telescope;
-public:
-  Rts2ObsConditions (Rts2DevTelescope * in_telescope)
-  {
-    telescope = in_telescope;
-  }
-  int getFlip ()
-  {
-    return telescope->getFlip ();
-  }
-  double getLatitude ()
-  {
-    return telescope->getLatitude ();
-  }
+	private:
+		Rts2DevTelescope * telescope;
+	public:
+		Rts2ObsConditions (Rts2DevTelescope * in_telescope)
+		{
+			telescope = in_telescope;
+		}
+		int getFlip ()
+		{
+			return telescope->getFlip ();
+		}
+		double getLatitude ()
+		{
+			return telescope->getLatitude ();
+		}
 };
 
 /**
@@ -79,46 +79,45 @@ public:
  */
 class Rts2TelModel
 {
-private:
-  Rts2ObsConditions * cond;
-  const char *modelFile;
+	private:
+		Rts2ObsConditions * cond;
+		const char *modelFile;
 
-  char caption[81];		// Model description: 80 chars + NULL
-  char method;			// method: T or S
-  int num;			// Number of active observations
-  double rms;			// sky RMS (arcseconds)
-  double refA;			// refraction constant A (arcseconds)
-  double refB;			// refraction constant B (arcseconds)
-    std::vector < Rts2ModelTerm * >terms;
-public:
-    Rts2TelModel (Rts2DevTelescope * in_telescope, const char *in_modelFile);
-    virtual ~ Rts2TelModel (void);
-  int load ();
-  /**
-   * Apply model to coordinates. Pos.ra is hour angle, not RA.
-   */
-  int apply (struct ln_equ_posn *pos);
-  int applyVerbose (struct ln_equ_posn *pos);
+		char caption[81];		 // Model description: 80 chars + NULL
+		char method;			 // method: T or S
+		int num;				 // Number of active observations
+		double rms;				 // sky RMS (arcseconds)
+		double refA;			 // refraction constant A (arcseconds)
+		double refB;			 // refraction constant B (arcseconds)
+		std::vector < Rts2ModelTerm * >terms;
+	public:
+		Rts2TelModel (Rts2DevTelescope * in_telescope, const char *in_modelFile);
+		virtual ~ Rts2TelModel (void);
+		int load ();
+		/**
+		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
+		 */
+		int apply (struct ln_equ_posn *pos);
+		int applyVerbose (struct ln_equ_posn *pos);
 
-  int reverse (struct ln_equ_posn *pos);
-  int reverseVerbose (struct ln_equ_posn *pos);
-  int reverse (struct ln_equ_posn *pos, double sid);
+		int reverse (struct ln_equ_posn *pos);
+		int reverseVerbose (struct ln_equ_posn *pos);
+		int reverse (struct ln_equ_posn *pos, double sid);
 
-  /**
-   * Return RMS in degrees.
-   *
-   * @return RMS error in degrees.
-   */
-  double getRMS ()
-  {
-    return rms / 3600;
-  }
+		/**
+		 * Return RMS in degrees.
+		 *
+		 * @return RMS error in degrees.
+		 */
+		double getRMS ()
+		{
+			return rms / 3600;
+		}
 
-  friend std::istream & operator >> (std::istream & is, Rts2TelModel * model);
-  friend std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
+		friend std::istream & operator >> (std::istream & is, Rts2TelModel * model);
+		friend std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
 };
 
 std::istream & operator >> (std::istream & is, Rts2TelModel * model);
 std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
-
-#endif /* !__RTS2_TELMODEL__ */
+#endif							 /* !__RTS2_TELMODEL__ */

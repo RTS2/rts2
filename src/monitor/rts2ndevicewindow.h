@@ -1,5 +1,5 @@
 /* 
- * Device window display. 
+ * Device window display.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -25,58 +25,58 @@
 
 class Rts2NDeviceWindow:public Rts2NSelWindow
 {
-private:
-  WINDOW * valueList;
-  Rts2Conn *connection;
-  void printState ();
-  Rts2Value *getSelValue ();
-  void printValueDesc (Rts2Value * val);
-  void endValueBox ();
-  void createValueBox ();
-  Rts2NValueBox *valueBox;
-  /** Index from which start value box */
-  int valueBegins;
+	private:
+		WINDOW * valueList;
+		Rts2Conn *connection;
+		void printState ();
+		Rts2Value *getSelValue ();
+		void printValueDesc (Rts2Value * val);
+		void endValueBox ();
+		void createValueBox ();
+		Rts2NValueBox *valueBox;
+		/** Index from which start value box */
+		int valueBegins;
 
-protected:
-  double now;
-  struct timeval tvNow;
+	protected:
+		double now;
+		struct timeval tvNow;
 
-  Rts2Conn *getConnection ()
-  {
-    return connection;
-  }
+		Rts2Conn *getConnection ()
+		{
+			return connection;
+		}
 
-  /**
-   * Prints value name and value. Adds newline, so next value will be printed
-   * on next line.
-   *
-   * @param name Name of variable.
-   * @param value Value of variable.
-   */
-  void printValue (const char *name, const char *value);
+		/**
+		 * Prints value name and value. Adds newline, so next value will be printed
+		 * on next line.
+		 *
+		 * @param name Name of variable.
+		 * @param value Value of variable.
+		 */
+		void printValue (const char *name, const char *value);
 
-  /**
-   * Prints out one value. Adds newline, so next value will be
-   * printed on next line.
-   *
-   * @param value  Value to print.
-   */
-  void printValue (Rts2Value * value);
+		/**
+		 * Prints out one value. Adds newline, so next value will be
+		 * printed on next line.
+		 *
+		 * @param value  Value to print.
+		 */
+		void printValue (Rts2Value * value);
 
-  virtual void drawValuesList ();
+		virtual void drawValuesList ();
 
-public:
-  Rts2NDeviceWindow (Rts2Conn * in_connection);
-  virtual ~ Rts2NDeviceWindow (void);
+	public:
+		Rts2NDeviceWindow (Rts2Conn * in_connection);
+		virtual ~ Rts2NDeviceWindow (void);
 
-  virtual keyRet injectKey (int key);
-  virtual void draw ();
-  virtual void refresh ();
-  virtual bool setCursor ();
-  virtual bool needEnter ()
-  {
-    return valueBox != NULL;
-  }
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void refresh ();
+		virtual bool setCursor ();
+		virtual bool needEnter ()
+		{
+			return valueBox != NULL;
+		}
 };
 
 /**
@@ -84,25 +84,25 @@ public:
  */
 class FutureStateChange
 {
-private:
-  int state;
-  double endTime;
-public:
-    FutureStateChange (int in_state, double in_endTime)
-  {
-    state = in_state;
-    endTime = in_endTime;
-  }
+	private:
+		int state;
+		double endTime;
+	public:
+		FutureStateChange (int in_state, double in_endTime)
+		{
+			state = in_state;
+			endTime = in_endTime;
+		}
 
-  int getState ()
-  {
-    return state;
-  }
+		int getState ()
+		{
+			return state;
+		}
 
-  double getEndTime ()
-  {
-    return endTime;
-  }
+		double getEndTime ()
+		{
+			return endTime;
+		}
 };
 
 /**
@@ -110,34 +110,33 @@ public:
  */
 class Rts2NDeviceCentralWindow:public Rts2NDeviceWindow
 {
-private:
-  /** Private values. */
-  Rts2ValueTime * nightStart;
-  Rts2ValueTime *nightStop;
+	private:
+		/** Private values. */
+		Rts2ValueTime * nightStart;
+		Rts2ValueTime *nightStop;
 
-  Rts2ValueDouble *sunAlt;
-  Rts2ValueDouble *sunAz;
+		Rts2ValueDouble *sunAlt;
+		Rts2ValueDouble *sunAz;
 
-  Rts2ValueTime *sunRise;
-  Rts2ValueTime *sunSet;
+		Rts2ValueTime *sunRise;
+		Rts2ValueTime *sunSet;
 
-  Rts2ValueDouble *moonAlt;
-  Rts2ValueDouble *moonAz;
+		Rts2ValueDouble *moonAlt;
+		Rts2ValueDouble *moonAz;
 
-  Rts2ValueDouble *moonPhase;
+		Rts2ValueDouble *moonPhase;
 
-  Rts2ValueTime *moonRise;
-  Rts2ValueTime *moonSet;
+		Rts2ValueTime *moonRise;
+		Rts2ValueTime *moonSet;
 
-    std::vector < FutureStateChange > stateChanges;
+		std::vector < FutureStateChange > stateChanges;
 
-  void printValues ();
-protected:
-    virtual void drawValuesList ();
+		void printValues ();
+	protected:
+		virtual void drawValuesList ();
 
-public:
-    Rts2NDeviceCentralWindow (Rts2Conn * in_connection);
-    virtual ~ Rts2NDeviceCentralWindow (void);
+	public:
+		Rts2NDeviceCentralWindow (Rts2Conn * in_connection);
+		virtual ~ Rts2NDeviceCentralWindow (void);
 };
-
-#endif /* ! __RTS2_NDEVICEWINDOW__ */
+#endif							 /* ! __RTS2_NDEVICEWINDOW__ */

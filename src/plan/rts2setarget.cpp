@@ -2,36 +2,38 @@
 
 int
 Rts2SETDisable::defnextCommand (Rts2DevClient * client,
-				Rts2Command ** new_command,
-				char new_device[DEVICE_NAME_SIZE])
+Rts2Command ** new_command,
+char new_device[DEVICE_NAME_SIZE])
 {
-  getTarget ()->setTargetEnabled (false);
-  getTarget ()->save (true);
-  return NEXT_COMMAND_NEXT;
+	getTarget ()->setTargetEnabled (false);
+	getTarget ()->save (true);
+	return NEXT_COMMAND_NEXT;
 }
+
 
 int
 Rts2SETTempDisable::defnextCommand (Rts2DevClient * client,
-				    Rts2Command ** new_command,
-				    char new_device[DEVICE_NAME_SIZE])
+Rts2Command ** new_command,
+char new_device[DEVICE_NAME_SIZE])
 {
-  time_t now;
-  time (&now);
-  now += seconds;
-  getTarget ()->setNextObservable (&now);
-  getTarget ()->save (true);
-  return NEXT_COMMAND_NEXT;
+	time_t now;
+	time (&now);
+	now += seconds;
+	getTarget ()->setNextObservable (&now);
+	getTarget ()->save (true);
+	return NEXT_COMMAND_NEXT;
 }
+
 
 int
 Rts2SETTarBoost::defnextCommand (Rts2DevClient * client,
-				 Rts2Command ** new_command,
-				 char new_device[DEVICE_NAME_SIZE])
+Rts2Command ** new_command,
+char new_device[DEVICE_NAME_SIZE])
 {
-  time_t now;
-  time (&now);
-  now += seconds;
-  getTarget ()->setTargetBonus (bonus, &now);
-  getTarget ()->save (true);
-  return NEXT_COMMAND_NEXT;
+	time_t now;
+	time (&now);
+	now += seconds;
+	getTarget ()->setTargetBonus (bonus, &now);
+	getTarget ()->save (true);
+	return NEXT_COMMAND_NEXT;
 }

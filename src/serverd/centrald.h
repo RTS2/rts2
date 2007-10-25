@@ -1,4 +1,4 @@
-/** 
+/**
  * Centrald - RTS2 coordinator
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -39,9 +39,8 @@
 #include "status.h"
 
 #ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX		255
+#define HOST_NAME_MAX   255
 #endif
-
 
 class Rts2ConnCentrald;
 
@@ -70,156 +69,157 @@ class Rts2CommandStatusInfo;
 
 class Rts2Centrald:public Rts2Daemon
 {
-private:
-  int priority_client;
+	private:
+		int priority_client;
 
-  int next_event_type;
-  time_t next_event_time;
-  struct ln_lnlat_posn *observer;
+		int next_event_type;
+		time_t next_event_time;
+		struct ln_lnlat_posn *observer;
 
-  int morning_off;
-  int morning_standby;
+		int morning_off;
+		int morning_standby;
 
-  char *configFile;
-    std::string logFile;
-  // which sets logfile
-  enum
-  { LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF } logFileSource;
+		char *configFile;
+		std::string logFile;
+		// which sets logfile
+		enum
+		{ LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF }
+		logFileSource;
 
-    std::ofstream * fileLog;
+		std::ofstream * fileLog;
 
-  void openLog ();
-  int reloadConfig ();
+		void openLog ();
+		int reloadConfig ();
 
-  int connNum;
+		int connNum;
 
-  Rts2ValueTime *nextStateChange;
-  Rts2ValueSelection *nextState;
-  Rts2ValueDouble *observerLng;
-  Rts2ValueDouble *observerLat;
+		Rts2ValueTime *nextStateChange;
+		Rts2ValueSelection *nextState;
+		Rts2ValueDouble *observerLng;
+		Rts2ValueDouble *observerLat;
 
-  Rts2ValueDouble *nightHorizon;
-  Rts2ValueDouble *dayHorizon;
+		Rts2ValueDouble *nightHorizon;
+		Rts2ValueDouble *dayHorizon;
 
-  Rts2ValueInteger *eveningTime;
-  Rts2ValueInteger *morningTime;
+		Rts2ValueInteger *eveningTime;
+		Rts2ValueInteger *morningTime;
 
-protected:
-  /**
-   * @param new_state	new state, if -1 -> 3
-   */
-  int changeState (int new_state, const char *user);
+	protected:
+		/**
+		 * @param new_state	new state, if -1 -> 3
+		 */
+		int changeState (int new_state, const char *user);
 
-  virtual int processOption (int in_opt);
+		virtual int processOption (int in_opt);
 
-  /**
-   * Those callbacks are for current centrald implementation empty and returns
-   * NULL. They can be used in future to link two centrald to enable
-   * cooperative observation.
-   */
-  virtual Rts2Conn *createClientConnection (char *in_deviceName)
-  {
-    return NULL;
-  }
+		/**
+		 * Those callbacks are for current centrald implementation empty and returns
+		 * NULL. They can be used in future to link two centrald to enable
+		 * cooperative observation.
+		 */
+		virtual Rts2Conn *createClientConnection (char *in_deviceName)
+		{
+			return NULL;
+		}
 
-  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
-  {
-    return NULL;
-  }
+		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
+		{
+			return NULL;
+		}
 
-  virtual bool queValueChange (Rts2CondValue * old_value)
-  {
-    return false;
-  }
+		virtual bool queValueChange (Rts2CondValue * old_value)
+		{
+			return false;
+		}
 
-  virtual int init ();
-  virtual int initValues ();
+		virtual int init ();
+		virtual int initValues ();
 
-  virtual void connectionRemoved (Rts2Conn * conn);
+		virtual void connectionRemoved (Rts2Conn * conn);
 
-public:
-  Rts2Centrald (int in_argc, char **in_argv);
-  virtual ~ Rts2Centrald (void);
+	public:
+		Rts2Centrald (int in_argc, char **in_argv);
+		virtual ~ Rts2Centrald (void);
 
-  virtual int idle ();
+		virtual int idle ();
 
-  /**
-   * Made priority update, distribute messages to devices
-   * about priority update.
-   *
-   * @param timeout	time to wait for priority change.. 
-   *
-   * @return 0 on success, -1 and set errno otherwise
-   */
-  int changePriority (time_t timeout);
+		/**
+		 * Made priority update, distribute messages to devices
+		 * about priority update.
+		 *
+		 * @param timeout	time to wait for priority change..
+		 *
+		 * @return 0 on success, -1 and set errno otherwise
+		 */
+		int changePriority (time_t timeout);
 
-  /**
-   * Switch centrald state to ON.
-   *
-   * @param user Name of user who initiated state change.
-   */
-  int changeStateOn (const char *user)
-  {
-    return changeState ((next_event_type + 5) % 6, user);
-  }
+		/**
+		 * Switch centrald state to ON.
+		 *
+		 * @param user Name of user who initiated state change.
+		 */
+		int changeStateOn (const char *user)
+		{
+			return changeState ((next_event_type + 5) % 6, user);
+		}
 
-  /**
-   * Switch centrald to standby.
-   *
-   * @param user Name of user who initiated state change.
-   */
-  int changeStateStandby (const char *user)
-  {
-    return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6), user);
-  }
+		/**
+		 * Switch centrald to standby.
+		 *
+		 * @param user Name of user who initiated state change.
+		 */
+		int changeStateStandby (const char *user)
+		{
+			return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6), user);
+		}
 
-  /**
-   * Switch centrald to off.
-   *
-   * @param user Name of user who initiated state change.
-   */
-  int changeStateOff (const char *user)
-  {
-    return changeState (SERVERD_OFF, user);
-  }
-  inline int getPriorityClient ()
-  {
-    return priority_client;
-  }
+		/**
+		 * Switch centrald to off.
+		 *
+		 * @param user Name of user who initiated state change.
+		 */
+		int changeStateOff (const char *user)
+		{
+			return changeState (SERVERD_OFF, user);
+		}
+		inline int getPriorityClient ()
+		{
+			return priority_client;
+		}
 
-  virtual Rts2Conn *createConnection (int in_sock);
-  void connAdded (Rts2ConnCentrald * added);
-  Rts2Conn *getConnection (int conn_num);
+		virtual Rts2Conn *createConnection (int in_sock);
+		void connAdded (Rts2ConnCentrald * added);
+		Rts2Conn *getConnection (int conn_num);
 
-  void sendMessage (messageType_t in_messageType,
-		    const char *in_messageString);
+		void sendMessage (messageType_t in_messageType,
+			const char *in_messageString);
 
-  virtual void message (Rts2Message & msg);
-  void processMessage (Rts2Message & msg)
-  {
-    sendMessageAll (msg);
-  }
+		virtual void message (Rts2Message & msg);
+		void processMessage (Rts2Message & msg)
+		{
+			sendMessageAll (msg);
+		}
 
-  virtual void signaledHUP ();
+		virtual void signaledHUP ();
 
-  void bopMaskChanged ();
+		void bopMaskChanged ();
 
-  virtual int statusInfo (Rts2Conn * conn);
+		virtual int statusInfo (Rts2Conn * conn);
 
-  /**
-   * Return state of system, as seen rrom device identified by connection.
-   * 
-   * This command return state. It is similar to Rts2Daemon::getState() call.
-   * It result only differ when connection which is asking for state is a
-   * device connection. In this case, BOP mask is composed only from devices
-   * which can block querying device.
-   *
-   * The blocking devices are specified by blocking_by parameter in rts2.ini
-   * file.
-   *
-   * @param conn Connection which is asking for state.
-   */
-  int getStateForConnection (Rts2Conn * conn);
+		/**
+		 * Return state of system, as seen rrom device identified by connection.
+		 *
+		 * This command return state. It is similar to Rts2Daemon::getState() call.
+		 * It result only differ when connection which is asking for state is a
+		 * device connection. In this case, BOP mask is composed only from devices
+		 * which can block querying device.
+		 *
+		 * The blocking devices are specified by blocking_by parameter in rts2.ini
+		 * file.
+		 *
+		 * @param conn Connection which is asking for state.
+		 */
+		int getStateForConnection (Rts2Conn * conn);
 };
 
 /**
@@ -229,58 +229,57 @@ public:
  */
 class Rts2ConnCentrald:public Rts2Conn
 {
-private:
-  int authorized;
-  char login[CLIENT_LOGIN_SIZE];
-  Rts2Centrald *master;
-  char hostname[HOST_NAME_MAX];
-  int port;
-  int device_type;
+	private:
+		int authorized;
+		char login[CLIENT_LOGIN_SIZE];
+		Rts2Centrald *master;
+		char hostname[HOST_NAME_MAX];
+		int port;
+		int device_type;
 
-  /**
-   * Handle serverd commands.
-   *
-   * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
-   */
-  int command ();
-  int commandDevice ();
-  int commandClient ();
-  // command handling functions
-  int priorityCommand ();
-  int sendDeviceKey ();
-  int sendInfo ();
+		/**
+		 * Handle serverd commands.
+		 *
+		 * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
+		 */
+		int command ();
+		int commandDevice ();
+		int commandClient ();
+		// command handling functions
+		int priorityCommand ();
+		int sendDeviceKey ();
+		int sendInfo ();
 
-  /**
-   * Prints standard status header.
-   *
-   * It needs to be called after establishing of every new connection.
-   */
-  int sendStatusInfo ();
-  int sendAValue (char *name, int value);
-  int messageMask;
+		/**
+		 * Prints standard status header.
+		 *
+		 * It needs to be called after establishing of every new connection.
+		 */
+		int sendStatusInfo ();
+		int sendAValue (char *name, int value);
+		int messageMask;
 
-  Rts2CommandStatusInfo *statusCommand;
-protected:
-    virtual void setState (int in_value);
-public:
-    Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
-		      int in_centrald_id);
-    /**
-     * Called on connection exit.
-     *
-     * Delete client|device login|name, updates priorities, detach shared
-     * memory.
-     */
-    virtual ~ Rts2ConnCentrald (void);
-  virtual int sendMessage (Rts2Message & msg);
-  virtual int sendInfo (Rts2Conn * conn);
+		Rts2CommandStatusInfo *statusCommand;
+	protected:
+		virtual void setState (int in_value);
+	public:
+		Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
+			int in_centrald_id);
+		/**
+		 * Called on connection exit.
+		 *
+		 * Delete client|device login|name, updates priorities, detach shared
+		 * memory.
+		 */
+		virtual ~ Rts2ConnCentrald (void);
+		virtual int sendMessage (Rts2Message & msg);
+		virtual int sendInfo (Rts2Conn * conn);
 
-  void deleteStatusCommand ();
-  void setStatusCommand (Rts2CommandStatusInfo * cmd)
-  {
-    statusCommand = cmd;
-  }
-  virtual void updateStatusWait (Rts2Conn * conn);
+		void deleteStatusCommand ();
+		void setStatusCommand (Rts2CommandStatusInfo * cmd)
+		{
+			statusCommand = cmd;
+		}
+		virtual void updateStatusWait (Rts2Conn * conn);
 };
-
-#endif /*! __RTS2_CENTRALD__ */
+#endif							 /*! __RTS2_CENTRALD__ */
