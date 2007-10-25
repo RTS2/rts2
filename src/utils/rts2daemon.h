@@ -87,6 +87,15 @@ class Rts2Daemon:public Rts2Block
 		{
 			daemonize = DONT_DAEMONIZE;
 		}
+		/**
+		 * Returns true if daemon should stream debug messages to standart output.
+		 *
+		 * @return True when debug messages can be printed.
+		 */
+		bool printDebug ()
+		{
+			return daemonize == DONT_DAEMONIZE;
+		}
 		int doDeamonize ();
 		int lockFile ();
 		virtual void addSelectSocks ();
