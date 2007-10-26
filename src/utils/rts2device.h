@@ -47,7 +47,6 @@ class Rts2Device;
  * as connections created from device to device. They are distinguished by
  * connType (set by setType, get by getType calls).
  */
-
 class Rts2DevConn:public Rts2Conn
 {
 	private:
@@ -78,15 +77,21 @@ class Rts2DevConn:public Rts2Conn
 		virtual void setConnState (conn_state_t new_conn_state);
 };
 
+/**
+ * Device connection to master - Rts2Centrald.
+ *
+ * @see Rts2Centrald
+ */
 class Rts2DevConnMaster:public Rts2Conn
 {
-	char *device_host;
-	char master_host[HOST_NAME_MAX];
-	int master_port;
-	char device_name[DEVICE_NAME_SIZE];
-	int device_type;
-	int device_port;
-	time_t nextTime;
+	private:
+		char *device_host;
+		char master_host[HOST_NAME_MAX];
+		int master_port;
+		char device_name[DEVICE_NAME_SIZE];
+		int device_type;
+		int device_port;
+		time_t nextTime;
 	protected:
 		virtual int command ();
 		virtual int priorityChange ();
@@ -94,10 +99,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual int status ();
 		virtual void connectionError (int last_data_size);
 	public:
-		Rts2DevConnMaster (Rts2Block * in_master,
-			char *in_device_host, int in_device_port,
-			char *in_device_name, int in_device_type,
-			char *in_master_host, int in_master_port);
+		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port);
 		virtual ~ Rts2DevConnMaster (void);
 		int registerDevice ();
 		virtual int init ();
@@ -108,8 +110,9 @@ class Rts2DevConnMaster:public Rts2Conn
 
 class Rts2DevConnData:public Rts2Conn
 {
-	int sendHeader ();
-	Rts2Conn *dataConn;
+	private:
+		int sendHeader ();
+		Rts2Conn *dataConn;
 	protected:
 		virtual int command ()
 		{
@@ -119,8 +122,7 @@ class Rts2DevConnData:public Rts2Conn
 			return -1;
 		};
 	public:
-		Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn
-			(in_master)
+		Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn (in_master)
 		{
 			dataConn = conn;
 		}
@@ -192,6 +194,7 @@ class Rts2Device:public Rts2Daemon
 
 		int setMode (int new_mode);
 
+		int blockState;
 		Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 
 	protected:
@@ -238,8 +241,7 @@ class Rts2Device:public Rts2Daemon
 		virtual Rts2Conn *createClientConnection (char *in_deviceName);
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
-		virtual void stateChanged (int new_state, int old_state,
-			const char *description);
+		virtual void stateChanged (int new_state, int old_state, const char *description);
 
 		virtual void cancelPriorityOperations ();
 

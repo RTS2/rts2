@@ -157,7 +157,15 @@ class Rts2Conn:public Rts2Object
 		Rts2ValueTime *info_time;
 
 	protected:
+		/**
+		 * Other side of connection state.
+		 */
 		Rts2ServerState * serverState;
+
+		/**
+		 * BOP mask state.
+		 */
+		Rts2ServerState * bopState;
 
 		/**
 		 * Pointer to master object.
