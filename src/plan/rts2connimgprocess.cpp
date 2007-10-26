@@ -203,28 +203,12 @@ int in_timeout):
 Rts2ConnProcess (in_master, in_conn, in_exe, in_timeout)
 {
 	obsId = in_obsId;
-	obs = NULL;
-}
-
-
-int
-Rts2ConnObsProcess::newProcess ()
-{
-	int ret;
-	char *obsIdCh;
-	char *obsTarIdCh;
-	char *obsTarTypeCh;
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2ConnObsProcess::newProcess exe: " <<
-		exePath << " obsid: " << obsId << sendLog;
-	#endif
 	obs = new Rts2Obs (obsId);
-	ret = obs->load ();
-	if (ret)
+	if (obs->load ())
 	{
 		logStream (MESSAGE_ERROR) <<
 			"Rts2ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
-		return ret;
+		obs = NULL;
 	}
 
 	asprintf (&obsIdCh, "%i", obsId);
@@ -232,6 +216,16 @@ Rts2ConnObsProcess::newProcess ()
 	asprintf (&obsTarTypeCh, "%c", obs->getTargetType ());
 
 	delete obs;
+}
+
+
+int
+Rts2ConnObsProcess::newProcess ()
+{
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "Rts2ConnObsProcess::newProcess exe: " <<
+		exePath << " obsid: " << obsId << " pid: " << getpid () << sendLog;
+	#endif
 
 	if (exePath)
 	{

@@ -69,6 +69,10 @@ class Rts2ConnObsProcess:public Rts2ConnProcess
 	private:
 		int obsId;
 		Rts2Obs *obs;
+
+		char *obsIdCh;
+		char *obsTarIdCh;
+		char *obsTarTypeCh;
 	public:
 		Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
 			const char *in_exe, int in_obsId, int in_timeout);
