@@ -445,10 +445,10 @@ Rts2Block::changeBopState (int new_state)
 int
 Rts2Block::setMasterState (int new_state)
 {
-	masterState = new_state;
 	if ((masterState & ~BOP_MASK) != (new_state & ~BOP_MASK))
 	{
 		// call changeMasterState only if something except BOP_MASK changed
+		masterState = new_state;
 		changeMasterState (new_state);
 	}
 	if ((masterState & BOP_MASK) != (new_state & BOP_MASK))
