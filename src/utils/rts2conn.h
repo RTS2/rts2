@@ -123,6 +123,8 @@ class Rts2Conn:public Rts2Object
 		int connectionTimeout;
 		conn_state_t conn_state;
 
+		int status ();
+		int bopStatus ();
 		int message ();
 
 		/**
@@ -178,10 +180,29 @@ class Rts2Conn:public Rts2Object
 
 		/**
 		 * Set connection state.
+		 *
+		 * @param in_value New state value.
 		 */
 		virtual void setState (int in_value);
 
+		/**
+		 * Set device full BOP state.
+		 *
+		 * This is device full BOP mask, which includes BOP mask from
+		 * devices blocked by this call.
+		 *
+		 * @param in_value New full BOP state value.
+		 */
+		virtual void setBopState (int in_value);
+
+		/**
+		 * Reference to other device client.
+		 */
 		Rts2DevClient *otherDevice;
+
+		/**
+		 * Type of device.
+		 */
 		int otherType;
 
 		/**
@@ -247,6 +268,16 @@ class Rts2Conn:public Rts2Object
 		int getBopState ()
 		{
 			return getState () & BOP_MASK;
+		}
+
+		/**
+		 * Returns full BOP state, which include connections mentioned in block_by.
+		 *
+		 * @return Connection full BOP state.
+		 */
+		int getFullBopState ()
+		{
+			return bopState->getValue ();
 		}
 
 		/**
@@ -520,7 +551,6 @@ class Rts2Conn:public Rts2Object
 		virtual void priorityChanged ();
 		virtual int priorityChange ();
 		int priorityInfo ();
-		virtual int status ();
 		int sendNextCommand ();
 
 		int commandReturn ();

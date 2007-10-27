@@ -50,6 +50,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
 	serverState = new Rts2ServerState ();
+	bopState = new Rts2ServerState ();
 	otherDevice = NULL;
 	otherType = -1;
 
@@ -83,6 +84,7 @@ Rts2Object ()
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
 	serverState = new Rts2ServerState ();
+	bopState = new Rts2ServerState ();
 	otherDevice = NULL;
 	otherType = -1;
 
@@ -102,6 +104,7 @@ Rts2Conn::~Rts2Conn (void)
 	if (sock >= 0)
 		close (sock);
 	delete serverState;
+	delete bopState;
 	delete otherDevice;
 	queClear ();
 	delete[]buf;
@@ -529,6 +532,13 @@ Rts2Conn::setState (int in_value)
 
 
 void
+Rts2Conn::setBopState (int in_value)
+{
+	bopState->setValue (in_value);
+}
+
+
+void
 Rts2Conn::setOtherType (int other_device_type)
 {
 	delete otherDevice;
@@ -593,6 +603,11 @@ Rts2Conn::processLine ()
 	else if (isCommand (PROTO_STATUS))
 	{
 		ret = status ();
+	}
+	// bop status update
+	else if (isCommand (PROTO_BOP_STATE))
+	{
+		ret = bopStatus ();
 	}
 	// message from application
 	else if (isCommand (PROTO_MESSAGE))
@@ -1007,6 +1022,17 @@ Rts2Conn::status ()
 	if (paramNextInteger (&value) || !paramEnd ())
 		return -2;
 	setState (value);
+	return -1;
+}
+
+
+int
+Rts2Conn::bopStatus ()
+{
+	int value;
+	if (paramNextInteger (&value) || !paramEnd ())
+		return -2;
+	setBopState (value);
 	return -1;
 }
 

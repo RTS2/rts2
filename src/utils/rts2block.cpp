@@ -213,29 +213,47 @@ Rts2Block::sendMessageAll (Rts2Message & msg)
 }
 
 
-int
+void
 Rts2Block::sendStatusMessage (int state)
 {
 	char *msg;
-	int ret;
 
 	asprintf (&msg, PROTO_STATUS " %i", state);
-	ret = sendAll (msg);
+	sendAll (msg);
 	free (msg);
-	return ret;
 }
 
 
-int
+void
 Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
 {
 	char *msg;
-	int ret;
 
 	asprintf (&msg, PROTO_STATUS " %i", state);
-	ret = conn->send (msg);
+	conn->send (msg);
 	free (msg);
-	return ret;
+}
+
+
+void
+Rts2Block::sendBopMessage (int state)
+{
+	char *msg;
+
+	asprintf (&msg, PROTO_BOP_STATE " %i", state);
+	sendAll (msg);
+	free (msg);
+}
+
+
+void
+Rts2Block::sendBopMessage (int state, Rts2Conn * conn)
+{
+	char *msg;
+
+	asprintf (&msg, PROTO_BOP_STATE " %i", state);
+	conn->send (msg);
+	free (msg);
 }
 
 

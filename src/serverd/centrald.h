@@ -17,6 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/*!
+ * @file Server deamon source.
+ *
+ * Source for server deamon - a something between client and device,
+ * what takes care of priorities and authentification.
+ *
+ * Contains list of clients with their id's and with their access rights.
+ */
+
 #ifndef __RTS2_CENTRALD__
 #define __RTS2_CENTRALD__
 
@@ -66,7 +75,6 @@ class Rts2CommandStatusInfo;
  * @see Rts2Client
  * @see Rts2ConnCentraldClient
  */
-
 class Rts2Centrald:public Rts2Daemon
 {
 	private:
@@ -189,6 +197,15 @@ class Rts2Centrald:public Rts2Daemon
 
 		virtual Rts2Conn *createConnection (int in_sock);
 		void connAdded (Rts2ConnCentrald * added);
+
+		/**
+		 * Return connection based on conn_num.
+		 *
+		 * @param conn_num Connection number, which uniquely identified
+		 * every connection.
+		 *
+		 * @return Connection with given connection number.
+		 */
 		Rts2Conn *getConnection (int conn_num);
 
 		void sendMessage (messageType_t in_messageType,
@@ -207,7 +224,7 @@ class Rts2Centrald:public Rts2Daemon
 		virtual int statusInfo (Rts2Conn * conn);
 
 		/**
-		 * Return state of system, as seen rrom device identified by connection.
+		 * Return state of system, as seen from device identified by connection.
 		 *
 		 * This command return state. It is similar to Rts2Daemon::getState() call.
 		 * It result only differ when connection which is asking for state is a

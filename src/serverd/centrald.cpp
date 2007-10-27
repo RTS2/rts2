@@ -17,17 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/*!
- * @file Server deamon source.
- *
- * Source for server deamon - a something between client and device,
- * what takes care of priorities and authentification.
- *
- * Contains list of clients with their id's and with their access rights.
- *
- * @author petr
- */
-
 #include "centrald.h"
 #include "../utils/rts2command.h"
 
@@ -195,7 +184,8 @@ Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 	if (getMaster ()->commandPending (statusCommand, conn))
 		return;
 
-	master->sendStatusMessage (master->getStateForConnection (this), this);
+	master->sendStatusMessage (master->getState (), this);
+	master->sendBopMessage (master->getStateForConnection (this), this);
 	sendCommandEnd (DEVDEM_OK, "OK");
 }
 
@@ -705,7 +695,8 @@ Rts2Centrald::changeState (int new_state, const char *user)
 	logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
 		user << sendLog;
 	setState (new_state, user);
-	return sendStatusMessage (getState ());
+	sendStatusMessage (getState ());
+	return 0;
 }
 
 
@@ -846,10 +837,11 @@ void
 Rts2Centrald::bopMaskChanged ()
 {
 	int bopState = 0;
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
 	{
 		bopState |= (*iter)->getBopState ();
+		if ((*iter)->getType () == DEVICE_SERVER)
+			sendBopMessage (getStateForConnection (*iter), *iter);
 	}
 	maskState (BOP_MASK, bopState, "changed BOP state");
 	sendStatusMessage (getState ());

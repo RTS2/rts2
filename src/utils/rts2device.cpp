@@ -183,7 +183,7 @@ Rts2DevConn::authorizationOK ()
 	master->sendBaseInfo (this);
 	master->info ();
 	master->sendInfo (this);
-	master->sendStateInfo (this);
+	master->sendFullStateInfo (this);
 	sendCommandEnd (0, "OK authorized");
 	return 0;
 }
@@ -284,7 +284,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 		master->baseInfo (this);
 		master->info (this);
 		sendPriorityInfo ();
-		master->sendStateInfo (this);
+		master->sendFullStateInfo (this);
 	}
 	Rts2Conn::setConnState (new_conn_state);
 }
@@ -496,23 +496,19 @@ Rts2DevConnMaster::priorityChange ()
 }
 
 
-int
-Rts2DevConnMaster::informations ()
+void
+Rts2DevConnMaster::setState (int in_value)
 {
-	int state_value;
-	if (paramNextInteger (&state_value) || !paramEnd ())
-		return -1;
-	return master->setMasterState (state_value);
+	Rts2Conn::setState (in_value);
+	master->setMasterState (in_value);
 }
 
 
-int
-Rts2DevConnMaster::status ()
+void
+Rts2DevConnMaster::setBopState (int in_value)
 {
-	int new_state;
-	if (paramNextInteger (&new_state) || !paramEnd ())
-		return -1;
-	return master->setMasterState (new_state);
+	Rts2Conn::setBopState (in_value);
+	((Rts2Device *) master)->setFullBopState (in_value);
 }
 
 
@@ -626,6 +622,8 @@ Rts2Daemon (in_argc, in_argv)
 	device_name = default_name;
 	centrald_host = "localhost";
 	centrald_port = atoi (CENTRALD_PORT);
+
+	fullBopState = 0;
 
 	modefile = NULL;
 	modeconf = NULL;
@@ -903,15 +901,18 @@ const char *description)
 }
 
 
-int
+void
 Rts2Device::sendStateInfo (Rts2Conn * conn)
 {
-	int ret;
-	char *msg;
-	asprintf (&msg, PROTO_STATUS " %i", getState ());
-	ret = conn->send (msg);
-	free (msg);
-	return ret;
+	sendStatusMessage (getState (), conn);
+}
+
+
+void
+Rts2Device::sendFullStateInfo (Rts2Conn * conn)
+{
+	sendStateInfo (conn);
+	sendBopMessage (fullBopState, conn);
 }
 
 
@@ -1047,19 +1048,21 @@ Rts2Device::ready (Rts2Conn * conn)
 int
 Rts2Device::statusInfo (Rts2Conn * conn)
 {
-	return sendStatusMessage (getState (), conn);
+	sendStatusMessage (getState (), conn);
+	return 0;
 }
 
 
 int
-Rts2Device::setMasterState (int new_state)
+Rts2Device::setFullBopState (int new_state)
 {
+	// send new BOP state to all connected clients
+	sendBopMessage (new_state);
 	if (deviceStatusCommand)
 	{
-		// or our device state BOP with new_state
-		sendStatusMessage ((new_state & BOP_MASK) | getDaemonState (),
-			deviceStatusCommand->getOwnerConn ());
+		// we get what we wait for..
 		endDeviceStatusCommand ();
 	}
-	return Rts2Daemon::setMasterState (new_state);
+	fullBopState = new_state;
+	return 0;
 }

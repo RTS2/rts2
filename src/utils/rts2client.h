@@ -59,6 +59,8 @@ class Rts2ConnCentraldClient:public Rts2Conn
 
 		const char *login;
 		const char *password;
+	protected:
+		virtual void setState (int in_value);
 
 	public:
 		Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login,
@@ -68,7 +70,6 @@ class Rts2ConnCentraldClient:public Rts2Conn
 		virtual int init ();
 
 		virtual int command ();
-		virtual int status ();
 };
 
 /*class Rts2Thread:public Rts2Conn

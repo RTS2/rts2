@@ -55,7 +55,6 @@ class Rts2DevConn:public Rts2Conn
 
 		Rts2Device *master;
 
-		int doDeamonize ();
 	protected:
 		virtual int command ();
 	public:
@@ -95,8 +94,8 @@ class Rts2DevConnMaster:public Rts2Conn
 	protected:
 		virtual int command ();
 		virtual int priorityChange ();
-		virtual int informations ();
-		virtual int status ();
+		virtual void setState (int in_value);
+		virtual void setBopState (int in_value);
 		virtual void connectionError (int last_data_size);
 	public:
 		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port);
@@ -176,6 +175,9 @@ class Rts2Device:public Rts2Daemon
 		Rts2DevConnMaster * conn_master;
 		char *centrald_host;
 		int centrald_port;
+
+		// device current full BOP state
+		int fullBopState;
 
 		// mode related variable
 		char *modefile;
@@ -282,7 +284,15 @@ class Rts2Device:public Rts2Daemon
 
 		virtual int ready (Rts2Conn * conn);
 
-		int sendStateInfo (Rts2Conn * conn);
+		/**
+		 * Send device status info to given connection.
+		 */
+		void sendStateInfo (Rts2Conn * conn);
+
+		/**
+		 * Send full state, including device full BOP state.
+		 */
+		void sendFullStateInfo (Rts2Conn * conn);
 
 		// only devices can send messages
 		virtual void sendMessage (messageType_t in_messageType,
@@ -308,7 +318,7 @@ class Rts2Device:public Rts2Daemon
 
 		virtual int statusInfo (Rts2Conn * conn);
 
-		virtual int setMasterState (int new_state);
+		int setFullBopState (int new_state);
 
 		void endDeviceStatusCommand ()
 		{
