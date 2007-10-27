@@ -126,7 +126,7 @@ Rts2DevFocuser::setTo (int num)
 
 	focPositionNew = num;
 	steps = num - getFocPos ();
-	setFocusTimeout ((int) ceil (steps / focStepSec) + 5);
+	setFocusTimeout ((int) ceil (abs (steps) / focStepSec) + 5);
 
 	return stepOut (steps);
 }
