@@ -97,16 +97,11 @@ std::list <
 Rts2ConfigValue >
 {
 	private:
-		std::string
-			sectName;
-
-		std::vector <
-			std::string > *
-			blockedBy;
+		std::string sectName;
+		std::vector <std::string> *blockedBy;
 	public:
 		Rts2ConfigSection (const char *name);
-		~
-			Rts2ConfigSection (void);
+		~Rts2ConfigSection (void);
 
 		/**
 		 * Return true if section have given name.
@@ -115,13 +110,12 @@ Rts2ConfigValue >
 		 *
 		 * @return True if section have name name.
 		 */
-		bool
-			isSection (std::string name)
+		bool isSection (std::string name)
 		{
 			return sectName == name;
 		}
-		std::string
-			getName ()
+
+		std::string getName ()
 		{
 			return sectName;
 		}
@@ -132,16 +126,14 @@ Rts2ConfigValue >
 		 *
 		 * @return NULL if value cannot be found, otherwise return Rts2ConfigValue valid pointer.
 		 */
-		Rts2ConfigValue *
-			getValue (const char *valueName);
+		Rts2ConfigValue *getValue (const char *valueName);
 
 		/**
 		 * Create blockedBy vector from string.
 		 *
 		 * @param val Value which containst name of blocked devices.
 		 */
-		void
-			createBlockedBy (std::string val);
+		void createBlockedBy (std::string val);
 
 		/**
 		 * Query if querying_device is among "blocked_by" devices listed for this section.
@@ -152,9 +144,7 @@ Rts2ConfigValue >
 		 *
 		 * @callergraph
 		 */
-		const
-			bool
-			containedInBlockedBy (const char *querying_device);
+		const bool containedInBlockedBy (const char *querying_device);
 };
 
 /**
@@ -172,39 +162,27 @@ class Rts2ConfigRaw:
 public std::vector < Rts2ConfigSection * >
 {
 	private:
-		void
-			clearSections ();
-		int
-			parseConfigFile ();
+		void clearSections ();
+		int parseConfigFile ();
 
-		Rts2ConfigSection *
-			getSection (const char *section);
-		Rts2ConfigValue *
-			getValue (const char *section, const char *valueName);
+		Rts2ConfigSection *getSection (const char *section, bool verbose=true);
+		Rts2ConfigValue *getValue (const char *section, const char *valueName);
 	protected:
 		std::ifstream * configStream;
-		virtual void
-			getSpecialValues ()
+		virtual void getSpecialValues ()
 		{
 		}
 
 	public:
 		Rts2ConfigRaw ();
 		virtual ~ Rts2ConfigRaw (void);
-		int
-			loadFile (char *filename = NULL);
-		int
-			getString (const char *section, const char *valueName, std::string & buf);
-		int
-			getInteger (const char *section, const char *valueName, int &value);
-		int
-			getFloat (const char *section, const char *valueName, float &value);
-		double
-			getDouble (const char *section, const char *valueName);
-		int
-			getDouble (const char *section, const char *valueName, double &value);
-		bool
-			getBoolean (const char *section, const char *valueName, bool def = false);
+		int loadFile (char *filename = NULL);
+		int getString (const char *section, const char *valueName, std::string & buf);
+		int getInteger (const char *section, const char *valueName, int &value);
+		int getFloat (const char *section, const char *valueName, float &value);
+		double getDouble (const char *section, const char *valueName);
+		int getDouble (const char *section, const char *valueName, double &value);
+		bool getBoolean (const char *section, const char *valueName, bool def = false);
 
 		/**
 		 * Query if device can be blocked by another device. This function return true in following two cases:
@@ -221,8 +199,6 @@ public std::vector < Rts2ConfigSection * >
 		 *
 		 * @callergraph
 		 */
-		const
-			bool
-			blockDevice (const char *device_name, const char *querying_device);
+		const bool blockDevice (const char *device_name, const char *querying_device);
 };
 #endif							 /*! __RTS2_CONFIG_RAW__ */

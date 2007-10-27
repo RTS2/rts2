@@ -326,7 +326,7 @@ Rts2ConfigRaw::loadFile (char *filename)
 
 
 Rts2ConfigSection *
-Rts2ConfigRaw::getSection (const char *section)
+Rts2ConfigRaw::getSection (const char *section, bool verbose)
 {
 	std::string name (section);
 	for (Rts2ConfigRaw::iterator iter = begin (); iter != end (); iter++)
@@ -335,8 +335,8 @@ Rts2ConfigRaw::getSection (const char *section)
 		if (sect->isSection (name))
 			return sect;
 	}
-	logStream (MESSAGE_ERROR) << "Cannot find section '" << section << "'." <<
-		sendLog;
+	if (verbose)
+		logStream (MESSAGE_ERROR) << "Cannot find section '" << section << "'." << sendLog;
 	return NULL;
 }
 
@@ -461,7 +461,7 @@ const bool
 Rts2ConfigRaw::blockDevice (const char *device_name,
 const char *querying_device)
 {
-	Rts2ConfigSection *sect = getSection (device_name);
+	Rts2ConfigSection *sect = getSection (device_name, false);
 	if (!sect)
 		return true;
 	return sect->containedInBlockedBy (querying_device);
