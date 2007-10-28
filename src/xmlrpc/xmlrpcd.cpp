@@ -239,7 +239,10 @@ class ListValuesDevice: public ListValues
 				}
 				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
 				{
-					result[i] = (*variter)->getName ();
+					XmlRpcValue retVar;
+					retVar["name"] = (*variter)->getName ();
+					retVar["value"] = (*variter)->getValue ();
+					result[i] = retVar;
 				}
 			}
 			// print from all
