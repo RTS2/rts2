@@ -404,17 +404,28 @@ std::string Rts2Conn::getStateString ()
 			_os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
 	}
 	if (getState () & DEVICE_ERROR_KILL)
-		_os << " | PRIORITY CHANGED ";
+		_os << " | PRIORITY CHANGED";
 	if (getState () & DEVICE_ERROR_HW)
-		_os << " | HW ERROR ";
+		_os << " | HW ERROR";
 	if (getState () & DEVICE_NOT_READY)
-		_os << " | NOT READY ";
+		_os << " | NOT READY";
+
+	// block states and full BOP states
 	if (getState () & BOP_EXPOSURE)
-		_os << " | BLOCK EXPOSURE ";
+		_os << " | BLOCK EXPOSURE";
+	else if (getFullBopState () & BOP_EXPOSURE)
+		_os << " # BLOCK EXPOSING";
+
 	if (getState () & BOP_READOUT)
-		_os << " | BLOCK READOUT ";
+		_os << " | BLOCK READOUT";
+	else if (getFullBopState () & BOP_READOUT)
+		_os << " # BLOCK READOUT";
+
 	if (getState () & BOP_TEL_MOVE)
-		_os << " | BLOCK TELESCOPE MOVEMENT ";
+		_os << " | BLOCK TELESCOPE MOVEMENT";
+	else if (getFullBopState () & BOP_TEL_MOVE)
+		_os << " # BLOCK TELESCOPE MOVEMENT";
+
 	return _os.str ();
 }
 
