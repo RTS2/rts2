@@ -535,7 +535,6 @@ Rts2Command (in_master)
 	setCommand (command);
 	free (command);
 	tel = NULL;
-	commandCond = IN_WAIT_STATE;
 }
 
 
@@ -548,7 +547,6 @@ Rts2Command (in_tel->getMaster ())
 	setCommand (command);
 	free (command);
 	tel = in_tel;
-	commandCond = IN_WAIT_STATE;
 }
 
 

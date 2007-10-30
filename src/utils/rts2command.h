@@ -38,7 +38,7 @@ exposureType;
 typedef enum
 {
 	NO_COND, NO_EXPOSURE_MOVE, NO_EXPOSURE_NO_MOVE,
-	IN_WAIT_STATE, WHILE_EXPOSING
+	WHILE_EXPOSING
 } commandCondType;
 
 /**
