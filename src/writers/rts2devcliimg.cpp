@@ -1,3 +1,22 @@
+/* 
+ * Client which produces images.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <ctype.h>
 
 #include "rts2devcliimg.h"
@@ -14,8 +33,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	exposureT = EXP_LIGHT;
 	exposureChip = 0;
 	exposureCount = 0;
-
-	isExposingFlag = false;
 
 	Rts2Config *
 		config;
@@ -59,8 +76,7 @@ Rts2Image *
 Rts2DevClientCameraImage::setImage (Rts2Image * old_img,
 Rts2Image * new_image)
 {
-	for (CameraImages::iterator iter = images.begin (); iter != images.end ();
-		iter++)
+	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
 		CameraImage *ci = *iter;
 		if (ci->image == old_img)
@@ -80,11 +96,14 @@ Rts2DevClientCameraImage::queExposure ()
 		return;
 	if (exposureCount > 0)
 		exposureCount--;
-	connection->
-		queCommand (new
-		Rts2CommandExposure (connection->getMaster (), this,
-		0, exposureT, exposureTime));
-	setIsExposing (true);
+	connection->queCommand (
+		new Rts2CommandExposure (
+		connection->getMaster (),
+		this,
+		exposureT,
+		exposureTime
+		)
+		);
 	if (exposureT != EXP_DARK)
 		blockWait ();
 }
@@ -192,7 +211,7 @@ imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 void
 Rts2DevClientCameraImage::exposureFailed (int status)
 {
-	setIsExposing (false);
+	Rts2DevClientCamera::exposureFailed (status);
 	readoutEnd ();				 // pretend we can expose new image after failure..
 }
 
@@ -245,27 +264,18 @@ Rts2DevClientCameraImage::exposureStarted ()
 void
 Rts2DevClientCameraImage::exposureEnd ()
 {
-	connection->getMaster ()->
-		logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraImage::exposureEnd " <<
-		connection->getName () << sendLog;
-	if (!getIsExposing ())
-		return Rts2DevClientCamera::exposureEnd ();
-
+	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 	CameraImage *ci = getTop ();
 
 	ci->setExEnd (getMaster ()->getNow ());
 	ci->image->writeConn (getConnection (), EXPOSURE_START);
 
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, ci));
-	setIsExposing (false);
 	if (exposureT != EXP_DARK)
 		unblockWait ();
-	connection->
-		queCommand (new Rts2CommandReadout (connection->getMaster (), 0));
+	Rts2DevClientCamera::exposureEnd ();
 	//  connection->
 	//    queCommand (new Rts2CommandExposure (connection->getMaster (), this, 0, exposureT, exposureTime, true));
-	//  setIsExposing (true);
-	Rts2DevClientCamera::exposureEnd ();
 }
 
 

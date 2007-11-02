@@ -49,6 +49,7 @@
 #include "rts2value.h"
 #include "rts2valuestat.h"
 #include "rts2valueminmax.h"
+#include "rts2valuerectangle.h"
 #include "rts2app.h"
 #include "rts2serverstate.h"
 
@@ -91,10 +92,7 @@ class Rts2DevClient;
 class Rts2LogStream;
 
 /** Hold list of connections. It is used to store @see Rts2Conn objects. */
-typedef
-std::list <
-Rts2Conn * >
-connections_t;
+typedef std::list < Rts2Conn * > connections_t;
 
 /**
  * Base class of RTS2 devices and clients.
@@ -547,8 +545,6 @@ class Rts2Block: public Rts2App
 
 		int queAll (Rts2Command * cmd);
 		int queAll (char *text);
-
-		int allQuesEmpty ();
 
 		// enables to grant priority for special device links
 		virtual int grantPriority (Rts2Conn * conn)

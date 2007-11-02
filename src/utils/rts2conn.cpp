@@ -19,12 +19,8 @@
 
 #include "rts2block.h"
 #include "rts2centralstate.h"
-#include "rts2conn.h"
 #include "rts2command.h"
-#include "rts2devclient.h"
 #include "rts2dataconn.h"
-#include "rts2event.h"
-#include "rts2value.h"
 #ifdef DEBUG_ALL
 #include <iostream>
 #endif							 /* DEBUG_ALL */
@@ -570,7 +566,7 @@ Rts2Conn::getOtherType ()
 void
 Rts2Conn::updateStatusWait (Rts2Conn * conn)
 {
-	if (runningCommand && runningCommand->getStatusCallProgress () == 1)
+	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_WAIT)
 		sendCommand ();
 }
 
@@ -578,7 +574,7 @@ Rts2Conn::updateStatusWait (Rts2Conn * conn)
 void
 Rts2Conn::masterStateChanged ()
 {
-	if (runningCommand && runningCommand->getStatusCallProgress () == 2)
+	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_RUN)
 		sendCommand ();
 }
 
@@ -997,12 +993,10 @@ Rts2Conn::command ()
 			return -2;
 		if (!strcmp (p_command, "connect"))
 		{
-			int p_chip_id;
 			char *p_hostname;
 			int p_port;
 			int p_size;
-			if (paramNextInteger (&p_chip_id)
-				|| paramNextString (&p_hostname)
+			if (paramNextString (&p_hostname)
 				|| paramNextInteger (&p_port)
 				|| paramNextInteger (&p_size) || !paramEnd ())
 				return -2;
@@ -1077,30 +1071,46 @@ Rts2Conn::sendCommand ()
 	// we require some special state before command can be executed
 	if (runningCommand->getBopMask ())
 	{
+		// we are waiting for some BOP mask and it have already occured
+		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
+		{
+			if (getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
+			{
+				runningCommand->send ();
+				return;
+			}
+		}
 		switch (runningCommand->getStatusCallProgress ())
 		{
-			case 0:
+			case CIP_NOT_CALLED:
 				statInfoCall =
 					new Rts2CommandDeviceStatus (getMaster (), this, false);
 				conn = runningCommand->getConnection ();
 				// we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
 				statInfoCall->setConnection (this);
-				statInfoCall->setStatusCallProgress (3);
+				statInfoCall->setStatusCallProgress (CIP_RETURN);
 				statInfoCall->send ();
-				runningCommand->setStatusCallProgress (2);
+				runningCommand->setStatusCallProgress (CIP_RUN);
 				commandQue.push_front (runningCommand);
 				runningCommand = statInfoCall;
 				break;
-			case 1:
+			case CIP_WAIT:
 				// if the bock bit is still set..
-				runningCommand->setStatusCallProgress (2);
-			case 2:
-				if (getMaster ()->getMasterStateFull () & runningCommand->
-					getBopMask () & BOP_MASK)
-					break;
+				runningCommand->setStatusCallProgress (CIP_RUN);
+			case CIP_RUN:
+				if (runningCommand->getBopMask () & BOP_WHILE_STATE)
+				{
+					if (!(getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK))
+						break;
+				}
+				else
+				{
+					if (getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
+						break;
+				}
 				runningCommand->send ();
 				break;
-			case 3:
+			case CIP_RETURN:
 				// do nothing, it's status command, which return back
 				break;
 		}
@@ -1608,57 +1618,28 @@ Rts2Conn::addValue (Rts2Value * value)
 int
 Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 {
-	Rts2Value *newValue;
-	switch (rts2Type & RTS2_VALUE_MASK)
+	Rts2Value *new_value;
+	switch (rts2Type & RTS2_EXT_TYPE)
 	{
-		case RTS2_VALUE_STRING:
-			newValue =
-				new Rts2ValueString (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
+		case 0:
+			new_value =
+				newValue (rts2Type, m_name, desc);
+			if (newValue == NULL)
+				return -2;
 			break;
-		case RTS2_VALUE_INTEGER:
-			newValue =
-				new Rts2ValueInteger (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_TIME:
-			newValue =
-				new Rts2ValueTime (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_DOUBLE:
-			newValue =
-				new Rts2ValueDouble (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_FLOAT:
-			newValue =
-				new Rts2ValueFloat (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_BOOL:
-			newValue =
-				new Rts2ValueBool (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_SELECTION:
-			newValue =
-				new Rts2ValueSelection (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_LONGINT:
-			newValue =
-				new Rts2ValueLong (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
-			break;
-		case RTS2_VALUE_DOUBLE_STAT:
-			newValue =
+		case RTS2_VALUE_STAT:
+			new_value =
 				new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS,
 				rts2Type);
 			break;
-		case RTS2_VALUE_DOUBLE_MMAX:
-			newValue =
+		case RTS2_VALUE_MMAX:
+			new_value =
 				new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS,
+				rts2Type);
+			break;
+		case RTS2_VALUE_RECTANGLE:
+			new_value =
+				new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS,
 				rts2Type);
 			break;
 		default:
@@ -1666,7 +1647,7 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 				sendLog;
 			return -2;
 	}
-	addValue (newValue);
+	addValue (new_value);
 	return -1;
 }
 
@@ -1722,7 +1703,7 @@ Rts2Conn::getValueSelection (const char *value_name)
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelVal ().c_str ();
+	return ((Rts2ValueSelection *) val)->getSelName ().c_str ();
 }
 
 
@@ -1733,7 +1714,7 @@ Rts2Conn::getValueSelection (const char *value_name, int val_num)
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelVal (val_num).c_str ();
+	return ((Rts2ValueSelection *) val)->getSelName (val_num).c_str ();
 }
 
 

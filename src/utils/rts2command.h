@@ -27,19 +27,31 @@
  */
 
 /** Keep command, do not delete it from after it return. @ingroup RTS2Command */
-#define RTS2_COMMAND_KEEP -2
+#define RTS2_COMMAND_KEEP       -2
 /** Send command again to device. @ingroup RTS2Command */
-#define RTS2_COMMAND_REQUE  -5
+#define RTS2_COMMAND_REQUE      -5
 
 typedef enum
 { EXP_LIGHT, EXP_DARK }
 exposureType;
 
-typedef enum
+/**
+ * Miscelanus flag for sending command while exposure is in progress.
+ */
+#define BOP_WHILE_STATE         0x00001000
+
+/**
+ * Call-in-progress mask
+ */
+#define BOP_CIP_MASK            0x00006000
+
+typedef enum cip_state_t
 {
-	NO_COND, NO_EXPOSURE_MOVE, NO_EXPOSURE_NO_MOVE,
-	WHILE_EXPOSING
-} commandCondType;
+	CIP_NOT_CALLED = 0x00000000,
+	CIP_WAIT       = 0x00002000,
+	CIP_RUN        = 0x00004000,
+	CIP_RETURN     = 0x00006000
+};
 
 /**
  * Base class which represents commands send over network to other component.
@@ -61,7 +73,6 @@ class Rts2Command
 		Rts2Block * owner;
 		Rts2Conn *connection;
 		char *text;
-		commandCondType commandCond;
 	public:
 		Rts2Command (Rts2Block * in_owner);
 		Rts2Command (Rts2Block * in_owner, char *in_text);
@@ -81,10 +92,6 @@ class Rts2Command
 		char *getText ()
 		{
 			return text;
-		}
-		commandCondType getCommandCond ()
-		{
-			return commandCond;
 		}
 
 		/**
@@ -134,9 +141,9 @@ class Rts2Command
 		 *
 		 * @return Status of info call.
 		 */
-		int getStatusCallProgress ()
+		cip_state_t getStatusCallProgress ()
 		{
-			return bopMask & 0xff;
+			return (cip_state_t) (bopMask & BOP_CIP_MASK);
 		}
 
 		/**
@@ -146,9 +153,9 @@ class Rts2Command
 		 *
 		 * @see Rts2Command::getStatusCallProgress
 		 */
-		void setStatusCallProgress (int call_progress)
+		void setStatusCallProgress (cip_state_t call_progress)
 		{
-			bopMask = (bopMask & ~0xff) | (call_progress & 0xff);
+			bopMask = (bopMask & ~BOP_CIP_MASK) | (call_progress & BOP_CIP_MASK);
 		}
 
 		/**
@@ -278,8 +285,8 @@ class Rts2CommandExposure:public Rts2Command
 		Rts2DevClientCamera * camera;
 	public:
 		Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
-			int chip, exposureType exp_type, float exp_time,
-			bool readout = false);
+			exposureType exp_type, float exp_time);
+		virtual int send ();
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
@@ -291,7 +298,7 @@ class Rts2CommandExposure:public Rts2Command
 class Rts2CommandReadout:public Rts2Command
 {
 	public:
-		Rts2CommandReadout (Rts2Block * in_master, int chip);
+		Rts2CommandReadout (Rts2Block * in_master);
 };
 
 /**
@@ -318,14 +325,14 @@ class Rts2CommandFilter:public Rts2Command
 class Rts2CommandBox:public Rts2CommandCameraSettings
 {
 	public:
-		Rts2CommandBox (Rts2DevClientCamera * in_camera, int chip, int x, int y,
+		Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y,
 			int w, int h);
 };
 
 class Rts2CommandCenter:public Rts2CommandCameraSettings
 {
 	public:
-		Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip, int width,
+		Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width,
 			int height);
 };
 
@@ -351,9 +358,7 @@ class Rts2CommandChangeValueDontReturn:public Rts2Command
 			bool in_operand);
 		Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 			std::string in_valName, char op,
-			std::string in_operand,
-			commandCondType in_commandCond =
-			NO_COND);
+			std::string in_operand);
 };
 
 /**
@@ -375,8 +380,7 @@ class Rts2CommandChangeValue:public Rts2CommandChangeValueDontReturn
 		Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
 			char op, bool in_operand);
 		Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName,
-			char op, std::string in_operand,
-			commandCondType in_commandCond = NO_COND);
+			char op, std::string in_operand);
 };
 
 /**

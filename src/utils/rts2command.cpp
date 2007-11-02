@@ -28,7 +28,6 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
 {
 	owner = in_owner;
 	text = NULL;
-	commandCond = NO_COND;
 	bopMask = 0;
 	originator = NULL;
 }
@@ -38,7 +37,6 @@ Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
 {
 	owner = in_owner;
 	setCommand (in_text);
-	commandCond = NO_COND;
 	bopMask = 0;
 	originator = NULL;
 }
@@ -49,8 +47,7 @@ Rts2Command::Rts2Command (Rts2Command * in_command)
 	owner = in_command->owner;
 	connection = in_command->connection;
 	setCommand (in_command->getText ());
-	commandCond = in_command->getCommandCond ();
-	bopMask = 0;
+	bopMask = in_command->getBopMask ();
 	originator = NULL;
 }
 
@@ -80,6 +77,9 @@ Rts2Command::send ()
 int
 Rts2Command::commandReturn (int status, Rts2Conn * conn)
 {
+	#ifdef DEBUG_EXTRA
+	logStream(MESSAGE_DEBUG) << "commandReturn status: " << status << " connection: " << conn->getName () << " command: " << text << sendLog;
+	#endif
 	switch (status)
 	{
 		case 0:
@@ -168,27 +168,26 @@ Rts2CommandCameraSettings (in_camera)
 }
 
 
-Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master,
-Rts2DevClientCamera * in_camera,
-int chip,
-exposureType exp_type,
-float exp_time, bool readout):
+Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, exposureType exp_type, float exp_time):
 Rts2Command (in_master)
 {
 	char *command;
-	if (readout)
-		asprintf (&command, "readout_exposure %i %i %f", chip,
-			(exp_type == EXP_LIGHT ? 1 : 0), exp_time);
-	else
-		asprintf (&command, "expose %i %i %f", chip,
-			(exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+	asprintf (&command, "expose %i %f", (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
 	setCommand (command);
 	free (command);
 	camera = in_camera;
 	if (exp_type == EXP_LIGHT)
-		commandCond = NO_EXPOSURE_NO_MOVE;
+		setBopMask (BOP_EXPOSURE | BOP_TEL_MOVE);
 	else
-		commandCond = NO_EXPOSURE_MOVE;
+		setBopMask (BOP_EXPOSURE);
+}
+
+
+int
+Rts2CommandExposure::send ()
+{
+	camera->setIsExposing (true);
+	return Rts2Command::send ();
 }
 
 
@@ -200,13 +199,10 @@ Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandReadout::Rts2CommandReadout (Rts2Block * in_master, int chip):
+Rts2CommandReadout::Rts2CommandReadout (Rts2Block * in_master):
 Rts2Command (in_master)
 {
-	char *command;
-	asprintf (&command, "readout %i", chip);
-	setCommand (command);
-	free (command);
+	setCommand ("readout");
 }
 
 
@@ -279,23 +275,21 @@ Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int chip, int x, int y, int w, int h):Rts2CommandCameraSettings
+Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y, int w, int h):Rts2CommandCameraSettings
 (in_camera)
 {
-	char *
-		command;
-	asprintf (&command, "box %i %i %i %i %i", chip, x, y, w, h);
+	char *command;
+	asprintf (&command, "box %i %i %i %i", x, y, w, h);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int chip, int width = -1, int height = -1):Rts2CommandCameraSettings
+Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width = -1, int height = -1):Rts2CommandCameraSettings
 (in_camera)
 {
-	char *
-		command;
-	asprintf (&command, "center %i %i %i", chip, width, height);
+	char *command;
+	asprintf (&command, "center %i %i", width, height);
 	setCommand (command);
 	free (command);
 }
@@ -360,15 +354,13 @@ Rts2Command (in_client->getMaster ())
 Rts2CommandChangeValueDontReturn::
 Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
 std::string in_valName, char op,
-std::string in_operand,
-commandCondType in_commandCond):
+std::string in_operand):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
 	asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", in_valName.c_str (),
 		op, in_operand.c_str ());
 	setCommand (command);
-	commandCond = in_commandCond;
 	free (command);
 }
 
@@ -412,11 +404,8 @@ Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
 std::string in_valName,
 char op,
-std::string in_operand,
-commandCondType
-in_commandCond):
-Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand,
-in_commandCond)
+std::string in_operand):
+Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
 }

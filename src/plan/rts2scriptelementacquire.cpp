@@ -103,9 +103,7 @@ char new_device[DEVICE_NAME_SIZE])
 				script->getMaster ()->
 					postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 			}
-			*new_command =
-				new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
-				expTime);
+			*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT, expTime);
 			getDevice (new_device);
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<

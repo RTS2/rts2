@@ -96,9 +96,7 @@ bool
 Rts2ScriptExec::isScriptRunning ()
 {
 	int runningScripts = 0;
-	postEvent (new
-		Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION,
-		(void *) &runningScripts));
+	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
 	// if we still have some commands in que, wait till they finish

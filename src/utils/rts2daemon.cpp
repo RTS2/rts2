@@ -1,3 +1,22 @@
+/* 
+ * Daemon class.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <stdio.h>
 #include <syslog.h>
 #include <sys/file.h>
@@ -496,89 +515,48 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 {
 	// create new value, which will be passed to hook
 	Rts2Value *dup_val;
-	switch (old_value->getValueType ())
+	switch (old_value->getValueExtType ())
 	{
-		case RTS2_VALUE_STRING:
-			dup_val = new Rts2ValueString (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
+		case 0:
+			dup_val = newValue (old_value->getFlags (),
+				old_value->getName (),
+				old_value->getDescription ());
+			// do some extra settings
+			switch (old_value->getValueType ())
+			{
+				case RTS2_VALUE_SELECTION:
+					((Rts2ValueSelection *) dup_val)->copySel ((Rts2ValueSelection *) old_value);
+					break;
+			}
 			if (withVal)
 				((Rts2ValueString *) dup_val)->setValueString (old_value->
 					getValue ());
 			break;
-		case RTS2_VALUE_INTEGER:
-			dup_val = new Rts2ValueInteger (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueInteger *) dup_val)->setValueInteger (old_value->
-					getValueInteger ());
-			break;
-		case RTS2_VALUE_TIME:
-			dup_val = new Rts2ValueTime (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueTime *) dup_val)->setValueDouble (old_value->
-					getValueDouble ());
-			break;
-		case RTS2_VALUE_DOUBLE:
-			dup_val = new Rts2ValueDouble (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueDouble *) dup_val)->setValueDouble (old_value->
-					getValueDouble ());
-			break;
-		case RTS2_VALUE_FLOAT:
-			dup_val = new Rts2ValueFloat (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueFloat *) dup_val)->setValueFloat (old_value->
-					getValueFloat ());
-			break;
-		case RTS2_VALUE_BOOL:
-			dup_val = new Rts2ValueBool (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueBool *) dup_val)->
-				setValueBool (((Rts2ValueBool *) old_value)->getValueBool ());
-			break;
-		case RTS2_VALUE_SELECTION:
-			dup_val = new Rts2ValueSelection (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			((Rts2ValueSelection *) dup_val)->
-				copySel ((Rts2ValueSelection *) old_value);
-			if (withVal)
-				((Rts2ValueInteger *) dup_val)->
-				setValueInteger (old_value->getValueInteger ());
-			break;
-		case RTS2_VALUE_DOUBLE_STAT:
+		case RTS2_VALUE_STAT:
 			dup_val = new Rts2ValueDoubleStat (old_value->getName (),
 				old_value->getDescription (),
 				old_value->getWriteToFits ());
-			if (withVal)
-				((Rts2ValueDoubleStat *) dup_val)->
-				setValueDouble (old_value->getValueDouble ());
 			break;
-		case RTS2_VALUE_DOUBLE_MMAX:
+		case RTS2_VALUE_MMAX:
 			dup_val = new Rts2ValueDoubleMinMax (old_value->getName (),
 				old_value->getDescription (),
 				old_value->getWriteToFits ());
 			((Rts2ValueDoubleMinMax *) dup_val)->
 				copyMinMax ((Rts2ValueDoubleMinMax *) old_value);
-			if (withVal)
-				((Rts2ValueDoubleMinMax *) dup_val)->
-				setValueDouble (old_value->getValueDouble ());
+			break;
+		case RTS2_VALUE_RECTANGLE:
+			dup_val = new Rts2ValueRectangle (old_value->getName (),
+				old_value->getDescription (),
+				old_value->getWriteToFits (),
+				old_value->getFlags ());
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 				getValueType () << sendLog;
 			return NULL;
 	}
+	if (withVal)
+		dup_val->setFromValue (old_value);
 	return dup_val;
 }
 

@@ -1,3 +1,22 @@
+/* 
+ * Class which represents image.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_IMAGE__
 #define __RTS2_IMAGE__
 
@@ -93,6 +112,8 @@ class Rts2Image:public Rts2Expander
 
 		void initData ();
 
+		void writeConnBaseValue (const char *name, Rts2Value * val, const char *desc);
+
 		// writes one value to image
 		void writeConnValue (Rts2Conn * conn, Rts2Value * val);
 	protected:
@@ -179,14 +200,14 @@ class Rts2Image:public Rts2Expander
 
 		int saveImageData (const char *save_filename, unsigned short *in_data);
 
-		int setValue (char *name, bool value, char *comment);
-		int setValue (char *name, int value, char *comment);
-		int setValue (char *name, long value, char *comment);
-		int setValue (char *name, float value, char *comment);
-		int setValue (char *name, double value, char *comment);
-		int setValue (char *name, char value, char *comment);
-		int setValue (char *name, const char *value, char *comment);
-		int setValue (char *name, time_t * sec, long usec, char *comment);
+		int setValue (const char *name, bool value, const char *comment);
+		int setValue (const char *name, int value, const char *comment);
+		int setValue (const char *name, long value, const char *comment);
+		int setValue (const char *name, float value, const char *comment);
+		int setValue (const char *name, double value, const char *comment);
+		int setValue (const char *name, char value, const char *comment);
+		int setValue (const char *name, const char *value, const char *comment);
+		int setValue (const char *name, time_t * sec, long usec, const char *comment);
 		// that method is used to update DATE - creation date entry - for other file then ffile
 		int setCreationDate (fitsfile * out_file = NULL);
 

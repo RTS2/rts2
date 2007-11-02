@@ -171,7 +171,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			// either we have script or there are some commands in que
 			if ((script && !script->isLastCommand ())
 				|| !script_connection->queEmpty ()
-				|| blockMove || script_connection->getRealState () != 0)
+				|| blockMove
+				|| script_connection->getRealState () != 0)
 				(*((int *) event->getArg ()))++;
 			break;
 		case EVENT_OK_ASTROMETRY:

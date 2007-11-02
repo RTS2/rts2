@@ -1,3 +1,22 @@
+/* 
+ * Client classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_DEVCLIENT__
 #define __RTS2_DEVCLIENT__
 
@@ -124,15 +143,39 @@ class Rts2DevClient:public Rts2Object
  */
 class Rts2DevClientCamera:public Rts2DevClient
 {
+	private:
+		bool isExposingFlag;
 	protected:
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
 		virtual void readoutEnd ();
+		/**
+		 * Query if the connection is the originator of exposure.
+		 *
+		 * @return True if the connection is originator of last exposure command.
+		 */
+		bool getIsExposing ()
+		{
+			return isExposingFlag;
+		}
 	public:
 		Rts2DevClientCamera (Rts2Conn * in_connection);
-		// exposureFailed will get called even when we faild during readout
+
+		/**
+		 * ExposureFailed will get called even when we faild during readout
+		 */
 		virtual void exposureFailed (int status);
 		virtual void stateChanged (Rts2ServerState * state);
+
+		/**
+		 * Sets if current connection send exposure command.
+		 *
+		 * @param in_isExposing True if the connection is originator of exposure command.
+		 */
+		void setIsExposing (bool in_isExposing)
+		{
+			isExposingFlag = in_isExposing;
+		}
 
 		virtual void filterOK ()
 		{

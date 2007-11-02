@@ -1,3 +1,22 @@
+/* 
+ * Class which represents image.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <libnova/libnova.h>
 #include <malloc.h>
 
@@ -698,7 +717,7 @@ std::string Rts2Image::getFitsErrors ()
 
 
 int
-Rts2Image::setValue (char *name, bool value, char *comment)
+Rts2Image::setValue (const char *name, bool value, const char *comment)
 {
 	int ret;
 	if (!ffile)
@@ -707,14 +726,14 @@ Rts2Image::setValue (char *name, bool value, char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_update_key (ffile, TLOGICAL, name, &value, comment, &fits_status);
+	fits_update_key (ffile, TLOGICAL, (char *) name, &value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name, true);
 }
 
 
 int
-Rts2Image::setValue (char *name, int value, char *comment)
+Rts2Image::setValue (const char *name, int value, const char *comment)
 {
 	int ret;
 	if (!ffile)
@@ -723,14 +742,14 @@ Rts2Image::setValue (char *name, int value, char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_update_key (ffile, TINT, name, &value, comment, &fits_status);
+	fits_update_key (ffile, TINT, (char *) name, &value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name, true);
 }
 
 
 int
-Rts2Image::setValue (char *name, long value, char *comment)
+Rts2Image::setValue (const char *name, long value, const char *comment)
 {
 	int ret;
 	if (!ffile)
@@ -739,14 +758,14 @@ Rts2Image::setValue (char *name, long value, char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_update_key (ffile, TLONG, name, &value, comment, &fits_status);
+	fits_update_key (ffile, TLONG, (char *) name, &value, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name);
 }
 
 
 int
-Rts2Image::setValue (char *name, float value, char *comment)
+Rts2Image::setValue (const char *name, float value, const char *comment)
 {
 	int ret;
 	float val = value;
@@ -758,14 +777,14 @@ Rts2Image::setValue (char *name, float value, char *comment)
 	}
 	if (isnan (val) || isinf (val))
 		val = FLOATNULLVALUE;
-	fits_update_key (ffile, TFLOAT, name, &val, comment, &fits_status);
+	fits_update_key (ffile, TFLOAT, (char *) name, &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name);
 }
 
 
 int
-Rts2Image::setValue (char *name, double value, char *comment)
+Rts2Image::setValue (const char *name, double value, const char *comment)
 {
 	int ret;
 	double val = value;
@@ -777,14 +796,14 @@ Rts2Image::setValue (char *name, double value, char *comment)
 	}
 	if (isnan (val) || isinf (val))
 		val = DOUBLENULLVALUE;
-	fits_update_key (ffile, TDOUBLE, name, &val, comment, &fits_status);
+	fits_update_key (ffile, TDOUBLE, (char *) name, &val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name);
 }
 
 
 int
-Rts2Image::setValue (char *name, char value, char *comment)
+Rts2Image::setValue (const char *name, char value, const char *comment)
 {
 	char val[2];
 	int ret;
@@ -796,14 +815,14 @@ Rts2Image::setValue (char *name, char value, char *comment)
 	}
 	val[0] = value;
 	val[1] = '\0';
-	fits_update_key (ffile, TSTRING, name, (void *) val, comment, &fits_status);
+	fits_update_key (ffile, TSTRING, (char *) name, (void *) val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name);
 }
 
 
 int
-Rts2Image::setValue (char *name, const char *value, char *comment)
+Rts2Image::setValue (const char *name, const char *value, const char *comment)
 {
 	int ret;
 	// we will not save null values
@@ -815,7 +834,7 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_update_key_longstr (ffile, name, (char *) value, comment,
+	fits_update_key_longstr (ffile, (char *) name, (char *) value, (char *) comment,
 		&fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name);
@@ -823,7 +842,7 @@ Rts2Image::setValue (char *name, const char *value, char *comment)
 
 
 int
-Rts2Image::setValue (char *name, time_t * sec, long usec, char *comment)
+Rts2Image::setValue (const char *name, time_t * sec, long usec, const char *comment)
 {
 	char buf[25];
 	struct tm t_tm;
@@ -1932,21 +1951,9 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 
 
 void
-Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
+Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *desc)
 {
-	char *desc = (char *) val->getDescription ().c_str ();
-	char *name = (char *) val->getName ().c_str ();
-	char *name_stat;
-	char *n_top;
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
-	{
-		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
-		strcpy (name, conn->getName ());
-		strcat (name, ".");
-		strcat (name, val->getName ().c_str ());
-	}
-
-	switch (val->getValueType ())
+	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_STRING:
 			setValue (name, val->getValue (), desc);
@@ -1958,10 +1965,47 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 			setValue (name, val->getValueDouble (), desc);
 			break;
 		case RTS2_VALUE_DOUBLE:
-		case RTS2_VALUE_DOUBLE_MMAX:
 			setValue (name, val->getValueDouble (), desc);
 			break;
-		case RTS2_VALUE_DOUBLE_STAT:
+		case RTS2_VALUE_FLOAT:
+			setValue (name, val->getValueFloat (), desc);
+			break;
+		case RTS2_VALUE_BOOL:
+			setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
+			break;
+		case RTS2_VALUE_SELECTION:
+			setValue (name, ((Rts2ValueSelection *) val)->getSelName ().c_str (), desc);
+			break;
+		default:
+			logStream (MESSAGE_ERROR) <<
+				"Don't know how to write to FITS file header value '" << name
+				<< "' of type " << val->getValueType () << sendLog;
+			break;
+	}
+}
+
+
+void
+Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
+{
+	const char *desc = val->getDescription ().c_str ();
+	char *name = (char *) val->getName ().c_str ();
+	char *name_stat;
+	char *n_top;
+	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
+	{
+		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
+		strcpy (name, conn->getName ());
+		strcat (name, ".");
+		strcat (name, val->getName ().c_str ());
+	}
+	switch (val->getValueExtType ())
+	{
+		case 0:
+			writeConnBaseValue (name, val, desc);
+			break;
+		case RTS2_VALUE_STAT:
+			writeConnBaseValue (name, val, desc);
 			setValue (name, val->getValueDouble (), desc);
 			name_stat = new char[strlen (name) + 6];
 			n_top = name_stat + strlen (name);
@@ -1980,20 +2024,41 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 			setValue (name_stat, ((Rts2ValueDoubleStat *) val)->getNumMes (), desc);
 			delete[]name_stat;
 			break;
-		case RTS2_VALUE_FLOAT:
-			setValue (name, val->getValueFloat (), desc);
-			break;
-		case RTS2_VALUE_BOOL:
-			setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
-			break;
-		case RTS2_VALUE_SELECTION:
-			setValue (name,
-				((Rts2ValueSelection *) val)->getSelVal ().c_str (), desc);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) <<
-				"Don't know how to write to FITS file header value '" << name
-				<< "' of type " << val->getValueType () << sendLog;
+		case RTS2_VALUE_RECTANGLE:
+			name_stat = new char[strlen(name) + 8];
+			n_top = name_stat + strlen (name);
+			strcpy (name_stat, name);
+			*n_top = '.';
+			n_top++;
+			strcpy (n_top, "X");
+			writeConnBaseValue (
+				name_stat,
+				((Rts2ValueRectangle *)val)->getX (),
+				((Rts2ValueRectangle *)val)->getX ()->getDescription ().c_str ()
+				);
+
+			strcpy (n_top, "Y");
+			writeConnBaseValue (
+				name_stat,
+				((Rts2ValueRectangle *)val)->getY (),
+				((Rts2ValueRectangle *)val)->getY ()->getDescription ().c_str ()
+				);
+
+			strcpy (n_top, "HEIGHT");
+			writeConnBaseValue (
+				name_stat,
+				((Rts2ValueRectangle *)val)->getHeight (),
+				((Rts2ValueRectangle *)val)->getHeight ()->getDescription ().c_str ()
+				);
+
+			strcpy (n_top, "WIDTH");
+			writeConnBaseValue (
+				name_stat,
+				((Rts2ValueRectangle *)val)->getWidth (),
+				((Rts2ValueRectangle *)val)->getWidth ()->getDescription ().c_str ()
+				);
+
+			delete[]name_stat;
 			break;
 	}
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())

@@ -124,9 +124,7 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command =
-		new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
-		expTime);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT, expTime);
 	(*new_command)->setBopMask (BOP_EXPOSURE);
 	getDevice (new_device);
 	return 0;
@@ -145,9 +143,7 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command =
-		new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_DARK,
-		expTime);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_DARK, expTime);
 	getDevice (new_device);
 	return 0;
 }
@@ -186,7 +182,7 @@ Rts2ScriptElementBox::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandBox (camera, 0, x, y, w, h);
+	*new_command = new Rts2CommandBox (camera, x, y, w, h);
 	getDevice (new_device);
 	return 0;
 }
@@ -205,7 +201,7 @@ Rts2ScriptElementCenter::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandCenter (camera, 0, w, h);
+	*new_command = new Rts2CommandCenter (camera, w, h);
 	getDevice (new_device);
 	return 0;
 }
@@ -589,14 +585,12 @@ new_device[DEVICE_NAME_SIZE])
 	// handle while exposing part..
 	if (valName[0] == '!')
 	{
-		*new_command =
-			new Rts2CommandChangeValue (client, valName.substr (1), op, operand,
-			WHILE_EXPOSING);
+		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand);
+		(*new_command)->setBopMask (BOP_EXPOSURE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command =
-			new Rts2CommandChangeValue (client, valName, op, operand);
+		*new_command = new Rts2CommandChangeValue (client, valName, op, operand);
 	}
 	getDevice (new_device);
 	return 0;

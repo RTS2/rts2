@@ -1,3 +1,22 @@
+/* 
+ * Client classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <algorithm>
 
 #include "rts2block.h"
@@ -147,6 +166,7 @@ Rts2DevClient::idle ()
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
 (in_connection)
 {
+	isExposingFlag = false;
 }
 
 
@@ -159,12 +179,14 @@ Rts2DevClientCamera::exposureStarted ()
 void
 Rts2DevClientCamera::exposureEnd ()
 {
+	setIsExposing (false);
 }
 
 
 void
 Rts2DevClientCamera::exposureFailed (int status)
 {
+	setIsExposing (false);
 }
 
 
@@ -177,16 +199,20 @@ Rts2DevClientCamera::readoutEnd ()
 void
 Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 {
-	switch (state->
-		getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
+	switch (state->getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
 	{
 		case CAM_EXPOSING:
+			// not me!
+			if (!getIsExposing ())
+				break;
 			if (connection->getErrorState () == DEVICE_NO_ERROR)
 				exposureStarted ();
 			else
 				exposureFailed (connection->getErrorState ());
 			break;
 		case CAM_DATA:
+			if (!getIsExposing ())
+				break;
 			if (connection->getErrorState () == DEVICE_NO_ERROR)
 				exposureEnd ();
 			else
@@ -205,9 +231,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 
 bool Rts2DevClientCamera::isIdle ()
 {
-	return ((connection->
-		getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA |
-		CAM_MASK_READING)) ==
+	return ((connection->getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
 		(CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
 }
 

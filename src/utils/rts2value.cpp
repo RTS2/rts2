@@ -141,6 +141,15 @@ Rts2ValueString::setValueString (const char *in_value)
 
 
 int
+Rts2ValueString::setValueInteger (int in_value)
+{
+	delete[]value;
+	asprintf (&value, "%i", in_value);
+	return 0;
+}
+
+
+int
 Rts2ValueString::send (Rts2Conn * connection)
 {
 	return connection->sendValue (getName (), getValue ());
@@ -277,6 +286,14 @@ Rts2ValueDouble::setValueString (const char *in_value)
 
 
 int
+Rts2ValueDouble::setValueInteger (int in_value)
+{
+	setValueDouble (in_value);
+	return 0;
+}
+
+
+int
 Rts2ValueDouble::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
@@ -379,6 +396,14 @@ Rts2ValueFloat::setValueString (const char *in_value)
 
 
 int
+Rts2ValueFloat::setValueInteger (int in_value)
+{
+	setValueDouble (in_value);
+	return 0;
+}
+
+
+int
 Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
@@ -455,6 +480,23 @@ flags)
 }
 
 
+Rts2ValueSelection::~Rts2ValueSelection ()
+{
+	values.clear ();
+}
+
+
+void
+Rts2ValueSelection::deleteValues ()
+{
+	for (std::vector <SelVal>::iterator iter=selBegin (); iter!= selEnd (); iter++)
+	{
+		delete (*iter).data;
+	}
+	values.clear ();
+}
+
+
 int
 Rts2ValueSelection::setValue (Rts2Conn * connection)
 {
@@ -490,10 +532,9 @@ int
 Rts2ValueSelection::getSelIndex (std::string in_val)
 {
 	int i = 0;
-	for (std::vector < std::string >::iterator iter = valNames.begin ();
-		iter != valNames.end (); iter++, i++)
+	for (std::vector < SelVal >::iterator iter = selBegin (); iter != selEnd (); iter++, i++)
 	{
-		if (*iter == in_val)
+		if ((*iter).name == in_val)
 			return i;
 	}
 	return -2;
@@ -503,8 +544,7 @@ Rts2ValueSelection::getSelIndex (std::string in_val)
 void
 Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
 {
-	for (std::vector < std::string >::iterator iter = sel->selBegin ();
-		iter != sel->selEnd (); iter++)
+	for (std::vector < SelVal >::iterator iter = sel->selBegin (); iter != sel->selEnd (); iter++)
 	{
 		addSelVal (*iter);
 	}
@@ -532,10 +572,9 @@ Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 	// now send selection values..
 	std::ostringstream _os;
 
-	for (std::vector < std::string >::iterator iter = valNames.begin ();
-		iter != valNames.end (); iter++)
+	for (std::vector < SelVal >::iterator iter = selBegin (); iter != selEnd (); iter++)
 	{
-		std::string val = *iter;
+		std::string val = (*iter).name;
 		_os << PROTO_SELMETAINFO << " \"" << getName () << "\" \"" << val <<
 			"\"\n";
 	}
@@ -547,9 +586,8 @@ Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 void
 Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
 {
-	valNames.clear ();
-	for (std::vector < std::string >::iterator iter = otherValue->selBegin ();
-		iter != otherValue->selEnd (); iter++)
+	deleteValues ();
+	for (std::vector < SelVal >::iterator iter = otherValue->selBegin (); iter != otherValue->selEnd (); iter++)
 	{
 		addSelVal (*iter);
 	}
@@ -599,6 +637,13 @@ Rts2ValueLong::setValueString (const char *in_value)
 
 
 int
+Rts2ValueLong::setValueInteger (int in_value)
+{
+	return setValueLong (in_value);
+}
+
+
+int
 Rts2ValueLong::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
@@ -618,4 +663,30 @@ void
 Rts2ValueLong::setFromValue (Rts2Value * newValue)
 {
 	setValueLong (newValue->getValueLong ());
+}
+
+
+Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
+{
+	switch (rts2Type & RTS2_BASE_TYPE)
+	{
+		case RTS2_VALUE_STRING:
+			return new Rts2ValueString (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_INTEGER:
+			return new Rts2ValueInteger (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_TIME:
+			return new  Rts2ValueTime (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_DOUBLE:
+			return new Rts2ValueDouble (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_FLOAT:
+			return new Rts2ValueFloat (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_BOOL:
+			return new Rts2ValueBool (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_SELECTION:
+			return new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_LONGINT:
+			return new Rts2ValueLong (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+	}
+	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
+	return NULL;
 }

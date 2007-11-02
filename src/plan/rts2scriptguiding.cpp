@@ -169,9 +169,7 @@ char new_device[DEVICE_NAME_SIZE])
 			if (ret != -1)
 				return NEXT_COMMAND_NEXT;
 		case NEED_IMAGE:
-			*new_command =
-				new Rts2CommandExposure (script->getMaster (), camera, 0, EXP_LIGHT,
-				expTime);
+			*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT, expTime);
 			getDevice (new_device);
 			processingState = WAITING_IMAGE;
 			return NEXT_COMMAND_KEEP;

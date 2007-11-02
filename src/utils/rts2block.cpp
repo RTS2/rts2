@@ -82,8 +82,7 @@ Rts2Block::getPort (void)
 
 bool Rts2Block::commandQueEmpty ()
 {
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
 	{
 		if (!(*iter)->queEmpty ())
 			return false;
@@ -725,22 +724,6 @@ int
 Rts2Block::queAll (char *text)
 {
 	return queAll (new Rts2Command (this, text));
-}
-
-
-int
-Rts2Block::allQuesEmpty ()
-{
-	int ret = 1;
-	connections_t::iterator iter;
-	for (iter = connections.begin (); iter != connections.end (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		ret = conn->queEmpty ();
-		if (!ret)
-			return ret;
-	}
-	return ret;
 }
 
 

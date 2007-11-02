@@ -51,7 +51,7 @@ Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name):Rts2ValueDoub
 (in_val_name)
 {
 	clearStat ();
-	rts2Type |= RTS2_VALUE_DOUBLE_STAT;
+	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
 
@@ -59,7 +59,7 @@ Rts2ValueDoubleStat::Rts2ValueDoubleStat (std::string in_val_name, std::string i
 flags)
 {
 	clearStat ();
-	rts2Type |= RTS2_VALUE_DOUBLE_STAT;
+	rts2Type |= RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE;
 }
 
 
@@ -108,7 +108,7 @@ void
 Rts2ValueDoubleStat::setFromValue (Rts2Value * newValue)
 {
 	Rts2ValueDouble::setFromValue (newValue);
-	if (newValue->getValueType () == RTS2_VALUE_DOUBLE_STAT)
+	if (newValue->getValueType () == (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE))
 	{
 		numMes = ((Rts2ValueDoubleStat *) newValue)->getNumMes ();
 		mode = ((Rts2ValueDoubleStat *) newValue)->getMode ();

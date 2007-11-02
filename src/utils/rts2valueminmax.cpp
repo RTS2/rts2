@@ -6,7 +6,7 @@ Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name):Rts2Value
 {
 	min = nan ("f");
 	max = nan ("f");
-	rts2Type |= RTS2_VALUE_DOUBLE_MMAX;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
 
@@ -15,7 +15,7 @@ flags)
 {
 	min = nan ("f");
 	max = nan ("f");
-	rts2Type |= RTS2_VALUE_DOUBLE_MMAX;
+	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
 
@@ -90,7 +90,7 @@ void
 Rts2ValueDoubleMinMax::setFromValue (Rts2Value * newValue)
 {
 	Rts2ValueDouble::setFromValue (newValue);
-	if (newValue->getValueType () == RTS2_VALUE_DOUBLE_MMAX)
+	if (newValue->getValueType () == (RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE))
 	{
 		copyMinMax ((Rts2ValueDoubleMinMax *) newValue);
 	}

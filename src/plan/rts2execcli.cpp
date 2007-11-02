@@ -103,6 +103,15 @@ Rts2DevClientCameraExec::nextCommand ()
 	if (!ret)
 		return;
 
+	// if command cannot be executed when telescope is moving, do not execute it
+	// before target was moved
+	if ((nextComd->getBopMask () & BOP_TEL_MOVE) && currentTarget && !currentTarget->wasMoved())
+		return;
+
+	// if we are exposing and command ask to perform exposure..
+	// if ((nextComd->getBopMask () & BOP_EXPOSURE) && (getConnection()->getFullBopState () & (BOP_EXPOSURE | BOP_READOUT)))
+	// 	return;
+
 	// send command to other device
 	if (strcmp (getName (), cmd_device))
 	{
@@ -113,84 +122,14 @@ Rts2DevClientCameraExec::nextCommand ()
 				sendLog;
 			return;
 		}
-		if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
-			|| nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
-		{
-			if (getIsExposing ())
-			{
-				return;			 // after current exposure ends..
-			}
-		}
-		// WHILE_EXPOSING
-		if (nextComd->getCommandCond () == WHILE_EXPOSING)
-		{
-			if (!getIsExposing ())
-			{
-				logStream (MESSAGE_WARNING) <<
-					"Tried to execute 'while exposing' command without exposure, executing it now"
-					<< sendLog;
-			}
-			else if (isIdle ())
-			{
-				return;
-			}
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
-				sendLog;
-			#endif				 /* DEBUG_EXTRA */
-		}
 
+		// execute command
+		// when it returns, we can execute next command
 		cmdConn->queCommand (nextComd);
 		nextComd = NULL;
 		return;
 	}
 
-	if (nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE
-		|| nextComd->getCommandCond () == NO_EXPOSURE_MOVE)
-	{
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) <<
-			"Rts2DevClientCameraExec::nextComd isExposing: " << getIsExposing ()
-			<< " isIdle: " << isIdle () << sendLog;
-		#endif					 /* DEBUG_EXTRA */
-		if (getIsExposing ())
-		{
-			return;				 // after current exposure ends..
-		}
-		// don't execute command which need stable mount before
-		// move was executed
-		if (currentTarget && nextComd->getCommandCond () == NO_EXPOSURE_NO_MOVE)
-		{
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) <<
-				"Rts2DevClientCameraExec::nextComd wasMoved: " << currentTarget->
-				wasMoved () << sendLog;
-			#endif				 /* DEBUG_EXTRA */
-			if (!currentTarget->wasMoved ())
-			{
-				return;
-			}
-		}
-		setIsExposing (true);
-	}
-	// when we would like to execute that while exposing
-	if (nextComd->getCommandCond () == WHILE_EXPOSING)
-	{
-		if (!getIsExposing ())
-		{
-			logStream (MESSAGE_WARNING) <<
-				"Tried to execute 'while exposing' command without exposure, executing it now"
-				<< sendLog;
-		}
-		else if (isIdle ())
-		{
-			return;
-		}
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "Executing WHILE_EXPOSING command" <<
-			sendLog;
-		#endif					 /* DEBUG_EXTRA */
-	}
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "For " << getName () << " queing " <<
 		nextComd->getText () << sendLog;
@@ -255,8 +194,6 @@ Rts2DevClientCameraExec::exposureStarted ()
 		blockMove = 1;
 	}
 	Rts2DevClientCameraImage::exposureStarted ();
-	if (nextComd && nextComd->getCommandCond () == WHILE_EXPOSING)
-		nextCommand ();
 }
 
 

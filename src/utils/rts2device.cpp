@@ -703,7 +703,8 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 		char *deviceName;
 		int deviceType;
 		if (conn->paramNextString (&deviceName)
-			|| conn->paramNextInteger (&deviceType) || !conn->paramEnd ())
+			|| conn->paramNextInteger (&deviceType)
+			|| !conn->paramEnd ())
 			return -2;
 		conn->setName (deviceName);
 		conn->setOtherType (deviceType);
@@ -727,14 +728,14 @@ Rts2Device::setMode (int new_mode)
 {
 	if (modesel == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Called setMode without modesel." <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "Called setMode without modesel."
+			<< sendLog;
 		return -1;
 	}
 	if (new_mode < 0 || new_mode >= modesel->selSize ())
 	{
-		logStream (MESSAGE_ERROR) << "Invalid new mode " << new_mode << "." <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "Invalid new mode " << new_mode
+			<< "." << sendLog;
 		return -1;
 	}
 	Rts2ConfigSection *sect = (*modeconf)[new_mode];
@@ -745,38 +746,40 @@ Rts2Device::setMode (int new_mode)
 		Rts2Value *val = getValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)
 		{
-			logStream (MESSAGE_ERROR) << "Cannot find value with name '" <<
-				(*iter).getValueName () << "'." << sendLog;
+			logStream (MESSAGE_ERROR)
+				<< "Cannot find value with name '"
+				<< (*iter).getValueName ()
+				<< "'." << sendLog;
 			return -1;
 		}
 		// test for suffix
 		std::string suffix = (*iter).getSuffix ();
 		if (suffix.length () > 0)
 		{
-			if (val->getValueType () == RTS2_VALUE_DOUBLE_MMAX)
+			if (val->getValueExtType () == RTS2_VALUE_MMAX)
 			{
 				if (!strcasecmp (suffix.c_str (), "min"))
 				{
-					((Rts2ValueDoubleMinMax *) val)->setMin ((*iter).
-						getValueDouble ());
+					((Rts2ValueDoubleMinMax *) val)->setMin ((*iter).getValueDouble ());
 					sendValueAll (val);
 					continue;
 				}
 				else if (!strcasecmp (suffix.c_str (), "max"))
 				{
-					((Rts2ValueDoubleMinMax *) val)->setMax ((*iter).
-						getValueDouble ());
+					((Rts2ValueDoubleMinMax *) val)->setMax ((*iter).getValueDouble ());
 					sendValueAll (val);
 					continue;
 				}
 			}
-			logStream (MESSAGE_ERROR) << "Do not know what to do with suffix "
-				<< suffix << "." << sendLog;
+			logStream (MESSAGE_ERROR)
+				<< "Do not know what to do with suffix " << suffix << "."
+				<< sendLog;
 			return -1;
 		}
 		// as fall back, exit
-		logStream (MESSAGE_ERROR) << "Cannot set value " << (*iter).
-			getValueName () << "." << sendLog;
+		logStream (MESSAGE_ERROR)
+			<< "Cannot set value " << (*iter).getValueName () << "."
+			<< sendLog;
 		return -1;
 	}
 	return 0;
@@ -839,6 +842,18 @@ Rts2Device::clearStatesPriority ()
 }
 
 
+int
+Rts2Device::deleteConnection (Rts2Conn * conn)
+{
+	if (deviceStatusCommand && deviceStatusCommand->getOwnerConn ())
+	{
+		deviceStatusCommand->nullOwnerConn ();
+		deviceStatusCommand = NULL;
+	}
+	return Rts2Daemon::deleteConnection (conn);
+}
+
+
 Rts2Conn *
 Rts2Device::createClientConnection (char *in_device_name)
 {
@@ -862,14 +877,12 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
 
 
 void
-Rts2Device::stateChanged (int new_state, int old_state,
-const char *description)
+Rts2Device::stateChanged (int new_state, int old_state, const char *description)
 {
 	int ret;
 	Rts2Daemon::stateChanged (new_state, old_state, description);
 	// try to wake-up qued changes..
-	for (Rts2ValueQueVector::iterator iter = queValues.begin ();
-		iter != queValues.end ();)
+	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end ();)
 	{
 		Rts2ValueQue *queVal = *iter;
 		// free qued values
@@ -878,17 +891,24 @@ const char *description)
 			std::string newValStr =
 				std::string (queVal->getNewValue ()->getValue ());
 			ret =
-				doSetValue (queVal->getCondValue (), queVal->getOperation (),
-				queVal->getNewValue ());
+				doSetValue (
+				queVal->getCondValue (),
+				queVal->getOperation (),
+				queVal->getNewValue ()
+				);
 			if (ret)
-				logStream (MESSAGE_ERROR) << "cannot set qued value " << queVal->
-					getOldValue ()->getName () << " with operation " << queVal->
-					getOperation () << " and new value value " << newValStr <<
-					sendLog;
+				logStream (MESSAGE_ERROR)
+					<< "cannot set qued value "
+					<< queVal->getOldValue ()->getName ()
+					<< " with operation " << queVal->getOperation ()
+					<< " and new value value " << newValStr
+					<< sendLog;
 			else
-				logStream (MESSAGE_DEBUG) << "change value of' " << queVal->
-					getOldValue ()->
-					getName () << "' from que to " << newValStr << sendLog;
+				logStream (MESSAGE_DEBUG)
+					<< "change value of' "
+					<< queVal->getOldValue ()->getName ()
+					<< "' from que to " << newValStr
+					<< sendLog;
 			delete queVal;
 			iter = queValues.erase (iter);
 		}

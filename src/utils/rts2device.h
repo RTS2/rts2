@@ -167,6 +167,14 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		{
 			return owner_conn;
 		}
+
+		/**
+		 * Sets owner connection to null. Used when owner connection is deleted.
+		 */
+		void nullOwnerConn ()
+		{
+			owner_conn = NULL;
+		}
 };
 
 class Rts2Device:public Rts2Daemon
@@ -210,6 +218,8 @@ class Rts2Device:public Rts2Daemon
 		virtual int init ();
 
 		void clearStatesPriority ();
+
+		virtual int deleteConnection (Rts2Conn * conn);
 
 		// sends operation block commands to master
 		// this functions should mark critical blocks during device execution
@@ -324,8 +334,7 @@ class Rts2Device:public Rts2Daemon
 		{
 			if (deviceStatusCommand)
 			{
-				deviceStatusCommand->getOwnerConn ()->sendCommandEnd (DEVDEM_OK,
-					"device status updated");
+				deviceStatusCommand->getOwnerConn ()->sendCommandEnd (DEVDEM_OK, "device status updated");
 				deviceStatusCommand = NULL;
 			}
 		}

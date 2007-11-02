@@ -29,57 +29,68 @@
 
 /**
  * @file Various value classes.
+ *
+ * @defgroup RTS2Value RTS2 Values
  */
 
 /** Value is string (character array). */
-#define RTS2_VALUE_STRING 0x00000001
+#define RTS2_VALUE_STRING             0x00000001
 /** Value is integer number. */
-#define RTS2_VALUE_INTEGER  0x00000002
+#define RTS2_VALUE_INTEGER            0x00000002
 /** Value is time (date and time, distributed as double precission floating point
  * number, representing number of seconds from 1.1.1970) */
-#define RTS2_VALUE_TIME   0x00000003
+#define RTS2_VALUE_TIME               0x00000003
 /** Value is double precission floating point number. */
-#define RTS2_VALUE_DOUBLE 0x00000004
+#define RTS2_VALUE_DOUBLE             0x00000004
 /** Value is single precission floating point number. */
-#define RTS2_VALUE_FLOAT  0x00000005
+#define RTS2_VALUE_FLOAT              0x00000005
 /** Value is boolean value (true or false). */
-#define RTS2_VALUE_BOOL   0x00000006
+#define RTS2_VALUE_BOOL               0x00000006
 /** Value is selection value. Ussuall represnetation is integer number, but string representation is provided as well. */
-#define RTS2_VALUE_SELECTION  0x00000007
+#define RTS2_VALUE_SELECTION          0x00000007
 /** Value is long integer value. */
-#define RTS2_VALUE_LONGINT  0x00000008
+#define RTS2_VALUE_LONGINT            0x00000008
 
 /** Value have statistics nature (include mean, average, min and max values and number of measurements taken for value). */
-#define RTS2_VALUE_DOUBLE_STAT  0x00000014
+#define RTS2_VALUE_STAT               0x00000010
 /** Value is min-max value, which puts boundaries on minimal and maximal values. */
-#define RTS2_VALUE_DOUBLE_MMAX  0x00000024
+#define RTS2_VALUE_MMAX               0x00000020
+/** Value holds rectangle - 4 values of same type (X,Y,w,h). */
+#define RTS2_VALUE_RECTANGLE          0x00000030
 
-#define RTS2_VALUE_MASK   0x000000ff
+/** Base type mask. */
+#define RTS2_BASE_TYPE                0x0000000f
 
-#define RTS2_VALUE_FITS   0x00000100
-#define RTS2_VALUE_DEVPREFIX  0x00000200
+#define RTS2_VALUE_MASK               0x000000ff
 
-#define RTS2_VWHEN_MASK   0x0000f000
+#define RTS2_EXT_TYPE                 0x000000f0
 
-#define RTS2_VWHEN_BEFORE_EXP 0x00000000
-#define RTS2_VWHEN_AFTER_START  0x00001000
-#define RTS2_VWHEN_BEFORE_END 0x00002000
-#define RTS2_VWHEN_AFTER_END  0x00003000
+#define RTS2_VALUE_FITS               0x00000100
+#define RTS2_VALUE_DEVPREFIX          0x00000200
 
-#define RTS2_TYPE_MASK    0x00ff0000
-#define RTS2_DT_RA    0x00010000
-#define RTS2_DT_DEC   0x00020000
-#define RTS2_DT_DEGREES   0x00030000
-#define RTS2_DT_DEG_DIST  0x00040000
-#define RTS2_DT_PERCENTS  0x00050000
+#define RTS2_VWHEN_MASK               0x0000f000
 
-#define RTS2_VALUE_INFOTIME "infotime"
+#define RTS2_VWHEN_BEFORE_EXP         0x00000000
+#define RTS2_VWHEN_AFTER_START        0x00001000
+#define RTS2_VWHEN_BEFORE_END         0x00002000
+#define RTS2_VWHEN_AFTER_END          0x00003000
+
+#define RTS2_TYPE_MASK                0x00ff0000
+#define RTS2_DT_RA                    0x00010000
+#define RTS2_DT_DEC                   0x00020000
+#define RTS2_DT_DEGREES               0x00030000
+#define RTS2_DT_DEG_DIST              0x00040000
+#define RTS2_DT_PERCENTS              0x00050000
+
+#define RTS2_VALUE_INFOTIME           "infotime"
 
 /**
  * Script value, when we will display it, we might look for scriptPosition and
  * scriptLen, which will show current script position.
  */
-#define RTS2_DT_SCRIPT    0x00100000
+#define RTS2_DT_SCRIPT                0x00100000
+
+#define VALUE_BUF_LEN                 200
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)
 
@@ -93,7 +104,8 @@ class Rts2Conn;
  * distributed with metainformations over TCP/IP network, and stored in
  * receiving devices.
  *
- * @ingroup RTS2Block
+ * @addgroup RTS2Blocka
+ * @addgroup RTS2Value
  */
 class Rts2Value
 {
@@ -101,7 +113,7 @@ class Rts2Value
 		std::string valueName;
 		std::string description;
 	protected:
-		char buf[200];
+		char buf[VALUE_BUF_LEN];
 		int32_t rts2Type;
 
 		void setValueFlags (int32_t flags)
@@ -113,7 +125,7 @@ class Rts2Value
 		/**
 		 * Set value display type - part covered by RTS2_TYPE_MASK
 		 *
-		 * \param displayType - display type, one from RTS2_DT_xxxx
+		 * @param displayType Display type, one from RTS2_DT_xxxx
 		 * constant.
 		 */
 		void setValueDisplayType (int32_t displayType)
@@ -146,6 +158,7 @@ class Rts2Value
 		 * return -1 when value cannot be set from string.
 		 */
 		virtual int setValueString (const char *in_value) = 0;
+		virtual int setValueInteger (int in_value) = 0;
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		virtual const char *getValue () = 0;
 		virtual const char *getDisplayValue ()
@@ -186,9 +199,25 @@ class Rts2Value
 			return description;
 		}
 
-		int getValueType ()
+		const int getValueType ()
 		{
 			return rts2Type & RTS2_VALUE_MASK;
+		}
+
+		const int getValueExtType ()
+		{
+			return rts2Type & RTS2_EXT_TYPE;
+		}
+
+		/**
+		 * If base type value. This will be different from
+		 * value type for composite types (min-max, rectangles,..)
+		 *
+		 * @return Value base type.
+		 */
+		const int getValueBaseType ()
+		{
+			return rts2Type & RTS2_BASE_TYPE;
 		}
 
 		void setWriteToFits ()
@@ -206,6 +235,11 @@ class Rts2Value
 			return (rts2Type & RTS2_VALUE_DEVPREFIX);
 		}
 
+		int32_t getFlags ()
+		{
+			return rts2Type;
+		}
+
 		// send value metainformations, including description
 		int sendMetaInfo (Rts2Conn * connection);
 
@@ -218,6 +252,11 @@ class Rts2Value
 		virtual void setFromValue (Rts2Value * newValue) = 0;
 };
 
+/**
+ * Class which holds string value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueString:public Rts2Value
 {
 	private:
@@ -232,11 +271,17 @@ class Rts2ValueString:public Rts2Value
 		}
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
+		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
 		virtual int send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 };
 
+/**
+ * Class which holds integre value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueInteger:public Rts2Value
 {
 	private:
@@ -247,7 +292,6 @@ class Rts2ValueInteger:public Rts2Value
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
-		virtual int doOpValue (char op, Rts2Value * old_value);
 		/**
 		 * Returns -1 on error
 		 *
@@ -257,6 +301,7 @@ class Rts2ValueInteger:public Rts2Value
 			value = in_value;
 			return 0;
 		}
+		virtual int doOpValue (char op, Rts2Value * old_value);
 		virtual const char *getValue ();
 		virtual double getValueDouble ()
 		{
@@ -277,6 +322,11 @@ class Rts2ValueInteger:public Rts2Value
 		virtual void setFromValue (Rts2Value * newValue);
 };
 
+/**
+ * Class which holds double value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueDouble:public Rts2Value
 {
 	protected:
@@ -287,6 +337,7 @@ class Rts2ValueDouble:public Rts2Value
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
+		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
 		{
@@ -317,6 +368,11 @@ class Rts2ValueDouble:public Rts2Value
 		virtual void setFromValue (Rts2Value * newValue);
 };
 
+/**
+ * Class which holds time value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueTime:public Rts2ValueDouble
 {
 	public:
@@ -330,6 +386,11 @@ class Rts2ValueTime:public Rts2ValueDouble
 		virtual const char *getDisplayValue ();
 };
 
+/**
+ * Class which holds float value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueFloat:public Rts2Value
 {
 	private:
@@ -340,6 +401,7 @@ class Rts2ValueFloat:public Rts2Value
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
+		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
 		{
@@ -368,6 +430,11 @@ class Rts2ValueFloat:public Rts2Value
 		virtual void setFromValue (Rts2Value * newValue);
 };
 
+/**
+ * Class which holds boolean value.
+ *
+ * @addgroup RTS2Value
+ */
 class Rts2ValueBool:public Rts2ValueInteger
 {
 	// value - 0 means unknow, 1 is false, 2 is true
@@ -390,14 +457,64 @@ class Rts2ValueBool:public Rts2ValueInteger
 };
 
 /**
+ * Abstract class, it's descandants cann be added as data to SelVal.
+ *
+ * @see SelVal
+ */
+class Rts2SelData
+{
+	public:
+		/**
+		 * Empty SelData constructor.
+		 */
+		Rts2SelData ()
+		{
+		}
+
+		/**
+		 * Empty SelData destructor.
+		 */
+		virtual ~Rts2SelData ()
+		{
+		}
+};
+
+/**
+ * Holds selection value.
+ *
+ * @addgroup RTS2Value
+ */
+class SelVal
+{
+	public:
+		std::string name;
+		Rts2SelData * data;
+
+		/**
+		 * Create new selection value.
+		 *
+		 * @param in_name Selection value name.
+		 * @param in_data Selection value optional data.
+		 */
+		SelVal (std::string in_name, Rts2SelData *in_data = NULL)
+		{
+			name = in_name;
+			data = in_data;
+		}
+};
+
+/**
  * This value adds as meta-information allowed content in strings.
  * It can be used for named selection list (think of enums..).
+ *
+ * @addgroup RTS2Value
  */
 class Rts2ValueSelection:public Rts2ValueInteger
 {
 	private:
 		// holds variables bag..
-		std::vector < std::string > valNames;
+		std::vector < SelVal > values;
+		void deleteValues ();
 
 	protected:
 		virtual int sendTypeMetaInfo (Rts2Conn * connection);
@@ -407,6 +524,8 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		Rts2ValueSelection (std::string in_val_name, std::string in_description,
 			bool writeToFits = false, int32_t flags = 0);
 
+		virtual ~Rts2ValueSelection (void);
+
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
 
@@ -414,12 +533,12 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		virtual const char *getDisplayValue ()
 		{
-			return getSelVal ().c_str ();
+			return getSelName ().c_str ();
 		}
 
 		virtual int setValueInteger (int in_value)
 		{
-			if (in_value < 0 || (size_t) in_value >= valNames.size ())
+			if (in_value < 0 || (size_t) in_value >= values.size ())
 				return -1;
 			return Rts2ValueInteger::setValueInteger (in_value);
 		}
@@ -439,43 +558,79 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		 *
 		 * @param sel_name String identifing new selection value.
 		 */
-		void addSelVal (char *sel_name)
+		void addSelVal (const char *sel_name, Rts2SelData *data = NULL)
 		{
-			addSelVal (std::string (sel_name));
+			addSelVal (std::string (sel_name), data);
 		}
 
-		void addSelVal (std::string sel_name)
+		void addSelVal (std::string sel_name, Rts2SelData *data = NULL)
 		{
-			valNames.push_back (sel_name);
+			addSelVal (SelVal (sel_name, data));
+		}
+
+		void addSelVal (SelVal val)
+		{
+			values.push_back (val);
 		}
 
 		void addSelVals (const char **vals);
 
-		std::string getSelVal ()
+		std::string getSelName ()
+		{
+			return getSelName (getValueInteger ());
+		}
+
+		std::string getSelName (int index)
+		{
+			const SelVal *val = getSelVal (index);
+			if (val == NULL)
+				return std::string ("UNK");
+			return val->name;
+		}
+
+		Rts2SelData *getData ()
+		{
+			return getData (getValueInteger ());
+		}
+
+		Rts2SelData *getData (int index)
+		{
+			const SelVal *val = getSelVal (index);
+			if (val == NULL)
+				return NULL;
+			return val->data;
+		}
+
+		const SelVal* getSelVal ()
 		{
 			return getSelVal (getValueInteger ());
 		}
 
-		std::string getSelVal (int val)
+		const SelVal* getSelVal (int index)
 		{
-			if (val < 0 || (unsigned int) val >= valNames.size ())
-				return std::string ("UNK");
-			return valNames[val];
+			if (index < 0 || (unsigned int) index >= values.size ())
+				return NULL;
+			// find it
+			std::vector <SelVal>::iterator iter = selBegin ();
+			for (int i = 0; iter != selEnd () && i < index; iter++, i++)
+			{
+			}
+			return &(*iter);
 		}
 
-		std::vector < std::string >::iterator selBegin ()
+		std::vector < SelVal >::iterator selBegin ()
 		{
-			return valNames.begin ();
+			return values.begin ();
 		}
 
-		std::vector < std::string >::iterator selEnd ()
+		std::vector < SelVal >::iterator selEnd ()
 		{
-			return valNames.end ();
+			return values.end ();
 		}
 
 		int selSize ()
 		{
-			return valNames.size ();
+			return values.size ();
 		}
 
 		void duplicateSelVals (Rts2ValueSelection * otherValue);
@@ -483,6 +638,8 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 /**
  * Class for long int value.
+ *
+ * @addgroup RTS2Value
  */
 class Rts2ValueLong:public Rts2Value
 {
@@ -494,16 +651,9 @@ class Rts2ValueLong:public Rts2Value
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
+		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
-		/**
-		 * Returns -1 on error
-		 *
-		 */
-		virtual int setValueInteger (int in_value)
-		{
-			value = in_value;
-			return 0;
-		}
+
 		virtual const char *getValue ();
 		virtual double getValueDouble ()
 		{
@@ -532,4 +682,13 @@ class Rts2ValueLong:public Rts2Value
 		}
 		virtual void setFromValue (Rts2Value * newValue);
 };
+
+/**
+ * Creates value from meta information.
+ *
+ * @param rts2Type Value flags.
+ * @param name Value name.
+ * @param desc Value description.
+ */
+Rts2Value *newValue (int rts2Type, std::string name, std::string desc);
 #endif							 /* !__RTS2_VALUE__ */
