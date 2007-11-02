@@ -1,95 +1,61 @@
+/* 
+ * Dummy camera for testing purposes.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "camd.h"
-
-class CameraDummyChip:public CameraChip
-{
-	private:
-		char *data;
-		bool supportFrameT;
-		Rts2ValueDouble *readoutSleep;
-	public:
-		CameraDummyChip (Rts2DevCamera * in_cam, bool in_supportFrameT,
-			Rts2ValueDouble * in_readoutSleep, int in_width,
-			int in_height):CameraChip (in_cam, 0)
-		{
-			supportFrameT = in_supportFrameT;
-			readoutSleep = in_readoutSleep;
-			setSize (in_width, in_height, 0, 0);
-			data = NULL;
-		}
-		virtual int startExposure (int light, float exptime)
-		{
-			return 0;
-		}
-		virtual int readoutOneLine ();
-
-		virtual int readoutEnd ()
-		{
-			if (data)
-			{
-				delete data;
-				data = NULL;
-			}
-			return CameraChip::endReadout ();
-		}
-
-		virtual bool supportFrameTransfer ()
-		{
-			return supportFrameT;
-		}
-};
-
-int
-CameraDummyChip::readoutOneLine ()
-{
-	int ret;
-	int lineSize = lineByteSize ();
-	if (sendLine == 0)
-	{
-		ret = CameraChip::sendFirstLine ();
-		if (ret)
-			return ret;
-		data = new char[lineSize];
-	}
-	if (readoutLine == 0 && readoutSleep->getValueDouble () > 0)
-		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-	for (int i = 0; i < lineSize; i++)
-	{
-		data[i] = i + readoutLine;
-	}
-	readoutLine++;
-	sendLine++;
-	ret = sendReadoutData (data, lineSize);
-	if (ret < 0)
-		return ret;
-	if (readoutLine <
-		(chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
-		return 0;				 // imediately send new data
-	return -2;					 // no more data..
-}
-
 
 class Rts2DevCameraDummy:public Rts2DevCamera
 {
 	private:
+		char *data;
+
 		bool supportFrameT;
 		int infoSleep;
 		Rts2ValueDouble *readoutSleep;
-		Rts2ValueSelection *dataType;
 		int width;
 		int height;
 
-		int setDataType (Rts2ValueSelection * new_data_type)
-		{
-			static int dataTypes[] =
-			{
-				RTS2_DATA_USHORT, RTS2_DATA_LONG, RTS2_DATA_LONGLONG,
-				RTS2_DATA_FLOAT, RTS2_DATA_DOUBLE, RTS2_DATA_BYTE, RTS2_DATA_SBYTE,
-				RTS2_DATA_ULONG
-			};
-			chips[0]->setUsedDataType (dataTypes[new_data_type->getValueInteger ()]);
-			return 0;
-		}
 	protected:
+		virtual void initBinnings ()
+		{
+			Rts2DevCamera::initBinnings ();
+
+			addBinning2D (2, 2);
+			addBinning2D (3, 3);
+			addBinning2D (4, 4);
+			addBinning2D (1, 2);
+			addBinning2D (2, 1);
+			addBinning2D (4, 1);
+		}
+
+		virtual void initDataTypes ()
+		{
+			Rts2DevCamera::initDataTypes ();
+			addDataType (RTS2_DATA_BYTE);
+			addDataType (RTS2_DATA_SHORT);
+			addDataType (RTS2_DATA_LONG);
+			addDataType (RTS2_DATA_LONGLONG);
+			addDataType (RTS2_DATA_FLOAT);
+			addDataType (RTS2_DATA_DOUBLE);
+			addDataType (RTS2_DATA_SBYTE);
+			addDataType (RTS2_DATA_ULONG);
+		}
+
 		virtual int setGain (double in_gain)
 		{
 			return 0;
@@ -100,10 +66,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			if (old_value == readoutSleep)
 			{
 				return 0;
-			}
-			if (old_value == dataType)
-			{
-				return setDataType ((Rts2ValueSelection *) new_value);
 			}
 			return Rts2DevCamera::setValue (old_value, new_value);
 		}
@@ -119,17 +81,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 				CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 			readoutSleep->setValueDouble (0);
 
-			createValue (dataType, "data_type", "used data type", true, 0,
-				CAM_READING | CAM_DATA, false);
-			dataType->addSelVal ("UNSIGNED SHORT");
-			dataType->addSelVal ("LONG");
-			dataType->addSelVal ("LONGLONG");
-			dataType->addSelVal ("FLOAT");
-			dataType->addSelVal ("DOUBLE");
-			dataType->addSelVal ("BYTE");
-			dataType->addSelVal ("SIGNED BYTE");
-			dataType->addSelVal ("UNSIGNED LONG");
-
 			width = 200;
 			height = 100;
 			addOption ('f', "frame_transfer", 0,
@@ -140,6 +91,8 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 				"device will sleep i nanosecunds before each readout");
 			addOption ('w', "width", 1, "width of simulated CCD");
 			addOption ('g', "height", 1, "height of simulated CCD");
+
+			data = NULL;
 		}
 		virtual ~ Rts2DevCameraDummy (void)
 		{
@@ -185,9 +138,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		}
 		virtual int initChips ()
 		{
-			chips[0] =
-				new CameraDummyChip (this, supportFrameT, readoutSleep, width, height);
-			chipNum = 1;
+			initCameraChip (width, height, 0, 0);
 			return Rts2DevCamera::initChips ();
 		}
 		virtual int ready ()
@@ -204,7 +155,58 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		{
 			return 0;
 		}
+
+		virtual int startExposure (int light, float exptime)
+		{
+			return 0;
+		}
+		virtual int readoutOneLine ();
+
+		virtual int readoutEnd ()
+		{
+			if (data)
+			{
+				delete data;
+				data = NULL;
+			}
+			return Rts2DevCamera::endReadout ();
+		}
+
+		virtual bool supportFrameTransfer ()
+		{
+			return supportFrameT;
+		}
 };
+
+int
+Rts2DevCameraDummy::readoutOneLine ()
+{
+	int ret;
+	int lineSize = lineByteSize ();
+	if (sendLine == 0)
+	{
+		ret = sendFirstLine ();
+		if (ret)
+			return ret;
+		data = new char[lineSize];
+	}
+	if (readoutLine == 0 && readoutSleep->getValueDouble () > 0)
+		usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
+	for (int i = 0; i < lineSize; i++)
+	{
+		data[i] = i + readoutLine;
+	}
+	readoutLine++;
+	sendLine++;
+	ret = sendReadoutData (data, lineSize);
+	if (ret < 0)
+		return ret;
+	if (readoutLine <
+		(chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt ()) / binningVertical ())
+		return 0;				 // imediately send new data
+	return -2;					 // no more data..
+}
+
 
 int
 main (int argc, char **argv)
