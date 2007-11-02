@@ -1,8 +1,27 @@
-/*!
+/* 
+ * Image header.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+/**
+ * @file Image header.
+ *
  * Standart image header. Used for transforming image header data between
  * camera deamon and camera client.
- *
- * $Id$
  *
  * It's quite necessary to have such a head, since condition on camera could
  * change unpredicitably after readout command was issuedddand client could
@@ -13,7 +32,7 @@
  * NOT be stored in permanent form, since it could change with versions of the
  * software.
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 
 #ifndef __RTS_IMGHDR__
@@ -21,26 +40,26 @@
 
 #include <time.h>
 
-#define SHUTTER_OPEN  0x01
-#define SHUTTER_CLOSED  0x02
-#define SHUTTER_SYNCHRO 0x03
+#define SHUTTER_OPEN     0x01
+#define SHUTTER_CLOSED   0x02
+#define SHUTTER_SYNCHRO  0x03
 
-#define FILTER_SIZE       10
+#define FILTER_SIZE        10
 
-#define MAX_AXES  5				 //! Maximum number of axes we should considered.
+#define MAX_AXES            5	 //! Maximum number of axes we should considered.
 
 // various datatypes
-#define RTS2_DATA_BYTE    8
-#define RTS2_DATA_SHORT   16
-#define RTS2_DATA_LONG    32
+#define RTS2_DATA_BYTE       8
+#define RTS2_DATA_SHORT     16
+#define RTS2_DATA_LONG      32
 #define RTS2_DATA_LONGLONG  64
-#define RTS2_DATA_FLOAT   -32
-#define RTS2_DATA_DOUBLE  -64
+#define RTS2_DATA_FLOAT    -32
+#define RTS2_DATA_DOUBLE   -64
 
 // unsigned data types
-#define RTS2_DATA_SBYTE   10
-#define RTS2_DATA_USHORT  20
-#define RTS2_DATA_ULONG   40
+#define RTS2_DATA_SBYTE     10
+#define RTS2_DATA_USHORT    20
+#define RTS2_DATA_ULONG     40
 
 struct imghdr
 {
