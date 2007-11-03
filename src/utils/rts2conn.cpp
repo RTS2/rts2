@@ -120,9 +120,7 @@ Rts2Conn::add (fd_set * set)
 
 std::string Rts2Conn::getCameraChipState (int chipN)
 {
-	int
-		chip_state =
-		(getRealState () & (CAM_MASK_CHIP << (chipN * 4))) >> (chipN * 4);
+	int chip_state = (getRealState () & (CAM_MASK_CHIP << (chipN * 4))) >> (chipN * 4);
 	std::ostringstream _os;
 	if (chip_state == 0)
 	{
@@ -154,10 +152,8 @@ std::string Rts2Conn::getCameraChipState (int chipN)
 std::string Rts2Conn::getStateString ()
 {
 	std::ostringstream _os;
-	int
-		real_state = getRealState ();
-	int
-		chipN;
+	int real_state = getRealState ();
+	int chipN;
 	switch (getOtherType ())
 	{
 		case DEVICE_TYPE_SERVERD:
@@ -959,7 +955,8 @@ Rts2Conn::command ()
 			|| paramNextString (&p_name)
 			|| paramNextString (&p_host)
 			|| paramNextInteger (&p_port)
-			|| paramNextInteger (&p_device_type) || !paramEnd ())
+			|| paramNextInteger (&p_device_type)
+			|| !paramEnd ())
 			return -2;
 		master->addAddress (p_name, p_host, p_port, p_device_type);
 		setCommandInProgress (false);
@@ -973,7 +970,9 @@ Rts2Conn::command ()
 		char *p_login;
 		if (paramNextInteger (&p_centraldId)
 			|| paramNextInteger (&p_priority)
-			|| paramNextString (&p_priority_have) || paramNextString (&p_login))
+			|| paramNextString (&p_priority_have)
+			|| paramNextString (&p_login)
+			|| !paramEnd ())
 			return -2;
 		master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
 			p_login);

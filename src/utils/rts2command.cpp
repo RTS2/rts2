@@ -142,8 +142,7 @@ Rts2CommandSendKey::send ()
 Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name):Rts2Command
 (in_master)
 {
-	char *
-		command;
+	char *command;
 	asprintf (&command, "key %s", device_name);
 	setCommand (command);
 	free (command);
@@ -216,8 +215,7 @@ Rts2CommandFilter::setCommandFilter (int filter)
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * in_camera,
-int filter):
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * in_camera, int filter):
 Rts2Command (in_camera->getMaster ())
 {
 	camera = in_camera;
@@ -227,8 +225,7 @@ Rts2Command (in_camera->getMaster ())
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * in_phot,
-int filter):
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * in_phot, int filter):
 Rts2Command (in_phot->getMaster ())
 {
 	camera = NULL;
@@ -238,8 +235,7 @@ Rts2Command (in_phot->getMaster ())
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * in_filter,
-int filter):
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * in_filter, int filter):
 Rts2Command (in_filter->getMaster ())
 {
 	camera = NULL;
@@ -275,8 +271,8 @@ Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y, int w, int h):Rts2CommandCameraSettings
-(in_camera)
+Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y, int w, int h):
+Rts2CommandCameraSettings (in_camera)
 {
 	char *command;
 	asprintf (&command, "box %i %i %i %i", x, y, w, h);
@@ -285,8 +281,8 @@ Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y, i
 }
 
 
-Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width = -1, int height = -1):Rts2CommandCameraSettings
-(in_camera)
+Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width = -1, int height = -1):
+Rts2CommandCameraSettings (in_camera)
 {
 	char *command;
 	asprintf (&command, "center %i %i", width, height);
@@ -295,10 +291,8 @@ Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width
 }
 
 
-Rts2CommandChangeValueDontReturn::
-Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
-std::string in_valName, char op,
-int in_operand):
+Rts2CommandChangeValueDontReturn::Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client, std::string in_valName, char op, int in_operand):
+
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
@@ -309,10 +303,7 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValueDontReturn::
-Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
-std::string in_valName, char op,
-float in_operand):
+Rts2CommandChangeValueDontReturn::Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client, std::string in_valName, char op, float in_operand):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
@@ -323,10 +314,7 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValueDontReturn::
-Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
-std::string in_valName, char op,
-double in_operand):
+Rts2CommandChangeValueDontReturn::Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client, std::string in_valName, char op, double in_operand):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
@@ -337,10 +325,7 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValueDontReturn::
-Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
-std::string in_valName, char op,
-bool in_operand):
+Rts2CommandChangeValueDontReturn::Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,std::string in_valName, char op, bool in_operand):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
@@ -351,10 +336,7 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValueDontReturn::
-Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client,
-std::string in_valName, char op,
-std::string in_operand):
+Rts2CommandChangeValueDontReturn::Rts2CommandChangeValueDontReturn (Rts2DevClient * in_client, std::string in_valName, char op, std::string in_operand):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
@@ -365,46 +347,35 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-std::string in_valName,
-char op, int in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, int in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-std::string in_valName,
-char op, float in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, float in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-std::string in_valName,
-char op, double in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, double in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-std::string in_valName,
-char op, bool in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, bool in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,
-std::string in_valName,
-char op,
-std::string in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, std::string in_operand):
 Rts2CommandChangeValueDontReturn (in_client, in_valName, op, in_operand)
 {
 	client = in_client;
