@@ -59,11 +59,13 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	time (&lastGoodSend);
 	lastData = lastGoodSend;
 	lastSendReady = lastGoodSend - connectionTimeout;
+
+	binaryReadDataSize = -1;
+	binaryWriteDataSize = -1;
 }
 
 
-Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):
-Rts2Object ()
+Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
 	buf_size = MAX_DATA;
@@ -92,6 +94,9 @@ Rts2Object ()
 	time (&lastGoodSend);
 	lastData = lastGoodSend;
 	lastSendReady = lastData - connectionTimeout;
+
+	binaryReadDataSize = -1;
+	binaryWriteDataSize = -1;
 }
 
 
@@ -449,7 +454,7 @@ Rts2Conn::idle ()
 		if (now > lastData + getConnTimeout ()
 			&& now > lastSendReady + getConnTimeout () / 4)
 		{
-			ret = send (PROTO_TECHNICAL " ready");
+			ret = sendMsg (PROTO_TECHNICAL " ready");
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "Send T ready ret: " << ret <<
 				" name: " << getName () << " type: " << type << sendLog;
@@ -628,7 +633,7 @@ Rts2Conn::processLine ()
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "Send T OK" << sendLog;
 			#endif
-			send (PROTO_TECHNICAL " OK");
+			sendMsg (PROTO_TECHNICAL " OK");
 			return -1;
 		}
 		if (!strcmp (msg, "OK"))
@@ -682,6 +687,22 @@ Rts2Conn::processLine ()
 	{
 		ret = master->setValue (this, true);
 	}
+	else if (isCommand (PROTO_BINARY))
+	{
+		// we expect binary data
+		if (paramNextLong (&binaryReadDataSize)
+			|| paramNextInteger (&binaryReadType)
+			|| !paramEnd ())
+		{
+			// end connection - we cannot process this command
+			binaryReadDataSize = -1;
+			connectionError (-2);
+			return -1;
+		}
+		binaryReadBuff = new char[binaryReadDataSize];
+		binaryReadTop = binaryReadBuff;
+		return -1;
+	}
 	else if (isCommandReturn ())
 	{
 		ret = commandReturn ();
@@ -722,9 +743,30 @@ Rts2Conn::receive (fd_set * set)
 		{
 			return acceptConn ();
 		}
-		data_size = read (sock, buf_top, buf_size - (buf_top - buf));
+		// we are receiving binary data
+		if (binaryReadDataSize > 0)
+		{
+			data_size = read (sock, binaryReadTop, binaryReadDataSize);
+			// ignore EINTR
+			if (data_size == -1 && errno == EINTR)
+				return 0;
+			// without error
+			if (data_size <= 0)
+			{
+				connectionError (data_size);
+				return -1;
+			}
+			binaryReadDataSize -= data_size;
+			binaryReadTop += data_size;
+			// inform device that we read some data
+			getMaster ()->binaryDataArrived (this);
+			if (binaryReadDataSize == 0)
+			{
+				delete []binaryReadBuff;
+			}
+		}
 		// increase buffer if it's too small
-		if (data_size == 0 && ((int) buf_size) == (buf_top - buf))
+		if (((int) buf_size) == (buf_top - buf))
 		{
 			char *new_buf = new char[buf_size + MAX_DATA + 1];
 			memcpy (new_buf, buf, buf_size);
@@ -733,9 +775,9 @@ Rts2Conn::receive (fd_set * set)
 			delete[]buf;
 			buf = new_buf;
 			// read us again..
-			return 0;
 		}
-		// ingore EINTR error
+		data_size = read (sock, buf_top, buf_size - (buf_top - buf));
+		// ignore EINTR
 		if (data_size == -1 && errno == EINTR)
 			return 0;
 		if (data_size <= 0)
@@ -743,11 +785,14 @@ Rts2Conn::receive (fd_set * set)
 			connectionError (data_size);
 			return -1;
 		}
+		char *full_data_end = buf_top + data_size;
 		buf_top[data_size] = '\0';
 		successfullRead ();
 		#ifdef DEBUG_ALL
-		std::cerr << "Rts2Conn::receive name " << getName () <<
-			" reas: " << buf_top << " full_buf: " << buf << " size: " << data_size
+		std::cerr << "Rts2Conn::receive name " << getName ()
+			<< " reas: " << buf_top
+			<< " full_buf: " << buf
+			<< " size: " << data_size
 			<< std::endl;
 		#endif
 		// put old data size into account..
@@ -781,6 +826,22 @@ Rts2Conn::receive (fd_set * set)
 				*buf_top = '\0';
 				buf_top++;
 				processLine ();
+				// binary read just started
+				if (binaryReadDataSize > 0 && binaryReadBuff == binaryReadTop)
+				{
+					int readSize = full_data_end - buf_top;
+					if (readSize > binaryReadDataSize)
+						readSize = binaryReadDataSize;
+					memcpy (binaryReadBuff, buf_top, readSize);
+					binaryReadTop += readSize;
+					binaryReadDataSize -= readSize;
+					getMaster ()->binaryDataArrived (this);
+					// we read all data and we aren't in binary
+					if (binaryReadDataSize <= 0)
+						memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize);
+					else
+						return 1;
+				}
 				command_start = buf_top;
 			}
 		}
@@ -834,9 +895,9 @@ void
 Rts2Conn::setHavePriority (int in_have_priority)
 {
 	if (in_have_priority)
-		send (PROTO_PRIORITY_INFO " 1");
+		sendMsg (PROTO_PRIORITY_INFO " 1");
 	else
-		send (PROTO_PRIORITY_INFO " 0");
+		sendMsg (PROTO_PRIORITY_INFO " 0");
 	have_priority = in_have_priority;
 };
 
@@ -854,7 +915,7 @@ Rts2Conn::sendPriorityInfo ()
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_PRIORITY_INFO " %i", havePriority ());
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1196,43 +1257,95 @@ Rts2Conn::priorityInfo ()
 
 
 int
-Rts2Conn::send (const char *msg)
+Rts2Conn::sendMsg (const char *msg)
 {
 	int len;
 	int ret;
 	if (sock == -1)
 		return -1;
 	len = strlen (msg);
-	ret = write (sock, msg, len);
+	// ignore EINTR
+	do
+	{
+		ret = write (sock, msg, len);
+	} while (ret == -1 && errno == EINTR);
+
 	if (ret != len)
 	{
-		syslog (LOG_ERR,
-			"Cannot send msg: %s to sock %i with len %i, ret %i errno %i message %m",
+		syslog (LOG_ERR, "Cannot send msg: %s to sock %i with len %i, ret %i errno %i message %m",
 			msg, sock, len, ret, errno);
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_ERROR) <<
-			"Rts2Conn::send [" << getCentraldId () << ":" << conn_state <<
-			"] error " << sock << " state: " << ret << " sending " << msg << ":"
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR)
+			<< "Rts2Conn::send [" << getCentraldId () << ":" << conn_state << "] error "
+			<< sock << " state: " << ret << " sending " << msg << ":" strerror (errno)
+			<< sendLog;
 		#endif
 		connectionError (ret);
 		return -1;
 	}
 	#ifdef DEBUG_ALL
-	std::
-		cerr << "Rts2Conn::send " << getName () << " [" << getCentraldId () << ":"
-		<< sock << "] send " << ret << ": " << msg << std::endl;
+	std::cerr << "Rts2Conn::send " << getName ()
+		<< " [" << getCentraldId () << ":" << sock << "] send " << ret << ": " << msg
+		<< std::endl;
 	#endif
-	write (sock, "\r\n", 2);
+	do
+	{
+		ret = write (sock, "\r\n", 2);
+	} while (ret == -1 && errno == EINTR);
+
 	successfullSend ();
 	return 0;
 }
 
 
 int
-Rts2Conn::send (std::string msg)
+Rts2Conn::sendMsg (std::string msg)
 {
-	return send (msg.c_str ());
+	return sendMsg (msg.c_str ());
+}
+
+
+int
+Rts2Conn::sendBinaryData (char *data, long dataSize, int dataType)
+{
+	char *msg;
+	asprintf (&msg, PROTO_BINARY " %li %i", dataSize, dataType);
+	int ret;
+	do
+	{
+		ret = sendMsg (msg);
+	} while (ret == -1 && errno == EINTR);
+	free (msg);
+	if (ret)
+	{
+		delete[] binaryWriteBuff;
+		connectionError (ret);
+		return ret;
+	}
+	binaryWriteDataSize = dataSize;
+	binaryWriteTop = binaryWriteBuff = data;
+
+	while (binaryWriteDataSize > 0)
+	{
+		ret = send (sock, binaryWriteTop, binaryWriteDataSize, 0);
+		if (ret == -1)
+		{
+			if (errno != EINTR)
+			{
+				connectionError (ret);
+				delete[] binaryWriteBuff;
+				return -1;
+			}
+		}
+		else
+		{
+			binaryWriteTop += ret;
+			binaryWriteDataSize -= ret;
+		}
+	}
+	delete[] binaryWriteBuff;
+	binaryWriteDataSize = -1;
+	return 0;
 }
 
 
@@ -1281,7 +1394,7 @@ Rts2Conn::connectionError (int last_data_size)
 int
 Rts2Conn::sendMessage (Rts2Message & msg)
 {
-	return send (msg.toConn ());
+	return sendMsg (msg.toConn ());
 }
 
 
@@ -1291,7 +1404,7 @@ Rts2Conn::sendValue (std::string val_name, int value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1303,7 +1416,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, int val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %i", val_name.c_str (), val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1315,7 +1428,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %f", val_name.c_str (), val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1327,7 +1440,7 @@ Rts2Conn::sendValue (std::string val_name, const char *value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s \"%s\"", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1339,7 +1452,7 @@ Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %s", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1351,7 +1464,7 @@ Rts2Conn::sendValue (std::string val_name, double value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %f", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1363,7 +1476,7 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s \"%s\" %i", val_name, val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1377,7 +1490,7 @@ double val3, double val4, double val5, double val6)
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %i %f %f %f %f", val_name, val1, val2,
 		val3, val4, val5, val6);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1389,7 +1502,7 @@ Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %li", val_name.c_str (), *value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1400,7 +1513,7 @@ Rts2Conn::sendCommandEnd (int num, char *in_msg)
 {
 	char *msg;
 	asprintf (&msg, "%+04i \"%s\"", num, in_msg);
-	send (msg);
+	sendMsg (msg);
 	free (msg);
 	setCommandInProgress (false);
 	return 0;

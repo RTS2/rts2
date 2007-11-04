@@ -1495,10 +1495,10 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 
 	if (conn->isCommand ("help"))
 	{
-		conn->send ("ready - is telescope ready?");
-		conn->send ("info - information about telescope");
-		conn->send ("exit - exit from connection");
-		conn->send ("help - print, what you are reading just now");
+		conn->sendMsg ("ready - is telescope ready?");
+		conn->sendMsg ("info - information about telescope");
+		conn->sendMsg ("exit - exit from connection");
+		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
 	else if (conn->isCommand ("move"))

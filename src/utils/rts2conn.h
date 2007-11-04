@@ -119,6 +119,24 @@ class Rts2Conn:public Rts2Object
 		time_t lastData;
 		time_t lastSendReady;
 
+		// binary data
+		// when it is positive, there are binary data to read from connection
+		// when it is 0, we should send confirmation that we received binary data
+		// when it is negative, there aren't any data waiting
+		long binaryReadDataSize;
+
+		char *binaryReadBuff;
+		char *binaryReadTop;
+
+		// type of data we are reading
+		int binaryReadType;
+
+		// number of data to write on conection
+		long binaryWriteDataSize;
+
+		char *binaryWriteBuff;
+		char *binaryWriteTop;
+
 		// connectionTimeout in seconds
 		int connectionTimeout;
 		conn_state_t conn_state;
@@ -311,8 +329,20 @@ class Rts2Conn:public Rts2Object
 			return !strcmp (cmd, getCommand ());
 		}
 
-		virtual int send (const char *msg);
-		int send (std::string msg);
+		virtual int sendMsg (const char *msg);
+		int sendMsg (std::string msg);
+		/**
+		 * Send binary data on connection.
+		 * Switch to binary connection and send binary data.
+		 *
+		 * @param data  Data to send.
+		 * @param dataSize Size of data (in bytes)
+		 * @param dataType Type of data
+		 *
+		 * @return -1 on error, otherwise size of sended data
+		 */
+		int sendBinaryData (char *data, long dataSize, int dataType);
+
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
 		int sendValue (std::string val_name, int val1, int val2);

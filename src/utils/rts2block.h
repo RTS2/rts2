@@ -80,6 +80,8 @@
 #define PROTO_METAINFO         "E"
 /** The command is metainformation about selection variable. @addgroup RTS2Protocol */
 #define PROTO_SELMETAINFO      "F"
+/** The command switch comunication to binary mode. @addgroup RTS2Protocol */
+#define PROTO_BINARY           "C"
 
 #define USEC_SEC    1000000
 
@@ -597,5 +599,15 @@ class Rts2Block: public Rts2App
 		 * @callergraph
 		 */
 		bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
+
+		/**
+		 * Called when we have new binary data on connection. Childs
+		 * should overwite this method.
+		 *
+		 * @param conn Connection which received binary data
+		 */
+		virtual void binaryDataArrived (Rts2Conn *conn)
+		{
+		}
 };
 #endif							 // !__RTS2_NETBLOCK__

@@ -126,8 +126,8 @@ class Rts2DevConnData:public Rts2Conn
 			dataConn = conn;
 		}
 		virtual int init ();
-		virtual int send (const char *msg);
-		int send (char *data, size_t data_size);
+		virtual int sendMsg (const char *msg);
+		int sendMsg (char *data, size_t data_size);
 };
 
 /**
@@ -286,7 +286,7 @@ class Rts2Device:public Rts2Daemon
 		int authorize (Rts2DevConn * conn);
 		int sendMaster (char *msg)
 		{
-			return conn_master->send (msg);
+			return conn_master->sendMsg (msg);
 		}
 
 		// callback functions for device
