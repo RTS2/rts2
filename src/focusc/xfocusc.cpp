@@ -1,3 +1,22 @@
+/* 
+ * Display RTS2 (and FITS images) in separate window.
+ * Copyright (C) 2004-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 /*!
  *
  * Display images from RTS2 camera devices in nifty Xwindow.
@@ -692,20 +711,15 @@ Rts2xfocusCamera::idle ()
 }
 
 
-imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
+imageProceRes
+Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-	int
-		dataSize;
-	int
-		i,
-		j,
-		k;
-	unsigned short *
-		im_ptr;
+	int dataSize;
+	int i, j, k;
+	unsigned short *im_ptr;
 
 	// get to upper classes as well
-	imageProceRes
-		res = Rts2DevClientCameraFoc::processImage (image);
+	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 
 	pixmapWidth = image->getWidth ();
 	pixmapHeight = image->getHeight ();
@@ -715,16 +729,18 @@ imageProceRes Rts2xfocusCamera::processImage (Rts2Image * image)
 		windowHeight = pixmapHeight;
 		rebuildWindow ();
 	}
-	std::
-		cout << "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]" <<
-		std::endl;
+	std::cout
+		<< "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]"
+		<< std::endl;
 	// draw window with image..
 	if (!ximage)
 	{
-		ximage =
-			XCreateImage (master->getDisplay (), master->getVisual (),
+		ximage = XCreateImage
+			(
+			master->getDisplay (), master->getVisual (),
 			master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
-			pixmapHeight, 8, 0);
+			pixmapHeight, 8, 0
+			);
 		ximage->data = new char[ximage->bytes_per_line * pixmapHeight];
 	}
 

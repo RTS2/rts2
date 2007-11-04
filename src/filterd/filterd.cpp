@@ -181,10 +181,10 @@ Rts2DevFilterd::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("help"))
 	{
-		conn->send ("ready - is filter ready?");
-		conn->send ("info - information about camera");
-		conn->send ("exit - exit from connection");
-		conn->send ("help - print, what you are reading just now");
+		conn->sendMsg ("ready - is filter ready?");
+		conn->sendMsg ("info - information about camera");
+		conn->sendMsg ("exit - exit from connection");
+		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
 	return Rts2Device::commandAuthorized (conn);

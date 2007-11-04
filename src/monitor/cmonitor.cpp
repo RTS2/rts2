@@ -100,7 +100,7 @@ class Rts2CMonitor:public Rts2Client
 int
 Rts2CMonitor::idle ()
 {
-	if (allQuesEmpty ())
+	if (commandQueEmpty ())
 		endRunLoop ();
 	return Rts2Client::idle ();
 }

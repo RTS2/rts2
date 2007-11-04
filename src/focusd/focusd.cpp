@@ -273,13 +273,13 @@ Rts2DevFocuser::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{
-		conn->send ("ready - is focuser ready?");
-		conn->send ("info  - information about focuser");
-		conn->send ("step  - move by given steps offset");
-		conn->send ("set   - set to given position");
-		conn->send ("focus - auto focusing");
-		conn->send ("exit  - exit from connection");
-		conn->send ("help  - print, what you are reading just now");
+		conn->sendMsg ("ready - is focuser ready?");
+		conn->sendMsg ("info  - information about focuser");
+		conn->sendMsg ("step  - move by given steps offset");
+		conn->sendMsg ("set   - set to given position");
+		conn->sendMsg ("focus - auto focusing");
+		conn->sendMsg ("exit  - exit from connection");
+		conn->sendMsg ("help  - print, what you are reading just now");
 		return 0;
 	}
 	else if (conn->isCommand ("step"))

@@ -192,7 +192,7 @@ Rts2DevCamera::sendReadoutData (char *data, size_t data_size)
 		// completly strange then..
 		return -1;
 	}
-	ret = readoutConn->send (data, data_size);
+	ret = readoutConn->sendMsg (data, data_size);
 	if (ret == -2)
 	{
 		time (&now);
@@ -245,7 +245,7 @@ Rts2DevCamera::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
 
 		asprintf (&msg, "D connect %s %i %i", address, dataConn->getLocalPort (),
 			chipUsedSize () * usedPixelByteSize () + sizeof (imghdr));
-		conn->send (msg);
+		conn->sendMsg (msg);
 		free (msg);
 	}
 	return 0;
@@ -1200,19 +1200,19 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 
 	if (conn->isCommand ("help"))
 	{
-		conn->send ("ready - is camera ready?");
-		conn->send ("info - information about camera");
-		conn->send ("chipinfo <chip> - information about chip");
-		conn->send ("expose <chip> <light> <exposure> - start exposition on given chip");
-		conn->send ("stopexpo <chip> - stop exposition on given chip");
-		conn->send ("progexpo <chip> - query exposition progress");
-		conn->send ("mirror <open|close> - open/close mirror");
-		conn->send ("binning <chip> <binning_id> - set new binning; actual from next readout on");
-		conn->send ("stopread <chip> - stop reading given chip");
-		conn->send ("cooltemp <temp> - cooling temperature");
-		conn->send ("focus - try to autofocus picture");
-		conn->send ("exit - exit from connection");
-		conn->send ("help - print, what you are reading just now");
+		conn->sendMsg ("ready - is camera ready?");
+		conn->sendMsg ("info - information about camera");
+		conn->sendMsg ("chipinfo <chip> - information about chip");
+		conn->sendMsg ("expose <chip> <light> <exposure> - start exposition on given chip");
+		conn->sendMsg ("stopexpo <chip> - stop exposition on given chip");
+		conn->sendMsg ("progexpo <chip> - query exposition progress");
+		conn->sendMsg ("mirror <open|close> - open/close mirror");
+		conn->sendMsg ("binning <chip> <binning_id> - set new binning; actual from next readout on");
+		conn->sendMsg ("stopread <chip> - stop reading given chip");
+		conn->sendMsg ("cooltemp <temp> - cooling temperature");
+		conn->sendMsg ("focus - try to autofocus picture");
+		conn->sendMsg ("exit - exit from connection");
+		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
 	// commands which requires priority
