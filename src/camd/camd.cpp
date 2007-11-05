@@ -1,3 +1,22 @@
+/* 
+ * Basic camera daemon
+ * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,149 +30,101 @@
 #include "rts2devclifocuser.h"
 
 void
-CameraChip::initData (Rts2DevCamera * in_cam, int in_chip_id)
+Rts2DevCamera::initData ()
 {
-	camera = in_cam;
-	chipId = in_chip_id;
-	exposureEnd.tv_sec = 0;
-	exposureEnd.tv_usec = 0;
-	readoutConn = NULL;
-	binningVertical = 1;
-	binningHorizontal = 1;
-	chipSize = NULL;
-	chipReadout = NULL;
-	chipUsedReadout = NULL;
 	pixelX = nan ("f");
 	pixelY = nan ("f");
-	readoutLine = -1;
-	sendLine = -1;
+	readoutLine = 0;
+	sendLine = 0;
 	shutter_state = -1;
 
-	subExposure = nan ("f");
 	nAcc = 1;
 
 	focusingData = NULL;
 	focusingDataTop = NULL;
-
-	usedDataType = RTS2_DATA_USHORT;
 }
 
 
-CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id)
+void
+Rts2DevCamera::initCameraChip ()
 {
-	initData (in_cam, in_chip_id);
+	initData ();
 }
 
 
-CameraChip::CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-int in_height, double in_pixelX, double in_pixelY)
+void
+Rts2DevCamera::initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY)
 {
-	initData (in_cam, in_chip_id);
+	initData ();
 	setSize (in_width, in_height, 0, 0);
 	pixelX = in_pixelX;
 	pixelY = in_pixelY;
 }
 
 
-CameraChip::~CameraChip (void)
-{
-	delete chipSize;
-	delete chipReadout;
-
-	delete focusingData;
-}
-
-
 int
-CameraChip::init ()
+Rts2DevCamera::setBinning (int in_vert, int in_hori)
 {
 	return 0;
 }
 
 
 int
-CameraChip::setBinning (int in_vert, int in_hori)
-{
-	binningVertical = in_vert;
-	binningHorizontal = in_hori;
-	return 0;
-}
-
-
-int
-CameraChip::box (int in_x, int in_y, int in_width, int in_height)
+Rts2DevCamera::box (int in_x, int in_y, int in_width, int in_height)
 {
 	// tests for -1 -> full size
 	if (in_x == -1)
-		in_x = chipSize->x;
+		in_x = chipSize->getXInt ();
 	if (in_y == -1)
-		in_y = chipSize->y;
+		in_y = chipSize->getYInt ();
 	if (in_width == -1)
-		in_width = chipSize->width;
+		in_width = chipSize->getWidthInt ();
 	if (in_height == -1)
-		in_height = chipSize->height;
-	if (in_x < chipSize->x || in_y < chipSize->y
-		|| ((in_x - chipSize->x) + in_width) > chipSize->width
-		|| ((in_y - chipSize->y) + in_height) > chipSize->height)
+		in_height = chipSize->getHeightInt ();
+	if (in_x < chipSize->getXInt () || in_y < chipSize->getYInt ()
+		|| ((in_x - chipSize->getXInt ()) + in_width) > chipSize->getWidthInt ()
+		|| ((in_y - chipSize->getYInt ()) + in_height) > chipSize->getHeightInt ())
 		return -1;
-	chipReadout->x = in_x;
-	chipReadout->y = in_y;
-	chipReadout->width = in_width;
-	chipReadout->height = in_height;
+	chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
 	return 0;
 }
 
 
 int
-CameraChip::center (int in_w, int in_h)
+Rts2DevCamera::center (int in_w, int in_h)
 {
 	int x, y, w, h;
-	if (in_w > 0 && chipSize->width >= in_w)
+	if (in_w > 0 && chipSize->getWidthInt () >= in_w)
 	{
 		w = in_w;
-		x = chipSize->width / 2 - w / 2;
+		x = chipSize->getWidthInt () / 2 - w / 2;
 	}
 	else
 	{
-		w = chipSize->width / 2;
-		x = chipSize->width / 4;
+		w = chipSize->getWidthInt () / 2;
+		x = chipSize->getWidthInt () / 4;
 	}
-	if (in_h > 0 && chipSize->height >= in_h)
+	if (in_h > 0 && chipSize->getHeightInt () >= in_h)
 	{
 		h = in_h;
-		y = chipSize->height / 2 - h / 2;
+		y = chipSize->getHeightInt () / 2 - h / 2;
 	}
 	else
 	{
-		h = chipSize->height / 2;
-		y = chipSize->height / 4;
+		h = chipSize->getHeightInt () / 2;
+		y = chipSize->getHeightInt () / 4;
 	}
 	return box (x, y, w, h);
 }
 
 
 int
-CameraChip::startExposure (int light, float exptime)
+Rts2DevCamera::setExposure (float exptime, int in_shutter_state)
 {
-	return -1;
-}
+	exposureEnd->setValueDouble (getNow () + exptime);
 
+	sendValueAll (exposureEnd);
 
-int
-CameraChip::setExposure (float exptime, int in_shutter_state)
-{
-	struct timeval tv;
-	gettimeofday (&tv, NULL);
-
-	long int f_exptime = (long int) floor (exptime);
-	exposureEnd.tv_sec = tv.tv_sec + f_exptime;
-	exposureEnd.tv_usec =
-		tv.tv_usec + (long int) ((exptime - f_exptime) * USEC_SEC);
-	if (tv.tv_usec > USEC_SEC)
-	{
-		exposureEnd.tv_sec += tv.tv_usec / USEC_SEC;
-		exposureEnd.tv_usec = tv.tv_usec % USEC_SEC;
-	}
 	shutter_state = in_shutter_state;
 	return 0;
 }
@@ -165,136 +136,48 @@ CameraChip::setExposure (float exptime, int in_shutter_state)
  * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
  */
 long
-CameraChip::isExposing ()
+Rts2DevCamera::isExposing ()
 {
-	struct timeval tv;
-	if (exposureEnd.tv_sec == 0 && exposureEnd.tv_usec == 0)
+	if (exposureEnd->getValueDouble () == 0)
 		return -1;				 // no exposure running
-	gettimeofday (&tv, NULL);
-	if (tv.tv_sec > exposureEnd.tv_sec
-		|| (tv.tv_sec == exposureEnd.tv_sec
-		&& tv.tv_usec >= exposureEnd.tv_usec))
+	if (getNow () > exposureEnd->getValueDouble ())
 	{
 		return 0;				 // exposure ended
 	}
 								 // timeout
-	return (exposureEnd.tv_sec - tv.tv_sec) * USEC_SEC + (exposureEnd.tv_usec - tv.tv_usec);
+	return ((long int) ((exposureEnd->getValueDouble () - getNow ()) * USEC_SEC));
 }
 
 
 int
-CameraChip::endExposure ()
+Rts2DevCamera::endExposure ()
 {
 	int ret;
-	exposureEnd.tv_sec = 0;
-	exposureEnd.tv_usec = 0;
-	if (camera->isFocusing ())
+	exposureEnd->setValueDouble (0);
+	if (isFocusing ())
 	{
 		// fake readout - only to memory
-		ret = camera->camReadout (chipId);
+		ret = camReadout ();
 		if (ret)
-			camera->endFocusing ();
+			endFocusing ();
+	}
+	else if (exposureConn)
+	{
+		return camReadout (exposureConn);
 	}
 	return 0;
 }
 
 
 int
-CameraChip::stopExposure ()
+Rts2DevCamera::stopExposure ()
 {
 	return endExposure ();
 }
 
 
 int
-CameraChip::sendChip (Rts2Conn * conn, char *name, int value)
-{
-	char *msg;
-	int ret;
-
-	asprintf (&msg, "chip %i %s %i", chipId, name, value);
-	ret = conn->send (msg);
-	free (msg);
-	return ret;
-}
-
-
-int
-CameraChip::sendChip (Rts2Conn * conn, char *name, float value)
-{
-	char *msg;
-	int ret;
-
-	asprintf (&msg, "chip %i %s %0.2f", chipId, name, value);
-	ret = conn->send (msg);
-	free (msg);
-	return ret;
-}
-
-
-int
-CameraChip::sendChip (Rts2Conn * conn, char *name, double value)
-{
-	char *msg;
-	int ret;
-
-	asprintf (&msg, "chip %i %s %lf", chipId, name, value);
-	ret = conn->send (msg);
-	free (msg);
-	return ret;
-}
-
-
-int
-CameraChip::send (Rts2Conn * conn)
-{
-	sendChip (conn, "width", chipSize->width);
-	sendChip (conn, "height", chipSize->height);
-	sendChip (conn, "binning_vertical", binningVertical);
-	sendChip (conn, "binning_horizontal", binningHorizontal);
-	sendChip (conn, "pixelX", pixelX);
-	sendChip (conn, "pixelY", pixelY);
-	return 0;
-}
-
-
-int
-CameraChip::sendReadoutData (char *data, size_t data_size)
-{
-	int ret;
-	time_t now;
-	if (!readoutConn)
-	{
-		if (camera->isFocusing ())
-		{
-			return processData (data, data_size);
-		}
-		// completly strange then..
-		return -1;
-	}
-	ret = readoutConn->send (data, data_size);
-	if (ret == -2)
-	{
-		time (&now);
-		if (now > readout_started + readoutConn->getConnTimeout ())
-		{
-			logStream (MESSAGE_ERROR) <<
-				"Chip sendReadoutData connection not established within timeout"
-				<< sendLog;
-			return -1;
-		}
-	}
-	if (ret == -1)
-	{
-		logStream (MESSAGE_ERROR) << "Chip sendReadoutData " << strerror (errno)
-			<< sendLog;
-	}
-	return ret;
-}
-
-
-int
-CameraChip::processData (char *data, size_t size)
+Rts2DevCamera::processData (char *data, size_t size)
 {
 	memcpy (focusingDataTop, data, size);
 	focusingDataTop += size;
@@ -303,67 +186,31 @@ CameraChip::processData (char *data, size_t size)
 
 
 int
-CameraChip::doFocusing ()
+Rts2DevCamera::doFocusing ()
 {
 	// dummy method to write data to see it's working as expected
 	int f = open ("/tmp/focusing.dat", O_CREAT | O_TRUNC | O_WRONLY);
-	write (f, focusingData,
-		focusingHeader.sizes[0] * focusingHeader.sizes[1] * 2);
+	write (f, focusingData, focusingHeader.sizes[0] * focusingHeader.sizes[1] * 2);
 	close (f);
 	return 0;
 }
 
 
 int
-CameraChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
+Rts2DevCamera::deleteConnection (Rts2Conn * conn)
 {
-	char *msg;
-	char address[200];
-	if (!chipUsedReadout)
+	if (conn == exposureConn)
 	{
-		chipUsedReadout = new ChipSubset (chipReadout);
-		usedBinningVertical = binningVertical;
-		usedBinningHorizontal = binningHorizontal;
+		exposureConn = NULL;
 	}
-	setReadoutConn (dataConn);
-	if (dataConn && conn)
-	{
-		dataConn->getAddress ((char *) &address, 200);
-
-		asprintf (&msg, "D connect %i %s %i %i", chipId, address,
-			dataConn->getLocalPort (),
-			chipUsedSize () * usedPixelByteSize () + sizeof (imghdr));
-		conn->send (msg);
-		free (msg);
-	}
-	return 0;
-}
-
-
-void
-CameraChip::setReadoutConn (Rts2DevConnData * dataConn)
-{
-	readoutConn = dataConn;
-	readoutLine = 0;
-	sendLine = 0;
-	time (&readout_started);
-}
-
-
-void
-CameraChip::deleteConnection (Rts2Conn * conn)
-{
-	if (conn == readoutConn)
-	{
-		readoutConn = NULL;
-	}
+	return Rts2Device::deleteConnection (conn);
 }
 
 
 int
-CameraChip::endReadout ()
+Rts2DevCamera::endReadout ()
 {
-	if (camera->isFocusing ())
+	if (isFocusing ())
 	{
 		int ret;
 		ret = doFocusing ();
@@ -372,36 +219,29 @@ CameraChip::endReadout ()
 			delete[]focusingData;
 			focusingData = NULL;
 			focusingDataTop = NULL;
-			camera->endFocusing ();
+			endFocusing ();
 		}
 	}
 	clearReadout ();
-	if (readoutConn)
-	{
-		readoutConn->endConnection ();
-		readoutConn = NULL;
-	}
-	delete chipUsedReadout;
-	chipUsedReadout = NULL;
 	return 0;
 }
 
 
 void
-CameraChip::clearReadout ()
+Rts2DevCamera::clearReadout ()
 {
-	readoutLine = -1;
-	sendLine = -1;
+	readoutLine = 0;
+	sendLine = 0;
 }
 
 
 int
-CameraChip::sendFirstLine ()
+Rts2DevCamera::sendFirstLine ()
 {
 	int w, h;
-	w = chipUsedReadout->width / usedBinningHorizontal;
-	h = chipUsedReadout->height / usedBinningVertical;
-	if (camera->isFocusing ())
+	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
+	h = chipUsedReadout->getHeightInt () / binningVertical ();
+	if (isFocusing ())
 	{
 		// alocate data..
 		if (!focusingData || focusingHeader.sizes[0] < w
@@ -412,59 +252,32 @@ CameraChip::sendFirstLine ()
 		}
 		focusingDataTop = focusingData;
 	}
-	focusingHeader.data_type = usedDataType;
+	focusingHeader.data_type = getDataType ();
 	focusingHeader.naxes = 2;
-	focusingHeader.sizes[0] = chipUsedReadout->width / usedBinningHorizontal;
-	focusingHeader.sizes[1] = chipUsedReadout->height / usedBinningVertical;
-	focusingHeader.binnings[0] = usedBinningHorizontal;
-	focusingHeader.binnings[1] = usedBinningVertical;
-	focusingHeader.x = chipUsedReadout->x;
-	focusingHeader.y = chipUsedReadout->y;
-	focusingHeader.filter = camera->getLastFilterNum ();
+	focusingHeader.sizes[0] = chipUsedReadout->getWidthInt () / binningHorizontal ();
+	focusingHeader.sizes[1] = chipUsedReadout->getHeightInt () / binningVertical ();
+	focusingHeader.binnings[0] = binningVertical ();
+	focusingHeader.binnings[1] = binningHorizontal ();
+	focusingHeader.x = chipUsedReadout->getXInt ();
+	focusingHeader.y = chipUsedReadout->getYInt ();
+	focusingHeader.filter = getLastFilterNum ();
 	focusingHeader.shutter = shutter_state;
-	focusingHeader.subexp = subExposure;
+	focusingHeader.subexp = subExposure->getValueDouble ();
 	focusingHeader.nacc = nAcc;
-	if (readoutConn)
-	{
-		int ret;
-		ret = sendReadoutData ((char *) &focusingHeader, sizeof (imghdr));
-		if (ret == -2)
-			return 100;			 // not yet connected, wait for connection..
-		if (ret > 0)			 // data send sucessfully
-			return 0;
-		return ret;				 // can be -1 as well
-	}
-	else if (camera->isFocusing ())
-		return 0;
-	return -1;
+
+	return sendReadoutData ((char *) &focusingHeader, sizeof (imghdr));
 }
 
 
 int
-CameraChip::readoutOneLine ()
+Rts2DevCamera::readoutOneLine ()
 {
 	return -1;
 }
 
 
-void
-CameraChip::cancelPriorityOperations ()
-{
-	stopExposure ();
-	if (camera->isFocusing ())
-		camera->endFocusing ();
-	endReadout ();
-	chipUsedReadout = NULL;
-	delete[]focusingData;
-	focusingData = NULL;
-	focusingDataTop = NULL;
-	subExposure = nan ("f");
-	nAcc = 1;
-	box (-1, -1, -1, -1);
-}
-
-
-bool CameraChip::supportFrameTransfer ()
+bool
+Rts2DevCamera::supportFrameTransfer ()
 {
 	return false;
 }
@@ -481,9 +294,6 @@ Rts2DevCamera::setSubExposure (double in_subexposure)
 Rts2DevCamera::Rts2DevCamera (int in_argc, char **in_argv):
 Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
-	int i;
-	for (i = 0; i < MAX_CHIPS; i++)
-		chips[i] = NULL;
 	tempAir = NULL;
 	tempCCD = NULL;
 	tempSet = NULL;
@@ -495,14 +305,19 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
-	createValue (lastExp, "exposure", "current exposure time", false);
-	createValue (subExposure, "subexposure", "current subexposure", false, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
-	createValue (camFilterVal, "filter", "used filter number", false, 0,
-		CAM_EXPOSING, false);
+	createValue (exposureEnd, "exposure_end", "expected end of exposure", false);
 
-	createValue (camFocVal, "focpos", "position of focuser", false, 0,
-		CAM_EXPOSING, true);
+	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
+	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING);
+
+	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
+	createValue (dataType, "data_type", "used data type", true, 0, CAM_WORKING, true);
+
+	createValue (exposure, "exposure", "current exposure time", false);
+	createValue (subExposure, "subexposure", "current subexposure", false, 0, CAM_WORKING, true);
+	createValue (camFilterVal, "filter", "used filter number", false, 0, CAM_EXPOSING, false);
+
+	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING, true);
 
 	createValue (camShutterVal, "shutter", "shutter position", false);
 
@@ -512,13 +327,8 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	focuserDevice = NULL;
 	wheelDevice = NULL;
 
-	createValue (nextExp, "next_exp",
-		"state of next exposure (0 when next exposure is possible",
-		false);
-	nextExp->setValueInteger (NOT_EXP);
+	exposureConn = NULL;
 
-	nextExpChip = -1;
-	nextExpLight = 1;
 	defBinning = 1;
 	defFocusExposure = 10;
 
@@ -526,27 +336,20 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
 	// cooling & other options..
 	addOption ('c', "cooling_temp", 1, "default night cooling temperature");
-	addOption ('F', "focuser", 1,
-		"name of focuser device, which will be granted to do exposures without priority");
-	addOption ('W', "filterwheel", 1,
-		"name of device which is used as filter wheel");
+	addOption ('F', "focuser", 1, "name of focuser device, which will be granted to do exposures without priority");
+	addOption ('W', "filterwheel", 1, "name of device which is used as filter wheel");
 	addOption ('b', "default_bin", 1, "default binning (ussualy 1)");
 	addOption ('e', "focexp", 1, "starting focusing exposure duration");
 	addOption ('s', "subexposure", 1, "default subexposure");
-	addOption ('t', "type", 1,
-		"specify camera type (in case camera do not store it in FLASH ROM)");
+	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 }
 
 
 Rts2DevCamera::~Rts2DevCamera ()
 {
-	int i;
-	for (i = 0; i < chipNum; i++)
-	{
-		delete chips[i];
-		chips[i] = NULL;
-	}
 	delete filter;
+
+	delete focusingData;
 }
 
 
@@ -580,17 +383,22 @@ Rts2DevCamera::createOtherType (Rts2Conn * conn, int other_device_type)
 void
 Rts2DevCamera::cancelPriorityOperations ()
 {
-	int i;
-	for (i = 0; i < chipNum; i++)
-	{
-		chips[i]->cancelPriorityOperations ();
-		maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING,
-			CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING,
-			BOP_TEL_MOVE, 0, "chip exposure interrupted");
-		chips[i]->setBinning (defBinning, defBinning);
-	}
-	nextExp->setValueInteger (NOT_EXP);
-	nextExpChip = -1;
+	stopExposure ();
+	if (isFocusing ())
+		endFocusing ();
+	endReadout ();
+	delete[]focusingData;
+	focusingData = NULL;
+	focusingDataTop = NULL;
+	setSubExposure (nan ("f"));
+	nAcc = 1;
+	box (-1, -1, -1, -1);
+
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING,
+		CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING,
+		BOP_TEL_MOVE, 0, "chip exposure interrupted");
+	setBinning (defBinning, defBinning);
+
 	setTimeout (USEC_SEC);
 	// init states etc..
 	clearStatesPriority ();
@@ -611,12 +419,9 @@ Rts2DevCamera::info ()
 int
 Rts2DevCamera::scriptEnds ()
 {
-	int i;
-	for (i = 0; i < chipNum; i++)
-	{
-		chips[i]->box (-1, -1, -1, -1);
-		chips[i]->setBinning (defBinning, defBinning);
-	}
+	box (-1, -1, -1, -1);
+	setBinning (defBinning, defBinning);
+
 	setTimeout (USEC_SEC);
 	return Rts2ScriptDevice::scriptEnds ();
 }
@@ -660,14 +465,8 @@ int
 Rts2DevCamera::initChips ()
 {
 	int ret;
-	for (int i = 0; i < chipNum; i++)
-	{
-		ret = chips[i]->init ();
-		if (ret)
-			return ret;
-		if (defBinning != 1)
-			chips[i]->setBinning (defBinning, defBinning);
-	}
+	if (defBinning != 1)
+		setBinning (defBinning, defBinning);
 	// init filter
 	if (filter)
 	{
@@ -683,16 +482,86 @@ Rts2DevCamera::initChips ()
 
 
 int
+Rts2DevCamera::sendReadoutData (char *data, size_t dataSize)
+{
+	if (exposureConn)
+		return exposureConn->sendBinaryData (data, dataSize);
+	return 0;
+}
+
+
+void
+Rts2DevCamera::addBinning2D (int bin_v, int bin_h)
+{
+	Binning2D *bin = new Binning2D (bin_v, bin_h);
+	binning->addSelVal (bin->getDescription ().c_str (), bin);
+}
+
+
+void
+Rts2DevCamera::initBinnings ()
+{
+	addBinning2D (1,1);
+}
+
+
+void
+Rts2DevCamera::addDataType (int in_type)
+{
+	const struct
+	{
+		const char* typeName;
+		int type;
+	}
+	*t, types [] =
+	{
+		{ "BYTE", RTS2_DATA_BYTE },
+		{ "SHORT", RTS2_DATA_SHORT },
+		{ "LONG", RTS2_DATA_LONG },
+		{ "LONG LONG", RTS2_DATA_LONGLONG },
+		{ "FLOAT", RTS2_DATA_FLOAT },
+		{ "DOUBLE", RTS2_DATA_DOUBLE },
+		{ "SIGNED BYTE", RTS2_DATA_SBYTE },
+		{ "UNSIGNED SHORT", RTS2_DATA_USHORT },
+		{ "UNSIGNED LONG", RTS2_DATA_ULONG },
+	};
+	for (t=types; t->typeName; t++)
+	{
+		if (t->type == in_type)
+		{
+			dataType->addSelVal (t->typeName, new DataType (in_type));
+			return;
+		}
+	}
+	std::cerr << "Cannot find type: " << in_type << std::endl;
+	exit (1);
+}
+
+
+void
+Rts2DevCamera::initDataTypes ()
+{
+	dataType->addSelVal ("UNSIGNED SHORT", new DataType (RTS2_DATA_USHORT));
+}
+
+
+int
 Rts2DevCamera::initValues ()
 {
 	// TODO init focuser - try to read focuser offsets & initial position from file
 	addConstValue ("focuser", focuserDevice);
 	addConstValue ("wheel", wheelDevice);
 
-	addConstValue ("chips", chipNum);
-
 	addConstValue ("CCD_TYPE", "camera type", ccdRealType);
 	addConstValue ("CCD_SER", "camera serial number", serialNumber);
+
+	addConstValue ("chips", 1);
+
+	addConstValue ("pixelX", "X pixel size", pixelX);
+	addConstValue ("pixelY", "Y pixel size", pixelY);
+
+	initBinnings ();
+	initDataTypes ();
 
 	return Rts2ScriptDevice::initValues ();
 }
@@ -702,35 +571,32 @@ void
 Rts2DevCamera::checkExposures ()
 {
 	long ret;
-	for (int i = 0; i < chipNum; i++)
+	if (getStateChip (0) & CAM_EXPOSING)
 	{
-		if (getStateChip (i) & CAM_EXPOSING)
+		// try to end exposure
+		ret = camWaitExpose ();
+		if (ret >= 0)
 		{
-			// try to end exposure
-			ret = camWaitExpose (i);
-			if (ret >= 0)
+			setTimeout (ret);
+		}
+		else
+		{
+			if (ret == -2)
 			{
-				setTimeout (ret);
+				maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+					CAM_NOEXPOSURE | CAM_DATA, BOP_TEL_MOVE, 0,
+					"exposure chip finished");
+				endExposure ();
 			}
-			else
+			if (ret == -1)
 			{
-				if (ret == -2)
-				{
-					maskStateChip (i, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-						CAM_NOEXPOSURE | CAM_DATA, BOP_TEL_MOVE, 0,
-						"exposure chip finished");
-					chips[i]->endExposure ();
-				}
-				if (ret == -1)
-				{
-					maskStateChip (i,
-						DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
-						CAM_MASK_DATA,
-						DEVICE_ERROR_HW | CAM_NOEXPOSURE |
-						CAM_NODATA, BOP_TEL_MOVE, 0,
-						"exposure chip finished with error");
-					chips[i]->stopExposure ();
-				}
+				maskStateChip (0,
+					DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
+					CAM_MASK_DATA,
+					DEVICE_ERROR_HW | CAM_NOEXPOSURE |
+					CAM_NODATA, BOP_TEL_MOVE, 0,
+					"exposure chip finished with error");
+				stopExposure ();
 			}
 		}
 	}
@@ -741,27 +607,24 @@ void
 Rts2DevCamera::checkReadouts ()
 {
 	int ret;
-	for (int i = 0; i < chipNum; i++)
+	if ((getStateChip (0) & CAM_MASK_READING) != CAM_READING)
+		return;
+	ret = readoutOneLine ();
+	if (ret >= 0)
 	{
-		if ((getStateChip (i) & CAM_MASK_READING) != CAM_READING)
-			continue;
-		ret = chips[i]->readoutOneLine ();
-		if (ret >= 0)
-		{
-			setTimeout (ret);
-		}
+		setTimeout (ret);
+	}
+	else
+	{
+		endReadout ();
+		afterReadout ();
+		if (ret == -2)
+			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE,
+				0, "chip readout ended");
 		else
-		{
-			chips[i]->endReadout ();
-			afterReadout ();
-			if (ret == -2)
-				maskStateChip (i, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE,
-					0, "chip readout ended");
-			else
-				maskStateChip (i, DEVICE_ERROR_MASK | CAM_MASK_READING,
-					DEVICE_ERROR_HW | CAM_NOTREADING, BOP_TEL_MOVE, 0,
-					"chip readout ended with error");
-		}
+			maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
+				DEVICE_ERROR_HW | CAM_NOTREADING, BOP_TEL_MOVE, 0,
+				"chip readout ended with error");
 	}
 }
 
@@ -769,11 +632,6 @@ Rts2DevCamera::checkReadouts ()
 void
 Rts2DevCamera::afterReadout ()
 {
-	if (nextExp->getValueInteger () == FT_EXP)
-	{
-		camStartExposure (nextExpChip, nextExpLight, nextExpTime);
-		nextExp->setValueInteger (NOT_EXP);
-	}
 	setTimeout (USEC_SEC);
 }
 
@@ -796,6 +654,15 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == tempSet)
 	{
 		return camCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
+	}
+	if (old_value == binning)
+	{
+		Binning2D *bin = (Binning2D *) binning->getData ();
+		return setBinning (bin->horizontal, bin->vertical);
+	}
+	if (old_value == chipUsedReadout)
+	{
+		return 0;
 	}
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
@@ -824,25 +691,8 @@ Rts2DevCamera::postEvent (Rts2Event * event)
 	{
 		case EVENT_FILTER_MOVE_END:
 		case EVENT_FOCUSER_END_MOVE:
-			switch (event->getType ())
-			{
-				case EVENT_FILTER_MOVE_END:
-					nextExp->setValueInteger (nextExp->
-						getValueInteger () & ~FILTER_MOVE);
-					break;
-				case EVENT_FOCUSER_END_MOVE:
-					nextExp->setValueInteger (nextExp->
-						getValueInteger () & ~FOCUSER_MOVE);
-					break;
-			}
 			// update info about FW
 			infoAll ();
-			if (nextExp->getValueInteger () == NOT_EXP && nextExpChip >= 0)
-			{
-				// start qued exposure
-				camStartExposure (nextExpChip, nextExpLight, nextExpTime);
-				nextExpChip = -1;
-			}
 			break;
 	}
 	Rts2ScriptDevice::postEvent (event);
@@ -857,7 +707,7 @@ Rts2DevCamera::idle ()
 	checkReadouts ();
 	if (isIdle () && isFocusing ())
 	{
-		ret = camStartExposure (0, 1, focusExposure);
+		ret = camStartExposure (1, focusExposure);
 		if (ret)
 			endFocusing ();
 	}
@@ -890,39 +740,24 @@ Rts2DevCamera::changeMasterState (int new_state)
 
 
 int
-Rts2DevCamera::camChipInfo (Rts2Conn * conn, int chip)
-{
-	int ret;
-	ret = camChipInfo (chip);
-	if (ret)
-	{
-		conn->sendCommandEnd (DEVDEM_E_HW, "error during chipinfo call");
-		return -1;
-	}
-	return chips[chip]->send (conn);
-}
-
-
-int
-Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
+Rts2DevCamera::camStartExposure (int light, float exptime)
 {
 	int ret;
 
-	ret = camExpose (chip, light, exptime);
+	ret = camExpose (light, exptime);
 	if (ret)
 		return ret;
 
-	lastExp->setValueFloat (exptime);
+	exposure->setValueFloat (exptime);
 	infoAll ();
-	maskStateChip (chip, CAM_MASK_EXPOSE | CAM_MASK_DATA,
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA,
 		CAM_EXPOSING | CAM_NODATA, BOP_TEL_MOVE, BOP_TEL_MOVE,
 		"exposure chip started");
-	chips[chip]->setExposure (exptime,
-		light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
+	setExposure (exptime, light ? SHUTTER_SYNCHRO : SHUTTER_CLOSED);
 	lastFilterNum = getFilterNum ();
 	// call us to check for exposures..
 	long new_timeout;
-	new_timeout = camWaitExpose (chip);
+	new_timeout = camWaitExpose ();
 	if (new_timeout >= 0)
 	{
 		setTimeout (new_timeout);
@@ -932,60 +767,51 @@ Rts2DevCamera::camStartExposure (int chip, int light, float exptime)
 
 
 int
-Rts2DevCamera::camExpose (Rts2Conn * conn, int chip, int light, float exptime)
+Rts2DevCamera::camExpose (Rts2Conn * conn, int light, float exptime)
 {
 	int ret;
 
-	if (light && nextExp->getValueInteger () != NOT_EXP)
-	{
-		// que exposure after filter or focuser move ends
-		nextExpChip = chip;
-		nextExpLight = light;
-		nextExpTime = exptime;
-		ret = 0;
-	}
-	else
-	{
-		nextExpChip = -1;
-		ret = camStartExposure (chip, light, exptime);
-	}
+	ret = camStartExposure (light, exptime);
 	if (ret)
 	{
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot exposure on chip");
+	}
+	else
+	{
+		exposureConn = conn;
 	}
 	return ret;
 }
 
 
 long
-Rts2DevCamera::camWaitExpose (int chip)
+Rts2DevCamera::camWaitExpose ()
 {
 	int ret;
-	ret = chips[chip]->isExposing ();
+	ret = isExposing ();
 	return (ret == 0 ? -2 : ret);
 }
 
 
 int
-Rts2DevCamera::camStopExpose (Rts2Conn * conn, int chip)
+Rts2DevCamera::camStopExpose (Rts2Conn * conn)
 {
-	if (chips[chip]->isExposing () >= 0)
+	if (isExposing () >= 0)
 	{
-		maskStateChip (chip, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, BOP_TEL_MOVE, 0,
-			"exposure canceled");
-		chips[chip]->endExposure ();
-		return camStopExpose (chip);
+		maskStateChip (0, CAM_MASK_EXPOSE, CAM_NOEXPOSURE, BOP_TEL_MOVE,
+			0, "exposure canceled");
+		endExposure ();
+		return camStopExpose ();
 	}
 	return -1;
 }
 
 
 int
-Rts2DevCamera::camBox (Rts2Conn * conn, int chip, int x, int y, int width,
-int height)
+Rts2DevCamera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
 {
 	int ret;
-	ret = chips[chip]->box (x, y, width, height);
+	ret = box (x, y, width, height);
 	if (!ret)
 		return ret;
 	conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "invalid box size");
@@ -994,10 +820,10 @@ int height)
 
 
 int
-Rts2DevCamera::camCenter (Rts2Conn * conn, int chip, int in_h, int in_w)
+Rts2DevCamera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 {
 	int ret;
-	ret = chips[chip]->center (in_h, in_w);
+	ret = center (in_h, in_w);
 	if (ret)
 		conn->sendCommandEnd (DEVDEM_E_PARAMSVAL, "cannot set box size");
 	return ret;
@@ -1006,18 +832,17 @@ Rts2DevCamera::camCenter (Rts2Conn * conn, int chip, int in_h, int in_w)
 
 // when we don't have data connection - handy for exposing
 int
-Rts2DevCamera::camReadout (int chip)
+Rts2DevCamera::camReadout ()
 {
 	int ret;
-	maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
+	maskStateChip (0, CAM_MASK_READING | CAM_MASK_DATA,
 		CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
 		"chip readout started");
-	ret = chips[chip]->startReadout (NULL, NULL);
 	if (!ret)
 	{
 		return 0;
 	}
-	maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
 		DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
 		"chip readout failed");
 	return -1;
@@ -1025,38 +850,20 @@ Rts2DevCamera::camReadout (int chip)
 
 
 int
-Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
+Rts2DevCamera::camReadout (Rts2Conn * conn)
 {
 	int ret;
 	// open data connection - wait socket
-
-	Rts2DevConnData *data_conn;
-	data_conn = new Rts2DevConnData (this, conn);
-
-	ret = data_conn->init ();
-	// add data connection
-	addConnection (data_conn);
-
-	struct sockaddr_in our_addr;
-
-	if (conn->getOurAddress (&our_addr) < 0)
-	{
-		delete data_conn;
-		conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot get our address");
-		return -1;
-	}
-
-	data_conn->setAddress (&our_addr.sin_addr);
-
-	maskStateChip (chip, CAM_MASK_READING | CAM_MASK_DATA,
+	maskStateChip (0, CAM_MASK_READING | CAM_MASK_DATA,
 		CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
 		"chip readout started");
-	ret = chips[chip]->startReadout (data_conn, conn);
+
+	ret = conn->startBinaryData (chipUsedSize () * usedPixelByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 	if (!ret)
 	{
 		return 0;
 	}
-	maskStateChip (chip, DEVICE_ERROR_MASK | CAM_MASK_READING,
+	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
 		DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
 		"chip readout failed");
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
@@ -1065,34 +872,10 @@ Rts2DevCamera::camReadout (Rts2Conn * conn, int chip)
 
 
 int
-Rts2DevCamera::camReadoutExpose (Rts2Conn * conn, int chip, int light,
-float exptime)
+Rts2DevCamera::camBinning (Rts2Conn * conn, int x_bin, int y_bin)
 {
 	int ret;
-	// test if we can do frame transfer..
-	if (chips[chip]->supportFrameTransfer ())
-	{
-		ret = camExpose (conn, chip, light, exptime);
-		if (ret)
-			return ret;
-	}
-	else
-	{
-		// if we don't support frame transfer, store exposure
-		nextExp->setValueInteger (FT_EXP);
-		nextExpChip = chip;
-		nextExpTime = exptime;
-		nextExpLight = light;
-	}
-	return camReadout (conn, chip);
-}
-
-
-int
-Rts2DevCamera::camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin)
-{
-	int ret;
-	ret = chips[chip]->setBinning (x_bin, y_bin);
+	ret = setBinning (x_bin, y_bin);
 	if (ret)
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set requested binning");
 	return ret;
@@ -1100,10 +883,10 @@ Rts2DevCamera::camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin)
 
 
 int
-Rts2DevCamera::camStopRead (Rts2Conn * conn, int chip)
+Rts2DevCamera::camStopRead (Rts2Conn * conn)
 {
 	int ret;
-	ret = camStopRead (chip);
+	ret = camStopRead ();
 	if (ret)
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot end readout");
 	return ret;
@@ -1168,14 +951,10 @@ Rts2DevCamera::camFilter (int new_filter)
 		// filter move will be performed
 		if (fs.filter == -1)
 		{
-			nextExp->setValueInteger (nextExp->
-				getValueInteger () | FILTER_MOVE);
 			ret = 0;
 		}
 		else
 		{
-			nextExp->setValueInteger (nextExp->
-				getValueInteger () & ~FILTER_MOVE);
 			ret = -1;
 		}
 	}
@@ -1189,16 +968,21 @@ Rts2DevCamera::camFilter (int new_filter)
 
 
 int
-Rts2DevCamera::getStateChip (int chip_num)
+Rts2DevCamera::getStateChip (int chip)
 {
-	return (getState () & (CAM_MASK_CHIP << (chip_num * 4))) >> (chip_num * 4);
+	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
 }
 
 
 void
-Rts2DevCamera::maskStateChip (int chip_num, int chip_state_mask,
-int chip_new_state, int state_mask,
-int new_state, char *description)
+Rts2DevCamera::maskStateChip (
+int chip_num,
+int chip_state_mask,
+int chip_new_state,
+int state_mask,
+int new_state,
+char *description
+)
 {
 	maskState (state_mask | (chip_state_mask << (4 * chip_num)),
 		new_state | (chip_new_state << (4 * chip_num)), description);
@@ -1236,11 +1020,7 @@ Rts2DevCamera::setFocuser (int new_set)
 	fm.value = new_set;
 	postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
 	if (fm.focuserName)
-	{
-		nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
 		return -1;
-	}
-	nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
 	return 0;
 }
 
@@ -1257,11 +1037,7 @@ Rts2DevCamera::stepFocuser (int step_count)
 	fm.value = step_count;
 	postEvent (new Rts2Event (EVENT_FOCUSER_STEP, (void *) &fm));
 	if (fm.focuserName)
-	{
-		nextExp->setValueInteger (nextExp->getValueInteger () & ~FOCUSER_MOVE);
 		return -1;
-	}
-	nextExp->setValueInteger (nextExp->getValueInteger () | FOCUSER_MOVE);
 	return 0;
 }
 
@@ -1320,53 +1096,26 @@ bool Rts2DevCamera::isFocusing ()
 
 
 int
-Rts2DevCamera::paramNextChip (Rts2Conn * conn, int *in_chip)
-{
-	int ret;
-	ret = conn->paramNextInteger (in_chip);
-	if (ret)
-		return ret;
-	if (*in_chip < 0 || *in_chip >= MAX_CHIPS)
-	{
-		return -1;
-	}
-	return 0;
-}
-
-
-int
 Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 {
-	int chip;
 	float exptime;
 	int light;
 
-	if (conn->isCommand ("chipinfo"))
+	if (conn->isCommand ("help"))
 	{
-		if (paramNextChip (conn, &chip) || !conn->paramEnd ())
-			return -2;
-		return camChipInfo (conn, chip);
-	}
-	else if (conn->isCommand ("help"))
-	{
-		conn->send ("ready - is camera ready?");
-		conn->send ("info - information about camera");
-		conn->send ("chipinfo <chip> - information about chip");
-		conn->send
-			("expose <chip> <light> <exposure> - start exposition on given chip");
-		conn->send ("stopexpo <chip> - stop exposition on given chip");
-		conn->send ("progexpo <chip> - query exposition progress");
-		conn->send ("readout <chip> - start reading given chip");
-		conn->send
-			("readout_exposure <chip> <light> <exposure> - start readout and start/que next exposure, handy for frame transfer CDDs");
-		conn->send ("mirror <open|close> - open/close mirror");
-		conn->send
-			("binning <chip> <binning_id> - set new binning; actual from next readout on");
-		conn->send ("stopread <chip> - stop reading given chip");
-		conn->send ("cooltemp <temp> - cooling temperature");
-		conn->send ("focus - try to autofocus picture");
-		conn->send ("exit - exit from connection");
-		conn->send ("help - print, what you are reading just now");
+		conn->sendMsg ("ready - is camera ready?");
+		conn->sendMsg ("info - information about camera");
+		conn->sendMsg ("chipinfo <chip> - information about chip");
+		conn->sendMsg ("expose <chip> <light> <exposure> - start exposition on given chip");
+		conn->sendMsg ("stopexpo <chip> - stop exposition on given chip");
+		conn->sendMsg ("progexpo <chip> - query exposition progress");
+		conn->sendMsg ("mirror <open|close> - open/close mirror");
+		conn->sendMsg ("binning <chip> <binning_id> - set new binning; actual from next readout on");
+		conn->sendMsg ("stopread <chip> - stop reading given chip");
+		conn->sendMsg ("cooltemp <temp> - cooling temperature");
+		conn->sendMsg ("focus - try to autofocus picture");
+		conn->sendMsg ("exit - exit from connection");
+		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
 	// commands which requires priority
@@ -1375,36 +1124,32 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("expose"))
 	{
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip)
-			|| conn->paramNextInteger (&light)
+		if (conn->paramNextInteger (&light)
 			|| conn->paramNextFloat (&exptime) || !conn->paramEnd ())
 			return -2;
-		return camExpose (conn, chip, light, exptime);
+		return camExpose (conn, light, exptime);
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip) || !conn->paramEnd ())
+		if (!conn->paramEnd ())
 			return -2;
-		return camStopExpose (conn, chip);
+		return camStopExpose (conn);
 	}
 	else if (conn->isCommand ("box"))
 	{
 		int x, y, w, h;
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip)
-			|| conn->paramNextInteger (&x)
+		if (conn->paramNextInteger (&x)
 			|| conn->paramNextInteger (&y)
 			|| conn->paramNextInteger (&w) || conn->paramNextInteger (&h)
 			|| !conn->paramEnd ())
 			return -2;
-		return camBox (conn, chip, x, y, w, h);
+		return camBox (conn, x, y, w, h);
 	}
 	else if (conn->isCommand ("center"))
 	{
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip))
-			return -2;
 		int w, h;
 		if (conn->paramEnd ())
 		{
@@ -1417,40 +1162,30 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 				|| !conn->paramEnd ())
 				return -2;
 		}
-		return camCenter (conn, chip, w, h);
+		return camCenter (conn, w, h);
 	}
 	else if (conn->isCommand ("readout"))
 	{
-		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip) || !conn->paramEnd ())
+		if (!conn->paramEnd ())
 			return -2;
-		return camReadout (conn, chip);
-	}
-	else if (conn->isCommand ("readout_exposure"))
-	{
-		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip)
-			|| conn->paramNextInteger (&light)
-			|| conn->paramNextFloat (&exptime) || !conn->paramEnd ())
-			return -2;
-		return camReadoutExpose (conn, chip, light, exptime);
+		return -2;
+		return camReadout (conn);
 	}
 	else if (conn->isCommand ("binning"))
 	{
 		int vertical, horizontal;
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip)
-			|| conn->paramNextInteger (&vertical)
+		if (conn->paramNextInteger (&vertical)
 			|| conn->paramNextInteger (&horizontal) || !conn->paramEnd ())
 			return -2;
-		return camBinning (conn, chip, vertical, horizontal);
+		return camBinning (conn, vertical, horizontal);
 	}
 	else if (conn->isCommand ("stopread"))
 	{
 		CHECK_PRIORITY;
-		if (paramNextChip (conn, &chip) || !conn->paramEnd ())
+		if (!conn->paramEnd ())
 			return -2;
-		return camStopRead (conn, chip);
+		return camStopRead (conn);
 	}
 	else if (conn->isCommand ("coolmax"))
 	{
