@@ -352,12 +352,12 @@ Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("help"))
 	{
-		conn->send ("info - phot informations");
-		conn->send ("exit - exit from main loop");
-		conn->send ("help - print, what you are reading just now");
-		conn->send ("integrate <time> <count> - start integration");
-		conn->send ("enable - enable filter movements");
-		conn->send ("stop - stop any running integration");
+		conn->sendMsg ("info - phot informations");
+		conn->sendMsg ("exit - exit from main loop");
+		conn->sendMsg ("help - print, what you are reading just now");
+		conn->sendMsg ("integrate <time> <count> - start integration");
+		conn->sendMsg ("enable - enable filter movements");
+		conn->sendMsg ("stop - stop any running integration");
 		return 0;
 	}
 	return Rts2ScriptDevice::commandAuthorized (conn);
