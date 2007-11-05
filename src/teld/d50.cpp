@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#define DEBUG_EXTRA
+
 #include "telescope.h"
 #include "model/telmodel.h"
 
@@ -174,7 +176,7 @@ Rts2ValueInteger * proc)
 	int ret;
 	static char buf[15];
 	ret = tel_write (command);
-	if (ret <= 0)
+	if (ret < 0)
 		return ret;
 	ret = read (tel_desc, buf, 14);
 	if (ret <= 0)
@@ -294,15 +296,15 @@ Rts2DevTelD50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	tel_desc = open (device_file, O_RDWR);
+	tel_desc = open (device_name, O_RDWR);
 	if (tel_desc < 0)
 		return -1;
 
 	if (tcgetattr (tel_desc, &tel_termios) < 0)
 		return -1;
 
-	if (cfsetospeed (&tel_termios, B4800) < 0 ||
-		cfsetispeed (&tel_termios, B4800) < 0)
+	if (cfsetospeed (&tel_termios, B9600) < 0 ||
+		cfsetispeed (&tel_termios, B9600) < 0)
 		return -1;
 
 	tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
