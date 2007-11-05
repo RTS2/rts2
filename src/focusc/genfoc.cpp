@@ -74,9 +74,9 @@ Rts2GenFocCamera::lostPriority ()
 void
 Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 {
-	std::
-		cout << "State changed (" << getName () << "): " << " value:" << state->
-		getValue () << std::endl;
+	std::cout << "State changed (" << getName () << "): "
+		<< " value:" << state->getValue ()
+		<< std::endl;
 	Rts2DevClientCameraFoc::stateChanged (state);
 }
 
@@ -94,8 +94,7 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	}
 	if (exe)
 	{
-		asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (),
-			getpid ());
+		asprintf (&filename, "!/tmp/%s_%i.fits", connection->getName (), getpid ());
 		image = new Rts2Image (filename, expStart);
 		image->keepImage ();
 		free (filename);
@@ -107,10 +106,10 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
 }
 
 
-imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
+imageProceRes
+Rts2GenFocCamera::processImage (Rts2Image * image)
 {
-	imageProceRes
-		res = Rts2DevClientCameraFoc::processImage (image);
+	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 	std::cout << "Camera " << getName () << " image_type:";
 	switch (image->getShutter ())
 	{
@@ -204,8 +203,7 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 void
 Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 {
-	connection->
-		queCommand (new Rts2CommandCenter (this, 0, centerWidth, centerHeight));
+	connection->queCommand (new Rts2CommandCenter (this, centerWidth, centerHeight));
 }
 
 

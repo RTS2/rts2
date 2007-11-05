@@ -36,7 +36,6 @@
 
 #include "imghdr.h"
 #include "../utils/libnova_cpp.h"
-#include "../utils/rts2dataconn.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2expander.h"
 #include "../utils/mkpath.h"
@@ -238,7 +237,7 @@ class Rts2Image:public Rts2Expander
 			false, int nstart = 1);
 
 		int writeImgHeader (struct imghdr *im_h);
-		int writeDate (Rts2ClientTCPDataConn * dataConn);
+		int writeDate (char *in_data, char *fullTop);
 
 		std::string expandPath (std::string pathEx)
 		{

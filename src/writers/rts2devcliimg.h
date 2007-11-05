@@ -22,7 +22,6 @@
 
 #include "../utils/rts2object.h"
 #include "../utils/rts2devclient.h"
-#include "../utils/rts2dataconn.h"
 #include "../utils/rts2command.h"
 
 #include "rts2image.h"
@@ -113,7 +112,7 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		Rts2DevClientCameraImage (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClientCameraImage (void);
 		virtual void postEvent (Rts2Event * event);
-		virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+		virtual void fullDataReceived (char *data, char  *fullTop);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
 		/**

@@ -1103,23 +1103,21 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 
 
 int
-Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
+Rts2Image::writeDate (char *in_data, char *fullTop)
 {
 	struct imghdr *im_h;
 	unsigned short *pixel;
-	unsigned short *top;
 	int ret;
 
 	average = 0;
 	stdev = 0;
 	bg_stdev = 0;
 
-	im_h = dataConn->getImageHeader ();
+	im_h = (struct imghdr *) in_data;
 	// we have to copy data to FITS anyway, so let's do it right now..
 	if (im_h->naxes != 2)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Image::writeDate not 2D image " <<
-			im_h->naxes << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2Image::writeDate not 2D image " << im_h->naxes << sendLog;
 		return -1;
 	}
 	flags |= IMAGE_SAVE;
@@ -1129,10 +1127,14 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 	naxis[1] = im_h->sizes[1];
 
 	delete[]imageData;
+
+	long dataSize = (fullTop - in_data) - sizeof (struct imghdr);
+	char *pixelData = in_data + sizeof (struct imghdr);
+
 	if (flags & IMAGE_KEEP_DATA)
 	{
-		imageData = new char[dataConn->getSize ()];
-		memcpy (imageData, dataConn->getData (), dataConn->getSize ());
+		imageData = new char[dataSize];
+		memcpy (imageData, pixelData, dataSize);
 	}
 	else
 	{
@@ -1140,9 +1142,8 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 	}
 
 	// calculate average..
-	pixel = (unsigned short *) dataConn->getData ();
-	top = dataConn->getTop ();
-	while (pixel < top)
+	pixel = (unsigned short *) pixelData;
+	while (pixel < (unsigned short *) fullTop)
 	{
 		average += *pixel;
 		pixel++;
@@ -1150,12 +1151,12 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 
 	int bg_size = 0;
 
-	if ((dataConn->getSize () / getPixelByteSize ()) > 0)
+	if ((dataSize / getPixelByteSize ()) > 0)
 	{
-		average /= dataConn->getSize () / 2;
+		average /= dataSize / 2;
 		// calculate stdev
-		pixel = (unsigned short *) dataConn->getData ();
-		while (pixel < top)
+		pixel = (unsigned short *) pixelData;
+		while (pixel < (unsigned short *) fullTop)
 		{
 			long double tmp_s = *pixel - average;
 			long double tmp_ss = tmp_s * tmp_s;
@@ -1167,7 +1168,7 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 			stdev += tmp_ss;
 			pixel++;
 		}
-		stdev = sqrt (stdev / (dataConn->getSize () / 2));
+		stdev = sqrt (stdev / (dataSize / 2));
 		bg_stdev = sqrt (bg_stdev / bg_size);
 	}
 	else
@@ -1181,16 +1182,15 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 	if (!ffile || !(flags & IMAGE_SAVE))
 	{
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "not saving data " << ffile << " " <<
-			(flags & IMAGE_SAVE) << sendLog;
+		logStream (MESSAGE_DEBUG) << "not saving data " << ffile << " "
+			<< (flags & IMAGE_SAVE) << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 		return 0;
 	}
 
 	if (imageType == RTS2_DATA_SBYTE)
 	{
-		fits_resize_img (ffile, RTS2_DATA_BYTE, im_h->naxes, naxis,
-			&fits_status);
+		fits_resize_img (ffile, RTS2_DATA_BYTE, im_h->naxes, naxis, &fits_status);
 	}
 	else
 	{
@@ -1198,71 +1198,57 @@ Rts2Image::writeDate (Rts2ClientTCPDataConn * dataConn)
 	}
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "cannot resize image: " <<
-			getFitsErrors () << "imageType " << imageType << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot resize image: " << getFitsErrors ()
+			<< "imageType " << imageType << sendLog;
 		return -1;
 	}
+	long pixelSize = dataSize / getPixelByteSize ();
 	switch (imageType)
 	{
 		case RTS2_DATA_BYTE:
-			fits_write_img_byt (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(unsigned char *) dataConn->getData (),
-				&fits_status);
+			fits_write_img_byt (ffile, 0, 1, pixelSize,
+				(unsigned char *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_SHORT:
-			fits_write_img_sht (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(int16_t *) dataConn->getData (), &fits_status);
+			fits_write_img_sht (ffile, 0, 1, pixelSize,
+				(int16_t *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_LONG:
-			fits_write_img_lng (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(long int *) dataConn->getData (), &fits_status);
+			fits_write_img_lng (ffile, 0, 1, pixelSize,
+				(long int *) pixelData, &fits_status);
 			break;
 
 		case RTS2_DATA_LONGLONG:
-			fits_write_img_lnglng (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(LONGLONG *) dataConn->getData (), &fits_status);
+			fits_write_img_lnglng (ffile, 0, 1, pixelSize,
+				(LONGLONG *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_FLOAT:
-			fits_write_img_flt (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(float *) dataConn->getData (), &fits_status);
+			fits_write_img_flt (ffile, 0, 1, pixelSize,
+				(float *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_DOUBLE:
-			fits_write_img_dbl (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(double *) dataConn->getData (), &fits_status);
+			fits_write_img_dbl (ffile, 0, 1, pixelSize,
+				(double *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_SBYTE:
-			fits_write_img_sbyt (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(signed char *) dataConn->getData (),
-				&fits_status);
+			fits_write_img_sbyt (ffile, 0, 1, pixelSize,
+				(signed char *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_USHORT:
-			fits_write_img_usht (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(short unsigned int *) dataConn->getData (),
-				&fits_status);
+			fits_write_img_usht (ffile, 0, 1, pixelSize,
+				(short unsigned int *) pixelData, &fits_status);
 			break;
 		case RTS2_DATA_ULONG:
-			fits_write_img_ulng (ffile, 0, 1,
-				dataConn->getSize () / getPixelByteSize (),
-				(unsigned long *) dataConn->getData (),
-				&fits_status);
+			fits_write_img_ulng (ffile, 0, 1, pixelSize,
+				(unsigned long *) pixelData, &fits_status);
 			break;
 		default:
-			logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "Unknow imageType " << imageType << sendLog;
 			return -1;
 	}
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors ()
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "cannot write data: " << getFitsErrors () << sendLog;
 		return -1;
 	}
 	setValue ("AVERAGE", average, "average value of image");

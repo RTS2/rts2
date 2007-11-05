@@ -140,14 +140,13 @@ Rts2DevClientCameraImage::writeFilter ()
 
 
 void
-Rts2DevClientCameraImage::dataReceived (Rts2ClientTCPDataConn * dataConn)
+Rts2DevClientCameraImage::fullDataReceived (char *data, char *fullTop)
 {
-	Rts2DevClientCamera::dataReceived (dataConn);
 	if (getTopImage ())
 	{
 		CameraImages::iterator cis = getTopIter ();
 		CameraImage *ci = *cis;
-		ci->image->writeDate (dataConn);
+		ci->image->writeDate (data, fullTop);
 		ci->setDataWriten ();
 		if (ci->canDelete ())
 		{

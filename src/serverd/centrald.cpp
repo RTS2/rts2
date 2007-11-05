@@ -107,7 +107,7 @@ Rts2ConnCentrald::sendDeviceKey ()
 	}
 	setKey (dev_key);
 	asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
-	send (msg);
+	sendMsg (msg);
 	free (msg);
 	return 0;
 }
@@ -151,13 +151,13 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 			asprintf (&msg, "user %i %i %c %s",
 				getCentraldId (),
 				getPriority (), havePriority ()? '*' : '-', login);
-			ret = conn->send (msg);
+			ret = conn->sendMsg (msg);
 			free (msg);
 			break;
 		case DEVICE_SERVER:
 			asprintf (&msg, "device %i %s %s %i %i",
 				getCentraldId (), getName (), hostname, port, device_type);
-			ret = conn->send (msg);
+			ret = conn->sendMsg (msg);
 			free (msg);
 			break;
 		default:
@@ -268,7 +268,7 @@ Rts2ConnCentrald::sendStatusInfo ()
 	int ret;
 
 	asprintf (&msg, PROTO_STATUS " %i", master->getState ());
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -280,7 +280,7 @@ Rts2ConnCentrald::sendAValue (char *val_name, int value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_AUTH " %s %i", val_name, value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -300,7 +300,7 @@ Rts2ConnCentrald::commandClient ()
 			char *msg;
 			authorized = 1;
 			asprintf (&msg, "logged_as %i", getCentraldId ());
-			send (msg);
+			sendMsg (msg);
 			free (msg);
 			sendStatusInfo ();
 			return 0;
@@ -405,14 +405,14 @@ Rts2ConnCentrald::command ()
 			{
 				asprintf (&msg, PROTO_PRIORITY " %i %i",
 					master->getPriorityClient (), 0);
-				send (msg);
+				sendMsg (msg);
 				free (msg);
 			}
 
 			asprintf (&msg, "device %i %s %s %i %i",
 				master->getPriorityClient (), reg_device, hostname, port,
 				device_type);
-			ret = send (msg);
+			ret = sendMsg (msg);
 			free (msg);
 			sendAValue ("registered_as", getCentraldId ());
 			master->connAdded (this);
