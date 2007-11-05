@@ -61,6 +61,19 @@ Rts2DevClient::postEvent (Rts2Event * event)
 
 
 void
+Rts2DevClient::dataReceived (char *data, char *dataTop, long fullSize)
+{
+}
+
+
+void
+Rts2DevClient::fullDataReceived (char *data, char *fullTop)
+{
+	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << sendLog;
+}
+
+
+void
 Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
 	if (connection->getErrorState () == DEVICE_ERROR_HW)

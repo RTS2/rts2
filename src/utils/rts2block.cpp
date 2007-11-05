@@ -33,7 +33,6 @@
 #include "rts2block.h"
 #include "rts2command.h"
 #include "rts2client.h"
-#include "rts2dataconn.h"
 
 #include "imghdr.h"
 
@@ -109,19 +108,6 @@ Rts2Conn *
 Rts2Block::createConnection (int in_sock)
 {
 	return new Rts2Conn (in_sock, this);
-}
-
-
-Rts2Conn *
-Rts2Block::addDataConnection (Rts2Conn * owner_conn, char *in_hostname,
-int in_port, int in_size)
-{
-	Rts2Conn *conn;
-	conn =
-		new Rts2ClientTCPDataConn (this, owner_conn, in_hostname, in_port,
-		in_size);
-	addConnection (conn);
-	return conn;
 }
 
 

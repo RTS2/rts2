@@ -25,7 +25,6 @@
 #include "rts2value.h"
 
 class Rts2Command;
-class Rts2ClientTCPDataConn;
 class Rts2ServerState;
 
 class Rts2Block;
@@ -78,9 +77,8 @@ class Rts2DevClient:public Rts2Object
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual void dataReceived (Rts2ClientTCPDataConn * dataConn)
-		{
-		}
+		virtual void dataReceived (char *data, char *dataTop, long left);
+		virtual void fullDataReceived (char *data, char *dataEnd);
 
 		virtual void stateChanged (Rts2ServerState * state);
 		void priorityInfo (bool have);

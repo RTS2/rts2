@@ -20,7 +20,6 @@
 #include "rts2block.h"
 #include "rts2centralstate.h"
 #include "rts2command.h"
-#include "rts2dataconn.h"
 #ifdef DEBUG_ALL
 #include <iostream>
 #endif							 /* DEBUG_ALL */
@@ -748,22 +747,17 @@ Rts2Conn::receive (fd_set * set)
 		{
 			data_size = read (sock, binaryReadTop, binaryReadDataSize);
 			// ignore EINTR
-			if (data_size == -1 && errno == EINTR)
-				return 0;
-			// without error
-			if (data_size <= 0)
+			if (data_size == -1)
 			{
+				if (errno == EINTR)
+					return 0;
 				connectionError (data_size);
 				return -1;
 			}
 			binaryReadDataSize -= data_size;
 			binaryReadTop += data_size;
-			// inform device that we read some data
-			getMaster ()->binaryDataArrived (this);
-			if (binaryReadDataSize == 0)
-			{
-				delete []binaryReadBuff;
-			}
+			dataReceived ();
+			return data_size;
 		}
 		// increase buffer if it's too small
 		if (((int) buf_size) == (buf_top - buf))
@@ -809,9 +803,11 @@ Rts2Conn::receive (fd_set * set)
 			while (*buf_top && *buf_top != '\n' && *buf_top != '\r')
 				buf_top++;
 
-			// tr "\r\n" "\n\n", so we can deal more easily with it..
 			if (*buf_top == '\r' && *(buf_top + 1) == '\n')
-				*buf_top = '\n';
+			{
+				*buf_top = '\0';
+				buf_top++;
+			}
 			// weird error on when we get \r in one and \n in next read
 			if (*buf_top == '\r' && !*(buf_top + 1))
 			{
@@ -835,12 +831,9 @@ Rts2Conn::receive (fd_set * set)
 					memcpy (binaryReadBuff, buf_top, readSize);
 					binaryReadTop += readSize;
 					binaryReadDataSize -= readSize;
-					getMaster ()->binaryDataArrived (this);
-					// we read all data and we aren't in binary
-					if (binaryReadDataSize <= 0)
-						memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize);
-					else
-						return 1;
+					dataReceived ();
+					// move binary data away
+					memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
 				}
 				command_start = buf_top;
 			}
@@ -1045,26 +1038,6 @@ Rts2Conn::command ()
 		if (!paramEnd ())
 			return -2;
 		return master->statusInfo (this);
-	}
-	else if (isCommand (PROTO_DATA))
-	{
-		char *p_command;
-		if (paramNextString (&p_command))
-			return -2;
-		if (!strcmp (p_command, "connect"))
-		{
-			char *p_hostname;
-			int p_port;
-			int p_size;
-			if (paramNextString (&p_hostname)
-				|| paramNextInteger (&p_port)
-				|| paramNextInteger (&p_size) || !paramEnd ())
-				return -2;
-			master->addDataConnection (this, p_hostname, p_port, p_size);
-			setCommandInProgress (false);
-			return -1;
-		}
-		return -2;
 	}
 	// don't respond to values with error - otherDevice does respond to
 	// values, if there is no other device, we have to take resposibility
@@ -1306,34 +1279,40 @@ Rts2Conn::sendMsg (std::string msg)
 
 
 int
-Rts2Conn::sendBinaryData (char *data, long dataSize, int dataType)
+Rts2Conn::startBinaryData (long dataSize, int dataType)
 {
 	char *msg;
 	asprintf (&msg, PROTO_BINARY " %li %i", dataSize, dataType);
 	int ret;
-	do
-	{
-		ret = sendMsg (msg);
-	} while (ret == -1 && errno == EINTR);
+	ret = sendMsg (msg);
 	free (msg);
-	if (ret)
-	{
-		delete[] binaryWriteBuff;
-		connectionError (ret);
-		return ret;
-	}
 	binaryWriteDataSize = dataSize;
-	binaryWriteTop = binaryWriteBuff = data;
+	return ret;
+}
 
-	while (binaryWriteDataSize > 0)
+
+int
+Rts2Conn::sendBinaryData (char *data, long dataSize)
+{
+	binaryWriteTop = binaryWriteBuff = data;
+	char *binaryEnd = data + dataSize;
+
+	std::cerr << "WriteDataSize " << binaryWriteDataSize;
+
+	while (binaryWriteTop < binaryEnd)
 	{
-		ret = send (sock, binaryWriteTop, binaryWriteDataSize, 0);
+		if (dataSize > binaryWriteDataSize)
+		{
+			logStream (MESSAGE_ERROR) << "Attemp to send too much data "
+				<< dataSize << " " << binaryWriteDataSize << sendLog;
+			dataSize = binaryWriteDataSize;
+		}
+		int ret = send (sock, binaryWriteTop, dataSize, 0);
 		if (ret == -1)
 		{
 			if (errno != EINTR)
 			{
 				connectionError (ret);
-				delete[] binaryWriteBuff;
 				return -1;
 			}
 		}
@@ -1343,8 +1322,6 @@ Rts2Conn::sendBinaryData (char *data, long dataSize, int dataType)
 			binaryWriteDataSize -= ret;
 		}
 	}
-	delete[] binaryWriteBuff;
-	binaryWriteDataSize = -1;
 	return 0;
 }
 
@@ -1694,11 +1671,18 @@ Rts2Conn::paramNextTimeval (struct timeval *tv)
 
 
 void
-Rts2Conn::dataReceived (Rts2ClientTCPDataConn * dataConn)
+Rts2Conn::dataReceived ()
 {
+	std::cerr << "dataReceived " << binaryReadDataSize << " " << (binaryReadTop - binaryReadBuff) << std::endl;
+	// inform device that we read some data
 	if (otherDevice)
+		otherDevice->dataReceived (binaryReadBuff, binaryReadTop, binaryReadDataSize);
+	getMaster ()->binaryDataArrived (this);
+	if (binaryReadDataSize == 0)
 	{
-		otherDevice->dataReceived (dataConn);
+		if (otherDevice)
+			otherDevice->fullDataReceived (binaryReadBuff, binaryReadTop);
+		delete []binaryReadBuff;
 	}
 }
 

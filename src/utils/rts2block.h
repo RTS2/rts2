@@ -325,22 +325,6 @@ class Rts2Block: public Rts2App
 		virtual Rts2Conn *createConnection (int in_sock);
 
 		/**
-		 * Create data connection. Various parameters determines how data
-		 * will be retrieved.
-		 *
-		 * @see Rts2ClientTCPDataConn
-		 *
-		 * @param in_conn Connection which is asking for creation of DataConn.
-		 * @param in_hostname Name of host from which data will be downloaded.
-		 * @param in_port Port which will be open on host for listening, and from which data will be downloaded.
-		 * @param in_size Size of data.
-		 *
-		 * @return Rts2ClientTCPDataConn instance, which represent newly created data
-		 * connection.
-		 */
-		Rts2Conn *addDataConnection (Rts2Conn * in_conn, char *in_hostname, int in_port, int in_size);
-
-		/**
 		 * Finds connection with given name.
 		 *
 		 * @param in_name Name of connection which will be looked for.

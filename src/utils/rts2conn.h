@@ -75,8 +75,6 @@ class Rts2Block;
 class Rts2Command;
 class Rts2CommandStatusInfo;
 
-class Rts2ClientTCPDataConn;
-
 class Rts2DevClient;
 
 class Rts2Event;
@@ -331,17 +329,24 @@ class Rts2Conn:public Rts2Object
 
 		virtual int sendMsg (const char *msg);
 		int sendMsg (std::string msg);
+
 		/**
-		 * Send binary data on connection.
-		 * Switch to binary connection and send binary data.
+		 * Switch connection to binary connection.
 		 *
-		 * @param data  Data to send.
 		 * @param dataSize Size of data (in bytes)
 		 * @param dataType Type of data
 		 *
 		 * @return -1 on error, otherwise size of sended data
 		 */
-		int sendBinaryData (char *data, long dataSize, int dataType);
+		int startBinaryData (long dataSize, int dataType);
+
+		/**
+		 * Sends part of binary data.
+		 *
+		 * @param data  Data to send.
+		 * @param dataSize Size of data to send (in bytes).
+		 */
+		int sendBinaryData (char *data, long dataSize);
 
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
@@ -539,7 +544,7 @@ class Rts2Conn:public Rts2Object
 		int paramNextTimeval (struct timeval *tv);
 
 		// called when some data were sucessfully received
-		virtual void dataReceived (Rts2ClientTCPDataConn * dataConn);
+		void dataReceived ();
 
 		Rts2Block *getMaster ()
 		{
