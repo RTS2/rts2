@@ -60,8 +60,6 @@
 #define PROTO_SET_VALUE        "X"
 /** The command set default value of variable. @addgroup RTS2Protocol */
 #define PROTO_SET_VALUE_DEF    "Y"
-/** The command start data transfer. @addgroup RTS2Protocol */
-#define PROTO_DATA             "D"
 /** The command is authorization request. @addgroup RTS2Protocol */
 #define PROTO_AUTH             "A"
 /** The command is priority request. @addgroup RTS2Protocol */
@@ -80,8 +78,11 @@
 #define PROTO_METAINFO         "E"
 /** The command is metainformation about selection variable. @addgroup RTS2Protocol */
 #define PROTO_SELMETAINFO      "F"
-/** The command switch comunication to binary mode. @addgroup RTS2Protocol */
+
+/** The command defines binary channel. @addgroup RTS2Protocol */
 #define PROTO_BINARY           "C"
+/** The command is followed by data which goes to binary channel. @addgroup RTS2Protocol */
+#define PROTO_DATA             "D"
 
 #define USEC_SEC    1000000
 

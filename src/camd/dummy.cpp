@@ -201,7 +201,6 @@ Rts2DevCameraDummy::readoutOneLine ()
 	if (ret < 0)
 		return ret;
 
-	std::cerr << std::endl << readoutLine << " " << (chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt ()) / binningVertical () << std::endl;
 	if (readoutLine < (chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt ()) / binningVertical ())
 		return 0;				 // imediately send new data
 	return -2;					 // no more data..

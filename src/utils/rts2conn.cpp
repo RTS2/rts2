@@ -61,6 +61,8 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 
 	binaryReadDataSize = -1;
 	binaryWriteDataSize = -1;
+
+	binaryReadChunkSize = -1;
 }
 
 
@@ -96,6 +98,8 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 
 	binaryReadDataSize = -1;
 	binaryWriteDataSize = -1;
+
+	binaryReadChunkSize = -1;
 }
 
 
@@ -702,6 +706,18 @@ Rts2Conn::processLine ()
 		binaryReadTop = binaryReadBuff;
 		return -1;
 	}
+	else if (isCommand (PROTO_DATA))
+	{
+		if (paramNextLong (&binaryReadChunkSize)
+			|| !paramEnd ())
+		{
+			// end connection - bad binary data header
+			binaryReadDataSize = -1;
+			connectionError (-2);
+			return -1;
+		}
+		return -1;
+	}
 	else if (isCommandReturn ())
 	{
 		ret = commandReturn ();
@@ -743,9 +759,9 @@ Rts2Conn::receive (fd_set * set)
 			return acceptConn ();
 		}
 		// we are receiving binary data
-		if (binaryReadDataSize > 0)
+		if (binaryReadChunkSize > 0)
 		{
-			data_size = read (sock, binaryReadTop, binaryReadDataSize);
+			data_size = read (sock, binaryReadTop, binaryReadChunkSize);
 			// ignore EINTR
 			if (data_size == -1)
 			{
@@ -755,6 +771,7 @@ Rts2Conn::receive (fd_set * set)
 				return -1;
 			}
 			binaryReadDataSize -= data_size;
+			binaryReadChunkSize -= data_size;
 			binaryReadTop += data_size;
 			dataReceived ();
 			return data_size;
@@ -823,17 +840,19 @@ Rts2Conn::receive (fd_set * set)
 				buf_top++;
 				processLine ();
 				// binary read just started
-				if (binaryReadDataSize > 0 && binaryReadBuff == binaryReadTop)
+				if (binaryReadChunkSize > 0)
 				{
 					int readSize = full_data_end - buf_top;
-					if (readSize > binaryReadDataSize)
-						readSize = binaryReadDataSize;
-					memcpy (binaryReadBuff, buf_top, readSize);
+					if (readSize > binaryReadChunkSize)
+						readSize = binaryReadChunkSize;
+					memcpy (binaryReadTop, buf_top, readSize);
 					binaryReadTop += readSize;
 					binaryReadDataSize -= readSize;
+					binaryReadChunkSize -= readSize;
 					dataReceived ();
 					// move binary data away
 					memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
+					full_data_end -= readSize;
 				}
 				command_start = buf_top;
 			}
@@ -1297,7 +1316,13 @@ Rts2Conn::sendBinaryData (char *data, long dataSize)
 	binaryWriteTop = binaryWriteBuff = data;
 	char *binaryEnd = data + dataSize;
 
-	std::cerr << "WriteDataSize " << binaryWriteDataSize;
+	char *msg;
+	asprintf (&msg, PROTO_DATA " %li", dataSize);
+	int ret;
+	ret = sendMsg (msg);
+	free (msg);
+	if (ret)
+		return ret;
 
 	while (binaryWriteTop < binaryEnd)
 	{
@@ -1307,7 +1332,7 @@ Rts2Conn::sendBinaryData (char *data, long dataSize)
 				<< dataSize << " " << binaryWriteDataSize << sendLog;
 			dataSize = binaryWriteDataSize;
 		}
-		int ret = send (sock, binaryWriteTop, dataSize, 0);
+		ret = send (sock, binaryWriteTop, dataSize, 0);
 		if (ret == -1)
 		{
 			if (errno != EINTR)
@@ -1673,7 +1698,6 @@ Rts2Conn::paramNextTimeval (struct timeval *tv)
 void
 Rts2Conn::dataReceived ()
 {
-	std::cerr << "dataReceived " << binaryReadDataSize << " " << (binaryReadTop - binaryReadBuff) << std::endl;
 	// inform device that we read some data
 	if (otherDevice)
 		otherDevice->dataReceived (binaryReadBuff, binaryReadTop, binaryReadDataSize);

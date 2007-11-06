@@ -129,6 +129,9 @@ class Rts2Conn:public Rts2Object
 		// type of data we are reading
 		int binaryReadType;
 
+		// remaining size of binary data chunk which needed to be read
+		long binaryReadChunkSize;
+
 		// number of data to write on conection
 		long binaryWriteDataSize;
 
@@ -327,6 +330,11 @@ class Rts2Conn:public Rts2Object
 			return !strcmp (cmd, getCommand ());
 		}
 
+		/**
+		 * Send char message to other side.
+		 *
+		 * @return -1 on error, 0 on sucess
+		 */
 		virtual int sendMsg (const char *msg);
 		int sendMsg (std::string msg);
 
