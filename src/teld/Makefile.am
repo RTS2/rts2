@@ -6,7 +6,7 @@ noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h gem.h
 
 EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp
 
-LDADD = teld.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
+LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
 rts2_teld_gemini_SOURCES = gemini.cpp hms.c
 
@@ -17,7 +17,6 @@ rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
 rts2_teld_d50_SOURCES = d50.cpp
-rts2_teld_d50_LDFLAGS = gem.o
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
@@ -43,6 +42,6 @@ endif
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount
 rts2_teld_paramount_SOURCES = paramount.cpp
-rts2_teld_paramount_LDFLAGS = @LIB_PARA@ gem.o
+rts2_teld_paramount_LDFLAGS = @LIB_PARA@
 rts2_teld_paramount_CPPFLAGS = @INC_PARA@
 endif
