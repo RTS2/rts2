@@ -17,7 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "telescope.h"
+#define DEBUG_EXTRA
+
+#include "gem.h"
 #include "model/telmodel.h"
 
 #include "../utils/rts2config.h"
@@ -28,7 +30,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-class Rts2DevTelD50:public Rts2DevTelescope
+class Rts2DevTelD50:public Rts2DevGEM
 {
 	private:
 		char *device_name;
@@ -39,15 +41,13 @@ class Rts2DevTelD50:public Rts2DevTelescope
 		int tel_write (const char *command);
 		// write to both units
 		int write_both (const char *command);
-		int tel_write (const char command, long value);
+		int tel_write (const char command, int32_t value);
 
 		int tel_write_unit (int unit, const char *command);
-		int tel_write_unit (int unit, const char command, long value);
+		int tel_write_unit (int unit, const char command, int32_t value);
 
-		int tel_read (const char command, Rts2ValueLong * value,
-			Rts2ValueInteger * proc);
-		int tel_read_unit (int unit, const char command, Rts2ValueLong * value,
-			Rts2ValueInteger * proc);
+		int tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc);
+		int tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc);
 
 		Rts2ValueBool *motorRa;
 		Rts2ValueBool *motorDec;
@@ -55,16 +55,21 @@ class Rts2DevTelD50:public Rts2DevTelescope
 		Rts2ValueBool *wormRa;
 		Rts2ValueBool *wormDec;
 
-		Rts2ValueLong *unitRa;
-		Rts2ValueLong *unitDec;
+		Rts2ValueInteger *unitRa;
+		Rts2ValueInteger *unitDec;
 
 		Rts2ValueInteger *procRa;
 		Rts2ValueInteger *procDec;
 
 	protected:
 		virtual int processOption (int in_opt);
+
+		virtual int getHomeOffset (int32_t & off);
+
 		virtual int isMoving ();
 		virtual int isParking ();
+
+		virtual int updateLimits ();
 
 		virtual void updateTrack ();
 
@@ -84,8 +89,7 @@ class Rts2DevTelD50:public Rts2DevTelescope
 		virtual int startPark ();
 		virtual int endPark ();
 
-		virtual int correct (double cor_ra, double cor_dec, double real_ra,
-			double real_dec);
+		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 };
 
 int
@@ -135,10 +139,10 @@ Rts2DevTelD50::write_both (const char *command)
 
 
 int
-Rts2DevTelD50::tel_write (const char command, long value)
+Rts2DevTelD50::tel_write (const char command, int32_t value)
 {
 	static char buf[50];
-	sprintf (buf, "%c%li\x0d", command, value);
+	sprintf (buf, "%c%i\x0d", command, value);
 	return tel_write (buf);
 }
 
@@ -156,7 +160,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char *command)
 
 
 int
-Rts2DevTelD50::tel_write_unit (int unit, const char command, long value)
+Rts2DevTelD50::tel_write_unit (int unit, const char command, int32_t value)
 {
 	int ret;
 	// switch unit
@@ -168,13 +172,12 @@ Rts2DevTelD50::tel_write_unit (int unit, const char command, long value)
 
 
 int
-Rts2DevTelD50::tel_read (const char command, Rts2ValueLong * value,
-Rts2ValueInteger * proc)
+Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	static char buf[15];
 	ret = tel_write (command);
-	if (ret <= 0)
+	if (ret < 0)
 		return ret;
 	ret = read (tel_desc, buf, 14);
 	if (ret <= 0)
@@ -193,23 +196,22 @@ Rts2ValueInteger * proc)
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Readed from D50 " << buf << sendLog;
 	#endif
-	long int vall;
+	int vall;
 	int ppro;
-	ret = sscanf (buf, "#%li&%i\x0d\x0a", &vall, &ppro);
+	ret = sscanf (buf, "#%i&%i\x0d\x0a", &vall, &ppro);
 	if (ret != 2)
 	{
 		logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
 		return -1;
 	}
-	value->setValueLong (vall);
+	value->setValueInteger (vall);
 	proc->setValueInteger (ppro);
 	return 0;
 }
 
 
 int
-Rts2DevTelD50::tel_read_unit (int unit, const char command,
-Rts2ValueLong * value, Rts2ValueInteger * proc)
+Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	ret = tel_write ('x', unit);
@@ -219,10 +221,16 @@ Rts2ValueLong * value, Rts2ValueInteger * proc)
 }
 
 
-Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
-in_argv)
+Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv):
+Rts2DevGEM (in_argc, in_argv)
 {
 	tel_desc = -1;
+
+	haZero = 0;
+	decZero = 0;
+
+	haCpd = 360;
+	decCpd = 360;
 
 	device_name = "/dev/ttyS0";
 	addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
@@ -244,8 +252,7 @@ in_argv)
 	createValue (procDec, "proc_dec", "state for DEC processor", false);
 
 	// apply all correction for paramount
-	corrections->
-		setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+	corrections->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 }
 
 
@@ -264,8 +271,16 @@ Rts2DevTelD50::processOption (int in_opt)
 			device_name = optarg;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Rts2DevGEM::processOption (in_opt);
 	}
+	return 0;
+}
+
+
+int
+Rts2DevTelD50::getHomeOffset (int32_t & off)
+{
+	off = 0;
 	return 0;
 }
 
@@ -276,7 +291,7 @@ Rts2DevTelD50::init ()
 	struct termios tel_termios;
 	int ret;
 
-	ret = Rts2DevTelescope::init ();
+	ret = Rts2DevGEM::init ();
 	if (ret)
 		return ret;
 
@@ -294,15 +309,15 @@ Rts2DevTelD50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	tel_desc = open (device_file, O_RDWR);
+	tel_desc = open (device_name, O_RDWR);
 	if (tel_desc < 0)
 		return -1;
 
 	if (tcgetattr (tel_desc, &tel_termios) < 0)
 		return -1;
 
-	if (cfsetospeed (&tel_termios, B4800) < 0 ||
-		cfsetispeed (&tel_termios, B4800) < 0)
+	if (cfsetospeed (&tel_termios, B9600) < 0 ||
+		cfsetispeed (&tel_termios, B9600) < 0)
 		return -1;
 
 	tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
@@ -327,6 +342,18 @@ Rts2DevTelD50::init ()
 }
 
 
+int
+Rts2DevTelD50::updateLimits ()
+{
+	acMin = 0;
+	acMax = 200000;
+
+	dcMin = 0;
+	dcMax = 200000;
+	return 0;
+}
+
+
 void
 Rts2DevTelD50::updateTrack ()
 {
@@ -339,29 +366,23 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == motorRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->
-			getValueBool ()? "E\x0d" : "D\x0d") ==
-			0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d") == 0 ? 0 : -2;
 	}
 	if (old_value == motorDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->
-			getValueBool ()? "E\x0d" : "D\x0d") ==
-			0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d") == 0 ? 0 : -2;
 	}
 	if (old_value == wormRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->
-			getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
 
 	}
 	if (old_value == wormDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->
-			getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
 
 	}
 	if (old_value == unitRa)
@@ -374,7 +395,7 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return tel_write_unit (2, 't',
 			new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
-	return Rts2DevTelescope::setValue (old_value, new_value);
+	return Rts2DevGEM::setValue (old_value, new_value);
 }
 
 
@@ -389,13 +410,42 @@ Rts2DevTelD50::info ()
 	if (ret)
 		return ret;
 
-	return Rts2DevTelescope::info ();
+	double t_telRa;
+	double t_telDec;
+
+	int u_ra = unitRa->getValueInteger ();
+
+	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
+	telRa->setValueDouble (t_telRa);
+	telDec->setValueDouble (t_telDec);
+
+	return Rts2DevGEM::info ();
 }
 
 
 int
 Rts2DevTelD50::startMove (double tar_ra, double tar_dec)
 {
+	int ret;
+	int32_t ac, dc;
+	ret = sky2counts (tar_ra, tar_dec, ac, dc);
+	if (ret)
+		return -1;
+
+	ret = tel_write_unit (1, 't', ac);
+	if (ret)
+		return ret;
+	ret = tel_write_unit (2, 't', dc);
+	if (ret)
+		return ret;
+
+	ret = tel_write (1, 'g');
+	if (ret)
+		return ret;
+	ret = tel_write (2, 'g');
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
@@ -411,21 +461,29 @@ Rts2DevTelD50::isMoving ()
 int
 Rts2DevTelD50::endMove ()
 {
-	return Rts2DevTelescope::endMove ();
+	return Rts2DevGEM::endMove ();
 }
 
 
 int
 Rts2DevTelD50::stopMove ()
 {
-	return Rts2DevTelescope::stopMove ();
+	int ret;
+	ret = tel_write (1, 'k');
+	if (ret)
+		return ret;
+	ret = tel_write (2, 'k');
+	if (ret)
+		return ret;
+
+	return Rts2DevGEM::stopMove ();
 }
 
 
 int
 Rts2DevTelD50::startPark ()
 {
-	return Rts2DevTelescope::startPark ();
+	return Rts2DevGEM::startPark ();
 }
 
 
@@ -439,7 +497,7 @@ Rts2DevTelD50::isParking ()
 int
 Rts2DevTelD50::endPark ()
 {
-	return Rts2DevTelescope::endPark ();
+	return Rts2DevGEM::endPark ();
 }
 
 
