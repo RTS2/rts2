@@ -671,11 +671,10 @@ Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 
 
 int
-Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op,
-Rts2Value * new_value)
+Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
 {
 	// que change if that's necessary
-	if (queValueChange (old_value_cond))
+	if (queValueChange (old_value_cond, getState ()))
 	{
 		queValues.push_back (new Rts2ValueQue (old_value_cond, op, new_value));
 		return -1;

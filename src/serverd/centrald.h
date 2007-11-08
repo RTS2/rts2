@@ -135,11 +135,6 @@ class Rts2Centrald:public Rts2Daemon
 			return NULL;
 		}
 
-		virtual bool queValueChange (Rts2CondValue * old_value)
-		{
-			return false;
-		}
-
 		virtual int init ();
 		virtual int initValues ();
 

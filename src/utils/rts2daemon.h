@@ -227,9 +227,14 @@ class Rts2Daemon:public Rts2Block
 		/**
 		 * Returns whenever value change with old_value needs to be qued or
 		 * not.
-		 * \param old_value Rts2CondValue object describing the old_value
+		 *
+		 * @param old_value Rts2CondValue object describing the old_value
+		 * @param fakeState Server state agains which value change will be checked.
 		 */
-		virtual bool queValueChange (Rts2CondValue * old_value) = 0;
+		bool queValueChange (Rts2CondValue * old_value, int fakeState)
+		{
+			return old_value->queValueChange (fakeState);
+		}
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -279,8 +284,16 @@ class Rts2Daemon:public Rts2Block
 		 * Called to set new state value
 		 */
 		void setState (int new_state, const char *description);
-		virtual void stateChanged (int new_state, int old_state,
-			const char *description);
+
+		/**
+		 * Loop through que values and tries to free as much of them as is possible.
+		 *
+		 * @param fakeState State of the device. This one is not set in
+		 * server state, it's only used during value tests.
+		 */
+		void checkQueChanges (int fakeState);
+
+		virtual void stateChanged (int new_state, int old_state, const char *description);
 	public:
 		/**
 		 * Called when state is changed.

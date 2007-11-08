@@ -253,14 +253,14 @@ class Rts2Device:public Rts2Daemon
 		virtual Rts2Conn *createClientConnection (char *in_deviceName);
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
+		/**
+		 * Check if we can set value.
+		 */
+		void checkQueChanges (int fakeState);
+
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 
 		virtual void cancelPriorityOperations ();
-
-		virtual bool queValueChange (Rts2CondValue * old_value)
-		{
-			return old_value->queValueChange (getState ());
-		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:

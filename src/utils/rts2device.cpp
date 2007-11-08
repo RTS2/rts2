@@ -877,21 +877,17 @@ Rts2Device::createClientConnection (Rts2Address * in_addres)
 
 
 void
-Rts2Device::stateChanged (int new_state, int old_state, const char *description)
+Rts2Device::checkQueChanges (int fakeState)
 {
 	int ret;
-	Rts2Daemon::stateChanged (new_state, old_state, description);
-	// try to wake-up qued changes..
 	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end ();)
 	{
 		Rts2ValueQue *queVal = *iter;
 		// free qued values
-		if (!queValueChange (queVal->getCondValue ()))
+		if (!queValueChange (queVal->getCondValue (), fakeState))
 		{
-			std::string newValStr =
-				std::string (queVal->getNewValue ()->getValue ());
-			ret =
-				doSetValue (
+			std::string newValStr = std::string (queVal->getNewValue ()->getValue ());
+			ret = doSetValue (
 				queVal->getCondValue (),
 				queVal->getOperation (),
 				queVal->getNewValue ()
@@ -917,6 +913,15 @@ Rts2Device::stateChanged (int new_state, int old_state, const char *description)
 			iter++;
 		}
 	}
+}
+
+
+void
+Rts2Device::stateChanged (int new_state, int old_state, const char *description)
+{
+	Rts2Daemon::stateChanged (new_state, old_state, description);
+	// try to wake-up qued changes..
+	checkQueChanges (new_state);
 	sendStatusMessage (getState ());
 }
 
