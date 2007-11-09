@@ -107,30 +107,33 @@ class Rts2DevCamera:public Rts2ScriptDevice
 {
 	private:
 		// comes from CameraChip
-
 		void initData ();
 
 		time_t readout_started;
 		int shutter_state;
 
-		// end of CameraChip
-
+		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
+
+		// number of connection waiting to be executed
+		Rts2ValueInteger *exposureNumber;
+		Rts2ValueBool *waitingForEmptyQue;
 
 		char *focuserDevice;
 		char *wheelDevice;
 
 		int lastFilterNum;
 
+								 // DARK of LIGHT frames
+		Rts2ValueSelection *expType;
 		Rts2ValueFloat *exposure;
 
 		Rts2ValueRectangle *chipSize;
 
-		int camStartExposure (int light, float exptime);
+		int camStartExposure ();
 		// when we call that function, we must be sure that either filter or wheelDevice != NULL
 		int camFilter (int new_filter);
 
-		double defaultSubExposure;
 		Rts2ValueDouble *subExposure;
 
 		Rts2ValueSelection *camFilterVal;
@@ -243,9 +246,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			return usedPixelByteSize () * (chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt ());
 		}
 
-		char *focusingData;
-		char *focusingDataTop;
-
 		virtual int processData (char *data, size_t size);
 
 		/**
@@ -260,7 +260,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 *
 		 * Return 0 if focusing should continue, !0 otherwise.
 		 */
-		virtual int doFocusing ();
+		//virtual int doFocusing ();
 
 		// end of CameraChip
 
@@ -295,14 +295,22 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		float nightCoolTemp;
 
+		virtual void checkQueChanges (int fakeState);
+
 		virtual void cancelPriorityOperations ();
-		int defBinning;
 
 		Rts2ValueDouble *rnoise;
 
 		virtual void afterReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		void createExpType ()
+		{
+			createValue (expType, "SHUTTER", "shutter state");
+			expType->addSelVal ("LIGHT", NULL);
+			expType->addSelVal ("DARK", NULL);
+		}
 
 		void createTempAir ()
 		{
@@ -357,9 +365,13 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		virtual int box (int in_x, int in_y, int in_width, int in_height);
 		int center (int in_w, int in_h);
 
-		virtual int startExposure (int light, float exptime) = 0;
+		virtual int startExposure () = 0;
 
-		int setExposure (float exptime, int in_shutter_state);
+		/**
+		 * Check if exposure has ended.
+		 *
+		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
+		 */
 		virtual long isExposing ();
 		virtual int endExposure ();
 		virtual int stopExposure ();
@@ -411,15 +423,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual int scriptEnds ();
 
-		virtual int camExpose (int light, float exptime)
-		{
-			return startExposure (light, exptime);
-		}
 		virtual long camWaitExpose ();
-		virtual int camStopExpose ()
-		{
-			return stopExposure ();
-		}
 		virtual int camStopRead ()
 		{
 			return endReadout ();
@@ -442,15 +446,17 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		// callback functions from camera connection
-		int camExpose (Rts2Conn * conn, int light, float exptime);
-		int camStopExpose (Rts2Conn * conn);
+		int camExpose (Rts2Conn * conn);
 		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
-		int camReadout ();
+
+		/**
+		 * Called when readout starts, on transition from EXPOSING to READOUT state.
+		 * Need to intiate readout area, setup camera for readout etc..
+		 */
+		virtual int camStartReadout ();
+
 		int camReadout (Rts2Conn * conn);
-		// start readout & do/que exposure, that's for frame transfer CCDs
-		int camReadoutExpose (Rts2Conn * conn, int light, float exptime);
-		int camBinning (Rts2Conn * conn, int x_bin, int y_bin);
 		int camStopRead (Rts2Conn * conn);
 		int camCoolMax (Rts2Conn * conn);
 		int camCoolHold (Rts2Conn * conn);
@@ -464,13 +470,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		int stepFocuser (int step_count);
 		int getFocPos ();
 
-		float focusExposure;
-		float defFocusExposure;
-
-		// autofocus
-		int startFocus (Rts2Conn * conn);
-		int endFocusing ();
-
 		virtual int setSubExposure (double in_subexposure);
 
 		double getSubExposure (void)
@@ -479,7 +478,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		bool isIdle ();
-		bool isFocusing ();
 
 		virtual int grantPriority (Rts2Conn * conn)
 		{

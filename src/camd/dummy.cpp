@@ -81,14 +81,13 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 				CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 			readoutSleep->setValueDouble (0);
 
+			createExpType ();
+
 			width = 200;
 			height = 100;
-			addOption ('f', "frame_transfer", 0,
-				"when set, dummy CCD will act as frame transfer device");
-			addOption ('I', "info_sleep", 1,
-				"device will sleep i nanosecunds before each info and baseInfo return");
-			addOption ('r', "readout_sleep", 1,
-				"device will sleep i nanosecunds before each readout");
+			addOption ('f', "frame_transfer", 0, "when set, dummy CCD will act as frame transfer device");
+			addOption ('I', "info_sleep", 1, "device will sleep <param> seconds before each info and baseInfo return");
+			addOption ('r', "readout_sleep", 1, "device will sleep <parame> seconds before each readout");
 			addOption ('w', "width", 1, "width of simulated CCD");
 			addOption ('g', "height", 1, "height of simulated CCD");
 
@@ -156,7 +155,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			return 0;
 		}
 
-		virtual int startExposure (int light, float exptime)
+		virtual int startExposure ()
 		{
 			return 0;
 		}
