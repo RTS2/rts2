@@ -99,6 +99,7 @@ Rts2DevTelD50::tel_write (const char command)
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "D50 will write " << command << sendLog;
 	#endif
+	usleep (100000);
 	ret = write (tel_desc, &command, 1);
 	if (ret != 1)
 	{
@@ -116,6 +117,7 @@ Rts2DevTelD50::tel_write (const char *command)
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "D50 will write " << command << sendLog;
 	#endif
+	usleep (100000);
 	ret = write (tel_desc, command, strlen (command));
 	if (ret != strlen (command))
 	{
@@ -201,8 +203,13 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 	ret = sscanf (buf, "#%i&%i\x0d\x0a", &vall, &ppro);
 	if (ret != 2)
 	{
-		logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
-		return -1;
+		ret = sscanf (buf, "#%i", &vall);
+		if (ret != 1)
+		{
+			logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
+			return -1;
+		}
+		ppro = 0;
 	}
 	value->setValueInteger (vall);
 	proc->setValueInteger (ppro);
@@ -229,8 +236,13 @@ Rts2DevGEM (in_argc, in_argv)
 	haZero = 0;
 	decZero = 0;
 
-	haCpd = 360;
-	decCpd = 360;
+	haCpd = 3600;
+	decCpd = 3600;
+
+	ra_ticks = (int32_t) (fabs (haCpd) * 360);
+	dec_ticks = (int32_t) (fabs (decCpd) * 360);
+
+	acMargin = (int32_t) (haCpd * 5);
 
 	device_name = "/dev/ttyS0";
 	addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
@@ -345,11 +357,11 @@ Rts2DevTelD50::init ()
 int
 Rts2DevTelD50::updateLimits ()
 {
-	acMin = 0;
-	acMax = 200000;
+	acMin = (int32_t) (haCpd * -70);
+	acMax = (int32_t) (haCpd * 70);
 
-	dcMin = 0;
-	dcMax = 200000;
+	dcMin = (int32_t) (decCpd * -70);
+	dcMax = (int32_t) (decCpd * 70);
 	return 0;
 }
 
@@ -428,6 +440,7 @@ Rts2DevTelD50::startMove (double tar_ra, double tar_dec)
 {
 	int ret;
 	int32_t ac, dc;
+
 	ret = sky2counts (tar_ra, tar_dec, ac, dc);
 	if (ret)
 		return -1;
@@ -435,14 +448,14 @@ Rts2DevTelD50::startMove (double tar_ra, double tar_dec)
 	ret = tel_write_unit (1, 't', ac);
 	if (ret)
 		return ret;
-	ret = tel_write_unit (2, 't', dc);
+	ret = tel_write ('g');
 	if (ret)
 		return ret;
 
-	ret = tel_write (1, 'g');
+	ret = tel_write_unit (2, 't', dc);
 	if (ret)
 		return ret;
-	ret = tel_write (2, 'g');
+	ret = tel_write ('g');
 	if (ret)
 		return ret;
 
@@ -483,6 +496,13 @@ Rts2DevTelD50::stopMove ()
 int
 Rts2DevTelD50::startPark ()
 {
+	int ret;
+	ret = tel_write_unit (1, 's', 0);
+	if (ret)
+		return ret;
+	ret = tel_write_unit (2, 's', 0);
+	if (ret)
+		return ret;
 	return Rts2DevGEM::startPark ();
 }
 

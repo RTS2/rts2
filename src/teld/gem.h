@@ -45,6 +45,7 @@ class Rts2DevGEM: public Rts2DevTelescope
 
 		int acMargin;
 
+		// ticks per revolution
 		int32_t ra_ticks;
 		int32_t dec_ticks;
 
