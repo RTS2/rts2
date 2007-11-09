@@ -43,6 +43,7 @@ class Rts2DevTelD50:public Rts2DevGEM
 		int write_both (const char *command);
 		int tel_write (const char command, int32_t value);
 
+		int tel_write_unit (int unit, const char command);
 		int tel_write_unit (int unit, const char *command);
 		int tel_write_unit (int unit, const char command, int32_t value);
 
@@ -146,6 +147,18 @@ Rts2DevTelD50::tel_write (const char command, int32_t value)
 	static char buf[50];
 	sprintf (buf, "%c%i\x0d", command, value);
 	return tel_write (buf);
+}
+
+
+int
+Rts2DevTelD50::tel_write_unit (int unit, const char command)
+{
+	int ret;
+	// switch unit
+	ret = tel_write ('x', unit);
+	if (ret)
+		return ret;
+	return tel_write (command);
 }
 
 
@@ -482,10 +495,10 @@ int
 Rts2DevTelD50::stopMove ()
 {
 	int ret;
-	ret = tel_write (1, 'k');
+	ret = tel_write_unit (1, 'k');
 	if (ret)
 		return ret;
-	ret = tel_write (2, 'k');
+	ret = tel_write_unit (2, 'k');
 	if (ret)
 		return ret;
 
@@ -503,7 +516,7 @@ Rts2DevTelD50::startPark ()
 	ret = tel_write_unit (2, 's', 0);
 	if (ret)
 		return ret;
-	return Rts2DevGEM::startPark ();
+	return 0;
 }
 
 
@@ -517,7 +530,7 @@ Rts2DevTelD50::isParking ()
 int
 Rts2DevTelD50::endPark ()
 {
-	return Rts2DevGEM::endPark ();
+	return 0;
 }
 
 
