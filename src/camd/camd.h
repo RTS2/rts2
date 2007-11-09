@@ -1,28 +1,3 @@
-/* 
- * Basic camera daemon
- * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
-
-/**
- * @file Abstract camera class.
- *
- * @defgroup RTS2Camera Camera driver
- */
-
 #ifndef __RTS2_CAMERA_CPP__
 #define __RTS2_CAMERA_CPP__
 
@@ -38,217 +13,113 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
-#define CAMERA_COOL_OFF            0
-#define CAMERA_COOL_MAX            1
-#define CAMERA_COOL_HOLD           2
-#define CAMERA_COOL_SHUTDOWN       3
+/* image types, taken from fitsio.h */
+#define CAMERA_BYTE_IMG   8
+#define CAMERA_SHORT_IMG  16
+#define CAMERA_LONG_IMG   32
+#define CAMERA_FLOAT_IMG  -32
+#define CAMERA_DOUBLE_IMG -64
+#define CAMERA_USHORT_IMG 20
+#define CAMERA_ULONG_IMG  40
 
-/**
- * Class which holds 2D binning informations.
- *
- * @addgroup RTS2Camera
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class Binning2D: public Rts2SelData
+#define CAMERA_COOL_OFF   0
+#define CAMERA_COOL_MAX   1
+#define CAMERA_COOL_HOLD  2
+#define CAMERA_COOL_SHUTDOWN  3
+
+class Rts2DevCamera;
+
+class ChipSubset
 {
 	public:
-		/**
-		 * Vertical binning factor.
-		 */
-		int vertical;
-
-		/**
-		 * Horizontal binnning factor.
-		 */
-		int horizontal;
-
-		Binning2D (int in_vertical, int in_horizontal): Rts2SelData ()
+		int x, y, width, height;
+		ChipSubset (int in_x, int in_y, int in_width, int in_height)
 		{
-			vertical = in_vertical;
-			horizontal = in_horizontal;
+			x = in_x;
+			y = in_y;
+			width = in_width;
+			height = in_height;
 		}
-
-		/**
-		 * Return string description of binning.
-		 *
-		 * @return String describing binning in standard <vertical> x <horizontal> form.
-		 */
-		std::string getDescription ()
+		ChipSubset (const ChipSubset * copy)
 		{
-			std::ostringstream _os;
-			_os << vertical << "x" << horizontal;
-			return _os.str();
+			x = copy->x;
+			y = copy->y;
+			width = copy->width;
+			height = copy->height;
+		}
+		int getWidth ()
+		{
+			return width;
+		}
+		int getHeight ()
+		{
+			return height;
 		}
 };
 
 /**
- * Holds type of data produced.
- */
-class DataType: public Rts2SelData
-{
-	public:
-		int type;
-
-		DataType (int in_type): Rts2SelData ()
-		{
-			type = in_type;
-		}
-};
-
-/**
- * Abstract class for camera device.
+ * Class holding information about one camera chip.
  *
- * @addgroup RTS2Camera
- *
- * @author Petr Kubanek <petr@kubanek.net>
+ * The idea behind is: we will put there size and other things.
+ * There aren't any methods which will handle communication with camera;
+ * all comunication should be handled directly in device methods.
  */
-class Rts2DevCamera:public Rts2ScriptDevice
+class CameraChip
 {
 	private:
-		// comes from CameraChip
+		void initData (Rts2DevCamera * in_cam, int in_chip_id);
 
-		void initData ();
-
+		int sendChip (Rts2Conn * conn, char *name, int value);
+		int sendChip (Rts2Conn * conn, char *name, float value);
+		int sendChip (Rts2Conn * conn, char *name, double value);
 		time_t readout_started;
 		int shutter_state;
 
-		// end of CameraChip
-
-		Rts2Conn *exposureConn;
-
-		char *focuserDevice;
-		char *wheelDevice;
-
-		int lastFilterNum;
-
-		Rts2ValueFloat *exposure;
-
-		Rts2ValueRectangle *chipSize;
-
-		int camStartExposure (int light, float exptime);
-		// when we call that function, we must be sure that either filter or wheelDevice != NULL
-		int camFilter (int new_filter);
-
-		double defaultSubExposure;
-		Rts2ValueDouble *subExposure;
-
-		Rts2ValueSelection *camFilterVal;
-		Rts2ValueInteger *camFocVal;
-		Rts2ValueInteger *camShutterVal;
-
-		int getStateChip (int chip);
-
-		/**
-		 * Change state of camera chip.
-		 *
-		 * This function changes state of chip. chip_state_mask and chip_new_state are
-		 * shifted according to chip_num value, so they should contain common state
-		 * mask and values, as defined in status.h. state_mask and new_state are not shifted.
-		 *
-		 * @param chip_state_mask  Chip state mask.
-		 * @param chip_new_state New chip state.
-		 * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
-		 * @param new_state New state for whole device.
-		 * @param description Text describing operation which is performed.
-		 */
-		void maskStateChip (int chip, int chip_state_mask, int chip_new_state,
-			int state_mask, int new_state, char *description);
-
-		// chip binning
-		Rts2ValueSelection *binning;
-
-		// allowed chip data type
-		Rts2ValueSelection *dataType;
-
-		const int getDataType ()
+		int chipUsedSize ()
 		{
-			return ((DataType *) dataType->getData ())->type;
+			return (chipUsedReadout->width / usedBinningHorizontal)
+				* (chipUsedReadout->height / usedBinningVertical);
 		}
 
-		// returns data size in bytes
 		int usedPixelByteSize ()
 		{
-			if (getDataType () == RTS2_DATA_ULONG)
+			if (usedDataType == RTS2_DATA_ULONG)
 				return 4;
-			return abs (getDataType () / 8);
+			return abs (usedDataType / 8);
 		}
 
-		// when chip exposure will end
-		Rts2ValueTime *exposureEnd;
+		int usedDataType;
 
 	protected:
-		// comes from CameraChip
-
+		int chipId;
+		struct timeval exposureEnd;
 		int readoutLine;
-
 		int sendLine;
 		Rts2DevConnData *readoutConn;
+
+		ChipSubset *chipSize;
+		ChipSubset *chipReadout;
+		ChipSubset *chipUsedReadout;
+
+		Rts2DevCamera *camera;
 
 		double pixelX;
 		double pixelY;
 
+		int binningVertical;
+		int binningHorizontal;
+		int usedBinningVertical;
+		int usedBinningHorizontal;
+		double subExposure;
 		int nAcc;
 		struct imghdr focusingHeader;
 
 		int sendReadoutData (char *data, size_t data_size);
 
-		void addBinning2D (int bin_v, int bin_h);
-
-		/**
-		 * Defines possible binning values.
-		 */
-		virtual void initBinnings ();
-
-		void addDataType (int in_type);
-
-		/**
-		 * Defines data type values.
-		 */
-		virtual void initDataTypes ();
-
-		/**
-		 * Return vertical binning.
-		 */
-		int binningHorizontal ()
-		{
-			return ((Binning2D *)(binning->getData ()))->horizontal;
-		}
-
-		/**
-		 * Return vertical binning.
-		 */
-		int binningVertical ()
-		{
-			return ((Binning2D *)(binning->getData ()))->vertical;
-		}
-
-		/**
-		 * Returns chip size in pixels. This method must be overloaded
-		 * when camera decides to use non-standart 2D horizontal and
-		 * vertical binning.
-		 *
-		 * @return Chip size in bytes.
-		 */
-		virtual int chipUsedSize ()
-		{
-			return (chipUsedReadout->getWidthInt () / binningHorizontal ())
-				* (chipUsedReadout->getHeightInt () / binningVertical ());
-		}
-
-		/**
-		 * Returns size of one line in bytes.
-		 */
-		int lineByteSize ()
-		{
-			return usedPixelByteSize () * (chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt ());
-		}
-
 		char *focusingData;
 		char *focusingDataTop;
 
 		virtual int processData (char *data, size_t size);
-
 		/**
 		 * Function to do focusing. To fullfill it's task, it can
 		 * use following informations:
@@ -263,10 +134,128 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 */
 		virtual int doFocusing ();
 
-		// end of CameraChip
+		int lineByteSize ()
+		{
+			return usedPixelByteSize () * (chipUsedReadout->width -
+				chipUsedReadout->x);
+		}
 
-		Rts2ValueRectangle *chipUsedReadout;
+	public:
+		CameraChip (Rts2DevCamera * in_cam, int in_chip_id);
+		CameraChip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
+			int in_height, double in_pixelX, double in_pixelY);
+		virtual ~ CameraChip (void);
+		void setSize (int in_width, int in_height, int in_x, int in_y)
+		{
+			chipSize = new ChipSubset (in_x, in_y, in_width, in_height);
+			chipReadout = new ChipSubset (in_x, in_y, in_width, in_height);
+		}
+		int getWidth ()
+		{
+			return chipSize->getWidth ();
+		}
+		int getHeight ()
+		{
+			return chipSize->getHeight ();
+		}
+		virtual int init ();
+		int send (Rts2Conn * conn);
+		virtual int setBinning (int in_vert, int in_hori);
+		virtual int box (int in_x, int in_y, int in_width, int in_height);
+		int center (int in_w, int in_h);
+		virtual int startExposure (int light, float exptime);
+		int setExposure (float exptime, int in_shutter_state);
+		virtual long isExposing ();
+		virtual int endExposure ();
+		virtual int stopExposure ();
+		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
+		void setReadoutConn (Rts2DevConnData * dataConn);
+		virtual void deleteConnection (Rts2Conn * conn);
+		int getShutterState ()
+		{
+			return shutter_state;
+		}
+		virtual int endReadout ();
+		void clearReadout ();
+		virtual int sendFirstLine ();
+		virtual int readoutOneLine ();
+		virtual void cancelPriorityOperations ();
+		/**
+		 * If chip support frame transfer.
+		 *
+		 * @return false (default) if we don't support frame transfer, so
+		 * request for readout will be handled on-site, exposure will be
+		 * handed when readout ends
+		 */
+		virtual bool supportFrameTransfer ();
 
+		/**
+		 * Set used data type.
+		 */
+		void setUsedDataType (int in_data_type)
+		{
+			usedDataType = in_data_type;
+		}
+};
+
+#define NOT_EXP   0x00
+#define FILTER_MOVE     0x01
+#define FT_EXP    0x02
+#define FOCUSER_MOVE  0x04
+
+class Rts2DevCamera:public Rts2ScriptDevice
+{
+	private:
+		char *focuserDevice;
+		char *wheelDevice;
+		Rts2ValueInteger *nextExp;
+		int nextExpChip;
+		float nextExpTime;
+		int nextExpLight;
+		int lastFilterNum;
+		Rts2ValueFloat *lastExp;
+
+		int camStartExposure (int chip, int light, float exptime);
+		// when we call that function, we must be sure that either filter or wheelDevice != NULL
+		int camFilter (int new_filter);
+
+		double defaultSubExposure;
+		Rts2ValueDouble *subExposure;
+
+		Rts2ValueSelection *camFilterVal;
+		Rts2ValueInteger *camFocVal;
+		Rts2ValueInteger *camShutterVal;
+
+		int getStateChip (int chip_num);
+
+		/**
+		 * Change state of camera chip.
+		 *
+		 * This function changes state of chip. chip_state_mask and chip_new_state are
+		 * shifted according to chip_num value, so they should contain common state
+		 * mask and values, as defined in status.h. state_mask and new_state are not shifted.
+		 *
+		 * @param chip_num  Number of the chip, for most calls 0.\ 
+		 * @param chip_state_mask  Chip state mask.
+		 * @param chip_new_state New chip state.
+		 * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
+		 * @param new_state New state for whole device.
+		 * @param description Text describing operation which is performed.
+		 */
+		void maskStateChip (int chip_num, int chip_state_mask, int chip_new_state,
+			int state_mask, int new_state, char *description);
+
+		/**
+		 * Retrieves chip number from connection, and check if it is valid.
+		 *
+		 * @param conn Connection from which next parameter will be retrieved. Function @see Rts2Conn::paramNextInteger is used.
+		 * @param in_chip Memory location where chip number will be stored.
+		 *
+		 * @return 0 if chip number retrieved is valid, -1 when it is not valid.
+		 */
+		int paramNextChip (Rts2Conn * conn, int *in_chip);
+
+	protected:
 		/**
 		 * Handles options passed on the command line. For a list of options, please
 		 * see output of component with -h parameter passed on command line.
@@ -279,11 +268,13 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int willConnect (Rts2Address * in_addr);
 		char *device_file;
+		// camera chips
+		CameraChip *chips[MAX_CHIPS];
+		int chipNum;
 		// temperature and others; all in deg Celsius
 		Rts2ValueFloat *tempAir;
 		Rts2ValueFloat *tempCCD;
 		Rts2ValueFloat *tempSet;
-
 		Rts2ValueInteger *tempRegulation;
 		Rts2ValueInteger *coolingPower;
 		Rts2ValueInteger *fan;
@@ -336,56 +327,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 	public:
-		// Comes from CameraChip
-
-		void initCameraChip ();
-		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
-
-		void setSize (int in_width, int in_height, int in_x, int in_y)
-		{
-			chipSize->setInts (in_x, in_y, in_width, in_height);
-			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
-		}
-		int getWidth ()
-		{
-			return chipSize->getWidthInt ();
-		}
-		int getHeight ()
-		{
-			return chipSize->getHeightInt ();
-		}
-		virtual int setBinning (int in_vert, int in_hori);
-		virtual int box (int in_x, int in_y, int in_width, int in_height);
-		int center (int in_w, int in_h);
-
-		virtual int startExposure (int light, float exptime) = 0;
-
-		int setExposure (float exptime, int in_shutter_state);
-		virtual long isExposing ();
-		virtual int endExposure ();
-		virtual int stopExposure ();
-		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
-		void setReadoutConn (Rts2DevConnData * dataConn);
-		virtual int deleteConnection (Rts2Conn * conn);
-		int getShutterState ()
-		{
-			return shutter_state;
-		}
-		virtual int endReadout ();
-		void clearReadout ();
-		virtual int sendFirstLine ();
-		virtual int readoutOneLine ();
-		/**
-		 * If chip support frame transfer.
-		 *
-		 * @return false (default) if we don't support frame transfer, so
-		 * request for readout will be handled on-site, exposure will be
-		 * handed when readout ends
-		 */
-		virtual bool supportFrameTransfer ();
-
-		// end of CameraChip
-
 		Rts2DevCamera (int argc, char **argv);
 		virtual ~ Rts2DevCamera (void);
 
@@ -400,6 +341,13 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual int idle ();
 
+		virtual int deleteConnection (Rts2Conn * conn)
+		{
+			for (int i = 0; i < chipNum; i++)
+				chips[i]->deleteConnection (conn);
+			return Rts2Device::deleteConnection (conn);
+		}
+
 		virtual int changeMasterState (int new_state);
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
@@ -411,18 +359,22 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual int scriptEnds ();
 
-		virtual int camExpose (int light, float exptime)
+		virtual int camChipInfo (int chip)
 		{
-			return startExposure (light, exptime);
+			return -1;
 		}
-		virtual long camWaitExpose ();
-		virtual int camStopExpose ()
+		virtual int camExpose (int chip, int light, float exptime)
 		{
-			return stopExposure ();
+			return chips[chip]->startExposure (light, exptime);
 		}
-		virtual int camStopRead ()
+		virtual long camWaitExpose (int chip);
+		virtual int camStopExpose (int chip)
 		{
-			return endReadout ();
+			return chips[chip]->stopExposure ();
+		}
+		virtual int camStopRead (int chip)
+		{
+			return chips[chip]->endReadout ();
 		}
 		virtual int camCoolMax ()
 		{
@@ -442,16 +394,17 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		// callback functions from camera connection
-		int camExpose (Rts2Conn * conn, int light, float exptime);
-		int camStopExpose (Rts2Conn * conn);
-		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
-		int camCenter (Rts2Conn * conn, int in_w, int in_h);
-		int camReadout ();
-		int camReadout (Rts2Conn * conn);
+		int camChipInfo (Rts2Conn * conn, int chip);
+		int camExpose (Rts2Conn * conn, int chip, int light, float exptime);
+		int camStopExpose (Rts2Conn * conn, int chip);
+		int camBox (Rts2Conn * conn, int chip, int x, int y, int width, int height);
+		int camCenter (Rts2Conn * conn, int chip, int in_w, int in_h);
+		int camReadout (int chip);
+		int camReadout (Rts2Conn * conn, int chip);
 		// start readout & do/que exposure, that's for frame transfer CCDs
-		int camReadoutExpose (Rts2Conn * conn, int light, float exptime);
-		int camBinning (Rts2Conn * conn, int x_bin, int y_bin);
-		int camStopRead (Rts2Conn * conn);
+		int camReadoutExpose (Rts2Conn * conn, int chip, int light, float exptime);
+		int camBinning (Rts2Conn * conn, int chip, int x_bin, int y_bin);
+		int camStopRead (Rts2Conn * conn, int chip);
 		int camCoolMax (Rts2Conn * conn);
 		int camCoolHold (Rts2Conn * conn);
 		int camCoolTemp (Rts2Conn * conn, float new_temp);
