@@ -68,7 +68,7 @@ Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
 		<< PROTO_METAINFO << " "
 		<< rts2Type << " "
 		<< '"' << getName () << "\" " << '"' << description << "\" ";
-	return connection->send (_os.str ());
+	return connection->sendMsg (_os.str ());
 }
 
 
@@ -540,7 +540,7 @@ Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 			"\"\n";
 	}
 
-	return connection->send (_os.str ());
+	return connection->sendMsg (_os.str ());
 }
 
 

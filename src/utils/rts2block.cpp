@@ -170,7 +170,7 @@ Rts2Block::sendAll (char *msg)
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
-		conn->send (msg);
+		conn->sendMsg (msg);
 	}
 	return 0;
 }
@@ -230,7 +230,7 @@ Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
 	char *msg;
 
 	asprintf (&msg, PROTO_STATUS " %i", state);
-	conn->send (msg);
+	conn->sendMsg (msg);
 	free (msg);
 }
 
@@ -252,7 +252,7 @@ Rts2Block::sendBopMessage (int state, Rts2Conn * conn)
 	char *msg;
 
 	asprintf (&msg, PROTO_BOP_STATE " %i", state);
-	conn->send (msg);
+	conn->sendMsg (msg);
 	free (msg);
 }
 

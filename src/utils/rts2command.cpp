@@ -73,7 +73,7 @@ Rts2Command::~Rts2Command (void)
 int
 Rts2Command::send ()
 {
-	return connection->send (text);
+	return connection->sendMsg (text);
 }
 
 

@@ -311,8 +311,8 @@ class Rts2Conn:public Rts2Object
 			return !strcmp (cmd, getCommand ());
 		}
 
-		virtual int send (const char *msg);
-		int send (std::string msg);
+		virtual int sendMsg (const char *msg);
+		int sendMsg (std::string msg);
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
 		int sendValue (std::string val_name, int val1, int val2);

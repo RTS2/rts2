@@ -457,7 +457,7 @@ Rts2Conn::idle ()
 		if (now > lastData + getConnTimeout ()
 			&& now > lastSendReady + getConnTimeout () / 4)
 		{
-			ret = send (PROTO_TECHNICAL " ready");
+			ret = sendMsg (PROTO_TECHNICAL " ready");
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "Send T ready ret: " << ret <<
 				" name: " << getName () << " type: " << type << sendLog;
@@ -636,7 +636,7 @@ Rts2Conn::processLine ()
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "Send T OK" << sendLog;
 			#endif
-			send (PROTO_TECHNICAL " OK");
+			sendMsg (PROTO_TECHNICAL " OK");
 			return -1;
 		}
 		if (!strcmp (msg, "OK"))
@@ -842,9 +842,9 @@ void
 Rts2Conn::setHavePriority (int in_have_priority)
 {
 	if (in_have_priority)
-		send (PROTO_PRIORITY_INFO " 1");
+		sendMsg (PROTO_PRIORITY_INFO " 1");
 	else
-		send (PROTO_PRIORITY_INFO " 0");
+		sendMsg (PROTO_PRIORITY_INFO " 0");
 	have_priority = in_have_priority;
 };
 
@@ -862,7 +862,7 @@ Rts2Conn::sendPriorityInfo ()
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_PRIORITY_INFO " %i", havePriority ());
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1187,7 +1187,7 @@ Rts2Conn::priorityInfo ()
 
 
 int
-Rts2Conn::send (const char *msg)
+Rts2Conn::sendMsg (const char *msg)
 {
 	int len;
 	int ret;
@@ -1221,9 +1221,9 @@ Rts2Conn::send (const char *msg)
 
 
 int
-Rts2Conn::send (std::string msg)
+Rts2Conn::sendMsg (std::string msg)
 {
-	return send (msg.c_str ());
+	return sendMsg (msg.c_str ());
 }
 
 
@@ -1272,7 +1272,7 @@ Rts2Conn::connectionError (int last_data_size)
 int
 Rts2Conn::sendMessage (Rts2Message & msg)
 {
-	return send (msg.toConn ());
+	return sendMsg (msg.toConn ());
 }
 
 
@@ -1282,7 +1282,7 @@ Rts2Conn::sendValue (std::string val_name, int value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1294,7 +1294,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, int val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %i", val_name.c_str (), val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1306,7 +1306,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %f", val_name.c_str (), val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1318,7 +1318,7 @@ Rts2Conn::sendValue (std::string val_name, const char *value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s \"%s\"", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1330,7 +1330,7 @@ Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %s", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1342,7 +1342,7 @@ Rts2Conn::sendValue (std::string val_name, double value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %f", val_name.c_str (), value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1354,7 +1354,7 @@ Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s \"%s\" %i", val_name, val1, val2);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1368,7 +1368,7 @@ double val3, double val4, double val5, double val6)
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i %i %f %f %f %f", val_name, val1, val2,
 		val3, val4, val5, val6);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1380,7 +1380,7 @@ Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %li", val_name.c_str (), *value);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -1391,7 +1391,7 @@ Rts2Conn::sendCommandEnd (int num, char *in_msg)
 {
 	char *msg;
 	asprintf (&msg, "%+04i \"%s\"", num, in_msg);
-	send (msg);
+	sendMsg (msg);
 	free (msg);
 	setCommandInProgress (false);
 	return 0;

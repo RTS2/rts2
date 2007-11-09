@@ -1,22 +1,3 @@
-/* 
- * Dialog boxes for setting values.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
-
 #include "rts2nvaluebox.h"
 #include "nmonitor.h"
 
@@ -33,7 +14,9 @@ Rts2NValueBox::~Rts2NValueBox (void)
 }
 
 
-Rts2NValueBoxBool::Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int in_x, int in_y):
+Rts2NValueBoxBool::Rts2NValueBoxBool (Rts2NWindow * top,
+Rts2ValueBool * in_val, int in_x,
+int in_y):
 Rts2NValueBox (top, in_val),
 Rts2NSelWindow (top->getX () + in_x, top->getY () + in_y, 10, 4)
 {
@@ -89,9 +72,10 @@ bool Rts2NValueBoxBool::setCursor ()
 }
 
 
-Rts2NValueBoxString::Rts2NValueBoxString (Rts2NWindow * top, Rts2Value * in_val, int in_x, int in_y):
+Rts2NValueBoxString::Rts2NValueBoxString (Rts2NWindow * top, Rts2ValueString * in_val, int in_x, int in_y):
 Rts2NValueBox (top, in_val),
-Rts2NWindowEdit (top->getX () + in_x, top->getY () + in_y, 20, 3, 1, 1, 300, 1)
+Rts2NWindowEdit (top->getX () + in_x, top->getY () + in_y, 20, 3, 1, 1, 300,
+1)
 {
 	wprintw (getWriteWindow (), "%s", in_val->getValue ());
 }
@@ -121,8 +105,11 @@ Rts2NValueBoxString::sendValue (Rts2Conn * connection)
 	char buf[cx + 1];
 	mvwinnstr (getWriteWindow (), 0, 0, buf, cx);
 	buf[cx] = '\0';
-	connection->queCommand (new Rts2CommandChangeValue (connection->getOtherDevClient (),
-		getValue ()->getName (), '=', std::string (buf)));
+	connection->
+		queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+		getValue ()->getName (), '=',
+		std::string (buf)));
 }
 
 
@@ -272,9 +259,10 @@ Rts2NValueBoxDouble::sendValue (Rts2Conn * connection)
 		// log error;
 		return;
 	}
-	connection->queCommand (new  Rts2CommandChangeValue (connection->getOtherDevClient (),
-		getValue ()->getName (), '=', tval)
-		);
+	connection->
+		queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+		getValue ()->getName (), '=', tval));
 }
 
 
@@ -316,9 +304,10 @@ Rts2NValueBoxSelection::draw ()
 	werase (getWriteWindow ());
 	Rts2ValueSelection *vals = (Rts2ValueSelection *) getValue ();
 	maxrow = 0;
-	for (std::vector < SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++, maxrow++)
+	for (std::vector < std::string >::iterator iter = vals->selBegin ();
+		iter != vals->selEnd (); iter++, maxrow++)
 	{
-		mvwprintw (getWriteWindow (), maxrow, 1, (*iter).name.c_str ());
+		mvwprintw (getWriteWindow (), maxrow, 1, (*iter).c_str ());
 	}
 	refresh ();
 }
@@ -329,10 +318,11 @@ Rts2NValueBoxSelection::sendValue (Rts2Conn * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	connection->queCommand (new  Rts2CommandChangeValue (connection->getOtherDevClient (),
+	connection->
+		queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
 		getValue ()->getName (), '=',
-		getSelRow ())
-		);
+		getSelRow ()));
 }
 
 

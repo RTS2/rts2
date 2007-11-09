@@ -278,7 +278,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 		char *msg;
 		asprintf (&msg, "this_device %s %i", master->getDeviceName (),
 			master->getDeviceType ());
-		send (msg);
+		sendMsg (msg);
 		free (msg);
 		master->sendMetaInfo (this);
 		master->baseInfo (this);
@@ -329,7 +329,7 @@ Rts2DevConnMaster::registerDevice ()
 	}
 	asprintf (&msg, "register %s %i %s %i", device_name, device_type,
 		device_host, device_port);
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -518,7 +518,7 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 	char *msg;
 	int ret;
 	asprintf (&msg, "authorize %i %i", conn->getCentraldId (), conn->getKey ());
-	ret = send (msg);
+	ret = sendMsg (msg);
 	free (msg);
 	return ret;
 }
@@ -567,14 +567,14 @@ Rts2DevConnData::init ()
 
 
 int
-Rts2DevConnData::send (const char *msg)
+Rts2DevConnData::sendMsg (const char *msg)
 {
 	return 0;
 }
 
 
 int
-Rts2DevConnData::send (char *data, size_t data_size)
+Rts2DevConnData::sendMsg (char *data, size_t data_size)
 {
 	if (!isConnState (CONN_CONNECTED))
 		return -2;

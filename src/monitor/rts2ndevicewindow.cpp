@@ -24,8 +24,9 @@
 #include "../utils/rts2displayvalue.h"
 #include "../utils/riseset.h"
 
-Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):
-Rts2NSelWindow (10, 1, COLS - 10, LINES - 25)
+Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow
+(10, 1, COLS - 10,
+LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
@@ -48,13 +49,9 @@ Rts2NDeviceWindow::printState ()
 		wcolor_set (window, CLR_FAILURE, NULL);
 	else if (connection->havePriority ())
 		wcolor_set (window, CLR_OK, NULL);
-	mvwprintw (window, 0, 2, "%s %s (%x) %x priority: %s",
-		connection->getName (),
-		connection->getStateString ().c_str (),
-		connection->getState (),
-		connection->getFullBopState (),
-		connection->havePriority ()? "yes" : "no"
-	);
+	mvwprintw (window, 0, 2, "%s %s (%x) %x priority: %s", connection->getName (),
+		connection->getStateString ().c_str (), connection->getState (),
+		connection->getFullBopState (), connection->havePriority ()? "yes" : "no");
 
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
@@ -87,8 +84,8 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 			return;
 		const char *valTop = valStart;
 		int scriptPosition = connection->getValueInteger ("scriptPosition");
-		int scriptEnd = connection->getValueInteger ("scriptLen") + scriptPosition;
-
+		int scriptEnd =
+			connection->getValueInteger ("scriptLen") + scriptPosition;
 		while (*valTop && (valTop - valStart < scriptPosition))
 		{
 			waddch (getWriteWindow (), *valTop);
@@ -112,19 +109,16 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	switch (value->getValueType ())
 	{
 		case RTS2_VALUE_TIME:
-			_os
-				<< LibnovaDateDouble (value->getValueDouble ())
-				<< " (" << TimeDiff (now, value->getValueDouble ()) << ")";
+			_os << LibnovaDateDouble (value->
+				getValueDouble ()) << " (" <<
+				TimeDiff (now, value->getValueDouble ()) << ")";
 			printValue (value->getName ().c_str (), _os.str ().c_str ());
 			break;
 		case RTS2_VALUE_SELECTION:
-			wprintw
-				(
-				getWriteWindow (), "%-20s %5i %24s\n",
+			wprintw (getWriteWindow (), "%-20s %5i %24s\n",
 				value->getName ().c_str (),
 				value->getValueInteger (),
-				((Rts2ValueSelection *) value)->getSelName ().c_str ()
-				);
+				((Rts2ValueSelection *) value)->getSelVal ().c_str ());
 			break;
 		default:
 			printValue (value->getName ().c_str (),
@@ -183,49 +177,44 @@ void
 Rts2NDeviceWindow::createValueBox ()
 {
 	int s = getSelRow ();
-	if (s < 0)
-		return;
-	Rts2Value *val = connection->valueAt (s);
-	if (!val)
-		return;
-	s -= getPadoffY ();
-	switch (val->getValueType ())
+	if (s >= 0)
 	{
-		case RTS2_VALUE_BOOL:
-			valueBox = new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
-			break;
-		case RTS2_VALUE_STRING:
-			valueBox = new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
-			break;
-		case RTS2_VALUE_INTEGER:
-			valueBox = new Rts2NValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
-			break;
-		case RTS2_VALUE_FLOAT:
-			valueBox = new Rts2NValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
-			break;
-		case RTS2_VALUE_DOUBLE:
-		case RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE:
-			valueBox = new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
-			break;
-		case RTS2_VALUE_SELECTION:
-			valueBox = new Rts2NValueBoxSelection (this, (Rts2ValueSelection *) val, 21, s);
-			break;
-		default:
-			switch (val->getValueExtType ())
-			{
-				case RTS2_VALUE_RECTANGLE:
-					valueBox = new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
-					break;
-				default:
-					logStream (MESSAGE_WARNING) << "Cannot find box for value '"
-						<<  val->getName ()
-						<< " type " << val->getValueType ()
-						<< sendLog;
-					valueBox = new Rts2NValueBoxString (this, val, 21, s - 1);
-					break;
-
-			}
-			break;
+		Rts2Value *val = connection->valueAt (s);
+		if (!val)
+			return;
+		s -= getPadoffY ();
+		switch (val->getValueType ())
+		{
+			case RTS2_VALUE_BOOL:
+				valueBox =
+					new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
+				break;
+			case RTS2_VALUE_STRING:
+				valueBox =
+					new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21,
+					s - 1);
+				break;
+			case RTS2_VALUE_INTEGER:
+				valueBox =
+					new Rts2NValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
+				break;
+			case RTS2_VALUE_FLOAT:
+				valueBox =
+					new Rts2NValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
+				break;
+			case RTS2_VALUE_DOUBLE:
+			case RTS2_VALUE_DOUBLE_MMAX:
+				valueBox =
+					new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
+				break;
+			case RTS2_VALUE_SELECTION:
+				valueBox =
+					new Rts2NValueBoxSelection (this, (Rts2ValueSelection *) val, 21,
+					s);
+				break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -305,19 +294,27 @@ Rts2NDeviceWindow::setCursor ()
 Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rts2NDeviceWindow
 (in_connection)
 {
-	nightStart = new Rts2ValueTime ("Night start", "Beginnign of current or next night", false);
-	nightStop = new Rts2ValueTime ("Night stop", "End of current or next night", false);
+	nightStart =
+		new Rts2ValueTime ("Night start", "Beginnign of current or next night",
+		false);
+	nightStop =
+		new Rts2ValueTime ("Night stop", "End of current or next night", false);
 
-	sunAlt = new Rts2ValueDouble ("Sun alt", "Sun altitude", false, RTS2_DT_DEC);
-	sunAz = new Rts2ValueDouble ("Sun az", "Sun azimuth", false, RTS2_DT_DEGREES);
+	sunAlt =
+		new Rts2ValueDouble ("Sun alt", "Sun altitude", false, RTS2_DT_DEC);
+	sunAz =
+		new Rts2ValueDouble ("Sun az", "Sun azimuth", false, RTS2_DT_DEGREES);
 
 	sunRise = new Rts2ValueTime ("Sun rise", "Sun rise", false);
 	sunSet = new Rts2ValueTime ("Sun set", "Sun set", false);
 
-	moonAlt = new Rts2ValueDouble ("Moon alt", "Moon altitude", false, RTS2_DT_DEC);
-	moonAz = new Rts2ValueDouble ("Moon az", "Moon azimuth", false, RTS2_DT_DEGREES);
+	moonAlt =
+		new Rts2ValueDouble ("Moon alt", "Moon altitude", false, RTS2_DT_DEC);
+	moonAz =
+		new Rts2ValueDouble ("Moon az", "Moon azimuth", false, RTS2_DT_DEGREES);
 
-	moonPhase = new Rts2ValueDouble ("Moon phase", "Moon phase", false, RTS2_DT_PERCENTS);
+	moonPhase =
+		new Rts2ValueDouble ("Moon phase", "Moon phase", false, RTS2_DT_PERCENTS);
 
 	moonRise = new Rts2ValueTime ("Moon rise", "Moon rise", false);
 	moonSet = new Rts2ValueTime ("Moon set", "Moon set", false);
@@ -354,12 +351,15 @@ Rts2NDeviceCentralWindow::printValues ()
 			stateChanges.begin (); iter != stateChanges.end (); iter++)
 		{
 			std::ostringstream _os;
-			_os << LibnovaDateDouble ((*iter).getEndTime ())
-				<< " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
-
-			printValue (((Rts2ValueSelection *) nextState)->getSelName
-				((*iter).getState ()).c_str (), _os.str ().c_str ()
-				);
+			_os << LibnovaDateDouble ((*iter).
+				getEndTime ()) << " (" << TimeDiff (now,
+				(*iter).
+				getEndTime
+				()) <<
+				")";
+			printValue (((Rts2ValueSelection *) nextState)->
+				getSelVal ((*iter).getState ()).c_str (),
+				_os.str ().c_str ());
 		}
 	}
 
@@ -416,8 +416,7 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 		Rts2Value *valEveningTime = getConnection ()->getValue ("evening_time");
 		Rts2Value *valMorningTime = getConnection ()->getValue ("morning_time");
 
-		if (valNightHorizon
-			&& valDayHorizon
+		if (valNightHorizon && valDayHorizon
 			&& !isnan (valNightHorizon->getValueDouble ())
 			&& !isnan (valDayHorizon->getValueDouble ()) && valEveningTime
 			&& valMorningTime)
