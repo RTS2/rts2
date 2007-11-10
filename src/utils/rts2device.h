@@ -256,7 +256,7 @@ class Rts2Device:public Rts2Daemon
 		/**
 		 * Check if we can set value.
 		 */
-		void checkQueChanges (int fakeState);
+		virtual void checkQueChanges (int fakeState);
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 

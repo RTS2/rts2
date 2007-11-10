@@ -116,7 +116,9 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		Rts2Conn *exposureConn;
 
 		// number of connection waiting to be executed
-		Rts2ValueInteger *exposureNumber;
+		Rts2ValueInteger *quedExpNumber;
+		// number of exposures camera takes
+		Rts2ValueLong *exposureNumber;
 		Rts2ValueBool *waitingForEmptyQue;
 
 		char *focuserDevice;
@@ -180,15 +182,24 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// when chip exposure will end
 		Rts2ValueTime *exposureEnd;
 
+		// set chipUsedSize size
+		int box (int in_x, int in_y, int in_width, int in_height);
+
 	protected:
 		// comes from CameraChip
 
-		int readoutLine;
-
-		int sendLine;
-
 		double pixelX;
 		double pixelY;
+
+		/**
+		 * Returns number of exposure camera is currently taking or has taken from camera startup.
+		 *
+		 * @return Exposure number.
+		 */
+		long getExposureNumber ()
+		{
+			return exposureNumber->getValueLong ();
+		}
 
 		int nAcc;
 		struct imghdr focusingHeader;
@@ -243,7 +254,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 */
 		int lineByteSize ()
 		{
-			return usedPixelByteSize () * (chipUsedReadout->getWidthInt () - chipUsedReadout->getXInt ());
+			return usedPixelByteSize () * (chipUsedReadout->getWidthInt ());
 		}
 
 		virtual int processData (char *data, size_t size);
@@ -362,7 +373,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			return chipSize->getHeightInt ();
 		}
 		virtual int setBinning (int in_vert, int in_hori);
-		virtual int box (int in_x, int in_y, int in_width, int in_height);
 		int center (int in_w, int in_h);
 
 		virtual int startExposure () = 0;
@@ -454,7 +464,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 * Called when readout starts, on transition from EXPOSING to READOUT state.
 		 * Need to intiate readout area, setup camera for readout etc..
 		 */
-		virtual int camStartReadout ();
+		virtual int readoutStart ();
 
 		int camReadout (Rts2Conn * conn);
 		int camStopRead (Rts2Conn * conn);

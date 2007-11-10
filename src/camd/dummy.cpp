@@ -30,6 +30,8 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		int width;
 		int height;
 
+		int readoutLine;
+
 	protected:
 		virtual void initBinnings ()
 		{
@@ -73,6 +75,8 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 			in_argv)
 		{
+			readoutLine = 0;
+
 			createTempCCD ();
 
 			supportFrameT = false;
@@ -159,13 +163,14 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		{
 			return 0;
 		}
+		virtual int readoutStart ();
 		virtual int readoutOneLine ();
 
 		virtual int readoutEnd ()
 		{
 			if (data)
 			{
-				delete data;
+				delete[] data;
 				data = NULL;
 			}
 			return Rts2DevCamera::endReadout ();
@@ -178,24 +183,28 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 };
 
 int
+Rts2DevCameraDummy::readoutStart ()
+{
+	readoutLine = chipUsedReadout->getYInt ();
+	return Rts2DevCamera::readoutStart ();
+}
+
+
+int
 Rts2DevCameraDummy::readoutOneLine ()
 {
 	int ret;
 	int lineSize = lineByteSize ();
-	if (sendLine == 0)
+	if (!data)
 	{
-		ret = sendFirstLine ();
-		if (ret)
-			return ret;
 		data = new char[lineSize];
 	}
 	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 	for (int i = 0; i < lineSize; i++)
 	{
-		data[i] = i + readoutLine;
+		data[i] = i + readoutLine + (int) (getExposureNumber () * 10);
 	}
 	readoutLine++;
-	sendLine++;
 	ret = sendReadoutData (data, lineSize);
 	if (ret < 0)
 		return ret;

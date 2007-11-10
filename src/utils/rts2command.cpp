@@ -171,7 +171,8 @@ Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCa
 Rts2Command (in_master)
 {
 	char *command;
-	asprintf (&command, "expose %i %f", (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+								 //, (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
+	asprintf (&command, "expose");
 	setCommand (command);
 	free (command);
 	camera = in_camera;

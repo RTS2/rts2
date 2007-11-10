@@ -137,12 +137,14 @@ class Rts2Daemon:public Rts2Block
 		 * @param writeToFits    When true, value will be writen to FITS.
 		 * @param displayType    Value display type, one of the RTS2_DT_xxx constant.
 		 */
-		template < typename T > void createValue (T * &val, char *in_val_name,
+		template < typename T > void createValue (
+			T * &val,
+			char *in_val_name,
 			std::string in_description,
-			bool writeToFits =
-			true, int32_t valueFlags =
-			0, int queCondition =
-			0, bool save_value = false)
+			bool writeToFits = true,
+			int32_t valueFlags = 0,
+			int queCondition = 0,
+			bool save_value = false)
 		{
 			val = new T (in_val_name, in_description, writeToFits, valueFlags);
 			addValue (val, queCondition, save_value);
@@ -298,8 +300,8 @@ class Rts2Daemon:public Rts2Block
 		/**
 		 * Called when state is changed.
 		 */
-		void maskState (int state_mask, int new_state, const char *description =
-			NULL);
+		void maskState (int state_mask, int new_state, const char *description = NULL);
+
 		int getState ()
 		{
 			return state;

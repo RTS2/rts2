@@ -34,8 +34,6 @@ Rts2DevCamera::initData ()
 {
 	pixelX = nan ("f");
 	pixelY = nan ("f");
-	readoutLine = 0;
-	sendLine = 0;
 	shutter_state = -1;
 
 	nAcc = 1;
@@ -133,7 +131,8 @@ int
 Rts2DevCamera::endExposure ()
 {
 	exposureEnd->setValueDouble (0);
-	exposureNumber->dec ();
+	if (quedExpNumber->getValueInteger () > 0)
+		quedExpNumber->dec ();
 	if (exposureConn)
 	{
 		return camReadout (exposureConn);
@@ -171,7 +170,7 @@ int
 Rts2DevCamera::endReadout ()
 {
 	clearReadout ();
-	if (exposureNumber->getValueInteger () > 0 && exposureConn)
+	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
 		// peek to see if we can continue..
 		if (! (getStateChip (0) & CAM_EXPOSING))
@@ -187,8 +186,6 @@ Rts2DevCamera::endReadout ()
 void
 Rts2DevCamera::clearReadout ()
 {
-	readoutLine = 0;
-	sendLine = 0;
 }
 
 
@@ -253,8 +250,11 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
-	createValue (exposureNumber, "exposure_num", "number of exposures in que", false, 0, true);
-	exposureNumber->setValueInteger (0);
+	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, 0, true);
+	quedExpNumber->setValueInteger (0);
+
+	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, false);
+	exposureNumber->setValueLong (0);
 
 	createValue (exposureEnd, "exposure_end", "expected end of exposure", false);
 
@@ -262,7 +262,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	waitingForEmptyQue->setValueBool (false);
 
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
-	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING);
+	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
 
 	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", true, 0, CAM_WORKING, true);
@@ -358,7 +358,7 @@ Rts2DevCamera::cancelPriorityOperations ()
 	// init states etc..
 	clearStatesPriority ();
 	// cancel any pending exposures
-	exposureNumber->setValueInteger (0);
+	quedExpNumber->setValueInteger (0);
 	Rts2ScriptDevice::cancelPriorityOperations ();
 }
 
@@ -588,7 +588,7 @@ Rts2DevCamera::afterReadout ()
 int
 Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == exposure || old_value == exposureNumber)
+	if (old_value == exposure || old_value == quedExpNumber)
 	{
 		return 0;
 	}
@@ -615,7 +615,8 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == chipUsedReadout)
 	{
-		return 0;
+		Rts2ValueRectangle *rect = (Rts2ValueRectangle *) new_value;
+		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt ()) == 0 ? 0 : -2;
 	}
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
@@ -690,6 +691,9 @@ Rts2DevCamera::camStartExposure ()
 {
 	int ret;
 
+	exposureNumber->inc ();
+	sendValueAll (exposureNumber);
+
 	ret = startExposure ();
 	if (ret)
 		return ret;
@@ -700,7 +704,6 @@ Rts2DevCamera::camStartExposure ()
 		"exposure chip started");
 
 	exposureEnd->setValueDouble (getNow () + exposure->getValueDouble ());
-
 	sendValueAll (exposureEnd);
 
 	lastFilterNum = getFilterNum ();
@@ -729,7 +732,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn)
 	{
 		if (queValues.empty ())
 		{
-			exposureNumber->inc ();
+			quedExpNumber->inc ();
 			return 0;
 		}
 		// need to wait to empty que of value changes
@@ -785,9 +788,9 @@ Rts2DevCamera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 
 
 int
-Rts2DevCamera::camStartReadout ()
+Rts2DevCamera::readoutStart ()
 {
-	return 0;
+	return sendFirstLine ();
 }
 
 
@@ -803,14 +806,14 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 	ret = conn->startBinaryData (chipUsedSize () * usedPixelByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 
 	// if we can do exposure, do it..
-	if (exposureNumber->getValueInteger () > 0 && exposureConn)
+	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
 		camExpose (exposureConn);
 	}
 
 	if (!ret)
 	{
-		return camStartReadout ();
+		return readoutStart ();
 	}
 	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
 		DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
