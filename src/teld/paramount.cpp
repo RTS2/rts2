@@ -1,7 +1,26 @@
-#include "telescope.h"
+/* 
+ * Driver for Paramount. You need ParaLib to make that work, please ask petr@kubanek.net
+ * for details.
+ * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "gem.h"
 #include "model/telmodel.h"
 
-#include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
 #include <libmks3.h>
@@ -108,7 +127,7 @@ ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
 }
 
 
-class Rts2DevTelParamount:public Rts2DevTelescope
+class Rts2DevTelParamount:public Rts2DevGEM
 {
 	private:
 		MKS3Id axis0;
@@ -126,13 +145,6 @@ class Rts2DevTelParamount:public Rts2DevTelescope
 
 		CWORD32 park_axis[2];
 
-		// that's in degrees
-		double haZero;
-		double decZero;
-
-		double haCpd;
-		double decCpd;
-
 		int checkRetAxis (const MKS3Id & axis, int reta);
 		int checkRet ();
 		int updateStatus ();
@@ -145,24 +157,7 @@ class Rts2DevTelParamount:public Rts2DevTelescope
 
 		int saveAxis (std::ostream & os, const MKS3Id & axis);
 
-		// returns actual home offset
-		int getHomeOffset (CWORD32 & off);
-
-		int updateLimits ();
-
-		int sky2counts (double ra, double dec, CWORD32 & ac, CWORD32 & dc);
-		int sky2counts (struct ln_equ_posn *pos, CWORD32 & ac, CWORD32 & dc,
-			double JD, CWORD32 homeOff);
-		int counts2sky (CWORD32 & ac, CWORD32 dc, double &ra, double &dec);
-
 		int moveState;
-
-		CWORD32 acMin;
-		CWORD32 acMax;
-		CWORD32 dcMin;
-		CWORD32 dcMax;
-
-		int acMargin;
 
 		// variables for tracking
 		struct timeval track_start_time;
@@ -175,7 +170,12 @@ class Rts2DevTelParamount:public Rts2DevTelescope
 		virtual int isMoving ();
 		virtual int isParking ();
 
+		virtual int updateLimits ();
+
 		virtual void updateTrack ();
+
+		// returns actual home offset
+		virtual int getHomeOffset (int32_t & off);
 	public:
 		Rts2DevTelParamount (int in_argc, char **in_argv);
 		virtual ~ Rts2DevTelParamount (void);
@@ -375,10 +375,10 @@ Rts2DevTelParamount::saveAxis (std::ostream & os, const MKS3Id & axis)
 
 
 int
-Rts2DevTelParamount::getHomeOffset (CWORD32 & off)
+Rts2DevTelParamount::getHomeOffset (int32_t & off)
 {
 	int ret;
-	long en0, pos0;
+	CWORD32 en0, pos0;
 
 	ret = MKS3PosEncoderGet (axis0, &en0);
 	if (ret != MKS_OK)
@@ -412,196 +412,8 @@ Rts2DevTelParamount::updateLimits ()
 }
 
 
-int
-Rts2DevTelParamount::sky2counts (double ra, double dec, CWORD32 & ac,
-CWORD32 & dc)
-{
-	double JD;
-	CWORD32 homeOff;
-	struct ln_equ_posn pos;
-	int ret;
-
-	JD = ln_get_julian_from_sys ();
-
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
-
-	pos.ra = ra;
-	pos.dec = dec;
-
-	return sky2counts (&pos, ac, dc, JD, homeOff);
-}
-
-
-int
-Rts2DevTelParamount::sky2counts (struct ln_equ_posn *pos, CWORD32 & ac,
-CWORD32 & dc, double JD, CWORD32 homeOff)
-{
-	double lst, ra, dec;
-	struct ln_hrz_posn hrz;
-	struct ln_equ_posn model_change;
-	int ret;
-	bool flip = false;
-
-	lst = getLstDeg (JD);
-
-	ln_get_hrz_from_equ (pos, Rts2Config::instance ()->getObserver (), JD,
-		&hrz);
-	if (hrz.alt < -1)
-	{
-		return -1;
-	}
-
-	// get hour angle
-	ra = ln_range_degrees (lst - pos->ra);
-	if (ra > 180.0)
-		ra -= 360.0;
-
-	// pretend we are at north hemispehere.. at least for dec
-	dec = pos->dec;
-	if (telLatitude->getValueDouble () < 0)
-		dec *= -1;
-
-	dec = decZero + dec;
-	if (dec > 90)
-		dec = 180 - dec;
-	if (dec < -90)
-		dec = -180 - dec;
-
-	// convert to ac; ra now holds HA
-	ac = (CWORD32) ((ra + haZero) * haCpd);
-	dc = (CWORD32) (dec * decCpd);
-
-	// gets the limits
-	ret = updateLimits ();
-	if (ret)
-	{
-		return -1;
-	}
-
-	// purpose of following code is to get from west side of flip
-	// on S, we prefer negative values
-	if (telLatitude->getValueDouble () < 0)
-	{
-		while ((ac - acMargin) < acMin)
-			// ticks per revolution - don't have idea where to get that
-		{
-			ac += (CWORD32) (RA_TICKS / 2.0);
-			flip = !flip;
-		}
-	}
-	while ((ac + acMargin) > acMax)
-	{
-		ac -= (CWORD32) (RA_TICKS / 2.0);
-		flip = !flip;
-	}
-	// while on N we would like to see positive values
-	if (telLatitude->getValueDouble () > 0)
-	{
-		while ((ac - acMargin) < acMin)
-			// ticks per revolution - don't have idea where to get that
-		{
-			ac += (CWORD32) (RA_TICKS / 2.0);
-			flip = !flip;
-		}
-	}
-
-	if (flip)
-		dc += (CWORD32) ((90 - dec) * 2 * decCpd);
-
-	// put dc to correct numbers
-	while (dc < dcMin)
-		dc += DEC_TICKS;
-	while (dc > dcMax)
-		dc -= DEC_TICKS;
-
-	// apply model
-	applyModel (pos, &model_change, flip, JD);
-
-	// when fliped, change sign - most probably work diferently on N and S; tested only on S
-	if ((flip && telLatitude->getValueDouble () < 0)
-		|| (!flip && telLatitude->getValueDouble () > 0))
-		model_change.dec *= -1;
-
-	LibnovaRaDec lchange (&model_change);
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
-		sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ac += (CWORD32) (model_change.ra * haCpd);
-	dc += (CWORD32) (model_change.dec * decCpd);
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "After model" << ac << dc << sendLog;
-	#endif						 /* DEBUG_EXTRA */
-
-	ac -= homeOff;
-
-	return 0;
-}
-
-
-int
-Rts2DevTelParamount::counts2sky (CWORD32 & ac, CWORD32 dc, double &ra,
-double &dec)
-{
-	double JD, lst;
-	CWORD32 homeOff;
-	int ret;
-
-	ret = getHomeOffset (homeOff);
-	if (ret)
-		return -1;
-
-	JD = ln_get_julian_from_sys ();
-	lst = getLstDeg (JD);
-
-	ac += homeOff;
-
-	ra = (double) (ac / haCpd) - haZero;
-	dec = (double) (dc / decCpd) - decZero;
-
-	ra = lst - ra;
-
-	// flipped
-	if (fabs (dec) > 90)
-	{
-		telFlip->setValueInteger (1);
-		if (dec > 0)
-			dec = 180 - dec;
-		else
-			dec = -180 - dec;
-		ra += 180;
-		ac += (CWORD32) (RA_TICKS / 2.0);
-	}
-	else
-	{
-		telFlip->setValueInteger (0);
-	}
-
-	while (ac < acMin)
-		ac += RA_TICKS;
-	while (ac > acMax)
-		ac -= RA_TICKS;
-
-	dec = ln_range_degrees (dec);
-	if (dec > 180.0)
-		dec -= 360.0;
-
-	ra = ln_range_degrees (ra);
-
-	if (telLatitude->getValueDouble () < 0)
-		dec *= -1;
-
-	return 0;
-}
-
-
-Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
-in_argv)
+Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):
+Rts2DevGEM (in_argc, in_argv)
 {
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -611,6 +423,9 @@ in_argv)
 
 	park_axis[0] = PARK_AXIS0;
 	park_axis[1] = PARK_AXIS1;
+
+	ra_ticks = RA_TICKS;
+	dec_ticks = DEC_TICKS;
 
 	setIndices = false;
 
@@ -738,7 +553,7 @@ Rts2DevTelParamount::processOption (int in_opt)
 			park_axis[1] = atoi (optarg);
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Rts2DevGEM::processOption (in_opt);
 	}
 	return 0;
 }
@@ -752,7 +567,7 @@ Rts2DevTelParamount::init ()
 	int ret;
 	int i;
 
-	ret = Rts2DevTelescope::init ();
+	ret = Rts2DevGEM::init ();
 	if (ret)
 		return ret;
 
@@ -911,7 +726,7 @@ int
 Rts2DevTelParamount::idle ()
 {
 	struct timeval now;
-	CWORD32 homeOff, ac = 0;
+	int32_t homeOff, ac = 0;
 	int ret;
 	// check if we aren't close to RA limit
 	ret = MKS3PosCurGet (axis0, &ac);
@@ -955,7 +770,7 @@ Rts2DevTelParamount::idle ()
 			updateTrack ();
 	}
 	// check for some critical stuff
-	return Rts2DevTelescope::idle ();
+	return Rts2DevGEM::idle ();
 }
 
 
@@ -978,7 +793,7 @@ Rts2DevTelParamount::info ()
 	ax2->setValueDouble (dc);
 	if (ret)
 		return ret;
-	return Rts2DevTelescope::info ();
+	return Rts2DevGEM::info ();
 }
 
 
@@ -1100,7 +915,7 @@ Rts2DevTelParamount::endMove ()
 	// 1 sec sleep to get time to settle down
 	sleep (1);
 	if (!ret)
-		return Rts2DevTelescope::endMove ();
+		return Rts2DevGEM::endMove ();
 	return ret;
 }
 
