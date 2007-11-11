@@ -666,5 +666,13 @@ class Rts2Conn:public Rts2Object
 		 * Returns true if we hold any value with given write type.
 		 */
 		bool existWriteType (int w_type);
+
+		/**
+		 * Return size of data we have to write.
+		 */
+		long getWriteBinaryDataSize ()
+		{
+			return binaryWriteDataSize;
+		}
 };
 #endif							 /* ! __RTS2_CONN__ */
