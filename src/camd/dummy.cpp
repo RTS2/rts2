@@ -19,6 +19,10 @@
 
 #include "camd.h"
 
+#define OPT_WIDTH        OPT_LOCAL + 1
+#define OPT_HEIGHT       OPT_LOCAL + 2
+#define OPT_DATA_SIZE    OPT_LOCAL + 3
+
 class Rts2DevCameraDummy:public Rts2DevCamera
 {
 	private:
@@ -30,7 +34,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		int width;
 		int height;
 
-		int readoutLine;
+		int dataSize;
 
 	protected:
 		virtual void initBinnings ()
@@ -75,7 +79,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 			in_argv)
 		{
-			readoutLine = 0;
+			dataSize = -1;
 
 			createTempCCD ();
 
@@ -89,11 +93,12 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 
 			width = 200;
 			height = 100;
-			addOption ('f', "frame_transfer", 0, "when set, dummy CCD will act as frame transfer device");
-			addOption ('I', "info_sleep", 1, "device will sleep <param> seconds before each info and baseInfo return");
-			addOption ('r', "readout_sleep", 1, "device will sleep <parame> seconds before each readout");
-			addOption ('w', "width", 1, "width of simulated CCD");
-			addOption ('g', "height", 1, "height of simulated CCD");
+			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
+			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
+			addOption ('r', NULL, 1, "device will sleep <parame> seconds before each readout");
+			addOption (OPT_WIDTH, "width", 1, "width of simulated CCD");
+			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
+			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
 
 			data = NULL;
 		}
@@ -115,11 +120,14 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 				case 'r':
 					readoutSleep->setValueDouble (atoi (optarg));
 					break;
-				case 'w':
+				case OPT_WIDTH:
 					width = atoi (optarg);
 					break;
-				case 'g':
+				case OPT_HEIGHT:
 					height = atoi (optarg);
+					break;
+				case OPT_DATA_SIZE:
+					dataSize = atoi (optarg);
 					break;
 				default:
 					return Rts2DevCamera::processOption (in_opt);
@@ -185,7 +193,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 int
 Rts2DevCameraDummy::readoutStart ()
 {
-	readoutLine = chipUsedReadout->getYInt ();
 	return Rts2DevCamera::readoutStart ();
 }
 
@@ -194,24 +201,27 @@ int
 Rts2DevCameraDummy::readoutOneLine ()
 {
 	int ret;
-	int lineSize = lineByteSize ();
 	if (!data)
 	{
-		data = new char[lineSize];
+		if (dataSize < 0)
+			dataSize = chipUsedSize () * usedPixelByteSize ();
+		data = new char[dataSize];
 	}
+	long usedSize = dataSize;
+	if (usedSize > getWriteBinaryDataSize ())
+		usedSize = getWriteBinaryDataSize ();
 	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-	for (int i = 0; i < lineSize; i++)
+	for (int i = 0; i < usedSize; i++)
 	{
-		data[i] = i + readoutLine + (int) (getExposureNumber () * 10);
+		data[i] = i + (int) (getExposureNumber () * 10);
 	}
-	readoutLine++;
-	ret = sendReadoutData (data, lineSize);
+	ret = sendReadoutData (data, usedSize);
 	if (ret < 0)
 		return ret;
 
-	if (readoutLine < (chipUsedReadout->getYInt () + chipUsedReadout->getHeightInt ()) / binningVertical ())
-		return 0;				 // imediately send new data
-	return -2;					 // no more data..
+	if (getWriteBinaryDataSize () == 0)
+		return -2;				 // no more data..
+	return 0;					 // imediately send new data
 }
 
 

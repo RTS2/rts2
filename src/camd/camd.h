@@ -99,6 +99,11 @@ class DataType: public Rts2SelData
 /**
  * Abstract class for camera device.
  *
+ * During complete exposure cycle (EXPOSURE-DATA-READOUT), all values which
+ * have connection to chip size etc. does not change, so you can safely use
+ * them during exposure cycle. The changes are put to que and executed once
+ * camera enters IDLE cycle.
+ *
  * @addgroup RTS2Camera
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -171,14 +176,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			return ((DataType *) dataType->getData ())->type;
 		}
 
-		// returns data size in bytes
-		int usedPixelByteSize ()
-		{
-			if (getDataType () == RTS2_DATA_ULONG)
-				return 4;
-			return abs (getDataType () / 8);
-		}
-
 		// when chip exposure will end
 		Rts2ValueTime *exposureEnd;
 
@@ -205,6 +202,12 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		struct imghdr focusingHeader;
 
 		int sendReadoutData (char *data, size_t dataSize);
+		long getWriteBinaryDataSize ()
+		{
+			if (exposureConn)
+				return exposureConn->getWriteBinaryDataSize ();
+			return 0;
+		}
 
 		void addBinning2D (int bin_v, int bin_h);
 
@@ -237,11 +240,23 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		/**
+		 * Get size of pixel in bytes.
+		 *
+		 * @return Size of pixel in bytes.
+		 */
+		int usedPixelByteSize ()
+		{
+			if (getDataType () == RTS2_DATA_ULONG)
+				return 4;
+			return abs (getDataType () / 8);
+		}
+
+		/**
 		 * Returns chip size in pixels. This method must be overloaded
 		 * when camera decides to use non-standart 2D horizontal and
 		 * vertical binning.
 		 *
-		 * @return Chip size in bytes.
+		 * @return Chip size in pixels.
 		 */
 		virtual int chipUsedSize ()
 		{
