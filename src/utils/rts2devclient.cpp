@@ -215,17 +215,12 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 	switch (state->getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
 	{
 		case CAM_EXPOSING:
-			// not me!
-			if (!getIsExposing ())
-				break;
 			if (connection->getErrorState () == DEVICE_NO_ERROR)
 				exposureStarted ();
 			else
 				exposureFailed (connection->getErrorState ());
 			break;
 		case CAM_DATA:
-			if (!getIsExposing ())
-				break;
 			if (connection->getErrorState () == DEVICE_NO_ERROR)
 				exposureEnd ();
 			else

@@ -156,18 +156,7 @@ getMaster
 }
 
 
-Rts2CommandBinning::Rts2CommandBinning (Rts2DevClientCamera * in_camera,
-int binning_v, int binning_h):
-Rts2CommandCameraSettings (in_camera)
-{
-	char *command;
-	asprintf (&command, "binning 0 %i %i", binning_v, binning_h);
-	setCommand (command);
-	free (command);
-}
-
-
-Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, exposureType exp_type, float exp_time):
+Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, int in_bopMask):
 Rts2Command (in_master)
 {
 	char *command;
@@ -176,10 +165,7 @@ Rts2Command (in_master)
 	setCommand (command);
 	free (command);
 	camera = in_camera;
-	if (exp_type == EXP_LIGHT)
-		setBopMask (BOP_EXPOSURE | BOP_TEL_MOVE);
-	else
-		setBopMask (BOP_EXPOSURE);
+	setBopMask (in_bopMask);
 }
 
 

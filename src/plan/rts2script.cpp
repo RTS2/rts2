@@ -12,8 +12,7 @@
 bool Rts2Script::isNext (const char *element)
 {
 	// skip spaces..
-	size_t
-		el_len = strlen (element);
+	size_t el_len = strlen (element);
 	while (isspace (*cmdBufTop))
 		cmdBufTop++;
 	if (!strncmp (element, cmdBufTop, el_len))
@@ -236,13 +235,6 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (ret)
 			return NULL;
 		return new Rts2ScriptElementFilter (this, filter);
-	}
-	else if (!strcmp (commandStart, COMMAND_BINNING))
-	{
-		int bin;
-		if (getNextParamInteger (&bin))
-			return NULL;
-		return new Rts2ScriptElementBinning (this, bin);
 	}
 	else if (!strcmp (commandStart, COMMAND_BOX))
 	{

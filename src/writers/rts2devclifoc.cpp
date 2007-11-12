@@ -23,34 +23,15 @@ Rts2DevClientCameraImage (in_connection)
 		exe = NULL;
 	}
 	isFocusing = 0;
-	darkImage = NULL;
 	focConn = NULL;
-	autoDark = 0;
 }
 
 
 Rts2DevClientCameraFoc::~Rts2DevClientCameraFoc (void)
 {
 	delete[]exe;
-	delete darkImage;
 	if (focConn)
 		focConn->nullCamera ();
-}
-
-
-void
-Rts2DevClientCameraFoc::queExposure ()
-{
-	if (isFocusing)
-		return;
-	if (autoDark)
-	{
-		if (darkImage)
-			exposureT = EXP_LIGHT;
-		else
-			exposureT = EXP_DARK;
-	}
-	Rts2DevClientCameraImage::queExposure ();
 }
 
 
@@ -86,8 +67,6 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 				getConnection ()->getValueChar ("focuser")))
 			{
 				isFocusing = 0;
-				exposureCount = 1;
-				queExposure ();
 			}
 			break;
 	}
@@ -104,21 +83,8 @@ imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 	imageProceRes
 		res = Rts2DevClientCameraImage::processImage (image);
 
-	// got requested dark..
-	if (image->getShutter () == SHUT_CLOSED)
-	{
-		if (darkImage)
-			delete
-				darkImage;
-		darkImage = image;
-		darkImage->saveImage ();
-		exposureCount = 1;
-		if (image == getTopImage ())
-			clearImages ();
-		queExposure ();
-	}
-	else if (darkImage)
-		image->substractDark (darkImage);
+	//else if (darkImage)
+	//	image->substractDark (darkImage);
 	if (image->getShutter () == SHUT_OPENED
 		|| image->getShutter () == SHUT_SYNCHRO && exe)
 	{
@@ -145,8 +111,6 @@ Rts2DevClientCameraFoc::focusChange (Rts2Conn * focus)
 	int change = focConn->getChange ();
 	if (change == INT_MAX || !focus)
 	{
-		exposureCount = 1;
-		queExposure ();
 		return;
 	}
 	focus->postEvent (new Rts2Event (EVENT_START_FOCUSING, (void *) &change));

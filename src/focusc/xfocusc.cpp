@@ -211,9 +211,6 @@ Rts2xfocusCamera::buildWindow ()
 	XTextProperty window_title;
 	char *cameraName;
 
-	if (!exposureCount)
-		return;
-
 	window =
 		XCreateWindow (master->getDisplay (),
 		DefaultRootWindow (master->getDisplay ()), 0, 0, 100, 100,
@@ -413,15 +410,13 @@ Rts2xfocusCamera::printInfo ()
 	char *stringBuf;
 	int len;
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
-	len =
-		asprintf (&stringBuf,
-		"L: %d M: %d H: %d Min: %d Max: %d", low, med, hig, min, max);
+	len = asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Max: %d",
+		low, med, hig, min, max);
 	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
 		20, stringBuf, len);
 	free (stringBuf);
 
-	len =
-		asprintf (&stringBuf, "Avg: %.2f Stdev: %.2f Bg Stdev: %.2f", average,
+	len = asprintf (&stringBuf, "Avg: %.2f Stdev: %.2f Bg Stdev: %.2f", average,
 		stdev, bg_stdev);
 	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
 		32, stringBuf, len);
@@ -429,14 +424,11 @@ Rts2xfocusCamera::printInfo ()
 
 	if (lastImage)
 	{
-		len =
-			asprintf (&stringBuf,
-			"[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
-			lastX, lastY, lastSizeX, lastSizeY,
-			binningsX, binningsY, exposureTime);
+		len = asprintf (&stringBuf, "[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
+			lastX, lastY, lastSizeX, lastSizeY, binningsX, binningsY,
+			getConnection ()->getValue ("exposure")->getValueDouble ());
 		XDrawImageString (master->getDisplay (), pixmap, gc,
-			pixmapWidth / 2 - 150, pixmapHeight - 20, stringBuf,
-			len);
+			pixmapWidth / 2 - 150, pixmapHeight - 20, stringBuf, len);
 		free (stringBuf);
 	}
 }
@@ -520,34 +512,31 @@ Rts2xfocusCamera::XeventLoop ()
 				switch (ks)
 				{
 					case XK_1:
-						connection->queCommand (new Rts2CommandBinning (this, 1, 1));
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 0));
 						break;
 					case XK_2:
-						connection->queCommand (new Rts2CommandBinning (this, 2, 2));
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 1));
 						break;
 					case XK_3:
-						connection->queCommand (new Rts2CommandBinning (this, 3, 3));
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 2));
 						break;
 					case XK_e:
-						exposureTime += 1;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 1));
 						break;
 					case XK_d:
-						if (exposureTime > 1)
-							exposureTime -= 1;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 1));
 						break;
 					case XK_w:
-						exposureTime += 0.1;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 0.1));
 						break;
 					case XK_s:
-						if (exposureTime > 0.1)
-							exposureTime -= 0.1;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 0.1));
 						break;
 					case XK_q:
-						exposureTime += 0.01;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 0.01));
 						break;
 					case XK_a:
-						if (exposureTime > 0.01)
-							exposureTime -= 0.01;
+						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 0.01));
 						break;
 					case XK_f:
 						connection->
@@ -673,13 +662,6 @@ Rts2xfocusCamera::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
-		case EVENT_START_EXPOSURE:
-			Rts2GenFocCamera::postEvent (event);
-			// build window etc..
-			buildWindow ();
-			if (connection->havePriority ())
-				queExposure ();
-			return;
 		case EVENT_XWIN_SOCK:
 			XeventLoop ();
 			break;
@@ -710,6 +692,9 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	int dataSize;
 	int i, j, k;
 	unsigned short *im_ptr;
+
+	if (window == 0L)
+		buildWindow ();
 
 	// get to upper classes as well
 	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);

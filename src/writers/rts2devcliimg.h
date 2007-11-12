@@ -99,15 +99,8 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		std::string telescop;
 		std::string origin;
 
-		float exposureTime;
-		exposureType exposureT;
-		int exposureChip;
-		int exposureCount;		 // -1 means exposure forewer
-
-		virtual void queExposure ();
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
-		virtual void readoutEnd ();
 	public:
 		Rts2DevClientCameraImage (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClientCameraImage (void);
@@ -126,8 +119,6 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		virtual imageProceRes processImage (Rts2Image * image);
 
 		CameraImages::iterator processCameraImage (CameraImages::iterator & cis);
-
-		virtual void exposureFailed (int status);
 
 		void setSaveImage (int in_saveImage)
 		{

@@ -1,6 +1,5 @@
 /* 
- * Display images from RTS2 camera devices in nifty Xwindow.
- *
+ * Generic class for focusing.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -27,14 +26,10 @@
 
 #define OPT_CHANGE_FILTER   OPT_LOCAL + 50
 
-Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection,
-in_master->
-getExePath ())
+Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):
+Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
-
-	exposureTime = master->defaultExpousure ();
-	autoDark = master->getAutoDark ();
 
 	average = 0;
 	stdev = 0;
@@ -61,22 +56,6 @@ Rts2GenFocCamera::~Rts2GenFocCamera (void)
 
 
 void
-Rts2GenFocCamera::postEvent (Rts2Event * event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_START_EXPOSURE:
-			exposureCount = (exe != NULL) ? 1 : -1;
-			break;
-		case EVENT_STOP_EXPOSURE:
-			exposureCount = 0;
-			break;
-	}
-	Rts2DevClientCameraFoc::postEvent (event);
-}
-
-
-void
 Rts2GenFocCamera::getPriority ()
 {
 	std::cout << "Get priority" << std::endl;
@@ -87,7 +66,14 @@ void
 Rts2GenFocCamera::lostPriority ()
 {
 	std::cout << "Priority lost" << std::endl;
-	exposureCount = 0;
+}
+
+
+void
+Rts2GenFocCamera::exposureStarted ()
+{
+	queCommand (new Rts2CommandExposure (getMaster (), this, 0));
+	Rts2DevClientCameraFoc::exposureStarted ();
 }
 
 
@@ -230,7 +216,7 @@ Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):
 Rts2Client (in_argc, in_argv)
 {
-	defExposure = 10;
+	defExposure = nan("f");
 	defCenter = 0;
 	defBin = -1;
 
@@ -241,7 +227,6 @@ Rts2Client (in_argc, in_argv)
 
 	focExe = NULL;
 
-	autoDark = 0;
 	query = 0;
 	tarRa = -999.0;
 	tarDec = -999.0;
@@ -255,7 +240,6 @@ Rts2Client (in_argc, in_argv)
 
 	addOption ('d', "device", 1,
 		"camera device name(s) (multiple for multiple cameras)");
-	addOption ('A', "autodark", 0, "take (and use) dark image");
 	addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
 	addOption ('c', "center", 0, "takes only center images");
 	addOption ('b', "binning", 1,
@@ -293,9 +277,6 @@ Rts2GenFocClient::processOption (int in_opt)
 			break;
 		case 'd':
 			cameraNames.push_back (optarg);
-			break;
-		case 'A':
-			autoDark = 1;
 			break;
 		case 'e':
 			defExposure = atof (optarg);
@@ -350,8 +331,7 @@ Rts2GenFocClient::createFocCamera (Rts2Conn * conn)
 }
 
 
-Rts2GenFocCamera *
-Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
+Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 {
 	std::vector < char *>::iterator cam_iter;
 	cam->setSaveImage (autoSave || focExe);
@@ -359,18 +339,18 @@ Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	{
 		cam->center (centerWidth, centerHeight);
 	}
-	if (defBin > 0)
+	if (!isnan (defExposure))
 	{
-		cam->queCommand (new Rts2CommandBinning (cam, defBin, defBin));
+		cam->queCommand (new Rts2CommandChangeValueDontReturn (cam, "exposure", '=', defExposure));
+
 	}
 	// post exposure event..if name agree
-	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end ();
-		cam_iter++)
+	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)
 	{
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			printf ("Get conn: %s\n", cam->getName ());
-			cam->postEvent (new Rts2Event (EVENT_START_EXPOSURE));
+			cam->queCommand (new Rts2CommandExposure (this, cam, BOP_EXPOSURE | BOP_TEL_MOVE));
 		}
 	}
 	return cam;

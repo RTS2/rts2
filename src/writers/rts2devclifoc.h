@@ -17,15 +17,11 @@ class Rts2DevClientCameraFoc:public Rts2DevClientCameraImage
 {
 	private:
 		int isFocusing;
-		Rts2Image *darkImage;
 
 	protected:
 		char *exe;
-		int autoDark;
 
 		Rts2ConnFocus *focConn;
-
-		virtual void queExposure ();
 	public:
 		Rts2DevClientCameraFoc (Rts2Conn * in_connection, const char *in_exe);
 		virtual ~ Rts2DevClientCameraFoc (void);

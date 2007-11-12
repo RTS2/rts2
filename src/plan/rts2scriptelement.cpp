@@ -124,7 +124,8 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_LIGHT, expTime);
+	// EXP_LIGHT, expTime);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_TEL_MOVE);
 	(*new_command)->setBopMask (BOP_EXPOSURE);
 	getDevice (new_device);
 	return 0;
@@ -143,25 +144,8 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, EXP_DARK, expTime);
-	getDevice (new_device);
-	return 0;
-}
-
-
-Rts2ScriptElementBinning::Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin):Rts2ScriptElement
-(in_script)
-{
-	bin = in_bin;
-}
-
-
-int
-Rts2ScriptElementBinning::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
-{
-	*new_command = new Rts2CommandBinning (camera, bin, bin);
+	//EXP_DARK, expTime);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	getDevice (new_device);
 	return 0;
 }

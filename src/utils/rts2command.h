@@ -266,14 +266,6 @@ class Rts2CommandCameraSettings:public Rts2Command
 		Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera);
 };
 
-// devices commands
-class Rts2CommandBinning:public Rts2CommandCameraSettings
-{
-	public:
-		Rts2CommandBinning (Rts2DevClientCamera * in_camera, int binning_v,
-			int binning_h);
-};
-
 /**
  * Start exposure on camera.
  *
@@ -284,8 +276,15 @@ class Rts2CommandExposure:public Rts2Command
 	private:
 		Rts2DevClientCamera * camera;
 	public:
-		Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera,
-			exposureType exp_type, float exp_time);
+		/**
+		 * Send exposure command to device.
+		 *
+		 * @param in_master Master block which controls exposure
+		 * @param in_camera Camera client for exposure
+		 * @param in_bopMask BOP mask for exposure command
+		 */
+		Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, int in_bopMask);
+
 		virtual int send ();
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };

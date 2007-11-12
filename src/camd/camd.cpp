@@ -131,8 +131,6 @@ int
 Rts2DevCamera::endExposure ()
 {
 	exposureEnd->setValueDouble (0);
-	if (quedExpNumber->getValueInteger () > 0)
-		quedExpNumber->dec ();
 	if (exposureConn)
 	{
 		return camReadout (exposureConn);
@@ -253,7 +251,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, 0, true);
 	quedExpNumber->setValueInteger (0);
 
-	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, false);
+	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, true);
 	exposureNumber->setValueLong (0);
 
 	createValue (exposureEnd, "exposure_end", "expected end of exposure", false);
@@ -741,6 +739,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn)
 		// do not send OK, send it after we finish
 		return -1;
 	}
+	if (quedExpNumber->getValueInteger () > 0)
+		quedExpNumber->dec ();
 
 	ret = camStartExposure ();
 	if (ret)

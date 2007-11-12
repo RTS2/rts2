@@ -149,17 +149,6 @@ class Rts2ScriptElementDark:public Rts2ScriptElement
 			char new_device[DEVICE_NAME_SIZE]);
 };
 
-class Rts2ScriptElementBinning:public Rts2ScriptElement
-{
-	private:
-		int bin;
-	public:
-		Rts2ScriptElementBinning (Rts2Script * in_script, int in_bin);
-		virtual int nextCommand (Rts2DevClientCamera * camera,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
-};
-
 class Rts2ScriptElementBox:public Rts2ScriptElement
 {
 	private:

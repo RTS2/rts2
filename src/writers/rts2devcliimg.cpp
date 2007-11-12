@@ -29,11 +29,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	chipNumbers = 0;
 	saveImage = 1;
 
-	exposureTime = 1.0;
-	exposureT = EXP_LIGHT;
-	exposureChip = 0;
-	exposureCount = 0;
-
 	Rts2Config *
 		config;
 	config = Rts2Config::instance ();
@@ -86,26 +81,6 @@ Rts2Image * new_image)
 		}
 	}
 	return NULL;
-}
-
-
-void
-Rts2DevClientCameraImage::queExposure ()
-{
-	if (getIsExposing () || !exposureCount)
-		return;
-	if (exposureCount > 0)
-		exposureCount--;
-	connection->queCommand (
-		new Rts2CommandExposure (
-		connection->getMaster (),
-		this,
-		exposureT,
-		exposureTime
-		)
-		);
-	if (exposureT != EXP_DARK)
-		blockWait ();
 }
 
 
@@ -208,17 +183,9 @@ imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 
 
 void
-Rts2DevClientCameraImage::exposureFailed (int status)
-{
-	Rts2DevClientCamera::exposureFailed (status);
-	readoutEnd ();				 // pretend we can expose new image after failure..
-}
-
-
-void
 Rts2DevClientCameraImage::exposureStarted ()
 {
-	exposureTime = getConnection ()->getValueDouble ("exposure");
+	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	struct timeval expStart;
 	const char *focuser;
 	gettimeofday (&expStart, NULL);
@@ -270,19 +237,7 @@ Rts2DevClientCameraImage::exposureEnd ()
 	ci->image->writeConn (getConnection (), EXPOSURE_START);
 
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, ci));
-	if (exposureT != EXP_DARK)
-		unblockWait ();
 	Rts2DevClientCamera::exposureEnd ();
-	//  connection->
-	//    queCommand (new Rts2CommandExposure (connection->getMaster (), this, 0, exposureT, exposureTime, true));
-}
-
-
-void
-Rts2DevClientCameraImage::readoutEnd ()
-{
-	queExposure ();
-	Rts2DevClientCamera::readoutEnd ();
 }
 
 
