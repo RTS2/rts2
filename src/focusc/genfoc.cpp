@@ -350,7 +350,7 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			printf ("Get conn: %s\n", cam->getName ());
-			cam->queCommand (new Rts2CommandExposure (this, cam, BOP_EXPOSURE | BOP_TEL_MOVE));
+			cam->queCommand (new Rts2CommandExposure (this, cam, BOP_EXPOSURE));
 		}
 	}
 	return cam;

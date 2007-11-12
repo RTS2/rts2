@@ -179,7 +179,6 @@ Rts2DevClient::idle ()
 Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
 (in_connection)
 {
-	isExposingFlag = false;
 }
 
 
@@ -192,14 +191,12 @@ Rts2DevClientCamera::exposureStarted ()
 void
 Rts2DevClientCamera::exposureEnd ()
 {
-	setIsExposing (false);
 }
 
 
 void
 Rts2DevClientCamera::exposureFailed (int status)
 {
-	setIsExposing (false);
 }
 
 

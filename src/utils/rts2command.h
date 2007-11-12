@@ -285,7 +285,6 @@ class Rts2CommandExposure:public Rts2Command
 		 */
 		Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, int in_bopMask);
 
-		virtual int send ();
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 

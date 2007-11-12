@@ -85,8 +85,6 @@ void
 Rts2DevClientCameraExec::clearBlockMove ()
 {
 	// we will be cleared when exposure ends..
-	if (getIsExposing ())
-		return;
 	Rts2DevScript::clearBlockMove ();
 }
 

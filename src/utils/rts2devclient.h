@@ -141,21 +141,10 @@ class Rts2DevClient:public Rts2Object
  */
 class Rts2DevClientCamera:public Rts2DevClient
 {
-	private:
-		bool isExposingFlag;
 	protected:
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
 		virtual void readoutEnd ();
-		/**
-		 * Query if the connection is the originator of exposure.
-		 *
-		 * @return True if the connection is originator of last exposure command.
-		 */
-		bool getIsExposing ()
-		{
-			return isExposingFlag;
-		}
 	public:
 		Rts2DevClientCamera (Rts2Conn * in_connection);
 
@@ -164,16 +153,6 @@ class Rts2DevClientCamera:public Rts2DevClient
 		 */
 		virtual void exposureFailed (int status);
 		virtual void stateChanged (Rts2ServerState * state);
-
-		/**
-		 * Sets if current connection send exposure command.
-		 *
-		 * @param in_isExposing True if the connection is originator of exposure command.
-		 */
-		void setIsExposing (bool in_isExposing)
-		{
-			isExposingFlag = in_isExposing;
-		}
 
 		virtual void filterOK ()
 		{

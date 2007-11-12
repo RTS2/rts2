@@ -170,14 +170,6 @@ Rts2Command (in_master)
 
 
 int
-Rts2CommandExposure::send ()
-{
-	camera->setIsExposing (true);
-	return Rts2Command::send ();
-}
-
-
-int
 Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 {
 	camera->exposureFailed (status);
