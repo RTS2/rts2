@@ -182,6 +182,11 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// set chipUsedSize size
 		int box (int in_x, int in_y, int in_width, int in_height);
 
+		// callback functions from camera connection
+		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);
+		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
+		int camCenter (Rts2Conn * conn, int in_w, int in_h);
+
 	protected:
 		// comes from CameraChip
 
@@ -469,11 +474,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		{
 			return -1;
 		}
-
-		// callback functions from camera connection
-		int camExpose (Rts2Conn * conn);
-		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
-		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
 		/**
 		 * Called when readout starts, on transition from EXPOSING to READOUT state.

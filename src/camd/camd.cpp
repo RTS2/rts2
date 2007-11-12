@@ -171,11 +171,9 @@ Rts2DevCamera::endReadout ()
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
 		// peek to see if we can continue..
-		if (! (getStateChip (0) & CAM_EXPOSING))
-		{
-			checkQueChanges (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING);
-		}
-		camExpose (exposureConn);
+		checkQueChanges (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING);
+		// do not report that we
+		camExpose (exposureConn, getStateChip(0) & CAM_MASK_EXPOSE, true);
 	}
 	return 0;
 }
@@ -717,20 +715,21 @@ Rts2DevCamera::camStartExposure ()
 
 
 int
-Rts2DevCamera::camExpose (Rts2Conn * conn)
+Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 {
 	int ret;
 
 	// if it is currently exposing
 	// or performin other op that can block command execution
-	if ((getStateChip (0) & CAM_EXPOSING)
-		|| (((getStateChip (0) & (CAM_READING | CAM_DATA))
+	if ((chipState & CAM_EXPOSING)
+		|| (((chipState & (CAM_READING | CAM_DATA))
 		&& !supportFrameTransfer ()))
 		)
 	{
 		if (queValues.empty ())
 		{
-			quedExpNumber->inc ();
+			if (!fromQue)
+				quedExpNumber->inc ();
 			return 0;
 		}
 		// need to wait to empty que of value changes
@@ -808,7 +807,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
-		camExpose (exposureConn);
+		camExpose (exposureConn, getStateChip (0), true);
 	}
 
 	if (!ret)
@@ -1032,7 +1031,7 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 		CHECK_PRIORITY;
 		if (!conn->paramEnd ())
 			return -2;
-		return camExpose (conn);
+		return camExpose (conn, getStateChip (0), false);
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
