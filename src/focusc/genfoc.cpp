@@ -81,7 +81,8 @@ void
 Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 {
 	std::cout << "State changed (" << getName () << "): "
-		<< " value:" << state->getValue ()
+		<< " value:" << getConnection()->getStateString ()
+		<< " (" << state->getValue () << ")"
 		<< std::endl;
 	Rts2DevClientCameraFoc::stateChanged (state);
 }
