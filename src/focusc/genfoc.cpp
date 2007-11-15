@@ -58,14 +58,14 @@ Rts2GenFocCamera::~Rts2GenFocCamera (void)
 void
 Rts2GenFocCamera::getPriority ()
 {
-	std::cout << "Get priority" << std::endl;
+	std::cout << "Get priority " << getName () << std::endl;
 }
 
 
 void
 Rts2GenFocCamera::lostPriority ()
 {
-	std::cout << "Priority lost" << std::endl;
+	std::cout << "Priority lost " << getName () << std::endl;
 }
 
 
@@ -342,7 +342,7 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	}
 	if (!isnan (defExposure))
 	{
-		cam->queCommand (new Rts2CommandChangeValueDontReturn (cam, "exposure", '=', defExposure));
+		cam->queCommand (new Rts2CommandChangeValue (cam, "exposure", '=', defExposure));
 
 	}
 	// post exposure event..if name agree

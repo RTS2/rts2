@@ -512,31 +512,31 @@ Rts2xfocusCamera::XeventLoop ()
 				switch (ks)
 				{
 					case XK_1:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 0));
+						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 0));
 						break;
 					case XK_2:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 1));
+						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 1));
 						break;
 					case XK_3:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "binning", '=', 2));
+						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 2));
 						break;
 					case XK_e:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 1));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 1));
 						break;
 					case XK_d:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 1));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 1));
 						break;
 					case XK_w:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 0.1));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 0.1));
 						break;
 					case XK_s:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 0.1));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 0.1));
 						break;
 					case XK_q:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '+', 0.01));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 0.01));
 						break;
 					case XK_a:
-						queCommand (new Rts2CommandChangeValueDontReturn (this, "exposure", '-', 0.01));
+						queCommand (new Rts2CommandChangeValue (this, "exposure", '-', 0.01));
 						break;
 					case XK_f:
 						connection->
@@ -699,6 +699,12 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	// get to upper classes as well
 	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 
+	if (ximage && (pixmapWidth < image->getWidth () || pixmapHeight < image->getHeight ()))
+	{
+		XDestroyImage (ximage);
+		ximage = NULL;
+	}
+
 	pixmapWidth = image->getWidth ();
 	pixmapHeight = image->getHeight ();
 	if (pixmapWidth > windowWidth || pixmapHeight > windowHeight)
@@ -713,6 +719,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	// draw window with image..
 	if (!ximage)
 	{
+		std::cout << "Create ximage " << pixmapWidth << pixmapHeight << std::endl;
 		ximage = XCreateImage
 			(
 			master->getDisplay (), master->getVisual (),
