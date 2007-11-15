@@ -209,26 +209,30 @@ Rts2DevClientCamera::readoutEnd ()
 void
 Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 {
-	switch (state->getValue () & (CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_DATA))
+	if (state->maskValueChanged (CAM_MASK_EXPOSE))
 	{
-		case CAM_EXPOSING:
-			if (connection->getErrorState () == DEVICE_NO_ERROR)
-				exposureStarted ();
-			else
-				exposureFailed (connection->getErrorState ());
-			break;
-		case CAM_DATA:
-			if (connection->getErrorState () == DEVICE_NO_ERROR)
-				exposureEnd ();
-			else
-				exposureFailed (connection->getErrorState ());
-			break;
-		case CAM_NODATA | CAM_NOTREADING | CAM_NOEXPOSURE:
-			if (connection->getErrorState () == DEVICE_NO_ERROR)
-				readoutEnd ();
-			else
-				exposureFailed (connection->getErrorState ());
-			break;
+		switch (state->getValue () & CAM_MASK_EXPOSE)
+		{
+			case CAM_EXPOSING:
+				if (connection->getErrorState () == DEVICE_NO_ERROR)
+					exposureStarted ();
+				else
+					exposureFailed (connection->getErrorState ());
+				break;
+			case CAM_NOEXPOSURE:
+				if (connection->getErrorState () == DEVICE_NO_ERROR)
+					exposureEnd ();
+				else
+					exposureFailed (connection->getErrorState ());
+				break;
+		}
+	}
+	if (state->maskValueChanged (CAM_MASK_READING) && (state->getValue () & CAM_NOTREADING))
+	{
+		if (connection->getErrorState () == DEVICE_NO_ERROR)
+			readoutEnd ();
+		else
+			exposureFailed (connection->getErrorState ());
 	}
 	Rts2DevClient::stateChanged (state);
 }
