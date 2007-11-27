@@ -18,7 +18,14 @@
  */
 
 #include "../utilsdb/rts2devicedb.h"
+#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/rts2imgset.h"
+#include "../writers/rts2imagedb.h"
+#include "../utils/libnova_cpp.h"
+#include "../utils/timestamp.h"
 #include "xmlrpc++/XmlRpc.h"
+// #include "xmlstream.h"
 
 using namespace XmlRpc;
 
@@ -241,7 +248,43 @@ class ListValuesDevice: public ListValues
 				{
 					XmlRpcValue retVar;
 					retVar["name"] = (*variter)->getName ();
-					retVar["value"] = (*variter)->getValue ();
+
+					Rts2Value *val = *variter;
+
+					switch (val->getValueBaseType ())
+					{
+						case RTS2_VALUE_INTEGER:
+							int int_val;
+							int_val = (*variter)->getValueInteger ();
+							if (int_val == int_val) retVar["value"] = int_val;
+							else retVar["value"] = "NaN";
+							break;
+						case RTS2_VALUE_DOUBLE:
+							double value;
+							value = (*variter)->getValueDouble ();
+							if (value == value) retVar["value"] = value;
+							else retVar["value"] = "NaN";
+							break;
+						case RTS2_VALUE_FLOAT:
+							float float_val;
+							float_val = (*variter)->getValueFloat ();
+							if (float_val == float_val) retVar["value"] = float_val;
+							else retVar["value"] = "NaN";
+							break;
+						case RTS2_VALUE_LONGINT:
+							int_val = (*variter)->getValueInteger ();
+							if (int_val == int_val) retVar["value"] = int_val;
+							else retVar["value"] = "NaN";
+							break;
+						case RTS2_VALUE_TIME:
+							int_val = (*variter)->getValueInteger ();
+							if (int_val == int_val) retVar["value"] = int_val;
+							else retVar["value"] = "NaN";
+							break;
+						default:
+							retVar["value"] = (*variter)->getValue ();
+							break;
+					}
 					result[i] = retVar;
 				}
 			}
@@ -271,6 +314,231 @@ class ListValuesDevice: public ListValues
 			return std::string ("Returns name of devices conencted to the system for given device(s)");
 		}
 } listValuesDevice (&xmlrpc_server);
+
+/*
+ *
+ */
+
+class ListTargets: public XmlRpcServerMethod
+{
+	public:
+		ListTargets (XmlRpcServer* s) : XmlRpcServerMethod ("system.listTargets", s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			Rts2TargetSet *tar_set;
+			tar_set = new Rts2TargetSet ();
+			double value;
+			int i = 0;
+			XmlRpcValue retVar;
+
+			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			{
+				retVar["id"] = (*tar_iter)->getTargetID ();
+				retVar["type"] = (*tar_iter)->getTargetType ();
+				retVar["name"] = (*tar_iter)->getTargetName ();
+				retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
+				if ((*tar_iter)->getTargetComment ())
+					retVar["comment"] = (*tar_iter)->getTargetComment ();
+				else
+					retVar["comment"] = "";
+				value = (*tar_iter)->getLastObs();
+				if (value == value) retVar["last"] = value;
+				else retVar["last"] = "NaN";
+
+				for (int j = 0; j < params.size(); j++)
+				{
+					char type = (((std::string)params[j]).c_str())[0];
+					//	if (type == ' ')
+					//		result[i++] = retVar;	// ask for all targets
+					//	else
+					//	{
+					if ((*tar_iter)->getTargetType() == type)
+								 // only one type
+						result[i++] = retVar;
+					//	}
+				}
+
+				//else
+				//	result[i++] = retVar;	// no parameter, send all targets
+
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns all targets");
+		}
+
+} listTargets (&xmlrpc_server);
+
+class TargetInfo: public XmlRpcServerMethod
+{
+	public:
+		TargetInfo (XmlRpcServer* s) : XmlRpcServerMethod ("system.targetInfo", s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			std::list < int >targets;
+			XmlRpcValue retVar;
+			int i;
+			double JD;
+			struct ln_hrz_posn hrz;
+			struct ln_rst_time rst;
+			time_t now;
+
+			for (i = 0; i < params.size(); i++)
+				targets.push_back (params[i]);
+
+			Rts2TargetSet *tar_set;
+			tar_set = new Rts2TargetSet (targets);
+
+			i = 0;
+
+			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
+			{
+				/*	
+					JD = ln_get_julian_from_sys ();
+
+					ln_get_timet_from_julian (JD, &now);
+
+					(*tar_iter)->getAltAz (&hrz, JD);
+
+					retVar["id"] = (*tar_iter)->getTargetID ();
+								retVar["type"] = (*tar_iter)->getTargetType ();
+								retVar["name"] = (*tar_iter)->getTargetName ();
+								retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
+
+					retVar["airmass"] = (*tar_iter)->getAirmass (JD);
+
+					// retVar << "AIRMASS";
+
+					retVar["altaz"]["alt"] = hrz.alt;
+					retVar["altaz"]["az"] = hrz.az;
+					retVar["hour angle"] = (*tar_iter)->getHourAngle (JD);
+					retVar["zenith"] = (*tar_iter)->getZenitDistance (JD);
+					// retVar["azimuth"] = ln_range_degrees (hrz.az);
+					// retVar["altitude"] = hrz.alt
+
+					switch ((*tar_iter)->getRST (&rst, JD, LN_STAR_STANDART_HORIZON))
+					{
+						case 1:
+							retVar["rst"]["info"] = " - CIRCUMPOLAR - ";
+							rst.transit = JD + ((360 - (*tar_iter)->getHourAngle (JD))/ 15.0 / 24.0);
+							// retVar["rst"]["transit"] = <TimeJDDiff> TimeJDDiff (rst.transit, now);
+					}
+				*/
+				// observations
+				Rts2ObsSet *obs_set;
+				obs_set = new Rts2ObsSet ((*tar_iter)->getTargetID ());
+				int j = 0;
+				for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
+				{
+					retVar["observation"][j] =  (*obs_iter).getObsId();
+					// retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
+				}
+
+				/*
+					XmlStream xs (&retVar);
+
+					// xs << InfoVal<XmlRpcValue> ("HOUR", (*tar_iter)->getHourAngle (JD));
+					Target *tar = *tar_iter;
+					tar->sendInfo (xs, JD);
+				*/
+				result[i++] = retVar;
+			}
+		}
+
+} targetInfo (&xmlrpc_server);
+
+class ListObservations: public XmlRpcServerMethod
+{
+	public:
+		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod ("system.listObservations", s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			XmlRpcValue retVar;
+			Rts2ObsSet *obs_set;
+			obs_set = new Rts2ObsSet ((int)params[0]);
+			int i = 0;
+			double value;
+			for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			{
+				retVar["id"] = (*obs_iter).getObsId();
+				/**/
+				value  = (*obs_iter).getObsRa();
+				if (value == value) retVar["obs_ra"] = value;
+				else retVar["obs_ra"] = "NaN";
+				/**/
+				value  = (*obs_iter).getObsDec();
+				if (value == value) retVar["obs_dec"] = value;
+				else retVar["obs_dec"] = "NaN";
+				/**/
+				value = (*obs_iter).getObsStart();
+				if (value == value) retVar["obs_start"] = value;
+				else retVar["obs_start"] = "NaN";
+				/**/
+				value = (*obs_iter).getObsEnd();
+				if (value == value) retVar["obs_end"] = value;
+				else retVar["obs_end"] = "NaN";
+				/**/
+				// value = (*obs_iter).getNumberOfImages();
+				// if (value == value) retVar["obs_images"] = value;
+				// else retVar["obs_images"] = "NaN";
+
+				result[i] = retVar;
+			}
+		}
+
+} listObservations (&xmlrpc_server);
+
+class ListImages: public XmlRpcServerMethod
+{
+	public:
+		ListImages (XmlRpcServer* s) : XmlRpcServerMethod ("system.listImages", s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			XmlRpcValue retVar;
+			Rts2Obs *obs;
+			obs = new Rts2Obs ((int)params[0]);
+			Rts2ImgSet *img_set;
+			img_set = obs->getImageSet();
+			//img_set->load();
+			int i = 0, j = 0;
+			/*
+			for (std::vector <Rts2Image *>::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++, i++)
+			{
+				// retVar[j++] = i;
+				// result[i] = retVar;
+			}
+			*/
+
+		}
+} listImages (&xmlrpc_server);
+
+class GetMessages: public XmlRpcServerMethod
+{
+	public:
+		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod ("system.getMessages", s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			int i = 0;
+			XmlRpcValue retVar;
+			std::list < Rts2Message > messages;
+			// setMessageMask (MESSAGE_MASK_ALL);
+
+			for (std::list < Rts2Message >::iterator iter = messages.begin (); iter != messages.end (); iter++, i++)
+			{
+				Rts2Message msg = *iter;
+				retVar[i] = msg.toString ().c_str ();
+				result[i] = retVar;
+			}
+
+		}
+} getMessages (&xmlrpc_server);
 
 int
 main (int argc, char **argv)

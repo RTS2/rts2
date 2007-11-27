@@ -96,7 +96,6 @@ namespace XmlRpc
 
 			XmlRpcValue& operator[](std::string const& k) { assertStruct(); return (*_value.asStruct)[k]; }
 			XmlRpcValue& operator[](const char* k) { assertStruct(); std::string s(k); return (*_value.asStruct)[s]; }
-
 			// Accessors
 			//! Return true if the value has been set to something.
 			bool valid() const { return _type != TypeInvalid; }

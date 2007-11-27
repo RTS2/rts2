@@ -7,16 +7,29 @@ using namespace XmlRpc;
 
 int main(int argc, char* argv[])
 {
-	if (argc != 3)
+	int port;
+	char* host;
+
+	if (argc == 1)
+	{
+		host = "localhost";
+		port = 8889;
+	}
+	else if (argc == 3)
+	{
+		host = argv[1];
+		port = atoi(argv[2]);
+	}
+	else
 	{
 		std::cerr << "Usage: HelloClient serverHost serverPort\n";
 		return -1;
 	}
-	int port = atoi(argv[2]);
+
 	//XmlRpc::setVerbosity(5);
 
 	// Use introspection API to look up the supported methods
-	XmlRpcClient c(argv[1], port);
+	XmlRpcClient c(host, port);
 	XmlRpcValue noArgs, result;
 	if (c.execute("system.listMethods", noArgs, result))
 		std::cout << "\nMethods:\n " << result << "\n\n";
@@ -65,12 +78,12 @@ int main(int argc, char* argv[])
 		std::cout << "Error calling 'system.listValues'\n\n";
 	}
 
-	oneArg[0] = "C0";
+	oneArg[0] = "andor";
 
 	// Call system.listVariables method with one device
 	if (c.execute("system.listValuesDevice", oneArg, result))
 	{
-		std::cout << "Devices + values for C0: " << std::endl;
+		std::cout << "Devices + values for andor: " << std::endl;
 		for (int i = 0; i < result.size(); i++)
 		{
 			std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
@@ -97,23 +110,59 @@ int main(int argc, char* argv[])
 	{
 		std::cout << "Error calling 'system.listValuesDevice'\n\n";
 	}
-
-	XmlRpcValue notDevice;
-	notDevice[0] = "CXXX";
-
-	// Call system.listVariables method with one device
-	if (c.execute("system.listValuesDevice", notDevice, result))
-	{
-		std::cout << "Devices + values for CXX: " << std::endl;
-		for (int i = 0; i < result.size(); i++)
+	/*
+			oneArg[0] = "DOME";
+		if (c.execute("system.listValuesDevice", oneArg, result))
 		{
-			std::cout << " " << result[i] << std::endl;
+		  std::cout << "DOME: " << std::endl;
+		  for (int i = 0; i < result.size (); i++)
+		  {
+				std::cout <<  " " << result[i] << std::endl;
+		  }
+		}
+		else std::cout  << "neco je blbe\n\n";
+	*/
+
+	oneArg[0] = "G";
+	oneArg[1] = "E";
+	if (c.execute("system.listTargets", oneArg, result))
+	{
+		std::cout << "TARGETS: " << std::endl;
+		for (int i = 0; i < result.size (); i++)
+		{
+			std::cout <<  " " << result[i] << std::endl;
 		}
 	}
-	else
-	{
-		std::cout << "Error calling 'system.listValuesDevice'\n\n";
-	}
+	else std::cout  << "neco je blbe s targetama\n\n";
 
+	oneArg[0] = 27219;
+	if (c.execute("system.listImages", oneArg, result))
+	{
+		std::cout << "IMAGES (1009 - 27219): " << std::endl;
+		for (int i = 0; i < result.size (); i++)
+		{
+			std::cout <<  " " << result[i] << std::endl;
+		}
+	}
+	else std::cout  << "neco je blbe s observajsnama\n\n";
+
+	/*
+		XmlRpcValue notDevice;
+		notDevice[0] = "CXXX";
+
+		// Call system.listVariables method with one device
+		if (c.execute("system.listValuesDevice", notDevice, result))
+		{
+			std::cout << "Devices + values for CXX: " << std::endl;
+			for (int i = 0; i < result.size(); i++)
+			{
+				std::cout << " " << result[i] << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "Error calling 'system.listValuesDevice'\n\n";
+		}
+	*/
 	return 0;
 }
