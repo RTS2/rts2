@@ -1,3 +1,22 @@
+/*
+ * Target from SIMBAD database.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "SesameSoapBinding.nsmap"
 #include "soapSesameSoapBindingProxy.h"
 
@@ -140,22 +159,26 @@ Rts2SimbadTarget::load ()
 
 
 void
-Rts2SimbadTarget::printExtra (std::ostream & _os)
+Rts2SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
 {
-	ConstTarget::printExtra (_os, ln_get_julian_from_sys ());
+	ConstTarget::printExtra (_ivs, ln_get_julian_from_sys ());
 
-	_os << "REFERENCED " << references << std::endl;
-	int old_prec = _os.precision (2);
-	_os << "PROPER MOTION RA " <<
-		(propMotions.ra * 360000.0)
-		<< " DEC " << (propMotions.dec * 360000.0) << " (mas/y)";
-	_os << "TYPE " << simbadType << std::endl;
-	_os << "B MAG " << simbadBMag << std::endl;
-	_os.precision (old_prec);
-
-	for (std::list < std::string >::iterator alias = aliases.begin ();
-		alias != aliases.end (); alias++)
+	if (_ivs.getStream ())
 	{
-		_os << "ALIAS " << (*alias) << std::endl;
+		std::ostream* _os = _ivs.getStream ();
+		*_os << "REFERENCED " << references << std::endl;
+		int old_prec = _os->precision (2);
+		*_os << "PROPER MOTION RA " <<
+			(propMotions.ra * 360000.0)
+			<< " DEC " << (propMotions.dec * 360000.0) << " (mas/y)";
+		*_os << "TYPE " << simbadType << std::endl;
+		*_os << "B MAG " << simbadBMag << std::endl;
+		_os->precision (old_prec);
+
+		for (std::list < std::string >::iterator alias = aliases.begin ();
+			alias != aliases.end (); alias++)
+		{
+			*_os << "ALIAS " << (*alias) << std::endl;
+		}
 	}
 }
