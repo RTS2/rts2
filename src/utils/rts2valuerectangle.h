@@ -26,7 +26,7 @@
  * Rectangle value. Rectangle have four points, each of Rts2Value, which
  * represents X, Y coordinates and width and height.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueRectangle: public Rts2Value
 {

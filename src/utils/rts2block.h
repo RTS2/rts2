@@ -54,34 +54,34 @@
 #include "rts2serverstate.h"
 
 // protocol specific commands
-/** The command is variable value update. @addgroup RTS2Protocol */
+/** The command is variable value update. @ingroup RTS2Protocol */
 #define PROTO_VALUE            "V"
-/** The command set variable value. @addgroup RTS2Protocol */
+/** The command set variable value. @ingroup RTS2Protocol */
 #define PROTO_SET_VALUE        "X"
-/** The command set default value of variable. @addgroup RTS2Protocol */
+/** The command set default value of variable. @ingroup RTS2Protocol */
 #define PROTO_SET_VALUE_DEF    "Y"
-/** The command is authorization request. @addgroup RTS2Protocol */
+/** The command is authorization request. @ingroup RTS2Protocol */
 #define PROTO_AUTH             "A"
-/** The command is priority request. @addgroup RTS2Protocol */
+/** The command is priority request. @ingroup RTS2Protocol */
 #define PROTO_PRIORITY         "P"
-/** The command is priority infor request. @addgroup RTS2Protocol */
+/** The command is priority infor request. @ingroup RTS2Protocol */
 #define PROTO_PRIORITY_INFO    "Q"
-/** The command set device status. @addgroup RTS2Protocol */
+/** The command set device status. @ingroup RTS2Protocol */
 #define PROTO_STATUS           "S"
-/** The command set device BOP state. @addgroup RTS2Protocol */
+/** The command set device BOP state. @ingroup RTS2Protocol */
 #define PROTO_BOP_STATE        "B"
-/** The command is technical command, used to check device responsiveness. @addgroup RTS2Protocol */
+/** The command is technical command, used to check device responsiveness. @ingroup RTS2Protocol */
 #define PROTO_TECHNICAL        "T"
-/** The command is message with some message information. @addgroup RTS2Protocol */
+/** The command is message with some message information. @ingroup RTS2Protocol */
 #define PROTO_MESSAGE          "M"
-/** The command is metainformation describing variable. @addgroup RTS2Protocol */
+/** The command is metainformation describing variable. @ingroup RTS2Protocol */
 #define PROTO_METAINFO         "E"
-/** The command is metainformation about selection variable. @addgroup RTS2Protocol */
+/** The command is metainformation about selection variable. @ingroup RTS2Protocol */
 #define PROTO_SELMETAINFO      "F"
 
-/** The command defines binary channel. @addgroup RTS2Protocol */
+/** The command defines binary channel. @ingroup RTS2Protocol */
 #define PROTO_BINARY           "C"
-/** The command is followed by data which goes to binary channel. @addgroup RTS2Protocol */
+/** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
 
 #define USEC_SEC    1000000

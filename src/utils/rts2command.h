@@ -26,8 +26,6 @@
  * @defgroup RTS2Command Command classes
  */
 
-/** Keep command, do not delete it from after it return. @ingroup RTS2Command */
-#define RTS2_COMMAND_KEEP       -2
 /** Send command again to device. @ingroup RTS2Command */
 #define RTS2_COMMAND_REQUE      -5
 
@@ -612,12 +610,15 @@ class Rts2CommandStatusInfo:public Rts2Command
 {
 	private:
 		Rts2Conn * control_conn;
-		bool keep;
 	public:
-		Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn,
-			bool in_keep);
+		Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn);
 		virtual int commandReturnOK (Rts2Conn * conn);
 		virtual int commandReturnFailed (Rts2Conn * conn);
+
+		const char* getCentralName()
+		{
+			return control_conn->getName ();
+		}
 };
 
 /**
@@ -628,7 +629,6 @@ class Rts2CommandStatusInfo:public Rts2Command
 class Rts2CommandDeviceStatus:public Rts2CommandStatusInfo
 {
 	public:
-		Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn,
-			bool in_keep);
+		Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn);
 };
 #endif							 /* !__RTS2_COMMAND__ */

@@ -89,7 +89,7 @@ class Rts2Value;
  * Rts2Conn is used primarly in @see Rts2Block, which holds list of connections
  * and provide function to manage them.
  *
- * @addgroup RTS2Block
+ * @ingroup RTS2Block
  */
 class Rts2Conn:public Rts2Object
 {

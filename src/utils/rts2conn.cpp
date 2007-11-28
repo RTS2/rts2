@@ -1136,7 +1136,7 @@ Rts2Conn::sendCommand ()
 		{
 			case CIP_NOT_CALLED:
 				statInfoCall =
-					new Rts2CommandDeviceStatus (getMaster (), this, false);
+					new Rts2CommandDeviceStatus (getMaster (), this);
 				conn = runningCommand->getConnection ();
 				// we can do that, as if we are running on same connection as is centrald, we are runningCommand, so we can send directly..
 				statInfoCall->setConnection (this);
@@ -1212,7 +1212,6 @@ Rts2Conn::commandReturn ()
 			break;
 		case -1:
 			delete runningCommand;
-		case RTS2_COMMAND_KEEP:
 			sendNextCommand ();
 			break;
 	}
@@ -1698,6 +1697,7 @@ Rts2Conn::paramNextTimeval (struct timeval *tv)
 void
 Rts2Conn::dataReceived ()
 {
+	std::cerr << "dataReceived " << binaryReadTop << " " << binaryReadDataSize << std::endl;
 	// inform device that we read some data
 	if (otherDevice)
 		otherDevice->dataReceived (binaryReadBuff, binaryReadTop, binaryReadDataSize);

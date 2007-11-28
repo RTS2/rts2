@@ -32,7 +32,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2Block
+ * @ingroup RTS2Block
  */
 class Rts2ConnFork:public Rts2ConnNoSend
 {

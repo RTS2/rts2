@@ -26,10 +26,9 @@
 #include <math.h>
 
 /**
- * @file
- * Libnova utility classes.
+ * @file Libnova utility classes
  *
- * @defgroup LibnovaCPP Libnova clases.
+ * @defgroup LibnovaCPP Libnova clases
  */
 
 /**
@@ -41,6 +40,8 @@ double timetFromJD (double JD);
  * Holds RA of an target.
  *
  * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
  */
 class LibnovaRa
 {
@@ -71,6 +72,13 @@ class LibnovaRa
 		friend std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra);
 };
 
+/**
+ * Holds target entered in J2000 coordinate system.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaRaJ2000:public LibnovaRa
 {
 	public:
@@ -83,6 +91,13 @@ class LibnovaRaJ2000:public LibnovaRa
 		friend std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
 };
 
+/**
+ * Holds hours and minutes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaHaM:public LibnovaRa
 {
 	public:
@@ -96,6 +111,13 @@ class LibnovaHaM:public LibnovaRa
 		friend std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
 };
 
+/**
+ * Distance in RA.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaRaComp:public LibnovaRa
 {
 	public:
@@ -108,6 +130,13 @@ class LibnovaRaComp:public LibnovaRa
 		friend std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 };
 
+/**
+ * Abstract degrees class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDeg
 {
 	private:
@@ -156,6 +185,13 @@ class LibnovaDeg
 		friend std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);
 };
 
+/**
+ * Deg -90..90 class, used tyo display DEC.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDeg90:public LibnovaDeg
 {
 	public:
@@ -169,6 +205,13 @@ class LibnovaDeg90:public LibnovaDeg
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 };
 
+/**
+ * Deg 0..360 class, used to display RA and HA in degrees.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDeg360:public LibnovaDeg
 {
 	public:
@@ -182,6 +225,13 @@ class LibnovaDeg360:public LibnovaDeg
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg);
 };
 
+/**
+ * Deg 0..180 class, used to display distance in degrees.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDeg180:public LibnovaDeg
 {
 	public:
@@ -195,6 +245,13 @@ class LibnovaDeg180:public LibnovaDeg
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg);
 };
 
+/**
+ * Dec class for DEC display.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDec:public LibnovaDeg90
 {
 	public:
@@ -214,6 +271,13 @@ class LibnovaDec:public LibnovaDeg90
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec);
 };
 
+/**
+ * Dec in J2000 coordinates.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDecJ2000:public LibnovaDec
 {
 	public:
@@ -228,6 +292,13 @@ class LibnovaDecJ2000:public LibnovaDec
 			LibnovaDecJ2000 l_dec);
 };
 
+/**
+ * 90 deg comparsion.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDeg90Comp:public LibnovaDeg90
 {
 	public:
@@ -242,6 +313,13 @@ class LibnovaDeg90Comp:public LibnovaDeg90
 			LibnovaDeg90Comp l_deg);
 };
 
+/**
+ * Display degrees as arc min.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDegArcMin:public LibnovaDeg
 {
 	public:
@@ -256,6 +334,13 @@ class LibnovaDegArcMin:public LibnovaDeg
 			LibnovaDegArcMin l_deg);
 };
 
+/**
+ * Display degrees as distance (scale between degrees, minutes and seconds dispaly).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDegDist:public LibnovaDeg
 {
 	public:
@@ -274,6 +359,8 @@ class LibnovaDegDist:public LibnovaDeg
 
 /**
  * Holds RA and DEC of an object.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup LibnovaCPP
  */
@@ -370,6 +457,13 @@ class LibnovaRaDec
 			LibnovaRaDec & l_radec);
 };
 
+/**
+ * Holds horizontal coordinates - altitude and azimuth - of an object.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaHrz
 {
 	private:
@@ -431,6 +525,13 @@ class LibnovaHrz
 		friend std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz);
 };
 
+/**
+ * Holds date.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDate
 {
 	protected:
@@ -475,10 +576,24 @@ class LibnovaDate
 			LibnovaDate & l_date);
 };
 
+/**
+ * Holds date, which can be created from double in computer time.
+ * Create LibnovaData class from seconds and fractions of seconds
+ * from 1-1-1970.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaDateDouble:public LibnovaDate
 {
 	public:
-		// take double as time_t argument
+		/**
+		 * Create LibnovaDate from seconds and fractions of
+		 * seconds.
+		 *
+		 * @param t Seconds and fractions of seconds from 1-1-1970 (computer time).
+		 */
 		LibnovaDateDouble (double t):LibnovaDate (false)
 		{
 			time_t tt = (time_t) ceil (t);
@@ -489,6 +604,10 @@ class LibnovaDateDouble:public LibnovaDate
 
 /**
  * Calculate from date night - e.g. date/time at which night started and at which it ends
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
  */
 class Rts2Night
 {
@@ -516,6 +635,13 @@ class Rts2Night
 		friend std::ostream & operator << (std::ostream & _os, Rts2Night night);
 };
 
+/**
+ * Holds observer position on Earth (longitude and latitude).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup LibnovaCPP
+ */
 class LibnovaPos
 {
 	private:

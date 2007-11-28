@@ -104,8 +104,8 @@ class Rts2Conn;
  * distributed with metainformations over TCP/IP network, and stored in
  * receiving devices.
  *
- * @addgroup RTS2Blocka
- * @addgroup RTS2Value
+ * @ingroup RTS2Block
+ * @ingroup RTS2Value
  */
 class Rts2Value
 {
@@ -255,7 +255,7 @@ class Rts2Value
 /**
  * Class which holds string value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueString:public Rts2Value
 {
@@ -280,7 +280,7 @@ class Rts2ValueString:public Rts2Value
 /**
  * Class which holds integre value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueInteger:public Rts2Value
 {
@@ -329,7 +329,7 @@ class Rts2ValueInteger:public Rts2Value
 /**
  * Class which holds double value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueDouble:public Rts2Value
 {
@@ -375,7 +375,7 @@ class Rts2ValueDouble:public Rts2Value
 /**
  * Class which holds time value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueTime:public Rts2ValueDouble
 {
@@ -393,7 +393,7 @@ class Rts2ValueTime:public Rts2ValueDouble
 /**
  * Class which holds float value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueFloat:public Rts2Value
 {
@@ -437,7 +437,7 @@ class Rts2ValueFloat:public Rts2Value
 /**
  * Class which holds boolean value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueBool:public Rts2ValueInteger
 {
@@ -486,7 +486,7 @@ class Rts2SelData
 /**
  * Holds selection value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class SelVal
 {
@@ -511,7 +511,7 @@ class SelVal
  * This value adds as meta-information allowed content in strings.
  * It can be used for named selection list (think of enums..).
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueSelection:public Rts2ValueInteger
 {
@@ -643,7 +643,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 /**
  * Class for long int value.
  *
- * @addgroup RTS2Value
+ * @ingroup RTS2Value
  */
 class Rts2ValueLong:public Rts2Value
 {

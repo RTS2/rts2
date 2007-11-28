@@ -748,11 +748,10 @@ Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn, bool in_keep):Rts2Command
-(master)
+Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn)
+:Rts2Command(master)
 {
 	control_conn = in_control_conn;
-	keep = in_keep;
 	setCommand ("status_info");
 }
 
@@ -761,8 +760,6 @@ int
 Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
 	control_conn->updateStatusWait (conn);
-	if (keep)
-		return RTS2_COMMAND_KEEP;
 	return Rts2Command::commandReturnOK (conn);
 }
 
@@ -771,14 +768,12 @@ int
 Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
 {
 	control_conn->updateStatusWait (conn);
-	if (keep)
-		return RTS2_COMMAND_KEEP;
 	return Rts2Command::commandReturnOK (conn);
 }
 
 
-Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn, bool in_keep):Rts2CommandStatusInfo (master, in_control_conn,
-in_keep)
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn)
+:Rts2CommandStatusInfo (master, in_control_conn)
 {
 	setCommand ("device_status");
 }
