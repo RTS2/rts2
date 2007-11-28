@@ -1,6 +1,7 @@
 /* 
  * XML-RPC daemon.
  * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,7 +26,7 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 #include "xmlrpc++/XmlRpc.h"
-// #include "xmlstream.h"
+#include "xmlstream.h"
 
 using namespace XmlRpc;
 
@@ -113,8 +114,8 @@ Rts2XmlRpcd::selectSuccess ()
 
 Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv): Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "XMLRPC")
 {
-	rpcPort = 8888;
-	addOption ('p', NULL, 1, "XML-RPC port. Default to 8888");
+	rpcPort = 8889;
+	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	XmlRpc::setVerbosity (0);
 }
 
@@ -256,30 +257,31 @@ class ListValuesDevice: public ListValues
 						case RTS2_VALUE_INTEGER:
 							int int_val;
 							int_val = (*variter)->getValueInteger ();
-							if (int_val == int_val) retVar["value"] = int_val;
-							else retVar["value"] = "NaN";
+							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_DOUBLE:
 							double value;
 							value = (*variter)->getValueDouble ();
-							if (value == value) retVar["value"] = value;
-							else retVar["value"] = "NaN";
+							if (isnan (value))
+								retVar["value"] = "NaN";
+							else
+								retVar["value"] = value;
 							break;
 						case RTS2_VALUE_FLOAT:
 							float float_val;
 							float_val = (*variter)->getValueFloat ();
-							if (float_val == float_val) retVar["value"] = float_val;
-							else retVar["value"] = "NaN";
+							if (isnan (value))
+								retVar["value"] = "NaN";
+							else
+								retVar["value"] = value;
 							break;
 						case RTS2_VALUE_LONGINT:
 							int_val = (*variter)->getValueInteger ();
-							if (int_val == int_val) retVar["value"] = int_val;
-							else retVar["value"] = "NaN";
+							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_TIME:
 							int_val = (*variter)->getValueInteger ();
-							if (int_val == int_val) retVar["value"] = int_val;
-							else retVar["value"] = "NaN";
+							retVar["value"] = int_val;
 							break;
 						default:
 							retVar["value"] = (*variter)->getValue ();
@@ -334,9 +336,14 @@ class ListTargets: public XmlRpcServerMethod
 
 			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
+				std::cout << "ID " << (*tar_iter)->getTargetID () << std::endl;
 				retVar["id"] = (*tar_iter)->getTargetID ();
 				retVar["type"] = (*tar_iter)->getTargetType ();
-				retVar["name"] = (*tar_iter)->getTargetName ();
+				if ((*tar_iter)->getTargetName ())
+					retVar["name"] = (*tar_iter)->getTargetName ();
+				else
+					retVar["name"] = "NULL";
+
 				retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
 				if ((*tar_iter)->getTargetComment ())
 					retVar["comment"] = (*tar_iter)->getTargetComment ();
@@ -353,6 +360,7 @@ class ListTargets: public XmlRpcServerMethod
 					//		result[i++] = retVar;	// ask for all targets
 					//	else
 					//	{
+					std::cout << "types: " << (*tar_iter)->getTargetType () << type << std::endl;
 					if ((*tar_iter)->getTargetType() == type)
 								 // only one type
 						result[i++] = retVar;
@@ -383,8 +391,6 @@ class TargetInfo: public XmlRpcServerMethod
 			XmlRpcValue retVar;
 			int i;
 			double JD;
-			struct ln_hrz_posn hrz;
-			struct ln_rst_time rst;
 			time_t now;
 
 			for (i = 0; i < params.size(); i++)
@@ -397,37 +403,13 @@ class TargetInfo: public XmlRpcServerMethod
 
 			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
 			{
-				/*	
-					JD = ln_get_julian_from_sys ();
+				JD = ln_get_julian_from_sys ();
 
-					ln_get_timet_from_julian (JD, &now);
+				ln_get_timet_from_julian (JD, &now);
 
-					(*tar_iter)->getAltAz (&hrz, JD);
+				XmlStream xs (&retVar);
+				xs << *(*tar_iter);
 
-					retVar["id"] = (*tar_iter)->getTargetID ();
-								retVar["type"] = (*tar_iter)->getTargetType ();
-								retVar["name"] = (*tar_iter)->getTargetName ();
-								retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
-
-					retVar["airmass"] = (*tar_iter)->getAirmass (JD);
-
-					// retVar << "AIRMASS";
-
-					retVar["altaz"]["alt"] = hrz.alt;
-					retVar["altaz"]["az"] = hrz.az;
-					retVar["hour angle"] = (*tar_iter)->getHourAngle (JD);
-					retVar["zenith"] = (*tar_iter)->getZenitDistance (JD);
-					// retVar["azimuth"] = ln_range_degrees (hrz.az);
-					// retVar["altitude"] = hrz.alt
-
-					switch ((*tar_iter)->getRST (&rst, JD, LN_STAR_STANDART_HORIZON))
-					{
-						case 1:
-							retVar["rst"]["info"] = " - CIRCUMPOLAR - ";
-							rst.transit = JD + ((360 - (*tar_iter)->getHourAngle (JD))/ 15.0 / 24.0);
-							// retVar["rst"]["transit"] = <TimeJDDiff> TimeJDDiff (rst.transit, now);
-					}
-				*/
 				// observations
 				Rts2ObsSet *obs_set;
 				obs_set = new Rts2ObsSet ((*tar_iter)->getTargetID ());
@@ -476,8 +458,10 @@ class ListObservations: public XmlRpcServerMethod
 				else retVar["obs_dec"] = "NaN";
 				/**/
 				value = (*obs_iter).getObsStart();
-				if (value == value) retVar["obs_start"] = value;
-				else retVar["obs_start"] = "NaN";
+				if (isnan (value))
+					retVar["obs_start"] = "NaN";
+				else
+					retVar["obs_start"] = value;
 				/**/
 				value = (*obs_iter).getObsEnd();
 				if (value == value) retVar["obs_end"] = value;
@@ -503,18 +487,16 @@ class ListImages: public XmlRpcServerMethod
 			XmlRpcValue retVar;
 			Rts2Obs *obs;
 			obs = new Rts2Obs ((int)params[0]);
-			Rts2ImgSet *img_set;
-			img_set = obs->getImageSet();
-			//img_set->load();
-			int i = 0, j = 0;
-			/*
-			for (std::vector <Rts2Image *>::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++, i++)
+			if (obs->loadImages ())
+				return;
+			Rts2ImgSet *img_set = obs->getImageSet();
+			int i = 0;
+			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
-				// retVar[j++] = i;
-				// result[i] = retVar;
+				Rts2Image *image = *img_iter;
+				retVar["filename"] = image->getImageName ();
+				result[i++] = retVar;
 			}
-			*/
-
 		}
 } listImages (&xmlrpc_server);
 
