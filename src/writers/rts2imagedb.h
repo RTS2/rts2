@@ -1,3 +1,22 @@
+/* 
+ * Database image access classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 /**
  * Used for Image-DB interaction.
  *
@@ -100,6 +119,8 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
+		virtual const char* getImageName ();
+
 		virtual bool haveOKAstrometry ()
 		{
 			return (processBitfiedl & ASTROMETRY_OK);
@@ -109,8 +130,6 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		{
 			return (processBitfiedl & ASTROMETRY_PROC);
 		}
-
-		virtual void printFileName (std::ostream & _os);
 
 		virtual std::string getFileName ();
 

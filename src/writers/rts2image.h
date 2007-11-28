@@ -261,7 +261,7 @@ class Rts2Image:public Rts2Expander
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
-		char *getImageName ()
+		virtual const char *getImageName ()
 		{
 			return imageName;
 		}
