@@ -24,7 +24,7 @@
  * @file
  * Basic TPoint routines.
  *
- * @defgroup RTS2TPoint TPoint interface.
+ * @defgroup RTS2TPoint TPoint interface
  */
 
 #include "../telescope.h"
@@ -45,6 +45,8 @@ class Rts2ModelTerm;
  * Holds only conditions which are static, e.g. it will not hold alt&az, as
  * those will be changed in course of model calculation. Holds mount
  * geographics position, current time etc.
+ *
+ * @ingroup RTS2TPoint
  */
 class Rts2ObsConditions
 {
@@ -75,7 +77,7 @@ class Rts2ObsConditions
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPoint
+ * @ingroup RTS2TPoint
  */
 class Rts2TelModel
 {

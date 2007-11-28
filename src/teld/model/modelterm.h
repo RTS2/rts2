@@ -27,7 +27,7 @@
  * @file
  * Include classes for various TPoint terms.
  *
- * @defgroup RTS2TPointTerm Modelling terms for TPOINT.
+ * @defgroup RTS2TPointTerm Modelling terms for TPOINT
  */
 
 class Rts2ObsConditions;
@@ -38,7 +38,7 @@ class Rts2ObsConditions;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2ModelTerm
 {
@@ -81,7 +81,7 @@ std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
  *
  * @author Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermME:public Rts2ModelTerm
 {
@@ -99,7 +99,7 @@ class Rts2TermME:public Rts2ModelTerm
  *
  * @author Martin Jelinek <Martin Jelinek <mates@iaa.es>@iaa.es>a
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermMA:public Rts2ModelTerm
 {
@@ -117,7 +117,7 @@ class Rts2TermMA:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermIH:public Rts2ModelTerm
 {
@@ -135,7 +135,7 @@ class Rts2TermIH:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermID:public Rts2ModelTerm
 {
@@ -153,7 +153,7 @@ class Rts2TermID:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermCH:public Rts2ModelTerm
 {
@@ -171,7 +171,7 @@ class Rts2TermCH:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermNP:public Rts2ModelTerm
 {
@@ -189,7 +189,7 @@ class Rts2TermNP:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermPHH:public Rts2ModelTerm
 {
@@ -223,7 +223,7 @@ class Rts2TermPDD:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermA1H:public Rts2ModelTerm
 {
@@ -241,7 +241,7 @@ class Rts2TermA1H:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermA1D:public Rts2ModelTerm
 {
@@ -259,7 +259,7 @@ class Rts2TermA1D:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermTF:public Rts2ModelTerm
 {
@@ -277,7 +277,7 @@ class Rts2TermTF:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermTX:public Rts2ModelTerm
 {
@@ -295,7 +295,7 @@ class Rts2TermTX:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermHCEC:public Rts2ModelTerm
 {
@@ -314,7 +314,7 @@ class Rts2TermHCEC:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermHCES:public Rts2ModelTerm
 {
@@ -333,7 +333,7 @@ class Rts2TermHCES:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermDCEC:public Rts2ModelTerm
 {
@@ -352,7 +352,7 @@ class Rts2TermDCEC:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermDCES:public Rts2ModelTerm
 {
@@ -371,7 +371,7 @@ class Rts2TermDCES:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermDAB:public Rts2ModelTerm
 {
@@ -389,7 +389,7 @@ class Rts2TermDAB:public Rts2ModelTerm
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermDAF:public Rts2ModelTerm
 {
@@ -412,7 +412,7 @@ sincos_t;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
- * @addgroup RTS2TPointTerm
+ * @ingroup RTS2TPointTerm
  */
 class Rts2TermHarmonics:public Rts2ModelTerm
 {
