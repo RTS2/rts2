@@ -1,3 +1,22 @@
+/* 
+ * Target classes.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS_TARGETDB__
 #define __RTS_TARGETDB__
 
@@ -10,6 +29,7 @@
 
 #include "status.h"
 
+#include "../utils/infoval.h"
 #include "../utils/objectcheck.h"
 #include "../utils/rts2device.h"
 #include "../utils/rts2target.h"
@@ -385,7 +405,7 @@ class Target:public Rts2Target
 		 *
 		 * @param _os stream to print that
 		 */
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		/**
 		 * print short target info
@@ -421,12 +441,13 @@ class Target:public Rts2Target
 		 * @param _os stream to print that
 		 * @param JD date for which to print info
 		 */
-		virtual void sendPositionInfo (std::ostream & _os, double JD);
-		void sendInfo (std::ostream & _os)
+		virtual void sendPositionInfo (Rts2InfoValStream & _os, double JD);
+		void sendInfo (Rts2InfoValStream & _os)
 		{
 			sendInfo (_os, ln_get_julian_from_sys ());
 		}
-		virtual void sendInfo (std::ostream & _os, double JD);
+		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
+
 		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i,
 			double step);
 
@@ -491,7 +512,7 @@ class ConstTarget:public Target
 		virtual int getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		void setPosition (double ra, double dec)
 		{
@@ -555,7 +576,7 @@ class FlatTarget:public ConstTarget
 		{
 			return 1;
 		}
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
 // possible calibration target
@@ -723,7 +744,7 @@ class TargetSwiftFOV:public Target
 		virtual float getBonus (double JD);
 		virtual int isContinues ();
 
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
 class TargetIntegralFOV:public Target
@@ -748,7 +769,7 @@ class TargetIntegralFOV:public Target
 		virtual float getBonus (double JD);
 		virtual int isContinues ();
 
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
 class TargetGps:public ConstTarget
@@ -804,7 +825,7 @@ class TargetPlan:public Target
 		virtual int beforeMove ();
 		virtual moveType startSlew (struct ln_equ_posn *position);
 
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
 // load target from DB
@@ -819,4 +840,5 @@ struct ln_lnlat_posn *in_obs, Rts2App * master);
 
 // print target information to stdout..
 std::ostream & operator << (std::ostream & _os, Target & target);
+Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Target & target);
 #endif							 /*! __RTS_TARGETDB__ */

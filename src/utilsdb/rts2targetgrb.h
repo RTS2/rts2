@@ -1,4 +1,4 @@
-/**
+/*
  * Class for GRB target.
  * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -85,7 +85,7 @@ class TargetGRB:public ConstTarget
 		void checkValidity ();
 
 		double getFirstPacket ();
-		virtual void printExtra (std::ostream & _os, double JD);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		virtual void printDS9Reg (std::ostream & _os, double JD);
 
