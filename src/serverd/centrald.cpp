@@ -1,4 +1,4 @@
-/**
+/*
  * Centrald - RTS2 coordinator
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -46,7 +46,6 @@ Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
 	setPriority (-1);
 	master->changePriority (0);
-	deleteStatusCommand ();
 }
 
 
@@ -854,7 +853,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
 	c_conn->deleteStatusCommand ();
 	Rts2CommandStatusInfo *statusCommand =
-		new Rts2CommandStatusInfo (this, c_conn, true);
+		new Rts2CommandStatusInfo (this, c_conn);
 	int s_count = 0;
 	// update system status
 	for (connections_t::iterator iter = connectionBegin ();
@@ -865,12 +864,10 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 		{
 			if (conn->getType () == DEVICE_SERVER)
 			{
-				if (Rts2Config::instance ()->
-					blockDevice (conn->getName (),
-					test_conn->getName ()) == false)
+				if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 					continue;
 			}
-			test_conn->queCommand (statusCommand);
+			test_conn->queCommand (new Rts2CommandStatusInfo (this, c_conn));
 			s_count++;
 		}
 	}

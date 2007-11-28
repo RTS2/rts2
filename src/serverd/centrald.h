@@ -1,4 +1,4 @@
-/**
+/*
  * Centrald - RTS2 coordinator
  * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
@@ -52,9 +52,6 @@
 #endif
 
 class Rts2ConnCentrald;
-
-// defined in rts2commandstatusinfo.h
-class Rts2CommandStatusInfo;
 
 /**
  * Class for central server.
