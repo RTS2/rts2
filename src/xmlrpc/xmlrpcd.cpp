@@ -262,18 +262,12 @@ class ListValuesDevice: public ListValues
 						case RTS2_VALUE_DOUBLE:
 							double dbl_value;
 							dbl_value = (*variter)->getValueDouble ();
-							if (isnan (dbl_value))
-								retVar["value"] = "NaN";
-							else
-								retVar["value"] = dbl_value;
+							retVar["value"] = dbl_value;
 							break;
 						case RTS2_VALUE_FLOAT:
 							float float_val;
 							float_val = (*variter)->getValueFloat ();
-							if (isnan (float_val))
-								retVar["value"] = "NaN";
-							else
-								retVar["value"] = float_val;
+							retVar["value"] = float_val;
 							break;
 						case RTS2_VALUE_LONGINT:
 							int_val = (*variter)->getValueInteger ();
@@ -336,7 +330,6 @@ class ListTargets: public XmlRpcServerMethod
 
 			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
-				std::cout << "ID " << (*tar_iter)->getTargetID () << std::endl;
 				retVar["id"] = (*tar_iter)->getTargetID ();
 				retVar["type"] = (*tar_iter)->getTargetType ();
 				if ((*tar_iter)->getTargetName ())
@@ -350,8 +343,7 @@ class ListTargets: public XmlRpcServerMethod
 				else
 					retVar["comment"] = "";
 				value = (*tar_iter)->getLastObs();
-				if (value == value) retVar["last"] = value;
-				else retVar["last"] = "NaN";
+				retVar["last"] = value;
 
 				for (int j = 0; j < params.size(); j++)
 				{
@@ -360,7 +352,6 @@ class ListTargets: public XmlRpcServerMethod
 					//		result[i++] = retVar;	// ask for all targets
 					//	else
 					//	{
-					std::cout << "types: " << (*tar_iter)->getTargetType () << type << std::endl;
 					if ((*tar_iter)->getTargetType() == type)
 								 // only one type
 						result[i++] = retVar;
@@ -444,32 +435,14 @@ class ListObservations: public XmlRpcServerMethod
 			Rts2ObsSet *obs_set;
 			obs_set = new Rts2ObsSet ((int)params[0]);
 			int i = 0;
-			double value;
 			for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
-				/**/
-				value  = (*obs_iter).getObsRa();
-				if (value == value) retVar["obs_ra"] = value;
-				else retVar["obs_ra"] = "NaN";
-				/**/
-				value  = (*obs_iter).getObsDec();
-				if (value == value) retVar["obs_dec"] = value;
-				else retVar["obs_dec"] = "NaN";
-				/**/
-				value = (*obs_iter).getObsStart();
-				if (isnan (value))
-					retVar["obs_start"] = "NaN";
-				else
-					retVar["obs_start"] = value;
-				/**/
-				value = (*obs_iter).getObsEnd();
-				if (value == value) retVar["obs_end"] = value;
-				else retVar["obs_end"] = "NaN";
-				/**/
-				// value = (*obs_iter).getNumberOfImages();
-				// if (value == value) retVar["obs_images"] = value;
-				// else retVar["obs_images"] = "NaN";
+				retVar["obs_ra"] = (*obs_iter).getObsRa();
+				retVar["obs_dec"] = (*obs_iter).getObsDec();
+				retVar["obs_start"] = (*obs_iter).getObsStart();
+				retVar["obs_end"] = (*obs_iter).getObsEnd();
+				retVar["obs_images"] = (*obs_iter).getNumberOfImages();
 
 				result[i] = retVar;
 			}
