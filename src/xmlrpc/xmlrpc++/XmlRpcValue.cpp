@@ -11,6 +11,8 @@
 # include <stdio.h>
 #endif
 
+#include <math.h>
+
 namespace XmlRpc
 {
 
@@ -345,7 +347,10 @@ namespace XmlRpc
 	std::string XmlRpcValue::doubleToXml() const
 	{
 		char buf[256];
-		snprintf(buf, sizeof(buf)-1, getDoubleFormat().c_str(), _value.asDouble);
+		if (isnan (_value.asDouble))
+			strcpy (buf, "NaN");
+		else
+			snprintf(buf, sizeof(buf)-1, getDoubleFormat().c_str(), _value.asDouble);
 		buf[sizeof(buf)-1] = 0;
 
 		std::string xml = VALUE_TAG;
