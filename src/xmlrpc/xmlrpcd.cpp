@@ -260,28 +260,28 @@ class ListValuesDevice: public ListValues
 							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_DOUBLE:
-							double value;
-							value = (*variter)->getValueDouble ();
-							if (isnan (value))
+							double dbl_value;
+							dbl_value = (*variter)->getValueDouble ();
+							if (isnan (dbl_value))
 								retVar["value"] = "NaN";
 							else
-								retVar["value"] = value;
+								retVar["value"] = dbl_value;
 							break;
 						case RTS2_VALUE_FLOAT:
 							float float_val;
 							float_val = (*variter)->getValueFloat ();
-							if (isnan (value))
+							if (isnan (float_val))
 								retVar["value"] = "NaN";
 							else
-								retVar["value"] = value;
+								retVar["value"] = float_val;
 							break;
 						case RTS2_VALUE_LONGINT:
 							int_val = (*variter)->getValueInteger ();
 							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_TIME:
-							int_val = (*variter)->getValueInteger ();
-							retVar["value"] = int_val;
+							dbl_value = (*variter)->getValueDouble ();
+							retVar["value"] = dbl_value;
 							break;
 						default:
 							retVar["value"] = (*variter)->getValue ();
