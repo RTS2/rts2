@@ -1,168 +1,185 @@
-// HelloClient.cpp : A simple xmlrpc client. Usage: HelloClient serverHost serverPort
-// Link against xmlrpc lib and whatever socket libs your system needs (ws2_32.lib
-// on windows)
+/* 
+ * XML-RPC client.
+ * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "xmlrpc++/XmlRpc.h"
+#include "../utils/rts2cliapp.h"
 #include <iostream>
 using namespace XmlRpc;
 
-int main(int argc, char* argv[])
-{
-	int port;
-	char* host;
+#define OPT_HOST             OPT_LOCAL + 1
 
-	if (argc == 1)
+class Rts2XmlRpcTest: public Rts2CliApp
+{
+	private:
+		int xmlPort;
+		char *xmlHost;
+		int xmlVerbosity;
+
+		XmlRpcClient* xmlClient;
+
+		int runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcValue &result, bool printRes = true);
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int doProcessing ();
+
+	public:
+		Rts2XmlRpcTest (int argc, char **argv);
+		virtual ~Rts2XmlRpcTest (void);
+};
+
+int
+Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcValue &result, bool printRes)
+{
+	int ret;
+
+	ret = xmlClient->execute (methodName, args, result);
+	if (!ret)
 	{
-		host = "localhost";
-		port = 8889;
-	}
-	else if (argc == 3)
-	{
-		host = argv[1];
-		port = atoi(argv[2]);
-	}
-	else
-	{
-		std::cerr << "Usage: HelloClient serverHost serverPort\n";
+		logStream (MESSAGE_ERROR) << "Error calling '" << methodName << "'." << sendLog;
 		return -1;
 	}
+	if (printRes)
+	{
+		std::cout << "Output of method '" << methodName << "':" << std::endl << result << std::endl << std::endl;
+	}
+	return 0;
+}
 
-	//XmlRpc::setVerbosity(5);
 
-	// Use introspection API to look up the supported methods
-	XmlRpcClient c(host, port);
-	XmlRpcValue noArgs, result;
-	if (c.execute("system.listMethods", noArgs, result))
-		std::cout << "\nMethods:\n " << result << "\n\n";
-	else
-		std::cout << "Error calling 'listMethods'\n\n";
+int
+Rts2XmlRpcTest::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case OPT_PORT:
+			xmlPort = atoi (optarg);
+			break;
+		case OPT_HOST:
+			xmlHost = optarg;
+			break;
+		case 'v':
+			xmlVerbosity++;
+			break;
+		default:
+			return Rts2CliApp::processOption (in_opt);
+	}
+	return 0;
+}
 
-	// Use introspection API to get the help string for the Hello method
-	XmlRpcValue oneArg;
+
+int
+Rts2XmlRpcTest::doProcessing ()
+{
+	XmlRpcValue noArgs, oneArg, result;
+
+	runXmlMethod ("system.listMethods", noArgs, result);
+
 	oneArg[0] = "DeviceCount";
-	if (c.execute("system.methodHelp", oneArg, result))
-		std::cout << "Help for 'DeviceCount' method: " << result << "\n\n";
-	else
-		std::cout << "Error calling 'methodHelp'\n\n";
+	runXmlMethod ("system.methodHelp", oneArg, result);
 
-	// Call the DeviceCount method
-	if (c.execute("DeviceCount", noArgs, result))
-		std::cout << result << "\n\n";
-	else
-		std::cout << "Error calling 'DeviceCount'\n\n";
+	runXmlMethod ("system.listDevices", noArgs, result);
 
-	// Call system.listDevices method
-	if (c.execute("system.listDevices", noArgs, result))
+	runXmlMethod ("system.listValues", noArgs, result);
+
+	oneArg[0] = "C0";
+	runXmlMethod ("system.listValuesDevice", oneArg, result, false);
+	std::cout << "listValues for device " << oneArg[0] << std::endl;
+	for (int i = 0; i < result.size(); i++)
 	{
-		std::cout << "Devices: " << std::endl;
-		for (int i = 0; i < result.size(); i++)
-		{
-			std::cout << " " << result[i] << std::endl;
-		}
-	}
-	else
-	{
-		std::cout << "Error calling 'system.listDevices'\n\n";
+		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
 	}
 
-	// Call system.listVariables method
-	if (c.execute("system.listValues", noArgs, result))
+	oneArg[0] = "P";
+	runXmlMethod ("system.listTargets", oneArg, result);
+
+	oneArg[0] = 4;
+	oneArg[1] = 2;
+	runXmlMethod ("system.targetInfo", oneArg, result);
+
+	oneArg[0] = 2600;
+	runXmlMethod ("system.listImages", oneArg, result);
+	return 0;
+}
+
+
+int
+Rts2XmlRpcTest::init ()
+{
+	int ret;
+	ret = Rts2CliApp::init ();
+	if (ret)
+		return ret;
+	XmlRpc::setVerbosity(xmlVerbosity);
+	xmlClient = new XmlRpcClient (xmlHost, xmlPort);
+	return 0;
+}
+
+
+Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
+{
+	xmlPort = 8889;
+	xmlHost = "localhost";
+	xmlVerbosity = 0;
+
+	xmlClient = NULL;
+
+	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
+	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
+	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it");
+}
+
+
+Rts2XmlRpcTest::~Rts2XmlRpcTest (void)
+{
+	delete xmlClient;
+}
+
+
+int main(int argc, char** argv)
+{
+	Rts2XmlRpcTest app (argc, argv);
+	return app.run();
+}
+
+
+// Call system.listVariables method
+/*	if (c.execute("system.listValues", noArgs, result))
 	{
 		std::cout << "Devices + values: " << std::endl;
 		for (int i = 0; i < result.size(); i++)
 		{
 			std::cout << " " << result[i] << std::endl;
 		}
-	}
-	else
+	}*/
+// Call system.listVariables method with one device
+/*if (c.execute("system.listValuesDevice", oneArg, result))
+{
+	std::cout << "Devices + values for andor: " << std::endl;
+	for (int i = 0; i < result.size(); i++)
 	{
-		std::cout << "Error calling 'system.listValues'\n\n";
+		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
 	}
-
-	oneArg[0] = "andor";
-
-	// Call system.listVariables method with one device
-	if (c.execute("system.listValuesDevice", oneArg, result))
-	{
-		std::cout << "Devices + values for andor: " << std::endl;
-		for (int i = 0; i < result.size(); i++)
-		{
-			std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
-		}
-	}
-	else
-	{
-		std::cout << "Error calling 'system.listValuesDevice'\n\n";
-	}
-
-	oneArg[0] = "C0";
-	oneArg[1] = "C1";
-
-	// Call system.listVariables method with one device
-	if (c.execute("system.listValuesDevice", oneArg, result))
-	{
-		std::cout << "Devices + values for C0 and C1: " << std::endl;
-		for (int i = 0; i < result.size(); i++)
-		{
-			std::cout << " " << result[i] << std::endl;
-		}
-	}
-	else
-	{
-		std::cout << "Error calling 'system.listValuesDevice'\n\n";
-	}
-	/*
-			oneArg[0] = "DOME";
-		if (c.execute("system.listValuesDevice", oneArg, result))
-		{
-		  std::cout << "DOME: " << std::endl;
-		  for (int i = 0; i < result.size (); i++)
-		  {
-				std::cout <<  " " << result[i] << std::endl;
-		  }
-		}
-		else std::cout  << "neco je blbe\n\n";
-	*/
-
-	oneArg[0] = "G";
-	oneArg[1] = "E";
-	if (c.execute("system.listTargets", oneArg, result))
-	{
-		std::cout << "TARGETS: " << std::endl;
-		for (int i = 0; i < result.size (); i++)
-		{
-			std::cout <<  " " << result[i] << std::endl;
-		}
-	}
-	else std::cout  << "neco je blbe s targetama\n\n";
-
-	oneArg[0] = 27219;
-	if (c.execute("system.listImages", oneArg, result))
-	{
-		std::cout << "IMAGES (1009 - 27219): " << std::endl;
-		for (int i = 0; i < result.size (); i++)
-		{
-			std::cout <<  " " << result[i] << std::endl;
-		}
-	}
-	else std::cout  << "neco je blbe s observajsnama\n\n";
-
-	/*
-		XmlRpcValue notDevice;
-		notDevice[0] = "CXXX";
-
-		// Call system.listVariables method with one device
-		if (c.execute("system.listValuesDevice", notDevice, result))
-		{
-			std::cout << "Devices + values for CXX: " << std::endl;
-			for (int i = 0; i < result.size(); i++)
-			{
-				std::cout << " " << result[i] << std::endl;
-			}
-		}
-		else
-		{
-			std::cout << "Error calling 'system.listValuesDevice'\n\n";
-		}
-	*/
-	return 0;
 }
+else
+{
+	std::cout << "Error calling 'system.listValuesDevice'\n\n";
+}*/
