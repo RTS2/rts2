@@ -35,6 +35,7 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		XmlRpcClient* xmlClient;
 
 		int runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcValue &result, bool printRes = true);
+		void doTest ();
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -65,6 +66,41 @@ Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcV
 }
 
 
+void
+Rts2XmlRpcTest::doTest ()
+{
+	XmlRpcValue noArgs, oneArg, result;
+
+	runXmlMethod ("system.listMethods", noArgs, result);
+
+	oneArg[0] = "DeviceCount";
+	runXmlMethod ("system.methodHelp", oneArg, result);
+
+	runXmlMethod ("system.listDevices", noArgs, result);
+
+	runXmlMethod ("system.listValues", noArgs, result);
+
+	oneArg[0] = "SD";
+	runXmlMethod ("system.listValuesDevice", oneArg, result, false);
+	std::cout << "listValues for device " << oneArg[0] << std::endl;
+	for (int i = 0; i < result.size(); i++)
+	{
+		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
+	}
+	return;
+
+	oneArg[0] = "P";
+	runXmlMethod ("system.listTargets", oneArg, result);
+
+	oneArg[0] = 4;
+	oneArg[1] = 2;
+	runXmlMethod ("system.targetInfo", oneArg, result);
+
+	oneArg[0] = 2600;
+	runXmlMethod ("system.listImages", oneArg, result);
+}
+
+
 int
 Rts2XmlRpcTest::processOption (int in_opt)
 {
@@ -89,34 +125,7 @@ Rts2XmlRpcTest::processOption (int in_opt)
 int
 Rts2XmlRpcTest::doProcessing ()
 {
-	XmlRpcValue noArgs, oneArg, result;
-
-	runXmlMethod ("system.listMethods", noArgs, result);
-
-	oneArg[0] = "DeviceCount";
-	runXmlMethod ("system.methodHelp", oneArg, result);
-
-	runXmlMethod ("system.listDevices", noArgs, result);
-
-	runXmlMethod ("system.listValues", noArgs, result);
-
-	oneArg[0] = "C0";
-	runXmlMethod ("system.listValuesDevice", oneArg, result, false);
-	std::cout << "listValues for device " << oneArg[0] << std::endl;
-	for (int i = 0; i < result.size(); i++)
-	{
-		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
-	}
-
-	oneArg[0] = "P";
-	runXmlMethod ("system.listTargets", oneArg, result);
-
-	oneArg[0] = 4;
-	oneArg[1] = 2;
-	runXmlMethod ("system.targetInfo", oneArg, result);
-
-	oneArg[0] = 2600;
-	runXmlMethod ("system.listImages", oneArg, result);
+	doTest ();
 	return 0;
 }
 
