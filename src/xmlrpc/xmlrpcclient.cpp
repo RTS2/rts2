@@ -87,9 +87,8 @@ Rts2XmlRpcTest::doTest ()
 	{
 		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
 	}
-	return;
 
-	oneArg[0] = "P";
+	oneArg[0] = "f";
 	runXmlMethod ("system.listTargets", oneArg, result);
 
 	oneArg[0] = 4;

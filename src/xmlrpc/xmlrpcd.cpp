@@ -322,8 +322,13 @@ class ListTargets: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2TargetSet *tar_set;
-			tar_set = new Rts2TargetSet ();
+			char target_types[params.size ()+1];
+			int j;
+			for (j = 0; j < params.size (); j++)
+				target_types[j] = *(((std::string)params[j]).c_str());
+			target_types[j] = '\0';
+
+			Rts2TargetSet *tar_set = new Rts2TargetSet (target_types);
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
@@ -344,23 +349,7 @@ class ListTargets: public XmlRpcServerMethod
 					retVar["comment"] = "";
 				value = (*tar_iter)->getLastObs();
 				retVar["last"] = value;
-
-				for (int j = 0; j < params.size(); j++)
-				{
-					char type = (((std::string)params[j]).c_str())[0];
-					//	if (type == ' ')
-					//		result[i++] = retVar;	// ask for all targets
-					//	else
-					//	{
-					if ((*tar_iter)->getTargetType() == type)
-								 // only one type
-						result[i++] = retVar;
-					//	}
-				}
-
-				//else
-				//	result[i++] = retVar;	// no parameter, send all targets
-
+				result[i++] = retVar;
 			}
 		}
 
