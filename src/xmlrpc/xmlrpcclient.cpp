@@ -76,16 +76,21 @@ Rts2XmlRpcTest::doTest ()
 	oneArg[0] = "DeviceCount";
 	runXmlMethod ("system.methodHelp", oneArg, result);
 
-	runXmlMethod ("system.listDevices", noArgs, result);
-
 	runXmlMethod ("system.listValues", noArgs, result);
 
-	oneArg[0] = "SD";
-	runXmlMethod ("system.listValuesDevice", oneArg, result, false);
-	std::cout << "listValues for device " << oneArg[0] << std::endl;
-	for (int i = 0; i < result.size(); i++)
+	runXmlMethod ("system.listDevices", noArgs, result);
+
+	for (int i = 0; i < result.size (); i++)
 	{
-		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
+		XmlRpcValue resultValues;
+		oneArg[0] = result[i];
+		runXmlMethod ("system.listValuesDevice", oneArg, resultValues, false);
+		std::cout << "listValues for device " << oneArg[0] << std::endl;
+		for (int j = 0; j < resultValues.size(); j++)
+		{
+			std::cout << " " << resultValues[j]["name"]
+				<< "=" << resultValues[j]["value"] << std::endl;
+		}
 	}
 
 	oneArg[0] = "f";
