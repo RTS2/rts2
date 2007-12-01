@@ -61,15 +61,21 @@ Rts2DevClient::postEvent (Rts2Event * event)
 
 
 void
-Rts2DevClient::dataReceived (char *data, char *dataTop, long fullSize)
+Rts2DevClient::newDataConn (int data_conn)
 {
 }
 
 
 void
-Rts2DevClient::fullDataReceived (char *data, char *fullTop)
+Rts2DevClient::dataReceived (Rts2DataRead *data)
 {
-	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << sendLog;
+}
+
+
+void
+Rts2DevClient::fullDataReceived (int data_conn, Rts2DataRead *data)
+{
+	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }
 
 

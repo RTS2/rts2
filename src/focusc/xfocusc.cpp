@@ -476,7 +476,7 @@ Rts2xfocusCamera::redraw ()
 	if (crossType > 0)
 		printInfo ();
 	// draw plots over stars..
-	drawStars (getTopImage ());
+	drawStars (getActualImage ());
 
 	printMouse ();
 
@@ -822,16 +822,17 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
 	// process mouse change events..
 
-	if (mouseTelChange_x != INT_MAX && mouseTelChange_y != INT_MAX
-		&& getTopImage ())
+	if (mouseTelChange_x != INT_MAX
+		&& mouseTelChange_y != INT_MAX
+		&& getActualImage ())
 	{
 		struct ln_equ_posn
 			change;
-		getTopImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra,
+		getActualImage ()->getRaDec (mouseTelChange_x, mouseTelChange_y, change.ra,
 			change.dec);
 
-		change.ra -= getTopImage ()->getCenterRa ();
-		change.dec -= getTopImage ()->getCenterDec ();
+		change.ra -= getActualImage ()->getCenterRa ();
+		change.dec -= getActualImage ()->getCenterDec ();
 
 		logStream (MESSAGE_DEBUG) << "Change X:" << mouseTelChange_x << " Y:" <<
 			mouseTelChange_y << " RA:" << change.ra << " DEC:" << change.

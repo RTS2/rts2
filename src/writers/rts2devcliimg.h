@@ -43,38 +43,31 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 	private:
 		void writeFilter ();
 
-	protected:
 		// we have to allocate that field as soon as we get the knowledge of
 		// camera chip numbers..
 		CameraImages images;
 
-		CameraImages::iterator getTopIter ()
-		{
-			if (images.begin () == images.end ())
-				return images.begin ();
-			return --images.end ();
-		}
+		// current image
+		CameraImage *actualImage;
 
-		CameraImage *getTop ()
-		{
-			if (images.begin () == images.end ())
-				return NULL;
-			return *(--images.end ());
-		}
+		// last image
+		Rts2Image *lastImage;
 
-		Rts2Image *getTopImage ()
+	protected:
+
+		/**
+		 * Returns image on top of the que.
+		 */
+		Rts2Image *getActualImage ()
 		{
-			if (images.begin () == images.end ())
-				return NULL;
-			return (*(--images.end ()))->image;
+			return lastImage;
 		}
 
 		void clearImages ()
 		{
-			for (CameraImages::iterator iter = images.begin (); iter != images.end ();
-				iter++)
+			for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 			{
-				delete (*iter);
+				delete (*iter).second;
 			}
 			images.clear ();
 		}
@@ -103,9 +96,11 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		virtual void exposureEnd ();
 	public:
 		Rts2DevClientCameraImage (Rts2Conn * in_connection);
-		virtual ~ Rts2DevClientCameraImage (void);
+		virtual ~Rts2DevClientCameraImage (void);
 		virtual void postEvent (Rts2Event * event);
-		virtual void fullDataReceived (char *data, char  *fullTop);
+
+		virtual void newDataConn (int data_conn);
+		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
 		/**
@@ -118,7 +113,7 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		 */
 		virtual imageProceRes processImage (Rts2Image * image);
 
-		CameraImages::iterator processCameraImage (CameraImages::iterator & cis);
+		void processCameraImage (CameraImages::iterator cis);
 
 		void setSaveImage (int in_saveImage)
 		{

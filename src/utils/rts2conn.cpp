@@ -59,10 +59,8 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	lastData = lastGoodSend;
 	lastSendReady = lastGoodSend - connectionTimeout;
 
-	binaryReadDataSize = -1;
-	binaryWriteDataSize = -1;
-
-	binaryReadChunkSize = -1;
+	activeReadData = -1;
+	dataConn = 0;
 }
 
 
@@ -96,10 +94,8 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	lastData = lastGoodSend;
 	lastSendReady = lastData - connectionTimeout;
 
-	binaryReadDataSize = -1;
-	binaryWriteDataSize = -1;
-
-	binaryReadChunkSize = -1;
+	activeReadData = -1;
+	dataConn = 0;
 }
 
 
@@ -692,27 +688,32 @@ Rts2Conn::processLine ()
 	}
 	else if (isCommand (PROTO_BINARY))
 	{
+		int data_conn, data_type;
+		long data_size;
 		// we expect binary data
-		if (paramNextLong (&binaryReadDataSize)
-			|| paramNextInteger (&binaryReadType)
+		if (paramNextInteger (&data_conn)
+			|| paramNextLong (&data_size)
+			|| paramNextInteger (&data_type)
 			|| !paramEnd ())
 		{
 			// end connection - we cannot process this command
-			binaryReadDataSize = -1;
+			activeReadData = -1;
 			connectionError (-2);
 			return -1;
 		}
-		binaryReadBuff = new char[binaryReadDataSize];
-		binaryReadTop = binaryReadBuff;
+
+		readData[data_conn] = new Rts2DataRead (data_size, data_type);
+		newDataConn (data_conn);
 		return -1;
 	}
 	else if (isCommand (PROTO_DATA))
 	{
-		if (paramNextLong (&binaryReadChunkSize)
+		if (paramNextInteger (&activeReadData)
+			|| readData[activeReadData]->readDataSize (this)
 			|| !paramEnd ())
 		{
 			// end connection - bad binary data header
-			binaryReadDataSize = -1;
+			activeReadData = -1;
 			connectionError (-2);
 			return -1;
 		}
@@ -759,20 +760,15 @@ Rts2Conn::receive (fd_set * set)
 			return acceptConn ();
 		}
 		// we are receiving binary data
-		if (binaryReadChunkSize > 0)
+		if (activeReadData >= 0)
 		{
-			data_size = read (sock, binaryReadTop, binaryReadChunkSize);
-			// ignore EINTR
+			data_size = readData[activeReadData]->getData (sock);
 			if (data_size == -1)
 			{
-				if (errno == EINTR)
-					return 0;
 				connectionError (data_size);
-				return -1;
 			}
-			binaryReadDataSize -= data_size;
-			binaryReadChunkSize -= data_size;
-			binaryReadTop += data_size;
+			if (data_size == 0)
+				return 0;
 			dataReceived ();
 			return data_size;
 		}
@@ -840,15 +836,10 @@ Rts2Conn::receive (fd_set * set)
 				buf_top++;
 				processLine ();
 				// binary read just started
-				if (binaryReadChunkSize > 0)
+				if (activeReadData >= 0)
 				{
-					int readSize = full_data_end - buf_top;
-					if (readSize > binaryReadChunkSize)
-						readSize = binaryReadChunkSize;
-					memcpy (binaryReadTop, buf_top, readSize);
-					binaryReadTop += readSize;
-					binaryReadDataSize -= readSize;
-					binaryReadChunkSize -= readSize;
+					long readSize = full_data_end - buf_top;
+					readSize = readData[activeReadData]->addData (buf_top, readSize);
 					dataReceived ();
 					// move binary data away
 					memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
@@ -1300,23 +1291,27 @@ int
 Rts2Conn::startBinaryData (long dataSize, int dataType)
 {
 	char *msg;
-	asprintf (&msg, PROTO_BINARY " %li %i", dataSize, dataType);
+	dataConn++;
+	asprintf (&msg, PROTO_BINARY " %i %li %i", dataConn, dataSize, dataType);
 	int ret;
 	ret = sendMsg (msg);
 	free (msg);
-	binaryWriteDataSize = dataSize;
-	return ret;
+	if (ret == -1)
+		return -1;
+	writeData[dataConn] = new Rts2DataWrite (dataSize);
+	return dataConn;
 }
 
 
 int
-Rts2Conn::sendBinaryData (char *data, long dataSize)
+Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 {
+	char *binaryWriteTop, *binaryWriteBuff;
 	binaryWriteTop = binaryWriteBuff = data;
 	char *binaryEnd = data + dataSize;
 
 	char *msg;
-	asprintf (&msg, PROTO_DATA " %li", dataSize);
+	asprintf (&msg, PROTO_DATA " %i %li", data_conn, dataSize);
 	int ret;
 	ret = sendMsg (msg);
 	free (msg);
@@ -1325,11 +1320,11 @@ Rts2Conn::sendBinaryData (char *data, long dataSize)
 
 	while (binaryWriteTop < binaryEnd)
 	{
-		if (dataSize > binaryWriteDataSize)
+		if (dataSize > getWriteBinaryDataSize (data_conn))
 		{
 			logStream (MESSAGE_ERROR) << "Attemp to send too much data "
-				<< dataSize << " " << binaryWriteDataSize << sendLog;
-			dataSize = binaryWriteDataSize;
+				<< dataSize << " " << getWriteBinaryDataSize (data_conn) << sendLog;
+			dataSize = getWriteBinaryDataSize (data_conn);
 		}
 		ret = send (sock, binaryWriteTop, dataSize, 0);
 		if (ret == -1)
@@ -1343,7 +1338,13 @@ Rts2Conn::sendBinaryData (char *data, long dataSize)
 		else
 		{
 			binaryWriteTop += ret;
-			binaryWriteDataSize -= ret;
+			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
+			((*iter).second)->dataWritten (ret);
+			if (writeData[data_conn]->getDataSize () <= 0)
+			{
+				delete ((*iter).second);
+				writeData.erase (iter);
+			}
 		}
 	}
 	return 0;
@@ -1383,6 +1384,7 @@ Rts2Conn::successfullRead ()
 void
 Rts2Conn::connectionError (int last_data_size)
 {
+	activeReadData = -1;
 	setConnState (CONN_DELETE);
 	if (sock >= 0)
 		close (sock);
@@ -1695,18 +1697,32 @@ Rts2Conn::paramNextTimeval (struct timeval *tv)
 
 
 void
+Rts2Conn::newDataConn (int data_conn)
+{
+	if (otherDevice)
+		otherDevice->newDataConn (data_conn);
+}
+
+
+void
 Rts2Conn::dataReceived ()
 {
-	std::cerr << "dataReceived " << binaryReadTop << " " << binaryReadDataSize << std::endl;
+	std::map <int, Rts2DataRead *>::iterator iter = readData.find (activeReadData);
 	// inform device that we read some data
 	if (otherDevice)
-		otherDevice->dataReceived (binaryReadBuff, binaryReadTop, binaryReadDataSize);
+		otherDevice->dataReceived ((*iter).second);
 	getMaster ()->binaryDataArrived (this);
-	if (binaryReadDataSize == 0)
+	if (((*iter).second)->getRestSize () == 0)
 	{
 		if (otherDevice)
-			otherDevice->fullDataReceived (binaryReadBuff, binaryReadTop);
-		delete []binaryReadBuff;
+			otherDevice->fullDataReceived ((*iter).first, (*iter).second);
+		delete (*iter).second;
+		readData.erase (iter);
+		activeReadData = -1;
+	}
+	else if (((*iter).second)->getChunkSize () == 0)
+	{
+		activeReadData = -1;
 	}
 }
 

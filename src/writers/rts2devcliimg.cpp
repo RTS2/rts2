@@ -29,9 +29,7 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	chipNumbers = 0;
 	saveImage = 1;
 
-	Rts2Config *
-		config;
-	config = Rts2Config::instance ();
+	Rts2Config *config = Rts2Config::instance ();
 
 	xplate = 1;
 	yplate = 1;
@@ -59,6 +57,9 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	config->getString (connection->getName (), "instrume", instrume);
 	config->getString (connection->getName (), "telescop", telescop);
 	config->getString (connection->getName (), "origin", origin);
+
+	actualImage = NULL;
+	lastImage = NULL;
 }
 
 
@@ -73,7 +74,7 @@ Rts2Image * new_image)
 {
 	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
-		CameraImage *ci = *iter;
+		CameraImage *ci = (*iter).second;
 		if (ci->image == old_img)
 		{
 			ci->image = new_image;
@@ -106,26 +107,48 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientCameraImage::writeFilter ()
 {
-	int camFilter = getTopImage ()->getFilterNum ();
+	if (!actualImage)
+	{
+		logStream (MESSAGE_ERROR) << "writeFilter called without image!" << sendLog;
+		return;
+	}
+	int camFilter = actualImage->image->getFilterNum ();
 	char imageFilter[4];
 	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 4);
 	imageFilter[4] = '\0';
-	getTopImage ()->setFilter (imageFilter);
+	actualImage->image->setFilter (imageFilter);
 }
 
 
 void
-Rts2DevClientCameraImage::fullDataReceived (char *data, char *fullTop)
+Rts2DevClientCameraImage::newDataConn (int data_conn)
 {
-	if (getTopImage ())
+	if (!actualImage)
 	{
-		CameraImages::iterator cis = getTopIter ();
-		CameraImage *ci = *cis;
-		ci->image->writeDate (data, fullTop);
+		logStream (MESSAGE_ERROR) << "Data stream started without exposure!" << sendLog;
+		return;
+	}
+	images[data_conn] = actualImage;
+	actualImage = NULL;
+}
+
+
+void
+Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
+{
+	CameraImages::iterator iter = images.find (data_conn);
+	if (iter != images.end ())
+	{
+		CameraImage *ci = (*iter).second;
+		ci->image->writeDate (data->getDataBuff (), data->getDataTop ());
 		ci->setDataWriten ();
 		if (ci->canDelete ())
 		{
-			processCameraImage (cis);
+			processCameraImage (iter);
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "getData, but not all metainfo" << sendLog;
 		}
 	}
 	else
@@ -142,10 +165,10 @@ Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 }
 
 
-CameraImages::iterator
-Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator & cis)
+void
+Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 {
-	CameraImage *ci = *cis;
+	CameraImage *ci = (*cis).second;
 	// create new image of requsted type
 	beforeProcess (ci->image);
 	if (saveImage)
@@ -165,8 +188,10 @@ Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator & cis)
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
 	#endif						 /* DEBUG_EXTRA */
+	if (lastImage == ci->image)
+		lastImage = NULL;
 	delete ci;
-	return images.erase (cis);
+	images.erase (cis);
 }
 
 
@@ -220,9 +245,12 @@ Rts2DevClientCameraImage::exposureStarted ()
 	{
 		image->setFocuserName (focuser);
 	}
-	CameraImage *ci = new CameraImage (image, getMaster ()->getNow ());
-	images.push_back (ci);
-	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, ci));
+	// delete old image
+	delete actualImage;
+	// create image
+	actualImage = new CameraImage (image, getMaster ()->getNow ());
+	lastImage = image;
+	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
 	Rts2DevClientCamera::exposureStarted ();
 }
 
@@ -231,12 +259,12 @@ void
 Rts2DevClientCameraImage::exposureEnd ()
 {
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
-	CameraImage *ci = getTop ();
 
-	ci->setExEnd (getMaster ()->getNow ());
-	ci->image->writeConn (getConnection (), EXPOSURE_START);
+	actualImage->setExEnd (getMaster ()->getNow ());
+	actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 
-	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, ci));
+	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+
 	Rts2DevClientCamera::exposureEnd ();
 }
 

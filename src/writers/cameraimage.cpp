@@ -1,3 +1,22 @@
+/* 
+ * Classes for camera image.
+ * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "cameraimage.h"
 #include "rts2devcliimg.h"
 #include "../utils/timestamp.h"
@@ -66,7 +85,7 @@ CameraImages::~CameraImages (void)
 {
 	for (CameraImages::iterator iter = begin (); iter != end (); iter++)
 	{
-		delete (*iter);
+		delete (*iter).second;
 	}
 	clear ();
 }
@@ -77,11 +96,11 @@ CameraImages::deleteOld ()
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-		CameraImage *ci = *iter;
+		CameraImage *ci = (*iter).second;
 		if (ci->canDelete ())
 		{
 			delete ci;
-			iter = erase (iter);
+			erase (iter++);
 		}
 		else
 		{
@@ -92,18 +111,17 @@ CameraImages::deleteOld ()
 
 
 void
-CameraImages::infoOK (Rts2DevClientCameraImage * master,
-Rts2DevClient * client)
+CameraImages::infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-		CameraImage *ci = *iter;
+		CameraImage *ci = (*iter).second;
 		if (ci->waitingFor (client))
 		{
 			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
 			if (ci->canDelete ())
 			{
-				iter = master->processCameraImage (iter);
+				master->processCameraImage (iter++);
 			}
 		}
 		else
@@ -120,11 +138,11 @@ Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
-		CameraImage *ci = *iter;
+		CameraImage *ci = (*iter).second;
 		if (ci->waitingFor (client))
 		{
 			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
-			iter = master->processCameraImage (iter);
+			master->processCameraImage (iter++);
 		}
 		else
 		{

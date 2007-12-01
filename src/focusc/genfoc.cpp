@@ -156,13 +156,13 @@ Rts2GenFocCamera::printFWHMTable ()
 void
 Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 {
-	if (getTopImage ()->sexResultNum)
+	if (getActualImage()->sexResultNum)
 	{
 		double fwhm;
 		int focPos;
-		fwhm = getTopImage ()->getFWHM ();
-		focPos = getTopImage ()->getFocPos ();
-		fwhmDatas.push_back (new fwhmData (getTopImage ()->sexResultNum, focPos, fwhm));
+		fwhm = getActualImage ()->getFWHM ();
+		focPos = getActualImage ()->getFocPos ();
+		fwhmDatas.push_back (new fwhmData (getActualImage ()->sexResultNum, focPos, fwhm));
 	}
 
 	printFWHMTable ();

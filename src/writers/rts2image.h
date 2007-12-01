@@ -568,7 +568,7 @@ class Rts2Image:public Rts2Expander
 			return false;
 		}
 
-		virtual void printFileName (std::ostream & _os);
+		void printFileName (std::ostream & _os);
 
 		virtual void print (std::ostream & _os, int in_flags = 0);
 

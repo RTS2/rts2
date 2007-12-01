@@ -18,7 +18,7 @@ librts2block_a_SOURCES = rts2app.cpp rts2block.cpp rts2daemon.cpp rts2device.cpp
 	rts2message.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp \
 	rts2displayvalue.cpp rts2scriptdevice.cpp \
 	rts2cliapp.cpp rts2valueminmax.cpp rts2expander.cpp \
-	riseset.cpp rts2valuerectangle.cpp
+	riseset.cpp rts2valuerectangle.cpp rts2data.cpp
 
 # CYGWIN workaround
 
@@ -32,7 +32,7 @@ noinst_HEADERS = mkpath.h rts2app.h rts2block.h rts2daemon.h rts2device.h rts2op
 	rts2connfork.h objectcheck.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
 	rts2message.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h rts2expander.h \
-	riseset.h rts2valuerectangle.h
+	riseset.h rts2valuerectangle.h rts2data.h
 
 rts2_horizon_SOURCES = horizonapp.cpp
 rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a

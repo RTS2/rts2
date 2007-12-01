@@ -77,8 +77,15 @@ class Rts2DevClient:public Rts2Object
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual void dataReceived (char *data, char *dataTop, long left);
-		virtual void fullDataReceived (char *data, char *dataEnd);
+		/**
+		 * Called when new data connection is created.
+		 *
+		 * @param data_conn Index of new data connection.
+		 */
+		virtual void newDataConn (int data_conn);
+
+		virtual void dataReceived (Rts2DataRead *data);
+		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
 
 		virtual void stateChanged (Rts2ServerState * state);
 		void priorityInfo (bool have);

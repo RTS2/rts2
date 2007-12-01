@@ -24,6 +24,7 @@
  * @file Contains Rts2Conn class.
  */
 
+#include <map>
 #include <string>
 #include <string.h>
 #include <time.h>
@@ -32,6 +33,7 @@
 
 #include <status.h>
 
+#include "rts2data.h"
 #include "rts2object.h"
 #include "rts2serverstate.h"
 #include "rts2message.h"
@@ -117,26 +119,12 @@ class Rts2Conn:public Rts2Object
 		time_t lastData;
 		time_t lastSendReady;
 
-		// binary data
-		// when it is positive, there are binary data to read from connection
-		// when it is 0, we should send confirmation that we received binary data
-		// when it is negative, there aren't any data waiting
-		long binaryReadDataSize;
+		std::map <int, Rts2DataRead *> readData;
+		int activeReadData;
 
-		char *binaryReadBuff;
-		char *binaryReadTop;
-
-		// type of data we are reading
-		int binaryReadType;
-
-		// remaining size of binary data chunk which needed to be read
-		long binaryReadChunkSize;
-
-		// number of data to write on conection
-		long binaryWriteDataSize;
-
-		char *binaryWriteBuff;
-		char *binaryWriteTop;
+		std::map <int, Rts2DataWrite *> writeData;
+		// ID of outgoing data connection
+		int dataConn;
 
 		// connectionTimeout in seconds
 		int connectionTimeout;
@@ -176,6 +164,18 @@ class Rts2Conn:public Rts2Object
 		 * Holds info_time variable.
 		 */
 		Rts2ValueTime *info_time;
+
+		/**
+		 * Called when new data connection is created.
+		 *
+		 * @param data_conn Number of data connection created.
+		 */
+		void newDataConn (int data_conn);
+
+		/**
+		 * Called when some data were sucessfully received.
+		 */
+		void dataReceived ();
 
 	protected:
 		/**
@@ -344,17 +344,18 @@ class Rts2Conn:public Rts2Object
 		 * @param dataSize Size of data (in bytes)
 		 * @param dataType Type of data
 		 *
-		 * @return -1 on error, otherwise size of sended data
+		 * @return -1 on error, otherwise ID of data connection.
 		 */
 		int startBinaryData (long dataSize, int dataType);
 
 		/**
 		 * Sends part of binary data.
 		 *
-		 * @param data  Data to send.
-		 * @param dataSize Size of data to send (in bytes).
+		 * @param data_conn  ID of data connection.
+		 * @param data       Data to send.
+		 * @param dataSize   Size of data to send (in bytes).
 		 */
-		int sendBinaryData (char *data, long dataSize);
+		int sendBinaryData (int data_conn, char *data, long dataSize);
 
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
@@ -452,8 +453,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @callergraph
 		 */
-		void queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator =
-			NULL);
+		void queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator = NULL);
 
 		/**
 		 * Que command on connection.
@@ -550,9 +550,6 @@ class Rts2Conn:public Rts2Object
 		int paramNextDouble (double *num);
 		int paramNextFloat (float *num);
 		int paramNextTimeval (struct timeval *tv);
-
-		// called when some data were sucessfully received
-		void dataReceived ();
 
 		Rts2Block *getMaster ()
 		{
@@ -670,9 +667,13 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Return size of data we have to write.
 		 */
-		long getWriteBinaryDataSize ()
+		long getWriteBinaryDataSize (int data_conn)
 		{
-			return binaryWriteDataSize;
+			// if it exists..
+			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
+			if (iter == writeData.end ())
+				return 0;
+			return ((*iter).second)->getDataSize ();
 		}
 };
 #endif							 /* ! __RTS2_CONN__ */
