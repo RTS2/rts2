@@ -1152,9 +1152,10 @@ Rts2Conn::sendCommand ()
 						break;
 				}
 				runningCommand->send ();
+				runningCommand->setStatusCallProgress (CIP_RETURN);
 				break;
 			case CIP_RETURN:
-				// do nothing, it's status command, which return back
+				// do nothing, it's status command, which return back, or command waiting for return
 				break;
 		}
 	}
