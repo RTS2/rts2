@@ -107,16 +107,16 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientCameraImage::writeFilter ()
 {
-	if (!actualImage)
+	if (!getActualImage ())
 	{
 		logStream (MESSAGE_ERROR) << "writeFilter called without image!" << sendLog;
 		return;
 	}
-	int camFilter = actualImage->image->getFilterNum ();
+	int camFilter = getActualImage ()->getFilterNum ();
 	char imageFilter[4];
 	strncpy (imageFilter, getConnection()->getValueSelection ("filter", camFilter), 4);
 	imageFilter[4] = '\0';
-	actualImage->image->setFilter (imageFilter);
+	getActualImage ()->setFilter (imageFilter);
 }
 
 
