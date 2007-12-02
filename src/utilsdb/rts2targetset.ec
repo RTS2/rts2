@@ -151,8 +151,7 @@ Rts2TargetSet::Rts2TargetSet (std::list<int> &tar_ids, struct ln_lnlat_posn *in_
 }
 
 
-Rts2TargetSet::Rts2TargetSet (const char *target_type, struct
-ln_lnlat_posn *in_obs)
+Rts2TargetSet::Rts2TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs)
 {
 	obs = in_obs;
 	if (!obs)

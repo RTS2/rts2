@@ -26,6 +26,13 @@
 
 #include "target.h"
 
+/**
+ * Set of targets.
+ *
+ * This class holds set of targets. Constructors for filling set from the DB using various criterias are provided.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2TargetSet:public std::list <Target * >
 {
 	protected:
@@ -36,11 +43,44 @@ class Rts2TargetSet:public std::list <Target * >
 
 		struct ln_lnlat_posn *obs;
 	public:
-		// print all targets..
+		/**
+		 * Construct set of all targets.
+		 *
+		 * @param in_obs Observer location.
+		 * @param do_load If true, load all targets details.
+		 */
 		Rts2TargetSet (struct ln_lnlat_posn *in_obs, bool do_load);
+
+		/**
+		 * Construct set of all targets.
+		 *
+		 * @param in_obs Observer location.
+		 */
 		Rts2TargetSet (struct ln_lnlat_posn *in_obs = NULL);
+
+		/**
+		 * Construct set of targets around given position.
+		 *
+		 * @param pos RA and DEC of target point.
+		 * @param radius Radius in arcdeg of the circle in which search will be performed.
+		 * @param in_obs Observer location.
+		 */
 		Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs = NULL);
+
+		/**
+		 * Construct set of targets from list of targets IDs.
+		 *
+		 * @param tar_ids Id of targets.
+		 * @param in_obs Observer location.
+		 */
 		Rts2TargetSet (std::list < int >&tar_ids, struct ln_lnlat_posn *in_obs = NULL);
+
+		/**
+		 * Construct set of targets with given type.
+		 *
+		 * @param target_type Type(s) of targets.
+		 * @param in_obs Observer location.
+		 */
 		Rts2TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
 
 		virtual ~Rts2TargetSet (void);
