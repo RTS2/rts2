@@ -106,10 +106,6 @@ Rts2DevClientCameraExec::nextCommand ()
 	if ((nextComd->getBopMask () & BOP_TEL_MOVE) && currentTarget && !currentTarget->wasMoved())
 		return;
 
-	// if we are exposing and command ask to perform exposure..
-	// if ((nextComd->getBopMask () & BOP_EXPOSURE) && (getConnection()->getFullBopState () & (BOP_EXPOSURE | BOP_READOUT)))
-	// 	return;
-
 	// send command to other device
 	if (strcmp (getName (), cmd_device))
 	{
@@ -158,8 +154,7 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
 
 imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
-	int
-		ret;
+	int ret;
 	// try processing in script..
 	if (getScript () && !queCurrentImage)
 	{
