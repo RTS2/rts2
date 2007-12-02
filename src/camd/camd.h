@@ -46,7 +46,7 @@
 /**
  * Class which holds 2D binning informations.
  *
- * @addgroup RTS2Camera
+ * @ingroup RTS2Camera
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -84,6 +84,10 @@ class Binning2D: public Rts2SelData
 
 /**
  * Holds type of data produced.
+ *
+ * @ingroup RTS2Camera
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class DataType: public Rts2SelData
 {
@@ -104,7 +108,35 @@ class DataType: public Rts2SelData
  * them during exposure cycle. The changes are put to que and executed once
  * camera enters IDLE cycle.
  *
- * @addgroup RTS2Camera
+ * Folowing state diagram depict possible state transation inside
+ * Rts2DevCamera.
+ *
+ * @dot
+digraph "Camera states" {
+	idle [shape=box];
+	exposing [shape=box];
+	"exposure end" [shape=diamond];
+	"readout end" [shape=diamond];
+	readout [shape=box];
+	"readout | exposing" [shape=box];
+
+	{ rank = same; idle; exposing; "exposure end"}
+	{ rank = same; "readout | exposing" ; readout}
+
+	idle -> exposing [label="expose"];
+	exposing -> "exposure end" [label="exposure ended"];
+	"exposure end" -> "readout | exposing" [label="exposure_number>0\nsupportFT\nqueValues.empty"];
+
+	"readout | exposing" -> exposing [label="readout end"];
+	"readout | exposing" -> readout [label="exposure end"];
+	"exposure end" -> readout;
+	readout -> "readout end";
+	"readout end" -> idle [label="exposure_number==0"];
+	"readout end" -> exposing [label="exposure_number>0"];
+}
+ * @enddot
+ *
+ * @ingroup RTS2Camera
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -131,6 +163,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int lastFilterNum;
 
+		int currentImageData;
 								 // DARK of LIGHT frames
 		Rts2ValueSelection *expType;
 		Rts2ValueFloat *exposure;
@@ -210,7 +243,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		long getWriteBinaryDataSize ()
 		{
 			if (exposureConn)
-				return exposureConn->getWriteBinaryDataSize ();
+				return exposureConn->getWriteBinaryDataSize (currentImageData);
 			return 0;
 		}
 
@@ -355,7 +388,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		void createTempSet ()
 		{
-			createValue (tempSet, "CCD_SET", "CCD set temperature");
+			createValue (tempSet, "CCD_SET", "CCD set temperature", true, 0, CAM_WORKING, true);
 		}
 
 		void createTempRegulation ()
