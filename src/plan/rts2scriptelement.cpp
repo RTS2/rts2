@@ -124,6 +124,11 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
+	if (camera->getConnection ()->getValue ("SHUTTER")->getValueInteger () != 0)
+		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
+	// change values of the exposure
+	if (camera->getConnection ()->getValue ("exposure")->getValueFloat () != expTime)
+		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
 	// EXP_LIGHT, expTime);
 	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 	(*new_command)->setBopMask (BOP_EXPOSURE);
@@ -144,7 +149,11 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
 Rts2Command ** new_command,
 char new_device[DEVICE_NAME_SIZE])
 {
-	//EXP_DARK, expTime);
+	if (camera->getConnection ()->getValue ("SHUTTER")->getValueInteger () != 1)
+		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
+	// change values of the exposure
+	if (camera->getConnection ()->getValue ("exposure")->getValueFloat () != expTime)
+		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
 	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	getDevice (new_device);
 	return 0;
