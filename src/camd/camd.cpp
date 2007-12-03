@@ -586,7 +586,9 @@ Rts2DevCamera::afterReadout ()
 int
 Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == exposure || old_value == quedExpNumber)
+	if (old_value == exposure
+		|| old_value == quedExpNumber
+		|| old_value == expType)
 	{
 		return 0;
 	}
