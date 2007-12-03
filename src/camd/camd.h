@@ -204,11 +204,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// allowed chip data type
 		Rts2ValueSelection *dataType;
 
-		const int getDataType ()
-		{
-			return ((DataType *) dataType->getData ())->type;
-		}
-
 		// when chip exposure will end
 		Rts2ValueTime *exposureEnd;
 
@@ -220,11 +215,16 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
+		int sendFirstLine ();
+
 	protected:
 		// comes from CameraChip
-
 		double pixelX;
 		double pixelY;
+
+		// buffer used to read data
+		char* dataBuffer;
+		long dataBufferSize;
 
 		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.
@@ -234,6 +234,11 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		long getExposureNumber ()
 		{
 			return exposureNumber->getValueLong ();
+		}
+
+		const int getDataType ()
+		{
+			return ((DataType *) dataType->getData ())->type;
 		}
 
 		int nAcc;
@@ -296,10 +301,20 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 *
 		 * @return Chip size in pixels.
 		 */
-		virtual int chipUsedSize ()
+		virtual long chipUsedSize ()
 		{
 			return (chipUsedReadout->getWidthInt () / binningHorizontal ())
 				* (chipUsedReadout->getHeightInt () / binningVertical ());
+		}
+
+		/**
+		 * Retuns size of chip in bytes.
+		 *
+		 * @return Size of pixel data from current configured CCD in bytes.
+		 */
+		virtual long chipByteSize ()
+		{
+			return chipUsedSize () * usedPixelByteSize ();
 		}
 
 		/**
@@ -365,7 +380,51 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		Rts2ValueDouble *rnoise;
 
+		void initCameraChip ();
+		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
+
+		virtual int startExposure () = 0;
 		virtual void afterReadout ();
+
+		int getShutterState ()
+		{
+			return shutter_state;
+		}
+		virtual int endReadout ();
+
+		virtual int readoutOneLine () = 0;
+		void clearReadout ();
+
+		void setSize (int in_width, int in_height, int in_x, int in_y)
+		{
+			chipSize->setInts (in_x, in_y, in_width, in_height);
+			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
+		}
+
+		virtual long suggestBufferSize ()
+		{
+			return chipByteSize ();
+		}
+
+		int getWidth ()
+		{
+			return chipSize->getWidthInt ();
+		}
+		int getHeight ()
+		{
+			return chipSize->getHeightInt ();
+		}
+		virtual int setBinning (int in_vert, int in_hori);
+		int center (int in_w, int in_h);
+
+		/**
+		 * Check if exposure has ended.
+		 *
+		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
+		 */
+		virtual long isExposing ();
+		virtual int endExposure ();
+		virtual int stopExposure ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -406,50 +465,44 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			createValue (fan, "CCD_FAN", "fan on (1) / off (0)");
 		}
 
-	public:
-		// Comes from CameraChip
-
-		void initCameraChip ();
-		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
-
-		void setSize (int in_width, int in_height, int in_x, int in_y)
+		/**
+		 * Returns current exposure time in seconds.
+		 *
+		 * @return Exposure time in seconds and fractions of seconds.
+		 */
+		float getExposure ()
 		{
-			chipSize->setInts (in_x, in_y, in_width, in_height);
-			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
+			return exposure->getValueFloat ();
 		}
-		int getWidth ()
-		{
-			return chipSize->getWidthInt ();
-		}
-		int getHeight ()
-		{
-			return chipSize->getHeightInt ();
-		}
-		virtual int setBinning (int in_vert, int in_hori);
-		int center (int in_w, int in_h);
-
-		virtual int startExposure () = 0;
 
 		/**
-		 * Check if exposure has ended.
-		 *
-		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
+		 * Set exposure time.
 		 */
-		virtual long isExposing ();
-		virtual int endExposure ();
-		virtual int stopExposure ();
-
-		virtual int deleteConnection (Rts2Conn * conn);
-		int getShutterState ()
+		void setExposure (float in_exp)
 		{
-			return shutter_state;
+			exposure->setValueFloat (in_exp);
+			sendValueAll (exposure);
 		}
-		virtual int endReadout ();
 
-		virtual int readoutOneLine ();
-		void clearReadout ();
+		int setSubExposure (double in_subexposure);
 
-		virtual int sendFirstLine ();
+		double getSubExposure (void)
+		{
+			return subExposure->getValueDouble ();
+		}
+
+		/**
+		 * Returns exposure type.
+		 *
+		 * @return 0 for light exposures, 1 for dark exposure.
+		 */
+		int getExpType ()
+		{
+			return expType->getValueInteger ();
+		}
+
+	public:
+		virtual int deleteConnection (Rts2Conn * conn);
 		/**
 		 * If chip support frame transfer.
 		 *
@@ -527,13 +580,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		int setFocuser (int new_set);
 		int stepFocuser (int step_count);
 		int getFocPos ();
-
-		virtual int setSubExposure (double in_subexposure);
-
-		double getSubExposure (void)
-		{
-			return subExposure->getValueDouble ();
-		}
 
 		bool isIdle ();
 

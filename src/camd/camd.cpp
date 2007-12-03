@@ -279,6 +279,9 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	focuserDevice = NULL;
 	wheelDevice = NULL;
 
+	dataBuffer = NULL;
+	dataBufferSize = -1;
+
 	exposureConn = NULL;
 
 	createValue (rnoise, "RNOISE", "CCD readout noise");
@@ -295,6 +298,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
 Rts2DevCamera::~Rts2DevCamera ()
 {
+	delete[] dataBuffer;
 	delete filter;
 }
 
@@ -714,6 +718,15 @@ Rts2DevCamera::camStartExposure ()
 	{
 		setTimeout (new_timeout);
 	}
+
+	// increas buffer size
+	if (dataBufferSize < suggestBufferSize ())
+	{
+		delete[] dataBuffer;
+		dataBufferSize = suggestBufferSize ();
+		dataBuffer = new char[dataBufferSize];
+	}
+
 	return 0;
 }
 
@@ -811,7 +824,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 		CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
 		"chip readout started");
 
-	currentImageData = conn->startBinaryData (chipUsedSize () * usedPixelByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+	currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)

@@ -55,17 +55,16 @@ using namespace std;
 
 // Mode definitions for the BOOTES projects iXon camera.
 // Arguably they shouldn't be here, but....
-typedef struct ixon_mode_t
+/*typedef struct ixon_mode_t
 {
 	int ad;						 ///0=14bit (3,5,10MHz), 1=16bit (1MHz)
 	int hsspeed;				 ///speed setting (varies with ADC, see docs)
 	int vsspeed;				 ///
 	int vs_amp;					 ///driving voltage, 0-4, leave low if possible
 	int disable_em;				 ///0 = use EMCCD
-} ixon_mode;
+} ixon_mode; */
 
-#define IXON_MODES 7
-const ixon_mode mode_def[] =	 //default with which we worked
+/*const ixon_mode mode_def[] =	 //default with which we worked
 {
 	{
 		1, 0, 5, 1, 0
@@ -88,308 +87,7 @@ const ixon_mode mode_def[] =	 //default with which we worked
 	{							 //14 bit @ 3MHz, no em
 		0, 0, 0, 1, 1
 	}
-};
-
-/***********************************************************************/
-/**
- * Andor Camera Chip
- *
- * In this case, handles memory and some startup hardware poking
- */
-
-class CameraAndorChip:public CameraChip
-{
-	private:
-		AndorCapabilities cap;
-		unsigned short *dest;	 /// Memory array for reading out
-		unsigned short *dest_top;
-		char *send_top;
-		int gain;
-		bool useFT;
-		int andor_shutter_state;
-
-	public:
-		CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
-			int in_gain, bool in_useFT);
-		virtual ~ CameraAndorChip (void);
-		virtual int init ();
-		virtual int startExposure (int light, float exptime);
-		virtual int stopExposure ();
-		virtual long isExposing ();
-		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
-		virtual int readoutOneLine ();
-		virtual bool supportFrameTransfer ();
-
-		int setUseFT (bool in_useFT);
-
-		// *FIXME* only CameraAndor needs to play with this, do we need functions?
-		int use_shutter_anyway;	 // Use shutter even if we have FT
-		void closeShutter ();
-};
-
-CameraAndorChip::CameraAndorChip (Rts2DevCamera * in_cam, int in_chip_id,
-int in_gain, bool in_useFT):
-CameraChip (in_cam, in_chip_id)
-{
-	gain = in_gain;
-	useFT = in_useFT;
-}
-
-
-CameraAndorChip::~CameraAndorChip (void)
-{
-	delete dest;
-};
-
-/** init()
- * Should not be called until post andor Initialise() call
- * Finds out various pieces of information from the Andor library,
- * and switches on frame transfer if the camera has it.
- */
-int
-CameraAndorChip::init ()
-{
-	int ret;
-	float x_um, y_um;
-	int x_pix, y_pix;
-
-	SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
-	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
-	use_shutter_anyway = 0;
-
-	if ((ret = GetPixelSize (&x_um, &y_um)) != DRV_SUCCESS)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"andor chip cannot get pixel size" << ret << sendLog;
-		return -1;
-	}
-
-	//GetPixelSize returns floats, pixel[XY] are doubles
-	pixelX = x_um;
-	pixelY = y_um;
-
-	if ((ret = GetDetector (&x_pix, &y_pix)) != DRV_SUCCESS)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"andor chip cannot get detector size" << ret << sendLog;
-		return -1;
-	}
-	setSize (x_pix, y_pix, 0, 0);
-	dest = new unsigned short[x_pix * y_pix];
-
-	if ((ret = GetCapabilities (&cap)) != DRV_SUCCESS)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"andor chip failed to retrieve camera capabilities" << ret << sendLog;
-		return -1;
-	}
-
-	// use frame transfer mode
-	if ((cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER) && (useFT) &&
-		((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
-	{
-		logStream (MESSAGE_ERROR) <<
-			"andor init attempt to set frame transfer failed " << ret << sendLog;
-		return -1;
-	}
-
-	return CameraChip::init ();
-}
-
-
-int
-CameraAndorChip::startExposure (int light, float exptime)
-{
-	int ret;
-
-	ret =
-		SetImage (binningHorizontal, binningVertical, chipReadout->x + 1,
-		chipReadout->x + chipReadout->height, chipReadout->y + 1,
-		chipReadout->y + chipReadout->width);
-	if (ret != DRV_SUCCESS)
-	{
-		logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
-		return -1;
-	}
-
-	subExposure = camera->getSubExposure ();
-	if (isnan (subExposure))
-	{
-		// single scan
-		if (SetAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
-			return -1;
-		}
-		if (SetExposureTime (exptime) != DRV_SUCCESS)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot set exposure time" << sendLog;
-			return -1;
-		}
-	}
-	else
-	{
-		nAcc = (int) (exptime / subExposure);
-		float acq_exp, acq_acc, acq_kinetic;
-		if (nAcc == 0)
-		{
-			nAcc = 1;
-			subExposure = exptime;
-		}
-
-		// Acquisition mode 2 is "accumulate"
-		if (SetAcquisitionMode (2) != DRV_SUCCESS)
-			return -1;
-		if (SetExposureTime (subExposure) != DRV_SUCCESS)
-			return -1;
-		if (SetNumberAccumulations (nAcc) != DRV_SUCCESS)
-			return -1;
-		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) !=
-			DRV_SUCCESS)
-			return -1;
-		exptime = nAcc * acq_exp;
-		subExposure = acq_exp;
-		camera->setSubExposure (subExposure);
-	}
-
-	chipUsedReadout = new ChipSubset (chipReadout);
-	usedBinningVertical = binningVertical;
-	usedBinningHorizontal = binningHorizontal;
-
-	int new_state = (light) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
-
-	if ((light) && (useFT) && (!use_shutter_anyway))
-		new_state = ANDOR_SHUTTER_OPEN;
-
-	if (new_state != andor_shutter_state)
-	{
-		logStream (MESSAGE_DEBUG) << "SetShutter " << new_state << sendLog;
-		ret = SetShutter (1, new_state, 50, 50);
-		if (ret != DRV_SUCCESS)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot set shutter state to " <<
-				new_state << " error " << ret << sendLog;
-			return -1;
-		}
-	}
-	andor_shutter_state = new_state;
-
-	if ((ret = StartAcquisition ()) != DRV_SUCCESS)
-		return -1;
-	return 0;
-}
-
-
-int
-CameraAndorChip::stopExposure ()
-{
-	AbortAcquisition ();
-	FreeInternalMemory ();
-	return CameraChip::stopExposure ();
-}
-
-
-long
-CameraAndorChip::isExposing ()
-{
-	int status;
-	int ret;
-	if ((ret = CameraChip::isExposing ()) != 0)
-		return ret;
-	if (GetStatus (&status) != DRV_SUCCESS)
-		return -1;
-	if (status == DRV_ACQUIRING)
-		return 100;
-	return 0;
-}
-
-
-int
-CameraAndorChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
-{
-	dest_top = dest;
-	send_top = (char *) dest;
-	return CameraChip::startReadout (dataConn, conn);
-}
-
-
-/***************************************************************
- * readoutOneLine
- *
- * For each exposure, the first time this function is called, it reads out
- * the entire image from the camera (into dest).  Subsequent calls return
- * lines from dest.
- */
-
-int
-CameraAndorChip::readoutOneLine ()
-{
-	int ret;
-	if (readoutLine < chipUsedReadout->height)
-	{
-		int size =
-			(chipUsedReadout->width / usedBinningHorizontal) *
-			(chipUsedReadout->height / usedBinningVertical);
-		ret = GetAcquiredData16 (dest, size);
-		if (ret != DRV_SUCCESS)
-		{
-			logStream (MESSAGE_ERROR) << "andor GetAcquiredData16 return " <<
-				ret << sendLog;
-			return -1;
-		}
-		readoutLine = chipUsedReadout->height;
-		dest_top += size;
-		return 0;
-	}
-	if (sendLine == 0)
-	{
-		ret = CameraChip::sendFirstLine ();
-		if (ret)
-			return ret;
-	}
-	int send_data_size;
-	sendLine++;
-	send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
-	if (send_data_size < 0)
-		return -1;
-	send_top += send_data_size;
-	if (send_top < (char *) dest_top)
-		return 0;
-	return -2;
-}
-
-
-bool
-CameraAndorChip::supportFrameTransfer ()
-{
-	return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
-}
-
-
-int
-CameraAndorChip::setUseFT (bool in_useFT)
-{
-	int status;
-	if (!supportFrameTransfer ())
-		return -1;
-	status = SetFrameTransferMode (in_useFT ? 1 : 0);
-	if (status != DRV_SUCCESS)
-		return -1;
-	useFT = in_useFT;
-	return 0;
-}
-
-
-void
-CameraAndorChip::closeShutter ()
-{
-	SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
-	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
-}
-
-
-/***********************************************************************
- ***********************************************************************/
+}; */
 
 /**
  * Andor camera, as seen by the outside world.
@@ -398,9 +96,7 @@ CameraAndorChip::closeShutter ()
  * an iXon can't do.  If used with a different Andor camera, it should
  * respond reasonably well to the absence of iXon features
  *
- ************************************************************************
- ***********************************************************************/
-
+ */
 class Rts2DevCameraAndor:public Rts2DevCamera
 {
 	private:
@@ -409,11 +105,12 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		// number of AD channels
 		int chanNum;
 
+		AndorCapabilities cap;
+		int andor_shutter_state;
+
 		int disable_ft;
 		int shutter_with_ft;
 		int mode;
-
-		AndorCapabilities cap;
 
 		Rts2ValueInteger *gain;
 
@@ -439,8 +136,7 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		int setVSAmplitude (int in_vsamp);
 		int setHSSpeed (int in_amp, int in_hsspeed);
 		int setVSSpeed (int in_vsspeed);
-		int setFTShutter (int force);
-		int setMode (int mode);
+		int setFTShutter (bool force);
 
 		int printInfo ();
 		void printCapabilities ();
@@ -449,18 +145,29 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		int printVSSpeeds ();
 
 		void initAndorValues ();
+		void closeShutter ();
 
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void help ();
 		virtual void cancelPriorityOperations ();
+
+		virtual int startExposure ();
+		virtual int stopExposure ();
+		virtual long isExposing ();
+
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual int readoutOneLine ();
 
 	public:
 		Rts2DevCameraAndor (int argc, char **argv);
-		virtual ~ Rts2DevCameraAndor (void);
+		virtual ~Rts2DevCameraAndor (void);
 
+		virtual int initChips ();
 		virtual int init ();
+
+		virtual bool supportFrameTransfer ();
 
 		// callback functions for Camera alone
 		virtual int ready ();
@@ -471,9 +178,81 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual int camCoolHold ();
 		virtual int camCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
-
-		virtual int camExpose (int chip, int light, float exptime);
 };
+
+int
+Rts2DevCameraAndor::stopExposure ()
+{
+	AbortAcquisition ();
+	FreeInternalMemory ();
+	return Rts2DevCamera::stopExposure ();
+}
+
+
+long
+Rts2DevCameraAndor::isExposing ()
+{
+	int status;
+	int ret;
+	if ((ret = Rts2DevCameraAndor::isExposing ()) != 0)
+		return ret;
+	if (GetStatus (&status) != DRV_SUCCESS)
+		return -1;
+	if (status == DRV_ACQUIRING)
+		return 100;
+	return 0;
+}
+
+
+// For each exposure, the first time this function is called, it reads out
+// the entire image from the camera (into dest).  Subsequent calls return
+// lines from dest.
+int
+Rts2DevCameraAndor::readoutOneLine ()
+{
+	int ret;
+	switch (getDataType ())
+	{
+		case RTS2_DATA_FLOAT:
+			ret = GetAcquiredFloatData ((float *)dataBuffer, chipByteSize ());
+			break;
+		case RTS2_DATA_LONG:
+			ret = GetAcquiredData ((long *)dataBuffer, chipByteSize ());
+			break;
+			// case RTS2_DATA_SHORT:
+		default:
+			ret = GetAcquiredData16 ((short unsigned *)dataBuffer, chipByteSize ());
+			break;
+	}
+	if (ret != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "andor GetAcquiredXXXX "
+			<< getDataType () << " return " << ret << sendLog;
+		return -1;
+	}
+	ret = sendReadoutData (dataBuffer, dataBufferSize);
+	if (ret < 0)
+		return -1;
+	if (getWriteBinaryDataSize () == 0)
+		return -2;
+	return 0;
+}
+
+
+bool
+Rts2DevCameraAndor::supportFrameTransfer ()
+{
+	return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
+}
+
+
+void
+Rts2DevCameraAndor::closeShutter ()
+{
+	SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
+	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
+}
+
 
 Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
@@ -621,44 +400,9 @@ Rts2DevCameraAndor::setVSSpeed (int in_vsspeed)
 
 
 int
-Rts2DevCameraAndor::setFTShutter (int force)
+Rts2DevCameraAndor::setFTShutter (bool force)
 {
-	for (int i = 0; chips[i] != NULL; i++)
-		((CameraAndorChip *) chips[i])->use_shutter_anyway = force;
-	FTShutter->setValueBool ((force == 0) ? false : true);
-	return 0;
-}
-
-
-int
-Rts2DevCameraAndor::setMode (int in_mode)
-{
-	int ret;
-	const ixon_mode *m;
-
-	if ((in_mode < 0) || (in_mode >= IXON_MODES))
-	{
-		logStream (MESSAGE_ERROR) << "andor setMode failed: " << in_mode
-			<< " is not a valid mode!" << ret << sendLog;
-		return -1;
-	}
-
-	m = &mode_def[in_mode];
-	if ((ret = setADChannel (m->ad)) != 0)
-		return -1;
-
-	if ((ret = setHSSpeed (m->disable_em, m->hsspeed)) != 0)
-		return -1;
-
-	if ((ret = setVSSpeed (m->vsspeed)) != 0)
-		return -1;
-
-	// only set VSAmp if it's defined
-	if (VSAmp && (ret = setVSAmplitude (m->vs_amp)) != 0)
-		return -1;
-
-	// *FIXME*
-	Mode->setValueInteger (in_mode);
+	FTShutter->setValueBool (force);
 	return 0;
 }
 
@@ -672,20 +416,93 @@ Rts2DevCameraAndor::cancelPriorityOperations ()
 }
 
 
-/********************************************************************
- * scriptEnds
- *
- * Ensure that we definitely leave the shutter closed.
- */
+int
+Rts2DevCameraAndor::startExposure ()
+{
+	int ret;
 
+	ret = SetImage (binningHorizontal (), binningVertical (), chipUsedReadout->getXInt () + 1,
+		chipUsedReadout->getXInt () + chipUsedReadout->getHeightInt (),
+		chipUsedReadout->getYInt () + 1,
+		chipUsedReadout->getYInt () + chipUsedReadout->getWidthInt ());
+	if (ret != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
+		return -1;
+	}
+
+	if (isnan (getSubExposure ()))
+	{
+		// single scan
+		if (SetAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
+			return -1;
+		}
+		if (SetExposureTime (getExposure ()) != DRV_SUCCESS)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot set exposure time" << sendLog;
+			return -1;
+		}
+	}
+	else
+	{
+		nAcc = (int) (getExposure () / getSubExposure ());
+		float acq_exp, acq_acc, acq_kinetic;
+		if (nAcc == 0)
+		{
+			nAcc = 1;
+			setSubExposure (getExposure ());
+		}
+
+		// Acquisition mode 2 is "accumulate"
+		if (SetAcquisitionMode (2) != DRV_SUCCESS)
+			return -1;
+		if (SetExposureTime (getSubExposure ()) != DRV_SUCCESS)
+			return -1;
+		if (SetNumberAccumulations (nAcc) != DRV_SUCCESS)
+			return -1;
+		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) !=
+			DRV_SUCCESS)
+			return -1;
+		setExposure (nAcc * acq_exp);
+		setSubExposure (acq_exp);
+	}
+
+	int new_state = (getExpType () == 0) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
+
+	if ((getExpType () == 0) && (useFT) && (!FTShutter->getValueBool ()))
+		new_state = ANDOR_SHUTTER_OPEN;
+
+	if (new_state != andor_shutter_state)
+	{
+		logStream (MESSAGE_DEBUG) << "SetShutter " << new_state << sendLog;
+		ret = SetShutter (1, new_state, 50, 50);
+		if (ret != DRV_SUCCESS)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot set shutter state to " <<
+				new_state << " error " << ret << sendLog;
+			return -1;
+		}
+	}
+	andor_shutter_state = new_state;
+
+	getTemp ();
+
+	if ((ret = StartAcquisition ()) != DRV_SUCCESS)
+		return -1;
+	return 0;
+}
+
+
+// scriptEnds
+// Ensure that we definitely leave the shutter closed.
 int
 Rts2DevCameraAndor::scriptEnds ()
 {
 	if (!isnan (defaultGain) && gain)
 		setGain (defaultGain);
-	// *FIXME* Wow, this is ugly
-	CameraAndorChip *c = (CameraAndorChip *) chips[0];
-	c->closeShutter ();
+	closeShutter ();
 	return Rts2DevCamera::scriptEnds ();
 }
 
@@ -695,8 +512,6 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == gain)
 		return setGain (new_value->getValueInteger ());
-	if (old_value == Mode)
-		return setMode (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == ADChannel)
 		return setADChannel (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSAmp)
@@ -714,9 +529,13 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			0 ? 0 : -2;
 	if (old_value == useFT)
 	{
-		CameraAndorChip *c = (CameraAndorChip *) chips[0];
-		return c->setUseFT (((Rts2ValueBool *) new_value)->getValueBool ()) ==
-			0 ? 0 : -2;
+		int status;
+		if (!supportFrameTransfer ())
+			return -2;
+		status = SetFrameTransferMode (((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0);
+		if (status != DRV_SUCCESS)
+			return -2;
+		return 0;
 	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
@@ -1002,9 +821,57 @@ Rts2DevCameraAndor::printInfo ()
 
 
 int
+Rts2DevCameraAndor::initChips ()
+{
+	int ret;
+	float x_um, y_um;
+	int x_pix, y_pix;
+
+	SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
+	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
+
+	if ((ret = GetPixelSize (&x_um, &y_um)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) <<
+			"andor chip cannot get pixel size" << ret << sendLog;
+		return -1;
+	}
+
+	//GetPixelSize returns floats, pixel[XY] are doubles
+	pixelX = x_um;
+	pixelY = y_um;
+
+	if ((ret = GetDetector (&x_pix, &y_pix)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) <<
+			"andor chip cannot get detector size" << ret << sendLog;
+		return -1;
+	}
+	setSize (x_pix, y_pix, 0, 0);
+
+	if ((ret = GetCapabilities (&cap)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) <<
+			"andor chip failed to retrieve camera capabilities" << ret << sendLog;
+		return -1;
+	}
+
+	// use frame transfer mode
+	if (supportFrameTransfer ()
+		&& (useFT)
+		&& ((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
+	{
+		logStream (MESSAGE_ERROR) <<
+			"andor init attempt to set frame transfer failed " << ret << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+
+int
 Rts2DevCameraAndor::init ()
 {
-	CameraAndorChip *cc;
 	unsigned long err;
 	int ret;
 
@@ -1039,17 +906,6 @@ Rts2DevCameraAndor::init ()
 		cerr << "Cannot set read mode (" << ret << "), exiting" << endl;
 		return -1;
 	}
-
-	if (setMode (0) != 0)
-		return -1;
-
-	chipNum = 1;
-
-	// *FIXME* this is borked until we figure out exactly who knows about
-	// shutters vs. FT - hardcoded as "gain=1", "use ft=1"
-	cc = new CameraAndorChip (this, 0, 1, useFT->getValueBool ());
-	chips[0] = cc;
-	chips[1] = NULL;
 
 	if (printSpeedInfo)
 		printInfo ();
@@ -1168,18 +1024,8 @@ Rts2DevCameraAndor::camCoolShutdown ()
 	CoolerOFF ();
 	SetTemperature (20);
 	tempSet->setValueDouble (+50);
-	// *FIXME* Wow, this is ugly
-	CameraAndorChip *c = (CameraAndorChip *) chips[0];
-	c->closeShutter ();
+	closeShutter ();
 	return 0;
-}
-
-
-int
-Rts2DevCameraAndor::camExpose (int chip, int light, float exptime)
-{
-	getTemp ();
-	return Rts2DevCamera::camExpose (chip, light, exptime);
 }
 
 

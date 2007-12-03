@@ -26,16 +26,13 @@
 class Rts2DevCameraDummy:public Rts2DevCamera
 {
 	private:
-		char *data;
-
 		bool supportFrameT;
 		int infoSleep;
 		Rts2ValueDouble *readoutSleep;
 		int width;
 		int height;
 
-		int dataSize;
-
+		long dataSize;
 	protected:
 		virtual void initBinnings ()
 		{
@@ -79,8 +76,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
 			in_argv)
 		{
-			dataSize = -1;
-
 			createTempCCD ();
 
 			supportFrameT = false;
@@ -93,16 +88,16 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 
 			width = 200;
 			height = 100;
+			dataSize = -1;
+
 			addOption ('f', NULL, 0, "when set, dummy CCD will act as frame transfer device");
 			addOption ('i', NULL, 1, "device will sleep <param> seconds before each info and baseInfo return");
 			addOption ('r', NULL, 1, "device will sleep <parame> seconds before each readout");
 			addOption (OPT_WIDTH, "width", 1, "width of simulated CCD");
 			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
-
-			data = NULL;
 		}
-		virtual ~ Rts2DevCameraDummy (void)
+		virtual ~Rts2DevCameraDummy (void)
 		{
 			readoutSleep = NULL;
 		}
@@ -171,18 +166,14 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		{
 			return 0;
 		}
+		virtual long suggestBufferSize ()
+		{
+			if (dataSize < 0)
+				return Rts2DevCamera::suggestBufferSize ();
+			return dataSize;
+		}
 		virtual int readoutStart ();
 		virtual int readoutOneLine ();
-
-		virtual int readoutEnd ()
-		{
-			if (data)
-			{
-				delete[] data;
-				data = NULL;
-			}
-			return Rts2DevCamera::endReadout ();
-		}
 
 		virtual bool supportFrameTransfer ()
 		{
@@ -201,21 +192,15 @@ int
 Rts2DevCameraDummy::readoutOneLine ()
 {
 	int ret;
-	if (!data)
-	{
-		if (dataSize < 0)
-			dataSize = chipUsedSize () * usedPixelByteSize ();
-		data = new char[dataSize];
-	}
-	long usedSize = dataSize;
+	long usedSize = dataBufferSize;
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
 	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 	for (int i = 0; i < usedSize; i++)
 	{
-		data[i] = i + (int) (getExposureNumber () * 10);
+		dataBuffer[i] = i + (int) (getExposureNumber () * 10);
 	}
-	ret = sendReadoutData (data, usedSize);
+	ret = sendReadoutData (dataBuffer, usedSize);
 	if (ret < 0)
 		return ret;
 
