@@ -152,6 +152,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual void help ();
 		virtual void cancelPriorityOperations ();
 
+		virtual void initDataTypes ();
+
 		virtual int startExposure ();
 		virtual int stopExposure ();
 		virtual long isExposing ();
@@ -194,7 +196,7 @@ Rts2DevCameraAndor::isExposing ()
 {
 	int status;
 	int ret;
-	if ((ret = Rts2DevCameraAndor::isExposing ()) != 0)
+	if ((ret = Rts2DevCamera::isExposing ()) != 0)
 		return ret;
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
@@ -214,14 +216,14 @@ Rts2DevCameraAndor::readoutOneLine ()
 	switch (getDataType ())
 	{
 		case RTS2_DATA_FLOAT:
-			ret = GetAcquiredFloatData ((float *)dataBuffer, chipByteSize ());
+			ret = GetAcquiredFloatData ((float *)dataBuffer, chipUsedSize ());
 			break;
 		case RTS2_DATA_LONG:
-			ret = GetAcquiredData ((long *)dataBuffer, chipByteSize ());
+			ret = GetAcquiredData ((long *)dataBuffer, chipUsedSize ());
 			break;
 			// case RTS2_DATA_SHORT:
 		default:
-			ret = GetAcquiredData16 ((short unsigned *)dataBuffer, chipByteSize ());
+			ret = GetAcquiredData16 ((short unsigned *)dataBuffer, chipUsedSize ());
 			break;
 	}
 	if (ret != DRV_SUCCESS)
@@ -242,7 +244,7 @@ Rts2DevCameraAndor::readoutOneLine ()
 bool
 Rts2DevCameraAndor::supportFrameTransfer ()
 {
-	return (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
+	return useFT->getValueBool () && (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
 }
 
 
@@ -260,6 +262,8 @@ Rts2DevCamera (in_argc, in_argv)
 	createTempCCD ();
 	createTempRegulation ();
 	createTempSet ();
+
+	createExpType ();
 
 	andorRoot = "/root/andor/examples/common";
 
@@ -416,6 +420,15 @@ Rts2DevCameraAndor::cancelPriorityOperations ()
 }
 
 
+void
+Rts2DevCameraAndor::initDataTypes ()
+{
+	Rts2DevCamera::initDataTypes ();
+	addDataType (RTS2_DATA_LONG);
+	addDataType (RTS2_DATA_FLOAT);
+}
+
+
 int
 Rts2DevCameraAndor::startExposure ()
 {
@@ -471,7 +484,7 @@ Rts2DevCameraAndor::startExposure ()
 
 	int new_state = (getExpType () == 0) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
 
-	if ((getExpType () == 0) && (useFT) && (!FTShutter->getValueBool ()))
+	if ((getExpType () == 0) && (supportFrameTransfer ()) && (!FTShutter->getValueBool ()))
 		new_state = ANDOR_SHUTTER_OPEN;
 
 	if (new_state != andor_shutter_state)
@@ -530,7 +543,7 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == useFT)
 	{
 		int status;
-		if (!supportFrameTransfer ())
+		if (!(cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER))
 			return -2;
 		status = SetFrameTransferMode (((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0);
 		if (status != DRV_SUCCESS)
@@ -858,7 +871,6 @@ Rts2DevCameraAndor::initChips ()
 
 	// use frame transfer mode
 	if (supportFrameTransfer ()
-		&& (useFT)
 		&& ((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
 	{
 		logStream (MESSAGE_ERROR) <<
@@ -912,7 +924,7 @@ Rts2DevCameraAndor::init ()
 
 	sprintf (ccdType, "ANDOR");
 
-	return Rts2DevCamera::initChips ();
+	return Rts2DevCameraAndor::initChips ();
 }
 
 
