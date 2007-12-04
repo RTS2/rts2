@@ -356,9 +356,6 @@ Rts2DevCameraFli::init ()
 			sendLog;
 	}
 
-	chipNum = 1;
-	chips[0] = new CameraFliChip (this, 0, dev);
-
 	// FLIGetSerialNum (dev, &serno);
 
 	// snprintf (serialNumber, 64, "%li", serno);
