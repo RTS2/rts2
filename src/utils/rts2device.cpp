@@ -776,11 +776,27 @@ Rts2Device::setMode (int new_mode)
 				<< sendLog;
 			return -1;
 		}
-		// as fall back, exit
-		logStream (MESSAGE_ERROR)
-			<< "Cannot set value " << (*iter).getValueName () << "."
-			<< sendLog;
-		return -1;
+		// create and set new value
+		Rts2Value *new_value = duplicateValue (val);
+		int ret;
+		ret = new_value->setValueString ((*iter).getValue ().c_str ());
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName ()
+				<< " for mode " << new_mode
+				<< " with value '" << (*iter).getValue ()
+				<< "'." << sendLog;
+			return -1;
+		}
+		ret = setCondValue (getCondValue (val->getName ().c_str ()), '=', new_value);
+		if (ret == -2)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName ()
+				<< " mode " << new_mode
+				<< " value '" << new_value->getValue ()
+				<< sendLog;
+			return -1;
+		}
 	}
 	return 0;
 }

@@ -72,21 +72,14 @@ class Rts2Daemon:public Rts2Block
 		void addValue (Rts2Value * value, int queCondition = 0, bool save_value =
 			false);
 
-		Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
-
 		/**
-		 * Perform value changes. Check if value can be changed before performing change.
-		 *
-		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
-		 */
-		int setValue (Rts2CondValue * old_value_cond, char op,
-			Rts2Value * new_value);
-
-		/**
-		 * Holds vector of values which are indendet to be saved. There are two methods, saveValues and loadValues.
-		 * saveValues is called from setValue(Rts2Value,char,Rts2ValueVector) before first value value is changed. Once values are saved,
-		 * values_were_saved turns to true and we don't call saveValues before loadValues is called.
-		 * loadValues reset values_were_saved flag, load all values from savedValues
+		 * Holds vector of values which are indendet to be saved. There
+		 * are two methods, saveValues and loadValues.  saveValues is
+		 * called from setValue(Rts2Value,char,Rts2ValueVector) before
+		 * first value value is changed. Once values are saved,
+		 * values_were_saved turns to true and we don't call saveValues
+		 * before loadValues is called.  loadValues reset
+		 * values_were_saved flag, load all values from savedValues
 		 */
 		Rts2ValueVector savedValues;
 
@@ -124,6 +117,16 @@ class Rts2Daemon:public Rts2Block
 
 		Rts2Value *getValue (const char *v_name);
 		Rts2CondValue *getCondValue (const char *v_name);
+
+		/**
+		 * Duplicate variable.
+		 *
+		 * @param old_value Old value of variable.
+		 * @param withVal When set to true, variable will be duplicated with value.
+		 *
+		 * @return Duplicate of old_value.
+		 */
+		Rts2Value *duplicateValue (Rts2Value * old_value, bool withVal = false);
 
 		void loadValues ();
 
@@ -214,6 +217,14 @@ class Rts2Daemon:public Rts2Block
 		 * error.
 		 */
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		/**
+		 * Perform value changes. Check if value can be changed before performing change.
+		 *
+		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
+		 */
+		int setCondValue (Rts2CondValue * old_value_cond, char op,
+			Rts2Value * new_value);
 
 		/**
 		 * Really perform value change.

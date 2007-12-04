@@ -266,7 +266,7 @@ class Rts2Device:public Rts2Daemon
 	public:
 		Rts2Device (int in_argc, char **in_argv, int in_device_type,
 			char *default_name);
-		virtual ~ Rts2Device (void);
+		virtual ~Rts2Device (void);
 		virtual Rts2DevConn *createConnection (int in_sock);
 
 		/**

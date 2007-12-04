@@ -454,7 +454,7 @@ Rts2Daemon::loadValues ()
 		// if there was error setting value
 		else
 		{
-			ret = setValue (old_val, '=', new_val);
+			ret = setCondValue (old_val, '=', new_val);
 			if (ret == -2)
 			{
 				logStream (MESSAGE_ERROR) <<
@@ -671,7 +671,7 @@ Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 
 
 int
-Rts2Daemon::setValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
+Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
 {
 	// que change if that's necessary
 	if (queValueChange (old_value_cond, getState ()))
@@ -918,8 +918,7 @@ Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 		deleteSaveValue (old_value_cond);
 	}
 
-	ret = setValue (old_value_cond, *op, newValue);
-
+	ret = setCondValue (old_value_cond, *op, newValue);
 	// value change was qued
 	if (ret == -1)
 	{
