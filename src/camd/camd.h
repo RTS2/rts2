@@ -287,7 +287,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 *
 		 * @return Size of pixel in bytes.
 		 */
-		int usedPixelByteSize ()
+		const int usedPixelByteSize ()
 		{
 			if (getDataType () == RTS2_DATA_ULONG)
 				return 4;
@@ -340,8 +340,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 * Return 0 if focusing should continue, !0 otherwise.
 		 */
 		//virtual int doFocusing ();
-
-		// end of CameraChip
 
 		Rts2ValueRectangle *chipUsedReadout;
 
@@ -398,23 +396,85 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		void setSize (int in_width, int in_height, int in_x, int in_y)
 		{
 			chipSize->setInts (in_x, in_y, in_width, in_height);
-			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
+			chipUsedReadout->setInts (0, 0, in_width, in_height);
 		}
 
+		/**
+		 * Suggest size of data buffer.  Data buffer is used to readout
+		 * and then send the data. It should be big enought to hold
+		 * largest element which is possible to get from camera driver.
+		 * Default return full chip size, but can be overwritten in
+		 * descendants.
+		 *
+		 * @return Size of data buffer in bytes.
+		 */
 		virtual long suggestBufferSize ()
 		{
 			return chipByteSize ();
 		}
 
-		int getWidth ()
+		/**
+		 * Get chip height (in pixels).
+		 *
+		 * @return Chip height in pixels.
+		 */
+		const int getWidth ()
 		{
 			return chipSize->getWidthInt ();
 		}
-		int getHeight ()
+
+		/**
+		 * Get width of chip divided by binning factor.
+		 *
+		 * @return getWidth() / binningHorizontal()
+		 */
+		const int getWidthBinned ()
+		{
+			return getWidth () / binningHorizontal ();
+		}
+
+		/**
+		 * Get chip width (in pixels).
+		 *
+		 * @return Chip width in pixels.
+		 */
+		const int getHeight ()
 		{
 			return chipSize->getHeightInt ();
 		}
+
+		/**
+		 * Get height of chip divided by binning factor.
+		 *
+		 * @return getHeight() / binningVertical()
+		 */
+		const int getHeightBinned ()
+		{
+			return getHeight () / binningVertical ();
+		}
+
+		/**
+		 * Get X of top corner in chip coordinates.
+		 *
+		 * @return Chip top X corner chip coordinate.
+		 */
+		const int chipTopX ()
+		{
+			return chipSize->getXInt () + chipUsedReadout->getXInt ();
+		}
+
+		/**
+		 * Get Y of top corner in chip coordinates.
+		 *
+		 * @return Chip top Y corner chip coordinate.
+		 */
+		const int chipTopY ()
+		{
+			return chipSize->getYInt () + chipUsedReadout->getYInt ();
+		}
+
 		virtual int setBinning (int in_vert, int in_hori);
+
 		int center (int in_w, int in_h);
 
 		/**
@@ -564,6 +624,8 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		/**
 		 * Called when readout starts, on transition from EXPOSING to READOUT state.
 		 * Need to intiate readout area, setup camera for readout etc..
+		 *
+		 * @return -1 on error.
 		 */
 		virtual int readoutStart ();
 
