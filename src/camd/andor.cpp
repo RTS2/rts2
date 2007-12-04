@@ -924,7 +924,7 @@ Rts2DevCameraAndor::init ()
 
 	sprintf (ccdType, "ANDOR");
 
-	return Rts2DevCameraAndor::initChips ();
+	return initChips ();
 }
 
 
