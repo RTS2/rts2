@@ -49,6 +49,26 @@ class Rts2DevCameraFli:public Rts2DevCamera
 		int nflush;
 	protected:
 		virtual int initChips ();
+
+		virtual void initBinnings ()
+		{
+			Rts2DevCamera::initBinnings ();
+
+			addBinning2D (2, 2);
+			addBinning2D (4, 4);
+			addBinning2D (8, 8);
+			addBinning2D (16, 16);
+			addBinning2D (2, 1);
+			addBinning2D (4, 1);
+			addBinning2D (8, 1);
+			addBinning2D (16, 1);
+			addBinning2D (1, 2);
+			addBinning2D (1, 4);
+			addBinning2D (1, 8);
+			addBinning2D (1, 16);
+
+		}
+
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
@@ -108,7 +128,7 @@ Rts2DevCameraFli::startExposure ()
 
 	ret = FLISetImageArea (dev,
 		chipTopX(), chipTopY(),
-		chipTopX () + getWidthBinned (), chipTopY () + getHeightBinned ());
+		chipTopX () + getUsedWidthBinned (), chipTopY () + getUsedHeightBinned ());
 	if (ret)
 		return -1;
 
@@ -155,7 +175,7 @@ Rts2DevCameraFli::stopExposure ()
 		if (ret)
 			return ret;
 	}
-	return Rts2DevCameraFli::stopExposure ();
+	return Rts2DevCamera::stopExposure ();
 }
 
 
@@ -164,12 +184,11 @@ Rts2DevCameraFli::readoutOneLine ()
 {
 	LIBFLIAPI ret;
 	char *bufferTop = dataBuffer;
-	for (int line = 0; line < getHeightBinned (); line++, bufferTop += usedPixelByteSize () * getWidthBinned ())
+	for (int line = 0; line < getUsedHeightBinned (); line++, bufferTop += usedPixelByteSize () * getUsedWidthBinned ())
 	{
-		ret = FLIGrabRow (dev, bufferTop, getWidthBinned ());
+		ret = FLIGrabRow (dev, bufferTop, getUsedWidthBinned ());
 		if (ret)
 			return -1;
-		return 0;
 	}
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 	if (ret < 0)
@@ -185,6 +204,7 @@ Rts2DevCamera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
+	createExpType ();
 
 	deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;

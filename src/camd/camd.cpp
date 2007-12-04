@@ -69,9 +69,9 @@ Rts2DevCamera::box (int in_x, int in_y, int in_width, int in_height)
 {
 	// tests for -1 -> full size
 	if (in_x == -1)
-		in_x = chipSize->getXInt ();
+		in_x = 0;
 	if (in_y == -1)
-		in_y = chipSize->getYInt ();
+		in_y = 0;
 	if (in_width == -1)
 		in_width = chipSize->getWidthInt ();
 	if (in_height == -1)

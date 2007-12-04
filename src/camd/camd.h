@@ -414,9 +414,9 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		/**
-		 * Get chip height (in pixels).
+		 * Get chip width (in pixels).
 		 *
-		 * @return Chip height in pixels.
+		 * @return Chip width in pixels.
 		 */
 		const int getWidth ()
 		{
@@ -424,13 +424,23 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		/**
-		 * Get width of chip divided by binning factor.
+		 * Get used area width (in pixels).
 		 *
-		 * @return getWidth() / binningHorizontal()
+		 * @return Used area width in pixels.
 		 */
-		const int getWidthBinned ()
+		const int getUsedWidth ()
 		{
-			return getWidth () / binningHorizontal ();
+			return chipUsedReadout->getWidthInt ();
+		}
+
+		/**
+		 * Get width of used area divided by binning factor.
+		 *
+		 * @return getUsedWidth() / binningHorizontal()
+		 */
+		const int getUsedWidthBinned ()
+		{
+			return getUsedWidth () / binningHorizontal ();
 		}
 
 		/**
@@ -444,13 +454,23 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		/**
-		 * Get height of chip divided by binning factor.
+		 * Get width of used area (in pixels).
 		 *
-		 * @return getHeight() / binningVertical()
+		 * @return Used area width in pixels.
 		 */
-		const int getHeightBinned ()
+		const int getUsedHeight ()
 		{
-			return getHeight () / binningVertical ();
+			return chipUsedReadout->getHeightInt ();
+		}
+
+		/**
+		 * Get height of used area divided by binning factor.
+		 *
+		 * @return getUsedHeight() / binningVertical()
+		 */
+		const int getUsedHeightBinned ()
+		{
+			return getUsedHeight () / binningVertical ();
 		}
 
 		/**
