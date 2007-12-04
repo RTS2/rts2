@@ -1,184 +1,48 @@
-/*!
- * Driver for Apogee Alta cameras.
+/* 
+ * Apogee Alta CCD driver.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
- * Based on test_alta.cpp from Alta source.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author petr
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 #include <math.h>
 
 #include "camd.h"
 #include "ApnCamera.h"
 
-class CameraChipAlta:public CameraChip
-{
-	private:
-		CApnCamera * alta;
-		short unsigned int *dest;
-		short unsigned int *dest_top;
-		char *send_top;
-	public:
-		CameraChipAlta (Rts2DevCamera * in_camer, CApnCamera * in_alta);
-		virtual int init ();
-		virtual int setBinning (int in_vert, int in_hori);
-		virtual int startExposure (int light, float exptime);
-		virtual long isExposing ();
-		virtual int endExposure ();
-		virtual int stopExposure ();
-		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
-		virtual int readoutOneLine ();
-		virtual int endReadout ();
-};
-
-CameraChipAlta::CameraChipAlta (Rts2DevCamera * in_cam, CApnCamera * in_alta):CameraChip (in_cam,
-0)
-{
-	alta = in_alta;
-}
-
-
-int
-CameraChipAlta::init ()
-{
-	setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
-	binningHorizontal = alta->read_RoiBinningH ();
-	binningVertical = alta->read_RoiBinningV ();
-	pixelX = nan ("f");
-	pixelY = nan ("f");
-	//  gain = alta->m_ReportedGainSixteenBit;
-
-	dest = new short unsigned int[chipSize->width * chipSize->height];
-
-	return 0;
-}
-
-
-int
-CameraChipAlta::setBinning (int in_vert, int in_hori)
-{
-	alta->write_RoiBinningH (in_hori);
-	alta->write_RoiBinningV (in_vert);
-	return CameraChip::setBinning (in_vert, in_hori);
-}
-
-
-int
-CameraChipAlta::startExposure (int light, float exptime)
-{
-	int ret;
-	ret = alta->Expose (exptime, light);
-	if (!ret)
-		return -1;
-
-	chipUsedReadout = new ChipSubset (chipReadout);
-	usedBinningVertical = binningVertical;
-	usedBinningHorizontal = binningHorizontal;
-	return 0;
-}
-
-
-long
-CameraChipAlta::isExposing ()
-{
-	long ret;
-	Apn_Status status;
-	ret = CameraChip::isExposing ();
-	if (ret > 0)
-		return ret;
-
-	status = alta->read_ImagingStatus ();
-
-	if (status < 0)
-		return -2;
-	if (status != Apn_Status_ImageReady)
-		return 200;
-	// exposure has ended..
-	return -2;
-}
-
-
-int
-CameraChipAlta::endExposure ()
-{
-	return CameraChip::endExposure ();
-}
-
-
-int
-CameraChipAlta::stopExposure ()
-{
-	// we need to digitize image:(
-	alta->StopExposure (true);
-	return CameraChip::stopExposure ();
-}
-
-
-int
-CameraChipAlta::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
-{
-	int ret;
-	ret = CameraChip::startReadout (dataConn, conn);
-	// set region of intereset..
-	alta->write_RoiPixelsV (chipUsedReadout->height);
-	alta->write_RoiStartY (chipUsedReadout->y);
-	alta->write_RoiStartX (chipUsedReadout->x);
-	alta->write_RoiPixelsH (chipUsedReadout->width);
-	dest_top = dest;
-	send_top = (char *) dest;
-	return ret;
-}
-
-
-int
-CameraChipAlta::readoutOneLine ()
-{
-	int ret;
-
-	if (readoutLine <
-		(chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
-	{
-		bool status;
-		unsigned short width, height;
-		width = chipUsedReadout->width;
-		height = chipUsedReadout->height;
-		unsigned long count;
-		status = alta->GetImageData (dest_top, width, height, count);
-		if (!status)
-			return -1;
-		dest_top += width * height;
-		readoutLine = chipUsedReadout->y + chipUsedReadout->height;
-	}
-	if (sendLine == 0)
-	{
-		ret = CameraChip::sendFirstLine ();
-		if (ret)
-			return ret;
-	}
-	int send_data_size;
-	sendLine++;
-	send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
-	if (send_data_size < 0)
-		return -1;
-	send_top += send_data_size;
-	if (send_top < (char *) dest_top)
-		return 0;
-	return -2;
-}
-
-
-int
-CameraChipAlta::endReadout ()
-{
-	// reset system??
-	return CameraChip::endReadout ();
-}
-
-
+/**
+ * Driver for Apogee Alta cameras.
+ *
+ * Based on test_alta.cpp from Alta source.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevCameraAlta:public Rts2DevCamera
 {
 	private:
 		CApnCamera * alta;
 		int bit12;
+
+	protected:
+		virtual int initChips ();
+		virtual int setBinning (int in_vert, int in_hori);
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int stopExposure ();
+		virtual int readoutOneLine ();
+
 	public:
 		Rts2DevCameraAlta (int argc, char **argv);
 		virtual ~ Rts2DevCameraAlta (void);
@@ -195,6 +59,95 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual int camCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
 };
+
+int
+Rts2DevCameraAlta::initChips ()
+{
+	setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
+	setBinning (1, 1);
+	pixelX = nan ("f");
+	pixelY = nan ("f");
+	//  gain = alta->m_ReportedGainSixteenBit;
+
+	return Rts2DevCamera::initChips ();
+}
+
+
+int
+Rts2DevCameraAlta::setBinning (int in_vert, int in_hori)
+{
+	alta->write_RoiBinningH (in_hori);
+	alta->write_RoiBinningV (in_vert);
+	return Rts2DevCamera::setBinning (in_vert, in_hori);
+}
+
+
+int
+Rts2DevCameraAlta::startExposure ()
+{
+	int ret;
+	ret = alta->Expose (getExposure (), getExpType () ? 0 : 1);
+	if (!ret)
+		return -1;
+
+	// set region of intereset..
+	alta->write_RoiStartY (chipUsedReadout->getYInt ());
+	alta->write_RoiStartX (chipUsedReadout->getXInt ());
+	alta->write_RoiPixelsH (chipUsedReadout->getWidthInt ());
+	alta->write_RoiPixelsV (chipUsedReadout->getHeightInt ());
+
+	return 0;
+}
+
+
+long
+Rts2DevCameraAlta::isExposing ()
+{
+	long ret;
+	Apn_Status status;
+	ret = Rts2DevCamera::isExposing ();
+	if (ret > 0)
+		return ret;
+
+	status = alta->read_ImagingStatus ();
+
+	if (status < 0)
+		return -2;
+	if (status != Apn_Status_ImageReady)
+		return 200;
+	// exposure has ended..
+	return -2;
+}
+
+
+int
+Rts2DevCameraAlta::stopExposure ()
+{
+	// we need to digitize image:(
+	alta->StopExposure (true);
+	return Rts2DevCamera::stopExposure ();
+}
+
+
+int
+Rts2DevCameraAlta::readoutOneLine ()
+{
+	int ret;
+
+	bool status;
+	unsigned long count;
+	unsigned short width = chipUsedReadout->getWidthInt ();
+	unsigned short height = chipUsedReadout->getHeightInt ();
+	status = alta->GetImageData ((short unsigned int *) dataBuffer, width, height, count);
+	if (!status)
+		return -1;
+
+	ret = sendReadoutData (dataBuffer, dataBufferSize);
+	if (ret < 0)
+		return -1;
+	return -2;
+}
+
 
 Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
@@ -275,14 +228,11 @@ Rts2DevCameraAlta::init ()
 		alta->write_DataBits (Apn_Resolution_SixteenBit);
 	}
 
-	chipNum = 1;
-	chips[0] = new CameraChipAlta (this, alta);
-
 	strcpy (ccdType, "Alta ");
 	strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
 	sprintf (serialNumber, "%i", alta->m_CameraId);
 
-	return Rts2DevCamera::initChips ();
+	return initChips ();
 }
 
 
