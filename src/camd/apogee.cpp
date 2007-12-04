@@ -1,9 +1,20 @@
-/*!
- * Driver for Apogee camera.
+/* 
+ * Apogee CCD driver.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
- * Based on original apogee driver.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author petr
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <math.h>
@@ -35,93 +46,97 @@ const int CCD_OPEN_LOOPTST = 3;	 // Loopback test failed, no camera found
 const int CCD_OPEN_ALLOC = 4;	 // Memory alloc failed - system error
 const int CCD_OPEN_NTIO = 5;	 // NT I/O driver not present
 
-class CameraApogeeChip:public CameraChip
+/**
+ * Driver for Apogee camera.
+ *
+ * Based on original Apogee driver.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Rts2DevCameraApogee:public Rts2DevCamera
 {
-	CCameraIO *camera;
-	short unsigned int *dest;
-	short unsigned int *dest_top;
-	char *send_top;
-	time_t expExposureEnd;
-	public:
-		CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera);
-		virtual ~ CameraApogeeChip (void);
-		virtual int init ();
+	private:
+		CCameraIO *camera;
+		int device_id;
+		char *cfgname;
+		int config_load (short BaseAddress, short RegOffset);
+		bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
+			short bufflen, short *parmlen);
+
+		time_t expExposureEnd;
+
+	protected:
+		virtual int initChips ();
 		virtual int setBinning (int in_vert, int in_hori);
-		virtual int startExposure (int light, float exptime);
+		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int endExposure ();
 		virtual int stopExposure ();
-		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
 		virtual int readoutOneLine ();
 		virtual int endReadout ();
+
+	public:
+		Rts2DevCameraApogee (int argc, char **argv);
+		virtual ~ Rts2DevCameraApogee (void);
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int ready ();
+		virtual int info ();
+
+		virtual int camChipInfo (int chip);
+
+		virtual int camCoolMax ();
+		virtual int camCoolHold ();
+		virtual int camCoolTemp (float new_temp);
+		virtual int camCoolShutdown ();
 };
 
-CameraApogeeChip::CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera):CameraChip (in_cam,
-0)
-{
-	camera = in_camera;
-	dest = NULL;
-}
-
-
-CameraApogeeChip::~CameraApogeeChip (void)
-{
-	delete dest;
-}
-
-
 int
-CameraApogeeChip::init ()
+Rts2DevCameraApogee::initChips ()
 {
 	setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
-	binningHorizontal = camera->m_BinX;
-	binningVertical = camera->m_BinY;
+	setBinning (1, 1);
 	pixelX = camera->m_PixelXSize;
 	pixelY = camera->m_PixelYSize;
 
-	dest = new short unsigned int[chipSize->width * chipSize->height];
-
-	return 0;
+	return Rts2DevCamera::initChips ();
 }
 
 
 int
-CameraApogeeChip::setBinning (int in_vert, int in_hori)
+Rts2DevCameraApogee::setBinning (int in_vert, int in_hori)
 {
 	camera->m_ExposureBinX = in_hori;
 	camera->m_ExposureBinY = in_vert;
-	return CameraChip::setBinning (in_vert, in_hori);
+	return Rts2DevCamera::setBinning (in_vert, in_hori);
 }
 
 
 int
-CameraApogeeChip::startExposure (int light, float exptime)
+Rts2DevCameraApogee::startExposure ()
 {
 	bool ret;
-	ret = camera->Expose (exptime, light);
+	ret = camera->Expose (getExposure (), getExpType () ? 0 : 1);
 
 	if (!ret)
 	{
-		logStream (MESSAGE_ERROR) << "apogee startExposure exposure error" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "apogee startExposure exposure error" << sendLog;
 		return -1;
 	}
 
-	chipUsedReadout = new ChipSubset (chipReadout);
-	usedBinningVertical = binningVertical;
-	usedBinningHorizontal = binningHorizontal;
 	expExposureEnd = 0;
 	return 0;
 }
 
 
 long
-CameraApogeeChip::isExposing ()
+Rts2DevCameraApogee::isExposing ()
 {
 	long ret;
 	time_t now;
 	Camera_Status status;
-	ret = CameraChip::isExposing ();
+	ret = Rts2DevCamera::isExposing ();
 	if (ret > 0)
 		return ret;
 
@@ -155,105 +170,52 @@ CameraApogeeChip::isExposing ()
 
 
 int
-CameraApogeeChip::endExposure ()
+Rts2DevCameraApogee::endExposure ()
 {
 	camera->m_WaitingforTrigger = false;
-	return CameraChip::endExposure ();
+	return Rts2DevCamera::endExposure ();
 }
 
 
 int
-CameraApogeeChip::stopExposure ()
+Rts2DevCameraApogee::stopExposure ()
 {
 	camera->Reset ();
-	return CameraChip::stopExposure ();
+	return Rts2DevCamera::stopExposure ();
 }
 
 
 int
-CameraApogeeChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
+Rts2DevCameraApogee::readoutOneLine ()
 {
+	bool status;
+	short int width, height;
+	width = chipUsedReadout->getWidthInt ();
+	height = chipUsedReadout->getHeightInt ();
 	int ret;
-	ret = CameraChip::startReadout (dataConn, conn);
-	dest_top = dest;
-	send_top = (char *) dest;
-	return ret;
-}
 
-
-int
-CameraApogeeChip::readoutOneLine ()
-{
-	if (readoutLine <
-		(chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
-	{
-		bool status;
-		short int width, height;
-		width = chipUsedReadout->width;
-		height = chipUsedReadout->height;
-		camera->m_ExposureStartX = chipUsedReadout->x;
-		camera->m_ExposureStartY = chipUsedReadout->y;
-		camera->m_ExposureNumX = chipUsedReadout->width / usedBinningHorizontal;
-		camera->m_ExposureNumY = chipUsedReadout->height / usedBinningVertical;
-		status = camera->GetImage (dest_top, width, height);
-		logStream (MESSAGE_DEBUG) << "apogee readoutOneLine status " << status
-			<< sendLog;
-		if (!status)
-			return -1;
-		dest_top += width * height;
-		readoutLine = chipUsedReadout->y + chipUsedReadout->height;
-	}
-	if (sendLine == 0)
-	{
-		int ret;
-		ret = CameraChip::sendFirstLine ();
-		if (ret)
-			return ret;
-	}
-	int send_data_size;
-	sendLine++;
-	send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
-	if (send_data_size < 0)
+	camera->m_ExposureStartX = chipUsedReadout->getXInt ();
+	camera->m_ExposureStartY = chipUsedReadout->getYInt ();
+	camera->m_ExposureNumX = getUsedWidthBinned ();
+	camera->m_ExposureNumY = getUsedHeightBinned ();
+	status = camera->GetImage ((short unsigned int*) dataBuffer, width, height);
+	logStream (MESSAGE_DEBUG) << "apogee readoutOneLine status " << status << sendLog;
+	if (!status)
 		return -1;
-	send_top += send_data_size;
-	if (send_top < (char *) dest_top)
-		return 0;				 // there are still some data to send..
+	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	if (ret < 0)
+		return -1;
 	return -2;
 }
 
 
 int
-CameraApogeeChip::endReadout ()
+Rts2DevCameraApogee::endReadout ()
 {
 	camera->Reset ();
-	return CameraChip::endReadout ();
+	return Rts2DevCamera::endReadout ();
 }
 
-
-class Rts2DevCameraApogee:public Rts2DevCamera
-{
-	CCameraIO *camera;
-	int device_id;
-	char *cfgname;
-	int config_load (short BaseAddress, short RegOffset);
-	bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
-		short bufflen, short *parmlen);
-	public:
-		Rts2DevCameraApogee (int argc, char **argv);
-		virtual ~ Rts2DevCameraApogee (void);
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-		virtual int ready ();
-		virtual int info ();
-
-		virtual int camChipInfo (int chip);
-
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
-		virtual int camCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
-};
 
 //-------------------------------------------------------------
 // CfgGet
@@ -571,7 +533,7 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 	}
 	else
 								 //default
-			camera->write_TestBits (0);
+		camera->write_TestBits (0);
 
 	if (CfgGet (inifp, "system", "test2", retbuf, sizeof (retbuf), &plen))
 	{
@@ -580,7 +542,7 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 	}
 	else
 								 // default
-			camera->write_Test2Bits (0);
+		camera->write_Test2Bits (0);
 
 								 //default
 	camera->write_FastReadout (false);
@@ -876,14 +838,11 @@ Rts2DevCameraApogee::init ()
 	if (status < 0)
 		return -1;
 
-	chipNum = 1;
-	chips[0] = new CameraApogeeChip (this, camera);
-
 	strcpy (ccdType, "Apogee_");
 	strncat (ccdType, camera->m_Sensor, 10);
 	strcpy (serialNumber, "007");
 
-	return Rts2DevCamera::initChips ();
+	return initChips ();
 }
 
 

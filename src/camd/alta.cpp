@@ -142,7 +142,7 @@ Rts2DevCameraAlta::readoutOneLine ()
 	if (!status)
 		return -1;
 
-	ret = sendReadoutData (dataBuffer, dataBufferSize);
+	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	return -2;
@@ -157,6 +157,8 @@ Rts2DevCamera (in_argc, in_argv)
 	createTempRegulation ();
 	createTempSet ();
 	createCamFan ();
+
+	createExpType ();
 
 	alta = NULL;
 	addOption ('B', "12bits", 0,
