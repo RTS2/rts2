@@ -117,7 +117,7 @@ AC_SUBST(INC_ANDOR)
 
 # test for EDT PDV boards
 AC_ARG_WITH(edtpdv,
-[  --with-edtpdv           path to EDT-PDV SDK files, needed to build EDT cameras (http://www.edt.com/software],
+[  --with-edtpdv           path to EDT-PDV SDK files, needed to build EDT cameras (http://www.edt.com/software)],
 EDTPDV="${withval}";
 LIB_EDTPDV="-L${EDTPDV} -lpdv -ldl";
 INC_EDTPDV="-I${EDTPDV}",
