@@ -15,7 +15,7 @@ rts2_mon_CXXFLAGS = @NOVA_CFLAGS@ @LIB_GSOAP_CFLAGS@ @LIBPG_CFLAGS@ @CFITSIO_CFL
 
 else
 
-rts2_mon_LDFLAGS = @LIB_NCURSES@ @LIB_M@ @LIB_NOVA@ ../utilsdb/librts2blockdb.a ../utils/librts2block.a
+rts2_mon_LDFLAGS = @LIB_NCURSES@ @LIB_M@ @LIB_NOVA@ ../utils/librts2block.a
 rts2_mon_CXXFLAGS = @NOVA_CFLAGS@
 
 endif
