@@ -1,10 +1,23 @@
-/*!
- * Alternative driver for SBIG camera.
+/* 
+ * Alternative SBIG PP CCD driver.
+ * Copyright (C) 2001-2005 Martin Jelinek <mates@iaa.es>
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
- * RTS2 urvc2 interface.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author petr
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -20,132 +33,17 @@
 								 // in case geteeprom fails
 #define DEFAULT_CAMERA  ST8_CAMERA
 
-class CameraUrvc2Chip:public CameraChip
-{
-	CAMERA *C;
-	unsigned short *img;
-	unsigned short *dest_top;
-	char *send_top;
-	public:
-		CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id, int in_width,
-			int in_height, double in_pixelX, double in_pixelY);
-		virtual ~ CameraUrvc2Chip ();
-
-		virtual int setBinning (int in_vert, int in_hori);
-
-		virtual int startExposure (int light, float exptime);
-		virtual long isExposing ();
-		virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
-		virtual int readoutOneLine ();
-};
-
-CameraUrvc2Chip::CameraUrvc2Chip (Rts2DevCamera * in_cam, int in_chip_id,
-int in_width, int in_height,
-double in_pixelX, double in_pixelY):
-CameraChip (in_cam, in_chip_id, in_width, in_height, in_pixelX, in_pixelY)
-{
-	OpenCCD (in_chip_id, &C);
-	img = new unsigned short int[C->horzImage * C->vertImage];
-}
-
-
-CameraUrvc2Chip::~CameraUrvc2Chip ()
-{
-	free (img);
-	CloseCCD (C);
-}
-
-
-int
-CameraUrvc2Chip::setBinning (int in_vert, int in_hori)
-{
-	if (in_vert < 1 || in_vert > 3 || in_hori < 1 || in_hori > 3)
-		return -1;
-	return CameraChip::setBinning (in_vert, in_hori);
-};
-
-int
-CameraUrvc2Chip::startExposure (int light, float exptime)
-{
-	return (CCDExpose (C, (int) (100 * (exptime) + 0.5), light));
-}
-
-
-int
-CameraUrvc2Chip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
-{
-	dest_top = img;
-	send_top = (char *) img;
-	return CameraChip::startReadout (dataConn, conn);
-}
-
-
-long
-CameraUrvc2Chip::isExposing ()
-{
-	int ret;
-	ret = CameraChip::isExposing ();
-	if (ret > 0)
-		return ret;
-	int imstate;
-	imstate = CCDImagingState (C);
-	if (imstate == -1)
-		return -1;
-	if (imstate)
-	{
-		return 100;				 // recheck in 100 msec
-	}
-	return -2;
-}
-
-
-int
-CameraUrvc2Chip::readoutOneLine ()
-{
-	if (readoutLine == 0)
-	{
-		if (CCDReadout
-			(img, C, chipReadout->x / binningVertical,
-			chipReadout->y / binningVertical,
-			chipReadout->width / binningVertical,
-			chipReadout->height / binningVertical, binningVertical))
-		{
-			logStream (MESSAGE_DEBUG) <<
-				"urvc2 chip readoutOneLine readout return not-null" << sendLog;
-			return -1;
-		}
-		dest_top =
-			img +
-			((chipReadout->width / binningVertical) *
-			(chipReadout->height / binningVertical));
-		readoutLine = 1;
-		// save to file
-		return 0;
-	}
-	if (sendLine == 0)
-	{
-		int ret;
-		ret = CameraChip::sendFirstLine ();
-		if (ret)
-			return ret;
-	}
-	int send_data_size;
-	sendLine++;
-	send_data_size += sendReadoutData (send_top, (char *) dest_top - send_top);
-	if (send_data_size < 0)
-		return -1;
-	send_top += send_data_size;
-	if (send_top < (char *) dest_top)
-		return 0;
-	return -2;
-}
-
-
+/**
+ * Alternative driver for SBIG camera.
+ *
+ * RTS2 urvc2 interface.
+ */
 class Rts2DevCameraUrvc2:public Rts2DevCamera
 {
 	private:
 		EEPROMContents eePtr;	 // global to prevent multiple EEPROM calls
 		CAMERA_TYPE cameraID;
+		CAMERA *C;
 
 		void get_eeprom ();
 		void init_shutter ();
@@ -153,8 +51,16 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 		int setcool (int reg, int setpt, int prel, int fan, int state);
 
 		int ad_temp;
+
+	protected:
+		virtual int initChips ();
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int stopExposure ();
+		virtual int readoutOneLine ();
 	public:
 		Rts2DevCameraUrvc2 (int argc, char **argv);
+		virtual ~Rts2DevCameraUrvc2 (void);
 
 		virtual int init ();
 		virtual int ready ();
@@ -163,9 +69,6 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 		{
 			return 0;
 		}
-		virtual int camExpose (int chip, int light, float exptime);
-
-		virtual int camStopExpose (int chip);
 
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
@@ -340,8 +243,67 @@ int coolstate)
 }
 
 
-Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
-in_argv)
+int
+Rts2DevCameraUrvc2::initChips ()
+{
+	OpenCCD (0, &C);
+	return Rts2DevCamera::initChips ();
+}
+
+
+int
+Rts2DevCameraUrvc2::startExposure ()
+{
+	#ifdef INIT_SHUTTER
+	init_shutter ();
+	#else
+	if (getExpType () == 1)		 // init shutter only for dark images
+		init_shutter ();
+	#endif
+	return (CCDExpose (C, (int) (100 * (getExposure ()) + 0.5), getExpType () ? 0 : 1));
+}
+
+
+long
+Rts2DevCameraUrvc2::isExposing ()
+{
+	int ret;
+	ret = Rts2DevCamera::isExposing ();
+	if (ret > 0)
+		return ret;
+	int imstate;
+	imstate = CCDImagingState (C);
+	if (imstate == -1)
+		return -1;
+	if (imstate)
+	{
+		return 100;				 // recheck in 100 msec
+	}
+	return -2;
+}
+
+
+int
+Rts2DevCameraUrvc2::readoutOneLine ()
+{
+	if (CCDReadout ((short unsigned int *) dataBuffer, C, chipUsedReadout->getXInt () / binningVertical (),
+		chipUsedReadout->getYInt () / binningHorizontal (),
+		getUsedWidthBinned (), getUsedHeightBinned (), binningVertical ()))
+	{
+		logStream (MESSAGE_DEBUG)
+			<< "urvc2 chip readoutOneLine readout return not-null" << sendLog;
+		return -1;
+	}
+	int ret;
+	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	if (ret < 0)
+		return -1;
+	return -2;
+}
+
+
+Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):
+Rts2DevCamera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -350,8 +312,16 @@ in_argv)
 	createCoolingPower ();
 	createCamFan ();
 
+	createExpType ();
+
 	cameraID = DEFAULT_CAMERA;
 	tempRegulation->setValueInteger (-1);
+}
+
+
+Rts2DevCameraUrvc2::~Rts2DevCameraUrvc2 (void)
+{
+	CloseCCD (C);
 }
 
 
@@ -395,21 +365,9 @@ Rts2DevCameraUrvc2::init ()
 
 	get_eeprom ();
 
-	if (Cams[eePtr.model].hasTrack)
-		chipNum = 2;
-	else
-		chipNum = 1;
-
-	for (i = 0; i < chipNum; i++)
-	{
-		logStream (MESSAGE_DEBUG) << "urvc2 new CameraUrvc2Chip " << i <<
-			sendLog;
-		chips[i] =
-			new CameraUrvc2Chip (this, i, Cams[eePtr.model].horzImage,
-			Cams[eePtr.model].vertImage,
-			Cams[eePtr.model].pixelX,
-			Cams[eePtr.model].pixelY);
-	}
+	setSize (Cams[eePtr.model].horzImage, Cams[eePtr.model].vertImage, 0, 0);
+	pixelX = Cams[eePtr.model].pixelX;
+	pixelY = Cams[eePtr.model].pixelY;
 
 	// determine temperature regulation state
 	switch (qtsr.enabled)
@@ -417,9 +375,7 @@ Rts2DevCameraUrvc2::init ()
 		case 0:
 			// a bit strange: may have different
 			// meanings... (freeze)
-			tempRegulation->
-				setValueInteger ((qtsr.power >
-				250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF);
+			tempRegulation->setValueInteger ((qtsr.power > 250) ? CAMERA_COOL_MAX : CAMERA_COOL_OFF);
 			break;
 		case 1:
 			tempRegulation->setValueInteger (CAMERA_COOL_HOLD);
@@ -436,7 +392,7 @@ Rts2DevCameraUrvc2::init ()
 	strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
 	strcpy (serialNumber, (char *) eePtr.serialNumber);
 
-	return Rts2DevCameraUrvc2::initChips ();
+	return initChips ();
 }
 
 
@@ -472,23 +428,10 @@ Rts2DevCameraUrvc2::info ()
 
 
 int
-Rts2DevCameraUrvc2::camExpose (int chip_id, int light, float exptime)
-{
-	#ifdef INIT_SHUTTER
-	init_shutter ();
-	#else
-	if (!light)					 // init shutter only for dark images
-		init_shutter ();
-	#endif
-	return Rts2DevCamera::camExpose (chip_id, light, exptime);
-}
-
-
-int
-Rts2DevCameraUrvc2::camStopExpose (int chip)
+Rts2DevCameraUrvc2::stopExposure ()
 {
 	EndExposureParams eep;
-	eep.ccd = chip;
+	eep.ccd = 0;
 
 	if (MicroCommand (MC_END_EXPOSURE, cameraID, &eep, NULL))
 		return -1;
