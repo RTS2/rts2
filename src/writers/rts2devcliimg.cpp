@@ -38,7 +38,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	ter_xoa = nan ("f");
 	ter_yoa = nan ("f");
 	flip = 1;
-	config_rotang = 0;
 
 	config->getDouble (connection->getName (), "xplate", xplate);
 	config->getDouble (connection->getName (), "yplate", yplate);
@@ -46,7 +45,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	config->getDouble (connection->getName (), "yoa", yoa);
 	config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
 	config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
-	config->getDouble (connection->getName (), "rotang", config_rotang);
 	config->getInteger (connection->getName (), "flip", flip);
 	config->getString (connection->getName (), "filter", filter);
 
@@ -237,7 +235,6 @@ Rts2DevClientCameraImage::exposureStarted ()
 		image->setXoA (xoa);
 		image->setYoA (yoa);
 	}
-	image->setConfigRotang (config_rotang);
 	image->setValue ("FLIP", flip,
 		"camera flip (since most astrometry devices works as mirrors");
 	focuser = getConnection ()->getValueChar ("focuser");
@@ -298,6 +295,8 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			infotime = getConnection ()->getValueDouble ("infotime");
 			image->setValue ("MNT_INFO", infotime,
 				"time when mount informations were collected");
+
+			image->setMountFlip (getMountFlip ());
 			ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
 			ln_get_hrz_from_equ (&suneq, &obs, image->getExposureJD (), &sunhrz);
 			image->setValue ("SUN_ALT", sunhrz.alt, "solar altitude");
@@ -337,6 +336,13 @@ Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
 {
 	tar->ra = getConnection ()->getValueDouble ("RASC");
 	tar->dec = getConnection ()->getValueDouble ("DECL");
+}
+
+
+int
+Rts2DevClientTelescopeImage::getMountFlip ()
+{
+	return getConnection ()->getValueInteger ("MNT_FLIP");
 }
 
 

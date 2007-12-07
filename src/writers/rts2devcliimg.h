@@ -85,7 +85,6 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		double yoa;
 		double ter_xoa;
 		double ter_yoa;
-		double config_rotang;
 		int flip;
 		std::string filter;
 		std::string instrume;
@@ -129,6 +128,7 @@ class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
 		void getEqu (struct ln_equ_posn *tel);
 		void getEquTel (struct ln_equ_posn *tel);
 		void getEquTar (struct ln_equ_posn *tar);
+		int getMountFlip ();
 		void getAltAz (struct ln_hrz_posn *hrz);
 		void getObs (struct ln_lnlat_posn *obs);
 		double getLocalSiderealDeg ();

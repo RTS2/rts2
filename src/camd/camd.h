@@ -179,6 +179,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		Rts2ValueSelection *camFilterVal;
 		Rts2ValueInteger *camFocVal;
 		Rts2ValueInteger *camShutterVal;
+		Rts2ValueDouble *rotang;
 
 		int getStateChip (int chip);
 
@@ -303,8 +304,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 */
 		virtual long chipUsedSize ()
 		{
-			return (chipUsedReadout->getWidthInt () / binningHorizontal ())
-				* (chipUsedReadout->getHeightInt () / binningVertical ());
+			return getUsedWidthBinned () * getUsedHeightBinned ();
 		}
 
 		/**

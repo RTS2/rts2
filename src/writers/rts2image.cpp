@@ -71,7 +71,7 @@ Rts2Image::initData ()
 
 	isAcquiring = 0;
 
-	config_rotang = nan ("f");
+	total_rotang = nan ("f");
 
 	shutter = SHUT_UNKNOW;
 
@@ -118,7 +118,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2Expander (in_image)
 	histogram = in_image->histogram;
 	in_image->histogram = NULL;
 	isAcquiring = in_image->isAcquiring;
-	config_rotang = in_image->config_rotang;
+	total_rotang = in_image->total_rotang;
 
 	targetId = in_image->targetId;
 	targetIdSel = in_image->targetIdSel;
@@ -1307,24 +1307,9 @@ Rts2Image::closeFile ()
 			setValue ("DEC_ERR", dec_err, "DEC error in position");
 			setValue ("POS_ERR", getAstrometryErr (), "error in position");
 		}
-		if (!isnan (config_rotang))
+		if (!isnan (total_rotang))
 		{
-			int flip;
-			flip = getMountFlip ();
-			switch (flip)
-			{
-				case 1:
-					config_rotang += 180.0;
-					config_rotang = ln_range_degrees (config_rotang);
-				case 0:
-					setValue ("ROTANG", config_rotang,
-						"camera rotation over X axis");
-					config_rotang = nan ("f");
-					break;
-				default:
-					setValue ("ROTANG", config_rotang,
-						"CONFIG rotang - not corrected for flip");
-			}
+			setValue ("ROTANG", total_rotang, "Image rotang over X axis");
 		}
 		setCreationDate ();
 		fits_close_file (ffile, &fits_status);
@@ -2072,9 +2057,12 @@ Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 				case EXPOSURE_END:
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
 						writeConnValue (conn, val);
+					if (val->getValueDisplayType () == RTS2_DT_ROTANG)
+						addRotang (val->getValueDouble ());
 					break;
 			}
 		}
+
 	}
 }
 

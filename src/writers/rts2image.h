@@ -100,9 +100,10 @@ class Rts2Image:public Rts2Expander
 		short int mean;
 		int *histogram;
 		int isAcquiring;
-		// that value is nan when rotang was already set; it's same double when rotang was set (by camera)
-		// and become nan once we save image (so mnt_flip can be applied properly).
-		double config_rotang;
+		// that value is nan when rotang was already set;
+		// it is calculated as sum of partial rotangs.
+		// For change of total rotang, addRotang function is provided.
+		double total_rotang;
 
 		double xoa;
 		double yoa;
@@ -521,18 +522,38 @@ class Rts2Image:public Rts2Expander
 		double getXPlate ();
 		double getYPlate ();
 
-		// mnt flip value
+		/**
+		 * Set mount flip value.
+		 *
+		 * @param in_mnt_flip New mount flip value (0 or 1).
+		 */
+		void setMountFlip (int in_mnt_flip)
+		{
+			mnt_flip = in_mnt_flip;
+		}
+
+		/**
+		 * Increase image rotang.
+		 */
+		void addRotang (double rotAdd)
+		{
+			if (isnan (total_rotang))
+				total_rotang = rotAdd;
+			else
+				total_rotang += rotAdd;
+		}
+
+		/**
+		 * Return image mount flip.
+		 *
+		 * @return Image mount flip.
+		 */
 		int getMountFlip ();
 
 		// image flip value - ussually 1
 		int getFlip ();
 
 		int getError (double &eRa, double &eDec, double &eRad);
-
-		void setConfigRotang (double in_config_rotang)
-		{
-			config_rotang = in_config_rotang;
-		}
 
 		int getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name);
 		int getCoordTarget (struct ln_equ_posn &radec);

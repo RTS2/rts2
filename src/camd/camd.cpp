@@ -274,6 +274,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING, true);
 
 	createValue (camShutterVal, "shutter", "shutter position", false);
+	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
 
 	nightCoolTemp = nan ("f");
 	focuserDevice = NULL;
@@ -293,6 +294,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('s', "subexposure", 1, "default subexposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
+	addOption ('r', NULL, 1, "camera rotang");
 }
 
 
@@ -406,6 +408,9 @@ Rts2DevCamera::processOption (int in_opt)
 			break;
 		case 't':
 			ccdRealType = optarg;
+			break;
+		case 'r':
+			rotang->setValueString (optarg);
 			break;
 		default:
 			return Rts2ScriptDevice::processOption (in_opt);
