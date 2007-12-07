@@ -123,6 +123,8 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueInteger *telFlip;
 		Rts2ValueDouble *ax1;
 		Rts2ValueDouble *ax2;
+		double defaultRotang;
+		Rts2ValueDouble *rotang;
 		Rts2ValueDouble *telLongtitude;
 		Rts2ValueDouble *telLatitude;
 		Rts2ValueDouble *telAltitude;

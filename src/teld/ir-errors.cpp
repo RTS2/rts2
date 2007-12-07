@@ -1,9 +1,29 @@
+/* 
+ * Driver for OpemTPL mounts.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "ir.h"
 
 #include <sstream>
 #include <iomanip>
 
-#define OPT_SAMPLE OPT_LOCAL+5
+#define OPT_SAMPLE          OPT_LOCAL+5
+#define OPT_RESET_MODEL     OPT_LOCAL+6
 
 class IrAxis
 {
@@ -169,7 +189,7 @@ Rts2TelescopeIr (in_argc, in_argv)
 {
 	op = NO_OP;
 	addOption ('c', NULL, 0, "Calculate model");
-	addOption ('r', NULL, 0, "Reset model counts");
+	addOption (OPT_RESET_MODEL, "reset-model", 0, "Reset model counts");
 	addOption ('f', NULL, 0, "Referencing status");
 	addOption (OPT_SAMPLE, "sample", 0, "Sample measurements");
 }
@@ -183,7 +203,7 @@ Rts2DevIrError::processOption (int in_opt)
 		case 'c':
 			op = CAL;
 			break;
-		case 'r':
+		case OPT_RESET_MODEL:
 			op = RESET;
 			break;
 		case 'f':

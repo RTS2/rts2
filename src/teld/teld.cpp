@@ -54,6 +54,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (ax1, "MNT_AX0", "mount axis 0 counts");
 	createValue (ax2, "MNT_AX1", "mount axis 1 counts");
 
+	defaultRotang = 0;
+	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG);
+
 	move_fixed = 0;
 
 	move_connection = NULL;
@@ -109,6 +112,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 		"minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
 	addOption ('s', "standby-park", 0, "park when switched to standby");
+
+	addOption ('r', NULL, 1, "telescope rotang");
 
 	maxCorrNum = 1;
 
@@ -170,6 +175,10 @@ Rts2DevTelescope::processOption (int in_opt)
 			break;
 		case 's':
 			standbyPark = true;
+			break;
+		case 'r':
+			defaultRotang = atof (optarg);
+			rotang->setValueDouble (defaultRotang);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -834,6 +843,10 @@ Rts2DevTelescope::info ()
 	}
 	lastTarRa->setValueDouble (lastTar.ra);
 	lastTarDec->setValueDouble (lastTar.dec);
+	if (telFlip->getValueInteger ())
+		rotang->setValueDouble (ln_range_degrees (defaultRotang + 180.0));
+	else
+		rotang->setValueDouble (defaultRotang);
 	return Rts2Device::info ();
 }
 
