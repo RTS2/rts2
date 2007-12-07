@@ -294,15 +294,10 @@ Rts2DevTelescope::getLstDeg (double JD)
 int
 Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == quickEnabled)
-	{
-		return 0;
-	}
-	if (old_value == sepLimit)
-	{
-		return 0;
-	}
-	if (old_value == minGood)
+	if (old_value == quickEnabled
+		|| old_value == sepLimit
+		|| old_value == minGood
+		|| old_value == rotang)
 	{
 		return 0;
 	}
