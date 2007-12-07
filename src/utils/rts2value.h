@@ -81,6 +81,7 @@
 #define RTS2_DT_DEGREES               0x00030000
 #define RTS2_DT_DEG_DIST              0x00040000
 #define RTS2_DT_PERCENTS              0x00050000
+#define RTS2_DT_ROTANG                0x00060000
 
 #define RTS2_VALUE_INFOTIME           "infotime"
 
