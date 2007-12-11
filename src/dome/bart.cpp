@@ -35,7 +35,7 @@
 typedef enum
 {
 	ZASUVKA_1, ZASUVKA_2, ZASUVKA_3, ZASUVKA_4, ZASUVKA_5, ZASUVKA_6, MOTOR,
-	SMER, SVETLO, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
+	SMER, SVETLO, KONCAK_ZAVRENI_JIH, KONCAK_OTEVRENI_JIH,
 	KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER
 } vystupy;
 
@@ -345,6 +345,16 @@ Rts2DevDomeBart::init ()
 		}
 	}
 
+	// get state
+	ret = zjisti_stav_portu ();
+	if (ret)
+		return -1;
+
+	if (!isOn (KONCAK_OTEVRENI_JIH) && isOn (KONCAK_ZAVRENI_JIH))
+		setState (DOME_CLOSED, "dome is closed");
+	else if (isOn (KONCAK_OTEVRENI_JIH) && !isOn (KONCAK_ZAVRENI_JIH))
+		setState (DOME_OPENED, "dome is opened");
+
 	if (cloud_dev)
 	{
 		cloud_port = open (cloud_dev, O_RDWR | O_NOCTTY);
@@ -619,15 +629,9 @@ Rts2DevDomeBart::info ()
 	if (ret)
 		return -1;
 	sw_state->setValueInteger (!getPortState (KONCAK_OTEVRENI_JIH));
-	sw_state->setValueInteger (sw_state->
-		getValueInteger () |
-		(!getPortState (SMER) << 1));
-	sw_state->setValueInteger (sw_state->
-		getValueInteger () |
-		(!getPortState (KONCAK_ZAVRENI_JIH) << 2));
-	sw_state->setValueInteger (sw_state->
-		getValueInteger () |
-		(!getPortState (MOTOR) << 3));
+	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (SMER) << 1));
+	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (KONCAK_ZAVRENI_JIH) << 2));
+	sw_state->setValueInteger (sw_state->getValueInteger () | (!getPortState (MOTOR) << 3));
 	return Rts2DomeFord::info ();
 }
 
