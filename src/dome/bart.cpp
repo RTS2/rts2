@@ -14,18 +14,11 @@
 
 #include <vector>
 
-#include "dome.h"
+#include "ford.h"
 #include "rts2connbufweather.h"
 
-#define BAUDRATE B9600
-#define CTENI_PORTU 0
-#define ZAPIS_NA_PORT 4
-#define STAV_PORTU 0
 #define CHYBA_NEZNAMY_PRIKAZ 0x80
 #define CHYBA_PRETECENI_TX_BUFFERU 0x81
-#define PORT_A 0
-#define PORT_B 1
-#define PORT_C 2
 
 #define CAS_NA_OTEVRENI 30
 
@@ -45,53 +38,6 @@ typedef enum
 	SMER, SVETLO, KONCAK_OTEVRENI_JIH, KONCAK_ZAVRENI_JIH,
 	KONCAK_OTEVRENI_SEVER, KONCAK_ZAVRENI_SEVER
 } vystupy;
-
-struct typ_a
-{
-	unsigned char port;
-	unsigned char pin;
-} adresa[] =
-{
-	{
-		PORT_B, 1
-	},
-	{
-		PORT_B, 2
-	},
-	{
-		PORT_B, 4
-	},
-	{
-		PORT_B, 8
-	},
-	{
-		PORT_B, 16
-	},
-	{
-		PORT_B, 32
-	},
-	{
-		PORT_B, 64
-	},
-	{
-		PORT_B, 128
-	},
-	{
-		PORT_A, 1
-	},
-	{
-		PORT_A, 2
-	},
-	{
-		PORT_A, 4
-	},
-	{
-		PORT_A, 8
-	},
-	{
-		PORT_A, 16
-	}
-};
 
 #define NUM_ZAS   5
 
@@ -117,29 +63,17 @@ enum stavy zasuvky_stavy[3][NUM_ZAS] =
 	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
-class Rts2DevDomeBart:public Rts2DevDome
+class Rts2DevDomeBart:public Rts2DomeFord
 {
 	private:
-		int dome_port;
 		int rain_port;
-		char *dome_file;
 		char *rain_detector;
 		FILE *mrak2_log;
 
 		unsigned char spinac[2];
-		unsigned char stav_portu[3];
 
 		Rts2ConnBufWeather *weatherConn;
 
-		int zjisti_stav_portu ();
-		void zapni_pin (unsigned char c_port, unsigned char pin);
-		void vypni_pin (unsigned char c_port, unsigned char pin);
-		int getPortState (int c_port)
-		{
-			return (stav_portu[adresa[c_port].port] & adresa[c_port].pin);
-		};
-
-		int isOn (int c_port);
 		int handle_zasuvky (int zas);
 
 		char *cloud_dev;
@@ -194,12 +128,10 @@ class Rts2DevDomeBart:public Rts2DevDome
 };
 
 Rts2DevDomeBart::Rts2DevDomeBart (int in_argc, char **in_argv):
-Rts2DevDome (in_argc, in_argv)
+Rts2DomeFord (in_argc, in_argv)
 {
-	addOption ('f', "dome_file", 1, "/dev file for dome serial port");
 	addOption ('R', "rain_detector", 1, "/dev/file for rain detector");
 	addOption ('c', "cloud_sensor", 1, "/dev/file for cloud sensor");
-	dome_file = "/dev/ttyS0";
 	rain_detector = NULL;
 	rain_port = -1;
 
@@ -220,77 +152,9 @@ Rts2DevDome (in_argc, in_argv)
 Rts2DevDomeBart::~Rts2DevDomeBart (void)
 {
 	close (rain_port);
-	close (dome_port);
 	fclose (mrak2_log);
 }
 
-
-int
-Rts2DevDomeBart::zjisti_stav_portu ()
-{
-	unsigned char ta, tb, c = STAV_PORTU | PORT_A;
-	int ret;
-	write (dome_port, &c, 1);
-	if (read (dome_port, &ta, 1) < 1)
-		logStream (MESSAGE_ERROR) << "read error 0" << sendLog;
-	read (dome_port, &stav_portu[PORT_A], 1);
-	c = STAV_PORTU | PORT_B;
-	write (dome_port, &c, 1);
-	if (read (dome_port, &tb, 1) < 1)
-		logStream (MESSAGE_ERROR) << "read error 1" << sendLog;
-	ret = read (dome_port, &stav_portu[PORT_B], 1);
-	logStream (MESSAGE_DEBUG) << "A stav:" << ta << " state:" <<
-		stav_portu[PORT_A] << " B stav: " << tb << " state: " <<
-		stav_portu[PORT_B] << sendLog;
-	if (ret < 1)
-		return -1;
-	return 0;
-}
-
-
-void
-Rts2DevDomeBart::zapni_pin (unsigned char c_port, unsigned char pin)
-{
-	unsigned char c;
-	zjisti_stav_portu ();
-	c = ZAPIS_NA_PORT | c_port;
-	logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
-		" write:" << c << sendLog;
-	write (dome_port, &c, 1);
-	c = stav_portu[c_port] | pin;
-	logStream (MESSAGE_DEBUG) << "zapni_pin: " << c << sendLog;
-	write (dome_port, &c, 1);
-}
-
-
-void
-Rts2DevDomeBart::vypni_pin (unsigned char c_port, unsigned char pin)
-{
-	unsigned char c;
-	zjisti_stav_portu ();
-	c = ZAPIS_NA_PORT | c_port;
-	logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
-		" write:" << c << sendLog;
-	write (dome_port, &c, 1);
-	c = stav_portu[c_port] & (~pin);
-	logStream (MESSAGE_DEBUG) << c << sendLog;
-	write (dome_port, &c, 1);
-}
-
-
-int
-Rts2DevDomeBart::isOn (int c_port)
-{
-	int ret;
-	ret = zjisti_stav_portu ();
-	if (ret)
-		return -1;
-	return !(stav_portu[adresa[c_port].port] & adresa[c_port].pin);
-}
-
-
-#define ZAP(i) zapni_pin(adresa[i].port,adresa[i].pin)
-#define VYP(i) vypni_pin(adresa[i].port,adresa[i].pin)
 
 int
 Rts2DevDomeBart::openDome ()
@@ -305,7 +169,7 @@ Rts2DevDomeBart::openDome ()
 	sleep (1);
 	ZAP (MOTOR);
 	logStream (MESSAGE_DEBUG) << "oteviram strechu" << sendLog;
-	return Rts2DevDome::openDome ();
+	return Rts2DomeFord::openDome ();
 }
 
 
@@ -328,7 +192,7 @@ Rts2DevDomeBart::endOpen ()
 	VYP (MOTOR);
 	zjisti_stav_portu ();		 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
 	setTimeout (USEC_SEC);
-	return Rts2DevDome::endOpen ();
+	return Rts2DomeFord::endOpen ();
 }
 
 
@@ -359,7 +223,7 @@ Rts2DevDomeBart::closeDome ()
 	ZAP (MOTOR);
 	logStream (MESSAGE_DEBUG) << "zaviram strechu" << sendLog;
 
-	return Rts2DevDome::closeDome ();
+	return Rts2DomeFord::closeDome ();
 }
 
 
@@ -384,12 +248,12 @@ Rts2DevDomeBart::endClose ()
 	if (motor == -1)
 		return -1;
 	if (motor)
-		return Rts2DevDome::endClose ();
+		return Rts2DomeFord::endClose ();
 	VYP (MOTOR);
 	sleep (1);
 	VYP (SMER);
 	zjisti_stav_portu ();
-	return Rts2DevDome::endClose ();
+	return Rts2DomeFord::endClose ();
 }
 
 
@@ -398,9 +262,6 @@ Rts2DevDomeBart::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'f':
-			dome_file = optarg;
-			break;
 		case 'R':
 			rain_detector = optarg;
 			break;
@@ -408,7 +269,7 @@ Rts2DevDomeBart::processOption (int in_opt)
 			cloud_dev = optarg;
 			break;
 		default:
-			return Rts2DevDome::processOption (in_opt);
+			return Rts2DomeFord::processOption (in_opt);
 	}
 	return 0;
 }
@@ -447,46 +308,11 @@ Rts2DevDomeBart::isGoodWeather ()
 int
 Rts2DevDomeBart::init ()
 {
-	struct termios oldtio, newtio;
+	struct termios newtio;
 
-	int ret = Rts2DevDome::init ();
+	int ret = Rts2DomeFord::init ();
 	if (ret)
 		return ret;
-
-	dome_port = open (dome_file, O_RDWR | O_NOCTTY);
-
-	if (dome_port == -1)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init open " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	ret = tcgetattr (dome_port, &oldtio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init tcgetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	newtio = oldtio;
-
-	newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-	newtio.c_iflag = IGNPAR;
-	newtio.c_oflag = 0;
-	newtio.c_lflag = 0;
-	newtio.c_cc[VMIN] = 0;
-	newtio.c_cc[VTIME] = 1;
-
-	tcflush (dome_port, TCIOFLUSH);
-	ret = tcsetattr (dome_port, TCSANOW, &newtio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init tcsetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
 
 	if (rain_detector)
 	{
@@ -589,7 +415,7 @@ Rts2DevDomeBart::idle ()
 		}
 		setMasterStandby ();
 	}
-	return Rts2DevDome::idle ();
+	return Rts2DomeFord::idle ();
 }
 
 
@@ -602,11 +428,11 @@ Rts2DevDomeBart::handle_zasuvky (int zas)
 		int zasuvka_num = zasuvky_index[i];
 		if (zasuvky_stavy[zas][i] == ZAS_VYP)
 		{
-			zapni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
+			ZAP (zasuvka_num);
 		}
 		else
 		{
-			vypni_pin (adresa[zasuvka_num].port, adresa[zasuvka_num].pin);
+			VYP (zasuvka_num);
 		}
 		sleep (1);				 // doplnil Ford
 	}
@@ -802,7 +628,7 @@ Rts2DevDomeBart::info ()
 	sw_state->setValueInteger (sw_state->
 		getValueInteger () |
 		(!getPortState (MOTOR) << 3));
-	return Rts2DevDome::info ();
+	return Rts2DomeFord::info ();
 }
 
 
@@ -869,7 +695,7 @@ Rts2DevDomeBart::changeMasterState (int new_state)
 				off ();
 		}
 	}
-	return Rts2DevDome::changeMasterState (new_state);
+	return Rts2DomeFord::changeMasterState (new_state);
 }
 
 
