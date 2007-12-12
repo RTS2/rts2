@@ -497,7 +497,7 @@ Rts2DevCamera::addDataType (int in_type)
 void
 Rts2DevCamera::initDataTypes ()
 {
-	dataType->addSelVal ("UNSIGNED SHORT", new DataType (RTS2_DATA_USHORT));
+	addDataType (RTS2_DATA_USHORT);
 }
 
 

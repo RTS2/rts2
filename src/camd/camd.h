@@ -444,6 +444,16 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		}
 
 		/**
+		 * Returns size of single row in bytes.
+		 *
+		 * @return getUsedWidthBinned() * usedPixelByteSize()
+		 */
+		const int getUsedRowBytes ()
+		{
+			return getUsedWidthBinned () * usedPixelByteSize ();
+		}
+
+		/**
 		 * Get chip width (in pixels).
 		 *
 		 * @return Chip width in pixels.
