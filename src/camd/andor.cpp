@@ -434,10 +434,10 @@ Rts2DevCameraAndor::startExposure ()
 {
 	int ret;
 
-	ret = SetImage (binningHorizontal (), binningVertical (), chipUsedReadout->getXInt () + 1,
-		chipUsedReadout->getXInt () + chipUsedReadout->getHeightInt (),
-		chipUsedReadout->getYInt () + 1,
-		chipUsedReadout->getYInt () + chipUsedReadout->getWidthInt ());
+	ret = SetImage (binningHorizontal (), binningVertical (), chipTopX () + 1,
+		chipTopX () + chipUsedReadout->getHeightInt (),
+		chipTopY () + 1,
+		chipTopY () + chipUsedReadout->getWidthInt ());
 	if (ret != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
