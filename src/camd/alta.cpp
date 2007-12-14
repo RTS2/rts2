@@ -134,12 +134,12 @@ Rts2DevCameraAlta::readoutOneLine ()
 {
 	int ret;
 
-	bool status;
+	long status;
 	unsigned long count;
 	unsigned short width = chipUsedReadout->getWidthInt ();
 	unsigned short height = chipUsedReadout->getHeightInt ();
 	status = alta->GetImageData ((short unsigned int *) dataBuffer, width, height, count);
-	if (!status)
+	if (status != CAPNCAMERA_SUCCESS)
 		return -1;
 
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
@@ -202,14 +202,14 @@ Rts2DevCameraAlta::init ()
 		return ret;
 	}
 	alta = (CApnCamera *) new CApnCamera ();
-	ret = alta->InitDriver (0, 0, 0);
+	ret = alta->InitDriver (1, 0, 0);
 
 	if (!ret)
 	{
 		alta->ResetSystem ();
 		alta->CloseDriver ();
 		sleep (2);
-		ret = alta->InitDriver (0, 0, 0);
+		ret = alta->InitDriver (1, 0, 0);
 		if (!ret)
 			return -1;
 	}
