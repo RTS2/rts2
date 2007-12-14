@@ -37,6 +37,7 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 
 	protected:
 		virtual int initChips ();
+		virtual void initBinnings ();
 		virtual int setBinning (int in_vert, int in_hori);
 		virtual int startExposure ();
 		virtual long isExposing ();
@@ -70,6 +71,25 @@ Rts2DevCameraAlta::initChips ()
 	//  gain = alta->m_ReportedGainSixteenBit;
 
 	return Rts2DevCamera::initChips ();
+}
+
+
+void
+Rts2DevCameraAlta::initBinnings ()
+{
+	addBinning2D (1,1);
+	addBinning2D (2,2);
+	addBinning2D (4,4);
+	addBinning2D (8,8);
+	addBinning2D (16,16);
+	addBinning2D (32,32);
+	addBinning2D (64,64);
+	addBinning2D (3,3);
+	addBinning2D (5,5);
+	addBinning2D (6,6);
+	addBinning2D (7,7);
+	addBinning2D (10,10);
+	addBinning2D (20,20);
 }
 
 
@@ -136,8 +156,8 @@ Rts2DevCameraAlta::readoutOneLine ()
 
 	long status;
 	unsigned long count;
-	unsigned short width = chipUsedReadout->getWidthInt ();
-	unsigned short height = chipUsedReadout->getHeightInt ();
+	unsigned short width = getUsedWidth ();
+	unsigned short height = getUsedHeight ();
 	status = alta->GetImageData ((short unsigned int *) dataBuffer, width, height, count);
 	if (status != CAPNCAMERA_SUCCESS)
 		return -1;
