@@ -159,7 +159,7 @@ Rts2DevDomeBart::~Rts2DevDomeBart (void)
 int
 Rts2DevDomeBart::openDome ()
 {
-	if (isOn (KONCAK_OTEVRENI_JIH))
+	if (!isOn (KONCAK_OTEVRENI_JIH))
 		return endOpen ();
 	if (!isGoodWeather ())
 		return -1;
@@ -180,7 +180,7 @@ Rts2DevDomeBart::isOpened ()
 	ret = zjisti_stav_portu ();
 	if (ret)
 		return ret;
-	if (!isOn (KONCAK_OTEVRENI_JIH))
+	if (isOn (KONCAK_OTEVRENI_JIH))
 		return USEC_SEC;
 	return -2;
 }
@@ -201,7 +201,7 @@ Rts2DevDomeBart::closeDome ()
 {
 	int motor;
 	int smer;
-	if (isOn (KONCAK_ZAVRENI_JIH))
+	if (!isOn (KONCAK_ZAVRENI_JIH))
 		return endClose ();
 	motor = isOn (MOTOR);
 	smer = isOn (SMER);
@@ -234,7 +234,7 @@ Rts2DevDomeBart::isClosed ()
 	ret = zjisti_stav_portu ();
 	if (ret)
 		return ret;
-	if (!isOn (KONCAK_ZAVRENI_JIH))
+	if (isOn (KONCAK_ZAVRENI_JIH))
 		return USEC_SEC;
 	return -2;
 }
@@ -350,9 +350,9 @@ Rts2DevDomeBart::init ()
 	if (ret)
 		return -1;
 
-	if (!isOn (KONCAK_OTEVRENI_JIH) && isOn (KONCAK_ZAVRENI_JIH))
+	if (isOn (KONCAK_OTEVRENI_JIH) && !isOn (KONCAK_ZAVRENI_JIH))
 		setState (DOME_CLOSED, "dome is closed");
-	else if (isOn (KONCAK_OTEVRENI_JIH) && !isOn (KONCAK_ZAVRENI_JIH))
+	else if (!isOn (KONCAK_OTEVRENI_JIH) && isOn (KONCAK_ZAVRENI_JIH))
 		setState (DOME_OPENED, "dome is opened");
 
 	if (cloud_dev)
