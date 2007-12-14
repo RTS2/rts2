@@ -440,7 +440,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 */
 		const int getUsedWidthBinned ()
 		{
-			return getUsedWidth () / binningHorizontal ();
+			return (int) (ceil (getUsedWidth () / binningHorizontal ()));
 		}
 
 		/**
@@ -480,7 +480,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 */
 		const int getUsedHeightBinned ()
 		{
-			return getUsedHeight () / binningVertical ();
+			return (int) (ceil (getUsedHeight () / binningVertical ()));
 		}
 
 		/**
