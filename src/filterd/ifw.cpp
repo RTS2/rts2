@@ -1,3 +1,22 @@
+/* 
+ * Driver for IFW from Optec.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "filterd.h"
 
 #include <fcntl.h>
@@ -122,6 +141,9 @@ in_argv)
 	dev_port = -1;
 	homeCount = 0;
 
+	filterType = "IFW";
+	serialNumber = "001";
+
 	addOption ('f', "device_name", 1, "device name (/dev..)");
 }
 
@@ -244,8 +266,6 @@ Rts2DevFilterdIfw::init (void)
 	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " <<
 		filter_buff << sendLog;
 
-	filterType = "IFW";
-	serialNumber = "001";
 	return 0;
 }
 
