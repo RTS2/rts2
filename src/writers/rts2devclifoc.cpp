@@ -85,8 +85,8 @@ imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 
 	//else if (darkImage)
 	//	image->substractDark (darkImage);
-	if (image->getShutter () == SHUT_OPENED
-		|| image->getShutter () == SHUT_SYNCHRO && exe)
+	if ((image->getShutter () == SHUT_OPENED || image->getShutter () == SHUT_SYNCHRO)
+		&& exe)
 	{
 		focConn =
 			new Rts2ConnFocus (getMaster (), image, exe, EVENT_CHANGE_FOCUS);
