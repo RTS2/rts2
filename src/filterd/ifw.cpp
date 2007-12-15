@@ -243,6 +243,9 @@ Rts2DevFilterdIfw::init (void)
 	}
 	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " <<
 		filter_buff << sendLog;
+
+	filterType = "IFW";
+	serialNumber = "001";
 	return 0;
 }
 
