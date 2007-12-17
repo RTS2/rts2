@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <linux/string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
