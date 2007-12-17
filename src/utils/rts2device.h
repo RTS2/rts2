@@ -107,29 +107,6 @@ class Rts2DevConnMaster:public Rts2Conn
 		void setHavePriority (int in_have_priority);
 };
 
-class Rts2DevConnData:public Rts2Conn
-{
-	private:
-		int sendHeader ();
-		Rts2Conn *dataConn;
-	protected:
-		virtual int command ()
-		{
-			logStream (MESSAGE_DEBUG) << "Rts2DevConnData::command badCommand " <<
-				getCommand () << sendLog;
-			// there isn't any command possible on data connection
-			return -1;
-		};
-	public:
-		Rts2DevConnData (Rts2Block * in_master, Rts2Conn * conn):Rts2Conn (in_master)
-		{
-			dataConn = conn;
-		}
-		virtual int init ();
-		virtual int sendMsg (const char *msg);
-		int sendMsg (char *data, size_t data_size);
-};
-
 /**
  * Send status_info command from device to master, and wait for reply.
  *

@@ -184,7 +184,7 @@ Rts2DevConn::authorizationOK ()
 	master->info ();
 	master->sendInfo (this);
 	master->sendFullStateInfo (this);
-	sendCommandEnd (0, "OK authorized");
+	sendCommandEnd (DEVDEM_OK, "OK authorized");
 	return 0;
 }
 
@@ -521,71 +521,6 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 	ret = sendMsg (msg);
 	free (msg);
 	return ret;
-}
-
-
-int
-Rts2DevConnData::init ()
-{
-	// find empty port
-	sock = socket (PF_INET, SOCK_STREAM, 0);
-	if (sock < 0)
-		return -1;
-
-	struct sockaddr_in server;
-	int test_port;
-
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = htonl (INADDR_ANY);
-
-	// find empty port
-	for (test_port = MINDATAPORT; test_port < MAXDATAPORT; test_port++)
-	{
-		server.sin_port = htons (test_port);
-		if (bind (sock, (struct sockaddr *) &server, sizeof (server)) == 0)
-			break;
-	}
-	if (test_port == MAXDATAPORT)
-	{
-		close (sock);
-		sock = -1;
-		return -1;
-	}
-
-	if (listen (sock, 1))
-	{
-		close (sock);
-		sock = -1;
-		return -1;
-	}
-
-	setPort (test_port);
-
-	setConnState (CONN_CONNECTING);
-	return 0;
-}
-
-
-int
-Rts2DevConnData::sendMsg (const char *msg)
-{
-	return 0;
-}
-
-
-int
-Rts2DevConnData::sendMsg (char *data, size_t data_size)
-{
-	if (!isConnState (CONN_CONNECTED))
-		return -2;
-	return write (sock, data, data_size);
-}
-
-
-int
-Rts2DevConnData::sendHeader ()
-{
-	return 0;
 }
 
 
@@ -990,7 +925,7 @@ Rts2Device::init ()
 		if (ret)
 			return ret;
 
-		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX);
+		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX, 0, true);
 
 		for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
 			iter != modeconf->end (); iter++)
