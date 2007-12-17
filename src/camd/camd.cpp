@@ -208,13 +208,6 @@ Rts2DevCamera::sendFirstLine ()
 }
 
 
-int
-Rts2DevCamera::readoutOneLine ()
-{
-	return -1;
-}
-
-
 bool
 Rts2DevCamera::supportFrameTransfer ()
 {
@@ -434,6 +427,19 @@ Rts2DevCamera::initChips ()
 	}
 
 	return 0;
+}
+
+
+int
+Rts2DevCamera::sendImage (char *data, size_t dataSize)
+{
+	if (!exposureConn)
+		return -1;
+	currentImageData = exposureConn->startBinaryData (dataSize + sizeof (imghdr), dataType->getValueInteger ());
+	if (currentImageData == -1)
+		return -1;
+	sendFirstLine ();
+	return exposureConn->sendBinaryData (currentImageData, data, dataSize);
 }
 
 

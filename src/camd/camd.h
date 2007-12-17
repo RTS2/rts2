@@ -152,8 +152,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
 
-		// number of connection waiting to be executed
-		Rts2ValueInteger *quedExpNumber;
 		// number of exposures camera takes
 		Rts2ValueLong *exposureNumber;
 		Rts2ValueBool *waitingForEmptyQue;
@@ -183,22 +181,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int getStateChip (int chip);
 
-		/**
-		 * Change state of camera chip.
-		 *
-		 * This function changes state of chip. chip_state_mask and chip_new_state are
-		 * shifted according to chip_num value, so they should contain common state
-		 * mask and values, as defined in status.h. state_mask and new_state are not shifted.
-		 *
-		 * @param chip_state_mask  Chip state mask.
-		 * @param chip_new_state New chip state.
-		 * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
-		 * @param new_state New state for whole device.
-		 * @param description Text describing operation which is performed.
-		 */
-		void maskStateChip (int chip, int chip_state_mask, int chip_new_state,
-			int state_mask, int new_state, char *description);
-
 		// chip binning
 		Rts2ValueSelection *binning;
 
@@ -227,6 +209,25 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		char* dataBuffer;
 		long dataBufferSize;
 
+		//! number of connection waiting to be executed
+		Rts2ValueInteger *quedExpNumber;
+
+		/**
+		 * Change state of camera chip.
+		 *
+		 * This function changes state of chip. chip_state_mask and chip_new_state are
+		 * shifted according to chip_num value, so they should contain common state
+		 * mask and values, as defined in status.h. state_mask and new_state are not shifted.
+		 *
+		 * @param chip_state_mask  Chip state mask.
+		 * @param chip_new_state New chip state.
+		 * @param state_mask State mask for whole device. This argument should contain various BOP_XXX values.
+		 * @param new_state New state for whole device.
+		 * @param description Text describing operation which is performed.
+		 */
+		void maskStateChip (int chip, int chip_state_mask, int chip_new_state,
+			int state_mask, int new_state, char *description);
+
 		/**
 		 * Returns number of exposure camera is currently taking or has taken from camera startup.
 		 *
@@ -244,6 +245,16 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int nAcc;
 		struct imghdr focusingHeader;
+
+		/**
+		 * Send whole image, including header.
+		 *
+		 * @param data Data to send.
+		 * @param dataSize Size of data which will be send.
+		 *
+		 * @return -1 on error, 0 otherwise.
+		 */
+		int sendImage (char *data, size_t dataSize);
 
 		int sendReadoutData (char *data, size_t dataSize);
 		long getWriteBinaryDataSize ()

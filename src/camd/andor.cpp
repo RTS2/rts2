@@ -40,9 +40,6 @@ using namespace std;
 #endif
 
 #include "atmcdLXd.h"
-//We need at least version 2.7.  2.6 API doesn't have frame transfer
-//#define ANDOR_ROOT "/root/andor2.7/examples/common"
-
 //That's root for andor2.77
 #define ANDOR_ROOT "/usr/local/etc/andor"
 
@@ -52,42 +49,6 @@ using namespace std;
 #define ANDOR_SHUTTER_AUTO 0
 #define ANDOR_SHUTTER_OPEN 1
 #define ANDOR_SHUTTER_CLOSED 2
-
-// Mode definitions for the BOOTES projects iXon camera.
-// Arguably they shouldn't be here, but....
-/*typedef struct ixon_mode_t
-{
-	int ad;						 ///0=14bit (3,5,10MHz), 1=16bit (1MHz)
-	int hsspeed;				 ///speed setting (varies with ADC, see docs)
-	int vsspeed;				 ///
-	int vs_amp;					 ///driving voltage, 0-4, leave low if possible
-	int disable_em;				 ///0 = use EMCCD
-} ixon_mode; */
-
-/*const ixon_mode mode_def[] =	 //default with which we worked
-{
-	{
-		1, 0, 5, 1, 0
-	},
-	{							 //16 bit @ 1MHz
-		1, 0, 0, 1, 0
-	},
-	{							 //14 bit @ 3MHz
-		0, 2, 0, 1, 0
-	},
-	{							 //14 bit @ 5MHz
-		0, 1, 0, 1, 0
-	},
-	{							 //14 bit @ 10MHz
-		0, 0, 0, 1, 0
-	},
-	{							 //16 bit @ 1MHz, no em
-		1, 0, 0, 1, 1
-	},
-	{							 //14 bit @ 3MHz, no em
-		0, 0, 0, 1, 1
-	}
-}; */
 
 /**
  * Andor camera, as seen by the outside world.
@@ -110,11 +71,9 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 
 		int disable_ft;
 		int shutter_with_ft;
-		int mode;
 
 		Rts2ValueInteger *gain;
 
-		Rts2ValueInteger *Mode;
 		Rts2ValueBool *useFT;
 		Rts2ValueInteger *VSAmp;
 		Rts2ValueBool *FTShutter;
@@ -127,6 +86,7 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		Rts2ValueFloat *HSpeedHZ;
 		Rts2ValueFloat *VSpeedHZ;
 		Rts2ValueInteger *bitDepth;
+		Rts2ValueInteger *acqusitionMode;
 
 		int defaultGain;
 
@@ -137,6 +97,7 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		int setHSSpeed (int in_amp, int in_hsspeed);
 		int setVSSpeed (int in_vsspeed);
 		int setFTShutter (bool force);
+		int setAcquisitionMode (int mode);
 
 		int printInfo ();
 		void printCapabilities ();
@@ -196,8 +157,54 @@ Rts2DevCameraAndor::isExposing ()
 {
 	int status;
 	int ret;
+	// if we are in acqusition mode 5
 	if ((ret = Rts2DevCamera::isExposing ()) != 0)
 		return ret;
+	if (acqusitionMode->getValueInteger () == 5)
+	{
+		long first, last;
+		if (GetNumberNewImages (&first, &last) == DRV_NO_NEW_DATA)
+			return 100;
+		// signal that we have data
+		maskStateChip (0, CAM_MASK_READING, CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
+		// there is new image, process it
+		for (long i = first; i < last; i++)
+		{
+			if (quedExpNumber->getValueInteger () == 0)
+			{
+				// stop exposure if we do not have any qued values
+				AbortAcquisition ();
+				FreeInternalMemory ();
+				logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
+				return 0;
+			}
+			quedExpNumber->dec ();
+			// get the data
+			long validFirst, validLast;
+			switch (getDataType ())
+			{
+				case RTS2_DATA_LONG:
+					if (GetImages (i, i, (long *) dataBuffer, chipUsedSize (), &validFirst, &validLast) != DRV_SUCCESS)
+					{
+						logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
+						return -1;
+					}
+					break;
+				default:
+					if (GetImages16 (i, i, (unsigned short *) dataBuffer, chipUsedSize (), &validFirst, &validLast) != DRV_SUCCESS)
+					{
+						logStream (MESSAGE_ERROR) << "Cannot get int data" << sendLog;
+						return -1;
+					}
+			}
+			// now send the data
+			ret = sendImage (dataBuffer, dataBufferSize);
+			if (ret)
+				return ret;
+		}
+		maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout started");
+		return 0;
+	}
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
 	if (status == DRV_ACQUIRING)
@@ -265,13 +272,10 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createExpType ();
 
-	andorRoot = "/root/andor/examples/common";
+	andorRoot = ANDOR_ROOT;
 
 	gain = NULL;
 
-	createValue (Mode, "MODE", "Camera mode", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
-	Mode->setValueInteger (0);
 	createValue (ADChannel, "ADCHANEL",
 		"Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
 		true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
@@ -294,6 +298,8 @@ Rts2DevCamera (in_argc, in_argv)
 	createValue (useFT, "USEFT", "Use FT", false, 0,
 		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 	useFT->setValueBool (true);
+
+	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
 
 	defaultGain = IXON_DEFAULT_GAIN;
 
@@ -411,6 +417,16 @@ Rts2DevCameraAndor::setFTShutter (bool force)
 }
 
 
+int
+Rts2DevCameraAndor::setAcquisitionMode (int mode)
+{
+	if (SetAcquisitionMode (mode) != DRV_SUCCESS)
+		return -1;
+	acqusitionMode->setValueInteger (mode);
+	return 0;
+}
+
+
 void
 Rts2DevCameraAndor::cancelPriorityOperations ()
 {
@@ -446,11 +462,22 @@ Rts2DevCameraAndor::startExposure ()
 
 	if (isnan (getSubExposure ()))
 	{
-		// single scan
-		if (SetAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
+		if (supportFrameTransfer ())
 		{
-			logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
-			return -1;
+			if (setAcquisitionMode (5) != DRV_SUCCESS)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot set AQ run-till-abort mode" << sendLog;
+				return -1;
+			}
+		}
+		else
+		{
+			// single scan
+			if (setAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
+				return -1;
+			}
 		}
 		if (SetExposureTime (getExposure ()) != DRV_SUCCESS)
 		{
@@ -469,7 +496,7 @@ Rts2DevCameraAndor::startExposure ()
 		}
 
 		// Acquisition mode 2 is "accumulate"
-		if (SetAcquisitionMode (2) != DRV_SUCCESS)
+		if (setAcquisitionMode (2) != DRV_SUCCESS)
 			return -1;
 		if (SetExposureTime (getSubExposure ()) != DRV_SUCCESS)
 			return -1;
@@ -933,8 +960,7 @@ Rts2DevCameraAndor::initAndorValues ()
 {
 	if (cap.ulCameraType == AC_CAMERATYPE_IXON)
 	{
-		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0,
-			CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
 		VSAmp->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
