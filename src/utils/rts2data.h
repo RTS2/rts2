@@ -58,7 +58,7 @@ class Rts2DataRead
 
 		~Rts2DataRead (void)
 		{
-			delete binaryReadBuff;
+			delete[] binaryReadBuff;
 		}
 
 		/**
