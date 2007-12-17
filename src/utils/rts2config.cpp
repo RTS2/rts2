@@ -19,8 +19,7 @@
 
 #include "rts2config.h"
 
-Rts2Config *
-Rts2Config::pInstance = NULL;
+Rts2Config *Rts2Config::pInstance = NULL;
 
 void
 Rts2Config::getSpecialValues ()

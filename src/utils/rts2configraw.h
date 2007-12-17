@@ -165,6 +165,9 @@ public std::vector < Rts2ConfigSection * >
 		void clearSections ();
 		int parseConfigFile ();
 
+		// sections which are know to be missing
+		std::vector <std::string> missingSections;
+
 		Rts2ConfigSection *getSection (const char *section, bool verbose=true);
 		Rts2ConfigValue *getValue (const char *section, const char *valueName);
 	protected:

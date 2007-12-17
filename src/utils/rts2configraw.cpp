@@ -118,6 +118,7 @@ Rts2ConfigRaw::clearSections ()
 	{
 		delete *iter;
 	}
+	missingSections.clear ();
 	clear ();
 }
 
@@ -335,8 +336,11 @@ Rts2ConfigRaw::getSection (const char *section, bool verbose)
 		if (sect->isSection (name))
 			return sect;
 	}
-	if (verbose)
+	if (verbose && find (missingSections.begin (), missingSections.end (), name) == missingSections.end ())
+	{
 		logStream (MESSAGE_ERROR) << "Cannot find section '" << section << "'." << sendLog;
+		missingSections.push_back (name);
+	}
 	return NULL;
 }
 
@@ -458,8 +462,7 @@ bool def)
 
 
 const bool
-Rts2ConfigRaw::blockDevice (const char *device_name,
-const char *querying_device)
+Rts2ConfigRaw::blockDevice (const char *device_name, const char *querying_device)
 {
 	Rts2ConfigSection *sect = getSection (device_name, false);
 	if (!sect)
