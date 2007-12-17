@@ -25,8 +25,6 @@
 
 #include <vector>
 
-class Rts2Executor;
-
 class Rts2Executor:public Rts2DeviceDb
 {
 	private:
@@ -383,8 +381,7 @@ void
 Rts2Executor::deviceReady (Rts2Conn * conn)
 {
 	if (currentTarget)
-		conn->
-			postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
 
 
