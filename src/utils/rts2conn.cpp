@@ -796,7 +796,7 @@ Rts2Conn::receive (fd_set * set)
 		buf_top[data_size] = '\0';
 		successfullRead ();
 		#ifdef DEBUG_ALL
-		std::cerr << "Rts2Conn::receive name " << getName ()
+		std::cout << "Rts2Conn::receive name " << getName ()
 			<< " reas: " << buf_top
 			<< " full_buf: " << buf
 			<< " size: " << data_size
@@ -1133,7 +1133,7 @@ Rts2Conn::sendCommand ()
 				statInfoCall->setConnection (this);
 				statInfoCall->setStatusCallProgress (CIP_RETURN);
 				statInfoCall->send ();
-				runningCommand->setStatusCallProgress (CIP_RUN);
+				runningCommand->setStatusCallProgress (CIP_WAIT);
 				commandQue.push_front (runningCommand);
 				runningCommand = statInfoCall;
 				break;
@@ -1235,7 +1235,8 @@ Rts2Conn::priorityInfo ()
 	priorityChanged ();
 	if (otherDevice)
 		otherDevice->priorityInfo (have);
-	return 0;
+	// don't send OK
+	return -1;
 }
 
 
@@ -1267,7 +1268,7 @@ Rts2Conn::sendMsg (const char *msg)
 		return -1;
 	}
 	#ifdef DEBUG_ALL
-	std::cerr << "Rts2Conn::send " << getName ()
+	std::cout << "Rts2Conn::send " << getName ()
 		<< " [" << getCentraldId () << ":" << sock << "] send " << ret << ": " << msg
 		<< std::endl;
 	#endif
