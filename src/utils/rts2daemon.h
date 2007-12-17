@@ -138,7 +138,9 @@ class Rts2Daemon:public Rts2Block
 		 * @param in_val_name    Value name.
 		 * @param in_description Value description.
 		 * @param writeToFits    When true, value will be writen to FITS.
-		 * @param displayType    Value display type, one of the RTS2_DT_xxx constant.
+		 * @param valueFlags     Value display type, one of the RTS2_DT_xxx constant.
+		 * @param queCondition   Conditions in which the change will be put to que.
+		 * @param save_value     True if value is saved and reseted at end of script execution.
 		 */
 		template < typename T > void createValue (
 			T * &val,
