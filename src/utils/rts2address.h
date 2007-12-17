@@ -7,7 +7,7 @@
 #include <config.h>
 
 // CYGWIN workaround
-#ifndef HAVE_GETADDRINFO
+#ifdef NOT_GETADDRINFO
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
