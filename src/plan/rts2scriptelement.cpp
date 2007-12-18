@@ -570,8 +570,7 @@ Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 int
 Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
 Rts2Command ** new_command,
-char
-new_device[DEVICE_NAME_SIZE])
+char new_device[DEVICE_NAME_SIZE])
 {
 	if (op == '\0' || operand.size () == 0)
 		return -1;
