@@ -19,11 +19,14 @@ class Rts2DevSensorPhytron:public Rts2DevSensor
 
 		char cmdbuf[CMDBUF_LEN];
 
-		Rts2ValueInteger *axis0;
+		Rts2ValueInteger* axis0;
+		Rts2ValueInteger* runFreq;
+		Rts2ValueSelection* phytronParams[47];
 
+		int readValue (int ax, int reg, Rts2ValueInteger *val);
 		int readAxis ();
+		int setValue (int ax, int reg, Rts2ValueInteger *val);
 		int setAxis (int new_val);
-
 		char *dev;
 	protected:
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -90,23 +93,25 @@ Rts2DevSensorPhytron::readPort ()
 		{
 			*buf_top = '\0';
 			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Readed " << buf << sendLog;
+			logStream (MESSAGE_DEBUG) << "Readed " << cmdbuf << sendLog;
 			#endif
 			return 0;
 		}
 		buf_top++;
 	}
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "String does not ends " << buf << sendLog;
+	logStream (MESSAGE_DEBUG) << "String does not ends " << cmdbuf << sendLog;
 	#endif
 	return -1;
 }
 
 
 int
-Rts2DevSensorPhytron::readAxis ()
+Rts2DevSensorPhytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 {
-	int ret = writePort ("01P21R");
+	char buf[50];
+	snprintf (buf, 50, "%02iP%2iR", ax, reg);
+	int ret = writePort (buf);
 	if (ret < 0)
 		return ret;
 
@@ -119,9 +124,36 @@ Rts2DevSensorPhytron::readAxis ()
 		logStream (MESSAGE_ERROR) << "Invalid header" << sendLog;
 		return -1;
 	}
-	int val = atoi (cmdbuf + 2);
-	axis0->setValueInteger (val);
+	int ival = atoi (cmdbuf + 2);
+	val->setValueInteger (ival);
 	return 0;
+}
+
+
+int
+Rts2DevSensorPhytron::readAxis ()
+{
+	int ret;
+	ret = readValue (1, 21, axis0);
+	if (ret)
+		return ret;
+	ret = readValue (1, 14, runFreq);
+	if (ret)
+		return ret;
+	return ret;
+}
+
+
+int
+Rts2DevSensorPhytron::setValue (int ax, int reg, Rts2ValueInteger *val)
+{
+	char buf[50];
+	snprintf (buf, 50, "%02iP%2iS%i", ax, reg, val->getValueInteger ());
+	int ret = writePort (buf);
+	if (ret < 0)
+		return ret;
+	ret = readPort ();
+	return ret;
 }
 
 
@@ -151,7 +183,19 @@ Rts2DevSensor (in_argc, in_argv)
 	dev_port = -1;
 	dev = "/dev/ttyS0";
 
+	createValue (runFreq, "RUNFREQ", "current run frequency", true);
 	createValue (axis0, "CURPOS", "current arm position", true);
+
+	// create phytron params
+	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
+		((Rts2ValueSelection *) phytronParams[0])->addSelVal ("rotational");
+		((Rts2ValueSelection *) phytronParams[0])->addSelVal ("linear");
+
+		createValue ((Rts2ValueSelection *)phytronParams[1], "P02", "Measuring units of movement", false);
+		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("step");
+		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("mm");
+		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("inch");
+		((Rts2ValueSelection *) phytronParams[1])->addSelVal ("degree"); */
 
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
@@ -169,6 +213,8 @@ Rts2DevSensorPhytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == axis0)
 		return setAxis (new_value->getValueInteger ());
+	if (old_value == runFreq)
+		return setValue (1, 14, (Rts2ValueInteger *)new_value);
 	return Rts2DevSensor::setValue (old_value, new_value);
 }
 
@@ -261,7 +307,6 @@ Rts2DevSensorPhytron::init ()
 			strerror (errno) << sendLog;
 		return -1;
 	}
-
 	ret = readAxis ();
 	if (ret)
 		return ret;
