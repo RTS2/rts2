@@ -101,10 +101,20 @@ Rts2DevClientCameraExec::nextCommand ()
 	if (!ret)
 		return;
 
-	// if command cannot be executed when telescope is moving, do not execute it
-	// before target was moved
-	if ((nextComd->getBopMask () & BOP_TEL_MOVE) && currentTarget && !currentTarget->wasMoved())
-		return;
+	if (nextComd->getBopMask () & BOP_TEL_MOVE)
+	{
+		// if command cannot be executed when telescope is moving, do not execute it
+		// before target was moved
+		if (currentTarget && !currentTarget->wasMoved())
+			return;
+		if (nextComd->getBopMask () & BOP_WHILE_STATE)
+		{
+			// if there are qued exposures, do not execute command
+			Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+			if (val && val->getValueInteger () != 0)
+				return;
+		}
+	}
 
 	// send command to other device
 	if (strcmp (getName (), cmd_device))
