@@ -138,8 +138,7 @@ void
 Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
 	// if unknow type, don't process image..
-	if ((image->getShutter () != SHUT_OPENED
-		&& image->getShutter () != SHUT_SYNCHRO)
+	if (image->getShutter () != SHUT_OPENED
 		|| image->getImageType () == IMGTYPE_FLAT)
 		return;
 

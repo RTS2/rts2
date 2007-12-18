@@ -124,7 +124,6 @@ Rts2GenFocCamera::processImage (Rts2Image * image)
 			std::cout << "dark";
 			break;
 		case SHUT_OPENED:
-		case SHUT_SYNCHRO:
 			std::cout << "object";
 			break;
 		default:
