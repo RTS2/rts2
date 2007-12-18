@@ -61,7 +61,7 @@ typedef enum
 } img_type_t;
 
 typedef enum
-{ SHUT_UNKNOW, SHUT_OPENED, SHUT_CLOSED, SHUT_SYNCHRO }
+{ SHUT_UNKNOW, SHUT_OPENED, SHUT_CLOSED }
 shutter_t;
 
 typedef enum

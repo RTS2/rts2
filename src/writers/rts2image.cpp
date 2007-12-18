@@ -1086,14 +1086,11 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 	// dark images don't need to wait till imgprocess will pick them up for reprocessing
 	switch (im_h->shutter)
 	{
-		case 1:
+		case 0:
 			shutter = SHUT_OPENED;
 			break;
-		case 2:
+		case 1:
 			shutter = SHUT_CLOSED;
-			break;
-		case 3:
-			shutter = SHUT_SYNCHRO;
 			break;
 		default:
 			shutter = SHUT_UNKNOW;
