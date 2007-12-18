@@ -41,7 +41,7 @@ imageProceRes;
 class Rts2DevClientCameraImage:public Rts2DevClientCamera
 {
 	private:
-		void writeFilter ();
+		void writeFilter (Rts2Image *img);
 
 		// we have to allocate that field as soon as we get the knowledge of
 		// camera chip numbers..
