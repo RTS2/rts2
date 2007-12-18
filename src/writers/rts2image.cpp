@@ -2050,12 +2050,12 @@ Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 				case EXPOSURE_START:
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
 						writeConnValue (conn, val);
+					if (val->getValueDisplayType () == RTS2_DT_ROTANG)
+						addRotang (val->getValueDouble ());
 					break;
 				case EXPOSURE_END:
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
 						writeConnValue (conn, val);
-					if (val->getValueDisplayType () == RTS2_DT_ROTANG)
-						addRotang (val->getValueDouble ());
 					break;
 			}
 		}
