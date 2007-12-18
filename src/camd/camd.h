@@ -147,7 +147,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		void initData ();
 
 		time_t readout_started;
-		int shutter_state;
 
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
@@ -395,10 +394,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		virtual int startExposure () = 0;
 		virtual void afterReadout ();
 
-		int getShutterState ()
-		{
-			return shutter_state;
-		}
 		virtual int endReadout ();
 
 		virtual int readoutOneLine () = 0;

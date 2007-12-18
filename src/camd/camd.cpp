@@ -34,7 +34,6 @@ Rts2DevCamera::initData ()
 {
 	pixelX = nan ("f");
 	pixelY = nan ("f");
-	shutter_state = -1;
 
 	nAcc = 1;
 }
@@ -200,7 +199,11 @@ Rts2DevCamera::sendFirstLine ()
 	focusingHeader.x = chipUsedReadout->getXInt ();
 	focusingHeader.y = chipUsedReadout->getYInt ();
 	focusingHeader.filter = getLastFilterNum ();
-	focusingHeader.shutter = shutter_state;
+	// light - dark images
+	if (expType)
+		focusingHeader.shutter = expType->getValueInteger ();
+	else
+		focusingHeader.shutter = 0;
 	focusingHeader.subexp = subExposure->getValueDouble ();
 	focusingHeader.nacc = nAcc;
 
