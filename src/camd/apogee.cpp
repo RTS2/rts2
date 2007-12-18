@@ -781,6 +781,8 @@ Rts2DevCamera (in_argc, in_argv)
 	createTempSet ();
 	createTempCCD ();
 
+	createExpType ();
+
 	addOption ('n', "device_id", 1,
 		"device ID (ussualy 0, which is also default)");
 	addOption ('a', "config_name", 1,
