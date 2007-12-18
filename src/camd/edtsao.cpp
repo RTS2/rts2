@@ -41,9 +41,9 @@ typedef struct SplitConf
 
 const SplitConf splitConf[] =
 {
-	{true, false, 2, "e2vsplit.bin", 0x51000040, 0x51008141},
 	{false, false, 1, "e2vunsplit.bin", 0x51000040, 0x51008101},
-	{false, true, 1, "e2vunsplit.bin", 0x51000000, 0x51008141}
+	{false, true, 1, "e2vunsplit.bin", 0x51000000, 0x51008141},
+	{true, false, 2, "e2vsplit.bin", 0x51000040, 0x51008141}
 };
 
 /**
@@ -312,7 +312,7 @@ Rts2CamdEdtSao::fclr (int num)
 			{
 				logStream (MESSAGE_ERROR) << "timeout during fclr, phase 2" <<
 					sendLog;
-				return -1;
+				return 0;
 			}
 		}
 		pdv_serial_wait (pd, 10, 4);
@@ -359,7 +359,7 @@ Rts2CamdEdtSao::startExposure ()
 {
 	int ret;
 	// taken from readout script
-	// set split modes.. (0 - center, 1 - left, 2 - right
+	// set split modes.. (0 - left, 1 - right, 2 - both)
 	const SplitConf *conf = &splitConf[splitMode->getValueInteger ()];
 	channels = conf->chanNum;
 	ret = setEDTSplit (conf->splitMode);
@@ -741,6 +741,8 @@ Rts2DevCamera (in_argc, in_argv)
 	notimeout = 0;
 	sdelay = 0;
 
+	createExpType ();
+
 	addOption ('p', "devname", 1, "device name");
 	addOption ('n', "devunit", 1, "device unit number");
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
@@ -752,9 +754,9 @@ Rts2DevCamera (in_argc, in_argv)
 	splitMode->setValueInteger (0);
 
 	// add possible split modes
-	splitMode->addSelVal ("BOTH");
 	splitMode->addSelVal ("LEFT");
 	splitMode->addSelVal ("RIGHT");
+	splitMode->addSelVal ("BOTH");
 
 	createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
 		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
