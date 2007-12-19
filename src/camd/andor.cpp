@@ -158,40 +158,34 @@ Rts2DevCameraAndor::isExposing ()
 	int status;
 	int ret;
 	// if we are in acqusition mode 5
-	if ((ret = Rts2DevCamera::isExposing ()) != 0)
-		return ret;
 	if (acqusitionMode->getValueInteger () == 5)
 	{
 		long first, last;
 		if (GetNumberNewImages (&first, &last) == DRV_NO_NEW_DATA)
-			return 100;
-		// signal that we have data
-		maskStateChip (0, CAM_MASK_READING, CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
-		// there is new image, process it
-		for (long i = first; i < last; i++)
 		{
-			if (quedExpNumber->getValueInteger () == 0)
-			{
-				// stop exposure if we do not have any qued values
-				AbortAcquisition ();
-				FreeInternalMemory ();
-				logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
-				return 0;
-			}
-			quedExpNumber->dec ();
+			return 100;
+		}
+		// there is new image, process it
+		std::cout << "Images " << first << " " << last << std::endl;
+		for (long i = first; i <= last; i++)
+		{
+			// signal that we have data
+			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
+			long firstValid, lastValid;
 			// get the data
-			long validFirst, validLast;
+			GetSizeOfCircularBuffer (&firstValid);
+			std::cout << "buffer size " << firstValid << std::endl;
 			switch (getDataType ())
 			{
 				case RTS2_DATA_LONG:
-					if (GetImages (i, i, (long *) dataBuffer, chipUsedSize (), &validFirst, &validLast) != DRV_SUCCESS)
+					if (GetImages (i, i, (long *) dataBuffer, chipUsedSize (), &firstValid, &lastValid) != DRV_SUCCESS)
 					{
 						logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
 						return -1;
 					}
 					break;
 				default:
-					if (GetImages16 (i, i, (unsigned short *) dataBuffer, chipUsedSize (), &validFirst, &validLast) != DRV_SUCCESS)
+					if (GetImages16 (i, i, (unsigned short *) dataBuffer, chipUsedSize (), &firstValid, &lastValid) != DRV_SUCCESS)
 					{
 						logStream (MESSAGE_ERROR) << "Cannot get int data" << sendLog;
 						return -1;
@@ -201,10 +195,21 @@ Rts2DevCameraAndor::isExposing ()
 			ret = sendImage (dataBuffer, dataBufferSize);
 			if (ret)
 				return ret;
+			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout started");
+			if (quedExpNumber->getValueInteger () == 0)
+			{
+				// stop exposure if we do not have any qued values
+				AbortAcquisition ();
+				FreeInternalMemory ();
+				logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
+				return -1;
+			}
+			quedExpNumber->dec ();
 		}
-		maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout started");
-		return 0;
+		return 100;
 	}
+	if ((ret = Rts2DevCamera::isExposing ()) != 0)
+		return ret;
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
 	if (status == DRV_ACQUIRING)
@@ -383,7 +388,7 @@ Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 	int ret;
 	if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
 	{
-		logStream (MESSAGE_ERROR) << "andor setHSSpeed error " << ret <<
+		logStream (MESSAGE_ERROR) << "andor setHSSpeed amplifier " << in_amp << " speed " << in_hsspeed << " error " << ret <<
 			sendLog;
 		return -1;
 	}
@@ -460,20 +465,29 @@ Rts2DevCameraAndor::startExposure ()
 		return -1;
 	}
 
+	float acq_exp, acq_acc, acq_kinetic;
 	if (isnan (getSubExposure ()))
 	{
 		if (supportFrameTransfer ())
 		{
-			if (setAcquisitionMode (5) != DRV_SUCCESS)
+			if (setAcquisitionMode (5))
 			{
 				logStream (MESSAGE_ERROR) << "Cannot set AQ run-till-abort mode" << sendLog;
 				return -1;
 			}
+			if (SetKineticCycleTime (0) != DRV_SUCCESS)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot set kinetic timing to 0" << sendLog;
+				return -1;
+			}
+			if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) != DRV_SUCCESS)
+				return -1;
+			std::cout << "timings " << acq_exp << " " << acq_acc << " " << acq_kinetic << std::endl;
 		}
 		else
 		{
 			// single scan
-			if (setAcquisitionMode (AC_ACQMODE_SINGLE) != DRV_SUCCESS)
+			if (setAcquisitionMode (AC_ACQMODE_SINGLE))
 			{
 				logStream (MESSAGE_ERROR) << "Cannot set AQ mode" << sendLog;
 				return -1;
@@ -488,7 +502,6 @@ Rts2DevCameraAndor::startExposure ()
 	else
 	{
 		nAcc = (int) (getExposure () / getSubExposure ());
-		float acq_exp, acq_acc, acq_kinetic;
 		if (nAcc == 0)
 		{
 			nAcc = 1;
@@ -496,7 +509,7 @@ Rts2DevCameraAndor::startExposure ()
 		}
 
 		// Acquisition mode 2 is "accumulate"
-		if (setAcquisitionMode (2) != DRV_SUCCESS)
+		if (setAcquisitionMode (2))
 			return -1;
 		if (SetExposureTime (getSubExposure ()) != DRV_SUCCESS)
 			return -1;
