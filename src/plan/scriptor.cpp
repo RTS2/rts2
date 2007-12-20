@@ -167,16 +167,22 @@ Rts2Scriptor::postEvent (Rts2Event * event)
 int
 Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 {
-	std::string cmd = scriptGen->getSelName ();
-	FILE *gen = popen (cmd.c_str (), "r");
+	std::ostringstream cmd;
+	cmd << scriptGen->getSelName () << " " << getMasterState ();
+	logStream (MESSAGE_DEBUG) << "Calling '" << cmd.str () << "'." << sendLog;
+	FILE *gen = popen (cmd.str().c_str (), "r");
 
 	char *filebuf = NULL;
 	size_t len;
 	ssize_t ret = getline (&filebuf, &len, gen);
 	if (ret == -1)
 		return -1;
+	// replace \n
+	filebuf[ret - 1] = '\0';
 	buf = std::string (filebuf);
+	logStream (MESSAGE_DEBUG) << "Script '" << buf << "'." << sendLog;
 	pclose (gen);
+
 	free (filebuf);
 	return 0;
 }
