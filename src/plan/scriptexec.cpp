@@ -49,8 +49,8 @@ Rts2ScriptExec::getStreamAsString (std::istream & _is)
 }
 
 
-const char *
-Rts2ScriptExec::findScript (std::string in_deviceName)
+int
+Rts2ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 {
 	// take script from stdin
 	if (deviceName)
@@ -69,10 +69,11 @@ Rts2ScriptExec::findScript (std::string in_deviceName)
 				time (&nextRunningQ);
 				nextRunningQ += 5;
 			}
-			return ds->getScript ();
+			buf = std::string (ds->getScript ());
+			return 0;
 		}
 	}
-	return NULL;
+	return -1;
 }
 
 

@@ -67,10 +67,11 @@ class Rts2ScriptInterface
 		 * Return script for next target.
 		 *
 		 * @param in_deviceName   Name of device for script.
+		 * @param buf             Buffer for device script.
 		 *
 		 * @return NULL when script for given device cannot be found, otherwise device script.
 		 */
-		virtual const char *findScript (std::string in_deviceName) = 0;
+		virtual int findScript (std::string in_deviceName, std::string & buf) = 0;
 
 		/**
 		 * Return position of next target.

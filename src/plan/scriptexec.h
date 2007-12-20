@@ -58,7 +58,7 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		Rts2ScriptExec (int in_argc, char **in_argv);
 		virtual ~ Rts2ScriptExec (void);
 
-		virtual const char *findScript (std::string deviceName);
+		virtual int findScript (std::string deviceName, std::string & buf);
 
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);

@@ -23,12 +23,14 @@
 #include "rts2targetscr.h"
 
 #define OPT_EXPAND_PATH       OPT_LOCAL + 101
+#define OPT_GEN               OPT_LOCAL + 102
 
 class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 {
 	private:
 		Rts2ValueInteger *scriptCount;
 		Rts2ValueString *expandPath;
+		Rts2ValueSelection *scriptGen;
 
 		Rts2TargetScr *currentTarget;
 	protected:
@@ -44,7 +46,7 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual const char *findScript (std::string in_deviceName);
+		virtual int findScript (std::string in_deviceName, std::string & buf);
 		virtual int getPosition (struct ln_equ_posn *posn, double JD);
 };
 
@@ -55,7 +57,11 @@ Rts2Scriptor::Rts2Scriptor (int in_argc, char **in_argv)
 	createValue (expandPath, "expand_path", "expand path for new images", false);
 	expandPath->setValueString ("%f");
 
+	createValue (scriptGen, "script_generator", "command which gets state and generates next script", false);
+	scriptGen->addSelVal ("/etc/rts2/scriptor");
+
 	addOption (OPT_EXPAND_PATH, "expand-path", 1, "path used for filename expansion");
+	addOption (OPT_GEN, "script-gen", 1, "script generator");
 
 	currentTarget = NULL;
 }
@@ -90,6 +96,9 @@ Rts2Scriptor::processOption (int in_opt)
 	{
 		case OPT_EXPAND_PATH:
 			expandPath->setValueString (optarg);
+			break;
+		case OPT_GEN:
+			scriptGen->addSelVal (optarg);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -155,12 +164,21 @@ Rts2Scriptor::postEvent (Rts2Event * event)
 }
 
 
-const char *
-Rts2Scriptor::findScript (std::string in_deviceName)
+int
+Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 {
-	if (in_deviceName == "C0")
-		return "E 1";
-	return NULL;
+	std::string cmd = scriptGen->getSelName ();
+	FILE *gen = popen (cmd.c_str (), "r");
+
+	char *filebuf = NULL;
+	size_t len;
+	ssize_t ret = getline (&filebuf, &len, gen);
+	if (ret == -1)
+		return -1;
+	buf = std::string (filebuf);
+	pclose (gen);
+	free (filebuf);
+	return 0;
 }
 
 
