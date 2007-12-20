@@ -27,24 +27,10 @@
 #include <fstream>
 #include <vector>
 
-// Rts2ScriptForDevice
-
-Rts2ScriptForDevice::Rts2ScriptForDevice (std::string in_deviceName,
-std::string in_script)
-{
-	deviceName = in_deviceName;
-	script = in_script;
-}
-
-
-Rts2ScriptForDevice::~Rts2ScriptForDevice (void)
-{
-}
-
-
 // Rts2ScriptExec class
 
-std::string Rts2ScriptExec::getStreamAsString (std::istream & _is)
+std::string
+Rts2ScriptExec::getStreamAsString (std::istream & _is)
 {
 	std::string out;
 	while (!_is.eof ())
@@ -63,15 +49,13 @@ std::string Rts2ScriptExec::getStreamAsString (std::istream & _is)
 }
 
 
-Rts2ScriptForDevice *
+const char *
 Rts2ScriptExec::findScript (std::string in_deviceName)
 {
 	// take script from stdin
 	if (deviceName)
 	{
-		scripts.
-			push_back (Rts2ScriptForDevice
-			(std::string (deviceName), getStreamAsString (std::cin)));
+		scripts.push_back (Rts2ScriptForDevice (std::string (deviceName), getStreamAsString (std::cin)));
 		deviceName = NULL;
 	}
 	for (std::vector < Rts2ScriptForDevice >::iterator iter = scripts.begin ();
@@ -85,7 +69,7 @@ Rts2ScriptExec::findScript (std::string in_deviceName)
 				time (&nextRunningQ);
 				nextRunningQ += 5;
 			}
-			return ds;
+			return ds->getScript ();
 		}
 	}
 	return NULL;
@@ -147,8 +131,8 @@ Rts2ScriptExec::processOption (int in_opt)
 }
 
 
-Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc,
-in_argv)
+Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
+:Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()
 {
 	waitState = 0;
 	currentTarget = NULL;
@@ -301,6 +285,15 @@ Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();
+}
+
+
+int
+Rts2ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
+{
+	pos->ra = 20;
+	pos->dec = 20;
+	return 0;
 }
 
 

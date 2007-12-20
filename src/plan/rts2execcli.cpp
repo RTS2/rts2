@@ -25,10 +25,10 @@
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
-Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection):Rts2DevClientCameraImage
-(in_connection),
-Rts2DevScript (in_connection)
+Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString *in_expandPath)
+:Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
 {
+	expandPath = in_expandPath;
 	queCurrentImage = false;
 	imgCount = 0;
 }
@@ -37,6 +37,15 @@ Rts2DevScript (in_connection)
 Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 {
 	deleteScript ();
+}
+
+
+Rts2Image *
+Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
+{
+	if (expandPath)
+		return new Rts2Image (expandPath->getValue (), expStart, connection);
+	return Rts2DevClientCameraImage::createImage (expStart);
 }
 
 
@@ -384,14 +393,17 @@ Rts2DevClientTelescopeExec::syncTarget ()
 	{
 		case OBS_MOVE:
 			currentTarget->moveStarted ();
-			queCommand (new
-				Rts2CommandMove (getMaster (), this, coord.ra, coord.dec));
+			queCommand (
+				new Rts2CommandMove (getMaster (), this, coord.ra, coord.dec),
+				BOP_TEL_MOVE
+				);
 			break;
 		case OBS_MOVE_UNMODELLED:
 			currentTarget->moveStarted ();
-			queCommand (new
-				Rts2CommandMoveUnmodelled (getMaster (), this,
-				coord.ra, coord.dec));
+			queCommand (
+				new Rts2CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec),
+				BOP_TEL_MOVE
+				);
 			break;
 		case OBS_MOVE_FIXED:
 			currentTarget->moveStarted ();

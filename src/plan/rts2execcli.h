@@ -71,6 +71,7 @@ public Rts2DevScript
 {
 	private:
 		bool queCurrentImage;
+		Rts2ValueString *expandPath;
 	protected:
 		virtual void unblockWait ()
 		{
@@ -129,8 +130,9 @@ public Rts2DevScript
 
 		virtual void clearBlockMove ();
 	public:
-		Rts2DevClientCameraExec (Rts2Conn * in_connection);
+		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
 		virtual ~ Rts2DevClientCameraExec (void);
+		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void postEvent (Rts2Event * event);
 		virtual void nextCommand ();
 		void queImage (Rts2Image * image);

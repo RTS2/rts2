@@ -120,11 +120,10 @@ Rts2ScriptElement (in_script)
 
 
 int
-Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	if (camera->getConnection ()->getValue ("SHUTTER")->getValueInteger () != 0)
+	Rts2Value *shutter = camera->getConnection ()->getValue ("SHUTTER");
+	if (shutter && shutter->getValueInteger () != 0)
 		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
 	// change values of the exposure
 	if (camera->getConnection ()->getValue ("exposure")->getValueFloat () != expTime)
@@ -145,11 +144,11 @@ Rts2ScriptElementDark::Rts2ScriptElementDark (Rts2Script * in_script, float in_e
 
 
 int
-Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	if (camera->getConnection ()->getValue ("SHUTTER")->getValueInteger () != 1)
+	Rts2Value *shutter;
+	shutter = camera->getConnection ()->getValue ("SHUTTER");
+	if (shutter && shutter->getValueInteger () != 1)
 		camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
 	// change values of the exposure
 	if (camera->getConnection ()->getValue ("exposure")->getValueFloat () != expTime)
