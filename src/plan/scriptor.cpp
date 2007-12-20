@@ -42,6 +42,8 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		Rts2Scriptor (int argc, char **argv);
 		virtual ~Rts2Scriptor (void);
 
+		virtual void postEvent (Rts2Event * event);
+
 		virtual const char *findScript (std::string in_deviceName);
 		virtual int getPosition (struct ln_equ_posn *posn, double JD);
 };
@@ -136,6 +138,20 @@ Rts2Scriptor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == expandPath)
 		return 0;
 	return Rts2Device::setValue (old_value, new_value);
+}
+
+
+void
+Rts2Scriptor::postEvent (Rts2Event * event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_SCRIPT_ENDED:
+			postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+			postEvent (new Rts2Event (EVENT_OBSERVE));
+			break;
+	}
+	Rts2Device::postEvent (event);
 }
 
 
