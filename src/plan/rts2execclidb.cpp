@@ -30,12 +30,12 @@ Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 		// create image based on target type and shutter state
 		return new Rts2ImageDb (currentTarget, this, expStart);
 	logStream (MESSAGE_ERROR)
-		<< "Rts2DevClientCameraExec::createImage creating no-target image" <<
-		sendLog;
+		<< "Rts2DevClientCameraExec::createImage creating no-target image"
+		<< sendLog;
 	Rts2Image *image;
 	char *name;
 	asprintf (&name, "!/tmp/%s_%i.fits", connection->getName (), imgCount);
-	image = new Rts2Image (name, expStart);
+	image = new Rts2Image (name, expStart, connection);
 	free (name);
 	return image;
 }
