@@ -43,12 +43,16 @@ exposureType;
  */
 #define BOP_CIP_MASK            0x00006000
 
+/**
+ * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
+ * to reach given state uses this to control their execution.
+ */
 typedef enum cip_state_t
 {
-	CIP_NOT_CALLED = 0x00000000,
-	CIP_WAIT       = 0x00002000,
-	CIP_RUN        = 0x00004000,
-	CIP_RETURN     = 0x00006000
+	CIP_NOT_CALLED = 0x00000000, //! The command does not use CIP.
+	CIP_WAIT       = 0x00002000, //! The command is waiting for status update.
+	CIP_RUN        = 0x00004000, //! The status update have run, but does not fullfill command request. Command is still waiting for correct state.
+	CIP_RETURN     = 0x00006000	 //! Command is waiting for return from device status wait.
 };
 
 /**

@@ -115,6 +115,11 @@ class Rts2DevClient:public Rts2Object
 			connection->queCommand (cmd);
 		}
 
+		void queCommand (Rts2Command * cmd, int notBop)
+		{
+			connection->queCommand (cmd, notBop);
+		}
+
 		void commandReturn (Rts2Command * cmd, int status)
 		{
 			if (status)
