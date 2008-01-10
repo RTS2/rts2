@@ -1,6 +1,6 @@
 /* 
  * Night reporting utility.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,9 +40,11 @@ class Rts2NightReport:public Rts2AppDb
 		struct ln_date *tm_night;
 		int printImages;
 		int printCounts;
-		int printStat;
+		bool printStat;
+		bool collocate;
 		void printObsList ();
 		void printStatistics ();
+		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
 		Rts2ObsSet *obs_set;
 
 	protected:
@@ -66,26 +68,25 @@ Rts2AppDb (in_argc, in_argv)
 	obs_set = NULL;
 	printImages = 0;
 	printCounts = 0;
-	printStat = 0;
-	addOption ('f', "from", 1,
-		"date from which take measurements; default to current date - 24 hours");
-	addOption ('t', "to", 1,
-		"date to which show measurements; default to from + 24 hours");
+	printStat = false;
+	collocate = false;
+
+	addOption ('f', "from", 1, "date from which take measurements; default to current date - 24 hours");
+	addOption ('t', "to", 1, "date to which show measurements; default to from + 24 hours");
 	addOption ('n', "night-date", 1, "report for night around given date");
 	addOption ('l', NULL, 0, "print full image names");
 	addOption ('i', NULL, 0, "print image listing");
-	addOption ('I', "images_summary", 0, "print image summary row");
-	addOption ('p', "photometer", 2,
-		"print counts listing; can be followed by format, txt for plain");
-	addOption ('P', "photometer_summary", 0, "print counts summary row");
-	addOption ('s', "statistics", 0, "print night statistics");
+	addOption ('I', NULL, 0, "print image summary row");
+	addOption ('p', NULL, 2, "print counts listing; can be followed by format, txt for plain");
+	addOption ('P', NULL, 0, "print counts summary row");
+	addOption ('s', NULL, 0, "print night statistics");
+	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
 }
 
 
 Rts2NightReport::~Rts2NightReport (void)
 {
 	delete tm_night;
-	delete obs_set;
 }
 
 
@@ -128,7 +129,10 @@ Rts2NightReport::processOption (int in_opt)
 			printCounts |= DISPLAY_SUMMARY;
 			break;
 		case 's':
-			printStat = 1;
+			printStat = true;
+			break;
+		case 'c':
+			collocate = true;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -165,6 +169,8 @@ Rts2NightReport::printObsList ()
 		obs_set->printImages (printImages);
 	if (printCounts)
 		obs_set->printCounts (printCounts);
+	if (collocate)
+		obs_set->collocate ();
 	std::cout << *obs_set;
 }
 
@@ -176,6 +182,28 @@ Rts2NightReport::printStatistics ()
 }
 
 
+void
+Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
+{
+	obs_set = new Rts2ObsSet (t_start, t_end);
+
+	if (!printEmpty && obs_set->empty ())
+	{
+		delete obs_set;
+		return;
+	}
+
+	// from which date to which..
+	std::cout << "From " << Timestamp (*t_start) << " to " << Timestamp (*t_end) << std::endl;
+
+	printObsList ();
+
+	if (printStat)
+		printStatistics ();
+	delete obs_set;
+}
+
+
 int
 Rts2NightReport::doProcessing ()
 {
@@ -183,17 +211,19 @@ Rts2NightReport::doProcessing ()
 	Rts2Config *config;
 	//  Rts2SqlColumnObsState *obsState;
 	config = Rts2Config::instance ();
-	// from which date to which..
-	std::
-		cout << "From " << Timestamp (t_from) << " to " << Timestamp (t_to) <<
-		std::endl;
 
-	obs_set = new Rts2ObsSet (&t_from, &t_to);
-
-	printObsList ();
-
-	if (printStat)
-		printStatistics ();
+	if (collocate && t_to - t_from > 86400)
+	{
+		time_t t_start = t_from;
+		for (time_t t_end = t_from + 86400; t_end <= t_to; t_start = t_end, t_end += 86400)
+		{
+			printFromTo (&t_start, &t_end, false);
+		}
+	}
+	else
+	{
+		printFromTo (&t_from, &t_to, true);
+	}
 
 	return 0;
 }
