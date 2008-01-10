@@ -142,7 +142,7 @@ Rts2DevFilterd::setFilterNumMask (int new_filter)
 	if (ret == -1)
 	{
 		maskState (DEVICE_ERROR_MASK | FILTERD_MASK | BOP_EXPOSURE,
-			DEVICE_ERROR_HW | FILTERD_IDLE | ~BOP_EXPOSURE);
+			DEVICE_ERROR_HW | FILTERD_IDLE);
 		return ret;
 	}
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_IDLE);
