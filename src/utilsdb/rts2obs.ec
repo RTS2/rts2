@@ -478,6 +478,24 @@ Rts2Obs::getSlewSpeed ()
 }
 
 
+double
+Rts2Obs::getSlewTime ()
+{
+	if (isnan (obs_slew) || isnan (obs_start))
+		return nan ("f");
+	return obs_start - obs_slew;
+}
+
+
+double
+Rts2Obs::getObsTime ()
+{
+	if (isnan (obs_start) || isnan (obs_end))
+		return nan ("f");
+	return obs_end - obs_slew;
+}
+
+
 void
 Rts2Obs::maskState (int newBits)
 {

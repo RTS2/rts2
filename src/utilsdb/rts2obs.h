@@ -103,6 +103,16 @@ class Rts2Obs
 			displayCounts = in_printCounts;
 		}
 
+		void setPrintHeader (bool in_printHeader)
+		{
+			printHeader = in_printHeader;
+		}
+
+		/**
+		 * Return real target ID.
+		 *
+		 * @return Target id.
+		 */
 		int getTargetId ()
 		{
 			return tar_id;
@@ -111,6 +121,16 @@ class Rts2Obs
 		char getTargetType ()
 		{
 			return tar_type;
+		}
+
+		/**
+		 * Return name of observation target.
+		 *
+		 * @return Target name.
+		 */
+		const std::string getTargetName ()
+		{
+			return tar_name;
 		}
 
 		int getObsId ()
@@ -185,7 +205,27 @@ class Rts2Obs
 		 * Return average slew speed in arc deg/sec. Return nan when slew speed cannot be determined.
 		 */
 		double getPrevSeparation ();
+
+		/**
+		 * Return slew speed in degrees / second.
+		 *
+		 * @return Slew speed in degrees per seconds.
+		 */
 		double getSlewSpeed ();
+
+		/**
+		 * Return time spend slewing telescope on target.
+		 *
+		 * @return Slew time in seconds.
+		 */
+		double getSlewTime ();
+
+		/**
+		 * Return observation time. Return time spend with telescope on target.
+		 *
+		 * @return Observation time in seconds.
+		 */
+		double getObsTime ();
 
 		void maskState (int newBits);
 		void unmaskState (int newBits);
@@ -205,8 +245,7 @@ class Rts2ObsState
 			state = in_state;
 		}
 
-		friend std::ostream & operator << (std::ostream & _os,
-			Rts2ObsState obs_state);
+		friend std::ostream & operator << (std::ostream & _os, Rts2ObsState obs_state);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ObsState obs_state);

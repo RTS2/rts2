@@ -1,3 +1,22 @@
+/* 
+ * Observation class set.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_OBS_SET__
 #define __RTS2_OBS_SET__
 
@@ -15,27 +34,22 @@
  *
  * It can print various statistic on observations in set.
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class Rts2ObsSet:public
-std::vector <
-Rts2Obs >
+class Rts2ObsSet:public std::vector <Rts2Obs >
 {
 	private:
-		int
-			images;
-		int
-			counts;
-		int
-			successNum;
-		int
-			failedNum;
-		void
-			initObsSet ()
+		int images;
+		int counts;
+		bool collocated;
+		int successNum;
+		int failedNum;
+		void initObsSet ()
 		{
 			images = 0;
 			counts = 0;
+			collocated = false;
 			successNum = 0;
 			failedNum = 0;
 
@@ -52,31 +66,21 @@ Rts2Obs >
 			errAvgDec = 0;
 			errAvgRad = 0;
 		}
-		void
-			load (std::string in_where);
+		void load (std::string in_where);
 
 		// numbers
-		int
-			allNum;
-		int
-			goodNum;
-		int
-			firstNum;
+		int allNum;
+		int goodNum;
+		int firstNum;
 
 		// errors..
-		double
-			errFirstRa;
-		double
-			errFirstDec;
-		double
-			errFirstRad;
+		double errFirstRa;
+		double errFirstDec;
+		double errFirstRad;
 
-		double
-			errAvgRa;
-		double
-			errAvgDec;
-		double
-			errAvgRad;
+		double errAvgRa;
+		double errAvgDec;
+		double errAvgRad;
 	public:
 		Rts2ObsSet (void);
 		Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
@@ -86,60 +90,62 @@ Rts2Obs >
 		Rts2ObsSet (struct ln_equ_posn *position, double radius);
 		virtual ~ Rts2ObsSet (void);
 
-		void
-			printImages (int in_images)
+		void  printImages (int in_images)
 		{
 			images = in_images;
 		}
 
-		int
-			getPrintImages ()
+		int getPrintImages ()
 		{
 			return images;
 		}
 
-		int
-			getPrintCounts ()
+		int getPrintCounts ()
 		{
 			return counts;
 		}
 
-		void
-			printCounts (int in_counts)
+		void printCounts (int in_counts)
 		{
 			counts = in_counts;
 		}
 
-		int
-			getSuccess ()
+		/**
+		 * Collocate observations by target ids.
+		 */
+		void collocate ()
+		{
+			collocated = true;
+		}
+
+		bool isCollocated ()
+		{
+			return collocated;
+		}
+
+		int getSuccess ()
 		{
 			return successNum;
 		}
-		int
-			getFailed ()
+		int getFailed ()
 		{
 			return failedNum;
 		}
-		int
-			computeStatistics ();
+		int computeStatistics ();
 
-		int
-			getNumberOfImages ()
+		int getNumberOfImages ()
 		{
 			return allNum;
 		}
 
-		int
-			getNumberOfGoodImages ()
+		int getNumberOfGoodImages ()
 		{
 			return goodNum;
 		}
 
-		void
-			printStatistics (std::ostream & _os);
+		void printStatistics (std::ostream & _os);
 
-		friend
-			std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
+		friend std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
