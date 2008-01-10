@@ -2,7 +2,7 @@
 
 SUBDIRS = urvc2 apogee edtsao
 
-bin_PROGRAMS = rts2-camd-miniccd rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
+bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-i rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
 noinst_HEADERS = camd.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
 
@@ -24,6 +24,8 @@ rts2_camd_andor_LDFLAGS = @LIB_ANDOR@ @LIB_M@ @LIB_PTHREAD@
 endif
 
 rts2_camd_miniccd_SOURCES = miniccd.cpp
+
+rts2_camd_miniccd_interleaved_SOURCES = miniccd.cpp
 
 rts2_camd_urvc2_SOURCES = urvc2.cpp
 rts2_camd_urvc2_LDFLAGS = urvc2/liburvc2.a

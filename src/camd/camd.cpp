@@ -259,7 +259,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
 
 	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
-	createValue (dataType, "data_type", "used data type", true, 0, CAM_WORKING, true);
+	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
 
 	createValue (exposure, "exposure", "current exposure time", false);
 	exposure->setValueDouble (1);
@@ -271,6 +271,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
 	createValue (camShutterVal, "shutter", "shutter position", false);
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
+	rotang->setValueDouble (0);
 
 	nightCoolTemp = nan ("f");
 	focuserDevice = NULL;

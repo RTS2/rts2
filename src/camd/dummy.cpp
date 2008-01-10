@@ -73,8 +73,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			return Rts2DevCamera::setValue (old_value, new_value);
 		}
 	public:
-		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc,
-			in_argv)
+		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc, in_argv)
 		{
 			createTempCCD ();
 
