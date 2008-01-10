@@ -30,10 +30,11 @@ happen in release 0.5 of RTS2.
 
 Originally states doesn't use error mask (see 2c for description). Error mask
 was added in 0.5 branch. States converge to one state per server in release
-0.7.
+0.7. BOP (Block operation) handling and special BOP state, which describe
+device-perspective blocking (from camera etc..) appered in version 0.7.2.
 
 It was originally expected that clients will query for values with info,
-baseinfo etc. call. That wsa droped in favour of server notifing all clients
+baseinfo etc. call. That was droped in favour of server notifing all clients
 when value changed (telescope change location, new filter is selected,..).
 
 2. Protocol
@@ -138,6 +139,24 @@ X is followed by value name, operation (=,+ or -) and new value as string.
 Example:
 
 X GAIN = 20
+
+2j. Binary escape extension
+
+Binary escaped extension was added in version 0.7.3, when it become necessary
+because of changes in camera driver. Binary data can be passed on protocol.
+Typical scenario of communication looks like that:
+
+Server, Client;
+
+Server->Client [label="C <datasize> <datatype>"]
+Server->Client [label="binary data"]
+Server->Client [label="..binary data.."]
+Server->Client [label="..binary data"]
+
+During transmission of binary data, escape can be signaled by sending binary
+escape - 0x00 0x01 followed by non-0x00 char (0x00 0x01 0x00 is regarded as
+binary data, with last 0x00 beiing discarded). in binary data. Binary escape
+ends by sending binary command again, with remaining size of the data.
 
 3. Command strategy
 
