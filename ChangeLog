@@ -3,6 +3,31 @@
  * new blocking operations API
  * futher customatization, more configuration
 
+2007-12-07
+ * ROTANG, MNT_ROTA, CCD_ROTA
+
+2007-12-06
+ * edtSoa, sbigusb and urvc2 drivers
+
+2007-12-04
+ * new FLI, Apogee, Alta and SBIG CCD driver
+
+2007-12-03
+ * Andor driver works (without frame transefer)
+
+2007-11-09
+ * d50 driver almost finished
+ * Rts2DevGEM
+
+2007-11-04
+ * binary connection support
+
+2007-11-01
+ * new camera driver API, without CameraChip
+
+2007-10-31
+ * Rts2ValueRectangle
+
 2007-10-24
  * added xmlrpc access
 
