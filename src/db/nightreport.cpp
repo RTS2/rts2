@@ -27,6 +27,11 @@
 
 #include <time.h>
 #include <iostream>
+#include <iomanip>
+
+#define STAT_NONE            0
+#define STAT_COLLOCATE       1
+#define STAT_SUPER           2
 
 /**
  * Produces night report output.
@@ -41,8 +46,11 @@ class Rts2NightReport:public Rts2AppDb
 		int printImages;
 		int printCounts;
 		bool printStat;
-		bool printSuperStat;
-		bool collocate;
+		int statType;
+
+		long totalImages;
+		long totalGoodImages;
+		long totalObs;
 
 		int observationsNights;
 
@@ -50,6 +58,8 @@ class Rts2NightReport:public Rts2AppDb
 		void printStatistics ();
 		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
 		Rts2ObsSet *obs_set;
+
+		std::vector <Rts2ObsSet *> allObs;
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -73,10 +83,13 @@ Rts2AppDb (in_argc, in_argv)
 	printImages = 0;
 	printCounts = 0;
 	printStat = false;
-	printSuperStat = false;
-	collocate = false;
+	statType = STAT_NONE;
 
 	observationsNights = 0;
+
+	totalImages = 0;
+	totalGoodImages = 0;
+	totalObs = 0;
 
 	addOption ('f', "from", 1, "date from which take measurements; default to current date - 24 hours");
 	addOption ('t', "to", 1, "date to which show measurements; default to from + 24 hours");
@@ -95,6 +108,11 @@ Rts2AppDb (in_argc, in_argv)
 Rts2NightReport::~Rts2NightReport (void)
 {
 	delete tm_night;
+	for (std::vector <Rts2ObsSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
+	{
+		delete (*iter);
+	}
+	allObs.clear ();
 }
 
 
@@ -140,10 +158,10 @@ Rts2NightReport::processOption (int in_opt)
 			printStat = true;
 			break;
 		case 'S':
-			printSuperStat = true;
+			statType = STAT_SUPER;
 			break;
 		case 'c':
-			collocate = true;
+			statType = STAT_COLLOCATE;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -180,7 +198,7 @@ Rts2NightReport::printObsList ()
 		obs_set->printImages (printImages);
 	if (printCounts)
 		obs_set->printCounts (printCounts);
-	if (collocate)
+	if (statType == STAT_COLLOCATE)
 		obs_set->collocate ();
 	std::cout << *obs_set;
 }
@@ -207,11 +225,13 @@ Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 	if (!obs_set->empty ())		 // used nights..
 		observationsNights++;
 
-	if (printSuperStat)
+	if (statType == STAT_SUPER)
 	{
 		obs_set->computeStatistics ();
-		std::cout << "Night " << Timestamp (*t_start) << std::endl;
-		std::cout << "Observations " << obs_set->size () << " images " << obs_set->getNumberOfImages () << std::endl;
+		totalImages += obs_set->getNumberOfImages ();
+		totalGoodImages += obs_set->getNumberOfGoodImages ();
+		totalObs += obs_set->size ();
+		allObs.push_back (obs_set);
 	}
 	else
 	{
@@ -222,8 +242,8 @@ Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 
 		if (printStat)
 			printStatistics ();
+		delete obs_set;
 	}
-	delete obs_set;
 }
 
 
@@ -237,7 +257,7 @@ Rts2NightReport::doProcessing ()
 
 	int totalNights = 0;
 
-	if ((collocate || printSuperStat) && t_to - t_from > 86400)
+	if (statType != STAT_NONE && t_to - t_from > 86400)
 	{
 		time_t t_start = t_from;
 		// iterate by nights
@@ -249,13 +269,49 @@ Rts2NightReport::doProcessing ()
 	}
 	else
 	{
+		totalNights++;
 		printFromTo (&t_from, &t_to, true);
 	}
 
 	// print number of nights
-	if (printSuperStat)
+	if (statType == STAT_SUPER)
 	{
-		std::cout << "Number of nights " << totalNights << " observations nights " << observationsNights << std::endl;
+		if (observationsNights == 0)
+		{
+			std::cerr << "Cannot find any observations from " << Timestamp (t_from)
+				<< " to " << Timestamp (t_to) << std::endl;
+			return -1;
+		}
+		std::cout << "From " << Timestamp (t_from) << " to " << Timestamp (t_to) << std::endl
+			<< "Number of nights " << totalNights << " observations nights " << observationsNights
+			<< " (" << Percentage (observationsNights, totalNights) << "%)" << std::endl;
+		if (totalImages == 0)
+		{
+			std::cerr << "Cannot find any images from " << Timestamp (t_from)
+				<< " to " << Timestamp (t_to) << std::endl;
+		}
+		else
+		{
+			std::cout << "Images " << totalImages << " good images " << totalGoodImages
+				<< " (" << Percentage (totalGoodImages, totalImages) << "%)" << std::endl;
+
+		}
+
+		time_t t_start = t_from;
+
+		std::cout << " Date                          Images      % of good" << std::endl
+			<< "                    Observations   Good Images" << std::endl;
+
+		for (std::vector <Rts2ObsSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
+		{
+			std::cout << SEP << Timestamp (t_start)
+				<< SEP << std::setw (5) << (*iter)->size ()
+				<< SEP << std::setw (5) << (*iter)->getNumberOfImages ()
+				<< SEP << std::setw (5) << (*iter)->getNumberOfGoodImages ()
+				<< SEP << Percentage ((*iter)->getNumberOfGoodImages (), (*iter)->getNumberOfImages ())
+				<< std::endl;
+			t_start += 86400;
+		}
 	}
 
 	return 0;
