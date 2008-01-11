@@ -124,7 +124,7 @@ std::ostream & operator << (std::ostream & _os, Percentage _per)
 {
 	if (isnan (_per.per) || isnan (_per.total) || _per.total == 0)
 	{
-		_os << "nan ";
+		_os << std::setw (6) << std::right  << "nan";
 	}
 	else
 	{
