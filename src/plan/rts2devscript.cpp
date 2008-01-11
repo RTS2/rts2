@@ -514,8 +514,9 @@ Rts2DevScript::haveNextCommand ()
 		return 0;
 	}
 	ret = nextPreparedCommand ();
+	Rts2Value *queExpNum = script_connection->getValue ("que_exp_num");
 	// only end when we do not have any commands in que
-	if (ret < 0 && script_connection->queEmpty ())
+	if (ret < 0 && script_connection->queEmpty () && (queExpNum == NULL || queExpNum->getValueInteger () == 0))
 	{
 		deleteScript ();
 		#ifdef DEBUG_EXTRA
