@@ -1,5 +1,5 @@
 /* 
- * Command classes.
+ * Basic constants.
  * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -279,43 +279,40 @@
 #define PLANCOMM_E_NAMESPACE -101
 								 //! no route to host and various other problems. See errno for futhre details.
 #define PLANCOMM_E_HOSTACCES -102
-#define PLANCOMM_E_COMMAND  -103 //! invalid command
-								 //! invalid number of parameters to system command
-#define PLANCOMM_E_PARAMSNUM -104
-
-// maximal number of devices
-#define MAX_DEVICE          10
+#define PLANCOMM_E_COMMAND   -103//! invalid command
+#define PLANCOMM_E_PARAMSNUM -104//! invalid number of parameters to system command
 
 // maximal sizes of some important strings
-#define DEVICE_NAME_SIZE    50
-#define CLIENT_LOGIN_SIZE   50
-#define CLIENT_PASSWD_SIZE  50
-#define DEVICE_URI_SIZE     80
+#define DEVICE_NAME_SIZE      50
+#define CLIENT_LOGIN_SIZE     50
+#define CLIENT_PASSWD_SIZE    50
+#define DEVICE_URI_SIZE       80
 
 // device types
-#define DEVICE_TYPE_UNKNOW  0
-#define DEVICE_TYPE_SERVERD 1
-#define DEVICE_TYPE_MOUNT   2
-#define DEVICE_TYPE_CCD     3
-#define DEVICE_TYPE_DOME    4
-#define DEVICE_TYPE_WEATHER 5
-#define DEVICE_TYPE_ARCH    6
-#define DEVICE_TYPE_PHOT    7
-#define DEVICE_TYPE_PLAN    8
-#define DEVICE_TYPE_GRB     9
-#define DEVICE_TYPE_FOCUS   10
-#define DEVICE_TYPE_MIRROR  11
-#define DEVICE_TYPE_COPULA  12
-#define DEVICE_TYPE_FW      13
-#define DEVICE_TYPE_AUGERSH 14
-#define DEVICE_TYPE_SENSOR  15
+#define DEVICE_TYPE_UNKNOW     0
+#define DEVICE_TYPE_SERVERD    1
+#define DEVICE_TYPE_MOUNT      2
+#define DEVICE_TYPE_CCD        3
+#define DEVICE_TYPE_DOME       4
+#define DEVICE_TYPE_WEATHER    5
+#define DEVICE_TYPE_ARCH       6
+#define DEVICE_TYPE_PHOT       7
+#define DEVICE_TYPE_PLAN       8
+#define DEVICE_TYPE_GRB        9
+#define DEVICE_TYPE_FOCUS     10
+#define DEVICE_TYPE_MIRROR    11
+#define DEVICE_TYPE_COPULA    12
+#define DEVICE_TYPE_FW        13
+#define DEVICE_TYPE_AUGERSH   14
+#define DEVICE_TYPE_SENSOR    15
 
 #define DEVICE_TYPE_EXECUTOR  20
-#define DEVICE_TYPE_IMGPROC 21
+#define DEVICE_TYPE_IMGPROC   21
 #define DEVICE_TYPE_SELECTOR  22
-#define DEVICE_TYPE_SOAP    23
-#define DEVICE_TYPE_INDI    24
-#define DEVICE_TYPE_LOGD    25
+#define DEVICE_TYPE_SOAP      23
+#define DEVICE_TYPE_INDI      24
+#define DEVICE_TYPE_LOGD      25
+#define DEVICE_TYPE_SCRIPTOR  26
 
 // and more to come..
 // #define DEVICE_TYPE_
