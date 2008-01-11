@@ -118,3 +118,22 @@ std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd)
 	_os << ((TimeJD) _tjd) << " (" << td << ")";
 	return _os;
 }
+
+
+std::ostream & operator << (std::ostream & _os, Percentage _per)
+{
+	if (isnan (_per.per) || isnan (_per.total) || _per.total == 0)
+	{
+		_os << "nan ";
+	}
+	else
+	{
+		std::ios_base::fmtflags old_settings = _os.flags ();
+		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		int old_precision = _os.precision (2);
+		_os << std::setw (6) << ((double) (_per.per * 100.0) / _per.total);
+		_os.precision (old_precision);
+		_os.setf (old_settings);
+	}
+	return _os;
+}

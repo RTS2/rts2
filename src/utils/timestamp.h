@@ -1,6 +1,6 @@
 /* 
  * Timestamp manipulation routines.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -146,4 +146,24 @@ class TimeJDDiff:public TimeJD
 };
 
 std::ostream & operator << (std::ostream & _os, TimeJDDiff _tjd);
+
+/**
+ * Holds and prints percentage.
+ */
+class Percentage
+{
+	private:
+		double per;
+		double total;
+	public:
+		Percentage (double in_per, double in_total)
+		{
+			per = in_per;
+			total = in_total;
+		}
+
+		friend std::ostream & operator << (std::ostream & _os, Percentage _per);
+};
+
+std::ostream & operator << (std::ostream & _os, Percentage _per);
 #endif							 /* !__TIMESTAMP_CPP__ */
