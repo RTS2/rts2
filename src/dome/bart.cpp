@@ -666,7 +666,7 @@ Rts2DevDomeBart::observing ()
 int
 Rts2DevDomeBart::changeMasterState (int new_state)
 {
-	observingPossible = 0;
+	observingPossible->setValueInteger (0);
 	if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	{
 		switch (new_state & SERVERD_STATUS_MASK)
