@@ -209,6 +209,7 @@ Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 
 	if (printSuperStat)
 	{
+		obs_set->computeStatistics ();
 		std::cout << "Night " << Timestamp (*t_start) << std::endl;
 		std::cout << "Observations " << obs_set->size () << " images " << obs_set->getNumberOfImages () << std::endl;
 	}
