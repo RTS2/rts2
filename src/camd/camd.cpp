@@ -171,7 +171,7 @@ Rts2DevCamera::endReadout ()
 	{
 		// peek to see if we can continue..
 		checkQueChanges (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING);
-		// do not report that we
+		// do not report that we start exposure
 		camExpose (exposureConn, getStateChip(0) & CAM_MASK_EXPOSE, true);
 	}
 	return 0;
@@ -261,8 +261,10 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
 
-	createValue (exposure, "exposure", "current exposure time", false);
+	createValue (exposure, "exposure", "current exposure time", false, 0, CAM_EXPOSING);
 	exposure->setValueDouble (1);
+
+	sendOkInExposure = false;
 
 	createValue (subExposure, "subexposure", "current subexposure", false, 0, CAM_WORKING, true);
 	createValue (camFilterVal, "filter", "used filter number", false, 0, CAM_EXPOSING, false);
@@ -336,8 +338,7 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 	if (queValues.empty () && waitingForEmptyQue->getValueBool ())
 	{
 		waitingForEmptyQue->setValueBool (false);
-		if (exposureConn)
-			exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
+		sendOkInExposure = true;
 	}
 }
 
@@ -759,13 +760,13 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 		&& !supportFrameTransfer ()))
 		)
 	{
+		if (!fromQue)
+		{
+			quedExpNumber->inc ();
+			sendValueAll (quedExpNumber);
+		}
 		if (queValues.empty ())
 		{
-			if (!fromQue)
-			{
-				quedExpNumber->inc ();
-				sendValueAll (quedExpNumber);
-			}
 			return 0;
 		}
 		// need to wait to empty que of value changes
@@ -787,6 +788,12 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	}
 	else
 	{
+		// check if that comes from old request
+		if (sendOkInExposure && exposureConn)
+		{
+			sendOkInExposure = false;
+			exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
+		}
 		exposureConn = conn;
 	}
 	return ret;

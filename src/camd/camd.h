@@ -199,6 +199,9 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int sendFirstLine ();
 
+		// if true, send command OK after exposure is started
+		bool sendOkInExposure;
+
 	protected:
 		// comes from CameraChip
 		double pixelX;
