@@ -41,7 +41,11 @@ class Rts2NightReport:public Rts2AppDb
 		int printImages;
 		int printCounts;
 		bool printStat;
+		bool printSuperStat;
 		bool collocate;
+
+		int observationsNights;
+
 		void printObsList ();
 		void printStatistics ();
 		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
@@ -69,7 +73,10 @@ Rts2AppDb (in_argc, in_argv)
 	printImages = 0;
 	printCounts = 0;
 	printStat = false;
+	printSuperStat = false;
 	collocate = false;
+
+	observationsNights = 0;
 
 	addOption ('f', "from", 1, "date from which take measurements; default to current date - 24 hours");
 	addOption ('t', "to", 1, "date to which show measurements; default to from + 24 hours");
@@ -80,6 +87,7 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('p', NULL, 2, "print counts listing; can be followed by format, txt for plain");
 	addOption ('P', NULL, 0, "print counts summary row");
 	addOption ('s', NULL, 0, "print night statistics");
+	addOption ('S', NULL, 0, "print night statistics - % of time used for observation");
 	addOption ('c', NULL, 0, "collocate statistics by nights, targets, ..");
 }
 
@@ -130,6 +138,9 @@ Rts2NightReport::processOption (int in_opt)
 			break;
 		case 's':
 			printStat = true;
+			break;
+		case 'S':
+			printSuperStat = true;
 			break;
 		case 'c':
 			collocate = true;
@@ -193,13 +204,24 @@ Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 		return;
 	}
 
-	// from which date to which..
-	std::cout << "From " << Timestamp (*t_start) << " to " << Timestamp (*t_end) << std::endl;
+	if (!obs_set->empty ())		 // used nights..
+		observationsNights++;
 
-	printObsList ();
+	if (printSuperStat)
+	{
+		std::cout << "Night " << Timestamp (*t_start) << std::endl;
+		std::cout << "Observations " << obs_set->size () << " images " << obs_set->getNumberOfImages () << std::endl;
+	}
+	else
+	{
+		// from which date to which..
+		std::cout << "From " << Timestamp (*t_start) << " to " << Timestamp (*t_end) << std::endl;
 
-	if (printStat)
-		printStatistics ();
+		printObsList ();
+
+		if (printStat)
+			printStatistics ();
+	}
 	delete obs_set;
 }
 
@@ -212,17 +234,27 @@ Rts2NightReport::doProcessing ()
 	//  Rts2SqlColumnObsState *obsState;
 	config = Rts2Config::instance ();
 
-	if (collocate && t_to - t_from > 86400)
+	int totalNights = 0;
+
+	if ((collocate || printSuperStat) && t_to - t_from > 86400)
 	{
 		time_t t_start = t_from;
+		// iterate by nights
 		for (time_t t_end = t_from + 86400; t_end <= t_to; t_start = t_end, t_end += 86400)
 		{
+			totalNights++;
 			printFromTo (&t_start, &t_end, false);
 		}
 	}
 	else
 	{
 		printFromTo (&t_from, &t_to, true);
+	}
+
+	// print number of nights
+	if (printSuperStat)
+	{
+		std::cout << "Number of nights " << totalNights << " observations nights " << observationsNights << std::endl;
 	}
 
 	return 0;
