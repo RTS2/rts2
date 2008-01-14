@@ -69,8 +69,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @param value Rts2Value which will be added.
 		 */
-		void addValue (Rts2Value * value, int queCondition = 0, bool save_value =
-			false);
+		void addValue (Rts2Value * value, int queCondition = 0, bool save_value = false);
 
 		/**
 		 * Holds vector of values which are indendet to be saved. There
@@ -299,14 +298,6 @@ class Rts2Daemon:public Rts2Block
 		 * Called to set new state value
 		 */
 		void setState (int new_state, const char *description);
-
-		/**
-		 * Loop through que values and tries to free as much of them as is possible.
-		 *
-		 * @param fakeState State of the device. This one is not set in
-		 * server state, it's only used during value tests.
-		 */
-		void checkQueChanges (int fakeState);
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 	public:
