@@ -142,11 +142,11 @@ std::string Rts2Conn::getCameraChipState (int chipN)
 				_os << " | ";
 			_os << chipN << " READING";
 		}
-		if (chip_state & CAM_DATA)
+		if (chip_state & CAM_FT)
 		{
 			if (_os.str ().size ())
 				_os << " | ";
-			_os << chipN << " DATA";
+			_os << chipN << " FT";
 		}
 	}
 	return _os.str ();
@@ -542,6 +542,8 @@ void
 Rts2Conn::setBopState (int in_value)
 {
 	bopState->setValue (in_value);
+	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_RUN)
+		sendCommand ();
 }
 
 
@@ -1115,14 +1117,14 @@ Rts2Conn::sendCommand ()
 	if (runningCommand->getBopMask ())
 	{
 		// we are waiting for some BOP mask and it have already occured
-		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
-		{
-			if (getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
-			{
-				runningCommand->send ();
-				return;
-			}
-		}
+		/*		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
+				{
+					if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
+					{
+						runningCommand->send ();
+						return;
+					}
+				} */
 		switch (runningCommand->getStatusCallProgress ())
 		{
 			case CIP_NOT_CALLED:
@@ -1143,12 +1145,12 @@ Rts2Conn::sendCommand ()
 			case CIP_RUN:
 				if (runningCommand->getBopMask () & BOP_WHILE_STATE)
 				{
-					if (!(getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK))
+					if (!(getFullBopState () & runningCommand->getBopMask () & BOP_MASK))
 						break;
 				}
 				else
 				{
-					if (getMaster ()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
+					if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
 						break;
 				}
 				runningCommand->send ();
