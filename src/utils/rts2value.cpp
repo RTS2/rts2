@@ -166,6 +166,8 @@ Rts2ValueString::setFromValue (Rts2Value * newValue)
 bool
 Rts2ValueString::isEqual (Rts2Value *other_value)
 {
+	if (getValue () == NULL || other_value->getValue () == NULL)
+		return getValue () == other_value->getValue ();
 	return strcmp (getValue (), other_value->getValue ());
 }
 
