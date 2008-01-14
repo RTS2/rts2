@@ -1,6 +1,6 @@
 /* 
  * Device basic class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -847,14 +847,15 @@ Rts2Device::checkQueChanges (int fakeState)
 				logStream (MESSAGE_ERROR)
 					<< "cannot set qued value "
 					<< queVal->getOldValue ()->getName ()
-					<< " with operation " << queVal->getOperation ()
-					<< " and new value value " << newValStr
+					<< " with operator " << queVal->getOperation ()
+					<< " and operand " << newValStr
 					<< sendLog;
 			else
 				logStream (MESSAGE_DEBUG)
 					<< "change value of' "
 					<< queVal->getOldValue ()->getName ()
-					<< "' from que to " << newValStr
+					<< "' from que with operator " << queVal->getOperation ()
+					<< " and operand " << newValStr
 					<< sendLog;
 			delete queVal;
 			iter = queValues.erase (iter);
@@ -1029,9 +1030,13 @@ Rts2Device::statusInfo (Rts2Conn * conn)
 }
 
 
-int
+void
 Rts2Device::setFullBopState (int new_state)
 {
+	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end (); iter++)
+	{
+		new_state = maskQueValueBopState (new_state, (*iter)->getStateCondition ());
+	}
 	// send new BOP state to all connected clients
 	sendBopMessage (new_state);
 	if (deviceStatusCommand)
@@ -1040,5 +1045,11 @@ Rts2Device::setFullBopState (int new_state)
 		endDeviceStatusCommand ();
 	}
 	fullBopState = new_state;
-	return 0;
+}
+
+
+int
+Rts2Device::maskQueValueBopState (int new_state, int valueQueCondition)
+{
+	return new_state;
 }

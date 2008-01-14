@@ -1,6 +1,6 @@
 /* 
  * Device basic class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -231,7 +231,10 @@ class Rts2Device:public Rts2Daemon
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
 		/**
-		 * Check if we can set value.
+		 * Loop through que values and tries to free as much of them as is possible.
+		 *
+		 * @param fakeState State of the device. This one is not set in
+		 * server state, it's only used during value tests.
 		 */
 		virtual void checkQueChanges (int fakeState);
 
@@ -240,6 +243,7 @@ class Rts2Device:public Rts2Daemon
 		virtual void cancelPriorityOperations ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	public:
 		Rts2Device (int in_argc, char **in_argv, int in_device_type,
 			char *default_name);
@@ -305,7 +309,22 @@ class Rts2Device:public Rts2Daemon
 
 		virtual int statusInfo (Rts2Conn * conn);
 
-		int setFullBopState (int new_state);
+		/**
+		 * Called to set current device BOP state.
+		 *
+		 * @param new_state New BOP state.
+		 */
+		void setFullBopState (int new_state);
+
+		/**
+		 * Hook called to mask device BOP state with possible blocking values from que.
+		 *
+		 * @param new_state New BOP state.
+		 * @param valueQueCondition Que condition of the value.
+		 *
+		 * @return Masked BOP state.
+		 */
+		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
 
 		void endDeviceStatusCommand ()
 		{
