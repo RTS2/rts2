@@ -674,7 +674,9 @@ int
 Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
 {
 	// que change if that's necessary
-	if (queValueChange (old_value_cond, getState ()))
+	if ((op != '=' || !old_value_cond->getValue ()->isEqual (new_value) || queValues.contains (old_value_cond->getValue ()))
+		&& (queValueChange (old_value_cond, getState ()))
+		)
 	{
 		queValues.push_back (new Rts2ValueQue (old_value_cond, op, new_value));
 		return -1;
