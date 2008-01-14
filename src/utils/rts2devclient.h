@@ -181,7 +181,6 @@ class Rts2DevClientCamera:public Rts2DevClient
 
 		bool isIdle ();
 		bool isExposing ();
-		bool handlingData ();
 };
 
 class Rts2DevClientTelescope:public Rts2DevClient

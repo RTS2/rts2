@@ -233,6 +233,19 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 				break;
 		}
 	}
+	// exposure mask does not changed, but FT changed..
+	else if (state->maskValueChanged (CAM_MASK_FT))
+	{
+		switch (state->getValue () & CAM_MASK_FT)
+		{
+			case CAM_FT:
+				exposureEnd ();
+				break;
+			case CAM_NOFT:
+				exposureStarted ();
+				break;
+		}
+	}
 	if (state->maskValueChanged (CAM_MASK_READING) && (state->getValue () & CAM_NOTREADING))
 	{
 		if (connection->getErrorState () == DEVICE_NO_ERROR)
@@ -246,22 +259,14 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 
 bool Rts2DevClientCamera::isIdle ()
 {
-	return ((connection->getState () & (CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
-		(CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
+	return ((connection->getState () & (CAM_MASK_EXPOSE | CAM_MASK_READING)) ==
+		(CAM_NOEXPOSURE | CAM_NOTREADING));
 }
 
 
 bool Rts2DevClientCamera::isExposing ()
 {
 	return (connection->getState () && CAM_MASK_EXPOSE) == CAM_EXPOSING;
-}
-
-
-bool Rts2DevClientCamera::handlingData ()
-{
-	return ((connection->
-		getState () & CAM_MASK_DATA) ||
-		(connection->getState () & CAM_MASK_DATA));
 }
 
 
