@@ -8,6 +8,8 @@ class Rts2ScriptDevice:public Rts2Device
 	private:
 		Rts2ValueInteger * scriptRepCount;
 		Rts2ValueString *runningScript;
+		Rts2ValueString *scriptComment;
+		Rts2ValueInteger *scriptNumber;
 		Rts2ValueInteger *scriptPosition;
 		Rts2ValueInteger *scriptLen;
 	protected:
