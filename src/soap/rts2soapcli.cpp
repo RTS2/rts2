@@ -288,7 +288,6 @@ Rts2DevClientCameraSoap::postEvent (Rts2Event * event)
 			switch (status)
 			{
 				case CAM_EXPOSING:
-				case CAM_DATA:
 					if (getConnection ()->getValueInteger ("shutter") == SHUTTER_CLOSED)
 						cam->status = rts2__cameraStatus__DARK;
 					else
