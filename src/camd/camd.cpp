@@ -169,8 +169,6 @@ Rts2DevCamera::endReadout ()
 	clearReadout ();
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
-		// peek to see if we can continue..
-		checkQueChanges (CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING);
 		// do not report that we start exposure
 		camExpose (exposureConn, getStateChip(0) & CAM_MASK_EXPOSE, true);
 	}
@@ -261,7 +259,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
 
-	createValue (exposure, "exposure", "current exposure time", false, 0, CAM_EXPOSING);
+	createValue (exposure, "exposure", "current exposure time", false, 0, CAM_WORKING);
 	exposure->setValueDouble (1);
 
 	sendOkInExposure = false;
@@ -334,11 +332,19 @@ Rts2DevCamera::createOtherType (Rts2Conn * conn, int other_device_type)
 void
 Rts2DevCamera::checkQueChanges (int fakeState)
 {
+	// do not check if we have qued exposures
+	if (quedExpNumber->getValueInteger () > 0)
+		return;
 	Rts2ScriptDevice::checkQueChanges (fakeState);
-	if (queValues.empty () && waitingForEmptyQue->getValueBool ())
+	if (queValues.empty ())
 	{
-		waitingForEmptyQue->setValueBool (false);
-		sendOkInExposure = true;
+		if (waitingForEmptyQue->getValueBool ())
+		{
+			waitingForEmptyQue->setValueBool (false);
+			sendOkInExposure = true;
+		}
+		if (exposureConn)
+			getCentraldConn ()->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
 	}
 }
 
@@ -352,8 +358,8 @@ Rts2DevCamera::cancelPriorityOperations ()
 	endReadout ();
 	nAcc = 1;
 
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING,
-		CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING,
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT,
+		CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT,
 		BOP_TEL_MOVE, 0, "chip exposure interrupted");
 
 	setTimeout (USEC_SEC);
@@ -550,18 +556,26 @@ Rts2DevCamera::checkExposures ()
 		{
 			if (ret == -2)
 			{
-				maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-					CAM_NOEXPOSURE | CAM_DATA, BOP_TEL_MOVE, 0,
-					"exposure chip finished");
+				// remember exposure number
+				int expNum = exposureNumber->getValueInteger ();
 				endExposure ();
+				// if new exposure does not start during endExposure (camReadout) call, drop exposure state
+				if (expNum == exposureNumber->getValueInteger ())
+					maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
+						CAM_NOEXPOSURE | CAM_NOFT, BOP_TEL_MOVE, 0,
+						"exposure chip finished");
+
+				// drop FT flag
+				else
+					maskStateChip (0, CAM_MASK_FT, CAM_NOFT,
+						0, 0, "ft exposure chip finished");
 			}
 			if (ret == -1)
 			{
 				maskStateChip (0,
-					DEVICE_ERROR_MASK | CAM_MASK_EXPOSE |
-					CAM_MASK_DATA,
-					DEVICE_ERROR_HW | CAM_NOEXPOSURE |
-					CAM_NODATA, BOP_TEL_MOVE, 0,
+					DEVICE_ERROR_MASK | CAM_MASK_EXPOSE,
+					DEVICE_ERROR_HW | CAM_NOEXPOSURE,
+					BOP_TEL_MOVE, 0,
 					"exposure chip finished with error");
 				stopExposure ();
 			}
@@ -623,7 +637,7 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		return camFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return camFilter (new_value->getValueInteger ()) == 0 ? 1 : -2;
 	}
 	if (old_value == tempSet)
 	{
@@ -720,9 +734,8 @@ Rts2DevCamera::camStartExposure ()
 		return ret;
 
 	infoAll ();
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_DATA,
-		CAM_EXPOSING | CAM_NODATA, BOP_TEL_MOVE, BOP_TEL_MOVE,
-		"exposure chip started");
+	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING,
+		BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
 
 	exposureEnd->setValueDouble (getNow () + exposure->getValueDouble ());
 	sendValueAll (exposureEnd);
@@ -756,7 +769,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	// if it is currently exposing
 	// or performin other op that can block command execution
 	if ((chipState & CAM_EXPOSING)
-		|| (((chipState & (CAM_READING | CAM_DATA))
+		|| (((chipState & CAM_READING)
 		&& !supportFrameTransfer ()))
 		)
 	{
@@ -764,10 +777,10 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 		{
 			quedExpNumber->inc ();
 			sendValueAll (quedExpNumber);
-		}
-		if (queValues.empty ())
-		{
-			return 0;
+			if (queValues.empty ())
+			{
+				return 0;
+			}
 		}
 		// need to wait to empty que of value changes
 		waitingForEmptyQue->setValueBool (true);
@@ -842,17 +855,23 @@ Rts2DevCamera::readoutStart ()
 int
 Rts2DevCamera::camReadout (Rts2Conn * conn)
 {
-	// open data connection - wait socket
-	maskStateChip (0, CAM_MASK_READING | CAM_MASK_DATA,
-		CAM_READING | CAM_NODATA, BOP_TEL_MOVE, 0,
-		"chip readout started");
-
-	currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
-
 	// if we can do exposure, do it..
-	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
+	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
-		camExpose (exposureConn, getStateChip (0), true);
+		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT,
+			0, 0, "starting frame transfer");
+		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+		// remove exposure flag from state
+		camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+	}
+	else
+	{
+		// open data connection - wait socket
+		// end exposure as well..
+		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING,
+			CAM_NOEXPOSURE | CAM_READING,
+			BOP_TEL_MOVE, 0, "chip readout started");
+		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 	}
 
 	if (currentImageData >= 0)
@@ -1044,8 +1063,8 @@ Rts2DevCamera::getFocPos ()
 bool Rts2DevCamera::isIdle ()
 {
 	return ((getStateChip (0) &
-		(CAM_MASK_EXPOSE | CAM_MASK_DATA | CAM_MASK_READING)) ==
-		(CAM_NOEXPOSURE | CAM_NODATA | CAM_NOTREADING));
+		(CAM_MASK_EXPOSE | CAM_MASK_READING)) ==
+		(CAM_NOEXPOSURE | CAM_NOTREADING));
 }
 
 
@@ -1143,4 +1162,15 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 		return camCoolTemp (conn, new_temp);
 	}
 	return Rts2ScriptDevice::commandAuthorized (conn);
+}
+
+
+int
+Rts2DevCamera::maskQueValueBopState (int new_state, int valueQueCondition)
+{
+	if (valueQueCondition & CAM_EXPOSING)
+		new_state |= BOP_EXPOSURE;
+	if (valueQueCondition & CAM_READING)
+		new_state |= BOP_READOUT;
+	return new_state;
 }

@@ -712,5 +712,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		 * Handles camera commands.
 		 */
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
 };
 #endif							 /* !__RTS2_CAMERA_CPP__ */
