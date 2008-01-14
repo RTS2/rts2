@@ -1,6 +1,6 @@
 /* 
  * List of values.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,8 +51,7 @@ class Rts2CondValue
 		int save;
 		int stateCondition;
 	public:
-		Rts2CondValue (Rts2Value * in_value, int in_stateCondition,
-			bool in_save_value)
+		Rts2CondValue (Rts2Value * in_value, int in_stateCondition, bool in_save_value)
 		{
 			value = in_value;
 			save = in_save_value ? 0x01 : 0x00;
@@ -193,6 +192,21 @@ class Rts2ValueQueVector:public std::vector < Rts2ValueQue * >
 		{
 			for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
 				delete *iter;
+		}
+
+		/**
+		 * Query if vector contain given value.
+		 *
+		 * @parameter value Value which we are looking for.
+		 *
+		 * @return True if que value vector contain given value.
+		 */
+		bool contains (Rts2Value *value)
+		{
+			for (Rts2ValueQueVector::iterator iter = begin (); iter != end (); iter++)
+				if ((*iter)->getOldValue () == value)
+					return true;
+			return false;
 		}
 };
 #endif							 /* !__RTS2_VALUELIST__ */
