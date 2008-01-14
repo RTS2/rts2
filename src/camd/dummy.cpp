@@ -80,7 +80,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			supportFrameT = false;
 			infoSleep = 0;
 			createValue (readoutSleep, "readout", "readout sleep in sec", true, 0,
-				CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+				CAM_WORKING, true);
 			readoutSleep->setValueDouble (0);
 
 			createExpType ();

@@ -750,7 +750,7 @@ Rts2DevCamera (in_argc, in_argv)
 	addOption ('v', "verbose", 0, "verbose report");
 
 	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
 	// add possible split modes
@@ -759,7 +759,7 @@ Rts2DevCamera (in_argc, in_argv)
 	splitMode->addSelVal ("BOTH");
 
 	createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 
 	edtGain->addSelVal ("HIGH");
 	edtGain->addSelVal ("LOW");
