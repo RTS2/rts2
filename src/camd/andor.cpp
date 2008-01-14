@@ -283,25 +283,25 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (ADChannel, "ADCHANEL",
 		"Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
-		true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		true, 0, CAM_WORKING, true);
 	ADChannel->setValueInteger (0);
 	// create VSAmp only if we have amplitude set capability
 	VSAmp = NULL;
 	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	VSpeed->setValueInteger (1);
 	createValue (EMOn, "EMON", "If EM is enabled", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	EMOn->setValueBool (true);
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	HSpeed->setValueInteger (1);
 	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	FTShutter->setValueBool (false);
 
 	createValue (useFT, "USEFT", "Use FT", false, 0,
-		CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		CAM_WORKING, true);
 	useFT->setValueBool (true);
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
@@ -973,13 +973,13 @@ Rts2DevCameraAndor::initAndorValues ()
 {
 	if (cap.ulCameraType == AC_CAMERATYPE_IXON)
 	{
-		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_WORKING, true);
 		VSAmp->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
 	{
 		createValue (gain, "GAIN", "CCD gain", true, 0,
-			CAM_EXPOSING | CAM_READING | CAM_DATA, true);
+			CAM_WORKING, true);
 		setGain (defaultGain);
 	}
 }
