@@ -3,6 +3,10 @@
  * new blocking operations API
  * futher customatization, more configuration
 
+2008-01-13
+ * isEqual for values
+ * removed CAM_DATA state
+
 2008-01-11
  * Percentage class
 
