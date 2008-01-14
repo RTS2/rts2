@@ -153,3 +153,17 @@ Rts2ValueRectangle::setFromValue(Rts2Value * newValue)
 		h->setFromValue (((Rts2ValueRectangle *)newValue)->getHeight ());
 	}
 }
+
+
+bool
+Rts2ValueRectangle::isEqual (Rts2Value *other_value)
+{
+	if (other_value->getValueExtType () == RTS2_VALUE_RECTANGLE)
+	{
+		return x->isEqual (((Rts2ValueRectangle *)newValue)->getX ())
+			&& y->isEqual (((Rts2ValueRectangle *)newValue)->getY ())
+			&& w->isEqual (((Rts2ValueRectangle *)newValue)->getWidth ())
+			&& h->isEqual (((Rts2ValueRectangle *)newValue)->getHeight ());
+	}
+	return false;
+}

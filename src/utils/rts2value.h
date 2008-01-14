@@ -1,6 +1,6 @@
 /* 
  * Various value classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -211,7 +211,7 @@ class Rts2Value
 		}
 
 		/**
-		 * If base type value. This will be different from
+		 * Return value base type. This will be different from
 		 * value type for composite types (min-max, rectangles,..)
 		 *
 		 * @return Value base type.
@@ -251,6 +251,13 @@ class Rts2Value
 			return send (connection);
 		}
 		virtual void setFromValue (Rts2Value * newValue) = 0;
+
+		/**
+		 * Returns true, if value is equal to other value.
+		 *
+		 * @return True if value is equal to other value, otherwise false.
+		 */
+		virtual bool isEqual (Rts2Value *other_value) = 0;
 };
 
 /**
@@ -276,6 +283,7 @@ class Rts2ValueString:public Rts2Value
 		virtual const char *getValue ();
 		virtual int send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
 };
 
 /**
@@ -325,6 +333,7 @@ class Rts2ValueInteger:public Rts2Value
 			return value--;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
 };
 
 /**
@@ -371,6 +380,7 @@ class Rts2ValueDouble:public Rts2Value
 			return (long int) value;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
 };
 
 /**
@@ -433,6 +443,7 @@ class Rts2ValueFloat:public Rts2Value
 			return (int) value;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
 };
 
 /**
@@ -533,6 +544,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
+		virtual int doOpValue (char op, Rts2Value * old_value);
 
 		int getSelIndex (std::string in_val);
 
@@ -690,6 +702,7 @@ class Rts2ValueLong:public Rts2Value
 			return 0;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
 };
 
 /**

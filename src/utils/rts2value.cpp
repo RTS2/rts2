@@ -1,6 +1,6 @@
 /* 
  * Various value classes.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -163,6 +163,13 @@ Rts2ValueString::setFromValue (Rts2Value * newValue)
 }
 
 
+bool
+Rts2ValueString::isEqual (Rts2Value *other_value)
+{
+	return strcmp (getValue (), other_value->getValue ());
+}
+
+
 Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name):
 Rts2Value (in_val_name)
 {
@@ -227,6 +234,13 @@ void
 Rts2ValueInteger::setFromValue (Rts2Value * newValue)
 {
 	setValueInteger (newValue->getValueInteger ());
+}
+
+
+bool
+Rts2ValueInteger::isEqual (Rts2Value * other_value)
+{
+	return getValueInteger () == other_value->getValueInteger ();
 }
 
 
@@ -315,6 +329,13 @@ void
 Rts2ValueDouble::setFromValue (Rts2Value * newValue)
 {
 	setValueDouble (newValue->getValueDouble ());
+}
+
+
+bool
+Rts2ValueDouble::isEqual (Rts2Value *other_value)
+{
+	return getValueDouble () == other_value->getValueDouble ();
 }
 
 
@@ -428,6 +449,13 @@ Rts2ValueFloat::setFromValue (Rts2Value * newValue)
 }
 
 
+bool
+Rts2ValueFloat::isEqual (Rts2Value * other_value)
+{
+	return getValueFloat () == other_value->getValueFloat ();
+}
+
+
 Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger
 (in_val_name)
 {
@@ -525,6 +553,24 @@ Rts2ValueSelection::setValueString (const char *in_value)
 	if (ret < 0)
 		return -1;
 	return setValueInteger (ret);
+}
+
+
+int
+Rts2ValueSelection::doOpValue (char op, Rts2Value * old_value)
+{
+	switch (op)
+	{
+		int new_val;
+		case '+':
+			return setValueInteger ((old_value->getValueInteger () + getValueInteger ()) % values.size ());
+		case '-':
+			new_val = old_value->getValueInteger () - getValueInteger ();
+			while (new_val < 0)
+				new_val += values.size ();
+			return setValueInteger (new_val);
+	}
+	return Rts2ValueInteger::doOpValue (op, old_value);
 }
 
 
@@ -663,6 +709,13 @@ void
 Rts2ValueLong::setFromValue (Rts2Value * newValue)
 {
 	setValueLong (newValue->getValueLong ());
+}
+
+
+bool
+Rts2ValueLong::isEqual (Rts2Value * other_value)
+{
+	return getValueLong () == other_value->getValueLong ();
 }
 
 
