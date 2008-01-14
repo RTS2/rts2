@@ -91,12 +91,11 @@
 #define CAM_NOTREADING      0x0000
 #define CAM_READING         0x0002
 
-#define CAM_MASK_DATA       0x0004
+#define CAM_MASK_FT         0x0004
+#define CAM_FT              0x0004
+#define CAM_NOFT            0x0000
 
-#define CAM_NODATA          0x0000
-#define CAM_DATA            0x0004
-
-#define CAM_WORKING         CAM_EXPOSING | CAM_READING | CAM_DATA
+#define CAM_WORKING         CAM_EXPOSING | CAM_READING
 
 #define CAM_MASK_FOCUSING   0x0800
 
