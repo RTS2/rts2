@@ -1,6 +1,6 @@
 /* 
  * Class which represents image.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -430,7 +430,7 @@ Rts2Image::setImageName (const char *in_filename)
 
 
 int
-Rts2Image::createImage (std::string in_filename)
+Rts2Image::createImage ()
 {
 	int ret;
 
@@ -438,8 +438,6 @@ Rts2Image::createImage (std::string in_filename)
 	flags = IMAGE_NOT_SAVE;
 	shutter = SHUT_UNKNOW;
 	ffile = NULL;
-
-	setImageName (in_filename.c_str ());
 
 	// make path for us..
 	ret = mkpath (getImageName (), 0777);
@@ -458,41 +456,29 @@ Rts2Image::createImage (std::string in_filename)
 	logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << this << " " <<
 		getImageName () << sendLog;
 
+	// add history
+	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
+
 	flags = IMAGE_SAVE;
 	return 0;
 }
 
 
 int
+Rts2Image::createImage (std::string in_filename)
+{
+	setImageName (in_filename.c_str ());
+
+	return createImage ();
+}
+
+
+int
 Rts2Image::createImage (char *in_filename)
 {
-	int ret;
-
-	fits_status = 0;
-	flags = IMAGE_NOT_SAVE;
-	shutter = SHUT_UNKNOW;
-	ffile = NULL;
-
 	setImageName (in_filename);
-	// make path for us..
-	ret = mkpath (getImageName (), 0777);
-	if (ret)
-		return -1;
-	naxis[0] = 1;
-	naxis[1] = 1;
-	fits_create_file (&ffile, in_filename, &fits_status);
-	fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
-	if (fits_status)
-	{
-		logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " <<
-			getFitsErrors () << sendLog;
-		return -1;
-	}
-	logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << in_filename <<
-		sendLog;
 
-	flags = IMAGE_SAVE;
-	return 0;
+	return createImage ();
 }
 
 
@@ -1065,6 +1051,22 @@ int nstart)
 	fits_read_keys_str (ffile, (char *) name, nstart, num, values, &nfound,
 		&fits_status);
 	return fitsStatusGetValue (name, required);
+}
+
+
+int
+Rts2Image::writeHistory (const char *history)
+{
+	fits_write_history (ffile, (char *) history, &fits_status);
+	return fitsStatusSetValue ("history", true);
+}
+
+
+int
+Rts2Image::writeComment (const char *comment)
+{
+	fits_write_comment (ffile, (char *) comment, &fits_status);
+	return fitsStatusSetValue ("comment", true);
 }
 
 

@@ -1,6 +1,6 @@
 /* 
  * Class which represents image.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -79,6 +79,7 @@ class Rts2Image:public Rts2Expander
 		char *filter;
 		float exposureLength;
 		void setImageName (const char *in_filename);
+		int createImage ();
 		int createImage (std::string in_filename);
 		int createImage (char *in_filename);
 		// when in_filename == NULL, we take image name stored in this->imageName
@@ -211,31 +212,49 @@ class Rts2Image:public Rts2Expander
 		// that method is used to update DATE - creation date entry - for other file then ffile
 		int setCreationDate (fitsfile * out_file = NULL);
 
-		int getValue (const char *name, bool & value, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, int &value, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, long &value, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, float &value, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, double &value, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, char &value, bool required =
-			false, char *command = NULL);
-		int getValue (const char *name, char *value, int valLen, bool required =
-			false, char *comment = NULL);
-		int getValue (const char *name, char **value, int valLen, bool required =
-			false, char *comment = NULL);
+		int getValue (const char *name, bool & value,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, int &value,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, long &value,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, float &value,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, double &value,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, char &value,
+			bool required = false, char *command = NULL);
+		int getValue (const char *name, char *value, int valLen,
+			bool required = false, char *comment = NULL);
+		int getValue (const char *name, char **value, int valLen,
+			bool required = false, char *comment = NULL);
 
-		int getValues (const char *name, int *values, int num, bool required =
-			false, int nstart = 1);
-		int getValues (const char *name, long *values, int num, bool required =
-			false, int nstart = 1);
-		int getValues (const char *name, double *values, int num, bool required =
-			false, int nstart = 1);
-		int getValues (const char *name, char **values, int num, bool required =
-			false, int nstart = 1);
+		int getValues (const char *name, int *values, int num,
+			bool required = false, int nstart = 1);
+		int getValues (const char *name, long *values, int num,
+			bool required = false, int nstart = 1);
+		int getValues (const char *name, double *values, int num,
+			bool required = false, int nstart = 1);
+		int getValues (const char *name, char **values, int num,
+			bool required = false, int nstart = 1);
+
+		/**
+		 * Appends history string.
+		 *
+		 * @param history History keyword which will be appended.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int writeHistory (const char *history);
+
+		/**
+		 * Append comment to FITS file.
+		 *
+		 * @param comment Comment which will be appended to FITS file comments.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int writeComment (const char *comment);
 
 		int writeImgHeader (struct imghdr *im_h);
 		int writeDate (char *in_data, char *fullTop);
