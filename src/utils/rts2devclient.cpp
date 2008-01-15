@@ -266,7 +266,7 @@ bool Rts2DevClientCamera::isIdle ()
 
 bool Rts2DevClientCamera::isExposing ()
 {
-	return (connection->getState () && CAM_MASK_EXPOSE) == CAM_EXPOSING;
+	return (connection->getState () & CAM_MASK_EXPOSE) == CAM_EXPOSING;
 }
 
 
