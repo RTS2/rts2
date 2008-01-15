@@ -12,10 +12,10 @@ Rts2Device (in_argc, in_argv, in_device_type, default_name)
 		true, RTS2_DT_SCRIPT, 0, true);
 	runningScript->setValueString ("");
 
-	createValue (scriptComment, "COMMENT", "comment recorded for this script",
+	createValue (scriptComment, "SCR_COMM", "comment recorded for this script",
 		true, 0, CAM_WORKING, true);
 
-	createValue (scriptNumber, "NUMCOM", "comment number of this script",
+	createValue (scriptNumber, "COMM_NUM", "comment order within current script",
 		true, 0, CAM_WORKING, true);
 
 	createValue (scriptPosition, "scriptPosition", "position within script", false, 0, 0, true);
