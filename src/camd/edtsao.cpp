@@ -59,6 +59,8 @@ class Rts2ValueEdt: public Rts2ValueFloat
 		long reg;
 		// algorith used to compute hex suffix value
 		edtAlgoType algo;
+
+		float v_min, v_max;
 	public:
 		Rts2ValueEdt (std::string in_val_name);
 		Rts2ValueEdt (std::string in_val_name, std::string in_description,
@@ -66,8 +68,16 @@ class Rts2ValueEdt: public Rts2ValueFloat
 		~Rts2ValueEdt (void);
 
 		// init EDT part of variable
-		void initEdt (long in_reg, edtAlgoType in_algo, float in_val);
+		void initEdt (long in_reg, edtAlgoType in_algo);
 
+		/**
+		 * @return False if new float value is invalid.
+		 */
+		bool testValue (float in_v);
+
+		/**
+		 * @return -1 on error, otherwise hex value.
+		 */
 		long getHexValue (float in_v);
 };
 
@@ -90,11 +100,42 @@ Rts2ValueEdt::~Rts2ValueEdt (void)
 
 
 void
-Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, float in_val)
+Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 {
-	reg = (in_reg << 3);
+	reg = (in_reg << 12);
 	algo = in_algo;
-	setValueFloat (in_val);
+
+	// set v_min and v_max - minimal and maximal values
+	switch (algo)
+	{
+		case A_plus:
+			v_min = 0;
+			v_max = 10;
+			break;
+		case A_minus:
+			v_min = -10;
+			v_max = 10;
+			break;
+		case B:
+			v_min = -5;
+			v_max = 5;
+			break;
+		case C:
+			v_min = 0;
+			v_max = 20;
+			break;
+		case D:
+			v_min = 0;
+			v_max = 25.9;
+			break;
+	}
+}
+
+
+bool
+Rts2ValueEdt::testValue (float in_v)
+{
+	return (in_v >= v_min && in_v <= v_max);
 }
 
 
@@ -194,6 +235,22 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		Rts2ValueEdt *phi;
 		Rts2ValueEdt *plo;
 
+		Rts2ValueEdt *shi;
+		Rts2ValueEdt *slo;
+
+		Rts2ValueEdt *rhi;
+		Rts2ValueEdt *rlo;
+
+		Rts2ValueEdt *rd;
+
+		Rts2ValueEdt *od1r;
+		Rts2ValueEdt *od2l;
+		Rts2ValueEdt *og1r;
+		Rts2ValueEdt *og2l;
+
+		Rts2ValueEdt *dd;
+
+		int setEdtValue (Rts2ValueEdt * old_value, float new_value);
 		int setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value);
 
 	protected:
@@ -346,6 +403,27 @@ Rts2CamdEdtSao::setDAC ()
 		}
 		valp++;
 	}
+
+	setEdtValue (rd, 9);
+	sleep (1);
+
+	setEdtValue (phi, 2);
+	setEdtValue (plo, -9);
+
+	setEdtValue (shi, 3);
+	setEdtValue (slo, -7);
+
+	setEdtValue (rhi, 5);
+	setEdtValue (rlo, -5);
+
+	setEdtValue (od1r, 20);
+	setEdtValue (od2l, 20);
+
+	setEdtValue (og1r, -5);
+	setEdtValue (og2l, -2);
+
+	setEdtValue (dd, 15);
+
 	return 0;
 }
 
@@ -838,11 +916,41 @@ Rts2DevCamera (in_argc, in_argv)
 		CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
-	createValue (phi, "PHi", "P high", true, 0, CAM_WORKING, true);
-	phi->initEdt (0xA0084, A_plus, 2);
+	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING, true);
+	phi->initEdt (0xA0084, A_plus);
 
-	createValue (plo, "PLo", "P low", true, 0, CAM_WORKING, true);
-	plo->initEdt (0xA0184, A_minus, -9);
+	createValue (plo, "PLO", "P low", true, 0, CAM_WORKING, true);
+	plo->initEdt (0xA0184, A_minus);
+
+	createValue (shi, "SHI", "S high", true, 0, CAM_WORKING, true);
+	shi->initEdt (0xA008C, A_plus);
+
+	createValue (slo, "SLO", "S low", true, 0, CAM_WORKING, true);
+	slo->initEdt (0xA0180, A_minus);
+
+	createValue (rhi, "RHI", "R high", true, 0, CAM_WORKING, true);
+	rhi->initEdt (0xA0088, A_plus);
+
+	createValue (rlo, "RLO", "R low", true, 0, CAM_WORKING, true);
+	rlo->initEdt (0xA018C, A_minus);
+
+	createValue (rd, "RD", "RD", true, 0, CAM_WORKING, true);
+	rd->initEdt (0xA0384, C);
+
+	createValue (od1r, "OD1_R", "OD 1 right", true, 0, CAM_WORKING, true);
+	od1r->initEdt (0xA0388, D);
+
+	createValue (od2l, "OD2_L", "OD 2 left", true, 0, CAM_WORKING, true);
+	od2l->initEdt (0xA038C, D);
+
+	createValue (og1r, "OG1_R", "OG 1 right", true, 0, CAM_WORKING, true);
+	og1r->initEdt (0xA0288, B);
+
+	createValue (og2l, "OG2_L", "OG 2 left", true, 0, CAM_WORKING, true);
+	og2l->initEdt (0xA028C, B);
+
+	createValue (dd, "DD", "DD", true, 0, CAM_WORKING, true);
+	dd->initEdt (0xA0380, C);
 
 	// add possible split modes
 	splitMode->addSelVal ("LEFT");
@@ -895,9 +1003,21 @@ Rts2CamdEdtSao::processOption (int in_opt)
 
 
 int
+Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, float new_value)
+{
+	if (old_value->testValue (new_value) == false)
+		return -2;
+	old_value->setValueFloat (new_value);
+	return edtwrite (old_value->getHexValue (new_value));
+}
+
+
+int
 Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value)
 {
-	return edtwrite (old_value->getHexValue (new_value->getValueFloat ())) ? -2 : 0;
+	if (old_value->testValue (new_value->getValueFloat ()) == false)
+		return -2;
+	return edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
 }
 
 
@@ -909,7 +1029,18 @@ Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return 0;
 	}
 	if (old_value == phi
-		|| old_value == plo)
+		|| old_value == plo
+		|| old_value == shi
+		|| old_value == slo
+		|| old_value == rhi
+		|| old_value == rlo
+		|| old_value == rd
+		|| old_value == od1r
+		|| old_value == od2l
+		|| old_value == og1r
+		|| old_value == og2l
+		|| old_value == dd
+		)
 	{
 		return setEdtValue ((Rts2ValueEdt *) old_value, new_value);
 	}
