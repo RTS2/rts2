@@ -1,6 +1,6 @@
 /* 
  * EDT controller driver
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,6 +45,85 @@ const SplitConf splitConf[] =
 	{false, true, 1, "e2vunsplit.bin", 0x51000000, 0x51008141},
 	{true, false, 2, "e2vsplit.bin", 0x51000040, 0x51008141}
 };
+
+typedef enum {A_plus, A_minus, B, C, D}
+edtAlgoType;
+
+/**
+ * Special variable for EDT-SAO registers.
+ */
+class Rts2ValueEdt: public Rts2ValueFloat
+{
+	private:
+		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
+		long reg;
+		// algorith used to compute hex suffix value
+		edtAlgoType algo;
+	public:
+		Rts2ValueEdt (std::string in_val_name);
+		Rts2ValueEdt (std::string in_val_name, std::string in_description,
+			bool writeToFits = true, int32_t flags = 0);
+		~Rts2ValueEdt (void);
+
+		// init EDT part of variable
+		void initEdt (long in_reg, edtAlgoType in_algo, float in_val);
+
+		long getHexValue (float in_v);
+};
+
+Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name): Rts2ValueFloat (in_val_name)
+{
+}
+
+
+Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name, std::string in_description,
+bool writeToFits, int32_t flags):
+Rts2ValueFloat (in_val_name, in_description, writeToFits, flags)
+{
+
+}
+
+
+Rts2ValueEdt::~Rts2ValueEdt (void)
+{
+}
+
+
+void
+Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo, float in_val)
+{
+	reg = (in_reg << 3);
+	algo = in_algo;
+	setValueFloat (in_val);
+}
+
+
+long
+Rts2ValueEdt::getHexValue (float in_v)
+{
+	long val = 0;
+	// calculate value by algorithm
+	switch (algo)
+	{
+		case A_plus:
+			val = (long) (in_v * 409.5);
+			break;
+		case A_minus:
+			val = (long) (fabs (in_v) * 409.5);
+			break;
+		case B:
+			val = (long) ((5 - in_v) * 409.5);
+			break;
+		case C:
+			val = (long) (in_v * 204.7);
+			break;
+		case D:
+			val = (long) (in_v * 158.0);
+			break;
+	}
+	return reg | val;
+}
+
 
 /**
  * This is main control class for EDT-SAO cameras.
@@ -110,6 +189,12 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 				return edtwrite (SAO_GAIN_HIGH);
 			return edtwrite (SAO_GAIN_LOW);
 		}
+
+		// registers
+		Rts2ValueEdt *phi;
+		Rts2ValueEdt *plo;
+
+		int setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -753,6 +838,12 @@ Rts2DevCamera (in_argc, in_argv)
 		CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
+	createValue (phi, "PHi", "P high", true, 0, CAM_WORKING, true);
+	phi->initEdt (0xA0084, A_plus, 2);
+
+	createValue (plo, "PLo", "P low", true, 0, CAM_WORKING, true);
+	plo->initEdt (0xA0184, A_minus, -9);
+
 	// add possible split modes
 	splitMode->addSelVal ("LEFT");
 	splitMode->addSelVal ("RIGHT");
@@ -804,11 +895,23 @@ Rts2CamdEdtSao::processOption (int in_opt)
 
 
 int
+Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value)
+{
+	return edtwrite (old_value->getHexValue (new_value->getValueFloat ())) ? -2 : 0;
+}
+
+
+int
 Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == splitMode)
 	{
 		return 0;
+	}
+	if (old_value == phi
+		|| old_value == plo)
+	{
+		return setEdtValue ((Rts2ValueEdt *) old_value, new_value);
 	}
 	if (old_value == edtGain)
 	{
