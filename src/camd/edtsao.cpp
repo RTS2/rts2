@@ -52,15 +52,13 @@ edtAlgoType;
 /**
  * Special variable for EDT-SAO registers.
  */
-class Rts2ValueEdt: public Rts2ValueFloat
+class Rts2ValueEdt: public Rts2ValueDoubleMinMax
 {
 	private:
 		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
 		long reg;
 		// algorith used to compute hex suffix value
 		edtAlgoType algo;
-
-		float v_min, v_max;
 	public:
 		Rts2ValueEdt (std::string in_val_name);
 		Rts2ValueEdt (std::string in_val_name, std::string in_description,
@@ -71,24 +69,19 @@ class Rts2ValueEdt: public Rts2ValueFloat
 		void initEdt (long in_reg, edtAlgoType in_algo);
 
 		/**
-		 * @return False if new float value is invalid.
-		 */
-		bool testValue (float in_v);
-
-		/**
 		 * @return -1 on error, otherwise hex value.
 		 */
 		long getHexValue (float in_v);
 };
 
-Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name): Rts2ValueFloat (in_val_name)
+Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name)
+:Rts2ValueDoubleMinMax (in_val_name)
 {
 }
 
 
-Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name, std::string in_description,
-bool writeToFits, int32_t flags):
-Rts2ValueFloat (in_val_name, in_description, writeToFits, flags)
+Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
+:Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
 {
 
 }
@@ -109,33 +102,26 @@ Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 	switch (algo)
 	{
 		case A_plus:
-			v_min = 0;
-			v_max = 10;
+			setMin (0);
+			setMax (10);
 			break;
 		case A_minus:
-			v_min = -10;
-			v_max = 10;
+			setMin (-10);
+			setMax (10);
 			break;
 		case B:
-			v_min = -5;
-			v_max = 5;
+			setMin (-5);
+			setMax (5);
 			break;
 		case C:
-			v_min = 0;
-			v_max = 20;
+			setMin (0);
+			setMax (20);
 			break;
 		case D:
-			v_min = 0;
-			v_max = 25.9;
+			setMin (0);
+			setMax (25.9);
 			break;
 	}
-}
-
-
-bool
-Rts2ValueEdt::testValue (float in_v)
-{
-	return (in_v >= v_min && in_v <= v_max);
 }
 
 
@@ -1007,7 +993,7 @@ Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, float new_value)
 {
 	if (old_value->testValue (new_value) == false)
 		return -2;
-	old_value->setValueFloat (new_value);
+	old_value->setValueDouble (new_value);
 	return edtwrite (old_value->getHexValue (new_value));
 }
 
