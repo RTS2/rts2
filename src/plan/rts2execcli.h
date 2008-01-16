@@ -112,11 +112,7 @@ public Rts2DevScript
 			Rts2DevClient::clearFailedCount ();
 		}
 
-		virtual void idle ()
-		{
-			Rts2DevScript::idle ();
-			Rts2DevClientCameraImage::idle ();
-		}
+		virtual void idle ();
 
 		virtual void exposureStarted ();
 		virtual void exposureEnd ();
@@ -138,9 +134,6 @@ public Rts2DevScript
 		void queImage (Rts2Image * image);
 		virtual imageProceRes processImage (Rts2Image * image);
 		virtual void exposureFailed (int status);
-
-		virtual void filterOK ();
-		virtual void filterFailed (int status);
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage

@@ -574,7 +574,7 @@ char new_device[DEVICE_NAME_SIZE])
 	if (valName[0] == '!')
 	{
 		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand);
-		(*new_command)->setBopMask (BOP_EXPOSURE | BOP_WHILE_STATE);
+		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{

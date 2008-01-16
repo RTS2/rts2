@@ -116,25 +116,33 @@ Rts2DevClientCameraExec::nextCommand ()
 		// before target was moved
 		if (currentTarget && !currentTarget->wasMoved())
 			return;
-		if (nextComd->getBopMask () & BOP_WHILE_STATE)
-		{
-			// if there are qued exposures, do not execute command
-			Rts2Value *val = getConnection ()->getValue ("que_exp_num");
-			if (val && val->getValueInteger () != 0)
-				return;
-		}
+	}
+
+	if (nextComd->getBopMask () & BOP_WHILE_STATE)
+	{
+		// if there are qued exposures, do not execute command
+		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+		if (val && val->getValueInteger () != 0)
+			return;
 	}
 
 	// send command to other device
 	if (strcmp (getName (), cmd_device))
 	{
-		Rts2Conn *cmdConn = getMaster ()->getConnection (cmd_device);
+		Rts2Conn *cmdConn = getMaster ()->getOpenConnection (cmd_device);
 		if (!cmdConn)
 		{
-			logStream (MESSAGE_ERROR) << "Unknow device : " << cmd_device <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "Unknow device : " << cmd_device << sendLog;
+			nextComd = NULL;
 			return;
 		}
+
+		// do not execute if camera is exposing, but only if it is not BOP_WHILE_STATE command
+		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+		if ((!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
+			(isExposing () || (val && val->getValueInteger () != 0) || !connection->queEmpty ())
+			)
+			return;
 
 		// execute command
 		// when it returns, we can execute next command
@@ -197,6 +205,21 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 
 
 void
+Rts2DevClientCameraExec::idle ()
+{
+	Rts2DevScript::idle ();
+	Rts2DevClientCameraImage::idle ();
+	// when it is the first command in the script..
+	if (getScript () && getScript ()->getExecutedCount () == 0)
+		nextCommand ();
+
+	// execute next command if it is waiting for qued exposures..
+	if (nextComd && (nextComd->getBopMask () & (BOP_TEL_MOVE | BOP_WHILE_STATE)))
+		nextCommand ();
+}
+
+
+void
 Rts2DevClientCameraExec::exposureStarted ()
 {
 	// we control observations..
@@ -223,9 +246,8 @@ Rts2DevClientCameraExec::exposureEnd ()
 	}
 	else
 	{
-		// delete nextComd;
-		// nextComd = NULL;
-		nextCommand ();
+		// don't do anything
+		// nextCommand ();
 	}
 	// send readout after we deal with next command - which can be filter move
 	Rts2DevClientCameraImage::exposureEnd ();
@@ -243,24 +265,9 @@ Rts2DevClientCameraExec::exposureFailed (int status)
 
 
 void
-Rts2DevClientCameraExec::filterOK ()
-{
-	nextCommand ();
-}
-
-
-void
-Rts2DevClientCameraExec::filterFailed (int status)
-{
-	nextCommand ();
-	Rts2DevClientCameraImage::filterFailed (status);
-}
-
-
-void
 Rts2DevClientCameraExec::readoutEnd ()
 {
-	nextCommand ();
+	//nextCommand ();
 	// we don't want camera to react to that..
 }
 
