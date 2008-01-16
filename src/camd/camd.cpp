@@ -600,12 +600,12 @@ Rts2DevCamera::checkReadouts ()
 		endReadout ();
 		afterReadout ();
 		if (ret == -2)
-			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE,
-				0, "chip readout ended");
+			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING,
+				0, 0, "chip readout ended");
 		else
 			maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
-				DEVICE_ERROR_HW | CAM_NOTREADING, BOP_TEL_MOVE, 0,
-				"chip readout ended with error");
+				DEVICE_ERROR_HW | CAM_NOTREADING,
+				0, 0, "chip readout ended with error");
 	}
 }
 
