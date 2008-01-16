@@ -140,7 +140,7 @@ Rts2DevClientCameraExec::nextCommand ()
 		// do not execute if camera is exposing, but only if it is not BOP_WHILE_STATE command
 		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 		if ((!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
-			(isExposing () || (val && val->getValueInteger () != 0) || !connection->queEmpty ())
+			(isExposing () || (val && val->getValueInteger () != 0))
 			)
 			return;
 
