@@ -944,8 +944,7 @@ Rts2Daemon::setState (int new_state, const char *description)
 
 
 void
-Rts2Daemon::stateChanged (int new_state, int old_state,
-const char *description)
+Rts2Daemon::stateChanged (int new_state, int old_state, const char *description)
 {
 	state = new_state;
 }
@@ -955,10 +954,11 @@ void
 Rts2Daemon::maskState (int state_mask, int new_state, const char *description)
 {
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) <<
-		"Rts2Device::maskState state: " << " state_mask: " <<
-		state_mask << " new_state: " << new_state << " desc: " << description <<
-		sendLog;
+	logStream (MESSAGE_DEBUG)
+		<< "Rts2Device::maskState state: state_mask: " << std::hex << state_mask
+		<< " new_state: " << std::hex << new_state
+		<< " desc: " << description
+		<< sendLog;
 	#endif
 	int masked_state = state;
 	// null from state all errors..
