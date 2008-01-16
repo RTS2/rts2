@@ -802,8 +802,16 @@ Rts2Conn::receive (fd_set * set)
 			<< " reas: " << buf_top
 			<< " full_buf: " << buf
 			<< " size: " << data_size
+			<< " commandInProgress " << commandInProgress
 			<< std::endl;
 		#endif
+		// don't do anything else if command is in progress
+		if (commandInProgress)
+		{
+			// move buf_top to end of readed data
+			buf_top += data_size;
+			return data_size;
+		}
 		// put old data size into account..
 		data_size += buf_top - buf;
 		buf_top = buf;
@@ -852,9 +860,12 @@ Rts2Conn::receive (fd_set * set)
 		}
 		if (buf != command_start)
 		{
-			memmove (buf, command_start, (buf_top - command_start + 1));
+			memmove (buf, command_start, (full_data_end - command_start));
 			// move buffer to the end..
 			buf_top -= command_start - buf;
+			// if it entered command in progress..
+			if (commandInProgress)
+				buf_top += (full_data_end - command_start);
 		}
 	}
 	return data_size;
@@ -1117,14 +1128,33 @@ Rts2Conn::sendCommand ()
 	if (runningCommand->getBopMask ())
 	{
 		// we are waiting for some BOP mask and it have already occured
-		/*		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
-				{
-					if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
-					{
-						runningCommand->send ();
-						return;
-					}
-				} */
+		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
+		{
+			//			#ifdef DEBUG_ALL
+			std::cout << "waiting for " << runningCommand->getText () << " "
+				<< std::hex << runningCommand->getBopMask () << " "
+				<< std::hex << getMaster()->getMasterStateFull ()
+				<< " " << runningCommand
+				<< std::endl;
+			//			#endif
+			if (getMaster()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
+			{
+				// just wait for finish
+				if (runningCommand->getStatusCallProgress () == CIP_WAIT)
+					return;
+				//				#ifdef DEBUG_ALL
+				logStream (MESSAGE_DEBUG) << "executing " << runningCommand->getText () << " " << runningCommand << sendLog;
+				//				#endif
+				runningCommand->send ();
+				runningCommand->setStatusCallProgress (CIP_WAIT);
+			}
+			else
+			{
+				// signal connection we are waiting for state changed
+				runningCommand->setStatusCallProgress (CIP_RUN);
+			}
+			return;
+		}
 		switch (runningCommand->getStatusCallProgress ())
 		{
 			case CIP_NOT_CALLED:
@@ -1143,16 +1173,8 @@ Rts2Conn::sendCommand ()
 				// if the bock bit is still set..
 				runningCommand->setStatusCallProgress (CIP_RUN);
 			case CIP_RUN:
-				if (runningCommand->getBopMask () & BOP_WHILE_STATE)
-				{
-					if (!(getFullBopState () & runningCommand->getBopMask () & BOP_MASK))
-						break;
-				}
-				else
-				{
-					if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
-						break;
-				}
+				if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
+					break;
 				runningCommand->send ();
 				runningCommand->setStatusCallProgress (CIP_RETURN);
 				break;
@@ -1193,7 +1215,7 @@ Rts2Conn::commandReturn ()
 	if (!runningCommand)
 	{
 		#ifdef DEBUG_ALL
-		std::cerr << "Rts2Conn::commandReturn null!" << std::endl;
+		std::cout << "Rts2Conn::commandReturn null!" << std::endl;
 		#endif					 /* DEBUG_ALL */
 		return -1;
 	}
