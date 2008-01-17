@@ -445,6 +445,16 @@ class Rts2Block: public Rts2App
 		virtual void deviceReady (Rts2Conn * conn);
 
 		/**
+		 * Called when connection receive/lost priority.
+		 * This method is hook for descendand to hook actions performed
+		 * when device receive priority.
+		 *
+		 * @param conn Connection which reports priority status.
+		 * @param have If connection have (true) or just lost (false) priority.
+		 */
+		virtual void priorityChanged (Rts2Conn * conn, bool have);
+
+		/**
 		 * Called when some device connected to us become idle.
 		 *
 		 * \param conn connection representing device which became idle

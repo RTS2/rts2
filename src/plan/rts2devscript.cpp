@@ -31,6 +31,7 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;
 	scriptLoopCount = 0;
+	scriptCount = 0;
 	lastTargetObsID = -1;
 	script_connection = in_script_connection;
 }
@@ -67,6 +68,7 @@ Rts2DevScript::startTarget ()
 	{
 		scriptLoopCount++;
 	}
+	scriptCount++;
 	setScript (new Rts2Script (script_connection->getMaster (),
 		script_connection->getName (), currentTarget));
 
@@ -287,6 +289,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			// give script chance to finish searching (e.g. move filter back
 			// to 0, then delete script)
 			nextCommand ();
+			break;
+		case EVENT_SCRIPT_NUMBER:
+			*((int*)event->getArg ()) = scriptCount;
 			break;
 	}
 }

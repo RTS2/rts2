@@ -256,10 +256,30 @@ Rts2ScriptExec::deviceReady (Rts2Conn * conn)
 {
 	if (conn->havePriority ())
 	{
+		std::cout << "Device ready, have priority " << conn->getName () << std::endl;
+		//		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+		//		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
+	}
+	else
+	{
+		std::cout << "Do not have priority " << conn->getName () << std::endl;
+	}
+	Rts2Client::deviceReady (conn);
+}
+
+
+void
+Rts2ScriptExec::priorityChanged (Rts2Conn * conn, bool have)
+{
+	int scriptCount = 0;
+	// test if we did not assign script in previous runs of priority changed
+	conn->postEvent (new Rts2Event (EVENT_SCRIPT_NUMBER, (void *) &scriptCount));
+	std::cout << "Observing " << conn->getName () << " have " << have << " scriptCount " << scriptCount << std::endl;
+	if (have && scriptCount == 0)
+	{
 		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 	}
-	Rts2Client::deviceReady (conn);
 }
 
 

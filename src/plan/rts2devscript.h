@@ -39,6 +39,7 @@ class Rts2DevScript
 		Rts2Target *nextTarget;
 		int dont_execute_for;
 		int scriptLoopCount;
+		int scriptCount;
 		int lastTargetObsID;
 		void setNextTarget (Rts2Target * in_target);
 

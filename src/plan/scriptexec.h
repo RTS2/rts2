@@ -65,6 +65,7 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 
 		virtual void postEvent (Rts2Event * event);
 		virtual void deviceReady (Rts2Conn * conn);
+		virtual void priorityChanged (Rts2Conn * conn, bool have);
 		virtual int idle ();
 		virtual void deviceIdle (Rts2Conn * conn);
 

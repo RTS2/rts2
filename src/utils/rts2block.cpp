@@ -414,6 +414,12 @@ Rts2Block::deviceReady (Rts2Conn * conn)
 
 
 void
+Rts2Block::priorityChanged (Rts2Conn * conn, bool have)
+{
+}
+
+
+void
 Rts2Block::deviceIdle (Rts2Conn * conn)
 {
 }
