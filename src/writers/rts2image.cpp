@@ -712,7 +712,8 @@ Rts2Image::setValue (const char *name, bool value, const char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_update_key (ffile, TLOGICAL, (char *) name, &value, (char *) comment, &fits_status);
+	int i_val = value ? 1 : 0;
+	fits_update_key (ffile, TLOGICAL, (char *) name, &i_val, (char *) comment, &fits_status);
 	flags |= IMAGE_SAVE;
 	return fitsStatusSetValue (name, true);
 }
@@ -873,8 +874,10 @@ char *comment)
 		if (ret)
 			return ret;
 	}
-	fits_read_key (ffile, TLOGICAL, (char *) name, (void *) &value, comment,
+	int i_val;
+	fits_read_key (ffile, TLOGICAL, (char *) name, (void *) &i_val, comment,
 		&fits_status);
+	value = i_val == TRUE;
 	return fitsStatusGetValue (name, required);
 }
 
@@ -2039,6 +2042,29 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 
 
 void
+Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
+{
+	char *name;
+	// construct name
+	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
+	{
+		name = new char[strlen (name) + strlen (conn->getName ()) + 10];
+		strcpy (name, conn->getName ());
+		strcat (name, ".");
+		strcat (name, val->getName ().c_str ());
+	}
+	else
+	{
+		name = new char[strlen (val->getName ().c_str ()) + 9];
+		strcpy (name, val->getName ().c_str ());
+	}
+	strcat (name, ".CHANGED");
+	setValue (name, val->wasChanged (), "true if value was changed during exposure");
+	delete[]name;
+}
+
+
+void
 Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 {
 	for (Rts2ValueVector::iterator iter = conn->valueBegin ();
@@ -2052,12 +2078,18 @@ Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 				case EXPOSURE_START:
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_EXP)
 						writeConnValue (conn, val);
+					val->resetValueChanged ();
 					if (val->getValueDisplayType () == RTS2_DT_ROTANG)
 						addRotang (val->getValueDouble ());
 					break;
-				case EXPOSURE_END:
+				case INFO_CALLED:
 					if (val->getValueWriteFlags () == RTS2_VWHEN_BEFORE_END)
 						writeConnValue (conn, val);
+					break;
+				case EXPOSURE_END:
+					// check to write change of value
+					if (val->writeWhenChanged ())
+						recordChange (conn, val);
 					break;
 			}
 		}

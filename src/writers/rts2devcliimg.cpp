@@ -241,6 +241,8 @@ Rts2DevClientCameraImage::exposureStarted ()
 	delete actualImage;
 	// create image
 	actualImage = new CameraImage (image, getMaster ()->getNow ());
+	actualImage->image->writeConn (getConnection (), EXPOSURE_START);
+
 	lastImage = image;
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
 	Rts2DevClientCamera::exposureStarted ();
@@ -253,7 +255,6 @@ Rts2DevClientCameraImage::exposureEnd ()
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 
 	actualImage->setExEnd (getMaster ()->getNow ());
-	actualImage->image->writeConn (getConnection (), EXPOSURE_START);
 
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 
@@ -271,10 +272,10 @@ void
 Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 {
 	struct ln_equ_posn *change;	 // change in degrees
+	CameraImage * ci;
 	switch (event->getType ())
 	{
 		case EVENT_WRITE_TO_IMAGE:
-			CameraImage * ci;
 			Rts2Image *image;
 			struct ln_equ_posn object;
 			struct ln_lnlat_posn obs;
@@ -296,6 +297,10 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			ln_get_hrz_from_equ (&suneq, &obs, image->getExposureJD (), &sunhrz);
 			image->setValue ("SUN_ALT", sunhrz.alt, "solar altitude");
 			image->setValue ("SUN_AZ", sunhrz.az, "solar azimuth");
+			break;
+		case EVENT_WRITE_TO_IMAGE_ENDS:
+			ci = (CameraImage *)event->getArg ();
+			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 		case EVENT_GET_RADEC:
 			getEqu ((struct ln_equ_posn *) event->getArg ());
@@ -390,17 +395,23 @@ Rts2DevClientFocusImage::Rts2DevClientFocusImage (Rts2Conn * in_connection):Rts2
 void
 Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 {
+	CameraImage * ci;
+	Rts2Image *image;
 	switch (event->getType ())
 	{
 		case EVENT_WRITE_TO_IMAGE:
-			CameraImage * ci = (CameraImage *) event->getArg ();
-			Rts2Image *image = ci->image;
+			ci = (CameraImage *) event->getArg ();
+			image = ci->image;
 			// check if we are correct focuser for given camera
 			if (!image->getFocuserName ()
 				|| !connection->getName ()
 				|| strcmp (image->getFocuserName (), connection->getName ()))
 				break;
 			image->writeConn (getConnection (), EXPOSURE_START);
+			break;
+		case EVENT_WRITE_TO_IMAGE_ENDS:
+			ci = (CameraImage *) event->getArg ();
+			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 	}
 	Rts2DevClientFocus::postEvent (event);
@@ -431,7 +442,7 @@ Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *) event->getArg ();
-			// do nothing now..
+			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 	}
 	Rts2DevClient::postEvent (event);
@@ -456,8 +467,7 @@ Rts2DevClientWriteImage::infoFailed ()
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
 (in_owner)
 {
-	char *
-		command;
+	char *command;
 	asprintf (&command, "que_image %s", image->getImageName ());
 	setCommand (command);
 	free (command);

@@ -65,7 +65,7 @@ typedef enum
 shutter_t;
 
 typedef enum
-{ EXPOSURE_START, EXPOSURE_END }
+{ EXPOSURE_START, INFO_CALLED, EXPOSURE_END }
 imageWriteWhich_t;
 
 class Rts2Image:public Rts2Expander
@@ -117,6 +117,9 @@ class Rts2Image:public Rts2Expander
 
 		// writes one value to image
 		void writeConnValue (Rts2Conn * conn, Rts2Value * val);
+
+		// record value changes
+		void recordChange (Rts2Conn * conn, Rts2Value * val);
 	protected:
 		int targetId;
 		int targetIdSel;
@@ -212,31 +215,19 @@ class Rts2Image:public Rts2Expander
 		// that method is used to update DATE - creation date entry - for other file then ffile
 		int setCreationDate (fitsfile * out_file = NULL);
 
-		int getValue (const char *name, bool & value,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, int &value,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, long &value,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, float &value,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, double &value,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, char &value,
-			bool required = false, char *command = NULL);
-		int getValue (const char *name, char *value, int valLen,
-			bool required = false, char *comment = NULL);
-		int getValue (const char *name, char **value, int valLen,
-			bool required = false, char *comment = NULL);
+		int getValue (const char *name, bool & value, bool required = false, char *comment = NULL);
+		int getValue (const char *name, int &value, bool required = false, char *comment = NULL);
+		int getValue (const char *name, long &value, bool required = false, char *comment = NULL);
+		int getValue (const char *name, float &value, bool required = false, char *comment = NULL);
+		int getValue (const char *name, double &value, bool required = false, char *comment = NULL);
+		int getValue (const char *name, char &value, bool required = false, char *command = NULL);
+		int getValue (const char *name, char *value, int valLen, bool required = false, char *comment = NULL);
+		int getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
 
-		int getValues (const char *name, int *values, int num,
-			bool required = false, int nstart = 1);
-		int getValues (const char *name, long *values, int num,
-			bool required = false, int nstart = 1);
-		int getValues (const char *name, double *values, int num,
-			bool required = false, int nstart = 1);
-		int getValues (const char *name, char **values, int num,
-			bool required = false, int nstart = 1);
+		int getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
+		int getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
+		int getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
+		int getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
 		/**
 		 * Appends history string.

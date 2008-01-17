@@ -118,7 +118,7 @@ CameraImages::infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client)
 		CameraImage *ci = (*iter).second;
 		if (ci->waitingFor (client))
 		{
-			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
+			ci->image->writeConn (client->getConnection (), INFO_CALLED);
 			if (ci->canDelete ())
 			{
 				master->processCameraImage (iter++);
@@ -141,7 +141,7 @@ Rts2DevClient * client)
 		CameraImage *ci = (*iter).second;
 		if (ci->waitingFor (client))
 		{
-			ci->image->writeConn (client->getConnection (), EXPOSURE_END);
+			ci->image->writeConn (client->getConnection (), INFO_CALLED);
 			master->processCameraImage (iter++);
 		}
 		else
