@@ -134,5 +134,7 @@ class Rts2ValueRectangle: public Rts2Value
 		virtual void setFromValue(Rts2Value * newValue);
 
 		virtual bool isEqual (Rts2Value * other_value);
+
+		virtual void resetValueChanged ();
 };
 #endif							 // !__RTS2_RECTANGLE__

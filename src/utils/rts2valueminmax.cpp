@@ -1,8 +1,27 @@
+/* 
+ * Min-max value.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2valueminmax.h"
 #include "rts2conn.h"
 
-Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name):Rts2ValueDouble
-(in_val_name)
+Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name)
+:Rts2ValueDouble (in_val_name)
 {
 	min = nan ("f");
 	max = nan ("f");
@@ -10,8 +29,8 @@ Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name):Rts2Value
 }
 
 
-Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDouble (in_val_name, in_description, writeToFits,
-flags)
+Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
+:Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
 	min = nan ("f");
 	max = nan ("f");

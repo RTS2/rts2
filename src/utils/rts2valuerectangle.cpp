@@ -78,6 +78,8 @@ Rts2ValueRectangle::setValue (Rts2Conn *connection)
 		return -2;
 	if (connection->paramNextString (&val) || h->setValueString (val))
 		return -2;
+	if (x->wasChanged () || y->wasChanged () || w->wasChanged () || h->wasChanged ())
+		changed ();
 	return connection->paramEnd () ? 0 : -2;
 }
 
@@ -166,4 +168,15 @@ Rts2ValueRectangle::isEqual (Rts2Value *other_value)
 			&& h->isEqual (((Rts2ValueRectangle *)newValue)->getHeight ());
 	}
 	return false;
+}
+
+
+void
+Rts2ValueRectangle::resetValueChanged ()
+{
+	x->resetValueChanged ();
+	y->resetValueChanged ();
+	w->resetValueChanged ();
+	h->resetValueChanged ();
+	Rts2Value::resetValueChanged ();
 }

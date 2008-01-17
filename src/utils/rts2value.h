@@ -67,6 +67,11 @@
 
 #define RTS2_VALUE_FITS               0x00000100
 #define RTS2_VALUE_DEVPREFIX          0x00000200
+/** Contains 1 if value was changed from last run. */
+#define RTS2_VALUE_CHANGED            0x00000400
+
+/** If to record that value was changed. */
+#define RTS2_VWHEN_RECORD_CHANGE      0x00000800
 
 #define RTS2_VWHEN_MASK               0x0000f000
 
@@ -119,19 +124,7 @@ class Rts2Value
 
 		void setValueFlags (int32_t flags)
 		{
-			rts2Type |=
-				(RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VALUE_DEVPREFIX) & flags;
-		}
-
-		/**
-		 * Set value display type - part covered by RTS2_TYPE_MASK
-		 *
-		 * @param displayType Display type, one from RTS2_DT_xxxx
-		 * constant.
-		 */
-		void setValueDisplayType (int32_t displayType)
-		{
-			rts2Type |= (RTS2_TYPE_MASK & displayType);
+			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX) & flags;
 		}
 
 		/**
@@ -170,6 +163,12 @@ class Rts2Value
 		{
 			return rts2Type & RTS2_VWHEN_MASK;
 		}
+
+		bool writeWhenChanged ()
+		{
+			return rts2Type & RTS2_VWHEN_RECORD_CHANGE;
+		}
+
 		int32_t getValueDisplayType ()
 		{
 			return rts2Type & RTS2_TYPE_MASK;
@@ -258,6 +257,34 @@ class Rts2Value
 		 * @return True if value is equal to other value, otherwise false.
 		 */
 		virtual bool isEqual (Rts2Value *other_value) = 0;
+
+		/**
+		 * Reset value change bit, so changes will be recorded from now on.
+		 *
+		 * @see wasChanged()
+		 */
+		virtual void resetValueChanged ()
+		{
+			rts2Type &= ~RTS2_VALUE_CHANGED;
+		}
+
+		/**
+		 * Return true if value was changed from last call of resetValueChanged().
+		 *
+		 * @see resetValueChanged()
+		 */
+		bool wasChanged ()
+		{
+			return rts2Type & RTS2_VALUE_CHANGED;
+		}
+
+		/**
+		 * Set value change flag.
+		 */
+		void changed ()
+		{
+			rts2Type |= RTS2_VALUE_CHANGED;
+		}
 };
 
 /**

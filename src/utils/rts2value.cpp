@@ -128,6 +128,9 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 int
 Rts2ValueString::setValueString (const char *in_value)
 {
+	if ((value != in_value)
+		&& (value == NULL || in_value == NULL || strcmp (value, in_value)))
+		changed ();
 	delete[]value;
 	if (!in_value)
 	{
@@ -202,6 +205,8 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
 	int new_value;
 	if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
 		return -2;
+	if (value != new_value)
+		changed ();
 	value = new_value;
 	return 0;
 }
@@ -288,6 +293,8 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
 	double new_value;
 	if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
 		return -2;
+	if (value != new_value)
+		changed ();
 	value = new_value;
 	return 0;
 }
@@ -405,6 +412,8 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
 	float new_value;
 	if (connection->paramNextFloat (&new_value) || !connection->paramEnd ())
 		return -2;
+	if (value != new_value)
+		changed ();
 	value = new_value;
 	return 0;
 }
@@ -672,6 +681,8 @@ Rts2ValueLong::setValue (Rts2Conn * connection)
 	long int new_value;
 	if (connection->paramNextLong (&new_value) || !connection->paramEnd ())
 		return -2;
+	if (value != new_value)
+		changed ();
 	value = new_value;
 	return 0;
 }
