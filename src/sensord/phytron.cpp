@@ -162,6 +162,7 @@ Rts2DevSensorPhytron::setAxis (int new_val)
 {
 	int ret;
 	sprintf (cmdbuf, "01A%i", new_val);
+	logStream (MESSAGE_DEBUG) << "Change axis to " << new_val << sendLog;
 	ret = writePort (cmdbuf);
 	if (ret)
 		return ret;
@@ -184,7 +185,7 @@ Rts2DevSensor (in_argc, in_argv)
 	dev = "/dev/ttyS0";
 
 	createValue (runFreq, "RUNFREQ", "current run frequency", true);
-	createValue (axis0, "CURPOS", "current arm position", true);
+	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
 
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
