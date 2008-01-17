@@ -902,6 +902,19 @@ Rts2DevCamera (in_argc, in_argv)
 		CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
+	// add possible split modes
+	splitMode->addSelVal ("LEFT");
+	splitMode->addSelVal ("RIGHT");
+	splitMode->addSelVal ("BOTH");
+
+	createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
+		CAM_WORKING, true);
+
+	edtGain->addSelVal ("HIGH");
+	edtGain->addSelVal ("LOW");
+
+	edtGain->setValueInteger (0);
+
 	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING, true);
 	phi->initEdt (0xA0084, A_plus);
 
@@ -937,19 +950,6 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (dd, "DD", "DD", true, 0, CAM_WORKING, true);
 	dd->initEdt (0xA0380, C);
-
-	// add possible split modes
-	splitMode->addSelVal ("LEFT");
-	splitMode->addSelVal ("RIGHT");
-	splitMode->addSelVal ("BOTH");
-
-	createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
-		CAM_WORKING, true);
-
-	edtGain->addSelVal ("HIGH");
-	edtGain->addSelVal ("LOW");
-
-	edtGain->setValueInteger (0);
 }
 
 
@@ -1001,8 +1001,6 @@ Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, float new_value)
 int
 Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value)
 {
-	if (old_value->testValue (new_value->getValueFloat ()) == false)
-		return -2;
 	return edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
 }
 
