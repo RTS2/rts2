@@ -2033,6 +2033,9 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 
 			delete[]name_stat;
 			break;
+		case RTS2_VALUE_MMAX:
+			writeConnBaseValue (name, val, desc);
+			break;
 	}
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
 	{
@@ -2048,7 +2051,7 @@ Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
 	// construct name
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
 	{
-		name = new char[strlen (name) + strlen (conn->getName ()) + 10];
+		name = new char[strlen (conn->getName ()) + strlen (val->getName ().c_str ()) + 10];
 		strcpy (name, conn->getName ());
 		strcat (name, ".");
 		strcat (name, val->getName ().c_str ());
