@@ -16,6 +16,7 @@ class Rts2DevSensorKeithley487:public Rts2DevSensorGpib
 		Rts2ValueFloat * curr;
 		Rts2ValueBool *sourceOn;
 		Rts2ValueDoubleMinMax *voltage;
+		Rts2ValueSelection *zeroCheck;
 	protected:
 		virtual int init ();
 		virtual int info ();
@@ -35,8 +36,13 @@ Rts2DevSensorGpib (in_argc, in_argv)
 	createValue (voltage, "VOLTAGE", "Voltage level", true);
 
 	voltage->setValueDouble (0);
-	voltage->setMin (-50);
+	voltage->setMin (-70);
 	voltage->setMax (0);
+
+	createValue (zeroCheck, "ZERO_CHECK", "Zero check on/off", true);
+	zeroCheck->addSelVal ("off");
+	zeroCheck->addSelVal ("on, no correction");
+	zeroCheck->addSelVal ("on, with correction");
 }
 
 
@@ -48,7 +54,7 @@ Rts2DevSensorKeithley487::init ()
 	if (ret)
 		return ret;
 	// binary for Intel
-	return gpibWrite ("G4X");
+	return gpibWrite ("G4C0X");
 }
 
 
@@ -96,7 +102,12 @@ Rts2Value * new_value)
 	}
 	if (old_value == voltage)
 	{
-		snprintf (buf, 50, "V%fX", new_value->getValueFloat ());
+		snprintf (buf, 50, "V%f,%iX", new_value->getValueFloat (), fabs (new_value->getValueFloat ()) > 50 ? 1 : 0);
+		return gpibWrite (buf);
+	}
+	if (old_value == zeroCheck)
+	{
+		snprintf (buf, 50, "C%iX", new_value->getValueInteger ());
 		return gpibWrite (buf);
 	}
 	return Rts2DevSensorGpib::setValue (old_value, new_value);
