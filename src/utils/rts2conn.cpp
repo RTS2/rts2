@@ -1130,21 +1130,21 @@ Rts2Conn::sendCommand ()
 		// we are waiting for some BOP mask and it have already occured
 		if (runningCommand->getBopMask () & BOP_WHILE_STATE)
 		{
-			//			#ifdef DEBUG_ALL
+			#ifdef DEBUG_ALL
 			std::cout << "waiting for " << runningCommand->getText () << " "
 				<< std::hex << runningCommand->getBopMask () << " "
 				<< std::hex << getMaster()->getMasterStateFull ()
 				<< " " << runningCommand
 				<< std::endl;
-			//			#endif
+			#endif
 			if (getMaster()->getMasterStateFull () & runningCommand->getBopMask () & BOP_MASK)
 			{
 				// just wait for finish
 				if (runningCommand->getStatusCallProgress () == CIP_WAIT)
 					return;
-				//				#ifdef DEBUG_ALL
+				#ifdef DEBUG_ALL
 				logStream (MESSAGE_DEBUG) << "executing " << runningCommand->getText () << " " << runningCommand << sendLog;
-				//				#endif
+				#endif
 				runningCommand->send ();
 				runningCommand->setStatusCallProgress (CIP_WAIT);
 			}
@@ -1259,6 +1259,7 @@ Rts2Conn::priorityInfo ()
 	priorityChanged ();
 	if (otherDevice)
 		otherDevice->priorityInfo (have);
+	getMaster ()->priorityChanged (this, have);
 	// don't send OK
 	return -1;
 }
