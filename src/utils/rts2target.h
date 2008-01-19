@@ -116,6 +116,14 @@ class Rts2Target
 		{
 		}
 		// target manipulation functions
+		/**
+		 * Retrieve script for target.
+		 *
+		 * @param device_name Name of the device.
+		 * @param buf  Buffer with (part) of script.
+		 *
+		 * @return -1 on error, 0 when string represent last part of script, 1 when script can continue.
+		 */
 		virtual int getScript (const char *device_name, std::string & buf) = 0;
 
 		int getPosition (struct ln_equ_posn *pos)
