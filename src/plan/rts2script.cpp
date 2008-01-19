@@ -113,38 +113,11 @@ Rts2Script::getNextParamInteger (int *val)
 }
 
 
-Rts2Script::Rts2Script (Rts2Block * in_master, const char *cam_name, Rts2Target * target):
-Rts2Object ()
+Rts2Script::Rts2Script (Rts2Block * in_master)
+:Rts2Object ()
 {
-	Rts2ScriptElement *element;
-	std::string scriptText;
-	struct ln_equ_posn target_pos;
-
-	target->getScript (cam_name, scriptText);
-	target->getPosition (&target_pos);
-	cmdBuf = new char[scriptText.length () + 1];
-	strcpy (cmdBuf, scriptText.c_str ());
-	wholeScript = scriptText;
-	strcpy (defaultDevice, cam_name);
 	master = in_master;
-	cmdBufTop = cmdBuf;
-	commandStart = cmdBuf;
-	while (1)
-	{
-		element = parseBuf (target, &target_pos);
-		if (!element)
-			break;
-		element->setLen (cmdBufTop - commandStart);
-		elements.push_back (element);
-	}
-	executedCount = 0;
-	currScriptElement = NULL;
-	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
-	{
-		element = *el_iter;
-		element->beforeExecuting ();
-	}
-	el_iter = elements.begin ();
+	lineOffset = 0;
 }
 
 
@@ -159,7 +132,90 @@ Rts2Script::~Rts2Script (void)
 		delete el;
 	}
 	elements.clear ();
-	delete[]cmdBuf;
+}
+
+
+int
+Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
+{
+	Rts2ScriptElement *element;
+	std::string scriptText;
+	struct ln_equ_posn target_pos;
+
+	target->getPosition (&target_pos);
+
+	strcpy (defaultDevice, cam_name);
+	commentNumber = 1;
+	wholeScript = std::string ("");
+
+	int ret = 1;
+	// offset on scripts over one line
+	do
+	{
+		ret = target->getScript (cam_name, scriptText);
+		if (ret == -1)
+			return -1;
+		char *comment = NULL;
+		int offset = 0;
+		cmdBuf = new char[scriptText.length () + 1];
+		strcpy (cmdBuf, scriptText.c_str ());
+		// find any possible comment and mark it
+		cmdBufTop = cmdBuf;
+		while (*cmdBufTop && *cmdBufTop != '#')
+			cmdBufTop++;
+		if (*cmdBufTop == '#')
+		{
+			*cmdBufTop = '\0';
+			cmdBufTop++;
+			while (*cmdBufTop && isspace (*cmdBufTop))
+				cmdBufTop++;
+			comment = cmdBufTop;
+		}
+
+		wholeScript += std::string (cmdBuf);
+
+		cmdBufTop = cmdBuf;
+		commandStart = cmdBuf;
+		while (1)
+		{
+			element = parseBuf (target, &target_pos);
+			if (!element)
+				break;
+			element->setLen (cmdBufTop - commandStart);
+			offset += cmdBufTop - commandStart;
+			elements.push_back (element);
+		}
+		// add comment if there was one
+		if (comment)
+		{
+			element = new Rts2ScriptElementComment (this, comment, commentNumber);
+			std::ostringstream ws;
+			ws << "#" << commentNumber << " ";
+			if (wholeScript.length () > 0)
+			{
+				wholeScript += " ";
+				offset++;
+			}
+			wholeScript += ws.str ();
+			commentNumber++;
+
+			element->setLen (2);
+			offset += 3;
+			elements.push_back (element);
+		}
+		delete[] cmdBuf;
+		lineOffset += offset;
+	} while (ret == 1);
+
+	executedCount = 0;
+	currScriptElement = NULL;
+	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
+	{
+		element = *el_iter;
+		element->beforeExecuting ();
+	}
+	el_iter = elements.begin ();
+	return 0;
 }
 
 
@@ -209,6 +265,9 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	char *devSep;
 	char new_device[DEVICE_NAME_SIZE];
 	int ret;
+
+	while (isspace (*cmdBufTop))
+		cmdBufTop++;
 
 	// find whole command
 	commandStart = nextElement ();

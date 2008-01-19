@@ -281,7 +281,8 @@ Rts2TargetInfo::printTargetInfo ()
 				cout << "Script for camera " << cam_name << ":'" << script_buf <<
 				"' ret (" << ret << ")" << std::endl;
 			// try to parse it..
-			Rts2Script script = Rts2Script (NULL, cam_name, target);
+			Rts2Script script = Rts2Script (NULL);
+			script.setTarget (cam_name, target);
 			failedCount = script.getFaultLocation ();
 			if (failedCount != -1)
 			{

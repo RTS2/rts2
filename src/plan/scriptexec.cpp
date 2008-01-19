@@ -29,39 +29,19 @@
 
 // Rts2ScriptExec class
 
-std::string
-Rts2ScriptExec::getStreamAsString (std::istream & _is)
-{
-	std::string out;
-	while (!_is.eof ())
-	{
-		std::string buf;
-		getline (_is, buf);
-		size_t
-			hi = buf.find ("#");
-		if (hi != std::string::npos)
-		{
-			buf = buf.substr (0, hi);
-		}
-		out += std::string (" ") + buf;
-	}
-	return out;
-}
-
-
 int
 Rts2ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 {
 	// take script from stdin
 	if (deviceName)
 	{
-		scripts.push_back (Rts2ScriptForDevice (std::string (deviceName), getStreamAsString (std::cin)));
+		scripts.push_back (new Rts2ScriptForDeviceStream (std::string (deviceName), &std::cin));
 		deviceName = NULL;
 	}
-	for (std::vector < Rts2ScriptForDevice >::iterator iter = scripts.begin ();
+	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
 		iter != scripts.end (); iter++)
 	{
-		Rts2ScriptForDevice *ds = &(*iter);
+		Rts2ScriptForDevice *ds = *iter;
 		if (ds->isDevice (in_deviceName))
 		{
 			if (!nextRunningQ)
@@ -69,8 +49,7 @@ Rts2ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 				time (&nextRunningQ);
 				nextRunningQ += 5;
 			}
-			buf = std::string (ds->getScript ());
-			return 0;
+			return ds->getScript (buf);
 		}
 	}
 	return -1;
@@ -107,9 +86,7 @@ Rts2ScriptExec::processOption (int in_opt)
 				std::cerr << "unknow device name" << std::endl;
 				return -1;
 			}
-			scripts.
-				push_back (Rts2ScriptForDevice
-				(std::string (deviceName), std::string (optarg)));
+			scripts.push_back (new Rts2ScriptForDevice (std::string (deviceName), std::string (optarg)));
 			deviceName = NULL;
 			break;
 		case 'f':
@@ -119,10 +96,7 @@ Rts2ScriptExec::processOption (int in_opt)
 				return -1;
 			}
 			is = new std::ifstream (optarg);
-			scripts.
-				push_back (Rts2ScriptForDevice
-				(std::string (deviceName), getStreamAsString (*is)));
-			delete is;
+			scripts.push_back (new Rts2ScriptForDeviceStream (std::string (deviceName), is));
 			deviceName = NULL;
 			break;
 		default:
@@ -150,7 +124,12 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
 
 Rts2ScriptExec::~Rts2ScriptExec (void)
 {
-
+	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
+		iter != scripts.end (); iter++)
+	{
+		delete *iter;
+	}
+	scripts.clear ();
 }
 
 
@@ -252,29 +231,11 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
 
 
 void
-Rts2ScriptExec::deviceReady (Rts2Conn * conn)
-{
-	if (conn->havePriority ())
-	{
-		std::cout << "Device ready, have priority " << conn->getName () << std::endl;
-		//		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-		//		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
-	}
-	else
-	{
-		std::cout << "Do not have priority " << conn->getName () << std::endl;
-	}
-	Rts2Client::deviceReady (conn);
-}
-
-
-void
 Rts2ScriptExec::priorityChanged (Rts2Conn * conn, bool have)
 {
 	int scriptCount = 0;
 	// test if we did not assign script in previous runs of priority changed
 	conn->postEvent (new Rts2Event (EVENT_SCRIPT_NUMBER, (void *) &scriptCount));
-	std::cout << "Observing " << conn->getName () << " have " << have << " scriptCount " << scriptCount << std::endl;
 	if (have && scriptCount == 0)
 	{
 		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));

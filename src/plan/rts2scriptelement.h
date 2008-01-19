@@ -1,3 +1,22 @@
+/*
+ * Script element.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_SCRIPTELEMENT__
 #define __RTS2_SCRIPTELEMENT__
 
@@ -11,31 +30,31 @@
 
 #define EVENT_PRECISION_REACHED   RTS2_LOCAL_EVENT + 250
 
-#define EVENT_MIRROR_SET    RTS2_LOCAL_EVENT + 251
-#define EVENT_MIRROR_FINISH   RTS2_LOCAL_EVENT + 252
+#define EVENT_MIRROR_SET          RTS2_LOCAL_EVENT + 251
+#define EVENT_MIRROR_FINISH       RTS2_LOCAL_EVENT + 252
 
-#define EVENT_ACQUIRE_START   RTS2_LOCAL_EVENT + 253
-#define EVENT_ACQUIRE_WAIT    RTS2_LOCAL_EVENT + 254
-#define EVENT_ACQUIRE_QUERY   RTS2_LOCAL_EVENT + 255
+#define EVENT_ACQUIRE_START       RTS2_LOCAL_EVENT + 253
+#define EVENT_ACQUIRE_WAIT        RTS2_LOCAL_EVENT + 254
+#define EVENT_ACQUIRE_QUERY       RTS2_LOCAL_EVENT + 255
 
 // send some signal to other device..so they will
 // know that something is going on
-#define EVENT_SIGNAL      RTS2_LOCAL_EVENT + 256
+#define EVENT_SIGNAL              RTS2_LOCAL_EVENT + 256
 
-#define EVENT_SIGNAL_QUERY    RTS2_LOCAL_EVENT + 257
+#define EVENT_SIGNAL_QUERY        RTS2_LOCAL_EVENT + 257
 
 // send when data we received
-#define EVENT_STAR_DATA     RTS2_LOCAL_EVENT + 258
+#define EVENT_STAR_DATA           RTS2_LOCAL_EVENT + 258
 
 #define EVENT_ADD_FIXED_OFFSET    RTS2_LOCAL_EVENT + 259
 
 #define EVENT_TEL_SEARCH_START    RTS2_LOCAL_EVENT + 260
-#define EVENT_TEL_SEARCH_STOP   RTS2_LOCAL_EVENT + 261
-#define EVENT_TEL_SEARCH_END    RTS2_LOCAL_EVENT + 262
+#define EVENT_TEL_SEARCH_STOP     RTS2_LOCAL_EVENT + 261
+#define EVENT_TEL_SEARCH_END      RTS2_LOCAL_EVENT + 262
 // successfull search
 #define EVENT_TEL_SEARCH_SUCCESS  RTS2_LOCAL_EVENT + 263
 // guiding data available
-#define EVENT_GUIDING_DATA    RTS2_LOCAL_EVENT + 264
+#define EVENT_GUIDING_DATA        RTS2_LOCAL_EVENT + 264
 // ask for acquire state..
 #define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 265
 
@@ -347,5 +366,24 @@ class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 		virtual int defnextCommand (Rts2DevClient * client,
 			Rts2Command ** new_command,
 			char new_device[DEVICE_NAME_SIZE]);
+};
+
+/**
+ * Class for comment.
+ */
+class Rts2ScriptElementComment:public Rts2ScriptElement
+{
+	private:
+		char *comment;
+		// comment number
+		int cnum;
+	public:
+		Rts2ScriptElementComment (Rts2Script * in_script,
+			const char *in_comment, int in_cnum);
+		virtual ~ Rts2ScriptElementComment (void);
+		virtual int defnextCommand (Rts2DevClient * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+
 };
 #endif							 /* !__RTS2_SCRIPTELEMENT__ */

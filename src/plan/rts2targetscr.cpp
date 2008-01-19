@@ -36,8 +36,8 @@ int
 Rts2TargetScr::getScript (const char *device_name, std::string & buf)
 {
 	int ret = master->findScript (std::string (device_name), buf);
-	if (!ret)
-		return 0;
+	if (ret >= 0)
+		return ret;
 
 	buf = std::string ("");
 	return -1;

@@ -21,6 +21,8 @@
 #define __RTS2_SCRIPTINTERFACE__
 
 #include <string>
+#include <iostream>
+#include <fstream>
 
 /**
  * Holds script for given device.
@@ -30,14 +32,32 @@ class Rts2ScriptForDevice
 	private:
 		std::string deviceName;
 		std::string script;
+	protected:
+		void setDeviceName (std::string in_deviceName)
+		{
+			deviceName = in_deviceName;
+		}
+
+		/**
+		 * Sets script string.
+		 */
+		void setScript (std::string in_script)
+		{
+			script = in_script;
+		}
 	public:
+		Rts2ScriptForDevice (std::string in_deviceName)
+		{
+			deviceName = in_deviceName;
+		}
+
 		Rts2ScriptForDevice (std::string in_deviceName, std::string in_script)
 		{
 			deviceName = in_deviceName;
-			script = in_script;
+			setScript (in_script);
 		}
 
-		~ Rts2ScriptForDevice (void)
+		virtual ~ Rts2ScriptForDevice (void)
 		{
 		}
 
@@ -46,10 +66,34 @@ class Rts2ScriptForDevice
 			return deviceName == in_deviceName;
 		}
 
-		const char *getScript ()
+		virtual int getScript (std::string & buf)
 		{
-			return script.c_str ();
+			buf = script;
+			return 0;
 		}
+};
+
+/**
+ * For cases when script is in file.
+ */
+class Rts2ScriptForDeviceStream:public Rts2ScriptForDevice
+{
+	private:
+		std::istream *is;
+	public:
+		Rts2ScriptForDeviceStream (std::string in_deviceName, std::istream *in_is)
+			:Rts2ScriptForDevice (in_deviceName)
+		{
+			setDeviceName (in_deviceName);
+			is = in_is;
+		}
+
+		virtual ~ Rts2ScriptForDeviceStream (void)
+		{
+			delete is;
+		}
+
+		virtual int getScript (std::string & buf);
 };
 
 class Rts2ScriptInterface

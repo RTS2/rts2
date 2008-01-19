@@ -94,17 +94,33 @@ class Rts2Script:public Rts2Object
 		int getNextParamDouble (double *val);
 		int getNextParamInteger (int *val);
 		// we should not save reference to target, as it can be changed|deleted without our knowledge
-		Rts2ScriptElement *parseBuf (Rts2Target * target,
-			struct ln_equ_posn *target_pos);
+		Rts2ScriptElement *parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos);
 		std::list < Rts2ScriptElement * >elements;
 		std::list < Rts2ScriptElement * >::iterator el_iter;
 		Rts2Block *master;
+
+		// counts comments
+		int commentNumber;
 		// is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
 		int executedCount;
+
+		// offset for scripts spanning more than one line
+		int lineOffset;
 	public:
-		Rts2Script (Rts2Block * in_master, const char *cam_name,
-			Rts2Target * target);
+		Rts2Script (Rts2Block * in_master);
 		virtual ~ Rts2Script (void);
+
+		/**
+		 * Get script from target, create vector of script elements and
+		 * script string, which will be put to FITS header.
+		 *
+		 * @params cam_name Name of the camera.
+		 * @params target  Script target. It is used to suply informations to script.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int setTarget (const char *cam_name, Rts2Target *target);
+
 		virtual void postEvent (Rts2Event * event);
 		template < typename T > int nextCommand (T & device,
 			Rts2Command ** new_command,
@@ -142,13 +158,18 @@ class Rts2Script:public Rts2Object
 		{
 			return cmdBuf;
 		}
+		/**
+		 * Returns script for FITS header.
+		 *
+		 * @return Script text for FITS header file.
+		 */
 		const std::string getWholeScript ()
 		{
 			return wholeScript;
 		}
 		int getParsedStartPos ()
 		{
-			return commandStart - cmdBuf;
+			return commandStart - cmdBuf + lineOffset;
 		}
 
 		int idle ();

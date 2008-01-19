@@ -12,7 +12,7 @@ CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
 
 rts2_scriptexec_SOURCES = scriptexec.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp \
 			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp \
-			rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp
+			rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp rts2scriptinterface.cpp
 rts2_scriptexec_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 # LDFLAGS are defined in PGSQL/nonPGSQL
@@ -20,7 +20,7 @@ rts2_scriptexec_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 rts2_scriptor_SOURCES = scriptor.cpp rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp \
 			rts2spiral.cpp rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp \
-			rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp
+			rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp rts2scriptinterface.cpp
 rts2_scriptor_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 if PGSQL

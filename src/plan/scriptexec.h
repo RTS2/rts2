@@ -34,7 +34,7 @@ class Rts2TargetScr;
 class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 {
 	private:
-		std::vector < Rts2ScriptForDevice > scripts;
+		std::vector < Rts2ScriptForDevice* > scripts;
 		char *deviceName;
 
 		int waitState;
@@ -44,8 +44,6 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		time_t nextRunningQ;
 
 		bool isScriptRunning ();
-
-		std::string getStreamAsString (std::istream & _is);
 
 		char *configFile;
 	protected:
@@ -64,7 +62,6 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 			int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
-		virtual void deviceReady (Rts2Conn * conn);
 		virtual void priorityChanged (Rts2Conn * conn, bool have);
 		virtual int idle ();
 		virtual void deviceIdle (Rts2Conn * conn);

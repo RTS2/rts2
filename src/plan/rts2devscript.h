@@ -35,7 +35,6 @@ class Rts2DevScript
 	private:
 		Rts2Conn * script_connection;
 		Rts2Script *script;
-		Rts2Script *nextScript;
 		Rts2Target *nextTarget;
 		int dont_execute_for;
 		int scriptLoopCount;

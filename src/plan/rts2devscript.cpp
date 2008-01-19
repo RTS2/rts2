@@ -24,7 +24,6 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
 {
 	currentTarget = NULL;
 	nextComd = NULL;
-	nextScript = NULL;
 	nextTarget = NULL;
 	script = NULL;
 	blockMove = 0;
@@ -57,7 +56,6 @@ Rts2DevScript::startTarget ()
 		if (!nextTarget)
 			return;
 		currentTarget = nextTarget;
-		nextScript = NULL;
 		nextTarget = NULL;
 		if (lastTargetObsID == currentTarget->getObsTargetID ())
 			scriptLoopCount++;
@@ -69,8 +67,10 @@ Rts2DevScript::startTarget ()
 		scriptLoopCount++;
 	}
 	scriptCount++;
-	setScript (new Rts2Script (script_connection->getMaster (),
-		script_connection->getName (), currentTarget));
+
+	Rts2Script *sc = new Rts2Script (script_connection->getMaster ());
+	sc->setTarget (script_connection->getName (), currentTarget);
+	setScript (sc);
 
 	clearFailedCount ();
 	queCommandFromScript (new
@@ -104,12 +104,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	{
 		case EVENT_KILL_ALL:
 			currentTarget = NULL;
-			if (nextScript)
-			{
-				tmp_script = nextScript;
-				nextScript = NULL;
-				delete tmp_script;
-			}
 			nextTarget = NULL;
 		#ifdef DEBUG_EXTRA
 			logStream(MESSAGE_DEBUG) << "EVENT_KILL_ALL" << sendLog;
@@ -264,8 +258,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 		case EVENT_SIGNAL_QUERY:
 			if (script)
 				script->postEvent (new Rts2Event (event));
-			if (nextScript)
-				nextScript->postEvent (new Rts2Event (event));
 			break;
 		case EVENT_SIGNAL:
 			if (!script)
@@ -326,8 +318,7 @@ Rts2DevScript::scriptBegin ()
 			Rts2CommandChangeValue (cli,
 			std::string ("SCRIPT"),
 			'=',
-			script->
-			getWholeScript ()));
+			script->getWholeScript ()));
 	}
 }
 
@@ -380,9 +371,6 @@ Rts2DevScript::deleteScript ()
 				if (nextTarget
 					&& nextTarget->getTargetID () == dont_execute_for)
 				{
-					tmp_script = nextScript;
-					nextScript = NULL;
-					delete tmp_script;
 					nextTarget = NULL;
 				}
 			}
@@ -416,24 +404,10 @@ Rts2DevScript::searchSucess ()
 void
 Rts2DevScript::setNextTarget (Rts2Target * in_target)
 {
-	Rts2Script *tmp_script;
-	if (nextTarget)
-	{
-		// we have to free our memory..
-		tmp_script = nextScript;
-		nextScript = NULL;
-		delete tmp_script;
-	}
 	nextTarget = in_target;
 	if (nextTarget->getTargetID () == dont_execute_for)
 	{
 		nextTarget = NULL;
-	}
-	else
-	{
-		nextScript =
-			new Rts2Script (script_connection->getMaster (),
-			script_connection->getName (), nextTarget);
 	}
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "setNextTarget " << nextTarget << sendLog;

@@ -1,3 +1,22 @@
+/*
+ * Script element.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <iterator>
 
 #include "rts2devscript.h"
@@ -565,8 +584,7 @@ Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 
 int
 Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (op == '\0' || operand.size () == 0)
 		return -1;
@@ -580,6 +598,33 @@ char new_device[DEVICE_NAME_SIZE])
 	{
 		*new_command = new Rts2CommandChangeValue (client, valName, op, operand);
 	}
+	getDevice (new_device);
+	return 0;
+}
+
+
+Rts2ScriptElementComment::Rts2ScriptElementComment (Rts2Script * in_script, const char *in_comment, int in_cnum)
+:Rts2ScriptElement (in_script)
+{
+	comment = new char[strlen (in_comment) + 1];
+	cnum = in_cnum;
+	strcpy (comment, in_comment);
+}
+
+
+Rts2ScriptElementComment::~Rts2ScriptElementComment (void)
+{
+	delete []comment;
+}
+
+
+int
+Rts2ScriptElementComment::defnextCommand (Rts2DevClient * client,
+Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	client->getConnection ()->queCommand (new Rts2CommandChangeValue (client, "COMM_NUM", '=', cnum));
+	// script comment value
+	*new_command = new Rts2CommandChangeValue (client, "SCR_COMM", '=', std::string (comment));
 	getDevice (new_device);
 	return 0;
 }
