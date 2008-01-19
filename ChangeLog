@@ -3,6 +3,10 @@
  * new blocking operations API
  * futher customatization, more configuration
 
+2008-01-19
+ * Rts2Script::setTarget
+ * comments from script are saved to FITS header
+
 2008-01-13
  * isEqual for values
  * removed CAM_DATA state
