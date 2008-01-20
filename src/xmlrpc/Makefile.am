@@ -2,7 +2,7 @@ SUBDIRS = xmlrpc++
 
 bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
 
-noinst_HEADERS = xmlstream.h
+noinst_HEADERS = xmlstream.h r2x.h
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@

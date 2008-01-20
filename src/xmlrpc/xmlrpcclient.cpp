@@ -21,6 +21,9 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "../utils/rts2cliapp.h"
 #include <iostream>
+
+#include "r2x.h"
+
 using namespace XmlRpc;
 
 #define OPT_HOST             OPT_LOCAL + 1
@@ -76,15 +79,24 @@ Rts2XmlRpcTest::doTest ()
 	oneArg[0] = "DeviceCount";
 	runXmlMethod ("system.methodHelp", oneArg, result);
 
-	runXmlMethod ("system.listValues", noArgs, result);
+	runXmlMethod (R2X_VALUES_LIST, noArgs, result);
 
-	runXmlMethod ("system.listDevices", noArgs, result);
+	XmlRpcValue val;
+	val["device"] = "C0";
+	val["var"] = "scriptLen";
+	val["value"] = 100;
+	oneArg[0] = val;
+	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+
+	return;
+
+	runXmlMethod (R2X_DEVICES_LIST, noArgs, result);
 
 	for (int i = 0; i < result.size (); i++)
 	{
 		XmlRpcValue resultValues;
 		oneArg[0] = result[i];
-		runXmlMethod ("system.listValuesDevice", oneArg, resultValues, false);
+		runXmlMethod (R2X_DEVICES_VALUES_LIST, oneArg, resultValues, false);
 		std::cout << "listValues for device " << oneArg[0] << std::endl;
 		for (int j = 0; j < resultValues.size(); j++)
 		{
@@ -94,14 +106,14 @@ Rts2XmlRpcTest::doTest ()
 	}
 
 	oneArg[0] = "f";
-	runXmlMethod ("system.listTargets", oneArg, result);
+	runXmlMethod (R2X_TARGETS_LIST, oneArg, result);
 
 	oneArg[0] = 4;
 	oneArg[1] = 2;
-	runXmlMethod ("system.targetInfo", oneArg, result);
+	runXmlMethod (R2X_TARGETS_INFO, oneArg, result);
 
 	oneArg[0] = 2600;
-	runXmlMethod ("system.listImages", oneArg, result);
+	runXmlMethod (R2X_IMAGES_LIST, oneArg, result);
 }
 
 
@@ -175,7 +187,7 @@ int main(int argc, char** argv)
 
 
 // Call system.listVariables method
-/*	if (c.execute("system.listValues", noArgs, result))
+/*	if (c.execute(R2X_VALUES_LIST, noArgs, result))
 	{
 		std::cout << "Devices + values: " << std::endl;
 		for (int i = 0; i < result.size(); i++)
@@ -184,7 +196,7 @@ int main(int argc, char** argv)
 		}
 	}*/
 // Call system.listVariables method with one device
-/*if (c.execute("system.listValuesDevice", oneArg, result))
+/*if (c.execute(R2X_DEVICES_VALUES_LIST, oneArg, result))
 {
 	std::cout << "Devices + values for andor: " << std::endl;
 	for (int i = 0; i < result.size(); i++)
@@ -194,5 +206,5 @@ int main(int argc, char** argv)
 }
 else
 {
-	std::cout << "Error calling 'system.listValuesDevice'\n\n";
+	std::cout << "Error calling '" R2X_DEVICES_VALUES_LIST "'\n\n";
 }*/

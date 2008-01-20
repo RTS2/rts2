@@ -28,6 +28,8 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
 
+#include "r2x.h"
+
 using namespace XmlRpc;
 
 /**
@@ -155,7 +157,7 @@ class DeviceCount: public XmlRpcServerMethod
 class ListDevices: public XmlRpcServerMethod
 {
 	public:
-		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod ("system.listDevices", s)
+		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_LIST, s)
 		{
 		}
 
@@ -190,7 +192,7 @@ class ListValues: public XmlRpcServerMethod
 		}
 
 	public:
-		ListValues (XmlRpcServer* s): XmlRpcServerMethod ("system.listValues", s)
+		ListValues (XmlRpcServer* s): XmlRpcServerMethod (R2X_VALUES_LIST, s)
 		{
 		}
 
@@ -228,7 +230,7 @@ class ListValues: public XmlRpcServerMethod
 class ListValuesDevice: public ListValues
 {
 	public:
-		ListValuesDevice (XmlRpcServer* s): ListValues ("system.listValuesDevice", s)
+		ListValuesDevice (XmlRpcServer* s): ListValues (R2X_DEVICES_VALUES_LIST, s)
 		{
 		}
 
@@ -311,6 +313,90 @@ class ListValuesDevice: public ListValues
 		}
 } listValuesDevice (&xmlrpc_server);
 
+/**
+ * Set values.
+ */
+class SetValues: public XmlRpcServerMethod
+{
+	public:
+		SetValues (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUES_SET, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			for (int i = 0; i < params.size (); i++)
+			{
+				std::string devName = params[i]["device"];
+				std::string valueName = params[i]["var"];
+				Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+				Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+				if (!conn)
+				{
+					throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+				}
+				Rts2Value *val = conn->getValue (valueName.c_str ());
+				if (!val)
+				{
+					throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
+				}
+
+				int i_val;
+				double d_val;
+				std::string s_val;
+				XmlRpcValue x_val = params[i]["value"];
+				switch (val->getValueBaseType ())
+				{
+					case RTS2_VALUE_INTEGER:
+					case RTS2_VALUE_LONGINT:
+						if (x_val.getType () == XmlRpcValue::TypeInt)
+						{
+							i_val = (int) (x_val);
+						}
+						else
+						{
+							s_val = (std::string) (x_val);
+							i_val = atoi (s_val.c_str ());
+						}
+						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
+						break;
+					case RTS2_VALUE_DOUBLE:
+						if (x_val.getType () == XmlRpcValue::TypeDouble)
+						{
+							d_val = (double) (x_val);
+						}
+						else
+						{
+							s_val = (std::string) (x_val);
+							d_val = atof (s_val.c_str ());
+						}
+						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
+						break;
+
+					case RTS2_VALUE_FLOAT:
+						if (x_val.getType () == XmlRpcValue::TypeDouble)
+						{
+							d_val = (double) (x_val);
+						}
+						else
+						{
+							s_val = (std::string) (x_val);
+							d_val = atof (s_val.c_str ());
+						}
+						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
+						break;
+					case RTS2_VALUE_STRING:
+						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"])));
+						break;
+				}
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Set RTS2 value");
+		}
+
+} setValues (&xmlrpc_server);
+
 /*
  *
  */
@@ -318,7 +404,7 @@ class ListValuesDevice: public ListValues
 class ListTargets: public XmlRpcServerMethod
 {
 	public:
-		ListTargets (XmlRpcServer* s) : XmlRpcServerMethod ("system.listTargets", s) {}
+		ListTargets (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -363,7 +449,7 @@ class ListTargets: public XmlRpcServerMethod
 class TargetInfo: public XmlRpcServerMethod
 {
 	public:
-		TargetInfo (XmlRpcServer* s) : XmlRpcServerMethod ("system.targetInfo", s) {}
+		TargetInfo (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_INFO, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -416,7 +502,7 @@ class TargetInfo: public XmlRpcServerMethod
 class ListObservations: public XmlRpcServerMethod
 {
 	public:
-		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod ("system.listObservations", s) {}
+		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATIONS_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -442,7 +528,7 @@ class ListObservations: public XmlRpcServerMethod
 class ListImages: public XmlRpcServerMethod
 {
 	public:
-		ListImages (XmlRpcServer* s) : XmlRpcServerMethod ("system.listImages", s) {}
+		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_IMAGES_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -465,7 +551,7 @@ class ListImages: public XmlRpcServerMethod
 class GetMessages: public XmlRpcServerMethod
 {
 	public:
-		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod ("system.getMessages", s) {}
+		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_MESSAGES_GET, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
