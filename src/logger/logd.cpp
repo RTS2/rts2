@@ -1,3 +1,22 @@
+/* 
+ * Log daemon.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2loggerbase.h"
 #include "../utils/rts2device.h"
 
@@ -116,7 +135,13 @@ Rts2Logd::willConnect (Rts2Address * in_addr)
 Rts2DevClient *
 Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	return Rts2LoggerBase::createOtherType (conn, other_device_type);
+	Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
+	if (cli)
+	{
+		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));
+		return cli;
+	}
+	return Rts2Device::createOtherType (conn, other_device_type);
 }
 
 
