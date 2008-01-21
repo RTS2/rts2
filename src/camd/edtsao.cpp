@@ -107,7 +107,7 @@ Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 			break;
 		case A_minus:
 			setMin (-10);
-			setMax (10);
+			setMax (0);
 			break;
 		case B:
 			setMin (-5);
@@ -208,6 +208,11 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		void probe ();
 
 		int fclr (int num);
+
+		/**
+		 * Repeat fclr until it is sucessfull.
+		 */
+		void fclr_r (int num);
 
 		/** set high or low gain */
 		int setEDTGain (bool high)
@@ -437,17 +442,18 @@ Rts2CamdEdtSao::fclr (int num)
 		for (j = 0; j < 10; j++)
 			probe ();
 		time (&end_time);
-		end_time += 7;
+		end_time += 10;
 		while ((!overrun && (status & PDV_CHAN_ID1)) || overrun)
 		{
 			probe ();
 			time (&now);
 			if (now > end_time)
 			{
-				logStream (MESSAGE_ERROR) <<
-					"timeout during fclr, phase 1. Overrun: " << overrun <<
-					" status & PDV_CHAN_ID1 " << (status & PDV_CHAN_ID1) <<
-					sendLog;
+				logStream (MESSAGE_ERROR)
+					<< "timeout during fclr, phase 1. Overrun: " << overrun
+					<< " status & PDV_CHAN_ID1 " << (status & PDV_CHAN_ID1)
+					<< " number " << num
+					<< sendLog;
 				return -1;
 			}
 		}
@@ -459,14 +465,28 @@ Rts2CamdEdtSao::fclr (int num)
 			time (&now);
 			if (now > end_time)
 			{
-				logStream (MESSAGE_ERROR) << "timeout during fclr, phase 2" <<
-					sendLog;
+				logStream (MESSAGE_ERROR)
+					<< "timeout during fclr, phase 2 "
+					<< " number " << num
+					<< sendLog;
 				return 0;
 			}
 		}
 		pdv_serial_wait (pd, 10, 4);
 	}
 	return 0;
+}
+
+
+void
+Rts2CamdEdtSao::fclr_r (int num)
+{
+	while (fclr (num) != 0)
+	{
+		logStream (MESSAGE_ERROR)
+			<< "Cannot do fclr, trying again." << sendLog;
+		sleep (10);
+	}
 }
 
 
@@ -523,8 +543,7 @@ Rts2CamdEdtSao::startExposure ()
 
 	writeBinFile (conf->patFile);
 	writeBinFile ("e2v_nidlesc.bin");
-	if (fclr (5))
-		return -1;
+	fclr_r (5);
 	if (channels != 1)
 		writeBinFile ("e2v_freezesc.bin");
 
