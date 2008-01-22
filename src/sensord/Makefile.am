@@ -1,4 +1,4 @@
-bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-phytron
+bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-phytron rts2-sensor-ds21
 
 noinst_HEADERS = sensord.h sensorgpib.h
 
@@ -11,6 +11,8 @@ rts2_sensor_dummy_SOURCES = dummy.cpp
 rts2_sensor_ms257_SOURCES = ms257.cpp
 
 rts2_sensor_phytron_SOURCES = phytron.cpp
+
+rts2_sensor_ds21_SOURCES = ds21.cpp
 
 if GPIBLIB
 
