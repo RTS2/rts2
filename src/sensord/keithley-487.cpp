@@ -31,7 +31,7 @@ Rts2DevSensorGpib (in_argc, in_argv)
 {
 	setPad (23);
 
-	createValue (curr, "CURRENT", "Measured current", true);
+	createValue (curr, "CURRENT", "Measured current", true, RTS2_VWHEN_BEFORE_END, 0, false);
 	createValue (sourceOn, "ON", "If voltage source is switched on", true);
 	createValue (voltage, "VOLTAGE", "Voltage level", true);
 
