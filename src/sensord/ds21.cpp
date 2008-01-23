@@ -19,6 +19,8 @@
 
 #include "sensord.h"
 
+#define DEBUG_ALL
+
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,6 +41,11 @@ class DS21Axis
 
 		Rts2ValueBool *enabled;
 		Rts2ValueLong *position;
+		Rts2ValueLong *poserr;
+		Rts2ValueInteger *velocity;
+		Rts2ValueInteger *acceleration;
+
+		Rts2ValueString *commandSet;
 	public:
 		/**
 		 * @param in_anum Number of the axis being constructed.
@@ -57,9 +64,13 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		char *dev;
 		int dev_port;
 
+		std::list <DS21Axis> axes;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 	public:
 		Rts2DevSensorDS21 (int in_argc, char **in_argv);
@@ -69,12 +80,14 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 			const char *in_val_name, const char *in_desc, bool writeToFits)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
-			n[0] = anum + '1';
-			n[2] = '.';
+			n[0] = anum + '0';
+			n[1] = '.';
 			strcpy (n+2, in_val_name);
 			createValue (val, n, in_desc, writeToFits);
 			delete []n;
 		}
+
+		virtual int info ();
 
 		int writePort (char anum, const char *msg);
 		int readPort (char *buf, int blen);
@@ -91,7 +104,12 @@ DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
 	anum = in_anum;
 
 	master->createAxisValue (enabled, anum, "enabled", "if motor is enabled", false);
-	master->createAxisValue (position, anum, "POSITION", "motor position", false);
+	master->createAxisValue (position, anum, "POSITION", "motor position", true);
+	master->createAxisValue (poserr, anum, "POS_ERROR", "motor position error", true);
+	master->createAxisValue (velocity, anum, "velocity", "programmed velocity", false);
+	master->createAxisValue (acceleration, anum, "acceleration", "programmed acceleration", false);
+
+	master->createAxisValue (commandSet, anum, "commands", "commands for this motor", false);
 }
 
 
@@ -104,7 +122,15 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == position)
 	{
-		return (master->writePort (anum, new_value->getValue ())) ? -2 : 0;
+		return (master->writeValue (anum, "MA", new_value)) ? -2 : 0;
+	}
+	if (old_value == velocity)
+	{
+		return (master->writeValue (anum, "SV", new_value)) ? -2 : 0;
+	}
+	if (old_value == acceleration)
+	{
+		return (master->writeValue (anum, "SA", new_value)) ? -2 : 0;
 	}
 	return -3;
 }
@@ -113,6 +139,12 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 int
 DS21Axis::info ()
 {
+	master->writePort (anum, "RF");
+	master->readValue (anum, "TP", position);
+	master->readValue (anum, "TE", poserr);
+	master->readValue (anum, "GV", velocity);
+	master->readValue (anum, "GA", acceleration);
+	master->readValue (anum, "HE", commandSet);
 	return 0;
 }
 
@@ -190,8 +222,8 @@ Rts2DevSensorDS21::init ()
 	term_options.c_cflag &= ~CSIZE;
 	term_options.c_cflag |= CS8;
 
-	/* set timeout  to 20 seconds */
-	term_options.c_cc[VTIME] = 200;
+	/* set timeout to 2 seconds */
+	term_options.c_cc[VTIME] = 20;
 	term_options.c_cc[VMIN] = 0;
 
 	tcflush (dev_port, TCIFLUSH);
@@ -206,7 +238,25 @@ Rts2DevSensorDS21::init ()
 		return -1;
 	}
 
+	tcflush (dev_port, TCIOFLUSH);
+
+	axes.push_back (DS21Axis (this, 5));
+	axes.push_back (DS21Axis (this, 3));
+
 	return 0;
+}
+
+
+int
+Rts2DevSensorDS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
+	{
+		int ret = (*iter).setValue (old_value, new_value);
+		if (ret != -3)
+			return ret;
+	}
+	return Rts2DevSensor::setValue (old_value, new_value);
 }
 
 
@@ -216,7 +266,6 @@ Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
 	dev = "/dev/ttyS0";
 
 	addOption ('f', NULL, 1, "device serial port, default to /dev/ttyS0");
-
 }
 
 
@@ -227,20 +276,35 @@ Rts2DevSensorDS21::~Rts2DevSensorDS21 (void)
 
 
 int
+Rts2DevSensorDS21::info ()
+{
+	int ret;
+	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
+	{
+		ret = (*iter).info ();
+		if (ret)
+			return ret;
+	}
+	return Rts2DevSensor::info ();
+}
+
+
+int
 Rts2DevSensorDS21::writePort (char anum, const char *msg)
 {
 	int blen = strlen (msg);
-	char *buf = new char[blen + 3];
-	buf[0] = anum + '1';
+	char *buf = new char[blen + 4];
+	buf[0] = anum + '0';
 	strcpy (buf + 1, msg);
-	buf[blen + 1] = '\n';
-	buf[blen + 2] = '\0';
+	buf[blen + 1] = '\r';
+	buf[blen + 2] = '\n';
+	buf[blen + 3] = '\0';
 	int ret = -1;
 	do
 	{
-		ret = write (dev_port, buf, blen + 2);
+		ret = write (dev_port, buf, blen + 3);
 	} while (ret == -1 && errno == EINTR);
-	if (ret != blen + 2)
+	if (ret != blen + 3)
 		return -1;
 
 	#ifdef DEBUG_ALL
@@ -254,17 +318,36 @@ int
 Rts2DevSensorDS21::readPort (char *buf, int blen)
 {
 	int ret;
-	do
+	char *buf_top = buf;
+	while (buf_top - buf < blen)
 	{
-		ret = read (dev_port, buf, blen);
-	} while (ret == -1 && errno == EINTR);
+		do
+		{
+			ret = read (dev_port, buf_top, 1);
+			//			#ifdef DEBUG_ALL
+			//			std::cout << (*buf_top) << " " << ret << std::endl;
+			//			#endif
+		} while (ret == -1 && errno == EINTR);
+		if (ret == -1 || ret == 0)
+			return -1;
+		if (*buf_top == '\r')
+		{
+			*buf_top = '\0';
+		}
+		if (*buf_top == '\n')
+		{
+			std::cout << "get \\n" << std::endl;
+			break;
+		}
+		buf_top++;
+	}
 	if (ret <= 0)
 	{
 		return -1;
 	}
+	*buf_top = '\0';
 	#ifdef DEBUG_ALL
-	buf[ret] = '\0';
-	logStream (MESSAGE_DEBUG) << "readed from port " << buf << " readed " << ret << sendLog;
+	logStream (MESSAGE_DEBUG) << "readed from port '" << buf << "' readed " << ret << sendLog;
 	#endif
 	return 0;
 }
@@ -301,13 +384,14 @@ int
 Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
 {
 	int ret;
-	char buf[50];
+	char buf[500];
 
-	ret = writeReadPort (anum, cmd, buf, 50);
+	tcflush (dev_port, TCIOFLUSH);
+
+	ret = writeReadPort (anum, cmd, buf, 500);
 	if (ret)
 		return -1;
-	std::cout << buf << std::endl;
-	return 0;
+	return val->setValueString (buf);
 }
 
 
