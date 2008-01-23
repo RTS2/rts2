@@ -45,6 +45,8 @@ class DS21Axis
 		Rts2ValueInteger *velocity;
 		Rts2ValueInteger *acceleration;
 
+		Rts2ValueBool *limitSwitch;
+
 		Rts2ValueString *commandSet;
 	public:
 		/**
@@ -65,6 +67,8 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		int dev_port;
 
 		std::list <DS21Axis> axes;
+
+		int home ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -89,6 +93,11 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 
 		virtual int info ();
 
+		/**
+		 * Handles camera commands.
+		 */
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 		int writePort (char anum, const char *msg);
 		int readPort (char *buf, int blen);
 
@@ -108,8 +117,11 @@ DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
 	master->createAxisValue (poserr, anum, "POS_ERROR", "motor position error", true);
 	master->createAxisValue (velocity, anum, "velocity", "programmed velocity", false);
 	master->createAxisValue (acceleration, anum, "acceleration", "programmed acceleration", false);
+	master->createAxisValue (limitSwitch, anum, "limitSwitch", "true if limit switchs are active", false);
 
 	master->createAxisValue (commandSet, anum, "commands", "commands for this motor", false);
+
+	master->writePort (anum, "RE");
 }
 
 
@@ -132,6 +144,10 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	{
 		return (master->writeValue (anum, "SA", new_value)) ? -2 : 0;
 	}
+	if (old_value == limitSwitch)
+	{
+		return (master->writePort (anum, ((Rts2ValueBool *) new_value)->getValueBool () ? "LN" : "LF")) ? -2 : 0;
+	}
 	return -3;
 }
 
@@ -139,7 +155,6 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 int
 DS21Axis::info ()
 {
-	master->writePort (anum, "RF");
 	master->readValue (anum, "TP", position);
 	master->readValue (anum, "TE", poserr);
 	master->readValue (anum, "GV", velocity);
@@ -240,6 +255,8 @@ Rts2DevSensorDS21::init ()
 
 	tcflush (dev_port, TCIOFLUSH);
 
+	writePort (0, "RE");
+
 	axes.push_back (DS21Axis (this, 5));
 	axes.push_back (DS21Axis (this, 3));
 
@@ -290,12 +307,36 @@ Rts2DevSensorDS21::info ()
 
 
 int
+Rts2DevSensorDS21::home ()
+{
+	char buf[500];
+	return writeReadPort (0, "GH", buf, 500);
+}
+
+
+int
+Rts2DevSensorDS21::commandAuthorized (Rts2Conn *conn)
+{
+	if (conn->isCommand ("home"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return home ();
+	}
+	return Rts2DevSensor::commandAuthorized (conn);
+}
+
+
+int
 Rts2DevSensorDS21::writePort (char anum, const char *msg)
 {
 	int blen = strlen (msg);
 	char *buf = new char[blen + 4];
 	buf[0] = anum + '0';
 	strcpy (buf + 1, msg);
+	#ifdef DEBUG_ALL
+	logStream (MESSAGE_DEBUG) << "write on port " << buf << sendLog;
+	#endif
 	buf[blen + 1] = '\r';
 	buf[blen + 2] = '\n';
 	buf[blen + 3] = '\0';
@@ -307,9 +348,6 @@ Rts2DevSensorDS21::writePort (char anum, const char *msg)
 	if (ret != blen + 3)
 		return -1;
 
-	#ifdef DEBUG_ALL
-	logStream (MESSAGE_DEBUG) << "write on port " << buf << "  " << ret << sendLog;
-	#endif
 	return 0;
 }
 
@@ -324,19 +362,18 @@ Rts2DevSensorDS21::readPort (char *buf, int blen)
 		do
 		{
 			ret = read (dev_port, buf_top, 1);
-			//			#ifdef DEBUG_ALL
-			//			std::cout << (*buf_top) << " " << ret << std::endl;
-			//			#endif
 		} while (ret == -1 && errno == EINTR);
 		if (ret == -1 || ret == 0)
+		{
+			logStream (MESSAGE_ERROR) << "error reading from port " << buf << " " << ret << " " << strerror (errno) << sendLog;
 			return -1;
+		}
 		if (*buf_top == '\r')
 		{
 			*buf_top = '\0';
 		}
 		if (*buf_top == '\n')
 		{
-			std::cout << "get \\n" << std::endl;
 			break;
 		}
 		buf_top++;
@@ -371,10 +408,12 @@ Rts2DevSensorDS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 	int ret;
 	const char *sval = val->getValue ();
 	char *buf = new char[strlen (sval) + 3];
+	char rbuf[500];
+
 	memcpy (buf, cmd, 2);
 	strcpy (buf + 2, sval);
 
-	ret = writePort (anum, buf);
+	ret = writeReadPort (anum, buf, rbuf, 500);
 	delete[] buf;
 	return ret;
 }
