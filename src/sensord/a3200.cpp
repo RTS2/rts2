@@ -39,6 +39,8 @@ class Rts2DevSensorA3200:public Rts2DevSensor
 		Rts2ValueDoubleMinMax *ax2;
 		Rts2ValueDoubleMinMax *ax3;
 
+		Rts2ValueInteger *moveCount;
+
 		LPCTSTR initFile;
 
 		void logErr (char *proc, AERERR_CODE eRc);
@@ -135,6 +137,14 @@ Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
 {
 	AERERR_CODE eRc;
 	blockExposure ();
+	if (moveCount->getValueInteger () == 0)
+	{
+		int ret;
+		ret = home ();
+		if (ret)
+			return ret;
+		moveCount->inc ();
+	}
 	eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
 	if (eRc != AERERR_NOERR)
 	{
@@ -183,6 +193,9 @@ Rts2DevSensorA3200::Rts2DevSensorA3200 (int in_argc, char **in_argv)
 	createValue (ax1, "AX1", "first axis", true);
 	createValue (ax2, "AX2", "second axis", true);
 	createValue (ax3, "AX3", "third axis", true);
+
+	createValue (moveCount, "moveCount", "number of axis movements", false);
+	moveCount->setValue (0);
 
 	addOption ('f', NULL, 1, "Init file");
 }
