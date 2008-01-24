@@ -172,6 +172,14 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 			comment = cmdBufTop;
 		}
 
+		// if we are adding and last character is not space, add space
+
+		if (wholeScript.length () != 0 && wholeScript[wholeScript.length () - 1] != ' ')
+		{
+			lineOffset++;
+			wholeScript += std::string (" ");
+		}
+
 		wholeScript += std::string (cmdBuf);
 
 		cmdBufTop = cmdBuf;
