@@ -195,7 +195,7 @@ Rts2DevSensorA3200::Rts2DevSensorA3200 (int in_argc, char **in_argv)
 	createValue (ax3, "AX3", "third axis", true);
 
 	createValue (moveCount, "moveCount", "number of axis movements", false);
-	moveCount->setValue (0);
+	moveCount->setValueInteger (0);
 
 	addOption ('f', NULL, 1, "Init file");
 }
