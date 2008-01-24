@@ -206,7 +206,7 @@ class Rts2Device:public Rts2Daemon
 		}
 		void clearExposure ()
 		{
-			maskState (BOP_EXPOSURE, ~BOP_EXPOSURE, "exposure possible");
+			maskState (BOP_EXPOSURE, 0, "exposure possible");
 		}
 
 		void blockReadout ()
@@ -215,7 +215,7 @@ class Rts2Device:public Rts2Daemon
 		}
 		void clearReadout ()
 		{
-			maskState (BOP_READOUT, ~BOP_READOUT, "readout possible");
+			maskState (BOP_READOUT, 0, "readout possible");
 		}
 
 		void blockTelMove ()
@@ -224,7 +224,7 @@ class Rts2Device:public Rts2Daemon
 		}
 		void clearTelMove ()
 		{
-			maskState (BOP_TEL_MOVE, ~BOP_TEL_MOVE, "telescope move possible");
+			maskState (BOP_TEL_MOVE, 0, "telescope move possible");
 		}
 
 		virtual Rts2Conn *createClientConnection (char *in_deviceName);
