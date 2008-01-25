@@ -68,7 +68,7 @@ Rts2DevClientLogger::setOutputFile (const char *filename)
 {
 	Rts2Expander exp = Rts2Expander ();
 	std::ofstream * nstream =
-		new std::ofstream (exp.expand (filename).c_str (), std::ios_base::out);
+		new std::ofstream (exp.expand (filename).c_str (), std::ios_base::app);
 	if (nstream->fail ())
 	{
 		delete nstream;
