@@ -207,7 +207,7 @@ Rts2ScriptElementBlock::getStartPos ()
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->getStartPos ();
-	return Rts2ScriptElementBlock::getStartPos ();
+	return Rts2ScriptElement::getStartPos ();
 }
 
 
@@ -216,7 +216,7 @@ Rts2ScriptElementBlock::getLen ()
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->getLen ();
-	return Rts2ScriptElementBlock::getLen ();
+	return Rts2ScriptElement::getLen ();
 }
 
 
