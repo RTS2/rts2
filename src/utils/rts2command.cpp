@@ -29,6 +29,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
 	owner = in_owner;
 	text = NULL;
 	bopMask = 0;
+	returning = false;
 	originator = NULL;
 }
 
@@ -38,6 +39,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
 	owner = in_owner;
 	setCommand (in_text);
 	bopMask = 0;
+	returning = false;
 	originator = NULL;
 }
 
@@ -48,6 +50,7 @@ Rts2Command::Rts2Command (Rts2Command * in_command)
 	connection = in_command->connection;
 	setCommand (in_command->getText ());
 	bopMask = in_command->getBopMask ();
+	returning = in_command->returning;
 	originator = NULL;
 }
 
@@ -70,6 +73,7 @@ Rts2Command::~Rts2Command (void)
 int
 Rts2Command::send ()
 {
+	returning = false;
 	return connection->sendMsg (text);
 }
 
@@ -80,6 +84,7 @@ Rts2Command::commandReturn (int status, Rts2Conn * conn)
 	#ifdef DEBUG_EXTRA
 	logStream(MESSAGE_DEBUG) << "commandReturn status: " << status << " connection: " << conn->getName () << " command: " << text << sendLog;
 	#endif
+	returning = true;
 	switch (status)
 	{
 		case 0:
@@ -89,6 +94,7 @@ Rts2Command::commandReturn (int status, Rts2Conn * conn)
 		default:
 			return commandReturnFailed (status, conn);
 	}
+	returning = false;
 }
 
 
@@ -271,11 +277,21 @@ Rts2CommandCameraSettings (in_camera)
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, int in_operand):
-
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
 	asprintf (&command, PROTO_SET_VALUE " %s %c %i", in_valName.c_str (), op,
+		in_operand);
+	setCommand (command);
+	free (command);
+}
+
+
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, long in_operand):
+Rts2Command (in_client->getMaster ())
+{
+	char *command;
+	asprintf (&command, PROTO_SET_VALUE " %s %c %li", in_valName.c_str (), op,
 		in_operand);
 	setCommand (command);
 	free (command);

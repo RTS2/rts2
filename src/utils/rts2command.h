@@ -29,10 +29,6 @@
 /** Send command again to device. @ingroup RTS2Command */
 #define RTS2_COMMAND_REQUE      -5
 
-typedef enum
-{ EXP_LIGHT, EXP_DARK }
-exposureType;
-
 /**
  * Miscelanus flag for sending command while exposure is in progress.
  */
@@ -71,6 +67,7 @@ class Rts2Command
 	private:
 		int bopMask;
 		Rts2Object *originator;
+		bool returning;
 	protected:
 		Rts2Block * owner;
 		Rts2Conn *connection;
@@ -131,6 +128,20 @@ class Rts2Command
 		void setOriginator (Rts2Object * in_originator)
 		{
 			originator = in_originator;
+		}
+
+		/**
+		 * Return true if testOriginator is originator
+		 * of the command.
+		 *
+		 * @param testOriginator Test originator.
+		 *
+		 * @return True if testOriginator is command
+		 * originator.
+		 */
+		bool isOriginator (Rts2Object *testOriginator)
+		{
+			return (!returning) && originator == testOriginator;
 		}
 
 		/**
@@ -347,6 +358,9 @@ class Rts2CommandChangeValue:public Rts2Command
 		Rts2CommandChangeValue (Rts2DevClient * in_client,
 			std::string in_valName, char op,
 			int in_operand);
+		Rts2CommandChangeValue (Rts2DevClient * in_client,
+			std::string in_valName, char op,
+			long int in_operand);
 		Rts2CommandChangeValue (Rts2DevClient * in_client,
 			std::string in_valName, char op,
 			float in_operand);
@@ -593,7 +607,7 @@ class Rts2CommandInfo:public Rts2Command
  * Send status info command.
  *
  * When this command return, device status is updated, so updateStatusWait from
- * master is called.
+ * control_conn is called.
  *
  * @msc
  *
