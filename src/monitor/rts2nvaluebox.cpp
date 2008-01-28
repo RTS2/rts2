@@ -183,6 +183,57 @@ bool Rts2NValueBoxInteger::setCursor ()
 }
 
 
+Rts2NValueBoxLongInteger::Rts2NValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * in_val, int in_x, int in_y):
+Rts2NValueBox (top, in_val),
+Rts2NWindowEditIntegers (top->getX () + in_x, top->getY () + in_y, 20, 3, 1,
+1, 300, 1)
+{
+	wprintw (getWriteWindow (), "%li", in_val->getValueLong ());
+}
+
+
+keyRet
+Rts2NValueBoxLongInteger::injectKey (int key)
+{
+	return Rts2NWindowEditIntegers::injectKey (key);
+}
+
+
+void
+Rts2NValueBoxLongInteger::draw ()
+{
+	Rts2NWindowEditIntegers::draw ();
+	refresh ();
+}
+
+
+void
+Rts2NValueBoxLongInteger::sendValue (Rts2Conn * connection)
+{
+	if (!connection->getOtherDevClient ())
+		return;
+	char buf[200];
+	char *endptr;
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+	long tval = strtoll (buf, &endptr, 10);
+	if (*endptr != '\0' && *endptr != ' ')
+	{
+		// log error;
+		return;
+	}
+	connection->
+		queCommand (new
+		Rts2CommandChangeValue (connection->getOtherDevClient (),
+		getValue ()->getName (), '=', tval));
+}
+
+
+bool Rts2NValueBoxLongInteger::setCursor ()
+{
+	return Rts2NWindowEditIntegers::setCursor ();
+}
+
+
 Rts2NValueBoxFloat::Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int in_x, int in_y):
 Rts2NValueBox (top, in_val),
 Rts2NWindowEditDigits (top->getX () + in_x, top->getY () + in_y, 20, 3, 1, 1,

@@ -91,6 +91,22 @@ public Rts2NWindowEditIntegers
 };
 
 /**
+ * Holds edit box for long integer value.
+ */
+class Rts2NValueBoxLongInteger:public Rts2NValueBox,
+public Rts2NWindowEditIntegers
+{
+	public:
+		Rts2NValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * in_val,
+			int in_x, int in_y);
+
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
+};
+
+/**
  * Holds edit box for float value.
  */
 class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
