@@ -14,20 +14,11 @@
 
 class Rts2focusc:public Rts2GenFocClient
 {
-	private:
-		exposureType exposureT;
 	protected:
 		virtual Rts2GenFocCamera * createFocCamera (Rts2Conn * conn);
 		virtual void help ();
 	public:
 		Rts2focusc (int argc, char **argv);
-
-		virtual int processOption (int in_opt);
-
-		exposureType getExposureType ()
-		{
-			return exposureT;
-		}
 };
 
 Rts2GenFocCamera *
@@ -51,26 +42,9 @@ Rts2focusc::help ()
 Rts2focusc::Rts2focusc (int in_argc, char **in_argv):
 Rts2GenFocClient (in_argc, in_argv)
 {
-	exposureT = EXP_LIGHT;
 	autoSave = 1;
 
 	addOption ('s', "secmod", 1, "exposure every UT sec");
-	addOption ('a', "dark", 0, "create dark images");
-}
-
-
-int
-Rts2focusc::processOption (int in_opt)
-{
-	switch (in_opt)
-	{
-		case 'a':
-			exposureT = EXP_DARK;
-			break;
-		default:
-			return Rts2GenFocClient::processOption (in_opt);
-	}
-	return 0;
 }
 
 

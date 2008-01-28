@@ -225,6 +225,8 @@ Rts2Client (in_argc, in_argv)
 
 	autoSave = 0;
 
+	darks = false;
+
 	focExe = NULL;
 
 	query = 0;
@@ -241,6 +243,7 @@ Rts2Client (in_argc, in_argv)
 	addOption ('d', "device", 1,
 		"camera device name(s) (multiple for multiple cameras)");
 	addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
+	addOption ('a', "dark", 0, "create dark images");
 	addOption ('c', "center", 0, "takes only center images");
 	addOption ('b', "binning", 1,
 		"default binning (ussually 1, depends on camera setting)");
@@ -280,6 +283,9 @@ Rts2GenFocClient::processOption (int in_opt)
 			break;
 		case 'e':
 			defExposure = atof (optarg);
+			break;
+		case 'a':
+			darks = true;
 			break;
 		case 'b':
 			defBin = atoi (optarg);
@@ -343,6 +349,10 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	{
 		cam->queCommand (new Rts2CommandChangeValue (cam, "exposure", '=', defExposure));
 
+	}
+	if (darks)
+	{
+		cam->queCommand (new Rts2CommandChangeValue (cam, "SHUTTER", '=', 1));
 	}
 	// post exposure event..if name agree
 	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)

@@ -49,6 +49,9 @@ class Rts2GenFocClient:public Rts2Client
 		int defCenter;
 		int defBin;
 
+		// to take darks images, set that to true
+		bool darks;
+
 		int centerHeight;
 		int centerWidth;
 
