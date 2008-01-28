@@ -167,12 +167,17 @@ Rts2DevSensorMS257::writeValue (const char *valueName, T val, char qStr)
 {
 	int ret;
 	char *rstr;
+	blockExposure ();
 	std::ostringstream _os;
 	_os << qStr << valueName << ' ' << val;
 	ret = writePort (_os.str ().c_str ());
 	if (ret)
+	{
+		clearExposure ();
 		return ret;
+	}
 	ret = readPort (&rstr, _os.str ().c_str ());
+	clearExposure ();
 	return ret;
 }
 
@@ -401,7 +406,7 @@ Rts2DevSensorMS257::init ()
 	term_options.c_cc[VTIME] = 200;
 	term_options.c_cc[VMIN] = 0;
 
-	tcflush (dev_port, TCIFLUSH);
+	tcflush (dev_port, TCIOFLUSH);
 
 	/*
 	 * Set the new options for the port...
