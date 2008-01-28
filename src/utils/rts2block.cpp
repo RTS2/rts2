@@ -778,3 +778,21 @@ Rts2Block::commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn)
 	}
 	return false;
 }
+
+
+bool
+Rts2Block::commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn)
+{
+	for (connections_t::iterator iter = connectionBegin ();
+		iter != connectionEnd (); iter++)
+	{
+		if ((*iter) != exclude_conn && (*iter)->commandOriginatorPending (object))
+		{
+			#ifdef DEBUG_EXTRA
+			std::cout << "command originator pending on " << (*iter)->getName () << std::endl;
+			#endif				 /* DEBUG_EXTRA */
+			return true;
+		}
+	}
+	return false;
+}

@@ -595,6 +595,8 @@ class Rts2Block: public Rts2App
 		 */
 		bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
 
+		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
+
 		/**
 		 * Called when we have new binary data on connection. Childs
 		 * should overwite this method.
