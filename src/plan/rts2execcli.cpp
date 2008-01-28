@@ -104,8 +104,9 @@ Rts2DevClientCameraExec::nextCommand ()
 	int ret;
 	ret = haveNextCommand ();
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevClientCameraExec::nextComd " << ret <<
-		sendLog;
+	logStream (MESSAGE_DEBUG)
+		<< "Rts2DevClientCameraExec::nextComd " << ret
+		<< sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	if (!ret)
 		return;
@@ -132,17 +133,29 @@ Rts2DevClientCameraExec::nextCommand ()
 		Rts2Conn *cmdConn = getMaster ()->getOpenConnection (cmd_device);
 		if (!cmdConn)
 		{
-			logStream (MESSAGE_ERROR) << "Unknow device : " << cmd_device << sendLog;
+			logStream (MESSAGE_ERROR)
+				<< "Unknow device : " << cmd_device
+				<< sendLog;
 			nextComd = NULL;
 			return;
 		}
 
 		// do not execute if camera is exposing, but only if it is not BOP_WHILE_STATE command
-		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
-		if ((!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
-			(isExposing () || (val && val->getValueInteger () != 0))
-			)
-			return;
+		// Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+		if (!(nextComd->getBopMask () & BOP_WHILE_STATE))
+			//	(isExposing () || (val && val->getValueInteger () != 0))
+			// )
+		{
+			// if there are some command in que, do not proceed, as they might change state of the device
+			if (!connection->queEmptyForOriginator (this))
+			{
+				std::cout << "not empty que " << nextComd->getText () << std::endl;
+				return;
+			}
+
+			std::cout << "setting BOP_TEL_MOVE mask for " << nextComd->getText () << std::endl;
+			nextComd->setBopMask (BOP_TEL_MOVE);
+		}
 
 		// execute command
 		// when it returns, we can execute next command
@@ -249,6 +262,13 @@ Rts2DevClientCameraExec::exposureEnd ()
 		// don't do anything
 		// nextCommand ();
 	}
+	// execute value change, if we do not execute that during exposure
+	/*	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+		if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
+			!isExposing () && val && val->getValueInteger () == 0
+		)
+			nextCommand (); */
+
 	// send readout after we deal with next command - which can be filter move
 	Rts2DevClientCameraImage::exposureEnd ();
 }
