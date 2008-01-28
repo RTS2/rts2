@@ -36,6 +36,8 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	sock = -1;
 	master = in_master;
 	buf_top = buf;
+	full_data_end = NULL;
+
 	*name = '\0';
 	key = 0;
 	priority = -1;
@@ -72,6 +74,8 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	sock = in_sock;
 	master = in_master;
 	buf_top = buf;
+	full_data_end = NULL;
+
 	*name = '\0';
 	key = 0;
 	priority = -1;
@@ -748,6 +752,68 @@ Rts2Conn::processLine ()
 }
 
 
+void
+Rts2Conn::processBuffer ()
+{
+	if (full_data_end)
+		return;
+	full_data_end = buf_top;
+	buf_top = buf;
+	command_start = buf;
+	while (*buf_top)
+	{
+		while (isspace (*buf_top) || (*buf_top && *buf_top == '\n'))
+			buf_top++;
+		command_start = buf_top;
+		// find command end..
+		while (*buf_top && *buf_top != '\n' && *buf_top != '\r')
+			buf_top++;
+
+		if (*buf_top == '\r' && *(buf_top + 1) == '\n')
+		{
+			*buf_top = '\0';
+			buf_top++;
+		}
+		// weird error on when we get \r in one and \n in next read
+		if (*buf_top == '\r' && !*(buf_top + 1))
+		{
+			// we get to 0, while will ends, and we get out, waiting for \n in next packet
+			buf_top++;
+			break;
+		}
+
+		if (*buf_top == '\n')
+		{
+			// mark end of line..
+			*buf_top = '\0';
+			buf_top++;
+			processLine ();
+			// binary read just started
+			if (activeReadData >= 0)
+			{
+				long readSize = full_data_end - buf_top;
+				readSize = readData[activeReadData]->addData (buf_top, readSize);
+				dataReceived ();
+				// move binary data away
+				memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
+				full_data_end -= readSize;
+			}
+			command_start = buf_top;
+		}
+	}
+	if (buf != command_start)
+	{
+		memmove (buf, command_start, (full_data_end - command_start) + 1);
+		// move buffer to the end..
+		buf_top -= command_start - buf;
+		// if it entered command in progress..
+		if (commandInProgress)
+			buf_top += (full_data_end - command_start);
+	}
+	full_data_end = NULL;
+}
+
+
 int
 Rts2Conn::receive (fd_set * set)
 {
@@ -794,7 +860,6 @@ Rts2Conn::receive (fd_set * set)
 			connectionError (data_size);
 			return -1;
 		}
-		char *full_data_end = buf_top + data_size;
 		buf_top[data_size] = '\0';
 		successfullRead ();
 		#ifdef DEBUG_ALL
@@ -805,68 +870,16 @@ Rts2Conn::receive (fd_set * set)
 			<< " commandInProgress " << commandInProgress
 			<< std::endl;
 		#endif
+		// move buf_top to end of readed data
+		buf_top += data_size;
 		// don't do anything else if command is in progress
-		if (commandInProgress)
-		{
-			// move buf_top to end of readed data
-			buf_top += data_size;
-			return data_size;
-		}
+		//if (commandInProgress)
+		//{
+		//	return data_size;
+		//}
 		// put old data size into account..
 		data_size += buf_top - buf;
-		buf_top = buf;
-		command_start = buf;
-		// do not call processLine if command is pending..
-		while (*buf_top && !commandInProgress)
-		{
-			while (isspace (*buf_top) || (*buf_top && *buf_top == '\n'))
-				buf_top++;
-			command_start = buf_top;
-			// find command end..
-			while (*buf_top && *buf_top != '\n' && *buf_top != '\r')
-				buf_top++;
-
-			if (*buf_top == '\r' && *(buf_top + 1) == '\n')
-			{
-				*buf_top = '\0';
-				buf_top++;
-			}
-			// weird error on when we get \r in one and \n in next read
-			if (*buf_top == '\r' && !*(buf_top + 1))
-			{
-				// we get to 0, while will ends, and we get out, waiting for \n in next packet
-				buf_top++;
-				break;
-			}
-
-			if (*buf_top == '\n')
-			{
-				// mark end of line..
-				*buf_top = '\0';
-				buf_top++;
-				processLine ();
-				// binary read just started
-				if (activeReadData >= 0)
-				{
-					long readSize = full_data_end - buf_top;
-					readSize = readData[activeReadData]->addData (buf_top, readSize);
-					dataReceived ();
-					// move binary data away
-					memmove (buf_top, buf_top + readSize, (full_data_end - buf_top) - readSize + 1);
-					full_data_end -= readSize;
-				}
-				command_start = buf_top;
-			}
-		}
-		if (buf != command_start)
-		{
-			memmove (buf, command_start, (full_data_end - command_start));
-			// move buffer to the end..
-			buf_top -= command_start - buf;
-			// if it entered command in progress..
-			if (commandInProgress)
-				buf_top += (full_data_end - command_start);
-		}
+		processBuffer ();
 	}
 	return data_size;
 }
@@ -983,6 +996,19 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
 {
 	if (otherDevice)
 		otherDevice->commandReturn (cmd, in_status);
+}
+
+
+bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
+{
+	if (runningCommand && runningCommand->isOriginator (testOriginator))
+		return false;
+	for (std::list <Rts2Command *>::iterator iter = commandQue.begin (); iter != commandQue.end (); iter++)
+	{
+		if ((*iter)->isOriginator (testOriginator))
+			return false;
+	}
+	return true;
 }
 
 
@@ -1545,7 +1571,11 @@ Rts2Conn::sendCommandEnd (int num, char *in_msg)
 	asprintf (&msg, "%+04i \"%s\"", num, in_msg);
 	sendMsg (msg);
 	free (msg);
-	setCommandInProgress (false);
+	if (commandInProgress)
+	{
+		setCommandInProgress (false);
+		processBuffer ();
+	}
 	return 0;
 }
 

@@ -101,6 +101,8 @@ class Rts2Conn:public Rts2Object
 		char *buf_top;
 		char *command_buf_top;
 
+		char *full_data_end;	 // points to end of full data
+
 		conn_type_t type;
 								 // name of device/client this connection goes to
 		char name[DEVICE_NAME_SIZE];
@@ -149,6 +151,11 @@ class Rts2Conn:public Rts2Object
 		 * @invariant True if command is pending (e.g. the connection does not send end of command), otherwise false.
 		 */
 		bool commandInProgress;
+
+		/**
+		 * Called to process buffer.
+		 */
+		void processBuffer ();
 
 		/**
 		 * Holds connection values.
@@ -500,6 +507,21 @@ class Rts2Conn:public Rts2Object
 		bool queEmpty ()
 		{
 			return (runningCommand == NULL && commandQue.empty ());
+		}
+
+		/**
+		 * Return true, if command que is empty for given
+		 * originator.
+		 *
+		 * @param testOriginator Test if in que is command
+		 * 	with this object as originator.
+		 *
+		 * @return True if in connectionQue isn't any command with originator set to testOriginator.
+		 */
+		bool queEmptyForOriginator (Rts2Object *testOriginator);
+		bool commandOriginatorPending (Rts2Object *originator)
+		{
+			return !queEmptyForOriginator (originator);
 		}
 
 		/**
