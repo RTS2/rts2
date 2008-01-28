@@ -19,6 +19,7 @@
 
 #include "centrald.h"
 #include "../utils/rts2command.h"
+#include "../utils/timestamp.h"
 
 void
 Rts2ConnCentrald::setState (int in_value)
@@ -38,7 +39,6 @@ Rts2Conn (in_sock, in_master)
 	master = in_master;
 	setCentraldId (in_centrald_id);
 	messageMask = 0x00;
-	statusCommand = NULL;
 }
 
 
@@ -170,17 +170,11 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 
 
 void
-Rts2ConnCentrald::deleteStatusCommand ()
-{
-	delete statusCommand;
-	statusCommand = NULL;
-}
-
-
-void
 Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 {
-	if (getMaster ()->commandPending (statusCommand, conn))
+	std::cout << "updateStatusWait from conn " << conn->getName () << std::endl;
+
+	if (getMaster ()->commandOriginatorPending (this, conn))
 		return;
 
 	master->sendStatusMessage (master->getState (), this);
@@ -851,11 +845,9 @@ int
 Rts2Centrald::statusInfo (Rts2Conn * conn)
 {
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
-	c_conn->deleteStatusCommand ();
-	Rts2CommandStatusInfo *statusCommand =
-		new Rts2CommandStatusInfo (this, c_conn);
 	int s_count = 0;
 	// update system status
+	std::cout << Timestamp () << " status info from " << conn->getName () << std::endl;
 	for (connections_t::iterator iter = connectionBegin ();
 		iter != connectionEnd (); iter++)
 	{
@@ -867,18 +859,17 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 				if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 					continue;
 			}
-			test_conn->queCommand (new Rts2CommandStatusInfo (this, c_conn));
+			Rts2CommandStatusInfo *cs = new Rts2CommandStatusInfo (this, c_conn);
+			cs->setOriginator (this);
+			test_conn->queCommand (cs);
 			s_count++;
 		}
 	}
 	// command was not send at all..
 	if (s_count == 0)
 	{
-		delete statusCommand;
 		return 0;
 	}
-	// c_conn will keep that command..
-	c_conn->setStatusCommand (statusCommand);
 
 	// indicate command pending, we will send command end once we will get reply from all devices
 	return -1;

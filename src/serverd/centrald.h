@@ -268,7 +268,6 @@ class Rts2ConnCentrald:public Rts2Conn
 		int sendAValue (char *name, int value);
 		int messageMask;
 
-		Rts2CommandStatusInfo *statusCommand;
 	protected:
 		virtual void setState (int in_value);
 	public:
@@ -284,11 +283,6 @@ class Rts2ConnCentrald:public Rts2Conn
 		virtual int sendMessage (Rts2Message & msg);
 		virtual int sendInfo (Rts2Conn * conn);
 
-		void deleteStatusCommand ();
-		void setStatusCommand (Rts2CommandStatusInfo * cmd)
-		{
-			statusCommand = cmd;
-		}
 		virtual void updateStatusWait (Rts2Conn * conn);
 };
 #endif							 /*! __RTS2_CENTRALD__ */
