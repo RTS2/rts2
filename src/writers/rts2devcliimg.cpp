@@ -93,9 +93,18 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_INFO_DEVCLI_OK:
 			images.infoOK (this, (Rts2DevClient *) event->getArg ());
+			// check also actualImage
+			if (actualImage)
+				actualImage->waitingFor ((Rts2DevClient *) event->getArg ());
 			break;
 		case EVENT_INFO_DEVCLI_FAILED:
 			images.infoFailed (this, (Rts2DevClient *) event->getArg ());
+			// check also actualImage
+			if (actualImage)
+				actualImage->waitingFor ((Rts2DevClient *) event->getArg ());
+			break;
+		case EVENT_NUMBER_OF_IMAGES:
+			*((int *)event->getArg ()) += images.size ();
 			break;
 	}
 	Rts2DevClientCamera::postEvent (event);
@@ -137,11 +146,11 @@ Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
 		ci->setDataWriten ();
 		if (ci->canDelete ())
 		{
-			processCameraImage (iter);
+			processCameraImage (iter++);
 		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "getData, but not all metainfo" << sendLog;
+			logStream (MESSAGE_ERROR) << "getData, but not all metainfo - size of images:" << images.size () << sendLog;
 		}
 	}
 	else
