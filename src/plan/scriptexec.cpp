@@ -63,6 +63,10 @@ Rts2ScriptExec::isScriptRunning ()
 	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
 	if (runningScripts > 0)
 		return true;
+	// if there are some images which need to be written
+	postEvent (new Rts2Event (EVENT_NUMBER_OF_IMAGES, (void *)&runningScripts));
+	if (runningScripts > 0)
+		return true;
 	// if we still have some commands in que, wait till they finish
 	return (!commandQueEmpty ());
 }

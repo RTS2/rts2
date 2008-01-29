@@ -140,21 +140,22 @@ Rts2DevClientCameraExec::nextCommand ()
 			return;
 		}
 
-		// do not execute if camera is exposing, but only if it is not BOP_WHILE_STATE command
-		// Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 		if (!(nextComd->getBopMask () & BOP_WHILE_STATE))
-			//	(isExposing () || (val && val->getValueInteger () != 0))
-			// )
 		{
-			// if there are some command in que, do not proceed, as they might change state of the device
+			// if there are some commands in que, do not proceed, as they might change state of the device
 			if (!connection->queEmptyForOriginator (this))
 			{
-				std::cout << "not empty que " << nextComd->getText () << std::endl;
 				return;
 			}
 
-			std::cout << "setting BOP_TEL_MOVE mask for " << nextComd->getText () << std::endl;
 			nextComd->setBopMask (BOP_TEL_MOVE);
+
+			// do not execute if there are some exposures in que
+			Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+			if (val && val->getValueInteger () > 0)
+			{
+				return;
+			}
 		}
 
 		// execute command
@@ -225,10 +226,6 @@ Rts2DevClientCameraExec::idle ()
 	// when it is the first command in the script..
 	if (getScript () && getScript ()->getExecutedCount () == 0)
 		nextCommand ();
-
-	// execute next command if it is waiting for qued exposures..
-	if (nextComd && (nextComd->getBopMask () & (BOP_TEL_MOVE | BOP_WHILE_STATE)))
-		nextCommand ();
 }
 
 
@@ -240,6 +237,9 @@ Rts2DevClientCameraExec::exposureStarted ()
 	{
 		blockMove = 1;
 	}
+	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
+		nextCommand ();
+
 	Rts2DevClientCameraImage::exposureStarted ();
 }
 
@@ -263,11 +263,11 @@ Rts2DevClientCameraExec::exposureEnd ()
 		// nextCommand ();
 	}
 	// execute value change, if we do not execute that during exposure
-	/*	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
-		if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
-			!isExposing () && val && val->getValueInteger () == 0
+	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
+		!isExposing () && val && val->getValueInteger () == 0
 		)
-			nextCommand (); */
+		nextCommand ();
 
 	// send readout after we deal with next command - which can be filter move
 	Rts2DevClientCameraImage::exposureEnd ();
