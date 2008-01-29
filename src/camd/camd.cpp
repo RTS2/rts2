@@ -562,8 +562,9 @@ Rts2DevCamera::checkExposures ()
 				// if new exposure does not start during endExposure (camReadout) call, drop exposure state
 				if (expNum == exposureNumber->getValueInteger ())
 					maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
-						CAM_NOEXPOSURE | CAM_NOFT, BOP_TEL_MOVE, 0,
-						"exposure chip finished");
+						CAM_NOEXPOSURE | CAM_NOFT,
+						BOP_TEL_MOVE, (quedExpNumber->getValueInteger () > 0) ? BOP_TEL_MOVE : 0,
+					"exposure chip finished");
 
 				// drop FT flag
 				else
@@ -868,9 +869,11 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 	{
 		// open data connection - wait socket
 		// end exposure as well..
+		// do not signal BOP_TEL_MOVE down if there are exposures in que
 		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING,
 			CAM_NOEXPOSURE | CAM_READING,
-			BOP_TEL_MOVE, 0, "chip readout started");
+			BOP_TEL_MOVE, (quedExpNumber->getValueInteger ()) > 0 ? BOP_TEL_MOVE : 0,
+			"chip readout started");
 		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 	}
 
