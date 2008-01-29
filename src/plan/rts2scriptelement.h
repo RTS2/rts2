@@ -134,7 +134,7 @@ class Rts2ScriptElement:public Rts2Object
 		}
 		virtual int getLen ();
 
-		int idleCall ();
+		virtual int idleCall ();
 
 		void setIdleTimeout (double sec);
 
