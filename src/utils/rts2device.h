@@ -57,11 +57,11 @@ class Rts2DevConn:public Rts2Conn
 
 	protected:
 		virtual int command ();
-	public:
-		Rts2DevConn (int in_sock, Rts2Device * in_master);
 
 		virtual int init ();
 		virtual int idle ();
+	public:
+		Rts2DevConn (int in_sock, Rts2Device * in_master);
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
