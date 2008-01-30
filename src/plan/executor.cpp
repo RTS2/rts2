@@ -25,6 +25,8 @@
 
 #include <vector>
 
+#define OPT_IGNORE_DAY    OPT_LOCAL + 100
+
 class Rts2Executor:public Rts2DeviceDb
 {
 	private:
@@ -115,9 +117,6 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 		false);
 	scriptCount->setValueInteger (-1);
 
-	addOption ('I', "ignore_day", 0, "observe even during daytime");
-	ignoreDay = 0;
-
 	grb_sep_limit = -1;
 	grb_min_sep = 0;
 
@@ -145,6 +144,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 		"ID of priority target (should be NULL in most cases", false);
 
 	createValue (img_id, "img_id", "ID of current image", false);
+
+	ignoreDay = 0;
+	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 }
 
 
@@ -161,7 +163,7 @@ Rts2Executor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'I':
+		case OPT_IGNORE_DAY:
 			ignoreDay = 1;
 			break;
 		default:
@@ -334,7 +336,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 		case EVENT_MOVE_FAILED:
 			if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
 			{
-				// we are free to start new hig-priority observation
+				// we are free to start new high-priority observation
 				if (currentTarget)
 					queTarget (currentTarget);
 				currentTarget = priorityTarget;
