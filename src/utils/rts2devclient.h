@@ -71,6 +71,16 @@ class Rts2DevClient:public Rts2Object
 		{
 			failedCount = 0;
 		}
+
+		/**
+		 * Check if the client have priority on this device.
+		 *
+		 * @return True if the client have priority.
+		 */
+		bool havePriority ()
+		{
+			return connection->havePriority ();
+		}
 	public:
 		Rts2DevClient (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClient (void);
