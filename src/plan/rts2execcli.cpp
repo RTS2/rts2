@@ -510,8 +510,8 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
 	blockMove = 0;
 	Rts2DevClientTelescopeImage::moveFailed (status);
 	// move failed, either because of priority change, or because device failure
-	getMaster ()->
-		postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
+	if (havePriority ())
+		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }
 
 

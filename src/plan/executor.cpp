@@ -502,7 +502,7 @@ Rts2Executor::setNow (int nextId)
 {
 	Target *newTarget;
 
-	if (!currentTarget)
+	if (!currentTarget && !priorityTarget)
 		return setNext (nextId);
 
 	newTarget = createTarget (nextId, observer);
@@ -539,6 +539,7 @@ Rts2Executor::setNow (Target * newTarget)
 		nextTarget = NULL;
 	}
 
+	clearAll ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	queAll (new Rts2CommandKillAll (this));
 	infoAll ();
