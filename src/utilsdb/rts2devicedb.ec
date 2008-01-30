@@ -1,7 +1,25 @@
-/**
- * This add database connectivity to device class
+/* 
+ * Device with database connection.
+ * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 #include "rts2devicedb.h"
+
+#define OPT_DEBUGDB    OPT_LOCAL + 201
 
 EXEC SQL include sqlca;
 
@@ -22,8 +40,9 @@ char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
 	connectString = NULL;		 // defualt DB
 	configFile = NULL;
 
-	addOption ('B', "database", 1, "connect string to PSQL database (default to stars)");
-	addOption ('C', "config", 1, "configuration file");
+	addOption (OPT_DATABASE, "database", 1, "connect string to PSQL database (default to stars)");
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
+	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
 
@@ -40,12 +59,15 @@ Rts2DeviceDb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'B':
+		case OPT_DATABASE:
 			connectString = new char[strlen (optarg) + 1];
 			strcpy (connectString, optarg);
 			break;
-		case 'C':
+		case OPT_CONFIG:
 			configFile = optarg;
+			break;
+		case OPT_DEBUGDB:
+			ECPGdebug (1, stderr);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -100,12 +122,6 @@ Rts2DeviceDb::initDB ()
 	{
 		logStream (MESSAGE_ERROR) << "Rts2DeviceDb::init Cannot connect to DB '" << conn_str << "' : " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		return -1;
-	}
-
-	// set debug
-	if (printDebug ())
-	{
-		ECPGdebug (1, stderr);
 	}
 
 	return 0;
