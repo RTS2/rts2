@@ -788,7 +788,13 @@ Rts2Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
 void
 Rts2Device::clearStatesPriority ()
 {
-	maskState (0xffffff | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
+	if (getState () & DEVICE_ERROR_KILL)
+	{
+		// turn ERROR_KILL down, so next command will change mask
+		maskState (DEVICE_ERROR_KILL, 0, "reset ERROR_KILL");
+
+	}
+	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
 		"all operations canceled by priority");
 }
 
