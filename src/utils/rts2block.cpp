@@ -683,6 +683,15 @@ Rts2Block::message (Rts2Message & msg)
 }
 
 
+void
+Rts2Block::clearAll ()
+{
+	connections_t::iterator iter;
+	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+		(*iter)->queClear ();
+}
+
+
 int
 Rts2Block::queAll (Rts2Command * command)
 {

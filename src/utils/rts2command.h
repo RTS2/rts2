@@ -67,7 +67,6 @@ class Rts2Command
 	private:
 		int bopMask;
 		Rts2Object *originator;
-		bool returning;
 	protected:
 		Rts2Block * owner;
 		Rts2Conn *connection;
@@ -141,7 +140,7 @@ class Rts2Command
 		 */
 		bool isOriginator (Rts2Object *testOriginator)
 		{
-			return (!returning) && originator == testOriginator;
+			return originator == testOriginator;
 		}
 
 		/**

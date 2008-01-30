@@ -540,6 +540,11 @@ class Rts2Block: public Rts2App
 
 		virtual void message (Rts2Message & msg);
 
+		/**
+		 * Clear all connections from pending commands.
+		 */
+		void clearAll ();
+
 		int queAll (Rts2Command * cmd);
 		int queAll (char *text);
 

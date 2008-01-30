@@ -46,6 +46,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	conn_state = CONN_UNKNOW;
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
+	runningCommandStatus = RETURNING;
 	serverState = new Rts2ServerState ();
 	bopState = new Rts2ServerState ();
 	otherDevice = NULL;
@@ -84,6 +85,7 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	conn_state = CONN_CONNECTED;
 	type = NOT_DEFINED_SERVER;
 	runningCommand = NULL;
+	runningCommandStatus = RETURNING;
 	serverState = new Rts2ServerState ();
 	bopState = new Rts2ServerState ();
 	otherDevice = NULL;
@@ -1001,7 +1003,7 @@ Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
 
 bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
 {
-	if (runningCommand && runningCommand->isOriginator (testOriginator))
+	if (runningCommand && runningCommandStatus != RETURNING && runningCommand->isOriginator (testOriginator))
 		return false;
 	for (std::list <Rts2Command *>::iterator iter = commandQue.begin (); iter != commandQue.end (); iter++)
 	{
@@ -1031,6 +1033,11 @@ bool Rts2Conn::commandPending (Rts2Command * cmd)
 void
 Rts2Conn::queClear ()
 {
+	if (runningCommand && runningCommandStatus != SEND)
+	{
+		delete runningCommand;
+		runningCommand = NULL;
+	}
 	std::list < Rts2Command * >::iterator que_iter;
 	for (que_iter = commandQue.begin (); que_iter != commandQue.end ();
 		que_iter++)
@@ -1167,11 +1174,15 @@ Rts2Conn::sendCommand ()
 			{
 				// just wait for finish
 				if (runningCommand->getStatusCallProgress () == CIP_WAIT)
+				{
+					runningCommandStatus = WAITING;
 					return;
+				}
 				#ifdef DEBUG_ALL
 				logStream (MESSAGE_DEBUG) << "executing " << runningCommand->getText () << " " << runningCommand << sendLog;
 				#endif
 				runningCommand->send ();
+				runningCommandStatus = SEND;
 				runningCommand->setStatusCallProgress (CIP_WAIT);
 			}
 			else
@@ -1194,14 +1205,19 @@ Rts2Conn::sendCommand ()
 				runningCommand->setStatusCallProgress (CIP_WAIT);
 				commandQue.push_front (runningCommand);
 				runningCommand = statInfoCall;
+				runningCommandStatus = SEND;
 				break;
 			case CIP_WAIT:
 				// if the bock bit is still set..
 				runningCommand->setStatusCallProgress (CIP_RUN);
 			case CIP_RUN:
 				if (getFullBopState () & runningCommand->getBopMask () & BOP_MASK)
+				{
+					runningCommandStatus = WAITING;
 					break;
+				}
 				runningCommand->send ();
+				runningCommandStatus = SEND;
 				runningCommand->setStatusCallProgress (CIP_RETURN);
 				break;
 			case CIP_RETURN:
@@ -1212,6 +1228,7 @@ Rts2Conn::sendCommand ()
 	else
 	{
 		runningCommand->send ();
+		runningCommandStatus = SEND;
 	}
 }
 
@@ -1245,6 +1262,7 @@ Rts2Conn::commandReturn ()
 		#endif					 /* DEBUG_ALL */
 		return -1;
 	}
+	runningCommandStatus = RETURNING;
 	commandReturn (runningCommand, stat);
 	ret = runningCommand->commandReturn (stat, this);
 	switch (ret)

@@ -115,6 +115,8 @@ class Rts2Conn:public Rts2Object
 
 		std::list < Rts2Command * >commandQue;
 		Rts2Command *runningCommand;
+		enum {WAITING, SEND, RETURNING}
+		runningCommandStatus;
 
 		// used for monitoring of connection state..
 		time_t lastGoodSend;
@@ -534,10 +536,15 @@ class Rts2Conn:public Rts2Object
 		bool commandPending (Rts2Command * cmd);
 
 		/**
-		 * Clear que of pending command.
-		 * This is usefull when reseting connection.
+		 * Clear connection from all pending commands.
+		 * Will remove all pending commands from que. Will also
+		 * delete runningCommand, if it was not send.
 		 */
 		void queClear ();
+
+		/**
+		 */
+		void clearConnection ();
 
 		/**
 		 * Called when new device connect to the system.
