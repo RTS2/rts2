@@ -1,6 +1,7 @@
 #RTS2 devices configuration
 #device	type	device_name	options
 #example:
-#teld	gemini	T0	-f /dev/ttyS6
-camd	miniccd	C0	-f /dev/ccda
-teld	gemini	T0	-f /dev/ttyS4
+camd	dummy	C0	-W W0 -F F0 --width 400 --height 500 -f
+teld	dummy	T0
+filterd	dummy	W0	-F "AA:B:C:D:E" -s 10
+sensor	dummy	SD	--modefile /etc/rts2/sd
