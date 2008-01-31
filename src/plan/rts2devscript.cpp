@@ -48,8 +48,10 @@ Rts2DevScript::startTarget ()
 	// currentTarget should be nulled when script ends in
 	// deleteScript
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget this " << this <<
-		" currentTarget " << currentTarget << " nextTarget " << nextTarget << sendLog;
+	logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget this " << this
+		<< " currentTarget " << (currentTarget ? currentTarget->getTargetID () : 0)
+		<< " nextTarget " << (nextTarget ? nextTarget->getTargetID () : 0)
+		<< sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	if (!currentTarget)
 	{
@@ -106,7 +108,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			currentTarget = NULL;
 			nextTarget = NULL;
 		#ifdef DEBUG_EXTRA
-			logStream(MESSAGE_DEBUG) << "EVENT_KILL_ALL" << sendLog;
+			logStream(MESSAGE_DEBUG) << script_connection->getName () << " EVENT_KILL_ALL" << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			// stop actual observation..
 			blockMove = 0;
@@ -131,7 +133,9 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			if (currentTarget)
 				break;
 		#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "EVENT_SET_TARGET " << this << sendLog;
+			logStream (MESSAGE_DEBUG) << "EVENT_SET_TARGET " << this << " "
+				<< (nextTarget ? nextTarget->getTargetID () : 0)
+				<< sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			// we don't have target..so let's observe us
 			startTarget ();
