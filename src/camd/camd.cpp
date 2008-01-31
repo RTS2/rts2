@@ -132,8 +132,15 @@ Rts2DevCamera::endExposure ()
 	exposureEnd->setValueDouble (nan("f"));
 	if (exposureConn)
 	{
+		logStream (MESSAGE_INFO)
+			<< "end exposure for " << exposureConn->getName ()
+			<< sendLog;
+
 		return camReadout (exposureConn);
 	}
+	logStream (MESSAGE_WARNING)
+		<< "end exposure without exposure connection"
+		<< sendLog;
 	return 0;
 }
 
@@ -809,6 +816,9 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 			exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
 		}
 		exposureConn = conn;
+
+		logStream (MESSAGE_INFO) <<
+			"exposing for '" << conn->getName () << "'" << sendLog;
 	}
 	return ret;
 }
