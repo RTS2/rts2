@@ -69,8 +69,8 @@ Rts2ConnCentrald::priorityCommand ()
 		timeout += time (NULL);
 	}
 
-	sendValue ("old_priority", getPriority (), getCentraldId ());
-	sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
+	//sendValue ("old_priority", getPriority (), getCentraldId ());
+	//sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
 
 	setPriority (new_priority);
 
@@ -81,7 +81,7 @@ Rts2ConnCentrald::priorityCommand ()
 		return -1;
 	}
 
-	sendValue ("new_priority", master->getPriorityClient (), getPriority ());
+	//sendValue ("new_priority", master->getPriorityClient (), getPriority ());
 
 	return 0;
 }
@@ -376,7 +376,6 @@ Rts2ConnCentrald::command ()
 			char *reg_device;
 			char *in_hostname;
 			char *msg;
-			int ret;
 
 			if (paramNextString (&reg_device) || paramNextInteger (&device_type)
 				|| paramNextString (&in_hostname) || paramNextInteger (&port)
@@ -402,15 +401,10 @@ Rts2ConnCentrald::command ()
 				free (msg);
 			}
 
-			asprintf (&msg, "device %i %s %s %i %i",
-				master->getPriorityClient (), reg_device, hostname, port,
-				device_type);
-			ret = sendMsg (msg);
-			free (msg);
 			sendAValue ("registered_as", getCentraldId ());
 			master->connAdded (this);
 			sendInfo ();
-			return ret;
+			return 0;
 		}
 		else
 		{
@@ -448,6 +442,9 @@ in_argv)
 	fileLog = NULL;
 
 	priority_client = -1;
+
+	createValue (priorityClient, "priority_client", "client which have priority", false);
+	createValue (priority, "priority", "current priority level", false);
 
 	createValue (nextStateChange, "next_state_change",
 		"time of next state change", false);
@@ -730,7 +727,21 @@ Rts2Centrald::changePriority (time_t timeout)
 		if (priority_client >= 0 && conn)
 			conn->setHavePriority (1);
 	}
-	return sendPriorityChange (priority_client, timeout);
+	// send out priority change
+	char *msg;
+
+	asprintf (&msg, PROTO_PRIORITY " %i %li", priority_client, timeout);
+	sendAll (msg);
+	free (msg);
+
+	// and set and send new priority values
+	priorityClient->setValueString (conn ? conn->getName () : "(null)");
+	priority->setValueInteger (new_priority_max);
+
+	sendValueAll (priorityClient);
+	sendValueAll (priority);
+
+	return 0;
 }
 
 
@@ -889,8 +900,7 @@ Rts2Centrald::getStateForConnection (Rts2Conn * conn)
 		iter != connectionEnd (); iter++)
 	{
 		Rts2Conn *test_conn = *iter;
-		if (Rts2Config::instance ()->
-			blockDevice (conn->getName (), test_conn->getName ()) == false)
+		if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
 			continue;
 		sta |= test_conn->getBopState ();
 	}

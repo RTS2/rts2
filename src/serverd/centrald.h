@@ -87,8 +87,7 @@ class Rts2Centrald:public Rts2Daemon
 		char *configFile;
 		std::string logFile;
 		// which sets logfile
-		enum
-		{ LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF }
+		enum { LOGFILE_ARG, LOGFILE_DEF, LOGFILE_CNF }
 		logFileSource;
 
 		std::ofstream * fileLog;
@@ -97,6 +96,9 @@ class Rts2Centrald:public Rts2Daemon
 		int reloadConfig ();
 
 		int connNum;
+
+		Rts2ValueString *priorityClient;
+		Rts2ValueInteger *priority;
 
 		Rts2ValueTime *nextStateChange;
 		Rts2ValueSelection *nextState;
