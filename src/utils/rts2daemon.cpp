@@ -455,14 +455,7 @@ Rts2Daemon::loadValues ()
 		else
 		{
 			ret = setCondValue (old_val, '=', new_val);
-			if (ret == -2)
-			{
-				logStream (MESSAGE_ERROR) <<
-					"Rts2Daemon::loadValues cannot set value " << new_val->
-					getName () << sendLog;
-			}
-			// if value change is qued, inform value, that it should delete after next load..
-			if (ret == 0)
+			if (ret == 0 || ret == -2)
 			{
 				old_val->clearValueSave ();
 				// this will put to iter next value..
@@ -736,6 +729,11 @@ Rts2Value * new_value)
 
 	return 0;
 	err:
+	logStream (MESSAGE_ERROR)
+		<< "Rts2Daemon::loadValues cannot set value "
+		<< new_value->getName ()
+		<< sendLog;
+
 	delete new_value;
 	return ret;
 }

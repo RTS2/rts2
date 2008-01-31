@@ -358,6 +358,12 @@ Rts2Block::deleteConnection (Rts2Conn * conn)
 	}
 	if (conn->isConnState (CONN_DELETE))
 	{
+		// try to look if there are any references to connection in other connections
+		for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+		{
+			if (conn != *iter)
+				(*iter)->deleteConnection (conn);
+		}
 		return 0;
 	}
 	// don't delete us when we are in incorrect state

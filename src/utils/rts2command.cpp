@@ -120,6 +120,14 @@ Rts2Command::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
+void
+Rts2Command::deleteConnection (Rts2Conn * conn)
+{
+	if (conn == originator)
+		originator = NULL;
+}
+
+
 Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * in_master, int in_key):Rts2Command
 (in_master)
 {

@@ -368,7 +368,6 @@ class Rts2Conn:public Rts2Object
 
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
-		int sendValue (std::string val_name, int val1, int val2);
 		int sendValue (std::string val_name, int val1, double val2);
 		int sendValue (std::string val_name, const char *value);
 		int sendValueRaw (std::string val_name, const char *value);
@@ -543,8 +542,12 @@ class Rts2Conn:public Rts2Object
 		void queClear ();
 
 		/**
+		 * Called when connection will be deleted from system to
+		 * remove any possible reference to this connection.
+		 *
+		 * @param conn Connection which will be removed.
 		 */
-		void clearConnection ();
+		virtual void deleteConnection (Rts2Conn * conn);
 
 		/**
 		 * Called when new device connect to the system.

@@ -1050,6 +1050,20 @@ Rts2Conn::queClear ()
 }
 
 
+void
+Rts2Conn::deleteConnection (Rts2Conn *conn)
+{
+	// look if connection isn't entered among originators or controll connections..
+	if (runningCommand)
+		runningCommand->deleteConnection (conn);
+	for (std::list < Rts2Command * >::iterator iter = commandQue.begin ();
+		iter != commandQue.end (); iter++)
+	{
+		(*iter)->deleteConnection (conn);
+	}
+}
+
+
 // high-level commands, used to pass variables etc..
 int
 Rts2Conn::command ()
@@ -1480,18 +1494,6 @@ Rts2Conn::sendValue (std::string val_name, int value)
 	char *msg;
 	int ret;
 	asprintf (&msg, PROTO_VALUE " %s %i", val_name.c_str (), value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
-}
-
-
-int
-Rts2Conn::sendValue (std::string val_name, int val1, int val2)
-{
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %i %i", val_name.c_str (), val1, val2);
 	ret = sendMsg (msg);
 	free (msg);
 	return ret;

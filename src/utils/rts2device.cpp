@@ -547,6 +547,14 @@ Rts2CommandDeviceStatusInfo::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
+void
+Rts2CommandDeviceStatusInfo::deleteConnection (Rts2Conn * conn)
+{
+	if (conn == owner_conn)
+		owner_conn = NULL;
+}
+
+
 Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
 Rts2Daemon (in_argc, in_argv)
 {
@@ -795,18 +803,6 @@ Rts2Device::clearStatesPriority ()
 	}
 	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
 		"all operations canceled by priority");
-}
-
-
-int
-Rts2Device::deleteConnection (Rts2Conn * conn)
-{
-	if (deviceStatusCommand && deviceStatusCommand->getOwnerConn ())
-	{
-		deviceStatusCommand->nullOwnerConn ();
-		deviceStatusCommand = NULL;
-	}
-	return Rts2Daemon::deleteConnection (conn);
 }
 
 

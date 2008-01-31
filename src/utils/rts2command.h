@@ -214,6 +214,13 @@ class Rts2Command
 		 */
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 
+		/**
+		 * Called to remove reference to deleted connection.
+		 *
+		 * @param conn Connection which will be removed.
+		 */
+		virtual void deleteConnection (Rts2Conn *conn);
+
 };
 
 /**
