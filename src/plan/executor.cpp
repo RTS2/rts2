@@ -141,7 +141,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 	createValue (next_name, "next_name", "name of next target", false);
 
 	createValue (priority_id, "priority_target",
-		"ID of priority target (should be NULL in most cases", false);
+		"ID of priority target (should be NULL in most cases)", false);
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
