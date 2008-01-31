@@ -833,6 +833,8 @@ Rts2Daemon::constInfoAll ()
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
+	if (!(conn->isConnState (CONN_CONNECTED) || conn->isConnState (CONN_AUTH_OK)))
+		return -1;
 	for (Rts2CondValueVector::iterator iter = values.begin ();
 		iter != values.end (); iter++)
 	{

@@ -139,7 +139,17 @@ Rts2CommandSendKey::send ()
 }
 
 
-Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name):Rts2Command
+Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, int centralId, int key)
+:Rts2Command (in_master)
+{
+	char *buf;
+	asprintf (&buf, "authorize %i %i", centralId, key);
+	setCommand (buf);
+	free (buf);
+}
+
+
+Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name):Rts2Command
 (in_master)
 {
 	char *command;

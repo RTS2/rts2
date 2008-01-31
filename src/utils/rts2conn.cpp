@@ -652,19 +652,15 @@ Rts2Conn::processLine ()
 	// metainfo with values
 	else if (isCommand (PROTO_METAINFO))
 	{
-		if (otherDevice)
-		{
-			int m_type;
-			char *m_name;
-			char *m_descr;
-			if (paramNextInteger (&m_type)
-				|| paramNextString (&m_name)
-				|| paramNextString (&m_descr) || !paramEnd ())
-				return -2;
-			return metaInfo (m_type, std::string (m_name),
-				std::string (m_descr));
-		}
-		ret = -2;
+		int m_type;
+		char *m_name;
+		char *m_descr;
+		if (paramNextInteger (&m_type)
+			|| paramNextString (&m_name)
+			|| paramNextString (&m_descr) || !paramEnd ())
+			return -2;
+		return metaInfo (m_type, std::string (m_name),
+			std::string (m_descr));
 	}
 	else if (isCommand (PROTO_VALUE))
 	{
@@ -675,16 +671,12 @@ Rts2Conn::processLine ()
 	}
 	else if (isCommand (PROTO_SELMETAINFO))
 	{
-		if (otherDevice)
-		{
-			char *m_name;
-			char *sel_name;
-			if (paramNextString (&m_name)
-				|| paramNextString (&sel_name) || !paramEnd ())
-				return -2;
-			return selMetaInfo (m_name, sel_name);
-		}
-		ret = -2;
+		char *m_name;
+		char *sel_name;
+		if (paramNextString (&m_name)
+			|| paramNextString (&sel_name) || !paramEnd ())
+			return -2;
+		return selMetaInfo (m_name, sel_name);
 	}
 	else if (isCommand (PROTO_SET_VALUE))
 	{
@@ -808,9 +800,6 @@ Rts2Conn::processBuffer ()
 		memmove (buf, command_start, (full_data_end - command_start) + 1);
 		// move buffer to the end..
 		buf_top -= command_start - buf;
-		// if it entered command in progress..
-		if (commandInProgress)
-			buf_top += (full_data_end - command_start);
 	}
 	full_data_end = NULL;
 }
@@ -870,6 +859,7 @@ Rts2Conn::receive (fd_set * set)
 			<< " full_buf: " << buf
 			<< " size: " << data_size
 			<< " commandInProgress " << commandInProgress
+			<< " runningCommand " << runningCommand
 			<< std::endl;
 		#endif
 		// move buf_top to end of readed data
@@ -987,7 +977,17 @@ Rts2Conn::queSend (Rts2Command * cmd)
 		return;
 	}
 	if (runningCommand)
+	{
+		// when the actual command was sended or if the actual command
+		// is returning, push us to fron of que to be executed as first
+		// command
+		if (runningCommandStatus == SEND || runningCommandStatus == RETURNING)
+		{
+			commandQue.push_front (cmd);
+			return;
+		}
 		commandQue.push_front (runningCommand);
+	}
 	runningCommand = cmd;
 	sendCommand ();
 }
@@ -1257,9 +1257,11 @@ Rts2Conn::commandReturn ()
 	// ignore (for the moment) retuns recieved without command
 	if (!runningCommand)
 	{
-		#ifdef DEBUG_ALL
-		std::cout << "Rts2Conn::commandReturn null!" << std::endl;
-		#endif					 /* DEBUG_ALL */
+		logStream (MESSAGE_ERROR) << "Rts2Conn::commandReturn null on connection with '"
+			<< getName ()
+			<< "' (" << getCentraldId ()
+			<< ") and status " << stat
+			<<"!" << sendLog;
 		return -1;
 	}
 	runningCommandStatus = RETURNING;
@@ -1944,6 +1946,10 @@ Rts2Conn::commandValue (const char *v_name)
 		}
 		return ret;
 	}
+	logStream (MESSAGE_ERROR)
+		<< "Unknow value from connection '" << getName () << "' "
+		<< v_name
+		<< sendLog;
 	return -2;
 }
 

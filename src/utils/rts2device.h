@@ -108,6 +108,22 @@ class Rts2DevConnMaster:public Rts2Conn
 };
 
 /**
+ * Register device to central server.
+ */
+class Rts2CommandRegister:public Rts2Command
+{
+	public:
+		Rts2CommandRegister (Rts2Block * in_master, const char *device_name, int device_type, const char *device_host, int device_port)
+			:Rts2Command (in_master)
+		{
+			char *buf;
+			asprintf (&buf, "register %s %i %s %i", device_name, device_type, device_host, device_port);
+			setCommand (buf);
+			free (buf);
+		}
+};
+
+/**
  * Send status_info command from device to master, and wait for reply.
  *
  * This command works with Rts2CommandStatusInfo to ensure, that proper device
@@ -154,6 +170,10 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		}
 };
 
+/**
+ * Represents RTS2 device. From this class, different devices are
+ * derived.
+ */
 class Rts2Device:public Rts2Daemon
 {
 	private:
@@ -274,6 +294,8 @@ class Rts2Device:public Rts2Daemon
 		virtual int ready ();
 
 		virtual int ready (Rts2Conn * conn);
+
+		virtual void centraldConnRunning ();
 
 		/**
 		 * Send device status info to given connection.

@@ -238,7 +238,7 @@ Rts2DevConn::connAuth ()
 		getConnState () << sendLog;
 	#endif
 	master->getCentraldConn ()->
-		queCommand (new Rts2CommandAuthorize (master, getName ()));
+		queCommand (new Rts2CommandKey (master, getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 
@@ -318,20 +318,23 @@ Rts2DevConnMaster::~Rts2DevConnMaster (void)
 int
 Rts2DevConnMaster::registerDevice ()
 {
-	char *msg;
 	int ret;
 	if (!device_host)
 	{
 		device_host = new char[HOST_NAME_MAX];
 		ret = gethostname (device_host, HOST_NAME_MAX);
 		if (ret < 0)
+		{
+			logStream (MESSAGE_ERROR)
+				<< "Cannot get hostname : "
+				<< strerror (errno)
+				<< " (" << errno << "), exiting."
+				<< sendLog;
 			return -1;
+		}
 	}
-	asprintf (&msg, "register %s %i %s %i", device_name, device_type,
-		device_host, device_port);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	queSend (new Rts2CommandRegister (getMaster (), device_name, device_type, device_host, device_port));
+	return 0;
 }
 
 
@@ -515,12 +518,8 @@ Rts2DevConnMaster::setBopState (int in_value)
 int
 Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, "authorize %i %i", conn->getCentraldId (), conn->getKey ());
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	queSend (new Rts2CommandAuthorize (getMaster (), conn->getCentraldId (), conn->getKey ()));
+	return 0;
 }
 
 
@@ -970,6 +969,14 @@ int
 Rts2Device::ready ()
 {
 	return -1;
+}
+
+
+void
+Rts2Device::centraldConnRunning ()
+{
+	Rts2Daemon::centraldConnRunning ();
+	sendMetaInfo (getCentraldConn ());
 }
 
 

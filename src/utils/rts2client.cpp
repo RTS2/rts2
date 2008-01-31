@@ -120,7 +120,7 @@ void
 Rts2ConnClient::connLogin ()
 {
 	master->getCentraldConn ()->
-		queCommand (new Rts2CommandAuthorize (master, getName ()));
+		queCommand (new Rts2CommandKey (master, getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 

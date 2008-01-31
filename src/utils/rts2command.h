@@ -257,14 +257,25 @@ class Rts2CommandSendKey:public Rts2Command
 };
 
 /**
- * Receive authorization reply from centrald daemon.
+ * Send authorization query to centrald daemon.
  *
  * @ingroup RTS2Command
  */
 class Rts2CommandAuthorize:public Rts2Command
 {
 	public:
-		Rts2CommandAuthorize (Rts2Block * in_master, const char *device_name);
+		Rts2CommandAuthorize (Rts2Block * in_master, int centralId, int key);
+};
+
+/**
+ * Send key request to centrald.
+ *
+ * @ingroup RTS2Command
+ */
+class Rts2CommandKey:public Rts2Command
+{
+	public:
+		Rts2CommandKey (Rts2Block * in_master, const char *device_name);
 };
 
 /**
