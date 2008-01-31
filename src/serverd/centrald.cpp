@@ -871,7 +871,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 					continue;
 			}
 			Rts2CommandStatusInfo *cs = new Rts2CommandStatusInfo (this, c_conn);
-			cs->setOriginator (this);
+			cs->setOriginator (conn);
 			test_conn->queCommand (cs);
 			s_count++;
 		}
