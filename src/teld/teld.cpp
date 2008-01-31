@@ -973,10 +973,12 @@ bool onlyCorrect)
 	}
 
 	infoAll ();
+	LibnovaRaDec l_to (tar_ra, tar_dec);
+	LibnovaRaDec l_from (telRa->getValueDouble (), telDec->getValueDouble ());
+
 	logStream (MESSAGE_INFO)
-		<< "start telescope move " << telRa->getValueDouble ()
-		<< " " << telDec->getValueDouble ()
-		<< " target " << tar_ra << " " << tar_dec
+		<< "moving to " << l_to
+		<< " from " << l_from
 		<< " returns " << ret
 		<< sendLog;
 	return ret;
@@ -986,10 +988,13 @@ bool onlyCorrect)
 int
 Rts2DevTelescope::endMove ()
 {
-	logStream (MESSAGE_INFO) << "telescope end move " << telRa->
-		getValueDouble () << " " << telDec->
-		getValueDouble () << " target " << lastTar.ra << " " << lastTar.
-		dec << sendLog;
+	LibnovaRaDec l_to (telRa->getValueDouble (), telDec->getValueDouble ());
+	LibnovaRaDec l_req (&lastTar);
+
+	logStream (MESSAGE_INFO)
+		<< "moved to " << l_to
+		<< " requested " << l_req
+		<< sendLog;
 	return 0;
 }
 
