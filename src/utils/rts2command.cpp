@@ -787,7 +787,8 @@ Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_
 int
 Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
 {
-	control_conn->updateStatusWait (conn);
+	if (control_conn)
+		control_conn->updateStatusWait (conn);
 	return Rts2Command::commandReturnOK (conn);
 }
 
@@ -795,8 +796,17 @@ Rts2CommandStatusInfo::commandReturnOK (Rts2Conn * conn)
 int
 Rts2CommandStatusInfo::commandReturnFailed (Rts2Conn * conn)
 {
-	control_conn->updateStatusWait (conn);
+	if (control_conn)
+		control_conn->updateStatusWait (conn);
 	return Rts2Command::commandReturnOK (conn);
+}
+
+
+void
+Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
+{
+	if (control_conn == conn)
+		control_conn = NULL;
 }
 
 

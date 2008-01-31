@@ -654,6 +654,8 @@ class Rts2CommandStatusInfo:public Rts2Command
 		{
 			return control_conn->getName ();
 		}
+
+		virtual void deleteConnection (Rts2Conn *conn);
 };
 
 /**
