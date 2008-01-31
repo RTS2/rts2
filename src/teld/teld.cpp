@@ -973,9 +973,12 @@ bool onlyCorrect)
 	}
 
 	infoAll ();
-	logStream (MESSAGE_INFO) << "start telescope move " << telRa->
-		getValueDouble () << " " << telDec->
-		getValueDouble () << " target " << tar_ra << " " << tar_dec << sendLog;
+	logStream (MESSAGE_INFO)
+		<< "start telescope move " << telRa->getValueDouble ()
+		<< " " << telDec->getValueDouble ()
+		<< " target " << tar_ra << " " << tar_dec
+		<< " returns " << ret
+		<< sendLog;
 	return ret;
 }
 
