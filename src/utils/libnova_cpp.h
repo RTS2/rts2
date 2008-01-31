@@ -376,7 +376,7 @@ class LibnovaRaDec
 			dec = NULL;
 		}
 
-		LibnovaRaDec (LibnovaRaDec & in_libnova)
+		LibnovaRaDec (LibnovaRaDec &in_libnova)
 		{
 			ra = new LibnovaRa (in_libnova.getRa ());
 			dec = new LibnovaDec (in_libnova.getDec ());
@@ -386,6 +386,12 @@ class LibnovaRaDec
 		{
 			ra = new LibnovaRa (pos->ra);
 			dec = new LibnovaDec (pos->dec);
+		}
+
+		LibnovaRaDec (double in_ra, double in_dec)
+		{
+			ra = new LibnovaRa (in_ra);
+			dec = new LibnovaDec (in_dec);
 		}
 
 		virtual ~ LibnovaRaDec (void)

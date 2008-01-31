@@ -66,8 +66,9 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 	int old_precison = _os.precision (3);
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
-	_os << std::setw (2) << ra_hms.hours << " "
-		<< std::setw (2) << ra_hms.minutes << " "
+	_os
+		<< std::setw (2) << ra_hms.hours << ":"
+		<< std::setw (2) << ra_hms.minutes << ":"
 		<< std::setw (6) << ra_hms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
@@ -342,8 +343,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os << (deg_dms.neg ? '-' : '+')
-		<< std::setw (2) << deg_dms.degrees << " "
-		<< std::setw (2) << deg_dms.minutes << " "
+		<< std::setw (2) << deg_dms.degrees << ":"
+		<< std::setw (2) << deg_dms.minutes << ":"
 		<< std::setw (5) << deg_dms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);

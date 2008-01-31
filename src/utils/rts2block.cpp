@@ -173,19 +173,6 @@ Rts2Block::sendValueAll (char *val_name, char *value)
 }
 
 
-int
-Rts2Block::sendPriorityChange (int p_client, int timeout)
-{
-	char *msg;
-	int ret;
-
-	asprintf (&msg, PROTO_PRIORITY " %i %i", p_client, timeout);
-	ret = sendAll (msg);
-	free (msg);
-	return ret;
-}
-
-
 void
 Rts2Block::sendMessageAll (Rts2Message & msg)
 {

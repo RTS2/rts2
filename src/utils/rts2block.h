@@ -399,7 +399,6 @@ class Rts2Block: public Rts2App
 		 */
 		void sendValueAll (char *val_name, char *value);
 
-		int sendPriorityChange (int p_client, int timeout);
 		// only used in centrald!
 		void sendMessageAll (Rts2Message & msg);
 

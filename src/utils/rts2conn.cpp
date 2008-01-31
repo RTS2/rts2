@@ -461,8 +461,8 @@ Rts2Conn::idle ()
 		{
 			ret = sendMsg (PROTO_TECHNICAL " ready");
 			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Send T ready ret: " << ret <<
-				" name: " << getName () << " type: " << type << sendLog;
+			std::cout << "Send T ready ret: " << ret <<
+				" name: " << getName () << " type: " << type << std::endl;
 			#endif				 /* DEBUG_EXTRA */
 			time (&lastSendReady);
 		}
@@ -638,7 +638,7 @@ Rts2Conn::processLine ()
 		if (!strcmp (msg, "ready"))
 		{
 			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Send T OK" << sendLog;
+			std::cout << "Send T OK" << std::endl;
 			#endif
 			sendMsg (PROTO_TECHNICAL " OK");
 			return -1;
