@@ -553,9 +553,7 @@ Rts2DevCameraAndor::startExposure ()
 int
 Rts2DevCameraAndor::scriptEnds ()
 {
-	if (!isnan (defaultGain) && gain)
-		setGain (defaultGain);
-	closeShutter ();
+	//	closeShutter ();
 	return Rts2DevCamera::scriptEnds ();
 }
 
