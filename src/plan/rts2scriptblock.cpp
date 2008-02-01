@@ -243,7 +243,10 @@ int
 Rts2ScriptElementBlock::idleCall ()
 {
 	if (curr_element != blockElements.end ())
-		return (*curr_element)->idleCall ();
+	{
+		int ret = (*curr_element)->idleCall ();
+		return blockScriptRet (ret);
+	}
 	return Rts2ScriptElement::idleCall ();
 }
 
