@@ -39,6 +39,8 @@ Rts2Conn (in_sock, in_master)
 	master = in_master;
 	setCentraldId (in_centrald_id);
 	messageMask = 0x00;
+
+	statusCommandRunning = 0;
 }
 
 
@@ -172,14 +174,23 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 void
 Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 {
-	std::cout << "updateStatusWait from conn " << conn->getName () << std::endl;
-
-	if (getMaster ()->commandOriginatorPending (this, conn))
-		return;
+	if (conn)
+	{
+		if (getMaster ()->commandOriginatorPending (this, conn))
+			return;
+	}
+	else
+	{
+		if (statusCommandRunning == 0)
+			return;
+		if (getMaster ()->commandOriginatorPending (this, NULL))
+			return;
+	}
 
 	master->sendStatusMessage (master->getState (), this);
 	master->sendBopMessage (master->getStateForConnection (this), this);
 	sendCommandEnd (DEVDEM_OK, "OK");
+	statusCommandRunning--;
 }
 
 
@@ -642,6 +653,11 @@ Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
+	// and make sure we aren't the last who block status info
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		(*iter)->updateStatusWait (NULL);
+	}
 }
 
 
@@ -858,12 +874,12 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
 	int s_count = 0;
 	// update system status
-	std::cout << Timestamp () << " status info from " << conn->getName () << std::endl;
 	for (connections_t::iterator iter = connectionBegin ();
 		iter != connectionEnd (); iter++)
 	{
 		Rts2ConnCentrald *test_conn = (Rts2ConnCentrald *) * iter;
-		if (test_conn != conn)
+		// do not request status from client connections
+		if (test_conn != conn && test_conn->getType () != CLIENT_SERVER)
 		{
 			if (conn->getType () == DEVICE_SERVER)
 			{
@@ -881,6 +897,8 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	{
 		return 0;
 	}
+
+	c_conn->statusCommandSend ();
 
 	// indicate command pending, we will send command end once we will get reply from all devices
 	return -1;

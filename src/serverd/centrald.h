@@ -248,6 +248,9 @@ class Rts2ConnCentrald:public Rts2Conn
 		int port;
 		int device_type;
 
+		// number of status commands device have running
+		int statusCommandRunning;
+
 		/**
 		 * Handle serverd commands.
 		 *
@@ -286,5 +289,10 @@ class Rts2ConnCentrald:public Rts2Conn
 		virtual int sendInfo (Rts2Conn * conn);
 
 		virtual void updateStatusWait (Rts2Conn * conn);
+
+		void statusCommandSend ()
+		{
+			statusCommandRunning++;
+		}
 };
 #endif							 /*! __RTS2_CENTRALD__ */
