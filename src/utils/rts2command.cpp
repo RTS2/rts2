@@ -807,6 +807,7 @@ Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
 {
 	if (control_conn == conn)
 		control_conn = NULL;
+	Rts2Command::deleteConnection (conn);
 }
 
 
