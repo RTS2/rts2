@@ -296,12 +296,11 @@ Rts2DevCamera (in_argc, in_argv)
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0,
 		CAM_WORKING, true);
 	HSpeed->setValueInteger (1);
-	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", false, 0,
+	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0,
 		CAM_WORKING, true);
 	FTShutter->setValueBool (false);
 
-	createValue (useFT, "USEFT", "Use FT", false, 0,
-		CAM_WORKING, true);
+	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING, true);
 	useFT->setValueBool (true);
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
