@@ -37,11 +37,11 @@
 #define ASTROMETRY_PROC 0x01
 // when & -> image should be in archive, otherwise it's in trash|que
 // depending on ASTROMETRY_PROC
-#define ASTROMETRY_OK 0x02
-#define DARK_OK   0x04
-#define FLAT_OK   0x08
+#define ASTROMETRY_OK   0x02
+#define DARK_OK     0x04
+#define FLAT_OK     0x08
 // some error durring image operations occured, information in DB is unrealiable
-#define IMG_ERR   0x8000
+#define IMG_ERR       0x8000
 
 /**
  * Abstract class, representing image in DB.
