@@ -670,6 +670,8 @@ Rts2ImageSkyDb::deleteImage ()
 const char *
 Rts2ImageSkyDb::getImageName ()
 {
+	if (imageName)
+		return imageName;
 	std::ostringstream _os;
 	_os << getImageBase ();
 	if (processBitfiedl & ASTROMETRY_PROC)
@@ -818,7 +820,7 @@ Rts2ImageFlatDb::updateDB ()
 			) VALUES (
 			:d_obs_id,
 			:d_img_id,
-			:d_flat_date,
+			abstime (:d_flat_date),
 			:d_flat_date_usec,
 			:d_flat_exposure,
 			:d_flat_temperature :d_flat_temperature_ind,
