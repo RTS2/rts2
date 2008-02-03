@@ -374,6 +374,7 @@ Rts2DevCamera::cancelPriorityOperations ()
 	clearStatesPriority ();
 	// cancel any pending exposures
 	quedExpNumber->setValueInteger (0);
+	sendValueAll (quedExpNumber);
 	Rts2ScriptDevice::cancelPriorityOperations ();
 }
 
