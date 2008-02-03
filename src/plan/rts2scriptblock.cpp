@@ -90,7 +90,7 @@ Rts2ScriptElementBlock::postEvent (Rts2Event * event)
 			for (el_iter_sig = blockElements.begin ();
 				el_iter_sig != blockElements.end (); el_iter_sig++)
 			{
-				(*curr_element)->postEvent (new Rts2Event (event));
+				(*el_iter_sig)->postEvent (new Rts2Event (event));
 			}
 			break;
 		default:
@@ -246,7 +246,7 @@ Rts2ScriptElementBlock::idleCall ()
 	{
 		int ret = (*curr_element)->idleCall ();
 		if (ret != NEXT_COMMAND_NEXT)
-			return ret;
+			return blockScriptRet (ret);
 		curr_element++;
 		if (curr_element == blockElements.end ())
 		{
@@ -255,18 +255,10 @@ Rts2ScriptElementBlock::idleCall ()
 				return NEXT_COMMAND_NEXT;
 			curr_element = blockElements.begin ();
 		}
-		return blockScriptRet (ret);
+		// trigger nextCommand call, which will call nextCommand, which will execute command from block
+		return NEXT_COMMAND_NEXT;
 	}
 	return Rts2ScriptElement::idleCall ();
-}
-
-
-int
-Rts2ScriptElementBlock::idle ()
-{
-	if (curr_element != blockElements.end ())
-		return (*curr_element)->idle ();
-	return Rts2ScriptElement::idle ();
 }
 
 

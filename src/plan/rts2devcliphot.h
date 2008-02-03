@@ -63,7 +63,6 @@ class Rts2DevClientPhotExec:public Rts2DevClientPhot, public Rts2DevScript
 
 		virtual int getNextCommand ();
 
-		virtual void clearBlockMove ();
 	public:
 		Rts2DevClientPhotExec (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClientPhotExec (void);

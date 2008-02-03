@@ -32,12 +32,7 @@ Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 	logStream (MESSAGE_ERROR)
 		<< "Rts2DevClientCameraExec::createImage creating no-target image"
 		<< sendLog;
-	Rts2Image *image;
-	char *name;
-	asprintf (&name, "!/tmp/%s_%i.fits", connection->getName (), imgCount);
-	image = new Rts2Image (name, expStart, connection);
-	free (name);
-	return image;
+	return NULL;
 }
 
 

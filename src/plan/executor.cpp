@@ -833,8 +833,9 @@ Rts2Executor::queTarget (Target * in_target)
 void
 Rts2Executor::updateScriptCount ()
 {
-	scriptCount->setValueInteger (0);
-	postEvent (new Rts2Event (EVENT_MOVE_QUESTION, (void *) scriptCount));
+	int scriptRunning = 0;
+	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &scriptRunning));
+	scriptCount->setValueInteger (scriptRunning);
 }
 
 

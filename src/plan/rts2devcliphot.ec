@@ -28,7 +28,6 @@ Rts2DevClientPhotExec::integrationStart ()
 void
 Rts2DevClientPhotExec::integrationEnd ()
 {
-  blockMove = 0;
   nextCommand ();
   Rts2DevClientPhot::integrationEnd ();
 }
@@ -37,7 +36,6 @@ Rts2DevClientPhotExec::integrationEnd ()
 void
 Rts2DevClientPhotExec::integrationFailed (int status)
 {
-  blockMove = 0;
   nextCommand ();
   Rts2DevClientPhot::integrationFailed (status);
 }
@@ -152,15 +150,6 @@ Rts2DevClientPhotExec::getNextCommand ()
 
 
 void
-Rts2DevClientPhotExec::clearBlockMove ()
-{
-  if (isIntegrating ())
-    return;
-  Rts2DevScript::clearBlockMove ();
-}
-
-
-void
 Rts2DevClientPhotExec::postEvent (Rts2Event * event)
 {
   Rts2DevScript::postEvent (new Rts2Event (event));
@@ -181,7 +170,6 @@ Rts2DevClientPhotExec::nextCommand ()
 
   connection->queCommand (nextComd);
   nextComd = NULL;               // after command execute, it will be deleted
-  blockMove = 1;                 // as we run a script..
 }
 
 

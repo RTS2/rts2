@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#define DEBUG_EXTRA
+
 #include <limits.h>
 #include <iostream>
 
@@ -31,7 +33,6 @@ Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2
 :Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
 {
 	expandPath = in_expandPath;
-	queCurrentImage = false;
 	imgCount = 0;
 }
 
@@ -89,14 +90,6 @@ Rts2DevClientCameraExec::getNextCommand ()
 	if (nextComd)
 		nextComd->setOriginator (this);
 	return ret;
-}
-
-
-void
-Rts2DevClientCameraExec::clearBlockMove ()
-{
-	// we will be cleared when exposure ends..
-	Rts2DevScript::clearBlockMove ();
 }
 
 
@@ -173,7 +166,6 @@ Rts2DevClientCameraExec::nextCommand ()
 	#endif						 /* DEBUG_EXTRA */
 	queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted
-	blockMove = 1;				 // as we run a script..
 }
 
 
@@ -198,7 +190,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
 	int ret;
 	// try processing in script..
-	if (getScript () && !queCurrentImage)
+	if (getScript ())
 	{
 		ret = getScript ()->processImage (image);
 		if (ret > 0)
@@ -210,10 +202,6 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 			return IMAGE_DO_BASIC_PROCESSING;
 		}
 		// otherwise que image processing
-	}
-	else
-	{
-		queCurrentImage = false;
 	}
 	queImage (image);
 	return IMAGE_DO_BASIC_PROCESSING;
@@ -234,11 +222,6 @@ Rts2DevClientCameraExec::idle ()
 void
 Rts2DevClientCameraExec::exposureStarted ()
 {
-	// we control observations..
-	if (getScript ())
-	{
-		blockMove = 1;
-	}
 	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
 		nextCommand ();
 
@@ -249,23 +232,18 @@ Rts2DevClientCameraExec::exposureStarted ()
 void
 Rts2DevClientCameraExec::exposureEnd ()
 {
-	blockMove = 0;
-	if (!getScript ()
-		|| (getScript () && !nextComd && getScript ()->isLastCommand ()))
+	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+	// if script is running and it does not have anything to do, end it
+	if (getScript ()
+		&& !nextComd
+		&& getScript ()->isLastCommand ()
+		&& (!val || val->getValueInteger () == 0)
+		&& !getMaster ()->commandOriginatorPending (this, NULL)
+		)
 	{
 		deleteScript ();
-		// EVENT_LAST_READOUT will start new script, when it's possible
-		getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
-		// created image is last in script - will be qued, not processed
-		queCurrentImage = true;
-	}
-	else
-	{
-		// don't do anything
-		// nextCommand ();
 	}
 	// execute value change, if we do not execute that during exposure
-	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
 		!isExposing () && val && val->getValueInteger () == 0
 		)
@@ -280,8 +258,6 @@ void
 Rts2DevClientCameraExec::exposureFailed (int status)
 {
 	// in case of an error..
-	blockMove = 0;
-	queCurrentImage = false;
 	Rts2DevClientCameraImage::exposureFailed (status);
 }
 
@@ -299,7 +275,6 @@ Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection
 {
 	currentTarget = NULL;
 	cmdChng = NULL;
-	blockMove = 0;
 	fixedOffset.ra = 0;
 	fixedOffset.dec = 0;
 }
@@ -338,7 +313,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 					case OBS_MOVE_FIXED:
 						queCommand (new Rts2CommandScriptEnds (getMaster ()));
 					case OBS_ALREADY_STARTED:
-						blockMove = 1;
 						break;
 				}
 			}
@@ -380,12 +354,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 		case EVENT_MOVE_OK:
 		case EVENT_CORRECTING_OK:
 		case EVENT_MOVE_FAILED:
-			break;
-		case EVENT_MOVE_QUESTION:
-			if (blockMove)
-			{
-				((Rts2ValueInteger *) event->getArg ())->inc ();
-			}
 			break;
 		case EVENT_ADD_FIXED_OFFSET:
 			offset = (ln_equ_posn *) event->getArg ();
@@ -494,7 +462,6 @@ Rts2DevClientTelescopeExec::moveEnd ()
 		getMaster ()->postEvent (new Rts2Event (EVENT_CORRECTING_OK));
 	else
 		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
-	blockMove = 0;
 	Rts2DevClientTelescopeImage::moveEnd ();
 }
 
@@ -509,7 +476,6 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
 	}
 	if (currentTarget && currentTarget->moveWasStarted ())
 		currentTarget->moveFailed ();
-	blockMove = 0;
 	Rts2DevClientTelescopeImage::moveFailed (status);
 	// move failed, either because of priority change, or because device failure
 	if (havePriority ())

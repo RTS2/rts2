@@ -33,7 +33,6 @@
 #define EVENT_MOVE_OK                      RTS2_LOCAL_EVENT+53
 #define EVENT_MOVE_FAILED                  RTS2_LOCAL_EVENT+54
 // to get correct scriptCount..
-#define EVENT_MOVE_QUESTION                RTS2_LOCAL_EVENT+55
 #define EVENT_KILL_ALL                     RTS2_LOCAL_EVENT+57
 
 #define EVENT_SLEW_TO_TARGET               RTS2_LOCAL_EVENT+58
@@ -71,7 +70,6 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
 public Rts2DevScript
 {
 	private:
-		bool queCurrentImage;
 		Rts2ValueString *expandPath;
 	protected:
 		virtual void unblockWait ()
@@ -124,8 +122,6 @@ public Rts2DevScript
 		virtual void startTarget ();
 
 		virtual int getNextCommand ();
-
-		virtual void clearBlockMove ();
 	public:
 		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
 		virtual ~ Rts2DevClientCameraExec (void);

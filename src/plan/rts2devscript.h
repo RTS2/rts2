@@ -54,7 +54,6 @@ class Rts2DevScript
 			WAIT_SEARCH
 		} waitScript;
 
-		int blockMove;
 		//  enum
 		//  { NO_START, START_CURRENT, START_NEXT } getObserveStart;
 		virtual void startTarget ();
@@ -91,11 +90,6 @@ class Rts2DevScript
 
 		// called when we find source..
 		virtual void searchSucess ();
-
-		virtual void clearBlockMove ()
-		{
-			blockMove = 0;
-		}
 
 	public:
 		Rts2DevScript (Rts2Conn * in_script_connection);

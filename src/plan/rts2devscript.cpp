@@ -26,7 +26,6 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
 	nextComd = NULL;
 	nextTarget = NULL;
 	script = NULL;
-	blockMove = 0;
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;
 	scriptLoopCount = 0;
@@ -111,7 +110,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			logStream(MESSAGE_DEBUG) << script_connection->getName () << " EVENT_KILL_ALL" << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			// stop actual observation..
-			blockMove = 0;
 			unsetWait ();
 			waitScript = NO_WAIT;
 			if (script)
@@ -180,18 +178,8 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			nextCommand ();
 			// if we are still exposing, exposureEnd/readoutEnd will query new command
 			break;
-		case EVENT_MOVE_QUESTION:
-			if (blockMove)
-			{
-				((Rts2ValueInteger *) event->getArg ())->inc ();
-			}
-			break;
 		case EVENT_SCRIPT_RUNNING_QUESTION:
-			// either we have script or there are some commands in que
-			if ((script && !script->isLastCommand ())
-				|| !script_connection->queEmpty ()
-				|| blockMove
-				|| script_connection->getRealState () != 0)
+			if (getScript () != NULL)
 				(*((int *) event->getArg ()))++;
 			break;
 		case EVENT_OK_ASTROMETRY:
@@ -345,7 +333,6 @@ void
 Rts2DevScript::deleteScript ()
 {
 	Rts2Script *tmp_script;
-	clearBlockMove ();
 	unsetWait ();
 	if (waitScript == WAIT_MASTER)
 	{
@@ -533,7 +520,6 @@ Rts2DevScript::haveNextCommand (Rts2DevClient *devClient)
 		delete nextComd;
 		nextComd = NULL;
 		setWaitMove ();
-		blockMove = 1;
 		return 0;
 	}
 	return 1;

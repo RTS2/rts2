@@ -82,7 +82,6 @@ class Rts2ScriptElementBlock:public Rts2ScriptElement
 		virtual int getLen ();
 
 		virtual int idleCall ();
-		virtual int idle ();
 };
 
 /**
