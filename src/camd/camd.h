@@ -519,7 +519,8 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		/**
 		 * Check if exposure has ended.
 		 *
-		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure
+		 * @return 0 if there was pending exposure which ends, -1 if there wasn't any exposure, > 0 time remainnign till end of exposure,
+		 * 	-3 when exposure ended because there were not any exposures in exposure que
 		 */
 		virtual long isExposing ();
 		virtual int endExposure ();

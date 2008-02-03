@@ -561,31 +561,43 @@ Rts2DevCamera::checkExposures ()
 		}
 		else
 		{
-			if (ret == -2)
+			int expNum;
+			switch (ret)
 			{
-				// remember exposure number
-				int expNum = exposureNumber->getValueInteger ();
-				endExposure ();
-				// if new exposure does not start during endExposure (camReadout) call, drop exposure state
-				if (expNum == exposureNumber->getValueInteger ())
+				case -3:
+					exposureConn = NULL;
+					endExposure ();
+					break;
 					maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
 						CAM_NOEXPOSURE | CAM_NOFT,
 						BOP_TEL_MOVE, 0,
 						"exposure chip finished");
+					break;
+				case -2:
+					// remember exposure number
+					expNum = exposureNumber->getValueInteger ();
+					endExposure ();
+					// if new exposure does not start during endExposure (camReadout) call, drop exposure state
+					if (expNum == exposureNumber->getValueInteger ())
+						maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
+							CAM_NOEXPOSURE | CAM_NOFT,
+							BOP_TEL_MOVE, 0,
+							"exposure chip finished");
 
-				// drop FT flag
-				else
-					maskStateChip (0, CAM_MASK_FT, CAM_NOFT,
-						0, 0, "ft exposure chip finished");
-			}
-			if (ret == -1)
-			{
-				maskStateChip (0,
-					DEVICE_ERROR_MASK | CAM_MASK_EXPOSE,
-					DEVICE_ERROR_HW | CAM_NOEXPOSURE,
-					BOP_TEL_MOVE, 0,
-					"exposure chip finished with error");
-				stopExposure ();
+					// drop FT flag
+					else
+						maskStateChip (0, CAM_MASK_FT, CAM_NOFT,
+							0, 0, "ft exposure chip finished");
+					break;
+				case -1:
+					maskStateChip (0,
+						DEVICE_ERROR_MASK | CAM_MASK_EXPOSE,
+						DEVICE_ERROR_HW | CAM_NOEXPOSURE,
+						BOP_TEL_MOVE, 0,
+						"exposure chip finished with error");
+					exposureConn = NULL;
+					stopExposure ();
+					break;
 			}
 		}
 	}

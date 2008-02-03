@@ -41,14 +41,16 @@ using namespace std;
 
 #include "atmcdLXd.h"
 //That's root for andor2.77
-#define ANDOR_ROOT "/usr/local/etc/andor"
+#define ANDOR_ROOT          "/usr/local/etc/andor"
 
-#define IXON_DEFAULT_GAIN 255
-#define IXON_MAX_GAIN 255
+#define IXON_DEFAULT_GAIN   255
+#define IXON_MAX_GAIN       255
 
-#define ANDOR_SHUTTER_AUTO 0
-#define ANDOR_SHUTTER_OPEN 1
-#define ANDOR_SHUTTER_CLOSED 2
+#define ANDOR_SHUTTER_AUTO    0
+#define ANDOR_SHUTTER_OPEN    1
+#define ANDOR_SHUTTER_CLOSED  2
+
+#define OPT_ANDOR_ROOT        OPT_LOCAL + 206
 
 /**
  * Andor camera, as seen by the outside world.
@@ -174,7 +176,6 @@ Rts2DevCameraAndor::isExposing ()
 			long firstValid, lastValid;
 			// get the data
 			GetSizeOfCircularBuffer (&firstValid);
-			std::cout << "buffer size " << firstValid << std::endl;
 			switch (getDataType ())
 			{
 				case RTS2_DATA_LONG:
@@ -195,16 +196,18 @@ Rts2DevCameraAndor::isExposing ()
 			ret = sendImage (dataBuffer, dataBufferSize);
 			if (ret)
 				return ret;
-			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout started");
 			if (quedExpNumber->getValueInteger () == 0)
 			{
 				// stop exposure if we do not have any qued values
 				AbortAcquisition ();
 				FreeInternalMemory ();
 				logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
-				return -1;
+				maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
+				return -3;
 			}
+			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
 			quedExpNumber->dec ();
+			sendValueAll (quedExpNumber);
 		}
 		return 100;
 	}
@@ -309,8 +312,7 @@ Rts2DevCamera (in_argc, in_argv)
 
 	printSpeedInfo = false;
 
-	addOption ('m', "mode", 1, "Which mode to use");
-	addOption ('r', "root", 1, "directory with Andor detector.ini file");
+	addOption (OPT_ANDOR_ROOT, "root", 1, "directory with Andor detector.ini file");
 	addOption ('g', "gain", 1, "set camera gain level (0-255)");
 	addOption ('N', "noft", 0, "do not use frame transfer mode");
 	addOption ('I', "speed_info", 0,
@@ -605,7 +607,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
 				exit (EXIT_FAILURE);
 			}
 			break;
-		case 'r':
+		case OPT_ANDOR_ROOT:
 			andorRoot = optarg;
 			break;
 		case 'I':
