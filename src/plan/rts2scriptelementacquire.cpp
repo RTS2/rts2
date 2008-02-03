@@ -122,7 +122,11 @@ char new_device[DEVICE_NAME_SIZE])
 				script->getMaster ()->
 					postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 			}
-			// EXP_LIGHT, expTime);
+
+			camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
+			// change values of the exposur
+			camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
+
 			*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
 			getDevice (new_device);
 		#ifdef DEBUG_EXTRA
