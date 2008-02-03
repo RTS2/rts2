@@ -217,6 +217,8 @@ Rts2DevClientCameraImage::exposureStarted ()
 	const char *focuser;
 	gettimeofday (&expStart, NULL);
 	Rts2Image *image = createImage (&expStart);
+	if (image == NULL)
+		return;
 	image->setExposureLength (exposureTime);
 
 	image->setValue ("XPLATE", xplate,
