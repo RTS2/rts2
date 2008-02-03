@@ -487,11 +487,10 @@ Rts2DevScript::nextPreparedCommand ()
 
 
 int
-Rts2DevScript::haveNextCommand ()
+Rts2DevScript::haveNextCommand (Rts2DevClient *devClient)
 {
 	int ret;
-
-								 // waiting for script or acqusition
+	// waiting for script or acqusition
 	if (!script || waitScript == WAIT_SLAVE)
 	{
 		return 0;
@@ -499,7 +498,7 @@ Rts2DevScript::haveNextCommand ()
 	ret = nextPreparedCommand ();
 	Rts2Value *queExpNum = script_connection->getValue ("que_exp_num");
 	// only end when we do not have any commands in que
-	if (ret < 0 && script_connection->queEmpty () && (queExpNum == NULL || queExpNum->getValueInteger () == 0))
+	if (ret < 0 && script_connection->queEmptyForOriginator (devClient) && (queExpNum == NULL || queExpNum->getValueInteger () == 0))
 	{
 		deleteScript ();
 		#ifdef DEBUG_EXTRA

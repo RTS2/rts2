@@ -172,7 +172,7 @@ void
 Rts2DevClientPhotExec::nextCommand ()
 {
   int ret;
-  ret = haveNextCommand ();
+  ret = haveNextCommand (this);
   if (!ret)
     return;
 

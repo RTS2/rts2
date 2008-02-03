@@ -25,6 +25,8 @@
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
 
+#define DEBUG_EXTRA
+
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString *in_expandPath)
 :Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
 {
@@ -102,7 +104,7 @@ void
 Rts2DevClientCameraExec::nextCommand ()
 {
 	int ret;
-	ret = haveNextCommand ();
+	ret = haveNextCommand (this);
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
 		<< "Rts2DevClientCameraExec::nextComd " << ret

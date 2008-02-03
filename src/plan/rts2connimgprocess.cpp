@@ -88,6 +88,14 @@ Rts2ConnImgProcess::processLine ()
 }
 
 
+int
+Rts2ConnImgProcess::sendMsg (const char *msg)
+{
+	// do nothing
+	return 0;
+}
+
+
 void
 Rts2ConnImgProcess::connectionError (int last_data_size)
 {

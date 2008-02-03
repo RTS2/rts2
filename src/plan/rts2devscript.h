@@ -75,7 +75,7 @@ class Rts2DevScript
 		 * @return 0 when there isn't any next command to execute, 1 when
 		 * there is next command available.
 		 */
-		int haveNextCommand ();
+		int haveNextCommand (Rts2DevClient *devClient);
 		virtual void unblockWait () = 0;
 		virtual void unsetWait () = 0;
 		virtual void clearWait () = 0;
