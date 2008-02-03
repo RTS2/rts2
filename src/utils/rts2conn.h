@@ -507,7 +507,9 @@ class Rts2Conn:public Rts2Object
 		 */
 		bool queEmpty ()
 		{
-			return (runningCommand == NULL && commandQue.empty ());
+			if (runningCommandStatus != RETURNING && runningCommand)
+				return false;
+			return commandQue.empty ();
 		}
 
 		/**
