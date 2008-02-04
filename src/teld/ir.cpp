@@ -39,8 +39,7 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 	if (!*status)
 	{
 		#ifdef DEBUG_ALL
-		if (!*status)
-			std::cout << "tpl_get name " << name << std::endl;
+		std::cout << "tpl_get name " << name << std::endl;
 		#endif
 		Request *r = tplc->Get (name, false);
 		cstatus = r->Wait (5000);
@@ -146,7 +145,7 @@ Rts2TelescopeIr::coverClose ()
 	status = tpl_set ("COVER.POWER", 1, &status);
 	status = tpl_get ("COVER.TARGETPOS", targetPos, &status);
 	cover_state = CLOSING;
-	logStream (MESSAGE_DEBUG) << "IR coverClose status " << status <<
+	logStream (MESSAGE_INFO) << "closing cover, status" << status <<
 		" target position " << targetPos << sendLog;
 	return status;
 }
@@ -161,7 +160,7 @@ Rts2TelescopeIr::coverOpen ()
 	status = tpl_set ("COVER.TARGETPOS", 1, &status);
 	status = tpl_set ("COVER.POWER", 1, &status);
 	cover_state = OPENING;
-	logStream (MESSAGE_DEBUG) << "IR coverOpen status " << status << sendLog;
+	logStream (MESSAGE_INFO) << "opening cover, status" << status << sendLog;
 	return status;
 }
 
@@ -173,7 +172,7 @@ Rts2TelescopeIr::domeOpen ()
 	dome_state = D_OPENING;
 	status = tpl_set ("DOME[1].TARGETPOS", 1, &status);
 	status = tpl_set ("DOME[2].TARGETPOS", 1, &status);
-	logStream (MESSAGE_DEBUG) << "IR domeOpen status " << status << sendLog;
+	logStream (MESSAGE_INFO) << "opening dome, status " << status << sendLog;
 	return status;
 }
 
@@ -185,7 +184,7 @@ Rts2TelescopeIr::domeClose ()
 	dome_state = D_CLOSING;
 	status = tpl_set ("DOME[1].TARGETPOS", 0, &status);
 	status = tpl_set ("DOME[2].TARGETPOS", 0, &status);
-	logStream (MESSAGE_DEBUG) << "IR domeClose status " << status << sendLog;
+	logStream (MESSAGE_INFO) << "closing dome, status " << status << sendLog;
 	return status;
 }
 
@@ -227,7 +226,16 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == derotatorOffset)
 	{
 		status =
-			tpl_set ("DEROTATOR[3].OFFSET", new_value->getValueDouble (),
+			tpl_set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == derotatorCurrpos)
+	{
+		status =
+			tpl_set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (),
 			&status);
 		if (status != TPL_OK)
 			return -2;
@@ -377,6 +385,69 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
+	if (old_value == model_aoff)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.AOFF", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_zoff)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_ae)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.AE", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_an)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_npae)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_ca)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_flex)
+	{
+		status =
+			tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
 
 	return Rts2DevTelescope::setValue (old_value, new_value);
 }
@@ -396,7 +467,7 @@ in_argv)
 		"power state of cabinet", false);
 
 	createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
-		RTS2_DT_DEG_DIST);
+		RTS2_DT_ROTANG);
 	createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
 		true, RTS2_DT_DEGREES);
 
@@ -497,9 +568,8 @@ Rts2TelescopeIr::initIrDevice ()
 	}
 	if (!ir_ip || !ir_port)
 	{
-		std::
-			cerr << "Invalid port or IP address of mount controller PC" << std::
-			endl;
+		std::cerr << "Invalid port or IP address of mount controller PC"
+			<< std::endl;
 		return -1;
 	}
 
@@ -960,7 +1030,7 @@ Rts2TelescopeIr::info ()
 	tpl_get ("DEROTATOR[3].POWER", derPower, &status);
 	if (status == TPL_OK)
 	{
-		derotatorOffset->setValueDouble (tmp_derOff);
+		derotatorOffset->setValueDouble (-1 * tmp_derOff);
 		derotatorCurrpos->setValueDouble (tmp_derCur);
 		derotatorPower->setValueBool (derPower == 1);
 	}

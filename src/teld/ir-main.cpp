@@ -25,7 +25,6 @@
 class Rts2DevTelescopeIr:public Rts2TelescopeIr
 {
 	private:
-		double rotatorOffset;
 		struct ln_equ_posn target;
 		int irTracking;
 
@@ -58,7 +57,7 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 			irTracking = atoi (optarg);
 			break;
 		case OPT_ROTATOR_OFFSET:
-			rotatorOffset = atof (optarg);
+			derotatorOffset->setValueDouble (atof (optarg));
 			break;
 		default:
 			return Rts2TelescopeIr::processOption (in_opt);
@@ -84,8 +83,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
 		sendLog;
 	#endif
-	if (rotatorOffset != 0)
-		status = tpl_set ("DEROTATOR[3].OFFSET", rotatorOffset, &status);
+	status = tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
 
 	if (status != TPL_OK)
 		return status;
@@ -279,7 +277,6 @@ Rts2DevTelescopeIr::endPark ()
 Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2TelescopeIr (in_argc,
 in_argv)
 {
-	rotatorOffset = 0;
 	irTracking = 4;
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
@@ -313,7 +310,7 @@ Rts2DevTelescopeIr::stopWorm ()
 int
 Rts2DevTelescopeIr::changeMasterState (int new_state)
 {
-	switch (new_state & SERVERD_STATUS_MASK)
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:

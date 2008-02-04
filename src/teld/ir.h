@@ -66,7 +66,6 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		Rts2ValueBool *cabinetPower;
 		Rts2ValueFloat *cabinetPowerState;
 
-		Rts2ValueDouble *derotatorOffset;
 		Rts2ValueDouble *derotatorCurrpos;
 
 		Rts2ValueBool *derotatorPower;
@@ -108,6 +107,8 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		template < typename T > int tpl_setw (const char *name, T val,
 			int *status);
 		virtual int processOption (int in_opt);
+
+		Rts2ValueDouble *derotatorOffset;
 
 		Rts2ValueBool *domeAutotrack;
 
