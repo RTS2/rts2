@@ -948,6 +948,20 @@ Rts2DevCameraAndor::init ()
 		return -1;
 	}
 
+	// This clamps the baseline level of kinetic series frames.  Didn't exist
+	// in older SDK versions, is not a problem for non-KS exposures.
+	ret = SetBaselineClamp(1);
+
+	// iXon+ cameras can do "real gain", indicated by a flag.
+	if (cap.ulEMGainCapability & 0x08)
+	{
+		ret = SetEMGainMode(3);
+		if (ret !=DRV_SUCCESS)
+		{
+			cerr << "Failed to set real gain mode" << ret << endl;
+			return -1;
+		}
+	}
 	initAndorValues ();
 
 	//Set Read Mode to --Image--
