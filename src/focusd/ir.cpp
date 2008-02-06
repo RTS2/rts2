@@ -20,14 +20,12 @@ class Rts2DevFocuserIr:public Rts2DevFocuser
 		char *ir_ip;
 		int ir_port;
 		Client *tplc;
-		int is_focusing;
+
+		Rts2ValueInteger *realPos;
 		// low-level tpl functions
-		template < typename T > int tpl_get (const char *name, T & val,
-			int *status);
-		template < typename T > int tpl_set (const char *name, T val,
-			int *status);
-		template < typename T > int tpl_setw (const char *name, T val,
-			int *status);
+		template < typename T > int tpl_get (const char *name, T & val, int *status);
+		template < typename T > int tpl_set (const char *name, T val, int *status);
+		template < typename T > int tpl_setw (const char *name, T val, int *status);
 		// low-level image fuctions
 		// int data_handler (int sock, size_t size, struct image_info *image);
 		// int readout ();
@@ -127,7 +125,8 @@ Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 Rts2DevFocuserIr::Rts2DevFocuserIr (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
 in_argv)
 {
-	is_focusing = 0;
+	createValue (realPos, "FOC_REAL", "real position of the focuser", true, 0, 0, false);
+
 	ir_ip = NULL;
 	ir_port = 0;
 	tplc = NULL;
@@ -227,12 +226,12 @@ Rts2DevFocuserIr::info ()
 	if (!(tplc->IsAuth () && tplc->IsConnected ()))
 		return -1;
 
-	double realPos;
-	status = tpl_get ("FOCUS.REALPOS", realPos, &status);
+	double f_realPos;
+	status = tpl_get ("FOCUS.REALPOS", f_realPos, &status);
 	if (status)
 		return -1;
 
-	focPos->setValueInteger ((int) (realPos * 1000.0));
+	realPos->setValueInteger ((int) (f_realPos * 1000.0));
 
 	return Rts2DevFocuser::info ();
 }
