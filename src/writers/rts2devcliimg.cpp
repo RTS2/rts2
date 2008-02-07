@@ -265,7 +265,8 @@ Rts2DevClientCameraImage::exposureEnd ()
 {
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 
-	actualImage->setExEnd (getMaster ()->getNow ());
+	if (actualImage)
+		actualImage->setExEnd (getMaster ()->getNow ());
 
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 
