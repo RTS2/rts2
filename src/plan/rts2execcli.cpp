@@ -120,6 +120,9 @@ Rts2DevClientCameraExec::nextCommand ()
 		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
 			return;
+		// if there are commands in que, do not execute command
+		if (!connection->queEmptyForOriginator (this))
+			return;
 	}
 
 	// send command to other device
