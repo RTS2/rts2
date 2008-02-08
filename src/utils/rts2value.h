@@ -50,6 +50,8 @@
 #define RTS2_VALUE_SELECTION          0x00000007
 /** Value is long integer value. */
 #define RTS2_VALUE_LONGINT            0x00000008
+/** Value is RA DEC. */
+#define RTS2_VALUE_RADEC              0x00000009
 
 /** Value have statistics nature (include mean, average, min and max values and number of measurements taken for value). */
 #define RTS2_VALUE_STAT               0x00000010
@@ -132,7 +134,16 @@ class Rts2Value
 		 */
 		virtual int sendTypeMetaInfo (Rts2Conn * connection);
 	public:
+		/**
+		 * Create value. RA and DEC names will be composed by suffixing
+		 * in_val_name with RA and DEC strings.
+		 */
 		Rts2Value (std::string in_val_name);
+
+		/**
+		 * Create value. RA and DEC names will be composed by suffixing
+		 * in_val_name with RA and DEC strings.
+		 */
 		Rts2Value (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual ~ Rts2Value (void)
@@ -147,12 +158,25 @@ class Rts2Value
 			return valueName;
 		}
 		virtual int setValue (Rts2Conn * connection) = 0;
+
 		/**
 		 * Set value from string.
 		 * return -1 when value cannot be set from string.
 		 */
 		virtual int setValueString (const char *in_value) = 0;
-		virtual int setValueInteger (int in_value) = 0;
+		virtual int setValueInteger (int in_value)
+		{
+			return -1;
+		}
+
+		/**
+		 * Performs operation on value.
+		 *
+		 * @param op Operator character. Currently are supoprted =, + and -.
+		 * @param old_value Operand. Ussually any value of any type.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		virtual const char *getValue () = 0;
 		virtual const char *getDisplayValue ()
@@ -240,15 +264,21 @@ class Rts2Value
 			return rts2Type;
 		}
 
-		// send value metainformations, including description
+		/**
+		 * Sends value metainformations, including description.
+		 *
+		 * @param connection Connection over which value will be send.
+		 * @return -1 on error, 0 on success.
+		 */
 		int sendMetaInfo (Rts2Conn * connection);
 
-		// send value over given connection
+		/**
+		 * Sends value over given connection.
+		 *
+		 * @param connection Connection on which value will be send.
+		 */
 		virtual int send (Rts2Conn * connection);
-		int sendInfo (Rts2Conn * connection)
-		{
-			return send (connection);
-		}
+
 		virtual void setFromValue (Rts2Value * newValue) = 0;
 
 		/**
@@ -728,6 +758,117 @@ class Rts2ValueLong:public Rts2Value
 			value = in_value;
 			return 0;
 		}
+		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
+};
+
+/**
+ * Class for RADEC informations.
+ *
+ * @ingroup RTS2Value
+ */
+class Rts2ValueRaDec: public Rts2Value
+{
+	private:
+		double ra;
+		double decl;
+
+	protected:
+		virtual int sendTypeMetaInfo (Rts2Conn * connection);
+
+	public:
+		Rts2ValueRaDec (std::string in_val_name);
+		Rts2ValueRaDec (std::string in_val_name, std::string in_description,
+			bool writeToFits = true, int32_t flags = 0);
+		virtual int setValue (Rts2Conn * connection);
+
+		/**
+		 * Set value from string, uses parsing from
+		 * input stream, so it recognized various forms of the value.
+		 *
+		 * @param in_value String represenation of RA and DEC.
+		 */
+		virtual int setValueString (const char *in_value);
+
+		/**
+		 * Set RA and DEC values from two doubles.
+		 *
+		 * @param in_ra RA value.
+		 * @param in_dec DEC value.
+		 *
+		 * @return 0 on sucess.
+		 */
+		int setValueRaDec (double in_ra, double in_dec)
+		{
+			setRa (in_ra);
+			setDec (in_dec);
+			return 0;
+		}
+
+		/**
+		 * Sets RA.
+		 */
+		void setRa (double in_ra)
+		{
+			ra = in_ra;
+		}
+
+		/**
+		 * Sets DEC.
+		 */
+		void setDec (double in_dec)
+		{
+			decl = in_dec;
+		}
+
+		virtual int doOpValue (char op, Rts2Value * old_value);
+
+		virtual const char *getValue ();
+		virtual double getValueDouble ()
+		{
+			return nan("f");
+		}
+		virtual float getValueFloat ()
+		{
+			return nan("f");
+		}
+		virtual int getValueInteger ()
+		{
+			return INT_MAX;
+		}
+		virtual long int getValueLong ()
+		{
+			return INT_MAX;
+		}
+		long inc ()
+		{
+			return INT_MAX;
+		}
+		long dec ()
+		{
+			return INT_MAX;
+		}
+
+		/**
+		 * Return RA in degrees.
+		 *
+		 * @return RA value in degrees.
+		 */
+		double getRa ()
+		{
+			return ra;
+		}
+
+		/**
+		 * Return DEC in degrees.
+		 *
+		 * @return DEC value in degrees.
+		 */
+		double getDec ()
+		{
+			return decl;
+		}
+
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
 };

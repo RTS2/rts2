@@ -18,6 +18,7 @@
  */
 
 #include "libnova_cpp.h"
+#include "radecparser.h"
 
 // (this is in libnova_cpp.h) #include <math.h>
 #include <iomanip>
@@ -509,6 +510,20 @@ LibnovaRaDec::flip (struct ln_lnlat_posn *obs)
 		ra->flip ();
 	if (dec)
 		dec->flip (obs);
+}
+
+
+int
+LibnovaRaDec::parseString (const char *radec)
+{
+	int ret;
+	double v_ra, v_dec;
+	ret = parseRaDec (radec, v_ra, v_dec);
+	if (ret)
+		return ret;
+	setRa (v_ra);
+	setDec (v_dec);
+	return ret;
 }
 
 

@@ -24,7 +24,7 @@
 #include "rts2block.h"
 #include "rts2value.h"
 
-#include <libnova/libnova.h>
+#include "radecparser.h"
 
 Rts2Value::Rts2Value (std::string in_val_name)
 {
@@ -732,6 +732,135 @@ Rts2ValueLong::isEqual (Rts2Value * other_value)
 }
 
 
+Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name)
+:Rts2Value (in_val_name)
+{
+	ra = nan ("f");
+	decl = nan ("f");
+	rts2Type |= RTS2_VALUE_RADEC;
+}
+
+
+Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_description,
+bool writeToFits, int32_t flags)
+:Rts2Value (in_val_name, in_description + " RA and DEC", writeToFits, flags)
+{
+	ra = nan ("f");
+	decl = nan ("f");
+	rts2Type |= RTS2_VALUE_RADEC;
+}
+
+
+int
+Rts2ValueRaDec::sendTypeMetaInfo (Rts2Conn * connection)
+{
+	return Rts2Value::sendTypeMetaInfo (connection);
+}
+
+
+int
+Rts2ValueRaDec::setValue (Rts2Conn * connection)
+{
+	if (connection->paramNextDouble (&ra) || connection->paramNextDouble (&decl) || !connection->paramEnd ())
+		return -2;
+	return 0;
+}
+
+
+int
+Rts2ValueRaDec::setValueString (const char *in_value)
+{
+	double v_ra, v_dec;
+	if (parseRaDec (in_value, v_ra, v_dec));
+	return -2;
+	setValueRaDec (v_ra, v_dec);
+	return 0;
+}
+
+
+int
+Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
+{
+	switch (old_value->getValueType ())
+	{
+		case RTS2_VALUE_RADEC:
+			switch (op)
+			{
+				case '+':
+					ra += ((Rts2ValueRaDec *)old_value)->getRa ();
+					decl += ((Rts2ValueRaDec *)old_value)->getDec ();
+					return 0;
+				case '-':
+					ra -= ((Rts2ValueRaDec *)old_value)->getRa ();
+					decl -= ((Rts2ValueRaDec *)old_value)->getDec ();
+					return 0;
+				default:
+					return Rts2Value::doOpValue (op, old_value);
+			}
+		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_FLOAT:
+		case RTS2_VALUE_INTEGER:
+		case RTS2_VALUE_LONGINT:
+			switch (op)
+			{
+				case '+':
+					ra += old_value->getValueDouble ();
+					decl += old_value->getValueDouble ();
+					return 0;
+				case '-':
+					ra -= old_value->getValueDouble ();
+					decl -= old_value->getValueDouble ();
+					return 0;
+				default:
+					return Rts2Value::doOpValue (op, old_value);
+			}
+		default:
+			logStream (MESSAGE_ERROR) << "Do not know how to handle operation '" << op
+				<< "' between RADEC value and " << old_value->getValueType ()
+				<< sendLog;
+			return -1;
+	}
+}
+
+
+const char *
+Rts2ValueRaDec::getValue ()
+{
+	std::ostringstream _os;
+	//	LibnovaRaDec radec (ra->getValueDouble (), decl->getValueDouble ());
+	_os << getRa () << " " << getDec ();
+
+	return _os.str ().c_str ();
+}
+
+
+void
+Rts2ValueRaDec::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == RTS2_VALUE_RADEC)
+	{
+		setValueRaDec (((Rts2ValueRaDec *)newValue)->getRa (),
+			((Rts2ValueRaDec *)newValue)->getDec ());
+	}
+	else
+	{
+		setValueString (newValue->getValue ());
+	}
+}
+
+
+bool
+Rts2ValueRaDec::isEqual (Rts2Value *other_value)
+{
+	if (other_value->getValueType () == RTS2_VALUE_RADEC)
+	{
+		return getRa () == ((Rts2ValueRaDec*)other_value)->getDec ()
+			&& getDec () == ((Rts2ValueRaDec*)other_value)->getDec ();
+	}
+	return false;
+}
+
+
 Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
 {
 	switch (rts2Type & RTS2_BASE_TYPE)
@@ -752,6 +881,8 @@ Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
 			return new Rts2ValueSelection (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_LONGINT:
 			return new Rts2ValueLong (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_RADEC:
+			return new Rts2ValueRaDec (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 	}
 	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
 	return NULL;

@@ -461,6 +461,11 @@ class LibnovaRaDec
 			LibnovaRaDec l_radec);
 		friend std::istream & operator >> (std::istream & _is,
 			LibnovaRaDec & l_radec);
+
+		/**
+		 * Get Ra and Dec from string.
+		 */
+		int parseString (const char *radec);
 };
 
 /**
