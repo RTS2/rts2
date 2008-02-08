@@ -112,11 +112,17 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	switch (value->getValueType ())
 	{
 		case RTS2_VALUE_TIME:
-			_os
-				<< LibnovaDateDouble (value->getValueDouble ())
+			_os << LibnovaDateDouble (value->getValueDouble ())
 				<< " (" << TimeDiff (now, value->getValueDouble ()) << ")";
 			printValue (value->getName ().c_str (), _os.str ().c_str ());
 			break;
+		case RTS2_VALUE_RADEC:
+		{
+			LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
+			_os << v_radec;
+			printValue (value->getName ().c_str (), _os.str().c_str ());
+		}
+		break;
 		case RTS2_VALUE_SELECTION:
 			wprintw
 				(
