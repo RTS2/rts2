@@ -341,8 +341,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 					queTarget (currentTarget);
 				currentTarget = priorityTarget;
 				priorityTarget = NULL;
-				postEvent (new
-					Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+				postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 				postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 				infoAll ();
 				break;

@@ -45,7 +45,15 @@ class Rts2DevScript
 		void scriptBegin ();
 	protected:
 		Rts2Target * currentTarget;
+		/**
+		 * Reference to next command.
+		 */
 		Rts2Command *nextComd;
+
+		/**
+		 * Reference to next command connection, if it differs from scripting device.
+		 */
+		Rts2Conn *cmdConn;
 		char cmd_device[DEVICE_NAME_SIZE];
 
 		enum

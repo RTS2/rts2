@@ -86,10 +86,36 @@ Rts2DevClientCameraExec::startTarget ()
 int
 Rts2DevClientCameraExec::getNextCommand ()
 {
-	int ret = getScript ()->nextCommand (*this, &nextComd, cmd_device);
-	if (nextComd)
-		nextComd->setOriginator (this);
-	return ret;
+	// there is only one continue which can bring us on beginning
+	while (true)
+	{
+		int ret = getScript ()->nextCommand (*this, &nextComd, cmd_device);
+		if (nextComd)
+		{
+			// send command to other device
+			if (strcmp (getName (), cmd_device))
+			{
+				cmdConn = getMaster ()->getOpenConnection (cmd_device);
+				if (!cmdConn)
+				{
+					logStream (MESSAGE_ERROR)
+						<< "Unknow device : " << cmd_device
+						<< "for command " << nextComd->getText ()
+						<< sendLog;
+					// only there try to get next command
+					continue;
+				}
+			}
+			else
+			{
+				cmdConn = NULL;
+			}
+			nextComd->setOriginator (this);
+			return ret;
+		}
+		cmdConn = NULL;
+		return ret;
+	}
 }
 
 
@@ -126,7 +152,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
 
 	// send command to other device
-	if (strcmp (getName (), cmd_device))
+	if (cmdConn)
 	{
 		Rts2Conn *cmdConn = getMaster ()->getOpenConnection (cmd_device);
 		if (!cmdConn)
