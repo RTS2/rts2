@@ -154,16 +154,6 @@ Rts2DevClientCameraExec::nextCommand ()
 	// send command to other device
 	if (cmdConn)
 	{
-		Rts2Conn *cmdConn = getMaster ()->getOpenConnection (cmd_device);
-		if (!cmdConn)
-		{
-			logStream (MESSAGE_ERROR)
-				<< "Unknow device : " << cmd_device
-				<< sendLog;
-			nextComd = NULL;
-			return;
-		}
-
 		if (!(nextComd->getBopMask () & BOP_WHILE_STATE))
 		{
 			// if there are some commands in que, do not proceed, as they might change state of the device
