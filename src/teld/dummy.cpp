@@ -1,3 +1,22 @@
+/* 
+ * Dummy telescope for tests.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -14,8 +33,7 @@
 class Rts2DevTelescopeDummy:public Rts2DevTelescope
 {
 	private:
-		double newRa;
-		double newDec;
+		struct ln_equ_posn dummyPos;
 		long countLong;
 	protected:
 
@@ -45,12 +63,8 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 		Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
 			in_argv)
 		{
-			newRa = 0;
-			newDec = 0;
-
-			telLongtitude = 0;
-			telLatitude = 0;
-			telAltitude = 0;
+			dummyPos.ra = 0;
+			dummyPos.dec = 0;
 		}
 
 		virtual int initValues ()
@@ -59,7 +73,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			config = Rts2Config::instance ();
 			config->loadFile ();
 			telLatitude->setValueDouble (config->getObserver ()->lat);
-			telLongtitude->setValueDouble (config->getObserver ()->lng);
+			telLongitude->setValueDouble (config->getObserver ()->lng);
 			strcpy (telType, "Dummy");
 			return Rts2DevTelescope::initValues ();
 		}
@@ -71,23 +85,20 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 
 		virtual int info ()
 		{
-			telRa->setValueDouble (newRa);
-			telDec->setValueDouble (newDec);
+			setTelRaDec (dummyPos.ra, dummyPos.dec);
 			return Rts2DevTelescope::info ();
 		}
 
-		virtual int startMove (double tar_ra, double tar_dec)
+		virtual int startMove ()
 		{
-			newRa = tar_ra;
-			newDec = tar_dec;
+			getTarget (&dummyPos);
 			countLong = 0;
 			return 0;
 		}
 
 		virtual int startMoveFixed (double tar_az, double tar_alt)
 		{
-			newRa = tar_az;
-			newDec = tar_alt;
+			getTarget (&dummyPos);
 			countLong = 0;
 			return 0;
 		}
@@ -97,25 +108,17 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			return 0;
 		}
 
-		virtual int change (double chng_ra, double chng_dec)
+		virtual int stopMove ()
 		{
-			newRa += chng_ra;
-			newDec += chng_dec;
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int stop ()
-		{
-			newRa = 1;
-			newDec = 1;
+			dummyPos.ra = 1;
+			dummyPos.dec = 1;
 			return 0;
 		}
 
 		virtual int startPark ()
 		{
-			newRa = 2;
-			newDec = 2;
+			dummyPos.ra = 2;
+			dummyPos.dec = 2;
 			countLong = 0;
 			return 0;
 		}

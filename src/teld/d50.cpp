@@ -83,14 +83,12 @@ class Rts2DevTelD50:public Rts2DevGEM
 
 		virtual int info ();
 
-		virtual int startMove (double tar_ra, double tar_dec);
+		virtual int startMove ();
 		virtual int endMove ();
 		virtual int stopMove ();
 
 		virtual int startPark ();
 		virtual int endPark ();
-
-		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 };
 
 int
@@ -277,7 +275,7 @@ Rts2DevGEM (in_argc, in_argv)
 	createValue (procDec, "proc_dec", "state for DEC processor", false);
 
 	// apply all correction for paramount
-	corrections->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+	correctionsMask->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 }
 
 
@@ -325,7 +323,7 @@ Rts2DevTelD50::init ()
 	if (ret)
 		return -1;
 
-	telLongtitude->setValueDouble (config->getObserver ()->lng);
+	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 
 								 // south hemispehere
@@ -441,20 +439,20 @@ Rts2DevTelD50::info ()
 	int u_ra = unitRa->getValueInteger ();
 
 	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
-	telRa->setValueDouble (t_telRa);
-	telDec->setValueDouble (t_telDec);
+	setTelRa (t_telRa);
+	setTelDec (t_telDec);
 
 	return Rts2DevGEM::info ();
 }
 
 
 int
-Rts2DevTelD50::startMove (double tar_ra, double tar_dec)
+Rts2DevTelD50::startMove ()
 {
 	int ret;
 	int32_t ac, dc;
 
-	ret = sky2counts (tar_ra, tar_dec, ac, dc);
+	ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
 
@@ -502,7 +500,7 @@ Rts2DevTelD50::stopMove ()
 	if (ret)
 		return ret;
 
-	return Rts2DevGEM::stopMove ();
+	return 0;
 }
 
 
@@ -531,14 +529,6 @@ int
 Rts2DevTelD50::endPark ()
 {
 	return 0;
-}
-
-
-int
-Rts2DevTelD50::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
-{
-	return correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
 }
 
 

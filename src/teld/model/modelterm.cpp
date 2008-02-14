@@ -136,8 +136,7 @@ Rts2ObsConditions * obs_conditions)
 
 // status: testing
 void
-Rts2TermA1D::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+Rts2TermA1D::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
 {
 	pos->dec =
 		pos->dec -
@@ -146,8 +145,7 @@ Rts2ObsConditions * obs_conditions)
 
 
 void
-Rts2TermTF::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+Rts2TermTF::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);

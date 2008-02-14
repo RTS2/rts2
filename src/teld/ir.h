@@ -143,7 +143,7 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 			double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
-		virtual int resetMount (resetStates reset_mount);
+		virtual int resetMount ();
 
 		virtual int getError (int in_error, std::string & desc);
 };

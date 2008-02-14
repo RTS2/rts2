@@ -1,6 +1,6 @@
 /* 
  * Abstract class for GEMs.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 #include "../utils/libnova_cpp.h"
 
 int
-Rts2DevGEM::sky2counts (double ra, double dec, int32_t & ac, int32_t & dc)
+Rts2DevGEM::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
@@ -36,8 +36,7 @@ Rts2DevGEM::sky2counts (double ra, double dec, int32_t & ac, int32_t & dc)
 	if (ret)
 		return -1;
 
-	pos.ra = ra;
-	pos.dec = dec;
+	getTarget (&pos);
 
 	return sky2counts (&pos, ac, dc, JD, homeOff);
 }
@@ -131,9 +130,9 @@ Rts2DevGEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, dou
 		|| (!flip && telLatitude->getValueDouble () > 0))
 		model_change.dec *= -1;
 
+	#ifdef DEBUG_EXTRA
 	LibnovaRaDec lchange (&model_change);
 
-	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Before model " << ac << dc << lchange <<
 		sendLog;
 	#endif						 /* DEBUG_EXTRA */

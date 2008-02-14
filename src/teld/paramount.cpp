@@ -53,6 +53,7 @@ class ParaVal
 		const char *name;
 		para_t type;
 		int id;
+
 	public:
 		ParaVal (const char *in_name, para_t in_type, int in_id)
 		{
@@ -155,6 +156,9 @@ class Rts2DevTelParamount:public Rts2DevGEM
 
 		std::vector < ParaVal > paramountValues;
 
+		Rts2ValueLong *axRa;
+		Rts2ValueLong *axDec;
+
 		int saveAxis (std::ostream & os, const MKS3Id & axis);
 
 		int moveState;
@@ -176,6 +180,17 @@ class Rts2DevTelParamount:public Rts2DevGEM
 
 		// returns actual home offset
 		virtual int getHomeOffset (int32_t & off);
+
+		virtual int startMove ();
+		virtual int endMove ();
+		virtual int stopMove ();
+
+		virtual int startPark ();
+		virtual int endPark ();
+
+		// save and load gemini informations
+		virtual int saveModel ();
+		virtual int loadModel ();
 	public:
 		Rts2DevTelParamount (int in_argc, char **in_argv);
 		virtual ~ Rts2DevTelParamount (void);
@@ -184,20 +199,6 @@ class Rts2DevTelParamount:public Rts2DevGEM
 		virtual int idle ();
 
 		virtual int info ();
-
-		virtual int startMove (double tar_ra, double tar_dec);
-		virtual int endMove ();
-		virtual int stopMove ();
-
-		virtual int startPark ();
-		virtual int endPark ();
-
-		virtual int correct (double cor_ra, double cor_dec, double real_ra,
-			double real_dec);
-
-		// save and load gemini informations
-		virtual int saveModel ();
-		virtual int loadModel ();
 };
 
 int
@@ -412,9 +413,12 @@ Rts2DevTelParamount::updateLimits ()
 }
 
 
-Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv):
-Rts2DevGEM (in_argc, in_argv)
+Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv)
+:Rts2DevGEM (in_argc, in_argv)
 {
+	createValue (axRa, "AX1", "RA axis count", true);
+	createValue (axDec, "AX2", "DEC axis count", true);
+
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
 
@@ -463,7 +467,7 @@ Rts2DevGEM (in_argc, in_argv)
 	track1 = NULL;
 
 	// apply all correction for paramount
-	corrections->
+	correctionsMask->
 		setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 
 	// int paramout values
@@ -576,7 +580,7 @@ Rts2DevTelParamount::init ()
 	if (ret)
 		return -1;
 
-	telLongtitude->setValueDouble (config->getObserver ()->lng);
+	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 
 								 // south hemispehere
@@ -685,8 +689,8 @@ Rts2DevTelParamount::updateTrack ()
 	{
 		JD = ln_get_julian_from_sys ();
 
-		getTargetCorrected (&corr_pos, JD);
-		startMove (corr_pos.ra, corr_pos.dec);
+		getTarget (&corr_pos);
+		startMove ();
 		return;
 	}
 	double track_delta;
@@ -699,7 +703,7 @@ Rts2DevTelParamount::updateTrack ()
 		USEC_SEC;
 	JD = ln_get_julian_from_timet (&track_next.tv_sec);
 	JD += track_next.tv_usec / USEC_SEC / 86400.0;
-	getTargetCorrected (&corr_pos, JD);
+	getTarget (&corr_pos);
 	// calculate position at track_next time
 	sky2counts (&corr_pos, ac, dc, JD, 0);
 
@@ -777,7 +781,7 @@ Rts2DevTelParamount::idle ()
 int
 Rts2DevTelParamount::info ()
 {
-	CWORD32 ac = 0, dc = 0;
+	int32_t ac = 0, dc = 0;
 	int ret;
 	ret0 = MKS3PosCurGet (axis0, &ac);
 	ret1 = MKS3PosCurGet (axis1, &dc);
@@ -787,10 +791,10 @@ Rts2DevTelParamount::info ()
 	double t_telRa;
 	double t_telDec;
 	ret = counts2sky (ac, dc, t_telRa, t_telDec);
-	telRa->setValueDouble (t_telRa);
-	telDec->setValueDouble (t_telDec);
-	ax1->setValueDouble (ac);
-	ax2->setValueDouble (dc);
+	setTelRa (t_telRa);
+	setTelDec (t_telDec);
+	axRa->setValueLong (ac);
+	axDec->setValueLong (dc);
 	if (ret)
 		return ret;
 	return Rts2DevGEM::info ();
@@ -798,7 +802,7 @@ Rts2DevTelParamount::info ()
 
 
 int
-Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
+Rts2DevTelParamount::startMove ()
 {
 	int ret;
 	CWORD32 ac = 0;
@@ -838,7 +842,7 @@ Rts2DevTelParamount::startMove (double tar_ra, double tar_dec)
 		return -1;
 	}
 
-	ret = sky2counts (tar_ra, tar_dec, ac, dc);
+	ret = sky2counts (ac, dc);
 	if (ret)
 	{
 		return -1;
@@ -878,9 +882,7 @@ Rts2DevTelParamount::isMoving ()
 		if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
 			return USEC_SEC / 10;
 		// re-move
-		struct ln_equ_posn tar;
-		getTargetCorrected (&tar);
-		return startMove (tar.ra, tar.dec);
+		return startMove ();
 	}
 	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
 		return USEC_SEC / 10;
@@ -1003,14 +1005,6 @@ Rts2DevTelParamount::endPark ()
 	ret0 = MKS3MotorOff (axis0);
 	ret1 = MKS3MotorOff (axis1);
 	return checkRet ();
-}
-
-
-int
-Rts2DevTelParamount::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
-{
-	return correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
 }
 
 

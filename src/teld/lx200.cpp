@@ -80,8 +80,6 @@ class Rts2DevTelescopeLX200:public Rts2DevTelescope
 
 		int tel_read_ra ();
 		int tel_read_dec ();
-		int tel_read_localtime ();
-		int tel_read_siderealtime ();
 		int tel_read_latitude ();
 		int tel_read_longtitude ();
 		int tel_rep_write (char *command);
@@ -112,7 +110,7 @@ class Rts2DevTelescopeLX200:public Rts2DevTelescope
 		virtual int correct (double cor_ra, double cor_dec, double real_ra,
 			double real_dec);
 
-		virtual int startMove (double tar_ra, double tar_dec);
+		virtual int startMove ();
 		virtual int isMoving ();
 		virtual int stopMove ();
 
@@ -313,7 +311,7 @@ Rts2DevTelescopeLX200::tel_read_ra ()
 	double new_ra;
 	if (tel_read_hms (&new_ra, "#:GR#"))
 		return -1;
-	telRa->setValueDouble (new_ra * 15.0);
+	setTelRa (new_ra * 15.0);
 	return 0;
 }
 
@@ -329,57 +327,7 @@ Rts2DevTelescopeLX200::tel_read_dec ()
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
 		return -1;
-	telDec->setValueDouble (t_telDec);
-	return 0;
-}
-
-
-/*!
- * Returns LX200 local time.
- *
- * @return -1 and errno on error, otherwise 0
- *
- * TEMPORARY
- * MY EDIT LX200 local time
- *
- * Hardcode local time and return 0
- */
-int
-Rts2DevTelescopeLX200::tel_read_localtime ()
-{
-	time_t curtime;
-	struct tm *loctime;
-
-	/* Get the current time. */
-	time (&curtime);
-
-	/* Convert it to local time representation. */
-	loctime = localtime (&curtime);
-
-	telLocalTime->setValueDouble (loctime->tm_hour + loctime->tm_min / 60 +
-		loctime->tm_sec / 3600);
-
-	return 0;
-}
-
-
-/*!
- * Returns LX200 sidereal time.
- *
- * @return -1 and errno on error, otherwise 0
- *
- * TEMPORARY
- * MY EDIT LX200 sidereal time
- *
- * Hardcode sidereal time and return 0
- * Dynostar doesn't suptel_desc reading Sidereal time,
- * so read sidereal time from system
- */
-int
-Rts2DevTelescopeLX200::tel_read_siderealtime ()
-{
-	tel_read_longtitude ();
-	telSiderealTime->setValueDouble (getLocSidTime ());
+	setTelDec (t_telDec);
 	return 0;
 }
 
@@ -659,8 +607,7 @@ Rts2DevTelescopeLX200::initValues ()
 int
 Rts2DevTelescopeLX200::info ()
 {
-	if (tel_read_ra ()
-		|| tel_read_dec () || tel_read_siderealtime () || tel_read_localtime ())
+	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
 	return Rts2DevTelescope::info ();
@@ -765,10 +712,10 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 
 	// ADDED BY JF
 	// CALCULATE & PRINT ALT/AZ & HOUR ANGLE TO LOG
-	object.ra = telRa->getValueDouble ();
-	object.dec = telDec->getValueDouble ();
+	object.ra = getTelRa ();
+	object.dec = getTelDec ();
 
-	observer.lng = telLongtitude->getValueDouble ();
+	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 
 	JD = ln_get_julian_from_sys ();
@@ -801,7 +748,7 @@ Rts2DevTelescopeLX200::set_move_timeout (time_t plus_time)
 
 
 int
-Rts2DevTelescopeLX200::startMove (double tar_ra, double tar_dec)
+Rts2DevTelescopeLX200::startMove ()
 {
 	int ret;
 
@@ -815,8 +762,8 @@ Rts2DevTelescopeLX200::startMove (double tar_ra, double tar_dec)
 
 	move_state = MOVE_HOME;
 	set_move_timeout (100);
-	lastMoveRa = tar_ra;
-	lastMoveDec = tar_dec;
+	lastMoveRa = getTelRa ();
+	lastMoveDec = getTelDec ();
 	return 0;
 }
 
@@ -873,7 +820,6 @@ Rts2DevTelescopeLX200::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
-	Rts2DevTelescope::stopMove ();
 	for (i = 0; i < 4; i++)
 	{
 		if (telescope_stop_move (dirs[i]) < 0)

@@ -29,14 +29,34 @@
 
 class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 {
+	protected:
+		int startMove ()
+		{
+			return 0;
+		}
+		int stopMove ()
+		{
+			return 0;
+		}
+
+		int startPark ()
+		{
+			return 0;
+		}
+
+		int endPark ()
+		{
+			return 0;
+		}
+
 	public:
 		Rts2DevTelescopeModelTest ():Rts2DevTelescope (0, NULL)
 		{
-			createConstValue (telLongtitude, "LONG", "telescope longtitude");
+			createConstValue (telLongitude, "LONG", "telescope longtitude");
 			createConstValue (telLatitude, "LAT", "telescope latitude");
 			createConstValue (telAltitude, "ALTI", "telescope altitude");
 
-			telLongtitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
+			telLongitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
 				lng);
 			telLatitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
 				lat);

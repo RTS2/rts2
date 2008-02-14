@@ -1,6 +1,6 @@
 /* 
  * Abstract class for GEMs.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -56,7 +56,7 @@ class Rts2DevGEM: public Rts2DevTelescope
 		 */
 		virtual int getHomeOffset (int32_t & off) = 0;
 
-		int sky2counts (double ra, double dec, int32_t & ac, int32_t & dc);
+		int sky2counts (int32_t & ac, int32_t & dc);
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
 	public:

@@ -33,7 +33,7 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 		virtual int processOption (int in_opt);
 	public:
 		Rts2DevTelescopeIr (int in_arcg, char **in_argv);
-		virtual int startMove (double tar_ra, double tar_dec);
+		virtual int startMove ();
 		virtual int isMoving ();
 		virtual int stopMove ();
 
@@ -96,18 +96,17 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 
 
 int
-Rts2DevTelescopeIr::startMove (double ra, double dec)
+Rts2DevTelescopeIr::startMove ()
 {
 	int status = 0;
 	double sep;
 
-	target.ra = ra;
-	target.dec = dec;
+	getTarget (&target);
 
 	// move to zenit - move to different dec instead
-	if (fabs (dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
+	if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
 	{
-		if (fabs (ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
+		if (fabs (target.ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
 		{
 			target.dec = telLatitude->getValueDouble () - BLIND_SIZE;
 		}
@@ -119,17 +118,21 @@ Rts2DevTelescopeIr::startMove (double ra, double dec)
 	status = tpl_set ("ZD.OFFSET", alt_off, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
 		return -1;
 	}
 
-	status = startMoveReal (ra, dec);
+	status = startMoveReal (target.ra, target.dec);
 	if (status)
 		return -1;
 
 	// wait till we get it processed
-	sep = getMoveTargetSep ();
+	status = tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot get target separation" << sendLog;
+		return -1;
+	}
 	if (sep > 2)
 		sleep (3);
 	else if (sep > 2 / 60.0)

@@ -46,8 +46,8 @@ Rts2TelescopeIr::tpl_get (const char *name, T & val, int *status)
 
 		if (cstatus != TPLC_OK)
 		{
-			logStream (MESSAGE_ERROR) << "IR tpl_get error " << name <<
-				" status " << cstatus << sendLog;
+			logStream (MESSAGE_ERROR) << "IR tpl_get error " << name
+				<< " status " << cstatus << sendLog;
 			r->Abort ();
 			*status = 1;
 		}
@@ -467,7 +467,7 @@ in_argv)
 		"power state of cabinet", false);
 
 	createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
-		RTS2_DT_ROTANG);
+		RTS2_DT_ROTANG, 0, true);
 	createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
 		true, RTS2_DT_DEGREES);
 
@@ -623,7 +623,7 @@ Rts2TelescopeIr::initValues ()
 	int status = TPL_OK;
 	std::string serial;
 
-	telLongtitude->setValueDouble (LONGITUDE);
+	telLongitude->setValueDouble (LONGITUDE);
 	telLatitude->setValueDouble (LATITUDE);
 	telAltitude->setValueDouble (ALTITUDE);
 	tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
@@ -1005,7 +1005,7 @@ Rts2TelescopeIr::info ()
 		struct ln_equ_posn curr;
 		hrz.az = az;
 		hrz.alt = 90 - fabs (zd);
-		observer.lng = telLongtitude->getValueDouble ();
+		observer.lng = telLongitude->getValueDouble ();
 		observer.lat = telLatitude->getValueDouble ();
 		ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
 		telRa->setValueDouble (curr.ra);
@@ -1093,7 +1093,7 @@ double real_dec)
 	eq_target.ra = real_ra + cor_ra;
 	eq_target.dec = real_dec + cor_dec;
 	applyLocCorr (&eq_target);
-	observer.lng = telLongtitude->getValueDouble ();
+	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 	ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
 	ln_get_hrz_from_equ (&eq_target, &observer, jd, &hrz_target);
