@@ -276,7 +276,6 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
 	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING, true);
 
-	createValue (camShutterVal, "shutter", "shutter position", false);
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
 	rotang->setValueDouble (0);
 

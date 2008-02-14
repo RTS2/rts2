@@ -175,7 +175,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		Rts2ValueSelection *camFilterVal;
 		Rts2ValueInteger *camFocVal;
-		Rts2ValueInteger *camShutterVal;
 		Rts2ValueDouble *rotang;
 
 		int getStateChip (int chip);
@@ -375,7 +374,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		Rts2ValueInteger *tempRegulation;
 		Rts2ValueInteger *coolingPower;
-		Rts2ValueInteger *fan;
+		Rts2ValueBool *fan;
 
 		char ccdType[64];
 		char *ccdRealType;
@@ -684,16 +683,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		int getFocPos ();
 
 		bool isIdle ();
-
-		virtual int grantPriority (Rts2Conn * conn)
-		{
-			if (focuserDevice)
-			{
-				if (conn->isName (focuserDevice))
-					return 1;
-			}
-			return Rts2Device::grantPriority (conn);
-		}
 
 		/**
 		 * Returns last filter number.
