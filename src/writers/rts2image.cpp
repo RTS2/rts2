@@ -1949,6 +1949,28 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 		case RTS2_VALUE_SELECTION:
 			setValue (name, ((Rts2ValueSelection *) val)->getSelName ().c_str (), desc);
 			break;
+		case RTS2_VALUE_RADEC:
+		{
+			// construct RADEC string and desc, write it down
+			char *v_name = new char[strlen (name) + 4];
+			char *v_desc = new char[strlen (desc) + 5];
+			// write RA
+			strcpy (v_name, name);
+			strcat (v_name, "RA");
+			strcpy (v_desc, desc);
+			strcat (v_desc, " RA");
+			setValue (v_name, ((Rts2ValueRaDec *) val)->getRa (), v_desc);
+			// now DEC
+			strcpy (v_name, name);
+			strcat (v_name, "DEC");
+			strcpy (v_desc, desc);
+			strcat (v_desc, " DEC");
+			setValue (v_name, ((Rts2ValueRaDec *) val)->getDec (), v_desc);
+			// free memory
+			delete[] v_name;
+			delete[] v_desc;
+		}
+		break;
 		default:
 			logStream (MESSAGE_ERROR) <<
 				"Don't know how to write to FITS file header value '" << name
