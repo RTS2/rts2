@@ -909,7 +909,7 @@ Rts2Conn::getAddress (char *addrBuf, int in_buf_size)
 int
 Rts2Conn::havePriority ()
 {
-	return have_priority || master->grantPriority (this);
+	return have_priority;
 }
 
 

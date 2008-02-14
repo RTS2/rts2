@@ -547,12 +547,6 @@ class Rts2Block: public Rts2App
 		int queAll (Rts2Command * cmd);
 		int queAll (char *text);
 
-		// enables to grant priority for special device links
-		virtual int grantPriority (Rts2Conn * conn)
-		{
-			return 0;
-		}
-
 		/**
 		 * Return connection with minimum (integer) value.
 		 */

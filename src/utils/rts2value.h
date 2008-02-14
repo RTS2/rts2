@@ -810,7 +810,11 @@ class Rts2ValueRaDec: public Rts2Value
 		 */
 		void setRa (double in_ra)
 		{
-			ra = in_ra;
+			if (ra != in_ra)
+			{
+				ra = in_ra;
+				changed ();
+			}
 		}
 
 		/**
@@ -818,7 +822,11 @@ class Rts2ValueRaDec: public Rts2Value
 		 */
 		void setDec (double in_dec)
 		{
-			decl = in_dec;
+			if (decl != in_dec)
+			{
+				decl = in_dec;
+				changed ();
+			}
 		}
 
 		virtual int doOpValue (char op, Rts2Value * old_value);

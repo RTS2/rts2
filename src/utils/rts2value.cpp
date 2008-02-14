@@ -743,7 +743,7 @@ Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name)
 
 Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_description,
 bool writeToFits, int32_t flags)
-:Rts2Value (in_val_name, in_description + " RA and DEC", writeToFits, flags)
+:Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	ra = nan ("f");
 	decl = nan ("f");
@@ -827,7 +827,6 @@ const char *
 Rts2ValueRaDec::getValue ()
 {
 	std::ostringstream _os;
-	//	LibnovaRaDec radec (ra->getValueDouble (), decl->getValueDouble ());
 	_os << getRa () << " " << getDec ();
 
 	return _os.str ().c_str ();
