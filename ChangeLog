@@ -3,6 +3,26 @@
  * new blocking operations API
  * futher customatization, more configuration
 
+2008-02-12
+ * commited new, simplified teld
+
+2008-02-11
+ * remove grantPriority hook, as it is not needed
+
+2008-02-09
+ * added cmdConn, fixed bug with unconnected/unknow devices
+
+2008-02-05
+ * added RADEC value
+
+2008-01-30
+ * fixed executor
+ * queClear/clearAll issues
+
+2008-01-24
+ * Cygwin fixes
+ * AXIS fixes
+
 2008-01-19
  * Rts2Script::setTarget
  * comments from script are saved to FITS header
