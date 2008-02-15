@@ -239,6 +239,13 @@ class Rts2Daemon:public Rts2Block
 			Rts2Value * new_value);
 
 		/**
+		 * Called after value was changed.
+		 *
+		 * @param changed_value Pointer to changed value.
+		 */
+		virtual void valueChanged (Rts2Value *changed_value);
+
+		/**
 		 * Returns whenever value change with old_value needs to be qued or
 		 * not.
 		 *

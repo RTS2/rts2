@@ -705,7 +705,13 @@ Rts2Value * new_value)
 
 	// set value after sucessfull return..
 	if (ret == 0)
-		old_value->setFromValue (new_value);
+	{
+		if (!old_value->isEqual (new_value))
+		{
+			old_value->setFromValue (new_value);
+			valueChanged (old_value);
+		}
+	}
 
 	// if in previous step we put ignore load, reset it now
 	if (old_cond_value->ignoreLoad ())
@@ -736,6 +742,12 @@ Rts2Value * new_value)
 
 	delete new_value;
 	return ret;
+}
+
+
+void
+Rts2Daemon::valueChanged (Rts2Value *changed_value)
+{
 }
 
 
