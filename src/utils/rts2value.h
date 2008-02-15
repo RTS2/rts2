@@ -364,7 +364,11 @@ class Rts2ValueInteger:public Rts2Value
 		 */
 		virtual int setValueInteger (int in_value)
 		{
-			value = in_value;
+			if (value != in_value)
+			{
+				changed ();
+				value = in_value;
+			}
 			return 0;
 		}
 		virtual int doOpValue (char op, Rts2Value * old_value);
@@ -412,7 +416,11 @@ class Rts2ValueDouble:public Rts2Value
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
 		{
-			value = in_value;
+			if (value != in_value)
+			{
+				changed ();
+				value = in_value;
+			}
 		}
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
@@ -477,11 +485,19 @@ class Rts2ValueFloat:public Rts2Value
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
 		{
-			value = (float) in_value;
+			if (value != in_value)
+			{
+				changed ();
+				value = (float) in_value;
+			}
 		}
 		void setValueFloat (float in_value)
 		{
-			value = in_value;
+			if (value != in_value)
+			{
+				changed ();
+				value = in_value;
+			}
 		}
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
@@ -755,7 +771,11 @@ class Rts2ValueLong:public Rts2Value
 		}
 		int setValueLong (long in_value)
 		{
-			value = in_value;
+			if (value != in_value)
+			{
+				changed ();
+				value = in_value;
+			}
 			return 0;
 		}
 		virtual void setFromValue (Rts2Value * newValue);

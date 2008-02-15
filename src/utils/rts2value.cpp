@@ -148,6 +148,7 @@ Rts2ValueString::setValueInteger (int in_value)
 {
 	delete[]value;
 	asprintf (&value, "%i", in_value);
+	changed ();
 	return 0;
 }
 
@@ -763,6 +764,7 @@ Rts2ValueRaDec::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&ra) || connection->paramNextDouble (&decl) || !connection->paramEnd ())
 		return -2;
+
 	return 0;
 }
 
