@@ -1949,6 +1949,9 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 		case RTS2_VALUE_SELECTION:
 			setValue (name, ((Rts2ValueSelection *) val)->getSelName ().c_str (), desc);
 			break;
+		case RTS2_VALUE_LONGINT:
+			setValue (name, ((Rts2ValueLong *) val)->getValueLong (), desc);
+			break;
 		case RTS2_VALUE_RADEC:
 		{
 			// construct RADEC string and desc, write it down
