@@ -36,8 +36,12 @@
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
+	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
+
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true);
-	createConstValue (telLongitude, "LONGITUDE", "observatory longitude", true);
+	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true);
 	createConstValue (telAlt, "ALTITUDE", "observatory altitude", true);
 
 	// object
@@ -60,7 +64,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
-	createValue (moveNum, "move_num", "number of movements performed by the driver", false);
+	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", false);
 
 	createValue (telAlt, "ALT", "mount altitude", true, RTS2_DT_DEC);
 	createValue (telAz, "AZ", "mount azimuth", true, RTS2_DT_DEGREES);
@@ -183,7 +187,26 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return 0;
 	}
+	if (old_value == objRaDec
+		|| old_value == offsetRaDec
+		|| old_value == corrRaDec)
+	{
+		return 0;
+	}
 	return Rts2Device::setValue (old_value, new_value);
+}
+
+
+void
+Rts2DevTelescope::valueChanged (Rts2Value * changed_value)
+{
+	if (changed_value == objRaDec
+		|| changed_value == offsetRaDec
+		|| changed_value == corrRaDec)
+	{
+		startResyncMove (NULL, false);
+	}
+	Rts2Device::valueChanged (changed_value);
 }
 
 
