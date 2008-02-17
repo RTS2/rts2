@@ -47,8 +47,7 @@ class TPM:public Rts2CliApp
 		double dec_step;
 		double dec_offset;
 
-		enum
-		{ TARGET, BEST, MOUNT }
+		enum { TARGET, BEST, MOUNT }
 		tarCorType;
 	protected:
 		virtual int processOption (int in_opt);
@@ -108,9 +107,8 @@ TPM::processOption (int in_opt)
 					tarCorType = MOUNT;
 					break;
 				default:
-					std::
-						cerr << "Invalit coordinates type (" << *optarg <<
-						"), expected t or b" << std::endl;
+					std::cerr << "Invalit coordinates type (" << *optarg <<
+						"), expected t, b or m" << std::endl;
 					return -1;
 			}
 			break;
@@ -121,8 +119,7 @@ TPM::processOption (int in_opt)
 				selFlip = 0;
 			else
 			{
-				std::
-					cout << "You entered invalid flip, please select either 0 or 1" <<
+				std::cout << "You entered invalid flip, please select either 0 or 1" <<
 					std::endl;
 				help ();
 				return -1;
@@ -196,16 +193,11 @@ TPM::doProcessing ()
 void
 TPM::help ()
 {
-	std::
-		cout <<
-		"Process list of images with astrometry, and creates file which you can feed to TPoint"
-		<< std::endl;
-	std::
-		cout << "Without any switch, prouduce file with J2000 mean coordinates."
-		<< std::endl;
-	std::
-		cout <<
-		"Option proudced should be sufficient to run it throught TPOINT and get model"
+	std::cout << "Process list of images with astrometry, and creates file which you can feed to TPoint"
+		<< std::endl
+		<< "Without any switch, prouduce file with J2000 mean coordinates."
+		<< std::endl
+		<< "Option proudced should be sufficient to run it throught TPOINT and get model"
 		<< std::endl;
 	Rts2CliApp::help ();
 }
@@ -217,8 +209,8 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
 	obs.lat = Rts2Config::instance ()->getObserver ()->lat;
 	obs.lng = Rts2Config::instance ()->getObserver ()->lng;
 	// try to get latitude from image
-	image->getValue ("LAT", obs.lat);
-	image->getValue ("LONG", obs.lng);
+	image->getValue ("LATITUDE", obs.lat);
+	image->getValue ("LONGITUDE", obs.lng);
 	// standart header
 								 // we are observing on equatorial mount
 	_os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl;
