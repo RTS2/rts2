@@ -1,16 +1,33 @@
+/*
+ * Provides Rts2Image astrometry (position of pixels on image) functions.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <math.h>
 #include <libnova/libnova.h>
 
 #include "rts2image.h"
 
-/**
- * Provides Rts2Image astrometry (position of pixels on image) functions.
+/*
  *
  * Most probably will converge to WCS class solution (or even WCSlib incorporation) in future.
  *
  * @author Petr Kubanek <pkubanek@asu.cas.cz>
  */
-
 int
 Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 {
@@ -222,7 +239,7 @@ Rts2Image::getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name)
 int
 Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "TAR_RA", "TAR_DEC");
+	return getCoord (radec, "TARRA", "TARDEC");
 }
 
 
@@ -236,14 +253,18 @@ Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
 int
 Rts2Image::getCoordMount (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "MNT_RA", "MNT_DEC");
+	return getCoord (radec, "TELRA", "TELDEC");
 }
 
 
 int
 Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "RASC", "DECL");
+	int ret;
+	ret = getCoordAstrometry (radec);
+	if (ret)
+		return getCoordTarget (radec);
+	return ret;
 }
 
 
