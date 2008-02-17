@@ -1,18 +1,31 @@
-/**
- * Receive info from GCN via socket, put them to DB.
+/* 
+ * Receives informations from GCN via socket, put them to database.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
- * Based on http://gcn.gsfc.nasa.gov/socket_demo.c
- * socket_demo     Ver: 3.29   23 Mar 05,
- * which is CVSed with GRBC. Only "active" satellite packets are processed.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * If new version of socket_demo.c show up, we need to invesigate
- * modifications to include it.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * @author petr
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include "../utils/rts2command.h"
 #include "grbd.h"
+
+#define OPT_GCN_HOST            OPT_LOCAL + 50
+#define OPT_GCN_PORT            OPT_LOCAL + 51
+#define OPT_GCN_TEST            OPT_LOCAL + 52
+#define OPT_GCN_FORWARD         OPT_LOCAL + 53
+#define OPT_GCN_EXE             OPT_LOCAL + 54
+#define OPT_GCN_FOLLOUPS        OPT_LOCAL + 55
 
 Rts2DevGrb::Rts2DevGrb (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
@@ -36,14 +49,12 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 
 	createValue (execConnection, "exec", "exec connection", false);
 
-	addOption ('s', "gcn_host", 1, "GCN host name");
-	addOption ('p', "gcn_port", 1, "GCN port");
-	addOption ('t', "test", 0,
-		"process test notices (default to off - don't process them)");
-	addOption ('f', "forward", 1, "forward incoming notices to that port");
-	addOption ('a', "add_exe", 1,
-		"execute that command when new GCN packet arrives");
-	addOption ('U', "exec_followups", 0,
+	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
+	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
+	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
+	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
+	addOption (OPT_GCN_EXE, "add_exe", 1, "execute that command when new GCN packet arrives");
+	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0,
 		"execute observation and add_exe script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 }
 
@@ -60,23 +71,23 @@ Rts2DevGrb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 's':
+		case OPT_GCN_HOST:
 			gcn_host = new char[strlen (optarg) + 1];
 			strcpy (gcn_host, optarg);
 			break;
-		case 'p':
+		case OPT_GCN_PORT:
 			gcn_port = atoi (optarg);
 			break;
-		case 't':
+		case OPT_GCN_TEST:
 			do_hete_test = 1;
 			break;
-		case 'f':
+		case OPT_GCN_FORWARD:
 			forwardPort = atoi (optarg);
 			break;
-		case 'a':
+		case OPT_GCN_EXE:
 			addExe = optarg;
 			break;
-		case 'U':
+		case OPT_GCN_FOLLOUPS:
 			execFollowups = 1;
 			break;
 		default:
@@ -183,6 +194,16 @@ Rts2DevGrb::init ()
 		}
 	}
 	return ret;
+}
+
+
+void
+Rts2DevGrb::help ()
+{
+	Rts2DeviceDb::help ();
+	std::cout << std::endl << " Execution script, specified with --add_exec option, receives following parameters as arguments:"
+		" target-id grb-id grb-seqn grb-type grb-ra grb-dec grb-is-grb grb-date grb-errorbox." << std::endl
+		<< " Please see man page for meaning of that arguments." << std::endl;
 }
 
 

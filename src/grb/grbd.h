@@ -1,3 +1,22 @@
+/* 
+ * Receives informations from GCN via socket, put them to database.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_GRBD__
 #define __RTS2_GRBD__
 
@@ -10,6 +29,18 @@
 
 class Rts2ConnGrb;
 
+/**
+ * Receive info from GCN via socket, put them to DB.
+ *
+ * Based on http://gcn.gsfc.nasa.gov/socket_demo.c
+ * socket_demo     Ver: 3.29   23 Mar 05,
+ * which is CVSed with GRBC. Only "active" satellite packets are processed.
+ *
+ * If new version of socket_demo.c show up, we need to invesigate
+ * modifications to include it.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevGrb:public Rts2DeviceDb
 {
 	private:
@@ -32,10 +63,12 @@ class Rts2DevGrb:public Rts2DeviceDb
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
+
+		virtual int init ();
+		virtual void help ();
 	public:
 		Rts2DevGrb (int argc, char **argv);
 		virtual ~ Rts2DevGrb ();
-		virtual int init ();
 
 		virtual int ready ()
 		{
