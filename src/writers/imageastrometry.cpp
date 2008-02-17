@@ -284,7 +284,7 @@ Rts2Image::getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name)
 int
 Rts2Image::getCoordTarget (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "TAR_RA", "TAR_DEC");
+	return getCoord (radec, "TARRA", "TARDEC");
 }
 
 
@@ -298,14 +298,18 @@ Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
 int
 Rts2Image::getCoordMount (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "MNT_RA", "MNT_DEC");
+	return getCoord (radec, "TELRA", "TELDEC");
 }
 
 
 int
 Rts2Image::getCoordBest (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "RASC", "DECL");
+	int ret;
+	ret = getCoordAstrometry (radec);
+	if (ret)
+		return getCoordTarget (radec);
+	return ret;
 }
 
 
