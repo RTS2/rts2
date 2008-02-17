@@ -17,7 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "ir.h"
+#include "irconn.h"
+#include "../utils/rts2cliapp.h"
+#include "../utils/rts2config.h"
 
 #include <sstream>
 #include <iomanip>
@@ -75,25 +77,31 @@ std::ostream & operator << (std::ostream & _os, IrAxis irax)
 }
 
 
-class Rts2DevIrError:public Rts2TelescopeIr
+class Rts2DevIrError:public Rts2CliApp
 {
-	std::list < const char *>errList;
-	enum
-	{ NO_OP, CAL, RESET, REFERENCED, SAMPLE }
-	op;
+	private:
+		std::string ir_ip;
+		int ir_port;
 
-	IrAxis getAxisStatus (const char *ax_name);
-	int doReferenced ();
+		std::list < const char *> errList;
+		enum { NO_OP, CAL, RESET, REFERENCED, SAMPLE }
+		op;
+
+		IrAxis getAxisStatus (const char *ax_name);
+		IrConn *irConn;
+
+		int doReferenced ();
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
+		virtual int init ();
 	public:
 		Rts2DevIrError (int in_argc, char **in_argv);
 		virtual ~ Rts2DevIrError (void)
 		{
+			delete irConn;
 		}
 		virtual int doProcessing ();
-		virtual int run ();
 };
 
 IrAxis
@@ -111,31 +119,31 @@ Rts2DevIrError::getAxisStatus (const char *ax_name)
 
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".REFERENCED";
-	status = tpl_get (os->str ().c_str (), referenced, &status);
+	status = irConn->tpl_get (os->str ().c_str (), referenced, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".CURRPOS";
-	status = tpl_get (os->str ().c_str (), currpos, &status);
+	status = irConn->tpl_get (os->str ().c_str (), currpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".TARGETPOS";
-	status = tpl_get (os->str ().c_str (), targetpos, &status);
+	status = irConn->tpl_get (os->str ().c_str (), targetpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".OFFSET";
-	status = tpl_get (os->str ().c_str (), offset, &status);
+	status = irConn->tpl_get (os->str ().c_str (), offset, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".REALPOS";
-	status = tpl_get (os->str ().c_str (), realpos, &status);
+	status = irConn->tpl_get (os->str ().c_str (), realpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".POWER";
-	status = tpl_get (os->str ().c_str (), power, &status);
+	status = irConn->tpl_get (os->str ().c_str (), power, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".POWER";
-	status = tpl_get (os->str ().c_str (), power_state, &status);
+	status = irConn->tpl_get (os->str ().c_str (), power_state, &status);
 	delete os;
 	return IrAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
 		power, power_state);
@@ -149,26 +157,26 @@ Rts2DevIrError::doReferenced ()
 	int track;
 	double fpar;
 	std::string slist;
-	status = tpl_get ("CABINET.REFERENCED", fpar, &status);
+	status = irConn->tpl_get ("CABINET.REFERENCED", fpar, &status);
 	std::cout << "CABINET.REFERENCED " << fpar << std::endl;
-	status = tpl_get ("CABINET.POWER", fpar, &status);
+	status = irConn->tpl_get ("CABINET.POWER", fpar, &status);
 	std::cout << "CABINET.POWER " << fpar << std::endl;
-	status = tpl_get ("CABINET.POWER_STATE", fpar, &status);
+	status = irConn->tpl_get ("CABINET.POWER_STATE", fpar, &status);
 	std::cout << "CABINET.POWER_STATE " << fpar << std::endl;
 
-	status = tpl_get ("CABINET.STATUS.LIST", slist, &status);
+	status = irConn->tpl_get ("CABINET.STATUS.LIST", slist, &status);
 	std::cout << "CABINET.STATUS.LIST " << slist << std::endl;
 
-	status = tpl_get ("POINTING.TRACK", track, &status);
+	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
 	std::cout << "POINTING.TRACK " << track << std::endl;
-	status = tpl_get ("POINTING.CURRENT.RA", fpar, &status);
+	status = irConn->tpl_get ("POINTING.CURRENT.RA", fpar, &status);
 	std::cout << "POINTING.CURRENT.RA " << fpar << std::endl;
-	status = tpl_get ("POINTING.CURRENT.DEC", fpar, &status);
+	status = irConn->tpl_get ("POINTING.CURRENT.DEC", fpar, &status);
 	std::cout << "POINTING.CURRENT.DEC " << fpar << std::endl;
 
-	status = tpl_get ("POINTING.TARGET.RA", fpar, &status);
+	status = irConn->tpl_get ("POINTING.TARGET.RA", fpar, &status);
 	std::cout << "POINTING.TARGET.RA " << fpar << std::endl;
-	status = tpl_get ("POINTING.TARGET.DEC", fpar, &status);
+	status = irConn->tpl_get ("POINTING.TARGET.DEC", fpar, &status);
 	std::cout << "POINTING.TARGET.DEC " << fpar << std::endl;
 
 	std::cout << getAxisStatus ("ZD");
@@ -185,9 +193,16 @@ Rts2DevIrError::doReferenced ()
 
 
 Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
-Rts2TelescopeIr (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
+	ir_port = 0;
+	irConn = NULL;
+
 	op = NO_OP;
+
+	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
+	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
+
 	addOption ('c', NULL, 0, "Calculate model");
 	addOption (OPT_RESET_MODEL, "reset-model", 0, "Reset model counts");
 	addOption ('f', NULL, 0, "Referencing status");
@@ -200,6 +215,12 @@ Rts2DevIrError::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'I':
+			ir_ip = std::string (optarg);
+			break;
+		case 'N':
+			ir_port = atoi (optarg);
+			break;
 		case 'c':
 			op = CAL;
 			break;
@@ -213,7 +234,7 @@ Rts2DevIrError::processOption (int in_opt)
 			op = SAMPLE;
 			break;
 		default:
-			return Rts2TelescopeIr::processOption (in_opt);
+			return Rts2App::processOption (in_opt);
 	}
 	return 0;
 }
@@ -228,13 +249,51 @@ Rts2DevIrError::processArgs (const char *arg)
 
 
 int
+Rts2DevIrError::init ()
+{
+	int ret;
+	ret = Rts2App::init ();
+	if (ret)
+		return ret;
+
+	Rts2Config *config = Rts2Config::instance ();
+	config->loadFile (NULL);
+	// try to get default from config file
+	if (!ir_ip.length () == 0)
+	{
+		config->getString ("ir", "ip", ir_ip);
+	}
+	if (!ir_port)
+	{
+		config->getInteger ("ir", "port", ir_port);
+	}
+	if (ir_ip.length () == 0 || !ir_port)
+	{
+		std::cerr << "Invalid port or IP address of mount controller PC"
+			<< std::endl;
+		return -1;
+	}
+
+	irConn = new IrConn (ir_ip, ir_port);
+
+	// are we connected ?
+	if (!irConn->isOK ())
+	{
+		std::cerr << "Connection to server failed" << std::endl;
+		return -1;
+	}
+	return 0;
+}
+
+
+int
 Rts2DevIrError::doProcessing ()
 {
 	std::string descri;
 	for (std::list < const char *>::iterator iter = errList.begin ();
 		iter != errList.end (); iter++)
 	{
-		getError (atoi (*iter), descri);
+		irConn->getError (atoi (*iter), descri);
 		std::cout << descri << std::endl;
 	}
 	int status = 0;
@@ -243,17 +302,17 @@ Rts2DevIrError::doProcessing ()
 	switch (op)
 	{
 		case SAMPLE:
-			status = tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+			status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
 		case NO_OP:
 			break;
 		case CAL:
 			fparam = 2;
-			status = tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
+			status = irConn->tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 			break;
 		case RESET:
 			fparam = 0;
 			status =
-				tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
+				irConn->tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
 			break;
 		case REFERENCED:
 			return doReferenced ();
@@ -265,14 +324,14 @@ Rts2DevIrError::doProcessing ()
 	int track;
 	std::string dumpfile;
 
-	status = tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.DUMPFILE " << dumpfile << std::endl;
 	std::cout.precision (20);
@@ -284,46 +343,26 @@ Rts2DevIrError::doProcessing ()
 	std::cout << "CA = " << ca << std::endl;
 	std::cout << "FLEX = " << flex << std::endl;
 	// dump offsets
-	status = tpl_get ("AZ.OFFSET", aoff, &status);
-	status = tpl_get ("ZD.OFFSET", zoff, &status);
+	status = irConn->tpl_get ("AZ.OFFSET", aoff, &status);
+	status = irConn->tpl_get ("ZD.OFFSET", zoff, &status);
 
 	std::cout << "AZ.OFFSET " << aoff << std::endl;
 	std::cout << "ZD.OFFSET " << zoff << std::endl;
 
-	status = tpl_get ("POINTING.TRACK ", track, &status);
+	status = irConn->tpl_get ("POINTING.TRACK ", track, &status);
 	std::cout << "POINTING.TRACK " << track << std::endl;
 
 	status =
-		tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
+		irConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
 		endl;
 
-	status = tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.CALCULATE " << fparam << std::endl;
 
 	return 0;
-}
-
-
-int
-Rts2DevIrError::run ()
-{
-	int ret;
-	ret = initOptions ();
-	if (ret)
-	{
-		return ret;
-	}
-	ret = initIrDevice ();
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot initialize telescope - exiting!" <<
-			sendLog;
-		return ret;
-	}
-	return doProcessing ();
 }
 
 

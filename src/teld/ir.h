@@ -36,19 +36,19 @@
 #include <list>
 #include <iostream>
 
+#include "irconn.h"
+
 using namespace OpenTPL;
 
 class Rts2TelescopeIr:public Rts2DevTelescope
 {
 	private:
-		std::string * ir_ip;
+		std::string ir_ip;
 		int ir_port;
-		Client *tplc;
-		enum
-		{ OPENED, OPENING, CLOSING, CLOSED }
+
+		enum { OPENED, OPENING, CLOSING, CLOSED }
 		cover_state;
-		enum
-		{ D_OPENED, D_OPENING, D_CLOSING, D_CLOSED }
+		enum { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED }
 		dome_state;
 
 		void checkErrors ();
@@ -98,14 +98,10 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		int infoModel ();
 
 	protected:
+		IrConn *irConn;
+
 		time_t timeout;
 
-		template < typename T > int tpl_get (const char *name, T & val,
-			int *status);
-		template < typename T > int tpl_set (const char *name, T val,
-			int *status);
-		template < typename T > int tpl_setw (const char *name, T val,
-			int *status);
 		virtual int processOption (int in_opt);
 
 		Rts2ValueDouble *derotatorOffset;
@@ -139,12 +135,8 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		virtual int getAltAz ();
 
 		virtual int info ();
-		virtual int correct (double cor_ra, double cor_dec, double real_ra,
-			double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
 		virtual int resetMount ();
-
-		virtual int getError (int in_error, std::string & desc);
 };
 #endif							 /* !__RTS2_TELD_IR__ */

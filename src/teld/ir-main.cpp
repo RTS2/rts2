@@ -71,19 +71,19 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
 	int status;
 	//  status = setTrack (0);
-	status = tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
-	status = tpl_set ("POINTING.TARGET.DEC", dec, &status);
+	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
+	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
 	if (!getDerotatorPower ())
 	{
-		status = tpl_set ("DEROTATOR[3].POWER", 1, &status);
-		status = tpl_set ("CABINET.POWER", 1, &status);
+		status = irConn->tpl_set ("DEROTATOR[3].POWER", 1, &status);
+		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
 	}
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
 		sendLog;
 	#endif
-	status = tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
+	status = irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
 
 	if (status != TPL_OK)
 		return status;
@@ -114,8 +114,8 @@ Rts2DevTelescopeIr::startMove ()
 
 	double az_off = 0;
 	double alt_off = 0;
-	status = tpl_set ("AZ.OFFSET", az_off, &status);
-	status = tpl_set ("ZD.OFFSET", alt_off, &status);
+	status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
+	status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
@@ -127,7 +127,7 @@ Rts2DevTelescopeIr::startMove ()
 		return -1;
 
 	// wait till we get it processed
-	status = tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
+	status = irConn->tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot get target separation" << sendLog;
@@ -158,10 +158,9 @@ Rts2DevTelescopeIr::stopMove ()
 {
 	int status = 0;
 	double zd;
-	Rts2DevTelescope::stopMove ();
 	info ();
 	// ZD check..
-	status = tpl_get ("ZD.CURRPOS", zd, &status);
+	status = irConn->tpl_get ("ZD.CURRPOS", zd, &status);
 	if (status)
 	{
 		logStream (MESSAGE_DEBUG) << "IR stopMove cannot get ZD! (" << status <<
@@ -197,9 +196,9 @@ Rts2DevTelescopeIr::startPark ()
 	#endif
 	sleep (1);
 	status = TPL_OK;
-	status = tpl_set ("AZ.TARGETPOS", 0, &status);
-	status = tpl_set ("ZD.TARGETPOS", 0, &status);
-	status = tpl_set ("DEROTATOR[3].POWER", 0, &status);
+	status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
+	status = irConn->tpl_set ("ZD.TARGETPOS", 0, &status);
+	status = irConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<
@@ -221,17 +220,17 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	time_t now;
 	struct ln_equ_posn tPos;
 	struct ln_equ_posn cPos;
-	//  status = tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-	status = tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
-	status = tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
-	status = tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
-	status = tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+	//  status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+	status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
+	status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
+	status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
+	status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
 	if (status != TPL_OK)
 		return -1;
 	poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	time (&now);
 	// get track..
-	status = tpl_get ("POINTING.TRACK", track, &status);
+	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
 	if (track == 0 && !park)
 	{
 		logStream (MESSAGE_WARNING) <<
