@@ -1972,7 +1972,7 @@ Target::writeToImage (Rts2Image * image, double JD)
 	struct ln_hrz_posn hmoon;
 	ln_get_lunar_equ_coords (JD, &moon);
 	ln_get_hrz_from_equ (&moon, observer, JD, &hmoon);
-	image->setValue ("MOONDIST", getDistance (&moon, JD), "moon angular distance");
+	image->setValue ("MOONANGL", getDistance (&moon, JD), "angle between the observation and the moon");
 	image->setValue ("MOONRA", moon.ra, "lunar RA");
 	image->setValue ("MOONDEC", moon.dec, "lunar DEC");
 	image->setValue ("MOONPHA", ln_get_lunar_phase (JD) / 1.8, "moon phase");
