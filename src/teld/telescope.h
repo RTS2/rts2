@@ -209,11 +209,15 @@ class Rts2DevTelescope:public Rts2Device
 		double defaultRotang;
 
 		Rts2ValueDouble *rotang;
+
+								 // which coordinates are used for pointing (eq, alt-az,..)
+		Rts2ValueSelection *pointingModel;
+
 		Rts2ValueDouble *telLongitude;
 		Rts2ValueDouble *telLatitude;
 		Rts2ValueDouble *telAltitude;
 		Rts2ValueString *telescope;
-								 // in multiply of sidereal speed..eg 1 == 15 arcsec/sec
+		// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
 		virtual int isMovingFixed ()
 		{
 			return isMoving ();
@@ -311,6 +315,8 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual void valueChanged (Rts2Value * changed_value);
 
 		virtual int deleteConnection (Rts2Conn * in_conn)
 		{
