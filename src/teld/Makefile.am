@@ -2,7 +2,7 @@ SUBDIRS = model
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-teld-d50
 
-noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h gem.h
+noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h hms.h gem.h irbase.h
 
 EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp
 
