@@ -42,7 +42,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true);
-	createConstValue (telAlt, "ALTITUDE", "observatory altitude", true);
+	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
 
 	// object
 	createValue (objRaDec, "OBJ", "object position (J2000)", true);
