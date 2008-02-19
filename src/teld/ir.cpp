@@ -452,7 +452,7 @@ Rts2TelescopeIr::initIrDevice ()
 	Rts2Config *config = Rts2Config::instance ();
 	config->loadFile (NULL);
 	// try to get default from config file
-	if (!ir_ip.length () == 0)
+	if (ir_ip.length () == 0)
 	{
 		config->getString ("ir", "ip", ir_ip);
 	}
@@ -803,7 +803,7 @@ Rts2TelescopeIr::info ()
 {
 	double zd, az;
 	#ifdef DEBUG_EXTRA
-	double zd_acc, zd_speed, az_acc, az_speed;
+	double zd_speed, az_speed;
 	#endif						 // DEBUG_EXTRA
 	double t_telRa, t_telDec;
 	int track = 0;
@@ -834,14 +834,13 @@ Rts2TelescopeIr::info ()
 
 	#ifdef DEBUG_EXTRA
 	status = irConn->tpl_get ("ZD.CURRSPEED", zd_speed, &status);
-	status = irConn->tpl_get ("ZD.CURRACC", zd_acc, &status);
 	status = irConn->tpl_get ("AZ.CURRSPEED", az_speed, &status);
-	status = irConn->tpl_get ("AZ.CURRACC", az_acc, &status);
 
 	logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
-		<< " dec " << getTelDec () << " az_speed " << az_speed
-		<< " az_acc " << az_acc << " zd_speed " << zd_speed
-		<< " zd_acc " << zd_acc << " track " << track
+		<< " dec " << getTelDec ()
+		<< " az_speed " << az_speed
+		<< " zd_speed " << zd_speed
+		<< " track " << track
 		<< sendLog;
 	#endif						 // DEBUG_EXTRA
 
