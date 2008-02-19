@@ -259,7 +259,7 @@ Rts2DevIrError::init ()
 	Rts2Config *config = Rts2Config::instance ();
 	config->loadFile (NULL);
 	// try to get default from config file
-	if (!ir_ip.length () == 0)
+	if (ir_ip.length () == 0)
 	{
 		config->getString ("ir", "ip", ir_ip);
 	}
