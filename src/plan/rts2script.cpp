@@ -117,6 +117,7 @@ Rts2Script::Rts2Script (Rts2Block * in_master)
 :Rts2Object ()
 {
 	master = in_master;
+	executedCount = 0;
 	lineOffset = 0;
 }
 

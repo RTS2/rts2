@@ -32,6 +32,7 @@ Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 	script = in_script;
 	startPos = script->getParsedStartPos ();
 	timerclear (&idleTimeout);
+	timerclear (&nextIdle);
 }
 
 
@@ -161,7 +162,6 @@ Rts2ScriptElementDark::Rts2ScriptElementDark (Rts2Script * in_script, float in_e
 int
 Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	Rts2Value *shutter;
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
 	// change values of the exposure
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
@@ -538,10 +538,9 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	strcpy (deviceName, new_device);
 	std::string chng_s = std::string (chng_str);
 	op = '\0';
-	int
-		op_end = 0;
-	int
-		i;
+	rawString = false;
+	int op_end = 0;
+	int i;
 	std::string::iterator iter;
 	for (iter = chng_s.begin (), i = 0; iter != chng_s.end (); iter++, i++)
 	{
@@ -562,6 +561,18 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	if (op == '\0')
 		return;
 	operand = chng_s.substr (op_end + 1);
+	// try to split operand comming in two pieces
+	if (operand[0] == '(' && operand[operand.length () - 1] == ')')
+	{
+		// substitute ',' with space..
+		operand = operand.substr (1, operand.length () - 2);
+		for (i = 0; i < (int) operand.length (); i++)
+		{
+			if (operand[i] == ',')
+				operand[i] = ' ';
+		}
+		rawString = true;
+	}
 }
 
 
@@ -587,12 +598,12 @@ Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 	// handle while exposing part..
 	if (valName[0] == '!')
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand);
+		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand, rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName, op, operand);
+		*new_command = new Rts2CommandChangeValue (client, valName, op, operand, rawString);
 	}
 	getDevice (new_device);
 	return 0;
