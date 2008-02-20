@@ -268,6 +268,10 @@ Rts2DevClientCameraExec::exposureEnd ()
 		)
 		nextCommand ();
 
+	// execute next command if it's null
+	if (nextComd == NULL)
+		nextCommand ();
+
 	// send readout after we deal with next command - which can be filter move
 	Rts2DevClientCameraImage::exposureEnd ();
 }
