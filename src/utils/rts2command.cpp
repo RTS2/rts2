@@ -343,12 +343,20 @@ Rts2Command (in_client->getMaster ())
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, std::string in_operand):
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, std::string in_operand, bool raw):
 Rts2Command (in_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", in_valName.c_str (),
-		op, in_operand.c_str ());
+	if (raw)
+	{
+		asprintf (&command, PROTO_SET_VALUE " %s %c %s", in_valName.c_str (),
+			op, in_operand.c_str ());
+	}
+	else
+	{
+		asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", in_valName.c_str (),
+			op, in_operand.c_str ());
+	}
 	setCommand (command);
 	free (command);
 }

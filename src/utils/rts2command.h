@@ -387,9 +387,14 @@ class Rts2CommandChangeValue:public Rts2Command
 		Rts2CommandChangeValue (Rts2DevClient * in_client,
 			std::string in_valName, char op,
 			bool in_operand);
+		/**
+		 * Create command to change value from string.
+		 *
+		 * @param raw If true, string will be send without escaping.
+		 */
 		Rts2CommandChangeValue (Rts2DevClient * in_client,
 			std::string in_valName, char op,
-			std::string in_operand);
+			std::string in_operand, bool raw = false);
 };
 
 /**
