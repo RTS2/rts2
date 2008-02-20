@@ -56,6 +56,8 @@ class Rts2DevTelD50:public Rts2DevGEM
 		Rts2ValueBool *wormRa;
 		Rts2ValueBool *wormDec;
 
+		Rts2ValueInteger *wormRaSpeed;
+
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
 
@@ -292,6 +294,8 @@ Rts2DevGEM (in_argc, in_argv)
 	createValue (wormDec, "dec_worm", "DEC worm drive", false);
 	wormDec->setValueBool (false);
 
+	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
+
 	createValue (unitRa, "axis_ra", "RA axis raw counts", false);
 	createValue (unitDec, "axis_dec", "DEC axis raw counts", false);
 
@@ -384,6 +388,15 @@ Rts2DevTelD50::init ()
 
 	// switch both motors off
 	ret = write_both ("D\x0d");
+	if (ret)
+		return ret;
+	motorRa->setValueBool (false);
+	motorDec->setValueBool (false);
+
+	ret = tel_write_unit (1, 'h', 25000);
+	if (ret)
+		return ret;
+	wormRaSpeed->setValueInteger (25000);
 
 	return ret;
 }
@@ -431,6 +444,11 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return tel_write_unit (2,
 			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
 
+	}
+	if (old_value == wormRaSpeed)
+	{
+		return tel_write_unit (1, 'h',
+			new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == unitRa)
 	{
