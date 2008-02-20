@@ -46,6 +46,7 @@
 #define COMMAND_BLOCK_ACQ       "ifacq"
 #define COMMAND_BLOCK_ELSE      "else"
 #define COMMAND_BLOCK_FOR       "for"
+#define COMMAND_WAIT_SOD    "waitsod"
 #define COMMAND_WAITFOR         "waitfor"
 #define COMMAND_SLEEP           "sleep"
 
