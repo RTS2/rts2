@@ -356,6 +356,7 @@ class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 		std::string valName;
 		char op;
 		std::string operand;
+		bool rawString;
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	public:
