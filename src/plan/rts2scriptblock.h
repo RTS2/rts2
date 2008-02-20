@@ -29,12 +29,12 @@
  */
 class Rts2ScriptElementBlock:public Rts2ScriptElement
 {
-	private:
+	protected:
 		std::list < Rts2ScriptElement * >blockElements;
 		std::list < Rts2ScriptElement * >::iterator curr_element;
 		int blockScriptRet (int ret);
 		int loopCount;
-	protected:
+
 		virtual bool endLoop ()
 		{
 			return true;
@@ -172,5 +172,37 @@ class Rts2SEBFor:public Rts2ScriptElementBlock
 		{
 			max = in_max;
 		}
+};
+
+/**
+ * Do while current second of day is lower then requested second of day
+ */
+class Rts2WhileSod:public Rts2ScriptElementBlock
+{
+	private:
+		// end second of day (UT)
+		int endSod;
+	protected:
+		virtual bool endLoop ()
+		{
+			time_t now;
+			time (&now);
+			struct tm *tm_sod = gmtime (&now);
+			int currSod = tm_sod->tm_sec + tm_sod->tm_min * 60 + tm_sod->tm_hour * 3600;
+			return endSod <= currSod;
+		}
+	public:
+		Rts2WhileSod (Rts2Script * in_script, int in_endSod):Rts2ScriptElementBlock (in_script)
+		{
+			endSod = in_endSod;
+		}
+
+		virtual ~Rts2WhileSod (void)
+		{
+		}
+
+		virtual int nextCommand (Rts2DevClientCamera * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
 };
 #endif							 /* !__RTS2_SCRIPT_BLOCK__ */

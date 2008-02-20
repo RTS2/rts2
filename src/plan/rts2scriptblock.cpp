@@ -460,3 +460,41 @@ bool Rts2SEBElse::endLoop ()
 {
 	return (getLoopCount () != 0);
 }
+
+
+int
+Rts2WhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	Rts2Value *val = client->getConnection ()->getValue ("que_exp_num");
+
+	int ret;
+	if (endLoop () || blockElements.empty ())
+		return NEXT_COMMAND_NEXT;
+
+	while (1)
+	{
+		Rts2ScriptElement *ce = *curr_element;
+		ret = ce->nextCommand (client, new_command, new_device);
+		if (ret == 0 && curr_element == blockElements.begin ())
+		{
+			// test if exposures are qued..
+			if (val && val->getValueInteger () > 1)
+			{
+				*new_command = NULL;
+				return blockScriptRet (NEXT_COMMAND_KEEP);
+			}
+		}
+		if (ret != NEXT_COMMAND_NEXT)
+			break;
+		curr_element++;
+		if (curr_element == blockElements.end ())
+		{
+			loopCount++;
+			if (getNextLoop ())
+				return NEXT_COMMAND_NEXT;
+
+			curr_element = blockElements.begin ();
+		}
+	}
+	return blockScriptRet (ret);
+}

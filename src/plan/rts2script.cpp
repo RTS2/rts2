@@ -545,6 +545,32 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		}
 		return forEl;
 	}
+	else if (!strcmp (commandStart, COMMAND_WAIT_SOD))
+	{
+		char *el;
+		int endSod;
+		Rts2ScriptElement *newElement;
+		Rts2WhileSod *forEl;
+		// test for block start..
+		if (getNextParamInteger (&endSod))
+			return NULL;
+		el = nextElement ();
+		// error, return NULL
+		if (*el != '{')
+			return NULL;
+		forEl = new Rts2WhileSod (this, endSod);
+		// parse block..
+		while (1)
+		{
+			newElement = parseBuf (target, target_pos);
+			// "}" will result in NULL, which we capture here
+			if (!newElement)
+				break;
+			newElement->setLen (cmdBufTop - commandStart);
+			forEl->addElement (newElement);
+		}
+		return forEl;
+	}
 	else if (!strcmp (commandStart, COMMAND_WAITFOR))
 	{
 		char *val;
