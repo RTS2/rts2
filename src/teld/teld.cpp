@@ -790,10 +790,10 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	corrRaDec->resetValueChanged ();
 
 	if (onlyCorrect)
-		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP,
-			TEL_CORRECTING | TEL_MOVING, "correction move started");
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
+			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	else
-		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
+		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE,
 			"move started");
 	move_connection = conn;
 
