@@ -905,7 +905,7 @@ Rts2DevTelParamount::isMoving ()
 		sleep (10);
 		ret = MKS3MotorOn (axis1);
 		ret = MKS3Home (axis1, 0);
-		moveState |= TEL_FORCED_HOMING0;
+		moveState |= TEL_FORCED_HOMING1;
 		return USEC_SEC / 10;
 	}
 	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
