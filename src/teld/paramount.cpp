@@ -876,6 +876,7 @@ Rts2DevTelParamount::startMove ()
 int
 Rts2DevTelParamount::isMoving ()
 {
+	int ret;
 	// we were called from idle loop
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
 	{
@@ -883,6 +884,29 @@ Rts2DevTelParamount::isMoving ()
 			return USEC_SEC / 10;
 		// re-move
 		return startMove ();
+	}
+	// check axis state..
+	if (status0 & SERVO_STATE_UN)
+	{
+		sleep (10);
+		// switch motor off
+		ret = MKS3MotorOff (axis0);
+		sleep (10);
+		ret = MKS3MotorOn (axis0);
+		ret = MKS3Home (axis0, 0);
+		moveState |= TEL_FORCED_HOMING0;
+		return USEC_SEC / 10;
+	}
+	if (status1 & SERVO_STATE_UN)
+	{
+		sleep (10);
+		// switch motor off
+		ret = MKS3MotorOff (axis1);
+		sleep (10);
+		ret = MKS3MotorOn (axis1);
+		ret = MKS3Home (axis1, 0);
+		moveState |= TEL_FORCED_HOMING0;
+		return USEC_SEC / 10;
 	}
 	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
 		return USEC_SEC / 10;
