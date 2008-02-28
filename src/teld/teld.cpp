@@ -1000,7 +1000,7 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("reset"))
 	{
-		ret = startWorm ();
+		ret = resetMount ();
 		if (ret)
 		{
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset mount");
