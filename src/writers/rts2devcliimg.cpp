@@ -312,7 +312,8 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *)event->getArg ();
-			ci->image->writeConn (getConnection (), EXPOSURE_END);
+			if (ci)
+				ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 		case EVENT_GET_RADEC:
 			getEqu ((struct ln_equ_posn *) event->getArg ());
