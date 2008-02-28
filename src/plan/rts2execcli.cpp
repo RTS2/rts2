@@ -261,6 +261,7 @@ Rts2DevClientCameraExec::exposureEnd ()
 		)
 	{
 		deleteScript ();
+		getMaster ()->postEvent (new Rts2Event (EVENT_LAST_READOUT));
 	}
 	// execute value change, if we do not execute that during exposure
 	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&

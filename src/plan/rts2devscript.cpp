@@ -143,7 +143,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 		case EVENT_MOVE_OK:
 		case EVENT_CORRECTING_OK:
 			break;
-		case EVENT_LAST_READOUT:
 		case EVENT_SCRIPT_ENDED:
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED Rts2DevScript currentTarget " << currentTarget << " nextTarget " << nextTarget << sendLog;
@@ -154,7 +153,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 				setNextTarget ((Rts2Target *) event->getArg ());
 			// we still have something to do
 		#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "EVENT_LAST_READOUT " << currentTarget << " next " << nextTarget << " arg " << event->getArg () << sendLog;
+			logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED " << currentTarget << " next " << nextTarget << " arg " << event->getArg () << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			if (currentTarget)
 				break;
