@@ -371,6 +371,15 @@ Rts2ValueTime::getDisplayValue ()
 }
 
 
+void
+Rts2ValueTime::getStructTm (struct tm *tm_s, long *usec)
+{
+	time_t t_val = (time_t) getValueLong ();
+	gmtime_r (&t_val, tm_s);
+	*usec = (long) ((getValueDouble () - getValueLong ()) * USEC_SEC);
+}
+
+
 Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
 Rts2Value (in_val_name)
 {

@@ -465,6 +465,11 @@ class Rts2ValueTime:public Rts2ValueDouble
 			Rts2ValueDouble::setValueDouble (in_value);
 		}
 		virtual const char *getDisplayValue ();
+
+		/**
+		 * Convert double ctime to struct tm and fraction of seconds.
+		 */
+		void getStructTm (struct tm *tm_s, long *usec);
 };
 
 /**
