@@ -271,6 +271,11 @@ class ListValuesDevice: public ListValues
 							float_val = (*variter)->getValueFloat ();
 							retVar["value"] = float_val;
 							break;
+						case RTS2_VALUE_BOOL:
+							bool bool_val;
+							bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
+							retVar["value"] = bool_val;
+							break;
 						case RTS2_VALUE_LONGINT:
 							int_val = (*variter)->getValueInteger ();
 							retVar["value"] = int_val;
