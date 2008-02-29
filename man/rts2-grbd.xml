@@ -181,6 +181,12 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--test</option></term>
+        <listitem>
+          <para>If set, GCN test routines will be processed, writen to database and executed.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>--add-exec <replaceable class="parameter">command</replaceable></option></term>
         <listitem>
           <para>
@@ -227,7 +233,7 @@
 	        <term>grb_ra</term>
 		<listitem>
 		  <para>
-		    GRB RA specified in decimal degrees (e.g. except 0..360 range).
+		    GRB RA specified in decimal degrees (e.g. expect 0..360 range).
 		  </para>
 		</listitem>
 	      </varlistentry>
