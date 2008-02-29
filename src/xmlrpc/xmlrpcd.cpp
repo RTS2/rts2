@@ -276,8 +276,10 @@ class ListValuesDevice: public ListValues
 							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_TIME:
-							dbl_value = (*variter)->getValueDouble ();
-							retVar["value"] = dbl_value;
+							struct tm tm_s;
+							long usec;
+							((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
+							retVar["value"] = XmlRpcValue (&tm_s);
 							break;
 						default:
 							retVar["value"] = (*variter)->getValue ();
