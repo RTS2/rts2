@@ -50,7 +50,7 @@ using namespace std;
 #define ANDOR_SHUTTER_OPEN    1
 #define ANDOR_SHUTTER_CLOSED  2
 
-#define OPT_ANDOR_ROOT        OPT_LOCAL + 206
+#define OPT_ANDOR_ROOT        OPT_LOCAL + 1
 
 /**
  * Andor camera, as seen by the outside world.
@@ -483,7 +483,6 @@ Rts2DevCameraAndor::startExposure ()
 			}
 			if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) != DRV_SUCCESS)
 				return -1;
-			std::cout << "timings " << acq_exp << " " << acq_acc << " " << acq_kinetic << std::endl;
 		}
 		else
 		{
@@ -506,7 +505,6 @@ Rts2DevCameraAndor::startExposure ()
 		if (nAcc == 0)
 		{
 			nAcc = 1;
-			setSubExposure (getExposure ());
 		}
 
 		// Acquisition mode 2 is "accumulate"
@@ -520,6 +518,7 @@ Rts2DevCameraAndor::startExposure ()
 			DRV_SUCCESS)
 			return -1;
 		setExposure (nAcc * acq_exp);
+		checkValueSave (subExposure);
 		setSubExposure (acq_exp);
 	}
 
