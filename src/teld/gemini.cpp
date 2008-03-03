@@ -24,25 +24,11 @@
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <math.h>
-#include <iostream>
-
 #include <libnova/libnova.h>
 
 #include "telescope.h"
-#include "status.h"
 #include "hms.h"
+#include "../utils/rts2connserial.h"
 
 // uncomment following line, if you want all port read logging (will
 // add about 10 30-bytes lines to logStream for every query).
@@ -110,7 +96,8 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 
 		char *device_file_io;
 		char *geminiConfig;
-		int tel_desc;
+
+		Rts2ConnSerial *tel_conn;
 		// utility I/O functions
 		/**
 		 * Reads some data directly from port.
@@ -299,12 +286,12 @@ Rts2DevTelescopeGemini::tel_read (char *buf, int count)
 
 	for (readed = 0; readed < count; readed++)
 	{
-		int ret = read (tel_desc, &buf[readed], 1);
+		int ret = tel_conn->readPort (&buf[readed], 1);
 		#ifdef DEBUG_ALL_PORT_COMM
-		logStream (MESSAGE_DEBUG) << "Losmandy read from " << tel_desc <<
+		logStream (MESSAGE_DEBUG) << "Losmandy read from " << tel_conn <<
 			" size " << ret << sendLog;
 		#endif
-		if (ret <= 0)
+		if (ret < 0)
 		{
 			return -1;
 		}
@@ -342,7 +329,7 @@ Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
 			// flow-in so we can really flush them
 			if (*buf)
 				sleep (5);
-			tcflush (tel_desc, TCIOFLUSH);
+			tel_conn->flushPortIO ();
 			// try to read something in case we flush partialy full
 			// buffer; sometimes something hang somewhere, and to keep
 			// communication going, we need to be sure to read as much
@@ -383,11 +370,10 @@ Rts2DevTelescopeGemini::tel_write (char *buf, int count)
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Losmandy will write " << buf << sendLog;
 	#endif
-	ret = write (tel_desc, buf, count);
+	ret = tel_conn->writePort (buf, count);
 	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "Error during write " << errno << " "
-			<< strerror (errno) << sendLog;
+		return ret;
 	}
 	return ret;
 }
@@ -663,7 +649,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t & val)
 			tel_gemini_checksum (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
-		tcflush (tel_desc, TCIOFLUSH);
+		tel_conn->flushPortIO ();
 		return -1;
 	}
 	val = atol (buf);
@@ -695,7 +681,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, double &val)
 			tel_gemini_checksum (buf) << " is " << checksum << sendLog;
 		if (*buf)
 			sleep (5);
-		tcflush (tel_desc, TCIOFLUSH);
+		tel_conn->flushPortIO ();
 		return -1;
 	}
 	val = atof (buf);
@@ -732,7 +718,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	char rbuf[50];
 
 	// write_read_hash
-	if (tcflush (tel_desc, TCIOFLUSH) < 0)
+	if (tel_conn->flushPortIO () < 0)
 		return -1;
 
 	if (tel_write ("\x06", 1) < 0)
@@ -762,7 +748,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	{
 		// something is wrong, reset all comm
 		sleep (10);
-		tcflush (tel_desc, TCIOFLUSH);
+		tel_conn->flushPortIO ();
 	}
 	return -1;
 }
@@ -1040,7 +1026,8 @@ in_argv)
 	telMotorState = TEL_OK;
 	infoCount = 0;
 	matchCount = 0;
-	tel_desc = -1;
+
+	tel_conn = NULL;
 
 	worm = 0;
 	worm_move_needed = 0;
@@ -1083,7 +1070,6 @@ in_argv)
 
 Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
 {
-	close (tel_desc);
 }
 
 
@@ -1264,42 +1250,20 @@ Rts2DevTelescopeGemini::setCorrection ()
 int
 Rts2DevTelescopeGemini::init ()
 {
-	struct termios tel_termios;
 	int ret;
 
 	ret = Rts2DevTelescope::init ();
 	if (ret)
 		return ret;
 
+	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	ret = tel_conn->init ();
+	if (ret)
+		return ret;
+
 	while (1)
 	{
-		std::
-			cerr << "Rts2DevTelescopeGemini::init open: " << device_file << std::
-			endl;
-
-		tel_desc = open (device_file, O_RDWR);
-		if (tel_desc < 0)
-			return -1;
-
-		if (tcgetattr (tel_desc, &tel_termios) < 0)
-			return -1;
-
-		if (cfsetospeed (&tel_termios, B9600) < 0 ||
-			cfsetispeed (&tel_termios, B9600) < 0)
-			return -1;
-
-		tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-		tel_termios.c_oflag = 0;
-		tel_termios.c_cflag =
-			((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-		tel_termios.c_lflag = 0;
-		tel_termios.c_cc[VMIN] = 0;
-		tel_termios.c_cc[VTIME] = 40;
-
-		if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
-			return -1;
-
-		tcflush (tel_desc, TCIOFLUSH);
+		tel_conn->flushPortIO ();
 
 		ret = geminiInit ();
 		if (!ret)
@@ -1314,7 +1278,6 @@ Rts2DevTelescopeGemini::init ()
 			return ret;
 		}
 
-		close (tel_desc);		 // try again
 		sleep (60);
 	}
 	return 0;
