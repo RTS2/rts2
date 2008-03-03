@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -93,6 +93,13 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void sendValueAll (Rts2Value * value);
 
+		/**
+		 * If value needs to be saved, save it.
+		 *
+		 * @param val Value which will be checked and possibly saved.
+		 */
+		void checkValueSave (Rts2Value *val);
+
 		int checkLockFile (const char *lock_fname);
 		void setNotDeamonize ()
 		{
@@ -115,7 +122,24 @@ class Rts2Daemon:public Rts2Block
 		Rts2ValueQueVector queValues;
 
 		Rts2Value *getValue (const char *v_name);
+
+		/**
+		 * Return conditional value entry for given value name.
+		 *
+		 * @param v_name Value name.
+		 *
+		 * @return Rts2CondValue for given value, if this exists. NULL if it does not exist.
+		 */
 		Rts2CondValue *getCondValue (const char *v_name);
+
+		/**
+		 * Return conditional value entry for given value.
+		 *
+		 * @param val Value entry.
+		 *
+		 * @return Rts2CondValue for given value, if this exists. NULL if it does not exist.
+		 */
+		Rts2CondValue *getCondValue (const Rts2Value *val);
 
 		/**
 		 * Duplicate variable.

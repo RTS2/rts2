@@ -503,6 +503,20 @@ Rts2Daemon::getCondValue (const char *v_name)
 }
 
 
+Rts2CondValue *
+Rts2Daemon::getCondValue (const Rts2Value *val)
+{
+	Rts2CondValueVector::iterator iter;
+	for (iter = values.begin (); iter != values.end (); iter++)
+	{
+		Rts2CondValue *c_val = *iter;
+		if (c_val->getValue () == val)
+			return c_val;
+	}
+	return NULL;
+}
+
+
 Rts2Value *
 Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 {
@@ -867,6 +881,15 @@ Rts2Daemon::sendValueAll (Rts2Value * value)
 		Rts2Conn *conn = *iter;
 		value->send (conn);
 	}
+}
+
+
+void
+Rts2Daemon::checkValueSave (Rts2Value *val)
+{
+	Rts2CondValue *cond_val = getCondValue (val);
+	if (cond_val && cond_val->needSaveValue ())
+		saveValue (cond_val);
 }
 
 
