@@ -274,7 +274,7 @@ Rts2DevCameraAlta::info ()
 	tempSet->setValueFloat (alta->read_CoolerSetPoint ());
 	tempCCD->setValueFloat (alta->read_TempCCD ());
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
-	fan->setValueInteger (alta->read_FanMode () == Apn_FanMode_Low ? 0 : 1);
+	fan->setValueBool (alta->read_FanMode () == Apn_FanMode_Low ? false : true);
 	return Rts2DevCamera::info ();
 }
 
