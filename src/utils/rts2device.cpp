@@ -853,7 +853,7 @@ Rts2Device::checkQueChanges (int fakeState)
 					<< sendLog;
 			else
 				logStream (MESSAGE_DEBUG)
-					<< "change value of' "
+					<< "change value of '"
 					<< queVal->getOldValue ()->getName ()
 					<< "' from que with operator " << queVal->getOperation ()
 					<< " and operand " << newValStr
