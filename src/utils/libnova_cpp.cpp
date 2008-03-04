@@ -54,6 +54,17 @@ LibnovaRa::flip ()
 }
 
 
+int flagSpace = -1;
+
+std::ostream & spaceDegSep (std::ostream & _os)
+{
+	if (flagSpace == -1)
+		flagSpace = _os.xalloc ();
+	_os.iword (flagSpace) = 1;
+	return _os;
+}
+
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 {
 	if (isnan (l_ra.ra))
@@ -68,8 +79,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os
-		<< std::setw (2) << ra_hms.hours << ":"
-		<< std::setw (2) << ra_hms.minutes << ":"
+		<< std::setw (2) << ra_hms.hours << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
+		<< std::setw (2) << ra_hms.minutes << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
 		<< std::setw (6) << ra_hms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
@@ -344,8 +355,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os << (deg_dms.neg ? '-' : '+')
-		<< std::setw (2) << deg_dms.degrees << ":"
-		<< std::setw (2) << deg_dms.minutes << ":"
+		<< std::setw (2) << deg_dms.degrees << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
+		<< std::setw (2) << deg_dms.minutes << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
 		<< std::setw (5) << deg_dms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
