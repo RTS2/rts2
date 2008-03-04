@@ -332,7 +332,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 			break;
 	}
 
-	_os << target << " " << lst << " " << imageFlip << " " << aux1 << std::endl;
+	_os << spaceDegSep << target << " " << lst << " " << imageFlip << " " << aux1 << std::endl;
 	return 0;
 }
 
