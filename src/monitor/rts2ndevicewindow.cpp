@@ -118,8 +118,17 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 			break;
 		case RTS2_VALUE_RADEC:
 		{
-			LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
-			_os << v_radec;
+			if (value->getValueDisplayType () == RTS2_DT_DEGREES)
+			{
+				LibnovaDeg v_rd (((Rts2ValueRaDec *) value)->getRa ());
+				LibnovaDeg v_dd (((Rts2ValueRaDec *) value)->getDec ());
+				_os << v_rd << " " << v_dd;
+			}
+			else
+			{
+				LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
+				_os << v_radec;
+			}
 			printValue (value->getName ().c_str (), _os.str().c_str ());
 		}
 		break;
