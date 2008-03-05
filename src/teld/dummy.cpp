@@ -110,8 +110,6 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 
 		virtual int stopMove ()
 		{
-			dummyPos.ra = 1;
-			dummyPos.dec = 1;
 			return 0;
 		}
 
