@@ -208,6 +208,18 @@ class Rts2Device:public Rts2Daemon
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
+		/**
+		 * Return device BOP state.
+		 * This state is specific for device, and contains BOP values
+		 * only from devices which can block us.
+		 */
+		int getDeviceBopState ()
+		{
+			return fullBopState;
+		}
+
+		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
+
 		void clearStatesPriority ();
 
 		// sends operation block commands to master
@@ -328,7 +340,7 @@ class Rts2Device:public Rts2Daemon
 		 *
 		 * @param new_state New BOP state.
 		 */
-		void setFullBopState (int new_state);
+		virtual void setFullBopState (int new_state);
 
 		/**
 		 * Hook called to mask device BOP state with possible blocking values from que.
@@ -340,6 +352,9 @@ class Rts2Device:public Rts2Daemon
 		 */
 		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
 
+		/**
+		 * Called when status_info command ends.
+		 */
 		void endDeviceStatusCommand ()
 		{
 			if (deviceStatusCommand && deviceStatusCommand->getOwnerConn ())

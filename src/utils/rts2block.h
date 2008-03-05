@@ -202,6 +202,11 @@ class Rts2Block: public Rts2App
 		 */
 		virtual void connectionRemoved (Rts2Conn * conn);
 
+		/**
+		 * Called when BOP state is changed.
+		 */
+		void bopStateChanged ();
+
 	public:
 
 		/**
@@ -456,13 +461,11 @@ class Rts2Block: public Rts2App
 		/**
 		 * Called when some device connected to us become idle.
 		 *
-		 * \param conn connection representing device which became idle
+		 * @param conn connection representing device which became idle
 		 */
 		virtual void deviceIdle (Rts2Conn * conn);
 
 		virtual int changeMasterState (int new_state);
-
-		int changeBopState (int new_state);
 
 		/**
 		 * Called when new state information arrives.

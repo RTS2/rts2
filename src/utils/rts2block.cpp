@@ -431,8 +431,8 @@ Rts2Block::changeMasterState (int new_state)
 }
 
 
-int
-Rts2Block::changeBopState (int new_state)
+void
+Rts2Block::bopStateChanged ()
 {
 	// send message to all connections that they can possibly continue executing..
 	for (connections_t::iterator iter = connectionBegin ();
@@ -440,7 +440,6 @@ Rts2Block::changeBopState (int new_state)
 	{
 		(*iter)->masterStateChanged ();
 	}
-	return 0;
 }
 
 
@@ -457,7 +456,7 @@ Rts2Block::setMasterState (int new_state)
 	}
 	if ((old_state & BOP_MASK) != (new_state & BOP_MASK))
 	{
-		changeBopState (new_state);
+		bopStateChanged ();
 	}
 	return 0;
 }

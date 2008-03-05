@@ -481,8 +481,8 @@ class Rts2CommandChange:public Rts2Command
 class Rts2CommandCorrect:public Rts2Command
 {
 	public:
-		Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, double ra,
-			double dec, double ra_err, double dec_err);
+		Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, int img_id,
+			double ra_corr, double dec_corr, double pos_err);
 };
 
 class Rts2CommandStartGuide:public Rts2Command

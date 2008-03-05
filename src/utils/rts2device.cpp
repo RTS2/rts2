@@ -655,8 +655,7 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("device_status"))
 	{
-		deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, conn);
-		getCentraldConn ()->queCommand (deviceStatusCommand);
+		queDeviceStatusCommand (conn);
 		// OK will be returned when command return from centrald
 		return -1;
 	}
@@ -771,6 +770,14 @@ Rts2Device::processOption (int in_opt)
 			return Rts2Daemon::processOption (in_opt);
 	}
 	return 0;
+}
+
+
+void
+Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
+{
+	deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, in_owner_conn);
+	getCentraldConn ()->queCommand (deviceStatusCommand);
 }
 
 
@@ -1050,7 +1057,7 @@ Rts2Device::setFullBopState (int new_state)
 	sendBopMessage (new_state);
 	if (deviceStatusCommand)
 	{
-		// we get what we wait for..
+		// we get what we waited for..
 		endDeviceStatusCommand ();
 	}
 	fullBopState = new_state;
