@@ -1,3 +1,22 @@
+/*
+ * Connections for image processing forked instances.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2connimgprocess.h"
 #include "rts2script.h"
 
@@ -13,18 +32,16 @@
 
 #include <sstream>
 
-Rts2ConnProcess::Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe, int in_timeout):
+Rts2ConnProcess::Rts2ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):
 Rts2ConnFork (in_master, in_exe, in_timeout)
 {
-	reqConn = in_conn;
 }
 
 
 Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
-Rts2Conn * in_conn,
 const char *in_exe,
 const char *in_path, int in_timeout):
-Rts2ConnProcess (in_master, in_conn, in_exe, in_timeout)
+Rts2ConnProcess (in_master, in_exe, in_timeout)
 {
 	imgPath = new char[strlen (in_path) + 1];
 	strcpy (imgPath, in_path);
@@ -71,9 +88,10 @@ int
 Rts2ConnImgProcess::processLine ()
 {
 	int ret;
-	ret =
-		sscanf (getCommand (), "%li %lf %lf (%lf,%lf)", &id, &ra, &dec, &ra_err,
-		&dec_err);
+	ret = sscanf (getCommand (),
+		"%li %lf %lf (%lf,%lf)",
+		&id, &ra, &dec, &ra_err, &dec_err);
+
 	if (ret == 5)
 	{
 		astrometryStat = GET;
@@ -122,14 +140,11 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 			sendProcEndMail (image);
 			break;
 		case GET:
-			if (reqConn)
-				reqConn->sendValue ("correct", image->getObsId (), image->getImgId (),
-					ra, dec, ra_err, dec_err);
 			image->setAstroResults (ra, dec, ra_err / 60.0, dec_err / 60.0);
 			image->toArchive ();
 			// send correction to telescope..
 			telescopeName = image->getMountName ();
-			ret = image->getValue ("MNT_MARK", corr_mark);
+			ret = image->getValue ("MOVE_NUM", corr_mark);
 			if (ret)
 				break;
 			if (telescopeName)
@@ -138,10 +153,21 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 				telConn = master->findName (telescopeName);
 				// correction error should be in degrees
 				if (telConn)
-					telConn->
-						queCommand (new
-						Rts2CommandCorrect (master, corr_mark, ra, dec,
-						ra_err / 60.0, dec_err / 60.0));
+				{
+					struct ln_equ_posn pos1, pos2;
+					pos1.ra = ra;
+					pos1.dec = dec;
+
+					pos2.ra = ra - ra_err / 60.0;
+					pos2.dec = dec - dec_err / 60.0;
+
+					double posErr = ln_get_angular_separation (&pos1, &pos2);
+
+					telConn->queCommand (
+						new Rts2CommandCorrect (master, corr_mark, image->getImgId (),
+						ra_err / 60.0, dec_err / 60.0, posErr)
+						);
+				}
 			}
 			sendOKMail (image);
 			sendProcEndMail (image);
@@ -205,10 +231,9 @@ Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 
 
 Rts2ConnObsProcess::Rts2ConnObsProcess (Rts2Block * in_master,
-Rts2Conn * in_conn,
 const char *in_exe, int in_obsId,
 int in_timeout):
-Rts2ConnProcess (in_master, in_conn, in_exe, in_timeout)
+Rts2ConnProcess (in_master, in_exe, in_timeout)
 {
 	obsId = in_obsId;
 	obs = new Rts2Obs (obsId);
@@ -255,9 +280,8 @@ Rts2ConnObsProcess::processLine ()
 }
 
 
-Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe, int in_timeout):Rts2ConnProcess (in_master, in_conn,
-in_exe,
-in_timeout)
+Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
+:Rts2ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 
@@ -269,9 +293,8 @@ Rts2ConnDarkProcess::processLine ()
 }
 
 
-Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn, const char *in_exe, int in_timeout):Rts2ConnProcess (in_master, in_conn,
-in_exe,
-in_timeout)
+Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
+:Rts2ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 

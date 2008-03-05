@@ -1,3 +1,22 @@
+/*
+ * Image processor body.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "../utilsdb/rts2devicedb.h"
 #include "status.h"
 #include "rts2connimgprocess.h"
@@ -53,13 +72,13 @@ class Rts2ImageProc:public Rts2DeviceDb
 
 		int que (Rts2ConnProcess * newProc);
 
-		int queImage (Rts2Conn * conn, const char *in_path);
-		int doImage (Rts2Conn * conn, const char *in_path);
+		int queImage (const char *in_path);
+		int doImage (const char *in_path);
 
-		int queObs (Rts2Conn * conn, int obsId);
+		int queObs (int obsId);
 
-		int queDarks (Rts2Conn * conn);
-		int queFlats (Rts2Conn * conn);
+		int queDarks ();
+		int queFlats ();
 
 		int checkNotProcessed ();
 		void changeRunning (Rts2ConnProcess * newImage);
@@ -160,7 +179,7 @@ Rts2ImageProc::postEvent (Rts2Event * event)
 	{
 		case EVENT_ALL_PROCESSED:
 			obsId = *((int *) event->getArg ());
-			queObs (NULL, obsId);
+			queObs (obsId);
 			break;
 	}
 	Rts2DeviceDb::postEvent (event);
@@ -266,7 +285,7 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 			{
 				if (globC < imageGlob.gl_pathc)
 				{
-					queImage (NULL, imageGlob.gl_pathv[globC]);
+					queImage (imageGlob.gl_pathv[globC]);
 					globC++;
 				}
 				else if (imageGlob.gl_pathc > 0)
@@ -332,23 +351,21 @@ Rts2ImageProc::que (Rts2ConnProcess * newProc)
 
 
 int
-Rts2ImageProc::queImage (Rts2Conn * conn, const char *in_path)
+Rts2ImageProc::queImage (const char *in_path)
 {
 	Rts2ConnImgProcess *newImageConn;
-	newImageConn =
-		new Rts2ConnImgProcess (this, conn, defaultImgProcess.c_str (), in_path,
-		Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new Rts2ConnImgProcess (this, defaultImgProcess.c_str (),
+		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
 	return que (newImageConn);
 }
 
 
 int
-Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
+Rts2ImageProc::doImage (const char *in_path)
 {
 	Rts2ConnImgProcess *newImageConn;
-	newImageConn =
-		new Rts2ConnImgProcess (this, conn, defaultImgProcess.c_str (), in_path,
-		Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new Rts2ConnImgProcess (this, defaultImgProcess.c_str (),
+		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
 	changeRunning (newImageConn);
 	infoAll ();
 	return 0;
@@ -356,36 +373,31 @@ Rts2ImageProc::doImage (Rts2Conn * conn, const char *in_path)
 
 
 int
-Rts2ImageProc::queObs (Rts2Conn * conn, int obsId)
+Rts2ImageProc::queObs (int obsId)
 {
 	Rts2ConnObsProcess *newObsConn;
-	newObsConn =
-		new Rts2ConnObsProcess (this, conn, defaultObsProcess.c_str (), obsId,
-		Rts2Config::instance ()->getObsProcessTimeout ());
+	newObsConn = new Rts2ConnObsProcess (this, defaultObsProcess.c_str (),
+		obsId, Rts2Config::instance ()->getObsProcessTimeout ());
 	return que (newObsConn);
 }
 
 
 int
-Rts2ImageProc::queDarks (Rts2Conn * conn)
+Rts2ImageProc::queDarks ()
 {
 	Rts2ConnDarkProcess *newDarkConn;
-	newDarkConn =
-		new Rts2ConnDarkProcess (this, conn, defaultDarkProcess.c_str (),
-		Rts2Config::instance ()->
-		getDarkProcessTimeout ());
+	newDarkConn = new Rts2ConnDarkProcess (this, defaultDarkProcess.c_str (),
+		Rts2Config::instance ()->getDarkProcessTimeout ());
 	return que (newDarkConn);
 }
 
 
 int
-Rts2ImageProc::queFlats (Rts2Conn * conn)
+Rts2ImageProc::queFlats ()
 {
 	Rts2ConnFlatProcess *newFlatConn;
-	newFlatConn =
-		new Rts2ConnFlatProcess (this, conn, defaultFlatProcess.c_str (),
-		Rts2Config::instance ()->
-		getFlatProcessTimeout ());
+	newFlatConn = new Rts2ConnFlatProcess (this, defaultFlatProcess.c_str (),
+		Rts2Config::instance ()->getFlatProcessTimeout ());
 	return que (newFlatConn);
 }
 
@@ -415,7 +427,7 @@ Rts2ImageProc::checkNotProcessed ()
 
 	// start files que..
 	if (imageGlob.gl_pathc > 0)
-		return queImage (NULL, imageGlob.gl_pathv[0]);
+		return queImage (imageGlob.gl_pathv[0]);
 	return 0;
 }
 
@@ -428,33 +440,33 @@ Rts2ImageProc::commandAuthorized (Rts2Conn * conn)
 		char *in_imageName;
 		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
 			return -2;
-		return queImage (conn, in_imageName);
+		return queImage (in_imageName);
 	}
 	else if (conn->isCommand ("do_image"))
 	{
 		char *in_imageName;
 		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
 			return -2;
-		return doImage (conn, in_imageName);
+		return doImage (in_imageName);
 	}
 	else if (conn->isCommand ("que_obs"))
 	{
 		int obsId;
 		if (conn->paramNextInteger (&obsId) || !conn->paramEnd ())
 			return -2;
-		return queObs (conn, obsId);
+		return queObs (obsId);
 	}
 	else if (conn->isCommand ("que_darks"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return queDarks (conn);
+		return queDarks ();
 	}
 	else if (conn->isCommand ("que_flats"))
 	{
 		if (!conn->paramEnd ())
 			return -2;
-		return queFlats (conn);
+		return queFlats ();
 	}
 
 	return Rts2DeviceDb::commandAuthorized (conn);

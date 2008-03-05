@@ -1,3 +1,22 @@
+/*
+ * Connections for image processing forked instances.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2CONNIMGPROCESS__
 #define __RTS2CONNIMGPROCESS__
 
@@ -12,17 +31,10 @@ astrometry_stat_t;
 class Rts2ConnProcess:public Rts2ConnFork
 {
 	protected:
-		Rts2Conn * reqConn;
 		astrometry_stat_t astrometryStat;
 	public:
-		Rts2ConnProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		Rts2ConnProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
-
-		void deleteConnection (Rts2Conn * conn)
-		{
-			if (conn == reqConn)
-				reqConn = NULL;
-		}
 
 		astrometry_stat_t getAstrometryStat ()
 		{
@@ -55,7 +67,7 @@ class Rts2ConnImgProcess:public Rts2ConnProcess
 		virtual void connectionError (int last_data_size);
 
 	public:
-		Rts2ConnImgProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		Rts2ConnImgProcess (Rts2Block * in_master,
 			const char *in_exe, const char *in_path,
 			int in_timeout);
 		virtual ~ Rts2ConnImgProcess (void);
@@ -76,7 +88,7 @@ class Rts2ConnObsProcess:public Rts2ConnProcess
 		char *obsTarIdCh;
 		char *obsTarTypeCh;
 	public:
-		Rts2ConnObsProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		Rts2ConnObsProcess (Rts2Block * in_master,
 			const char *in_exe, int in_obsId, int in_timeout);
 
 		virtual int newProcess ();
@@ -86,7 +98,7 @@ class Rts2ConnObsProcess:public Rts2ConnProcess
 class Rts2ConnDarkProcess:public Rts2ConnProcess
 {
 	public:
-		Rts2ConnDarkProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		Rts2ConnDarkProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual int processLine ();
@@ -95,7 +107,7 @@ class Rts2ConnDarkProcess:public Rts2ConnProcess
 class Rts2ConnFlatProcess:public Rts2ConnProcess
 {
 	public:
-		Rts2ConnFlatProcess (Rts2Block * in_master, Rts2Conn * in_conn,
+		Rts2ConnFlatProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual int processLine ();
