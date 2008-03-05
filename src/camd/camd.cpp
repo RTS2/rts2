@@ -746,6 +746,14 @@ Rts2DevCamera::camStartExposure ()
 {
 	int ret;
 
+	// check if we aren't blocked
+	if ((!expType || expType->getValueInteger () == 0)
+		&& (getDeviceBopState () & BOP_EXPOSURE))
+	{
+		quedExpNumber->inc ();
+		return 0;
+	}
+
 	exposureNumber->inc ();
 	sendValueAll (exposureNumber);
 
@@ -1198,4 +1206,13 @@ Rts2DevCamera::maskQueValueBopState (int new_state, int valueQueCondition)
 	if (valueQueCondition & CAM_READING)
 		new_state |= BOP_READOUT;
 	return new_state;
+}
+
+
+void
+Rts2DevCamera::setFullBopState (int new_state)
+{
+	Rts2Device::setFullBopState (new_state);
+	if (!(new_state & BOP_EXPOSURE) && quedExpNumber->getValueInteger () > 0)
+		camStartExposure ();
 }

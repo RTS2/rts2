@@ -704,5 +704,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		virtual int commandAuthorized (Rts2Conn * conn);
 
 		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
+
+		virtual void setFullBopState (int new_state);
 };
 #endif							 /* !__RTS2_CAMERA_CPP__ */
