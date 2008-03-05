@@ -266,9 +266,10 @@ Rts2DevClientCameraImage::exposureEnd ()
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 
 	if (actualImage)
+	{
 		actualImage->setExEnd (getMaster ()->getNow ());
-
-	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+		connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
+	}
 
 	Rts2DevClientCamera::exposureEnd ();
 }
@@ -312,8 +313,7 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *)event->getArg ();
-			if (ci)
-				ci->image->writeConn (getConnection (), EXPOSURE_END);
+			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 		case EVENT_GET_RADEC:
 			getEqu ((struct ln_equ_posn *) event->getArg ());
