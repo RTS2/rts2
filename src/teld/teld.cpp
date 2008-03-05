@@ -47,24 +47,30 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// object
 	createValue (objRaDec, "OBJ", "object position (J2000)", true);
 	// users offset
-	createValue (offsetRaDec, "OFFS", "object offset", true, 0, 0, true);
-	offsetRaDec->setRa (0);
-	offsetRaDec->setDec (0);
+	createValue (offsetRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
+	offsetRaDec->setValueRaDec (0, 0);
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
-	createValue (corrRaDec, "CORR_", "correction from closed loop", true, 0, 0, true);
-	corrRaDec->setRa (0);
-	corrRaDec->setDec (0);
+	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES,
+		0, true);
+	corrRaDec->setValueRaDec (0, 0);
+
+	createValue (waitingCorrRaDec, "wcorr", "corrections which waits for being applied",
+		false, RTS2_DT_DEGREES, 0, true);
+	waitingCorrRaDec->setValueRaDec (0, 0);
 
 	// position error
-	createValue (posErr, "pos_err", "error in degrees", false,
-		RTS2_DT_DEG_DIST);
+	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
 
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", false);
+	moveNum->setValueInteger (0);
+
+	createValue (corrImgId, "corr_img", "ID of last image used for correction", false);
+	corrImgId->setValueInteger (0);
 
 	createValue (telAlt, "ALT", "mount altitude", true, RTS2_DT_DEC);
 	createValue (telAz, "AZ", "mount azimuth", true, RTS2_DT_DEGREES);
@@ -73,6 +79,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG);
 
 	move_connection = NULL;
+
+	createValue (smallCorrection, "small_correction", "correction bellow that value will be considered as small",
+		false, RTS2_DT_DEG_DIST);
+	smallCorrection->setValueDouble (0);
 
 	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST);
 	modelLimit->setValueDouble (5.0);
@@ -189,7 +199,8 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == objRaDec
 		|| old_value == offsetRaDec
-		|| old_value == corrRaDec)
+		|| old_value == corrRaDec
+		|| old_value == waitingCorrRaDec)
 	{
 		return 0;
 	}
@@ -672,6 +683,7 @@ Rts2DevTelescope::info ()
 int
 Rts2DevTelescope::scriptEnds ()
 {
+	corrImgId->setValueInteger (0);
 	return Rts2Device::scriptEnds ();
 }
 
@@ -744,15 +756,26 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	if (objRaDec->wasChanged ())
 	{
 		// reset offsets
-		offsetRaDec->setRa (0);
-		offsetRaDec->setDec (0);
+		offsetRaDec->setValueRaDec (0, 0);
 		offsetRaDec->resetValueChanged ();
 
-		corrRaDec->setRa (0);
-		corrRaDec->setDec (0);
+		corrRaDec->setValueRaDec (0, 0);
 		corrRaDec->resetValueChanged ();
 
+		waitingCorrRaDec->setValueRaDec (0, 0);
+		waitingCorrRaDec->resetValueChanged ();
+
 		moveNum->inc ();
+	}
+
+	// if some value is waiting to be applied..
+	if (waitingCorrRaDec->wasChanged ())
+	{
+		corrRaDec->setRa (corrRaDec->getRa () + waitingCorrRaDec->getRa ());
+		corrRaDec->setDec (corrRaDec->getDec () + waitingCorrRaDec->getDec ());
+
+		waitingCorrRaDec->setValueRaDec (0, 0);
+		waitingCorrRaDec->resetValueChanged ();
 	}
 
 	LibnovaRaDec l_obj (objRaDec->getRa (), objRaDec->getDec ());
@@ -928,21 +951,36 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("correct"))
 	{
 		int cor_mark;
-		struct ln_equ_posn realPos;
-		double cor_ra;
-		double cor_dec;
+		int img_id;
+		double total_cor_ra;
+		double total_cor_dec;
+		double pos_err;
 		if (conn->paramNextInteger (&cor_mark)
-			|| conn->paramNextDouble (&cor_ra)
-			|| conn->paramNextDouble (&cor_dec)
-			|| conn->paramNextDouble (&realPos.ra)
-			|| conn->paramNextDouble (&realPos.dec) || !conn->paramEnd ())
+			|| conn->paramNextInteger (&img_id)
+			|| conn->paramNextDouble (&total_cor_ra)
+			|| conn->paramNextDouble (&total_cor_dec)
+			|| conn->paramNextDouble (&pos_err)
+			|| !conn->paramEnd ())
 			return -2;
-		if (cor_mark == moveNum->getValueInteger ())
+		if (cor_mark == moveNum->getValueInteger () && img_id > corrImgId->getValueInteger ())
 		{
-			corrRaDec->setValueRaDec (cor_ra, cor_dec);
-			return startResyncMove (conn, true);
+			waitingCorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
+
+			posErr->setValueDouble (pos_err);
+			sendValueAll (posErr);
+
+			corrImgId->setValueInteger (img_id);
+			sendValueAll (corrImgId);
+
+			if (pos_err < smallCorrection->getValueDouble ())
+				return startResyncMove (conn, true);
+			sendValueAll (waitingCorrRaDec);
+			// else set BOP_EXPOSURE, and wait for result of statusUpdate call
+			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for correction");
+			// correction was accepted, will be carried once it will be possible
+			return 0;
 		}
-		conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is for incurrect movement mark");
+		conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is for incorrect movement mark");
 		return -1;
 	}
 	else if (conn->isCommand ("park"))
@@ -1008,4 +1046,13 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 		return ret;
 	}
 	return Rts2Device::commandAuthorized (conn);
+}
+
+
+void
+Rts2DevTelescope::setFullBopState (int new_state)
+{
+	Rts2DevTelescope::setFullBopState (new_state);
+	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))
+		startResyncMove (false, true);
 }

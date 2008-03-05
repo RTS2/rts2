@@ -64,6 +64,11 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueDouble *posErr;
 
 		/**
+		 * If correction is bellow that value, it is considered as small correction.
+		 */
+		Rts2ValueDouble *smallCorrection;
+
+		/**
 		 * If move is above this limit, correction is rejected.
 		 */
 		Rts2ValueDouble *modelLimit;
@@ -95,6 +100,11 @@ class Rts2DevTelescope:public Rts2Device
 		 * Corrections from astrometry/user.
 		 */
 		Rts2ValueRaDec *corrRaDec;
+
+		/**
+		 * RA DEC correction which waits to be applied.
+		 */
+		Rts2ValueRaDec *waitingCorrRaDec;
 
 		/**
 		 * Telescope RA and DEC. In perfect world readed from sensors.
@@ -165,6 +175,7 @@ class Rts2DevTelescope:public Rts2Device
 
 	private:
 		Rts2ValueInteger *moveNum;
+		Rts2ValueInteger *corrImgId;
 
 		void checkMoves ();
 		void checkGuiding ();
@@ -444,5 +455,7 @@ class Rts2DevTelescope:public Rts2Device
 		virtual void signaledHUP ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual void setFullBopState (int new_state);
 };
 #endif							 /* !__RTS2_TELD_CPP__ */
