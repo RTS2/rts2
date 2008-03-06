@@ -157,7 +157,13 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
 	if (debugPortComm)
-		logStream (MESSAGE_DEBUG) << "will write to port: " << std::setw(b_len) << wbuf << sendLog;
+	{
+		char *tmp_b = new char[b_len + 1];
+		memcpy (tmp_b, wbuf, b_len);
+		tmp_b[b_len] = '\0';
+		logStream (MESSAGE_DEBUG) << "will write to port: '" << tmp_b << "'" << sendLog;
+		delete []tmp_b;
+	}
 	while (wlen < b_len)
 	{
 		int ret = write (sock, wbuf, b_len);
@@ -188,12 +194,17 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		if (ret == -1 && errno != EINTR)
 		{
 			if (rlen > 0)
-				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading "
-					<< std::setw (rlen) << rbuf << ", error is "
+			{
+				rbuf[rlen] = '\0';
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '"
+					<< rbuf << "', error is "
 					<< strerror (errno) << sendLog;
+			}
 			else
+			{
 				logStream (MESSAGE_ERROR) << "cannot read from serial port "
 					<< strerror (errno) << sendLog;
+			}
 			return -1;
 		}
 		if (ret == 0)
@@ -205,7 +216,13 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		rlen += ret;
 	}
 	if (debugPortComm)
-		logStream (MESSAGE_DEBUG) << "readed from port " << std::setw(rlen) << rbuf << sendLog;
+	{
+		char *tmp_b = new char[rlen + 1];
+		memcpy (tmp_b, rbuf, rlen);
+		tmp_b[rlen] = '\0';
+		logStream (MESSAGE_DEBUG) << "readed from port '" << tmp_b << "'" << sendLog;
+		delete []tmp_b;
+	}
 	return rlen;
 }
 
@@ -220,9 +237,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		if (ret == -1 && errno != EINTR)
 		{
 			if (rlen > 0)
-				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading "
-					<< std::setw (rlen) << rbuf << ", error is "
+			{
+				rbuf[rlen] = '\0';
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading '"
+					<< rbuf << "', error is "
 					<< strerror (errno) << sendLog;
+			}
 			else
 				logStream (MESSAGE_ERROR) << "cannot read from serial port "
 					<< strerror (errno) << sendLog;
@@ -232,13 +252,23 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		{
 			rlen += ret;
 			if (debugPortComm)
-				logStream (MESSAGE_DEBUG) << "readed from port " << std::setw(rlen) << rbuf << sendLog;
+			{
+				char *tmp_b = new char[rlen + 1];
+				memcpy (tmp_b, rbuf, rlen);
+				tmp_b[rlen] = '\0';
+				logStream (MESSAGE_DEBUG) << "readed from port '" << tmp_b << "'" << sendLog;
+				delete []tmp_b;
+			}
 			return rlen;
 		}
 		rlen += ret;
 	}
+	char *tmp_b = new char[rlen + 1];
+	memcpy (tmp_b, rbuf, rlen);
+	tmp_b[rlen] = '\0';
 	logStream (MESSAGE_ERROR) << "did not find end char '" << endChar
-		<< "', readed " << std::setw(rlen) << rbuf << sendLog;
+		<< "', readed '" << tmp_b << "'" << sendLog;
+	delete []tmp_b;
 	return -1;
 }
 
