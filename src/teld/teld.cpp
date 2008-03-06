@@ -60,6 +60,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 		false, RTS2_DT_DEGREES, 0, true);
 	waitingCorrRaDec->setValueRaDec (0, 0);
 
+	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction",
+		false, 0, 0, true);
+
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
 
@@ -770,6 +773,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 		moveNum->inc ();
 		corrImgId->setValueInteger (0);
+		wCorrImgId->setValueInteger (0);
 	}
 
 	// if some value is waiting to be applied..
@@ -780,6 +784,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 		waitingCorrRaDec->setValueRaDec (0, 0);
 		waitingCorrRaDec->resetValueChanged ();
+
+		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
 	}
 
 	LibnovaRaDec l_obj (objRaDec->getRa (), objRaDec->getDec ());
@@ -955,26 +961,30 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("correct"))
 	{
 		int cor_mark;
+		int corr_img;
 		int img_id;
 		double total_cor_ra;
 		double total_cor_dec;
 		double pos_err;
 		if (conn->paramNextInteger (&cor_mark)
+			|| conn->paramNextInteger (&corr_img)
 			|| conn->paramNextInteger (&img_id)
 			|| conn->paramNextDouble (&total_cor_ra)
 			|| conn->paramNextDouble (&total_cor_dec)
 			|| conn->paramNextDouble (&pos_err)
 			|| !conn->paramEnd ())
 			return -2;
-		if (cor_mark == moveNum->getValueInteger () && img_id > corrImgId->getValueInteger ())
+		if (cor_mark == moveNum->getValueInteger ()
+			&& corr_img == corrImgId->getValueInteger ()
+			&& img_id > wCorrImgId->getValueInteger ())
 		{
 			waitingCorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
 
 			posErr->setValueDouble (pos_err);
 			sendValueAll (posErr);
 
-			corrImgId->setValueInteger (img_id);
-			sendValueAll (corrImgId);
+			wCorrImgId->setValueInteger (img_id);
+			sendValueAll (wCorrImgId);
 
 			if (pos_err < smallCorrection->getValueDouble ())
 				return startResyncMove (conn, true);

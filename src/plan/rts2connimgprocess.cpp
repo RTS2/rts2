@@ -119,7 +119,7 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 {
 	int ret;
 	const char *telescopeName;
-	int corr_mark;
+	int corr_mark, corr_img;
 	Rts2ImageSkyDb *image;
 
 	if (last_data_size < 0 && errno == EAGAIN)
@@ -147,6 +147,9 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 			ret = image->getValue ("MOVE_NUM", corr_mark);
 			if (ret)
 				break;
+			ret = image->getValue ("CORR_IMG", corr_img);
+			if (ret)
+				break;
 			if (telescopeName)
 			{
 				Rts2Conn *telConn;
@@ -164,7 +167,8 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 					double posErr = ln_get_angular_separation (&pos1, &pos2);
 
 					telConn->queCommand (
-						new Rts2CommandCorrect (master, corr_mark, image->getImgId (),
+						new Rts2CommandCorrect (master, corr_mark,
+						corr_img, image->getImgId (),
 						ra_err / 60.0, dec_err / 60.0, posErr)
 						);
 				}

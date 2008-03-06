@@ -506,13 +506,13 @@ Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark, int img_id,
-double ra_corr, double dec_corr, double pos_err):
+Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark,
+int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):
 Rts2Command (in_master)
 {
 	char *command;
-	asprintf (&command, "correct %i %i %lf %lf %lf", corr_mark, img_id,
-		ra_corr, dec_corr, pos_err);
+	asprintf (&command, "correct %i %i %i %lf %lf %lf", corr_mark, corr_img,
+		img_id, ra_corr, dec_corr, pos_err);
 	setCommand (command);
 	free (command);
 }
