@@ -177,6 +177,8 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueInteger *moveNum;
 		Rts2ValueInteger *corrImgId;
 
+		Rts2ValueInteger *wCorrImgId;
+
 		void checkMoves ();
 		void checkGuiding ();
 
