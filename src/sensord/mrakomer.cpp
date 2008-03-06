@@ -63,7 +63,7 @@ Rts2SensorMrakomer::readSensor ()
 	int ret;
 	char buf[51];
 	ret = mrakConn->writeRead (heater->getValueBool () ? "h" : "x", 1, buf, 50, '\r');
-	if (ret)
+	if (ret < 0)
 		return ret;
 	buf[ret] = '\0';
 
@@ -102,6 +102,8 @@ Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
+
+	addOption ('f', NULL, 1, "serial port with cloud sensor");
 }
 
 
