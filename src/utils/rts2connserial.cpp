@@ -163,7 +163,8 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 		int ret = write (sock, wbuf, b_len);
 		if (ret == -1 && errno != EINTR)
 		{
-			logStream (MESSAGE_ERROR) << "cannot write to serial port" << sendLog;
+			logStream (MESSAGE_ERROR) << "cannot write to serial port "
+				<< strerror (errno) << sendLog;
 			return -1;
 		}
 		if (ret == 0)
@@ -195,6 +196,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 					<< strerror (errno) << sendLog;
 			return -1;
 		}
+		if (ret == 0)
+		{
+			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+			return -1;
+		}
+
 		rlen += ret;
 	}
 	if (debugPortComm)
