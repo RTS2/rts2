@@ -362,9 +362,7 @@ Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 	buf[len] = '\0';
 	ret = tel_conn->writePort (buf, len);
 	free (buf);
-	if (ret == len)
-		return 0;
-	return -1;
+	return ret;
 }
 
 
@@ -387,9 +385,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	if (tel_conn->writePort (buf, len) > 0)
-		return 0;
-	return -1;
+	return tel_conn->writePort (buf, len);
 }
 
 
@@ -404,9 +400,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	if (tel_conn->writePort (buf, len) > 0)
-		return 0;
-	return -1;
+	return tel_conn->writePort (buf, len);
 }
 
 
@@ -1316,9 +1310,7 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
-	if (tel_conn->writePort (command, 5) > 0)
-		return 0;
-	return -1;
+	return tel_conn->writePort (command, 5);
 }
 
 
@@ -1329,13 +1321,12 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
  *
  * @param direction 	direction
  *
- * @return -1 on failure & set errnom, 5 (>=0) otherwise
+ * @return -1 on failure, 0 on sucess.
  */
 int
 Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
 	char command[6];
-	int ret;
 	// start worm if moving in RA DEC..
 	/*  if (worm == 135 && (direction == DIR_EAST || direction == DIR_WEST))
 		{
@@ -1352,11 +1343,10 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 		  worm_move_needed = 0;
 		} */
 	sprintf (command, "#:M%c#", direction);
-	ret = tel_conn->writePort (command, 5) < 0 ? -1 : 0;
+	return tel_conn->writePort (command, 5);
 	// workaround suggested by Rene Goerlich
 	//if (worm_move_needed == 1)
 	//  stopWorm ();
-	return ret;
 }
 
 
@@ -1375,7 +1365,7 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 		worm_move_needed = 0;
 		stopWorm ();
 	}
-	return tel_conn->writePort (command, 5) < 0 ? -1 : 0;
+	return tel_conn->writePort (command, 5);
 }
 
 
@@ -1836,7 +1826,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 	stopWorm ();
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_conn->writePort ("#:ONfixed#", 10) > 0)
+	if (tel_conn->writePort ("#:ONfixed#", 10) == 0)
 		return Rts2DevTelescope::endMoveFixed ();
 	return -1;
 }
@@ -2191,10 +2181,7 @@ Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 	int len;
 	int ret;
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
-	ret = tel_conn->writePort (buf, len);
-	if (ret != len)
-		return -1;
-	return 0;
+	return tel_conn->writePort (buf, len);
 }
 
 int
