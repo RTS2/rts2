@@ -66,10 +66,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
-	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", false);
+	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
 
-	createValue (corrImgId, "corr_img", "ID of last image used for correction", false);
+	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true);
 	corrImgId->setValueInteger (0);
 
 	createValue (telAlt, "ALT", "mount altitude", true, RTS2_DT_DEC);
@@ -260,11 +260,11 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	double lst;
 	if (!model || !(correctionsMask->getValueInteger () & COR_MODEL))
 	{
-		model_change->ra = corrRaDec->getRa();
-		model_change->dec = corrRaDec->getDec();
+		model_change->ra = -1 * corrRaDec->getRa();
+		model_change->dec = -1 * corrRaDec->getDec();
 
-		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
-		pos->dec = pos->dec + corrRaDec->getDec ();
+		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
+		pos->dec = pos->dec - corrRaDec->getDec ();
 		return;
 	}
 	lst = getLstDeg (JD);
@@ -332,11 +332,11 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
 
-	model_change->ra += corrRaDec->getRa();
-	model_change->dec += corrRaDec->getDec();
+	model_change->ra -= corrRaDec->getRa();
+	model_change->dec -= corrRaDec->getDec();
 
-	pos->ra = ln_range_degrees (ra + corrRaDec->getRa ());
-	pos->dec = hadec.dec + corrRaDec->getDec ();
+	pos->ra = ln_range_degrees (ra - corrRaDec->getRa ());
+	pos->dec = hadec.dec - corrRaDec->getDec ();
 }
 
 
@@ -769,6 +769,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		waitingCorrRaDec->resetValueChanged ();
 
 		moveNum->inc ();
+		corrImgId->setValueInteger (0);
 	}
 
 	// if some value is waiting to be applied..
