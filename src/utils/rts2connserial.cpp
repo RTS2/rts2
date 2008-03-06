@@ -22,6 +22,7 @@
 
 #include "rts2connserial.h"
 #include "rts2block.h"
+#include <iomanip>
 
 Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, bSpeedT in_baudSpeed,
 cSizeT in_cSize, parityT in_parity, int in_vTime)
@@ -40,6 +41,8 @@ cSizeT in_cSize, parityT in_parity, int in_vTime)
 
 	vMin = 0;
 	vTime = in_vTime;
+
+	debugPortComm = false;
 }
 
 
@@ -153,6 +156,8 @@ int
 Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
+	if (debugPortComm)
+		logStream (MESSAGE_DEBUG) << "Wwill write to port: " << std::setw(b_len) << wbuf << sendLog;
 	while (wlen < b_len)
 	{
 		int ret = write (sock, wbuf, b_len);
@@ -181,11 +186,19 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		int ret = read (sock, rbuf + rlen, b_len - rlen);
 		if (ret == -1 && errno != EINTR)
 		{
-			logStream (MESSAGE_ERROR) << "cannot read from serial port " << strerror (errno) << sendLog;
+			if (rlen > 0)
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading "
+					<< std::setw (rlen) << rbuf << ", error is "
+					<< strerror (errno) << sendLog;
+			else
+				logStream (MESSAGE_ERROR) << "cannot read from serial port "
+					<< strerror (errno) << sendLog;
 			return -1;
 		}
 		rlen += ret;
 	}
+	if (debugPortComm)
+		logStream (MESSAGE_DEBUG) << "readed from port " << std::setw(rlen) << rbuf << sendLog;
 	return 0;
 }
 

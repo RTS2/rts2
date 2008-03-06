@@ -59,6 +59,9 @@ class Rts2ConnSerial: public Rts2Conn
 		int vMin;
 		int vTime;
 
+		// if we will preint port communication
+		bool debugPortComm;
+
 		/**
 		 * Returns baud speed as string.
 		 */
@@ -122,4 +125,15 @@ class Rts2ConnSerial: public Rts2Conn
 		 * Flush serial port (make sure all data were sended and received).
 		 */
 		int flushPortIO ();
+
+		/**
+		 * Set if debug messages from port communication will be printed.
+		 *
+		 * @param printDebug  True if all port communication should be written to log.
+		 */
+		void setDebug (bool printDebug = true)
+		{
+			debugPortComm = printDebug;
+		}
+
 };
