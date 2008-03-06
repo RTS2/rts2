@@ -157,7 +157,7 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
 	if (debugPortComm)
-		logStream (MESSAGE_DEBUG) << "Wwill write to port: " << std::setw(b_len) << wbuf << sendLog;
+		logStream (MESSAGE_DEBUG) << "will write to port: " << std::setw(b_len) << wbuf << sendLog;
 	while (wlen < b_len)
 	{
 		int ret = write (sock, wbuf, b_len);
