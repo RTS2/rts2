@@ -1,18 +1,25 @@
-bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-phytron rts2-sensor-ds21
+bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2-sensor-phytron \
+	rts2-sensor-ds21 rts2-sensor-mrakomer
 
-noinst_HEADERS = sensord.h sensorgpib.h
+noinst_HEADERS = sensord.h sensorgpib.h newport.h
 
-EXTRA_DIST = sensord.cpp
+EXTRA_DIST = sensord.cpp newport.cpp
 
 LDADD = sensord.o ../utils/librts2block.a
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
 rts2_sensor_ms257_SOURCES = ms257.cpp
+rts2_sensor_ms257_LDADD = ${LDADD} newport.o
+
+rts2_sensor_newport_lamp_SOURCES = newport-lamp.cpp
+rts2_sensor_newport_lamp_LDADD = ${LDADD} newport.o
 
 rts2_sensor_phytron_SOURCES = phytron.cpp
 
 rts2_sensor_ds21_SOURCES = ds21.cpp
+
+rts2_sensor_mrakomer_SOURCES = mrakomer.cpp
 
 if GPIBLIB
 
