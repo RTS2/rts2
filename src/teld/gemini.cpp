@@ -98,24 +98,6 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		char *geminiConfig;
 
 		Rts2ConnSerial *tel_conn;
-		// utility I/O functions
-		/**
-		 * Reads some data directly from port.
-		 *
-		 * Log all flow as LOG_DEBUG to logStream
-		 *
-		 * @exception EIO when there aren't data from port
-		 *
-		 * @param buf 		buffer to read in data
-		 * @param count 	how much data will be readed
-		 *
-		 * @return -1 on failure, otherwise number of read data
-		 */
-		int tel_read (char *buf, int count);
-		int tel_read_hash (char *buf, int count);
-		int tel_write (char *buf, int count);
-		int tel_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
-			int rcount);
 		int tel_write_read (char *buf, int wcount, char *rbuf, int rcount);
 		int tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount);
 		int tel_read_hms (double *hmsptr, char *command);
@@ -280,159 +262,16 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 };
 
 int
-Rts2DevTelescopeGemini::tel_read (char *buf, int count)
-{
-	int readed;
-
-	for (readed = 0; readed < count; readed++)
-	{
-		int ret = tel_conn->readPort (&buf[readed], 1);
-		#ifdef DEBUG_ALL_PORT_COMM
-		logStream (MESSAGE_DEBUG) << "Losmandy read from " << tel_conn <<
-			" size " << ret << sendLog;
-		#endif
-		if (ret < 0)
-		{
-			return -1;
-		}
-		#ifdef DEBUG_ALL_PORT_COMM
-		logStream (MESSAGE_DEBUG) << "Losmandy readed " << buf[readed] <<
-			sendLog;
-		#endif
-	}
-	return readed;
-}
-
-
-/*!
- * Will read from port till it encoutered # character.
- *
- * Read ending #, but doesn't return it.
- *
- * @see tel_read() for description
- */
-int
-Rts2DevTelescopeGemini::tel_read_hash (char *buf, int count)
-{
-	int readed;
-	int retr = 0;
-	buf[0] = 0;
-
-	for (readed = 0; readed < count;)
-	{
-		if (tel_read (&buf[readed], 1) < 0)
-		{
-			buf[readed] = 0;
-			logStream (MESSAGE_DEBUG) << "Losmandy Hash-read error " << buf <<
-				sendLog;
-			// we get something, let's wait a bit for all data to
-			// flow-in so we can really flush them
-			if (*buf)
-				sleep (5);
-			tel_conn->flushPortIO ();
-			// try to read something in case we flush partialy full
-			// buffer; sometimes something hang somewhere, and to keep
-			// communication going, we need to be sure to read as much
-			// as possible..
-			if (*buf && retr < 2)
-				retr++;
-			else
-				return -1;
-		}
-		else
-		{
-			if (buf[readed] == '#')
-				break;
-			readed++;
-		}
-	}
-	buf[readed] = 0;
-	logStream (MESSAGE_DEBUG) << "Losmandy Hash-readed " << buf << " size " <<
-		readed << sendLog;
-	return readed;
-}
-
-
-/*!
- * Will write on telescope port string.
- *
- * @exception EIO, .. common write exceptions
- *
- * @param buf 		buffer to write
- * @param count 	count to write
- *
- * @return -1 on failure, count otherwise
- */
-int
-Rts2DevTelescopeGemini::tel_write (char *buf, int count)
-{
-	int ret;
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Losmandy will write " << buf << sendLog;
-	#endif
-	ret = tel_conn->writePort (buf, count);
-	if (ret < 0)
-	{
-		return ret;
-	}
-	return ret;
-}
-
-
-/*!
- * Combine write && read together.
- *
- * Flush port to clear any gargabe.
- *
- * @exception EINVAL and other exceptions
- *
- * @param wbuf		buffer to write on port
- * @param wcount	write count
- * @param rbuf		buffer to read from port
- * @param rcount	maximal number of characters to read
- *
- * @return -1 and set errno on failure, rcount otherwise
- */
-int
-Rts2DevTelescopeGemini::tel_write_read_no_reset (char *wbuf, int wcount,
-char *rbuf, int rcount)
-{
-	int tmp_rcount = -1;
-
-	if (tel_write (wbuf, wcount) < 0)
-		return -1;
-
-	tmp_rcount = tel_read (rbuf, rcount);
-
-	if (tmp_rcount > 0)
-	{
-		#ifdef DEBUG_EXTRA
-		char *buf = (char *) malloc (rcount + 1);
-		memcpy (buf, rbuf, rcount);
-		buf[rcount] = 0;
-		logStream (MESSAGE_DEBUG) << "Losmandy readed " << tmp_rcount <<
-			" size " << buf << sendLog;
-		free (buf);
-		#endif
-		return 0;
-	}
-	logStream (MESSAGE_ERROR) << "error in read " << tmp_rcount << " " <<
-		strerror (errno) << sendLog;
-	return -1;
-}
-
-
-int
 Rts2DevTelescopeGemini::tel_write_read (char *buf, int wcount, char *rbuf,
 int rcount)
 {
 	int ret;
-	ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
+	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
 	if (ret < 0)
 	{
 		// try rebooting
 		tel_gemini_reset ();
-		ret = tel_write_read_no_reset (buf, wcount, rbuf, rcount);
+		ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
 	}
 	return ret;
 }
@@ -444,21 +283,16 @@ int rcount)
  * @see tel_write_read for definition
  */
 int
-Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount,
-char *rbuf, int rcount)
+Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
 {
-	int tmp_rcount = -1;
-
-	if (tel_write (wbuf, wcount) < 0)
-		return -1;
-
-	tmp_rcount = tel_read_hash (rbuf, rcount);
+	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	if (tmp_rcount < 0)
 	{
 		tel_gemini_reset ();
 		return -1;
 	}
-
+	// end hash..
+	rbuf[tmp_rcount - 1] = '\0';
 	return tmp_rcount;
 }
 
@@ -526,7 +360,7 @@ Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	ret = tel_write (buf, len);
+	ret = tel_conn->writePort (buf, len);
 	free (buf);
 	if (ret == len)
 		return 0;
@@ -553,7 +387,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	if (tel_write (buf, len) > 0)
+	if (tel_conn->writePort (buf, len) > 0)
 		return 0;
 	return -1;
 }
@@ -570,7 +404,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 	buf[len] = '#';
 	len++;
 	buf[len] = '\0';
-	if (tel_write (buf, len) > 0)
+	if (tel_conn->writePort (buf, len) > 0)
 		return 0;
 	return -1;
 }
@@ -721,24 +555,24 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 	if (tel_conn->flushPortIO () < 0)
 		return -1;
 
-	if (tel_write ("\x06", 1) < 0)
+	if (tel_conn->writeRead ("\x06", 1, rbuf, 47, '#') < 0)
+	{
+		tel_conn->flushPortIO ();
 		return -1;
-
-	if (tel_read_hash (rbuf, 47) < 1)
-		return -1;
+	}
 
 	if (*rbuf == 'b')			 // booting phase, select warm reboot
 	{
 		switch (resetState->getValueInteger ())
 		{
 			case 0:
-				tel_write ("bR#", 3);
+				tel_conn->writePort ("bR#", 3);
 				break;
 			case 1:
-				tel_write ("bW#", 3);
+				tel_conn->writePort ("bW#", 3);
 				break;
 			case 2:
-				tel_write ("bC#", 3);
+				tel_conn->writePort ("bC#", 3);
 				break;
 		}
 		resetState->setValueInteger (0);
@@ -786,8 +620,8 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
 	{
 		return -1;
 	}
-	// read blanck
-	ret = tel_read_hash (buf, 26);
+	// read spaces
+	ret = tel_conn->readPort (buf, 26, '#');
 	if (ret)
 	{
 		matchCount = 1;
@@ -1226,17 +1060,13 @@ Rts2DevTelescopeGemini::setCorrection ()
 	switch (correctionsMask->getValueInteger ())
 	{
 		case COR_ABERATION | COR_PRECESSION | COR_REFRACTION:
-			return tel_write (":p0#", 4);
-			break;
+			return tel_conn->writePort (":p0#", 4);
 		case COR_REFRACTION:
-			return tel_write (":p1#", 4);
-			break;
+			return tel_conn->writePort (":p1#", 4);
 		case COR_ABERATION | COR_PRECESSION:
-			return tel_write (":p2#", 4);
-			break;
+			return tel_conn->writePort (":p2#", 4);
 		case 0:
-			return tel_write (":p3#", 4);
-			break;
+			return tel_conn->writePort (":p3#", 4);
 	}
 	return -1;
 }
@@ -1257,6 +1087,8 @@ Rts2DevTelescopeGemini::init ()
 		return ret;
 
 	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	tel_conn->setDebug ();
+
 	ret = tel_conn->init ();
 	if (ret)
 		return ret;
@@ -1484,7 +1316,7 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
-	if (tel_write (command, 5) > 0)
+	if (tel_conn->writePort (command, 5) > 0)
 		return 0;
 	return -1;
 }
@@ -1520,7 +1352,7 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 		  worm_move_needed = 0;
 		} */
 	sprintf (command, "#:M%c#", direction);
-	ret = tel_write (command, 5) == 1 ? -1 : 0;
+	ret = tel_conn->writePort (command, 5) < 0 ? -1 : 0;
 	// workaround suggested by Rene Goerlich
 	//if (worm_move_needed == 1)
 	//  stopWorm ();
@@ -1543,7 +1375,7 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 		worm_move_needed = 0;
 		stopWorm ();
 	}
-	return tel_write (command, 5) < 0 ? -1 : 0;
+	return tel_conn->writePort (command, 5) < 0 ? -1 : 0;
 }
 
 
@@ -1551,7 +1383,7 @@ void
 Rts2DevTelescopeGemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
-	tel_write ("#:Q#", 4);
+	tel_conn->writePort ("#:Q#", 4);
 	if (lastMotorState & 8)
 	{
 		lastMotorState &= ~8;
@@ -1580,7 +1412,7 @@ Rts2DevTelescopeGemini::tel_start_move ()
 		return 0;
 	}
 	// otherwise read reply..
-	tel_read_hash (buf, 53);
+	tel_conn->readPort (buf, 53, '#');
 	if (retstr == '3')			 // manual control..
 		return 0;
 	return -1;
@@ -1834,9 +1666,9 @@ Rts2DevTelescopeGemini::endMove ()
 	#endif
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_write ("#:ONtest#", 9) > 0)
-		return Rts2DevTelescope::endMove ();
-	return -1;
+	if (tel_conn->writePort ("#:ONtest#", 9) < 0)
+		return -1;
+	return Rts2DevTelescope::endMove ();
 }
 
 
@@ -2004,7 +1836,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 	stopWorm ();
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_write ("#:ONfixed#", 10) > 0)
+	if (tel_conn->writePort ("#:ONfixed#", 10) > 0)
 		return Rts2DevTelescope::endMoveFixed ();
 	return -1;
 }
@@ -2359,7 +2191,7 @@ Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 	int len;
 	int ret;
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
-	ret = tel_write (buf, len);
+	ret = tel_conn->writePort (buf, len);
 	if (ret != len)
 		return -1;
 	return 0;
@@ -2664,8 +2496,8 @@ Rts2DevTelescopeGemini::startPark ()
 	if (telMotorState != TEL_OK)
 		return -1;
 	stopMove ();
-	ret = tel_write ("#:hP#", 5);
-	if (ret <= 0)
+	ret = tel_conn->writePort ("#:hP#", 5);
+	if (ret < 0)
 		return -1;
 	sleep (1);
 	return 0;
