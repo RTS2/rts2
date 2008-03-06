@@ -113,13 +113,22 @@ class Rts2ConnSerial: public Rts2Conn
 		 * @param buf Buffer where data will be readed.
 		 * @param b_len Lenght of buffer to read data.
 		 *
-		 * @return -1 on error, 0 on sucess.
+		 * @return -1 on error, number of bytes readed on success.
 		 */
 		int readPort (char *rbuf, int b_len);
 
 		/**
-		 * Read full line from serial port.
+		 * Read data from serial port until end character is encountered.
+		 *
+		 * Read data until readed byte is not equal endChar and readed length is less then b_len.
+		 *
+		 * @param buf     Buffer where data will be readed.
+		 * @param b_len   Lenght of buffer to read data.
+		 * @param endChar End character.
+		 *
+		 * @return -1 on error, number of bytes readed on success.
 		 */
+		int readPort (char *rbuf, int b_len, char endChar);
 
 		/**
 		 * Flush serial port (make sure all data were sended and received).
@@ -136,4 +145,37 @@ class Rts2ConnSerial: public Rts2Conn
 			debugPortComm = printDebug;
 		}
 
+		/**
+		 * Exchange packets - write to port and read reply.
+		 *
+		 * This call combines Rts2ConnSerial::writePort ()
+		 * and Rts2ConnSerial::readPort() calls to form a complete
+		 * packet exchange.
+		 *
+		 * @param wbuf Buffer with data to write.
+		 * @param wlne Length of the write buffer.
+		 * @param rbuf Buffer where readed data will be stored.
+		 * @param rlen Length of the read buffer.
+		 *
+		 * @return -1 on error, size of data readed on success.
+		 */
+		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen);
+
+		/**
+		 * Exchange packets - write to port and read reply.
+		 *
+		 * This call combines Rts2ConnSerial::writePort ()
+		 * and Rts2ConnSerial::readPort() calls to form a complete
+		 * packet exchange. Read continues while readed buffer is less then
+		 * rbuf and while endChar is not encountered.
+		 *
+		 * @param wbuf    Buffer with data to write.
+		 * @param wlne    Length of the write buffer.
+		 * @param rbuf    Buffer where readed data will be stored.
+		 * @param rlen    Length of the read buffer.
+		 * @param endChar End character.
+		 *
+		 * @return -1 on error, size of data readed on success.
+		 */
+		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar);
 };

@@ -206,7 +206,62 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 	}
 	if (debugPortComm)
 		logStream (MESSAGE_DEBUG) << "readed from port " << std::setw(rlen) << rbuf << sendLog;
-	return 0;
+	return rlen;
+}
+
+
+int
+Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
+{
+	int rlen = 0;
+	while (rlen < b_len)
+	{
+		int ret = read (sock, rbuf + rlen, 1);
+		if (ret == -1 && errno != EINTR)
+		{
+			if (rlen > 0)
+				logStream (MESSAGE_ERROR) << "cannot read from serial port after reading "
+					<< std::setw (rlen) << rbuf << ", error is "
+					<< strerror (errno) << sendLog;
+			else
+				logStream (MESSAGE_ERROR) << "cannot read from serial port "
+					<< strerror (errno) << sendLog;
+			return -1;
+		}
+		if (*(rbuf + rlen) == endChar)
+		{
+			rlen += ret;
+			if (debugPortComm)
+				logStream (MESSAGE_DEBUG) << "readed from port " << std::setw(rlen) << rbuf << sendLog;
+			return rlen;
+		}
+		rlen += ret;
+	}
+	logStream (MESSAGE_ERROR) << "did not find end char '" << endChar
+		<< "', readed " << std::setw(rlen) << rbuf << sendLog;
+	return -1;
+}
+
+
+int
+Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
+{
+	int ret;
+	ret = writePort (wbuf, wlen);
+	if (ret < 0)
+		return -1;
+	return readPort (rbuf, rlen);
+}
+
+
+int
+Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar)
+{
+	int ret;
+	ret = writePort (wbuf, wlen);
+	if (ret < 0)
+		return -1;
+	return readPort (rbuf, rlen, endChar);
 }
 
 
