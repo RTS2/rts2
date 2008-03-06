@@ -1052,7 +1052,7 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 void
 Rts2DevTelescope::setFullBopState (int new_state)
 {
-	Rts2DevTelescope::setFullBopState (new_state);
+	Rts2Device::setFullBopState (new_state);
 	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))
 		startResyncMove (false, true);
 }
