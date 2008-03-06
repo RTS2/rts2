@@ -332,6 +332,9 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
 
+	model_change->ra += corrRaDec->getRa();
+	model_change->dec += corrRaDec->getDec();
+
 	pos->ra = ln_range_degrees (ra + corrRaDec->getRa ());
 	pos->dec = hadec.dec + corrRaDec->getDec ();
 }
