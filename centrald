@@ -1,0 +1,5 @@
+# put to that file line:
+# centrald [centrald-options] to start centrald on our host
+# -[devices-options] to pass centrald-specific options to devices (-s <server_name> -q <server_port>..)
+centrald
+--server localhost
