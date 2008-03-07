@@ -64,6 +64,9 @@ class Rts2DevTelD50:public Rts2DevGEM
 		Rts2ValueInteger *procRa;
 		Rts2ValueInteger *procDec;
 
+		Rts2ValueInteger *velRa;
+		Rts2ValueInteger *velDec;
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -273,8 +276,8 @@ Rts2DevGEM (in_argc, in_argv)
 	haZero = 0;
 	decZero = 0;
 
-	haCpd = 3600;
-	decCpd = 3600;
+	haCpd = 21333.333;
+	decCpd = 17777.778;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
@@ -301,6 +304,12 @@ Rts2DevGEM (in_argc, in_argv)
 
 	createValue (procRa, "proc_ra", "state for RA processor", false);
 	createValue (procDec, "proc_dec", "state for DEC processor", false);
+
+	createValue (velRa, "vel_ra", "RA velocity", false);
+	createValue (velDec, "vel_dec", "DEC velocity", false);
+
+	velRa->setValueInteger (50);
+	velDec->setValueInteger (50);
 
 	// apply all correction for paramount
 	correctionsMask->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
@@ -460,6 +469,17 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return tel_write_unit (2, 't',
 			new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
+	if (old_value == velRa)
+	{
+		return tel_write_unit (1, 'v',
+			new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == velDec)
+	{
+		return tel_write_unit (2, 'v',
+			new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+
 	return Rts2DevGEM::setValue (old_value, new_value);
 }
 
@@ -506,7 +526,7 @@ Rts2DevTelD50::startMove ()
 	if (ret)
 		return ret;
 
-	ret = tel_write_unit (2, 't', dc);
+	ret = tel_write_unit (2, 't', -1 * dc);
 	if (ret)
 		return ret;
 	ret = tel_write_char ('g');
