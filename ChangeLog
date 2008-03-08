@@ -3,8 +3,21 @@
  * new blocking operations API
  * futher customatization, more configuration
 
+2008-03-08
+ * Migrated to Subversion
+
+2008-03-06
+ * cloud sensor
+ * finish Rts2ConnSerial
+
+2008-03-05
+ * fix corrections flows
+
 2008-02-28
  * RTS2_DT_HEX
+
+2008-02-20
+ * send raw commands
 
 2008-02-12
  * commited new, simplified teld
