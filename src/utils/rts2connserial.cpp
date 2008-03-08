@@ -28,7 +28,7 @@ Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, b
 cSizeT in_cSize, parityT in_parity, int in_vTime)
 :Rts2Conn (in_master)
 {
-	sock = open (in_devName, O_RDWR);
+	sock = open (in_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
 	if (sock < 0)
 		logStream (MESSAGE_ERROR) << "cannot open serial port:" << in_devName << sendLog;
