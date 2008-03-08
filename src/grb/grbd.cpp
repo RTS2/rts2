@@ -53,16 +53,15 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
 	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
-	addOption (OPT_GCN_EXE, "add_exe", 1, "execute that command when new GCN packet arrives");
+	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
 	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0,
-		"execute observation and add_exe script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
+		"execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 }
 
 
 Rts2DevGrb::~Rts2DevGrb (void)
 {
 	delete[]gcn_host;
-	delete[]addExe;
 }
 
 
@@ -130,7 +129,7 @@ Rts2DevGrb::reloadConfig ()
 	if (!addExe)
 	{
 		std::string conf_addExe;
-		ret = config->getString ("grbd", "add_exe", conf_addExe);
+		ret = config->getString ("grbd", "add-exe", conf_addExe);
 		if (!ret)
 		{
 			addExe = new char[conf_addExe.length () + 1];
@@ -201,7 +200,7 @@ void
 Rts2DevGrb::help ()
 {
 	Rts2DeviceDb::help ();
-	std::cout << std::endl << " Execution script, specified with --add_exec option, receives following parameters as arguments:"
+	std::cout << std::endl << " Execution script, specified with --add-exec option, receives following parameters as arguments:"
 		" target-id grb-id grb-seqn grb-type grb-ra grb-dec grb-is-grb grb-date grb-errorbox." << std::endl
 		<< " Please see man page for meaning of that arguments." << std::endl;
 }
