@@ -1,0 +1,289 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-07-01</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-image">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+      <author>
+        <firstname>Stanislav</firstname>
+	<surname>Vitek</surname>
+	<contrib>Contributed image analysing tools.</contrib>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Provide basic tools to manipulate images and compute some image statistics.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<option>--database <replaceable>database name</replaceable></option>
+      </arg>
+      <arg choice="opt">
+	<option>--config <replaceable>configuration file</replaceable></option>
+      </arg>
+      <arg choice="req" rep="repeat">
+        <group choice="req">
+	  <arg choice="plain">
+      	    <option>-p <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-c <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>--add-date</option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-i</option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-m <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-e</option>
+	  </arg>
+	  <arg choice="plain">
+  	    <option>-t</option>
+	  </arg>
+	  <arg choice="plain">
+            <option>-w
+              <arg choice="opt"><option>-o <replaceable>X offset</replaceable>:<replaceable>Y offset</replaceable></option></arg>
+  	    </option>
+	  </arg>
+	</group>
+      </arg>
+      <arg choice="plain" rep="repeat"><replaceable>image file name</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    
+    <para>
+      This program prints various informations about image, or manipulate
+      image, its location and header values.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>RTS2 expression</title>
+
+    <para>
+      RTS2 expressions are used to print various FITS keys from file, or to
+      copy or move FITS files to new directorirs and files based on content of
+      their FITS keys. For complete list of allowed expression, please see
+      <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+      section IMAGE PATH EXPRESSION.
+    </para>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--database <replaceable class="parameter">database name</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify database name. Will overwrite database name specified in
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config <replaceable class="parameter">configuration file</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-p <replaceable>RTS2 expression</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify expresion to print out. For each file, expression will be
+	    printed to standard output, one expresion on each line.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c <replaceable>RTS2 expression</replaceable></option></term>
+        <listitem>
+          <para>
+	    Copy image to new location. New location is formed from RTS2 expression.
+	  </para>
+        </listitem>
+      </varlistentry>
+       <varlistentry>
+        <term><option>--add-date</option></term>
+        <listitem>
+          <para>
+	    Add DATE-OBS to FITS header from JD. This option is for use in old
+	    images, which do not provide DATE-OBS header, to make them work
+	    with legacy programs which required on DATE-OBS keyword.
+	  </para>
+        </listitem>
+      </varlistentry>
+     <varlistentry>
+        <term><option>-i</option></term>
+        <listitem>
+          <para>
+	    Insert or update image record in database.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-m <replaceable>RTS2 expression</replaceable></option></term>
+        <listitem>
+          <para>
+	    Move image to new location. New location is formed from RTS2 expression.
+	  </para>
+        </listitem>
+      </varlistentry>
+     <varlistentry>
+        <term><option>-e</option></term>
+        <listitem>
+          <para>
+	    Print informations needed for image focussing.
+	  </para>
+        </listitem>
+      </varlistentry>
+     <varlistentry>
+        <term><option>-t</option></term>
+        <listitem>
+          <para>
+	    Perform test of various image routines.
+	  </para>
+        </listitem>
+      </varlistentry>
+     <varlistentry>
+        <term><option>-w</option></term>
+        <listitem>
+          <para>
+	    Add WCS information to the image, based on values of RASC and DESC
+	    for RA DEC and XPLATE and YPLATE keywords.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-o <replaceable>X offset</replaceable>:<replaceable>Y offset</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify X and Y offsets for RA DEC coordinates taken with -w option.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-V</option></term>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <para>
+      Following command will print values of FITS keywords JD, EXPOSURE and
+      CCD_NAME from all FITS files from current direcotry.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-p</option> <replaceable class="parameter">'$JD$ $EXPOSURE$ $CCD_NAME$'</replaceable> <replaceable>*.fits</replaceable>
+    </screen>
+
+    <para>
+      This command will copy all fits files to directory formed from CCD_NAME
+      keyword and filename formed from DATE-OBS keyword followed by .fits.
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-c</option> <replaceable class="parameter">'$CCD_NAME$/$DATE-OBS$.fits'</replaceable> <replaceable>*.fits</replaceable>
+    </screen>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

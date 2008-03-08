@@ -1,683 +1,934 @@
-/*!
- * @file Server deamon source.
+/*
+ * Centrald - RTS2 coordinator
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
  *
- * Source for server deamon - a something between client and device,
- * what takes care of priorities and authentification.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * Contains list of clients with their id's and with their access rights.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * @author petr
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+#include "centrald.h"
+#include "../utils/rts2command.h"
+#include "../utils/timestamp.h"
 
-#define DEBUG
-
-#include "riseset.h"
-
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <syslog.h>
-#include <malloc.h>
-#include <libnova/libnova.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <arpa/inet.h>
-
-#include "../utils/rts2block.h"
-#include "../utils/rts2config.h"
-#include "status.h"
-
-#define PORT	617
-
-#ifndef HOST_NAME_MAX
-#define HOST_NAME_MAX		255
-#endif
-
-class Rts2ConnCentrald;
-
-class Rts2Centrald:public Rts2Block
+void
+Rts2ConnCentrald::setState (int in_value)
 {
-  int priority_client;
-  int current_state;
+	Rts2Conn::setState (in_value);
+	if (serverState->maskValueChanged (BOP_MASK))
+	{
+		master->bopMaskChanged ();
+	}
+}
 
-  int next_event_type;
-  time_t next_event_time;
-  struct ln_lnlat_posn *observer;
-
-  int morning_off;
-  int morning_standby;
-
-protected:
-  int changeState (int new_state);
-  int idle ();
-
-  virtual int processOption (int in_opt);
-
-  // those callbacks are now empty; they can be use in future
-  // to link two centrald to enable cooperative observation
-  virtual Rts2Conn *createClientConnection (char *in_deviceName)
-  {
-    return NULL;
-  }
-  virtual Rts2Conn *createClientConnection (Rts2Address * in_addr)
-  {
-    return NULL;
-  }
-
-public:
-  Rts2Centrald (int in_argc, char **in_argv);
-
-  int init ();
-  int changePriority (time_t timeout);
-
-  int changeStateOn ()
-  {
-    return changeState ((next_event_type + 5) % 6);
-  }
-  int changeStateStandby ()
-  {
-    return changeState (SERVERD_STANDBY | ((next_event_type + 5) % 6));
-  }
-  int changeStateOff ()
-  {
-    return changeState (SERVERD_OFF);
-  }
-  inline int getState ()
-  {
-    return current_state;
-  }
-  inline int getPriorityClient ()
-  {
-    return priority_client;
-  }
-
-  virtual Rts2Conn *createConnection (int in_sock, int conn_num);
-  void connAdded (Rts2ConnCentrald * added);
-};
-
-class Rts2ConnCentrald:public Rts2Conn
-{
-private:
-  int authorized;
-  char status_txt[MAX_STATUS_TXT];
-  char login[MAX_STATUS_TXT];
-  Rts2Centrald *master;
-  char hostname[HOST_NAME_MAX];
-  int port;
-  int device_type;
-
-  int command ();
-  int commandDevice ();
-  int commandClient ();
-  // command handling functions
-  int priorityCommand ();
-  int sendDeviceKey ();
-  int sendInfo ();
-  int sendStatusInfo ();
-  int sendAValue (char *name, int value);
-public:
-    Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
-		      int in_centrald_id);
-    virtual ~ Rts2ConnCentrald (void);
-  int sendInfo (Rts2Conn * conn);
-};
 
 Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
-				    int in_centrald_id):
+int in_centrald_id):
 Rts2Conn (in_sock, in_master)
 {
-  master = in_master;
-  setCentraldId (in_centrald_id);
+	master = in_master;
+	setCentraldId (in_centrald_id);
+	messageMask = 0x00;
+
+	statusCommandRunning = 0;
 }
 
-/*!
- * Called on connection exit.
- *
- * Delete client|device login|name, updates priorities, detach shared
- * memory.
- */
+
 Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
-  setPriority (-1);
-  master->changePriority (0);
+	setPriority (-1);
+	master->changePriority (0);
 }
+
 
 int
 Rts2ConnCentrald::priorityCommand ()
 {
-  int timeout;
-  int new_priority;
+	int timeout;
+	int new_priority;
 
-  if (isCommand ("priority"))
-    {
-      if (paramNextInteger (&new_priority) || !paramEnd ())
-	return -1;
-      timeout = 0;
-    }
-  else
-    {
-      if (paramNextInteger (&new_priority) ||
-	  paramNextInteger (&timeout) || !paramEnd ())
-	return -1;
-      timeout += time (NULL);
-    }
+	if (isCommand ("priority"))
+	{
+		if (paramNextInteger (&new_priority) || !paramEnd ())
+			return -1;
+		timeout = 0;
+	}
+	else
+	{
+		if (paramNextInteger (&new_priority) ||
+			paramNextInteger (&timeout) || !paramEnd ())
+			return -1;
+		timeout += time (NULL);
+	}
 
-  sendValue ("old_priority", getPriority (), getCentraldId ());
+	//sendValue ("old_priority", getPriority (), getCentraldId ());
+	//sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
 
-  sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
+	setPriority (new_priority);
 
-  setPriority (new_priority);
+	if (master->changePriority (timeout))
+	{
+		sendCommandEnd (DEVDEM_E_PRIORITY,
+			"error when processing priority request");
+		return -1;
+	}
 
-  if (master->changePriority (timeout))
-    {
-      sendCommandEnd (DEVDEM_E_PRIORITY,
-		      "error when processing priority request");
-      return -1;
-    }
+	//sendValue ("new_priority", master->getPriorityClient (), getPriority ());
 
-  sendValue ("new_priority", master->getPriorityClient (), getPriority ());
-
-  return 0;
+	return 0;
 }
+
 
 int
 Rts2ConnCentrald::sendDeviceKey ()
 {
-  int dev_key = random ();
-  char *msg;
-  // device number could change..device names don't
-  char *dev_name;
-  Rts2Conn *dev;
-  if (paramNextString (&dev_name) || !paramEnd ())
-    return -2;
-  // find device, set it authorization key
-  dev = master->findName (dev_name);
-  if (!dev)
-    {
-      sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
-      return -1;
-    }
-  setKey (dev_key);
-  asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
-  send (msg);
-  free (msg);
-  return 0;
+	int dev_key = random ();
+	char *msg;
+	// device number could change..device names don't
+	char *dev_name;
+	Rts2Conn *dev;
+	if (paramNextString (&dev_name) || !paramEnd ())
+		return -2;
+	// find device, set it authorization key
+	dev = master->findName (dev_name);
+	if (!dev)
+	{
+		sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
+		return -1;
+	}
+	setKey (dev_key);
+	asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
+	sendMsg (msg);
+	free (msg);
+	return 0;
 }
+
+
+int
+Rts2ConnCentrald::sendMessage (Rts2Message & msg)
+{
+	if (msg.passMask (messageMask))
+		return Rts2Conn::sendMessage (msg);
+	return -1;
+}
+
 
 int
 Rts2ConnCentrald::sendInfo ()
 {
-  int i;
+	if (!paramEnd ())
+		return -2;
 
-  if (!paramEnd ())
-    return -2;
-
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn = master->connections[i];
-      if (conn)
+	connections_t::iterator iter;
+	for (iter = master->connectionBegin ();
+		iter != master->connectionEnd (); iter++)
 	{
-	  conn->sendInfo (this);
+		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
+		conn->sendInfo (this);
 	}
-    }
-  return 0;
+	return 0;
 }
+
 
 int
 Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 {
-  char *msg;
-  int ret = -1;
+	char *msg;
+	int ret = -1;
 
-  switch (getType ())
-    {
-    case CLIENT_SERVER:
-      asprintf (&msg, "user %i %i %c %s %s",
-		getCentraldId (),
-		getPriority (),
-		havePriority ()? '*' : '-', login, status_txt);
-      ret = conn->send (msg);
-      free (msg);
-      break;
-    case DEVICE_SERVER:
-      asprintf (&msg, "device %i %s %s %i %i",
-		getCentraldId (), getName (), hostname, port, device_type);
-      ret = conn->send (msg);
-      free (msg);
-      break;
-    default:
-      break;
-    }
-  return ret;
+	switch (getType ())
+	{
+		case CLIENT_SERVER:
+			asprintf (&msg, "user %i %i %c %s",
+				getCentraldId (),
+				getPriority (), havePriority ()? '*' : '-', login);
+			ret = conn->sendMsg (msg);
+			free (msg);
+			break;
+		case DEVICE_SERVER:
+			asprintf (&msg, "device %i %s %s %i %i",
+				getCentraldId (), getName (), hostname, port, device_type);
+			ret = conn->sendMsg (msg);
+			free (msg);
+			break;
+		default:
+			break;
+	}
+	if (ret)
+		return ret;
+	// send connection values
+	return ((Rts2Centrald *) getMaster ())->sendInfo (conn);
 }
+
+
+void
+Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
+{
+	if (conn)
+	{
+		if (getMaster ()->commandOriginatorPending (this, conn))
+			return;
+	}
+	else
+	{
+		if (statusCommandRunning == 0)
+			return;
+		if (getMaster ()->commandOriginatorPending (this, NULL))
+			return;
+	}
+
+	master->sendStatusMessage (master->getState (), this);
+	master->sendBopMessage (master->getStateForConnection (this), this);
+	sendCommandEnd (DEVDEM_OK, "OK");
+	statusCommandRunning--;
+}
+
 
 int
 Rts2ConnCentrald::commandDevice ()
 {
-  if (isCommand ("authorize"))
-    {
-      int client;
-      int dev_key;
-      if (paramNextInteger (&client)
-	  || paramNextInteger (&dev_key) || !paramEnd ())
-	return -2;
-
-      if (client >= MAX_CONN || client < 0)
+	if (isCommand ("authorize"))
 	{
-	  return -2;
+		int client;
+		int dev_key;
+		if (paramNextInteger (&client)
+			|| paramNextInteger (&dev_key) || !paramEnd ())
+			return -2;
+
+		if (client < 0)
+		{
+			return -2;
+		}
+
+		Rts2Conn *conn = master->getConnection (client);
+
+		// client vanished when we processed data..
+		if (conn == NULL)
+			return -1;
+
+		if (conn->getKey () == 0)
+		{
+			sendAValue ("authorization_failed", client);
+			sendCommandEnd (DEVDEM_E_SYSTEM,
+				"client didn't ask for authorization");
+			return -1;
+		}
+
+		if (conn->getKey () != dev_key)
+		{
+			sendAValue ("authorization_failed", client);
+			sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
+			return -1;
+		}
+
+		sendAValue ("authorization_ok", client);
+		sendInfo ();
+
+		return 0;
 	}
-
-      // client wanished when we processed data..
-      if (master->connections[client] == NULL)
-	return -1;
-
-      if (master->connections[client]->getKey () == 0)
+	if (isCommand ("key"))
 	{
-	  sendAValue ("authorization_failed", client);
-	  sendCommandEnd (DEVDEM_E_SYSTEM,
-			  "client didn't ask for authorization");
-	  return -1;
+		return sendDeviceKey ();
 	}
-
-      if (master->connections[client]->getKey () != dev_key)
+	if (isCommand ("info"))
 	{
-	  sendAValue ("authorization_failed", client);
-	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid authorization key");
-	  return -1;
+		master->info ();
+		return sendInfo ();
 	}
-
-      sendAValue ("authorization_ok", client);
-      sendInfo ();
-
-      return 0;
-    }
-  if (isCommand ("key"))
-    {
-      return sendDeviceKey ();
-    }
-  if (isCommand ("info"))
-    {
-      return sendInfo ();
-    }
-  if (isCommand ("on"))
-    {
-      return master->changeStateOn ();
-    }
-  if (isCommand ("priority") || isCommand ("prioritydeferred"))
-    {
-      return priorityCommand ();
-    }
-  if (isCommand ("standby"))
-    {
-      return master->changeStateStandby ();
-    }
-  if (isCommand ("off"))
-    {
-      return master->changeStateOff ();
-    }
-  return -1;
+	if (isCommand ("on"))
+	{
+		return master->changeStateOn (getName ());
+	}
+	if (isCommand ("priority") || isCommand ("prioritydeferred"))
+	{
+		return priorityCommand ();
+	}
+	if (isCommand ("standby"))
+	{
+		return master->changeStateStandby (getName ());
+	}
+	if (isCommand ("off"))
+	{
+		return master->changeStateOff (getName ());
+	}
+	return Rts2Conn::command ();
 }
 
-/*!
- * Print standart status header.
- *
- * It needs to be called after establishing of every new connection.
- */
+
 int
 Rts2ConnCentrald::sendStatusInfo ()
 {
-  char *msg;
-  int ret;
+	char *msg;
+	int ret;
 
-  ret = send ("I status_num 1");
-  if (ret)
-    return ret;
-  asprintf (&msg, "I status 0 %s %i", SERVER_STATUS, master->getState ());
-  ret = send (msg);
-  free (msg);
-  return ret;
+	asprintf (&msg, PROTO_STATUS " %i", master->getState ());
+	ret = sendMsg (msg);
+	free (msg);
+	return ret;
 }
+
 
 int
 Rts2ConnCentrald::sendAValue (char *val_name, int value)
 {
-  char *msg;
-  int ret;
-  asprintf (&msg, "A %s %i", val_name, value);
-  ret = send (msg);
-  free (msg);
-  return ret;
+	char *msg;
+	int ret;
+	asprintf (&msg, PROTO_AUTH " %s %i", val_name, value);
+	ret = sendMsg (msg);
+	free (msg);
+	return ret;
 }
+
 
 int
 Rts2ConnCentrald::commandClient ()
 {
-  if (isCommand ("password"))
-    {
-      char *passwd;
-      if (paramNextString (&passwd) || !paramEnd ())
-	return -2;
+	if (isCommand ("password"))
+	{
+		char *passwd;
+		if (paramNextString (&passwd) || !paramEnd ())
+			return -2;
 
-      if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
-	{
-	  char *msg;
-	  authorized = 1;
-	  asprintf (&msg, "logged_as %i", getCentraldId ());
-	  send (msg);
-	  free (msg);
-	  sendStatusInfo ();
-	  return 0;
+		if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
+		{
+			char *msg;
+			authorized = 1;
+			asprintf (&msg, "logged_as %i", getCentraldId ());
+			sendMsg (msg);
+			free (msg);
+			sendStatusInfo ();
+			return 0;
+		}
+		else
+		{
+			sleep (5);			 // wait some time to prevent repeat attack
+			sendCommandEnd (DEVDEM_E_SYSTEM, "invalid login or password");
+			return -1;
+		}
 	}
-      else
+	if (authorized)
 	{
-	  sleep (5);		// wait some time to prevent repeat attack
-	  sendCommandEnd (DEVDEM_E_SYSTEM, "invalid login or password");
-	  return -1;
-	}
-    }
-  if (authorized)
-    {
-      if (isCommand ("ready"))
-	{
-	  return 0;
-	}
+		if (isCommand ("ready"))
+		{
+			return 0;
+		}
 
-      if (isCommand ("info"))
-	{
-	  return sendInfo ();
+		if (isCommand ("info"))
+		{
+			master->info ();
+			return sendInfo ();
+		}
+		if (isCommand ("priority") || isCommand ("prioritydeferred"))
+		{
+			return priorityCommand ();
+		}
+		if (isCommand ("key"))
+		{
+			return sendDeviceKey ();
+		}
+		if (isCommand ("on"))
+		{
+			return master->changeStateOn (login);
+		}
+		if (isCommand ("standby"))
+		{
+			return master->changeStateStandby (login);
+		}
+		if (isCommand ("off"))
+		{
+			return master->changeStateOff (login);
+		}
 	}
-      if (isCommand ("status_txt"))
-	{
-	  char *new_st;
-	  if (paramNextString (&new_st) || !paramEnd ())
-	    return -1;
-	  strncpy (status_txt, new_st, MAX_STATUS_TXT - 1);
-	  status_txt[MAX_STATUS_TXT - 1] = 0;
-	  return 0;
-	}
-      if (isCommand ("priority") || isCommand ("prioritydeferred"))
-	{
-	  return priorityCommand ();
-	}
-      if (isCommand ("key"))
-	{
-	  return sendDeviceKey ();
-	}
-      if (isCommand ("on"))
-	{
-	  return master->changeStateOn ();
-	}
-      if (isCommand ("standby"))
-	{
-	  return master->changeStateStandby ();
-	}
-      if (isCommand ("off"))
-	{
-	  return master->changeStateOff ();
-	}
-    }
-  return Rts2Conn::command ();
+	return Rts2Conn::command ();
 }
 
-/*! 
- * Handle serverd commands.
- *
- * @return -2 on exit, -1 and set errno on HW failure, 0 otherwise
- */
+
 int
 Rts2ConnCentrald::command ()
 {
-  if (isCommand ("login"))
-    {
-      if (getType () == NOT_DEFINED_SERVER)
+	if (isCommand ("login"))
 	{
-	  char *in_login;
+		if (getType () == NOT_DEFINED_SERVER)
+		{
+			char *in_login;
 
-	  srandom (time (NULL));
+			srandom (time (NULL));
 
-	  if (paramNextString (&in_login) || !paramEnd ())
-	    return -2;
+			if (paramNextString (&in_login) || !paramEnd ())
+				return -2;
 
-	  strncpy (login, in_login, CLIENT_LOGIN_SIZE);
+			strncpy (login, in_login, CLIENT_LOGIN_SIZE);
 
-	  setType (CLIENT_SERVER);
-	  master->connAdded (this);
-	  return 0;
+			setType (CLIENT_SERVER);
+			master->connAdded (this);
+			return 0;
+		}
+		else
+		{
+			sendCommandEnd (DEVDEM_E_COMMAND,
+				"cannot switch server type to CLIENT_SERVER");
+			return -1;
+		}
 	}
-      else
+	else if (isCommand ("register"))
 	{
-	  sendCommandEnd (DEVDEM_E_COMMAND,
-			  "cannot switch server type to CLIENT_SERVER");
-	  return -1;
+		if (getType () == NOT_DEFINED_SERVER)
+		{
+			char *reg_device;
+			char *in_hostname;
+			char *msg;
+
+			if (paramNextString (&reg_device) || paramNextInteger (&device_type)
+				|| paramNextString (&in_hostname) || paramNextInteger (&port)
+				|| !paramEnd ())
+				return -2;
+
+			if (master->findName (reg_device))
+			{
+				sendCommandEnd (DEVDEM_E_SYSTEM, "name already registered");
+				return -1;
+			}
+
+			setName (reg_device);
+			strncpy (hostname, in_hostname, HOST_NAME_MAX);
+
+			setType (DEVICE_SERVER);
+			sendStatusInfo ();
+			if (master->getPriorityClient () > -1)
+			{
+				asprintf (&msg, PROTO_PRIORITY " %i %i",
+					master->getPriorityClient (), 0);
+				sendMsg (msg);
+				free (msg);
+			}
+
+			sendAValue ("registered_as", getCentraldId ());
+			master->connAdded (this);
+			sendInfo ();
+			return 0;
+		}
+		else
+		{
+			sendCommandEnd (DEVDEM_E_COMMAND,
+				"cannot switch server type to DEVICE_SERVER");
+			return -1;
+		}
 	}
-    }
-  else if (isCommand ("register"))
-    {
-      if (getType () == NOT_DEFINED_SERVER)
+	else if (isCommand ("message_mask"))
 	{
-	  char *reg_device;
-	  char *in_hostname;
-	  char *msg;
-	  int ret;
-
-	  if (paramNextString (&reg_device) || paramNextInteger (&device_type)
-	      || paramNextString (&in_hostname) || paramNextInteger (&port)
-	      || !paramEnd ())
-	    return -2;
-
-	  if (master->findName (reg_device))
-	    {
-	      sendCommandEnd (DEVDEM_E_SYSTEM, "name already registered");
-	      return -1;
-	    }
-
-	  setName (reg_device);
-	  strncpy (hostname, in_hostname, HOST_NAME_MAX);
-
-	  setType (DEVICE_SERVER);
-	  sendStatusInfo ();
-	  if (master->getPriorityClient () > -1)
-	    {
-	      asprintf (&msg, "M priority_change %i %i",
-			master->getPriorityClient (), 0);
-	      send (msg);
-	      free (msg);
-	    }
-
-	  asprintf (&msg, "device %i %s %s %i %i",
-		    master->getPriorityClient (), reg_device, hostname, port,
-		    device_type);
-	  ret = send (msg);
-	  free (msg);
-	  sendAValue ("registered_as", getCentraldId ());
-	  master->connAdded (this);
-	  sendInfo ();
-	  return ret;
+		int newMask;
+		if (paramNextInteger (&newMask) || !paramEnd ())
+			return -2;
+		messageMask = newMask;
+		return 0;
 	}
-      else
-	{
-	  sendCommandEnd (DEVDEM_E_COMMAND,
-			  "cannot switch server type to DEVICE_SERVER");
-	  return -1;
-	}
-    }
-  else if (getType () == DEVICE_SERVER)
-    return commandDevice ();
-  else if (getType () == CLIENT_SERVER)
-    return commandClient ();
-  else
-    {
-      return Rts2Conn::command ();
-    }
-  return 0;
+	else if (getType () == DEVICE_SERVER)
+		return commandDevice ();
+	else if (getType () == CLIENT_SERVER)
+		return commandClient ();
+	// else
+	return Rts2Conn::command ();
 }
 
-Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Block (in_argc,
-	   in_argv)
+
+Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
+in_argv)
 {
-  Rts2Config *
-    config = Rts2Config::instance ();
-  config->loadFile ();
-  observer = config->getObserver ();
+	connNum = 0;
 
-  current_state =
-    config->getBoolean ("centrald", "reboot_on") ? 0 : SERVERD_OFF;
+	setState (SERVERD_OFF, "Initial configuration");
 
-  morning_off = config->getBoolean ("centrald", "morning_off");
-  morning_standby = config->getBoolean ("centrald", "morning_standby");
+	configFile = NULL;
+	logFileSource = LOGFILE_DEF;
+	fileLog = NULL;
 
-  addOption ('p', "port", 1, "port on which centrald will listen");
+	priority_client = -1;
+
+	createValue (priorityClient, "priority_client", "client which have priority", false);
+	createValue (priority, "priority", "current priority level", false);
+
+	createValue (nextStateChange, "next_state_change",
+		"time of next state change", false);
+	createValue (nextState, "next_state", "next server state", false);
+	nextState->addSelVal ("day");
+	nextState->addSelVal ("evening");
+	nextState->addSelVal ("dusk");
+	nextState->addSelVal ("night");
+	nextState->addSelVal ("dawn");
+	nextState->addSelVal ("morning");
+
+	createConstValue (observerLng, "longitude", "observatory longitude", false,
+		RTS2_DT_DEGREES);
+	createConstValue (observerLat, "latitude", "observatory latitude", false,
+		RTS2_DT_DEC);
+
+	createConstValue (nightHorizon, "night_horizon",
+		"observatory night horizon", false, RTS2_DT_DEC);
+	createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
+		false, RTS2_DT_DEC);
+
+	createConstValue (eveningTime, "evening_time",
+		"time needed to cool down cameras", false);
+	createConstValue (morningTime, "morning_time",
+		"time needed to heat up cameras", false);
+
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
+	addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
+	addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
 }
+
+
+Rts2Centrald::~Rts2Centrald (void)
+{
+	fileLog->close ();
+	delete fileLog;
+}
+
+
+void
+Rts2Centrald::openLog ()
+{
+	if (fileLog)
+	{
+		fileLog->close ();
+		delete fileLog;
+	}
+	if (logFile == std::string ("-"))
+	{
+		fileLog = NULL;
+		return;
+	}
+	fileLog = new std::ofstream ();
+	fileLog->open (logFile.c_str (), std::ios_base::out | std::ios_base::app);
+}
+
+
+int
+Rts2Centrald::reloadConfig ()
+{
+	int ret;
+	Rts2Config *config = Rts2Config::instance ();
+	ret = config->loadFile (configFile);
+	if (ret)
+		return ret;
+
+	if (logFileSource != LOGFILE_ARG)
+	{
+		ret = config->getString ("centrald", "logfile", logFile);
+		if (ret)
+		{
+			logFileSource = LOGFILE_DEF;
+			logFile = "/var/log/rts2-debug";
+		}
+		else
+		{
+			logFileSource = LOGFILE_CNF;
+		}
+	}
+
+	openLog ();
+
+	observer = config->getObserver ();
+
+	observerLng->setValueDouble (observer->lng);
+	observerLat->setValueDouble (observer->lat);
+
+	double t_h = -10;
+	config->getDouble ("observatory", "night_horizon", t_h);
+	nightHorizon->setValueDouble (t_h);
+
+	t_h = 0;
+	config->getDouble ("observatory", "day_horizon", t_h);
+	dayHorizon->setValueDouble (t_h);
+
+	int t_t = 7200;
+	config->getInteger ("observatory", "evening_time", t_t);
+	eveningTime->setValueInteger (t_t);
+
+	t_t = 1800;
+	config->getInteger ("observatory", "morning_time", t_t);
+	morningTime->setValueInteger (t_t);
+
+	morning_off = config->getBoolean ("centrald", "morning_off");
+	morning_standby = config->getBoolean ("centrald", "morning_standby");
+
+	next_event_time = 0;
+
+	constInfoAll ();
+
+	return 0;
+}
+
 
 int
 Rts2Centrald::processOption (int in_opt)
 {
-  switch (in_opt)
-    {
-    case 'p':
-      setPort (atoi (optarg));
-      break;
-    default:
-      return Rts2Block::processOption (in_opt);
-    }
-  return 0;
+	switch (in_opt)
+	{
+		case OPT_CONFIG:
+			configFile = optarg;
+			break;
+		case OPT_PORT:
+			setPort (atoi (optarg));
+			break;
+		case OPT_LOGFILE:
+			logFile = std::string (optarg);
+			logFileSource = LOGFILE_ARG;
+			break;
+		default:
+			return Rts2Daemon::processOption (in_opt);
+	}
+	return 0;
 }
+
 
 int
 Rts2Centrald::init ()
 {
-  setPort (PORT);
-  return Rts2Block::init ();
+	int ret;
+	setPort (atoi (CENTRALD_PORT));
+	ret = Rts2Daemon::init ();
+	if (ret)
+		return ret;
+
+	ret = reloadConfig ();
+	if (ret)
+		return ret;
+
+	centraldConnRunning ();
+	ret = checkLockFile (LOCK_PREFIX "centrald");
+	if (ret)
+		return ret;
+	ret = doDeamonize ();
+	if (ret)
+		return ret;
+	return lockFile ();
 }
 
-Rts2Conn *
-Rts2Centrald::createConnection (int in_sock, int conn_num)
+
+int
+Rts2Centrald::initValues ()
 {
-  return new Rts2ConnCentrald (in_sock, this, conn_num);
+	time_t curr_time;
+
+	int call_state;
+
+	curr_time = time (NULL);
+
+	next_event (observer, &curr_time, &call_state, &next_event_type,
+		&next_event_time, nightHorizon->getValueDouble (),
+		dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
+		morningTime->getValueInteger ());
+
+	Rts2Config *config = Rts2Config::instance ();
+
+	if (config->getBoolean ("centrald", "reboot_on"))
+	{
+		setState (call_state, "switched on centrald reboot");
+	}
+	else
+	{
+		setState (SERVERD_OFF, "switched on centrald reboot");
+	}
+
+	nextStateChange->setValueTime (next_event_time);
+	nextState->setValueInteger (next_event_type);
+
+	return Rts2Daemon::initValues ();
 }
+
+
+void
+Rts2Centrald::connectionRemoved (Rts2Conn * conn)
+{
+	// make sure we will change BOP mask..
+	bopMaskChanged ();
+	// and make sure we aren't the last who block status info
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		(*iter)->updateStatusWait (NULL);
+	}
+}
+
+
+Rts2Conn *
+Rts2Centrald::createConnection (int in_sock)
+{
+	connNum++;
+	return new Rts2ConnCentrald (in_sock, this, connNum);
+}
+
 
 void
 Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
-  for (int i = 0; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn;
-      conn = connections[i];
-      if (conn)
-	added->sendInfo (conn);
-    }
+	connections_t::iterator iter;
+	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		Rts2Conn *conn = *iter;
+		added->sendInfo (conn);
+	}
 }
 
-/*!
- * @param new_state		new state, if -1 -> 3
- */
-int
-Rts2Centrald::changeState (int new_state)
+
+Rts2Conn *
+Rts2Centrald::getConnection (int conn_num)
 {
-  current_state = new_state;
-  return sendStatusMessage (SERVER_STATUS, current_state);
+	connections_t::iterator iter;
+	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
+		if (conn->getCentraldId () == conn_num)
+			return conn;
+	}
+	return NULL;
 }
 
-/*!
- * Made priority update, distribute messages to devices
- * about priority update.
- *
- * @param timeout	time to wait for priority change.. 
- *
- * @return 0 on success, -1 and set errno otherwise
- */
+
+int
+Rts2Centrald::changeState (int new_state, const char *user)
+{
+	logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
+		user << sendLog;
+	setState (new_state, user);
+	sendStatusMessage (getState ());
+	return 0;
+}
+
+
 int
 Rts2Centrald::changePriority (time_t timeout)
 {
-  int new_priority_client = -1;
-  int new_priority_max = 0;
-  int i;
+	int new_priority_client = -1;
+	int new_priority_max = 0;
+	connections_t::iterator iter;
+	Rts2Conn *conn = getConnection (priority_client);
 
-  if (priority_client >= 0 && connections[priority_client])	// old priority client
-    {
-      new_priority_client = priority_client;
-      new_priority_max = connections[priority_client]->getPriority ();
-    }
-  // find new client with highest priority
-  for (i = 0; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn = connections[i];
-      if (conn)
-	syslog (LOG_DEBUG, "Rts2Centrald::changePriority priorit: %i, %i", i,
-		conn->getPriority ());
-      if (conn && conn->getPriority () > new_priority_max)
+								 // old priority client
+	if (priority_client >= 0 && conn)
 	{
-	  new_priority_client = i;
-	  new_priority_max = conn->getPriority ();
+		new_priority_client = priority_client;
+		new_priority_max = conn->getPriority ();
 	}
-    }
+	// find new client with highest priority
+	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		conn = *iter;
+		if (conn->getPriority () > new_priority_max)
+		{
+			new_priority_client = conn->getCentraldId ();
+			new_priority_max = conn->getPriority ();
+		}
+	}
 
-  if (priority_client != new_priority_client)
-    {
-      if (priority_client >= 0 && connections[priority_client])
-	connections[priority_client]->setHavePriority (0);
+	if (priority_client != new_priority_client)
+	{
+		conn = getConnection (priority_client);
+		if (priority_client >= 0 && conn)
+			conn->setHavePriority (0);
 
-      priority_client = new_priority_client;
+		priority_client = new_priority_client;
 
-      if (priority_client >= 0 && connections[priority_client])
-	connections[priority_client]->setHavePriority (1);
-    }
-  return sendMessage ("priority_change", priority_client, timeout);
+		conn = getConnection (priority_client);
+		if (priority_client >= 0 && conn)
+			conn->setHavePriority (1);
+	}
+	// send out priority change
+	char *msg;
+
+	asprintf (&msg, PROTO_PRIORITY " %i %li", priority_client, timeout);
+	sendAll (msg);
+	free (msg);
+
+	// and set and send new priority values
+	priorityClient->setValueString (conn ? conn->getName () : "(null)");
+	priority->setValueInteger (new_priority_max);
+
+	sendValueAll (priorityClient);
+	sendValueAll (priority);
+
+	return 0;
 }
+
 
 int
 Rts2Centrald::idle ()
 {
-  time_t curr_time;
+	time_t curr_time;
 
-  int call_state;
-  int old_current_state;
+	int call_state;
+	int old_current_state;
 
-  curr_time = time (NULL);
+	if ((getState () & SERVERD_STATUS_MASK) == SERVERD_OFF)
+		return Rts2Daemon::idle ();
 
-  next_event (observer, &curr_time, &call_state, &next_event_type,
-	      &next_event_time);
+	curr_time = time (NULL);
 
-  if (current_state != SERVERD_OFF && current_state != call_state)
-    {
-      old_current_state = current_state;
-      if ((current_state & SERVERD_STATUS_MASK) == SERVERD_MORNING
-	  && call_state == SERVERD_DAY)
+	if (curr_time < next_event_time)
+		return Rts2Daemon::idle ();
+
+	next_event (observer, &curr_time, &call_state, &next_event_type,
+		&next_event_time, nightHorizon->getValueDouble (),
+		dayHorizon->getValueDouble (), eveningTime->getValueInteger (),
+		morningTime->getValueInteger ());
+
+	if (getState () != call_state)
 	{
-	  if (morning_off)
-	    current_state = SERVERD_OFF;
-	  else if (morning_standby)
-	    current_state = call_state | SERVERD_STANDBY;
-	  else
-	    current_state =
-	      (current_state & SERVERD_STANDBY_MASK) | call_state;
+		nextStateChange->setValueTime (next_event_time);
+		nextState->setValueInteger (next_event_type);
+
+		old_current_state = getState ();
+		if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
+			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+		{
+			if (morning_off)
+				setState (SERVERD_OFF, "by idle routine");
+			else if (morning_standby)
+				setState (call_state | SERVERD_STANDBY, "by idle routine");
+			else
+				setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
+					"by idle routine");
+		}
+		else
+		{
+			setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
+				"by idle routine");
+		}
+
+		// distribute new state
+		if (getState () != old_current_state)
+		{
+			logStream (MESSAGE_INFO) << "changed state from " <<
+				old_current_state << " to " << getState () << sendLog;
+			sendStatusMessage (getState ());
+		}
+		// send update about next state transits..
+		infoAll ();
 	}
-      else
-	{
-	  current_state = (current_state & SERVERD_STANDBY_MASK) | call_state;
-	}
-      if (current_state != old_current_state)
-	{
-	  sendStatusMessage (SERVER_STATUS, current_state);
-	}
-    }
-  return Rts2Block::idle ();
+	return Rts2Daemon::idle ();
 }
+
+
+void
+Rts2Centrald::sendMessage (messageType_t in_messageType,
+const char *in_messageString)
+{
+	Rts2Message msg =
+		Rts2Message ("centrald", in_messageType, in_messageString);
+	Rts2Daemon::sendMessage (in_messageType, in_messageString);
+	sendMessageAll (msg);
+}
+
+
+void
+Rts2Centrald::message (Rts2Message & msg)
+{
+	processMessage (msg);
+	if (fileLog)
+	{
+		(*fileLog) << msg;
+	}
+	else
+	{
+		std::cerr << msg.toString () << std::endl;
+	}
+}
+
+
+void
+Rts2Centrald::signaledHUP ()
+{
+	reloadConfig ();
+	Rts2Daemon::signaledHUP ();
+}
+
+
+void
+Rts2Centrald::bopMaskChanged ()
+{
+	int bopState = 0;
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		bopState |= (*iter)->getBopState ();
+		if ((*iter)->getType () == DEVICE_SERVER)
+			sendBopMessage (getStateForConnection (*iter), *iter);
+	}
+	maskState (BOP_MASK, bopState, "changed BOP state");
+	sendStatusMessage (getState ());
+}
+
+
+int
+Rts2Centrald::statusInfo (Rts2Conn * conn)
+{
+	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
+	int s_count = 0;
+	// update system status
+	for (connections_t::iterator iter = connectionBegin ();
+		iter != connectionEnd (); iter++)
+	{
+		Rts2ConnCentrald *test_conn = (Rts2ConnCentrald *) * iter;
+		// do not request status from client connections
+		if (test_conn != conn && test_conn->getType () != CLIENT_SERVER)
+		{
+			if (conn->getType () == DEVICE_SERVER)
+			{
+				if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
+					continue;
+			}
+			Rts2CommandStatusInfo *cs = new Rts2CommandStatusInfo (this, c_conn);
+			cs->setOriginator (conn);
+			test_conn->queCommand (cs);
+			s_count++;
+		}
+	}
+	// command was not send at all..
+	if (s_count == 0)
+	{
+		return 0;
+	}
+
+	c_conn->statusCommandSend ();
+
+	// indicate command pending, we will send command end once we will get reply from all devices
+	return -1;
+}
+
+
+int
+Rts2Centrald::getStateForConnection (Rts2Conn * conn)
+{
+	if (conn->getType () != DEVICE_SERVER)
+		return getState ();
+	int sta = getState ();
+	// get rid of BOP mask
+	sta &= ~BOP_MASK & ~DEVICE_ERROR_MASK;
+	// cretae BOP mask for device
+	for (connections_t::iterator iter = connectionBegin ();
+		iter != connectionEnd (); iter++)
+	{
+		Rts2Conn *test_conn = *iter;
+		if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)
+			continue;
+		sta |= test_conn->getBopState ();
+	}
+	return sta;
+}
+
 
 int
 main (int argc, char **argv)
 {
-  Rts2Centrald *centrald;
-  openlog (NULL, LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
-  centrald = new Rts2Centrald (argc, argv);
-  centrald->init ();
-  centrald->run ();
-
-  return 0;
+	Rts2Centrald centrald = Rts2Centrald (argc, argv);
+	return centrald.run ();
 }

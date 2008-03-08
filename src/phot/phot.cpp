@@ -1,8 +1,22 @@
-/*! 
- * @file Photometer deamon. 
+/* 
+ * Photometer daemon.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
- * @author petr
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -14,7 +28,6 @@
 
 #include <fcntl.h>
 #include <errno.h>
-#include <signal.h>
 #include <sys/io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,326 +35,344 @@
 #include <syslog.h>
 #include <time.h>
 
-int
-Rts2DevConnPhot::commandAuthorized ()
-{
-  int ret;
-  if (isCommand ("home"))
-    {
-      return master->homeFilter ();
-    }
-  else if (isCommand ("integrate"))
-    {
-      float new_req_time;
-      int new_req_count;
-      if (paramNextFloat (&new_req_time) || paramNextInteger (&new_req_count)
-	  || !paramEnd ())
-	return -2;
-
-      return master->startIntegrate (this, new_req_time, new_req_count);
-    }
-
-  else if (isCommand ("intfil"))
-    {
-      int new_filter;
-      float new_req_time;
-      int new_req_count;
-      if (paramNextInteger (&new_filter) || paramNextFloat (&new_req_time)
-	  || paramNextInteger (&new_req_count) || !paramEnd ())
-	return -2;
-
-      ret = master->moveFilter (this, new_filter);
-      if (ret)
-	return ret;
-      return master->startIntegrate (this, new_req_time, new_req_count);
-    }
-
-  else if (isCommand ("stop"))
-    {
-      return master->stopIntegrate ();
-    }
-
-  else if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-      return master->moveFilter (this, new_filter);
-    }
-  else if (isCommand ("enable"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->enableFilter (this);
-    }
-  else if (isCommand ("help"))
-    {
-      send ("info - phot informations");
-      send ("exit - exit from main loop");
-      send ("help - print, what you are reading just now");
-      send ("integrate <time> <count> - start integration");
-      send ("enable - enable filter movements");
-      send ("stop - stop any running integration");
-      return 0;
-    }
-  return Rts2DevConn::commandAuthorized ();
-}
-
-Rts2DevConnPhot::Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device):Rts2DevConn (in_sock,
-	     in_master_device)
-{
-  master = in_master_device;
-}
-
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
+Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
-  char *states_names[1] = { "phot" };
-  setStateNames (1, states_names);
-  filter = 0;
+	createValue (filter, "filter", "used filter", false);
+	createValue (count, "count", "count of the photometer", false);
+	createValue (exp, "exposure", "exposure time in sec", false);
+	createValue (is_ov, "is_ov", "if photometer overflow", false);
 
-  req_count = -1;
-  setReqTime (1);
+	photType = NULL;
+	serial = NULL;
+
+	req_count = -1;
+	setReqTime (1);
 }
+
 
 void
 Rts2DevPhot::checkFilterMove ()
 {
-  long ret;
-  if ((getState (0) & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
-    {
-      ret = isFilterMoving ();
-      if (ret > 0)
+	long ret;
+	if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
 	{
-	  setTimeoutMin (ret);
-	  return;
+		ret = isFilterMoving ();
+		if (ret > 0)
+		{
+			setTimeoutMin (ret);
+			return;
+		}
+		// when it's -1 or -2..end filter move
+		endFilterMove ();
 	}
-      // when it's -1 or -2..end filter move
-      endFilterMove ();
-    }
 }
+
+
+int
+Rts2DevPhot::initValues ()
+{
+	addConstValue ("type", photType);
+	addConstValue ("serial", serial);
+
+	return Rts2ScriptDevice::initValues ();
+}
+
 
 int
 Rts2DevPhot::idle ()
 {
-  long ret;
-  struct timeval now;
-  gettimeofday (&now, NULL);
-  if (now.tv_sec > nextCountDue.tv_sec
-      || (now.tv_sec == nextCountDue.tv_sec
-	  && now.tv_usec > nextCountDue.tv_usec))
-    {
-      ret = getCount ();
-      if (ret >= 0)
+	long ret;
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	if (now.tv_sec > nextCountDue.tv_sec
+		|| (now.tv_sec == nextCountDue.tv_sec
+		&& now.tv_usec > nextCountDue.tv_usec))
 	{
-	  setTimeout (ret);
-	  nextCountDue.tv_sec = now.tv_sec + ret / USEC_SEC;
-	  nextCountDue.tv_usec = now.tv_usec + ret % USEC_SEC;
-	  if (nextCountDue.tv_usec >= USEC_SEC)
-	    {
-	      nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
-	      nextCountDue.tv_usec %= USEC_SEC;
-	    }
+		ret = getCount ();
+		if (ret >= 0)
+		{
+			setTimeout (ret);
+			nextCountDue.tv_sec = now.tv_sec + ret / USEC_SEC;
+			nextCountDue.tv_usec = now.tv_usec + ret % USEC_SEC;
+			if (nextCountDue.tv_usec >= USEC_SEC)
+			{
+				nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
+				nextCountDue.tv_usec %= USEC_SEC;
+			}
+		}
+		if (ret < 0)
+		{
+			endIntegrate ();
+		}
 	}
-      if (ret < 0)
+	else
 	{
-	  endIntegrate ();
+		setTimeout ((nextCountDue.tv_sec - now.tv_sec) * USEC_SEC +
+			nextCountDue.tv_usec - now.tv_usec);
 	}
-    }
-  else
-    {
-      setTimeout ((nextCountDue.tv_sec - now.tv_sec) * USEC_SEC +
-		  nextCountDue.tv_usec - now.tv_usec);
-    }
-  // check filter moving..
-  checkFilterMove ();
-  return Rts2Device::idle ();
+	// check filter moving..
+	checkFilterMove ();
+	return Rts2ScriptDevice::idle ();
 }
 
-Rts2DevConn *
-Rts2DevPhot::createConnection (int in_sock, int conn_num)
-{
-  return new Rts2DevConnPhot (in_sock, this);
-}
 
 int
 Rts2DevPhot::homeFilter ()
 {
-  return -1;
+	return -1;
 }
+
 
 int
 Rts2DevPhot::startFilterMove (int new_filter)
 {
-  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
-  return 0;
+	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
+	return 0;
 }
+
 
 long
 Rts2DevPhot::isFilterMoving ()
 {
-  return -2;
+	return -2;
 }
+
 
 int
 Rts2DevPhot::endFilterMove ()
 {
-  infoAll ();
-  maskState (0, PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
-  return 0;
+	infoAll ();
+	maskState (PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
+	return 0;
 }
+
 
 int
 Rts2DevPhot::startIntegrate ()
 {
-  return -1;
+	return -1;
 }
+
 
 int
 Rts2DevPhot::startIntegrate (Rts2Conn * conn, float in_req_time,
-			     int in_req_count)
+int in_req_count)
 {
-  int ret;
-  req_count = in_req_count;
-  setReqTime (in_req_time);
-  ret = startIntegrate ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
-      return -1;
-    }
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
-  return 0;
+	int ret;
+	req_count = in_req_count;
+	setReqTime (in_req_time);
+	ret = startIntegrate ();
+	if (ret)
+	{
+		conn->sendCommandEnd (DEVDEM_E_HW, "cannot start integration");
+		return -1;
+	}
+	maskState (PHOT_MASK_INTEGRATE, PHOT_INTEGRATE, "integration started");
+	return 0;
 }
+
 
 int
 Rts2DevPhot::endIntegrate ()
 {
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-	     "integration finished");
-  // keep us update in old time
-  startIntegrate ();
-  req_count = -1;
-  return 0;
+	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
+	// keep us update in old time
+	startIntegrate ();
+	req_count = -1;
+	return 0;
 }
+
 
 int
 Rts2DevPhot::stopIntegrate ()
 {
-  maskState (0, PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
-	     "Integration interrupted");
-  startIntegrate ();
-  return 0;
+	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
+		"Integration interrupted");
+	startIntegrate ();
+	return 0;
 }
+
 
 int
 Rts2DevPhot::homeFilter (Rts2Conn * conn)
 {
-  int ret;
-  ret = homeFilter ();
-  if (ret)
-    return -1;
-  filter = 0;
-  infoAll ();
-  return ret;
+	int ret;
+	ret = homeFilter ();
+	if (ret)
+		return -1;
+	filter->setValueInteger (0);
+	infoAll ();
+	return ret;
 }
+
 
 int
 Rts2DevPhot::enableMove ()
 {
-  return -1;
+	return -1;
 }
+
 
 int
 Rts2DevPhot::disableMove ()
 {
-  return -1;
+	return -1;
 }
 
+
 int
-Rts2DevPhot::moveFilter (Rts2Conn * conn, int new_filter)
+Rts2DevPhot::moveFilter (int new_filter)
 {
-  int ret;
-  ret = startFilterMove (new_filter);
-  if (ret)
-    return -1;
-  return 0;
+	int ret;
+	ret = startFilterMove (new_filter);
+	if (ret)
+		return -1;
+	return 0;
 }
+
 
 int
 Rts2DevPhot::enableFilter (Rts2Conn * conn)
 {
-  int ret;
-  ret = enableMove ();
-  if (ret)
-    return -1;
-  infoAll ();
-  return 0;
+	int ret;
+	ret = enableMove ();
+	if (ret)
+		return -1;
+	infoAll ();
+	return 0;
 }
+
 
 void
 Rts2DevPhot::cancelPriorityOperations ()
 {
-  stopIntegrate ();
-  clearStatesPriority ();
-  Rts2Device::cancelPriorityOperations ();
+	stopIntegrate ();
+	clearStatesPriority ();
+	Rts2ScriptDevice::cancelPriorityOperations ();
 }
+
 
 int
 Rts2DevPhot::changeMasterState (int new_state)
 {
-  switch (new_state & SERVERD_STATUS_MASK)
-    {
-    case SERVERD_NIGHT:
-      enableMove ();
-      break;
-    default:			/* other - SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF, etc */
-      disableMove ();
-      break;
-    }
-  return 0;
+	switch (new_state & SERVERD_STATUS_MASK)
+	{
+		case SERVERD_NIGHT:
+			enableMove ();
+			break;
+		default:				 /* other - SERVERD_DAY, SERVERD_DUSK, SERVERD_MAINTANCE, SERVERD_OFF, etc */
+			disableMove ();
+			break;
+	}
+	return Rts2ScriptDevice::changeMasterState (new_state);
 }
+
 
 void
 Rts2DevPhot::setReqTime (float in_req_time)
 {
-  req_time = in_req_time;
-  gettimeofday (&nextCountDue, NULL);
-  nextCountDue.tv_sec += (long) floor (in_req_time);
-  nextCountDue.tv_usec +=
-    (long) ((in_req_time - floor (in_req_time)) * USEC_SEC);
-  if (nextCountDue.tv_usec >= USEC_SEC)
-    {
-      nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
-      nextCountDue.tv_usec %= USEC_SEC;
-    }
-}
-
-int
-Rts2DevPhot::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("filter", filter);
-  return 0;
-}
-
-int
-Rts2DevPhot::sendCount (int count, float exp, int is_ov)
-{
-  char *msg;
-  int ret;
-  asprintf (&msg, "%i %f %i", count, exp, is_ov);
-  for (int i = 1; i < MAX_CONN; i++)
-    {
-      Rts2Conn *conn = connections[i];
-      if (conn)
+	req_time = in_req_time;
+	gettimeofday (&nextCountDue, NULL);
+	nextCountDue.tv_sec += (long) floor (in_req_time);
+	nextCountDue.tv_usec +=
+		(long) ((in_req_time - floor (in_req_time)) * USEC_SEC);
+	if (nextCountDue.tv_usec >= USEC_SEC)
 	{
-	  conn->sendValue ("count", msg);
+		nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
+		nextCountDue.tv_usec %= USEC_SEC;
 	}
-    }
-  if (req_count > 0)
-    req_count--;
-  if (req_count == 0)
-    endIntegrate ();
-  free (msg);
-  return ret;
+}
+
+
+int
+Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == filter)
+		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	return Rts2ScriptDevice::setValue (old_value, new_value);
+}
+
+
+void
+Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
+{
+	count->setValueInteger (in_count);
+	exp->setValueFloat (in_exp);
+	is_ov->setValueBool (in_is_ov);
+	// send value..
+	sendValueAll (exp);
+	sendValueAll (is_ov);
+	sendValueAll (count);
+	if (req_count > 0)
+		req_count--;
+	if (req_count == 0)
+		endIntegrate ();
+}
+
+
+int
+Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
+{
+	int ret;
+	if (conn->isCommand ("home"))
+	{
+		return homeFilter ();
+	}
+	else if (conn->isCommand ("integrate"))
+	{
+		float new_req_time;
+		int new_req_count;
+		if (conn->paramNextFloat (&new_req_time)
+			|| conn->paramNextInteger (&new_req_count) || !conn->paramEnd ())
+			return -2;
+
+		return startIntegrate (conn, new_req_time, new_req_count);
+	}
+
+	else if (conn->isCommand ("intfil"))
+	{
+		int new_filter;
+		float new_req_time;
+		int new_req_count;
+		if (conn->paramNextInteger (&new_filter)
+			|| conn->paramNextFloat (&new_req_time)
+			|| conn->paramNextInteger (&new_req_count) || !conn->paramEnd ())
+			return -2;
+
+		ret = moveFilter (new_filter);
+		if (ret)
+			return ret;
+		return startIntegrate (conn, new_req_time, new_req_count);
+	}
+
+	else if (conn->isCommand ("stop"))
+	{
+		return stopIntegrate ();
+	}
+
+	else if (conn->isCommand ("filter"))
+	{
+		int new_filter;
+		if (conn->paramNextInteger (&new_filter) || !conn->paramEnd ())
+			return -2;
+		return moveFilter (new_filter);
+	}
+	else if (conn->isCommand ("enable"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return enableFilter (conn);
+	}
+	else if (conn->isCommand ("help"))
+	{
+		conn->sendMsg ("info - phot informations");
+		conn->sendMsg ("exit - exit from main loop");
+		conn->sendMsg ("help - print, what you are reading just now");
+		conn->sendMsg ("integrate <time> <count> - start integration");
+		conn->sendMsg ("enable - enable filter movements");
+		conn->sendMsg ("stop - stop any running integration");
+		return 0;
+	}
+	return Rts2ScriptDevice::commandAuthorized (conn);
 }

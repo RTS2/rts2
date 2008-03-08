@@ -1,22 +1,27 @@
-/*!
- * Driver for Apogee camera.
+/* 
+ * Apogee CCD driver.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
- * Based on original apogee driver.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author petr
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif /* !_GNU_SOURCE */
-
 #include <math.h>
-#include <signal.h>
 #include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <linux/string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -30,201 +35,186 @@
 
 #include "apogee/CameraIO_Linux.h"
 
-#include "camera_cpp.h"
+#include "camd.h"
 
 // Error codes returned from config_load
-const int CCD_OPEN_NOERR = 0;	// No error detected
-const int CCD_OPEN_CFGNAME = 1;	// No config file specified
-const int CCD_OPEN_CFGDATA = 2;	// Config missing or missing required data
-const int CCD_OPEN_LOOPTST = 3;	// Loopback test failed, no camera found
-const int CCD_OPEN_ALLOC = 4;	// Memory alloc failed - system error
-const int CCD_OPEN_NTIO = 5;	// NT I/O driver not present
+const int CCD_OPEN_NOERR = 0;	 // No error detected
+const int CCD_OPEN_CFGNAME = 1;	 // No config file specified
+const int CCD_OPEN_CFGDATA = 2;	 // Config missing or missing required data
+const int CCD_OPEN_LOOPTST = 3;	 // Loopback test failed, no camera found
+const int CCD_OPEN_ALLOC = 4;	 // Memory alloc failed - system error
+const int CCD_OPEN_NTIO = 5;	 // NT I/O driver not present
 
-class CameraApogeeChip:public CameraChip
-{
-  CCameraIO *camera;
-  short unsigned int *dest;
-  short unsigned int *dest_top;
-  char *send_top;
-public:
-    CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera);
-    virtual ~ CameraApogeeChip (void);
-  virtual int init ();
-  virtual int setBinning (int in_vert, int in_hori);
-  virtual int startExposure (int light, float exptime);
-  virtual long isExposing ();
-  virtual int endExposure ();
-  virtual int stopExposure ();
-  virtual int startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn);
-  virtual int readoutOneLine ();
-  virtual int endReadout ();
-};
-
-CameraApogeeChip::CameraApogeeChip (Rts2DevCamera * in_cam, CCameraIO * in_camera):CameraChip (in_cam,
-	    0)
-{
-  camera = in_camera;
-  dest = NULL;
-}
-
-CameraApogeeChip::~CameraApogeeChip (void)
-{
-  delete dest;
-}
-
-int
-CameraApogeeChip::init ()
-{
-  setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
-  binningHorizontal = camera->m_BinX;
-  binningVertical = camera->m_BinY;
-  pixelX = camera->m_PixelXSize;
-  pixelY = camera->m_PixelYSize;
-  gain = camera->m_Gain;
-
-  dest = new short unsigned int[chipSize->width * chipSize->height];
-  return 0;
-}
-
-int
-CameraApogeeChip::setBinning (int in_vert, int in_hori)
-{
-  camera->m_ExposureBinX = in_hori;
-  camera->m_ExposureBinY = in_vert;
-  return CameraChip::setBinning (in_vert, in_hori);
-}
-
-int
-CameraApogeeChip::startExposure (int light, float exptime)
-{
-  bool ret;
-  ret = camera->Expose (exptime, light);
-
-  if (!ret)
-    {
-      syslog (LOG_ERR, "CameraApogeeChip::startExposure exposure error");
-      return -1;
-    }
-
-  chipUsedReadout = new ChipSubset (chipReadout);
-  usedBinningVertical = binningVertical;
-  usedBinningHorizontal = binningHorizontal;
-  return 0;
-}
-
-long
-CameraApogeeChip::isExposing ()
-{
-  long ret;
-  Camera_Status status;
-  ret = CameraChip::isExposing ();
-  if (ret > 0)
-    return ret;
-
-  status = camera->read_Status ();
-
-  if (status != Camera_Status_ImageReady)
-    return 200;
-  // exposure has ended.. 
-  return -2;
-}
-
-int
-CameraApogeeChip::endExposure ()
-{
-  camera->m_WaitingforTrigger = false;
-  return CameraChip::endExposure ();
-}
-
-int
-CameraApogeeChip::stopExposure ()
-{
-  camera->Reset ();
-  return CameraChip::stopExposure ();
-}
-
-int
-CameraApogeeChip::startReadout (Rts2DevConnData * dataConn, Rts2Conn * conn)
-{
-  int ret;
-  ret = CameraChip::startReadout (dataConn, conn);
-  dest_top = dest;
-  send_top = (char *) dest;
-  return ret;
-}
-
-int
-CameraApogeeChip::readoutOneLine ()
-{
-  if (readoutLine <
-      (chipUsedReadout->y + chipUsedReadout->height) / usedBinningVertical)
-    {
-      bool status;
-      short int width, height;
-      width = chipUsedReadout->width;
-      height = chipUsedReadout->height;
-      camera->m_ExposureStartX = chipUsedReadout->x;
-      camera->m_ExposureStartY = chipUsedReadout->y;
-      camera->m_ExposureNumX = chipUsedReadout->width / usedBinningHorizontal;
-      camera->m_ExposureNumY = chipUsedReadout->height / usedBinningVertical;
-      status = camera->GetImage (dest_top, width, height);
-      syslog (LOG_DEBUG, "CameraApogeeChip::readoutOneLine status: %i",
-	      status);
-      if (!status)
-	return -1;
-      dest_top += width * height;
-      readoutLine = chipUsedReadout->y + chipUsedReadout->height;
-    }
-  if (sendLine == 0)
-    {
-      int ret;
-      ret = CameraChip::sendFirstLine ();
-      if (ret)
-	return ret;
-    }
-  int send_data_size;
-  sendLine++;
-  send_data_size = sendReadoutData (send_top, (char *) dest_top - send_top);
-  if (send_data_size < 0)
-    return -1;
-  send_top += send_data_size;
-  if (send_top < (char *) dest_top)
-    return 0;			// there are still some data to send..
-  return -2;
-}
-
-int
-CameraApogeeChip::endReadout ()
-{
-  camera->Reset ();
-  return CameraChip::endReadout ();
-}
-
+/**
+ * Driver for Apogee camera.
+ *
+ * Based on original Apogee driver.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevCameraApogee:public Rts2DevCamera
 {
-  CCameraIO *camera;
-  int device_id;
-  char *cfgname;
-  int config_load (short BaseAddress, short RegOffset);
-  bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
-	       short bufflen, short *parmlen);
-public:
-    Rts2DevCameraApogee (int argc, char **argv);
-    virtual ~ Rts2DevCameraApogee (void);
-  virtual int processOption (int in_opt);
-  virtual int init ();
+	private:
+		CCameraIO *camera;
+		int device_id;
+		char *cfgname;
+		int config_load (short BaseAddress, short RegOffset);
+		bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
+			short bufflen, short *parmlen);
 
-  virtual int ready ();
-  virtual int baseInfo ();
-  virtual int info ();
+		time_t expExposureEnd;
 
-  virtual int camChipInfo (int chip);
+	protected:
+		virtual int initChips ();
+		virtual int setBinning (int in_vert, int in_hori);
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int endExposure ();
+		virtual int stopExposure ();
+		virtual int readoutOneLine ();
+		virtual int endReadout ();
 
-  virtual int camCoolMax ();
-  virtual int camCoolHold ();
-  virtual int camCoolTemp (float new_temp);
-  virtual int camCoolShutdown ();
+	public:
+		Rts2DevCameraApogee (int argc, char **argv);
+		virtual ~ Rts2DevCameraApogee (void);
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int ready ();
+		virtual int info ();
+
+		virtual int camChipInfo (int chip);
+
+		virtual int camCoolMax ();
+		virtual int camCoolHold ();
+		virtual int camCoolTemp (float new_temp);
+		virtual int camCoolShutdown ();
 };
+
+int
+Rts2DevCameraApogee::initChips ()
+{
+	setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
+	setBinning (1, 1);
+	pixelX = camera->m_PixelXSize;
+	pixelY = camera->m_PixelYSize;
+
+	return Rts2DevCamera::initChips ();
+}
+
+
+int
+Rts2DevCameraApogee::setBinning (int in_vert, int in_hori)
+{
+	camera->m_ExposureBinX = in_hori;
+	camera->m_ExposureBinY = in_vert;
+	return Rts2DevCamera::setBinning (in_vert, in_hori);
+}
+
+
+int
+Rts2DevCameraApogee::startExposure ()
+{
+	bool ret;
+	ret = camera->Expose (getExposure (), getExpType () ? 0 : 1);
+
+	if (!ret)
+	{
+		logStream (MESSAGE_ERROR) << "apogee startExposure exposure error" << sendLog;
+		return -1;
+	}
+
+	expExposureEnd = 0;
+	return 0;
+}
+
+
+long
+Rts2DevCameraApogee::isExposing ()
+{
+	long ret;
+	time_t now;
+	Camera_Status status;
+	ret = Rts2DevCamera::isExposing ();
+	if (ret > 0)
+		return ret;
+
+	if (expExposureEnd == 0)
+	{
+		time (&expExposureEnd);
+		expExposureEnd += 10;
+	}
+
+	status = camera->read_Status ();
+
+	if (status != Camera_Status_ImageReady)
+	{
+		if (status == Camera_Status_Flushing
+			|| status == Camera_Status_Exposing)
+		{
+			// if flushing takes too much time, reset camera and end exposure
+			time (&now);
+			if (expExposureEnd < now)
+			{
+				camera->Reset ();
+				return -1;
+			}
+		}
+		return 200;
+	}
+
+	// exposure has ended..
+	return -2;
+}
+
+
+int
+Rts2DevCameraApogee::endExposure ()
+{
+	camera->m_WaitingforTrigger = false;
+	return Rts2DevCamera::endExposure ();
+}
+
+
+int
+Rts2DevCameraApogee::stopExposure ()
+{
+	camera->Reset ();
+	return Rts2DevCamera::stopExposure ();
+}
+
+
+int
+Rts2DevCameraApogee::readoutOneLine ()
+{
+	bool status;
+	short int width, height;
+	width = chipUsedReadout->getWidthInt ();
+	height = chipUsedReadout->getHeightInt ();
+	int ret;
+
+	camera->m_ExposureStartX = chipUsedReadout->getXInt ();
+	camera->m_ExposureStartY = chipUsedReadout->getYInt ();
+	camera->m_ExposureNumX = getUsedWidthBinned ();
+	camera->m_ExposureNumY = getUsedHeightBinned ();
+	status = camera->GetImage ((short unsigned int*) dataBuffer, width, height);
+	logStream (MESSAGE_DEBUG) << "apogee readoutOneLine status " << status << sendLog;
+	if (!status)
+		return -1;
+	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
+	if (ret < 0)
+		return -1;
+	return -2;
+}
+
+
+int
+Rts2DevCameraApogee::endReadout ()
+{
+	camera->Reset ();
+	return Rts2DevCamera::endReadout ();
+}
+
 
 //-------------------------------------------------------------
 // CfgGet
@@ -233,89 +223,95 @@ public:
 // and the paramter string in retbuff.
 //-------------------------------------------------------------
 bool
-  Rts2DevCameraApogee::CfgGet (FILE * inifp,
-			       char *inisect,
-			       char *iniparm,
-			       char *retbuff, short bufflen, short *parmlen)
+Rts2DevCameraApogee::CfgGet (FILE * inifp,
+char *inisect,
+char *iniparm,
+char *retbuff, short bufflen, short *parmlen)
 {
-  short gotsect;
-  char tbuf[256];
-  char *ss, *eq, *ps, *vs, *ptr;
+	short gotsect;
+	char tbuf[256];
+	char *ss, *eq, *ps, *vs, *ptr;
 
-  rewind (inifp);
+	rewind (inifp);
 
-  // find the target section
+	// find the target section
 
-  gotsect = 0;
-  while (fgets (tbuf, 256, inifp) != NULL)
-    {
-      if ((ss = strchr (tbuf, '[')) != NULL)
+	gotsect = 0;
+	while (fgets (tbuf, 256, inifp) != NULL)
 	{
-	  if (strncasecmp (ss + 1, inisect, strlen (inisect)) == 0)
-	    {
-	      gotsect = 1;
-	      break;
-	    }
-	}
-    }
-
-  if (!gotsect)
-    {				// section not found
-      return false;
-    }
-
-  while (fgets (tbuf, 256, inifp) != NULL)
-    {				// find parameter in sect
-
-      if ((ptr = strrchr (tbuf, '\n')) != NULL)	// remove newline if there
-	*ptr = '\0';
-
-      ps = tbuf + strspn (tbuf, " \t");	// find the first non-blank
-
-      if (*ps == ';')		// Skip line if comment
-	continue;
-
-      if (*ps == '[')
-	{			// Start of next section
-	  return false;
+		if ((ss = strchr (tbuf, '[')) != NULL)
+		{
+			if (strncasecmp (ss + 1, inisect, strlen (inisect)) == 0)
+			{
+				gotsect = 1;
+				break;
+			}
+		}
 	}
 
-      eq = strchr (ps, '=');	// Find '=' sign in string
-
-      if (eq)
-	vs = eq + 1 + strspn (eq + 1, " \t");	// Find start of value str
-      else
-	continue;
-
-      // found the target parameter
-
-      if (strncasecmp (ps, iniparm, strlen (iniparm)) == 0)
-	{
-
-	  if ((ptr = strchr (vs, ';')) != NULL)	// cut off an EOL comment
-	    *ptr = '\0';
-
-	  if (short (strlen (vs)) > bufflen - 1)
-	    {			// not enough buffer space
-	      strncpy (retbuff, vs, bufflen - 1);
-	      retbuff[bufflen - 1] = '\0';	// put EOL in string
-	      *parmlen = bufflen;
-	      return true;
-	    }
-	  else
-	    {
-	      strcpy (retbuff, vs);	// got it
-	      ptr = retbuff;
-	      while (*ptr && *ptr != '\n' && *ptr != '\r')
-		ptr++;
-	      *ptr = '\0';
-	      *parmlen = strlen (retbuff);
-	      return true;
-	    }
+	if (!gotsect)
+	{							 // section not found
+		return false;
 	}
-    }
 
-  return false;			// parameter not found
+	while (fgets (tbuf, 256, inifp) != NULL)
+	{							 // find parameter in sect
+
+								 // remove newline if there
+		if ((ptr = strrchr (tbuf, '\n')) != NULL)
+			*ptr = '\0';
+
+								 // find the first non-blank
+		ps = tbuf + strspn (tbuf, " \t");
+
+		if (*ps == ';')			 // Skip line if comment
+			continue;
+
+		if (*ps == '[')
+		{						 // Start of next section
+			return false;
+		}
+
+		eq = strchr (ps, '=');	 // Find '=' sign in string
+
+		if (eq)
+								 // Find start of value str
+			vs = eq + 1 + strspn (eq + 1, " \t");
+		else
+			continue;
+
+		// found the target parameter
+
+		if (strncasecmp (ps, iniparm, strlen (iniparm)) == 0)
+		{
+
+								 // cut off an EOL comment
+			if ((ptr = strchr (vs, ';')) != NULL)
+				*ptr = '\0';
+
+			if (short (strlen (vs)) > bufflen - 1)
+			{					 // not enough buffer space
+				strncpy (retbuff, vs, bufflen - 1);
+								 // put EOL in string
+				retbuff[bufflen - 1] = '\0';
+				*parmlen = bufflen;
+				return true;
+			}
+			else
+			{
+								 // got it
+				strcpy (retbuff, vs);
+				ptr = retbuff;
+				while (*ptr && *ptr != '\n' && *ptr != '\r')
+					ptr++;
+				*ptr = '\0';
+				*parmlen = strlen (retbuff);
+				return true;
+			}
+		}
+	}
+
+	return false;				 // parameter not found
 }
 
 
@@ -327,616 +323,605 @@ bool
 int
 Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 {
-  short plen;
-  char retbuf[256];
+	short plen;
+	char retbuf[256];
 
-  if ((strlen (cfgname) == 0) || (cfgname[0] == '\0'))
-    return CCD_OPEN_CFGNAME;
+	if ((strlen (cfgname) == 0) || (cfgname[0] == '\0'))
+		return CCD_OPEN_CFGNAME;
 
-  // attempt to open INI file
-  FILE *inifp = NULL;
+	// attempt to open INI file
+	FILE *inifp = NULL;
 
-  if ((inifp = fopen (cfgname, "r")) == NULL)
-    return CCD_OPEN_CFGDATA;
+	if ((inifp = fopen (cfgname, "r")) == NULL)
+		return CCD_OPEN_CFGDATA;
 
-  // System
-  if (CfgGet (inifp, "system", "interface", retbuf, sizeof (retbuf), &plen))
-    {
-      // Assume cam is currently null
-      if (strcasecmp ("isa", retbuf) == 0)
+	// System
+	if (CfgGet (inifp, "system", "interface", retbuf, sizeof (retbuf), &plen))
 	{
-	  return CCD_OPEN_NTIO;
+		// Assume cam is currently null
+		if (strcasecmp ("isa", retbuf) == 0)
+		{
+			return CCD_OPEN_NTIO;
+		}
+		else if (strcasecmp ("ppi", retbuf) == 0)
+		{
+			return CCD_OPEN_NTIO;
+		}
+		else if (strcasecmp ("pci", retbuf) == 0)
+		{
+			camera = new CCameraIO;
+		}
+
+		if (camera == NULL)
+		{
+			fclose (inifp);
+			return CCD_OPEN_ALLOC;
+		}
 	}
-      else if (strcasecmp ("ppi", retbuf) == 0)
+	else
 	{
-	  return CCD_OPEN_NTIO;
+		fclose (inifp);
+		return CCD_OPEN_CFGDATA;
 	}
-      else if (strcasecmp ("pci", retbuf) == 0)
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// Settings which are stored in a class member (not in firmware) are already set
+	// to a default value in the constructor. Settings accessed by get/put functions
+	// must be set to a default value in this routine, after the base address and
+	// communication protocal is setup.
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// These settings must done first since they affect communication with the camera
+
+	/*  if (BaseAddress == -1)
+		{
+		  if (CfgGet (inifp, "system", "base", retbuf, sizeof (retbuf), &plen))
+	  camera->m_BaseAddress = strtol (retbuf, NULL, 0) & 0xFFF;
+		  else
+	  {
+		fclose (inifp);
+		delete camera;
+		camera = NULL;
+		return CCD_OPEN_CFGDATA;	// base address MUST be defined
+	  }
+		}
+	  else
+		camera->m_BaseAddress = BaseAddress & 0xFFF; */
+
+	if (RegOffset == -1)
 	{
-	  camera = new CCameraIO;
+		if (CfgGet
+			(inifp, "system", "reg_offset", retbuf, sizeof (retbuf), &plen))
+		{
+			//        unsigned short val = strtol (retbuf, NULL, 0);
+			//        if (val >= 0x0 && val <= 0xF0)
+			//          camera->m_RegisterOffset = val & 0xF0;
+		}
 	}
-
-      if (camera == NULL)
+	else
 	{
-	  fclose (inifp);
-	  return CCD_OPEN_ALLOC;
+		if (RegOffset >= 0x0 && RegOffset <= 0xF0)
+			camera->m_RegisterOffset = RegOffset & 0xF0;
 	}
-    }
-  else
-    {
-      fclose (inifp);
-      return CCD_OPEN_CFGDATA;
-    }
 
-  /////////////////////////////////////////////////////////////////////////////////
-  // Settings which are stored in a class member (not in firmware) are already set
-  // to a default value in the constructor. Settings accessed by get/put functions
-  // must be set to a default value in this routine, after the base address and
-  // communication protocal is setup.
+	/////////////////////////////////////////////////////////////////////////////////
+	// Necessary geometry settings
 
-  /////////////////////////////////////////////////////////////////////////////////
-  // These settings must done first since they affect communication with the camera
-
-/*  if (BaseAddress == -1)
-    {
-      if (CfgGet (inifp, "system", "base", retbuf, sizeof (retbuf), &plen))
-	camera->m_BaseAddress = strtol (retbuf, NULL, 0) & 0xFFF;
-      else
+	if (CfgGet (inifp, "geometry", "rows", retbuf, sizeof (retbuf), &plen))
 	{
-	  fclose (inifp);
-	  delete camera;
-	  camera = NULL;
-	  return CCD_OPEN_CFGDATA;	// base address MUST be defined
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXTOTALROWS)
+			camera->m_Rows = val;
 	}
-    }
-  else
-    camera->m_BaseAddress = BaseAddress & 0xFFF; */
-
-  if (RegOffset == -1)
-    {
-      if (CfgGet
-	  (inifp, "system", "reg_offset", retbuf, sizeof (retbuf), &plen))
+	else
 	{
-//        unsigned short val = strtol (retbuf, NULL, 0);
-//        if (val >= 0x0 && val <= 0xF0)
-//          camera->m_RegisterOffset = val & 0xF0;
+		fclose (inifp);
+		delete camera;
+		camera = NULL;
+		return CCD_OPEN_CFGDATA; // rows MUST be defined
 	}
-    }
-  else
-    {
-      if (RegOffset >= 0x0 && RegOffset <= 0xF0)
-	camera->m_RegisterOffset = RegOffset & 0xF0;
-    }
 
-  /////////////////////////////////////////////////////////////////////////////////
-  // Necessary geometry settings
-
-  if (CfgGet (inifp, "geometry", "rows", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXTOTALROWS)
-	camera->m_Rows = val;
-    }
-  else
-    {
-      fclose (inifp);
-      delete camera;
-      camera = NULL;
-      return CCD_OPEN_CFGDATA;	// rows MUST be defined
-    }
-
-  if (CfgGet (inifp, "geometry", "columns", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, 0, 0);
-      if (val >= 1 && val <= MAXTOTALCOLUMNS)
-	camera->m_Columns = val;
-    }
-  else
-    {
-      fclose (inifp);
-      delete camera;
-      camera = NULL;
-      return CCD_OPEN_CFGDATA;	// columns MUST be defined
-    }
-
-  /////////////////////////////////////////////////////////////////////////////////
-
-  if (CfgGet (inifp, "system", "pp_repeat", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val > 0 && val <= 1000)
-	camera->m_PPRepeat = val;
-    }
-
-  /////////////////////////////////////////////////////////////////////////////////
-  // First actual communication with camera if in PPI mode
-  if (!camera->InitDriver (device_id))
-    {
-      delete camera;
-      camera = NULL;
-      fclose (inifp);
-      return CCD_OPEN_LOOPTST;
-    }
-  /////////////////////////////////////////////////////////////////////////////////
-  // First actual communication with camera if in ISA mode
-  camera->Reset ();		// Read in command register to set shadow register known state
-  /////////////////////////////////////////////////////////////////////////////////
-
-  if (CfgGet (inifp, "system", "cable", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("LONG", retbuf))
-	camera->write_LongCable (true);
-      else if (!strcasecmp ("SHORT", retbuf))
-	camera->write_LongCable (false);
-    }
-  else
-    camera->write_LongCable (false);	// default
-
-  if (!camera->read_Present ())
-    {
-      delete camera;
-      camera = NULL;
-      fclose (inifp);
-
-      return CCD_OPEN_LOOPTST;
-    }
-  /////////////////////////////////////////////////////////////////////////////////
-  // Set default setting and read other settings from ini file
-
-  camera->write_UseTrigger (false);
-  camera->write_ForceShutterOpen (false);
-
-  if (CfgGet
-      (inifp, "system", "high_priority", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
-	  || !strcasecmp ("1", retbuf))
+	if (CfgGet (inifp, "geometry", "columns", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_HighPriority = true;
+		short val = strtol (retbuf, 0, 0);
+		if (val >= 1 && val <= MAXTOTALCOLUMNS)
+			camera->m_Columns = val;
 	}
-      else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
-	       || !strcasecmp ("0", retbuf))
+	else
 	{
-	  camera->m_HighPriority = false;
+		fclose (inifp);
+		delete camera;
+		camera = NULL;
+		return CCD_OPEN_CFGDATA; // columns MUST be defined
 	}
-    }
 
-  if (CfgGet (inifp, "system", "data_bits", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 8 && val <= 18)
-	camera->m_DataBits = val;
-    }
+	/////////////////////////////////////////////////////////////////////////////////
 
-  if (CfgGet (inifp, "system", "sensor", retbuf, sizeof (retbuf), &plen))
-    {
-      if (strcasecmp ("ccd", retbuf) == 0)
+	if (CfgGet (inifp, "system", "pp_repeat", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_SensorType = Camera_SensorType_CCD;
+		short val = strtol (retbuf, NULL, 0);
+		if (val > 0 && val <= 1000)
+			camera->m_PPRepeat = val;
 	}
-      else if (strcasecmp ("cmos", retbuf) == 0)
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// First actual communication with camera if in PPI mode
+	if (!camera->InitDriver (device_id))
 	{
-	  camera->m_SensorType = Camera_SensorType_CMOS;
+		delete camera;
+		camera = NULL;
+		fclose (inifp);
+		return CCD_OPEN_LOOPTST;
 	}
-    }
+	/////////////////////////////////////////////////////////////////////////////////
+	// First actual communication with camera if in ISA mode
+	camera->Reset ();			 // Read in command register to set shadow register known state
+	/////////////////////////////////////////////////////////////////////////////////
 
-  if (CfgGet (inifp, "system", "mode", retbuf, sizeof (retbuf), &plen))
-    {
-      unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
-      camera->write_Mode (val);
-    }
-  else
-    camera->write_Mode (0);	// default
-
-  if (CfgGet (inifp, "system", "test", retbuf, sizeof (retbuf), &plen))
-    {
-      unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
-      camera->write_TestBits (val);
-    }
-  else
-    camera->write_TestBits (0);	//default
-
-  if (CfgGet (inifp, "system", "test2", retbuf, sizeof (retbuf), &plen))
-    {
-      unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
-      camera->write_Test2Bits (val);
-    }
-  else
-    camera->write_Test2Bits (0);	// default
-
-  camera->write_FastReadout (false);	//default
-
-  if (CfgGet
-      (inifp, "system", "shutter_speed", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("normal", retbuf))
+	if (CfgGet (inifp, "system", "cable", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_FastShutter = false;
-	  camera->m_MaxExposure = 10485.75;
-	  camera->m_MinExposure = 0.01;
+		if (!strcasecmp ("LONG", retbuf))
+			camera->write_LongCable (true);
+		else if (!strcasecmp ("SHORT", retbuf))
+			camera->write_LongCable (false);
 	}
-      else if (!strcasecmp ("fast", retbuf))
+	else
+								 // default
+		camera->write_LongCable (false);
+
+	if (!camera->read_Present ())
 	{
-	  camera->m_FastShutter = true;
-	  camera->m_MaxExposure = 1048.575;
-	  camera->m_MinExposure = 0.001;
+		delete camera;
+		camera = NULL;
+		fclose (inifp);
+
+		return CCD_OPEN_LOOPTST;
 	}
-      else if (!strcasecmp ("dual", retbuf))
+	/////////////////////////////////////////////////////////////////////////////////
+	// Set default setting and read other settings from ini file
+
+	camera->write_UseTrigger (false);
+	camera->write_ForceShutterOpen (false);
+
+	if (CfgGet
+		(inifp, "system", "high_priority", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_FastShutter = true;
-	  camera->m_MaxExposure = 10485.75;
-	  camera->m_MinExposure = 0.001;
+		if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
+			|| !strcasecmp ("1", retbuf))
+		{
+			camera->m_HighPriority = true;
+		}
+		else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
+			|| !strcasecmp ("0", retbuf))
+		{
+			camera->m_HighPriority = false;
+		}
 	}
-    }
 
-  if (CfgGet
-      (inifp, "system", "shutter_bits", retbuf, sizeof (retbuf), &plen))
-    {
-      unsigned short val = strtol (retbuf, NULL, 0);
-      camera->m_FastShutterBits_Mode = val & 0x0F;
-      camera->m_FastShutterBits_Test = (val & 0xF0) >> 4;
-    }
-
-  if (CfgGet (inifp, "system", "maxbinx", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXHBIN)
-	camera->m_MaxBinX = val;
-    }
-
-  if (CfgGet (inifp, "system", "maxbiny", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXVBIN)
-	camera->m_MaxBinY = val;
-    }
-
-  if (CfgGet
-      (inifp, "system", "guider_relays", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
-	  || !strcasecmp ("1", retbuf))
+	if (CfgGet (inifp, "system", "data_bits", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_GuiderRelays = true;
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 8 && val <= 18)
+			camera->m_DataBits = val;
 	}
-      else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
-	       || !strcasecmp ("0", retbuf))
+
+	if (CfgGet (inifp, "system", "sensor", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_GuiderRelays = false;
+		if (strcasecmp ("ccd", retbuf) == 0)
+		{
+			camera->m_SensorType = Camera_SensorType_CCD;
+		}
+		else if (strcasecmp ("cmos", retbuf) == 0)
+		{
+			camera->m_SensorType = Camera_SensorType_CMOS;
+		}
 	}
-    }
 
-  if (CfgGet (inifp, "system", "timeout", retbuf, sizeof (retbuf), &plen))
-    {
-      double val = atof (retbuf);
-      if (val >= 0.0 && val <= 10000.0)
-	camera->m_Timeout = val;
-    }
-
-  /////////////////////////////////////////////////////////////////////////////////
-  // Geometry
-
-  if (CfgGet (inifp, "geometry", "bic", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXCOLUMNS)
-	camera->m_BIC = val;
-    }
-
-  if (CfgGet (inifp, "geometry", "bir", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXROWS)
-	camera->m_BIR = val;
-    }
-
-  if (CfgGet (inifp, "geometry", "skipc", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 0 && val <= MAXCOLUMNS)
-	camera->m_SkipC = val;
-    }
-
-  if (CfgGet (inifp, "geometry", "skipr", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 0 && val <= MAXROWS)
-	camera->m_SkipR = val;
-    }
-
-  if (CfgGet (inifp, "geometry", "imgcols", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXTOTALCOLUMNS)
-	camera->m_ImgColumns = val;
-    }
-  else
-    camera->m_ImgColumns =
-      camera->m_Columns - camera->m_BIC - camera->m_SkipC;
-
-  if (CfgGet (inifp, "geometry", "imgrows", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXTOTALROWS)
-	camera->m_ImgRows = val;
-    }
-  else
-    camera->m_ImgRows = camera->m_Rows - camera->m_BIR - camera->m_SkipR;
-
-  if (CfgGet (inifp, "geometry", "hflush", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXHBIN)
-	camera->m_HFlush = val;
-    }
-
-  if (CfgGet (inifp, "geometry", "vflush", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= MAXVBIN)
-	camera->m_VFlush = val;
-    }
-
-  // Default to full frame
-  camera->m_NumX = camera->m_ImgColumns;
-  camera->m_NumY = camera->m_ImgRows;
-
-  /////////////////////////////////////////////////////////////////////////////////
-  // Temperature
-
-  if (CfgGet (inifp, "temp", "control", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
-	  || !strcasecmp ("1", retbuf))
+	if (CfgGet (inifp, "system", "mode", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_TempControl = true;
+		unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
+		camera->write_Mode (val);
 	}
-      else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
-	       || !strcasecmp ("0", retbuf))
+	else
+		camera->write_Mode (0);	 // default
+
+	if (CfgGet (inifp, "system", "test", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_TempControl = false;
+		unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
+		camera->write_TestBits (val);
 	}
-    }
+	else
+								 //default
+		camera->write_TestBits (0);
 
-  if (CfgGet (inifp, "temp", "cal", retbuf, sizeof (retbuf), &plen))
-    {
-      short val = strtol (retbuf, NULL, 0);
-      if (val >= 1 && val <= 255)
-	camera->m_TempCalibration = val;
-    }
-
-  if (CfgGet (inifp, "temp", "scale", retbuf, sizeof (retbuf), &plen))
-    {
-      double val = atof (retbuf);
-      if (val >= 1.0 && val <= 10.0)
-	camera->m_TempScale = val;
-    }
-
-  if (CfgGet (inifp, "temp", "target", retbuf, sizeof (retbuf), &plen))
-    {
-      double val = atof (retbuf);
-      if (val >= -60.0 && val <= 40.0)
-	camera->write_CoolerSetPoint (val);
-      else
-	camera->write_CoolerSetPoint (-10.0);
-    }
-  else
-    camera->write_CoolerSetPoint (-10.0);	//default
-
-  /////////////////////////////////////////////////////////////////////////////////
-  // CCD
-
-  if (CfgGet (inifp, "ccd", "sensor", retbuf, sizeof (retbuf), &plen))
-    {
-      if (plen > 256)
-	plen = 256;
-      memcpy (camera->m_Sensor, retbuf, plen);
-    }
-
-  if (CfgGet (inifp, "ccd", "color", retbuf, sizeof (retbuf), &plen))
-    {
-      if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
-	  || !strcasecmp ("1", retbuf))
+	if (CfgGet (inifp, "system", "test2", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_Color = true;
+		unsigned short val = strtol (retbuf, NULL, 0) & 0xF;
+		camera->write_Test2Bits (val);
 	}
-      else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
-	       || !strcasecmp ("0", retbuf))
+	else
+								 // default
+		camera->write_Test2Bits (0);
+
+								 //default
+	camera->write_FastReadout (false);
+
+	if (CfgGet
+		(inifp, "system", "shutter_speed", retbuf, sizeof (retbuf), &plen))
 	{
-	  camera->m_Color = false;
+		if (!strcasecmp ("normal", retbuf))
+		{
+			camera->m_FastShutter = false;
+			camera->m_MaxExposure = 10485.75;
+			camera->m_MinExposure = 0.01;
+		}
+		else if (!strcasecmp ("fast", retbuf))
+		{
+			camera->m_FastShutter = true;
+			camera->m_MaxExposure = 1048.575;
+			camera->m_MinExposure = 0.001;
+		}
+		else if (!strcasecmp ("dual", retbuf))
+		{
+			camera->m_FastShutter = true;
+			camera->m_MaxExposure = 10485.75;
+			camera->m_MinExposure = 0.001;
+		}
 	}
-    }
 
-  if (CfgGet (inifp, "ccd", "noise", retbuf, sizeof (retbuf), &plen))
-    {
-      camera->m_Noise = atof (retbuf);
-    }
+	if (CfgGet
+		(inifp, "system", "shutter_bits", retbuf, sizeof (retbuf), &plen))
+	{
+		unsigned short val = strtol (retbuf, NULL, 0);
+		camera->m_FastShutterBits_Mode = val & 0x0F;
+		camera->m_FastShutterBits_Test = (val & 0xF0) >> 4;
+	}
 
-  if (CfgGet (inifp, "ccd", "gain", retbuf, sizeof (retbuf), &plen))
-    {
-      camera->m_Gain = atof (retbuf);
-    }
+	if (CfgGet (inifp, "system", "maxbinx", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXHBIN)
+			camera->m_MaxBinX = val;
+	}
 
-  if (CfgGet (inifp, "ccd", "pixelxsize", retbuf, sizeof (retbuf), &plen))
-    {
-      camera->m_PixelXSize = atof (retbuf);
-    }
+	if (CfgGet (inifp, "system", "maxbiny", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXVBIN)
+			camera->m_MaxBinY = val;
+	}
 
-  if (CfgGet (inifp, "ccd", "pixelysize", retbuf, sizeof (retbuf), &plen))
-    {
-      camera->m_PixelYSize = atof (retbuf);
-    }
+	if (CfgGet
+		(inifp, "system", "guider_relays", retbuf, sizeof (retbuf), &plen))
+	{
+		if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
+			|| !strcasecmp ("1", retbuf))
+		{
+			camera->m_GuiderRelays = true;
+		}
+		else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
+			|| !strcasecmp ("0", retbuf))
+		{
+			camera->m_GuiderRelays = false;
+		}
+	}
 
-  fclose (inifp);
-  return CCD_OPEN_NOERR;
+	if (CfgGet (inifp, "system", "timeout", retbuf, sizeof (retbuf), &plen))
+	{
+		double val = atof (retbuf);
+		if (val >= 0.0 && val <= 10000.0)
+			camera->m_Timeout = val;
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// Geometry
+
+	if (CfgGet (inifp, "geometry", "bic", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXCOLUMNS)
+			camera->m_BIC = val;
+	}
+
+	if (CfgGet (inifp, "geometry", "bir", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXROWS)
+			camera->m_BIR = val;
+	}
+
+	if (CfgGet (inifp, "geometry", "skipc", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 0 && val <= MAXCOLUMNS)
+			camera->m_SkipC = val;
+	}
+
+	if (CfgGet (inifp, "geometry", "skipr", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 0 && val <= MAXROWS)
+			camera->m_SkipR = val;
+	}
+
+	if (CfgGet (inifp, "geometry", "imgcols", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXTOTALCOLUMNS)
+			camera->m_ImgColumns = val;
+	}
+	else
+		camera->m_ImgColumns =
+			camera->m_Columns - camera->m_BIC - camera->m_SkipC;
+
+	if (CfgGet (inifp, "geometry", "imgrows", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXTOTALROWS)
+			camera->m_ImgRows = val;
+	}
+	else
+		camera->m_ImgRows = camera->m_Rows - camera->m_BIR - camera->m_SkipR;
+
+	if (CfgGet (inifp, "geometry", "hflush", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXHBIN)
+			camera->m_HFlush = val;
+	}
+
+	if (CfgGet (inifp, "geometry", "vflush", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= MAXVBIN)
+			camera->m_VFlush = val;
+	}
+
+	// Default to full frame
+	camera->m_NumX = camera->m_ImgColumns;
+	camera->m_NumY = camera->m_ImgRows;
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// Temperature
+
+	if (CfgGet (inifp, "temp", "control", retbuf, sizeof (retbuf), &plen))
+	{
+		if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
+			|| !strcasecmp ("1", retbuf))
+		{
+			camera->m_TempControl = true;
+		}
+		else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
+			|| !strcasecmp ("0", retbuf))
+		{
+			camera->m_TempControl = false;
+		}
+	}
+
+	if (CfgGet (inifp, "temp", "cal", retbuf, sizeof (retbuf), &plen))
+	{
+		short val = strtol (retbuf, NULL, 0);
+		if (val >= 1 && val <= 255)
+			camera->m_TempCalibration = val;
+	}
+
+	if (CfgGet (inifp, "temp", "scale", retbuf, sizeof (retbuf), &plen))
+	{
+		double val = atof (retbuf);
+		if (val >= 1.0 && val <= 10.0)
+			camera->m_TempScale = val;
+	}
+
+	if (CfgGet (inifp, "temp", "target", retbuf, sizeof (retbuf), &plen))
+	{
+		double val = atof (retbuf);
+		if (val >= -60.0 && val <= 40.0)
+			camera->write_CoolerSetPoint (val);
+		else
+			camera->write_CoolerSetPoint (-10.0);
+	}
+	else
+								 //default
+		camera->write_CoolerSetPoint (-10.0);
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// CCD
+
+	if (CfgGet (inifp, "ccd", "sensor", retbuf, sizeof (retbuf), &plen))
+	{
+		if (plen > 256)
+			plen = 256;
+		memcpy (camera->m_Sensor, retbuf, plen);
+	}
+
+	if (CfgGet (inifp, "ccd", "color", retbuf, sizeof (retbuf), &plen))
+	{
+		if (!strcasecmp ("ON", retbuf) || !strcasecmp ("TRUE", retbuf)
+			|| !strcasecmp ("1", retbuf))
+		{
+			camera->m_Color = true;
+		}
+		else if (!strcasecmp ("OFF", retbuf) || !strcasecmp ("FALSE", retbuf)
+			|| !strcasecmp ("0", retbuf))
+		{
+			camera->m_Color = false;
+		}
+	}
+
+	if (CfgGet (inifp, "ccd", "noise", retbuf, sizeof (retbuf), &plen))
+	{
+		camera->m_Noise = atof (retbuf);
+	}
+
+	if (CfgGet (inifp, "ccd", "gain", retbuf, sizeof (retbuf), &plen))
+	{
+		camera->m_Gain = atof (retbuf);
+	}
+
+	if (CfgGet (inifp, "ccd", "pixelxsize", retbuf, sizeof (retbuf), &plen))
+	{
+		camera->m_PixelXSize = atof (retbuf);
+	}
+
+	if (CfgGet (inifp, "ccd", "pixelysize", retbuf, sizeof (retbuf), &plen))
+	{
+		camera->m_PixelYSize = atof (retbuf);
+	}
+
+	fclose (inifp);
+	return CCD_OPEN_NOERR;
 }
 
 
 Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
-  addOption ('n', "device_id", 1,
-	     "device ID (ussualy 0, which is also default)");
-  addOption ('C', "config_name", 1,
-	     "device ini config file (default to /etc/rts2/apogee.ini");
-  device_id = 0;
-  cfgname = "/etc/rts2/apogee.ini";
 
-  camera = NULL;
+	createTempRegulation ();
+	createTempSet ();
+	createTempCCD ();
 
-  fan = 1;
-  canDF = 1;
+	createExpType ();
+
+	addOption ('n', "device_id", 1,
+		"device ID (ussualy 0, which is also default)");
+	addOption ('a', "config_name", 1,
+		"device ini config file (default to /etc/rts2/apogee.ini");
+	device_id = 0;
+	cfgname = "/etc/rts2/apogee.ini";
+
+	camera = NULL;
 }
+
 
 Rts2DevCameraApogee::~Rts2DevCameraApogee (void)
 {
-  delete camera;
+	delete camera;
 }
+
 
 int
 Rts2DevCameraApogee::processOption (int in_opt)
 {
-  switch (in_opt)
-    {
-    case 'n':
-      device_id = atoi (optarg);
-      break;
-    case 'C':
-      cfgname = optarg;
-      break;
-    default:
-      return Rts2DevCamera::processOption (in_opt);
-    }
-  return 0;
+	switch (in_opt)
+	{
+		case 'n':
+			device_id = atoi (optarg);
+			break;
+		case 'a':
+			cfgname = optarg;
+			break;
+		default:
+			return Rts2DevCamera::processOption (in_opt);
+	}
+	return 0;
 }
+
 
 int
 Rts2DevCameraApogee::init ()
 {
-  int ret;
-  ret = Rts2DevCamera::init ();
-  if (ret)
-    return ret;
+	int ret;
+	ret = Rts2DevCamera::init ();
+	if (ret)
+		return ret;
 
-  Camera_Status status;
+	Camera_Status status;
 
-  ret = config_load (-1, -1);
-  if (ret != CCD_OPEN_NOERR)
-    return -1;
+	ret = config_load (-1, -1);
+	if (ret != CCD_OPEN_NOERR)
+		return -1;
 
-  camera->Flush ();
+	camera->Flush ();
 
-  status = camera->read_Status ();
+	status = camera->read_Status ();
 
-  if (status < 0)
-    return -1;
+	if (status < 0)
+		return -1;
 
-  chipNum = 1;
-  chips[0] = new CameraApogeeChip (this, camera);
+	strcpy (ccdType, "Apogee_");
+	strncat (ccdType, camera->m_Sensor, 10);
+	strcpy (serialNumber, "007");
 
-  return Rts2DevCamera::initChips ();
+	return initChips ();
 }
+
 
 int
 Rts2DevCameraApogee::ready ()
 {
-  int ret;
-  ret = camera->read_Present ();
-  if (!ret)
-    return -1;
-  return 0;
+	int ret;
+	ret = camera->read_Present ();
+	if (!ret)
+		return -1;
+	return 0;
 }
 
-int
-Rts2DevCameraApogee::baseInfo ()
-{
-  strcpy (ccdType, "Apogee_");
-  strncat (ccdType, camera->m_Sensor, 10);
-  strcpy (serialNumber, "007");
-  return 0;
-}
 
 int
 Rts2DevCameraApogee::info ()
 {
 
-  tempRegulation = camera->read_CoolerMode ();
-  tempSet = camera->read_CoolerSetPoint ();
-  tempCCD = camera->read_Temperature ();
-  tempAir = nan ("f");
-  coolingPower = 5000;
-  return 0;
+	tempRegulation->setValueInteger (camera->read_CoolerMode ());
+	tempSet->setValueDouble (camera->read_CoolerSetPoint ());
+	tempCCD->setValueDouble (camera->read_Temperature ());
+	return Rts2DevCamera::info ();
 }
+
 
 int
 Rts2DevCameraApogee::camChipInfo (int chip)
 {
-  return 0;
+	return 0;
 }
+
 
 int
 Rts2DevCameraApogee::camCoolMax ()
 {
-  return camCoolTemp (-30);
+	return camCoolHold ();
 }
+
 
 int
 Rts2DevCameraApogee::camCoolHold ()
 {
-  return camCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
+	return camCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
 }
+
 
 int
 Rts2DevCameraApogee::camCoolShutdown ()
 {
-  Camera_CoolerMode cMode;
-  cMode = camera->read_CoolerMode ();
-  // first shutdown, if we are in shutdown, then off
-  if (cMode == Camera_CoolerMode_Shutdown)
-    camera->write_CoolerMode (Camera_CoolerMode_Off);
-  else
-    camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
-  return 0;
+	Camera_CoolerMode cMode;
+	cMode = camera->read_CoolerMode ();
+	camera->write_CoolerSetPoint (+20);
+	// first shutdown, if we are in shutdown, then off
+	if (cMode == Camera_CoolerMode_Shutdown)
+		camera->write_CoolerMode (Camera_CoolerMode_Off);
+	else
+		camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
+	return 0;
 }
+
 
 int
 Rts2DevCameraApogee::camCoolTemp (float new_temp)
 {
-  Camera_CoolerMode cMode;
-  cMode = camera->read_CoolerMode ();
-  // we must traverse from shutdown to off mode before we can go to on
-  if (cMode == Camera_CoolerMode_Shutdown)
-    camera->write_CoolerMode (Camera_CoolerMode_Off);
-  camera->write_CoolerSetPoint (new_temp);
-  camera->write_CoolerMode (Camera_CoolerMode_On);
-  return 0;
+	Camera_CoolerMode cMode;
+	cMode = camera->read_CoolerMode ();
+	// we must traverse from shutdown to off mode before we can go to on
+	if (cMode == Camera_CoolerMode_Shutdown)
+		camera->write_CoolerMode (Camera_CoolerMode_Off);
+	camera->write_CoolerSetPoint (new_temp);
+	camera->write_CoolerMode (Camera_CoolerMode_On);
+	return 0;
 }
 
-Rts2DevCameraApogee *device;
-
-void
-killSignal (int sig)
-{
-  if (device)
-    delete device;
-  exit (0);
-}
 
 int
 main (int argc, char **argv)
 {
-  int ret;
-  device = new Rts2DevCameraApogee (argc, argv);
-
-  signal (SIGINT, killSignal);
-  signal (SIGTERM, killSignal);
-
-  ret = device->init ();
-  if (ret)
-    {
-      syslog (LOG_ERR, "Cannot initialize apogee camera - exiting!");
-      exit (1);
-    }
-  device->run ();
-  delete device;
+	Rts2DevCameraApogee device = Rts2DevCameraApogee (argc, argv);
+	return device.run ();
 }

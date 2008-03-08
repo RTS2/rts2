@@ -13,24 +13,23 @@
  */
 class Rts2GrbForwardConnection:public Rts2ConnNoSend
 {
-private:
-  int forwardPort;
-public:
-    Rts2GrbForwardConnection (Rts2Block * in_master, int in_forwardPort);
-  virtual int init ();
-  // span new GRBFw connection
-  virtual int receive (fd_set * set);
+	private:
+		int forwardPort;
+	public:
+		Rts2GrbForwardConnection (Rts2Block * in_master, int in_forwardPort);
+		virtual int init ();
+		// span new GRBFw connection
+		virtual int receive (fd_set * set);
 };
 
 class Rts2GrbForwardClientConn:public Rts2ConnNoSend
 {
-private:
-  void forwardPacket (long *nbuf);
-public:
-    Rts2GrbForwardClientConn (int in_sock, Rts2Block * in_master);
-  virtual void postEvent (Rts2Event * event);
+	private:
+		void forwardPacket (long *nbuf);
+	public:
+		Rts2GrbForwardClientConn (int in_sock, Rts2Block * in_master);
+		virtual void postEvent (Rts2Event * event);
 
-  virtual int receive (fd_set * set);
+		virtual int receive (fd_set * set);
 };
-
-#endif /* !__RTS2_GRBFW__ */
+#endif							 /* !__RTS2_GRBFW__ */

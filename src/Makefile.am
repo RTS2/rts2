@@ -1,7 +1,6 @@
 
 SUBDIRS = \
 	utils	\
-	camd	\
 	phot	\
 	dome	\
 	focusd  \
@@ -9,9 +8,9 @@ SUBDIRS = \
 	filterd \
 	wcs \
 	utilsdb \
-	teld \
 	writers \
-	monitor \
+	camd	\
+	teld \
 	focusc \
 	serverd \
 	plan \
@@ -19,4 +18,10 @@ SUBDIRS = \
 	pgsql \
 	bckimages \
 	sql \
-	db
+	db \
+	monitor \
+	soap \
+	sensord \
+	indi \
+	logger \
+	xmlrpc

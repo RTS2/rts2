@@ -8,28 +8,27 @@
 
 class Rts2Prop
 {
-private:
-  int prop_id;
-  int tar_id;
-  int user_id;
+	private:
+		int prop_id;
+		int tar_id;
+		int user_id;
 
-  Target *target;
-  Rts2PlanSet *planSet;
-  void init ();
-public:
-    Rts2Prop ();
-    Rts2Prop (int in_prop_id);
-    virtual ~ Rts2Prop (void);
+		Target *target;
+		Rts2PlanSet *planSet;
+		void init ();
+	public:
+		Rts2Prop ();
+		Rts2Prop (int in_prop_id);
+		virtual ~ Rts2Prop (void);
 
-  int load ();
-  int save ();
+		int load ();
+		int save ();
 
-  Target *getTarget ();
-  Rts2PlanSet *getPlanSet ();
+		Target *getTarget ();
+		Rts2PlanSet *getPlanSet ();
 
-  friend std::ostream & operator << (std::ostream & _os, Rts2Prop prop);
+		friend std::ostream & operator << (std::ostream & _os, Rts2Prop prop);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Prop prop);
-
-#endif /* !__RTS2_PROP__ */
+#endif							 /* !__RTS2_PROP__ */

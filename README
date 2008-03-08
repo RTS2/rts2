@@ -1,93 +1,25 @@
 $Id$
 
-Tento soubor je tady pro to, aby popsal zakladni architektru systemu.
+RTS2 - Remote Telescope System, 2nd Version
+===========================================
 
-Pro styl prace konzultujte HACKING, pro instalaci INSTAL.
+This is an attempt to make opensource software for robotics telescope
+observatory.
 
-rts2 - nova verze dalekohledu
+What it isn't:
+ - box software. It's still work in progress, some things works, some not
+ - interactive planetarium
+ - human directed hunter of nice objects with robotics telescope - look for
+   INDI, if you are looking for that, our goal is to make all observations
+   without observer
 
-Zalozena na mrakach pythonskych skriptu, rts, slouzicich k ovladani
-LX200 a sbig kamer na Ondrejove.
+For futher details, please see:
 
-Proc nova verze?
+  http://rts-2.sf.net
 
-- vice sitova
-- psana v c cecku
-- slozitejsi
-- s vetsimi moznostmi
 
-Zaklad - navrh.
 
-deamonek = v podstate driver na dane zarizeni. Maly deamon, ktery sedi
-a umi ovladat dane zarizeni. 
+For comments, please email to pkubanek (at) sf [dot] net or petr (at) kubanek
+[dot] net.
 
-rozhrani=textove. Prikaz vyvolava odpoved, ktera konci retezcem
-
-+<cislo> popis 
-
-v pripade uspesneho vykonani, jinak
-
--<cislo> popis 
-
-v pripade chyby (zaklad = pop3 protokol).
-
-Nad deamonky bdi deamon - centralni pristupovy bod k tomu vsemu. Ten
-ovlada zamykani (prideluje jednotliva zarizeni jednotlivim pripojenym
-uzivatelum), uzivatele vidi jenom jeho, na obycejne zarizeni nemaji
-pristup -> jednotne misto pro autentifikaci, ostatni zarizeni muzeme
-vhodne zafirewallovat.
-
-Zatim porad badame, rozhranni asi dost podobne ovladani IRAFu, aby
-jste meli predstavu.
-
-LOGOVANI - DULEZITE!!!!!!!!!!!!!!!
-
-Uvedomte si, ze piseme v podstate server.
-
-Logujte, logujte, logujte..jinak ty chyby nenajdeme. Klidne do
-LOG_DEBUG, pak ho vyndame. 
-
-Pri logovani piste prvni pismeno male, nejedna se vetsinou o vetu. Neukoncujte
-logovaci prikaz teckou.
-
-Logujeme pomoci syslogu. Crash course (info libc, Syslog):
-
- #include <syslog.h>
-   
-  // setlogmask (LOG_UPTO (LOG_NOTICE)); tady to zatim nepotrebujeme
-
-  openlog ("exampleprog", LOG_CONS | LOG_PID | LOG_NDELAY,
-LOG_LOCAL1); // staci jednou, logujmez zatim do LOG_LOCAL1
-     
-  syslog (LOG_NOTICE, "program started by User %d", getuid ());
-  syslog (LOG_DEBUG, "will write:'%s'", "test");
-        // retezce obalujeme '', aby jsme se v tom pak vyznali
-  syslog (LOG_INFO, "a tree falls in a forest");
-     
-  closelog (); //neni potreba, vola se sam pri ukonceni.
-
-Nastaveni:
-/etc/syslog.conf
-
-Radka:
-local1.*			/var/log/rts2
-
-A vse z local1 vam pujde do /var/log/rtsd.
-
-/etc/init.d/syslog restart pro nacteni novych hodnot.
-tail -f /var/log/rtsd (nejlepe jako root) pro sledovani, co to loguje.
-  
-Viz man syslog.
-
-Logrotate (aby jste si logy nemuseli mazat):
-
-Na RH linuxu staci do adresare /etc/logrotate.d pridat soubor s nasledujicim
-obsahem (jmenujici se treba rts2):
-
-/var/log/rts2 {
-        rotate 4
-        compress
-        errors rtadmin@lascaux.asu.cas.cz
-}
-
-Petr
+Petr Kubanek

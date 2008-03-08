@@ -1129,8 +1129,7 @@ pr_alexis (lbuf, s)		/* print the contents of the ALEXIS packet */
   int i;			/* Loop var */
   static char tele[7][16] =
     { "n/a", "1A, 93eV", "1B, 70eV", "2A, 93eV", "2B, 66eV", "3A, 70eV",
-    "3B, 66eV"
-  };
+"3B, 66eV" };
 
   fprintf (s, "PKT INFO:    Received: LT %s", ctime ((time_t *) & tloc));
   fprintf (s, "   Type= %d     SN  = %d\n", lbuf[PKT_TYPE], lbuf[PKT_SERNUM]);

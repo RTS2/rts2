@@ -269,7 +269,7 @@ isinwcs2 (PG_FUNCTION_ARGS)
  * Calculate word coordinates of given pixel.
  */
 void
-pix2wcs (struct kwcs2 *arg, double x, double y, double *ra, double *dec)
+RTS2pix2wcs (struct kwcs2 *arg, double x, double y, double *ra, double *dec)
 {
   double ra0, dec0;
   double dx, dy, tx;
@@ -326,8 +326,8 @@ imgrange2 (PG_FUNCTION_ARGS)
 
   buffer = (char *) palloc (200);
 
-  pix2wcs (arg, 0, 0, &ra1, &dec1);
-  pix2wcs (arg, arg->naxis1, arg->naxis2, &ra2, &dec2);
+  RTS2pix2wcs (arg, 0, 0, &ra1, &dec1);
+  RTS2pix2wcs (arg, arg->naxis1, arg->naxis2, &ra2, &dec2);
 
   l =
     snprintf (buffer, 200, "[%0.3f-%0.3f] [%0.3f-%0.3f]", ra1, dec1, ra2,

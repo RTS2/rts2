@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<definitions xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://www.imcce.fr/webservices/skybot" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" targetNamespace="http://www.imcce.fr/webservices/skybot">
+<types>
+<xsd:schema targetNamespace="http://www.imcce.fr/webservices/skybot"
+>
+ <xsd:import namespace="http://schemas.xmlsoap.org/soap/encoding/" />
+ <xsd:import namespace="http://schemas.xmlsoap.org/wsdl/" />
+ <xsd:complexType name="skybotRequest">
+  <xsd:all>
+   <xsd:element name="epoch" type="xsd:double"/>
+   <xsd:element name="alpha" type="xsd:double"/>
+   <xsd:element name="delta" type="xsd:double"/>
+   <xsd:element name="radius" type="xsd:string"/>
+   <xsd:element name="mime" type="xsd:string"/>
+   <xsd:element name="output" type="xsd:string"/>
+   <xsd:element name="observer" type="xsd:string"/>
+   <xsd:element name="filter" type="xsd:double"/>
+  </xsd:all>
+ </xsd:complexType>
+ <xsd:complexType name="skybotresolverRequest">
+  <xsd:all>
+   <xsd:element name="epoch" type="xsd:double"/>
+   <xsd:element name="name" type="xsd:string"/>
+   <xsd:element name="mime" type="xsd:string"/>
+   <xsd:element name="output" type="xsd:string"/>
+   <xsd:element name="observer" type="xsd:string"/>
+  </xsd:all>
+ </xsd:complexType>
+</xsd:schema>
+</types>
+<message name="skybotRequest">
+  <part name="inputArray" type="tns:skybotRequest" /></message>
+<message name="skybotResponse">
+  <part name="result" type="xsd:string" /></message>
+<message name="skybotresolverRequest">
+  <part name="inputArray" type="tns:skybotresolverRequest" /></message>
+<message name="skybotresolverResponse">
+  <part name="result" type="xsd:string" /></message>
+<message name="skybotstatusRequest">
+  <part name="mime" type="xsd:string" /></message>
+<message name="skybotstatusResponse">
+  <part name="result" type="xsd:string" /></message>
+<portType name="SkyBoTPortType">
+  <operation name="skybot">
+    <documentation>Provide the J2000 astrometric geocentric or topocentric coordinates of solar system objects located at a given epoch in a field of view (&lt;= 20 deg.) centered at given coordinates.</documentation>
+    <input message="tns:skybotRequest"/>
+    <output message="tns:skybotResponse"/>
+  </operation>
+  <operation name="skybotresolver">
+    <documentation>Provide the coordinates of a solar system object from its name.</documentation>
+    <input message="tns:skybotresolverRequest"/>
+    <output message="tns:skybotresolverResponse"/>
+  </operation>
+  <operation name="skybotstatus">
+    <documentation>Status of the SkyBoT database.</documentation>
+    <input message="tns:skybotstatusRequest"/>
+    <output message="tns:skybotstatusResponse"/>
+  </operation>
+</portType>
+<binding name="SkyBoTBinding" type="tns:SkyBoTPortType">
+  <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="skybot">
+    <soap:operation soapAction="http://www.imcce.fr/webservices/skybot#skybot" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="skybotresolver">
+    <soap:operation soapAction="http://www.imcce.fr/webservices/skybot#skybotresolver" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+  <operation name="skybotstatus">
+    <soap:operation soapAction="http://www.imcce.fr/webservices/skybot#skybotstatus" style="rpc"/>
+    <input><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></input>
+    <output><soap:body use="encoded" namespace="http://www.imcce.fr/webservices/skybot" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/></output>
+  </operation>
+</binding>
+<service name="SkyBoT">
+  <port name="SkyBoTPort" binding="tns:SkyBoTBinding">
+    <soap:address location="http://www.imcce.fr/webservices/skybot/skybot.php"/>
+  </port>
+</service>
+</definitions>

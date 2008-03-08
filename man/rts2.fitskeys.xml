@@ -1,0 +1,528 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-23</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.fitskeys">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>List of FITS keys written by RTS2 in CCD FITS files.</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      RTS2 writes values, which were deemed usefull to record, to FITS
+      file. As RTS2 can support various instruments, each with
+      different values, the FITS key names cannot be specified with
+      FITS template file.
+
+      Instead, various RTS2 devices can define keys which will be
+      written to a RTS2 image. 
+    </para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>OBSERVATION SPACE AND TIME COORDINATES KEYS</title>
+    
+    <para>
+      RTS2 writes various keys, which describe time and location where the image was taken.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>CTIME</option>
+        </term>
+        <listitem>
+          <para>
+	    Computer time, represening number of seconds from 1. Jan 1970.
+	    Please be aware, that computer time ingores leap seconds. It should
+	    not be used for precise timing analysis.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>USEC</option>
+        </term>
+        <listitem>
+          <para>
+	    Nanoseconds (1^10-6 s) of the exposure. Use with CTIME keyword to
+	    get precise time of the start of exposure. However pay attention to
+	    fact, that it is not precise start time, it is time when executor
+	    get message that camera start to take exposure. 
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>JD</option>
+        </term>
+        <listitem>
+          <para>
+	    Julian data of exposure start.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>DATE-OBS</option>
+        </term>
+        <listitem>
+          <para>
+	    Date of observation in human-readable form. Same as CTIME.USEC or JD.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>EXPOSURE</option>
+        </term>
+        <listitem>
+          <para>
+	    Exposure length in seconds and fractions of the second.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>LONG</option>
+	  <option>LAT</option>
+        </term>
+        <listitem>
+          <para>
+	    Longitude and latitude of the observing site. Longitude is couted
+	    positively to east (most of Europe have positive longitude, America
+	    have negative), latitude is classic positive for northern
+	    hemisphere, counted from the equator.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>ALTI</option>
+        </term>
+        <listitem>
+          <para>
+	    Altitude of the observing site in meters above see level.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>IMAGE MANAGEMENT KEYS</title>
+
+    <para>
+      Various keys for image management are recored in FITS headers. Those are
+      either related to the observation, or to image quality.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>EPOCH_ID</option>
+        </term>
+	<listitem>
+	  <para>
+	    Epoch of the observation. RTS2 divides images to "epochs", which
+	    are time period defined in epoch table.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>OBSID</option>
+        </term>
+        <listitem>
+          <para>
+	    Observation ID. This links to observations table, where various
+	    details about observation can be found.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>IMGID</option>
+        </term>
+        <listitem>
+          <para>
+	    Image ID. OBSID and IMGID is unique key. IMGID is 1 for first image
+	    in the observation, 2 for second etc. It does not depends on device
+	    - so if the setup has two CCDs, images will be chaotically numbered
+	    between those, and you will not find two images with same OBSID and
+	    IMGID combination.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>PROC</option>
+        </term>
+        <listitem>
+          <para>
+	    Processing bit-mask. Here is the description:
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>SCRIPREP</option>
+        </term>
+        <listitem>
+          <para>
+	    Integer value, representing number of loop main script takes. It is
+	    0 at beginign, increasign every time script goes to the end of
+	    observation.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>SCRIPT</option>
+        </term>
+        <listitem>
+          <para>
+	    Script used during observation. That is RTS2 script which device
+	    was executing during observation.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>AVERAGE</option>
+        </term>
+        <listitem>
+          <para>
+	    Average value (in ADUs) of the image.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>STDEV</option>
+        </term>
+        <listitem>
+          <para>
+	    Standard deviation of the image.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>BGSTDEV</option>
+        </term>
+        <listitem>
+          <para>
+	    Standard deviation of the image background. Pixels with value
+	    higher or lower then 1/10th of the average are not used to compute
+	    this value.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>DATE</option>
+        </term>
+        <listitem>
+          <para>
+	    Date when the image was written, in standard FITS date string.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>COORDINATES KEYS</title>
+
+    <para>
+      Various keys holding all possible coordinates and coordinate corection,
+      which play role inside RTS2 system.
+    </para>
+
+    <para>
+      All values are always recorded as float value in degrees. So right
+      ascention is inside 0 to 360 range, declination is in -90 to 90 range.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>RASC</option>
+	  <option>DECL</option>
+	</term>
+	<listitem>
+          <para>
+	    Right Ascention and DECLination of the image. This is best
+	    approximation of the image center location, which included all
+	    changes performed by mount, corrections send from feedback
+	    astronomy routine and other small changes performed by mount.
+	  </para>
+	  <para>
+	    With good enough mount, those values are well suitable for blind
+	    mosaicing, calculating offsets only from those coordinates.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>MNT_RA</option>
+	  <option>MNT_DEC</option>
+	</term>
+	<listitem>
+	  <para>
+	    RA and DEC recorded from the mount. Those are mount raw values, the
+	    value which mount thinks it is located on. If model for the mount
+	    exists, those values are aproximalty target values corrected by
+	    model, but with additional noise introduced by back readout frrom
+	    mount sensors.
+          </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>LAST_RA</option>
+	  <option>LAST_DECL</option>
+	</term>
+	<listitem>
+          <para>
+	    If present, those are coordinates of last target before we slew to
+	    current one. This can be used only to calculate mount slew speed,
+	    nothing else.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>TAR_RA</option>
+	  <option>TAR_DEC</option>
+	</term>
+	<listitem>
+          <para>
+	    Target RA and DEC. This value represent coordinates which were send
+	    to the mount. For coordinates readed from the mount see MNT_RA and
+	    MNT_DEC, for best image coordinate estimate see RASC and DECL.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>ALT, AZ</option>
+	</term>
+	<listitem>
+	  <para>
+	    Mount altitude and azimuth. This value is either calculated from
+	    MNT_RA, MNT_DEC and local time, or raded from mount, if mount
+	    support ALT-AZ coordinates.
+          </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>MNT_AX0</option>
+	  <option>MNT_AX1</option>
+	</term>
+	<listitem>
+	  <para>
+	    Axis sensor values. This number is arbirtary, and depends on mount driver.
+          </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>RA_CORR</option>
+	  <option>DEC_CORR</option>
+	</term>
+	<listitem>
+	  <para>
+	    Corection in RA and DEC. This is correction computed by RTS2 model,
+	    if RTS2 model is enabled. If there was image taken at same location
+	      and it gets astrometry, this number represents offset based on
+	      astrometry.
+          </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+          <option>MNT_FLIP</option>
+	</term>
+	<listitem>
+	  <para>
+	    Mount flip. It is most important on standard German equatorial
+	    mounts, where rotation angle of the picture depends on which side
+	    of meridian it was acquired.
+          </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>TARGET KEYS</title>
+
+    <para>
+      Following keys are ussually written to target. They represent various target parameters.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>OBJECT</option>
+        </term>
+        <listitem>
+          <para>
+	    Target name. It is taken from target database.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>TARGET</option>
+        </term>
+        <listitem>
+          <para>
+	    Target ID of the observed target. This ID links to target table,
+	    where you can find various target-related informations.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>TARSEL</option>
+        </term>
+        <listitem>
+          <para>
+	    Target ID of selected target (target proposed by executor). In
+	    chained target (callibrations,..) it might be different from target
+	    id of the observed target.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>TARTYPE</option>
+        </term>
+        <listitem>
+          <para>
+	    Type of the target. Possible target types are listed in types table.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>MOUNT KEYS</title>
+
+    <para>
+      Various mount parameters are recorede. This manual page describes only
+      generic values. For mount specific values, please see manual page of the
+      mount driver.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+          <option>MNT_TYPE</option>
+	</term>
+	<listitem>
+	  <para>
+  	    String describing type of the mount.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1>
+    <title>CCD KEYS</title>
+    
+    <para>
+      Various CCD characteristics are recorded. This manul describe only
+      generic values, for camera specific one see manul pages for this camera
+      driver.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>CCD_NAME</option>
+        </term>
+        <listitem>
+          <para>
+	    RTS2 name of the CDD which acquired the image.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>CCD_TYPE</option>
+        </term>
+        <listitem>
+          <para>
+	    Type of the CCD, some string value more or less precisely representing it.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

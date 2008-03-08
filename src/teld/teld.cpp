@@ -1,4 +1,22 @@
-#include <mcheck.h>
+/* 
+ * Telescope control daemon.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,1245 +36,1036 @@
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
-  char *states_names[1] = { "telescope" };
-  setStateNames (1, states_names);
-  telRa = nan ("f");
-  telDec = nan ("f");
-  telSiderealTime = nan ("f");
-  telLocalTime = nan ("f");
-  telAxis[0] = telAxis[1] = nan ("f");
-  telLongtitude = nan ("f");
-  telLatitude = nan ("f");
-  telAltitude = nan ("f");
-  move_fixed = 0;
+	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
 
-  move_connection = NULL;
-  moveInfoCount = 0;
-  moveInfoMax = 100;
-  moveMark = 0;
-  numCorr = 0;
-  locCorNum = -1;
-  locCorRa = 0;
-  locCorDec = 0;
+	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true);
+	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true);
+	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
 
-  raCorr = nan ("f");
-  decCorr = nan ("f");
-  posErr = nan ("f");
+	// object
+	createValue (objRaDec, "OBJ", "object position (J2000)", true);
+	// users offset
+	createValue (offsetRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
+	offsetRaDec->setValueRaDec (0, 0);
 
-  modelFile = NULL;
-  model = NULL;
+	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
-  modelFile0 = NULL;
-  model0 = NULL;
+	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES,
+		0, true);
+	corrRaDec->setValueRaDec (0, 0);
 
-  addOption ('n', "max_corr_num", 1,
-	     "maximal number of corections aplied during night (equal to 1; -1 if unlimited)");
-  addOption ('m', "model_file", 1,
-	     "name of file holding RTS2-calculated model parameters (for flip = 1, or for both when o is not specified)");
-  addOption ('o', "model_file_flip 0", 1,
-	     "name of file holding RTS2-calculated model parameters for flip = 0");
+	createValue (waitingCorrRaDec, "wcorr", "corrections which waits for being applied",
+		false, RTS2_DT_DEGREES, 0, true);
+	waitingCorrRaDec->setValueRaDec (0, 0);
 
-  maxCorrNum = 1;
+	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction",
+		false, 0, 0, true);
 
-  knowPosition = 0;
+	// position error
+	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
 
-  nextReset = RESET_RESTART;
+	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
+	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
-  lastTar.ra = -1000;
-  lastTar.dec = -1000;
+	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
+	moveNum->setValueInteger (0);
 
-  for (int i = 0; i < 4; i++)
-    {
-      timerclear (dir_timeouts + i);
-    }
-  telGuidingSpeed = nan ("f");
+	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true);
+	corrImgId->setValueInteger (0);
 
-  // default is to don't apply any corrections
-  corrections = 0x00;
+	createValue (telAlt, "ALT", "mount altitude", true, RTS2_DT_DEC);
+	createValue (telAz, "AZ", "mount azimuth", true, RTS2_DT_DEGREES);
+
+	defaultRotang = 0;
+	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG);
+
+	move_connection = NULL;
+
+	createValue (smallCorrection, "small_correction", "correction bellow that value will be considered as small",
+		false, RTS2_DT_DEG_DIST);
+	smallCorrection->setValueDouble (0);
+
+	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST);
+	modelLimit->setValueDouble (5.0);
+
+	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST);
+	telFov->setValueDouble (180.0);
+
+	modelFile = NULL;
+	model = NULL;
+
+	standbyPark = false;
+
+	addOption ('m', NULL, 1,
+		"name of file holding model parameters, calculated by T-Point");
+	addOption ('l', NULL, 1,
+		"separation limit (corrections above that limit will be ignored)");
+	addOption ('g', NULL, 1,
+		"minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
+
+	addOption ('s', NULL, 0, "park when switched to standby");
+
+	addOption ('r', NULL, 1, "telescope rotang");
+
+	// default is to aply model corrections
+	createValue (correctionsMask, "RTS_COR", "RTS2 corrections bitmask", true);
+	correctionsMask->setValueInteger (COR_MODEL);
+
+	// send telescope position every 60 seconds
+	setIdleInfoInterval (60);
+
+	moveInfoCount = 0;
+	moveInfoMax = 100;
 }
+
 
 Rts2DevTelescope::~Rts2DevTelescope (void)
 {
-  delete model;
-  delete model0;
+	delete model;
 }
 
-int
-Rts2DevTelescope::processOption (int in_opt)
-{
-  switch (in_opt)
-    {
-    case 'n':
-      maxCorrNum = atoi (optarg);
-      break;
-    case 'm':
-      modelFile = optarg;
-      break;
-    case 'o':
-      modelFile0 = optarg;
-      break;
-    default:
-      return Rts2Device::processOption (in_opt);
-    }
-  return 0;
-}
-
-int
-Rts2DevTelescope::setTarget (double tar_ra, double tar_dec)
-{
-  // either we know position, and we move to exact position which we know the center is (from correction..)
-  if (knowPosition)
-    {
-      // should replace that with distance check..
-      if (lastRa == tar_ra && lastDec == tar_dec)
-	return 0;
-    }
-  // or we don't know our position yet, but we issue move to same position..
-  else
-    {
-      if (lastTar.ra == tar_ra && lastTar.dec == tar_dec)
-	return 0;
-    }
-  lastTar.ra = tar_ra;
-  lastTar.dec = tar_dec;
-  return 1;
-}
-
-void
-Rts2DevTelescope::getTargetCorrected (struct ln_equ_posn *out_tar, double JD)
-{
-  getTarget (out_tar);
-  applyCorrections (out_tar, JD);
-}
-
-double
-Rts2DevTelescope::getMoveTargetSep ()
-{
-  struct ln_equ_posn curr;
-  int ret;
-  ret = info ();
-  if (ret)
-    return 0;
-  if (knowPosition)
-    {
-      curr.ra = lastRa;
-      curr.dec = lastDec;
-    }
-  else
-    {
-      curr.ra = telRa;
-      curr.dec = telDec;
-    }
-  return ln_get_angular_separation (&curr, &lastTar);
-}
-
-void
-Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz)
-{
-  getTargetAltAz (hrz, ln_get_julian_from_sys ());
-}
-
-void
-Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
-{
-  struct ln_lnlat_posn observer;
-  observer.lng = telLongtitude;
-  observer.lat = telLatitude;
-  ln_get_hrz_from_equ (&lastTar, &observer, jd, hrz);
-}
-
-double
-Rts2DevTelescope::getLocSidTime ()
-{
-  return getLocSidTime (ln_get_julian_from_sys ());
-}
 
 double
 Rts2DevTelescope::getLocSidTime (double JD)
 {
-  double ret;
-  ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongtitude;
-  return ln_range_degrees (ret) / 15.0;
+	double ret;
+	ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongitude->getValueDouble ();
+	return ln_range_degrees (ret) / 15.0;
 }
+
+
+int
+Rts2DevTelescope::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'm':
+			modelFile = optarg;
+			break;
+		case 'l':
+			modelLimit->setValueDouble (atof (optarg));
+			break;
+		case 'g':
+			telFov->setValueDouble (atof (optarg));
+			break;
+		case 's':
+			standbyPark = true;
+			break;
+		case 'r':
+			defaultRotang = atof (optarg);
+			rotang->setValueDouble (defaultRotang);
+			break;
+		default:
+			return Rts2Device::processOption (in_opt);
+	}
+	return 0;
+}
+
+
+void
+Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz)
+{
+	getTargetAltAz (hrz, ln_get_julian_from_sys ());
+}
+
+
+void
+Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
+{
+	struct ln_equ_posn tar;
+	getTarget (&tar);
+	struct ln_lnlat_posn observer;
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
+	ln_get_hrz_from_equ (&tar, &observer, jd, hrz);
+}
+
 
 double
 Rts2DevTelescope::getLstDeg (double JD)
 {
-  return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
-			   telLongtitude);
+	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
+		telLongitude->getValueDouble ());
 }
+
+
+int
+Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == modelLimit
+		|| old_value == telFov
+		|| old_value == rotang)
+	{
+		return 0;
+	}
+	if (old_value == objRaDec
+		|| old_value == offsetRaDec
+		|| old_value == corrRaDec
+		|| old_value == waitingCorrRaDec)
+	{
+		return 0;
+	}
+	return Rts2Device::setValue (old_value, new_value);
+}
+
+
+void
+Rts2DevTelescope::valueChanged (Rts2Value * changed_value)
+{
+	if (changed_value == objRaDec
+		|| changed_value == offsetRaDec
+		|| changed_value == corrRaDec)
+	{
+		startResyncMove (NULL, false);
+	}
+	Rts2Device::valueChanged (changed_value);
+}
+
 
 void
 Rts2DevTelescope::applyAberation (struct ln_equ_posn *pos, double JD)
 {
-  ln_get_equ_aber (pos, JD, pos);
+	ln_get_equ_aber (pos, JD, pos);
 }
+
 
 void
 Rts2DevTelescope::applyPrecession (struct ln_equ_posn *pos, double JD)
 {
-  ln_get_equ_prec (pos, JD, pos);
+	ln_get_equ_prec (pos, JD, pos);
 }
+
 
 void
 Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 {
-  struct ln_hrz_posn hrz;
-  struct ln_lnlat_posn obs;
-  double ref;
+	struct ln_hrz_posn hrz;
+	struct ln_lnlat_posn obs;
+	double ref;
 
-  obs.lng = telLongtitude;
-  obs.lat = telLatitude;
+	obs.lng = telLongitude->getValueDouble ();
+	obs.lat = telLatitude->getValueDouble ();
 
-  ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-  ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
-  hrz.alt += ref;
-  ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
+	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
+	ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
+	hrz.alt += ref;
+	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
+
 
 void
-Rts2DevTelescope::applyModel (struct ln_equ_posn *pos,
-			      struct ln_equ_posn *model_change, int flip,
-			      double JD)
+Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
 {
-  struct ln_equ_posn hadec;
-  double ra;
-  double lst;
-  if (!model && !model0)
-    {
-      model_change->ra = 0;
-      model_change->dec = 0;
-      return;
-    }
-  lst = getLstDeg (JD);
-  hadec.ra = ln_range_degrees (lst - pos->ra);
-  hadec.dec = pos->dec;
-  if (flip && model)
-    model->reverse (&hadec);
-  else if (!flip && model0)
-    model0->reverse (&hadec);
-  // fallback - use whenever model is available
-  else if (model)
-    model->reverse (&hadec);
-  else
-    model0->reverse (&hadec);
+	struct ln_equ_posn hadec;
+	double ra;
+	double lst;
+	if (!model || !(correctionsMask->getValueInteger () & COR_MODEL))
+	{
+		model_change->ra = -1 * corrRaDec->getRa();
+		model_change->dec = -1 * corrRaDec->getDec();
 
-  // get back from model - from HA
-  ra = ln_range_degrees (lst - hadec.ra);
+		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
+		pos->dec = pos->dec - corrRaDec->getDec ();
+		return;
+	}
+	lst = getLstDeg (JD);
+	hadec.ra = ln_range_degrees (lst - pos->ra);
+	hadec.dec = pos->dec;
 
-  // calculate change
-  model_change->ra = pos->ra - ra;
-  model_change->dec = pos->dec - hadec.dec;
+	// change RA and DEC when modeling oposite side and we have only one model
+	if (flip && model)
+	{
+		LibnovaRaDec fhadec (&hadec);
 
-  // change above 5 degrees are strange - reject them
-  if (fabs (model_change->ra) > 5 || fabs (model_change->dec) > 5)
-    {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescope::applyModel big change - rejecting ra %f dec %f",
-	      model_change->ra, model_change->dec);
-      model_change->ra = 0;
-      model_change->dec = 0;
-      return;
-    }
+		struct ln_lnlat_posn observer;
+		observer.lng = telLongitude->getValueDouble ();
+		observer.lat = telLatitude->getValueDouble ();
 
-  pos->ra = ra;
-  pos->dec = hadec.dec;
+		fhadec.flip (&observer);
+
+		hadec.ra = fhadec.getRa ();
+		hadec.dec = fhadec.getDec ();
+
+		model->reverse (&hadec);
+
+		// now flip back
+		fhadec.setRa (hadec.ra);
+		fhadec.setDec (hadec.dec);
+
+		fhadec.flip (&observer);
+
+		hadec.ra = fhadec.getRa ();
+		hadec.dec = fhadec.getDec ();
+	}
+	else
+	{
+		model->reverse (&hadec);
+	}
+
+	// get back from model - from HA
+	ra = ln_range_degrees (lst - hadec.ra);
+
+	// calculate change
+	model_change->ra = ln_range_degrees (pos->ra - ra);
+	model_change->dec = pos->dec - hadec.dec;
+
+	if (model_change->ra > 180)
+		model_change->ra -= 360.0;
+
+	hadec.ra = ra;
+
+	double sep = ln_get_angular_separation (&hadec, pos);
+
+	// change above modelLimit are strange - reject them
+	if (sep > modelLimit->getValueDouble ())
+	{
+		logStream (MESSAGE_WARNING)
+			<< "telescope applyModel big change - rejecting "
+			<< model_change->ra << " "
+			<< model_change->dec << " sep " << sep << sendLog;
+		model_change->ra = 0;
+		model_change->dec = 0;
+		return;
+	}
+
+	logStream (MESSAGE_DEBUG)
+		<< "Rts2DevTelescope::applyModel offsets ra: "
+		<< model_change->ra << " dec: " << model_change->dec
+		<< sendLog;
+
+	model_change->ra -= corrRaDec->getRa();
+	model_change->dec -= corrRaDec->getDec();
+
+	pos->ra = ln_range_degrees (ra - corrRaDec->getRa ());
+	pos->dec = hadec.dec - corrRaDec->getDec ();
 }
+
 
 int
 Rts2DevTelescope::init ()
 {
-  int ret;
-  ret = Rts2Device::init ();
-  if (ret)
-    return ret;
+	int ret;
+	ret = Rts2Device::init ();
+	if (ret)
+		return ret;
 
-  if (modelFile)
-    {
-      model = new Rts2TelModel (this, modelFile);
-      ret = model->load ();
-      if (ret)
-	return ret;
-    }
-  if (modelFile0)
-    {
-      model0 = new Rts2TelModel (this, modelFile0);
-      ret = model0->load ();
-      if (ret)
-	return ret;
-    }
-  return 0;
+	if (modelFile)
+	{
+		model = new Rts2TelModel (this, modelFile);
+		ret = model->load ();
+		if (ret)
+			return ret;
+	}
+	createValue (telFlip, "MNT_FLIP", "telescope flip");
+
+	return 0;
 }
 
-Rts2DevConn *
-Rts2DevTelescope::createConnection (int in_sock, int conn_num)
-{
-  return new Rts2DevConnTelescope (in_sock, this);
-}
 
 void
 Rts2DevTelescope::checkMoves ()
 {
-  int ret;
-  if ((getState (0) & TEL_MASK_SEARCHING) == TEL_SEARCH)
-    {
-      ret = isSearching ();
-      if (ret >= 0)
+	int ret;
+	if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
 	{
-	  setTimeout (ret);
-	  if (moveInfoCount == moveInfoMax)
-	    {
-	      info ();
-	      if (move_connection)
-		sendInfo (move_connection);
-	      moveInfoCount = 0;
-	    }
-	  else
-	    {
-	      moveInfoCount++;
-	    }
+		ret = isSearching ();
+		if (ret >= 0)
+		{
+			setTimeout (ret);
+			if (moveInfoCount == moveInfoMax)
+			{
+				info ();
+				if (move_connection)
+					sendInfo (move_connection);
+				moveInfoCount = 0;
+			}
+			else
+			{
+				moveInfoCount++;
+			}
+		}
+		else if (ret == -1)
+		{
+			stopSearch ();
+		}
+		else if (ret == -2)
+		{
+			endSearch ();
+		}
 	}
-      else if (ret == -1)
+	else if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
-	  stopSearch ();
+		ret = isMoving ();
+		if (ret >= 0)
+		{
+			setTimeout (ret);
+			if (moveInfoCount == moveInfoMax)
+			{
+				info ();
+				if (move_connection)
+					sendInfo (move_connection);
+				moveInfoCount = 0;
+			}
+			else
+			{
+				moveInfoCount++;
+			}
+		}
+		else if (ret == -1)
+		{
+			if (move_connection)
+				sendInfo (move_connection);
+			maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
+				TEL_MASK_MOVING | BOP_EXPOSURE,
+				DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
+				"move finished with error");
+			move_connection = NULL;
+		}
+		else if (ret == -2)
+		{
+			infoAll ();
+			ret = endMove ();
+			if (ret)
+			{
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_CORRECTING |
+					TEL_MASK_MOVING | BOP_EXPOSURE,
+					DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
+					"move finished with error");
+			}
+			else
+				maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE,
+					TEL_NOT_CORRECTING | TEL_OBSERVING,
+					"move finished without error");
+			if (move_connection)
+			{
+				sendInfo (move_connection);
+			}
+			move_connection = NULL;
+		}
 	}
-      else if (ret == -2)
+	else if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
 	{
-	  endSearch ();
+		ret = isParking ();
+		if (ret >= 0)
+		{
+			setTimeout (ret);
+		}
+		if (ret == -1)
+		{
+			infoAll ();
+			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
+				DEVICE_ERROR_HW | TEL_PARKED,
+				"park command finished with error");
+		}
+		else if (ret == -2)
+		{
+			infoAll ();
+			ret = endPark ();
+			if (ret)
+				maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
+					DEVICE_ERROR_HW | TEL_PARKED,
+					"park command finished with error");
+			else
+				maskState (TEL_MASK_MOVING | BOP_EXPOSURE, TEL_PARKED,
+					"park command finished without error");
+			if (move_connection)
+			{
+				sendInfo (move_connection);
+			}
+		}
 	}
-    }
-  else if ((getState (0) & TEL_MASK_MOVING) == TEL_MOVING)
-    {
-      if (move_fixed)
-	ret = isMovingFixed ();
-      else
-	ret = isMoving ();
-      if (ret >= 0)
-	{
-	  setTimeout (ret);
-	  if (moveInfoCount == moveInfoMax)
-	    {
-	      info ();
-	      if (move_connection)
-		sendInfo (move_connection);
-	      moveInfoCount = 0;
-	    }
-	  else
-	    {
-	      moveInfoCount++;
-	    }
-	}
-      else if (ret == -1)
-	{
-	  if (move_connection)
-	    sendInfo (move_connection);
-	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-		     DEVICE_ERROR_HW | TEL_OBSERVING,
-		     "move finished with error");
-	  lastTar.ra = -1000;
-	  lastTar.dec = -1000;
-	  move_connection = NULL;
-	  knowPosition = 0;
-	}
-      else if (ret == -2)
-	{
-	  infoAll ();
-	  if (move_fixed)
-	    ret = endMoveFixed ();
-	  else
-	    ret = endMove ();
-	  if (ret)
-	    {
-	      maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-			 DEVICE_ERROR_HW | TEL_OBSERVING,
-			 "move finished with error");
-	      knowPosition = 0;
-	    }
-	  else
-	    maskState (0, TEL_MASK_MOVING, TEL_OBSERVING,
-		       "move finished without error");
-	  if (move_connection)
-	    {
-	      sendInfo (move_connection);
-	    }
-	  move_connection = NULL;
-	}
-    }
-  else if ((getState (0) & TEL_MASK_MOVING) == TEL_PARKING)
-    {
-      ret = isParking ();
-      if (ret >= 0)
-	{
-	  setTimeout (ret);
-	  if (moveInfoCount == moveInfoMax)
-	    {
-	      info ();
-	      if (move_connection)
-		sendInfo (move_connection);
-	      moveInfoCount = 0;
-	    }
-	  else
-	    {
-	      moveInfoCount++;
-	    }
-	}
-      if (ret == -1)
-	{
-	  infoAll ();
-	  maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-		     DEVICE_ERROR_HW | TEL_PARKED,
-		     "park command finished with error");
-	}
-      else if (ret == -2)
-	{
-	  infoAll ();
-	  ret = endPark ();
-	  if (ret)
-	    maskState (0, DEVICE_ERROR_MASK | TEL_MASK_MOVING,
-		       DEVICE_ERROR_HW | TEL_PARKED,
-		       "park command finished with error");
-	  else
-	    maskState (0, TEL_MASK_MOVING, TEL_PARKED,
-		       "park command finished without error");
-	  if (move_connection)
-	    {
-	      sendInfo (move_connection);
-	    }
-	}
-    }
 }
+
 
 void
 Rts2DevTelescope::checkGuiding ()
 {
-  struct timeval now;
-  gettimeofday (&now, NULL);
-  if (dir_timeouts[0].tv_sec > 0 && timercmp (&now, dir_timeouts + 0, >))
-    stopGuide (DIR_NORTH);
-  if (dir_timeouts[1].tv_sec > 0 && timercmp (&now, dir_timeouts + 1, >))
-    stopGuide (DIR_EAST);
-  if (dir_timeouts[2].tv_sec > 0 && timercmp (&now, dir_timeouts + 2, >))
-    stopGuide (DIR_SOUTH);
-  if (dir_timeouts[3].tv_sec > 0 && timercmp (&now, dir_timeouts + 3, >))
-    stopGuide (DIR_WEST);
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	if (dir_timeouts[0].tv_sec > 0 && timercmp (&now, dir_timeouts + 0, >))
+		stopGuide (DIR_NORTH);
+	if (dir_timeouts[1].tv_sec > 0 && timercmp (&now, dir_timeouts + 1, >))
+		stopGuide (DIR_EAST);
+	if (dir_timeouts[2].tv_sec > 0 && timercmp (&now, dir_timeouts + 2, >))
+		stopGuide (DIR_SOUTH);
+	if (dir_timeouts[3].tv_sec > 0 && timercmp (&now, dir_timeouts + 3, >))
+		stopGuide (DIR_WEST);
 }
+
 
 int
 Rts2DevTelescope::idle ()
 {
-  checkMoves ();
-  checkGuiding ();
-  return Rts2Device::idle ();
+	checkMoves ();
+	checkGuiding ();
+	return Rts2Device::idle ();
 }
+
 
 void
 Rts2DevTelescope::postEvent (Rts2Event * event)
 {
-  switch (event->getType ())
-    {
-    case EVENT_COP_SYNCED:
-      maskState (0, TEL_MASK_COP, TEL_NO_WAIT_COP);
-      break;
-    }
-  Rts2Device::postEvent (event);
+	switch (event->getType ())
+	{
+		case EVENT_COP_SYNCED:
+			maskState (TEL_MASK_COP, TEL_NO_WAIT_COP);
+			break;
+	}
+	Rts2Device::postEvent (event);
 }
+
 
 int
 Rts2DevTelescope::willConnect (Rts2Address * in_addr)
 {
-  if (in_addr->getType () == DEVICE_TYPE_COPULA)
-    return 1;
-  return Rts2Device::willConnect (in_addr);
+	if (in_addr->getType () == DEVICE_TYPE_COPULA)
+		return 1;
+	return Rts2Device::willConnect (in_addr);
 }
+
 
 Rts2DevClient *
 Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-  switch (other_device_type)
-    {
-    case DEVICE_TYPE_COPULA:
-      return new Rts2DevClientCopulaTeld (conn);
-    }
-  return Rts2Device::createOtherType (conn, other_device_type);
+	switch (other_device_type)
+	{
+		case DEVICE_TYPE_COPULA:
+			return new Rts2DevClientCupolaTeld (conn);
+	}
+	return Rts2Device::createOtherType (conn, other_device_type);
 }
+
 
 int
 Rts2DevTelescope::changeMasterState (int new_state)
 {
-  int status = new_state & SERVERD_STATUS_MASK;
-  if (status == SERVERD_MORNING || status == SERVERD_DAY
-      || new_state == SERVERD_OFF)
-    {
-      moveMark = 0;
-      numCorr = 0;
-      locCorNum = -1;
-      locCorRa = 0;
-      locCorDec = 0;
-      knowPosition = 0;
-    }
-  // park us during day..
-  if (status == SERVERD_DAY || new_state == SERVERD_OFF)
-    startPark (NULL);
-  return 0;
+	// park us during day..
+	if (((new_state & SERVERD_STANDBY_MASK) == SERVERD_DAY)
+		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_OFF)
+		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
+		startPark (NULL);
+	return Rts2Device::changeMasterState (new_state);
 }
 
-int
-Rts2DevTelescope::stopMove ()
-{
-  unsetTarget ();
-  return 0;
-}
 
 int
 Rts2DevTelescope::stopSearch ()
 {
-  maskState (0, TEL_MASK_SEARCHING, TEL_NOSEARCH);
-  infoAll ();
-  return 0;
+	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
+	infoAll ();
+	return 0;
 }
+
 
 int
 Rts2DevTelescope::endSearch ()
 {
-  return maskState (0, TEL_MASK_SEARCHING, TEL_NOSEARCH);
+	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
+	return 0;
 }
+
 
 int
 Rts2DevTelescope::startGuide (char dir, double dir_dist)
 {
-  struct timeval *tv;
-  struct timeval tv_add;
-  int state_dir;
-  switch (dir)
-    {
-    case DIR_NORTH:
-      tv = dir_timeouts + 0;
-      state_dir = TEL_GUIDE_NORTH;
-      break;
-    case DIR_EAST:
-      tv = dir_timeouts + 1;
-      state_dir = TEL_GUIDE_EAST;
-      break;
-    case DIR_SOUTH:
-      tv = dir_timeouts + 2;
-      state_dir = TEL_GUIDE_SOUTH;
-      break;
-    case DIR_WEST:
-      tv = dir_timeouts + 3;
-      state_dir = TEL_GUIDE_WEST;
-      break;
-    default:
-      return -1;
-    }
-  double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed;
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startGuide dir: %c dir_dist: %f dir_timeout: %f",
-	  dir, dir_dist, dir_timeout);
-  gettimeofday (&tv_add, NULL);
-  tv_add.tv_sec = (int) (floor (dir_timeout));
-  tv_add.tv_usec = (int) ((dir_timeout - tv_add.tv_sec) * USEC_SEC);
-  timeradd (tv, &tv_add, tv);
-  maskState (0, state_dir, state_dir, "started guiding");
-  return 0;
+	/*	struct timeval *tv;
+		struct timeval tv_add;
+		int state_dir;
+		switch (dir)
+		{
+			case DIR_NORTH:
+				tv = dir_timeouts + 0;
+				state_dir = TEL_GUIDE_NORTH;
+				break;
+			case DIR_EAST:
+				tv = dir_timeouts + 1;
+				state_dir = TEL_GUIDE_EAST;
+				break;
+			case DIR_SOUTH:
+				tv = dir_timeouts + 2;
+				state_dir = TEL_GUIDE_SOUTH;
+				break;
+			case DIR_WEST:
+				tv = dir_timeouts + 3;
+				state_dir = TEL_GUIDE_WEST;
+				break;
+			default:
+				return -1;
+		}
+		double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed->getValueDouble ();
+		logStream (MESSAGE_INFO)
+			<< "telescope startGuide dir "
+			<< dir_dist << " timeout " << dir_timeout << sendLog;
+		gettimeofday (&tv_add, NULL);
+		tv_add.tv_sec = (int) (floor (dir_timeout));
+		tv_add.tv_usec = (int) ((dir_timeout - tv_add.tv_sec) * USEC_SEC);
+		timeradd (tv, &tv_add, tv);
+		maskState (state_dir, state_dir, "started guiding"); */
+	return -1;
 }
+
 
 int
 Rts2DevTelescope::stopGuide (char dir)
 {
-  int state_dir;
-  switch (dir)
-    {
-    case DIR_NORTH:
-      dir_timeouts[0].tv_sec = 0;
-      state_dir = TEL_GUIDE_NORTH;
-      break;
-    case DIR_EAST:
-      dir_timeouts[1].tv_sec = 0;
-      state_dir = TEL_GUIDE_EAST;
-      break;
-    case DIR_SOUTH:
-      dir_timeouts[2].tv_sec = 0;
-      state_dir = TEL_GUIDE_SOUTH;
-      break;
-    case DIR_WEST:
-      dir_timeouts[3].tv_sec = 0;
-      state_dir = TEL_GUIDE_WEST;
-      break;
-    default:
-      return -1;
-    }
-  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuide dir: %c", dir);
-  maskState (0, state_dir, TEL_NOGUIDE, "guiding ended");
-  return 0;
+	/*	int state_dir;
+		switch (dir)
+		{
+			case DIR_NORTH:
+				dir_timeouts[0].tv_sec = 0;
+				state_dir = TEL_GUIDE_NORTH;
+				break;
+			case DIR_EAST:
+				dir_timeouts[1].tv_sec = 0;
+				state_dir = TEL_GUIDE_EAST;
+				break;
+			case DIR_SOUTH:
+				dir_timeouts[2].tv_sec = 0;
+				state_dir = TEL_GUIDE_SOUTH;
+				break;
+			case DIR_WEST:
+				dir_timeouts[3].tv_sec = 0;
+				state_dir = TEL_GUIDE_WEST;
+				break;
+			default:
+				return -1;
+		}
+		logStream (MESSAGE_INFO) << "telescope stopGuide dir " << dir << sendLog;
+		maskState (state_dir, TEL_NOGUIDE, "guiding ended"); */
+	return -1;
 }
+
 
 int
 Rts2DevTelescope::stopGuideAll ()
 {
-  syslog (LOG_DEBUG, "Rts2DevTelescope::stopGuideAll");
-  maskState (0, TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
-  return 0;
+	logStream (MESSAGE_INFO) << "telescope stopGuideAll" << sendLog;
+	maskState (TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
+	return 0;
 }
 
-int
-Rts2DevTelescope::sendInfo (Rts2Conn * conn)
-{
-  if (knowPosition)
-    {
-      conn->sendValue ("ra", lastRa);
-      conn->sendValue ("dec", lastDec);
-    }
-  else
-    {
-      conn->sendValue ("ra", telRa);
-      conn->sendValue ("dec", telDec);
-    }
-  conn->sendValue ("ra_tel", telRa);
-  conn->sendValue ("dec_tel", telDec);
-  conn->sendValue ("ra_tar", lastTar.ra);
-  conn->sendValue ("dec_tar", lastTar.dec);
-  conn->sendValue ("ra_corr", raCorr);
-  conn->sendValue ("dec_corr", decCorr);
-  conn->sendValue ("know_position", knowPosition);
-  conn->sendValue ("siderealtime", telSiderealTime);
-  conn->sendValue ("localtime", telLocalTime);
-  conn->sendValue ("flip", telFlip);
-  conn->sendValue ("axis0_counts", telAxis[0]);
-  conn->sendValue ("axis1_counts", telAxis[1]);
-  conn->sendValue ("correction_mark", moveMark);
-  conn->sendValue ("num_corr", numCorr);
-  conn->sendValue ("guiding_speed", telGuidingSpeed);
-  return 0;
-}
 
 int
-Rts2DevTelescope::sendBaseInfo (Rts2Conn * conn)
+Rts2DevTelescope::getAltAz ()
 {
-  conn->sendValue ("type", telType);
-  conn->sendValue ("serial", telSerialNumber);
-  conn->sendValue ("longtitude", telLongtitude);
-  conn->sendValue ("latitude", telLatitude);
-  conn->sendValue ("altitude", telAltitude);
-  return 0;
+	struct ln_equ_posn telpos;
+	struct ln_lnlat_posn observer;
+	struct ln_hrz_posn hrz;
+
+	telpos.ra = telRaDec->getRa ();
+	telpos.dec = telRaDec->getDec ();
+
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
+
+	ln_get_hrz_from_equ_sidereal_time (&telpos, &observer,
+		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()),
+		&hrz);
+
+	telAlt->setValueDouble (hrz.alt);
+	telAz->setValueDouble (hrz.az);
+
+	return 0;
 }
+
+
+int
+Rts2DevTelescope::info ()
+{
+
+	// calculate alt+az
+	getAltAz ();
+
+	if (telFlip->getValueInteger ())
+		rotang->setValueDouble (ln_range_degrees (defaultRotang + 180.0));
+	else
+		rotang->setValueDouble (defaultRotang);
+	return Rts2Device::info ();
+}
+
+
+int
+Rts2DevTelescope::scriptEnds ()
+{
+	corrImgId->setValueInteger (0);
+	return Rts2Device::scriptEnds ();
+}
+
 
 void
 Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
-  // apply all posible corrections
-  if (corrections & COR_ABERATION)
-    applyAberation (pos, JD);
-  if (corrections & COR_PRECESSION)
-    applyPrecession (pos, JD);
-  if (corrections & COR_REFRACTION)
-    applyRefraction (pos, JD);
+	// apply all posible corrections
+	if (correctionsMask->getValueInteger () & COR_ABERATION)
+		applyAberation (pos, JD);
+	if (correctionsMask->getValueInteger () & COR_PRECESSION)
+		applyPrecession (pos, JD);
+	if (correctionsMask->getValueInteger () & COR_REFRACTION)
+		applyRefraction (pos, JD);
 }
+
 
 void
 Rts2DevTelescope::applyCorrections (double &tar_ra, double &tar_dec)
 {
-  struct ln_equ_posn pos;
-  pos.ra = tar_ra;
-  pos.dec = tar_dec;
+	struct ln_equ_posn pos;
+	pos.ra = tar_ra;
+	pos.dec = tar_dec;
 
-  applyCorrections (&pos, ln_get_julian_from_sys ());
+	applyCorrections (&pos, ln_get_julian_from_sys ());
 
-  tar_ra = pos.ra;
-  tar_dec = pos.dec;
+	tar_ra = pos.ra;
+	tar_dec = pos.dec;
 }
+
 
 int
-Rts2DevTelescope::startMove (Rts2Conn * conn, double tar_ra, double tar_dec)
+Rts2DevTelescope::endMove ()
 {
-  int ret;
-  struct ln_equ_posn pos;
-  double JD;
+	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
+	LibnovaRaDec l_req (tarRaDec->getRa (), tarRaDec->getDec ());
 
-  pos.ra = tar_ra;
-  pos.dec = tar_dec;
-
-  JD = ln_get_julian_from_sys ();
-
-  applyCorrections (&pos, JD);
-
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec, lastTar.ra, lastTar.dec);
-  // target is without corrections
-  ret = setTarget (tar_ra, tar_dec);
-
-  tar_ra = pos.ra;
-  tar_dec = pos.dec;
-
-  // we know our position and we are on it..don't move
-  if (ret == 0)
-    {
-      conn->sendCommandEnd (DEVDEM_E_IGNORE, "move will not be performed");
-      return -1;
-    }
-  if (knowPosition)
-    {
-      double sep;
-      sep = getMoveTargetSep ();
-      syslog (LOG_DEBUG, "Rts2DevTelescope::startMove sep: %f", sep);
-      if (sep > 2)
-	{
-	  knowPosition = 0;
-	}
-    }
-  // we received correction for last move..
-  if (locCorNum == moveMark)
-    {
-      // if we don't move too far from last correction
-      if (knowPosition)
-	{
-	  locCorNum++;
-	}
-      else
-	{
-	  locCorNum = -1;
-	  locCorRa = 0;
-	  locCorDec = 0;
-	}
-      tar_ra += locCorRa;
-      tar_dec += locCorDec;
-    }
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec);
-  moveInfoCount = 0;
-  ret = startMove (tar_ra, tar_dec);
-  if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
-  else
-    {
-      move_fixed = 0;
-      moveMark++;
-      // try to sync dome..
-      postEvent (new Rts2Event (EVENT_COP_START_SYNC, &pos));
-      // somebody cared about it..
-      if (isnan (pos.ra))
-	{
-	  maskState (0, TEL_MASK_COP_MOVING, TEL_MOVING | TEL_WAIT_COP,
-		     "move started");
-	}
-      else
-	{
-	  maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		     "move started");
-	}
-      move_connection = conn;
-    }
-  infoAll ();
-  return ret;
+	logStream (MESSAGE_INFO)
+		<< "moved to " << l_to
+		<< " requested " << l_req
+		<< sendLog;
+	return 0;
 }
 
-int
-Rts2DevTelescope::startMoveFixed (Rts2Conn * conn, double tar_ha,
-				  double tar_dec)
-{
-  int ret;
-  ret = startMoveFixed (tar_ha, tar_dec);
-  if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
-  else
-    {
-      move_fixed = 1;
-      moveMark++;
-      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
-      knowPosition = 0;
-      move_connection = conn;
-    }
-  return ret;
-}
 
 int
 Rts2DevTelescope::startSearch (Rts2Conn * conn, double radius,
-			       double in_searchSpeed)
+double in_searchSpeed)
 {
-  int ret;
-  searchRadius = radius;
-  searchSpeed = in_searchSpeed;
-  ret = startSearch ();
-  if (ret)
-    return ret;
-  move_connection = conn;
-  maskState (0, TEL_MASK_SEARCHING, TEL_SEARCH);
-  return 0;
+	/*	int ret;
+		searchRadius = radius;
+		searchSpeed = in_searchSpeed;
+		ret = startSearch ();
+		if (ret)
+			return ret;
+		move_connection = conn;
+		maskState (TEL_MASK_SEARCHING, TEL_SEARCH); */
+	return -1;
 }
 
+
 int
-Rts2DevTelescope::startResyncMove (Rts2Conn * conn, double tar_ra,
-				   double tar_dec)
+Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 {
-  int ret;
+	int ret;
 
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startResyncMove intersting val 1: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f lastTar.ra: %f lastTar.dec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec, lastTar.ra, lastTar.dec);
+	struct ln_equ_posn pos;
 
-  if (tar_ra != lastTar.ra || tar_dec != lastTar.dec)
-    {
-      syslog (LOG_DEBUG,
-	      "Rts2DevTelescope::startResyncMove called wrong - calling startMove!");
-      applyCorrections (tar_ra, tar_dec);
-      return startMove (conn, tar_ra, tar_dec);
-    }
-  if (knowPosition)
-    {
-      double sep;
-      sep = getMoveTargetSep ();
-      syslog (LOG_DEBUG, "Rts2DevTelescope::startResyncMove sep: %f", sep);
-      if (sep > 2)
+	// object changed from last call to startResyncMove
+	if (objRaDec->wasChanged ())
 	{
-	  knowPosition = 0;
+		// reset offsets
+		offsetRaDec->setValueRaDec (0, 0);
+		offsetRaDec->resetValueChanged ();
+
+		corrRaDec->setValueRaDec (0, 0);
+		corrRaDec->resetValueChanged ();
+
+		waitingCorrRaDec->setValueRaDec (0, 0);
+		waitingCorrRaDec->resetValueChanged ();
+
+		moveNum->inc ();
+		corrImgId->setValueInteger (0);
+		wCorrImgId->setValueInteger (0);
 	}
-    }
-  infoAll ();
-  // we received correction for last move..and yes, we would like to apply it in resync
-  if (locCorNum == moveMark)
-    {
-      // if we don't move too far from last correction
-      if (knowPosition)
+	// if some value is waiting to be applied..
+	else if (waitingCorrRaDec->wasChanged ())
 	{
-	  locCorNum++;
+		corrRaDec->setRa (corrRaDec->getRa () + waitingCorrRaDec->getRa ());
+		corrRaDec->setDec (corrRaDec->getDec () + waitingCorrRaDec->getDec ());
+
+		waitingCorrRaDec->setValueRaDec (0, 0);
+		waitingCorrRaDec->resetValueChanged ();
+
+		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
 	}
-      else
-	{
-	  locCorNum = -1;
-	  locCorRa = 0;
-	  locCorDec = 0;
-	}
-      tar_ra += locCorRa;
-      tar_dec += locCorDec;
-    }
-  if (isBellowResolution (locCorRa, locCorDec))
-    {
-      conn->sendCommandEnd (DEVDEM_E_IGNORE,
-			    "position change is bellow telescope resolution");
-      return -1;
-    }
-  applyCorrections (tar_ra, tar_dec);
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::startResyncMove intersting val 2: tar_ra: %f tar_dec: %f lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  tar_ra, tar_dec, lastRa, lastDec, knowPosition, locCorNum, locCorRa,
-	  locCorDec);
-  moveInfoCount = 0;
-  ret = startMove (tar_ra, tar_dec);
-  if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform move op");
-  else
-    {
-      move_fixed = 0;
-      moveMark++;
-      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
-      move_connection = conn;
-    }
-  return ret;
+
+	LibnovaRaDec l_obj (objRaDec->getRa (), objRaDec->getDec ());
+
+	// first apply offset
+	pos.ra = ln_range_degrees (objRaDec->getRa () + offsetRaDec->getRa ());
+	pos.dec = objRaDec->getDec () + offsetRaDec->getDec ();
+
+	LibnovaRaDec syncTo (&pos);
+	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
+
+	logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
+
+	// apply corrections
+	applyCorrections (&pos, ln_get_julian_from_sys ());
+
+	// now we have target position, which can be feeded to telescope
+	tarRaDec->setValueRaDec (pos.ra, pos.dec);
+
+	// calculate target after corrections
+	pos.ra = ln_range_degrees (pos.ra + corrRaDec->getRa ());
+	pos.dec = pos.dec + corrRaDec->getDec ();
+	telRaDec->setValueRaDec (pos.ra, pos.dec);
+
+	moveInfoCount = 0;
+
+	ret = startMove ();
+	if (ret)
+		return ret;
+
+	infoAll ();
+
+	objRaDec->resetValueChanged ();
+	offsetRaDec->resetValueChanged ();
+	corrRaDec->resetValueChanged ();
+
+	if (onlyCorrect)
+		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
+			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
+	else
+		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE,
+			"move started");
+	move_connection = conn;
+
+	return ret;
 }
 
 
 int
 Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 {
-  int ret;
-  ret = setTo (set_ra, set_dec);
-  if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot set to");
-  return ret;
+	int ret;
+	ret = setTo (set_ra, set_dec);
+	if (ret)
+		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set to");
+	return ret;
 }
 
-int
-Rts2DevTelescope::correct (Rts2Conn * conn, int cor_mark, double cor_ra,
-			   double cor_dec, double real_ra, double real_dec)
-{
-  int ret = -1;
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 1: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
-  raCorr = cor_ra;
-  decCorr = cor_dec;
-  // not moved yet
-  if (moveMark == cor_mark)
-    {
-      if (numCorr < maxCorrNum || maxCorrNum < 0)
-	{
-	  ret = correct (cor_ra, cor_dec, real_ra, real_dec);
-	  if (!ret)
-	    {
-	      numCorr++;
-	      locCorRa = 0;
-	      locCorDec = 0;
-	    }
-	}
-      else
-	{
-	  ret = 0;
-	  // change scope
-	  locCorNum = moveMark;
-	  locCorRa = cor_ra;
-	  locCorDec = cor_dec;
-	}
-      if (fabs (locCorRa) < 5 && fabs (locCorRa) < 5)
-	{
-	  knowPosition = 1;
-	  info ();
-	  lastRa = real_ra;
-	  lastDec = real_dec;
-	}
-      else
-	{
-	  locCorNum = -1;
-	  locCorRa = 0;
-	  locCorDec = 0;
-	}
-    }
-  else
-    {
-      // first change - set offsets
-      if (numCorr == 0)
-	{
-	  ret = correctOffsets (cor_ra, cor_dec, real_ra, real_dec);
-	  if (ret == 0)
-	    numCorr++;
-	}
-      // discards changes - astrometry was too late
-      locCorNum = -1;
-      locCorRa = 0;
-      locCorDec = 0;
-    }
-  syslog (LOG_DEBUG,
-	  "Rts2DevTelescope::correct intersting val 2: lastRa: %f lastDec: %f knowPosition: %i locCorNum: %i locCorRa: %f locCorDec: %f",
-	  lastRa, lastDec, knowPosition, locCorNum, locCorRa, locCorDec);
-  if (ret)
-    conn->sendCommandEnd (DEVDEM_E_HW, "cannot perform correction");
-  return ret;
-}
 
 int
 Rts2DevTelescope::startPark (Rts2Conn * conn)
 {
-  int ret;
-  unsetTarget ();
-  ret = startPark ();
-  if (ret)
-    {
-      if (conn)
-	conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
-    }
-  else
-    {
-      move_fixed = 0;
-      moveMark++;
-      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
-		 "parking started");
-    }
-  return ret;
+	int ret;
+	ret = startPark ();
+	if (ret)
+	{
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot park");
+	}
+	else
+	{
+		moveNum->inc ();
+		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
+			"parking started");
+	}
+	return ret;
 }
 
-int
-Rts2DevTelescope::change (Rts2Conn * conn, double chng_ra, double chng_dec)
-{
-  int ret;
-  syslog (LOG_DEBUG, "Rts2DevTelescope::change %f %f", chng_ra, chng_dec);
-  ret = info ();
-  if (ret)
-    return -2;
-  ret = setTarget (telRa + chng_ra, telDec + chng_dec);
-  if (ret == 0)
-    {
-      conn->sendCommandEnd (DEVDEM_E_IGNORE, "move will not be performed");
-      return -1;
-    }
-  ret = change (chng_ra, chng_dec);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot change");
-    }
-  else
-    {
-      move_fixed = 0;
-      moveMark++;
-      maskState (0, TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_MOVING,
-		 "move started");
-      move_connection = conn;
-    }
-  return ret;
-}
-
-int
-Rts2DevTelescope::saveModel (Rts2Conn * conn)
-{
-  int ret;
-  ret = saveModel ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot save model");
-    }
-  return ret;
-}
-
-int
-Rts2DevTelescope::loadModel (Rts2Conn * conn)
-{
-  int ret;
-  ret = loadModel ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot load model");
-    }
-  return ret;
-}
-
-int
-Rts2DevTelescope::stopWorm (Rts2Conn * conn)
-{
-  int ret;
-  ret = stopWorm ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
-    }
-  return ret;
-}
-
-int
-Rts2DevTelescope::startWorm (Rts2Conn * conn)
-{
-  int ret;
-  ret = startWorm ();
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot start worm");
-    }
-  return ret;
-}
-
-int
-Rts2DevTelescope::resetMount (Rts2Conn * conn, resetStates reset_state)
-{
-  int ret;
-  ret = resetMount (reset_state);
-  if (ret)
-    {
-      conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset");
-    }
-  return ret;
-}
 
 int
 Rts2DevTelescope::getFlip ()
 {
-  int ret;
-  ret = info ();
-  if (ret)
-    return ret;
-  return telFlip;
+	int ret;
+	ret = info ();
+	if (ret)
+		return ret;
+	return telFlip->getValueInteger ();
 }
+
+
+void
+Rts2DevTelescope::signaledHUP ()
+{
+	int ret;
+	if (modelFile)
+	{
+		delete model;
+		model = new Rts2TelModel (this, modelFile);
+		ret = model->load ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Failed to reload model from file " <<
+				modelFile << sendLog;
+			delete model;
+			model = NULL;
+		}
+		else
+		{
+			logStream (MESSAGE_INFO) << "Reloaded model from file " <<
+				modelFile << sendLog;
+		}
+	}
+	Rts2Device::signaledHUP ();
+}
+
 
 int
-Rts2DevTelescope::grantPriority (Rts2Conn * conn)
+Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 {
-  // grant to imgproc, so it can use correct..
-  if (conn->getOtherType () == DEVICE_TYPE_IMGPROC)
-    return 1;
-  return Rts2Device::grantPriority (conn);
+	double obj_ra;
+	double obj_dec;
+
+	int ret;
+
+	if (conn->isCommand ("move"))
+	{
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		modelOn ();
+		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		return startResyncMove (conn, false);
+	}
+	else if (conn->isCommand ("move_not_model"))
+	{
+		CHECK_PRIORITY;
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		modelOff ();
+		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		return startResyncMove (conn, false);
+	}
+	else if (conn->isCommand ("resync"))
+	{
+		CHECK_PRIORITY;
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		return startResyncMove (conn, true);
+	}
+	else if (conn->isCommand ("fixed"))
+	{
+		CHECK_PRIORITY;
+		// tar_ra hold HA (Hour Angle)
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		/*		modelOff ();
+				// currently don't know how to handle that */
+		return -2;
+	}
+	else if (conn->isCommand ("setto"))
+	{
+		CHECK_PRIORITY;
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		modelOn ();
+		return setTo (conn, obj_ra, obj_dec);
+	}
+	else if (conn->isCommand ("correct"))
+	{
+		int cor_mark;
+		int corr_img;
+		int img_id;
+		double total_cor_ra;
+		double total_cor_dec;
+		double pos_err;
+		if (conn->paramNextInteger (&cor_mark)
+			|| conn->paramNextInteger (&corr_img)
+			|| conn->paramNextInteger (&img_id)
+			|| conn->paramNextDouble (&total_cor_ra)
+			|| conn->paramNextDouble (&total_cor_dec)
+			|| conn->paramNextDouble (&pos_err)
+			|| !conn->paramEnd ())
+			return -2;
+		if (cor_mark == moveNum->getValueInteger ()
+			&& corr_img == corrImgId->getValueInteger ()
+			&& img_id > wCorrImgId->getValueInteger ())
+		{
+			waitingCorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
+
+			posErr->setValueDouble (pos_err);
+			sendValueAll (posErr);
+
+			wCorrImgId->setValueInteger (img_id);
+			sendValueAll (wCorrImgId);
+
+			if (pos_err < smallCorrection->getValueDouble ())
+				return startResyncMove (conn, true);
+			sendValueAll (waitingCorrRaDec);
+			// else set BOP_EXPOSURE, and wait for result of statusUpdate call
+			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for correction");
+			// correction was accepted, will be carried once it will be possible
+			return 0;
+		}
+		conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is for incorrect movement mark");
+		return -1;
+	}
+	else if (conn->isCommand ("park"))
+	{
+		CHECK_PRIORITY;
+		if (!conn->paramEnd ())
+			return -2;
+		modelOn ();
+		return startPark (conn);
+	}
+	else if (conn->isCommand ("change"))
+	{
+		CHECK_PRIORITY;
+		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
+			|| !conn->paramEnd ())
+			return -2;
+		offsetRaDec->setValueRaDec (obj_ra, obj_dec);
+		return startResyncMove (conn, true);
+	}
+	else if (conn->isCommand ("save_model"))
+	{
+		ret = saveModel ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot save model");
+		}
+		return ret;
+	}
+	else if (conn->isCommand ("load_model"))
+	{
+		ret = loadModel ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot load model");
+		}
+		return ret;
+	}
+	else if (conn->isCommand ("worm_stop"))
+	{
+		ret = stopWorm ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot stop worm");
+		}
+		return ret;
+	}
+	else if (conn->isCommand ("worm_start"))
+	{
+		ret = startWorm ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot start worm");
+		}
+		return ret;
+	}
+	else if (conn->isCommand ("reset"))
+	{
+		ret = resetMount ();
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot reset mount");
+		}
+		return ret;
+	}
+	return Rts2Device::commandAuthorized (conn);
 }
 
-Rts2DevConnTelescope::Rts2DevConnTelescope (int in_sock, Rts2DevTelescope * in_master_device):
-Rts2DevConn (in_sock, in_master_device)
-{
-  master = in_master_device;
-}
 
-int
-Rts2DevConnTelescope::commandAuthorized ()
+void
+Rts2DevTelescope::setFullBopState (int new_state)
 {
-  if (isCommand ("exit"))
-    {
-      close (sock);
-      return -1;
-    }
-  else if (isCommand ("help"))
-    {
-      send ("ready - is telescope ready?");
-      send ("info - information about telescope");
-      send ("exit - exit from connection");
-      send ("help - print, what you are reading just now");
-      return 0;
-    }
-  else if (isCommand ("move"))
-    {
-      double tar_ra;
-      double tar_dec;
-      CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
-	return -2;
-      return master->startMove (this, tar_ra, tar_dec);
-    }
-  else if (isCommand ("resync"))
-    {
-      double tar_ra;
-      double tar_dec;
-      CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ra) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
-	return -2;
-      return master->startResyncMove (this, tar_ra, tar_dec);
-    }
-  else if (isCommand ("fixed"))
-    {
-      double tar_ha;
-      double tar_dec;
-      CHECK_PRIORITY;
-      if (paramNextDouble (&tar_ha) || paramNextDouble (&tar_dec)
-	  || !paramEnd ())
-	return -2;
-      return master->startMoveFixed (this, tar_ha, tar_dec);
-    }
-  else if (isCommand ("setto"))
-    {
-      double set_ra;
-      double set_dec;
-      CHECK_PRIORITY;
-      if (paramNextDouble (&set_ra) || paramNextDouble (&set_dec)
-	  || !paramEnd ())
-	return -2;
-      return master->setTo (this, set_ra, set_dec);
-    }
-  else if (isCommand ("correct"))
-    {
-      int cor_mark;
-      double cor_ra;
-      double cor_dec;
-      double real_ra;
-      double real_dec;
-      if (paramNextInteger (&cor_mark)
-	  || paramNextDouble (&cor_ra)
-	  || paramNextDouble (&cor_dec)
-	  || paramNextDouble (&real_ra)
-	  || paramNextDouble (&real_dec)
-	  || !paramEnd () || fabs (cor_ra) > 5 || fabs (cor_dec) > 5)
-	return -2;
-      return master->correct (this, cor_mark, cor_ra, cor_dec, real_ra,
-			      real_dec);
-    }
-  else if (isCommand ("park"))
-    {
-      CHECK_PRIORITY;
-      if (!paramEnd ())
-	return -2;
-      return master->startPark (this);
-    }
-  else if (isCommand ("change"))
-    {
-      double chng_ra;
-      double chng_dec;
-      CHECK_PRIORITY;
-      if (paramNextDouble (&chng_ra) || paramNextDouble (&chng_dec)
-	  || !paramEnd ())
-	return -2;
-      return master->change (this, chng_ra, chng_dec);
-    }
-  else if (isCommand ("save_model"))
-    {
-      return master->saveModel (this);
-    }
-  else if (isCommand ("load_model"))
-    {
-      return master->loadModel (this);
-    }
-  else if (isCommand ("worm_stop"))
-    {
-      return master->stopWorm (this);
-    }
-  else if (isCommand ("worm_start"))
-    {
-      return master->startWorm (this);
-    }
-  else if (isCommand ("reset"))
-    {
-      char *param;
-      resetStates reset_state;
-      CHECK_PRIORITY;
-      if (paramEnd ())
-	{
-	  reset_state = RESET_RESTART;
-	}
-      else
-	{
-	  if (paramNextString (&param) || !paramEnd ())
-	    return -2;
-	  // switch param cases
-	  if (!strcmp (param, "restart"))
-	    reset_state = RESET_RESTART;
-	  else if (!strcmp (param, "warm_start"))
-	    reset_state = RESET_WARM_START;
-	  else if (!strcmp (param, "cold_start"))
-	    reset_state = RESET_COLD_START;
-	  else if (!strcmp (param, "init"))
-	    reset_state = RESET_INIT_START;
-	  else
-	    return -2;
-	}
-      return master->resetMount (this, reset_state);
-    }
-  else if (isCommand ("start_dir"))
-    {
-      char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
-	return -2;
-      return master->startDir (dir);
-    }
-  else if (isCommand ("stop_dir"))
-    {
-      char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
-	return -2;
-      return master->stopDir (dir);
-    }
-  else if (isCommand ("start_guide"))
-    {
-      char *dir;
-      double dir_timeout;
-      if (paramNextString (&dir)
-	  || paramNextDouble (&dir_timeout) || !paramEnd ())
-	return -2;
-      return master->startGuide (*dir, dir_timeout);
-    }
-  else if (isCommand ("stop_guide"))
-    {
-      char *dir;
-      if (paramNextString (&dir) || !paramEnd ())
-	return -2;
-      return master->stopGuide (*dir);
-    }
-  else if (isCommand ("stop_guide_all"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->stopGuideAll ();
-    }
-  else if (isCommand ("search"))
-    {
-      double in_radius;
-      double in_searchSpeed;
-      if (paramNextDouble (&in_radius) || paramNextDouble (&in_searchSpeed)
-	  || !paramEnd ())
-	return -2;
-      return master->startSearch (this, in_radius, in_searchSpeed);
-    }
-  else if (isCommand ("searchstop"))
-    {
-      if (!paramEnd ())
-	return -2;
-      return master->stopSearch ();
-    }
-  return Rts2DevConn::commandAuthorized ();
+	Rts2Device::setFullBopState (new_state);
+	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))
+		startResyncMove (false, true);
 }

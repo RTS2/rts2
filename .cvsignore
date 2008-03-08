@@ -22,4 +22,4 @@ depcomp
 ltmain.sh
 macros
 stamp-h2.in
-
+build-stamp

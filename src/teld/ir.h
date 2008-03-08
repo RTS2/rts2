@@ -1,3 +1,22 @@
+/* 
+ * Driver for OpemTPL mounts.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_TELD_IR__
 #define __RTS2_TELD_IR__
 
@@ -17,83 +36,107 @@
 #include <list>
 #include <iostream>
 
+#include "irconn.h"
+
 using namespace OpenTPL;
 
-class ErrorTime
+class Rts2TelescopeIr:public Rts2DevTelescope
 {
-  time_t etime;
-  int error;
-public:
-    ErrorTime (int in_error);
-  int clean (time_t now);
-  int isError (int in_error);
+	private:
+		std::string ir_ip;
+		int ir_port;
+
+		enum { OPENED, OPENING, CLOSING, CLOSED }
+		cover_state;
+		enum { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED }
+		dome_state;
+
+		void checkErrors ();
+		void checkCover ();
+		void checkPower ();
+
+		bool doCheckPower;
+
+		void getCover ();
+		void getDome ();
+		void initCoverState ();
+
+		std::string errorList;
+
+		Rts2ValueBool *cabinetPower;
+		Rts2ValueFloat *cabinetPowerState;
+
+		Rts2ValueDouble *derotatorCurrpos;
+
+		Rts2ValueBool *derotatorPower;
+
+		Rts2ValueDouble *targetDist;
+		Rts2ValueDouble *targetTime;
+
+		Rts2ValueInteger *mountTrack;
+
+		Rts2ValueFloat *domeUp;
+		Rts2ValueFloat *domeDown;
+
+		Rts2ValueDouble *domeCurrAz;
+		Rts2ValueDouble *domeTargetAz;
+		Rts2ValueBool *domePower;
+		Rts2ValueDouble *domeTarDist;
+
+		Rts2ValueDouble *cover;
+
+		// model values
+		Rts2ValueString *model_dumpFile;
+		Rts2ValueDouble *model_aoff;
+		Rts2ValueDouble *model_zoff;
+		Rts2ValueDouble *model_ae;
+		Rts2ValueDouble *model_an;
+		Rts2ValueDouble *model_npae;
+		Rts2ValueDouble *model_ca;
+		Rts2ValueDouble *model_flex;
+
+		int infoModel ();
+
+	protected:
+		IrConn *irConn;
+
+		time_t timeout;
+
+		virtual int processOption (int in_opt);
+
+		Rts2ValueDouble *derotatorOffset;
+
+		Rts2ValueBool *domeAutotrack;
+
+		int coverClose ();
+		int coverOpen ();
+
+		int domeOpen ();
+		int domeClose ();
+
+		int setTrack (int new_track);
+		int setTrack (int new_track, bool autoEn);
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		bool getDerotatorPower ()
+		{
+			return derotatorPower->getValueBool ();
+		}
+	public:
+		Rts2TelescopeIr (int argc, char **argv);
+		virtual ~ Rts2TelescopeIr (void);
+		virtual int initIrDevice ();
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+		virtual int ready ();
+
+		virtual int getAltAz ();
+
+		virtual int info ();
+		virtual int saveModel ();
+		virtual int loadModel ();
+		virtual int resetMount ();
 };
-
-class Rts2DevTelescopeIr:public Rts2DevTelescope
-{
-private:
-  std::string * ir_ip;
-  int ir_port;
-  Client *tplc;
-  time_t timeout;
-  double cover;
-  enum
-  { OPENED, OPENING, CLOSING, CLOSED } cover_state;
-
-  struct ln_equ_posn target;
-
-  virtual int coverClose ();
-  virtual int coverOpen ();
-
-  int startMoveReal (double ra, double dec);
-
-  void addError (int in_error);
-
-  void checkErrors ();
-  void checkCover ();
-  void checkPower ();
-
-    std::list < ErrorTime * >errorcodes;
-  int irTracking;
-  char *irConfig;
-  bool makeModel;
-
-protected:
-    template < typename T > int tpl_get (const char *name, T & val,
-					 int *status);
-    template < typename T > int tpl_set (const char *name, T val,
-					 int *status);
-    template < typename T > int tpl_setw (const char *name, T val,
-					  int *status);
-  virtual int processOption (int in_opt);
-public:
-    Rts2DevTelescopeIr (int argc, char **argv);
-    virtual ~ Rts2DevTelescopeIr (void);
-  virtual int initDevice ();
-  virtual int init ();
-  virtual int idle ();
-  virtual int ready ();
-  virtual int baseInfo ();
-  virtual int info ();
-  virtual int startMove (double tar_ra, double tar_dec);
-  virtual int isMoving ();
-  virtual int endMove ();
-  virtual int startPark ();
-  virtual int isParking ();
-  virtual int endPark ();
-  virtual int stopMove ();
-  virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
-			      double real_dec);
-  virtual int correct (double cor_ra, double cor_dec, double real_ra,
-		       double real_dec);
-  virtual int saveModel ();
-  virtual int loadModel ();
-  virtual int stopWorm ();
-  virtual int startWorm ();
-  virtual int changeMasterState (int new_state);
-  virtual int resetMount (resetStates reset_mount);
-
-  virtual int getError (int in_error, std::string & desc);
-};
-
-#endif /* !__RTS2_TELD_IR__ */
+#endif							 /* !__RTS2_TELD_IR__ */

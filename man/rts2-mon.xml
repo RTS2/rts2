@@ -1,0 +1,366 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-05-17</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-mon">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Allow interactive control of the RTS2 system.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-c</option></arg>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>\
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+  </refsect1>
+  <refsect1 id="basic_operation">
+    <title>BASIC OPERATION</title>
+    <para>
+      Probably the most basic operation is to switch system states. Please
+      press F2, F3, or F4 keys to switch states. To switch system to on, you
+      will press F4. When system is in on, it is observing.
+    </para>
+
+    <para>
+      To switch system to off, please press F2 key. To switch to standby, use
+      F3 keys. Use off state when you are sure you will not observe, or use F3
+      key and standby mode when you think you might be able to observe later
+      tonight.
+    </para>
+
+    <para>
+      After you press key to change state, small confirmation window will
+      appear. Use left and right keys and enter key to confirm your selection.
+      You most probably would like to press enter key to confirm selected yes.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>RTS2-MON SCREEN</title>
+
+    <para>
+      When you run rts2-mon, screen is divided into four principal
+      areas - menu bar, device list and status display, RTS2 messages
+      space and status bar at bottom.
+    </para>
+
+    <para>
+      Standart screen layout will display following elements:
+
+      <variablelist>
+        <varlistentry>
+	  <term>menu</term>
+	  <listitem>
+	    <para>
+	      This is the uppermost line of the screen. You can enter menu
+	      pressing F9 key, and exit it pressing ESC key. In menu you will
+	      find generic command to switch RTS2 to off, standby and on
+	      states.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>device listing</term>
+	  <listitem>
+	    <para>
+	      Devices are listed in left part of the screen. You can use up and
+	      down arrows to move between devices. Once you have selected
+	      device which you want, press TAB key to move to the variable
+	      listing.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>variable list</term>
+	  <listitem>
+	    <para>
+	      The center and left part of the screen holds information about
+	      RTS2 device variables, or device states. For central server, list
+	      of devices and their states will be shown.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>log window</term>
+	  <listitem>
+	    <para>
+	      Log window display messages, as they are passed through RTS2
+	      system. Those messages include debug messages. To change filter
+	      which governs which message will be displayed, go to the menu and
+	      select "Debug" option.
+	    </para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>status bar</term>
+	  <listitem>
+	    <para>
+	      Status bar display current system status. Left is system state
+	      (on, standby or off and substate - day, night, etc..), right is
+	      current <acronym>UT</acronym>.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </para>
+
+  </refsect1>
+  <refsect1 id="keys">
+    <title>KEYS</title>
+
+     <refsect2>
+      <title>State switching keys</title>
+    
+      <para>
+	RTS2 state can be switched by F2, F3 and F4 keys. After you press that
+	key, message dialog with question to confirm state change appear. You
+	can use arrow keys to change answer, and confirm the message box by
+	pressing enter. If you choose Yes as answer to question, RTS2 state
+	will be changed.
+      </para>
+
+      <para>
+	For detailed discussions of various states, please see
+	<citerefentry><refentrytitle>rts2</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>F2</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to off state.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F3</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to standby state.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F4</option>
+	  </term>
+	  <listitem>
+	    <para>Switch RTS2 to on state.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2>
+      <title>Movement keys</title>
+
+      <para>
+        As text which should be displayed in rts2-mon windows must
+        not necessary fit inside windows where it should be
+	displayed, following keys can be used to shift text.
+      </para>
+
+      <variablelist>
+        <varlistentry>
+	  <term>
+	    <option>up</option>
+	    <option>down</option>
+	  </term>
+	  <listitem>
+	    <para>Move focus on selection list up or down.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>home</option>
+	  </term>
+	  <listitem>
+	    <para>Move focus on selection list to first entry.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>end</option>
+	  </term>
+	  <listitem>
+	    <para>Move focus on selection list to last entry.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>left, right (arrows)</option>
+	  </term>
+	  <listitem>
+	    <para>Shift text left or right, so part which cannot be visible becomes visible.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2>
+      <title>rts2-mon functions keys</title>
+    
+      <para>
+	Those are keys, which execute rts2-mon functions:
+      </para>
+
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>F5</option>
+	  </term>
+	  <listitem>
+	    <para>Refresh display.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F9</option>
+	  </term>
+	  <listitem>
+	    <para>Enter to menu.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>F10</option>
+	  </term>
+	  <listitem>
+	    <para>Exit from rts2-mon.</para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <listitem>
+          <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

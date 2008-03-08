@@ -10,21 +10,17 @@ Instalation from CVS
    For inpatient (works on Debian/sarge with automake-1.7 installed -
 apt-get install automake-1.7):
 
-petr@omega:~/rts2$ aclocal-1.7
-petr@omega:~/rts2$ automake-1.7 --add-missing
-petr@omega:~/rts2$ autoconf
-petr@omega:~/rts2$ autoheader
+uuser@host:~/rts2$ ./autogen.sh
 
-   You should take all actions which are required to install an
-autoconf & automake based project. Namely, you should make those
-steps:
+Edit autogen.sh and set automake version to something other (see AC_VERSION
+parameter at top). It most probably will not work with automake versions 1.5
+and lower. This script will perform following steps:
    
-   Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then
-name of the script) to produce acinclude.m4 from aclocal.m4.
+   Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then name of
+   the script) to produce acinclude.m4 from aclocal.m4.
    
-   Run automake --add-missing, preferably automake-1.6 or newer (same
-as to aclocal apply to automake) to produce Makefile.in from
-Makefile.am. 
+   Run automake --add-missing, preferably automake-1.6 or newer (same as to
+   aclocal apply to automake) to produce Makefile.in from Makefile.am. 
 
    Run autoconf, preferably autoconf2.50 or newer, to produce
 configure from configure.in.
@@ -32,8 +28,13 @@ configure from configure.in.
    Run autoheader, preferably autoheader2.50 or newer, to produce
 config.h.in in include subdir.
 
-   You should end with running ./configure, thus proceeding as
-described bellow.
+   You should continue with running ./configure, thus proceeding as
+described bellow. If you have some special devices, you will need to add
+arguments to ./configure. See list bellow for details.
+
+   You then compile RTS2 using make command. And install it using make install.
+
+   Please see file RUN for details how to setup and RUN RTS2 envriroment.
 
    Hint: on most distributions, you can easily test, which versions of
 aclocal & so you have, by typing in bash aclocal and pressing enter.
@@ -227,3 +228,9 @@ operates.
      script, and exit.
 
 `configure' also accepts some other, not widely useful, options.
+
+Alta libraries
+==============
+
+You will need slightly modified Alta drives, which you can get from Random
+Factory. Please contact us for details.

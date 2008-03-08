@@ -4,3 +4,4 @@ Makefile
 Makefile.in
 rts2-dome*
 rts2-cupola*
+rts2-weathertimeout

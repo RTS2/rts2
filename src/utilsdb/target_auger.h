@@ -1,26 +1,55 @@
+/* 
+ * Auger cosmic rays showers follow-up target.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_TARGET_AUGER__
 #define __RTS2_TARGET_AUGER__
 
 #include "target.h"
 
-class TargetAuger:public Target
+class TargetAuger:public ConstTarget
 {
-private:
-  int t3id;
-  time_t date;
-  int npixels;
-  double sdpphi;
-  double sdptheta;
-  double sdpangle;
-public:
-    TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs);
-    virtual ~ TargetAuger (void);
+	private:
+		int t3id;
+		double auger_date;
+		int npixels;
+		int augerPriorityTimeout;
+	public:
+		TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs,
+			int in_augerPriorityTimeout);
+		virtual ~ TargetAuger (void);
 
-  virtual int load ();
-  virtual int getPosition (struct ln_equ_posn *pos, double JD);
-  virtual float getBonus (double JD);
+		virtual int load ();
+		virtual float getBonus (double JD);
+		virtual moveType afterSlewProcessed ();
+		virtual int considerForObserving (double JD);
+		virtual int changePriority (int pri_change, time_t * time_ch)
+		{
+			// do not drop priority
+			return 0;
+		}
+		virtual int isContinues ()
+		{
+			return 1;
+		}
 
-  virtual void printExtra (std::ostream & _os);
+		virtual void printExtra (Rts2InfoValStream & _os, double JD);
+
+		virtual void writeToImage (Rts2Image * image, double JD);
 };
-
-#endif /* !__RTS2_TARGET_AUGER__ */
+#endif							 /* !__RTS2_TARGET_AUGER__ */

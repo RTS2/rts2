@@ -3,7 +3,6 @@
 rts2-photlist
 Makefile
 Makefile.in
-db.c
 photlist.c
 test
 rts2-nightmails
@@ -13,5 +12,6 @@ rts2-simbadinfo
 rts2-targetlist
 rts2-target
 rts2-tpm
+rts2-obsinfo
 soap*
 SesameSoapBinding*

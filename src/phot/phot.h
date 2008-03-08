@@ -1,84 +1,105 @@
+/* 
+ * Photometer daemon.
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+/**
+ * @file Photometer deamon.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+
 #ifndef __RTS2_PHOT__
 #define __RTS2_PHOT__
 
-#include "../utils/rts2device.h"
+#include "../utils/rts2scriptdevice.h"
 #include "status.h"
 
 #include <sys/time.h>
 
-class Rts2DevPhot:public Rts2Device
+/**
+ * Abstract photometer class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Rts2DevPhot:public Rts2ScriptDevice
 {
-private:
-  int req_count;
-  struct timeval nextCountDue;
-protected:
-    Rts2Conn * integrateConn;
+	private:
+		int req_count;
+		struct timeval nextCountDue;
+		Rts2ValueInteger *count;
+		Rts2ValueFloat *exp;
+		Rts2ValueBool *is_ov;
 
-  int filter;
-  float req_time;
-  void setReqTime (float in_req_time);
+	protected:
+		Rts2Conn * integrateConn;
 
-  int sendCount (int count, float exp, int is_ov);
-  virtual int startIntegrate ();
-  virtual int endIntegrate ();
+		Rts2ValueInteger *filter;
+		float req_time;
+		void setReqTime (float in_req_time);
 
-public:
-    Rts2DevPhot (int argc, char **argv);
-  // return time till next getCount call in usec, or -1 when failed
-  virtual long getCount ()
-  {
-    return -1;
-  }
-  virtual int idle ();
+		char *photType;
+		char *serial;
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-  virtual int deleteConnection (Rts2Conn * conn)
-  {
-    if (integrateConn == conn)
-      integrateConn = NULL;
-    return Rts2Device::deleteConnection (conn);
-  }
+		void sendCount (int in_count, float in_exp, bool in_is_ov);
+		virtual int startIntegrate ();
+		virtual int endIntegrate ();
 
-  virtual int homeFilter ();
+	public:
+		Rts2DevPhot (int argc, char **argv);
+		// return time till next getCount call in usec, or -1 when failed
+		virtual long getCount ()
+		{
+			return -1;
+		}
+		virtual int initValues ();
 
-  void checkFilterMove ();
+		virtual int idle ();
 
-  virtual int startFilterMove (int new_filter);
-  virtual long isFilterMoving ();
-  virtual int endFilterMove ();
-  virtual int enableMove ();
-  virtual int disableMove ();
+		virtual int deleteConnection (Rts2Conn * conn)
+		{
+			if (integrateConn == conn)
+				integrateConn = NULL;
+			return Rts2ScriptDevice::deleteConnection (conn);
+		}
 
-  int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
-  virtual int stopIntegrate ();
+		virtual int homeFilter ();
 
-  int homeFilter (Rts2Conn * conn);
-  int moveFilter (Rts2Conn * conn, int new_filter);
-  int enableFilter (Rts2Conn * conn);
+		void checkFilterMove ();
 
-  virtual void cancelPriorityOperations ();
+		virtual int startFilterMove (int new_filter);
+		virtual long isFilterMoving ();
+		virtual int endFilterMove ();
+		virtual int enableMove ();
+		virtual int disableMove ();
 
-  virtual int changeMasterState (int new_state);
+		int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
+		virtual int stopIntegrate ();
 
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn)
-  {
-    return 0;
-  }
+		int homeFilter (Rts2Conn * conn);
+		int moveFilter (int new_filter);
+		int enableFilter (Rts2Conn * conn);
+
+		virtual void cancelPriorityOperations ();
+
+		virtual int changeMasterState (int new_state);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
-
-class Rts2DevConnPhot:public Rts2DevConn
-{
-private:
-  Rts2DevPhot * master;
-  int keepInformed;
-protected:
-    virtual int commandAuthorized ();
-public:
-    Rts2DevConnPhot (int in_sock, Rts2DevPhot * in_master_device);
-};
-
-
-
-#endif /* !__RTS2_PHOT__ */
+#endif							 /* !__RTS2_PHOT__ */

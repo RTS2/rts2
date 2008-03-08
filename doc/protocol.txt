@@ -29,8 +29,8 @@ in V prefix for values, so they can be distinguished from commands. That change
 happen in release 0.5 of RTS2.
 
 Originally states doesn't use error mask (see 2c for description). Error mask
-was added in 0.5 branch. States should converge to one state per server in
-release 0.6 or 0.7.
+was added in 0.5 branch. States converge to one state per server in release
+0.7.
 
 It was originally expected that clients will query for values with info,
 baseinfo etc. call. That wsa droped in favour of server notifing all clients
@@ -72,17 +72,38 @@ Example:
 
 V exposure 10.0
 
-2d. States
+2d. Extra values
 
-States changes are reported with messages starting with 'S' character. First is
-state name, followed with new state (numerical value), and optional description
-of state change cause.
+Apart from V values, which are standart values seen on all (or most) setups,
+there can be values, which should be recorded to FITS header of produced image,
+but are non-standart, so they cannot be added to standart values that RTS2
+write to image.
+
+For such values, you can use EXTRA VALUES. New extra value can be added in
+device constructor with method addExtraValue.
+
+Client devices process meta-information send by the device during communication
+setup. Clients classes, which produce FITS files (currently only camera) then
+write extra tags to FITS file.
+
+Example of definition (integer value):
+
+ED dith_mode i Dither wedge mode of operation (IR camera)
+
+Example of value transmission:
+
+EV 1
+
+2e. States
+
+States changes are reported with messages starting with 'S' character. There is
+new state (numerical value), and optional description of state change cause.
 
 Example:
 
-S img_chip 1 exposure started
+S 1 exposure started
 
-2e. Messages
+2f. Messages
 
 Messages are prefixed with 'M'. They were originally used to send changes of
 priority, but I think that was dropped. I'm not sure whenever messages are used
@@ -90,9 +111,9 @@ anymore - most probably they were completly abandoned.
 
 Example:
 
-M client receive priority
+M 1145788.876 C0 Exposure started
 
-2f. Data transfer
+2g. Data transfer
 
 RTS2 needs to transfer huge amount of data. Commands/values related to data
 transfer are prefixed with D.
@@ -100,6 +121,23 @@ transfer are prefixed with D.
 Example:
 
 D connect ir1.osn.iaa.es 22876 32256
+
+2h. Priority changes
+
+Priority changes are prefixed with P. They are send only by centrald.
+
+Example:
+
+P 100 0
+
+2i. Values change
+
+Values changes are prefixed with X. Those commands are used to change value of the device.
+X is followed by value name, operation (=,+ or -) and new value as string.
+
+Example:
+
+X GAIN = 20
 
 3. Command strategy
 

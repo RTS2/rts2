@@ -2,3 +2,4 @@ Makefile
 Makefile.in
 config.h
 stamp-h1
+stamp-h1.in

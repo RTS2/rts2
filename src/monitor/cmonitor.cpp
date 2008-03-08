@@ -1,7 +1,3 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -15,119 +11,112 @@ using namespace std;
 
 class Rts2CMonitorConnection:public Rts2ConnClient
 {
-private:
-  void printStatus ();
-public:
-    Rts2CMonitorConnection (Rts2Block * in_master,
-			    char *in_name):Rts2ConnClient (in_master, in_name)
-  {
-  }
-  virtual int commandReturn (Rts2Command * command, int cmd_status);
+	private:
+		void printStatus ();
+	public:
+		Rts2CMonitorConnection (Rts2Block * in_master,
+			char *in_name):Rts2ConnClient (in_master, in_name)
+		{
+		}
+		virtual void commandReturn (Rts2Command * command, int cmd_status);
 };
 
 void
 Rts2CMonitorConnection::printStatus ()
 {
-  cout << "============================== \n\
+	cout << "============================== \n\
   " << getName () << " status OK \n";
-  // get values..
-  std::vector < Rts2Value * >::iterator val_iter;
-  for (val_iter = otherDevice->values.begin ();
-       val_iter != otherDevice->values.end (); val_iter++)
-    {
-      Rts2Value *val = (*val_iter);
-      char *val_buf;
-      val_buf = val->getValue ();
-      cout << fixed << setprecision (2);
-      if (val_buf)
-	cout << setw (15) << val->
-	  getName () << " = " << setw (8) << val_buf << endl;
-    }
+	// get values..
+	Rts2ValueVector::iterator val_iter;
+	for (val_iter = valueBegin ();
+		val_iter != valueEnd (); val_iter++)
+	{
+		Rts2Value *val = (*val_iter);
+		const char *val_buf;
+		val_buf = val->getValue ();
+		cout << fixed << setprecision (2);
+		if (val_buf)
+			cout << setw (15) << val->
+				getName () << " = " << setw (8) << val_buf << endl;
+	}
 }
 
-int
+
+void
 Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
 {
-  // if command failed..
-  if (cmd_status)
-    {
-      endConnection ();
-      // print some fake status..
-      cout <<
-	"===================================" << endl
-	<< getName () << " FAILED! " << endl << endl
-	<< cmd->getText () << "'returned : " << cmd_status << endl;
-      return -1;
-    }
-  // command OK..
-  if (!strcmp (cmd->getText (), "info"))
-    {
-      printStatus ();
-    }
-  return 0;
+	// if command failed..
+	if (cmd_status)
+	{
+		endConnection ();
+		// print some fake status..
+		cout <<
+			"===================================" << endl
+			<< getName () << " FAILED! " << endl << endl
+			<< cmd->getText () << "'returned : " << cmd_status << endl;
+		return;
+	}
+	// command OK..
+	if (!strcmp (cmd->getText (), "info"))
+	{
+		printStatus ();
+	}
 }
+
 
 class CommandInfo:public Rts2Command
 {
 
-public:
-  CommandInfo (Rts2Block * in_owner):Rts2Command (in_owner, "info")
-  {
-  }
-  virtual int commandReturnOK ()
-  {
-    owner->queAll ("ready");
-    owner->queAll ("base_info");
-    owner->queAll ("info");
-    return Rts2Command::commandReturnOK ();
-  }
+	public:
+		CommandInfo (Rts2Block * in_owner):Rts2Command (in_owner, "info")
+		{
+		}
+		virtual int commandReturnOK (Rts2Conn * conn)
+		{
+			owner->queAll ("ready");
+			owner->queAll ("base_info");
+			owner->queAll ("info");
+			return Rts2Command::commandReturnOK (conn);
+		}
 };
 
 class Rts2CMonitor:public Rts2Client
 {
-protected:
-  virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
-  {
-    return new Rts2CMonitorConnection (this, in_deviceName);
-  }
+	protected:
+		virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
+		{
+			return new Rts2CMonitorConnection (this, in_deviceName);
+		}
 
-public:
-    Rts2CMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
-  {
+	public:
+		Rts2CMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
+		{
 
-  }
-  virtual int idle ();
-  virtual int run ();
+		}
+		virtual int idle ();
+		virtual int run ();
 };
 
 int
 Rts2CMonitor::idle ()
 {
-  if (allQuesEmpty ())
-    endRunLoop ();
-  return Rts2Client::idle ();
+	if (commandQueEmpty ())
+		endRunLoop ();
+	return Rts2Client::idle ();
 }
+
 
 int
 Rts2CMonitor::run ()
 {
-  getCentraldConn ()->queCommand (new CommandInfo (this));
-  return Rts2Client::run ();
+	getCentraldConn ()->queCommand (new CommandInfo (this));
+	return Rts2Client::run ();
 }
+
 
 int
 main (int argc, char **argv)
 {
-  int ret;
-  Rts2CMonitor *monitor;
-  monitor = new Rts2CMonitor (argc, argv);
-  ret = monitor->init ();
-  if (ret)
-    {
-      cerr << "Cannot initialize Monitor\n";
-      return 1;
-    }
-  monitor->run ();
-  delete monitor;
-  return 0;
+	Rts2CMonitor monitor = Rts2CMonitor (argc, argv);
+	return monitor.run ();
 }

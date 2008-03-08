@@ -4,7 +4,7 @@
 #include <ostream>
 #include <vector>
 
-#define USER_EMAIL_LEN		200
+#define USER_EMAIL_LEN    200
 
 class Target;
 
@@ -19,25 +19,25 @@ class Target;
  */
 class Rts2UserEvent
 {
-private:
-  std::string usr_email;
-  int event_mask;
-public:
-  // copy constructor
-    Rts2UserEvent (const Rts2UserEvent & in_user);
-    Rts2UserEvent (const char *in_usr_email, int in_event_mask);
-    virtual ~ Rts2UserEvent (void);
+	private:
+		std::string usr_email;
+		int event_mask;
+	public:
+		// copy constructor
+		Rts2UserEvent (const Rts2UserEvent & in_user);
+		Rts2UserEvent (const char *in_usr_email, int in_event_mask);
+		virtual ~ Rts2UserEvent (void);
 
-  bool haveMask (int in_mask)
-  {
-    return (in_mask & event_mask);
-  }
-  std::string & getUserEmail ()
-  {
-    return usr_email;
-  }
+		bool haveMask (int in_mask)
+		{
+			return (in_mask & event_mask);
+		}
+		std::string & getUserEmail ()
+		{
+			return usr_email;
+		}
 
-  friend bool operator == (Rts2UserEvent _user1, Rts2UserEvent _user2);
+		friend bool operator == (Rts2UserEvent _user1, Rts2UserEvent _user2);
 };
 
 bool operator == (Rts2UserEvent _user1, Rts2UserEvent _user2);
@@ -49,18 +49,17 @@ bool operator == (Rts2UserEvent _user1, Rts2UserEvent _user2);
  */
 class Rts2TarUser
 {
-private:
-  //! users which belongs to event
-  std::vector < Rts2UserEvent > users;
-  int tar_id;
-  char type_id;
-public:
-    Rts2TarUser (int in_target, char in_type_id);
-    virtual ~ Rts2TarUser (void);
+	private:
+		//! users which belongs to event
+		std::vector < Rts2UserEvent > users;
+		int tar_id;
+		char type_id;
+	public:
+		Rts2TarUser (int in_target, char in_type_id);
+		virtual ~ Rts2TarUser (void);
 
-  int load ();
-  // returns users for given event
-    std::string getUsers (int in_event_mask);
+		int load ();
+		// returns users for given event
+		std::string getUsers (int in_event_mask, int &count);
 };
-
-#endif /* !__RTS2_TARUSER__ */
+#endif							 /* !__RTS2_TARUSER__ */

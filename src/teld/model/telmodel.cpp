@@ -1,200 +1,275 @@
+/* 
+ * Telescope model reader.
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "telmodel.h"
 
 #include <fstream>
 
 Rts2TelModel::Rts2TelModel (Rts2DevTelescope * in_telescope,
-			    const char *in_modelFile)
+const char *in_modelFile)
 {
-  cond = new Rts2ObsConditions (in_telescope);
-  modelFile = in_modelFile;
+	cond = new Rts2ObsConditions (in_telescope);
+	modelFile = in_modelFile;
 }
+
 
 Rts2TelModel::~Rts2TelModel (void)
 {
-  delete cond;
+	delete cond;
 }
+
 
 int
 Rts2TelModel::load ()
 {
-  std::ifstream is (modelFile);
-  is >> this;
-  if (is.fail ())
-    return -1;
-  return 0;
+	std::ifstream is (modelFile);
+	is >> this;
+	if (is.fail ())
+		return -1;
+	return 0;
 }
+
 
 int
 Rts2TelModel::apply (struct ln_equ_posn *pos)
 {
-  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
-       iter != terms.end (); iter++)
-    {
-      (*iter)->apply (pos, cond);
-    }
-  return 0;
+	for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+		iter != terms.end (); iter++)
+	{
+		(*iter)->apply (pos, cond);
+	}
+	return 0;
 }
+
 
 int
 Rts2TelModel::applyVerbose (struct ln_equ_posn *pos)
 {
-  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
-       iter != terms.end (); iter++)
-    {
-      std::cout << (*iter) << "Before: " << pos->ra << " " << pos->
-	dec << std::endl;
-      (*iter)->apply (pos, cond);
-      std::cout << "After: " << pos->ra << " " << pos->
-	dec << std::endl << std::endl;
-    }
-  return 0;
+	for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+		iter != terms.end (); iter++)
+	{
+		struct ln_equ_posn old_pos = *pos;
+		logStream (MESSAGE_DEBUG) << (*iter) << "Before: " << pos->
+			ra << " " << pos->dec << sendLog;
+		(*iter)->apply (pos, cond);
+		logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec <<
+			"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+			old_pos.
+			dec) << ")" << sendLog;
+	}
+	return 0;
 }
 
 
 int
 Rts2TelModel::reverse (struct ln_equ_posn *pos)
 {
-  struct ln_equ_posn pos2;
+	struct ln_equ_posn pos2;
 
-  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
-       iter != terms.end (); iter++)
-    {
-      pos2.ra = pos->ra;
-      pos2.dec = pos->dec;
+	for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+		iter != terms.end (); iter++)
+	{
+		pos2.ra = pos->ra;
+		pos2.dec = pos->dec;
 
-      (*iter)->apply (pos, cond);
+		(*iter)->apply (pos, cond);
 
-      pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
-      pos->dec = 2 * pos2.dec - pos->dec;
-    }
-  return 0;
+		pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
+		pos->dec = 2 * pos2.dec - pos->dec;
+	}
+	return 0;
 }
+
+
+int
+Rts2TelModel::reverseVerbose (struct ln_equ_posn *pos)
+{
+	struct ln_equ_posn pos2;
+
+	for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+		iter != terms.end (); iter++)
+	{
+		struct ln_equ_posn old_pos = *pos;
+
+		pos2.ra = pos->ra;
+		pos2.dec = pos->dec;
+
+		logStream (MESSAGE_DEBUG) << (*iter) << "Before: " << pos->
+			ra << " " << pos->dec << sendLog;
+
+		(*iter)->apply (pos, cond);
+
+		logStream (MESSAGE_DEBUG) << "After1: " << pos->ra << " " << pos->dec <<
+			"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+			old_pos.
+			dec) << ")" << sendLog;
+
+		pos->ra = ln_range_degrees (2 * pos2.ra - pos->ra);
+		pos->dec = 2 * pos2.dec - pos->dec;
+
+		logStream (MESSAGE_DEBUG) << "After2: " << pos->ra << " " << pos->dec <<
+			"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+			old_pos.
+			dec) << ")" << sendLog;
+	}
+	return 0;
+}
+
 
 int
 Rts2TelModel::reverse (struct ln_equ_posn *pos, double sid)
 {
-  for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
-       iter != terms.end (); iter++)
-    {
-      (*iter)->reverse (pos, cond);
-    }
-  return 0;
+	for (std::vector < Rts2ModelTerm * >::iterator iter = terms.begin ();
+		iter != terms.end (); iter++)
+	{
+		(*iter)->reverse (pos, cond);
+	}
+	return 0;
 }
+
 
 std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 {
-  std::string name;
+	std::string name;
 
-  double corr;
-  double sigma;
-  Rts2ModelTerm *term;
-  // first line
-  is.getline (model->caption, 80);
-  // second line - method, number, refA, refB
-  is >> model->method >> model->num >> model->rms >> model->refA >> model->
-    refB;
-  is.ignore (2000, is.widen ('\n'));
-  if (is.fail ())
-    return is;
-  while (!is.eof ())
-    {
-      is >> name;
-      if (name == "END")
+	double corr;
+	double sigma;
+	Rts2ModelTerm *term;
+	// first line
+	is.getline (model->caption, 80);
+	// second line - method, number, refA, refB
+	is >> model->method >> model->num >> model->rms >> model->refA >> model->
+		refB;
+	is.ignore (2000, is.widen ('\n'));
+	if (is.fail ())
+		return is;
+	while (!is.eof ())
 	{
-	  return is;
+		is >> name;
+		if (name == "END")
+		{
+			return is;
+		}
+		// get corr parameter
+		is >> corr >> sigma;
+		if (is.fail ())
+		{
+			return is;
+		}
+		// correction is in degrees to speed up a calculation
+		corr /= 3600.0;
+		// get rid of fixed terms
+		if (name[0] == '=')
+			name = name.substr (1);
+		if (name == "ME")
+		{
+			term = new Rts2TermME (corr, sigma);
+		}
+		else if (name == "MA")
+		{
+			term = new Rts2TermMA (corr, sigma);
+		}
+		else if (name == "IH")
+		{
+			term = new Rts2TermIH (corr, sigma);
+		}
+		else if (name == "ID")
+		{
+			term = new Rts2TermID (corr, sigma);
+		}
+		else if (name == "CH")
+		{
+			term = new Rts2TermCH (corr, sigma);
+		}
+		else if (name == "NP")
+		{
+			term = new Rts2TermNP (corr, sigma);
+		}
+		else if (name == "PHH")
+		{
+			term = new Rts2TermPHH (corr, sigma);
+		}
+		else if (name == "PDD")
+		{
+			term = new Rts2TermPDD (corr, sigma);
+		}
+		else if (name == "A1H")
+		{
+			term = new Rts2TermA1H (corr, sigma);
+		}
+		else if (name == "A1D")
+		{
+			term = new Rts2TermA1D (corr, sigma);
+		}
+		else if (name == "TF")
+		{
+			term = new Rts2TermTF (corr, sigma);
+		}
+		else if (name == "TX")
+		{
+			term = new Rts2TermTX (corr, sigma);
+		}
+		else if (name == "HCEC")
+		{
+			term = new Rts2TermHCEC (corr, sigma);
+		}
+		else if (name == "HCES")
+		{
+			term = new Rts2TermHCES (corr, sigma);
+		}
+		else if (name == "DCEC")
+		{
+			term = new Rts2TermDCEC (corr, sigma);
+		}
+		else if (name == "DCES")
+		{
+			term = new Rts2TermDCES (corr, sigma);
+		}
+		else if (name == "DAB")
+		{
+			term = new Rts2TermDAB (corr, sigma);
+		}
+		else if (name == "DAF")
+		{
+			term = new Rts2TermDAF (corr, sigma);
+		}
+		// generic harmonics term
+		else if (name[0] == 'H')
+		{
+			term = new Rts2TermHarmonics (corr, sigma, name.c_str ());
+		}
+		else
+		{
+			return is;
+		}
+		model->terms.push_back (term);
 	}
-      // get corr parameter
-      is >> corr >> sigma;
-      if (is.fail ())
-	{
-	  return is;
-	}
-      // correction is in degrees to speed up a calculation
-      corr /= 3600.0;
-      if (name == "ME")
-	{
-	  term = new Rts2TermME (corr, sigma);
-	}
-      else if (name == "MA")
-	{
-	  term = new Rts2TermMA (corr, sigma);
-	}
-      else if (name == "IH")
-	{
-	  term = new Rts2TermIH (corr, sigma);
-	}
-      else if (name == "ID")
-	{
-	  term = new Rts2TermID (corr, sigma);
-	}
-      else if (name == "CH")
-	{
-	  term = new Rts2TermCH (corr, sigma);
-	}
-      else if (name == "NP")
-	{
-	  term = new Rts2TermNP (corr, sigma);
-	}
-      else if (name == "PHH")
-	{
-	  term = new Rts2TermPHH (corr, sigma);
-	}
-      else if (name == "PDD")
-	{
-	  term = new Rts2TermPDD (corr, sigma);
-	}
-      else if (name == "A1H")
-	{
-	  term = new Rts2TermA1H (corr, sigma);
-	}
-      else if (name == "A1D")
-	{
-	  term = new Rts2TermA1D (corr, sigma);
-	}
-      else if (name == "TF")
-	{
-	  term = new Rts2TermTF (corr, sigma);
-	}
-      else if (name == "TX")
-	{
-	  term = new Rts2TermTX (corr, sigma);
-	}
-      else if (name == "HCEC")
-	{
-	  term = new Rts2TermHCEC (corr, sigma);
-	}
-      else if (name == "HCES")
-	{
-	  term = new Rts2TermHCES (corr, sigma);
-	}
-      else if (name == "DCEC")
-	{
-	  term = new Rts2TermDCEC (corr, sigma);
-	}
-      else if (name == "DCES")
-	{
-	  term = new Rts2TermDCES (corr, sigma);
-	}
-      // generic harmonics term
-      else if (name[0] == 'H')
-	{
-	  term = new Rts2TermHarmonics (corr, sigma, name.c_str ());
-	}
-      else
-	{
-	  return is;
-	}
-      model->terms.push_back (term);
-    }
-  return is;
+	return is;
 }
+
 
 std::ostream & operator << (std::ostream & os, Rts2TelModel * model)
 {
-  for (std::vector < Rts2ModelTerm * >::iterator iter = model->terms.begin ();
-       iter != model->terms.end (); iter++)
-    {
-      os << (*iter);
-    }
-  return os;
+	for (std::vector < Rts2ModelTerm * >::iterator iter = model->terms.begin ();
+		iter != model->terms.end (); iter++)
+	{
+		os << (*iter);
+	}
+	return os;
 }

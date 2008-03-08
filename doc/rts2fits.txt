@@ -1,0 +1,60 @@
+# FITS = standart FITS header, see any FITS guide for details
+# l - long integer, b - boolean, c - char, s - string, d - double
+NAXIS	l	FITS
+NAXIS1	l	FITS
+NAXIS2	l	FITS
+EXTEND	b	FITS
+BZERO	l	FITS
+BSCALE	l	FITS
+CTIME	l	ctime (unix time) of exposure start
+USEC	l	nanosecond of exposure start (divide by 10^6 + ctime to get "double" ctime)
+JD	d	JD, is equal (in date sense) to CTIME+USEC/10^6
+EPOCH_ID	l	RTS2 epoch of observation (1, 2, 3, - currently must be number..)
+TARGET	l	RTS2 target id, which selector suplied to executor
+TARSEL	l	RTS2 target id, which executor choosed (e.g. is 22xx on FRAM, when TARGET is 6; a bit misleading anyway, I think I have to swap that two values)
+TARTYPE	c	RTS2 target type; see src/utilsdb/target.h for list
+OBSID	l	RTS2 observation ID
+IMGID	l	RTS2 image ID; counts from 1 to infiniti for given OBSERVATION, for new observation, count is reseted
+PROCES	l	mistage, needs to be removed; should be called PROC
+OBJECT	s	RTS2 object name (name field from DB)
+CCD_NAME	s	RTS2 name of ccd which take image (B01,..)
+CCD_TEMP	s?!	CCD temperature of chip
+EXPOSURE	d	exposure time in seconds
+CAM_FAN	b	camera fan state on/off (1/0)
+XPLATE	d	initial xplate guess for astrometry, given in rts2.ini
+YPLATE	d	initial xplate guess for astrometry, given in rts2.ini
+CAM_XOA	d	coordinates of OA in image, given in rts2.ini
+CAM_YOA	d	coordinates of OA in image, given in rts2.ini
+ROTANG	d	initial rotantional angle, given in rts2.ini
+FLIP	l	camera flip (1 or 0), given in rts2.ini; ussually 1
+FOC_NAME	s	name of focuser (if any is attached to camera and configure using -F option to camd)
+MIR_<name>	l	mirror state
+MNT_NAME	s	RTS2 name of mount on which image was caused
+MNT_TYPE	s	Type of mount as reported by RTS2
+MNT_MARK	l	RTS2 mount mark used for correction; increased by 1 after each mount move, reset to 0 at morning
+RASC	d	target RA (can differ from mount reported RA due to local corrections mechanism)
+DESC	d	target DEC (see RASC for comments)
+CUR_RA	d	current RA (one mount is think it is; first from target (=RASC), then, is there is astrometry, from last result of on-line astrometry on same position
+CUR_DEC	d	current DEC (see CUR_RA for comments)
+MNT_RA	d	RA reported from mount
+MNT_DEC	d	DEC reported from mount
+LONG	d	site longtitude; - is W of Greenwich
+LAT	d	site latitude; - is for S hemisphere
+GST	d	calculated global sidereal time at start of observation
+ALT	d	calculated mount altitude
+AZ	d	calculated mount azimut
+MNT_FLIP	l	mount flip - 1 when mount is flipped; flip changes on german mounts when mount pass throught pole point, on altaz mounts when mount pass through zenith point; usefull for modelling
+DOME	s	name of DOME component
+RAIN	l	DOME reported raining (should be 0 on all but dark images)
+WINDSPED	d	DOME reported windspeed
+IMAGETYP	s	IRAF image type; dark, object or flat are used now
+X	l	unbinned (as BIN_V = 1; divide by BIN_V to get binned start) start of readout area in X coordinates; width is given by NAXIS1
+Y	l	unbinned (as BIN_H = 1; divide by BIN_H to get binned start) start of readout area in Y coordinates; height is given by NAXIS2
+BIN_V	l	CCD vertical binning (NAXIS1 is given in binned pixels, multiply by BIN_V to get unbinned pixels)
+BIN_H	l	CCD horizontal binning (NAXIS2 is given in binned pixels, multiply by BIN_H to get unbinned pixels)
+CAM_FILT	l	filter index used for image
+SHUTTER	l	CCD shutter state (1- open, 2 closed, 3 - synchronized)
+AVERAGE	d	calculated image average
+FILTER	s	filter string, calculated from CAM_FILT; filter names are given in rts2.ini
+DARK	s	dark image path
+

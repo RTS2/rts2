@@ -1,50 +1,69 @@
+/* 
+ * Filter base class.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_FILTERD__
 #define __RTS2_FILTERD__
 
 #include "../utils/rts2device.h"
 
-/*!
- * That class is used for filter devices.
+/**
+ * This class is used for filter devices.
  * It's directly attached to camera, so idependent filter devices can
  * be attached to independent cameras.
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-
-class Rts2DevConnFilter;
-
 class Rts2DevFilterd:public Rts2Device
 {
-protected:
-  char *filterType;
-  char *serialNumber;
+	private:
+		/**
+		 * Set filter names from space separated argument list.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int setFilters (char *filters);
+		int setFilterNumMask (int new_filter);
+	protected:
+		char *filterType;
+		char *serialNumber;
 
-  int filter;
+		Rts2ValueSelection *filter;
 
-  virtual int getFilterNum (void);
-  virtual int setFilterNum (int new_filter);
-public:
-    Rts2DevFilterd (int in_argc, char **in_argv);
-    virtual ~ Rts2DevFilterd (void);
+		virtual int processOption (int in_opt);
 
-  virtual Rts2DevConn *createConnection (int in_sock, int conn_num);
+		virtual int initValues ();
 
-  virtual int info ();
+		virtual int getFilterNum (void);
+		virtual int setFilterNum (int new_filter);
 
-  virtual int sendInfo (Rts2Conn * conn);
-  virtual int sendBaseInfo (Rts2Conn * conn);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-  int setFilterNum (Rts2DevConnFilter * conn, int new_filter);
+	public:
+		Rts2DevFilterd (int in_argc, char **in_argv);
+		virtual ~ Rts2DevFilterd (void);
+
+		virtual int info ();
+
+		int setFilterNum (Rts2Conn * conn, int new_filter);
+
+		virtual int homeFilter ();
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
-
-class Rts2DevConnFilter:public Rts2DevConn
-{
-private:
-  Rts2DevFilterd * master;
-protected:
-  virtual int commandAuthorized ();
-public:
-    Rts2DevConnFilter (int in_sock, Rts2DevFilterd * in_master_device);
-};
-
-#endif /* !__RTS2_FILTERD__ */
+#endif							 /* !__RTS2_FILTERD__ */

@@ -1,0 +1,55 @@
+bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2-sensor-phytron \
+	rts2-sensor-ds21 rts2-sensor-mrakomer
+
+noinst_HEADERS = sensord.h sensorgpib.h
+
+EXTRA_DIST = sensord.cpp newport.cpp
+
+LDADD = sensord.o ../utils/librts2block.a
+
+rts2_sensor_dummy_SOURCES = dummy.cpp
+
+rts2_sensor_ms257_SOURCES = ms257.cpp
+rts2_sensor_ms257_LDADD = ${LDADD}
+
+rts2_sensor_newport_lamp_SOURCES = newport-lamp.cpp
+rts2_sensor_newport_lamp_LDADD = ${LDADD}
+
+rts2_sensor_phytron_SOURCES = phytron.cpp
+
+rts2_sensor_ds21_SOURCES = ds21.cpp
+
+rts2_sensor_mrakomer_SOURCES = mrakomer.cpp
+
+if GPIBLIB
+
+bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485 \
+	rts2-sensor-keithley-487
+
+LDADD += sensorgpib.o @LIB_GPIB@
+
+rts2_sensor_cryocon_SOURCES = cryocon.cpp
+
+rts2_sensor_keithley_6485_SOURCES = keithley-6485.cpp
+
+rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
+
+else
+
+EXTRA_DIST += sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
+
+endif
+
+if A3200
+
+bin_PROGRAMS += rts2-sensor-a3200
+
+rts2_sensor_a3200_SOURCES = a3200.cpp
+rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
+rts2_sensor_a3200_LDFLAGS = @LIB_A3200@ ../utils/librts2block.a
+
+else
+
+EXTRA_DIST += a3200.cpp
+
+endif

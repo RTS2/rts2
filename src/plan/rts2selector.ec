@@ -6,19 +6,19 @@
  *
  * @author petr
  */
- 
+
 #include "rts2selector.h"
 #include "../utils/rts2config.h"
 #include "status.h"
 
 #include <libnova/libnova.h>
 
-Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer)
+Rts2Selector::Rts2Selector (struct ln_lnlat_posn * in_observer)
 {
   int ret;
-  Rts2Config * config;
+  Rts2Config *config;
   double val;
-  
+
   observer = in_observer;
 
   config = Rts2Config::instance ();
@@ -31,24 +31,26 @@ Rts2Selector::Rts2Selector (struct ln_lnlat_posn *in_observer)
   if (ret)
     return;
   if (flat_sun_min > flat_sun_max)
-    {
-      val = flat_sun_min;
-      flat_sun_min = flat_sun_max;
-      flat_sun_max = val;
-    }
+  {
+    val = flat_sun_min;
+    flat_sun_min = flat_sun_max;
+    flat_sun_max = val;
+  }
 }
+
 
 Rts2Selector::~Rts2Selector (void)
 {
-  std::list <Target *>::iterator target_list;
-  for (target_list = possibleTargets.begin (); target_list !=
-  possibleTargets.end (); target_list++)
+  for (std::list < Target * >::iterator target_list =
+    possibleTargets.begin (); target_list != possibleTargets.end ();
+    target_list++)
   {
     Target *tar = *target_list;
     delete tar;
   }
   possibleTargets.clear ();
 }
+
 
 int
 Rts2Selector::selectNext (int masterState)
@@ -59,7 +61,7 @@ Rts2Selector::selectNext (int masterState)
   int ret;
   // take care of state - select to make darks when we are able to
   // make darks.
-  switch (masterState)
+  switch (masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
   {
     case SERVERD_NIGHT:
       return selectNextNight ();
@@ -84,18 +86,19 @@ Rts2Selector::selectNext (int masterState)
       return selectDarks ();
       break;
   }
-  return -1; // we don't have any target to take observation..
+  return -1;                     // we don't have any target to take observation..
 }
+
 
 void
 Rts2Selector::considerTarget (int consider_tar_id, double JD)
 {
-  std::list < Target* >::iterator target_list;
+  std::list < Target * >::iterator target_list;
   Target *newTar;
   int ret;
 
-  for (target_list = possibleTargets.begin (); target_list != possibleTargets.end ();
-  target_list++)
+  for (target_list = possibleTargets.begin ();
+    target_list != possibleTargets.end (); target_list++)
   {
     Target *tar = *target_list;
     if (tar->getTargetID () == consider_tar_id)
@@ -108,9 +111,10 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   if (!newTar)
     return;
   ret = newTar->considerForObserving (JD);
-#ifdef DEBUG_EXTRA
-  syslog (LOG_DEBUG, "considerForObserving tar_id: %i ret: %i", newTar->getTargetID (), ret);
-#endif
+  #ifdef DEBUG_EXTRA
+  logStream (MESSAGE_DEBUG) << "considerForObserving tar_id: " << newTar->
+    getTargetID () << " ret: " << ret << sendLog;
+  #endif
   if (ret)
   {
     delete newTar;
@@ -120,46 +124,67 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
   possibleTargets.push_back (newTar);
 }
 
+
+// enable targets which become observable
+void
+Rts2Selector::checkTargetObservability ()
+{
+  EXEC SQL
+    UPDATE
+      targets
+    SET
+      tar_next_observable = NULL
+    WHERE
+      tar_next_observable < now ();
+  EXEC SQL COMMIT;
+}
+
+
+// drop old priorities..
+void
+Rts2Selector::checkTargetBonus ()
+{
+  EXEC SQL
+    UPDATE
+      targets
+    SET
+      tar_bonus = 0,
+      tar_bonus_time = NULL
+    WHERE
+      tar_bonus_time < now ()
+    AND tar_bonus_time is not NULL;
+  EXEC SQL COMMIT;
+}
+
+
 void
 Rts2Selector::findNewTargets ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
-  int consider_tar_id;
+    int consider_tar_id;
   EXEC SQL END DECLARE SECTION;
-
-  std::list < Target* >::iterator target_list;
 
   double JD;
   int ret;
 
   JD = ln_get_julian_from_sys ();
 
-  // drop old priorities..
-
-  EXEC SQL
-  UPDATE
-    targets
-  SET
-    tar_bonus = 0,
-    tar_bonus_time = NULL
-  WHERE
-    tar_bonus_time < now ();
-  EXEC SQL COMMIT;
+  checkTargetObservability ();
+  checkTargetBonus ();
 
   // drop targets which gets bellow horizont..
-  
-  for (target_list = possibleTargets.begin (); target_list != possibleTargets.end ();)
+
+  for (std::list < Target * >::iterator target_list =
+    possibleTargets.begin (); target_list != possibleTargets.end ();)
   {
     Target *tar = *target_list;
     ret = tar->considerForObserving (JD);
     if (ret)
     {
       // don't observe us - we are bellow horizont etc..
-      std::list < Target* >::iterator old_list;
-      old_list = target_list;
-      target_list++;
-      possibleTargets.erase (old_list);
-      syslog (LOG_DEBUG, "remove target tar_id %i from possible targets", tar->getTargetID ());
+      target_list = possibleTargets.erase (target_list);
+      logStream (MESSAGE_DEBUG) << "remove target tar_id " << tar->
+        getTargetID () << " from possible targets" << sendLog;
       delete tar;
     }
     else
@@ -174,24 +199,27 @@ Rts2Selector::findNewTargets ()
     FROM
       targets
     WHERE
-        tar_enabled = true
-      AND tar_priority + tar_bonus > 0;
+      (tar_enabled = true)
+    AND (tar_priority + tar_bonus > 0)
+    AND ((tar_next_observable is null) OR (tar_next_observable < now ()));
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "findNewTargets: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.
+      sqlerrmc << sendLog;
     return;
   }
 
   EXEC SQL OPEN findnewtargets;
   if (sqlca.sqlcode)
   {
-    syslog (LOG_ERR, "findNewTargets: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_ERROR) << "findNewTargets: " << sqlca.sqlerrm.
+      sqlerrmc << sendLog;
     EXEC SQL ROLLBACK;
     return;
   }
   while (1)
   {
-    EXEC SQL FETCH next FROM findnewtargets INTO :consider_tar_id;
+    EXEC SQL FETCH next FROM findnewtargets INTO:consider_tar_id;
     if (sqlca.sqlcode)
       break;
     // do not consider FLAT and other master targets!
@@ -203,7 +231,8 @@ Rts2Selector::findNewTargets ()
   if (sqlca.sqlcode != ECPG_NOT_FOUND)
   {
     // some DB error..strange, let's get out
-    syslog (LOG_DEBUG, "findNewTargets DB error: %s", sqlca.sqlerrm.sqlerrmc);
+    logStream (MESSAGE_DEBUG) << "findNewTargets DB error: " << sqlca.
+      sqlerrm.sqlerrmc << sendLog;
     exit (1);
   }
   EXEC SQL CLOSE findnewtargets;
@@ -212,21 +241,22 @@ Rts2Selector::findNewTargets ()
 int
 Rts2Selector::selectNextNight (int in_bonusLimit)
 {
-  std::list < Target *>::iterator target_list;
   // search for new observation targets..
   int maxId;
   float maxBonus = -1;
   float tar_bonus;
   findNewTargets ();
   // find target with highest bonus and move us to it..
-  for (target_list = possibleTargets.begin (); target_list !=
-    possibleTargets.end (); target_list++)
+  for (std::list < Target * >::iterator target_list =
+    possibleTargets.begin (); target_list != possibleTargets.end ();
+    target_list++)
   {
     Target *tar = *target_list;
     tar_bonus = tar->getBonus ();
-#ifdef DEBUG_EXTRA
-    syslog (LOG_DEBUG, "bonus: %i %f", tar->getTargetID (), tar_bonus);
-#endif
+    #ifdef DEBUG_EXTRA
+    logStream (MESSAGE_DEBUG) << "target: " << tar->
+      getTargetID () << " bonus: " << tar_bonus << sendLog;
+    #endif
     if (tar_bonus > maxBonus)
     {
       maxId = tar->getTargetID ();
@@ -245,11 +275,13 @@ Rts2Selector::selectNextNight (int in_bonusLimit)
   return maxId;
 }
 
+
 int
 Rts2Selector::selectFlats ()
 {
   return TARGET_FLAT;
 }
+
 
 int
 Rts2Selector::selectDarks ()

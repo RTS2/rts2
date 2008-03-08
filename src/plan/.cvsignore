@@ -5,6 +5,7 @@ Makefile.in
 marchive
 rts2-marchive
 rts2-executor
+rts2-scriptexec
 rts2-imgproc
 rts2-selector
 rts2-seltest
@@ -14,3 +15,4 @@ rts2selector.cpp
 rts2devcliphot.cpp
 marchive.cpp
 test
+spiraltest

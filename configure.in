@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.6.1, pkubanek@asu.cas.cz)
+AC_INIT(rts2, 0.7.3, petr@kubanek.net)
 
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
@@ -8,7 +8,6 @@ AC_PREREQ(2.50)
 AM_MAINTAINER_MODE
 
 # Checks for programs.
-AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_MAKE_SET
 
@@ -26,7 +25,7 @@ AC_ARG_ENABLE(focusing,
 esac],[focusing=yes])
 
 AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
-
+B_A
 AC_ARG_ENABLE(mirror,
 [  --disable-mirror        disables mirror code in camd (=>camd is a bit smaller)],
 [case "${enableval}" in
@@ -48,14 +47,34 @@ esac],[xfocusc=yes])
 AM_CONDITIONAL(XFOCUSC, test x$xfocusc = xyes)
 
 AC_ARG_WITH(libnova,
-[  --without-libnova       don't build libnova dependent programs],
+[  --with-libnova       path to libnova or "no" if libnova is not installed],
 [case "${withval}" in
 	yes) libnova=yes ;;
 	no)  libnova=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-libnova) ;;
+	*) libnova=${withval} ;;
 esac],[libnova=yes])
 
-AM_CONDITIONAL(LIBNOVA, test x$libnova = xyes)
+AM_CONDITIONAL(LIBNOVA, test x$libnova != xno)
+
+AC_ARG_WITH(cfitsio,
+[  --with-cfitsio       path to CFITSO library or "no" if cfitsio is not installed],
+[case "${withval}" in
+	yes) cfitsio=yes ;;
+	no)  cfitsio=no ;;
+	*) cfitsio=${withval} ;;
+esac],[cfitsio=yes])
+
+AM_CONDITIONAL(CFITSIO, test x$cfitsio != xno)
+
+AC_ARG_WITH(jpeg,
+[  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
+[case "${withval}" in
+	yes) libjpeg=yes ;;
+	no)  libjpeg=no ;;
+	*) libjpeg=${withval} ;;
+esac],[libjpeg=yes])
+
+AM_CONDITIONAL(LIBJPEG, test x$libjpeg != xno)
 
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
@@ -88,8 +107,7 @@ AC_SUBST(INC_SBIG)
 AC_ARG_WITH(andor,
 [  --with-andor            path to Andor CCD driver, build Andor CCD driver],
 ANDOR="${withval}";
-LIB_ANDOR="-L${ANDOR} -landor-shared-gcc3";
-INC_ANDOR="-I${ANDOR}",
+LIB_ANDOR="-landor",
 [ANDOR=no])
 
 AM_CONDITIONAL(ANDOR, test x$ANDOR != xno)
@@ -97,20 +115,33 @@ AC_SUBST(ANDOR)
 AC_SUBST(LIB_ANDOR)
 AC_SUBST(INC_ANDOR)
 
+# test for EDT PDV boards
+AC_ARG_WITH(edtpdv,
+[  --with-edtpdv           path to EDT-PDV SDK files, needed to build EDT cameras (http://www.edt.com/software],
+EDTPDV="${withval}";
+LIB_EDTPDV="-L${EDTPDV} -lpdv -ldl";
+INC_EDTPDV="-I${EDTPDV}",
+[EDTPDV=no])
+
+AM_CONDITIONAL(EDTPDV, test x$EDTPDV != xno)
+AC_SUBST(EDTPDV)
+AC_SUBST(LIB_EDTPDV)
+AC_SUBST(INC_EDTPDV)
+
 # for Alta we need special library:(
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
 # checks for libusb-config
 AC_CHECK_PROG(LIBUSB_CONFIG, libusb-config, yes, no)
 if test "$LIBUSB_CONFIG" = "yes"; then
- LIBUSB_LDFLAGS=`libusb-config --libs`
- LIBUSB_CFLAGS=`libusb-config --cflags`
- LIBUSB_VERSION=`libusb-config --version`
+  LIBUSB_LDFLAGS=`libusb-config --libs`
+  LIBUSB_CFLAGS=`libusb-config --cflags`
+  LIBUSB_VERSION=`libusb-config --version`
 else
- AC_MSG_ERROR([libusb not found!])
+  AC_MSG_ERROR([libusb not found!])
 fi
 ALTA="${withval}";
-LIB_ALTA="${ALTA}/ApnCamera.o ${ALTA}/ApnCamera_USB.o ${ALTA}/ApogeeUsbLinux.o ${ALTA}/ApnCamData*.o ${ALTA}/ApnCamTable.o ${LIBUSB_LDFLAGS}";
+LIB_ALTA="${ALTA}/apogee_USB.so ${LIBUSB_LDFLAGS}";
 INC_ALTA="-I${ALTA} -I${ALTA}/FpgaRegs ${LIBUSB_CFLAGS}",
 [ALTA=no])
 
@@ -145,6 +176,19 @@ AC_SUBST(OPENTPL)
 AC_SUBST(LIB_OPENTPL)
 AC_SUBST(INC_OPENTPL)
 
+# check for COMEDI
+AC_ARG_WITH(comedi,
+[  --with-comedi	path to COMEDI library, build comedi dependent binaries],
+COMEDI="${withval}";
+LIB_COMEDI="-lcomedi";
+INC_COMEDI="",
+[COMEDI=no])
+
+AM_CONDITIONAL(COMEDI, test x$COMEDI != xno)
+AC_SUBST(COMEDI)
+AC_SUBST(LIB_COMEDI)
+AC_SUBST(INC_COMEDI)
+
 # check for paramount library 
 AC_ARG_WITH(paralib,
 [  --with-paralib          path to Paramount library, build Paramount driver],
@@ -171,6 +215,72 @@ AC_SUBST(PCI8255)
 AC_SUBST(LIB_PCI8255)
 AC_SUBST(INC_PCI8255)
 
+# check for GPIB
+AC_ARG_WITH(gpib,
+[  --with-gpib             build with support for GPIB devices],
+GPIBLIB="${withval}";
+LIB_GPIB="-lgpib",
+[GPIBLIB=no])
+
+if test "x$GPIBLIB" != "xno" ; then
+  AC_CHECK_HEADERS([gpib/ib.h])
+fi
+
+AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
+AC_SUBST(GPIBLIB)
+AC_SUBST(LIB_GPIB)
+
+# check for INDI sources
+AC_ARG_WITH(indi,
+[  --with-indi             build with INDI bridge],
+INDI="${withval}";
+LIB_INDI="-L${withval} ";
+INC_INDI="-I${withval} ",
+[INDI=no])
+
+if test "x$INDI" != "xno" ; then
+  AC_CHECK_HEADERS([${INDI}/indidevapi.h ${INDI}/indicom.h])
+fi
+
+AM_CONDITIONAL(INDI, test x$INDI != xno)
+AC_SUBST(INDI)
+AC_SUBST(LIB_INDI)
+AC_SUBST(INC_INDI)
+
+# Check for A3200
+AC_ARG_WITH(a3200,
+[  --with-a3200           path for A3200 SDK],
+A3200="${withval}";
+LIB_A3200="${withval}/Lib/A32Cmplr.lib ${withval}/Lib/A32Sys.lib";
+INC_A3200="-I${withval}/Include",
+[A3200=no])
+
+AM_CONDITIONAL(A3200, test x$A3200 != xno)
+AC_SUBST(A3200)
+AC_SUBST(LIB_A3200)
+AC_SUBST(INC_A3200)
+  
+# Define lock file prefix
+AC_ARG_WITH(lock,
+[  --with-lock             specify lock file path prefix, default to /var/run/rts2_],
+LOCK_PREFIX="${withval}",
+LOCK_PREFIX="/var/run/rts2_")
+
+AH_TEMPLATE([LOCK_PREFIX],[Lock file prefix path])
+
+AC_DEFINE_UNQUOTED(LOCK_PREFIX, "$LOCK_PREFIX", [Lock file prefix path])
+
+# Default centrald port
+AC_ARG_WITH(port,
+[  --with-port             default centrald port. If this value is not specified, 617 is used],
+CENTRALD_PORT="${withval}",
+CENTRALD_PORT="617")
+
+AH_TEMPLATE([CENTRALD_PORT],[Default centrald port])
+
+AC_DEFINE_UNQUOTED(CENTRALD_PORT, "$CENTRALD_PORT", [Default centrald port])
+
+
 # Checks for libraries.
 
 AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
@@ -180,13 +290,26 @@ LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
-AC_SUBST(LIB_CFITSIO), [cat <<EOF
+if test "x${cfitsio}" != "xno"; then
+  if test "x${cfitsio}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${cfitsio}/lib"
+  fi
+  AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
+, [cat <<EOF
 **** You don't have cfitsio installed.
 **** Please download one from 
 **** http://heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html
 EOF
 exit 1])
+  if test "x${cfitsio}" != "xyes"; then
+    LIB_CFITSIO="-L${cfitsio}/lib ${LIB_CFITSIO}"
+    CFITSIO_CFLAGS="-I${cfitsio}/include"
+  else
+    CFITSIO_CFLAGS=""
+  fi
+  AC_SUBST(CFITSIO_CFLAGS)
+  AC_SUBST(LIB_CFITSIO)
+fi
 
 if test "x${wcs}" = "xyes"; then
 	AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
@@ -201,6 +324,8 @@ EOF
 	exit 1])
 fi
 
+AM_CONDITIONAL(WCSLIB, test x$wcs != xno)
+
 AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
 AC_SUBST(LIB_NCURSES), [cat << EOF
 **** You don't have ncurser libraries.
@@ -208,21 +333,26 @@ AC_SUBST(LIB_NCURSES), [cat << EOF
 EOF
 exit 1])
 
-AC_CHECK_LIB([panel], [update_panels], LIB_PANEL="-lpanel";
-AC_SUBST(LIB_PANEL), [cat <<EOF
-**** You don't have panel library installed, which is
-**** ussually part of ncurses library. Please prove
-**** your system for such library.
-EOF
-exit 1])
-
-AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova"; 
-AC_SUBST(LIB_NOVA), [cat << EOF
+if test "x${libnova}" != "xno"; then
+  if test "x${libnova}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${libnova}/lib"
+  fi
+  AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
+[cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-exit 1])
-AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
+  exit 1])
+  if test "x${libnova}" != "xyes"; then
+    LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
+    NOVA_CFLAGS="-I${libnova}/include"
+  else
+    NOVA_CFLAGS=""
+  fi
+  AC_SUBST(LIB_NOVA)
+  AC_SUBST(NOVA_CFLAGS)
+  AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
+fi  
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
@@ -236,27 +366,34 @@ if test "x"$xfocusc = "xyes"; then
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
-AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg";
-AC_SUBST(LIB_JPEG), [cat << EOF
+
+if test "x${libjpeg}" != "xno"; then
+  if test "x${libjpeg}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${libjpeg}/lib"
+  fi
+  AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg",
+[cat << EOF
 **** You don't have jpeg library installed.
 **** Please try to get it somewhere.
 EOF
-exit 1])
-
-WWWUSER="none"
-
-AC_MSG_CHECKING(for httpd.conf)
-httpd_conf=`find /etc /usr/local/etc -name httpd.conf 2>/dev/null | head -n1`
-if test "z"$httpd_conf = "z" ; then
-	AC_MSG_RESULT(none found)
-else
-	AC_MSG_RESULT($httpd_conf)
-	AC_MSG_CHECKING(for User in httpd.conf)
-	WWWUSER=`grep '^User.*$' $httpd_conf | head -n1 | sed -e "s/\(.*User *\| *$\)//"`
-	AC_MSG_RESULT($WWWUSER)
+  exit 1])
+  if test "x${libjpeg}" != "xyes"; then
+    LIB_JPEG="-L${libjpeg}/lib ${LIB_JPEG}"
+    JPEG_CFLAGS="-I${libjpeg}/include"
+  else
+    JPEG_CFLAGS=""
+  fi
+  AC_SUBST(LIB_JPEG)
+  AC_SUBST(JPEG_CFLAGS)
 fi
 
-AC_SUBST(WWWUSER)
+
+#AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
+#AC_SUBST(LIB_COMEDI), [cat << EOF
+#**** You don't have comedi library installed.
+#**** Please try to get it somewhere.
+#EOF
+#exit 1])
 
 AC_MSG_CHECKING(for date)
 DATE=`date +%Y-%m-%d`
@@ -293,11 +430,29 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-AC_POSTGRESQL
-AC_ECPG
+AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
+
+if test "x"$psql = xyes ; then
+  AC_POSTGRESQL
+  AC_ECPG
+
+  AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
+fi
+
+AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 
 # Check for gsoap
 AC_GSOAP
+
+AH_TEMPLATE([HAVE_PGSQL_SOAP],[Whenever PGSQL and SOAP libraries are installed])
+
+AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap == xyes )
+
+if test x$psql = xyes -a x$gsoap == xyes ; then 
+  AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
+fi
+
+AC_CHECK_HEADERS
 
 # Checks for library functions.
 AC_FUNC_FORK
@@ -306,7 +461,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo])
 
 AC_CHECK_HEADERS([limits.h]) 
 AC_FUNC_CHOWN 
@@ -318,18 +473,23 @@ AC_FUNC_VPRINTF
 AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
-AM_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADER(include/config.h)
+
+AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
 
 AC_OUTPUT([Makefile
 	   man/Makefile
 	   include/Makefile
-	   html/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
+	   src/camd/edtsao/Makefile
+	   doc/Makefile
+	   doc/doxyfile
 	   src/dome/Makefile
+	   src/indi/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
@@ -351,10 +511,12 @@ AC_OUTPUT([Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
-	   man/rts2.1
-	   man/rts2.conf.5
-	   man/rts2-centrald.1
-	   man/rts2-cmon.1]
+	   src/db/simbad/Makefile
+	   src/soap/Makefile
+	   src/sensord/Makefile
+	   src/logger/Makefile
+	   src/xmlrpc/Makefile
+	   src/xmlrpc/xmlrpc++/Makefile]
 )
 
 echo "
@@ -362,16 +524,18 @@ echo "
  RTS2 build configuration 
 
   focusing      ${focusing}
-  mirror	${mirror}
+  mirror        ${mirror}
   xfocusc       ${xfocusc}
-  psql		${psql}
-  libnova	${libnova}
+  psql          ${psql}
+  libnova       ${libnova}
+  cfitsio       ${cfitsio}
 
 CCD's:
-  sbig		${SBIG}
+  sbig          ${SBIG}
   andor         ${ANDOR}
+  edtsao        ${EDTPDV}
   alta          ${ALTA}
-  fli		${FLI}
+  fli           ${FLI}
 
 MOUNT's:
   opentpl       ${OPENTPL}
@@ -380,7 +544,16 @@ MOUNT's:
 DOME's:
   PCI8255       ${PCI8255}
 
-gsoap           ${gsoap}  
+SENSOR's:
+  A3200         ${A3200}
+
+pgsql		${psql}
+gsoap           ${gsoap}
+gpib            ${GPIBLIB}
+INDI            ${INDI}
+
+lock prefix     ${LOCK_PREFIX}
+centrald port	${CENTRALD_PORT}
 
 ***************************************
 

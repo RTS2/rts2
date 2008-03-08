@@ -1,0 +1,9 @@
+Installation of RTS2 on Cygwin
+
+RTS2 can run on Microsoft Windows (R)(TM), using Cygwin enviroment. You can get Cygwin from http://www.cygwin.com.
+
+RTS2 takes benefits from Cygwin Unix emulation, which includes select() call
+etc. It can be linked with Windows libraries. That enables you to quickly add devices, for which you get only binary
+Windows driver, to RTS2.
+
+Petr Kubanek

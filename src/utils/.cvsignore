@@ -6,3 +6,4 @@ Makefile.in
 config.h
 msgread
 test
+rts2-horizon

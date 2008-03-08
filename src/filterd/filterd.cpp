@@ -1,100 +1,191 @@
+/* 
+ * Filter base class.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "filterd.h"
 
 Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
-  char *states_names[1] = { "filter" };
-  setStateNames (1, states_names);
-  filter = -1;
-  filterType = NULL;
-  serialNumber = NULL;
+	createValue (filter, "filter", "used filter", false);
+
+	addOption ('F', NULL, 1, "filter names, separated by space(s)");
+
+	filterType = NULL;
+	serialNumber = NULL;
 }
+
 
 Rts2DevFilterd::~Rts2DevFilterd (void)
 {
 }
 
-Rts2DevConn *
-Rts2DevFilterd::createConnection (int in_sock, int conn_num)
+
+int
+Rts2DevFilterd::processOption (int in_opt)
 {
-  return new Rts2DevConnFilter (in_sock, this);
+	switch (in_opt)
+	{
+		case 'F':
+			return setFilters (optarg);
+		default:
+			return Rts2Device::processOption (in_opt);
+	}
+	return 0;
 }
+
+
+int
+Rts2DevFilterd::initValues ()
+{
+	addConstValue ("type", filterType);
+	addConstValue ("serial", serialNumber);
+
+	return Rts2Device::initValues ();
+}
+
 
 int
 Rts2DevFilterd::info ()
 {
-  filter = getFilterNum ();
-  return 0;
+	filter->setValueInteger (getFilterNum ());
+	return Rts2Device::info ();
 }
 
-int
-Rts2DevFilterd::sendInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("filter", filter);
-  return 0;
-}
-
-int
-Rts2DevFilterd::sendBaseInfo (Rts2Conn * conn)
-{
-  conn->sendValue ("type", filterType);
-  conn->sendValue ("serial", serialNumber);
-  return 0;
-}
 
 int
 Rts2DevFilterd::getFilterNum ()
 {
-  return -1;
+	return -1;
 }
+
 
 int
 Rts2DevFilterd::setFilterNum (int new_filter)
 {
-  return -1;
+	return -1;
 }
+
 
 int
-Rts2DevFilterd::setFilterNum (Rts2DevConnFilter * conn, int new_filter)
+Rts2DevFilterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-  int ret;
-  maskState (0, FILTERD_MASK, FILTERD_MOVE, "filter move started");
-  ret = setFilterNum (new_filter);
-  Rts2Device::infoAll ();
-  if (ret == -1)
-    {
-      maskState (0, DEVICE_ERROR_MASK | FILTERD_MASK,
-		 DEVICE_ERROR_HW | FILTERD_IDLE);
-      conn->sendCommandEnd (DEVDEM_E_HW, "filter set failed");
-    }
-  maskState (0, FILTERD_MASK, FILTERD_IDLE);
-  return ret;
+	if (old_value == filter)
+		return setFilterNumMask (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	return Rts2Device::setValue (old_value, new_value);
 }
 
-Rts2DevConnFilter::Rts2DevConnFilter (int in_sock, Rts2DevFilterd * in_master_device):Rts2DevConn (in_sock,
-	     in_master_device)
-{
-  master = in_master_device;
-}
 
 int
-Rts2DevConnFilter::commandAuthorized ()
+Rts2DevFilterd::homeFilter ()
 {
-  if (isCommand ("filter"))
-    {
-      int new_filter;
-      if (paramNextInteger (&new_filter) || !paramEnd ())
-	return -2;
-      return master->setFilterNum (this, new_filter);
-    }
-  else if (isCommand ("help"))
-    {
-      send ("ready - is filter ready?");
-      send ("info - information about camera");
-      send ("filter <filter number> - set camera filter");
-      send ("exit - exit from connection");
-      send ("help - print, what you are reading just now");
-      return 0;
-    }
-  return Rts2DevConn::commandAuthorized ();
+	return -1;
+}
+
+
+int
+Rts2DevFilterd::setFilters (char *filters)
+{
+	char *top;
+	while (*filters)
+	{
+		// skip leading spaces
+		while (*filters
+			&& (*filters == ':' || *filters == '"' || *filters == '\''))
+			filters++;
+		if (!*filters)
+			break;
+		top = filters;
+		// find filter string
+		while (*top && *top != ':' && *top != '"' && *top != '\'')
+			top++;
+		// it's natural end, add and break..
+		if (!*top)
+		{
+			if (top != filters)
+				filter->addSelVal (filters);
+			break;
+		}
+		*top = '\0';
+		filter->addSelVal (filters);
+		filters = top + 1;
+	}
+	if (filter->selSize () == 0)
+		return -1;
+	return 0;
+}
+
+
+int
+Rts2DevFilterd::setFilterNumMask (int new_filter)
+{
+	int ret;
+	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_MOVE | BOP_EXPOSURE,
+		"filter move started");
+	ret = setFilterNum (new_filter);
+	infoAll ();
+	if (ret == -1)
+	{
+		maskState (DEVICE_ERROR_MASK | FILTERD_MASK | BOP_EXPOSURE,
+			DEVICE_ERROR_HW | FILTERD_IDLE);
+		return ret;
+	}
+	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_IDLE);
+	return ret;
+}
+
+
+int
+Rts2DevFilterd::setFilterNum (Rts2Conn * conn, int new_filter)
+{
+	int ret;
+	ret = setFilterNumMask (new_filter);
+	if (ret == -1)
+	{
+		conn->sendCommandEnd (DEVDEM_E_HW, "filter set failed");
+	}
+	return ret;
+}
+
+
+int
+Rts2DevFilterd::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("filter"))
+	{
+		int new_filter;
+		if (conn->paramNextInteger (&new_filter) || !conn->paramEnd ())
+			return -2;
+		return setFilterNum (conn, new_filter);
+	}
+	else if (conn->isCommand ("home"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return homeFilter ();
+	}
+	else if (conn->isCommand ("help"))
+	{
+		conn->sendMsg ("ready - is filter ready?");
+		conn->sendMsg ("info - information about camera");
+		conn->sendMsg ("exit - exit from connection");
+		conn->sendMsg ("help - print, what you are reading just now");
+		return 0;
+	}
+	return Rts2Device::commandAuthorized (conn);
 }

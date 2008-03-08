@@ -1,0 +1,543 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2007-06-02</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.script">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+      <author>
+	<firstname>Michael</firstname>
+	<surname>Prouza</surname>
+	<contrib>Contributed to the man page.</contrib>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2006</year>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Scripting for Remote Telescope System, 2nd Version.</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      Scripting is used to command various devices, which can be found in RTS2 setup.
+    </para>
+
+    <para>
+      Script can contain block, enclosed in curved brackets ({}).
+      This block ussually comes after 'for', 'if' and similar commands.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>COMMANDS</title>
+
+    <para>
+      Commands are separated by an arbitrary number of spaces. 
+      Here in this description we use parameters enclosed in
+      {curved brackets}, and afterwards explanation of their 
+      meaning is given in text.  Numerical values are entered 
+      in standard decimal notation.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>E {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes light exposure. Exposure time is specified
+	    in seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>D {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes dark frame, useful for calibration. Exposure time is specified
+	    in seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>F {filter_number}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Changes filter on camera filter wheel. Filter numbers are
+	    always counted from 0.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <replaceable>{value name}</replaceable><replaceable>operation</replaceable><replaceable>{new value}</replaceable>
+	</term>
+	<listitem>
+	  <para>
+	    Perform value change of the specified value. <replaceable>value
+	    name</replaceable> is name of the value, <replaceable>new
+	    value</replaceable> is new value, either as string, or number in
+	    decimal notation. <replaceable>operation</replaceable> can be one
+	    of the following:
+	    <variablelist>
+  	      <varlistentry>
+	        <term>
+		  <option>=</option>
+		</term>
+		<para>
+		  Set new value. It works with all types of variables.
+		</para>
+	      </varlistentry>
+  	      <varlistentry>
+	        <term>
+		  <option>+=</option>
+		</term>
+		<para>
+		  Increase value. Works only with numeric values.
+		</para>
+	      </varlistentry>
+  	      <varlistentry>
+	        <term>
+		  <option>-=</option>
+		</term>
+		<para>
+		  Decrease value. Works only with numeric values.
+		</para>
+	      </varlistentry>
+	    </variablelist>
+	    Please see EXAMPLES section for sample scripts, which might clear
+	    how this command operates better than the description.
+	  </para>
+	  <para>
+	    Value name, operation and new value must be written without space.
+	    This is invalid syntax: <option>focpos +=10</option>,
+	    <option>focpos+= 10</option>. This is valid:
+	    <option>focpos+=10</option>.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>O {unknown}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Reserved for focusing command. Not implemented yet.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>C {ra_diff} {dec_diff}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position before next exposure by {ra_diff}
+	    and {dec_diff}. Wait until no exposure is
+	    going on, then perform move, then continue exposing.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in degrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>hex {ra_diff} {dec_diff} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position in hex pattern after finishing
+	    [block] and execute [block] again. This will produce
+	    images which are aligned on hexagonal path.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in degrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>fxf {ra_diff} {dec_diff} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Change mount position in 5x5 rectangular pattern after finishing
+	    [block] and execute [block] again. This will produce images, which
+	    are aligned on rectangular path.
+	  </para>
+	  <para>
+	    {ra_diff} and {dec_diff} are in degrees.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>BIN {binning} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Change both vertical and horizontal binning. Will be
+	    dropped in favour of constant settings.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>BOX {x} {y} {width} {heigh} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Readout only area of the chip, specified by pixel coordinates of
+	    upper left corner (x and y) and by area width and height.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>CENTER {width} {height} </option>
+	</term>
+	<listitem>
+	  <para>
+	    Readout center of the chip of provided width and height (in
+	    pixels).
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>W</option>
+	</term>
+	<listitem>
+	  <para>
+	    Generic wait for any signal.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>A {precision} {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Takes an image of {exposure_time}, tries astrometry, waits for
+	    a result. If the image is not within {precision} in degrees from
+	    a target position, then the procedure is repeated. 
+            It will continue and it will take multiple images, as
+	    long as precision of the last image is at least twice better
+	    than previous image - e.g. if o1 is offset of the last image,
+	    and o0 is offset of previous one, o1 &lt; o0 / 2.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>Aw</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait until A command on other camera is finished. If there
+	    is no running script with A command on any other device, it will
+	    continue with the next command.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>M {mirror_position}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Move mirror to new position, specified by
+	    {mirror_position} numeric argument.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>P {filter} {exposure} {count}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Do measurements using photometer. {filter} is filter number
+	    (integer), {exposure} is exposure time in seconds (float
+	    number), and {count} is integer specifying how many
+	    measurements will be taken.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>star {repeat_number} {precision} {exposure} {min_flux}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Try to find stars with (raw) flux larger than
+	    {min_flux} on the image. Exposure length and required precision  from
+	    star center can be specified. {repeat_number} specifies
+	    how many time will be search performed. If star brighter
+	    than {min_flux} is not found on the taken image, telescope is
+	    moved on the spiral path around target coordinates 
+            in order to find a bright star.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>PS {radius} {speed}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Do cross-shaped search of maxima on photometer. {radius} specifies
+	    size of the arms in degrees, which will be searched, and speed
+	    specifies speed which will be used.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>block_waitsig {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute next block only if given signal arrives.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>guiding {exposure_time} {end_signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Start guiding on given camera. Exposure of {exposure_time}
+	    length is taken, brightest stars on the image are identified, and
+	    correction commands are then feed to the telescope. When
+	    {end_signal} is sended (using SS command), guiding loop is
+	    stopped.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>ifacq [block] [else [block]]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Start given commands only if acquisition of target ended
+	    sucessfully.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>for {repeat_number} [block]</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute commands in block for {repeat_number} times.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>waitfor {variable} {value} {range}</option>
+	</term>
+	<listitem>
+	  <para>
+	    This command will wait for numeric {variable} to reach {value} with {range} margin.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>sleep {seconds}</option>
+	</term>
+	<listitem>
+	  <para>
+	    This command will pause execution of script for given number of seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>HAM {repeat_number} {exposure_time}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Search for terrestrial light source (HAM). It is similar as searching for
+	    stars, but terrestrial movement commands are used.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>SS {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Send given signal. Other scripts can wait for signal with
+	    SW command. Signal is integer number, which should be
+	    unique in script.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>SW {signal}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait for a signal. Execution of the script is paused until
+	    the signal with given number ({}) is send.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>tardisable</option>
+	</term>
+	<listitem>
+	  <para>
+	    Disable target. In consectutive selector runs, it will not
+	    be considered for selection. Target can be re-enabled by
+	    rts2-target (1) command executed with -e option.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>tempdisable {seconds}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Temporaly disable target for {seconds}. If next selector
+	    run hapened earlier then {seconds} time from now, target
+	    will not be considered. Target temporary disable is
+	    stored in NEXT_OBSERVABLE target parameter, which can be
+	    reseted by rts2-target (1) command executed with -o option.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>tarboost {seconds} {bonus}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Temporary boost of target for {seconds}. It changes value of
+	    TARGET BONUS and TARGET BONUS TIME fields. Those fields
+	    can be changed by rts2-target (1) command executed with -b
+	    and -t options.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <para>focpos-=50 for 10 { E 10 focpos+=10 }</para>
+
+    <para>for 3 { E 1 E 5 E 10 SPL_MODE+=1 }</para>
+
+    <para>for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }</para>
+
+    <para>GAIN=20 for 3 { E 1 GAIN-=1 }</para>
+
+    <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-target</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

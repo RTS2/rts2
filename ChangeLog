@@ -1,10 +1,145 @@
-0.6.1
+0.7.1
+====
+ * new blocking operations API
+ * futher customatization, more configuration
+
+2008-03-08
+ * Migrated to Subversion
+
+2008-03-06
+ * cloud sensor
+ * finish Rts2ConnSerial
+
+2008-03-05
+ * fix corrections flows
+
+2008-02-28
+ * RTS2_DT_HEX
+
+2008-02-20
+ * send raw commands
+
+2008-02-12
+ * commited new, simplified teld
+
+2008-02-11
+ * remove grantPriority hook, as it is not needed
+
+2008-02-09
+ * added cmdConn, fixed bug with unconnected/unknow devices
+
+2008-02-05
+ * added RADEC value
+
+2008-01-30
+ * fixed executor
+ * queClear/clearAll issues
+
+2008-01-24
+ * Cygwin fixes
+ * AXIS fixes
+
+2008-01-19
+ * Rts2Script::setTarget
+ * comments from script are saved to FITS header
+
+2008-01-13
+ * isEqual for values
+ * removed CAM_DATA state
+
+2008-01-11
+ * Percentage class
+
+2008-01-10
+ * nightreport improvements
+
+2007-12-07
+ * ROTANG, MNT_ROTA, CCD_ROTA
+
+2007-12-06
+ * edtSoa, sbigusb and urvc2 drivers
+
+2007-12-04
+ * new FLI, Apogee, Alta and SBIG CCD driver
+
+2007-12-03
+ * Andor driver works (without frame transefer)
+
+2007-11-09
+ * d50 driver almost finished
+ * Rts2DevGEM
+
+2007-11-04
+ * binary connection support
+
+2007-11-01
+ * new camera driver API, without CameraChip
+
+2007-10-31
+ * Rts2ValueRectangle
+
+2007-10-24
+ * added xmlrpc access
+
+2007-10-23
+ * TPM change to properly support GEM
+ * DAB and DAF modelling terms
+
+2007-10-18
+ * D50 mount driver
+
+2007-10-16
+ * blocking API device_status command
+
+2007-09-10
+ * Values moved from Rts2DevClient to Rts2Conn
+ * significant changes in Rts2Conn infrastructure, more work on BOP
+   client-side mechanism
+ * fixed problem with rts2-xfocusc - made it single thread (with help of
+   ConnectionNumber, which returns X11 socket descriptor).
+
+2007-09-03
+ * BOP (blocking operations) core implemented
+
+2007-09-01
+ * Paramount driver park when not homed (MOTOR_HOMED is not set)
+
+2007-07-19
+ * Rts2SWaitFor and Rts2SSleep
+
+2007-07-16
+ * Stat value
+ * Rts2ConfigRaw
+ * monitor with edit functionality
+
+0.7.0
 ===
- * native Paramount driver (used first time on Watcher telescope, SA)
+ * cleaning of options (capital | lower case,..)
+   - copula->cupola cleanup
+ * added soapd, augershooter,..
+ * manual pages
+ * create events table
+ * mesaging
+ * clean of init, deamonize, .. (centrald have log file..)
+ * custom values
+ * filter table & better filter support
+
+0.6.3
+===
+ * observation processing support
+   - obs_process script
+
+0.6.2
+==
+ * (fill in)
+
+0.6.1
+==
+ * (fill in)
 
 0.6.0
-===
- * Plan observation (plan table and tables depending on plan)
+==
+ * (fill in)
 
 0.5.2
 ===

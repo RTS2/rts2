@@ -1,0 +1,244 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2008-01-25</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-logd">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <releaseinfo role="version">0.7.0</releaseinfo>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Daemon which allows logging of interesting values to a text file.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>--server <replaceable>central server hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-o <replaceable>log file</replaceable></option></arg>
+      </arg>
+      <arg choice="plain"><replaceable>config file</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    
+    <para>
+      This daemon connects to RTS2, and then dumps in predefined interval values
+      of intereset for each selected device. It is similar to
+      <citerefentry><refentrytitle>rts2-logger</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+      except that it runs forever and can be started as standard daemon, e.g. from rts2 configuration 
+      file (usually you can find it in <emphasis>/etc/rts2/services</emphasis>).
+    </para>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--server <replaceable>central server hostname</replaceable></option></term>
+        <listitem>
+          <para>Change central server location. Defaults to localhost.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>port number</replaceable></option></term>
+        <listitem>
+          <para>Change central server port number. Default value is specified with compilation, default is 617.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-o <replaceable>filename</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify output filename, or output filename expansion string. For
+	    expansion string please see
+	    <citerefentry><refentrytitle>rts2-ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	    Most probably you will put there %y%m%d-%H%M%S.%s.log.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-V</option></term>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="arguments">
+    <title>ARGUMENTS</title>
+
+      <varlistentry>
+        <term><emphasis role="bold">config file</emphasis></term>
+        <listitem>
+          <para>
+	    Argument that specifies configuration file. This configuration file contains parameters that 
+            will be logged. Format description of configuration file follows below:
+	  </para>
+        </listitem>
+      </varlistentry>
+
+    <para>
+      Configuration file is written as text file. On each line, entries separated
+      with one or more space characters specify:
+    </para>
+
+
+    <para>
+      <variablelist>
+        <varlistentry>
+          <term><emphasis role="bold">device name</emphasis></term>
+          <listitem>
+            <para>
+              Name of the device. You can get the device name from rts2-mon.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><emphasis role="bold">login interval in seconds</emphasis></term>
+          <listitem>
+            <para>
+              This specify how often log will be writen. Only integer number of
+              second is currently accepted. Depending on RTS2 performance, the
+              logged values can be written at arbitary time - system makes all
+              efforts to get values in time, but it cannot guarantie delivery
+              of the value at exact time.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><emphasis role="bold">values (multiple listing)</emphasis></term>
+          <listitem>
+            <para>
+              List of variables to log.
+            </para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+
+    <para>
+      You can always consult
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      for list of devices and their variables.
+    </para>
+
+    <para>
+     If you will run <citerefentry><refentrytitle>rts2-logd</refentrytitle><manvolnum>1</manvolnum></citerefentry> 
+     as a RTS2 service than you can use <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry> 
+     to change the configuration file as well as to change the output file (see below).   
+    </para>
+  </refsect1>
+
+
+  <refsect1>
+    <title>OUTPUT</title>
+
+    <para>
+      Output is written to standard output or to file specified with expansion
+      string using either -o option, or changing of output variable. For output
+      format, please see
+      <citerefentry><refentrytitle>rts2-logger</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      manual page.
+    </para>
+
+    <para>
+      For details about expansion strings in output filename, please see
+      <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+      The string which you would most probably like to see is %y%m%d.log.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-logger</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

@@ -1,37 +1,47 @@
 SUBDIRS = model
 
-bin_PROGRAMS = rts2-teld-gemini rts2-teld-bridge rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-telmodeltest
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-teld-d50
 
-noinst_HEADERS = telescope.h maps.h rts2devclicop.h ir.h
+noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h irconn.h
 
-LDADD = ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
+EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp
 
-rts2_teld_gemini_SOURCES = teld.cpp rts2devclicop.cpp gemini.cpp
+LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
-rts2_teld_bridge_SOURCES = teld.cpp rts2devclicop.cpp bridge.cpp
+rts2_teld_gemini_SOURCES = gemini.cpp hms.c
 
-rts2_teld_dummy_SOURCES = teld.cpp rts2devclicop.cpp dummy.cpp
+rts2_teld_dummy_SOURCES = dummy.cpp
 
-rts2_teld_mm2_SOURCES = teld.cpp rts2devclicop.cpp mm2.cpp
+rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
-rts2_teld_lx200_SOURCES = teld.cpp rts2devclicop.cpp lx200.cpp
+rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
-rts2_telmodeltest_SOURCES = teld.cpp rts2devclicop.cpp telmodeltest.cpp
+rts2_teld_d50_SOURCES = d50.cpp
+
+if PGSQL
+bin_PROGRAMS += rts2-telmodeltest
+
+rts2_telmodeltest_SOURCES = telmodeltest.cpp
+rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@
+endif
 
 if OPENTPL
 bin_PROGRAMS += rts2-teld-ir rts2-ir-errors
-rts2_teld_ir_SOURCES = teld.cpp rts2devclicop.cpp ir.cpp ir-main.cpp
-rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
-rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H @INC_OPENTPL@
 
-rts2_ir_errors_SOURCES = teld.cpp rts2devclicop.cpp ir.cpp ir-errors.cpp
+rts2_teld_ir_SOURCES = ir-main.cpp ir.cpp
+rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
+rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
+
+rts2_ir_errors_SOURCES = ir-errors.cpp ir.cpp
 rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
-rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H @INC_OPENTPL@
+rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
+else
+EXTRA_DIST += ir.cpp ir-main.cpp ir-errors.cpp
 endif
 
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount
-rts2_teld_paramount_SOURCES = teld.cpp rts2devclicop.cpp paramount.cpp
+rts2_teld_paramount_SOURCES = paramount.cpp
 rts2_teld_paramount_LDFLAGS = @LIB_PARA@
 rts2_teld_paramount_CPPFLAGS = @INC_PARA@
 endif

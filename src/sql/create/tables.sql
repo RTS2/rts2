@@ -182,16 +182,6 @@ CREATE INDEX darks_exposures ON darks (dark_date);
 
 CREATE INDEX darks_temperature ON darks (dark_temperature);
 
-CREATE TABLE flats ( 
-	flat_name	varchar(250) NOT NULL,
-	flat_date	timestamp,
-	flat_exposure	integer,
-	flat_temperature integer,
-	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
-	camera_name	varchar(8) REFERENCES cameras(camera_name),
-CONSTRAINT flats_prim_key PRIMARY KEY (flat_date, camera_name)
-);
-
 CREATE SEQUENCE tar_id START WITH 1000;
 
 CREATE SEQUENCE grb_tar_id START WITH 50000;

@@ -1,14 +1,10 @@
 #include <getopt.h>
-#include <libnova/ln_types.h>
-#include <libnova/julian_day.h>
-#include <libnova/solar.h>
+#include <libnova/libnova.h>
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include "riseset.h"
-#include "../utils/config.h"
-
-#include <mcheck.h>
+#include "../utils/rts2config.h"
 
 void
 usage ()
@@ -35,7 +31,7 @@ print_jd (double JD, struct ln_lnlat_posn *obs)
   struct ln_equ_posn posn;
   struct ln_hrz_posn hrz;
 
-  ln_get_equ_solar_coords (JD, &posn);
+  ln_get_solar_equ_coords (JD, &posn);
   ln_get_hrz_from_equ (&posn, obs, JD, &hrz);
 
   ln_get_date (JD, &date);
@@ -73,17 +69,16 @@ rise_set_cal (struct ln_lnlat_posn *obs, time_t * start_time, int ndays)
       printf ("\nset/rise: ");
       print_rst (&rst, obs);
 
-      ln_get_solar_rst_horizont (JD, obs, LN_SOLAR_CIVIL_HORIZONT, &rst);
-      printf ("\ncivil %02f: ", LN_SOLAR_CIVIL_HORIZONT);
+      ln_get_solar_rst_horizon (JD, obs, LN_SOLAR_CIVIL_HORIZON, &rst);
+      printf ("\ncivil %02f: ", LN_SOLAR_CIVIL_HORIZON);
       print_rst (&rst, obs);
 
-      ln_get_solar_rst_horizont (JD, obs, LN_SOLAR_NAUTIC_HORIZONT, &rst);
-      printf ("\nnautic %02f: ", LN_SOLAR_NAUTIC_HORIZONT);
+      ln_get_solar_rst_horizon (JD, obs, LN_SOLAR_NAUTIC_HORIZON, &rst);
+      printf ("\nnautic %02f: ", LN_SOLAR_NAUTIC_HORIZON);
       print_rst (&rst, obs);
 
-      ln_get_solar_rst_horizont (JD, obs, LN_SOLAR_ASTRONOMICAL_HORIZONT,
-				 &rst);
-      printf ("\nastronomical %02f: ", LN_SOLAR_ASTRONOMICAL_HORIZONT);
+      ln_get_solar_rst_horizon (JD, obs, LN_SOLAR_ASTRONOMICAL_HORIZON, &rst);
+      printf ("\nastronomical %02f: ", LN_SOLAR_ASTRONOMICAL_HORIZON);
       print_rst (&rst, obs);
     }
 
@@ -97,17 +92,15 @@ main (int argc, char **argv)
   time_t end_time;
   time_t ev_time;
   time_t last_event = 0;
-  struct ln_lnlat_posn obs;
+  struct ln_lnlat_posn *obs;
   int type, curr_type;
   int ndays = 5;
   int c;
 
-  mtrace ();
+  Rts2Config *config = Rts2Config::instance ();
+  config->loadFile ();
 
-  read_config (CONFIG_FILE);
-
-  obs.lat = get_double_default ("latitude", 0);
-  obs.lng = get_double_default ("longtitude", 0);
+  obs = config->getObserver ();
   ev_time = time (NULL);
 
   while (1)
@@ -118,10 +111,10 @@ main (int argc, char **argv)
       switch (c)
 	{
 	case 'a':
-	  obs.lat = atof (optarg);
+	  obs->lat = atof (optarg);
 	  break;
 	case 'l':
-	  obs.lng = atof (optarg);
+	  obs->lng = atof (optarg);
 	  break;
 	case 'n':
 	  ndays = atoi (optarg);
@@ -148,14 +141,14 @@ main (int argc, char **argv)
 	}
     }
 
-  rise_set_cal (&obs, &ev_time, ndays);
+  rise_set_cal (obs, &ev_time, ndays);
 
   start_time = ev_time;
 
   end_time = start_time + 86500 * ndays;
   for (; start_time < end_time; start_time += 60)
     {
-      if (next_event (&obs, &start_time, &curr_type, &type, &ev_time))
+      if (next_event (obs, &start_time, &curr_type, &type, &ev_time))
 	{
 	  printf ("error!!\n");
 	  return EXIT_FAILURE;

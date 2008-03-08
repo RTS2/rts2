@@ -1,0 +1,8 @@
+/var/log/rts2-debug {
+    daily
+    rotate 8
+    compress
+    postrotate
+        /usr/bin/killall -HUP rts2-soapd
+    endscript
+}
