@@ -28,8 +28,13 @@ configure from configure.in.
    Run autoheader, preferably autoheader2.50 or newer, to produce
 config.h.in in include subdir.
 
-   You should end with running ./configure, thus proceeding as
-described bellow.
+   You should continue with running ./configure, thus proceeding as
+described bellow. If you have some special devices, you will need to add
+arguments to ./configure. See list bellow for details.
+
+   You then compile RTS2 using make command. And install it using make install.
+
+   Please see file RUN for details how to setup and RUN RTS2 envriroment.
 
    Hint: on most distributions, you can easily test, which versions of
 aclocal & so you have, by typing in bash aclocal and pressing enter.
