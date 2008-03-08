@@ -450,14 +450,16 @@ Rts2DevClientTelescopeExec::syncTarget ()
 			#endif
 				queCommand (new
 					Rts2CommandChange (this, fixedOffset.ra,
-					fixedOffset.dec));
+					fixedOffset.dec),
+					BOP_TEL_MOVE);
 				fixedOffset.ra = 0;
 				fixedOffset.dec = 0;
 				break;
 			}
 			queCommand (new
 				Rts2CommandResyncMove (getMaster (), this,
-				coord.ra, coord.dec));
+				coord.ra, coord.dec),
+				BOP_TEL_MOVE);
 			break;
 		case OBS_DONT_MOVE:
 			break;
