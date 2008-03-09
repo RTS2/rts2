@@ -285,7 +285,7 @@ Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
 void
 Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
-	switch (state->getValue () & TEL_MASK_COP_MOVING)
+	switch (state->maskValueChanged (TEL_MASK_COP_MOVING))
 	{
 		case TEL_MOVING:
 		case TEL_MOVING | TEL_WAIT_COP:
@@ -300,7 +300,7 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 				moveFailed (connection->getErrorState ());
 			break;
 	}
-	switch (state->getValue () & TEL_MASK_SEARCHING)
+	switch (state->maskValueChanged (TEL_MASK_SEARCHING))
 	{
 		case TEL_SEARCH:
 			searchStart ();
