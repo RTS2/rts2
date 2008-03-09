@@ -260,6 +260,9 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (waitingForEmptyQue, "wait_for_que", "if camera is waiting for empty que", false);
 	waitingForEmptyQue->setValueBool (false);
 
+	createValue (waitingForNotBop, "wait_for_notbop", "if camera is waiting for not bop state", false);
+	waitingForNotBop->setValueBool (false);
+
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
 	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
 
@@ -744,15 +747,29 @@ Rts2DevCamera::changeMasterState (int new_state)
 int
 Rts2DevCamera::camStartExposure ()
 {
-	int ret;
-
 	// check if we aren't blocked
 	if ((!expType || expType->getValueInteger () == 0)
 		&& (getDeviceBopState () & BOP_EXPOSURE))
 	{
-		quedExpNumber->inc ();
+		if (!waitingForNotBop->getValueBool ())
+		{
+			quedExpNumber->inc ();
+			sendValueAll (quedExpNumber);
+			waitingForNotBop->setValueBool (true);
+			sendValueAll (waitingForNotBop);
+		}
+
 		return 0;
 	}
+
+	return camStartExposureWithoutCheck ();
+}
+
+
+int
+Rts2DevCamera::camStartExposureWithoutCheck ()
+{
+	int ret;
 
 	exposureNumber->inc ();
 	sendValueAll (exposureNumber);
@@ -1213,6 +1230,12 @@ void
 Rts2DevCamera::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
-	if (!(new_state & BOP_EXPOSURE) && quedExpNumber->getValueInteger () > 0)
-		camStartExposure ();
+	if (!(new_state & BOP_EXPOSURE) 
+		&& quedExpNumber->getValueInteger () > 0
+		&& waitingForNotBop->getValueBool ())
+	{
+		waitingForNotBop->setValueBool (false);
+		quedExpNumber->dec ();
+		camStartExposureWithoutCheck ();
+	}
 }

@@ -154,6 +154,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// number of exposures camera takes
 		Rts2ValueLong *exposureNumber;
 		Rts2ValueBool *waitingForEmptyQue;
+		Rts2ValueBool *waitingForNotBop;
 
 		char *focuserDevice;
 		char *wheelDevice;
@@ -168,10 +169,10 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		Rts2ValueRectangle *chipSize;
 
 		int camStartExposure ();
+		int camStartExposureWithoutCheck ();
+
 		// when we call that function, we must be sure that either filter or wheelDevice != NULL
 		int camFilter (int new_filter);
-
-		Rts2ValueDouble *subExposure;
 
 		Rts2ValueSelection *camFilterVal;
 		Rts2ValueInteger *camFocVal;
@@ -209,6 +210,8 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		// buffer used to read data
 		char* dataBuffer;
 		long dataBufferSize;
+
+		Rts2ValueDouble *subExposure;
 
 		//! number of connection waiting to be executed
 		Rts2ValueInteger *quedExpNumber;
