@@ -56,6 +56,10 @@ Rts2DevGEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, dou
 	ln_get_hrz_from_equ (pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < -1)
 	{
+		logStream (MESSAGE_DEBUG) << "object is bellow horizont, azimuth is "
+			<< hrz.az  << " and altitude " << hrz.alt 
+			<< ", check observatory time and location (long & latitude)"
+			<< sendLog;
 		return -1;
 	}
 
