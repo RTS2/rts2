@@ -2,9 +2,9 @@ SUBDIRS = model
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-teld-d50
 
-noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h irconn.h
+noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h irconn.h
 
-EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp
+EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp
 
 LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
@@ -17,6 +17,7 @@ rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
 rts2_teld_d50_SOURCES = d50.cpp
+rts2_teld_d50_LDADD = fork.o ${LDADD}
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest

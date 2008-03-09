@@ -19,8 +19,7 @@
 
 #define DEBUG_EXTRA
 
-#include "gem.h"
-#include "model/telmodel.h"
+#include "fork.h"
 
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
@@ -30,7 +29,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-class Rts2DevTelD50:public Rts2DevGEM
+class Rts2DevTelD50:public TelFork
 {
 	private:
 		char *device_name;
@@ -268,8 +267,8 @@ Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * v
 }
 
 
-Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv):
-Rts2DevGEM (in_argc, in_argv)
+Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
+:TelFork (in_argc, in_argv)
 {
 	tel_desc = -1;
 
@@ -302,8 +301,8 @@ Rts2DevGEM (in_argc, in_argv)
 	createValue (unitRa, "axis_ra", "RA axis raw counts", false);
 	createValue (unitDec, "axis_dec", "DEC axis raw counts", false);
 
-	createValue (procRa, "proc_ra", "state for RA processor", false);
-	createValue (procDec, "proc_dec", "state for DEC processor", false);
+	createValue (procRa, "proc_ra", "state for RA processor", false, RTS2_DT_HEX);
+	createValue (procDec, "proc_dec", "state for DEC processor", false, RTS2_DT_HEX);
 
 	createValue (velRa, "vel_ra", "RA velocity", false);
 	createValue (velDec, "vel_dec", "DEC velocity", false);
@@ -331,7 +330,7 @@ Rts2DevTelD50::processOption (int in_opt)
 			device_name = optarg;
 			break;
 		default:
-			return Rts2DevGEM::processOption (in_opt);
+			return TelFork::processOption (in_opt);
 	}
 	return 0;
 }
@@ -351,7 +350,7 @@ Rts2DevTelD50::init ()
 	struct termios tel_termios;
 	int ret;
 
-	ret = Rts2DevGEM::init ();
+	ret = TelFork::init ();
 	if (ret)
 		return ret;
 
@@ -414,11 +413,9 @@ Rts2DevTelD50::init ()
 int
 Rts2DevTelD50::updateLimits ()
 {
-	acMin = (int32_t) (haCpd * -70);
-	acMax = (int32_t) (haCpd * 70);
+	acMin = (int32_t) (haCpd * -180);
+	acMax = (int32_t) (haCpd * 180);
 
-	dcMin = (int32_t) (decCpd * -70);
-	dcMax = (int32_t) (decCpd * 70);
 	return 0;
 }
 
@@ -480,7 +477,7 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 
-	return Rts2DevGEM::setValue (old_value, new_value);
+	return TelFork::setValue (old_value, new_value);
 }
 
 
@@ -505,7 +502,7 @@ Rts2DevTelD50::info ()
 	setTelRa (t_telRa);
 	setTelDec (t_telDec);
 
-	return Rts2DevGEM::info ();
+	return TelFork::info ();
 }
 
 
@@ -548,7 +545,7 @@ Rts2DevTelD50::isMoving ()
 int
 Rts2DevTelD50::endMove ()
 {
-	return Rts2DevGEM::endMove ();
+	return TelFork::endMove ();
 }
 
 
