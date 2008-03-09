@@ -285,32 +285,38 @@ Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
 void
 Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
-	switch (state->maskValueChanged (TEL_MASK_COP_MOVING))
+	if (state->maskValueChanged (TEL_MASK_COP_MOVING))
 	{
-		case TEL_MOVING:
-		case TEL_MOVING | TEL_WAIT_COP:
-		case TEL_PARKING:
-			moveStart (state->getValue () & TEL_CORRECTING);
-			break;
-		case TEL_OBSERVING:
-		case TEL_PARKED:
-			if (connection->getErrorState () == DEVICE_NO_ERROR)
-				moveEnd ();
-			else
-				moveFailed (connection->getErrorState ());
-			break;
+		switch (state->getValue () & TEL_MASK_COP_MOVING)
+		{
+			case TEL_MOVING:
+			case TEL_MOVING | TEL_WAIT_COP:
+			case TEL_PARKING:
+				moveStart (state->getValue () & TEL_CORRECTING);
+				break;
+			case TEL_OBSERVING:
+			case TEL_PARKED:
+				if (connection->getErrorState () == DEVICE_NO_ERROR)
+					moveEnd ();
+				else
+					moveFailed (connection->getErrorState ());
+				break;
+		}
 	}
-	switch (state->maskValueChanged (TEL_MASK_SEARCHING))
+	if (state->maskValueChanged (TEL_MASK_SEARCHING))
 	{
-		case TEL_SEARCH:
-			searchStart ();
-			break;
-		case TEL_NOSEARCH:
-			if (connection->getErrorState () == DEVICE_NO_ERROR)
-				searchEnd ();
-			else
-				searchFailed (connection->getErrorState ());
-			break;
+		switch (state->getValue () & TEL_MASK_SEARCHING)
+		{
+			case TEL_SEARCH:
+				searchStart ();
+				break;
+			case TEL_NOSEARCH:
+				if (connection->getErrorState () == DEVICE_NO_ERROR)
+					searchEnd ();
+				else
+					searchFailed (connection->getErrorState ());
+				break;
+		}
 	}
 	Rts2DevClient::stateChanged (state);
 }
