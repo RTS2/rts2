@@ -796,8 +796,6 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
 
-	logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
-
 	// apply corrections
 	applyCorrections (&pos, ln_get_julian_from_sys ());
 
@@ -822,11 +820,17 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	corrRaDec->resetValueChanged ();
 
 	if (onlyCorrect)
+	{
+		logStream (MESSAGE_INFO) << "correcting to " << syncTo << " from " << syncFrom << sendLog;
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
 			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
+	}
 	else
+	{
+		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE,
 			"move started");
+	}
 	move_connection = conn;
 
 	return ret;
@@ -998,7 +1002,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("park"))
 	{
-		CHECK_PRIORITY;
 		if (!conn->paramEnd ())
 			return -2;
 		modelOn ();
@@ -1006,7 +1009,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("change"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
@@ -1067,5 +1069,5 @@ Rts2DevTelescope::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
 	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))
-		startResyncMove (false, true);
+		startResyncMove (NULL, true);
 }
