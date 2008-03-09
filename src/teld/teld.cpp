@@ -203,7 +203,9 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == objRaDec
 		|| old_value == offsetRaDec
 		|| old_value == corrRaDec
-		|| old_value == waitingCorrRaDec)
+		|| old_value == waitingCorrRaDec
+		|| old_value == corrImgId
+		|| old_value == wCorrImgId)
 	{
 		return 0;
 	}
