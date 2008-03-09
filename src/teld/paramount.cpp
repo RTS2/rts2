@@ -29,16 +29,16 @@
 #include <vector>
 #include <fcntl.h>
 
-#define TEL_SLEW    0x00
+#define TEL_SLEW        0x00
 #define TEL_FORCED_HOMING0  0x01
 #define TEL_FORCED_HOMING1  0x02
 
-#define RA_TICKS    11520000
-#define DEC_TICKS   7500000
+#define RA_TICKS        11520000
+#define DEC_TICKS       7500000
 
 // park positions
-#define PARK_AXIS0    0
-#define PARK_AXIS1    0
+#define PARK_AXIS0      0
+#define PARK_AXIS1      0
 
 typedef enum
 { T16, T32 }
@@ -143,6 +143,9 @@ class Rts2DevTelParamount:public Rts2DevGEM
 
 		CWORD16 status0;
 		CWORD16 status1;
+
+		Rts2ValueInteger *statusRa;
+		Rts2ValueInteger *statusDec;
 
 		CWORD32 park_axis[2];
 
@@ -343,8 +346,16 @@ Rts2DevTelParamount::checkRet ()
 int
 Rts2DevTelParamount::updateStatus ()
 {
+	CWORD16 old_status = status0;
 	ret0 = MKS3StatusGet (axis0, &status0);
+	if (status0 != old_status)
+		logStream (MESSAGE_DEBUG) << "changed axis 0 state from " << std::hex << old_status << " to " << status0 << sendLog;
+	statusRa->setValueInteger (status0);
+	old_status = status1;
 	ret1 = MKS3StatusGet (axis1, &status1);
+	if (status1 != old_status)
+		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << old_status << " to " << status1 << sendLog;
+	statusDec->setValueInteger (status1);
 	return checkRet ();
 }
 
@@ -416,8 +427,11 @@ Rts2DevTelParamount::updateLimits ()
 Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv)
 :Rts2DevGEM (in_argc, in_argv)
 {
-	createValue (axRa, "AX1", "RA axis count", true);
-	createValue (axDec, "AX2", "DEC axis count", true);
+	createValue (axRa, "AXRA", "RA axis count", true);
+	createValue (axDec, "AXDEC", "DEC axis count", true);
+
+	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
+	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -596,8 +610,8 @@ Rts2DevTelParamount::init ()
 		return -1;
 
 	ret = updateLimits ();
-	if (ret)
-		return -1;
+	//	if (ret)
+	//		return -1;
 
 	if (setIndices)
 	{
@@ -653,15 +667,15 @@ Rts2DevTelParamount::init ()
 		ret0 = MKS3PosTargetSet (axis0, pos0);
 		ret1 = MKS3PosTargetSet (axis1, pos1);
 		ret = checkRet ();
-		if (ret)
-			return ret;
+		//		if (ret)
+		//			return ret;
 	}
 
 	ret0 = MKS3MotorOff (axis0);
 	ret1 = MKS3MotorOff (axis1);
 	ret = checkRet ();
-	if (ret)
-		return ret;
+	//	if (ret)
+	//return ret;
 
 	CWORD16 pMajor, pMinor, pBuild;
 	ret = MKS3VersionGet (axis0, &pMajor, &pMinor, &pBuild);
@@ -729,7 +743,7 @@ Rts2DevTelParamount::updateTrack ()
 int
 Rts2DevTelParamount::idle ()
 {
-	struct timeval now;
+//	struct timeval now;
 	int32_t homeOff, ac = 0;
 	int ret;
 	// check if we aren't close to RA limit
@@ -764,15 +778,30 @@ Rts2DevTelParamount::idle ()
 		// don't check for move etc..
 		return Rts2Device::idle ();
 	}
-	// issue new track request..if needed and we aren't homing
-	if ((getState () & TEL_MASK_MOVING) == TEL_OBSERVING
-		&& !(status0 & MOTOR_HOMING) && !(status0 & MOTOR_SLEWING)
-		&& !(status1 & MOTOR_HOMING) && !(status1 & MOTOR_SLEWING))
+	// if we need homing..
+/*	if ((!(status0 & MOTOR_HOMED)) && (!(status0 & MOTOR_HOMING)))
 	{
-		gettimeofday (&now, NULL);
-		if (timercmp (&track_next, &now, <))
-			updateTrack ();
+		logStream (MESSAGE_INFO) <<
+			"Detected not homed axis0, force homing.. (axis0:" << status0 <<
+			")" << sendLog;
+		//startPark (NULL);
 	}
+	else if ((!(status1 & MOTOR_HOMED)) && (!(status1 & MOTOR_HOMING)))
+	{
+		logStream (MESSAGE_INFO) <<
+			"Detected not homed axis1, force homing.. (axis1:" << status1 <<
+			")" << sendLog;
+		//startPark (NULL);
+	} */
+	// issue new track request..if needed and we aren't homing
+	/*  if ((getState () & TEL_MASK_MOVING) == TEL_OBSERVING
+		  && !(status0 & MOTOR_HOMING) && !(status0 & MOTOR_SLEWING)
+		  && !(status1 & MOTOR_HOMING) && !(status1 & MOTOR_SLEWING))
+		{
+		  gettimeofday (&now, NULL);
+		  if (timercmp (&track_next, &now, <))
+		updateTrack ();
+		} */
 	// check for some critical stuff
 	return Rts2DevGEM::idle ();
 }
@@ -830,12 +859,43 @@ Rts2DevTelParamount::startMove ()
 		moveState = TEL_FORCED_HOMING1;
 		return 0;
 	}
+	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	{
+		logStream (MESSAGE_DEBUG) << "Aborting move, as mount is slewing" << sendLog;
+		if (status0 & MOTOR_SLEWING)
+		{
+			ret0 = MKS3PosAbort (axis0);
+			MKS3MotorOff (axis0);
+		}
+		if (status1 & MOTOR_SLEWING)
+		{
+			ret1 = MKS3PosAbort (axis1);
+			MKS3MotorOff (axis1);
+		}
+		sleep (2);
+		ret = checkRet ();
+		if (ret)
+			return -1;
+	}
 	if ((status0 & MOTOR_OFF) || (status1 & MOTOR_OFF))
 	{
 		ret0 = MKS3MotorOn (axis0);
 		ret1 = MKS3MotorOn (axis1);
 		usleep (USEC_SEC / 10);
 	}
+	if (!(status0 & MOTOR_HOMED))
+	{
+		MKS3Home (axis0, 0);
+		moveState |= TEL_FORCED_HOMING0;
+	}
+	if (!(status1 & MOTOR_HOMED))
+	{
+		MKS3Home (axis1, 1);
+		moveState |= TEL_FORCED_HOMING1;
+	}
+	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
+		return 0;
+
 	ret = checkRet ();
 	if (ret)
 	{
@@ -985,6 +1045,20 @@ Rts2DevTelParamount::startPark ()
 	ret = checkRet ();
 	if (ret)
 		return -1;
+
+	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
+	{
+		if (status0 & MOTOR_SLEWING)
+		{
+			ret0 = MKS3PosAbort (axis0);
+		}
+		if (status1 & MOTOR_SLEWING)
+		{
+			ret0 = MKS3PosAbort (axis1);
+		}
+		if (ret)
+			return -1;
+	}
 
 	ret0 = MKS3Home (axis0, 0);
 	ret1 = MKS3Home (axis1, 0);
