@@ -482,12 +482,16 @@ Rts2DevClientTelescopeExec::checkInterChange ()
 void
 Rts2DevClientTelescopeExec::moveEnd ()
 {
-	if (currentTarget)
-		currentTarget->moveEnded ();
 	if (moveWasCorrecting)
+	{
 		getMaster ()->postEvent (new Rts2Event (EVENT_CORRECTING_OK));
+	}
 	else
+	{
 		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
+		if (currentTarget)
+			currentTarget->moveEnded ();
+	}
 	Rts2DevClientTelescopeImage::moveEnd ();
 }
 
