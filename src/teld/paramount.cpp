@@ -846,6 +846,7 @@ Rts2DevTelParamount::startMove ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
+
 	ret0 = MKS_OK;
 	ret1 = MKS_OK;
 	// when we are homing, we will move after home finish
@@ -894,7 +895,10 @@ Rts2DevTelParamount::startMove ()
 		moveState |= TEL_FORCED_HOMING1;
 	}
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
+	{
+		logStream (MESSAGE_DEBUG) << "homing needed, aborting move command" << sendLog;
 		return 0;
+	}
 
 	ret = checkRet ();
 	if (ret)
