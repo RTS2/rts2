@@ -18,6 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#define DEBUG_EXTRA
+
 #include "gem.h"
 #include "model/telmodel.h"
 
@@ -441,6 +443,8 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv)
 
 	park_axis[0] = PARK_AXIS0;
 	park_axis[1] = PARK_AXIS1;
+
+	moveState = TEL_SLEW;
 
 	ra_ticks = RA_TICKS;
 	dec_ticks = DEC_TICKS;
@@ -946,6 +950,7 @@ Rts2DevTelParamount::isMoving ()
 	{
 		if ((status0 & MOTOR_HOMING) || (status1 & MOTOR_HOMING))
 			return USEC_SEC / 10;
+		moveState = TEL_SLEW;
 		// re-move
 		return startMove ();
 	}
