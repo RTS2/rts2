@@ -68,8 +68,9 @@ install: build
 	# copy confiles
 	mkdir $(CURDIR)/debian/rts2/etc
 	mkdir $(CURDIR)/debian/rts2/etc/rts2
-	cp /etc/rts2/rts2.ini /etc/rts2/centrald /etc/rts2/devices /etc/rts2/services $(CURDIR)/debian/rts2/etc/rts2
-
+	mkdir $(CURDIR)/debian/rts2/etc/init.d
+	cp $(CURDIR)/rts2.ini $(CURDIR)/centrald $(CURDIR)/devices $(CURDIR)/services $(CURDIR)/debian/rts2/etc/rts2
+	cp $(CURDIR)/rts2.initd $(CURDIR)/debian/rts2/etc/init.d/rts2
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -82,14 +83,14 @@ binary-arch: build install
 	dh_installchangelogs ChangeLog
 	dh_installdocs
 	dh_installexamples
-#	dh_install
+	dh_install
 #	dh_installmenu
 #	dh_installdebconf	
 #	dh_installlogrotate
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-#	dh_installinit
+	dh_installinit
 #	dh_installcron
 #	dh_installinfo
 	dh_installman
@@ -97,9 +98,6 @@ binary-arch: build install
 	dh_strip --dbg-package=rts2
 	dh_compress
 	dh_fixperms
-#	dh_perl
-#	dh_python
-#	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
