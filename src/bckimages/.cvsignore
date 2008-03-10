@@ -1,9 +1,0 @@
-.deps
-.libs
-Makefile
-Makefile.in
-bckimages.c
-deleteimage.cpp
-rts2-bckimages
-rts2-flatprocess
-rts2-deleteimage
