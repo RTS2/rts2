@@ -303,6 +303,10 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 				break;
 		}
 	}
+	if (state->maskValueChanged (DEVICE_ERROR_KILL))
+	{
+		moveFailed (connection->getErrorState ());
+	}
 	if (state->maskValueChanged (TEL_MASK_SEARCHING))
 	{
 		switch (state->getValue () & TEL_MASK_SEARCHING)
