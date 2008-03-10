@@ -1,5 +1,6 @@
 2008-03-10
  * Use username and password [# 1911021]
+ * grb_isnew flag [# 1909513 ]
 
 2008-03-08
  * Migrated to Subversion
