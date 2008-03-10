@@ -143,8 +143,8 @@ Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
 		ret = home ();
 		if (ret)
 			return ret;
-		moveCount->inc ();
 	}
+	moveCount->inc ();
 	eRc = AerMoveAbsolute (hAerCtrl, ax, tar, 1000000);
 	if (eRc != AERERR_NOERR)
 	{
