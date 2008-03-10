@@ -808,7 +808,7 @@ Rts2Device::clearStatesPriority ()
 		maskState (DEVICE_ERROR_KILL, 0, "reset ERROR_KILL");
 
 	}
-	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK, DEVICE_ERROR_KILL,
+	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK | BOP_MASK, DEVICE_ERROR_KILL,
 		"all operations canceled by priority");
 }
 
