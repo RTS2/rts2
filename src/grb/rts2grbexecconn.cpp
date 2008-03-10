@@ -7,7 +7,7 @@ int in_tar_id, int in_grb_id,
 int in_grb_seqn, int in_grb_type,
 double in_grb_ra, double in_grb_dec,
 bool in_grb_is_grb, time_t * in_grb_date,
-float in_grb_errorbox):
+float in_grb_errorbox, int in_grb_isnew):
 Rts2ConnFork (in_master, execFile)
 {
 	argvs = new char *[11];
@@ -23,7 +23,8 @@ Rts2ConnFork (in_master, execFile)
 	asprintf (&argvs[7], "%i", (in_grb_is_grb ? 1 : 0));
 	asprintf (&argvs[8], "%li", *in_grb_date);
 	asprintf (&argvs[9], "%f", in_grb_errorbox);
-	argvs[10] = NULL;
+	asprintf (&argvs[10], "%i", in_grb_isnew);
+	argvs[11] = NULL;
 }
 
 

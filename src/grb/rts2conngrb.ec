@@ -611,25 +611,27 @@ int
 Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_tar_id;
-		int d_grb_id = grb_id;
-		int d_grb_seqn = grb_seqn;
-		int d_grb_type = grb_type;
-		int d_curr_grb_type = -1;
-		double d_grb_ra = grb_ra;
-		double d_grb_dec = grb_dec;
-		bool d_grb_is_grb = grb_is_grb;
-		double d_grb_date = *grb_date + (double) grb_date_usec / USEC_SEC;
-		double d_grb_update = last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
-		float d_grb_errorbox = grb_errorbox;
-		int d_grb_errorbox_ind;
-		// used to find correct grb - based on type
-		int d_grb_type_start;
-		int d_grb_type_end;
-		// target stuff
-		VARCHAR d_tar_name[150];
-		VARCHAR d_tar_comment[2000];
+	int d_tar_id;
+	int d_grb_id = grb_id;
+	int d_grb_seqn = grb_seqn;
+	int d_grb_type = grb_type;
+	int d_curr_grb_type = -1;
+	double d_grb_ra = grb_ra;
+	double d_grb_dec = grb_dec;
+	bool d_grb_is_grb = grb_is_grb;
+	double d_grb_date = *grb_date + (double) grb_date_usec / USEC_SEC;
+	double d_grb_update = last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
+	float d_grb_errorbox = grb_errorbox;
+	int d_grb_errorbox_ind;
+	// used to find correct grb - based on type
+	int d_grb_type_start;
+	int d_grb_type_end;
+	// target stuff
+	VARCHAR d_tar_name[150];
+	VARCHAR d_tar_comment[2000];
 	EXEC SQL END DECLARE SECTION;
+
+	int grb_isnew = 0;
 
 	struct tm grb_broken_time;
 
@@ -644,18 +646,18 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	getGrbBound (grb_type, d_grb_type_start, d_grb_type_end);
 
 	EXEC SQL
-		SELECT
-			tar_id,
-			grb_type,
-			grb_errorbox
-		INTO
-			:d_tar_id,
-			:d_curr_grb_type,
-			:d_grb_errorbox :d_grb_errorbox_ind
-		FROM
-			grb
-		WHERE
-			grb_id = :d_grb_id
+	SELECT
+		tar_id,
+		grb_type,
+		grb_errorbox
+	INTO
+		:d_tar_id,
+		:d_curr_grb_type,
+		:d_grb_errorbox :d_grb_errorbox_ind
+	FROM
+		grb
+	WHERE
+		grb_id = :d_grb_id
 		AND grb_type >= :d_grb_type_start
 		AND grb_type <= :d_grb_type_end;
 
@@ -685,10 +687,10 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			grb_broken_time.tm_hour, grb_broken_time.tm_min, grb_broken_time.tm_sec, d_grb_id, d_grb_type);
 
 		EXEC SQL
-			SELECT
+		SELECT
 			nextval ('grb_tar_id')
-			INTO
-				:d_tar_id;
+		INTO
+			:d_tar_id;
 
 		if (sqlca.sqlcode)
 		{
@@ -700,9 +702,9 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 		// insert new target
 		EXEC SQL
-			INSERT INTO
-				targets
-				(
+		INSERT INTO
+			targets
+			(
 				tar_id,
 				type_id,
 				tar_name,
@@ -713,29 +715,32 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				tar_priority,
 				tar_bonus,
 				tar_bonus_time
-				) VALUES (
+			)
+			VALUES
+			(
 				:d_tar_id,
 				'G',
 				:d_tar_name,
 				:d_grb_ra,
 				:d_grb_dec,
-			true,
+				true,
 				:d_tar_comment,
 				100,
 				100,
-			NULL
-				);
+				NULL
+			);
 		if (sqlca.sqlcode)
 		{
 			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint insert target error: "
 				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 			EXEC SQL ROLLBACK;
 		}
+		grb_isnew = 1;
 		// insert new grb packet
 		EXEC SQL
-			INSERT INTO
-				grb
-				(
+		INSERT INTO
+			grb
+			(
 				tar_id,
 				grb_id,
 				grb_seqn,
@@ -746,7 +751,9 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				grb_date,
 				grb_last_update,
 				grb_errorbox
-				) VALUES (
+			)
+			VALUES
+			(
 				:d_tar_id,
 				:d_grb_id,
 				:d_grb_seqn,
@@ -757,7 +764,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				(TIMESTAMP 'epoch' + :d_grb_date * INTERVAL '1 seconds'),
 				(TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
 				:d_grb_errorbox :d_grb_errorbox_ind
-				);
+			);
 		if (sqlca.sqlcode)
 		{
 			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot insert new GCN : "
@@ -902,7 +909,10 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	if (addExe)
 	{
 		int execRet;
-		Rts2GrbExecConn *execConn = new Rts2GrbExecConn (master, addExe, d_tar_id, grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, grb_date, grb_errorbox);
+		Rts2GrbExecConn *execConn = new Rts2GrbExecConn (master, addExe, d_tar_id,
+			grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, grb_date,
+			grb_errorbox, grb_isnew);
+
 		execRet = execConn->init ();
 		if (execRet < 0)
 		{
