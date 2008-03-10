@@ -7,3 +7,4 @@ config.h
 msgread
 test
 rts2-horizon
+librts2block.a

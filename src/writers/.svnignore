@@ -4,3 +4,5 @@ Makefile
 Makefile.in
 rts2imagedb.cpp
 rts2-image
+librts2image.a
+librts2imagedb.a

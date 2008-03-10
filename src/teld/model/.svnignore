@@ -1,4 +1,5 @@
 .deps
 .libs
+librts2model.a
 Makefile.in
 Makefile
