@@ -261,6 +261,14 @@
 		  </para>
 		</listitem>
 	      </varlistentry>
+	      <varlistentry>
+	        <term>grb_isnew</term>
+		<listitem>
+		  <para>
+		    1 if this is new GRB, 0 if this message is update of an already know GRB.
+		  </para>
+		</listitem>
+	      </varlistentry>
 	    </variablelist>
 	  </para>
         </listitem>
