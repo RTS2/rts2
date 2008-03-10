@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+*.1
+*.5
+*.7

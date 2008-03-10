@@ -1,0 +1,6 @@
+.deps
+.libs
+Makefile
+Makefile.in
+rts2imagedb.cpp
+rts2-image

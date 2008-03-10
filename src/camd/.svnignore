@@ -1,0 +1,7 @@
+.deps
+.libs
+Makefile
+Makefile.in
+core*
+rts2-camd*
+mirror_test

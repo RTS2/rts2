@@ -1,0 +1,9 @@
+.deps
+.libs
+Makefile
+Makefile.in
+*.fits
+rts2-focusc
+rts2-xfocusc
+rts2-foctest
+*~
