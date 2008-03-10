@@ -1,8 +1,3 @@
-0.7.1
-====
- * new blocking operations API
- * futher customatization, more configuration
-
 2008-03-08
  * Migrated to Subversion
 
@@ -80,6 +75,11 @@
 
 2007-10-24
  * added xmlrpc access
+
+0.7.1
+====
+ * new blocking operations API
+ * futher customatization, more configuration
 
 2007-10-23
  * TPM change to properly support GEM
