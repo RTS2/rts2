@@ -25,6 +25,9 @@
 #include <math.h>
 #include <postgres.h>
 #include <fmgr.h>
+#ifdef PG_MODULE_MAGIC
+PG_MODULE_MAGIC;
+#endif
 
 PG_FUNCTION_INFO_V1 (ln_angular_separation);
 PG_FUNCTION_INFO_V1 (ln_airmass);

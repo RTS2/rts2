@@ -24,8 +24,11 @@
 
 #include <postgres.h>
 #include <fmgr.h>
+#ifdef PG_MODULE_MAGIC
+PG_MODULE_MAGIC;
+#endif
 
-#include <wcs.h>
+#include <libwcs/wcs.h>
 
 #include <ctype.h>
 #include <string.h>

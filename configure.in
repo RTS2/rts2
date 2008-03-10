@@ -85,12 +85,13 @@ AC_ARG_WITH(pgsql,
 esac],[psql=yes])
 
 AC_ARG_WITH(wcs,
-[  --without-wcs           don't build WCS dependent programs],
+[  --with-libwcs           path to WCS programs],
 [case "${withval}" in
-	yes) wcs=yes ;;
-	no)  wcs=no ;;
-	*) AC_MSG_ERROR(bad value ${withval} for --without-wcs) ;;
-esac],[wcs=yes])
+	yes) libwcs=yes ;;
+	no)  libwcs=no ;;
+	*) libwcs=${withval} ;;
+esac],[libwcs=yes])
+
 
 AC_ARG_WITH(sbig,
 [  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
@@ -311,9 +312,12 @@ exit 1])
   AC_SUBST(LIB_CFITSIO)
 fi
 
-if test "x${wcs}" = "xyes"; then
-	AC_CHECK_LIB([wcs], [wcs2pix], LIB_WCS="-lwcs"; 
-	AC_SUBST(LIB_WCS), [cat <<EOF
+if test "x${libwcs}" != "xno"; then
+  if test "x${libwcs}" != "xyes"; then
+    LDFLAGS="${LDFLAGS} -L${libwcs}"
+  fi
+  AC_CHECK_LIB([wcs], [wcs2pix], LIBWCS_LDFLAGS="-lwcs", 
+  [cat <<EOF
 **** You don't have libwcs installed.
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
@@ -321,10 +325,18 @@ if test "x${wcs}" = "xyes"; then
 **** that library. You have to put headers and lib* files from
 **** libwcs directory somewhere, where I can acces them
 EOF
-	exit 1])
+  exit 1])
+  if test "x${libwcs}" != "xyes"; then
+    LIBWCS_LDFLAGS="-L${libwcs}/libwcs -lwcs"
+    LIBWCS_CFLAGS="-I${libwcs}"
+  else
+    LIBWCS_LDFLAGS="-lwcs"
+  fi
 fi
 
-AM_CONDITIONAL(WCSLIB, test x$wcs != xno)
+AM_CONDITIONAL(LIBWCS, test x$libwcs != xno)
+AC_SUBST(LIBWCS_CFLAGS)
+AC_SUBST(LIBWCS_LDFLAGS)
 
 AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
 AC_SUBST(LIB_NCURSES), [cat << EOF

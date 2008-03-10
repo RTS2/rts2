@@ -20,7 +20,6 @@
 #ifndef __RTS2_EVENT__
 #define __RTS2_EVENT__
 
-#define EVENT_SET_TARGET_ID         1
 #define EVENT_WRITE_TO_IMAGE        2
 #define EVENT_WRITE_TO_IMAGE_ENDS  13
 #define EVENT_SET_TARGET            3

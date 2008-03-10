@@ -1,11 +1,11 @@
 #include <fitsio.h>
 #include <longnam.h>
 #include <stdlib.h>
-#include <wcslib/wcslib.h>
 #include <stdio.h>
 #include <jpeglib.h>
-#include <wcslib/wcs.h>
-#include <wcslib/fitsfile.h>
+#include <libwcs/wcslib.h>
+#include <libwcs/wcs.h>
+#include <libwcs/fitsfile.h>
 #include <getopt.h>
 #include <math.h>
 

@@ -75,7 +75,6 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		Rts2Image *setImage (Rts2Image * old_img, Rts2Image * new_image);
 
 		int chipNumbers;
-		int activeTargetId;
 		int saveImage;
 
 		// some camera characteristics..

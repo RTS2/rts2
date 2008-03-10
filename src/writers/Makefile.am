@@ -4,6 +4,8 @@ noinst_LIBRARIES = librts2image.a
 
 noinst_HEADERS = rts2image.h rts2devcliimg.h cameraimage.h rts2imagedb.h rts2devclifoc.h rts2appdbimage.h rts2appimage.h
 
+LDADD = @LIB_M@ @LIB_NOVA@
+
 EXTRA_DIST = rts2imagedb.ec
 
 CLEANFILES = rts2imagedb.cpp

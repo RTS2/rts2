@@ -88,9 +88,6 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
-		case EVENT_SET_TARGET_ID:
-			activeTargetId = (int) event->getArg ();
-			break;
 		case EVENT_INFO_DEVCLI_OK:
 			images.infoOK (this, (Rts2DevClient *) event->getArg ());
 			// check also actualImage
