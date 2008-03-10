@@ -813,7 +813,11 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	ret = startMove ();
 	if (ret)
+	{
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
 		return ret;
+	}
 
 	infoAll ();
 
