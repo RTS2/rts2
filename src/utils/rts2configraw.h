@@ -180,6 +180,15 @@ public std::vector < Rts2ConfigSection * >
 		Rts2ConfigRaw ();
 		virtual ~ Rts2ConfigRaw (void);
 		int loadFile (char *filename = NULL);
+		/**
+		 * Get string from configuration file.
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param buf        Return buffer.
+		 *
+		 * @return -1 on error, 0 on sucess.
+		 */
 		int getString (const char *section, const char *valueName, std::string & buf);
 		int getInteger (const char *section, const char *valueName, int &value);
 		int getFloat (const char *section, const char *valueName, float &value);
