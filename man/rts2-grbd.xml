@@ -100,7 +100,7 @@
         <arg choice="plain"><option>--forward <replaceable>port</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>--add_exec <replaceable>command</replaceable></option></arg>
+        <arg choice="plain"><option>--add-exec <replaceable>command</replaceable></option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>--exec_followups</option></arg>
