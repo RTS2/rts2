@@ -7,7 +7,7 @@ Standards-Version: 3.6.1
 
 Package: rts2
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libnova (>= 0.12.0)
+Depends: ${misc:Depends}, libnova (>= 0.12.0)
 Description: Remote Telescope System 2nd Version
  Complete system for driving your astronomical observatory with various
  instruments. See http://lascaux.asu.cas.cz/rts2 for details.
