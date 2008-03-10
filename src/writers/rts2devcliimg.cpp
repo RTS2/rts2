@@ -102,6 +102,8 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_NUMBER_OF_IMAGES:
 			*((int *)event->getArg ()) += images.size ();
+			if (actualImage)
+				*((int *)event->getArg ()) += 1;
 			break;
 	}
 	Rts2DevClientCamera::postEvent (event);
