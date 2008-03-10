@@ -214,7 +214,11 @@ Rts2ConnCentrald::commandDevice ()
 
 		// client vanished when we processed data..
 		if (conn == NULL)
+		{
+		  	sendCommandEnd (DEVDEM_E_SYSTEM,
+				"client vanished during auth sequence");
 			return -1;
+		}
 
 		if (conn->getKey () == 0)
 		{
