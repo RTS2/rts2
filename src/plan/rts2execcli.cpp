@@ -132,7 +132,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	if (!ret)
 		return;
 
-	if (nextComd->getBopMask () & BOP_TEL_MOVE)
+	if (nextComd->getBopMask () & BOP_EXPOSURE)
 	{
 		// if command cannot be executed when telescope is moving, do not execute it
 		// before target was moved
