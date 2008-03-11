@@ -945,7 +945,7 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 			|| !conn->paramEnd ())
 			return -2;
 		objRaDec->setValueRaDec (obj_ra, obj_dec);
-		return startResyncMove (conn, true);
+		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("fixed"))
 	{
