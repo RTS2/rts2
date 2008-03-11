@@ -541,6 +541,12 @@ echo "
   psql          ${psql}
   libnova       ${libnova}
   cfitsio       ${cfitsio}
+  libwcs        ${libwcs}
+  pgsql		${psql}
+  gsoap         ${gsoap}
+  gpib          ${GPIBLIB}
+  INDI          ${INDI}
+
 
 CCD's:
   sbig          ${SBIG}
@@ -559,13 +565,9 @@ DOME's:
 SENSOR's:
   A3200         ${A3200}
 
-pgsql		${psql}
-gsoap           ${gsoap}
-gpib            ${GPIBLIB}
-INDI            ${INDI}
 
-lock prefix     ${LOCK_PREFIX}
-centrald port	${CENTRALD_PORT}
+  lock prefix   ${LOCK_PREFIX}
+  centrald port	${CENTRALD_PORT}
 
 ***************************************
 
