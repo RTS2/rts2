@@ -488,9 +488,9 @@ Rts2DevClientTelescopeExec::moveEnd ()
 	}
 	else
 	{
-		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
 		if (currentTarget)
 			currentTarget->moveEnded ();
+		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_OK));
 	}
 	Rts2DevClientTelescopeImage::moveEnd ();
 }
