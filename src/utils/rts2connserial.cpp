@@ -76,6 +76,9 @@ Rts2ConnSerial::init ()
 {
 	if (sock < 0)
 		return -1;
+	
+	// set blocking mode
+	fcntl (sock, F_SETFL, 0);
 
 	struct termios s_termios;
 	speed_t b_speed;
