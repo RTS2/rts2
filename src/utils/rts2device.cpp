@@ -635,7 +635,6 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("script_ends"))
 	{
-		CHECK_PRIORITY;
 		return scriptEnds ();
 	}
 	// pseudo-command; will not be answered with ok ect..
@@ -865,6 +864,11 @@ Rts2Device::checkQueChanges (int fakeState)
 					<< "' from que with operator " << queVal->getOperation ()
 					<< " and operand " << newValStr
 					<< sendLog;
+			if (queVal->getCondValue ()->needClearValueSaveAfterLoad ())
+			{
+				queVal->getCondValue ()->clearValueSave ();
+				queVal->getCondValue ()->clearValueSaveAfterLoad ();
+			}
 			delete queVal;
 			iter = queValues.erase (iter);
 		}

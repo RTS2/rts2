@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "rts2value.h"
+#include "rts2app.h"
 
 /**
  * Represent set of Rts2Values. It's used to store values which shall
@@ -103,7 +104,7 @@ class Rts2CondValue
 		{
 			save &= ~0x04;
 		}
-		// mark that next operation is value load from que..
+		// mark that next operation value loads from que..
 		void loadFromQue ()
 		{
 			save |= 0x08;
@@ -115,6 +116,18 @@ class Rts2CondValue
 		bool loadedFromQue ()
 		{
 			return save & 0x08;
+		}
+		void setValueSaveAfterLoad ()
+		{
+		  	save |= 0x10;
+		}
+		void clearValueSaveAfterLoad ()
+		{
+		  	save &= ~0x10;
+		}
+		bool needClearValueSaveAfterLoad ()
+		{
+			return save & 0x10;
 		}
 		Rts2Value *getValue ()
 		{

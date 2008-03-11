@@ -455,6 +455,7 @@ Rts2Daemon::loadValues ()
 		else
 		{
 			ret = setCondValue (old_val, '=', new_val);
+
 			if (ret == 0 || ret == -2)
 			{
 				old_val->clearValueSave ();
@@ -464,6 +465,7 @@ Rts2Daemon::loadValues ()
 			}
 			else
 			{
+			  	old_val->setValueSaveAfterLoad ();
 				old_val->loadFromQue ();
 			}
 		}
@@ -703,7 +705,9 @@ Rts2Value * new_value)
 
 	// save values before first change
 	if (old_cond_value->needSaveValue ())
+	{
 		saveValue (old_cond_value);
+	}
 
 	ret = new_value->doOpValue (op, old_value);
 	if (ret)
