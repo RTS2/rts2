@@ -1046,7 +1046,7 @@ Rts2DevCameraAndor::init ()
 	sprintf (ccdType, "ANDOR");
 
 	int serNum;
-	ret = GetSerialNumber (&serNum);
+	ret = GetCameraSerialNumber (&serNum);
 	if (ret != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "cannot get serial number" << sendLog;
