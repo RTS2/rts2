@@ -292,13 +292,14 @@ Rts2DevCamera (in_argc, in_argv)
 	andorRoot = ANDOR_ROOT;
 
 	gain = NULL;
+	VSAmp = NULL;
+	baselineClamp = NULL;
+	baselineOff = NULL;
 
 	createValue (ADChannel, "ADCHANEL",
 		"Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
 		true, 0, CAM_WORKING, true);
 	ADChannel->setValueInteger (0);
-	// create VSAmp only if we have amplitude set capability
-	VSAmp = NULL;
 	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
 		CAM_WORKING, true);
 	VSpeed->setValueInteger (1);
@@ -325,12 +326,6 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING, true);
 	filterCr->setValueBool (false);
-
-	createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING, true);
-	baselineClamp->setValueBool (false);
-
-	createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING, true);
-	baselineOff->setValueInteger (0);
 
 	defaultGain = IXON_DEFAULT_GAIN;
 
@@ -1071,6 +1066,14 @@ Rts2DevCameraAndor::initAndorValues ()
 		createValue (gain, "GAIN", "CCD gain", true, 0,
 			CAM_WORKING, true);
 		setGain (defaultGain);
+	}
+	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINECLAMP)
+	{
+		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING, true);
+		baselineClamp->setValueBool (false);
+
+		createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING, true);
+		baselineOff->setValueInteger (0);
 	}
 }
 
