@@ -1036,7 +1036,7 @@ Rts2DevCameraAndor::init ()
 	ret = SetReadMode (4);
 	if (ret != DRV_SUCCESS)
 	{
-		cerr << "Cannot set read mode (" << ret << "), exiting" << endl;
+		logStream (MESSAGE_ERROR) << "Cannot set read mode (" << ret << "), exiting" << sendLog;
 		return -1;
 	}
 
@@ -1044,6 +1044,15 @@ Rts2DevCameraAndor::init ()
 		printInfo ();
 
 	sprintf (ccdType, "ANDOR");
+
+	int serNum;
+	ret = GetSerialNumber (&serNum);
+	if (ret != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "cannot get serial number" << sendLog;
+		return -1;
+	}
+	sprintf (serialNumber, "%i", serNum);
 
 	return initChips ();
 }
