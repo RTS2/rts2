@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iomanip>
 
 #include "camd.h"
 
@@ -89,6 +90,14 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		Rts2ValueFloat *VSpeedHZ;
 		Rts2ValueInteger *bitDepth;
 		Rts2ValueInteger *acqusitionMode;
+
+		Rts2ValueInteger *outputAmp;
+		Rts2ValueInteger *outPreAmpGain;
+
+		Rts2ValueBool *filterCr;
+
+		Rts2ValueBool *baselineClamp;
+		Rts2ValueInteger *baselineOff;
 
 		int defaultGain;
 
@@ -307,6 +316,21 @@ Rts2DevCamera (in_argc, in_argv)
 	useFT->setValueBool (true);
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
+
+	createValue (outputAmp, "OUTAMP", "output amplifier", true, 0, CAM_WORKING, true);
+	outputAmp->setValueInteger (0);
+
+	createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
+	outPreAmpGain->setValueInteger (0);
+
+	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING, true);
+	filterCr->setValueBool (false);
+
+	createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING, true);
+	baselineClamp->setValueBool (false);
+
+	createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING, true);
+	baselineOff->setValueInteger (0);
 
 	defaultGain = IXON_DEFAULT_GAIN;
 
@@ -588,6 +612,26 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
+	if (old_value == outputAmp)
+	{
+		return SetOutputAmplifier (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == outPreAmpGain)
+	{
+		return SetPreAmpGain (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == filterCr)
+	{
+		return SetFilterMode (((Rts2ValueBool *)new_value)->getValueBool () ? 2 : 0) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == baselineClamp)
+	{
+		return SetBaselineClamp (((Rts2ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == baselineOff)
+	{
+		return SetBaselineOffset (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
 }
@@ -749,7 +793,8 @@ Rts2DevCameraAndor::printNumberADCs ()
 int
 Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
 {
-	int ret, nhs;
+	int ret;
+	int nhs, npreamps;
 	if ((ret = GetNumberHSSpeeds (ad, amp, &nhs)) != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) <<
@@ -757,7 +802,14 @@ Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
 		return -1;
 	}
 
-	printf ("Horizontal speeds: %d (", nhs);
+	if ((ret = GetNumberPreAmpGains (&npreamps)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) <<
+			"cannot get number of preAmps gains " << sendLog;
+		return -1;
+	}
+
+	std::cout << "Horizontal speeds: " << nhs << " (";
 
 	for (int s = 0; s < nhs; s++)
 	{
@@ -769,19 +821,36 @@ Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
 				" ad " << ad << " amp " << amp << sendLog;
 			return -1;
 		}
-		printf ("%.2f", val);
+		std::cout << std::setprecision (2) << val;
 		if (s == (nhs - 1))
+		{
 			switch (camera_type)
 			{
 				case AC_CAMERATYPE_IXON:
-					printf (" MHz)\n");
+					std::cout << " MHz)" << std::endl;
 					break;
 				default:
-					printf (" usec/pix)\n");
+					std::cout << " usec/pix)" << std::endl;
 					break;
 			}
-			else
-				printf (", ");
+		}
+		else
+		{
+			std::cout << ", ";
+		}
+		// prints available preAmpGains
+		for (int p = 0; p < npreamps; p++)
+		{
+			float preAmpGain;
+			int isPreAmp;
+			GetPreAmpGain (p, &preAmpGain);
+			IsPreAmpGainAvailable (ad, amp, s, p, &isPreAmp);
+			std::cout << "pream " << p
+				<< " preampVal " << preAmpGain
+				<< " is " << isPreAmp
+				<< " ";
+
+		}
 	}
 	return 0;
 }
