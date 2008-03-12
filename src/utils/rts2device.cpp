@@ -664,7 +664,32 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 
 
 int
-Rts2Device::setMode (int new_mode)
+Rts2Device::loadModefile ()
+{
+	if (!modefile)
+		return 0;
+	
+	int ret;
+	
+	delete modeconf;
+	modeconf = new Rts2ConfigRaw ();
+	ret = modeconf->loadFile (modefile);
+	if (ret)
+		return ret;
+
+	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX, 0, true);
+
+	for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
+		iter != modeconf->end (); iter++)
+	{
+		modesel->addSelVal ((*iter)->getName ());
+	}
+	return setMode (0, true);
+}
+
+
+int
+Rts2Device::setMode (int new_mode, bool defaultValues)
 {
 	if (modesel == NULL)
 	{
@@ -728,13 +753,19 @@ Rts2Device::setMode (int new_mode)
 				<< "'." << sendLog;
 			return -1;
 		}
-		ret = setCondValue (getCondValue (val->getName ().c_str ()), '=', new_value);
+		Rts2CondValue *cond_val = getCondValue (val->getName ().c_str ());
+		if (defaultValues)
+		{
+			cond_val->setIgnoreSave ();
+			deleteSaveValue (cond_val);
+		}
+		ret = setCondValue (cond_val, '=', new_value);
 		if (ret == -2)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot load value from mode file " << val->getName ()
 				<< " mode " << new_mode
-				<< " value '" << new_value->getValue ()
-				<< sendLog;
+				<< " value '" << (*iter).getValue ().c_str ()
+				<< "'." << sendLog;
 			return -1;
 		}
 	}
@@ -930,24 +961,6 @@ Rts2Device::init ()
 
 	free (lock_fname);
 
-	// check for modefile
-	if (modefile != NULL)
-	{
-		modeconf = new Rts2ConfigRaw ();
-		ret = modeconf->loadFile (modefile);
-		if (ret)
-			return ret;
-
-		createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX, 0, true);
-
-		for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
-			iter != modeconf->end (); iter++)
-		{
-			modesel->addSelVal ((*iter)->getName ());
-		}
-		setMode (0);
-	}
-
 	conn_master =
 		new Rts2DevConnMaster (this, device_host, getPort (), device_name,
 		device_type, centrald_host, centrald_port);
@@ -962,6 +975,13 @@ Rts2Device::init ()
 			return -1;
 	}
 	return ret;
+}
+
+
+int
+Rts2Device::initValues ()
+{
+	return loadModefile ();
 }
 
 
@@ -1072,4 +1092,11 @@ int
 Rts2Device::maskQueValueBopState (int new_state, int valueQueCondition)
 {
 	return new_state;
+}
+
+
+void
+Rts2Device::signaledHUP ()
+{
+	loadModefile ();
 }

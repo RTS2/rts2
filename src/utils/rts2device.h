@@ -183,6 +183,8 @@ class Rts2Device:public Rts2Daemon
 		Rts2ConfigRaw *modeconf;
 		Rts2ValueSelection *modesel;
 
+		int loadModefile ();
+
 		int device_port;
 		char *device_name;
 		int device_type;
@@ -193,7 +195,17 @@ class Rts2Device:public Rts2Daemon
 
 		char *mailAddress;
 
-		int setMode (int new_mode);
+		/**
+		 * Set mode from modefile.
+		 *
+		 * Values for each device can be specified in modefiles.
+		 *
+		 * @param new_mode       New mode number.
+		 * @param defaultValues  If true, will set default values.
+		 *
+		 * @return -1 on error, 0 if sucessful.
+		 */
+		int setMode (int new_mode, bool defaultValues = false);
 
 		int blockState;
 		Rts2CommandDeviceStatusInfo *deviceStatusCommand;
@@ -207,6 +219,7 @@ class Rts2Device:public Rts2Daemon
 		 */
 		virtual int processOption (int in_opt);
 		virtual int init ();
+		virtual int initValues ();
 
 		/**
 		 * Return device BOP state.
@@ -363,5 +376,7 @@ class Rts2Device:public Rts2Daemon
 				deviceStatusCommand = NULL;
 			}
 		}
+
+		virtual void signaledHUP ();
 };
 #endif							 /* !__RTS2_DEVICE__ */

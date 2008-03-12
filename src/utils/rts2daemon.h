@@ -83,11 +83,20 @@ class Rts2Daemon:public Rts2Block
 		Rts2ValueVector savedValues;
 
 		void saveValue (Rts2CondValue * val);
-		void deleteSaveValue (Rts2CondValue * val);
 
 		bool doHupIdleLoop;
 
 	protected:
+		
+		/**
+		 * Delete all saved reference of given value.
+		 *
+		 * Used to clear saved values when the default value shall be changed.
+		 * 
+		 * @param val Value which references will be deleted.
+		 */
+		void deleteSaveValue (Rts2CondValue * val);
+
 		/**
 		 * Send new value over the wire to all connections.
 		 */
