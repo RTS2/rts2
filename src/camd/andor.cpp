@@ -94,6 +94,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		Rts2ValueInteger *outputAmp;
 		Rts2ValueInteger *outPreAmpGain;
 
+		Rts2ValueSelection *emGainMode;
+
 		Rts2ValueBool *filterCr;
 
 		Rts2ValueBool *baselineClamp;
@@ -323,6 +325,12 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
 	outPreAmpGain->setValueInteger (0);
+
+	createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING, true);
+	emGainMode->addSelVal ("DAC 8bit");
+	emGainMode->addSelVal ("DAC 12bit");
+	emGainMode->addSelVal ("LINEAR 12bit");
+	emGainMode->addSelVal ("REAL 12bit");
 
 	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING, true);
 	filterCr->setValueBool (false);
@@ -626,6 +634,11 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == baselineOff)
 	{
 		return SetBaselineOffset (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == emGainMode)
+	{
+		int newMode[] = {AC_EMGAIN_8BIT, AC_EMGAIN_12BIT, AC_EMGAIN_LINEAR12, AC_EMGAIN_REAL12};
+		return SetEMGainMode (newMode[new_value->getValueInteger ()]) == DRV_SUCCESS ? 0 : -2;
 	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
