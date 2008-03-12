@@ -64,6 +64,11 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueDouble *posErr;
 
 		/**
+		 * If correction is bellow that value, it is ignored.
+		 */
+		Rts2ValueDouble *ignoreCorrection;
+
+		/**
 		 * If correction is bellow that value, it is considered as small correction.
 		 */
 		Rts2ValueDouble *smallCorrection;

@@ -83,6 +83,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	move_connection = NULL;
 
+	createValue (ignoreCorrection, "ignore_correction", "corrections below that value will be ignored", false, RTS2_DT_DEG_DIST, 0, true);
+	ignoreCorrection->setValueDouble (0);
+
 	createValue (smallCorrection, "small_correction", "correction bellow that value will be considered as small",
 		false, RTS2_DT_DEG_DIST);
 	smallCorrection->setValueDouble (0);
@@ -196,7 +199,9 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == modelLimit
 		|| old_value == telFov
-		|| old_value == rotang)
+		|| old_value == rotang
+		|| old_value == smallCorrection
+		|| old_value == ignoreCorrection)
 	{
 		return 0;
 	}
@@ -987,6 +992,12 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 			&& corr_img == corrImgId->getValueInteger ()
 			&& img_id > wCorrImgId->getValueInteger ())
 		{
+			if (pos_err < ignoreCorrection->getValueDouble ())
+			{
+				conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as is too smallk");
+				return -1;
+			}
+
 			waitingCorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
 
 			posErr->setValueDouble (pos_err);
