@@ -283,6 +283,11 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 					<< strerror (errno) << sendLog;
 			return -1;
 		}
+		if (ret == 0)
+		{
+			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+			return -1;
+		}
 		if (*(rbuf + rlen) == endChar)
 		{
 			rlen += ret;
