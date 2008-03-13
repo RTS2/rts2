@@ -549,7 +549,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		void createTempSet ()
 		{
-			createValue (tempSet, "CCD_SET", "CCD set temperature", true, 0, CAM_WORKING, true);
+			createValue (tempSet, "CCD_SET", "CCD set temperature", true, 0, CAM_WORKING, false);
 		}
 
 		void createTempRegulation ()
