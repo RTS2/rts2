@@ -94,7 +94,9 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		Rts2ValueInteger *outputAmp;
 		Rts2ValueInteger *outPreAmpGain;
 
+		Rts2ValueBool *emAdvanced;
 		Rts2ValueSelection *emGainMode;
+		Rts2ValueSelection *fanMode;
 
 		Rts2ValueBool *filterCr;
 
@@ -323,14 +325,12 @@ Rts2DevCamera (in_argc, in_argv)
 	createValue (outputAmp, "OUTAMP", "output amplifier", true, 0, CAM_WORKING, true);
 	outputAmp->setValueInteger (0);
 
-	createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
-	outPreAmpGain->setValueInteger (0);
+	outPreAmpGain = NULL;
 
-	createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING, true);
-	emGainMode->addSelVal ("DAC 8bit");
-	emGainMode->addSelVal ("DAC 12bit");
-	emGainMode->addSelVal ("LINEAR 12bit");
-	emGainMode->addSelVal ("REAL 12bit");
+	emAdvanced = NULL;
+	emGainMode = NULL;
+
+	fanMode = NULL;
 
 	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING, true);
 	filterCr->setValueBool (false);
@@ -635,10 +635,17 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return SetBaselineOffset (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
 	}
+	if (old_value == emAdvanced)
+	{
+		return SetEMAdvanced (((Rts2ValueBool *)new_value)->getValueBool () ? 1 : 0) == DRV_SUCCESS ? 0 : -2;
+	}
 	if (old_value == emGainMode)
 	{
-		int newMode[] = {AC_EMGAIN_8BIT, AC_EMGAIN_12BIT, AC_EMGAIN_LINEAR12, AC_EMGAIN_REAL12};
-		return SetEMGainMode (newMode[new_value->getValueInteger ()]) == DRV_SUCCESS ? 0 : -2;
+		return SetEMGainMode (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
+	}
+	if (old_value == fanMode)
+	{
+		return SetFanMode (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
 	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
@@ -1069,24 +1076,50 @@ Rts2DevCameraAndor::init ()
 void
 Rts2DevCameraAndor::initAndorValues ()
 {
-	if (cap.ulCameraType == AC_CAMERATYPE_IXON)
+	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
 	{
 		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_WORKING, true);
 		VSAmp->setValueInteger (0);
+	}
+	if (cap.ulSetFunctions & AC_SETFUNCTION_PREAMPGAIN)
+	{
+		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
+		outPreAmpGain->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
 	{
 		createValue (gain, "GAIN", "CCD gain", true, 0,
 			CAM_WORKING, true);
 		setGain (defaultGain);
+
+		if (cap.ulEMGainCapability != 0)
+		{
+			createValue (emAdvanced, "EMADV", "advanced EM mode", true, 0, CAM_WORKING, true);
+			emAdvanced->setValueBool (false);
+
+			createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING, true);
+			emGainMode->addSelVal ("DAC 8bit");
+			emGainMode->addSelVal ("DAC 12bit");
+			emGainMode->addSelVal ("LINEAR 12bit");
+			emGainMode->addSelVal ("REAL 12bit");
+		}
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINECLAMP)
 	{
 		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING, true);
 		baselineClamp->setValueBool (false);
-
+	}
+	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINEOFFSET)
+	{
 		createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING, true);
 		baselineOff->setValueInteger (0);
+	}
+	if (cap.ulFeatures & AC_FEATURES_FANCONTROL)
+	{
+		createValue (fanMode, "FANMODE", "FAN mode", true, 0, CAM_WORKING, true);
+		fanMode->addSelVal ("FULL");
+		fanMode->addSelVal ("LOW");
+		fanMode->addSelVal ("OFF");
 	}
 }
 
