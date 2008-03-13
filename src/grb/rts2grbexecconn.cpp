@@ -10,7 +10,7 @@ bool in_grb_is_grb, time_t * in_grb_date,
 float in_grb_errorbox, int in_grb_isnew):
 Rts2ConnFork (in_master, execFile)
 {
-	argvs = new char *[11];
+	argvs = new char *[12];
 	// defaults..
 	argvs[0] = execFile;
 	// pass real arguments..
