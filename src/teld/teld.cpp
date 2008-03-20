@@ -765,6 +765,10 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	struct ln_equ_posn pos;
 
+	// if object was not specified, do not move
+	if (isnan (objRaDec->getRa ()) || isnan (objRaDec->getDec ()))
+		return -1;
+
 	// object changed from last call to startResyncMove
 	if (objRaDec->wasChanged ())
 	{
