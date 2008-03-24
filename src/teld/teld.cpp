@@ -36,6 +36,11 @@
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
+	for (int i = 0; i < 4; i++)
+	{
+	 	timerclear (dir_timeouts + i);
+	}
+	
 	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
 	pointingModel->addSelVal ("EQU");
 	pointingModel->addSelVal ("ALT-AZ");
