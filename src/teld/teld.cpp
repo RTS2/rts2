@@ -25,7 +25,6 @@
 #include <libnova/libnova.h>
 
 #include "../utils/rts2device.h"
-#include "../utils/rts2block.h"
 #include "../utils/libnova_cpp.h"
 
 #include "telescope.h"
@@ -264,6 +263,26 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 	ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
 	hrz.alt += ref;
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
+}
+
+
+void
+Rts2DevTelescope::incMoveNum ()
+{
+	// reset offsets
+	offsetRaDec->setValueRaDec (0, 0);
+	offsetRaDec->resetValueChanged ();
+
+	corrRaDec->setValueRaDec (0, 0);
+	corrRaDec->resetValueChanged ();
+
+	waitingCorrRaDec->setValueRaDec (0, 0);
+	waitingCorrRaDec->resetValueChanged ();
+
+	moveNum->inc ();
+
+	corrImgId->setValueInteger (0);
+	wCorrImgId->setValueInteger (0);
 }
 
 
@@ -777,19 +796,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	// object changed from last call to startResyncMove
 	if (objRaDec->wasChanged ())
 	{
-		// reset offsets
-		offsetRaDec->setValueRaDec (0, 0);
-		offsetRaDec->resetValueChanged ();
-
-		corrRaDec->setValueRaDec (0, 0);
-		corrRaDec->resetValueChanged ();
-
-		waitingCorrRaDec->setValueRaDec (0, 0);
-		waitingCorrRaDec->resetValueChanged ();
-
-		moveNum->inc ();
-		corrImgId->setValueInteger (0);
-		wCorrImgId->setValueInteger (0);
+		incMoveNum ();
 	}
 	// if some value is waiting to be applied..
 	else if (waitingCorrRaDec->wasChanged ())
@@ -884,7 +891,7 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
 	}
 	else
 	{
-		moveNum->inc ();
+		incMoveNum ();
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
 			"parking started");
 	}

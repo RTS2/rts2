@@ -209,6 +209,11 @@ class Rts2DevTelescope:public Rts2Device
 		 */
 		void applyRefraction (struct ln_equ_posn *pos, double JD);
 
+		/**
+		 * Zero's all corrections, increment move count. Called before move.
+		 */
+		void incMoveNum ();
+
 	protected:
 		Rts2ValueInteger * correctionsMask;
 
