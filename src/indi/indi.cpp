@@ -1,3 +1,23 @@
+/* 
+ * INDI bridge.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+
 #include "../utils/rts2device.h"
 #include "../utils/rts2command.h"
 
@@ -24,6 +44,7 @@ class Rts2Indi:public Rts2Device
 		virtual int changeMasterState (int new_state);
 
 		void setStates ();
+		void setObjRaDec (double ra, double dec);
 		void ISPoll ();
 
 		virtual void message (Rts2Message & msg);
@@ -73,49 +94,34 @@ Rts2Indi::message (Rts2Message & msg)
 /*INDI controls */
 static ISwitch PowerS[] =
 {
-	{
-		"CONNECT", "Connect", ISS_OFF, 0, 0
-	}
-	,
-	{
-		"DISCONNECT", "Disconnect",
-		ISS_ON, 0, 0
-	}
+	{"CONNECT", "Connect", ISS_OFF, 0, 0},
+	{"DISCONNECT", "Disconnect", ISS_ON, 0, 0}
 };
+
 ISwitchVectorProperty PowerSP =
-{
-	mydev, "CONNECTION", "Connection", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0,
-	IPS_IDLE, PowerS, NARRAY (PowerS), 0, 0
-};
+{mydev, "CONNECTION", "Connection", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0,	IPS_IDLE, PowerS, NARRAY (PowerS), 0, 0};
 
 static ISwitch StatesS[] =
 {
-	{
-		"OFF", "Off", ISS_ON, 0, 0
-	}
-	,
-	{
-		"STANDBY", "Standby", ISS_OFF, 0, 0
-	},
+ 	{"OFF", "Off", ISS_ON, 0, 0},
+	{"STANDBY", "Standby", ISS_OFF, 0, 0},
 	{"ON", "On", ISS_OFF, 0, 0}
 };
+
 ISwitchVectorProperty StatesSP =
-{
-	mydev, "STATE", "State", RTS2_GROUP, IP_RW, ISR_1OFMANY, 0, IPS_IDLE,
-	StatesS, NARRAY (StatesS), 0, 0
-};
+{mydev, "STATE", "State", RTS2_GROUP, IP_RW, ISR_1OFMANY, 0, IPS_IDLE, StatesS, NARRAY (StatesS), 0, 0};
 
 static INumber eq[] =
 {
 	{"RA", "RA  H:M:S", "%10.6m", 0., 24., 0., 0., 0, 0, 0},
 	{"DEC", "Dec D:M:S", "%10.6m", -90., 90., 0., 0., 0, 0, 0},
 };
+
 INumberVectorProperty eqNum =
-{
-	mydev, "EQUATORIAL_COORD", "Equatorial J2000", BASIC_GROUP, IP_RW, 0,
-	IPS_IDLE,
-	eq, NARRAY (eq), 0, 0
-};
+{mydev, "EQUATORIAL_COORD", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
+
+INumberVectorProperty eqOffsets =
+{mydev, "EQUATORIAL_OFFSET", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
 
 static INumber hor[] =
 {
@@ -124,42 +130,25 @@ static INumber hor[] =
 };
 
 static INumberVectorProperty horNum =
-{
-	mydev, "HORIZONTAL_COORD", "Horizontal Coords", BASIC_GROUP, IP_RW, 0,
-	IPS_IDLE,
-	hor, NARRAY (hor), 0, 0
-};
+{mydev, "HORIZONTAL_COORD", "Horizontal Coords", BASIC_GROUP, IP_RW, 0, IPS_IDLE, hor, NARRAY (hor), 0, 0};
 
 static ISwitch OnCoordSetS[] =
 {
-	{
-		"SLEW", "Slew", ISS_ON, 0, 0
-	}
-	,
-	{
-		"TRACK", "Track", ISS_OFF, 0, 0
-	},
+	{"SLEW", "Slew", ISS_ON, 0, 0},
+	{"TRACK", "Track", ISS_OFF, 0, 0},
 	{"SYNC", "Sync", ISS_OFF, 0, 0}
 };
 
 static ISwitchVectorProperty OnCoordSetSw =
-{
-	mydev, "ON_COORD_SET", "On Set", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0,
-	IPS_IDLE, OnCoordSetS, NARRAY (OnCoordSetS), 0, 0
-};
+{mydev, "ON_COORD_SET", "On Set", BASIC_GROUP, IP_RW, ISR_1OFMANY, 0, IPS_IDLE, OnCoordSetS, NARRAY (OnCoordSetS), 0, 0};
 
 static ISwitch abortSlewS[] =
 {
-	{
-		"ABORT", "Abort", ISS_OFF, 0, 0
-	}
+	{"ABORT", "Abort", ISS_OFF, 0, 0}
 };
 
 static ISwitchVectorProperty abortSlewSw =
-{
-	mydev, "ABORT_MOTION", "Abort Slew/Track", BASIC_GROUP, IP_RW,
-	ISR_1OFMANY, 0, IPS_IDLE, abortSlewS, NARRAY (abortSlewS), 0, 0
-};
+{mydev, "ABORT_MOTION", "Abort Slew/Track", BASIC_GROUP, IP_RW,	ISR_1OFMANY, 0, IPS_IDLE, abortSlewS, NARRAY (abortSlewS), 0, 0};
 
 static Rts2Indi *device = NULL;
 
@@ -176,14 +165,24 @@ Rts2Indi::setStates ()
 	{
 		getCentraldConn ()->queCommand (new Rts2Command (this, "standby"));
 		StatesSP.s = IPS_BUSY;
-		IDSetSwitch (&StatesSP,
-			"System is switched to standby, will not observe.");
+		IDSetSwitch (&StatesSP,	"System is switched to standby, will not observe.");
 	}
 	else if (StatesSP.sp[2].s == ISS_ON)
 	{
 		getCentraldConn ()->queCommand (new Rts2Command (this, "on"));
 		StatesSP.s = IPS_BUSY;
 		IDSetSwitch (&StatesSP, "System is switched to on, will observe.");
+	}
+}
+
+
+void
+Rts2Indi::setObjRaDec (double ra, double dec)
+{
+	Rts2Conn *tel = getOpenConnection ("T0");
+	if (tel)
+	{
+		tel->queCommand (new Rts2CommandResyncMove (this, (Rts2DevClientTelescope *)tel->getOtherDevClient (), ra, dec));
 	}
 }
 
@@ -220,10 +219,31 @@ Rts2Indi::ISPoll ()
 	Rts2Conn *tel = getOpenConnection ("T0");
 	if (tel)
 	{
-		eqNum.np[0].value = tel->getValueDouble ("MNT_RA") / 15.0;
-		eqNum.np[1].value = tel->getValueDouble ("MNT_DEC");
-		eqNum.s = IPS_OK;
+		Rts2Value *val = tel->getValue ("OBJ");
+		if (val->getValueBaseType () == RTS2_VALUE_RADEC)
+		{
+			eqNum.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
+			eqNum.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqNum.s = IPS_OK;
+		}
+		else
+		{
+		  	eqNum.s = IPS_BUSY;
+		}
 		IDSetNumber (&eqNum, NULL);
+
+		val = tel->getValue ("OFFS");
+		if (val->getValueBaseType () == RTS2_VALUE_RADEC)
+		{
+			eqOffsets.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
+			eqOffsets.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqOffsets.s = IPS_OK;
+		}
+		else
+		{
+		  	eqOffsets.s = IPS_BUSY;
+		}
+		IDSetNumber (&eqOffsets, NULL);
 
 		horNum.np[0].value = tel->getValueDouble ("ALT");
 		horNum.np[1].value = tel->getValueDouble ("AZ");
@@ -270,6 +290,7 @@ ISGetProperties (const char *dev)
 	IDDefSwitch (&PowerSP, NULL);
 	IDDefSwitch (&StatesSP, NULL);
 	IDDefNumber (&eqNum, NULL);
+	IDDefNumber (&eqOffsets, NULL);
 	IDDefNumber (&horNum, NULL);
 
 	IDDefSwitch (&OnCoordSetSw, NULL);
@@ -280,14 +301,11 @@ ISGetProperties (const char *dev)
 
 
 void
-ISNewSwitch (const char *dev, const char *name, ISState * states,
-char *names[], int n)
+ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[], int n)
 {
 	ISInit ();
 	if (!strcmp (name, StatesSP.name))
 	{
-		IUResetSwitches (&StatesSP);
-		IUUpdateSwitches (&StatesSP, states, names, n);
 		device->setStates ();
 		return;
 	}
@@ -303,8 +321,56 @@ int n)
 
 
 void
-ISNewNumber (const char *dev, const char *name, double values[],
-char *names[], int n)
+ISNewNumber (const char *dev, const char *name, double values[], char *names[], int n)
+{
+	ISInit ();
+	if (!strcmp (name, eqNum.name))
+	{
+		double newRA;
+		double newDEC;
+
+		// parse move request
+		int i=0, nset=0;
+
+		for (nset = i = 0; i < n; i++)
+		{
+			INumber *eqp = IUFindNumber (&eqNum, names[i]);
+			if (eqp == &eq[0])
+			{
+        	        	newRA = values[i];
+				nset += newRA >= 0 && newRA <= 24.0;
+			}
+			else if (eqp == &eq[1])
+			{
+				newDEC = values[i];
+				nset += newDEC >= -90.0 && newDEC <= 90.0;
+			}
+		}
+
+		if (nset == 2)
+		{
+			eqNum.s = IPS_BUSY;
+			device->setObjRaDec (newRA, newDEC);
+			eqNum.s = IPS_IDLE;
+			IDSetNumber(&eqNum, NULL);
+			return;
+		}
+		else
+		{
+			eqNum.s = IPS_IDLE;
+			IDSetNumber(&eqNum, "RA or Dec missing or invalid");
+		}
+	}
+}
+
+void
+ISNewBLOB (const char *dev, const char *name, int sizes[], int blobsizes[], char *blobs[], char *formats[], char *names[], int n)
+{
+	ISInit ();
+}
+
+void
+ISSnoopDevice (XMLEle *root)
 {
 	ISInit ();
 }

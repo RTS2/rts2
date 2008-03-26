@@ -236,7 +236,7 @@ AC_ARG_WITH(indi,
 [  --with-indi             build with INDI bridge],
 INDI="${withval}";
 LIB_INDI="-L${withval} ";
-INC_INDI="-I${withval} ",
+INC_INDI="-I${withval} -I${withval}/libs",
 [INDI=no])
 
 if test "x$INDI" != "xno" ; then
@@ -513,6 +513,7 @@ AC_OUTPUT([Makefile
 	   src/sql/create/Makefile
 	   src/sql/drop/Makefile
 	   src/sql/update/Makefile
+	   src/sql/telma/Makefile
 	   src/pgsql/Makefile
 	   src/phot/Makefile
 	   src/serverd/Makefile
