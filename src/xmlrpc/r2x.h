@@ -34,4 +34,14 @@
 #define R2X_IMAGES_LIST               "rts2.images.list"
 
 #define R2X_MESSAGES_GET              "rts2.messages.get"
+
+/**
+ * User login. Provides username and password, out true/false - true if login is OK
+ */
+#define R2X_USER_LOGIN                "rts2.user.login"
+
+/**
+ * New user. Provides all user parameters (login, email, password,..), out true/false - true if OK
+ */
+#define R2X_USER_TELMA_NEW            "rts2.user.telma.new"
 #endif							 /* ! __RTS2_R2X__ */

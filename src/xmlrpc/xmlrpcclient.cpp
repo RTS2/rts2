@@ -88,8 +88,6 @@ Rts2XmlRpcTest::doTest ()
 	oneArg[0] = val;
 	runXmlMethod (R2X_VALUES_SET, oneArg, result);
 
-	return;
-
 	runXmlMethod (R2X_DEVICES_LIST, noArgs, result);
 
 	for (int i = 0; i < result.size (); i++)
@@ -108,12 +106,16 @@ Rts2XmlRpcTest::doTest ()
 	oneArg[0] = "f";
 	runXmlMethod (R2X_TARGETS_LIST, oneArg, result);
 
+	oneArg[0] = 2600;
+	runXmlMethod (R2X_IMAGES_LIST, oneArg, result);
+
 	oneArg[0] = 4;
 	oneArg[1] = 2;
 	runXmlMethod (R2X_TARGETS_INFO, oneArg, result);
 
-	oneArg[0] = 2600;
-	runXmlMethod (R2X_IMAGES_LIST, oneArg, result);
+	oneArg[0] = "log";
+	oneArg[1] = "pas";
+	runXmlMethod (R2X_USER_LOGIN, oneArg, result);
 }
 
 

@@ -577,6 +577,21 @@ class GetMessages: public XmlRpcServerMethod
 		}
 } getMessages (&xmlrpc_server);
 
+class UserLogin: public XmlRpcServerMethod
+{
+	public:
+		UserLogin (XmlRpcServer* s) : XmlRpcServerMethod (R2X_USER_LOGIN, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size() != 2)
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+			result = verifyUser (params[0], params[1]);
+		}
+} userLogin (&xmlrpc_server);
+
 int
 main (int argc, char **argv)
 {
