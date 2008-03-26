@@ -57,7 +57,7 @@ Rts2ConfigSection::~Rts2ConfigSection (void)
 
 
 Rts2ConfigValue *
-Rts2ConfigSection::getValue (const char *valueName)
+Rts2ConfigSection::getValue (const char *valueName, bool verbose)
 {
 	std::string name (valueName);
 	for (Rts2ConfigSection::iterator iter = begin (); iter != end (); iter++)
@@ -66,8 +66,11 @@ Rts2ConfigSection::getValue (const char *valueName)
 		if (val->isValue (name))
 			return val;
 	}
-	logStream (MESSAGE_WARNING) << "Cannot find value '" << name <<
-		"' in section '" << sectName << "'." << sendLog;
+	if (verbose)
+	{
+		logStream (MESSAGE_WARNING) << "Cannot find value '" << name <<
+			"' in section '" << sectName << "'." << sendLog;
+	}
 	return NULL;
 }
 
@@ -285,6 +288,7 @@ Rts2ConfigRaw::parseConfigFile ()
 
 Rts2ConfigRaw::Rts2ConfigRaw ()
 {
+	verboseEntry = true;
 	configStream = NULL;
 }
 
@@ -318,7 +322,11 @@ Rts2ConfigRaw::loadFile (char *filename)
 		return -1;
 	}
 
-	getSpecialValues ();
+	if (getSpecialValues ())
+	{
+		delete configStream;
+		return -1;
+	}
 
 	delete configStream;
 
@@ -348,18 +356,17 @@ Rts2ConfigRaw::getSection (const char *section, bool verbose)
 Rts2ConfigValue *
 Rts2ConfigRaw::getValue (const char *section, const char *valueName)
 {
-	Rts2ConfigSection *sect = getSection (section);
+	Rts2ConfigSection *sect = getSection (section, verboseEntry);
 	if (!sect)
 	{
 		return NULL;
 	}
-	return sect->getValue (valueName);
+	return sect->getValue (valueName, verboseEntry);
 }
 
 
 int
-Rts2ConfigRaw::getString (const char *section, const char *valueName,
-std::string & buf)
+Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf)
 {
 	Rts2ConfigValue *val = getValue (section, valueName);
 	if (!val)
@@ -372,8 +379,22 @@ std::string & buf)
 
 
 int
-Rts2ConfigRaw::getInteger (const char *section, const char *valueName,
-int &value)
+Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
+{
+	int ret;
+	clearVerboseEntry ();
+	ret = getString (section, valueName, buf);
+	if (ret)
+	{
+		buf = std::string (defVal);
+	}
+	setVerboseEntry ();
+	return ret;
+}
+
+
+int
+Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -384,7 +405,10 @@ int &value)
 	value = strtol (valbuf.c_str (), &retv, 0);
 	if (*retv != '\0')
 	{
-		value = 0;
+		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+			<< " in section [" << section
+			<< "] value '" << valueName 
+			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}
 	return 0;
@@ -392,8 +416,22 @@ int &value)
 
 
 int
-Rts2ConfigRaw::getFloat (const char *section, const char *valueName,
-float &value)
+Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value, int defVal)
+{
+	int ret;
+	clearVerboseEntry ();
+	ret = getInteger (section, valueName, value);
+	if (ret)
+	{
+		value = defVal;
+	}
+	setVerboseEntry ();
+	return ret;
+}
+
+
+int
+Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -404,10 +442,28 @@ float &value)
 	value = strtof (valbuf.c_str (), &retv);
 	if (*retv != '\0')
 	{
-		value = 0;
+		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+			<< " in section [" << section
+			<< "] value '" << valueName 
+			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}
 	return 0;
+}
+
+
+int
+Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value, float defVal)
+{
+	int ret;
+	clearVerboseEntry ();
+	ret = getFloat (section, valueName, value);
+	if (ret)
+	{
+		value = defVal;
+	}
+	setVerboseEntry ();
+	return ret;
 }
 
 
@@ -425,8 +481,7 @@ Rts2ConfigRaw::getDouble (const char *section, const char *valueName)
 
 
 int
-Rts2ConfigRaw::getDouble (const char *section, const char *valueName,
-double &value)
+Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -437,22 +492,43 @@ double &value)
 	value = strtod (valbuf.c_str (), &retv);
 	if (*retv != '\0')
 	{
-		value = 0;
+		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
+			<< " in section [" << section
+			<< "] value '" << valueName 
+			<< "' to float number. Please check configuration file." << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
 
+int
+Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value, double defVal)
+{
+  	int ret;
+	clearVerboseEntry ();
+	ret = getDouble (section, valueName, value);
+	if (ret)
+	{
+		value = defVal;
+	}
+	setVerboseEntry ();
+	return ret;
+}
+
+
 bool
-Rts2ConfigRaw::getBoolean (const char *section, const char *valueName,
-bool def)
+Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool def)
 {
 	std::string valbuf;
 	int ret;
+	clearVerboseEntry ();
 	ret = getString (section, valueName, valbuf);
+	setVerboseEntry ();
 	if (ret)
+	{
 		return def;
+	}
 	if (valbuf == "y" || valbuf == "yes" || valbuf == "true")
 		return true;
 	if (valbuf == "n" || valbuf == "no" || valbuf == "false")

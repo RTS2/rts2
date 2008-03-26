@@ -63,7 +63,7 @@ class Rts2Config:public Rts2ConfigRaw
 		bool grbd_follow_fake;
 		int grbd_validity;
 	protected:
-		virtual void getSpecialValues ();
+		virtual int getSpecialValues ();
 
 	public:
 		/**

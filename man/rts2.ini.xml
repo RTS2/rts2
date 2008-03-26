@@ -306,165 +306,6 @@
   <refsect1>
     <title>CONFIGURATION FILE SECTION</title>
     <refsect2>
-      <title>grbd</title>
-      <para>Provides values for GRB daemon configuration and GRB observing informations.</para>
-      <variablelist>
-	<varlistentry>
-	  <term>
-	    <option>port</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Port which will be opened by GRBD either for listening (if server
-	      is filled with "-") or which will be contacted on server, if
-	      server is filled.  If you have allowed direct connection from the
-	      GCN machine (capella.gsfc.nasa.gov), you should put there port
-	      number negotiated with GCN. If you do not have direct connection
-	      and use some sort of the forwarding mechanism (ussing ssh tunnels
-	      or bacofwd), put there number to which port grbd should connect.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>server</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Location of GRB server. "-" when GRBD should open listening
-	      connection, or hostname (or IP address) of GRB relaying server.
-	      Please see port parameter for futher discussion.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>seplimit</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      If distance for GCN update of GRB position is bellow this value,
-	      it is assumed that GRB is still in FOV of the instrument and
-	      immediate slew will not be commanded. If distance of telescope is
-	      above seplimit, immediate telescope movement will be commanded.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>add_exe</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Optional binary, which will be passed various parameters about GRB. On command line, this program will receive values (in following order) of
-	      tar_id grb_id grb_seqn grb_type grb_ra grb_dec grb_is_grb grb_date grb_errorbox. Those values are:
-	      <variablelist>
-	        <varlistentry>
-		  <term>
-		    <option>tar_id</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      Target ID taken from RTS2 database.
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_id</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      GCN GRB target id. Be aware, that different values are
-		      ussually assigned by GCN for observations of same GRB
-		      with different satellite.
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_seqn</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      Sequence number assigned from GCN. Please see GCN for details.
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_type</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      Type number of GCN packet. Please see GCN for details.
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_ra</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      J2000 RA of GRB location. In degrees (0-360 range).
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_dec</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      J2000 DEC of GRB location. In degrees (-90 to 90 range).
-		    </para>
-		  </listitem>
-		</varlistentry>
-	        <varlistentry>
-		  <term>
-		    <option>grb_errorbox</option>
-		  </term>
-		  <listitem>
-		    <para>
-		      GRB errorbox. In degrees.
-		    </para>
-		  </listitem>
-		</varlistentry>
-	      </variablelist>
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>follow_fake</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      True if GRB marked by GCN are labelled as fake, e.g. originating
-	      from know source variability, should be followed. Defaults to
-	      true. This option should be left true while system is in testing
-	      phase, as fake grb provide good tests of the system, but once it
-	      reach maturity, it is wise to switch follow_fake to false.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>validity</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Time for which GRB observing request will be valid. After that
-	      time, GRB will not be observed by automatic update. If zero, then
-	      GRB observing request will never expires, but will be observed
-	      governed by GRB merit function.
-	    </para>
-	  </listitem>
-	</varlistentry>
-      </variablelist>
-    </refsect2>
-    <refsect2>
       <title>database</title>
       <para>Provides configuration values necessary to connect to database.</para>
       <variablelist>
@@ -536,7 +377,7 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>horizont</option>
+	    <option>horizon</option>
 	  </term>
 	  <listitem>
 	    <para>
@@ -624,7 +465,7 @@
 	    <para>
 	      Timeout in seconds for astrometry script. If it's greater then 0,
 	      alarm with exit handling is issued at forked instance, before
-	      astrometry script is started.
+	      astrometry script is started. Defaults to 3600 seconds.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -674,7 +515,15 @@
 	    <option>airmass_distance</option>
 	  </term>
 	  <listitem>
-	    <para>Maximal airmass distance for calibration targets. Defaults to 0.1.</para>
+	    <para>
+		Maximal airmass distance for calibration targets. This value
+		set step size in airmass calibartion table. If set to 0.1,
+		airmass calibration table will have steps by 0.1, so targets on
+		airmass 1.3 and 1.4 will belong to diferent class and both will
+		be considered for observation in calibration target. If both
+		targets have airmass between 1.35 and 1.45, only one of them
+		will be considered for observation.Defaults to 0.1.
+	    </para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
@@ -683,8 +532,8 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Minimal lunar distance for calibration targets. It's recorded in
-	      degrees, defaults to 20.
+	      Minimal lunar distance for calibration targets to be considered
+	      for selection. It's recorded in degrees, defaults to 20.
             </para>
 	  </listitem>
 	</varlistentry>
@@ -736,7 +585,175 @@
 	</varlistentry>
       </variablelist>
     </refsect2>
-
+    <refsect2>
+      <title>grbd</title>
+      <para>Provides values for GRB daemon configuration and GRB observing informations.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>port</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Port which will be opened by GRBD either for listening (if server
+	      is filled with "-") or which will be contacted on server, if
+	      server is filled.  If you have allowed direct connection from the
+	      GCN machine (capella.gsfc.nasa.gov), you should put there port
+	      number negotiated with GCN. If you do not have direct connection
+	      and use some sort of the forwarding mechanism (ussing ssh tunnels
+	      or bacofwd), put there number to which port grbd should connect.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>server</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Location of GRB server. "-" when GRBD should open listening
+	      connection, or hostname (or IP address) of GRB relaying server.
+	      Please see port parameter for futher discussion.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>seplimit</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      If distance for GCN update of GRB position is bellow this value,
+	      it is assumed that GRB is still in FOV of the instrument and
+	      immediate slew will not be commanded. If distance of telescope is
+	      above seplimit, immediate telescope movement will be commanded.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>add_exe</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Optional binary, which will be passed various parameters about GRB. On command line, this program will receive values (in following order) of
+	      tar_id grb_id grb_seqn grb_type grb_ra grb_dec grb_is_grb grb_date grb_errorbox and grb_isnew. Those values are:
+	      <variablelist>
+	        <varlistentry>
+		  <term>
+		    <option>tar_id</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      Target ID taken from RTS2 database.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_id</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      GCN GRB target id. Be aware, that different values are
+		      ussually assigned by GCN for observations of same GRB
+		      with different satellite.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_seqn</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      Sequence number assigned from GCN. Please see GCN for details.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_type</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      Type number of GCN packet. Please see GCN for details.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_ra</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      J2000 RA of GRB location. In degrees (0-360 range).
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_dec</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      J2000 DEC of GRB location. In degrees (-90 to 90 range).
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_errorbox</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      GRB errorbox. In degrees.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	        <varlistentry>
+		  <term>
+		    <option>grb_isnew</option>
+		  </term>
+		  <listitem>
+		    <para>
+		      1 if this is new GRB, 0 if this message is update of an already know GRB.
+		    </para>
+		  </listitem>
+		</varlistentry>
+	      </variablelist>
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>follow_fake</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      True if GRB marked by GCN are labelled as fake, e.g. originating
+	      from know source variability, should be followed. Defaults to
+	      true. This option should be left true while system is in testing
+	      phase, as fake grb provide good tests of the system, but once it
+	      reach maturity, it is wise to switch follow_fake to false.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>validity</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Time for which GRB observing request will be valid. After that
+	      time, GRB will not be observed by automatic update. If zero, then
+	      GRB observing request will never expires, but will be observed
+	      governed by GRB merit function.
+	    </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
     <refsect2>
       <title>swiftfov</title>
         <para>

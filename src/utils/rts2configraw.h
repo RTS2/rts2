@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -92,9 +92,7 @@ std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConfigSection:public
-std::list <
-Rts2ConfigValue >
+class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 {
 	private:
 		std::string sectName;
@@ -123,10 +121,11 @@ Rts2ConfigValue >
 		 * Look for value with given name.
 		 *
 		 * @param valueName Name of value.
+		 * @param verbose   When true (default), warning message will be printed for missing value.
 		 *
 		 * @return NULL if value cannot be found, otherwise return Rts2ConfigValue valid pointer.
 		 */
-		Rts2ConfigValue *getValue (const char *valueName);
+		Rts2ConfigValue *getValue (const char *valueName, bool verbose = true);
 
 		/**
 		 * Create blockedBy vector from string.
@@ -158,10 +157,21 @@ Rts2ConfigValue >
  * @author Petr Kubanek <petr@kubanek.net>
  */
 
-class Rts2ConfigRaw:
-public std::vector < Rts2ConfigSection * >
+class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 {
 	private:
+		bool verboseEntry;
+
+		void setVerboseEntry ()
+		{
+			verboseEntry = true;
+		}
+
+		void clearVerboseEntry ()
+		{
+			verboseEntry = false;
+		}
+
 		void clearSections ();
 		int parseConfigFile ();
 
@@ -172,8 +182,9 @@ public std::vector < Rts2ConfigSection * >
 		Rts2ConfigValue *getValue (const char *section, const char *valueName);
 	protected:
 		std::ifstream * configStream;
-		virtual void getSpecialValues ()
+		virtual int getSpecialValues ()
 		{
+			return 0;
 		}
 
 	public:
@@ -190,11 +201,58 @@ public std::vector < Rts2ConfigSection * >
 		 * @return -1 on error, 0 on sucess.
 		 */
 		int getString (const char *section, const char *valueName, std::string & buf);
+
+		int getString (const char *section, const char *valueName, std::string & buf, const char* defVal);
+
 		int getInteger (const char *section, const char *valueName, int &value);
+
+		int getInteger (const char *section, const char *valueName, int &value, int defVal);
+
+		/**
+		 * Return float value. Print warning message if value cannot be find in configuration file.
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param value      Returned value.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		int getFloat (const char *section, const char *valueName, float &value);
+
+		/**
+		 * Return float value. Use supplied default value if value cannot be find in configuration file.
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param value      Returned value.
+		 * @param defVal     Default value, used if value cannot be found.
+		 *
+		 * @return -1 when default value was used, 0 on success. Never prints any error messages, only
+		 * 	debug log entry is created.
+		 */
+		int getFloat (const char *section, const char *valueName, float &value, float defVal);
+
+		/**
+		 * Return double configuration value.
+		 */
 		double getDouble (const char *section, const char *valueName);
+
 		int getDouble (const char *section, const char *valueName, double &value);
-		bool getBoolean (const char *section, const char *valueName, bool def = false);
+
+		/**
+		 * Return double configuration value. Use supplied default value if value cannot be find in configuration file.
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param value      Returned value.
+		 * @param defVal     Default value, used if value cannot be found.
+		 *
+		 * @return -1 when default value was used, 0 on success. Never prints any error messages, only
+		 * 	debug log entry is created.
+		 */
+		int getDouble (const char *section, const char *valueName, double &value, double defVal);
+
+		bool getBoolean (const char *section, const char *valueName, bool );
 
 		/**
 		 * Query if device can be blocked by another device. This function return true in following two cases:

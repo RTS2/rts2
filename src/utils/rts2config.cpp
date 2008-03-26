@@ -21,38 +21,38 @@
 
 Rts2Config *Rts2Config::pInstance = NULL;
 
-void
+int
 Rts2Config::getSpecialValues ()
 {
+	int ret = 0;
 	std::string horizon_file;
 
 	// get some commonly used values
-	observer.lat = 0;
-	observer.lng = 0;
-	getDouble ("observatory", "longtitude", observer.lng);
-	getDouble ("observatory", "latitude", observer.lat);
+	ret += getDouble ("observatory", "longtitude", observer.lng);
+	ret += getDouble ("observatory", "latitude", observer.lat);
 	// load horizont file..
-	getString ("observatory", "horizont", horizon_file);
-	checker = new ObjectCheck (horizon_file.c_str ());
-	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout);
-	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance);
-	getDouble ("calibration", "lunar_dist", calibrationLunarDist);
-	getInteger ("calibration", "valid_time", calibrationValidTime);
-	getInteger ("calibration", "max_delay", calibrationMaxDelay);
-	getFloat ("calibration", "min_bonus", calibrationMinBonus);
-	getFloat ("calibration", "max_bonus", calibrationMaxBonus);
+	getString ("observatory", "horizon", horizon_file, "");
 
-	// SWIFT section
-	swift_min_horizon = 0;
-	getFloat ("swift", "min_horizon", swift_min_horizon);
-	swift_soft_horizon = swift_min_horizon;
-	getFloat ("swift", "soft_horizon", swift_soft_horizon);
+	checker = new ObjectCheck (horizon_file.c_str ());
+	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout, 3600);
+	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance, 0.1);
+	getDouble ("calibration", "lunar_dist", calibrationLunarDist, 20);
+	getInteger ("calibration", "valid_time", calibrationValidTime, 3600);
+	getInteger ("calibration", "max_delay", calibrationMaxDelay, 7200);
+	getFloat ("calibration", "min_bonus", calibrationMinBonus, 1.0);
+	getFloat ("calibration", "max_bonus", calibrationMaxBonus, 300.0);
+
+	getFloat ("swift", "min_horizon", swift_min_horizon, 0);
+	getFloat ("swift", "soft_horizon", swift_soft_horizon, swift_min_horizon);
 
 	// GRD section
-	grbd_follow_fake = true;
-	getBoolean ("grbd", "follow_fake", grbd_follow_fake);
-	grbd_validity = 0;
-	getInteger ("grbd", "validity", grbd_validity);
+	grbd_follow_fake = getBoolean ("grbd", "follow_fake", true);
+	getInteger ("grbd", "validity", grbd_validity, 3600);
+
+	if (ret)
+		return -1;
+
+	return Rts2ConfigRaw::getSpecialValues ();
 }
 
 
@@ -63,12 +63,6 @@ Rts2Config::Rts2Config ():Rts2ConfigRaw ()
 	checker = NULL;
 	// default to 120 seconds
 	astrometryTimeout = 120;
-	calibrationAirmassDistance = 0.1;
-	calibrationLunarDist = 20.0;
-	calibrationValidTime = 3600;
-	calibrationMaxDelay = 7200;
-	calibrationMinBonus = 1.0;
-	calibrationMaxBonus = 300.0;
 }
 
 
