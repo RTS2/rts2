@@ -481,10 +481,8 @@ in_argv)
 	createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
 		false, RTS2_DT_DEC);
 
-	createConstValue (eveningTime, "evening_time",
-		"time needed to cool down cameras", false);
-	createConstValue (morningTime, "morning_time",
-		"time needed to heat up cameras", false);
+	createConstValue (eveningTime, "evening_time", "time needed to cool down cameras", false);
+	createConstValue (morningTime, "morning_time", "time needed to heat up cameras", false);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
@@ -528,16 +526,8 @@ Rts2Centrald::reloadConfig ()
 
 	if (logFileSource != LOGFILE_ARG)
 	{
-		ret = config->getString ("centrald", "logfile", logFile);
-		if (ret)
-		{
-			logFileSource = LOGFILE_DEF;
-			logFile = "/var/log/rts2-debug";
-		}
-		else
-		{
-			logFileSource = LOGFILE_CNF;
-		}
+		config->getString ("centrald", "logfile", logFile, "/var/log/rts2-debug");
+		logFileSource = LOGFILE_CNF;
 	}
 
 	openLog ();
@@ -547,24 +537,22 @@ Rts2Centrald::reloadConfig ()
 	observerLng->setValueDouble (observer->lng);
 	observerLat->setValueDouble (observer->lat);
 
-	double t_h = -10;
-	config->getDouble ("observatory", "night_horizon", t_h);
+	double t_h;
+	config->getDouble ("observatory", "night_horizon", t_h, -10);
 	nightHorizon->setValueDouble (t_h);
 
-	t_h = 0;
-	config->getDouble ("observatory", "day_horizon", t_h);
+	config->getDouble ("observatory", "day_horizon", t_h, 0);
 	dayHorizon->setValueDouble (t_h);
 
-	int t_t = 7200;
-	config->getInteger ("observatory", "evening_time", t_t);
+	int t_t;
+	config->getInteger ("observatory", "evening_time", t_t, 7200);
 	eveningTime->setValueInteger (t_t);
 
-	t_t = 1800;
-	config->getInteger ("observatory", "morning_time", t_t);
+	config->getInteger ("observatory", "morning_time", t_t, 1800);
 	morningTime->setValueInteger (t_t);
 
-	morning_off = config->getBoolean ("centrald", "morning_off");
-	morning_standby = config->getBoolean ("centrald", "morning_standby");
+	morning_off = config->getBoolean ("centrald", "morning_off", true);
+	morning_standby = config->getBoolean ("centrald", "morning_standby", true);
 
 	next_event_time = 0;
 
@@ -636,7 +624,7 @@ Rts2Centrald::initValues ()
 
 	Rts2Config *config = Rts2Config::instance ();
 
-	if (config->getBoolean ("centrald", "reboot_on"))
+	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
 		setState (call_state, "switched on centrald reboot");
 	}
