@@ -322,7 +322,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
 	LibnovaHaM lst (mean_sidereal);
 
-	_os << actual;
+	_os << spaceDegSep << actual;
 	switch (tarCorType)
 	{
 		case TARGET:
