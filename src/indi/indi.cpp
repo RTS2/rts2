@@ -220,7 +220,7 @@ Rts2Indi::ISPoll ()
 	if (tel)
 	{
 		Rts2Value *val = tel->getValue ("OBJ");
-		if (val->getValueBaseType () == RTS2_VALUE_RADEC)
+		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
 		{
 			eqNum.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
 			eqNum.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
@@ -233,7 +233,7 @@ Rts2Indi::ISPoll ()
 		IDSetNumber (&eqNum, NULL);
 
 		val = tel->getValue ("OFFS");
-		if (val->getValueBaseType () == RTS2_VALUE_RADEC)
+		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
 		{
 			eqOffsets.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
 			eqOffsets.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
@@ -350,7 +350,7 @@ ISNewNumber (const char *dev, const char *name, double values[], char *names[], 
 		if (nset == 2)
 		{
 			eqNum.s = IPS_BUSY;
-			device->setObjRaDec (newRA, newDEC);
+			device->setObjRaDec (newRA * 15.0, newDEC);
 			eqNum.s = IPS_IDLE;
 			IDSetNumber(&eqNum, NULL);
 			return;
