@@ -965,7 +965,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("resync"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
