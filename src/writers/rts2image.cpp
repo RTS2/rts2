@@ -2130,7 +2130,7 @@ double
 Rts2Image::getLongtitude ()
 {
 	double lng = nan ("f");
-	getValue ("LONG", lng, true);
+	getValue ("LONGITUD", lng, true);
 	return lng;
 }
 
