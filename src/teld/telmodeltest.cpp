@@ -52,9 +52,9 @@ class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 	public:
 		Rts2DevTelescopeModelTest ():Rts2DevTelescope (0, NULL)
 		{
-			createConstValue (telLongitude, "LONG", "telescope longtitude");
-			createConstValue (telLatitude, "LAT", "telescope latitude");
-			createConstValue (telAltitude, "ALTI", "telescope altitude");
+			createConstValue (telLongitude, "LONGITUD", "telescope longtitude");
+			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
+			createConstValue (telAltitude, "ALTITUDE", "telescope altitude");
 
 			telLongitude->setValueDouble (Rts2Config::instance ()->getObserver ()->
 				lng);
@@ -201,8 +201,8 @@ TelModelTest::runOnFile (std::string filename, std::ostream & os)
 void
 TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 {
-	// load image data
-	Rts2ImageDb img (filename.c_str ());
+	// load image data, open them read-only
+	Rts2ImageDb img (filename.c_str (), true, true);
 	struct ln_equ_posn posTar;
 	struct ln_equ_posn posImg;
 	LibnovaRaDec posMount;
