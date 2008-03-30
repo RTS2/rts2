@@ -73,6 +73,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
+	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
+
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
 
@@ -892,6 +894,7 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
 	else
 	{
 		incMoveNum ();
+		setParkTimeNow ();
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
 			"parking started");
 	}

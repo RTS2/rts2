@@ -179,6 +179,11 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 	private:
+		/**
+		 * Date and time when last park command was issued.
+		 */
+		Rts2ValueTime *mountParkTime;
+
 		Rts2ValueInteger *moveNum;
 		Rts2ValueInteger *corrImgId;
 
@@ -216,6 +221,19 @@ class Rts2DevTelescope:public Rts2Device
 
 	protected:
 		Rts2ValueInteger * correctionsMask;
+
+		/**
+		 * Increment number of parks. Shall be called
+		 * every time mount homing commands is issued.
+		 *
+		 * ParkNum is used in the modelling to find observations
+		 * taken in interval with same park numbers, e.g. with sensors 
+		 * homed at same location.
+		 */
+		void setParkTimeNow ()
+		{
+			mountParkTime->setNow ();
+		}
 
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 		void applyCorrections (struct ln_equ_posn *pos, double JD);
