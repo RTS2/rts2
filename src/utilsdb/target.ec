@@ -1976,8 +1976,8 @@ Target::writeToImage (Rts2Image * image, double JD)
 	image->setValue ("MOONRA", moon.ra, "lunar RA");
 	image->setValue ("MOONDEC", moon.dec, "lunar DEC");
 	image->setValue ("MOONPHA", ln_get_lunar_phase (JD) / 1.8, "moon phase");
-	image->setValue ("MOONALT", moon.ra, "lunar altitude");
-	image->setValue ("MOONAZ", moon.dec, "lunar azimuth");
+	image->setValue ("MOONALT", hmoon.alt, "lunar altitude");
+	image->setValue ("MOONAZ", hmoon.az, "lunar azimuth");
 }
 
 
