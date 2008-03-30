@@ -285,8 +285,7 @@ Rts2Target ()
 	config->getInteger ("observatory", "epoch_id", epId);
 	setEpoch (epId);
 
-	minAlt = 0;
-	config->getDouble ("observatory", "min_alt", minAlt);
+	config->getDouble ("observatory", "min_alt", minAlt, 0);
 
 	observation = NULL;
 
@@ -316,8 +315,7 @@ Target::Target ()
 	config->getInteger ("observatory", "epoch_id", epId);
 	setEpoch (epId);
 
-	minAlt = 0;
-	config->getDouble ("observatory", "min_alt", minAlt);
+	config->getDouble ("observatory", "min_alt", minAlt, 0);
 
 	observation = NULL;
 
