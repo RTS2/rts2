@@ -900,6 +900,7 @@ Rts2DevTelParamount::startMove ()
 	}
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
 	{
+		setParkTimeNow ();
 		logStream (MESSAGE_DEBUG) << "homing needed, aborting move command" << sendLog;
 		return 0;
 	}
@@ -931,11 +932,13 @@ Rts2DevTelParamount::startMove ()
 	{
 		ret0 = MKS3Home (axis0, 0);
 		moveState |= TEL_FORCED_HOMING0;
+		setParkTimeNow ();
 	}
 	if (ret1 == MAIN_AT_LIMIT)
 	{
 		ret1 = MKS3Home (axis1, 0);
 		moveState |= TEL_FORCED_HOMING1;
+		setParkTimeNow ();
 	}
 	return checkRet ();
 }
@@ -964,6 +967,7 @@ Rts2DevTelParamount::isMoving ()
 		ret = MKS3MotorOn (axis0);
 		ret = MKS3Home (axis0, 0);
 		moveState |= TEL_FORCED_HOMING0;
+		setParkTimeNow ();
 		return USEC_SEC / 10;
 	}
 	if (status1 & SERVO_STATE_UN)
@@ -975,6 +979,7 @@ Rts2DevTelParamount::isMoving ()
 		ret = MKS3MotorOn (axis1);
 		ret = MKS3Home (axis1, 0);
 		moveState |= TEL_FORCED_HOMING1;
+		setParkTimeNow ();
 		return USEC_SEC / 10;
 	}
 	if ((status0 & MOTOR_SLEWING) || (status1 & MOTOR_SLEWING))
