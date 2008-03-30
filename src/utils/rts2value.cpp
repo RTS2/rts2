@@ -372,6 +372,15 @@ Rts2ValueTime::getDisplayValue ()
 
 
 void
+Rts2ValueTime::setNow ()
+{
+	struct timeval t_val;
+	gettimeofday (&t_val, NULL);
+	setValueDouble (t_val.tv_sec + ((double) t_val.tv_usec) / USEC_SEC);
+}
+
+
+void
 Rts2ValueTime::getStructTm (struct tm *tm_s, long *usec)
 {
 	time_t t_val = (time_t) getValueLong ();

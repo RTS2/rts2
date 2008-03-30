@@ -467,6 +467,11 @@ class Rts2ValueTime:public Rts2ValueDouble
 		virtual const char *getDisplayValue ();
 
 		/**
+		 * Set time value to current date and time.
+		 */
+		void setNow ();
+
+		/**
 		 * Convert double ctime to struct tm and fraction of seconds.
 		 */
 		void getStructTm (struct tm *tm_s, long *usec);
