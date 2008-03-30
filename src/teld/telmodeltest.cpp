@@ -240,6 +240,13 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 	double rms = 0;
 	int rms_n = 0;
 
+	// date when data were acquired
+	struct ln_date date;
+
+	// julian date (of observations start; as precession will not change a much in few hours spanning data acqusition time,
+	// we don't need exact date
+	double JD = nan("f");
+
 	is.getline (caption, 80);
 	os << caption << std::endl;
 	while (!is.eof ())
@@ -277,7 +284,6 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 		else if (!latLine)
 		{
 			struct ln_dms lat;
-			struct ln_date date;
 			std::string line;
 			std::getline (is, line);
 			std::istringstream iss (line);
@@ -301,6 +307,8 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			}
 			else
 			{
+				JD = ln_get_julian_day (&date);
+				telescope->setCorrectionMask (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 				iss >> temp >> press;
 				if (iss.fail ())
 				{
@@ -350,6 +358,10 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			// calculate model position, output it,..
 			struct ln_equ_posn pos;
 			_out.getPos (&pos);
+
+			if (!isnan (JD))
+				telescope->applyCorrections (&pos, JD);
+
 			pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
 			if (verbose)
 				model->applyVerbose (&pos);

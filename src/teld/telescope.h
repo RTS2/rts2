@@ -236,8 +236,14 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
-		void applyCorrections (struct ln_equ_posn *pos, double JD);
-		// apply corrections (at system time)
+
+		/**
+		 * Apply corrections (at system time).
+		 * Will apply corrections (precession, refraction,..) at system time.
+		 * 
+		 * @param tar_ra  Target RA, returns its value.
+		 * @param tar_dec Target DEC, returns its value.
+		 */
 		void applyCorrections (double &tar_ra, double &tar_dec);
 
 		virtual int willConnect (Rts2Address * in_addr);
@@ -458,6 +464,21 @@ class Rts2DevTelescope:public Rts2Device
 		int startPark (Rts2Conn * conn);
 
 		virtual int getFlip ();
+	
+		/**
+		 * Apply corrections to position.
+		 */
+		void applyCorrections (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Set telescope corrections mask.
+		 *
+		 * @param newMask   New telescope corrections mask.
+		 */
+		void setCorrectionMask (int newMask)
+		{
+			correctionsMask->setValueInteger (newMask);
+		}
 
 		/**
 		 * Swicth model on.

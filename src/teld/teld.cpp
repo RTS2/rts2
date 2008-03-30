@@ -207,7 +207,8 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		|| old_value == telFov
 		|| old_value == rotang
 		|| old_value == smallCorrection
-		|| old_value == ignoreCorrection)
+		|| old_value == ignoreCorrection
+		|| old_value == correctionsMask)
 	{
 		return 0;
 	}
