@@ -431,7 +431,7 @@ Rts2AppDb::initDB ()
 		c_db = cs.c_str ();
 	}
 
-	if (config->getString ("database", "username", db_username) == 0)
+	if (config->getString ("database", "username", db_username, "") == 0)
 	{
 		c_username = db_username.c_str ();
 		if (config->getString ("database", "password", db_password) == 0)
