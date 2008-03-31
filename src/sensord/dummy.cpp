@@ -23,7 +23,8 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 {
 	private:
 		Rts2ValueInteger *testInt;
-		Rts2ValueDoubleStat * statTest;
+		Rts2ValueDoubleStat *statTest;
+		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 	public:
 		Rts2DevSensorDummy (int in_argc, char **in_argv):Rts2DevSensor (in_argc,
@@ -31,6 +32,7 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (statTest, "test_stat", "test stat value", true);
+			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true);
 		}
 
@@ -51,6 +53,10 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 					return -2;
 				statTest->addValue (aval);
 				statTest->calculate ();
+
+				statTest->addValue (aval);
+				statTest->calculate ();
+
 				infoAll ();
 				return 0;
 			}
