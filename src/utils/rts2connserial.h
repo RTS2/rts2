@@ -116,6 +116,16 @@ class Rts2ConnSerial: public Rts2Conn
 		int writePort (const char *wbuf, int b_len);
 
 		/**
+		 * Raw port read.
+		 *
+		 * Read one character from the port.
+		 *
+		 * @param ch Character which will be read.
+		 * @return -1 on error, 1 on sucess.
+		 */
+		int readPort (char &ch);
+
+		/**
 		 * Raw read data from serial port.
 		 *
 		 * @param buf Buffer where data will be readed.

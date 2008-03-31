@@ -220,6 +220,28 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 
 
 int
+Rts2ConnSerial::readPort (char &ch)
+{
+	int rlen = 0;
+	while (rlen == 0)
+	{
+		rlen = read (sock, &ch, 1);
+		if (rlen == -1 && errno != EINTR)
+		{
+			logStream (MESSAGE_ERROR) << "cannot read single char from serial port, error is "
+				<< strerror (errno) << sendLog;
+			return -1;
+		}
+		if (rlen == 0)
+		{
+			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+			return -1;
+		}
+	}
+	return 1;
+}
+
+int
 Rts2ConnSerial::readPort (char *rbuf, int b_len)
 {
 	int rlen = 0;
