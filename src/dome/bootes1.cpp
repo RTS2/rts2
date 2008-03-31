@@ -23,10 +23,6 @@
 
 #define ROOF_TIMEOUT  360		 // in seconds
 
-#define WATCHER_DOME_OPEN 1
-#define WATCHER_DOME_CLOSED 0
-#define WATCHER_DOME_UNKNOWN  -1
-
 #define WATCHER_METEO_TIMEOUT 80
 
 #define WATCHER_BAD_WEATHER_TIMEOUT 3600
@@ -48,12 +44,13 @@ typedef enum
 	CLOSE_END_1,
 	CLOSE_END_2,
 	OPEN_END_2,
+	// 0xy0
+	RAIN_SENSOR
 } outputs;
 
 class Rts2DevDomeBootes1:public Rts2DomeFord
 {
 	private:
-		int dome_state;
 		time_t timeOpenClose;
 		bool domeFailed;
 
@@ -104,6 +101,12 @@ Rts2DevDomeBootes1::isGoodWeather ()
 {
 	if (getIgnoreMeteo () == true)
 		return 1;
+	int ret = zjisti_stav_portu ();
+	if (ret)
+	  	return 0;
+	// rain sensor
+	if (getPortState (RAIN_SENSOR))
+	  	return 0;
 	if (weatherConn)
 		return weatherConn->isGoodWeather ();
 	return 0;
@@ -117,8 +120,6 @@ Rts2DevDomeBootes1::init ()
 	ret = Rts2DomeFord::init ();
 	if (ret)
 		return ret;
-
-	dome_state = WATCHER_DOME_UNKNOWN;
 
 	weatherConn =
 		new Rts2ConnBufWeather (5005, WATCHER_METEO_TIMEOUT,
@@ -164,7 +165,7 @@ Rts2DevDomeBootes1::idle ()
 	else
 	{
 		int ret;
-		// close dome - don't thrust centrald to be running and closing
+		// close dome - don't trust centrald to be running and closing
 		// it for us
 		ret = closeDomeWeather ();
 		if (ret == -1)
@@ -271,7 +272,6 @@ int
 Rts2DevDomeBootes1::endOpen ()
 {
 	timeOpenClose = 0;
-	dome_state = WATCHER_DOME_OPEN;
 	if (!domeFailed)
 	{
 		sw_state->setValueInteger (1);
@@ -321,7 +321,6 @@ int
 Rts2DevDomeBootes1::endClose ()
 {
 	timeOpenClose = 0;
-	dome_state = WATCHER_DOME_CLOSED;
 	return Rts2DomeFord::endClose ();
 }
 
