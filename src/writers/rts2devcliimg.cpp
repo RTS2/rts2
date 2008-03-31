@@ -330,8 +330,12 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 void
 Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 {
-	tel->ra = getConnection ()->getValueDouble ("CUR_RA");
-	tel->dec = getConnection ()->getValueDouble ("CUR_DEC");
+	Rts2ValueRaDec *vradec = (Rts2ValueRaDec *) getConnection ()->getValue ("TAR");
+	if (!vradec)
+		return;
+
+	tel->ra = vradec->getRa ();
+	tel->dec = vradec->getDec ();
 }
 
 
@@ -377,8 +381,8 @@ Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
 void
 Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
 {
-	obs->lng = getConnection ()->getValueDouble ("LONG");
-	obs->lat = getConnection ()->getValueDouble ("LAT");
+	obs->lng = getConnection ()->getValueDouble ("LONGITUD");
+	obs->lat = getConnection ()->getValueDouble ("LATITUDE");
 }
 
 
