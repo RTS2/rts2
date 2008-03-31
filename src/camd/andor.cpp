@@ -78,6 +78,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		Rts2ValueInteger *gain;
 
 		Rts2ValueBool *useFT;
+		Rts2ValueBool *useRunTillAbort;
+
 		Rts2ValueInteger *VSAmp;
 		Rts2ValueBool *FTShutter;
 
@@ -176,10 +178,14 @@ Rts2DevCameraAndor::isExposing ()
 	if (acqusitionMode->getValueInteger () == 5)
 	{
 		long first, last;
-		if (GetNumberNewImages (&first, &last) == DRV_NO_NEW_DATA)
+		status = GetNumberNewImages (&first, &last);
+		if (status == DRV_NO_NEW_DATA)
 		{
-			return 100;
+			return 5;
 		}
+		if (first == last)
+			return 5;
+		std::cout << "status GetNumberNewImages " << status << std::endl;
 		// there is new image, process it
 		std::cout << "Images " << first << " " << last << std::endl;
 		for (long i = first; i <= last; i++)
@@ -188,7 +194,8 @@ Rts2DevCameraAndor::isExposing ()
 			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
 			long firstValid, lastValid;
 			// get the data
-			GetSizeOfCircularBuffer (&firstValid);
+			status = GetSizeOfCircularBuffer (&firstValid);
+			std::cout << "Circular buffer size " << firstValid << " status " << status << std::endl;
 			switch (getDataType ())
 			{
 				case RTS2_DATA_LONG:
@@ -205,6 +212,13 @@ Rts2DevCameraAndor::isExposing ()
 						return -1;
 					}
 			}
+			std::cout << "First valid " << firstValid << " lastValid " << lastValid << std::endl;
+			// print first few pixels
+			std::cout << ((unsigned short *) dataBuffer)[0] << " " 
+				<< ((unsigned short *) dataBuffer)[1] << " "
+				<< ((unsigned short *) dataBuffer)[2] << " "
+				<< ((unsigned short *) dataBuffer)[3] << " "
+				<< ((unsigned short *) dataBuffer)[4];
 			// now send the data
 			ret = sendImage (dataBuffer, dataBufferSize);
 			if (ret)
@@ -229,7 +243,16 @@ Rts2DevCameraAndor::isExposing ()
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
 	if (status == DRV_ACQUIRING)
+	{
+		// 100 second timeout for acqusition
+		if (getNow () > getExposureEnd () + 100)
+		{
+			logStream (MESSAGE_ERROR) << "Exposure running for too long, aborting" << sendLog;
+			AbortAcquisition ();
+			return -1;
+		}
 		return 100;
+	}
 	return 0;
 }
 
@@ -272,7 +295,7 @@ Rts2DevCameraAndor::readoutOneLine ()
 bool
 Rts2DevCameraAndor::supportFrameTransfer ()
 {
-	return useFT->getValueBool () && (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER);
+	return useFT->getValueBool () && (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER) && useRunTillAbort->getValueBool ();
 }
 
 
@@ -319,6 +342,10 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING, true);
 	useFT->setValueBool (true);
+
+	createValue (useRunTillAbort, "USERTA", "Use run till abort mode of the CCD", true, 0, CAM_WORKING, true);
+	// it is disabled, as it produces wrong data
+	useRunTillAbort->setValueBool (false);
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
 
@@ -487,6 +514,7 @@ Rts2DevCameraAndor::startExposure ()
 		chipTopX () + chipUsedReadout->getHeightInt (),
 		chipTopY () + 1,
 		chipTopY () + chipUsedReadout->getWidthInt ());
+
 	if (ret != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
@@ -541,8 +569,7 @@ Rts2DevCameraAndor::startExposure ()
 			return -1;
 		if (SetNumberAccumulations (nAcc) != DRV_SUCCESS)
 			return -1;
-		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) !=
-			DRV_SUCCESS)
+		if (GetAcquisitionTimings (&acq_exp, &acq_acc, &acq_kinetic) != DRV_SUCCESS)
 			return -1;
 		setExposure (nAcc * acq_exp);
 		checkValueSave (subExposure);
@@ -551,7 +578,7 @@ Rts2DevCameraAndor::startExposure ()
 
 	int new_state = (getExpType () == 0) ? ANDOR_SHUTTER_AUTO : ANDOR_SHUTTER_CLOSED;
 
-	if ((getExpType () == 0) && (supportFrameTransfer ()) && (!FTShutter->getValueBool ()))
+	if ((getExpType () == 0) && useFT->getValueBool () && (!FTShutter->getValueBool ()))
 		new_state = ANDOR_SHUTTER_OPEN;
 
 	if (new_state != andor_shutter_state)
@@ -992,7 +1019,8 @@ Rts2DevCameraAndor::initChips ()
 	}
 
 	// use frame transfer mode
-	if (supportFrameTransfer ()
+	if (useFT->getValueBool ()
+		&& (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER)
 		&& ((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
 	{
 		logStream (MESSAGE_ERROR) <<
