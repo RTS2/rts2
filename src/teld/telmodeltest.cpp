@@ -108,7 +108,8 @@ Rts2App (in_argc, in_argv)
 	image = false;
 	verbose = false;
 	addOption ('m', NULL, 1, "Model file to use");
-	addOption ('e', NULL, 0, "Print errors");
+	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC.");
+	addOption ('n', NULL, 0, "Print numbers, do not pretty print.");
 	addOption ('v', NULL, 0, "Report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
 }
@@ -131,6 +132,9 @@ TelModelTest::processOption (int in_opt)
 			break;
 		case 'e':
 			errors++;
+			break;
+		case 'n':
+			std::cout << pureNumbers;
 			break;
 		case 'v':
 			verbose = true;
@@ -232,8 +236,16 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	LibnovaDegDist modTarRa (posTar.ra - pTar.getRa ());
 	LibnovaDegDist modTarDec (posTar.dec - pTar.getDec ());
 
+	LibnovaDegDist objImgRa (pImg.getRa () - pObj.getRa ());
+	LibnovaDegDist objImgDec (pImg.getDec () - pObj.getDec ());
+
+	LibnovaDegDist tarImgRa (pImg.getRa () - pTar.getRa ());
+	LibnovaDegDist tarImgDec (pImg.getDec () - pTar.getDec ());
+
 	os << "Model:  " << pTar2 << " " << modTarRa << " " << modTarDec << std::endl
-		<< "Mount:  " << posMount << std::endl << "Image:  " << pImg << std::endl;
+		<< "Mount:  " << posMount << std::endl
+		<< "Image:  " << pImg << " " << objImgRa << " " << objImgDec 
+		<< " " << tarImgRa << " " << tarImgDec << std::endl;
 }
 
 
@@ -258,7 +270,7 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 	double JD = nan("f");
 
 	is.getline (caption, 80);
-	os << caption << std::endl;
+	os << caption << spaceDegSep << std::endl;
 	while (!is.eof ())
 	{
 		// ignore
@@ -369,9 +381,6 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			struct ln_equ_posn pos;
 			_out.getPos (&pos);
 
-			if (!isnan (JD))
-				telescope->applyCorrections (&pos, JD);
-
 			pos.ra = ln_range_degrees (lst.getRa () - pos.ra);
 			if (verbose)
 				model->applyVerbose (&pos);
@@ -388,13 +397,16 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				_in.getPos (&pos_in);
 				_out_in.getPos (&pos_out);
 
+				if (!isnan (JD))
+					telescope->applyCorrections (&pos_in, JD);
+
 				double err = ln_get_angular_separation (&pos_in, &pos_out);
 
 				// do some statistics
 				rms += err * err;
 				rms_n++;
 
-				std::cout << LibnovaDegDist (err);
+				std::cout << LibnovaDegDist (err) << " ";
 
 				if (errors > 1)
 				{
@@ -415,9 +427,9 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 				}
 			}
 
-			std::cout << "  " << _out_in << " "
+			std::cout << "  " << _in << " "
 				<< m << " "
-				<< d << " " << epoch << "   " << _out << "   " << lst << " ";
+				<< d << " " << epoch << "   " << _out_in << "   " << lst << " ";
 			std::cout.precision (6);
 			std::cout << aux1 << " " << aux2 << std::endl;
 		}
