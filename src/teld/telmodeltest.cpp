@@ -168,6 +168,7 @@ TelModelTest::init ()
 	}
 
 	telescope = new Rts2DevTelescopeModelTest ();
+	telescope->setCorrectionMask (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 
 	model = new Rts2TelModel (telescope, modelFile);
 	ret = model->load ();
@@ -203,16 +204,21 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 {
 	// load image data, open them read-only
 	Rts2ImageDb img (filename.c_str (), true, true);
+	struct ln_equ_posn posObj;
 	struct ln_equ_posn posTar;
 	struct ln_equ_posn posImg;
 	LibnovaRaDec posMount;
 
+	img.getCoordObject (posObj);
 	img.getCoordTarget (posTar);
 	img.getCoordAstrometry (posImg);
 	img.getCoordMount (posMount);
 
+	LibnovaRaDec pObj (&posObj);
 	LibnovaRaDec pTar (&posTar);
-	os << "Target: " << pTar << std::endl;
+	os << "Object: " << pObj << std::endl
+	  << "Target: " << pTar << std::endl;
+
 	double lst = img.getExposureLST ();
 	posTar.ra = ln_range_degrees (lst - posTar.ra);
 	if (verbose)
@@ -222,6 +228,7 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	posTar.ra = ln_range_degrees (lst - posTar.ra);
 	LibnovaRaDec pTar2 (&posTar);
 	LibnovaRaDec pImg (&posImg);
+
 	os << "Model:  " << pTar2 << std::endl
 		<< "Mount:  " << posMount << std::endl << "Image:  " << pImg << std::endl;
 }
