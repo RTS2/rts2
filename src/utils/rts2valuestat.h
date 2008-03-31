@@ -119,7 +119,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		 */
 		void addValue (double in_val, size_t maxQueSize)
 		{
-			if (valueList.size () > maxQueSize)
+			while (valueList.size () >= maxQueSize)
 				valueList.pop_front ();
 			addValue (in_val);
 		}
