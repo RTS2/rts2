@@ -166,7 +166,8 @@ Rts2ConnSerial::writePort (char ch)
 	int wlen = 0;
 	if (debugPortComm)
 	{
-		logStream (MESSAGE_DEBUG) << "write char " << ch << " hex " << std::hex << ch << sendLog;
+		logStream (MESSAGE_DEBUG) << "write char " << std::hex
+			<< std::setfill ('0') << std::setw (2)<< ((int) ch) << sendLog;
 	}
 	while (wlen < 1)
 	{
@@ -237,6 +238,11 @@ Rts2ConnSerial::readPort (char &ch)
 			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
 			return -1;
 		}
+	}
+	if (debugPortComm)
+	{
+		logStream (MESSAGE_DEBUG) << "readed from port 0x"
+			<< std::hex << std::setfill ('0') << std::setw(2) << ((int) ch) << sendLog;
 	}
 	return 1;
 }
