@@ -77,9 +77,13 @@ Rts2SensorMrakomer::readSensor ()
 			<< buf << "', return " << x << sendLog;
 		return -1;
 	}
-	tempDiff->addValue (temp0 - temp1);
-	tempIn->addValue (temp0);
-	tempOut->addValue (temp1);
+	tempDiff->addValue (temp0 - temp1, 20);
+	tempIn->addValue (temp0, 20);
+	tempOut->addValue (temp1, 20);
+
+	tempDiff->calculate ();
+	tempIn->calculate ();
+	tempOut->calculate ();
 
 	numberMes->setValueInteger (tno);
 	mrakStatus->setValueInteger (tstat);
@@ -140,6 +144,7 @@ Rts2SensorMrakomer::init ()
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
+	
 	mrakConn->flushPortIO ();
 
 	return 0;
