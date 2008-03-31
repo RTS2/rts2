@@ -64,10 +64,22 @@ Rts2Message::~Rts2Message (void)
 std::string Rts2Message::toConn ()
 {
 	std::ostringstream os;
+	// replace \r\n
+	std::string msg = messageString;
+	size_t pos;
+	for (pos = 0; pos != std::string::npos; pos = msg.find_first_of ("\r", pos))
+	{
+		msg.replace (pos, 1, "\\r");
+	}
+	for (pos = 0; pos != std::string::npos; pos = msg.find_first_of ("\n", pos))
+	{
+		msg.replace (pos, 1, "\\n");
+	}
+
 	os << PROTO_MESSAGE
 		<< " " << messageTime.tv_sec
 		<< " " << messageTime.tv_usec
-		<< " " << messageOName << " " << messageType << " " << messageString;
+		<< " " << messageOName << " " << messageType << " " << msg;
 	return os.str ();
 }
 
