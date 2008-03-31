@@ -1,6 +1,6 @@
 /* 
  * Dome driver for Bootes1 station.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,15 +18,10 @@
  */
 
 #include "ford.h"
+
 #include "rts2connbufweather.h"
 
 #define ROOF_TIMEOUT  360		 // in seconds
-
-#define OPEN    2
-#define CLOSE   4
-
-#define OPENING   2
-#define CLOSING   0
 
 #define WATCHER_DOME_OPEN 1
 #define WATCHER_DOME_CLOSED 0
@@ -40,14 +35,15 @@
 
 typedef enum
 {
-	DOMESWITCH,
+	PORT_1,
 	PORT_2,
 	PORT_3,
 	PORT_4,
-	PORT_5,
+	DOMESWITCH,
 	PORT_6,
 	PORT_7,
 	PORT_8,
+	// A
 	OPEN_END_1,
 	CLOSE_END_1,
 	CLOSE_END_2,

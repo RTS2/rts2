@@ -23,6 +23,8 @@
 #define ZAPIS_NA_PORT 4
 #define STAV_PORTU 0
 
+#include <iomanip>
+
 struct typ_a
 {
 	unsigned char port;
@@ -53,7 +55,7 @@ Rts2DomeFord::zjisti_stav_portu ()
 	char ta, tb;
 	char c = STAV_PORTU | PORT_A;
 
-	if (domeConn->writePort (c) != 1);
+	if (domeConn->writePort (c) != 1)
 		return -1;
 	if (domeConn->readPort (ta) != 1)
 	  	return -1;
@@ -71,9 +73,10 @@ Rts2DomeFord::zjisti_stav_portu ()
 	  	return -1;
 	stav_portu[PORT_B] = c;
 
-	logStream (MESSAGE_DEBUG) << "A stav:" << ta << " state:" <<
-		stav_portu[PORT_A] << " B stav: " << tb << " state: " <<
-		stav_portu[PORT_B] << sendLog;
+	logStream (MESSAGE_DEBUG) << "A 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ta 
+		<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) stav_portu[PORT_A]
+		<< " B 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) tb
+		<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int)stav_portu[PORT_B] << sendLog;
 	
 	return 0;
 }
@@ -173,7 +176,7 @@ Rts2DomeFord::init ()
 	ret = domeConn->init ();
 	if (ret)
 		return ret;
-	
+
 	domeConn->flushPortIO ();
 	return 0;
 }
