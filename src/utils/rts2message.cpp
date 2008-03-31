@@ -67,11 +67,11 @@ std::string Rts2Message::toConn ()
 	// replace \r\n
 	std::string msg = messageString;
 	size_t pos;
-	for (pos = 0; pos != std::string::npos; pos = msg.find_first_of ("\r", pos))
+	for (pos = msg.find_first_of ("\r"); pos != std::string::npos; pos = msg.find_first_of ("\r", pos))
 	{
 		msg.replace (pos, 1, "\\r");
 	}
-	for (pos = 0; pos != std::string::npos; pos = msg.find_first_of ("\n", pos))
+	for (pos = msg.find_first_of ("\n"); pos != std::string::npos; pos = msg.find_first_of ("\n", pos))
 	{
 		msg.replace (pos, 1, "\\n");
 	}
