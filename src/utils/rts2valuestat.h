@@ -109,5 +109,19 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		{
 			valueList.push_back (in_val);
 		}
+
+		/**
+		 * Add value to the measurement values. If que size is greater then
+		 * maxQueSize, delete first entry.
+		 *
+		 * @param in_val        Value which will be added.
+		 * @param maxQueSize    Maximal que size.
+		 */
+		void addValue (double in_val, size_t maxQueSize)
+		{
+			if (valueList.size () > maxQueSize)
+				valueList.pop_front ();
+			addValue (in_val);
+		}
 };
 #endif							 /* !__RTS2_VALUESTAT__ */
