@@ -1,6 +1,6 @@
 /* 
  * Driver for Ford boards.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,12 +19,6 @@
 
 #include "ford.h"
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <termios.h>
-#include <unistd.h>
-
-#define BAUDRATE B9600
 #define CTENI_PORTU 0
 #define ZAPIS_NA_PORT 4
 #define STAV_PORTU 0
@@ -56,22 +50,31 @@ struct typ_a
 int
 Rts2DomeFord::zjisti_stav_portu ()
 {
-	unsigned char ta, tb, c = STAV_PORTU | PORT_A;
-	int ret;
-	write (dome_port, &c, 1);
-	if (read (dome_port, &ta, 1) < 1)
-		logStream (MESSAGE_ERROR) << "read error 0" << sendLog;
-	read (dome_port, &stav_portu[PORT_A], 1);
+	char ta, tb;
+	char c = STAV_PORTU | PORT_A;
+
+	if (domeConn->writePort (c) != 1);
+		return -1;
+	if (domeConn->readPort (ta) != 1)
+	  	return -1;
+	if (domeConn->readPort (c) != 1)
+		return -1;
+	stav_portu[PORT_A] = c;
+	
 	c = STAV_PORTU | PORT_B;
-	write (dome_port, &c, 1);
-	if (read (dome_port, &tb, 1) < 1)
-		logStream (MESSAGE_ERROR) << "read error 1" << sendLog;
-	ret = read (dome_port, &stav_portu[PORT_B], 1);
+
+	if (domeConn->writePort (c) != 1)
+		return -1;
+	if (domeConn->readPort (tb) != 1)
+	  	return -1;
+	if (domeConn->readPort (c) != 1)
+	  	return -1;
+	stav_portu[PORT_B] = c;
+
 	logStream (MESSAGE_DEBUG) << "A stav:" << ta << " state:" <<
 		stav_portu[PORT_A] << " B stav: " << tb << " state: " <<
 		stav_portu[PORT_B] << sendLog;
-	if (ret < 1)
-		return -1;
+	
 	return 0;
 }
 
@@ -80,14 +83,17 @@ void
 Rts2DomeFord::zapni_pin (unsigned char c_port, unsigned char pin)
 {
 	unsigned char c;
+
 	zjisti_stav_portu ();
+
 	c = ZAPIS_NA_PORT | c_port;
-	logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
-		" write:" << c << sendLog;
-	write (dome_port, &c, 1);
+
+	if (domeConn->writePort (c) != 1)
+		return;
+
 	c = stav_portu[c_port] | pin;
-	logStream (MESSAGE_DEBUG) << "zapni_pin: " << c << sendLog;
-	write (dome_port, &c, 1);
+
+	domeConn->writePort (c);
 }
 
 
@@ -96,13 +102,15 @@ Rts2DomeFord::vypni_pin (unsigned char c_port, unsigned char pin)
 {
 	unsigned char c;
 	zjisti_stav_portu ();
+
 	c = ZAPIS_NA_PORT | c_port;
-	logStream (MESSAGE_DEBUG) << "port:" << c_port << " pin:" << pin <<
-		" write:" << c << sendLog;
-	write (dome_port, &c, 1);
+
+	if (domeConn->writePort (c) != 1)
+	  	return;
+
 	c = stav_portu[c_port] & (~pin);
-	logStream (MESSAGE_DEBUG) << c << sendLog;
-	write (dome_port, &c, 1);
+
+	domeConn->writePort (c);
 }
 
 
@@ -156,47 +164,17 @@ Rts2DomeFord::processOption (int in_opt)
 int
 Rts2DomeFord::init ()
 {
-	struct termios oldtio, newtio;
-
 	int ret;
 	ret = Rts2DevDome::init ();
 	if (ret)
 		return ret;
-	dome_port = open (dome_file, O_RDWR | O_NOCTTY);
 
-	if (dome_port == -1)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init open " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	ret = tcgetattr (dome_port, &oldtio);
+	domeConn = new Rts2ConnSerial (dome_file, this, BS9600, C8, NONE, 40);
+	ret = domeConn->init ();
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBart::init tcgetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	newtio = oldtio;
-
-	newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-	newtio.c_iflag = IGNPAR;
-	newtio.c_oflag = 0;
-	newtio.c_lflag = 0;
-	newtio.c_cc[VMIN] = 0;
-	newtio.c_cc[VTIME] = 1;
-
-	tcflush (dome_port, TCIOFLUSH);
-	ret = tcsetattr (dome_port, TCSANOW, &newtio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DomeFord::init tcsetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
+		return ret;
+	
+	domeConn->flushPortIO ();
 	return 0;
 }
 
@@ -205,13 +183,12 @@ Rts2DomeFord::Rts2DomeFord (int in_argc, char **in_argv)
 :Rts2DevDome (in_argc, in_argv)
 {
 	dome_file = "/dev/ttyS0";
-	dome_port = 0;
+	domeConn = NULL;
 	addOption ('f', NULL, 1, "/dev file for dome serial port (default to /dev/ttyS0)");
 }
 
 
 Rts2DomeFord::~Rts2DomeFord (void)
 {
-	if (dome_port)
-		close (dome_port);
+	delete domeConn;
 }

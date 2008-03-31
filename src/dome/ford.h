@@ -1,6 +1,6 @@
 /* 
  * Driver for Ford boards.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,8 @@
 
 #include "dome.h"
 
+#include "../utils/rts2connserial.h"
+
 #define PORT_A 0
 #define PORT_B 1
 #define PORT_C 2
@@ -29,7 +31,7 @@
 class Rts2DomeFord: public Rts2DevDome
 {
 	private:
-		int dome_port;
+		Rts2ConnSerial *domeConn;
 		char *dome_file;
 		unsigned char stav_portu[3];
 	protected:

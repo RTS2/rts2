@@ -38,8 +38,6 @@
 #define WATCHER_BAD_WINDSPEED_TIMEOUT 360
 #define WATCHER_CONN_TIMEOUT    360
 
-#define BASE 0xde00
-
 typedef enum
 {
 	DOMESWITCH,
@@ -91,7 +89,7 @@ class Rts2DevDomeBootes1:public Rts2DomeFord
 Rts2DevDomeBootes1::Rts2DevDomeBootes1 (int in_argc, char **in_argv):
 Rts2DomeFord (in_argc, in_argv)
 {
-	domeModel = "DUBLIN_DOME";
+	domeModel = "BOOTES1";
 
 	weatherConn = NULL;
 

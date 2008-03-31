@@ -1,8 +1,6 @@
 /*!
  * @file Dome control deamon for Dome Control Modules - BOOTESes
  *
- * $Id$
- *
  * Packtets are separated by space; they are in ascii, and ends with 0
  * followed by checksum calculated using function ..
  *
