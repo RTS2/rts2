@@ -211,6 +211,16 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		char* dataBuffer;
 		long dataBufferSize;
 
+		/**
+		 * Return exected exposure end.
+		 *
+		 * @return Expected exposure end (ctime in with usec).
+		 */
+		double getExposureEnd ()
+		{
+			return exposureEnd->getValueDouble ();
+		}
+
 		Rts2ValueDouble *subExposure;
 
 		//! number of connection waiting to be executed
