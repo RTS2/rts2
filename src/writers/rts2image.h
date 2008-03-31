@@ -566,6 +566,12 @@ class Rts2Image:public Rts2Expander
 		int getError (double &eRa, double &eDec, double &eRad);
 
 		int getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name);
+		/**
+		 * Get object coordinates. Object coordinates are
+		 * J2000 coordinates of object which observer would like to
+		 * observe.
+		 */
+		int getCoordObject (struct ln_equ_posn &radec);
 		int getCoordTarget (struct ln_equ_posn &radec);
 		int getCoordAstrometry (struct ln_equ_posn &radec);
 		int getCoordMount (struct ln_equ_posn &radec);

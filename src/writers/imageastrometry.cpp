@@ -237,6 +237,13 @@ Rts2Image::getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name)
 
 
 int
+Rts2Image::getCoordObject (struct ln_equ_posn &radec)
+{
+	return getCoord (radec, "OBJRA", "OBJDEC");
+}
+
+
+int
 Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
 {
 	return getCoord (radec, "TARRA", "TARDEC");
