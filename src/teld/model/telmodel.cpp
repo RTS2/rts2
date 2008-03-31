@@ -18,6 +18,7 @@
  */
 
 #include "telmodel.h"
+#include "../../utils/libnova_cpp.h"
 
 #include <fstream>
 
@@ -65,13 +66,13 @@ Rts2TelModel::applyVerbose (struct ln_equ_posn *pos)
 		iter != terms.end (); iter++)
 	{
 		struct ln_equ_posn old_pos = *pos;
-		logStream (MESSAGE_DEBUG) << (*iter) << "Before: " << pos->
-			ra << " " << pos->dec << sendLog;
+		logStream (MESSAGE_DEBUG) << (*iter) << "Before: "
+			<< pos->ra << " " << pos->dec << sendLog;
 		(*iter)->apply (pos, cond);
-		logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec <<
-			"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
-			old_pos.
-			dec) << ")" << sendLog;
+		logStream (MESSAGE_DEBUG) << "After: " << pos->ra << " " << pos->dec 
+			<< "(" << LibnovaDegDist (pos->ra - old_pos.ra) 
+			<< " " << LibnovaDegDist (pos->dec - old_pos.dec)
+			<< ")" << sendLog;
 	}
 	return 0;
 }
@@ -116,7 +117,7 @@ Rts2TelModel::reverseVerbose (struct ln_equ_posn *pos)
 		(*iter)->apply (pos, cond);
 
 		logStream (MESSAGE_DEBUG) << "After1: " << pos->ra << " " << pos->dec <<
-			"(" << (pos->ra - old_pos.ra) << " " << (pos->dec -
+			"(" << LibnovaDegDist (pos->ra - old_pos.ra) << " " << (pos->dec -
 			old_pos.
 			dec) << ")" << sendLog;
 
@@ -148,17 +149,29 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 {
 	std::string name;
 
+	int lineNo = 1;
+
 	double corr;
 	double sigma;
 	Rts2ModelTerm *term;
 	// first line
 	is.getline (model->caption, 80);
+	if (is.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read first line of the model file" << sendLog;
+		return is;
+	}
+	lineNo++;
 	// second line - method, number, refA, refB
-	is >> model->method >> model->num >> model->rms >> model->refA >> model->
-		refB;
+	is >> model->method >> model->num >> model->rms
+		>> model->refA >> model->refB;
 	is.ignore (2000, is.widen ('\n'));
 	if (is.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read seconds line of the model file" << sendLog;
 		return is;
+	}
+	lineNo++;
 	while (!is.eof ())
 	{
 		is >> name;
@@ -167,10 +180,21 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 			return is;
 		}
 		// get corr parameter
-		is >> corr >> sigma;
+		is >> corr;
 		if (is.fail ())
 		{
+			logStream (MESSAGE_ERROR) << "Cannot read correction from line " << lineNo << sendLog;
 			return is;
+		}
+		if (name[0] != '=')
+		{
+			// only read sigma when needed
+			is >> sigma;
+			if (is.fail ())
+			{
+				logStream (MESSAGE_ERROR) << "Cannot read sigma from line " << lineNo << sendLog;
+				return is;
+			}
 		}
 		// correction is in degrees to speed up a calculation
 		corr /= 3600.0;
@@ -256,9 +280,12 @@ std::istream & operator >> (std::istream & is, Rts2TelModel * model)
 		}
 		else
 		{
+			logStream (MESSAGE_ERROR) << "Unknow model term '" << name
+				<< "' at model line " << lineNo << sendLog;
 			return is;
 		}
 		model->terms.push_back (term);
+		lineNo++;
 	}
 	return is;
 }
