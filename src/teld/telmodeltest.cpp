@@ -229,7 +229,10 @@ TelModelTest::runOnFitsFile (std::string filename, std::ostream & os)
 	LibnovaRaDec pTar2 (&posTar);
 	LibnovaRaDec pImg (&posImg);
 
-	os << "Model:  " << pTar2 << std::endl
+	LibnovaDegDist modTarRa (posTar.ra - pTar.getRa ());
+	LibnovaDegDist modTarDec (posTar.dec - pTar.getDec ());
+
+	os << "Model:  " << pTar2 << " " << modTarRa << " " << modTarDec << std::endl
 		<< "Mount:  " << posMount << std::endl << "Image:  " << pImg << std::endl;
 }
 
