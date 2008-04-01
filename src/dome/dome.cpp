@@ -35,7 +35,7 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 	weatherCanOpenDome = false;
 	createValue (ignoreMeteo, "ignoreMeteo", "if meteo situation is ignored",
 		false);
-	ignoreMeteo->setValueInteger (1);
+	ignoreMeteo->setValueBool (false);
 
 	createValue (cloud, "CLOUD_S", "cloud sensor value");
 
@@ -74,7 +74,7 @@ Rts2DevDome::processOption (int in_opt)
 			weatherCanOpenDome = true;
 			break;
 		case 'I':
-			ignoreMeteo->setValueInteger (2);
+			ignoreMeteo->setValueBool (true);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -103,6 +103,15 @@ Rts2DevDome::isGoodWeather ()
 
 
 int
+Rts2DevDome::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == ignoreMeteo)
+		return 0;
+	return Rts2Device::setValue (old_value, new_value);
+}
+
+
+int
 Rts2DevDome::init ()
 {
 	return Rts2Device::init ();
@@ -124,7 +133,6 @@ Rts2DevDome::checkOpening ()
 	{
 		long ret;
 		ret = isOpened ();
-		logStream (MESSAGE_DEBUG) << "isOpened ret: " << ret << sendLog;
 		if (ret >= 0)
 		{
 			setTimeout (ret);
@@ -234,7 +242,7 @@ Rts2DevDome::observing ()
 int
 Rts2DevDome::standby ()
 {
-	ignoreMeteo->setValueInteger (1);
+	ignoreMeteo->setValueBool (false);
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
 		return closeDome ();
 	return 0;
@@ -244,7 +252,7 @@ Rts2DevDome::standby ()
 int
 Rts2DevDome::off ()
 {
-	ignoreMeteo->setValueInteger (1);
+	ignoreMeteo->setValueBool (false);
 	if ((getState () & DOME_DOME_MASK) != DOME_CLOSED)
 		return closeDome ();
 	return 0;

@@ -28,7 +28,7 @@
 class Rts2DevDome:public Rts2Device
 {
 	private:
-		Rts2ValueInteger * ignoreMeteo;
+		Rts2ValueBool * ignoreMeteo;
 
 	protected:
 		char *domeModel;
@@ -57,11 +57,15 @@ class Rts2DevDome:public Rts2Device
 
 		void domeWeatherGood ();
 		virtual int isGoodWeather ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	public:
 		Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
 		virtual int openDome ()
 		{
 			maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
+			logStream (MESSAGE_INFO) << "opening dome" << sendLog;
 			return 0;
 		}
 		virtual int endOpen ()
@@ -74,9 +78,11 @@ class Rts2DevDome:public Rts2Device
 			return -2;
 		};
 		int closeDomeWeather ();
+
 		virtual int closeDome ()
 		{
 			maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
+			logStream (MESSAGE_INFO) << "closing dome" << sendLog;
 			return 0;
 		};
 		virtual int endClose ()
@@ -107,16 +113,14 @@ class Rts2DevDome:public Rts2Device
 
 		int setIgnoreMeteo (bool newIgnore)
 		{
-			ignoreMeteo->setValueInteger (newIgnore ? 2 : 1);
+			ignoreMeteo->setValueBool (newIgnore);
 			infoAll ();
 			return 0;
 		}
 
 		bool getIgnoreMeteo ()
 		{
-			if (ignoreMeteo->getValueInteger () == 2)
-				return true;
-			return false;
+			return ignoreMeteo->getValueBool ();
 		}
 
 		void setTemperature (float in_temp)
