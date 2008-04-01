@@ -187,7 +187,7 @@ Rts2ConnBufWeather::receive (fd_set * set)
 				logStream (MESSAGE_DEBUG) <<
 					"Rts2ConnBufWeather::parse rtCloudBottom " << rtCloudBottom <<
 					" rtCloudTop " << rtCloudTop << " rtRainRate " << rtRainRate
-					<< " rtWetness " << rtWetness << "vapor " << vapor << " dew "
+					<< " rtWetness " << rtWetness << " vapor " << vapor << " dew "
 					<< dew << sendLog;
 				if ((rtCloudBottom - rtCloudTop) > 2.5 && rtRainRate == 0
 					&& rtWetness < 15.0 && fabs (rtOutsideTemp - dew) < 3.0)
