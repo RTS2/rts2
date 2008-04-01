@@ -37,7 +37,7 @@ typedef enum
 	PORT_4,
 	DOMESWITCH,
 	PORT_6,
-	PORT_7,
+	TEL_SWITCH,
 	PORT_8,
 	// A
 	OPEN_END_1,
@@ -82,6 +82,8 @@ class Rts2DevDomeBootes1:public Rts2DomeFord
 		virtual int closeDome ();
 		virtual long isClosed ();
 		virtual int endClose ();
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 Rts2DevDomeBootes1::Rts2DevDomeBootes1 (int in_argc, char **in_argv):
@@ -189,6 +191,10 @@ Rts2DevDomeBootes1::init ()
 		// not opened, not closed..
 		return -1;
 	}
+
+	// switch on telescope
+	ZAP (TEL_SWITCH);
+
 	return 0;
 }
 
@@ -407,6 +413,23 @@ int
 Rts2DevDomeBootes1::endClose ()
 {
 	return Rts2DomeFord::endClose ();
+}
+
+
+int
+Rts2DevDomeBootes1::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("telon"))
+	{
+		ZAP (TEL_SWITCH);
+		return 0;
+	}
+	if (conn->isCommand ("teloff"))
+	{
+		VYP (TEL_SWITCH);
+		return 0;
+	}
+	return Rts2DomeFord::commandAuthorized (conn);
 }
 
 
