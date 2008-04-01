@@ -37,7 +37,7 @@ class Rts2SensorMrakomer: public Rts2DevSensor
 		Rts2ValueDoubleStat *tempOut;
 
 		Rts2ValueBool *heater;
-		Rts2ValueDouble *sleepPeriod;
+		Rts2ValueFloat *sleepPeriod;
 
 		Rts2ValueInteger *numberMes;
 		Rts2ValueInteger *mrakStatus;
@@ -51,6 +51,8 @@ class Rts2SensorMrakomer: public Rts2DevSensor
 		virtual int init ();
 
 		virtual int info ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		Rts2SensorMrakomer (int in_argc, char **in_argv);
@@ -88,6 +90,8 @@ Rts2SensorMrakomer::readSensor ()
 	numberMes->setValueInteger (tno);
 	mrakStatus->setValueInteger (tstat);
 
+	usleep ((int) (sleepPeriod->getValueFloat () * USEC_SEC));
+
 	return 0;
 }
 
@@ -103,6 +107,7 @@ Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
 
 	createValue (heater, "HEATER", "heater state", true);
 	createValue (sleepPeriod, "sleep", "sleep period between measurments", false);
+	sleepPeriod->setValueFloat (0.3);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
@@ -140,7 +145,7 @@ Rts2SensorMrakomer::init ()
 	if (ret)
 		return ret;
 
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 5);
+	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 10);
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
@@ -159,6 +164,15 @@ Rts2SensorMrakomer::info ()
 	if (ret)
 		return -1;
 	return Rts2DevSensor::info ();
+}
+
+
+int
+Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == sleepPeriod)
+		return 0;
+	return Rts2DevSensor::setValue (old_value, new_value);
 }
 
 
