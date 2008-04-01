@@ -338,11 +338,11 @@ Rts2DevDome::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("open"))
 	{
-		return openDome ();
+		return (openDome () == 0 ? 0 : -2);
 	}
 	else if (conn->isCommand ("close"))
 	{
-		return closeDome ();
+		return (closeDome () == 0 ? 0 : -2);
 	}
 	else if (conn->isCommand ("ignore"))
 	{
