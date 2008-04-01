@@ -21,7 +21,7 @@
 
 #include "rts2connbufweather.h"
 
-#define ROOF_TIMEOUT  360		 // in seconds
+#define ROOF_TIMEOUT  120		 // in seconds
 
 #define WATCHER_METEO_TIMEOUT 80
 
@@ -44,7 +44,8 @@ typedef enum
 	CLOSE_END_1,
 	CLOSE_END_2,
 	OPEN_END_2,
-	// 0xy0
+	// 0xy0,
+	PORT_13,
 	RAIN_SENSOR
 } outputs;
 
@@ -57,6 +58,10 @@ class Rts2DevDomeBootes1:public Rts2DomeFord
 		Rts2ConnBufWeather *weatherConn;
 
 		bool isMoving ();
+
+		int lastWeatherCheckState;
+
+		Rts2ValueTime *ignoreRainSensorTime;
 
 	protected:
 		virtual int isGoodWeather ();
@@ -82,7 +87,12 @@ class Rts2DevDomeBootes1:public Rts2DomeFord
 Rts2DevDomeBootes1::Rts2DevDomeBootes1 (int in_argc, char **in_argv):
 Rts2DomeFord (in_argc, in_argv)
 {
+	createValue (ignoreRainSensorTime, "ignore_rain_time", "time when rain sensor will be ignored", false);
+	ignoreRainSensorTime->setValueDouble (nan ("f"));
+
 	domeModel = "BOOTES1";
+
+	lastWeatherCheckState = -1;
 
 	weatherConn = NULL;
 
@@ -99,14 +109,49 @@ Rts2DevDomeBootes1::~Rts2DevDomeBootes1 (void)
 int
 Rts2DevDomeBootes1::isGoodWeather ()
 {
-	if (getIgnoreMeteo () == true)
-		return 1;
 	int ret = zjisti_stav_portu ();
 	if (ret)
-	  	return 0;
-	// rain sensor
+	  	return getIgnoreMeteo () == true ? 1 : 0;
+
+	// rain sensor, ignore if dome was recently opened
 	if (getPortState (RAIN_SENSOR))
-	  	return 0;
+	{
+		int weatherCheckState = (getPortState (OPEN_END_2) << 3)
+			| (getPortState (CLOSE_END_2) << 2)
+			| (getPortState (CLOSE_END_1) << 1)
+			| (getPortState (OPEN_END_1));
+		if (lastWeatherCheckState == -1)
+			lastWeatherCheckState = weatherCheckState;
+
+		// all switches must be off and previous reading must show at least one was on, know prerequsity for failed rain sensor
+		if (weatherCheckState != lastWeatherCheckState || (getState () & DOME_OPENING) || (getState () & DOME_CLOSING))
+		{
+			logStream (MESSAGE_WARNING) << "ignoring faulty rain sensor" << sendLog;
+			ignoreRainSensorTime->setValueDouble (getNow () + 120);
+		}
+		else
+		{
+			// if we are not in ignoreRainSensorTime period..
+			if (isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
+			{
+				lastWeatherCheckState = weatherCheckState;
+				setWeatherTimeout (WATCHER_BAD_WEATHER_TIMEOUT);
+	  			return getIgnoreMeteo () == true ? 1 : 0;
+			}
+		}
+		lastWeatherCheckState = weatherCheckState;
+	}
+	else
+	{
+		lastWeatherCheckState = (getPortState (OPEN_END_2) << 3)
+			| (getPortState (CLOSE_END_2) << 2)
+			| (getPortState (CLOSE_END_1) << 1)
+			| (getPortState (OPEN_END_1));
+	}
+
+	if (getIgnoreMeteo () == true)
+		return 1;
+
 	if (weatherConn)
 		return weatherConn->isGoodWeather ();
 	return 0;
@@ -236,13 +281,27 @@ Rts2DevDomeBootes1::openDome ()
 {
 	if (!isGoodWeather ())
 		return -1;
-	if (isMoving () || (getState () & DOME_OPENED))
+	if (getState () & DOME_OPENING)
+	{
+		if (isMoving ())
+			return 0;
+		return -1;
+	}
+	if ((getState () & DOME_OPENED)
+		&& (getPortState (OPEN_END_1) || getPortState (OPEN_END_2)))
+	{
 		return 0;
+	}
+	if (getState () & DOME_CLOSING)
+		return -1;
 
 	ZAP(DOMESWITCH);
 	sleep (1);
 	VYP(DOMESWITCH);
 	sleep (1);
+
+	time (&timeOpenClose);
+	timeOpenClose += ROOF_TIMEOUT;
 
 	return Rts2DomeFord::openDome ();
 }
@@ -260,18 +319,24 @@ Rts2DevDomeBootes1::isOpened ()
 			sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
-		// stop motor
-		closeDome ();
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome opened with errror");
+		openDome ();
 		return -2;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+		return USEC_SEC;
+	if (getPortState (OPEN_END_1) || getPortState (OPEN_END_2))
+		return -2;
+	if (getPortState (CLOSE_END_1) && getPortState (CLOSE_END_2))
+		return USEC_SEC;
+	logStream (MESSAGE_ERROR) << "isOpened reached unknow state" << sendLog;
+	return USEC_SEC;
 }
 
 
 int
 Rts2DevDomeBootes1::endOpen ()
 {
-	timeOpenClose = 0;
 	if (!domeFailed)
 	{
 		sw_state->setValueInteger (1);
@@ -284,8 +349,19 @@ int
 Rts2DevDomeBootes1::closeDome ()
 {
 	// we cannot close dome when we are still moving
-	if (isMoving () || (getState () & DOME_CLOSED))
+	if (getState () & DOME_CLOSING)
+	{
+		if (isMoving ())
+			return 0;
+		return -1;
+	}
+	if ((getState () & DOME_CLOSED)
+		&& (getPortState (CLOSE_END_1) || getPortState (CLOSE_END_2)))
+	{
 		return 0;
+	}
+	if (getState () & DOME_OPENING)
+		return -1;
 
 	ZAP(DOMESWITCH);
 	sleep (1);
@@ -310,17 +386,26 @@ Rts2DevDomeBootes1::isClosed ()
 			<< sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
-		openDome ();
-		return -2;
+		// cycle again..
+		maskState (DOME_DOME_MASK, DOME_OPENED, "failed closing");
+		closeDome ();
+		return USEC_SEC;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+		return USEC_SEC;
+	// at least one switch must be closed
+	if (getPortState (CLOSE_END_1) || getPortState (CLOSE_END_2))
+		return -2;
+	if (getPortState (OPEN_END_1) && getPortState (OPEN_END_2))
+		return USEC_SEC;
+	logStream (MESSAGE_ERROR) << "isClosed reached unknow state" << sendLog;
+	return USEC_SEC;
 }
 
 
 int
 Rts2DevDomeBootes1::endClose ()
 {
-	timeOpenClose = 0;
 	return Rts2DomeFord::endClose ();
 }
 
