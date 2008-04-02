@@ -1,3 +1,8 @@
+2008-04-01
+ * Fixed issues with modelling (J2000 vs. current epochs)
+ * cloud sensor
+ * Bootes 1 dome rewrite
+
 2008-03-13
  * telma database
 
