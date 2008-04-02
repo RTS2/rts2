@@ -1,6 +1,6 @@
 /* 
  * Driver for IFW from Optec.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,31 +18,25 @@
  */
 
 #include "filterd.h"
+#include "../utils/rts2connserial.h"
 
-#include <fcntl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-#include <errno.h>
-
-/*!
+/**
  * Class for OPTEC filter wheel.
  *
- * @author john, petr
+ * @author Petr Kubanek <petr@kubanek.net>
+ * @author John French
  */
 class Rts2DevFilterdIfw:public Rts2DevFilterd
 {
-	char *dev_file;
-	char filter_buff[5];
-	int dev_port;
-	int writePort (char *buf, size_t len);
-	int readPort (size_t len);
-	int shutdown ();
+	private:
+		char *dev_file;
+		Rts2ConnSerial *ifwConn;
 
-	int homeCount;
+		char filter_buff[5];
+		int readPort (size_t len);
+		void shutdown ();
+
+		int homeCount;
 	public:
 		Rts2DevFilterdIfw (int in_argc, char **in_argv);
 		virtual ~ Rts2DevFilterdIfw (void);
@@ -55,90 +49,53 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
 		virtual int homeFilter ();
 };
 
-int
-Rts2DevFilterdIfw::writePort (char *buf, size_t len)
-{
-	size_t ret;
-	ret = write (dev_port, buf, len);
-	if (ret != len)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw writePort " << buf << " " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-	return 0;
-}
-
-
-int
-Rts2DevFilterdIfw::readPort (size_t len)
-{
-	int ret;
-	ret = read (dev_port, filter_buff, len);
-	if (ret <= 0)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw readPort " << strerror (errno)
-			<< sendLog;
-		filter_buff[0] = '\0';
-		return -1;
-	}
-	filter_buff[ret] = '\0';
-	return 0;
-}
-
 
 int
 Rts2DevFilterdIfw::homeFilter ()
 {
 	int ret;
-	ret = writePort ("WHOME\r", 6);
+	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 4);
 	if (ret == -1)
 		return ret;
-	readPort (4);
 	if (strstr (filter_buff, "ER"))
 	{
-		logStream (MESSAGE_ERROR) << "filter ifw init error while homing " <<
-			filter_buff << sendLog;
+		logStream (MESSAGE_ERROR) << "filter ifw init error while homing " << filter_buff << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
 
-int
+void
 Rts2DevFilterdIfw::shutdown (void)
 {
 	int n;
 
-	/* shutdown filter wheel communications */
-	n = writePort ("WEXITS\r", 7);
+	if (ifwConn == NULL)
+		return;
 
-	readPort (4);
+	/* shutdown filter wheel communications */
+	n = ifwConn->writeRead ("WEXITS\r", 7, filter_buff, 4);
 
 	/* Check for correct response from filter wheel */
 	if (strcmp (filter_buff, "END"))
 	{
 		logStream (MESSAGE_ERROR) << "filter ifw shutdown FILTER WHEEL ERROR: "
 			<< filter_buff << sendLog;
-		tcflush (dev_port, TCIFLUSH);
 	}
 	else
 	{
-		tcflush (dev_port, TCIFLUSH);
 		logStream (MESSAGE_DEBUG) <<
 			"filter ifw shutdown Filter wheel shutdown: " << filter_buff <<
 			sendLog;
 	}
-	close (dev_port);
-	dev_port = -1;
-	return 0;
 }
 
 
 Rts2DevFilterdIfw::Rts2DevFilterdIfw (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
 in_argv)
 {
-	dev_port = -1;
+	ifwConn = NULL;
 	homeCount = 0;
 
 	filterType = "IFW";
@@ -150,10 +107,8 @@ in_argv)
 
 Rts2DevFilterdIfw::~Rts2DevFilterdIfw (void)
 {
-	if (dev_port)
-	{
-		shutdown ();
-	}
+	shutdown ();
+	delete ifwConn;
 }
 
 
@@ -175,96 +130,33 @@ Rts2DevFilterdIfw::processOption (int in_opt)
 int
 Rts2DevFilterdIfw::init (void)
 {
-	struct termios term_options; /* structure to hold serial port configuration */
-	int n;
-
 	int ret;
 
 	ret = Rts2DevFilterd::init ();
 	if (ret)
 		return ret;
 
-	dev_port = open (dev_file, O_RDWR | O_NOCTTY | O_NDELAY);
-
-	if (dev_port == -1)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init cannot open: " << dev_file
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-	ret = fcntl (dev_port, F_SETFL, 0);
+	ifwConn = new Rts2ConnSerial (dev_file, this, BS19200, C8, NONE, 200);
+	ret = ifwConn->init ();
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init cannot fcntl " <<
-			strerror (errno) << sendLog;
-	}
-	/* get current serial port configuration */
-	if (tcgetattr (dev_port, &term_options) < 0)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"filter ifw init error reading serial port configuration: " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
+	  	return ret;
 
-	/*
-	 * Set the baud rates to 19200...
-	 */
-	if (cfsetospeed (&term_options, B19200) < 0
-		|| cfsetispeed (&term_options, B19200) < 0)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init error setting baud rate: "
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
+	ifwConn->setDebug ();
 
-	/*
-	 * Enable the receiver and set local mode...
-	 */
-	term_options.c_cflag |= (CLOCAL | CREAD);
-
-	/* Choose raw input */
-	term_options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
-	/* set port to 8 data bits, 1 stop bit, no parity */
-	term_options.c_cflag &= ~PARENB;
-	term_options.c_cflag &= ~CSTOPB;
-	term_options.c_cflag &= ~CSIZE;
-	term_options.c_cflag |= CS8;
-
-	/* set timeout  to 20 seconds */
-	term_options.c_cc[VTIME] = 200;
-	term_options.c_cc[VMIN] = 0;
-
-	tcflush (dev_port, TCIFLUSH);
-
-	/*
-	 * Set the new options for the port...
-	 */
-	if (tcsetattr (dev_port, TCSANOW, &term_options))
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init tcsetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
+	ifwConn->flushPortIO ();
 
 	/* initialise filter wheel */
-	n = writePort ("WSMODE\r", 7);
-	if (n == -1)
-		return n;
-
-	readPort (4);
-
+	ret = ifwConn->writeRead ("WSMODE\r", 7, filter_buff, 4);
+	if (ret == -1)
+		return ret;
+	
 	/* Check for correct response from filter wheel */
 	if (filter_buff[0] != '!')
 	{
-		logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR: " <<
-			filter_buff << sendLog;
-		tcflush (dev_port, TCIFLUSH);
+		logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR: " << filter_buff << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " <<
-		filter_buff << sendLog;
+	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " << filter_buff << sendLog;
 
 	return 0;
 }
@@ -295,11 +187,9 @@ Rts2DevFilterdIfw::getFilterNum (void)
 	int filter_number;
 	int n;
 
-	n = writePort ("WFILTR\r", 7);
+	n = ifwConn->writeRead ("WFILTR\r", 7, filter_buff, 4);
 	if (n == -1)
 		return -1;
-
-	readPort (4);
 
 	if (strstr (filter_buff, "ER"))
 	{
@@ -332,11 +222,9 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
 	set_filter[5] = (char) new_filter + '1';
 
-	ret = writePort (set_filter, 7);
+	ret = ifwConn->writeRead (set_filter, 7, filter_buff, 4);
 	if (ret == -1)
 		return -1;
-
-	readPort (4);
 
 	if (filter_buff[0] != '*')
 	{
