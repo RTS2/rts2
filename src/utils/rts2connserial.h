@@ -22,7 +22,7 @@
 /**
  * Enum for baud speeds.
  */
-typedef enum {BS2400, BS4800, BS9600, BS115200}
+typedef enum {BS2400, BS4800, BS9600, BS19200, BS115200}
 bSpeedT;
 
 /**

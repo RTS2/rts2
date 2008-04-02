@@ -64,6 +64,8 @@ Rts2ConnSerial::getBaudSpeed ()
 			return "4800";
 		case BS9600:
 			return "9600";
+		case BS19200:
+			return "19200";
 		case BS115200:
 			return "115200";
 	}
@@ -101,6 +103,9 @@ Rts2ConnSerial::init ()
 			break;
 		case BS9600:
 			b_speed = B9600;
+			break;
+		case BS19200:
+			b_speed = B19200;
 			break;
 		case BS115200:
 			b_speed = B115200;
