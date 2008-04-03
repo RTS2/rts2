@@ -1,3 +1,9 @@
+2008-04-03
+ * [1929677] fixed
+
+2008-04-02
+ * [1932118] Changed IFW to use Rts2ConnSerial
+
 2008-04-01
  * Fixed issues with modelling (J2000 vs. current epochs)
  * cloud sensor
