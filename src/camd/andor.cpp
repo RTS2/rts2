@@ -556,7 +556,7 @@ Rts2DevCameraAndor::startExposure ()
 	}
 	else
 	{
-		nAcc = (int) (getExposure () / getSubExposure ());
+		nAcc = (int) (round (getExposure () / getSubExposure ()));
 		if (nAcc == 0)
 		{
 			nAcc = 1;
