@@ -54,7 +54,7 @@ int
 Rts2DevFilterdIfw::homeFilter ()
 {
 	int ret;
-	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 4);
+	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 4, '\r');
 	if (ret == -1)
 		return ret;
 	if (strstr (filter_buff, "ER"))
@@ -75,7 +75,7 @@ Rts2DevFilterdIfw::shutdown (void)
 		return;
 
 	/* shutdown filter wheel communications */
-	n = ifwConn->writeRead ("WEXITS\r", 7, filter_buff, 4);
+	n = ifwConn->writeRead ("WEXITS\r", 7, filter_buff, 4, '\r');
 
 	/* Check for correct response from filter wheel */
 	if (strcmp (filter_buff, "END"))
@@ -146,7 +146,7 @@ Rts2DevFilterdIfw::init (void)
 	ifwConn->flushPortIO ();
 
 	/* initialise filter wheel */
-	ret = ifwConn->writeRead ("WSMODE\r", 7, filter_buff, 4);
+	ret = ifwConn->writeRead ("WSMODE\r", 7, filter_buff, 4, '\r');
 	if (ret == -1)
 		return ret;
 	
@@ -187,7 +187,7 @@ Rts2DevFilterdIfw::getFilterNum (void)
 	int filter_number;
 	int n;
 
-	n = ifwConn->writeRead ("WFILTR\r", 7, filter_buff, 4);
+	n = ifwConn->writeRead ("WFILTR\r", 7, filter_buff, 4, '\r');
 	if (n == -1)
 		return -1;
 
@@ -222,7 +222,7 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
 	set_filter[5] = (char) new_filter + '1';
 
-	ret = ifwConn->writeRead (set_filter, 7, filter_buff, 4);
+	ret = ifwConn->writeRead (set_filter, 7, filter_buff, 4, '\r');
 	if (ret == -1)
 		return -1;
 
