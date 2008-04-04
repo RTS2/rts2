@@ -598,7 +598,6 @@ Rts2DevCamera::checkExposures ()
 						DEVICE_ERROR_HW | CAM_NOEXPOSURE,
 						BOP_TEL_MOVE, 0,
 						"exposure chip finished with error");
-					exposureConn = NULL;
 					stopExposure ();
 					if (quedExpNumber->getValueInteger () > 0)
 					{
@@ -862,9 +861,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 			exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
 		}
 		exposureConn = conn;
-
-		logStream (MESSAGE_INFO) <<
-			"exposing for '" << conn->getName () << "'" << sendLog;
+		logStream (MESSAGE_INFO) << "exposing for '"
+			<< (conn ? conn->getName () : "null") << "'" << sendLog;
 	}
 	return ret;
 }
