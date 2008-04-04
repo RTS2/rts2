@@ -362,6 +362,10 @@ Rts2DevTelD50::init ()
 	telLongitude->setValueDouble (config->getObserver ()->lng);
 	telLatitude->setValueDouble (config->getObserver ()->lat);
 
+	// zero dec is on local meridian, 90 - telLatitude bellow (to nadir)
+	decZero = 90 - fabs (telLatitude->getValueDouble ());
+	if (telLatitude > 0)
+		decZero *= -1;
 								 // south hemispehere
 	if (telLatitude->getValueDouble () < 0)
 	{
