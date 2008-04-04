@@ -600,6 +600,11 @@ Rts2DevCamera::checkExposures ()
 						"exposure chip finished with error");
 					exposureConn = NULL;
 					stopExposure ();
+					if (quedExpNumber->getValueInteger () > 0)
+					{
+						logStream (MESSAGE_DEBUG) << "starting new exposure after camera failure" << sendLog;
+						camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+					}
 					break;
 			}
 		}
