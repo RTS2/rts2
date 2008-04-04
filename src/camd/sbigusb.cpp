@@ -123,7 +123,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int camStopRead ();
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
-		virtual int camCoolTemp (float new_temp);
+		virtual int setCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
 };
 
@@ -519,9 +519,9 @@ Rts2DevCameraSbig::camCoolHold ()
 	if (ret)
 		return -1;
 	if (isnan (nightCoolTemp))
-		ret = camCoolTemp (-5);
+		ret = setCoolTemp (-5);
 	else
-		ret = camCoolTemp (nightCoolTemp);
+		ret = setCoolTemp (nightCoolTemp);
 	if (ret)
 		return -1;
 	return fanState (TRUE);
@@ -529,12 +529,12 @@ Rts2DevCameraSbig::camCoolHold ()
 
 
 int
-Rts2DevCameraSbig::camCoolTemp (float new_temp)
+Rts2DevCameraSbig::setCoolTemp (float new_temp)
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
 	temp.regulation = REGULATION_ON;
-	logStream (MESSAGE_DEBUG) << "sbig camCoolTemp setTemp " << new_temp <<
+	logStream (MESSAGE_DEBUG) << "sbig setCoolTemp setTemp " << new_temp <<
 		sendLog;
 	if (fanState (TRUE))
 		return -1;

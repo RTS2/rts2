@@ -87,7 +87,8 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
-		virtual int camCoolTemp (float new_temp);
+		virtual int setCoolTemp (float new_temp);
+		virtual int setTempRegulation (int new_reg);
 		virtual int camCoolShutdown ();
 };
 
@@ -886,7 +887,7 @@ Rts2DevCameraApogee::camCoolMax ()
 int
 Rts2DevCameraApogee::camCoolHold ()
 {
-	return camCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
+	return setCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
 }
 
 
@@ -906,7 +907,7 @@ Rts2DevCameraApogee::camCoolShutdown ()
 
 
 int
-Rts2DevCameraApogee::camCoolTemp (float new_temp)
+Rts2DevCameraApogee::setCoolTemp (float new_temp)
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();
@@ -915,6 +916,29 @@ Rts2DevCameraApogee::camCoolTemp (float new_temp)
 		camera->write_CoolerMode (Camera_CoolerMode_Off);
 	camera->write_CoolerSetPoint (new_temp);
 	camera->write_CoolerMode (Camera_CoolerMode_On);
+	return 0;
+}
+
+
+int
+Rts2DevCameraApogee::setTempRegulation (int new_reg)
+{
+	Camera_CoolerMode cMode;
+ 	switch (new_reg)
+	{
+		case 0:
+			cMode = Camera_CoolerMode_Off;
+			break;
+		case 1:
+			cMode = Camera_CoolerMode_On;
+			break;
+		case 2:
+			cMode = Camera_CoolerMode_Shutdown;
+			break;
+		default:
+			return -1;
+	}
+	camera->write_CoolerMode (cMode);
 	return 0;
 }
 

@@ -156,7 +156,7 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual int camChipInfo (int chip);
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
-		virtual int camCoolTemp (float new_temp);
+		virtual int setCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
 };
 
@@ -1209,14 +1209,14 @@ int
 Rts2DevCameraAndor::camCoolHold ()
 {
 	if (isnan (nightCoolTemp))
-		return camCoolTemp (-5);
+		return setCoolTemp (-5);
 	else
-		return camCoolTemp (nightCoolTemp);
+		return setCoolTemp (nightCoolTemp);
 }
 
 
 int
-Rts2DevCameraAndor::camCoolTemp (float new_temp)
+Rts2DevCameraAndor::setCoolTemp (float new_temp)
 {
 	int status;
 	status = CoolerON ();

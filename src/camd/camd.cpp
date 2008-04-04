@@ -669,7 +669,11 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == tempSet)
 	{
-		return camCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
+		return setCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
+	}
+	if (old_value == tempRegulation)
+	{
+		return setTempRegulation (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == binning)
 	{
@@ -974,18 +978,6 @@ Rts2DevCamera::camCoolHold (Rts2Conn * conn)
 
 
 int
-Rts2DevCamera::camCoolTemp (Rts2Conn * conn, float new_temp)
-{
-	int ret;
-	ret = camCoolTemp (new_temp);
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW,
-			"cannot set cooling temp to requested temperature");
-	return ret;
-}
-
-
-int
 Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
 {
 	int ret;
@@ -1208,13 +1200,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("coolhold"))
 	{
 		return camCoolHold (conn);
-	}
-	else if (conn->isCommand ("cooltemp"))
-	{
-		float new_temp;
-		if (conn->paramNextFloat (&new_temp) || !conn->paramEnd ())
-			return -2;
-		return camCoolTemp (conn, new_temp);
 	}
 	return Rts2ScriptDevice::commandAuthorized (conn);
 }

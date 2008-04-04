@@ -664,7 +664,11 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		{
 			return -1;
 		}
-		virtual int camCoolTemp (float new_temp)
+		virtual int setCoolTemp (float new_temp)
+		{
+			return -1;
+		}
+		virtual int setTempRegulation (int new_reg)
 		{
 			return -1;
 		}
@@ -685,7 +689,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		int camStopRead (Rts2Conn * conn);
 		int camCoolMax (Rts2Conn * conn);
 		int camCoolHold (Rts2Conn * conn);
-		int camCoolTemp (Rts2Conn * conn, float new_temp);
 		int camCoolShutdown (Rts2Conn * conn);
 
 		virtual int getFilterNum ();

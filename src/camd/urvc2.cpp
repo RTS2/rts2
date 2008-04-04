@@ -72,11 +72,11 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
-		int camCoolTemp ()
+		int setCoolTemp ()
 		{
 			return setcool (1, ad_temp, 0xaf, FAN_ON, CAMERA_COOL_HOLD);
 		}
-		virtual int camCoolTemp (float coolpoint);
+		virtual int setCoolTemp (float coolpoint);
 		virtual int camCoolShutdown ();
 		CAMERA_TYPE getCameraID (void)
 		{
@@ -471,17 +471,17 @@ Rts2DevCameraUrvc2::camCoolHold ()
 
 	set_fan (1);
 
-	return camCoolTemp (ot);
+	return setCoolTemp (ot);
 }
 
 
 int
 								 /* set direct setpoint */
-Rts2DevCameraUrvc2::camCoolTemp (float coolpoint)
+Rts2DevCameraUrvc2::setCoolTemp (float coolpoint)
 {
 								 // zaokrohlovat a neorezavat!
 	ad_temp = ccd_c2ad (coolpoint) + 0x7;
-	return camCoolTemp ();
+	return setCoolTemp ();
 }
 
 

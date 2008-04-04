@@ -57,7 +57,7 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
-		virtual int camCoolTemp (float new_temp);
+		virtual int setCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
 };
 
@@ -306,7 +306,7 @@ Rts2DevCameraAlta::camCoolHold ()
 
 
 int
-Rts2DevCameraAlta::camCoolTemp (float new_temp)
+Rts2DevCameraAlta::setCoolTemp (float new_temp)
 {
 	alta->write_CoolerEnable (true);
 	alta->write_FanMode (Apn_FanMode_High);
