@@ -32,7 +32,7 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
 		char *dev_file;
 		Rts2ConnSerial *ifwConn;
 
-		char filter_buff[5];
+		char filter_buff[6];
 		int readPort (size_t len);
 		void shutdown ();
 
@@ -54,7 +54,7 @@ int
 Rts2DevFilterdIfw::homeFilter ()
 {
 	int ret;
-	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 4, '\r');
+	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 5, '\r');
 	if (ret == -1)
 		return ret;
 	if (strstr (filter_buff, "ER"))
@@ -75,7 +75,7 @@ Rts2DevFilterdIfw::shutdown (void)
 		return;
 
 	/* shutdown filter wheel communications */
-	n = ifwConn->writeRead ("WEXITS\r", 7, filter_buff, 4, '\r');
+	n = ifwConn->writeRead ("WEXITS", 6, filter_buff, 5, '\r');
 
 	/* Check for correct response from filter wheel */
 	if (strcmp (filter_buff, "END"))
@@ -146,7 +146,7 @@ Rts2DevFilterdIfw::init (void)
 	ifwConn->flushPortIO ();
 
 	/* initialise filter wheel */
-	ret = ifwConn->writeRead ("WSMODE\r", 7, filter_buff, 4, '\r');
+	ret = ifwConn->writeRead ("WSMODE", 6, filter_buff, 5, '\r');
 	if (ret == -1)
 		return ret;
 	
@@ -156,7 +156,7 @@ Rts2DevFilterdIfw::init (void)
 		logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR: " << filter_buff << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised: " << filter_buff << sendLog;
+	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised" << sendLog;
 
 	return 0;
 }
@@ -187,7 +187,7 @@ Rts2DevFilterdIfw::getFilterNum (void)
 	int filter_number;
 	int n;
 
-	n = ifwConn->writeRead ("WFILTR\r", 7, filter_buff, 4, '\r');
+	n = ifwConn->writeRead ("WFILTR", 6, filter_buff, 5, '\r');
 	if (n == -1)
 		return -1;
 
@@ -209,7 +209,7 @@ Rts2DevFilterdIfw::getFilterNum (void)
 int
 Rts2DevFilterdIfw::setFilterNum (int new_filter)
 {
-	char set_filter[] = "WGOTOx\r";
+	char set_filter[] = "WGOTOx";
 	int ret;
 
 	if (new_filter > 4 || new_filter < 0)
@@ -222,15 +222,14 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
 	set_filter[5] = (char) new_filter + '1';
 
-	ret = ifwConn->writeRead (set_filter, 7, filter_buff, 4, '\r');
+	ret = ifwConn->writeRead (set_filter, 6, filter_buff, 5, '\r');
 	if (ret == -1)
 		return -1;
 
 	if (filter_buff[0] != '*')
 	{
 		logStream (MESSAGE_ERROR) <<
-			"filter ifw setFilterNum FILTER WHEEL ERROR: " << filter_buff <<
-			sendLog;
+			"filter ifw setFilterNum FILTER WHEEL ERROR" << sendLog;
 		// make sure we will home filter, but home only once if there is still error
 		if (homeCount == 0)
 		{
@@ -241,8 +240,6 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 	}
 	else
 	{
-		logStream (MESSAGE_DEBUG) << "filter ifw setFilterNum Set filter: " <<
-			filter_buff << sendLog;
 		homeCount = 0;
 		ret = 0;
 	}
