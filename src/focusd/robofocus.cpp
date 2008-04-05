@@ -1,31 +1,39 @@
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <termios.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <ctype.h>
+/**
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2006 John French
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #define BAUDRATE B9600
 #define FOCUSER_PORT "/dev/ttyS1"
 
-#define CMD_FOCUS_MOVE_IN   "FI"
+#define CMD_FOCUS_MOVE_IN     "FI"
 #define CMD_FOCUS_MOVE_OUT    "FO"
-#define CMD_FOCUS_GET     "FG"
-#define CMD_TEMP_GET      "FT"
-#define CMD_FOCUS_GOTO      "FG"
+#define CMD_FOCUS_GET         "FG"
+#define CMD_TEMP_GET          "FT"
+#define CMD_FOCUS_GOTO        "FG"
 
 #include "focuser.h"
+#include "../utils/rts2connserial.h"
 
 class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 {
 	private:
 		char *device_file_io;
-		int foc_desc;
+		Rts2ConnSerial *robofocConn;
 		char checksum;
 		int step_num;
 
@@ -33,12 +41,6 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 		Rts2ValueInteger *focSwitches;
 		int switchNum;
 
-		// low-level I/O functions
-		int foc_read (char *buf, int count);
-		int foc_write (char *buf, int count);
-		int foc_write_read_no_reset (char *wbuf, int wcount, char *rbuf,
-			int rcount);
-		int foc_write_read (char *buf, int wcount, char *rbuf, int rcount);
 		// high-level I/O functions
 		int focus_move (char *cmd, int steps);
 		void compute_checksum (char *cmd);
@@ -80,123 +82,7 @@ Rts2DevFocuser (in_argc, in_argv)
 
 Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
 {
-	close (foc_desc);
-}
-
-
-/*!
- * Will write on focuser port string.
- *
- * @exception EIO, .. common write exceptions
- *
- * @param buf           buffer to write
- * @param count         count to write
- *
- * @return -1 on failure, count otherwise
- */
-int
-Rts2DevFocuserRobofocus::foc_write (char *buf, int count)
-{
-	logStream (MESSAGE_DEBUG) << "Robofocus will write: " << buf << sendLog;
-	return write (foc_desc, buf, count);
-}
-
-
-/*!
- * Reads some data directly from port.
- *
- * Log all flow as MESSAGE_ERROR
- *
- * @exception EIO when there aren't data from port
- *
- * @param buf           buffer to read in data
- * @param count         how much data will be readed
- *
- * @return -1 on failure, otherwise number of read data
- */
-
-int
-Rts2DevFocuserRobofocus::foc_read (char *buf, int count)
-{
-	int readed;
-
-	for (readed = 0; readed < count;)
-	{
-		int ret = read (foc_desc, &buf[readed], count - readed);
-		if (ret <= 0)
-		{
-			tcflush (foc_desc, TCIOFLUSH);
-			sleep (1);
-			return -1;
-		}
-		readed += ret;
-	}
-	#ifdef DEBUG_ALL_PORT_COMM
-	logStream (MESSAGE_DEBUG) << "Robofocus  readed: " << buf[readed] <<
-		sendLog;
-	#endif
-	return readed;
-}
-
-
-/*!
- * Combine write && read together.
- *
- * Flush port to clear any gargabe.
- *
- * @exception EINVAL and other exceptions
- *
- * @param wbuf          buffer to write on port
- * @param wcount        write count
- * @param rbuf          buffer to read from port
- * @param rcount        maximal number of characters to read
- *
- * @return -1 and set errno on failure, rcount otherwise
- */
-int
-Rts2DevFocuserRobofocus::foc_write_read_no_reset (char *wbuf, int wcount,
-char *rbuf, int rcount)
-{
-	int tmp_rcount = -1;
-	char *buf;
-
-	if (foc_write (wbuf, wcount) < 0)
-		return -1;
-
-	tmp_rcount = foc_read (rbuf, rcount);
-
-	if (tmp_rcount > 0)
-	{
-		buf = (char *) malloc (tmp_rcount + 1);
-		memcpy (buf, rbuf, rcount);
-		buf[rcount] = 0;
-		logStream (MESSAGE_DEBUG) << "Robofocus readed " << tmp_rcount << " " <<
-			buf << sendLog;
-		free (buf);
-	}
-	else
-	{
-		logStream (MESSAGE_DEBUG) << "Robofocus readed returns " << tmp_rcount
-			<< sendLog;
-	}
-	return tmp_rcount;
-}
-
-
-int
-Rts2DevFocuserRobofocus::foc_write_read (char *buf, int wcount, char *rbuf,
-int rcount)
-{
-
-	int ret;
-
-	ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-
-	if (ret <= 0)
-	{
-		ret = foc_write_read_no_reset (buf, wcount, rbuf, rcount);
-	}
-	return ret;
+  	delete robofocConn;
 }
 
 
@@ -230,45 +116,21 @@ Rts2DevFocuserRobofocus::init ()
 	if (ret)
 		return ret;
 
-	struct termios tio;
-	foc_desc = open (device_file, O_RDWR | O_NOCTTY);
-	if (foc_desc == -1)
-	{
-		perror ("focus_open");
-		return -1;
-	}
-
-	ret = tcgetattr (foc_desc, &tio);
+	robofocConn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	ret = robofocConn->init ();
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevFocuserRobofocus::init tcgetattr "
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
+		return ret;
 
-	if (cfsetospeed (&tio, B9600) < 0 || cfsetispeed (&tio, B9600) < 0)
-		return -1;
-
-	tio.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-	tio.c_oflag = 0;
-	tio.c_cflag = ((tio.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-	tio.c_lflag = 0;
-	tio.c_cc[VMIN] = 0;
-	tio.c_cc[VTIME] = 40;
-
-	ret = tcsetattr (foc_desc, TCSANOW, &tio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevFocuserRobofocus::init tcsetattr "
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-	tcflush (foc_desc, TCIOFLUSH);
+	robofocConn->flushPortIO ();
 
 	// turn paramount on
 	ret = setSwitch (1, 1);
 	if (ret)
 		return -1;
+
+	ret = setSwitch (2, 1);
+	if (ret)
+	  	return -1;
 
 	return 0;
 }
@@ -315,7 +177,7 @@ Rts2DevFocuserRobofocus::getPos (Rts2ValueInteger * position)
 
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (foc_write_read (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
 		return -1;
 	position->setValueInteger (atoi (rbuf + 2));
 	return 0;
@@ -334,7 +196,7 @@ Rts2DevFocuserRobofocus::getTemp (Rts2ValueFloat * temp)
 
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (foc_write_read (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
 		return -1;
 								 // return temp in Celsius
 	temp->setValueFloat ((atof (rbuf + 2) / 2) - 273.15);
@@ -353,7 +215,7 @@ Rts2DevFocuserRobofocus::getSwitchState ()
 	compute_checksum (command_buffer);
 
 	sprintf (command, "%s%c", command_buffer, checksum);
-	if (foc_write_read (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
 		return -1;
 	ret = 0;
 	for (int i = 0; i < switchNum; i++)
@@ -381,7 +243,7 @@ Rts2DevFocuserRobofocus::setTo (int num)
 	sprintf (command, "FG%06i", num);
 	compute_checksum (command);
 	sprintf (command_buf, "%s%c", command, checksum);
-	if (foc_write (command_buf, 9) < 1)
+	if (robofocConn->writePort (command_buf, 9) < 1)
 		return -1;
 	return 0;
 }
@@ -406,7 +268,7 @@ Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
 	compute_checksum (command_buffer);
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (foc_write_read (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
 		return -1;
 
 	infoAll ();
@@ -436,7 +298,7 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 
 	// Send command to focuser
 
-	if (foc_write (command, 9) < 1)
+	if (robofocConn->writePort (command, 9) < 1)
 		return -1;
 
 	step_num = steps;
@@ -450,14 +312,13 @@ Rts2DevFocuserRobofocus::isFocusing ()
 {
 	char rbuf[10];
 	int ret;
-	ret = foc_read (rbuf, 1);
+	ret = robofocConn->readPort (rbuf, 1);
 	if (ret == -1)
 		return ret;
 	// if we get F, read out end command
-	printf ("%c\n", *rbuf);
 	if (*rbuf == 'F')
 	{
-		ret = foc_read (rbuf + 1, 8);
+		ret = robofocConn->readPort (rbuf + 1, 8);
 		if (ret != 8)
 			return -1;
 		return -2;

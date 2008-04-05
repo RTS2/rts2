@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,19 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*!
- * @file FLI focuser driver
- *
- * @author petr
- *
- * You will need FLIlib and option to ./configure (--with-fli=<llibflidir>)
- * to get that running. You can get libfli on http://www.moronski.com/fli
- */
-
 #include "focuser.h"
 
 #include "libfli.h"
 
+/**
+ * FLI focuser driver. You will need FLIlib and option to ./configure (--with-fli=<llibflidir>)
+ * to get that running. You can get libfli on http://www.moronski.com/fli
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevFocuserFli:public Rts2DevFocuser
 {
 	private:

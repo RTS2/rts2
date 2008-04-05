@@ -1,15 +1,35 @@
-/*!
- * $Id$
+/**
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2007 Stanislav Vitek
  *
- * @author standa
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #ifndef __RTS2_FOCUSD_CPP__
 #define __RTS2_FOCUSD_CPP__
 
-#include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
+/**
+ * Abstract base class for focuser.
+ *
+ * Defines interface for fouser, put on various variables etc..
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ * @author Stanisla Vitek
+ */
 class Rts2DevFocuser:public Rts2Device
 {
 	private:
