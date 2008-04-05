@@ -124,7 +124,7 @@ Rts2DevFocuserOptec::init ()
 	optecConn->flushPortIO ();
 
 	// set manual
-	if (optecConn->writeRead ("FMMODE", 6, rbuf, 10, '\n') < 0)
+	if (optecConn->writeRead ("FMMODE", 6, rbuf, 10, '\r') < 0)
 		return -1;
 	if (rbuf[0] != '!')
 		return -1;
@@ -140,7 +140,7 @@ Rts2DevFocuserOptec::getPos (Rts2ValueInteger * position)
 {
 	char rbuf[9];
 
-	if (optecConn->writeRead ("FPOSRO", 6, rbuf, 8, '\n') < 1)
+	if (optecConn->writeRead ("FPOSRO", 6, rbuf, 8, '\r') < 1)
 	{
 		return -1;
 	}
@@ -164,7 +164,7 @@ Rts2DevFocuserOptec::getTemp ()
 	if (damagedTempSens)
 		return 0;
 
-	if (optecConn->writeRead ("FTMPRO", 6, rbuf, 9, '\n') < 1)
+	if (optecConn->writeRead ("FTMPRO", 6, rbuf, 9, '\r') < 1)
 	{
 		return -1;
 	}
@@ -244,7 +244,7 @@ Rts2DevFocuserOptec::stepOut (int num)
 
 	sprintf (command, "F%c%04d", add, num);
 
-	if (optecConn->writeRead (command, 6, rbuf, 3, '\n') < 0)
+	if (optecConn->writeRead (command, 6, rbuf, 3, '\r') < 0)
 		return -1;
 	if (rbuf[0] != '*')
 		return -1;
