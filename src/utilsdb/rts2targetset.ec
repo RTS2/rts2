@@ -50,9 +50,8 @@ void
 Rts2TargetSet::load (std::string in_where, std::string order_by)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		char *stmp_c;
-
-		int db_tar_id;
+	char *stmp_c;
+	int db_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
 	std::list <int> target_ids;
@@ -339,7 +338,7 @@ Rts2TargetSetGrb::load ()
 			tar_id
 		FROM
 			grb
-			ORDER BY
+		ORDER BY
 			grb_date DESC;
 
 	EXEC SQL OPEN grb_tar_cur;

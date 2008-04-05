@@ -1,8 +1,13 @@
+2008-04-06
+ * added rts2-user command (user management)
+ * created Rts2User and Rts2UserSet classes
+
 2008-04-05
  * Pure number formating flag works with TimeDiff
  * -N option for rts2-nightreport, rts2-target, rts2-targetlist and rts2-targetinfo
 
 2008-04-04
+ * [1913505] replaced camCoolTemp with setCoolTemp, removed cooltemp commad
  * [1933822] fixed
 
 2008-04-03

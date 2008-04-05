@@ -5,7 +5,7 @@ if PGSQL
 AM_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@
 
-bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo
+bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user
 
 noinst_HEADERS = rts2targetapp.h
 
@@ -26,6 +26,9 @@ rts2_tpm_LDFLAGS = ../writers/librts2imagedb.a ../utils/librts2block.a
 
 rts2_obsinfo_SOURCES = obsinfo.cpp
 rts2_obsinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
+
+rts2_user_SOURCES = user.cpp
+rts2_user_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a
 
 SUBDIRS = simbad
 

@@ -180,34 +180,3 @@ Rts2TarUser::getUsers (int in_event_mask, int &count)
 	}
 	return email_list;
 }
-
-
-bool
-verifyUser (std::string username, std::string pass)
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-	VARCHAR db_username[25];
-	VARCHAR db_pass[25];
-	int d_ret;
-	EXEC SQL END DECLARE SECTION;
-	db_username.len = username.length ();
-	db_username.len = db_username.len > 25 ? 25 : db_username.len;
-	strncpy (db_username.arr, username.c_str (), db_username.len);
-
-	db_pass.len = pass.length ();
-	db_pass.len = db_pass.len > 25 ? 25 : db_pass.len;
-	strncpy (db_pass.arr, pass.c_str (), db_pass.len);
-
-	EXEC SQL
-	SELECT
-		count (*)
-	INTO
-		:d_ret
-	FROM
-		users
-	WHERE
-		usr_login = :db_username
-	AND usr_passwd = :db_pass;
-
-	return d_ret == 1;
-}

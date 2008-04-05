@@ -82,14 +82,4 @@ class Rts2TarUser
 		std::string getUsers (int in_event_mask, int &count);
 };
 
-/**
- * Verify username and password combination.
- *
- * @param username   User login name.
- * @param pass       User password.
- *
- * @return True if login and password is correct, false otherwise.
- */
-bool verifyUser (std::string username, std::string pass);
-
 #endif							 /* !__RTS2_TARUSER__ */
