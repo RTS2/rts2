@@ -1,6 +1,7 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2targetset.h"
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 
 #include <iostream>
 
@@ -38,6 +39,7 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('s', "selectable", 0,
 		"list only targets considered by selector");
 	addOption ('t', "target_type", 1, "print given target types");
+	addOption ('N', NULL, 0, "do not pretty print");
 }
 
 
@@ -59,6 +61,9 @@ Rts2TargetList::processOption (int in_opt)
 			break;
 		case 't':
 			targetType = optarg;
+			break;
+		case 'N':
+			std::cout << pureNumbers;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);

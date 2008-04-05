@@ -94,6 +94,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>-s <replaceable>script</replaceable></option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-N</option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target(s) ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -227,6 +230,14 @@
 	    specify <option>-c</option> camera option for name of the camera.
 	    For script syntax, please consult
 	    <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-N</option></term>
+        <listitem>
+          <para>
+	    Do not pretty print results, print them as number.
 	  </para>
         </listitem>
       </varlistentry>

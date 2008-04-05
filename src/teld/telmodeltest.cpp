@@ -110,7 +110,7 @@ Rts2App (in_argc, in_argv)
 	verbose = false;
 	addOption ('m', NULL, 1, "Model file to use");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC.");
-	addOption ('n', NULL, 0, "Print numbers, do not pretty print.");
+	addOption ('N', NULL, 0, "Print numbers, do not pretty print.");
 	addOption ('v', NULL, 0, "Report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
 }
@@ -134,7 +134,7 @@ TelModelTest::processOption (int in_opt)
 		case 'e':
 			errors++;
 			break;
-		case 'n':
+		case 'N':
 			std::cout << pureNumbers;
 			break;
 		case 'v':

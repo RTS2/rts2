@@ -21,6 +21,7 @@
 #include "../utilsdb/rts2targetset.h"
 #include "../utils/rts2askchoice.h"
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 
 #include <iostream>
 
@@ -98,6 +99,7 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('o', NULL, 0, "clear next observable time");
 	addOption ('c', NULL, 1, "next script will be set for given camera");
 	addOption ('s', NULL, 1, "set script for target and camera");
+	addOption ('N', NULL, 0, "do not pretty print");
 }
 
 
@@ -150,6 +152,9 @@ Rts2TargetApp::processOption (int in_opt)
 			new_scripts.push_back (CamScript (camera, optarg));
 			camera = NULL;
 			op |= OP_SCRIPT;
+			break;
+		case 'N':
+			std::cout << pureNumbers;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
