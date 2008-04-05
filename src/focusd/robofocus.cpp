@@ -177,7 +177,7 @@ Rts2DevFocuserRobofocus::getPos (Rts2ValueInteger * position)
 
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 	position->setValueInteger (atoi (rbuf + 2));
 	return 0;
@@ -196,7 +196,7 @@ Rts2DevFocuserRobofocus::getTemp (Rts2ValueFloat * temp)
 
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 								 // return temp in Celsius
 	temp->setValueFloat ((atof (rbuf + 2) / 2) - 273.15);
@@ -215,7 +215,7 @@ Rts2DevFocuserRobofocus::getSwitchState ()
 	compute_checksum (command_buffer);
 
 	sprintf (command, "%s%c", command_buffer, checksum);
-	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 	ret = 0;
 	for (int i = 0; i < switchNum; i++)
@@ -243,7 +243,7 @@ Rts2DevFocuserRobofocus::setTo (int num)
 	sprintf (command, "FG%06i", num);
 	compute_checksum (command);
 	sprintf (command_buf, "%s%c", command, checksum);
-	if (robofocConn->writePort (command_buf, 9) < 1)
+	if (robofocConn->writePort (command_buf, 9))
 		return -1;
 	return 0;
 }
@@ -268,7 +268,7 @@ Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
 	compute_checksum (command_buffer);
 	sprintf (command, "%s%c", command_buffer, checksum);
 
-	if (robofocConn->writeRead (command, 9, rbuf, 9) < 1)
+	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 
 	infoAll ();
@@ -298,7 +298,7 @@ Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
 
 	// Send command to focuser
 
-	if (robofocConn->writePort (command, 9) < 1)
+	if (robofocConn->writePort (command, 9))
 		return -1;
 
 	step_num = steps;
@@ -319,6 +319,7 @@ Rts2DevFocuserRobofocus::isFocusing ()
 	if (*rbuf == 'F')
 	{
 		ret = robofocConn->readPort (rbuf + 1, 8);
+		sleep (3);
 		if (ret != 8)
 			return -1;
 		return -2;
