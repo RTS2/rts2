@@ -72,11 +72,10 @@ class Rts2TargetApp:public Rts2AppDb
 		virtual int processArgs (const char *arg);
 		virtual int init ();
 
+		virtual int doProcessing ();
 	public:
 		Rts2TargetApp (int argc, char **argv);
 		virtual ~ Rts2TargetApp (void);
-
-		virtual int doProcessing ();
 };
 
 Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):

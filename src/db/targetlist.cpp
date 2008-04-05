@@ -22,11 +22,10 @@ class Rts2TargetList:public Rts2AppDb
 		virtual int processArgs (const char *arg);
 		virtual int init ();
 
+		virtual int doProcessing ();
 	public:
 		Rts2TargetList (int argc, char **argv);
 		virtual ~ Rts2TargetList (void);
-
-		virtual int doProcessing ();
 };
 
 Rts2TargetList::Rts2TargetList (int in_argc, char **in_argv):

@@ -66,11 +66,11 @@ class Rts2NightReport:public Rts2AppDb
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
+
+		virtual int doProcessing ();
 	public:
 		Rts2NightReport (int argc, char **argv);
 		virtual ~ Rts2NightReport (void);
-
-		virtual int doProcessing ();
 };
 
 Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):
