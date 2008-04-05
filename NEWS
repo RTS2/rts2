@@ -1,0 +1,2 @@
+0.8.0
+  -N option (do not pretty print) for rts2-nightreport, rts2-target, rts2-targetlist, rts2-targetinfo and rts2-telmodeltest
