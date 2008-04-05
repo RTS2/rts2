@@ -19,6 +19,7 @@
 
 #include "libnova_cpp.h"
 #include "radecparser.h"
+#include "rts2format.h"
 
 // (this is in libnova_cpp.h) #include <math.h>
 #include <iomanip>
@@ -53,30 +54,9 @@ LibnovaRa::flip ()
 	ra = ln_range_degrees (ra + 180);
 }
 
-
-int flagSpace = -1;
-
-std::ostream & spaceDegSep (std::ostream & _os)
-{
-	if (flagSpace == -1)
-		flagSpace = _os.xalloc ();
-	_os.iword (flagSpace) = 1;
-	return _os;
-}
-
-int flagPureNumbers = -1;
-
-std::ostream & pureNumbers (std::ostream & _os)
-{
-	if (flagPureNumbers == -1)
-		flagPureNumbers = _os.xalloc ();
-	_os.iword (flagPureNumbers) = 1;
-	return _os;
-}
-
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision(6);
@@ -96,8 +76,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os
-		<< std::setw (2) << ra_hms.hours << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
-		<< std::setw (2) << ra_hms.minutes << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
+		<< std::setw (2) << ra_hms.hours << (formatSpaceDegSep (_os) ? " " : ":")
+		<< std::setw (2) << ra_hms.minutes << (formatSpaceDegSep (_os) ? " " : ":")
 		<< std::setw (6) << ra_hms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
@@ -117,7 +97,7 @@ std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra)
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -132,7 +112,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
 
 std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -166,7 +146,7 @@ std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM)
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -210,7 +190,7 @@ LibnovaDeg::fromDms (struct ln_dms *deg_dms)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -307,7 +287,7 @@ std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -339,7 +319,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -371,7 +351,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -416,7 +396,7 @@ LibnovaDec::flip (struct ln_lnlat_posn *obs)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -436,8 +416,8 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	_os << (deg_dms.neg ? '-' : '+')
-		<< std::setw (2) << deg_dms.degrees << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
-		<< std::setw (2) << deg_dms.minutes << ((flagSpace == -1 || _os.iword (flagSpace) == 0) ? ":" : " ")
+		<< std::setw (2) << deg_dms.degrees << (formatSpaceDegSep (_os) ? " " : ":")
+		<< std::setw (2) << deg_dms.minutes << (formatSpaceDegSep (_os) ? " " : ":")
 		<< std::setw (5) << deg_dms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
@@ -448,7 +428,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDec l_dec)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -463,7 +443,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -493,7 +473,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -533,7 +513,7 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 
 std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -653,7 +633,7 @@ LibnovaRaDec::parseString (const char *radec)
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);
@@ -682,7 +662,7 @@ std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec)
 
 std::ostream & operator << (std::ostream & _os, LibnovaHrz l_hrz)
 {
-	if (flagPureNumbers != -1 && _os.iword (flagPureNumbers))
+	if (formatPureNumbers (_os))
 	{
 		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 		_os.precision (6);

@@ -1,3 +1,7 @@
+2008-04-05
+ * Pure number formating flag works with TimeDiff
+ * -N option for rts2-nightreport
+
 2008-04-04
  * [1933822] fixed
 

@@ -681,17 +681,6 @@ class LibnovaPos
 		friend std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
 };
 
-/**
- * Stream output will separated hours and minutes with space.
- */
-std::ostream & spaceDegSep (std::ostream & _os);
-
-/**
- * Stream output will always contains pure numbers. Degreess
- * pretty print will be disabled.
- */
-std::ostream & pureNumbers (std::ostream & _os);
-
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);

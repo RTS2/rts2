@@ -175,6 +175,9 @@ class Rts2DevTelParamount:public Rts2DevGEM
 		MKS3ObjTrackInfo *track0;
 		MKS3ObjTrackInfo *track1;
 	protected:
+		virtual int init ();
+		virtual int initValues ();
+
 		virtual int processOption (int in_opt);
 		virtual int isMoving ();
 		virtual int isParking ();
@@ -200,7 +203,6 @@ class Rts2DevTelParamount:public Rts2DevGEM
 		Rts2DevTelParamount (int in_argc, char **in_argv);
 		virtual ~ Rts2DevTelParamount (void);
 
-		virtual int init ();
 		virtual int idle ();
 
 		virtual int info ();
@@ -688,6 +690,15 @@ Rts2DevTelParamount::init ()
 	snprintf (telType, 64, "Paramount %i %i %i", pMajor, pMinor, pBuild);
 
 	return ret;
+}
+
+
+int
+Rts2DevTelParamount::initValues ()
+{
+	// ignore corrections bellow 5 arcsec
+	setIgnoreCorrection (5/3600);
+	return Rts2DevTelescope::initValues ();
 }
 
 

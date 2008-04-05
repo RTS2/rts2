@@ -178,6 +178,15 @@ class Rts2DevTelescope:public Rts2Device
 			tel->dec = getTelDec ();
 		}
 
+		/**
+		 * Set ignore correction - size bellow which correction commands will
+		 * be ignored.
+		 */
+		void setIgnoreCorrection (double new_ign)
+		{
+			ignoreCorrection->setValueDouble (new_ign);
+		}
+
 	private:
 		/**
 		 * Date and time when last park command was issued.

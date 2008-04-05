@@ -18,6 +18,7 @@
  */
 
 #include "timestamp.h"
+#include "rts2format.h"
 #include "../utils/rts2block.h"
 
 #include <iomanip>
@@ -64,6 +65,13 @@ std::ostream & operator << (std::ostream & _os, Timestamp _ts)
 
 std::ostream & operator << (std::ostream & _os, TimeDiff _td)
 {
+	if (formatPureNumbers (_os))
+	{
+		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		_os.precision(6);
+		_os << _td.time_2 - _td.time_1;
+		return _os;
+	}
 	if (isnan (_td.time_1) || isnan (_td.time_2))
 	{
 		_os << "na (nan)";

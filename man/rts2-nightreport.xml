@@ -68,34 +68,25 @@
 	<arg choice="plain"><option>--config <replaceable class="parameter">configuration file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-s</option></arg>
+        <arg choice="plain"><option>-f <replaceable class="parameter">from</replaceable> </option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-e</option></arg>
+        <arg choice="plain"><option>-t <replaceable class="parameter">to</replaceable> </option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-b</option></arg>
+        <arg choice="plain"><option>-n <replaceable class="parameter">night</replaceable> </option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-B</option></arg>
+        <arg choice="plain"><option>-N</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-g<replaceable class="parameter">gnuplot-option</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>-m</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-c</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>-o</option></arg>
+        <arg choice="plain"><option>-l</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-i</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-I</option></arg>
+	<arg choice="plain"><option>-I</option></arg>
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-p</option></arg>
@@ -104,15 +95,14 @@
         <arg choice="plain"><option>-P</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-t</option></arg>
+        <arg choice="plain"><option>-s</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
+        <arg choice="plain"><option>-S</option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>-9</option></arg>
+        <arg choice="plain"><option>-c</option></arg>
       </arg>
-      <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 

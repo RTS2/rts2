@@ -19,6 +19,7 @@
 
 #include "model/telmodel.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2format.h"
 #include "../writers/rts2imagedb.h"
 
 #include <iostream>

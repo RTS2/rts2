@@ -20,6 +20,7 @@
 #include "imgdisplay.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2format.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obsset.h"
 
@@ -91,9 +92,10 @@ Rts2AppDb (in_argc, in_argv)
 	totalGoodImages = 0;
 	totalObs = 0;
 
-	addOption ('f', "from", 1, "date from which take measurements; default to current date - 24 hours");
-	addOption ('t', "to", 1, "date to which show measurements; default to from + 24 hours");
-	addOption ('n', "night-date", 1, "report for night around given date");
+	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours");
+	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours");
+	addOption ('n', NULL, 1, "report for night around given date");
+	addOption ('N', NULL, 0, "prints out all values as numbers, do not pretty format them");
 	addOption ('l', NULL, 0, "print full image names");
 	addOption ('i', NULL, 0, "print image listing");
 	addOption ('I', NULL, 0, "print image summary row");
@@ -129,6 +131,9 @@ Rts2NightReport::processOption (int in_opt)
 		case 'n':
 			tm_night = new struct ln_date;
 			return Rts2CliApp::parseDate (optarg, tm_night);
+		case 'N':
+			std::cout << pureNumbers;	
+			break;
 		case 'l':
 			printImages |= DISPLAY_FILENAME;
 			break;

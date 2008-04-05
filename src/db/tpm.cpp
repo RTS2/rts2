@@ -29,6 +29,7 @@
 
 #include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 #include "../writers/rts2image.h"
 
 class TPM:public Rts2CliApp
