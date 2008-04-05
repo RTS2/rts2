@@ -319,7 +319,7 @@ Rts2DevFocuserRobofocus::isFocusing ()
 	if (*rbuf == 'F')
 	{
 		ret = robofocConn->readPort (rbuf + 1, 8);
-		sleep (3);
+		usleep (USEC_SEC/10);
 		if (ret != 8)
 			return -1;
 		return -2;
