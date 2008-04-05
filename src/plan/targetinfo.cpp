@@ -23,6 +23,7 @@
 #include "../utilsdb/target.h"
 #include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 #include "../utils/libnova_cpp.h"
 #include "rts2script.h"
 
@@ -138,6 +139,7 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
 	addOption ('d', NULL, 1, "give informations for this data");
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
+	addOption ('N', NULL, 0, "do not pretty print");
 }
 
 
@@ -224,6 +226,9 @@ Rts2TargetInfo::processOption (int in_opt)
 			break;
 		case '9':
 			printDS9 = true;
+			break;
+		case 'N':
+			std::cout << pureNumbers;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);

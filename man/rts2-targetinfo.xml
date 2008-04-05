@@ -112,6 +112,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-N</option></arg>
+      </arg>
       <arg choice="plain" rep="repeat"><replaceable>target ID</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -345,6 +348,14 @@
         <term><option>-9</option></term>
         <listitem>
           <para>Prints out DS9 .reg file. That is especially usefull for GRB observations, when it prints out various error boxes.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-N</option></term>
+        <listitem>
+          <para>
+            Do not pretty print. Print all degrees, dates etc. as numbers, do not convert them to degrees minutes seconds format.
+	  </para>
         </listitem>
       </varlistentry>
     </variablelist>
