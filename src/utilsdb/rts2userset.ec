@@ -85,6 +85,68 @@ Rts2UserSet::~Rts2UserSet (void)
 }
 
 
+int
+createUser (std::string login, std::string password, std::string email)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR db_login[25];
+	VARCHAR db_password[25];
+	VARCHAR db_email[200];
+	EXEC SQL END DECLARE SECTION;
+
+	if (login.length () > 25)
+	{
+		logStream (MESSAGE_ERROR) << "login is too long" << sendLog;
+		return -1;
+	}
+
+	if (password.length () > 25)
+	{
+		logStream (MESSAGE_ERROR) << "password is too long" << sendLog;
+		return -1;
+	}
+
+	if (email.length () > 25)
+	{
+		logStream (MESSAGE_ERROR) << "email is too long" << sendLog;
+		return -1;
+	}
+
+	strncpy (db_login.arr, login.c_str (), 25);
+	db_login.len = login.length ();
+
+	strncpy (db_password.arr, password.c_str (), 25);
+	db_password.len = password.length ();
+
+	strncpy (db_email.arr, email.c_str (), 200);
+	db_email.len = email.length ();
+
+	EXEC SQL INSERT INTO users
+	(
+		usr_id,
+		usr_login,
+		usr_passwd,
+		usr_email
+	)
+	VALUES (
+		nextval ('user_id'),
+		:db_login,
+		:db_password,
+		:db_email
+	);
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "cannot insert new user " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream & _os, Rts2UserSet & userSet)
 {
 	for (Rts2UserSet::iterator iter = userSet.begin (); iter != userSet.end (); iter++)

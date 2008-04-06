@@ -45,5 +45,15 @@ class Rts2UserSet: public std::list <Rts2User>
 		~Rts2UserSet (void);
 };
 
+/**
+ * Create new user.
+ *
+ * @param login     User login.
+ * @param password  User password.
+ * @param email     User email.
+ * @return -1 on error, 0 on sucess.
+ */
+int createUser (std::string login, std::string password, std::string email);
+
 std::ostream & operator << (std::ostream & _os, Rts2UserSet & userSet);
 #endif							 /* !__RTS2_USERSET__ */
