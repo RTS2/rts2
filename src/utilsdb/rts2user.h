@@ -22,6 +22,38 @@
 
 #include <string>
 #include <ostream>
+#include <list>
+
+/**
+ * Represents type which user have subscribed for receiving events.
+ */
+class Rts2TypeUser
+{
+	private:
+		char type;
+		int eventMask;
+	public:
+		Rts2TypeUser (char type, int eventMask);
+		~Rts2TypeUser (void);
+
+		friend std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr);
+};
+
+std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr);
+
+class Rts2TypeUserSet: public std::list <Rts2TypeUser>
+{
+	private:
+		int load (int usr_id);
+	public:
+		/**
+		 * Load type-user map for given user ID.
+		 */
+		Rts2TypeUserSet (int usr_id);
+		~Rts2TypeUserSet (void);
+};
+
+std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usr);
 
 /**
  * Represents user from database.
@@ -34,6 +66,9 @@ class Rts2User
 		int id;
 		std::string login;
 		std::string email;
+
+		Rts2TypeUserSet *types;
+
 	public:
 		/**
 		 * Construct user from database entry.
@@ -44,6 +79,13 @@ class Rts2User
 		 */
 		Rts2User (int in_id, std::string in_login, std::string in_email);
 		~Rts2User (void);
+
+		/**
+		 * Load types which belongs to given user id.
+		 *
+		 * @return -1 on error, 0 on sucess.
+		 */
+		int loadTypes ();
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2User & user);
 };
@@ -59,5 +101,4 @@ std::ostream & operator << (std::ostream & _os, Rts2User & user);
  * @return True if login and password is correct, false otherwise.
  */
 bool verifyUser (std::string username, std::string pass);
-
-#endif /* !__RTS2_USER__ */
+#endif							 /* !__RTS2_USER__ */

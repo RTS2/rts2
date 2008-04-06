@@ -24,10 +24,12 @@ int
 Rts2UserSet::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-	int db_id;
-	VARCHAR db_login[25];
-	VARCHAR db_email[200];
+		int db_id;
+		VARCHAR db_login[25];
+		VARCHAR db_email[200];
 	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL BEGIN TRANSACTION;
 
 	EXEC SQL DECLARE user_cur CURSOR FOR
 		SELECT
@@ -36,7 +38,7 @@ Rts2UserSet::load ()
 			usr_email
 		FROM
 			users
-		ORDER BY
+			ORDER BY
 			usr_login asc;
 
 	EXEC SQL OPEN user_cur;
@@ -44,18 +46,30 @@ Rts2UserSet::load ()
 	while (1)
 	{
 		EXEC SQL FETCH next FROM user_cur INTO
-			:db_id,
-			:db_login,
-			:db_email;
+				:db_id,
+				:db_login,
+				:db_email;
 		if (sqlca.sqlcode)
-		  	break;
+			break;
 		push_back (Rts2User (db_id, std::string (db_login.arr), std::string (db_email.arr)));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		logStream (MESSAGE_ERROR) << "Rts2UserSet::load cannot load user set " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
 		return -1;
 	}
+
+	EXEC SQL COMMIT;
+
+	// load types
+	for (Rts2UserSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		int ret = (*iter).loadTypes ();
+		if (ret)
+			return ret;
+	}
+
 	return 0;
 }
 

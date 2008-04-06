@@ -46,5 +46,4 @@ class Rts2UserSet: public std::list <Rts2User>
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2UserSet & userSet);
-
-#endif /* !__RTS2_USERSET__ */
+#endif							 /* !__RTS2_USERSET__ */
