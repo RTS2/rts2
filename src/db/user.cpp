@@ -20,6 +20,11 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2userset.h"
 
+/**
+ * Application for user management.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2UserApp:public Rts2AppDb
 {
 	private:
@@ -28,6 +33,7 @@ class Rts2UserApp:public Rts2AppDb
 		const char *user;
 
 		int listUser ();
+		int newUser ();
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int doProcessing ();
@@ -84,6 +90,22 @@ Rts2UserApp::listUser ()
 
 
 int
+Rts2UserApp::newUser ()
+{
+	std::string passwd;
+	std::string email;
+
+	int ret;
+	ret = askForString ("User password", passwd);
+	if (ret)
+		return ret;
+	ret = askForString ("User email (can be left empty)", email);
+	if (ret)
+		return ret;
+	return createUser (std::string (user), passwd, email);
+}
+
+int
 Rts2UserApp::doProcessing ()
 {
 	switch (op)
@@ -94,7 +116,7 @@ Rts2UserApp::doProcessing ()
 		case LIST_USER:
 			return listUser ();
 		case NEW_USER:
-			break;
+			return newUser ();
 		case USER_PASSWORD:
 			break;
 		case USER_EMAIL:
