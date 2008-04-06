@@ -129,7 +129,7 @@ Rts2ConnSerial::init ()
 	s_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
 	s_termios.c_oflag = 0;
 	// clear CSIZE and parity from cflags..
-	s_termios.c_cflag = s_termios.c_cflag & ~(CSIZE | PARENB | PARODD);
+	s_termios.c_cflag = s_termios.c_cflag & ~(CSIZE | PARENB | PARODD | CSTOPB);
 	switch (cSize)
 	{
 		case C7:
