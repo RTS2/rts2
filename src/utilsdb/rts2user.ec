@@ -19,6 +19,7 @@
 
 #include "rts2user.h"
 #include "../utils/rts2app.h"
+#include "../utils/rts2target.h"
 
 #include <iomanip>
 
@@ -37,7 +38,10 @@ Rts2TypeUser::~Rts2TypeUser (void)
 
 std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr)
 {
-	_os << usr.type << " " << std::hex << std::setw (4) << usr.eventMask << std::endl;
+	_os << usr.type << " "
+		<< std::hex << std::setw (4) << usr.eventMask << " ";
+	printEventMask (usr.eventMask, _os);
+	_os << std::endl;
 	return _os;
 }
 

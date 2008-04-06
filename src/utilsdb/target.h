@@ -40,24 +40,24 @@
 #include "scriptcommands.h"
 
 #define MAX_READOUT_TIME    120
-#define PHOT_TIMEOUT      10
-#define EXPOSURE_TIMEOUT    50
+#define PHOT_TIMEOUT         10
+#define EXPOSURE_TIMEOUT     50
 
-#define TARGET_DARK   1
-#define TARGET_FLAT   2
-#define TARGET_FOCUSING   3
+#define TARGET_DARK           1
+#define TARGET_FLAT           2
+#define TARGET_FOCUSING       3
 // orimary model
-#define TARGET_MODEL    4
+#define TARGET_MODEL          4
 // primary terestial - based on HAM/FRAM number
-#define TARGET_TERRESTIAL 5
+#define TARGET_TERRESTIAL     5
 // master calibration target
-#define TARGET_CALIBRATION  6
+#define TARGET_CALIBRATION    6
 // master plan target
-#define TARGET_PLAN   7
+#define TARGET_PLAN           7
 
-#define TARGET_SWIFT_FOV  10
-#define TARGET_INTEGRAL_FOV 11
-#define TARGET_SHOWER   12
+#define TARGET_SWIFT_FOV     10
+#define TARGET_INTEGRAL_FOV  11
+#define TARGET_SHOWER        12
 
 class Rts2Obs;
 class Rts2TargetSet;
