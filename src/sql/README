@@ -15,6 +15,9 @@ Subdirectories:
 * update - contains update scripts. Basicaly you should run scripts in
   create, then scripts in update.
 
+* telma - extended login informations, user targets insertion. Used for storing
+  web requests for observations.
+
 Scripts:
 
 * rts2-builddb - build RTS2 database. Run scripts in create, then in

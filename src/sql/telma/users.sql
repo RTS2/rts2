@@ -13,16 +13,10 @@ COPY countries (country_id, country_name) FROM stdin;
 
 -- users table, which holds users extended details
 
-CREATE TABLE telma_users (
-  	-- usr_login, pasword and email are stored in users table
-	usr_id           integer NOT NULL REFERENCES users (usr_id),
-	birthday         date,
-	birthplace       varchar(50),
-	sex              char,
-	cellphone        varchar(15),
-	address          varchar(200),
-	city             varchar(50),
-	country          integer REFERENCES countries(country_id)
-);
-
-
+ALTER TABLE users ADD COLUMN birthday date;
+ALTER TABLE users ADD COLUMN birthplace varchar(50);
+ALTER TABLE users ADD COLUMN sex char;
+ALTER TABLE users ADD COLUMN cellphone varchar(15);
+ALTER TABLE users ADD COLUMN address varchar(200);
+ALTER TABLE users ADD COLUMN city varchar(50);
+ALTER TABLE users ADD COLUMN country integer REFERENCES (countries (country_id));

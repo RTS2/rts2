@@ -32,6 +32,8 @@ $PSQLDB < update/rel_0_6_0.sql
 $PSQLDB < update/rel_0_6_1.sql
 $PSQLDB < update/rel_0_6_2.sql
 $PSQLDB < update/rel_0_7_0.sql
+$PSQLDB < update/rel_0_7_1.sql
+$PSQLDB < update/rel_0_7_4.sql
 
 # load init data
 
@@ -56,7 +58,6 @@ if [ "x$repl" = 'xY' -o "x$repl" = 'xy' -o "x$repl" = 'x' ]; then
 else
   echo "Planet targets skipped."
 fi
-
 
 # grant rights
 
