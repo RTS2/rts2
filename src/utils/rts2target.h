@@ -1,3 +1,22 @@
+/* 
+ * Abstract target class.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_TARGET__
 #define __RTS2_TARGET__
 
@@ -5,6 +24,7 @@
 
 #include <libnova/libnova.h>
 #include <time.h>
+#include <ostream>
 
 #define MAX_COMMAND_LENGTH     2000
 
@@ -64,6 +84,24 @@
 // send message at end of night, with all observations and number of images obtained/processed
 #define SEND_END_NIGHT         0x10
 
+
+/**
+ * Returns mask for target events.
+ *
+ * @param eventMask   Event which will be printed.
+ * @return Character describing event mask.
+ */
+const char *getEventMaskName (int eventMask);
+
+
+/**
+ * Print all registered events to stream.
+ *
+ * @param eventMask  Event mask which will be printed.
+ * @param _os        Stream which will recevive event mask description.
+ */
+void printEventMask (int eventMask, std::ostream & _os);
+
 class Rts2Image;
 
 typedef enum
@@ -79,6 +117,8 @@ typedef enum
 /**
  * This abstract class defines target interface.
  * It's indendet to be used when a target is required.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  *
  * \see Rts2TargetDb, Rts2ScriptTarget
  */
@@ -313,4 +353,5 @@ class Rts2Target
 			strcpy (target_name, in_target_name);
 		}
 };
+
 #endif							 /* !__RTS2_TARGET__ */
