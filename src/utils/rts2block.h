@@ -115,7 +115,7 @@ class Rts2Block: public Rts2App
 		connections_t connections;
 
 		std::list <Rts2Address *> blockAddress;
-		std::list <Rts2User * > blockUsers;
+		std::list <Rts2ConnUser * > blockUsers;
 
 		int masterState;
 
@@ -503,7 +503,7 @@ class Rts2Block: public Rts2App
 
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		void addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login);
-		int addUser (Rts2User * in_user);
+		int addUser (Rts2ConnUser * in_user);
 
 		/**
 		 * Return established connection to device with given name.

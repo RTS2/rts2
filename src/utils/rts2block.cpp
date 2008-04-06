@@ -598,7 +598,7 @@ Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have,
 const char *p_login)
 {
 	int ret;
-	std::list < Rts2User * >::iterator user_iter;
+	std::list < Rts2ConnUser * >::iterator user_iter;
 	for (user_iter = blockUsers.begin (); user_iter != blockUsers.end ();
 		user_iter++)
 	{
@@ -608,12 +608,12 @@ const char *p_login)
 		if (!ret)
 			return;
 	}
-	addUser (new Rts2User (p_centraldId, p_priority, p_priority_have, p_login));
+	addUser (new Rts2ConnUser (p_centraldId, p_priority, p_priority_have, p_login));
 }
 
 
 int
-Rts2Block::addUser (Rts2User * in_user)
+Rts2Block::addUser (Rts2ConnUser * in_user)
 {
 	blockUsers.push_back (in_user);
 	return 0;
