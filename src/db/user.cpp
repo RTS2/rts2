@@ -23,7 +23,8 @@
 class Rts2UserApp:public Rts2AppDb
 {
 	private:
-		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL} op;
+		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL}
+		op;
 		const char *user;
 
 		int listUser ();
@@ -102,6 +103,7 @@ Rts2UserApp::doProcessing ()
 	return -1;
 }
 
+
 Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_argv)
 {
 	op = NOT_SET;
@@ -112,6 +114,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 	addOption ('p', NULL, 1, "set user password");
 	addOption ('e', NULL, 1, "set user email");
 }
+
 
 Rts2UserApp::~Rts2UserApp (void)
 {
