@@ -6,63 +6,63 @@
 #include <libnova/libnova.h>
 #include <time.h>
 
-#define MAX_COMMAND_LENGTH              2000
+#define MAX_COMMAND_LENGTH     2000
 
 // move was executed
-#define OBS_BIT_MOVED   0x01
+#define OBS_BIT_MOVED          0x01
 // observation started - expect some nice images in db
-#define OBS_BIT_STARTED   0x02
+#define OBS_BIT_STARTED        0x02
 // set while in acquisition
-#define OBS_BIT_ACQUSITION  0x04
+#define OBS_BIT_ACQUSITION     0x04
 // when observation was interupted
-#define OBS_BIT_INTERUPED 0x10
+#define OBS_BIT_INTERUPED      0x10
 // when acqusition failed
-#define OBS_BIT_ACQUSITION_FAI  0x20
+#define OBS_BIT_ACQUSITION_FAI 0x20
 // observation was processed
-#define OBS_BIT_PROCESSED 0x40
+#define OBS_BIT_PROCESSED      0x40
 
-#define TARGET_NAME_LEN   150
+#define TARGET_NAME_LEN         150
 
-#define TYPE_UNKNOW   'u'
+#define TYPE_UNKNOW             'u'
 
 #define TYPE_OPORTUNITY         'O'
 #define TYPE_GRB                'G'
-#define TYPE_GRB_TEST   'g'
+#define TYPE_GRB_TEST           'g'
 #define TYPE_SKY_SURVEY         'S'
 #define TYPE_GPS                'P'
 #define TYPE_ELLIPTICAL         'E'
 #define TYPE_HETE               'H'
-#define TYPE_PHOTOMETRIC  'M'
+#define TYPE_PHOTOMETRIC        'M'
 #define TYPE_TECHNICAL          't'
-#define TYPE_TERESTIAL    'T'
-#define TYPE_CALIBRATION  'c'
-#define TYPE_MODEL    'm'
-#define TYPE_PLANET   'L'
+#define TYPE_TERESTIAL          'T'
+#define TYPE_CALIBRATION        'c'
+#define TYPE_MODEL              'm'
+#define TYPE_PLANET             'L'
 
-#define TYPE_SWIFT_FOV    'W'
-#define TYPE_INTEGRAL_FOV 'I'
+#define TYPE_SWIFT_FOV          'W'
+#define TYPE_INTEGRAL_FOV       'I'
 
-#define TYPE_AUGER    'A'
+#define TYPE_AUGER              'A'
 
-#define TYPE_DARK   'd'
-#define TYPE_FLAT   'f'
-#define TYPE_FOCUSING   'o'
+#define TYPE_DARK               'd'
+#define TYPE_FLAT               'f'
+#define TYPE_FOCUSING           'o'
 
-#define TYPE_LANDOLT    'l'
+#define TYPE_LANDOLT            'l'
 
 // master plan target
-#define TYPE_PLAN   'p'
+#define TYPE_PLAN               'p'
 
 // send message when observation stars
-#define SEND_START_OBS    0x01
+#define SEND_START_OBS         0x01
 // send message when first image from given observation get astrometry
-#define SEND_ASTRO_OK   0x02
+#define SEND_ASTRO_OK          0x02
 // send message at the end of observation
-#define SEND_END_OBS    0x04
+#define SEND_END_OBS           0x04
 // send message at end of processing
-#define SEND_END_PROC   0x08
+#define SEND_END_PROC          0x08
 // send message at end of night, with all observations and number of images obtained/processed
-#define SEND_END_NIGHT    0x10
+#define SEND_END_NIGHT         0x10
 
 class Rts2Image;
 
