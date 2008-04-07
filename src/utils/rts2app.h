@@ -132,12 +132,22 @@ class Rts2App:public Rts2Object
 		/**
 		 * Ask user for string.
 		 *
-		 * @param desc     Description.
+		 * @param desc Description.
 		 * @param val  Value typed by user. Also it is default value, used when user only hits enter.
-		 * @param visible  If false, application will display * instead of typed characters. Handy to handle password inputs.
 		 * @return -1 on error, 0 on success.
 		 */
-		int askForString (const char *desc, std::string & val, bool visible = true);
+		int askForString (const char *desc, std::string & val);
+
+		/**
+		 * Ask user for password string.
+		 * Allow user to type password on console, without displaying character
+		 * he/she enters.
+		 *
+		 * @param desc Description.
+		 * @param val  Password value.
+		 * @return -1 on error, 0 on success.
+		 */
+		int askForPassword (const char *desc, std::string & val);
 
 		/**
 		 * Ask user for boolean value. Various entries (YyNn01) are allowed.

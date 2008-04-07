@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <libnova/libnova.h>
 
+#include <termios.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -312,24 +313,42 @@ Rts2App::askForDouble (const char *desc, double &val)
 
 
 int
-Rts2App::askForString (const char *desc, std::string & val, bool visible)
+Rts2App::askForString (const char *desc, std::string & val)
 {
-	char temp[201];
 	while (!getEndLoop ())
 	{
 		std::cout << desc << " [" << val << "]: ";
-		std::cin.getline (temp, 200);
+		std::cin >> val;
 		// use default value
-		if (strlen (temp) == 0)
+		if (val.length () == 0)
 			break;
-		val = std::string (temp);
 		if (!std::cin.fail ())
 			break;
 		std::cout << "Invalid string!" << std::endl;
 		std::cin.clear ();
-		std::cin.ignore (2000, '\n');
+		std::cin.ignore ();
 	}
 	std::cout << desc << ": " << val << std::endl;
+	return 0;
+}
+
+
+int Rts2App::askForPassword (const char *desc, std::string & val)
+{
+	std::cout << desc << ":";
+	struct termios oldt, newt;
+	tcgetattr (STDIN_FILENO, &oldt);
+	newt = oldt;
+
+	// do not echo
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr (STDIN_FILENO, TCSANOW, &newt);
+	std::cin >> val;
+	tcsetattr (STDIN_FILENO, TCSANOW, &oldt);
+
+	std::cin.ignore ();
+	std::cout << std::endl;
+
 	return 0;
 }
 
