@@ -594,8 +594,8 @@ Rts2DevCamera::checkExposures ()
 					break;
 				case -1:
 					maskStateChip (0,
-						DEVICE_ERROR_MASK | CAM_MASK_EXPOSE,
-						DEVICE_ERROR_HW | CAM_NOEXPOSURE,
+						DEVICE_ERROR_MASK | CAM_MASK_EXPOSE | CAM_MASK_READING,
+						DEVICE_ERROR_HW | CAM_NOEXPOSURE | CAM_NOTREADING,
 						BOP_TEL_MOVE, 0,
 						"exposure chip finished with error");
 					stopExposure ();
