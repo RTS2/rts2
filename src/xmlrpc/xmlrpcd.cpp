@@ -22,6 +22,7 @@
 #include "../utilsdb/rts2targetset.h"
 #include "../utilsdb/rts2obsset.h"
 #include "../utilsdb/rts2imgset.h"
+#include "../utilsdb/rts2user.h"
 #include "../writers/rts2imagedb.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
