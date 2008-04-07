@@ -49,11 +49,11 @@ logStream (messageType_t in_messageType)
 }
 
 
-Rts2App::Rts2App (int in_argc, char **in_argv):
+Rts2App::Rts2App (int argc, char **argv):
 Rts2Object ()
 {
-	argc = in_argc;
-	argv = in_argv;
+	app_argc = argc;
+	app_argv = argv;
 
 	end_loop = false;
 
@@ -120,7 +120,7 @@ Rts2App::initOptions ()
 	/* get attrs */
 	while (1)
 	{
-		c = getopt_long (argc, argv, opt_char, long_option, NULL);
+		c = getopt_long (app_argc, app_argv, opt_char, long_option, NULL);
 
 		if (c == -1)
 			break;
@@ -135,12 +135,12 @@ Rts2App::initOptions ()
 
 	delete[]opt_char;
 
-	while (optind < argc)
+	while (optind < app_argc)
 	{
-		ret = processArgs (argv[optind]);
+		ret = processArgs (app_argv[optind]);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Error processing arg " << argv[optind]
+			logStream (MESSAGE_ERROR) << "Error processing arg " << app_argv[optind]
 				<< sendLog;
 			return ret;
 		}
@@ -312,7 +312,7 @@ Rts2App::askForDouble (const char *desc, double &val)
 
 
 int
-Rts2App::askForString (const char *desc, std::string & val)
+Rts2App::askForString (const char *desc, std::string & val, bool visible)
 {
 	char temp[201];
 	while (!getEndLoop ())

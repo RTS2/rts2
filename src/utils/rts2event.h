@@ -20,6 +20,8 @@
 #ifndef __RTS2_EVENT__
 #define __RTS2_EVENT__
 
+#include <string>
+
 #define EVENT_WRITE_TO_IMAGE        2
 #define EVENT_WRITE_TO_IMAGE_ENDS  13
 #define EVENT_SET_TARGET            3
@@ -65,36 +67,69 @@
 // rts2loggerbase.h        800-849
 // rts2soapclient.h       1000-1200
 
+/**
+ * Event class.
+ *
+ * This class defines event, which is passed by Rts2Object::postEvent through all
+ * classes in RTS2.
+ * 
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2Event
 {
 	private:
 		int type;
 		void *arg;
 	public:
-		Rts2Event (int in_type)
-		{
-			type = in_type;
-			arg = 0;
-		}
-		Rts2Event (int in_type, void *in_arg)
+		/**
+		 * Construct event.
+		 *
+		 * @param in_type Event type.
+		 * @param in_arg  Optional pointer to event argument.
+		 */
+		Rts2Event (int in_type, void *in_arg = NULL)
 		{
 			type = in_type;
 			arg = in_arg;
 		}
+
+		/**
+		 * Copy constructor to construct event from the
+		 * same event.
+		 *
+		 * @param event  Event which will be copied.
+		 */
 		Rts2Event (Rts2Event * event)
 		{
 			type = event->getType ();
 			arg = event->getArg ();
 		}
 
+		/**
+		 * Return event type.
+		 *
+		 * @return Event type.
+		 */
 		int getType ()
 		{
 			return type;
 		}
+
+		/**
+		 * Return event argument.
+		 *
+		 * @return Event argument.
+		 */
 		void *getArg ()
 		{
 			return arg;
 		}
+
+		/**
+		 * Set event argument.
+		 *
+		 * @param in_arg New event argument.
+		 */
 		void setArg (void *in_arg)
 		{
 			arg = in_arg;
