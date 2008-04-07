@@ -96,7 +96,7 @@ Rts2UserApp::newUser ()
 	std::string email;
 
 	int ret;
-	ret = askForString ("User password", passwd);
+	ret = askForPassword ("User password", passwd);
 	if (ret)
 		return ret;
 	ret = askForString ("User email (can be left empty)", email);
