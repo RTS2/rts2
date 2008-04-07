@@ -1,5 +1,3 @@
-# $Id$
-
 bin_PROGRAMS = rts2-grbforward
 
 noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2grbexecconn.h rts2connshooter.h augershooter.h
