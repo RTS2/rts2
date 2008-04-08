@@ -232,6 +232,9 @@ Rts2UserApp::addNewType ()
 			case '4':
 				flags ^= 0x08;
 				break;
+			case '5':
+				flags ^= 0x10;
+				break;
 			case 'q':
 				return 0;
 			case 's':
@@ -309,6 +312,9 @@ Rts2UserApp::editType ()
 				break;
 			case '4':
 				eventMask ^= 0x08;
+				break;
+			case '5':
+				eventMask ^= 0x10;
 				break;
 			case 'q':
 				return 0;
