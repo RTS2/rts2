@@ -20,6 +20,9 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2userset.h"
 
+#include "../utils/rts2askchoice.h"
+#include "../utils/rts2target.h"
+
 /**
  * Application for user management.
  *
@@ -28,14 +31,24 @@
 class Rts2UserApp:public Rts2AppDb
 {
 	private:
-		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL}
+		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
 		op;
 		const char *user;
+		Rts2User r2user;
 
 		int listUser ();
 		int newUser ();
 		int userPassword ();
 		int userEmail ();
+		int typesEmail ();
+
+		// menu for flags informations
+		Rts2AskChoice *flagsChoice;
+
+		// type actions
+		int addNewType ();
+		int removeType ();
+		int editType ();
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int doProcessing ();
@@ -53,6 +66,7 @@ Rts2UserApp::processOption (int in_opt)
 		case 'a':
 		case 'p':
 		case 'e':
+		case 'm':
 			if (op != NOT_SET)
 			{
 				std::cerr << "Cannot specify two operations together" << std::endl;
@@ -74,6 +88,10 @@ Rts2UserApp::processOption (int in_opt)
 				case 'e':
 					user = optarg;
 					op = USER_EMAIL;
+					break;
+				case 'm':
+					user = optarg;
+					op = TYPES_EMAIL;
 					break;
 			}
 			return 0;
@@ -115,7 +133,6 @@ Rts2UserApp::userPassword ()
 
 	int ret;
 
-	Rts2User r2user = Rts2User ();
 	ret = r2user.load (user);
 	if (ret)
 		return ret;
@@ -134,7 +151,6 @@ Rts2UserApp::userEmail ()
 
 	int ret;
 
-	Rts2User r2user = Rts2User ();
 	ret = r2user.load (user);
 	if (ret)
 		return ret;
@@ -144,6 +160,99 @@ Rts2UserApp::userEmail ()
 		return ret;
 	
 	return r2user.setEmail (email);
+}
+
+
+int
+Rts2UserApp::typesEmail ()
+{
+	Rts2AskChoice typeChoice = Rts2AskChoice (this);
+	typeChoice.addChoice ('a', "Add triggers for new type");
+	typeChoice.addChoice ('r', "Remove triggers for a target type");
+	typeChoice.addChoice ('e', "Edit triggers for a target type");
+	typeChoice.addChoice ('q', "Quit");
+
+	int ret;
+
+	ret = r2user.load (user);
+	if (ret)
+		return ret;
+
+	// display user..
+	std::cout << r2user;
+
+	while (true)
+	{
+		char rkey = typeChoice.query (std::cout);
+		switch (rkey)
+		{
+			case 'a':
+				addNewType ();
+				break;
+			case 'r':
+				removeType ();
+				break;
+			case 'e':
+				editType ();
+				break;
+			case 'q':
+				return 0;
+		}
+	}
+}
+
+
+int
+Rts2UserApp::addNewType ()
+{
+	char type;
+	if (askForChr ("Please enter a type", type))
+		return -1;
+	
+	char flagKey = '\0';
+	
+	// selected flags
+	int flags = 0x05;
+
+	while (flagKey != 'q')
+	{
+	  	std::cout << "Current mask: ";
+		printEventMask (flags, std::cout);
+		std::cout << std::endl;
+
+		flagKey = flagsChoice->query (std::cout);
+		switch (flagKey)
+		{
+			case '1':
+				flags ^= 0x01;
+				break;
+			case '2':
+				flags ^= 0x02;
+				break;
+			case '3':
+				flags ^= 0x04;
+				break;
+			case '4':
+				flags ^= 0x08;
+				break;
+		}
+	}
+
+	return r2user.addNewTypeFlags (type, flags);
+}
+
+
+int
+Rts2UserApp::removeType ()
+{
+	return -1;
+}
+
+
+int
+Rts2UserApp::editType ()
+{
+	return -1;
 }
 
 
@@ -163,6 +272,8 @@ Rts2UserApp::doProcessing ()
 			return userPassword ();
 		case USER_EMAIL:
 			return userEmail ();
+		case TYPES_EMAIL:
+			return typesEmail ();
 	}
 	return -1;
 }
@@ -173,15 +284,29 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 	op = NOT_SET;
 	user = NULL;
 
+	r2user = Rts2User ();
+
+	// construct menu for flags solution
+	flagsChoice = new Rts2AskChoice (this);
+	flagsChoice->addChoice ('1', "send at start of observation");
+	flagsChoice->addChoice ('2', "send when first image receives astrometry");
+	flagsChoice->addChoice ('3', "send when observation finishes");
+	flagsChoice->addChoice ('4', "send when observation is processed");
+	flagsChoice->addChoice ('5', "send at the end of night");
+
+	flagsChoice->addChoice ('q', "quit");
+
 	addOption ('l', NULL, 0, "list user stored in the database");
 	addOption ('a', NULL, 1, "add new user");
 	addOption ('p', NULL, 1, "set user password");
 	addOption ('e', NULL, 1, "set user email");
+	addOption ('m', NULL, 1, "edit user mailing preferences");
 }
 
 
 Rts2UserApp::~Rts2UserApp (void)
 {
+	delete flagsChoice;
 }
 
 
