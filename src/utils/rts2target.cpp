@@ -62,6 +62,14 @@ void printEventMask (int eventMask, std::ostream & _os)
 			printed = true;
 		_os << getEventMaskName (SEND_END_OBS);
 	}
+	if (eventMask & SEND_END_PROC)
+	{
+		if (printed)
+			_os << " ";
+		else
+			printed = true;
+		_os << getEventMaskName (SEND_END_PROC);
+	}
 	if (eventMask & SEND_END_NIGHT)
 	{
 		if (printed)
