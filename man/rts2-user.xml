@@ -79,6 +79,9 @@
       <arg choice="opt">
         <arg choice="plain"><option>-e <replaceable class="parameter">user name</replaceable></option></arg>
       </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-m <replaceable class="parameter">user name</replaceable></option></arg>
+      </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -156,6 +159,15 @@
         <listitem>
           <para>
 	    Set new user email. You will be asked for the email.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-m <replaceable class="parameter">user_login</replaceable></option></term>
+        <listitem>
+          <para>
+	    Edit user mailing preferences. You will be presented with menu, which will allows you to
+	    add, remove or edit user mailing preferences.
 	  </para>
         </listitem>
       </varlistentry>
