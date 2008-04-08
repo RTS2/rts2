@@ -51,6 +51,17 @@ class Rts2TypeUserSet: public std::list <Rts2TypeUser>
 		 */
 		Rts2TypeUserSet (int usr_id);
 		~Rts2TypeUserSet (void);
+
+		/**
+		 * Add to user new entry about which events he/she
+		 * should receive from given observation.
+		 *
+		 * @param id    User id.
+		 * @param type  Target type.
+		 * @param flags Event flags (when to trigger the event).
+		 * @return -1 on error, 0 on success.
+		 */
+		int addNewTypeFlags (int id, char type, int flags);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usr);
@@ -121,13 +132,25 @@ class Rts2User
 		int setEmail (std::string newEmail);
 
 		/**
+		 * Add to user new entry about which events he/she
+		 * should receive from given observation.
+		 *
+		 * @param type  Target type.
+		 * @param flags Event flags (when to trigger the event).
+		 * @return -1 on error, 0 on success.
+		 */
+		int addNewTypeFlags (char type, int flags)
+		{
+			return types->addNewTypeFlags (id, type, flags);
+		}
+
+		/**
 		 * Prints Rts2User object to a stream.
 		 *
 		 * @param _os  Stream to which object will be printed.
 		 * @param user User which will be printed.
 		 * @return Stream with printed user.
 		 */
-
 		friend std::ostream & operator << (std::ostream & _os, Rts2User & user);
 };
 

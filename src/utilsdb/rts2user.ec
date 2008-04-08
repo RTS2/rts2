@@ -50,9 +50,9 @@ int
 Rts2TypeUserSet::load (int usr_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_usr_id = usr_id;
-		char db_type;
-		int db_eventMask;
+	int db_usr_id = usr_id;
+	char db_type;
+	int db_eventMask;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL BEGIN TRANSACTION;
@@ -94,17 +94,52 @@ Rts2TypeUserSet::Rts2TypeUserSet (int usr_id)
 }
 
 
+Rts2TypeUserSet::~Rts2TypeUserSet (void)
+{
+
+}
+
+
+int
+Rts2TypeUserSet::addNewTypeFlags (int id, char type, int flags)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+        char db_type_id = type;
+	int db_usr_id = id;
+	int db_event_mask = flags;
+	EXEC SQL END DECLARE SECTION;
+	
+	EXEC SQL INSERT INTO type_users
+	(	
+		type_id,
+		usr_id,
+		event_mask
+	)
+	VALUES (
+		:db_type_id,
+		:db_usr_id,
+		:db_event_mask
+	);
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "cannot insert event trigger record " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+
+	push_back (Rts2TypeUser (type, flags));
+
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usrSet)
 {
 	for (Rts2TypeUserSet::iterator iter = usrSet.begin (); iter != usrSet.end (); iter++)
 		_os << "   - " << (*iter);
 	return _os;
-}
-
-
-Rts2TypeUserSet::~Rts2TypeUserSet (void)
-{
-
 }
 
 
