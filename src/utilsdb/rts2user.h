@@ -71,7 +71,15 @@ class Rts2User
 
 	public:
 		/**
+		 * Construct empty user object.
+		 * You should call some load method to load data from database.
+		 */
+		Rts2User ();
+
+		/**
 		 * Construct user from database entry.
+		 * This constructor is passed all user entries. It does not extract any
+		 * information from the database.
 		 *
 		 * @param in_id     User ID.
 		 * @param in_login  User login.
@@ -81,11 +89,44 @@ class Rts2User
 		~Rts2User (void);
 
 		/**
+		 * Load user entry from the database.
+		 *
+		 * @param in_login User login.
+		 * @return -1 on error, 0 on succes.
+		 */
+		int load (const char * in_login);
+
+		/**
 		 * Load types which belongs to given user id.
 		 *
 		 * @return -1 on error, 0 on sucess.
 		 */
 		int loadTypes ();
+
+		/**
+		 * Sets user password.
+		 *
+		 * @param newPass  New user password.
+		 * @return -1 on error, 0 on success.
+		 */
+		int setPassword (std::string newPass);
+
+
+		/**
+		 * Sets user email.
+		 *
+		 * @param newEmail New user email.
+		 * @return -1 on error, 0 on succes.
+		 */
+		int setEmail (std::string newEmail);
+
+		/**
+		 * Prints Rts2User object to a stream.
+		 *
+		 * @param _os  Stream to which object will be printed.
+		 * @param user User which will be printed.
+		 * @return Stream with printed user.
+		 */
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2User & user);
 };

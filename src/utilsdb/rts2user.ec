@@ -108,12 +108,10 @@ Rts2TypeUserSet::~Rts2TypeUserSet (void)
 }
 
 
-int
-Rts2User::loadTypes ()
+Rts2User::Rts2User ()
 {
-	delete types;
-	types = new Rts2TypeUserSet (id);
-	return 0;
+ 	id = -1;
+	types = NULL;
 }
 
 
@@ -130,6 +128,138 @@ Rts2User::Rts2User (int in_id, std::string in_login, std::string in_email)
 Rts2User::~Rts2User (void)
 {
 	delete types;
+}
+
+
+int
+Rts2User::load (const char * in_login)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_id;
+	VARCHAR db_login[25];
+	VARCHAR db_email[200];
+	EXEC SQL END DECLARE SECTION;
+
+	if (strlen (in_login) > 25)
+	{
+		logStream (MESSAGE_ERROR) << "login string '" << in_login << "' too long." << sendLog;
+		return -1;
+	}
+
+	strcpy (db_login.arr, in_login);
+	db_login.len = strlen (in_login);
+
+	EXEC SQL SELECT
+		usr_id,
+		usr_email
+	INTO
+		:db_id,
+		:db_email
+	FROM
+		users
+	WHERE
+		usr_login = :db_login;
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find user with login " << in_login << "." << sendLog;
+		id = -1;
+		return -1;
+	}
+	id = db_id;
+	login = std::string (in_login);
+	email = std::string (db_email.arr);
+
+	return loadTypes ();
+}
+
+
+int
+Rts2User::loadTypes ()
+{
+	delete types;
+	types = new Rts2TypeUserSet (id);
+	return 0;
+}
+
+
+int
+Rts2User::setPassword (std::string newPass)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR db_login[25];
+	VARCHAR db_passwd[25];
+	EXEC SQL END DECLARE SECTION;
+
+	strncpy (db_login.arr, login.c_str (), 25);
+	db_login.len = login.length ();
+
+	if (newPass.length () > 25)
+	{
+		logStream (MESSAGE_ERROR) << "too long password" << sendLog;
+		return -1;
+	}
+
+	strncpy (db_passwd.arr, newPass.c_str (), 25);
+	db_passwd.len = newPass.length ();
+
+	EXEC SQL UPDATE
+		users
+	SET
+		usr_passwd = :db_passwd
+	WHERE
+		usr_login = :db_login;
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "error updating password " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+
+	EXEC SQL COMMIT;
+
+	return 0;
+}
+
+
+int
+Rts2User::setEmail (std::string newEmail)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR db_login[25];
+	VARCHAR db_email[200];
+	EXEC SQL END DECLARE SECTION;
+
+	strncpy (db_login.arr, login.c_str (), 25);
+	db_login.len = login.length ();
+
+	if (newEmail.length () > 200)
+	{
+		logStream (MESSAGE_ERROR) << "too long email" << sendLog;
+		return -1;
+	}
+
+	strncpy (db_email.arr, newEmail.c_str (), 25);
+	db_email.len = newEmail.length ();
+
+	EXEC SQL UPDATE
+		users
+	SET
+		usr_email = :db_email
+	WHERE
+		usr_login = :db_login;
+
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "error updating email " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+
+	EXEC SQL COMMIT;
+
+	return 0;
 }
 
 
