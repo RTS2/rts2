@@ -209,8 +209,6 @@ Rts2UserApp::addNewType ()
 	if (askForChr ("Please enter a type", type))
 		return -1;
 	
-	char flagKey = '\0';
-	
 	// selected flags
 	int flags = 0x05;
 
@@ -220,8 +218,7 @@ Rts2UserApp::addNewType ()
 		printEventMask (flags, std::cout);
 		std::cout << std::endl;
 
-		flagKey = flagsChoice->query (std::cout);
-		switch (flagKey)
+		switch (flagsChoice->query (std::cout))
 		{
 			case '1':
 				flags ^= 0x01;
@@ -247,13 +244,79 @@ Rts2UserApp::addNewType ()
 int
 Rts2UserApp::removeType ()
 {
-	return -1;
+	int ret;
+
+	ret = r2user.load (user);
+	if (ret)
+		return ret;
+
+	std::cout << r2user;
+
+	// let's user decide which type he would likt to remove
+	char type;
+	if (askForChr ("Enter type which you would like to remove", type))
+		return -1;
+	
+	return r2user.removeType (type);
 }
 
 
 int
 Rts2UserApp::editType ()
 {
+	int ret;
+
+	ret = r2user.load (user);
+	if (ret)
+		return ret;
+
+	std::cout << r2user;
+
+	// let's user decide which type he would likt to remove
+	char type;
+	if (askForChr ("Enter type which you would like to remove", type))
+		return -1;
+
+	Rts2TypeUser *typeUser;
+	
+	// selected flags
+	typeUser = r2user.getFlags (type);
+
+	if (typeUser == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot find entry for type " << type << sendLog;
+		return -1;
+	}
+
+	int eventMask = typeUser->getEventMask ();
+
+	while (true)
+	{
+	  	std::cout << "Current mask: ";
+		printEventMask (eventMask, std::cout);
+		std::cout << std::endl;
+
+		switch (flagsChoice->query (std::cout))
+		{
+			case '1':
+				eventMask ^= 0x01;
+				break;
+			case '2':
+				eventMask ^= 0x02;
+				break;
+			case '3':
+				eventMask ^= 0x04;
+				break;
+			case '4':
+				eventMask ^= 0x08;
+				break;
+			case 'q':
+				return 0;
+			case 's':
+				return typeUser->updateFlags (r2user.getUserId (), eventMask);
+		}
+	}
+
 	return -1;
 }
 
