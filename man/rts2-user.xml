@@ -126,6 +126,39 @@
           <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>-l</option></term>
+        <listitem>
+          <para>
+	    List user in database. List is formated, and contains both user information, followed by
+	    informations on subsribed target types and events user receives from this targets observations.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-a <replaceable class="parameter">user_login</replaceable></option></term>
+        <listitem>
+          <para>
+	    Add user to database. You will be asked to enter user email and user password.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-p <replaceable class="parameter">user_login</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set new user password. You will be asked for the password.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-e <replaceable class="parameter">user_login</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set new user email. You will be asked for the email.
+	  </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
 
   </refsect1>
@@ -140,10 +173,6 @@
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>1</manvolnum>
-      </citerefentry>
-      <citerefentry>
-        <refentrytitle>rts2.ini</refentrytitle>
-	<manvolnum>5</manvolnum>
       </citerefentry>
     </para>
 
