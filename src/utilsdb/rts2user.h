@@ -26,6 +26,8 @@
 
 /**
  * Represents type which user have subscribed for receiving events.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2TypeUser
 {
@@ -33,8 +35,40 @@ class Rts2TypeUser
 		char type;
 		int eventMask;
 	public:
-		Rts2TypeUser (char type, int eventMask);
+		Rts2TypeUser (char type, int event_mask);
 		~Rts2TypeUser (void);
+
+		/**
+		 * Return event mask for this entry.
+		 *
+		 * @return Event mask for this entry.
+		 */
+		int getEventMask ()
+		{
+			return eventMask;
+		}
+
+		/**
+		 * Check if this entry represents given observation type.
+		 *
+		 * @param in_type Type which will be checked.
+		 * @return True if in_type == type.
+		 */
+		bool isType (char in_type)
+		{
+			return type == in_type;
+		}
+
+		/**
+		 * Update flags associate with this observation type and
+		 * specified user id.
+		 *
+		 * @param id       User ID which entry will be updated.
+		 * @param newFlags New event_mask.
+		 * @return -1 on error, 0 on success.
+		 */
+		int updateFlags (int id, int newFlags);
+
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr);
 };
@@ -53,6 +87,14 @@ class Rts2TypeUserSet: public std::list <Rts2TypeUser>
 		~Rts2TypeUserSet (void);
 
 		/**
+		 * Return Rts2TypeUser entry for given observation type.
+		 *
+		 * @param type Observation type.
+		 * @return Pointer to Rts2TypeUser object holding type flags, or NULL if type flags cannot be find.
+		 */
+		Rts2TypeUser *getFlags (char type);
+
+		/**
 		 * Add to user new entry about which events he/she
 		 * should receive from given observation.
 		 *
@@ -62,6 +104,15 @@ class Rts2TypeUserSet: public std::list <Rts2TypeUser>
 		 * @return -1 on error, 0 on success.
 		 */
 		int addNewTypeFlags (int id, char type, int flags);
+
+		/**
+		 * Remove type reaction for an user.
+		 *
+		 * @param id User ID for which type will be removed.
+		 * @param type Type id which will be removed.
+		 * @return -1 on error, 0 on sucess.
+		 */
+		int removeType (int id, char type);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usr);
@@ -100,6 +151,16 @@ class Rts2User
 		~Rts2User (void);
 
 		/**
+		 * Return user ID.
+		 *
+		 * @return User ID.
+		 */
+		int getUserId ()
+		{
+			return id;
+		}
+
+		/**
 		 * Load user entry from the database.
 		 *
 		 * @param in_login User login.
@@ -113,6 +174,17 @@ class Rts2User
 		 * @return -1 on error, 0 on sucess.
 		 */
 		int loadTypes ();
+
+		/**
+		 * Return Rts2TypeUser entry for given observation type.
+		 *
+		 * @param type Observation type.
+		 * @return Pointer to Rts2TypeUser object holding type flags, or NULL if type flags cannot be find.
+		 */
+		Rts2TypeUser *getFlags (char type)
+		{
+			return types->getFlags (type);
+		}
 
 		/**
 		 * Sets user password.
@@ -143,6 +215,18 @@ class Rts2User
 		{
 			return types->addNewTypeFlags (id, type, flags);
 		}
+
+		/**
+		 * Remove type reaction for this user.
+		 *
+		 * @param type Type id which will be removed.
+		 * @return -1 on error, 0 on sucess.
+		 */
+		int removeType (int type)
+		{
+			return types->removeType (id, type);
+		}
+
 
 		/**
 		 * Prints Rts2User object to a stream.

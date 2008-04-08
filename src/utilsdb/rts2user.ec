@@ -36,6 +36,38 @@ Rts2TypeUser::~Rts2TypeUser (void)
 }
 
 
+int
+Rts2TypeUser::updateFlags (int id, int newFlags)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_id = id;
+	char db_type = type;
+	int db_eventMask = newFlags;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL UPDATE
+		type_users
+	SET
+		event_mask = :db_eventMask
+	WHERE
+		usr_id = :db_id AND type_id = :db_type;
+	
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "error while updating flags for user " << id
+			<< " and type " << type 
+			<< " :" << sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+
+	eventMask = newFlags;
+
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr)
 {
 	_os << usr.type << " "
@@ -100,6 +132,18 @@ Rts2TypeUserSet::~Rts2TypeUserSet (void)
 }
 
 
+Rts2TypeUser *
+Rts2TypeUserSet::getFlags (char type)
+{
+	for (Rts2TypeUserSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter).isType (type))
+			return &(*iter);
+	}
+	return NULL;
+}
+
+
 int
 Rts2TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 {
@@ -129,6 +173,32 @@ Rts2TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 	}
 
 	push_back (Rts2TypeUser (type, flags));
+
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
+int
+Rts2TypeUserSet::removeType (int id, char type)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_id = id;
+	char db_type = type;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DELETE FROM
+		type_users
+	WHERE
+		type_id = :db_type AND usr_id = :db_id;
+	
+	if (sqlca.sqlcode)
+	{
+		logStream (MESSAGE_ERROR) << "error while removing user " << id 
+			<< " and type " << type << "." << sendLog;
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
 
 	EXEC SQL COMMIT;
 	return 0;
