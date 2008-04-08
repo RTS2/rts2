@@ -178,11 +178,11 @@ Rts2UserApp::typesEmail ()
 	if (ret)
 		return ret;
 
-	// display user..
-	std::cout << r2user;
-
 	while (true)
 	{
+		// display user..
+		std::cout << r2user;
+
 		char rkey = typeChoice.query (std::cout);
 		switch (rkey)
 		{
@@ -214,7 +214,7 @@ Rts2UserApp::addNewType ()
 	// selected flags
 	int flags = 0x05;
 
-	while (flagKey != 'q')
+	while (true)
 	{
 	  	std::cout << "Current mask: ";
 		printEventMask (flags, std::cout);
@@ -235,10 +235,12 @@ Rts2UserApp::addNewType ()
 			case '4':
 				flags ^= 0x08;
 				break;
+			case 'q':
+				return 0;
+			case 's':
+				return r2user.addNewTypeFlags (type, flags);
 		}
 	}
-
-	return r2user.addNewTypeFlags (type, flags);
 }
 
 
@@ -294,6 +296,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 	flagsChoice->addChoice ('4', "send when observation is processed");
 	flagsChoice->addChoice ('5', "send at the end of night");
 
+	flagsChoice->addChoice ('s', "save");
 	flagsChoice->addChoice ('q', "quit");
 
 	addOption ('l', NULL, 0, "list user stored in the database");
