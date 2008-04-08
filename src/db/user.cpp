@@ -34,6 +34,8 @@ class Rts2UserApp:public Rts2AppDb
 
 		int listUser ();
 		int newUser ();
+		int userPassword ();
+		int userEmail ();
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int doProcessing ();
@@ -105,6 +107,46 @@ Rts2UserApp::newUser ()
 	return createUser (std::string (user), passwd, email);
 }
 
+
+int
+Rts2UserApp::userPassword ()
+{
+	std::string passwd;
+
+	int ret;
+
+	Rts2User r2user = Rts2User ();
+	ret = r2user.load (user);
+	if (ret)
+		return ret;
+	
+	ret = askForPassword ("New user password", passwd);
+	if (ret)
+		return ret;
+	return r2user.setPassword (passwd);
+}
+
+
+int
+Rts2UserApp::userEmail ()
+{
+	std::string email;
+
+	int ret;
+
+	Rts2User r2user = Rts2User ();
+	ret = r2user.load (user);
+	if (ret)
+		return ret;
+
+	ret = askForString ("New user email", email);
+	if (ret)
+		return ret;
+	
+	return r2user.setEmail (email);
+}
+
+
 int
 Rts2UserApp::doProcessing ()
 {
@@ -118,9 +160,9 @@ Rts2UserApp::doProcessing ()
 		case NEW_USER:
 			return newUser ();
 		case USER_PASSWORD:
-			break;
+			return userPassword ();
 		case USER_EMAIL:
-			break;
+			return userEmail ();
 	}
 	return -1;
 }
