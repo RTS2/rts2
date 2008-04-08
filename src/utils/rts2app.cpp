@@ -391,7 +391,7 @@ int
 Rts2App::askForChr (const char *desc, char &out)
 {
 	char temp[201];
-	std::cout << desc;
+	std::cout << desc << ":";
 	std::cin.getline (temp, 200);
 	out = *temp;
 	return 0;
