@@ -29,6 +29,8 @@ const char *getEventMaskName (int eventMask)
 			return "IMAGE_OK";
 		case SEND_END_OBS:
 			return "END_OBS";
+		case SEND_END_PROC:
+			return "END_PROC";
 		case SEND_END_NIGHT:
 			return "END_NIGHT";
 	}
