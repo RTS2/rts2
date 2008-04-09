@@ -66,6 +66,9 @@ class Rts2DevTelD50:public TelFork
 		Rts2ValueInteger *velRa;
 		Rts2ValueInteger *velDec;
 
+		Rts2ValueInteger *accRa;
+		Rts2ValueInteger *accDec;
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -276,7 +279,8 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 	decZero = 0;
 
 	haCpd = 21333.333;
-	decCpd = 17777.778;
+	//decCpd = 17777.778;
+	decCpd = 8100;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
@@ -298,8 +302,8 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 
 	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
 
-	createValue (unitRa, "axis_ra", "RA axis raw counts", false);
-	createValue (unitDec, "axis_dec", "DEC axis raw counts", false);
+	createValue (unitRa, "AXRA", "RA axis raw counts", true);
+	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
 
 	createValue (procRa, "proc_ra", "state for RA processor", false, RTS2_DT_HEX);
 	createValue (procDec, "proc_dec", "state for DEC processor", false, RTS2_DT_HEX);
@@ -309,6 +313,12 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 
 	velRa->setValueInteger (50);
 	velDec->setValueInteger (50);
+
+	createValue (accRa, "acc_ra", "RA acceleration", false);
+	createValue (accDec, "acc_dec", "DEC acceleration", false);
+
+	accRa->setValueInteger (15);
+	accDec->setValueInteger (15);
 
 	// apply all correction for paramount
 	correctionsMask->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
@@ -364,7 +374,7 @@ Rts2DevTelD50::init ()
 
 	// zero dec is on local meridian, 90 - telLatitude bellow (to nadir)
 	decZero = 90 - fabs (telLatitude->getValueDouble ());
-	if (telLatitude > 0)
+	if (telLatitude->getValueDouble () > 0)
 		decZero *= -1;
 								 // south hemispehere
 	if (telLatitude->getValueDouble () < 0)
@@ -480,6 +490,16 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return tel_write_unit (2, 'v',
 			new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
+	if (old_value == accRa)
+	{
+		return tel_write_unit (1, 'a',
+			new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == accDec)
+	{
+		return tel_write_unit (2, 'a',
+			new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
 
 	return TelFork::setValue (old_value, new_value);
 }
@@ -527,7 +547,7 @@ Rts2DevTelD50::startMove ()
 	if (ret)
 		return ret;
 
-	ret = tel_write_unit (2, 't', -1 * dc);
+	ret = tel_write_unit (2, 't', dc);
 	if (ret)
 		return ret;
 	ret = tel_write_char ('g');
