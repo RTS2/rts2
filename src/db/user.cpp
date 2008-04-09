@@ -178,7 +178,7 @@ Rts2UserApp::typesEmail ()
 	if (ret)
 		return ret;
 
-	while (true)
+	while (!getEndLoop ())
 	{
 		// display user..
 		std::cout << r2user;
@@ -199,6 +199,7 @@ Rts2UserApp::typesEmail ()
 				return 0;
 		}
 	}
+	return -1;
 }
 
 
@@ -212,7 +213,7 @@ Rts2UserApp::addNewType ()
 	// selected flags
 	int flags = 0x05;
 
-	while (true)
+	while (!getEndLoop ())
 	{
 	  	std::cout << "Current mask: ";
 		printEventMask (flags, std::cout);
@@ -241,6 +242,7 @@ Rts2UserApp::addNewType ()
 				return r2user.addNewTypeFlags (type, flags);
 		}
 	}
+	return -1;
 }
 
 
@@ -277,7 +279,7 @@ Rts2UserApp::editType ()
 
 	// let's user decide which type he would likt to remove
 	char type;
-	if (askForChr ("Enter type which you would like to remove", type))
+	if (askForChr ("Enter type which you would like to edit", type))
 		return -1;
 
 	Rts2TypeUser *typeUser;
@@ -293,7 +295,7 @@ Rts2UserApp::editType ()
 
 	int eventMask = typeUser->getEventMask ();
 
-	while (true)
+	while (!getEndLoop ())
 	{
 	  	std::cout << "Current mask: ";
 		printEventMask (eventMask, std::cout);
