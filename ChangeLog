@@ -1,5 +1,6 @@
 2008-04-09
  * rts2-user finished
+ * fix in rts2app.cpp (exit and eof handling)
 
 2008-04-06
  * added rts2-user command (user management)
