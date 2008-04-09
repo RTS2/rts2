@@ -278,7 +278,8 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 	haZero = 0;
 	decZero = 0;
 
-	haCpd = 21333.333;
+	//haCpd = 21333.333;
+	haCpd = 10000;
 	//decCpd = 17777.778;
 	decCpd = 8100;
 
