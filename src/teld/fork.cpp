@@ -73,11 +73,7 @@ TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	if (telLatitude->getValueDouble () < 0)
 		dec *= -1;
 
-	dec = decZero + dec;
-	if (dec > 90)
-		dec = 180 - dec;
-	if (dec < -90)
-		dec = -180 - dec;
+	dec = dec - decZero;
 
 	// convert to ac; ra now holds HA
 	ac = (int32_t) ((ra + haZero) * haCpd);
@@ -164,7 +160,7 @@ TelFork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	ac += homeOff;
 
 	ra = (double) (ac / haCpd) - haZero;
-	dec = (double) (dc / decCpd) - decZero;
+	dec = (double) (dc / decCpd) + decZero;
 
 	ra = lst - ra;
 
