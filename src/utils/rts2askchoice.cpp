@@ -53,6 +53,7 @@ Rts2AskChoice::query (std::ostream & _os)
 	{
 		_os << (*iter);
 	}
-	app->askForChr ("Your selection?", selection);
+	if (app->askForChr ("Your selection", selection))
+		return '\0';
 	return selection;
 }

@@ -272,6 +272,11 @@ Rts2App::askForInt (const char *desc, int &val)
 			std::cout << val;
 		std::cout << "]: ";
 		std::cin.getline (temp, 200);
+		if (std::cin.eof ())
+		{
+			setEndLoop ();
+			return -1;
+		}
 		std::string str_val (temp);
 		if (str_val.empty ())
 			break;
@@ -296,6 +301,11 @@ Rts2App::askForDouble (const char *desc, double &val)
 	{
 		std::cout << desc << " [" << val << "]: ";
 		std::cin.getline (temp, 200);
+		if (std::cin.eof ())
+		{
+			setEndLoop ();
+			return -1;
+		}
 		std::string str_val (temp);
 		if (str_val.empty ())
 			break;
@@ -319,6 +329,11 @@ Rts2App::askForString (const char *desc, std::string & val)
 	{
 		std::cout << desc << " [" << val << "]: ";
 		std::cin >> val;
+		if (std::cin.eof ())
+		{
+			setEndLoop ();
+			return -1;
+		}
 		// use default value
 		if (val.length () == 0)
 			break;
@@ -344,6 +359,13 @@ int Rts2App::askForPassword (const char *desc, std::string & val)
 	newt.c_lflag &= ~(ICANON | ECHO);
 	tcsetattr (STDIN_FILENO, TCSANOW, &newt);
 	std::cin >> val;
+
+	if (std::cin.eof ())
+	{
+		setEndLoop ();
+		return -1;
+	}
+
 	tcsetattr (STDIN_FILENO, TCSANOW, &oldt);
 
 	std::cin.ignore ();
@@ -355,12 +377,16 @@ int Rts2App::askForPassword (const char *desc, std::string & val)
 
 bool Rts2App::askForBoolean (const char *desc, bool val)
 {
-	char
-		temp[20];
+	char temp[20];
 	while (!getEndLoop ())
 	{
 		std::cout << desc << " (y/n) [" << (val ? "y" : "n") << "]: ";
 		std::cin.getline (temp, 20);
+		if (std::cin.eof ())
+		{
+			setEndLoop ();
+			return -1;
+		}
 		// use default value
 		if (strlen (temp) == 0)
 			break;
@@ -393,6 +419,13 @@ Rts2App::askForChr (const char *desc, char &out)
 	char temp[201];
 	std::cout << desc << ":";
 	std::cin.getline (temp, 200);
+	if (std::cin.eof ())
+	{
+		setEndLoop ();
+		return -1;
+	}
+	if (std::cin.fail ())
+		return -1;
 	out = *temp;
 	return 0;
 }
@@ -416,8 +449,7 @@ Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
 
 Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
-	Rts2LogStream
-		ls (this, in_messageType);
+	Rts2LogStream ls (this, in_messageType);
 	return ls;
 }
 

@@ -202,6 +202,8 @@ class Rts2App:public Rts2Object
 
 		/**
 		 * Return end loop flag.
+		 *
+		 * @return End loop flag. When true, application should silently exit.
 		 */
 		bool getEndLoop ()
 		{
@@ -210,8 +212,10 @@ class Rts2App:public Rts2Object
 
 		/**
 		 * Set end loop flag.
+		 *
+		 * @param in_end_loop True if run loop should be stopped.
 		 */
-		void setEndLoop (bool in_end_loop)
+		void setEndLoop (bool in_end_loop = true)
 		{
 			end_loop = in_end_loop;
 		}
