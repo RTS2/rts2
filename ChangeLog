@@ -1,3 +1,6 @@
+2008-04-10
+ * [1939260] fixed
+
 2008-04-09
  * rts2-user finished
  * fix in rts2app.cpp (exit and eof handling)
