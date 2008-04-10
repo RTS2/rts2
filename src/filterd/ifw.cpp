@@ -54,12 +54,11 @@ int
 Rts2DevFilterdIfw::homeFilter ()
 {
 	int ret;
-	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 5, '\r');
+	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 6, '\r');
 	if (ret == -1)
 		return ret;
 	if (strstr (filter_buff, "ER"))
 	{
-		logStream (MESSAGE_ERROR) << "filter ifw init error while homing " << filter_buff << sendLog;
 		return -1;
 	}
 	return 0;
@@ -75,13 +74,12 @@ Rts2DevFilterdIfw::shutdown (void)
 		return;
 
 	/* shutdown filter wheel communications */
-	n = ifwConn->writeRead ("WEXITS", 6, filter_buff, 5, '\r');
+	n = ifwConn->writeRead ("WEXITS", 6, filter_buff, 6, '\r');
 
 	/* Check for correct response from filter wheel */
 	if (strcmp (filter_buff, "END"))
 	{
-		logStream (MESSAGE_ERROR) << "filter ifw shutdown FILTER WHEEL ERROR: "
-			<< filter_buff << sendLog;
+		logStream (MESSAGE_ERROR) << "filter ifw shutdown FILTER WHEEL ERROR" << sendLog;
 	}
 	else
 	{
@@ -146,14 +144,14 @@ Rts2DevFilterdIfw::init (void)
 	ifwConn->flushPortIO ();
 
 	/* initialise filter wheel */
-	ret = ifwConn->writeRead ("WSMODE", 6, filter_buff, 5, '\r');
+	ret = ifwConn->writeRead ("WSMODE", 6, filter_buff, 6, '\r');
 	if (ret == -1)
 		return ret;
 	
 	/* Check for correct response from filter wheel */
 	if (filter_buff[0] != '!')
 	{
-		logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR: " << filter_buff << sendLog;
+		logStream (MESSAGE_DEBUG) << "filter ifw init FILTER WHEEL ERROR" << sendLog;
 		return -1;
 	}
 	logStream (MESSAGE_DEBUG) << "filter ifw init Filter wheel initialised" << sendLog;
@@ -187,15 +185,14 @@ Rts2DevFilterdIfw::getFilterNum (void)
 	int filter_number;
 	int n;
 
-	n = ifwConn->writeRead ("WFILTR", 6, filter_buff, 5, '\r');
+	n = ifwConn->writeRead ("WFILTR", 6, filter_buff, 6, '\r');
 	if (n == -1)
 		return -1;
 
 	if (strstr (filter_buff, "ER"))
 	{
 		logStream (MESSAGE_DEBUG) <<
-			"filter ifw getFilterNum FILTER WHEEL ERROR: " << filter_buff <<
-			sendLog;
+			"filter ifw getFilterNum FILTER WHEEL ERROR" << sendLog;
 		filter_number = -1;
 	}
 	else
@@ -222,7 +219,7 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
 	set_filter[5] = (char) new_filter + '1';
 
-	ret = ifwConn->writeRead (set_filter, 6, filter_buff, 5, '\r');
+	ret = ifwConn->writeRead (set_filter, 6, filter_buff, 6, '\r');
 	if (ret == -1)
 		return -1;
 
