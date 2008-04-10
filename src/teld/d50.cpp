@@ -22,28 +22,21 @@
 #include "fork.h"
 
 #include "../utils/rts2config.h"
+#include "../utils/rts2connserial.h"
 #include "../utils/libnova_cpp.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <unistd.h>
 
 class Rts2DevTelD50:public TelFork
 {
 	private:
 		char *device_name;
-		int tel_desc;
+		Rts2ConnSerial *d50Conn;
 
-		// utility comm I/O
-		int tel_write_char (const char command);
-		int tel_write (const char *command);
 		// write to both units
-		int write_both (const char *command);
+		int write_both (const char *command, int len);
 		int tel_write (const char command, int32_t value);
 
 		int tel_write_unit (int unit, const char command);
-		int tel_write_unit (int unit, const char *command);
+		int tel_write_unit (int unit, const char *command, int len);
 		int tel_write_unit (int unit, const char command, int32_t value);
 
 		int tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc);
@@ -98,55 +91,15 @@ class Rts2DevTelD50:public TelFork
 		virtual int endPark ();
 };
 
+
 int
-Rts2DevTelD50::tel_write_char (const char command)
+Rts2DevTelD50::write_both (const char *command, int len)
 {
 	int ret;
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "D50 will write char " << command << sendLog;
-	#endif
-	usleep (100000);
-	ret = write (tel_desc, &command, 1);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Error during write " << errno << " " <<
-			strerror (errno) << " ret " << ret << sendLog;
-	}
-	return 0;
-}
-
-
-int
-Rts2DevTelD50::tel_write (const char *command)
-{
-	size_t ret;
-	#ifdef DEBUG_EXTRA
-	ret = strlen (command);
-	char *cmd = new char[ret];
-	memcpy (cmd, command, ret - 1);
-	cmd[ret - 1] = '\0';
-	logStream (MESSAGE_DEBUG) << "D50 will write '" << cmd << "'" << sendLog;
-	delete[] cmd;
-	#endif
-	usleep (100000);
-	ret = write (tel_desc, command, strlen (command));
-	if (ret != strlen (command))
-	{
-		logStream (MESSAGE_ERROR) << "Error during write " << errno << " " <<
-			strerror (errno) << " ret " << ret << sendLog;
-	}
-	return 0;
-}
-
-
-int
-Rts2DevTelD50::write_both (const char *command)
-{
-	int ret;
-	ret = tel_write_unit (1, command);
+	ret = tel_write_unit (1, command, len);
 	if (ret)
 		return ret;
-	ret = tel_write_unit (2, command);
+	ret = tel_write_unit (2, command, len);
 	return ret;
 }
 
@@ -155,8 +108,8 @@ int
 Rts2DevTelD50::tel_write (const char command, int32_t value)
 {
 	static char buf[50];
-	sprintf (buf, "%c%i\x0d", command, value);
-	return tel_write (buf);
+	int len = sprintf (buf, "%c%i\x0d", command, value);
+	return d50Conn->writePort (buf, len) == len ? 0 : -1;
 }
 
 
@@ -168,19 +121,19 @@ Rts2DevTelD50::tel_write_unit (int unit, const char command)
 	ret = tel_write ('x', unit);
 	if (ret)
 		return ret;
-	return tel_write_char (command);
+	return d50Conn->writePort (command) == 1 ? 0 : -1;
 }
 
 
 int
-Rts2DevTelD50::tel_write_unit (int unit, const char *command)
+Rts2DevTelD50::tel_write_unit (int unit, const char *command, int len)
 {
 	int ret;
 	// switch unit
 	ret = tel_write ('x', unit);
 	if (ret)
 		return ret;
-	return tel_write (command);
+	return d50Conn->writePort (command, len) == len ? 0 : -1;
 }
 
 
@@ -201,42 +154,17 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 {
 	int ret;
 	static char buf[15];
-	ret = tel_write_char (command);
-	if (ret < 0)
+	ret = d50Conn->writePort (command);
+	if (ret != 1)
 		return ret;
 	// read while there isn't error and we do not get \r
-	for (int i = 0; i < 14; i++)
+	ret = d50Conn->readPort (buf, 14, '\r');
+	if (ret == -1) 
 	{
-		ret = read (tel_desc, buf + i, 1);
-		if (ret <= 0)
-		{
-			logStream (MESSAGE_ERROR) << "Error during read " << errno <<
-				strerror (errno) << sendLog;
-			return -1;
-		}
-		if (buf[i] == '\r')
-		{
-			ret = i;
-			break;
-		}
-		ret = i;
-
-	}
-	if (ret == 14)
-	{
-		logStream (MESSAGE_ERROR) << "Too long string" << sendLog;
 		return -1;
 	}
 	buf[ret] = '\0';
-	if (ret < 2)
-	{
-		logStream (MESSAGE_ERROR) << "Error during read - too small " << ret <<
-			"'" << buf << "'" << sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Readed from D50 " << buf << sendLog;
-	#endif
+
 	int vall;
 	int ppro;
 	ret = sscanf (buf, "#%i&%i\x0d\x0a", &vall, &ppro);
@@ -246,7 +174,7 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 		if (ret != 1)
 		{
 			logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
-			tcflush (tel_desc, TCIOFLUSH);
+			d50Conn->flushPortIO ();
 			usleep (1000000);
 			return -1;
 		}
@@ -262,7 +190,6 @@ int
 Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
-	tcflush (tel_desc, TCIOFLUSH);
 	ret = tel_write ('x', unit);
 	if (ret)
 		return ret;
@@ -273,7 +200,7 @@ Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * v
 Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 :TelFork (in_argc, in_argv)
 {
-	tel_desc = -1;
+	d50Conn = NULL;
 
 	haZero = 0;
 	decZero = 0;
@@ -328,7 +255,7 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 
 Rts2DevTelD50::~Rts2DevTelD50 (void)
 {
-	close (tel_desc);
+	delete d50Conn;
 }
 
 
@@ -358,7 +285,6 @@ Rts2DevTelD50::getHomeOffset (int32_t & off)
 int
 Rts2DevTelD50::init ()
 {
-	struct termios tel_termios;
 	int ret;
 
 	ret = TelFork::init ();
@@ -383,34 +309,19 @@ Rts2DevTelD50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	tel_desc = open (device_name, O_RDWR);
-	if (tel_desc < 0)
-		return -1;
+	d50Conn = new Rts2ConnSerial (device_name, this, BS9600, C8, NONE, 40);
+	ret = d50Conn->init ();
+	if (ret)
+		return ret;
 
-	if (tcgetattr (tel_desc, &tel_termios) < 0)
-		return -1;
+	d50Conn->setDebug ();
+	d50Conn->flushPortIO ();
 
-	if (cfsetospeed (&tel_termios, B9600) < 0 ||
-		cfsetispeed (&tel_termios, B9600) < 0)
-		return -1;
-
-	tel_termios.c_iflag = IGNBRK & ~(IXON | IXOFF | IXANY);
-	tel_termios.c_oflag = 0;
-	tel_termios.c_cflag =
-		((tel_termios.c_cflag & ~(CSIZE)) | CS8) & ~(PARENB | PARODD);
-	tel_termios.c_lflag = 0;
-	tel_termios.c_cc[VMIN] = 0;
-	tel_termios.c_cc[VTIME] = 40;
-
-	if (tcsetattr (tel_desc, TCSANOW, &tel_termios) < 0)
-		return -1;
-
-	tcflush (tel_desc, TCIOFLUSH);
 
 	snprintf (telType, 64, "D50");
 
 	// switch both motors off
-	ret = write_both ("D\x0d");
+	ret = write_both ("D\x0d", 2);
 	if (ret)
 		return ret;
 	motorRa->setValueBool (false);
@@ -447,23 +358,23 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == motorRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
 	}
 	if (old_value == motorDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "E\x0d" : "D\x0d", 2) == 0 ? 0 : -2;
 	}
 	if (old_value == wormRa)
 	{
 		return tel_write_unit (1,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
 
 	}
 	if (old_value == wormDec)
 	{
 		return tel_write_unit (2,
-			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0") == 0 ? 0 : -2;
+			((Rts2ValueBool *) new_value)->getValueBool ()? "o0" : "c0", 2) == 0 ? 0 : -2;
 
 	}
 	if (old_value == wormRaSpeed)
@@ -544,16 +455,16 @@ Rts2DevTelD50::startMove ()
 	ret = tel_write_unit (1, 't', ac);
 	if (ret)
 		return ret;
-	ret = tel_write_char ('g');
-	if (ret)
+	ret = d50Conn->writePort ('g');
+	if (ret != 1)
 		return ret;
 
 	ret = tel_write_unit (2, 't', dc);
 	if (ret)
 		return ret;
-	ret = tel_write_char ('g');
-	if (ret)
-		return ret;
+	ret = d50Conn->writePort ('g');
+	if (ret != 1)
+		return -1;
 
 	return 0;
 }
@@ -594,26 +505,26 @@ Rts2DevTelD50::startPark ()
 {
 	int ret;
 	// switch off worms..
-	ret = tel_write_unit (1, "c0");
+	ret = tel_write_unit (1, "c0", 2);
 	if (ret)
 		return ret;
 	wormRa->setValueBool (false);
-	ret = tel_write_unit (2, "c0");
+	ret = tel_write_unit (2, "c0", 2);
 	if (ret)
 		return ret;
 	wormDec->setValueBool (false);
 	ret = tel_write_unit (1, 't', 0);
 	if (ret)
 		return ret;
-	ret = tel_write_char ('g');
-	if (ret)
-		return ret;
+	ret = d50Conn->writePort ('g');
+	if (ret != 1)
+		return -1;
 	ret = tel_write_unit (2, 't', 0);
 	if (ret)
 		return ret;
-	ret = tel_write_char ('g');
-	if (ret)
-		return ret;
+	ret = d50Conn->writePort ('g');
+	if (ret != 1)
+		return -1;
 	return 0;
 }
 
