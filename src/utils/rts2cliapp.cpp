@@ -54,7 +54,7 @@ Rts2CliApp::parseDate (const char *in_date, struct ln_date *out_time)
 	out_time->hours = out_time->minutes = 0;
 	out_time->seconds = 0;
 	ret =
-		sscanf (in_date, "%i-%i-%i%n", &out_time->years, &out_time->months,
+		sscanf (in_date, "%d-%d-%d%n", &out_time->years, &out_time->months,
 		&out_time->days, &ret2);
 	if (ret == 3)
 	{
@@ -72,7 +72,7 @@ Rts2CliApp::parseDate (const char *in_date, struct ln_date *out_time)
 				sscanf (in_date, "%u:%u", &out_time->hours, &out_time->minutes);
 			if (ret2 == 2)
 				return 0;
-			ret2 = sscanf (in_date, "%i", &out_time->hours);
+			ret2 = sscanf (in_date, "%d", &out_time->hours);
 			if (ret2 == 1)
 				return 0;
 			std::cerr << "Cannot parse time of the date: " << in_date << std::
