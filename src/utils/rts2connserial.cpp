@@ -190,7 +190,7 @@ Rts2ConnSerial::writePort (char ch)
 		}
 		wlen += ret;
 	}
-	return 1;
+	return 0;
 }
 
 int

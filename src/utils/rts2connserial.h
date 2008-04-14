@@ -101,7 +101,7 @@ class Rts2ConnSerial: public Rts2Conn
 		 * Write single character to serial port.
 		 *
 		 * @param ch Character to write.
-		 * @return -1 on error, 1 on sucess.
+		 * @return -1 on error, 0 on sucess.
 		 */
 		int writePort (char ch);
 
