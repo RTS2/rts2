@@ -351,6 +351,15 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 		/**
+		 * Return distance in degrees to target position.
+		 * You are responsible to call info() before this call to
+		 * update telescope coordinates.
+		 * 
+		 * @return Sky distance in degrees to target, 0 - 180. -1 on error.
+		 */
+		double getTargetDistance ();
+
+		/**
 		 * Returns ALT AZ coordinates of target.
 		 *
 		 * @param hrz ALT AZ coordinates of target.

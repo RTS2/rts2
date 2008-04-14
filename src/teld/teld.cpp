@@ -173,6 +173,20 @@ Rts2DevTelescope::processOption (int in_opt)
 }
 
 
+double
+Rts2DevTelescope::getTargetDistance ()
+{
+	struct ln_equ_posn tar,tel;
+	getTarget (&tar);
+	getTelRaDec (&tel);
+
+	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
+		return -1;
+	
+	return ln_get_angular_separation (&tel, &tar);
+}
+
+
 void
 Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
