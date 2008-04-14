@@ -62,6 +62,8 @@ class Rts2DevTelD50:public TelFork
 		Rts2ValueInteger *accRa;
 		Rts2ValueInteger *accDec;
 
+		int32_t ac, dc;
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -446,7 +448,6 @@ int
 Rts2DevTelD50::startMove ()
 {
 	int ret;
-	int32_t ac, dc;
 
 	ret = sky2counts (ac, dc);
 	if (ret)
@@ -473,6 +474,14 @@ Rts2DevTelD50::startMove ()
 int
 Rts2DevTelD50::isMoving ()
 {
+	int ret;
+	ret = info ();
+	if (ret)
+		return ret;
+	if (unitRa->getValueInteger () != ac || unitDec->getValueInteger () != dc)
+		return USEC_SEC / 10;
+	// wait to move to dest
+	usleep (USEC_SEC / 10);
 	// we reached destination
 	return -2;
 }
