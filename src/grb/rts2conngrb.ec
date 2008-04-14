@@ -619,6 +619,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	double d_grb_ra = grb_ra;
 	double d_grb_dec = grb_dec;
 	bool d_grb_is_grb = grb_is_grb;
+	bool db_was_grb;
 	double d_grb_date = *grb_date + (double) grb_date_usec / USEC_SEC;
 	double d_grb_update = last_packet.tv_sec + (double) last_packet.tv_usec / USEC_SEC;
 	float d_grb_errorbox = grb_errorbox;
@@ -649,11 +650,13 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	SELECT
 		tar_id,
 		grb_type,
-		grb_errorbox
+		grb_errorbox,
+		grb_is_grb
 	INTO
 		:d_tar_id,
 		:d_curr_grb_type,
-		:d_grb_errorbox :d_grb_errorbox_ind
+		:d_grb_errorbox :d_grb_errorbox_ind,
+		:db_was_grb
 	FROM
 		grb
 	WHERE
@@ -663,6 +666,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	if (sqlca.sqlcode == ECPG_NOT_FOUND)
 	{
+		// create new GCN entry..
 		d_grb_errorbox = grb_errorbox;
 		if (isnan (d_grb_errorbox))
 		{
@@ -791,6 +795,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	}
 	else
 	{
+		// update know event
 		if (insertOnly)
 		{
 			EXEC SQL ROLLBACK;
@@ -883,6 +888,27 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				<< grb_errorbox
 				<< " d_grb_errorbox " << d_grb_errorbox
 				<< " d_grb_errorbox_ind " << d_grb_errorbox_ind << sendLog;
+			// update grb_is_grb, if that has changed
+			if (d_grb_is_grb != db_was_grb)
+			{
+				EXEC SQL UPDATE
+					grb
+				SET
+					grb_is_grb = :d_grb_is_grb
+				WHERE
+					tar_id = :d_tar_id;
+				if (sqlca.sqlcode)
+				{
+					logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update grb_is_grb : "
+						<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
+					EXEC SQL ROLLBACK;
+					ret = -1;
+				}
+				else
+				{
+					EXEC SQL COMMIT;
+				}
+			}
 			// do not update
 			d_grb_errorbox_ind = -1;
 		}
