@@ -111,7 +111,7 @@ Rts2DevTelD50::tel_write (const char command, int32_t value)
 {
 	static char buf[50];
 	int len = sprintf (buf, "%c%i\x0d", command, value);
-	return d50Conn->writePort (buf, len) == len ? 0 : -1;
+	return d50Conn->writePort (buf, len);
 }
 
 
@@ -123,7 +123,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char command)
 	ret = tel_write ('x', unit);
 	if (ret)
 		return ret;
-	return d50Conn->writePort (command) == 1 ? 0 : -1;
+	return d50Conn->writePort (command);
 }
 
 
@@ -135,7 +135,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char *command, int len)
 	ret = tel_write ('x', unit);
 	if (ret)
 		return ret;
-	return d50Conn->writePort (command, len) == len ? 0 : -1;
+	return d50Conn->writePort (command, len);
 }
 
 
@@ -157,10 +157,10 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 	int ret;
 	static char buf[15];
 	ret = d50Conn->writePort (command);
-	if (ret != 1)
+	if (ret)
 		return ret;
 	// read while there isn't error and we do not get \r
-	ret = d50Conn->readPort (buf, 14, '\r');
+	ret = d50Conn->readPort (buf, 14, '\x0a');
 	if (ret == -1) 
 	{
 		return -1;
@@ -386,12 +386,12 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == unitRa)
 	{
-		return tel_write_unit (1, 't',
+		return tel_write_unit (1, 's',
 			new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == unitDec)
 	{
-		return tel_write_unit (2, 't',
+		return tel_write_unit (2, 's',
 			new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == velRa)
@@ -449,6 +449,14 @@ Rts2DevTelD50::startMove ()
 {
 	int ret;
 
+	// turn on RA worm
+	ret = tel_write_unit (1, "o0", 2);
+	if (ret)
+		return ret;
+	wormRa->setValueBool (true);
+
+	usleep (USEC_SEC / 10);
+
 	ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
@@ -456,17 +464,23 @@ Rts2DevTelD50::startMove ()
 	ret = tel_write_unit (1, 't', ac);
 	if (ret)
 		return ret;
+
+	usleep (USEC_SEC / 10);
+
 	ret = d50Conn->writePort ('g');
-	if (ret != 1)
+	if (ret)
 		return ret;
 
 	ret = tel_write_unit (2, 't', dc);
 	if (ret)
 		return ret;
-	ret = d50Conn->writePort ('g');
-	if (ret != 1)
-		return -1;
 
+	usleep (USEC_SEC / 10);
+
+	ret = d50Conn->writePort ('g');
+	if (ret)
+		return -1;
+	
 	return 0;
 }
 
@@ -478,10 +492,11 @@ Rts2DevTelD50::isMoving ()
 	ret = info ();
 	if (ret)
 		return ret;
-	if (unitRa->getValueInteger () != ac || unitDec->getValueInteger () != dc)
+	// compute distance - 6 arcmin is expected current limit
+	if (getTargetDistance () > 0.5)
 		return USEC_SEC / 10;
 	// wait to move to dest
-	usleep (USEC_SEC / 10);
+	usleep (USEC_SEC);
 	// we reached destination
 	return -2;
 }
@@ -526,13 +541,13 @@ Rts2DevTelD50::startPark ()
 	if (ret)
 		return ret;
 	ret = d50Conn->writePort ('g');
-	if (ret != 1)
+	if (ret)
 		return -1;
 	ret = tel_write_unit (2, 't', 0);
 	if (ret)
 		return ret;
 	ret = d50Conn->writePort ('g');
-	if (ret != 1)
+	if (ret)
 		return -1;
 	return 0;
 }
@@ -540,8 +555,15 @@ Rts2DevTelD50::startPark ()
 
 int
 Rts2DevTelD50::isParking ()
-{
-	return -2;
+{	
+	int ret;
+	ret = info ();
+	if (ret)
+		return ret;
+
+	if (unitRa->getValueInteger () == 0 && unitDec->getValueInteger () == 0)
+		return -2;
+	return USEC_SEC / 10;
 }
 
 
