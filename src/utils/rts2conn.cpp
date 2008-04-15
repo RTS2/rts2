@@ -1333,11 +1333,14 @@ Rts2Conn::sendMsg (const char *msg)
 	int ret;
 	if (sock == -1)
 		return -1;
-	len = strlen (msg);
+	len = strlen (msg) + 1;
+	char *mbuf = new char[len + 1];
+	strcpy (mbuf, msg);
+	strcat (mbuf, "\n");
 	// ignore EINTR
 	do
 	{
-		ret = write (sock, msg, len);
+		ret = write (sock, mbuf, len);
 	} while (ret == -1 && errno == EINTR);
 
 	if (ret != len)
@@ -1351,6 +1354,7 @@ Rts2Conn::sendMsg (const char *msg)
 			<< sendLog;
 		#endif
 		connectionError (ret);
+		delete[] mbuf;
 		return -1;
 	}
 	#ifdef DEBUG_ALL
@@ -1358,11 +1362,8 @@ Rts2Conn::sendMsg (const char *msg)
 		<< " [" << getCentraldId () << ":" << sock << "] send " << ret << ": " << msg
 		<< std::endl;
 	#endif
-	do
-	{
-		ret = write (sock, "\r\n", 2);
-	} while (ret == -1 && errno == EINTR);
 
+	delete[] mbuf;
 	successfullSend ();
 	return 0;
 }
