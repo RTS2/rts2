@@ -809,7 +809,7 @@ Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 int
 Rts2Daemon::info ()
 {
-	info_time->setValueDouble (getNow ());
+	updateInfoTime ();
 	return 0;
 }
 

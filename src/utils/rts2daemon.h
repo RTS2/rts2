@@ -295,6 +295,14 @@ class Rts2Daemon:public Rts2Block
 		virtual int initValues ();
 		virtual int idle ();
 
+		/**
+		 * Updates info_time to current time.
+		 */
+		void updateInfoTime ()
+		{
+			info_time->setValueDouble (getNow ());
+		}
+
 	public:
 		Rts2Daemon (int in_argc, char **in_argv);
 		virtual ~ Rts2Daemon (void);
