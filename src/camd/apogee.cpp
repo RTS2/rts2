@@ -158,6 +158,7 @@ Rts2DevCameraApogee::isExposing ()
 			if (expExposureEnd < now)
 			{
 				camera->Reset ();
+				camera->Flush ();
 				return -1;
 			}
 		}
@@ -181,6 +182,7 @@ int
 Rts2DevCameraApogee::stopExposure ()
 {
 	camera->Reset ();
+	camera->Flush ();
 	return Rts2DevCamera::stopExposure ();
 }
 
@@ -213,6 +215,7 @@ int
 Rts2DevCameraApogee::endReadout ()
 {
 	camera->Reset ();
+	camera->Flush ();
 	return Rts2DevCamera::endReadout ();
 }
 
