@@ -202,7 +202,6 @@ TelFork::TelFork (int in_argc, char **in_argv):
 Rts2DevTelescope (in_argc, in_argv)
 {
 	haZero = decZero = haCpd = decCpd = nan("f");
-
 	ra_ticks = dec_ticks = 0;
 }
 

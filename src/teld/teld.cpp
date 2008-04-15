@@ -178,6 +178,8 @@ Rts2DevTelescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
 	getTarget (&tar);
+	tar.ra += corrRaDec->getRa ();
+	tar.dec += corrRaDec->getDec ();
 	getTelRaDec (&tel);
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))

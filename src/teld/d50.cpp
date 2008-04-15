@@ -493,10 +493,10 @@ Rts2DevTelD50::isMoving ()
 	if (ret)
 		return ret;
 	// compute distance - 6 arcmin is expected current limit
-	if (getTargetDistance () > 0.5)
+	if (getTargetDistance () > 2)
 		return USEC_SEC / 10;
 	// wait to move to dest
-	usleep (USEC_SEC);
+	sleep (3);
 	// we reached destination
 	return -2;
 }
