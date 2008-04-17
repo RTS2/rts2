@@ -20,6 +20,7 @@
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2displayvalue.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2expander.h"
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800
 
@@ -27,6 +28,8 @@
  * This class logs given values to given file.
  *
  * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup RTS2Logger
  */
 class Rts2DevClientLogger:public Rts2DevClient
 {
@@ -36,15 +39,45 @@ class Rts2DevClientLogger:public Rts2DevClient
 
 		std::ostream * outputStream;
 
-		time_t nextInfoCall;
-		time_t numberSec;
+		Rts2Expander * exp;
+		std::string expandPattern;
+		std::string expandedFilename;
 
+		/**
+		 * Next time info command will be called.
+		 */
+		struct timeval nextInfoCall;
+
+		/**
+		 * Info command will be send every numberSec seconds.
+		 */
+		struct timeval numberSec;
+	
+		/**
+		 * Fill to log file values which are in logValues array.
+		 */
 		void fillLogValues ();
+
+		/**
+		 * Change output stream according to new expansion.
+		 */
+		void changeOutputStream ();
 	protected:
-		void setOutputFile (const char *filename);
+		/**
+		 * Change expansion pattern to new filename.
+		 *
+		 * @param pattern Expanding pattern.
+		 */
+		void setOutputFile (const char *pattern);
 	public:
-		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec,
-			std::list < std::string > &in_logNames);
+		/**
+		 * Construct client for logging device.
+		 *
+		 * @param in_conn Connection.
+		 * @param in_numberSec Number of seconds when the info command will be send.
+		 * @param in_logNames String with space separated names of values which will be logged.
+		 */
+		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, std::list < std::string > &in_logNames);
 
 		virtual ~ Rts2DevClientLogger (void);
 		virtual void infoOK ();

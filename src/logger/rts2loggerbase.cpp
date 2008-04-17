@@ -19,16 +19,13 @@
 
 #include "rts2loggerbase.h"
 
-#include "../utils/rts2expander.h"
-
-Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn,
-double in_numberSec,
-std::list < std::string >
-&in_logNames):
-Rts2DevClient (in_conn)
+Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, std::list < std::string > &in_logNames)
+:Rts2DevClient (in_conn)
 {
-	time (&nextInfoCall);
-	numberSec = (time_t) in_numberSec;
+	gettimeofday (&nextInfoCall, NULL);
+	numberSec.tv_sec = (int) (floor (in_numberSec));
+	numberSec.tv_usec = (int) (in_numberSec - floor (in_numberSec));
+
 	logNames = in_logNames;
 
 	outputStream = &std::cout;
@@ -39,6 +36,7 @@ Rts2DevClientLogger::~Rts2DevClientLogger (void)
 {
 	if (outputStream != &std::cout)
 		delete outputStream;
+	delete exp;
 }
 
 
@@ -64,11 +62,27 @@ Rts2DevClientLogger::fillLogValues ()
 
 
 void
-Rts2DevClientLogger::setOutputFile (const char *filename)
+Rts2DevClientLogger::setOutputFile (const char *pattern)
 {
-	Rts2Expander exp = Rts2Expander ();
-	std::ofstream * nstream =
-		new std::ofstream (exp.expand (filename).c_str (), std::ios_base::app);
+	if (exp == NULL)
+	{
+		exp = new Rts2Expander ();
+	}
+	expandPattern = std::string (pattern);
+	changeOutputStream ();
+}
+
+
+void
+Rts2DevClientLogger::changeOutputStream ()
+{
+	exp->setExpandDate ();
+	std::string expanded = exp->expand (expandPattern);
+	// if filename was not changed
+	if (expanded == expandedFilename)
+		return;
+	expandedFilename = expanded;
+	std::ofstream * nstream = new std::ofstream (expandedFilename.c_str(), std::ios_base::app);
 	if (nstream->fail ())
 	{
 		delete nstream;
@@ -76,7 +90,7 @@ Rts2DevClientLogger::setOutputFile (const char *filename)
 	}
 	if (outputStream != &std::cout)
 		delete outputStream;
-
+	
 	outputStream = nstream;
 }
 
@@ -86,6 +100,8 @@ Rts2DevClientLogger::infoOK ()
 {
 	if (logValues.empty ())
 		fillLogValues ();
+	// check if we have to change log file..
+	changeOutputStream ();
 	*outputStream << getName ();
 	for (std::list < Rts2Value * >::iterator iter = logValues.begin ();
 		iter != logValues.end (); iter++)
@@ -99,6 +115,7 @@ Rts2DevClientLogger::infoOK ()
 void
 Rts2DevClientLogger::infoFailed ()
 {
+ 	changeOutputStream ();
 	*outputStream << "info failed" << std::endl;
 }
 
@@ -106,12 +123,12 @@ Rts2DevClientLogger::infoFailed ()
 void
 Rts2DevClientLogger::idle ()
 {
-	time_t now;
-	time (&now);
-	if (nextInfoCall < now)
+	struct timeval now;
+	gettimeofday (&now, NULL);
+	if (timercmp (&nextInfoCall, &now, <))
 	{
 		queCommand (new Rts2CommandInfo (getMaster ()));
-		nextInfoCall = now + numberSec;
+		timeradd (&now, &numberSec, &nextInfoCall);
 	}
 }
 
