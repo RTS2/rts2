@@ -475,6 +475,13 @@ class Rts2ValueTime:public Rts2ValueDouble
 		 * Convert double ctime to struct tm and fraction of seconds.
 		 */
 		void getStructTm (struct tm *tm_s, long *usec);
+
+		/**
+		 * Get timeval.
+		 *
+		 * @param tv Returned timeval value.
+		 */
+		void getValueTime (struct timeval &tv);
 };
 
 /**

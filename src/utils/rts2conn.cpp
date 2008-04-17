@@ -1979,6 +1979,18 @@ Rts2Conn::getInfoTime ()
 }
 
 
+void
+Rts2Conn::getInfoTime (struct timeval &tv)
+{
+	if (info_time)
+	{
+		info_time->getValueTime (tv);
+		return;
+	}
+	gettimeofday (&tv, NULL);
+}
+
+
 bool
 Rts2Conn::infoTimeChanged ()
 {

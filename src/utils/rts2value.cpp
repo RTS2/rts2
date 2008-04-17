@@ -389,6 +389,14 @@ Rts2ValueTime::getStructTm (struct tm *tm_s, long *usec)
 }
 
 
+void
+Rts2ValueTime::getValueTime (struct timeval &tv)
+{
+	tv.tv_sec = (time_t) (floor (getValueDouble ()));
+	tv.tv_usec = (long) ((getValueDouble () - tv.tv_sec) * USEC_SEC);
+}
+
+
 Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
 Rts2Value (in_val_name)
 {

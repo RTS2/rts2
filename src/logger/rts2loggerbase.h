@@ -85,7 +85,6 @@ class Rts2DevClientLogger:public Rts2DevClient
 
 		virtual void idle ();
 
-		// used to set command
 		virtual void postEvent (Rts2Event * event);
 };
 

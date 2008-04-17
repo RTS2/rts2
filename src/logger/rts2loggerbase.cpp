@@ -24,7 +24,7 @@ Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSe
 {
 	gettimeofday (&nextInfoCall, NULL);
 	numberSec.tv_sec = (int) (floor (in_numberSec));
-	numberSec.tv_usec = (int) (in_numberSec - floor (in_numberSec));
+	numberSec.tv_usec = (int) (USEC_SEC * (in_numberSec - floor (in_numberSec)));
 
 	logNames = in_logNames;
 
@@ -76,7 +76,9 @@ Rts2DevClientLogger::setOutputFile (const char *pattern)
 void
 Rts2DevClientLogger::changeOutputStream ()
 {
-	exp->setExpandDate ();
+	struct timeval tv;
+	getConnection ()->getInfoTime (tv);
+	exp->setExpandDate (&tv);
 	std::string expanded = exp->expand (expandPattern);
 	// if filename was not changed
 	if (expanded == expandedFilename)

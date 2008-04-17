@@ -674,9 +674,16 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Return time when values were valid.
 		 *
-		 * @return Time (as double seconds from 1-1-1970).
+		 * @return Time of last information call (as number of seconds from 1.1.1970).
 		 */
 		double getInfoTime ();
+
+		/**
+		 * Get time when values were valid.
+		 *
+		 * @param tv Returned timeval of last info call.
+		 */
+		void getInfoTime (struct timeval &tv);
 
 		/**
 		 * Check if info time has changed.
