@@ -55,7 +55,7 @@ Rts2DomeFord::zjisti_stav_portu ()
 	char ta, tb;
 	char c = STAV_PORTU | PORT_A;
 
-	if (domeConn->writePort (c) != 1)
+	if (domeConn->writePort (c))
 		return -1;
 	if (domeConn->readPort (ta) != 1)
 	  	return -1;
@@ -65,7 +65,7 @@ Rts2DomeFord::zjisti_stav_portu ()
 	
 	c = STAV_PORTU | PORT_B;
 
-	if (domeConn->writePort (c) != 1)
+	if (domeConn->writePort (c))
 		return -1;
 	if (domeConn->readPort (tb) != 1)
 	  	return -1;
@@ -91,7 +91,7 @@ Rts2DomeFord::zapni_pin (unsigned char c_port, unsigned char pin)
 
 	c = ZAPIS_NA_PORT | c_port;
 
-	if (domeConn->writePort (c) != 1)
+	if (domeConn->writePort (c))
 		return;
 
 	c = stav_portu[c_port] | pin;
@@ -108,7 +108,7 @@ Rts2DomeFord::vypni_pin (unsigned char c_port, unsigned char pin)
 
 	c = ZAPIS_NA_PORT | c_port;
 
-	if (domeConn->writePort (c) != 1)
+	if (domeConn->writePort (c))
 	  	return;
 
 	c = stav_portu[c_port] & (~pin);
