@@ -160,7 +160,10 @@ Rts2DevFocuserFli::initValues ()
 
 	ret = FLIGetModel (dev, focType, 20);
 	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot get filter model, error: " << ret << sendLog;
 		return -1;
+	}
 	return Rts2DevFocuser::initValues ();
 }
 
