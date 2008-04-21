@@ -118,6 +118,7 @@ Rts2SensorPixy::init ()
 		return ret;
 	
 	pixyConn = new Rts2ConnPixy (device_port, this, BS19200, C8, NONE, 20);
+	addConnection (pixyConn);
 	ret = pixyConn->init ();
 	if (ret)
 		return ret;
@@ -146,7 +147,6 @@ Rts2SensorPixy::Rts2SensorPixy (int argc, char **argv)
 
 Rts2SensorPixy::~Rts2SensorPixy (void)
 {
-	delete pixyConn;
 }
 
 
