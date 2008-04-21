@@ -1,3 +1,10 @@
 0.8.0
+  rts2-sensor-pixy (lightening sensor)
+
+  rts2-sensor-mrakomer (cloud sensor)
+
   rts2-user binary (see man rts2-user for details)
+
   -N option (do not pretty print) for rts2-nightreport, rts2-target, rts2-targetlist, rts2-targetinfo and rts2-telmodeltest
+
+  rts2-logd check for expansion pattern changes
