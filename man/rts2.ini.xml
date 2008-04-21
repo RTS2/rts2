@@ -377,6 +377,28 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>day_horizon</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Sun is below horizon, when its calculated altitude is bellow that value.
+              Default to 0 degrees.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>night_horizon</option>
+	  </term>
+          <listitem>
+	    <para>
+	      Night starts, when sun gets below that value
+              Default to -10 degrees.
+	    </para>
+          </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>horizon</option>
 	  </term>
 	  <listitem>
