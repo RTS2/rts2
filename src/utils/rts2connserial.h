@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2conn.h"
+#include "rts2connnosend.h"
 
 /**
  * Enum for baud speeds.
@@ -48,7 +48,7 @@ parityT;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnSerial: public Rts2Conn
+class Rts2ConnSerial: public Rts2ConnNoSend
 {
 	private:
 		bSpeedT baudSpeed;

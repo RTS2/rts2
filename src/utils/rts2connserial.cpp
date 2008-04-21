@@ -26,7 +26,7 @@
 
 Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, bSpeedT in_baudSpeed,
 cSizeT in_cSize, parityT in_parity, int in_vTime)
-:Rts2Conn (in_master)
+:Rts2ConnNoSend (in_master)
 {
 	sock = open (in_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
