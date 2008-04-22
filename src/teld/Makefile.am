@@ -1,6 +1,7 @@
 SUBDIRS = model
 
-bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 rts2-teld-d50
+bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
+	rts2-teld-d50 rts2-teld-kolonica
 
 noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h irconn.h
 
@@ -18,6 +19,9 @@ rts2_teld_lx200_SOURCES = lx200.cpp hms.c
 
 rts2_teld_d50_SOURCES = d50.cpp
 rts2_teld_d50_LDADD = fork.o ${LDADD}
+
+rts2_teld_kolonica_SOURCES = kolonica.cpp
+rts2_teld_kolonica_LDADD = fork.o ${LDADD}
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
