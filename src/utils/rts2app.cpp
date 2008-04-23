@@ -197,11 +197,18 @@ Rts2App::helpOptions ()
 	}
 }
 
+void
+Rts2App::usage()
+{
+	std::cout << "\tUsage pattern not defined, please add feature request to http://www.sf.net/projects/rts-2" << std::endl;
+}
 
 void
 Rts2App::help ()
 {
-	std::cout << "Options" << std::endl;
+ 	std::cout << "Usage:" << std::endl;
+	usage ();
+	std::cout << "Options:" << std::endl;
 	helpOptions ();
 }
 
@@ -328,7 +335,7 @@ Rts2App::askForString (const char *desc, std::string & val)
 	while (!getEndLoop ())
 	{
 		std::cout << desc << " [" << val << "]: ";
-		std::cin >> val;
+		std::getline (std::cin, val);
 		if (std::cin.eof ())
 		{
 			setEndLoop ();

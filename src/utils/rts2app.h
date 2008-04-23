@@ -78,6 +78,9 @@ class Rts2App:public Rts2Object
 		 */
 		char **app_argv;
 
+		/**
+		 * Flag for loopEnd. True if application shall finish.
+		 */
 		bool end_loop;
 
 	protected:
@@ -157,6 +160,21 @@ class Rts2App:public Rts2Object
 		 * @return -1 on error, 0 on success.
 		 */
 		bool askForBoolean (const char *desc, bool val);
+
+		/**
+		 * Return application name, taken from the command line.
+		 *
+		 * @return Application name (= argv[0]).
+		 */
+		const char *getAppName ()
+		{
+			return app_argv[0];
+		}
+
+		/**
+		 * Print ussage line. Called from help() routine to print recommended usage.
+		 */
+		virtual void usage ();
 		
 		/**
 		 * Prints help message.
