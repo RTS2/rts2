@@ -24,10 +24,29 @@
 
 #include <libnova/libnova.h>
 
+/**
+ * Abstract base class for all client applications.
+ *
+ * Provides doProcessing() and afterProcessing() functions. The doProcessing()
+ * must be defined in any descendant, afterProcessing() method is optional.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2CliApp:public Rts2App
 {
 	protected:
+		/**
+		 * Called for application processing. This method shall be used instead of
+		 * run() method.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int doProcessing () = 0;
+
+		/**
+		 * Called after processing is done. This method may be used to print
+		 * summary of processed data etc.
+		 */
 		virtual void afterProcessing ();
 
 	public:
