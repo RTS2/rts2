@@ -455,7 +455,7 @@ Rts2DevTelD50::startMove ()
 		return ret;
 	wormRa->setValueBool (true);
 
-	usleep (USEC_SEC / 10);
+	usleep (USEC_SEC / 5);
 
 	ret = sky2counts (ac, dc);
 	if (ret)
@@ -465,7 +465,7 @@ Rts2DevTelD50::startMove ()
 	if (ret)
 		return ret;
 
-	usleep (USEC_SEC / 10);
+	usleep (USEC_SEC / 5);
 
 	ret = d50Conn->writePort ('g');
 	if (ret)
@@ -475,7 +475,7 @@ Rts2DevTelD50::startMove ()
 	if (ret)
 		return ret;
 
-	usleep (USEC_SEC / 10);
+	usleep (USEC_SEC / 5);
 
 	ret = d50Conn->writePort ('g');
 	if (ret)
@@ -496,7 +496,7 @@ Rts2DevTelD50::isMoving ()
 	if (getTargetDistance () > 2)
 		return USEC_SEC / 10;
 	// wait to move to dest
-	sleep (3);
+	sleep (6);
 	// we reached destination
 	return -2;
 }
