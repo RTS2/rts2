@@ -145,14 +145,14 @@ Rts2ValueRectangle::getValue ()
 
 
 void
-Rts2ValueRectangle::setFromValue(Rts2Value * newValue)
+Rts2ValueRectangle::setFromValue(Rts2Value * new_value)
 {
-	if (newValue->getValueExtType () == RTS2_VALUE_RECTANGLE)
+	if (new_value->getValueExtType () == RTS2_VALUE_RECTANGLE)
 	{
-		x->setFromValue (((Rts2ValueRectangle *)newValue)->getX ());
-		y->setFromValue (((Rts2ValueRectangle *)newValue)->getY ());
-		w->setFromValue (((Rts2ValueRectangle *)newValue)->getWidth ());
-		h->setFromValue (((Rts2ValueRectangle *)newValue)->getHeight ());
+		x->setFromValue (((Rts2ValueRectangle *)new_value)->getX ());
+		y->setFromValue (((Rts2ValueRectangle *)new_value)->getY ());
+		w->setFromValue (((Rts2ValueRectangle *)new_value)->getWidth ());
+		h->setFromValue (((Rts2ValueRectangle *)new_value)->getHeight ());
 	}
 }
 
@@ -162,10 +162,10 @@ Rts2ValueRectangle::isEqual (Rts2Value *other_value)
 {
 	if (other_value->getValueExtType () == RTS2_VALUE_RECTANGLE)
 	{
-		return x->isEqual (((Rts2ValueRectangle *)newValue)->getX ())
-			&& y->isEqual (((Rts2ValueRectangle *)newValue)->getY ())
-			&& w->isEqual (((Rts2ValueRectangle *)newValue)->getWidth ())
-			&& h->isEqual (((Rts2ValueRectangle *)newValue)->getHeight ());
+		return x->isEqual (((Rts2ValueRectangle *)other_value)->getX ())
+			&& y->isEqual (((Rts2ValueRectangle *)other_value)->getY ())
+			&& w->isEqual (((Rts2ValueRectangle *)other_value)->getWidth ())
+			&& h->isEqual (((Rts2ValueRectangle *)other_value)->getHeight ());
 	}
 	return false;
 }

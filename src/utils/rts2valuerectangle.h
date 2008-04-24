@@ -131,7 +131,7 @@ class Rts2ValueRectangle: public Rts2Value
 
 		virtual const char *getValue ();
 
-		virtual void setFromValue(Rts2Value * newValue);
+		virtual void setFromValue(Rts2Value * new_value);
 
 		virtual bool isEqual (Rts2Value * other_value);
 
