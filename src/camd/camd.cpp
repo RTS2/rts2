@@ -138,9 +138,10 @@ Rts2DevCamera::endExposure ()
 
 		return camReadout (exposureConn);
 	}
-	logStream (MESSAGE_WARNING)
-		<< "end exposure without exposure connection"
-		<< sendLog;
+	if (getStateChip (0) & CAM_EXPOSING)
+		logStream (MESSAGE_WARNING)
+			<< "end exposure without exposure connection"
+			<< sendLog;
 	return 0;
 }
 
