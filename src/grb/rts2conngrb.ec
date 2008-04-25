@@ -251,6 +251,14 @@ Rts2ConnGrb::pr_swift_with_radec ()
 				grb_is_grb = 0;
 			}
 			break;
+		case TYPE_SWIFT_XRT_POSITION_SRC:
+			// if it's not a grb, or if its in ground cat, ignore it..
+			if ((lbuf[TRIGGER_ID] & 0x00000020)
+				|| (lbuf[TRIGGER_ID] & 0x00000100))
+			{
+				grb_is_grb = 0;
+			}
+			break;
 	}
 
 	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
