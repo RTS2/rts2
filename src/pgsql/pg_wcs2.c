@@ -339,7 +339,7 @@ imgrange2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-  VARATT_SIZEP (res) = VARHDRSZ + l;
+  SET_VAVSIZE (res, VARHDRSZ + l);
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);

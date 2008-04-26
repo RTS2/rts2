@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <postgres.h>
 #include <fmgr.h>
 #ifdef PG_MODULE_MAGIC
@@ -271,7 +275,7 @@ imgrange (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-  VARATT_SIZEP (res) = VARHDRSZ + l;
+  SET_VARSIZE (res, VARHDRSZ + l);
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);
@@ -319,7 +323,7 @@ img_wcs_ctype1 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-  VARATT_SIZEP (res) = VARHDRSZ + l;
+  SET_VARSIZE (res, VARHDRSZ + l);
   memcpy (VARDATA (res), arg->ctype1, l);
 
   PG_RETURN_TEXT_P (res);
@@ -340,7 +344,7 @@ img_wcs_ctype2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-  VARATT_SIZEP (res) = VARHDRSZ + l;
+  SET_VARSIZE (res, VARHDRSZ + l);
   memcpy (VARDATA (res), arg->ctype2, l);
 
   PG_RETURN_TEXT_P (res);
