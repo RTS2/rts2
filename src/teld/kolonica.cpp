@@ -96,6 +96,9 @@ class TelKolonica:public TelFork
 		Rts2ValueLong *axAlt;
 		Rts2ValueLong *axAz;
 
+		Rts2ValueBool *motorAlt;
+		Rts2ValueBool *motorAz;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -311,6 +314,14 @@ TelKolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	{
 		return setAzAxis (new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
+	if (old_value == motorAlt)
+	{
+		return setMotor (1, ((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+	}
+	if (old_value == motorAz)
+	{
+		return setMotor (2, ((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+	}
 	return TelFork::setValue (old_value, new_value);
 }
 
@@ -323,6 +334,9 @@ TelKolonica::TelKolonica (int in_argc, char **in_argv)
 
 	createValue (axAlt, "AXALT", "altitude axis", true);
 	createValue (axAz, "AXAZ", "azimuth axis", true);
+
+	createValue (motorAlt, "motor_alt", "altitude motor", false);
+	createValue (motorAz, "motor_az", "azimuth motor", false);
 
 	addOption ('f', NULL, 1, "telescope device (default to /dev/ttyS0)");
 }
