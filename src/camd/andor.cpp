@@ -279,6 +279,11 @@ Rts2DevCameraAndor::readoutOneLine ()
 	}
 	if (ret != DRV_SUCCESS)
 	{
+		// acquisition in progress is NOT and error if it occurs early
+		if ((ret == DRV_ACQUIRING) && (getNow () < getExposureEnd () + 100))
+		{
+			return 100;
+		}
 		logStream (MESSAGE_ERROR) << "andor GetAcquiredXXXX "
 			<< getDataType () << " return " << ret << sendLog;
 		return -1;

@@ -115,8 +115,6 @@ Rts2DevCamera::center (int in_w, int in_h)
 long
 Rts2DevCamera::isExposing ()
 {
-	if (exposureEnd->getValueDouble () == 0)
-		return -1;				 // no exposure running
 	if (getNow () > exposureEnd->getValueDouble ())
 	{
 		return 0;				 // exposure ended
@@ -129,7 +127,6 @@ Rts2DevCamera::isExposing ()
 int
 Rts2DevCamera::endExposure ()
 {
-	exposureEnd->setValueDouble (nan("f"));
 	if (exposureConn)
 	{
 		logStream (MESSAGE_INFO)
@@ -142,6 +139,11 @@ Rts2DevCamera::endExposure ()
 		logStream (MESSAGE_WARNING)
 			<< "end exposure without exposure connection"
 			<< sendLog;
+	quedExpNumber->setValueInteger (0);
+	sendValueAll (quedExpNumber);
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT,
+		CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT,
+		BOP_TEL_MOVE, 0, "chip exposure interrupted");
 	return 0;
 }
 
