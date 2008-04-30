@@ -26,4 +26,8 @@ rts2_deleteimage_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
 
+else
+
+EXTRA_DIST += deleteimage.cpp
+
 endif
