@@ -81,8 +81,8 @@ class Rts2Centrald:public Rts2Daemon
 		time_t next_event_time;
 		struct ln_lnlat_posn *observer;
 
-		int morning_off;
-		int morning_standby;
+		Rts2ValueBool *morning_off;
+		Rts2ValueBool *morning_standby;
 
 		char *configFile;
 		std::string logFile;
@@ -137,10 +137,12 @@ class Rts2Centrald:public Rts2Daemon
 		virtual int init ();
 		virtual int initValues ();
 
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+
 		virtual void connectionRemoved (Rts2Conn * conn);
 
 	public:
-		Rts2Centrald (int in_argc, char **in_argv);
+		Rts2Centrald (int argc, char **argv);
 		virtual ~ Rts2Centrald (void);
 
 		virtual int idle ();

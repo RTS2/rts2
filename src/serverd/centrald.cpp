@@ -78,8 +78,7 @@ Rts2ConnCentrald::priorityCommand ()
 
 	if (master->changePriority (timeout))
 	{
-		sendCommandEnd (DEVDEM_E_PRIORITY,
-			"error when processing priority request");
+		sendCommandEnd (DEVDEM_E_PRIORITY, "error when processing priority request");
 		return -1;
 	}
 
@@ -445,8 +444,8 @@ Rts2ConnCentrald::command ()
 }
 
 
-Rts2Centrald::Rts2Centrald (int in_argc, char **in_argv):Rts2Daemon (in_argc,
-in_argv)
+Rts2Centrald::Rts2Centrald (int argc, char **argv)
+:Rts2Daemon (argc, argv)
 {
 	connNum = 0;
 
@@ -458,11 +457,13 @@ in_argv)
 
 	priority_client = -1;
 
+	createValue (morning_off, "morning_off", "switch to off at the morning", false);
+	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
+
 	createValue (priorityClient, "priority_client", "client which have priority", false);
 	createValue (priority, "priority", "current priority level", false);
 
-	createValue (nextStateChange, "next_state_change",
-		"time of next state change", false);
+	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
 	nextState->addSelVal ("day");
 	nextState->addSelVal ("evening");
@@ -551,9 +552,6 @@ Rts2Centrald::reloadConfig ()
 	config->getInteger ("observatory", "morning_time", t_t, 1800);
 	morningTime->setValueInteger (t_t);
 
-	morning_off = config->getBoolean ("centrald", "morning_off", true);
-	morning_standby = config->getBoolean ("centrald", "morning_standby", true);
-
 	next_event_time = 0;
 
 	constInfoAll ();
@@ -597,6 +595,10 @@ Rts2Centrald::init ()
 	if (ret)
 		return ret;
 
+	// only set morning_off and morning_standby values at firts config load
+	morning_off->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_off", true));
+	morning_standby->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_standby", true));
+
 	centraldConnRunning ();
 	ret = checkLockFile (LOCK_PREFIX "centrald");
 	if (ret)
@@ -639,6 +641,14 @@ Rts2Centrald::initValues ()
 	return Rts2Daemon::initValues ();
 }
 
+
+int
+Rts2Centrald::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == morning_off || old_value == morning_standby)
+		return 0;
+	return Rts2Daemon::setValue (old_value, new_value);
+}
 
 void
 Rts2Centrald::connectionRemoved (Rts2Conn * conn)
@@ -783,9 +793,9 @@ Rts2Centrald::idle ()
 		if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
 			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		{
-			if (morning_off)
+			if (morning_off->getValueBool ())
 				setState (SERVERD_OFF, "by idle routine");
-			else if (morning_standby)
+			else if (morning_standby->getValueBool ())
 				setState (call_state | SERVERD_STANDBY, "by idle routine");
 			else
 				setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
