@@ -1,13 +1,36 @@
+
+/* 
+ * Connection for OpenTPL.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_IR_CONN__
 #define __RTS2_IR_CONN__
 
 #include <opentpl/client.h>
 #include "../utils/rts2app.h"	 // logStream for logging
+#include "../utils/rts2value.h"
 
 using namespace OpenTPL;
 
 /**
- * Class which enables access to OpenTPL.
+ * Connection for access to OpenTPL.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class IrConn
 {
@@ -41,8 +64,48 @@ class IrConn
 		}
 
 		template < typename T > int tpl_get (const char *name, T & val, int *status);
+
+		/**
+		 * Set Rts2ValueDouble from OpenTPL.
+		 *
+		 * @param name   Value name.
+		 * @param value  Rts2ValueDouble which will be set.
+		 * @param status OpenTPL status.
+		 *
+		 * @return OpenTPL status of the get operation.
+		 */
+		int getValueDouble (const char *name, Rts2ValueDouble *value, int *status)
+		{
+			double val;
+			int ret = tpl_get (name, val, status);
+			if (ret == TPL_OK)
+				value->setValueDouble (val);
+
+			return ret;
+		}
+
+		/**
+		 * Set value. Do not wait for result.
+		 *
+		 * @param name   Value name.
+		 * @param val    Value.
+		 * @param status OpenTPL status.
+		 *
+		 * @return OpenTPL status of the operation.
+		 */
 		template < typename T > int tpl_set (const char *name, T val, int *status);
+		
+		/**
+		 * Set value and wait for result.
+		 *
+		 * @param name   Value name.
+		 * @param val    Value.
+		 * @param status OpenTPL status.
+		 *
+		 * @return OpenTPL status of the operation.
+		 */
 		template < typename T > int tpl_setw (const char *name, T val, int *status);
+
 
 		int getError (int in_error, std::string & desc)
 		{

@@ -1,6 +1,6 @@
 /* 
- * Driver for OpemTPL mounts.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Driver for OpenTPL mounts.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

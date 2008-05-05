@@ -1,6 +1,6 @@
 /* 
- * Driver for OpemTPL mounts.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Driver for OpenTPL mounts.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -505,23 +505,17 @@ Rts2TelescopeIr::initValues ()
 	int status = TPL_OK;
 	std::string serial;
 
-	double t_long, t_lat, t_heigh;
-
-	status = irConn->tpl_get ("LOCAL.LATITUDE", t_lat, &status);
-	status = irConn->tpl_get ("LOCAL.LONGITUDE", t_long, &status);
-	status = irConn->tpl_get ("LOCAL.HEIGHT", t_heigh, &status);
+	status = irConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
+	status = irConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
+	status = irConn->getValueDouble ("LOCAL.HEIGHT", telAltitude, &status);
 
 	if (status != TPL_OK)
 	{
 		return -1;
 	}
 
-	telLatitude->setValueDouble (t_lat);
-	telLongitude->setValueDouble (t_long);
-	telAltitude->setValueDouble (t_heigh);
-
 	irConn->tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
-	addConstValue ("IR_HWID", "serial number", (char *) serial.c_str ());
+	addConstValue ("IR_HWID", "serial number", serial.c_str ());
 
 	return Rts2DevTelescope::initValues ();
 }
