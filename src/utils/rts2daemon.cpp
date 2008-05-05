@@ -614,7 +614,7 @@ Rts2Daemon::checkBopStatus ()
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, const char *in_desc, char *in_value)
+Rts2Daemon::addConstValue (char *in_name, const char *in_desc, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
 	val->setValueString (in_value);
