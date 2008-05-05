@@ -19,12 +19,16 @@
 
 #include "rts2loggerbase.h"
 
-Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, std::list < std::string > &in_logNames)
+Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, 
+time_t in_fileCreationInterval, std::list < std::string > &in_logNames)
 :Rts2DevClient (in_conn)
 {
 	gettimeofday (&nextInfoCall, NULL);
 	numberSec.tv_sec = (int) (floor (in_numberSec));
 	numberSec.tv_usec = (int) (USEC_SEC * (in_numberSec - floor (in_numberSec)));
+
+	time(&nextFileCreationCheck);
+	fileCreationInterval = in_fileCreationInterval;
 
 	logNames = in_logNames;
 
@@ -78,6 +82,8 @@ Rts2DevClientLogger::changeOutputStream ()
 {
 	struct timeval tv;
 	getConnection ()->getInfoTime (tv);
+	if (tv.tv_sec < nextFileCreationCheck)
+		return;
 	exp->setExpandDate (&tv);
 	std::string expanded = exp->expand (expandPattern);
 	// if filename was not changed
@@ -227,6 +233,6 @@ Rts2LoggerBase::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2LogValName *val = getLogVal (conn->getName ());
 	if (val)
-		return new Rts2DevClientLogger (conn, val->timeout, val->valueList);
+		return new Rts2DevClientLogger (conn, val->timeout, 60, val->valueList);
 	return NULL;
 }

@@ -52,6 +52,16 @@ class Rts2DevClientLogger:public Rts2DevClient
 		 * Info command will be send every numberSec seconds.
 		 */
 		struct timeval numberSec;
+
+		/**
+		 * Interval between two sucessive tests of file expansion.
+		 */
+		time_t fileCreationInterval;
+
+		/**
+		 * Next file creation check.
+		 */
+		time_t nextFileCreationCheck;
 	
 		/**
 		 * Fill to log file values which are in logValues array.
@@ -73,11 +83,12 @@ class Rts2DevClientLogger:public Rts2DevClient
 		/**
 		 * Construct client for logging device.
 		 *
-		 * @param in_conn Connection.
-		 * @param in_numberSec Number of seconds when the info command will be send.
-		 * @param in_logNames String with space separated names of values which will be logged.
+		 * @param in_conn                  Connection.
+		 * @param in_numberSec             Number of seconds when the info command will be send.
+		 * @param in_fileCreationInterval  Interval between file creation.
+		 * @param in_logNames              String with space separated names of values which will be logged.
 		 */
-		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, std::list < std::string > &in_logNames);
+		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
 
 		virtual ~ Rts2DevClientLogger (void);
 		virtual void infoOK ();
@@ -110,7 +121,11 @@ class Rts2LogValName
 };
 
 /**
- * This class is base class for logging.
+ * Bse class for logging. Provides functions for both Rts2App and Rts2Device, which
+ * shall be called from the respective program bodies.
+ *
+ * @ingroup RTS2Logger
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2LoggerBase
 {
