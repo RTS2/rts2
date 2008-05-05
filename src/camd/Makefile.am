@@ -37,7 +37,7 @@ rts2_camd_dummy_SOURCES = dummy.cpp
 if ALTA
 bin_PROGRAMS += rts2-camd-alta
 rts2_camd_alta_SOURCES = alta.cpp
-rts2_camd_alta_LDFLAGS = @LIB_ALTA@ @LIB_M@
+rts2_camd_alta_LDADD = @LIB_ALTA@ @LIB_M@ ${LDADD}
 rts2_camd_alta_CXXFLAGS = @INC_ALTA@
 endif
 
