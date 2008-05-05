@@ -76,7 +76,7 @@ class Rts2Command
 		Rts2Command (Rts2Block * in_owner, char *in_text);
 		Rts2Command (Rts2Command * in_command);
 		virtual ~ Rts2Command (void);
-		int setCommand (char *in_text);
+		int setCommand (const char *in_text);
 		void setConnection (Rts2Conn * conn)
 		{
 			connection = conn;
