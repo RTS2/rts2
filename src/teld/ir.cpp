@@ -30,6 +30,8 @@ using namespace OpenTPL;
 int
 Rts2TelescopeIr::coverClose ()
 {
+	if (cover == NULL)
+		return 0;
 	int status = TPL_OK;
 	double targetPos;
 	if (cover_state == CLOSED)
@@ -47,6 +49,8 @@ Rts2TelescopeIr::coverClose ()
 int
 Rts2TelescopeIr::coverOpen ()
 {
+	if (cover == NULL)
+		return 0;
 	int status = TPL_OK;
 	if (cover_state == OPENED)
 		return 0;
@@ -493,8 +497,6 @@ Rts2TelescopeIr::init ()
 	if (ret)
 		return ret;
 
-	initCoverState ();
-
 	return 0;
 }
 
@@ -505,6 +507,28 @@ Rts2TelescopeIr::initValues ()
 	int status = TPL_OK;
 	std::string serial;
 
+	std::string config_mount;
+
+	status = irConn->tpl_get ("CONFIG.MOUNT", config_mount, &status);
+	if (status != TPL_OK)
+		return -1;
+	
+	// switch mount type
+	if (config_mount == "\"AZ-ZD\"")
+	{
+		setPointingModel (1);
+
+	}
+	else if (config_mount == "\"RA-DEC\"")
+	{
+		setPointingModel (0);
+
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "Unsupported pointing model: '" << config_mount << "'" << sendLog;
+		return -1;
+	}
 	status = irConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
 	status = irConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
 	status = irConn->getValueDouble ("LOCAL.HEIGHT", telAltitude, &status);
@@ -520,6 +544,7 @@ Rts2TelescopeIr::initValues ()
 	if (irConn->haveModule ("COVER"))
 	{
 		createValue (cover, "cover", "cover state (1 = opened)", false);
+		initCoverState ();
 	}
 
 	return Rts2DevTelescope::initValues ();
@@ -672,18 +697,21 @@ Rts2TelescopeIr::checkPower ()
 		}
 		sleep (1);
 	}
-	// force close of cover..
-	initCoverState ();
-	switch (getMasterState ())
+	if (cover)
 	{
-		case SERVERD_DUSK:
-		case SERVERD_NIGHT:
-		case SERVERD_DAWN:
-			coverOpen ();
-			break;
-		default:
-			coverClose ();
-			break;
+		// force close of cover..
+		initCoverState ();
+		switch (getMasterState ())
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				coverOpen ();
+				break;
+			default:
+				coverClose ();
+				break;
+		}
 	}
 }
 
@@ -774,7 +802,8 @@ Rts2TelescopeIr::idle ()
 	checkPower ();
 	// check for errors..
 	checkErrors ();
-	checkCover ();
+	if (cover)
+		checkCover ();
 	return Rts2DevTelescope::idle ();
 }
 
@@ -791,6 +820,9 @@ Rts2TelescopeIr::getAltAz ()
 {
 	int status = TPL_OK;
 	double zd, az;
+
+	if (getPointingModel () == 0)
+		return Rts2DevTelescope::getAltAz ();
 
 	status = irConn->tpl_get ("ZD.REALPOS", zd, &status);
 	status = irConn->tpl_get ("AZ.REALPOS", az, &status);
@@ -840,15 +872,32 @@ Rts2TelescopeIr::info ()
 	setTelRaDec (t_telRa, t_telDec);
 
 	#ifdef DEBUG_EXTRA
-	status = irConn->tpl_get ("ZD.CURRSPEED", zd_speed, &status);
-	status = irConn->tpl_get ("AZ.CURRSPEED", az_speed, &status);
+	switch (getPointingModel ())
+	{
+		case 0:
+			status = irConn->tpl_get ("HA.CURRSPEED", zd_speed, &status);
+			status = irConn->tpl_get ("DEC.CURRSPEED", az_speed, &status);
 
-	logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
-		<< " dec " << getTelDec ()
-		<< " az_speed " << az_speed
-		<< " zd_speed " << zd_speed
-		<< " track " << track
-		<< sendLog;
+			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
+				<< " dec " << getTelDec ()
+				<< " ha_speed " << az_speed
+				<< " dec_speed " << zd_speed
+				<< " track " << track
+				<< sendLog;
+			break;
+
+		case 1:
+			status = irConn->tpl_get ("ZD.CURRSPEED", zd_speed, &status);
+			status = irConn->tpl_get ("AZ.CURRSPEED", az_speed, &status);
+
+			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
+				<< " dec " << getTelDec ()
+				<< " az_speed " << az_speed
+				<< " zd_speed " << zd_speed
+				<< " track " << track
+				<< sendLog;
+			break;
+	}
 	#endif						 // DEBUG_EXTRA
 
 	if (!track)
@@ -886,7 +935,8 @@ Rts2TelescopeIr::info ()
 		derotatorPower->setValueBool (derPower == 1);
 	}
 
-	getCover ();
+	if (cover)
+		getCover ();
 	getDome ();
 
 	mountTrack->setValueInteger (track);

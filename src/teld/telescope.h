@@ -187,6 +187,28 @@ class Rts2DevTelescope:public Rts2Device
 			ignoreCorrection->setValueDouble (new_ign);
 		}
 
+
+		/**
+		 * Set ponting model. 0 is EQU, 1 is ALT-AZ
+		 *
+		 * @param pModel 0 for EQU, 1 for ALT-AZ.
+		 */
+		void setPointingModel (int pModel)
+		{
+			pointingModel->setValueInteger (pModel);
+		}
+
+
+		/**
+		 * Return telescope pointing model.
+		 *
+		 * @return 0 if pointing model is EQU, 1 if it is ALT-AZ
+		 */
+		int getPointingModel ()
+		{
+			return pointingModel->getValueInteger ();
+		}
+
 	private:
 		/**
 		 * Date and time when last park command was issued.

@@ -69,8 +69,9 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
-	int status;
+	int status = TPL_OK;
 	//  status = setTrack (0);
+
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
 	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
 	if (!getDerotatorPower ())
@@ -101,25 +102,41 @@ Rts2DevTelescopeIr::startMove ()
 	int status = 0;
 	double sep;
 
+	struct ln_hrz_posn tarAltAz;
+
 	getTarget (&target);
 
-	// move to zenit - move to different dec instead
-	if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
+	switch (getPointingModel ())
 	{
-		if (fabs (target.ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
-		{
-			target.dec = telLatitude->getValueDouble () - BLIND_SIZE;
-		}
-	}
+		case 0:
+			getTargetAltAz (&tarAltAz);
+			if ((tarAltAz.az < 5 || tarAltAz.az > 355 || (tarAltAz.az > 175 && tarAltAz.az < 185))
+				&& tarAltAz.alt < 15)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot move to target, as it's too close to dome" << sendLog;
+				return -1;
+			}
+			break;
+		case 1:
+			// move to zenit - move to different dec instead
+			if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
+			{
+				if (fabs (target.ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
+				{
+					target.dec = telLatitude->getValueDouble () - BLIND_SIZE;
+				}
+			}
 
-	double az_off = 0;
-	double alt_off = 0;
-	status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
-	status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
-		return -1;
+			double az_off = 0;
+			double alt_off = 0;
+			status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
+			status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
+			if (status)
+			{
+				logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
+				return -1;
+			}
+			break;
 	}
 
 	status = startMoveReal (target.ra, target.dec);
@@ -196,12 +213,21 @@ Rts2DevTelescopeIr::startPark ()
 	#endif
 	sleep (1);
 	status = TPL_OK;
-	status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
-	status = irConn->tpl_set ("ZD.TARGETPOS", 0, &status);
-	status = irConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
+	switch (getPointingModel ())
+	{
+		case 0:
+			status = irConn->tpl_set ("HA.TARGETPOS", 90, &status);
+			status = irConn->tpl_set ("DEC.TARGETPOS", 90, &status);
+			break;
+		case 1:
+			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
+			status = irConn->tpl_set ("ZD.TARGETPOS", 0, &status);
+			status = irConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
+			break;
+	}
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "IR startPark ZD.TARGETPOS status " <<
+		logStream (MESSAGE_ERROR) << "IR startPark status " <<
 			status << sendLog;
 		return -1;
 	}
