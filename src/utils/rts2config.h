@@ -60,7 +60,7 @@ class Rts2Config:public Rts2ConfigRaw
 		float swift_min_horizon;
 		float swift_soft_horizon;
 
-		bool grbd_follow_fake;
+		bool grbd_follow_transients;
 		int grbd_validity;
 	protected:
 		virtual int getSpecialValues ();
@@ -227,13 +227,15 @@ class Rts2Config:public Rts2ConfigRaw
 		}
 
 		/**
-		 * If burst which is shown as invalid, should be observerd. Defaults to true.
+		 * If burst which is shown as know transient source and invalid
+		 * GRBs should be observerd. Defaults to true.
 		 *
-		 * @return True if fake burst should be followed.
+		 * @return True if know sources and invalid GRBs should be
+		 * followed.
 		 */
-		bool grbdFollowFake ()
+		bool grbdFollowTransients ()
 		{
-			return grbd_follow_fake;
+			return grbd_follow_transients;
 		}
 
 		/**

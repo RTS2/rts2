@@ -46,7 +46,7 @@ Rts2Config::getSpecialValues ()
 	getFloat ("swift", "soft_horizon", swift_soft_horizon, swift_min_horizon);
 
 	// GRD section
-	grbd_follow_fake = getBoolean ("grbd", "follow_fake", true);
+	grbd_follow_transients = getBoolean ("grbd", "know_transients", true);
 	getInteger ("grbd", "validity", grbd_validity, 3600);
 
 	if (ret)
