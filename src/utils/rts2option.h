@@ -54,12 +54,12 @@
 class Rts2Option
 {
 	int short_option;
-	char *long_option;
+	const char *long_option;
 	int has_arg;
-	char *help_msg;
+	const char *help_msg;
 	public:
-		Rts2Option (int in_short_option, char *in_long_option, int in_has_arg,
-			char *in_help_msg)
+		Rts2Option (int in_short_option, const char *in_long_option, int in_has_arg,
+			const char *in_help_msg)
 		{
 			short_option = in_short_option;
 			long_option = in_long_option;

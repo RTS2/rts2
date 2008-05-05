@@ -1,6 +1,6 @@
 /* 
  * Connection class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -90,6 +90,8 @@ class Rts2Value;
  *
  * Rts2Conn is used primarly in @see Rts2Block, which holds list of connections
  * and provide function to manage them.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup RTS2Block
  */
@@ -376,7 +378,17 @@ class Rts2Conn:public Rts2Object
 		int sendValue (char *val_name, int val1, int val2, double val3, double val4,
 			double val5, double val6);
 		int sendValueTime (std::string val_name, time_t * value);
-		int sendCommandEnd (int num, char *in_msg);
+
+		/**
+		 * Send end of command on the connection.
+		 *
+		 * @param num      Error number (0 for no error).
+		 * @param in_msg   Message which will be send with command end.
+		 *
+		 * @return -1 on error, 0 on sucess.
+		 */
+		int sendCommandEnd (int num, const char *in_msg);
+
 		virtual int processLine ();
 		virtual int receive (fd_set * set);
 		conn_type_t getType ()

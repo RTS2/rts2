@@ -111,7 +111,7 @@ class Rts2App:public Rts2Object
 		 * @param in_help_msg      Help message printed to the user.
 		 * @return -1 on failure, 0 on success.
 		 */
-		int addOption (int in_short_option, char *in_long_option, int in_has_arg, char *in_help_msg);
+		int addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg);
 
 		/**
 		 * Ask user for integer.

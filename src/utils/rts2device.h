@@ -98,7 +98,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual void setBopState (int in_value);
 		virtual void connectionError (int last_data_size);
 	public:
-		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, char *in_master_host, int in_master_port);
+		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, const char *in_master_host, int in_master_port);
 		virtual ~ Rts2DevConnMaster (void);
 		int registerDevice ();
 		virtual int init ();
@@ -172,7 +172,7 @@ class Rts2Device:public Rts2Daemon
 {
 	private:
 		Rts2DevConnMaster * conn_master;
-		char *centrald_host;
+		const char *centrald_host;
 		int centrald_port;
 
 		// device current full BOP state

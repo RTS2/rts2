@@ -53,7 +53,7 @@ Rts2Command::Rts2Command (Rts2Command * in_command)
 
 
 int
-Rts2Command::setCommand (char *in_text)
+Rts2Command::setCommand (const char *in_text)
 {
 	text = new char[strlen (in_text) + 1];
 	strcpy (text, in_text);

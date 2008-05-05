@@ -176,7 +176,7 @@ class Rts2Daemon:public Rts2Block
 		 */
 		template < typename T > void createValue (
 			T * &val,
-			char *in_val_name,
+			const char *in_val_name,
 			std::string in_description,
 			bool writeToFits = true,
 			int32_t valueFlags = 0,

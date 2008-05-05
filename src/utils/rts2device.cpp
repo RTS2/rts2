@@ -295,7 +295,7 @@ char *in_device_host,
 int in_device_port,
 char *in_device_name,
 int in_device_type,
-char *in_master_host,
+const char *in_master_host,
 int in_master_port):
 Rts2Conn (-1, in_master)
 {
@@ -961,9 +961,7 @@ Rts2Device::init ()
 
 	free (lock_fname);
 
-	conn_master =
-		new Rts2DevConnMaster (this, device_host, getPort (), device_name,
-		device_type, centrald_host, centrald_port);
+	conn_master = new Rts2DevConnMaster (this, device_host, getPort (), device_name, device_type, centrald_host, centrald_port);
 	addConnection (conn_master);
 
 	while (conn_master->init () < 0)

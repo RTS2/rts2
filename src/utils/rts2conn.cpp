@@ -1589,7 +1589,7 @@ Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 
 
 int
-Rts2Conn::sendCommandEnd (int num, char *in_msg)
+Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 {
 	char *msg;
 	asprintf (&msg, "%+04i \"%s\"", num, in_msg);
