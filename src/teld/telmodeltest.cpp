@@ -1,6 +1,6 @@
 /* 
  * Dry run for telescope model.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@
 #include "model/telmodel.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2format.h"
+#include "../utils/rts2cliapp.h"
 #include "../writers/rts2imagedb.h"
 
 #include <iostream>
@@ -69,7 +70,7 @@ class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 		}
 };
 
-class TelModelTest:public Rts2App
+class TelModelTest:public Rts2CliApp
 {
 	private:
 		char *modelFile;
@@ -86,6 +87,8 @@ class TelModelTest:public Rts2App
 		void runOnFitsFile (std::string filename, std::ostream & os);
 		void runOnDatFile (std::string filename, std::ostream & os);
 	protected:
+		virtual void usage ();
+		
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
 
@@ -94,11 +97,12 @@ class TelModelTest:public Rts2App
 		virtual ~ TelModelTest (void);
 
 		virtual int init ();
-		virtual int run ();
+		virtual int doProcessing ();
 };
 
+
 TelModelTest::TelModelTest (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2CliApp (in_argc, in_argv)
 {
 	Rts2Config *config;
 	config = Rts2Config::instance ();
@@ -121,6 +125,13 @@ TelModelTest::~TelModelTest (void)
 	delete telescope;
 	runFiles.clear ();
 }
+
+
+void
+TelModelTest::usage ()
+{
+	std::cout << "-m <model_file> [-e[e]] [-N] [-v] (-i <images> | <model datafile>)" << std::endl;
+} 
 
 
 int
@@ -439,7 +450,7 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 
 
 int
-TelModelTest::run ()
+TelModelTest::doProcessing ()
 {
 	if (!runFiles.empty ())
 	{
@@ -460,10 +471,6 @@ TelModelTest::run ()
 int
 main (int argc, char **argv)
 {
-	int ret;
 	TelModelTest app (argc, argv);
-	ret = app.init ();
-	if (ret)
-		return ret;
 	return app.run ();
 }
