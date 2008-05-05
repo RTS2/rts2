@@ -203,12 +203,12 @@ class Rts2Daemon:public Rts2Block
 			addConstValue (val);
 		}
 		void addConstValue (Rts2Value * value);
-		void addConstValue (char *in_name, const char *in_desc, const char *in_value);
-		void addConstValue (char *in_name, const char *in_desc, double in_value);
-		void addConstValue (char *in_name, const char *in_desc, int in_value);
-		void addConstValue (char *in_name, char *in_value);
-		void addConstValue (char *in_name, double in_value);
-		void addConstValue (char *in_name, int in_value);
+		void addConstValue (const char *in_name, const char *in_desc, const char *in_value);
+		void addConstValue (const char *in_name, const char *in_desc, double in_value);
+		void addConstValue (const char *in_name, const char *in_desc, int in_value);
+		void addConstValue (const char *in_name, char *in_value);
+		void addConstValue (const char *in_name, double in_value);
+		void addConstValue (const char *in_name, int in_value);
 
 		/**
 		 * BOP management routines.

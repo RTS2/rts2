@@ -614,7 +614,7 @@ Rts2Daemon::checkBopStatus ()
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, const char *in_desc, const char *in_value)
+Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
 	val->setValueString (in_value);
@@ -623,7 +623,7 @@ Rts2Daemon::addConstValue (char *in_name, const char *in_desc, const char *in_va
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, const char *in_desc,
+Rts2Daemon::addConstValue (const char *in_name, const char *in_desc,
 double in_value)
 {
 	Rts2ValueDouble *val = new Rts2ValueDouble (in_name, std::string (in_desc));
@@ -633,7 +633,7 @@ double in_value)
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, const char *in_desc, int in_value)
+Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, int in_value)
 {
 	Rts2ValueInteger *val =
 		new Rts2ValueInteger (in_name, std::string (in_desc));
@@ -643,7 +643,7 @@ Rts2Daemon::addConstValue (char *in_name, const char *in_desc, int in_value)
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, char *in_value)
+Rts2Daemon::addConstValue (const char *in_name, char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name);
 	val->setValueString (in_value);
@@ -652,7 +652,7 @@ Rts2Daemon::addConstValue (char *in_name, char *in_value)
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, double in_value)
+Rts2Daemon::addConstValue (const char *in_name, double in_value)
 {
 	Rts2ValueDouble *val = new Rts2ValueDouble (in_name);
 	val->setValueDouble (in_value);
@@ -661,7 +661,7 @@ Rts2Daemon::addConstValue (char *in_name, double in_value)
 
 
 void
-Rts2Daemon::addConstValue (char *in_name, int in_value)
+Rts2Daemon::addConstValue (const char *in_name, int in_value)
 {
 	Rts2ValueInteger *val = new Rts2ValueInteger (in_name);
 	val->setValueInteger (in_value);
