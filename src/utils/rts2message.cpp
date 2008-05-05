@@ -67,6 +67,10 @@ std::string Rts2Message::toConn ()
 	// replace \r\n
 	std::string msg = messageString;
 	size_t pos;
+	for (pos = msg.find_first_of ("\0"); pos != std::string::npos; pos = msg.find_first_of ("\0", pos))
+	{
+		msg.replace (pos, 1, "\\0");
+	}
 	for (pos = msg.find_first_of ("\r"); pos != std::string::npos; pos = msg.find_first_of ("\r", pos))
 	{
 		msg.replace (pos, 1, "\\r");
