@@ -27,10 +27,6 @@
 
 using namespace OpenTPL;
 
-#define LONGITUDE -3.3847222
-#define LATITUDE 37.064167
-#define ALTITUDE 2896
-
 int
 Rts2TelescopeIr::coverClose ()
 {
@@ -509,9 +505,21 @@ Rts2TelescopeIr::initValues ()
 	int status = TPL_OK;
 	std::string serial;
 
-	telLongitude->setValueDouble (LONGITUDE);
-	telLatitude->setValueDouble (LATITUDE);
-	telAltitude->setValueDouble (ALTITUDE);
+	double t_long, t_lat, t_heigh;
+
+	status = irConn->tpl_get ("LOCAL.LATITUDE", t_lat, &status);
+	status = irConn->tpl_get ("LOCAL.LONGITUDE", t_long, &status);
+	status = irConn->tpl_get ("LOCAL.HEIGHT", t_heigh, &status);
+
+	if (status != TPL_OK)
+	{
+		return -1;
+	}
+
+	telLatitude->setValueDouble (t_lat);
+	telLongitude->setValueDouble (t_long);
+	telAltitude->setValueDouble (t_heigh);
+
 	irConn->tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
 	addConstValue ("IR_HWID", "serial number", (char *) serial.c_str ());
 

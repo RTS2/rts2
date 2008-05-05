@@ -228,6 +228,11 @@ class Rts2DevTelescope:public Rts2Device
 		 */
 		void incMoveNum ();
 
+		/** 
+		 * Which coordinates are used for pointing (eq, alt-az,..)
+		 */
+		Rts2ValueSelection *pointingModel;
+
 	protected:
 		Rts2ValueInteger * correctionsMask;
 
@@ -265,9 +270,6 @@ class Rts2DevTelescope:public Rts2Device
 		double defaultRotang;
 
 		Rts2ValueDouble *rotang;
-
-								 // which coordinates are used for pointing (eq, alt-az,..)
-		Rts2ValueSelection *pointingModel;
 
 		Rts2ValueDouble *telLongitude;
 		Rts2ValueDouble *telLatitude;
