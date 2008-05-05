@@ -66,6 +66,28 @@ class IrConn
 		template < typename T > int tpl_get (const char *name, T & val, int *status);
 
 		/**
+		 * Check if given module exists.
+		 *
+		 * @param name  Module name.
+		 * @return True if module exists.
+		 */
+		bool haveModule (const char *name)
+		{
+			int ver;
+			int status = TPL_OK;
+
+			char *vName = new char[strlen (name) + 9];
+			strcpy (vName, name);
+			strcat (vName, ".VERSION");
+
+			status = tpl_get (name, ver, &status);
+
+			delete []vName;
+
+			return status == TPL_OK && ver > 0;
+		}
+
+		/**
 		 * Set Rts2ValueDouble from OpenTPL.
 		 *
 		 * @param name   Value name.
@@ -106,7 +128,6 @@ class IrConn
 		 */
 		template < typename T > int tpl_setw (const char *name, T val, int *status);
 
-
 		int getError (int in_error, std::string & desc)
 		{
 			char *txt;
@@ -134,7 +155,7 @@ IrConn::tpl_get (const char *name, T & val, int *status)
 {
 	int cstatus = TPL_OK;
 
-	if (!*status)
+	if (*status == TPL_OK)
 	{
 		#ifdef DEBUG_ALL
 		std::cout << "tpl_get name " << name << std::endl;
@@ -176,7 +197,7 @@ IrConn::tpl_set (const char *name, T val, int *status)
 {
 	//  int cstatus;
 
-	if (!*status)
+	if (*status == TPL_OK)
 	{
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "tpl_set name " << name << " val " << val
@@ -202,7 +223,7 @@ IrConn::tpl_setw (const char *name, T val, int *status)
 {
 	int cstatus;
 
-	if (!*status)
+	if (*status == TPL_OK)
 	{
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "tpl_setw name " << name << " val " << val

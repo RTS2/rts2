@@ -386,7 +386,7 @@ in_argv)
 	createValue (domeTarDist, "dome_tar_dist", "dome target distance", false,
 		RTS2_DT_DEG_DIST);
 
-	createValue (cover, "cover", "cover state (1 = opened)", false);
+	cover = NULL;
 
 	createValue (model_dumpFile, "dump_file", "model dump file", false);
 	createValue (model_aoff, "aoff", "model azimuth offset", false,
@@ -516,6 +516,11 @@ Rts2TelescopeIr::initValues ()
 
 	irConn->tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
 	addConstValue ("IR_HWID", "serial number", serial.c_str ());
+
+	if (irConn->haveModule ("COVER"))
+	{
+		createValue (cover, "cover", "cover state (1 = opened)", false);
+	}
 
 	return Rts2DevTelescope::initValues ();
 }
