@@ -183,15 +183,21 @@ TargetGRB::getPostSec ()
 void
 TargetGRB::checkValidity ()
 {
-	if (isGrb () == false && Rts2Config::instance()->grbdFollowFake () == false)
+	if (isGrb () == false && Rts2Config::instance()->grbdFollowTransients () == false)
 	{
-		logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB" << sendLog;
-		setTargetEnabled (false);
+		if (getTargetEnabled () == true)
+		{
+ 			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB" << sendLog;
+			setTargetEnabled (false);
+		}
 	}
 	if (Rts2Config::instance()->grbdValidity () > 0 && getPostSec () > Rts2Config::instance()->grbdValidity ())
 	{
-		logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is not valid GRB" << sendLog;
-		setTargetEnabled (false);
+		if (getTargetEnabled () == false)
+		{
+			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is not valid GRB" << sendLog;
+			setTargetEnabled (false);
+		}
 	}
 }
 
