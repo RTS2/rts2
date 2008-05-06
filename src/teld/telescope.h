@@ -258,6 +258,11 @@ class Rts2DevTelescope:public Rts2Device
 	protected:
 		Rts2ValueInteger * correctionsMask;
 
+		virtual int processOption (int in_opt);
+
+		virtual int init ();
+		virtual int idle ();
+
 		/**
 		 * Increment number of parks. Shall be called
 		 * every time mount homing commands is issued.
@@ -335,8 +340,6 @@ class Rts2DevTelescope:public Rts2Device
 		 * @return Local sidereal time in hours (0-24 range).
 		 */
 		double getLocSidTime (double JD);
-
-		virtual int processOption (int in_opt);
 
 		virtual void cancelPriorityOperations ()
 		{
@@ -469,8 +472,6 @@ class Rts2DevTelescope:public Rts2Device
 	public:
 		Rts2DevTelescope (int argc, char **argv);
 		virtual ~ Rts2DevTelescope (void);
-		virtual int init ();
-		virtual int idle ();
 
 		virtual void postEvent (Rts2Event * event);
 
