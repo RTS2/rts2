@@ -182,8 +182,8 @@ Rts2Plan::save ()
 			:db_tar_id,
 			:db_prop_id :db_prop_id_ind,
 			:db_obs_id :db_obs_id_ind,
-			abstime (:db_plan_start),
-			abstime (:db_plan_end :db_plan_end_ind),
+			to_timestamp (:db_plan_start),
+			to_timestamp (:db_plan_end :db_plan_end_ind),
 			:db_plan_status
 			);
 	if (sqlca.sqlcode)
@@ -197,8 +197,8 @@ Rts2Plan::save ()
 				tar_id = :db_tar_id,
 				prop_id = :db_prop_id :db_prop_id_ind,
 				obs_id = :db_obs_id :db_obs_id_ind,
-				plan_start = abstime (:db_plan_start),
-				plan_end = abstime (:db_plan_end :db_plan_end_ind),
+				plan_start = to_timestamp (:db_plan_start),
+				plan_end = to_timestamp (:db_plan_end :db_plan_end_ind),
 				plan_status = :db_plan_status
 			WHERE
 				plan_id = :db_plan_id;

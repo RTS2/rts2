@@ -547,7 +547,7 @@ Target::save (bool overwrite, int tar_id)
 			:db_tar_comment :db_tar_comment_ind,
 			:db_tar_priority,
 			:db_tar_bonus :db_tar_bonus_ind,
-			abstime (:db_tar_bonus_time :db_tar_bonus_time_ind),
+			to_timestamp (:db_tar_bonus_time :db_tar_bonus_time_ind),
 		null,
 			:db_tar_enabled
 			);
@@ -570,7 +570,7 @@ Target::save (bool overwrite, int tar_id)
 				tar_comment = :db_tar_comment,
 				tar_priority = :db_tar_priority,
 				tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
-				tar_bonus_time = abstime(:db_tar_bonus_time :db_tar_bonus_time_ind),
+				tar_bonus_time = to_timestamp(:db_tar_bonus_time :db_tar_bonus_time_ind),
 				tar_enabled = :db_tar_enabled
 			WHERE
 				tar_id = :db_tar_id;
@@ -1300,7 +1300,7 @@ Target::changePriority (int pri_change, time_t *time_ch)
 			targets
 		SET
 			tar_bonus = tar_bonus + :db_priority_change,
-			tar_bonus_time = abstime(:db_next_t)
+			tar_bonus_time = to_timestamp(:db_next_t)
 		WHERE
 			tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
@@ -1348,7 +1348,7 @@ Target::setNextObservable (time_t *time_ch)
 	EXEC SQL UPDATE
 			targets
 		SET
-			tar_next_observable = abstime(:db_next_observable :db_next_observable_ind)
+			tar_next_observable = to_timestamp(:db_next_observable :db_next_observable_ind)
 		WHERE
 			tar_id = :db_tar_id;
 	if (sqlca.sqlcode)
@@ -1390,9 +1390,9 @@ Target::getNumObs (time_t *start_time, time_t *end_time)
 			observations
 		WHERE
 			tar_id = :d_tar_id
-		AND obs_slew >= abstime (:d_start_time)
+		AND obs_slew >= to_timestamp(:d_start_time)
 		AND (obs_end is null
-		OR obs_end <= abstime (:d_end_time)
+		OR obs_end <= to_timestamp(:d_end_time)
 			);
 	// runnign observations counts as well - hence obs_end is null
 
@@ -1758,8 +1758,8 @@ struct ln_lnlat_posn *in_obs, Rts2App *master)
 			observations
 		WHERE
 			targets.tar_id = observations.tar_id
-		AND observations.obs_slew >= abstime (:db_from)
-		AND observations.obs_end <= abstime (:db_end);
+		AND observations.obs_slew >= to_timestamp (:db_from)
+		AND observations.obs_end <= to_timestamp (:db_end);
 
 	EXEC SQL OPEN tar_obs_cur;
 

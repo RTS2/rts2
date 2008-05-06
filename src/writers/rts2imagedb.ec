@@ -237,7 +237,7 @@ Rts2ImageSkyDb::updateDB ()
 			:d_img_filter,
 			:d_img_alt,
 			:d_img_az,
-			abstime (:d_img_date),
+			to_timestamp (:d_img_date),
 			:d_img_usec,
 			:d_epoch_id,
 			:d_med_id,
@@ -259,7 +259,7 @@ Rts2ImageSkyDb::updateDB ()
 			UPDATE
 				images
 			SET
-				img_date = abstime (:d_img_date),
+				img_date = to_timestamp (:d_img_date),
 				img_usec = :d_img_usec,
 				epoch_id = :d_epoch_id,
 				med_id   = :d_med_id,
@@ -467,7 +467,7 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 				UPDATE
 					airmass_cal_images
 				SET
-					air_last_image = abstime (0),
+					air_last_image = to_timestamp (0),
 					obs_id = NULL,
 					img_id = NULL
 				WHERE
@@ -491,13 +491,13 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 					UPDATE
 						airmass_cal_images
 					SET
-						air_last_image = abstime (:db_air_last_image),
+						air_last_image = to_timestamp (:db_air_last_image),
 						obs_id = :db_obs_id,
 						img_id = :db_img_id
 					WHERE
 						air_airmass_start <= :db_airmass
 					AND :db_airmass < air_airmass_end
-					AND air_last_image <= abstime (:db_air_last_image);
+					AND air_last_image <= to_timestamp (:db_air_last_image);
 
 				if (sqlca.sqlcode)
 				{
@@ -747,7 +747,7 @@ Rts2ImageDarkDb::updateDB ()
 			) VALUES (
 			:d_img_id,
 			:d_obs_id,
-			abstime (:d_dark_date),
+			to_timestamp (:d_dark_date),
 			:d_dark_usec,
 			:d_dark_exposure,
 			:d_dark_temperature :d_dark_temperature_ind,
@@ -820,7 +820,7 @@ Rts2ImageFlatDb::updateDB ()
 			) VALUES (
 			:d_obs_id,
 			:d_img_id,
-			abstime (:d_flat_date),
+			to_timestamp (:d_flat_date),
 			:d_flat_date_usec,
 			:d_flat_exposure,
 			:d_flat_temperature :d_flat_temperature_ind,

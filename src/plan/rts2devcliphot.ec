@@ -119,7 +119,7 @@ Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
     VALUES
       (
       :d_obs_id,
-      abstime (:d_count_date),
+      to_timestamp (:d_count_date),
       :d_count_usec,
       :d_count_value,
       :d_count_exposure,

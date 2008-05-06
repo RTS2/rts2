@@ -1927,7 +1927,7 @@ TargetPlan::refreshNext ()
 		FROM
 			plan
 		WHERE
-			plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= abstime (:db_next) AND obs_id IS NULL);
+			plan_start = (SELECT min(plan_start) FROM plan WHERE plan_start >= to_timestamp (:db_next) AND obs_id IS NULL);
 	if (sqlca.sqlcode)
 	{
 		logMsgDb ("TargetPlan::refreshNext cannot load next target",
