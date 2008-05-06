@@ -28,9 +28,13 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 		struct ln_equ_posn target;
 		int irTracking;
 
+		double derOff;
+
 		int startMoveReal (double ra, double dec);
 	protected:
 		virtual int processOption (int in_opt);
+
+		virtual int initValues ();
 	public:
 		Rts2DevTelescopeIr (int in_arcg, char **in_argv);
 		virtual int startMove ();
@@ -57,12 +61,24 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 			irTracking = atoi (optarg);
 			break;
 		case OPT_ROTATOR_OFFSET:
-			derotatorOffset->setValueDouble (atof (optarg));
+			derOff = atof (optarg);
 			break;
 		default:
 			return Rts2TelescopeIr::processOption (in_opt);
 	}
 	return 0;
+}
+
+
+int
+Rts2DevTelescopeIr::initValues ()
+{
+	int ret;
+	ret = Rts2TelescopeIr::initValues ();
+	if (ret)
+		return ret;
+	if (derotatorOffset)
+		derotatorOffset->setValueDouble (derOff);
 }
 
 
@@ -74,7 +90,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
 	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
-	if (!getDerotatorPower ())
+	if (derotatorOffset && !getDerotatorPower ())
 	{
 		status = irConn->tpl_set ("DEROTATOR[3].POWER", 1, &status);
 		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
@@ -84,10 +100,14 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
 		sendLog;
 	#endif
-	status = irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
 
-	if (status != TPL_OK)
-		return status;
+	if (derotatorOffset)
+	{
+		status = irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
+
+		if (status != TPL_OK)
+			return status;
+	}
 
 	//  usleep (USEC_SEC);
 	status = setTrack (irTracking, domeAutotrack->getValueBool ());
@@ -306,6 +326,8 @@ Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2Telesco
 in_argv)
 {
 	irTracking = 4;
+
+	derOff = 0;
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,

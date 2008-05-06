@@ -104,6 +104,11 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 
 		virtual int processOption (int in_opt);
 
+		virtual int initIrDevice ();
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+
 		Rts2ValueDouble *derotatorOffset;
 
 		Rts2ValueBool *domeAutotrack;
@@ -126,10 +131,6 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 	public:
 		Rts2TelescopeIr (int argc, char **argv);
 		virtual ~ Rts2TelescopeIr (void);
-		virtual int initIrDevice ();
-		virtual int init ();
-		virtual int initValues ();
-		virtual int idle ();
 		virtual int ready ();
 
 		virtual int getAltAz ();

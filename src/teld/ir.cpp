@@ -362,17 +362,13 @@ in_argv)
 	createValue (cabinetPowerState, "cabinet_power_state",
 		"power state of cabinet", false);
 
-	createValue (derotatorOffset, "DER_OFF", "derotator offset", true,
-		RTS2_DT_ROTANG, 0, true);
-	createValue (derotatorCurrpos, "DER_CUR", "derotator current position",
-		true, RTS2_DT_DEGREES);
+	derotatorOffset = NULL;
+	derotatorCurrpos = NULL;
+	derotatorPower = NULL;
 
 	createValue (targetDist, "target_dist", "distance in degrees to target",
 		false, RTS2_DT_DEG_DIST);
 	createValue (targetTime, "target_time", "reach target time in seconds",
-		false);
-
-	createValue (derotatorPower, "derotatorPower", "derotator power setting",
 		false);
 
 	createValue (mountTrack, "TRACK", "mount track");
@@ -512,7 +508,7 @@ Rts2TelescopeIr::initValues ()
 	status = irConn->tpl_get ("CONFIG.MOUNT", config_mount, &status);
 	if (status != TPL_OK)
 		return -1;
-	
+
 	// switch mount type
 	if (config_mount == "\"AZ-ZD\"")
 	{
@@ -545,6 +541,14 @@ Rts2TelescopeIr::initValues ()
 	{
 		createValue (cover, "cover", "cover state (1 = opened)", false);
 		initCoverState ();
+	}
+
+	// nasmith derotator
+	if (irConn->haveModule ("DEROTATOR[3]"))
+	{
+		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG, 0, true);
+		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES);
+		createValue (derotatorPower, "derotatorPower", "derotator power setting", false);
 	}
 
 	return Rts2DevTelescope::initValues ();
@@ -923,16 +927,15 @@ Rts2TelescopeIr::info ()
 	if (status)
 		return -1;
 
-	double tmp_derOff;
-	double tmp_derCur;
-	irConn->tpl_get ("DEROTATOR[3].OFFSET", tmp_derOff, &status);
-	irConn->tpl_get ("DEROTATOR[3].CURRPOS", tmp_derCur, &status);
-	irConn->tpl_get ("DEROTATOR[3].POWER", derPower, &status);
-	if (status == TPL_OK)
+	if (derotatorOffset)
 	{
-		derotatorOffset->setValueDouble (-1 * tmp_derOff);
-		derotatorCurrpos->setValueDouble (tmp_derCur);
-		derotatorPower->setValueBool (derPower == 1);
+		irConn->getValueDouble ("DEROTATOR[3].OFFSET", derotatorOffset, &status);
+		irConn->getValueDouble ("DEROTATOR[3].CURRPOS", derotatorCurrpos, &status);
+		irConn->tpl_get ("DEROTATOR[3].POWER", derPower, &status);
+		if (status == TPL_OK)
+		{
+			derotatorPower->setValueBool (derPower == 1);
+		}
 	}
 
 	if (cover)
