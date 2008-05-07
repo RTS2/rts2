@@ -334,7 +334,7 @@ img_wcs_ctype1 (PG_FUNCTION_ARGS)
 #ifdef HAVE_PGSQL_8
   SET_VARSIZE (res, VARHDRSZ + l);
 #else
-  VARATT_SIZEP (res) = VARHDRSZ + l);
+  VARATT_SIZEP (res) = VARHDRSZ + l;
 #endif
   memcpy (VARDATA (res), arg->ctype1, l);
 

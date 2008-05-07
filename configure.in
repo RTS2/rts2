@@ -450,7 +450,7 @@ if test "x"$psql = xyes ; then
   AC_ECPG
 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
-  if test `pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'` > 7 ; then
+  if test `pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'` -gt 7 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
   fi
 fi
