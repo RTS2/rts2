@@ -1,4 +1,5 @@
 2008-05-07
+ * [1959546] fixed problem with arrays in grb_gcn
  * [1959375] fixed SET_VARSIZE
 
 2008-05-06

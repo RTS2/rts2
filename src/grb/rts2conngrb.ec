@@ -1001,11 +1001,93 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 		int d_grb_type = grb_type;
 		long int d_grb_update = (int) last_packet.tv_sec;
 		int d_grb_update_usec = (int) last_packet.tv_usec;
-		long d_packet[40];
+
+		long d_packet0;
+		long d_packet1;
+		long d_packet2;
+		long d_packet3;
+		long d_packet4;
+		long d_packet5;
+		long d_packet6;
+		long d_packet7;
+		long d_packet8;
+		long d_packet9;
+		long d_packet10;
+		long d_packet11;
+		long d_packet12;
+		long d_packet13;
+		long d_packet14;
+		long d_packet15;
+		long d_packet16;
+		long d_packet17;
+		long d_packet18;
+		long d_packet19;
+		long d_packet20;
+		long d_packet21;
+		long d_packet22;
+		long d_packet23;
+		long d_packet24;
+		long d_packet25;
+		long d_packet26;
+		long d_packet27;
+		long d_packet28;
+		long d_packet29;
+		long d_packet30;
+		long d_packet31;
+		long d_packet32;
+		long d_packet33;
+		long d_packet34;
+		long d_packet35;
+		long d_packet36;
+		long d_packet37;
+		long d_packet38;
+		long d_packet39;
 	EXEC SQL END DECLARE SECTION;
 
-	// insert raw packet..
-	memcpy (d_packet, lbuf, 40 * sizeof (long));
+
+	d_packet0 = lbuf[0];
+	d_packet1 = lbuf[1];
+	d_packet2 = lbuf[2];
+	d_packet3 = lbuf[3];
+	d_packet4 = lbuf[4];
+	d_packet5 = lbuf[5];
+	d_packet6 = lbuf[6];
+	d_packet7 = lbuf[7];
+	d_packet8 = lbuf[8];
+	d_packet9 = lbuf[9];
+
+	d_packet10 = lbuf[10];
+	d_packet11 = lbuf[11];
+	d_packet12 = lbuf[12];
+	d_packet13 = lbuf[13];
+	d_packet14 = lbuf[14];
+	d_packet15 = lbuf[15];
+	d_packet16 = lbuf[16];
+	d_packet17 = lbuf[17];
+	d_packet18 = lbuf[18];
+	d_packet19 = lbuf[19];
+
+	d_packet20 = lbuf[20];
+	d_packet21 = lbuf[21];
+	d_packet22 = lbuf[22];
+	d_packet23 = lbuf[23];
+	d_packet24 = lbuf[24];
+	d_packet25 = lbuf[25];
+	d_packet26 = lbuf[26];
+	d_packet27 = lbuf[27];
+	d_packet28 = lbuf[28];
+	d_packet29 = lbuf[29];
+
+	d_packet30 = lbuf[30];
+	d_packet31 = lbuf[31];
+	d_packet32 = lbuf[32];
+	d_packet33 = lbuf[33];
+	d_packet34 = lbuf[34];
+	d_packet35 = lbuf[35];
+	d_packet36 = lbuf[36];
+	d_packet37 = lbuf[37];
+	d_packet38 = lbuf[38];
+	d_packet39 = lbuf[39];
 
 	EXEC SQL
 		INSERT INTO
@@ -1023,7 +1105,11 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 			:d_grb_type,
 			(TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
 			:d_grb_update_usec,
-			:d_packet
+			ARRAY[:d_packet0, :d_packet1, :d_packet2, :d_packet3, :d_packet4, :d_packet5, :d_packet6, :d_packet7, :d_packet8, :d_packet9,
+				d_packet10, :d_packet11, :d_packet12, :d_packet13, :d_packet14, :d_packet15, :d_packet16, :d_packet17, :d_packet18, :d_packet19,
+				d_packet20, :d_packet21, :d_packet22, :d_packet23, :d_packet24, :d_packet25, :d_packet26, :d_packet27, :d_packet28, :d_packet29,
+				d_packet30, :d_packet31, :d_packet32, :d_packet33, :d_packet34, :d_packet35, :d_packet36, :d_packet37, :d_packet38, :d_packet39]
+
 			);
 	if (sqlca.sqlcode)
 	{
