@@ -1,9 +1,6 @@
-/*!
- * @file Defines extension to PostgresSQL to handle efectivelly WCS informations.
- *
- * @author petr
- *
- * Copyright (C) 2002 Petr Kubanek <petr@kubanek.net>
+/*
+ * Defines extension to PostgresSQL to handle efectivelly WCS informations.
+ * Copyright (C) 2002-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +31,15 @@ PG_MODULE_MAGIC;
 #include <stdio.h>
 
 #include <math.h>
+
+// so gcc will not complains..
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+
+#include <config.h>
 
 struct kwcs2
 {
@@ -339,7 +345,11 @@ imgrange2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-  SET_VAVSIZE (res, VARHDRSZ + l);
+#ifdef HAVE_PGSQL_8
+  SET_VARSIZE (res, VARHDRSZ + l);
+#else
+  VARATT_SIZEP (res) = VARHDRSZ + l;
+#endif
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);

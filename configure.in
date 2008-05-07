@@ -443,12 +443,16 @@ AC_HEADER_TIME
 AC_STRUCT_TM
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
+AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
 
 if test "x"$psql = xyes ; then
   AC_POSTGRESQL
   AC_ECPG
 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
+  if test `pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'` > 7 ; then
+    AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
+  fi
 fi
 
 AM_CONDITIONAL(PGSQL, test x$psql = xyes)

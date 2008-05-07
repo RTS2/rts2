@@ -1,3 +1,6 @@
+2008-05-07
+ * [1959375] fixed SET_VARSIZE
+
 2008-05-06
  * Driver for NMT (by Astelco)
  * [1958842] fixed

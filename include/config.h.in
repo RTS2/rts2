@@ -88,6 +88,9 @@
 /* Whenever PGSQL is installed */
 #undef HAVE_PGSQL
 
+/* If PGSQL version is 8 or higher */
+#undef HAVE_PGSQL_8
+
 /* Whenever PGSQL and SOAP libraries are installed */
 #undef HAVE_PGSQL_SOAP
 

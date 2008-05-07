@@ -1,9 +1,6 @@
-/*!
- * @file Defines extension to PostgresSQL to handle efectivelly WCS informations.
- *
- * @author petr
- *
- * Copyright (C) 2002 Petr Kubanek <petr@kubanek.net>
+/*
+ * Defines extension to PostgresSQL to handle efectivelly WCS informations.
+ * Copyright (C) 2002-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#endif
 
 #include <postgres.h>
 #include <fmgr.h>
@@ -35,6 +30,15 @@ PG_MODULE_MAGIC;
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+
+// so gcc will not complains..
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+
+#include <config.h>
 
 struct kwcs
 {
@@ -275,7 +279,11 @@ imgrange (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
+#ifdef HAVE_PGSQL_8
   SET_VARSIZE (res, VARHDRSZ + l);
+#else
+  VARATT_SIZEP (res) = VARHDRSZ + l;
+#endif
   memcpy (VARDATA (res), buffer, l);
 
   pfree (buffer);
@@ -323,7 +331,11 @@ img_wcs_ctype1 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
+#ifdef HAVE_PGSQL_8
   SET_VARSIZE (res, VARHDRSZ + l);
+#else
+  VARATT_SIZEP (res) = VARHDRSZ + l);
+#endif
   memcpy (VARDATA (res), arg->ctype1, l);
 
   PG_RETURN_TEXT_P (res);
@@ -344,7 +356,11 @@ img_wcs_ctype2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
+#ifdef HAVE_PGSQL_8
   SET_VARSIZE (res, VARHDRSZ + l);
+#else
+  VARATT_SIZEP (res) = VARHDRSZ + l;
+#endif
   memcpy (VARDATA (res), arg->ctype2, l);
 
   PG_RETURN_TEXT_P (res);
