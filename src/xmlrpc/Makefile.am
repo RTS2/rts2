@@ -1,6 +1,6 @@
 SUBDIRS = xmlrpc++
 
-bin_PROGRAMS = rts2-xmlrpcd 
+bin_PROGRAMS = rts2-xmlrpcclient
 
 noinst_HEADERS = xmlstream.h r2x.h
 
