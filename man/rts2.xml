@@ -8,10 +8,8 @@
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhucpackage "<refentrytitle>rts2</refentrytitle>">
   <!ENTITY dhpackage   "rts2">
 
-  <!ENTITY debian      "<productname>Debian</productname>">
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
 ]>
@@ -20,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <releaseinfo role="version">0.7.0</releaseinfo>
+    <productnumber>0.7.0</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -71,8 +69,7 @@
     </legalnotice>
   </refentryinfo>
   <refmeta>
-    &dhucpackage;
-
+    <refentrytitle>&dhpackage;</refentrytitle>
     &dhsection;
   </refmeta>
   <refnamediv>

@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <releaseinfo role="version">0.7.0</releaseinfo>
+    <productnumber>0.7.3</productnumber>
     &dhdate;
     <authorgroup>
       <author>
