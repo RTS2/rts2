@@ -85,7 +85,6 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		double ter_xoa;
 		double ter_yoa;
 		int flip;
-		std::string filter;
 		std::string instrume;
 		std::string telescop;
 		std::string origin;

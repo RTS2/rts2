@@ -46,7 +46,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
 	config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
 	config->getInteger (connection->getName (), "flip", flip);
-	config->getString (connection->getName (), "filter", filter);
 
 	telescop[0] = '\0';
 	instrume[0] = '\0';
