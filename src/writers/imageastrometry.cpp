@@ -223,7 +223,7 @@ Rts2Image::getFlip ()
 
 
 int
-Rts2Image::getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name)
+Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
 	int ret;
 	ret = getValue (ra_name, radec.ra);
@@ -276,7 +276,7 @@ Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 
 
 int
-Rts2Image::getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name)
+Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
 {
 	int ret;
 	struct ln_equ_posn pos;

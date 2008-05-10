@@ -1,3 +1,6 @@
+2008-05-10
+ * [1961114] added symlinkImage method, -l option to rts2-image
+
 2008-05-07
  * [1959546] fixed problem with arrays in grb_gcn
  * [1959375] fixed SET_VARSIZE

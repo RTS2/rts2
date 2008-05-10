@@ -1,3 +1,22 @@
+/* 
+ * Image manipulation program.
+ * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <config.h>
 
 #ifdef HAVE_PGSQL
@@ -12,17 +31,18 @@
 
 #include <list>
 
-#define IMAGEOP_NOOP    0x0000
+#define IMAGEOP_NOOP      0x0000
 #define IMAGEOP_ADDDATE   0x0001
 #ifdef HAVE_PGSQL
 #define IMAGEOP_INSERT    0x0002
 #endif							 /* HAVE_PGSQL */
-#define IMAGEOP_TEST    0x0004
-#define IMAGEOP_PRINT   0x0008
-#define IMAGEOP_COPY    0x0010
-#define IMAGEOP_MOVE    0x0020
-#define IMAGEOP_EVAL    0x0040
-#define IMAGEOP_CREATEWCS 0x0080
+#define IMAGEOP_TEST      0x0004
+#define IMAGEOP_PRINT     0x0008
+#define IMAGEOP_COPY      0x0010
+#define IMAGEOP_SYMLINK	  0x0020
+#define IMAGEOP_MOVE      0x0040
+#define IMAGEOP_EVAL      0x0080
+#define IMAGEOP_CREATEWCS 0x0100
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 
@@ -49,6 +69,7 @@ class Rts2AppImageManip:public Rts2AppImage
 
 		std::string print_expr;
 		std::string copy_expr;
+		std::string link_expr;
 		std::string move_expr;
 	protected:
 		virtual int processOption (int in_opt);
@@ -218,6 +239,10 @@ Rts2AppImageManip::processOption (int in_opt)
 			operation |= IMAGEOP_MOVE;
 			move_expr = optarg;
 			break;
+		case 'l':
+			operation |= IMAGEOP_SYMLINK;
+			link_expr = optarg;
+			break;
 		case 't':
 			operation |= IMAGEOP_TEST;
 			break;
@@ -284,6 +309,8 @@ Rts2AppImageManip::processImage (Rts2Image * image)
 		image->copyImageExpand (copy_expr);
 	if (operation & IMAGEOP_MOVE)
 		image->renameImageExpand (move_expr);
+	if (operation & IMAGEOP_SYMLINK)
+	  	image->symlinkImageExpand (link_expr);
 	if (operation & IMAGEOP_EVAL)
 		testEval (image);
 	if (operation & IMAGEOP_CREATEWCS)
@@ -323,12 +350,11 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	off_y = 0;
 
 	addOption ('p', NULL, 1, "print image expression");
-	addOption ('c', NULL, 1,
-		"copy image(s) to path expression given as argument");
+	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
-	addOption ('m', NULL, 1,
-		"move image(s) to path expression given as argument");
+	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
+	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('e', NULL, 0, "image evaluation for AF purpose");
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('w', NULL, 0,

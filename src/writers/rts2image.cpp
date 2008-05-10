@@ -616,26 +616,22 @@ Rts2Image::renameImageExpand (std::string new_ex)
 int
 Rts2Image::copyImage (const char *copy_filename)
 {
-	char *cp_filename = new char[strlen (copy_filename) + 1];
-	strcpy (cp_filename, copy_filename);
 	fitsfile *cp_file;
 	fits_status = 0;
 
 	int ret;
-	ret = mkpath (cp_filename, 0777);
+	ret = mkpath (copy_filename, 0777);
 	if (ret)
-		goto err;
+		return ret;
 
-	fits_create_file (&cp_file, cp_filename, &fits_status);
+	fits_create_file (&cp_file, copy_filename, &fits_status);
 	fits_copy_file (ffile, cp_file, true, true, true, &fits_status);
 	ret = setCreationDate (cp_file);
 	if (ret)
-		goto err;
+		return ret;
 	fits_close_file (cp_file, &fits_status);
 	if (fits_status)
 		ret = fits_status;
-	err:
-	delete[]cp_filename;
 	return ret;
 }
 
@@ -645,11 +641,39 @@ Rts2Image::copyImageExpand (std::string copy_ex)
 {
 	std::string copy_filename;
 
-	if (!imageName)
+	if (!getImageName ())
 		return -1;
 
 	copy_filename = expandPath (copy_ex);
 	return copyImage (copy_filename.c_str ());
+}
+
+
+int
+Rts2Image::symlinkImage (const char *link_filename)
+{
+	int ret;
+
+	if (!getImageName ())
+		return -1;
+
+	ret = mkpath (link_filename, 0777);
+	if (ret)
+		return ret;
+	return symlink (getImageName (), link_filename);
+}
+
+
+int
+Rts2Image::symlinkImageExpand (std::string link_ex)
+{
+	std::string link_filename;
+
+	if (!getImageName ())
+		return -1;
+
+	link_filename = expandPath (link_ex);
+	return symlinkImage (link_filename.c_str ());
 }
 
 

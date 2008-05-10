@@ -52,15 +52,15 @@ class Rts2ImageDb:public Rts2Image
 {
 	protected:
 		virtual void initDbImage ();
-		void reportSqlError (char *msg);
+		void reportSqlError (const char *msg);
 
 		virtual int updateDB ()
 		{
 			return -1;
 		}
 
-		int getValueInd (char *name, double &value, int &ind, char *comment = NULL);
-		int getValueInd (char *name, float &value, int &ind, char *comment = NULL);
+		int getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
+		int getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
 
 	public:
 		Rts2ImageDb (Rts2Image * in_image);

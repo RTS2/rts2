@@ -41,6 +41,9 @@
 #include "../utils/mkpath.h"
 #include "../utils/rts2target.h"
 
+/**
+ * One pixel at the image, with coordinates and a value.
+ */
 struct pixel
 {
 	int x;
@@ -68,6 +71,14 @@ typedef enum
 { EXPOSURE_START, INFO_CALLED, EXPOSURE_END }
 imageWriteWhich_t;
 
+/**
+ * Generic class which represents an image.
+ *
+ * This class represents image. It has functions for accessing various image
+ * properties, as well as method to perform some image operations.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2Image:public Rts2Expander
 {
 	private:
@@ -199,8 +210,42 @@ class Rts2Image:public Rts2Expander
 
 		int renameImage (const char *new_filename);
 		int renameImageExpand (std::string new_ex);
+
+		/**
+		 * Copy image to given given location.
+		 *
+		 * @param copy_filename  Path where image will be copied.
+		 *
+		 * @return 0 on success, otherwise returns error code.
+		 */
 		int copyImage (const char *copy_filename);
+
+		/**
+		 * Copy image to given given location. The location is specified as expansion string.
+		 *
+		 * @param copy_filename  Path where image will be copied.
+		 *
+		 * @return 0 on success, otherwise returns system error code.
+		 */
 		int copyImageExpand (std::string copy_ex);
+
+		/**
+		 * Create softlink of the image.
+		 *
+		 * @param link_name  Pathe where link will be created.
+		 * 
+		 * @return 0 on success, otherwise returns system error code.
+		 */
+		int symlinkImage (const char *link_name);
+
+		/**
+		 * Create softlink of the image. The location is specified as expansion string.
+		 *
+		 * @param link_ex   Path where image link will be created. Any 
+		 * 
+		 * @return 0 on success, otherwise returns system errror code.
+		 */
+		int symlinkImageExpand (std::string link_ex);
 
 		int saveImageData (const char *save_filename, unsigned short *in_data);
 
@@ -565,7 +610,17 @@ class Rts2Image:public Rts2Expander
 
 		int getError (double &eRa, double &eDec, double &eRad);
 
-		int getCoord (struct ln_equ_posn &radec, char *ra_name, char *dec_name);
+		/**
+		 * Returns coordinates, which are stored in two FITS keys, as struct ln_equ_posn.
+		 *
+		 * @param radec    Struct which will hold resulting coordinates.
+		 * @param ra_name  Name of the RA coordinate key.
+		 * @param dec_name Name of the DEC coordinate key.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name);
+
 		/**
 		 * Get object coordinates. Object coordinates are
 		 * J2000 coordinates of object which observer would like to
@@ -578,7 +633,7 @@ class Rts2Image:public Rts2Expander
 
 		int getCoordBest (struct ln_equ_posn &radec);
 
-		int getCoord (LibnovaRaDec & radec, char *ra_name, char *dec_name);
+		int getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name);
 		int getCoordTarget (LibnovaRaDec & radec);
 		int getCoordAstrometry (LibnovaRaDec & radec);
 		int getCoordMount (LibnovaRaDec & radec);

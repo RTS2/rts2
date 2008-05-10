@@ -1,4 +1,8 @@
 0.8.0
+  rts2-image
+  
+  -l option to create softlinks
+
   rts2-sensor-pixy (lightening sensor)
 
   rts2-sensor-mrakomer (cloud sensor)

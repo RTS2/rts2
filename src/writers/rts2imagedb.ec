@@ -35,7 +35,7 @@ Rts2ImageDb::initDbImage ()
 
 
 void
-Rts2ImageDb::reportSqlError (char *msg)
+Rts2ImageDb::reportSqlError (const char *msg)
 {
 	logStream (MESSAGE_ERROR) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
 		msg << ")" << sendLog;
@@ -43,7 +43,7 @@ Rts2ImageDb::reportSqlError (char *msg)
 
 
 int
-Rts2ImageDb::getValueInd (char *name, double &value, int &ind, char *comment)
+Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
 {
 	ind = getValue (name, value, comment);
 	if (ind || isnan(value))
@@ -56,7 +56,7 @@ Rts2ImageDb::getValueInd (char *name, double &value, int &ind, char *comment)
 
 
 int
-Rts2ImageDb::getValueInd (char *name, float &value, int &ind, char *comment)
+Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
 {
 	ind = getValue (name, value, comment);
 	if (ind || isnan(value))
