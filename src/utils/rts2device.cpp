@@ -428,7 +428,7 @@ int
 Rts2DevConnMaster::command ()
 {
 	Rts2Conn *auth_conn;
-	if (isCommand ("A"))
+	if (isCommand (PROTO_AUTH))
 	{
 		char *a_type;
 		int auth_id;
