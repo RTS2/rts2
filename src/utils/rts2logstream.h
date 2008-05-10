@@ -1,3 +1,22 @@
+/* 
+ * Log steam, used for logging output.
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_LOGSTREAM__
 #define __RTS2_LOGSTREAM__
 
@@ -7,6 +26,16 @@
 
 class Rts2App;
 
+/**
+ * Class used for streaming log messages. This class provides operators which
+ * sends through it various values. Once the message is completed by sending
+ * sendLog manipulator to this class, it is passed to the system for
+ * processing.
+ *
+ * @ingroup RTS2Block
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2LogStream
 {
 	private:
@@ -45,5 +74,8 @@ class Rts2LogStream
 		inline void sendLog ();
 };
 
+/**
+ * Send log. That is used as manipulator for stream to send it through the system.
+ */
 Rts2LogStream & sendLog (Rts2LogStream & _ls);
 #endif							 /* ! __RTS2_LOGSTREAM__ */

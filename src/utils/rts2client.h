@@ -1,3 +1,22 @@
+/* 
+ * Supporting classes for clients programs.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_CLIENT__
 #define __RTS2_CLIENT__
 
@@ -18,6 +37,8 @@
  * which client establish to other RTS2 components.
  *
  * @ingroup RTS2Client
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ConnClient:public Rts2Conn
 {
@@ -50,6 +71,8 @@ class Rts2ConnClient:public Rts2Conn
  * server and client. It is used to handle key management etc.
  *
  * @ingroup RTS2Client
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ConnCentraldClient:public Rts2Conn
 {
@@ -96,18 +119,20 @@ class Rts2CommandLogin:public Rts2Command
  * Common class for client aplication.
  *
  * Connect to centrald, get names of all devices.
- * Works similary to Rts2Device
+ * Works similary to Rts2Device.
  *
  * @ingroup RTS2Block RTS2Client
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2Client:public Rts2Block
 {
 	private:
 		Rts2ConnCentraldClient * central_conn;
-		char *central_host;
-		char *central_port;
-		char *login;
-		char *password;
+		const char *central_host;
+		const char *central_port;
+		const char *login;
+		const char *password;
 
 	protected:
 		virtual Rts2ConnClient * createClientConnection (char *in_deviceName);

@@ -33,7 +33,7 @@ Rts2Command::Rts2Command (Rts2Block * in_owner)
 }
 
 
-Rts2Command::Rts2Command (Rts2Block * in_owner, char *in_text)
+Rts2Command::Rts2Command (Rts2Block * in_owner, const char *in_text)
 {
 	owner = in_owner;
 	setCommand (in_text);
@@ -461,8 +461,7 @@ Rts2CommandSearch::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel):Rts2Command (in_tel->getMaster (),
-"searchstop")
+Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel):Rts2Command (in_tel->getMaster (), "searchstop")
 {
 }
 

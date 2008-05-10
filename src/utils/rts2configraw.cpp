@@ -299,7 +299,7 @@ Rts2ConfigRaw::~Rts2ConfigRaw (void)
 
 
 int
-Rts2ConfigRaw::loadFile (char *filename)
+Rts2ConfigRaw::loadFile (const char *filename)
 {
 	clearSections ();
 

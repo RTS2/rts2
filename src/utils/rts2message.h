@@ -1,3 +1,22 @@
+/* 
+ * Configuration file read routines.
+ * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_MESSAGE__
 #define __RTS2_MESSAGE__
 
@@ -7,6 +26,16 @@
 #include <string>
 #include <fstream>
 
+/**
+ * Holds message, which can be passed through the system. Message contains
+ * timestamp when it was generated, flags describing its severity, and message
+ * text, which is free text.
+ *
+ *
+ * @ingroup RTS2Block
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2Message
 {
 	protected:
@@ -44,11 +73,22 @@ class Rts2Message
 			return (((int) messageType) & in_mask);
 		}
 
+		/**
+		 * Check if message is debug message.
+		 *
+		 * @return True if message is not debugging messages, and hence
+		 * have to be stored in more permament location.
+		 */
 		bool isNotDebug ()
 		{
 			return (!(messageType & MESSAGE_DEBUG));
 		}
 
+		/**
+		 * Returns message flags.
+		 *
+		 * @return Message flags.
+		 */
 		messageType_t getType ()
 		{
 			return messageType;

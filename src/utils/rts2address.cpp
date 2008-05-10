@@ -1,4 +1,22 @@
-#include <malloc.h>
+/* 
+ * Class which contains routines to resolve IP address from hostname.
+ * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -43,18 +61,15 @@ int
 Rts2Address::getSockaddr (struct addrinfo **info)
 {
 	int ret;
-	char *s_port;
+	char s_port[10];
 	struct addrinfo hints;
 	hints.ai_flags = 0;
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
-	asprintf (&s_port, "%i", port);
+	sprintf (s_port, "%i", port);
 	ret = getaddrinfo (host, s_port, &hints, info);
-	free (s_port);
 	if (ret)
-	{
 		return -1;
-	}
 	return 0;
 }

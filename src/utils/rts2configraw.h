@@ -190,7 +190,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 	public:
 		Rts2ConfigRaw ();
 		virtual ~ Rts2ConfigRaw (void);
-		int loadFile (char *filename = NULL);
+		int loadFile (const char *filename = NULL);
 		/**
 		 * Get string from configuration file.
 		 *
