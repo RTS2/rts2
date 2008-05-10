@@ -28,6 +28,10 @@
 /**
  * Represent set of Rts2Values. It's used to store values which shall
  * be reseted when new script starts etc..
+ *
+ * @ingroup RTS2Value
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ValueVector:public std::vector < Rts2Value * >
 {
@@ -40,10 +44,63 @@ class Rts2ValueVector:public std::vector < Rts2Value * >
 			for (Rts2ValueVector::iterator iter = begin (); iter != end (); iter++)
 				delete *iter;
 		}
+
+		/**
+		 * Returns iterator reference for value with given name.
+		 *
+		 * @param value_name Name of the value.
+		 *
+		 * @return Interator reference of the value with given name.
+		 */
+		Rts2ValueVector::iterator getValueIterator (const char *value_name)
+		{
+			Rts2ValueVector::iterator val_iter;
+			for (val_iter = begin (); val_iter != end (); val_iter++)
+			{
+				Rts2Value *val;
+				val = (*val_iter);
+				if (val->isValue (value_name))
+					return val_iter;
+			}
+			return val_iter;
+		}
+
+		/**
+		 * Search for value by value name.
+		 *
+		 * @param value_name  Name of the searched value.
+		 *
+		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
+		 */
+		Rts2Value *getValue (const char *value_name)
+		{
+			Rts2ValueVector::iterator val_iter = getValueIterator (value_name);
+			if (val_iter == end ())
+				return NULL;
+			return (*val_iter);
+		}
+
+		/**
+		 * Remove value with given name from the list.
+		 *
+		 * @param value_name  Name of the value.
+		 */
+		void removeValue (const char *value_name)
+		{
+			Rts2ValueVector::iterator val_iter = getValueIterator (value_name);
+			if (val_iter == end ())
+				return;
+			delete (*val_iter);
+			erase (val_iter);
+		}
 };
 
 /**
  * Holds state condition for value.
+ *
+ * @ingroup RTS2Value
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2CondValue
 {
@@ -135,6 +192,13 @@ class Rts2CondValue
 		}
 };
 
+/**
+ * Holds cond values.
+ *
+ * @ingroup RTS2Value
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2CondValueVector:public std::vector < Rts2CondValue * >
 {
 	public:
@@ -151,6 +215,10 @@ class Rts2CondValueVector:public std::vector < Rts2CondValue * >
 
 /**
  * Holds value changes which cannot be handled by device immediately.
+ *
+ * @ingroup RTS2Value
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ValueQue
 {
@@ -195,6 +263,13 @@ class Rts2ValueQue
 		}
 };
 
+/**
+ * Holds Rts2ValueQue.
+ *
+ * @ingroup RTS2Value
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2ValueQueVector:public std::vector < Rts2ValueQue * >
 {
 	public:

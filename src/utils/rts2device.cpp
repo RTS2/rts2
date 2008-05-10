@@ -293,7 +293,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 Rts2DevConnMaster::Rts2DevConnMaster (Rts2Block * in_master,
 char *in_device_host,
 int in_device_port,
-char *in_device_name,
+const char *in_device_name,
 int in_device_type,
 const char *in_master_host,
 int in_master_port):
@@ -555,7 +555,7 @@ Rts2CommandDeviceStatusInfo::deleteConnection (Rts2Conn * conn)
 }
 
 
-Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, char *default_name):
+Rts2Device::Rts2Device (int in_argc, char **in_argv, int in_device_type, const char *default_name):
 Rts2Daemon (in_argc, in_argv)
 {
 	/* put defaults to variables.. */

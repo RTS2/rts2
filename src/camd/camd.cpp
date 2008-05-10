@@ -702,7 +702,11 @@ Rts2DevCamera::deviceReady (Rts2Conn * conn)
 		Rts2Value *val = conn->getValue ("filter");
 		// it's filter and it's correct type
 		if (val->getValueType () == RTS2_VALUE_SELECTION)
+		{
 			camFilterVal->duplicateSelVals ((Rts2ValueSelection *) val);
+			// sends filter metainformations to all connected devices
+			updateMetaInformations (camFilterVal);
+		}
 	}
 }
 
@@ -1033,7 +1037,7 @@ int chip_state_mask,
 int chip_new_state,
 int state_mask,
 int new_state,
-char *description
+const char *description
 )
 {
 	maskState (state_mask | (chip_state_mask << (4 * chip_num)),

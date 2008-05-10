@@ -606,6 +606,13 @@ class Rts2Conn:public Rts2Object
 		{
 		}
 
+		/**
+		 * Search for value by value name.
+		 *
+		 * @param value_name  Name of the searched value.
+		 *
+		 * @return  Value object of value with given name, or NULL if value with this name does not exists.
+		 */
 		Rts2Value *getValue (const char *value_name);
 
 		int getOtherType ();

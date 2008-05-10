@@ -20,7 +20,7 @@
 #include "rts2scriptdevice.h"
 
 Rts2ScriptDevice::Rts2ScriptDevice (int in_argc, char **in_argv,
-int in_device_type, char *default_name):
+int in_device_type, const char *default_name):
 Rts2Device (in_argc, in_argv, in_device_type, default_name)
 {
 	createValue (scriptRepCount, "SCRIPREP", "script loop count", true, 0, 0,

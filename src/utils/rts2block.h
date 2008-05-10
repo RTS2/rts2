@@ -207,6 +207,13 @@ class Rts2Block: public Rts2App
 		 */
 		void bopStateChanged ();
 
+		/**
+		 * Updates metainformation about given value.
+		 *
+		 * @param value Value whose metainformation will be send out.
+		 */
+		void updateMetaInformations (Rts2Value *value);
+
 	public:
 
 		/**
@@ -568,6 +575,15 @@ class Rts2Block: public Rts2App
 			return -2;
 		}
 
+		/**
+		 * Search for value from device.
+		 *
+		 * @param device_name Name of the device.
+		 * @param value_name  Name of the value.
+		 *
+		 * @return Pointer to Rts2Value object holding the value, or NULL if device or value with given name
+		 * does not exists.
+		 */
 		Rts2Value *getValue (const char *device_name, const char *value_name);
 
 		virtual void endRunLoop ()

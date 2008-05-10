@@ -98,7 +98,9 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual void setBopState (int in_value);
 		virtual void connectionError (int last_data_size);
 	public:
-		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port, char *in_device_name, int in_device_type, const char *in_master_host, int in_master_port);
+		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port,
+			const char *in_device_name, int in_device_type,
+			const char *in_master_host, int in_master_port);
 		virtual ~ Rts2DevConnMaster (void);
 		int registerDevice ();
 		virtual int init ();
@@ -186,7 +188,7 @@ class Rts2Device:public Rts2Daemon
 		int loadModefile ();
 
 		int device_port;
-		char *device_name;
+		const char *device_name;
 		int device_type;
 
 		int log_option;
@@ -283,7 +285,7 @@ class Rts2Device:public Rts2Daemon
 
 	public:
 		Rts2Device (int in_argc, char **in_argv, int in_device_type,
-			char *default_name);
+			const char *default_name);
 		virtual ~Rts2Device (void);
 		virtual Rts2DevConn *createConnection (int in_sock);
 
@@ -337,7 +339,7 @@ class Rts2Device:public Rts2Daemon
 		{
 			return conn_master;
 		};
-		char *getDeviceName ()
+		const char *getDeviceName ()
 		{
 			return device_name;
 		};

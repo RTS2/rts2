@@ -660,8 +660,7 @@ Rts2Conn::processLine ()
 			|| paramNextString (&m_name)
 			|| paramNextString (&m_descr) || !paramEnd ())
 			return -2;
-		return metaInfo (m_type, std::string (m_name),
-			std::string (m_descr));
+		return metaInfo (m_type, std::string (m_name), std::string (m_descr));
 	}
 	else if (isCommand (PROTO_VALUE))
 	{
@@ -1811,15 +1810,7 @@ Rts2Conn::dataReceived ()
 Rts2Value *
 Rts2Conn::getValue (const char *value_name)
 {
-	Rts2ValueVector::iterator val_iter;
-	for (val_iter = values.begin (); val_iter != values.end (); val_iter++)
-	{
-		Rts2Value *val;
-		val = (*val_iter);
-		if (val->isValue (value_name))
-			return val;
-	}
-	return NULL;
+	return values.getValue (value_name);
 }
 
 
@@ -1828,6 +1819,8 @@ Rts2Conn::addValue (Rts2Value * value)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))
 		info_time = (Rts2ValueTime *) value;
+	// if value exists, remove it from list
+	values.removeValue (value->getName ().c_str ());
 	values.push_back (value);
 }
 
@@ -1839,25 +1832,18 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 	switch (rts2Type & RTS2_EXT_TYPE)
 	{
 		case 0:
-			new_value =
-				newValue (rts2Type, m_name, desc);
+			new_value = newValue (rts2Type, m_name, desc);
 			if (newValue == NULL)
 				return -2;
 			break;
 		case RTS2_VALUE_STAT:
-			new_value =
-				new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
+			new_value = new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_MMAX:
-			new_value =
-				new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
+			new_value =  new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			new_value =
-				new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS,
-				rts2Type);
+			new_value =  new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<

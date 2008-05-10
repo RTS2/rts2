@@ -1,3 +1,7 @@
+2008-05-11
+ * [1910493] fixed
+ * [1953718] more fixs
+
 2008-05-10
  * [1961114] added symlinkImage method, -l option to rts2-image
 

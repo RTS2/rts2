@@ -443,6 +443,16 @@ Rts2Block::bopStateChanged ()
 }
 
 
+void
+Rts2Block::updateMetaInformations (Rts2Value *value)
+{
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	{
+		value->sendMetaInfo (*iter);
+	}
+}
+
+
 int
 Rts2Block::setMasterState (int new_state)
 {
@@ -784,8 +794,7 @@ Rts2Block::commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn)
 bool
 Rts2Block::commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn)
 {
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
 	{
 		if ((*iter) != exclude_conn && (*iter)->commandOriginatorPending (object))
 		{
