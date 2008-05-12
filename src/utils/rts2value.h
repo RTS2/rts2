@@ -72,7 +72,11 @@
 /** Contains 1 if value was changed from last run. */
 #define RTS2_VALUE_CHANGED            0x00000400
 
-/** If to record that value was changed. */
+/**
+ * When set, writer will add to FITS header key with name <value_key>.CHANGED, That FITS key will be true,
+ * if value changed during exposure. It will be false if value do not changed during exposure.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VWHEN_RECORD_CHANGE      0x00000800
 
 #define RTS2_VWHEN_MASK               0x0000f000
