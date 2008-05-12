@@ -33,43 +33,105 @@
  * @defgroup RTS2Value RTS2 Values
  */
 
-/** Value is string (character array). */
+/**
+ * Value is string (character array).
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_STRING             0x00000001
-/** Value is integer number. */
+
+/**
+ * Value is integer number. 
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_INTEGER            0x00000002
-/** Value is time (date and time, distributed as double precission floating point
- * number, representing number of seconds from 1.1.1970) */
+
+/**
+ * Value is time (date and time, distributed as double precission floating point
+ * number, representing number of seconds from 1.1.1970) 
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_TIME               0x00000003
-/** Value is double precission floating point number. */
+
+/**
+ * Value is double precission floating point number.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_DOUBLE             0x00000004
-/** Value is single precission floating point number. */
+
+/**
+ * Value is single precission floating point number.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_FLOAT              0x00000005
-/** Value is boolean value (true or false). */
+
+/**
+ * Value is boolean value (true or false).
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_BOOL               0x00000006
-/** Value is selection value. Ussuall represnetation is integer number, but string representation is provided as well. */
+
+/**
+ * Value is selection value. Ussuall represnetation is integer number, but string representation is provided as well.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_SELECTION          0x00000007
-/** Value is long integer value. */
+
+/**
+ * Value is long integer value.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_LONGINT            0x00000008
-/** Value is RA DEC. */
+
+/**
+ * Value is RA DEC.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_RADEC              0x00000009
 
-/** Value have statistics nature (include mean, average, min and max values and number of measurements taken for value). */
+/**
+ * Value have statistics nature (include mean, average, min and max values and number of measurements taken for value).
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_STAT               0x00000010
-/** Value is min-max value, which puts boundaries on minimal and maximal values. */
+
+/**
+ * Value is min-max value, which puts boundaries on minimal and maximal values.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_MMAX               0x00000020
-/** Value holds rectangle - 4 values of same type (X,Y,w,h). */
+/**
+ * Value holds rectangle - 4 values of same type (X,Y,w,h).
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_RECTANGLE          0x00000030
 
-/** Base type mask. */
+/**
+ * Base type mask.
+ * @ingroup RTS2Value
+ */
 #define RTS2_BASE_TYPE                0x0000000f
 
 #define RTS2_VALUE_MASK               0x000000ff
 
 #define RTS2_EXT_TYPE                 0x000000f0
 
+/**
+ * When this bit is set, value is writen to FITS file.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_FITS               0x00000100
+
+/**
+ * When this bit is set, value is written to FITS file
+ * with device name used as prefix.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_DEVPREFIX          0x00000200
-/** Contains 1 if value was changed from last run. */
+
+/**
+ * When this bit is set, value was changed from last valueChanged reset.
+ * @ingroup RTS2Value
+ */
 #define RTS2_VALUE_CHANGED            0x00000400
 
 /**
