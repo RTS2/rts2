@@ -33,7 +33,9 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 {
 	private:
 		CApnCamera * alta;
-		int bit12;
+		Rts2ValueSelection * bitDepth;
+
+		void setBitDepth (int newBit);
 
 	protected:
 		virtual int initChips ();
@@ -43,6 +45,8 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual long isExposing ();
 		virtual int stopExposure ();
 		virtual int readoutOneLine ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		Rts2DevCameraAlta (int argc, char **argv);
@@ -60,6 +64,19 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual int setCoolTemp (float new_temp);
 		virtual int camCoolShutdown ();
 };
+
+void
+Rts2DevCameraAlta::setBitDepth (int newBit)
+{
+	switch (newBit)
+	{
+		case 0:
+			alta->write_DataBits (Apn_Resolution_SixteenBit);
+		case 1:
+			alta->write_DataBits (Apn_Resolution_TwelveBit);
+	}
+}
+
 
 int
 Rts2DevCameraAlta::initChips ()
@@ -169,6 +186,18 @@ Rts2DevCameraAlta::readoutOneLine ()
 }
 
 
+int
+Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == bitDepth)
+	{
+		setBitDepth (new_value->getValueInteger ());
+		return 0;
+	}
+	return Rts2DevCamera::setValue (old_value, new_value);
+}
+
+
 Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
@@ -180,10 +209,12 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createExpType ();
 
+	createValue (bitDepth, "BITDEPTH", "bit depth", true, 0, CAM_WORKING);
+	bitDepth->addSelVal ("16 bit");
+	bitDepth->addSelVal ("12 bit");
+
 	alta = NULL;
-	addOption ('B', "12bits", 0,
-		"switch to 12 bit readout mode; see alta specs for details");
-	bit12 = 0;
+	addOption ('b', NULL, 0, "switch to 12 bit readout mode; see alta specs for details");
 }
 
 
@@ -202,8 +233,8 @@ Rts2DevCameraAlta::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'B':
-			bit12 = 1;
+		case 'b':
+			bitDepth->setValueInteger (1);
 			break;
 		default:
 			return Rts2DevCamera::processOption (in_opt);
@@ -241,14 +272,6 @@ Rts2DevCameraAlta::init ()
 		return -1;
 
 	// set data bits..
-	if (bit12)
-	{
-		alta->write_DataBits (Apn_Resolution_TwelveBit);
-	}
-	else
-	{
-		alta->write_DataBits (Apn_Resolution_SixteenBit);
-	}
 
 	strcpy (ccdType, "Alta ");
 	strncat (ccdType, alta->m_ApnSensorInfo->m_Sensor, 10);
