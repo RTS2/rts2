@@ -345,7 +345,7 @@ imgrange2 (PG_FUNCTION_ARGS)
   l++;
 
   res = (text *) palloc (VARHDRSZ + l);
-#ifdef HAVE_PGSQL_8
+#ifdef HAVE_PGSQL_SET_VARSIZE
   SET_VARSIZE (res, VARHDRSZ + l);
 #else
   VARATT_SIZEP (res) = VARHDRSZ + l;

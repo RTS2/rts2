@@ -444,14 +444,25 @@ AC_STRUCT_TM
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
+AH_TEMPLATE([HAVE_PGSQL_SET_VARSIZE], [If PGSQL provides SET_VARSIZE function])
 
 if test "x"$psql = xyes ; then
   AC_POSTGRESQL
   AC_ECPG
 
+  PG_MAJOR=`pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'`
+  PG_MINOR=`pg_config --version | sed 's/PostgreSQL [[0-9]]\.//' | sed 's/\..*$//'`
+
   AC_DEFINE_UNQUOTED(HAVE_PGSQL, 1, [Whenever PGSQL is installed])
-  if test `pg_config --version | sed 's/PostgreSQL //' | sed 's/\..*$//'` -gt 7 ; then
+
+  if test $PG_MAJOR -gt 7 ; then
     AC_DEFINE_UNQUOTED(HAVE_PGSQL_8, 1, [If PGSQL version is 8 or higher])
+  fi
+  if test $PG_MAJOR -gt 8; then
+    AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
+  fi
+  if test $PG_MAJOR -eq 8 -a $PG_MINOR -gt 2; then
+    AC_DEFINE_UNQUOTED(HAVE_PGSQL_SET_VARSIZE, 1, [If PGSQL provides SET_VARSIZE function])
   fi
 fi
 
@@ -569,7 +580,6 @@ DOME's:
 
 SENSOR's:
   A3200         ${A3200}
-
 
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}
