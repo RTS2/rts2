@@ -1,137 +1,192 @@
-RTS 2 - jak na to.
+RTS 2 - how to start it
+=======================
 
-Dodrzujte prosim zadane uzivatele, jinak je vice nez pravdepodobne, ze
-se nedopracujete k funkcnimu rts2!!
+OK, so you read INSTALL, go through all the steps, and have nice
+rts2-xxxx binaries sitting in your /usr/local/bin and waiting to be executed.
 
-Vsechny binarky se od 4.srpna 2003 instaluji do /usr/local/bin, t.j. je mate v
-ceste. Muzete se potkat se spatnym nastavenim prav do databaze pro svoji osobu,
-v tom pripade je potreba se mnou domluvit jejich nastaveni (pripadne muzete
-nekoho, kdo ma prava vytvaret uzivatele pro postgres, ukecat, aby udelal
-createuser <vas_login>, psql stars, alter group observers add <vas_login> a
-nekoho, kdo zna rootovske heslo, aby vas pridal do grupy rts2)
+First some hints:
 
-Pokud neco nebude fungovat:
-- nepropadejte panice:)
-- zkuste me zavolat (staci prozvonit), pokud nejsem primo na
- Ondrejove, vetsinou neni problem se pripojit a pomoci s poustenim
+- don't panic!
+- if something does not work, write to petr@kubanek.net. If he does not
+  respond, chances are that the mail ended in SPAM filter and was never read.
+  You will find contact details (including phone, skype,..) on
+  http://petr.kubanek.net, so try to contact him using a more interactive
+  communication.
 
-1) Spustne rts2-mon 
-lascaux:rts2-mon
+Creating database
+=================
 
-Musi zobrazovat udaje o zarizenich C1, C0, CNF1, T1 a poctu pripojenych klientech.
-Pokud pise u nejakeho zarizeni NOT READY, a vy jsi jste jisty tim, za zarizeni
-je pripojeno k dalekohledu, zkuste restart popsany v kroku 2. Restart provedte
-v pripade, ze nejake zarizeni nebezi (samosebou se muzete omezit na kus, ktery
-vam nebezi)
+You can skip this part if you want RTS2 without database. But if you run
+astronomical observatory, you will not be able to do any reasonable work
+without it. So:
 
-Obrazovka rts2-mon by mela vypadat nasledovne:
-                                                         
- ==== Name: CNF1 ======     ==== Name: T0 ======               
- Typ: ST9                   Typ: LX200                  status: RDY Night
- Ser: 910009253             R+D/f: 356.242+43.492/n      -1-nmonitor
- Siz: [512x512]             Az/Al/D: 262 +57 NEE         -1-nmonitor
- S/A: -4.8 +28.1 oC         Lon/Lat: +345.383 +49.90     -1-grbc_waiting
- CCD: -4.820 oC            0Lsid: 308.192 (20:32:46)     20*P:_1017_obs:_-1_ra:3
- CPo: 71.4 %                Gsid: 293.575 (19:34:18)   5 -1-nmonitor:0:0
- Fan: on                    st: telescope - 1                                     
- st: img_chip - 0           st: priority - 0                                      
- st: trc_chip - 0                                                                 
- st: priority - 0                                                                 
- ==== Name: C1 ======       ==== Name: C0 ======       > T0.ready
- Typ: ST8                   Typ: ST8                   : authorization_key T0 27
- Ser: 99EEE                 Ser: 819                   7391300
- Siz: [1536x1024]           Siz: [1536x1024]           : +000 Success
- S/A: -4.8 +28.1 oC         S/A: -9.8 +23.6 oC         > T0.info
- CCD: -5.230 oC             CCD: -10.200 oC            > C0.ready
- CPo: 78.5 %                CPo: 85.1 %                : authorization_key C0 41
- Fan: on                    Fan: on                    5230847
- st: img_chip - 2           st: img_chip - 2           : +000 Success
- st: trc_chip - 0           st: trc_chip - 0           > C0.info                  
- st: priority - 0           st: priority - 0    
+- create/add user to allowed database users. On Debian, after you install postgresql-server:
 
-Jeji presne rozvrzeni zavisi na poradi startu devicu, rozlozeni sloupcu a radku
-zavisi na velikosti vaseho terminalu, stav jednodlivych zarizeni zavisi na tom,
-jak jsou startovana. 
+root@host:$ su postgres             # you must be root. Do sudo bash on Ubuntu and similar systems.
+root@host:$ createuser <username>   # where you replace username with your username
 
-status: musi ukazovat RDY, aby se vubec pozorovalo! Na to, aby se delali
-snimky, musi ukazovat neco z RDY Dawn, RDY Night nebo RDY Dusk. RDY znamena
-ready, mame jeste stav standby a off. Jejich prepinani viz nize u popisu
-monitoru. status je urcovan centralnim serverem, pocita se ze souradnic, ktere
-zadate v konfiguracnim souboru.
+Grant rights to create db and superuser (when asked, press y). Please consult
+Postgresql manual for details. Or write me.
 
-2) Pokud neco nebezi (v podstate dost vyjimecny pripad)
+- setup RTS2 database. Usually it is called stars, but you are free to create
+  your own. Just choose other name.
 
-a) presvedcit se, ze bezi na lascaux rts2-centrald (centralni server):
-lascaux:ps -A|grep rts2-centra
-23491 ?        00:00:00 rts2-centrald
-23492 ?        00:00:00 rts2-centrald
-..........
+user@host:$ createdb stars  # you must be user which have granted database access
+user@host:$ cd rts2/src/sql
+user@host:$ ./rts2-builddb stars
 
-Pokud nebezi, kill -1 1 (pod rootem), jelikoz centrald je v inittabu.
+If you want planets and Landolt fields, answer the questions with y.
 
-b) na c0 pustit camd a teld (pod rootem):
-c0:/etc/init.d/rts2 restart
+Try the database with:
 
-c) na c1 spustit camd (pod rootem):
-c1:/etc/init.d/rts2 restart
+user@host: rts2-targetinfo 1
 
-d) na c2 spustit camd (pod rootem):
-c2:/etc/init.d/rts2 restart
+1 is dark frame target. It should produce some warnings, but should print something like:
 
-Poznamka: tento prikaz vede vetsinou k padu c1, c1 je lepsi rebootovat prikazem
-restart. Je to chyba, na jejim odstraneni se pracuje.
+ID                  1
+SEL_ID              1
+NAME                Dark frames
+TYPE                100
+RA                  00:00:00.000
+DEC                 +000 00 00.00
 
-e) na lascaux planovac pod sluzbou nebo jinym uzivatelem s PRISTUPEM NA
-POSTGRESQL a clenem skupiny rts2 (pristup rw do /images, /darks):
-lascaux:rts2-planc 
+etc..
 
-Vhodna volba je uzivatel sluzba.
+If it does not print that out, there is something wrong. Please investigate it,
+try to fix it, or write me.
 
-Planovac vytvori prvni polozku planu, pote ji spusti. Dalekohled se
-zacne presouvat, zacne se exponovat, snimky lezou do /images.
+Creating targets of your choice
+===============================
 
-6) na lascaux grbovac pod sluzbou nebo jinym uzivatelem s pristupem na
-postgresql a clenem skupiny rts2:
-lascaux:rts2-grbc
+Probably the best way how to create a target is using rts2-newtarget. In order
+for it to work properly, you will need gsoap installed before you started the
+build. There is sample session:
 
-7) monitoring
-pousti se pomoci
-lascaux:rts2-mon
 
-Ma nekolik zajimavych vlasnosti:
+user@host:$ rts2-newtarget 
+Default values are written at []..
+Target name, RA&DEC or anything else []: M31
+Target name, RA&DEC or anything else: M31
+2008-05-15T12:49:14.698 app 2 Cannot find value 'epoch_id' in section 'observatory'.
+2008-05-15T12:49:14.699 app 1 Cannot find section 'newtarget'.
+Simbad response for 'M31': 
+***************************
+# M31	#Q31223
+#=Simbad: 1
+#(Q30426)x1
+%C LINER
+%J  10.6846250 +41.2692778 (6) = 00 42 44.31   +41 16 09.4  
+%J.E [10800.00 10800.00  90] D 1999ApJS..125..409C
+%V z -.001004 D [ .000023] 2002LEDA..........P
+%T Sb
+%I.0 2C 56
 
-- aktualizuje se pri zmene stavu nebo pri stisku F5
-- stiskem F2 prejde centralni server do stavu off
-- stiskem F3 do jednoho ze stavu standby
-- stiskem F4 do jednoho z on stavu
-- F2, F3 a F4 jsou potvrzovane, takze se vam snad uz nebude stavat, ze je prepnete omylem.
-- stiskem ctrl+c nebo F10 se ukonci
-- nahore je mozne psat primo prikazy, ktere oddelujeme entrem.  Napriklad
-  (pokud mate pripojeno zarizeni C0):
+etc..
 
-  C0.cooltemp -20
+#---ServerTime(ms): 36
 
-  Nebo (pokud mate teld a nebezi nic s prioritou)
 
-  priority 1
-  teld.park
+***************************
+Unknow %V
+Unknow %T
+  s .. Save
+  q .. Quit
+  o .. List observations around position
+  t .. List targets around position
+Your selection:s
+Target ID [ new id ]: 
+Target ID: -2147483648
+Target NAME [2C 56]: M31
+Target NAME: M31
+ID                  1000
+SEL_ID              1000
+NAME                M31
+TYPE                79
+RA                  00:42:44.310
+DEC                 +041 16 09.40
 
-  V pravem dolnim rohu se zobrazuji vysledky techto cinnosti
-  (komunikace klient-server).
+ALTITUDE            +055 08 08.98
+ZENITH DISTANCE     +034 51 51.02
+AZIMUTH             +094 50 52.13
+HOUR ANGLE          03:17:05.286
 
-Pokud nemate radi ncurses:
-lascaux:rts2-cmon localhost
+(You press enter when asked for ID, but enter name, as you don't like 2C 56 the
+system is offering from SIMBAD).
 
-Odjinud nez z lascaux vam monitor nebude kvuli NAT fungovat.
+After creating your targets, run:
 
-Pokud to nic nedela, vse restartovat a pustit na cisto - nicmene nemelo by se
-to jiz stavat. 
+usrr@host: rts2-seltest
+ID                  20
+SEL_ID              20
+NAME                MAblank1
+TYPE                102
+RA                  01:00:00.000
+DEC                 +000 07 00.00
 
-Logy jdou do [lascaux|c0|c1|c2]:/var/log/rts2.
+Please consult man rts2-target for details how to edit the target (most
+probably you will like to enable it and raise its priority -
+rts2-target -e -p 200 <tar_id> will do that). See man rts2-targetinfo for
+details how to print target informations (including way how to produce nice
+graphs depicting target height etc..).
 
-8) Databaze
-http://lascaux.asu.cas.cz/bartdb
-Dale si uz urcite poradite.
-Pokud touzite po loginu, zeptejte se.
+Running and testing RTS2
+========================
 
-Petr Kubanek
+So you want to start the beast up? You will need to (as root user):
+
+root@host:$ mkdir /etc/rts2  # or some other directory, if you specify it during ./configure
+root@host:$ cd rts2
+root@host:rts2$ cp rts2.ini /etc/rts2/
+root@host:rts2$ cp rts2.initd /etc/init.d/rts2
+
+Now you need to edit /etc/rts2/rts2.ini and provide values for your
+installation (they are marked with xxxx, so just search for that and replace
+its occurences).
+
+Before you will run to:
+
+root@host:rts2$ cp services devices centrald /etc/rts2
+
+and editing /etc/rts2/devices, so you will be able to do start RTS2 with:
+
+root@host:rts2$ /etc/init.d/rts2 start
+
+you might be interested in starting the thing manually. Do:
+
+root@host: rts2-centrald -i
+
+if it exists, you have a problem. If not, on other x-term window/terminal/console, do:
+
+user@host: rts2-mon
+
+It should show rts2-mon screen. Suppose you have LX200 connected to /dev/ttyS1, do:
+
+root@host: rts2-teld-lx200 -f /dev/ttyS1 -i
+
+If that does not exists with an error message, you should then see LX200 as T0
+device in rts2-mon (run it in other x-term/..). The try to:
+
+press key down to get to T0
+the display on right changes to display telescope informations
+write:
+park
+and press enter
+
+Telescope shall move to parking position
+
+write:
+move 180 0
+and press enter
+
+If that coordinate is above horizon, telescope should move there. Please change
+coordinates (RA DEC) according to your location, the best is to try some object
+which is circumpolar (DEC > 90 - latitude for northern hemisphere, DEC < -90 -
+latitude on southern hemisphere).
+
+Now move to camera, There is demonstration with dummy, pleae change dummy
+string to name of your camera driver.
+
+root@host:$ rts2-camd-dummy -i
+root@host:$ rts2-xfocusc -d C0 -e 2
+
+If you reach till that point, running services shall be quite easy for you.
