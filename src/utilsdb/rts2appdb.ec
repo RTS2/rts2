@@ -26,6 +26,8 @@
 #include <iomanip>
 #include <string>
 
+#define OPT_DEBUGDB    OPT_LOCAL + 201
+
 EXEC SQL INCLUDE sql3types;
 
 Rts2SqlQuery::Rts2SqlQuery (const char *in_from)
@@ -359,6 +361,7 @@ Rts2AppDb::Rts2AppDb (int in_argc, char **in_argv) : Rts2CliApp (in_argc, in_arg
 
 	addOption (OPT_DATABASE, "database", 1, "connect string to PSQL database (default to stars)");
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
+	addOption (OPT_DEBUGDB, "debugdb", 0, "print database debugging messages");
 }
 
 
@@ -380,6 +383,9 @@ Rts2AppDb::processOption (int in_opt)
 			break;
 		case OPT_CONFIG:
 			configFile = optarg;
+			break;
+		case OPT_DEBUGDB:
+			ECPGdebug (1, stderr);
 			break;
 		default:
 			return Rts2CliApp::processOption (in_opt);
