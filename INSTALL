@@ -13,6 +13,9 @@ Instalation from SVN
 
    subversion postgresql-server-dev libecpg-dev automake libtool
 
+   Package gsoap is needed if you want SIMBAD name resolving and other nice
+   stuff.
+
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
 user@host:svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
@@ -44,26 +47,11 @@ arguments to ./configure. See list bellow for details.
 
    Please see file RUN for details how to setup and RUN RTS2 envriroment.
 
-   Hint: on most distributions, you can easily test, which versions of
-aclocal & so you have, by typing in bash aclocal and pressing enter.
-List as follow will apear:
+Alta, FLI, Paramount libraries
+==============================
 
-user@host:~$ aclocal
-aclocal      aclocal-1.4  aclocal-1.7  aclocal-1.8
-
-From that, you can easily see that you have versions 1.4, 1.7 and 1.8
-installed.
-
-Alta libraries
-==============
-
-You will need slightly modified Alta drives, which you can get from Random
-Factory. Please contact us for details.
-
-Running configure
-=================
-
-
+You will need slightly modified drivers. Please contact us for details, we will
+ship the links.
 
 Basic Installation
 ==================
