@@ -45,7 +45,7 @@ To restart it:
 
 /etc/init.d/rts2 restart
 
-*) What does RTS2 stands for?
+*) What does RTS2 stands for? What is its history? And future?
 
 It stands for Remote Telescope System 2. As name suggest, there was Remote
 Telescope System, which was later renamed to RTS1. It was writen in python,
@@ -56,20 +56,34 @@ BART.
 RTS2 was firstly written in pure C as my diploma thesis. After I finish degree,
 it was (almost completly) rewritten to C++. Rewrites enabled me to
 maternialize ideas I gather during writing C code - primary objectiv was
-selector and executor separation, but there were more issues (memory leaks...)
+selector and executor separation, but there were more issues (memory leaks...).
+
+The main author (Petr Kubanek) is currently working on network extension, so
+the RTS2 telescopes will collaborate on new discoveries. Please write him for
+details (there is a paper presented in Astronomische Nachrichten on the issue,
+but most probably you will have to pay for it - I can send you personal copy
+for free).
 
 *) Does it run? Where? Can I use it?
 
 Yes, currently it runs on those telescopes:
 
 BART - Ondrejov, Czech Republic
+
 BOOTES - Two telescopes in Huelva station, Spain, one (Bootes IR) on
 http://www.osn.iaa.es
 
 FRAM - monitoring telescope at Argentina, build by Physical Institute of the
 Czech Republic
 
-It should work on Watcher telescope in South Africa in some time.
+Watcher - Boyden observatory, South Africa
+BNL, NY, LSST(.org) testing lab - used as master controller for CCD tests (without telescope).
+
+D50 - new Ondrejov 50cm
+
+And future plans: 3 x RT in Spain (Astrobiology), 1.23m at CAHA
+(http://www.caha.es), new Bootes system at New Zealand. Plus there is plan to
+finally make from it a network - work in progress.
 
 Yes, you can use the software, as long as you agree with it's licence (GNU
 licence - see COPYING).
