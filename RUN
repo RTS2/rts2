@@ -155,7 +155,7 @@ you might be interested in starting the thing manually. Do:
 
 root@host: rts2-centrald -i
 
-if it exists, you have a problem. If not, on other x-term window/terminal/console, do:
+if it exits, you have a problem. If not, on other x-term window/terminal/console, do:
 
 user@host: rts2-mon
 
@@ -182,6 +182,9 @@ If that coordinate is above horizon, telescope should move there. Please change
 coordinates (RA DEC) according to your location, the best is to try some object
 which is circumpolar (DEC > 90 - latitude for northern hemisphere, DEC < -90 -
 latitude on southern hemisphere).
+
+First in move command is RA (in degrees, <0,360> range), second is DEC (in
+degrees, <-90,+90> range).
 
 Now move to camera, There is demonstration with dummy, pleae change dummy
 string to name of your camera driver.
