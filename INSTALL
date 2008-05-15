@@ -1,20 +1,28 @@
 Please skip to "Basic Installation" if you are not performing
-installation from CVS.
+installation from SVN.
 
 Note 1: you need to have libtool installed (apt-get install libtool on Debian),
-otherwise it will not work. I'll investigate that.
+otherwise it will not work. I'll investigate that. Please enter any request to
+SF tracking system, or send them to the author (petr@kubanek.net).
 
-Instalation from CVS
+Instalation from SVN 
 ====================
 
-   For inpatient (works on Debian/sarge with automake-1.7 installed -
-apt-get install automake-1.7):
+   You will need following packages (apt-get install on Debian based systems
+   should install them).
 
-uuser@host:~/rts2$ ./autogen.sh
+   subversion postgresql-server-dev libecpg-dev automake libtool
 
-Edit autogen.sh and set automake version to something other (see AC_VERSION
-parameter at top). It most probably will not work with automake versions 1.5
-and lower. This script will perform following steps:
+   For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
+
+user@host:svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
+user@host:cd rts2
+user@host:~/rts2$ ./autogen.sh
+
+The chances are you will not need to edit autogen.sh and set automake version
+to something other (see AC_VERSION parameter at top). It most probably will not
+work with automake versions 1.5 and lower. This script will perform following
+steps:
    
    Run aclocal, preferably aclocal-1.6 or newer (aclocal-1.6 is then name of
    the script) to produce acinclude.m4 from aclocal.m4.
@@ -40,11 +48,22 @@ arguments to ./configure. See list bellow for details.
 aclocal & so you have, by typing in bash aclocal and pressing enter.
 List as follow will apear:
 
-petr@omega:~$ aclocal
+user@host:~$ aclocal
 aclocal      aclocal-1.4  aclocal-1.7  aclocal-1.8
 
 From that, you can easily see that you have versions 1.4, 1.7 and 1.8
 installed.
+
+Alta libraries
+==============
+
+You will need slightly modified Alta drives, which you can get from Random
+Factory. Please contact us for details.
+
+Running configure
+=================
+
+
 
 Basic Installation
 ==================
@@ -229,8 +248,3 @@ operates.
 
 `configure' also accepts some other, not widely useful, options.
 
-Alta libraries
-==============
-
-You will need slightly modified Alta drives, which you can get from Random
-Factory. Please contact us for details.
