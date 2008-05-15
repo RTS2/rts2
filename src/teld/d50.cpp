@@ -208,9 +208,13 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 	decZero = 0;
 
 	//haCpd = 21333.333;
-	haCpd = 10000;
+	//haCpd = 10000;
+	// zadal Torman 11.5.08 - polovina puvodne vypocitane hodnoty
+	haCpd = 10666.666667;
 	//decCpd = 17777.778;
-	decCpd = 8100;
+	//decCpd = 8100;
+	// zadal Torman 11.5.08 - polovina puvodne vypocitane hodnoty
+	decCpd = 8888.888889;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
