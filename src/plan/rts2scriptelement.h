@@ -194,14 +194,19 @@ class Rts2ScriptElementCenter:public Rts2ScriptElement
 class Rts2ScriptElementChange:public Rts2ScriptElement
 {
 	private:
+		char *deviceName;
 		double ra;
 		double dec;
 	public:
-		Rts2ScriptElementChange (Rts2Script * in_script, double in_ra,
-			double in_dec);
+		Rts2ScriptElementChange (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE],
+			double in_ra, double in_dec);
+		virtual ~Rts2ScriptElementChange (void)
+		{
+			delete [] deviceName;
+		}
+
 		virtual int defnextCommand (Rts2DevClient * client,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
+			Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		void setChangeRaDec (double in_ra, double in_dec)
 		{
 			ra = in_ra;

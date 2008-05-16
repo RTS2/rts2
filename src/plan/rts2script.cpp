@@ -345,7 +345,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		double dec;
 		if (getNextParamDouble (&ra) || getNextParamDouble (&dec))
 			return NULL;
-		return new Rts2ScriptElementChange (this, ra, dec);
+		return new Rts2ScriptElementChange (this, new_device, ra, dec);
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT))
 	{
@@ -620,7 +620,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		hexEl = new Rts2SEHex (this, ra_size, dec_size);
+		hexEl = new Rts2SEHex (this, new_device, ra_size, dec_size);
 		// parse block..
 		while (1)
 		{
@@ -648,7 +648,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		ffEl = new Rts2SEFF (this, ra_size, dec_size);
+		ffEl = new Rts2SEFF (this, new_device, ra_size, dec_size);
 		// parse block..
 		while (1)
 		{
@@ -666,8 +666,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	// setValue fallback
 	else if (strchr (commandStart, '='))
 	{
-		return new Rts2ScriptElementChangeValue (this, new_device,
-			commandStart);
+		return new Rts2ScriptElementChangeValue (this, new_device, commandStart);
 	}
 	return NULL;
 }

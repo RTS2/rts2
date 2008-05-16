@@ -211,20 +211,20 @@ char new_device[DEVICE_NAME_SIZE])
 }
 
 
-Rts2ScriptElementChange::Rts2ScriptElementChange (Rts2Script * in_script, double in_ra, double in_dec):Rts2ScriptElement
-(in_script)
+Rts2ScriptElementChange::Rts2ScriptElementChange (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec)
+:Rts2ScriptElement (in_script)
 {
+	deviceName = new char[strlen (new_device) + 1];
+	strcpy (deviceName, new_device);
 	setChangeRaDec (in_ra, in_dec);
 }
 
 
 int
-Rts2ScriptElementChange::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+Rts2ScriptElementChange::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new Rts2CommandChange (script->getMaster (), ra, dec);
-	strcpy (new_device, "TX");
+	strcpy (new_device, deviceName);
 	return 0;
 }
 

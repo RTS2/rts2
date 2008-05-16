@@ -81,10 +81,11 @@ Rts2SEHex::afterBlockEnd ()
 }
 
 
-Rts2SEHex::Rts2SEHex (Rts2Script * in_script, double in_ra_size,
-double in_dec_size):
+Rts2SEHex::Rts2SEHex (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size):
 Rts2ScriptElementBlock (in_script)
 {
+	deviceName = new char[strlen (new_device) + 1];
+	strcpy (deviceName, new_device);
 	ra_size = in_ra_size;
 	dec_size = in_dec_size;
 	changeEl = NULL;
@@ -93,6 +94,7 @@ Rts2ScriptElementBlock (in_script)
 
 Rts2SEHex::~Rts2SEHex (void)
 {
+	delete [] deviceName;
 	changeEl = NULL;
 }
 
@@ -105,14 +107,13 @@ Rts2SEHex::beforeExecuting ()
 
 	if (path.haveNext ())
 	{
-		changeEl = new Rts2ScriptElementChange (script, getRa (), getDec ());
+		changeEl = new Rts2ScriptElementChange (script, deviceName, getRa (), getDec ());
 		addElement (changeEl);
 	}
 
 	bool en = false;
 	if (script->getMaster ())
-		script->getMaster ()->
-			postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
+		script->getMaster ()->postEvent (new Rts2Event (EVENT_QUICK_ENABLE, (void *) &en));
 }
 
 
@@ -149,9 +150,8 @@ Rts2SEFF::constructPath ()
 }
 
 
-Rts2SEFF::Rts2SEFF (Rts2Script * in_script, double in_ra_size,
-double in_dec_size):
-Rts2SEHex (in_script, in_ra_size, in_dec_size)
+Rts2SEFF::Rts2SEFF (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size)
+:Rts2SEHex (in_script, new_device, in_ra_size, in_dec_size)
 {
 }
 
