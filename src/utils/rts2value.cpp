@@ -788,7 +788,14 @@ Rts2ValueRaDec::sendTypeMetaInfo (Rts2Conn * connection)
 int
 Rts2ValueRaDec::setValue (Rts2Conn * connection)
 {
-	if (connection->paramNextDouble (&ra) || connection->paramNextDouble (&decl) || !connection->paramEnd ())
+	if (connection->paramNextDouble (&ra))
+		return -2;
+	if (connection->paramEnd ())
+	{
+	  	decl = ra;
+		return 0;
+	}
+	if (connection->paramNextDouble (&decl) || !connection->paramEnd ())
 		return -2;
 
 	return 0;
@@ -799,8 +806,8 @@ int
 Rts2ValueRaDec::setValueString (const char *in_value)
 {
 	double v_ra, v_dec;
-	if (parseRaDec (in_value, v_ra, v_dec));
-	return -2;
+	if (parseRaDec (in_value, v_ra, v_dec))
+		return -2;
 	setValueRaDec (v_ra, v_dec);
 	return 0;
 }
