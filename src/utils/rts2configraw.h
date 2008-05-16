@@ -55,31 +55,61 @@ class Rts2ConfigValue
 			valueSuffix = in_valueSuffix;
 			value = in_value;
 		}
-
+		
+		/**
+		 * Check for value name.
+		 *
+		 * @param name Name which will be checked.
+		 *
+		 * @return True if value name is equal to name.
+		 */
 		bool isValue (std::string name)
 		{
 			return (valueName == name && valueSuffix.length () == 0);
 		}
 
+		/**
+		 * Return value name.
+		 *
+		 * @return Value name.
+		 */
 		std::string getValueName ()
 		{
 			return valueName;
 		}
 
-		std::string getSuffix ()
-		{
-			return valueSuffix;
-		}
+		/**
+		 * Return value suffix. Value suffix is used for .min and .max
+		 * entris in mode files.
+		 *
+		 * @return Value suffix.
+		 */
+ 		std::string getSuffix ()
+ 		{
+ 			return valueSuffix;
+ 		}
 
+		/**
+		 * Return value as string.
+		 *
+		 * @return Value as string.
+		 */
 		std::string getValue ()
 		{
 			return value;
 		}
 
+		/**
+		 * Return value as double number.
+		 *
+		 * @return Value as double number.
+		 */
 		double getValueDouble ()
 		{
 			return atof (value.c_str ());
 		}
+
+
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val);
 };
