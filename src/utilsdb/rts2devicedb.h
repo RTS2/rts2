@@ -24,14 +24,18 @@
 #include "../utils/rts2config.h"
 
 /**
- * This add database connectivity to device class
+ * Adds database connectivity to device class.
+ * Provides parameters to specify database location,
+ * and routines to parse database location from .ini file.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-
 class Rts2DeviceDb:public Rts2Device
 {
 	private:
 		char *connectString;
 		char *configFile;
+
 	protected:
 		virtual int willConnect (Rts2Address * in_addr);
 		virtual int processOption (int in_opt);
@@ -46,7 +50,7 @@ class Rts2DeviceDb:public Rts2Device
 		virtual int init ();
 		virtual void forkedInstance ();
 	public:
-		Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type, char *default_name);
+		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
 		virtual ~ Rts2DeviceDb (void);
 
 		virtual void signaledHUP ();

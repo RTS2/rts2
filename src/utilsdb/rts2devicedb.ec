@@ -34,8 +34,8 @@ Rts2DeviceDb::willConnect (Rts2Address * in_addr)
 }
 
 
-Rts2DeviceDb::Rts2DeviceDb (int in_argc, char **in_argv, int in_device_type,
-char *default_name):Rts2Device (in_argc, in_argv, in_device_type, default_name)
+Rts2DeviceDb::Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name)
+:Rts2Device (argc, argv, in_device_type, default_name)
 {
 	connectString = NULL;		 // defualt DB
 	configFile = NULL;
