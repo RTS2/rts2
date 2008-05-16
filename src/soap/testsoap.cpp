@@ -77,7 +77,7 @@ std::ostream & operator << (std::ostream & _os, rts2__target * in_target)
 int
 Rts2TestSoap::doProcessing ()
 {
-	struct soap soap;
+	struct soap *sp = soap_new ();
 	struct rts2__getEquResponse res;
 	struct rts2__getTelescopeResponse resTel;
 	struct rts2__getExecResponse exec;
@@ -90,9 +90,9 @@ Rts2TestSoap::doProcessing ()
 	struct rts2__setNowResponse nowR;
 	int ret;
 
-	soap_init (&soap);
+	soap_init (sp);
 
-	ret = soap_call_rts2__getEqu (&soap, server, "", res);
+	ret = soap_call_rts2__getEqu (sp, server, "", res);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -100,7 +100,7 @@ Rts2TestSoap::doProcessing ()
 	}
 	std::cout << res.radec->ra << " " << res.radec->dec << std::endl;
 
-	ret = soap_call_rts2__getTelescope (&soap, server, "", "T0", resTel);
+	ret = soap_call_rts2__getTelescope (sp, server, "", "T0", resTel);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -113,7 +113,7 @@ Rts2TestSoap::doProcessing ()
 		dec << std::endl << resTel.tel->err->ra << " " << resTel.tel->err->
 		dec << std::endl;
 
-	ret = soap_call_rts2__getExec (&soap, server, "", exec);
+	ret = soap_call_rts2__getExec (sp, server, "", exec);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -125,7 +125,7 @@ Rts2TestSoap::doProcessing ()
 		<< "Next" << std::endl << exec.next << std::endl;
 	// << "Priority" << std::endl << exec.priority << std::endl;
 
-	ret = soap_call_rts2__getTarget (&soap, server, "", 1, target);
+	ret = soap_call_rts2__getTarget (sp, server, "", 1, target);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -133,7 +133,7 @@ Rts2TestSoap::doProcessing ()
 	}
 	std::cout << "Target 1 is " << std::endl << target.target << std::endl;
 
-	ret = soap_call_rts2__getCentrald (&soap, server, "", centrald);
+	ret = soap_call_rts2__getCentrald (sp, server, "", centrald);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -145,7 +145,7 @@ Rts2TestSoap::doProcessing ()
 	if (setOff)
 	{
 		ret =
-			soap_call_rts2__setCentrald (&soap, server, "", rts2__system__OFF,
+			soap_call_rts2__setCentrald (sp, server, "", rts2__system__OFF,
 			centrald_set);
 		if (ret != SOAP_OK)
 		{
@@ -154,14 +154,14 @@ Rts2TestSoap::doProcessing ()
 		}
 	}
 
-	ret = soap_call_rts2__getCamera (&soap, server, "", camera_res);
+	ret = soap_call_rts2__getCamera (sp, server, "", camera_res);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
 		return ret;
 	}
 
-	ret = soap_call_rts2__getCameras (&soap, server, "", cameras_res);
+	ret = soap_call_rts2__getCameras (sp, server, "", cameras_res);
 	if (ret != SOAP_OK)
 	{
 		std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -184,7 +184,7 @@ Rts2TestSoap::doProcessing ()
 	}
 	if (next > 0)
 	{
-		ret = soap_call_rts2__setNext (&soap, server, "", next, nextR);
+		ret = soap_call_rts2__setNext (sp, server, "", next, nextR);
 		if (ret != SOAP_OK)
 		{
 			std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -194,7 +194,7 @@ Rts2TestSoap::doProcessing ()
 	}
 	if (nowTarget > 0)
 	{
-		ret = soap_call_rts2__setNow (&soap, server, "", nowTarget, nowR);
+		ret = soap_call_rts2__setNow (sp, server, "", nowTarget, nowR);
 		if (ret != SOAP_OK)
 		{
 			std::cerr << "Cannot connect to SOAP server: " << ret << std::endl;
@@ -202,6 +202,7 @@ Rts2TestSoap::doProcessing ()
 		}
 		std::cout << "Now set to:" << std::endl << nowR.target << std::endl;
 	}
+	soap_free (sp);
 	return ret;
 }
 

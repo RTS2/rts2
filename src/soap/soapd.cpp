@@ -11,24 +11,32 @@
 class Rts2SoapConn:public Rts2Conn
 {
 	private:
-		struct soap soap;
+		struct soap *sp;
 	protected:
 		virtual int acceptConn ();
 	public:
 		Rts2SoapConn (int in_port, Rts2Block * in_master);
+		virtual ~Rts2SoapConn (void);
 		virtual int init ();
 };
 
 Rts2SoapConn::Rts2SoapConn (int in_port, Rts2Block * in_master):
 Rts2Conn (in_master)
 {
-	soap_init (&soap);
-	sock = soap_bind (&soap, NULL, in_port, 100);
+	sp = soap_new ();
+	soap_init (sp);
+	sock = soap_bind (sp, NULL, in_port, 100);
 	if (sock < 0)
-		soap_print_fault (&soap, stderr);
+		soap_print_fault (sp, stderr);
 	setConnTimeout (-1);
-	fprintf (stderr, "Socket connection successful: master socket = %d\n",
-		sock);
+	logStream (MESSAGE_DEBUG)
+		<< "Socket connection successful: master socket = " << sock << sendLog;
+}
+
+
+Rts2SoapConn::~Rts2SoapConn (void)
+{
+	soap_free (sp);
 }
 
 
@@ -46,15 +54,15 @@ int
 Rts2SoapConn::acceptConn ()
 {
 	int s;
-	s = soap_accept (&soap);
+	s = soap_accept (sp);
 	//  fprintf (stderr, "Socket connection successful: slave socket = %d\n", s);
 	if (s < 0)
 	{
-		soap_print_fault (&soap, stderr);
+		soap_print_fault (sp, stderr);
 		exit (-1);
 	}
-	soap_serve (&soap);
-	soap_end (&soap);
+	soap_serve (sp);
+	soap_end (sp);
 	setConnState (CONN_CONNECTING);
 	return 0;
 }
