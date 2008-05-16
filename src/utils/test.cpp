@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <libnova/libnova.h>
 
-#include "mkpath.h"
+#include "utilsfunc.h"
 
 #include "rts2app.h"
 #include "rts2config.h"
