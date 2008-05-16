@@ -186,7 +186,9 @@
 	  <para>
 	    Change mount position before next exposure by {ra_diff}
 	    and {dec_diff}. Wait until no exposure is
-	    going on, then perform move, then continue exposing.
+	    going on, then perform move, then continue exposing. Please note,
+	    that telescope which should change must by specified with . notation - so
+	    if your telescope is called T0, you must write T0.C {ra_diff} {dec_diff}
 	  </para>
 	  <para>
 	    {ra_diff} and {dec_diff} are in degrees.
