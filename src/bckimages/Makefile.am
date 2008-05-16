@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = rts2-flatprocess
 
-EXTRA_DIST = bckimages.ec
+EXTRA_DIST = bckimages.ec deleteimage.ec
 
 AM_CFLAGS = @LIBPG_CFLAGS@
 
@@ -13,21 +13,19 @@ if PGSQL
 
 bin_PROGRAMS += rts2-bckimages rts2-deleteimage
 
-rts2_bckimages_SOURCES = bckimages.c
-rts2_bckimages_LDFLAGS = ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ 
+rts2_bckimages_SOURCES = bckimages.cpp
+rts2_bckimages_CXXFLAGS = @LIBPG_CFLAGS@
+rts2_bckimages_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@
 
 rts2_deleteimage_SOURCES = deleteimage.cpp
 rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_deleteimage_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@
-
-%.c: %.ec
-	@ECPG@ -o $@ $^
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
 
 else
 
-EXTRA_DIST += deleteimage.cpp
+EXTRA_DIST += bckimages.cpp deleteimage.cpp
 
 endif
