@@ -194,7 +194,7 @@ class Rts2Daemon:public Rts2Block
 		 * @param in_description value description
 		 * @param writeToFits    when true, value will be writen to FITS
 		 */
-		template < typename T > void createConstValue (T * &val, char *in_val_name,
+		template < typename T > void createConstValue (T * &val, const char *in_val_name,
 			std::string in_description,
 			bool writeToFits =
 			true, int32_t valueFlags = 0)
