@@ -268,8 +268,7 @@ Rts2ConfigRaw::parseConfigFile ()
 				return -1;
 			}
 			#ifdef DEBUG_EXTRA
-			std::
-				cout << "Pushing " << valName << " " << valSuffix << " " << val <<
+			std::cout << "Pushing " << valName << " " << valSuffix << " " << val <<
 				std::endl;
 			#endif				 /* DEBUG_EXTRA */
 			sect->push_back (Rts2ConfigValue (valName, valSuffix, val));
