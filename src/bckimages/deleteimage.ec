@@ -1,27 +1,46 @@
-#include "../utils/mkpath.h"
+/* 
+ * Utility to remove images from RTS2 database.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../writers/rts2imagedb.h"
 
 #include <iostream>
-#include <string.h>
 #include <list>
 
 class Rts2DeleteApp: public Rts2AppDb
 {
-	int findImages ();
-	int deleteImage (const char *in_name);
+	private:
+		int findImages ();
+		int deleteImage (const char *in_name);
 
-	int dont_delete;
-	std::list <const char *> imageNames;
+		int dont_delete;
+		std::list <const char *> imageNames;
 
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *in_arg);
+
+		virtual int doProcessing ();
 	public:
 		Rts2DeleteApp (int argc, char **argv);
 		virtual ~Rts2DeleteApp (void);
-
-		virtual int doProcessing ();
 };
 
 int
@@ -60,7 +79,7 @@ Rts2DeleteApp::deleteImage (const char *in_name)
 }
 
 
-Rts2DeleteApp::Rts2DeleteApp (int in_argc, char **in_argv) : Rts2AppDb (in_argc, in_argv)
+Rts2DeleteApp::Rts2DeleteApp (int argc, char **argv) : Rts2AppDb (argc, argv)
 {
 	addOption ('n', "notmod", 1, "don't delete anything, just show what will be done");
 	dont_delete = 0;
