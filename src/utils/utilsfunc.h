@@ -40,5 +40,4 @@ int mkpath (const char *path, mode_t mode);
  * @return Vector of std::string.
  */
 std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter);
-
 #endif							 /* !__RTS_UTILSFUNC__ */

@@ -28,46 +28,47 @@
 int
 mkpath (const char *path, mode_t mode)
 {
-  char *cp_path;
-  char *start, *end;
-  int ret = 0;
-  cp_path = strdup (path);
-  start = cp_path;
-  while (1)
-    {
-      end = ++start;
-      while (*end && *end != '/')
-	end++;
-      if (!*end)
-	break;
-      *end = '\0';
-      ret = mkdir (cp_path, mode);
-      *end = '/';
-      start = ++end;
-      if (ret)
+	char *cp_path;
+	char *start, *end;
+	int ret = 0;
+	cp_path = strdup (path);
+	start = cp_path;
+	while (1)
 	{
-	  if (errno != EEXIST)
-	    break;
-	  ret = 0;
+		end = ++start;
+		while (*end && *end != '/')
+			end++;
+		if (!*end)
+			break;
+		*end = '\0';
+		ret = mkdir (cp_path, mode);
+		*end = '/';
+		start = ++end;
+		if (ret)
+		{
+			if (errno != EEXIST)
+				break;
+			ret = 0;
+		}
 	}
-    }
-  free (cp_path);
-  return ret;
+	free (cp_path);
+	return ret;
 }
+
 
 std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter)
 {
-  std::size_t pos = 0;
-  std::size_t oldpos = 0;
-  std::size_t delimlen = delimeter.length();
+	std::size_t pos = 0;
+	std::size_t oldpos = 0;
+	std::size_t delimlen = delimeter.length();
 
-  std::vector<std::string> result;
-  while(pos != std::string::npos)
-  {
-    pos = text.find(delimeter, oldpos);
-    result.push_back(text.substr(oldpos, pos - oldpos));
-    oldpos = pos + delimlen;
-  }
+	std::vector<std::string> result;
+	while(pos != std::string::npos)
+	{
+		pos = text.find(delimeter, oldpos);
+		result.push_back(text.substr(oldpos, pos - oldpos));
+		oldpos = pos + delimlen;
+	}
 
-  return result;
+	return result;
 }
