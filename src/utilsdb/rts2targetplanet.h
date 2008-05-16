@@ -27,7 +27,7 @@ typedef double (*get_double_val_t) (double);
 
 typedef struct planet_info_t
 {
-	char *name;
+	const char *name;
 	get_equ_t rst_func;
 	get_double_val_t earth_func;
 	get_double_val_t sun_func;
