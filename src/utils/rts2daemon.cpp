@@ -623,8 +623,7 @@ Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, const char 
 
 
 void
-Rts2Daemon::addConstValue (const char *in_name, const char *in_desc,
-double in_value)
+Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, double in_value)
 {
 	Rts2ValueDouble *val = new Rts2ValueDouble (in_name, std::string (in_desc));
 	val->setValueDouble (in_value);
@@ -643,7 +642,7 @@ Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, int in_valu
 
 
 void
-Rts2Daemon::addConstValue (const char *in_name, char *in_value)
+Rts2Daemon::addConstValue (const char *in_name, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name);
 	val->setValueString (in_value);
