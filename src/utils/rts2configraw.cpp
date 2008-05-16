@@ -19,7 +19,6 @@
 
 #include "rts2configraw.h"
 #include "rts2app.h"
-#include <strtok.h>
 
 #ifdef DEBUG_EXTRA
 #include <iostream>
