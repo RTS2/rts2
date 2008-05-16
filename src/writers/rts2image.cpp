@@ -23,10 +23,10 @@
 #include "rts2image.h"
 #include "imghdr.h"
 
-#include "../utils/mkpath.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
+#include "../utils/utilsfunc.h"
 #include "../utilsdb/target.h"
 
 #include "imgdisplay.h"

@@ -38,7 +38,6 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2expander.h"
-#include "../utils/mkpath.h"
 #include "../utils/rts2target.h"
 
 /**
