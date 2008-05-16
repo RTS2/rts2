@@ -3,12 +3,13 @@
 
 #include "../utils/rts2config.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2connnosend.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2messagedb.h"
 #include "../utils/rts2block.h"
 #include "rts2soapcli.h"
 
-class Rts2SoapConn:public Rts2Conn
+class Rts2SoapConn:public Rts2ConnNoSend
 {
 	private:
 		struct soap *sp;
@@ -21,7 +22,7 @@ class Rts2SoapConn:public Rts2Conn
 };
 
 Rts2SoapConn::Rts2SoapConn (int in_port, Rts2Block * in_master):
-Rts2Conn (in_master)
+Rts2ConnNoSend (in_master)
 {
 	sp = soap_new ();
 	soap_init (sp);
@@ -55,7 +56,6 @@ Rts2SoapConn::acceptConn ()
 {
 	int s;
 	s = soap_accept (sp);
-	//  fprintf (stderr, "Socket connection successful: slave socket = %d\n", s);
 	if (s < 0)
 	{
 		soap_print_fault (sp, stderr);
