@@ -56,7 +56,8 @@ mkpath (const char *path, mode_t mode)
 }
 
 
-std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter)
+std::vector<std::string>
+SplitStr(const std::string& text, const std::string& delimeter)
 {
 	std::size_t pos = 0;
 	std::size_t oldpos = 0;
@@ -71,4 +72,15 @@ std::vector<std::string> SplitStr(const std::string& text, const std::string& de
 	}
 
 	return result;
+}
+
+std::vector<char>
+Str2CharVector (std::string text)
+{
+	std::vector<char> res;
+	for (std::string::iterator iter = text.begin(); iter != text.end(); iter++)
+	{
+		res.push_back (*iter);	
+	}
+	return res;
 }

@@ -37,7 +37,18 @@ int mkpath (const char *path, mode_t mode);
 /**
  * Split std::string to vector of strings.
  *
+ * @param text        String which will be splitted.
+ * @param delimeter   String shich separates entries in vector.
+ *
  * @return Vector of std::string.
  */
-std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter);
+std::vector<std::string> SplitStr (const std::string& text, const std::string& delimeter);
+
+/**
+ * Splits string to vector of chars
+ *
+ * @param text   Text which will be splited.
+ */
+std::vector<char> Str2CharVector (std::string text);
+
 #endif							 /* !__RTS_UTILSFUNC__ */
