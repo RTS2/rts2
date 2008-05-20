@@ -339,7 +339,7 @@
     </refsect2>
     <refsect2>
       <title>observatory</title>
-      <para>Provide informations about observatory - it's location etc.</para>
+      <para>Provide informations about observatory - its location etc.</para>
       <variablelist>
 	<varlistentry>
 	  <term>
@@ -354,8 +354,8 @@
 	    <option>longtitude</option>
 	  </term>
 	  <listitem>
-	    <para>Observatory longtitude in degrees. Positive values are east from Greenwich, negative are west - e.g. America's
-	    locations should have negative longtitude, most of Europe positive.</para>
+	    <para>Observatory longtitude in degrees. Positive values are east from Greenwich, negative are west - e.g. american
+	    locations should have negative longtitude, most of european positive.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
