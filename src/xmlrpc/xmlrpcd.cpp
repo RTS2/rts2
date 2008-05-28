@@ -1,6 +1,6 @@
 /* 
  * XML-RPC daemon.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
  * This program is free software; you can redistribute it and/or
@@ -63,7 +63,7 @@ class Rts2XmlRpcd:public Rts2DeviceDb
 		virtual void selectSuccess ();
 
 	public:
-		Rts2XmlRpcd (int in_argc, char **in_argv);
+		Rts2XmlRpcd (int argc, char **argv);
 };
 
 int
@@ -115,7 +115,7 @@ Rts2XmlRpcd::selectSuccess ()
 }
 
 
-Rts2XmlRpcd::Rts2XmlRpcd (int in_argc, char **in_argv): Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SOAP, "XMLRPC")
+Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
 {
 	rpcPort = 8889;
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
