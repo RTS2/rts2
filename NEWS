@@ -1,4 +1,15 @@
 0.8.0
+  RTS2 scripting
+
+  C, HEX commands needs for proper functionality name of the device  
+
+  rts2-xmlrpcclient
+
+  It is now possible to set RTS2 variable by XML-RPC call. Either use some
+  custom XML-RPC library and call rts2.values.set with device, var and value
+  filled in (look to src/xmlrpc/xmlrpcclient.cpp for an example) or use
+  rts2-xmlrpcclient with -s option (see rts2-xmlrpcclient for small help).
+
   rts2-image
   
   -l option to create softlinks
