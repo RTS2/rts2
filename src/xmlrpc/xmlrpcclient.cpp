@@ -32,7 +32,7 @@ class Rts2XmlRpcTest: public Rts2CliApp
 {
 	private:
 		int xmlPort;
-		char *xmlHost;
+		const char *xmlHost;
 		int xmlVerbosity;
 
 		XmlRpcClient* xmlClient;
@@ -85,6 +85,18 @@ Rts2XmlRpcTest::doTest ()
 	val["device"] = "C0";
 	val["var"] = "scriptLen";
 	val["value"] = 100;
+	oneArg[0] = val;
+	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+
+	val["device"] = "T0";
+	val["var"] = "OFFS";
+	val["value"] = "1 1";
+	oneArg[0] = val;
+	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+
+	val["device"] = "T0";
+	val["var"] = "OBJ";
+	val["value"] = "20 30";
 	oneArg[0] = val;
 	runXmlMethod (R2X_VALUES_SET, oneArg, result);
 
@@ -171,7 +183,7 @@ Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_arg
 
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
-	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it");
+	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 }
 
 
@@ -186,27 +198,3 @@ int main(int argc, char** argv)
 	Rts2XmlRpcTest app (argc, argv);
 	return app.run();
 }
-
-
-// Call system.listVariables method
-/*	if (c.execute(R2X_VALUES_LIST, noArgs, result))
-	{
-		std::cout << "Devices + values: " << std::endl;
-		for (int i = 0; i < result.size(); i++)
-		{
-			std::cout << " " << result[i] << std::endl;
-		}
-	}*/
-// Call system.listVariables method with one device
-/*if (c.execute(R2X_DEVICES_VALUES_LIST, oneArg, result))
-{
-	std::cout << "Devices + values for andor: " << std::endl;
-	for (int i = 0; i < result.size(); i++)
-	{
-		std::cout << " " << result[i]["name"] << "=" << result[i]["value"] << std::endl;
-	}
-}
-else
-{
-	std::cout << "Error calling '" R2X_DEVICES_VALUES_LIST "'\n\n";
-}*/
