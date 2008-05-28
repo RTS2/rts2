@@ -376,7 +376,7 @@ XmlRpcServerConnection::generateHeader(std::string const& body)
 		"Content-length: ";
 
 	char buffLen[40];
-	sprintf(buffLen,"%d\r\n\r\n", body.size());
+	sprintf(buffLen,"%li\r\n\r\n", body.size());
 
 	return header + buffLen;
 }
