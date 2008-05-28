@@ -21,6 +21,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "../utils/rts2cliapp.h"
 #include <iostream>
+#include <vector>
 
 #include "r2x.h"
 
@@ -28,6 +29,11 @@ using namespace XmlRpc;
 
 #define OPT_HOST             OPT_LOCAL + 1
 
+/**
+ * Class for testing XML-RPC.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2XmlRpcTest: public Rts2CliApp
 {
 	private:
@@ -35,12 +41,43 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		const char *xmlHost;
 		int xmlVerbosity;
 
+		enum {TEST, SET_VARIABLE} xmlOp;
+
+		std::vector <const char *> args;
+
 		XmlRpcClient* xmlClient;
 
-		int runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcValue &result, bool printRes = true);
-		void doTest ();
+		/**
+		 * Run one XML-RPC method. Prints out method execution
+		 * processing according to verbosity level.
+		 *
+		 * @param methodName   Name of the method.
+		 * @param in           Input arguments.
+		 * @param result       Result of execution.
+		 * @param printRes     Prints out result.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes = true);
+
+		/**
+		 * Run test methods.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int doTest ();
+
+		/**
+		 * Set XML-RPC variable.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int setVariable (const char *deviceName, const char *varName, const char *value);
 	protected:
+		virtual void usage ();
+
 		virtual int processOption (int in_opt);
+		virtual int processArgs (const char *arg);
 		virtual int init ();
 
 		virtual int doProcessing ();
@@ -51,11 +88,11 @@ class Rts2XmlRpcTest: public Rts2CliApp
 };
 
 int
-Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcValue &result, bool printRes)
+Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
 {
 	int ret;
 
-	ret = xmlClient->execute (methodName, args, result);
+	ret = xmlClient->execute (methodName, in, result);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error calling '" << methodName << "'." << sendLog;
@@ -69,7 +106,7 @@ Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &args, XmlRpcV
 }
 
 
-void
+int
 Rts2XmlRpcTest::doTest ()
 {
 	XmlRpcValue noArgs, oneArg, result;
@@ -127,9 +164,31 @@ Rts2XmlRpcTest::doTest ()
 
 	oneArg[0] = "log";
 	oneArg[1] = "pas";
-	runXmlMethod (R2X_USER_LOGIN, oneArg, result);
+	return runXmlMethod (R2X_USER_LOGIN, oneArg, result);
 }
 
+int
+Rts2XmlRpcTest::setVariable (const char *deviceName, const char *varName, const char *value)
+{
+	XmlRpcValue oneArg, result;
+	XmlRpcValue val;
+
+	val["device"] = deviceName;
+	val["var"] = varName;
+	val["value"] = value;
+	oneArg[0] = val;
+
+	return runXmlMethod (R2X_VALUES_SET, oneArg, result);
+}
+
+
+void
+Rts2XmlRpcTest::usage ()
+{
+	std::cout << "  " << getAppName () << " -s <device name> <variable name> <value>" << std::endl
+		<< " To set T0.OBJ to 10 20, run: " << std::endl
+		<< "  " << getAppName () << " -s T0 OBJ \"10 20\"" << std::endl; 
+}
 
 int
 Rts2XmlRpcTest::processOption (int in_opt)
@@ -145,6 +204,9 @@ Rts2XmlRpcTest::processOption (int in_opt)
 		case 'v':
 			xmlVerbosity++;
 			break;
+		case 's':
+			xmlOp = SET_VARIABLE;
+			break;
 		default:
 			return Rts2CliApp::processOption (in_opt);
 	}
@@ -153,10 +215,32 @@ Rts2XmlRpcTest::processOption (int in_opt)
 
 
 int
+Rts2XmlRpcTest::processArgs (const char *arg)
+{
+	if (xmlOp != SET_VARIABLE)
+		return -1;
+	args.push_back (arg);
+	return 0;
+}
+
+
+int
 Rts2XmlRpcTest::doProcessing ()
 {
-	doTest ();
-	return 0;
+	switch (xmlOp)
+	{
+		case TEST:
+			return doTest ();
+		case SET_VARIABLE:
+			if (args.size () != 3)
+			{
+				logStream (MESSAGE_ERROR) << "Invalid number of parameters - " << args.size () 
+					<< ", expected 3." << sendLog;
+				return -1;
+			}
+			return setVariable (args[0], args[1], args[2]);
+	}
+	return -1;
 }
 
 
@@ -179,11 +263,14 @@ Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_arg
 	xmlHost = "localhost";
 	xmlVerbosity = 0;
 
+	xmlOp = TEST;
+
 	xmlClient = NULL;
 
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
+	addOption ('s', NULL, 0, "set variables specified by variable list.");
 }
 
 

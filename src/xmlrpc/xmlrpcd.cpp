@@ -395,7 +395,7 @@ class SetValues: public XmlRpcServerMethod
 						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"])));
 						break;
 					default:
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"])));
+						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"]), true));
 						break;
 				}
 			}
