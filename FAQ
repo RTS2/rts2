@@ -13,7 +13,7 @@ ways of solving problems (press ctrl+alt+del, reboot, try again) will most
 probably not produce sensible results - they will only worsen posibility of
 discovering exact cause of problem, and most probably failed exactly same way
 as before (because you haven't found some random errors, you have found a real
-bug in system, at most cases).
+bug in the system, at most cases).
 
 So when you encounter some strange behaviour of whole system, please consider
 submiting bug to authors. If I have access on machine running RTS2, I can
@@ -36,11 +36,6 @@ To stop it:
 
 /etc/init.d/rts2 stop
 
-To stop it with centrald (centrald is main server of RTS2, which keeps track
-about devices running; should not be necessary unless you update code):
-
-/etc/init.d/rts2 stop-centrald
-
 To restart it:
 
 /etc/init.d/rts2 restart
@@ -48,15 +43,14 @@ To restart it:
 *) What does RTS2 stands for? What is its history? And future?
 
 It stands for Remote Telescope System 2. As name suggest, there was Remote
-Telescope System, which was later renamed to RTS1. It was writen in python,
-which was later discovered as pretty stupid idea, as project at the
-Mathematical and Physical Faculty of Prague Charles Univerzity for telescope
-BART.
+Telescope System, which was later renamed to RTS1. It was writen in Python,
+which was discovered as pretty stupid idea, as project at the Mathematical and
+Physical Faculty of Prague Charles Univerzity for telescope BART.
 
 RTS2 was firstly written in pure C as my diploma thesis. After I finish degree,
 it was (almost completly) rewritten to C++. Rewrites enabled me to
-maternialize ideas I gather during writing C code - primary objectiv was
-selector and executor separation, but there were more issues (memory leaks...).
+realize ideas I gather during writing C code - primary objectiv was selector
+and executor separation, but there were more issues (memory leaks...).
 
 The main author (Petr Kubanek) is currently working on network extension, so
 the RTS2 telescopes will collaborate on new discoveries. Please write him for
@@ -64,26 +58,29 @@ details (there is a paper presented in Astronomische Nachrichten on the issue,
 but most probably you will have to pay for it - I can send you personal copy
 for free).
 
-*) Does it run? Where? Can I use it?
+*) Does it run? Where?
 
 Yes, currently it runs on those telescopes:
 
 BART - Ondrejov, Czech Republic
 
 BOOTES - Two telescopes in Huelva station, Spain, one (Bootes IR) on
-http://www.osn.iaa.es
+http://www.osn.iaa.es, Bootes 2 near Malaga, Spain
 
 FRAM - monitoring telescope at Argentina, build by Physical Institute of the
 Czech Republic
 
 Watcher - Boyden observatory, South Africa
+
 BNL, NY, LSST(.org) testing lab - used as master controller for CCD tests (without telescope).
 
 D50 - new Ondrejov 50cm
 
-And future plans: 3 x RT in Spain (Astrobiology), 1.23m at CAHA
+And future plans: 1 x RT in Spain (Astrobiology), 1.23m at CAHA
 (http://www.caha.es), new Bootes system at New Zealand. Plus there is plan to
 finally make from it a network - work in progress.
+
+*) Can I use it?
 
 Yes, you can use the software, as long as you agree with it's licence (GNU
 licence - see COPYING).
@@ -120,7 +117,7 @@ you switch from to on. If you have meteo station, you will not be able to
 switch to on if weather doesn't cooperate - if it's raining or too windy,
 depending on your local setup.
 
-It's equivalent to you car on highway (which can sometimes turn to pawed urban road).
+It's equivalent to you car on a highway.
 
 To switch between states, use rts2-mon. Run it, and either press F keys for switch:
 
@@ -141,8 +138,6 @@ running, it ends observation and start a new one, resulting in new slew.
 
 Most probably some new version will not have this problem and will not produce
 that crazy slew.
-
-*) How is focusing working?
 
 *) How can I tell it's doing something?
 
@@ -373,6 +368,26 @@ So /images/<epoch>/archive/<target_id>/<camera_name>/object resolves to:
 Let's see it:
 petr@ir1:/images/002/archive/49999/sbig/object$ ls
 20050810200400-0432.fits  20050810203158-0745.fits ....
+
+*) If I need to put images to other directory than /images, how do I do it?
+
+Now you cannot specify where RTS2 will store images, as this is hardcoded
+(using expansion mechanism described in man rts2.ini, but still hardcoded). But
+you can use soft links to change that. Suppose that you would like to place
+images in /storage/images, do as root:
+
+ln -s /storage/images /images
+
+That will of course succeed only if you do not have /images directory on your
+system.
+
+*) When setting priority for targets, what is the range of values and how is
+priority ranked? In other words is priority 1 higher than 2?  What is the
+priority hierarchy?
+
+Higher priority - higher chances to observe the target. So if there are two
+targets, one with priority 1, other with priority 2, the target with priority 2
+will be picked up.
 
 ===============================================================================
 
