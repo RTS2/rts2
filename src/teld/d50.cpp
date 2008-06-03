@@ -155,12 +155,12 @@ int
 Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
-	static char buf[15];
+	static char buf[16];
 	ret = d50Conn->writePort (command);
 	if (ret)
 		return ret;
 	// read while there isn't error and we do not get \r
-	ret = d50Conn->readPort (buf, 14, '\x0a');
+	ret = d50Conn->readPort (buf, 15, '\x0a');
 	if (ret == -1) 
 	{
 		return -1;
