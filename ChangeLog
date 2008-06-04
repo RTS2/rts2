@@ -1,5 +1,7 @@
 2008-06-04
- * [1984306] see rts2.script - T0.OFFS+=(10,2) is now possible
+ * [1953718] fixed in teld
+ * [1968365] fixed for Bootes 2, not for Bootes IR
+ * [1984306] see rts2.script - T0.OFFS+=(10,2) is now possiblea
 
 2008-05-12
  * [1959375] fixed (again)

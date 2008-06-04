@@ -288,7 +288,6 @@ class Rts2DevTelescope:public Rts2Device
 		void applyCorrections (double &tar_ra, double &tar_dec);
 
 		virtual int willConnect (Rts2Address * in_addr);
-		char *device_file;
 		char telType[64];
 		Rts2ValueDouble *telAlt;
 		Rts2ValueDouble *telAz;
@@ -375,6 +374,47 @@ class Rts2DevTelescope:public Rts2Device
 		{
 			out_tar->ra = tarRaDec->getRa ();
 			out_tar->dec = tarRaDec->getDec ();
+		}
+
+		/**
+		 * Return corrections in RA/HA.
+		 *
+		 * @return RA correction (in degrees).
+		 */
+		double getCorrRa ()
+		{
+			return corrRaDec->getRa ();
+		}
+
+		/**
+		 * Return corrections in DEC.
+		 *
+		 * @return DEC correction.
+		 */
+		double getCorrDec ()
+		{
+		  	return corrRaDec->getDec ();
+		}
+
+
+		/**
+		 * Return corrections in zenit distance.
+		 *
+		 * @return Correction in zenit distance.
+		 */
+		double getCorrZd ()
+		{
+			return 0;
+		}
+
+		/**
+		 * Return corrections in altitude.
+		 *
+		 * @return Correction in altitude.
+		 */
+		double getCorrAlt ()
+		{
+			return 0;
 		}
 
 		/**

@@ -73,7 +73,7 @@
 class Rts2DevTelescopeMM2:public Rts2DevTelescope
 {
 	private:
-		char *device_file;
+		const char *device_file;
 		int tel_desc;
 
 		double lastMoveRa, lastMoveDec;
@@ -97,10 +97,10 @@ class Rts2DevTelescopeMM2:public Rts2DevTelescope
 		// low-level functions..
 		int tel_read (char *buf, int count);
 		int tel_read_hash (char *buf, int count);
-		int tel_write (char *buf, int count);
-		int tel_write_read (char *wbuf, int wcount, char *rbuf, int rcount);
-		int tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount);
-		int tel_read_hms (double *hmsptr, char *command);
+		int tel_write (const char *buf, int count);
+		int tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount);
+		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
+		int tel_read_hms (double *hmsptr, const char *command);
 
 		int tel_read_ra ();
 		int tel_read_dec ();
@@ -245,7 +245,7 @@ Rts2DevTelescopeMM2::tel_read_hash (char *buf, int count)
  */
 
 int
-Rts2DevTelescopeMM2::tel_write (char *buf, int count)
+Rts2DevTelescopeMM2::tel_write (const char *buf, int count)
 {
 	logStream (MESSAGE_DEBUG) << "MM2 tel_write: will write: " << buf <<
 		sendLog;
@@ -269,7 +269,7 @@ Rts2DevTelescopeMM2::tel_write (char *buf, int count)
  */
 
 int
-Rts2DevTelescopeMM2::tel_write_read (char *wbuf, int wcount, char *rbuf,
+Rts2DevTelescopeMM2::tel_write_read (const char *wbuf, int wcount, char *rbuf,
 int rcount)
 {
 	int tmp_rcount;
@@ -306,7 +306,7 @@ int rcount)
  * @see tel_write_read for definition
  */
 int
-Rts2DevTelescopeMM2::tel_write_read_hash (char *wbuf, int wcount, char *rbuf,
+Rts2DevTelescopeMM2::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf,
 int rcount)
 {
 	int tmp_rcount;
@@ -332,7 +332,7 @@ int rcount)
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_read_hms (double *hmsptr, char *command)
+Rts2DevTelescopeMM2::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)

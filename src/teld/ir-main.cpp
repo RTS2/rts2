@@ -96,6 +96,26 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
 	}
 
+	double offset;
+
+	// apply corrections
+	switch (getPointingModel ())
+	{
+		case 0:
+			offset = getCorrRa ();
+			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
+			offset = getCorrDec ();
+			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
+			break;
+		case 1:
+			offset = getCorrZd ();
+			status = irConn->tpl_set ("ZD.OFFSET", offset, &status);
+			offset = getCorrAz ();
+			status = irConn->tpl_set ("AZ.OFFSET", offset, &status);
+			break;
+
+	}
+
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
 		sendLog;

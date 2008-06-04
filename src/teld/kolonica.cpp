@@ -30,7 +30,7 @@
 class TelKolonica:public TelFork
 {
 	private:
-		char *telDev;
+		const char *telDev;
 		Rts2ConnSerial *telConn;
 
 		/**

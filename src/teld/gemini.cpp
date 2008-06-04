@@ -85,6 +85,9 @@ searchDirs_t searchDirs[SEARCH_STEPS] =
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 	private:
+		
+		const char *device_file;
+
 		Rts2ValueTime *telLocalTime;
 		Rts2ValueFloat *telGuidingSpeed;
 
@@ -94,13 +97,12 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		Rts2ValueDouble *axRa;
 		Rts2ValueDouble *axDec;
 
-		char *device_file_io;
-		char *geminiConfig;
+		const char *geminiConfig;
 
 		Rts2ConnSerial *tel_conn;
-		int tel_write_read (char *buf, int wcount, char *rbuf, int rcount);
-		int tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount);
-		int tel_read_hms (double *hmsptr, char *command);
+		int tel_write_read (const char *buf, int wcount, char *rbuf, int rcount);
+		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
+		int tel_read_hms (double *hmsptr, const char *command);
 		unsigned char tel_gemini_checksum (const char *buf);
 		// higher level I/O functions
 		int tel_gemini_getch (int id, char *in_buf);
@@ -262,7 +264,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 };
 
 int
-Rts2DevTelescopeGemini::tel_write_read (char *buf, int wcount, char *rbuf,
+Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf,
 int rcount)
 {
 	int ret;
@@ -283,7 +285,7 @@ int rcount)
  * @see tel_write_read for definition
  */
 int
-Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount, char *rbuf, int rcount)
+Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	if (tmp_rcount < 0)
@@ -307,7 +309,7 @@ Rts2DevTelescopeGemini::tel_write_read_hash (char *wbuf, int wcount, char *rbuf,
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, char *command)
+Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
