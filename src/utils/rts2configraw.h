@@ -234,6 +234,18 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 
 		int getString (const char *section, const char *valueName, std::string & buf, const char* defVal);
 
+		/**
+		 * Return string value as vector of strings. Vector items are separated by space.
+		 * If value cannot be found, -1 is returned and vector remains empty.
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param vect       String vector.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & vect);
+
 		int getInteger (const char *section, const char *valueName, int &value);
 
 		int getInteger (const char *section, const char *valueName, int &value, int defVal);
@@ -282,7 +294,15 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 */
 		int getDouble (const char *section, const char *valueName, double &value, double defVal);
 
-		bool getBoolean (const char *section, const char *valueName, bool );
+		/**
+		 *
+		 * @param section    Section name.
+		 * @param valueName  Value name.
+		 * @param def        Default value.
+		 *
+		 * @return Configuration valeu.
+		 */
+		bool getBoolean (const char *section, const char *valueName, bool def);
 
 		/**
 		 * Query if device can be blocked by another device. This function return true in following two cases:

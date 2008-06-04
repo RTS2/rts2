@@ -586,8 +586,20 @@ class Rts2Conn:public Rts2Object
 			return conn_state;
 		}
 
-		int paramEnd ();
-		int paramNextString (char **str);
+		bool paramEnd ();
+
+		/**
+		 * Parse next string.
+		 *
+		 * After this function is called, str points to start of next, \0 delimited string,
+		 *
+		 * @param str       Location where pointer to the begging of string will be stored.
+		 * @param enddelim  Possible additional end delimiters. isspace chars are default delimiters.
+		 *
+		 * @return 0 on success, -1 if end of buffer was reached before extracting any usefull data.
+		 *
+		 */
+		int paramNextString (char **str, const char *enddelim = NULL);
 		char *paramNextWholeString ();
 		int paramNextStringNull (char **str);
 		int paramNextInteger (int *num);

@@ -164,6 +164,13 @@
 	    <option>focpos+= 10</option>. This is valid:
 	    <option>focpos+=10</option>.
 	  </para>
+	  <para>
+	    Variables which have more the one component (telescope axes and
+	    offsets,..) must be coma "," separated and enclosed in round
+	    brackets "(", ")". This is valid syntax for increase of the
+	    telescope offset by 10 degrees in RA and 5 degrees in DEC:
+	    <option>T0.OFFS+=(10,5)</option>.
+	  </para>
 	</listitem>
       </varlistentry>
 
@@ -525,6 +532,8 @@
     <para>GAIN=20 for 3 { E 1 GAIN-=1 }</para>
 
     <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
+
+    <para>for 10 { E 10 T0.OFFS+=(0,0.01) }</para>
 
   </refsect1>
   <refsect1>

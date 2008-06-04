@@ -392,6 +392,13 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 
 
 int
+Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & vect)
+{
+	return -1;
+}
+
+
+int
 Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value)
 {
 	std::string valbuf;

@@ -1628,7 +1628,7 @@ Rts2Conn::isConnState (conn_state_t in_conn_state)
 }
 
 
-int
+bool
 Rts2Conn::paramEnd ()
 {
 	while (isspace (*command_buf_top))
@@ -1638,7 +1638,7 @@ Rts2Conn::paramEnd ()
 
 
 int
-Rts2Conn::paramNextString (char **str)
+Rts2Conn::paramNextString (char **str, const char *enddelim)
 {
 	while (isspace (*command_buf_top))
 		command_buf_top++;
@@ -1656,7 +1656,9 @@ Rts2Conn::paramNextString (char **str)
 	{
 		// eat next spaces
 		*str = command_buf_top;
-		while (!isspace (*command_buf_top) && *command_buf_top)
+		while (!isspace (*command_buf_top)
+		  && *command_buf_top
+		  && (enddelim == NULL || strchr (enddelim, *command_buf_top) == NULL))
 			command_buf_top++;
 	}
 	if (*command_buf_top)
@@ -1693,7 +1695,7 @@ Rts2Conn::paramNextInteger (int *num)
 {
 	char *str_num;
 	char *num_end;
-	if (paramNextString (&str_num))
+	if (paramNextString (&str_num, ","))
 		return -1;
 	*num = strtol (str_num, &num_end, 10);
 	if (*num_end)
@@ -1707,7 +1709,7 @@ Rts2Conn::paramNextLong (long int *num)
 {
 	char *str_num;
 	char *num_end;
-	if (paramNextString (&str_num))
+	if (paramNextString (&str_num, ","))
 		return -1;
 	*num = strtol (str_num, &num_end, 10);
 	if (*num_end)
@@ -1735,7 +1737,7 @@ Rts2Conn::paramNextDouble (double *num)
 {
 	char *str_num;
 	int ret;
-	if (paramNextString (&str_num))
+	if (paramNextString (&str_num, ","))
 		return -1;
 	if (!strcmp (str_num, "nan"))
 	{
@@ -1754,7 +1756,7 @@ Rts2Conn::paramNextFloat (float *num)
 {
 	char *str_num;
 	int ret;
-	if (paramNextString (&str_num))
+	if (paramNextString (&str_num, ","))
 		return -1;
 	ret = sscanf (str_num, "%f", num);
 	if (ret != 1)
