@@ -418,6 +418,16 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 		/**
+		 * Return corrections in azimuth.
+		 *
+		 * @return Correction in azimuth.
+		 */
+		double getCorrAz ()
+		{
+			return 0;
+		}
+
+		/**
 		 * Return distance in degrees to target position.
 		 * You are responsible to call info() before this call to
 		 * update telescope coordinates.
