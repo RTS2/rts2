@@ -110,9 +110,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	addOption ('m', NULL, 1,
 		"name of file holding model parameters, calculated by T-Point");
 	addOption ('l', NULL, 1,
-		"separation limit (corrections above that limit will be ignored)");
+		"separation limit (corrections above that number in degrees will be ignored)");
 	addOption ('g', NULL, 1,
 		"minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
+
+	addOption ('c', NULL, 1,
+		"minimal value for corrections. Corrections bellow that value will be rejected.");
 
 	addOption ('s', NULL, 0, "park when switched to standby");
 
@@ -158,6 +161,9 @@ Rts2DevTelescope::processOption (int in_opt)
 			break;
 		case 'g':
 			telFov->setValueDouble (atof (optarg));
+			break;
+		case 'c':
+			ignoreCorrection->setValueDouble (atof (optarg));
 			break;
 		case 's':
 			standbyPark = true;
