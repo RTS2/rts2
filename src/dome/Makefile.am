@@ -1,7 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-dome-dublin \
-	rts2-cupola-mark rts2-cupola-dummy rts2-weathertimeout rts2-dome-ir \
+	rts2-cupola-mark rts2-cupola-dummy rts2-weathertimeout \
 	rts2-dome-bootes1
 
 
@@ -29,11 +29,18 @@ rts2_dome_dublin_LDADD = udpweather.o rts2connbufweather.o ${LDADD}
 rts2_dome_dcm_SOURCES = dcm.cpp
 rts2_dome_dcm_LDADD = udpweather.o ${LDADD}
 
-rts2_dome_ir_SOURCES = ir.cpp
-rts2_dome_ir_LDADD = ${LDADD}
-rts2_dome_ir_LDFLAGS = @LIB_COMEDI@
-
 rts2_dome_bootes1_SOURCES = bootes1.cpp
 rts2_dome_bootes1_LDADD = udpweather.o rts2connbufweather.o ford.o ${LDADD}
 
 rts2_weathertimeout_SOURCES = weathertimeout.cpp
+
+if OPENTPL
+bin_PROGRAMS += rts2-dome-ir
+
+rts2_dome_ir_SOURCES = ir.cpp
+rts2_dome_ir_LDFLAGS = @LIB_OPENTPL@
+rts2_dome_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
+
+else
+EXTRA_DIST += ir.cpp
+endif
