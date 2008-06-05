@@ -25,6 +25,11 @@
 
 #define DEF_WEATHER_TIMEOUT 600
 
+/**
+ * Skeleton for dome control.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevDome:public Rts2Device
 {
 	private:
@@ -60,8 +65,12 @@ class Rts2DevDome:public Rts2Device
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-	public:
-		Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
+		/**
+		 * Open dome. Called either for open command, or when system
+		 * transitioned to on state.
+		 *
+		 * @return 0 on success, -1 on error.
+		 */
 		virtual int openDome ()
 		{
 			maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
@@ -77,7 +86,6 @@ class Rts2DevDome:public Rts2Device
 		{
 			return -2;
 		};
-		int closeDomeWeather ();
 
 		virtual int closeDome ()
 		{
@@ -94,6 +102,11 @@ class Rts2DevDome:public Rts2Device
 		{
 			return -2;
 		};
+
+	public:
+		Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
+		int closeDomeWeather ();
+
 		int checkOpening ();
 		virtual int init ();
 		virtual int initValues ();
