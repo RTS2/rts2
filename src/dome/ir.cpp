@@ -31,7 +31,7 @@
 class Rts2DevDomeIR:public Rts2DevDome
 {
 	private:
-		char *dome_file;
+		const char *dome_file;
 		int dome_port;
 		//  comedi_t *it;
 

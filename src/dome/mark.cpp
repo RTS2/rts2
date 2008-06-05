@@ -39,7 +39,7 @@
 class Rts2DevCupolaMark:public Rts2DevCupola
 {
 	private:
-		char *device_file;
+		const char *device_file;
 		int cop_desc;
 
 		uint16_t getMsgBufCRC16 (char *msgBuf, int msgLen);

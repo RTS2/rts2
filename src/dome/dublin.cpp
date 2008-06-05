@@ -52,7 +52,7 @@ class Rts2DevDomeDublin:public Rts2DevDome
 		void closeDomeReal ();
 
 		const char *isOnString (int mask);
-		int sendDublinMail (char *subject);
+		int sendDublinMail (const char *subject);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -106,7 +106,7 @@ void
 Rts2DevDomeDublin::executeSms (smsType_t type)
 {
 	char *cmd;
-	char *msg;
+	const char *msg;
 	switch (type)
 	{
 		case TYPE_OPENED:
@@ -414,7 +414,7 @@ Rts2DevDomeDublin::isOnString (int mask)
 
 
 int
-Rts2DevDomeDublin::sendDublinMail (char *subject)
+Rts2DevDomeDublin::sendDublinMail (const char *subject)
 {
 	char *text;
 	int ret;

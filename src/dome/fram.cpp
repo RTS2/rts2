@@ -165,7 +165,7 @@ class Rts2DevDomeFram:public Rts2DevDome
 {
 	private:
 		int dome_port;
-		char *dome_file;
+		const char *dome_file;
 
 		int wdc_port;
 		char *wdc_file;
@@ -276,7 +276,7 @@ class Rts2DevDomeFram:public Rts2DevDome
 		virtual int standby ();
 		virtual int off ();
 
-		int sendFramMail (char *subject);
+		int sendFramMail (const char *subject);
 };
 
 int
@@ -1244,7 +1244,7 @@ Rts2DevDomeFram::observing ()
 
 
 int
-Rts2DevDomeFram::sendFramMail (char *subject)
+Rts2DevDomeFram::sendFramMail (const char *subject)
 {
 	char *openText;
 	int ret;

@@ -31,7 +31,7 @@ class Rts2DevDome:public Rts2Device
 		Rts2ValueBool * ignoreMeteo;
 
 	protected:
-		char *domeModel;
+		const char *domeModel;
 		Rts2ValueInteger *sw_state;
 
 		Rts2ValueFloat *temperature;

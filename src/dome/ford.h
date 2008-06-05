@@ -32,7 +32,7 @@ class Rts2DomeFord: public Rts2DevDome
 {
 	private:
 		Rts2ConnSerial *domeConn;
-		char *dome_file;
+		const char *dome_file;
 		unsigned char stav_portu[3];
 	protected:
 		int zjisti_stav_portu ();
