@@ -1020,7 +1020,7 @@ const char *in_messageString)
 
 
 int
-Rts2Device::sendMail (char *subject, char *text)
+Rts2Device::sendMail (const char *subject, const char *text)
 {
 	// no mail will be send
 	if (!mailAddress)

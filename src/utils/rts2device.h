@@ -304,7 +304,7 @@ class Rts2Device:public Rts2Daemon
 		virtual int commandAuthorized (Rts2Conn * conn);
 
 		int authorize (Rts2DevConn * conn);
-		int sendMaster (char *msg)
+		int sendMaster (const char *msg)
 		{
 			return conn_master->sendMsg (msg);
 		}
@@ -330,7 +330,7 @@ class Rts2Device:public Rts2Daemon
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
 
-		int sendMail (char *subject, char *text);
+		int sendMail (const char *subject, const char *text);
 
 		int killAll ();
 		virtual int scriptEnds ();
