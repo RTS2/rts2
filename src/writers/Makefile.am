@@ -33,6 +33,6 @@ rts2_image_LDFLAGS = ../utilsdb/librts2blockdb.a librts2imagedb.a ../utils/librt
 else
 
 rts2_image_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-rts2_image_LDFLAGS = librts2image.a ../utils/librts2block.a ../utils/mkpath.o @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
+rts2_image_LDFLAGS = librts2image.a ../utils/librts2block.a ../utils/utilsfunc.o @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
 endif
