@@ -208,7 +208,7 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		void probe ();
 
 		int fclr (int num);
-
+		
 		/**
 		 * Repeat fclr until it is sucessfull.
 		 */
@@ -243,6 +243,9 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 
 		int setEdtValue (Rts2ValueEdt * old_value, float new_value);
 		int setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value);
+
+		// number of rows
+		Rts2ValueInteger *chipHeight;
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -450,7 +453,7 @@ Rts2CamdEdtSao::fclr (int num)
 			if (now > end_time)
 			{
 				logStream (MESSAGE_ERROR)
-					<< "timeout during fclr, phase 1. Overrun: " << overrun
+					<< "timeout during fclr, phase 1. Overrun: " << overrun 
 					<< " status & PDV_CHAN_ID1 " << (status & PDV_CHAN_ID1)
 					<< " number " << num
 					<< sendLog;
@@ -516,7 +519,7 @@ Rts2CamdEdtSao::initChips ()
 	if (ret)
 		return ret;
 
-	setSize (2040, 520, 0, 0);
+	setSize (2040, chipHeight->getValueInteger (), 0, 0);
 
 	ret = setDAC ();
 	return ret;
@@ -609,7 +612,7 @@ Rts2CamdEdtSao::readoutStart ()
 		width = 2024;
 	else
 		width = 1020;
-	height = 520;
+	height = chipHeight->getValueInteger ();
 	// width = chipUsedReadout->width;
 	// height = chipUsedReadout->height;
 	ret = pdv_setsize (pd, width * channels * dsub, height);
@@ -621,7 +624,7 @@ Rts2CamdEdtSao::readoutStart ()
 	}
 	pdv_set_width (pd, width * channels * dsub);
 	pdv_set_height (pd, height);
-	setSize (pdv_get_width (pd), pdv_get_height (pd), 0, 0);
+	setSize (pdv_get_width (pd), pdv_get_height (pd), -1, 0);
 	//	chipUsedReadout->width = pdv_get_width (pd);
 	//	chipUsedReadout->height = pdv_get_height (pd);
 	depth = pdv_get_depth (pd);
@@ -913,6 +916,7 @@ Rts2DevCamera (in_argc, in_argv)
 
 	addOption ('p', "devname", 1, "device name");
 	addOption ('n', "devunit", 1, "device unit number");
+	addOption ('H', NULL, 1, "chip height - number of rows");
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
 	addOption ('s', "sdelay", 1, "serial delay");
 	addOption ('v', "verbose", 0, "verbose report");
@@ -933,6 +937,9 @@ Rts2DevCamera (in_argc, in_argv)
 	edtGain->addSelVal ("LOW");
 
 	edtGain->setValueInteger (0);
+
+	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING, true);
+	chipHeight->setValueInteger (520);
 
 	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING, true);
 	phi->initEdt (0xA0084, A_plus);
@@ -990,6 +997,9 @@ Rts2CamdEdtSao::processOption (int in_opt)
 			break;
 		case 'n':
 			devunit = atoi (optarg);
+			break;
+		case 'H':
+			chipHeight->setValueInteger (atoi (optarg));
 			break;
 		case OPT_NOTIMEOUT:
 			notimeout = true;
