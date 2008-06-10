@@ -420,6 +420,20 @@ Rts2DevTelescope::init ()
 }
 
 
+int
+Rts2DevTelescope::initValues ()
+{
+	int ret;
+	ret = info ();
+	if (ret)
+		return ret;
+	tarRaDec->setFromValue (telRaDec);
+	objRaDec->setFromValue (telRaDec);
+	
+	return Rts2Device::initValues ();
+}
+
+
 void
 Rts2DevTelescope::checkMoves ()
 {

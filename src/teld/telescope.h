@@ -261,6 +261,7 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
+		virtual int initValues ();
 		virtual int idle ();
 
 		/**
