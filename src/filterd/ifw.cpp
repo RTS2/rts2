@@ -187,12 +187,16 @@ Rts2DevFilterdIfw::getFilterNum (void)
 
 	n = ifwConn->writeRead ("WFILTR", 6, filter_buff, 6, '\r');
 	if (n == -1)
+	{
+	  	ifwConn->flushPortIO ();
 		return -1;
+	}
 
 	if (strstr (filter_buff, "ER"))
 	{
 		logStream (MESSAGE_DEBUG) <<
 			"filter ifw getFilterNum FILTER WHEEL ERROR" << sendLog;
+		ifwConn->flushPortIO ();
 		filter_number = -1;
 	}
 	else
@@ -221,12 +225,16 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 
 	ret = ifwConn->writeRead (set_filter, 6, filter_buff, 6, '\r');
 	if (ret == -1)
+	{
+		ifwConn->flushPortIO ();
 		return -1;
+	}
 
 	if (filter_buff[0] != '*')
 	{
 		logStream (MESSAGE_ERROR) <<
 			"filter ifw setFilterNum FILTER WHEEL ERROR" << sendLog;
+		ifwConn->flushPortIO ();
 		// make sure we will home filter, but home only once if there is still error
 		if (homeCount == 0)
 		{
