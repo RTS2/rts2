@@ -1,0 +1,133 @@
+Popis RTS2
+==========
+
+RTS2 je název pro soubor programů určených k ovládání robotického dalekohledu.
+RTS2 vychází ze zkušeností získaných při návrhu a provozu RTS1. RTS1 byl řídicí
+systém pro dalekohled BART, provozovaný v letech 2000-2003. Vývoj RTS2 započal
+v roce 2002, v roce 2003 bylo RTS2 použito pro moji diplomovou práci, v roce
+2004 bylo přepsáno z C do C++.
+
+RTS2 je napsáno jako modulární systém. Jeho základem je komunikační knihovna,
+napsaná nad protokolem TCP/IP. Komunikační knihovna slouží pro komunikaci
+komponent systému. Komponenty lze rozdělit do čtyř skupin:
+
+ovladače zařízení - například CCD kamer, dalekohledů, všemožných měřících
+přístrojů, kryogeniky, ..
+
+služby - sekvencér pro řízení pozorování, selector pro výběr cílů, ruzné rapid
+reaction mode klienti
+
+centrální server - eviduje, jaké zařízení a služby jsou aktuálně k dispozici,
+poskytuje podporu pro synchronizaci pozorování
+
+Systém je psán pro plně automatické řízení pozorování. Celý je provázán s
+databází, do které se zapisují důležité údaje o pozorování, a se systémem
+zapisování FITS hlaviček, který garantuje zapsání správné FITS hlavičky ve
+správnou chvíli. Zatím postrádá pěkné grafické rozhranní, jenž není tolik
+potřeba.
+
+RTS2 je k dispozici pod GPL licencí, tedy zdrojové soubory nebo binární
+programy lze neomezeně šířit a při dodržení podmínek licence modifikovat.
+Udržováním komunity vývojářů, kteří systému rozumí, je zajištěna kontinualita
+vývoje.
+
+Co RTS2 umožňuje
+================
+
+RTS2 umožňuje plnou automatizaci pozorování. Systém se stará o přejezd
+dalekohledu, umožňuje nadefinovat sekvenci filtrů pro pozorování, zapisuje
+důležité informace do databáze.
+
+Systém není psán a vyvýjen jako ovladač dalekohledu, nebo kamer. Cílem systému
+je integrovat různá zařízení aby byly řiditelné z jednoho místa. Systém přejímá
+odpovědnost za řízení celé hvězdárny a činnost pozorovatele se v optimálním
+případě redukuje na sledování průběhu pozorování a výběru cílů pozorování,
+případně není pozorovatel potřeba. Díky komunikačnimu protokolu je stále mežné
+řídit celé pozorování ručne - náhradou sekvencéru za pozoravatele.
+
+RTS2 je běžně používáno na dálku (od několika metrů po desítky tisíc km).
+
+Silné stránky
+=============
+
+- obecný pointační model (napsaný v C++, rozšiřitelný o další termy)
+
+- možnost generovat vstupní soubor pro TPoint z vysledků astrometrie snímků
+
+- možnost automatického updatu modelu na základě údajů změřených na začátku noci
+
+- zobecnění synchronizace kamery a montáže
+
+- otevřený komunikační protokol
+
+- široké spektrum podporovaných zařízení (CCD kamer, montáží,..)
+
+- ncurses rozhranní, přístupné přes telnet/ssh
+
+- dotažený a funkční closed-loop guidance (snímek->astrometrie (srovnání s katalogem)->korekce pro dalekohled)
+
+- databáze cílů pozorování
+
+- prohledávatelná databáze snímků včetně jejich souřadnic z astrometrie
+
+- možnost zadávat cíle podle názvu, jejich dohledání v Simbadu
+
+- možnost držet v databázi tělesa sluneční soustavy, počítání jejich drah
+  pomocí libnovy, výpočet aktuální pozice včetně paralaxy pro danou hvězdárnu,
+  možnost průběžné korekce pozici v průběhu pozorování
+
+- bridge pro protokoly používané projekty KStars a Stellarium.
+
+- XML-RPC a SOAP rozhranní
+
+Slabé stránky
+=============
+
+Zde uvedený seznam poskytuje výčet toho, co považujeme za slabši stránky
+systému. Je skoro jisté, že pro další vývoj systému je bude nutno překonat a do
+systému dodat.
+
+- grafické uživatelské rozhranní pro ovládání systému
+
+- "účtování" času - evidence kdo kolik napozoroval
+
+- umožnění uživatelské interakce s plánovačem
+
+- nedotažené guidování pomocí guiding kamery (ale systém obsahuje obecnou
+  podporu pro synchronzaci, čili tohle je relativně trivialita)
+
+Reference
+=========
+
+Bližší popis systémů včetně dosažených výsledků na vyžádání rád poskytnu.
+
+Funkční:
+
+BART, D 50cm - Ondřejov
+BOOTES 1, 2, IR - Španělsko
+Watcher - Jižní Afrika
+FRAM - Argentina
+LSST testing lab - NY, USA
+
+Připravované:
+
+BOOTES 3 - Nový Zeland (2009, finance zajištěné)
+CAHA 1.23m - snad konec roku 2008
+Basilej - amatérská hvezdárna
+Španělsko - další 50cm dalekohledy
+
+Literatura
+==========
+
+Technické:
+  SPIE 2006, SPIE 2008, AN 2008 - PDF technických článků poskytnu na vyžádání
+
+Vědecké
+  Jelinek & al., A&A, GRB 060117, Heispen & al., Nature, GRB 050904, Castro-Tirado & al., submited to Nature, GRB/SGR 070610, desítky GCN cirkulářů
+
+http://rts-2.sf.net
+
+Kontakt
+=======
+
+Petr Kubanek - petr@kubanek.net, +420 737 500 268, +34 661 107 995
