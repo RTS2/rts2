@@ -1,57 +1,64 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-#include <sys/stat.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-
-//#include <comedilib.h>
+/* 
+ * Driver for IR (OpenTPL) dome.
+ * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #include "dome.h"
+#include "irconn.h"
 
-#define BAUDRATE B9600
-
-#define LEFT_CLOSE  0
-#define RIGHT_CLOSE 3
-#define LEFT_OPEN 1
-#define RIGHT_OPEN  2
-
+/**
+ * Driver for Bootes IR dome.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevDomeIR:public Rts2DevDome
 {
 	private:
-		const char *dome_file;
-		int dome_port;
-		//  comedi_t *it;
+		std::string ir_ip;
+		int ir_port;
 
-		int initIrDevice ();
-		int getPort (int channel, double *value);
+		IrConn *irConn;
+
+		Rts2ValueFloat *domeUp;
+		Rts2ValueFloat *domeDown;
+
+		Rts2ValueDouble *domeCurrAz;
+		Rts2ValueDouble *domeTargetAz;
+		Rts2ValueBool *domePower;
+		Rts2ValueDouble *domeTarDist;
+
+		enum { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED } dome_state;
+
 		int getSNOW (float *temp, float *humi, float *wind);
 
-		int openLeft ();
-		int openRight ();
-		int closeLeft ();
-		int closeRight ();
-
-		int leftClosed ();
-		int rightClosed ();
-		int leftOpened ();
-		int rightOpened ();
+		/**
+		 * Set dome autotrack.
+		 *
+		 * @param new_auto New auto track value. True or false.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int setDomeTrack (bool new_auto);
+		int initIrDevice ();
 
 	protected:
-		//   virtual int processOption ();
-		//   virtual int isGoodWeather ();
+		virtual int processOption ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 	public:
 		Rts2DevDomeIR (int argc, char **argv);
@@ -66,114 +73,125 @@ class Rts2DevDomeIR:public Rts2DevDome
 		virtual int baseInfo ();
 		virtual int info ();
 
-		//  virtual int openDome ();
-		//  virtual long isOpened ();
-		//  virtual int closeDome ();
-		//  virtual long isClosed ();
-
+		virtual int openDome ();
+		virtual int closeDome ();
 };
 
-int
-Rts2DevDomeIR::initIrDevice ()
-{
-	//  it = comedi_open ("/dev/comedi0");
 
+int
+Rts2DevDomeIR::setValueBool (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == domeAutotrack)
+	{
+		status = setDomeTrack (((Rts2ValueBool *) new_value)->getValueBool ());
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == domeUp)
+	{
+		status = irConn->tpl_set ("DOME[1].TARGETPOS", new_value->getValueFloat (), &status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == domeDown)
+	{
+		status = irConn->tpl_set ("DOME[2].TARGETPOS", new_value->getValueFloat (), &status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == domeTargetAz)
+	{
+		status = irConn->tpl_set ("DOME[0].TARGETPOS",
+			ln_range_degrees (new_value->getValueDouble () - 180.0),
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+
+	}
+	if (old_value == domePower)
+	{
+		status =  irConn->tpl_set ("DOME[0].POWER",
+			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
+			&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+
+	}
+	return Rts2DevDome::setValue (old_value, new_value);
+}
+
+
+int
+Rts2DevDome::openDome ()
+{
+	int status = TPL_OK;
+	dome_state = D_OPENING;
+	status = irConn->tpl_set ("DOME[1].TARGETPOS", 1, &status);
+	status = irConn->tpl_set ("DOME[2].TARGETPOS", 1, &status);
+	logStream (MESSAGE_INFO) << "opening dome, status " << status << sendLog;
+	if (status != TPL_OK)
+		return -1;
+	return Rts2DevDome::openDome ();
+}
+
+
+int
+Rts2DevDomeIR::closeDome ()
+{
+	int status = TPL_OK;
+	dome_state = D_CLOSING;
+	status = irConn->tpl_set ("DOME[1].TARGETPOS", 0, &status);
+	status = irConn->tpl_set ("DOME[2].TARGETPOS", 0, &status);
+	logStream (MESSAGE_INFO) << "closing dome, status " << status << sendLog;
+	if (status != TPL_OK)
+		return -1;
+	return Rts2DevDome::closeDome ();
+}
+
+
+int
+Rts2DevDomeIR::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'I':
+			ir_ip = std::string (optarg);
+			break;
+		case 'N':
+			ir_port = atoi (optarg);
+			break;
+		default:
+			return Rts2DevTelescope::processOption (in_opt);
+	}
 	return 0;
 }
 
 
-int
-Rts2DevDomeIR::getPort (int channel, double *value)
+Rts2DevDomeIR::Rts2DevDomeIR (int argc, char **argv)
+:Rts2DevDome (argc, argv)
 {
-	/*  int subdev = 0;
-	  int max, range = 0;
-	  lsampl_t data;
-	  comedi_range *rqn;
-	  int aref = AREF_GROUND;
-	  double tmp;
-
-	  max = comedi_get_maxdata (it, subdev, channel);
-	  rqn = comedi_get_range (it, subdev, channel, range);
-	  comedi_data_read (it, subdev, channel, range, aref, &data);
-	  tmp = comedi_to_phys (data, rqn, max);
-
-	  if (isnan (tmp))
-		*value = -10;
-	  else
-		*value = 10 * tmp; */
-
-	return 0;
-}
-
-
-int
-Rts2DevDomeIR::leftClosed ()
-{
-	int ret;
-	double val;
-
-	ret = getPort (LEFT_CLOSE, &val);
-
-	if (val == -10)
-		return 0;
-	else
-		return 1;
-}
-
-
-int
-Rts2DevDomeIR::rightClosed ()
-{
-	int ret;
-	double val;
-
-	ret = getPort (RIGHT_CLOSE, &val);
-
-	if (val == -10)
-		return 0;
-	else
-		return 1;
-}
-
-
-int
-Rts2DevDomeIR::leftOpened ()
-{
-	int ret;
-	double val;
-
-	ret = getPort (LEFT_OPEN, &val);
-
-	if (val == -10)
-		return 0;
-	else
-		return 1;
-}
-
-
-int
-Rts2DevDomeIR::rightOpened ()
-{
-	int ret;
-	double val;
-
-	ret = getPort (RIGHT_OPEN, &val);
-
-	if (val == -10)
-		return 0;
-	else
-		return 1;
-}
-
-
-Rts2DevDomeIR::Rts2DevDomeIR (int in_argc, char **in_argv):Rts2DevDome (in_argc,
-in_argv)
-{
-	addOption ('f', "dome_file", 1, "/dev file for dome serial port");
-
-	dome_file = "/dev/ttyS0";
-
 	domeModel = "IR";
+
+	createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false);
+	domeAutotrack->setValueBool (true);
+
+	createValue (domeUp, "dome_up", "upper dome cover", false);
+	createValue (domeDown, "dome_down", "dome down cover", false);
+
+	createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false, RTS2_DT_DEGREES);
+	createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false, RTS2_DT_DEGREES);
+	createValue (domePower, "dome_power", "if dome have power", false);
+	createValue (domeTarDist, "dome_tar_dist", "dome target distance", false, RTS2_DT_DEG_DIST);
+
+	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
+	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
+
+	dome_state = D_OPENING;
 }
 
 
@@ -274,24 +292,93 @@ Rts2DevDomeIR::getSNOW (float *temp, float *humi, float *wind)
 
 
 int
+Rts2DevDomeIR::setDomeTrack (bool new_auto)
+{
+	int status = TPL_OK;
+	int old_track;
+	status = irConn->tpl_get ("POINTING.TRACK", old_track, &status);
+	if (status != TPL_OK)
+		return -1;
+	old_track &= ~128;
+	status = irConn->tpl_set ("POINTING.TRACK", old_track | (new_auto ? 128 : 0), &status);
+	if (status != TPL_OK)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot setDomeTrack" << sendLog;
+	}
+	return status;
+}
+
+
+int
+Rts2DevDomeIR::initIrDevice ()
+{
+	Rts2Config *config = Rts2Config::instance ();
+	config->loadFile (NULL);
+	// try to get default from config file
+	if (ir_ip.length () == 0)
+	{
+		config->getString ("ir", "ip", ir_ip);
+	}
+	if (!ir_port)
+	{
+		config->getInteger ("ir", "port", ir_port);
+	}
+	if (ir_ip.length () == 0 || !ir_port)
+	{
+		std::cerr << "Invalid port or IP address of mount controller PC"
+			<< std::endl;
+		return -1;
+	}
+
+	irConn = new IrConn (ir_ip, ir_port);
+
+	// are we connected ?
+	if (!irConn->isOK ())
+	{
+		std::cerr << "Connection to server failed" << std::endl;
+		return -1;
+	}
+
+	return 0;
+}
+
+
+int
 Rts2DevDomeIR::info ()
 {
-	/*
-	   int ret;
-	   ret = zjisti_stav_portu ();
-	   if (ret)
-	   return -1;
-	 */
-	/*
-	   sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_PRAVY));
-	   sw_state->setValueInteger (sw_state->getValueInteger | (getPortState (KONCAK_OTEVRENI_LEVY) << 1));
-	   sw_state->setValueInteger (sw_state->getValueInteger | (getPortState (KONCAK_ZAVRENI_PRAVY) << 2));
-	   sw_state->setValueInteger (sw_state->setValueInteger | (getPortState (KONCAK_ZAVRENI_LEVY) << 3));
-	 */
-	if (leftClosed () && rightClosed ())
-		sw_state->setValueInteger (4);
-	if (leftOpened () && rightOpened ())
-		sw_state->setValueInteger (1);
+	double dome_curr_az, dome_target_az, dome_tar_dist, dome_power;
+	status = TPL_OK;
+	status = irConn->tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
+	status = irConn->tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
+	status = irConn->tpl_get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
+	status = irConn->tpl_get ("DOME[0].POWER", dome_power, &status);
+	if (status == TPL_OK)
+	{
+		domeCurrAz->setValueDouble (ln_range_degrees (dome_curr_az + 180));
+		domeTargetAz->setValueDouble (ln_range_degrees (dome_target_az + 180));
+		domeTarDist->setValueDouble (dome_tar_dist);
+		domePower->setValueBool (dome_power == 1);
+	}
+
+	if (dome_state == D_CLOSING && dome_state == D_OPENING)
+	{
+		int status = TPL_OK;
+		double dome_up, dome_down;
+		status = irConn->tpl_get ("DOME[1].CURRPOS", dome_up, &status);
+		status = irConn->tpl_get ("DOME[2].CURRPOS", dome_down, &status);
+		if (status != TPL_OK)
+		{
+			logStream (MESSAGE_ERROR) << "unknow dome state" << sendLog;
+			return;
+		}
+		domeUp->setValueFloat (dome_up);
+		domeDown->setValueFloat (dome_down);
+		if (dome_up == 1.0 && dome_down == 1.0)
+			dome_state = D_OPENED;
+		if (dome_up == 0.0 && dome_down == 0.0)
+			dome_state = D_CLOSED;
+	}
+
 	//rain = weatherConn->getRain ();
 	float t_temp;
 	float t_hum;
@@ -345,71 +432,10 @@ Rts2DevDomeIR::idle ()
 int
 Rts2DevDomeIR::init ()
 {
-	struct termios oldtio, newtio;
-
 	int ret = Rts2DevDome::init ();
 	if (ret)
 		return ret;
-
-	dome_port = open (dome_file, O_RDWR | O_NOCTTY);
-	if (dome_port == -1)
-		return -1;
-
-	ret = tcgetattr (dome_port, &oldtio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeIR::init tcgetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	newtio = oldtio;
-
-	newtio.c_cflag = BAUDRATE | CS8 | CLOCAL | CREAD;
-	newtio.c_iflag = IGNPAR;
-	newtio.c_oflag = 0;
-	newtio.c_lflag = 0;
-	newtio.c_cc[VMIN] = 0;
-	newtio.c_cc[VTIME] = 1;
-
-	tcflush (dome_port, TCIOFLUSH);
-	ret = tcsetattr (dome_port, TCSANOW, &newtio);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeIR::init tcsetattr %m" <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	return 0;
-}
-
-
-int
-Rts2DevDomeIR::openLeft ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeIR::openRight ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeIR::closeLeft ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeIR::closeRight ()
-{
-	return 0;
+	return initIrDevice ();
 }
 
 
