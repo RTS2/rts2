@@ -79,6 +79,8 @@ Rts2DevTelescopeIr::initValues ()
 		return ret;
 	if (derotatorOffset)
 		derotatorOffset->setValueDouble (derOff);
+
+	return Rts2DevTelescope::initValues ();
 }
 
 
@@ -86,7 +88,7 @@ int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	//  status = setTrack (0);
+	//  status = setTelescopeTrack (0);
 
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
 	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
@@ -102,7 +104,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	switch (getPointingModel ())
 	{
 		case 0:
-			offset = getCorrRa ();
+			offset = -1.0 * getCorrRa ();
 			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
 			offset = getCorrDec ();
 			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
@@ -130,7 +132,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	}
 
 	//  usleep (USEC_SEC);
-	status = setTrack (irTracking, domeAutotrack->getValueBool ());
+	status = setTelescopeTrack (irTracking);
 	usleep (USEC_SEC);
 	return status;
 }
@@ -228,7 +230,7 @@ Rts2DevTelescopeIr::stopMove ()
 	{
 		logStream (MESSAGE_DEBUG) << "IR stopMove suspicious ZD.. " << zd <<
 			sendLog;
-		status = setTrack (0);
+		status = setTelescopeTrack (0);
 		if (status)
 		{
 			logStream (MESSAGE_DEBUG) << "IR stopMove cannot set track: " <<
@@ -246,7 +248,7 @@ Rts2DevTelescopeIr::startPark ()
 {
 	int status = TPL_OK;
 	// Park to south+zenith
-	status = setTrack (0);
+	status = setTelescopeTrack (0);
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
 		sendLog;
@@ -301,7 +303,7 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	{
 		logStream (MESSAGE_WARNING) <<
 			"Tracking sudently stopped, reenable tracking" << sendLog;
-		setTrack (irTracking, domeAutotrack->getValueBool ());
+		setTelescopeTrack (irTracking);
 		sleep (1);
 		return USEC_SEC / 100;
 	}
@@ -359,7 +361,7 @@ int
 Rts2DevTelescopeIr::startWorm ()
 {
 	int status = TPL_OK;
-	status = setTrack (irTracking, domeAutotrack->getValueBool ());
+	status = setTelescopeTrack (irTracking);
 	if (status != TPL_OK)
 		return -1;
 	return 0;
@@ -370,7 +372,7 @@ int
 Rts2DevTelescopeIr::stopWorm ()
 {
 	int status = TPL_OK;
-	status = setTrack (0);
+	status = setTelescopeTrack (0);
 	if (status)
 		return -1;
 	return 0;
@@ -386,11 +388,9 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
 			coverOpen ();
-			domeOpen ();
 			break;
 		default:
 			coverClose ();
-			domeClose ();
 			break;
 	}
 	return Rts2DevTelescope::changeMasterState (new_state);

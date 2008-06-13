@@ -104,8 +104,6 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 
 		Rts2ValueDouble *derotatorOffset;
 
-		Rts2ValueBool *domeAutotrack;
-
 		int coverClose ();
 		int coverOpen ();
 
