@@ -26,7 +26,6 @@ class Rts2DevPhotDummy:public Rts2DevPhot
 		virtual int init ()
 		{
 			photType = "Dummy";
-			serial = "001";
 			return Rts2DevPhot::init ();
 		}
 

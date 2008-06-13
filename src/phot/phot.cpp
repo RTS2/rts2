@@ -44,7 +44,6 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 	createValue (is_ov, "is_ov", "if photometer overflow", false);
 
 	photType = NULL;
-	serial = NULL;
 
 	req_count = -1;
 	setReqTime (1);
@@ -73,7 +72,6 @@ int
 Rts2DevPhot::initValues ()
 {
 	addConstValue ("type", photType);
-	addConstValue ("serial", serial);
 
 	return Rts2ScriptDevice::initValues ();
 }

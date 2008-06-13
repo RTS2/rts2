@@ -52,7 +52,7 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		float req_time;
 		void setReqTime (float in_req_time);
 
-		char *photType;
+		const char *photType;
 		char *serial;
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);

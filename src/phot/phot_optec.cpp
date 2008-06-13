@@ -21,7 +21,7 @@
 class Rts2DevPhotOptec:public Rts2DevPhot
 {
 	private:
-		char *phot_dev;
+		const char *phot_dev;
 		int fd;
 		time_t filter_move_timeout;
 
