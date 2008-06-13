@@ -27,7 +27,8 @@ class Rts2DevSensorPhytron:public Rts2DevSensor
 		int readAxis ();
 		int setValue (int ax, int reg, Rts2ValueInteger *val);
 		int setAxis (int new_val);
-		char *dev;
+		const char *dev;
+
 	protected:
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual int processOption (int in_opt);
