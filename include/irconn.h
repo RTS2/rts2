@@ -1,4 +1,3 @@
-
 /* 
  * Connection for OpenTPL.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
