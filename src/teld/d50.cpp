@@ -28,7 +28,7 @@
 class Rts2DevTelD50:public TelFork
 {
 	private:
-		char *device_name;
+		const char *device_name;
 		Rts2ConnSerial *d50Conn;
 
 		// write to both units
