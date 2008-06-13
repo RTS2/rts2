@@ -40,16 +40,18 @@
 
 using namespace OpenTPL;
 
+/**
+ * Base class for IR telescope.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2TelescopeIr:public Rts2DevTelescope
 {
 	private:
 		std::string ir_ip;
 		int ir_port;
 
-		enum { OPENED, OPENING, CLOSING, CLOSED }
-		cover_state;
-		enum { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED }
-		dome_state;
+		enum { OPENED, OPENING, CLOSING, CLOSED } cover_state;
 
 		void checkErrors ();
 		void checkCover ();
@@ -58,7 +60,6 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		bool doCheckPower;
 
 		void getCover ();
-		void getDome ();
 		void initCoverState ();
 
 		std::string errorList;
@@ -73,17 +74,9 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		Rts2ValueDouble *targetDist;
 		Rts2ValueDouble *targetTime;
 
-		Rts2ValueInteger *mountTrack;
-
-		Rts2ValueFloat *domeUp;
-		Rts2ValueFloat *domeDown;
-
-		Rts2ValueDouble *domeCurrAz;
-		Rts2ValueDouble *domeTargetAz;
-		Rts2ValueBool *domePower;
-		Rts2ValueDouble *domeTarDist;
-
 		Rts2ValueDouble *cover;
+
+		Rts2ValueInteger *mountTrack;
 
 		// model values
 		Rts2ValueString *model_dumpFile;
@@ -119,8 +112,7 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		int domeOpen ();
 		int domeClose ();
 
-		int setTrack (int new_track);
-		int setTrack (int new_track, bool autoEn);
+		int setTelescopeTrack (int new_track);
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 

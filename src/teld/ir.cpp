@@ -63,46 +63,19 @@ Rts2TelescopeIr::coverOpen ()
 
 
 int
-Rts2TelescopeIr::domeOpen ()
+Rts2TelescopeIr::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
-	dome_state = D_OPENING;
-	status = irConn->tpl_set ("DOME[1].TARGETPOS", 1, &status);
-	status = irConn->tpl_set ("DOME[2].TARGETPOS", 1, &status);
-	logStream (MESSAGE_INFO) << "opening dome, status " << status << sendLog;
-	return status;
-}
-
-
-int
-Rts2TelescopeIr::domeClose ()
-{
-	int status = TPL_OK;
-	dome_state = D_CLOSING;
-	status = irConn->tpl_set ("DOME[1].TARGETPOS", 0, &status);
-	status = irConn->tpl_set ("DOME[2].TARGETPOS", 0, &status);
-	logStream (MESSAGE_INFO) << "closing dome, status " << status << sendLog;
-	return status;
-}
-
-
-int
-Rts2TelescopeIr::setTrack (int new_track)
-{
-	int status = TPL_OK;
-	status = irConn->tpl_set ("POINTING.TRACK", new_track, &status);
+	int old_track;
+	status = irConn->tpl_get ("POINTING.TRACK", old_track, &status);
+	if (status != TPL_OK)
+		return -1;
+	status = irConn->tpl_set ("POINTING.TRACK", new_track | (old_track & 128), &status);
 	if (status != TPL_OK)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot setTrack" << sendLog;
+		logStream (MESSAGE_ERROR) << "Cannot setTelescopeTrack" << sendLog;
 	}
 	return status;
-}
-
-
-int
-Rts2TelescopeIr::setTrack (int new_track, bool autoEn)
-{
-	return setTrack ((new_track & ~128) | (autoEn ? 128 : 0));
 }
 
 
@@ -167,57 +140,10 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == mountTrack)
 	{
-		status = setTrack (new_value->getValueInteger ());
+		status = setTelescopeTrack (new_value->getValueInteger ());
 		if (status != TPL_OK)
 			return -2;
 		return 0;
-	}
-	if (old_value == domeAutotrack)
-	{
-		status =
-			setTrack (mountTrack->getValueInteger (),
-			((Rts2ValueBool *) new_value)->getValueBool ());
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == domeUp)
-	{
-		status =
-			irConn->tpl_set ("DOME[1].TARGETPOS", new_value->getValueFloat (), &status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == domeDown)
-	{
-		status =
-			irConn->tpl_set ("DOME[2].TARGETPOS", new_value->getValueFloat (), &status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == domeTargetAz)
-	{
-		status =
-			irConn->tpl_set ("DOME[0].TARGETPOS",
-			ln_range_degrees (new_value->getValueDouble () - 180.0),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-
-	}
-	if (old_value == domePower)
-	{
-		status =
-			irConn->tpl_set ("DOME[0].POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-
 	}
 	if (old_value == model_aoff)
 	{
@@ -350,8 +276,8 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
-in_argv)
+Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv)
+:Rts2DevTelescope (in_argc, in_argv)
 {
 	ir_port = 0;
 	irConn = NULL;
@@ -359,59 +285,35 @@ in_argv)
 	doCheckPower = false;
 
 	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
-	createValue (cabinetPowerState, "cabinet_power_state",
-		"power state of cabinet", false);
+	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
 
 	derotatorOffset = NULL;
 	derotatorCurrpos = NULL;
 	derotatorPower = NULL;
 
-	createValue (targetDist, "target_dist", "distance in degrees to target",
-		false, RTS2_DT_DEG_DIST);
-	createValue (targetTime, "target_time", "reach target time in seconds",
-		false);
+	createValue (targetDist, "target_dist", "distance in degrees to target", false, RTS2_DT_DEG_DIST);
+	createValue (targetTime, "target_time", "reach target time in seconds", false);
 
 	createValue (mountTrack, "TRACK", "mount track");
-	createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false);
-	domeAutotrack->setValueBool (true);
 
-	createValue (domeUp, "dome_up", "upper dome cover", false);
-	createValue (domeDown, "dome_down", "dome down cover", false);
-
-	createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false,
-		RTS2_DT_DEGREES);
-	createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false,
-		RTS2_DT_DEGREES);
-	createValue (domePower, "dome_power", "if dome have power", false);
-	createValue (domeTarDist, "dome_tar_dist", "dome target distance", false,
-		RTS2_DT_DEG_DIST);
+	createValue (model_dumpFile, "dump_file", "model dump file", false);
+	createValue (model_aoff, "aoff", "model azimuth offset", false,	RTS2_DT_DEG_DIST);
+	createValue (model_zoff, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
+	createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+	createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+	createValue (model_npae, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
+	createValue (model_flex, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
 
 	cover = NULL;
 
-	createValue (model_dumpFile, "dump_file", "model dump file", false);
-	createValue (model_aoff, "aoff", "model azimuth offset", false,
-		RTS2_DT_DEG_DIST);
-	createValue (model_zoff, "zoff", "model zenith offset", false,
-		RTS2_DT_DEG_DIST);
-	createValue (model_ae, "ae", "azimuth equator? offset", false,
-		RTS2_DT_DEG_DIST);
-	createValue (model_an, "an", "azimuth nadir? offset", false,
-		RTS2_DT_DEG_DIST);
-	createValue (model_npae, "npae", "not polar adjusted equator?", false,
-		RTS2_DT_DEG_DIST);
-	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
-	createValue (model_flex, "flex", "model flex parameter", false,
-		RTS2_DT_DEG_DIST);
-
 	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
 	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
-	addOption ('p', "check power", 0,
-		"whenever to check for power state != 0 (currently depreciated)");
+	addOption ('p', "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	strcpy (telType, "BOOTES_IR");
 
 	cover_state = CLOSED;
-	dome_state = D_OPENING;
 }
 
 
@@ -579,7 +481,7 @@ Rts2TelescopeIr::checkErrors ()
 					zd = -85;
 				if (zd > 80)
 					zd = 85;
-				status = setTrack (0);
+				status = setTelescopeTrack (0);
 				logStream (MESSAGE_DEBUG) <<
 					"IR checkErrors set pointing status " << status << sendLog;
 				sleep (1);
@@ -729,29 +631,6 @@ Rts2TelescopeIr::getCover ()
 	if (status)
 		return;
 	cover->setValueDouble (cor_tmp);
-}
-
-
-void
-Rts2TelescopeIr::getDome ()
-{
-	if (dome_state != D_CLOSING && dome_state != D_OPENING)
-		return;
-	int status = TPL_OK;
-	double dome_up, dome_down;
-	status = irConn->tpl_get ("DOME[1].CURRPOS", dome_up, &status);
-	status = irConn->tpl_get ("DOME[2].CURRPOS", dome_down, &status);
-	if (status != TPL_OK)
-	{
-		logStream (MESSAGE_ERROR) << "unknow dome state" << sendLog;
-		return;
-	}
-	domeUp->setValueFloat (dome_up);
-	domeDown->setValueFloat (dome_down);
-	if (dome_up == 1.0 && dome_down == 1.0)
-		dome_state = D_OPENED;
-	if (dome_up == 0.0 && dome_down == 0.0)
-		dome_state = D_CLOSED;
 }
 
 
@@ -940,7 +819,6 @@ Rts2TelescopeIr::info ()
 
 	if (cover)
 		getCover ();
-	getDome ();
 
 	mountTrack->setValueInteger (track);
 
@@ -955,19 +833,6 @@ Rts2TelescopeIr::info ()
 		targetTime->setValueDouble (point_time);
 	}
 
-	double dome_curr_az, dome_target_az, dome_tar_dist, dome_power;
-	status = TPL_OK;
-	status = irConn->tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
-	status = irConn->tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
-	status = irConn->tpl_get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
-	status = irConn->tpl_get ("DOME[0].POWER", dome_power, &status);
-	if (status == TPL_OK)
-	{
-		domeCurrAz->setValueDouble (ln_range_degrees (dome_curr_az + 180));
-		domeTargetAz->setValueDouble (ln_range_degrees (dome_target_az + 180));
-		domeTarDist->setValueDouble (dome_tar_dist);
-		domePower->setValueBool (dome_power == 1);
-	}
 	return Rts2DevTelescope::info ();
 }
 
