@@ -80,7 +80,7 @@ Rts2DevTelescopeIr::initValues ()
 	if (derotatorOffset)
 		derotatorOffset->setValueDouble (derOff);
 
-	return Rts2DevTelescope::initValues ();
+	return Rts2Device::initValues ();
 }
 
 
@@ -288,11 +288,22 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	time_t now;
 	struct ln_equ_posn tPos;
 	struct ln_equ_posn cPos;
-	//  status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-	status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
-	status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
-	status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
-	status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+	// if parking, check is different for EQU telescope
+	if (park && getPointingModel () == 0)
+	{
+		status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
+		status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
+		status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
+		status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+	}
+	else
+	{
+		//  status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+		status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
+		status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
+		status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
+		status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+	}
 	if (status != TPL_OK)
 		return -1;
 	poin_dist = ln_get_angular_separation (&cPos, &tPos);
