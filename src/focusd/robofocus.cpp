@@ -32,7 +32,7 @@
 class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 {
 	private:
-		char *device_file_io;
+		const char *device_file;
 		Rts2ConnSerial *robofocConn;
 		char checksum;
 		int step_num;
@@ -42,7 +42,7 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 		int switchNum;
 
 		// high-level I/O functions
-		int focus_move (char *cmd, int steps);
+		int focus_move (const char *cmd, int steps);
 		void compute_checksum (char *cmd);
 
 		int getPos (Rts2ValueInteger * position);
@@ -277,7 +277,7 @@ Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
 
 
 int
-Rts2DevFocuserRobofocus::focus_move (char *cmd, int steps)
+Rts2DevFocuserRobofocus::focus_move (const char *cmd, int steps)
 {
 	char command[10];
 	char command_buffer[9];

@@ -31,7 +31,7 @@
 class Rts2DevFocuserOptec:public Rts2DevFocuser
 {
 	private:
-		char *device_file_io;
+		const char *device_file;
 		Rts2ConnSerial *optecConn;
 		
 		int status;
