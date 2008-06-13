@@ -282,7 +282,7 @@ Rts2ConnCentrald::sendStatusInfo ()
 
 
 int
-Rts2ConnCentrald::sendAValue (char *val_name, int value)
+Rts2ConnCentrald::sendAValue (const char *val_name, int value)
 {
 	char *msg;
 	int ret;

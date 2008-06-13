@@ -272,7 +272,7 @@ class Rts2ConnCentrald:public Rts2Conn
 		 * It needs to be called after establishing of every new connection.
 		 */
 		int sendStatusInfo ();
-		int sendAValue (char *name, int value);
+		int sendAValue (const char *name, int value);
 		int messageMask;
 
 	protected:
