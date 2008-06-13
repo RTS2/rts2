@@ -53,7 +53,7 @@ class Rts2DevSensorMS257:public Rts2DevSensor
 		int readRts2Value (const char *valueName, Rts2Value * val);
 		int readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val);
 
-		char *dev;
+		const char *dev;
 	protected:
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual int processOption (int in_opt);
@@ -299,7 +299,7 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == shutter)
 	{
-		char *shttypes[] = { "S", "F", "M" };
+		const char *shttypes[] = { "S", "F", "M" };
 		if (new_value->getValueInteger () > 2
 			|| new_value->getValueInteger () < 0)
 			return -1;
