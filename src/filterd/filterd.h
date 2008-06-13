@@ -40,9 +40,6 @@ class Rts2DevFilterd:public Rts2Device
 		int setFilters (char *filters);
 		int setFilterNumMask (int new_filter);
 	protected:
-		char *filterType;
-		char *serialNumber;
-
 		Rts2ValueSelection *filter;
 
 		virtual int processOption (int in_opt);

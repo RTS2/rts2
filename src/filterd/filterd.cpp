@@ -25,9 +25,6 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 	createValue (filter, "filter", "used filter", false);
 
 	addOption ('F', NULL, 1, "filter names, separated by space(s)");
-
-	filterType = NULL;
-	serialNumber = NULL;
 }
 
 
@@ -53,9 +50,6 @@ Rts2DevFilterd::processOption (int in_opt)
 int
 Rts2DevFilterd::initValues ()
 {
-	addConstValue ("type", filterType);
-	addConstValue ("serial", serialNumber);
-
 	return Rts2Device::initValues ();
 }
 

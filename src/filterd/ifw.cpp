@@ -96,9 +96,6 @@ in_argv)
 	ifwConn = NULL;
 	homeCount = 0;
 
-	filterType = "IFW";
-	serialNumber = "001";
-
 	addOption ('f', "device_name", 1, "device name (/dev..)");
 }
 
