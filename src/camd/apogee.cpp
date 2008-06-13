@@ -57,9 +57,9 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 	private:
 		CCameraIO *camera;
 		int device_id;
-		char *cfgname;
+		const char *cfgname;
 		int config_load (short BaseAddress, short RegOffset);
-		bool CfgGet (FILE * inifp, char *inisect, char *iniparm, char *retbuff,
+		bool CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff,
 			short bufflen, short *parmlen);
 
 		time_t expExposureEnd;
@@ -227,10 +227,7 @@ Rts2DevCameraApogee::endReadout ()
 // and the paramter string in retbuff.
 //-------------------------------------------------------------
 bool
-Rts2DevCameraApogee::CfgGet (FILE * inifp,
-char *inisect,
-char *iniparm,
-char *retbuff, short bufflen, short *parmlen)
+Rts2DevCameraApogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff, short bufflen, short *parmlen)
 {
 	short gotsect;
 	char tbuf[256];
