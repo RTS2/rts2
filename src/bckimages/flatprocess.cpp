@@ -101,7 +101,7 @@ process_file (char *filename)
 		printerror (status);
 		return;
 	}
-	if (fits_read_keys_lng (fptr, "NAXIS", 1, 2, naxes, &nfound, &status))
+	if (fits_read_keys_lng (fptr, (char *) "NAXIS", 1, 2, naxes, &nfound, &status))
 		goto err;
 	if (nfound < 1)
 	{
@@ -116,7 +116,7 @@ process_file (char *filename)
 	for (; nfound > 0; nfound--)
 		npixels *= naxes[nfound];
 	npix = npixels;
-	if (fits_read_key_str (fptr, "CAM_NAME", camera_name, NULL, &status))
+	if (fits_read_key_str (fptr, (char *) "CAM_NAME", camera_name, NULL, &status))
 	{
 		if (verbose)
 			printf ("No CAM_NAME in %s, default will be used\n", filename);
