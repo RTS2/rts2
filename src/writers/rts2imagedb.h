@@ -171,7 +171,7 @@ class Rts2ImageFlatDb:public Rts2ImageDb
 
 template < class img > img * setValueImageType (img * in_image)
 {
-	char *imgTypeText = "unknow";
+	const char *imgTypeText = "unknow";
 	img *ret_i = NULL;
 	// guess image type..
 	if (in_image->getShutter () == SHUT_CLOSED)
