@@ -19,6 +19,9 @@
 
 #include "dome.h"
 #include "irconn.h"
+#include "../utils/rts2config.h"
+
+#include <libnova/libnova.h>
 
 /**
  * Driver for Bootes IR dome.
@@ -41,6 +44,8 @@ class Rts2DevDomeIR:public Rts2DevDome
 		Rts2ValueBool *domePower;
 		Rts2ValueDouble *domeTarDist;
 
+		Rts2ValueBool *domeAutotrack;
+
 		enum { D_OPENED, D_OPENING, D_CLOSING, D_CLOSED } dome_state;
 
 		int getSNOW (float *temp, float *humi, float *wind);
@@ -56,7 +61,7 @@ class Rts2DevDomeIR:public Rts2DevDome
 		int initIrDevice ();
 
 	protected:
-		virtual int processOption ();
+		virtual int processOption (int in_opt);
 
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
@@ -79,8 +84,9 @@ class Rts2DevDomeIR:public Rts2DevDome
 
 
 int
-Rts2DevDomeIR::setValueBool (Rts2Value *old_value, Rts2Value *new_value)
-{
+Rts2DevDomeIR::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{	
+	int status = TPL_OK;
 	if (old_value == domeAutotrack)
 	{
 		status = setDomeTrack (((Rts2ValueBool *) new_value)->getValueBool ());
@@ -127,7 +133,7 @@ Rts2DevDomeIR::setValueBool (Rts2Value *old_value, Rts2Value *new_value)
 
 
 int
-Rts2DevDome::openDome ()
+Rts2DevDomeIR::openDome ()
 {
 	int status = TPL_OK;
 	dome_state = D_OPENING;
@@ -166,7 +172,7 @@ Rts2DevDomeIR::processOption (int in_opt)
 			ir_port = atoi (optarg);
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Rts2DevDome::processOption (in_opt);
 	}
 	return 0;
 }
@@ -347,7 +353,7 @@ int
 Rts2DevDomeIR::info ()
 {
 	double dome_curr_az, dome_target_az, dome_tar_dist, dome_power;
-	status = TPL_OK;
+	int status = TPL_OK;
 	status = irConn->tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
 	status = irConn->tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
 	status = irConn->tpl_get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
@@ -362,14 +368,14 @@ Rts2DevDomeIR::info ()
 
 	if (dome_state == D_CLOSING && dome_state == D_OPENING)
 	{
-		int status = TPL_OK;
+		status = TPL_OK;
 		double dome_up, dome_down;
 		status = irConn->tpl_get ("DOME[1].CURRPOS", dome_up, &status);
 		status = irConn->tpl_get ("DOME[2].CURRPOS", dome_down, &status);
 		if (status != TPL_OK)
 		{
 			logStream (MESSAGE_ERROR) << "unknow dome state" << sendLog;
-			return;
+			return -1;
 		}
 		domeUp->setValueFloat (dome_up);
 		domeDown->setValueFloat (dome_down);
