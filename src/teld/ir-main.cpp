@@ -289,12 +289,23 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	struct ln_equ_posn tPos;
 	struct ln_equ_posn cPos;
 	// if parking, check is different for EQU telescope
-	if (park && getPointingModel () == 0)
+	if (park)
 	{
-		status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
-		status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
-		status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
-		status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+		switch (getPointingModel ())
+		{
+			case 0:
+				status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
+				status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
+				status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
+				status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+				break;
+			case 1:
+				status = irConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
+				status = irConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
+				status = irConn->tpl_get ("ZD.CURRPOS", cPos.ra, &status);
+				status = irConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
+				break;
+		}
 	}
 	else
 	{
