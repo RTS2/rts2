@@ -247,20 +247,20 @@ Rts2DevCameraMiniccdIl::initChips ()
 
 	int msg_len;
 
-	msg_len = strlen (device_file);
+	int c_len = strlen (device_file);
 
 	for (int i = 0; i < 2; i++)
 	{
-		char chip_name[msg_len + 2];
+		char chip_name[c_len + 2];
 		strcpy (chip_name, device_file);
-		chip_name[msg_len] = '0' + i;
-		chip_name[msg_len + 1] = '\0';
+		chip_name[c_len] = '1' + i;
+		chip_name[c_len + 1] = '\0';
 	
 		fd_chip[i] = open (chip_name, O_RDWR);
 		if (fd_chip[i] < 0)
 		{
 			logStream (MESSAGE_ERROR)
-				<< "Rts2DevCameraMiniccdIl::initChips cannot open device file: " <<
+				<< "Rts2DevCameraMiniccdIl::initChips cannot open device file " << chip_name << ": " <<
 				strerror (errno) << sendLog;
 			return -1;
 		}
@@ -626,7 +626,7 @@ Rts2DevCameraMiniccdIl::init ()
 	char *top = ccdType;
 
 	while ((isgraph (*top) || isspace (*top))
-		&& top - ccdType < CCD_CCD_NAME_LEN / 2)
+		&& top - ccdType < (CCD_CCD_NAME_LEN / 2 - 1))
 		top++;
 	*top = '\0';
 

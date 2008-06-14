@@ -72,7 +72,7 @@ Rts2DevCameraMiniccd::initChips ()
 
 	char chip_name[msg_len + 2];
 	strcpy (chip_name, device_file);
-	chip_name[msg_len] = '0';
+	chip_name[msg_len] = '1';
 	chip_name[msg_len + 1] = '\0';
 
 	fd_chip = open (chip_name, O_RDWR);
