@@ -295,21 +295,27 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 		status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
 		status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
 		status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
-		poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	}
 	else
 	{
-		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-		/* 
-		It is possible this must be enabled on ALT-AZ mount
+		// status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 		status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
 		status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
 		status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
 		status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
-		*/
+		// for EQU models, we must include target offset
+		if (getPointingModel () == 0)
+		{
+			double haOff, decOff;
+			status = irConn->tpl_get ("HA.OFFSET", haOff, &status);
+			status = irConn->tpl_get ("DEC.OFFSET", decOff, &status);
+			tPos.ra -= haOff;
+			tPos.dec += decOff;
+		}
 	}
 	if (status != TPL_OK)
 		return -1;
+	poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	time (&now);
 	// get track..
 	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
