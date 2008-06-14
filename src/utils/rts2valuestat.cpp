@@ -86,7 +86,7 @@ int
 Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&value)
-		|| connection->paramNextSizeT (&numMes)
+		|| connection->paramNextInteger (&numMes)
 		|| connection->paramNextDouble (&mode)
 		|| connection->paramNextDouble (&min)
 		|| connection->paramNextDouble (&max)
@@ -99,7 +99,7 @@ Rts2ValueDoubleStat::setValue (Rts2Conn * connection)
 const char *
 Rts2ValueDoubleStat::getValue ()
 {
-	sprintf (buf, "%.20le %li %.20le %.20le %.20le %.20le", value, numMes,
+	sprintf (buf, "%.20le %i %.20le %.20le %.20le %.20le", value, numMes,
 		mode, min, max, stdev);
 	return buf;
 }
@@ -108,7 +108,7 @@ Rts2ValueDoubleStat::getValue ()
 const char *
 Rts2ValueDoubleStat::getDisplayValue ()
 {
-	sprintf (buf, "%f %li %f %f %f %f",
+	sprintf (buf, "%f %i %f %f %f %f",
 		getValueDouble (), numMes, mode, min, max, stdev);
 	return buf;
 }
@@ -117,7 +117,7 @@ Rts2ValueDoubleStat::getDisplayValue ()
 int
 Rts2ValueDoubleStat::send (Rts2Conn * connection)
 {
-	if (numMes != valueList.size ())
+	if (numMes != (int) valueList.size ())
 		calculate ();
 	return Rts2ValueDouble::send (connection);
 }

@@ -33,7 +33,7 @@
 class Rts2ValueDoubleStat:public Rts2ValueDouble
 {
 	private:
-		size_t numMes;
+		int numMes;
 		double mode;
 		double min;
 		double max;

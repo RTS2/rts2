@@ -864,7 +864,9 @@ Rts2ValueRaDec::getValue ()
 	std::ostringstream _os;
 	_os << getRa () << " " << getDec ();
 
-	return _os.str ().c_str ();
+	strcpy (buf, _os.str ().c_str ());
+
+	return buf;
 }
 
 
