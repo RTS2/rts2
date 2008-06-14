@@ -188,7 +188,7 @@ Rts2DevCameraMiniccd::isExposing ()
 			return -1;
 		}
 		if ((unsigned int) (msgi[CCD_MSG_LENGTH_LO_INDEX] + (msgi[CCD_MSG_LENGTH_HI_INDEX] << 16))
-			!= (chipUsedSize () + CCD_MSG_IMAGE_LEN))
+			!= (chipByteSize () + CCD_MSG_IMAGE_LEN))
 		{
 			logStream (MESSAGE_ERROR) << "miniccd sendLineData wrong size " <<
 				msgi[CCD_MSG_LENGTH_LO_INDEX] +
