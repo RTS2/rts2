@@ -353,6 +353,7 @@ Rts2DevCameraMiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 	{
 		return -1;
 	}
+	logStream (MESSAGE_DEBUG) << "start chip exposing " << chip_id << sendLog;
 	return 0;
 }
 
@@ -404,13 +405,14 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 			return -1;
 		}
 		if ((unsigned int) (msgi[CCD_MSG_LENGTH_LO_INDEX] + (msgi[CCD_MSG_LENGTH_HI_INDEX] << 16))
-			!= (chipByteSize () + CCD_MSG_IMAGE_LEN))
+			!= (chipByteSize () / 2 + CCD_MSG_IMAGE_LEN))
 		{
 			logStream (MESSAGE_ERROR) << "miniccd sendLineData wrong size " <<
 				msgi[CCD_MSG_LENGTH_LO_INDEX] +
 				(msgi[CCD_MSG_LENGTH_HI_INDEX] << 16) << sendLog;
 			return -1;
 		}
+		logStream (MESSAGE_DEBUG) << "isChipExposing " << chip_id << " returns 0" << sendLog;
 		return 0;
 	}
 	return 100;
