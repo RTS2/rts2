@@ -73,6 +73,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
+	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
+
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
@@ -80,9 +82,6 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true);
 	corrImgId->setValueInteger (0);
-
-	createValue (telAlt, "ALT", "mount altitude", true, RTS2_DT_DEC);
-	createValue (telAz, "AZ", "mount azimuth", true, RTS2_DT_DEGREES);
 
 	defaultRotang = 0;
 	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG);
@@ -176,6 +175,62 @@ Rts2DevTelescope::processOption (int in_opt)
 			return Rts2Device::processOption (in_opt);
 	}
 	return 0;
+}
+
+void
+Rts2DevTelescope::calculateCorrAltAz ()
+{
+	struct ln_equ_posn equ_target;
+	struct ln_equ_posn equ_corr;
+
+	struct ln_lnlat_posn observer;
+
+	double jd = ln_get_julian_from_sys ();
+
+	equ_target.ra = tarRaDec->getRa ();
+	equ_target.dec = tarRaDec->getDec ();
+
+	equ_corr.ra = equ_target.ra - corrRaDec->getRa ();
+	equ_corr.dec = equ_target.dec - corrRaDec->getDec ();
+
+	observer.lng = telLongitude->getValueDouble ();
+	observer.lat = telLatitude->getValueDouble ();
+
+	ln_get_hrz_from_equ (&equ_target, &observer, jd, &tarAltAz);
+
+	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
+	{
+		corrAltAz.alt = tarAltAz.alt;
+		corrAltAz.az = tarAltAz.az;
+	}
+	else
+	{
+		ln_get_hrz_from_equ (&equ_corr, &observer, jd, &corrAltAz);
+	}
+}
+
+
+double
+Rts2DevTelescope::getCorrZd ()
+{
+	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
+		return 0;
+	
+	calculateCorrAltAz ();
+
+	return corrAltAz.alt - tarAltAz.alt;
+}
+
+
+double
+Rts2DevTelescope::getCorrAz ()
+{
+	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
+		return 0;
+
+	calculateCorrAltAz ();
+
+	return tarAltAz.az - corrAltAz.az;
 }
 
 
@@ -734,8 +789,7 @@ Rts2DevTelescope::getAltAz ()
 		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()),
 		&hrz);
 
-	telAlt->setValueDouble (hrz.alt);
-	telAz->setValueDouble (hrz.az);
+	telAltAz->setValueAltAz (hrz.alt, hrz.az);
 
 	return 0;
 }
@@ -865,8 +919,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
 
 	// calculate target after corrections
-	pos.ra = ln_range_degrees (pos.ra + corrRaDec->getRa ());
-	pos.dec = pos.dec + corrRaDec->getDec ();
+	pos.ra = ln_range_degrees (pos.ra - corrRaDec->getRa ());
+	pos.dec = pos.dec - corrRaDec->getDec ();
 	telRaDec->setValueRaDec (pos.ra, pos.dec);
 
 	moveInfoCount = 0;

@@ -107,6 +107,16 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueRaDec *corrRaDec;
 
 		/**
+		 * Target HRZ coordinates.
+		 */
+		struct ln_hrz_posn tarAltAz;
+
+		/**
+		 * Target HRZ coordinates with corrections applied.
+		 */
+		struct ln_hrz_posn corrAltAz;
+
+		/**
 		 * RA DEC correction which waits to be applied.
 		 */
 		Rts2ValueRaDec *waitingCorrRaDec;
@@ -290,8 +300,8 @@ class Rts2DevTelescope:public Rts2Device
 
 		virtual int willConnect (Rts2Address * in_addr);
 		char telType[64];
-		Rts2ValueDouble *telAlt;
-		Rts2ValueDouble *telAz;
+		Rts2ValueAltAz *telAltAz;
+
 		Rts2ValueInteger *telFlip;
 
 		double defaultRotang;
@@ -397,16 +407,20 @@ class Rts2DevTelescope:public Rts2Device
 		  	return corrRaDec->getDec ();
 		}
 
+		/**
+		 * Update target and corrected ALT AZ coordinates.
+		 *
+		 * This call will update tarAltAz and corrAltAz coordinates, based on actuall
+		 * tarRaDec and corrRaDec values.
+		 */
+		void calculateCorrAltAz ();
 
 		/**
 		 * Return corrections in zenit distance.
 		 *
 		 * @return Correction in zenit distance.
 		 */
-		double getCorrZd ()
-		{
-			return 0;
-		}
+		double getCorrZd ();
 
 		/**
 		 * Return corrections in altitude.
@@ -415,7 +429,7 @@ class Rts2DevTelescope:public Rts2Device
 		 */
 		double getCorrAlt ()
 		{
-			return 0;
+			return -getCorrZd ();
 		}
 
 		/**
@@ -423,10 +437,7 @@ class Rts2DevTelescope:public Rts2Device
 		 *
 		 * @return Correction in azimuth.
 		 */
-		double getCorrAz ()
-		{
-			return 0;
-		}
+		double getCorrAz ();
 
 		/**
 		 * Return distance in degrees to target position.
