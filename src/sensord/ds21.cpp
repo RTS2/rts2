@@ -18,15 +18,7 @@
  */
 
 #include "sensord.h"
-
-#define DEBUG_ALL
-
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termios.h>
-#include <unistd.h>
-#include <errno.h>
+#include "../utils/rts2connserial.h"
 
 class Rts2DevSensorDS21;
 
@@ -63,8 +55,8 @@ class DS21Axis
 class Rts2DevSensorDS21: public Rts2DevSensor
 {
 	private:
-		char *dev;
-		int dev_port;
+		const char *dev;
+		Rts2ConnSerial *ds21;
 
 		std::list <DS21Axis> axes;
 
@@ -182,78 +174,21 @@ Rts2DevSensorDS21::processOption (int in_opt)
 int
 Rts2DevSensorDS21::init ()
 {
-	struct termios term_options; /* structure to hold serial port configuration */
 	int ret;
 
 	ret = Rts2DevSensor::init ();
 	if (ret)
 		return ret;
 
-	dev_port = open (dev, O_RDWR | O_NOCTTY | O_NDELAY);
+	ds21 = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 20);
 
-	if (dev_port == -1)
-	{
-		logStream (MESSAGE_ERROR) << "init cannot open: " << dev
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-	ret = fcntl (dev_port, F_SETFL, 0);
+	ds21->setDebug (true);
+
+	ret = ds21->init ();
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "init cannot fcntl " <<
-			strerror (errno) << sendLog;
-	}
-	/* get current serial port configuration */
-	if (tcgetattr (dev_port, &term_options) < 0)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"init error reading serial port configuration: " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
+		return ret;
 
-	/*
-	 * Set the baud rates to 9600
-	 */
-	if (cfsetospeed (&term_options, B9600) < 0
-		|| cfsetispeed (&term_options, B9600) < 0)
-	{
-		logStream (MESSAGE_ERROR) << "init error setting baud rate: "
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-
-	/*
-	 * Enable the receiver and set local mode...
-	 */
-	term_options.c_cflag |= (CLOCAL | CREAD);
-
-	/* Choose raw input */
-	term_options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
-	/* set port to 8 data bits, 1 stop bit, no parity */
-	term_options.c_cflag &= ~PARENB;
-	term_options.c_cflag &= ~CSTOPB;
-	term_options.c_cflag &= ~CSIZE;
-	term_options.c_cflag |= CS8;
-
-	/* set timeout to 2 seconds */
-	term_options.c_cc[VTIME] = 20;
-	term_options.c_cc[VMIN] = 0;
-
-	tcflush (dev_port, TCIFLUSH);
-
-	/*
-	 * Set the new options for the port...
-	 */
-	if (tcsetattr (dev_port, TCSANOW, &term_options))
-	{
-		logStream (MESSAGE_ERROR) << "init tcsetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	tcflush (dev_port, TCIOFLUSH);
+	ds21->flushPortIO ();
 
 	writePort (0, "RE");
 
@@ -281,6 +216,7 @@ Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
 :Rts2DevSensor (in_argc, in_argv)
 {
 	dev = "/dev/ttyS0";
+	ds21 = NULL;
 
 	addOption ('f', NULL, 1, "device serial port, default to /dev/ttyS0");
 }
@@ -288,7 +224,7 @@ Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
 
 Rts2DevSensorDS21::~Rts2DevSensorDS21 (void)
 {
-	close (dev_port);
+ 	delete ds21;
 }
 
 
@@ -340,53 +276,20 @@ Rts2DevSensorDS21::writePort (char anum, const char *msg)
 	buf[blen + 1] = '\r';
 	buf[blen + 2] = '\n';
 	buf[blen + 3] = '\0';
-	int ret = -1;
-	do
-	{
-		ret = write (dev_port, buf, blen + 3);
-	} while (ret == -1 && errno == EINTR);
-	if (ret != blen + 3)
-		return -1;
-
-	return 0;
+	return ds21->writePort (buf, blen + 3);
 }
 
 
 int
 Rts2DevSensorDS21::readPort (char *buf, int blen)
 {
-	int ret;
-	char *buf_top = buf;
-	while (buf_top - buf < blen)
-	{
-		do
-		{
-			ret = read (dev_port, buf_top, 1);
-		} while (ret == -1 && errno == EINTR);
-		if (ret == -1 || ret == 0)
-		{
-			logStream (MESSAGE_ERROR) << "error reading from port " << buf << " " << ret << " " << strerror (errno) << sendLog;
-			return -1;
-		}
-		if (*buf_top == '\r')
-		{
-			*buf_top = '\0';
-		}
-		if (*buf_top == '\n')
-		{
-			break;
-		}
-		buf_top++;
-	}
-	if (ret <= 0)
-	{
-		return -1;
-	}
-	*buf_top = '\0';
-	#ifdef DEBUG_ALL
-	logStream (MESSAGE_DEBUG) << "readed from port '" << buf << "' readed " << ret << sendLog;
-	#endif
-	return 0;
+	int ret = ds21->readPort (buf, blen, '\n');
+	if (ret == -1)
+		return ret;
+	// delete end '\r'
+	if (buf[ret - 2] == '\r')
+		buf[ret - 2] = '\0';
+	return 0;	
 }
 
 
@@ -425,7 +328,7 @@ Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
 	int ret;
 	char buf[500];
 
-	tcflush (dev_port, TCIOFLUSH);
+	ds21->flushPortIO ();
 
 	ret = writeReadPort (anum, cmd, buf, 500);
 	if (ret)
