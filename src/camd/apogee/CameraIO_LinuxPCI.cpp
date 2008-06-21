@@ -146,7 +146,7 @@ Sleep (int hTime)
 
 
 void
-ATLTRACE (char *msg)
+ATLTRACE (const char *msg)
 {
 }
 
