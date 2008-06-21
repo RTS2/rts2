@@ -1998,6 +1998,28 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 			delete[] v_desc;
 		}
 		break;
+		case RTS2_VALUE_ALTAZ:
+		{
+			// construct RADEC string and desc, write it down
+			char *v_name = new char[strlen (name) + 4];
+			char *v_desc = new char[strlen (desc) + 10];
+			// write RA
+			strcpy (v_name, name);
+			strcat (v_name, "ALT");
+			strcpy (v_desc, desc);
+			strcat (v_desc, " altitude");
+			setValue (v_name, ((Rts2ValueAltAz *) val)->getAlt (), v_desc);
+			// now DEC
+			strcpy (v_name, name);
+			strcat (v_name, "AZ");
+			strcpy (v_desc, desc);
+			strcat (v_desc, " azimuth");
+			setValue (v_name, ((Rts2ValueAltAz *) val)->getAz (), v_desc);
+			// free memory
+			delete[] v_name;
+			delete[] v_desc;
+		}
+		break;
 		default:
 			logStream (MESSAGE_ERROR) <<
 				"Don't know how to write to FITS file header value '" << name
