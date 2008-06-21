@@ -331,7 +331,7 @@ Rts2DevCameraMiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_EXP_LEN / CCD_ELEM_SIZE];
 	int exposure_msec = (int) (getExposure () * 1000);
-	int ccdFlags = (getExpType () ? CCD_EXP_FLAGS_NOOPEN_SHUTTER: 0) | ccd_flags;
+	int ccdFlags = (getExpType () ? CCD_EXP_FLAGS_NOOPEN_SHUTTER : 0) | ccd_flags;
 	int ret;
 
 	msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
