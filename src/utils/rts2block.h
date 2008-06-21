@@ -555,7 +555,7 @@ class Rts2Block: public Rts2App
 		void clearAll ();
 
 		int queAll (Rts2Command * cmd);
-		int queAll (char *text);
+		int queAll (const char *text);
 
 		/**
 		 * Return connection with minimum (integer) value.
