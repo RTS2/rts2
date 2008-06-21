@@ -724,7 +724,7 @@ Rts2Block::queAll (Rts2Command * command)
 
 
 int
-Rts2Block::queAll (char *text)
+Rts2Block::queAll (const char *text)
 {
 	return queAll (new Rts2Command (this, text));
 }
