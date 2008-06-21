@@ -1,18 +1,36 @@
-#include "sensord.h"
+/* 
+ * Driver for Phytron stepper motor controlers.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <termios.h>
-#include <unistd.h>
-#include <errno.h>
+#include "sensord.h"
+#include "../utils/rts2connserial.h"
 
 #define CMDBUF_LEN  20
 
+/**
+ * Class for Phytron stepper motor controllers.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevSensorPhytron:public Rts2DevSensor
 {
 	private:
-		int dev_port;
+		Rts2ConnSerial *phytronDev;
 
 		int writePort (const char *str);
 		int readPort ();
@@ -46,30 +64,26 @@ Rts2DevSensorPhytron::writePort (const char *str)
 {
 	int ret;
 	// send prefix
-	ret = write (dev_port, "\002", 1);
-	if (ret != 1)
+	ret = phytronDev->writePort ('\002');
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot send prefix" << sendLog;
 		return -1;
 	}
 	int len = strlen (str);
-	ret = write (dev_port, str, len);
-	if (ret != len)
+	ret = phytronDev->writePort (str, len);
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot send body" << sendLog;
 		return -1;
 	}
 	// send postfix
-	ret = write (dev_port, "\003", 1);
-	if (ret != 1)
+	ret = phytronDev->writePort ('\003');
+	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot send postfix" << sendLog;
 		return -1;
 	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Writing '" << str << "' (" << strlen (str) <<
-		")" << sendLog;
-	#endif
 	return 0;
 }
 
@@ -77,33 +91,7 @@ Rts2DevSensorPhytron::writePort (const char *str)
 int
 Rts2DevSensorPhytron::readPort ()
 {
-	int readed = 0;
-	char *buf_top = cmdbuf;
-	while (readed < CMDBUF_LEN)
-	{
-		int ret = read (dev_port, buf_top, 1);
-		if (ret != 1)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot read from port, returned " <<
-				ret << " error " << strerror (errno) << " readed " << readed <<
-				sendLog;
-			return -1;
-		}
-		readed++;
-		if (*buf_top == '\003')
-		{
-			*buf_top = '\0';
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "Readed " << cmdbuf << sendLog;
-			#endif
-			return 0;
-		}
-		buf_top++;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "String does not ends " << cmdbuf << sendLog;
-	#endif
-	return -1;
+	return phytronDev->readPort (cmdbuf, CMDBUF_LEN, '\003') > 0 ? 0 : -1;
 }
 
 
@@ -182,7 +170,7 @@ Rts2DevSensorPhytron::setAxis (int new_val)
 Rts2DevSensorPhytron::Rts2DevSensorPhytron (int in_argc, char **in_argv):
 Rts2DevSensor (in_argc, in_argv)
 {
-	dev_port = -1;
+	phytronDev = NULL;
 	dev = "/dev/ttyS0";
 
 	createValue (runFreq, "RUNFREQ", "current run frequency", true);
@@ -205,8 +193,7 @@ Rts2DevSensor (in_argc, in_argv)
 
 Rts2DevSensorPhytron::~Rts2DevSensorPhytron (void)
 {
-	close (dev_port);
-	dev_port = -1;
+	delete phytronDev;
 }
 
 
@@ -239,76 +226,18 @@ Rts2DevSensorPhytron::processOption (int in_opt)
 int
 Rts2DevSensorPhytron::init ()
 {
-	struct termios term_options; /* structure to hold serial port configuration */
 	int ret;
 
 	ret = Rts2DevSensor::init ();
 	if (ret)
 		return ret;
 
-	dev_port = open (dev, O_RDWR | O_NOCTTY | O_NDELAY);
-
-	if (dev_port == -1)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init cannot open: " << dev
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-	ret = fcntl (dev_port, F_SETFL, 0);
+	phytronDev = new Rts2ConnSerial (dev, this, BS57600, C8, NONE, 200);
+	ret = phytronDev->init ();
 	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init cannot fcntl " <<
-			strerror (errno) << sendLog;
-	}
-	/* get current serial port configuration */
-	if (tcgetattr (dev_port, &term_options) < 0)
-	{
-		logStream (MESSAGE_ERROR) <<
-			"filter ifw init error reading serial port configuration: " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-
-	/*
-	 * Set the baud rates to 9600
-	 */
-	if (cfsetospeed (&term_options, B57600) < 0
-		|| cfsetispeed (&term_options, B57600) < 0)
-	{
-		logStream (MESSAGE_ERROR) << "filter ifw init error setting baud rate: "
-			<< strerror (errno) << sendLog;
-		return -1;
-	}
-
-	/*
-	 * Enable the receiver and set local mode...
-	 */
-	term_options.c_cflag |= (CLOCAL | CREAD);
-
-	/* Choose raw input */
-	term_options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
-
-	/* set port to 8 data bits, 1 stop bit, no parity */
-	term_options.c_cflag &= ~PARENB;
-	term_options.c_cflag &= ~CSTOPB;
-	term_options.c_cflag &= ~CSIZE;
-	term_options.c_cflag |= CS8;
-
-	/* set timeout  to 20 seconds */
-	term_options.c_cc[VTIME] = 200;
-	term_options.c_cc[VMIN] = 0;
-
-	tcflush (dev_port, TCIFLUSH);
-
-	/*
-	 * Set the new options for the port...
-	 */
-	if (tcsetattr (dev_port, TCSANOW, &term_options))
-	{
-		logStream (MESSAGE_ERROR) << "phytron init tcsetattr " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
+		return ret;
+	phytronDev->flushPortIO ();
+	
 	ret = readAxis ();
 	if (ret)
 		return ret;
