@@ -1,10 +1,20 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-/*!
- * Used for generating new plan entries.
+/*
+ * Selector body.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
- * @author petr
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include "../utils/rts2devclient.h"
@@ -12,6 +22,8 @@
 #include "../utilsdb/rts2devicedb.h"
 #include "../utils/rts2event.h"
 #include "../utils/rts2command.h"
+
+#define OPT_IDLE_SELECT         OPT_LOCAL + 5
 
 class Rts2DevClientTelescopeSel:public Rts2DevClientTelescope
 {
@@ -73,6 +85,8 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		Rts2ValueDouble *flatSunMin;
 		Rts2ValueDouble *flatSunMax;
 
+		Rts2ValueString *nightDisabledTypes;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
@@ -104,24 +118,18 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_SELECTOR, "SEL")
 	next_id = -1;
 	time (&last_selected);
 
-	createValue (idle_select, "idle_select",
-		"time in seconds in which at least one selection will be performed",
-		false);
+	createValue (idle_select, "idle_select", "time in seconds in which at least one selection will be performed", false);
 	idle_select->setValueInteger (300);
 
-	createValue (selEnabled, "selector_enabled",
-		"if selector should select next targets", false);
+	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false);
 	selEnabled->setValueBool (true);
 
-	createValue (flatSunMin, "flat_sun_min",
-		"minimal Solar height for flat selection", false,
-		RTS2_DT_DEGREES);
-	createValue (flatSunMax, "flat_sun_max",
-		"maximal Solar height for flat selection", false,
-		RTS2_DT_DEGREES);
+	createValue (flatSunMin, "flat_sun_min", "minimal Solar height for flat selection", false, RTS2_DT_DEGREES);
+	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES);
 
-	addOption ('I', "idle_select", 1,
-		"selection timeout (reselect every I seconds)");
+	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false);
+
+	addOption (OPT_IDLE_SELECT, "idle_select", 1, "selection timeout (reselect every I seconds)");
 }
 
 
@@ -137,7 +145,7 @@ Rts2SelectorDev::processOption (int in_opt)
 	int t_idle;
 	switch (in_opt)
 	{
-		case 'I':
+		case OPT_IDLE_SELECT:
 			t_idle = atoi (optarg);
 			idle_select->setValueInteger (t_idle);
 			break;
@@ -260,6 +268,11 @@ Rts2SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == flatSunMax)
 	{
 		sel->setFlatSunMax (new_value->getValueDouble ());
+		return 0;
+	}
+	if (old_value == nightDisabledTypes)
+	{
+		sel->setNightDisabledTypes (new_value->getValue ());
 		return 0;
 	}
 
