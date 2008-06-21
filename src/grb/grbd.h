@@ -33,8 +33,8 @@ class Rts2ConnGrb;
  * Receive info from GCN via socket, put them to DB.
  *
  * Based on http://gcn.gsfc.nasa.gov/socket_demo.c
- * socket_demo     Ver: 3.29   23 Mar 05,
- * which is CVSed with GRBC. Only "active" satellite packets are processed.
+ * socket_demo     Ver: 3.32   29 May 06
+ * which is in this directory. Only "active" satellite packets are processed.
  *
  * If new version of socket_demo.c show up, we need to invesigate
  * modifications to include it.

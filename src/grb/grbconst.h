@@ -343,10 +343,10 @@
 #define TYPE_SWIFT_XRT_LC_SRC            70
 								 // SWIFT XRT Position NOT Ack message (Centroid Error)
 #define TYPE_SWIFT_XRT_CENTROID_SRC      71
-								 // SWIFT UVOT DarkBurst message (aka Neighbor, aka GeNie)
-#define TYPE_SWIFT_UVOT_DBURST_SRC       72
-								 // SWIFT UVOT Finding Chart message
-#define TYPE_SWIFT_UVOT_FCHART_SRC       73
+								 // SWIFT UVOT Image message (aka DarkBurst, aka GeNie)
+#define TYPE_SWIFT_UVOT_IMAGE_SRC        72
+								 // SWIFT UVOT Source List message (aka FindChart)
+#define TYPE_SWIFT_UVOT_SLIST_SRC        73
 								 // SWIFT Full Data Set Initial message
 #define TYPE_SWIFT_FULL_DATA_INIT_SRC    74
 								 // SWIFT Full Data Set Updated message
@@ -358,9 +358,9 @@
 								 // SWIFT XRT Image processed message
 #define TYPE_SWIFT_XRT_IMAGE_PROC_SRC    78
 								 // SWIFT UVOT DarkBurst processed mesg (aka Neighbor, aka GeNie)
-#define TYPE_SWIFT_UVOT_DBURST_PROC_SRC  79
+#define TYPE_SWIFT_UVOT_IMAGE_PROC_SRC   79
 								 // SWIFT UVOT Finding Chart processed message
-#define TYPE_SWIFT_UVOT_FCHART_PROC_SRC  80
+#define TYPE_SWIFT_UVOT_SLIST_PROC_SRC   80
 								 // SWIFT UVOT Position message
 #define TYPE_SWIFT_UVOT_POS_SRC          81
 								 // SWIFT BAT GRB Position Test message

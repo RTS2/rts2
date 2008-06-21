@@ -341,10 +341,10 @@ Rts2ConnGrb::pr_swift_without_radec ()
 			break;
 		case TYPE_SWIFT_SCALEDMAP_SRC:
 		case TYPE_SWIFT_XRT_CENTROID_SRC:
-		case TYPE_SWIFT_UVOT_DBURST_SRC:
-		case TYPE_SWIFT_UVOT_FCHART_SRC:
-		case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
-		case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+		case TYPE_SWIFT_UVOT_IMAGE_SRC:
+		case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 			grb_ra = lbuf[BURST_RA] / 10000.0;
 			grb_dec = lbuf[BURST_DEC] / 10000.0;
 			ret = addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, grb_ra, grb_dec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox(d_grb_type), true);
@@ -518,9 +518,9 @@ Rts2ConnGrb::gcnContainsGrbPos (int grb_type)
 		case TYPE_INTEGRAL_SPIACS_SRC:
 		case TYPE_SWIFT_SCALEDMAP_SRC:
 		case TYPE_SWIFT_XRT_CENTROID_SRC:
-		case TYPE_SWIFT_UVOT_DBURST_SRC:
-		case TYPE_SWIFT_UVOT_FCHART_SRC:
-		case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+		case TYPE_SWIFT_UVOT_IMAGE_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 		case TYPE_SWIFT_POINTDIR_SRC:
 		case TYPE_SWIFT_UVOT_NACK_POSITION:
 			return false;
@@ -585,13 +585,13 @@ Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
 		case TYPE_SWIFT_XRT_CENTROID_SRC:
 			// XRT FOV
 			return 15.0 / 60.0;
-		case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 		case TYPE_SWIFT_UVOT_POS_SRC:
 			// that's VERY conservative estimate, we might refine it
 			return 19.0 / 3600.0;
-		case TYPE_SWIFT_UVOT_FCHART_SRC:
-		case TYPE_SWIFT_UVOT_DBURST_SRC:
-		case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+		case TYPE_SWIFT_UVOT_SLIST_SRC:
+		case TYPE_SWIFT_UVOT_IMAGE_SRC:
+		case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
 			// UVOT FOV
 			return 15.0 / 60.0;
 		case TYPE_GLAST_GBM_GRB_ALERT:
@@ -1466,12 +1466,12 @@ Rts2ConnGrb::receive (fd_set *set)
 			case TYPE_SWIFT_XRT_SPECTRUM_SRC:
 			case TYPE_SWIFT_XRT_IMAGE_SRC:
 			case TYPE_SWIFT_XRT_LC_SRC:
-			case TYPE_SWIFT_UVOT_FCHART_SRC:
+			case TYPE_SWIFT_UVOT_SLIST_SRC:
 				// processed messages
 			case TYPE_SWIFT_BAT_GRB_LC_PROC_SRC:
 			case TYPE_SWIFT_XRT_SPECTRUM_PROC_SRC:
 			case TYPE_SWIFT_XRT_IMAGE_PROC_SRC:
-			case TYPE_SWIFT_UVOT_FCHART_PROC_SRC:
+			case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 			case TYPE_SWIFT_UVOT_POS_SRC:
 				// transient
 			case TYPE_SWIFT_BAT_TRANS:
@@ -1481,9 +1481,9 @@ Rts2ConnGrb::receive (fd_set *set)
 			case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
 			case TYPE_SWIFT_SCALEDMAP_SRC:
 			case TYPE_SWIFT_XRT_CENTROID_SRC:
-			case TYPE_SWIFT_UVOT_DBURST_SRC:
+			case TYPE_SWIFT_UVOT_IMAGE_SRC:
 				// processed messages
-			case TYPE_SWIFT_UVOT_DBURST_PROC_SRC:
+			case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
 			case TYPE_SWIFT_UVOT_NACK_POSITION:
 				pr_swift_without_radec ();
 				break;
