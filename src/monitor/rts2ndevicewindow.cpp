@@ -117,21 +117,28 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 			printValue (value->getName ().c_str (), _os.str ().c_str ());
 			break;
 		case RTS2_VALUE_RADEC:
-		{
-			if (value->getValueDisplayType () == RTS2_DT_DEGREES)
 			{
-				LibnovaDeg v_rd (((Rts2ValueRaDec *) value)->getRa ());
-				LibnovaDeg v_dd (((Rts2ValueRaDec *) value)->getDec ());
-				_os << v_rd << " " << v_dd;
+				if (value->getValueDisplayType () == RTS2_DT_DEGREES)
+				{
+					LibnovaDeg v_rd (((Rts2ValueRaDec *) value)->getRa ());
+					LibnovaDeg v_dd (((Rts2ValueRaDec *) value)->getDec ());
+					_os << v_rd << " " << v_dd;
+				}
+				else
+				{
+					LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
+					_os << v_radec;
+				}
+				printValue (value->getName ().c_str (), _os.str().c_str ());
 			}
-			else
+			break;
+		case RTS2_VALUE_ALTAZ:
 			{
-				LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
-				_os << v_radec;
+				LibnovaHrz hrz (((Rts2ValueAltAz *) value)->getAlt (), ((Rts2ValueAltAz *) value)->getAz ());
+				_os << hrz;
+				printValue (value->getName ().c_str (), _os.str().c_str ());
 			}
-			printValue (value->getName ().c_str (), _os.str().c_str ());
-		}
-		break;
+			break;
 		case RTS2_VALUE_SELECTION:
 			wprintw
 				(
