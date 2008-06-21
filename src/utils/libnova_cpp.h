@@ -499,6 +499,12 @@ class LibnovaHrz
 			az = new LibnovaDeg360 (hrz->az);
 		}
 
+		LibnovaHrz (double in_alt, double in_az)
+		{
+			alt = new LibnovaDeg90 (in_alt);
+			az = new LibnovaDeg360 (in_az);
+		}
+
 		virtual ~ LibnovaHrz (void)
 		{
 			delete alt;
