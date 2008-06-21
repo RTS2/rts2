@@ -88,6 +88,13 @@
  */
 #define RTS2_VALUE_RADEC              0x00000009
 
+
+/**
+ * Value is Alt Az
+ * @ingroup RTS2Value
+ */
+#define RTS2_VALUE_ALTAZ              0x0000000A
+
 /**
  * Value have statistics nature (include mean, average, min and max values and number of measurements taken for value).
  * @ingroup RTS2Value
@@ -877,9 +884,6 @@ class Rts2ValueRaDec: public Rts2Value
 		double ra;
 		double decl;
 
-	protected:
-		virtual int sendTypeMetaInfo (Rts2Conn * connection);
-
 	public:
 		Rts2ValueRaDec (std::string in_val_name);
 		Rts2ValueRaDec (std::string in_val_name, std::string in_description,
@@ -984,6 +988,124 @@ class Rts2ValueRaDec: public Rts2Value
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
 };
+
+
+/**
+ * Class for Alt-Az informations.
+ *
+ * @ingroup RTS2Value
+ */
+class Rts2ValueAltAz: public Rts2Value
+{
+	private:
+		double alt;
+		double az;
+
+	public:
+		Rts2ValueAltAz (std::string in_val_name);
+		Rts2ValueAltAz (std::string in_val_name, std::string in_description,
+			bool writeToFits = true, int32_t flags = 0);
+		virtual int setValue (Rts2Conn * connection);
+
+		/**
+		 * Set value from string, uses parsing from
+		 * input stream, so it recognized various forms of the value.
+		 *
+		 * @param in_value String represenation of altitude and azimuth.
+		 */
+		virtual int setValueString (const char *in_value);
+
+		/**
+		 * Set altitude and azimuth values from two doubles.
+		 *
+		 * @param in_alt Altitude value.
+		 * @param in_az Azimuth value.
+		 *
+		 * @return 0 on sucess.
+		 */
+		int setValueAltAz (double in_alt, double in_az)
+		{
+			setAlt (in_alt);
+			setAz (in_az);
+			return 0;
+		}
+
+		/**
+		 * Sets altitude.
+		 */
+		void setAlt (double in_alt)
+		{
+			if (alt != in_alt)
+			{
+				alt = in_alt;
+				changed ();
+			}
+		}
+
+		/**
+		 * Sets azimuth.
+		 */
+		void setAz (double in_az)
+		{
+			if (az != in_az)
+			{
+				az = in_az;
+				changed ();
+			}
+		}
+
+		virtual int doOpValue (char op, Rts2Value * old_value);
+
+		virtual const char *getValue ();
+		virtual double getValueDouble ()
+		{
+			return nan("f");
+		}
+		virtual float getValueFloat ()
+		{
+			return nan("f");
+		}
+		virtual int getValueInteger ()
+		{
+			return INT_MAX;
+		}
+		virtual long int getValueLong ()
+		{
+			return INT_MAX;
+		}
+		long inc ()
+		{
+			return INT_MAX;
+		}
+		long dec ()
+		{
+			return INT_MAX;
+		}
+
+		/**
+		 * Return altitude in degrees.
+		 *
+		 * @return Altitude value in degrees.
+		 */
+		double getAlt ()
+		{
+			return alt;
+		}
+
+		/**
+		 * Return azimuth in degrees.
+		 *
+		 * @return Azimuth value in degrees.
+		 */
+		double getAz ()
+		{
+			return az;
+		}
+
+		virtual void setFromValue (Rts2Value * newValue);
+		virtual bool isEqual (Rts2Value *other_value);
+};
+
 
 /**
  * Creates value from meta information.

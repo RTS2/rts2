@@ -779,13 +779,6 @@ bool writeToFits, int32_t flags)
 
 
 int
-Rts2ValueRaDec::sendTypeMetaInfo (Rts2Conn * connection)
-{
-	return Rts2Value::sendTypeMetaInfo (connection);
-}
-
-
-int
 Rts2ValueRaDec::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&ra))
@@ -897,6 +890,135 @@ Rts2ValueRaDec::isEqual (Rts2Value *other_value)
 }
 
 
+Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name)
+:Rts2Value (in_val_name)
+{
+	alt = nan ("f");
+	az = nan ("f");
+	rts2Type |= RTS2_VALUE_ALTAZ;
+}
+
+
+Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name, std::string in_description,
+bool writeToFits, int32_t flags)
+:Rts2Value (in_val_name, in_description, writeToFits, flags)
+{
+	alt = nan ("f");
+	az = nan ("f");
+	rts2Type |= RTS2_VALUE_ALTAZ;
+}
+
+
+int
+Rts2ValueAltAz::setValue (Rts2Conn * connection)
+{
+	if (connection->paramNextDouble (&alt))
+		return -2;
+	if (connection->paramEnd ())
+	{
+	  	az = alt;
+		return 0;
+	}
+	if (connection->paramNextDouble (&az) || !connection->paramEnd ())
+		return -2;
+
+	return 0;
+}
+
+
+int
+Rts2ValueAltAz::setValueString (const char *in_value)
+{
+	double v_alt, v_az;
+	if (parseRaDec (in_value, v_alt, v_az))
+		return -2;
+	setValueAltAz (v_alt, v_az);
+	return 0;
+}
+
+
+int
+Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
+{
+	switch (old_value->getValueType ())
+	{
+		case RTS2_VALUE_ALTAZ:
+			switch (op)
+			{
+				case '+':
+					alt += ((Rts2ValueAltAz *)old_value)->getAlt ();
+					az += ((Rts2ValueAltAz *)old_value)->getAz ();
+					return 0;
+				case '-':
+					alt -= ((Rts2ValueAltAz *)old_value)->getAlt ();
+					az -= ((Rts2ValueAltAz *)old_value)->getAz ();
+					return 0;
+				default:
+					return Rts2Value::doOpValue (op, old_value);
+			}
+		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_FLOAT:
+		case RTS2_VALUE_INTEGER:
+		case RTS2_VALUE_LONGINT:
+			switch (op)
+			{
+				case '+':
+					alt += old_value->getValueDouble ();
+					az += old_value->getValueDouble ();
+					return 0;
+				case '-':
+					alt -= old_value->getValueDouble ();
+					az -= old_value->getValueDouble ();
+					return 0;
+				default:
+					return Rts2Value::doOpValue (op, old_value);
+			}
+		default:
+			logStream (MESSAGE_ERROR) << "Do not know how to handle operation '" << op
+				<< "' between RADEC value and " << old_value->getValueType ()
+				<< sendLog;
+			return -1;
+	}
+}
+
+
+const char *
+Rts2ValueAltAz::getValue ()
+{
+	std::ostringstream _os;
+	_os << getAlt () << " " << getAz ();
+
+	return _os.str ().c_str ();
+}
+
+
+void
+Rts2ValueAltAz::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == RTS2_VALUE_ALTAZ)
+	{
+		setValueAltAz (((Rts2ValueAltAz *)newValue)->getAlt (),
+			((Rts2ValueAltAz *)newValue)->getAz ());
+	}
+	else
+	{
+		setValueString (newValue->getValue ());
+	}
+}
+
+
+bool
+Rts2ValueAltAz::isEqual (Rts2Value *other_value)
+{
+	if (other_value->getValueType () == RTS2_VALUE_ALTAZ)
+	{
+		return getAlt () == ((Rts2ValueAltAz*)other_value)->getAlt ()
+			&& getAz () == ((Rts2ValueAltAz*)other_value)->getAz ();
+	}
+	return false;
+}
+
+
 Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
 {
 	switch (rts2Type & RTS2_BASE_TYPE)
@@ -919,6 +1041,8 @@ Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
 			return new Rts2ValueLong (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 		case RTS2_VALUE_RADEC:
 			return new Rts2ValueRaDec (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+		case RTS2_VALUE_ALTAZ:
+			return new Rts2ValueAltAz (name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 	}
 	logStream (MESSAGE_ERROR) << "unknow value name: " << name << " type: " << rts2Type << sendLog;
 	return NULL;
