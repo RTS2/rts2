@@ -30,6 +30,8 @@ class Rts2DevCameraMiniccdIl:public Rts2DevCamera
 	private:
 		int fd_ccd;
 		int fd_chip[2];
+		char *row[2];
+
 		char *device_file;
 
 		int ccd_dac_bits;
@@ -412,6 +414,11 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 				(msgi[CCD_MSG_LENGTH_HI_INDEX] << 16) << sendLog;
 			return -1;
 		}
+		delete[] row[chip_id];
+		row[chip_id] = new char[chipByteSize () / 2];
+		ret = read (fd_chip[chip_id], row[chip_id], chipByteSize () / 2);
+		if (ret != chipByteSize () / 2)
+			return -1;
 		logStream (MESSAGE_DEBUG) << "isChipExposing " << chip_id << " returns 0" << sendLog;
 		return 0;
 	}
@@ -468,30 +475,13 @@ int
 Rts2DevCameraMiniccdIl::readoutOneLine ()
 {
 	int ret;
-	char *row1, *row2;
-	ssize_t ret1, ret2, rs;
 
 //		usedRowBytes = slaveChip[0]->getUsedRowBytes () / 2;
 
 	switch (slaveState)
 	{
 		case SLAVE2_READOUT:
-			rs = chipByteSize () / 2;
-			row1 = new char[rs];
-			row2 = new char[rs];
-
-			ret1 = read (fd_chip[0], row1, rs);
-			ret2 = read (fd_chip[0], row2, rs);
-			if (ret1 != rs && ret2 != rs)
-			{
-				// error while retriving data
-				delete[] row1;
-				delete[] row2;
-				return -1;
-			}
-			doBinning ((uint16_t *) row1, (uint16_t *) row2);
-			delete[] row1;
-			delete[] row2;
+			doBinning ((uint16_t *) row[0], (uint16_t *) row[1]);
 			slaveState = SENDING;
 		case SENDING:
 			ret = sendReadoutData (dataBuffer, dataBufferSize);
@@ -538,6 +528,9 @@ Rts2DevCamera (in_argc, in_argv)
 {
 	fd_ccd = -1;
 	device_file = NULL;
+
+	row[0] = NULL;
+	row[1] = NULL;
 
 	firstReadoutTime = 3 * USEC_SEC;
 	slaveState = NO_ACTION;
