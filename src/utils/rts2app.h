@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <time.h>
+#include <unistd.h>
 
 #include "rts2object.h"
 #include "rts2option.h"

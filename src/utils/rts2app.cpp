@@ -29,7 +29,6 @@
 
 #include <termios.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 static Rts2App *masterApp = NULL;
 
