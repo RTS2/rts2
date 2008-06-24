@@ -20,6 +20,7 @@
 #ifndef __RTS2_VALUE__
 #define __RTS2_VALUE__
 
+#include <limits.h>
 #include <string.h>
 #include <string>
 #include <math.h>
