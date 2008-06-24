@@ -21,6 +21,7 @@
 #include "rts2obsset.h"
 #include "target.h"
 
+#include <algorithm>
 #include <sstream>
 
 #include "../utils/libnova_cpp.h"
