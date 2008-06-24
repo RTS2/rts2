@@ -6,6 +6,7 @@
 #ifndef MAKEDEPEND
 # include <stdio.h>
 # include <stdlib.h>
+# include <string.h>
 #endif
 
 using namespace XmlRpc;

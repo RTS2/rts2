@@ -9,6 +9,7 @@
 # include <ostream>
 # include <stdlib.h>
 # include <stdio.h>
+# include <string.h>
 #endif
 
 #include <math.h>

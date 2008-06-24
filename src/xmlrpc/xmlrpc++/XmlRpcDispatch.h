@@ -12,6 +12,8 @@
 # include <list>
 #endif
 
+#include <sys/select.h>
+
 namespace XmlRpc
 {
 

@@ -20,6 +20,8 @@
 #ifndef __RTS2_SELECTOR__
 #define __RTS2_SELECTOR__
 
+#include <algorithm>
+
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
 
