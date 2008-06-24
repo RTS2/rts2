@@ -26,9 +26,11 @@
 #include <sstream>
 #include <errno.h>
 #include <libnova/libnova.h>
+#include <limits.h>
 
 #include <termios.h>
 #include <sys/types.h>
+#include <string.h>
 
 static Rts2App *masterApp = NULL;
 
