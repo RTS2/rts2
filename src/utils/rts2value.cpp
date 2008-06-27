@@ -988,7 +988,9 @@ Rts2ValueAltAz::getValue ()
 	std::ostringstream _os;
 	_os << getAlt () << " " << getAz ();
 
-	return _os.str ().c_str ();
+	strcpy (buf, _os.str ().c_str ());
+
+	return buf;
 }
 
 
