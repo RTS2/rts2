@@ -160,6 +160,11 @@ IrConn::tpl_get (const char *name, T & val, int *status)
 		std::cout << "tpl_get name " << name << std::endl;
 		#endif
 		Request *r = tplc->Get (name, false);
+		if (r == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "While getting " << name << ", request object is NULL" << sendLog;
+			return -1;
+		}
 		cstatus = r->Wait (5000);
 
 		if (cstatus != TPLC_OK)
