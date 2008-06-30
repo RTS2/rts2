@@ -152,17 +152,18 @@ class IrConn
 template < typename T > int
 IrConn::tpl_get (const char *name, T & val, int *status)
 {
-	int cstatus = TPL_OK;
+	OpenTPL::ClientStatus cstatus = TPLC_OK;
 
 	if (*status == TPL_OK)
 	{
 		#ifdef DEBUG_ALL
 		std::cout << "tpl_get name " << name << std::endl;
 		#endif
-		Request *r = tplc->Get (name, false);
+		Request *r = tplc->Get (name, false, cstatus);
 		if (r == NULL)
 		{
-			logStream (MESSAGE_ERROR) << "While getting " << name << ", request object is NULL" << sendLog;
+			logStream (MESSAGE_ERROR) << "While getting " << name << ", request object is NULL, status: " 
+				<< cstatus << sendLog;
 			return -1;
 		}
 		cstatus = r->Wait (5000);
