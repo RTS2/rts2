@@ -106,7 +106,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 		case 0:
 			offset = -1.0 * getCorrRa ();
 			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
-			offset = getCorrDec ();
+			offset = -1.0 * getCorrDec ();
 			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
 			break;
 		case 1:
@@ -144,16 +144,16 @@ Rts2DevTelescopeIr::startMove ()
 	int status = 0;
 	double sep;
 
-	struct ln_hrz_posn tarAltAz;
+	struct ln_hrz_posn tAltAz;
 
 	getTarget (&target);
 
 	switch (getPointingModel ())
 	{
 		case 0:
-			getTargetAltAz (&tarAltAz);
-			if ((tarAltAz.az < 5 || tarAltAz.az > 355 || (tarAltAz.az > 175 && tarAltAz.az < 185))
-				&& tarAltAz.alt < 15)
+			getTargetAltAz (&tAltAz);
+			if ((tAltAz.az < 5 || tAltAz.az > 355 || (tAltAz.az > 175 && tAltAz.az < 185))
+				&& tAltAz.alt < 15)
 			{
 				logStream (MESSAGE_ERROR) << "Cannot move to target, as it's too close to dome" << sendLog;
 				return -1;
@@ -200,7 +200,7 @@ Rts2DevTelescopeIr::startMove ()
 		usleep (USEC_SEC / 10);
 
 	time (&timeout);
-	timeout += 300;
+	timeout += 30;
 	return 0;
 }
 
@@ -295,8 +295,10 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 		{
 			case 0:
 				status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
+				tPos.ra *= 15.0;
 				status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
 				status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
+				cPos.ra *= 15.0;
 				status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
 				break;
 			case 1:
@@ -311,8 +313,10 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	{
 		// status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 		status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
+		tPos.ra *= 15.0;
 		status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
 		status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
+		cPos.ra *= 15.0;
 		status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
 		// for EQU models, we must include target offset
 		if (getPointingModel () == 0)
@@ -321,7 +325,7 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 			status = irConn->tpl_get ("HA.OFFSET", haOff, &status);
 			status = irConn->tpl_get ("DEC.OFFSET", decOff, &status);
 			tPos.ra -= haOff;
-			tPos.dec += decOff;
+			tPos.dec -= decOff;
 		}
 	}
 	if (status != TPL_OK)
