@@ -295,10 +295,8 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 		{
 			case 0:
 				status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
-				tPos.ra *= 15.0;
 				status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
 				status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
-				cPos.ra *= 15.0;
 				status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
 				break;
 			case 1:
