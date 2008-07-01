@@ -1108,7 +1108,8 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 			ARRAY[:d_packet0, :d_packet1, :d_packet2, :d_packet3, :d_packet4, :d_packet5, :d_packet6, :d_packet7, :d_packet8, :d_packet9,
 				:d_packet10, :d_packet11, :d_packet12, :d_packet13, :d_packet14, :d_packet15, :d_packet16, :d_packet17, :d_packet18, :d_packet19,
 				:d_packet20, :d_packet21, :d_packet22, :d_packet23, :d_packet24, :d_packet25, :d_packet26, :d_packet27, :d_packet28, :d_packet29,
-				:d_packet30, :d_packet31, :d_packet32, :d_packet33, :d_packet34, :d_packet35, :d_packet36, :d_packet37, :d_packet38, :d_packet39]
+				:d_packet30, :d_packet31, :d_packet32, :d_packet33, :d_packet34, :d_packet35, :d_packet36, :d_packet37, :d_packet38, :d_packet39
+			]::bigint[]
 
 			);
 	if (sqlca.sqlcode)
