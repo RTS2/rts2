@@ -360,6 +360,33 @@ Rts2ConnGrb::pr_swift_without_radec ()
 
 
 int
+Rts2ConnGrb::pr_agile ()
+{
+	int grb_id;
+	int grb_type;
+	double grb_ra;
+	double grb_dec;
+
+	int grb_is_grb = 1;
+	time_t grb_date;
+	long grb_date_usec;
+	float grb_errorbox;
+
+	grb_type = (int) (lbuf[PKT_TYPE]);
+	grb_id = lbuf[BURST_TRIG];
+	grb_ra = lbuf[BURST_RA] / 10000.0;
+	grb_dec = lbuf[BURST_DEC] / 10000.0;
+
+	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
+
+	grb_errorbox = (float) lbuf[BURST_ERROR] / 10000.0;
+
+	grb_is_grb = lbuf[TRIGGER_ID] & 0x0022;
+
+	return addGcnPoint (grb_id, 1, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
+}
+
+int
 Rts2ConnGrb::pr_glast ()
 {
 	// TODO implement that
@@ -523,6 +550,7 @@ Rts2ConnGrb::gcnContainsGrbPos (int grb_type)
 		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 		case TYPE_SWIFT_POINTDIR_SRC:
 		case TYPE_SWIFT_UVOT_NACK_POSITION:
+		case TYPE_SuperAGILE_POINTDIR:
 			return false;
 		default:
 			return true;
@@ -1487,6 +1515,11 @@ Rts2ConnGrb::receive (fd_set *set)
 			case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
 			case TYPE_SWIFT_UVOT_NACK_POSITION:
 				pr_swift_without_radec ();
+				break;
+			case TYPE_SuperAGILE_POSITION:
+			case TYPE_SuperAGILE_PROMPT:
+			case TYPE_SuperAGILE_REFINED:
+				pr_agile ();
 				break;
 			case TYPE_GLAST_GBM_GRB_ALERT:
 			case TYPE_GLAST_GBM_GRB_POS_ACK:

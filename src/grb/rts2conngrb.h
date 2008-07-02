@@ -75,7 +75,7 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		int pr_integral_spicas ();
 		int pr_swift_with_radec ();
 		int pr_swift_without_radec ();
-
+		int pr_agile ();  // AGILE messages (100-102)
 		int pr_glast ();
 
 		// GRB db stuff

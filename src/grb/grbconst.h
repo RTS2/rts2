@@ -371,6 +371,14 @@
 #define TYPE_SWIFT_BAT_TRANS             84
 								 // SWIFT UVOT not source
 #define TYPE_SWIFT_UVOT_NACK_POSITION    89
+								 // SuperAGILE wakeup
+#define TYPE_SuperAGILE_POSITION        100
+								 // SuperAGILE prompt position
+#define TYPE_SuperAGILE_PROMPT          101
+								 // SuperAGILE prompt refined position
+#define TYPE_SuperAGILE_REFINED         102
+
+#define TYPE_SuperAGILE_POINTDIR        107
 
 // preliminary GLAST packets
 #define TYPE_GLAST_GBM_GRB_ALERT        110
