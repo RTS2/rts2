@@ -1,3 +1,11 @@
+2008-07-02
+ * [2008885] Added SuperAGILE support.
+
+2008-06-13
+ * added miniccd interlaced driver
+ * fixed and split IR driver (dome and telescope)
+ * add AltAz value type (for ALT AZ offsets)
+
 2008-06-05
  * [1953718] fixed in dome
 
