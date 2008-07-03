@@ -11,7 +11,7 @@ Instalation from SVN
    You will need following packages (apt-get install on Debian based systems
    should install them).
 
-   subversion postgresql-server-dev libecpg-dev automake libtool
+   subversion postgresql-server-dev libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc
 
    Package gsoap is needed if you want SIMBAD name resolving and other nice
    stuff.
@@ -21,6 +21,7 @@ Instalation from SVN
 user@host:svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
 user@host:cd rts2
 user@host:~/rts2$ ./autogen.sh
+user@host:~/rts2$ ./configure --without-wcs
 
 The chances are you will not need to edit autogen.sh and set automake version
 to something other (see AC_VERSION parameter at top). It most probably will not
