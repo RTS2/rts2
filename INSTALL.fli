@@ -1,0 +1,33 @@
+Instructions to install fli devices
+===================================
+
+For FLI devices, you will need FLI drivers. You can either get them from
+http://www.fli-cam.com, or from RTS2 SVN. RTS2 svn packages are patched for few
+know problems in SDK.
+
+To get SVN version, run:
+
+user@host:~$ svn co https://rts-2.svn.sf.net/svnroot/rts-2/fliusb
+
+After that, run:
+
+user@host:~$ cd fliusb/fliusb
+user@host:~/fliusb/fliusb$ make
+
+As root, run:
+
+root@host:/home/user/fliusb/fliusb$ mkdir /lib/modules/`uname -r`/misc
+root@host:/home/user/fliusb/fliusb$ cp fliusb.ko /lib/modules/`uname -r`/misc
+
+Then as normal user:
+
+user@host:~/fliusb/fliusb$ cd ../libfli
+user@host:~/fliusb/libfli$ make
+
+Then you will need to run ./configure from rts2 with --with-fli option:
+
+user@host:~/fliusb/libfli$ cd ~/rts2
+user@host:~/rts2$ ./configure --without-wcs --with-fli=$HOME/fliusb/libfli
+
+Then run make and (as root) make install. Please see RUN file for details on
+that.
