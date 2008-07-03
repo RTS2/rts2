@@ -1,0 +1,50 @@
+RTS2 database tables
+====================
+
+RTS2 database is created by scripts run by rts2/src/sql/rts2-builddb. This
+builddb script creates all base tables. It also runs various update scripts to
+update tables to newer version of database - this is usefull on sites which
+already run RTS2 and needs upgrade to new database structure. Those scripts are
+located in rts2/src/sql/update directory.
+
+Description of database structure, version 0.7.4, follows.
+
+Tables:
+airmass_cal_images
+table which holds callibration images for airmass callibration. 
+
+auger
+For auger follow-ups of sky showers. Utilised only on FRAM telescope.
+
+auger_observation
+Connect auger with observation. Utilised only on FRAM telescope.
+
+calibration_observation
+Callibration observations. Connect observations with callibrations. Currently
+not used at all.
+
+cameras
+Holds cameras which are used in observatory. Must be configured before any
+images are written to the database.
+
+counters
+Holds photometers. Used when photometer is present.
+
+Counts
+Holds counts informations. Used to record informations from photometer.
+
+Darks
+Holds dark images. Used for calibration purposes. That table shall be replaced
+superseed with FITS table holding master darks, valid in some time span.
+
+ell
+Contains extended informations for orbit parameters of targets on orbits around
+solar system.
+
+epoch
+Contains RTS2 epochs. We would like to get rid of it in future releases.
+
+filters
+Contsins list of filters present in RTS2.
+
+

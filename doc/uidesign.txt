@@ -1,0 +1,51 @@
+User interface design
+=====================
+
+We would like to implement interface for RTS2 in Google Web Toolkit. This
+interface shall allow:
+
+- user authentification
+- storing user details
+- modifing user details
+
+- administrator interface for users
+
+- creating new targes
+- change exposure sequence for targets
+
+- accessing observation logs
+   - by target
+   - by area on the sky
+   - by date/night
+
+- accesing state of the instruments
+- change changeable values of the instruments
+- command instruments
+
+
+Google web toolkit and RTS2
+===========================
+
+There is the full path how GWT client interacts with RTS2. GWT provides RPC,
+which are calleble simply from Java on client side - see
+http://code.google.com/webtoolkit/documentation/com.google.gwt.doc.DeveloperGuide.RemoteProcedureCalls.html
+for nice short description. The calls on client (browser) sides behaves as
+common Java functions.
+
+On server, RPC is ussually translated to XMLRPC call and this is shipped to
+XMLRPCD for processing. XMLRPCD is part of the RTS2 (rts2/src/xmlrpc). It gets
+the informations user wants, and returns back reply to server side of GWT
+application. The server side of GWT then returns back to browser.
+
+For database access, we would like to stick for a while with the XMLRPC
+mechanism, XMLRPCD being used to actually query data from database. There are
+two reasons for this rather complicated mechanism:
+
+- we have a lot of functionality of the database (calculation of target height,
+  bonus,..) written in RTS2 C++ classes. Duplicating that work in Java for
+  direct database access will be a pain.
+
+- for future applications, distributed environment is envisioned. XML-RPC calls
+  can be nicely tunneled through HTTP, which is not a case for JDBC.
+
+
