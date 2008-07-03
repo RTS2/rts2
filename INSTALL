@@ -11,7 +11,7 @@ Instalation from SVN
    You will need following packages (apt-get install on Debian based systems
    should install them).
 
-   subversion postgresql-server-dev libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc
+   subversion postgresql-server-dev libecpg-dev automake libtool libcfitsio3-dev libnova-dev libecpg-dev gcc g++
 
    Package gsoap is needed if you want SIMBAD name resolving and other nice
    stuff.
