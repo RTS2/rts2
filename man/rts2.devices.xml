@@ -1,0 +1,110 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2008-06-03</date>">
+  <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2.devices">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.7.4</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>The devices configuration file for Remote Telescope System, 2nd version</refpurpose>
+  </refnamediv>
+  <refsect1>
+    <title>SYNOPSIS</title>
+
+    <para>
+      The rts2.devices file describes which devices will be started by RTS2
+      startup script (/etc/init.d/rts2).
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>FILE FORMAT</title>
+
+    <para>
+      Format of the file is quite simple. The file contains space separated
+      devices types, device driver name and device options. So one row contains:
+    </para>
+
+    <para>
+      {device type} {device driver name} {device name} {device options}
+    </para>
+
+    <para>
+      where device options and short descriptions are given running
+      rts2-{device type}-{device driver name} -h.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <para>
+      To start up device driver for Gemini telescope called T0 and FLI CCD called C0 with option -l 1, give:
+    </para>
+
+    <para>
+      teld  gemini  T0
+      camd  fli     C0  -l 1
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

@@ -46,7 +46,8 @@ man_MANS = \
     rts2-scriptor.1 \
     rts2-grbd.1 \
     rts2-user.1 \
-    rts2-telmodeltest.1
+    rts2-telmodeltest.1 \
+    rts2.devices.5
 
 doc_FOP = \
     rts2-man.fop \
