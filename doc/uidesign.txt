@@ -1,14 +1,22 @@
-User interface design
-=====================
+<html>
 
-We would like to implement interface for RTS2 in Google Web Toolkit. This
-interface shall allow:
+<head>
+	<title>User interface design</title>
+</head>
+<body>
 
-- user authentification
-- storing user details
-- modifing user details
+<h1>User interface design</h1>
 
-- administrator interface for users
+<p>We would like to implement interface for RTS2 in Google Web Toolkit. This
+interface shall allow:</p>
+
+<p>
+<ul>
+<li><a href="uc/user.html">user authentification</a></li>
+<li>storing user details</li>
+<li>modifing user details</li>
+
+<li>administrator interface for users</li>
 
 - creating new targes
 - change exposure sequence for targets
@@ -48,4 +56,5 @@ two reasons for this rather complicated mechanism:
 - for future applications, distributed environment is envisioned. XML-RPC calls
   can be nicely tunneled through HTTP, which is not a case for JDBC.
 
-
+If we found out that using XML-RPC significantly slow down interface, we will
+move to direct JDBC calls, using some nifty features of Java/Tomcat (connection pool,..).
