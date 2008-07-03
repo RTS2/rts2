@@ -55,7 +55,12 @@ FLI devices (cameras, filter wheels, focusers)
 
 To install FLI devices, please follow instructions in INSTALL.fli.
 
-Alta, Paramount libraries
+Alta CCDs (from Apogee)
+=======================
+
+To install Apogee ALTA CCDs, please follow instructions in INSTALL.alta.
+
+Apogee, Paramount libraries
 =========================
 
 You will need slightly modified drivers. Please contact us for details, we will
