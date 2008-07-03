@@ -18,6 +18,20 @@ As root, run:
 
 root@host:/home/user/fliusb/fliusb$ mkdir /lib/modules/`uname -r`/misc
 root@host:/home/user/fliusb/fliusb$ cp fliusb.ko /lib/modules/`uname -r`/misc
+root@host:/home/user/fliusb/fliusb$ depmod -a
+root@host:/home/user/fliusb/fliusb$ modprobe fliusb
+
+If dmesg | tail will show something similar to:
+
+FLI USB device found: 'FLI USB MaxCam'
+FLI USB device attached; rdepaddr: 0x82; wrepaddr: 0x02; buffersize: 4096; timeout: 5000
+registered new interface driver fliusb
+fliusb module loaded
+
+then you loaded your driver successfully.
+
+If you like to load driver during each computer boot, add fliusb to
+/etc/modules.
 
 Then as normal user:
 
