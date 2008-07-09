@@ -34,25 +34,26 @@
 // add about 10 30-bytes lines to logStream for every query).
 // #define DEBUG_ALL_PORT_COMM
 
-#define RATE_SLEW 'S'
-#define RATE_FIND 'M'
-#define RATE_CENTER 'C'
-#define RATE_GUIDE  'G'
-#define PORT_TIMEOUT  5
+#define RATE_SLEW                'S'
+#define RATE_FIND                'M'
+#define RATE_CENTER              'C'
+#define RATE_GUIDE               'G'
+#define PORT_TIMEOUT             5
 
-#define TCM_DEFAULT_RATE  32768
+#define TCM_DEFAULT_RATE         32768
 
-#define SEARCH_STEPS  16
+#define SEARCH_STEPS             16
 
-#define MIN(a,b)  ((a) < (b) ? (a) : (b))
-#define MAX(a,b)  ((a) > (b) ? (a) : (b))
+#define MIN(a,b)                 ((a) < (b) ? (a) : (b))
+#define MAX(a,b)                 ((a) > (b) ? (a) : (b))
 
-#define GEMINI_CMD_RATE_GUIDE 150
-#define GEMINI_CMD_RATE_CENTER  170
+#define GEMINI_CMD_RATE_GUIDE    150
+#define GEMINI_CMD_RATE_CENTER   170
 
-#define OPT_BOOTES  OPT_LOCAL + 10
-#define OPT_CORR  OPT_LOCAL + 11
-#define OPT_EXPTYPE OPT_LOCAL + 12
+#define OPT_BOOTES               OPT_LOCAL + 10
+#define OPT_CORR                 OPT_LOCAL + 11
+#define OPT_EXPTYPE              OPT_LOCAL + 12
+#define OPT_FORCETYPE            OPT_LOCAL + 13
 
 int arr[] = { 0, 1, 2, 3 };
 
@@ -85,7 +86,7 @@ searchDirs_t searchDirs[SEARCH_STEPS] =
 class Rts2DevTelescopeGemini:public Rts2DevTelescope
 {
 	private:
-		
+
 		const char *device_file;
 
 		Rts2ValueTime *telLocalTime;
@@ -214,6 +215,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		Rts2ValueDouble *guideLimit;
 
 		int expectedType;
+		int forceType;
 
 		const char *getGemType (int gem_type);
 
@@ -842,6 +844,7 @@ in_argv)
 	geminiConfig = "/etc/rts2/gemini.ini";
 	bootesSensors = 0;
 	expectedType = 0;
+	forceType = 0;
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
 	addOption ('c', NULL, 1, "config file (with model parameters)");
@@ -850,6 +853,8 @@ in_argv)
 	addOption (OPT_CORR, "corrections", 1,
 		"level of correction done in Gemini - 0 none, 3 all");
 	addOption (OPT_EXPTYPE, "expected_type", 1,
+		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
+	addOption (OPT_FORCETYPE, "force_type", 1,
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 
 	lastMotorState = 0;
@@ -939,6 +944,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
 			}
 		case OPT_EXPTYPE:
 			expectedType = atoi (optarg);
+			break;
+		case OPT_FORCETYPE:
+			forceType = atoi (optarg);
 			break;
 		default:
 			return Rts2DevTelescope::processOption (in_opt);
@@ -1142,6 +1150,12 @@ Rts2DevTelescopeGemini::initValues ()
 	int ret;
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
+	if (forceType > 0)
+	{
+		ret = tel_gemini_set (forceType, forceType);
+		if (ret)
+			return ret;
+	}
 	ret = tel_gemini_get (0, gem_type);
 	if (ret)
 		return ret;
