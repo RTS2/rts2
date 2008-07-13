@@ -94,7 +94,7 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 	// pixels which are processed ring now
 	uint16_t a0_0, a0_1, a1_0, a1_1;
 	uint16_t b0_0, b0_1, b1_0, b1_1;
-	int w = chipUsedReadout->getWidthInt () * 2;
+	int w = chipUsedReadout->getWidthInt ();
 	int h = chipUsedReadout->getHeightInt ();
 	int x, y, n_x;
 	long n_y;
@@ -341,7 +341,7 @@ Rts2DevCameraMiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 	msg[CCD_MSG_LENGTH_HI_INDEX] = 0;
 	msg[CCD_MSG_INDEX] = CCD_MSG_EXP;
 	msg[CCD_EXP_WIDTH_INDEX] = getUsedWidth ();
-	msg[CCD_EXP_HEIGHT_INDEX] = getUsedHeight ();
+	msg[CCD_EXP_HEIGHT_INDEX] = getUsedHeight () / 2;
 	msg[CCD_EXP_XOFFSET_INDEX] = chipTopX ();
 	msg[CCD_EXP_YOFFSET_INDEX] = chipTopY ();
 	msg[CCD_EXP_XBIN_INDEX] = binningHorizontal ();
@@ -398,7 +398,10 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 		CCD_ELEM_TYPE msgi[CCD_MSG_IMAGE_LEN];
 		ret = read (fd_chip[chip_id], msgi, CCD_MSG_IMAGE_LEN);
 		if (ret != CCD_MSG_IMAGE_LEN)
+		{
+			logStream (MESSAGE_DEBUG) << "ret != CCD_MSG_INDEX " << ret << sendLog;
 			return -1;
+		}
 		// test image header
 		if (msgi[CCD_MSG_INDEX] != CCD_MSG_IMAGE)
 		{
@@ -416,10 +419,29 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 		}
 		delete[] row[chip_id];
 		row[chip_id] = new char[chipByteSize () / 2];
-		ret = read (fd_chip[chip_id], row[chip_id], chipByteSize () / 2);
-		if (ret != chipByteSize () / 2)
-			return -1;
-		logStream (MESSAGE_DEBUG) << "isChipExposing " << chip_id << " returns 0" << sendLog;
+
+		int rlen = 0;
+
+		while (rlen < (chipByteSize () / 2))
+		{
+			std::cout << "chip " << chip_id << " rlen " << rlen << std::endl;
+			ret = read (fd_chip[chip_id], row[chip_id] + rlen, (chipByteSize () / 2) - rlen);
+			if (ret == -1)
+			{
+				if (errno != EINTR)
+				{
+					logStream (MESSAGE_DEBUG)
+						<< "chip_id " << chip_id
+						<< "return != chipByteSize " << ret << " " << chipByteSize () << sendLog;
+					return -1;
+				}
+			}
+			else
+			{
+				rlen += ret;
+			}
+		}
+		std::cout << "chip " << chip_id << " rlen " << rlen << std::endl;
 		return 0;
 	}
 	return 100;
@@ -436,8 +458,8 @@ Rts2DevCameraMiniccdIl::isExposing ()
 		case SLAVE1_EXPOSING:
 			gettimeofday (&now, NULL);
 			if (timercmp (&now, &slave2ExposureStart, <))
-				return (now.tv_sec - slave2ExposureStart.tv_sec) * USEC_SEC +
-					(now.tv_usec - slave2ExposureStart.tv_usec);
+				return 1000; // (now.tv_sec - slave2ExposureStart.tv_sec) * USEC_SEC; // +
+//					(((long) now.tv_usec) - (long) slave2ExposureStart.tv_usec);
 			ret = startChipExposure (1, CCD_EXP_FLAGS_NOWIPE_FRAME);
 			if (ret)
 			{
