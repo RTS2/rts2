@@ -94,8 +94,8 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 	// pixels which are processed ring now
 	uint16_t a0_0, a0_1, a1_0, a1_1;
 	uint16_t b0_0, b0_1, b1_0, b1_1;
-	int w = chipUsedReadout->getWidthInt ();
-	int h = chipUsedReadout->getHeightInt ();
+	int w = chipUsedReadout->getWidthInt () * 2;
+	int h = chipUsedReadout->getHeightInt () * 2;
 	int x, y, n_x;
 	long n_y;
 	float n_fx, n_fy;
@@ -116,7 +116,7 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 
 	// biliniear scalling
 	// y is coordinate in old image, n_x and n_y are coordinates in transformed image
-	for (y = 0; y < (chipUsedReadout->getHeightInt () / 2 - 1); y++)
+	for (y = 0; y < (chipUsedReadout->getHeightInt () - 1); y++)
 	{
 		a0_0 = row1[0];
 		a0_1 = row1[2];
@@ -212,7 +212,7 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 	}
 	// and scale to 1/4 in height and 1/2 in height (as 1/2 of scalling is done by combining rows and cols..
 	w = chipUsedReadout->getWidthInt ();
-	h = chipUsedReadout->getHeightInt () / 2;
+	h = chipUsedReadout->getHeightInt ();
 	int n_x2;
 	int n_y2;
 	for (y = 0, n_y2 = 0; y < h; y++, n_y2 += 4)
@@ -503,7 +503,7 @@ Rts2DevCameraMiniccdIl::readoutOneLine ()
 	switch (slaveState)
 	{
 		case SLAVE2_READOUT:
-			doBinning ((uint16_t *) row[0], (uint16_t *) row[1]);
+			doBinning ((uint16_t *) (row[0]), (uint16_t *) (row[1]));
 			slaveState = SENDING;
 		case SENDING:
 			ret = sendReadoutData (dataBuffer, dataBufferSize);
