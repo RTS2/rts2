@@ -84,6 +84,13 @@ class Rts2Selector
 		}
 
 		/**
+		 * Returns night disabled types.
+		 *
+		 * @return String with night disabled types.
+		 */
+		std::string getNightDisabledTypes ();
+
+		/**
 		 * Set types of targets which are not permited for selection
 		 * during night.
 		 *

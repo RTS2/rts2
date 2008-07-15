@@ -27,11 +27,17 @@ Rts2Selector::Rts2Selector (struct ln_lnlat_posn * in_observer)
 {
 	int ret;
 	Rts2Config *config;
+	std::string doNotObserve;
 	double val;
 
 	observer = in_observer;
 
 	config = Rts2Config::instance ();
+
+	config->getString ("selector", "night_do_not_consider", doNotObserve);
+
+	setNightDisabledTypes (doNotObserve.c_str ());
+
 	flat_sun_min = 100;
 	flat_sun_max = 100;
 	ret = config->getDouble ("observatory", "flat_sun_min", flat_sun_min);
@@ -40,6 +46,7 @@ Rts2Selector::Rts2Selector (struct ln_lnlat_posn * in_observer)
 	ret = config->getDouble ("observatory", "flat_sun_max", flat_sun_max);
 	if (ret)
 		return;
+
 	if (flat_sun_min > flat_sun_max)
 	{
 		val = flat_sun_min;
@@ -306,6 +313,18 @@ Rts2Selector::selectDarks ()
 	return TARGET_DARK;
 }
 
+
+std::string
+Rts2Selector::getNightDisabledTypes ()
+{
+	std::string ret;
+	for (std::vector <char>::iterator iter = nightDisabledTypes.begin (); iter != nightDisabledTypes.end (); iter++)
+	{
+		ret += *iter;
+		ret += " ";
+	}
+	return ret;
+}
 
 int
 Rts2Selector::setNightDisabledTypes (const char *types)
