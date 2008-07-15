@@ -429,6 +429,19 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>model_step_type</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Stepping type for model target. Default value is 2, which will
+	      take 2 steps on the net defined in model table. -1 is for linear
+	      model, where step is increased by factor of 1, and -2 is for
+	      completly random model, which will not make points on the net.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
@@ -465,64 +478,6 @@
 	  </listitem>
 	</varlistentry>
 
-      </variablelist>
-    </refsect2>
-    <refsect2>
-      <title>imgproc</title>
-      <para>This sections describes various image processing scripts.</para>
-      <variablelist>
-	<varlistentry>
-	  <term>
-	    <option>astrometry</option>
-	  </term>
-	  <listitem>
-	    <para>This script is called on all taked object image (not twilight flats, not darks).</para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>astrometry_timeout</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Timeout in seconds for astrometry script. If it's greater then 0,
-	      alarm with exit handling is issued at forked instance, before
-	      astrometry script is started. Defaults to 3600 seconds.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>imageglob</option>
-	  </term>
-	  <listitem>
-	    <para>Path to images, which will be feed to imgproc during day.</para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>obsprocess</option>
-	  </term>
-	  <listitem>
-	    <para>Script for observation processing. That one is called at end of the observing sequence.</para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>darkprocess</option>
-	  </term>
-	  <listitem>
-	    <para>Dark processing script, creates master dark from callibration darks.</para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>flatprocess</option>
-	  </term>
-	  <listitem>
-	    <para>Flat processing script, creates master flat from twilight flats.</para>
-	  </listitem>
-	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
@@ -806,6 +761,22 @@
 	      systems, which would like to follow Swift which center is bellow
 	      horizon. Defaults to the "min_horizon" parameter.
             </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>selector</title>
+      <para>Configuration section for target selector.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>night_do_not_consider</option>
+	  </term>
+	  <listitem>
+	    <para>Space separated list of targets types which will not be considered
+      for observation during night. Usually you would like to put there flat
+      fields - f and F.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
