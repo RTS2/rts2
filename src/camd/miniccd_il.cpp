@@ -458,8 +458,10 @@ Rts2DevCameraMiniccdIl::isExposing ()
 		case SLAVE1_EXPOSING:
 			gettimeofday (&now, NULL);
 			if (timercmp (&now, &slave2ExposureStart, <))
-				return 1000; // (now.tv_sec - slave2ExposureStart.tv_sec) * USEC_SEC; // +
-//					(((long) now.tv_usec) - (long) slave2ExposureStart.tv_usec);
+			{
+				timersub (&slave2ExposureStart, &now, &now);
+				return now.tv_sec * USEC_SEC + now.tv_usec;
+			}
 			ret = startChipExposure (1, CCD_EXP_FLAGS_NOWIPE_FRAME);
 			if (ret)
 			{
@@ -477,8 +479,8 @@ Rts2DevCameraMiniccdIl::isExposing ()
 				return ret;
 			// calculate firstReadoutTime
 			gettimeofday (&now, NULL);
-			firstReadoutTime = (now.tv_sec - slave1ReadoutStart.tv_sec) * USEC_SEC +
-				(now.tv_usec - slave1ReadoutStart.tv_usec);
+			timersub (&now, &slave1ReadoutStart, &slave1ReadoutStart);
+			firstReadoutTime = slave1ReadoutStart.tv_sec * USEC_SEC + slave1ReadoutStart.tv_usec;
 			slaveState = SLAVE1_READOUT;
 		case SLAVE1_READOUT:
 			ret = isChipExposing (1);
