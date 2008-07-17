@@ -86,7 +86,21 @@ class Rts2DevCameraMiniccdIl:public Rts2DevCamera
 void
 Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 {
-	#define SCALE_X   0.5
+	uint16_t *rtop = (uint16_t *) dataBuffer;
+	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
+	{
+		memcpy (rtop, row1, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
+		rtop += 2 * chipUsedReadout->getWidthInt ();
+	}
+	rtop = (uint16_t *) dataBuffer;
+	rtop += chipUsedReadout->getWidthInt ();
+	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
+	{
+		memcpy (rtop, row1, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
+		rtop += 2 * chipUsedReadout->getWidthInt ();
+	}
+
+/*	#define SCALE_X   0.5
 	#define SCALE_Y   0.259
 	// offset aplied after scalling
 	#define OFF_X   1
@@ -237,7 +251,7 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 	}
 	delete[]img_1;
 	delete[]img_2;
-	delete[]img_com;
+	delete[]img_com; */
 }
 
 
