@@ -91,13 +91,15 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 	{
 		memcpy (rtop, row1, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
 		rtop += 2 * chipUsedReadout->getWidthInt ();
+		row1 += chipUsedReadout->getWidthInt ();
 	}
 	rtop = (uint16_t *) dataBuffer;
 	rtop += chipUsedReadout->getWidthInt ();
 	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
 	{
-		memcpy (rtop, row1, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
+		memcpy (rtop, row2, chipUsedReadout->getWidthInt () * sizeof (uint16_t));
 		rtop += 2 * chipUsedReadout->getWidthInt ();
+		row2 += chipUsedReadout->getWidthInt ();
 	}
 
 /*	#define SCALE_X   0.5
