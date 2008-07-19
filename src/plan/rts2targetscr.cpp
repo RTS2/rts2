@@ -24,6 +24,7 @@ Rts2TargetScr::Rts2TargetScr (Rts2ScriptInterface * in_master)
 {
 	master = in_master;
 	target_id = 1;
+	moveEnded ();
 }
 
 

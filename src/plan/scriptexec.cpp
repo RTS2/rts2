@@ -156,7 +156,6 @@ Rts2ScriptExec::init ()
 
 	// create current target
 	currentTarget = new Rts2TargetScr (this);
-	currentTarget->moveEnded ();
 
 	return 0;
 }
