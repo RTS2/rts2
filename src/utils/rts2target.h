@@ -198,7 +198,7 @@ class Rts2Target
 
 		bool wasMoved ()
 		{
-			return (moveCount == 2);
+			return (moveCount == 2 || moveCount == 3);
 		}
 
 		int getCurrImgId ()
