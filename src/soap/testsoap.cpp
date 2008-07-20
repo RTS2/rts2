@@ -8,7 +8,7 @@
 class Rts2TestSoap:public Rts2CliApp
 {
 	private:
-		char *server;
+		const char *server;
 		int next;
 		int nowTarget;
 		bool setOff;
