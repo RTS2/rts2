@@ -67,7 +67,7 @@ Rts2DevFilterdFli::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case 'D':
-			deviceDomain = FLIDEVICE_CAMERA;
+			deviceDomain = FLIDEVICE_FILTERWHEEL;
 			if (!strcasecmp ("USB", optarg))
 				deviceDomain |= FLIDOMAIN_USB;
 			else if (!strcasecmp ("LPT", optarg))
