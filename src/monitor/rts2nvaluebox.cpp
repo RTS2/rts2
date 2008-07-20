@@ -44,7 +44,8 @@ Rts2NSelWindow (top->getX () + in_x, top->getY () + in_y, 10, 4)
 }
 
 
-keyRet Rts2NValueBoxBool::injectKey (int key)
+keyRet
+Rts2NValueBoxBool::injectKey (int key)
 {
 	switch (key)
 	{
@@ -83,7 +84,8 @@ Rts2NValueBoxBool::sendValue (Rts2Conn * connection)
 }
 
 
-bool Rts2NValueBoxBool::setCursor ()
+bool
+Rts2NValueBoxBool::setCursor ()
 {
 	return false;
 }

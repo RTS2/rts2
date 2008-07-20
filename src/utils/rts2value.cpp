@@ -498,6 +498,7 @@ Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger
 (in_val_name)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
+	setValueInteger (2);
 }
 
 
@@ -506,6 +507,21 @@ writeToFits,
 flags)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
+	setValueInteger (2);
+}
+
+
+int
+Rts2ValueBool::setValue (Rts2Conn * connection)
+{
+	char *new_value;
+	int ret;
+	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
+		return -2;
+	ret = setValueString (new_value);
+	if (ret)
+		return -2;
+	return 0;
 }
 
 

@@ -618,21 +618,24 @@ class Rts2ValueFloat:public Rts2Value
  */
 class Rts2ValueBool:public Rts2ValueInteger
 {
-	// value - 0 means unknow, 1 is false, 2 is true
+	// value - 2 means unknow, 0 is false, 1 is true
 	public:
 		Rts2ValueBool (std::string in_val_name);
 		Rts2ValueBool (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
+		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueString (const char *in_value);
 
 		void setValueBool (bool in_bool)
 		{
-			setValueInteger (in_bool ? 2 : 1);
+			if (in_bool != getValueInteger ())
+				changed ();
+			setValueInteger (in_bool);
 		}
 
 		bool getValueBool ()
 		{
-			return getValueInteger () == 2 ? true : false;
+			return getValueInteger () == 1 ? true : false;
 		}
 		virtual const char *getDisplayValue ();
 };

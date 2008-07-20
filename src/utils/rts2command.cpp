@@ -337,7 +337,7 @@ Rts2Command (in_client->getMaster ())
 {
 	char *command;
 	asprintf (&command, PROTO_SET_VALUE " %s %c %i", in_valName.c_str (), op,
-		in_operand ? 2 : 1);
+		in_operand ? 1 : 0);
 	setCommand (command);
 	free (command);
 }
