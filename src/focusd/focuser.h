@@ -44,12 +44,26 @@ class Rts2DevFocuser:public Rts2Device
 		int focStepSec;
 		int startPosition;
 
+		virtual int processOption (int in_opt);
+
+		// callback functions
+		virtual int ready ()
+		{
+			return -1;
+		};
+
+		virtual int stepOut (int num) = 0;
+		// set to given number
+		// default to use stepOut function
+		virtual int setTo (int num);
+		virtual int home ();
+
 		virtual int isFocusing ();
 		virtual int endFocusing ();
 
 		void setFocusTimeout (int timeout);
 
-		virtual bool isAtStartPosition ();
+		virtual bool isAtStartPosition () = 0;
 		int checkStartPosition ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -60,18 +74,6 @@ class Rts2DevFocuser:public Rts2Device
 		}
 	public:
 		Rts2DevFocuser (int argc, char **argv);
-		virtual int processOption (int in_opt);
-
-		// callback functions
-		virtual int ready ()
-		{
-			return -1;
-		};
-		virtual int stepOut (int num) = 0;
-		// set to given number
-		// default to use stepOut function
-		virtual int setTo (int num);
-		virtual int home ();
 
 		// set switch state
 		virtual int setSwitch (int switch_num, int new_state)

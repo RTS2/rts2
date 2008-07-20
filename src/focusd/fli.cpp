@@ -33,9 +33,11 @@ class Rts2DevFocuserFli:public Rts2DevFocuser
 		flidomain_t deviceDomain;
 
 		int fliDebug;
-	public:
-		Rts2DevFocuserFli (int in_argc, char **in_argv);
-		virtual ~ Rts2DevFocuserFli (void);
+
+	protected:
+		virtual int isFocusing ();
+		virtual bool isAtStartPosition ();
+
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int ready ();
@@ -43,7 +45,10 @@ class Rts2DevFocuserFli:public Rts2DevFocuser
 		virtual int info ();
 		virtual int stepOut (int num);
 		virtual int home ();
-		virtual int isFocusing ();
+
+	public:
+		Rts2DevFocuserFli (int in_argc, char **in_argv);
+		virtual ~ Rts2DevFocuserFli (void);
 };
 
 Rts2DevFocuserFli::Rts2DevFocuserFli (int in_argc, char **in_argv):
@@ -219,6 +224,17 @@ Rts2DevFocuserFli::isFocusing ()
 	if (rem == 0)
 		return -2;
 	return USEC_SEC / 100;
+}
+
+
+bool
+Rts2DevFocuserFli::isAtStartPosition ()
+{
+	int ret;
+	ret = info ();
+	if (ret)
+		return false;
+	return getFocPos () == 0;
 }
 
 

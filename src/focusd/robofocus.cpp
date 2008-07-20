@@ -51,6 +51,11 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
+
+		virtual bool isAtStartPosition ()
+		{
+			return false;
+		}
 	public:
 		Rts2DevFocuserRobofocus (int argc, char **argv);
 		~Rts2DevFocuserRobofocus (void);

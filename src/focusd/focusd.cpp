@@ -238,12 +238,6 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
 }
 
 
-bool Rts2DevFocuser::isAtStartPosition ()
-{
-	return false;
-}
-
-
 int
 Rts2DevFocuser::checkStartPosition ()
 {
