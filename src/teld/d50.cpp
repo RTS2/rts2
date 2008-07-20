@@ -177,7 +177,7 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 		{
 			logStream (MESSAGE_ERROR) << "Wrong buffer " << buf << sendLog;
 			d50Conn->flushPortIO ();
-			usleep (1000000);
+			usleep (USEC_SEC);
 			return -1;
 		}
 		ppro = 0;
@@ -452,6 +452,23 @@ int
 Rts2DevTelD50::startMove ()
 {
 	int ret;
+
+	// writes again speed and acceleration info
+	ret = tel_write_unit (1, 'v', velRa->getValueInteger ());
+	if (ret)
+		return ret;
+
+	ret = tel_write_unit (2, 'v', velDec->getValueInteger ());
+	if (ret)
+		return ret;
+
+	ret = tel_write_unit (1, 'a', accRa->getValueInteger ());
+	if (ret)
+		return ret;
+
+	ret = tel_write_unit (2, 'a', accDec->getValueInteger ());
+	if (ret)
+		return ret;
 
 	// turn on RA worm
 	ret = tel_write_unit (1, "o0", 2);
