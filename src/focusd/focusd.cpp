@@ -22,7 +22,6 @@
 Rts2DevFocuser::Rts2DevFocuser (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
-	focCamera[0] = '\0';
 	focStepSec = 100;
 	homePos = 750;
 	startPosition = INT_MIN;
@@ -31,7 +30,6 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 
 	createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
 
-	addOption ('x', "camera_name", 1, "associated camera name (ussualy B0x)");
 	addOption ('o', "home", 1, "home position (default to 750!)");
 	addOption ('p', "start_position", 1,
 		"focuser start position (focuser will be set to this one, if initial position is detected");
@@ -43,10 +41,6 @@ Rts2DevFocuser::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'x':
-			strncpy (focCamera, optarg, 20);
-			focCamera[19] = '\0';
-			break;
 		case 'o':
 			homePos = atoi (optarg);
 			break;
@@ -91,7 +85,6 @@ int
 Rts2DevFocuser::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
-	addConstValue ("camera", focCamera);
 
 	return Rts2Device::initValues ();
 }

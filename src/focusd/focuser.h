@@ -36,7 +36,6 @@ class Rts2DevFocuser:public Rts2Device
 		time_t focusTimeout;
 		int homePos;
 	protected:
-		char focCamera[20];
 		char focType[20];
 		Rts2ValueInteger *focPos;
 		int focPositionNew;
