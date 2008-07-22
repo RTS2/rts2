@@ -133,8 +133,6 @@ in_argv)
 
 	addOption ('I', "ir_ip", 1, "IR TCP/IP adress");
 	addOption ('P', "ir_port", 1, "IR TCP/IP port number");
-
-	strcpy (focType, "BOOTES_IR");
 }
 
 
@@ -213,7 +211,7 @@ Rts2DevFocuserIr::ready ()
 int
 Rts2DevFocuserIr::initValues ()
 {
-	strcpy (focType, "FIR");
+	focType = std::string ("FIR");
 	return Rts2DevFocuser::initValues ();
 }
 
