@@ -211,7 +211,7 @@ Rts2DevGrb::info ()
 {
 	last_packet->setValueDouble (gcncnn->lastPacket ());
 	delta->setValueDouble (gcncnn->delta ());
-	last_target->setValueString (gcncnn->lastTarget ());
+	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
 	execConnection->setValueInteger (getOpenConnection ("EXEC") ? 1 : 0);
 	return Rts2DeviceDb::info ();

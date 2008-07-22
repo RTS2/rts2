@@ -204,6 +204,7 @@ class Rts2Daemon:public Rts2Block
 		}
 		void addConstValue (Rts2Value * value);
 		void addConstValue (const char *in_name, const char *in_desc, const char *in_value);
+		void addConstValue (const char *in_name, const char *in_desc, std::string in_value);
 		void addConstValue (const char *in_name, const char *in_desc, double in_value);
 		void addConstValue (const char *in_name, const char *in_desc, int in_value);
 		void addConstValue (const char *in_name, const char *in_value);

@@ -70,13 +70,13 @@ int
 Rts2ValueRectangle::setValue (Rts2Conn *connection)
 {
 	char *val;
-	if (connection->paramNextString (&val) || x->setValueString (val))
+	if (connection->paramNextString (&val) || x->setValueCharArr (val))
 		return -2;
-	if (connection->paramNextString (&val) || y->setValueString (val))
+	if (connection->paramNextString (&val) || y->setValueCharArr (val))
 		return -2;
-	if (connection->paramNextString (&val) || w->setValueString (val))
+	if (connection->paramNextString (&val) || w->setValueCharArr (val))
 		return -2;
-	if (connection->paramNextString (&val) || h->setValueString (val))
+	if (connection->paramNextString (&val) || h->setValueCharArr (val))
 		return -2;
 	if (x->wasChanged () || y->wasChanged () || w->wasChanged () || h->wasChanged ())
 		changed ();
@@ -85,7 +85,7 @@ Rts2ValueRectangle::setValue (Rts2Conn *connection)
 
 
 int
-Rts2ValueRectangle::setValueString (const char *in_value)
+Rts2ValueRectangle::setValueCharArr (const char *in_value)
 {
 	strncpy (buf, in_value, VALUE_BUF_LEN);
 	// split on spaces
@@ -97,7 +97,7 @@ Rts2ValueRectangle::setValueString (const char *in_value)
 	if (!*top)
 		return -1;
 	*top = '\0';
-	x->setValueString (buf);
+	x->setValueCharArr (buf);
 	top++;
 	val_start = top;
 
@@ -106,7 +106,7 @@ Rts2ValueRectangle::setValueString (const char *in_value)
 	if (!*top)
 		return -1;
 	*top = '\0';
-	y->setValueString (buf);
+	y->setValueCharArr (buf);
 	top++;
 	val_start = top;
 
@@ -115,7 +115,7 @@ Rts2ValueRectangle::setValueString (const char *in_value)
 	if (!*top)
 		return -1;
 	*top = '\0';
-	w->setValueString (buf);
+	w->setValueCharArr (buf);
 	top++;
 	val_start = top;
 
@@ -124,7 +124,7 @@ Rts2ValueRectangle::setValueString (const char *in_value)
 	if (!*top)
 		return -1;
 	*top = '\0';
-	h->setValueString (buf);
+	h->setValueCharArr (buf);
 	return 0;
 }
 

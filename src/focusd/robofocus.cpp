@@ -151,7 +151,7 @@ Rts2DevFocuserRobofocus::ready ()
 int
 Rts2DevFocuserRobofocus::initValues ()
 {
-	strcpy (focType, "ROBOFOCUS");
+	focType = std::string ("ROBOFOCUS");
 	addConstValue ("switch_num", switchNum);
 	return Rts2DevFocuser::initValues ();
 }

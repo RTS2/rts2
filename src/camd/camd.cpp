@@ -427,7 +427,7 @@ Rts2DevCamera::processOption (int in_opt)
 			ccdRealType = optarg;
 			break;
 		case 'r':
-			rotang->setValueString (optarg);
+			rotang->setValueCharArr (optarg);
 			break;
 		default:
 			return Rts2ScriptDevice::processOption (in_opt);

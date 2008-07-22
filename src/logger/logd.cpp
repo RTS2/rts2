@@ -80,10 +80,10 @@ Rts2Logd::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case 'c':
-			logConfig->setValueString (optarg);
+			logConfig->setValueCharArr (optarg);
 			return 0;
 		case 'o':
-			logFile->setValueString (optarg);
+			logFile->setValueCharArr (optarg);
 			return 0;
 	}
 	return Rts2Device::processOption (in_opt);

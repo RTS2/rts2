@@ -536,7 +536,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 					break;
 			}
 			if (withVal)
-				((Rts2ValueString *) dup_val)->setValueString (old_value->
+				((Rts2ValueString *) dup_val)->setValueCharArr (old_value->
 					getValue ());
 			break;
 		case RTS2_VALUE_STAT:
@@ -617,6 +617,15 @@ void
 Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
+	val->setValueCharArr (in_value);
+	addConstValue (val);
+}
+
+
+void
+Rts2Daemon::addConstValue (const char *in_name, const char *in_desc, std::string in_value)
+{
+	Rts2ValueString *val = new Rts2ValueString (in_name, std::string (in_desc));
 	val->setValueString (in_value);
 	addConstValue (val);
 }
@@ -645,7 +654,7 @@ void
 Rts2Daemon::addConstValue (const char *in_name, const char *in_value)
 {
 	Rts2ValueString *val = new Rts2ValueString (in_name);
-	val->setValueString (in_value);
+	val->setValueCharArr (in_value);
 	addConstValue (val);
 }
 

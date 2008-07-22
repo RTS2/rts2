@@ -29,7 +29,7 @@
 
 #define mydev       "RTS2"
 
-#define POLLMS      1000		 /* poll period, ms */
+#define POLLMS      10		 /* poll period, ms */
 
 class Rts2Indi:public Rts2Device
 {

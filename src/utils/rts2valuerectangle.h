@@ -126,7 +126,7 @@ class Rts2ValueRectangle: public Rts2Value
 
 		virtual int setValue (Rts2Conn *connection);
 
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 
 		virtual const char *getValue ();

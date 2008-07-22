@@ -55,7 +55,7 @@ Rts2Scriptor::Rts2Scriptor (int in_argc, char **in_argv)
 {
 	createValue (scriptCount, "script_count", "number of scripts execuced", false);
 	createValue (expandPath, "expand_path", "expand path for new images", false);
-	expandPath->setValueString ("%f");
+	expandPath->setValueCharArr ("%f");
 
 	createValue (scriptGen, "script_generator", "command which gets state and generates next script", false);
 	scriptGen->addSelVal ("/etc/rts2/scriptor");
@@ -95,7 +95,7 @@ Rts2Scriptor::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case OPT_EXPAND_PATH:
-			expandPath->setValueString (optarg);
+			expandPath->setValueCharArr (optarg);
 			break;
 		case OPT_GEN:
 			scriptGen->addSelVal (optarg);

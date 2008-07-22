@@ -333,7 +333,7 @@ Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
 	ret = writeReadPort (anum, cmd, buf, 500);
 	if (ret)
 		return -1;
-	return val->setValueString (buf);
+	return val->setValueCharArr (buf);
 }
 
 

@@ -36,7 +36,7 @@ class Rts2DevFocuser:public Rts2Device
 		time_t focusTimeout;
 		int homePos;
 	protected:
-		char focType[20];
+		std::string focType;
 		Rts2ValueInteger *focPos;
 		int focPositionNew;
 		Rts2ValueFloat *focTemp;

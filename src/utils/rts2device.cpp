@@ -744,7 +744,7 @@ Rts2Device::setMode (int new_mode, bool defaultValues)
 		// create and set new value
 		Rts2Value *new_value = duplicateValue (val);
 		int ret;
-		ret = new_value->setValueString ((*iter).getValue ().c_str ());
+		ret = new_value->setValueCharArr ((*iter).getValue ().c_str ());
 		if (ret)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot load value " << val->getName ()

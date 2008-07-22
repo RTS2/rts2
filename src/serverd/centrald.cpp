@@ -753,7 +753,7 @@ Rts2Centrald::changePriority (time_t timeout)
 	free (msg);
 
 	// and set and send new priority values
-	priorityClient->setValueString (conn ? conn->getName () : "(null)");
+	priorityClient->setValueCharArr (conn ? conn->getName () : "(null)");
 	priority->setValueInteger (new_priority_max);
 
 	sendValueAll (priorityClient);

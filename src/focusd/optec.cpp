@@ -197,7 +197,7 @@ Rts2DevFocuserOptec::ready ()
 int
 Rts2DevFocuserOptec::initValues ()
 {
-	strcpy (focType, "OPTEC_TCF");
+	focType = std::string ("OPTEC_TCF");
 	return Rts2DevFocuser::initValues ();
 }
 

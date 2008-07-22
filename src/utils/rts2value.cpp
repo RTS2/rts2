@@ -120,13 +120,13 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 	char *new_value;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
 		return -2;
-	setValueString (new_value);
+	setValueCharArr (new_value);
 	return 0;
 }
 
 
 int
-Rts2ValueString::setValueString (const char *in_value)
+Rts2ValueString::setValueCharArr (const char *in_value)
 {
 	if ((value != in_value)
 		&& (value == NULL || in_value == NULL || strcmp (value, in_value)))
@@ -163,7 +163,7 @@ Rts2ValueString::send (Rts2Conn * connection)
 void
 Rts2ValueString::setFromValue (Rts2Value * newValue)
 {
-	setValueString (newValue->getValue ());
+	setValueCharArr (newValue->getValue ());
 }
 
 
@@ -214,7 +214,7 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueInteger::setValueString (const char *in_value)
+Rts2ValueInteger::setValueCharArr (const char *in_value)
 {
 	return setValueInteger (atoi (in_value));
 }
@@ -302,7 +302,7 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueDouble::setValueString (const char *in_value)
+Rts2ValueDouble::setValueCharArr (const char *in_value)
 {
 	setValueDouble (atof (in_value));
 	return 0;
@@ -447,7 +447,7 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueFloat::setValueString (const char *in_value)
+Rts2ValueFloat::setValueCharArr (const char *in_value)
 {
 	setValueDouble (atof (in_value));
 	return 0;
@@ -518,7 +518,7 @@ Rts2ValueBool::setValue (Rts2Conn * connection)
 	int ret;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
 		return -2;
-	ret = setValueString (new_value);
+	ret = setValueCharArr (new_value);
 	if (ret)
 		return -2;
 	return 0;
@@ -526,7 +526,7 @@ Rts2ValueBool::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueBool::setValueString (const char *in_value)
+Rts2ValueBool::setValueCharArr (const char *in_value)
 {
 	if (!strcasecmp (in_value, "ON") || !strcasecmp (in_value, "TRUE")
 		|| !strcasecmp (in_value, "YES") || !strcmp (in_value, "1"))
@@ -587,7 +587,7 @@ Rts2ValueSelection::setValue (Rts2Conn * connection)
 		return -2;
 	// try if it's number
 	int ret;
-	ret = setValueString (new_value);
+	ret = setValueCharArr (new_value);
 	if (ret)
 		return -2;
 	return 0;
@@ -595,7 +595,7 @@ Rts2ValueSelection::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueSelection::setValueString (const char *in_value)
+Rts2ValueSelection::setValueCharArr (const char *in_value)
 {
 	char *end;
 	int ret = strtol (in_value, &end, 10);
@@ -732,7 +732,7 @@ Rts2ValueLong::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueLong::setValueString (const char *in_value)
+Rts2ValueLong::setValueCharArr (const char *in_value)
 {
 	return setValueLong (atol (in_value));
 }
@@ -812,7 +812,7 @@ Rts2ValueRaDec::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueRaDec::setValueString (const char *in_value)
+Rts2ValueRaDec::setValueCharArr (const char *in_value)
 {
 	double v_ra, v_dec;
 	if (parseRaDec (in_value, v_ra, v_dec))
@@ -889,7 +889,7 @@ Rts2ValueRaDec::setFromValue (Rts2Value * newValue)
 	}
 	else
 	{
-		setValueString (newValue->getValue ());
+		setValueCharArr (newValue->getValue ());
 	}
 }
 
@@ -943,7 +943,7 @@ Rts2ValueAltAz::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueAltAz::setValueString (const char *in_value)
+Rts2ValueAltAz::setValueCharArr (const char *in_value)
 {
 	double v_alt, v_az;
 	if (parseRaDec (in_value, v_alt, v_az))
@@ -1020,7 +1020,7 @@ Rts2ValueAltAz::setFromValue (Rts2Value * newValue)
 	}
 	else
 	{
-		setValueString (newValue->getValue ());
+		setValueCharArr (newValue->getValue ());
 	}
 }
 

@@ -238,7 +238,11 @@ class Rts2Value
 		 * Set value from string.
 		 * return -1 when value cannot be set from string.
 		 */
-		virtual int setValueString (const char *in_value) = 0;
+		virtual int setValueCharArr (const char *in_value) = 0;
+		int setValueString (std::string in_value)
+		{
+			return setValueCharArr (in_value.c_str ());
+		}
 		virtual int setValueInteger (int in_value)
 		{
 			return -1;
@@ -410,7 +414,7 @@ class Rts2ValueString:public Rts2Value
 			delete[]value;
 		}
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
 		virtual int send (Rts2Conn * connection);
@@ -432,7 +436,7 @@ class Rts2ValueInteger:public Rts2Value
 		Rts2ValueInteger (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		/**
 		 * Returns -1 on error
 		 *
@@ -486,7 +490,7 @@ class Rts2ValueDouble:public Rts2Value
 		Rts2ValueDouble (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
@@ -572,7 +576,7 @@ class Rts2ValueFloat:public Rts2Value
 		Rts2ValueFloat (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		void setValueDouble (double in_value)
@@ -624,7 +628,7 @@ class Rts2ValueBool:public Rts2ValueInteger
 		Rts2ValueBool (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 
 		void setValueBool (bool in_bool)
 		{
@@ -711,7 +715,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		virtual ~Rts2ValueSelection (void);
 
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 
 		int getSelIndex (std::string in_val);
@@ -835,7 +839,7 @@ class Rts2ValueLong:public Rts2Value
 		Rts2ValueLong (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 
@@ -900,7 +904,7 @@ class Rts2ValueRaDec: public Rts2Value
 		 *
 		 * @param in_value String represenation of RA and DEC.
 		 */
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 
 		/**
 		 * Set RA and DEC values from two doubles.
@@ -1017,7 +1021,7 @@ class Rts2ValueAltAz: public Rts2Value
 		 *
 		 * @param in_value String represenation of altitude and azimuth.
 		 */
-		virtual int setValueString (const char *in_value);
+		virtual int setValueCharArr (const char *in_value);
 
 		/**
 		 * Set altitude and azimuth values from two doubles.

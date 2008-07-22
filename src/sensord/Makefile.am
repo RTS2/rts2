@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 
 noinst_HEADERS = sensord.h sensorgpib.h
 
-EXTRA_DIST = sensord.cpp newport.cpp
+EXTRA_DIST = sensord.cpp
 
 LDADD = sensord.o ../utils/librts2block.a
 

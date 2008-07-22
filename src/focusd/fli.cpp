@@ -163,12 +163,15 @@ Rts2DevFocuserFli::initValues ()
 {
 	LIBFLIAPI ret;
 
-	ret = FLIGetModel (dev, focType, 20);
+	char ft[200];
+
+	ret = FLIGetModel (dev, ft, 200);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot get filter model, error: " << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "Cannot get focuser model, error: " << ret << sendLog;
 		return -1;
 	}
+	focType = std::string (ft);
 	return Rts2DevFocuser::initValues ();
 }
 

@@ -177,7 +177,7 @@ Rts2SelectorDev::reloadConfig ()
 	flatSunMin->setValueDouble (sel->getFlatSunMin ());
 	flatSunMax->setValueDouble (sel->getFlatSunMax ());
 
-	nightDisabledTypes->setValueString (sel->getNightDisabledTypes ().c_str ());
+	nightDisabledTypes->setValueCharArr (sel->getNightDisabledTypes ().c_str ());
 
 	return 0;
 }

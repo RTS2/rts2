@@ -393,7 +393,7 @@ Rts2Executor::info ()
 	if (currentTarget)
 	{
 		current_id->setValueInteger (currentTarget->getObsTargetID ());
-		current_name->setValueString (currentTarget->getTargetName ());
+		current_name->setValueCharArr (currentTarget->getTargetName ());
 		current_id_sel->setValueInteger (currentTarget->getTargetID ());
 		current_obsid->setValueInteger (currentTarget->getObsId ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
@@ -402,19 +402,19 @@ Rts2Executor::info ()
 	{
 		current_id->setValueInteger (-1);
 		current_id_sel->setValueInteger (-1);
-		current_name->setValueString (NULL);
+		current_name->setValueCharArr (NULL);
 		current_obsid->setValueInteger (-1);
 		img_id->setValueInteger (-1);
 	}
 	if (nextTarget)
 	{
 		next_id->setValueInteger (nextTarget->getTargetID ());
-		next_name->setValueString (nextTarget->getTargetName ());
+		next_name->setValueCharArr (nextTarget->getTargetName ());
 	}
 	else
 	{
 		next_id->setValueInteger (-1);
-		next_name->setValueString (NULL);
+		next_name->setValueCharArr (NULL);
 	}
 	if (priorityTarget)
 	{

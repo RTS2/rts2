@@ -29,7 +29,7 @@ Rts2Device (in_argc, in_argv, in_device_type, default_name)
 
 	createValue (runningScript, "SCRIPT", "script used to take this images",
 		true, RTS2_DT_SCRIPT, 0, true);
-	runningScript->setValueString ("");
+	runningScript->setValueCharArr ("");
 
 	createValue (scriptComment, "SCR_COMM", "comment recorded for this script",
 		true, 0, CAM_WORKING, true);
