@@ -29,6 +29,7 @@
 #include "telescope.h"
 #include "hms.h"
 #include "../utils/rts2connserial.h"
+#include "../utils/rts2config.h"
 
 // uncomment following line, if you want all port read logging (will
 // add about 10 30-bytes lines to logStream for every query).
@@ -54,6 +55,7 @@
 #define OPT_CORR                 OPT_LOCAL + 11
 #define OPT_EXPTYPE              OPT_LOCAL + 12
 #define OPT_FORCETYPE            OPT_LOCAL + 13
+#define OPT_FORCELATLON          OPT_LOCAL + 14
 
 int arr[] = { 0, 1, 2, 3 };
 
@@ -216,6 +218,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 
 		int expectedType;
 		int forceType;
+		bool forceLatLon;
 
 		const char *getGemType (int gem_type);
 
@@ -266,8 +269,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 };
 
 int
-Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf,
-int rcount)
+Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
 	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
@@ -845,6 +847,7 @@ in_argv)
 	bootesSensors = 0;
 	expectedType = 0;
 	forceType = 0;
+	forceLatLon = false;
 
 	addOption ('f', NULL, 1, "device file (ussualy /dev/ttySx");
 	addOption ('c', NULL, 1, "config file (with model parameters)");
@@ -856,6 +859,7 @@ in_argv)
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 	addOption (OPT_FORCETYPE, "force_type", 1,
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
+	addOption (OPT_FORCELATLON, "force_latlon", 0, "set observing longitude and latitude from configuration file");
 
 	lastMotorState = 0;
 	telMotorState = TEL_OK;
@@ -947,6 +951,9 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
 			break;
 		case OPT_FORCETYPE:
 			forceType = atoi (optarg);
+			break;
+		case OPT_FORCELATLON:
+			forceLatLon = true;
 			break;
 		default:
 			return Rts2DevTelescope::processOption (in_opt);
@@ -1156,6 +1163,40 @@ Rts2DevTelescopeGemini::initValues ()
 		if (ret)
 			return ret;
 	}
+
+	// Set observing site longitude and latitude from configuration file
+	if (forceLatLon)
+	{
+		char command[20];
+		struct ln_dms dlat;
+		char sign = '+';
+		Rts2Config *config = Rts2Config::instance ();
+		double tdeg = config->getObserver ()->lat;
+		if (tdeg < 0)
+		{
+			sign = '-';
+			tdeg *= -1;
+		}
+		ln_deg_to_dms (tdeg, &dlat);
+		sprintf (command, "#:St%c%02d*%02d#", sign, dlat.degrees, dlat.minutes);
+		ret = tel_write_read (command, strlen (command), command, 1);
+		if (ret)
+			return ret;
+
+		sign = '+';
+		tdeg = config->getObserver ()->lng;
+		if (tdeg < 0)
+		{
+			sign = '-';
+			tdeg *= -1;
+		}
+		ln_deg_to_dms (tdeg, &dlat);
+		sprintf (command, "#:Sg%c%03d*%02d#", sign, dlat.degrees, dlat.minutes);
+		ret = tel_write_read (command, strlen (command), command, 1);
+		if (ret)
+			return ret;
+	}
+
 	ret = tel_gemini_get (0, gem_type);
 	if (ret)
 		return ret;
