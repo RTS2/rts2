@@ -154,6 +154,24 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-f <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <listitem>
+          <para>Print information from given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-t <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <listitem>
+          <para>Print information to given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-n <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
+        <listitem>
+          <para>Print information for given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-e</option></term>
         <listitem>
           <para>Print extended information about source - visibility in next 10 hours and next 10 days.</para>
@@ -323,12 +341,6 @@
 	    </variablelist>
 	    You can find all targets type in "types" table in the database.
 	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></term>
-        <listitem>
-          <para>Print information for given date. Date must be given in YYYY-MM-DDTHH:MM:SS.sss format.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
