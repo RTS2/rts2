@@ -63,6 +63,8 @@ class Rts2NightReport:public Rts2AppDb
 		std::vector <Rts2ObsSet *> allObs;
 
 	protected:
+		virtual void usage ();
+
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
@@ -92,9 +94,9 @@ Rts2AppDb (in_argc, in_argv)
 	totalGoodImages = 0;
 	totalObs = 0;
 
-	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours");
-	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours");
-	addOption ('n', NULL, 1, "report for night around given date");
+	addOption ('f', NULL, 1, "date from which take measurements; default to current date - 24 hours. Date is in YYYY-MM-DD format.");
+	addOption ('t', NULL, 1, "date to which show measurements; default to from + 24 hours. Date is in YYYY-MM-DD format.");
+	addOption ('n', NULL, 1, "report for night around given date. Date format is YYYY-MM-DD.");
 	addOption ('N', NULL, 0, "prints out all values as numbers, do not pretty format them");
 	addOption ('l', NULL, 0, "print full image names");
 	addOption ('i', NULL, 0, "print image listing");
@@ -117,6 +119,13 @@ Rts2NightReport::~Rts2NightReport (void)
 	allObs.clear ();
 }
 
+
+void
+Rts2NightReport::usage ()
+{
+	std::cout << "\t" << getAppName () << "-n 2007-12-31" << std::endl
+		<< "\t" << getAppName () << "-f 2007-12-15 -t 2007-12-18" << std::endl;
+}
 
 int
 Rts2NightReport::processOption (int in_opt)
