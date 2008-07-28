@@ -59,7 +59,7 @@
 
 int arr[] = { 0, 1, 2, 3 };
 
-typedef struct searchDirs_t
+struct searchDirs_t
 {
 	short raDiv;
 	short decDiv;
@@ -226,6 +226,8 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		virtual int processOption (int in_opt);
 		virtual int initValues ();
 		virtual int idle ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		Rts2DevTelescopeGemini (int argc, char **argv);
@@ -1118,6 +1120,9 @@ Rts2DevTelescopeGemini::init ()
 			if (ret)
 				return ret;
 			setCorrection ();
+
+			tel_conn->writePort ("#:hW#", 5);
+
 			return ret;
 		}
 
@@ -1155,6 +1160,7 @@ Rts2DevTelescopeGemini::initValues ()
 	int32_t gem_type;
 	char buf[5];
 	int ret;
+
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
 	if (forceType > 0)
@@ -1311,6 +1317,15 @@ Rts2DevTelescopeGemini::idle ()
 		}
 	}
 	return Rts2DevTelescope::idle ();
+}
+
+
+int
+Rts2DevTelescopeGemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == resetState)
+		return 0;
+	return Rts2DevTelescope::setValue (old_value, new_value);
 }
 
 
