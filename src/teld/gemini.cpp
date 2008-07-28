@@ -1171,6 +1171,10 @@ Rts2DevTelescopeGemini::initValues ()
 		struct ln_dms dlat;
 		char sign = '+';
 		Rts2Config *config = Rts2Config::instance ();
+		ret = config->loadFile ();
+		if (ret)
+			return ret;
+
 		double tdeg = config->getObserver ()->lat;
 		if (tdeg < 0)
 		{
@@ -1180,11 +1184,11 @@ Rts2DevTelescopeGemini::initValues ()
 		ln_deg_to_dms (tdeg, &dlat);
 		sprintf (command, "#:St%c%02d*%02d#", sign, dlat.degrees, dlat.minutes);
 		ret = tel_write_read (command, strlen (command), command, 1);
-		if (ret)
-			return ret;
+		if (ret != 1)
+			return -1;
 
 		sign = '+';
-		tdeg = config->getObserver ()->lng;
+		tdeg = config->getObserver ()->lng * -1;
 		if (tdeg < 0)
 		{
 			sign = '-';
@@ -1193,8 +1197,8 @@ Rts2DevTelescopeGemini::initValues ()
 		ln_deg_to_dms (tdeg, &dlat);
 		sprintf (command, "#:Sg%c%03d*%02d#", sign, dlat.degrees, dlat.minutes);
 		ret = tel_write_read (command, strlen (command), command, 1);
-		if (ret)
-			return ret;
+		if (ret != 1)
+			return -1;
 	}
 
 	ret = tel_gemini_get (0, gem_type);
