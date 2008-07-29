@@ -23,12 +23,18 @@
 #define OPT_HEIGHT       OPT_LOCAL + 2
 #define OPT_DATA_SIZE    OPT_LOCAL + 3
 
+/**
+ * Class for a dummy camera.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevCameraDummy:public Rts2DevCamera
 {
 	private:
 		bool supportFrameT;
 		int infoSleep;
 		Rts2ValueDouble *readoutSleep;
+		Rts2ValueSelection *genType;
 		int width;
 		int height;
 
@@ -66,7 +72,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
 		{
-			if (old_value == readoutSleep)
+			if (old_value == readoutSleep || old_value == genType)
 			{
 				return 0;
 			}
@@ -79,9 +85,13 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 
 			supportFrameT = false;
 			infoSleep = 0;
-			createValue (readoutSleep, "readout", "readout sleep in sec", true, 0,
-				CAM_WORKING, true);
+			createValue (readoutSleep, "readout", "readout sleep in sec", true, 0, CAM_WORKING, true);
 			readoutSleep->setValueDouble (0);
+
+			createValue (genType, "gen_type", "data generation algorithm", true, 0);
+			genType->addSelVal (std::string ("random"));
+			genType->addSelVal (std::string ("linear"));
+			genType->setValueInteger (0);
 
 			createExpType ();
 
@@ -96,6 +106,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			addOption (OPT_HEIGHT, "height", 1, "height of simulated CCD");
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
 		}
+
 		virtual ~Rts2DevCameraDummy (void)
 		{
 			readoutSleep = NULL;
@@ -139,6 +150,8 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			strcpy (ccdType, "Dummy");
 			strcpy (serialNumber, "1");
 
+			srand (time (NULL));
+
 			return initChips ();
 		}
 		virtual int initChips ()
@@ -171,7 +184,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 				return Rts2DevCamera::suggestBufferSize ();
 			return dataSize;
 		}
-		virtual int readoutStart ();
 		virtual int readoutOneLine ();
 
 		virtual bool supportFrameTransfer ()
@@ -179,12 +191,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			return supportFrameT;
 		}
 };
-
-int
-Rts2DevCameraDummy::readoutStart ()
-{
-	return Rts2DevCamera::readoutStart ();
-}
 
 
 int
@@ -197,7 +203,15 @@ Rts2DevCameraDummy::readoutOneLine ()
 	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
 	for (int i = 0; i < usedSize; i++)
 	{
-		dataBuffer[i] = i + (int) (getExposureNumber () * 10);
+		switch (genType->getValueInteger ())
+		{
+			case 0:  // random
+				dataBuffer[i] = 10 + 10 * ((double) rand ()) / RAND_MAX;
+				break;
+			case 1:  // linear
+				dataBuffer[i] = i + (int) (getExposureNumber () * 10);
+				break;
+		}
 	}
 	ret = sendReadoutData (dataBuffer, usedSize);
 	if (ret < 0)
