@@ -147,7 +147,8 @@ Before you will run to:
 
 root@host:rts2$ cp services devices centrald /etc/rts2
 
-and editing /etc/rts2/devices, so you will be able to do start RTS2 with:
+and editing /etc/rts2/devices (please see man rts2.devices for details what to
+enter), so you will be able to do start RTS2 with:
 
 root@host:rts2$ /etc/init.d/rts2 start
 
@@ -186,10 +187,18 @@ latitude on southern hemisphere).
 First in move command is RA (in degrees, <0,360> range), second is DEC (in
 degrees, <-90,+90> range).
 
-Now move to camera, There is demonstration with dummy, pleae change dummy
-string to name of your camera driver.
+Now move to camera, Following is demonstration with dummy, please change dummy
+string on following line to name of your camera driver.
 
 root@host:$ rts2-camd-dummy -i
+
+If you have FLI camera, you will run:
+
+root@host:$ rts2-camd-fli -i
+
+Then run from second Xterminal window:
+
 root@host:$ rts2-xfocusc -d C0 -e 2
 
-If you reach till that point, running services shall be quite easy for you.
+to get some images. If you reach till that point, running services shall be
+quite easy for you.
