@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.7.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2008</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -74,6 +74,54 @@
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>--config <replaceable class="parameter">config file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-d <replaceable class="parameter">camera device name</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-e <replaceable class="parameter">exposure</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-a</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-c</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-b <replaceable class="parameter">binning</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-Q</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-R <replaceable class="parameter">target ra</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-D <replaceable class="parameter">target dec</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-W <replaceable class="parameter">width</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-H <replaceable class="parameter">height</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--display <replaceable class="parameter">X display</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-X <replaceable class="parameter">cross type</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--save</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--change_val <replaceable class="parameter">value (in arcseconds)</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-Z <replaceable class="parameter">zoom</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-9</option></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -127,7 +175,204 @@
           <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>-d <replaceable class="parameter">camera device name</replaceable></option></term>
+        <listitem>
+          <para>Specify name of camera which will be exposed. Multiple camera names can be specified using multiple -d options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-e <replaceable class="parameter">exposure</replaceable></option></term>
+        <listitem>
+          <para>Exposure lenght. Default are 10 seconds exposure. Exposure time is in seconds.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-a</option></term>
+        <listitem>
+          <para>Produce auto darks.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <listitem>
+          <para>Take exposures of the chip center. Center pixel width and height can be specified with -W and -H parameters.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-b <replaceable class="parameter">binning</replaceable></option></term>
+        <listitem>
+          <para>Set camera binning.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-Q</option></term>
+        <listitem>
+          <para>Query for focus change after each exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-R <replaceable class="parameter">target ra</replaceable></option></term>
+        <listitem>
+          <para>Target RA. Telescope will be moved to this position before start of the exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-D <replaceable class="parameter">target dec</replaceable></option></term>
+        <listitem>
+          <para>Target DEC. Telescope will be moved to this position before start of the exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-W <replaceable class="parameter">center width</replaceable></option></term>
+        <listitem>
+          <para>Width of image center.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-H <replaceable class="parameter">center height</replaceable></option></term>
+        <listitem>
+          <para>Height of image center.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--display <replaceable class="parameter">X11 display</replaceable></option></term>
+        <listitem>
+          <para>Set X11 display.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-X <replaceable class="parameter">cross type</replaceable></option></term>
+        <listitem>
+          <para>
+	    Set cross type. Following cross types can be specified. 0 is default.
+	    <variablelist>
+	      <varlistentry>
+		<term>0</term>
+		<listitem>
+		  <para>No cross.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>1</term>
+		<listitem>
+		  <para>Centeric squares.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>2</term>
+		<listitem>
+		  <para>Centeric circles.</para>
+		</listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>3</term>
+		<listitem>
+		  <para>BOOTES special.</para>
+		</listitem>
+	      </varlistentry>
+	    </variablelist>
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--save</option></term>
+        <listitem>
+          <para>If set, xfocusc will save images comming from detectors.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--change_val <replaceable class="parameter">value (in arcseconds)</replaceable></option></term>
+        <listitem>
+          <para>Size of change steps.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-Z <replaceable class="parameter">zoom</replaceable></option></term>
+        <listitem>
+          <para>Set display zooming.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-9</option></term>
+        <listitem>
+          <para>Display image squares.</para>
+        </listitem>
+      </varlistentry>
     </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>KEYS</title>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>1,2,3</option></term>
+        <listitem>
+          <para>Set camera binning.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>9</option></term>
+        <listitem>
+          <para>Split screen to squares containg corners of the image and its center.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>q,a</option></term>
+        <listitem>
+          <para>Increase and decrease exposure by 0.01 of second.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>w,s</option></term>
+        <listitem>
+          <para>Increase and decrease exposure by 0.1 of second.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>e,d</option></term>
+        <listitem>
+          <para>Increase and decrease exposure by 1 second.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>f</option></term>
+        <listitem>
+          <para>Full frame exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>c</option></term>
+        <listitem>
+          <para>Center exposure. rts2-xfocusc then display half of the chip.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>y</option></term>
+        <listitem>
+          <para>Save images as FITS files.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>u</option></term>
+        <listitem>
+          <para>Do not save images as FITS files.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>hjkl,arrows</option></term>
+        <listitem>
+          <para>Move -- change mount position.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>+-</option></term>
+        <listitem>
+          <para>Change zoom level.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+
   </refsect1>
   <refsect1>
     <title>SEE ALSO</title>

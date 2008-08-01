@@ -33,6 +33,11 @@
 
 #include <limits.h>
 
+#define OPT_DISPLAY      OPT_LOCAL + 20
+#define OPT_STARS        OPT_LOCAL + 21
+#define OPT_SAVE         OPT_LOCAL + 22
+#define OPT_CHANGE       OPT_LOCAL + 23
+
 class Rts2xfocus:public Rts2GenFocClient
 {
 	private:
@@ -69,6 +74,8 @@ class Rts2xfocus:public Rts2GenFocClient
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
+
+		virtual void usage ();
 		virtual void help ();
 
 		Display *getDisplay ()
@@ -97,7 +104,7 @@ class Rts2xfocus:public Rts2GenFocClient
 			return starsType;
 		}
 		double zoom;
-		int GoNine;
+		bool GoNine;
 };
 
 class Rts2xfocusCamera:public Rts2GenFocCamera
@@ -488,8 +495,9 @@ Rts2xfocusCamera::printMouse ()
 {
 	char stringBuf[20];
 	int len;
-	len = snprintf (stringBuf, 20, "%i %i", mouseX, mouseY);
+	len = snprintf (stringBuf, 20, "%04i %04i", mouseX, mouseY);
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
+	XSetForeground (master->getDisplay (), gc, master->getRGB (256)->pixel);
 	XDrawImageString (master->getDisplay (), pixmap, gc, 30, 30, stringBuf,
 		len);
 	if (buttonX >= 0 && buttonY >= 0)
@@ -500,7 +508,7 @@ Rts2xfocusCamera::printMouse ()
 void
 Rts2xfocusCamera::redrawMouse ()
 {
-	XClearArea (master->getDisplay (), window, 0, 0, 100, 40, False);
+	XClearArea (master->getDisplay (), window, 0, 0, 200, 40, False);
 	XClearArea (master->getDisplay (), window, buttonX - 10, buttonY - 10, 20,
 		20, False);
 }
@@ -567,6 +575,9 @@ Rts2xfocusCamera::XeventLoop ()
 						break;
 					case XK_3:
 						queCommand (new Rts2CommandChangeValue (this, "binning", '=', 2));
+						break;
+					case XK_9:
+						master->GoNine = !master->GoNine;
 						break;
 					case XK_e:
 						queCommand (new Rts2CommandChangeValue (this, "exposure", '+', 1));
@@ -659,6 +670,7 @@ Rts2xfocusCamera::XeventLoop ()
 
 				printMouse ();
 				redrawMouse ();
+				XFlush (master->getDisplay ());
 				break;
 			case ButtonPress:
 				mouseX = ((XButtonPressedEvent *) & event)->x;
@@ -1000,18 +1012,17 @@ Rts2GenFocClient (in_argc, in_argv)
 
 	changeVal = 15;
 	zoom = 1.0;
-	GoNine = 0;
+	GoNine = false;
 
-	addOption ('x', "display", 1, "name of X display");
-	addOption ('t', "stars", 0, "draw stars over image (default to don't)");
-	addOption ('X', "cross", 1,
-		"cross type (default to 1; possible values 0 - no cross, 1 - rectangles\n"
-		"    2 - circles, 3 - BOOTES special");
-	addOption ('s', "save", 0, "save filenames (default don't save");
-	addOption ('m', "change_val", 1,
+	addOption (OPT_DISPLAY, "display", 1, "name of X display");
+	addOption (OPT_STARS, "stars", 0, "draw stars over image (default to don't)");
+	addOption ('X', NULL, 1,
+		"cross type (default to 1; possible values 0 no cross, 1 rectangles 2 circles, 3 BOOTES special");
+	addOption (OPT_SAVE, "save", 0, "save filenames (default don't save");
+	addOption (OPT_CHANGE, "change_val", 1,
 		"change value (in arcseconds; default to 15 arcsec");
-	addOption ('Z', "zoom", 1, "Zoom (int 1..16)");
-	addOption ('9', "nine", 0, "Nine sectors from different places of the CCD");
+	addOption ('Z', NULL, 1, "Zoom (int 1..16)");
+	addOption ('9', NULL, 0, "Nine sectors from different places of the CCD");
 }
 
 
@@ -1023,26 +1034,32 @@ Rts2xfocus::~Rts2xfocus (void)
 
 
 void
+Rts2xfocus::usage ()
+{
+	std::cout <<
+		"\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1"
+		<< std::endl <<
+		"\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them"
+		<< std::endl;
+}
+
+
+void
 Rts2xfocus::help ()
 {
 	Rts2Client::help ();
 	std::cout << "Keys:" << std::endl
 		<< "\t1,2,3 .. binning 1x1, 2x2, 3x3" << std::endl
+		<< "\t9     .. split screen to squares containg corners of the image and its center" << std::endl
 		<< "\tq,a   .. increase/decrease exposure 0.01 sec" << std::endl
 		<< "\tw,s   .. increase/decrease exposure 0.1 sec" << std::endl
 		<< "\te,d   .. increase/decrease exposure 1 sec" << std::endl
 		<< "\tf     .. full frame exposure" << std::endl
 		<< "\tc     .. center (1/2x1/2 chip size) exposure" << std::endl
-		<< "\ty     .. save fits file\n" << std::endl
-		<< "\tu     .. don't save fits file\n" << std::endl
-		<< "\thjkl, arrrows .. move (change mount position)\n" << std::endl
-		<< "Examples:" << std::endl
-		<<
-		"\trts2-xfocusc -d C0 -d C1 -e 20 .. takes 20 sec exposures on devices C0 and C1"
-		<< std::
-		endl <<
-		"\trts2-xfocusc -d C2 -a -e 10    .. takes 10 sec exposures on device C2. Takes darks and use them"
-		<< std::endl;
+		<< "\ty     .. save FITS file" << std::endl
+		<< "\tu     .. don't save fits file" << std::endl
+		<< "\thjkl, arrows .. move (change mount position)" << std::endl
+		<< "\t+-    .. change zoom" << std::endl;
 }
 
 
@@ -1051,13 +1068,13 @@ Rts2xfocus::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 's':
+		case OPT_SAVE:
 			autoSave = 1;
 			break;
-		case 'x':
+		case OPT_DISPLAY:
 			displayName = optarg;
 			break;
-		case 't':
+		case OPT_STARS:
 			starsType = 1;
 			break;
 		case 'X':
@@ -1071,9 +1088,9 @@ Rts2xfocus::processOption (int in_opt)
 				zoom = 16;
 			break;
 		case '9':
-			GoNine = 1;
+			GoNine = true;
 			break;
-		case 'm':
+		case OPT_CHANGE:
 			changeVal = atof (optarg);
 			break;
 		default:

@@ -354,6 +354,10 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	{
 		cam->queCommand (new Rts2CommandChangeValue (cam, "SHUTTER", '=', 1));
 	}
+	if (defBin >= 0)
+	{
+		cam->queCommand (new Rts2CommandChangeValue (cam, "binning", '=', defBin));
+	}
 	// post exposure event..if name agree
 	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)
 	{
