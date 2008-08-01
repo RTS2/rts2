@@ -641,6 +641,14 @@ Rts2xfocusCamera::XeventLoop ()
 					case XK_Escape:
 						master->endRunLoop ();
 						break;
+					case XK_plus:
+					case XK_KP_Add:
+						master->zoom = master->zoom * 2.0;
+						break;
+					case XK_minus:
+					case XK_KP_Subtract:
+						master->zoom = master->zoom / 2.0;
+						break;
 					default:
 						break;
 				}
