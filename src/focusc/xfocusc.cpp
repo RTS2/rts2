@@ -29,6 +29,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <stdlib.h>
 
 #include <limits.h>
 
@@ -95,6 +96,8 @@ class Rts2xfocus:public Rts2GenFocClient
 		{
 			return starsType;
 		}
+		double zoom;
+		int GoNine;
 };
 
 class Rts2xfocusCamera:public Rts2GenFocCamera
@@ -152,7 +155,9 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		double change_val;		 // change value in degrees
 
 		int mouseTelChange_x, mouseTelChange_y;
+
 	protected:
+		double classical_median(ushort *q, int n, double *sigma);
 		virtual void printFWHMTable ();
 
 	public:
@@ -169,15 +174,60 @@ class Rts2xfocusCamera:public Rts2GenFocCamera
 		virtual void idle ();
 };
 
-Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection,
-double in_change_val,
-Rts2xfocus * in_master):
-Rts2GenFocCamera (in_connection, in_master)
+int
+cmpdouble(const void *a, const void *b)
+{
+	if (*((double *)a) > *((double *)b))
+		return 1;
+	if (*((double *)a) < *((double *)b))
+		return -1;
+	return 0;
+}
+
+
+double
+Rts2xfocusCamera::classical_median(ushort *q, int n, double *sigma)
+{
+	int i;
+	double f[n],M,S;
+
+	for (i = 0; i < n; i++)
+		f[i] = q[i];
+
+	qsort (f, n, sizeof(double), cmpdouble);
+
+	if (n % 2)
+		M = f[n / 2];
+	else
+	  	M = (f[n / 2] + f[n / 2 + 1]) / 2;
+
+	if (sigma)
+	{
+		for (i = 0; i < n; i++)
+			f[i] = fabs(f[i] - M) * 0.6745;
+
+		qsort((void *)f, (size_t)n, sizeof(double), cmpdouble);
+
+		if (n % 2)
+			S = f[n / 2];
+		else
+			S = (f[n / 2] + f[n / 2 + 1]) / 2;
+
+		*sigma=S;
+	}
+
+	return M;
+}
+
+
+Rts2xfocusCamera::Rts2xfocusCamera (Rts2Conn * in_connection, double in_change_val, Rts2xfocus * in_master)
+:Rts2GenFocCamera (in_connection, in_master)
 {
 	master = in_master;
 
 	window = 0L;
 	pixmap = 0L;
+	ximage = NULL;
 	gc = 0L;
 	windowHeight = 800;
 	windowWidth = 800;
@@ -212,10 +262,9 @@ Rts2xfocusCamera::buildWindow ()
 	char *cameraName;
 
 	window =
-		XCreateWindow (master->getDisplay (),
-		DefaultRootWindow (master->getDisplay ()), 0, 0, 100, 100,
-		0, master->getDepth (), InputOutput, master->getVisual (),
-		0, &xswa);
+		XCreateWindow (master->getDisplay (), DefaultRootWindow (master->getDisplay ()),
+			0, 0, 100, 100, 0, master->getDepth (), InputOutput,
+			master->getVisual (), 0, &xswa);
 	pixmap =
 		XCreatePixmap (master->getDisplay (), window, windowWidth, windowHeight,
 		master->getDepth ());
@@ -234,7 +283,7 @@ Rts2xfocusCamera::buildWindow ()
 }
 
 
-// called to
+// called to rebuild window on the screen
 void
 Rts2xfocusCamera::rebuildWindow ()
 {
@@ -325,7 +374,7 @@ Rts2xfocusCamera::drawCross2 ()
 
 	drawCenterCross (xc, yc);
 
-	for (i = 0; i < arcNum;)
+	for (i = 0; i < arcNum; )
 	{
 		i++;
 		xc -= 20;
@@ -483,8 +532,7 @@ Rts2xfocusCamera::redraw ()
 	xswa.colormap = *(master->getColormap ());
 	xswa.background_pixmap = pixmap;
 
-	XChangeWindowAttributes (master->getDisplay (), window,
-		CWColormap | CWBackPixmap, &xswa);
+	XChangeWindowAttributes (master->getDisplay (), window, CWColormap | CWBackPixmap, &xswa);
 
 	XClearWindow (master->getDisplay (), window);
 }
@@ -590,6 +638,9 @@ Rts2xfocusCamera::XeventLoop ()
 							postEvent (new
 							Rts2Event (EVENT_MOUNT_CHANGE, (void *) &change));
 						break;
+					case XK_Escape:
+						master->endRunLoop ();
+						break;
 					default:
 						break;
 				}
@@ -689,9 +740,7 @@ Rts2xfocusCamera::idle ()
 imageProceRes
 Rts2xfocusCamera::processImage (Rts2Image * image)
 {
-	int dataSize;
-	int i, j, k;
-	unsigned short *im_ptr;
+	int i, j;
 
 	if (window == 0L)
 		buildWindow ();
@@ -705,106 +754,182 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 		ximage = NULL;
 	}
 
-	pixmapWidth = image->getWidth ();
-	pixmapHeight = image->getHeight ();
-	if (pixmapWidth > windowWidth || pixmapHeight > windowHeight)
+	if (master->GoNine)
+	{
+		XWindowAttributes wa;
+		XGetWindowAttributes (master->getDisplay (), DefaultRootWindow (master->getDisplay ()), &wa);
+		pixmapWidth = wa.width / 2;
+		pixmapHeight = wa.height / 2;
+
+		// if window is too large, set to 1/4 of required size, so we will see nine effect
+		if (pixmapWidth > image->getWidth () * master->zoom)
+			pixmapWidth = image->getWidth () * master->zoom;
+		if (pixmapHeight > image->getHeight () * master->zoom)
+		  	pixmapHeight = image->getHeight () * master->zoom;
+	}
+	else
+	{
+		pixmapWidth = image->getWidth () * master->zoom;
+		pixmapHeight = image->getHeight () * master->zoom;
+	}
+
+	if (pixmapWidth != windowWidth || pixmapHeight != windowHeight)
 	{
 		windowWidth = pixmapWidth;
 		windowHeight = pixmapHeight;
 		rebuildWindow ();
 	}
 	std::cout
-		<< "Get data : [" << pixmapWidth << "x" << pixmapHeight << "]"
+		<< "Get data : [" << image->getWidth () << "x" << image->getHeight () << "]"
 		<< std::endl;
 	// draw window with image..
 	if (!ximage)
 	{
-		std::cout << "Create ximage " << pixmapWidth << pixmapHeight << std::endl;
+		std::cout << "Create ximage " << pixmapWidth << "x" << pixmapHeight << std::endl;
 		ximage = XCreateImage
 			(
 			master->getDisplay (), master->getVisual (),
 			master->getDepth (), ZPixmap, 0, 0, pixmapWidth,
 			pixmapHeight, 8, 0
 			);
-		ximage->data = new char[ximage->bytes_per_line * pixmapHeight];
+		ximage->data = (char *) malloc (ximage->bytes_per_line * pixmapHeight);
+
+		std::cout << "Ximage created" << std::endl;
 	}
 
-	// build histogram
-	memset (histogram, 0, sizeof (int) * HISTOGRAM_LIMIT);
-	dataSize = pixmapHeight * pixmapWidth;
-	k = 0;
-	im_ptr = image->getDataUShortInt ();
-	average = 0;
-	max = 0;
-	min = USHRT_MAX;
-	for (i = 0; i < pixmapHeight; i++)
-		for (j = 0; j < pixmapWidth; j++)
+	// default vertical and horizontal image origins - center image
+	int vorigin = (int) floor(master->zoom * (double) image->getWidth () / 2.0) - pixmapWidth / 2;
+	int horigin = (int) floor(master->zoom * (double) image->getHeight () / 2.0) - pixmapHeight / 2;
+
+	// create array which will hold the image
+	// this will be then zoomed to pixmap array
+	// to make it clear: iP is temporaly image storage, used to extract
+	// data from image and calculate image cut levels, ximage->data then
+	// holds pixmap, which is zoomed
+	// modified image size
+	int iW = (int) ceil (pixmapWidth / master->zoom);
+	int iH = (int) ceil (pixmapHeight / master->zoom);
+	ushort *iP = (ushort *) malloc(iW * iH * sizeof(ushort));
+	ushort *iTop = iP;
+	// pointer to top line of square image subset
+	ushort *iNineTop = image->getDataUShortInt ();
+	// prepare the image data to be processed
+	ushort *im_ptr = image->getDataUShortInt () + vorigin + horigin * image->getWidth ();
+
+	// fill IP
+	// copy image center..
+	for (i = 0; i < iH / 3; i++)
 	{
-		histogram[*im_ptr]++;
-		average += *im_ptr;
-		if (max < *im_ptr)
-			max = *im_ptr;
-		if (min > *im_ptr)
-			min = *im_ptr;
-		im_ptr++;
-	}
+		if (master->GoNine)
+		{
+		 	// square..
+			memcpy (iTop, iNineTop, sizeof(ushort) * (iW / 3));
+			iTop += iW / 3;
 
-	average /= dataSize;
-	stdev = image->getStdDev ();
-	bg_stdev = image->getBgStdDev ();
+			// line..
+			// im_ptr is hovvseted, so we only add iW/3 for already copied pixels..
+			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * (int) ceil (iW - (2 * iW / 3)));
+			iTop += iW - (int) ceil (2 * iW / 3);
 
-	low = med = hig = 0;
-	j = 0;
-	for (i = 0; i < HISTOGRAM_LIMIT; i++)
-	{
-		j += histogram[i];
-		if ((!low) && (((float) j / (float) dataSize) > PP_LOW))
-			low = i;
-		if ((!med) && (((float) j / (float) dataSize) > PP_MED))
-			med = i;
-		if ((!hig) && (((float) j / (float) dataSize) > PP_HIG))
-			hig = i;
-	}
-	if (!hig)
-		hig = USHRT_MAX;
-	if (low == hig)
-		low = hig / 2 - 1;
+			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
+			iTop += iW / 3;
 
-	im_ptr = image->getDataUShortInt ();
-
-	for (j = 0; j < pixmapHeight; j++)
-		for (i = 0; i < pixmapWidth; i++)
-	{
-		unsigned short
-			val;
-		val = *im_ptr;
-		im_ptr++;
-		if (val < low)
-			XPutPixel (ximage, i, j, master->getRGB (0)->pixel);
-		else if (val > hig)
-			XPutPixel (ximage, i, j, master->getRGB (255)->pixel);
+			iNineTop += image->getWidth ();
+		}
 		else
 		{
-			XPutPixel (ximage, i, j,
-				master->
-				getRGB ((int) (255 * (val - low) / (hig - low)))->
-				pixel);
+			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
+			iTop += iW;
+		}
+		im_ptr += image->getWidth ();
+	}
+	// only center in all cases..
+	for (;i < 2 * iH / 3; i++)
+	{
+		memcpy (iTop, im_ptr, sizeof(ushort) * iW);
+		im_ptr += image->getWidth ();
+		iTop += iW;
+	}
+
+	if (master->GoNine)
+		iNineTop += image->getWidth () * (image->getHeight () - (int) floor (2 * iH / 3.0));
+
+	// followed again by edge squares for end..
+	for (;i < iH; i++)
+	{
+		if (master->GoNine)
+		{
+		 	// square..
+			memcpy (iTop, iNineTop, sizeof (ushort) * (iW / 3));
+			iTop += iW / 3;
+
+			// line..
+			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * ((int) ceil (iW - (2 * iW / 3))));
+			iTop += (int) ceil (iW - (2 * iW / 3));
+
+			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
+			iTop += iW / 3;
+			iNineTop += image->getWidth ();
+		}
+		else
+		{
+			memcpy (iTop, im_ptr, sizeof(ushort) * iW);
+			iTop += iW;
+		}
+		im_ptr += image->getWidth ();
+	}
+
+	// get cuts
+	double sigma, median;
+	median = classical_median(iP, iW * iH, &sigma);
+	low = median - 3 * sigma;
+	hig = median + 5 * sigma;
+
+	std::cout << "Window median:" << median << " stdev " << sigma
+		<< " low:" << low << " hig:" << hig << std::endl;
+
+	// transfer iP to pixmap, zoom it on fly
+	for (i = 0; i < pixmapHeight; i++)
+	{
+		for (j = 0; j < pixmapWidth; j++)
+		{
+			double pW; // pixel value
+			// do zooming..
+			if (master->zoom >= 1)
+			{
+				pW = (double) iP[((int) (i / master->zoom)) * iW + (int) (j / master->zoom)];
+			}
+			else
+			{
+				pW = 0;
+				// collect relevant pixels..
+				int bsize = (int) ceil (1 / master->zoom);
+
+				int ii = (int) floor (i * bsize);
+				int jj = (int) floor (j * bsize);
+
+				for (int k = 0; k < bsize; k++)
+					for (int l = 0; l < bsize; l++)
+						pW += iP[(ii + k) * iW + jj + l];
+
+				pW /= bsize * bsize;
+			}
+			int grey = (int) floor (256.0 * (pW - (double) low) /
+				((double) hig - (double) low));
+
+			if (grey < 0) grey=0;
+			if (grey > 255) grey=255;
+
+			// here the pixel position is clear
+			XPutPixel (ximage, j, i, master->getRGB (grey)->pixel);
 		}
 	}
 
-	std::
-		cout << "Data low:" << low
-		<< " med:" << med
-		<< " hig:" << hig
-		<< " min:" << min
-		<< " max:" << max
-		<< " average:" << average << " " << image->getAverage ()
-		<< " stdev " << stdev << " bg stdev " << bg_stdev << std::endl;
+	free (iP);
 
 	XResizeWindow (master->getDisplay (), window, pixmapWidth, pixmapHeight);
 
-	XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0,
-		pixmapWidth, pixmapHeight);
+	XPutImage (master->getDisplay (), pixmap, gc, ximage, 0, 0, 0, 0, pixmapWidth, pixmapHeight);
 
 	// some info values
 	image->getValue ("X", lastX);
@@ -862,10 +987,12 @@ Rts2GenFocClient (in_argc, in_argv)
 {
 	displayName = NULL;
 
-	crossType = 1;
+	crossType = 0;
 	starsType = 0;
 
 	changeVal = 15;
+	zoom = 1.0;
+	GoNine = 0;
 
 	addOption ('x', "display", 1, "name of X display");
 	addOption ('t', "stars", 0, "draw stars over image (default to don't)");
@@ -875,6 +1002,8 @@ Rts2GenFocClient (in_argc, in_argv)
 	addOption ('s', "save", 0, "save filenames (default don't save");
 	addOption ('m', "change_val", 1,
 		"change value (in arcseconds; default to 15 arcsec");
+	addOption ('Z', "zoom", 1, "Zoom (int 1..16)");
+	addOption ('9', "nine", 0, "Nine sectors from different places of the CCD");
 }
 
 
@@ -925,6 +1054,16 @@ Rts2xfocus::processOption (int in_opt)
 			break;
 		case 'X':
 			crossType = atoi (optarg);
+			break;
+		case 'Z':
+			zoom = atof (optarg);
+			if (zoom < 0.0625)
+				zoom = 0.0625;
+			if (zoom > 16)
+				zoom = 16;
+			break;
+		case '9':
+			GoNine = 1;
 			break;
 		case 'm':
 			changeVal = atof (optarg);
