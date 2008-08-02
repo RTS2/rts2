@@ -33,6 +33,13 @@ Rts2Config::getSpecialValues ()
 	// load horizont file..
 	getString ("observatory", "horizon", horizon_file, "");
 
+	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
+	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
+	getString ("observatory", "archive_path", obs_archive, "%b/archive/%t/%c/object/%f");
+	getString ("observatory", "trash_path", obs_trash, "%b/trash/%t/%c/%f");
+	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
+	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
+
 	checker = new ObjectCheck (horizon_file.c_str ());
 	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout, 3600);
 	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance, 0.1);
@@ -44,6 +51,7 @@ Rts2Config::getSpecialValues ()
 
 	getFloat ("swift", "min_horizon", swift_min_horizon, 0);
 	getFloat ("swift", "soft_horizon", swift_soft_horizon, swift_min_horizon);
+
 
 	// GRD section
 	grbd_follow_transients = getBoolean ("grbd", "know_transients", true);

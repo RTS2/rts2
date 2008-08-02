@@ -62,6 +62,13 @@ class Rts2Config:public Rts2ConfigRaw
 
 		bool grbd_follow_transients;
 		int grbd_validity;
+
+		std::string obs_quePath;
+		std::string obs_acqPath;
+		std::string obs_archive;
+		std::string obs_trash;
+		std::string obs_flats;
+		std::string obs_darks;
 	protected:
 		virtual int getSpecialValues ();
 
@@ -244,6 +251,72 @@ class Rts2Config:public Rts2ConfigRaw
 		int grbdValidity ()
 		{
 			return grbd_validity;
+		}
+
+
+		/**
+		 * Return extension pattern for que images.
+		 *
+		 * @return Extension pattern (observatory/que_path entry in config file).
+		 */
+		std::string observatoryQuePath ()
+		{
+			return obs_quePath;
+		}
+
+
+		/**
+		 * Return extension pattern for acqusition images.
+		 *
+		 * @return Extension pattern (observatory/acq_path entry in config file).
+		 */
+		std::string observatoryAcqPath ()
+		{
+			return obs_acqPath;
+		}
+
+
+		/**
+		 * Return extension pattern for archive images.
+		 *
+		 * @return Extension pattern (observatory/archive_path entry in config file).
+		 */
+		std::string observatoryArchivePath ()
+		{
+			return obs_archive;
+		}
+
+
+		/**
+		 * Return extension pattern for trash images.
+		 *
+		 * @return Extension pattern (observatory/trash_path entry in config file).
+		 */
+		std::string observatoryTrashPath ()
+		{
+			return obs_trash;
+		}
+
+
+		/**
+		 * Return extension pattern for flat images.
+		 *
+		 * @return Extension pattern (observatory/flat_path entry in config file).
+		 */
+		std::string observatoryFlatPath ()
+		{
+			return obs_flats;
+		}
+
+
+		/**
+		 * Return extension pattern for dark images.
+		 *
+		 * @return Extension pattern (observatory/dark_path entry in config file).
+		 */
+		std::string observatoryDarkPath ()
+		{
+			return obs_darks;
 		}
 };
 #endif							 /* !__RTS2_CONFIG__ */
