@@ -245,7 +245,7 @@ Rts2Expander (in_exposureStart)
 	}
 	else
 	{
-		in_filename = expandPath ("%b/que/%c/%f");
+		in_filename = expandPath (Rts2Config::instance ()->observatoryQuePath ());
 	}
 
 	createImage (in_filename);
@@ -528,21 +528,21 @@ Rts2Image::openImage (const char *in_filename, bool readOnly)
 int
 Rts2Image::toQue ()
 {
-	return renameImageExpand ("%b/que/%c/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryQuePath ());
 }
 
 
 int
 Rts2Image::toAcquisition ()
 {
-	return renameImageExpand ("%b/acqusition/%t/%c/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryAcqPath ());
 }
 
 
 int
 Rts2Image::toArchive ()
 {
-	return renameImageExpand ("%b/archive/%t/%c/object/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryArchivePath ());
 }
 
 
@@ -552,7 +552,7 @@ Rts2Image::toDark ()
 {
 	if (getTargetId () == TARGET_DARK)
 	{
-		return renameImageExpand ("%b/darks/%c/%f");
+		return renameImageExpand (Rts2Config::instance ()->observatoryDarkPath ());
 	}
 	// else..
 	return renameImageExpand ("%b/archive/%t/%c/darks/%f");
@@ -562,7 +562,7 @@ Rts2Image::toDark ()
 int
 Rts2Image::toFlat ()
 {
-	return renameImageExpand ("%b/flat/%c/raw/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryFlatPath ());
 }
 
 
@@ -576,7 +576,7 @@ Rts2Image::toMasterFlat ()
 int
 Rts2Image::toTrash ()
 {
-	return renameImageExpand ("%b/trash/%t/%c/%f");
+	return renameImageExpand (Rts2Config::instance ()->observatoryTrashPath ());
 }
 
 

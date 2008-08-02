@@ -418,6 +418,67 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>que_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Images are stored on this path before they are processed. Default value is "%b/que/%c/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>acq_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Images are stored on this path for acqusition. Default value is "%b/acqusition/%t/%c/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>archive_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Good images are stored at this location. Those images form the processed image archive.
+	      Default value is "%b/archive/%t/%c/object/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>trash_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Bad images are stored at this location. Default value is "%b/trash/%t/%c/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>flat_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Flat images are stored at this location. Default value is "%b/flat/%c/raw/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>dark_path</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Bad images are stored at this location. Default value is "%b/darks/%c/%f".
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>model_step_type</option>
 	  </term>
 	  <listitem>
