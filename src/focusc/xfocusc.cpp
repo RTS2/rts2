@@ -196,7 +196,8 @@ double
 Rts2xfocusCamera::classical_median(ushort *q, int n, double *sigma)
 {
 	int i;
-	double f[n],M,S;
+	double M,S;
+	double *f = new double[n];
 
 	for (i = 0; i < n; i++)
 		f[i] = q[i];
@@ -222,6 +223,8 @@ Rts2xfocusCamera::classical_median(ushort *q, int n, double *sigma)
 
 		*sigma=S;
 	}
+
+	delete[] f;
 
 	return M;
 }
@@ -818,8 +821,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	}
 
 	// default vertical and horizontal image origins - center image
-	int vorigin = (int) floor(master->zoom * (double) image->getWidth () / 2.0) - pixmapWidth / 2;
-	int horigin = (int) floor(master->zoom * (double) image->getHeight () / 2.0) - pixmapHeight / 2;
+	int vorigin = (int) floor (master->zoom * (double) image->getWidth () / 2.0) - pixmapWidth / 2;
+	int horigin = (int) floor (master->zoom * (double) image->getHeight () / 2.0) - pixmapHeight / 2;
 
 	// create array which will hold the image
 	// this will be then zoomed to pixmap array
@@ -829,7 +832,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	// modified image size
 	int iW = (int) ceil (pixmapWidth / master->zoom);
 	int iH = (int) ceil (pixmapHeight / master->zoom);
-	ushort *iP = (ushort *) malloc(iW * iH * sizeof(ushort));
+	ushort *iP = (ushort *) malloc (iW * iH * sizeof(ushort));
 	ushort *iTop = iP;
 	// pointer to top line of square image subset
 	ushort *iNineTop = image->getDataUShortInt ();
@@ -847,9 +850,9 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 			iTop += iW / 3;
 
 			// line..
-			// im_ptr is hovvseted, so we only add iW/3 for already copied pixels..
-			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * (int) ceil (iW - (2 * iW / 3)));
-			iTop += iW - (int) ceil (2 * iW / 3);
+			// im_ptr is offseted in horizontal direction, so we only add iW/3 for already copied pixels..
+			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * (int) ceil ((double) iW / 3.0));
+			iTop += (int) ceil ((double) iW / 3.0);
 
 			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
 			iTop += iW / 3;
@@ -884,8 +887,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 			iTop += iW / 3;
 
 			// line..
-			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * ((int) ceil (iW - (2 * iW / 3))));
-			iTop += (int) ceil (iW - (2 * iW / 3));
+			memcpy (iTop, im_ptr + iW / 3, sizeof(ushort) * ((int) ceil ((double) iW / 3.0)));
+			iTop += (int) ceil ((double) iW / 3.0);
 
 			memcpy (iTop, iNineTop + (image->getWidth () - 2 * iW / 3), sizeof(ushort) * (iW / 3));
 			iTop += iW / 3;
