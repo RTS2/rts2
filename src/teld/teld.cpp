@@ -377,8 +377,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		model_change->ra = -1 * corrRaDec->getRa();
 		model_change->dec = -1 * corrRaDec->getDec();
 
-		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
-		pos->dec = pos->dec - corrRaDec->getDec ();
+		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
+		pos->dec = pos->dec + corrRaDec->getDec ();
 		return;
 	}
 	lst = getLstDeg (JD);
@@ -419,8 +419,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	ra = ln_range_degrees (lst - hadec.ra);
 
 	// calculate change
-	model_change->ra = ln_range_degrees (pos->ra - ra);
-	model_change->dec = pos->dec - hadec.dec;
+	model_change->ra = ln_range_degrees (pos->ra + ra);
+	model_change->dec = pos->dec + hadec.dec;
 
 	if (model_change->ra > 180)
 		model_change->ra -= 360.0;
