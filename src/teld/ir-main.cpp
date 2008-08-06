@@ -259,7 +259,7 @@ Rts2DevTelescopeIr::startPark ()
 	{
 		case 0:
 			status = irConn->tpl_set ("HA.TARGETPOS", 90, &status);
-			status = irConn->tpl_set ("DEC.TARGETPOS", 90, &status);
+			status = irConn->tpl_set ("DEC.TARGETPOS", 0, &status);
 			break;
 		case 1:
 			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);

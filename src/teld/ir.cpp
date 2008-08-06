@@ -744,10 +744,46 @@ Rts2TelescopeIr::info ()
 	cabinetPower->setValueBool (cab_power == 1);
 	cabinetPowerState->setValueFloat (cab_power_state);
 
-	status = irConn->tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
-	t_telRa *= 15.0;
-	status = irConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
-	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+	if (!track)
+	{
+		// telRA, telDec are invalid: compute them from ZD/AZ
+		struct ln_hrz_posn hrz;
+		struct ln_lnlat_posn observer;
+		struct ln_equ_posn curr;
+		switch (getPointingModel ())
+		{
+			case 0:
+				status = irConn->tpl_get ("HA.CURRPOS", t_telRa, &status);
+				status = irConn->tpl_get ("DEC.CURRPOS", t_telDec, &status);
+				if (status != TPL_OK)
+				{
+					return -1;
+				}
+				t_telRa = ln_range_degrees (ln_get_mean_sidereal_time (ln_get_julian_from_sys ()) - t_telRa);
+				setTelRaDec (t_telRa, t_telDec);
+				break;
+			case 1:
+				hrz.az = az;
+				hrz.alt = 90 - fabs (zd);
+				observer.lng = telLongitude->getValueDouble ();
+				observer.lat = telLatitude->getValueDouble ();
+				ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
+				setTelRa (curr.ra);
+				setTelDec (curr.dec);
+				telFlip->setValueInteger (0);
+				break;
+		}
+	}
+	else
+	{
+		status = irConn->tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
+		t_telRa *= 15.0;
+		status = irConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
+		status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+
+		telFlip->setValueInteger (0);
+	}
+
 	if (status != TPL_OK)
 		return -1;
 
@@ -781,26 +817,6 @@ Rts2TelescopeIr::info ()
 			break;
 	}
 	#endif						 // DEBUG_EXTRA
-
-	if (!track)
-	{
-		// telRA, telDec are invalid: compute them from ZD/AZ
-		struct ln_hrz_posn hrz;
-		struct ln_lnlat_posn observer;
-		struct ln_equ_posn curr;
-		hrz.az = az;
-		hrz.alt = 90 - fabs (zd);
-		observer.lng = telLongitude->getValueDouble ();
-		observer.lat = telLatitude->getValueDouble ();
-		ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
-		setTelRa (curr.ra);
-		setTelDec (curr.dec);
-		telFlip->setValueInteger (0);
-	}
-	else
-	{
-		telFlip->setValueInteger (0);
-	}
 
 	if (status)
 		return -1;
