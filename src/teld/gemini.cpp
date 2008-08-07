@@ -860,7 +860,7 @@ in_argv)
 	addOption (OPT_EXPTYPE, "expected_type", 1,
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 	addOption (OPT_FORCETYPE, "force_type", 1,
-		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
+		"force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
 	addOption (OPT_FORCELATLON, "force_latlon", 0, "set observing longitude and latitude from configuration file");
 
 	lastMotorState = 0;
