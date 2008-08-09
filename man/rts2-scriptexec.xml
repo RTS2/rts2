@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2007, 2008</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -75,6 +75,9 @@
       </arg>
       <arg choice="opt">
         <arg choice="plain"><option>-s</option> <replaceable>script</replaceable></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-e</option> <replaceable>expand string</replaceable></arg>
       </arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -160,6 +163,15 @@
 	    with <option>-d</option> option. For details of the script syntax,
 	    please see
 	    <citerefentry><refentrytitle>rts2.script</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-e <replaceable class="parameter">expand string</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify path on which images will be saved. Path is constitued as expression, described in 
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
 	  </para>
         </listitem>
       </varlistentry>

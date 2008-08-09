@@ -103,6 +103,10 @@ Rts2ScriptExec::processOption (int in_opt)
 			scripts.push_back (new Rts2ScriptForDeviceStream (std::string (deviceName), is));
 			deviceName = NULL;
 			break;
+		case 'e':
+			expandPath = new Rts2ValueString ("expand_path");
+			expandPath->setValueString (optarg);
+			break;
 		default:
 			return Rts2Client::processOption (in_opt);
 	}
@@ -117,12 +121,15 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
 	currentTarget = NULL;
 	nextRunningQ = 0;
 	configFile = NULL;
+	expandPath = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
 	addOption ('d', NULL, 1, "name of next script device");
 	addOption ('s', NULL, 1, "device script (for device specified with d)");
 	addOption ('f', NULL, 1, "script filename");
+
+	addOption ('e', NULL, 1, "filename expand string");
 }
 
 
@@ -178,7 +185,7 @@ Rts2ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 			cli = new Rts2DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
-			cli = new Rts2DevClientCameraExec (conn);
+			cli = new Rts2DevClientCameraExec (conn, expandPath);
 			break;
 		case DEVICE_TYPE_FOCUS:
 			cli = new Rts2DevClientFocusImage (conn);

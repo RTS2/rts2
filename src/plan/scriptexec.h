@@ -34,6 +34,7 @@ class Rts2TargetScr;
 class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 {
 	private:
+		Rts2ValueString *expandPath;
 		std::vector < Rts2ScriptForDevice* > scripts;
 		char *deviceName;
 
