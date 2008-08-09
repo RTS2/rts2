@@ -396,10 +396,9 @@ std::string Rts2Image::expandVariable (char expression)
 std::string Rts2Image::expandVariable (std::string expression)
 {
 	std::string ret;
-	char
-		valB[200];
-	int
-		g_ret;
+	char valB[200];
+	int g_ret;
+
 	g_ret = getValue (expression.c_str (), valB, 200, true);
 	if (g_ret)
 	{
