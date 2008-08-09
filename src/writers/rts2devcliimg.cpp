@@ -57,6 +57,8 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 
 	actualImage = NULL;
 	lastImage = NULL;
+
+	expNum = 0;
 }
 
 
@@ -161,7 +163,7 @@ Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
 Rts2Image *
 Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
-	return new Rts2Image ("%c_%y%m%d-%H%M%S-%s.fits", expStart, connection);
+	return new Rts2Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
 }
 
 

@@ -121,6 +121,8 @@ class Rts2Image:public Rts2Expander
 
 		int mnt_flip;
 
+		int expNum;
+
 		void initData ();
 
 		void writeConnBaseValue (const char *name, Rts2Value * val, const char *desc);
@@ -178,9 +180,15 @@ class Rts2Image:public Rts2Expander
 		Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure);
 		// create image
 		Rts2Image (char *in_filename, const struct timeval *in_exposureStart);
-		// create image from expand path
-		Rts2Image (const char *in_expression,
-			const struct timeval *in_exposureStart,
+		/**
+		 * Create image from expand path.
+		 *
+		 * @param in_expression     Expresion containing characters which will be expanded.
+		 * @param in_expNum         Exposure number.
+		 * @param in_exposureStart  Starting time of the exposure.
+		 * @param in_connection     Connection of camera requesting exposure.
+		 */
+		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart,
 			Rts2Conn * in_connection);
 		// create image in que
 		Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
@@ -387,6 +395,8 @@ class Rts2Image:public Rts2Expander
 
 		std::string getTargetString ();
 		std::string getTargetSelString ();
+
+		std::string getExposureNumberString ();
 		std::string getObsString ();
 		std::string getImgIdString ();
 

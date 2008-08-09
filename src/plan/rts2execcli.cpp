@@ -47,7 +47,7 @@ Rts2Image *
 Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
 	if (expandPath)
-		return new Rts2Image (expandPath->getValue (), expStart, connection);
+		return new Rts2Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
 	return Rts2DevClientCameraImage::createImage (expStart);
 }
 

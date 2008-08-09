@@ -53,6 +53,9 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		// last image
 		Rts2Image *lastImage;
 
+		// number of exposure
+		int expNum;
+
 	protected:
 
 		/**
@@ -73,6 +76,11 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		}
 
 		Rts2Image *setImage (Rts2Image * old_img, Rts2Image * new_image);
+
+		int getExposureNumber ()
+		{
+			return ++expNum;
+		}
 
 		int chipNumbers;
 		int saveImage;
@@ -100,6 +108,7 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
+
 		/**
 		 * This function carries image processing.  Based on the return value, image
 		 * will be deleted when new image is taken, or deleting of the image will

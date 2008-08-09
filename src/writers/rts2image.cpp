@@ -62,6 +62,7 @@ Rts2Image::initData ()
 	focPos = -1;
 	signalNoise = 17;
 	getFailed = 0;
+	expNum = 1;
 
 	pos_astr.ra = nan ("f");
 	pos_astr.dec = nan ("f");
@@ -178,9 +179,8 @@ Rts2Expander (in_exposureStart)
 }
 
 
-Rts2Image::Rts2Image (long in_img_date, int in_img_usec,
-float in_img_exposure):
-Rts2Expander ()
+Rts2Image::Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure)
+:Rts2Expander ()
 {
 	struct timeval tv;
 	initData ();
@@ -192,9 +192,8 @@ Rts2Expander ()
 }
 
 
-Rts2Image::Rts2Image (char *in_filename,
-const struct timeval *in_exposureStart):
-Rts2Expander (in_exposureStart)
+Rts2Image::Rts2Image (char *in_filename, const struct timeval *in_exposureStart)
+:Rts2Expander (in_exposureStart)
 {
 	initData ();
 
@@ -203,22 +202,20 @@ Rts2Expander (in_exposureStart)
 }
 
 
-Rts2Image::Rts2Image (const char *in_expression,
-const struct timeval *in_exposureStart,
-Rts2Conn * in_connection):
-Rts2Expander (in_exposureStart)
+Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection)
+:Rts2Expander (in_exposureStart)
 {
 	initData ();
 	setCameraName (in_connection->getName ());
+	expNum = in_expNum;
 
 	createImage (expandPath (in_expression));
 	writeExposureStart ();
 }
 
 
-Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-const struct timeval *in_exposureStart):
-Rts2Expander (in_exposureStart)
+Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *in_exposureStart)
+:Rts2Expander (in_exposureStart)
 {
 	std::string in_filename;
 
@@ -387,6 +384,8 @@ std::string Rts2Image::expandVariable (char expression)
 			return getTargetString ();
 		case 't':
 			return getTargetSelString ();
+		case 'n':
+			return getExposureNumberString ();
 		default:
 			return Rts2Expander::expandVariable (expression);
 	}
@@ -1402,6 +1401,15 @@ std::string Rts2Image::getTargetSelString ()
 	std::ostringstream _os;
 	_os.fill ('0');
 	_os << std::setw (5) << getTargetIdSel ();
+	return _os.str ();
+}
+
+
+std::string Rts2Image::getExposureNumberString ()
+{
+	std::ostringstream _os;
+	_os.fill ('0');
+	_os << std::setw (6) << expNum;
 	return _os.str ();
 }
 
