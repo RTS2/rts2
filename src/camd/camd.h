@@ -163,7 +163,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int currentImageData;
 								 // DARK of LIGHT frames
-		Rts2ValueSelection *expType;
 		Rts2ValueFloat *exposure;
 
 		Rts2ValueRectangle *chipSize;
@@ -225,6 +224,11 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		//! number of connection waiting to be executed
 		Rts2ValueInteger *quedExpNumber;
+
+		/**
+		 * Shutter control.
+		 */
+		Rts2ValueSelection *expType;
 
 		/**
 		 * Change state of camera chip.
@@ -540,11 +544,25 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
+		/**
+		 * Create shutter variable,
+		 */
 		void createExpType ()
 		{
 			createValue (expType, "SHUTTER", "shutter state");
 			expType->addSelVal ("LIGHT", NULL);
 			expType->addSelVal ("DARK", NULL);
+		}
+
+		/**
+		 * Add enumeration to shutter variable.
+		 *
+		 * @param enumName  Value which will be used for enumeration.
+		 * @param @data     Optional data associated with enumeration.
+		 */
+		void addShutterType (const char *enumName, Rts2SelData *data = NULL)
+		{
+			expType->addSelVal (enumName, data);
 		}
 
 		void createTempAir ()

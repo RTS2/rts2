@@ -73,6 +73,8 @@ class Rts2DevCameraFli:public Rts2DevCamera
 		virtual long isExposing ();
 		virtual int stopExposure ();
 		virtual int readoutOneLine ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
 		Rts2DevCameraFli (int in_argc, char **in_argv);
 		virtual ~ Rts2DevCameraFli (void);
@@ -199,12 +201,26 @@ Rts2DevCameraFli::readoutOneLine ()
 }
 
 
+int
+Rts2DevCameraFli::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == expType)
+	{
+		int ret;
+		ret = FLIControlShutter (dev, (new_value->getValueInteger () == 2) ? FLI_SHUTTER_OPEN : FLI_SHUTTER_CLOSE);
+		return ret ? -2 : 0;
+	}
+	return Rts2DevCamera::setValue (old_value, new_value);
+}
+
+
 Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
 	createExpType ();
+	addShutterType ("OPEN");
 
 	deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
