@@ -34,6 +34,7 @@ class Rts2AirmasScale: public Rts2AppDb
     int doPrintAction ();
 
     virtual void help ();
+    virtual void usage ();
 
     virtual int processOption (int in_opt);
     virtual int processArgs (const char *arg);
@@ -50,7 +51,7 @@ Rts2AirmasScale::Rts2AirmasScale (int in_argc, char **in_argv): Rts2AppDb (in_ar
   steps = nan ("f");
   max = nan ("f");
 
-  addOption ('s', "set", 0, "set airmass scales");
+  addOption ('s', NULL, 0, "set airmass scales. Two args are scale and max airmass");
 }
 
 
@@ -61,6 +62,14 @@ Rts2AirmasScale::help ()
   Rts2AppDb::help ();
 }
 
+
+void
+Rts2AirmasScale::usage ()
+{
+  std::cout
+  	<< "Set airmass table from 0 to 2.5 with step size 0.2" << std::endl
+  	<< "\t" << getAppName () << " -s 0.2 2.5" << std::endl;
+}
 
 int
 Rts2AirmasScale::processOption (int in_opt)
