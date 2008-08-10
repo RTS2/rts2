@@ -656,7 +656,7 @@ CalibrationTarget::load ()
 			type_id = 'c'
 		OR type_id = 'M'
 			)
-			ORDER BY
+		ORDER BY
 			tar_priority + tar_bonus desc;
 	EXEC SQL OPEN pos_calibration;
 	while (1)
@@ -709,7 +709,7 @@ CalibrationTarget::load ()
 			EXTRACT (EPOCH FROM air_last_image)
 		FROM
 			airmass_cal_images
-			ORDER BY
+		ORDER BY
 			air_last_image asc,
 			abs (1.5 - (air_airmass_start + air_airmass_end) / 2) asc;
 	EXEC SQL OPEN cur_airmass_cal_images;

@@ -281,9 +281,7 @@ Rts2Target ()
 
 	observer = in_obs;
 
-	int epId = 1;
-	config->getInteger ("observatory", "epoch_id", epId);
-	setEpoch (epId);
+	setEpoch (config->observatoryEpoch ());
 
 	config->getDouble ("observatory", "min_alt", minAlt, 0);
 
@@ -311,9 +309,7 @@ Target::Target ()
 
 	observer = config->getObserver ();
 
-	int epId = 1;
-	config->getInteger ("observatory", "epoch_id", epId);
-	setEpoch (epId);
+	setEpoch (config->observatoryEpoch ());
 
 	config->getDouble ("observatory", "min_alt", minAlt, 0);
 
@@ -1920,6 +1916,9 @@ Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	time_t now, last;
 
 	const char *name = getTargetName ();
+	char tar_type[2];
+	tar_type[0] = getTargetType ();
+	tar_type[1] = '\0';
 
 	ln_get_timet_from_julian (JD, &now);
 
@@ -1929,7 +1928,7 @@ Target::sendInfo (Rts2InfoValStream & _os, double JD)
 		<< InfoVal<int> ("ID", getTargetID ())
 		<< InfoVal<int> ("SEL_ID", getObsTargetID ())
 		<< InfoVal<const char *> ("NAME", (name ? name : "null name"))
-		<< InfoVal<char> ("TYPE", getTargetType ())
+		<< InfoVal<const char *> ("TYPE", tar_type)
 		<< InfoVal<LibnovaRaJ2000> ("RA", LibnovaRaJ2000 (pos.ra))
 		<< InfoVal<LibnovaDecJ2000> ("DEC", LibnovaDecJ2000 (pos.dec))
 		<< std::endl;
