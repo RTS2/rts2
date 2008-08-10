@@ -38,6 +38,8 @@
 class Rts2DevCameraFli:public Rts2DevCamera
 {
 	private:
+		Rts2ValueSelection *fliShutter;
+
 		flidomain_t deviceDomain;
 
 		flidev_t dev;
@@ -204,10 +206,28 @@ Rts2DevCameraFli::readoutOneLine ()
 int
 Rts2DevCameraFli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == expType)
+	if (old_value == fliShutter)
 	{
 		int ret;
-		ret = FLIControlShutter (dev, (new_value->getValueInteger () == 2) ? FLI_SHUTTER_OPEN : FLI_SHUTTER_CLOSE);
+		switch (new_value->getValueInteger ())
+		{
+			case 0:
+				ret = FLI_SHUTTER_CLOSE;
+				break;
+			case 1:
+				ret = FLI_SHUTTER_OPEN;
+				break;
+			case 2:
+				ret = FLI_SHUTTER_EXTERNAL_TRIGGER;
+				break;
+			case 3:
+				ret = FLI_SHUTTER_EXTERNAL_TRIGGER_LOW;
+				break;
+			case 4:
+				ret = FLI_SHUTTER_EXTERNAL_TRIGGER_HIGH;
+				break;
+		}
+		ret = FLIControlShutter (dev, ret);
 		return ret ? -2 : 0;
 	}
 	return Rts2DevCamera::setValue (old_value, new_value);
@@ -220,7 +240,13 @@ Rts2DevCamera (in_argc, in_argv)
 	createTempSet ();
 	createTempCCD ();
 	createExpType ();
-	addShutterType ("OPEN");
+
+	createValue (fliShutter, "FLISHUT", "FLI shutter state");
+	fliShutter->addSelVal ("CLOSED");
+	fliShutter->addSelVal ("OPENED");
+	fliShutter->addSelVal ("EXTERNAL TRIGGER");
+	fliShutter->addSelVal ("EXTERNAL TRIGGER LOW");
+	fliShutter->addSelVal ("EXTERNAL TRIGGER HIGH");
 
 	deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
