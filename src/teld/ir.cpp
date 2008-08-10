@@ -744,6 +744,10 @@ Rts2TelescopeIr::info ()
 	cabinetPower->setValueBool (cab_power == 1);
 	cabinetPowerState->setValueFloat (cab_power_state);
 
+	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+	if (status != TPL_OK)
+		return -1;
+
 	if (!track)
 	{
 		// telRA, telDec are invalid: compute them from ZD/AZ
@@ -779,7 +783,6 @@ Rts2TelescopeIr::info ()
 		status = irConn->tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
 		t_telRa *= 15.0;
 		status = irConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
-		status = irConn->tpl_get ("POINTING.TRACK", track, &status);
 
 		telFlip->setValueInteger (0);
 	}
