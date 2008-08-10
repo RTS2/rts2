@@ -63,6 +63,8 @@ class Rts2Config:public Rts2ConfigRaw
 		bool grbd_follow_transients;
 		int grbd_validity;
 
+		int obs_epoch_id;
+
 		std::string obs_quePath;
 		std::string obs_acqPath;
 		std::string obs_archive;
@@ -251,6 +253,15 @@ class Rts2Config:public Rts2ConfigRaw
 		int grbdValidity ()
 		{
 			return grbd_validity;
+		}
+
+
+		/**
+		 * Return observatory epoch.
+		 */
+		int observatoryEpoch ()
+		{
+			return obs_epoch_id;
 		}
 
 
