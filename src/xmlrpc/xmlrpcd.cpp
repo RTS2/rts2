@@ -19,9 +19,10 @@
  */
 
 #include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/rts2targetset.h"
-#include "../utilsdb/rts2obsset.h"
 #include "../utilsdb/rts2imgset.h"
+#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/rts2messagedb.h"
+#include "../utilsdb/rts2targetset.h"
 #include "../utilsdb/rts2user.h"
 #include "../writers/rts2imagedb.h"
 #include "../utils/libnova_cpp.h"
@@ -64,6 +65,8 @@ class Rts2XmlRpcd:public Rts2DeviceDb
 
 	public:
 		Rts2XmlRpcd (int argc, char **argv);
+
+		virtual void message (Rts2Message & msg);
 };
 
 int
@@ -120,6 +123,17 @@ Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVI
 	rpcPort = 8889;
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	XmlRpc::setVerbosity (0);
+}
+
+
+void
+Rts2XmlRpcd::message (Rts2Message & msg)
+{
+	if (msg.isNotDebug ())
+	{
+		Rts2MessageDB msgDB (msg);
+		msgDB.insertDB ();
+	}
 }
 
 
