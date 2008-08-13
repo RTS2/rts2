@@ -119,11 +119,11 @@ Rts2Conn::~Rts2Conn (void)
 
 
 int
-Rts2Conn::add (fd_set * set)
+Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (sock >= 0)
 	{
-		FD_SET (sock, set);
+		FD_SET (sock, readset);
 	}
 	return 0;
 }
@@ -806,13 +806,13 @@ Rts2Conn::processBuffer ()
 
 
 int
-Rts2Conn::receive (fd_set * set)
+Rts2Conn::receive (fd_set * readset)
 {
 	int data_size = 0;
 	// connections market for deletion
 	if (isConnState (CONN_DELETE))
 		return -1;
-	if ((sock >= 0) && FD_ISSET (sock, set))
+	if ((sock >= 0) && FD_ISSET (sock, readset))
 	{
 		if (isConnState (CONN_CONNECTING))
 		{
@@ -874,6 +874,13 @@ Rts2Conn::receive (fd_set * set)
 		processBuffer ();
 	}
 	return data_size;
+}
+
+
+int
+Rts2Conn::writable (fd_set * writeset)
+{
+	return 0;
 }
 
 
@@ -957,6 +964,7 @@ Rts2Conn::queCommand (Rts2Command * cmd)
 	cmd->setConnection (this);
 	if (runningCommand
 		|| isConnState (CONN_CONNECTING)
+		|| isConnState (CONN_INPROGRESS)
 		|| isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_back (cmd);
@@ -971,7 +979,9 @@ void
 Rts2Conn::queSend (Rts2Command * cmd)
 {
 	cmd->setConnection (this);
-	if (isConnState (CONN_CONNECTING) || isConnState (CONN_UNKNOW))
+	if (isConnState (CONN_CONNECTING)
+		|| isConnState (CONN_INPROGRESS)
+		|| isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_front (cmd);
 		return;

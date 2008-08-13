@@ -1353,14 +1353,14 @@ Rts2ConnGrb::init ()
 
 
 int
-Rts2ConnGrb::add (fd_set * set)
+Rts2ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (gcn_listen_sock >= 0)
 	{
-		FD_SET (gcn_listen_sock, set);
+		FD_SET (gcn_listen_sock, readset);
 		return 0;
 	}
-	return Rts2Conn::add (set);
+	return Rts2Conn::add (readset, writeset, expset);
 }
 
 

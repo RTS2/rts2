@@ -173,6 +173,12 @@
  */
 #define RTS2_DT_SCRIPT                0x00100000
 
+
+/**
+ * If set. value is read-write. When not set, value is read only.
+ */
+#define RTS2_VALUE_WRITABLE           0x01000000
+
 #define VALUE_BUF_LEN                 200
 
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)

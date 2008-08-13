@@ -54,8 +54,10 @@ typedef enum
 	CONN_UNKNOW,
 	/** Connection waits for address of device. */
 	CONN_RESOLVING_DEVICE,
-	/** Socket to device is opened, connection waits for other side to reply to connect call. */
+	/** Socket is opened, waiting for time to call accept call. */
 	CONN_CONNECTING,
+	/** Socket to device is opened, connection waits for other side to reply to connect call. */
+	CONN_INPROGRESS,
 	/** Connection is connected and everything works. */
 	CONN_CONNECTED,
 	/** Connection is broken, other side does not replied to previous commands before timeout on command reply expires. */
@@ -275,7 +277,16 @@ class Rts2Conn:public Rts2Object
 
 		virtual void postEvent (Rts2Event * event);
 
-		virtual int add (fd_set * set);
+		/**
+		 * Add to read/write/exception sets sockets identifiers which
+		 * belong to current connection. Those sets are used in 
+		 * main select call of Rts2Block.
+		 *
+		 * @param readset   Set of sockets which will be checked for new data.
+		 * @param writeset  Set of sockets which will be checked for possibility to write new data.
+		 * @param expset    Set of sockets checked for any connection exceptions.
+		 */
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
 		/**
 		 * Set if command is in progress.
@@ -390,7 +401,26 @@ class Rts2Conn:public Rts2Object
 		int sendCommandEnd (int num, const char *in_msg);
 
 		virtual int processLine ();
-		virtual int receive (fd_set * set);
+
+		/**
+		 * Called when select call indicates that socket holds new
+		 * data for reading.
+		 *
+		 * @param readset  Read FD_SET, connection must test if socket is among this set.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int receive (fd_set * readset);
+
+		/**
+		 * Called when select call indicates that socket 
+		 * can accept new data for writing.
+		 *
+		 * @param write  Write FD_SET, connection must test if socket is among this set.
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int writable (fd_set * writeset);
+
 		conn_type_t getType ()
 		{
 			return type;

@@ -59,9 +59,11 @@ class Rts2DevConn:public Rts2Conn
 		virtual int command ();
 
 		virtual int init ();
-		virtual int idle ();
 	public:
 		Rts2DevConn (int in_sock, Rts2Device * in_master);
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int writable (fd_set * writeset);
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();

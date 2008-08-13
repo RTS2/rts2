@@ -257,7 +257,7 @@ Rts2Block::addSelectSocks ()
 	for (iter = connections.begin (); iter != connections.end (); iter++)
 	{
 		conn = *iter;
-		conn->add (&read_set);
+		conn->add (&read_set, &write_set, &exp_set);
 	}
 }
 
@@ -273,7 +273,7 @@ Rts2Block::selectSuccess ()
 	for (iter = connections.begin (); iter != connections.end ();)
 	{
 		conn = *iter;
-		if (conn->receive (&read_set) == -1)
+		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
 		{
 			#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<

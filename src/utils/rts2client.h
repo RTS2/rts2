@@ -49,7 +49,10 @@ class Rts2ConnClient:public Rts2Conn
 		virtual ~ Rts2ConnClient (void);
 
 		virtual int init ();
-		virtual int idle ();
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+		virtual int writable (fd_set * writeset);
+
 
 		virtual void setAddress (Rts2Address * in_addr);
 		void connLogin ();

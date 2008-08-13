@@ -116,7 +116,7 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		virtual int idle ();
 		virtual int init ();
 
-		virtual int add (fd_set * set);
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
 		virtual void connectionError (int last_data_size);
 		virtual int receive (fd_set * set);

@@ -329,6 +329,7 @@ class Rts2Target
 		{
 			return epochId;
 		}
+
 		void setEpoch (int in_epochId)
 		{
 			epochId = in_epochId;

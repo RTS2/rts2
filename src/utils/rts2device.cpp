@@ -126,7 +126,7 @@ Rts2DevConn::init ()
 	{
 		if (errno == EINPROGRESS)
 		{
-			setConnState (CONN_CONNECTING);
+			setConnState (CONN_INPROGRESS);
 			return 0;
 		}
 		return -1;
@@ -137,12 +137,18 @@ Rts2DevConn::init ()
 
 
 int
-Rts2DevConn::idle ()
+Rts2DevConn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
-	if (getType () != DEVICE_DEVICE)
-		return Rts2Conn::idle ();
+	if (isConnState (CONN_INPROGRESS))
+		FD_SET (sock, writeset);
+	return Rts2Conn::add (readset, writeset, expset);
+}
 
-	if (isConnState (CONN_CONNECTING))
+
+int
+Rts2DevConn::writable (fd_set * writeset)
+{
+	if (FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
 	{
 		int err = 0;
 		int ret;

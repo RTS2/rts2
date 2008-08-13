@@ -84,7 +84,7 @@ Rts2ConnClient::init ()
 	{
 		if (errno == EINPROGRESS)
 		{
-			setConnState (CONN_CONNECTING);
+			setConnState (CONN_INPROGRESS);
 			return 0;
 		}
 		return -1;
@@ -95,9 +95,18 @@ Rts2ConnClient::init ()
 
 
 int
-Rts2ConnClient::idle ()
+Rts2ConnClient::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
-	if (isConnState (CONN_CONNECTING))
+	if (isConnState (CONN_INPROGRESS))
+		FD_SET (sock, writeset);
+	return Rts2Conn::add (readset, writeset, expset);
+}
+
+
+int
+Rts2ConnClient::writable (fd_set * writeset)
+{
+	if (FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
 	{
 		int err = 0;
 		int ret;
@@ -121,7 +130,7 @@ Rts2ConnClient::idle ()
 			connLogin ();
 		}
 	}
-	return Rts2Conn::idle ();
+	return Rts2Conn::writable (writeset);
 }
 
 
