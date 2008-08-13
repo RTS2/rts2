@@ -266,6 +266,7 @@ class ListValuesDevice: public ListValues
 				{
 					XmlRpcValue retVar;
 					retVar["name"] = (*variter)->getName ();
+					retVar["flags"] = (*variter)->getFlags ();
 
 					Rts2Value *val = *variter;
 
