@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-07-19</date>">
+  <!ENTITY dhdate      "<date>2008-08-14</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.3</productnumber>
+    <productnumber>0.7.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2006, 2007</year>
+      <year>2006 - 2008</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -829,6 +829,80 @@
 	      altitude of soft_horizon. This is interesting for widefield
 	      systems, which would like to follow Swift which center is bellow
 	      horizon. Defaults to the "min_horizon" parameter.
+            </para>
+	  </listitem>
+	</varlistentry>
+      </variablelist>
+    </refsect2>
+    <refsect2>
+      <title>imgproc</title>
+      <para>Image processor configuration.</para>
+      <variablelist>
+	<varlistentry>
+	  <term>
+	    <option>astrometry</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for image processing script. Image processing script is
+	      called on every obtained image. The only parameter passed to the
+	      script is full path of the image.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>imageglob</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Glob pattern (e.g. * are allowed) for images. Those images are
+	      processed when system is in day or standby/off state.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>astrometry_timeout</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Timeout for astrometry processing. Astrometry script run time is
+	      limited to this number of seconds.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>obsprocess</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Observation processing script. Script is passed ID of observation
+	      which shall be processed. Script is run after all observation
+	      images were called through astrometry script.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>darkprocess</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Dark images processing script. Script is run without any
+	      parameter at the end of dark images acqusition.
+            </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>flatprocess</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Flat images processing script. Script is run without any
+	      parameter at the end of flat image acqusition.
             </para>
 	  </listitem>
 	</varlistentry>
