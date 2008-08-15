@@ -747,6 +747,7 @@ Rts2DevTelescopeGemini::tel_rep_write (char *command)
 		if (retstr == '1')
 			break;
 		sleep (1);
+		tel_conn->flushPortIO ();
 		logStream (MESSAGE_DEBUG) << "Losmandy tel_rep_write - for " << count <<
 			" time" << sendLog;
 	}
