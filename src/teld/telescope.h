@@ -312,19 +312,48 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueDouble *telLatitude;
 		Rts2ValueDouble *telAltitude;
 		Rts2ValueString *telescope;
-		// in multiply of sidereal speed..eg 1 == 15 arcsec/sec
+
+		/**
+		 * Check if telescope is moving to fixed position. Called during telescope
+		 * movement to detect if the target destination was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isMovingFixed
+		 * call.
+		 *
+		 * @see isMoving()
+		 */
 		virtual int isMovingFixed ()
 		{
 			return isMoving ();
 		}
+
+		/**
+		 * Check if telescope is moving. Called during telescope
+		 * movement to detect if the target destination was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isMoving
+		 * call.
+		 */
 		virtual int isMoving ()
 		{
 			return -2;
 		}
+
 		virtual int isSearching ()
 		{
 			return -2;
 		}
+
+		/**
+		 * Check if telescope is parking. Called during telescope
+		 * park to detect if parking position was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isParking
+		 * call.
+		 */
 		virtual int isParking ()
 		{
 			return -2;
@@ -486,7 +515,23 @@ class Rts2DevTelescope:public Rts2Device
 		 * @return 0 on success, -1 on error.
 		 */
 		virtual int startMove () = 0;
+
+		/**
+		 * Called at the end of telescope movement, after isMoving return
+		 * -2.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
 		virtual int endMove ();
+
+		/**
+		 * Stop telescope movement. It is called in two cases. Either when new
+		 * target is entered and telescope should stop movement to current target,
+		 * or when some failure of telescope is detected and telescope should stop 
+		 * current movement in order to prevent futher damage to the hardware.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
 		virtual int stopMove () = 0;
 		virtual int startSearch ()
 		{
@@ -500,7 +545,20 @@ class Rts2DevTelescope:public Rts2Device
 			return -1;
 		}
 
+		/**
+		 * Called when park command is issued. Moves telescope to park position.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
 		virtual int startPark () = 0;
+
+		/**
+		 * Called when parking of the telescope is finished. Can do various
+		 * important thinks - ussually switch of mount tracking, but can
+		 * also switch of some power supply etc..
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
 		virtual int endPark () = 0;
 
 		/**
