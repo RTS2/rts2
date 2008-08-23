@@ -348,14 +348,15 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
 		delete processor;
 		processor = NULL;
 		processingState = FAILED;
+		return 0;
 	}
 	else
 	{
 		script->getMaster ()->addConnection (processor);
 		processingState = WAITING_ASTROMETRY;
 		script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_WAIT));
+		return 1;
 	}
-	return 0;
 }
 
 
