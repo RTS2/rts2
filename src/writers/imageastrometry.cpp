@@ -145,7 +145,7 @@ Rts2Image::getCenterRa ()
 {
 	int ret;
 	double val;
-	ret = getValue ("RASC", val);
+	ret = getValue ("TARRA", val);
 	if (ret)
 	{
 		getFailed++;
@@ -160,7 +160,7 @@ Rts2Image::getCenterDec ()
 {
 	int ret;
 	double val;
-	ret = getValue ("DECL", val);
+	ret = getValue ("TARDEC", val);
 	if (ret)
 	{
 		getFailed++;
