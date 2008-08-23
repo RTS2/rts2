@@ -130,7 +130,7 @@ Rts2Image::getRotang ()
 	//  return rotang;
 	int ret;
 	double val;
-	ret = getValue ("ROTANG", val);
+	ret = getValue ("ROTANG", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -145,7 +145,7 @@ Rts2Image::getCenterRa ()
 {
 	int ret;
 	double val;
-	ret = getValue ("TARRA", val);
+	ret = getValue ("TARRA", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -160,7 +160,7 @@ Rts2Image::getCenterDec ()
 {
 	int ret;
 	double val;
-	ret = getValue ("TARDEC", val);
+	ret = getValue ("TARDEC", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -175,7 +175,7 @@ Rts2Image::getXPlate ()
 {
 	int ret;
 	double val;
-	ret = getValue ("XPLATE", val);
+	ret = getValue ("XPLATE", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -190,7 +190,7 @@ Rts2Image::getYPlate ()
 {
 	int ret;
 	double val;
-	ret = getValue ("YPLATE", val);
+	ret = getValue ("YPLATE", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -212,7 +212,7 @@ Rts2Image::getFlip ()
 {
 	int ret;
 	int val;
-	ret = getValue ("FLIP", val);
+	ret = getValue ("FLIP", val, true);
 	if (ret)
 	{
 		getFailed++;
@@ -226,10 +226,10 @@ int
 Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
 	int ret;
-	ret = getValue (ra_name, radec.ra);
+	ret = getValue (ra_name, radec.ra, true);
 	if (ret)
 		return ret;
-	ret = getValue (dec_name, radec.dec);
+	ret = getValue (dec_name, radec.dec, true);
 	if (ret)
 		return ret;
 	return 0;

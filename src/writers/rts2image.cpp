@@ -1286,8 +1286,7 @@ Rts2Image::writeDate (char *in_data, char *fullTop)
 
 
 int
-Rts2Image::fitsStatusValue (const char *valname, const char *operation,
-bool required)
+Rts2Image::fitsStatusValue (const char *valname, const char *operation, bool required)
 {
 	int ret = 0;
 	if (fits_status)
