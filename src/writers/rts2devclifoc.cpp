@@ -77,11 +77,9 @@ Rts2DevClientCameraFoc::postEvent (Rts2Event * event)
 imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 {
 	// create focus connection
-	int
-		ret;
+	int ret;
 
-	imageProceRes
-		res = Rts2DevClientCameraImage::processImage (image);
+	imageProceRes res = Rts2DevClientCameraImage::processImage (image);
 
 	//else if (darkImage)
 	//	image->substractDark (darkImage);
@@ -93,8 +91,7 @@ imageProceRes Rts2DevClientCameraFoc::processImage (Rts2Image * image)
 		ret = focConn->init ();
 		if (ret)
 		{
-			delete
-				focConn;
+			delete focConn;
 			return IMAGE_DO_BASIC_PROCESSING;
 		}
 		// after we finish, we will call focus routines..
