@@ -894,8 +894,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	// if some value is waiting to be applied..
 	else if (waitingCorrRaDec->wasChanged ())
 	{
-		corrRaDec->setRa (corrRaDec->getRa () + waitingCorrRaDec->getRa ());
-		corrRaDec->setDec (corrRaDec->getDec () + waitingCorrRaDec->getDec ());
+		corrRaDec->incValueRaDec (waitingCorrRaDec->getRa (), waitingCorrRaDec->getDec ());
 
 		waitingCorrRaDec->setValueRaDec (0, 0);
 		waitingCorrRaDec->resetValueChanged ();
@@ -1142,7 +1141,7 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
-		offsetRaDec->setValueRaDec (obj_ra, obj_dec);
+		offsetRaDec->incValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, true);
 	}
 	else if (conn->isCommand ("save_model"))

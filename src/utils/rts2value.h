@@ -927,6 +927,22 @@ class Rts2ValueRaDec: public Rts2Value
 			return 0;
 		}
 
+
+		/**
+		 * Increments RA and DEC values.
+		 *
+		 * @param _ra RA increment.
+		 * @param _dec Dec increment.
+		 *
+		 * @return 0 on success.
+		 */
+		int incValueRaDec (double _ra, double _dec)
+		{
+			setRa (getRa () + _ra);
+			setDec (getDec () + _dec);
+			return 0;
+		}
+
 		/**
 		 * Sets RA.
 		 */
