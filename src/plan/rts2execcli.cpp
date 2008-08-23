@@ -484,6 +484,8 @@ Rts2DevClientTelescopeExec::moveEnd ()
 {
 	if (moveWasCorrecting)
 	{
+		if (currentTarget)
+			currentTarget->moveEnded ();
 		getMaster ()->postEvent (new Rts2Event (EVENT_CORRECTING_OK));
 	}
 	else
