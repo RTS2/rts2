@@ -822,13 +822,11 @@ Rts2Centrald::idle ()
 
 
 void
-Rts2Centrald::sendMessage (messageType_t in_messageType,
-const char *in_messageString)
+Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
-	Rts2Message msg =
-		Rts2Message ("centrald", in_messageType, in_messageString);
+	Rts2Message msg = Rts2Message ("centrald", in_messageType, in_messageString);
 	Rts2Daemon::sendMessage (in_messageType, in_messageString);
-	sendMessageAll (msg);
+	processMessage (msg);
 }
 
 
@@ -836,6 +834,13 @@ void
 Rts2Centrald::message (Rts2Message & msg)
 {
 	processMessage (msg);
+}
+
+
+void
+Rts2Centrald::processMessage (Rts2Message & msg)
+{
+	// log it
 	if (fileLog)
 	{
 		(*fileLog) << msg;
@@ -844,6 +849,9 @@ Rts2Centrald::message (Rts2Message & msg)
 	{
 		std::cerr << msg.toString () << std::endl;
 	}
+
+	// and send it to all
+	sendMessageAll (msg);
 }
 
 

@@ -111,6 +111,8 @@ class Rts2Centrald:public Rts2Daemon
 		Rts2ValueInteger *eveningTime;
 		Rts2ValueInteger *morningTime;
 
+		void processMessage (Rts2Message & msg);
+
 	protected:
 		/**
 		 * @param new_state	new state, if -1 -> 3
@@ -208,10 +210,7 @@ class Rts2Centrald:public Rts2Daemon
 			const char *in_messageString);
 
 		virtual void message (Rts2Message & msg);
-		void processMessage (Rts2Message & msg)
-		{
-			sendMessageAll (msg);
-		}
+
 
 		virtual void signaledHUP ();
 
