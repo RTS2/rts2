@@ -547,6 +547,11 @@ class Rts2Block: public Rts2App
 			return NULL;
 		}
 
+		/**
+		 * Called when new message is received.
+		 *
+		 * @param msg Message which is received.
+		 */
 		virtual void message (Rts2Message & msg);
 
 		/**

@@ -198,16 +198,18 @@ Rts2App::helpOptions ()
 	}
 }
 
+
 void
 Rts2App::usage()
 {
-	std::cout << "\tUsage pattern not defined, please add feature request to http://www.sf.net/projects/rts-2" << std::endl;
+	std::cout << "\tUsage pattern not defined, please add feature request for missing usage pattern to http://www.sf.net/projects/rts-2" << std::endl;
 }
+
 
 void
 Rts2App::help ()
 {
- 	std::cout << "Usage:" << std::endl;
+	std::cout << "Usage:" << std::endl;
 	usage ();
 	std::cout << "Options:" << std::endl;
 	helpOptions ();
@@ -226,22 +228,30 @@ Rts2App::processOption (int in_opt)
 		case OPT_VERSION:
 			std::cout << "Part of RTS2 version: " << VERSION << std::endl
 				<< std::endl
-				<<
-				"(C) 2001-2007 Petr Kubanek and others, see AUTHORS file for complete list"
-				<< std::endl << std::
-				endl <<
-				"This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org.  This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
-				<< std::endl << std::endl;
+				<< "(C) 2001-2008 Petr Kubanek and others, see AUTHORS file for complete list"
+				<< std::endl
+				<< std::endl
+				<< "This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org. \
+This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
+				<< std::endl
+				<< "See http://rts-2.sf.net for news and more."
+				<< std::endl;
+
 			exit (EXIT_SUCCESS);
+
 		case '?':
-			std::cerr << "Invalid option encountered, exiting." << std::endl
-				<< "For correct ussage, please consult following:" << std::endl;
+			std::cerr << "Invalid option encountered, exiting."
+				<< std::endl
+				<< "For correct ussage, please consult following:"
+				<< std::endl;
+
 			help ();
 			exit (EXIT_FAILURE);
+
 		default:
-			std::
-				cout << "Unknow option: " << in_opt << "(" << (char) in_opt << ")" <<
-				std::endl;
+			std::cout << "Unknow option: " << in_opt << "(" << (char) in_opt << ")"
+				<< std::endl;
+
 			exit (EXIT_FAILURE);
 	}
 	return 0;

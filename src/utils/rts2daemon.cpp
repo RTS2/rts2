@@ -312,8 +312,7 @@ Rts2Daemon::forkedInstance ()
 
 
 void
-Rts2Daemon::sendMessage (messageType_t in_messageType,
-const char *in_messageString)
+Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	int prio;
 	switch (daemonize)
