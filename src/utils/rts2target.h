@@ -152,10 +152,11 @@ class Rts2Target
 			selected = 0;
 			acquired = 0;
 		}
+
 		virtual ~ Rts2Target (void)
 		{
 		}
-		// target manipulation functions
+
 		/**
 		 * Retrieve script for target.
 		 *
@@ -166,12 +167,27 @@ class Rts2Target
 		 */
 		virtual int getScript (const char *device_name, std::string & buf) = 0;
 
+		/**
+		 * Return target position at actual time.
+		 *
+		 * @param pos  Pointer to returned target position.
+		 *
+		 * @return 0 if target position was sucessfully calculated.
+		 */
 		int getPosition (struct ln_equ_posn *pos)
 		{
 			return getPosition (pos, ln_get_julian_from_sys ());
 		}
 
-		// return target position at given julian date
+		/**
+		 * Return target position at given time. This method must be
+		 * implemented by target descendants.
+		 *
+		 * @param pos Pointer to returned target position.
+		 * @param JD  Julian date for which target position is calculated.
+		 *
+		 * @return 0 if target position was sucessfully calculated.
+		 */
 		virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
 		// move functions
@@ -263,14 +279,17 @@ class Rts2Target
 		}
 
 		/**
-		 * Set observation ID and start observation
+		 * Set observation ID and start observation.
+		 *
+		 * @param _obs_id Target observation ID.
 		 */
-		void setObsId (int new_obs_id)
+		void setObsId (int _obs_id)
 		{
-			obs_id = new_obs_id;
+			obs_id = _obs_id;
 			selected++;
 			obs_state |= OBS_BIT_MOVED;
 		}
+
 		int getObsState ()
 		{
 			return obs_state;
@@ -347,11 +366,17 @@ class Rts2Target
 		{
 			return target_name;
 		}
-		void setTargetName (const char *in_target_name)
+
+		/**
+		 * Set target name.
+		 *
+		 * @param _target_name  Target name.
+		 */
+		void setTargetName (const char *_target_name)
 		{
 			delete[]target_name;
-			target_name = new char[strlen (in_target_name) + 1];
-			strcpy (target_name, in_target_name);
+			target_name = new char[strlen (_target_name) + 1];
+			strcpy (target_name, _target_name);
 		}
 };
 
