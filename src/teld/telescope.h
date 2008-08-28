@@ -540,6 +540,17 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int stopSearch ();
 		virtual int endSearch ();
 
+		/**
+		 * Set telescope to match given coordinates
+		 *
+		 * This function is mainly used to tell the telescope, where it
+		 * actually is at the beggining of observation
+		 *
+		 * @param ra		setting right ascennation
+		 * @param dec		setting declination
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
 		virtual int setTo (double set_ra, double set_dec)
 		{
 			return -1;

@@ -104,32 +104,196 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 
 		Rts2ConnSerial *tel_conn;
 		int tel_write_read (const char *buf, int wcount, char *rbuf, int rcount);
+
+		/**
+		 * Combine write && read_hash together.
+		 *
+		 * @see tel_write_read for definition
+		 */
 		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
+
+		/**
+		 * Reads some value from lx200 in hms format.
+		 *
+		 * Utility function for all those read_ra and other.
+		 *
+		 * @param hmsptr	where hms will be stored
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
 		int tel_read_hms (double *hmsptr, const char *command);
+
+		/**
+		 * Computes gemini checksum
+		 *
+		 * @param buf checksum to compute
+		 *
+		 * @return computed checksum
+		 */
 		unsigned char tel_gemini_checksum (const char *buf);
+
 		// higher level I/O functions
+		/**
+		 * Read gemini local parameters
+		 *
+		 * @param id	id to get
+		 * @param buf	pointer where to store result (char[15] buf)
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
 		int tel_gemini_getch (int id, char *in_buf);
+
+		/**
+		 * Write command to set gemini local parameters
+		 *
+		 * @param id	id to set
+		 * @param buf	value to set (char buffer; should be 15 char long)
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
 		int tel_gemini_setch (int id, char *in_buf);
+
+		/**
+		 * Write command to set gemini local parameters
+		 *
+		 * @param id	id to set
+		 * @param val	value to set
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
 		int tel_gemini_set (int id, int32_t val);
 		int tel_gemini_set (int id, double val);
+
+		/**
+		 * Read gemini local parameters
+		 *
+		 * @param id	id to get
+		 * @param val	pointer where to store result
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
 		int tel_gemini_get (int id, int32_t & val);
 		int tel_gemini_get (int id, double &val);
 		int tel_gemini_get (int id, int &val1, int &val2);
+
+		/**
+		 * Reset and home losmandy telescope
+		 */
 		int tel_gemini_reset ();
+
+		/**
+		 * Match gemini time with system time
+		 */
 		int tel_gemini_match_time ();
+
+		/**
+		 * Reads lx200 right ascenation.
+		 *
+		 * @param raptr		where ra will be stored
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
 		int tel_read_ra ();
+
+		/**
+		 * Reads losmandy declination.
+		 *
+		 * @param decptr	where dec will be stored
+		 *
+		 * @return -1 and set errno on error, otherwise 0
+		 */
 		int tel_read_dec ();
+
+		/**
+		 * Returns losmandy local time.
+		 *
+		 * @param tptr		where time will be stored
+		 *
+		 * @return -1 and errno on error, otherwise 0
+		 */
 		int tel_read_localtime ();
+
+		/**
+		 * Reads losmandy longtitude.
+		 *
+		 * @param latptr	where longtitude will be stored
+		 *
+		 * @return -1 and errno on error, otherwise 0
+		 */
 		int tel_read_longtitude ();
-		int tel_read_siderealtime ();
+
+		/**
+		 * Reads losmandy latitude.
+		 *
+		 * @param latptr	here latitude will be stored
+		 *
+		 * @return -1 and errno on error, otherwise 0
+		 */
 		int tel_read_latitude ();
+
+		/**
+		 * Repeat losmandy write.
+		 *
+		 * Handy for setting ra and dec.
+		 * Meade tends to have problems with that.
+		 *
+		 * @param command	command to write on port
+		 */
 		int tel_rep_write (char *command);
+
+		/**
+		 * Normalize ra and dec,
+		 *
+		 * @param ra		rigth ascenation to normalize in decimal hours
+		 * @param dec		rigth declination to normalize in decimal degrees
+		 *
+		 * @return 0
+		 */
 		void tel_normalize (double *ra, double *dec);
+
+		/**
+		 * Set losmandy right ascenation.
+		 *
+		 * @param ra		right ascenation to set in decimal degrees
+		 *
+		 * @return -1 and errno on error, otherwise 0
+		 */
 		int tel_write_ra (double ra);
+
+		/**
+		 * Set losmandy declination.
+		 *
+		 * @param dec		declination to set in decimal degrees
+		 *
+		 * @return -1 and errno on error, otherwise 0
+		 */
 		int tel_write_dec (double dec);
 
+		/**
+		 * Set slew rate.
+		 *
+		 * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
+		 *
+		 * @return -1 on failure & set errno, 5 (>=0) otherwise
+		 */
 		int tel_set_rate (char new_rate);
+
+		/**
+		 * Start slew.
+		 *
+		 * @see tel_set_rate() for speed.
+		 *
+		 * @param direction 	direction
+		 *
+		 * @return -1 on failure, 0 on sucess.
+		 */
 		int telescope_start_move (char direction);
+
+		/**
+		 * Stop sleew.
+		 *
+		 * @see tel_start_slew for direction.
+		 */
 		int telescope_stop_move (char direction);
 
 		void telescope_stop_goto ();
@@ -154,9 +318,9 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 	#ifdef L4_GUIDE
 		bool isGuiding (struct timeval *now);
 		int guide (char direction, double val);
-		//		int changeDec ();
+		int changeDec ();
 	#endif
-		//		int change_real (double chng_ra, double chng_dec);
+		int change_real (double chng_ra, double chng_dec);
 
 		int forcedReparking;	 // used to count reparking, when move fails
 		double lastMoveRa;
@@ -174,19 +338,19 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		int matchCount;
 		int bootesSensors;
 	#ifdef L4_GUIDE
-		//		struct timeval changeTime;
+		struct timeval changeTime;
 	#else
-		//		struct timeval changeTimeRa;
-		//		struct timeval changeTimeDec;
+		struct timeval changeTimeRa;
+		struct timeval changeTimeDec;
 
-		//		int change_ra (double chng_ra);
-		//		int change_dec (double chng_dec);
+		int change_ra (double chng_ra);
+		int change_dec (double chng_dec);
 	#endif
 		bool guideDetected;
 
-		//		void clearSearch ();
+		void clearSearch ();
 		// execute next search step, if necessary
-		//		int changeSearch ();
+		int changeSearch ();
 
 		void getAxis ();
 		int parkBootesSensors ();
@@ -194,9 +358,9 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		int searchStep;
 		long searchUsecTime;
 
-		//		short lastSearchRaDiv;
-		//		short lastSearchDecDiv;
-		//		struct timeval nextSearchStep;
+		short lastSearchRaDiv;
+		short lastSearchDecDiv;
+		struct timeval nextSearchStep;
 
 		int32_t worm;
 		int worm_move_needed;	 // 1 if we need to put mount to 130 tracking (we are performing RA move)
@@ -243,20 +407,16 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		//		virtual int startMoveFixed (double tar_ha, double tar_dec);
 		//		virtual int isMovingFixed ();
 		//		virtual int endMoveFixed ();
-		//		virtual int startSearch ();
-		//		virtual int isSearching ();
-		//		virtual int stopSearch ();
-		//		virtual int endSearch ();
+		virtual int startSearch ();
+		virtual int isSearching ();
+		virtual int stopSearch ();
+		virtual int endSearch ();
 		virtual int startPark ();
 		virtual int isParking ();
 		virtual int endPark ();
 		int setTo (double set_ra, double set_dec, int appendModel);
 		virtual int setTo (double set_ra, double set_dec);
-		//		virtual int correctOffsets (double cor_ra, double cor_dec, double real_ra,
-		//			double real_dec);
-		//		virtual int correct (double cor_ra, double cor_dec, double real_ra,
-		//			double real_dec);
-		//		virtual int change (double chng_ra, double chng_dec);
+		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
 		virtual int saveModel ();
 		virtual int loadModel ();
 		virtual int stopWorm ();
@@ -285,11 +445,6 @@ Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf,
 }
 
 
-/*!
- * Combine write && read_hash together.
- *
- * @see tel_write_read for definition
- */
 int
 Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
@@ -305,15 +460,6 @@ Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char 
 }
 
 
-/*!
- * Reads some value from lx200 in hms format.
- *
- * Utility function for all those read_ra and other.
- *
- * @param hmsptr	where hms will be stored
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, const char *command)
 {
@@ -327,13 +473,6 @@ Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, const char *command)
 }
 
 
-/*!
- * Computes gemini checksum
- *
- * @param buf checksum to compute
- *
- * @return computed checksum
- */
 unsigned char
 Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
 {
@@ -346,14 +485,6 @@ Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
 }
 
 
-/*!
- * Write command to set gemini local parameters
- *
- * @param id	id to set
- * @param buf	value to set (char buffer; should be 15 char long)
- *
- * @return -1 on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 {
@@ -374,14 +505,6 @@ Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 }
 
 
-/*!
- * Write command to set gemini local parameters
- *
- * @param id	id to set
- * @param val	value to set
- *
- * @return -1 on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 {
@@ -412,14 +535,6 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 }
 
 
-/*!
- * Read gemini local parameters
- *
- * @param id	id to get
- * @param buf	pointer where to store result (char[15] buf)
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
 {
@@ -453,14 +568,6 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
 }
 
 
-/*!
- * Read gemini local parameters
- *
- * @param id	id to get
- * @param val	pointer where to store result
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t & val)
 {
@@ -545,9 +652,6 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int &val1, int &val2)
 }
 
 
-/*!
- * Reset and home losmandy telescope
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_reset ()
 {
@@ -590,9 +694,6 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 }
 
 
-/*!
- * Match gemini time with system time
- */
 int
 Rts2DevTelescopeGemini::tel_gemini_match_time ()
 {
@@ -634,13 +735,6 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
 }
 
 
-/*!
- * Reads lx200 right ascenation.
- *
- * @param raptr		where ra will be stored
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_ra ()
 {
@@ -653,13 +747,6 @@ Rts2DevTelescopeGemini::tel_read_ra ()
 }
 
 
-/*!
- * Reads losmandy declination.
- *
- * @param decptr	where dec will be stored
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_dec ()
 {
@@ -671,13 +758,6 @@ Rts2DevTelescopeGemini::tel_read_dec ()
 }
 
 
-/*!
- * Returns losmandy local time.
- *
- * @param tptr		where time will be stored
- *
- * @return -1 and errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_localtime ()
 {
@@ -689,13 +769,6 @@ Rts2DevTelescopeGemini::tel_read_localtime ()
 }
 
 
-/*!
- * Reads losmandy longtitude.
- *
- * @param latptr	where longtitude will be stored
- *
- * @return -1 and errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_longtitude ()
 {
@@ -709,13 +782,6 @@ Rts2DevTelescopeGemini::tel_read_longtitude ()
 }
 
 
-/*!
- * Reads losmandy latitude.
- *
- * @param latptr	here latitude will be stored
- *
- * @return -1 and errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_read_latitude ()
 {
@@ -727,14 +793,6 @@ Rts2DevTelescopeGemini::tel_read_latitude ()
 }
 
 
-/*!
- * Repeat losmandy write.
- *
- * Handy for setting ra and dec.
- * Meade tends to have problems with that.
- *
- * @param command	command to write on port
- */
 int
 Rts2DevTelescopeGemini::tel_rep_write (char *command)
 {
@@ -762,14 +820,6 @@ Rts2DevTelescopeGemini::tel_rep_write (char *command)
 }
 
 
-/*!
- * Normalize ra and dec,
- *
- * @param ra		rigth ascenation to normalize in decimal hours
- * @param dec		rigth declination to normalize in decimal degrees
- *
- * @return 0
- */
 void
 Rts2DevTelescopeGemini::tel_normalize (double *ra, double *dec)
 {
@@ -782,13 +832,6 @@ Rts2DevTelescopeGemini::tel_normalize (double *ra, double *dec)
 }
 
 
-/*!
- * Set losmandy right ascenation.
- *
- * @param ra		right ascenation to set in decimal degrees
- *
- * @return -1 and errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_write_ra (double ra)
 {
@@ -802,13 +845,6 @@ Rts2DevTelescopeGemini::tel_write_ra (double ra)
 }
 
 
-/*!
- * Set losmandy declination.
- *
- * @param dec		declination to set in decimal degrees
- *
- * @return -1 and errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::tel_write_dec (double dec)
 {
@@ -874,14 +910,12 @@ in_argv)
 	worm = 0;
 	worm_move_needed = 0;
 
-	/*
 	#ifdef L4_GUIDE
 	timerclear (&changeTime);
 	#else
 	timerclear (&changeTimeRa);
 	timerclear (&changeTimeDec);
 	#endif
-	*/
 
 	guideDetected = false;
 
@@ -1086,11 +1120,6 @@ Rts2DevTelescopeGemini::setCorrection ()
 }
 
 
-/*!
- * Init telescope, connect on given port.
- *
- * @return 0 on succes, -1 & set errno otherwise
- */
 int
 Rts2DevTelescopeGemini::init ()
 {
@@ -1375,13 +1404,6 @@ Rts2DevTelescopeGemini::info ()
 }
 
 
-/*!
- * Set slew rate.
- *
- * @param new_rate	new rate to set. Uses RATE_<SPEED> constant.
- *
- * @return -1 on failure & set errno, 5 (>=0) otherwise
- */
 int
 Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 {
@@ -1391,15 +1413,6 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 }
 
 
-/*!
- * Start slew.
- *
- * @see tel_set_rate() for speed.
- *
- * @param direction 	direction
- *
- * @return -1 on failure, 0 on sucess.
- */
 int
 Rts2DevTelescopeGemini::telescope_start_move (char direction)
 {
@@ -1427,11 +1440,6 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 }
 
 
-/*!
- * Stop sleew.
- *
- * @see tel_start_slew for direction.
- */
 int
 Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 {
@@ -1541,9 +1549,6 @@ Rts2DevTelescopeGemini::startMove ()
 	// calculate current HA
 	ha = getLocSidTime () - lastMoveRa;
 
-	lastMoveRa = pos.ra;
-	lastMoveDec = pos.dec;
-
 	// normalize HA to meridian angle
 	if (newFlip)
 		ha = 90.0 - ha;
@@ -1585,13 +1590,26 @@ Rts2DevTelescopeGemini::startMove ()
 
 	// we fit to limit, aply model
 
-	pos.ra = lastMoveRa;
-	pos.dec = lastMoveDec;
-
 	applyModel (&pos, &model_change, newFlip, ln_get_julian_from_sys ());
+
+	ra_diff = ln_range_degrees (lastMoveRa - pos.ra);
+	if (ra_diff > 180.0)
+		ra_diff -= 360.0;
+
+	dec_diff = lastMoveDec - pos.dec;
 
 	lastMoveRa = pos.ra;
 	lastMoveDec = pos.dec;
+
+	// check for small movements and perform them using change command..
+	#ifdef L4_GUIDE
+	if (fabs (ra_diff) <= maxPrecGuideRa && fabs (ra_diff) <= maxPrecGuideDec)
+	#else
+	if (fabs (dec_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
+	#endif
+	{
+		return change_real (ra_diff, dec_diff);
+	}
 
 	fixed_ha = nan ("f");
 
@@ -1629,11 +1647,6 @@ Rts2DevTelescopeGemini::startMove ()
 }
 
 
-/*!
- * Check, if telescope is still moving
- *
- * @return -1 on error, 0 if telescope isn't moving, 100 if telescope is moving
- */
 int
 Rts2DevTelescopeGemini::isMoving ()
 {
@@ -1659,7 +1672,6 @@ Rts2DevTelescopeGemini::isMoving ()
 		return -2;
 	}
 	#else
-	/*
 	int ret;
 	if (changeTimeRa.tv_sec > 0 || changeTimeRa.tv_usec > 0
 		|| changeTimeDec.tv_sec > 0 || changeTimeDec.tv_usec > 0)
@@ -1702,7 +1714,6 @@ Rts2DevTelescopeGemini::isMoving ()
 			return -2;
 		return 0;
 	}
-	*/
 	#endif
 	if (now.tv_sec > moveTimeout)
 	{
@@ -1744,10 +1755,10 @@ Rts2DevTelescopeGemini::stopMove ()
 {
 	telescope_stop_goto ();
 	#ifdef L4_GUIDE
-	//	timerclear (&changeTime);
+	timerclear (&changeTime);
 	#else
-	//	timerclear (&changeTimeRa);
-	//	timerclear (&changeTimeDec);
+	timerclear (&changeTimeRa);
+	timerclear (&changeTimeDec);
 	#endif
 	return 0;
 }
@@ -1909,7 +1920,6 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 }
 */
 
-/*
 void
 Rts2DevTelescopeGemini::clearSearch ()
 {
@@ -1927,12 +1937,8 @@ Rts2DevTelescopeGemini::startSearch ()
 	int ret;
 	char *searchSpeedCh;
 	clearSearch ();
-	if (searchSpeed > 0.8)
-		searchSpeed = 0.8;
-	else if (searchSpeed < 0.2)
-		searchSpeed = 0.2;
 	// maximal guiding speed
-	asprintf (&searchSpeedCh, "%lf", searchSpeed);
+	asprintf (&searchSpeedCh, "%lf", 0.2);
 	ret = tel_gemini_setch (GEMINI_CMD_RATE_GUIDE, searchSpeedCh);
 	free (searchSpeedCh);
 	if (ret)
@@ -1942,7 +1948,8 @@ Rts2DevTelescopeGemini::startSearch ()
 		return -1;
 	ret = tel_set_rate (RATE_GUIDE);
 	searchUsecTime =
-		(long int) (USEC_SEC * (searchRadius * 3600 / (searchSpeed * 15.0)));
+		(long int) (USEC_SEC * (10 * 3600 / (0.2 * 15.0)));
+	// searchRadius * 3600 / (searchSpeed * 15.0)
 	return changeSearch ();
 }
 
@@ -2061,7 +2068,7 @@ Rts2DevTelescopeGemini::endSearch ()
 	telescope_stop_goto ();
 	return Rts2DevTelescope::endSearch ();
 }
-*/
+
 
 int
 Rts2DevTelescopeGemini::isParking ()
@@ -2098,17 +2105,6 @@ Rts2DevTelescopeGemini::endPark ()
 }
 
 
-/*!
- * Set telescope to match given coordinates
- *
- * This function is mainly used to tell the telescope, where it
- * actually is at the beggining of observation
- *
- * @param ra		setting right ascennation
- * @param dec		setting declination
- *
- * @return -1 and set errno on error, otherwise 0
- */
 int
 Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
 {
@@ -2148,7 +2144,6 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
 }
 
 
-/*
 int
 Rts2DevTelescopeGemini::correctOffsets (double cor_ra, double cor_dec,
 double real_ra, double real_dec)
@@ -2168,73 +2163,9 @@ double real_ra, double real_dec)
 		return -1;
 	return 0;
 }
-*/
 
-/*!
- * Correct telescope coordinates.
- *
- * Used for closed loop coordinates correction based on astronometry
- * of obtained images.
- *
- * @param ra		ra correction
- * @param dec		dec correction
- *
- * This routine can be called from teld.cpp only when we haven't moved
- * from last location. However, we recalculate angular separation and
- * check if we are closer then 5 degrees to be 100% sure we will not
- * load mess to the telescope.
- *
- * @return -1 and set errno on error, 0 otherwise.
- */
-/*
-int
-Rts2DevTelescopeGemini::correct (double cor_ra, double cor_dec,
-double real_ra, double real_dec)
-{
-	struct ln_equ_posn pos1;
-	struct ln_equ_posn pos2;
-	double sep;
-	int ret;
-
-	if (tel_read_ra () || tel_read_dec ())
-		return -1;
-
-	// do not change if we are too close to poles
-	if (fabs (telRaDec->getDec ()) > 85)
-		return -1;
-
-	setTelRa (getTelRa () - cor_ra);
-	setTelDec (getTelDec () - cor_dec);
-
-	// do not change if we are too close to poles
-	if (fabs (getTelDec ()) > 85)
-		return -1;
-
-	pos1.ra = getTelRa ();
-	pos1.dec = getTelDec ();
-	pos2.ra = real_ra;
-	pos2.dec = real_dec;
-
-	sep = ln_get_angular_separation (&pos1, &pos2);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Losmandy correct separation " << sep <<
-		sendLog;
-	#endif
-	if (sep > 5)
-		return -1;
-
-	ret = setTo (real_ra, real_dec, getNumCorr () < 2 ? 0 : 1);
-	if (ret)
-	{
-		// mount correction failed - do local one
-		return Rts2DevTelescope::correct (cor_ra, cor_dec, real_ra, real_dec);
-	}
-	return ret;
-}
-*/
 
 #ifdef L4_GUIDE
-/*
 bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 {
 	int
@@ -2250,6 +2181,7 @@ bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 	return true;
 }
 
+
 int
 Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 {
@@ -2260,6 +2192,7 @@ Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 	len = sprintf (buf, ":Mi%c%i#", direction, val);
 	return tel_conn->writePort (buf, len);
 }
+
 
 int
 Rts2DevTelescopeGemini::changeDec ()
@@ -2285,6 +2218,7 @@ Rts2DevTelescopeGemini::changeDec ()
 	return 0;
 }
 
+
 int
 Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 {
@@ -2292,63 +2226,63 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	struct timeval chng_time;
 	int ret = 0;
 
-	 // smaller then 30 arcsec
-	  if (chng_dec < 60.0 / 3600.0 && chng_ra < 60.0 / 3600.0)
-		{
-		  // set smallest rate..
-		  tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.2);
-		  if (chng_ra < 30.0 / 3600.0)
-	  chng_ra = 0;
-		}
-	  else
-		{ *
-	tel_gemini_set (GEMINI_CMD_RATE_GUIDE, guidingSpeed->getValueFloat ());
-	if (!getFlip ())
+	// smaller then 30 arcsec
+	if (chng_dec < 60.0 / 3600.0 && chng_ra < 60.0 / 3600.0)
 	{
-		chng_dec *= -1;
+		// set smallest rate..
+		tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.2);
+		if (chng_ra < 30.0 / 3600.0)
+			chng_ra = 0;
 	}
-	if (chng_ra != 0)
+	else
 	{
-		// first - RA direction
-		// slew speed to 1 - 0.25 arcmin / sec
-		if (chng_ra > 0)
+		tel_gemini_set (GEMINI_CMD_RATE_GUIDE, guidingSpeed->getValueFloat ());
+		if (!getFlip ())
 		{
-			direction = DIR_EAST;
+			chng_dec *= -1;
 		}
-		else
+		if (chng_ra != 0)
 		{
-			direction = DIR_WEST;
-		}
-		ret =
-			guide (direction,
-			(unsigned int) (fabs (chng_ra) * 255.0 / maxPrecGuideRa));
-		if (ret)
-			return ret;
+			// first - RA direction
+			// slew speed to 1 - 0.25 arcmin / sec
+			if (chng_ra > 0)
+			{
+				direction = DIR_EAST;
+			}
+			else
+			{
+				direction = DIR_WEST;
+			}
+			ret =
+				guide (direction,
+				(unsigned int) (fabs (chng_ra) * 255.0 / maxPrecGuideRa));
+			if (ret)
+				return ret;
 
 								 // * 0.8 * some constand, but that will left enought margin..
-		chng_time.tv_sec = (int) (ceil (fabs (chng_ra) * 240.0));
-		nextChangeDec = chng_dec;
-		gettimeofday (&changeTime, NULL);
-		timeradd (&changeTime, &chng_time, &changeTime);
-		guideDetected = false;
-		decChanged = false;
-		return 0;
+			chng_time.tv_sec = (int) (ceil (fabs (chng_ra) * 240.0));
+			nextChangeDec = chng_dec;
+			gettimeofday (&changeTime, NULL);
+			timeradd (&changeTime, &chng_time, &changeTime);
+			guideDetected = false;
+			decChanged = false;
+			return 0;
+		}
+		else if (chng_dec != 0)
+		{
+			nextChangeDec = chng_dec;
+			// don't update guide,,
+			// that will be chandled in changeDec
+			return 0;
+		}
+		return -1;
 	}
-	else if (chng_dec != 0)
-	{
-		nextChangeDec = chng_dec;
-		// don't update guide,,
-		// that will be chandled in changeDec
-		return 0;
-	}
-	return -1;
 }
 
-*/
+
 #else
-/*
-int
-Rts2DevTelescopeGemini::change_ra (double chng_ra)
+
+int Rts2DevTelescopeGemini::change_ra (double chng_ra)
 {
 	char direction;
 	long u_sleep;
@@ -2423,6 +2357,7 @@ Rts2DevTelescopeGemini::change_ra (double chng_ra)
 	return ret;
 }
 
+
 int
 Rts2DevTelescopeGemini::change_dec (double chng_dec)
 {
@@ -2472,6 +2407,7 @@ Rts2DevTelescopeGemini::change_dec (double chng_dec)
 	return ret;
 }
 
+
 int
 Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 {
@@ -2494,64 +2430,9 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	}
 	return -1;
 }
-*/
 #endif
 
-/*
-int
-Rts2DevTelescopeGemini::change (double chng_ra, double chng_dec)
-{
-	int ret;
-	ret = info ();
-	if (ret)
-		return ret;
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_INFO) << "Losmandy change ra " << telRaDec->getRa ()
-		<< " dec " << telRaDec->getDec ()
-		<< " move_fixed " << move_fixed
-		<< sendLog;
-	#endif
-	// decide, if we make change, or move using move command
-	#ifdef L4_GUIDE
-	if (fabs (chng_ra) > maxPrecGuideRa || fabs (chng_dec) > maxPrecGuideDec)
-	#else
-		if (fabs (chng_ra) > 20 / 60.0 || fabs (chng_dec) > 20 / 60.0)
-	#endif
-	{
-		if (move_fixed && !isnan (fixed_ha))
-		{
-			ret =
-				startMoveFixed (fixed_ha - chng_ra,
-				getTelDec () + chng_dec);
-		}
-		else
-		{
-			ret =
-				startMove (getTelRa () + chng_ra,
-				getTelDec () + chng_dec);
-		}
-		if (ret)
-			return ret;
-		// move wait ended .. log results
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "Losmandy change move " << ret << sendLog;
-		#endif
-	}
-	else
-	{
-		return change_real (chng_ra, chng_dec);
-	}
-	if (ret == -1)
-		return -1;
-	return 0;
-}
-*/
 
-/*!
- * Park telescope to neutral location.
- *
- * @return -1 and errno on error, 0 otherwise
- */
 int
 Rts2DevTelescopeGemini::startPark ()
 {
