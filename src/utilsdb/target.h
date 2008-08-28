@@ -101,7 +101,7 @@ class Target:public Rts2Target
 								 // send mail to users..
 		void sendTargetMail (int eventMask, const char *subject_text, Rts2Block * master);
 
-		double minAlt;
+		double minObsAlt;
 
 		float tar_priority;
 		float tar_bonus;
@@ -155,19 +155,37 @@ class Target:public Rts2Target
 			return 30.0 / 3600.0;
 		}
 
-		// some libnova trivials to get more comfortable access to
-		// coordinates
+		/**
+		 * Return target horizontal coordinates for actual system time.
+		 *
+		 * @param hrz Returned coordinates.
+		 *
+		 * @return 0 if coordinates can be calculated.
+		 */
 		int getAltAz (struct ln_hrz_posn *hrz)
 		{
 			return getAltAz (hrz, ln_get_julian_from_sys ());
 		}
 
-		virtual double getMinAlt ()
-		{
-			return minAlt;
-		}
-
+		/**
+		 * Return target horizontal coordinates for given date.
+		 *
+		 * @param hrz Returned coordinates.
+		 * @param JD  Julian data for which target coordinates will be calculated.
+		 *
+		 * @return 0 if coordinates can be calculated.
+		 */
 		virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
+
+		/**
+		 * Return target minimal observational altitude.
+		 *
+		 * @return Minimal target observational altitude in degrees.
+		 */
+		virtual double getMinObsAlt ()
+		{
+			return minObsAlt;
+		}
 
 		int getGalLng (struct ln_gal_posn *gal)
 		{
@@ -682,7 +700,7 @@ class ModelTarget:public ConstTarget
 		virtual moveType afterSlewProcessed ();
 		virtual int endObservation (int in_next_id);
 		virtual int getPosition (struct ln_equ_posn *pos, double JD);
-		virtual double getMinAlt ()
+		virtual double getMinObsAlt ()
 		{
 			return -1;
 		}

@@ -283,7 +283,7 @@ Rts2Target ()
 
 	setEpoch (config->observatoryEpoch ());
 
-	config->getDouble ("observatory", "min_alt", minAlt, 0);
+	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
 	observation = NULL;
 
@@ -311,7 +311,7 @@ Target::Target ()
 
 	setEpoch (config->observatoryEpoch ());
 
-	config->getDouble ("observatory", "min_alt", minAlt, 0);
+	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
 	observation = NULL;
 
@@ -770,7 +770,7 @@ Target::secToObjectSet (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
-	ret = getRST (&rst, JD, getMinAlt ());
+	ret = getRST (&rst, JD, getMinObsAlt ());
 	if (ret)
 		return -1;				 // don't rise, circumpolar etc..
 	ret = int ((rst.set - JD) * 86400.0);
@@ -786,7 +786,7 @@ Target::secToObjectRise (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
-	ret = getRST (&rst, JD, getMinAlt ());
+	ret = getRST (&rst, JD, getMinObsAlt ());
 	if (ret)
 		return -1;				 // don't rise, circumpolar etc..
 	ret = int ((rst.rise - JD) * 86400.0);
@@ -802,7 +802,7 @@ Target::secToObjectMeridianPass (double JD)
 {
 	struct ln_rst_time rst;
 	int ret;
-	ret = getRST (&rst, JD, getMinAlt ());
+	ret = getRST (&rst, JD, getMinObsAlt ());
 	if (ret)
 		return -1;				 // don't rise, circumpolar etc..
 	ret = int ((rst.transit - JD) * 86400.0);
@@ -1173,7 +1173,7 @@ Target::isGood (double JD)
 bool
 Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 {
-	if (hrz->alt < getMinAlt ())
+	if (hrz->alt < getMinObsAlt ())
 		return 0;
 	return Rts2Config::instance ()->getObjectChecker ()->is_good (hrz);
 }
@@ -1200,7 +1200,7 @@ Target::considerForObserving (double JD)
 	if (!ret)
 	{
 		struct ln_rst_time rst;
-		ret = getRST (&rst, JD, getMinAlt ());
+		ret = getRST (&rst, JD, getMinObsAlt ());
 		if (ret == -1)
 		{
 			// object doesn't rise, let's hope tomorrow it will rise
@@ -1849,12 +1849,12 @@ Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 			}
 	}
 	_os << std::endl
-		<< InfoVal<double> ("MIN_ALT", getMinAlt ())
+		<< InfoVal<double> ("MIN_OBS_ALT", getMinObsAlt ())
 		<< std::endl
 		<< "RISE, SET AND TRANSIT ABOVE MIN_ALT"
 		<< std::endl
 		<< std::endl;
-	ret = getRST (&rst, JD, getMinAlt ());
+	ret = getRST (&rst, JD, getMinObsAlt ());
 	switch (ret)
 	{
 		case 1:

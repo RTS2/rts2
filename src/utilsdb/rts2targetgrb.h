@@ -56,7 +56,7 @@ class TargetGRB:public ConstTarget
 		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual int beforeMove ();
 		virtual float getBonus (double JD);
-		virtual double getMinAlt ()
+		virtual double getMinObsAlt ()
 		{
 			return 0;
 		}
