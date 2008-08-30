@@ -35,6 +35,8 @@ class Rts2DevCameraMiniccd:public Rts2DevCamera
 		int ccd_dac_bits;
 		int sizeof_pixel;
 
+		Rts2ValueBool * tempControl;
+
 		CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 		CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 	protected:
@@ -102,6 +104,9 @@ Rts2DevCameraMiniccd::initChips ()
 
 	in_width = msgr[CCD_CCD_WIDTH_INDEX];
 	in_height = msgr[CCD_CCD_HEIGHT_INDEX];
+
+	pixelX = msgr[CCD_CCD_PIX_WIDTH_INDEX];
+	pixelY = msgr[CCD_CCD_PIX_HEIGHT_INDEX];
 
 	sizeof_pixel = (msgr[CCD_CCD_DEPTH_INDEX] + 7) / 8;
 
@@ -282,6 +287,9 @@ Rts2DevCameraMiniccd::init ()
 	if (ret)
 		return ret;
 
+	createValue (tempControl, "temp_control", "temperature control", false);
+	tempControl->setValueBool (false);
+
 	fd_ccd = open (device_file, O_RDWR);
 	if (fd_ccd < 0)
 	{
@@ -339,6 +347,9 @@ Rts2DevCameraMiniccd::ready ()
 int
 Rts2DevCameraMiniccd::camCoolMax ()
 {
+	if (!tempControl->getValueBool ())
+		return 0;
+
 	CCD_ELEM_TYPE msg[CCD_MSG_TEMP_LEN / CCD_ELEM_SIZE];
 
 	msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
