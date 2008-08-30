@@ -46,6 +46,8 @@ class Rts2DevCameraMiniccdIl:public Rts2DevCamera
 		struct timeval slave1ReadoutStart;
 		struct timeval slave2ExposureStart;
 
+		Rts2ValueBool * tempControl;
+
 		CCD_ELEM_TYPE msgw[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 		CCD_ELEM_TYPE msgr[CCD_MSG_CCD_LEN / CCD_ELEM_SIZE];
 
@@ -614,6 +616,9 @@ Rts2DevCameraMiniccdIl::init ()
 	if (ret)
 		return ret;
 
+	createValue (tempControl, "temp_control", "temperature control", false);
+	tempControl->setValueBool (false);
+
 	fd_ccd = open (device_file, O_RDWR);
 	if (fd_ccd < 0)
 	{
@@ -679,6 +684,9 @@ Rts2DevCameraMiniccdIl::ready ()
 int
 Rts2DevCameraMiniccdIl::camCoolMax ()
 {
+	if (!tempControl->getValueBool ())
+		return 0;
+
 	CCD_ELEM_TYPE msg[CCD_MSG_TEMP_LEN / CCD_ELEM_SIZE];
 
 	msg[CCD_MSG_HEADER_INDEX] = CCD_MSG_HEADER;
