@@ -179,7 +179,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
 	processor = new Rts2ConnImgProcess (script->getMaster (),
-		defaultImgProccess.c_str (), image->getImageName (),
+		defaultImgProccess.c_str (), image->getFileName (),
 		Rts2Config::instance ()->getAstrometryTimeout ()
 		);
 	// save image before processing..

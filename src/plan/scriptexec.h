@@ -67,6 +67,6 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		virtual int idle ();
 		virtual void deviceIdle (Rts2Conn * conn);
 
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 };
 #endif							 /* !__SCRIPT_EXEC__ */

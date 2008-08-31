@@ -83,7 +83,7 @@ EllTarget::load ()
 }
 
 
-int
+void
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
 	if (orbit.e == 1.0)
@@ -116,16 +116,14 @@ EllTarget::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *
 
 	pos->ra += parallax->ra;
 	pos->dec += parallax->dec;
-
-	return 0;
 }
 
 
-int
+void
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_equ_posn parallax;
-	return getPosition (pos, JD, &parallax);
+	getPosition (pos, JD, &parallax);
 }
 
 

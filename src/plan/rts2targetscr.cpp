@@ -45,10 +45,10 @@ Rts2TargetScr::getScript (const char *device_name, std::string & buf)
 }
 
 
-int
+void
 Rts2TargetScr::getPosition (struct ln_equ_posn *pos, double JD)
 {
-	return master->getPosition (pos, JD);
+	master->getPosition (pos, JD);
 }
 
 

@@ -51,7 +51,7 @@ class TargetGRB:public ConstTarget
 			int in_maxBonusTimeout, int in_dayBonusTimeout,
 			int in_fiveBonusTimeout);
 		virtual int load ();
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual int beforeMove ();

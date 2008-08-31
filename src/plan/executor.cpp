@@ -570,18 +570,12 @@ Rts2Executor::setGrb (int grbId)
 	{
 		return -2;
 	}
-	ret = grbTarget->getAltAz (&grbHrz);
-	// don't care if we don't get altitude from libnova..it's completly weird, but we should not
-	// miss GRB:(
-	if (!ret)
+	grbTarget->getAltAz (&grbHrz);
+	logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb grbHrz alt:" << grbHrz.alt << sendLog;
+	if (grbHrz.alt < 0)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb grbHrz alt:" <<
-			grbHrz.alt << sendLog;
-		if (grbHrz.alt < 0)
-		{
-			delete grbTarget;
-			return -2;
-		}
+		delete grbTarget;
+		return -2;
 	}
 	// if we're already disabled, don't execute us
 	if (grbTarget->getTargetEnabled () == false)

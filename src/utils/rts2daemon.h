@@ -369,6 +369,29 @@ class Rts2Daemon:public Rts2Block
 		}
 
 		/**
+		 * Send e-mail to recepient.
+		 * Requires /usr/bin/mail binary. Send email with subject to specified email addresses.
+		 *
+		 * @param subject         Subject string.
+		 * @param text            Message text.
+		 * @param in_mailAddress  E-mails of recipients.
+		 */
+		int sendMailTo (const char *subject, const char *text, const char *in_mailAddress);
+
+		/**
+		 * Call external script on trigger. External script gets in
+		 * enviroment values current RTS2 values as
+		 * RTS2_{device_name}_{value}, and trigger reason as first
+		 * argument. This call creates new connection. Everything
+		 * outputed to standart error will be logged as WARN message.
+		 * Everything outputed to standart output will be logged as
+		 * DEBUG message.
+		 *
+		 * @param reason Trigger name.
+		 */
+		void execTrigger (const char *reason);
+
+		/**
 		 * Called from idle loop after HUP signal occured.
 		 *
 		 * This is most probably callback you needed for handling HUP signal.

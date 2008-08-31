@@ -29,6 +29,7 @@ int in_timeout):
 Rts2ConnNoSend (in_master)
 {
 	childPid = -1;
+	sockErr = 0;
 	exePath = new char[strlen (in_exe) + 1];
 	strcpy (exePath, in_exe);
 	if (in_timeout > 0)
@@ -97,9 +98,9 @@ Rts2ConnFork::init ()
 		initFailed ();
 		return 1;
 	}
-	int filedes[2];
-	ret = pipe (filedes);
-	if (ret)
+	int pipeStd[2];
+	int pipeErr[2];
+	if (pipe (pipeStd) || pipe (pipeErr))
 	{
 		logStream (MESSAGE_ERROR) <<
 			"Rts2ConnImgProcess::run cannot create pipe for process: " <<
@@ -119,14 +120,21 @@ Rts2ConnFork::init ()
 	}
 	else if (childPid)			 // parent
 	{
-		sock = filedes[0];
-		close (filedes[1]);
-		fcntl (sock, F_SETFL, O_NONBLOCK);
+		fcntl (pipeStd[0], F_SETFL, O_NONBLOCK);
+		fcntl (pipeErr[0], F_SETFL, O_NONBLOCK);
+		sock = pipeStd[0];
+		sockErr = pipeErr[0];
+		close (pipeStd[1]);
+		close (pipeErr[1]);
 		return 0;
 	}
 	// child
-	close (filedes[0]);
-	dup2 (filedes[1], 1);
+	close (pipeStd[0]);
+	close (pipeErr[0]);
+	close (1);
+	dup (pipeStd[1]);
+	close (2);
+	dup (pipeErr[1]);
 	// close all sockets so when we crash, we don't get any dailing
 	// sockets
 	master->forkedInstance ();
@@ -157,6 +165,13 @@ Rts2ConnFork::term ()
 	childPid = -1;
 }
 
+int
+Rts2ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+{
+	if (sockErr > 0)
+		FD_SET (sockErr, readset);
+	return Rts2Conn::add (readset, writeset, expset);
+}
 
 int
 Rts2ConnFork::idle ()

@@ -270,16 +270,6 @@ class Rts2App:public Rts2Object
 		virtual Rts2LogStream logStream (messageType_t in_messageType);
 
 		/**
-		 * Send e-mail to recepient.
-		 * Requires /usr/bin/mail binary. Send email with subject to specified email addresses.
-		 *
-		 * @param subject         Subject string.
-		 * @param text            Message text.
-		 * @param in_mailAddress  E-mails of recipients.
-		 */
-		virtual int sendMailTo (const char *subject, const char *text, const char *in_mailAddress);
-
-		/**
 		 * Called on SIGHUP signal.
 		 * This method is called from static signal routine.
 		 *

@@ -40,6 +40,9 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		pid_t childPid;
 		time_t forkedTimeout;
 
+		// holds pipe with stderr. Stdout is stored in sock
+		int sockErr;
+
 	protected:
 		char *exePath;
 		virtual void connectionError (int last_data_size);
@@ -67,6 +70,8 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		virtual int init ();
 		virtual void stop ();
 		void term ();
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
 		virtual int idle ();
 

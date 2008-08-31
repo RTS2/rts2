@@ -280,12 +280,11 @@ Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
 }
 
 
-int
+void
 Rts2ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	pos->ra = 20;
 	pos->dec = 20;
-	return 0;
 }
 
 

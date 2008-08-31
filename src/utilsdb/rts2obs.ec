@@ -360,7 +360,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 	// obs_end is not null - observation ends sucessfully
 	// get unprocessed counts..
 	ret = getUnprocessedCount ();
-	if (ret == 0)
+/*	if (ret == 0)
 	{
 		int count;
 		Rts2TarUser tar_user = Rts2TarUser (getTargetId (), getTargetType ());
@@ -374,7 +374,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 		std::ostringstream os;
 		os << *this;
 		master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
-	}
+	} */
 	return ret;
 }
 

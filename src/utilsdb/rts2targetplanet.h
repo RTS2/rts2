@@ -41,14 +41,13 @@ class TargetPlanet:public Target
 {
 	private:
 		planet_info_t * planet_info;
-		int getPosition (struct ln_equ_posn *pos, double JD,
-			struct ln_equ_posn *parallax);
+		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 	public:
 		TargetPlanet (int tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetPlanet (void);
 
 		virtual int load ();
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 
 		virtual int isContinues ();

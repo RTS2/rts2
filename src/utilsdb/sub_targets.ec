@@ -121,11 +121,10 @@ ConstTarget::save (bool overwrite, int tar_id)
 }
 
 
-int
+void
 ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = position;
-	return 0;
 }
 
 
@@ -133,11 +132,8 @@ int
 ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
-	int ret;
 
-	ret = getPosition (&pos, JD);
-	if (ret)
-		return ret;
+	getPosition (&pos, JD);
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
@@ -424,11 +420,10 @@ DarkTarget::getScript (const char *deviceName, std::string &buf)
 }
 
 
-int
+void
 DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = currPos;
-	return 0;
 }
 
 
@@ -558,7 +553,7 @@ FlatTarget::load ()
 }
 
 
-int
+void
 FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	// we were loaded, or we aren't generic flat target
@@ -566,7 +561,6 @@ FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 		return ConstTarget::getPosition (pos, JD);
 	// generic flat target observations
 	getAntiSolarPos (pos, JD);
-	return 0;
 }
 
 
@@ -825,18 +819,15 @@ CalibrationTarget::endObservation (int in_next_id)
 }
 
 
-int
+void
 CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (obs_target_id <= 0)
 	{
-		// no target..
-		if (target_id == TARGET_CALIBRATION)
-			return -1;
-		return ConstTarget::getPosition (pos, JD);
+		ConstTarget::getPosition (pos, JD);
+		return;
 	}
 	*pos = airmassPosition;
-	return 0;
 }
 
 
@@ -1086,7 +1077,7 @@ ModelTarget::endObservation (int in_next_id)
 }
 
 
-int
+void
 ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (equ_poz.ra < -10)
@@ -1102,7 +1093,6 @@ ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 			equ_poz.dec = -90;
 	}
 	*pos = equ_poz;
-	return 0;
 }
 
 
@@ -1151,11 +1141,10 @@ LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (i
 }
 
 
-int
+void
 LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_lunar_equ_coords (JD, pos);
-	return 0;
 }
 
 
@@ -1315,11 +1304,10 @@ TargetSwiftFOV::load ()
 }
 
 
-int
+void
 TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = swiftFovCenter;
-	return 0;
 }
 
 
@@ -1327,11 +1315,8 @@ int
 TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
-	int ret;
 
-	ret = getPosition (&pos, JD);
-	if (ret)
-		return ret;
+	getPosition (&pos, JD);
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
@@ -1384,12 +1369,7 @@ TargetSwiftFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	ret = getPosition (&curr_position, JD);
-	if (ret)
-	{
-		setNextObservable (JD + 1/1440.0/20.0);
-		return -1;
-	}
+	getPosition (&curr_position, JD);
 
 	ret = isGood (lst, JD, &curr_position);
 
@@ -1605,11 +1585,10 @@ TargetIntegralFOV::load ()
 }
 
 
-int
+void
 TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = integralFovCenter;
-	return 0;
 }
 
 
@@ -1617,11 +1596,8 @@ int
 TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
-	int ret;
 
-	ret = getPosition (&pos, JD);
-	if (ret)
-		return ret;
+	getPosition (&pos, JD);
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
@@ -1674,12 +1650,7 @@ TargetIntegralFOV::considerForObserving (double JD)
 		return -1;
 	}
 
-	ret = getPosition (&curr_position, JD);
-	if (ret)
-	{
-		setNextObservable (JD + 1/1440.0/20.0);
-		return -1;
-	}
+	getPosition (&curr_position, JD);
 
 	ret = isGood (lst, JD, &curr_position);
 
@@ -2107,15 +2078,19 @@ TargetPlan::getDBScript (const char *camera_name, std::string &script)
 }
 
 
-int
+void
 TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (selectedPlan)
-		return selectedPlan->getTarget()->getPosition (pos, JD);
-	// pretend to observe in zenith..
-	pos->ra = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
-	pos->dec = observer->lat;
-	return 0;
+	{
+		selectedPlan->getTarget()->getPosition (pos, JD);
+	}
+	else
+	{
+		// pretend to observe in zenith..
+		pos->ra = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
+		pos->dec = observer->lat;
+	}
 }
 
 

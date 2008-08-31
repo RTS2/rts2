@@ -47,7 +47,7 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		virtual void postEvent (Rts2Event * event);
 
 		virtual int findScript (std::string in_deviceName, std::string & buf);
-		virtual int getPosition (struct ln_equ_posn *posn, double JD);
+		virtual void getPosition (struct ln_equ_posn *posn, double JD);
 };
 
 Rts2Scriptor::Rts2Scriptor (int in_argc, char **in_argv)
@@ -188,12 +188,11 @@ Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 }
 
 
-int
+void
 Rts2Scriptor::getPosition (struct ln_equ_posn *posn, double JD)
 {
 	posn->ra = 20;
 	posn->dec = 20;
-	return -1;
 }
 
 

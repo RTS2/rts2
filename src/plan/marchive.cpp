@@ -13,7 +13,7 @@ class Rts2MoveArchive:public Rts2AppDbImage
 		{
 			int ret;
 			double val;
-			std::cout << "Processing " << image->getImageName () << "..";
+			std::cout << "Processing " << image->getFileName () << "..";
 			ret = image->getValue ("CRVAL1", val);
 			if (!ret)
 				ret = image->toArchive ();

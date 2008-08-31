@@ -195,7 +195,7 @@ void
 Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 {
 	// is first such image..
-	if (image->getOKCount () == 1)
+/*	if (image->getOKCount () == 1)
 	{
 		int count;
 		Rts2TarUser tar_user =
@@ -212,7 +212,7 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 		os << *image;
 		master->sendMailTo (subject.str ().c_str (), os.str ().c_str (),
 			mails.c_str ());
-	}
+	}*/
 }
 
 

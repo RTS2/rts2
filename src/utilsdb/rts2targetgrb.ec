@@ -137,7 +137,7 @@ TargetGRB::load ()
 }
 
 
-int
+void
 TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	time_t now;
@@ -151,10 +151,10 @@ TargetGRB::getPosition (struct ln_equ_posn *pos, double JD)
 		{
 			hrz.alt = 35;
 			ln_get_equ_from_hrz (&hrz, observer, JD, pos);
-			return 0;
+			return;
 		}
 	}
-	return ConstTarget::getPosition (pos, JD);
+	ConstTarget::getPosition (pos, JD);
 }
 
 

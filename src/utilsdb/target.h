@@ -162,9 +162,9 @@ class Target:public Rts2Target
 		 *
 		 * @return 0 if coordinates can be calculated.
 		 */
-		int getAltAz (struct ln_hrz_posn *hrz)
+		void getAltAz (struct ln_hrz_posn *hrz)
 		{
-			return getAltAz (hrz, ln_get_julian_from_sys ());
+			getAltAz (hrz, ln_get_julian_from_sys ());
 		}
 
 		/**
@@ -172,10 +172,21 @@ class Target:public Rts2Target
 		 *
 		 * @param hrz Returned coordinates.
 		 * @param JD  Julian data for which target coordinates will be calculated.
-		 *
-		 * @return 0 if coordinates can be calculated.
 		 */
-		virtual int getAltAz (struct ln_hrz_posn *hrz, double JD);
+		virtual void getAltAz (struct ln_hrz_posn *hrz, double JD);
+
+		/**
+		 * Returns target minimal and maximal altitude during
+		 * given time period. This method may return negative values
+		 * for both minimal and maximal altitude - those indicate that
+		 * target remain bellow horizont for the whole period.
+		 *
+		 * @param _start JD of start period.
+		 * @param _end   JD of end period.
+		 * @param _min   Minimal altitude during period.
+		 * @param _max   Maximal altitude during period.
+		 */
+		void getMinMaxAlt (double _start, double _end, double &_min, double &_max);
 
 		/**
 		 * Return target minimal observational altitude.
@@ -380,8 +391,11 @@ class Target:public Rts2Target
 		virtual bool isGood (double lst, double JD, struct ln_equ_posn *pos);
 		virtual bool isGood (double JD);
 		bool isAboveHorizon (struct ln_hrz_posn *hrz);
-		// scheduler functions
-								 // return 0, when target can be observed, otherwise modify tar_bonus..
+
+		/**
+		 *   Return -1 if target is not suitable for observing,
+		 *   otherwise return 0.
+		 */
 		virtual int considerForObserving (double JD);
 		virtual int dropBonus ();
 		float getBonus ()
@@ -527,7 +541,7 @@ class ConstTarget:public Target
 			struct ln_equ_posn *pos);
 		virtual int load ();
 		virtual int save (bool overwrite, int tar_id);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
@@ -568,7 +582,7 @@ class DarkTarget:public Target
 		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ DarkTarget (void);
 		virtual int getScript (const char *deviceName, std::string & buf);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
 		{
 			return 1;
@@ -588,7 +602,7 @@ class FlatTarget:public ConstTarget
 		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual int load ();
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
 		virtual int isContinues ()
 		{
@@ -623,12 +637,13 @@ class PosCalibration:public Target
 		{
 			return currAirmass;
 		}
-		virtual int getPosition (struct ln_equ_posn *in_pos, double JD)
+
+		virtual void getPosition (struct ln_equ_posn *in_pos, double JD)
 		{
 			in_pos->ra = object.ra;
 			in_pos->dec = object.dec;
-			return 0;
 		}
+
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
 		{
 			struct ln_equ_posn pos;
@@ -649,7 +664,7 @@ class CalibrationTarget:public ConstTarget
 		virtual int load ();
 		virtual int beforeMove ();
 		virtual int endObservation (int in_next_id);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
 		virtual int changePriority (int pri_change, time_t * time_ch)
 		{
@@ -699,7 +714,7 @@ class ModelTarget:public ConstTarget
 		virtual int beforeMove ();
 		virtual moveType afterSlewProcessed ();
 		virtual int endObservation (int in_next_id);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual double getMinObsAlt ()
 		{
 			return -1;
@@ -722,7 +737,7 @@ class LunarTarget:public Target
 	public:
 		LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
 		virtual int getScript (const char *deviceName, std::string & buf);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 };
 
@@ -753,7 +768,7 @@ class TargetSwiftFOV:public Target
 		virtual ~ TargetSwiftFOV (void);
 
 		virtual int load ();	 // find Swift pointing for observation
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
 								 // return 0, when target can be observed, otherwise modify tar_bonus..
@@ -778,7 +793,7 @@ class TargetIntegralFOV:public Target
 		virtual ~ TargetIntegralFOV (void);
 
 		virtual int load ();	 // find Swift pointing for observation
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual moveType afterSlewProcessed ();
 								 // return 0, when target can be observed, otherwise modify tar_bonus..
@@ -834,7 +849,7 @@ class TargetPlan:public Target
 
 		virtual int load ();
 		virtual int load (double JD);
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon);
 		virtual int getObsTargetID ();
 		virtual int considerForObserving (double JD);

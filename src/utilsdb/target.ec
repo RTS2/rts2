@@ -60,7 +60,7 @@ Target::getTargetSubject (std::string &subj)
 void
 Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *master)
 {
-	std::string mails;
+/*	std::string mails;
 
 	int count;
 	// send mails
@@ -83,7 +83,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
 		}
 		os << (*this) << std::endl << *observation;
 		master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
-	}
+	} */
 }
 
 
@@ -960,19 +960,75 @@ Target::setScript (const char *device_name, const char *buf)
 }
 
 
-int
+void
 Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
-	int ret;
 	struct ln_equ_posn object;
 
-	ret = getPosition (&object, JD);
-	if (ret)
-		return ret;
+	getPosition (&object, JD);
+
 	ln_get_hrz_from_equ (&object, observer, JD, hrz);
-	return 0;
 }
 
+
+void
+Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
+{
+	struct ln_equ_posn mid;
+	double midJD = (_start + _end) / 2.0;
+
+  	getPosition (&mid, midJD);
+
+	double absLat = fabs (observer->lat);
+	// change sign if we are on south hemisphere
+	if (observer->lat < 0)
+		mid.dec *= -1;
+
+	// difference of JD is larger then 1, for sure we will get a max and min alt..
+	if ((_end - _start) >= 1.0)
+	{
+		// use midJD to calculate DEC at maximum / minimum
+		// this is not a correct use
+		_min = absLat - 90 + mid.dec;
+		_max = 90 - absLat + mid.dec;
+		return;
+	}
+
+	struct ln_hrz_posn startHrz, endHrz;
+
+	getAltAz (&startHrz, _start);
+	getAltAz (&endHrz, _end);
+
+	_min = (startHrz.alt < endHrz.alt) ? startHrz.alt : endHrz.alt;
+	_max = (startHrz.alt > endHrz.alt) ? startHrz.alt : endHrz.alt;
+
+	// now compute if object is in low or high transit during given interval
+
+	double midHa = getHourAngle (midJD);
+	double startLst = ln_get_mean_sidereal_time (_start) * 15.0 + observer->lng;
+	double endLst = ln_get_mean_sidereal_time (_end) * 15.0 + observer->lng;
+
+	if (startLst < endLst)
+	{
+		// it culmitaes at given period
+		if (midHa > startLst && midHa < endLst)
+			_max = 90 - absLat + mid.dec;
+		midHa = ln_range_degrees (midHa + 180);
+		// it reach low point at given period
+		if (midHa > startLst && midHa < endLst)
+			_min = absLat - 90 + mid.dec;
+	}
+	else
+	{
+		// it culmitaes at given period
+		if (midHa < startLst && midHa > endLst)
+			_max = 90 - absLat + mid.dec;
+		midHa = ln_range_degrees (midHa + 180);
+		// it reach low point at given period
+		if (midHa < startLst && midHa > endLst)
+			_min = absLat - 90 + mid.dec;
+	}
+}
 
 int
 Target::getGalLng (struct ln_gal_posn *gal, double JD)
@@ -1018,11 +1074,8 @@ Target::getHourAngle (double JD)
 	double lst;
 	double ha;
 	struct ln_equ_posn pos;
-	int ret;
 	lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
-	ret = getPosition (&pos);
-	if (ret)
-		return nan ("f");
+	getPosition (&pos);
 	ha = ln_range_degrees (lst - pos.ra);
 	return ha;
 }
@@ -1179,11 +1232,6 @@ Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 }
 
 
-/****
- *
- *   Return -1 if target is not suitable for observing,
- *   othrwise return 0.
- */
 int
 Target::considerForObserving (double JD)
 {
@@ -1191,11 +1239,8 @@ Target::considerForObserving (double JD)
 	struct ln_equ_posn curr_position;
 	double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 	int ret;
-	if (getPosition (&curr_position, JD))
-	{
-		setNextObservable (JD + 1);
-		return -1;
-	}
+	getPosition (&curr_position, JD);
+
 	ret = isGood (lst, JD, &curr_position);
 	if (!ret)
 	{
@@ -1614,9 +1659,7 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 	struct ln_equ_posn tar_pos;
 	int ret;
 
-	ret = getPosition (&tar_pos, JD);
-	if (ret)
-		return ret;
+	getPosition (&tar_pos, JD);
 
 	Rts2ImgSetPosition img_set = Rts2ImgSetPosition (&tar_pos);
 	ret = img_set.load ();
@@ -1734,9 +1777,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 
 
 void
-sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts,
-struct ln_lnlat_posn *in_obs, Rts2App *master)
+sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts, struct ln_lnlat_posn *in_obs, Rts2App *master)
 {
+/*
 	EXEC SQL BEGIN DECLARE SECTION;
 		long db_from = (long) *t_from;
 		long db_end = (long) *t_to;
@@ -1789,7 +1832,7 @@ struct ln_lnlat_posn *in_obs, Rts2App *master)
 		}
 	}
 	EXEC SQL CLOSE tar_obs_cur;
-	EXEC SQL COMMIT;
+	EXEC SQL COMMIT; */
 }
 
 
@@ -1814,6 +1857,7 @@ Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (hourangle))
 		<< InfoVal<double> ("AIRMASS", getAirmass (JD))
 		<< std::endl;
+
 	ret = getRST (&rst, JD, LN_STAR_STANDART_HORIZON);
 	switch (ret)
 	{
@@ -1848,12 +1892,26 @@ Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 					<< InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
 			}
 	}
+
+	// test min-max routines
+	double maxAlt, minAlt;
+	getMinMaxAlt (JD - 1, JD + 1, minAlt, maxAlt);
+	_os << InfoVal<LibnovaDeg90> ("MIN ALT", LibnovaDeg90 (minAlt))
+		<< InfoVal<LibnovaDeg90> ("MAX ALT", LibnovaDeg90 (maxAlt));
+
+	getMinMaxAlt (JD - 0.2, JD + 0.2, minAlt, maxAlt);
+	_os <<  std::endl
+		<< InfoVal<LibnovaDeg90> ("MIN ALT", LibnovaDeg90 (minAlt))
+		<< InfoVal<LibnovaDeg90> ("MAX ALT", LibnovaDeg90 (maxAlt));
+
+
 	_os << std::endl
 		<< InfoVal<double> ("MIN_OBS_ALT", getMinObsAlt ())
 		<< std::endl
 		<< "RISE, SET AND TRANSIT ABOVE MIN_ALT"
 		<< std::endl
 		<< std::endl;
+
 	ret = getRST (&rst, JD, getMinObsAlt ());
 	switch (ret)
 	{

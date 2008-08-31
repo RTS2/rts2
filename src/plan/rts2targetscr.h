@@ -42,7 +42,7 @@ class Rts2TargetScr:public Rts2Target
 		virtual int getScript (const char *device_name, std::string & buf);
 
 		// return target position at given julian date
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 
 		virtual int setNextObservable (time_t * time_ch);
 		virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL);
