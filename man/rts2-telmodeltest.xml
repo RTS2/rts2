@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.3</productnumber>
+    <productnumber>0.7.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -101,8 +101,11 @@
     <title>DESCRIPTION</title>
     
     <para>
-      This program produces from astrometrically processed input FITS images
-      file, which can be feeded to TPoint for model fitting.
+      This program performs various tests of the pointing model. It can be used
+      to compare corrections predicted by pointing model 
+
+
+
     </para>
 
   </refsect1>
@@ -154,7 +157,7 @@
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
-	<manvolnum>1</manvolnum>
+	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
