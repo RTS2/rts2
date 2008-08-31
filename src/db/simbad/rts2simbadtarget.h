@@ -44,9 +44,9 @@ class Rts2SimbadTarget:public ConstTarget
 
 		virtual int load ();
 
-		int getPosition (struct ln_equ_posn *pos)
+		void getPosition (struct ln_equ_posn *pos)
 		{
-			return Target::getPosition (pos);
+			Target::getPosition (pos);
 		}
 
 		virtual void printExtra (Rts2InfoValStream & _os);
