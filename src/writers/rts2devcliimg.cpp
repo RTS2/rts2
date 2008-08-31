@@ -485,7 +485,7 @@ Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * imag
 (in_owner)
 {
 	char *command;
-	asprintf (&command, "que_image %s", image->getImageName ());
+	asprintf (&command, "que_image %s", image->getFileName ());
 	setCommand (command);
 	free (command);
 }

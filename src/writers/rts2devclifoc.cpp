@@ -151,8 +151,8 @@ const char *in_exe, int in_endEvent):
 Rts2ConnFork (in_master, in_exe)
 {
 	change = INT_MAX;
-	img_path = new char[strlen (in_image->getImageName ()) + 1];
-	strcpy (img_path, in_image->getImageName ());
+	img_path = new char[strlen (in_image->getFileName ()) + 1];
+	strcpy (img_path, in_image->getFileName ());
 	image = in_image;
 	endEvent = in_endEvent;
 }

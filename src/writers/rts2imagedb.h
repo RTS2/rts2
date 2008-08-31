@@ -119,7 +119,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
-		virtual const char* getImageName ();
+		virtual const char* getFileName ();
 
 		virtual bool haveOKAstrometry ()
 		{
@@ -131,7 +131,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 			return (processBitfiedl & ASTROMETRY_PROC);
 		}
 
-		virtual std::string getFileName ();
+		virtual std::string getFileNameString ();
 
 		virtual img_type_t getImageType ()
 		{

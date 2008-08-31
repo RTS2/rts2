@@ -668,10 +668,11 @@ Rts2ImageSkyDb::deleteImage ()
 
 
 const char *
-Rts2ImageSkyDb::getImageName ()
+Rts2ImageSkyDb::getFileName ()
 {
-	if (imageName)
-		return imageName;
+	if (Rts2Image::getFileName ())
+		return Rts2Image::getFileName ();
+
 	std::ostringstream _os;
 	_os << getImageBase ();
 	if (processBitfiedl & ASTROMETRY_PROC)
@@ -690,12 +691,13 @@ Rts2ImageSkyDb::getImageName ()
 		_os << "/que/" << getCameraName ();
 	}
 	_os << "/" << getOnlyFileName ();
-	return _os.str().c_str();
+	setFileName (_os.str().c_str ());
+	return getFileName ();
 }
 
 
 std::string
-Rts2ImageSkyDb::getFileName ()
+Rts2ImageSkyDb::getFileNameString ()
 {
 	std::ostringstream out;
 	printFileName (out);

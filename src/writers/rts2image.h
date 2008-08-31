@@ -20,21 +20,15 @@
 #ifndef __RTS2_IMAGE__
 #define __RTS2_IMAGE__
 
-#define IMAGE_SAVE              0x01
-#define IMAGE_NOT_SAVE          0x00
-#define IMAGE_KEEP_DATA         0x02
-#define IMAGE_DONT_DELETE_DATA  0x04
-#define IMAGE_CANNOT_LOAD       0x08
-
-#include <sys/time.h>
-#include <time.h>
-#include <fitsio.h>
 #include <list>
 #include <ostream>
 #include <vector>
 #include <config.h>
 
 #include "imghdr.h"
+
+#include "rts2fitsfile.h"
+
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2expander.h"
@@ -78,23 +72,19 @@ imageWriteWhich_t;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Image:public Rts2Expander
+class Rts2Image:public Rts2FitsFile
 {
 	private:
-		unsigned short *data;
-		fitsfile *ffile;
-		int fits_status;
-		int flags;
 		int filter_i;
 		char *filter;
 		float exposureLength;
-		void setImageName (const char *in_filename);
+		
 		int createImage ();
 		int createImage (std::string in_filename);
 		int createImage (char *in_filename);
-		// when in_filename == NULL, we take image name stored in this->imageName
-		int openImage ();
-		int openImage (const char *in_filename, bool readOnly = false);
+		// if filename is NULL, will take name stored in this->getFileName ()
+		int openImage (const char *_filename = NULL, bool readOnly = false);
+
 		int writeExposureStart ();
 		char *imageData;
 		int imageType;
@@ -142,7 +132,6 @@ class Rts2Image:public Rts2Expander
 		char *cameraName;
 		char *mountName;
 		char *focName;
-		char *imageName;
 		shutter_t shutter;
 
 		struct ln_equ_posn pos_astr;
@@ -152,13 +141,6 @@ class Rts2Image:public Rts2Expander
 
 		virtual int isGoodForFwhm (struct stardata *sr);
 		char *getImageBase (void);
-
-		void setFitsFile (fitsfile * in_ffile)
-		{
-			ffile = in_ffile;
-		}
-
-		std::string getFitsErrors ();
 
 		// expand expression to image path
 		virtual std::string expandVariable (char expression);
@@ -196,6 +178,8 @@ class Rts2Image:public Rts2Expander
 		// open image from disk..
 		Rts2Image (const char *in_filename, bool verbose = true, bool readOnly = false);
 		virtual ~ Rts2Image (void);
+
+		virtual int closeFile ();
 
 		virtual int toQue ();
 		virtual int toAcquisition ();
@@ -281,53 +265,14 @@ class Rts2Image:public Rts2Expander
 		int getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
 		int getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
-		/**
-		 * Appends history string.
-		 *
-		 * @param history History keyword which will be appended.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int writeHistory (const char *history);
-
-		/**
-		 * Append comment to FITS file.
-		 *
-		 * @param comment Comment which will be appended to FITS file comments.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int writeComment (const char *comment);
-
 		int writeImgHeader (struct imghdr *im_h);
 		int writeDate (char *in_data, char *fullTop);
 
-		std::string expandPath (std::string pathEx)
-		{
-			return expand (pathEx);
-		}
-
-		int fitsStatusValue (const char *valname, const char *operation,
-			bool required);
-		int fitsStatusSetValue (const char *valname, bool required = true)
-		{
-			return fitsStatusValue (valname, "SetValue", required);
-		}
-		int fitsStatusGetValue (const char *valname, bool required)
-		{
-			return fitsStatusValue (valname, "GetValue", required);
-		}
-
 		double getAstrometryErr ();
 
-		int closeFile ();
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
-		virtual const char *getImageName ()
-		{
-			return imageName;
-		}
 
 		void setMountName (const char *in_mountName);
 
@@ -475,11 +420,6 @@ class Rts2Image:public Rts2Expander
 		void keepImage ()
 		{
 			flags |= IMAGE_KEEP_DATA;
-		}
-
-		bool shouldSaveImage ()
-		{
-			return (flags & IMAGE_SAVE);
 		}
 
 		void closeData ()
@@ -672,19 +612,6 @@ class Rts2Image:public Rts2Expander
 		void printFileName (std::ostream & _os);
 
 		virtual void print (std::ostream & _os, int in_flags = 0);
-
-		/**
-		 * Get fits file for use by other image.
-		 *
-		 * File pointer will be discarded and will not be closed - usefull for copy
-		 * constructor, but for nothing else.
-		 */
-		fitsfile *getFitsFile ()
-		{
-			fitsfile *ret = ffile;
-			ffile = NULL;
-			return ret;
-		}
 
 		int setInstrument (const char *instr)
 		{

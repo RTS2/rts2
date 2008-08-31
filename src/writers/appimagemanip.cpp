@@ -121,7 +121,7 @@ Rts2AppImageManip::addDate (Rts2Image * image)
 {
 	int ret;
 	time_t t;
-	std::cout << "Adding date " << image->getImageName () << "..";
+	std::cout << "Adding date " << image->getFileName () << "..";
 	t = image->getExposureSec ();
 	image->setValue ("DATE-OBS", &t, image->getExposureUsec (),
 		"date of observation");
