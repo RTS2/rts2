@@ -568,7 +568,7 @@ class ListImages: public XmlRpcServerMethod
 			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
 				Rts2Image *image = *img_iter;
-				retVar["filename"] = image->getImageName ();
+				retVar["filename"] = image->getFileName ();
 				result[i++] = retVar;
 			}
 		}
