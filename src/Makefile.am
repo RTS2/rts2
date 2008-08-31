@@ -20,8 +20,8 @@ SUBDIRS = \
 	sql \
 	db \
 	monitor \
-	soap \
 	sensord \
 	indi \
 	logger \
-	xmlrpc
+	xmlrpc \
+	scheduler 
