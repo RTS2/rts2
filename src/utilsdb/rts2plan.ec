@@ -279,7 +279,7 @@ Rts2Plan::getTarget ()
 {
 	if (target)
 		return target;
-	target = createTarget (tar_id);
+	target = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
 	return target;
 }
 

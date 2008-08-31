@@ -1672,16 +1672,10 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 }
 
 
-Target *createTarget (int in_tar_id)
-{
-	return createTarget (in_tar_id, Rts2Config::instance()->getObserver ());
-}
-
-
-Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = in_tar_id;
+		int db_tar_id = _tar_id;
 		char db_type_id;
 	EXEC SQL END DECLARE SECTION;
 
@@ -1709,55 +1703,55 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 	{
 		// calibration targets..
 		case TYPE_DARK:
-			retTarget = new DarkTarget (in_tar_id, in_obs);
+			retTarget = new DarkTarget (_tar_id, _obs);
 			break;
 		case TYPE_FLAT:
-			retTarget = new FlatTarget (in_tar_id, in_obs);
+			retTarget = new FlatTarget (_tar_id, _obs);
 			break;
 		case TYPE_FOCUSING:
-			retTarget = new FocusingTarget (in_tar_id, in_obs);
+			retTarget = new FocusingTarget (_tar_id, _obs);
 			break;
 		case TYPE_CALIBRATION:
-			retTarget = new CalibrationTarget (in_tar_id, in_obs);
+			retTarget = new CalibrationTarget (_tar_id, _obs);
 			break;
 		case TYPE_MODEL:
-			retTarget = new ModelTarget (in_tar_id, in_obs);
+			retTarget = new ModelTarget (_tar_id, _obs);
 			break;
 		case TYPE_OPORTUNITY:
-			retTarget = new OportunityTarget (in_tar_id, in_obs);
+			retTarget = new OportunityTarget (_tar_id, _obs);
 			break;
 		case TYPE_ELLIPTICAL:
-			retTarget = new EllTarget (in_tar_id, in_obs);
+			retTarget = new EllTarget (_tar_id, _obs);
 			break;
 		case TYPE_GRB:
-			retTarget = new TargetGRB (in_tar_id, in_obs, 3600, 86400, 5 * 86400);
+			retTarget = new TargetGRB (_tar_id, _obs, 3600, 86400, 5 * 86400);
 			break;
 		case TYPE_SWIFT_FOV:
-			retTarget = new TargetSwiftFOV (in_tar_id, in_obs);
+			retTarget = new TargetSwiftFOV (_tar_id, _obs);
 			break;
 		case TYPE_INTEGRAL_FOV:
-			retTarget = new TargetIntegralFOV (in_tar_id, in_obs);
+			retTarget = new TargetIntegralFOV (_tar_id, _obs);
 			break;
 		case TYPE_GPS:
-			retTarget = new TargetGps (in_tar_id, in_obs);
+			retTarget = new TargetGps (_tar_id, _obs);
 			break;
 		case TYPE_SKY_SURVEY:
-			retTarget = new TargetSkySurvey (in_tar_id, in_obs);
+			retTarget = new TargetSkySurvey (_tar_id, _obs);
 			break;
 		case TYPE_TERESTIAL:
-			retTarget = new TargetTerestial (in_tar_id, in_obs);
+			retTarget = new TargetTerestial (_tar_id, _obs);
 			break;
 		case TYPE_PLAN:
-			retTarget = new TargetPlan (in_tar_id, in_obs);
+			retTarget = new TargetPlan (_tar_id, _obs);
 			break;
 		case TYPE_AUGER:
-			retTarget = new TargetAuger (in_tar_id, in_obs, 1800);
+			retTarget = new TargetAuger (_tar_id, _obs, 1800);
 			break;
 		case TYPE_PLANET:
-			retTarget = new TargetPlanet (in_tar_id, in_obs);
+			retTarget = new TargetPlanet (_tar_id, _obs);
 			break;
 		default:
-			retTarget = new ConstTarget (in_tar_id, in_obs);
+			retTarget = new ConstTarget (_tar_id, _obs);
 			break;
 	}
 

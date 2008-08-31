@@ -22,6 +22,7 @@
 
 #include <libnova/libnova.h>
 #include <list>
+#include <vector>
 #include <ostream>
 
 #include "target.h"
@@ -29,11 +30,12 @@
 /**
  * Set of targets.
  *
- * This class holds set of targets. Constructors for filling set from the DB using various criterias are provided.
+ * This class holds set of targets. Constructors for filling set from the DB
+ * using various criterias are provided.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TargetSet:public std::list <Target * >
+class Rts2TargetSet:public std::vector <Target * >
 {
 	protected:
 		void load (std::string in_where, std::string order_by);
@@ -85,6 +87,11 @@ class Rts2TargetSet:public std::list <Target * >
 
 		virtual ~Rts2TargetSet (void);
 
+		/**
+		 * Add to target set targets from the other set.
+		 */
+		void addSet (Rts2TargetSet &_set);
+
 		void setTargetEnabled (bool enabled = true, bool logit = false);
 		void setTargetPriority (float new_priority);
 		void setTargetBonus (float new_bonus);
@@ -120,7 +127,7 @@ class TargetGRB;
 /**
  * Holds last GRBs
  */
-class  Rts2TargetSetGrb:public std::list <TargetGRB *>
+class  Rts2TargetSetGrb:public std::vector <TargetGRB *>
 {
 	private:
 		void load ();

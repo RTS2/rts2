@@ -171,6 +171,17 @@ Rts2TargetSet::~Rts2TargetSet (void)
 	clear ();
 }
 
+void
+Rts2TargetSet::addSet (Rts2TargetSet &_set)
+{
+	for (Rts2TargetSet::iterator iter = _set.begin (); iter != _set.end (); iter++)
+	{
+		push_back (*iter);
+	}
+	// clear set so it cannot be used again
+	_set.clear ();
+}
+
 
 void
 Rts2TargetSet::setTargetEnabled (bool enabled, bool logit)

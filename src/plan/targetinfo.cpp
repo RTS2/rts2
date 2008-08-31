@@ -516,11 +516,10 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 			{
 				target = *iter;
 				Rts2TargetSet *addS = target->getCalTargets ();
-				calibSet.merge (*addS);
-				addS->clear ();
+				calibSet.addSet (*addS);
 				delete addS;
 			}
-			set.merge (calibSet);
+			set.addSet (calibSet);
 		}
 
 		for (iter = set.begin (); iter != set.end (); iter++)

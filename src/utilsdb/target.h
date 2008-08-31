@@ -861,10 +861,15 @@ class TargetPlan:public Target
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 };
 
-// load target from DB
-Target *createTarget (int in_tar_id);
-
-Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+/**
+ * Select target from database with given target ID.
+ *
+ * @param _tar_id  ID of target which will be loaded.
+ * @param _obs     Observer position.
+ *
+ * @return New target if it can be found. Otherwise will return NULL.
+ */
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs);
 
 // send end mails
 void sendEndMails (const time_t * t_from, const time_t * t_to,
