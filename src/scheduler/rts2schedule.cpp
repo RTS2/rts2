@@ -18,25 +18,40 @@
  */
 
 #include "rts2schedule.h"
+#include "../utilsdb/rts2targetset.h"
 
-Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend):
-std::set <Rts2SchedObs> ()
+Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs):
+std::vector <Rts2SchedObs*> ()
 {
 	JDstart = _JDstart;
 	JDend = _JDend;
+	observer = _obs;
 }
 
 
 Rts2Schedule::~Rts2Schedule (void)
 {
-
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+		delete (*iter);
+	clear ();
 }
 
 
 int
 Rts2Schedule::constructSchedule ()
 {
-
+	Rts2TargetSetSelectable tarSet = Rts2TargetSetSelectable (observer);
+	double JD = JDstart;
+	while (JD < JDend)
+	{
+		int ran = random ();
+		// random selection of observation
+		int sel = ran * tarSet.size () / RAND_MAX;
+		Target *tar = createTarget (tarSet[sel]->getTargetID (), observer);
+		push_back (new Rts2SchedObs (tar, JD, 1));
+		JD += (double) 10.0 / 1440.0;
+	}
+	return 0;
 }
 
 
@@ -44,7 +59,7 @@ std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule)
 {
 	for (Rts2Schedule::iterator iter = schedule.begin (); iter != schedule.end (); iter++)
 	{
-		_os << (*iter) << std::endl;
+		_os << *(*iter) << std::endl;
 	}
 	return _os;
 }

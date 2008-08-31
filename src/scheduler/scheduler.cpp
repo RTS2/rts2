@@ -18,11 +18,15 @@
  */
 
 #include "../utilsdb/rts2appdb.h"
+#include "../utils/rts2config.h"
 
 #include "rts2schedule.h"
 
 class Rts2ScheduleApp: public Rts2AppDb
 {
+	private:
+		Rts2Config *config;
+
 	protected:
 		virtual void usage ();
 		virtual void help ();
@@ -66,6 +70,13 @@ Rts2ScheduleApp::~Rts2ScheduleApp (void)
 int
 Rts2ScheduleApp::doProcessing ()
 {
+	struct ln_lnlat_posn *observer = Rts2Config::instance()->getObserver ();
+	double jd = ln_get_julian_from_sys ();
+
+	Rts2Schedule sched = Rts2Schedule (jd, jd + 1, observer);
+	sched.constructSchedule ();
+
+	std::cout << sched << std::endl;
 	return 0;
 }
 

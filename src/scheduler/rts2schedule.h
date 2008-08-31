@@ -17,9 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_SCHEDULE__
+#define __RTS2_SCHEDULE__
+
 #include "rts2schedobs.h"
 
-#include <set>
+#include <vector>
 
 /**
  * Observing schedule. This class provides holder of observing schedule, which
@@ -28,13 +31,15 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Schedule: public std::set <Rts2SchedObs>
+class Rts2Schedule: public std::vector <Rts2SchedObs*>
 {
 	private:
 		double JDstart;
 		double JDend;
+		struct ln_lnlat_posn *observer;
+
 	public:
-		Rts2Schedule (double _JDstart, double _JDend);
+		Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs);
 		virtual ~Rts2Schedule (void);
 
 		/**
@@ -46,3 +51,5 @@ class Rts2Schedule: public std::set <Rts2SchedObs>
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule);
+
+#endif // !__RTS2_SCHEDULE__

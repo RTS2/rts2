@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_SCHEDOBS__
+#define __RTS2_SCHEDOBS__
+
 #include "../utilsdb/target.h"
 #include <ostream>
 
@@ -31,11 +34,11 @@ class Rts2SchedObs
 {
   	private:
 		Target *target;
-		unsigned int loopCount;
 		double startJD;
+		unsigned int loopCount;
 
 	public:
-		Rts2SchedObs (Target *_target);
+		Rts2SchedObs (Target *_target, double _startJD, unsigned int _loopCount);
 		virtual ~Rts2SchedObs (void);
 
 		/**
@@ -69,4 +72,6 @@ class Rts2SchedObs
 		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2SchedObs schedobs);
+std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs);
+
+#endif // !__RTS2_SCHEDOBS__

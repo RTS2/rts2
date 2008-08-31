@@ -19,9 +19,12 @@
 
 #include "rts2schedobs.h"
 
-Rts2SchedObs::Rts2SchedObs (Target *_target)
+
+Rts2SchedObs::Rts2SchedObs (Target *_target, double _startJD, unsigned int _loopCount)
 {
 	target = _target;
+	startJD = _startJD;
+	loopCount = _loopCount;
 }
 
 
@@ -31,7 +34,7 @@ Rts2SchedObs::~Rts2SchedObs (void)
 }
 
 
-std::ostream & operator << (std::ostream & _os, Rts2SchedObs schedobs)
+std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs)
 {
 	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getLoopCount () << " " << schedobs.getTargetID () << std::endl;
 	return _os;
