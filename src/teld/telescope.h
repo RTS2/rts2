@@ -21,8 +21,6 @@
 #define __RTS2_TELD_CPP__
 
 #include <libnova/libnova.h>
-#include <sys/time.h>
-#include <time.h>
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
