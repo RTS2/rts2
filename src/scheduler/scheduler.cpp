@@ -30,6 +30,7 @@ class Rts2ScheduleApp: public Rts2AppDb
 	protected:
 		virtual void usage ();
 		virtual void help ();
+		virtual int init ();
 
 	public:
 		Rts2ScheduleApp (int argc, char ** argv);
@@ -56,6 +57,20 @@ http://rts-2.sf.net/scheduling.pdf." << std::endl
 }
 
 
+int
+Rts2ScheduleApp::init ()
+{
+	int ret;
+	ret = Rts2AppDb::init ();
+	if (ret)
+		return ret;
+
+	srandom (time (NULL));
+
+	return 0;
+}
+
+
 Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv)
 {
 
@@ -76,7 +91,10 @@ Rts2ScheduleApp::doProcessing ()
 	Rts2Schedule sched = Rts2Schedule (jd, jd + 1, observer);
 	sched.constructSchedule ();
 
-	std::cout << sched << std::endl;
+//	std::cout << sched << std::endl;
+	std::cout << sched.visibilityRation () << std::endl;
+
+	std::cout << sched.altitudeMerit () << std::endl;
 	return 0;
 }
 

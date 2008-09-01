@@ -70,6 +70,21 @@ class Rts2SchedObs
 		{
 			return loopCount;
 		}
+
+		/**
+		 * Determines schedule target visibility.
+		 *
+		 * @return True is observation is visible.
+		 */
+		bool isVisible ()
+		{
+			return target->isGood (getJDStart ());
+		}
+
+		/**
+		 * Return observation altitude merit computed from given period.
+		 */
+		double altitudeMerit (double _start, double _end);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs);

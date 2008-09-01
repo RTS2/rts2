@@ -34,6 +34,22 @@ Rts2SchedObs::~Rts2SchedObs (void)
 }
 
 
+double
+Rts2SchedObs::altitudeMerit (double _start, double _end)
+{
+	double minA, maxA;
+	struct ln_hrz_posn hrz;
+	target->getMinMaxAlt (_start, _end, minA, maxA);
+
+	target->getAltAz (&hrz, startJD);
+
+	if (maxA == minA)
+		return 1;
+
+	return (hrz.alt - minA) / (maxA - minA);
+}
+
+
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs)
 {
 	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getLoopCount () << " " << schedobs.getTargetID () << std::endl;

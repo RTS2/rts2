@@ -48,6 +48,21 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * @return Number of elements in the constructed schedule, -1 on error.
 		 */
 		int constructSchedule ();
+
+		/**
+		 * Ratio of observations from schedule which are visible.
+		 *
+		 * @return Ration of visible targets. Higher means better schedule.
+		 */
+		double visibilityRation ();
+
+		/**
+		 * Returns averaged altitude merit function.
+		 *
+		 * @return Averaged altitudu merit function of the observations.
+		 */
+		double altitudeMerit ();
+
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule);

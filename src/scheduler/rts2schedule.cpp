@@ -55,6 +55,31 @@ Rts2Schedule::constructSchedule ()
 }
 
 
+double
+Rts2Schedule::visibilityRation ()
+{
+	unsigned int visible = 0;
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter)->isVisible ())
+			visible ++;
+	}
+	return (double) visible / size ();
+}
+
+
+double
+Rts2Schedule::altitudeMerit ()
+{
+	double aMerit = 0;
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		aMerit += (*iter)->altitudeMerit (JDstart, JDend);
+	}
+	return aMerit / size ();
+}
+
+
 std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule)
 {
 	for (Rts2Schedule::iterator iter = schedule.begin (); iter != schedule.end (); iter++)
