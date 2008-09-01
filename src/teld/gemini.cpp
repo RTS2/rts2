@@ -113,7 +113,16 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
 
 		/**
-		 * Reads some value from lx200 in hms format.
+		 * Get date from Gemini. This call nulls all values stored in _tm.
+		 *
+		 * @param _tm Structure where date (years, days and monts) will be stored.
+		 * 
+		 * @return -1 on error, 0 on success.
+		 */
+		 int readDate (struct tm *_tm, const char *command);
+
+		/**
+		 * Reads some value from lx200 in HMS format.
 		 *
 		 * Utility function for all those read_ra and other.
 		 *
@@ -121,7 +130,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		 *
 		 * @return -1 and set errno on error, otherwise 0
 		 */
-		int tel_read_hms (double *hmsptr, const char *command);
+		int readHMS (double *hmsptr, const char *command);
 
 		/**
 		 * Computes gemini checksum
@@ -184,7 +193,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		/**
 		 * Match gemini time with system time
 		 */
-		int tel_gemini_match_time ();
+		int matchTime ();
 
 		/**
 		 * Reads lx200 right ascenation.
@@ -211,7 +220,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		 *
 		 * @return -1 and errno on error, otherwise 0
 		 */
-		int tel_read_localtime ();
+		int getLocaltime ();
 
 		/**
 		 * Reads losmandy longtitude.
@@ -461,7 +470,28 @@ Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char 
 
 
 int
-Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, const char *command)
+Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
+{
+	char wbuf[11];
+	int ret;
+	_tm->tm_hour = _tm->tm_min = _tm->tm_sec = _tm->tm_isdst = 0;
+	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 9)
+		return -1;
+	ret = sscanf (wbuf, "%i/%i/%i#", &_tm->tm_year, &_tm->tm_mon, &_tm->tm_mday);
+	if (ret != 3)
+	{
+		logStream (MESSAGE_ERROR) << "invalid date read " << wbuf << sendLog;
+		return -1;
+	}
+	// date will always be after 2000..
+	_tm->tm_year += 100;
+	_tm->tm_mon ++;
+	return 0;
+}
+
+
+int
+Rts2DevTelescopeGemini::readHMS (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -695,7 +725,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_match_time ()
+Rts2DevTelescopeGemini::matchTime ()
 {
 	struct tm ts;
 	time_t t;
@@ -739,7 +769,7 @@ int
 Rts2DevTelescopeGemini::tel_read_ra ()
 {
 	double t_telRa;
-	if (tel_read_hms (&t_telRa, "#:GR#"))
+	if (readHMS (&t_telRa, "#:GR#"))
 		return -1;
 	t_telRa *= 15.0;
 	setTelRa (t_telRa);
@@ -751,7 +781,7 @@ int
 Rts2DevTelescopeGemini::tel_read_dec ()
 {
 	double t_telDec;
-	if (tel_read_hms (&t_telDec, "#:GD#"))
+	if (readHMS (&t_telDec, "#:GD#"))
 		return -1;
 	setTelDec (t_telDec);
 	return 0;
@@ -759,11 +789,17 @@ Rts2DevTelescopeGemini::tel_read_dec ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_localtime ()
+Rts2DevTelescopeGemini::getLocaltime ()
 {
 	double t_telLocalTime;
-	if (tel_read_hms (&t_telLocalTime, "#:GL#"))
+	struct tm _tm;
+	if (readDate (&_tm, ":GC#"))
 		return -1;
+	if (readHMS (&t_telLocalTime, "#:GL#"))
+		return -1;
+	// change hours to seconds..
+	t_telLocalTime *= 3600;
+	t_telLocalTime += mktime (&_tm);
 	telLocalTime->setValueDouble (t_telLocalTime);
 	return 0;
 }
@@ -774,7 +810,7 @@ Rts2DevTelescopeGemini::tel_read_longtitude ()
 {
 	int ret;
 	double t_telLongitude;
-	ret = tel_read_hms (&t_telLongitude, "#:Gg#");
+	ret = readHMS (&t_telLongitude, "#:Gg#");
 	if (ret)
 		return ret;
 	telLongitude->setValueDouble (-1 * t_telLongitude);
@@ -786,7 +822,7 @@ int
 Rts2DevTelescopeGemini::tel_read_latitude ()
 {
 	double t_telLatitude;
-	if (tel_read_hms (&t_telLatitude, "#:Gt#"))
+	if (readHMS (&t_telLatitude, "#:Gt#"))
 		return -1;
 	telLatitude->setValueDouble (t_telLatitude);
 	return 0;
@@ -1389,7 +1425,7 @@ Rts2DevTelescopeGemini::info ()
 {
 	telFlip->setValueInteger (0);
 
-	if (tel_read_ra () || tel_read_dec () || tel_read_localtime ())
+	if (tel_read_ra () || tel_read_dec () || getLocaltime ())
 		return -1;
 	if (bootesSensors)
 	{
@@ -2099,7 +2135,7 @@ int
 Rts2DevTelescopeGemini::endPark ()
 {
 	if (getMasterState () != SERVERD_NIGHT)
-		tel_gemini_match_time ();
+		matchTime ();
 	setTimeout (USEC_SEC * 10);
 	return stopWorm ();
 }
