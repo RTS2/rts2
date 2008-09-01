@@ -24,7 +24,7 @@
 void
 Rts2SchedBag::mutate (Rts2Schedule * sched)
 {
-	int gen = random () * sched->size () / RAND_MAX;
+	int gen = randomNumber (0, sched->size ());
 
 	double JD = (*sched)[gen]->getJDStart ();
 
@@ -77,9 +77,10 @@ void
 Rts2SchedBag::doGAStep ()
 {
 	// mutate population
-  	int rMax = random () * mutationNum / RAND_MAX;
+  	int rMax = randomNumber (0, mutationNum);
+
 	for (int i = 0; i < rMax; i++)
 	{
-		mutate ((*this)[random () * size () / RAND_MAX]);	
+		mutate ((*this)[randomNumber (0, size ())]);	
 	}
 }

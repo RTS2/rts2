@@ -60,14 +60,14 @@ Rts2ScheduleApp::printMerits ()
 
 	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
 	{
-		std::cout << std::setw (8) << (*iter)->visibilityRation () << " ";
+		std::cout << std::left << std::setw (8) << (*iter)->visibilityRation () << " ";
 	}
 
 	std::cout << std::endl << "altitude:   ";
 
 	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
 	{
-		std::cout << std::setw (8) << (*iter)->altitudeMerit () << " ";
+		std::cout << std::left << std::setw (8) << (*iter)->altitudeMerit () << " ";
 	}
 
 	std::cout << std::endl;

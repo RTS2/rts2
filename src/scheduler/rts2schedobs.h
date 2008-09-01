@@ -23,6 +23,8 @@
 #include "../utilsdb/target.h"
 #include <ostream>
 
+#include "utils.h"
+
 /**
  * Single observation class. This class provides interface for a single
  * observing schedule entry - single observation. It provides methods to

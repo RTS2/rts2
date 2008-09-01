@@ -45,8 +45,7 @@ Target *
 Rts2Schedule::randomTarget ()
 {
 	// random selection of observation
-	int sel = random () * tarSet->size () / RAND_MAX;
-	return createTarget ((*tarSet)[sel]->getTargetID (), observer);
+	return createTarget ((*tarSet)[randomNumber (0, tarSet->size ())]->getTargetID (), observer);
 }
 
 
