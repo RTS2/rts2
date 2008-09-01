@@ -20,8 +20,14 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utils/rts2config.h"
 
-#include "rts2schedule.h"
+#include "rts2schedbag.h"
 
+/**
+ * Class of the scheduler application.  Prepares schedule, and run
+ * optimalization few times to get them out..
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2ScheduleApp: public Rts2AppDb
 {
 	private:
@@ -85,16 +91,33 @@ Rts2ScheduleApp::~Rts2ScheduleApp (void)
 int
 Rts2ScheduleApp::doProcessing ()
 {
-	struct ln_lnlat_posn *observer = Rts2Config::instance()->getObserver ();
 	double jd = ln_get_julian_from_sys ();
 
-	Rts2Schedule sched = Rts2Schedule (jd, jd + 1, observer);
-	sched.constructSchedule ();
+	// create list of schedules..
+	Rts2SchedBag schedBag = Rts2SchedBag (jd, jd + 1);
 
-//	std::cout << sched << std::endl;
-	std::cout << sched.visibilityRation () << std::endl;
+	int ret = schedBag.constructSchedules (10);
+	if (ret)
+		return ret;
 
-	std::cout << sched.altitudeMerit () << std::endl;
+	Rts2SchedBag::iterator iter;
+
+	std::cout << "visibility: ";
+
+	for (iter = schedBag.begin (); iter != schedBag.end (); iter++)
+	{
+		std::cout << std::setw (6) << (*iter)->visibilityRation () << " ";
+	}
+
+	std::cout << std::endl << "altitude:   ";
+
+	for (iter = schedBag.begin (); iter != schedBag.end (); iter++)
+	{
+		std::cout << std::setw (6) << (*iter)->altitudeMerit () << " ";
+	}
+
+	std::cout << std::endl;
+
 	return 0;
 }
 
