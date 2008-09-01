@@ -29,7 +29,26 @@
 class Rts2SchedBag:public std::vector <Rts2Schedule *>
 {
 	private:
+		int mutationNum;
 		double JDstart, JDend;
+
+		/**
+		 * Do mutation on genetic algorithm. The algorithm select
+		 * mutation gene with random generator.
+		 *
+		 * @param sched Schedule which will be mutated.
+		 */
+		void mutate (Rts2Schedule * sched);
+
+		/**
+		 * Do crossing of two schedules. This method calculate crossing
+		 * parameters.
+		 * 
+		 * @param sched1 1st schedule to cross.
+		 * @param sched2 2nd schedule to croos.
+		 */
+
+		void cross (Rts2Schedule * sched1, Rts2Schedule * sched2);
 
 	public:
 		/**
@@ -50,4 +69,9 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @return -1 on error, 0 on success.
 		 */
 		int constructSchedules (int num);
+
+		/**
+		 * Do one step of GA.
+		 */
+		void doGAStep ();
 };

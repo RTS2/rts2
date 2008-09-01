@@ -31,7 +31,12 @@
 class Rts2ScheduleApp: public Rts2AppDb
 {
 	private:
-		Rts2Config *config;
+		Rts2SchedBag *schedBag;
+
+		/**
+		 * Prints merits statistics of schedule set.
+		 */
+		void printMerits ();
 
 	protected:
 		virtual void usage ();
@@ -44,6 +49,29 @@ class Rts2ScheduleApp: public Rts2AppDb
 
 		virtual int doProcessing ();
 };
+
+
+void
+Rts2ScheduleApp::printMerits ()
+{
+	Rts2SchedBag::iterator iter;
+
+	std::cout << "visibility: ";
+
+	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
+	{
+		std::cout << std::setw (8) << (*iter)->visibilityRation () << " ";
+	}
+
+	std::cout << std::endl << "altitude:   ";
+
+	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
+	{
+		std::cout << std::setw (8) << (*iter)->altitudeMerit () << " ";
+	}
+
+	std::cout << std::endl;
+}
 
 
 void
@@ -73,50 +101,43 @@ Rts2ScheduleApp::init ()
 
 	srandom (time (NULL));
 
+	// initialize schedules..
+	double jd = ln_get_julian_from_sys ();
+
+	// create list of schedules..
+	schedBag = new Rts2SchedBag (jd, jd + 1);
+
+	ret = schedBag->constructSchedules (10);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
 
 Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv)
 {
-
+	schedBag = NULL;
 }
 
 
 Rts2ScheduleApp::~Rts2ScheduleApp (void)
 {
+	delete schedBag;
 }
 
 
 int
 Rts2ScheduleApp::doProcessing ()
 {
-	double jd = ln_get_julian_from_sys ();
+	printMerits ();
 
-	// create list of schedules..
-	Rts2SchedBag schedBag = Rts2SchedBag (jd, jd + 1);
-
-	int ret = schedBag.constructSchedules (10);
-	if (ret)
-		return ret;
-
-	Rts2SchedBag::iterator iter;
-
-	std::cout << "visibility: ";
-
-	for (iter = schedBag.begin (); iter != schedBag.end (); iter++)
+	for (int i = 0; i < 1000; i++)
 	{
-		std::cout << std::setw (6) << (*iter)->visibilityRation () << " ";
+		schedBag->doGAStep ();
 	}
-
-	std::cout << std::endl << "altitude:   ";
-
-	for (iter = schedBag.begin (); iter != schedBag.end (); iter++)
-	{
-		std::cout << std::setw (6) << (*iter)->altitudeMerit () << " ";
-	}
-
-	std::cout << std::endl;
+	
+	printMerits ();
 
 	return 0;
 }

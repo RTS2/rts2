@@ -21,6 +21,23 @@
 
 #include "../utils/rts2config.h"
 
+void
+Rts2SchedBag::mutate (Rts2Schedule * sched)
+{
+	int gen = random () * sched->size () / RAND_MAX;
+
+	double JD = (*sched)[gen]->getJDStart ();
+
+	delete (*sched)[gen];
+	(*sched)[gen] = sched->randomSchedObs (JD);
+}
+
+void
+Rts2SchedBag::cross (Rts2Schedule * sched1, Rts2Schedule * sched2)
+{
+
+}
+
 Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 {
 	JDstart = _JDstart;
@@ -46,8 +63,23 @@ Rts2SchedBag::constructSchedules (int num)
 	for (int i = 0; i < num; i++)
 	{
 		Rts2Schedule *sched = new Rts2Schedule (JDstart, JDend, observer);
-		sched->constructSchedule ();
+		if (sched->constructSchedule ())
+			return -1;
 		push_back (sched);
 	}
+  	mutationNum = size () / 5;
+
 	return 0;
+}
+
+
+void
+Rts2SchedBag::doGAStep ()
+{
+	// mutate population
+  	int rMax = random () * mutationNum / RAND_MAX;
+	for (int i = 0; i < rMax; i++)
+	{
+		mutate ((*this)[random () * size () / RAND_MAX]);	
+	}
 }

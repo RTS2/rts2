@@ -37,13 +37,41 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double JDstart;
 		double JDend;
 		struct ln_lnlat_posn *observer;
-
+		
+		Rts2TargetSetSelectable *tarSet;
 	public:
+		/**
+		 * Initialize schedule.
+		 *
+		 * @param _JDstart Schedule start in julian date.
+		 * @param _JDend   Schedule end in julian date.
+		 * @param _obs     Observer position.
+		 */
 		Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs);
-		virtual ~Rts2Schedule (void);
 
 		/**
-		 * This will construct observation schedule from JDstart to JDend.
+		 * Destroy observation schedule. Delete all scheduled observations.
+		 */
+		~Rts2Schedule (void);
+
+		/**
+		 * Generate random target for schedule.
+		 *
+		 * @return New Target object, or NULL if generation failed.
+		 */
+		Target * randomTarget ();
+
+		/**
+		 * Generate random observation schedule entry.
+		 *
+		 * @param JD Observation start interval.
+		 *
+		 * @return New schedule entry with random target.
+		 */
+		Rts2SchedObs * randomSchedObs (double JD);
+
+		/**
+		 * Construct observation schedule which fills time from JDstart to JDend.
 		 *
 		 * @return Number of elements in the constructed schedule, -1 on error.
 		 */

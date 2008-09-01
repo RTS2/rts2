@@ -26,6 +26,8 @@ std::vector <Rts2SchedObs*> ()
 	JDstart = _JDstart;
 	JDend = _JDend;
 	observer = _obs;
+
+	tarSet = NULL;
 }
 
 
@@ -34,21 +36,36 @@ Rts2Schedule::~Rts2Schedule (void)
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
 	clear ();
+
+	delete tarSet;
+}
+
+
+Target *
+Rts2Schedule::randomTarget ()
+{
+	// random selection of observation
+	int sel = random () * tarSet->size () / RAND_MAX;
+	return createTarget ((*tarSet)[sel]->getTargetID (), observer);
+}
+
+
+Rts2SchedObs *
+Rts2Schedule::randomSchedObs (double JD)
+{
+	return new Rts2SchedObs (randomTarget (), JD, 1);
 }
 
 
 int
 Rts2Schedule::constructSchedule ()
 {
-	Rts2TargetSetSelectable tarSet = Rts2TargetSetSelectable (observer);
+	if (!tarSet)
+  		tarSet = new Rts2TargetSetSelectable (observer);
 	double JD = JDstart;
 	while (JD < JDend)
 	{
-		int ran = random ();
-		// random selection of observation
-		int sel = ran * tarSet.size () / RAND_MAX;
-		Target *tar = createTarget (tarSet[sel]->getTargetID (), observer);
-		push_back (new Rts2SchedObs (tar, JD, 1));
+		push_back (randomSchedObs (JD));
 		JD += (double) 10.0 / 1440.0;
 	}
 	return 0;
