@@ -485,7 +485,7 @@ Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
 	}
 	// date will always be after 2000..
 	_tm->tm_year += 100;
-	_tm->tm_mon ++;
+	_tm->tm_mon --;
 	return 0;
 }
 
