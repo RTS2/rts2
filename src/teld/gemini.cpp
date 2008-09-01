@@ -477,10 +477,10 @@ Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
 	_tm->tm_hour = _tm->tm_min = _tm->tm_sec = _tm->tm_isdst = 0;
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 9)
 		return -1;
-	ret = sscanf (wbuf, "%i/%i/%i#", &_tm->tm_year, &_tm->tm_mon, &_tm->tm_mday);
+	ret = sscanf (wbuf, "%u/%u/%u", &(_tm->tm_mon), &(_tm->tm_mday), &(_tm->tm_year));
 	if (ret != 3)
 	{
-		logStream (MESSAGE_ERROR) << "invalid date read " << wbuf << sendLog;
+		logStream (MESSAGE_ERROR) << "invalid date read " << wbuf << " " << ret << sendLog;
 		return -1;
 	}
 	// date will always be after 2000..
