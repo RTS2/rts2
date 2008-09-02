@@ -32,6 +32,8 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		int mutationNum;
 		double JDstart, JDend;
 
+		Rts2TargetSetSelectable *tarSet;
+
 		/**
 		 * Do mutation on genetic algorithm. The algorithm select
 		 * mutation gene with random generator.
@@ -43,12 +45,18 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		/**
 		 * Do crossing of two schedules. This method calculate crossing
 		 * parameters.
-		 * 
-		 * @param sched1 1st schedule to cross.
-		 * @param sched2 2nd schedule to croos.
+		 *
+		 * @param sched1 Index of the 1st schedule to cross.
+		 * @param sched2 Index of the 2nd schedule to croos.
 		 */
+		void cross (int sched1, int sched2);
 
-		void cross (Rts2Schedule * sched1, Rts2Schedule * sched2);
+		/**
+		 * Select elite member of the population, delete non-elite members.
+		 *
+		 * @param eliteSize Elite size.
+		 */
+		void pickElite (unsigned int eliteSize);
 
 	public:
 		/**
@@ -60,7 +68,7 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * Delete schedules contained in schedule bag.
 		 */
 		~Rts2SchedBag (void);
-		
+
 		/**
 		 * Construct schedules and add them to schedule bag.
 		 *
@@ -69,6 +77,17 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @return -1 on error, 0 on success.
 		 */
 		int constructSchedules (int num);
+
+
+		/**
+		 * Return min, average and max fittness of population.
+		 *
+		 * @param _min Population minimal fittness.
+		 * @param _avg Population average fittness.
+		 * @param _max Population maximal fittness.
+		 */
+		void getStatistics (double &_min, double &_avg, double &_max);
+
 
 		/**
 		 * Do one step of GA.

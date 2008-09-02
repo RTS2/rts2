@@ -28,6 +28,36 @@ std::vector <Rts2SchedObs*> ()
 	observer = _obs;
 
 	tarSet = NULL;
+
+	visRatio = nan ("f");
+}
+
+
+Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned int crossPoint)
+{
+	// fill in parameters..
+  	JDstart = sched1->JDstart;
+	JDend = sched1->JDend;
+	observer = sched1->observer;
+
+	tarSet = sched1->tarSet;
+
+	visRatio = nan ("f");
+
+	unsigned int i;
+	Rts2SchedObs *parent;
+	// fill in schedobs
+	for (i = 0; i < crossPoint; i++)
+	{
+		parent = (*sched1)[i];
+		push_back (new Rts2SchedObs (parent->getTarget (), parent->getJDStart (), parent->getLoopCount ()));
+	}
+
+	for (; i < sched2->size (); i++)
+	{
+		parent = (*sched2)[i];
+		push_back (new Rts2SchedObs (parent->getTarget (), parent->getJDStart (), parent->getLoopCount ()));
+	}
 }
 
 
@@ -36,8 +66,6 @@ Rts2Schedule::~Rts2Schedule (void)
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 		delete (*iter);
 	clear ();
-
-	delete tarSet;
 }
 
 
@@ -45,22 +73,22 @@ Target *
 Rts2Schedule::randomTarget ()
 {
 	// random selection of observation
-	return createTarget ((*tarSet)[randomNumber (0, tarSet->size ())]->getTargetID (), observer);
+	return (*tarSet)[randomNumber (0, tarSet->size ())];
 }
 
 
 Rts2SchedObs *
 Rts2Schedule::randomSchedObs (double JD)
 {
+	visRatio = nan ("f");
 	return new Rts2SchedObs (randomTarget (), JD, 1);
 }
 
 
 int
-Rts2Schedule::constructSchedule ()
+Rts2Schedule::constructSchedule (Rts2TargetSet *_tarSet)
 {
-	if (!tarSet)
-  		tarSet = new Rts2TargetSetSelectable (observer);
+	tarSet = _tarSet;
 	double JD = JDstart;
 	while (JD < JDend)
 	{
@@ -72,15 +100,19 @@ Rts2Schedule::constructSchedule ()
 
 
 double
-Rts2Schedule::visibilityRation ()
+Rts2Schedule::visibilityRatio ()
 {
+	if (!isnan (visRatio))
+		return visRatio;
+
 	unsigned int visible = 0;
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 	{
 		if ((*iter)->isVisible ())
 			visible ++;
 	}
-	return (double) visible / size ();
+	visRatio = (double) visible / size ();
+	return visRatio;
 }
 
 
@@ -96,7 +128,8 @@ Rts2Schedule::altitudeMerit ()
 }
 
 
-std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule)
+std::ostream &
+operator << (std::ostream & _os, Rts2Schedule & schedule)
 {
 	for (Rts2Schedule::iterator iter = schedule.begin (); iter != schedule.end (); iter++)
 	{

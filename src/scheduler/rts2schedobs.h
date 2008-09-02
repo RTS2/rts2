@@ -34,7 +34,7 @@
  */
 class Rts2SchedObs
 {
-  	private:
+	private:
 		Target *target;
 		double startJD;
 		unsigned int loopCount;
@@ -51,6 +51,16 @@ class Rts2SchedObs
 		double getJDStart ()
 		{
 			return startJD;
+		}
+
+		/**
+		 * Return pointer to used target object.
+		 *
+		 * @return Pointer to target object.
+		 */
+		Target *getTarget ()
+		{
+			return target;
 		}
 
 		/**
@@ -90,5 +100,4 @@ class Rts2SchedObs
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs);
-
-#endif // !__RTS2_SCHEDOBS__
+#endif							 // !__RTS2_SCHEDOBS__

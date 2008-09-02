@@ -50,27 +50,32 @@ class Rts2ScheduleApp: public Rts2AppDb
 		virtual int doProcessing ();
 };
 
-
 void
 Rts2ScheduleApp::printMerits ()
 {
 	Rts2SchedBag::iterator iter;
+	double sum = 0;
 
 	std::cout << "visibility: ";
 
 	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
 	{
-		std::cout << std::left << std::setw (8) << (*iter)->visibilityRation () << " ";
+		std::cout << std::left << std::setw (8) << (*iter)->visibilityRatio () << " ";
+		sum += (*iter)->visibilityRatio ();
 	}
 
-	std::cout << std::endl << "altitude:   ";
+	std::cout << std::endl << " avg, visibility: " << (sum / schedBag->size ()) << std::endl
+		<< "altitude:   ";
+
+	sum = 0;
 
 	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
 	{
 		std::cout << std::left << std::setw (8) << (*iter)->altitudeMerit () << " ";
+		sum += (*iter)->altitudeMerit ();
 	}
 
-	std::cout << std::endl;
+	std::cout << std::endl << "avg. altitude: " << (sum / schedBag->size ()) << std::endl;
 }
 
 
@@ -86,7 +91,7 @@ Rts2ScheduleApp::help ()
 {
 	std::cout << "Create schedule for given night. The programme uses genetic algorithm scheduling, described at \
 http://rts-2.sf.net/scheduling.pdf." << std::endl
-                 << "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
+		<< "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
 	Rts2AppDb::help ();
 }
 
@@ -105,9 +110,9 @@ Rts2ScheduleApp::init ()
 	double jd = ln_get_julian_from_sys ();
 
 	// create list of schedules..
-	schedBag = new Rts2SchedBag (jd, jd + 1);
+	schedBag = new Rts2SchedBag (jd, jd + 0.5);
 
-	ret = schedBag->constructSchedules (10);
+	ret = schedBag->constructSchedules (20);
 	if (ret)
 		return ret;
 
@@ -132,11 +137,24 @@ Rts2ScheduleApp::doProcessing ()
 {
 	printMerits ();
 
-	for (int i = 0; i < 1000; i++)
+	for (int i = 1; i <= 3000; i++)
 	{
 		schedBag->doGAStep ();
+
+		double _min, _avg, _max;
+		schedBag->getStatistics (_min, _avg, _max);
+
+		std::cout << "\rGen " << std::right << std::setw (5) << i
+			<< " size " << std::setw (4) << schedBag->size ()
+			<< " fitness "
+			<< std::left << std::setw (8) << _min << " "
+			<< std::left << std::setw (8) << _avg << " "
+			<< std::left << std::setw (8) << _max << " ";
+		std::cout.flush ();
 	}
-	
+
+	std::cout << std::endl;
+
 	printMerits ();
 
 	return 0;

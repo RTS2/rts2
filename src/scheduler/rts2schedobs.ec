@@ -19,7 +19,6 @@
 
 #include "rts2schedobs.h"
 
-
 Rts2SchedObs::Rts2SchedObs (Target *_target, double _startJD, unsigned int _loopCount)
 {
 	target = _target;
@@ -30,7 +29,6 @@ Rts2SchedObs::Rts2SchedObs (Target *_target, double _startJD, unsigned int _loop
 
 Rts2SchedObs::~Rts2SchedObs (void)
 {
-	delete target;
 }
 
 

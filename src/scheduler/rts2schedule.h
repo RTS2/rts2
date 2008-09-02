@@ -37,17 +37,29 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double JDstart;
 		double JDend;
 		struct ln_lnlat_posn *observer;
-		
-		Rts2TargetSetSelectable *tarSet;
+
+		Rts2TargetSet *tarSet;
+
+		// this variable is lazy initialized
+		double visRatio;
 	public:
 		/**
-		 * Initialize schedule.
+		 * Create empty schedule.
 		 *
 		 * @param _JDstart Schedule start in julian date.
 		 * @param _JDend   Schedule end in julian date.
 		 * @param _obs     Observer position.
 		 */
 		Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs);
+
+		/**
+		 * Create schedule by crossing two previous schedules.
+		 *
+		 * @param sched1      1st schedule to cross.
+		 * @param sched2      2nd schedule to cross.
+		 * @param crossPoint  Index of an element at which schedules will cross.
+		 */
+		Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned int crossPoint);
 
 		/**
 		 * Destroy observation schedule. Delete all scheduled observations.
@@ -73,16 +85,18 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		/**
 		 * Construct observation schedule which fills time from JDstart to JDend.
 		 *
-		 * @return Number of elements in the constructed schedule, -1 on error.
+		 * @param _tarSet Target set which contains targets which schedule will hold.
+		 *
+		 * @return 0 on success, -1 on error.
 		 */
-		int constructSchedule ();
+		int constructSchedule (Rts2TargetSet *_tarSet);
 
 		/**
 		 * Ratio of observations from schedule which are visible.
 		 *
 		 * @return Ration of visible targets. Higher means better schedule.
 		 */
-		double visibilityRation ();
+		double visibilityRatio ();
 
 		/**
 		 * Returns averaged altitude merit function.
@@ -94,5 +108,4 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule);
-
-#endif // !__RTS2_SCHEDULE__
+#endif							 // !__RTS2_SCHEDULE__
