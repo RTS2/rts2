@@ -88,6 +88,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
 	tarSet = new Rts2TargetSetSelectable (observer);
+
+	mutationNum = -1;
+	popSize = -1;
 }
 
 
@@ -117,6 +120,8 @@ Rts2SchedBag::constructSchedules (int num)
 	}
 
 	mutationNum = 2;
+
+	popSize = size ();
 
 	return 0;
 }
@@ -154,14 +159,11 @@ Rts2SchedBag::doGAStep ()
 	for (iter = begin (); iter != end (); iter++)
 		sumFitness += (*iter)->visibilityRatio ();	
 
-	// save population size
-	unsigned int oldSize = size ();
-
 	// only the best..
-	pickElite (oldSize / 2);
+	pickElite (popSize / 2);
 
 	// have some sex..
-	while (size () < oldSize * 2)
+	while ((int) size () < popSize * 2)
 	{
 	  	// select comulative indices..
 		double rnum1 = sumFitness * random () / RAND_MAX;
@@ -203,6 +205,4 @@ Rts2SchedBag::doGAStep ()
 	{
 		mutate ((*this)[randomNumber (0, size ())]);
 	}
-
-	pickElite (oldSize);
 }

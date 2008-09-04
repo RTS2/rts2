@@ -33,6 +33,9 @@ class Rts2ScheduleApp: public Rts2AppDb
 	private:
 		Rts2SchedBag *schedBag;
 
+		// verbosity level
+		int verbose;
+
 		/**
 		 * Prints merits statistics of schedule set.
 		 */
@@ -41,6 +44,7 @@ class Rts2ScheduleApp: public Rts2AppDb
 	protected:
 		virtual void usage ();
 		virtual void help ();
+		virtual int processOption (int _opt);
 		virtual int init ();
 
 	public:
@@ -97,6 +101,21 @@ http://rts-2.sf.net/scheduling.pdf." << std::endl
 
 
 int
+Rts2ScheduleApp::processOption (int _opt)
+{
+	switch (_opt)
+	{
+		case 'v':
+			verbose++;
+			break;
+		default:
+			return Rts2AppDb::processOption (_opt);
+	}
+	return 0;
+}
+
+
+int
 Rts2ScheduleApp::init ()
 {
 	int ret;
@@ -123,6 +142,9 @@ Rts2ScheduleApp::init ()
 Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv)
 {
 	schedBag = NULL;
+	verbose = 0;
+
+	addOption ('v', NULL, 0, "verbosity level");
 }
 
 
@@ -135,27 +157,25 @@ Rts2ScheduleApp::~Rts2ScheduleApp (void)
 int
 Rts2ScheduleApp::doProcessing ()
 {
-	printMerits ();
+	if (verbose)
+	  	printMerits ();
 
-	for (int i = 1; i <= 3000; i++)
+	for (int i = 1; i <= 1500; i++)
 	{
 		schedBag->doGAStep ();
 
 		double _min, _avg, _max;
 		schedBag->getStatistics (_min, _avg, _max);
 
-		std::cout << "\rGen " << std::right << std::setw (5) << i
-			<< " size " << std::setw (4) << schedBag->size ()
-			<< " fitness "
+		std::cout << std::right << std::setw (5) << i << " "
+			<< std::setw (4) << schedBag->size () << " "
 			<< std::left << std::setw (8) << _min << " "
 			<< std::left << std::setw (8) << _avg << " "
-			<< std::left << std::setw (8) << _max << " ";
-		std::cout.flush ();
+			<< std::left << std::setw (8) << _max << std::endl;
 	}
 
-	std::cout << std::endl;
-
-	printMerits ();
+	if (verbose)	
+		printMerits ();
 
 	return 0;
 }

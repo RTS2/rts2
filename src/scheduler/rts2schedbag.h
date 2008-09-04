@@ -30,6 +30,8 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 {
 	private:
 		int mutationNum;
+		int popSize;
+
 		double JDstart, JDend;
 
 		Rts2TargetSetSelectable *tarSet;
