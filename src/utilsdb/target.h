@@ -93,6 +93,8 @@ class Target:public Rts2Target
 		double airmassScale;
 
 		time_t observationStart;
+		// ID of account to which target time will be accounted
+		int accountId;
 
 		Rts2TarUser *targetUsers;
 
@@ -553,35 +555,13 @@ class ConstTarget:public Target
 		}
 };
 
-class DarkTarget;
-
-class PossibleDarks
-{
-	private:
-		char *deviceName;
-		//
-		void addDarkExposure (float exp);
-		int defaultDark ();
-		int dbDark ();
-		// we will need temperature as well
-		std::list < float >dark_exposures;
-		DarkTarget *target;
-	public:
-		PossibleDarks (DarkTarget * in_target, const char *in_deviceName);
-		virtual ~ PossibleDarks (void);
-		int getScript (std::string & buf);
-		int isName (const char *in_deviceName);
-};
-
 class DarkTarget:public Target
 {
 	private:
 		struct ln_equ_posn currPos;
-		std::list < PossibleDarks * >darkList;
 	public:
 		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ DarkTarget (void);
-		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
 		{

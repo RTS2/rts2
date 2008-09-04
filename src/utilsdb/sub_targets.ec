@@ -185,171 +185,10 @@ ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 }
 
 
-PossibleDarks::PossibleDarks (DarkTarget *in_target, const char *in_deviceName)
-{
-	deviceName = new char [strlen (in_deviceName) + 1];
-	strcpy (deviceName, in_deviceName);
-	target = in_target;
-}
+//	ret = config->getString (deviceName, "darks", dark_exps);
 
 
-PossibleDarks::~PossibleDarks ()
-{
-	delete[] deviceName;
-	dark_exposures.clear ();
-}
-
-
-void
-PossibleDarks::addDarkExposure (float exp)
-{
-	std::list < float >::iterator dark_iter;
-	for (dark_iter = dark_exposures.begin (); dark_iter != dark_exposures.end (); dark_iter++)
-	{
-		if (*dark_iter == exp)
-			return;
-	}
-	dark_exposures.push_back (exp);
-}
-
-
-int
-PossibleDarks::defaultDark ()
-{
-	std::string dark_exps;
-	char *tmp_c;
-	const char *tmp_s;
-	float exp;
-	int ret;
-
-	Rts2Config *config;
-	config = Rts2Config::instance ();
-	ret = config->getString (deviceName, "darks", dark_exps);
-	if (ret)
-	{
-		return 0;
-	}
-	// get the getCalledNum th observation
-	// count how many exposures are in dark list..
-	tmp_s = dark_exps.c_str ();
-	while (*tmp_s)
-	{
-		// skip blanks..
-		while (*tmp_s && isblank (*tmp_s))
-			tmp_s++;
-		if (!*tmp_s)
-			break;
-		exp = strtod (tmp_s, &tmp_c);
-		if (tmp_s == tmp_c)
-		{
-			// error occured
-			logStream (MESSAGE_ERROR) << "PossibleDarks::defaultDark invalid entry" << sendLog;
-		}
-		else
-		{
-			// test if it exists..
-			addDarkExposure (exp);
-		}
-		tmp_s = tmp_c;
-		if (!*tmp_s)
-			break;
-		tmp_s++;
-	}
-	if (dark_exposures.size () == 0)
-		dark_exposures.push_back (17);
-	return 0;
-}
-
-
-int
-PossibleDarks::dbDark ()
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-		// cannot use DEVICE_NAME_SIZE, as some versions of ecpg complains about it
-		VARCHAR d_camera_name[50];
-		float d_img_exposure;
-		int d_dark_count;
-	EXEC SQL END DECLARE SECTION;
-
-	strncpy (d_camera_name.arr, deviceName, DEVICE_NAME_SIZE);
-	d_camera_name.len = strlen (deviceName);
-
-	// find which dark image we should optimally take..
-
-	EXEC SQL DECLARE dark_target CURSOR FOR
-		SELECT
-			img_exposure,
-			(SELECT
-		count (*)
-		FROM
-			darks
-		WHERE
-			darks.camera_name = images.camera_name
-		AND now () - dark_date < '18 hour'
-			) AS dark_count
-		FROM
-			images,
-			darks
-		WHERE
-			images.camera_name = :d_camera_name
-		AND now () - img_date < '1 day'
-		AND now () - dark_date < '1 day'
-		AND dark_exposure = img_exposure
-		GROUP BY
-			img_exposure,
-			images.camera_name
-		UNION
-		SELECT
-			img_exposure,
-			0
-		FROM
-			images
-		WHERE
-			images.camera_name = :d_camera_name
-		AND now () - img_date < '1 day'
-		AND NOT EXISTS (SELECT *
-		FROM
-			darks
-		WHERE
-			darks.camera_name = images.camera_name
-		AND dark_exposure = img_exposure
-		AND now () - dark_date < '1 day'
-			)
-			ORDER BY
-			img_exposure DESC,
-			dark_count DESC;
-	EXEC SQL OPEN dark_target;
-	if (sqlca.sqlcode)
-	{
-		target->logMsgDb ("PossibleDarks::getDb cannot open cursor dark_target, get default 10 sec darks",
-			(sqlca.sqlcode == ECPG_NOT_FOUND) ? MESSAGE_DEBUG : MESSAGE_ERROR);
-		EXEC SQL CLOSE dark_target;
-		return defaultDark ();
-	}
-	while (true)
-	{
-		EXEC SQL FETCH next FROM dark_target INTO
-				:d_img_exposure,
-				:d_dark_count;
-		if (sqlca.sqlcode)
-		{
-			EXEC SQL CLOSE dark_target;
-			EXEC SQL ROLLBACK;
-			if (dark_exposures.size () == 0)
-			{
-				target->logMsgDb ("PossibleDarks::getDb cannot get entry for darks (will use only defaults)", MESSAGE_DEBUG);
-			}
-			break;
-		}
-		addDarkExposure (d_img_exposure);
-	}
-	// add default darks..
-	defaultDark ();
-	return 0;
-}
-
-
-int
+/*int
 PossibleDarks::getScript (std::string &buf)
 {
 	std::list <float>::iterator dark_exp;
@@ -365,14 +204,7 @@ PossibleDarks::getScript (std::string &buf)
 	}
 	buf = _os.str ();
 	return 0;
-}
-
-
-int
-PossibleDarks::isName (const char *in_deviceName)
-{
-	return !strcmp (in_deviceName, deviceName);
-}
+}*/
 
 
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
@@ -384,39 +216,6 @@ DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in
 
 DarkTarget::~DarkTarget ()
 {
-	std::list <PossibleDarks *>::iterator dark_iter;
-	for (dark_iter = darkList.begin (); dark_iter != darkList.end (); dark_iter++)
-	{
-		PossibleDarks *darkpos;
-		darkpos = *dark_iter;
-		delete darkpos;
-	}
-	darkList.clear ();
-}
-
-
-int
-DarkTarget::getScript (const char *deviceName, std::string &buf)
-{
-	PossibleDarks *darkEntry = NULL;
-	// try to find our script...
-	std::list <PossibleDarks *>::iterator dark_iter;
-	for (dark_iter = darkList.begin (); dark_iter != darkList.end (); dark_iter++)
-	{
-		PossibleDarks *darkpos;
-		darkpos = *dark_iter;
-		if (darkpos->isName (deviceName))
-		{
-			darkEntry = darkpos;
-			break;
-		}
-	}
-	if (!darkEntry)
-	{
-		darkEntry = new PossibleDarks (this, deviceName);
-		darkList.push_back (darkEntry);
-	}
-	return darkEntry->getScript (buf);
 }
 
 
@@ -1844,10 +1643,8 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
 {
 	selectedPlan = NULL;
 	nextPlan = NULL;
-	hourLastSearch = 16.0;
-	Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch);
-	hourConsiderPlans = 1.0;
-	Rts2Config::instance ()->getFloat ("selector", "consider_plan", hourConsiderPlans);
+	Rts2Config::instance ()->getFloat ("selector", "last_search", hourLastSearch, 16.0);
+	Rts2Config::instance ()->getFloat ("selector", "consider_plan", hourConsiderPlans, 1.0);
 	nextTargetRefresh = 0;
 }
 
