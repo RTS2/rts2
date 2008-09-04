@@ -23,4 +23,11 @@ rts2targetgrb.cpp
 rts2targetplanet.cpp
 target_auger.cpp
 rts2messagedb.cpp
+rts2targetplanet.cpp
+rts2messagedb.cpp
+rts2userset.cpp
+rts2user.cpp
+rts2targetell.cpp
+rts2targetgrb.cpp
 rts2-*
+*.a
