@@ -1012,40 +1012,35 @@ Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
 	_max = (startHrz.alt > endHrz.alt) ? startHrz.alt : endHrz.alt;
 
 	// now compute if object is in low or high transit during given interval
+	double midRa = mid.ra;
+	double startLst = ln_range_degrees (ln_get_mean_sidereal_time (_start) * 15.0 + observer->lng);
+	double endLst = ln_range_degrees (ln_get_mean_sidereal_time (_end) * 15.0 + observer->lng);
 
-	double midHa = getHourAngle (midJD);
-	double startLst = ln_get_mean_sidereal_time (_start) * 15.0 + observer->lng;
-	double endLst = ln_get_mean_sidereal_time (_end) * 15.0 + observer->lng;
+	if (startLst > endLst)
+	{
+		// arange times so they are ordered
+		endLst += 360.0;
+		if (startLst > midRa)
+			midRa += 360.0;
+	}
 
-	if (startLst < endLst)
-	{
-		// it culmitaes during given period
-		if (midHa > startLst && midHa < endLst)
-			_max = 90 - absLat + mid.dec;
-		midHa = ln_range_degrees (midHa + 180);
-		// it pass low point during given period
-		if (midHa > startLst && midHa < endLst)
-			_min = absLat - 90 + mid.dec;
-	}
-	else
-	{
-		// it culmitaes during given period
-		if (midHa < startLst && midHa > endLst)
-			_max = 90 - absLat + mid.dec;
-		midHa = ln_range_degrees (midHa + 180);
-		// it pass low point during given period
-		if (midHa < startLst && midHa > endLst)
-			_min = absLat - 90 + mid.dec;
-	}
+	// it culmitaes during given period
+	if (midRa > startLst && midRa < endLst)
+		_max = 90 - absLat + mid.dec;
+	midRa = ln_range_degrees (midRa + 180);
+	if (midRa > endLst + 360)
+		midRa = endLst - 360;
+	// it pass low point during given period
+	if (midRa > startLst && midRa < endLst)
+		_min = absLat - 90 + mid.dec;
 }
 
-int
+void
 Target::getGalLng (struct ln_gal_posn *gal, double JD)
 {
 	struct ln_equ_posn curr;
 	getPosition (&curr, JD);
 	ln_get_gal_from_equ (&curr, gal);
-	return 0;
 }
 
 
