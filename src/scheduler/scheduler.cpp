@@ -80,6 +80,17 @@ Rts2ScheduleApp::printMerits ()
 	}
 
 	std::cout << std::endl << "avg. altitude: " << (sum / schedBag->size ()) << std::endl;
+
+	sum = 0;
+
+	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
+	{
+		std::cout << std::left << std::setw (8) << (*iter)->accountMerit () << " ";
+		sum += (*iter)->accountMerit ();
+	}
+
+	std::cout << std::endl << "avg. account: " << (sum / schedBag->size ()) << std::endl;
+
 }
 
 

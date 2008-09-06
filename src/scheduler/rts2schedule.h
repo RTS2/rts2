@@ -40,8 +40,9 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 
 		Rts2TargetSet *tarSet;
 
-		// this variable is lazy initialized
+		// following variables are lazy initialized
 		double visRatio;
+		double altMerit;
 	public:
 		/**
 		 * Create empty schedule.
@@ -105,6 +106,21 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 */
 		double altitudeMerit ();
 
+		/**
+		 * Returns schedule sharing differences merit. Lower value = better.
+		 *
+		 * @return Sum of weighted deviations of the schedule from a
+		 * requested time share. Lower value means better schedule.
+		 */
+		double accountMerit ();
+
+		/**
+		 * Return used merit function.
+		 */
+		double singleOptimum ()
+		{
+			return altitudeMerit ();
+		}
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule);

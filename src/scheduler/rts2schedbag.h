@@ -18,6 +18,7 @@
  */
 
 #include "rts2schedule.h"
+#include "../utilsdb/accountset.h"
 
 #include <vector>
 

@@ -58,7 +58,7 @@ struct eliteSort
 {
 	bool operator() (Rts2Schedule * sched1, Rts2Schedule *sched2)
 	{
-		return sched1->visibilityRatio () > sched2->visibilityRatio ();
+		return sched1->singleOptimum () > sched2->singleOptimum ();
 	}
 };
 
@@ -135,7 +135,7 @@ Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max)
 	_avg = 0;
 	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
 	{
-		double cur = (*iter)->visibilityRatio ();
+		double cur = (*iter)->singleOptimum ();
 		if (cur < _min)
 			_min = cur;
 		if (cur > _max)
@@ -157,7 +157,7 @@ Rts2SchedBag::doGAStep ()
 	// random generation based on fittness
 	double sumFitness = 0;
 	for (iter = begin (); iter != end (); iter++)
-		sumFitness += (*iter)->visibilityRatio ();	
+		sumFitness += (*iter)->singleOptimum ();
 
 	// only the best..
 	pickElite (popSize / 2);
@@ -179,7 +179,7 @@ Rts2SchedBag::doGAStep ()
 		// select parents
 		while ((p1 == 0 || p2 == 0) && iter != end ())
 		{
-			pNext += (*iter)->visibilityRatio ();
+			pNext += (*iter)->singleOptimum ();
 			if (rnum1 >= pSum && rnum1 < pNext)
 				p1 = j;
 			if (rnum2 >= pSum && rnum2 < pNext)

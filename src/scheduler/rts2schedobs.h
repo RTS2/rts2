@@ -74,6 +74,16 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Return id of account for which target should be assigned.
+		 *
+		 * @return Account id.
+		 */
+		int getAccountId ()
+		{
+			return target->getAccountId ();
+		}
+
+		/**
 		 * Returns number of loops observation sequence will be carried.
 		 *
 		 * @return Number of loops observation sequence will be carried.
@@ -81,6 +91,15 @@ class Rts2SchedObs
 		int getLoopCount ()
 		{
 			return loopCount;
+		}
+
+		/**
+		 * Get duration of whole target observation in seconds.
+		 */
+		float getTotalDuration ()
+		{
+			// TODO calculate this value
+			return 10.0;
 		}
 
 		/**

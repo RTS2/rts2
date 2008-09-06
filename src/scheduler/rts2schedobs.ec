@@ -44,6 +44,12 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 	if (maxA == minA)
 		return 1;
 
+	if ((hrz.alt - minA) / (maxA - minA) > 1)
+	{
+		std::cout << "hrz.alt: " << hrz.alt << " maxA: " << maxA << std::endl;
+		target->getMinMaxAlt (_start, _end, minA, maxA);
+	}
+
 	return (hrz.alt - minA) / (maxA - minA);
 }
 

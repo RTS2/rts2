@@ -18,7 +18,10 @@
  */
 
 #include "rts2schedule.h"
+#include "../utilsdb/accountset.h"
 #include "../utilsdb/rts2targetset.h"
+
+using namespace rts2db;
 
 Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs):
 std::vector <Rts2SchedObs*> ()
@@ -30,6 +33,7 @@ std::vector <Rts2SchedObs*> ()
 	tarSet = NULL;
 
 	visRatio = nan ("f");
+	altMerit = nan ("f");
 }
 
 
@@ -43,6 +47,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	tarSet = sched1->tarSet;
 
 	visRatio = nan ("f");
+	altMerit = nan ("f");
 
 	unsigned int i;
 	Rts2SchedObs *parent;
@@ -81,6 +86,7 @@ Rts2SchedObs *
 Rts2Schedule::randomSchedObs (double JD)
 {
 	visRatio = nan ("f");
+	altMerit = nan ("f");
 	return new Rts2SchedObs (randomTarget (), JD, 1);
 }
 
@@ -119,12 +125,52 @@ Rts2Schedule::visibilityRatio ()
 double
 Rts2Schedule::altitudeMerit ()
 {
-	double aMerit = 0;
+	if (!isnan (altMerit))
+		return altMerit;
+
+	altMerit = 0;
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 	{
-		aMerit += (*iter)->altitudeMerit (JDstart, JDend);
+		altMerit += (*iter)->altitudeMerit (JDstart, JDend);
 	}
-	return aMerit / size ();
+	altMerit /= size ();
+	return altMerit;
+}
+
+
+double
+Rts2Schedule::accountMerit ()
+{
+	AccountSet *accountset = AccountSet::instance ();
+
+	// map for storing calculated account time by account ids
+	std::map <int, double> observedShares;
+
+	// and fill map with all possible account IDs
+	for (AccountSet::iterator iter = accountset->begin (); iter != accountset->end (); iter++)
+	{
+		observedShares[(*iter).first] = 0;
+	}
+
+
+	double sumDur = 0;
+
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		observedShares[(*iter)->getAccountId ()] += (*iter)->getTotalDuration ();
+		sumDur += (*iter)->getTotalDuration ();
+	}
+
+	// deviances and sum them
+	double ret = 0;
+
+	for (AccountSet::iterator iter = accountset->begin (); iter != accountset->end (); iter++)
+	{
+		double sh = (*iter).second->getShare () / accountset->getShareSum ();
+		ret += fabs (observedShares[(*iter).first] / sumDur - sh) / sh;
+	}
+
+	return (double) 1.0 / ret;
 }
 
 
