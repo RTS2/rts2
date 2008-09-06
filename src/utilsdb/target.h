@@ -200,17 +200,50 @@ class Target:public Rts2Target
 			return minObsAlt;
 		}
 
-		int getGalLng (struct ln_gal_posn *gal)
+		/**
+		 * Returns galactic coordinates of the target at actual date.
+		 *
+		 * @param gal Returned galactic coordinates of the target.
+		 */
+		void getGalLng (struct ln_gal_posn *gal)
 		{
-			return getGalLng (gal, ln_get_julian_from_sys ());
+			getGalLng (gal, ln_get_julian_from_sys ());
 		}
-		virtual int getGalLng (struct ln_gal_posn *gal, double JD);
 
+		/**
+		 * Returns galactic coordinates of the target at give Julian day.
+		 *
+		 * @param gal Returned galactic coordinates of the target.
+		 * @param JD Julian date for which galactic coordinates will be calculated.
+		 */
+		virtual void getGalLng (struct ln_gal_posn *gal, double JD);
+
+		/**
+		 * Returns angular distance to galactic center.
+		 *
+		 * @return Angular distance to galactic center.
+		 */
 		double getGalCenterDist ()
 		{
 			return getGalCenterDist (ln_get_julian_from_sys ());
 		}
+
+		/**
+		 * Returns angular distance to galactic center.
+		 *
+		 * @param JD Julian Date for which galactic coordinates will be returned.
+		 *
+		 * @return Angular distance to galactic center.
+		 */
 		double getGalCenterDist (double JD);
+
+		/**
+		 * Return Id of associated time schare account.
+		 */
+		int getAccountId ()
+		{
+			return accountId;
+		}
 
 		double getAirmass ()
 		{
@@ -226,20 +259,42 @@ class Target:public Rts2Target
 		double getZenitDistance (double JD);
 
 		/**
-		 * Returns target HA in arcdeg, e.g. in same value as target RA is given.
+		 * Returns target hour angle in arcdeg at actual time.
 		 */
 		double getHourAngle ()
 		{
 			return getHourAngle (ln_get_julian_from_sys ());
 		}
 
+		/**
+		 * Returns target hour angle in arcdeg at given Julian day.
+		 *
+		 * @param JD Julian day for which target hour angle will be calculated.
+		 *
+		 * @return Hour angle of the target at given Julian day.
+		 */
 		double getHourAngle (double JD);
 
+		/**
+		 * Returns angular distance of the target to a given position.
+		 *
+		 * @param _pos Position for which distance of the target will be calculated.
+		 *
+		 * @return Angular distance to given position at system time in arcdeg.
+		 */
 		double getDistance (struct ln_equ_posn *in_pos)
 		{
 			return getDistance (in_pos, ln_get_julian_from_sys ());
 		}
 
+		/**
+		 * Returns angular distance of the target at a given Julian date to a given position.
+		 *
+		 * @param _pos Position for which distance will be calculated.
+		 * @param JD Julian date for which target position will be calculated.
+		 *
+		 * @return Angular distance to given position in arcdeg.
+		 */
 		double getDistance (struct ln_equ_posn *in_pos, double JD);
 
 		double getRaDistance (struct ln_equ_posn *in_pos)
@@ -249,6 +304,9 @@ class Target:public Rts2Target
 
 		double getRaDistance (struct ln_equ_posn *in_pos, double JD);
 
+		/**
+		 * Returns degree distance of the target to Sun center.
+		 */
 		double getSolarDistance ()
 		{
 			return getSolarDistance (ln_get_julian_from_sys ());
