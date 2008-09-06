@@ -1,8 +1,0 @@
-.deps
-.libs
-Makefile
-Makefile.in
-soap*
-SesameSoapBinding*
-simbad.h
-libsimbad.a
