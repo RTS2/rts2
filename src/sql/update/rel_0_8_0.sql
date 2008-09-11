@@ -4,18 +4,19 @@ CREATE TABLE accounts (
 	account_share   float NOT NULL   --- share of account on observation time (in arbitary units, but it is assumed that share is equal to account_share / sum (account_share)
 );
 
---- Modify target table to include account
+--- Scheduling ticket table
 
-ALTER TABLE targets ADD COLUMN account_id integer;
+CREATE TABLE tickets (
+	schedticket_id	integer PRIMARY KEY,
+	tar_id 		integer REFERENCES targets(tar_id),
+	account_id	integer REFERENCES accounts(account_id)
+);
+
+--- Create default account
 
 INSERT INTO accounts VALUES (1, 'Default account', 100);
 
-UPDATE TARGETS set account_id = 1;
-
-ALTER TABLE ONLY targets ADD CONSTRAINT targets_accounts
-	FOREIGN KEY (account_id) REFERENCES accounts (account_id); 
-
--- Drop darks and flats
+--- Drop darks and flats
 
 DROP TABLE darks;
 
