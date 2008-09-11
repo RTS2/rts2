@@ -30,7 +30,7 @@ std::vector <Rts2SchedObs*> ()
 	JDend = _JDend;
 	observer = _obs;
 
-	tarSet = NULL;
+	ticketSet = NULL;
 
 	visRatio = nan ("f");
 	altMerit = nan ("f");
@@ -44,7 +44,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	JDend = sched1->JDend;
 	observer = sched1->observer;
 
-	tarSet = sched1->tarSet;
+	ticketSet = sched1->ticketSet;
 
 	visRatio = nan ("f");
 	altMerit = nan ("f");
@@ -55,13 +55,13 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	for (i = 0; i < crossPoint; i++)
 	{
 		parent = (*sched1)[i];
-		push_back (new Rts2SchedObs (parent->getTarget (), parent->getJDStart (), parent->getLoopCount ()));
+		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getLoopCount ()));
 	}
 
 	for (; i < sched2->size (); i++)
 	{
 		parent = (*sched2)[i];
-		push_back (new Rts2SchedObs (parent->getTarget (), parent->getJDStart (), parent->getLoopCount ()));
+		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getLoopCount ()));
 	}
 }
 
@@ -74,11 +74,18 @@ Rts2Schedule::~Rts2Schedule (void)
 }
 
 
-Target *
-Rts2Schedule::randomTarget ()
+Ticket *
+Rts2Schedule::randomTicket ()
 {
+	int rn = randomNumber (0, ticketSet->size ());
+	TicketSet::iterator iter = ticketSet->begin ();
+	while (rn > 0)
+	{
+		rn--;
+		iter++;
+	}
 	// random selection of observation
-	return (*tarSet)[randomNumber (0, tarSet->size ())];
+	return (*iter).second;
 }
 
 
@@ -87,14 +94,14 @@ Rts2Schedule::randomSchedObs (double JD)
 {
 	visRatio = nan ("f");
 	altMerit = nan ("f");
-	return new Rts2SchedObs (randomTarget (), JD, 1);
+	return new Rts2SchedObs (randomTicket (), JD, 1);
 }
 
 
 int
-Rts2Schedule::constructSchedule (Rts2TargetSet *_tarSet)
+Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 {
-	tarSet = _tarSet;
+	ticketSet = _ticketSet;
 	double JD = JDstart;
 	while (JD < JDend)
 	{

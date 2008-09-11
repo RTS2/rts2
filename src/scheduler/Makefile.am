@@ -1,21 +1,21 @@
-noinst_HEADERS = rts2schedbag.h rts2schedule.h rts2schedobs.h utils.h
+noinst_HEADERS = rts2schedbag.h rts2schedule.h rts2schedobs.h ticket.h utils.h
 
 if PGSQL
 
 bin_PROGRAMS = rts2-scheduler
 
-rts2_scheduler_SOURCES = scheduler.cpp rts2schedbag.cpp rts2schedule.cpp rts2schedobs.cpp utils.cpp
+rts2_scheduler_SOURCES = scheduler.cpp rts2schedbag.cpp rts2schedule.cpp rts2schedobs.cpp ticket.cpp ticketset.cpp utils.cpp
 rts2_scheduler_CXXFLAGS = @LIBPG_CFLAGS@
 rts2_scheduler_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
 
-EXTRA_DIST = rts2schedobs.ec
+EXTRA_DIST = rts2schedobs.ec ticket.ec ticketset.ec
 
 else
 
-EXTRA_DIST = scheduler.cpp rts2schedbag.cpp rts2schedule.cpp rts2schedobs.ec utils.cpp
+EXTRA_DIST = scheduler.cpp rts2schedbag.cpp rts2schedule.cpp rts2schedobs.ec ticket.ec utils.cpp
 
 endif
 

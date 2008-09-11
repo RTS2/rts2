@@ -52,10 +52,17 @@ Rts2SchedBag::cross (int sched1, int sched2)
 
 
 /**
- * Operator to pick elite.
+ * Class for elite sorting. Compares schedules based on a result of
+ * singleOptimum fittness function.
  */
-struct eliteSort
+struct singleEliteSort
 {
+	/**
+	 * Operator to pick elite.
+	 *
+	 * @param sched1 First schedule to compare.
+	 * @param
+	 */
 	bool operator() (Rts2Schedule * sched1, Rts2Schedule *sched2)
 	{
 		return sched1->singleOptimum () > sched2->singleOptimum ();
@@ -63,10 +70,10 @@ struct eliteSort
 };
 
 void
-Rts2SchedBag::pickElite (unsigned int eliteSize)
+Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end)
 {
 	// check if we can do it..
-	if (size () < eliteSize)
+	if (_end - _begin < _size)
 	{
 		std::cerr << std::endl << "Too small size to choose elite. There are only " << size ()
 			<< " elements, but " << eliteSize << " are required. Most probably some parameters are set wrongly."
@@ -74,10 +81,10 @@ Rts2SchedBag::pickElite (unsigned int eliteSize)
 		exit (0);
 	}
 
-	std::sort (begin (), end (), eliteSort ());
+	std::sort (_begin, _end, singleEliteSort ());
 
 	// remove last n members..
-	resize (eliteSize);
+	erase (_end - _size, _end);
 }
 
 
@@ -87,10 +94,14 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	JDend = _JDend;
 
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
-	tarSet = new Rts2TargetSetSelectable (observer);
+
+	tarSet = new Rts2TargetSet (observer, true);
+	ticketSet = new rts2sched::TicketSet ();
 
 	mutationNum = -1;
 	popSize = -1;
+
+	eliteSize = 0;
 }
 
 
@@ -102,6 +113,7 @@ Rts2SchedBag::~Rts2SchedBag (void)
 	}
 	clear ();
 
+	delete ticketSet;
 	delete tarSet;
 }
 
@@ -111,10 +123,17 @@ Rts2SchedBag::constructSchedules (int num)
 {
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
 
+	ticketSet->load (tarSet);
+	if (ticketSet->size () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "There aren't any scheduling tickets in database (table tickets)" << sendLog;
+		return -1;
+	}
+
 	for (int i = 0; i < num; i++)
 	{
 		Rts2Schedule *sched = new Rts2Schedule (JDstart, JDend, observer);
-		if (sched->constructSchedule (tarSet))
+		if (sched->constructSchedule (ticketSet))
 			return -1;
 		push_back (sched);
 	}

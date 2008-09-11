@@ -19,9 +19,9 @@
 
 #include "rts2schedobs.h"
 
-Rts2SchedObs::Rts2SchedObs (Target *_target, double _startJD, unsigned int _loopCount)
+Rts2SchedObs::Rts2SchedObs (Ticket *_ticket, double _startJD, unsigned int _loopCount)
 {
-	target = _target;
+	ticket = _ticket;
 	startJD = _startJD;
 	loopCount = _loopCount;
 }
@@ -37,9 +37,9 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 {
 	double minA, maxA;
 	struct ln_hrz_posn hrz;
-	target->getMinMaxAlt (_start, _end, minA, maxA);
+	getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
 
-	target->getAltAz (&hrz, startJD);
+	getTarget ()->getAltAz (&hrz, startJD);
 
 	if (maxA == minA)
 		return 1;
@@ -47,7 +47,7 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 	if ((hrz.alt - minA) / (maxA - minA) > 1)
 	{
 		std::cout << "hrz.alt: " << hrz.alt << " maxA: " << maxA << std::endl;
-		target->getMinMaxAlt (_start, _end, minA, maxA);
+		getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
 	}
 
 	return (hrz.alt - minA) / (maxA - minA);
@@ -56,6 +56,6 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs)
 {
-	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getLoopCount () << " " << schedobs.getTargetID () << std::endl;
+	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getLoopCount () << " " << schedobs.getTargetId () << std::endl;
 	return _os;
 }

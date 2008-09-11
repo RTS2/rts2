@@ -20,10 +20,12 @@
 #ifndef __RTS2_SCHEDOBS__
 #define __RTS2_SCHEDOBS__
 
-#include "../utilsdb/target.h"
+#include "ticket.h"
 #include <ostream>
 
 #include "utils.h"
+
+using namespace rts2sched;
 
 /**
  * Single observation class. This class provides interface for a single
@@ -35,12 +37,12 @@
 class Rts2SchedObs
 {
 	private:
-		Target *target;
+		Ticket *ticket;
 		double startJD;
 		unsigned int loopCount;
 
 	public:
-		Rts2SchedObs (Target *_target, double _startJD, unsigned int _loopCount);
+		Rts2SchedObs (Ticket *_ticket, double _startJD, unsigned int _loopCount);
 		virtual ~Rts2SchedObs (void);
 
 		/**
@@ -54,13 +56,23 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Return pointer to used observing ticket.
+		 *
+		 * @return Pointer to used observing ticket.
+		 */
+		Ticket *getTicket ()
+		{
+			return ticket;
+		}
+
+		/**
 		 * Return pointer to used target object.
 		 *
 		 * @return Pointer to target object.
 		 */
 		Target *getTarget ()
 		{
-			return target;
+			return ticket->getTarget ();
 		}
 
 		/**
@@ -68,9 +80,9 @@ class Rts2SchedObs
 		 *
 		 * @return Target ID of the target.
 		 */
-		int getTargetID ()
+		int getTargetId ()
 		{
-			return target->getTargetID ();
+			return ticket->getTargetId ();
 		}
 
 		/**
@@ -80,7 +92,7 @@ class Rts2SchedObs
 		 */
 		int getAccountId ()
 		{
-			return target->getAccountId ();
+			return ticket->getAccountId ();
 		}
 
 		/**
@@ -109,7 +121,7 @@ class Rts2SchedObs
 		 */
 		bool isVisible ()
 		{
-			return target->isGood (getJDStart ());
+			return getTarget()->isGood (getJDStart ());
 		}
 
 		/**

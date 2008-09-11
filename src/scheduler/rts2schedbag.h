@@ -33,9 +33,14 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		int mutationNum;
 		int popSize;
 
+		// size of elite population 
+		// if this is 0, elite GA is not used
+		unsigned int eliteSize;
+
 		double JDstart, JDend;
 
-		Rts2TargetSetSelectable *tarSet;
+		rts2sched::TicketSet *ticketSet;
+		Rts2TargetSet *tarSet;
 
 		/**
 		 * Do mutation on genetic algorithm. The algorithm select
@@ -57,10 +62,14 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		/**
 		 * Select elite member of the population, delete non-elite members.
 		 *
-		 * @param eliteSize Elite size.
+		 * @param _size Elite size.
 		 */
-		void pickElite (unsigned int eliteSize);
-
+		void pickElite (unsigned int _size)
+		{
+			pickElite (_size, begin (), end ());
+		}
+		
+		void pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end);
 	public:
 		/**
 		 * Construct emtpy schedule bag.
@@ -71,6 +80,16 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * Delete schedules contained in schedule bag.
 		 */
 		~Rts2SchedBag (void);
+
+		/**
+		 * Return size of the elite population.
+		 *
+		 * @return Size of the elite population, 0 if elitism shall not be used.
+		 */
+		unsigned int getEliteSize ()
+		{
+			return eliteSize;
+		}
 
 		/**
 		 * Construct schedules and add them to schedule bag.

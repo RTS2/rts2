@@ -21,6 +21,7 @@
 #define __RTS2_SCHEDULE__
 
 #include "rts2schedobs.h"
+#include "ticketset.h"
 
 #include <vector>
 
@@ -38,7 +39,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double JDend;
 		struct ln_lnlat_posn *observer;
 
-		Rts2TargetSet *tarSet;
+		TicketSet *ticketSet;
 
 		// following variables are lazy initialized
 		double visRatio;
@@ -72,7 +73,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 *
 		 * @return New Target object, or NULL if generation failed.
 		 */
-		Target * randomTarget ();
+		Ticket * randomTicket ();
 
 		/**
 		 * Generate random observation schedule entry.
@@ -90,7 +91,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 *
 		 * @return 0 on success, -1 on error.
 		 */
-		int constructSchedule (Rts2TargetSet *_tarSet);
+		int constructSchedule (TicketSet *_ticketSet);
 
 		/**
 		 * Ratio of observations from schedule which are visible.
@@ -119,7 +120,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 */
 		double singleOptimum ()
 		{
-			return altitudeMerit ();
+			return accountMerit ();
 		}
 };
 
