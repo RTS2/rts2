@@ -93,8 +93,6 @@ class Target:public Rts2Target
 		double airmassScale;
 
 		time_t observationStart;
-		// ID of account to which target time will be accounted
-		int accountId;
 
 		Rts2TarUser *targetUsers;
 
@@ -236,14 +234,6 @@ class Target:public Rts2Target
 		 * @return Angular distance to galactic center.
 		 */
 		double getGalCenterDist (double JD);
-
-		/**
-		 * Return Id of associated time schare account.
-		 */
-		int getAccountId ()
-		{
-			return accountId;
-		}
 
 		double getAirmass ()
 		{

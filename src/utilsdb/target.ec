@@ -290,7 +290,6 @@ Rts2Target ()
 	target_id = in_tar_id;
 	obs_target_id = -1;
 	target_type = TYPE_UNKNOW;
-	accountId = -1;
 	target_name = NULL;
 	target_comment = NULL;
 	targetUsers = NULL;
@@ -319,7 +318,6 @@ Target::Target ()
 	target_id = -1;
 	obs_target_id = -1;
 	target_type = TYPE_UNKNOW;
-	accountId = -1;
 	target_name = NULL;
 	target_comment = NULL;
 	targetUsers = NULL;
@@ -374,7 +372,6 @@ Target::loadTarget (int in_tar_id)
 		long d_tar_next_observable;
 		int d_tar_next_observable_ind;
 		bool d_tar_enabled;
-		int d_account_id;
 		int db_tar_id = in_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
@@ -385,16 +382,14 @@ Target::loadTarget (int in_tar_id)
 			tar_bonus,
 			EXTRACT (EPOCH FROM tar_bonus_time),
 			EXTRACT (EPOCH FROM tar_next_observable),
-			tar_enabled,
-			account_id
+			tar_enabled
 		INTO
 			:d_tar_name,
 			:d_tar_priority :d_tar_priority_ind,
 			:d_tar_bonus :d_tar_bonus_ind,
 			:d_tar_bonus_time :d_tar_bonus_time_ind,
 			:d_tar_next_observable :d_tar_next_observable_ind,
-			:d_tar_enabled,
-			:d_account_id
+			:d_tar_enabled
 		FROM
 			targets
 		WHERE
@@ -432,7 +427,6 @@ Target::loadTarget (int in_tar_id)
 		tar_next_observable = 0;
 
 	setTargetEnabled (d_tar_enabled, false);
-	accountId = d_account_id;
 
 	// load target users for events..
 	targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
@@ -483,7 +477,6 @@ Target::save (bool overwrite, int tar_id)
 		long db_tar_bonus_time = *(getTargetBonusTime ());
 		int db_tar_bonus_time_ind;
 		bool db_tar_enabled = getTargetEnabled ();
-		int db_account_id = accountId;
 	EXEC SQL END DECLARE SECTION;
 	// fill in name and comment..
 	if (getTargetName ())
@@ -540,8 +533,7 @@ Target::save (bool overwrite, int tar_id)
 			tar_bonus,
 			tar_bonus_time,
 			tar_next_observable,
-			tar_enabled,
-			account_id
+			tar_enabled
 			)
 		VALUES
 			(
@@ -553,8 +545,7 @@ Target::save (bool overwrite, int tar_id)
 			:db_tar_bonus :db_tar_bonus_ind,
 			to_timestamp (:db_tar_bonus_time :db_tar_bonus_time_ind),
 		null,
-			:db_tar_enabled,
-			:db_account_id
+			:db_tar_enabled
 			);
 	// insert failed - try update
 	if (sqlca.sqlcode)

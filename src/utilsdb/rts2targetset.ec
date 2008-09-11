@@ -18,6 +18,7 @@
  */
 
 #include "rts2targetset.h"
+#include "sqlerror.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 
@@ -99,12 +100,12 @@ Rts2TargetSet::load (std::list<int> &target_ids)
 	{
 		Target *tar = createTarget (*iter, obs);
 		if (tar)
-			push_back (tar);
+			(*this)[*iter] = tar;
 	}
 }
 
 
-Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
+Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load): std::map <int, Target *> ()
 {
 	obs = in_obs;
 	if (!obs)
@@ -114,7 +115,7 @@ Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs, bool do_load)
 }
 
 
-Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs)
+Rts2TargetSet::Rts2TargetSet (struct ln_lnlat_posn * in_obs): std::map <int, Target *> ()
 {
 	obs = in_obs;
 	if (!obs)
@@ -166,7 +167,7 @@ Rts2TargetSet::~Rts2TargetSet (void)
 {
 	for (Rts2TargetSet::iterator iter = begin (); iter != end (); iter++)
 	{
-		delete *iter;
+		delete (*iter).second;
 	}
 	clear ();
 }
@@ -176,10 +177,23 @@ Rts2TargetSet::addSet (Rts2TargetSet &_set)
 {
 	for (Rts2TargetSet::iterator iter = _set.begin (); iter != _set.end (); iter++)
 	{
-		push_back (*iter);
+		if (find ((*iter).first) == end ())
+			(*this)[(*iter).first] = (*iter).second;
+		else
+		  	throw rts2db::SqlError ();
 	}
 	// clear set so it cannot be used again
 	_set.clear ();
+}
+
+
+Target *
+Rts2TargetSet::getTarget (int _id)
+{
+	Rts2TargetSet::iterator iter = find (_id);
+	if (iter == end ())
+		throw TargetNotFound (_id);
+	return (*iter).second;
 }
 
 
@@ -188,7 +202,7 @@ Rts2TargetSet::setTargetEnabled (bool enabled, bool logit)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setTargetEnabled (enabled, logit);
+		(*iter).second->setTargetEnabled (enabled, logit);
 	}
 }
 
@@ -198,7 +212,7 @@ Rts2TargetSet::setTargetPriority (float new_priority)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setTargetPriority (new_priority);
+		(*iter).second->setTargetPriority (new_priority);
 	}
 }
 
@@ -208,7 +222,7 @@ Rts2TargetSet::setTargetBonus (float new_bonus)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setTargetBonus (new_bonus);
+		(*iter).second->setTargetBonus (new_bonus);
 	}
 }
 
@@ -218,7 +232,7 @@ Rts2TargetSet::setTargetBonusTime (time_t *new_time)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setTargetBonusTime (new_time);
+		(*iter).second->setTargetBonusTime (new_time);
 	}
 }
 
@@ -228,7 +242,7 @@ Rts2TargetSet::setNextObservable (time_t *time_ch)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setNextObservable (time_ch);
+		(*iter).second->setNextObservable (time_ch);
 	}
 }
 
@@ -238,7 +252,7 @@ Rts2TargetSet::setTargetScript (const char *device_name, const char *script)
 {
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		(*iter)->setScript (device_name, script);
+		(*iter).second->setScript (device_name, script);
 	}
 }
 
@@ -251,7 +265,7 @@ Rts2TargetSet::save (bool overwrite)
 
 	for (iterator iter = begin (); iter != end (); iter++)
 	{
-		ret_s = (*iter)->save (overwrite);
+		ret_s = (*iter).second->save (overwrite);
 		if (ret_s)
 			ret--;
 	}
@@ -265,7 +279,7 @@ Rts2TargetSet::print (std::ostream & _os, double JD)
 {
 	for (Rts2TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
 	{
-		(*tar_iter)->printShortInfo (_os, JD);
+		(*tar_iter).second->printShortInfo (_os, JD);
 		_os << std::endl;
 	}
 	return _os;
@@ -277,7 +291,7 @@ Rts2TargetSet::printBonusList (std::ostream & _os, double JD)
 {
 	for (Rts2TargetSet::iterator tar_iter = begin(); tar_iter != end (); tar_iter++)
 	{
-		(*tar_iter)->printShortBonusInfo (_os, JD);
+		(*tar_iter).second->printShortBonusInfo (_os, JD);
 		_os << std::endl;
 	}
 	return _os;

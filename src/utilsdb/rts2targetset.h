@@ -22,10 +22,53 @@
 
 #include <libnova/libnova.h>
 #include <list>
+#include <map>
 #include <vector>
 #include <ostream>
 
 #include "target.h"
+
+/**
+ * Error class for addSet operation.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class NotDisjunct
+{
+	private:
+		int targetId;
+	public:
+		/**
+		 * Construct not disjunct exception.
+		 *
+		 * @param _targetId ID of target which is not disjunt in the set.
+		 */
+		NotDisjunct (int _targetId)
+		{
+			targetId = _targetId;
+		}
+};
+
+/**
+ * Error class when target with given ID is not found.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TargetNotFound
+{
+	private:
+		int id;
+	public:
+		/**
+		 * Construct the TargetNotFound execption.
+		 *
+		 * @param _id Id of target which was not found in the set.
+		 */
+		TargetNotFound (int _id)
+		{
+			id = _id;
+		}
+};
 
 /**
  * Set of targets.
@@ -35,7 +78,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TargetSet:public std::vector <Target * >
+class Rts2TargetSet:public std::map <int, Target * >
 {
 	protected:
 		void load (std::string in_where, std::string order_by);
@@ -89,8 +132,23 @@ class Rts2TargetSet:public std::vector <Target * >
 
 		/**
 		 * Add to target set targets from the other set.
+		 *
+		 * @param _set Other set.
+		 *
+		 * @throw NotDisjunct(target_id) if sets have not empty join set. Parameter is id of target which is in both.
 		 */
 		void addSet (Rts2TargetSet &_set);
+
+		/**
+		 * Finds in set target with a given id.
+		 *
+		 * @param _id Id to find.
+		 *
+		 * @return Target with a given id.
+		 *
+		 * @throw TargetNotFound error if not found.
+		 */
+		Target *getTarget (int _id);
 
 		void setTargetEnabled (bool enabled = true, bool logit = false);
 		void setTargetPriority (float new_priority);
@@ -125,7 +183,7 @@ Rts2TargetSetCalibration:public Rts2TargetSet
 class TargetGRB;
 
 /**
- * Holds last GRBs
+ * Holds last GRBs.
  */
 class  Rts2TargetSetGrb:public std::vector <TargetGRB *>
 {
