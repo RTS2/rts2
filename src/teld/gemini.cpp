@@ -2464,7 +2464,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	{
 		return change_dec (chng_dec);
 	}
-	return -1;
+	return 0;
 }
 #endif
 
