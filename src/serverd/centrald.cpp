@@ -1,6 +1,6 @@
 /*
  * Centrald - RTS2 coordinator
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -486,7 +486,6 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 	createConstValue (morningTime, "morning_time", "time needed to heat up cameras", false);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
-	addOption (OPT_PORT, "port", 1, "port on which centrald will listen");
 	addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
 }
 
@@ -567,9 +566,6 @@ Rts2Centrald::processOption (int in_opt)
 	{
 		case OPT_CONFIG:
 			configFile = optarg;
-			break;
-		case OPT_PORT:
-			setPort (atoi (optarg));
 			break;
 		case OPT_LOGFILE:
 			logFile = std::string (optarg);

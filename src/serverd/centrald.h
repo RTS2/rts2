@@ -1,6 +1,6 @@
 /*
  * Centrald - RTS2 coordinator
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,30 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/*!
- * @file Server deamon source.
- *
- * Source for server deamon - a something between client and device,
- * what takes care of priorities and authentification.
- *
- * Contains list of clients with their id's and with their access rights.
- */
-
 #ifndef __RTS2_CENTRALD__
 #define __RTS2_CENTRALD__
 
 #include "../utils/riseset.h"
 
-#include <errno.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <malloc.h>
 #include <libnova/libnova.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <arpa/inet.h>
 
 #include <config.h>
 #include "../utils/rts2daemon.h"
@@ -71,6 +53,8 @@ class Rts2ConnCentrald;
  * @see Rts2DevConnMaster
  * @see Rts2Client
  * @see Rts2ConnCentraldClient
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2Centrald:public Rts2Daemon
 {
