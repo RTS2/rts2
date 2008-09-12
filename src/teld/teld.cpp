@@ -908,11 +908,11 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	pos.ra = ln_range_degrees (objRaDec->getRa () + offsetRaDec->getRa ());
 	pos.dec = objRaDec->getDec () + offsetRaDec->getDec ();
 
-	LibnovaRaDec syncTo (&pos);
-	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
-
 	// apply corrections
 	applyCorrections (&pos, ln_get_julian_from_sys ());
+
+	LibnovaRaDec syncTo (&pos);
+	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
 
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);
