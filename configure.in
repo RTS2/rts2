@@ -544,7 +544,8 @@ AC_OUTPUT([Makefile
 	   src/sensord/Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
-	   src/xmlrpc/xmlrpc++/Makefile]
+	   src/xmlrpc/xmlrpc++/Makefile
+	   src/scheduler/Makefile]
 )
 
 echo "

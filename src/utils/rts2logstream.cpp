@@ -20,6 +20,7 @@
 #include "rts2app.h"
 #include "rts2logstream.h"
 
+
 void
 Rts2LogStream::sendLog ()
 {

@@ -114,6 +114,11 @@
 #define RTS2_VALUE_RECTANGLE          0x00000030
 
 /**
+ * Value is an array of variables.
+ */
+#define RTS2_VALUE_ARRAY              0x00000080
+
+/**
  * Base type mask.
  * @ingroup RTS2Value
  */

@@ -447,19 +447,20 @@ class ListTargets: public XmlRpcServerMethod
 
 			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
-				retVar["id"] = (*tar_iter)->getTargetID ();
-				retVar["type"] = (*tar_iter)->getTargetType ();
-				if ((*tar_iter)->getTargetName ())
-					retVar["name"] = (*tar_iter)->getTargetName ();
+				Target *tar = (*tar_iter).second;
+				retVar["id"] = tar->getTargetID ();
+				retVar["type"] = tar->getTargetType ();
+				if (tar->getTargetName ())
+					retVar["name"] = tar->getTargetName ();
 				else
 					retVar["name"] = "NULL";
 
-				retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
-				if ((*tar_iter)->getTargetComment ())
-					retVar["comment"] = (*tar_iter)->getTargetComment ();
+				retVar["enabled"] = tar->getTargetEnabled ();
+				if (tar->getTargetComment ())
+					retVar["comment"] = tar->getTargetComment ();
 				else
 					retVar["comment"] = "";
-				value = (*tar_iter)->getLastObs();
+				value = tar->getLastObs();
 				retVar["last"] = value;
 				result[i++] = retVar;
 			}
@@ -500,11 +501,11 @@ class TargetInfo: public XmlRpcServerMethod
 				ln_get_timet_from_julian (JD, &now);
 
 				XmlStream xs (&retVar);
-				xs << *(*tar_iter);
+				xs << *((*tar_iter).second);
 
 				// observations
 				Rts2ObsSet *obs_set;
-				obs_set = new Rts2ObsSet ((*tar_iter)->getTargetID ());
+				obs_set = new Rts2ObsSet ((*tar_iter).second->getTargetID ());
 				int j = 0;
 				for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
 				{

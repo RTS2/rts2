@@ -514,7 +514,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 			Rts2TargetSet calibSet = Rts2TargetSet (obs, false);
 			for (iter = set.begin (); iter != set.end (); iter++)
 			{
-				target = *iter;
+				target = (*iter).second;
 				Rts2TargetSet *addS = target->getCalTargets ();
 				calibSet.addSet (*addS);
 				delete addS;
@@ -524,7 +524,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 
 		for (iter = set.begin (); iter != set.end (); iter++)
 		{
-			target = *iter;
+			target = (*iter).second;
 			if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 			{
 				if (iter != set.begin () || addMoon || addHorizon)
@@ -581,7 +581,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 			for (double i = sset; i <= rise; i += step)
 			{
 				double jd = jd_start + i / 24.0;
-				(*(set.begin ()))->getAltAz (&hor, jd);
+				((*(set.begin ())).second)->getAltAz (&hor, jd);
 				std::cout
 					<< i << " "
 					<< Rts2Config::instance ()->getObjectChecker ()->
@@ -593,7 +593,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 
 	for (iter = set.begin (); iter != set.end (); iter++)
 	{
-		target = *iter;
+		target = (*iter).second;
 		if (printDS9)
 		{
 			printTargetInfoDS9 ();

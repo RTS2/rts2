@@ -206,6 +206,10 @@ class Rts2Conn:public Rts2Object
 		 */
 		Rts2Block *master;
 		char *command_start;
+
+		/**
+		 * Connection file descriptor.
+		 */
 		int sock;
 
 		virtual int acceptConn ();
