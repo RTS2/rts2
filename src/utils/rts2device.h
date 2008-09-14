@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "hoststring.h"
 #include "rts2command.h"
 #include "rts2daemon.h"
 #include "rts2configraw.h"
@@ -57,22 +58,18 @@ class Rts2DevConn:public Rts2Conn
 
 	protected:
 		virtual int command ();
-
 		virtual int init ();
+
+		virtual void connConnected ();
 	public:
 		Rts2DevConn (int in_sock, Rts2Device * in_master);
-
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
-		virtual int writable (fd_set * writeset);
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
 		void setHavePriority (int in_have_priority);
 
 		virtual void setDeviceAddress (Rts2Address * in_addr);
-		void setDeviceName (char *in_name);
-
-		void connAuth ();
+		void setDeviceName (int _centrald_num, char *_name);
 
 		virtual void setKey (int in_key);
 		virtual void setConnState (conn_state_t new_conn_state);
@@ -89,6 +86,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		char *device_host;
 		char master_host[HOST_NAME_MAX];
 		int master_port;
+		int centrald_num;
 		char device_name[DEVICE_NAME_SIZE];
 		int device_type;
 		int device_port;
@@ -98,13 +96,26 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual int priorityChange ();
 		virtual void setState (int in_value);
 		virtual void setBopState (int in_value);
+		virtual void connConnected ();
 		virtual void connectionError (int last_data_size);
 	public:
-		Rts2DevConnMaster (Rts2Block * in_master, char *in_device_host, int in_device_port,
-			const char *in_device_name, int in_device_type,
-			const char *in_master_host, int in_master_port);
+		/**
+		 * Construct new connection to central server.
+		 *
+		 * @param _master        Rts2Block which commands connection.
+		 * @param _device_host   Hostname of computer with device.
+		 * @param _device_port   Listening port for incoming connections
+		 * @param _device_name   Name of the device.
+		 * @param _device_type   Device type.
+		 * @param _master_host   Central server hostname for the connectio.
+		 * @param _master_port   Central server port for the connectio.
+		 * @param _serverNum     Server number (number of centrald which device is connected to)
+		 */
+		Rts2DevConnMaster (Rts2Block * _master, char *_device_host, int _device_port,
+			const char *_device_name, int _device_type,
+			const char *_master_host, int _master_port, int _serverNum);
 		virtual ~ Rts2DevConnMaster (void);
-		int registerDevice ();
+
 		virtual int init ();
 		virtual int idle ();
 		int authorize (Rts2DevConn * conn);
@@ -117,11 +128,11 @@ class Rts2DevConnMaster:public Rts2Conn
 class Rts2CommandRegister:public Rts2Command
 {
 	public:
-		Rts2CommandRegister (Rts2Block * in_master, const char *device_name, int device_type, const char *device_host, int device_port)
+		Rts2CommandRegister (Rts2Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
 			:Rts2Command (in_master)
 		{
 			char *buf;
-			asprintf (&buf, "register %s %i %s %i", device_name, device_type, device_host, device_port);
+			asprintf (&buf, "register %i %s %i %s %i", centrald_num, device_name, device_type, device_host, device_port);
 			setCommand (buf);
 			free (buf);
 		}
@@ -168,6 +179,7 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		virtual void deleteConnection (Rts2Conn * conn);
 };
 
+
 /**
  * Represents RTS2 device. From this class, different devices are
  * derived.
@@ -175,9 +187,8 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 class Rts2Device:public Rts2Daemon
 {
 	private:
-		Rts2DevConnMaster * conn_master;
-		const char *centrald_host;
-		int centrald_port;
+		
+		std::list <HostString> centraldHosts;
 
 		// device current full BOP state
 		int fullBopState;
@@ -268,7 +279,7 @@ class Rts2Device:public Rts2Daemon
 			maskState (BOP_TEL_MOVE, 0, "telescope move possible");
 		}
 
-		virtual Rts2Conn *createClientConnection (char *in_deviceName);
+		virtual Rts2Conn *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
 		/**
@@ -305,18 +316,23 @@ class Rts2Device:public Rts2Daemon
 		 */
 		virtual int commandAuthorized (Rts2Conn * conn);
 
-		int authorize (Rts2DevConn * conn);
-		int sendMaster (const char *msg)
-		{
-			return conn_master->sendMsg (msg);
-		}
+		int authorize (int centrald_num, Rts2DevConn * conn);
+
+		/**
+		 * Send commands to all masters which device has connected.
+		 *
+		 * @param msg Message that will be send to the masters.
+		 *
+		 * @return 0 on success, -1 on error.
+		 */
+		int sendMasters (const char *msg);
 
 		// callback functions for device
 		virtual int ready ();
 
 		virtual int ready (Rts2Conn * conn);
 
-		virtual void centraldConnRunning ();
+		virtual void centraldConnRunning (Rts2Conn *conn);
 
 		/**
 		 * Send device status info to given connection.
@@ -337,10 +353,6 @@ class Rts2Device:public Rts2Daemon
 		int killAll ();
 		virtual int scriptEnds ();
 
-		virtual Rts2Conn *getCentraldConn ()
-		{
-			return conn_master;
-		};
 		const char *getDeviceName ()
 		{
 			return device_name;

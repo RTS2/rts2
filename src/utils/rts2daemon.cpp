@@ -348,7 +348,7 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 
 
 void
-Rts2Daemon::centraldConnRunning ()
+Rts2Daemon::centraldConnRunning (Rts2Conn *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
@@ -359,7 +359,7 @@ Rts2Daemon::centraldConnRunning ()
 
 
 void
-Rts2Daemon::centraldConnBroken ()
+Rts2Daemon::centraldConnBroken (Rts2Conn *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
@@ -843,11 +843,10 @@ Rts2Daemon::infoAll ()
 	if (ret)
 		return -1;
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		sendInfo (conn);
-	}
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		sendInfo (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		sendInfo (*iter);
 	return 0;
 }
 
@@ -855,12 +854,11 @@ Rts2Daemon::infoAll ()
 void
 Rts2Daemon::constInfoAll ()
 {
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		sendBaseInfo (conn);
-	}
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		sendBaseInfo (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		sendBaseInfo (*iter);
 }
 
 
@@ -886,11 +884,10 @@ void
 Rts2Daemon::sendValueAll (Rts2Value * value)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		value->send (conn);
-	}
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		value->send (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		value->send (*iter);
 }
 
 
@@ -910,25 +907,19 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	ret = info_time->sendMetaInfo (conn);
 	if (ret < 0)
 		return -1;
-	for (Rts2ValueVector::iterator iter = constValues.begin ();
-		iter != constValues.end (); iter++)
+	for (Rts2ValueVector::iterator iter = constValues.begin (); iter != constValues.end (); iter++)
 	{
 		Rts2Value *val = *iter;
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
-		{
 			return -1;
-		}
 	}
-	for (Rts2CondValueVector::iterator iter = values.begin ();
-		iter != values.end (); iter++)
+	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
-		{
 			return -1;
-		}
 	}
 	return 0;
 }

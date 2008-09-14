@@ -29,6 +29,9 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
@@ -124,6 +127,8 @@ Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 	if (sock >= 0)
 	{
 		FD_SET (sock, readset);
+		if (isConnState (CONN_INPROGRESS))
+			FD_SET (sock, writeset);
 	}
 	return 0;
 }
@@ -880,6 +885,30 @@ Rts2Conn::receive (fd_set * readset)
 int
 Rts2Conn::writable (fd_set * writeset)
 {
+	if (sock >=0 && FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
+	{
+		int err = 0;
+		int ret;
+		socklen_t len = sizeof (err);
+
+		ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Rts2Conn::idle getsockopt " <<
+				strerror (errno) << sendLog;
+			connectionError (-1);
+		}
+		else if (err)
+		{
+			logStream (MESSAGE_ERROR) << "Rts2Conn::idle getsockopt " <<
+				strerror (errno) << sendLog;
+			connectionError (-1);
+		}
+		else
+		{
+			connConnected ();
+		}
+	}
 	return 0;
 }
 
@@ -1024,22 +1053,6 @@ bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
 }
 
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
-{
-	if (cmd == runningCommand)
-		return true;
-
-	for (std::list < Rts2Command * >::iterator que_iter = commandQue.begin ();
-		que_iter != commandQue.end (); que_iter++)
-	{
-		if (*que_iter == cmd)
-			return true;
-	}
-
-	return false;
-}
-
-
 void
 Rts2Conn::queClear ()
 {
@@ -1080,19 +1093,21 @@ Rts2Conn::command ()
 {
 	if (isCommand ("device"))
 	{
+		int p_centrald_num;
 		int p_centraldId;
 		char *p_name;
 		char *p_host;
 		int p_port;
 		int p_device_type;
-		if (paramNextInteger (&p_centraldId)
+		if (paramNextInteger (&p_centrald_num)
+		  	|| paramNextInteger (&p_centraldId)
 			|| paramNextString (&p_name)
 			|| paramNextString (&p_host)
 			|| paramNextInteger (&p_port)
 			|| paramNextInteger (&p_device_type)
 			|| !paramEnd ())
 			return -2;
-		master->addAddress (p_name, p_host, p_port, p_device_type);
+		master->addAddress (p_centrald_num, p_name, p_host, p_port, p_device_type);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -1480,6 +1495,12 @@ Rts2Conn::successfullRead ()
 
 
 void
+Rts2Conn::connConnected ()
+{
+}
+
+
+void
 Rts2Conn::connectionError (int last_data_size)
 {
 	activeReadData = -1;
@@ -1488,7 +1509,7 @@ Rts2Conn::connectionError (int last_data_size)
 		close (sock);
 	sock = -1;
 	if (strlen (getName ()))
-		master->deleteAddress (getName ());
+		master->deleteAddress (getCentraldNum (), getName ());
 }
 
 

@@ -28,12 +28,7 @@
  * @defgroup RTS2Protocol RTS2 protocol
  */
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <vector>
 #include <list>
 #include "status.h"
 
@@ -95,7 +90,7 @@ class Rts2DevClient;
 class Rts2LogStream;
 
 /** Hold list of connections. It is used to store @see Rts2Conn objects. */
-typedef std::list < Rts2Conn * > connections_t;
+typedef std::vector < Rts2Conn * > connections_t;
 
 /**
  * Base class of RTS2 devices and clients.
@@ -113,6 +108,7 @@ class Rts2Block: public Rts2App
 		int priority_client;
 
 		connections_t connections;
+		connections_t centraldConns;
 
 		std::list <Rts2Address *> blockAddress;
 		std::list <Rts2ConnUser * > blockUsers;
@@ -121,7 +117,10 @@ class Rts2Block: public Rts2App
 
 	protected:
 
-		virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
+		virtual Rts2Conn *createClientConnection (char *in_deviceName)
+		{
+			return NULL;
+		}
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
 		virtual void cancelPriorityOperations ();
@@ -246,33 +245,21 @@ class Rts2Block: public Rts2App
 		int getPort (void);
 
 		/**
-		 * Add connection to given block.
+		 * Add connection to block. Block select call then take into
+		 * account connections file descriptor and call hooks either
+		 * when data arrives or writing on connection is possible.
 		 *
-		 * @param conn Connection which will be added to connections of the block.
+		 * @param conn Connection which will be added to connections of
+		 * the block.
 		 */
-		void addConnection (Rts2Conn * conn);
+		void addConnection (Rts2Conn *_conn);
 
 		/**
-		 * Returns begin iterator of connections structure.
+		 * Add connection as connection to central server,
 		 *
-		 * @return connections.begin() iterator.
+		 * @param _conn Connection which will be added.
 		 */
-		connections_t::iterator connectionBegin ()
-		{
-			return connections.begin ();
-		}
-
-		/**
-		 * Returns end iterator of connections structure.
-		 *
-		 * @see Rts2Block::connectionBegin
-		 *
-		 * @return connections.end() iterator.
-		 */
-		connections_t::iterator connectionEnd ()
-		{
-			return connections.end ();
-		}
+		void addCentraldConnection (Rts2Conn *_conn);
 
 		/**
 		 * Return connection at given number.
@@ -280,18 +267,15 @@ class Rts2Block: public Rts2App
 		 * @param i Number of connection which will be returned.
 		 *
 		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
-		 *
-		 * @bug since connections_t is list, [] operator cannot be used. vector caused some funny problems.
 		 */
-		Rts2Conn *connectionAt (int i)
+		Rts2Conn *connectionAt (unsigned int i)
 		{
-			int j;
-			connections_t::iterator iter;
-			for (j = 0, iter = connections.begin ();
-				j < i && iter != connections.end (); j++, iter++);
-			if (iter == connections.end ())
+			if (i < centraldConns.size ())
+				return centraldConns[i];
+			i -= centraldConns.size ();
+			if (i >= connections.size ())
 				return NULL;
-			return *iter;
+			return connections[i];
 		}
 
 		/**
@@ -503,10 +487,11 @@ class Rts2Block: public Rts2App
 		}
 
 		Rts2Address *findAddress (const char *blockName);
+		Rts2Address *findAddress (int centraldNum, const char *blockName);
 
-		void addAddress (const char *p_name, const char *p_host, int p_port, int p_device_type);
+		void addAddress (int p_centrald_num, const char *p_name, const char *p_host, int p_port, int p_device_type);
 
-		void deleteAddress (const char *p_name);
+		void deleteAddress (int p_centrald_num, const char *p_name);
 
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		void addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login);
@@ -542,10 +527,36 @@ class Rts2Block: public Rts2App
 		 */
 		Rts2Conn *getConnection (char *deviceName);
 
-		virtual Rts2Conn *getCentraldConn ()
+
+		/**
+		 * Return vector of active connections to devices and clients.
+		 *
+		 */
+		connections_t* getConnections ()
 		{
-			return NULL;
+			return &connections;
 		}
+
+		/**
+		 * Returns vector of connections to central server.
+		 *
+		 * @return Vector of connections.
+		 */
+		connections_t* getCentraldConns ()
+		{
+			return &centraldConns;
+		}
+
+		Rts2Conn *getSingleCentralConn ()
+		{
+			if (centraldConns.size () != 1)
+			{
+				std::cerr << "getSingleCentralConn does not have 1 conn: " << centraldConns.size () << std::endl;
+				exit (0);
+			}
+			return *(centraldConns.begin ());
+		}
+
 
 		/**
 		 * Called when new message is received.
@@ -567,11 +578,11 @@ class Rts2Block: public Rts2App
 		 */
 		Rts2Conn *getMinConn (const char *valueName);
 
-		virtual void centraldConnRunning ()
+		virtual void centraldConnRunning (Rts2Conn *conn)
 		{
 		}
 
-		virtual void centraldConnBroken ()
+		virtual void centraldConnBroken (Rts2Conn *conn)
 		{
 		}
 
@@ -608,15 +619,13 @@ class Rts2Block: public Rts2App
 		/**
 		 * Check if command was not replied.
 		 *
-		 * @param cmd Command which will be checked.
+		 * @param object Object which orignated command.
 		 * @param exclude_conn Connection which should be excluded from check.
 		 *
 		 * @return True if command was not send or command reply was not received, false otherwise.
 		 *
 		 * @callergraph
 		 */
-		bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
-
 		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
 
 		/**

@@ -179,8 +179,13 @@ class ListDevices: public XmlRpcServerMethod
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			connections_t::iterator iter;
 			int i = 0;
-			for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++, i++)
+			for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++, i++)
+			{
+				result[i] = (*iter)->getName ();
+			}
+			for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++, i++)
 			{
 				result[i] = (*iter)->getName ();
 			}
@@ -215,14 +220,26 @@ class ListValues: public XmlRpcServerMethod
 		{
 			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
+			connections_t::iterator iter;
+			Rts2ValueVector::iterator variter;
 			int i = 0;
 			// print results for single device..
-			for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++)
+			for (iter = serv->getCentraldConns ()->begin (); iter != serv->getCentraldConns ()->end (); iter++)
 			{
 				conn = *iter;
 				std::string deviceName = (*iter)->getName ();
 				// filter device list
-				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				{
+					result[i] = deviceName + "." + (*variter)->getName ();
+				}
+			}
+			for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
+			{
+				conn = *iter;
+				std::string deviceName = (*iter)->getName ();
+				// filter device list
+				for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
 				{
 					result[i] = deviceName + "." + (*variter)->getName ();
 				}
@@ -310,22 +327,45 @@ class ListValuesDevice: public ListValues
 				}
 			}
 			// print from all
-			else for (connections_t::iterator iter = serv->connectionBegin (); iter != serv->connectionEnd (); iter++)
+			else
 			{
-				conn = *iter;
-				std::string deviceName = (*iter)->getName ();
-				// filter device list
-				int v;
-				for (v = 0; v < params.size (); v++)
+				connections_t::iterator iter;
+				Rts2ValueVector::iterator variter;
+				for (iter = serv->getCentraldConns ()->begin (); iter != serv->getCentraldConns ()->end (); iter++)
 				{
-					if (((std::string) params[v]) == deviceName)
-						break;
+					conn = *iter;
+					std::string deviceName = (*iter)->getName ();
+					// filter device list
+					int v;
+					for (v = 0; v < params.size (); v++)
+					{
+						if (((std::string) params[v]) == deviceName)
+							break;
+					}
+					if (v == params.size ())
+						continue;
+					for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+					{
+						result[i] = deviceName + "." + (*variter)->getName ();
+					}
 				}
-				if (v == params.size ())
-					continue;
-				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+				for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
 				{
-					result[i] = deviceName + "." + (*variter)->getName ();
+					conn = *iter;
+					std::string deviceName = (*iter)->getName ();
+					// filter device list
+					int v;
+					for (v = 0; v < params.size (); v++)
+					{
+						if (((std::string) params[v]) == deviceName)
+							break;
+					}
+					if (v == params.size ())
+						continue;
+					for (variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+					{
+						result[i] = deviceName + "." + (*variter)->getName ();
+					}
 				}
 			}
 		}

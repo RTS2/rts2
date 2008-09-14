@@ -44,18 +44,16 @@ class Rts2ConnClient:public Rts2Conn
 {
 	private:
 		Rts2Address * address;
+
+	protected:
+		virtual void connConnected ();
 	public:
-		Rts2ConnClient (Rts2Block * in_master, char *in_name);
+		Rts2ConnClient (Rts2Block *_master, int _centrald_num, char *_name);
 		virtual ~ Rts2ConnClient (void);
 
 		virtual int init ();
 
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
-		virtual int writable (fd_set * writeset);
-
-
 		virtual void setAddress (Rts2Address * in_addr);
-		void connLogin ();
 
 		/**
 		 * Set client key.
@@ -131,14 +129,13 @@ class Rts2CommandLogin:public Rts2Command
 class Rts2Client:public Rts2Block
 {
 	private:
-		Rts2ConnCentraldClient * central_conn;
 		const char *central_host;
 		const char *central_port;
 		const char *login;
 		const char *password;
 
 	protected:
-		virtual Rts2ConnClient * createClientConnection (char *in_deviceName);
+		virtual Rts2ConnClient * createClientConnection (int _centrald_num, char *_deviceName);
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 		virtual int willConnect (Rts2Address * in_addr);
 
@@ -168,11 +165,6 @@ class Rts2Client:public Rts2Block
 		virtual ~ Rts2Client (void);
 
 		virtual int run ();
-
-		virtual Rts2Conn *getCentraldConn ()
-		{
-			return central_conn;
-		}
 
 		std::string getMasterStateString ();
 };

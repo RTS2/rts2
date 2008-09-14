@@ -59,6 +59,8 @@ class Rts2ConnCentrald;
 class Rts2Centrald:public Rts2Daemon
 {
 	private:
+		// -1 if no connection has priority, -2 if the process is exiting and there aren't any valid connections,
+		// otherwise connection number of priority client
 		int priority_client;
 
 		int next_event_type;

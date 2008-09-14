@@ -128,10 +128,12 @@ Rts2Command::deleteConnection (Rts2Conn * conn)
 }
 
 
-Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * in_master, int in_key):Rts2Command
-(in_master)
+Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * in_master, int _centrald_id, int _centrald_num, int _key)
+:Rts2Command (in_master)
 {
-	key = in_key;
+	centrald_id = _centrald_id;
+	centrald_num = _centrald_num;
+	key = _key;
 }
 
 
@@ -139,8 +141,8 @@ int
 Rts2CommandSendKey::send ()
 {
 	char *command;
-	asprintf (&command, "auth %i %i",
-		owner->getCentraldConn ()->getCentraldId (), key);
+	asprintf (&command, "auth %i %i %i",
+		centrald_id, centrald_num, key);
 	setCommand (command);
 	free (command);
 	return Rts2Command::send ();
@@ -157,8 +159,8 @@ Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, int centralId
 }
 
 
-Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name):Rts2Command
-(in_master)
+Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name)
+:Rts2Command (in_master)
 {
 	char *command;
 	asprintf (&command, "key %s", device_name);
@@ -167,9 +169,8 @@ Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name):
 }
 
 
-Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera):Rts2Command (in_camera->
-getMaster
-())
+Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera)
+:Rts2Command (in_camera->getMaster ())
 {
 }
 

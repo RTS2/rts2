@@ -24,15 +24,16 @@
 
 #include "rts2address.h"
 
-Rts2Address::Rts2Address (const char *in_name, const char *in_host,
-int in_port, int in_type)
+Rts2Address::Rts2Address (int _centrald_num, const char *_name, const char *_host,
+	int _port, int _type)
 {
-	strncpy (name, in_name, DEVICE_NAME_SIZE);
+	centrald_num = _centrald_num;
+	strncpy (name, _name, DEVICE_NAME_SIZE);
 	name[DEVICE_NAME_SIZE - 1] = '\0';
-	host = new char[strlen (in_host) + 1];
-	strcpy (host, in_host);
-	port = in_port;
-	type = in_type;
+	host = new char[strlen (_host) + 1];
+	strcpy (host, _host);
+	port = _port;
+	type = _type;
 }
 
 
@@ -43,10 +44,10 @@ Rts2Address::~Rts2Address (void)
 
 
 int
-Rts2Address::update (const char *in_name, const char *new_host, int new_port,
-int new_type)
+Rts2Address::update (int _centrald_num, const char *_name,
+	const char *new_host, int new_port, int new_type)
 {
-	if (!isAddress (in_name))
+	if (!isAddress (_centrald_num, _name))
 		return -1;
 	delete[]host;
 	host = new char[strlen (new_host) + 1];

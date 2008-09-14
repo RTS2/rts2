@@ -1108,7 +1108,7 @@ Rts2DevDomeFram::idle ()
 		{
 			// after centrald reply, that he switched the state, dome will
 			// open
-			sendMaster ("on");
+			sendMasters ("on");
 		}
 	}
 	else

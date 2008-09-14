@@ -14,8 +14,8 @@ class Rts2CMonitorConnection:public Rts2ConnClient
 	private:
 		void printStatus ();
 	public:
-		Rts2CMonitorConnection (Rts2Block * in_master,
-			char *in_name):Rts2ConnClient (in_master, in_name)
+		Rts2CMonitorConnection (Rts2Block * _master, int _centrald_num, char *_name)
+		:Rts2ConnClient (_master, _centrald_num, _name)
 		{
 		}
 		virtual void commandReturn (Rts2Command * command, int cmd_status);
@@ -83,10 +83,7 @@ class CommandInfo:public Rts2Command
 class Rts2CMonitor:public Rts2Client
 {
 	protected:
-		virtual Rts2ConnClient * createClientConnection (char *in_deviceName)
-		{
-			return new Rts2CMonitorConnection (this, in_deviceName);
-		}
+		virtual Rts2ConnClient * createClientConnection (char *_deviceName);
 
 	public:
 		Rts2CMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
@@ -96,6 +93,17 @@ class Rts2CMonitor:public Rts2Client
 		virtual int idle ();
 		virtual int run ();
 };
+
+
+Rts2ConnClient *
+Rts2CMonitor::createClientConnection (char *_deviceName)
+{
+	Rts2Address *addr = findAddress (_deviceName);
+	if (addr == NULL)
+		return NULL;
+	return new Rts2CMonitorConnection (this, addr->getCentraldNum (), _deviceName);
+}
+
 
 int
 Rts2CMonitor::idle ()
@@ -109,7 +117,11 @@ Rts2CMonitor::idle ()
 int
 Rts2CMonitor::run ()
 {
-	getCentraldConn ()->queCommand (new CommandInfo (this));
+	connections_t::iterator iter;
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+	{
+		(*iter)->queCommand (new CommandInfo (this));
+	}
 	return Rts2Client::run ();
 }
 

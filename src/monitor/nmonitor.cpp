@@ -156,17 +156,23 @@ Rts2NMonitor::messageBoxEnd ()
 {
 	if (msgBox->exitState == 0)
 	{
+		const char *cmd = "off";
 		switch (msgAction)
 		{
 			case SWITCH_OFF:
-				getCentraldConn ()->queCommand (new Rts2Command (this, "off"));
+				cmd = "off";
 				break;
 			case SWITCH_STANDBY:
-				getCentraldConn ()->queCommand (new Rts2Command (this, "standby"));
+				cmd = "standby";
 				break;
 			case SWITCH_ON:
-				getCentraldConn ()->queCommand (new Rts2Command (this, "on"));
+				cmd = "on";
 				break;
+		}
+		connections_t::iterator iter;
+		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		{
+			(*iter)->queCommand (new Rts2Command (this, cmd));
 		}
 	}
 	delete msgBox;
@@ -235,9 +241,14 @@ Rts2NMonitor::changeListConnection ()
 	if (conn)
 	{
 		delete daemonWindow;
-		if (conn == getCentraldConn ())
-			daemonWindow = new Rts2NDeviceCentralWindow (conn);
-		else
+		daemonWindow = NULL;
+		// if connection is among centrald connections..
+		connections_t::iterator iter;
+		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+			if (conn == (*iter))
+				daemonWindow = new Rts2NDeviceCentralWindow (conn);
+
+		if (daemonWindow == NULL)
 			daemonWindow = new Rts2NDeviceWindow (conn);
 	}
 	else
@@ -396,7 +407,7 @@ Rts2NMonitor::init ()
 	msgwindow = new Rts2NMsgWindow ();
 	windowStack.push_back (deviceList);
 	statusWindow = new Rts2NStatusWindow (comWindow, this);
-	daemonWindow = new Rts2NDeviceCentralWindow (getCentraldConn ());
+	daemonWindow = new Rts2NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
 
 	// init layout
 	daemonLayout =
@@ -404,7 +415,10 @@ Rts2NMonitor::init ()
 	masterLayout = new Rts2NLayoutBlock (deviceList, daemonLayout, true, 10);
 	masterLayout = new Rts2NLayoutBlock (masterLayout, msgwindow, false, 75);
 
-	getCentraldConn ()->queCommand (new Rts2Command (this, "info"));
+	connections_t::iterator iter;
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		(*iter)->queCommand (new Rts2Command (this, "info"));
+
 	setMessageMask (MESSAGE_MASK_ALL);
 
 	resize ();
@@ -424,9 +438,12 @@ Rts2NMonitor::idle ()
 
 
 Rts2ConnClient *
-Rts2NMonitor::createClientConnection (char *in_deviceName)
+Rts2NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
 {
-	Rts2ConnClient *cliConn = new Rts2NMonConn (this, in_deviceName);
+	Rts2Address *addr = findAddress (_centrald_num, _deviceName);
+	if (addr == NULL)
+		return NULL;
+	Rts2ConnClient *cliConn = new Rts2NMonConn (this, addr->getCentraldNum (), _deviceName);
 	return cliConn;
 }
 

@@ -91,7 +91,8 @@ Rts2ConnCentrald::priorityCommand ()
 int
 Rts2ConnCentrald::sendDeviceKey ()
 {
-	int dev_key = random ();
+	int dev_key;
+	dev_key = random ();
 	char *msg;
 	// device number could change..device names don't
 	char *dev_name;
@@ -105,6 +106,7 @@ Rts2ConnCentrald::sendDeviceKey ()
 		sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
 		return -1;
 	}
+	setKey (0);
 	setKey (dev_key);
 	asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
 	sendMsg (msg);
@@ -129,8 +131,7 @@ Rts2ConnCentrald::sendInfo ()
 		return -2;
 
 	connections_t::iterator iter;
-	for (iter = master->connectionBegin ();
-		iter != master->connectionEnd (); iter++)
+	for (iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
 		conn->sendInfo (this);
@@ -155,8 +156,8 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 			free (msg);
 			break;
 		case DEVICE_SERVER:
-			asprintf (&msg, "device %i %s %s %i %i",
-				getCentraldId (), getName (), hostname, port, device_type);
+			asprintf (&msg, "device %i %i %s %s %i %i",
+				getCentraldNum (), getCentraldId (), getName (), hostname, port, device_type);
 			ret = conn->sendMsg (msg);
 			free (msg);
 			break;
@@ -387,12 +388,16 @@ Rts2ConnCentrald::command ()
 	{
 		if (getType () == NOT_DEFINED_SERVER)
 		{
+			int centraldNum;
 			char *reg_device;
 			char *in_hostname;
 			char *msg;
 
-			if (paramNextString (&reg_device) || paramNextInteger (&device_type)
-				|| paramNextString (&in_hostname) || paramNextInteger (&port)
+			if (paramNextInteger (&centraldNum)
+			  	|| paramNextString (&reg_device)
+				|| paramNextInteger (&device_type)
+				|| paramNextString (&in_hostname)
+				|| paramNextInteger (&port)
 				|| !paramEnd ())
 				return -2;
 
@@ -402,7 +407,7 @@ Rts2ConnCentrald::command ()
 				return -1;
 			}
 
-			setName (reg_device);
+			setName (centraldNum, reg_device);
 			strncpy (hostname, in_hostname, HOST_NAME_MAX);
 
 			setType (DEVICE_SERVER);
@@ -492,8 +497,13 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 
 Rts2Centrald::~Rts2Centrald (void)
 {
-	fileLog->close ();
-	delete fileLog;
+	if (fileLog)
+        {
+		fileLog->close ();
+		delete fileLog;
+	}
+	// do not report any priority changes
+	priority_client = -2;
 }
 
 
@@ -587,6 +597,8 @@ Rts2Centrald::init ()
 	if (ret)
 		return ret;
 
+	srandom (time (NULL));
+
 	ret = reloadConfig ();
 	if (ret)
 		return ret;
@@ -595,8 +607,13 @@ Rts2Centrald::init ()
 	morning_off->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_off", true));
 	morning_standby->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_standby", true));
 
-	centraldConnRunning ();
-	ret = checkLockFile (LOCK_PREFIX "centrald");
+	centraldConnRunning (NULL);
+	
+	char *lF;
+	asprintf (&lF, LOCK_PREFIX "centrald_%i", getPort ());
+	ret = checkLockFile (lF);
+	free (lF);
+
 	if (ret)
 		return ret;
 	ret = doDeamonize ();
@@ -651,8 +668,9 @@ Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
+	connections_t::iterator iter;
 	// and make sure we aren't the last who block status info
-	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		(*iter)->updateStatusWait (NULL);
 	}
@@ -671,7 +689,7 @@ void
 Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
 		added->sendInfo (conn);
@@ -683,7 +701,7 @@ Rts2Conn *
 Rts2Centrald::getConnection (int conn_num)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
 		if (conn->getCentraldId () == conn_num)
@@ -707,6 +725,10 @@ Rts2Centrald::changeState (int new_state, const char *user)
 int
 Rts2Centrald::changePriority (time_t timeout)
 {
+	// do not perform any priority changes
+	if (priority_client == -2)
+		return 0;
+
 	int new_priority_client = -1;
 	int new_priority_max = 0;
 	connections_t::iterator iter;
@@ -719,7 +741,7 @@ Rts2Centrald::changePriority (time_t timeout)
 		new_priority_max = conn->getPriority ();
 	}
 	// find new client with highest priority
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		conn = *iter;
 		if (conn->getPriority () > new_priority_max)
@@ -863,7 +885,8 @@ void
 Rts2Centrald::bopMaskChanged ()
 {
 	int bopState = 0;
-	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		bopState |= (*iter)->getBopState ();
 		if ((*iter)->getType () == DEVICE_SERVER)
@@ -880,8 +903,8 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
 	int s_count = 0;
 	// update system status
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *test_conn = (Rts2ConnCentrald *) * iter;
 		// do not request status from client connections
@@ -919,9 +942,9 @@ Rts2Centrald::getStateForConnection (Rts2Conn * conn)
 	int sta = getState ();
 	// get rid of BOP mask
 	sta &= ~BOP_MASK & ~DEVICE_ERROR_MASK;
+	connections_t::iterator iter;
 	// cretae BOP mask for device
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2Conn *test_conn = *iter;
 		if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)

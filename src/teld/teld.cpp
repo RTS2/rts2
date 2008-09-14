@@ -101,6 +101,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST);
 	telFov->setValueDouble (180.0);
 
+	createValue (telFlip, "MNT_FLIP", "telescope flip");
+
 	modelFile = NULL;
 	model = NULL;
 
@@ -469,7 +471,6 @@ Rts2DevTelescope::init ()
 		if (ret)
 			return ret;
 	}
-	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	return 0;
 }

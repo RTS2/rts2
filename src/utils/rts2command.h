@@ -247,8 +247,10 @@ class Rts2CommandSendKey:public Rts2Command
 {
 	private:
 		int key;
+		int centrald_id;
+		int centrald_num;
 	public:
-		Rts2CommandSendKey (Rts2Block * in_master, int in_key);
+		Rts2CommandSendKey (Rts2Block * in_master, int _centrald_id, int _centrald_num, int _key);
 		virtual int send ();
 
 		virtual int commandReturnOK (Rts2Conn * conn)

@@ -356,7 +356,14 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 			sendOkInExposure = true;
 		}
 		if (exposureConn)
-			getCentraldConn ()->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
+		{
+			connections_t::iterator iter;
+			// ask all centralds for possible blocking devices
+			for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+			{
+				(*iter)->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
+			}
+		}
 	}
 }
 

@@ -111,9 +111,10 @@ class Rts2Conn:public Rts2Object
 								 // name of device/client this connection goes to
 		char name[DEVICE_NAME_SIZE];
 		int key;
-		int priority;			 // priority - number
-		int have_priority;		 // priority - flag if we have priority
-		int centrald_id;		 // id of connection on central server
+		int priority;			// priority - number
+		int have_priority;		// priority - flag if we have priority
+		int centrald_num;		// number of centrald connection
+		int centrald_id;		// id of connection on central server
 		in_addr addr;
 		int port;				 // local port & connection
 
@@ -260,6 +261,11 @@ class Rts2Conn:public Rts2Object
 		 * packets will be send only when needed.
 		 */
 		void successfullRead ();
+
+		/**
+		 * Called when socket which is waiting for finishing of connectect call is connected.
+		 */
+		virtual void connConnected ();
 
 		/**
 		 * Function called on connection error.
@@ -449,8 +455,9 @@ class Rts2Conn:public Rts2Object
 		{
 			return (!strcmp (getName (), in_name));
 		}
-		void setName (char *in_name)
+		void setName (int _centrald_num, char *in_name)
 		{
+			centrald_num = _centrald_num;
 			strncpy (name, in_name, DEVICE_NAME_SIZE);
 			name[DEVICE_NAME_SIZE - 1] = '\0';
 		}
@@ -460,8 +467,7 @@ class Rts2Conn:public Rts2Object
 		};
 		virtual void setKey (int in_key)
 		{
-			if (key == 0)
-				key = in_key;
+			key = in_key;
 		}
 		int havePriority ();
 		void setHavePriority (int in_have_priority);
@@ -476,12 +482,23 @@ class Rts2Conn:public Rts2Object
 		void setPriority (int in_priority)
 		{
 			priority = in_priority;
-		};
+		}
+
+		int getCentraldNum ()
+		{
+			return centrald_num;
+		}
+
 		int getCentraldId ()
 		{
 			return centrald_id;
-		};
+		}
+
 		void setCentraldId (int in_centrald_id);
+		void setCentraldNum (int _centrald_num)
+		{
+			centrald_num = _centrald_num;
+		}
 		int sendPriorityInfo ();
 
 		/**
@@ -569,14 +586,6 @@ class Rts2Conn:public Rts2Object
 			return !queEmptyForOriginator (originator);
 		}
 
-		/**
-		 * Query if list of command (including running command) contains given command.
-		 *
-		 * @param cmd Rts2Command * we ask for
-		 *
-		 * @return true if we containt given command, false otherwise
-		 */
-		bool commandPending (Rts2Command * cmd);
 
 		/**
 		 * Clear connection from all pending commands.

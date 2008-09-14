@@ -232,7 +232,7 @@
       <varlistentry>
         <term><option>-m</option></term>
         <listitem>
-          <para>Plot moon coordinates at the graph.</para>
+          <para>Do not plot moon coordinates. Valid only for gnuplot graphs.</para>
         </listitem>
       </varlistentry>
       <varlistentry>

@@ -325,8 +325,8 @@ class Rts2Daemon:public Rts2Block
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
-		virtual void centraldConnRunning ();
-		virtual void centraldConnBroken ();
+		virtual void centraldConnRunning (Rts2Conn *conn);
+		virtual void centraldConnBroken (Rts2Conn *conn);
 
 		virtual int baseInfo ();
 		int baseInfo (Rts2Conn * conn);

@@ -145,7 +145,7 @@ class Rts2NMonitor:public Rts2Client
 		virtual int init ();
 		virtual int idle ();
 
-		virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
+		virtual Rts2ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
@@ -168,10 +168,10 @@ class Rts2NMonConn:public Rts2ConnClient
 	private:
 		Rts2NMonitor * master;
 	public:
-		Rts2NMonConn (Rts2NMonitor * in_master,
-			char *in_name):Rts2ConnClient (in_master, in_name)
+		Rts2NMonConn (Rts2NMonitor * _master, int _centrald_num, char *_name)
+		:Rts2ConnClient (_master, _centrald_num, _name)
 		{
-			master = in_master;
+			master = _master;
 		}
 
 		virtual void commandReturn (Rts2Command * cmd, int in_status)

@@ -421,8 +421,8 @@ Rts2GenFocClient::init ()
 
 
 void
-Rts2GenFocClient::centraldConnRunning ()
+Rts2GenFocClient::centraldConnRunning (Rts2Conn * conn)
 {
-	Rts2Client::centraldConnRunning ();
-	getCentraldConn ()->queCommand (new Rts2Command (this, "priority 137"));
+	Rts2Client::centraldConnRunning (conn);
+	conn->queCommand (new Rts2Command (this, "priority 137"));
 }
