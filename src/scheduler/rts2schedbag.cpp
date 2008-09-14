@@ -53,20 +53,36 @@ Rts2SchedBag::cross (int sched1, int sched2)
 
 /**
  * Class for elite sorting. Compares schedules based on a result of
- * singleOptimum fittness function.
+ * specified fittness function.
  */
-struct singleEliteSort
+class objectiveFunctionSort
 {
-	/**
-	 * Operator to pick elite.
-	 *
-	 * @param sched1 First schedule to compare.
-	 * @param
-	 */
-	bool operator() (Rts2Schedule * sched1, Rts2Schedule *sched2)
-	{
-		return sched1->singleOptimum () > sched2->singleOptimum ();
-	}
+	private:
+		// comparsion objective
+		objFunc objective;
+	public:
+		/**
+		 * Construct new objective sort class.
+		 *
+		 * @param _objective  Objective on which comparsion will be based.
+		 */
+		objectiveFunctionSort (objFunc _objective)
+		{
+			objective = _objective;
+		}
+	
+		/**
+		 * Operator to compare schedules.
+		 *
+		 * @param sched1 First schedule to compare.
+		 * @param sched2 Second schedule to compare.
+		 *
+		 * @return True if singleOptimum function of the first schedule is higher then second.
+		 */
+		bool operator () (Rts2Schedule *sched1, Rts2Schedule * sched2)
+		{
+			return sched1->getObjectiveFunction (objective) > sched2->getObjectiveFunction (objective);	
+		}
 };
 
 void
@@ -81,7 +97,7 @@ Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2
 		exit (0);
 	}
 
-	std::sort (_begin, _end, singleEliteSort ());
+	std::sort (_begin, _end, objectiveFunctionSort (SINGLE));
 
 	// remove last n members..
 	erase (_end - _size, _end);
@@ -102,6 +118,11 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	popSize = -1;
 
 	eliteSize = 0;
+
+	// fill in parameters for NSGA
+	objectives[0] = ALTITUDE;
+	objectives[1] = ACCOUNT;
+	objectives[2] = DISTANCE;
 }
 
 
@@ -126,7 +147,7 @@ Rts2SchedBag::constructSchedules (int num)
 	ticketSet->load (tarSet);
 	if (ticketSet->size () == 0)
 	{
-		logStream (MESSAGE_ERROR) << "There aren't any scheduling tickets in database (table tickets)" << sendLog;
+		logStream (MESSAGE_ERROR) << "There aren't any scheduling tickets in database (tickets table)" << sendLog;
 		return -1;
 	}
 
@@ -147,14 +168,14 @@ Rts2SchedBag::constructSchedules (int num)
 
 
 void
-Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max)
+Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _type)
 {
 	_min = 1000000;
 	_max = -1000000;
 	_avg = 0;
 	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
 	{
-		double cur = (*iter)->singleOptimum ();
+		double cur = (*iter)->getObjectiveFunction (_type);
 		if (cur < _min)
 			_min = cur;
 		if (cur > _max)
@@ -168,9 +189,6 @@ Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max)
 void
 Rts2SchedBag::doGAStep ()
 {
-	// mutate population
-	int rMax = randomNumber (0, mutationNum);
-
 	Rts2SchedBag::iterator iter;
 
 	// random generation based on fittness
@@ -220,8 +238,155 @@ Rts2SchedBag::doGAStep ()
 			cross (p1, p2);
 	}
 
+	// mutate population
+	int rMax = randomNumber (0, mutationNum);
+
 	for (int i = 0; i < rMax; i++)
 	{
 		mutate ((*this)[randomNumber (0, size ())]);
 	}
+}
+
+
+int
+Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
+{
+	bool dom1 = false;
+	bool dom2 = false;
+	for (unsigned int i = 0; i < sizeof (objectives); i++)
+	{
+		double obj1 = sched1->getObjectiveFunction (objectives[i]);
+		double obj2 = sched2->getObjectiveFunction (objectives[i]);
+		if (obj1 < obj2)
+			dom1 = true;
+		else if (obj1 < obj2)
+		  	dom2 = true;
+	}
+	if (dom1 && !dom2)
+		return -1;
+	else if (!dom1 && dom2)
+	  	return 1;
+	return 0;
+}
+
+
+void
+Rts2SchedBag::calculateNSGARanks ()
+{
+	// temporary structure which holds informations about ranks.
+	// Indexed by population (=schedule) number
+	struct {std::list <int> dominates; int dominated;} domStruct[size()];
+	// list of schedules in fronts
+	std::list <int> fronts[size ()];
+
+	NSGAfronts.clear ();
+
+	for (unsigned int p = 0; p < size (); p++)
+	{
+		domStruct[p].dominated = 0;
+		Rts2Schedule *sched_p = (*this)[p];
+		for (unsigned int q = 0; q < size (); q++)
+		{
+		  	// do not calculate for ourselfs..
+			if (p == q)
+				continue;
+			Rts2Schedule *sched_q = (*this)[q];
+			int dom = dominatesNSGA (sched_p, sched_q);
+			if (dom == -1)
+				domStruct[p].dominates.push_back (q);
+			else if (dom == 1)
+			  	domStruct[p].dominated++;
+		}
+		if (domStruct[p].dominated == 0)
+		{
+			sched_p->setNSGARank (1);
+			fronts[0].push_back (p);
+			NSGAfronts[0].push_back (sched_p);
+		}
+	}
+	int i = 0;
+	while (fronts[i].size () > 0)
+	{
+		i++;
+		for (std::list <int>::iterator p = fronts[i].begin (); p != fronts[i].end (); p++)
+		{
+			for (std::list <int>::iterator q = domStruct[*p].dominates.begin (); q != domStruct[*p].dominates.end (); q++)
+			{
+				domStruct[*q].dominated--;
+				if (domStruct[*q].dominated == 0)
+				{
+				 	Rts2Schedule *sched_q = (*this)[*q];
+					sched_q->setNSGARank (i + 1);
+					fronts[i + 1].push_back (*q);
+					NSGAfronts[i].push_back (sched_q);
+				}
+			}
+		}
+	}
+}
+
+
+// temporary operator for sorting based on crowding distance
+struct crowdingComp {
+	bool operator () (Rts2Schedule *sched1, Rts2Schedule *sched2)
+	{
+		return sched1->getNSGADistance () > sched2->getNSGADistance ();
+	};
+};
+
+
+void
+Rts2SchedBag::pickNSGACrowdingDistance (unsigned int f, unsigned int n)
+{
+	std::vector <Rts2Schedule *>::iterator iter;
+
+	if (NSGAfronts[f].size () <= 2)
+	{
+		// set to infinty and exit..
+		for (iter = NSGAfronts[f].begin (); iter != NSGAfronts[f].end (); iter++)
+			(*iter)->setNSGADistance (INFINITY);
+		return;
+	}
+
+	// null distance
+	for (iter = NSGAfronts[f].begin (); iter != NSGAfronts[f].end (); iter++)
+		(*iter)->setNSGADistance (0);
+
+	for (unsigned int o = 0; o < sizeof (objectives); o++)
+	{
+		// sort front by objective i
+		objFunc objective = objectives[o];
+		std::sort (NSGAfronts[f].begin (), NSGAfronts[f].end (), objectiveFunctionSort (objective));
+		// assign infiniti values to first and last
+		Rts2Schedule *begSched = *(NSGAfronts[f].begin ());
+		Rts2Schedule *endSched = *(NSGAfronts[f].end () - 1);
+		begSched->setNSGADistance (INFINITY);
+		endSched->setNSGADistance (INFINITY);
+		// function maxima and minima
+		double f_max = begSched->getObjectiveFunction (objective);
+		double f_min = endSched->getObjectiveFunction (objective);
+
+		// function values, so getObjectiveFunction is called only once
+		double f_1 = f_max;
+		double f_2 = (*(NSGAfronts[f].begin () + 1))->getObjectiveFunction (objective);
+		double f_3;
+
+		for (iter = NSGAfronts[f].begin () + 1; iter != (NSGAfronts[f].end () - 1); iter++)
+		{
+			f_3 = (*(iter + 1))->getObjectiveFunction (objective); 
+			(*iter)->incNSGADistance ((f_1 - f_3) / (f_max - f_min));
+			f_1 = f_2;
+			f_2 = f_3;
+		}
+	}
+
+	// sort based on crowding distance
+	std::sort (NSGAfronts[f].begin (), NSGAfronts[f].end (), crowdingComp ());
+}
+
+
+void
+Rts2SchedBag::doNSGAIIStep ()
+{
+	calculateNSGARanks ();
 }

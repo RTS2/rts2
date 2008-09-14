@@ -37,7 +37,17 @@ class Rts2ScheduleApp: public Rts2AppDb
 		int verbose;
 
 		/**
-		 * Prints merits statistics of schedule set.
+		 * Print merit of given type.
+		 *
+		 * @param _type Merit type.
+		 * @param _name Name of the merit function (for printing).
+		 *
+		 * @see objFunc
+		 */
+		void printMerits (objFunc _type, const char *name);
+
+		/**
+		 * Prints all merits statistics of schedule set.
 		 */
 		void printMerits ();
 
@@ -54,43 +64,35 @@ class Rts2ScheduleApp: public Rts2AppDb
 		virtual int doProcessing ();
 };
 
+
+void
+Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
+{
+	Rts2SchedBag::iterator iter;
+	std::cout << name << ": ";
+
+	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
+	{
+		std::cout << std::left << std::setw (8) << (*iter)->getObjectiveFunction (_type) << " ";
+	}
+
+	double min, avg, max;
+	schedBag->getStatistics (min, avg, max, _type);
+
+	std::cout << std::endl << name << " statistics: "
+		<< min << " "
+		<< avg << " "
+		<< max << std::endl;
+}
+
 void
 Rts2ScheduleApp::printMerits ()
 {
-	Rts2SchedBag::iterator iter;
-	double sum = 0;
-
-	std::cout << "visibility: ";
-
-	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
-	{
-		std::cout << std::left << std::setw (8) << (*iter)->visibilityRatio () << " ";
-		sum += (*iter)->visibilityRatio ();
-	}
-
-	std::cout << std::endl << " avg, visibility: " << (sum / schedBag->size ()) << std::endl
-		<< "altitude:   ";
-
-	sum = 0;
-
-	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
-	{
-		std::cout << std::left << std::setw (8) << (*iter)->altitudeMerit () << " ";
-		sum += (*iter)->altitudeMerit ();
-	}
-
-	std::cout << std::endl << "avg. altitude: " << (sum / schedBag->size ()) << std::endl;
-
-	sum = 0;
-
-	for (iter = schedBag->begin (); iter != schedBag->end (); iter++)
-	{
-		std::cout << std::left << std::setw (8) << (*iter)->accountMerit () << " ";
-		sum += (*iter)->accountMerit ();
-	}
-
-	std::cout << std::endl << "avg. account: " << (sum / schedBag->size ()) << std::endl;
-
+	printMerits (VISIBILITY, "visibility");
+	printMerits (ALTITUDE, "altitude");
+	printMerits (ACCOUNT, "account");
+	printMerits (DISTANCE, "distance");
+	printMerits (SINGLE, "single (main)");
 }
 
 

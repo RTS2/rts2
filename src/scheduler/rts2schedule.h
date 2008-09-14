@@ -25,6 +25,14 @@
 
 #include <vector>
 
+typedef enum {
+	VISIBILITY,
+	ALTITUDE,
+	ACCOUNT,
+	DISTANCE,
+	SINGLE
+} objFunc;
+
 /**
  * Observing schedule. This class provides holder of observing schedule, which
  * is a set of Rts2SchedObs objects. It also provides methods to manimulate
@@ -38,6 +46,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double JDstart;
 		double JDend;
 		struct ln_lnlat_posn *observer;
+
+		// variables used for non-dominated sorting
+		// rank - pareto front index
+		int NSGARank;
+		// crowding distance
+		double NSGADistance;
 
 		TicketSet *ticketSet;
 
@@ -67,6 +81,52 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * Destroy observation schedule. Delete all scheduled observations.
 		 */
 		~Rts2Schedule (void);
+
+		/**
+		 * Get non-dominated rank (front) of the schedule.
+		 */
+		int getNSGARank ()
+		{
+			return NSGARank;
+		}
+
+		/**
+		 * Set non-dominated rank (front) of the schedule.
+		 *
+		 * @param _rank New NSGA rank.
+		 */
+		void setNSGARank (int _rank)
+		{
+			NSGARank = _rank;
+		}
+
+		/**
+		 * Returns NSGA crowding distance of the member.
+		 */
+		double getNSGADistance ()
+		{
+			return NSGADistance;
+		}
+
+		/**
+		 * Set NSGA crowding distance of the schedule.
+		 *
+		 * @param _distance New NSGA crowding distance.
+		 */
+		void setNSGADistance (double _distance)
+		{
+			NSGADistance = _distance;
+		}
+
+		/**
+		 * Increment NSGA crowding distance of the schedule.
+		 *
+		 * @param _inc Increment value.
+		 */
+		void incNSGADistance (double _inc)
+		{
+			NSGADistance += _inc;
+		}
 
 		/**
 		 * Generate random target for schedule.
@@ -110,17 +170,49 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		/**
 		 * Returns schedule sharing differences merit. Lower value = better.
 		 *
-		 * @return Sum of weighted deviations of the schedule from a
-		 * requested time share. Lower value means better schedule.
+		 * @return 1 / sum of weighted deviations of the schedule from a
+		 * requested time share. Higher value means better schedule.
 		 */
 		double accountMerit ();
+
+		/**
+		 * Returns merit based on distance between schedules entries.
+		 *
+		 * @return 1 / average distance between schedule entries.
+		 */
+		double distanceMerit ();
 
 		/**
 		 * Return used merit function.
 		 */
 		double singleOptimum ()
 		{
-			return accountMerit ();
+			return distanceMerit ();
+		}
+
+		/**
+		 * Return some objective function based on the parameter.
+		 *
+		 * @param _type Objective function type.
+		 *
+		 * @see objFunc
+		 */
+		double getObjectiveFunction (objFunc _type)
+		{
+			switch (_type)
+			{
+				case VISIBILITY:
+					return visibilityRatio ();
+				case ALTITUDE:
+					return altitudeMerit ();
+				case ACCOUNT:
+					return accountMerit ();
+				case DISTANCE:
+					return distanceMerit ();
+				case SINGLE:
+					break;
+			}
+			return singleOptimum ();
 		}
 };
 

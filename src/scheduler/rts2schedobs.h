@@ -46,13 +46,23 @@ class Rts2SchedObs
 		virtual ~Rts2SchedObs (void);
 
 		/**
-		 * Return observation start JD.
+		 * Return julian date of observation start.
 		 *
 		 * @return Start JD of the observation.
 		 */
 		double getJDStart ()
 		{
 			return startJD;
+		}
+
+		/**
+		 * Return julian date of observation end.
+		 *
+		 * @return End JD of the observation.
+		 */
+		double getJDEnd ()
+		{
+			return startJD + 10 / 1440.0;
 		}
 
 		/**
@@ -128,6 +138,35 @@ class Rts2SchedObs
 		 * Return observation altitude merit computed from given period.
 		 */
 		double altitudeMerit (double _start, double _end);
+
+		/**
+		 * Get equatiorial position of the target at the beginning of the observation.
+		 *
+		 * @param _pos Returned position.
+		 */
+		void getStartPosition (struct ln_equ_posn &_pos)
+		{
+			getTarget ()->getPosition (&_pos, getJDStart ());
+		}
+
+		/**
+		 * Get equatiorial position of the target at the end of the observation.
+		 *
+		 * @param _pos Returned position.
+		 */
+		void getEndPosition (struct ln_equ_posn &_pos)
+		{
+			getTarget ()->getPosition (&_pos, getJDEnd ());
+		}
+
+		/**
+		 * Returns schedule position at give julian date.
+		 */
+		void getPosition (struct ln_equ_posn &_pos, double JD)
+		{
+			getTarget ()->getPosition (&_pos, JD);
+		}
+
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs);

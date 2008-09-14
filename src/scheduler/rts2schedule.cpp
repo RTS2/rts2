@@ -181,6 +181,33 @@ Rts2Schedule::accountMerit ()
 }
 
 
+double
+Rts2Schedule::distanceMerit ()
+{
+	if (size () <= 1)
+		return 1;
+
+	// schedule iterators for two targets..
+	Rts2Schedule::iterator iter1 = begin ();
+	Rts2Schedule::iterator iter2 = begin () + 1;
+
+	double distance = 0;
+
+	for ( ; iter2 != end (); iter1++, iter2++)
+	{
+		struct ln_equ_posn pos1, pos2;
+		(*iter1)->getEndPosition (pos1);
+		(*iter2)->getStartPosition (pos2);
+		distance += ln_get_angular_separation (&pos1, &pos2);
+	}
+	distance /= size ();
+	if (distance == 0)
+		return 1;
+	
+	return 1.0 / distance;
+}
+
+
 std::ostream &
 operator << (std::ostream & _os, Rts2Schedule & schedule)
 {

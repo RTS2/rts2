@@ -107,12 +107,57 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @param _min Population minimal fittness.
 		 * @param _avg Population average fittness.
 		 * @param _max Population maximal fittness.
+		 * @param _type Statistict type - function which will be evaluated. Please 
+		 * 	see objFunc enumaration for possible values.
+		 *
+		 * @see objFunc
 		 */
-		void getStatistics (double &_min, double &_avg, double &_max);
+		void getStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
 
 
 		/**
-		 * Do one step of GA.
+		 * Do one step of a simple GA.
 		 */
 		void doGAStep ();
+
+		// private functions used for NSGA-II
+	private:
+		// objectives which are used
+		objFunc objectives[3];
+
+		// vector of NSGA fronts members
+		std::vector <std::vector <Rts2Schedule *> > NSGAfronts;
+
+		/**
+		 * Dominance operator.
+		 *
+		 * @param sched_1  First schedule which will be compared.
+		 * @param sched_2  Second schedule which will be compared.
+		 *
+		 * @return <ul><li>-1 if first schedule dominates second</li><li>1 if second schedule dominates first</li><li>0 if schedules are equal</li>
+		 */
+		int dominatesNSGA (Rts2Schedule *sched_1, Rts2Schedule *sched_2);
+
+		/**
+		 * Calculate ranks of the entire population. Ranks are assigned to schedule
+		 * with setNSGARank function.
+		 */
+		void calculateNSGARanks ();
+
+		/**
+		 * Pick members on front based on the crowding distance
+		 * calculation.  Calculates crowding distance of each member in
+		 * the set and pick n members with largest crowding distance
+		 * value.
+		 *
+		 * @param f Front index (0..number of pareto fronts - 1)
+		 * @param n Number of members which will be selected.
+		 */
+		void pickNSGACrowdingDistance (unsigned int f, unsigned int n);
+	
+	public:
+		/** 
+		 * Do one step of NSGA-II algorithm.
+		 */
+		void doNSGAIIStep ();
 };
