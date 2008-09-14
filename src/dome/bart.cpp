@@ -17,9 +17,6 @@
 #include "ford.h"
 #include "rts2connbufweather.h"
 
-#define CHYBA_NEZNAMY_PRIKAZ 0x80
-#define CHYBA_PRETECENI_TX_BUFFERU 0x81
-
 #define CAS_NA_OTEVRENI 30
 
 // we should get packets every minute; 5 min timeout, as data from meteo station
@@ -90,6 +87,8 @@ class Rts2DevDomeBart:public Rts2DomeFord
 
 		void checkCloud ();
 
+		bool closeAfterOpen;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isGoodWeather ();
@@ -144,6 +143,8 @@ Rts2DomeFord (in_argc, in_argv)
 
 	nextCloudMeas = 0;
 
+	closeAfterOpen = false;
+
 	// oteviram file pro mrakomer2_log...
 	mrak2_log = fopen ("/var/log/mrakomer2", "a");
 }
@@ -192,6 +193,11 @@ Rts2DevDomeBart::endOpen ()
 	VYP (MOTOR);
 	zjisti_stav_portu ();		 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
 	setTimeout (USEC_SEC);
+	if (closeAfterOpen)
+	{
+		sleep (2);
+		return closeDome ();
+	}
 	return Rts2DomeFord::endOpen ();
 }
 
@@ -215,8 +221,13 @@ Rts2DevDomeBart::closeDome ()
 		// closing in progress
 		if (!smer)
 			return 0;
-		VYP (MOTOR);
-		sleep (1);
+		// let it go to open state and then close it..
+		if (closeAfterOpen == false)
+		{
+			closeAfterOpen = true;
+			logStream (MESSAGE_DEBUG) << "Commanded to close just afer dome finished opening." << sendLog;
+		}
+		return 0;
 	}
 	ZAP (SMER);
 	sleep (1);
@@ -245,6 +256,7 @@ Rts2DevDomeBart::endClose ()
 {
 	int motor;
 	motor = isOn (MOTOR);
+	closeAfterOpen = false;
 	if (motor == -1)
 		return -1;
 	if (motor)
