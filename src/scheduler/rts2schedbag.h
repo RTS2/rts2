@@ -31,7 +31,7 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 {
 	private:
 		int mutationNum;
-		int popSize;
+		unsigned int popSize;
 
 		// size of elite population 
 		// if this is 0, elite GA is not used
@@ -52,12 +52,24 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 
 		/**
 		 * Do crossing of two schedules. This method calculate crossing
-		 * parameters.
+		 * parameters and performs crossing.
 		 *
 		 * @param sched1 Index of the 1st schedule to cross.
 		 * @param sched2 Index of the 2nd schedule to croos.
 		 */
-		void cross (int sched1, int sched2);
+		void cross (int sched1, int sched2)
+		{
+		 	cross ((*this)[sched1], (*this)[sched2]);
+		}
+
+		/**
+		 * Do crossing of two schedules. This method calculate crossing
+		 * parameters and performs crossing.
+		 *
+		 * @param sched1 Pointer to the 1st schedule to cross.
+		 * @param sched2 Pointer to the 2nd schedule to croos.
+		 */
+		void cross (Rts2Schedule *parent1, Rts2Schedule *parent2);
 
 		/**
 		 * Select elite member of the population, delete non-elite members.
@@ -124,6 +136,8 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 	private:
 		// objectives which are used
 		objFunc objectives[3];
+		int objectivesSize;
+
 
 		// vector of NSGA fronts members
 		std::vector <std::vector <Rts2Schedule *> > NSGAfronts;
@@ -144,16 +158,25 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		void calculateNSGARanks ();
 
-		/**
-		 * Pick members on front based on the crowding distance
-		 * calculation.  Calculates crowding distance of each member in
-		 * the set and pick n members with largest crowding distance
-		 * value.
+		/** 
+		 * Calculates crowding distance of each member in
+		 * the set and sort NSGAfronts by crowding distance.
 		 *
 		 * @param f Front index (0..number of pareto fronts - 1)
-		 * @param n Number of members which will be selected.
 		 */
-		void pickNSGACrowdingDistance (unsigned int f, unsigned int n);
+		void calculateNSGACrowdingDistance (unsigned int f);
+
+
+		/**
+		 * Binary tournament selection for NSGA-II. This function uses
+		 * rank and crowding distance to select better schedule.
+		 *
+		 * @param sched1  First schedule to compare.
+		 * @param sched2  Second schedule to compare.
+		 *
+		 * @return Better schedule.
+		 */
+		Rts2Schedule *tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2);
 	
 	public:
 		/** 

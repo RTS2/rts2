@@ -34,11 +34,8 @@ Rts2SchedBag::mutate (Rts2Schedule * sched)
 
 
 void
-Rts2SchedBag::cross (int sched1, int sched2)
+Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
 {
-	Rts2Schedule *parent1 = (*this)[sched1];
-	Rts2Schedule *parent2 = (*this)[sched2];
-
 	// select crossing point
 	int crossPoint = randomNumber (1, parent1->size() - 1);
 
@@ -99,7 +96,11 @@ Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2
 
 	std::sort (_begin, _end, objectiveFunctionSort (SINGLE));
 
-	// remove last n members..
+	// delete last members
+	for (Rts2SchedBag::iterator iter = _end - _size; iter != _end;)
+		delete (*iter);
+
+	// remove deleted members..
 	erase (_end - _size, _end);
 }
 
@@ -115,7 +116,7 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	ticketSet = new rts2sched::TicketSet ();
 
 	mutationNum = -1;
-	popSize = -1;
+	popSize = 0;
 
 	eliteSize = 0;
 
@@ -123,6 +124,8 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	objectives[0] = ALTITUDE;
 	objectives[1] = ACCOUNT;
 	objectives[2] = DISTANCE;
+
+	objectivesSize = 3;
 }
 
 
@@ -191,16 +194,16 @@ Rts2SchedBag::doGAStep ()
 {
 	Rts2SchedBag::iterator iter;
 
+	// only the best..
+	pickElite (popSize / 2);
+
 	// random generation based on fittness
 	double sumFitness = 0;
 	for (iter = begin (); iter != end (); iter++)
 		sumFitness += (*iter)->singleOptimum ();
 
-	// only the best..
-	pickElite (popSize / 2);
-
 	// have some sex..
-	while ((int) size () < popSize * 2)
+	while (size () < popSize * 2)
 	{
 	  	// select comulative indices..
 		double rnum1 = sumFitness * random () / RAND_MAX;
@@ -253,13 +256,13 @@ Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 {
 	bool dom1 = false;
 	bool dom2 = false;
-	for (unsigned int i = 0; i < sizeof (objectives); i++)
+	for (int i = 0; i < objectivesSize; i++)
 	{
 		double obj1 = sched1->getObjectiveFunction (objectives[i]);
 		double obj2 = sched2->getObjectiveFunction (objectives[i]);
-		if (obj1 < obj2)
+		if (obj1 > obj2)
 			dom1 = true;
-		else if (obj1 < obj2)
+		else if (obj2 > obj1)
 		  	dom2 = true;
 	}
 	if (dom1 && !dom2)
@@ -281,6 +284,8 @@ Rts2SchedBag::calculateNSGARanks ()
 
 	NSGAfronts.clear ();
 
+	NSGAfronts.push_back (std::vector <Rts2Schedule *> ());
+
 	for (unsigned int p = 0; p < size (); p++)
 	{
 		domStruct[p].dominated = 0;
@@ -299,7 +304,7 @@ Rts2SchedBag::calculateNSGARanks ()
 		}
 		if (domStruct[p].dominated == 0)
 		{
-			sched_p->setNSGARank (1);
+			sched_p->setNSGARank (0);
 			fronts[0].push_back (p);
 			NSGAfronts[0].push_back (sched_p);
 		}
@@ -307,7 +312,7 @@ Rts2SchedBag::calculateNSGARanks ()
 	int i = 0;
 	while (fronts[i].size () > 0)
 	{
-		i++;
+		NSGAfronts.push_back (std::vector <Rts2Schedule *> ());
 		for (std::list <int>::iterator p = fronts[i].begin (); p != fronts[i].end (); p++)
 		{
 			for (std::list <int>::iterator q = domStruct[*p].dominates.begin (); q != domStruct[*p].dominates.end (); q++)
@@ -318,10 +323,11 @@ Rts2SchedBag::calculateNSGARanks ()
 				 	Rts2Schedule *sched_q = (*this)[*q];
 					sched_q->setNSGARank (i + 1);
 					fronts[i + 1].push_back (*q);
-					NSGAfronts[i].push_back (sched_q);
+					NSGAfronts[i + 1].push_back (sched_q);
 				}
 			}
 		}
+		i++;
 	}
 }
 
@@ -336,7 +342,7 @@ struct crowdingComp {
 
 
 void
-Rts2SchedBag::pickNSGACrowdingDistance (unsigned int f, unsigned int n)
+Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 {
 	std::vector <Rts2Schedule *>::iterator iter;
 
@@ -352,7 +358,7 @@ Rts2SchedBag::pickNSGACrowdingDistance (unsigned int f, unsigned int n)
 	for (iter = NSGAfronts[f].begin (); iter != NSGAfronts[f].end (); iter++)
 		(*iter)->setNSGADistance (0);
 
-	for (unsigned int o = 0; o < sizeof (objectives); o++)
+	for (int o = 0; o < objectivesSize; o++)
 	{
 		// sort front by objective i
 		objFunc objective = objectives[o];
@@ -379,14 +385,107 @@ Rts2SchedBag::pickNSGACrowdingDistance (unsigned int f, unsigned int n)
 			f_2 = f_3;
 		}
 	}
+}
 
-	// sort based on crowding distance
-	std::sort (NSGAfronts[f].begin (), NSGAfronts[f].end (), crowdingComp ());
+
+Rts2Schedule *
+Rts2SchedBag::tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
+{
+	if (sched1->getNSGARank () < sched2->getNSGARank ())
+		return sched1;
+	if (sched1->getNSGADistance () > sched2->getNSGADistance ())
+	  	return sched1;
+	return (randomNumber (0, 100) > 50) ? sched1 : sched2;
 }
 
 
 void
 Rts2SchedBag::doNSGAIIStep ()
 {
+	// we hold pointers to both parent and child population used/produced by previous step
 	calculateNSGARanks ();
+	// pick n members as parents of new population
+	Rts2Schedule *new_pop[popSize];
+	unsigned int n = 0;
+	unsigned int f;
+	unsigned int i;
+	for (f = 0; f < NSGAfronts.size (); f++)
+	{
+		calculateNSGACrowdingDistance (f);
+		if (NSGAfronts[f].size () < (popSize - n))
+		{
+			// copy schedules..
+			std::vector <Rts2Schedule *>::iterator iter;
+			for (iter = NSGAfronts[f].begin (); iter != NSGAfronts[f].end(); iter++, n++)
+				new_pop[n] = (*iter);
+			
+			NSGAfronts[f].clear ();
+		}
+		else
+		{
+			// sort based on crowding distance
+			std::sort (NSGAfronts[f].begin (), NSGAfronts[f].end (), crowdingComp ());
+			// copy missing entries..
+			std::vector <Rts2Schedule *>::iterator iter = NSGAfronts[f].begin ();
+			for (i = 0; n < popSize; i++, n++)
+			{
+				new_pop[n] = (*iter);
+				iter = NSGAfronts[f].erase (iter);
+			}
+			// delete rest of NSGAfronts..
+			while (iter != NSGAfronts[f].end ())
+			{
+				delete (*iter);
+				iter = NSGAfronts[f].erase (iter);
+			}
+			while (f < NSGAfronts.size ())
+			{
+				iter = NSGAfronts[f].begin ();
+				while (iter != NSGAfronts[f].end ())
+				{
+					delete (*iter);
+					iter = NSGAfronts[f].erase (iter);
+				}
+				f++;
+			}
+		}
+	}
+	
+	// erase current population - its pointer are either in new_pop or deleted..
+	clear ();
+
+	// put to bag remaining schedules..
+	for (i = 0; i < popSize; i++)
+		push_back (new_pop[i]);
+
+	// now new_pop holds members of new population ready for binary tournament..
+	// we need to calculate indices of population for tournament
+	unsigned int a1[popSize], a2[popSize];
+	for (i = 0; i < popSize; i++)
+		a1[i] = a2[i] = i;
+
+	for (i = 0; i < popSize; i++)
+	{
+		unsigned int rand = randomNumber (i, popSize - 1);
+		unsigned int temp = a1[rand];
+		a1[rand] = a1[i];
+		a1[i] = temp;
+
+		rand = randomNumber (i, popSize - 1);
+		temp = a2[rand];
+		a2[rand] = a2[i];
+		a2[i] = temp;
+	}
+
+	// do tournament
+	for (i = 0; i < popSize; i+=4)
+	{
+		Rts2Schedule *parent1 = tournamentNSGA (new_pop[a1[i]], new_pop[a1[i+1]]);
+		Rts2Schedule *parent2 = tournamentNSGA (new_pop[a1[i+2]], new_pop[a1[i+3]]);
+		cross (parent1, parent2);
+
+		parent1 = tournamentNSGA (new_pop[a2[i]], new_pop[a2[i+1]]);
+		parent2 = tournamentNSGA (new_pop[a2[i+2]], new_pop[a2[i+3]]);
+		cross (parent1, parent2);
+	}
 }

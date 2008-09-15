@@ -21,9 +21,9 @@
 
 #include <stdlib.h>
 
-int
-randomNumber (int _min, int _max)
+unsigned int
+randomNumber (unsigned int _min, unsigned int _max)
 {
-	return (int) (_min + (_max - _min) * (double) random () / RAND_MAX);	
+	return (unsigned int) (_min + (_max - _min) * (double) random () / RAND_MAX);	
 }
 

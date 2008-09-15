@@ -26,6 +26,6 @@
  * @param _min Range start
  * @param _max Range end
  */
-int randomNumber (int _min, int _max);
+unsigned int randomNumber (unsigned int _min, unsigned int _max);
 
 #endif // ! __RTS2_SCHED_UTILS__

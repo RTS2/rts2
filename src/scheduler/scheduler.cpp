@@ -35,6 +35,12 @@ class Rts2ScheduleApp: public Rts2AppDb
 
 		// verbosity level
 		int verbose;
+		
+		// number of populations
+		int generations;
+
+		// used algorithm
+		enum {SGA, NSGAII} algorithm;
 
 		/**
 		 * Print merit of given type.
@@ -121,6 +127,24 @@ Rts2ScheduleApp::processOption (int _opt)
 		case 'v':
 			verbose++;
 			break;
+		case 'g':
+			generations = atoi (optarg);
+			break;
+		case 'a':
+			if (!strcasecmp (optarg, "SGA"))
+			{
+				algorithm = SGA;
+			}
+			else if (!strcasecmp (optarg, "NSGAII"))
+			{
+			  	algorithm = NSGAII;
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "Unknow algorithm: " << optarg << sendLog;
+			  	return -1;
+			}
+			break;
 		default:
 			return Rts2AppDb::processOption (_opt);
 	}
@@ -156,8 +180,12 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 {
 	schedBag = NULL;
 	verbose = 0;
+	generations = 1500;
+	algorithm = SGA;
 
 	addOption ('v', NULL, 0, "verbosity level");
+	addOption ('g', NULL, 0, "number of generations");
+	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported)");
 }
 
 
@@ -173,10 +201,19 @@ Rts2ScheduleApp::doProcessing ()
 	if (verbose)
 	  	printMerits ();
 
-	for (int i = 1; i <= 1500; i++)
+	for (int i = 1; i <= generations; i++)
 	{
-		schedBag->doGAStep ();
+		switch (algorithm)
+		{
+			case SGA:
+				schedBag->doGAStep ();
+				break;
+			case NSGAII:
+				schedBag->doNSGAIIStep ();
+				break;
+		}
 
+		// collect and print statistics..
 		double _min, _avg, _max;
 		schedBag->getStatistics (_min, _avg, _max);
 
