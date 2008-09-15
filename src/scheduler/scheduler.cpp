@@ -35,9 +35,12 @@ class Rts2ScheduleApp: public Rts2AppDb
 
 		// verbosity level
 		int verbose;
-		
+
 		// number of populations
 		int generations;
+
+		// population size
+		int popSize;
 
 		// used algorithm
 		enum {SGA, NSGAII} algorithm;
@@ -51,6 +54,11 @@ class Rts2ScheduleApp: public Rts2AppDb
 		 * @see objFunc
 		 */
 		void printMerits (objFunc _type, const char *name);
+
+		/**
+		 * Prints objective functions of NSGAII.
+		 */
+		void printNSGAMerits ();
 
 		/**
 		 * Prints all merits statistics of schedule set.
@@ -92,13 +100,36 @@ Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
 }
 
 void
+Rts2ScheduleApp::printNSGAMerits ()
+{
+	Rts2SchedBag::iterator iter;
+	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
+	{
+		std::cout << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ALTITUDE) <<
+			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ACCOUNT) <<
+			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (DISTANCE) <<
+			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (VISIBILITY) 
+			<< std::endl; 
+	}
+}
+
+
+void
 Rts2ScheduleApp::printMerits ()
 {
-	printMerits (VISIBILITY, "visibility");
-	printMerits (ALTITUDE, "altitude");
-	printMerits (ACCOUNT, "account");
-	printMerits (DISTANCE, "distance");
-	printMerits (SINGLE, "single (main)");
+	switch (algorithm)
+	{
+		case SGA:
+			printMerits (VISIBILITY, "visibility");
+			printMerits (ALTITUDE, "altitude");
+			printMerits (ACCOUNT, "account");
+			printMerits (DISTANCE, "distance");
+			printMerits (SINGLE, "single (main)");
+			break;
+		case NSGAII:
+			printNSGAMerits ();
+			break;
+	}
 }
 
 
@@ -113,7 +144,7 @@ void
 Rts2ScheduleApp::help ()
 {
 	std::cout << "Create schedule for given night. The programme uses genetic algorithm scheduling, described at \
-http://rts-2.sf.net/scheduling.pdf." << std::endl
+http://rts2.org/scheduling.pdf." << std::endl
 		<< "You are free to experiment with various settings to create optimal observing schedule" << std::endl;
 	Rts2AppDb::help ();
 }
@@ -130,6 +161,14 @@ Rts2ScheduleApp::processOption (int _opt)
 		case 'g':
 			generations = atoi (optarg);
 			break;
+		case 'p':
+			popSize = atoi (optarg);
+			if (popSize <= 0)
+			{
+				logStream (MESSAGE_ERROR) << "Population size must be positive number " << optarg << sendLog;
+				return -1;
+			}
+			break;		
 		case 'a':
 			if (!strcasecmp (optarg, "SGA"))
 			{
@@ -168,7 +207,7 @@ Rts2ScheduleApp::init ()
 	// create list of schedules..
 	schedBag = new Rts2SchedBag (jd, jd + 0.5);
 
-	ret = schedBag->constructSchedules (20);
+	ret = schedBag->constructSchedules (popSize);
 	if (ret)
 		return ret;
 
@@ -181,10 +220,12 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	schedBag = NULL;
 	verbose = 0;
 	generations = 1500;
+	popSize = 100;
 	algorithm = SGA;
 
 	addOption ('v', NULL, 0, "verbosity level");
-	addOption ('g', NULL, 0, "number of generations");
+	addOption ('g', NULL, 1, "number of generations");
+	addOption ('p', NULL, 1, "population size");
 	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported)");
 }
 
