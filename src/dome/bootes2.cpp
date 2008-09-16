@@ -243,6 +243,9 @@ Bootes2::updateStatus ()
 		raining->setValueBool (false);
 	}
 
+	logStream (MESSAGE_DEBUG) << "sw_state " << std::hex << sw_state->getValueInteger () <<
+		" raining " << raining->getValueBool () << sendLog;
+
 	setSwState (sw_val);
 
 	return 0;
