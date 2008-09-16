@@ -44,3 +44,15 @@ rts2_dome_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 else
 EXTRA_DIST += ir.cpp
 endif
+
+
+if COMEDI
+bin_PROGRAMS += rts2-dome-bootes2
+
+rts2_dome_bootes2_SOURCES = bootes2.cpp
+rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
+
+else
+EXTRA_DIST += bootes2.cpp
+endif
