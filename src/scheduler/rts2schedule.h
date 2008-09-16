@@ -58,6 +58,17 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		// following variables are lazy initialized
 		double visRatio;
 		double altMerit;
+		double accMerit;
+		double distMerit;
+
+		// sets lazy merits to nan
+		void nanLazyMerits ()
+		{
+			visRatio = nan ("f");
+			altMerit = nan ("f");
+			accMerit = nan ("f");
+			distMerit = nan ("f");
+		}
 	public:
 		/**
 		 * Create empty schedule.

@@ -24,7 +24,7 @@
 void
 Rts2SchedBag::mutate (Rts2Schedule * sched)
 {
-	int gen = randomNumber (0, sched->size ());
+	int gen = randomNumber (0, sched->size () - 1);
 
 	double JD = (*sched)[gen]->getJDStart ();
 
@@ -162,9 +162,11 @@ Rts2SchedBag::constructSchedules (int num)
 		push_back (sched);
 	}
 
-	mutationNum = 2;
-
 	popSize = size ();
+
+	mutationNum = popSize / 2;
+
+	reserve (popSize * 2);
 
 	return 0;
 }
@@ -246,7 +248,7 @@ Rts2SchedBag::doGAStep ()
 
 	for (int i = 0; i < rMax; i++)
 	{
-		mutate ((*this)[randomNumber (0, size ())]);
+		mutate ((*this)[randomNumber (0, size () - 1)]);
 	}
 }
 
@@ -379,8 +381,9 @@ Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 
 		for (iter = NSGAfronts[f].begin () + 1; iter != (NSGAfronts[f].end () - 1); iter++)
 		{
-			f_3 = (*(iter + 1))->getObjectiveFunction (objective); 
-			(*iter)->incNSGADistance ((f_1 - f_3) / (f_max - f_min));
+			f_3 = (*(iter + 1))->getObjectiveFunction (objective);
+			if (isfinite ((*iter)->getNSGADistance ()))
+				(*iter)->incNSGADistance ((f_1 - f_3) / (f_max - f_min));
 			f_1 = f_2;
 			f_2 = f_3;
 		}
@@ -453,6 +456,7 @@ Rts2SchedBag::doNSGAIIStep ()
 	
 	// erase current population - its pointer are either in new_pop or deleted..
 	clear ();
+	reserve (popSize * 2);
 
 	// put to bag remaining schedules..
 	for (i = 0; i < popSize; i++)
@@ -487,5 +491,10 @@ Rts2SchedBag::doNSGAIIStep ()
 		parent1 = tournamentNSGA (new_pop[a2[i]], new_pop[a2[i+1]]);
 		parent2 = tournamentNSGA (new_pop[a2[i+2]], new_pop[a2[i+3]]);
 		cross (parent1, parent2);
+	}
+
+	for (int m = 0; m < mutationNum; m++)
+	{
+		mutate ((*this)[randomNumber (popSize, popSize * 2 - 1)]);
 	}
 }

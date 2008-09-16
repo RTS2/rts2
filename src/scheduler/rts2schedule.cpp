@@ -32,8 +32,7 @@ std::vector <Rts2SchedObs*> ()
 
 	ticketSet = NULL;
 
-	visRatio = nan ("f");
-	altMerit = nan ("f");
+	nanLazyMerits ();
 }
 
 
@@ -46,8 +45,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 
 	ticketSet = sched1->ticketSet;
 
-	visRatio = nan ("f");
-	altMerit = nan ("f");
+	nanLazyMerits ();
 
 	unsigned int i;
 	Rts2SchedObs *parent;
@@ -92,8 +90,7 @@ Rts2Schedule::randomTicket ()
 Rts2SchedObs *
 Rts2Schedule::randomSchedObs (double JD)
 {
-	visRatio = nan ("f");
-	altMerit = nan ("f");
+	nanLazyMerits ();
 	return new Rts2SchedObs (randomTicket (), JD, 1);
 }
 
@@ -148,6 +145,9 @@ Rts2Schedule::altitudeMerit ()
 double
 Rts2Schedule::accountMerit ()
 {
+	if (!isnan (accMerit))
+		return accMerit;
+
 	AccountSet *accountset = AccountSet::instance ();
 
 	// map for storing calculated account time by account ids
@@ -169,42 +169,56 @@ Rts2Schedule::accountMerit ()
 	}
 
 	// deviances and sum them
-	double ret = 0;
+	accMerit = 0;
 
 	for (AccountSet::iterator iter = accountset->begin (); iter != accountset->end (); iter++)
 	{
 		double sh = (*iter).second->getShare () / accountset->getShareSum ();
-		ret += fabs (observedShares[(*iter).first] / sumDur - sh) / sh;
+		accMerit += fabs (observedShares[(*iter).first] / sumDur - sh) * sh;
 	}
 
-	return (double) 1.0 / ret;
+	accMerit = (double) 1.0 / accMerit;
+
+	return accMerit;
 }
 
 
 double
 Rts2Schedule::distanceMerit ()
 {
+	if (!isnan (distMerit))
+		return distMerit;
+
 	if (size () <= 1)
-		return 1;
+	{
+		distMerit = 1;
+		return distMerit;
+	}
 
 	// schedule iterators for two targets..
 	Rts2Schedule::iterator iter1 = begin ();
 	Rts2Schedule::iterator iter2 = begin () + 1;
 
-	double distance = 0;
+	distMerit = 0;
 
 	for ( ; iter2 != end (); iter1++, iter2++)
 	{
 		struct ln_equ_posn pos1, pos2;
 		(*iter1)->getEndPosition (pos1);
 		(*iter2)->getStartPosition (pos2);
-		distance += ln_get_angular_separation (&pos1, &pos2);
+		distMerit += ln_get_angular_separation (&pos1, &pos2);
 	}
-	distance /= size ();
-	if (distance == 0)
-		return 1;
+	distMerit /= size ();
+	if (distMerit == 0)
+	{
+		distMerit = 20000;
+	}
+	else
+	{
+		distMerit = 1.0 / distMerit;
+	}
 	
-	return 1.0 / distance;
+	return distMerit;
 }
 
 
