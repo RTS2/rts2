@@ -23,7 +23,18 @@
 #include <comedilib.h>
 
 // top read all informations from temperature sensor
-#define LIFOSIZE	60
+#define LIFOSIZE          60
+
+#define RAIN_TIMEOUT    3600
+
+#define ROOF_PULSE	100000
+#define ROOF_TIMEOUT	5000000
+
+
+#define DOME_O1         0x01
+#define DOME_O2         0x02
+#define DOME_C1         0x04
+#define DOME_C2         0x08
 
 namespace rts2dome
 {
@@ -45,17 +56,7 @@ class Bootes2: public Rts2DevDome
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
 
-		// comedi status
-		// abrierta 1 - open 1
-		int A1;
-		// open 2
-		int A2;
-		// cerrada 1 - close 1
-		int C1;
-		// close 2
-		int C2;
-		int RAIN1;
-		int RAIN2;
+		Rts2ValueBool *raining;
 
 		/**
 		 * Returns volts from the device.
@@ -82,10 +83,34 @@ class Bootes2: public Rts2DevDome
 		 */
 		int updateHumidity ();
 
+		/**
+		 * Update status of end sensors.
+		 *
+		 * @return -1 on failure, 0 on success.
+		 */
+		int updateStatus ();
+
+		/**
+		 * Pull on roof trigger.
+		 *
+		 * @return -1 on failure, 0 on success.
+		 */
+		int roofChange ();
+
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
 		virtual int info ();
+
+		virtual int idle ();
+
+		virtual int openDome ();
+		virtual long isOpened ();
+
+		virtual int closeDome ();
+		virtual long isClosed ();
+
+		virtual int isGoodWeather ();
 
 	public:
 		Bootes2 (int argc, char **argv);
@@ -156,6 +181,96 @@ Bootes2::updateTemperature ()
 		return -1;
 	temp = (temp - 0.4) * 100;
 	tempMeas->addValue (temp, LIFOSIZE);
+	return 0;
+}
+
+
+int
+Bootes2::updateStatus ()
+{
+	int ret;
+	unsigned int value;
+	int sw_val = 0;
+	ret = comedi_dio_read (comediDevice, 3, 0, &value);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read first open end switch (subdev 3, channel 0)" << sendLog;
+		return -1;
+	}
+	if (value)
+		sw_val |= DOME_O1;
+
+	ret = comedi_dio_read (comediDevice, 3, 1, &value);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read second open end switch (subdev 3, channel 1)" << sendLog;
+		return -1;
+	}
+	if (value)
+	  	sw_val |= DOME_O2;
+
+	ret = comedi_dio_read (comediDevice, 3, 2, &value);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read first close end switch (subdev 3, channel 2)" << sendLog;
+		return -1;
+	}
+	if (value)
+	  	sw_val |= DOME_C1;
+
+	ret = comedi_dio_read (comediDevice, 3, 3, &value);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read second close end switch (subdev 3, channel 3)" << sendLog;
+		return -1;
+	}
+	if (value)
+	  	sw_val |= DOME_C2;
+
+	ret = comedi_dio_read (comediDevice, 3, 5, &value);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
+		return -1;
+	}
+	if (value)
+	{
+		setWeatherTimeout (RAIN_TIMEOUT);
+		raining->setValueBool (true);
+	}
+	else
+	{
+		raining->setValueBool (false);
+	}
+
+	setSwState (sw_val);
+
+	return 0;
+}
+
+
+int
+Bootes2::roofChange ()
+{
+	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set roof to off" << sendLog;
+		return -1;
+	}
+	usleep (ROOF_PULSE);
+	if (comedi_dio_write (comediDevice, 2, 0, 1) != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to on" << sendLog;
+		return -1;
+	}
+	usleep (ROOF_PULSE);
+	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
+		return 0;
+	}
+
+	usleep (ROOF_TIMEOUT);
 	return 0;
 }
 
@@ -237,12 +352,119 @@ Bootes2::info ()
 }
 
 
+int
+Bootes2::idle ()
+{
+	// check for weather..
+	if (isGoodWeather ())
+	{
+		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
+		{
+			// after centrald reply, that he switched the state, dome will
+			// open
+			domeWeatherGood ();
+		}
+	}
+	else
+	{
+		int ret;
+		// close dome - don't trust centrald to be running and closing
+		// it for us
+		ret = closeDomeWeather ();
+		if (ret == -1)
+		{
+			setTimeout (10 * USEC_SEC);
+		}
+	}
+	return Rts2DevDome::idle ();
+}
+
+
+int
+Bootes2::openDome ()
+{
+	int ret;
+	if (!isGoodWeather ())
+		return -1;
+
+	ret = updateStatus ();
+	if (ret)
+	 	return -1;
+	// only open if we are closed
+	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
+		return 0;
+	
+	return roofChange ();
+}
+
+
+long
+Bootes2::isOpened ()
+{
+	int ret;
+	ret = updateStatus ();
+	if (ret)
+		return -1;
+	if (sw_state->getValueInteger () != (DOME_O1 | DOME_O2))
+		return USEC_SEC;
+	return -2;
+}
+
+
+int
+Bootes2::closeDome ()
+{
+	int ret;
+	ret = updateStatus ();
+	if (ret)
+		return -1;
+	
+	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
+		return -1;
+	
+	return roofChange ();
+}
+
+
+long
+Bootes2::isClosed ()
+{
+	int ret;
+	ret = updateStatus ();
+	if (ret)
+		return -1;
+	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
+		return USEC_SEC;
+	return -2;
+}
+
+
+int
+Bootes2::isGoodWeather ()
+{
+	if (getIgnoreMeteo () == true)
+		return 1;
+	int ret;
+	ret = updateStatus ();
+	if (ret)
+		return 0;
+	// if it's raining
+	if (raining->getValueBool () == true)
+		return 0;
+	return 1;
+}
+
+
 Bootes2::Bootes2 (int argc, char **argv): Rts2DevDome (argc, argv)
 {
 	comediFile = "/dev/comedi0";
 
-	createValue (tempMeas, "TEMP", "outside temperature");
-	createValue (humiMeas, "HUMIDITY", "outside humidity");
+	createValue (tempMeas, "TEMP", "outside temperature", true);
+	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
+
+	createValue (raining, "RAIN", "if it's raining", true);
+	raining->setValueBool (false);
 
 	addOption ('c', NULL, 1, "path to comedi device");
 }
