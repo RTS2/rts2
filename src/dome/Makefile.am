@@ -1,5 +1,3 @@
-# $Id$
-
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-dcm rts2-dome-dublin \
 	rts2-cupola-mark rts2-cupola-dummy rts2-weathertimeout \
 	rts2-dome-bootes1

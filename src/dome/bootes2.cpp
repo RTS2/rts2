@@ -192,25 +192,7 @@ Bootes2::updateStatus ()
 	unsigned int value;
 	int sw_val = 0;
 	ret = comedi_dio_read (comediDevice, 3, 0, &value);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read first open end switch (subdev 3, channel 0)" << sendLog;
-		return -1;
-	}
-	if (value)
-		sw_val |= DOME_O1;
-
-	ret = comedi_dio_read (comediDevice, 3, 1, &value);
-	if (ret)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read second open end switch (subdev 3, channel 1)" << sendLog;
-		return -1;
-	}
-	if (value)
-	  	sw_val |= DOME_O2;
-
-	ret = comedi_dio_read (comediDevice, 3, 2, &value);
-	if (ret)
+	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read first close end switch (subdev 3, channel 2)" << sendLog;
 		return -1;
@@ -218,8 +200,8 @@ Bootes2::updateStatus ()
 	if (value)
 	  	sw_val |= DOME_C1;
 
-	ret = comedi_dio_read (comediDevice, 3, 3, &value);
-	if (ret)
+	ret = comedi_dio_read (comediDevice, 3, 1, &value);
+	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read second close end switch (subdev 3, channel 3)" << sendLog;
 		return -1;
@@ -227,13 +209,31 @@ Bootes2::updateStatus ()
 	if (value)
 	  	sw_val |= DOME_C2;
 
+	ret = comedi_dio_read (comediDevice, 3, 2, &value);
+	if (ret != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read first open end switch (subdev 3, channel 0)" << sendLog;
+		return -1;
+	}
+	if (value)
+		sw_val |= DOME_O1;
+
+	ret = comedi_dio_read (comediDevice, 3, 3, &value);
+	if (ret != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read second open end switch (subdev 3, channel 1)" << sendLog;
+		return -1;
+	}
+	if (value)
+	  	sw_val |= DOME_O2;
+
 	ret = comedi_dio_read (comediDevice, 3, 5, &value);
-	if (ret)
+	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
 		return -1;
 	}
-	if (value)
+	if (value == 0)
 	{
 		setWeatherTimeout (RAIN_TIMEOUT);
 		raining->setValueBool (true);
@@ -423,7 +423,7 @@ Bootes2::closeDome ()
 	if (ret)
 		return -1;
 	
-	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
+	if (sw_state->getValueInteger () == (DOME_C1 | DOME_C2))
 		return -1;
 	
 	return roofChange ();
@@ -448,6 +448,9 @@ Bootes2::isGoodWeather ()
 {
 	if (getIgnoreMeteo () == true)
 		return 1;
+	time_t now = time (NULL);
+	if (now > getNextOpen ())
+		return 0;
 	int ret;
 	ret = updateStatus ();
 	if (ret)
