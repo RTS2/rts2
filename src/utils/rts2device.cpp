@@ -948,8 +948,6 @@ Rts2Device::init ()
 		addCentraldConnection (conn_master);
 	}
 
-	idle ();
-
 	return 0;
 }
 
