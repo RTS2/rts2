@@ -350,6 +350,19 @@ Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
+	ret = updateStatus ();
+	if (ret)
+		return -1;
+
+	if (sw_state->getValueInteger () == (DOME_C1 | DOME_C2))
+		setState (DOME_CLOSED, "Dome is closed");
+	else if (sw_state->getValueInteger () == (DOME_O1 | DOME_O2))
+	  	setState (DOME_OPENED, "Dome is opened");
+	// dome should be closed, but it is not closed - report error
+	else if (sw_state->getValueInteger () & (DOME_O1 | DOME_O2))
+	{
+		setState (DOME_UNKNOW, "strange dome state");
+	}
 
 	return Rts2DevDome::info ();
 }
