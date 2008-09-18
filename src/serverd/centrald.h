@@ -70,6 +70,8 @@ class Rts2Centrald:public Rts2Daemon
 		Rts2ValueBool *morning_off;
 		Rts2ValueBool *morning_standby;
 
+		Rts2ValueStringArray *requiredDevices;
+
 		char *configFile;
 		std::string logFile;
 		// which sets logfile
@@ -170,10 +172,21 @@ class Rts2Centrald:public Rts2Daemon
 		 *
 		 * @param user Name of user who initiated state change.
 		 */
-		int changeStateOff (const char *user)
+		int changeStateHardOff (const char *user)
 		{
-			return changeState (SERVERD_OFF, user);
+			return changeState (SERVERD_HARD_OFF, user);
 		}
+
+		/**
+		 * Change state tp soft off.
+		 *
+		 * @param user Name of the user who initiated state change.
+		 */
+		int changeStateSoftOff (const char *user)
+		{
+			return changeState (SERVERD_SOFT_OFF, user);
+		}
+
 		inline int getPriorityClient ()
 		{
 			return priority_client;

@@ -421,7 +421,7 @@ int
 rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
 {
 	int state = soapd->getMasterState ();
-	if (state == SERVERD_OFF)
+	if (state == SERVERD_SOFT_OFF || state == SERVERD_HARD_OFF)
 	{
 		res.system = rts2__system__OFF;
 		res.daytime = rts2__daytime__DAY;

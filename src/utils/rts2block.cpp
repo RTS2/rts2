@@ -44,7 +44,7 @@ Rts2App (in_argc, in_argv)
 
 	signal (SIGPIPE, SIG_IGN);
 
-	masterState = SERVERD_OFF;
+	masterState = SERVERD_HARD_OFF;
 	// allocate ports dynamically
 	port = 0;
 }

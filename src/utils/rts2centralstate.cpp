@@ -48,9 +48,14 @@ Rts2CentralState::getStringShort ()
 std::string Rts2CentralState::getString ()
 {
 	std::ostringstream os;
-	if ((getValue () & SERVERD_STATUS_MASK) == SERVERD_OFF)
+	if ((getValue () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 	{
-		os << "OFF";
+		os << "HARD OFF";
+		return os.str ();
+        }
+	if ((getValue () & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+	{
+		os << "SOFT OFF";
 		return os.str ();
 	}
 	if ((getValue () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)

@@ -90,13 +90,22 @@
       keeps system running. It provides name services (list of connected
       devices and their location) and act as synchronization agent (synchronize
       requests for states with actual device state). It also govern system
-      states between <emphasis>on</emphasis>, <emphasis>standby</emphasis> and
-      <emphasis>off</emphasis> and various day-night states:
+      states between <emphasis>on</emphasis>, <emphasis>standby</emphasis>,
+      <emphasis>soft off</emphasis>, <emphasis>hard off</emphasis> and various day-night states:
       <emphasis>day</emphasis>, <emphasis>evening</emphasis>,
       <emphasis>dusk</emphasis>, <emphasis>night</emphasis>,
       <emphasis>dawn</emphasis> and <emphasis>morning</emphasis>.
     </para>
 
+  </refsect1>
+  <refsect1 id="description_states">
+    <title>RTS2 master states</title>
+
+    <para>
+       This paragraph gives description of RTS2 master states. This state
+       play an important role in whole system, as it governs which acctions
+       can be performed and which must be blocked.
+    </para>
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>

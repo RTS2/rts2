@@ -263,7 +263,11 @@ Rts2ConnCentrald::commandDevice ()
 	}
 	if (isCommand ("off"))
 	{
-		return master->changeStateOff (getName ());
+		return master->changeStateHardOff (getName ());
+	}
+	if (isCommand ("soft_off"))
+	{
+		return master->changeStateSoftOff (getName ());
 	}
 	return Rts2Conn::command ();
 }
@@ -350,7 +354,11 @@ Rts2ConnCentrald::commandClient ()
 		}
 		if (isCommand ("off"))
 		{
-			return master->changeStateOff (login);
+			return master->changeStateHardOff (login);
+		}
+		if (isCommand ("hard_off"))
+		{
+			return master->changeStateSoftOff (login);
 		}
 	}
 	return Rts2Conn::command ();
@@ -454,7 +462,7 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 {
 	connNum = 0;
 
-	setState (SERVERD_OFF, "Initial configuration");
+	setState (SERVERD_HARD_OFF, "Initial configuration");
 
 	configFile = NULL;
 	logFileSource = LOGFILE_DEF;
@@ -464,6 +472,8 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 
 	createValue (morning_off, "morning_off", "switch to off at the morning", false);
 	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
+
+	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false);
 
 	createValue (priorityClient, "priority_client", "client which have priority", false);
 	createValue (priority, "priority", "current priority level", false);
@@ -546,6 +556,8 @@ Rts2Centrald::reloadConfig ()
 
 	observerLng->setValueDouble (observer->lng);
 	observerLat->setValueDouble (observer->lat);
+
+	requiredDevices->setValueArray (config->observatoryRequiredDevices ());
 
 	double t_h;
 	config->getDouble ("observatory", "night_horizon", t_h, -10);
@@ -645,7 +657,7 @@ Rts2Centrald::initValues ()
 	}
 	else
 	{
-		setState (SERVERD_OFF, "switched on centrald reboot");
+		setState (SERVERD_HARD_OFF, "switched on centrald reboot");
 	}
 
 	nextStateChange->setValueTime (next_event_time);
@@ -789,7 +801,9 @@ Rts2Centrald::idle ()
 	int call_state;
 	int old_current_state;
 
-	if ((getState () & SERVERD_STATUS_MASK) == SERVERD_OFF)
+	if ((getState () & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
+		|| (getState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+
 		return Rts2Daemon::idle ();
 
 	curr_time = time (NULL);
@@ -812,7 +826,7 @@ Rts2Centrald::idle ()
 			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		{
 			if (morning_off->getValueBool ())
-				setState (SERVERD_OFF, "by idle routine");
+				setState (SERVERD_HARD_OFF, "by idle routine");
 			else if (morning_standby->getValueBool ())
 				setState (call_state | SERVERD_STANDBY, "by idle routine");
 			else

@@ -17,9 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2conn.h"
 #include "rts2block.h"
 #include "rts2centralstate.h"
 #include "rts2command.h"
+
+#include "rts2valuestat.h"
+#include "rts2valueminmax.h"
+#include "rts2valuerectangle.h"
+#include "rts2valuearray.h"
 
 #ifdef DEBUG_ALL
 #include <iostream>
@@ -1873,14 +1879,24 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 			new_value = new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_MMAX:
-			new_value =  new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			new_value =  new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			break;
+		case RTS2_VALUE_ARRAY:
+			switch (rts2Type & RTS2_BASE_TYPE)
+			{
+				case RTS2_VALUE_STRING:
+					new_value = new Rts2ValueStringArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "unsuported array type; " << rts2Type << sendLog;
+					break;
+			}
 			break;
 		default:
-			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type << sendLog;
 			return -2;
 	}
 	addValue (new_value);

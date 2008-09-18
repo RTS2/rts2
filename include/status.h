@@ -214,20 +214,23 @@
 #define FILTERD_IDLE        0x00
 #define FILTERD_MOVE        0x02
 
-#define SERVERD_DAY         0
-#define SERVERD_EVENING     1
-#define SERVERD_DUSK        2
-#define SERVERD_NIGHT       3
-#define SERVERD_DAWN        4
-#define SERVERD_MORNING     5
+#define SERVERD_DAY            0
+#define SERVERD_EVENING        1
+#define SERVERD_DUSK           2
+#define SERVERD_NIGHT          3
+#define SERVERD_DAWN           4
+#define SERVERD_MORNING        5
 
-#define SERVERD_OFF         11
-#define SERVERD_UNKNOW      12
+#define SERVERD_SOFT_OFF      11
+// set when it is a real off state blocking all domes
+#define SERVERD_HARD_OFF      12
 
-#define SERVERD_STATUS_MASK 0x0f
+#define SERVERD_UNKNOW        13
+
+#define SERVERD_STATUS_MASK   0x0f
 #define SERVERD_STANDBY_MASK  0x30
 
-#define SERVERD_STANDBY     0x10
+#define SERVERD_STANDBY       0x10
 
 // "executor" and related states..
 #define EXEC_STATE_MASK     0x0f
@@ -314,8 +317,5 @@
 #define DEVICE_TYPE_SCRIPTOR  26
 
 // and more to come..
-// #define DEVICE_TYPE_
 
-// default serverd port
-#define SERVERD_PORT        5557
 #endif							 /* __RTS__STATUS__ */

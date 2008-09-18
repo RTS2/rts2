@@ -289,7 +289,8 @@ Rts2SelectorDev::changeMasterState (int new_master_state)
 	{
 		case SERVERD_MORNING:
 		case SERVERD_MORNING | SERVERD_STANDBY:
-		case SERVERD_OFF:
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
 			selEnabled->setValueBool (true);
 			break;
 	}

@@ -42,9 +42,6 @@
 #include "rts2user.h"
 #include "rts2devclient.h"
 #include "rts2value.h"
-#include "rts2valuestat.h"
-#include "rts2valueminmax.h"
-#include "rts2valuerectangle.h"
 #include "rts2app.h"
 #include "rts2serverstate.h"
 

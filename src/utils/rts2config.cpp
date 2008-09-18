@@ -36,6 +36,8 @@ Rts2Config::getSpecialValues ()
 	obs_epoch_id = 1;
 	getInteger ("observatory", "epoch_id", obs_epoch_id);
 
+	getStringVector ("observatory", "required_devices", obs_requiredDevices);
+
 	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
 	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
 	getString ("observatory", "archive_path", obs_archive, "%b/archive/%t/%c/object/%f");

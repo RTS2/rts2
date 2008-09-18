@@ -262,8 +262,9 @@ Rts2DevDome::off ()
 int
 Rts2DevDome::setMasterStandby ()
 {
-	if ((getMasterState () != SERVERD_OFF && getMasterState () != SERVERD_UNKNOW)
-		&& ((getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY))
+	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
+	  	&& getMasterState () != SERVERD_UNKNOW
+		&& (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
 	{
 		return sendMasters ("standby");
 	}
@@ -274,8 +275,8 @@ Rts2DevDome::setMasterStandby ()
 int
 Rts2DevDome::setMasterOn ()
 {
-	if ((getMasterState () != SERVERD_OFF)
-		&& ((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY))
+	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
+		&& (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	{
 		return sendMasters ("on");
 	}
