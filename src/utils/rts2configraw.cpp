@@ -20,6 +20,7 @@
 #include <algorithm>
 
 #include "rts2configraw.h"
+#include "utilsfunc.h"
 #include "rts2app.h"
 
 #ifdef DEBUG_EXTRA
@@ -128,149 +129,147 @@ Rts2ConfigRaw::clearSections ()
 
 
 int
-Rts2ConfigRaw::parseConfigFile ()
+Rts2ConfigRaw::parseConfigFile (const char *filename)
 {
-	int ln = 1;
+	int ln = 0;
 	Rts2ConfigSection *sect = NULL;
 	std::string line;
 	while (!configStream->fail ())
 	{
-		char top;
-		*configStream >> top;
-		while (isspace (top))
-			*configStream >> top;
+		getline (*configStream, line);
+		ln++;
 		if (configStream->fail ())
 			break;
-		// ignore comments..
-		if (top == ';' || top == '#')
-		{
-			configStream->ignore (2000, '\n');
-			ln++;
+		std::string::iterator top = line.begin ();
+		while (isspace (*top) && top != line.end ())
+			top++;
+		// ignore blank lines and comments
+		if (top == line.end () || *top == ';' || *top == '#')
 			continue;
-		}
 		// start new section..
-		if (top == '[')
+		if (*top == '[')
 		{
-			getline (*configStream, line);
 			size_t el = line.find (']');
 			if (el == std::string::npos)
 			{
 				logStream (MESSAGE_ERROR) <<
 					"Cannot find end delimiter for section '" << line <<
-					"' on line " << ln << "." << sendLog;
+					"' on line " << ln << " infile " << filename << "." << sendLog;
 				return -1;
 			}
 			if (sect)
 				push_back (sect);
-			sect = new Rts2ConfigSection (line.substr (0, el).c_str ());
+			sect = new Rts2ConfigSection (line.substr (top - line.begin () + 1, el-1).c_str ());
 		}
 		else
 		{
 			if (!sect)
 			{
 				logStream (MESSAGE_ERROR) << "Value without section on line " <<
-					ln << " " << top << "." << sendLog;
+					ln << ": " << line <<  sendLog;
 				return -1;
 			}
-			configStream->unget ();
-			getline (*configStream, line);
 			// now create value..
-			enum
-			{ NAME, SUFF, VAL, VAL_QUT, VAL_END }
+			enum { NAME, SUFF, VAL, VAL_QUT, VAL_END }
 			pstate = NAME;
 			std::string valName;
 			std::string valSuffix;
 			std::string val;
-			size_t beg, es;
-			for (es = 0; es < line.length () && pstate != VAL_END; es++)
+			std::string::iterator es = top;
+			for (; es != line.end () && pstate != VAL_END; es++)
 			{
 				switch (pstate)
 				{
 					case NAME:
-						if (line[es] == '.')
+						if (*es == '.')
 						{
-							valName = line.substr (0, es);
+							valName = line.substr (top - line.begin (), es - top);
 							pstate = SUFF;
-							beg = es + 1;
+							top = es + 1;
 						}
-						else if (line[es] == '=' || isspace (line[es]))
+						else if (*es == '=' || isspace (*es))
 						{
 							pstate = VAL;
-							valName = line.substr (0, es);
-							while (line[es] != '=' && es < line.length ())
+							valName = line.substr (top - line.begin (), es - top);
+							while (*es != '=' && es != line.end ())
 								es++;
 							es++;
-							while (es < line.length () && isspace (line[es]))
+							while (es != line.end () && isspace (*es))
 								es++;
-							beg = es;
-							if (line[es] == '"')
+							if (*es == '"')
 							{
-								es++;
 								pstate = VAL_QUT;
-								beg = es;
+								top = es + 1;
+							}
+							else
+							{
+								top = es;
 							}
 						}
 						break;
 					case SUFF:
-						if (line[es] == '=' || isspace (line[es]))
+						if (*es == '=' || isspace (*es))
 						{
-							valSuffix = line.substr (beg, es - beg);
+							valSuffix = line.substr (top - line.begin (), es - top);
 							pstate = VAL;
-							while (line[es] != '=' && es < line.length ())
+							while (*es != '=' && es != line.end ())
 								es++;
 							es++;
-							while (es < line.length () && isspace (line[es]))
+							while (es != line.end () && isspace (*es))
 								es++;
-							beg = es;
-							if (line[es] == '"')
+							if (*es == '"')
 							{
-								es++;
 								pstate = VAL_QUT;
-								beg = es;
+								top = es + 1;
+							}
+							else
+							{
+								top = es;
 							}
 						}
 						break;
 					case VAL:
-						if (isspace (line[es]))
+						if (isspace (*es))
 						{
 							pstate = VAL_END;
-							val = line.substr (beg, es - beg);
-							es = line.length ();
+							val = line.substr (top - line.begin (), es - top);
+							es = line.end ();
 						}
 						break;
 					case VAL_QUT:
-						if (line[es] == '"')
+						if (*es == '"')
 						{
 							pstate = VAL_END;
-							val = line.substr (beg, es - beg);
-							es = line.length ();
+							if (top == es)
+								val = std::string ("");
+							else
+								val = line.substr (top - line.begin (), es - top);
+							es = line.end ();
 						}
 						break;
 					case VAL_END:
-						es++;
 						break;
 				}
 			}
 			if (pstate == VAL_QUT)
 			{
-				logStream (MESSAGE_ERROR) << "Missing \" on line " << ln << "."
-					<< sendLog;
+				logStream (MESSAGE_ERROR) << "Missing \" on line " << ln
+					<< " of file " << filename << sendLog;
 				return -1;
 			}
 			if (pstate == VAL)
 			{
-				val = line.substr (beg, es - beg);
+				val = line.substr (top - line.begin (), es - top);
 				pstate = VAL_END;
 			}
 			if (pstate != VAL_END)
 			{
-				logStream (MESSAGE_ERROR) << "Invalid configuration line " << ln
-					<< "." << sendLog;
+				logStream (MESSAGE_ERROR) << "Invalid configuration line " << ln 
+					<< " of file " << filename << sendLog;
 				return -1;
 			}
 			#ifdef DEBUG_EXTRA
-			std::cout << "Pushing " << valName << " " << valSuffix << " " << val <<
-				std::endl;
+			std::cout << "Pushing " << valName << " " << valSuffix << " " << val << std::endl;
 			#endif				 /* DEBUG_EXTRA */
 			sect->push_back (Rts2ConfigValue (valName, valSuffix, val));
 			if (valName == "blocked_by")
@@ -278,7 +277,6 @@ Rts2ConfigRaw::parseConfigFile ()
 				sect->createBlockedBy (val);
 			}
 		}
-		ln++;
 	}
 	if (sect)
 		push_back (sect);
@@ -316,7 +314,7 @@ Rts2ConfigRaw::loadFile (const char *filename)
 		return -1;
 	}
 	// fill sections
-	if (parseConfigFile ())
+	if (parseConfigFile (filename))
 	{
 		delete configStream;
 		return -1;
@@ -394,9 +392,15 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 
 
 int
-Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & vect)
+Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value)
 {
-	return -1;
+	std::string valbuf;
+	int ret;
+	ret = getString (section, valueName, valbuf);
+	if (ret)
+		return ret;
+	value = SplitStr (valbuf, std::string (" "));
+	return 0;
 }
 
 
