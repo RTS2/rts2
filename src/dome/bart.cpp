@@ -1,33 +1,43 @@
-#include <stdio.h>
-#include <termios.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
+/* 
+ * Driver for Ford boards.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-#include <sys/stat.h>
+#include <termios.h>
+#include <fcntl.h>
+
 #include <sys/ioctl.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
 
 #include <vector>
 
 #include "ford.h"
 #include "rts2connbufweather.h"
 
-#define CAS_NA_OTEVRENI 30
+#define CAS_NA_OTEVRENI              30
 
 // we should get packets every minute; 5 min timeout, as data from meteo station
 // aren't as precise as we want and we observe dropouts quite often
-#define BART_WEATHER_TIMEOUT  360
+#define BART_WEATHER_TIMEOUT        360
 
 // how long after weather was bad can weather be good again; in
 // seconds
-#define BART_BAD_WEATHER_TIMEOUT   360
-#define BART_BAD_WINDSPEED_TIMEOUT 360
-#define BART_CONN_TIMEOUT    360
+#define BART_BAD_WEATHER_TIMEOUT    360
+#define BART_BAD_WINDSPEED_TIMEOUT  360
+#define BART_CONN_TIMEOUT           360
 
 typedef enum
 {
@@ -60,6 +70,11 @@ enum stavy zasuvky_stavy[3][NUM_ZAS] =
 	{ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP, ZAS_ZAP}
 };
 
+/**
+ * Class for BART dome control.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevDomeBart:public Rts2DomeFord
 {
 	private:
