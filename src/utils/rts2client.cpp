@@ -125,12 +125,6 @@ Rts2ConnClient::setKey (int in_key)
 }
 
 
-/**************************************************************
- *
- * Rts2Client implementation.
- *
- *************************************************************/
-
 Rts2ConnClient *
 Rts2Client::createClientConnection (int _centrald_num, char *_deviceName)
 {

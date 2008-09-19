@@ -308,6 +308,17 @@ class Rts2Conn:public Rts2Object
 		{
 			return serverState->getValue ();
 		}
+		
+		/**
+		 * Get weather state of the connection.
+		 *
+		 * @return True if connection is reporting good weather, false if it is reporting bad weather.
+		 */
+		bool isGoodWeather ()
+		{
+			return (getState () & WEATHER_MASK) == GOOD_WEATHER;
+		}
+
 		int getErrorState ()
 		{
 			return getState () & DEVICE_ERROR_MASK;

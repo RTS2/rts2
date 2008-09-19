@@ -17,17 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #include <config.h>
 #include "status.h"
@@ -160,8 +151,9 @@ Rts2DevConn::authorizationFailed ()
 	setCentraldId (-1);
 	setConnState (CONN_DELETE);
 	sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
-	logStream (MESSAGE_DEBUG) << "authorization failed: " << getName () <<
-		sendLog;
+	logStream (MESSAGE_DEBUG) << "authorization failed: " << getName ()
+		<< getCentraldId () << " " << getCentraldNum ()
+		<< sendLog;
 	return 0;
 }
 
@@ -191,6 +183,8 @@ void
 Rts2DevConn::setDeviceName (int _centrald_num, char *_name)
 {
 	setName (_centrald_num, _name);
+	// find centrald connection for us..
+	connections_t::iterator iter;
 	setConnState (CONN_RESOLVING_DEVICE);
 }
 
@@ -200,25 +194,39 @@ Rts2DevConn::connConnected ()
 {
 	Rts2Conn::connConnected ();
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "auth: " << getName () << " state: " <<
+	logStream (MESSAGE_DEBUG) << "connConnected:  " << getName () << " state: " <<
 		getConnState () << sendLog;
 	#endif
-	master->getSingleCentralConn ()-> queCommand (new Rts2CommandKey (master, getName ()));
+	connections_t::iterator iter;
+/*	for (iter = getMaster ()->getCentraldConns ()->begin (); iter != getMaster ()->getCentraldConns ()->end (); iter++)
+	{
+		if ((*iter)->getCentraldNum () == getCentraldNum ())
+		{
+			(*iter)-> queCommand (new Rts2CommandKey (getMaster (), getName ()));
+			setConnState (CONN_AUTH_PENDING);
+			return;
+		}
+	}
+	logStream (MESSAGE_ERROR) << "Cannot find central server for authorization (name: " << getName ()
+		<< " centrald num: " << getCentraldNum () << ")"
+		<< sendLog;
+	exit (0);*/
+	getMaster ()->getSingleCentralConn ()->queCommand (new Rts2CommandKey (getMaster (), getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 
 
 void
-Rts2DevConn::setKey (int in_key)
+Rts2DevConn::setDeviceKey (int _centraldNum, int _key)
 {
-	Rts2Conn::setKey (in_key);
+	Rts2Conn::setKey (_key);
 	if (getType () == DEVICE_DEVICE)
 	{
 		if (isConnState (CONN_AUTH_PENDING))
 		{
 			// que to begining, send command
 			// kill all runinng commands
-			queSend (new Rts2CommandSendKey (master, getCentraldId (), getCentraldNum (), in_key));
+			queSend (new Rts2CommandSendKey (master, _centraldNum, getCentraldNum (), _key));
 			setCommandInProgress (false);
 		}
 		else
@@ -238,6 +246,7 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 {
 	if (getType () != DEVICE_DEVICE)
 		return Rts2Conn::setConnState (new_conn_state);
+	Rts2Conn::setConnState (new_conn_state);
 	if (new_conn_state == CONN_AUTH_OK)
 	{
 		char *msg;
@@ -251,7 +260,6 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 		sendPriorityInfo ();
 		master->sendFullStateInfo (this);
 	}
-	Rts2Conn::setConnState (new_conn_state);
 }
 
 
@@ -455,7 +463,7 @@ Rts2DevConnMaster::command ()
 			return -2;
 		conn = master->getOpenConnection (p_device_name);
 		if (conn)
-			conn->setKey (p_key);
+			((Rts2DevConn *)conn)->setDeviceKey (getCentraldId (), p_key);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -568,7 +576,6 @@ Rts2Daemon (in_argc, in_argv)
 
 Rts2Device::~Rts2Device (void)
 {
-	delete deviceStatusCommand;
 	delete modeconf;
 }
 
@@ -813,16 +820,6 @@ Rts2Device::clearStatesPriority ()
 	}
 	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK | BOP_MASK, DEVICE_ERROR_KILL,
 		"all operations canceled by priority");
-}
-
-
-Rts2Conn *
-Rts2Device::createClientConnection (int _centrald_num, char *_device_name)
-{
-	Rts2DevConn *conn;
-	conn = createConnection (-1);
-	conn->setDeviceName (_centrald_num, _device_name);
-	return conn;
 }
 
 

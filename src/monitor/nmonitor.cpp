@@ -440,11 +440,7 @@ Rts2NMonitor::idle ()
 Rts2ConnClient *
 Rts2NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
 {
-	Rts2Address *addr = findAddress (_centrald_num, _deviceName);
-	if (addr == NULL)
-		return NULL;
-	Rts2ConnClient *cliConn = new Rts2NMonConn (this, addr->getCentraldNum (), _deviceName);
-	return cliConn;
+	return new Rts2NMonConn (this, _centrald_num, _deviceName);
 }
 
 

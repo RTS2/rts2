@@ -46,6 +46,7 @@ class Rts2Address
 {
 	private:
 		int centrald_num;
+		int centrald_id;
 		char name[DEVICE_NAME_SIZE];
 		char *host;
 		int port;
@@ -55,12 +56,13 @@ class Rts2Address
 		 * Construct Rts2Address object.
 		 *
 		 * @param _centrald_num  Number of centrald connection (usefull in scenarios with multiple centrald)
+		 * @param _centrald_id   Device id as seen from centrald.
 		 * @param _name          Block name.
 		 * @param _host          Hostname of the host running the block.
 		 * @param _port          Port on which block listen for incoming requests.
 		 * @param _type          Block type.
 		 */
-		Rts2Address (int _centrald_num, const char *_name, const char *_host, int _port, int _type);
+		Rts2Address (int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type);
 		virtual ~ Rts2Address (void);
 		int update (int _centrald_num, const char *_name, const char *new_host, int new_port, int new_type);
 		int getSockaddr (struct addrinfo **info);
@@ -71,6 +73,14 @@ class Rts2Address
 		int getCentraldNum ()
 		{
 			return centrald_num;
+		}
+
+		/**
+		 * Return centrald id of the device.
+		 */
+		int getCentraldId ()
+		{
+			return centrald_id;
 		}
 
 		/**

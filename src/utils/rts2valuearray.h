@@ -53,6 +53,28 @@ class Rts2ValueStringArray: public Rts2Value
 		{
 			value = _arr;
 		}
+
+		/**
+		 * Returns true if given string is present in the array.
+		 *
+		 * @param _str String which will be searched in the array.
+		 *
+		 * @return True if string is present in the value array.
+		 */
+		bool isPresent (std::string _str)
+		{
+			return std::find (value.begin (), value.end (), _str) != value.end ();
+		}
+
+		std::vector <std::string>::iterator valueBegin ()
+		{
+			return value.begin ();
+		}
+
+		std::vector <std::string>::iterator valueEnd ()
+		{
+			return value.end ();
+		}
 };
 
 #endif // ! __RTS2_VALUEARRAY__

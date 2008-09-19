@@ -125,6 +125,12 @@ class Rts2Daemon:public Rts2Block
 		{
 			return daemonize == DONT_DAEMONIZE;
 		}
+
+		/**
+		 * Returns true if connection is running.
+		 */
+		virtual bool isRunning (Rts2Conn *conn) = 0;
+
 		int doDeamonize ();
 		int lockFile ();
 		virtual void addSelectSocks ();
@@ -307,7 +313,15 @@ class Rts2Daemon:public Rts2Block
 		}
 
 	public:
-		Rts2Daemon (int in_argc, char **in_argv);
+		/**
+		 * Construct daemon.
+		 *
+		 * @param _argc         Number of arguments.
+		 * @param _argv         Arguments values.
+		 * @param _init_state   Initial state.
+		 */
+		Rts2Daemon (int in_argc, char **in_argv, int _init_state = 0);
+
 		virtual ~ Rts2Daemon (void);
 		virtual int run ();
 
@@ -350,6 +364,13 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void setState (int new_state, const char *description);
 
+		/**
+		 * Called when state of the device is changed.
+		 *
+		 * @param new_state   New device state.
+		 * @param old_state   Old device state.
+		 * @param description Text description of state change.
+		 */
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 	public:
 		/**
@@ -357,6 +378,13 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void maskState (int state_mask, int new_state, const char *description = NULL);
 
+		/**
+		 * Return full device state. You are then responsible
+		 * to use approproate mask defined in status.h to extract
+		 * from state information that you want.
+		 *
+		 * @return Block state.
+		 */
 		int getState ()
 		{
 			return state;
@@ -368,6 +396,19 @@ class Rts2Daemon:public Rts2Block
 		int getDaemonState ()
 		{
 			return state & ~DEVICE_ERROR_MASK;
+		}
+
+		/**
+		 * Set weather state.
+		 *
+		 * @param good_weather If true, weather is good.
+		 */
+		void setWeatherState (bool good_weather)
+		{
+			if (good_weather)
+				setState ((getState () & ~WEATHER_MASK) | GOOD_WEATHER, "weather set to good");
+			else
+				setState ((getState () & ~WEATHER_MASK) | BAD_WEATHER, "weather set to bad");
 		}
 
 		/**

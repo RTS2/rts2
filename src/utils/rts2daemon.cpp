@@ -17,14 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <stdio.h>
 #include <syslog.h>
 #include <sys/file.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
 
 #include "rts2daemon.h"
 
@@ -41,8 +35,8 @@ Rts2Daemon::addConnectionSock (int in_sock)
 }
 
 
-Rts2Daemon::Rts2Daemon (int in_argc, char **in_argv):
-Rts2Block (in_argc, in_argv)
+Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):
+Rts2Block (_argc, _argv)
 {
 	lockf = 0;
 
@@ -50,7 +44,7 @@ Rts2Block (in_argc, in_argv)
 
 	doHupIdleLoop = false;
 
-	state = 0;
+	state = _init_state;
 
 	info_time = new Rts2ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
 
@@ -836,7 +830,10 @@ Rts2Daemon::info (Rts2Conn * conn)
 		conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
 		return -1;
 	}
-	return sendInfo (conn);
+	ret = sendInfo (conn);
+	if (ret)
+		conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot send info");
+	return ret;
 }
 
 
@@ -871,7 +868,7 @@ Rts2Daemon::constInfoAll ()
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
-	if (!conn->isConnState (CONN_AUTH_OK))
+	if (!isRunning (conn))
 		return -1;
 	for (Rts2CondValueVector::iterator iter = values.begin ();
 		iter != values.end (); iter++)

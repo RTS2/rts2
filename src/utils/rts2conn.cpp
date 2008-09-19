@@ -424,6 +424,10 @@ std::string Rts2Conn::getStateString ()
 	if (getState () & DEVICE_NOT_READY)
 		_os << " | NOT READY";
 
+	// report bad weather
+	if (getState () & BAD_WEATHER)
+	  	_os << " | BAD WEATHER";
+
 	// block states and full BOP states
 	if (getState () & BOP_EXPOSURE)
 		_os << " | BLOCK EXPOSURE";
@@ -1000,7 +1004,8 @@ Rts2Conn::queCommand (Rts2Command * cmd)
 	if (runningCommand
 		|| isConnState (CONN_CONNECTING)
 		|| isConnState (CONN_INPROGRESS)
-		|| isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
+		|| isConnState (CONN_AUTH_PENDING)
+		|| isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_back (cmd);
 		return;
@@ -1113,7 +1118,7 @@ Rts2Conn::command ()
 			|| paramNextInteger (&p_device_type)
 			|| !paramEnd ())
 			return -2;
-		master->addAddress (p_centrald_num, p_name, p_host, p_port, p_device_type);
+		master->addAddress (p_centrald_num, p_centraldId, p_name, p_host, p_port, p_device_type);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -1988,6 +1993,8 @@ Rts2Conn::commandValue (const char *v_name)
 	logStream (MESSAGE_ERROR)
 		<< "Unknow value from connection '" << getName () << "' "
 		<< v_name
+		<< " connection state " << getConnState ()
+		<< " value size " << values.size ()
 		<< sendLog;
 	return -2;
 }

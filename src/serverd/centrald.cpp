@@ -19,12 +19,18 @@
 
 #include "centrald.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2centralstate.h"
 #include "../utils/timestamp.h"
 
 void
 Rts2ConnCentrald::setState (int in_value)
 {
 	Rts2Conn::setState (in_value);
+	// distribute weather updates..
+	if (serverState->maskValueChanged (WEATHER_MASK))
+	{
+		master->weatherChanged ();
+	}
 	if (serverState->maskValueChanged (BOP_MASK))
 	{
 		master->bopMaskChanged ();
@@ -93,6 +99,8 @@ Rts2ConnCentrald::sendDeviceKey ()
 {
 	int dev_key;
 	dev_key = random ();
+	if (dev_key == 0)
+		dev_key = 1;
 	char *msg;
 	// device number could change..device names don't
 	char *dev_name;
@@ -134,14 +142,15 @@ Rts2ConnCentrald::sendInfo ()
 	for (iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
-		conn->sendInfo (this);
+		conn->sendConnectedInfo (this);
 	}
+	((Rts2Centrald *)getMaster ())->sendInfo (this);
 	return 0;
 }
 
 
 int
-Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
+Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 {
 	char *msg;
 	int ret = -1;
@@ -164,10 +173,7 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 		default:
 			break;
 	}
-	if (ret)
-		return ret;
-	// send connection values
-	return ((Rts2Centrald *) getMaster ())->sendInfo (conn);
+	return ret;
 }
 
 
@@ -207,6 +213,7 @@ Rts2ConnCentrald::commandDevice ()
 
 		if (client < 0)
 		{
+			logStream (MESSAGE_ERROR) << "invalid client ID requested for authentification: " << client << " from " << getName () << sendLog;
 			return -2;
 		}
 
@@ -356,7 +363,7 @@ Rts2ConnCentrald::commandClient ()
 		{
 			return master->changeStateHardOff (login);
 		}
-		if (isCommand ("hard_off"))
+		if (isCommand ("soft_off"))
 		{
 			return master->changeStateSoftOff (login);
 		}
@@ -458,11 +465,9 @@ Rts2ConnCentrald::command ()
 
 
 Rts2Centrald::Rts2Centrald (int argc, char **argv)
-:Rts2Daemon (argc, argv)
+:Rts2Daemon (argc, argv, SERVERD_HARD_OFF)
 {
 	connNum = 0;
-
-	setState (SERVERD_HARD_OFF, "Initial configuration");
 
 	configFile = NULL;
 	logFileSource = LOGFILE_DEF;
@@ -474,6 +479,7 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false);
+	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
 
 	createValue (priorityClient, "priority_client", "client which have priority", false);
 	createValue (priority, "priority", "current priority level", false);
@@ -678,6 +684,8 @@ Rts2Centrald::setValue (Rts2Value *old_value, Rts2Value *new_value)
 void
 Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
+	// update weather
+	weatherChanged ();
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
 	connections_t::iterator iter;
@@ -685,6 +693,21 @@ Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		(*iter)->updateStatusWait (NULL);
+	}
+}
+
+
+void
+Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
+{
+	Rts2Daemon::stateChanged (new_state, old_state, description);
+	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
+	{
+	  	logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
+			<< " to " << Rts2CentralState::getString (getState ())
+			<< " description " << description
+			<< sendLog;
+		sendStatusMessage (getState ());
 	}
 }
 
@@ -704,8 +727,9 @@ Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
-		added->sendInfo (conn);
+		added->sendConnectedInfo (conn);
 	}
+	// send connection values
 }
 
 
@@ -726,10 +750,9 @@ Rts2Centrald::getConnection (int conn_num)
 int
 Rts2Centrald::changeState (int new_state, const char *user)
 {
-	logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
+	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
 		user << sendLog;
 	setState (new_state, user);
-	sendStatusMessage (getState ());
 	return 0;
 }
 
@@ -839,13 +862,6 @@ Rts2Centrald::idle ()
 				"by idle routine");
 		}
 
-		// distribute new state
-		if (getState () != old_current_state)
-		{
-			logStream (MESSAGE_INFO) << "changed state from " <<
-				old_current_state << " to " << getState () << sendLog;
-			sendStatusMessage (getState ());
-		}
 		// send update about next state transits..
 		infoAll ();
 	}
@@ -892,6 +908,43 @@ Rts2Centrald::signaledHUP ()
 {
 	reloadConfig ();
 	Rts2Daemon::signaledHUP ();
+}
+
+
+void
+Rts2Centrald::weatherChanged ()
+{
+	// state of the required devices
+	std::vector <std::string> failedArr;
+	std::vector <std::string>::iterator namIter;
+	for (namIter = requiredDevices->valueBegin (); namIter != requiredDevices->valueEnd (); namIter++)
+		failedArr.push_back (*namIter);
+
+	connections_t::iterator iter;
+	// check if some connection block weather
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter ++)
+	{
+		// if connection is required..
+		namIter = std::find (failedArr.begin (), failedArr.end (), std::string ((*iter)->getName ()));
+		if (namIter != failedArr.end ())
+		{
+			if ((*iter)->isGoodWeather () == true && (*iter)->isConnState (CONN_CONNECTED))
+				failedArr.erase (namIter);
+			// otherwise, connection name will not be erased from 
+			// failedArr, so failedArr size will be larger then 0,
+			// so newWeather will be set to false in size check - few lines
+			// bellow.
+		}
+		else  if ((*iter)->isGoodWeather () == false)
+		{
+			failedArr.push_back ((*iter)->getName ());
+		}
+
+	}
+	failedDevices->setValueArray (failedArr);
+	sendValueAll (failedDevices);
+
+	setWeatherState (failedArr.size () > 0 ? false : true);
 }
 
 

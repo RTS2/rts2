@@ -274,6 +274,14 @@ class Rts2CommandAuthorize:public Rts2Command
 {
 	public:
 		Rts2CommandAuthorize (Rts2Block * in_master, int centralId, int key);
+		virtual int commandReturnFailed (int status, Rts2Conn * conn)
+		{
+			logStream (MESSAGE_ERROR) << "authentification failed for connection " << conn->getName ()
+				<< " centrald num " << conn->getCentraldNum ()
+				<< " centrald id " << conn->getCentraldId ()
+				<< sendLog;
+			return -1;
+		}
 };
 
 /**

@@ -24,14 +24,6 @@
 #define HOST_NAME_MAX 255
 #endif
 
-#include <malloc.h>
-#include <getopt.h>
-#include <sys/types.h>
-#include <sstream>
-#include <stdio.h>
-#include <unistd.h>
-#include <vector>
-
 #include "hoststring.h"
 #include "rts2command.h"
 #include "rts2daemon.h"
@@ -47,6 +39,8 @@ class Rts2Device;
  * Handles both connections which are created from clients to device, as well
  * as connections created from device to device. They are distinguished by
  * connType (set by setType, get by getType calls).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2DevConn:public Rts2Conn
 {
@@ -71,7 +65,7 @@ class Rts2DevConn:public Rts2Conn
 		virtual void setDeviceAddress (Rts2Address * in_addr);
 		void setDeviceName (int _centrald_num, char *_name);
 
-		virtual void setKey (int in_key);
+		void setDeviceKey (int _centraldNum, int _key);
 		virtual void setConnState (conn_state_t new_conn_state);
 };
 
@@ -79,6 +73,8 @@ class Rts2DevConn:public Rts2Conn
  * Device connection to master - Rts2Centrald.
  *
  * @see Rts2Centrald
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2DevConnMaster:public Rts2Conn
 {
@@ -124,6 +120,8 @@ class Rts2DevConnMaster:public Rts2Conn
 
 /**
  * Register device to central server.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2CommandRegister:public Rts2Command
 {
@@ -135,6 +133,18 @@ class Rts2CommandRegister:public Rts2Command
 			asprintf (&buf, "register %i %s %i %s %i", centrald_num, device_name, device_type, device_host, device_port);
 			setCommand (buf);
 			free (buf);
+		}
+
+		virtual int commandReturnOK (Rts2Conn *conn)
+		{
+			conn->setConnState (CONN_AUTH_OK);
+			return Rts2Command::commandReturnOK (conn);
+		}
+
+		virtual int commandReturnFailed (int status, Rts2Conn *conn)
+		{
+			conn->endConnection ();
+			return Rts2Command::commandReturnFailed (status, conn);
 		}
 };
 
@@ -161,6 +171,8 @@ class Rts2CommandRegister:public Rts2Command
  * @endmsc
  *
  * @ingroup RTS2Command
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2CommandDeviceStatusInfo:public Rts2Command
 {
@@ -183,11 +195,12 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 /**
  * Represents RTS2 device. From this class, different devices are
  * derived.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2Device:public Rts2Daemon
 {
 	private:
-		
 		std::list <HostString> centraldHosts;
 
 		// device current full BOP state
@@ -236,6 +249,15 @@ class Rts2Device:public Rts2Daemon
 		virtual int init ();
 		virtual int initValues ();
 
+		virtual bool isRunning (Rts2Conn *conn)
+		{
+			if (!conn->isConnState (CONN_AUTH_OK))
+			{
+				logStream (MESSAGE_DEBUG) << "is_runnning " << conn->getConnState () << sendLog;
+			}
+			return conn->isConnState (CONN_AUTH_OK);
+		}
+
 		/**
 		 * Return device BOP state.
 		 * This state is specific for device, and contains BOP values
@@ -279,7 +301,6 @@ class Rts2Device:public Rts2Daemon
 			maskState (BOP_TEL_MOVE, 0, "telescope move possible");
 		}
 
-		virtual Rts2Conn *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
 		/**

@@ -71,6 +71,7 @@ class Rts2Centrald:public Rts2Daemon
 		Rts2ValueBool *morning_standby;
 
 		Rts2ValueStringArray *requiredDevices;
+		Rts2ValueStringArray *failedDevices;
 
 		char *configFile;
 		std::string logFile;
@@ -127,9 +128,16 @@ class Rts2Centrald:public Rts2Daemon
 		virtual int init ();
 		virtual int initValues ();
 
+		virtual bool isRunning (Rts2Conn *conn)
+		{
+			return conn->isConnState (CONN_CONNECTED);
+		}
+
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 		virtual void connectionRemoved (Rts2Conn * conn);
+
+		virtual void stateChanged (int new_state, int old_state, const char *description);
 
 	public:
 		Rts2Centrald (int argc, char **argv);
@@ -213,6 +221,30 @@ class Rts2Centrald:public Rts2Daemon
 
 		virtual void signaledHUP ();
 
+		/**
+		 * Called when conditions which determines weather state changed.
+		 * Those conditions are:
+		 *
+		 * <ul>
+		 *   <li>changed weather state of a single device connected to centrald</li>
+		 *   <li>creating or removal of a connection to an device</li>
+		 * </ul>
+		 *
+		 * This routine is also called periodically, as weather can go
+		 * bad if we do not hear from a device for some time. This
+		 * periodic call is there to prevent situations when connection
+		 * will not be broken, but will not transwer any usable data to
+		 * centrald.
+		 *
+		 * @callgraph
+		 */
+		void weatherChanged ();
+
+		/**
+		 * Called when block of operation device mask changed. It checks
+		 * blocking state of all devices and updates accordingly master
+		 * blocking state.
+		 */
 		void bopMaskChanged ();
 
 		virtual int statusInfo (Rts2Conn * conn);
@@ -286,7 +318,7 @@ class Rts2ConnCentrald:public Rts2Conn
 		 */
 		virtual ~ Rts2ConnCentrald (void);
 		virtual int sendMessage (Rts2Message & msg);
-		virtual int sendInfo (Rts2Conn * conn);
+		int sendConnectedInfo (Rts2Conn * conn);
 
 		virtual void updateStatusWait (Rts2Conn * conn);
 

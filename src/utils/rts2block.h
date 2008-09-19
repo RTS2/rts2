@@ -114,10 +114,6 @@ class Rts2Block: public Rts2App
 
 	protected:
 
-		virtual Rts2Conn *createClientConnection (char *in_deviceName)
-		{
-			return NULL;
-		}
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
 		virtual void cancelPriorityOperations ();
@@ -364,7 +360,7 @@ class Rts2Block: public Rts2App
 		void sendBopMessage (int bop_state);
 
 		/**
-		 * Send BOP message to single connection.
+		 * Send BOP message to a single connection.
 		 *
 		 * @param bop_state
 		 * @param conn Connection which will receive BOP state.
@@ -486,7 +482,7 @@ class Rts2Block: public Rts2App
 		Rts2Address *findAddress (const char *blockName);
 		Rts2Address *findAddress (int centraldNum, const char *blockName);
 
-		void addAddress (int p_centrald_num, const char *p_name, const char *p_host, int p_port, int p_device_type);
+		void addAddress (int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
 
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
@@ -524,6 +520,17 @@ class Rts2Block: public Rts2App
 		 */
 		Rts2Conn *getConnection (char *deviceName);
 
+		/**
+		 * Return centrald id of device at given centrald
+		 * num server.
+		 *
+		 * @param centrald_num  Number at centrald.
+		 * 
+		 * @return -1 on error, otherwise centrald id of
+		 * device which holds this connection on centrald
+		 * server with number centrald_num.
+		 */
+		int getCentraldIdAtNum (int centrald_num);
 
 		/**
 		 * Return vector of active connections to devices and clients.
