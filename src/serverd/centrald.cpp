@@ -77,9 +77,6 @@ Rts2ConnCentrald::priorityCommand ()
 		timeout += time (NULL);
 	}
 
-	//sendValue ("old_priority", getPriority (), getCentraldId ());
-	//sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
-
 	setPriority (new_priority);
 
 	if (master->changePriority (timeout))
@@ -87,8 +84,6 @@ Rts2ConnCentrald::priorityCommand ()
 		sendCommandEnd (DEVDEM_E_PRIORITY, "error when processing priority request");
 		return -1;
 	}
-
-	//sendValue ("new_priority", master->getPriorityClient (), getPriority ());
 
 	return 0;
 }
@@ -114,7 +109,6 @@ Rts2ConnCentrald::sendDeviceKey ()
 		sendCommandEnd (DEVDEM_E_SYSTEM, "cannot find device with name");
 		return -1;
 	}
-	setKey (0);
 	setKey (dev_key);
 	asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
 	sendMsg (msg);
@@ -230,8 +224,7 @@ Rts2ConnCentrald::commandDevice ()
 		if (conn->getKey () == 0)
 		{
 			sendAValue ("authorization_failed", client);
-			sendCommandEnd (DEVDEM_E_SYSTEM,
-				"client didn't ask for authorization");
+			sendCommandEnd (DEVDEM_E_SYSTEM, "client didn't ask for authorization");
 			return -1;
 		}
 
@@ -465,7 +458,7 @@ Rts2ConnCentrald::command ()
 
 
 Rts2Centrald::Rts2Centrald (int argc, char **argv)
-:Rts2Daemon (argc, argv, SERVERD_HARD_OFF)
+:Rts2Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
 {
 	connNum = 0;
 
@@ -659,11 +652,11 @@ Rts2Centrald::initValues ()
 
 	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
-		setState (call_state, "switched on centrald reboot");
+		maskState (SERVERD_STATUS_MASK, call_state, "switched on centrald reboot");
 	}
 	else
 	{
-		setState (SERVERD_HARD_OFF, "switched on centrald reboot");
+		maskState (SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
 	}
 
 	nextStateChange->setValueTime (next_event_time);
@@ -729,6 +722,7 @@ Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 		Rts2Conn *conn = *iter;
 		added->sendConnectedInfo (conn);
 	}
+	weatherChanged ();
 	// send connection values
 }
 
@@ -752,7 +746,7 @@ Rts2Centrald::changeState (int new_state, const char *user)
 {
 	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
 		user << sendLog;
-	setState (new_state, user);
+	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
 }
 
@@ -849,17 +843,15 @@ Rts2Centrald::idle ()
 			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		{
 			if (morning_off->getValueBool ())
-				setState (SERVERD_HARD_OFF, "by idle routine");
+				maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
 			else if (morning_standby->getValueBool ())
-				setState (call_state | SERVERD_STANDBY, "by idle routine");
+				maskState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
 			else
-				setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
-					"by idle routine");
+				maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 		}
 		else
 		{
-			setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
-				"by idle routine");
+			maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 		}
 
 		// send update about next state transits..

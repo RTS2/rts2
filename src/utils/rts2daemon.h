@@ -406,9 +406,9 @@ class Rts2Daemon:public Rts2Block
 		void setWeatherState (bool good_weather)
 		{
 			if (good_weather)
-				setState ((getState () & ~WEATHER_MASK) | GOOD_WEATHER, "weather set to good");
+				maskState (WEATHER_MASK, GOOD_WEATHER, "weather set to good");
 			else
-				setState ((getState () & ~WEATHER_MASK) | BAD_WEATHER, "weather set to bad");
+				maskState (WEATHER_MASK, BAD_WEATHER, "weather set to bad");
 		}
 
 		/**

@@ -572,7 +572,7 @@ Rts2Block::findAddress (int centraldNum, const char *blockName)
 
 
 void
-Rts2Block::addAddress (int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port,
+Rts2Block::addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port,
 int p_device_type)
 {
 	int ret;
@@ -587,7 +587,7 @@ int p_device_type)
 			return;
 		}
 	}
-	an_addr = new Rts2Address (p_centrald_num, p_centrald_id, p_name, p_host, p_port, p_device_type);
+	an_addr = new Rts2Address (p_host_num, p_centrald_num, p_centrald_id, p_name, p_host, p_port, p_device_type);
 	blockAddress.push_back (an_addr);
 	addAddress (an_addr);
 }

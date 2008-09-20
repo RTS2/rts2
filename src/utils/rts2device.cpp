@@ -148,12 +148,12 @@ Rts2DevConn::authorizationOK ()
 int
 Rts2DevConn::authorizationFailed ()
 {
-	setCentraldId (-1);
-	setConnState (CONN_DELETE);
-	sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
 	logStream (MESSAGE_DEBUG) << "authorization failed: " << getName ()
 		<< getCentraldId () << " " << getCentraldNum ()
 		<< sendLog;
+	setCentraldId (-1);
+	setConnState (CONN_DELETE);
+	sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
 	return 0;
 }
 
@@ -197,10 +197,18 @@ Rts2DevConn::connConnected ()
 	logStream (MESSAGE_DEBUG) << "connConnected:  " << getName () << " state: " <<
 		getConnState () << sendLog;
 	#endif
-	connections_t::iterator iter;
-/*	for (iter = getMaster ()->getCentraldConns ()->begin (); iter != getMaster ()->getCentraldConns ()->end (); iter++)
+	if (address == NULL)
 	{
-		if ((*iter)->getCentraldNum () == getCentraldNum ())
+		logStream (MESSAGE_ERROR) << "null address record in Rts2DevConn::connConnected for device " << getName ()
+			<< " centrald num " << getCentraldNum ()
+			<< sendLog;
+		return;
+	}
+
+	connections_t::iterator iter;
+	for (iter = getMaster ()->getCentraldConns ()->begin (); iter != getMaster ()->getCentraldConns ()->end (); iter++)
+	{
+		if ((*iter)->getCentraldNum () == address->getHostNum ())
 		{
 			(*iter)-> queCommand (new Rts2CommandKey (getMaster (), getName ()));
 			setConnState (CONN_AUTH_PENDING);
@@ -209,15 +217,14 @@ Rts2DevConn::connConnected ()
 	}
 	logStream (MESSAGE_ERROR) << "Cannot find central server for authorization (name: " << getName ()
 		<< " centrald num: " << getCentraldNum () << ")"
+		<< " host num: " << address->getHostNum ()
 		<< sendLog;
-	exit (0);*/
-	getMaster ()->getSingleCentralConn ()->queCommand (new Rts2CommandKey (getMaster (), getName ()));
-	setConnState (CONN_AUTH_PENDING);
+	return;
 }
 
 
 void
-Rts2DevConn::setDeviceKey (int _centraldNum, int _key)
+Rts2DevConn::setDeviceKey (int _centraldId, int _key)
 {
 	Rts2Conn::setKey (_key);
 	if (getType () == DEVICE_DEVICE)
@@ -226,7 +233,8 @@ Rts2DevConn::setDeviceKey (int _centraldNum, int _key)
 		{
 			// que to begining, send command
 			// kill all runinng commands
-			queSend (new Rts2CommandSendKey (master, _centraldNum, getCentraldNum (), _key));
+
+			queSend (new Rts2CommandSendKey (master, _centraldId, getCentraldNum (), _key));
 			setCommandInProgress (false);
 		}
 		else

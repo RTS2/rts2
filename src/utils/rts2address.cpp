@@ -24,9 +24,10 @@
 
 #include "rts2address.h"
 
-Rts2Address::Rts2Address (int _centrald_num, int _centrald_id, const char *_name,
-	const char *_host, int _port, int _type)
+Rts2Address::Rts2Address (int _host_num, int _centrald_num, int _centrald_id,
+	const char *_name, const char *_host, int _port, int _type)
 {
+  	host_num = _host_num;
 	centrald_num = _centrald_num;
 	centrald_id = _centrald_id;
 	strncpy (name, _name, DEVICE_NAME_SIZE);

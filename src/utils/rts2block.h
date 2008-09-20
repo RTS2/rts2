@@ -171,6 +171,18 @@ class Rts2Block: public Rts2App
 		void setMessageMask (int new_mask);
 
 		/**
+		 * Called when block does not have anything to do. This is
+		 * right place to put in various hooks, which will react to
+		 * timer handlers or do any other maintanence work. Should be
+		 * fast and quick, longer IO operations should be split to
+		 * reduce time spend in idle call.
+		 *
+		 * When idle call is called, block does not react to any
+		 * incoming requests.
+		 */
+		virtual int idle ();
+
+		/**
 		 * Called before connection is deleted from connection list.
 		 * This hook method can cause connection to not be deleted by returning
 		 * non-zero value.
@@ -253,23 +265,6 @@ class Rts2Block: public Rts2App
 		 * @param _conn Connection which will be added.
 		 */
 		void addCentraldConnection (Rts2Conn *_conn);
-
-		/**
-		 * Return connection at given number.
-		 *
-		 * @param i Number of connection which will be returned.
-		 *
-		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
-		 */
-		Rts2Conn *connectionAt (unsigned int i)
-		{
-			if (i < centraldConns.size ())
-				return centraldConns[i];
-			i -= centraldConns.size ();
-			if (i >= connections.size ())
-				return NULL;
-			return connections[i];
-		}
 
 		/**
 		 * Return number of connections in connections structure.
@@ -391,18 +386,6 @@ class Rts2Block: public Rts2App
 		// only used in centrald!
 		void sendMessageAll (Rts2Message & msg);
 
-		/**
-		 * Called when block does not have anything to do. This is
-		 * right place to put in various hooks, which will react to
-		 * timer handlers or do any other maintanence work. Should be
-		 * fast and quick, longer IO operations should be split to
-		 * reduce time spend in idle call.
-		 *
-		 * When idle call is called, block does not react to any
-		 * incoming requests.
-		 */
-		virtual int idle ();
-
 		void setTimeout (long int new_timeout)
 		{
 			idle_timeout = new_timeout;
@@ -482,7 +465,7 @@ class Rts2Block: public Rts2App
 		Rts2Address *findAddress (const char *blockName);
 		Rts2Address *findAddress (int centraldNum, const char *blockName);
 
-		void addAddress (int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
+		void addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
 
 		void deleteAddress (int p_centrald_num, const char *p_name);
 

@@ -65,7 +65,7 @@ class Rts2DevConn:public Rts2Conn
 		virtual void setDeviceAddress (Rts2Address * in_addr);
 		void setDeviceName (int _centrald_num, char *_name);
 
-		void setDeviceKey (int _centraldNum, int _key);
+		void setDeviceKey (int _centraldId, int _key);
 		virtual void setConnState (conn_state_t new_conn_state);
 };
 

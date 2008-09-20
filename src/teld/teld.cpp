@@ -672,7 +672,8 @@ Rts2DevTelescope::changeMasterState (int new_state)
 		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_SOFT_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
-		startPark (NULL);
+	  	if ((getState () & TEL_MASK_MOVING) == 0)
+			startPark (NULL);
 	return Rts2Device::changeMasterState (new_state);
 }
 

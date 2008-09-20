@@ -52,6 +52,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	key = 0;
 	priority = -1;
 	have_priority = 0;
+	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_UNKNOW;
 	type = NOT_DEFINED_SERVER;
@@ -91,6 +92,7 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	key = 0;
 	priority = -1;
 	have_priority = 0;
+	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_CONNECTED;
 	type = NOT_DEFINED_SERVER;
@@ -1118,7 +1120,7 @@ Rts2Conn::command ()
 			|| paramNextInteger (&p_device_type)
 			|| !paramEnd ())
 			return -2;
-		master->addAddress (p_centrald_num, p_centraldId, p_name, p_host, p_port, p_device_type);
+		master->addAddress (getCentraldNum (), p_centrald_num, p_centraldId, p_name, p_host, p_port, p_device_type);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -1641,6 +1643,9 @@ Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 		setCommandInProgress (false);
 		processBuffer ();
 	}
+	if (num != 0)
+		logStream (MESSAGE_ERROR) << "command end with error " << num
+			<< " description: " << in_msg << sendLog;
 	return 0;
 }
 

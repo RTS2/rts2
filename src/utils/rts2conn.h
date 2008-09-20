@@ -478,7 +478,8 @@ class Rts2Conn:public Rts2Object
 		};
 		virtual void setKey (int in_key)
 		{
-			key = in_key;
+			if (key == 0)
+				key = in_key;
 		}
 		int havePriority ();
 		void setHavePriority (int in_have_priority);
