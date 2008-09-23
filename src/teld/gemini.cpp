@@ -2487,7 +2487,15 @@ Rts2DevTelescopeGemini::startPark ()
 
 static int save_registers[] =
 {
-	0,							 // mount type
+	0,
+	21,
+	22,
+	23,
+	24,
+	25,
+	26,
+	27,
+	28,							 // mount type
 	120,						 // manual slewing speed
 	140,						 // goto slewing speed
 	GEMINI_CMD_RATE_GUIDE,		 // guiding speed
