@@ -421,8 +421,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	ra = ln_range_degrees (lst - hadec.ra);
 
 	// calculate change
-	model_change->ra = ln_range_degrees (pos->ra + ra);
-	model_change->dec = pos->dec + hadec.dec;
+	model_change->ra = ln_range_degrees (pos->ra - ra);
+	model_change->dec = pos->dec - hadec.dec;
 
 	if (model_change->ra > 180)
 		model_change->ra -= 360.0;
