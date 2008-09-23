@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.4</productnumber>
+    <productnumber>0.8.0</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -106,6 +106,73 @@
        play an important role in whole system, as it governs which acctions
        can be performed and which must be blocked.
     </para>
+
+    <refsect2>
+      <title>Hard off</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Soft off</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Standby</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>On</title>
+      <para>
+
+      </para>
+    </refsect2>
+  </refsect1>
+  <refsect1 id="daystates">
+    <title>RTS2 day-night states</title>
+    <para>
+
+    </para>
+    <refsect2>
+      <title>Day</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Evening</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Dusk</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Night</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Dawn</title>
+      <para>
+
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>Morning</title>
+      <para>
+
+      </para>
+    </refsect2>
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>

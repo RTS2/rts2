@@ -1,5 +1,5 @@
 /* 
- * Dome driver for Bootes1 station.
+ * Dome driver for Bootes 1 B observatory.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -57,50 +57,44 @@ class Bootes1B:public Ford
 		time_t timeOpenClose;
 		bool domeFailed;
 
-		Rts2ConnBufWeather *weatherConn;
-
 		bool isMoving ();
 
 		int lastWeatherCheckState;
-
+	
+		Rts2ValueInteger *sw_state;
 		Rts2ValueTime *ignoreRainSensorTime;
 
 	protected:
-		virtual int isGoodWeather ();
+		virtual bool isGoodWeather ();
+
+		virtual int startOpen ();
+		virtual long isOpened ();
+		virtual int endOpen ();
+		virtual int startClose ();
+		virtual long isClosed ();
+		virtual int endClose ();
 
 	public:
 		Bootes1B (int argc, char **argv);
 		virtual ~ Bootes1B (void);
 		virtual int init ();
-		virtual int idle ();
 
-		virtual int ready ();
-		virtual int baseInfo ();
 		virtual int info ();
-
-		virtual int openDome ();
-		virtual long isOpened ();
-		virtual int endOpen ();
-		virtual int closeDome ();
-		virtual long isClosed ();
-		virtual int endClose ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 }
 
-Bootes1B::Bootes1B (int in_argc, char **in_argv):
-Ford (in_argc, in_argv)
+Bootes1B::Bootes1B (int argc, char **argv)
+:Ford (argc, argv)
 {
+	createValue (sw_state, "sw_state", "switch state", false, RTS2_DT_HEX);
+
 	createValue (ignoreRainSensorTime, "ignore_rain_time", "time when rain sensor will be ignored", false);
 	ignoreRainSensorTime->setValueDouble (nan ("f"));
 
-	domeModel = "BOOTES1";
-
 	lastWeatherCheckState = -1;
-
-	weatherConn = NULL;
 
 	timeOpenClose = 0;
 	domeFailed = false;
@@ -112,12 +106,14 @@ Bootes1B::~Bootes1B (void)
 }
 
 
-int
+bool
 Bootes1B::isGoodWeather ()
 {
+	if (getIgnoreMeteo ())
+		return true;
 	int ret = zjisti_stav_portu ();
 	if (ret)
-	  	return getIgnoreMeteo () == true ? 1 : 0;
+		return false;
 
 	// rain sensor, ignore if dome was recently opened
 	if (getPortState (RAIN_SENSOR))
@@ -141,8 +137,8 @@ Bootes1B::isGoodWeather ()
 			if (isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
 			{
 				lastWeatherCheckState = weatherCheckState;
-				setWeatherTimeout (WATCHER_BAD_WEATHER_TIMEOUT);
-	  			return getIgnoreMeteo () == true ? 1 : 0;
+				setWeatherTimeout (3600);
+	  			return false;
 			}
 		}
 		lastWeatherCheckState = weatherCheckState;
@@ -155,12 +151,7 @@ Bootes1B::isGoodWeather ()
 			| (getPortState (OPEN_END_1));
 	}
 
-	if (getIgnoreMeteo () == true)
-		return 1;
-
-	if (weatherConn)
-		return weatherConn->isGoodWeather ();
-	return 0;
+	return Ford::isGoodWeather ();
 }
 
 
@@ -196,55 +187,8 @@ Bootes1B::init ()
 
 
 int
-Bootes1B::idle ()
-{
-	// check for weather..
-	if (isGoodWeather ())
-	{
-		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
-		{
-			// after centrald reply, that he switched the state, dome will
-			// open
-			domeWeatherGood ();
-		}
-	}
-	else
-	{
-		int ret;
-		// close dome - don't trust centrald to be running and closing
-		// it for us
-		ret = closeDomeWeather ();
-		if (ret == -1)
-		{
-			setTimeout (10 * USEC_SEC);
-		}
-	}
-	return Ford::idle ();
-}
-
-
-int
-Bootes1B::ready ()
-{
-	return 0;
-}
-
-
-int
-Bootes1B::baseInfo ()
-{
-	return 0;
-}
-
-
-int
 Bootes1B::info ()
 {
-	// switches are both off either when we move enclosure or when dome failed
-	if (domeFailed || timeOpenClose > 0)
-		sw_state->setValueInteger (0);
-
 	int ret;
 	ret = zjisti_stav_portu ();
 	if (ret)
@@ -254,12 +198,6 @@ Bootes1B::info ()
 		| (getPortState (CLOSE_END_2) << 2)
 		| (getPortState (OPEN_END_1) << 1)
 		| getPortState (OPEN_END_2));
-
-	if (weatherConn)
-	{
-		setRain (weatherConn->getRain ());
-		setWindSpeed (weatherConn->getWindspeed ());
-	}
 
 	return Ford::info ();
 }
@@ -279,10 +217,8 @@ Bootes1B::isMoving ()
 
 
 int
-Bootes1B::openDome ()
+Bootes1B::startOpen ()
 {
-	if (!isGoodWeather ())
-		return -1;
 	if (getState () & DOME_OPENING)
 	{
 		if (isMoving ())
@@ -305,7 +241,7 @@ Bootes1B::openDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Ford::openDome ();
+	return 0;
 }
 
 
@@ -315,15 +251,14 @@ Bootes1B::isOpened ()
 	time_t now;
 	time (&now);
 	// timeout
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Bootes1B::isOpened timeout" <<
 			sendLog;
 		domeFailed = true;
-		sw_state->setValueInteger (0);
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome opened with errror");
-		openDome ();
-		return -2;
+		domeOpenStart ();
+		return USEC_SEC;
 	}
 	if (isMoving ())
 		return USEC_SEC;
@@ -339,16 +274,13 @@ Bootes1B::isOpened ()
 int
 Bootes1B::endOpen ()
 {
-	if (!domeFailed)
-	{
-		sw_state->setValueInteger (1);
-	}
-	return Ford::endOpen ();
+	timeOpenClose = 0;
+	return 0;
 }
 
 
 int
-Bootes1B::closeDome ()
+Bootes1B::startClose ()
 {
 	// we cannot close dome when we are still moving
 	if (getState () & DOME_CLOSING)
@@ -356,11 +288,6 @@ Bootes1B::closeDome ()
 		if (isMoving ())
 			return 0;
 		return -1;
-	}
-	if ((getState () & DOME_CLOSED)
-		&& (getPortState (CLOSE_END_1) || getPortState (CLOSE_END_2)))
-	{
-		return 0;
 	}
 	if (getState () & DOME_OPENING)
 		return -1;
@@ -373,7 +300,7 @@ Bootes1B::closeDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Ford::closeDome ();
+	return 0;
 }
 
 
@@ -382,15 +309,14 @@ Bootes1B::isClosed ()
 {
 	time_t now;
 	time (&now);
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Bootes1B::isClosed dome timeout"
 			<< sendLog;
 		domeFailed = true;
-		sw_state->setValueInteger (0);
 		// cycle again..
 		maskState (DOME_DOME_MASK, DOME_OPENED, "failed closing");
-		closeDome ();
+		startClose ();
 		return USEC_SEC;
 	}
 	if (isMoving ())
@@ -408,7 +334,8 @@ Bootes1B::isClosed ()
 int
 Bootes1B::endClose ()
 {
-	return Ford::endClose ();
+	timeOpenClose = 0;
+	return 0;
 }
 
 

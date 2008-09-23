@@ -722,8 +722,6 @@ Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 		Rts2Conn *conn = *iter;
 		added->sendConnectedInfo (conn);
 	}
-	weatherChanged ();
-	// send connection values
 }
 
 
@@ -858,6 +856,15 @@ Rts2Centrald::idle ()
 		infoAll ();
 	}
 	return Rts2Daemon::idle ();
+}
+
+
+void
+Rts2Centrald::deviceReady (Rts2Conn * conn)
+{
+	Rts2Daemon::deviceReady (conn);
+	// check again for weather state..
+	weatherChanged ();
 }
 
 

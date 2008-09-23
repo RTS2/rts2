@@ -33,7 +33,8 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);
-			goodWeather->setValueBool (true);
+			goodWeather->setValueBool (false);
+			setWeatherState (goodWeather->getValueBool ());
 			createValue (statTest, "test_stat", "test stat value", true);
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true);

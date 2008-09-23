@@ -46,13 +46,14 @@ namespace rts2dome
  * @author Petr Kubanek <petr@kubanek.net>
  * @see htpp://www.comedi.org
  */
-class Bootes2: public Rts2DevDome
+class Bootes2: public Dome
 {
 	private:
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-
+	
+		Rts2ValueInteger *sw_state;
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
 
@@ -102,15 +103,15 @@ class Bootes2: public Rts2DevDome
 		virtual int init ();
 		virtual int info ();
 
-		virtual int idle ();
-
-		virtual int openDome ();
+		virtual int startOpen ();
 		virtual long isOpened ();
+		virtual int endOpen ();
 
-		virtual int closeDome ();
+		virtual int startClose ();
 		virtual long isClosed ();
+		virtual int endClose ();
 
-		virtual int isGoodWeather ();
+		virtual bool isGoodWeather ();
 
 	public:
 		Bootes2 (int argc, char **argv);
@@ -246,7 +247,7 @@ Bootes2::updateStatus ()
 	logStream (MESSAGE_DEBUG) << "sw_state " << std::hex << sw_state->getValueInteger () <<
 		" raining " << raining->getValueBool () << sendLog;
 
-	setSwState (sw_val);
+	sw_state->setValueInteger (sw_val);
 
 	return 0;
 }
@@ -287,7 +288,7 @@ Bootes2::processOption (int _opt)
 			comediFile = optarg;
 			break;
 		default:
-			return Rts2DevDome::processOption (_opt);
+			return Dome::processOption (_opt);
 	}
 	return 0;
 }
@@ -297,7 +298,7 @@ int
 Bootes2::init ()
 {
 	int ret;
-	ret = Rts2DevDome::init ();
+	ret = Dome::init ();
 	if (ret)
 		return ret;
 
@@ -364,41 +365,12 @@ Bootes2::info ()
 		setState (DOME_UNKNOW, "strange dome state");
 	}
 
-	return Rts2DevDome::info ();
+	return Dome::info ();
 }
 
 
 int
-Bootes2::idle ()
-{
-	// check for weather..
-	if (isGoodWeather ())
-	{
-		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
-		{
-			// after centrald reply, that he switched the state, dome will
-			// open
-			domeWeatherGood ();
-		}
-	}
-	else
-	{
-		int ret;
-		// close dome - don't trust centrald to be running and closing
-		// it for us
-		ret = closeDomeWeather ();
-		if (ret == -1)
-		{
-			setTimeout (10 * USEC_SEC);
-		}
-	}
-	return Rts2DevDome::idle ();
-}
-
-
-int
-Bootes2::openDome ()
+Bootes2::startOpen ()
 {
 	int ret;
 	if (!isGoodWeather ())
@@ -429,7 +401,14 @@ Bootes2::isOpened ()
 
 
 int
-Bootes2::closeDome ()
+Bootes2::endOpen ()
+{
+	return 0;
+}
+
+
+int
+Bootes2::startClose ()
 {
 	int ret;
 	ret = updateStatus ();
@@ -457,28 +436,32 @@ Bootes2::isClosed ()
 
 
 int
-Bootes2::isGoodWeather ()
+Bootes2::endClose ()
 {
-	if (getIgnoreMeteo () == true)
-		return 1;
-	time_t now = time (NULL);
-	if (now > getNextOpen ())
-		return 0;
-	int ret;
-	ret = updateStatus ();
-	if (ret)
-		return 0;
-	// if it's raining
-	if (raining->getValueBool () == true)
-		return 0;
-	return 1;
+	return 0;
 }
 
 
-Bootes2::Bootes2 (int argc, char **argv): Rts2DevDome (argc, argv)
+bool
+Bootes2::isGoodWeather ()
+{
+	if (getIgnoreMeteo () == true)
+		return true;
+	int ret = updateStatus ();
+	if (ret)
+		return false;
+	// if it's raining
+	if (raining->getValueBool () == true)
+		return false;
+	return Dome::isGoodWeather ();
+}
+
+
+Bootes2::Bootes2 (int argc, char **argv): Dome (argc, argv)
 {
 	comediFile = "/dev/comedi0";
 
+	createValue (sw_state, "sw_state", "state of end switches", false, RTS2_DT_HEX);
 	createValue (tempMeas, "TEMP", "outside temperature", true);
 	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
 

@@ -1,8 +1,8 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2-sensor-phytron \
 	rts2-sensor-ds21 rts2-sensor-mrakomer \
-	rts2-sensor-pixy
+	rts2-sensor-pixy rts2-sensor-davis
 
-noinst_HEADERS = sensord.h sensorgpib.h
+noinst_HEADERS = sensord.h sensorgpib.h davisudp.h
 
 EXTRA_DIST = sensord.cpp
 
@@ -23,6 +23,8 @@ rts2_sensor_ds21_SOURCES = ds21.cpp
 rts2_sensor_mrakomer_SOURCES = mrakomer.cpp
 
 rts2_sensor_pixy_SOURCES = pixy.cpp
+
+rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp
 
 if GPIBLIB
 

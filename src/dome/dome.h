@@ -23,36 +23,32 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
 
-#define DEF_WEATHER_TIMEOUT 600
+#define DEF_WEATHER_TIMEOUT 10
+
+namespace rts2dome {
 
 /**
- * Skeleton for dome control.
+ * Skeleton for dome control. Provides pure virtual functions,
+ * which needs to be implemented in order to operate roof.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevDome:public Rts2Device
+class Dome:public Rts2Device
 {
 	private:
-		Rts2ValueBool * ignoreMeteo;
+		// time for which weather will be ignored - usefull for manual override of
+		// dome operations
+		Rts2ValueTime *ignoreTimeout;
+
+		Rts2ValueBool *weatherOpensDome;
+		Rts2ValueTime *nextGoodWeather;
+
+		// call isOpened and isClosed and decide what to do..
+		int checkOpening ();
+
+		int closeDomeWeather ();
 
 	protected:
-		const char *domeModel;
-		Rts2ValueInteger *sw_state;
-
-		Rts2ValueFloat *temperature;
-		Rts2ValueFloat *humidity;
-		Rts2ValueTime *nextOpen;
-		Rts2ValueInteger *rain;
-		Rts2ValueFloat *windspeed;
-		Rts2ValueDouble *cloud;
-
-		Rts2ValueInteger *observingPossible;
-		int maxWindSpeed;
-		int maxPeekWindspeed;
-		bool weatherCanOpenDome;
-
-		time_t nextGoodWeather;
-
 		virtual int processOption (int in_opt);
 
 		virtual void cancelPriorityOperations ()
@@ -60,8 +56,26 @@ class Rts2DevDome:public Rts2Device
 			// we don't want to get back to not-moving state if we were moving..so we don't request to reset our state
 		}
 
+		// functions to operate dome
+		// they call protected functions, which does the job
+		int domeOpenStart ();
+		int domeOpenEnd ();
+
+		int domeCloseStart ();
+		int domeCloseEnd ();
+
+		/**
+		 * Called when weather becomes favourable for observing.
+		 * If weatherOpensDome is true, it will set system to on.
+		 */
 		void domeWeatherGood ();
-		virtual int isGoodWeather ();
+
+		/**
+		 * Checks if weather is acceptable for observing.
+		 *
+		 * @return True if weather is acceptable, otherwise false.
+		 */
+		virtual bool isGoodWeather ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -71,135 +85,67 @@ class Rts2DevDome:public Rts2Device
 		 *
 		 * @return 0 on success, -1 on error.
 		 */
-		virtual int openDome ()
-		{
-			maskState (DOME_DOME_MASK, DOME_OPENING, "opening dome");
-			logStream (MESSAGE_INFO) << "opening dome" << sendLog;
-			return 0;
-		}
-		virtual int endOpen ()
-		{
-			maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
-			return 0;
-		};
-		virtual long isOpened ()
-		{
-			return -2;
-		};
+		virtual int startOpen () = 0;
 
-		virtual int closeDome ()
-		{
-			maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
-			logStream (MESSAGE_INFO) << "closing dome" << sendLog;
-			return 0;
-		};
-		virtual int endClose ()
-		{
-			maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed");
-			return 0;
-		};
-		virtual long isClosed ()
-		{
-			return -2;
-		};
+		/**
+		 * Check if dome is opened.
+		 *
+		 * @return -2 if dome is opened, -1 if there was an error, >=0 is timeout in miliseconds till
+		 * next isOpened call.
+		 */
+		virtual long isOpened () = 0;
 
-	public:
-		Rts2DevDome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
-		int closeDomeWeather ();
+		/**
+		 * Called when dome is fully opened. Can be used to turn off compressors used
+		 * to open dome etc..
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int endOpen () = 0;
 
-		int checkOpening ();
-		virtual int init ();
-		virtual int initValues ();
-		virtual int idle ();
+		virtual int startClose () = 0;
+		virtual long isClosed () = 0;
+		virtual int endClose () = 0;
 
-		virtual int info ();
-
-		// callback function from dome connection
-
+		// called when dome passed some states..
 		virtual int observing ();
 		virtual int standby ();
 		virtual int off ();
 
 		int setMasterStandby ();
 		int setMasterOn ();
+
+		virtual int idle ();
+
+	public:
+		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
+		virtual ~Dome ();
+
 		virtual int changeMasterState (int new_state);
 
-		int setIgnoreMeteo (bool newIgnore)
-		{
-			ignoreMeteo->setValueBool (newIgnore);
-			infoAll ();
-			return 0;
-		}
+		/**
+		 * Increases ignore timeout by given amount of seconds.
+		 *
+		 * @param _ignore_time  Seconds by which a timeout will be increased.
+		 */ 
+		void setIgnoreTimeout (time_t _ignore_time);
 
-		bool getIgnoreMeteo ()
-		{
-			return ignoreMeteo->getValueBool ();
-		}
+		bool getIgnoreMeteo ();
 
-		void setTemperature (float in_temp)
-		{
-			temperature->setValueFloat (in_temp);
-		}
-		float getTemperature ()
-		{
-			return temperature->getValueFloat ();
-		}
-		void setHumidity (float in_humidity)
-		{
-			humidity->setValueFloat (in_humidity);
-		}
-		float getHumidity ()
-		{
-			return humidity->getValueFloat ();
-		}
-		void setRain (int in_rain)
-		{
-			rain->setValueInteger (in_rain);
-		}
-		virtual void setRainWeather (int in_rain)
-		{
-			setRain (in_rain);
-		}
-		int getRain ()
-		{
-			return rain->getValueInteger ();
-		}
-		void setWindSpeed (float in_windpseed)
-		{
-			windspeed->setValueFloat (in_windpseed);
-		}
-		float getWindSpeed ()
-		{
-			return windspeed->getValueFloat ();
-		}
-		void setCloud (double in_cloud)
-		{
-			cloud->setValueDouble (in_cloud);
-		}
-		double getCloud ()
-		{
-			return cloud->getValueDouble ();
-		}
 		void setWeatherTimeout (time_t wait_time);
-		void setSwState (int in_sw_state)
-		{
-			sw_state->setValueInteger (in_sw_state);
-		}
 
-		int getMaxPeekWindspeed ()
+		double getNextOpen ()
 		{
-			return maxPeekWindspeed;
-		}
-
-		int getMaxWindSpeed ()
-		{
-			return maxWindSpeed;
-		}
-		time_t getNextOpen ()
-		{
-			return nextGoodWeather;
+			return nextGoodWeather->getValueDouble ();
 		}
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual int ready ()
+		{
+			return 0;
+		}
 };
-#endif							 /* ! __RTS2_DOME__ */
+
+}
+#endif	 // ! __RTS2_DOME__

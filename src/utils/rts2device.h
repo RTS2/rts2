@@ -115,7 +115,8 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual int init ();
 		virtual int idle ();
 		int authorize (Rts2DevConn * conn);
-		void setHavePriority (int in_have_priority);
+
+		virtual void setConnState (conn_state_t new_conn_state);
 };
 
 /**

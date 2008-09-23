@@ -411,7 +411,7 @@ class Rts2Block: public Rts2App
 		 * This function is called when device on given connection is ready
 		 * to accept commands.
 		 *
-		 * \param conn connection representing device which became ready
+		 * @param conn connection representing device which became ready
 		 */
 		virtual void deviceReady (Rts2Conn * conn);
 
@@ -440,7 +440,7 @@ class Rts2Block: public Rts2App
 		virtual int setMasterState (int new_state);
 
 		/**
-		 * Returns master state. This does not returns master BOP mask. Usually you
+		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
 		 * will need this call to check if master is in day etc..
 		 *
 		 * @see Rts2Block::getMasterStateFull()
@@ -453,7 +453,7 @@ class Rts2Block: public Rts2App
 		}
 
 		/**
-		 * Returns full master state, including BOP mask. For checking server state. see Rts2Block::getMasterState()
+		 * Returns full master state, including BOP mask and weather. For checking server state. see Rts2Block::getMasterState()
 		 *
 		 * @return Master state.
 		 */
@@ -461,6 +461,29 @@ class Rts2Block: public Rts2App
 		{
 			return masterState;
 		}
+
+		/**
+		 * Returns true if all masters thinks it is safe weather to
+		 * operate observatory.  Masters can have multiple weather
+		 * sensors connected which can block weather.
+		 * 
+		 * Master is responsible for handling those devices bad weather
+		 * state and set its state accordingly. It can also hold a list 
+		 * of devices which are necessary for observatory operation, and
+		 * if any of this devices is missing, it will set weather to bad
+		 * signal.
+		 *
+		 * Also all central daemons which were specified on command
+		 * line using the --server argument must be running.
+		 */
+		virtual bool isGoodWeather ();
+
+		/**
+		 * Returns true if all connections to central servers are up and running.
+		 *
+		 * @return True if all connections to central servers are up and running.
+		 */
+		bool allCentraldRunning ();
 
 		Rts2Address *findAddress (const char *blockName);
 		Rts2Address *findAddress (int centraldNum, const char *blockName);

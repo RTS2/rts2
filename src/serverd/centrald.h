@@ -145,6 +145,8 @@ class Rts2Centrald:public Rts2Daemon
 
 		virtual int idle ();
 
+		virtual void deviceReady (Rts2Conn * conn);
+
 		/**
 		 * Made priority update, distribute messages to devices
 		 * about priority update.

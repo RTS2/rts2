@@ -154,6 +154,11 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		int flushPortIO ();
 
 		/**
+		 * Flush serial port output (make sure that all data were written)
+		 */
+		int flushPortO ();
+
+		/**
 		 * Set if debug messages from port communication will be printed.
 		 *
 		 * @param printDebug  True if all port communication should be written to log.

@@ -45,7 +45,7 @@
  *
  * @ingroup RTS2Block
  */
-#define BOP_MASK            0xff000000
+#define BOP_MASK            0x7f000000
 
 /**
  * Block exposures.
@@ -67,6 +67,28 @@
  * @ingroup RTS2Block
  */
 #define BOP_TEL_MOVE        0x04000000
+
+
+/**
+ * Mask for device weather voting.
+ *
+ * @ingroup RTS2Block
+ */
+#define WEATHER_MASK        0x80000000
+
+/**
+ * Allow operations as weather is acceptable,
+ *
+ * @ingroup RTS2Block
+ */
+#define GOOD_WEATHER        0x00000000
+
+/**
+ * Block observations because there is bad weather.
+ *
+ * @ingroup RTS2Block
+ */
+#define BAD_WEATHER         0x80000000
 
 #define DEVICE_STATUS_MASK  0x00000fff
 

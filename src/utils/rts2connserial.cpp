@@ -378,3 +378,10 @@ Rts2ConnSerial::flushPortIO ()
 {
 	return tcflush (sock, TCIOFLUSH);
 }
+
+
+int
+Rts2ConnSerial::flushPortO ()
+{
+	return tcflush (sock, TCOFLUSH);
+}

@@ -517,6 +517,17 @@ Rts2DevConnMaster::authorize (Rts2DevConn * conn)
 }
 
 
+void
+Rts2DevConnMaster::setConnState (conn_state_t new_conn_state)
+{
+        Rts2Conn::setConnState (new_conn_state);
+        if (isConnState (CONN_AUTH_OK))
+        {
+                master->statusInfo (this);
+        }
+}
+
+
 Rts2CommandDeviceStatusInfo::Rts2CommandDeviceStatusInfo (Rts2Device * master, Rts2Conn * in_owner_conn):Rts2Command
 (master)
 {
@@ -950,6 +961,7 @@ Rts2Device::init ()
 	{
 		Rts2Conn * conn_master = new Rts2DevConnMaster (this, device_host, getPort (),
 			device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
+		conn_master->init ();
 		addCentraldConnection (conn_master);
 	}
 

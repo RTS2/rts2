@@ -78,7 +78,6 @@ class Watcher:public Dome
 		Watcher (int argc, char **argv);
 		virtual ~ Watcher (void);
 		virtual int init ();
-		virtual int idle ();
 
 		virtual int info ();
 
@@ -90,16 +89,13 @@ class Watcher:public Dome
 		virtual int endClose ();
 };
 
-Watcher::Watcher (int in_argc, char **in_argv):
-Rts2DevDome (in_argc, in_argv)
+}
+
+Watcher::Watcher (int argc, char **argv)
+:Dome (argc, argv)
 {
-	domeModel = "DUBLIN_DOME";
 	smsExec = NULL;
-	cloud_bad = 0;
-	addOption ('s', "execute_sms", 1,
-		"execute this commmand to send sms about roof");
-	addOption ('b', "cloud_bad", 1,
-		"Close roof when cloud sensor value is bellow that number");
+	addOption ('s', "execute_sms", 1, "execute this commmand to send sms about roof");
 
 	timeOpenClose = 0;
 	domeFailed = false;
@@ -148,11 +144,8 @@ Watcher::processOption (int in_opt)
 		case 's':
 			smsExec = optarg;
 			break;
-		case 'b':
-			cloud_bad = atof (optarg);
-			break;
 		default:
-			return Rts2DevDome::processOption (in_opt);
+			return Dome::processOption (in_opt);
 	}
 	return 0;
 }
@@ -162,7 +155,7 @@ int
 Watcher::init ()
 {
 	int ret, i;
-	ret = Rts2DevDome::init ();
+	ret = Dome::init ();
 	if (ret)
 		return ret;
 
@@ -188,42 +181,13 @@ Watcher::init ()
 
 
 int
-Watcher::idle ()
-{
-	// check for weather..
-	if (isGoodWeather ())
-	{
-		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
-		{
-			// after centrald reply, that he switched the state, dome will
-			// open
-			domeWeatherGood ();
-		}
-	}
-	else
-	{
-		int ret;
-		// close dome - don't thrust centrald to be running and closing
-		// it for us
-		ret = closeDomeWeather ();
-		if (ret == -1)
-		{
-			setTimeout (10 * USEC_SEC);
-		}
-	}
-	return Rts2DevDome::idle ();
-}
-
-
-int
 Watcher::info ()
 {
 	// switches are both off either when we move enclosure or when dome failed
 	if (domeFailed || timeOpenClose > 0)
 		sw_state->setValueInteger (0);
 
-	return Rts2DevDome::info ();
+	return Dome::info ();
 }
 
 
@@ -264,10 +228,8 @@ Watcher::openDomeReal ()
 
 
 int
-Watcher::openDome ()
+Watcher::startOpen ()
 {
-	if (!isGoodWeather ())
-		return -1;
 	if (isMoving () || dome_state == WATCHER_DOME_OPEN)
 		return 0;
 
@@ -276,7 +238,7 @@ Watcher::openDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Rts2DevDome::openDome ();
+	return 0;
 }
 
 
@@ -311,7 +273,7 @@ Watcher::endOpen ()
 		sw_state->setValueInteger (1);
 		executeSms (TYPE_OPENED);
 	}
-	return Rts2DevDome::endOpen ();
+	return 0;
 }
 
 
@@ -329,7 +291,7 @@ Watcher::closeDomeReal ()
 
 
 int
-Watcher::closeDome ()
+Watcher::startClose ()
 {
 	// we cannot close dome when we are still moving
 	if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
@@ -340,7 +302,7 @@ Watcher::closeDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Rts2DevDome::closeDome ();
+	return 0;
 }
 
 
@@ -373,7 +335,7 @@ Watcher::endClose ()
 		sw_state->setValueInteger (4);
 		executeSms (TYPE_CLOSED);
 	}
-	return Rts2DevDome::endClose ();
+	return 0;
 }
 
 
@@ -392,12 +354,11 @@ Watcher::sendDublinMail (const char *subject)
 	asprintf (&text, "%s.\n"
 		"CLOSE SWITCH:%s\n"
 		"OPEN SWITCH:%s\n"
-		"Weather::isGoodWeather %i\n"
-		"raining: %i\n"
-		"windspeed: %.2f km/h\n",
+		"Weather::isGoodWeather %i\n",
 		subject,
 		isOnString (4),
-		isOnString (1), isGoodWeather (), getRain (), getWindSpeed ());
+		isOnString (1),
+		isGoodWeather ());
 	ret = sendMail (subject, text);
 	free (text);
 	return ret;
