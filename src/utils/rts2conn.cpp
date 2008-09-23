@@ -273,17 +273,6 @@ std::string Rts2Conn::getStateString ()
 				default:
 					_os << "UNKNOW";
 			}
-			switch (real_state & DOME_WEATHER_MASK)
-			{
-				case DOME_WEATHER_OK:
-					_os << " | WEATHER OK";
-					break;
-				case DOME_WEATHER_BAD:
-					_os << " | WEATHER BAD";
-					break;
-				default:
-					_os << " | WEATHER STATE UNKNOW";
-			}
 			if (getOtherType () == DEVICE_TYPE_COPULA)
 			{
 				if (real_state & DOME_COP_MOVE)

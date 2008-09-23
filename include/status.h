@@ -207,11 +207,6 @@
 #define DOME_OPENED         0x04
 #define DOME_CLOSING        0x08
 
-#define DOME_WEATHER_MASK   0x30
-#define DOME_WEATHER_OK     0x10
-#define DOME_WEATHER_BAD    0x20
-#define DOME_WEATHER_UNKNOW 0x30
-
 #define DOME_COP_MASK       0xc0
 
 #define DOME_COP_MASK_MOVE  0x40
