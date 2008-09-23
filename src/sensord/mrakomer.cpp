@@ -36,6 +36,11 @@ class Rts2SensorMrakomer: public Rts2DevSensor
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
 
+		Rts2ValueInteger *numVal;
+
+		Rts2ValueDouble *triggerBad;
+		Rts2ValueDouble *triggerGood;
+
 		Rts2ValueBool *heater;
 		Rts2ValueFloat *sleepPeriod;
 
@@ -79,9 +84,9 @@ Rts2SensorMrakomer::readSensor ()
 			<< buf << "', return " << x << sendLog;
 		return -1;
 	}
-	tempDiff->addValue (temp0 - temp1, 20);
-	tempIn->addValue (temp0, 20);
-	tempOut->addValue (temp1, 20);
+	tempDiff->addValue (temp0 - temp1, numVal->getValueInteger ());
+	tempIn->addValue (temp0, numVal->getValueInteger ());
+	tempOut->addValue (temp1, numVal->getValueInteger ());
 
 	tempDiff->calculate ();
 	tempIn->calculate ();
@@ -105,14 +110,27 @@ Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
 	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
 
+	createValue (numVal, "num_stat", "number of measurements for weather statistic");
+	numVal->setValueInteger (20);
+
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true);
+	triggerBad->setValueDouble (nan ("f"));
+
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true);
+	triggerGood->setValueDouble (nan ("f"));
+
 	createValue (heater, "HEATER", "heater state", true);
 	createValue (sleepPeriod, "sleep", "sleep period between measurments", false);
-	sleepPeriod->setValueFloat (0.3);
+	sleepPeriod->setValueFloat (1);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
 
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
+	addOption ('b', NULL, 1, "bad trigger point");
+	addOption ('g', NULL, 1, "good trigger point");
+
+	setTimeout (20);
 }
 
 
@@ -152,6 +170,9 @@ Rts2SensorMrakomer::init ()
 	
 	mrakConn->flushPortIO ();
 
+	if (!isnan (triggerGood->getValueDouble ()))
+		setWeatherState (false);
+
 	return 0;
 }
 
@@ -162,7 +183,23 @@ Rts2SensorMrakomer::info ()
 	int ret;
 	ret = readSensor ();
 	if (ret)
+	{
+		if (getLastInfoTime () > 60)
+			setWeatherState (false);
 		return -1;
+	}
+	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
+	{
+		// trips..
+		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
+		{
+			setWeatherState (false);
+		}
+		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
+		{
+			setWeatherState (true);
+		}
+	}
 	return Rts2DevSensor::info ();
 }
 
