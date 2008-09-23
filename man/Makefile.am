@@ -50,7 +50,8 @@ man_MANS = \
     rts2-user.1 \
     rts2-telmodeltest.1 \
     rts2.devices.5 \
-    rts2-centrald.1
+    rts2-centrald.1 \
+    rts2-moodd.1
 
 doc_FOP = \
     rts2-man.fop \

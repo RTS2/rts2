@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2008-09-23</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-moodd">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.0</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Synchronize centralds. Gurantee smooth operations if one of the centralds is switched to off, etc..</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>-i</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--local-port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--logfile <replaceable>log file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> is designed to keep multiple centralds synchronized. It shall
+      be added as a required part of the setup. The <command>&dhpackage;</command> set weather on
+      all connected systems to bad if any of the situations described bellow is detected.
+   </para>
+   
+   <para>
+      <emphasis>If at least of of the centralds is switched to HARD OFF state.</emphasis> This gurantee that
+      if observer switch one centrald on a site to HARD OFF, the other domes on site will not open. The 
+      <emphasis>HARD OFF</emphasis> state is so designed - to inform system that the observer intentions are
+      to not run any telescope on site.
+   </para>
+   <para>
+      <emphasis>If at least one of the connections to the centrald is broken.</emphasis> This gurantee that
+      if one of the centrald is not running, system will not switch to state which will allow it to open
+      the roofs. This is to prevent situation, when one centrald will be switched to <emphasis>HARD OFF</emphasis>, then
+      the centrald on which system was switched to <emphasis>HARD OFF</emphasis> and the other systems, lacking any
+      weather blocks, will open.
+   </para>
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <para>
+      This program follows the usual &gnu; command line syntax,
+      with long options starting with two dashes (`--').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of the program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--local-port <replaceable class="parameter">port</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify port of on which <command>&dhpackage;</command> listen for
+	    incoming connections. The default value is choosen from available system
+	    ports. If you have any reason to provide a fixed port to listen for connections,
+	    please specify it here.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--logfile</option></term>
+        <listitem>
+	  <para>Specify logfile name. Defaults to /var/log/rts2-debug. If set
+	  to "-", <command>&dhpackage;</command> will log to standart
+	  output.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--server <replaceable class="parameter">hostname[:port]</replaceable></option></term>
+        <listitem>
+	  <para>
+	    Specify name of the host and possibly port, which runs
+	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	    This option is needed only for setups that use multiple computers.
+	    Its default is localhost for hostname and 617 for port number. If
+	    only hostname is provided, default port number - 617 - is used. 
+	    Default will work for simple setups.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-centrald</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
