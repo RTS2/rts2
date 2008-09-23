@@ -312,6 +312,16 @@ class Rts2Daemon:public Rts2Block
 			info_time->setValueDouble (getNow ());
 		}
 
+		/**
+		 * Get time from last info time in seconds (and second fractions).
+		 *
+		 * @return Difference from last info time in seconds.
+		 */
+		double getLastInfoTime ()
+		{
+			return getNow () - info_time->getValueDouble ();	
+		}
+
 	public:
 		/**
 		 * Construct daemon.
