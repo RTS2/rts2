@@ -129,8 +129,8 @@
     <title>DESCRIPTION</title>
 
     <para>
-      rts2-xfocusc display image acquired from CCDs which are part of RTS2 system. It can be used to
-      interactively focusc camera.
+      <command>&dhpackage;</command> displays an image acquired from CCDs which are part of RTS2 system. It can be used to
+      interactively focus the camera.
     </para>
 
   </refsect1>
