@@ -199,17 +199,23 @@ Rts2SensorMrakomer::info ()
 		// trips..
 		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
 		{
+			if (getWeatherState () == true)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerBad->getValueDouble ()
+					<< sendLog;
+			}
 			setWeatherState (false);
-			logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
-				<< " trigger: " << triggerBad->getValueDouble ()
-				<< sendLog;
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
+			if (getWeatherState () == false)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerGood->getValueDouble ()
+					<< sendLog;
+			}
 			setWeatherState (true);
-			logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
-				<< " trigger: " << triggerGood->getValueDouble ()
-				<< sendLog;
 		}
 	}
 	return Rts2DevSensor::info ();
