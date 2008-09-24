@@ -18,11 +18,21 @@
  */
 
 #include <fcntl.h>
-#include <termios.h>
 
 #include "rts2connserial.h"
 #include "rts2block.h"
 #include <iomanip>
+
+int
+Rts2ConnSerial::setAttr ()
+{
+	if (tcsetattr (sock, TCSANOW, &s_termios) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set device parameters" << sendLog;
+		return -1;
+	}
+	return 0;
+}
 
 Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, bSpeedT in_baudSpeed,
 cSizeT in_cSize, parityT in_parity, int in_vTime)
@@ -84,7 +94,6 @@ Rts2ConnSerial::init ()
 	// set blocking mode
 	fcntl (sock, F_SETFL, 0);
 
-	struct termios s_termios;
 	speed_t b_speed;
 	int ret;
 
@@ -158,14 +167,22 @@ Rts2ConnSerial::init ()
 	s_termios.c_cc[VMIN] = getVMin ();
 	s_termios.c_cc[VTIME] = getVTime ();
 
-	ret = tcsetattr (sock, TCSANOW, &s_termios);
-	if (ret < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot set device parameters" << sendLog;
+	if (setAttr ())
 		return -1;
-	}
 
 	tcflush (sock, TCIOFLUSH);
+	return 0;
+}
+
+
+int
+Rts2ConnSerial::setVTime (int _vtime)
+{
+	s_termios.c_cc[VTIME] = _vtime;
+	if (setAttr ())
+		return -1;
+
+	vTime = _vtime;
 	return 0;
 }
 
@@ -234,6 +251,10 @@ int
 Rts2ConnSerial::readPort (char &ch)
 {
 	int rlen = 0;
+	int ntries;
+	// it looks max vtime is 100, do not know why..
+	ntries = getVTime () / 100;
+
 	while (rlen == 0)
 	{
 		rlen = read (sock, &ch, 1);
@@ -245,8 +266,12 @@ Rts2ConnSerial::readPort (char &ch)
 		}
 		if (rlen == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 	}
 	if (debugPortComm)

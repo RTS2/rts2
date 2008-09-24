@@ -18,6 +18,7 @@
  */
 
 #include "rts2connnosend.h"
+#include <termios.h>
 
 /**
  * Enum for baud speeds.
@@ -51,6 +52,8 @@ parityT;
 class Rts2ConnSerial: public Rts2ConnNoSend
 {
 	private:
+		struct termios s_termios;
+
 		bSpeedT baudSpeed;
 
 		cSizeT cSize;
@@ -76,6 +79,9 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		{
 			return vTime;
 		}
+
+		// set s_termios to port..
+		int setAttr ();
 	public:
 		/**
 		 * Create connection to serial port.
@@ -94,8 +100,19 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 
 		/**
 		 * Init serial port.
+		 *
+		 * @return -1 on error, 0 on success.
 		 */
 		virtual int init ();
+
+		/**
+		 * Set socket vtime. VTIME is used with a serial port
+		 * to specify time in decaseconds, for how long device will wait 
+		 * during read call for character from serial port.
+		 *
+		 * @param _vtime New VTIME value (in decaseconds).
+		 */
+		int setVTime (int _vtime);
 
 		/**
 		 * Write single character to serial port.
