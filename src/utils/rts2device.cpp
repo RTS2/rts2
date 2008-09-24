@@ -404,6 +404,7 @@ Rts2DevConnMaster::idle ()
 	switch (getConnState ())
 	{
 		case CONN_BROKEN:
+			setConnTimeout (0);
 			if (now > nextTime)
 			{
 				nextTime = now + 60;
@@ -412,6 +413,8 @@ Rts2DevConnMaster::idle ()
 			}
 			break;
 		default:
+			successfullRead ();
+			setConnTimeout (300);
 			break;
 	}
 	return Rts2Conn::idle ();
