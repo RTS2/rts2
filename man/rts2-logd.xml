@@ -202,8 +202,31 @@
      to change the configuration file as well as to change the output file (see below).   
     </para>
   </refsect1>
+  <refsect1>
+    <title>EXAMPLE</title>
 
+    <para>
+      Following file will log once every 5 seconds values from C0 device, and
+      once every 8 seconds from S1 device. From C0, infotime (e.g. time when
+      this information was taken), MODE and GAIN are recorded. For S1,
+      infotime, TEMPA, TEMPB and TEMPC values are recorded.
 
+      <literallayout>
+C0 5 infotime MODE GAIN
+S1 8 infotime TEMPA TEMPB TEMPC
+      </literallayout>
+
+      The output will then contain:
+
+      <literallayout>
+C0 1183230001.403492 1 HIGH
+S1 1183230003.654364 -120.465 -100.6576 10.0809
+C0 1183230006.654364 1 HIGH
+C0 1183230012.236757 1 LOW
+S1 1183230013.567643 -120.345 -100.7654 10.3435
+      </literallayout>
+    </para>
+  </refsect1>
   <refsect1>
     <title>OUTPUT</title>
 
