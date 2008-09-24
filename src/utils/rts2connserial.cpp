@@ -251,9 +251,8 @@ int
 Rts2ConnSerial::readPort (char &ch)
 {
 	int rlen = 0;
-	int ntries;
 	// it looks max vtime is 100, do not know why..
-	ntries = getVTime () / 100;
+	int ntries = getVTime () / 100;
 
 	while (rlen == 0)
 	{
@@ -286,6 +285,7 @@ int
 Rts2ConnSerial::readPort (char *rbuf, int b_len)
 {
 	int rlen = 0;
+	int ntries = getVTime () / 100;
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, b_len - rlen);
@@ -307,8 +307,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		}
 		if (ret == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 
 		rlen += ret;
@@ -329,6 +333,7 @@ int
 Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 {
 	int rlen = 0;
+	int ntries = getVTime () / 100;
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, 1);
@@ -348,8 +353,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		}
 		if (ret == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 		if (*(rbuf + rlen) == endChar)
 		{
