@@ -115,12 +115,13 @@ Rts2DevCamera::center (int in_w, int in_h)
 long
 Rts2DevCamera::isExposing ()
 {
-	if (getNow () > exposureEnd->getValueDouble ())
+	double n = getNow ();
+	if (n > exposureEnd->getValueDouble ())
 	{
 		return 0;				 // exposure ended
 	}
 								 // timeout
-	return ((long int) ((exposureEnd->getValueDouble () - getNow ()) * USEC_SEC));
+	return ((long int) ((exposureEnd->getValueDouble () - n) * USEC_SEC));
 }
 
 
@@ -580,11 +581,6 @@ Rts2DevCamera::checkExposures ()
 				case -3:
 					exposureConn = NULL;
 					endExposure ();
-					break;
-					maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
-						CAM_NOEXPOSURE | CAM_NOFT,
-						BOP_TEL_MOVE, 0,
-						"exposure chip finished");
 					break;
 				case -2:
 					// remember exposure number
