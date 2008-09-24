@@ -97,7 +97,7 @@ Rts2Logd::init ()
 	ret = Rts2Device::init ();
 	if (ret)
 		return ret;
-	if (*logConfig->getValue () != '\n')
+	if (logConfig->getValue () && *logConfig->getValue () != '\n')
 		return setLogConfig (logConfig->getValue ());
 	return 0;
 }
