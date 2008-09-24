@@ -1871,7 +1871,7 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 	{
 		case 0:
 			new_value = newValue (rts2Type, m_name, desc);
-			if (newValue == NULL)
+			if (new_value == NULL)
 				return -2;
 			break;
 		case RTS2_VALUE_STAT:
