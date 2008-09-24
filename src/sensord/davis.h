@@ -29,6 +29,8 @@ class Davis: public Rts2DevSensor
 		Rts2ValueFloat *windspeed;
 		Rts2ValueDouble *cloud;
 
+		Rts2ValueInteger *udpPort;
+
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();

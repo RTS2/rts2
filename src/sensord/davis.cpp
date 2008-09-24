@@ -32,6 +32,8 @@
 
 #define DEF_WEATHER_TIMEOUT 600
 
+#define OPT_UDP             OPT_LOCAL + 1001
+
 using namespace rts2sensor;
 
 int
@@ -41,6 +43,9 @@ Davis::processOption (int _opt)
 	{
 		case 'b':
 			cloud_bad = atof (optarg);
+			break;
+		case OPT_UDP:
+			udpPort->setValueInteger (atoi (optarg));
 			break;
 		default:
 			return Rts2DevSensor::processOption (_opt);
@@ -56,7 +61,7 @@ Davis::init ()
 	if (ret)
 		return ret;
 
-	weatherConn = new DavisUdp (1500, BART_WEATHER_TIMEOUT,
+	weatherConn = new DavisUdp (udpPort->getValueInteger (), BART_WEATHER_TIMEOUT,
 		BART_CONN_TIMEOUT,
 		BART_BAD_WEATHER_TIMEOUT,
 		BART_BAD_WINDSPEED_TIMEOUT, this);
@@ -94,9 +99,13 @@ Davis::Davis (int argc, char **argv)
 
 	nextOpen->setValueTime (nextGoodWeather);
 
+	createValue (udpPort, "udp-port", "port for UDP connection from meteopoll", false);
+	udpPort->setValueInteger (1500);
+
 	addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
 	addOption ('P', "max_peek_windspeed", 1,
 		"maximal allowed windspeed (in km/h");
+	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
 }
 
 void
