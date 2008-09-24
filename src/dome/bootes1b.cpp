@@ -64,6 +64,8 @@ class Bootes1B:public Ford
 		Rts2ValueInteger *sw_state;
 		Rts2ValueTime *ignoreRainSensorTime;
 
+		Rts2ValueBool *rain;
+
 	protected:
 		virtual bool isGoodWeather ();
 
@@ -94,6 +96,8 @@ Bootes1B::Bootes1B (int argc, char **argv)
 	createValue (ignoreRainSensorTime, "ignore_rain_time", "time when rain sensor will be ignored", false);
 	ignoreRainSensorTime->setValueDouble (nan ("f"));
 
+	createValue (rain, "rain", "state of the rain detector", false);
+
 	lastWeatherCheckState = -1;
 
 	timeOpenClose = 0;
@@ -118,6 +122,7 @@ Bootes1B::isGoodWeather ()
 	// rain sensor, ignore if dome was recently opened
 	if (getPortState (RAIN_SENSOR))
 	{
+		rain->setValueBool (true);
 		int weatherCheckState = (getPortState (OPEN_END_2) << 3)
 			| (getPortState (CLOSE_END_2) << 2)
 			| (getPortState (CLOSE_END_1) << 1)
@@ -145,6 +150,7 @@ Bootes1B::isGoodWeather ()
 	}
 	else
 	{
+		rain->setValueBool (false);
 		lastWeatherCheckState = (getPortState (OPEN_END_2) << 3)
 			| (getPortState (CLOSE_END_2) << 2)
 			| (getPortState (CLOSE_END_1) << 1)
@@ -257,6 +263,9 @@ Bootes1B::isOpened ()
 			sendLog;
 		domeFailed = true;
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome opened with errror");
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+
 		domeOpenStart ();
 		return USEC_SEC;
 	}
@@ -316,7 +325,9 @@ Bootes1B::isClosed ()
 		domeFailed = true;
 		// cycle again..
 		maskState (DOME_DOME_MASK, DOME_OPENED, "failed closing");
-		startClose ();
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+		domeCloseStart ();
 		return USEC_SEC;
 	}
 	if (isMoving ())

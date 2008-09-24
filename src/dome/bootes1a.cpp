@@ -204,7 +204,7 @@ Bootes1A::swDome ()
 	if (! isMoving() )
 	{
 		ZAP (ROOF_SWITCH);
-		usleep (250000); 
+		usleep (750000); 
 		VYP (ROOF_SWITCH);
 		return 0;
 	}
@@ -250,6 +250,9 @@ Bootes1A::isOpened ()
 			sendLog;
 		domeFailed = true;
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome opened with errror");
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+
 		domeOpenStart ();
 		return USEC_SEC;
 	}
@@ -312,7 +315,9 @@ Bootes1A::isClosed ()
 		domeFailed = true;
 		// cycle again..
 		maskState (DOME_DOME_MASK, DOME_OPENED, "failed closing");
-		startClose ();
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+		domeCloseStart ();
 		return USEC_SEC;
 	}
 	if (isMoving ())
