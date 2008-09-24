@@ -409,6 +409,17 @@ class Rts2Daemon:public Rts2Block
 		}
 
 		/**
+		 * Get daemon local weather state. Please use isGoodWeather()
+		 * to test for system weather state.
+		 *
+		 * @ returns true if weather state is good.
+		 */
+		bool getWeatherState ()
+		{
+			return (getState () & WEATHER_MASK) == GOOD_WEATHER;
+		}
+
+		/**
 		 * Set weather state.
 		 *
 		 * @param good_weather If true, weather is good.
