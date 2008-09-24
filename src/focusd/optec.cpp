@@ -220,7 +220,7 @@ Rts2DevFocuserOptec::info ()
 int
 Rts2DevFocuserOptec::stepOut (int num)
 {
-	char command[7], rbuf[4];
+	char command[7], rbuf[7];
 	char add = ' ';
 	int ret;
 
@@ -247,7 +247,7 @@ Rts2DevFocuserOptec::stepOut (int num)
 
 	optecConn->setVTime (400);
 
-	ret = optecConn->writeRead (command, 6, rbuf, 3, '\r');
+	ret = optecConn->writeRead (command, 6, rbuf, 6, '\r');
 
 	optecConn->setVTime (40);
 
