@@ -55,31 +55,35 @@ int
 Ford::zjisti_stav_portu ()
 {
 	char ta, tb;
-	char c = STAV_PORTU | PORT_A;
+	char ca = STAV_PORTU | PORT_A;
 
-	if (domeConn->writePort (c))
+	if (domeConn->writePort (ca))
 		return -1;
 	if (domeConn->readPort (ta) != 1)
 	  	return -1;
-	if (domeConn->readPort (c) != 1)
+	if (domeConn->readPort (ca) != 1)
 		return -1;
-	stav_portu[PORT_A] = c;
 	
-	c = STAV_PORTU | PORT_B;
+	char cb = STAV_PORTU | PORT_B;
 
-	if (domeConn->writePort (c))
+	if (domeConn->writePort (cb))
 		return -1;
 	if (domeConn->readPort (tb) != 1)
 	  	return -1;
-	if (domeConn->readPort (c) != 1)
+	if (domeConn->readPort (cb) != 1)
 	  	return -1;
-	stav_portu[PORT_B] = c;
 
-	logStream (MESSAGE_DEBUG) << "A 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ta 
-		<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) stav_portu[PORT_A]
-		<< " B 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) tb
-		<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int)stav_portu[PORT_B] << sendLog;
-	
+	if (stav_portu[PORT_A] != ca || stav_portu[PORT_B] != cb)
+	{
+		logStream (MESSAGE_DEBUG) << "A 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ta 
+			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ca
+			<< " B 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) tb
+			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) cb << sendLog;
+	}
+
+	stav_portu[PORT_A] = ca;
+	stav_portu[PORT_B] = cb;
+
 	return 0;
 }
 
