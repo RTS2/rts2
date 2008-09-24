@@ -944,6 +944,14 @@ Rts2Centrald::weatherChanged ()
 	sendValueAll (failedDevices);
 
 	setWeatherState (failedArr.size () > 0 ? false : true);
+	if (failedArr.size () > 0)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "failed devices:";
+		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
+			ls << " " << (*namIter);
+		ls << sendLog;
+	}
 }
 
 
