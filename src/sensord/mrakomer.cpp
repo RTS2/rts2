@@ -148,6 +148,12 @@ Rts2SensorMrakomer::processOption (int in_opt)
 		case 'f':
 			device_file = optarg;
 			break;
+		case 'b':
+			triggerBad->setValueDouble (atof (optarg));
+			break;
+		case 'g':
+			triggerGood->setValueDouble (atof (optarg));
+			break;
 		default:
 			return Rts2DevSensor::processOption (in_opt);
 	}
