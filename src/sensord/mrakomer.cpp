@@ -169,7 +169,7 @@ Rts2SensorMrakomer::init ()
 	if (ret)
 		return ret;
 
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 10);
+	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 30);
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
