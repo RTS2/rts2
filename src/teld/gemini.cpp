@@ -1644,7 +1644,7 @@ Rts2DevTelescopeGemini::startMove ()
 	if (fabs (dec_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
 	#endif
 	{
-		return change_real (ra_diff, dec_diff);
+		return change_real (-1 * ra_diff, -1 * dec_diff);
 	}
 
 	fixed_ha = nan ("f");
