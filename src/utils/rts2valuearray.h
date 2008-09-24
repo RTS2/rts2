@@ -21,6 +21,7 @@
 #define __RTS2_VALUEARRAY__
 
 #include "rts2value.h"
+#include <algorithm>
 
 /**
  * String array value. Holds unlimited number of strings.
