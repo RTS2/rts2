@@ -65,6 +65,8 @@ class Dummy:public Cupola
 
 		virtual int startOpen ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
+				return 0;
 			mcount->setValueInteger (0);
 			return 0;
 		}
@@ -81,12 +83,16 @@ class Dummy:public Cupola
 
 		virtual int startClose ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
+				return 0;
 			mcount->setValueInteger (0);
 			return 0;
 		}
 
 		virtual long isClosed ()
 		{
+		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
+				return -2;
 			return isMoving ();
 		}
 
