@@ -351,20 +351,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual int processData (char *data, size_t size);
 
-		/**
-		 * Function to do focusing. To fullfill it's task, it can
-		 * use following informations:
-		 *
-		 * focusingData is (char *) array holding last image
-		 * focusingHeader holds informations about image size etc.
-		 * focusExposure is (float) with exposure setting of focussing
-		 *
-		 * Shall focusing need a box image, it should call box method.
-		 *
-		 * Return 0 if focusing should continue, !0 otherwise.
-		 */
-		//virtual int doFocusing ();
-
 		Rts2ValueRectangle *chipUsedReadout;
 
 		/**
@@ -478,6 +464,24 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		const int getHeight ()
 		{
 			return chipSize->getHeightInt ();
+		}
+
+		/**
+		 * Get X offset of used aread (in pixels)
+		 *
+		 */
+		const int getUsedY ()
+		{
+			return chipUsedReadout->getYInt ();
+		}
+
+		/**
+		 * Get X offset of used aread (in pixels)
+		 *
+		 */
+		const int getUsedX ()
+		{
+			return chipUsedReadout->getXInt ();
 		}
 
 		/**

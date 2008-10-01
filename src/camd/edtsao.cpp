@@ -594,6 +594,8 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 	writeCommand (true, addr++, ZERO);
 	// read..
 	int i;
+	for (i = 0; i < getUsedY (); i++)
+		writeCommand (true, addr++, SKIP);
 	for (i = 0; i <= getUsedHeight (); i ++)
 		writeCommand (true, addr++, READ);
 	writeCommand (true, addr++, VEND);
@@ -604,9 +606,16 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 		writeCommand (false, addr++, SKIP);
 	int width;
 	if (channels == 1)
-		width = 2024;
+	{
+		// skyp in X axis..
+		for (i = 0; i < getUsedX (); i++)
+			writeCommand (false, addr++, SKIP);
+		width = 2024 - getUsedX ();
+	}
 	else
+	{
 		width = 1020;
+	}
 	for (i = 0; i < width; i++)
 		writeCommand (false, addr++, READ);
 	writeCommand (false, addr++, HEND);
@@ -701,10 +710,10 @@ Rts2CamdEdtSao::readoutStart ()
 	 * SET SIZE VARIABLES FOR IMAGE
 	 */
 	if (channels == 1)
-		width = 2024;
+		width = getUsedWidth ();
 	else
 		width = 1020;
-	height = chipHeight->getValueInteger ();
+	height = getUsedHeight ();
 	ret = pdv_setsize (pd, width * channels * dsub, height);
 	if (ret == -1)
 	{
@@ -714,7 +723,6 @@ Rts2CamdEdtSao::readoutStart ()
 	}
 	pdv_set_width (pd, width * channels * dsub);
 	pdv_set_height (pd, height);
-	setSize (pdv_get_width (pd), pdv_get_height (pd), -1, 0);
 	depth = pdv_get_depth (pd);
 	db = bits2bytes (depth);
 	imagesize = chipUsedReadout->getWidthInt () * chipUsedReadout->getHeightInt () * db;
