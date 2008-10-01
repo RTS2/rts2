@@ -243,9 +243,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	tempAir = NULL;
 	tempCCD = NULL;
 	tempSet = NULL;
-	tempRegulation = NULL;
-	coolingPower = NULL;
-	fan = NULL;
+	nightCoolTemp = NULL;
 	filter = NULL;
 	ccdType[0] = '\0';
 	ccdRealType = ccdType;
@@ -286,7 +284,6 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
 	rotang->setValueDouble (0);
 
-	nightCoolTemp = nan ("f");
 	focuserDevice = NULL;
 	wheelDevice = NULL;
 
@@ -297,8 +294,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 
 	createValue (rnoise, "RNOISE", "CCD readout noise");
 
-	// cooling & other options..
-	addOption ('c', "cooling_temp", 1, "default night cooling temperature");
+	// other options..
 	addOption ('F', "focuser", 1, "name of focuser device, which will be granted to do exposures without priority");
 	addOption ('W', "filterwheel", 1, "name of device which is used as filter wheel");
 	addOption ('e', NULL, 1, "default exposure");
@@ -416,9 +412,6 @@ Rts2DevCamera::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'c':
-			nightCoolTemp = atof (optarg);
-			break;
 		case 'F':
 			focuserDevice = optarg;
 			break;
@@ -676,10 +669,6 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return setCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
 	}
-	if (old_value == tempRegulation)
-	{
-		return setTempRegulation (new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
 	if (old_value == binning)
 	{
 		Binning2D *bin = (Binning2D *) binning->getData ();
@@ -743,20 +732,18 @@ Rts2DevCamera::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
+		case SERVERD_EVENING | SERVERD_STANDBY:
 		case SERVERD_DUSK | SERVERD_STANDBY:
 		case SERVERD_NIGHT | SERVERD_STANDBY:
 		case SERVERD_DAWN | SERVERD_STANDBY:
+		case SERVERD_EVENING:
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
-			camCoolHold ();
-			break;
-		case SERVERD_EVENING | SERVERD_STANDBY:
-		case SERVERD_EVENING:
-			camCoolMax ();
+			beforeNight ();
 			break;
 		default:
-			camCoolShutdown ();
+			afterNight ();
 	}
 	return Rts2ScriptDevice::changeMasterState (new_state);
 }
@@ -830,7 +817,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	int ret;
 
 	// if it is currently exposing
-	// or performin other op that can block command execution
+	// or performing other op that can block command execution
 	if ((chipState & CAM_EXPOSING)
 		|| (((chipState & CAM_READING)
 		&& !supportFrameTransfer ()))
@@ -923,11 +910,16 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
+		quedExpNumber->dec ();
+		// update que changes..
+		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
+		quedExpNumber->inc ();
 		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT,
 			0, 0, "starting frame transfer");
 		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
-		// remove exposure flag from state
-		camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
+		if (queValues.empty ())
+			// remove exposure flag from state
+			camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
 	}
 	else
 	{
@@ -960,39 +952,6 @@ Rts2DevCamera::camStopRead (Rts2Conn * conn)
 	ret = camStopRead ();
 	if (ret)
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot end readout");
-	return ret;
-}
-
-
-int
-Rts2DevCamera::camCoolMax (Rts2Conn * conn)
-{
-	int ret = camCoolMax ();
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling mode to cool max");
-	return ret;
-}
-
-
-int
-Rts2DevCamera::camCoolHold (Rts2Conn * conn)
-{
-	int ret;
-	ret = camCoolHold ();
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW, "cannot set cooling mode to cool max");
-	return ret;
-}
-
-
-int
-Rts2DevCamera::camCoolShutdown (Rts2Conn * conn)
-{
-	int ret;
-	ret = camCoolShutdown ();
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW,
-			"cannot shutdown camera cooling system");
 	return ret;
 }
 
@@ -1200,14 +1159,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 		if (!conn->paramEnd ())
 			return -2;
 		return camStopRead (conn);
-	}
-	else if (conn->isCommand ("coolmax"))
-	{
-		return camCoolMax (conn);
-	}
-	else if (conn->isCommand ("coolhold"))
-	{
-		return camCoolHold (conn);
 	}
 	return Rts2ScriptDevice::commandAuthorized (conn);
 }

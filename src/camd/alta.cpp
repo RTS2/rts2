@@ -34,6 +34,10 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 	private:
 		CApnCamera * alta;
 		Rts2ValueSelection * bitDepth;
+		Rts2ValueSelection *fanMode;
+
+		Rts2ValueSelection *coolerStatus;
+		Rts2ValueSelection *coolerMode;
 
 		void setBitDepth (int newBit);
 
@@ -59,10 +63,10 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 
 		virtual int camChipInfo (int chip);
 
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
+		virtual int changeMasterState (int new_state);
+
 		virtual int setCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
+		virtual void afterNight ();
 };
 
 void
@@ -194,6 +198,15 @@ Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		setBitDepth (new_value->getValueInteger ());
 		return 0;
 	}
+	if (old_value == coolerMode)
+	{
+		return write_CoolerMode (new_value->getValueInteger ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+	}
+	if (old_value == fanMode)
+	{
+		return write_FanMode (new_value->getValueInteger ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+	}
+
 	return Rts2DevCamera::setValue (old_value, new_value);
 }
 
@@ -203,18 +216,39 @@ Rts2DevCamera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
-	createTempRegulation ();
 	createTempSet ();
 	createCamFan ();
 
 	createExpType ();
 
+	createValue (coolerStatus, "COOL_STA", "cooler status", true);
+	coolerStatus->addSelVal ("OFF");
+	coolerStatus->addSelVal ("RAMPING_TO_SETPOINT");
+	coolerStatus->addSelVal ("CORRECTING");
+	coolerStatus->addSelVal ("RAMPING_TO_AMBIENT");
+	coolerStatus->addSelVal ("AT_AMBIENT");
+	coolerStatus->addSelVal ("AT_MAX");
+	coolerStatus->addSelVal ("AT_MIN");
+	coolerStatus->addSelVal ("AT_SETPOINT");
+
+	createValue (coolerMode, "COOL_MOD", "cooler mode", true);
+	coolerMode->addSelVal ("OFF");
+	coolerMode->addSelVal ("ON");
+	coolerMode->addSelVal ("SHUTDOWN");
+
 	createValue (bitDepth, "BITDEPTH", "bit depth", true, 0, CAM_WORKING);
 	bitDepth->addSelVal ("16 bit");
 	bitDepth->addSelVal ("12 bit");
 
+	createValue (fanMode, "FAN", "fan mode", true);
+	fanMode->addSelVal ("OFF");
+	fanMode->addSelVal ("LOW");
+	fanMode->addSelVal ("MEDIUM");
+	fanMode->addSelVal ("HIGH");
+
 	alta = NULL;
 	addOption ('b', NULL, 0, "switch to 12 bit readout mode; see alta specs for details");
+	addOption ('c', NULL, 1, "night cooling temperature");
 }
 
 
@@ -235,6 +269,9 @@ Rts2DevCameraAlta::processOption (int in_opt)
 	{
 		case 'b':
 			bitDepth->setValueInteger (1);
+			break;
+		case 'c':
+			nightCoolTemp->setValueFloat (atof (optarg));
 			break;
 		default:
 			return Rts2DevCamera::processOption (in_opt);
@@ -293,7 +330,8 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::info ()
 {
-	tempRegulation->setValueInteger (alta->read_CoolerEnable ());
+	coolerStatus->setValueInteger (camera->read_CoolerStatus ());
+	coolerMode->setValueInteger (camera->read_CoolerMode ());
 	tempSet->setValueFloat (alta->read_CoolerSetPoint ());
 	tempCCD->setValueFloat (alta->read_TempCCD ());
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
@@ -310,26 +348,6 @@ Rts2DevCameraAlta::camChipInfo (int chip)
 
 
 int
-Rts2DevCameraAlta::camCoolMax ()
-{
-	alta->write_CoolerEnable (true);
-	alta->write_FanMode (Apn_FanMode_High);
-	alta->write_CoolerSetPoint (nightCoolTemp);
-	return 0;
-}
-
-
-int
-Rts2DevCameraAlta::camCoolHold ()
-{
-	alta->write_CoolerEnable (true);
-	alta->write_FanMode (Apn_FanMode_High);
-	alta->write_CoolerSetPoint (nightCoolTemp);
-	return 0;
-}
-
-
-int
 Rts2DevCameraAlta::setCoolTemp (float new_temp)
 {
 	alta->write_CoolerEnable (true);
@@ -339,8 +357,8 @@ Rts2DevCameraAlta::setCoolTemp (float new_temp)
 }
 
 
-int
-Rts2DevCameraAlta::camCoolShutdown ()
+void
+Rts2DevCameraAlta::afterNight ()
 {
 	alta->write_CoolerEnable (false);
 	alta->write_FanMode (Apn_FanMode_Low);

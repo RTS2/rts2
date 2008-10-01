@@ -55,10 +55,7 @@ class Rts2DevCameraMiniccd:public Rts2DevCamera
 		virtual ~ Rts2DevCameraMiniccd (void);
 
 		virtual int ready ();
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
-		virtual int setCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
+		virtual int setCoolTemp (float _temp);
 		virtual int camFilter (int new_filter);
 };
 
@@ -345,7 +342,7 @@ Rts2DevCameraMiniccd::ready ()
 
 
 int
-Rts2DevCameraMiniccd::camCoolMax ()
+Rts2DevCameraMiniccd::setCoolTemp (float _temp)
 {
 	if (!tempControl->getValueBool ())
 		return 0;
@@ -360,27 +357,6 @@ Rts2DevCameraMiniccd::camCoolMax ()
 	msg[CCD_TEMP_SET_LO_INDEX] = 0;
 	write (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
 	read (fd_ccd, (char *) msg, CCD_MSG_TEMP_LEN);
-	return 0;
-}
-
-
-int
-Rts2DevCameraMiniccd::camCoolHold ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevCameraMiniccd::setCoolTemp (float new_temp)
-{
-	return 0;
-}
-
-
-int
-Rts2DevCameraMiniccd::camCoolShutdown ()
-{
 	return 0;
 }
 

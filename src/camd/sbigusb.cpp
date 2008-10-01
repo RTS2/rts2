@@ -1,6 +1,6 @@
 /* 
- * (USB) Sbig driver.
- * Copyright (C) 2004-2007 Petr Kubanek <petr@kubanek.net>
+ * (USB) SBIG driver.
+ * Copyright (C) 2004-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,7 +59,11 @@ ambient_ad2c (unsigned int ad)
 	return 25.0 - 45.0 * (log (r / 3.0) / 2.0529692213);
 }
 
-
+/**
+ * Class for USB SBIG camera.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevCameraSbig:public Rts2DevCamera
 {
 	private:
@@ -81,6 +85,11 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		GetCCDInfoResults0 chip_info;
 		ReadoutLineParams rlp;
 		int sbig_readout_mode;
+
+		Rts2ValueInteger *coolingPower;
+		Rts2ValueSelection *tempRegulation;
+		Rts2ValueBool *fan;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int initChips ();
@@ -106,6 +115,8 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int readoutStart ();
 		virtual int endReadout ();
 		virtual int readoutOneLine ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		Rts2DevCameraSbig (int argc, char **argv);
@@ -229,16 +240,55 @@ Rts2DevCameraSbig::readoutOneLine ()
 }
 
 
+int
+Rts2DevCameraSbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == tempRegulation)
+	{
+		switch (new_value->getValueInteger ())
+		{
+			case 0:
+				return setcool (0, 0, 0) == 0 ? 0 : -2;
+			case 1:
+				return setCoolTemp (tempSet->getValueFloat ()) == 0 ? 0 : -2;
+			case 2:
+				return setcool (2, coolingPower->getValueInteger (), 0) == 0 ? 0 : -2;
+			default:
+				return -2;
+		}
+	}
+	if (old_value == coolingPower)
+	{
+		return setcool (2, new_value->getValueInteger (), 0) == 0 ? 0 : -2;
+	}
+	if (old_value == fan)
+	{
+		return set_fan (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
+	}
+	return Rts2DevCamera::setValue (old_value, new_value);
+}
+
+
 Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempSet ();
-	createCoolingPower ();
 	createTempCCD ();
-	createCamFan ();
 
 	createExpType ();
+
+	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true);
+	tempRegulation->addSelVal ("OFF");
+	tempRegulation->addSelVal ("TEMP");
+	tempRegulation->addSelVal ("POWER");
+
+	tempRegulation->setValueInteger (0);
+
+	createValue (coolingPower, "COOL_PWR", "cooling power", true);
+	coolingPower->setValueInteger (0);
+
+	createValue (fan, "FAN", "camera fan state", true);
 
 	pcam = NULL;
 	usb_port = 0;
@@ -416,18 +466,16 @@ Rts2DevCameraSbig::info ()
 	QueryTemperatureStatusResults qtsr;
 	QueryCommandStatusParams qcsp;
 	QueryCommandStatusResults qcsr;
-	if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) !=
-		CE_NO_ERROR)
+	if (pcam->SBIGUnivDrvCommand (CC_QUERY_TEMPERATURE_STATUS, NULL, &qtsr) != CE_NO_ERROR)
 		return -1;
 	qcsp.command = CC_MISCELLANEOUS_CONTROL;
-	if (pcam->SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) !=
-		CE_NO_ERROR)
+	if (pcam->SBIGUnivDrvCommand (CC_QUERY_COMMAND_STATUS, &qcsp, &qcsr) != CE_NO_ERROR)
 		return -1;
 	fan->setValueInteger (qcsr.status & 0x100);
 	tempAir->setValueFloat (pcam->ADToDegreesC (qtsr.ambientThermistor, FALSE));
 	tempSet->setValueFloat (pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE));
-	coolingPower->setValueInteger ((int) ((qtsr.power / 255.0) * 1000));
 	tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
+	coolingPower->setValueInteger (qtsr.power);
 	return Rts2DevCamera::info ();
 }
 

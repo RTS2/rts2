@@ -38,11 +38,6 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
-#define CAMERA_COOL_OFF            0
-#define CAMERA_COOL_MAX            1
-#define CAMERA_COOL_HOLD           2
-#define CAMERA_COOL_SHUTDOWN       3
-
 /**
  * Class which holds 2D binning informations.
  *
@@ -389,17 +384,14 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		Rts2ValueFloat *tempCCD;
 		Rts2ValueFloat *tempSet;
 
-		Rts2ValueInteger *tempRegulation;
-		Rts2ValueInteger *coolingPower;
-		Rts2ValueBool *fan;
+		// night cooling temperature
+		Rts2ValueFloat *nightCoolTemp;
 
 		char ccdType[64];
 		char *ccdRealType;
 		char serialNumber[64];
 
 		Rts2Filter *filter;
-
-		float nightCoolTemp;
 
 		virtual void checkQueChanges (int fakeState);
 
@@ -565,34 +557,34 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			expType->addSelVal (enumName, data);
 		}
 
+		/**
+		 * Create value for air temperature camera sensor. Use on CCDs which
+		 * can sense air temperature.
+		 */
 		void createTempAir ()
 		{
 			createValue (tempAir, "CCD_AIR", "detector air temperature");
 		}
 
+		/**
+		 * Create value for CCD temperature sensor.
+		 */
 		void createTempCCD ()
 		{
 			createValue (tempCCD, "CCD_TEMP", "CCD temperature");
 		}
 
+		/**
+		 * Create CCD target temperature. Used for devices which can
+		 * actively regulate CCD temperature. It creates tempSet and 
+		 * nightCoolTemp variables.
+		 */
 		void createTempSet ()
 		{
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, 0, CAM_WORKING, false);
-		}
-
-		void createTempRegulation ()
-		{
-			createValue (tempRegulation, "CCD_REG", "temperature regulation");
-		}
-
-		void createCoolingPower ()
-		{
-			createValue (coolingPower, "CCD_PWR", "cooling power");
-		}
-
-		void createCamFan ()
-		{
-			createValue (fan, "CCD_FAN", "fan on (1) / off (0)");
+			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false);
+			nightCoolTemp->setValueFloat (nan("f"));
+			addOption ('c', NULL, 1, "night cooling temperature");
 		}
 
 		/**
@@ -656,15 +648,12 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual void postEvent (Rts2Event * event);
 
+		virtual int changeMasterState (int new_state);
+
 		virtual int idle ();
 
-		virtual int changeMasterState (int new_state);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
-		virtual int ready ()
-		{
-			return -1;
-		}
+//		virtual int changeMasterState (int new_state);
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int info ();
 
 		virtual int scriptEnds ();
@@ -674,25 +663,32 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		{
 			return endReadout ();
 		}
-		virtual int camCoolMax ()
-		{
-			return -1;
-		}
-		virtual int camCoolHold ()
-		{
-			return -1;
-		}
+
+		/**
+		 * Sets camera cooling temperature.
+		 *
+		 * @param new_temp New cooling temperature.
+		 */
 		virtual int setCoolTemp (float new_temp)
 		{
 			return -1;
 		}
-		virtual int setTempRegulation (int new_reg)
+
+
+		/**
+		 * Called before night stars. Can be used to hook in preparing camera for night.
+		 */
+		virtual void beforeNight ()
 		{
-			return -1;
+			if (nightCoolTemp && !isnan (nightCoolTemp->getValueFloat ()))
+				setCoolTemp (nightCoolTemp->getValueFloat ());
 		}
-		virtual int camCoolShutdown ()
+		
+		/**
+		 * Called when night ends. Can be used to switch off cooling. etc..
+		 */
+		virtual void afterNight ()
 		{
-			return -1;
 		}
 
 		/**
@@ -705,9 +701,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		int camReadout (Rts2Conn * conn);
 		int camStopRead (Rts2Conn * conn);
-		int camCoolMax (Rts2Conn * conn);
-		int camCoolHold (Rts2Conn * conn);
-		int camCoolShutdown (Rts2Conn * conn);
 
 		virtual int getFilterNum ();
 
