@@ -30,6 +30,14 @@ Rts2ValueRectangle::createValues ()
 }
 
 
+void
+Rts2ValueRectangle::checkChange ()
+{
+	if (x->wasChanged () || y->wasChanged () || w->wasChanged () || h->wasChanged ())
+		changed ();
+}
+
+
 Rts2ValueRectangle::Rts2ValueRectangle (std::string in_val_name, int32_t baseType):
 Rts2Value (in_val_name)
 {
@@ -63,6 +71,7 @@ Rts2ValueRectangle::setInts (int in_x, int in_y, int in_w, int in_h)
 	y->setValueInteger (in_y);
 	w->setValueInteger (in_w);
 	h->setValueInteger (in_h);
+	checkChange ();
 }
 
 
@@ -78,8 +87,7 @@ Rts2ValueRectangle::setValue (Rts2Conn *connection)
 		return -2;
 	if (connection->paramNextString (&val) || h->setValueCharArr (val))
 		return -2;
-	if (x->wasChanged () || y->wasChanged () || w->wasChanged () || h->wasChanged ())
-		changed ();
+	checkChange ();
 	return connection->paramEnd () ? 0 : -2;
 }
 
@@ -125,6 +133,7 @@ Rts2ValueRectangle::setValueCharArr (const char *in_value)
 		return -1;
 	*top = '\0';
 	h->setValueCharArr (buf);
+	checkChange ();
 	return 0;
 }
 
@@ -153,6 +162,7 @@ Rts2ValueRectangle::setFromValue(Rts2Value * new_value)
 		y->setFromValue (((Rts2ValueRectangle *)new_value)->getY ());
 		w->setFromValue (((Rts2ValueRectangle *)new_value)->getWidth ());
 		h->setFromValue (((Rts2ValueRectangle *)new_value)->getHeight ());
+		checkChange ();
 	}
 }
 

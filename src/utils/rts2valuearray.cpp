@@ -47,6 +47,7 @@ Rts2ValueStringArray::setValue (Rts2Conn * connection)
 			return -2;
 		value.push_back (std::string (nextVal));
 	}
+	changed ();
 	return 0;
 }
 
@@ -55,6 +56,7 @@ int
 Rts2ValueStringArray::setValueCharArr (const char *_value)
 {
 	value = SplitStr (std::string (_value), std::string (" "));
+	changed ();
 	return 0;
 }
 
