@@ -589,7 +589,7 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 {
 	// write parallel commands
 	int addr = 0;
-	if (skipLines->wasChanged () == false && chipUsedReadout->wasChanged () == false)
+	if (skipLines->wasChanged () == false && chipUsedReadout->wasChanged () == false && splitMode->wasChanged () == false)
 	{
 		return 0;
 	}
@@ -601,7 +601,7 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 	int i;
 	for (i = 0; i < getUsedY (); i++)
 		writeCommand (true, addr++, SKIP);
-	for (i = 0; i <= getUsedHeight (); i ++)
+	for (i = 0; i <= getUsedHeight (); i++)
 		writeCommand (true, addr++, READ);
 	writeCommand (true, addr++, VEND);
 	// write serial commandsa
@@ -612,10 +612,10 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 	int width;
 	if (channels == 1)
 	{
-		// skyp in X axis..
+		// skip in X axis..
 		for (i = 0; i < getUsedX (); i++)
 			writeCommand (false, addr++, SKIP);
-		width = 2024 - getUsedX ();
+		width = getUsedWidth ();
 	}
 	else
 	{
