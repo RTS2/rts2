@@ -107,6 +107,12 @@ TargetGRB::load ()
 		gcnPacketMin = 60;
 		gcnPacketMax = 90;
 	}
+	else if (gcnPacketType >= 100 && gcnPacketType < 110)
+	{
+		// AGILE
+		gcnPacketMin = 100;
+		gcnPacketMax = 109;
+	}
 	else if (gcnPacketType >= 110 && gcnPacketType <= 150)
 	{
 		// GLAST
@@ -456,6 +462,10 @@ TargetGRB::getSatelite ()
 		if (gcnPacketType >= 67)
 			return "SWIFT BURST (XRT)";
 		return "SWIFT BURST (BAT)";
+	}
+	else if (gcnPacketMin == 100)
+	{
+		return "AGILE";
 	}
 	else if (gcnPacketMin == 110)
 	{
