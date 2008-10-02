@@ -591,6 +591,13 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 {
 	// write parallel commands
 	int addr = 0;
+	if (skipLines->wasChanged () == false && chipUsedReadout->wasChanged () == false)
+	{
+		return 0;
+	}
+	skipLines->resetValueChanged ();
+	chipUsedReadout->resetValueChanged ();
+	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
 	writeCommand (true, addr++, ZERO);
 	// read..
 	int i;
@@ -620,6 +627,7 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 		writeCommand (false, addr++, READ);
 	writeCommand (false, addr++, HEND);
 	writeCommandEnd ();
+	logStream (MESSAGE_DEBUG) << "pattern written" << sendLog;
 	return 0;
 }
 
