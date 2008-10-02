@@ -301,8 +301,6 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		virtual int initValues ();
 };
 
-//		bool shutter;
-//		bool overrun;
 
 int
 Rts2CamdEdtSao::edtwrite (unsigned long lval)
@@ -553,7 +551,7 @@ Rts2CamdEdtSao::initChips ()
 	if (ret)
 		return ret;
 
-	setSize (2040, chipHeight->getValueInteger (), 0, 0);
+	setSize (2024, chipHeight->getValueInteger (), 0, 0);
 
 	ret = setDAC ();
 	return ret;
@@ -729,8 +727,6 @@ Rts2CamdEdtSao::readoutStart ()
 			sendLog;
 		return -1;
 	}
-	pdv_set_width (pd, width * channels * dsub);
-	pdv_set_height (pd, height);
 	depth = pdv_get_depth (pd);
 	db = bits2bytes (depth);
 	imagesize = chipUsedReadout->getWidthInt () * chipUsedReadout->getHeightInt () * db;
@@ -749,9 +745,6 @@ Rts2CamdEdtSao::readoutStart ()
 			* timeout_val * 5 / 2000 + 2000;
 	pdv_set_timeout (pd, timeout_val);
 	logStream (MESSAGE_DEBUG) << "timeout_val: " << timeout_val << " millisecs" << sendLog;
-	printf ("width: %d height: %d imagesize: %d depth %i\n",
-		chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), imagesize, depth);
-	fflush (stdout);
 
 	/*
 	 * ALLOCATE MEMORY for the image, and make sure it's aligned on a page
@@ -762,8 +755,10 @@ Rts2CamdEdtSao::readoutStart ()
 	numbufs = 1;
 	bufsize = imagesize * dsub;
 	if (verbose)
+	{
 		printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
-	fflush (stdout);
+		fflush (stdout);
+	}
 	bufs = (u_char **) malloc (numbufs * sizeof (u_char *));
 	for (i = 0; i < numbufs; i++)
 		bufs[i] = (u_char *) pdv_alloc (bufsize);
@@ -790,8 +785,6 @@ Rts2CamdEdtSao::readoutOneLine ()
 		<< " height " << pdv_get_height (pd)
 		<< " depth " << pdv_get_depth (pd)
 		<< sendLog;
-
-	fflush (stdout);
 
 	int tb = pdv_timeouts (pd);
 	pdv_start_image (pd);
