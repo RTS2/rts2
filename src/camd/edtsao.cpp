@@ -615,14 +615,17 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 		// skip in X axis..
 		for (i = 0; i < getUsedX (); i++)
 			writeCommand (false, addr++, SKIP);
-		width = getUsedWidth ();
+		width = getUsedX () + getUsedWidth ();
+		for (; i < width; i++)
+			writeCommand (false, addr++, READ);
+		for (; i < getWidth (); i++)
+			writeCommand (false, addr++, SKIP);
 	}
 	else
 	{
-		width = 1020;
+		for (i = 0; i < 1020; i++)
+			writeCommand (false, addr++, READ);
 	}
-	for (i = 0; i < width; i++)
-		writeCommand (false, addr++, READ);
 	writeCommand (false, addr++, HEND);
 	writeCommandEnd ();
 	logStream (MESSAGE_DEBUG) << "pattern written" << sendLog;
