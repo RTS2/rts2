@@ -601,8 +601,10 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 	int i;
 	for (i = 0; i < getUsedY (); i++)
 		writeCommand (true, addr++, SKIP);
-	for (i = 0; i <= getUsedHeight (); i++)
+	for (; i < getUsedY () + getUsedHeight (); i++)
 		writeCommand (true, addr++, READ);
+	for (; i < getHeight (); i++)
+		writeCommand (true, addr++, SKIP);
 	writeCommand (true, addr++, VEND);
 	// write serial commandsa
 	addr = 0;
