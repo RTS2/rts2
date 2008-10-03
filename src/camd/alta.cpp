@@ -200,11 +200,13 @@ Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == coolerEnabled)
 	{
-		return alta->write_CoolerEnable (((Rts2ValueBool *)new_value)->getValueBool ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+		alta->write_CoolerEnable (((Rts2ValueBool *)new_value)->getValueBool ());
+		return 0;
 	}
 	if (old_value == fanMode)
 	{
-		return alta->write_FanMode (new_value->getValueInteger ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+		alta->write_FanMode (new_value->getValueInteger ());
+		return 0;
 	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
