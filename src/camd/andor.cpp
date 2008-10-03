@@ -316,7 +316,6 @@ Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
 	createTempCCD ();
-	createTempRegulation ();
 	createTempSet ();
 
 	createExpType ();
@@ -1221,13 +1220,6 @@ int
 Rts2DevCameraAndor::camChipInfo (int chip)
 {
 	return 0;
-}
-
-
-int
-Rts2DevCameraAndor::camCoolMax ()
-{
-	return camCoolHold ();
 }
 
 
