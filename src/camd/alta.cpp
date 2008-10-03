@@ -200,11 +200,11 @@ Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == coolerEnabled)
 	{
-		return write_CoolerEnable (((Rts2ValueBool *)new_value)->getValueBool ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+		return alta->write_CoolerEnable (((Rts2ValueBool *)new_value)->getValueBool ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
 	}
 	if (old_value == fanMode)
 	{
-		return write_FanMode (new_value->getValueInteger ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
+		return alta->write_FanMode (new_value->getValueInteger ()) == CAPNCAMERA_SUCCESS ? 0 : -2;
 	}
 
 	return Rts2DevCamera::setValue (old_value, new_value);
@@ -217,7 +217,6 @@ Rts2DevCamera (in_argc, in_argv)
 	createTempAir ();
 	createTempCCD ();
 	createTempSet ();
-	createCamFan ();
 
 	createExpType ();
 
@@ -327,8 +326,8 @@ Rts2DevCameraAlta::ready ()
 int
 Rts2DevCameraAlta::info ()
 {
-	coolerStatus->setValueInteger (camera->read_CoolerStatus ());
-	coolerEnabled->setValueBool (camera->read_CoolerEnable ());
+	coolerStatus->setValueInteger (alta->read_CoolerStatus ());
+	coolerEnabled->setValueBool (alta->read_CoolerEnable ());
 	tempSet->setValueFloat (alta->read_CoolerSetPoint ());
 	tempCCD->setValueFloat (alta->read_TempCCD ());
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
@@ -360,7 +359,6 @@ Rts2DevCameraAlta::afterNight ()
 	alta->write_CoolerEnable (false);
 	alta->write_FanMode (Apn_FanMode_Low);
 	alta->write_CoolerSetPoint (100);
-	return 0;
 }
 
 
