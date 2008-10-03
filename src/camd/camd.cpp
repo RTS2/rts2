@@ -427,6 +427,9 @@ Rts2DevCamera::processOption (int in_opt)
 		case 't':
 			ccdRealType = optarg;
 			break;
+		case 'c':
+			nightCoolTemp->setValueFloat (atof (optarg));
+			break;
 		case 'r':
 			rotang->setValueCharArr (optarg);
 			break;
