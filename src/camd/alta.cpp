@@ -63,8 +63,6 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 
 		virtual int camChipInfo (int chip);
 
-		virtual int changeMasterState (int new_state);
-
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
 };
