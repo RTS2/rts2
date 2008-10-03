@@ -327,6 +327,15 @@ Rts2DevCamera (in_argc, in_argv)
 	baselineClamp = NULL;
 	baselineOff = NULL;
 
+	createValue (tempStatus, "temp_status", "Andor temperature status", false);
+	tempStatus->addSelVal ("OFF");
+	tempStatus->addSelVal ("NOT_STABILIZED");
+	tempStatus->addSelVal ("STABILIZED");
+	tempStatus->addSelVal ("NOT_REACHED");
+	tempStatus->addSelVal ("OUT_RANGE");
+	tempStatus->addSelVal ("NOT_SUPPORTED");
+	tempStatus->addSelVal ("DRIFT");
+
 	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, 0, CAM_WORKING, true);
 	ADChannel->setValueInteger (0);
 
