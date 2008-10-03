@@ -80,17 +80,13 @@ Rts2DevSensorMS257::writePort (const char *str)
 {
 	int ret;
 	ret = ms257Dev->writePort (str, strlen (str));
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Writing '" << str << "' (" << strlen (str) <<
-		")" << sendLog;
-	#endif
-	if (ret != (int) strlen (str))
+	if (ret)
 	{
 		resetDevice ();
 		return -1;
 	}
-	ret = ms257Dev->writePort ("\n", 1);
-	if (ret != 1)
+	ret = ms257Dev->writePort ('\r');
+	if (ret)
 	{
 		resetDevice ();
 		return -1;
@@ -111,7 +107,7 @@ Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
 		return ret;
 
 	// check that we match \cr\lf[E|value]>
-	if (buf[0] != '\n' || buf[1] != '\n')
+	if (buf[0] != '\r' || buf[1] != '\n')
 	{
 		logStream (MESSAGE_ERROR) << "Reply string does not start with CR LF"
 			<< " (" << std::hex << (int) buf[0] << std::
@@ -120,9 +116,6 @@ Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
 	}
 	*rstr = buf + 2;
 	buf[i] = '\0';
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_ERROR) << "Read from port " << buf << sendLog;
-	#endif
 	if (**rstr == 'E')
 	{
 		logStream (MESSAGE_ERROR) << "Cmd: " << cmd << " Error: " << *rstr <<
@@ -351,6 +344,7 @@ Rts2DevSensorMS257::init ()
 		return ret;
 
 	ms257Dev = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 200);
+	ms257Dev->setDebug (true);
 	ret = ms257Dev->init ();
 	if (ret)
 		return ret;
