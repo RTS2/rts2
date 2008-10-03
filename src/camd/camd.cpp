@@ -428,6 +428,8 @@ Rts2DevCamera::processOption (int in_opt)
 			ccdRealType = optarg;
 			break;
 		case 'c':
+			if (nightCoolTemp == NULL)
+				return Rts2ScriptDevice::processOption (in_opt);
 			nightCoolTemp->setValueFloat (atof (optarg));
 			break;
 		case 'r':
