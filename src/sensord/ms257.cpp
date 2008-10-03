@@ -344,17 +344,11 @@ Rts2DevSensorMS257::init ()
 		return ret;
 
 	ms257Dev = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 200);
-	ms257Dev->setDebug (true);
 	ret = ms257Dev->init ();
 	if (ret)
 		return ret;
 
 	ms257Dev->flushPortIO ();
-
-	// char *rstr;
-
-	// try to read ready sign first..
-	//readPort (&rstr);
 
 	ret = readRts2Value ("VER", msVer);
 	if (ret)
