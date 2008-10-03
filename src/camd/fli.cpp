@@ -90,10 +90,8 @@ class Rts2DevCameraFli:public Rts2DevCamera
 
 		virtual int camChipInfo (int chip);
 
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
+		virtual void afterNight ();
 };
 
 int
@@ -472,20 +470,6 @@ Rts2DevCameraFli::camChipInfo (int chip)
 
 
 int
-Rts2DevCameraFli::camCoolMax ()
-{
-	return setCoolTemp (nightCoolTemp);
-}
-
-
-int
-Rts2DevCameraFli::camCoolHold ()
-{
-	return setCoolTemp (nightCoolTemp);
-}
-
-
-int
 Rts2DevCameraFli::setCoolTemp (float new_temp)
 {
 	LIBFLIAPI ret;
@@ -497,10 +481,11 @@ Rts2DevCameraFli::setCoolTemp (float new_temp)
 }
 
 
-int
-Rts2DevCameraFli::camCoolShutdown ()
+void
+Rts2DevCameraFli::afterNight ()
 {
-	return setCoolTemp (40);
+	setCoolTemp (40);
+	Rts2DevCamera::afterNight ();
 }
 
 
