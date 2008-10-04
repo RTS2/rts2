@@ -42,7 +42,6 @@ class Rts2SensorMrakomer: public Rts2DevSensor
 		Rts2ValueDouble *triggerGood;
 
 		Rts2ValueBool *heater;
-		Rts2ValueFloat *sleepPeriod;
 
 		Rts2ValueInteger *numberMes;
 		Rts2ValueInteger *mrakStatus;
@@ -95,8 +94,6 @@ Rts2SensorMrakomer::readSensor ()
 	numberMes->setValueInteger (tno);
 	mrakStatus->setValueInteger (tstat);
 
-	usleep ((int) (sleepPeriod->getValueFloat () * USEC_SEC));
-
 	return 0;
 }
 
@@ -120,8 +117,6 @@ Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
 	triggerGood->setValueDouble (nan ("f"));
 
 	createValue (heater, "HEATER", "heater state", true);
-	createValue (sleepPeriod, "sleep", "sleep period between measurments", false);
-	sleepPeriod->setValueFloat (1);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
@@ -225,7 +220,7 @@ Rts2SensorMrakomer::info ()
 int
 Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == sleepPeriod)
+	if (old_value == heater)
 		return 0;
 	return Rts2DevSensor::setValue (old_value, new_value);
 }
