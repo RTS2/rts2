@@ -656,7 +656,8 @@ Rts2DevCamera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == exposure
 		|| old_value == quedExpNumber
 		|| old_value == expType
-		|| old_value == rotang)
+		|| old_value == rotang
+		|| old_value == nightCoolTemp)
 	{
 		return 0;
 	}
