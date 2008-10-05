@@ -1,8 +1,8 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2-sensor-phytron \
 	rts2-sensor-ds21 rts2-sensor-mrakomer \
-	rts2-sensor-pixy rts2-sensor-davis
+	rts2-sensor-pixy rts2-sensor-davis rts2-sensor-fram-weather
 
-noinst_HEADERS = sensord.h sensorgpib.h davisudp.h
+noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h
 
 EXTRA_DIST = sensord.cpp
 
@@ -11,10 +11,8 @@ LDADD = sensord.o ../utils/librts2block.a
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
 rts2_sensor_ms257_SOURCES = ms257.cpp
-rts2_sensor_ms257_LDADD = ${LDADD}
 
 rts2_sensor_newport_lamp_SOURCES = newport-lamp.cpp
-rts2_sensor_newport_lamp_LDADD = ${LDADD}
 
 rts2_sensor_phytron_SOURCES = phytron.cpp
 
@@ -25,6 +23,9 @@ rts2_sensor_mrakomer_SOURCES = mrakomer.cpp
 rts2_sensor_pixy_SOURCES = pixy.cpp
 
 rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp
+
+rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
+rts2_sensor_fram_weather_LDADD = ${LDADD} @LIB_NOVA@
 
 if GPIBLIB
 

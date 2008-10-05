@@ -1,3 +1,22 @@
+/* 
+ * Davis weather sensor.
+ * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #ifndef __RTS2_DAVIS__
 #define __RTS2_DAVIS__
 
@@ -13,19 +32,15 @@ namespace rts2sensor
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Davis: public Rts2DevSensor
+class Davis: public SensorWeather
 {
 	private:
 		DavisUdp *weatherConn;
 		double cloud_bad;
 
-		int maxWindSpeed;
-		int maxPeekWindspeed;
-
 		Rts2ValueFloat *temperature;
 		Rts2ValueFloat *humidity;
-		Rts2ValueTime *nextOpen;
-		Rts2ValueInteger *rain;
+		Rts2ValueBool *rain;
 		Rts2ValueFloat *windspeed;
 		Rts2ValueDouble *cloud;
 
@@ -54,17 +69,17 @@ class Davis: public Rts2DevSensor
 		{
 			return humidity->getValueFloat ();
 		}
-		void setRain (int in_rain)
+		void setRain (bool _rain)
 		{
-			rain->setValueInteger (in_rain);
+			rain->setValueBool (_rain);
 		}
 		virtual void setRainWeather (int in_rain)
 		{
 			setRain (in_rain);
 		}
-		int getRain ()
+		bool getRain ()
 		{
-			return rain->getValueInteger ();
+			return rain->getValueBool ();
 		}
 		void setWindSpeed (float in_windpseed)
 		{
@@ -82,16 +97,15 @@ class Davis: public Rts2DevSensor
 		{
 			return cloud->getValueDouble ();
 		}
-		void setWeatherTimeout (time_t wait_time);
 
 		int getMaxPeekWindspeed ()
 		{
-			return maxPeekWindspeed;
+			return 50;
 		}
 
 		int getMaxWindSpeed ()
 		{
-			return maxWindSpeed;
+			return 50;
 		}
 };
 

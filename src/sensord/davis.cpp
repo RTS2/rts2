@@ -48,7 +48,7 @@ Davis::processOption (int _opt)
 			udpPort->setValueInteger (atoi (optarg));
 			break;
 		default:
-			return Rts2DevSensor::processOption (_opt);
+			return SensorWeather::processOption (_opt);
 	}
 	return 0;
 }
@@ -57,7 +57,7 @@ int
 Davis::init ()
 {
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
@@ -73,50 +73,27 @@ Davis::init ()
 
 
 Davis::Davis (int argc, char **argv)
-:Rts2DevSensor (argc, argv)
+:SensorWeather (argc, argv)
 {
 	createValue (temperature, "DOME_TMP", "temperature in degrees C");
 	createValue (humidity, "DOME_HUM", "(outside) humidity");
 	createValue (rain, "RAIN", "whenever is raining");
-	rain->setValueInteger (1);
+	rain->setValueInteger (true);
+
 	createValue (windspeed, "WINDSPED", "windspeed");
 	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
-
-	maxWindSpeed = 50;
-	maxPeekWindspeed = 50;
 
 	weatherConn = NULL;
 	cloud_bad = 0;
 
 	createValue (cloud, "CLOUD_S", "cloud sensor value");
 
-	createValue (nextOpen, "next_open", "time when we can next time open dome",
-		false);
-
-	time_t nextGoodWeather;
-	time (&nextGoodWeather);
-	nextGoodWeather += DEF_WEATHER_TIMEOUT;
-
-	nextOpen->setValueTime (nextGoodWeather);
-
 	createValue (udpPort, "udp-port", "port for UDP connection from meteopoll", false);
 	udpPort->setValueInteger (1500);
 
 	addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
-	addOption ('P', "max_peek_windspeed", 1,
-		"maximal allowed windspeed (in km/h");
+	addOption ('P', "max_peek_windspeed", 1, "maximal allowed windspeed (in km/h");
 	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
-}
-
-void
-Davis::setWeatherTimeout (time_t wait_time)
-{
-	time_t next;
-	time (&next);
-	next += wait_time;
-	if (next > nextOpen->getValueInteger ())
-		nextOpen->setValueTime (next);
-	setWeatherState (false);
 }
 
 
