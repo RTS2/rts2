@@ -313,6 +313,10 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 	{
 		case IS_DAEMONIZED:
 		case DO_DAEMONIZE:
+		case CENTRALD_OK:
+			if (allCentraldRunning ())
+				break;
+			// otherwise write it to syslog..
 			switch (in_messageType)
 			{
 				case MESSAGE_ERROR:
@@ -334,8 +338,6 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 		case DONT_DAEMONIZE:
 			// print to stdout
 			Rts2Block::sendMessage (in_messageType, in_messageString);
-			break;
-		case CENTRALD_OK:
 			break;
 	}
 }

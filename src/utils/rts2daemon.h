@@ -266,8 +266,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
 		 */
-		int setCondValue (Rts2CondValue * old_value_cond, char op,
-			Rts2Value * new_value);
+		int setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value);
 
 		/**
 		 * Really perform value change.
@@ -277,8 +276,7 @@ class Rts2Daemon:public Rts2Block
 		 *   (numerical or string), but "=", "+=" and "-=" are ussualy supported.
 		 * @param new_value
 		 */
-		int doSetValue (Rts2CondValue * old_cond_value, char op,
-			Rts2Value * new_value);
+		int doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value);
 
 		/**
 		 * Called after value was changed.
@@ -310,6 +308,18 @@ class Rts2Daemon:public Rts2Block
 		void updateInfoTime ()
 		{
 			info_time->setValueDouble (getNow ());
+		}
+
+		/**
+		 * Set info time to supplied date. Please note that if you use this function,
+		 * you should consider not calling standard info () routine, which updates
+		 * info time - just overwrite its implementation with empty body.
+		 *
+		 * @param _date  Date of the infotime.
+		 */
+		void setInfoTime (struct tm *_date)
+		{
+			info_time->setValueInteger (mktime (_date));
 		}
 
 		/**
