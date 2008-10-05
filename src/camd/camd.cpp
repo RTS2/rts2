@@ -347,18 +347,20 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 	Rts2ScriptDevice::checkQueChanges (fakeState);
 	if (queValues.empty ())
 	{
-		if (waitingForEmptyQue->getValueBool ())
+		if (waitingForEmptyQue->getValueBool () == true)
 		{
 			waitingForEmptyQue->setValueBool (false);
 			sendOkInExposure = true;
-		}
-		if (exposureConn)
-		{
-			connections_t::iterator iter;
-			// ask all centralds for possible blocking devices
-			for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+			if (exposureConn)
 			{
-				(*iter)->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
+				quedExpNumber->inc ();
+				waitingForNotBop->setValueBool (true);
+				connections_t::iterator iter;
+				// ask all centralds for possible blocking devices
+				for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+				{
+					(*iter)->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
+				}
 			}
 		}
 	}
@@ -761,7 +763,7 @@ Rts2DevCamera::camStartExposure ()
 	if ((!expType || expType->getValueInteger () == 0)
 		&& (getDeviceBopState () & BOP_EXPOSURE))
 	{
-		if (!waitingForNotBop->getValueBool ())
+		if (waitingForNotBop->getValueBool () == false)
 		{
 			quedExpNumber->inc ();
 			sendValueAll (quedExpNumber);
@@ -812,6 +814,13 @@ Rts2DevCamera::camStartExposureWithoutCheck ()
 		dataBuffer = new char[dataBufferSize];
 	}
 
+	// check if that comes from old request
+	if (sendOkInExposure && exposureConn)
+	{
+		sendOkInExposure = false;
+		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
+	}
+
 	return 0;
 }
 
@@ -823,17 +832,18 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 
 	// if it is currently exposing
 	// or performing other op that can block command execution
+	// or there are qued values which needs to be dealed before we can start exposing
 	if ((chipState & CAM_EXPOSING)
-		|| (((chipState & CAM_READING)
-		&& !supportFrameTransfer ()))
+		|| ((chipState & CAM_READING) && !supportFrameTransfer ())
+		|| !queValues.empty ()
 		)
 	{
-		if (!fromQue)
+		if (fromQue == false)
 		{
-			quedExpNumber->inc ();
-			sendValueAll (quedExpNumber);
 			if (queValues.empty ())
 			{
+				quedExpNumber->inc ();
+				sendValueAll (quedExpNumber);
 				return 0;
 			}
 		}
@@ -856,12 +866,6 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	}
 	else
 	{
-		// check if that comes from old request
-		if (sendOkInExposure && exposureConn)
-		{
-			sendOkInExposure = false;
-			exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
-		}
 		exposureConn = conn;
 		logStream (MESSAGE_INFO) << "exposing for '"
 			<< (conn ? conn->getName () : "null") << "'" << sendLog;
@@ -915,10 +919,7 @@ Rts2DevCamera::camReadout (Rts2Conn * conn)
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
-		quedExpNumber->dec ();
-		// update que changes..
 		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
-		quedExpNumber->inc ();
 		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT,
 			0, 0, "starting frame transfer");
 		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
@@ -1111,14 +1112,12 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	// otherwise we will be unable to answer DEVDEM_E_PRIORITY
 	else if (conn->isCommand ("expose"))
 	{
-		CHECK_PRIORITY;
 		if (!conn->paramEnd ())
 			return -2;
 		return camExpose (conn, getStateChip (0), false);
 	}
 	else if (conn->isCommand ("stopexpo"))
 	{
-		CHECK_PRIORITY;
 		if (!conn->paramEnd ())
 			return -2;
 		return stopExposure ();
@@ -1126,7 +1125,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	else if (conn->isCommand ("box"))
 	{
 		int x, y, w, h;
-		CHECK_PRIORITY;
 		if (conn->paramNextInteger (&x)
 			|| conn->paramNextInteger (&y)
 			|| conn->paramNextInteger (&w) || conn->paramNextInteger (&h)
@@ -1136,7 +1134,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("center"))
 	{
-		CHECK_PRIORITY;
 		int w, h;
 		if (conn->paramEnd ())
 		{
@@ -1160,7 +1157,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("stopread"))
 	{
-		CHECK_PRIORITY;
 		if (!conn->paramEnd ())
 			return -2;
 		return camStopRead (conn);
