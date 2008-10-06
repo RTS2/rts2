@@ -180,7 +180,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	}
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "For " << getName () << " queing " <<
+	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " <<
 		nextComd->getText () << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	queCommand (nextComd);
