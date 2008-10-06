@@ -1165,7 +1165,7 @@ Rts2DevTelescopeGemini::init ()
 	if (ret)
 		return ret;
 
-	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 90);
 	tel_conn->setDebug ();
 
 	ret = tel_conn->init ();
