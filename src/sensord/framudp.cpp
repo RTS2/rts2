@@ -78,10 +78,9 @@ ConnFramWeather::receive (fd_set * set)
 	char Wbuf[100];
 	char Wstatus[10];
 	int data_size = 0;
-	struct tm statDate;
+	struct ln_date statDate;
 	int rain = 1;
 	float windspeed;
-	float sec_f;
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
 		struct sockaddr_in from;
@@ -100,10 +99,10 @@ ConnFramWeather::receive (fd_set * set)
 			<< sendLog;
 		// parse weather info
 		ret = sscanf (Wbuf,
-			"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%fZ status=%s",
-			&windspeed, &rain, &statDate.tm_year, &statDate.tm_mon,
-			&statDate.tm_mday, &statDate.tm_hour, &statDate.tm_min,
-			&sec_f, Wstatus);
+			"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%lfZ status=%s",
+			&windspeed, &rain, &statDate.years, &statDate.months,
+			&statDate.days, &statDate.hours, &statDate.minutes,
+			&statDate.seconds, Wstatus);
 		if (ret != 9)
 		{
 			logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret

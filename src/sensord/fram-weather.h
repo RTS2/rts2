@@ -23,6 +23,8 @@
 #include "sensord.h"
 #include "framudp.h"
 
+#include <libnova/libnova.h>
+
 namespace rts2sensor
 {
 
@@ -66,7 +68,7 @@ class FramWeather: public SensorWeather
 		 * @param _status     Weather connection status (watch or something else)
 		 * @param _date       Date and time of last weather measurement.
 		 */
-		void setWeather (float _windSpeed, bool _rain, const char *_status, struct tm *_date);
+		void setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date);
 };
 
 }

@@ -96,8 +96,9 @@ FramWeather::info ()
 
 
 void
-FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, struct tm *_date)
+FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date)
 {
+	struct tm _tm;
 	windSpeed->setValueFloat (_windSpeed);
 	if (_windSpeed >= maxWindSpeed->getValueFloat ())
 		setWeatherTimeout (timeoutWindspeed->getValueInteger ());
@@ -115,7 +116,15 @@ FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, stru
 	  	watch->setValueInteger (1);
 		setWeatherTimeout (timeoutConn->getValueInteger ());
 	}
-	setInfoTime (_date);
+	// change from date to tm
+	_tm.tm_isdst = 0;
+	_tm.tm_year = _date->years - 1900;
+	_tm.tm_mon = _date->months - 1;
+	_tm.tm_mday = _date->days;
+	_tm.tm_hour = _date->hours;
+	_tm.tm_min = _date->minutes;
+	_tm.tm_sec = (int) _date->seconds;
+	setInfoTime (&_tm);
 	if (getLastInfoTime () > connUpdateSep->getValueInteger ())
 	{
 		setWeatherTimeout (timeoutConn->getValueInteger ());
