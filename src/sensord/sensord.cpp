@@ -53,7 +53,7 @@ SensorWeather::SensorWeather (int argc, char **argv, int _timeout)
 :Rts2DevSensor (argc, argv)
 {
 	createValue (nextGoodWeather, "next_good_weather", "date and time of next good weather");
-	nextGoodWeather->setValueDouble (getNow () + _timeout);
+	setWeatherTimeout (_timeout);
 }
 
 void
