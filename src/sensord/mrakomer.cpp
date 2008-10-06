@@ -36,6 +36,9 @@ class Rts2SensorMrakomer: public SensorWeather
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
 
+		// use this value only for logging to detect if we reported trips
+		double lastTempDiff;
+
 		Rts2ValueInteger *numVal;
 
 		Rts2ValueDouble *triggerBad;
@@ -167,7 +170,7 @@ Rts2SensorMrakomer::info ()
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
-			if (getWeatherState () == false)
+			if (getWeatherState () == false && lastTempDiff < triggerGood->getValueDouble ())
 			{
 				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
 					<< " trigger: " << triggerGood->getValueDouble ()
@@ -175,6 +178,8 @@ Rts2SensorMrakomer::info ()
 			}
 		}
 	}
+	// record last value
+	lastTempDiff = tempDiff->getValueDouble ();
 	return SensorWeather::info ();
 }
 
