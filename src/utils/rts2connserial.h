@@ -86,16 +86,16 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		/**
 		 * Create connection to serial port.
 		 *
-		 * @param in_devName   Device name (ussually /dev/ttySx)
-		 * @param in_master    Controlling block
-		 * @param in_baudSpeed Device baud speed
-		 * @param in_cSize     Character bits size (7 or 8 bits)
-		 * @param in_parity    Device parity.
-		 * @param in_vTime     Time to wait for single read before giving up.
+		 * @param _devName   Device name (ussually /dev/ttySx)
+		 * @param _master    Controlling block
+		 * @param _baudSpeed Device baud speed
+		 * @param _cSize     Character bits size (7 or 8 bits)
+		 * @param _parity    Device parity.
+		 * @param _vTime     Time to wait for single read before giving up.
 		 */
-		Rts2ConnSerial (const char *in_devName, Rts2Block * in_master,
-			bSpeedT in_baudSpeed = BS9600, cSizeT in_cSize = C8,
-			parityT in_parity = NONE, int in_vTime = 40);
+		Rts2ConnSerial (const char *_devName, Rts2Block * _master,
+			bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8,
+			parityT _parity = NONE, int _vTime = 40);
 		virtual ~Rts2ConnSerial (void);
 
 		/**

@@ -34,23 +34,22 @@ Rts2ConnSerial::setAttr ()
 	return 0;
 }
 
-Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, bSpeedT in_baudSpeed,
-cSizeT in_cSize, parityT in_parity, int in_vTime)
-:Rts2ConnNoSend (in_master)
+Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime)
+:Rts2ConnNoSend (_master)
 {
-	sock = open (in_devName, O_RDWR | O_NOCTTY | O_NDELAY);
+	sock = open (_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
 	if (sock < 0)
-		logStream (MESSAGE_ERROR) << "cannot open serial port:" << in_devName << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot open serial port:" << _devName << sendLog;
 
 	// some defaults
-	baudSpeed = in_baudSpeed;
+	baudSpeed = _baudSpeed;
 
-	cSize = in_cSize;
-	parity = in_parity;
+	cSize = _cSize;
+	parity = _parity;
 
-	vMin = 0;
-	vTime = in_vTime;
+	vMin = 1;
+	vTime = _vTime;
 
 	debugPortComm = false;
 }
