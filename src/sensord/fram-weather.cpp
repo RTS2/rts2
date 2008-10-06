@@ -68,6 +68,8 @@ FramWeather::FramWeather (int argc, char **argv)
 	createValue (windSpeed, "windspeed", "current measured windspeed", false);
 	createValue (rain, "rain", "true it it is raining", false);
 	createValue (watch, "watch", "connection watch status", false);
+	watch->addSelVal ("WATCH");
+	watch->addSelVal ("UNKNOW");
 
 	createValue (maxWindSpeed, "max_windspeed", "maximal allowed windspeed", false);
 	maxWindSpeed->setValueFloat (50);
