@@ -26,7 +26,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2SensorMrakomer: public Rts2DevSensor
+class Rts2SensorMrakomer: public SensorWeather
 {
 	private:
 		char *device_file;
@@ -98,8 +98,98 @@ Rts2SensorMrakomer::readSensor ()
 }
 
 
+int
+Rts2SensorMrakomer::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'f':
+			device_file = optarg;
+			break;
+		case 'b':
+			triggerBad->setValueDouble (atof (optarg));
+			break;
+		case 'g':
+			triggerGood->setValueDouble (atof (optarg));
+			break;
+		default:
+			return SensorWeather::processOption (in_opt);
+	}
+	return 0;
+}
+
+
+int
+Rts2SensorMrakomer::init ()
+{
+	int ret;
+	ret = SensorWeather::init ();
+	if (ret)
+		return ret;
+
+	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 30);
+	ret = mrakConn->init ();
+	if (ret)
+		return ret;
+	
+	mrakConn->flushPortIO ();
+
+	if (!isnan (triggerGood->getValueDouble ()))
+		setWeatherState (false);
+
+	return 0;
+}
+
+
+int
+Rts2SensorMrakomer::info ()
+{
+	int ret;
+	ret = readSensor ();
+	if (ret)
+	{
+		if (getLastInfoTime () > 60)
+			setWeatherTimeout (60);
+		return -1;
+	}
+	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
+	{
+		// trips..
+		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
+		{
+			if (getWeatherState () == true)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerBad->getValueDouble ()
+					<< sendLog;
+			}
+			setWeatherTimeout (300);
+		}
+		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
+		{
+			if (getWeatherState () == false)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerGood->getValueDouble ()
+					<< sendLog;
+			}
+		}
+	}
+	return SensorWeather::info ();
+}
+
+
+int
+Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == heater)
+		return 0;
+	return SensorWeather::setValue (old_value, new_value);
+}
+
+
 Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
+:SensorWeather (in_argc, in_argv)
 {
 	mrakConn = NULL;
 
@@ -132,97 +222,6 @@ Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
 Rts2SensorMrakomer::~Rts2SensorMrakomer (void)
 {
 	delete mrakConn;
-}
-
-
-int
-Rts2SensorMrakomer::processOption (int in_opt)
-{
-	switch (in_opt)
-	{
-		case 'f':
-			device_file = optarg;
-			break;
-		case 'b':
-			triggerBad->setValueDouble (atof (optarg));
-			break;
-		case 'g':
-			triggerGood->setValueDouble (atof (optarg));
-			break;
-		default:
-			return Rts2DevSensor::processOption (in_opt);
-	}
-	return 0;
-}
-
-
-int
-Rts2SensorMrakomer::init ()
-{
-	int ret;
-	ret = Rts2DevSensor::init ();
-	if (ret)
-		return ret;
-
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 30);
-	ret = mrakConn->init ();
-	if (ret)
-		return ret;
-	
-	mrakConn->flushPortIO ();
-
-	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false);
-
-	return 0;
-}
-
-
-int
-Rts2SensorMrakomer::info ()
-{
-	int ret;
-	ret = readSensor ();
-	if (ret)
-	{
-		if (getLastInfoTime () > 60)
-			setWeatherState (false);
-		return -1;
-	}
-	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
-	{
-		// trips..
-		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
-		{
-			if (getWeatherState () == true)
-			{
-				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
-					<< " trigger: " << triggerBad->getValueDouble ()
-					<< sendLog;
-			}
-			setWeatherState (false);
-		}
-		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
-		{
-			if (getWeatherState () == false)
-			{
-				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
-					<< " trigger: " << triggerGood->getValueDouble ()
-					<< sendLog;
-			}
-			setWeatherState (true);
-		}
-	}
-	return Rts2DevSensor::info ();
-}
-
-
-int
-Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == heater)
-		return 0;
-	return Rts2DevSensor::setValue (old_value, new_value);
 }
 
 
