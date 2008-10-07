@@ -98,6 +98,10 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 
 		int writeValue (char anum, const char cmd[3], Rts2Value *val);
 		int readValue (char anum, const char *cmd, Rts2Value *val);
+		/**
+		 * Reads binary value.
+		 */
+		int readValueBin (char anum, const char *cmd, Rts2Value *val);
 };
 
 DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
@@ -155,7 +159,7 @@ DS21Axis::info ()
 	master->readValue (anum, "TE", poserr);
 	master->readValue (anum, "GV", velocity);
 	master->readValue (anum, "GA", acceleration);
-	master->readValue (anum, "TS", status);
+	master->readValueBin (anum, "TS", status);
 	return 0;
 }
 
@@ -338,6 +342,36 @@ Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
 	if (ret)
 		return -1;
 	return val->setValueCharArr (buf);
+}
+
+
+int
+Rts2DevSensorDS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
+{
+	int ret;
+	char buf[500];
+
+	ds21->flushPortIO ();
+
+	ret = writeReadPort (anum, cmd, buf, 500);
+	if (ret)
+		return -1;
+	// convert bin to number
+	int res = 0;
+	for (char *top = buf; top < buf + ret; top++)
+	{
+		switch (*top)
+		{
+			case 0:
+				res = res << 1;
+				break;		
+			case 1:
+				res = res << 1;
+				res |= 0x01;
+				break;
+		}
+	}
+	return val->setValueInteger (res);
 }
 
 
