@@ -24,6 +24,8 @@ class Rts2DevSensorDS21;
 
 /**
  * Holds values and perform operations on them for one axis.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class DS21Axis
 {
@@ -51,7 +53,20 @@ class DS21Axis
 		 */
 		int setValue (Rts2Value *old_value, Rts2Value *new_value);
 		int info ();
+
+		/**
+		 * Check if axis is still moving.
+		 *
+		 * @return true if axis is still moving.
+		 */
+		bool isMoving ();
+
+		void updateStatus ();
 };
+
+/**
+ *
+ */
 
 class Rts2DevSensorDS21: public Rts2DevSensor
 {
@@ -63,9 +78,13 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 
 		int home ();
 
+		friend class DS21Axis;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
+
+		virtual int idle ();
 
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
@@ -102,6 +121,15 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		 * Reads binary value.
 		 */
 		int readValueBin (char anum, const char *cmd, Rts2Value *val);
+
+		/**
+		 * Called when axis start moving.
+		 */
+		void startMove ()
+		{
+			blockExposure ();
+			setTimeout (1);
+		}
 };
 
 DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
@@ -122,6 +150,11 @@ DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
 	master->writePort (anum, "RE");
 
 	master->readValue (anum, "HE", commandSet);
+
+	if (master->readValueBin (anum, "TS", status) == 0)
+	{
+		enabled->setValueBool (status->getValueInteger () & 0x0001);
+	}
 }
 
 
@@ -130,11 +163,17 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == enabled)
 	{
-		return (master->writePort (anum, ((Rts2ValueBool *) new_value)->getValueBool () ? "MN" : "MF")) ? -2 : 0;
+		if (master->writePort (anum, ((Rts2ValueBool *) new_value)->getValueBool () ? "MN" : "MF"))
+			return -2;
+		updateStatus ();
+		return 0;
 	}
 	if (old_value == position)
 	{
-		return (master->writeValue (anum, "MA", new_value)) ? -2 : 0;
+		if (master->writeValue (anum, "MA", new_value))
+			return -2;
+		master->startMove ();
+		return 0;
 	}
 	if (old_value == velocity)
 	{
@@ -161,6 +200,30 @@ DS21Axis::info ()
 	master->readValue (anum, "GA", acceleration);
 	master->readValueBin (anum, "TS", status);
 	return 0;
+}
+
+
+bool
+DS21Axis::isMoving ()
+{
+	if (master->readValueBin (anum, "TS", status))
+		return false;
+	if (status->getValueInteger () & 0x0100)
+	{
+		master->sendValueAll (status);
+		master->readValue (anum, "TP", position);
+		master->sendValueAll (position);
+		return true;
+	}
+	return false;
+}
+
+
+void
+DS21Axis::updateStatus ()
+{
+	master->readValueBin (anum, "TS", status);
+	master->sendValueAll (status);
 }
 
 
@@ -208,6 +271,27 @@ Rts2DevSensorDS21::init ()
 
 
 int
+Rts2DevSensorDS21::idle ()
+{
+	if (blockingExposure ())
+	{
+		for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
+		{
+			if ((*iter).isMoving ())
+				return Rts2DevSensor::idle ();
+		}
+		clearExposure ();
+		for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
+		{
+			(*iter).updateStatus ();
+		}
+		setTimeout (10);
+	}
+	return Rts2DevSensor::idle ();
+}
+
+
+int
 Rts2DevSensorDS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
@@ -232,7 +316,7 @@ Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
 
 Rts2DevSensorDS21::~Rts2DevSensorDS21 (void)
 {
- 	delete ds21;
+	delete ds21;
 }
 
 
@@ -253,8 +337,7 @@ Rts2DevSensorDS21::info ()
 int
 Rts2DevSensorDS21::home ()
 {
-	char buf[500];
-	return writeReadPort (0, "GH", buf, 500);
+	return writePort (0, "GH");
 }
 
 
@@ -297,7 +380,7 @@ Rts2DevSensorDS21::readPort (char *buf, int blen)
 	// delete end '\r'
 	if (buf[ret - 2] == '\r')
 		buf[ret - 2] = '\0';
-	return 0;	
+	return 0;
 }
 
 
@@ -319,12 +402,11 @@ Rts2DevSensorDS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 	int ret;
 	const char *sval = val->getValue ();
 	char *buf = new char[strlen (sval) + 3];
-	char rbuf[500];
 
 	memcpy (buf, cmd, 2);
 	strcpy (buf + 2, sval);
 
-	ret = writeReadPort (anum, buf, rbuf, 500);
+	ret = writePort (anum, buf);
 	delete[] buf;
 	return ret;
 }
@@ -357,21 +439,20 @@ Rts2DevSensorDS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
 	if (ret)
 		return -1;
 	// convert bin to number
-	int res = 0;
-	for (char *top = buf; top < buf + ret; top++)
+	for (char *top = buf; *top; top++)
 	{
 		switch (*top)
 		{
-			case 0:
-				res = res << 1;
-				break;		
-			case 1:
-				res = res << 1;
-				res |= 0x01;
+			case '0':
+				ret = ret << 1;
+				break;
+			case '1':
+				ret = ret << 1;
+				ret |= 0x01;
 				break;
 		}
 	}
-	return val->setValueInteger (res);
+	return val->setValueInteger (ret);
 }
 
 
