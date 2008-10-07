@@ -252,9 +252,6 @@ Rts2DevSensorDS21::init ()
 		return ret;
 
 	ds21 = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 20);
-
-	ds21->setDebug (true);
-
 	ret = ds21->init ();
 	if (ret)
 		return ret;
