@@ -48,7 +48,7 @@ Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpee
 	cSize = _cSize;
 	parity = _parity;
 
-	vMin = 1;
+	vMin = 0;
 	vTime = _vTime;
 
 	debugPortComm = false;

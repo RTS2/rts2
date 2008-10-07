@@ -575,8 +575,8 @@ class LibnovaDate
 
 		LibnovaDate (struct ln_date *_date)
 		{
-			date.years = _date->years;
-			date.months = _date->months;
+			date.years = _date->years + 1900;
+			date.months = _date->months + 1;
 			date.days = _date->days;
 			date.hours = _date->hours;
 			date.minutes = _date->minutes;
