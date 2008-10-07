@@ -36,6 +36,7 @@ class DS21Axis
 		Rts2ValueLong *poserr;
 		Rts2ValueInteger *velocity;
 		Rts2ValueInteger *acceleration;
+		Rts2ValueInteger *status;
 
 		Rts2ValueBool *limitSwitch;
 
@@ -73,13 +74,13 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		virtual ~Rts2DevSensorDS21 (void);
 
 		template < typename T > void createAxisValue( T * &val, char anum,
-			const char *in_val_name, const char *in_desc, bool writeToFits)
+			const char *in_val_name, const char *in_desc, bool writeToFits, int flags = 0)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
 			n[0] = anum + '0';
 			n[1] = '.';
 			strcpy (n+2, in_val_name);
-			createValue (val, n, in_desc, writeToFits);
+			createValue (val, n, in_desc, writeToFits, flags);
 			delete []n;
 		}
 
@@ -109,11 +110,14 @@ DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
 	master->createAxisValue (poserr, anum, "POS_ERROR", "motor position error", true);
 	master->createAxisValue (velocity, anum, "velocity", "programmed velocity", false);
 	master->createAxisValue (acceleration, anum, "acceleration", "programmed acceleration", false);
+	master->createAxisValue (status, anum, "status", "drives status", false, RTS2_DT_HEX);
 	master->createAxisValue (limitSwitch, anum, "limitSwitch", "true if limit switchs are active", false);
 
 	master->createAxisValue (commandSet, anum, "commands", "commands for this motor", false);
 
 	master->writePort (anum, "RE");
+
+	master->readValue (anum, "HE", commandSet);
 }
 
 
@@ -151,7 +155,7 @@ DS21Axis::info ()
 	master->readValue (anum, "TE", poserr);
 	master->readValue (anum, "GV", velocity);
 	master->readValue (anum, "GA", acceleration);
-	master->readValue (anum, "HE", commandSet);
+	master->readValue (anum, "TS", status);
 	return 0;
 }
 
