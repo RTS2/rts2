@@ -595,6 +595,7 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 	}
 	skipLines->resetValueChanged ();
 	chipUsedReadout->resetValueChanged ();
+	splitMode->resetValueChanged ();
 	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
 	writeCommand (true, addr++, ZERO);
 	// read..
