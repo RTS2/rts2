@@ -285,7 +285,7 @@ class Rts2Device:public Rts2Daemon
 		 *
 		 * @return true if device is blocking exposure.
 		 */
-		bool blockingExposures ()
+		bool blockingExposure ()
 		{
 			return getState () & BOP_EXPOSURE;
 		}
