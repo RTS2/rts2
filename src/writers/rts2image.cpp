@@ -447,12 +447,12 @@ Rts2Image::createImage ()
 	fits_create_img (ffile, USHORT_IMG, 2, naxis, &fits_status);
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Image::createImage " <<
-			getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "Error while creating image "
+			<< getFitsErrors () << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << this << " " <<
-		getImageName () << sendLog;
+	logStream (MESSAGE_DEBUG) << "Creating image "
+		<< getImageName () << sendLog;
 
 	// add history
 	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
