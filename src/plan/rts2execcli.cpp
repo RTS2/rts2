@@ -17,8 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define DEBUG_EXTRA
-
 #include <limits.h>
 #include <iostream>
 
@@ -26,8 +24,6 @@
 #include "../writers/rts2image.h"
 #include "../utilsdb/target.h"
 #include "../utils/rts2command.h"
-
-#define DEBUG_EXTRA
 
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString *in_expandPath)
 :Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
