@@ -279,6 +279,17 @@ class Rts2Device:public Rts2Daemon
 		{
 			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible");
 		}
+
+		/**
+		 * Get blocking exposure status.
+		 *
+		 * @return true if device is blocking exposure.
+		 */
+		bool blockingExposures ()
+		{
+			return getState () & BOP_EXPOSURE;
+		}
+
 		void clearExposure ()
 		{
 			maskState (BOP_EXPOSURE, 0, "exposure possible");
