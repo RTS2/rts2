@@ -759,6 +759,24 @@ Fram::init ()
 			return ret;
 	}
 
+	ret = zjisti_stav_portu_rep ();
+	if (ret)
+		return ret;
+	// switch state
+	if (isOn (KONCAK_OTEVRENI_PRAVY) && isOn (KONCAK_OTEVRENI_LEVY))
+	{
+		maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
+	}
+	else if (isOn (KONCAK_ZAVRENI_PRAVY) && isOn (KONCAK_ZAVRENI_PRAVY))
+	{
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome is closed");
+	}
+	else
+	{
+		maskState (DOME_DOME_MASK, DOME_OPENED, "dome is opened");
+		domeCloseStart ();
+	}
+		
 	sendFramMail ("FRAM DOME restart");
 
 	return 0;
