@@ -690,9 +690,9 @@ Fram::isClosed ()
 			closeLeft ();
 			break;
 		default:
-			if (!(isOn (KONCAK_ZAVRENI_PRAVY) || isOn (KONCAK_ZAVRENI_LEVY)))
-				return 0;
-			return -2;
+			if (isOn (KONCAK_ZAVRENI_PRAVY) && isOn (KONCAK_ZAVRENI_LEVY))
+				return -2;
+			return 0;
 	}
 	if (flag)
 		infoAll ();
@@ -772,7 +772,7 @@ Fram::init ()
 	{
 		maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened");
 	}
-	else if (isOn (KONCAK_ZAVRENI_PRAVY) && isOn (KONCAK_ZAVRENI_PRAVY))
+	else if (isOn (KONCAK_ZAVRENI_PRAVY) && isOn (KONCAK_ZAVRENI_LEVY))
 	{
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome is closed");
 	}
