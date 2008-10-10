@@ -530,7 +530,7 @@ Fram::isOpened ()
 				break;
 		case MOVE_NONE:
 			// if we are not opened..
-			if (!(isOn (KONCAK_ZAVRENI_PRAVY) || isOn (KONCAK_OTEVRENI_LEVY)))
+			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || isOn (KONCAK_OTEVRENI_LEVY)))
 				return 0;
 		default:
 			return -2;
