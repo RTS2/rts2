@@ -155,7 +155,7 @@ Ford::switchOffPins (int pin1, int pin2)
 		return -1;
 
 	}
-	return zapni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin);
+	return vypni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin);
 }
 
 
@@ -170,7 +170,7 @@ Ford::switchOffPins (int pin1, int pin2, int pin3)
 		return -1;
 
 	}
-	return zapni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin | adresa[pin3].pin);
+	return vypni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin | adresa[pin3].pin);
 }
 
 
@@ -187,7 +187,7 @@ Ford::switchOffPins (int pin1, int pin2, int pin3, int pin4)
 		return -1;
 
 	}
-	return zapni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin | adresa[pin3].pin | adresa[pin4].port);
+	return vypni_pin (adresa[pin1].port, adresa[pin1].pin | adresa [pin2].pin | adresa[pin3].pin | adresa[pin4].port);
 }
 
 
