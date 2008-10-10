@@ -528,6 +528,10 @@ Fram::isOpened ()
 		case MOVE_OPEN_RIGHT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
 				break;
+		case MOVE_NONE:
+			// if we are not opened..
+			if (!(isOn (KONCAK_ZAVRENI_PRAVY) || isOn (KONCAK_OTEVRENI_LEVY))
+				return 0;
 		default:
 			return -2;
 	}
@@ -686,6 +690,9 @@ Fram::isClosed ()
 			VYP (VENTIL_OTEVIRANI_LEVY);
 			closeLeft ();
 			break;
+		case MOVE_NONE:
+			if (!(isOn (KONCAK_ZAVRENI_PRAVY) || isOn (KONCAK_ZAVRENI_LEVY))
+				return 0;
 		default:
 			return -2;
 	}
