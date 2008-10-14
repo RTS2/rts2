@@ -1,3 +1,22 @@
+/* 
+ * Windows for edditing various variables.
+ * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "rts2nwindowedit.h"
 #include "nmonitor.h"
 
@@ -5,16 +24,14 @@
 
 #define MIN(x,y) ((x < y) ? x : y)
 
-Rts2NWindowEdit::Rts2NWindowEdit (int in_x, int in_y, int w, int h, int in_ex,
-int in_ey, int in_ew, int in_eh,
-int border):
-Rts2NWindow (in_x, in_y, w, h, border)
+Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
+:Rts2NWindow (_x, _y, w, h, border)
 {
-	ex = in_ex;
-	ey = in_ey;
-	eh = in_eh;
-	ew = in_ew;
-	comwin = newpad (in_eh, in_ew);
+	ex = _ex;
+	ey = _ey;
+	eh = _eh;
+	ew = _ew;
+	comwin = newpad (_eh, _ew);
 }
 
 
@@ -85,11 +102,22 @@ Rts2NWindowEdit::refresh ()
 	Rts2NWindow::refresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
-	if (pnoutrefresh
-		(getWriteWindow (), 0, 0, y + ey, x + ex, MIN (y + ey + eh, y + h - 1),
-		MIN (x + ex + ew, x + w - 2)) == ERR)
+	// window coordinates
+	int mwidth = x + w;
+	int mheight = y + h;
+	if (haveBox ())
+	{
+		mwidth -= 2;
+		mheight -= 1;
+	}
+
+	if (pnoutrefresh (getWriteWindow (), 0, 0, y + ey, x + ex,
+		MIN (y + ey + eh, mheight),
+		MIN (x + ex + ew, mwidth)) == ERR)
+	{
 		errorMove ("pnoutrefresh comwin", y + ey, x + ey,
-			MIN (y + ey + eh, y + h - 1), MIN (x + ex + ew, x + w - 2));
+			MIN (y + ey + eh, mheight), MIN (x + ex + ew, mwidth));
+	}
 }
 
 
@@ -104,8 +132,8 @@ Rts2NWindowEdit::setCursor ()
 }
 
 
-Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int in_x, int in_y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
-Rts2NWindowEdit (in_x, in_y, w, h, in_ex, in_ey, in_ew, in_eh, border)
+Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
+:Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 
@@ -119,8 +147,8 @@ Rts2NWindowEditIntegers::passKey (int key)
 }
 
 
-Rts2NWindowEditDigits::Rts2NWindowEditDigits (int in_x, int in_y, int w, int h, int in_ex, int in_ey, int in_ew, int in_eh, int border):
-Rts2NWindowEdit (in_x, in_y, w, h, in_ex, in_ey, in_ew, in_eh, border)
+Rts2NWindowEditDigits::Rts2NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
+:Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 

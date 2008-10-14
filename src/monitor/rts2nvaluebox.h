@@ -21,27 +21,31 @@
 #define __RTS2_NVALUEBOX__
 
 #include "../utils/rts2value.h"
+#include "../utils/rts2valuerectangle.h"
 
 #include "rts2nwindow.h"
 #include "rts2nwindowedit.h"
 #include "rts2daemonwindow.h"
 
+namespace rts2ncur
+{
+
 /**
  * Holds edit box for value.
  */
-class Rts2NValueBox
+class ValueBox
 {
 	private:
 		Rts2NWindow * topWindow;
-		Rts2Value *val;
+		Rts2Value * val;
 	protected:
 		Rts2Value * getValue ()
 		{
 			return val;
 		}
 	public:
-		Rts2NValueBox (Rts2NWindow * top, Rts2Value * in_val);
-		virtual ~ Rts2NValueBox (void);
+		ValueBox (Rts2NWindow * top, Rts2Value * _val);
+		virtual ~ValueBox (void);
 		virtual keyRet injectKey (int key) = 0;
 		virtual void draw () = 0;
 		virtual void sendValue (Rts2Conn * connection) = 0;
@@ -51,10 +55,10 @@ class Rts2NValueBox
 /**
  * Holds edit box for boolean value.
  */
-class Rts2NValueBoxBool:public Rts2NValueBox, public Rts2NSelWindow
+class ValueBoxBool:public ValueBox, Rts2NSelWindow
 {
 	public:
-		Rts2NValueBoxBool (Rts2NWindow * top, Rts2ValueBool * in_val, int in_x, int in_y);
+		ValueBoxBool (Rts2NWindow * top, Rts2ValueBool * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -64,10 +68,10 @@ class Rts2NValueBoxBool:public Rts2NValueBox, public Rts2NSelWindow
 /**
  * Holds edit box for string value.
  */
-class Rts2NValueBoxString:public Rts2NValueBox, Rts2NWindowEdit
+class ValueBoxString:public ValueBox, Rts2NWindowEdit
 {
 	public:
-		Rts2NValueBoxString (Rts2NWindow * top, Rts2Value * in_val, int in_x, int in_y);
+		ValueBoxString (Rts2NWindow * top, Rts2Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -77,13 +81,10 @@ class Rts2NValueBoxString:public Rts2NValueBox, Rts2NWindowEdit
 /**
  * Holds edit box for integer value.
  */
-class Rts2NValueBoxInteger:public Rts2NValueBox,
-public Rts2NWindowEditIntegers
+class ValueBoxInteger:public ValueBox, Rts2NWindowEditIntegers
 {
 	public:
-		Rts2NValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * in_val,
-			int in_x, int in_y);
-
+		ValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -93,13 +94,10 @@ public Rts2NWindowEditIntegers
 /**
  * Holds edit box for long integer value.
  */
-class Rts2NValueBoxLongInteger:public Rts2NValueBox,
-public Rts2NWindowEditIntegers
+class ValueBoxLongInteger:public ValueBox, Rts2NWindowEditIntegers
 {
 	public:
-		Rts2NValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * in_val,
-			int in_x, int in_y);
-
+		ValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -109,11 +107,10 @@ public Rts2NWindowEditIntegers
 /**
  * Holds edit box for float value.
  */
-class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
+class ValueBoxFloat:public ValueBox, Rts2NWindowEditDigits
 {
 	public:
-		Rts2NValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * in_val, int in_x,
-			int in_y);
+		ValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -124,11 +121,10 @@ class Rts2NValueBoxFloat:public Rts2NValueBox, public Rts2NWindowEditDigits
 /**
  * Holds edit box for double value.
  */
-class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEditDigits
+class ValueBoxDouble:public ValueBox, Rts2NWindowEditDigits
 {
 	public:
-		Rts2NValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * in_val, int in_x,
-			int in_y);
+		ValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -139,14 +135,37 @@ class Rts2NValueBoxDouble:public Rts2NValueBox, public Rts2NWindowEditDigits
 /**
  * Holds edit box for selection value.
  */
-class Rts2NValueBoxSelection:public Rts2NValueBox, public Rts2NSelWindow
+class ValueBoxSelection:public ValueBox, Rts2NSelWindow
 {
 	public:
-		Rts2NValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * in_val,
-			int in_x, int in_y);
+		ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 		virtual bool setCursor ();
 };
-#endif							 /* !__RTS2_NVALUEBOX__ */
+
+
+/**
+ * Provides edit box for editting 
+ */
+class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
+{
+	private:
+		Rts2NWindowEditIntegers * edtX;
+		Rts2NWindowEditIntegers * edtY;
+		Rts2NWindowEditIntegers * edtWidth;
+		Rts2NWindowEditIntegers * edtHeight;
+		Rts2NWindowEditIntegers * edtSelected;
+	public:
+		ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
+		virtual ~ValueBoxRectangle ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
+};
+
+}
+
+#endif // !__RTS2_NVALUEBOX__ 

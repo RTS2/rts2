@@ -54,7 +54,7 @@ Rts2NComWin::refresh ()
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	if (pnoutrefresh (comwin, 0, 0, y, x, y + 1, x + w - 1) == ERR)
-		errorMove ("pnoutrefresh comwin", y, x, y + 1, x + w - 1);
+		errorMove ("pnoutrefresh ComWin", y, x, y + 1, x + w - 1);
 	if (pnoutrefresh (statuspad, 0, 0, y + 1, x, y + h - 1, x + w - 1) == ERR)
 		errorMove ("pnoutrefresh statuspad", y + 1, x, y + h - 1, x + w - 1);
 }

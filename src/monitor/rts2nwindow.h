@@ -20,7 +20,7 @@ class Rts2NWindow:public Rts2NLayout
 		WINDOW * window;
 		void errorMove (const char *op, int y, int x, int h, int w);
 	public:
-		Rts2NWindow (int x, int y, int w, int h, int border = 1);
+		Rts2NWindow (int x, int y, int w, int h, bool border = true);
 		virtual ~ Rts2NWindow (void);
 		/**
 		 * Handles key pressed event. Return values has following meaning:

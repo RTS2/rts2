@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, int border):
-Rts2NLayout ()
+Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, bool border)
+:Rts2NLayout ()
 {
 	if (h <= 0)
 		h = 0;
@@ -17,16 +17,7 @@ Rts2NLayout ()
 	window = newwin (h, w, y, x);
 	if (!window)
 		errorMove ("newwin", y, x, h, w);
-	switch (border)
-	{
-		case 0:
-			_haveBox = false;
-			break;
-		case 1:
-			box (window, 0, 0);
-			_haveBox = true;
-			break;
-	}
+	_haveBox = border;
 }
 
 
@@ -194,7 +185,8 @@ Rts2NWindow::leave ()
 }
 
 
-bool Rts2NWindow::setCursor ()
+bool
+Rts2NWindow::setCursor ()
 {
 	return false;
 }

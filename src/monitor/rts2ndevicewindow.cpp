@@ -214,39 +214,39 @@ Rts2NDeviceWindow::createValueBox ()
 	switch (val->getValueType ())
 	{
 		case RTS2_VALUE_BOOL:
-			valueBox = new Rts2NValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
+			valueBox = new ValueBoxBool (this, (Rts2ValueBool *) val, 21, s - 1);
 			break;
 		case RTS2_VALUE_STRING:
-			valueBox = new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
+			valueBox = new ValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
 			break;
 		case RTS2_VALUE_INTEGER:
-			valueBox = new Rts2NValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
+			valueBox = new ValueBoxInteger (this, (Rts2ValueInteger *) val, 21, s);
 			break;
 		case RTS2_VALUE_LONGINT:
-			valueBox = new Rts2NValueBoxLongInteger (this, (Rts2ValueLong *) val, 21, s);
+			valueBox = new ValueBoxLongInteger (this, (Rts2ValueLong *) val, 21, s);
 			break;
 		case RTS2_VALUE_FLOAT:
-			valueBox = new Rts2NValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
+			valueBox = new ValueBoxFloat (this, (Rts2ValueFloat *) val, 21, s);
 			break;
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE:
-			valueBox = new Rts2NValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
+			valueBox = new ValueBoxDouble (this, (Rts2ValueDouble *) val, 21, s);
 			break;
 		case RTS2_VALUE_SELECTION:
-			valueBox = new Rts2NValueBoxSelection (this, (Rts2ValueSelection *) val, 21, s);
+			valueBox = new ValueBoxSelection (this, (Rts2ValueSelection *) val, 21, s);
 			break;
 		default:
 			switch (val->getValueExtType ())
 			{
 				case RTS2_VALUE_RECTANGLE:
-					valueBox = new Rts2NValueBoxString (this, (Rts2ValueString *) val, 21, s - 1);
+					valueBox = new ValueBoxRectangle (this, (Rts2ValueRectangle *) val, 21, s - 1);
 					break;
 				default:
 					logStream (MESSAGE_WARNING) << "Cannot find box for value '"
 						<<  val->getName ()
 						<< " type " << val->getValueType ()
 						<< sendLog;
-					valueBox = new Rts2NValueBoxString (this, val, 21, s - 1);
+					valueBox = new ValueBoxString (this, val, 21, s - 1);
 					break;
 
 			}
