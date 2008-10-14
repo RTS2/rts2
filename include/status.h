@@ -40,7 +40,7 @@
 
 /**
  * Used to deal blocking functions.
- * BOP is for Block OPeration. BOP is used maynly in @see Rts2Command and @see
+ * BOP is for Block OPeration. BOP is used mainly in Rts2Command and
  * Rts2Value.
  *
  * @ingroup RTS2Block
