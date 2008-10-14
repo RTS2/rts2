@@ -42,7 +42,7 @@
 
 #define MAX_DATA    200
 
-typedef enum conn_type_t
+enum conn_type_t
 { NOT_DEFINED_SERVER, CLIENT_SERVER, DEVICE_SERVER, DEVICE_DEVICE };
 
 /**

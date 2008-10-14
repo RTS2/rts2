@@ -485,6 +485,15 @@ class Rts2Block: public Rts2App
 		 */
 		bool allCentraldRunning ();
 
+		/**
+		 * Returns true if at least one connection to centrald is up and running. 
+		 * When that is the case, it is possible to log through RTS2 logging.
+		 * Otherwise, logging shall be diverted to syslog.
+		 *
+		 * @return True if at least one centrald is running.
+		 */
+		bool someCentraldRunning ();
+
 		Rts2Address *findAddress (const char *blockName);
 		Rts2Address *findAddress (int centraldNum, const char *blockName);
 

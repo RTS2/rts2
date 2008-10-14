@@ -23,19 +23,22 @@
 /**
  * Enum for baud speeds.
  */
-typedef enum {BS2400, BS4800, BS9600, BS19200, BS57600, BS115200}
+typedef enum
+{BS2400, BS4800, BS9600, BS19200, BS57600, BS115200}
 bSpeedT;
 
 /**
  * Enum for data size.
  */
-typedef enum {C7, C8}
+typedef enum
+{C7, C8}
 cSizeT;
 
 /**
  * Enum for parity.
  */
-typedef enum {NONE, ODD, EVEN}
+typedef enum
+{NONE, ODD, EVEN}
 parityT;
 
 /**

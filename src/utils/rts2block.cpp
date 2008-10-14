@@ -573,6 +573,24 @@ Rts2Block::allCentraldRunning ()
 }
 
 
+bool
+Rts2Block::someCentraldRunning ()
+{
+	if (getCentraldConns ()->size () <= 0)
+		return true;
+	// check if all masters are up and running and think it is good idea to open
+	// the roof
+	connections_t::iterator iter;
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+	{
+		if ((*iter)->isConnState (CONN_CONNECTED) || (*iter)->isConnState (CONN_AUTH_OK))
+			return true;
+	}
+	return false;
+}
+
+
+
 Rts2Address *
 Rts2Block::findAddress (const char *blockName)
 {

@@ -7,7 +7,7 @@
 #define STATFILE "/dev/tel/stat"
 #define CTRLFILE "/dev/tel/ctrl"
 
-typedef enum
+enum
 {
 	TEL_POINT,
 	// Sidereal mode, telescope points to an object. Is allowed to give commands,

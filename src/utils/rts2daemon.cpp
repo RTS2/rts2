@@ -65,6 +65,7 @@ Rts2Daemon::~Rts2Daemon (void)
 	if (lockf)
 		close (lockf);
 	delete info_time;
+	closelog ();
 }
 
 
@@ -314,7 +315,8 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 		case IS_DAEMONIZED:
 		case DO_DAEMONIZE:
 		case CENTRALD_OK:
-			if (allCentraldRunning ())
+			// if at least one centrald is running..
+			if (someCentraldRunning ())
 				break;
 			// otherwise write it to syslog..
 			switch (in_messageType)
@@ -348,7 +350,6 @@ Rts2Daemon::centraldConnRunning (Rts2Conn *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
-		closelog ();
 		daemonize = CENTRALD_OK;
 	}
 }
@@ -359,7 +360,6 @@ Rts2Daemon::centraldConnBroken (Rts2Conn *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
-		openlog (NULL, LOG_PID, LOG_DAEMON);
 		daemonize = IS_DAEMONIZED;
 		logStream (MESSAGE_WARNING) << "connection to centrald lost" << sendLog;
 	}

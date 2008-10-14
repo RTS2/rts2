@@ -43,7 +43,7 @@
  * Defines CIP (Command In Progress) states. Commands which waits on component or RTS2
  * to reach given state uses this to control their execution.
  */
-typedef enum cip_state_t
+enum cip_state_t
 {
 	CIP_NOT_CALLED = 0x00000000, //! The command does not use CIP.
 	CIP_WAIT       = 0x00002000, //! The command is waiting for status update.
