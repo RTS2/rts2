@@ -163,7 +163,7 @@ Rts2DevPhotOptec::getCount ()
 		}
 	}
 	// we don't care if we get any counts before we change filter..
-	if (ret == -1 && errno == EAGAIN && result[0] == 'A' || result[0] == 'B')
+	if (ret == -1 && errno == EAGAIN && (result[0] == 'A' || result[0] == 'B'))
 	{
 		sendCount (result[1], req_time, (result[0] == 'B' ? true : false));
 		return (long) (req_time * USEC_SEC);
