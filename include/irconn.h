@@ -79,7 +79,7 @@ class IrConn
 			strcpy (vName, name);
 			strcat (vName, ".VERSION");
 
-			status = tpl_get (name, ver, &status);
+			status = tpl_get (vName, ver, &status);
 
 			delete []vName;
 
