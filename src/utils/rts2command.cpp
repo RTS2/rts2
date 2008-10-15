@@ -24,39 +24,39 @@
 
 using namespace std;
 
-Rts2Command::Rts2Command (Rts2Block * in_owner)
+Rts2Command::Rts2Command (Rts2Block * _owner)
 {
-	owner = in_owner;
+	owner = _owner;
 	text = NULL;
 	bopMask = 0;
 	originator = NULL;
 }
 
 
-Rts2Command::Rts2Command (Rts2Block * in_owner, const char *in_text)
+Rts2Command::Rts2Command (Rts2Block * _owner, const char *_text)
 {
-	owner = in_owner;
-	setCommand (in_text);
+	owner = _owner;
+	setCommand (_text);
 	bopMask = 0;
 	originator = NULL;
 }
 
 
-Rts2Command::Rts2Command (Rts2Command * in_command)
+Rts2Command::Rts2Command (Rts2Command * _command)
 {
-	owner = in_command->owner;
-	connection = in_command->connection;
-	setCommand (in_command->getText ());
-	bopMask = in_command->getBopMask ();
+	owner = _command->owner;
+	connection = _command->connection;
+	setCommand (_command->getText ());
+	bopMask = _command->getBopMask ();
 	originator = NULL;
 }
 
 
 int
-Rts2Command::setCommand (const char *in_text)
+Rts2Command::setCommand (const char *_text)
 {
-	text = new char[strlen (in_text) + 1];
-	strcpy (text, in_text);
+	text = new char[strlen (_text) + 1];
+	strcpy (text, _text);
 	return 0;
 }
 
@@ -128,8 +128,8 @@ Rts2Command::deleteConnection (Rts2Conn * conn)
 }
 
 
-Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * in_master, int _centrald_id, int _centrald_num, int _key)
-:Rts2Command (in_master)
+Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * _master, int _centrald_id, int _centrald_num, int _key)
+:Rts2Command (_master)
 {
 	centrald_id = _centrald_id;
 	centrald_num = _centrald_num;
@@ -149,8 +149,8 @@ Rts2CommandSendKey::send ()
 }
 
 
-Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, int centralId, int key)
-:Rts2Command (in_master)
+Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * _master, int centralId, int key)
+:Rts2Command (_master)
 {
 	char *buf;
 	asprintf (&buf, "authorize %i %i", centralId, key);
@@ -159,8 +159,8 @@ Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * in_master, int centralId
 }
 
 
-Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name)
-:Rts2Command (in_master)
+Rts2CommandKey::Rts2CommandKey (Rts2Block * _master, const char *device_name)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "key %s", device_name);
@@ -169,22 +169,22 @@ Rts2CommandKey::Rts2CommandKey (Rts2Block * in_master, const char *device_name)
 }
 
 
-Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * in_camera)
-:Rts2Command (in_camera->getMaster ())
+Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * _camera)
+:Rts2Command (_camera->getMaster ())
 {
 }
 
 
-Rts2CommandExposure::Rts2CommandExposure (Rts2Block * in_master, Rts2DevClientCamera * in_camera, int in_bopMask):
-Rts2Command (in_master)
+Rts2CommandExposure::Rts2CommandExposure (Rts2Block * _master, Rts2DevClientCamera * _camera, int _bopMask)
+:Rts2Command (_master)
 {
 	char *command;
 								 //, (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
 	asprintf (&command, "expose");
 	setCommand (command);
 	free (command);
-	camera = in_camera;
-	setBopMask (in_bopMask);
+	camera = _camera;
+	setBopMask (_bopMask);
 }
 
 
@@ -196,8 +196,8 @@ Rts2CommandExposure::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandReadout::Rts2CommandReadout (Rts2Block * in_master):
-Rts2Command (in_master)
+Rts2CommandReadout::Rts2CommandReadout (Rts2Block * _master):
+Rts2Command (_master)
 {
 	setCommand ("readout");
 }
@@ -213,32 +213,32 @@ Rts2CommandFilter::setCommandFilter (int filter)
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * in_camera, int filter):
-Rts2Command (in_camera->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientCamera * _camera, int filter)
+:Rts2Command (_camera->getMaster ())
 {
-	camera = in_camera;
+	camera = _camera;
 	phot = NULL;
 	filterCli = NULL;
 	setCommandFilter (filter);
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * in_phot, int filter):
-Rts2Command (in_phot->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientPhot * _phot, int filter)
+:Rts2Command (_phot->getMaster ())
 {
 	camera = NULL;
-	phot = in_phot;
+	phot = _phot;
 	filterCli = NULL;
 	setCommandFilter (filter);
 }
 
 
-Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * in_filter, int filter):
-Rts2Command (in_filter->getMaster ())
+Rts2CommandFilter::Rts2CommandFilter (Rts2DevClientFilter * _filter, int filter)
+:Rts2Command (_filter->getMaster ())
 {
 	camera = NULL;
 	phot = NULL;
-	filterCli = in_filter;
+	filterCli = _filter;
 	setCommandFilter (filter);
 }
 
@@ -269,8 +269,8 @@ Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * in_camera, int x, int y, int w, int h):
-Rts2CommandCameraSettings (in_camera)
+Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * _camera, int x, int y, int w, int h):
+Rts2CommandCameraSettings (_camera)
 {
 	char *command;
 	asprintf (&command, "box %i %i %i %i", x, y, w, h);
@@ -279,8 +279,8 @@ Rts2CommandCameraSettings (in_camera)
 }
 
 
-Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * in_camera, int width = -1, int height = -1):
-Rts2CommandCameraSettings (in_camera)
+Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * _camera, int width = -1, int height = -1)
+:Rts2CommandCameraSettings (_camera)
 {
 	char *command;
 	asprintf (&command, "center %i %i", width, height);
@@ -289,97 +289,106 @@ Rts2CommandCameraSettings (in_camera)
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, int in_operand):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int _operand)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %i", in_valName.c_str (), op,
-		in_operand);
+	asprintf (&command, PROTO_SET_VALUE " %s %c %i", _valName.c_str (), op,
+		_operand);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, long in_operand):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long _operand)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %li", in_valName.c_str (), op,
-		in_operand);
+	asprintf (&command, PROTO_SET_VALUE " %s %c %li", _valName.c_str (), op,
+		_operand);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, float in_operand):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %f", in_valName.c_str (), op,
-		in_operand);
+	asprintf (&command, PROTO_SET_VALUE " %s %c %f", _valName.c_str (), op,
+		_operand);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, double in_operand):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %f", in_valName.c_str (), op,
-		in_operand);
+	asprintf (&command, PROTO_SET_VALUE " %s %c %f", _valName.c_str (), op,
+		_operand);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client,std::string in_valName, char op, bool in_operand):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, bool _operand)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %i", in_valName.c_str (), op,
-		in_operand ? 1 : 0);
+	asprintf (&command, PROTO_SET_VALUE " %s %c %i", _valName.c_str (), op,
+		_operand ? 1 : 0);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * in_client, std::string in_valName, char op, std::string in_operand, bool raw):
-Rts2Command (in_client->getMaster ())
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, int x, int y, int w, int h)
+:Rts2Command (_client->getMaster ())
+{
+	char *command;
+	asprintf (&command, PROTO_SET_VALUE " %s %c %i %i %i %i", _valName.c_str (), op,
+		x, y, w, h);
+	setCommand (command);
+	free (command);
+}
+
+
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, std::string _operand, bool raw)
+:Rts2Command (_client->getMaster ())
 {
 	char *command;
 	if (raw)
 	{
-		asprintf (&command, PROTO_SET_VALUE " %s %c %s", in_valName.c_str (),
-			op, in_operand.c_str ());
+		asprintf (&command, PROTO_SET_VALUE " %s %c %s", _valName.c_str (),
+			op, _operand.c_str ());
 	}
 	else
 	{
-		asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", in_valName.c_str (),
-			op, in_operand.c_str ());
+		asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", _valName.c_str (),
+			op, _operand.c_str ());
 	}
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel):
-Rts2Command (in_master)
+Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel)
+:Rts2Command (_master)
 {
-	tel = in_tel;
+	tel = _tel;
 }
 
 
-Rts2CommandMove::Rts2CommandMove (Rts2Block * in_master,
-Rts2DevClientTelescope * in_tel, double ra,
-double dec):
-Rts2Command (in_master)
+Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "move %lf %lf", ra, dec);
 	setCommand (command);
 	free (command);
-	tel = in_tel;
+	tel = _tel;
 }
 
 
@@ -391,8 +400,8 @@ Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
-Rts2CommandMove (in_master, in_tel)
+Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
+:Rts2CommandMove (_master, _tel)
 {
 	char *command;
 	asprintf (&command, "move_not_model %lf %lf", ra, dec);
@@ -401,16 +410,15 @@ Rts2CommandMove (in_master, in_tel)
 }
 
 
-Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * in_master,
-Rts2DevClientTelescope * in_tel,
-double ra, double dec):
-Rts2Command (in_master)
+Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTelescope * _tel,
+double ra, double dec)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "fixed %lf %lf", ra, dec);
 	setCommand (command);
 	free (command);
-	tel = in_tel;
+	tel = _tel;
 }
 
 
@@ -422,14 +430,14 @@ Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * in_master, Rts2DevClientTelescope * in_tel, double ra, double dec):
-Rts2Command (in_master)
+Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "resync %lf %lf", ra, dec);
 	setCommand (command);
 	free (command);
-	tel = in_tel;
+	tel = _tel;
 }
 
 
@@ -441,16 +449,15 @@ Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * in_tel, double searchRadius, double searchSpeed):Rts2Command (in_tel->
-getMaster
-())
+Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * _tel, double searchRadius, double searchSpeed)
+:Rts2Command (_tel->getMaster ())
 {
 	char *
 		command;
 	asprintf (&command, "search %lf %lf", searchRadius, searchSpeed);
 	setCommand (command);
 	free (command);
-	tel = in_tel;
+	tel = _tel;
 }
 
 
@@ -462,13 +469,14 @@ Rts2CommandSearch::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * in_tel):Rts2Command (in_tel->getMaster (), "searchstop")
+Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * _tel)
+:Rts2Command (_tel->getMaster (), "searchstop")
 {
 }
 
 
-Rts2CommandChange::Rts2CommandChange (Rts2Block * in_master, double ra, double dec):
-Rts2Command (in_master)
+Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "change %lf %lf", ra, dec);
@@ -478,22 +486,22 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * in_tel,
-double ra, double dec):
-Rts2Command (in_tel->getMaster ())
+Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * _tel,
+double ra, double dec)
+:Rts2Command (_tel->getMaster ())
 {
 	char *command;
 	asprintf (&command, "change %lf %lf", ra, dec);
 	setCommand (command);
 	free (command);
-	tel = in_tel;
+	tel = _tel;
 }
 
 
-Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * in_command, Rts2DevClientTelescope * in_tel):Rts2Command
-(in_command)
+Rts2CommandChange::Rts2CommandChange (Rts2CommandChange * _command, Rts2DevClientTelescope * _tel)
+:Rts2Command (_command)
 {
-	tel = in_tel;
+	tel = _tel;
 }
 
 
@@ -506,9 +514,8 @@ Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * in_master, int corr_mark,
-int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err):
-Rts2Command (in_master)
+Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "correct %i %i %i %lf %lf %lf", corr_mark, corr_img,
@@ -518,9 +525,8 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * in_master, char dir,
-double dir_dist):
-Rts2Command (in_master)
+Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * _master, char dir, double dir_dist)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "start_guide %c %lf", dir, dir_dist);
@@ -529,8 +535,8 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * in_master, char dir):
-Rts2Command (in_master)
+Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * _master, char dir)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "stop_guide %c", dir);
@@ -539,12 +545,11 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * in_copula,
-double ra, double dec):
-Rts2Command (in_copula->getMaster ())
+Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, double ra, double dec)
+:Rts2Command (_copula->getMaster ())
 {
 	char *msg;
-	copula = in_copula;
+	copula = _copula;
 	asprintf (&msg, "move %f %f", ra, dec);
 	setCommand (msg);
 	free (msg);
@@ -561,32 +566,30 @@ Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
 
 
 void
-Rts2CommandChangeFocus::change (int in_steps)
+Rts2CommandChangeFocus::change (int _steps)
 {
 	char *msg;
-	asprintf (&msg, "step %i", in_steps);
+	asprintf (&msg, "step %i", _steps);
 	setCommand (msg);
 	free (msg);
 }
 
 
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus *
-in_focuser, int in_steps):
-Rts2Command (in_focuser->getMaster ())
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientFocus * _focuser, int _steps)
+:Rts2Command (_focuser->getMaster ())
 {
-	focuser = in_focuser;
+	focuser = _focuser;
 	camera = NULL;
-	change (in_steps);
+	change (_steps);
 }
 
 
-Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientCamera *
-in_camera, int in_steps):
-Rts2Command (in_camera->getMaster ())
+Rts2CommandChangeFocus::Rts2CommandChangeFocus (Rts2DevClientCamera * _camera, int _steps)
+:Rts2Command (_camera->getMaster ())
 {
 	focuser = NULL;
-	camera = in_camera;
-	change (in_steps);
+	camera = _camera;
+	change (_steps);
 }
 
 
@@ -602,32 +605,30 @@ Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
 
 
 void
-Rts2CommandSetFocus::set (int in_steps)
+Rts2CommandSetFocus::set (int _steps)
 {
 	char *msg;
-	asprintf (&msg, "set %i", in_steps);
+	asprintf (&msg, "set %i", _steps);
 	setCommand (msg);
 	free (msg);
 }
 
 
-Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientFocus * in_focuser,
-int in_steps):
-Rts2Command (in_focuser->getMaster ())
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientFocus * _focuser, int _steps)
+:Rts2Command (_focuser->getMaster ())
 {
-	focuser = in_focuser;
+	focuser = _focuser;
 	camera = NULL;
-	set (in_steps);
+	set (_steps);
 }
 
 
-Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientCamera * in_camera,
-int in_steps):
-Rts2Command (in_camera->getMaster ())
+Rts2CommandSetFocus::Rts2CommandSetFocus (Rts2DevClientCamera * _camera, int _steps)
+:Rts2Command (_camera->getMaster ())
 {
 	focuser = NULL;
-	camera = in_camera;
-	set (in_steps);
+	camera = _camera;
+	set (_steps);
 }
 
 
@@ -642,14 +643,13 @@ Rts2CommandSetFocus::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * in_mirror, int in_pos):Rts2Command (in_mirror->
-getMaster
-())
+Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos)
+:Rts2Command (_mirror->getMaster ())
 {
-	mirror = in_mirror;
+	mirror = _mirror;
 	char *
 		msg;
-	asprintf (&msg, "set %c", (in_pos == 0 ? 'A' : 'B'));
+	asprintf (&msg, "set %c", (_pos == 0 ? 'A' : 'B'));
 	setCommand (msg);
 	free (msg);
 }
@@ -664,26 +664,24 @@ Rts2CommandMirror::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot, int in_filter, float in_exp, int in_count):Rts2Command (in_phot->
-getMaster
-())
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filter, float _exp, int _count)
+:Rts2Command (_phot->getMaster ())
 {
-	phot = in_phot;
+	phot = _phot;
 	char *
 		msg;
-	asprintf (&msg, "intfil %i %f %i", in_filter, in_exp, in_count);
+	asprintf (&msg, "intfil %i %f %i", _filter, _exp, _count);
 	setCommand (msg);
 	free (msg);
 }
 
 
-Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * in_phot,
-float in_exp, int in_count):
-Rts2Command (in_phot->getMaster ())
+Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _exp, int _count)
+:Rts2Command (_phot->getMaster ())
 {
-	phot = in_phot;
+	phot = _phot;
 	char *msg;
-	asprintf (&msg, "integrate %f %i", in_exp, in_count);
+	asprintf (&msg, "integrate %f %i", _exp, _count);
 	setCommand (msg);
 	free (msg);
 }
@@ -698,8 +696,8 @@ Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * in_master, int next_id):
-Rts2Command (in_master)
+Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * _master, int next_id)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "next %i", next_id);
@@ -708,8 +706,8 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * in_master, int now_id):
-Rts2Command (in_master)
+Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * _master, int now_id)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "now %i", now_id);
@@ -718,8 +716,8 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * in_master, int grb_id):
-Rts2Command (in_master)
+Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * _master, int grb_id)
+:Rts2Command (_master)
 {
 	char *command;
 	asprintf (&command, "grb %i", grb_id);
@@ -728,40 +726,39 @@ Rts2Command (in_master)
 }
 
 
-Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * in_master):
-Rts2Command (in_master)
+Rts2CommandExecShower::Rts2CommandExecShower (Rts2Block * _master)
+:Rts2Command (_master)
 {
 	setCommand ("shower");
 }
 
 
-Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block * in_master):Rts2Command
-(in_master)
+Rts2CommandKillAll::Rts2CommandKillAll (Rts2Block *_master)
+:Rts2Command (_master)
 {
 	setCommand ("killall");
 }
 
 
-Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block * in_master):Rts2Command
-(in_master)
+Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block *_master)
+:Rts2Command (_master)
 {
 	setCommand ("script_ends");
 }
 
 
-Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * in_master,
-int in_mask):
-Rts2Command (in_master)
+Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * _master, int _mask)
+:Rts2Command (_master)
 {
 	char *command;
-	asprintf (&command, "message_mask %i", in_mask);
+	asprintf (&command, "message_mask %i", _mask);
 	setCommand (command);
 	free (command);
 }
 
 
-Rts2CommandInfo::Rts2CommandInfo (Rts2Block * in_master):Rts2Command
-(in_master)
+Rts2CommandInfo::Rts2CommandInfo (Rts2Block * _master)
+:Rts2Command (_master)
 {
 	setCommand ("info");
 }
@@ -785,10 +782,10 @@ Rts2CommandInfo::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * in_control_conn)
+Rts2CommandStatusInfo::Rts2CommandStatusInfo (Rts2Block * master, Rts2Conn * _control_conn)
 :Rts2Command(master)
 {
-	control_conn = in_control_conn;
+	control_conn = _control_conn;
 	setCommand ("status_info");
 }
 
@@ -820,8 +817,8 @@ Rts2CommandStatusInfo::deleteConnection (Rts2Conn * conn)
 }
 
 
-Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * in_control_conn)
-:Rts2CommandStatusInfo (master, in_control_conn)
+Rts2CommandDeviceStatus::Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * _control_conn)
+:Rts2CommandStatusInfo (master, _control_conn)
 {
 	setCommand ("device_status");
 }
