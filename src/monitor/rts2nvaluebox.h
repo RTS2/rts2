@@ -152,11 +152,8 @@ class ValueBoxSelection:public ValueBox, Rts2NSelWindow
 class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
 {
 	private:
-		Rts2NWindowEditIntegers * edtX;
-		Rts2NWindowEditIntegers * edtY;
-		Rts2NWindowEditIntegers * edtWidth;
-		Rts2NWindowEditIntegers * edtHeight;
-		Rts2NWindowEditIntegers * edtSelected;
+		Rts2NWindowEditIntegers * edt[4];
+		int edtSelected;
 	public:
 		ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
 		virtual ~ValueBoxRectangle ();

@@ -102,7 +102,7 @@ Rts2NWindow::getHeight ()
 int
 Rts2NWindow::getWriteWidth ()
 {
-	int ret = getHeight ();
+	int ret = getWidth ();
 	if (haveBox ())
 		return ret - 2;
 	return ret;

@@ -510,8 +510,15 @@ Rts2NMonitor::processKey (int key)
 			}
 			else if (activeWindow == daemonWindow)
 			{
-				changeActive (msgwindow);
-				activeWindow = NULL;
+				if (daemonWindow->hasEditBox ())
+				{
+					ret = daemonWindow->injectKey (key);
+				}
+				else
+				{
+					changeActive (msgwindow);
+					activeWindow = NULL;
+				}
 			}
 			else if (activeWindow == msgwindow)
 			{
@@ -549,7 +556,7 @@ Rts2NMonitor::processKey (int key)
 		case K_ENTER:
 			// preproccesed enter in case device window is selected..
 			if (activeWindow == daemonWindow && comWindow->getCurX () != 0
-				&& !daemonWindow->needEnter ())
+				&& !daemonWindow->hasEditBox ())
 			{
 				ret = comWindow->injectKey (key);
 				sendCommand ();

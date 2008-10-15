@@ -78,6 +78,24 @@ class Rts2NWindow:public Rts2NLayout
 		 */
 		virtual bool setCursor ();
 
+		void setNormal ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_NORMAL, 0, NULL);
+		}
+
+		/**
+		 * Set reverse attribute for full pad (e.g. invert colors in pad).
+		 */
+		void setReverse ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_REVERSE, 0, NULL);
+		}
+
+		void setUnderline ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_UNDERLINE, 0, NULL);
+		}
+
 		/**
 		 * Returns window which is used to write text
 		 */
@@ -92,9 +110,9 @@ class Rts2NWindow:public Rts2NLayout
 		}
 
 		/**
-		 * Indicate this window needs enter, so enter key will not be stolen for wait command.
+		 * Indicate this window needs enter, so enter and tab keys will not be stolen for wait command.
 		 */
-		virtual bool needEnter ()
+		virtual bool hasEditBox ()
 		{
 			return false;
 		}

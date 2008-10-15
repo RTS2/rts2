@@ -75,7 +75,7 @@ class Rts2NDeviceWindow:public Rts2NSelWindow
 		virtual void draw ();
 		virtual void refresh ();
 		virtual bool setCursor ();
-		virtual bool needEnter ()
+		virtual bool hasEditBox ()
 		{
 			return valueBox != NULL;
 		}

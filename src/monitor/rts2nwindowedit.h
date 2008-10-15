@@ -83,6 +83,11 @@ class Rts2NWindowEditIntegers:public Rts2NWindowEdit
 		{
 			wprintw (getWriteWindow (), "%i", _val);
 		}
+
+		/**
+		 * Returns integer value of the field. Returns 0 if field is empty.
+		 */
+		int getValueInteger ();
 };
 
 /**

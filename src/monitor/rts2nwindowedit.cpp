@@ -147,6 +147,22 @@ Rts2NWindowEditIntegers::passKey (int key)
 }
 
 
+int
+Rts2NWindowEditIntegers::getValueInteger ()
+{
+	char buf[200];
+	char *endptr;
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+	int tval = strtol (buf, &endptr, 10);
+	if (*endptr != '\0' && *endptr != ' ')
+	{
+		// log error;
+		return 0;
+	}
+	return tval;
+}
+
+
 Rts2NWindowEditDigits::Rts2NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
 :Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {

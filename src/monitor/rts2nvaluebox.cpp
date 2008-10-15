@@ -161,17 +161,8 @@ ValueBoxInteger::sendValue (Rts2Conn * connection)
 {
 	if (!connection->getOtherDevClient ())
 		return;
-	char buf[200];
-	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
-	int tval = strtol (buf, &endptr, 10);
-	if (*endptr != '\0' && *endptr != ' ')
-	{
-		// log error;
-		return;
-	}
 	connection->queCommand (new Rts2CommandChangeValue (connection->getOtherDevClient (),
-		getValue ()->getName (), '=', tval));
+		getValue ()->getName (), '=', getValueInteger ()));
 }
 
 
@@ -383,40 +374,62 @@ bool ValueBoxSelection::setCursor ()
 
 ValueBoxRectangle::ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y)
 :ValueBox (top, _val),
-Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 44, 4, 1, 1, 300, 2)
+Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
 {
-	edtX = new Rts2NWindowEditIntegers (top->getX () + _x + 1, top->getY () + _y + 1,
-		20, 1, 0, 0, 300, 1, false);
-	edtY = new Rts2NWindowEditIntegers (top->getX () + _x + 1, top->getY () + _y + 2,
-		20, 1, 0, 0, 300, 1, false);
-	edtWidth = new Rts2NWindowEditIntegers (top->getX () + _x + 22, top->getY () + _y + 1,
-		20, 1, 0, 0, 300, 1, false);
-	edtHeight = new Rts2NWindowEditIntegers (top->getX () + _x + 22, top->getY () + _y + 2,
-		20, 1, 0, 0, 300, 1, false);
+	edt[0] = new Rts2NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1,
+		10, 1, 0, 0, 300, 1, false);
+	edt[1] = new Rts2NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 1,
+		10, 1, 0, 0, 300, 1, false);
+	edt[2] = new Rts2NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 2,
+		10, 1, 0, 0, 300, 1, false);
+	edt[3] = new Rts2NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 2,
+		10, 1, 0, 0, 300, 1, false);
 
-	edtX->setValueInteger (_val->getXInt ());
-	edtY->setValueInteger (_val->getYInt ());
-	edtWidth->setValueInteger (_val->getWidthInt ());
-	edtHeight->setValueInteger (_val->getHeightInt ());
+	edt[0]->setValueInteger (_val->getXInt ());
+	edt[1]->setValueInteger (_val->getYInt ());
+	edt[2]->setValueInteger (_val->getWidthInt ());
+	edt[3]->setValueInteger (_val->getHeightInt ());
 
-	edtSelected = edtX;
+	edtSelected = 0;
 }
 
 
 ValueBoxRectangle::~ValueBoxRectangle ()
 {
-	edtSelected = NULL;
-	delete edtX;
-	delete edtY;
-	delete edtWidth;
-	delete edtHeight;
+	edtSelected = -1;
+	for (int i = 0; i < 4; i++)
+		delete edt[i];
 }
 
 
 keyRet
 ValueBoxRectangle::injectKey (int key)
 {
-	return edtSelected->injectKey (key);	
+	switch (key)
+	{
+		case '\t':
+		case KEY_STAB:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected + 1) % 4;
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_BTAB:
+			edt[edtSelected]->setNormal ();
+			if (edtSelected == 0)
+				edtSelected = 3;
+			else
+				edtSelected--;
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_UP:
+		case KEY_DOWN:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected > 1 ? 0 : 2) + (edtSelected % 2);
+			draw ();
+			return RKEY_HANDLED;
+	}
+
+	return edt[edtSelected]->injectKey (key);	
 }
 
 
@@ -427,16 +440,20 @@ ValueBoxRectangle::draw ()
 	Rts2NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
-	edtX->draw ();
-	edtY->draw ();
-	edtWidth->draw ();
-	edtHeight->draw ();
+	for (int i = 0; i < 4; i++)
+		edt[i]->draw ();
+
+	edt[edtSelected]->setUnderline ();
+
+	// draws labels..
+	mvwprintw (getWriteWindow (), 0, 0, "x:");
+	mvwprintw (getWriteWindow (), 0, 13, "y:");
+	mvwprintw (getWriteWindow (), 1, 0, "w:");
+	mvwprintw (getWriteWindow (), 1, 13, "h:");
 
 	refresh ();
-	edtX->refresh ();
-	edtY->refresh ();
-	edtWidth->refresh ();
-	edtHeight->refresh ();
+	for (int i = 0; i < 4; i++)
+		edt[i]->refresh ();
 }
 
 
@@ -446,12 +463,13 @@ ValueBoxRectangle::sendValue (Rts2Conn * connection)
 	if (!connection->getOtherDevClient ())
 		return;
 	connection->queCommand (new Rts2CommandChangeValue (connection->getOtherDevClient (),
-		getValue ()->getName (), '=', 1, 1, 20, 20));
+		getValue ()->getName (), '=', edt[0]->getValueInteger (), edt[1]->getValueInteger (),
+		edt[2]->getValueInteger (), edt[3]->getValueInteger ()));
 }
 
 
 bool
 ValueBoxRectangle::setCursor ()
 {
-	return false;
+	return edt[edtSelected]->setCursor ();
 }
