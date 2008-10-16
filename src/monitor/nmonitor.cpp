@@ -406,6 +406,7 @@ Rts2NMonitor::init ()
 	comWindow = new Rts2NComWin ();
 	msgwindow = new Rts2NMsgWindow ();
 	windowStack.push_back (deviceList);
+	deviceList->enter ();
 	statusWindow = new Rts2NStatusWindow (comWindow, this);
 	daemonWindow = new Rts2NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
 
@@ -523,6 +524,30 @@ Rts2NMonitor::processKey (int key)
 			else if (activeWindow == msgwindow)
 			{
 				changeActive (deviceList);
+				activeWindow = NULL;
+			}
+			break;
+		case KEY_BTAB:
+			if (activeWindow == deviceList)
+			{
+				changeActive (msgwindow);
+				activeWindow = NULL;
+			}
+			else if (activeWindow == daemonWindow)
+			{
+				if (daemonWindow->hasEditBox ())
+				{
+					ret = daemonWindow->injectKey (key);
+				}
+				else
+				{
+					changeActive (deviceList);
+					activeWindow = NULL;
+				}
+			}
+			else if (activeWindow == msgwindow)
+			{
+				changeActive (daemonWindow);
 				activeWindow = NULL;
 			}
 			break;

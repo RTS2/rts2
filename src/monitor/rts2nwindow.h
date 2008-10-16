@@ -16,6 +16,7 @@ class Rts2NWindow:public Rts2NLayout
 {
 	private:
 		bool _haveBox;
+		bool active;
 	protected:
 		WINDOW * window;
 		void errorMove (const char *op, int y, int x, int h, int w);
@@ -115,6 +116,16 @@ class Rts2NWindow:public Rts2NLayout
 		virtual bool hasEditBox ()
 		{
 			return false;
+		}
+
+		/**
+		 * Return window active state. That is true if window is active and receives keyboard inputs.
+		 *
+		 * @return window active state.
+		 */
+		bool isActive ()
+		{
+			return active;
 		}
 };
 #endif							 /* !__RTS2_NWINDOW__ */

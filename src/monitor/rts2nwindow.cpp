@@ -18,6 +18,7 @@ Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, bool border)
 	if (!window)
 		errorMove ("newwin", y, x, h, w);
 	_haveBox = border;
+	active = false;
 }
 
 
@@ -40,7 +41,15 @@ Rts2NWindow::draw ()
 	werase (window);
 	if (haveBox ())
 	{
-		box (window, 0, 0);
+		if (isActive ())
+			wborder (window, A_REVERSE | ACS_VLINE, A_REVERSE | ACS_VLINE,
+			A_REVERSE | ACS_HLINE, A_REVERSE | ACS_HLINE,
+			A_REVERSE | ACS_ULCORNER,
+			A_REVERSE | ACS_URCORNER,
+			A_REVERSE | ACS_LLCORNER,
+			A_REVERSE | ACS_LRCORNER);
+		else
+			box (window, 0, 0);
 	}
 }
 
@@ -176,12 +185,14 @@ Rts2NWindow::refresh ()
 void
 Rts2NWindow::enter ()
 {
+	active = true;
 }
 
 
 void
 Rts2NWindow::leave ()
 {
+	active = false;
 }
 
 

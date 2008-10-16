@@ -88,7 +88,10 @@ Rts2NSelWindow::refresh ()
 	{
 		if (selrow >= 0)
 		{
-			mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
+			if (isActive ())
+				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE | A_BLINK, CLR_PRIORITY, NULL);
+			else
+				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
 		}
 		else if (selrow == -1)
 		{
