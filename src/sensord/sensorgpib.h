@@ -34,7 +34,7 @@ class Rts2DevSensorGpib:public Rts2DevSensor
 	protected:
 		int gpibWrite (const char *buf);
 		int gpibRead (void *buf, int blen);
-		int gpibWriteRead (char *buf, char *val, int blen = 50);
+		int gpibWriteRead (const char *buf, char *val, int blen = 50);
 
 		int gpibWaitSRQ ();
 
