@@ -318,7 +318,6 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 {
 	// taken from edtwriteblk.c, heavily modified
 	FILE *fp;
-	struct stat stbuf;
 	u_int cbuf;
 	u_int *cptr;
 	int loops;
@@ -335,16 +334,6 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 		free (full_name);
 		return -1;
 	}
-	if (stat (full_name, &stbuf) == -1)
-	{
-		logStream (MESSAGE_ERROR) << "fsize: can't access " << full_name <<
-			sendLog;
-		free (full_name);
-		return -1;
-	}
-	logStream (MESSAGE_DEBUG) << "writing " << full_name << "  - " << stbuf.
-		st_size << " bytes" << sendLog;
-	free (full_name);
 	cptr = &cbuf;
 	loops = 0;
 	/*pdv_reset_serial(pd); */
@@ -358,8 +347,10 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 		loops++;
 	}
 	fclose (fp);
-	logStream (MESSAGE_DEBUG) << "Total number of serial commands: " << loops <<
-		sendLog;
+	logStream (MESSAGE_DEBUG) << "From " << full_name
+		<< " written " << loops << " serial commands."
+		<< sendLog;
+	free (full_name);
 	return 0;
 }
 
@@ -988,7 +979,6 @@ void
 Rts2CamdEdtSao::cancelPriorityOperations ()
 {
 	Rts2DevCamera::cancelPriorityOperations ();
-	initChips ();
 }
 
 
