@@ -816,11 +816,6 @@ Rts2Centrald::idle ()
 	int call_state;
 	int old_current_state;
 
-	if ((getState () & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
-		|| (getState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-
-		return Rts2Daemon::idle ();
-
 	curr_time = time (NULL);
 
 	if (curr_time < next_event_time)
