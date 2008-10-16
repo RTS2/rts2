@@ -930,11 +930,11 @@ in_argv)
 		"BOOTES G-11 (with 1/0 pointing sensor)");
 	addOption (OPT_CORR, "corrections", 1,
 		"level of correction done in Gemini - 0 none, 3 all");
-	addOption (OPT_EXPTYPE, "expected_type", 1,
+	addOption (OPT_EXPTYPE, "expected-type", 1,
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
-	addOption (OPT_FORCETYPE, "force_type", 1,
+	addOption (OPT_FORCETYPE, "force-type", 1,
 		"force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
-	addOption (OPT_FORCELATLON, "force_latlon", 0, "set observing longitude and latitude from configuration file");
+	addOption (OPT_FORCELATLON, "force-latlon", 0, "set observing longitude and latitude from configuration file");
 
 	lastMotorState = 0;
 	telMotorState = TEL_OK;
