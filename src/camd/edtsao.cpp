@@ -281,6 +281,13 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		// number of rows
 		Rts2ValueInteger *chipHeight;
 
+		int lastSkipLines;
+		int lastX;
+		int lastY;
+		int lastW;
+		int lastH;
+		int lastSplitMode;
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -580,13 +587,23 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 {
 	// write parallel commands
 	int addr = 0;
-	if (skipLines->wasChanged () == false && chipUsedReadout->wasChanged () == false && splitMode->wasChanged () == false)
+	if (skipLines->getValueInteger () == lastSkipLines
+	  	&& chipUsedReadout->getXInt () == lastX
+		&& chipUsedReadout->getYInt () == lastY
+		&& chipUsedReadout->getWidthInt () == lastW
+		&& chipUsedReadout->getHeightInt () == lastH
+		&& splitMode->getValueInteger () == lastSplitMode)
 	{
 		return 0;
 	}
-	skipLines->resetValueChanged ();
-	chipUsedReadout->resetValueChanged ();
-	splitMode->resetValueChanged ();
+
+	lastSkipLines = skipLines->getValueInteger ();
+	lastX = chipUsedReadout->getXInt ();
+	lastY = chipUsedReadout->getYInt ();
+	lastW = chipUsedReadout->getWidthInt ();
+	lastH = chipUsedReadout->getHeightInt ();
+	lastSplitMode = splitMode->getValueInteger ();
+
 	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
 	writeCommand (true, addr++, ZERO);
 	// read..
@@ -1072,6 +1089,9 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (dd, "DD", "DD", true, 0, CAM_WORKING, true);
 	dd->initEdt (0xA0380, C);
+
+	// init last used modes - for writePattern
+	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = -1;
 }
 
 
