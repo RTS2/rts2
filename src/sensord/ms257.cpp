@@ -348,11 +348,16 @@ Rts2DevSensorMS257::init ()
 	if (ret)
 		return ret;
 
-	ms257Dev->flushPortIO ();
-
 	ret = readRts2Value ("VER", msVer);
 	if (ret)
-		return -1;
+	{
+		// try again - this is know problem of MS257 during startup
+		ms257Dev->flushPortIO ();
+		sleep (1);
+		ret = readRts2Value ("VER", msVer);
+		if (ret)
+			return -1;
+	}
 
 	// sets correct units
 	ret = writeValue ("UNITS", "nn");

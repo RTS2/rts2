@@ -237,7 +237,18 @@ Rts2DevSensorNewportLamp::init ()
 	if (ret)
 	  	return ret;
 	
-	// confir it is working..
+	// confirm it is working..
+	ret = readStatus ("STB", status);
+	if (ret)
+	{
+		// sometimes lamp init may fail
+		lampSerial->flushPortIO ();
+		sleep (1);
+		ret = readStatus ("STB", status);
+		if (ret)
+			return ret;
+	}
+
 	return info ();
 }
 
