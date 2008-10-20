@@ -147,7 +147,7 @@ Dome::isGoodWeather ()
 int
 Dome::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == ignoreTimeout)
+	if (old_value == ignoreTimeout || old_value == weatherOpensDome)
 		return 0;
 	return Rts2Device::setValue (old_value, new_value);
 }
