@@ -836,7 +836,7 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	// or there are qued values which needs to be dealed before we can start exposing
 	if ((chipState & CAM_EXPOSING)
 		|| ((chipState & CAM_READING) && !supportFrameTransfer ())
-		|| !queValues.empty ()
+		|| (!queValues.empty () && fromQue == false)
 		)
 	{
 		if (fromQue == false)
