@@ -342,7 +342,7 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
+	ref = ln_get_refraction_adj (hrz.alt, 860, 10);
 	hrz.alt += ref;
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
