@@ -17,13 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <termios.h>
-#include <fcntl.h>
-
-#include <sys/ioctl.h>
-
-#include <vector>
-
 #include "ford.h"
 
 #define CAS_NA_OTEVRENI              30
@@ -77,9 +70,7 @@ class Bart:public Ford
 
 		int handle_zasuvky (int zas);
 
-		// if true, after we open close dome - used as safety measurement as
-		// BART roof needs to be fully opened when commanded close to close properly
-		bool closeAfterOpen;
+		time_t domeTimeout;
 
 		Rts2ValueInteger *sw_state;
 
@@ -111,8 +102,9 @@ class Bart:public Ford
 Bart::Bart (int argc, char **argv)
 :Ford (argc, argv)
 {
+	domeTimeout = 0;
+
 	createValue (sw_state, "sw_state", "state of dome switches", false, RTS2_DT_HEX);
-	closeAfterOpen = false;
 }
 
 
@@ -132,6 +124,10 @@ Bart::startOpen ()
 	sleep (1);
 	ZAP (MOTOR);
 	logStream (MESSAGE_DEBUG) << "oteviram strechu" << sendLog;
+
+	time (&domeTimeout);
+	domeTimeout += CAS_NA_OTEVRENI;
+
 	return 0;
 }
 
@@ -141,6 +137,11 @@ Bart::isOpened ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
+	if (domeTimeout != 0 && domeTimeout < time (NULL))
+	{
+		logStream (MESSAGE_ERROR) << "Timeout reached during dome opening, dome is regarded as opened" << sendLog;
+		return -2;
+	}
 	if (ret)
 		return ret;
 	if (isOn (KONCAK_OTEVRENI_JIH))
@@ -155,11 +156,7 @@ Bart::endOpen ()
 	VYP (MOTOR);
 	zjisti_stav_portu ();		 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
 	setTimeout (USEC_SEC);
-	if (closeAfterOpen)
-	{
-		sleep (2);
-		return domeCloseStart ();
-	}
+	domeTimeout = 0;
 	return 0;
 }
 
@@ -184,17 +181,15 @@ Bart::startClose ()
 		if (!smer)
 			return 0;
 		// let it go to open state and then close it..
-		if (closeAfterOpen == false)
-		{
-			closeAfterOpen = true;
-			logStream (MESSAGE_DEBUG) << "Commanded to close just afer dome finished opening." << sendLog;
-		}
-		return 0;
+		return -1;
 	}
 	ZAP (SMER);
 	sleep (1);
 	ZAP (MOTOR);
 	logStream (MESSAGE_DEBUG) << "zaviram strechu" << sendLog;
+
+	time (&domeTimeout);
+	domeTimeout += CAS_NA_OTEVRENI;
 
 	return 0;
 }
@@ -204,6 +199,13 @@ long
 Bart::isClosed ()
 {
 	int ret;
+
+	if (domeTimeout != 0 && domeTimeout < time (NULL))
+	{
+		logStream (MESSAGE_ERROR) << "Timeout reached during dome closing. Aborting dome closing." << sendLog;
+		return -2;
+	}
+
 	ret = zjisti_stav_portu ();
 	if (ret)
 		return ret;
@@ -218,7 +220,7 @@ Bart::endClose ()
 {
 	int motor;
 	motor = isOn (MOTOR);
-	closeAfterOpen = false;
+	domeTimeout = 0;
 	if (motor == -1)
 		return -1;
 	if (motor)
