@@ -425,7 +425,7 @@ Rts2Image::createImage ()
 		return -1;
 	}
 	logStream (MESSAGE_DEBUG) << "Creating image "
-		<< getImageName () << sendLog;
+		<< getFileName () << sendLog;
 
 	// add history
 	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
