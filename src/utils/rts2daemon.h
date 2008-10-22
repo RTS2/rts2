@@ -26,6 +26,8 @@
 #include "rts2valuelist.h"
 #include "rts2valuestat.h"
 #include "rts2valueminmax.h"
+#include "rts2valuerectangle.h"
+#include "rts2valuearray.h"
 
 #include <vector>
 
@@ -123,6 +125,12 @@ class Rts2Daemon:public Rts2Block
 		{
 			return daemonize == DONT_DAEMONIZE;
 		}
+
+		/**
+		 * Returns true if connection is running.
+		 */
+		virtual bool isRunning (Rts2Conn *conn) = 0;
+
 		int doDeamonize ();
 		int lockFile ();
 		virtual void addSelectSocks ();
@@ -258,8 +266,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @return 0 when value change can be performed, -2 on error, -1 when value change is qued.
 		 */
-		int setCondValue (Rts2CondValue * old_value_cond, char op,
-			Rts2Value * new_value);
+		int setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value);
 
 		/**
 		 * Really perform value change.
@@ -269,8 +276,7 @@ class Rts2Daemon:public Rts2Block
 		 *   (numerical or string), but "=", "+=" and "-=" are ussualy supported.
 		 * @param new_value
 		 */
-		int doSetValue (Rts2CondValue * old_cond_value, char op,
-			Rts2Value * new_value);
+		int doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value);
 
 		/**
 		 * Called after value was changed.
@@ -304,8 +310,38 @@ class Rts2Daemon:public Rts2Block
 			info_time->setValueDouble (getNow ());
 		}
 
+		/**
+		 * Set info time to supplied date. Please note that if you use this function,
+		 * you should consider not calling standard info () routine, which updates
+		 * info time - just overwrite its implementation with empty body.
+		 *
+		 * @param _date  Date of the infotime.
+		 */
+		void setInfoTime (struct tm *_date)
+		{
+			info_time->setValueInteger (mktime (_date));
+		}
+
+		/**
+		 * Get time from last info time in seconds (and second fractions).
+		 *
+		 * @return Difference from last info time in seconds.
+		 */
+		double getLastInfoTime ()
+		{
+			return getNow () - info_time->getValueDouble ();	
+		}
+
 	public:
-		Rts2Daemon (int in_argc, char **in_argv);
+		/**
+		 * Construct daemon.
+		 *
+		 * @param _argc         Number of arguments.
+		 * @param _argv         Arguments values.
+		 * @param _init_state   Initial state.
+		 */
+		Rts2Daemon (int in_argc, char **in_argv, int _init_state = 0);
+
 		virtual ~ Rts2Daemon (void);
 		virtual int run ();
 
@@ -325,8 +361,8 @@ class Rts2Daemon:public Rts2Block
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
-		virtual void centraldConnRunning ();
-		virtual void centraldConnBroken ();
+		virtual void centraldConnRunning (Rts2Conn *conn);
+		virtual void centraldConnBroken (Rts2Conn *conn);
 
 		virtual int baseInfo ();
 		int baseInfo (Rts2Conn * conn);
@@ -348,6 +384,13 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void setState (int new_state, const char *description);
 
+		/**
+		 * Called when state of the device is changed.
+		 *
+		 * @param new_state   New device state.
+		 * @param old_state   Old device state.
+		 * @param description Text description of state change.
+		 */
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 	public:
 		/**
@@ -355,6 +398,13 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void maskState (int state_mask, int new_state, const char *description = NULL);
 
+		/**
+		 * Return full device state. You are then responsible
+		 * to use approproate mask defined in status.h to extract
+		 * from state information that you want.
+		 *
+		 * @return Block state.
+		 */
 		int getState ()
 		{
 			return state;
@@ -390,6 +440,30 @@ class Rts2Daemon:public Rts2Block
 		 * @param reason Trigger name.
 		 */
 		void execTrigger (const char *reason);
+
+		/**
+		 * Get daemon local weather state. Please use isGoodWeather()
+		 * to test for system weather state.
+		 *
+		 * @ returns true if weather state is good.
+		 */
+		bool getWeatherState ()
+		{
+			return (getState () & WEATHER_MASK) == GOOD_WEATHER;
+		}
+
+		/**
+		 * Set weather state.
+		 *
+		 * @param good_weather If true, weather is good.
+		 */
+		void setWeatherState (bool good_weather)
+		{
+			if (good_weather)
+				maskState (WEATHER_MASK, GOOD_WEATHER, "weather set to good");
+			else
+				maskState (WEATHER_MASK, BAD_WEATHER, "weather set to bad");
+		}
 
 		/**
 		 * Called from idle loop after HUP signal occured.

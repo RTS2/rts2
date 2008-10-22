@@ -420,11 +420,12 @@ Rts2Image::createImage ()
 	fits_create_img (getFitsFile (), USHORT_IMG, 2, naxis, &fits_status);
 	if (fits_status)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Image::createImage " <<
-			getFitsErrors () << sendLog;
+		logStream (MESSAGE_ERROR) << "Error while creating image "
+			<< getFitsErrors () << sendLog;
 		return -1;
 	}
-	logStream (MESSAGE_DEBUG) << "Rts2Image::createImage " << this << " " << getFileName () << sendLog;
+	logStream (MESSAGE_DEBUG) << "Creating image "
+		<< getImageName () << sendLog;
 
 	// add history
 	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
@@ -1029,10 +1030,7 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
 	if (!getFitsFile ())
 		return 0;
-	setValue ("X", im_h->x, "image beginning - detector X coordinate");
-	setValue ("Y", im_h->y, "image beginning - detector Y coordinate");
-	setValue ("BIN_V", im_h->binnings[0], "X axis binning");
-	setValue ("BIN_H", im_h->binnings[1], "Y axis binning");
+	writePhysical (im_h->x, im_h->y, im_h->binnings[0], im_h->binnings[1]);
 	filter_i = im_h->filter;
 	setValue ("CAM_FILT", filter_i, "filter used for image");
 	setValue ("SHUTTER", im_h->shutter,
@@ -1052,6 +1050,16 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 			shutter = SHUT_UNKNOW;
 	}
 	return 0;
+}
+
+
+void
+Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
+{
+	setValue ("LTV1", -1 * (double) x, "image beginning - detector X coordinate");
+	setValue ("LTM1_1", ((double) 1) / bin_x, "delta along X axis");
+	setValue ("LTV2", -1 * (double) y, "image beginning - detector Y coordinate");
+	setValue ("LRM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
 

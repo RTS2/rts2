@@ -17,9 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "rts2conn.h"
 #include "rts2block.h"
 #include "rts2centralstate.h"
 #include "rts2command.h"
+
+#include "rts2valuestat.h"
+#include "rts2valueminmax.h"
+#include "rts2valuerectangle.h"
+#include "rts2valuearray.h"
 
 #ifdef DEBUG_ALL
 #include <iostream>
@@ -28,6 +34,9 @@
 #include <errno.h>
 #include <syslog.h>
 #include <unistd.h>
+
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
@@ -43,6 +52,7 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	key = 0;
 	priority = -1;
 	have_priority = 0;
+	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_UNKNOW;
 	type = NOT_DEFINED_SERVER;
@@ -82,6 +92,7 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	key = 0;
 	priority = -1;
 	have_priority = 0;
+	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_CONNECTED;
 	type = NOT_DEFINED_SERVER;
@@ -124,6 +135,8 @@ Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 	if (sock >= 0)
 	{
 		FD_SET (sock, readset);
+		if (isConnState (CONN_INPROGRESS))
+			FD_SET (sock, writeset);
 	}
 	return 0;
 }
@@ -259,17 +272,6 @@ std::string Rts2Conn::getStateString ()
 					break;
 				default:
 					_os << "UNKNOW";
-			}
-			switch (real_state & DOME_WEATHER_MASK)
-			{
-				case DOME_WEATHER_OK:
-					_os << " | WEATHER OK";
-					break;
-				case DOME_WEATHER_BAD:
-					_os << " | WEATHER BAD";
-					break;
-				default:
-					_os << " | WEATHER STATE UNKNOW";
 			}
 			if (getOtherType () == DEVICE_TYPE_COPULA)
 			{
@@ -412,6 +414,10 @@ std::string Rts2Conn::getStateString ()
 		_os << " | HW ERROR";
 	if (getState () & DEVICE_NOT_READY)
 		_os << " | NOT READY";
+
+	// report bad weather
+	if (getState () & BAD_WEATHER)
+	  	_os << " | BAD WEATHER";
 
 	// block states and full BOP states
 	if (getState () & BOP_EXPOSURE)
@@ -880,6 +886,30 @@ Rts2Conn::receive (fd_set * readset)
 int
 Rts2Conn::writable (fd_set * writeset)
 {
+	if (sock >=0 && FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
+	{
+		int err = 0;
+		int ret;
+		socklen_t len = sizeof (err);
+
+		ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Rts2Conn::idle getsockopt " <<
+				strerror (errno) << sendLog;
+			connectionError (-1);
+		}
+		else if (err)
+		{
+			logStream (MESSAGE_ERROR) << "Rts2Conn::idle getsockopt " <<
+				strerror (errno) << sendLog;
+			connectionError (-1);
+		}
+		else
+		{
+			connConnected ();
+		}
+	}
 	return 0;
 }
 
@@ -965,7 +995,8 @@ Rts2Conn::queCommand (Rts2Command * cmd)
 	if (runningCommand
 		|| isConnState (CONN_CONNECTING)
 		|| isConnState (CONN_INPROGRESS)
-		|| isConnState (CONN_AUTH_PENDING) || isConnState (CONN_UNKNOW))
+		|| isConnState (CONN_AUTH_PENDING)
+		|| isConnState (CONN_UNKNOW))
 	{
 		commandQue.push_back (cmd);
 		return;
@@ -1024,22 +1055,6 @@ bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
 }
 
 
-bool Rts2Conn::commandPending (Rts2Command * cmd)
-{
-	if (cmd == runningCommand)
-		return true;
-
-	for (std::list < Rts2Command * >::iterator que_iter = commandQue.begin ();
-		que_iter != commandQue.end (); que_iter++)
-	{
-		if (*que_iter == cmd)
-			return true;
-	}
-
-	return false;
-}
-
-
 void
 Rts2Conn::queClear ()
 {
@@ -1080,19 +1095,21 @@ Rts2Conn::command ()
 {
 	if (isCommand ("device"))
 	{
+		int p_centrald_num;
 		int p_centraldId;
 		char *p_name;
 		char *p_host;
 		int p_port;
 		int p_device_type;
-		if (paramNextInteger (&p_centraldId)
+		if (paramNextInteger (&p_centrald_num)
+		  	|| paramNextInteger (&p_centraldId)
 			|| paramNextString (&p_name)
 			|| paramNextString (&p_host)
 			|| paramNextInteger (&p_port)
 			|| paramNextInteger (&p_device_type)
 			|| !paramEnd ())
 			return -2;
-		master->addAddress (p_name, p_host, p_port, p_device_type);
+		master->addAddress (getCentraldNum (), p_centrald_num, p_centraldId, p_name, p_host, p_port, p_device_type);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -1480,6 +1497,12 @@ Rts2Conn::successfullRead ()
 
 
 void
+Rts2Conn::connConnected ()
+{
+}
+
+
+void
 Rts2Conn::connectionError (int last_data_size)
 {
 	activeReadData = -1;
@@ -1488,7 +1511,7 @@ Rts2Conn::connectionError (int last_data_size)
 		close (sock);
 	sock = -1;
 	if (strlen (getName ()))
-		master->deleteAddress (getName ());
+		master->deleteAddress (getCentraldNum (), getName ());
 }
 
 
@@ -1609,6 +1632,9 @@ Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 		setCommandInProgress (false);
 		processBuffer ();
 	}
+	if (num != 0)
+		logStream (MESSAGE_ERROR) << "command end with error " << num
+			<< " description: " << in_msg << sendLog;
 	return 0;
 }
 
@@ -1845,21 +1871,31 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 	{
 		case 0:
 			new_value = newValue (rts2Type, m_name, desc);
-			if (newValue == NULL)
+			if (new_value == NULL)
 				return -2;
 			break;
 		case RTS2_VALUE_STAT:
 			new_value = new Rts2ValueDoubleStat (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_MMAX:
-			new_value =  new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new Rts2ValueDoubleMinMax (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			new_value =  new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			new_value = new Rts2ValueRectangle (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+			break;
+		case RTS2_VALUE_ARRAY:
+			switch (rts2Type & RTS2_BASE_TYPE)
+			{
+				case RTS2_VALUE_STRING:
+					new_value = new Rts2ValueStringArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "unsuported array type; " << rts2Type << sendLog;
+					break;
+			}
 			break;
 		default:
-			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "unknow value type: " << rts2Type << sendLog;
 			return -2;
 	}
 	addValue (new_value);
@@ -1951,6 +1987,8 @@ Rts2Conn::commandValue (const char *v_name)
 	logStream (MESSAGE_ERROR)
 		<< "Unknow value from connection '" << getName () << "' "
 		<< v_name
+		<< " connection state " << getConnState ()
+		<< " value size " << values.size ()
 		<< sendLog;
 	return -2;
 }

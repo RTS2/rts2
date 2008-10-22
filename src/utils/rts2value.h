@@ -114,7 +114,8 @@
 #define RTS2_VALUE_RECTANGLE          0x00000030
 
 /**
- * Value is an array of variables.
+ * Value is an array of strings.
+ * @ingroup RTS2Value
  */
 #define RTS2_VALUE_ARRAY              0x00000080
 
@@ -198,6 +199,8 @@ class Rts2Conn;
  * distributed with metainformations over TCP/IP network, and stored in
  * receiving devices.
  *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
  * @ingroup RTS2Block
  * @ingroup RTS2Value
  */
@@ -224,13 +227,13 @@ class Rts2Value
 		 * Create value. RA and DEC names will be composed by suffixing
 		 * in_val_name with RA and DEC strings.
 		 */
-		Rts2Value (std::string in_val_name);
+		Rts2Value (std::string _val_name);
 
 		/**
 		 * Create value. RA and DEC names will be composed by suffixing
 		 * in_val_name with RA and DEC strings.
 		 */
-		Rts2Value (std::string in_val_name, std::string in_description,
+		Rts2Value (std::string _val_name, std::string _description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual ~ Rts2Value (void)
 		{
@@ -243,13 +246,46 @@ class Rts2Value
 		{
 			return valueName;
 		}
+
+		/**
+		 * Sets value from connection.
+		 *
+		 * @param connection Connection which contains command to set value.
+		 *
+		 * @return -2 on error, 0 on success.
+		 */
 		virtual int setValue (Rts2Conn * connection) = 0;
 
 		/**
 		 * Set value from string.
-		 * return -1 when value cannot be set from string.
+		 *
+		 * @param
+		 *
+		 * @return -1 when value cannot be set from string.
 		 */
-		virtual int setValueCharArr (const char *in_value) = 0;
+		virtual int setValueCharArr (const char *_value) = 0;
+
+		/**
+		 * Return value as string.
+		 *
+		 * @return String which contains value.
+		 */
+		virtual const char *getValue () = 0;
+
+		/**
+		 * Set value from other value.
+		 *
+		 * @param newValue Value which content will be copied.
+		 */
+		virtual void setFromValue (Rts2Value * newValue) = 0;
+
+		/**
+		 * Returns true, if value is equal to other value.
+		 *
+		 * @return True if value is equal to other value, otherwise false.
+		 */
+		virtual bool isEqual (Rts2Value *other_value) = 0;
+
 		int setValueString (std::string in_value)
 		{
 			return setValueCharArr (in_value.c_str ());
@@ -268,11 +304,18 @@ class Rts2Value
 		 * @return -1 on error, 0 on success.
 		 */
 		virtual int doOpValue (char op, Rts2Value * old_value);
-		virtual const char *getValue () = 0;
+
+		/**
+		 * Return value as displayed in rts2-mon and other
+		 * applications.
+		 *
+		 * @return String with human-readable value.
+		 */
 		virtual const char *getDisplayValue ()
 		{
 			return getValue ();
 		}
+
 		int32_t getValueWriteFlags ()
 		{
 			return rts2Type & RTS2_VWHEN_MASK;
@@ -368,15 +411,6 @@ class Rts2Value
 		 * @param connection Connection on which value will be send.
 		 */
 		virtual int send (Rts2Conn * connection);
-
-		virtual void setFromValue (Rts2Value * newValue) = 0;
-
-		/**
-		 * Returns true, if value is equal to other value.
-		 *
-		 * @return True if value is equal to other value, otherwise false.
-		 */
-		virtual bool isEqual (Rts2Value *other_value) = 0;
 
 		/**
 		 * Reset value change bit, so changes will be recorded from now on.

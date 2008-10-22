@@ -26,7 +26,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2SensorMrakomer: public Rts2DevSensor
+class Rts2SensorMrakomer: public SensorWeather
 {
 	private:
 		char *device_file;
@@ -36,8 +36,15 @@ class Rts2SensorMrakomer: public Rts2DevSensor
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
 
+		// use this value only for logging to detect if we reported trips
+		double lastTempDiff;
+
+		Rts2ValueInteger *numVal;
+
+		Rts2ValueDouble *triggerBad;
+		Rts2ValueDouble *triggerGood;
+
 		Rts2ValueBool *heater;
-		Rts2ValueFloat *sleepPeriod;
 
 		Rts2ValueInteger *numberMes;
 		Rts2ValueInteger *mrakStatus;
@@ -79,9 +86,9 @@ Rts2SensorMrakomer::readSensor ()
 			<< buf << "', return " << x << sendLog;
 		return -1;
 	}
-	tempDiff->addValue (temp0 - temp1, 20);
-	tempIn->addValue (temp0, 20);
-	tempOut->addValue (temp1, 20);
+	tempDiff->addValue (temp0 - temp1, numVal->getValueInteger ());
+	tempIn->addValue (temp0, numVal->getValueInteger ());
+	tempOut->addValue (temp1, numVal->getValueInteger ());
 
 	tempDiff->calculate ();
 	tempIn->calculate ();
@@ -90,35 +97,7 @@ Rts2SensorMrakomer::readSensor ()
 	numberMes->setValueInteger (tno);
 	mrakStatus->setValueInteger (tstat);
 
-	usleep ((int) (sleepPeriod->getValueFloat () * USEC_SEC));
-
 	return 0;
-}
-
-
-Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
-{
-	mrakConn = NULL;
-
-	createValue (tempDiff, "TEMP_DIFF", "temperature difference");
-	createValue (tempIn, "TEMP_IN", "temperature inside", true);
-	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
-
-	createValue (heater, "HEATER", "heater state", true);
-	createValue (sleepPeriod, "sleep", "sleep period between measurments", false);
-	sleepPeriod->setValueFloat (0.3);
-
-	createValue (numberMes, "number_mes", "number of measurements", false);
-	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
-
-	addOption ('f', NULL, 1, "serial port with cloud sensor");
-}
-
-
-Rts2SensorMrakomer::~Rts2SensorMrakomer (void)
-{
-	delete mrakConn;
 }
 
 
@@ -130,8 +109,14 @@ Rts2SensorMrakomer::processOption (int in_opt)
 		case 'f':
 			device_file = optarg;
 			break;
+		case 'b':
+			triggerBad->setValueDouble (atof (optarg));
+			break;
+		case 'g':
+			triggerGood->setValueDouble (atof (optarg));
+			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return SensorWeather::processOption (in_opt);
 	}
 	return 0;
 }
@@ -141,16 +126,19 @@ int
 Rts2SensorMrakomer::init ()
 {
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 10);
+	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 30);
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
 	
 	mrakConn->flushPortIO ();
+
+	if (!isnan (triggerGood->getValueDouble ()))
+		setWeatherState (false);
 
 	return 0;
 }
@@ -162,17 +150,83 @@ Rts2SensorMrakomer::info ()
 	int ret;
 	ret = readSensor ();
 	if (ret)
+	{
+		if (getLastInfoTime () > 60)
+			setWeatherTimeout (60);
 		return -1;
-	return Rts2DevSensor::info ();
+	}
+	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
+	{
+		// trips..
+		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
+		{
+			if (getWeatherState () == true)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerBad->getValueDouble ()
+					<< sendLog;
+			}
+			setWeatherTimeout (300);
+		}
+		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
+		{
+			if (getWeatherState () == false && lastTempDiff < triggerGood->getValueDouble ())
+			{
+				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerGood->getValueDouble ()
+					<< sendLog;
+			}
+		}
+	}
+	// record last value
+	lastTempDiff = tempDiff->getValueDouble ();
+	return SensorWeather::info ();
 }
 
 
 int
 Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == sleepPeriod)
+	if (old_value == heater)
 		return 0;
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return SensorWeather::setValue (old_value, new_value);
+}
+
+
+Rts2SensorMrakomer::Rts2SensorMrakomer (int in_argc, char **in_argv)
+:SensorWeather (in_argc, in_argv)
+{
+	mrakConn = NULL;
+
+	createValue (tempDiff, "TEMP_DIFF", "temperature difference");
+	createValue (tempIn, "TEMP_IN", "temperature inside", true);
+	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
+
+	createValue (numVal, "num_stat", "number of measurements for weather statistic");
+	numVal->setValueInteger (20);
+
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true);
+	triggerBad->setValueDouble (nan ("f"));
+
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true);
+	triggerGood->setValueDouble (nan ("f"));
+
+	createValue (heater, "HEATER", "heater state", true);
+
+	createValue (numberMes, "number_mes", "number of measurements", false);
+	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
+
+	addOption ('f', NULL, 1, "serial port with cloud sensor");
+	addOption ('b', NULL, 1, "bad trigger point");
+	addOption ('g', NULL, 1, "good trigger point");
+
+	setTimeout (20);
+}
+
+
+Rts2SensorMrakomer::~Rts2SensorMrakomer (void)
+{
+	delete mrakConn;
 }
 
 

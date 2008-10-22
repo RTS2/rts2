@@ -93,24 +93,28 @@ Rts2DevMirror::commandAuthorized (Rts2Conn * conn)
 			(strcasecmp (str_dir, "A") && strcasecmp (str_dir, "B")))
 			return -2;
 		if (!strcasecmp (str_dir, "A"))
+		{
 			if ((getState () & MIRROR_MASK) != MIRROR_A)
-		{
-			return startClose (conn);
-		}
-		else
-		{
-			conn->sendCommandEnd (DEVDEM_E_IGNORE, "already in A");
-			return -1;
+			{
+				return startClose (conn);
+			}
+			else
+			{
+				conn->sendCommandEnd (DEVDEM_E_IGNORE, "already in A");
+				return -1;
+			}
 		}
 		else if (!strcasecmp (str_dir, "B"))
-		if ((getState () & MIRROR_MASK) != MIRROR_B)
 		{
-			return startOpen (conn);
-		}
-		else
-		{
-			conn->sendCommandEnd (DEVDEM_E_IGNORE, "already in B");
-			return -1;
+			if ((getState () & MIRROR_MASK) != MIRROR_B)
+			{
+				return startOpen (conn);
+			}
+			else
+			{
+				conn->sendCommandEnd (DEVDEM_E_IGNORE, "already in B");
+				return -1;
+			}
 		}
 	}
 	return Rts2Device::commandAuthorized (conn);

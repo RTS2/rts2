@@ -159,7 +159,7 @@ Rts2ScriptExec::init ()
 	if (ret)
 		return ret;
 
-	getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
+	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
 
 	// create current target
 	currentTarget = new Rts2TargetScr (this);

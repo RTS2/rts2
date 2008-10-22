@@ -32,6 +32,8 @@
 #include <list>
 #include <stdlib.h>
 
+#define OPT_FULL_DAY   OPT_LOCAL + 200
+
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
 	struct ln_dms dms;
@@ -55,14 +57,15 @@ get_norm_hour (double JD)
 }
 
 
-#define GNUPLOT_TYPE_MASK 0x0f
-#define GNUPLOT_TYPE_X11  0x01
-#define GNUPLOT_TYPE_PS   0x02
-#define GNUPLOT_TYPE_PNG  0x03
-#define GNUPLOT_TYPE_EPS  0x04
+#define GNUPLOT_TYPE_MASK   0x0f
+#define GNUPLOT_TYPE_X11    0x01
+#define GNUPLOT_TYPE_PS     0x02
+#define GNUPLOT_TYPE_PNG    0x03
+#define GNUPLOT_TYPE_EPS    0x04
 
-#define GNUPLOT_BONUS   0x10
+#define GNUPLOT_BONUS       0x10
 #define GNUPLOT_BONUS_ONLY  0x20
+#define GNUPLOT_FULL_DAY    0x40
 
 class Rts2TargetInfo:public Rts2AppDb
 {
@@ -137,7 +140,8 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('p', NULL, 2, "print counts (in given format)");
 	addOption ('P', NULL, 0, "print counts summary row");
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
-	addOption ('d', NULL, 1, "give informations for this data");
+	addOption ('d', NULL, 1, "give informations for this date");
+	addOption (OPT_FULL_DAY, "full-day", 0, "prints informations for 24 hours");
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 }
@@ -218,6 +222,9 @@ Rts2TargetInfo::processOption (int in_opt)
 			break;
 		case 't':
 			targetType = optarg;
+			break;
+		case OPT_FULL_DAY:
+			printGNUplot |= GNUPLOT_FULL_DAY;
 			break;
 		case 'd':
 			ret = parseDate (optarg, JD);
@@ -370,10 +377,14 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 	struct ln_rst_time t_rst;
 	struct ln_rst_time n_rst;
 
-	double sset;
-	double rise;
-	double nbeg;
-	double nend;
+	// sun set and rise times (hours)
+	double sset, rise;
+
+	// night begin and ends (hours)
+	double nbeg, nend;
+
+	// plot begin and end (hours)
+	double gbeg, gend;
 
 	char old_fill;
 	int old_p;
@@ -395,6 +406,17 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 		nbeg = get_norm_hour (n_rst.set);
 		nend = get_norm_hour (n_rst.rise);
 
+		if (printGNUplot & GNUPLOT_FULL_DAY)
+		{
+			gbeg = get_norm_hour (t_rst.transit) - 12.0;
+			gend = get_norm_hour (t_rst.transit) + 12.0;
+		}
+		else
+		{
+			gbeg = sset - 1.0;
+			gend = rise + 1.0;
+		}
+
 		if (nbeg < sset || sset > rise)
 		{
 			sset -= 24.0;
@@ -411,7 +433,9 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 			<< "rise=" << rise << std::endl
 			<< "nend=" << nend << std::endl
 			<< "nbeg=" << nbeg << std::endl
-			<< "set xrange [sset:rise] noreverse" << std::endl
+			<< "gbeg=" << gbeg << std::endl
+			<< "gend=" << gend << std::endl
+			<< "set xrange [gbeg:gend] noreverse" << std::endl
 			<< "set xlabel \"Time UT [h]\"" << std::endl;
 		if (printGNUplot & GNUPLOT_BONUS_ONLY)
 		{
@@ -467,14 +491,11 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 			"set arrow from (nend/2+nbeg/2),graph 0 to (nend/2+nbeg/2),graph 1 nohead lt 0"
 			<< std::endl << "set xtics ( ";
 
-		sset -= 1.0;
-		rise += 1.0;
-
-		for (int i = (int)floor (sset); i < (int) ceil (rise); i++)
+		for (int i = (int)floor (gbeg); i < (int) ceil (gend); i++)
 		{
-			if (i != (int) floor (sset))
+			if (i != (int) floor (gbeg))
 				std::cout << ", ";
-			std::cout << '"' << (i < 0 ? i + 24 : i) << "\" " << i;
+			std::cout << '"' << (i < 0 ? i + 24 : (i > 24) ? i - 24 : i) << "\" " << i;
 		}
 		std::cout << ')' << std::endl;
 
@@ -565,7 +586,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 		{
 			struct ln_hrz_posn moonHrz;
 			struct ln_equ_posn moonEqu;
-			for (double i = sset; i <= rise; i += step)
+			for (double i = gbeg; i <= gend; i += step)
 			{
 				double jd = jd_start + i / 24.0;
 				ln_get_lunar_equ_coords (jd, &moonEqu);
@@ -578,7 +599,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 		if (addHorizon)
 		{
 			struct ln_hrz_posn hor;
-			for (double i = sset; i <= rise; i += step)
+			for (double i = gbeg; i <= gend; i += step)
 			{
 				double jd = jd_start + i / 24.0;
 				((*(set.begin ())).second)->getAltAz (&hor, jd);
@@ -602,13 +623,13 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 		{
 			if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 			{
-				printTargetInfoGNUplot (jd_start, sset, rise, step);
+				printTargetInfoGNUplot (jd_start, gbeg, gend, step);
 				std::cout << "e" << std::endl;
 			}
 			if ((printGNUplot & GNUPLOT_BONUS)
 				|| (printGNUplot & GNUPLOT_BONUS_ONLY))
 			{
-				printTargetInfoGNUBonus (jd_start, sset, rise, step);
+				printTargetInfoGNUBonus (jd_start, gbeg, gend, step);
 				std::cout << "e" << std::endl;
 			}
 		}

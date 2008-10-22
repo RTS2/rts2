@@ -1,9 +1,35 @@
+/* 
+ * Dummy cupola driver.
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "cupola.h"
 
-/*!
+using namespace rts2dome;
+
+namespace rts2dome
+{
+
+/**
  * Dummy copula for testing.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCupolaDummy:public Rts2DevCupola
+class Dummy:public Cupola
 {
 	private:
 		Rts2ValueInteger * mcount;
@@ -12,14 +38,14 @@ class Rts2DevCupolaDummy:public Rts2DevCupola
 		virtual int moveStart ()
 		{
 			mcount->setValueInteger (0);
-			return Rts2DevCupola::moveStart ();
+			return Cupola::moveStart ();
 		}
 		virtual int moveEnd ()
 		{
 			struct ln_hrz_posn hrz;
 			getTargetAltAz (&hrz);
 			setCurrentAz (hrz.az);
-			return Rts2DevCupola::moveEnd ();
+			return Cupola::moveEnd ();
 		}
 		virtual long isMoving ()
 		{
@@ -34,11 +60,49 @@ class Rts2DevCupolaDummy:public Rts2DevCupola
 			{
 				return 0;
 			}
-			return Rts2DevCupola::setValue (old_value, new_value);
+			return Cupola::setValue (old_value, new_value);
 		}
+
+		virtual int startOpen ()
+		{
+			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
+				return 0;
+			mcount->setValueInteger (0);
+			return 0;
+		}
+
+		virtual long isOpened ()
+		{
+			return isMoving ();
+		}
+
+		virtual int endOpen ()
+		{
+			return 0;
+		}
+
+		virtual int startClose ()
+		{
+			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
+				return 0;
+			mcount->setValueInteger (0);
+			return 0;
+		}
+
+		virtual long isClosed ()
+		{
+		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
+				return -2;
+			return isMoving ();
+		}
+
+		virtual int endClose ()
+		{
+			return 0;
+		}
+
 	public:
-		Rts2DevCupolaDummy (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
-			in_argv)
+		Dummy (int argc, char **argv):Cupola (argc, argv)
 		{
 			createValue (mcount, "mcount", "moving count", false);
 			createValue (moveCountTop, "moveCountTop", "move count top", false);
@@ -48,39 +112,7 @@ class Rts2DevCupolaDummy:public Rts2DevCupola
 		virtual int initValues ()
 		{
 			setCurrentAz (0);
-			return Rts2DevCupola::initValues ();
-		}
-
-		virtual int ready ()
-		{
-			return 0;
-		}
-
-		virtual int baseInfo ()
-		{
-			return 0;
-		}
-
-		virtual int openDome ()
-		{
-			mcount->setValueInteger (0);
-			return Rts2DevCupola::openDome ();
-		}
-
-		virtual long isOpened ()
-		{
-			return isMoving ();
-		}
-
-		virtual int closeDome ()
-		{
-			mcount->setValueInteger (0);
-			return Rts2DevCupola::closeDome ();
-		}
-
-		virtual long isClosed ()
-		{
-			return isMoving ();
+			return Cupola::initValues ();
 		}
 
 		virtual double getSplitWidth (double alt)
@@ -89,9 +121,11 @@ class Rts2DevCupolaDummy:public Rts2DevCupola
 		}
 };
 
+}
+
 int
 main (int argc, char **argv)
 {
-	Rts2DevCupolaDummy device = Rts2DevCupolaDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }

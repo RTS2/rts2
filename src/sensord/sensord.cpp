@@ -19,8 +19,8 @@
 
 #include "sensord.h"
 
-Rts2DevSensor::Rts2DevSensor (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_SENSOR, "S1")
+Rts2DevSensor::Rts2DevSensor (int argc, char **argv):
+Rts2Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
 {
 	setIdleInfoInterval (60);
 }
@@ -28,4 +28,56 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_SENSOR, "S1")
 
 Rts2DevSensor::~Rts2DevSensor (void)
 {
+}
+
+
+int
+SensorWeather::idle ()
+{
+	// switch weather state back to good..
+	if (isGoodWeather () == true && getWeatherState () == false)
+	{
+		// last chance - run info () again to see if the device does not change the mind about
+		// it weather status..
+		int ret;
+		ret = info ();
+		if (ret)
+			return Rts2DevSensor::idle ();
+		if (isGoodWeather () == true)
+		{
+			logStream (MESSAGE_DEBUG) << "switching to GOOD_WEATHER after next_good_weather timeout expires" << sendLog;
+			setWeatherState (true);
+		}
+	}
+	return Rts2DevSensor::idle ();
+}
+
+
+bool
+SensorWeather::isGoodWeather ()
+{
+	if (getNextGoodWeather () >= getNow ())
+		return false;
+	return true;
+}
+
+
+SensorWeather::SensorWeather (int argc, char **argv, int _timeout)
+:Rts2DevSensor (argc, argv)
+{
+	createValue (nextGoodWeather, "next_good_weather", "date and time of next good weather");
+	setWeatherTimeout (_timeout);
+}
+
+
+void
+SensorWeather::setWeatherTimeout (time_t wait_time)
+{
+	setWeatherState (false);
+
+	time_t next;
+	time (&next);
+	next += wait_time;
+	if (next > nextGoodWeather->getValueInteger ())
+		nextGoodWeather->setValueInteger (next);
 }

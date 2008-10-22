@@ -204,7 +204,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		}
 
 		void clearSections ();
-		int parseConfigFile ();
+		int parseConfigFile (const char *filename);
 
 		// sections which are know to be missing
 		std::vector <std::string> missingSections;
@@ -241,11 +241,11 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 *
 		 * @param section    Section name.
 		 * @param valueName  Value name.
-		 * @param vect       String vector.
+		 * @param value      Returned string vector.
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & vect);
+		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & value);
 
 		int getInteger (const char *section, const char *valueName, int &value);
 

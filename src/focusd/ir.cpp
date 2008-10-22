@@ -1,12 +1,24 @@
-/*!
- * $Id$
+/* 
+ * IR focuser control.
+ * Copyright (C) 2005-2007 Stanislav Vitek <standa@iaa.es>
+ * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
  *
- * @author standa
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+#define DEBUG_EXTRA
 
 #include <opentpl/client.h>
 
@@ -24,7 +36,6 @@ class Rts2DevFocuserIr:public Rts2DevFocuser
 		Rts2ValueInteger *realPos;
 		// low-level tpl functions
 		template < typename T > int tpl_get (const char *name, T & val, int *status);
-		template < typename T > int tpl_set (const char *name, T val, int *status);
 		template < typename T > int tpl_setw (const char *name, T val, int *status);
 		// low-level image fuctions
 		// int data_handler (int sock, size_t size, struct image_info *image);
@@ -43,7 +54,6 @@ class Rts2DevFocuserIr:public Rts2DevFocuser
 		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int stepOut (int num);
 		virtual int setTo (int num);
 		virtual int isFocusing ();
 };
@@ -82,42 +92,27 @@ Rts2DevFocuserIr::tpl_get (const char *name, T & val, int *status)
 
 
 template < typename T > int
-Rts2DevFocuserIr::tpl_set (const char *name, T val, int *status)
-{
-	int cstatus;
-
-	if (!*status)
-	{
-								 // change to set...?
-		Request *r = tplc->Set (name, Value (val), true);
-		r->Wait (2000);
-
-		delete r;
-	}
-	return *status;
-}
-
-
-template < typename T > int
 Rts2DevFocuserIr::tpl_setw (const char *name, T val, int *status)
 {
 	int cstatus;
 
 	if (!*status)
 	{
+		#ifdef DEBUG_EXTRA
+		std::cout << "tpl_setw name " << name << std::endl;
+		#endif
 								 // change to set...?
 		Request *r = tplc->Set (name, Value (val), false);
 		cstatus = r->Wait ();
 
-		if (cstatus != TPLC_OK)
-		{
-			logStream (MESSAGE_ERROR) << "focuser IR tpl_setw error " << cstatus
-				<< sendLog;
-			*status = 1;
-		}
-
 		delete r;
 	}
+
+	#ifdef DEBUG_EXTRA
+	if (!*status)
+		std::cout << "tpl_setw name " << name << " val " << val << std::endl;
+	#endif
+
 	return *status;
 }
 
@@ -236,41 +231,6 @@ Rts2DevFocuserIr::info ()
 
 
 int
-Rts2DevFocuserIr::stepOut (int num)
-{
-	int status = 0;
-
-	int power = 1;
-	int referenced = 0;
-	double offset;
-
-	status = tpl_get ("FOCUS.REFERENCED", referenced, &status);
-	if (referenced != 1)
-	{
-		logStream (MESSAGE_ERROR) << "focuser IR stepOut referenced is: " <<
-			referenced << sendLog;
-		return -1;
-	}
-	status = tpl_setw ("FOCUS.POWER", power, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set POWER to 1"
-			<< sendLog;
-	}
-	status = tpl_get ("FOCUS.OFFSET", offset, &status);
-	offset += (double) num / 1000.0;
-	status = tpl_setw ("FOCUS.OFFSET", offset, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set offset!" <<
-			sendLog;
-		return -1;
-	}
-	return 0;
-}
-
-
-int
 Rts2DevFocuserIr::setTo (int num)
 {
 	int status = 0;
@@ -293,7 +253,7 @@ Rts2DevFocuserIr::setTo (int num)
 			<< sendLog;
 	}
 	offset = (double) num / 1000.0;
-	status = tpl_setw ("FOCUS.OFFSET", offset, &status);
+	status = tpl_setw ("FOCUS.TARGETPOS", offset, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "focuser IR stepOut cannot set offset!" <<
@@ -301,6 +261,7 @@ Rts2DevFocuserIr::setTo (int num)
 		return -1;
 	}
 	setFocusTimeout (100);
+	focPos->setValueInteger (num);
 	return 0;
 }
 
@@ -344,7 +305,7 @@ Rts2DevFocuserIr::isAtStartPosition ()
 	ret = info ();
 	if (ret)
 		return false;
-	return (fabs ((float) getFocPos ()) < 50);
+	return (fabs ((float) getFocPos () - 15200 ) < 100);
 }
 
 

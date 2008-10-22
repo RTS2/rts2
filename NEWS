@@ -1,4 +1,10 @@
 0.8.0
+  rts2-centrald  Logic for detecting missing devices.
+
+  Mailing
+
+  sendMailMessage
+
   RTS2 scripting
 
   C, HEX commands needs for proper functionality name of the device  

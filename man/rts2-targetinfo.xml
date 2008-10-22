@@ -110,6 +110,9 @@
         <arg choice="plain"><option>-d <replaceable class="parameter">YYYY-MM-DDTHH:MM:SS</replaceable></option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>--full-day</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-9</option></arg>
       </arg>
       <arg choice="opt">
@@ -229,7 +232,7 @@
       <varlistentry>
         <term><option>-m</option></term>
         <listitem>
-          <para>Plot moon coordinates at the graph.</para>
+          <para>Do not plot moon coordinates. Valid only for gnuplot graphs.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -345,6 +348,12 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>--full-day</option></term>
+        <listitem>
+          <para>Print graph for a full day.Graph will be printed on 24 hours centered around middle of night for given date.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-9</option></term>
         <listitem>
           <para>Prints out DS9 .reg file. That is especially usefull for GRB observations, when it prints out various error boxes.</para>
@@ -447,7 +456,7 @@
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
-	<manvolnum>1</manvolnum>
+	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>

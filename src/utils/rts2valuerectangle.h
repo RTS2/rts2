@@ -37,6 +37,7 @@ class Rts2ValueRectangle: public Rts2Value
 		Rts2Value *h;
 
 		void createValues ();
+		void checkChange ();
 	public:
 		Rts2ValueRectangle (std::string in_val_name, int32_t baseType);
 		Rts2ValueRectangle (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags);

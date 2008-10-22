@@ -75,6 +75,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		int disable_ft;
 		int shutter_with_ft;
 
+		Rts2ValueSelection *tempStatus;
+
 		Rts2ValueInteger *gain;
 
 		Rts2ValueBool *useFT;
@@ -154,10 +156,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual int info ();
 		virtual int scriptEnds ();
 		virtual int camChipInfo (int chip);
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
+		virtual void afterNight ();
 };
 
 int
@@ -316,7 +316,6 @@ Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
 	createTempCCD ();
-	createTempRegulation ();
 	createTempSet ();
 
 	createExpType ();
@@ -328,21 +327,28 @@ Rts2DevCamera (in_argc, in_argv)
 	baselineClamp = NULL;
 	baselineOff = NULL;
 
-	createValue (ADChannel, "ADCHANEL",
-		"Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit",
-		true, 0, CAM_WORKING, true);
+	createValue (tempStatus, "temp_status", "Andor temperature status", false);
+	tempStatus->addSelVal ("OFF");
+	tempStatus->addSelVal ("NOT_STABILIZED");
+	tempStatus->addSelVal ("STABILIZED");
+	tempStatus->addSelVal ("NOT_REACHED");
+	tempStatus->addSelVal ("OUT_RANGE");
+	tempStatus->addSelVal ("NOT_SUPPORTED");
+	tempStatus->addSelVal ("DRIFT");
+
+	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, 0, CAM_WORKING, true);
 	ADChannel->setValueInteger (0);
-	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0,
-		CAM_WORKING, true);
+
+	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0, CAM_WORKING, true);
 	VSpeed->setValueInteger (1);
-	createValue (EMOn, "EMON", "If EM is enabled", true, 0,
-		CAM_WORKING, true);
+
+	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING, true);
 	EMOn->setValueBool (true);
-	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0,
-		CAM_WORKING, true);
+
+	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING, true);
 	HSpeed->setValueInteger (1);
-	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0,
-		CAM_WORKING, true);
+
+	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0, CAM_WORKING, true);
 	FTShutter->setValueBool (false);
 
 	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING, true);
@@ -1170,12 +1176,35 @@ Rts2DevCameraAndor::getTemp ()
 	int c_status;
 	float tmpTemp;
 	c_status = GetTemperatureF (&tmpTemp);
-	if (!
-		(c_status == DRV_ACQUIRING || c_status == DRV_NOT_INITIALIZED
-		|| c_status == DRV_ERROR_ACK))
+	if (!(c_status == DRV_ACQUIRING || c_status == DRV_NOT_INITIALIZED || c_status == DRV_ERROR_ACK))
 	{
 		tempCCD->setValueDouble (tmpTemp);
-		tempRegulation->setValueInteger (c_status != DRV_TEMPERATURE_OFF);
+		switch (c_status)
+		{
+			case DRV_TEMPERATURE_OFF:
+				tempStatus->setValueInteger (0);
+				break;
+			case DRV_TEMPERATURE_NOT_STABILIZED:
+				tempStatus->setValueInteger (1);
+				break;
+			case DRV_TEMPERATURE_STABILIZED:
+				tempStatus->setValueInteger (2);
+				break;
+			case DRV_TEMPERATURE_NOT_REACHED:
+				tempStatus->setValueInteger (3);
+				break;
+			case DRV_TEMPERATURE_OUT_RANGE:
+				tempStatus->setValueInteger (4);
+				break;
+			case DRV_TEMPERATURE_NOT_SUPPORTED:
+				tempStatus->setValueInteger (5);
+				break;
+			case DRV_TEMPERATURE_DRIFT:
+				tempStatus->setValueInteger (6);
+				break;
+			default:
+				logStream (MESSAGE_WARNING) << "unknow temperature status " << c_status << sendLog;
+		}
 	}
 	else
 	{
@@ -1204,23 +1233,6 @@ Rts2DevCameraAndor::camChipInfo (int chip)
 
 
 int
-Rts2DevCameraAndor::camCoolMax ()
-{
-	return camCoolHold ();
-}
-
-
-int
-Rts2DevCameraAndor::camCoolHold ()
-{
-	if (isnan (nightCoolTemp))
-		return setCoolTemp (-5);
-	else
-		return setCoolTemp (nightCoolTemp);
-}
-
-
-int
 Rts2DevCameraAndor::setCoolTemp (float new_temp)
 {
 	int status;
@@ -1241,14 +1253,13 @@ Rts2DevCameraAndor::setCoolTemp (float new_temp)
 }
 
 
-int
-Rts2DevCameraAndor::camCoolShutdown ()
+void
+Rts2DevCameraAndor::afterNight ()
 {
 	CoolerOFF ();
 	SetTemperature (20);
 	tempSet->setValueDouble (+50);
 	closeShutter ();
-	return 0;
 }
 
 

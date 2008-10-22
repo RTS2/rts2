@@ -18,29 +18,38 @@
  */
 
 #include <fcntl.h>
-#include <termios.h>
 
 #include "rts2connserial.h"
 #include "rts2block.h"
 #include <iomanip>
 
-Rts2ConnSerial::Rts2ConnSerial (const char *in_devName, Rts2Block * in_master, bSpeedT in_baudSpeed,
-cSizeT in_cSize, parityT in_parity, int in_vTime)
-:Rts2ConnNoSend (in_master)
+int
+Rts2ConnSerial::setAttr ()
 {
-	sock = open (in_devName, O_RDWR | O_NOCTTY | O_NDELAY);
+	if (tcsetattr (sock, TCSANOW, &s_termios) < 0)
+	{
+		logStream (MESSAGE_ERROR) << "cannot set device parameters" << sendLog;
+		return -1;
+	}
+	return 0;
+}
+
+Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime)
+:Rts2ConnNoSend (_master)
+{
+	sock = open (_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
 	if (sock < 0)
-		logStream (MESSAGE_ERROR) << "cannot open serial port:" << in_devName << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot open serial port:" << _devName << sendLog;
 
 	// some defaults
-	baudSpeed = in_baudSpeed;
+	baudSpeed = _baudSpeed;
 
-	cSize = in_cSize;
-	parity = in_parity;
+	cSize = _cSize;
+	parity = _parity;
 
 	vMin = 0;
-	vTime = in_vTime;
+	vTime = _vTime;
 
 	debugPortComm = false;
 }
@@ -84,7 +93,6 @@ Rts2ConnSerial::init ()
 	// set blocking mode
 	fcntl (sock, F_SETFL, 0);
 
-	struct termios s_termios;
 	speed_t b_speed;
 	int ret;
 
@@ -158,14 +166,22 @@ Rts2ConnSerial::init ()
 	s_termios.c_cc[VMIN] = getVMin ();
 	s_termios.c_cc[VTIME] = getVTime ();
 
-	ret = tcsetattr (sock, TCSANOW, &s_termios);
-	if (ret < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot set device parameters" << sendLog;
+	if (setAttr ())
 		return -1;
-	}
 
 	tcflush (sock, TCIOFLUSH);
+	return 0;
+}
+
+
+int
+Rts2ConnSerial::setVTime (int _vtime)
+{
+	s_termios.c_cc[VTIME] = _vtime;
+	if (setAttr ())
+		return -1;
+
+	vTime = _vtime;
 	return 0;
 }
 
@@ -234,6 +250,9 @@ int
 Rts2ConnSerial::readPort (char &ch)
 {
 	int rlen = 0;
+	// it looks max vtime is 100, do not know why..
+	int ntries = getVTime () / 100;
+
 	while (rlen == 0)
 	{
 		rlen = read (sock, &ch, 1);
@@ -245,8 +264,12 @@ Rts2ConnSerial::readPort (char &ch)
 		}
 		if (rlen == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 	}
 	if (debugPortComm)
@@ -261,6 +284,7 @@ int
 Rts2ConnSerial::readPort (char *rbuf, int b_len)
 {
 	int rlen = 0;
+	int ntries = getVTime () / 100;
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, b_len - rlen);
@@ -282,8 +306,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		}
 		if (ret == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 
 		rlen += ret;
@@ -304,6 +332,7 @@ int
 Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 {
 	int rlen = 0;
+	int ntries = getVTime () / 100;
 	while (rlen < b_len)
 	{
 		int ret = read (sock, rbuf + rlen, 1);
@@ -323,8 +352,12 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 		}
 		if (ret == 0)
 		{
-			logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
-			return -1;
+			if (ntries == 0)
+			{
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				return -1;
+			}
+			ntries--;
 		}
 		if (*(rbuf + rlen) == endChar)
 		{
@@ -377,4 +410,11 @@ int
 Rts2ConnSerial::flushPortIO ()
 {
 	return tcflush (sock, TCIOFLUSH);
+}
+
+
+int
+Rts2ConnSerial::flushPortO ()
+{
+	return tcflush (sock, TCOFLUSH);
 }

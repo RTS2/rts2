@@ -23,6 +23,8 @@
 #include "rts2daemonwindow.h"
 #include "rts2nvaluebox.h"
 
+using namespace rts2ncur;
+
 class Rts2NDeviceWindow:public Rts2NSelWindow
 {
 	private:
@@ -33,7 +35,7 @@ class Rts2NDeviceWindow:public Rts2NSelWindow
 		void printValueDesc (Rts2Value * val);
 		void endValueBox ();
 		void createValueBox ();
-		Rts2NValueBox *valueBox;
+		ValueBox *valueBox;
 		/** Index from which start value box */
 		int valueBegins;
 
@@ -73,7 +75,7 @@ class Rts2NDeviceWindow:public Rts2NSelWindow
 		virtual void draw ();
 		virtual void refresh ();
 		virtual bool setCursor ();
-		virtual bool needEnter ()
+		virtual bool hasEditBox ()
 		{
 			return valueBox != NULL;
 		}

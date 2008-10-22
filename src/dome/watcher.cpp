@@ -1,0 +1,373 @@
+/* 
+ * Driver for Watcher dome board.
+ * Copyright (C) 2005-2008 John French
+ * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+#include <sys/io.h>
+
+#include "dome.h"
+
+#define ROOF_TIMEOUT  360		 // in seconds
+
+#define OPEN  	  2
+#define CLOSE     4
+
+#define OPENING   2
+#define CLOSING   0
+
+#define WATCHER_DOME_OPEN                 1
+#define WATCHER_DOME_CLOSED               0
+#define WATCHER_DOME_UNKNOWN             -1
+
+#define WATCHER_METEO_TIMEOUT            80
+
+#define WATCHER_BAD_WEATHER_TIMEOUT    3600
+#define WATCHER_BAD_WINDSPEED_TIMEOUT   360
+#define WATCHER_CONN_TIMEOUT            360
+
+#define BASE                         0xde00
+
+typedef enum
+{ TYPE_OPENED, TYPE_CLOSED, TYPE_STUCK }
+smsType_t;
+
+using namespace rts2dome;
+
+namespace rts2dome
+{
+
+class Watcher:public Dome
+{
+	private:
+		int dome_state;
+		time_t timeOpenClose;
+		bool domeFailed;
+		char *smsExec;
+		double cloud_bad;
+
+		bool isMoving ();
+
+		void executeSms (smsType_t type);
+
+		void openDomeReal ();
+		void closeDomeReal ();
+
+		const char *isOnString (int mask);
+		int sendDublinMail (const char *subject);
+
+		Rts2ValueInteger *sw_state;
+
+	protected:
+		virtual int processOption (int in_opt);
+
+	public:
+		Watcher (int argc, char **argv);
+		virtual ~ Watcher (void);
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int startOpen ();
+		virtual long isOpened ();
+		virtual int endOpen ();
+		virtual int startClose ();
+		virtual long isClosed ();
+		virtual int endClose ();
+};
+
+}
+
+Watcher::Watcher (int argc, char **argv)
+:Dome (argc, argv)
+{
+	smsExec = NULL;
+	addOption ('s', "execute_sms", 1, "execute this commmand to send sms about roof");
+
+	timeOpenClose = 0;
+	domeFailed = false;
+}
+
+
+Watcher::~Watcher (void)
+{
+	outb (0, BASE);
+	// SWITCH OFF INTERFACE
+	outb (0, BASE + 1);
+}
+
+
+void
+Watcher::executeSms (smsType_t type)
+{
+	char *cmd;
+	const char *msg;
+	switch (type)
+	{
+		case TYPE_OPENED:
+			msg = "Watcher roof opened as expected";
+			sendDublinMail ("WATCHER dome opened");
+			break;
+		case TYPE_CLOSED:
+			msg = "Watcher roof closed as expected";
+			sendDublinMail ("WATCHER dome closed");
+			break;
+		case TYPE_STUCK:
+			msg = "FAILURE! Watcher roof failed!!";
+			sendDublinMail ("WARNING CANNOT OPEN DOME! ROOF FAILED!");
+			break;
+	}
+	asprintf (&cmd, "%s '%s'", smsExec, msg);
+	system (cmd);
+	free (cmd);
+}
+
+
+int
+Watcher::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 's':
+			smsExec = optarg;
+			break;
+		default:
+			return Dome::processOption (in_opt);
+	}
+	return 0;
+}
+
+
+int
+Watcher::init ()
+{
+	int ret, i;
+	ret = Dome::init ();
+	if (ret)
+		return ret;
+
+	dome_state = WATCHER_DOME_UNKNOWN;
+
+	ioperm (BASE, 4, 1);
+
+	// SET CONTROL WORD
+	outb (137, BASE + 3);
+
+	// INITIALIZE ALL PORTS TO 0
+
+	for (i = 0; i <= 2; i++)
+	{
+		outb (0, BASE + i);
+	}
+
+	// SWITCH ON INTERFACE
+	outb (1, BASE + 1);
+
+	return 0;
+}
+
+
+int
+Watcher::info ()
+{
+	// switches are both off either when we move enclosure or when dome failed
+	if (domeFailed || timeOpenClose > 0)
+		sw_state->setValueInteger (0);
+
+	return Dome::info ();
+}
+
+
+bool
+Watcher::isMoving ()
+{
+	int result;
+	int moving = 0;
+	int count;
+	for (count = 0; count < 100; count++)
+	{
+		result = (inb (BASE + 2));
+		// we think it's moving
+		if (result & 2)
+			moving++;
+		usleep (USEC_SEC / 100);
+	}
+	// motor is moving at least once
+	if (moving > 0)
+		return true;
+	// dome is regarded as not failed after move of motor stop nominal way
+	domeFailed = false;
+	return false;
+}
+
+
+void
+Watcher::openDomeReal ()
+{
+	outb (OPEN, BASE);
+
+	sleep (1);
+	outb (0, BASE);
+
+	// wait for motor to decide to move
+	sleep (5);
+}
+
+
+int
+Watcher::startOpen ()
+{
+	if (isMoving () || dome_state == WATCHER_DOME_OPEN)
+		return 0;
+
+	openDomeReal ();
+
+	time (&timeOpenClose);
+	timeOpenClose += ROOF_TIMEOUT;
+
+	return 0;
+}
+
+
+long
+Watcher::isOpened ()
+{
+	time_t now;
+	time (&now);
+	// timeout
+	if (now > timeOpenClose)
+	{
+		logStream (MESSAGE_ERROR) << "Watcher::isOpened timeout" <<
+			sendLog;
+		domeFailed = true;
+		sw_state->setValueInteger (0);
+		executeSms (TYPE_STUCK);
+		// stop motor
+		closeDomeReal ();
+		return -2;
+	}
+	return (isMoving ()? USEC_SEC : -2);
+}
+
+
+int
+Watcher::endOpen ()
+{
+	timeOpenClose = 0;
+	dome_state = WATCHER_DOME_OPEN;
+	if (!domeFailed)
+	{
+		sw_state->setValueInteger (1);
+		executeSms (TYPE_OPENED);
+	}
+	return 0;
+}
+
+
+void
+Watcher::closeDomeReal ()
+{
+	outb (CLOSE, BASE);
+
+	sleep (1);
+	outb (0, BASE);
+
+	// give controller time to react
+	sleep (5);
+}
+
+
+int
+Watcher::startClose ()
+{
+	// we cannot close dome when we are still moving
+	if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
+		return 0;
+
+	closeDomeReal ();
+
+	time (&timeOpenClose);
+	timeOpenClose += ROOF_TIMEOUT;
+
+	return 0;
+}
+
+
+long
+Watcher::isClosed ()
+{
+	time_t now;
+	time (&now);
+	if (now > timeOpenClose)
+	{
+		logStream (MESSAGE_ERROR) << "Watcher::isClosed dome timeout"
+			<< sendLog;
+		domeFailed = true;
+		sw_state->setValueInteger (0);
+		executeSms (TYPE_STUCK);
+		openDomeReal ();
+		return -2;
+	}
+	return (isMoving ()? USEC_SEC : -2);
+}
+
+
+int
+Watcher::endClose ()
+{
+	timeOpenClose = 0;
+	dome_state = WATCHER_DOME_CLOSED;
+	if (!domeFailed)
+	{
+		sw_state->setValueInteger (4);
+		executeSms (TYPE_CLOSED);
+	}
+	return 0;
+}
+
+
+const char *
+Watcher::isOnString (int mask)
+{
+	return (sw_state->getValueInteger () & mask) ? "on" : "off";
+}
+
+
+int
+Watcher::sendDublinMail (const char *subject)
+{
+	char *text;
+	int ret;
+	asprintf (&text, "%s.\n"
+		"CLOSE SWITCH:%s\n"
+		"OPEN SWITCH:%s\n"
+		"Weather::isGoodWeather %i\n",
+		subject,
+		isOnString (4),
+		isOnString (1),
+		isGoodWeather ());
+	ret = sendMail (subject, text);
+	free (text);
+	return ret;
+}
+
+
+int
+main (int argc, char **argv)
+{
+	Watcher device = Watcher (argc, argv);
+	return device.run ();
+}

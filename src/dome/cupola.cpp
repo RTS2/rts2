@@ -3,8 +3,8 @@
 
 #include <math.h>
 
-Rts2DevCupola::Rts2DevCupola (int in_argc, char **in_argv):
-Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
+Cupola::Cupola (int in_argc, char **in_argv):
+Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 {
 	targetPos.ra = nan ("f");
 	targetPos.dec = nan ("f");
@@ -27,7 +27,7 @@ Rts2DevDome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 
 
 int
-Rts2DevCupola::processOption (int in_opt)
+Cupola::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -35,17 +35,17 @@ Rts2DevCupola::processOption (int in_opt)
 			configFile = optarg;
 			break;
 		default:
-			return Rts2DevDome::processOption (in_opt);
+			return Dome::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCupola::init ()
+Cupola::init ()
 {
 	int ret;
-	ret = Rts2DevDome::init ();
+	ret = Dome::init ();
 	if (ret)
 		return ret;
 
@@ -59,7 +59,7 @@ Rts2DevCupola::init ()
 
 
 int
-Rts2DevCupola::info ()
+Cupola::info ()
 {
 	struct ln_hrz_posn hrz;
 	// target ra+dec
@@ -69,12 +69,12 @@ Rts2DevCupola::info ()
 	tarAlt->setValueDouble (hrz.alt);
 	tarAz->setValueDouble (hrz.az);
 
-	return Rts2DevDome::info ();
+	return Dome::info ();
 }
 
 
 int
-Rts2DevCupola::idle ()
+Cupola::idle ()
 {
 	long ret;
 	if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
@@ -100,12 +100,12 @@ Rts2DevCupola::idle ()
 	{
 		setTimeout (10 * USEC_SEC);
 	}
-	return Rts2DevDome::idle ();
+	return Dome::idle ();
 }
 
 
 int
-Rts2DevCupola::moveTo (Rts2Conn * conn, double ra, double dec)
+Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 {
 	int ret;
 	targetPos.ra = ra;
@@ -121,7 +121,7 @@ Rts2DevCupola::moveTo (Rts2Conn * conn, double ra, double dec)
 
 
 int
-Rts2DevCupola::moveStart ()
+Cupola::moveStart ()
 {
 	maskState (DOME_COP_MASK_MOVE, DOME_COP_MOVE);
 	return 0;
@@ -129,7 +129,7 @@ Rts2DevCupola::moveStart ()
 
 
 int
-Rts2DevCupola::moveStop ()
+Cupola::moveStop ()
 {
 	maskState (DOME_COP_MASK | BOP_EXPOSURE,
 		DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
@@ -139,7 +139,7 @@ Rts2DevCupola::moveStop ()
 
 
 void
-Rts2DevCupola::synced ()
+Cupola::synced ()
 {
 	infoAll ();
 	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE, DOME_COP_SYNC);
@@ -147,7 +147,7 @@ Rts2DevCupola::synced ()
 
 
 int
-Rts2DevCupola::moveEnd ()
+Cupola::moveEnd ()
 {
 	maskState (DOME_COP_MASK | BOP_EXPOSURE, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
 	infoAll ();
@@ -156,7 +156,7 @@ Rts2DevCupola::moveEnd ()
 
 
 void
-Rts2DevCupola::getTargetAltAz (struct ln_hrz_posn *hrz)
+Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
 	JD = ln_get_julian_from_sys ();
@@ -165,7 +165,7 @@ Rts2DevCupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 
 
 int
-Rts2DevCupola::needSplitChange ()
+Cupola::needSplitChange ()
 {
 	int ret;
 	struct ln_hrz_posn targetHrz;
@@ -197,7 +197,7 @@ Rts2DevCupola::needSplitChange ()
 
 
 int
-Rts2DevCupola::commandAuthorized (Rts2Conn * conn)
+Cupola::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("move"))
 	{
@@ -208,5 +208,5 @@ Rts2DevCupola::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return moveTo (conn, tar_ra, tar_dec);
 	}
-	return Rts2DevDome::commandAuthorized (conn);
+	return Dome::commandAuthorized (conn);
 }

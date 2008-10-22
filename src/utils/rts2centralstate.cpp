@@ -23,9 +23,9 @@
 #include "rts2centralstate.h"
 
 const char *
-Rts2CentralState::getStringShort ()
+Rts2CentralState::getStringShort (int _state)
 {
-	switch (getValue () & SERVERD_STATUS_MASK)
+	switch (_state & SERVERD_STATUS_MASK)
 	{
 		case SERVERD_DAY:
 			return "day";
@@ -45,15 +45,26 @@ Rts2CentralState::getStringShort ()
 }
 
 
-std::string Rts2CentralState::getString ()
+std::string
+Rts2CentralState::getString (int _state)
 {
 	std::ostringstream os;
-	if ((getValue () & SERVERD_STATUS_MASK) == SERVERD_OFF)
+	// check for weather
+	if ((_state & WEATHER_MASK) == BAD_WEATHER)
 	{
-		os << "OFF";
+		os << "bad weather | ";
+	}
+	if ((_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+	{
+		os << "HARD OFF";
+		return os.str ();
+        }
+	if ((_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+	{
+		os << "SOFT OFF";
 		return os.str ();
 	}
-	if ((getValue () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+	if ((_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	{
 		os << "standby ";
 	}
@@ -61,13 +72,13 @@ std::string Rts2CentralState::getString ()
 	{
 		os << "ready ";
 	}
-	os << getStringShort ();
+	os << getStringShort (_state);
 	// check for blocking
-	if (getValue () & BOP_EXPOSURE)
+	if (_state & BOP_EXPOSURE)
 		os << ", block exposure";
-	if (getValue () & BOP_READOUT)
+	if (_state & BOP_READOUT)
 		os << ", block readout";
-	if (getValue () & BOP_TEL_MOVE)
+	if (_state & BOP_TEL_MOVE)
 		os << ", block telescope move";
 	return os.str ();
 }

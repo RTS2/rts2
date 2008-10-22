@@ -1,5 +1,23 @@
+/* 
+ * Driver for Mark copula.
+ * Copyright (C) 2005,2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "cupola.h"
-#include "udpweather.h"
 
 #include <math.h>
 #include <sys/types.h>
@@ -31,12 +49,17 @@
 // how many arcdeg we can be off to be considerd to hit position
 #define MIN_ERR     0.6
 
+using namespace rts2dome;
+
+namespace rts2dome
+{
+
 /*!
  * Cupola for MARK telescope on Prague Observatory - http://www.observatory.cz
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCupolaMark:public Rts2DevCupola
+class Mark:public Cupola
 {
 	private:
 		const char *device_file;
@@ -47,9 +70,6 @@ class Rts2DevCupolaMark:public Rts2DevCupola
 		int write_read (char *w_buf, int w_buf_len, char *r_buf, int r_buf_len);
 		int readReg (int reg_id, uint16_t * reg_val);
 		int writeReg (int reg_id, uint16_t reg_val);
-
-		int weatherPort;
-		Rts2ConnFramWeather *weatherConn;
 
 		double lastFast;
 
@@ -63,20 +83,23 @@ class Rts2DevCupolaMark:public Rts2DevCupola
 		virtual int moveStart ();
 		virtual long isMoving ();
 		virtual int moveEnd ();
+
+		virtual int startOpen ();
+		virtual long isOpened ();
+		virtual int endOpen ();
+
+		virtual int startClose ();
+		virtual long isClosed ();
+		virtual int endClose ();
+
+
 	public:
-		Rts2DevCupolaMark (int argc, char **argv);
+		Mark (int argc, char **argv);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int idle ();
 
-		virtual int ready ();
 		virtual int info ();
-
-		virtual int openDome ();
-		virtual long isOpened ();
-
-		virtual int closeDome ();
-		virtual long isClosed ();
 
 		virtual int moveStop ();
 
@@ -90,8 +113,10 @@ class Rts2DevCupolaMark:public Rts2DevCupola
 		}
 };
 
+}
+
 uint16_t
-Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
+Mark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 {
 	uint16_t ret = 0xffff;
 	for (int l = 0; l < msgLen; l++)
@@ -113,7 +138,7 @@ Rts2DevCupolaMark::getMsgBufCRC16 (char *msgBuf, int msgLen)
 // last 2 bits are reserved for crc! They are counted in w_buf_len and r_buf_len, and
 // will be modified by this function
 int
-Rts2DevCupolaMark::write_read (char *w_buf, int w_buf_len, char *r_buf,
+Mark::write_read (char *w_buf, int w_buf_len, char *r_buf,
 int r_buf_len)
 {
 	int ret;
@@ -126,14 +151,14 @@ int r_buf_len)
 	for (int i = 0; i < w_buf_len; i++)
 	{
 		logStream (MESSAGE_DEBUG) <<
-			"Rts2DevCupolaMark::write_read write byte " << i << "value " <<
+			"Mark::write_read write byte " << i << "value " <<
 			w_buf[i] << sendLog;
 	}
 	#endif
 	if (ret != w_buf_len)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2DevCupolaMark::write_read ret != w_buf_len " << ret << " " <<
+			"Mark::write_read ret != w_buf_len " << ret << " " <<
 			w_buf_len << sendLog;
 		return -1;
 	}
@@ -142,14 +167,14 @@ int r_buf_len)
 	for (int i = 0; i < r_buf_len; i++)
 	{
 		logStream (MESSAGE_DEBUG) <<
-			"Rts2DevCupolaMark::write_read read byte " << i << " value " <<
+			"Mark::write_read read byte " << i << " value " <<
 			r_buf[i] << sendLog;
 	}
 	#endif
 	if (ret != r_buf_len)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2DevCupolaMark::write_read ret != r_buf_len " << ret << " " <<
+			"Mark::write_read ret != r_buf_len " << ret << " " <<
 			r_buf_len << sendLog;
 		return -1;
 	}
@@ -160,7 +185,7 @@ int r_buf_len)
 		|| (r_buf[r_buf_len - 2] & (crc16 & 0x00ff)) != (crc16 & 0x00ff))
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2DevCupolaMark::write_read invalid checksum! (should be " <<
+			"Mark::write_read invalid checksum! (should be " <<
 			((crc16 & 0xff00) >> 8) << " " << (crc16 & 0x00ff) << " is " <<
 			r_buf[r_buf_len - 1] << " " << r_buf[r_buf_len - 2] << " ( " <<
 			(r_buf[r_buf_len - 1] & ((crc16 & 0xff00) >> 8)) << " " <<
@@ -173,7 +198,7 @@ int r_buf_len)
 
 
 int
-Rts2DevCupolaMark::readReg (int reg, uint16_t * reg_val)
+Mark::readReg (int reg, uint16_t * reg_val)
 {
 	int ret;
 	char wbuf[8];
@@ -190,14 +215,14 @@ Rts2DevCupolaMark::readReg (int reg, uint16_t * reg_val)
 	*reg_val = rbuf[3];
 	*reg_val = *reg_val << 8;
 	*reg_val |= (rbuf[4]);
-	logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::readReg reg " << reg <<
+	logStream (MESSAGE_DEBUG) << "Mark::readReg reg " << reg <<
 		" val " << *reg_val << sendLog;
 	return 0;
 }
 
 
 int
-Rts2DevCupolaMark::writeReg (int reg, uint16_t reg_val)
+Mark::writeReg (int reg, uint16_t reg_val)
 {
 	char wbuf[8];
 	char rbuf[8];
@@ -211,18 +236,15 @@ Rts2DevCupolaMark::writeReg (int reg, uint16_t reg_val)
 	wbuf[3] = (reg & 0x00ff);
 	wbuf[4] = (reg_val & 0xff00) >> 8;
 	wbuf[5] = (reg_val & 0x00ff);
-	logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::writeReg reg " << reg <<
+	logStream (MESSAGE_DEBUG) << "Mark::writeReg reg " << reg <<
 		" value " << reg_val << sendLog;
 	return write_read (wbuf, 8, rbuf, 8);
 }
 
 
-Rts2DevCupolaMark::Rts2DevCupolaMark (int in_argc, char **in_argv):Rts2DevCupola (in_argc,
+Mark::Mark (int in_argc, char **in_argv):Cupola (in_argc,
 in_argv)
 {
-	weatherPort = 5002;
-	weatherConn = NULL;
-
 	lastFast = nan ("f");
 
 	device_file = "/dev/ttyS0";
@@ -230,39 +252,34 @@ in_argv)
 	initialized = UNKNOW;
 
 	addOption ('f', "device", 1, "device filename (default to /dev/ttyS0");
-	addOption ('W', "mark_weather", 1,
-		"UDP port number of packets from meteo (default to 5002)");
 }
 
 
 int
-Rts2DevCupolaMark::processOption (int in_opt)
+Mark::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case 'f':
 			device_file = optarg;
 			break;
-		case 'W':
-			weatherPort = atoi (optarg);
-			break;
 		default:
-			return Rts2DevCupola::processOption (in_opt);
+			return Cupola::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCupolaMark::init ()
+Mark::init ()
 {
 	struct termios cop_termios;
 	int ret;
-	ret = Rts2DevCupola::init ();
+	ret = Cupola::init ();
 	if (ret)
 		return ret;
 
-	logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::init open: " << device_file
+	logStream (MESSAGE_DEBUG) << "Mark::init open: " << device_file
 		<< sendLog;
 
 	cop_desc = open (device_file, O_RDWR);
@@ -287,11 +304,6 @@ Rts2DevCupolaMark::init ()
 	if (tcsetattr (cop_desc, TCSANOW, &cop_termios) < 0)
 		return -1;
 
-	weatherConn = new Rts2ConnFramWeather (weatherPort, 20, this);
-	weatherConn->init ();
-
-	addConnection (weatherConn);
-
 	setTimeout (USEC_SEC);
 
 	return 0;
@@ -299,32 +311,10 @@ Rts2DevCupolaMark::init ()
 
 
 int
-Rts2DevCupolaMark::idle ()
+Mark::idle ()
 {
 	int ret;
 	uint16_t copState;
-	// check for weather..
-	if (weatherConn->isGoodWeather ())
-	{
-		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
-		{
-			// after centrald reply, that he switched the state, dome will
-			// open
-			sendMaster ("on");
-		}
-	}
-	else
-	{
-		// close dome - don't thrust centrald to be running and closing
-		// it for us
-		ret = closeDome ();
-		if (ret == -1)
-		{
-			setTimeout (10 * USEC_SEC);
-		}
-		setMasterStandby ();
-	}
 	if (initialized == UNKNOW || initialized == DONE
 		|| initialized == IN_PROGRESS || initialized == ERROR)
 	{
@@ -332,7 +322,7 @@ Rts2DevCupolaMark::idle ()
 		ret = readReg (REG_STATE, &copState);
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2DevCupola::idle cannot read reg!"
+			logStream (MESSAGE_ERROR) << "Cupola::idle cannot read reg!"
 				<< sendLog;
 			sleep (2);
 			tcflush (cop_desc, TCIOFLUSH);
@@ -352,43 +342,48 @@ Rts2DevCupolaMark::idle ()
 			initialized = DONE;
 		}
 	}
-	return Rts2DevCupola::idle ();
+	return Cupola::idle ();
 }
 
 
 int
-Rts2DevCupolaMark::openDome ()
+Mark::startOpen ()
 {
 	int ret;
-	if (!weatherConn->isGoodWeather ())
-		return -1;
 	ret = writeReg (REG_SPLIT_CONTROL, 0x0001);
 	if (ret)
 		return ret;
-	return Rts2DevCupola::openDome ();
+	return 0;
 }
 
 
 long
-Rts2DevCupolaMark::isOpened ()
+Mark::isOpened ()
 {
 	return -2;
 }
 
 
 int
-Rts2DevCupolaMark::closeDome ()
+Mark::endOpen ()
+{
+	return 0;
+}
+
+
+int
+Mark::startClose ()
 {
 	int ret;
 	ret = writeReg (REG_SPLIT_CONTROL, 0x0000);
 	if (ret)
 		return ret;
-	return Rts2DevCupola::closeDome ();
+	return 0;
 }
 
 
 long
-Rts2DevCupolaMark::isClosed ()
+Mark::isClosed ()
 {
 	int ret;
 	uint16_t reg_val;
@@ -406,27 +401,25 @@ Rts2DevCupolaMark::isClosed ()
 
 
 int
-Rts2DevCupolaMark::ready ()
+Mark::endClose ()
 {
 	return 0;
 }
 
 
 int
-Rts2DevCupolaMark::info ()
+Mark::info ()
 {
 	int ret;
 	int16_t az_val;
-	setRain (weatherConn->getRain ());
-	setWindSpeed (weatherConn->getWindspeed ());
 	ret = readReg (REG_POSITION, (uint16_t *) & az_val);
 	if (!ret)
 	{
 		setCurrentAz (ln_range_degrees
 			((az_val * STEP_AZ_SIZE) + STEP_AZ_OFFSET));
-		return Rts2DevCupola::info ();
+		return Cupola::info ();
 	}
-	return Rts2DevCupola::info ();
+	return Cupola::info ();
 }
 
 
@@ -434,7 +427,7 @@ Rts2DevCupolaMark::info ()
  * @return -1 on error, -2 when move complete (on target position), 0 when nothing interesting happen
  */
 int
-Rts2DevCupolaMark::slew ()
+Mark::slew ()
 {
 	int ret;
 	uint16_t copControl;
@@ -479,7 +472,7 @@ Rts2DevCupolaMark::slew ()
 				if (ret)
 					return -1;
 			}
-			logStream (MESSAGE_DEBUG) << "Rts2DevCupolaMark::slew slow down" <<
+			logStream (MESSAGE_DEBUG) << "Mark::slew slow down" <<
 				sendLog;
 		}
 		// test if we hit target destination
@@ -506,19 +499,19 @@ Rts2DevCupolaMark::slew ()
 
 
 int
-Rts2DevCupolaMark::moveStart ()
+Mark::moveStart ()
 {
 	int ret;
 	ret = needSplitChange ();
 	if (ret == 0 || ret == -1)
 		return ret;				 // pretend we change..so other devices can sync on our command
 	slew ();
-	return Rts2DevCupola::moveStart ();
+	return Cupola::moveStart ();
 }
 
 
 long
-Rts2DevCupolaMark::isMoving ()
+Mark::isMoving ()
 {
 	int ret;
 	ret = needSplitChange ();
@@ -532,23 +525,23 @@ Rts2DevCupolaMark::isMoving ()
 
 
 int
-Rts2DevCupolaMark::moveEnd ()
+Mark::moveEnd ()
 {
 	writeReg (REG_COP_CONTROL, 0x00);
-	return Rts2DevCupola::moveEnd ();
+	return Cupola::moveEnd ();
 }
 
 
 int
-Rts2DevCupolaMark::moveStop ()
+Mark::moveStop ()
 {
 	writeReg (REG_COP_CONTROL, 0x00);
-	return Rts2DevCupola::moveStop ();
+	return Cupola::moveStop ();
 }
 
 
 void
-Rts2DevCupolaMark::parkCupola ()
+Mark::parkCupola ()
 {
 	if (initialized != IN_PROGRESS)
 	{
@@ -560,24 +553,24 @@ Rts2DevCupolaMark::parkCupola ()
 
 
 int
-Rts2DevCupolaMark::standby ()
+Mark::standby ()
 {
 	parkCupola ();
-	return Rts2DevCupola::standby ();
+	return Cupola::standby ();
 }
 
 
 int
-Rts2DevCupolaMark::off ()
+Mark::off ()
 {
 	parkCupola ();
-	return Rts2DevCupola::off ();
+	return Cupola::off ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevCupolaMark device = Rts2DevCupolaMark (argc, argv);
+	Mark device = Mark (argc, argv);
 	return device.run ();
 }

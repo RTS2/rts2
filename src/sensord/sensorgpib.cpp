@@ -56,7 +56,7 @@ Rts2DevSensorGpib::gpibRead (void *buf, int blen)
 
 
 int
-Rts2DevSensorGpib::gpibWriteRead (char *buf, char *val, int blen)
+Rts2DevSensorGpib::gpibWriteRead (const char *buf, char *val, int blen)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, buf, strlen (buf));

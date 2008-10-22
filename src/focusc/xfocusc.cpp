@@ -43,11 +43,11 @@ class Rts2xfocus:public Rts2GenFocClient
 	private:
 		XColor rgb[260];		 // <= 255 - images, 256 - red line
 		Colormap colormap;
-		char *displayName;
+		char * displayName;
 
 		// X11 stuff
-		Display *display;
-		Visual *visual;
+		Display * display;
+		Visual * visual;
 		int depth;
 
 		int crossType;
@@ -56,7 +56,7 @@ class Rts2xfocus:public Rts2GenFocClient
 		// initially in arcsec, but converted (and used) in degrees
 		double changeVal;
 
-		virtual Rts2GenFocCamera *createFocCamera (Rts2Conn * conn);
+		virtual Rts2GenFocCamera * createFocCamera (Rts2Conn * conn);
 	protected:
 		/**
 		 * Add XWin connection socket, obtained by ConnectionNumber macro.
@@ -86,16 +86,16 @@ class Rts2xfocus:public Rts2GenFocClient
 		{
 			return depth;
 		}
-		Visual *getVisual ()
+		Visual * getVisual ()
 		{
 			return visual;
 		}
 
-		XColor *getRGB (int i)
+		XColor * getRGB (int i)
 		{
 			return &rgb[i];
 		}
-		Colormap *getColormap ()
+		Colormap * getColormap ()
 		{
 			return &colormap;
 		}
@@ -786,14 +786,14 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 
 		// if window is too large, set to 1/4 of required size, so we will see nine effect
 		if (pixmapWidth > image->getWidth () * master->zoom)
-			pixmapWidth = image->getWidth () * master->zoom;
+			pixmapWidth = (int) ceil (image->getWidth () * master->zoom);
 		if (pixmapHeight > image->getHeight () * master->zoom)
-		  	pixmapHeight = image->getHeight () * master->zoom;
+		  	pixmapHeight = (int) ceil (image->getHeight () * master->zoom);
 	}
 	else
 	{
-		pixmapWidth = image->getWidth () * master->zoom;
-		pixmapHeight = image->getHeight () * master->zoom;
+		pixmapWidth = (int) ceil (image->getWidth () * master->zoom);
+		pixmapHeight = (int) ceil (image->getHeight () * master->zoom);
 	}
 
 	if (pixmapWidth != windowWidth || pixmapHeight != windowHeight)
@@ -905,8 +905,8 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	// get cuts
 	double sigma, median;
 	median = classical_median(iP, iW * iH, &sigma);
-	low = median - 3 * sigma;
-	hig = median + 5 * sigma;
+	low = (short unsigned int) (median - 3 * sigma);
+	hig = (short unsigned int) (median + 5 * sigma);
 
 	std::cout << "Window median:" << median << " stdev " << sigma
 		<< " low:" << low << " hig:" << hig << std::endl;

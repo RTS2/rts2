@@ -45,6 +45,12 @@
 class Rts2Address
 {
 	private:
+		// our centrald number - centrald which created address record
+		int host_num;
+		// device centrald number
+		int centrald_num;
+		// device id
+		int centrald_id;
 		char name[DEVICE_NAME_SIZE];
 		char *host;
 		int port;
@@ -53,15 +59,43 @@ class Rts2Address
 		/**
 		 * Construct Rts2Address object.
 		 *
-		 * @param in_name  Block name.
-		 * @param in_host  Hostname of the host running the block.
-		 * @param in_port  Port on which block listen for incoming requests.
-		 * @param in_type  Block type.
+		 * @param _host_num      Number of centrald connection which crated the record
+		 * @param _centrald_num  Number of centrald connection (usefull in scenarios with multiple centrald)
+		 * @param _centrald_id   Device id as seen from centrald.
+		 * @param _name          Block name.
+		 * @param _host          Hostname of the host running the block.
+		 * @param _port          Port on which block listen for incoming requests.
+		 * @param _type          Block type.
 		 */
-		Rts2Address (const char *in_name, const char *in_host, int in_port, int in_type);
+		Rts2Address (int _host_num, int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type);
 		virtual ~ Rts2Address (void);
-		int update (const char *in_name, const char *new_host, int new_port, int new_type);
+		int update (int _centrald_num, const char *_name, const char *new_host, int new_port, int new_type);
 		int getSockaddr (struct addrinfo **info);
+
+		/**
+		 * Return number of centrald connection which creates
+		 * this address record.
+		 */
+		int getHostNum ()
+		{
+			return host_num;
+		}
+
+		/**
+		 * Return number of device centrald registration.
+		 */
+		int getCentraldNum ()
+		{
+			return centrald_num;
+		}
+
+		/**
+		 * Return centrald id of the device.
+		 */
+		int getCentraldId ()
+		{
+			return centrald_id;
+		}
 
 		/**
 		 * Return block name.
@@ -86,11 +120,21 @@ class Rts2Address
 		/**
 		 * Check if the block is for given name.
 		 *
-		 * @return True if it is block address for given name, false otherwise.
+		 * @return True if it is block address for given centrald number and name, false otherwise.
 		 */
-		bool isAddress (const char *in_name)
+		bool isAddress (const char *_name)
 		{
-			return !strcmp (in_name, name);
+			return !strcmp (_name, name);
+		}
+
+		/**
+		 * Check if the block is for given name.
+		 *
+		 * @return True if it is block address for given centrald number and name, false otherwise.
+		 */
+		bool isAddress (int _centrald_num, const char *_name)
+		{
+			return centrald_num == _centrald_num && !strcmp (_name, name);
 		}
 };
 #endif							 /* !__RTS2_ADDRESS__ */

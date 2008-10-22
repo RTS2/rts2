@@ -421,7 +421,7 @@ int
 rts2__getCentrald (struct soap *in_soap, rts2__getCentraldResponse & res)
 {
 	int state = soapd->getMasterState ();
-	if (state == SERVERD_OFF)
+	if (state == SERVERD_SOFT_OFF || state == SERVERD_HARD_OFF)
 	{
 		res.system = rts2__system__OFF;
 		res.daytime = rts2__daytime__DAY;
@@ -465,27 +465,25 @@ rts2__getDeviceList (struct soap *in_soap, rts2__getDeviceListResponse & res)
 {
 	res.devices = soap_new_rts2__devices (in_soap, 1);
 	res.devices->device =
-		#ifdef WITH_FAST
-		*soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
+	#ifdef WITH_FAST
+	*soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
 	#else
 	soap_new_std__vectorTemplateOfPointerTorts2__device (in_soap, 1);
 	#endif
 
-	for (connections_t::iterator iter = soapd->connectionBegin ();
-		iter != soapd->connectionEnd (); iter++)
+	connections_t::iterator iter;
+
+	for (iter = soapd->getConnections ()->begin (); iter != soapd->getConnections ()->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
 		const char *name = conn->getName ();
-		if (std::string (name).length ())
-		{
-			rts2__device *dev = soap_new_rts2__device (in_soap, 1);
-			dev->name = name;
-			#ifdef WITH_FAST
-			res.devices->device.push_back (dev);
-			#else
-			res.devices->device->push_back (dev);
-			#endif
-		}
+		rts2__device *dev = soap_new_rts2__device (in_soap, 1);
+		dev->name = name;
+		#ifdef WITH_FAST
+		res.devices->device.push_back (dev);
+		#else
+		res.devices->device->push_back (dev);
+		#endif
 	}
 
 	return SOAP_OK;
@@ -493,23 +491,27 @@ rts2__getDeviceList (struct soap *in_soap, rts2__getDeviceListResponse & res)
 
 
 int
-rts2__setCentrald (struct soap *in_soap, enum rts2__system system,
-struct rts2__setCentraldResponse &res)
+rts2__setCentrald (struct soap *in_soap, enum rts2__system system, struct rts2__setCentraldResponse &res)
 {
+	const char *cmd;
 	switch (system)
 	{
 		case rts2__system__OFF:
-			soapd->getCentraldConn ()->queCommand (new Rts2Command (soapd, "off"));
+			cmd = "off";
 			break;
 		case rts2__system__STANDBY:
-			soapd->getCentraldConn ()->
-				queCommand (new Rts2Command (soapd, "standby"));
+			cmd = "standby";
 			break;
 		case rts2__system__ON:
-			soapd->getCentraldConn ()->queCommand (new Rts2Command (soapd, "on"));
+			cmd = "on";
 			break;
 		default:
 			return SOAP_NO_METHOD;
+	}
+	connections_t::iterator iter;
+	for (iter = soapd->getCentraldConns ()->begin (); iter != soapd->getCentraldConns ()->end (); iter++)
+	{
+		(*iter)->queCommand (new Rts2Command (soapd, cmd));
 	}
 	return SOAP_OK;
 }

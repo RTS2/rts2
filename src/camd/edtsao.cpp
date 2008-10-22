@@ -34,23 +34,26 @@ typedef struct SplitConf
 	bool splitMode;
 	bool uniMode;
 	int chanNum;
-	const char *patFile;
+	bool split;
 	int ioPar1;
 	int ioPar2;
 };
 
 const SplitConf splitConf[] =
 {
-	{false, false, 1, "e2vunsplit.bin", 0x51000040, 0x51008101},
-	{false, true, 1, "e2vunsplit.bin", 0x51000000, 0x51008141},
-	{true, false, 2, "e2vsplit.bin", 0x51000040, 0x51008141}
+	{false, false, 1, false, 0x51000040, 0x51008101},
+	{false, true, 1, false, 0x51000000, 0x51008141},
+	{true, false, 2, true, 0x51000040, 0x51008141}
 };
 
 typedef enum {A_plus, A_minus, B, C, D}
 edtAlgoType;
 
 /**
- * Special variable for EDT-SAO registers.
+ * Special variable for EDT-SAO registers. It holds information
+ * about which registers the variable represents.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ValueEdt: public Rts2ValueDoubleMinMax
 {
@@ -153,7 +156,29 @@ Rts2ValueEdt::getHexValue (float in_v)
 
 
 /**
- * This is main control class for EDT-SAO cameras.
+ * Possible types of EDTSEO commands for LSST controller.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+typedef enum 
+{
+	ZERO,
+	READ,
+	ADD,
+	SKIP,
+	FRD,
+	JIGGLE,
+	XFERC,
+	XFERD,
+	HEND,
+	VEND = 0x10
+} command_t;
+
+
+/**
+ * This is main control class for EDT-SAO CCD controller.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2CamdEdtSao:public Rts2DevCamera
 {
@@ -169,6 +194,8 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		// 0 - unsplit, 1 - left, 2 - right
 		Rts2ValueSelection *splitMode;
 		Rts2ValueSelection *edtGain;
+		// number of lines to skip in serial mode
+		Rts2ValueInteger *skipLines;
 
 		bool verbose;
 
@@ -244,8 +271,22 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		int setEdtValue (Rts2ValueEdt * old_value, float new_value);
 		int setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value);
 
+		// write single command to controller
+		void writeCommand (bool parallel, int addr, command_t command);
+		void writeCommandEnd ();
+
+		// write to controller pattern file
+		int writePattern (const SplitConf *conf);
+
 		// number of rows
 		Rts2ValueInteger *chipHeight;
+
+		int lastSkipLines;
+		int lastX;
+		int lastY;
+		int lastW;
+		int lastH;
+		int lastSplitMode;
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -267,8 +308,6 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		virtual int initValues ();
 };
 
-//		bool shutter;
-//		bool overrun;
 
 int
 Rts2CamdEdtSao::edtwrite (unsigned long lval)
@@ -286,8 +325,7 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 {
 	// taken from edtwriteblk.c, heavily modified
 	FILE *fp;
-	struct stat stbuf;
-	u_int cbuf[256 * 4];
+	u_int cbuf;
 	u_int *cptr;
 	int loops;
 	int nwrite;
@@ -303,20 +341,10 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 		free (full_name);
 		return -1;
 	}
-	if (stat (full_name, &stbuf) == -1)
-	{
-		logStream (MESSAGE_ERROR) << "fsize: can't access " << full_name <<
-			sendLog;
-		free (full_name);
-		return -1;
-	}
-	logStream (MESSAGE_DEBUG) << "writing " << full_name << "  - " << stbuf.
-		st_size << " bytes" << sendLog;
-	free (full_name);
-	cptr = cbuf;
+	cptr = &cbuf;
 	loops = 0;
 	/*pdv_reset_serial(pd); */
-	while ((nwrite = fread (cbuf, 4, 1, fp)) > 0)
+	while ((nwrite = fread (&cbuf, 4, 1, fp)) > 0)
 	{
 		ccd_serial_write (pd, (u_char *) (cptr), nwrite * 4);
 		if (verbose)
@@ -326,8 +354,10 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 		loops++;
 	}
 	fclose (fp);
-	logStream (MESSAGE_DEBUG) << "Total number of serial commands: " << loops <<
-		sendLog;
+	logStream (MESSAGE_DEBUG) << "From " << full_name
+		<< " written " << loops << " serial commands."
+		<< sendLog;
+	free (full_name);
 	return 0;
 }
 
@@ -519,10 +549,98 @@ Rts2CamdEdtSao::initChips ()
 	if (ret)
 		return ret;
 
-	setSize (2040, chipHeight->getValueInteger (), 0, 0);
+	setSize (2024, chipHeight->getValueInteger (), 0, 0);
 
 	ret = setDAC ();
 	return ret;
+}
+
+
+void
+Rts2CamdEdtSao::writeCommand (bool parallel, int addr, command_t command)
+{
+	u_char cmd[4];
+	cmd[0] = 0x42;
+	cmd[1] = command;
+	if (parallel == false)
+		addr |= 0x4000;
+	cmd[2] = (addr & 0xff00) >> 8;
+	cmd[3] = addr & 0x00ff;
+	ccd_serial_write (pd, cmd, 4);
+	if (verbose)
+	{
+		sao_print_command ((u_int *) cmd, 1);
+	}
+}
+
+void
+Rts2CamdEdtSao::writeCommandEnd ()
+{
+	u_char cmd[4];
+	cmd[0] = cmd[1] = cmd[2] = cmd[3] = 0;
+	ccd_serial_write (pd, cmd, 4);
+}
+
+
+int
+Rts2CamdEdtSao::writePattern (const SplitConf *conf)
+{
+	// write parallel commands
+	int addr = 0;
+	if (skipLines->getValueInteger () == lastSkipLines
+	  	&& chipUsedReadout->getXInt () == lastX
+		&& chipUsedReadout->getYInt () == lastY
+		&& chipUsedReadout->getWidthInt () == lastW
+		&& chipUsedReadout->getHeightInt () == lastH
+		&& splitMode->getValueInteger () == lastSplitMode)
+	{
+		return 0;
+	}
+
+	lastSkipLines = skipLines->getValueInteger ();
+	lastX = chipUsedReadout->getXInt ();
+	lastY = chipUsedReadout->getYInt ();
+	lastW = chipUsedReadout->getWidthInt ();
+	lastH = chipUsedReadout->getHeightInt ();
+	lastSplitMode = splitMode->getValueInteger ();
+
+	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
+	writeCommand (true, addr++, ZERO);
+	// read..
+	int i;
+	for (i = 0; i < getUsedY (); i++)
+		writeCommand (true, addr++, SKIP);
+	for (; i < getUsedY () + getUsedHeight (); i++)
+		writeCommand (true, addr++, READ);
+	for (; i < getHeight (); i++)
+		writeCommand (true, addr++, SKIP);
+	writeCommand (true, addr++, VEND);
+	// write serial commandsa
+	addr = 0;
+	writeCommand (false, addr++, ZERO);
+	for (i = 0; i < skipLines->getValueInteger (); i++)
+		writeCommand (false, addr++, SKIP);
+	int width;
+	if (channels == 1)
+	{
+		// skip in X axis..
+		for (i = 0; i < getUsedX (); i++)
+			writeCommand (false, addr++, SKIP);
+		width = getUsedX () + getUsedWidth ();
+		for (; i < width; i++)
+			writeCommand (false, addr++, READ);
+		for (; i < getWidth (); i++)
+			writeCommand (false, addr++, SKIP);
+	}
+	else
+	{
+		for (i = 0; i < 1020; i++)
+			writeCommand (false, addr++, READ);
+	}
+	writeCommand (false, addr++, HEND);
+	writeCommandEnd ();
+	logStream (MESSAGE_DEBUG) << "pattern written" << sendLog;
+	return 0;
 }
 
 
@@ -544,7 +662,10 @@ Rts2CamdEdtSao::startExposure ()
 	edtwrite (conf->ioPar1);	 //  channel order
 	edtwrite (conf->ioPar2);
 
-	writeBinFile (conf->patFile);
+	// create and write pattern..
+	ret = writePattern (conf);
+	if (ret)
+		return ret;
 	writeBinFile ("e2v_nidlesc.bin");
 	fclr_r (5);
 	if (channels != 1)
@@ -609,12 +730,10 @@ Rts2CamdEdtSao::readoutStart ()
 	 * SET SIZE VARIABLES FOR IMAGE
 	 */
 	if (channels == 1)
-		width = 2024;
+		width = getUsedWidth ();
 	else
 		width = 1020;
-	height = chipHeight->getValueInteger ();
-	// width = chipUsedReadout->width;
-	// height = chipUsedReadout->height;
+	height = getUsedHeight ();
 	ret = pdv_setsize (pd, width * channels * dsub, height);
 	if (ret == -1)
 	{
@@ -622,11 +741,6 @@ Rts2CamdEdtSao::readoutStart ()
 			sendLog;
 		return -1;
 	}
-	pdv_set_width (pd, width * channels * dsub);
-	pdv_set_height (pd, height);
-	setSize (pdv_get_width (pd), pdv_get_height (pd), -1, 0);
-	//	chipUsedReadout->width = pdv_get_width (pd);
-	//	chipUsedReadout->height = pdv_get_height (pd);
 	depth = pdv_get_depth (pd);
 	db = bits2bytes (depth);
 	imagesize = chipUsedReadout->getWidthInt () * chipUsedReadout->getHeightInt () * db;
@@ -645,9 +759,6 @@ Rts2CamdEdtSao::readoutStart ()
 			* timeout_val * 5 / 2000 + 2000;
 	pdv_set_timeout (pd, timeout_val);
 	logStream (MESSAGE_DEBUG) << "timeout_val: " << timeout_val << " millisecs" << sendLog;
-	printf ("width: %d height: %d imagesize: %d depth %i\n",
-		chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), imagesize, depth);
-	fflush (stdout);
 
 	/*
 	 * ALLOCATE MEMORY for the image, and make sure it's aligned on a page
@@ -658,8 +769,10 @@ Rts2CamdEdtSao::readoutStart ()
 	numbufs = 1;
 	bufsize = imagesize * dsub;
 	if (verbose)
+	{
 		printf ("number of buffers: %d bufsize: %d\n", numbufs, bufsize);
-	fflush (stdout);
+		fflush (stdout);
+	}
 	bufs = (u_char **) malloc (numbufs * sizeof (u_char *));
 	for (i = 0; i < numbufs; i++)
 		bufs[i] = (u_char *) pdv_alloc (bufsize);
@@ -686,8 +799,6 @@ Rts2CamdEdtSao::readoutOneLine ()
 		<< " height " << pdv_get_height (pd)
 		<< " depth " << pdv_get_depth (pd)
 		<< sendLog;
-
-	fflush (stdout);
 
 	int tb = pdv_timeouts (pd);
 	pdv_start_image (pd);
@@ -885,7 +996,6 @@ void
 Rts2CamdEdtSao::cancelPriorityOperations ()
 {
 	Rts2DevCamera::cancelPriorityOperations ();
-	initChips ();
 }
 
 
@@ -938,6 +1048,9 @@ Rts2DevCamera (in_argc, in_argv)
 
 	edtGain->setValueInteger (0);
 
+	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true);
+	skipLines->setValueInteger (50);
+
 	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING, true);
 	chipHeight->setValueInteger (520);
 
@@ -976,6 +1089,9 @@ Rts2DevCamera (in_argc, in_argv)
 
 	createValue (dd, "DD", "DD", true, 0, CAM_WORKING, true);
 	dd->initEdt (0xA0380, C);
+
+	// init last used modes - for writePattern
+	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = -1;
 }
 
 

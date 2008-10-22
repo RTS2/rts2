@@ -88,7 +88,10 @@ Rts2NSelWindow::refresh ()
 	{
 		if (selrow >= 0)
 		{
-			mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
+			if (isActive ())
+				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE | A_BLINK, CLR_PRIORITY, NULL);
+			else
+				mvwchgat (scrolpad, selrow, 0, w, A_REVERSE, 0, NULL);
 		}
 		else if (selrow == -1)
 		{
@@ -132,15 +135,16 @@ Rts2NDevListWindow::draw ()
 	Rts2NWindow::draw ();
 	werase (scrolpad);
 	maxrow = 0;
-	for (connections_t::iterator iter = block->connectionBegin ();
-		iter != block->connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = block->getCentraldConns ()->begin (); iter != block->getCentraldConns ()->end (); iter++)
+	{
+		wprintw (scrolpad, "centrald\n");
+		maxrow++;
+	}
+	for (iter = block->getConnections ()->begin (); iter != block->getConnections ()->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
-		const char *name = conn->getName ();
-		if (*name == '\0')
-			wprintw (scrolpad, "centrald\n");
-		else
-			wprintw (scrolpad, "%s\n", conn->getName ());
+		wprintw (scrolpad, "%s\n", conn->getName ());
 		maxrow++;
 	}
 	wprintw (scrolpad, "status");
@@ -191,11 +195,14 @@ Rts2NCentraldWindow::draw ()
 	Rts2NSelWindow::draw ();
 	werase (getWriteWindow ());
 	maxrow = 0;
-	for (connections_t::iterator iter = client->connectionBegin ();
-		iter != client->connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = client->getCentraldConns ()->begin (); iter != client->getCentraldConns ()->end (); iter++)
 	{
-		Rts2Conn *conn = *iter;
-		drawDevice (conn);
+		drawDevice (*iter);
+	}
+	for (iter = client->getConnections ()->begin (); iter != client->getConnections ()->end (); iter++)
+	{
+		drawDevice (*iter);
 	}
 	refresh ();
 }

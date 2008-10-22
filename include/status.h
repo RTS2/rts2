@@ -40,12 +40,12 @@
 
 /**
  * Used to deal blocking functions.
- * BOP is for Block OPeration. BOP is used maynly in @see Rts2Command and @see
+ * BOP is for Block OPeration. BOP is used mainly in Rts2Command and
  * Rts2Value.
  *
  * @ingroup RTS2Block
  */
-#define BOP_MASK            0xff000000
+#define BOP_MASK            0x7f000000
 
 /**
  * Block exposures.
@@ -67,6 +67,28 @@
  * @ingroup RTS2Block
  */
 #define BOP_TEL_MOVE        0x04000000
+
+
+/**
+ * Mask for device weather voting.
+ *
+ * @ingroup RTS2Block
+ */
+#define WEATHER_MASK        0x80000000
+
+/**
+ * Allow operations as weather is acceptable,
+ *
+ * @ingroup RTS2Block
+ */
+#define GOOD_WEATHER        0x00000000
+
+/**
+ * Block observations because there is bad weather.
+ *
+ * @ingroup RTS2Block
+ */
+#define BAD_WEATHER         0x80000000
 
 #define DEVICE_STATUS_MASK  0x00000fff
 
@@ -185,11 +207,6 @@
 #define DOME_OPENED         0x04
 #define DOME_CLOSING        0x08
 
-#define DOME_WEATHER_MASK   0x30
-#define DOME_WEATHER_OK     0x10
-#define DOME_WEATHER_BAD    0x20
-#define DOME_WEATHER_UNKNOW 0x30
-
 #define DOME_COP_MASK       0xc0
 
 #define DOME_COP_MASK_MOVE  0x40
@@ -214,20 +231,23 @@
 #define FILTERD_IDLE        0x00
 #define FILTERD_MOVE        0x02
 
-#define SERVERD_DAY         0
-#define SERVERD_EVENING     1
-#define SERVERD_DUSK        2
-#define SERVERD_NIGHT       3
-#define SERVERD_DAWN        4
-#define SERVERD_MORNING     5
+#define SERVERD_DAY            0
+#define SERVERD_EVENING        1
+#define SERVERD_DUSK           2
+#define SERVERD_NIGHT          3
+#define SERVERD_DAWN           4
+#define SERVERD_MORNING        5
 
-#define SERVERD_OFF         11
-#define SERVERD_UNKNOW      12
+#define SERVERD_SOFT_OFF      11
+// set when it is a real off state blocking all domes
+#define SERVERD_HARD_OFF      12
 
-#define SERVERD_STATUS_MASK 0x0f
+#define SERVERD_UNKNOW        13
+
+#define SERVERD_STATUS_MASK   0x0f
 #define SERVERD_STANDBY_MASK  0x30
 
-#define SERVERD_STANDBY     0x10
+#define SERVERD_STANDBY       0x10
 
 // "executor" and related states..
 #define EXEC_STATE_MASK     0x0f
@@ -314,8 +334,5 @@
 #define DEVICE_TYPE_SCRIPTOR  26
 
 // and more to come..
-// #define DEVICE_TYPE_
 
-// default serverd port
-#define SERVERD_PORT        5557
 #endif							 /* __RTS__STATUS__ */

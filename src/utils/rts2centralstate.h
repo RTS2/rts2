@@ -42,8 +42,24 @@ class Rts2CentralState:public Rts2ServerState
 			setValue (in_state);
 		}
 
-		const char *getStringShort ();
-		std::string getString ();
+		/**
+		 * Return server state as string.
+		 */
+		const char *getStringShort ()
+		{
+			return getStringShort (getValue ());
+		}
+
+		std::string getString ()
+		{
+			return getString (getValue ());
+		}
+
+		/**
+		 * Function to retrieve state character description.
+		 */
+		static const char *getStringShort (int _state);
+		static std::string getString (int _state);
 
 		friend std::ostream & operator << (std::ostream & _os,
 			Rts2CentralState c_state);

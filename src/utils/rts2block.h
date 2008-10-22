@@ -28,12 +28,7 @@
  * @defgroup RTS2Protocol RTS2 protocol
  */
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <vector>
 #include <list>
 #include "status.h"
 
@@ -47,9 +42,6 @@
 #include "rts2user.h"
 #include "rts2devclient.h"
 #include "rts2value.h"
-#include "rts2valuestat.h"
-#include "rts2valueminmax.h"
-#include "rts2valuerectangle.h"
 #include "rts2app.h"
 #include "rts2serverstate.h"
 
@@ -95,7 +87,7 @@ class Rts2DevClient;
 class Rts2LogStream;
 
 /** Hold list of connections. It is used to store @see Rts2Conn objects. */
-typedef std::list < Rts2Conn * > connections_t;
+typedef std::vector < Rts2Conn * > connections_t;
 
 /**
  * Base class of RTS2 devices and clients.
@@ -113,6 +105,7 @@ class Rts2Block: public Rts2App
 		int priority_client;
 
 		connections_t connections;
+		connections_t centraldConns;
 
 		std::list <Rts2Address *> blockAddress;
 		std::list <Rts2ConnUser * > blockUsers;
@@ -121,7 +114,6 @@ class Rts2Block: public Rts2App
 
 	protected:
 
-		virtual Rts2Conn *createClientConnection (char *in_deviceName) = 0;
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
 
 		virtual void cancelPriorityOperations ();
@@ -177,6 +169,18 @@ class Rts2Block: public Rts2App
 		 * @see Rts2Centrald
 		 */
 		void setMessageMask (int new_mask);
+
+		/**
+		 * Called when block does not have anything to do. This is
+		 * right place to put in various hooks, which will react to
+		 * timer handlers or do any other maintanence work. Should be
+		 * fast and quick, longer IO operations should be split to
+		 * reduce time spend in idle call.
+		 *
+		 * When idle call is called, block does not react to any
+		 * incoming requests.
+		 */
+		virtual int idle ();
 
 		/**
 		 * Called before connection is deleted from connection list.
@@ -246,53 +250,21 @@ class Rts2Block: public Rts2App
 		int getPort (void);
 
 		/**
-		 * Add connection to given block.
+		 * Add connection to block. Block select call then take into
+		 * account connections file descriptor and call hooks either
+		 * when data arrives or writing on connection is possible.
 		 *
-		 * @param conn Connection which will be added to connections of the block.
+		 * @param conn Connection which will be added to connections of
+		 * the block.
 		 */
-		void addConnection (Rts2Conn * conn);
+		void addConnection (Rts2Conn *_conn);
 
 		/**
-		 * Returns begin iterator of connections structure.
+		 * Add connection as connection to central server,
 		 *
-		 * @return connections.begin() iterator.
+		 * @param _conn Connection which will be added.
 		 */
-		connections_t::iterator connectionBegin ()
-		{
-			return connections.begin ();
-		}
-
-		/**
-		 * Returns end iterator of connections structure.
-		 *
-		 * @see Rts2Block::connectionBegin
-		 *
-		 * @return connections.end() iterator.
-		 */
-		connections_t::iterator connectionEnd ()
-		{
-			return connections.end ();
-		}
-
-		/**
-		 * Return connection at given number.
-		 *
-		 * @param i Number of connection which will be returned.
-		 *
-		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
-		 *
-		 * @bug since connections_t is list, [] operator cannot be used. vector caused some funny problems.
-		 */
-		Rts2Conn *connectionAt (int i)
-		{
-			int j;
-			connections_t::iterator iter;
-			for (j = 0, iter = connections.begin ();
-				j < i && iter != connections.end (); j++, iter++);
-			if (iter == connections.end ())
-				return NULL;
-			return *iter;
-		}
+		void addCentraldConnection (Rts2Conn *_conn);
 
 		/**
 		 * Return number of connections in connections structure.
@@ -383,7 +355,7 @@ class Rts2Block: public Rts2App
 		void sendBopMessage (int bop_state);
 
 		/**
-		 * Send BOP message to single connection.
+		 * Send BOP message to a single connection.
 		 *
 		 * @param bop_state
 		 * @param conn Connection which will receive BOP state.
@@ -414,18 +386,6 @@ class Rts2Block: public Rts2App
 		// only used in centrald!
 		void sendMessageAll (Rts2Message & msg);
 
-		/**
-		 * Called when block does not have anything to do. This is
-		 * right place to put in various hooks, which will react to
-		 * timer handlers or do any other maintanence work. Should be
-		 * fast and quick, longer IO operations should be split to
-		 * reduce time spend in idle call.
-		 *
-		 * When idle call is called, block does not react to any
-		 * incoming requests.
-		 */
-		virtual int idle ();
-
 		void setTimeout (long int new_timeout)
 		{
 			idle_timeout = new_timeout;
@@ -451,7 +411,7 @@ class Rts2Block: public Rts2App
 		 * This function is called when device on given connection is ready
 		 * to accept commands.
 		 *
-		 * \param conn connection representing device which became ready
+		 * @param conn connection representing device which became ready
 		 */
 		virtual void deviceReady (Rts2Conn * conn);
 
@@ -480,7 +440,7 @@ class Rts2Block: public Rts2App
 		virtual int setMasterState (int new_state);
 
 		/**
-		 * Returns master state. This does not returns master BOP mask. Usually you
+		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
 		 * will need this call to check if master is in day etc..
 		 *
 		 * @see Rts2Block::getMasterStateFull()
@@ -493,7 +453,7 @@ class Rts2Block: public Rts2App
 		}
 
 		/**
-		 * Returns full master state, including BOP mask. For checking server state. see Rts2Block::getMasterState()
+		 * Returns full master state, including BOP mask and weather. For checking server state. see Rts2Block::getMasterState()
 		 *
 		 * @return Master state.
 		 */
@@ -502,11 +462,44 @@ class Rts2Block: public Rts2App
 			return masterState;
 		}
 
+		/**
+		 * Returns true if all masters thinks it is safe weather to
+		 * operate observatory.  Masters can have multiple weather
+		 * sensors connected which can block weather.
+		 * 
+		 * Master is responsible for handling those devices bad weather
+		 * state and set its state accordingly. It can also hold a list 
+		 * of devices which are necessary for observatory operation, and
+		 * if any of this devices is missing, it will set weather to bad
+		 * signal.
+		 *
+		 * Also all central daemons which were specified on command
+		 * line using the --server argument must be running.
+		 */
+		virtual bool isGoodWeather ();
+
+		/**
+		 * Returns true if all connections to central servers are up and running.
+		 *
+		 * @return True if all connections to central servers are up and running.
+		 */
+		bool allCentraldRunning ();
+
+		/**
+		 * Returns true if at least one connection to centrald is up and running. 
+		 * When that is the case, it is possible to log through RTS2 logging.
+		 * Otherwise, logging shall be diverted to syslog.
+		 *
+		 * @return True if at least one centrald is running.
+		 */
+		bool someCentraldRunning ();
+
 		Rts2Address *findAddress (const char *blockName);
+		Rts2Address *findAddress (int centraldNum, const char *blockName);
 
-		void addAddress (const char *p_name, const char *p_host, int p_port, int p_device_type);
+		void addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
 
-		void deleteAddress (const char *p_name);
+		void deleteAddress (int p_centrald_num, const char *p_name);
 
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		void addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login);
@@ -542,10 +535,47 @@ class Rts2Block: public Rts2App
 		 */
 		Rts2Conn *getConnection (char *deviceName);
 
-		virtual Rts2Conn *getCentraldConn ()
+		/**
+		 * Return centrald id of device at given centrald
+		 * num server.
+		 *
+		 * @param centrald_num  Number at centrald.
+		 * 
+		 * @return -1 on error, otherwise centrald id of
+		 * device which holds this connection on centrald
+		 * server with number centrald_num.
+		 */
+		int getCentraldIdAtNum (int centrald_num);
+
+		/**
+		 * Return vector of active connections to devices and clients.
+		 *
+		 */
+		connections_t* getConnections ()
 		{
-			return NULL;
+			return &connections;
 		}
+
+		/**
+		 * Returns vector of connections to central server.
+		 *
+		 * @return Vector of connections.
+		 */
+		connections_t* getCentraldConns ()
+		{
+			return &centraldConns;
+		}
+
+		Rts2Conn *getSingleCentralConn ()
+		{
+			if (centraldConns.size () != 1)
+			{
+				std::cerr << "getSingleCentralConn does not have 1 conn: " << centraldConns.size () << std::endl;
+				exit (0);
+			}
+			return *(centraldConns.begin ());
+		}
+
 
 		/**
 		 * Called when new message is received.
@@ -567,11 +597,11 @@ class Rts2Block: public Rts2App
 		 */
 		Rts2Conn *getMinConn (const char *valueName);
 
-		virtual void centraldConnRunning ()
+		virtual void centraldConnRunning (Rts2Conn *conn)
 		{
 		}
 
-		virtual void centraldConnBroken ()
+		virtual void centraldConnBroken (Rts2Conn *conn)
 		{
 		}
 
@@ -608,15 +638,13 @@ class Rts2Block: public Rts2App
 		/**
 		 * Check if command was not replied.
 		 *
-		 * @param cmd Command which will be checked.
+		 * @param object Object which orignated command.
 		 * @param exclude_conn Connection which should be excluded from check.
 		 *
 		 * @return True if command was not send or command reply was not received, false otherwise.
 		 *
 		 * @callergraph
 		 */
-		bool commandPending (Rts2Command * cmd, Rts2Conn * exclude_conn);
-
 		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
 
 		/**

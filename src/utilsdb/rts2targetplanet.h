@@ -25,7 +25,7 @@
 typedef void (*get_equ_t) (double, struct ln_equ_posn *);
 typedef double (*get_double_val_t) (double);
 
-typedef struct planet_info_t
+struct planet_info_t
 {
 	const char *name;
 	get_equ_t rst_func;

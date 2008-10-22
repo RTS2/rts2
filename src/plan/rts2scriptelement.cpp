@@ -165,7 +165,7 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command **
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
 	// change values of the exposure
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "exposure", '=', expTime));
-	*new_command = new Rts2CommandExposure (script->getMaster (), camera, BOP_EXPOSURE);
+	*new_command = new Rts2CommandExposure (script->getMaster (), camera, 0);
 	getDevice (new_device);
 	return 0;
 }

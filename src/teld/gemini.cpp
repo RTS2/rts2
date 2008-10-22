@@ -113,7 +113,16 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		int tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount);
 
 		/**
-		 * Reads some value from lx200 in hms format.
+		 * Get date from Gemini. This call nulls all values stored in _tm.
+		 *
+		 * @param _tm Structure where date (years, days and monts) will be stored.
+		 * 
+		 * @return -1 on error, 0 on success.
+		 */
+		 int readDate (struct tm *_tm, const char *command);
+
+		/**
+		 * Reads some value from lx200 in HMS format.
 		 *
 		 * Utility function for all those read_ra and other.
 		 *
@@ -121,7 +130,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		 *
 		 * @return -1 and set errno on error, otherwise 0
 		 */
-		int tel_read_hms (double *hmsptr, const char *command);
+		int readHMS (double *hmsptr, const char *command);
 
 		/**
 		 * Computes gemini checksum
@@ -184,7 +193,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		/**
 		 * Match gemini time with system time
 		 */
-		int tel_gemini_match_time ();
+		int matchTime ();
 
 		/**
 		 * Reads lx200 right ascenation.
@@ -211,7 +220,7 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		 *
 		 * @return -1 and errno on error, otherwise 0
 		 */
-		int tel_read_localtime ();
+		int getLocaltime ();
 
 		/**
 		 * Reads losmandy longtitude.
@@ -461,7 +470,28 @@ Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char 
 
 
 int
-Rts2DevTelescopeGemini::tel_read_hms (double *hmsptr, const char *command)
+Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
+{
+	char wbuf[11];
+	int ret;
+	_tm->tm_hour = _tm->tm_min = _tm->tm_sec = _tm->tm_isdst = 0;
+	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 9)
+		return -1;
+	ret = sscanf (wbuf, "%u/%u/%u", &(_tm->tm_mon), &(_tm->tm_mday), &(_tm->tm_year));
+	if (ret != 3)
+	{
+		logStream (MESSAGE_ERROR) << "invalid date read " << wbuf << " " << ret << sendLog;
+		return -1;
+	}
+	// date will always be after 2000..
+	_tm->tm_year += 100;
+	_tm->tm_mon --;
+	return 0;
+}
+
+
+int
+Rts2DevTelescopeGemini::readHMS (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -695,7 +725,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_match_time ()
+Rts2DevTelescopeGemini::matchTime ()
 {
 	struct tm ts;
 	time_t t;
@@ -707,14 +737,14 @@ Rts2DevTelescopeGemini::tel_gemini_match_time ()
 	t = time (NULL);
 	gmtime_r (&t, &ts);
 	// set time
-	ret = tel_write_read ("#:SG+00#", 8, &rep, 1);
+	ret = tel_write_read (":SG+00#", 7, &rep, 1);
 	if (ret < 0)
 		return ret;
-	snprintf (buf, 14, "#:SL%02d:%02d:%02d#", ts.tm_hour, ts.tm_min, ts.tm_sec);
+	snprintf (buf, 14, ":SL%02d:%02d:%02d#", ts.tm_hour, ts.tm_min, ts.tm_sec);
 	ret = tel_write_read (buf, strlen (buf), &rep, 1);
 	if (ret < 0)
 		return ret;
-	snprintf (buf, 14, "#:SC%02d/%02d/%02d#", ts.tm_mon + 1, ts.tm_mday,
+	snprintf (buf, 14, ":SC%02d/%02d/%02d#", ts.tm_mon + 1, ts.tm_mday,
 		ts.tm_year - 100);
 	ret = tel_write_read_hash (buf, strlen (buf), buf, 55);
 	if (ret < 0)
@@ -739,7 +769,7 @@ int
 Rts2DevTelescopeGemini::tel_read_ra ()
 {
 	double t_telRa;
-	if (tel_read_hms (&t_telRa, "#:GR#"))
+	if (readHMS (&t_telRa, ":GR#"))
 		return -1;
 	t_telRa *= 15.0;
 	setTelRa (t_telRa);
@@ -751,7 +781,7 @@ int
 Rts2DevTelescopeGemini::tel_read_dec ()
 {
 	double t_telDec;
-	if (tel_read_hms (&t_telDec, "#:GD#"))
+	if (readHMS (&t_telDec, ":GD#"))
 		return -1;
 	setTelDec (t_telDec);
 	return 0;
@@ -759,11 +789,17 @@ Rts2DevTelescopeGemini::tel_read_dec ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_localtime ()
+Rts2DevTelescopeGemini::getLocaltime ()
 {
 	double t_telLocalTime;
-	if (tel_read_hms (&t_telLocalTime, "#:GL#"))
+	struct tm _tm;
+	if (readDate (&_tm, ":GC#"))
 		return -1;
+	if (readHMS (&t_telLocalTime, ":GL#"))
+		return -1;
+	// change hours to seconds..
+	t_telLocalTime *= 3600;
+	t_telLocalTime += mktime (&_tm);
 	telLocalTime->setValueDouble (t_telLocalTime);
 	return 0;
 }
@@ -774,7 +810,7 @@ Rts2DevTelescopeGemini::tel_read_longtitude ()
 {
 	int ret;
 	double t_telLongitude;
-	ret = tel_read_hms (&t_telLongitude, "#:Gg#");
+	ret = readHMS (&t_telLongitude, ":Gg#");
 	if (ret)
 		return ret;
 	telLongitude->setValueDouble (-1 * t_telLongitude);
@@ -786,7 +822,7 @@ int
 Rts2DevTelescopeGemini::tel_read_latitude ()
 {
 	double t_telLatitude;
-	if (tel_read_hms (&t_telLatitude, "#:Gt#"))
+	if (readHMS (&t_telLatitude, ":Gt#"))
 		return -1;
 	telLatitude->setValueDouble (t_telLatitude);
 	return 0;
@@ -839,7 +875,7 @@ Rts2DevTelescopeGemini::tel_write_ra (double ra)
 	int h, m, s;
 	ra = ra / 15;
 	dtoints (ra, &h, &m, &s);
-	if (snprintf (command, 14, "#:Sr%02d:%02d:%02d#", h, m, s) < 0)
+	if (snprintf (command, 14, ":Sr%02d:%02d:%02d#", h, m, s) < 0)
 		return -1;
 	return tel_rep_write (command);
 }
@@ -858,7 +894,7 @@ Rts2DevTelescopeGemini::tel_write_dec (double dec)
 	}
 	ln_deg_to_dms (dec, &dh);
 	if (snprintf
-		(command, 15, "#:Sd%c%02d*%02d:%02.0f#", sign, dh.degrees, dh.minutes,
+		(command, 15, ":Sd%c%02d*%02d:%02.0f#", sign, dh.degrees, dh.minutes,
 		dh.seconds) < 0)
 		return -1;
 	return tel_rep_write (command);
@@ -894,11 +930,11 @@ in_argv)
 		"BOOTES G-11 (with 1/0 pointing sensor)");
 	addOption (OPT_CORR, "corrections", 1,
 		"level of correction done in Gemini - 0 none, 3 all");
-	addOption (OPT_EXPTYPE, "expected_type", 1,
+	addOption (OPT_EXPTYPE, "expected-type", 1,
 		"expected Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
-	addOption (OPT_FORCETYPE, "force_type", 1,
+	addOption (OPT_FORCETYPE, "force-type", 1,
 		"force Gemini type (1 GM8, 2 G11, 3 HGM-200, 4 CI700, 5 Titan, 6 Titan50)");
-	addOption (OPT_FORCELATLON, "force_latlon", 0, "set observing longitude and latitude from configuration file");
+	addOption (OPT_FORCELATLON, "force-latlon", 0, "set observing longitude and latitude from configuration file");
 
 	lastMotorState = 0;
 	telMotorState = TEL_OK;
@@ -1008,7 +1044,7 @@ Rts2DevTelescopeGemini::geminiInit ()
 	tel_gemini_reset ();
 
 	// 12/24 hours trick..
-	if (tel_write_read ("#:Gc#", 5, rbuf, 5) < 0)
+	if (tel_write_read (":Gc#", 4, rbuf, 5) < 0)
 		return -1;
 	rbuf[5] = 0;
 	if (strncmp (rbuf, "(24)#", 5))
@@ -1016,7 +1052,7 @@ Rts2DevTelescopeGemini::geminiInit ()
 
 	// we get 12:34:4# while we're in short mode
 	// and 12:34:45 while we're in long mode
-	if (tel_write_read_hash ("#:GR#", 5, rbuf, 9) < 0)
+	if (tel_write_read_hash (":GR#", 4, rbuf, 9) < 0)
 		return -1;
 	if (rbuf[7] == '\0')
 	{
@@ -1030,7 +1066,7 @@ Rts2DevTelescopeGemini::geminiInit ()
 	if (bootesSensors)
 		tel_gemini_set (311, 15);// reset feature port
 
-	ret = tel_write_read_hash ("#:GV#", 5, rbuf, 4);
+	ret = tel_write_read_hash (":GV#", 4, rbuf, 4);
 	if (ret <= 0)
 		return -1;
 
@@ -1129,7 +1165,7 @@ Rts2DevTelescopeGemini::init ()
 	if (ret)
 		return ret;
 
-	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 90);
 	tel_conn->setDebug ();
 
 	ret = tel_conn->init ();
@@ -1151,7 +1187,7 @@ Rts2DevTelescopeGemini::init ()
 				return ret;
 			setCorrection ();
 
-			tel_conn->writePort ("#:hW#", 5);
+			tel_conn->writePort (":hW#", 4);
 
 			return ret;
 		}
@@ -1218,7 +1254,7 @@ Rts2DevTelescopeGemini::initValues ()
 			tdeg *= -1;
 		}
 		ln_deg_to_dms (tdeg, &dlat);
-		sprintf (command, "#:St%c%02d*%02d#", sign, dlat.degrees, dlat.minutes);
+		sprintf (command, ":St%c%02d*%02d#", sign, dlat.degrees, dlat.minutes);
 		ret = tel_write_read (command, strlen (command), command, 1);
 		if (ret != 1)
 			return -1;
@@ -1231,7 +1267,7 @@ Rts2DevTelescopeGemini::initValues ()
 			tdeg *= -1;
 		}
 		ln_deg_to_dms (tdeg, &dlat);
-		sprintf (command, "#:Sg%c%03d*%02d#", sign, dlat.degrees, dlat.minutes);
+		sprintf (command, ":Sg%c%03d*%02d#", sign, dlat.degrees, dlat.minutes);
 		ret = tel_write_read (command, strlen (command), command, 1);
 		if (ret != 1)
 			return -1;
@@ -1254,7 +1290,7 @@ Rts2DevTelescopeGemini::initValues ()
 			gem_type << " (" << telType << ")." << sendLog;
 		return -1;
 	}
-	ret = tel_write_read_hash ("#:GV#", 5, buf, 4);
+	ret = tel_write_read_hash (":GV#", 4, buf, 4);
 	if (ret <= 0)
 		return -1;
 	buf[4] = '\0';
@@ -1389,7 +1425,7 @@ Rts2DevTelescopeGemini::info ()
 {
 	telFlip->setValueInteger (0);
 
-	if (tel_read_ra () || tel_read_dec () || tel_read_localtime ())
+	if (tel_read_ra () || tel_read_dec () || getLocaltime ())
 		return -1;
 	if (bootesSensors)
 	{
@@ -1408,7 +1444,7 @@ int
 Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 {
 	char command[6];
-	sprintf (command, "#:R%c#", new_rate);
+	sprintf (command, ":R%c#", new_rate);
 	return tel_conn->writePort (command, 5);
 }
 
@@ -1432,7 +1468,7 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 		{
 		  worm_move_needed = 0;
 		} */
-	sprintf (command, "#:M%c#", direction);
+	sprintf (command, ":M%c#", direction);
 	return tel_conn->writePort (command, 5);
 	// workaround suggested by Rene Goerlich
 	//if (worm_move_needed == 1)
@@ -1444,7 +1480,7 @@ int
 Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 {
 	char command[6];
-	sprintf (command, "#:Q%c#", direction);
+	sprintf (command, ":Q%c#", direction);
 	if (worm_move_needed && (direction == DIR_EAST || direction == DIR_WEST))
 	{
 		worm_move_needed = 0;
@@ -1458,7 +1494,7 @@ void
 Rts2DevTelescopeGemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
-	tel_conn->writePort ("#:Q#", 4);
+	tel_conn->writePort (":Q#", 3);
 	if (lastMotorState & 8)
 	{
 		lastMotorState &= ~8;
@@ -1478,7 +1514,7 @@ Rts2DevTelescopeGemini::tel_start_move ()
 
 	if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
 		return -1;
-	if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+	if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
 		return -1;
 
 	if (retstr == '0')
@@ -1608,7 +1644,7 @@ Rts2DevTelescopeGemini::startMove ()
 	if (fabs (dec_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
 	#endif
 	{
-		return change_real (ra_diff, dec_diff);
+		return change_real (-1 * ra_diff, -1 * dec_diff);
 	}
 
 	fixed_ha = nan ("f");
@@ -1744,7 +1780,7 @@ Rts2DevTelescopeGemini::endMove ()
 	#endif
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_conn->writePort ("#:ONtest#", 9) < 0)
+	if (tel_conn->writePort (":ONtest#", 8) < 0)
 		return -1;
 	return Rts2DevTelescope::endMove ();
 }
@@ -1914,7 +1950,7 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 	stopWorm ();
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_conn->writePort ("#:ONfixed#", 10) == 0)
+	if (tel_conn->writePort (":ONfixed#", 9) == 0)
 		return Rts2DevTelescope::endMoveFixed ();
 	return -1;
 }
@@ -2078,7 +2114,7 @@ Rts2DevTelescopeGemini::isParking ()
 		return USEC_SEC;
 	if (lastMotorState & 8)
 		return USEC_SEC;
-	tel_write_read ("#:h?#", 5, &buf, 1);
+	tel_write_read (":h?#", 4, &buf, 1);
 	switch (buf)
 	{
 		case '2':
@@ -2099,7 +2135,7 @@ int
 Rts2DevTelescopeGemini::endPark ()
 {
 	if (getMasterState () != SERVERD_NIGHT)
-		tel_gemini_match_time ();
+		matchTime ();
 	setTimeout (USEC_SEC * 10);
 	return stopWorm ();
 }
@@ -2117,7 +2153,7 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
 
 	if (appendModel)
 	{
-		if (tel_write_read_hash ("#:Cm#", 5, readback, 100) < 0)
+		if (tel_write_read_hash (":Cm#", 4, readback, 100) < 0)
 			return -1;
 	}
 	else
@@ -2128,7 +2164,7 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
 		int32_t v206_new;
 		tel_gemini_get (205, v205);
 		tel_gemini_get (206, v206);
-		if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
+		if (tel_write_read_hash (":CM#", 4, readback, 100) < 0)
 			return -1;
 		tel_gemini_get (205, v205_new);
 		tel_gemini_get (206, v206_new);
@@ -2428,7 +2464,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 	{
 		return change_dec (chng_dec);
 	}
-	return -1;
+	return 0;
 }
 #endif
 
@@ -2441,7 +2477,7 @@ Rts2DevTelescopeGemini::startPark ()
 	if (telMotorState != TEL_OK)
 		return -1;
 	stopMove ();
-	ret = tel_conn->writePort ("#:hP#", 5);
+	ret = tel_conn->writePort (":hP#", 4);
 	if (ret < 0)
 		return -1;
 	sleep (1);
@@ -2451,7 +2487,15 @@ Rts2DevTelescopeGemini::startPark ()
 
 static int save_registers[] =
 {
-	0,							 // mount type
+	0,
+	21,
+	22,
+	23,
+	24,
+	25,
+	26,
+	27,
+	28,							 // mount type
 	120,						 // manual slewing speed
 	140,						 // goto slewing speed
 	GEMINI_CMD_RATE_GUIDE,		 // guiding speed

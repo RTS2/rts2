@@ -186,9 +186,12 @@ Rts2DevIrError::doReferenced ()
 	std::cout << getAxisStatus ("DEROTATOR[3]");
 	if (irConn->haveModule ("COVER"))
 		std::cout << getAxisStatus ("COVER");
-	std::cout << getAxisStatus ("DOME[0]");
-	std::cout << getAxisStatus ("DOME[1]");
-	std::cout << getAxisStatus ("DOME[2]");
+	if (irConn->haveModule ("DOME[0]"))
+		std::cout << getAxisStatus ("DOME[0]");
+	if (irConn->haveModule ("DOME[1]"))
+		std::cout << getAxisStatus ("DOME[1]");
+	if (irConn->haveModule ("DOME[2]"))
+		std::cout << getAxisStatus ("DOME[2]");
 	return status;
 }
 

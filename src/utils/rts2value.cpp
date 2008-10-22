@@ -26,19 +26,18 @@
 
 #include "radecparser.h"
 
-Rts2Value::Rts2Value (std::string in_val_name)
+Rts2Value::Rts2Value (std::string _val_name)
 {
-	valueName = in_val_name;
+	valueName = _val_name;
 	rts2Type = 0;
 }
 
 
-Rts2Value::Rts2Value (std::string in_val_name, std::string in_description,
-bool writeToFits, int32_t flags)
+Rts2Value::Rts2Value (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
 {
-	valueName = in_val_name;
+	valueName = _val_name;
 	rts2Type = 0;
-	description = in_description;
+	description = _description;
 	if (writeToFits)
 		setWriteToFits ();
 	setValueFlags (flags);
@@ -126,19 +125,19 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueString::setValueCharArr (const char *in_value)
+Rts2ValueString::setValueCharArr (const char *_value)
 {
-	if ((value != in_value)
-		&& (value == NULL || in_value == NULL || strcmp (value, in_value)))
+	if ((value != _value) && (value == NULL || _value == NULL || strcmp (value, _value)))
 		changed ();
+
 	delete[]value;
-	if (!in_value)
+	if (!_value)
 	{
 		value = NULL;
 		return -1;
 	}
-	value = new char[strlen (in_value) + 1];
-	strcpy (value, in_value);
+	value = new char[strlen (_value) + 1];
+	strcpy (value, _value);
 	return 0;
 }
 

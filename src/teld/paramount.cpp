@@ -135,8 +135,8 @@ class Rts2DevTelParamount:public Rts2DevGEM
 	private:
 		MKS3Id axis0;
 		MKS3Id axis1;
-		char *device_name;
-		char *paramount_cfg;
+		const char *device_name;
+		const char *paramount_cfg;
 
 		bool setIndices;
 
@@ -211,7 +211,7 @@ class Rts2DevTelParamount:public Rts2DevGEM
 int
 Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
 {
-	char *msg = NULL;
+	const char *msg = NULL;
 	messageType_t msg_type = MESSAGE_ERROR;
 	switch (reta)
 	{
@@ -611,7 +611,7 @@ Rts2DevTelParamount::init ()
 		haCpd *= -1.0;
 	}
 
-	ret = MKS3Init (device_name);
+	ret = MKS3Init ((char *) device_name);
 	if (ret)
 		return -1;
 

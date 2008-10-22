@@ -22,10 +22,54 @@
 
 #include "../utils/rts2device.h"
 
+/**
+ * Class for a sensor. Sensor can be any device which produce some information
+ * which RTS2 can use.
+ *
+ * For special devices, which are ussually to be found in an observatory,
+ * please see special classes (Dome, Camera, Telescope etc..).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2DevSensor:public Rts2Device
 {
 	public:
 		Rts2DevSensor (int argc, char **argv);
 		virtual ~ Rts2DevSensor (void);
 };
+
+/**
+ * Sensor for weather devices. It provides timeout variable. If timeout is set
+ * to some time in future, the device will set WEATHER_BAD flag up to this
+ * time.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class SensorWeather:public Rts2DevSensor
+{
+	private:
+		Rts2ValueTime *nextGoodWeather;
+
+	protected:
+		virtual int idle ();
+
+		virtual bool isGoodWeather ();
+	
+	public:
+		/**
+		 * Construct new SensorWeather instance.
+		 *
+		 * @param _timeout Weather timeout when device is started. Shall be set to value above
+		 * readout of first data from device.
+		 */
+		SensorWeather (int argc, char **argv, int _timeout = 120);
+
+		double getNextGoodWeather ()
+		{
+			return nextGoodWeather->getValueDouble ();
+		}
+
+		void setWeatherTimeout (time_t wait_time);
+};
+
 #endif							 /* !__RTS2_CRYOCON__ */

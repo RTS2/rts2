@@ -101,6 +101,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST);
 	telFov->setValueDouble (180.0);
 
+	createValue (telFlip, "MNT_FLIP", "telescope flip");
+
 	modelFile = NULL;
 	model = NULL;
 
@@ -340,7 +342,7 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 	obs.lat = telLatitude->getValueDouble ();
 
 	ln_get_hrz_from_equ (pos, &obs, JD, &hrz);
-	ref = ln_get_refraction_adj (hrz.alt, 1010, 10);
+	ref = ln_get_refraction_adj (hrz.alt, 860, 10);
 	hrz.alt += ref;
 	ln_get_equ_from_hrz (&hrz, &obs, JD, pos);
 }
@@ -419,8 +421,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	ra = ln_range_degrees (lst - hadec.ra);
 
 	// calculate change
-	model_change->ra = ln_range_degrees (pos->ra + ra);
-	model_change->dec = pos->dec + hadec.dec;
+	model_change->ra = ln_range_degrees (pos->ra - ra);
+	model_change->dec = pos->dec - hadec.dec;
 
 	if (model_change->ra > 180)
 		model_change->ra -= 360.0;
@@ -469,7 +471,6 @@ Rts2DevTelescope::init ()
 		if (ret)
 			return ret;
 	}
-	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	return 0;
 }
@@ -668,9 +669,11 @@ Rts2DevTelescope::changeMasterState (int new_state)
 {
 	// park us during day..
 	if (((new_state & SERVERD_STANDBY_MASK) == SERVERD_DAY)
-		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_OFF)
+		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_SOFT_OFF)
+		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
-		startPark (NULL);
+	  	if ((getState () & TEL_MASK_MOVING) == 0)
+			startPark (NULL);
 	return Rts2Device::changeMasterState (new_state);
 }
 
@@ -908,11 +911,11 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	pos.ra = ln_range_degrees (objRaDec->getRa () + offsetRaDec->getRa ());
 	pos.dec = objRaDec->getDec () + offsetRaDec->getDec ();
 
-	LibnovaRaDec syncTo (&pos);
-	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
-
 	// apply corrections
 	applyCorrections (&pos, ln_get_julian_from_sys ());
+
+	LibnovaRaDec syncTo (&pos);
+	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
 
 	// now we have target position, which can be feeded to telescope
 	tarRaDec->setValueRaDec (pos.ra, pos.dec);

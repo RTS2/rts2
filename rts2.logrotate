@@ -3,6 +3,6 @@
     rotate 8
     compress
     postrotate
-        /usr/bin/killall -HUP rts2-soapd
+        /usr/bin/killall -HUP rts2-centrald
     endscript
 }

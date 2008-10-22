@@ -64,10 +64,7 @@
 	<arg choice="plain"><option>--localhost <replaceable>hostname</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>hostname</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable>port</replaceable></option></arg>
+	<arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>--modefile <replaceable>filename</replaceable></option></arg>
@@ -153,24 +150,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--server <replaceable class="parameter">server-name</replaceable></option></term>
+        <term><option>--server <replaceable class="parameter">server-name[:host]</replaceable></option></term>
         <listitem>
           <para>
-	    Specify name of the host, which runs
+	    Specify name of the host and possibly port, which runs
 	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
 	    This option is needed only for setups that use multiple computers.
-	    Its default is localhost. Default will work for simple setups.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--port <replaceable class="parameter">port</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify port of the
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    It defaults to RTS2 default port, specified during system
-	    configuration. This value is usually 617.
+	    Its default is localhost for hostname and 617 for port number. If
+	    only hostname is provided, default port number - 617 - is used. 
+	    Default will work for simple setups.
 	  </para>
         </listitem>
       </varlistentry>
@@ -281,7 +269,7 @@
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
-	<manvolnum>1</manvolnum>
+	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>

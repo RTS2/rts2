@@ -1,7 +1,7 @@
 /*!
  * @file Dome control deamon for Dome Control Modules - BOOTESes
  *
- * Packtets are separated by space; they are in ascii, and ends with 0
+ * Packets are separated by space; they are in ascii, and ends with 0
  * followed by checksum calculated using function ..
  *
  * <dome_name> YYYY-MM-DD hh:mm:ssZ <temperature> <humidity> <rain> <switch1 - o|c> <switch2 .. 4>

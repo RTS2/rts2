@@ -23,6 +23,7 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 {
 	private:
 		Rts2ValueInteger *testInt;
+		Rts2ValueBool *goodWeather;
 		Rts2ValueDoubleStat *statTest;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
@@ -31,6 +32,9 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 			in_argv)
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
+			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);
+			goodWeather->setValueBool (false);
+			setWeatherState (goodWeather->getValueBool ());
 			createValue (statTest, "test_stat", "test stat value", true);
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true);
@@ -41,6 +45,11 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 			if (old_value == minMaxTest
 				|| old_value == testInt)
 				return 0;
+			if (old_value == goodWeather)
+			{
+			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool ());
+				return 0;
+			}
 			return Rts2DevSensor::setValue (old_value, newValue);
 		}
 

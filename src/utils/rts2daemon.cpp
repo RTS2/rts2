@@ -17,14 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <stdio.h>
 #include <syslog.h>
 #include <sys/file.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
 
 #include "rts2daemon.h"
 
@@ -41,8 +35,8 @@ Rts2Daemon::addConnectionSock (int in_sock)
 }
 
 
-Rts2Daemon::Rts2Daemon (int in_argc, char **in_argv):
-Rts2Block (in_argc, in_argv)
+Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):
+Rts2Block (_argc, _argv)
 {
 	lockf = 0;
 
@@ -50,7 +44,7 @@ Rts2Block (in_argc, in_argv)
 
 	doHupIdleLoop = false;
 
-	state = 0;
+	state = _init_state;
 
 	info_time = new Rts2ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
 
@@ -71,6 +65,7 @@ Rts2Daemon::~Rts2Daemon (void)
 	if (lockf)
 		close (lockf);
 	delete info_time;
+	closelog ();
 }
 
 
@@ -319,6 +314,11 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 	{
 		case IS_DAEMONIZED:
 		case DO_DAEMONIZE:
+		case CENTRALD_OK:
+			// if at least one centrald is running..
+			if (someCentraldRunning ())
+				break;
+			// otherwise write it to syslog..
 			switch (in_messageType)
 			{
 				case MESSAGE_ERROR:
@@ -341,29 +341,25 @@ Rts2Daemon::sendMessage (messageType_t in_messageType, const char *in_messageStr
 			// print to stdout
 			Rts2Block::sendMessage (in_messageType, in_messageString);
 			break;
-		case CENTRALD_OK:
-			break;
 	}
 }
 
 
 void
-Rts2Daemon::centraldConnRunning ()
+Rts2Daemon::centraldConnRunning (Rts2Conn *conn)
 {
 	if (daemonize == IS_DAEMONIZED)
 	{
-		closelog ();
 		daemonize = CENTRALD_OK;
 	}
 }
 
 
 void
-Rts2Daemon::centraldConnBroken ()
+Rts2Daemon::centraldConnBroken (Rts2Conn *conn)
 {
 	if (daemonize == CENTRALD_OK)
 	{
-		openlog (NULL, LOG_PID, LOG_DAEMON);
 		daemonize = IS_DAEMONIZED;
 		logStream (MESSAGE_WARNING) << "connection to centrald lost" << sendLog;
 	}
@@ -553,6 +549,12 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 			break;
 		case RTS2_VALUE_RECTANGLE:
 			dup_val = new Rts2ValueRectangle (old_value->getName (),
+				old_value->getDescription (),
+				old_value->getWriteToFits (),
+				old_value->getFlags ());
+			break;
+		case RTS2_VALUE_ARRAY:
+			dup_val = new Rts2ValueStringArray (old_value->getName (),
 				old_value->getDescription (),
 				old_value->getWriteToFits (),
 				old_value->getFlags ());
@@ -830,7 +832,10 @@ Rts2Daemon::info (Rts2Conn * conn)
 		conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
 		return -1;
 	}
-	return sendInfo (conn);
+	ret = sendInfo (conn);
+	if (ret)
+		conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot send info");
+	return ret;
 }
 
 
@@ -843,11 +848,10 @@ Rts2Daemon::infoAll ()
 	if (ret)
 		return -1;
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		sendInfo (conn);
-	}
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		sendInfo (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		sendInfo (*iter);
 	return 0;
 }
 
@@ -855,19 +859,18 @@ Rts2Daemon::infoAll ()
 void
 Rts2Daemon::constInfoAll ()
 {
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		sendBaseInfo (conn);
-	}
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		sendBaseInfo (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		sendBaseInfo (*iter);
 }
 
 
 int
 Rts2Daemon::sendInfo (Rts2Conn * conn)
 {
-	if (!conn->isConnState (CONN_AUTH_OK))
+	if (!isRunning (conn))
 		return -1;
 	for (Rts2CondValueVector::iterator iter = values.begin ();
 		iter != values.end (); iter++)
@@ -886,11 +889,10 @@ void
 Rts2Daemon::sendValueAll (Rts2Value * value)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		value->send (conn);
-	}
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		value->send (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		value->send (*iter);
 }
 
 
@@ -910,25 +912,19 @@ Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 	ret = info_time->sendMetaInfo (conn);
 	if (ret < 0)
 		return -1;
-	for (Rts2ValueVector::iterator iter = constValues.begin ();
-		iter != constValues.end (); iter++)
+	for (Rts2ValueVector::iterator iter = constValues.begin (); iter != constValues.end (); iter++)
 	{
 		Rts2Value *val = *iter;
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
-		{
 			return -1;
-		}
 	}
-	for (Rts2CondValueVector::iterator iter = values.begin ();
-		iter != values.end (); iter++)
+	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
 		ret = val->sendMetaInfo (conn);
 		if (ret < 0)
-		{
 			return -1;
-		}
 	}
 	return 0;
 }

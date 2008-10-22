@@ -64,6 +64,9 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 
 		time_t expExposureEnd;
 
+		Rts2ValueSelection *coolerStatus;
+		Rts2ValueSelection *coolerMode;
+
 	protected:
 		virtual int initChips ();
 		virtual int setBinning (int in_vert, int in_hori);
@@ -85,11 +88,8 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 
 		virtual int camChipInfo (int chip);
 
-		virtual int camCoolMax ();
-		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
-		virtual int setTempRegulation (int new_reg);
-		virtual int camCoolShutdown ();
+		virtual void afterNight ();
 };
 
 int
@@ -777,18 +777,29 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
 Rts2DevCamera (in_argc, in_argv)
 {
-
-	createTempRegulation ();
 	createTempSet ();
 	createTempCCD ();
 
 	createExpType ();
 
-	addOption ('n', "device_id", 1,
-		"device ID (ussualy 0, which is also default)");
-	addOption ('a', "config_name", 1,
-		"device ini config file (default to /etc/rts2/apogee.ini");
+	createValue (coolerStatus, "COOL_STA", "cooler status", true);
+	coolerStatus->addSelVal ("OFF");
+	coolerStatus->addSelVal ("RAMPING_TO_SETPOINT");
+	coolerStatus->addSelVal ("CORRECTING");
+	coolerStatus->addSelVal ("RAMPING_TO_AMBIENT");
+	coolerStatus->addSelVal ("AT_AMBIENT");
+	coolerStatus->addSelVal ("AT_MAX");
+	coolerStatus->addSelVal ("AT_MIN");
+	coolerStatus->addSelVal ("AT_SETPOINT");
+
+	createValue (coolerMode, "COOL_MOD", "cooler mode", true);
+	coolerMode->addSelVal ("OFF");
+	coolerMode->addSelVal ("ON");
+	coolerMode->addSelVal ("SHUTDOWN");
+
+	addOption ('n', "device_id", 1,	"device ID (ussualy 0, which is also default)");
 	device_id = 0;
+	addOption ('a', "config_name", 1, "device ini config file (default to /etc/rts2/apogee.ini");
 	cfgname = "/etc/rts2/apogee.ini";
 
 	camera = NULL;
@@ -862,8 +873,8 @@ Rts2DevCameraApogee::ready ()
 int
 Rts2DevCameraApogee::info ()
 {
-
-	tempRegulation->setValueInteger (camera->read_CoolerMode ());
+	coolerStatus->setValueInteger (camera->read_CoolerStatus ());
+	coolerMode->setValueInteger (camera->read_CoolerMode ());
 	tempSet->setValueDouble (camera->read_CoolerSetPoint ());
 	tempCCD->setValueDouble (camera->read_Temperature ());
 	return Rts2DevCamera::info ();
@@ -877,22 +888,8 @@ Rts2DevCameraApogee::camChipInfo (int chip)
 }
 
 
-int
-Rts2DevCameraApogee::camCoolMax ()
-{
-	return camCoolHold ();
-}
-
-
-int
-Rts2DevCameraApogee::camCoolHold ()
-{
-	return setCoolTemp (isnan (nightCoolTemp) ? -20 : nightCoolTemp);
-}
-
-
-int
-Rts2DevCameraApogee::camCoolShutdown ()
+void
+Rts2DevCameraApogee::afterNight ()
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();
@@ -902,7 +899,6 @@ Rts2DevCameraApogee::camCoolShutdown ()
 		camera->write_CoolerMode (Camera_CoolerMode_Off);
 	else
 		camera->write_CoolerMode (Camera_CoolerMode_Shutdown);
-	return 0;
 }
 
 
@@ -916,29 +912,6 @@ Rts2DevCameraApogee::setCoolTemp (float new_temp)
 		camera->write_CoolerMode (Camera_CoolerMode_Off);
 	camera->write_CoolerSetPoint (new_temp);
 	camera->write_CoolerMode (Camera_CoolerMode_On);
-	return 0;
-}
-
-
-int
-Rts2DevCameraApogee::setTempRegulation (int new_reg)
-{
-	Camera_CoolerMode cMode;
- 	switch (new_reg)
-	{
-		case 0:
-			cMode = Camera_CoolerMode_Off;
-			break;
-		case 1:
-			cMode = Camera_CoolerMode_On;
-			break;
-		case 2:
-			cMode = Camera_CoolerMode_Shutdown;
-			break;
-		default:
-			return -1;
-	}
-	camera->write_CoolerMode (cMode);
 	return 0;
 }
 

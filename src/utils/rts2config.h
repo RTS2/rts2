@@ -65,6 +65,8 @@ class Rts2Config:public Rts2ConfigRaw
 
 		int obs_epoch_id;
 
+		std::vector <std::string> obs_requiredDevices;
+
 		std::string obs_quePath;
 		std::string obs_acqPath;
 		std::string obs_archive;
@@ -255,6 +257,18 @@ class Rts2Config:public Rts2ConfigRaw
 			return grbd_validity;
 		}
 
+		/**
+		 * Get names of devices which are necessary for system
+		 * operations.  Those devices are necessary for system being
+		 * able to detect weather state and so to switch automatically
+		 * to on mode.
+		 *
+		 * @return List of devices.
+		 */
+		std::vector <std::string> observatoryRequiredDevices ()
+		{
+			return obs_requiredDevices;
+		}
 
 		/**
 		 * Return observatory epoch.

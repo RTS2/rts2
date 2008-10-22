@@ -197,7 +197,7 @@ Rts2Executor::init ()
 	if (ret)
 		return ret;
 	// set priority..
-	getCentraldConn ()->queCommand (new Rts2Command (this, "priority 20"));
+	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
 	return 0;
 }
 

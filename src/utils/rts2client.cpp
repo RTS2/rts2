@@ -36,10 +36,10 @@
 
 #include <config.h>
 
-Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, char *in_name):
+Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, int _centrald_num, char *_name):
 Rts2Conn (in_master)
 {
-	setName (in_name);
+	setName (_centrald_num, _name);
 	setConnState (CONN_RESOLVING_DEVICE);
 	address = NULL;
 }
@@ -66,8 +66,7 @@ Rts2ConnClient::init ()
 			strerror (errno) << sendLog;
 		return ret;
 	}
-	sock =
-		socket (device_addr->ai_family, device_addr->ai_socktype,
+	sock = socket (device_addr->ai_family, device_addr->ai_socktype,
 		device_addr->ai_protocol);
 	if (sock == -1)
 	{
@@ -89,48 +88,8 @@ Rts2ConnClient::init ()
 		}
 		return -1;
 	}
-	connLogin ();
+	connConnected ();
 	return 0;
-}
-
-
-int
-Rts2ConnClient::add (fd_set * readset, fd_set * writeset, fd_set * expset)
-{
-	if (isConnState (CONN_INPROGRESS))
-		FD_SET (sock, writeset);
-	return Rts2Conn::add (readset, writeset, expset);
-}
-
-
-int
-Rts2ConnClient::writable (fd_set * writeset)
-{
-	if (FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
-	{
-		int err = 0;
-		int ret;
-		socklen_t len = sizeof (err);
-
-		ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
-				strerror (errno) << sendLog;
-			connectionError (-1);
-		}
-		else if (err)
-		{
-			logStream (MESSAGE_ERROR) << "Rts2ConnClient::idle getsockopt " <<
-				strerror (errno) << sendLog;
-			connectionError (-1);
-		}
-		else
-		{
-			connLogin ();
-		}
-	}
-	return Rts2Conn::writable (writeset);
 }
 
 
@@ -145,10 +104,10 @@ Rts2ConnClient::setAddress (Rts2Address * in_addr)
 
 
 void
-Rts2ConnClient::connLogin ()
+Rts2ConnClient::connConnected ()
 {
-	master->getCentraldConn ()->
-		queCommand (new Rts2CommandKey (master, getName ()));
+ 	Rts2Conn::connConnected ();
+	master->getSingleCentralConn ()->queCommand (new Rts2CommandKey (master, getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 
@@ -161,21 +120,15 @@ Rts2ConnClient::setKey (int in_key)
 	{
 		// que to begining, send command
 		// kill all runinng commands
-		queSend (new Rts2CommandSendKey (master, in_key));
+		queSend (new Rts2CommandSendKey (master, master->getSingleCentralConn ()->getCentraldId (), getCentraldNum (), in_key));
 	}
 }
 
 
-/**************************************************************
- *
- * Rts2Client implementation.
- *
- *************************************************************/
-
 Rts2ConnClient *
-Rts2Client::createClientConnection (char *in_deviceName)
+Rts2Client::createClientConnection (int _centrald_num, char *_deviceName)
 {
-	return new Rts2ConnClient (this, in_deviceName);
+	return new Rts2ConnClient (this, _centrald_num, _deviceName);
 }
 
 
@@ -183,7 +136,7 @@ Rts2Conn *
 Rts2Client::createClientConnection (Rts2Address * in_addr)
 {
 	Rts2ConnClient *conn;
-	conn = createClientConnection (in_addr->getName ());
+	conn = createClientConnection (in_addr->getCentraldNum (), in_addr->getName ());
 	conn->setAddress (in_addr);
 	return conn;
 }
@@ -255,7 +208,7 @@ Rts2Client::init ()
 		return ret;
 	}
 
-	central_conn = createCentralConn ();
+	Rts2ConnCentraldClient *central_conn = createCentralConn ();
 
 	ret = 1;
 	while (!getEndLoop ())
@@ -266,7 +219,7 @@ Rts2Client::init ()
 		std::cerr << "Trying to contact centrald\n";
 		sleep (10);
 	}
-	addConnection (central_conn);
+	addCentraldConnection (central_conn);
 	return 0;
 }
 
@@ -353,7 +306,7 @@ Rts2ConnCentraldClient::command ()
 		if (paramNextInteger (&p_centrald_id) || !paramEnd ())
 			return -2;
 		setCentraldId (p_centrald_id);
-		master->centraldConnRunning ();
+		master->centraldConnRunning (this);
 		setCommandInProgress (false);
 		return -1;
 	}

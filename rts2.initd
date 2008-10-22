@@ -12,12 +12,14 @@ RTS2_PID_PREFIX=/var/run/rts2_
 
 function rts2-start
 {
-	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
-		grep '^centrald' $CENTRALD_FILE | read centrald centrald_options
-		echo -n "Starting RTS2 centrald daemon:"
-		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald --exec $RTS2_BIN_PREFIX/rts2-centrald -- $centrald_options
-		echo "rts2-centrald."
-	fi
+	grep '^centrald' $CENTRALD_FILE | while read centrald centrald_port centrald_options; do
+		if [ "x${centrald_port}" == "x" ]; then
+			centrald_port=617
+		fi
+		echo -n "Starting RTS2 centrald daemon on port $centrald_port:"
+		start-stop-daemon --start --pidfile ${RTS2_PID_PREFIX}centrald_${centrald_port} --exec $RTS2_BIN_PREFIX/rts2-centrald -- --local-port $centrald_port $centrald_options
+		echo "rts2-centrald (${centrald_port})."
+	done
 	CENTRALD_OPTIONS=`grep '^-' $CENTRALD_FILE 2>/dev/null`
 	echo -n "Starting RTS2 devices:"
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do
@@ -59,8 +61,10 @@ function rts2-stop
 	rts2-stop-devices
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
         	echo -n "Stopping RTS2 centrald daemon:"
-		start-stop-daemon --stop --pidfile ${RTS2_PID_PREFIX}centrald
-		echo "rts2-centrald."
+		for cf in ${RTS2_PID_PREFIX}centrald_*; do
+			start-stop-daemon --stop --pidfile $cf
+			echo "rts2-centrald"
+		done
 	fi
 }
 

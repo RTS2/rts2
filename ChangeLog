@@ -1,3 +1,20 @@
+2008-10-15
+ * [2170371] fixed
+
+2008-10-03
+ * [1911238] added newport lamp driver
+
+2008-10-01
+ * [1742446] partial readout of the chip
+
+2008-09-23
+ * commited new dome modules
+ * added rts2-mood, devices for weather,..
+
+2008-09-02
+ * [2089418] added
+ * some scheduling works
+
 2008-08-27
  * [2078147] fixed
 

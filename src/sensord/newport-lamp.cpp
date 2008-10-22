@@ -38,15 +38,21 @@ class Rts2DevSensorNewportLamp: public Rts2DevSensor
 		Rts2ValueInteger *esr;
 		Rts2ValueFloat *amps;
 		Rts2ValueInteger *volts;
+		Rts2ValueInteger *watts;
+		Rts2ValueFloat *apreset;
+		Rts2ValueInteger *ppreset;
 		Rts2ValueFloat *alim;
 		Rts2ValueInteger *plim;
-		Rts2ValueString *idn;
+		Rts2ValueInteger *idn;
 		Rts2ValueInteger *hours;
 
 		int writeCommand (const char *cmd);
 
-		template < typename T > int writeValue (const char *valueName, T val);
+		int writeValue (const char *valueName, float val);
+		int writeValue (const char *valueName, int val);
 		template < typename T > int readValue (const char *valueName, T & val);
+		int getStatus (const char *valueName, Rts2ValueInteger *val);
+		int readStatus (const char *valueName, Rts2ValueInteger *val);
 
 	protected:
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
@@ -70,13 +76,32 @@ Rts2DevSensorNewportLamp::writeCommand (const char *cmd)
 	ret = lampSerial->writePort ('\r');
 	if (ret < 0)
 	  	return ret;
-	return 0;
+	return getStatus ("ESR", esr);
 }
 
-template < typename T > int
-Rts2DevSensorNewportLamp::writeValue (const char *valueName, T val)
+
+int
+Rts2DevSensorNewportLamp::writeValue (const char *valueName, float val)
 {
-	return -1;
+	std::ostringstream _os;
+	_os.precision (1);
+	_os << valueName << '=' << std::fixed << val << '\r';
+	int ret = lampSerial->writePort (_os.str ().c_str (), _os.str ().length ());
+	if (ret)
+		return ret;
+	return getStatus ("ESR", esr);
+}
+
+
+int
+Rts2DevSensorNewportLamp::writeValue (const char *valueName, int val)
+{
+	std::ostringstream _os;
+	_os << valueName << '=' << val << '\r';
+	int ret = lampSerial->writePort (_os.str ().c_str (), _os.str ().length ());
+	if (ret)
+		return ret;
+	return getStatus ("ESR", esr);
 }
 
 
@@ -84,13 +109,49 @@ template < typename T > int
 Rts2DevSensorNewportLamp::readValue (const char *valueName, T & val)
 {
 	int ret;
+	char buf[50];
 	ret = lampSerial->writePort (valueName, strlen (valueName));
 	if (ret < 0)
 	 	return ret;
-	ret = lampSerial->writePort ('?');
+	ret = lampSerial->writePort ("?\r", 2);
 	if (ret < 0)
 	  	return ret;
-	return 0;
+	ret = lampSerial->readPort (buf, 50, '\r');
+	if (ret == -1)
+		return ret;
+	return val->setValueCharArr (buf);
+}
+
+
+int
+Rts2DevSensorNewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
+{
+	int ret;
+	char buf[50];
+	ret = lampSerial->readPort (buf, 50, '\r');
+	if (ret == -1)
+		return ret;
+	if (strncmp (buf, valueName, strlen (valueName)) != 0)
+	{
+		logStream (MESSAGE_ERROR) << "status reply string does not start with status name (starts with " 
+			<< buf << ", expected is " << valueName << ")" << sendLog;
+		lampSerial->flushPortIO ();
+		return -1;
+	}
+	return val->setValueInteger (strtol (buf + strlen (valueName), NULL, 16));
+}
+
+int
+Rts2DevSensorNewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
+{
+	int ret;
+	ret = lampSerial->writePort (valueName, strlen (valueName));
+	if (ret < 0)
+	 	return ret;
+	ret = lampSerial->writePort ("?\r", 2);
+	if (ret < 0)
+	  	return ret;
+	return getStatus (valueName, val);
 }
 
 
@@ -106,6 +167,9 @@ Rts2DevSensorNewportLamp::Rts2DevSensorNewportLamp (int in_argc, char **in_argv)
 
 	createValue (amps, "AMPS", "Amps as displayed on front panel", true);
 	createValue (volts, "VOLTS", "Volts as displayed on front panel", true);
+	createValue (watts, "WATTS", "Watts as displayed on front panel", true);
+	createValue (apreset, "A_PRESET", "Current preset", true);
+	createValue (ppreset, "P_PRESET", "Power preset", true);
 	createValue (alim, "A_LIM", "Current limit", true);
 	createValue (plim, "P_LIM", "Power limit", true);
 
@@ -124,16 +188,22 @@ Rts2DevSensorNewportLamp::~Rts2DevSensorNewportLamp ()
 int
 Rts2DevSensorNewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
+	int ret;
 	if (old_value == on)
 	{
 		if (((Rts2ValueBool *) new_value)->getValueBool ())
-			return writeCommand ("START") == 0 ? 0 : -2;
+			ret = writeCommand ("START") == 0 ? 0 : -2;
 		else
-			return writeCommand ("STOP") == 0 ? 0 : -2;
+			ret = writeCommand ("STOP") == 0 ? 0 : -2;
+		return ret;
 	}
-	if (old_value == amps)
+	if (old_value == apreset)
 	{
-	  	return writeValue ("A-PRESET", new_value->getValueDouble ()) == 0 ? 0 : -2;
+	  	return writeValue ("A-PRESET", new_value->getValueFloat ()) == 0 ? 0 : -2;
+	}
+	if (old_value == ppreset)
+	{
+	  	return writeValue ("P-PRESET", new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	return Rts2DevSensor::setValue (old_value, new_value);
 }
@@ -162,14 +232,23 @@ Rts2DevSensorNewportLamp::init ()
 	if (ret)
 		return ret;
 	
-	lampSerial = new Rts2ConnSerial (lampDev, this, BS9600, C8, NONE, 40);
-	lampSerial->setDebug ();
-
+	lampSerial = new Rts2ConnSerial (lampDev, this, BS9600, C8, NONE, 100);
 	ret = lampSerial->init ();
 	if (ret)
 	  	return ret;
 	
-	// confir it is working..
+	// confirm it is working..
+	ret = readStatus ("STB", status);
+	if (ret)
+	{
+		// sometimes lamp init may fail
+		lampSerial->flushPortIO ();
+		sleep (1);
+		ret = readStatus ("STB", status);
+		if (ret)
+			return ret;
+	}
+
 	return info ();
 }
 
@@ -177,56 +256,41 @@ Rts2DevSensorNewportLamp::init ()
 int
 Rts2DevSensorNewportLamp::info ()
 {
-/*	int ret;
-	ret = readRts2Value ("PW", wavelenght);
+	int ret;
+	ret = readStatus ("STB", status);
 	if (ret)
 		return ret;
-	ret = readRts2Value ("SLITA", slitA);
+	on->setValueBool (status->getValueInteger () & 0x80);
+	ret = readStatus ("ESR", esr);
 	if (ret)
 		return ret;
-	ret = readRts2Value ("SLITB", slitB);
+	ret = readValue ("AMPS", amps);
 	if (ret)
 		return ret;
-	ret = readRts2Value ("SLITC", slitC);
+	ret = readValue ("VOLTS", volts);
 	if (ret)
 		return ret;
-	ret = readRts2Value ("BANDPASS", bandPass);
+	ret = readValue ("WATTS", watts);
 	if (ret)
 		return ret;
-	char *shttype;
-	char **shttype_p = &shttype;
-	ret = readValue ("SHTRTYPE", shttype_p);
-	switch (**shttype_p)
-	{
-		case 'S':
-			shutter->setValueInteger (0);
-			break;
-		case 'F':
-			shutter->setValueInteger (1);
-			break;
-		case 'M':
-			shutter->setValueInteger (2);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) << "Unknow shutter value: " << *shttype <<
-				sendLog;
-			return -1;
-	}
-	ret = readRts2ValueFilter ("FILT1", filter1);
-	if (ret)
-		return ret; */
-	/*  ret = readRts2Value ("FILT2", filter2);
-	  if (ret)
-		return ret;
-	*/
-	/*
-	ret = readRts2Value ("PS", msteps);
+	ret = readValue ("A-PRESET", apreset);
 	if (ret)
 		return ret;
-	usleep (100);
-	ret = readRts2ValueFilter ("GRAT", grat);
+	ret = readValue ("P-PRESET", ppreset);
 	if (ret)
-		return ret; */
+		return ret;
+	ret = readValue ("A-LIM", alim);
+	if (ret)
+		return ret;
+	ret = readValue ("P-LIM", plim);
+	if (ret)
+		return ret;
+	ret = readValue ("IDN", idn);
+	if (ret)
+		return ret; 
+	ret = readValue ("LAMP HRS", hours);
+	if (ret)
+		return ret;
 	return Rts2DevSensor::info (); 
 }
 

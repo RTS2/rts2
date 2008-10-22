@@ -182,7 +182,7 @@ AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
 COMEDI="${withval}";
 LIB_COMEDI="-lcomedi";
-INC_COMEDI="",
+if [ "x${withval}" != "xyes" ]; then INC_COMEDI="-I${withval}"; else INC_COMEDI=""; fi,
 [COMEDI=no])
 
 AM_CONDITIONAL(COMEDI, test x$COMEDI != xno)
@@ -400,12 +400,14 @@ EOF
 fi
 
 
-#AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
-#AC_SUBST(LIB_COMEDI), [cat << EOF
-#**** You don't have comedi library installed.
-#**** Please try to get it somewhere.
-#EOF
-#exit 1])
+if test "x$COMEDI" != "xno"; then
+	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
+	AC_SUBST(LIB_COMEDI), [cat << EOF
+**** You don't have comedi library installed.
+**** Please try to get it somewhere.
+EOF
+	exit 1])
+fi
 
 AC_MSG_CHECKING(for date)
 DATE=`date +%Y-%m-%d`
@@ -563,6 +565,7 @@ echo "
   gsoap         ${gsoap}
   gpib          ${GPIBLIB}
   INDI          ${INDI}
+  comedilib     ${COMEDI}
 
 
 CCD's:

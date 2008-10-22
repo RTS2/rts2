@@ -54,14 +54,14 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 {
 	int write (const char *buf, const char *newVal);
 
-	int writeRead (char *buf, Rts2Value * val);
-	int writeRead (char *subsystem, std::list < Rts2Value * >&vals,
+	int writeRead (const char *buf, Rts2Value * val);
+	int writeRead (const char *subsystem, std::list < Rts2Value * >&vals,
 		int prefix_num);
 
-	int writeRead (char *buf, Rts2ValueDouble * val);
-	int writeRead (char *buf, Rts2ValueFloat * val);
-	int writeRead (char *buf, Rts2ValueBool * val);
-	int writeRead (char *buf, Rts2ValueSelection * val);
+	int writeRead (const char *buf, Rts2ValueDouble * val);
+	int writeRead (const char *buf, Rts2ValueFloat * val);
+	int writeRead (const char *buf, Rts2ValueBool * val);
+	int writeRead (const char *buf, Rts2ValueSelection * val);
 
 	const char *getLoopVal (int l, Rts2Value * val);
 
@@ -87,8 +87,8 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 			const char *name, const char *desc);
 
 		template < typename T > void createLoopValue (T * &val, int loop,
-			char *in_val_name,
-			char *in_desc,
+			const char *in_val_name,
+			const char *in_desc,
 			bool writeToFits = true)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
@@ -210,7 +210,7 @@ Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
+Rts2DevSensorCryocon::writeRead (const char *buf, Rts2Value * val)
 {
 	switch (val->getValueType ())
 	{
@@ -231,9 +231,7 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2Value * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *subsystem,
-std::list < Rts2Value * >&vals,
-int prefix_num)
+Rts2DevSensorCryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
 {
 	char rb[500];
 	char *retTop;
@@ -286,7 +284,7 @@ int prefix_num)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
+Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueDouble * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -298,7 +296,7 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueDouble * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueFloat * val)
+Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueFloat * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -310,7 +308,7 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueFloat * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueBool * val)
+Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueBool * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -322,7 +320,7 @@ Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueBool * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (char *buf, Rts2ValueSelection * val)
+Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueSelection * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);

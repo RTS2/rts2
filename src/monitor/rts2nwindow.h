@@ -16,11 +16,12 @@ class Rts2NWindow:public Rts2NLayout
 {
 	private:
 		bool _haveBox;
+		bool active;
 	protected:
 		WINDOW * window;
 		void errorMove (const char *op, int y, int x, int h, int w);
 	public:
-		Rts2NWindow (int x, int y, int w, int h, int border = 1);
+		Rts2NWindow (int x, int y, int w, int h, bool border = true);
 		virtual ~ Rts2NWindow (void);
 		/**
 		 * Handles key pressed event. Return values has following meaning:
@@ -78,6 +79,24 @@ class Rts2NWindow:public Rts2NLayout
 		 */
 		virtual bool setCursor ();
 
+		void setNormal ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_NORMAL, 0, NULL);
+		}
+
+		/**
+		 * Set reverse attribute for full pad (e.g. invert colors in pad).
+		 */
+		void setReverse ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_REVERSE, 0, NULL);
+		}
+
+		void setUnderline ()
+		{
+			wchgat (getWriteWindow (), getWriteWidth (), A_UNDERLINE, 0, NULL);
+		}
+
 		/**
 		 * Returns window which is used to write text
 		 */
@@ -92,11 +111,21 @@ class Rts2NWindow:public Rts2NLayout
 		}
 
 		/**
-		 * Indicate this window needs enter, so enter key will not be stolen for wait command.
+		 * Indicate this window needs enter, so enter and tab keys will not be stolen for wait command.
 		 */
-		virtual bool needEnter ()
+		virtual bool hasEditBox ()
 		{
 			return false;
+		}
+
+		/**
+		 * Return window active state. That is true if window is active and receives keyboard inputs.
+		 *
+		 * @return window active state.
+		 */
+		bool isActive ()
+		{
+			return active;
 		}
 };
 #endif							 /* !__RTS2_NWINDOW__ */

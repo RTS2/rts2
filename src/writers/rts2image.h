@@ -266,6 +266,16 @@ class Rts2Image:public Rts2FitsFile
 		int getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
 		int writeImgHeader (struct imghdr *im_h);
+		/**
+		 * Record image physical coordinates.
+		 *
+		 * @param x     X offset of the image.
+		 * @param y     Y offset of the image.
+		 * @param bin_x Binning along X axis.
+		 * @param bin_y Binning along Y axis.
+		 */
+		void writePhysical (int x, int y, int bin_x, int bin_y);
+
 		int writeDate (char *in_data, char *fullTop);
 
 		double getAstrometryErr ();

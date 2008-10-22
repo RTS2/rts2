@@ -1,5 +1,5 @@
 /* 
- * Dome driver for Bootes1 station.
+ * Dome driver for Bootes 1 B observatory.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -19,15 +19,7 @@
 
 #include "ford.h"
 
-#include "rts2connbufweather.h"
-
 #define ROOF_TIMEOUT  120		 // in seconds
-
-#define WATCHER_METEO_TIMEOUT 80
-
-#define WATCHER_BAD_WEATHER_TIMEOUT 3600
-#define WATCHER_BAD_WINDSPEED_TIMEOUT 360
-#define WATCHER_CONN_TIMEOUT    360
 
 typedef enum
 {
@@ -49,75 +41,88 @@ typedef enum
 	RAIN_SENSOR
 } outputs;
 
-class Rts2DevDomeBootes1:public Rts2DomeFord
+using namespace rts2dome;
+
+namespace rts2dome
+{
+
+/**
+ * Control for Bootes1 dome.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Bootes1B:public Ford
 {
 	private:
 		time_t timeOpenClose;
 		bool domeFailed;
 
-		Rts2ConnBufWeather *weatherConn;
-
 		bool isMoving ();
 
 		int lastWeatherCheckState;
-
+	
+		Rts2ValueInteger *sw_state;
 		Rts2ValueTime *ignoreRainSensorTime;
 
+		Rts2ValueBool *rain;
+
 	protected:
-		virtual int isGoodWeather ();
+		virtual bool isGoodWeather ();
 
-	public:
-		Rts2DevDomeBootes1 (int argc, char **argv);
-		virtual ~ Rts2DevDomeBootes1 (void);
-		virtual int init ();
-		virtual int idle ();
-
-		virtual int ready ();
-		virtual int baseInfo ();
-		virtual int info ();
-
-		virtual int openDome ();
+		virtual int startOpen ();
 		virtual long isOpened ();
 		virtual int endOpen ();
-		virtual int closeDome ();
+		virtual int startClose ();
 		virtual long isClosed ();
 		virtual int endClose ();
+
+	public:
+		Bootes1B (int argc, char **argv);
+		virtual ~ Bootes1B (void);
+		virtual int init ();
+
+		virtual int info ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-Rts2DevDomeBootes1::Rts2DevDomeBootes1 (int in_argc, char **in_argv):
-Rts2DomeFord (in_argc, in_argv)
+}
+
+Bootes1B::Bootes1B (int argc, char **argv)
+:Ford (argc, argv)
 {
+	createValue (sw_state, "sw_state", "switch state", false, RTS2_DT_HEX);
+
 	createValue (ignoreRainSensorTime, "ignore_rain_time", "time when rain sensor will be ignored", false);
 	ignoreRainSensorTime->setValueDouble (nan ("f"));
 
-	domeModel = "BOOTES1";
+	createValue (rain, "rain", "state of the rain detector", false);
 
 	lastWeatherCheckState = -1;
-
-	weatherConn = NULL;
 
 	timeOpenClose = 0;
 	domeFailed = false;
 }
 
 
-Rts2DevDomeBootes1::~Rts2DevDomeBootes1 (void)
+Bootes1B::~Bootes1B (void)
 {
 }
 
 
-int
-Rts2DevDomeBootes1::isGoodWeather ()
+bool
+Bootes1B::isGoodWeather ()
 {
+	if (getIgnoreMeteo ())
+		return true;
 	int ret = zjisti_stav_portu ();
 	if (ret)
-	  	return getIgnoreMeteo () == true ? 1 : 0;
+		return false;
 
 	// rain sensor, ignore if dome was recently opened
 	if (getPortState (RAIN_SENSOR))
 	{
+		rain->setValueBool (true);
 		int weatherCheckState = (getPortState (OPEN_END_2) << 3)
 			| (getPortState (CLOSE_END_2) << 2)
 			| (getPortState (CLOSE_END_1) << 1)
@@ -137,44 +142,32 @@ Rts2DevDomeBootes1::isGoodWeather ()
 			if (isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
 			{
 				lastWeatherCheckState = weatherCheckState;
-				setWeatherTimeout (WATCHER_BAD_WEATHER_TIMEOUT);
-	  			return getIgnoreMeteo () == true ? 1 : 0;
+				setWeatherTimeout (3600);
+	  			return false;
 			}
 		}
 		lastWeatherCheckState = weatherCheckState;
 	}
 	else
 	{
+		rain->setValueBool (false);
 		lastWeatherCheckState = (getPortState (OPEN_END_2) << 3)
 			| (getPortState (CLOSE_END_2) << 2)
 			| (getPortState (CLOSE_END_1) << 1)
 			| (getPortState (OPEN_END_1));
 	}
 
-	if (getIgnoreMeteo () == true)
-		return 1;
-
-	if (weatherConn)
-		return weatherConn->isGoodWeather ();
-	return 0;
+	return Ford::isGoodWeather ();
 }
 
 
 int
-Rts2DevDomeBootes1::init ()
+Bootes1B::init ()
 {
 	int ret;
-	ret = Rts2DomeFord::init ();
+	ret = Ford::init ();
 	if (ret)
 		return ret;
-
-	weatherConn =
-		new Rts2ConnBufWeather (5005, WATCHER_METEO_TIMEOUT,
-		WATCHER_CONN_TIMEOUT,
-		WATCHER_BAD_WEATHER_TIMEOUT,
-		WATCHER_BAD_WINDSPEED_TIMEOUT, this);
-	weatherConn->init ();
-	addConnection (weatherConn);
 
 	ret = zjisti_stav_portu ();
 	if (ret)
@@ -200,55 +193,8 @@ Rts2DevDomeBootes1::init ()
 
 
 int
-Rts2DevDomeBootes1::idle ()
+Bootes1B::info ()
 {
-	// check for weather..
-	if (isGoodWeather ())
-	{
-		if (((getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-			&& ((getState () & DOME_DOME_MASK) == DOME_CLOSED))
-		{
-			// after centrald reply, that he switched the state, dome will
-			// open
-			domeWeatherGood ();
-		}
-	}
-	else
-	{
-		int ret;
-		// close dome - don't trust centrald to be running and closing
-		// it for us
-		ret = closeDomeWeather ();
-		if (ret == -1)
-		{
-			setTimeout (10 * USEC_SEC);
-		}
-	}
-	return Rts2DomeFord::idle ();
-}
-
-
-int
-Rts2DevDomeBootes1::ready ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeBootes1::baseInfo ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeBootes1::info ()
-{
-	// switches are both off either when we move enclosure or when dome failed
-	if (domeFailed || timeOpenClose > 0)
-		sw_state->setValueInteger (0);
-
 	int ret;
 	ret = zjisti_stav_portu ();
 	if (ret)
@@ -259,18 +205,12 @@ Rts2DevDomeBootes1::info ()
 		| (getPortState (OPEN_END_1) << 1)
 		| getPortState (OPEN_END_2));
 
-	if (weatherConn)
-	{
-		setRain (weatherConn->getRain ());
-		setWindSpeed (weatherConn->getWindspeed ());
-	}
-
-	return Rts2DomeFord::info ();
+	return Ford::info ();
 }
 
 
 bool
-Rts2DevDomeBootes1::isMoving ()
+Bootes1B::isMoving ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -283,10 +223,8 @@ Rts2DevDomeBootes1::isMoving ()
 
 
 int
-Rts2DevDomeBootes1::openDome ()
+Bootes1B::startOpen ()
 {
-	if (!isGoodWeather ())
-		return -1;
 	if (getState () & DOME_OPENING)
 	{
 		if (isMoving ())
@@ -309,25 +247,27 @@ Rts2DevDomeBootes1::openDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Rts2DomeFord::openDome ();
+	return 0;
 }
 
 
 long
-Rts2DevDomeBootes1::isOpened ()
+Bootes1B::isOpened ()
 {
 	time_t now;
 	time (&now);
 	// timeout
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBootes1::isOpened timeout" <<
+		logStream (MESSAGE_ERROR) << "Bootes1B::isOpened timeout" <<
 			sendLog;
 		domeFailed = true;
-		sw_state->setValueInteger (0);
 		maskState (DOME_DOME_MASK, DOME_CLOSED, "dome opened with errror");
-		openDome ();
-		return -2;
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+
+		domeOpenStart ();
+		return USEC_SEC;
 	}
 	if (isMoving ())
 		return USEC_SEC;
@@ -341,18 +281,15 @@ Rts2DevDomeBootes1::isOpened ()
 
 
 int
-Rts2DevDomeBootes1::endOpen ()
+Bootes1B::endOpen ()
 {
-	if (!domeFailed)
-	{
-		sw_state->setValueInteger (1);
-	}
-	return Rts2DomeFord::endOpen ();
+	timeOpenClose = 0;
+	return 0;
 }
 
 
 int
-Rts2DevDomeBootes1::closeDome ()
+Bootes1B::startClose ()
 {
 	// we cannot close dome when we are still moving
 	if (getState () & DOME_CLOSING)
@@ -360,11 +297,6 @@ Rts2DevDomeBootes1::closeDome ()
 		if (isMoving ())
 			return 0;
 		return -1;
-	}
-	if ((getState () & DOME_CLOSED)
-		&& (getPortState (CLOSE_END_1) || getPortState (CLOSE_END_2)))
-	{
-		return 0;
 	}
 	if (getState () & DOME_OPENING)
 		return -1;
@@ -377,24 +309,25 @@ Rts2DevDomeBootes1::closeDome ()
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
-	return Rts2DomeFord::closeDome ();
+	return 0;
 }
 
 
 long
-Rts2DevDomeBootes1::isClosed ()
+Bootes1B::isClosed ()
 {
 	time_t now;
 	time (&now);
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeBootes1::isClosed dome timeout"
+		logStream (MESSAGE_ERROR) << "Bootes1B::isClosed dome timeout"
 			<< sendLog;
 		domeFailed = true;
-		sw_state->setValueInteger (0);
 		// cycle again..
 		maskState (DOME_DOME_MASK, DOME_OPENED, "failed closing");
-		closeDome ();
+		time (&timeOpenClose);
+		timeOpenClose += ROOF_TIMEOUT;
+		domeCloseStart ();
 		return USEC_SEC;
 	}
 	if (isMoving ())
@@ -410,14 +343,15 @@ Rts2DevDomeBootes1::isClosed ()
 
 
 int
-Rts2DevDomeBootes1::endClose ()
+Bootes1B::endClose ()
 {
-	return Rts2DomeFord::endClose ();
+	timeOpenClose = 0;
+	return 0;
 }
 
 
 int
-Rts2DevDomeBootes1::commandAuthorized (Rts2Conn * conn)
+Bootes1B::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("telon"))
 	{
@@ -429,13 +363,13 @@ Rts2DevDomeBootes1::commandAuthorized (Rts2Conn * conn)
 		VYP (TEL_SWITCH);
 		return 0;
 	}
-	return Rts2DomeFord::commandAuthorized (conn);
+	return Ford::commandAuthorized (conn);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevDomeBootes1 device = Rts2DevDomeBootes1 (argc, argv);
+	Bootes1B device = Bootes1B (argc, argv);
 	return device.run ();
 }

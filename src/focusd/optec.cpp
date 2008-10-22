@@ -117,6 +117,7 @@ Rts2DevFocuserOptec::init ()
 	}
 
 	optecConn = new Rts2ConnSerial (device_file, this, BS19200, C8, NONE, 40);
+	optecConn->setDebug (true);
 	ret = optecConn->init ();
 	if (ret)
 		return ret;
@@ -219,7 +220,7 @@ Rts2DevFocuserOptec::info ()
 int
 Rts2DevFocuserOptec::stepOut (int num)
 {
-	char command[7], rbuf[4];
+	char command[7], rbuf[7];
 	char add = ' ';
 	int ret;
 
@@ -244,8 +245,15 @@ Rts2DevFocuserOptec::stepOut (int num)
 
 	sprintf (command, "F%c%04d", add, num);
 
-	if (optecConn->writeRead (command, 6, rbuf, 3, '\r') < 0)
+	optecConn->setVTime (400);
+
+	ret = optecConn->writeRead (command, 6, rbuf, 6, '\r');
+
+	optecConn->setVTime (40);
+
+	if (ret < 0)
 		return -1;
+
 	if (rbuf[0] != '*')
 		return -1;
 

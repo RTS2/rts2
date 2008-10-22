@@ -1,40 +1,56 @@
-/*!
- * @file Dome control deamon for Dublin dome.
+/* 
+ * Driver for Watcher dome board.
+ * Copyright (C) 2005-2008 John French
+ * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
  *
- * $Id$
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * @author john
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <sys/io.h>
 
 #include "dome.h"
-#include "rts2connbufweather.h"
 
 #define ROOF_TIMEOUT  360		 // in seconds
 
-#define OPEN    2
-#define CLOSE   4
+#define OPEN  	  2
+#define CLOSE     4
 
 #define OPENING   2
 #define CLOSING   0
 
-#define WATCHER_DOME_OPEN 1
-#define WATCHER_DOME_CLOSED 0
-#define WATCHER_DOME_UNKNOWN  -1
+#define WATCHER_DOME_OPEN                 1
+#define WATCHER_DOME_CLOSED               0
+#define WATCHER_DOME_UNKNOWN             -1
 
-#define WATCHER_METEO_TIMEOUT 80
+#define WATCHER_METEO_TIMEOUT            80
 
-#define WATCHER_BAD_WEATHER_TIMEOUT 3600
-#define WATCHER_BAD_WINDSPEED_TIMEOUT 360
-#define WATCHER_CONN_TIMEOUT    360
+#define WATCHER_BAD_WEATHER_TIMEOUT    3600
+#define WATCHER_BAD_WINDSPEED_TIMEOUT   360
+#define WATCHER_CONN_TIMEOUT            360
 
-#define BASE 0xde00
+#define BASE                         0xde00
 
 typedef enum
 { TYPE_OPENED, TYPE_CLOSED, TYPE_STUCK }
 smsType_t;
 
-class Rts2DevDomeDublin:public Rts2DevDome
+using namespace rts2dome;
+
+namespace rts2dome
+{
+
+class Watcher:public Dome
 {
 	private:
 		int dome_state;
@@ -43,7 +59,6 @@ class Rts2DevDomeDublin:public Rts2DevDome
 		char *smsExec;
 		double cloud_bad;
 
-		Rts2ConnBufWeather *weatherConn;
 		bool isMoving ();
 
 		void executeSms (smsType_t type);
@@ -54,29 +69,28 @@ class Rts2DevDomeDublin:public Rts2DevDome
 		const char *isOnString (int mask);
 		int sendDublinMail (const char *subject);
 
+		Rts2ValueInteger *sw_state;
+
 	protected:
 		virtual int processOption (int in_opt);
-		virtual int isGoodWeather ();
 
 	public:
-		Rts2DevDomeDublin (int argc, char **argv);
-		virtual ~ Rts2DevDomeDublin (void);
+		Watcher (int argc, char **argv);
+		virtual ~ Watcher (void);
 		virtual int init ();
 		virtual int idle ();
 
-		virtual int ready ();
-		virtual int baseInfo ();
 		virtual int info ();
 
-		virtual int openDome ();
+		virtual int startOpen ();
 		virtual long isOpened ();
 		virtual int endOpen ();
-		virtual int closeDome ();
+		virtual int startClose ();
 		virtual long isClosed ();
 		virtual int endClose ();
 };
 
-Rts2DevDomeDublin::Rts2DevDomeDublin (int in_argc, char **in_argv):
+Watcher::Watcher (int in_argc, char **in_argv):
 Rts2DevDome (in_argc, in_argv)
 {
 	domeModel = "DUBLIN_DOME";
@@ -87,14 +101,12 @@ Rts2DevDome (in_argc, in_argv)
 	addOption ('b', "cloud_bad", 1,
 		"Close roof when cloud sensor value is bellow that number");
 
-	weatherConn = NULL;
-
 	timeOpenClose = 0;
 	domeFailed = false;
 }
 
 
-Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
+Watcher::~Watcher (void)
 {
 	outb (0, BASE);
 	// SWITCH OFF INTERFACE
@@ -103,7 +115,7 @@ Rts2DevDomeDublin::~Rts2DevDomeDublin (void)
 
 
 void
-Rts2DevDomeDublin::executeSms (smsType_t type)
+Watcher::executeSms (smsType_t type)
 {
 	char *cmd;
 	const char *msg;
@@ -129,7 +141,7 @@ Rts2DevDomeDublin::executeSms (smsType_t type)
 
 
 int
-Rts2DevDomeDublin::processOption (int in_opt)
+Watcher::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -147,20 +159,7 @@ Rts2DevDomeDublin::processOption (int in_opt)
 
 
 int
-Rts2DevDomeDublin::isGoodWeather ()
-{
-	if (getIgnoreMeteo () == true)
-		return 1;
-	if (!isnan (getCloud ()) && getCloud () <= cloud_bad)
-		return 0;
-	if (weatherConn)
-		return weatherConn->isGoodWeather ();
-	return 0;
-}
-
-
-int
-Rts2DevDomeDublin::init ()
+Watcher::init ()
 {
 	int ret, i;
 	ret = Rts2DevDome::init ();
@@ -184,20 +183,12 @@ Rts2DevDomeDublin::init ()
 	// SWITCH ON INTERFACE
 	outb (1, BASE + 1);
 
-	weatherConn =
-		new Rts2ConnBufWeather (5002, WATCHER_METEO_TIMEOUT,
-		WATCHER_CONN_TIMEOUT,
-		WATCHER_BAD_WEATHER_TIMEOUT,
-		WATCHER_BAD_WINDSPEED_TIMEOUT, this);
-	weatherConn->init ();
-	addConnection (weatherConn);
-
 	return 0;
 }
 
 
 int
-Rts2DevDomeDublin::idle ()
+Watcher::idle ()
 {
 	// check for weather..
 	if (isGoodWeather ())
@@ -226,38 +217,18 @@ Rts2DevDomeDublin::idle ()
 
 
 int
-Rts2DevDomeDublin::ready ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeDublin::baseInfo ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevDomeDublin::info ()
+Watcher::info ()
 {
 	// switches are both off either when we move enclosure or when dome failed
 	if (domeFailed || timeOpenClose > 0)
 		sw_state->setValueInteger (0);
-
-	if (weatherConn)
-	{
-		setRain (weatherConn->getRain ());
-		setWindSpeed (weatherConn->getWindspeed ());
-	}
 
 	return Rts2DevDome::info ();
 }
 
 
 bool
-Rts2DevDomeDublin::isMoving ()
+Watcher::isMoving ()
 {
 	int result;
 	int moving = 0;
@@ -280,7 +251,7 @@ Rts2DevDomeDublin::isMoving ()
 
 
 void
-Rts2DevDomeDublin::openDomeReal ()
+Watcher::openDomeReal ()
 {
 	outb (OPEN, BASE);
 
@@ -293,7 +264,7 @@ Rts2DevDomeDublin::openDomeReal ()
 
 
 int
-Rts2DevDomeDublin::openDome ()
+Watcher::openDome ()
 {
 	if (!isGoodWeather ())
 		return -1;
@@ -310,14 +281,14 @@ Rts2DevDomeDublin::openDome ()
 
 
 long
-Rts2DevDomeDublin::isOpened ()
+Watcher::isOpened ()
 {
 	time_t now;
 	time (&now);
 	// timeout
 	if (now > timeOpenClose)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isOpened timeout" <<
+		logStream (MESSAGE_ERROR) << "Watcher::isOpened timeout" <<
 			sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
@@ -331,7 +302,7 @@ Rts2DevDomeDublin::isOpened ()
 
 
 int
-Rts2DevDomeDublin::endOpen ()
+Watcher::endOpen ()
 {
 	timeOpenClose = 0;
 	dome_state = WATCHER_DOME_OPEN;
@@ -345,7 +316,7 @@ Rts2DevDomeDublin::endOpen ()
 
 
 void
-Rts2DevDomeDublin::closeDomeReal ()
+Watcher::closeDomeReal ()
 {
 	outb (CLOSE, BASE);
 
@@ -358,7 +329,7 @@ Rts2DevDomeDublin::closeDomeReal ()
 
 
 int
-Rts2DevDomeDublin::closeDome ()
+Watcher::closeDome ()
 {
 	// we cannot close dome when we are still moving
 	if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
@@ -374,13 +345,13 @@ Rts2DevDomeDublin::closeDome ()
 
 
 long
-Rts2DevDomeDublin::isClosed ()
+Watcher::isClosed ()
 {
 	time_t now;
 	time (&now);
 	if (now > timeOpenClose)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevDomeDublin::isClosed dome timeout"
+		logStream (MESSAGE_ERROR) << "Watcher::isClosed dome timeout"
 			<< sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
@@ -393,7 +364,7 @@ Rts2DevDomeDublin::isClosed ()
 
 
 int
-Rts2DevDomeDublin::endClose ()
+Watcher::endClose ()
 {
 	timeOpenClose = 0;
 	dome_state = WATCHER_DOME_CLOSED;
@@ -407,14 +378,14 @@ Rts2DevDomeDublin::endClose ()
 
 
 const char *
-Rts2DevDomeDublin::isOnString (int mask)
+Watcher::isOnString (int mask)
 {
 	return (sw_state->getValueInteger () & mask) ? "on" : "off";
 }
 
 
 int
-Rts2DevDomeDublin::sendDublinMail (const char *subject)
+Watcher::sendDublinMail (const char *subject)
 {
 	char *text;
 	int ret;
@@ -436,6 +407,6 @@ Rts2DevDomeDublin::sendDublinMail (const char *subject)
 int
 main (int argc, char **argv)
 {
-	Rts2DevDomeDublin device = Rts2DevDomeDublin (argc, argv);
+	Watcher device = Watcher (argc, argv);
 	return device.run ();
 }

@@ -26,23 +26,23 @@
 
 // custom configuration values
 
-#define OPT_VERSION 999
-#define OPT_DATABASE  1000
-#define OPT_CONFIG  1001
+#define OPT_VERSION      999
+#define OPT_DATABASE    1000
+#define OPT_CONFIG      1001
 
-#define OPT_LOCALHOST 1002
-#define OPT_SERVER  1003
-#define OPT_PORT  1004
+#define OPT_LOCALHOST   1002
+#define OPT_SERVER      1003
+#define OPT_PORT        1004
 
-#define OPT_LOCALPORT 1005
+#define OPT_LOCALPORT   1005
 
-#define OPT_MODEFILE  1006
-#define OPT_LOGFILE 1007
+#define OPT_MODEFILE    1006
+#define OPT_LOGFILE     1007
 
 /**
  * Start of local option number playground.
  */
-#define OPT_LOCAL 10000
+#define OPT_LOCAL      10000
 
 /**
  * A program option.

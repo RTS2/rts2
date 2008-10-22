@@ -487,14 +487,12 @@ Rts2DevScript::haveNextCommand (Rts2DevClient *devClient)
 	if (ret < 0 && script_connection->queEmptyForOriginator (devClient) && (queExpNum == NULL || queExpNum->getValueInteger () == 0))
 	{
 		deleteScript ();
-		//#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "Rts2DevScript::haveNextCommand this "
-			<< this
-			<< " for connection " << script_connection->getName ()
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "For connection " << script_connection->getName ()
 			<< " ret " << ret
 			<< " que_exp_num " << (queExpNum ? queExpNum->getValueInteger () : -1)
 			<< sendLog;
-		//#endif					 /* DEBUG_EXTRA */
+		#endif					 /* DEBUG_EXTRA */
 		startTarget ();
 		if (!script)
 		{

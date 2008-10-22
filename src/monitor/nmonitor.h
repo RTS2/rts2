@@ -127,6 +127,23 @@ class Rts2NMonitor:public Rts2Client
 		Rts2SimbadTarget *tarArg;
 	#endif						 /* HAVE_PGSQL_SOAP */
 
+		/**
+		 * Return connection at given number.
+		 *
+		 * @param i Number of connection which will be returned.
+		 *
+		 * @return NULL if connection with given number does not exists, or @see Rts2Conn reference if it does.
+		 */
+		Rts2Conn *connectionAt (unsigned int i)
+		{
+			if (i < getCentraldConns ()->size ())
+				return (*getCentraldConns ())[i];
+			i -= getCentraldConns ()->size ();
+			if (i >= getConnections ()->size ())
+				return NULL;
+			return (*getConnections ())[i];
+		}
+
 	protected:
 		virtual int processOption (int in_opt);
 	#ifdef HAVE_PGSQL_SOAP
@@ -145,7 +162,7 @@ class Rts2NMonitor:public Rts2Client
 		virtual int init ();
 		virtual int idle ();
 
-		virtual Rts2ConnClient *createClientConnection (char *in_deviceName);
+		virtual Rts2ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
@@ -168,10 +185,10 @@ class Rts2NMonConn:public Rts2ConnClient
 	private:
 		Rts2NMonitor * master;
 	public:
-		Rts2NMonConn (Rts2NMonitor * in_master,
-			char *in_name):Rts2ConnClient (in_master, in_name)
+		Rts2NMonConn (Rts2NMonitor * _master, int _centrald_num, char *_name)
+		:Rts2ConnClient (_master, _centrald_num, _name)
 		{
-			master = in_master;
+			master = _master;
 		}
 
 		virtual void commandReturn (Rts2Command * cmd, int in_status)

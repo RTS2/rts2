@@ -23,6 +23,8 @@ Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSe
 time_t in_fileCreationInterval, std::list < std::string > &in_logNames)
 :Rts2DevClient (in_conn)
 {
+	exp = NULL;
+
 	gettimeofday (&nextInfoCall, NULL);
 	numberSec.tv_sec = (int) (floor (in_numberSec));
 	numberSec.tv_usec = (int) (USEC_SEC * (in_numberSec - floor (in_numberSec)));

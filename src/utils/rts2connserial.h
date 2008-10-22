@@ -18,23 +18,27 @@
  */
 
 #include "rts2connnosend.h"
+#include <termios.h>
 
 /**
  * Enum for baud speeds.
  */
-typedef enum {BS2400, BS4800, BS9600, BS19200, BS57600, BS115200}
+typedef enum
+{BS2400, BS4800, BS9600, BS19200, BS57600, BS115200}
 bSpeedT;
 
 /**
  * Enum for data size.
  */
-typedef enum {C7, C8}
+typedef enum
+{C7, C8}
 cSizeT;
 
 /**
  * Enum for parity.
  */
-typedef enum {NONE, ODD, EVEN}
+typedef enum
+{NONE, ODD, EVEN}
 parityT;
 
 /**
@@ -51,6 +55,8 @@ parityT;
 class Rts2ConnSerial: public Rts2ConnNoSend
 {
 	private:
+		struct termios s_termios;
+
 		bSpeedT baudSpeed;
 
 		cSizeT cSize;
@@ -76,26 +82,40 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		{
 			return vTime;
 		}
+
+		// set s_termios to port..
+		int setAttr ();
 	public:
 		/**
 		 * Create connection to serial port.
 		 *
-		 * @param in_devName   Device name (ussually /dev/ttySx)
-		 * @param in_master    Controlling block
-		 * @param in_baudSpeed Device baud speed
-		 * @param in_cSize     Character bits size (7 or 8 bits)
-		 * @param in_parity    Device parity.
-		 * @param in_vTime     Time to wait for single read before giving up.
+		 * @param _devName   Device name (ussually /dev/ttySx)
+		 * @param _master    Controlling block
+		 * @param _baudSpeed Device baud speed
+		 * @param _cSize     Character bits size (7 or 8 bits)
+		 * @param _parity    Device parity.
+		 * @param _vTime     Time to wait for single read before giving up.
 		 */
-		Rts2ConnSerial (const char *in_devName, Rts2Block * in_master,
-			bSpeedT in_baudSpeed = BS9600, cSizeT in_cSize = C8,
-			parityT in_parity = NONE, int in_vTime = 40);
+		Rts2ConnSerial (const char *_devName, Rts2Block * _master,
+			bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8,
+			parityT _parity = NONE, int _vTime = 40);
 		virtual ~Rts2ConnSerial (void);
 
 		/**
 		 * Init serial port.
+		 *
+		 * @return -1 on error, 0 on success.
 		 */
 		virtual int init ();
+
+		/**
+		 * Set socket vtime. VTIME is used with a serial port
+		 * to specify time in decaseconds, for how long device will wait 
+		 * during read call for character from serial port.
+		 *
+		 * @param _vtime New VTIME value (in decaseconds).
+		 */
+		int setVTime (int _vtime);
 
 		/**
 		 * Write single character to serial port.
@@ -152,6 +172,11 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * Flush serial port (make sure all data were sended and received).
 		 */
 		int flushPortIO ();
+
+		/**
+		 * Flush serial port output (make sure that all data were written)
+		 */
+		int flushPortO ();
 
 		/**
 		 * Set if debug messages from port communication will be printed.

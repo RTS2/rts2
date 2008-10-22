@@ -573,14 +573,27 @@ class LibnovaDate
 			ln_get_date_from_timet (t, &date);
 		}
 
-		LibnovaDate (struct ln_date *in_date)
+		LibnovaDate (struct ln_date *_date)
 		{
-			date.years = in_date->years;
-			date.months = in_date->months;
-			date.days = in_date->days;
-			date.hours = in_date->hours;
-			date.minutes = in_date->minutes;
-			date.seconds = in_date->seconds;
+			date.years = _date->years + 1900;
+			date.months = _date->months + 1;
+			date.days = _date->days;
+			date.hours = _date->hours;
+			date.minutes = _date->minutes;
+			date.seconds = _date->seconds;
+		}
+
+		/**
+		 * Construct date from system struct tm.
+		 */
+		LibnovaDate (struct tm *_date)
+		{
+			date.years = _date->tm_year + 1900;
+			date.months = _date->tm_mon + 1;
+			date.days = _date->tm_mday;
+			date.hours = _date->tm_hour;
+			date.minutes = _date->tm_min;
+			date.seconds = _date->tm_sec;
 		}
 
 		void getTimeT (time_t * t)

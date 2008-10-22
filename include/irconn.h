@@ -79,7 +79,7 @@ class IrConn
 			strcpy (vName, name);
 			strcat (vName, ".VERSION");
 
-			status = tpl_get (name, ver, &status);
+			status = tpl_get (vName, ver, &status);
 
 			delete []vName;
 
@@ -200,7 +200,7 @@ IrConn::tpl_get (const char *name, T & val, int *status)
 template < typename T > int
 IrConn::tpl_set (const char *name, T val, int *status)
 {
-	//  int cstatus;
+	// int cstatus;
 
 	if (*status == TPL_OK)
 	{
@@ -208,16 +208,15 @@ IrConn::tpl_set (const char *name, T val, int *status)
 		logStream (MESSAGE_DEBUG) << "tpl_set name " << name << " val " << val
 			<< sendLog;
 		#endif
-								 // change to set...?
-		tplc->Set (name, Value (val), false);
-		//      cstatus = r->Wait (5000);
+		
+		// autodispose work only correctly only with new TPL library
+		tplc->Set (name, Value (val), true);
 
 		#ifdef DEBUG_ALL
 		if (!*status)
 			std::cout << "tpl_set name " << name << " val " << val << std::endl;
 		#endif
 
-		//      delete r;
 	}
 	return *status;
 }
@@ -235,7 +234,6 @@ IrConn::tpl_setw (const char *name, T val, int *status)
 			<< sendLog;
 		#endif
 
-								 // change to set...?
 		Request *r = tplc->Set (name, Value (val), false);
 		cstatus = r->Wait (5000);
 

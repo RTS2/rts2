@@ -19,12 +19,18 @@
 
 #include "centrald.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2centralstate.h"
 #include "../utils/timestamp.h"
 
 void
 Rts2ConnCentrald::setState (int in_value)
 {
 	Rts2Conn::setState (in_value);
+	// distribute weather updates..
+	if (serverState->maskValueChanged (WEATHER_MASK))
+	{
+		master->weatherChanged ();
+	}
 	if (serverState->maskValueChanged (BOP_MASK))
 	{
 		master->bopMaskChanged ();
@@ -71,9 +77,6 @@ Rts2ConnCentrald::priorityCommand ()
 		timeout += time (NULL);
 	}
 
-	//sendValue ("old_priority", getPriority (), getCentraldId ());
-	//sendValue ("actual_priority", master->getPriorityClient (), getPriority ());
-
 	setPriority (new_priority);
 
 	if (master->changePriority (timeout))
@@ -82,8 +85,6 @@ Rts2ConnCentrald::priorityCommand ()
 		return -1;
 	}
 
-	//sendValue ("new_priority", master->getPriorityClient (), getPriority ());
-
 	return 0;
 }
 
@@ -91,7 +92,10 @@ Rts2ConnCentrald::priorityCommand ()
 int
 Rts2ConnCentrald::sendDeviceKey ()
 {
-	int dev_key = random ();
+	int dev_key;
+	dev_key = random ();
+	if (dev_key == 0)
+		dev_key = 1;
 	char *msg;
 	// device number could change..device names don't
 	char *dev_name;
@@ -129,18 +133,18 @@ Rts2ConnCentrald::sendInfo ()
 		return -2;
 
 	connections_t::iterator iter;
-	for (iter = master->connectionBegin ();
-		iter != master->connectionEnd (); iter++)
+	for (iter = master->getConnections ()->begin (); iter != master->getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
-		conn->sendInfo (this);
+		conn->sendConnectedInfo (this);
 	}
+	((Rts2Centrald *)getMaster ())->sendInfo (this);
 	return 0;
 }
 
 
 int
-Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
+Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 {
 	char *msg;
 	int ret = -1;
@@ -155,18 +159,15 @@ Rts2ConnCentrald::sendInfo (Rts2Conn * conn)
 			free (msg);
 			break;
 		case DEVICE_SERVER:
-			asprintf (&msg, "device %i %s %s %i %i",
-				getCentraldId (), getName (), hostname, port, device_type);
+			asprintf (&msg, "device %i %i %s %s %i %i",
+				getCentraldNum (), getCentraldId (), getName (), hostname, port, device_type);
 			ret = conn->sendMsg (msg);
 			free (msg);
 			break;
 		default:
 			break;
 	}
-	if (ret)
-		return ret;
-	// send connection values
-	return ((Rts2Centrald *) getMaster ())->sendInfo (conn);
+	return ret;
 }
 
 
@@ -206,6 +207,7 @@ Rts2ConnCentrald::commandDevice ()
 
 		if (client < 0)
 		{
+			logStream (MESSAGE_ERROR) << "invalid client ID requested for authentification: " << client << " from " << getName () << sendLog;
 			return -2;
 		}
 
@@ -222,8 +224,7 @@ Rts2ConnCentrald::commandDevice ()
 		if (conn->getKey () == 0)
 		{
 			sendAValue ("authorization_failed", client);
-			sendCommandEnd (DEVDEM_E_SYSTEM,
-				"client didn't ask for authorization");
+			sendCommandEnd (DEVDEM_E_SYSTEM, "client didn't ask for authorization");
 			return -1;
 		}
 
@@ -262,7 +263,11 @@ Rts2ConnCentrald::commandDevice ()
 	}
 	if (isCommand ("off"))
 	{
-		return master->changeStateOff (getName ());
+		return master->changeStateHardOff (getName ());
+	}
+	if (isCommand ("soft_off"))
+	{
+		return master->changeStateSoftOff (getName ());
 	}
 	return Rts2Conn::command ();
 }
@@ -349,7 +354,11 @@ Rts2ConnCentrald::commandClient ()
 		}
 		if (isCommand ("off"))
 		{
-			return master->changeStateOff (login);
+			return master->changeStateHardOff (login);
+		}
+		if (isCommand ("soft_off"))
+		{
+			return master->changeStateSoftOff (login);
 		}
 	}
 	return Rts2Conn::command ();
@@ -387,12 +396,16 @@ Rts2ConnCentrald::command ()
 	{
 		if (getType () == NOT_DEFINED_SERVER)
 		{
+			int centraldNum;
 			char *reg_device;
 			char *in_hostname;
 			char *msg;
 
-			if (paramNextString (&reg_device) || paramNextInteger (&device_type)
-				|| paramNextString (&in_hostname) || paramNextInteger (&port)
+			if (paramNextInteger (&centraldNum)
+			  	|| paramNextString (&reg_device)
+				|| paramNextInteger (&device_type)
+				|| paramNextString (&in_hostname)
+				|| paramNextInteger (&port)
 				|| !paramEnd ())
 				return -2;
 
@@ -402,7 +415,7 @@ Rts2ConnCentrald::command ()
 				return -1;
 			}
 
-			setName (reg_device);
+			setName (centraldNum, reg_device);
 			strncpy (hostname, in_hostname, HOST_NAME_MAX);
 
 			setType (DEVICE_SERVER);
@@ -445,11 +458,9 @@ Rts2ConnCentrald::command ()
 
 
 Rts2Centrald::Rts2Centrald (int argc, char **argv)
-:Rts2Daemon (argc, argv)
+:Rts2Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
 {
 	connNum = 0;
-
-	setState (SERVERD_OFF, "Initial configuration");
 
 	configFile = NULL;
 	logFileSource = LOGFILE_DEF;
@@ -459,6 +470,9 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 
 	createValue (morning_off, "morning_off", "switch to off at the morning", false);
 	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
+
+	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false);
+	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
 
 	createValue (priorityClient, "priority_client", "client which have priority", false);
 	createValue (priority, "priority", "current priority level", false);
@@ -492,8 +506,13 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 
 Rts2Centrald::~Rts2Centrald (void)
 {
-	fileLog->close ();
-	delete fileLog;
+	if (fileLog)
+        {
+		fileLog->close ();
+		delete fileLog;
+	}
+	// do not report any priority changes
+	priority_client = -2;
 }
 
 
@@ -536,6 +555,8 @@ Rts2Centrald::reloadConfig ()
 
 	observerLng->setValueDouble (observer->lng);
 	observerLat->setValueDouble (observer->lat);
+
+	requiredDevices->setValueArray (config->observatoryRequiredDevices ());
 
 	double t_h;
 	config->getDouble ("observatory", "night_horizon", t_h, -10);
@@ -587,6 +608,8 @@ Rts2Centrald::init ()
 	if (ret)
 		return ret;
 
+	srandom (time (NULL));
+
 	ret = reloadConfig ();
 	if (ret)
 		return ret;
@@ -595,8 +618,13 @@ Rts2Centrald::init ()
 	morning_off->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_off", true));
 	morning_standby->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_standby", true));
 
-	centraldConnRunning ();
-	ret = checkLockFile (LOCK_PREFIX "centrald");
+	centraldConnRunning (NULL);
+	
+	char *lF;
+	asprintf (&lF, LOCK_PREFIX "centrald_%i", getPort ());
+	ret = checkLockFile (lF);
+	free (lF);
+
 	if (ret)
 		return ret;
 	ret = doDeamonize ();
@@ -624,11 +652,11 @@ Rts2Centrald::initValues ()
 
 	if (config->getBoolean ("centrald", "reboot_on", false))
 	{
-		setState (call_state, "switched on centrald reboot");
+		maskState (SERVERD_STATUS_MASK, call_state, "switched on centrald reboot");
 	}
 	else
 	{
-		setState (SERVERD_OFF, "switched on centrald reboot");
+		maskState (SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "switched on centrald reboot");
 	}
 
 	nextStateChange->setValueTime (next_event_time);
@@ -649,12 +677,30 @@ Rts2Centrald::setValue (Rts2Value *old_value, Rts2Value *new_value)
 void
 Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
+	// update weather
+	weatherChanged ();
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
+	connections_t::iterator iter;
 	// and make sure we aren't the last who block status info
-	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		(*iter)->updateStatusWait (NULL);
+	}
+}
+
+
+void
+Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
+{
+	Rts2Daemon::stateChanged (new_state, old_state, description);
+	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
+	{
+	  	logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
+			<< " to " << Rts2CentralState::getString (getState ())
+			<< " description " << description
+			<< sendLog;
+		sendStatusMessage (getState ());
 	}
 }
 
@@ -671,10 +717,10 @@ void
 Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2Conn *conn = *iter;
-		added->sendInfo (conn);
+		added->sendConnectedInfo (conn);
 	}
 }
 
@@ -683,7 +729,7 @@ Rts2Conn *
 Rts2Centrald::getConnection (int conn_num)
 {
 	connections_t::iterator iter;
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *conn = (Rts2ConnCentrald *) * iter;
 		if (conn->getCentraldId () == conn_num)
@@ -696,10 +742,9 @@ Rts2Centrald::getConnection (int conn_num)
 int
 Rts2Centrald::changeState (int new_state, const char *user)
 {
-	logStream (MESSAGE_INFO) << "State switched to " << new_state << " by " <<
+	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
 		user << sendLog;
-	setState (new_state, user);
-	sendStatusMessage (getState ());
+	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
 }
 
@@ -707,6 +752,10 @@ Rts2Centrald::changeState (int new_state, const char *user)
 int
 Rts2Centrald::changePriority (time_t timeout)
 {
+	// do not perform any priority changes
+	if (priority_client == -2)
+		return 0;
+
 	int new_priority_client = -1;
 	int new_priority_max = 0;
 	connections_t::iterator iter;
@@ -719,7 +768,7 @@ Rts2Centrald::changePriority (time_t timeout)
 		new_priority_max = conn->getPriority ();
 	}
 	// find new client with highest priority
-	for (iter = connectionBegin (); iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		conn = *iter;
 		if (conn->getPriority () > new_priority_max)
@@ -767,9 +816,6 @@ Rts2Centrald::idle ()
 	int call_state;
 	int old_current_state;
 
-	if ((getState () & SERVERD_STATUS_MASK) == SERVERD_OFF)
-		return Rts2Daemon::idle ();
-
 	curr_time = time (NULL);
 
 	if (curr_time < next_event_time)
@@ -790,30 +836,30 @@ Rts2Centrald::idle ()
 			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		{
 			if (morning_off->getValueBool ())
-				setState (SERVERD_OFF, "by idle routine");
+				maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
 			else if (morning_standby->getValueBool ())
-				setState (call_state | SERVERD_STANDBY, "by idle routine");
+				maskState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
 			else
-				setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
-					"by idle routine");
+				maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 		}
 		else
 		{
-			setState ((getState () & SERVERD_STANDBY_MASK) | call_state,
-				"by idle routine");
+			maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
 		}
 
-		// distribute new state
-		if (getState () != old_current_state)
-		{
-			logStream (MESSAGE_INFO) << "changed state from " <<
-				old_current_state << " to " << getState () << sendLog;
-			sendStatusMessage (getState ());
-		}
 		// send update about next state transits..
 		infoAll ();
 	}
 	return Rts2Daemon::idle ();
+}
+
+
+void
+Rts2Centrald::deviceReady (Rts2Conn * conn)
+{
+	Rts2Daemon::deviceReady (conn);
+	// check again for weather state..
+	weatherChanged ();
 }
 
 
@@ -860,10 +906,56 @@ Rts2Centrald::signaledHUP ()
 
 
 void
+Rts2Centrald::weatherChanged ()
+{
+	// state of the required devices
+	std::vector <std::string> failedArr;
+	std::vector <std::string>::iterator namIter;
+	for (namIter = requiredDevices->valueBegin (); namIter != requiredDevices->valueEnd (); namIter++)
+		failedArr.push_back (*namIter);
+
+	connections_t::iterator iter;
+	// check if some connection block weather
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter ++)
+	{
+		// if connection is required..
+		namIter = std::find (failedArr.begin (), failedArr.end (), std::string ((*iter)->getName ()));
+		if (namIter != failedArr.end ())
+		{
+			if ((*iter)->isGoodWeather () == true && (*iter)->isConnState (CONN_CONNECTED))
+				failedArr.erase (namIter);
+			// otherwise, connection name will not be erased from 
+			// failedArr, so failedArr size will be larger then 0,
+			// so newWeather will be set to false in size check - few lines
+			// bellow.
+		}
+		else  if ((*iter)->isGoodWeather () == false)
+		{
+			failedArr.push_back ((*iter)->getName ());
+		}
+
+	}
+	failedDevices->setValueArray (failedArr);
+	sendValueAll (failedDevices);
+
+	setWeatherState (failedArr.size () > 0 ? false : true);
+	if (failedArr.size () > 0)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "failed devices:";
+		for (namIter = failedArr.begin (); namIter != failedArr.end (); namIter++)
+			ls << " " << (*namIter);
+		ls << sendLog;
+	}
+}
+
+
+void
 Rts2Centrald::bopMaskChanged ()
 {
 	int bopState = 0;
-	for (connections_t::iterator iter = connectionBegin (); iter != connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		bopState |= (*iter)->getBopState ();
 		if ((*iter)->getType () == DEVICE_SERVER)
@@ -880,8 +972,8 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
 	int s_count = 0;
 	// update system status
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2ConnCentrald *test_conn = (Rts2ConnCentrald *) * iter;
 		// do not request status from client connections
@@ -919,9 +1011,9 @@ Rts2Centrald::getStateForConnection (Rts2Conn * conn)
 	int sta = getState ();
 	// get rid of BOP mask
 	sta &= ~BOP_MASK & ~DEVICE_ERROR_MASK;
+	connections_t::iterator iter;
 	// cretae BOP mask for device
-	for (connections_t::iterator iter = connectionBegin ();
-		iter != connectionEnd (); iter++)
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		Rts2Conn *test_conn = *iter;
 		if (Rts2Config::instance ()->blockDevice (conn->getName (), test_conn->getName ()) == false)

@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, int border):
-Rts2NLayout ()
+Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, bool border)
+:Rts2NLayout ()
 {
 	if (h <= 0)
 		h = 0;
@@ -17,16 +17,8 @@ Rts2NLayout ()
 	window = newwin (h, w, y, x);
 	if (!window)
 		errorMove ("newwin", y, x, h, w);
-	switch (border)
-	{
-		case 0:
-			_haveBox = false;
-			break;
-		case 1:
-			box (window, 0, 0);
-			_haveBox = true;
-			break;
-	}
+	_haveBox = border;
+	active = false;
 }
 
 
@@ -49,7 +41,15 @@ Rts2NWindow::draw ()
 	werase (window);
 	if (haveBox ())
 	{
-		box (window, 0, 0);
+		if (isActive ())
+			wborder (window, A_REVERSE | ACS_VLINE, A_REVERSE | ACS_VLINE,
+			A_REVERSE | ACS_HLINE, A_REVERSE | ACS_HLINE,
+			A_REVERSE | ACS_ULCORNER,
+			A_REVERSE | ACS_URCORNER,
+			A_REVERSE | ACS_LLCORNER,
+			A_REVERSE | ACS_LRCORNER);
+		else
+			box (window, 0, 0);
 	}
 }
 
@@ -111,7 +111,7 @@ Rts2NWindow::getHeight ()
 int
 Rts2NWindow::getWriteWidth ()
 {
-	int ret = getHeight ();
+	int ret = getWidth ();
 	if (haveBox ())
 		return ret - 2;
 	return ret;
@@ -185,16 +185,19 @@ Rts2NWindow::refresh ()
 void
 Rts2NWindow::enter ()
 {
+	active = true;
 }
 
 
 void
 Rts2NWindow::leave ()
 {
+	active = false;
 }
 
 
-bool Rts2NWindow::setCursor ()
+bool
+Rts2NWindow::setCursor ()
 {
 	return false;
 }

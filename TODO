@@ -1,3 +1,7 @@
+* document telescope driver
+* document copula synchronization
+* document meteo polludp changes/put them to svn
+
 * camd autoDarking
 * image que processing
   - finish obs, .. processing
