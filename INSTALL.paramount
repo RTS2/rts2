@@ -1,0 +1,16 @@
+Instructions to install Software Bisque Paramount driver
+========================================================
+
+You need to obtain libmks3.h and libmks3.o files. Please ask petr@kubanek.net
+for details how to get them.
+
+Download them to $HOME/paracl directory.
+
+Then run from RTS2 code (see generic instructions in INSTALL file):
+
+user@host:~/rts2$ ./configure --without-wcs --with-paracl=$HOME/paracl
+
+This will tell buidl system to build with paramount libraries.
+
+Then run make and (as root) make install. Please see RUN file for details on
+that.
