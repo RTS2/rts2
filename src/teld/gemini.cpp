@@ -57,35 +57,11 @@
 #define OPT_FORCETYPE            OPT_LOCAL + 13
 #define OPT_FORCELATLON          OPT_LOCAL + 14
 
-int arr[] = { 0, 1, 2, 3 };
 
-struct searchDirs_t
+namespace rts2teld
 {
-	short raDiv;
-	short decDiv;
-};
 
-searchDirs_t searchDirs[SEARCH_STEPS] =
-{
-	{0, 1},
-	{0, -1},
-	{0, -1},
-	{0, 1},
-	{1, 0},
-	{-1, 0},
-	{-1, 0},
-	{1, 0},
-	{1, 1},
-	{-1, -1},
-	{-1, -1},
-	{1, 1},
-	{-1, 1},
-	{1, -1},
-	{1, -1},
-	{-1, 1}
-};
-
-class Rts2DevTelescopeGemini:public Rts2DevTelescope
+class Gemini:public Rts2DevTelescope
 {
 	private:
 
@@ -357,19 +333,8 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 	#endif
 		bool guideDetected;
 
-		void clearSearch ();
-		// execute next search step, if necessary
-		int changeSearch ();
-
 		void getAxis ();
 		int parkBootesSensors ();
-
-		int searchStep;
-		long searchUsecTime;
-
-		short lastSearchRaDiv;
-		short lastSearchDecDiv;
-		struct timeval nextSearchStep;
 
 		int32_t worm;
 		int worm_move_needed;	 // 1 if we need to put mount to 130 tracking (we are performing RA move)
@@ -403,8 +368,8 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2DevTelescopeGemini (int argc, char **argv);
-		virtual ~ Rts2DevTelescopeGemini (void);
+		Gemini (int argc, char **argv);
+		virtual ~ Gemini (void);
 		virtual int init ();
 		virtual int changeMasterState (int new_state);
 		virtual int ready ();
@@ -416,10 +381,6 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		//		virtual int startMoveFixed (double tar_ha, double tar_dec);
 		//		virtual int isMovingFixed ();
 		//		virtual int endMoveFixed ();
-		virtual int startSearch ();
-		virtual int isSearching ();
-		virtual int stopSearch ();
-		virtual int endSearch ();
 		virtual int startPark ();
 		virtual int isParking ();
 		virtual int endPark ();
@@ -439,8 +400,12 @@ class Rts2DevTelescopeGemini:public Rts2DevTelescope
 		virtual int getFlip ();
 };
 
+}
+
+using namespace rts2teld;
+
 int
-Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
+Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
 	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
@@ -455,7 +420,7 @@ Rts2DevTelescopeGemini::tel_write_read (const char *buf, int wcount, char *rbuf,
 
 
 int
-Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
+Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	if (tmp_rcount < 0)
@@ -470,7 +435,7 @@ Rts2DevTelescopeGemini::tel_write_read_hash (const char *wbuf, int wcount, char 
 
 
 int
-Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
+Gemini::readDate (struct tm *_tm, const char *command)
 {
 	char wbuf[11];
 	int ret;
@@ -491,7 +456,7 @@ Rts2DevTelescopeGemini::readDate (struct tm *_tm, const char *command)
 
 
 int
-Rts2DevTelescopeGemini::readHMS (double *hmsptr, const char *command)
+Gemini::readHMS (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -504,7 +469,7 @@ Rts2DevTelescopeGemini::readHMS (double *hmsptr, const char *command)
 
 
 unsigned char
-Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
+Gemini::tel_gemini_checksum (const char *buf)
 {
 	unsigned char checksum = 0;
 	for (; *buf; buf++)
@@ -516,7 +481,7 @@ Rts2DevTelescopeGemini::tel_gemini_checksum (const char *buf)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
+Gemini::tel_gemini_setch (int id, char *in_buf)
 {
 	int len;
 	char *buf;
@@ -536,7 +501,7 @@ Rts2DevTelescopeGemini::tel_gemini_setch (int id, char *in_buf)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
+Gemini::tel_gemini_set (int id, int32_t val)
 {
 	char buf[15];
 	int len;
@@ -551,7 +516,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, int32_t val)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
+Gemini::tel_gemini_set (int id, double val)
 {
 	char buf[15];
 	int len;
@@ -566,7 +531,7 @@ Rts2DevTelescopeGemini::tel_gemini_set (int id, double val)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
+Gemini::tel_gemini_getch (int id, char *buf)
 {
 	char *ptr;
 	unsigned char checksum, cal;
@@ -599,7 +564,7 @@ Rts2DevTelescopeGemini::tel_gemini_getch (int id, char *buf)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t & val)
+Gemini::tel_gemini_get (int id, int32_t & val)
 {
 	char buf[9], *ptr, checksum;
 	int len, ret;
@@ -631,7 +596,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int32_t & val)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_get (int id, double &val)
+Gemini::tel_gemini_get (int id, double &val)
 {
 	char buf[9], *ptr, checksum;
 	int len, ret;
@@ -663,7 +628,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, double &val)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_get (int id, int &val1, int &val2)
+Gemini::tel_gemini_get (int id, int &val1, int &val2)
 {
 	char buf[20], *ptr;
 	int ret;
@@ -683,7 +648,7 @@ Rts2DevTelescopeGemini::tel_gemini_get (int id, int &val1, int &val2)
 
 
 int
-Rts2DevTelescopeGemini::tel_gemini_reset ()
+Gemini::tel_gemini_reset ()
 {
 	char rbuf[50];
 
@@ -725,7 +690,7 @@ Rts2DevTelescopeGemini::tel_gemini_reset ()
 
 
 int
-Rts2DevTelescopeGemini::matchTime ()
+Gemini::matchTime ()
 {
 	struct tm ts;
 	time_t t;
@@ -766,7 +731,7 @@ Rts2DevTelescopeGemini::matchTime ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_ra ()
+Gemini::tel_read_ra ()
 {
 	double t_telRa;
 	if (readHMS (&t_telRa, ":GR#"))
@@ -778,7 +743,7 @@ Rts2DevTelescopeGemini::tel_read_ra ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_dec ()
+Gemini::tel_read_dec ()
 {
 	double t_telDec;
 	if (readHMS (&t_telDec, ":GD#"))
@@ -789,7 +754,7 @@ Rts2DevTelescopeGemini::tel_read_dec ()
 
 
 int
-Rts2DevTelescopeGemini::getLocaltime ()
+Gemini::getLocaltime ()
 {
 	double t_telLocalTime;
 	struct tm _tm;
@@ -806,7 +771,7 @@ Rts2DevTelescopeGemini::getLocaltime ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_longtitude ()
+Gemini::tel_read_longtitude ()
 {
 	int ret;
 	double t_telLongitude;
@@ -819,7 +784,7 @@ Rts2DevTelescopeGemini::tel_read_longtitude ()
 
 
 int
-Rts2DevTelescopeGemini::tel_read_latitude ()
+Gemini::tel_read_latitude ()
 {
 	double t_telLatitude;
 	if (readHMS (&t_telLatitude, ":Gt#"))
@@ -830,7 +795,7 @@ Rts2DevTelescopeGemini::tel_read_latitude ()
 
 
 int
-Rts2DevTelescopeGemini::tel_rep_write (char *command)
+Gemini::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -857,7 +822,7 @@ Rts2DevTelescopeGemini::tel_rep_write (char *command)
 
 
 void
-Rts2DevTelescopeGemini::tel_normalize (double *ra, double *dec)
+Gemini::tel_normalize (double *ra, double *dec)
 {
 	*ra = ln_range_degrees (*ra);
 	if (*dec < -90)
@@ -869,7 +834,7 @@ Rts2DevTelescopeGemini::tel_normalize (double *ra, double *dec)
 
 
 int
-Rts2DevTelescopeGemini::tel_write_ra (double ra)
+Gemini::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -882,7 +847,7 @@ Rts2DevTelescopeGemini::tel_write_ra (double ra)
 
 
 int
-Rts2DevTelescopeGemini::tel_write_dec (double dec)
+Gemini::tel_write_dec (double dec)
 {
 	char command[15];
 	struct ln_dms dh;
@@ -901,7 +866,7 @@ Rts2DevTelescopeGemini::tel_write_dec (double dec)
 }
 
 
-Rts2DevTelescopeGemini::Rts2DevTelescopeGemini (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+Gemini::Gemini (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
 in_argv)
 {
 	createValue (telLocalTime, "localtime", "telescope local time", false);
@@ -964,29 +929,24 @@ in_argv)
 
 	decFlipLimit = 4000;
 
-	//clearSearch ();
-
-	createValue (centeringSpeed, "centeringSpeed",
-		"speed used for centering mount on target", false);
+	createValue (centeringSpeed, "centeringSpeed", "speed used for centering mount on target", false);
 	centeringSpeed->setValueInteger (2);
 
-	createValue (guidingSpeed, "guidingSpeed",
-		"speed used for guiding mount on target", false);
+	createValue (guidingSpeed, "guidingSpeed", "speed used for guiding mount on target", false);
 	guidingSpeed->setValueFloat (0.8);
 
-	createValue (guideLimit, "guideLimit", "limit to to change between ",
-		false);
+	createValue (guideLimit, "guideLimit", "limit to to change between ", false);
 	guideLimit->setValueDouble (5.0 / 60.0);
 }
 
 
-Rts2DevTelescopeGemini::~Rts2DevTelescopeGemini ()
+Gemini::~Gemini ()
 {
 }
 
 
 int
-Rts2DevTelescopeGemini::processOption (int in_opt)
+Gemini::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -1036,7 +996,7 @@ Rts2DevTelescopeGemini::processOption (int in_opt)
 
 
 int
-Rts2DevTelescopeGemini::geminiInit ()
+Gemini::geminiInit ()
 {
 	char rbuf[10];
 	int ret;
@@ -1078,7 +1038,7 @@ Rts2DevTelescopeGemini::geminiInit ()
 
 
 int
-Rts2DevTelescopeGemini::readRatiosInter (int startId)
+Gemini::readRatiosInter (int startId)
 {
 	int32_t t;
 	int res = 1;
@@ -1096,7 +1056,7 @@ Rts2DevTelescopeGemini::readRatiosInter (int startId)
 
 
 int
-Rts2DevTelescopeGemini::readRatios ()
+Gemini::readRatios ()
 {
 	raRatio = 0;
 	decRatio = 0;
@@ -1127,7 +1087,7 @@ Rts2DevTelescopeGemini::readRatios ()
 
 
 int
-Rts2DevTelescopeGemini::readLimits ()
+Gemini::readLimits ()
 {
 	// TODO read from 221 and 222
 	haMinusLimit = -94;
@@ -1137,7 +1097,7 @@ Rts2DevTelescopeGemini::readLimits ()
 
 
 int
-Rts2DevTelescopeGemini::setCorrection ()
+Gemini::setCorrection ()
 {
 	if (gem_version < 4)
 		return 0;
@@ -1157,7 +1117,7 @@ Rts2DevTelescopeGemini::setCorrection ()
 
 
 int
-Rts2DevTelescopeGemini::init ()
+Gemini::init ()
 {
 	int ret;
 
@@ -1199,7 +1159,7 @@ Rts2DevTelescopeGemini::init ()
 
 
 const char *
-Rts2DevTelescopeGemini::getGemType (int gem_type)
+Gemini::getGemType (int gem_type)
 {
 	switch (gem_type)
 	{
@@ -1221,7 +1181,7 @@ Rts2DevTelescopeGemini::getGemType (int gem_type)
 
 
 int
-Rts2DevTelescopeGemini::initValues ()
+Gemini::initValues ()
 {
 	int32_t gem_type;
 	char buf[5];
@@ -1303,7 +1263,7 @@ Rts2DevTelescopeGemini::initValues ()
 
 
 int
-Rts2DevTelescopeGemini::idle ()
+Gemini::idle ()
 {
 	int ret;
 	tel_gemini_get (130, worm);
@@ -1387,7 +1347,7 @@ Rts2DevTelescopeGemini::idle ()
 
 
 int
-Rts2DevTelescopeGemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Gemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == resetState)
 		return 0;
@@ -1396,7 +1356,7 @@ Rts2DevTelescopeGemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 
 int
-Rts2DevTelescopeGemini::changeMasterState (int new_state)
+Gemini::changeMasterState (int new_state)
 {
 	matchCount = 0;
 	return Rts2DevTelescope::changeMasterState (new_state);
@@ -1404,14 +1364,14 @@ Rts2DevTelescopeGemini::changeMasterState (int new_state)
 
 
 int
-Rts2DevTelescopeGemini::ready ()
+Gemini::ready ()
 {
 	return 0;
 }
 
 
 void
-Rts2DevTelescopeGemini::getAxis ()
+Gemini::getAxis ()
 {
 	int feature;
 	tel_gemini_get (311, feature);
@@ -1421,7 +1381,7 @@ Rts2DevTelescopeGemini::getAxis ()
 
 
 int
-Rts2DevTelescopeGemini::info ()
+Gemini::info ()
 {
 	telFlip->setValueInteger (0);
 
@@ -1441,7 +1401,7 @@ Rts2DevTelescopeGemini::info ()
 
 
 int
-Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
+Gemini::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, ":R%c#", new_rate);
@@ -1450,7 +1410,7 @@ Rts2DevTelescopeGemini::tel_set_rate (char new_rate)
 
 
 int
-Rts2DevTelescopeGemini::telescope_start_move (char direction)
+Gemini::telescope_start_move (char direction)
 {
 	char command[6];
 	// start worm if moving in RA DEC..
@@ -1477,7 +1437,7 @@ Rts2DevTelescopeGemini::telescope_start_move (char direction)
 
 
 int
-Rts2DevTelescopeGemini::telescope_stop_move (char direction)
+Gemini::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, ":Q%c#", direction);
@@ -1491,7 +1451,7 @@ Rts2DevTelescopeGemini::telescope_stop_move (char direction)
 
 
 void
-Rts2DevTelescopeGemini::telescope_stop_goto ()
+Gemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
 	tel_conn->writePort (":Q#", 3);
@@ -1505,7 +1465,7 @@ Rts2DevTelescopeGemini::telescope_stop_goto ()
 
 
 int
-Rts2DevTelescopeGemini::tel_start_move ()
+Gemini::tel_start_move ()
 {
 	char retstr;
 	char buf[55];
@@ -1531,7 +1491,7 @@ Rts2DevTelescopeGemini::tel_start_move ()
 
 
 int
-Rts2DevTelescopeGemini::startMove ()
+Gemini::startMove ()
 {
 	int newFlip = telFlip->getValueInteger ();
 	bool willFlip = false;
@@ -1669,8 +1629,7 @@ Rts2DevTelescopeGemini::startMove ()
 	else
 	{
 		tel_set_rate (RATE_CENTER);
-		tel_gemini_set (GEMINI_CMD_RATE_CENTER,
-			centeringSpeed->getValueInteger ());
+		tel_gemini_set (GEMINI_CMD_RATE_CENTER,	centeringSpeed->getValueInteger ());
 	}
 	worm_move_needed = 0;
 
@@ -1684,7 +1643,7 @@ Rts2DevTelescopeGemini::startMove ()
 
 
 int
-Rts2DevTelescopeGemini::isMoving ()
+Gemini::isMoving ()
 {
 	struct timeval now;
 	if (telMotorState != TEL_OK)
@@ -1695,7 +1654,7 @@ Rts2DevTelescopeGemini::isMoving ()
 	if (changeTime.tv_sec > 0)
 	{
 		if (isGuiding (&now))
-			return 0;
+			return USEC_SEC / 10;
 		if (nextChangeDec != 0)
 		{
 			// worm need to be started - most probably due to error in Gemini
@@ -1703,7 +1662,7 @@ Rts2DevTelescopeGemini::isMoving ()
 			// initiate dec change
 			if (changeDec ())
 				return -1;
-			return 0;
+			return USEC_SEC / 10;
 		}
 		return -2;
 	}
@@ -1748,7 +1707,7 @@ Rts2DevTelescopeGemini::isMoving ()
 		if (changeTimeRa.tv_sec == 0 && changeTimeRa.tv_usec == 0
 			&& changeTimeDec.tv_sec == 0 && changeTimeDec.tv_usec == 0)
 			return -2;
-		return 0;
+		return USEC_SEC / 10;
 	}
 	#endif
 	if (now.tv_sec > moveTimeout)
@@ -1763,7 +1722,7 @@ Rts2DevTelescopeGemini::isMoving ()
 
 
 int
-Rts2DevTelescopeGemini::endMove ()
+Gemini::endMove ()
 {
 	int32_t track;
 	#ifdef L4_GUIDE
@@ -1787,7 +1746,7 @@ Rts2DevTelescopeGemini::endMove ()
 
 
 int
-Rts2DevTelescopeGemini::stopMove ()
+Gemini::stopMove ()
 {
 	telescope_stop_goto ();
 	#ifdef L4_GUIDE
@@ -1802,7 +1761,7 @@ Rts2DevTelescopeGemini::stopMove ()
 
 /*
 int
-Rts2DevTelescopeGemini::startMoveFixedReal ()
+Gemini::startMoveFixedReal ()
 {
 	int ret;
 
@@ -1831,7 +1790,7 @@ Rts2DevTelescopeGemini::startMoveFixedReal ()
 
 /*
 int
-Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
+Gemini::startMoveFixed (double tar_ha, double tar_dec)
 {
 	int32_t ra_ind;
 	int32_t dec_ind;
@@ -1909,7 +1868,7 @@ Rts2DevTelescopeGemini::startMoveFixed (double tar_ha, double tar_dec)
 }
 
 int
-Rts2DevTelescopeGemini::isMovingFixed ()
+Gemini::isMovingFixed ()
 {
 	int ret;
 	ret = isMoving ();
@@ -1944,7 +1903,7 @@ Rts2DevTelescopeGemini::isMovingFixed ()
 }
 
 int
-Rts2DevTelescopeGemini::endMoveFixed ()
+Gemini::endMoveFixed ()
 {
 	int32_t track;
 	stopWorm ();
@@ -1956,158 +1915,9 @@ Rts2DevTelescopeGemini::endMoveFixed ()
 }
 */
 
-void
-Rts2DevTelescopeGemini::clearSearch ()
-{
-	searchStep = 0;
-	searchUsecTime = 0;
-	lastSearchRaDiv = 0;
-	lastSearchDecDiv = 0;
-	timerclear (&nextSearchStep);
-	worm_move_needed = 0;
-}
 
 int
-Rts2DevTelescopeGemini::startSearch ()
-{
-	int ret;
-	char *searchSpeedCh;
-	clearSearch ();
-	// maximal guiding speed
-	asprintf (&searchSpeedCh, "%lf", 0.2);
-	ret = tel_gemini_setch (GEMINI_CMD_RATE_GUIDE, searchSpeedCh);
-	free (searchSpeedCh);
-	if (ret)
-		return -1;
-	ret = tel_gemini_set (GEMINI_CMD_RATE_CENTER, 1);
-	if (ret)
-		return -1;
-	ret = tel_set_rate (RATE_GUIDE);
-	searchUsecTime =
-		(long int) (USEC_SEC * (10 * 3600 / (0.2 * 15.0)));
-	// searchRadius * 3600 / (searchSpeed * 15.0)
-	return changeSearch ();
-}
-
-int
-Rts2DevTelescopeGemini::changeSearch ()
-{
-	int ret;
-	struct timeval add;
-	struct timeval now;
-	if (telMotorState != TEL_OK)
-		return -1;
-	if (searchStep >= SEARCH_STEPS)
-	{
-		// that will stop move in all directions
-		telescope_stop_goto ();
-		return -2;
-	}
-	ret = 0;
-	gettimeofday (&now, NULL);
-	// change in RaDiv..
-	if (lastSearchRaDiv != searchDirs[searchStep].raDiv)
-	{
-		// stop old in RA
-		if (lastSearchRaDiv == 1)
-		{
-			ret = telescope_stop_move (DIR_WEST);
-		}
-		else if (lastSearchRaDiv == -1)
-		{
-			ret = telescope_stop_move (DIR_EAST);
-		}
-		if (ret)
-			return -1;
-	}
-	// change in DecDiv..
-	if (lastSearchDecDiv != searchDirs[searchStep].decDiv)
-	{
-		// stop old in DEC
-		if (lastSearchDecDiv == 1)
-		{
-			ret = telescope_stop_move (DIR_NORTH);
-		}
-		else if (lastSearchDecDiv == -1)
-		{
-			ret = telescope_stop_move (DIR_SOUTH);
-		}
-		if (ret)
-			return -1;
-	}
-	// send current location
-	infoAll ();
-
-	// change to new..
-	searchStep++;
-	add.tv_sec = searchUsecTime / USEC_SEC;
-	add.tv_usec = searchUsecTime % USEC_SEC;
-	timeradd (&now, &add, &nextSearchStep);
-
-	if (lastSearchRaDiv != searchDirs[searchStep].raDiv)
-	{
-		lastSearchRaDiv = searchDirs[searchStep].raDiv;
-		// start new in RA
-		if (lastSearchRaDiv == 1)
-		{
-			ret = telescope_start_move (DIR_WEST);
-		}
-		else if (lastSearchRaDiv == -1)
-		{
-			ret = telescope_start_move (DIR_EAST);
-		}
-		if (ret)
-			return -1;
-	}
-	if (lastSearchDecDiv != searchDirs[searchStep].decDiv)
-	{
-		lastSearchDecDiv = searchDirs[searchStep].decDiv;
-		// start new in DEC
-		if (lastSearchDecDiv == 1)
-		{
-			ret = telescope_start_move (DIR_NORTH);
-		}
-		else if (lastSearchDecDiv == -1)
-		{
-			ret = telescope_start_move (DIR_SOUTH);
-		}
-		if (ret)
-			return -1;
-	}
-	return 0;
-}
-
-int
-Rts2DevTelescopeGemini::isSearching ()
-{
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	if (timercmp (&now, &nextSearchStep, >))
-	{
-		return changeSearch ();
-	}
-	return 100;
-}
-
-int
-Rts2DevTelescopeGemini::stopSearch ()
-{
-	clearSearch ();
-	telescope_stop_goto ();
-	return Rts2DevTelescope::stopSearch ();
-}
-
-int
-Rts2DevTelescopeGemini::endSearch ()
-{
-	clearSearch ();
-	telescope_stop_goto ();
-	return Rts2DevTelescope::endSearch ();
-}
-
-
-int
-Rts2DevTelescopeGemini::isParking ()
+Gemini::isParking ()
 {
 	char buf = '3';
 	if (telMotorState != TEL_OK)
@@ -2132,7 +1942,7 @@ Rts2DevTelescopeGemini::isParking ()
 
 
 int
-Rts2DevTelescopeGemini::endPark ()
+Gemini::endPark ()
 {
 	if (getMasterState () != SERVERD_NIGHT)
 		matchTime ();
@@ -2142,7 +1952,7 @@ Rts2DevTelescopeGemini::endPark ()
 
 
 int
-Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
+Gemini::setTo (double set_ra, double set_dec, int appendModel)
 {
 	char readback[101];
 
@@ -2174,14 +1984,14 @@ Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec, int appendModel)
 
 
 int
-Rts2DevTelescopeGemini::setTo (double set_ra, double set_dec)
+Gemini::setTo (double set_ra, double set_dec)
 {
 	return setTo (set_ra, set_dec, 0);
 }
 
 
 int
-Rts2DevTelescopeGemini::correctOffsets (double cor_ra, double cor_dec,
+Gemini::correctOffsets (double cor_ra, double cor_dec,
 double real_ra, double real_dec)
 {
 	int32_t v205;
@@ -2202,7 +2012,7 @@ double real_ra, double real_dec)
 
 
 #ifdef L4_GUIDE
-bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
+bool Gemini::isGuiding (struct timeval * now)
 {
 	int
 		ret;
@@ -2219,7 +2029,7 @@ bool Rts2DevTelescopeGemini::isGuiding (struct timeval * now)
 
 
 int
-Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
+Gemini::guide (char direction, unsigned int val)
 {
 	// convert to arcsec
 	char buf[20];
@@ -2231,7 +2041,7 @@ Rts2DevTelescopeGemini::guide (char direction, unsigned int val)
 
 
 int
-Rts2DevTelescopeGemini::changeDec ()
+Gemini::changeDec ()
 {
 	char direction;
 	struct timeval chng_time;
@@ -2256,7 +2066,7 @@ Rts2DevTelescopeGemini::changeDec ()
 
 
 int
-Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
+Gemini::change_real (double chng_ra, double chng_dec)
 {
 	char direction;
 	struct timeval chng_time;
@@ -2318,7 +2128,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 
 #else
 
-int Rts2DevTelescopeGemini::change_ra (double chng_ra)
+int Gemini::change_ra (double chng_ra)
 {
 	char direction;
 	long u_sleep;
@@ -2395,7 +2205,7 @@ int Rts2DevTelescopeGemini::change_ra (double chng_ra)
 
 
 int
-Rts2DevTelescopeGemini::change_dec (double chng_dec)
+Gemini::change_dec (double chng_dec)
 {
 	char direction;
 	long u_sleep;
@@ -2445,7 +2255,7 @@ Rts2DevTelescopeGemini::change_dec (double chng_dec)
 
 
 int
-Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
+Gemini::change_real (double chng_ra, double chng_dec)
 {
 	int ret;
 	// center rate
@@ -2470,7 +2280,7 @@ Rts2DevTelescopeGemini::change_real (double chng_ra, double chng_dec)
 
 
 int
-Rts2DevTelescopeGemini::startPark ()
+Gemini::startPark ()
 {
 	int ret;
 	fixed_ha = nan ("f");
@@ -2519,7 +2329,7 @@ static int save_registers[] =
 	-1
 };
 int
-Rts2DevTelescopeGemini::saveModel ()
+Gemini::saveModel ()
 {
 	int *reg = save_registers;
 	char buf[20];
@@ -2552,7 +2362,7 @@ Rts2DevTelescopeGemini::saveModel ()
 
 
 extern int
-Rts2DevTelescopeGemini::loadModel ()
+Gemini::loadModel ()
 {
 	FILE *config_file;
 	char *line;
@@ -2594,7 +2404,7 @@ Rts2DevTelescopeGemini::loadModel ()
 
 
 int
-Rts2DevTelescopeGemini::stopWorm ()
+Gemini::stopWorm ()
 {
 	worm = 135;
 	return tel_gemini_set (135, 1);
@@ -2602,7 +2412,7 @@ Rts2DevTelescopeGemini::stopWorm ()
 
 
 int
-Rts2DevTelescopeGemini::startWorm ()
+Gemini::startWorm ()
 {
 	worm = 131;
 	return tel_gemini_set (131, 1);
@@ -2610,7 +2420,7 @@ Rts2DevTelescopeGemini::startWorm ()
 
 
 int
-Rts2DevTelescopeGemini::parkBootesSensors ()
+Gemini::parkBootesSensors ()
 {
 	int ret;
 	char direction;
@@ -2666,7 +2476,7 @@ Rts2DevTelescopeGemini::parkBootesSensors ()
 
 
 int
-Rts2DevTelescopeGemini::resetMount ()
+Gemini::resetMount ()
 {
 	int ret;
 	if ((resetState->getValueInteger () == 1 || resetState->getValueInteger () == 2)
@@ -2683,7 +2493,7 @@ Rts2DevTelescopeGemini::resetMount ()
 
 
 int
-Rts2DevTelescopeGemini::startDir (char *dir)
+Gemini::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -2699,7 +2509,7 @@ Rts2DevTelescopeGemini::startDir (char *dir)
 
 
 int
-Rts2DevTelescopeGemini::stopDir (char *dir)
+Gemini::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -2714,7 +2524,7 @@ Rts2DevTelescopeGemini::stopDir (char *dir)
 
 
 int
-Rts2DevTelescopeGemini::startGuide (char dir, double dir_dist)
+Gemini::startGuide (char dir, double dir_dist)
 {
 	int ret;
 	switch (dir)
@@ -2737,7 +2547,7 @@ Rts2DevTelescopeGemini::startGuide (char dir, double dir_dist)
 
 
 int
-Rts2DevTelescopeGemini::stopGuide (char dir)
+Gemini::stopGuide (char dir)
 {
 	int ret;
 	switch (dir)
@@ -2756,7 +2566,7 @@ Rts2DevTelescopeGemini::stopGuide (char dir)
 
 
 int
-Rts2DevTelescopeGemini::stopGuideAll ()
+Gemini::stopGuideAll ()
 {
 	telescope_stop_goto ();
 	return Rts2DevTelescope::stopGuideAll ();
@@ -2764,7 +2574,7 @@ Rts2DevTelescopeGemini::stopGuideAll ()
 
 
 int
-Rts2DevTelescopeGemini::getFlip ()
+Gemini::getFlip ()
 {
 	int32_t raTick, decTick;
 	int ret;
@@ -2789,6 +2599,6 @@ Rts2DevTelescopeGemini::getFlip ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeGemini device = Rts2DevTelescopeGemini (argc, argv);
+	Gemini device = Gemini (argc, argv);
 	return device.run ();
 }

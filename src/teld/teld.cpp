@@ -494,34 +494,7 @@ void
 Rts2DevTelescope::checkMoves ()
 {
 	int ret;
-	if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
-	{
-		ret = isSearching ();
-		if (ret >= 0)
-		{
-			setTimeout (ret);
-			if (moveInfoCount == moveInfoMax)
-			{
-				info ();
-				if (move_connection)
-					sendInfo (move_connection);
-				moveInfoCount = 0;
-			}
-			else
-			{
-				moveInfoCount++;
-			}
-		}
-		else if (ret == -1)
-		{
-			stopSearch ();
-		}
-		else if (ret == -2)
-		{
-			endSearch ();
-		}
-	}
-	else if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = isMoving ();
 		if (ret >= 0)
@@ -675,23 +648,6 @@ Rts2DevTelescope::changeMasterState (int new_state)
 	  	if ((getState () & TEL_MASK_MOVING) == 0)
 			startPark (NULL);
 	return Rts2Device::changeMasterState (new_state);
-}
-
-
-int
-Rts2DevTelescope::stopSearch ()
-{
-	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
-	infoAll ();
-	return 0;
-}
-
-
-int
-Rts2DevTelescope::endSearch ()
-{
-	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
-	return 0;
 }
 
 
@@ -859,22 +815,6 @@ Rts2DevTelescope::endMove ()
 		<< " requested " << l_req
 		<< sendLog;
 	return 0;
-}
-
-
-int
-Rts2DevTelescope::startSearch (Rts2Conn * conn, double radius,
-double in_searchSpeed)
-{
-	/*	int ret;
-		searchRadius = radius;
-		searchSpeed = in_searchSpeed;
-		ret = startSearch ();
-		if (ret)
-			return ret;
-		move_connection = conn;
-		maskState (TEL_MASK_SEARCHING, TEL_SEARCH); */
-	return -1;
 }
 
 
