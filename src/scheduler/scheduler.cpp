@@ -105,7 +105,8 @@ Rts2ScheduleApp::printNSGAMerits ()
 	Rts2SchedBag::iterator iter;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
-		std::cout << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ALTITUDE) <<
+		std::cout << std::setw (3) << (*iter)->getNSGARank () <<
+			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ALTITUDE) <<
 			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ACCOUNT) <<
 			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (DISTANCE) <<
 			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (VISIBILITY) 

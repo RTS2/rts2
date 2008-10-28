@@ -68,6 +68,9 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 			altMerit = nan ("f");
 			accMerit = nan ("f");
 			distMerit = nan ("f");
+
+			NSGARank = INT_MAX;
+			NSGADistance = 0;
 		}
 	public:
 		/**

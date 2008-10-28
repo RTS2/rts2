@@ -21,6 +21,8 @@
 
 #include "../utils/rts2config.h"
 
+#include <algorithm>
+
 void
 Rts2SchedBag::mutate (Rts2Schedule * sched)
 {
