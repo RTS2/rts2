@@ -50,8 +50,6 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 
 	*name = '\0';
 	key = 0;
-	priority = -1;
-	have_priority = 0;
 	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_UNKNOW;
@@ -90,8 +88,6 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 
 	*name = '\0';
 	key = 0;
-	priority = -1;
-	have_priority = 0;
 	centrald_num = -1;
 	centrald_id = -1;
 	conn_state = CONN_CONNECTED;
@@ -612,17 +608,8 @@ Rts2Conn::processLine ()
 		*command_buf_top = '\0';
 		command_buf_top++;
 	}
-	// priority change
-	if (isCommand (PROTO_PRIORITY))
-	{
-		ret = priorityChange ();
-	}
-	else if (isCommand (PROTO_PRIORITY_INFO))
-	{
-		ret = priorityInfo ();
-	}
 	// status
-	else if (isCommand (PROTO_STATUS))
+	if (isCommand (PROTO_STATUS))
 	{
 		ret = status ();
 	}
@@ -942,40 +929,10 @@ Rts2Conn::getAddress (char *addrBuf, int in_buf_size)
 }
 
 
-int
-Rts2Conn::havePriority ()
-{
-	return have_priority;
-}
-
-
-void
-Rts2Conn::setHavePriority (int in_have_priority)
-{
-	if (in_have_priority)
-		sendMsg (PROTO_PRIORITY_INFO " 1");
-	else
-		sendMsg (PROTO_PRIORITY_INFO " 0");
-	have_priority = in_have_priority;
-};
-
 void
 Rts2Conn::setCentraldId (int in_centrald_id)
 {
 	centrald_id = in_centrald_id;
-	master->checkPriority (this);
-}
-
-
-int
-Rts2Conn::sendPriorityInfo ()
-{
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_PRIORITY_INFO " %i", havePriority ());
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
 }
 
 
@@ -1116,17 +1073,12 @@ Rts2Conn::command ()
 	else if (isCommand ("user"))
 	{
 		int p_centraldId;
-		int p_priority;
-		char *p_priority_have;
 		char *p_login;
 		if (paramNextInteger (&p_centraldId)
-			|| paramNextInteger (&p_priority)
-			|| paramNextString (&p_priority_have)
 			|| paramNextString (&p_login)
 			|| !paramEnd ())
 			return -2;
-		master->addUser (p_centraldId, p_priority, (*p_priority_have == '*'),
-			p_login);
+		master->addUser (p_centraldId, p_login);
 		setCommandInProgress (false);
 		return -1;
 	}
@@ -1318,36 +1270,6 @@ Rts2Conn::commandReturn ()
 			sendNextCommand ();
 			break;
 	}
-	return -1;
-}
-
-
-void
-Rts2Conn::priorityChanged ()
-{
-}
-
-
-int
-Rts2Conn::priorityChange ()
-{
-	// we don't want any messages yet..
-	return -1;
-}
-
-
-int
-Rts2Conn::priorityInfo ()
-{
-	int have;
-	if (paramNextInteger (&have) || !paramEnd ())
-		return -2;
-	have_priority = have;
-	priorityChanged ();
-	if (otherDevice)
-		otherDevice->priorityInfo (have);
-	getMaster ()->priorityChanged (this, have);
-	// don't send OK
 	return -1;
 }
 

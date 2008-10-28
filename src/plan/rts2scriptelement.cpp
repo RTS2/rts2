@@ -550,7 +550,7 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 		{
 			valName = chng_s.substr (0, i);
 			op = ch;
-			if (ch == '+' || ch == '-' && (*(iter + 1) == '='))
+			if ((ch == '+' || ch == '-') && (*(iter + 1) == '='))
 			{
 				iter++;
 				i++;

@@ -111,8 +111,6 @@ class Rts2Conn:public Rts2Object
 								 // name of device/client this connection goes to
 		char name[DEVICE_NAME_SIZE];
 		int key;
-		int priority;			// priority - number
-		int have_priority;		// priority - flag if we have priority
 		int centrald_num;		// number of centrald connection
 		int centrald_id;		// id of connection on central server
 		in_addr addr;
@@ -485,20 +483,6 @@ class Rts2Conn:public Rts2Object
 			if (key == 0)
 				key = in_key;
 		}
-		int havePriority ();
-		void setHavePriority (int in_have_priority);
-		int getHavePriority ()
-		{
-			return have_priority;
-		};
-		int getPriority ()
-		{
-			return priority;
-		};
-		void setPriority (int in_priority)
-		{
-			priority = in_priority;
-		}
 
 		int getCentraldNum ()
 		{
@@ -515,7 +499,6 @@ class Rts2Conn:public Rts2Object
 		{
 			centrald_num = _centrald_num;
 		}
-		int sendPriorityInfo ();
 
 		/**
 		 * Que command on connection.
@@ -708,9 +691,6 @@ class Rts2Conn:public Rts2Object
 
 	protected:
 		virtual int command ();
-		virtual void priorityChanged ();
-		virtual int priorityChange ();
-		int priorityInfo ();
 		int sendNextCommand ();
 
 		int commandReturn ();

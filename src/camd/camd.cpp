@@ -367,8 +367,8 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 }
 
 
-void
-Rts2DevCamera::cancelPriorityOperations ()
+int
+Rts2DevCamera::scriptEnds ()
 {
 	exposureConn = NULL;
 
@@ -381,12 +381,10 @@ Rts2DevCamera::cancelPriorityOperations ()
 		BOP_TEL_MOVE, 0, "chip exposure interrupted");
 
 	setTimeout (USEC_SEC);
-	// init states etc..
-	clearStatesPriority ();
 	// cancel any pending exposures
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	Rts2ScriptDevice::cancelPriorityOperations ();
+	return Rts2ScriptDevice::scriptEnds ();
 }
 
 
@@ -396,16 +394,6 @@ Rts2DevCamera::info ()
 	camFilterVal->setValueInteger (getFilterNum ());
 	camFocVal->setValueInteger (getFocPos ());
 	return Rts2ScriptDevice::info ();
-}
-
-
-int
-Rts2DevCamera::scriptEnds ()
-{
-	box (-1, -1, -1, -1);
-
-	setTimeout (USEC_SEC);
-	return Rts2ScriptDevice::scriptEnds ();
 }
 
 
@@ -1108,9 +1096,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
-	// commands which requires priority
-	// priority test must come after command string test,
-	// otherwise we will be unable to answer DEVDEM_E_PRIORITY
 	else if (conn->isCommand ("expose"))
 	{
 		if (!conn->paramEnd ())

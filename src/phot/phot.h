@@ -96,7 +96,7 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		int moveFilter (int new_filter);
 		int enableFilter (Rts2Conn * conn);
 
-		virtual void cancelPriorityOperations ();
+		virtual int scriptEnds ();
 
 		virtual int changeMasterState (int new_state);
 

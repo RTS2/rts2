@@ -132,12 +132,8 @@ Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_type)
 void
 Rts2Scriptor::deviceReady (Rts2Conn * conn)
 {
-	std::cout << "conn " << conn->getName () << " prio " << conn->havePriority () << std::endl;
-	if (conn->havePriority ())
-	{
-		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
-	}
+	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 
 

@@ -46,14 +46,11 @@ Rts2NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-	else if (connection->havePriority ())
-		wcolor_set (window, CLR_OK, NULL);
-	mvwprintw (window, 0, 2, "%s %s (%x) %x priority: %s",
+	mvwprintw (window, 0, 2, "%s %s (%x) %x",
 		connection->getName (),
 		connection->getStateString ().c_str (),
 		connection->getState (),
-		connection->getFullBopState (),
-		connection->havePriority ()? "yes" : "no"
+		connection->getFullBopState ()
 	);
 
 	wcolor_set (window, CLR_DEFAULT, NULL);

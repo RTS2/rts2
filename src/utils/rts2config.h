@@ -63,8 +63,6 @@ class Rts2Config:public Rts2ConfigRaw
 		bool grbd_follow_transients;
 		int grbd_validity;
 
-		int obs_epoch_id;
-
 		std::vector <std::string> obs_requiredDevices;
 
 		std::string obs_quePath;
@@ -269,15 +267,6 @@ class Rts2Config:public Rts2ConfigRaw
 		{
 			return obs_requiredDevices;
 		}
-
-		/**
-		 * Return observatory epoch.
-		 */
-		int observatoryEpoch ()
-		{
-			return obs_epoch_id;
-		}
-
 
 		/**
 		 * Return extension pattern for que images.

@@ -378,20 +378,6 @@ class Rts2DevTelescope:public Rts2Device
 		 */
 		double getLocSidTime (double JD);
 
-		virtual void cancelPriorityOperations ()
-		{
-			if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
-			{
-				stopSearch ();
-			}
-			else
-			{
-				stopMove ();
-			}
-			clearStatesPriority ();
-			Rts2Device::cancelPriorityOperations ();
-		}
-
 		/**
 		 * Sets new movement target.
 		 *

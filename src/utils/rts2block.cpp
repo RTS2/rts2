@@ -40,7 +40,6 @@ Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
-	priority_client = -1;
 
 	signal (SIGPIPE, SIG_IGN);
 
@@ -376,10 +375,6 @@ Rts2Block::oneRunLoop ()
 int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
-	if (conn->havePriority ())
-	{
-		cancelPriorityOperations ();
-	}
 	if (conn->isConnState (CONN_DELETE))
 	{
 		connections_t::iterator iter;
@@ -407,50 +402,8 @@ Rts2Block::connectionRemoved (Rts2Conn * conn)
 }
 
 
-int
-Rts2Block::setPriorityClient (int in_priority_client, int timeout)
-{
-	int discard_priority = 1;
-	Rts2Conn *priConn;
-	priConn = findCentralId (in_priority_client);
-	if (priConn && priConn->getHavePriority ())
-		discard_priority = 0;
-
-	connections_t::iterator iter;
-	for (iter = connections.begin (); iter != connections.end (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		if (conn->getCentraldId () == in_priority_client)
-		{
-			if (discard_priority)
-			{
-				cancelPriorityOperations ();
-				if (priConn)
-					priConn->setHavePriority (0);
-			}
-			conn->setHavePriority (1);
-			break;
-		}
-	}
-	priority_client = in_priority_client;
-	return 0;
-}
-
-
-void
-Rts2Block::cancelPriorityOperations ()
-{
-}
-
-
 void
 Rts2Block::deviceReady (Rts2Conn * conn)
-{
-}
-
-
-void
-Rts2Block::priorityChanged (Rts2Conn * conn, bool have)
 {
 }
 
@@ -716,17 +669,18 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
 
 
 void
-Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login)
+Rts2Block::addUser (int p_centraldId, const char *p_login)
 {
 	int ret;
 	std::list < Rts2ConnUser * >::iterator user_iter;
 	for (user_iter = blockUsers.begin (); user_iter != blockUsers.end (); user_iter++)
 	{
-		ret = (*user_iter)->update (p_centraldId, p_priority, p_priority_have, p_login);
+		ret =
+			(*user_iter)->update (p_centraldId, p_login);
 		if (!ret)
 			return;
 	}
-	addUser (new Rts2ConnUser (p_centraldId, p_priority, p_priority_have, p_login));
+	addUser (new Rts2ConnUser (p_centraldId, p_login));
 }
 
 

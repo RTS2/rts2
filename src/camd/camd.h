@@ -381,8 +381,6 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual void checkQueChanges (int fakeState);
 
-		virtual void cancelPriorityOperations ();
-
 		Rts2ValueDouble *rnoise;
 
 		void initCameraChip ();

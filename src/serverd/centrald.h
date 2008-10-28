@@ -148,16 +148,6 @@ class Rts2Centrald:public Rts2Daemon
 		virtual void deviceReady (Rts2Conn * conn);
 
 		/**
-		 * Made priority update, distribute messages to devices
-		 * about priority update.
-		 *
-		 * @param timeout	time to wait for priority change..
-		 *
-		 * @return 0 on success, -1 and set errno otherwise
-		 */
-		int changePriority (time_t timeout);
-
-		/**
 		 * Switch centrald state to ON.
 		 *
 		 * @param user Name of user who initiated state change.
@@ -195,11 +185,6 @@ class Rts2Centrald:public Rts2Daemon
 		int changeStateSoftOff (const char *user)
 		{
 			return changeState (SERVERD_SOFT_OFF, user);
-		}
-
-		inline int getPriorityClient ()
-		{
-			return priority_client;
 		}
 
 		virtual Rts2Conn *createConnection (int in_sock);

@@ -52,40 +52,6 @@ Rts2Conn (in_sock, in_master)
 
 Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
-	setPriority (-1);
-	master->changePriority (0);
-}
-
-
-int
-Rts2ConnCentrald::priorityCommand ()
-{
-	int timeout;
-	int new_priority;
-
-	if (isCommand ("priority"))
-	{
-		if (paramNextInteger (&new_priority) || !paramEnd ())
-			return -1;
-		timeout = 0;
-	}
-	else
-	{
-		if (paramNextInteger (&new_priority) ||
-			paramNextInteger (&timeout) || !paramEnd ())
-			return -1;
-		timeout += time (NULL);
-	}
-
-	setPriority (new_priority);
-
-	if (master->changePriority (timeout))
-	{
-		sendCommandEnd (DEVDEM_E_PRIORITY, "error when processing priority request");
-		return -1;
-	}
-
-	return 0;
 }
 
 
@@ -152,9 +118,7 @@ Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 	switch (getType ())
 	{
 		case CLIENT_SERVER:
-			asprintf (&msg, "user %i %i %c %s",
-				getCentraldId (),
-				getPriority (), havePriority ()? '*' : '-', login);
+			asprintf (&msg, "user %i %s", getCentraldId (), login);
 			ret = conn->sendMsg (msg);
 			free (msg);
 			break;
@@ -253,10 +217,6 @@ Rts2ConnCentrald::commandDevice ()
 	{
 		return master->changeStateOn (getName ());
 	}
-	if (isCommand ("priority") || isCommand ("prioritydeferred"))
-	{
-		return priorityCommand ();
-	}
 	if (isCommand ("standby"))
 	{
 		return master->changeStateStandby (getName ());
@@ -336,10 +296,6 @@ Rts2ConnCentrald::commandClient ()
 			master->info ();
 			return sendInfo ();
 		}
-		if (isCommand ("priority") || isCommand ("prioritydeferred"))
-		{
-			return priorityCommand ();
-		}
 		if (isCommand ("key"))
 		{
 			return sendDeviceKey ();
@@ -399,7 +355,6 @@ Rts2ConnCentrald::command ()
 			int centraldNum;
 			char *reg_device;
 			char *in_hostname;
-			char *msg;
 
 			if (paramNextInteger (&centraldNum)
 			  	|| paramNextString (&reg_device)
@@ -420,13 +375,6 @@ Rts2ConnCentrald::command ()
 
 			setType (DEVICE_SERVER);
 			sendStatusInfo ();
-			if (master->getPriorityClient () > -1)
-			{
-				asprintf (&msg, PROTO_PRIORITY " %i %i",
-					master->getPriorityClient (), 0);
-				sendMsg (msg);
-				free (msg);
-			}
 
 			sendAValue ("registered_as", getCentraldId ());
 			master->connAdded (this);
@@ -466,16 +414,11 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 	logFileSource = LOGFILE_DEF;
 	fileLog = NULL;
 
-	priority_client = -1;
-
 	createValue (morning_off, "morning_off", "switch to off at the morning", false);
 	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
 
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false);
 	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
-
-	createValue (priorityClient, "priority_client", "client which have priority", false);
-	createValue (priority, "priority", "current priority level", false);
 
 	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
@@ -745,65 +688,6 @@ Rts2Centrald::changeState (int new_state, const char *user)
 	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
 		user << sendLog;
 	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
-	return 0;
-}
-
-
-int
-Rts2Centrald::changePriority (time_t timeout)
-{
-	// do not perform any priority changes
-	if (priority_client == -2)
-		return 0;
-
-	int new_priority_client = -1;
-	int new_priority_max = 0;
-	connections_t::iterator iter;
-	Rts2Conn *conn = getConnection (priority_client);
-
-								 // old priority client
-	if (priority_client >= 0 && conn)
-	{
-		new_priority_client = priority_client;
-		new_priority_max = conn->getPriority ();
-	}
-	// find new client with highest priority
-	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-	{
-		conn = *iter;
-		if (conn->getPriority () > new_priority_max)
-		{
-			new_priority_client = conn->getCentraldId ();
-			new_priority_max = conn->getPriority ();
-		}
-	}
-
-	if (priority_client != new_priority_client)
-	{
-		conn = getConnection (priority_client);
-		if (priority_client >= 0 && conn)
-			conn->setHavePriority (0);
-
-		priority_client = new_priority_client;
-
-		conn = getConnection (priority_client);
-		if (priority_client >= 0 && conn)
-			conn->setHavePriority (1);
-	}
-	// send out priority change
-	char *msg;
-
-	asprintf (&msg, PROTO_PRIORITY " %i %li", priority_client, timeout);
-	sendAll (msg);
-	free (msg);
-
-	// and set and send new priority values
-	priorityClient->setValueCharArr (conn ? conn->getName () : "(null)");
-	priority->setValueInteger (new_priority_max);
-
-	sendValueAll (priorityClient);
-	sendValueAll (priority);
-
 	return 0;
 }
 

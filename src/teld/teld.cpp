@@ -816,6 +816,14 @@ Rts2DevTelescope::info ()
 int
 Rts2DevTelescope::scriptEnds ()
 {
+	if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
+	{
+		stopSearch ();
+	}
+	else
+	{
+		stopMove ();
+	}
 	corrImgId->setValueInteger (0);
 	return Rts2Device::scriptEnds ();
 }
@@ -1051,7 +1059,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("move_not_model"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
@@ -1069,7 +1076,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("fixed"))
 	{
-		CHECK_PRIORITY;
 		// tar_ra hold HA (Hour Angle)
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
@@ -1080,7 +1086,6 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("setto"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;

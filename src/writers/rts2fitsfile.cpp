@@ -24,6 +24,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 std::string
 Rts2FitsFile::getFitsErrors ()
 {

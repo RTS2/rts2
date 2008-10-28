@@ -242,12 +242,11 @@ Rts2DevPhot::enableFilter (Rts2Conn * conn)
 }
 
 
-void
-Rts2DevPhot::cancelPriorityOperations ()
+int
+Rts2DevPhot::scriptEnds ()
 {
 	stopIntegrate ();
-	clearStatesPriority ();
-	Rts2ScriptDevice::cancelPriorityOperations ();
+	return Rts2ScriptDevice::scriptEnds ();
 }
 
 

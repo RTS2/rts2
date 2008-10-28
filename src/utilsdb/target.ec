@@ -281,8 +281,6 @@ Rts2Target ()
 
 	observer = in_obs;
 
-	setEpoch (config->observatoryEpoch ());
-
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
 	observation = NULL;
@@ -308,8 +306,6 @@ Target::Target ()
 	config = Rts2Config::instance ();
 
 	observer = config->getObserver ();
-
-	setEpoch (config->observatoryEpoch ());
 
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 

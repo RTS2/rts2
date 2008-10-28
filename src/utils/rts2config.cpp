@@ -33,9 +33,6 @@ Rts2Config::getSpecialValues ()
 	// load horizont file..
 	getString ("observatory", "horizon", horizon_file, "");
 
-	obs_epoch_id = 1;
-	getInteger ("observatory", "epoch_id", obs_epoch_id);
-
 	getStringVector ("observatory", "required_devices", obs_requiredDevices);
 
 	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
