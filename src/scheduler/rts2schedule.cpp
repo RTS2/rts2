@@ -23,8 +23,7 @@
 
 using namespace rts2db;
 
-Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs):
-std::vector <Rts2SchedObs*> ()
+Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs)
 {
 	JDstart = _JDstart;
 	JDend = _JDend;

@@ -99,7 +99,7 @@ Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2
 	std::sort (_begin, _end, objectiveFunctionSort (SINGLE));
 
 	// delete last members
-	for (Rts2SchedBag::iterator iter = _end - _size; iter != _end;)
+	for (Rts2SchedBag::iterator iter = _end - _size; iter != _end; iter++)
 		delete (*iter);
 
 	// remove deleted members..
