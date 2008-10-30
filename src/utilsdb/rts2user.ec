@@ -345,7 +345,7 @@ Rts2User::setEmail (std::string newEmail)
 		return -1;
 	}
 
-	strncpy (db_email.arr, newEmail.c_str (), 25);
+	strncpy (db_email.arr, newEmail.c_str (), 200);
 	db_email.len = newEmail.length ();
 
 	EXEC SQL UPDATE
