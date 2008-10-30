@@ -216,7 +216,7 @@ Rts2ConnCentrald::commandDevice ()
 		// client vanished when we processed data..
 		if (conn == NULL)
 		{
-		  	sendCommandEnd (DEVDEM_E_SYSTEM,
+			sendCommandEnd (DEVDEM_E_SYSTEM,
 				"client vanished during auth sequence");
 			return -1;
 		}
@@ -402,7 +402,7 @@ Rts2ConnCentrald::command ()
 			char *msg;
 
 			if (paramNextInteger (&centraldNum)
-			  	|| paramNextString (&reg_device)
+				|| paramNextString (&reg_device)
 				|| paramNextInteger (&device_type)
 				|| paramNextString (&in_hostname)
 				|| paramNextInteger (&port)
@@ -507,7 +507,7 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 Rts2Centrald::~Rts2Centrald (void)
 {
 	if (fileLog)
-        {
+	{
 		fileLog->close ();
 		delete fileLog;
 	}
@@ -619,7 +619,7 @@ Rts2Centrald::init ()
 	morning_standby->setValueBool (Rts2Config::instance ()->getBoolean ("centrald", "morning_standby", true));
 
 	centraldConnRunning (NULL);
-	
+
 	char *lF;
 	asprintf (&lF, LOCK_PREFIX "centrald_%i", getPort ());
 	ret = checkLockFile (lF);
@@ -674,6 +674,7 @@ Rts2Centrald::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return Rts2Daemon::setValue (old_value, new_value);
 }
 
+
 void
 Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
@@ -696,7 +697,7 @@ Rts2Centrald::stateChanged (int new_state, int old_state, const char *descriptio
 	Rts2Daemon::stateChanged (new_state, old_state, description);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
 	{
-	  	logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
+		logStream (MESSAGE_INFO) << "State changed from " << Rts2CentralState::getString (old_state)
 			<< " to " << Rts2CentralState::getString (getState ())
 			<< " description " << description
 			<< sendLog;
@@ -831,20 +832,25 @@ Rts2Centrald::idle ()
 		nextStateChange->setValueTime (next_event_time);
 		nextState->setValueInteger (next_event_type);
 
-		old_current_state = getState ();
-		if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
-			&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+		// update state only if state isn't OFF or SOFT_OFF
+		if ((getState () & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF
+			&& (getState () & SERVERD_STATUS_MASK) != SERVERD_SOFT_OFF)
 		{
-			if (morning_off->getValueBool ())
-				maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
-			else if (morning_standby->getValueBool ())
-				maskState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
+			old_current_state = getState ();
+			if ((getState () & SERVERD_STATUS_MASK) == SERVERD_MORNING
+				&& (call_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+			{
+				if (morning_off->getValueBool ())
+					maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, SERVERD_HARD_OFF, "by idle routine");
+				else if (morning_standby->getValueBool ())
+					maskState (SERVERD_STANDBY_MASK, SERVERD_STANDBY, "by idle routine");
+				else
+					maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
+			}
 			else
+			{
 				maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
-		}
-		else
-		{
-			maskState (SERVERD_STATUS_MASK, call_state, "by idle routine");
+			}
 		}
 
 		// send update about next state transits..
@@ -924,7 +930,7 @@ Rts2Centrald::weatherChanged ()
 		{
 			if ((*iter)->isGoodWeather () == true && (*iter)->isConnState (CONN_CONNECTED))
 				failedArr.erase (namIter);
-			// otherwise, connection name will not be erased from 
+			// otherwise, connection name will not be erased from
 			// failedArr, so failedArr size will be larger then 0,
 			// so newWeather will be set to false in size check - few lines
 			// bellow.
