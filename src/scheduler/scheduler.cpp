@@ -255,15 +255,45 @@ Rts2ScheduleApp::doProcessing ()
 				break;
 		}
 
-		// collect and print statistics..
-		double _min, _avg, _max;
-		schedBag->getStatistics (_min, _avg, _max);
 
-		std::cout << std::right << std::setw (5) << i << " "
-			<< std::setw (4) << schedBag->size () << " "
-			<< std::left << std::setw (8) << _min << " "
-			<< std::left << std::setw (8) << _avg << " "
-			<< std::left << std::setw (8) << _max << std::endl;
+		if (verbose > 1)
+		{
+			printMerits ();
+		}
+		else
+		{
+			// collect and print statistics..
+			double _min, _avg, _max;
+			schedBag->getStatistics (_min, _avg, _max);
+
+			std::cout << std::right << std::setw (5) << i << " "
+				<< std::setw (4) << schedBag->size () << " "
+				<< std::left << std::setw (10) << _min << " "
+				<< std::left << std::setw (10) << _avg << " "
+				<< std::left << std::setw (10) << _max;
+			int rankSize = 0;
+			int rank = 0;
+			// print addtional algoritm specific info
+			switch (algorithm)
+			{
+				case SGA:
+					break;
+				case NSGAII:
+					// print populations size by ranks..
+					while (true)
+				  	{
+						rankSize = schedBag->getNSGARankSize (rank);
+						if (rankSize <= 0)
+							break;
+						std::cout << " " << std::right << std::setw (3) << rankSize;
+						rank++;
+					}
+
+					break;
+			}
+				
+			std::cout << std::endl;
+		}
 	}
 
 	if (verbose)	

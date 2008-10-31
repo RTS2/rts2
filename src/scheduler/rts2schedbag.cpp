@@ -22,6 +22,7 @@
 #include "../utils/rts2config.h"
 
 #include <algorithm>
+#include <stdexcept>
 
 void
 Rts2SchedBag::mutate (Rts2Schedule * sched)
@@ -287,8 +288,10 @@ Rts2SchedBag::calculateNSGARanks ()
 	std::list <int> fronts[size ()];
 
 	NSGAfronts.clear ();
+	NSGAfrontsSize.clear ();
 
 	NSGAfronts.push_back (std::vector <Rts2Schedule *> ());
+	NSGAfrontsSize.push_back (0);
 
 	for (unsigned int p = 0; p < size (); p++)
 	{
@@ -311,12 +314,14 @@ Rts2SchedBag::calculateNSGARanks ()
 			sched_p->setNSGARank (0);
 			fronts[0].push_back (p);
 			NSGAfronts[0].push_back (sched_p);
+			NSGAfrontsSize[0]++;
 		}
 	}
 	int i = 0;
 	while (fronts[i].size () > 0)
 	{
 		NSGAfronts.push_back (std::vector <Rts2Schedule *> ());
+		NSGAfrontsSize.push_back (0);
 		for (std::list <int>::iterator p = fronts[i].begin (); p != fronts[i].end (); p++)
 		{
 			for (std::list <int>::iterator q = domStruct[*p].dominates.begin (); q != domStruct[*p].dominates.end (); q++)
@@ -328,6 +333,7 @@ Rts2SchedBag::calculateNSGARanks ()
 					sched_q->setNSGARank (i + 1);
 					fronts[i + 1].push_back (*q);
 					NSGAfronts[i + 1].push_back (sched_q);
+					NSGAfrontsSize[i + 1]++;
 				}
 			}
 		}
@@ -498,5 +504,19 @@ Rts2SchedBag::doNSGAIIStep ()
 	for (int m = 0; m < mutationNum; m++)
 	{
 		mutate ((*this)[randomNumber (popSize, popSize * 2 - 1)]);
+	}
+}
+
+
+int
+Rts2SchedBag::getNSGARankSize (int _rank)
+{
+	try
+	{
+		return NSGAfrontsSize.at(_rank);
+	}
+	catch (std::out_of_range _err)
+	{
+		return 0;
 	}
 }

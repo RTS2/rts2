@@ -142,6 +142,9 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		// vector of NSGA fronts members
 		std::vector <std::vector <Rts2Schedule *> > NSGAfronts;
 
+		// vector holding size of individual fronts
+		std::vector <int> NSGAfrontsSize;
+
 		/**
 		 * Dominance operator.
 		 *
@@ -169,7 +172,7 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 
 		/**
 		 * Binary tournament selection for NSGA-II. This function uses
-		 * rank and crowding distance to select better schedule.
+		 * rank and crowding distance to select a better schedule.
 		 *
 		 * @param sched1  First schedule to compare.
 		 * @param sched2  Second schedule to compare.
@@ -183,4 +186,13 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * Do one step of NSGA-II algorithm.
 		 */
 		void doNSGAIIStep ();
+
+		/**
+		 * Return population size with given rank.
+		 *
+		 * @param  _rank  NSGA rank which is queried.
+		 *
+		 * @return Size of population with getNSGARank == _rank.
+		 */
+		int getNSGARankSize (int _rank);
 };
