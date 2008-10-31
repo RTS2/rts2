@@ -155,12 +155,6 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		int dominatesNSGA (Rts2Schedule *sched_1, Rts2Schedule *sched_2);
 
-		/**
-		 * Calculate ranks of the entire population. Ranks are assigned to schedule
-		 * with setNSGARank function.
-		 */
-		void calculateNSGARanks ();
-
 		/** 
 		 * Calculates crowding distance of each member in
 		 * the set and sort NSGAfronts by crowding distance.
@@ -182,6 +176,13 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		Rts2Schedule *tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2);
 	
 	public:
+		/**
+		 * Calculate ranks of the entire population. Ranks are assigned to schedule
+		 * with setNSGARank function.
+		 */
+		void calculateNSGARanks ();
+
+
 		/** 
 		 * Do one step of NSGA-II algorithm.
 		 */

@@ -103,13 +103,14 @@ void
 Rts2ScheduleApp::printNSGAMerits ()
 {
 	Rts2SchedBag::iterator iter;
+	schedBag->calculateNSGARanks ();
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
-		std::cout << std::setw (3) << (*iter)->getNSGARank () <<
-			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ALTITUDE) <<
-			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (ACCOUNT) <<
-			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (DISTANCE) <<
-			" " << std::left << std::setw (8) << (*iter)->getObjectiveFunction (VISIBILITY) 
+		std::cout << std::left << std::setw (3) << (*iter)->getNSGARank () <<
+			" " << std::setw (8) << (*iter)->getObjectiveFunction (ALTITUDE) <<
+			" " << std::setw (8) << (*iter)->getObjectiveFunction (ACCOUNT) <<
+			" " << std::setw (8) << (*iter)->getObjectiveFunction (DISTANCE) <<
+			" " << std::setw (8) << (*iter)->getObjectiveFunction (VISIBILITY) 
 			<< std::endl; 
 	}
 }
