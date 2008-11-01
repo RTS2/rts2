@@ -56,6 +56,11 @@ class Rts2ScheduleApp: public Rts2AppDb
 		void printMerits (objFunc _type, const char *name);
 
 		/**
+		 * Print objective functions for SGA.
+		 */
+		void printSGAMerits ();
+
+		/**
 		 * Prints objective functions of NSGAII.
 		 */
 		void printNSGAMerits ();
@@ -99,18 +104,51 @@ Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
 		<< max << std::endl;
 }
 
+
+void
+Rts2ScheduleApp::printSGAMerits ()
+{
+	Rts2SchedBag::iterator iter;
+	schedBag->calculateNSGARanks ();
+	// print header
+	std::cout << std::left
+		<< std::setw (11) << "ALTITUDE"
+		<< std::setw (11) << "ACCOUNT"
+		<< std::setw (11) << "DISTANCE"
+		<< std::setw (11) << "VISIBILITY"
+		<< std::setw (11) << "SINGLE"
+		<< std::endl;
+	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
+	{
+		std::cout << std::left 
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
+			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
+			<< std::endl; 
+	}
+}
+
 void
 Rts2ScheduleApp::printNSGAMerits ()
 {
 	Rts2SchedBag::iterator iter;
 	schedBag->calculateNSGARanks ();
+	// print header
+	std::cout << std::left << "RNK "
+		<< std::setw (11) << "ALTITUDE"
+		<< std::setw (11) << "ACCOUNT"
+		<< std::setw (11) << "DISTANCE"
+		<< std::setw (11) << "VISIBILITY"
+		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
-		std::cout << std::left << std::setw (3) << (*iter)->getNSGARank () <<
-			" " << std::setw (10) << (*iter)->getObjectiveFunction (ALTITUDE) <<
-			" " << std::setw (10) << (*iter)->getObjectiveFunction (ACCOUNT) <<
-			" " << std::setw (10) << (*iter)->getObjectiveFunction (DISTANCE) <<
-			" " << std::setw (10) << (*iter)->getObjectiveFunction (VISIBILITY) 
+		std::cout << std::left << std::setw (4) << (*iter)->getNSGARank ()
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
 			<< std::endl; 
 	}
 }
@@ -122,11 +160,7 @@ Rts2ScheduleApp::printMerits ()
 	switch (algorithm)
 	{
 		case SGA:
-			printMerits (VISIBILITY, "visibility");
-			printMerits (ALTITUDE, "altitude");
-			printMerits (ACCOUNT, "account");
-			printMerits (DISTANCE, "distance");
-			printMerits (SINGLE, "single (main)");
+			printSGAMerits ();
 			break;
 		case NSGAII:
 			printNSGAMerits ();
