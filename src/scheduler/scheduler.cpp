@@ -22,6 +22,9 @@
 
 #include "rts2schedbag.h"
 
+#define OPT_START_DATE		OPT_LOCAL + 210
+#define OPT_END_DATE		OPT_LOCAL + 211
+
 /**
  * Class of the scheduler application.  Prepares schedule, and run
  * optimalization few times to get them out..
@@ -44,6 +47,10 @@ class Rts2ScheduleApp: public Rts2AppDb
 
 		// used algorithm
 		enum {SGA, NSGAII} algorithm;
+
+		// start and end JD
+		double startDate;
+		double endDate;
 
 		/**
 		 * Print merit of given type.
@@ -224,6 +231,10 @@ Rts2ScheduleApp::processOption (int _opt)
 			  	return -1;
 			}
 			break;
+		case OPT_START_DATE:
+			return parseDate (optarg, startDate);
+		case OPT_END_DATE:
+			return parseDate (optarg, endDate);
 		default:
 			return Rts2AppDb::processOption (_opt);
 	}
@@ -242,10 +253,22 @@ Rts2ScheduleApp::init ()
 	srandom (time (NULL));
 
 	// initialize schedules..
-	double jd = ln_get_julian_from_sys ();
+	if (isnan (startDate))
+		startDate = ln_get_julian_from_sys ();
+	if (isnan (endDate))
+	  	endDate = startDate + 0.5;
+	if (startDate >= endDate)
+	{
+		  std::cerr << "Scheduling interval end date is behind scheduling start date, start is "
+		  	<< LibnovaDate (startDate) << ", end is "
+			<< LibnovaDate (endDate)
+			<< std::cerr;
+	}
+
+	std::cout << "Generating schedule from " << LibnovaDate (startDate) << " to " << LibnovaDate (endDate) << std::endl;
 
 	// create list of schedules..
-	schedBag = new Rts2SchedBag (jd, jd + 0.5);
+	schedBag = new Rts2SchedBag (startDate, endDate);
 
 	ret = schedBag->constructSchedules (popSize);
 	if (ret)
@@ -263,10 +286,16 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	popSize = 100;
 	algorithm = SGA;
 
+	startDate = nan ("f");
+	endDate = nan ("f");
+
 	addOption ('v', NULL, 0, "verbosity level");
 	addOption ('g', NULL, 1, "number of generations");
 	addOption ('p', NULL, 1, "population size");
 	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported)");
+
+	addOption (OPT_START_DATE, "start", 1, "produce schedule from this date");
+	addOption (OPT_END_DATE, "end", 1, "produce schedule till this date");
 }
 
 
