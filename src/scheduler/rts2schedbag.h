@@ -135,8 +135,12 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		// private functions used for NSGA-II
 	private:
 		// objectives which are used
-		objFunc objectives[3];
+		objFunc objectives[10];
 		int objectivesSize;
+
+		// constarint which are used
+		constraintFunc constraints[10];
+		int constraintSize;
 
 
 		// vector of NSGA fronts members

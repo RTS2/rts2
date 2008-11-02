@@ -129,6 +129,10 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	objectives[2] = DISTANCE;
 
 	objectivesSize = 3;
+
+	constraints[0] = CONSTR_VISIBILITY;
+
+	constraintSize = 1;
 }
 
 
@@ -259,9 +263,29 @@ Rts2SchedBag::doGAStep ()
 int
 Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 {
+	// check for constraints
 	bool dom1 = false;
 	bool dom2 = false;
-	for (int i = 0; i < objectivesSize; i++)
+	int i;
+	for (i = 0; i < constraintSize; i++)
+	{
+		double cons1 = sched1->getConstraintFunction (constraints[i]);
+		double cons2 = sched2->getConstraintFunction (constraints[i]);
+		// if some schedule violate, prefer the one which does not violate..
+		if (cons1 >= 1 && cons2 < 1)
+		  	return -1;
+		if (cons1 < 1 && cons2 >= 1)
+			return 1;
+		// if both are infesieble, prefer one which is closer to be feasible
+		if (cons1 < 1 && cons2 < 1)
+		{
+			if (cons1 > cons2)
+				dom1 = true;
+			else if (cons1 < cons2)
+			  	dom2 = true;
+		}
+	}
+	for (i = 0; i < objectivesSize; i++)
 	{
 		double obj1 = sched1->getObjectiveFunction (objectives[i]);
 		double obj2 = sched2->getObjectiveFunction (objectives[i]);

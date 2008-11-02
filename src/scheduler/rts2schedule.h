@@ -33,6 +33,10 @@ typedef enum {
 	SINGLE
 } objFunc;
 
+typedef enum {
+	CONSTR_VISIBILITY
+} constraintFunc;
+
 /**
  * Observing schedule. This class provides holder of observing schedule, which
  * is a set of Rts2SchedObs objects. It also provides methods to manimulate
@@ -205,9 +209,28 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		}
 
 		/**
+		 * Return constraint function. Constraint is satisfied, if return is >= 1.
+		 *
+		 * @param _type Constraint function type.
+		 *
+		 * @return 
+		 */
+		double getConstraintFunction (constraintFunc _type)
+		{
+			switch (_type)
+			{
+				case CONSTR_VISIBILITY:
+					return visibilityRatio ();
+			}
+			return nan ("f");
+		}
+
+		/**
 		 * Return some objective function based on the parameter.
 		 *
 		 * @param _type Objective function type.
+		 *
+		 * @return Objective function value.
 		 *
 		 * @see objFunc
 		 */
