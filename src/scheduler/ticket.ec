@@ -21,9 +21,28 @@
 
 using namespace rts2sched;
 
-Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId)
+Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId, double _sched_from, double _sched_to)
 {
 	ticketId = _schedTicketId;
 	target = _target;
 	accountId = _accountId;
+	sched_from = _sched_from;
+	sched_to = _sched_to;
+}
+
+
+bool
+Ticket::violateSchedule (double _from, double _to)
+{
+	if (isnan (sched_from))
+	{
+		if (isnan (sched_to))
+			return false;
+		return _to > sched_to;
+	}
+	if (isnan (sched_to))
+	{
+	  	return _from < sched_from;
+	}
+	return (_from < sched_from) || (_to > sched_to);
 }

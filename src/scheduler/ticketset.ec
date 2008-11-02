@@ -43,12 +43,20 @@ TicketSet::load (Rts2TargetSet *tarSet)
 	int d_schedticket_id;
 	int d_tar_id;
 	int d_account_id;
+	long d_sched_from;
+	int d_sched_from_ind;
+	long d_sched_to;
+	int d_sched_to_ind;
 	EXEC SQL END DECLARE SECTION;
+
+	double sched_from, sched_to;
 
 	EXEC SQL DECLARE cur_tickets CURSOR FOR SELECT
 		schedticket_id,
 		tar_id,
-		account_id
+		account_id,
+		EXTRACT (EPOCH FROM sched_from),
+		EXTRACT (EPOCH FROM sched_to)
 	FROM
 		tickets;
 
@@ -61,13 +69,27 @@ TicketSet::load (Rts2TargetSet *tarSet)
 		EXEC SQL FETCH next FROM cur_tickets INTO
 			:d_schedticket_id,
 			:d_tar_id,
-			:d_account_id;
+			:d_account_id,
+			:d_sched_from :d_sched_from_ind,
+			:d_sched_to :d_sched_to_ind;
+
 
 		if (sqlca.sqlcode == ECPG_NOT_FOUND)
 			break;
 		else if (sqlca.sqlcode)
 		  	throw rts2db::SqlError ();
 
-		(*this)[d_schedticket_id] = new Ticket (d_schedticket_id, tarSet->getTarget (d_tar_id), d_account_id);
+		if (d_sched_from_ind < 0)
+			sched_from = nan("f");
+		else
+			sched_from = ln_get_julian_from_timet (&d_sched_from);
+
+		if (d_sched_to_ind < 0)
+		  	sched_to = nan("f");
+		else
+		  	sched_to = ln_get_julian_from_timet (&d_sched_to);
+
+		(*this)[d_schedticket_id] = new Ticket (d_schedticket_id, tarSet->getTarget (d_tar_id),
+			d_account_id, sched_from, sched_to);
 	}
 }

@@ -126,6 +126,15 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		void getStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
 
+		/**
+		 * Return number of given constraint violation
+		 *
+		 * @param _type  Type of constraint violation which will be tested.
+		 *
+		 * @return 0 if all schedules in bag does not violate any constraint, otherwise number of constraint violated.
+		 */
+		unsigned int constraintViolation (constraintFunc _type);
+
 
 		/**
 		 * Do one step of a simple GA.

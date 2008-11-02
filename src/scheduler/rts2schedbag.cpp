@@ -131,8 +131,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	objectivesSize = 3;
 
 	constraints[0] = CONSTR_VISIBILITY;
+	constraints[1] = CONSTR_SCHEDULE_TIME;
 
-	constraintSize = 1;
+	constraintSize = 2;
 }
 
 
@@ -195,6 +196,18 @@ Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _
 		_avg += cur;	
 	}
 	_avg /= size ();
+}
+
+
+unsigned int
+Rts2SchedBag::constraintViolation (constraintFunc _type)
+{
+	unsigned int ret = 0;
+	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
+	{
+		ret += (*iter)->getConstraintFunction (_type);
+	}
+	return ret;
 }
 
 
@@ -272,16 +285,16 @@ Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 		double cons1 = sched1->getConstraintFunction (constraints[i]);
 		double cons2 = sched2->getConstraintFunction (constraints[i]);
 		// if some schedule violate, prefer the one which does not violate..
-		if (cons1 >= 1 && cons2 < 1)
+		if (cons1 == 0 && cons2 > 0)
 		  	return -1;
-		if (cons1 < 1 && cons2 >= 1)
+		if (cons1 > 0 && cons2 == 0)
 			return 1;
-		// if both are infesieble, prefer one which is closer to be feasible
-		if (cons1 < 1 && cons2 < 1)
+		// if both are infeasible, prefer one which is closer to be feasible
+		if (cons1 > 0 && cons2 > 0)
 		{
-			if (cons1 > cons2)
+			if (cons1 < cons2)
 				dom1 = true;
-			else if (cons1 < cons2)
+			else if (cons1 > cons2)
 			  	dom2 = true;
 		}
 	}

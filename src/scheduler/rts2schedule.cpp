@@ -114,11 +114,15 @@ Rts2Schedule::visibilityRatio ()
 	if (!isnan (visRatio))
 		return visRatio;
 
-	unsigned int visible = 0;
+	visible = 0;
+	unvisible = 0;
+
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 	{
 		if ((*iter)->isVisible ())
 			visible ++;
+		else
+			unvisible++;
 	}
 	visRatio = (double) visible / size ();
 	return visRatio;
@@ -218,6 +222,41 @@ Rts2Schedule::distanceMerit ()
 	}
 	
 	return distMerit;
+}
+
+
+unsigned int
+Rts2Schedule::violateSchedule ()
+{
+	if (violatedSch != UINT_MAX)
+		return violatedSch;
+
+	violatedSch = 0;
+
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter)->violateSchedule ())
+			violatedSch++;
+	}
+
+	return violatedSch;
+}
+
+
+unsigned int
+Rts2Schedule::unobservedSchedules ()
+{
+	if (unobservedSch != UINT_MAX)
+		return unobservedSch;
+
+	unobservedSch = 0;
+
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+
+	}
+
+	return unobservedSch;
 }
 
 

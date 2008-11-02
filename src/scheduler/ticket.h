@@ -35,16 +35,20 @@ class Ticket
 		int ticketId;
 		Target *target;
 		int accountId;
+		double sched_from;
+		double sched_to;
 
 	public:
 		/**
 		 * Create scheduling ticket with a given parameters.
 		 *
-		 * @param _ticketId  ID of scheduling ticket.
-		 * @param _target  Target class.
-		 * @param _accountId Id of 
+		 * @param _ticketId   ID of scheduling ticket.
+		 * @param _target     Target class.
+		 * @param _accountId  Id of ticket account.
+		 * @param _sched_from Scheduling from this time. When nan, there is not from restricion.
+		 * @param _sched_to   Scheduling to this time. When nan, there is not to restriction.
 		 */
-		Ticket (int _schedTicketId, Target *_target, int _accountId);
+		Ticket (int _schedTicketId, Target *_target, int _accountId, double _sched_from, double _sched_to);
 
 		/**
 		 * Return target associated with scheduling ticket.
@@ -76,6 +80,16 @@ class Ticket
 		{
 			return accountId;
 		}
+
+		/**
+		 * Returns true if ticket is violated if scheduled in given interval.
+		 *
+		 * @param _from  Test from this interval.
+		 * @param _to    Test to this interval.
+		 *
+		 * @return True if scheduling ticket is violated in this interval.
+		 */
+		bool violateSchedule (double _from, double _to);
 };
 
 }

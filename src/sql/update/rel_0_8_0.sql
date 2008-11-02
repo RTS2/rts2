@@ -9,7 +9,9 @@ CREATE TABLE accounts (
 CREATE TABLE tickets (
 	schedticket_id	integer PRIMARY KEY,
 	tar_id 		integer REFERENCES targets(tar_id),
-	account_id	integer REFERENCES accounts(account_id)
+	account_id	integer REFERENCES accounts(account_id),
+	sched_from	timestamp,
+	sched_to	timestamp
 );
 
 --- Create default account

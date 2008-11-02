@@ -26,15 +26,17 @@
 #include <vector>
 
 typedef enum {
-	VISIBILITY,
-	ALTITUDE,
-	ACCOUNT,
-	DISTANCE,
-	SINGLE
+	VISIBILITY,     // ratio of visible targets. 1 = all targets are visible
+	ALTITUDE,       // average altitude of the target. 1 = highest possible target altitude, 0 = on or bellow horizon
+	ACCOUNT,        // ratio of account share. Higher = better
+	DISTANCE,       // average distance between observations
+	SCHEDULE_TIME,  // number of targets with scheduling constrain that are satisfied
+	SINGLE		// single scheduling criteria
 } objFunc;
 
 typedef enum {
-	CONSTR_VISIBILITY
+	CONSTR_VISIBILITY,	// visibility violation - target is not visible
+	CONSTR_SCHEDULE_TIME	// schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
 } constraintFunc;
 
 /**
@@ -65,6 +67,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double accMerit;
 		double distMerit;
 
+		unsigned int visible;
+		unsigned int unvisible;
+
+		unsigned int violatedSch;
+		unsigned int unobservedSch;
+
 		// sets lazy merits to nan
 		void nanLazyMerits ()
 		{
@@ -72,6 +80,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 			altMerit = nan ("f");
 			accMerit = nan ("f");
 			distMerit = nan ("f");
+
+			visible = UINT_MAX;
+			unvisible = UINT_MAX;
+
+			violatedSch = UINT_MAX;
+			unobservedSch = UINT_MAX;
 
 			NSGARank = INT_MAX;
 			NSGADistance = 0;
@@ -208,19 +222,35 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 			return distanceMerit ();
 		}
 
+
 		/**
-		 * Return constraint function. Constraint is satisfied, if return is >= 1.
+		 * Return number of targets which are scheduled outside their scheduling
+		 * interval.
+		 */
+		unsigned int violateSchedule ();
+
+		/**
+		 * Return number of targets which schedule will never be satisfied.
+		 */
+		unsigned int unobservedSchedules ();
+
+		/**
+		 * Return constraint function. Constraint is satisfied, if return is = 0. Otherwise
+		 * number of constraint violations is returned.
 		 *
 		 * @param _type Constraint function type.
 		 *
-		 * @return 
+		 * @return Number of targets which are infeasible with respect to given constraint.
 		 */
 		double getConstraintFunction (constraintFunc _type)
 		{
 			switch (_type)
 			{
 				case CONSTR_VISIBILITY:
-					return visibilityRatio ();
+					visibilityRatio ();
+					return unvisible;
+				case CONSTR_SCHEDULE_TIME:
+					return violateSchedule () + unobservedSchedules ();
 			}
 			return nan ("f");
 		}

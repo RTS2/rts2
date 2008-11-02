@@ -116,6 +116,7 @@ Rts2ScheduleApp::printSGAMerits ()
 		<< std::setw (11) << "ACCOUNT"
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
+		<< std::setw (4) << "SCH"
 		<< std::setw (11) << "SINGLE"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
@@ -125,6 +126,7 @@ Rts2ScheduleApp::printSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
 			<< std::endl; 
 	}
@@ -141,6 +143,7 @@ Rts2ScheduleApp::printNSGAMerits ()
 		<< std::setw (11) << "ACCOUNT"
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
+		<< std::setw (4) << "SCH"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
@@ -148,7 +151,8 @@ Rts2ScheduleApp::printNSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY)
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
 			<< std::endl; 
 	}
 }
@@ -303,9 +307,11 @@ Rts2ScheduleApp::doProcessing ()
 
 			std::cout << std::right << std::setw (5) << i << " "
 				<< std::setw (4) << schedBag->size () << " "
-				<< std::left << std::setw (10) << _min << " "
-				<< std::left << std::setw (10) << _avg << " "
-				<< std::left << std::setw (10) << _max;
+				<< std::setw (10) << _min << " "
+				<< std::setw (10) << _avg << " "
+				<< std::setw (10) << _max << " "
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_VISIBILITY) << " "
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME);
 			int rankSize = 0;
 			int rank = 0;
 			// print addtional algoritm specific info

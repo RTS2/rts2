@@ -167,6 +167,14 @@ class Rts2SchedObs
 			getTarget ()->getPosition (&_pos, JD);
 		}
 
+		/**
+		 * Return true if schedule for given ticket is violated.
+		 */
+		bool violateSchedule ()
+		{
+			return ticket->violateSchedule (getJDStart (), getJDEnd ());
+		}
+
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs);
