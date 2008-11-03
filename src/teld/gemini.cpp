@@ -392,8 +392,6 @@ class Gemini:public Rts2DevTelescope
 		virtual int stopWorm ();
 		virtual int startWorm ();
 		virtual int resetMount ();
-		virtual int startDir (char *dir);
-		virtual int stopDir (char *dir);
 		virtual int startGuide (char dir, double dir_dist);
 		virtual int stopGuide (char dir);
 		virtual int stopGuideAll ();
@@ -2489,37 +2487,6 @@ Gemini::resetMount ()
 	if (ret)
 		return ret;
 	return Rts2DevTelescope::resetMount ();
-}
-
-
-int
-Gemini::startDir (char *dir)
-{
-	switch (*dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			tel_set_rate (RATE_FIND);
-			return telescope_start_move (*dir);
-	}
-	return -2;
-}
-
-
-int
-Gemini::stopDir (char *dir)
-{
-	switch (*dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			return telescope_stop_move (*dir);
-	}
-	return -2;
 }
 
 
