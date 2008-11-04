@@ -93,8 +93,6 @@ class Bart:public Ford
 	public:
 		Bart (int argc, char **argv);
 		virtual ~Bart ();
-
-		virtual int changeMasterState (int new_state);
 };
 
 }
@@ -312,45 +310,6 @@ Bart::observing ()
 {
 	handle_zasuvky (OBSERVING);
 	return Ford::observing ();
-}
-
-
-int
-Bart::changeMasterState (int new_state)
-{
-	if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
-	{
-		switch (new_state & SERVERD_STATUS_MASK)
-		{
-			case SERVERD_EVENING:
-			case SERVERD_MORNING:
-			case SERVERD_DUSK:
-			case SERVERD_NIGHT:
-			case SERVERD_DAWN:
-				standby ();
-				break;
-			default:
-				off ();
-		}
-	}
-	else
-	{
-		switch (new_state & SERVERD_STATUS_MASK)
-		{
-			case SERVERD_EVENING:
-			case SERVERD_NIGHT:
-			case SERVERD_DUSK:
-			case SERVERD_DAWN:
-				observing ();
-				break;
-			case SERVERD_MORNING:
-				standby ();
-				break;
-			default:
-				off ();
-		}
-	}
-	return Ford::changeMasterState (new_state);
 }
 
 
