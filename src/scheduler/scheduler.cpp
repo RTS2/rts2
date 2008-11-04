@@ -18,6 +18,7 @@
  */
 
 #include "../utilsdb/rts2appdb.h"
+#include "../utilsdb/sqlerror.h"
 #include "../utils/rts2config.h"
 
 #include "rts2schedbag.h"
@@ -124,6 +125,7 @@ Rts2ScheduleApp::printSGAMerits ()
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
 		<< std::setw (4) << "SCH"
+		<< std::setw (4) << "OBN"
 		<< std::setw (11) << "SINGLE"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
@@ -134,6 +136,7 @@ Rts2ScheduleApp::printSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
 			<< std::endl; 
 	}
@@ -151,6 +154,7 @@ Rts2ScheduleApp::printNSGAMerits ()
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
 		<< std::setw (4) << "SCH"
+		<< std::setw (4) << "OBN"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
@@ -160,6 +164,7 @@ Rts2ScheduleApp::printNSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::endl; 
 	}
 }
@@ -340,7 +345,8 @@ Rts2ScheduleApp::doProcessing ()
 				<< std::setw (10) << _avg << " "
 				<< std::setw (10) << _max << " "
 				<< std::setw (4) << schedBag->constraintViolation (CONSTR_VISIBILITY) << " "
-				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME);
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME) << " "
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_OBS_NUM);
 			int rankSize = 0;
 			int rank = 0;
 			// print addtional algoritm specific info
@@ -376,6 +382,13 @@ Rts2ScheduleApp::doProcessing ()
 int
 main (int argc, char ** argv)
 {
-	Rts2ScheduleApp app = Rts2ScheduleApp (argc, argv);
-	return app.run ();
+	try
+	{
+		Rts2ScheduleApp app = Rts2ScheduleApp (argc, argv);
+		return app.run ();
+	}
+	catch (rts2db::SqlError err)
+	{
+		std::cerr << err.getError () << std::endl;
+	}
 }

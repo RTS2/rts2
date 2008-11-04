@@ -260,6 +260,25 @@ Rts2Schedule::unobservedSchedules ()
 }
 
 
+unsigned int
+Rts2Schedule::violatedObsNum ()
+{
+	if (violatedObsN != UINT_MAX)
+		return violatedObsN;
+	
+	violatedObsN = 0;
+	
+	// now calculate how many times each ticket was observed
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((++ticketObs[(*iter)->getTicketId ()]) > (*iter)->getTicket ()->getObsNum ())
+			violatedObsN++;
+	}
+
+	return violatedObsN;
+}
+
+
 std::ostream &
 operator << (std::ostream & _os, Rts2Schedule & schedule)
 {

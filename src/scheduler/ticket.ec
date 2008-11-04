@@ -21,13 +21,18 @@
 
 using namespace rts2sched;
 
-Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId, double _sched_from, double _sched_to)
+Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId,
+	unsigned int _obs_num, double _sched_from, double _sched_to,
+	double _sched_interval_min, double _sched_interval_max)
 {
 	ticketId = _schedTicketId;
 	target = _target;
 	accountId = _accountId;
+	obs_num = _obs_num;
 	sched_from = _sched_from;
 	sched_to = _sched_to;
+	sched_interval_min = _sched_interval_min;
+	sched_interval_max = _sched_interval_max;
 }
 
 

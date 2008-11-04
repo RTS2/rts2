@@ -76,6 +76,16 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Return ID of ticket associated with this observation.
+		 *
+		 * @return Ticket ID.
+		 */
+		int getTicketId ()
+		{
+			return ticket->getTicketId ();
+		}
+
+		/**
 		 * Return pointer to used target object.
 		 *
 		 * @return Pointer to target object.

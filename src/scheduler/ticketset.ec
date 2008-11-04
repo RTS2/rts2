@@ -43,10 +43,16 @@ TicketSet::load (Rts2TargetSet *tarSet)
 	int d_schedticket_id;
 	int d_tar_id;
 	int d_account_id;
+	unsigned int d_obs_num;
+	int d_obs_num_ind;
 	long d_sched_from;
 	int d_sched_from_ind;
 	long d_sched_to;
 	int d_sched_to_ind;
+	double d_sched_interval_min;
+	int d_sched_interval_min_ind;
+	double d_sched_interval_max;
+	int d_sched_interval_max_ind;
 	EXEC SQL END DECLARE SECTION;
 
 	double sched_from, sched_to;
@@ -55,10 +61,15 @@ TicketSet::load (Rts2TargetSet *tarSet)
 		schedticket_id,
 		tar_id,
 		account_id,
+		obs_num,
 		EXTRACT (EPOCH FROM sched_from),
-		EXTRACT (EPOCH FROM sched_to)
+		EXTRACT (EPOCH FROM sched_to),
+		EXTRACT (EPOCH FROM sched_interval_min),
+		EXTRACT (EPOCH FROM sched_interval_max)
 	FROM
-		tickets;
+		tickets
+	WHERE
+		((obs_num is NULL) or (obs_num > 0));
 
 	EXEC SQL OPEN cur_tickets;
 	if (sqlca.sqlcode)
@@ -70,14 +81,19 @@ TicketSet::load (Rts2TargetSet *tarSet)
 			:d_schedticket_id,
 			:d_tar_id,
 			:d_account_id,
+			:d_obs_num :d_obs_num_ind,
 			:d_sched_from :d_sched_from_ind,
-			:d_sched_to :d_sched_to_ind;
-
+			:d_sched_to :d_sched_to_ind,
+			:d_sched_interval_min :d_sched_interval_min_ind,
+			:d_sched_interval_max :d_sched_interval_max_ind;
 
 		if (sqlca.sqlcode == ECPG_NOT_FOUND)
 			break;
 		else if (sqlca.sqlcode)
 		  	throw rts2db::SqlError ();
+
+		if (d_obs_num_ind < 0)
+		  	d_obs_num = UINT_MAX;
 
 		if (d_sched_from_ind < 0)
 			sched_from = nan("f");
@@ -89,7 +105,13 @@ TicketSet::load (Rts2TargetSet *tarSet)
 		else
 		  	sched_to = ln_get_julian_from_timet (&d_sched_to);
 
+		if (d_sched_interval_min_ind < 0)
+			d_sched_interval_min = -1;
+		if (d_sched_interval_max_ind < 0)
+		  	d_sched_interval_max = -1;
+
 		(*this)[d_schedticket_id] = new Ticket (d_schedticket_id, tarSet->getTarget (d_tar_id),
-			d_account_id, sched_from, sched_to);
+			d_account_id, d_obs_num, sched_from, sched_to,
+			d_sched_interval_min, d_sched_interval_max);
 	}
 }

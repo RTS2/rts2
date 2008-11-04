@@ -35,8 +35,14 @@ class Ticket
 		int ticketId;
 		Target *target;
 		int accountId;
+
+		unsigned int obs_num;
+
 		double sched_from;
 		double sched_to;
+
+		double sched_interval_min;
+		double sched_interval_max;
 
 	public:
 		/**
@@ -45,10 +51,25 @@ class Ticket
 		 * @param _ticketId   ID of scheduling ticket.
 		 * @param _target     Target class.
 		 * @param _accountId  Id of ticket account.
+		 * @param _obs_num    Number of observations which can be taken with this ticket.
 		 * @param _sched_from Scheduling from this time. When nan, there is not from restricion.
 		 * @param _sched_to   Scheduling to this time. When nan, there is not to restriction.
+		 * @param _sched_interval_min
+		 * @param _sched_interval_max
 		 */
-		Ticket (int _schedTicketId, Target *_target, int _accountId, double _sched_from, double _sched_to);
+		Ticket (int _schedTicketId, Target *_target, int _accountId,
+			unsigned int _obs_num, double _sched_from, double _sched_to,
+			double _sched_interval_min, double _sched_interval_max);
+
+		/**
+		 * Returns ticket ID.
+		 *
+		 * @return Ticket ID.
+		 */
+		int getTicketId ()
+		{
+			return ticketId;
+		}
 
 		/**
 		 * Return target associated with scheduling ticket.
@@ -90,6 +111,16 @@ class Ticket
 		 * @return True if scheduling ticket is violated in this interval.
 		 */
 		bool violateSchedule (double _from, double _to);
+
+		/**
+		 * Returns number of observations allocated to this ticket.
+		 *
+		 * @return obsNum;
+		 */
+		unsigned int getObsNum ()
+		{
+			return obs_num;
+		}
 };
 
 }

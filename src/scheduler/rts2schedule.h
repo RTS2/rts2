@@ -36,7 +36,8 @@ typedef enum {
 
 typedef enum {
 	CONSTR_VISIBILITY,	// visibility violation - target is not visible
-	CONSTR_SCHEDULE_TIME	// schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
+	CONSTR_SCHEDULE_TIME,	// schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
+	CONSTR_OBS_NUM		// target is observed more times then it should be observed
 } constraintFunc;
 
 /**
@@ -73,6 +74,11 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		unsigned int violatedSch;
 		unsigned int unobservedSch;
 
+		unsigned int violatedObsN;
+
+		// used to calculate how many observations were performed on a given ticket
+		std::map <int, int> ticketObs;
+
 		// sets lazy merits to nan
 		void nanLazyMerits ()
 		{
@@ -86,6 +92,10 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 
 			violatedSch = UINT_MAX;
 			unobservedSch = UINT_MAX;
+
+			violatedObsN = UINT_MAX;
+
+			ticketObs.clear ();
 
 			NSGARank = INT_MAX;
 			NSGADistance = 0;
@@ -234,6 +244,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 */
 		unsigned int unobservedSchedules ();
 
+
+		/**
+		 * Return number of tickets, which violate their observing number.
+		 */
+		unsigned int violatedObsNum ();
+
 		/**
 		 * Return constraint function. Constraint is satisfied, if return is = 0. Otherwise
 		 * number of constraint violations is returned.
@@ -251,6 +267,8 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 					return unvisible;
 				case CONSTR_SCHEDULE_TIME:
 					return violateSchedule () + unobservedSchedules ();
+				case CONSTR_OBS_NUM:
+					return violatedObsNum ();
 			}
 			return nan ("f");
 		}
