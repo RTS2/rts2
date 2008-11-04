@@ -8,7 +8,7 @@ Download them to $HOME/paracl directory.
 
 Then run from RTS2 code (see generic instructions in INSTALL file):
 
-user@host:~/rts2$ ./configure --without-wcs --with-paracl=$HOME/paracl
+user@host:~/rts2$ ./configure --without-wcs --with-paralib=$HOME/paracl
 
 This will tell buidl system to build with paramount libraries.
 
