@@ -7,11 +7,14 @@ CREATE TABLE accounts (
 --- Scheduling ticket table
 
 CREATE TABLE tickets (
-	schedticket_id	integer PRIMARY KEY,
-	tar_id 		integer REFERENCES targets(tar_id),
-	account_id	integer REFERENCES accounts(account_id),
-	sched_from	timestamp,
-	sched_to	timestamp
+	schedticket_id		integer PRIMARY KEY,
+	tar_id 			integer REFERENCES targets(tar_id) not NULL,
+	account_id		integer REFERENCES accounts(account_id) not NULL,
+	obs_num			integer default NULL, -- how many times observation can be repeated, null means unlimited
+	sched_from		timestamp default NULL, -- scheduling from this date
+	sched_to		timestamp default NULL, -- scheduling to this date
+	sched_interval_min	interval default NULL,  -- minimal interval between observations. 
+	sched_interval_max	interval default NULL  -- maximal interval between observations
 );
 
 --- Create default account
