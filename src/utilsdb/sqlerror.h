@@ -37,7 +37,11 @@ class SqlError
 		}
 
 		static std::string getError ();
+
+		friend std::ostream & operator << (std::ostream & _os, SqlError & err);
 };
+
+std::ostream & operator << (std::ostream & _os, SqlError & err);
 
 }
 
