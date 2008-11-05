@@ -125,6 +125,7 @@ Rts2ScheduleApp::printSGAMerits ()
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
 		<< std::setw (4) << "SCH"
+		<< std::setw (4) << "UNT"
 		<< std::setw (4) << "OBN"
 		<< std::setw (11) << "SINGLE"
 		<< std::endl;
@@ -136,6 +137,7 @@ Rts2ScheduleApp::printSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
 			<< std::endl; 
@@ -154,6 +156,7 @@ Rts2ScheduleApp::printNSGAMerits ()
 		<< std::setw (11) << "DISTANCE"
 		<< std::setw (11) << "VISIBILITY"
 		<< std::setw (4) << "SCH"
+		<< std::setw (4) << "UNT"
 		<< std::setw (4) << "OBN"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
@@ -164,6 +167,7 @@ Rts2ScheduleApp::printNSGAMerits ()
 			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::endl; 
 	}
@@ -346,6 +350,7 @@ Rts2ScheduleApp::doProcessing ()
 				<< std::setw (10) << _max << " "
 				<< std::setw (4) << schedBag->constraintViolation (CONSTR_VISIBILITY) << " "
 				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME) << " "
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_UNOBSERVED_TICKETS) << " "
 				<< std::setw (4) << schedBag->constraintViolation (CONSTR_OBS_NUM);
 			int rankSize = 0;
 			int rank = 0;

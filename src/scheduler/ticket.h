@@ -121,6 +121,27 @@ class Ticket
 		{
 			return obs_num;
 		}
+
+		/**
+		 * Test if schedule should be observed during given interval.
+		 *
+		 * @param _start Test interval start date in JD.
+		 * @param _end   Test interval end date in JD.
+		 *
+		 * @return 
+		 */
+		bool shouldBeObservedDuring (double _start, double _end)
+		{
+			if (isnan (sched_from))
+			{
+				if (isnan (sched_to))
+					return false;
+				return sched_to > _start;
+			}
+			if (isnan (sched_to))
+				return _end > sched_from;
+			return !(_start > sched_to || _end < sched_from);
+		}
 };
 
 }

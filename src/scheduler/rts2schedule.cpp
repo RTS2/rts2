@@ -71,6 +71,18 @@ Rts2Schedule::~Rts2Schedule (void)
 }
 
 
+bool
+Rts2Schedule::isScheduled (Ticket *_ticket)
+{
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (_ticket->getTicketId () == (*iter)->getTicketId ())
+			return true;
+	}
+	return false;
+}
+
+
 Ticket *
 Rts2Schedule::randomTicket ()
 {
@@ -251,9 +263,11 @@ Rts2Schedule::unobservedSchedules ()
 
 	unobservedSch = 0;
 
-	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	for (TicketSet::iterator iter = ticketSet->begin (); iter != ticketSet->end (); iter++)
 	{
-
+		if ((*iter).second->shouldBeObservedDuring (JDstart, JDend))
+		  	if (!isScheduled ((*iter).second))
+				unobservedSch++;
 	}
 
 	return unobservedSch;

@@ -35,9 +35,10 @@ typedef enum {
 } objFunc;
 
 typedef enum {
-	CONSTR_VISIBILITY,	// visibility violation - target is not visible
-	CONSTR_SCHEDULE_TIME,	// schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
-	CONSTR_OBS_NUM		// target is observed more times then it should be observed
+	CONSTR_VISIBILITY,	   // visibility violation - target is not visible
+	CONSTR_SCHEDULE_TIME,	   // schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
+	CONSTR_UNOBSERVED_TICKETS, // number of unobserved tickets - tickets which have to time in schedule period, have some numObs left, but were not observed
+	CONSTR_OBS_NUM		   // target is observed more times then it should be observed
 } constraintFunc;
 
 /**
@@ -77,7 +78,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		unsigned int violatedObsN;
 
 		// used to calculate how many observations were performed on a given ticket
-		std::map <int, int> ticketObs;
+		std::map <int, unsigned int> ticketObs;
 
 		// sets lazy merits to nan
 		void nanLazyMerits ()
@@ -169,6 +170,11 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		{
 			NSGADistance += _inc;
 		}
+
+		/**
+		 * Check if given ticket is properly scheduled in schedule.
+		 */
+		bool isScheduled (Ticket *_ticket);
 
 		/**
 		 * Generate random target for schedule.
@@ -266,7 +272,9 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 					visibilityRatio ();
 					return unvisible;
 				case CONSTR_SCHEDULE_TIME:
-					return violateSchedule () + unobservedSchedules ();
+					return violateSchedule ();
+				case CONSTR_UNOBSERVED_TICKETS:
+					return unobservedSchedules ();
 				case CONSTR_OBS_NUM:
 					return violatedObsNum ();
 			}

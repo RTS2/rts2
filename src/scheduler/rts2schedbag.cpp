@@ -132,9 +132,10 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 
 	constraints[0] = CONSTR_VISIBILITY;
 	constraints[1] = CONSTR_SCHEDULE_TIME;
-	constraints[2] = CONSTR_OBS_NUM;
+	constraints[2] = CONSTR_UNOBSERVED_TICKETS;
+	constraints[3] = CONSTR_OBS_NUM;
 
-	constraintSize = 3;
+	constraintSize = 4;
 }
 
 
