@@ -205,8 +205,6 @@ std::string Rts2Conn::getStateString ()
 				_os << " | CORRECTING";
 			if (real_state & TEL_WAIT_COP)
 				_os << " | WAIT_FOR_CUPOLA";
-			if (real_state & TEL_SEARCH)
-				_os << " | SEARCHING";
 			if (real_state & TEL_GUIDE_NORTH)
 				_os << " | GUIDE_NORTH";
 			if (real_state & TEL_GUIDE_EAST)
@@ -404,6 +402,9 @@ std::string Rts2Conn::getStateString ()
 			break;
 		case DEVICE_TYPE_LOGD:
 			_os << "logd " << real_state;
+			break;
+		case DEVICE_TYPE_SCRIPTOR:
+			_os << "scriptor " << real_state;
 			break;
 		default:
 			_os << "UNKNOW DEVICE " << getOtherType () << " " << real_state;
