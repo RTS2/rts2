@@ -31,10 +31,6 @@
 #include "../utils/rts2connserial.h"
 #include "../utils/rts2config.h"
 
-// uncomment following line, if you want all port read logging (will
-// add about 10 30-bytes lines to logStream for every query).
-// #define DEBUG_ALL_PORT_COMM
-
 #define RATE_SLEW                'S'
 #define RATE_FIND                'M'
 #define RATE_CENTER              'C'
@@ -1470,7 +1466,8 @@ Gemini::tel_start_move ()
 
 	telescope_stop_goto ();
 
-	if ((tel_write_ra (lastMoveRa) < 0) || (tel_write_dec (lastMoveDec) < 0))
+	if ((tel_write_ra (lastMoveRa) < 0) || (tel_conn->writePort (":ONtest#", 8) < 0)
+		|| (tel_write_dec (lastMoveDec) < 0))
 		return -1;
 	if (tel_write_read (":MS#", 4, &retstr, 1) < 0)
 		return -1;
@@ -1737,8 +1734,6 @@ Gemini::endMove ()
 	#endif
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	if (tel_conn->writePort (":ONtest#", 8) < 0)
-		return -1;
 	return Rts2DevTelescope::endMove ();
 }
 
