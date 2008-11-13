@@ -37,26 +37,28 @@ class IrAxis
 		double realpos;
 		double power;
 		double power_state;
+		int version;
 		const char *name;
 	public:
-		IrAxis (const char *in_name, double in_referenced, double in_currpos,
-			double in_targetpos, double in_offset, double in_realpos,
-			double in_power, double in_power_state);
+		IrAxis (const char *_name, double _referenced, double _currpos,
+			double _targetpos, double _offset, double _realpos,
+			double _power, double _power_state, int _version);
 		friend std::ostream & operator << (std::ostream & _os, IrAxis irax);
 };
 
-IrAxis::IrAxis (const char *in_name, double in_referenced, double in_currpos,
-double in_targetpos, double in_offset, double in_realpos,
-double in_power, double in_power_state)
+IrAxis::IrAxis (const char *_name, double _referenced, double _currpos,
+double _targetpos, double _offset, double _realpos,
+double _power, double _power_state, int _version)
 {
-	name = in_name;
-	referenced = in_referenced;
-	currpos = in_currpos;
-	targetpos = in_targetpos;
-	offset = in_offset;
-	realpos = in_realpos;
-	power = in_power;
-	power_state = in_power_state;
+	name = _name;
+	referenced = _referenced;
+	currpos = _currpos;
+	targetpos = _targetpos;
+	offset = _offset;
+	realpos = _realpos;
+	power = _power;
+	power_state = _power_state;
+	version = _version;
 }
 
 
@@ -71,7 +73,8 @@ std::ostream & operator << (std::ostream & _os, IrAxis irax)
 		<< irax.name << ".OFFSET " << irax.offset << std::endl
 		<< irax.name << ".REALPOS " << irax.realpos << std::endl
 		<< irax.name << ".POWER " << irax.power << std::endl
-		<< irax.name << ".POWER_STATE " << irax.power_state << std::endl;
+		<< irax.name << ".POWER_STATE " << irax.power_state << std::endl
+		<< irax.name << ".VERSION " << irax.version << std::endl;
 	_os.setf (old_settings);
 	return _os;
 }
@@ -114,6 +117,7 @@ Rts2DevIrError::getAxisStatus (const char *ax_name)
 	double realpos = nan ("f");
 	double power = nan ("f");
 	double power_state = nan ("f");
+	int version = 0;
 	std::ostringstream * os;
 	int status = 0;
 
@@ -145,8 +149,12 @@ Rts2DevIrError::getAxisStatus (const char *ax_name)
 	(*os) << ax_name << ".POWER";
 	status = irConn->tpl_get (os->str ().c_str (), power_state, &status);
 	delete os;
+	os = new std::ostringstream ();
+	(*os) << ax_name << ".VERSION";
+	status = irConn->tpl_get (os->str ().c_str (), version, &status);
+	delete os;
 	return IrAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
-		power, power_state);
+		power, power_state, version);
 }
 
 
