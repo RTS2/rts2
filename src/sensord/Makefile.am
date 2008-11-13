@@ -1,6 +1,6 @@
 bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2-sensor-phytron \
 	rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
-	rts2-sensor-fram-weather rts2-sensor-bart-rain \ # rts2-sensor-mrakomer-move \
+	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn
 
 noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h
