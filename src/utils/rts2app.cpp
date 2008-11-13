@@ -234,7 +234,7 @@ Rts2App::processOption (int in_opt)
 				<< "This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org. \
 This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
 				<< std::endl
-				<< "See http://rts-2.sf.net for news and more."
+				<< "See http://rts2.org for news and more."
 				<< std::endl;
 
 			exit (EXIT_SUCCESS);
