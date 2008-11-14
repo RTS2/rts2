@@ -74,9 +74,8 @@ Rts2ConnClient::init ()
 	}
 	ret = fcntl (sock, F_SETFL, O_NONBLOCK);
 	if (ret == -1)
-	{
 		return -1;
-	}
+	
 	ret = connect (sock, device_addr->ai_addr, device_addr->ai_addrlen);
 	freeaddrinfo (device_addr);
 	if (ret == -1)
