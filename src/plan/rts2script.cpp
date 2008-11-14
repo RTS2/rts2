@@ -425,15 +425,6 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			target_pos);
 	}
 	#endif						 /* HAVE_PGSQL */
-	else if (!strcmp (commandStart, COMMAND_PHOT_SEARCH))
-	{
-		double searchRadius;
-		double searchSpeed;
-		if (getNextParamDouble (&searchRadius)
-			|| getNextParamDouble (&searchSpeed))
-			return NULL;
-		return new Rts2ScriptElementSearch (this, searchRadius, searchSpeed);
-	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_WAITSIG))
 	{
 		int waitSig;

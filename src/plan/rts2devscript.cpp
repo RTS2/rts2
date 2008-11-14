@@ -261,18 +261,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 				nextCommand ();
 			}
 			break;
-		case EVENT_TEL_SEARCH_END:
-		case EVENT_TEL_SEARCH_STOP:
-		case EVENT_TEL_SEARCH_SUCCESS:
-			if (waitScript != WAIT_SEARCH)
-				break;
-			waitScript = NO_WAIT;
-			if (script)
-				script->postEvent (new Rts2Event (event));
-			// give script chance to finish searching (e.g. move filter back
-			// to 0, then delete script)
-			nextCommand ();
-			break;
 		case EVENT_SCRIPT_NUMBER:
 			*((int*)event->getArg ()) = scriptCount;
 			break;
@@ -380,14 +368,6 @@ Rts2DevScript::deleteScript ()
 		script_connection->getMaster ()->
 			postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
 	}
-}
-
-
-void
-Rts2DevScript::searchSucess ()
-{
-	script_connection->getMaster ()->
-		postEvent (new Rts2Event (EVENT_TEL_SEARCH_SUCCESS));
 }
 
 

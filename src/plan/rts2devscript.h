@@ -96,9 +96,6 @@ class Rts2DevScript
 
 		virtual void deleteScript ();
 
-		// called when we find source..
-		virtual void searchSucess ();
-
 	public:
 		Rts2DevScript (Rts2Conn * in_script_connection);
 		virtual ~ Rts2DevScript (void);

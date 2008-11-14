@@ -48,15 +48,10 @@
 
 #define EVENT_ADD_FIXED_OFFSET    RTS2_LOCAL_EVENT + 259
 
-#define EVENT_TEL_SEARCH_START    RTS2_LOCAL_EVENT + 260
-#define EVENT_TEL_SEARCH_STOP     RTS2_LOCAL_EVENT + 261
-#define EVENT_TEL_SEARCH_END      RTS2_LOCAL_EVENT + 262
-// successfull search
-#define EVENT_TEL_SEARCH_SUCCESS  RTS2_LOCAL_EVENT + 263
 // guiding data available
-#define EVENT_GUIDING_DATA        RTS2_LOCAL_EVENT + 264
+#define EVENT_GUIDING_DATA        RTS2_LOCAL_EVENT + 260
 // ask for acquire state..
-#define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 265
+#define EVENT_GET_ACQUIRE_STATE   RTS2_LOCAL_EVENT + 261
 
 /**
  * Helper class for EVENT_ACQUIRE_QUERY
@@ -317,39 +312,6 @@ class Rts2ScriptElementWaitSignal:public Rts2ScriptElement
 		virtual int waitForSignal (int in_sig);
 };
 
-/**
- * Photometer based search of stars
- */
-class Rts2ScriptElementSearch:public Rts2ScriptElement
-{
-	private:
-		double searchRadius;
-		double searchSpeed;
-		enum
-		{
-			NEED_SEARCH, SEARCHING, SEARCH_OK, SEARCH_FAILED,
-			SEARCH_FAILED2
-		} processingState;
-	public:
-		Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius,
-			double in_searchSpeed);
-		virtual void postEvent (Rts2Event * event);
-		virtual int nextCommand (Rts2DevClientPhot * phot,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
-		double getSearchRadius ()
-		{
-			return searchRadius;
-		}
-		double getSearchSpeed ()
-		{
-			return searchSpeed;
-		}
-		void getJob ()
-		{
-			searchRadius = nan ("f");
-		}
-};
 
 /**
  * Set value.

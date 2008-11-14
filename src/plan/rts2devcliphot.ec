@@ -57,14 +57,6 @@ Rts2DevClientPhotExec::addCount (int count, float exp, bool is_ov)
   EXEC SQL END DECLARE SECTION;
   if ((connection->getState () & PHOT_MASK_INTEGRATE) != PHOT_INTEGRATE)
   {
-    // we are in searching mode..
-    if (waitScript == WAIT_SEARCH)
-    {
-      logStream (MESSAGE_DEBUG) <<
-        "Rts2DevClientPhotExec::addCount WAIT_SEARCH " << count << " " << exp << " " << is_ov << sendLog;
-      if (is_ov || (count / exp) > minFlux)
-        searchSucess ();
-    }
     return;
   }
 

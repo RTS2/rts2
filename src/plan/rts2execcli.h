@@ -146,12 +146,10 @@ class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 		void checkInterChange ();
 	protected:
 		virtual void moveEnd ();
-		virtual void searchEnd ();
 	public:
 		Rts2DevClientTelescopeExec (Rts2Conn * in_connection);
 		virtual void postEvent (Rts2Event * event);
 		virtual void moveFailed (int status);
-		virtual void searchFailed (int status);
 };
 
 class Rts2DevClientMirrorExec:public Rts2DevClientMirror
