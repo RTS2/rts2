@@ -21,74 +21,79 @@
 #include "lilxml.h"
 #include "base64.h"
 
-typedef struct {
-    char *ge, *gv;			/* element name and value */
-    //int ok;  ToDo				/* set when found */
+typedef struct
+{
+	char *ge, *gv;				 /* element name and value */
+	//int ok;  ToDo				/* set when found */
 } GetEV;
 
-typedef struct {
-    char *d;				/* device to seek */
-    char *p;				/* property to seek */
-    char *e;				/* element to seek */
-    GetEV *gev;				/* retrieved elements and values  */
-    int ngev;				/* n retrieved elements */
-    int wc : 1;				/* whether pattern uses wild cards */
-    int ok : 1;				/* something matched this query */
-    char *pstate ;                      /* state of the property */
+typedef struct
+{
+	char *d;					 /* device to seek */
+	char *p;					 /* property to seek */
+	char *e;					 /* element to seek */
+	GetEV *gev;					 /* retrieved elements and values  */
+	int ngev;					 /* n retrieved elements */
+	int wc : 1;					 /* whether pattern uses wild cards */
+	int ok : 1;					 /* something matched this query */
+	char *pstate ;				 /* state of the property */
 } SearchDef;
 
-typedef struct {
-    char *d;				/* device to seek */
-    char *t ;                           /* type, Switch, Number, Next */ 
-    char *p;				/* property to seek */
-    char *e;				/* element to seek */
-    char *v ;                           /* value */
-    int wc : 1;				/* whether pattern uses wild cards */
-    int ok : 1;				/* something matched this query */
+typedef struct
+{
+	char *d;					 /* device to seek */
+	char *t ;					 /* type, Switch, Number, Next */
+	char *p;					 /* property to seek */
+	char *e;					 /* element to seek */
+	char *v ;					 /* value */
+	int wc : 1;					 /* whether pattern uses wild cards */
+	int ok : 1;					 /* something matched this query */
 } GetPars;
 
-typedef struct {
-    char *e, *v;			/* element name and value */
-    int ok;				/* set when found */
+typedef struct
+{
+	char *e, *v;				 /* element name and value */
+	int ok;						 /* set when found */
 } SetEV;
-
 
 /* table of INDI definition elements we can set
  * N.B. do not change defs[] order, they are indexed via -x/-n/-s args
  */
-typedef struct {
-    char *defType;			/* defXXXVector name */
-    char *defOne;			/* defXXX name */
-    char *newType;			/* newXXXVector name */
-    char *oneType;			/* oneXXX name */
+typedef struct
+{
+	char *defType;				 /* defXXXVector name */
+	char *defOne;				 /* defXXX name */
+	char *newType;				 /* newXXXVector name */
+	char *oneType;				 /* oneXXX name */
 } set_INDIDef;
 
-typedef struct {
-    char *d;				/* device */
-    char *p;				/* property */
-    SetEV *ev;				/* elements */
-    int nev;				/* n elements */
-    set_INDIDef *dp;			/* one of defs if known, else NULL */
+typedef struct
+{
+	char *d;					 /* device */
+	char *p;					 /* property */
+	SetEV *ev;					 /* elements */
+	int nev;					 /* n elements */
+	set_INDIDef *dp;			 /* one of defs if known, else NULL */
 } SetPars;
 
-
-#define INDIPORT        7624            /* default port */
+#define INDIPORT        7624	 /* default port */
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp) ;
-int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp) ;
-int        rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp) ;
-int        rts2setINDI( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp) ;
-int        fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele) ;
-int        fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets) ;
-SearchDef *malloc_getINDIproperty() ;
-SetPars   *malloc_setINDIproperty( SetPars *csets, int *ncsets) ;
-void       free_getINDIproperty( SearchDef *csrchs, int ncsrchs) ;
-void       free_setINDIproperty( SetPars *csets, int ncsets) ;
-void       openINDIServer( const char *host, int port, FILE **svrwfp, FILE **svrrfp);
-void       closeINDIServer( FILE *svrwfp, FILE *svrrfp);
-#ifdef __cplusplus
+extern "C"
+{
+	#endif
+	XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp) ;
+	int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp) ;
+	int        rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp) ;
+	int        rts2setINDI( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp) ;
+	int        fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele) ;
+	int        fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets) ;
+	SearchDef *malloc_getINDIproperty() ;
+	SetPars   *malloc_setINDIproperty( SetPars *csets, int *ncsets) ;
+	void       free_getINDIproperty( SearchDef *csrchs, int ncsrchs) ;
+	void       free_setINDIproperty( SetPars *csets, int ncsets) ;
+	void       openINDIServer( const char *host, int port, FILE **svrwfp, FILE **svrrfp);
+	void       closeINDIServer( FILE *svrwfp, FILE *svrrfp);
+	#ifdef __cplusplus
 }
 #endif
