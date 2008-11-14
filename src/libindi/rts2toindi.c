@@ -188,7 +188,7 @@ static SearchDef *srchs;		/* properties to look for */
 static int nsrchs;
 static SetPars *sets;			/* set of properties to set */
 
-int rts2getINDI( char *device, char *data_type, char *property, char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp)
+int rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp)
 { 
     int i, j ;
     nsrchs = 0 ;
@@ -233,7 +233,7 @@ XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp)
     
     return root_return;
 }
-int rts2setINDI ( char *device, char *data_type, char *property, char *elements, char *values, FILE *svrwfp, FILE *svrrfp)
+int rts2setINDI ( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp)
 {
     SetPars *xsets=NULL ;
     int xnsets = 0 ;
@@ -263,7 +263,7 @@ int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp)
  * set svrwfp and svrrfp or die.
  */
 void
-openINDIServer (char *host, int port, FILE **svrwfp, FILE **svrrfp)
+openINDIServer (const char *host, int port, FILE **svrwfp, FILE **svrrfp)
 {
 	struct sockaddr_in serv_addr;
 	struct hostent *hp;
@@ -833,7 +833,7 @@ SearchDef *malloc_getINDIproperty()
     return srchs ;
 }
 
-int fill_getINDIproperty( char *dev, char *type, char *prop, char *ele)
+int fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele)
 {
     //fprintf( stderr, "fill_getINDIproperty REALLOC %p\n",asrchs) ;
     srchs[nsrchs].d = strcpy (malloc(strlen(dev)+1), dev);
@@ -886,7 +886,7 @@ SetPars *malloc_setINDIproperty( SetPars *csets, int *ncsets)
     return csets ;
 }
 
-int fill_setINDIproperty( char *dev, char *type, char *prop, char *ele, char *val, SetPars *dsets, int *dnsets)
+int fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets)
 {
     int t ;
 

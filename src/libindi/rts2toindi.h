@@ -79,15 +79,15 @@ extern "C" {
 #endif
 XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp) ;
 int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp) ;
-int        rts2getINDI( char *device, char *data_type, char *property, char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp) ;
-int        rts2setINDI( char *device, char *data_type, char *property, char *elements, char *values, FILE *svrwfp, FILE *svrrfp) ;
-int        fill_getINDIproperty( char *dev, char *type, char *prop, char *ele) ;
-int        fill_setINDIproperty( char *dev, char *type, char *prop, char *ele, char *val, SetPars *dsets, int *dnsets) ;
+int        rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp) ;
+int        rts2setINDI( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp) ;
+int        fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele) ;
+int        fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets) ;
 SearchDef *malloc_getINDIproperty() ;
 SetPars   *malloc_setINDIproperty( SetPars *csets, int *ncsets) ;
 void       free_getINDIproperty( SearchDef *csrchs, int ncsrchs) ;
 void       free_setINDIproperty( SetPars *csets, int ncsets) ;
-void       openINDIServer( char *host, int port, FILE **svrwfp, FILE **svrrfp);
+void       openINDIServer( const char *host, int port, FILE **svrwfp, FILE **svrrfp);
 void       closeINDIServer( FILE *svrwfp, FILE *svrrfp);
 #ifdef __cplusplus
 }
