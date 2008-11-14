@@ -146,7 +146,7 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	if (debugModbusComm)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
-		ls << "received";
+		ls << "recv";
 		ls.fill ('0');
 		for (size_t i = 0; i < reply_size; i++)
 		{
@@ -180,34 +180,51 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 
 
 int
-ConnModbus::readCoils (int start, int size)
+ConnModbus::callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size)
 {
 	int16_t req_data[2];
+	req_data[0] = htons (p1);
+	req_data[1] = htons (p2);
+
+	return callFunction (func, req_data, 4, reply, reply_size);
+}
+
+
+int
+ConnModbus::readCoils (int16_t start, int16_t size)
+{
 	int reply_size = 1 + (size / 8) + ((size % 8) == 0 ? 0 : 1);
 	char reply_data[reply_size];
 
-	req_data[0] = htons (start);
-	req_data[1] = htons (size);
-
 	int ret;
-	ret = callFunction (0x01, req_data, 4, reply_data, reply_size);
+	ret = callFunction (0x01, start, size, reply_data, reply_size);
 
 	return 0;
 }
 
 
 int
-ConnModbus::readDiscreteInputs (int start, int size)
+ConnModbus::readDiscreteInputs (int16_t start, int16_t size)
 {
-	int16_t req_data[2];
 	int reply_size = 1 + (size / 8) + ((size % 8) == 0 ? 0 : 1);
 	char reply_data[reply_size];
 
-	req_data[0] = htons (start);
-	req_data[1] = htons (size);
-
 	int ret;
-	ret = callFunction (0x02, req_data, 4, reply_data, reply_size);
+	ret = callFunction (0x02, start, size, reply_data, reply_size);
 
 	return 0;
 }
+
+
+int
+ConnModbus::readHoldingRegisters (int16_t start, int16_t qty)
+{
+	int reply_size = 1 + qty * 2;
+	char reply_data[reply_size];
+
+	int ret;
+	ret = callFunction (0x03, start, qty, reply_data, reply_size);
+
+	return 0;
+}
+

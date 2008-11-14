@@ -83,6 +83,17 @@ class ConnModbus: public Rts2ConnNoSend
 		int callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size);
 
 		/**
+		 * Call modbus function with two integer parameters.
+		 *
+		 * @param func       Function index.
+		 * @param p1         First parameter.
+		 * @param p2         Second parameter.
+		 * @param reply      Data returned from function call.
+		 * @param reply_size Size of return data.
+		 */
+		int callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size);
+
+		/**
 		 * Read Modbus PLC coil states.
 		 *
 		 * @param start   Coil start address.
@@ -90,7 +101,7 @@ class ConnModbus: public Rts2ConnNoSend
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int readCoils (int start, int size);
+		int readCoils (int16_t start, int16_t size);
 
 		/**
 		 * Read Modbus PLC discrete input states.
@@ -100,7 +111,17 @@ class ConnModbus: public Rts2ConnNoSend
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int readDiscreteInputs (int start, int size);
+		int readDiscreteInputs (int16_t start, int16_t size);
+
+		/**
+		 * Read holding registers.
+		 *
+		 * @param start   Holding register starting address.
+		 * @param qty     Quantity of registers.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int readHoldingRegisters (int16_t start, int16_t qty);
 };
 
 }
