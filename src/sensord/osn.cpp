@@ -21,6 +21,10 @@
 
 #include <arpa/inet.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 namespace rts2sensor
 {
 
@@ -53,9 +57,9 @@ using namespace rts2sensor;
 int
 Osn::info ()
 {
-	int sockfd, bytes_read, ret, i, j = 0;
+	int sockfd, bytes_read, ret, i;
 	struct sockaddr_in dest;
-	char buffer[300], buff[300];
+	char buff[500];
 	fd_set rfds;
 	struct timeval tv;
 	double _temp, _humi, _wind1, _wind2;
@@ -79,8 +83,8 @@ Osn::info ()
 	}
 
 	/* send command to SNOW */
-	sprintf (buffer, "%s", "RCD");
-	ret = write (sockfd, buffer, strlen (buffer));
+	sprintf (buff, "%s", "RCD");
+	ret = write (sockfd, buff, strlen (buff));
 	if (ret == -1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot write data:" << strerror (errno) << sendLog;
@@ -97,16 +101,12 @@ Osn::info ()
 
 	if (ret == 1)
 	{
-		bytes_read = read (sockfd, buffer, sizeof (buffer));
+		bytes_read = read (sockfd, buff, sizeof (buff));
 		if (bytes_read > 0)
 		{
 			for (i = 5; i < bytes_read; i++)
-			{
-				if (buffer[i] == ',')
-					buff[j++] = '.';
-				else
-					buff[j++] = buffer[i];
-			}
+				if (buff[i] == ',')
+					buff[i] = '.';
 		}
 	}
 	else
@@ -117,17 +117,17 @@ Osn::info ()
 
 	close (sockfd);
 
-	token = strtok ((char *) buff, "|");
-	for (j = 1; j < 40; j++)
+	token = strtok ((char *) buff + 5, "|");
+	for (i = 6; i < 45; i++)
 	{
 		token = (char *) strtok (NULL, "|#");
-		if (j == 3)
+		if (i == 8)
 			_wind1 = atof (token);
-		if (j == 6)
+		if (i == 11)
 			_wind2 = atof (token);
-		if (j == 18)
+		if (i == 23)
 			_temp = atof (token);
-		if (j == 24)
+		if (i == 29)
 			_humi = atof (token);
 	}
 
@@ -154,8 +154,8 @@ Osn::Osn (int argc, char **argv)
 {
 	createValue (temp, "TEMP", "temperature in degrees C");
 	createValue (humidity, "HUMI", "(outside) humidity");
-	createValue (wind1, "WIND_N", "windspeed on east mast");
-	createValue (wind2, "WIND_S", "windspeed on west mast");
+	createValue (wind1, "WIND_E", "windspeed on east mast");
+	createValue (wind2, "WIND_W", "windspeed on west mast");
 }
 
 
