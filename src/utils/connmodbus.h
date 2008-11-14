@@ -91,6 +91,16 @@ class ConnModbus: public Rts2ConnNoSend
 		 * @return -1 on error, 0 on success.
 		 */
 		int readCoils (int start, int size);
+
+		/**
+		 * Read Modbus PLC discrete input states.
+		 *
+		 * @param start   Discrete input start address.
+		 * @param size    Quantity of inputs.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int readDiscreteInputs (int start, int size);
 };
 
 }

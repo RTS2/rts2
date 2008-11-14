@@ -80,14 +80,28 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	send_data[6] = unitId;
 	send_data[7] = func;
 	bcopy (data, send_data + 8, data_size);
-	ret = send (sock, send_data, data_size + 8, 0);
+	data_size += 8;
+	ret = send (sock, send_data, data_size, 0);
+
+	if (debugModbusComm)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "send";
+		ls.fill ('0');
+		for (size_t i = 0; i < data_size; i++)
+		{
+			ls << " " << std::hex << std::setw (2) << (int) (send_data[i]);
+		}
+		ls << sendLog;
+	}
+
 	if (ret == -1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot send data to socket, error: " << strerror (errno) << sendLog;
 		connectionError (-1);
 		return -1;
 	}
-	else if (ret != (int) (data_size + 8))
+	else if (ret != (int) (data_size))
 	{
 		logStream (MESSAGE_ERROR) << "cannot send all data - strange, continuing. Send " <<
 			ret << ", expected " << data_size << ". Continuuing" << sendLog;
@@ -119,15 +133,29 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	}
 
 	// read from descriptor
-	char reply_data[reply_size + 8];
-	ret = recv (sock, reply_data, reply_size + 8, 0);
+	reply_size += 8;
+	char reply_data[reply_size];
+	ret = recv (sock, reply_data, reply_size, 0);
 	if (ret < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read from Modbus socket, error " << strerror (errno) << sendLog;
 		connectionError (-1);
 		return -1;
 	}
-	else if (reply_data[7] & 0x80)
+
+	if (debugModbusComm)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "received";
+		ls.fill ('0');
+		for (size_t i = 0; i < reply_size; i++)
+		{
+			ls << " " << std::setw (2) << std::hex << (int) (reply_data[i]);
+		}
+		ls << sendLog;
+	}
+
+	if (reply_data[7] & 0x80)
 	{
 		logStream (MESSAGE_ERROR) << "Error executiong function " << func 
 			<< " error code is: 0x" << std::hex << (int) reply_data[8];
@@ -139,13 +167,13 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 			<< ", expected 0x" << std::hex << (int) func << "." << sendLog;
 		return -1;
 	}
-	else if (ret != (int) (reply_size + 8))
+	else if (ret != (int) reply_size)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot receive all reply data, received " << ret << ", expected " << reply_size << "." << sendLog;
 		connectionError (-1);
 		return -1;
 	}
-	bcopy (reply_data + 8, reply, reply_size);
+	bcopy (reply_data + 8, reply, reply_size - 8);
 	transId++;
 	return 0;
 }
@@ -164,9 +192,22 @@ ConnModbus::readCoils (int start, int size)
 	int ret;
 	ret = callFunction (0x01, req_data, 4, reply_data, reply_size);
 
-	for (int i = 1; i < reply_size; i++)
-	{
-		std::cout << std::hex << reply_data[i] << std::endl;	
-	}
+	return 0;
+}
+
+
+int
+ConnModbus::readDiscreteInputs (int start, int size)
+{
+	int16_t req_data[2];
+	int reply_size = 1 + (size / 8) + ((size % 8) == 0 ? 0 : 1);
+	char reply_data[reply_size];
+
+	req_data[0] = htons (start);
+	req_data[1] = htons (size);
+
+	int ret;
+	ret = callFunction (0x02, req_data, 4, reply_data, reply_size);
+
 	return 0;
 }
