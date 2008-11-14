@@ -116,7 +116,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 *
 		 * @param sched1      1st schedule to cross.
 		 * @param sched2      2nd schedule to cross.
-		 * @param crossPoint  Index of an element at which schedules will cross.
+		 * @param crossPoint  Seconds in schedule duration in which schedules will cross.
 		 */
 		Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned int crossPoint);
 
@@ -202,6 +202,16 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		int constructSchedule (TicketSet *_ticketSet);
 
 		/**
+		 * Adjust duration times, so schedule will be again valid. This
+		 * method searches for schedule, which time can be adjusted,
+		 * and do all necessary time changes.
+		 *
+		 * @param schedIter  Iterator pointing to schedule member which was detected to violated schedule
+		 * @param _sec       Number of seconds by which schedule duration shall be adjusted. Negative if duration shall be shortened.
+		 */
+		void adjustDuration (Rts2Schedule::iterator schedIter, double _sec);
+
+		/**
 		 * Ratio of observations from schedule which are visible.
 		 *
 		 * @return Ration of visible targets. Higher means better schedule.
@@ -235,7 +245,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 */
 		double singleOptimum ()
 		{
-			return distanceMerit ();
+			return altitudeMerit ();
 		}
 
 

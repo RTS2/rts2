@@ -39,8 +39,8 @@ Rts2SchedBag::mutate (Rts2Schedule * sched)
 void
 Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
 {
-	// select crossing point
-	int crossPoint = randomNumber (1, parent1->size() - 1);
+	// select crossing point - second in schedule
+	unsigned int crossPoint = randomNumber (60, (JDend - JDstart) * 86400 - 120);
 
 	// have a sex
 	Rts2Schedule *child1 = new Rts2Schedule (parent1, parent2, crossPoint);

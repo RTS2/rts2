@@ -19,11 +19,11 @@
 
 #include "rts2schedobs.h"
 
-Rts2SchedObs::Rts2SchedObs (Ticket *_ticket, double _startJD, unsigned int _loopCount)
+Rts2SchedObs::Rts2SchedObs (Ticket *_ticket, double _startJD, double _duration)
 {
 	ticket = _ticket;
 	startJD = _startJD;
-	loopCount = _loopCount;
+	duration = _duration;
 }
 
 
@@ -46,7 +46,9 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 
 	if ((hrz.alt - minA) / (maxA - minA) > 1)
 	{
-		std::cout << "hrz.alt: " << hrz.alt << " maxA: " << maxA << std::endl;
+		std::cout << "hrz.alt: " << hrz.alt
+			<< " minA: " << minA
+			<< " maxA: " << maxA << std::endl;
 		getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
 	}
 
@@ -56,6 +58,6 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs)
 {
-	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getLoopCount () << " " << schedobs.getTargetId () << std::endl;
+	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getTotalDuration () << " " << schedobs.getTargetId () << std::endl;
 	return _os;
 }

@@ -38,11 +38,13 @@ class Rts2SchedObs
 {
 	private:
 		Ticket *ticket;
+		// observation start in JD
 		double startJD;
-		unsigned int loopCount;
+		// duration in seconds
+		double duration;
 
 	public:
-		Rts2SchedObs (Ticket *_ticket, double _startJD, unsigned int _loopCount);
+		Rts2SchedObs (Ticket *_ticket, double _startJD, double _duration);
 		virtual ~Rts2SchedObs (void);
 
 		/**
@@ -116,22 +118,31 @@ class Rts2SchedObs
 		}
 
 		/**
-		 * Returns number of loops observation sequence will be carried.
+		 * Returns duration of observation.
 		 *
-		 * @return Number of loops observation sequence will be carried.
+		 * @return Duration of observation in seconds.
 		 */
-		int getLoopCount ()
+		double getObsDuration ()
 		{
-			return loopCount;
+			return duration;
 		}
 
 		/**
 		 * Get duration of whole target observation in seconds.
 		 */
-		float getTotalDuration ()
+		double getTotalDuration ()
 		{
-			// TODO calculate this value
-			return 10.0;
+			return duration;
+		}
+
+		/**
+		 * Sets new total duration.
+		 *
+		 * @param _duration New duration.
+		 */
+		void setTotalDuration (double _duration)
+		{
+			duration = _duration;
 		}
 
 		/**

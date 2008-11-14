@@ -46,20 +46,40 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 
 	nanLazyMerits ();
 
-	unsigned int i;
+	double obsSec;
+	double obsCorr;
+
+	Rts2Schedule::iterator iter;
+
 	Rts2SchedObs *parent;
-	// fill in schedobs
-	for (i = 0; i < crossPoint; i++)
+	
+	// fill schedules from first schedule till crossPoint
+	for (obsSec = 0, iter = sched1->begin(); obsSec < crossPoint && iter != sched1->end (); iter++)
 	{
-		parent = (*sched1)[i];
-		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getLoopCount ()));
+		parent = *iter;
+		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getObsDuration ()));
+		obsSec += parent->getTotalDuration ();
 	}
 
-	for (; i < sched2->size (); i++)
+	// number of days by which schedule from second schedule will be moved
+	obsCorr = (double (obsSec - crossPoint)) / 86400.0;
+
+	// now find point in sched2, from which schedule will be copied
+	for (obsSec = 0, iter = sched2->begin (); obsSec < crossPoint && iter != sched2->end (); obsSec += (*iter)->getTotalDuration (), iter++)
 	{
-		parent = (*sched2)[i];
-		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getLoopCount ()));
 	}
+
+	for (; iter != sched2->end (); iter++)
+	{
+		parent = (*iter);
+		if (parent->getJDStart () + obsCorr > JDend)
+			break;
+		
+		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart () + obsCorr, parent->getObsDuration ()));
+	}
+	
+	if ((*(--end ()))->getJDEnd () != JDend)
+		adjustDuration (--end (), (JDend - (*(--end ()))->getJDEnd ()) * 86400.0);
 }
 
 
@@ -102,7 +122,8 @@ Rts2SchedObs *
 Rts2Schedule::randomSchedObs (double JD)
 {
 	nanLazyMerits ();
-	return new Rts2SchedObs (randomTicket (), JD, 1);
+	// perform for a randon number of seconds - not less then 60, but no more then 3600
+	return new Rts2SchedObs (randomTicket (), JD, randomNumber (60, 3600));
 }
 
 
@@ -111,12 +132,27 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 {
 	ticketSet = _ticketSet;
 	double JD = JDstart;
+	Rts2SchedObs *newsched;
+
 	while (JD < JDend)
 	{
-		push_back (randomSchedObs (JD));
-		JD += (double) 10.0 / 1440.0;
+		newsched = randomSchedObs (JD);
+		push_back (newsched);
+		JD += (double) newsched->getTotalDuration () / 86400.0;
 	}
+	if (JD > JDend)
+	{
+		adjustDuration (--end (), (JDend - JD) * 86400);
+	}
+
 	return 0;
+}
+
+
+void
+Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
+{
+	(*schedIter)->setTotalDuration ((*schedIter)->getTotalDuration () + _sec);
 }
 
 
@@ -132,7 +168,7 @@ Rts2Schedule::visibilityRatio ()
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 	{
 		if ((*iter)->isVisible ())
-			visible ++;
+			visible++;
 		else
 			unvisible++;
 	}
