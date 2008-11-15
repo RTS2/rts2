@@ -43,6 +43,8 @@
 
 #define R2X_MESSAGES_GET              "rts2.messages.get"
 
+#define R2X_TICKET_INFO               "rts2.tickets.info"
+
 /**
  * User login. Provides username and password, out true/false - true if login is OK
  */

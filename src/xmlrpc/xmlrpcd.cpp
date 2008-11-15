@@ -24,6 +24,8 @@
 #include "../utilsdb/rts2messagedb.h"
 #include "../utilsdb/rts2targetset.h"
 #include "../utilsdb/rts2user.h"
+#include "../utilsdb/sqlerror.h"
+#include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
@@ -592,6 +594,7 @@ class ListObservations: public XmlRpcServerMethod
 
 } listObservations (&xmlrpc_server);
 
+
 class ListImages: public XmlRpcServerMethod
 {
 	public:
@@ -615,6 +618,7 @@ class ListImages: public XmlRpcServerMethod
 		}
 } listImages (&xmlrpc_server);
 
+
 class GetMessages: public XmlRpcServerMethod
 {
 	public:
@@ -636,6 +640,32 @@ class GetMessages: public XmlRpcServerMethod
 
 		}
 } getMessages (&xmlrpc_server);
+
+
+class TicketInfo: public XmlRpcServerMethod
+{
+	public:
+		TicketInfo (XmlRpcServer *s): XmlRpcServerMethod (R2X_TICKET_INFO, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 1)
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+
+			try
+			{
+				rts2sched::Ticket t = rts2sched::Ticket (params[0]);
+				XmlStream xs (&result);
+			}
+			catch (rts2db::SqlError e)
+			{
+				throw XmlRpcException ("DB error: " + e.getError ());
+			}
+		}
+} ticketInfo (&xmlrpc_server);
+
 
 class UserLogin: public XmlRpcServerMethod
 {
