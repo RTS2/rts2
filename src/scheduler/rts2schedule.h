@@ -274,7 +274,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 *
 		 * @return Number of targets which are infeasible with respect to given constraint.
 		 */
-		double getConstraintFunction (constraintFunc _type)
+		unsigned int getConstraintFunction (constraintFunc _type)
 		{
 			switch (_type)
 			{
