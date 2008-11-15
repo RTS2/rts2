@@ -166,8 +166,8 @@ namespace rts2sched
 					<< InfoVal <int> ("TARGET_ID", ticket.getTargetId ())
 					<< InfoVal <int> ("ACCOUNT_ID", ticket.accountId)
 					<< InfoVal <unsigned int> ("OBS_NUM", ticket.obs_num)
-					<< InfoVal <Timestamp> ("SCHED_FROM", ticket.sched_from)
-					<< InfoVal <Timestamp> ("SCHED_TO", ticket.sched_to)
+					<< InfoVal <TimeJD> ("SCHED_FROM", ticket.sched_from)
+					<< InfoVal <TimeJD> ("SCHED_TO", ticket.sched_to)
 					<< InfoVal <TimeDiff> ("SCHED_INTERVAL_MIN", ticket.sched_interval_min)
 					<< InfoVal <TimeDiff> ("SCHED_INTERVAL_MAX", ticket.sched_interval_max);
 				return _os;
