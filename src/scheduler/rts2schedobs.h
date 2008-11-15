@@ -64,7 +64,7 @@ class Rts2SchedObs
 		 */
 		double getJDEnd ()
 		{
-			return startJD + 10 / 1440.0;
+			return startJD + getTotalDuration () / 86400.0;
 		}
 
 		/**
