@@ -52,6 +52,11 @@ class XmlStream: public Rts2InfoValStream
 			(*rpcval)[desc] = val;
 		}
 
+		virtual void printInfoVal (const char *desc, unsigned int val)
+		{
+			(*rpcval)[desc] = (int) val;
+		}
+
 		virtual void printInfoVal (const char *desc, double val)
 		{
 			(*rpcval)[desc] = val;
