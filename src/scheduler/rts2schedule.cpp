@@ -334,7 +334,7 @@ operator << (std::ostream & _os, Rts2Schedule & schedule)
 {
 	for (Rts2Schedule::iterator iter = schedule.begin (); iter != schedule.end (); iter++)
 	{
-		_os << *(*iter) << std::endl;
+		_os << *(*iter);
 	}
 	return _os;
 }

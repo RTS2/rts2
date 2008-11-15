@@ -134,6 +134,26 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		}
 
 		/**
+		 * Return schedule start julian date.
+		 *
+		 * @return Schedule start JD.
+		 */
+		double getJDStart ()
+		{
+			return JDstart;
+		}
+
+		/**
+		 * Return schedule end julian date.
+		 *
+		 * @return Schedule end JD.
+		 */
+		double getJDEnd ()
+		{
+			return JDend;
+		}
+
+		/**
 		 * Set non-dominated rank (front) of the schedule.
 		 *
 		 * @param _rank New NSGA rank.

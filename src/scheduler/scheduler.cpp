@@ -49,6 +49,9 @@ class Rts2ScheduleApp: public Rts2AppDb
 		// used algorithm
 		enum {SGA, NSGAII} algorithm;
 
+		// if the programme will print detail schedule informations
+		bool printSchedules;
+
 		// start and end JD
 		double startDate;
 		double endDate;
@@ -62,6 +65,14 @@ class Rts2ScheduleApp: public Rts2AppDb
 		 * @see objFunc
 		 */
 		void printMerits (objFunc _type, const char *name);
+
+		/**
+		 * Prints schedule. This method prints all observation entries
+		 * of given schedule.
+		 *
+		 * @param sched Schedule which will be printed.
+		 */
+		void printSchedule (Rts2Schedule *sched);
 
 		/**
 		 * Print objective functions for SGA.
@@ -114,6 +125,18 @@ Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
 
 
 void
+Rts2ScheduleApp::printSchedule (Rts2Schedule *sched)
+{
+	int i = 1;
+	for (Rts2Schedule::iterator iter_s = sched->begin (); iter_s != sched->end (); iter_s++)
+	{
+		std::cout << "S  " << std::setw (3) << std::right << i++ << " "
+			<< *(*iter_s) << " "
+			<< (*iter_s)->altitudeMerit (sched->getJDStart (), sched->getJDEnd ()) << std::endl;
+	}
+}
+
+void
 Rts2ScheduleApp::printSGAMerits ()
 {
 	Rts2SchedBag::iterator iter;
@@ -140,7 +163,9 @@ Rts2ScheduleApp::printSGAMerits ()
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
-			<< std::endl; 
+			<< std::endl;
+		if (printSchedules)
+			printSchedule (*iter);
 	}
 }
 
@@ -170,6 +195,8 @@ Rts2ScheduleApp::printNSGAMerits ()
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::endl; 
+		if (printSchedules)
+			printSchedule (*iter);
 	}
 }
 
@@ -240,6 +267,9 @@ Rts2ScheduleApp::processOption (int _opt)
 			  	return -1;
 			}
 			break;
+		case 's':
+			printSchedules = true;
+			break;
 		case OPT_START_DATE:
 			return parseDate (optarg, startDate);
 		case OPT_END_DATE:
@@ -295,6 +325,8 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	popSize = 100;
 	algorithm = SGA;
 
+	printSchedules = false;
+
 	startDate = nan ("f");
 	endDate = nan ("f");
 
@@ -302,6 +334,7 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	addOption ('g', NULL, 1, "number of generations");
 	addOption ('p', NULL, 1, "population size");
 	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported)");
+	addOption ('s', NULL, 0, "print schedule entries");
 
 	addOption (OPT_START_DATE, "start", 1, "produce schedule from this date");
 	addOption (OPT_END_DATE, "end", 1, "produce schedule till this date");

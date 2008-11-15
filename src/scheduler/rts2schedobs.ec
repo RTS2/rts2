@@ -58,6 +58,18 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 
 std::ostream & operator << (std::ostream & _os, Rts2SchedObs & schedobs)
 {
-	_os << LibnovaDate (schedobs.getJDStart ()) << " .. " << schedobs.getTotalDuration () << " " << schedobs.getTargetId () << std::endl;
+	int old_p = _os.precision (2);
+	_os 
+		<< std::setw (6) << std::right << schedobs.getTargetId () << " "
+		<< std::setw (6) << std::right << schedobs.getTicketId () << " "
+		<< std::setw (6) << std::right << schedobs.getAccountId () << " "
+		<< LibnovaDate (schedobs.getJDStart ()) <<  " "
+		<< LibnovaDate (schedobs.getJDEnd ()) << " "
+		<< std::setw (8) << schedobs.getTotalDuration () << " "
+		<< std::setw (8) << schedobs.getObsDuration () << " "
+		<< schedobs.isVisible () <<  " "
+		<< schedobs.violateSchedule ();
+	_os.precision (old_p);
+	
 	return _os;
 }
