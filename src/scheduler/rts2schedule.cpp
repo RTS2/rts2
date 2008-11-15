@@ -52,12 +52,21 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	Rts2Schedule::iterator iter;
 
 	Rts2SchedObs *parent;
-	
+	Rts2SchedObs *lastObs = NULL;
+
 	// fill schedules from first schedule till crossPoint
 	for (obsSec = 0, iter = sched1->begin(); obsSec < crossPoint && iter != sched1->end (); iter++)
 	{
 		parent = *iter;
-		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getObsDuration ()));
+		if (lastObs && parent->getTicketId () == lastObs->getTicketId ())
+		{
+			lastObs->incTotalDuration (parent->getTotalDuration ());
+		}
+		else
+		{
+			lastObs = new Rts2SchedObs (parent->getTicket (), parent->getJDStart (), parent->getObsDuration ());
+			push_back (lastObs);
+		}
 		obsSec += parent->getTotalDuration ();
 	}
 
@@ -74,8 +83,16 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 		parent = (*iter);
 		if (parent->getJDStart () + obsCorr > JDend)
 			break;
-		
-		push_back (new Rts2SchedObs (parent->getTicket (), parent->getJDStart () + obsCorr, parent->getObsDuration ()));
+	
+		if (lastObs && parent->getTicketId () == lastObs->getTicketId ())
+		{
+			lastObs->incTotalDuration (parent->getTotalDuration ());
+		}
+		else
+		{
+			lastObs = new Rts2SchedObs (parent->getTicket (), parent->getJDStart () + obsCorr, parent->getObsDuration ());
+			push_back (lastObs);
+		}
 	}
 	
 	if ((*(--end ()))->getJDEnd () != JDend)

@@ -146,6 +146,17 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Increase total duration of observation
+		 * by some seconds.
+		 *
+		 * @param _inc Observation duration increment.
+		 */
+		void incTotalDuration (double _inc)
+		{
+			duration += _inc;
+		}
+
+		/**
 		 * Determines schedule target visibility.
 		 *
 		 * @return True is observation is visible.

@@ -37,7 +37,7 @@ typedef enum {
 typedef enum {
 	CONSTR_VISIBILITY,	   // visibility violation - target is not visible
 	CONSTR_SCHEDULE_TIME,	   // schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
-	CONSTR_UNOBSERVED_TICKETS, // number of unobserved tickets - tickets which have to time in schedule period, have some numObs left, but were not observed
+	CONSTR_UNOBSERVED_TICKETS, // number of unobserved tickets - tickets which have time constraint for schedule period, have some numObs left, but were not observed
 	CONSTR_OBS_NUM		   // target is observed more times then it should be observed
 } constraintFunc;
 
