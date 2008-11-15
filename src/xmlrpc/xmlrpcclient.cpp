@@ -28,6 +28,7 @@
 using namespace XmlRpc;
 
 #define OPT_HOST             OPT_LOCAL + 1
+#define OPT_SCHED_TICKET     OPT_LOCAL + 2
 
 /**
  * Class for testing XML-RPC.
@@ -41,7 +42,9 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		const char *xmlHost;
 		int xmlVerbosity;
 
-		enum {TEST, SET_VARIABLE} xmlOp;
+		int schedTicket;
+
+		enum {TEST, SET_VARIABLE, SCHED_TICKET} xmlOp;
 
 		std::vector <const char *> args;
 
@@ -73,6 +76,15 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		 * @return -1 on error, 0 on success.
 		 */
 		int setVariable (const char *deviceName, const char *varName, const char *value);
+
+		/**
+		 * Prints informations about given ticket.
+		 *
+		 * @param ticketId ID of ticket to print.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int schedTicketInfo (int ticketId);
 	protected:
 		virtual void usage ();
 
@@ -182,6 +194,16 @@ Rts2XmlRpcTest::setVariable (const char *deviceName, const char *varName, const 
 }
 
 
+int
+Rts2XmlRpcTest::schedTicketInfo (int ticketId)
+{
+	XmlRpcValue oneArg, result;
+	oneArg = ticketId;
+
+	return runXmlMethod (R2X_TICKET_INFO, oneArg, result);	
+}
+
+
 void
 Rts2XmlRpcTest::usage ()
 {
@@ -206,6 +228,10 @@ Rts2XmlRpcTest::processOption (int in_opt)
 			break;
 		case 's':
 			xmlOp = SET_VARIABLE;
+			break;
+		case OPT_SCHED_TICKET:
+			schedTicket = atoi (optarg);
+			xmlOp = SCHED_TICKET;
 			break;
 		default:
 			return Rts2CliApp::processOption (in_opt);
@@ -239,6 +265,8 @@ Rts2XmlRpcTest::doProcessing ()
 				return -1;
 			}
 			return setVariable (args[0], args[1], args[2]);
+		case SCHED_TICKET:
+			return schedTicketInfo (schedTicket);
 	}
 	return -1;
 }
@@ -271,6 +299,7 @@ Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_arg
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption ('s', NULL, 0, "set variables specified by variable list.");
+	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 }
 
 

@@ -657,7 +657,10 @@ class TicketInfo: public XmlRpcServerMethod
 			try
 			{
 				rts2sched::Ticket t = rts2sched::Ticket (params[0]);
+				t.load ();
 				XmlStream xs (&result);
+
+				xs << t;
 			}
 			catch (rts2db::SqlError e)
 			{
