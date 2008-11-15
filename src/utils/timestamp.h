@@ -87,9 +87,16 @@ class TimeJD:public Timestamp
 		 */
 		TimeJD (double JD):Timestamp ()
 		{
-			time_t _ts;
-			ln_get_timet_from_julian (JD, &_ts);
-			setTs (_ts);
+			if (isnan (JD))
+			{
+				setTs (nan("f"));
+			}
+			else
+			{
+				time_t _ts;
+				ln_get_timet_from_julian (JD, &_ts);
+				setTs (_ts);
+			}
 		}
 };
 
