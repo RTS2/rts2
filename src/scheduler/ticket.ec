@@ -19,11 +19,21 @@
 
 #include "ticket.h"
 
+#include "../utils/rts2config.h"
+#include "../utilsdb/sqlerror.h"
+
 using namespace rts2sched;
 
+Ticket::Ticket (int _schedTicketId)
+{
+	ticketId = _schedTicketId;
+	target = NULL;
+}
+
+
 Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId,
-	unsigned int _obs_num, double _sched_from, double _sched_to,
-	double _sched_interval_min, double _sched_interval_max)
+unsigned int _obs_num, double _sched_from, double _sched_to,
+double _sched_interval_min, double _sched_interval_max)
 {
 	ticketId = _schedTicketId;
 	target = _target;
@@ -33,6 +43,83 @@ Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId,
 	sched_to = _sched_to;
 	sched_interval_min = _sched_interval_min;
 	sched_interval_max = _sched_interval_max;
+}
+
+
+void
+Ticket::load ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+		int d_schedticket_id;
+		int d_tar_id;
+		int d_account_id;
+		unsigned int d_obs_num;
+		int d_obs_num_ind;
+		long d_sched_from;
+		int d_sched_from_ind;
+		long d_sched_to;
+		int d_sched_to_ind;
+		double d_sched_interval_min;
+		int d_sched_interval_min_ind;
+		double d_sched_interval_max;
+		int d_sched_interval_max_ind;
+	EXEC SQL END DECLARE SECTION;
+
+	d_schedticket_id = ticketId;
+
+	EXEC SQL SELECT
+			tar_id,
+			account_id,
+			obs_num,
+			EXTRACT (EPOCH FROM sched_from),
+			EXTRACT (EPOCH FROM sched_to),
+			EXTRACT (EPOCH FROM sched_interval_min),
+			EXTRACT (EPOCH FROM sched_interval_max)
+		INTO
+			:d_tar_id,
+			:d_account_id,
+			:d_obs_num :d_obs_num_ind,
+			:d_sched_from :d_sched_from_ind,
+			:d_sched_to :d_sched_to_ind,
+			:d_sched_interval_min :d_sched_interval_min_ind,
+			:d_sched_interval_max :d_sched_interval_max_ind
+		FROM
+			tickets
+		WHERE
+			schedticket_id = :d_schedticket_id;
+	if (sqlca.sqlcode)
+		throw rts2db::SqlError ();
+
+	target = createTarget (d_tar_id, Rts2Config::instance ()->getObserver ());
+	if (target == NULL)
+		throw rts2db::SqlError ();
+
+	accountId = d_account_id;
+
+	if (d_obs_num_ind < 0)
+		obs_num = UINT_MAX;
+	else
+		obs_num = d_obs_num;
+
+	if (d_sched_from_ind < 0)
+		sched_from = nan("f");
+	else
+		sched_from = ln_get_julian_from_timet (&d_sched_from);
+
+	if (d_sched_to_ind < 0)
+		sched_to = nan("f");
+	else
+		sched_to = ln_get_julian_from_timet (&d_sched_to);
+
+	if (d_sched_interval_min_ind < 0)
+		sched_interval_min = -1;
+	else
+		sched_interval_min = d_sched_interval_min;
+
+	if (d_sched_interval_max_ind < 0)
+		sched_interval_max = -1;
+	else
+		sched_interval_max = d_sched_interval_max;
 }
 
 
@@ -47,7 +134,7 @@ Ticket::violateSchedule (double _from, double _to)
 	}
 	if (isnan (sched_to))
 	{
-	  	return _from < sched_from;
+		return _from < sched_from;
 	}
 	return (_from < sched_from) || (_to > sched_to);
 }
