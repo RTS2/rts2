@@ -23,5 +23,5 @@ SUBDIRS = \
 	sensord \
 	indi \
 	logger \
-	xmlrpc \
-	scheduler 
+	scheduler \
+	xmlrpc
