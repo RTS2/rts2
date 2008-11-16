@@ -73,7 +73,7 @@ class Rts2SchedObs
 		 */
 		double getJDMid ()
 		{
-			return startJD + getTotalDuration () / 86400.0;
+			return startJD + getTotalDuration () / (2 * 86400.0);
 		}
 
 		/**
