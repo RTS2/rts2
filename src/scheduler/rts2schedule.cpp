@@ -70,13 +70,13 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 		obsSec += parent->getTotalDuration ();
 	}
 
-	// number of days by which schedule from second schedule will be moved
-	obsCorr = (double (obsSec - crossPoint)) / 86400.0;
-
 	// now find point in sched2, from which schedule will be copied
-	for (obsSec = 0, iter = sched2->begin (); obsSec < crossPoint && iter != sched2->end (); obsSec += (*iter)->getTotalDuration (), iter++)
+	for (obsCorr = 0, iter = sched2->begin (); obsCorr < crossPoint && iter != sched2->end (); obsCorr += (*iter)->getTotalDuration (), iter++)
 	{
 	}
+
+	// calculate correction for second schedule
+	obsCorr = (obsSec - obsCorr) / 86400.0;
 
 	for (; iter != sched2->end (); iter++)
 	{
@@ -96,7 +96,9 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	}
 	
 	if ((*(--end ()))->getJDEnd () != JDend)
+	{
 		adjustDuration (--end (), (JDend - (*(--end ()))->getJDEnd ()) * 86400.0);
+	}
 }
 
 
