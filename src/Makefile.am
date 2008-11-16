@@ -1,6 +1,7 @@
 
 SUBDIRS = \
 	utils	\
+	libindi \
 	phot	\
 	dome	\
 	focusd  \
