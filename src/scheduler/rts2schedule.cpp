@@ -98,6 +98,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	if ((*(--end ()))->getJDEnd () != JDend)
 	{
 		adjustDuration (--end (), (JDend - (*(--end ()))->getJDEnd ()) * 86400.0);
+		repairStartTimes ();
 	}
 }
 
@@ -180,14 +181,13 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 void
 Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 {
-	Rts2Schedule::iterator newSched;
-	if ((*schedIter)->getTotalDuration () + _sec > 0)
+	if ((*schedIter)->getTotalDuration () + _sec > 1)
 	{
 		(*schedIter)->incTotalDuration (_sec);
 	}
 	else
 	{
-		newSched = schedIter;
+		Rts2Schedule::iterator newSched = schedIter;
 		do
 		{
 			newSched++;
@@ -195,7 +195,7 @@ Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 			if (newSched == end ())
 				newSched = begin ();
 			// check if this schedule time can be adjusted
-			if ((*newSched)->getTotalDuration () + _sec > 0)
+			if ((*newSched)->getTotalDuration () + _sec > 1)
 			{
 				(*newSched)->incTotalDuration (_sec);
 				break;
@@ -229,6 +229,22 @@ Rts2Schedule::repairStartTimes ()
 	{
 		(*iter)->setJDStart (start);
 		start = (*iter)->getJDEnd ();
+	}
+	// repair end time - sometimes due to rounding errors,
+	// it exceed endtime
+	iter = --end();
+	if ((*iter)->getJDEnd () > JDend)
+	{
+		if ((*iter)->getJDEnd () > JDend + 0.000001)
+		{
+			logStream (MESSAGE_ERROR) << "Last observatin end exceed schedule end by a big number. Last observation end: "
+				<< LibnovaDate ((*iter)->getJDEnd ()) << " schedule end "
+				<< LibnovaDate (JDend) << sendLog;
+		}
+		if ((*iter)->getTotalDuration () < 0.01)
+			erase (iter);
+		else
+		  	(*iter)->incTotalDuration (-0.01);
 	}
 }
 
