@@ -49,47 +49,47 @@ Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
 		return;
 	}
 
-	int timed = randomNumber (0, maxTimeChange * 2);
+	double adj = randomNumber (0, maxTimeChange * 2);
 	// allow time decreasing as well..
-	timed -= maxTimeChange;
+	adj -= maxTimeChange;
 
 	// pick observation which will be mutated
 	unsigned int gen = randomNumber (0, sched->size () - 1);
-	(*sched)[gen]->incTotalDuration (timed);
+	(*sched)[gen]->incTotalDuration (adj);
 	if ((*sched)[gen]->getTotalDuration () < minObsDuration)
 	{
-		if (timed < 0)
+		if (adj < 0)
 		{
 			// in this case, change sign of duration..
-			(*sched)[gen]->incTotalDuration (-2 * timed);
-			timed *= -1;
+			(*sched)[gen]->incTotalDuration (-2 * adj);
+			adj *= -1;
 		}
 		else
 		{
 			// otherwise repair minimal duration
-			timed = (minObsDuration + 2 * randomNumber (0, minObsDuration) - (*sched)[gen]->getTotalDuration ());
-			(*sched)[gen]->incTotalDuration (timed);
+			adj = (minObsDuration + 2 * randomNumber (0, minObsDuration) - (*sched)[gen]->getTotalDuration ());
+			(*sched)[gen]->incTotalDuration (adj);
 		}
 	}
 	
 	// when adjusting, adjust by opossite time..
-	timed = ((double) timed) / -2.0;
+	adj = adj / -2.0;
 	// adjust schedule time..
 	// special cases first
 	if (gen == 0)
 	{
-		sched->adjustDuration (sched->begin() + 1, timed);
-		sched->adjustDuration (sched->end () - 1, timed);
+		sched->adjustDuration (sched->begin() + 1, adj);
+		sched->adjustDuration (sched->end () - 1, adj);
 	}
 	else if (gen == sched->size () - 1)
 	{
-		sched->adjustDuration (sched->begin(), timed);
-		sched->adjustDuration (sched->end () - 2, timed);
+		sched->adjustDuration (sched->begin(), adj);
+		sched->adjustDuration (sched->end () - 2, adj);
 	}
 	else
 	{
-		sched->adjustDuration (sched->begin () + (gen - 1), timed);
-		sched->adjustDuration (sched->begin () + (gen + 1), timed);
+		sched->adjustDuration (sched->begin () + (gen - 1), adj);
+		sched->adjustDuration (sched->begin () + (gen + 1), adj);
 	}
 	sched->repairStartTimes ();
 }

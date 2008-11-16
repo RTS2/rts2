@@ -166,11 +166,11 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 	{
 		newsched = randomSchedObs (JD);
 		push_back (newsched);
-		JD += (double) newsched->getTotalDuration () / 86400.0;
+		JD = newsched->getJDEnd ();
 	}
 	if (JD > JDend)
 	{
-		adjustDuration (--end (), (JDend - JD) * 86400);
+		adjustDuration (--end (), (JDend - JD) * 86400.0);
 	}
 
 	return 0;
