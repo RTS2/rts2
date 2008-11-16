@@ -144,6 +144,15 @@ Rts2Schedule::randomSchedObs (double JD)
 }
 
 
+Rts2SchedObs *
+Rts2Schedule::randomSchedObs (double JD, double dur)
+{
+	nanLazyMerits ();
+	// perform for a randon number of seconds - not less then 60, but no more then 3600
+	return new Rts2SchedObs (randomTicket (), JD, dur);
+}
+
+
 int
 Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 {
@@ -169,7 +178,56 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 void
 Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 {
-	(*schedIter)->setTotalDuration ((*schedIter)->getTotalDuration () + _sec);
+	Rts2Schedule::iterator newSched;
+	if ((*schedIter)->getTotalDuration () + _sec > 0)
+	{
+		(*schedIter)->incTotalDuration (_sec);
+	}
+	else
+	{
+		newSched = schedIter;
+		do
+		{
+			newSched++;
+			// if we hit end, continue on beginning
+			if (newSched == end ())
+				newSched = begin ();
+			// check if this schedule time can be adjusted
+			if ((*newSched)->getTotalDuration () + _sec > 0)
+			{
+				(*newSched)->incTotalDuration (_sec);
+				break;
+			}
+			// and do this loop as long as we do not hit same item
+		} while (newSched != schedIter);
+
+		if (newSched == schedIter)
+		{
+			// in this case, remove the schedule, and pass time gained by schedule removal + time diff equally to both neighbor..
+			double adj = ((*schedIter)->getTotalDuration () + _sec) / 2.0;
+			Rts2Schedule::iterator n1 = (schedIter == begin ()) ? end () - 1 : schedIter - 1;
+			delete (*schedIter);
+			Rts2Schedule::iterator n2 = erase (schedIter);
+			if (n2 == end ())
+				n2 = begin ();
+			adjustDuration (n1, adj);
+			adjustDuration (n2, adj);
+		}
+	}
+}
+
+
+void
+Rts2Schedule::repairStartTimes ()
+{
+	// now repair observations start times
+	Rts2Schedule::iterator iter = begin ();
+	double start = (*iter)->getJDEnd ();
+	for (iter++; iter != end (); iter++)
+	{
+		(*iter)->setJDStart (start);
+		start = (*iter)->getJDEnd ();
+	}
 }
 
 

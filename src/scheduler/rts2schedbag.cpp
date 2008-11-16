@@ -25,22 +25,94 @@
 #include <stdexcept>
 
 void
-Rts2SchedBag::mutate (Rts2Schedule * sched)
+Rts2SchedBag::mutateObs (Rts2Schedule * sched)
 {
 	int gen = randomNumber (0, sched->size () - 1);
 
 	double JD = (*sched)[gen]->getJDStart ();
+	double dur = (*sched)[gen]->getTotalDuration ();
 
 	delete (*sched)[gen];
-	(*sched)[gen] = sched->randomSchedObs (JD);
+	(*sched)[gen] = sched->randomSchedObs (JD, dur);
 }
 
+void
+Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
+{
+	if (sched->size () == 1)
+	{
+		// decrease current schedule time..
+		int dur = randomNumber (minObsDuration, (JDend - JDstart) * 86400 - 2 * minObsDuration);
+		(*(sched->begin ()))->incTotalDuration (-1 * dur);
+		// and add new schedule
+		sched->push_back (sched->randomSchedObs ((*(sched->begin ()))->getJDEnd (), dur));
+		return;
+	}
+
+	int timed = randomNumber (0, maxTimeChange * 2);
+	// allow time decreasing as well..
+	timed -= maxTimeChange;
+
+	// pick observation which will be mutated
+	unsigned int gen = randomNumber (0, sched->size () - 1);
+	(*sched)[gen]->incTotalDuration (timed);
+	if ((*sched)[gen]->getTotalDuration () < minObsDuration)
+	{
+		if (timed < 0)
+		{
+			// in this case, change sign of duration..
+			(*sched)[gen]->incTotalDuration (-2 * timed);
+			timed *= -1;
+		}
+		else
+		{
+			// otherwise repair minimal duration
+			timed = (minObsDuration + 2 * randomNumber (0, minObsDuration) - (*sched)[gen]->getTotalDuration ());
+			(*sched)[gen]->incTotalDuration (timed);
+		}
+	}
+	
+	// when adjusting, adjust by opossite time..
+	timed = ((double) timed) / -2.0;
+	// adjust schedule time..
+	// special cases first
+	if (gen == 0)
+	{
+		sched->adjustDuration (sched->begin() + 1, timed);
+		sched->adjustDuration (sched->end () - 1, timed);
+	}
+	else if (gen == sched->size () - 1)
+	{
+		sched->adjustDuration (sched->begin(), timed);
+		sched->adjustDuration (sched->end () - 2, timed);
+	}
+	else
+	{
+		sched->adjustDuration (sched->begin () + (gen - 1), timed);
+		sched->adjustDuration (sched->begin () + (gen + 1), timed);
+	}
+	sched->repairStartTimes ();
+}
+
+void
+Rts2SchedBag::mutate (Rts2Schedule * sched)
+{
+	int rn = randomNumber (0, 100);
+	if (rn > mutateDurationRatio * 100)
+	{
+		mutateObs (sched);
+	}
+	else
+	{
+	  	mutateDuration (sched);
+	}
+}
 
 void
 Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
 {
 	// select crossing point - second in schedule
-	unsigned int crossPoint = randomNumber (60, (JDend - JDstart) * 86400 - 120);
+	unsigned int crossPoint = randomNumber (minObsDuration, (JDend - JDstart) * 86400 - 2 * minObsDuration);
 
 	// have a sex
 	Rts2Schedule *child1 = new Rts2Schedule (parent1, parent2, crossPoint);
@@ -120,6 +192,10 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 
 	mutationNum = -1;
 	popSize = 0;
+
+	mutateDurationRatio = 0.5;
+	maxTimeChange = 300;
+	minObsDuration = 30;
 
 	eliteSize = 0;
 

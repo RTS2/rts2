@@ -39,7 +39,7 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 	struct ln_hrz_posn hrz;
 	getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
 
-	getTarget ()->getAltAz (&hrz, startJD);
+	getTarget ()->getAltAz (&hrz, getJDMid ());
 
 	if (maxA == minA)
 		return 1;

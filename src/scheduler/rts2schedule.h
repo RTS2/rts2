@@ -208,9 +208,19 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 *
 		 * @param JD Observation start interval.
 		 *
-		 * @return New schedule entry with random target.
+		 * @return New schedule entry with random target and random duration.
 		 */
 		Rts2SchedObs * randomSchedObs (double JD);
+
+		/**
+		 * Generate random observation schedule entry with given duration.
+		 *
+		 * @param JD   Observation start interval.
+		 * @param dur  New schedule entry duration.
+		 *
+		 * @return New schedule entru with random target, but given duration.
+		 */
+		Rts2SchedObs * randomSchedObs (double JD, double dur);
 
 		/**
 		 * Construct observation schedule which fills time from JDstart to JDend.
@@ -230,6 +240,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * @param _sec       Number of seconds by which schedule duration shall be adjusted. Negative if duration shall be shortened.
 		 */
 		void adjustDuration (Rts2Schedule::iterator schedIter, double _sec);
+
+		/**
+		 * Repair start times. Must be called after change of duration of an observation.
+		 * The sole exception is when changing last observation - in this case it can be omited.
+		 */
+		void repairStartTimes ();
 
 		/**
 		 * Ratio of observations from schedule which are visible.

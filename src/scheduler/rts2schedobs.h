@@ -58,6 +58,25 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Set schedule start time. Please use this only when you are sure you know what you are doing,
+		 * e.g. when repairing schedule. Otherwise you might create schedule which will be unvalid.
+		 * 
+		 * @param _newStart New JD of schedule start.
+		 */
+		void setJDStart (double _newStart)
+		{
+			startJD = _newStart;
+		}
+
+		/**
+		 * Return julian date in middle of observation.
+		 */
+		double getJDMid ()
+		{
+			return startJD + getTotalDuration () / 86400.0;
+		}
+
+		/**
 		 * Return julian date of observation end.
 		 *
 		 * @return End JD of the observation.

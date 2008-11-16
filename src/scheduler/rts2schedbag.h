@@ -33,6 +33,10 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		int mutationNum;
 		unsigned int popSize;
 
+		double mutateDurationRatio;
+		int maxTimeChange;
+		int minObsDuration;
+
 		// size of elite population 
 		// if this is 0, elite GA is not used
 		unsigned int eliteSize;
@@ -43,8 +47,23 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		Rts2TargetSet *tarSet;
 
 		/**
-		 * Do mutation on genetic algorithm. The algorithm select
-		 * mutation gene with random generator.
+		 * The algorithm replace randomly selected observation with randomly picked new
+		 * one.
+		 *
+		 * @param sched Schedule which entry will be mutated.
+		 */
+		void mutateObs (Rts2Schedule * sched);
+
+		/**
+		 * Mutate duration of observation. Randomly adjust duration of the schedule.
+		 * Split duration change evenly to both sides of the selected schedule.
+		 *
+		 * @param sched Schedule which entry will be mutated.
+		 */
+		void mutateDuration (Rts2Schedule * sched);
+
+		/**
+		 * Mutate schedule.
 		 *
 		 * @param sched Schedule which will be mutated.
 		 */
