@@ -81,7 +81,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	for (; iter != sched2->end (); iter++)
 	{
 		parent = (*iter);
-		if (parent->getJDStart () + obsCorr > JDend)
+		if (parent->getJDStart () + obsCorr >= JDend)
 			break;
 	
 		if (lastObs && parent->getTicketId () == lastObs->getTicketId ())
