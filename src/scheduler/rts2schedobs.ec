@@ -48,7 +48,12 @@ Rts2SchedObs::altitudeMerit (double _start, double _end)
 	{
 		std::cout << "hrz.alt: " << hrz.alt
 			<< " minA: " << minA
-			<< " maxA: " << maxA << std::endl;
+			<< " maxA: " << maxA
+			<< " from " << LibnovaDate (_start)
+			<< " to " << LibnovaDate (_end)
+			<< " obs from " << LibnovaDate (getJDStart ())
+			<< " to " << LibnovaDate (getJDEnd ())
+			<< std::endl;
 		getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
 	}
 
