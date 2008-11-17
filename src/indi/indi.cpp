@@ -157,19 +157,19 @@ Rts2Indi::setStates ()
 {
 	if (StatesSP.sp[0].s == ISS_ON)
 	{
-		getCentraldConn ()->queCommand (new Rts2Command (this, "off"));
+	  	sendMasters ("off");
 		StatesSP.s = IPS_BUSY;
 		IDSetSwitch (&StatesSP, "System is switched to off, will not observe.");
 	}
 	else if (StatesSP.sp[1].s == ISS_ON)
 	{
-		getCentraldConn ()->queCommand (new Rts2Command (this, "standby"));
+	  	sendMasters ("standby");
 		StatesSP.s = IPS_BUSY;
 		IDSetSwitch (&StatesSP,	"System is switched to standby, will not observe.");
 	}
 	else if (StatesSP.sp[2].s == ISS_ON)
 	{
-		getCentraldConn ()->queCommand (new Rts2Command (this, "on"));
+		sendMasters ("on");
 		StatesSP.s = IPS_BUSY;
 		IDSetSwitch (&StatesSP, "System is switched to on, will observe.");
 	}
@@ -197,7 +197,7 @@ Rts2Indi::changeMasterState (int new_state)
 	StatesS[1].s = ISS_OFF;
 	StatesS[2].s = ISS_OFF;
 
-	if (new_state == SERVERD_OFF)
+	if (new_state == SERVERD_HARD_OFF)
 		StatesS[0].s = ISS_ON;
 	else if (new_state & SERVERD_STANDBY_MASK)
 		StatesS[1].s = ISS_ON;
