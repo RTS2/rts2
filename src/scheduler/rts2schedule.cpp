@@ -70,10 +70,11 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 		obsSec += parent->getTotalDuration ();
 	}
 
-	if (lastObs)
+	if (lastObs && randomNumber (0, 100) < 50)
 	{
 		// cut schedule to fit within cross point
 		lastObs->incTotalDuration (crossPoint - obsSec);
+		obsSec = crossPoint;
 	}
 
 	// now find point in sched2, from which schedule will be copied
@@ -82,7 +83,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	}
 
 	// calculate correction for second schedule
-	obsCorr = (crossPoint - obsCorr) / 86400.0;
+	obsCorr = (obsSec - obsCorr) / 86400.0;
 
 	for (; iter != sched2->end (); iter++)
 	{
