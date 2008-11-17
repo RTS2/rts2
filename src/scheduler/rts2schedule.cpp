@@ -23,10 +23,11 @@
 
 using namespace rts2db;
 
-Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs)
+Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, double _minObsDuration, struct ln_lnlat_posn *_obs)
 {
 	JDstart = _JDstart;
 	JDend = _JDend;
+	minObsDuration = _minObsDuration;
 	observer = _obs;
 
 	ticketSet = NULL;
@@ -40,6 +41,7 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	// fill in parameters..
   	JDstart = sched1->JDstart;
 	JDend = sched1->JDend;
+	minObsDuration = randomNumber (0, 100) < 50 ? sched1->getMinObsDuration () : sched2->getMinObsDuration ();
 	observer = sched1->observer;
 
 	ticketSet = sched1->ticketSet;
@@ -188,7 +190,7 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 void
 Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 {
-	if ((*schedIter)->getTotalDuration () + _sec > 1)
+	if ((*schedIter)->getTotalDuration () + _sec > minObsDuration)
 	{
 		(*schedIter)->incTotalDuration (_sec);
 	}
@@ -202,7 +204,7 @@ Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 			if (newSched == end ())
 				newSched = begin ();
 			// check if this schedule time can be adjusted
-			if ((*newSched)->getTotalDuration () + _sec > 1)
+			if ((*newSched)->getTotalDuration () + _sec > minObsDuration)
 			{
 				(*newSched)->incTotalDuration (_sec);
 				break;
@@ -252,6 +254,7 @@ Rts2Schedule::repairStartTimes ()
 		}
 		else if ((*iter)->getTotalDuration () < 0.01)
 		{
+			delete (*iter);
 			erase (iter);
 		}
 		else
@@ -259,6 +262,23 @@ Rts2Schedule::repairStartTimes ()
 		  	(*iter)->incTotalDuration (-0.01);
 		}
 	}
+}
+
+
+Rts2Schedule::iterator
+Rts2Schedule::findShortest ()
+{
+	Rts2Schedule::iterator ret = begin ();
+	double min = (*ret)->getTotalDuration ();
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter)->getTotalDuration () < min)
+		{
+		  	ret = iter;
+			min = (*ret)->getTotalDuration ();
+		}
+	}
+	return ret;
 }
 
 
@@ -365,10 +385,9 @@ Rts2Schedule::distanceMerit ()
 		(*iter2)->getStartPosition (pos2);
 		distMerit += ln_get_angular_separation (&pos1, &pos2);
 	}
-	distMerit /= size ();
 	if (distMerit == 0)
 	{
-		distMerit = 20000;
+		distMerit = 1;
 	}
 	else
 	{

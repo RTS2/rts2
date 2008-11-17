@@ -34,6 +34,8 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		unsigned int popSize;
 
 		double mutateDurationRatio;
+		double mutateSchedRatio;
+
 		int maxTimeChange;
 		int minObsDuration;
 
@@ -61,6 +63,14 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @param sched Schedule which entry will be mutated.
 		 */
 		void mutateDuration (Rts2Schedule * sched);
+
+		/**
+		 * Mutate schedule by removing a schedule entry. Time gained
+		 * by schedule removal is added to the shortest schedule in set.
+		 *
+		 * @param sched Schedule which will be mutated.
+		 */
+		void mutateDelete (Rts2Schedule * sched);
 
 		/**
 		 * Mutate schedule.

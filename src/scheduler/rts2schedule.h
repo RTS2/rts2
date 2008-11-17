@@ -53,6 +53,10 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 	private:
 		double JDstart;
 		double JDend;
+
+		// minimal duration of an observing entry
+		double minObsDuration;
+
 		struct ln_lnlat_posn *observer;
 
 		// variables used for non-dominated sorting
@@ -105,11 +109,12 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		/**
 		 * Create empty schedule.
 		 *
-		 * @param _JDstart Schedule start in julian date.
-		 * @param _JDend   Schedule end in julian date.
-		 * @param _obs     Observer position.
+		 * @param _JDstart       Schedule start in julian date.
+		 * @param _JDend         Schedule end in julian date.
+		 * @param _minObsDuration   Minimal schedule duration (in seconds).
+		 * @param _obs           Observer position.
 		 */
-		Rts2Schedule (double _JDstart, double _JDend, struct ln_lnlat_posn *_obs);
+		Rts2Schedule (double _JDstart, double _JDend, double _minObsDuration, struct ln_lnlat_posn *_obs);
 
 		/**
 		 * Create schedule by crossing two previous schedules.
@@ -124,14 +129,6 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * Destroy observation schedule. Delete all scheduled observations.
 		 */
 		~Rts2Schedule (void);
-
-		/**
-		 * Get non-dominated rank (front) of the schedule.
-		 */
-		int getNSGARank ()
-		{
-			return NSGARank;
-		}
 
 		/**
 		 * Return schedule start julian date.
@@ -151,6 +148,24 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double getJDEnd ()
 		{
 			return JDend;
+		}
+
+		/**
+		 * Return schedule min duration time.
+		 *
+		 * @return Schedule minimal duration in seconds.
+		 */
+		double getMinObsDuration ()
+		{
+			return minObsDuration;
+		}
+
+		/**
+		 * Get non-dominated rank (front) of the schedule.
+		 */
+		int getNSGARank ()
+		{
+			return NSGARank;
 		}
 
 		/**
@@ -246,6 +261,13 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * The sole exception is when changing last observation - in this case it can be omited.
 		 */
 		void repairStartTimes ();
+
+		/**
+		 * Return schedule obs entry with a minimal time.
+		 *
+		 * @return Iterator with minimal time.
+		 */
+		Rts2Schedule::iterator findShortest ();
 
 		/**
 		 * Ratio of observations from schedule which are visible.

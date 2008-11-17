@@ -95,17 +95,50 @@ Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
 	sched->repairStartTimes ();
 }
 
+
+void
+Rts2SchedBag::mutateDelete (Rts2Schedule * sched)
+{
+	// pick random schedule..
+	int rs = randomNumber (0, sched->size () - 1);
+	
+	Rts2Schedule::iterator picked = sched->begin () + rs;
+
+	double adj = (*picked)->getTotalDuration ();
+
+	delete (*picked);
+
+	if (picked == sched->begin ())
+	{
+		picked = sched->erase (picked);
+		(*(picked))->setJDStart (JDstart);
+	}
+	else
+	{
+		picked = sched->erase (picked);
+	}
+	
+	// pick shortest schedule 
+	(*(sched->findShortest ()))->incTotalDuration (adj);
+
+	sched->repairStartTimes (); 
+}
+
 void
 Rts2SchedBag::mutate (Rts2Schedule * sched)
 {
 	int rn = randomNumber (0, 100);
-	if (rn > mutateDurationRatio * 100)
+	if (rn < mutateDurationRatio * 100 || sched->size () == 1)
 	{
 		mutateObs (sched);
 	}
-	else
+	else if (rn < (mutateDurationRatio + mutateSchedRatio) * 100)
 	{
 	  	mutateDuration (sched);
+	}
+	else
+	{
+		mutateDelete (sched);
 	}
 }
 
@@ -194,7 +227,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	mutationNum = -1;
 	popSize = 0;
 
-	mutateDurationRatio = 0.5;
+	mutateDurationRatio = 0.25;
+	mutateSchedRatio = 0.25;
+
 	maxTimeChange = 300;
 	minObsDuration = 30;
 
@@ -243,7 +278,7 @@ Rts2SchedBag::constructSchedules (int num)
 
 	for (int i = 0; i < num; i++)
 	{
-		Rts2Schedule *sched = new Rts2Schedule (JDstart, JDend, observer);
+		Rts2Schedule *sched = new Rts2Schedule (JDstart, JDend, minObsDuration, observer);
 		if (sched->constructSchedule (ticketSet))
 			return -1;
 		push_back (sched);
