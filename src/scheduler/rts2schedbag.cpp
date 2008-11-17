@@ -67,8 +67,9 @@ Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
 		else
 		{
 			// otherwise repair minimal duration
-			adj = (minObsDuration + 2 * randomNumber (0, minObsDuration) - (*sched)[gen]->getTotalDuration ());
-			(*sched)[gen]->incTotalDuration (adj);
+			double adj2 = (minObsDuration + 2 * randomNumber (0, minObsDuration) - (*sched)[gen]->getTotalDuration ());
+			(*sched)[gen]->incTotalDuration (adj2);
+			adj += adj2;
 		}
 	}
 	

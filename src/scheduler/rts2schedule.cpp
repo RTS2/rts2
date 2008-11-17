@@ -70,13 +70,19 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 		obsSec += parent->getTotalDuration ();
 	}
 
+	if (lastObs)
+	{
+		// cut schedule to fit within cross point
+		lastObs->incTotalDuration (crossPoint - obsSec);
+	}
+
 	// now find point in sched2, from which schedule will be copied
 	for (obsCorr = 0, iter = sched2->begin (); obsCorr < crossPoint && iter != sched2->end (); obsCorr += (*iter)->getTotalDuration (), iter++)
 	{
 	}
 
 	// calculate correction for second schedule
-	obsCorr = (obsSec - obsCorr) / 86400.0;
+	obsCorr = (crossPoint - obsCorr) / 86400.0;
 
 	for (; iter != sched2->end (); iter++)
 	{
@@ -237,14 +243,20 @@ Rts2Schedule::repairStartTimes ()
 	{
 		if ((*iter)->getJDEnd () > JDend + 0.000001)
 		{
-			logStream (MESSAGE_ERROR) << "Last observatin end exceed schedule end by a big number. Last observation end: "
+			logStream (MESSAGE_ERROR) << "Last observation end exceed schedule end by a big number. Last observation start: "
+				<< LibnovaDate ((*iter)->getJDStart ()) << " end: "
 				<< LibnovaDate ((*iter)->getJDEnd ()) << " schedule end "
 				<< LibnovaDate (JDend) << sendLog;
+			(*iter)->incTotalDuration (JDend - (*iter)->getJDEnd());
 		}
-		if ((*iter)->getTotalDuration () < 0.01)
+		else if ((*iter)->getTotalDuration () < 0.01)
+		{
 			erase (iter);
+		}
 		else
+		{
 		  	(*iter)->incTotalDuration (-0.01);
+		}
 	}
 }
 

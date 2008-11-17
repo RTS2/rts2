@@ -182,7 +182,14 @@ class Rts2SchedObs
 		 */
 		bool isVisible ()
 		{
-			return getTarget()->isGood (getJDStart ());
+			// determine if target is visible during whole period
+			if (getTarget()->isGood (getJDStart ()) == false
+				|| getTarget ()->isGood (getJDMid ()) == false
+				|| getTarget ()->isGood (getJDEnd ()) == false)
+				return false;
+			double minA, maxA;
+			getTarget ()->getMinMaxAlt (getJDStart (), getJDEnd (), minA, maxA);
+			return minA > 0;
 		}
 
 		/**
