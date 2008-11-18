@@ -184,6 +184,8 @@ class TargetGRB;
 
 /**
  * Holds last GRBs.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class  Rts2TargetSetGrb:public std::vector <TargetGRB *>
 {
@@ -198,6 +200,35 @@ class  Rts2TargetSetGrb:public std::vector <TargetGRB *>
 
 		void printGrbList (std::ostream & _os);
 };
+
+
+namespace rts2db
+{
+
+/**
+ * Singleton which holds list of all targets.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TargetSetSingleton
+{
+	private:
+		static Rts2TargetSet *_instance;	
+	public:
+		TargetSetSingleton ()
+		{
+			_instance = NULL;
+		}
+
+		static Rts2TargetSet *instance ()
+		{
+			if (_instance == NULL)
+				_instance = new Rts2TargetSet ();
+			return _instance;
+		}
+};
+
+}
 
 std::ostream & operator << (std::ostream & _os, Rts2TargetSet & tar_set);
 #endif							 /* !__RTS2_TARGETSET__ */

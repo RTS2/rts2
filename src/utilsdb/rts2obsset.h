@@ -145,6 +145,39 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 
 		void printStatistics (std::ostream & _os);
 
+		/**
+		 * Return JD of start of the first observation in the set.
+		 *
+		 * @return JD of start of the first observation.
+		 */
+		double getJDStart ()
+		{
+			if (size () == 0)
+				return nan("f");
+			return (*begin ()).getObsJDStart ();
+		}
+
+		/**
+		 * Return JD of the end of last observation in the set.
+		 *
+		 * @return JD of the end of last last observation.
+		 */
+		double getJDEnd ()
+		{
+			if (size () == 0)
+				return nan("f");
+			return (*(end () - 1)).getObsJDEnd ();
+		}
+
+		// Merit functions..
+		
+		/**
+		 * Returns averaged altitude merit function.
+		 *
+		 * @return Averaged altitudu merit function of the observations.
+		 */
+		double altitudeMerit ();
+
 		friend std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
 };
 

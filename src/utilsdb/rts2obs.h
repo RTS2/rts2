@@ -24,6 +24,7 @@
 #include <ostream>
 #include <time.h>
 #include <vector>
+#include <stdexcept>
 
 #include "imgdisplay.h"
 
@@ -31,6 +32,7 @@
 
 #include "rts2count.h"
 #include "rts2imgset.h"
+#include "target.h"
 
 /**
  * Observation class.
@@ -109,6 +111,23 @@ class Rts2Obs
 		}
 
 		/**
+		 * Return target structure.
+		 *
+		 * @return Target structure in case of success, NULL in case of error.
+		 */
+		Target *getTarget ()
+		{
+			try
+			{
+				return rts2db::TargetSetSingleton::instance ()->at(getTargetId ());
+			}
+			catch (std::out_of_range _e)
+			{
+				return NULL;
+			}
+		}
+
+		/**
 		 * Return real target ID.
 		 *
 		 * @return Target id.
@@ -143,10 +162,47 @@ class Rts2Obs
 			return obs_start;
 		}
 
+		double getObsJDStart ()
+		{
+			if (isnan (getObsStart ()))
+				return getObsStart ();
+			time_t s = (time_t) getObsStart ();
+			return ln_get_julian_from_timet (&s);
+		}
+
+		/**
+		 * Return middle time of observation.
+		 */
+		double getObsJDMid ()
+		{
+			if (isnan (getObsStart ()) || isnan (getObsStart ()))
+				return nan("f");
+			time_t mid = (time_t) ((getObsStart () + getObsEnd ()) / 2.0);
+			return ln_get_julian_from_timet (&mid);
+		}
+
 		double getObsEnd ()
 		{
 			return obs_end;
 		}
+
+		double getObsJDEnd ()
+		{
+			if (isnan (getObsEnd ()))
+				return getObsEnd ();
+			time_t e = (time_t) getObsEnd ();
+			return ln_get_julian_from_timet (&e);
+		}
+
+		/**
+		 * Calculate observation altitude merit withing given interval.
+		 *
+		 * @param _start JD of interval start.
+		 * @param _end   JD of interval end.
+		 *
+		 * @return Merit (=number between 0 and 1, higher means better).
+		 */
+		double altitudeMerit (double _start, double _end);
 
 		double getObsRa ()
 		{

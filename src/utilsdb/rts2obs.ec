@@ -326,6 +326,35 @@ Rts2Obs::printCountsSummary (std::ostream &_os)
 }
 
 
+double
+Rts2Obs::altitudeMerit (double _start, double _end)
+{
+	double minA, maxA;
+	struct ln_hrz_posn hrz;
+	getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
+
+	getTarget ()->getAltAz (&hrz, getObsJDMid ());
+
+	if (maxA == minA)
+		return 1;
+
+	if ((hrz.alt - minA) / (maxA - minA) > 1)
+	{
+		std::cout << "hrz.alt: " << hrz.alt
+			<< " minA: " << minA
+			<< " maxA: " << maxA
+			<< " from " << LibnovaDate (_start)
+			<< " to " << LibnovaDate (_end)
+			<< " obs from " << LibnovaDate (getObsJDStart ())
+			<< " to " << LibnovaDate (getObsJDEnd ())
+			<< std::endl;
+		getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
+	}
+
+	return (hrz.alt - minA) / (maxA - minA);
+}
+
+
 int
 Rts2Obs::getUnprocessedCount ()
 {

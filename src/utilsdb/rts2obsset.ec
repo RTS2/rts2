@@ -293,7 +293,9 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 		<< " without astrometry:" << (allNum - goodNum);
 	if (allNum > 0)
 	{
-		_os << " (" << (((double)(goodNum * 100)) / allNum) << "%)";
+		_os << " (" << (((double)(goodNum * 100)) / allNum) << "%)"
+		  << std::endl
+		  << "altitude merit: " << altitudeMerit ();
 	}
 	_os << std::endl;
 	if (goodNum > 0)
@@ -309,6 +311,19 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 			<< " radius: " << LibnovaDegArcMin (errAvgRad) << std::endl;
 	}
 	_os.precision (prec);
+}
+
+
+double
+Rts2ObsSet::altitudeMerit ()
+{
+	double altMerit = 0;
+	for (Rts2ObsSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		altMerit += (*iter).altitudeMerit (getJDStart (), getJDEnd ());
+	}
+	altMerit /= size ();
+	return altMerit;
 }
 
 
