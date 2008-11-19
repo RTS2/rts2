@@ -23,10 +23,10 @@
 
 /** Defines for FitsFile flags. */
 #define IMAGE_SAVE              0x01
-#define IMAGE_NOT_SAVE          0x00
-#define IMAGE_KEEP_DATA         0x02
-#define IMAGE_DONT_DELETE_DATA  0x04
-#define IMAGE_CANNOT_LOAD       0x08
+#define IMAGE_NOT_SAVE          0x02
+#define IMAGE_KEEP_DATA         0x04
+#define IMAGE_DONT_DELETE_DATA  0x08
+#define IMAGE_CANNOT_LOAD       0x10
 
 /**
  * Class representing FITS file. This class represents FITS file. Usually you

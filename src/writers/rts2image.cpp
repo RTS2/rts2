@@ -181,7 +181,6 @@ Rts2FitsFile ()
 	tv.tv_sec = in_img_date;
 	tv.tv_usec = in_img_usec;
 	setExposureStart (&tv);
-	writeExposureStart ();
 	exposureLength = in_img_exposure;
 }
 
