@@ -30,7 +30,7 @@ ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port)
 {
 	hostname = _hostname;
 	port = _port;
-	transId = 0;
+	transId = 1;
 	unitId = 0;
 }
 
@@ -73,10 +73,10 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	int ret;
 	char send_data[8 + data_size];
 	// fill header
-	*((int *) send_data) = htons (transId);
+	*((int16_t *) send_data) = htons (transId);
 	send_data[2] = 0;
 	send_data[3] = 0;
-	*((int *) (send_data + 4)) = htons (data_size + 2);
+	*((int16_t *) (send_data + 4)) = htons (data_size + 2);
 	send_data[6] = unitId;
 	send_data[7] = func;
 	bcopy (data, send_data + 8, data_size);
@@ -158,7 +158,7 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	if (reply_data[7] & 0x80)
 	{
 		logStream (MESSAGE_ERROR) << "Error executiong function " << func 
-			<< " error code is: 0x" << std::hex << (int) reply_data[8];
+			<< " error code is: 0x" << std::hex << (int) reply_data[8] << sendLog;
 		return -1;
 	}
 	else if (reply_data[7] != func)
@@ -225,6 +225,21 @@ ConnModbus::readHoldingRegisters (int16_t start, int16_t qty)
 	int ret;
 	ret = callFunction (0x03, start, qty, reply_data, reply_size);
 
+	logStream (MESSAGE_INFO) << "holding register 1" << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
+
 	return 0;
 }
 
+int
+ConnModbus::readInputRegisters (int16_t start, int16_t qty)
+{
+	int reply_size = 1 + qty * 2;
+	char reply_data[reply_size];
+
+	int ret;
+	ret = callFunction (0x04, start, qty, reply_data, reply_size);
+
+	logStream (MESSAGE_INFO) << "input register 1" << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
+
+	return 0;
+}

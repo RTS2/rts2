@@ -122,6 +122,16 @@ class ConnModbus: public Rts2ConnNoSend
 		 * @return -1 on error, 0 on success.
 		 */
 		int readHoldingRegisters (int16_t start, int16_t qty);
+
+		/**
+		 * Read input registers.
+		 *
+		 * @param start   Input register starting address.
+		 * @param qty     Quantity of registers.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int readInputRegisters (int16_t start, int16_t qty);
 };
 
 }
