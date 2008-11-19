@@ -212,19 +212,17 @@ namespace rts2db
  */
 class TargetSetSingleton
 {
-	private:
-		static Rts2TargetSet *_instance;	
 	public:
 		TargetSetSingleton ()
 		{
-			_instance = NULL;
 		}
 
 		static Rts2TargetSet *instance ()
 		{
-			if (_instance == NULL)
-				_instance = new Rts2TargetSet ();
-			return _instance;
+			static Rts2TargetSet *pInstance;
+			if (pInstance == NULL)
+				pInstance = new Rts2TargetSet ();
+			return pInstance; 
 		}
 };
 
