@@ -295,7 +295,8 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 	{
 		_os << " (" << (((double)(goodNum * 100)) / allNum) << "%)"
 		  << std::endl
-		  << "altitude merit: " << altitudeMerit ();
+		  << "altitude merit: " << altitudeMerit ()
+		  << " distance merit: " << distanceMerit ();
 	}
 	_os << std::endl;
 	if (goodNum > 0)
