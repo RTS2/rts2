@@ -154,7 +154,7 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		{
 			if (size () == 0)
 				return nan("f");
-			return (*begin ()).getObsJDStart ();
+			return (*(end () - 1)).getObsJDStart ();
 		}
 
 		/**
@@ -166,7 +166,7 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		{
 			if (size () == 0)
 				return nan("f");
-			return (*(end () - 1)).getObsJDEnd ();
+			return (*(begin ())).getObsJDEnd ();
 		}
 
 		// Merit functions..
