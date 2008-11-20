@@ -178,6 +178,13 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		 */
 		double altitudeMerit ();
 
+		/**
+		 * Returns merit based on distance between scheduled entries.
+		 *
+		 * @return 1 / sum of distance distance between schedule entries.
+		 */
+		double distanceMerit ();
+
 		friend std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
 };
 

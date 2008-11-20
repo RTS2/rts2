@@ -204,6 +204,37 @@ class Rts2Obs
 		 */
 		double altitudeMerit (double _start, double _end);
 
+
+		/**
+		 * Get equatiorial position of the target at the beginning of the observation.
+		 *
+		 * @param _pos Returned position.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getStartPosition (struct ln_equ_posn &_pos)
+		{
+			if (isnan (getObsJDStart ()))
+				return -1;
+			getTarget ()->getPosition (&_pos, getObsJDStart ());
+			return 0;
+		}
+
+		/**
+		 * Get equatiorial position of the target at the end of the observation.
+		 *
+		 * @param _pos Returned position.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getEndPosition (struct ln_equ_posn &_pos)
+		{
+			if (isnan (getObsJDEnd ()))
+				return -1;
+			getTarget ()->getPosition (&_pos, getObsJDEnd ());
+			return 0;
+		}
+
 		double getObsRa ()
 		{
 			return obs_ra;
