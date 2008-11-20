@@ -178,6 +178,7 @@ Rts2FitsFile ()
 {
 	struct timeval tv;
 	initData ();
+	flags |= IMAGE_NOT_SAVE;
 	tv.tv_sec = in_img_date;
 	tv.tv_usec = in_img_usec;
 	setExposureStart (&tv);
@@ -682,6 +683,8 @@ Rts2Image::setValue (const char *name, bool value, const char *comment)
 	int ret;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -699,6 +702,8 @@ Rts2Image::setValue (const char *name, int value, const char *comment)
 	int ret;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -715,6 +720,8 @@ Rts2Image::setValue (const char *name, long value, const char *comment)
 	int ret;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -732,6 +739,8 @@ Rts2Image::setValue (const char *name, float value, const char *comment)
 	float val = value;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -751,6 +760,8 @@ Rts2Image::setValue (const char *name, double value, const char *comment)
 	double val = value;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -770,6 +781,8 @@ Rts2Image::setValue (const char *name, char value, const char *comment)
 	int ret;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
@@ -791,6 +804,8 @@ Rts2Image::setValue (const char *name, const char *value, const char *comment)
 		return 0;
 	if (!getFitsFile ())
 	{
+		if (flags & IMAGE_NOT_SAVE)
+			return 0;
 		ret = openImage ();
 		if (ret)
 			return ret;
