@@ -1594,9 +1594,9 @@ Gemini::startMove ()
 
 	// check for small movements and perform them using change command..
 	#ifdef L4_GUIDE
-	if (fabs (ra_diff) <= maxPrecGuideRa && fabs (ra_diff) <= maxPrecGuideDec)
+	if (fabs (ra_diff) <= maxPrecGuideRa && fabs (dec_diff) <= maxPrecGuideDec)
 	#else
-	if (fabs (dec_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
+	if (fabs (ra_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
 	#endif
 	{
 		return change_real (-1 * ra_diff, -1 * dec_diff);
