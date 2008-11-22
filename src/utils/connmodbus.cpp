@@ -225,7 +225,7 @@ ConnModbus::readHoldingRegisters (int16_t start, int16_t qty)
 	int ret;
 	ret = callFunction (0x03, start, qty, reply_data, reply_size);
 
-	logStream (MESSAGE_INFO) << "holding register 1" << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
+	logStream (MESSAGE_INFO) << "holding register " << start << " 1 " << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
 
 	return 0;
 }
@@ -239,7 +239,7 @@ ConnModbus::readInputRegisters (int16_t start, int16_t qty)
 	int ret;
 	ret = callFunction (0x04, start, qty, reply_data, reply_size);
 
-	logStream (MESSAGE_INFO) << "input register 1" << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
+	logStream (MESSAGE_INFO) << "input register " << start << " 1 " << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
 
 	return 0;
 }
