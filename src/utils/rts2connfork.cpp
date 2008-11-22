@@ -40,6 +40,7 @@ Rts2ConnNoSend (in_master)
 	{
 		forkedTimeout = 0;
 	}
+	sockerr = -1;
 }
 
 
@@ -47,7 +48,40 @@ Rts2ConnFork::~Rts2ConnFork (void)
 {
 	if (childPid > 0)
 		kill (-childPid, SIGINT);
+	if (sockerr > 0)
+		close (sockerr);
 	delete[]exePath;
+}
+
+
+int
+Rts2ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+{
+	if (sockerr > 0)
+		FD_SET (sockerr, readset);
+	return Rts2ConnNoSend::add (readset, writeset, expset);
+}
+
+
+int
+Rts2ConnFork::receive (fd_set * readset)
+{
+	if (sockerr > 0 && FD_ISSET (sockerr, readset))
+	{
+		int data_size;
+		char errbuf[5001];
+		data_size = read (sockerr, errbuf, 5000);
+		if (data_size > 0)
+		{
+			errbuf[data_size] = '\0';
+			processErrorLine (errbuf);	
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "From error pipe read " << data_size << " bytes." << sendLog;
+		}
+	}
+	return Rts2ConnNoSend::receive (readset);
 }
 
 
@@ -77,6 +111,12 @@ Rts2ConnFork::initFailed ()
 }
 
 
+void
+Rts2ConnFork::processErrorLine (char *errbuf)
+{
+	logStream (MESSAGE_ERROR) << "From error pipe received: " << errbuf << "." << sendLog;
+}
+
 int
 Rts2ConnFork::newProcess ()
 {
@@ -98,11 +138,21 @@ Rts2ConnFork::init ()
 		return 1;
 	}
 	int filedes[2];
+	int filedeserr[2];
 	ret = pipe (filedes);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
 			"Rts2ConnImgProcess::run cannot create pipe for process: " <<
+			strerror (errno) << sendLog;
+		initFailed ();
+		return -1;
+	}
+	ret = pipe (filedeserr);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) <<
+			"Rts2ConnImgProcess::run cannot create error pipe for process: " <<
 			strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
@@ -121,12 +171,17 @@ Rts2ConnFork::init ()
 	{
 		sock = filedes[0];
 		close (filedes[1]);
+		sockerr = filedeserr[0];
+		close (filedeserr[1]);
 		fcntl (sock, F_SETFL, O_NONBLOCK);
+		fcntl (sockerr, F_SETFL, O_NONBLOCK);
 		return 0;
 	}
 	// child
 	close (filedes[0]);
 	dup2 (filedes[1], 1);
+	close (filedeserr[0]);
+	dup2 (filedeserr[1], 2);
 	// close all sockets so when we crash, we don't get any dailing
 	// sockets
 	master->forkedInstance ();
