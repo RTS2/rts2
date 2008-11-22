@@ -40,5 +40,5 @@ Rts2ConnNoSend::~Rts2ConnNoSend (void)
 int
 Rts2ConnNoSend::sendMsg (const char *msg)
 {
-	return 1;
+	return 0;
 }
