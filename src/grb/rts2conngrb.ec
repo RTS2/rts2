@@ -413,9 +413,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 	d_swift_name.len = strlen (obs_name);
 
 	EXEC SQL
-		INSERT INTO
-			swift
-			(
+		INSERT INTO swift
+		(
 			swift_id,
 			swift_ra,
 			swift_dec,
@@ -425,8 +424,9 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 			swift_name,
 			swift_obstime,
 			swift_merit
-			) VALUES (
-		nextval ('point_id'),
+		)
+		VALUES (
+			nextval ('point_id'),
 			:d_swift_ra,
 			:d_swift_dec,
 			:d_swift_roll,
@@ -435,7 +435,7 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 			:d_swift_name,
 			:d_swift_obstime,
 			:d_swift_merit
-			);
+		);
 	if (sqlca.sqlcode != 0)
 	{
 		logStream (MESSAGE_ERROR) << "Rts2ConnGrb cannot insert swift: " << sqlca.sqlerrm.sqlerrmc << sendLog;
