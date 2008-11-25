@@ -194,6 +194,7 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		// 0 - unsplit, 1 - left, 2 - right
 		Rts2ValueSelection *splitMode;
 		Rts2ValueSelection *edtGain;
+		Rts2ValueInteger *parallelClockSpeed;
 		// number of lines to skip in serial mode
 		Rts2ValueInteger *skipLines;
 
@@ -248,6 +249,8 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 				return edtwrite (SAO_GAIN_HIGH);
 			return edtwrite (SAO_GAIN_LOW);
 		}
+
+		int setParallelClockSpeed (int new_clockSpeed);
 
 		// registers
 		Rts2ValueEdt *phi;
@@ -520,6 +523,15 @@ Rts2CamdEdtSao::fclr_r (int num)
 			<< "Cannot do fclr, trying again." << sendLog;
 		sleep (10);
 	}
+}
+
+
+int
+Rts2CamdEdtSao::setParallelClockSpeed (int new_speed)
+{
+  	unsigned long ns = 0x46000000;	
+	ns |= (new_speed & 0x00ff);
+	return edtwrite (ns);
 }
 
 
@@ -1048,6 +1060,10 @@ Rts2DevCamera (in_argc, in_argv)
 
 	edtGain->setValueInteger (0);
 
+	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, 0, CAM_WORKING, true);
+	parallelClockSpeed->setValueInteger (6);
+	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
+
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true);
 	skipLines->setValueInteger (50);
 
@@ -1176,6 +1192,10 @@ Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == edtGain)
 	{
 		return (setEDTGain (new_value->getValueInteger () == 0));
+	}
+	if (old_value == parallelClockSpeed)
+	{
+		return (setParallelClockSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2);
 	}
 	return Rts2DevCamera::setValue (old_value, new_value);
 }
