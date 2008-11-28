@@ -333,6 +333,8 @@ Rts2ObsSet::distanceMerit ()
 {
 	double distMerit = 0;
 
+	unsigned int s = 0;
+
 	Rts2ObsSet::iterator iter1 = begin ();
 	Rts2ObsSet::iterator iter2 = begin () + 1;
 
@@ -340,7 +342,10 @@ Rts2ObsSet::distanceMerit ()
 	{
 		struct ln_equ_posn pos1, pos2;
 		if ((*iter1).getEndPosition (pos1) == 0 && (*iter2).getStartPosition (pos2) == 0)
+		{
 			distMerit += ln_get_angular_separation (&pos1, &pos2);
+			s++;
+		}
 	}
 	if (distMerit == 0)
 	{
@@ -348,7 +353,7 @@ Rts2ObsSet::distanceMerit ()
 	}
 	else
 	{
-		distMerit = 1.0 / distMerit;
+		distMerit = distMerit / s;
 	}
 
 	return distMerit;
