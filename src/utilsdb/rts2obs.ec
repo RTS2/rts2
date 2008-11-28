@@ -348,7 +348,18 @@ Rts2Obs::altitudeMerit (double _start, double _end)
 			<< " obs from " << LibnovaDate (getObsJDStart ())
 			<< " to " << LibnovaDate (getObsJDEnd ())
 			<< std::endl;
-		getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
+	}
+
+	if (isnan (hrz.alt) || isnan (minA) || isnan (maxA))
+	{
+		std::cout << "nan hrz.alt: " << hrz.alt
+			<< " minA: " << minA
+			<< " maxA: " << maxA
+			<< " from " << LibnovaDate (_start)
+			<< " to " << LibnovaDate (_end)
+			<< " obs from " << LibnovaDate (getObsJDStart ())
+			<< " to " << LibnovaDate (getObsJDEnd ())
+			<< std::endl;
 	}
 
 	return (hrz.alt - minA) / (maxA - minA);

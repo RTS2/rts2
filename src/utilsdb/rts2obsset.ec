@@ -319,11 +319,16 @@ double
 Rts2ObsSet::altitudeMerit ()
 {
 	double altMerit = 0;
+	int s = 0;
 	for (Rts2ObsSet::iterator iter = begin (); iter != end (); iter++)
 	{
-		altMerit += (*iter).altitudeMerit (getJDStart (), getJDEnd ());
+		double am = (*iter).altitudeMerit (getJDStart (), getJDEnd ());
+		if (isnan (am))
+			continue;
+		altMerit += am;
+		s++;
 	}
-	altMerit /= size ();
+	altMerit /= s;
 	return altMerit;
 }
 
