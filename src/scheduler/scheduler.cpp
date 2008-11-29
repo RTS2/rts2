@@ -143,25 +143,29 @@ Rts2ScheduleApp::printSGAMerits ()
 	schedBag->calculateNSGARanks ();
 	// print header
 	std::cout << std::left
-		<< std::setw (11) << "ALTITUDE"
-		<< std::setw (11) << "ACCOUNT"
-		<< std::setw (11) << "DISTANCE"
-		<< std::setw (11) << "VISIBILITY"
-		<< std::setw (4) << "SCH"
-		<< std::setw (4) << "UNT"
-		<< std::setw (4) << "OBN"
+		<< std::setw (11) << "ALTITUDE" SEP
+		<< std::setw (11) << "ACCOUNT" SEP
+		<< std::setw (11) << "DISTANCE" SEP
+		<< std::setw (11) << "VISIBILITY" SEP
+		<< std::setw (4) << "DIVT" SEP
+		<< std::setw (4) << "DIVO" SEP
+		<< std::setw (4) << "SCH" SEP
+		<< std::setw (4) << "UNT" SEP
+		<< std::setw (4) << "OBN" SEP
 		<< std::setw (11) << "SINGLE"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
 		std::cout << std::left 
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) 
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM) << SEP
 			<< std::setw (11) << (*iter)->getObjectiveFunction (SINGLE) 
 			<< std::endl;
 		if (printSchedules)
@@ -175,24 +179,28 @@ Rts2ScheduleApp::printNSGAMerits ()
 	Rts2SchedBag::iterator iter;
 	schedBag->calculateNSGARanks ();
 	// print header
-	std::cout << std::left << "RNK "
-		<< std::setw (11) << "ALTITUDE"
-		<< std::setw (11) << "ACCOUNT"
-		<< std::setw (11) << "DISTANCE"
-		<< std::setw (11) << "VISIBILITY"
-		<< std::setw (4) << "SCH"
-		<< std::setw (4) << "UNT"
+	std::cout << std::left << "RNK " SEP
+		<< std::setw (11) << "ALTITUDE" SEP
+		<< std::setw (11) << "ACCOUNT" SEP
+		<< std::setw (11) << "DISTANCE" SEP
+		<< std::setw (11) << "VISIBILITY" SEP
+		<< std::setw (4) << "DIVT" SEP
+		<< std::setw (4) << "DIVO" SEP
+		<< std::setw (4) << "SCH" SEP
+		<< std::setw (4) << "UNT" SEP
 		<< std::setw (4) << "OBN"
 		<< std::endl;
 	for (iter = schedBag->begin (); iter < schedBag->end (); iter++)
 	{
-		std::cout << std::left << std::setw (4) << (*iter)->getNSGARank ()
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE)
-			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY)
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME)
-			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS)
+		std::cout << std::left << std::setw (4) << (*iter)->getNSGARank () << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ALTITUDE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (ACCOUNT) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (DISTANCE) << SEP
+			<< std::setw (11) << (*iter)->getObjectiveFunction (VISIBILITY) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_TARGET)) << SEP
+			<< std::setw (4) << (int) ((*iter)->getObjectiveFunction (DIVERSITY_OBSERVATIONS)) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_SCHEDULE_TIME) << SEP
+			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_UNOBSERVED_TICKETS) << SEP
 			<< std::setw (4) << (*iter)->getConstraintFunction (CONSTR_OBS_NUM)
 			<< std::endl; 
 		if (printSchedules)
@@ -376,14 +384,14 @@ Rts2ScheduleApp::doProcessing ()
 			double _min, _avg, _max;
 			schedBag->getStatistics (_min, _avg, _max);
 
-			std::cout << std::right << std::setw (5) << i << " "
-				<< std::setw (4) << schedBag->size () << " "
-				<< std::setw (10) << _min << " "
-				<< std::setw (10) << _avg << " "
-				<< std::setw (10) << _max << " "
-				<< std::setw (4) << schedBag->constraintViolation (CONSTR_VISIBILITY) << " "
-				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME) << " "
-				<< std::setw (4) << schedBag->constraintViolation (CONSTR_UNOBSERVED_TICKETS) << " "
+			std::cout << std::right << std::setw (5) << i << SEP
+				<< std::setw (4) << schedBag->size () << SEP
+				<< std::setw (10) << _min << SEP
+				<< std::setw (10) << _avg << SEP
+				<< std::setw (10) << _max << SEP
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_VISIBILITY) << SEP
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_SCHEDULE_TIME) << SEP
+				<< std::setw (4) << schedBag->constraintViolation (CONSTR_UNOBSERVED_TICKETS) << SEP
 				<< std::setw (4) << schedBag->constraintViolation (CONSTR_OBS_NUM);
 			int rankSize = 0;
 			int rank = 0;
@@ -399,7 +407,7 @@ Rts2ScheduleApp::doProcessing ()
 						rankSize = schedBag->getNSGARankSize (rank);
 						if (rankSize <= 0)
 							break;
-						std::cout << " " << std::right << std::setw (3) << rankSize;
+						std::cout << SEP << std::right << std::setw (3) << rankSize;
 						rank++;
 					}
 

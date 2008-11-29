@@ -239,8 +239,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	objectives[0] = ALTITUDE;
 	objectives[1] = ACCOUNT;
 	objectives[2] = DISTANCE;
+	objectives[3] = DIVERSITY_TARGET;
 
-	objectivesSize = 3;
+	objectivesSize = 4;
 
 	constraints[0] = CONSTR_VISIBILITY;
 	constraints[1] = CONSTR_SCHEDULE_TIME;

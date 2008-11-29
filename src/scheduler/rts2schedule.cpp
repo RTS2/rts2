@@ -398,6 +398,35 @@ Rts2Schedule::distanceMerit ()
 }
 
 
+double
+Rts2Schedule::diversityTargetMerit ()
+{
+	if (!isnan (divTargetMerit))
+		return divTargetMerit;
+
+	divTargetMerit = 0;
+
+	// targets which were finded in schedule
+	std::map <int, int> targetSelected;
+
+	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (targetSelected[(*iter)->getTargetId ()] == 0)
+			divTargetMerit++;
+		targetSelected[(*iter)->getTargetId ()]++;
+	}
+	
+	return divTargetMerit;
+}
+
+
+double
+Rts2Schedule::diversityObservationMerit ()
+{
+	return size ();
+}
+
+
 unsigned int
 Rts2Schedule::violateSchedule ()
 {

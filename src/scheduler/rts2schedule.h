@@ -25,20 +25,24 @@
 
 #include <vector>
 
-typedef enum {
-	VISIBILITY,     // ratio of visible targets. 1 = all targets are visible
-	ALTITUDE,       // average altitude of the target. 1 = highest possible target altitude, 0 = on or bellow horizon
-	ACCOUNT,        // ratio of account share. Higher = better
-	DISTANCE,       // average distance between observations
-	SCHEDULE_TIME,  // number of targets with scheduling constrain that are satisfied
-	SINGLE		// single scheduling criteria
+typedef enum
+{
+	VISIBILITY,					 // ratio of visible targets. 1 = all targets are visible
+	ALTITUDE,					 // average altitude of the target. 1 = highest possible target altitude, 0 = on or bellow horizon
+	ACCOUNT,					 // ratio of account share. Higher = better
+	DISTANCE,					 // average distance between observations
+	SCHEDULE_TIME,				 // number of targets with scheduling constrain that are satisfied
+	DIVERSITY_TARGET,			 // diversity target - number of targets observed
+	DIVERSITY_OBSERVATIONS,		 // diversity observations merit - number of observations in schedule
+	SINGLE						 // single scheduling criteria
 } objFunc;
 
-typedef enum {
-	CONSTR_VISIBILITY,	   // visibility violation - target is not visible
-	CONSTR_SCHEDULE_TIME,	   // schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
-	CONSTR_UNOBSERVED_TICKETS, // number of unobserved tickets - tickets which have time constraint for schedule period, have some numObs left, but were not observed
-	CONSTR_OBS_NUM		   // target is observed more times then it should be observed
+typedef enum
+{
+	CONSTR_VISIBILITY,			 // visibility violation - target is not visible
+	CONSTR_SCHEDULE_TIME,		 // schedule violation - target is scheduled outside its allowed time OR there exists target(s) which was not scheduled while it must be scheduled
+	CONSTR_UNOBSERVED_TICKETS,	 // number of unobserved tickets - tickets which have time constraint for schedule period, have some numObs left, but were not observed
+	CONSTR_OBS_NUM				 // target is observed more times then it should be observed
 } constraintFunc;
 
 /**
@@ -72,6 +76,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		double altMerit;
 		double accMerit;
 		double distMerit;
+		double divTargetMerit;
 
 		unsigned int visible;
 		unsigned int unvisible;
@@ -91,6 +96,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 			altMerit = nan ("f");
 			accMerit = nan ("f");
 			distMerit = nan ("f");
+			divTargetMerit = nan ("f");
 
 			visible = UINT_MAX;
 			unvisible = UINT_MAX;
@@ -294,9 +300,23 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		/**
 		 * Returns merit based on distance between schedules entries.
 		 *
-		 * @return 1 / average distance between schedule entries.
+		 * @return 1 / sum of distance distance between schedule entries.
 		 */
 		double distanceMerit ();
+
+		/**
+		 * Return diversity target merit - number of targets visited.
+		 *
+		 * @return Number of target visited.
+		 */
+		double diversityTargetMerit ();
+
+		/**
+		 * Return diversity of observations - number of observations scheduled.
+		 *
+		 * @return Number of observations scheduled.
+		 */
+		double diversityObservationMerit ();
 
 		/**
 		 * Return used merit function.
@@ -305,7 +325,6 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		{
 			return altitudeMerit ();
 		}
-
 
 		/**
 		 * Return number of targets which are scheduled outside their scheduling
@@ -317,7 +336,6 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * Return number of targets which schedule will never be satisfied.
 		 */
 		unsigned int unobservedSchedules ();
-
 
 		/**
 		 * Return number of tickets, which violate their observing number.
@@ -370,6 +388,10 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 					return accountMerit ();
 				case DISTANCE:
 					return distanceMerit ();
+				case DIVERSITY_TARGET:
+					return diversityTargetMerit ();
+				case DIVERSITY_OBSERVATIONS:
+					return diversityObservationMerit ();
 				case SINGLE:
 					break;
 			}
