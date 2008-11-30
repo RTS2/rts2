@@ -76,9 +76,14 @@ Rts2ConnFork::receive (fd_set * readset)
 			errbuf[data_size] = '\0';
 			processErrorLine (errbuf);	
 		}
+		else if (data_size == 0)
+		{
+			close (sockerr);
+			sockerr = -1;
+		}
 		else
 		{
-			logStream (MESSAGE_ERROR) << "From error pipe read " << data_size << " bytes." << sendLog;
+			logStream (MESSAGE_ERROR) << "From error pipe read error " << strerror (errno) << "." << sendLog;
 		}
 	}
 	return Rts2ConnNoSend::receive (readset);
