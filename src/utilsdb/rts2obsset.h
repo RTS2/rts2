@@ -169,6 +169,15 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 			return (*(begin ())).getObsJDEnd ();
 		}
 
+		/**
+		 * Return map of targetsId and number of their observations.
+		 * The returning map has as a key targetId, and as value number of observations
+		 * of the target.
+		 *
+		 * @param Map containing target id as a key and number of target observations as value.
+		 */
+		std::map <int, int> getTargetObservations ();
+
 		// Merit functions..
 		
 		/**

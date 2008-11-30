@@ -315,6 +315,17 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 }
 
 
+std::map <int, int>
+Rts2ObsSet::getTargetObservations ()
+{
+	std::map <int, int> ret;
+	for (Rts2ObsSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		ret[(*iter).getTargetId ()]++;
+	}
+	return ret;
+}
+
 double
 Rts2ObsSet::altitudeMerit ()
 {
