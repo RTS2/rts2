@@ -36,6 +36,16 @@ typedef enum
 	SINGLE						 // single scheduling criteria
 } objFunc;
 
+
+/**
+ * Return objective string representation.
+ *
+ * @param obj Objective.
+ * 
+ * @return String representation of the objective.
+ */
+const char* getObjectiveName (objFunc obj);
+
 typedef enum
 {
 	CONSTR_VISIBILITY,			 // visibility violation - target is not visible
@@ -363,7 +373,7 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 				case CONSTR_OBS_NUM:
 					return violatedObsNum ();
 			}
-			return nan ("f");
+			return UINT_MAX;
 		}
 
 		/**

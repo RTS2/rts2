@@ -23,6 +23,13 @@
 
 using namespace rts2db;
 
+const char* getObjectiveName (objFunc obj)
+{
+	const static char* objNames[] = { "VISIBILITY", "ALTITUDE", "ACCOUNT", "DISTANCE",
+		"DIVERSITY_TARGET", "DIVERSITY_OBSERVATIONS", "SINGLE"};
+	return objNames[(int) obj];
+}
+
 Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, double _minObsDuration, struct ln_lnlat_posn *_obs)
 {
 	JDstart = _JDstart;

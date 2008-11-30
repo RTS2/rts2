@@ -52,6 +52,9 @@ class Rts2ScheduleApp: public Rts2AppDb
 		// if the programme will print detail schedule informations
 		bool printSchedules;
 
+		// if true, prints out statistics of merits of population with rank 0
+		bool printMeritsStat;
+
 		// observation night - will generate schedule for same night
 		struct ln_date *obsNight;
 
@@ -88,9 +91,14 @@ class Rts2ScheduleApp: public Rts2AppDb
 		void printNSGAMerits ();
 
 		/**
-		 * Prints all merits statistics of schedule set.
+		 * Prints all merits of each member of schedule set.
 		 */
 		void printMerits ();
+
+		/**
+		 * Prints statistics of merits of the best population.
+		 */
+		void printMeritsStatistics ();
 
 	protected:
 		virtual void usage ();
@@ -121,8 +129,8 @@ Rts2ScheduleApp::printMerits (objFunc _type, const char *name)
 	schedBag->getStatistics (min, avg, max, _type);
 
 	std::cout << std::endl << name << " statistics: "
-		<< min << " "
-		<< avg << " "
+		<< min << SEP
+		<< avg << SEP
 		<< max << std::endl;
 }
 
@@ -228,6 +236,28 @@ Rts2ScheduleApp::printMerits ()
 
 
 void
+Rts2ScheduleApp::printMeritsStatistics ()
+{
+	double _min, _avg, _max;
+	switch (algorithm)
+	{
+	  	case SGA:
+			schedBag->getStatistics (_min, _avg, _max);
+			std::cout << "SINGLE " << _min << SEP << _avg << SEP << _max << std::endl;	
+			break;
+		case NSGAII:
+			std::list <objFunc> obj = schedBag->getObjectives ();
+			for (std::list <objFunc>::iterator objIter = obj.begin (); objIter != obj.end (); objIter++)
+			{
+				schedBag->getNSGAIIBestStatistics (_min, _avg, _max, *objIter);
+				std::cout << getObjectiveName (*objIter) << _min << SEP << _avg << SEP << _max << std::endl;
+			}
+			break;
+	}
+}
+
+
+void
 Rts2ScheduleApp::usage ()
 {
 	std::cout << "\t" << getAppName () << std::endl;
@@ -280,6 +310,9 @@ Rts2ScheduleApp::processOption (int _opt)
 			break;
 		case 's':
 			printSchedules = true;
+			break;
+		case 'm':
+			printMeritsStat = true;
 			break;
 		case 'o':
 			obsNight = new struct ln_date;
@@ -353,6 +386,8 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 
 	printSchedules = false;
 
+	printMeritsStat = false;
+
 	obsNight = NULL;
 
 	startDate = nan ("f");
@@ -363,6 +398,7 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	addOption ('p', NULL, 1, "population size");
 	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported, NSGAII is default)");
 	addOption ('s', NULL, 0, "print schedule entries");
+	addOption ('m', NULL, 0, "print merits statistics of the best population group");
 	addOption ('o', NULL, 1, "do scheduling for observation set from this date");
 
 	addOption (OPT_START_DATE, "start", 1, "produce schedule from this date");
@@ -442,6 +478,8 @@ Rts2ScheduleApp::doProcessing ()
 
 	if (verbose)	
 		printMerits ();
+	if (printMeritsStat)
+	  	printMeritsStatistics ();
 
 	return 0;
 }

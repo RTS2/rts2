@@ -164,6 +164,19 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		void getStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
 
 		/**
+		 * Return min, average and max fittness of the best NSGA-II population.
+		 *
+		 * @param _min The best NSGA-II population minimal fittness.
+		 * @param _avg The best NSGA-II population average fittness.
+		 * @param _max The best NSGA-II population maximal fittness.
+		 * @param _type Statistict type - function which will be evaluated. Please 
+		 * 	see objFunc enumaration for possible values.
+		 *
+		 * @see objFunc
+		 */
+		void getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
+
+		/**
 		 * Return number of given constraint violation
 		 *
 		 * @param _type  Type of constraint violation which will be tested.
@@ -181,13 +194,10 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		// private functions used for NSGA-II
 	private:
 		// objectives which are used
-		objFunc objectives[10];
-		int objectivesSize;
+		std::list <objFunc> objectives;
 
 		// constarint which are used
-		constraintFunc constraints[10];
-		int constraintSize;
-
+		std::list <constraintFunc> constraints;
 
 		// vector of NSGA fronts members
 		std::vector <std::vector <Rts2Schedule *> > NSGAfronts;
@@ -246,4 +256,12 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @return Size of population with getNSGARank == _rank.
 		 */
 		int getNSGARankSize (int _rank);
+
+		/**
+		 * Return NSGAII objectives.
+		 */
+		std::list <objFunc> &getObjectives ()
+		{
+			return objectives;
+		}
 };

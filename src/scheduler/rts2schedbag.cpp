@@ -236,19 +236,15 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	eliteSize = 0;
 
 	// fill in parameters for NSGA
-	objectives[0] = ALTITUDE;
-	objectives[1] = ACCOUNT;
-	objectives[2] = DISTANCE;
-	objectives[3] = DIVERSITY_TARGET;
+	objectives.push_back (ALTITUDE);
+	objectives.push_back (ACCOUNT);
+	objectives.push_back (DISTANCE);
+	objectives.push_back (DIVERSITY_TARGET);
 
-	objectivesSize = 4;
-
-	constraints[0] = CONSTR_VISIBILITY;
-	constraints[1] = CONSTR_SCHEDULE_TIME;
-	constraints[2] = CONSTR_UNOBSERVED_TICKETS;
-	constraints[3] = CONSTR_OBS_NUM;
-
-	constraintSize = 4;
+	constraints.push_back (CONSTR_VISIBILITY);
+	constraints.push_back (CONSTR_SCHEDULE_TIME);
+	constraints.push_back (CONSTR_UNOBSERVED_TICKETS);
+	constraints.push_back (CONSTR_OBS_NUM);
 }
 
 
@@ -363,6 +359,29 @@ Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _
 }
 
 
+void
+Rts2SchedBag::getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type)
+{
+	_min = 1000000;
+	_max = -1000000;
+	_avg = 0;
+	int s = 0;
+	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter)->getNSGARank () != 0)
+			continue;
+		double cur = (*iter)->getObjectiveFunction (_type);
+		if (cur < _min)
+			_min = cur;
+		if (cur > _max)
+		  	_max = cur;
+		_avg += cur;
+		s++;
+	}
+	_avg /= s;
+}
+
+
 unsigned int
 Rts2SchedBag::constraintViolation (constraintFunc _type)
 {
@@ -443,11 +462,10 @@ Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 	// check for constraints
 	bool dom1 = false;
 	bool dom2 = false;
-	int i;
-	for (i = 0; i < constraintSize; i++)
+	for (std::list <constraintFunc>::iterator constIter  = constraints.begin (); constIter != constraints.end (); constIter++)
 	{
-		double cons1 = sched1->getConstraintFunction (constraints[i]);
-		double cons2 = sched2->getConstraintFunction (constraints[i]);
+		double cons1 = sched1->getConstraintFunction (*constIter);
+		double cons2 = sched2->getConstraintFunction (*constIter);
 		// if some schedule violate, prefer the one which does not violate..
 		if (cons1 == 0 && cons2 > 0)
 		  	return -1;
@@ -462,10 +480,10 @@ Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 			  	dom2 = true;
 		}
 	}
-	for (i = 0; i < objectivesSize; i++)
+	for (std::list <objFunc>::iterator objIter = objectives.begin (); objIter != objectives.end (); objIter++)
 	{
-		double obj1 = sched1->getObjectiveFunction (objectives[i]);
-		double obj2 = sched2->getObjectiveFunction (objectives[i]);
+		double obj1 = sched1->getObjectiveFunction (*objIter);
+		double obj2 = sched2->getObjectiveFunction (*objIter);
 		if (obj1 > obj2)
 			dom1 = true;
 		else if (obj2 > obj1)
@@ -569,10 +587,10 @@ Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 	for (iter = NSGAfronts[f].begin (); iter != NSGAfronts[f].end (); iter++)
 		(*iter)->setNSGADistance (0);
 
-	for (int o = 0; o < objectivesSize; o++)
+	for (std::list <objFunc>::iterator objIter = objectives.begin (); objIter != objectives.end (); objIter++)
 	{
 		// sort front by objective i
-		objFunc objective = objectives[o];
+		objFunc objective = *objIter;
 		std::sort (NSGAfronts[f].begin (), NSGAfronts[f].end (), objectiveFunctionSort (objective));
 		// assign infiniti values to first and last
 		Rts2Schedule *begSched = *(NSGAfronts[f].begin ());
