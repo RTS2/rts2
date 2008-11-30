@@ -26,6 +26,9 @@ getDisplayValue (Rts2Value * value)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
+	const char *sunits[] = {"B", "K", "M", "G", "T", "P"};
+	int sind = 0;
+	double sval;
 	switch (value->getValueDisplayType ())
 	{
 		case RTS2_DT_RA:
@@ -45,6 +48,15 @@ getDisplayValue (Rts2Value * value)
 			break;
 		case RTS2_DT_HEX:
 			_os << std::setw(8) << std::hex << value->getValueInteger ();
+			break;
+		case RTS2_DT_BYTESIZE:
+			sval = value->getValueLong ();
+			while (sval > 1.5 * 1024)
+			{
+				sval /= 1024;
+				sind++;
+			}
+			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << sunits[sind];
 			break;
 		default:
 			tmp_val = value->getDisplayValue ();
