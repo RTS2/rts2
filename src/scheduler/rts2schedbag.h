@@ -176,6 +176,8 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		void getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
 
+		void getNSGAIIAverageDistance (double &_min, double &_avg, double &_max);
+
 		/**
 		 * Return number of given constraint violation
 		 *

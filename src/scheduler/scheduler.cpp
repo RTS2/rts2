@@ -252,6 +252,8 @@ Rts2ScheduleApp::printMeritsStatistics ()
 				schedBag->getNSGAIIBestStatistics (_min, _avg, _max, *objIter);
 				std::cout << getObjectiveName (*objIter) << SEP << _min << SEP << _avg << SEP << _max << std::endl;
 			}
+			schedBag->getNSGAIIAverageDistance (_min, _avg, _max);
+			std::cout << "AVERAGE_DISTANCE" SEP << _min << SEP << _avg << SEP << _max << std::endl;
 			break;
 	}
 }

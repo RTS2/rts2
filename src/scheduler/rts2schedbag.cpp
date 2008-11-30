@@ -382,6 +382,29 @@ Rts2SchedBag::getNSGAIIBestStatistics (double &_min, double &_avg, double &_max,
 }
 
 
+void
+Rts2SchedBag::getNSGAIIAverageDistance (double &_min, double &_avg, double &_max)
+{
+	_min = 1000000;
+	_max = -1000000;
+	_avg = 0;
+	int s = 0;
+	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
+	{
+		if ((*iter)->getNSGARank () != 0)
+			continue;
+		double cur = (*iter)->averageDistance ();
+		if (cur < _min)
+			_min = cur;
+		if (cur > _max)
+		  	_max = cur;
+		_avg += cur;
+		s++;
+	}
+	_avg /= s;
+}
+
+
 unsigned int
 Rts2SchedBag::constraintViolation (constraintFunc _type)
 {

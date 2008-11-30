@@ -406,6 +406,31 @@ Rts2Schedule::distanceMerit ()
 
 
 double
+Rts2Schedule::averageDistance ()
+{
+	double ret = 0;
+	if (size () <= 1)
+	{
+		return 0;
+	}
+
+	// schedule iterators for two targets..
+	Rts2Schedule::iterator iter1 = begin ();
+	Rts2Schedule::iterator iter2 = begin () + 1;
+
+	for ( ; iter2 != end (); iter1++, iter2++)
+	{
+		struct ln_equ_posn pos1, pos2;
+		(*iter1)->getEndPosition (pos1);
+		(*iter2)->getStartPosition (pos2);
+		ret += ln_get_angular_separation (&pos1, &pos2);
+	}
+	
+	return ret / size ();
+}
+
+
+double
 Rts2Schedule::diversityTargetMerit ()
 {
 	if (!isnan (divTargetMerit))

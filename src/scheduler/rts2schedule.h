@@ -28,7 +28,7 @@
 typedef enum
 {
 	VISIBILITY,					 // ratio of visible targets. 1 = all targets are visible
-	ALTITUDE,					 // average altitude of the target. 1 = highest possible target altitude, 0 = on or bellow horizon
+	ALTITUDE,					 // sum of altitude of the targets. 1 = highest possible target altitude, 0 = on or bellow horizon
 	ACCOUNT,					 // ratio of account share. Higher = better
 	DISTANCE,					 // average distance between observations
 	DIVERSITY_TARGET,			 // diversity target - number of targets observed
@@ -312,6 +312,13 @@ class Rts2Schedule: public std::vector <Rts2SchedObs*>
 		 * @return 1 / sum of distance distance between schedule entries.
 		 */
 		double distanceMerit ();
+
+		/**
+		 * Returns average distance between observations (in degrees).
+		 *
+		 * @return Average distance between observations (in degrees).
+		 */
+		double averageDistance ();
 
 		/**
 		 * Return diversity target merit - number of targets visited.
