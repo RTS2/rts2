@@ -118,7 +118,7 @@ Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
 	buf[i] = '\0';
 	if (**rstr == 'E')
 	{
-		logStream (MESSAGE_ERROR) << "Cmd: " << cmd << " Error: " << *rstr <<
+		logStream (MESSAGE_ERROR) << "Command: " << cmd << " Error: " << *rstr <<
 			sendLog;
 		return -1;
 	}
