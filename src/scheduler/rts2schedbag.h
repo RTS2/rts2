@@ -141,6 +141,14 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		int constructSchedules (int num);
 
+		/**
+		 * Construct schedule from observation set around given night.
+		 *
+		 * @param  num       Number of schedules.
+		 * @param  obsNight  Night for which schedule will be constructed.
+		 * @return -1 on error, 0 on success.
+		 */
+		int constructSchedulesFromObsSet (int num, struct ln_date *obsNight);
 
 		/**
 		 * Return min, average and max fittness of population.

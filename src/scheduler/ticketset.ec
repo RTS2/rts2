@@ -115,3 +115,16 @@ TicketSet::load (Rts2TargetSet *tarSet)
 			d_sched_interval_min, d_sched_interval_max);
 	}
 }
+
+
+void
+TicketSet::constructFromObsSet (Rts2TargetSet *tarSet, Rts2ObsSet &obsSet)
+{
+	int ticket_id = 1;
+	std::map <int, int> tarObs = obsSet.getTargetObservations ();
+	for (std::map <int, int>::iterator iter = tarObs.begin (); iter != tarObs.end (); iter++, ticket_id++)
+	{
+		(*this)[ticket_id] = new Ticket (ticket_id, tarSet->getTarget ((*iter).first),
+			0, (*iter).second, nan("f"), nan ("f"), -1, -1);
+	}
+}

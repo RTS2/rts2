@@ -18,6 +18,8 @@
  */
 #include "ticket.h"
 
+#include "../utilsdb/rts2obsset.h"
+
 #include <map>
 
 namespace rts2sched {
@@ -44,11 +46,20 @@ class TicketSet: public std::map <int, Ticket *>
 		/**
 		 * Load ticket set from database.
 		 *
-		 * @param tarSet Rts2TargetSet which contains target object for scheduling tickets.
+		 * @param tarSet Rts2TargetSet which contains target objects for scheduling tickets.
 		 *
 		 * @throw rts2db::SqlError if some database error occurred.
 		 */
 		void load (Rts2TargetSet *tarSet);
+
+		/**
+		 * Construct ticket set from observation set. Used for testing of GA algorithm agains
+		 * clasicall scheduling, and for evaluation of criteria of pareto fron selection.
+		 *
+		 * @param tarSet Rts2TargetSet which contains target objects for scheduling tickets.
+		 * @param obsSet Observation set.
+		 */
+		void constructFromObsSet (Rts2TargetSet *tarSet, Rts2ObsSet &obsSet);
 };
 
 }

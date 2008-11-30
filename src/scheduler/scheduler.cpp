@@ -52,6 +52,9 @@ class Rts2ScheduleApp: public Rts2AppDb
 		// if the programme will print detail schedule informations
 		bool printSchedules;
 
+		// observation night - will generate schedule for same night
+		struct ln_date *obsNight;
+
 		// start and end JD
 		double startDate;
 		double endDate;
@@ -278,6 +281,9 @@ Rts2ScheduleApp::processOption (int _opt)
 		case 's':
 			printSchedules = true;
 			break;
+		case 'o':
+			obsNight = new struct ln_date;
+			return Rts2CliApp::parseDate (optarg, obsNight);
 		case OPT_START_DATE:
 			return parseDate (optarg, startDate);
 		case OPT_END_DATE:
@@ -331,9 +337,11 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	verbose = 0;
 	generations = 1500;
 	popSize = 100;
-	algorithm = SGA;
+	algorithm = NSGAII;
 
 	printSchedules = false;
+
+	obsNight = NULL;
 
 	startDate = nan ("f");
 	endDate = nan ("f");
@@ -341,8 +349,9 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 	addOption ('v', NULL, 0, "verbosity level");
 	addOption ('g', NULL, 1, "number of generations");
 	addOption ('p', NULL, 1, "population size");
-	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported)");
+	addOption ('a', NULL, 1, "algorithm (SGA or NSGAII are currently supported, NSGAII is default)");
 	addOption ('s', NULL, 0, "print schedule entries");
+	addOption ('o', NULL, 1, "do scheduling for observation set from this date");
 
 	addOption (OPT_START_DATE, "start", 1, "produce schedule from this date");
 	addOption (OPT_END_DATE, "end", 1, "produce schedule till this date");
@@ -351,6 +360,7 @@ Rts2ScheduleApp::Rts2ScheduleApp (int argc, char ** argv): Rts2AppDb (argc, argv
 
 Rts2ScheduleApp::~Rts2ScheduleApp (void)
 {
+	delete obsNight;
 	delete schedBag;
 }
 

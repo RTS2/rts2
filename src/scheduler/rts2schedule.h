@@ -31,7 +31,6 @@ typedef enum
 	ALTITUDE,					 // average altitude of the target. 1 = highest possible target altitude, 0 = on or bellow horizon
 	ACCOUNT,					 // ratio of account share. Higher = better
 	DISTANCE,					 // average distance between observations
-	SCHEDULE_TIME,				 // number of targets with scheduling constrain that are satisfied
 	DIVERSITY_TARGET,			 // diversity target - number of targets observed
 	DIVERSITY_OBSERVATIONS,		 // diversity observations merit - number of observations in schedule
 	SINGLE						 // single scheduling criteria

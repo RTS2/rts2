@@ -227,8 +227,8 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	mutationNum = -1;
 	popSize = 0;
 
-	mutateDurationRatio = 0.25;
-	mutateSchedRatio = 0.25;
+	mutateDurationRatio = 0.45;
+	mutateSchedRatio = 0.45;
 
 	maxTimeChange = 300;
 	minObsDuration = 30;
@@ -274,6 +274,55 @@ Rts2SchedBag::constructSchedules (int num)
 	if (ticketSet->size () == 0)
 	{
 		logStream (MESSAGE_ERROR) << "There aren't any scheduling tickets in database (tickets table)" << sendLog;
+		return -1;
+	}
+
+	for (int i = 0; i < num; i++)
+	{
+		Rts2Schedule *sched = new Rts2Schedule (JDstart, JDend, minObsDuration, observer);
+		if (sched->constructSchedule (ticketSet))
+			return -1;
+		push_back (sched);
+	}
+
+	popSize = size ();
+
+	mutationNum = popSize / 2;
+
+	reserve (popSize * 2);
+
+	return 0;
+}
+
+
+int
+Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
+{
+  	Rts2Night night = Rts2Night (obsNight, Rts2Config::instance ()->getObserver ());
+
+	Rts2ObsSet obsSet = Rts2ObsSet (night.getFrom (), night.getTo ());
+
+	if (obsSet.size () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "Empty observation set" << sendLog;
+		return -1;
+	}
+
+	JDstart = night.getJDFrom ();
+	JDend = night.getJDTo ();
+
+	if (isnan (JDstart) || isnan (JDend))
+	{
+	  	logStream (MESSAGE_ERROR) << "Null start or end dates" << sendLog;
+		return -1;
+	}
+
+	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
+
+	ticketSet->constructFromObsSet (tarSet, obsSet);
+	if (ticketSet->size () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "There aren't any scheduling tickets constructed from observations." << sendLog;
 		return -1;
 	}
 
