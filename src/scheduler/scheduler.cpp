@@ -318,14 +318,26 @@ Rts2ScheduleApp::init ()
 			<< std::cerr;
 	}
 
-	std::cout << "Generating schedule from " << LibnovaDate (startDate) << " to " << LibnovaDate (endDate) << std::endl;
-
 	// create list of schedules..
-	schedBag = new Rts2SchedBag (startDate, endDate);
+	if (obsNight)
+	{
+		std::cout << "Generating schedule for night " << LibnovaDate (obsNight) << std::endl;
 
-	ret = schedBag->constructSchedules (popSize);
-	if (ret)
-		return ret;
+		schedBag = new Rts2SchedBag (nan ("f"), nan ("f"));
+		ret = schedBag->constructSchedulesFromObsSet (popSize, obsNight);
+		if (ret)
+			return ret;
+	}
+	else
+	{
+		std::cout << "Generating schedule from " << LibnovaDate (startDate) << " to " << LibnovaDate (endDate) << std::endl;
+
+		schedBag = new Rts2SchedBag (startDate, endDate);
+
+		ret = schedBag->constructSchedules (popSize);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
