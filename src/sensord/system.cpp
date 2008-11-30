@@ -75,7 +75,7 @@ System::info ()
 		{
 			Rts2Value *val = getValue ((*iter).c_str ());
 			if (val)
-				((Rts2ValueLong *) val)->setValueLong (sf.f_bavail * sf.f_bsize);	
+				((Rts2ValueDouble *) val)->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
 		}
 	}
 	return Rts2DevSensor::info ();
@@ -84,7 +84,7 @@ System::info ()
 int
 System::addPath (const char *path)
 {
-	Rts2ValueLong *val;
+	Rts2ValueDouble *val;
 	createValue (val, path, (std::string ("free disk space on ") + std::string (path)).c_str (), false, RTS2_DT_BYTESIZE);
 	paths.push_back (path);
 

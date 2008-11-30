@@ -50,7 +50,7 @@ getDisplayValue (Rts2Value * value)
 			_os << std::setw(8) << std::hex << value->getValueInteger ();
 			break;
 		case RTS2_DT_BYTESIZE:
-			sval = value->getValueLong ();
+			sval = value->getValueDouble ();
 			while (sval > 1.5 * 1024)
 			{
 				sval /= 1024;
