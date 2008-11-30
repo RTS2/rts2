@@ -34,7 +34,10 @@ class System:public Rts2DevSensor
 {
 	private:
 		std::vector <std::string> paths;
+
+		int addPath (const char *path);
 	protected:
+		virtual int processOption (int opt);
 		virtual int info ();
 	public:
 		System (int in_argc, char **in_argv);
@@ -44,6 +47,19 @@ class System:public Rts2DevSensor
 };
 
 using namespace rts2sensor;
+
+int
+System::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 'p':
+			return addPath (optarg);
+		default:
+			return Rts2DevSensor::processOption (opt);
+	}
+	return 0;
+}
 
 int
 System::info ()
@@ -65,12 +81,20 @@ System::info ()
 	return Rts2DevSensor::info ();
 }
 
+int
+System::addPath (const char *path)
+{
+	Rts2ValueLong *val;
+	createValue (val, path, (std::string ("free disk space on ") + std::string (path)).c_str (), false, RTS2_DT_BYTESIZE);
+	paths.push_back (path);
+
+	return 0;
+}
+
+
 System::System (int argc, char **argv):Rts2DevSensor (argc, argv)
 {
-	paths.push_back (std::string ("/home"));
-
-	Rts2ValueLong *val;
-	createValue (val, "/home", "free disk on /home", false, RTS2_DT_BYTESIZE);
+	addOption ('p', "NULL", 1, "add this path to paths being monitored");
 }
 
 int
