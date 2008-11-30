@@ -250,7 +250,7 @@ Rts2ScheduleApp::printMeritsStatistics ()
 			for (std::list <objFunc>::iterator objIter = obj.begin (); objIter != obj.end (); objIter++)
 			{
 				schedBag->getNSGAIIBestStatistics (_min, _avg, _max, *objIter);
-				std::cout << getObjectiveName (*objIter) << _min << SEP << _avg << SEP << _max << std::endl;
+				std::cout << getObjectiveName (*objIter) << SEP << _min << SEP << _avg << SEP << _max << std::endl;
 			}
 			break;
 	}
