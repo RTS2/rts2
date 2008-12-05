@@ -87,6 +87,16 @@ class Rts2SchedObs
 		}
 
 		/**
+		 * Return minimal altitude for which target is worth observing.
+		 * 
+		 * @return Minimal observing altitude.
+		 */
+		double getObsMinAltitude ()
+		{
+			return 0;
+		}
+
+		/**
 		 * Return pointer to used observing ticket.
 		 *
 		 * @return Pointer to used observing ticket.
