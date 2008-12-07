@@ -73,10 +73,10 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	int ret;
 	char send_data[8 + data_size];
 	// fill header
-	*((int16_t *) send_data) = htons (transId);
+	*((uint16_t *) send_data) = htons (transId);
 	send_data[2] = 0;
 	send_data[3] = 0;
-	*((int16_t *) (send_data + 4)) = htons (data_size + 2);
+	*((uint16_t *) (send_data + 4)) = htons (data_size + 2);
 	send_data[6] = unitId;
 	send_data[7] = func;
 	bcopy (data, send_data + 8, data_size);
@@ -186,7 +186,38 @@ ConnModbus::callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t
 	req_data[0] = htons (p1);
 	req_data[1] = htons (p2);
 
-	return callFunction (func, req_data, 4, reply, reply_size);
+	int ret = callFunction (func, req_data, 4, reply, reply_size);
+	if (ret)
+		return ret;
+	return 0;
+}
+
+
+int
+ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty)
+{
+	int reply_size = 1 + qty * 2;
+	char reply[reply_size];
+
+	int ret = callFunction (func, p1, p2, (void *) reply, reply_size);
+	if (ret)
+		return ret;
+
+	if (reply[0] != qty)
+	{
+	 	logStream (MESSAGE_ERROR) << "Invalid quantity in reply packed!" << sendLog;
+		return ret;
+	}
+
+	char *rtop = reply + 1;
+
+	for (reply_size = 0; reply_size < qty; reply_size++)
+	{
+		reply_data[reply_size] = ntohs (*((uint16_t *) rtop));
+		rtop += 2;
+	}
+	return 0;
+
 }
 
 
@@ -217,29 +248,13 @@ ConnModbus::readDiscreteInputs (int16_t start, int16_t size)
 
 
 int
-ConnModbus::readHoldingRegisters (int16_t start, int16_t qty)
+ConnModbus::readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
 {
-	int reply_size = 1 + qty * 2;
-	char reply_data[reply_size];
-
-	int ret;
-	ret = callFunction (0x03, start, qty, reply_data, reply_size);
-
-	logStream (MESSAGE_INFO) << "holding register " << start << " 1 " << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
-
-	return 0;
+	return callFunction (0x03, start, qty, reply_data, qty);
 }
 
 int
-ConnModbus::readInputRegisters (int16_t start, int16_t qty)
+ConnModbus::readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
 {
-	int reply_size = 1 + qty * 2;
-	char reply_data[reply_size];
-
-	int ret;
-	ret = callFunction (0x04, start, qty, reply_data, reply_size);
-
-	logStream (MESSAGE_INFO) << "input register " << start << " 1 " << std::hex << (int) reply_data[0] << " 2 " << std::hex << (int) reply_data[1] << sendLog;
-
-	return 0;
+	return callFunction (0x04, start, qty, reply_data, qty);
 }

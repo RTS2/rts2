@@ -83,15 +83,26 @@ class ConnModbus: public Rts2ConnNoSend
 		int callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size);
 
 		/**
-		 * Call modbus function with two integer parameters.
+		 * Call modbus function with two unsigned integer parameters and return expected as char array.
 		 *
 		 * @param func       Function index.
 		 * @param p1         First parameter.
 		 * @param p2         Second parameter.
 		 * @param reply      Data returned from function call.
-		 * @param reply_size Size of return data.
+		 * @param reply_size Number of returned integers expected from the call.
 		 */
 		int callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size);
+
+		/**
+		 * Call modbus function with two unsigned integer parameters and return expected as array of unsigned interger.
+		 *
+		 * @param func       Function index.
+		 * @param p1         First parameter.
+		 * @param p2         Second parameter.
+		 * @param reply      Data returned from function call.
+		 * @param qty        Number of returned integers expected from the call.
+		 */
+		int callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
 
 		/**
 		 * Read Modbus PLC coil states.
@@ -116,22 +127,24 @@ class ConnModbus: public Rts2ConnNoSend
 		/**
 		 * Read holding registers.
 		 *
-		 * @param start   Holding register starting address.
-		 * @param qty     Quantity of registers.
+		 * @param start      Holding register starting address.
+		 * @param qty        Quantity of registers.
+		 * @param reply_data Returned data, converted to uint16_t (including network endian conversion).
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int readHoldingRegisters (int16_t start, int16_t qty);
+		int readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
 
 		/**
 		 * Read input registers.
 		 *
-		 * @param start   Input register starting address.
-		 * @param qty     Quantity of registers.
+		 * @param start      Input register starting address.
+		 * @param qty        Quantity of registers.
+		 * @param reply_data Returned data, converted to uint16_t (including network endian conversion).
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int readInputRegisters (int16_t start, int16_t qty);
+		int readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
 };
 
 }
