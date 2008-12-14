@@ -270,6 +270,8 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, con
 
 	setValue ("CCD_NAME", camera->getName (), "camera name");
 
+	setEnvironmentalValues ();
+
 	currTarget->writeToImage (this, getExposureJD ());
 }
 
@@ -2148,6 +2150,21 @@ Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
 	strcat (name, ".CHANGED");
 	setValue (name, val->wasChanged (), "true if value was changed during exposure");
 	delete[]name;
+}
+
+
+void
+Rts2Image::setEnvironmentalValues ()
+{
+	// record any environmental variables..
+	std::vector <std::string> envWrite;
+	Rts2Config::instance ()->deviceWriteEnvVariables (getCameraName (), envWrite);
+	for (std::vector <std::string>::iterator iter = envWrite.begin (); iter != envWrite.end (); iter++)
+	{
+		char *value = getenv ((*iter).c_str ());
+		if (value != NULL)
+			setValue ((*iter).c_str (), value, "enviromental variable");
+	}
 }
 
 

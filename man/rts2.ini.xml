@@ -1075,6 +1075,14 @@
 	    <para>Institution/observer.</para>
 	  </listitem>
 	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>environment</option>
+	  </term>
+	  <listitem>
+	    <para>Space separated list of environmental variables names, which should be recorded to FITS header.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
   </refsect1>

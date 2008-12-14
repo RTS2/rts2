@@ -343,5 +343,16 @@ class Rts2Config:public Rts2ConfigRaw
 		{
 			return obs_darks;
 		}
+
+		/**
+		 * Returns vector of environment variables, which shall be recorded in FITS header.
+		 *
+		 * @param deviceName   Device for which environmental list is returned.
+		 * @param ret Vector of environmental variables names.
+		 */
+		void deviceWriteEnvVariables (const char *deviceName, std::vector <std::string> &ret)
+		{
+			getStringVector (deviceName, "environment", ret);
+		}
 };
 #endif							 /* !__RTS2_CONFIG__ */

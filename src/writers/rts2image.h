@@ -716,6 +716,11 @@ class Rts2Image:public Rts2Expander
 			return setValue ("ORIGIN", orig, "organisation responsible for data");
 		}
 
+		/**
+		 * Save environmental variables, as specified by environmental config entry.
+		 */
+		void setEnvironmentalValues ();
+
 		void writeConn (Rts2Conn * conn, imageWriteWhich_t which =
 			EXPOSURE_START);
 
