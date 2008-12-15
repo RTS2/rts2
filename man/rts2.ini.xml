@@ -1083,6 +1083,14 @@
 	    <para>Space separated list of environmental variables names, which should be recorded to FITS header.</para>
 	  </listitem>
 	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>env_VARIABLE_comment</option>
+	  </term>
+	  <listitem>
+	    <para>FITS header comment for the environmental variable with name VARIABLE. You can of course specify any name you like.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
   </refsect1>

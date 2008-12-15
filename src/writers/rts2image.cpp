@@ -2162,8 +2162,14 @@ Rts2Image::setEnvironmentalValues ()
 	for (std::vector <std::string>::iterator iter = envWrite.begin (); iter != envWrite.end (); iter++)
 	{
 		char *value = getenv ((*iter).c_str ());
+		std::string comment;
+		std::string section =  std::string ("env_") + (*iter) + std::string ("_comment");
+		// check for comment
+		if (Rts2Config::instance ()->getString (getCameraName (), section.c_str (), comment) != 0)
+			comment = std::string ("enviromental variable");
+
 		if (value != NULL)
-			setValue ((*iter).c_str (), value, "enviromental variable");
+			setValue ((*iter).c_str (), value, comment.c_str ());
 	}
 }
 
