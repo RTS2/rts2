@@ -69,6 +69,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			config->loadFile ();
 			telLatitude->setValueDouble (config->getObserver ()->lat);
 			telLongitude->setValueDouble (config->getObserver ()->lng);
+			telAltitude->setValueDouble (config->getObservatoryAltitude ());
 			strcpy (telType, "Dummy");
 			return Rts2DevTelescope::initValues ();
 		}
