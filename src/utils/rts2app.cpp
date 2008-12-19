@@ -342,16 +342,18 @@ Rts2App::askForString (const char *desc, std::string & val)
 {
 	while (!getEndLoop ())
 	{
+		std::string new_val;
 		std::cout << desc << " [" << val << "]: ";
-		std::getline (std::cin, val);
+		std::getline (std::cin, new_val);
 		if (std::cin.eof ())
 		{
 			setEndLoop ();
 			return -1;
 		}
 		// use default value
-		if (val.length () == 0)
+		if (new_val.length () == 0)
 			break;
+		val = new_val;
 		if (!std::cin.fail ())
 			break;
 		std::cout << "Invalid string!" << std::endl;
