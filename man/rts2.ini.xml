@@ -359,11 +359,11 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>longtitude</option>
+	    <option>longitude</option>
 	  </term>
 	  <listitem>
-	    <para>Observatory longtitude in degrees. Positive values are east from Greenwich, negative are west - e.g. american
-	    locations should have negative longtitude, most of european positive.</para>
+	    <para>Observatory longitude in degrees. Positive values are east from Greenwich, negative are west - e.g. American
+	    locations should have negative longitude, most of European positive.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>

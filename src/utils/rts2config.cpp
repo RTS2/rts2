@@ -30,7 +30,7 @@ Rts2Config::getSpecialValues ()
 	std::string horizon_file;
 
 	// get some commonly used values
-	ret += getDouble ("observatory", "longtitude", observer.lng);
+	ret += getDouble ("observatory", "longitude", observer.lng);
 	ret += getDouble ("observatory", "latitude", observer.lat);
 	ret += getDouble ("observatory", "altitude", observatoryAltitude, nan("f"));
 	// load horizont file..
