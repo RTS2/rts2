@@ -449,10 +449,16 @@ Rts2Daemon::loadValues ()
 		{
 			ret = setCondValue (old_val, '=', new_val);
 
-			if (ret == 0 || ret == -2 || ret == -1)
+			if (ret == 0 || ret == -2)
 			{
 				old_val->clearValueSave ();
 				// this will put to iter next value..
+				iter = savedValues.erase (iter);
+				continue;
+			}
+			else if (ret == -1)
+			{
+				// if change was qued
 				iter = savedValues.erase (iter);
 				continue;
 			}
