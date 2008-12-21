@@ -218,7 +218,7 @@ Rts2Client::init ()
 		std::cerr << "Trying to contact centrald\n";
 		sleep (10);
 	}
-	addCentraldConnection (central_conn);
+	addCentraldConnection (central_conn, true);
 	return 0;
 }
 
