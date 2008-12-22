@@ -1599,6 +1599,7 @@ Gemini::startMove ()
 	if (fabs (ra_diff) <= 20 / 60.0 && fabs (dec_diff) <= 20 / 60.0)
 	#endif
 	{
+		logStream (MESSAGE_DEBUG) << "calling change_real (" << ra_diff << " " << dec_diff << ")" << sendLog;
 		return change_real (-1 * ra_diff, -1 * dec_diff);
 	}
 
@@ -2080,6 +2081,8 @@ Gemini::change_real (double chng_ra, double chng_dec)
 		{
 			chng_dec *= -1;
 		}
+		chng_ra *= -1;
+		logStream (MESSAGE_DEBUG) << "after getFlipI chng_ra " << chng_ra << sendLog;
 		if (chng_ra != 0)
 		{
 			// first - RA direction
@@ -2257,6 +2260,7 @@ Gemini::change_real (double chng_ra, double chng_dec)
 	{
 		chng_dec *= -1;
 	}
+	logStream (MESSAGE_DEBUG) << "change_real  " << chng_ra << " "  << chng_dec << sendLog;
 	if (chng_ra != 0)
 	{
 		ret = change_ra (chng_ra);
