@@ -93,7 +93,7 @@ Rts2XmlRpcd::init ()
 		return ret;
 
 	if (printDebug ())
-		XmlRpc::setVerbosity (5);
+		XmlRpc::setVerbosity (10);
 
 	xmlrpc_server.bindAndListen (rpcPort);
 	xmlrpc_server.enableIntrospection (true);
@@ -376,83 +376,77 @@ class ListValuesDevice: public ListValues
 		}
 } listValuesDevice (&xmlrpc_server);
 
-/**
- * Set values.
- */
-class SetValues: public XmlRpcServerMethod
+class SetValue: public XmlRpcServerMethod
 {
 	public:
-		SetValues (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUES_SET, s) {}
+		SetValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_SET, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			for (int i = 0; i < params.size (); i++)
+			std::string devName = params[0];
+			std::string valueName = params[1];
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			if (!conn)
 			{
-				std::string devName = params[i]["device"];
-				std::string valueName = params[i]["var"];
-				Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
-				Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
-				if (!conn)
-				{
-					throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
-				}
-				Rts2Value *val = conn->getValue (valueName.c_str ());
-				if (!val)
-				{
-					throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
-				}
+				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+			}
+			Rts2Value *val = conn->getValue (valueName.c_str ());
+			if (!val)
+			{
+				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
+			}
 
-				int i_val;
-				double d_val;
-				std::string s_val;
-				XmlRpcValue x_val = params[i]["value"];
-				switch (val->getValueBaseType ())
-				{
-					case RTS2_VALUE_INTEGER:
-					case RTS2_VALUE_LONGINT:
-						if (x_val.getType () == XmlRpcValue::TypeInt)
-						{
-							i_val = (int) (x_val);
-						}
-						else
-						{
-							s_val = (std::string) (x_val);
-							i_val = atoi (s_val.c_str ());
-						}
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
-						break;
-					case RTS2_VALUE_DOUBLE:
-						if (x_val.getType () == XmlRpcValue::TypeDouble)
-						{
-							d_val = (double) (x_val);
-						}
-						else
-						{
-							s_val = (std::string) (x_val);
-							d_val = atof (s_val.c_str ());
-						}
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
-						break;
+			int i_val;
+			double d_val;
+			std::string s_val;
+			XmlRpcValue x_val = params[2];
+			switch (val->getValueBaseType ())
+			{
+				case RTS2_VALUE_INTEGER:
+				case RTS2_VALUE_LONGINT:
+					if (x_val.getType () == XmlRpcValue::TypeInt)
+					{
+						i_val = (int) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						i_val = atoi (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
+					break;
+				case RTS2_VALUE_DOUBLE:
+					if (x_val.getType () == XmlRpcValue::TypeDouble)
+					{
+						d_val = (double) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						d_val = atof (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
+					break;
 
-					case RTS2_VALUE_FLOAT:
-						if (x_val.getType () == XmlRpcValue::TypeDouble)
-						{
-							d_val = (double) (x_val);
-						}
-						else
-						{
-							s_val = (std::string) (x_val);
-							d_val = atof (s_val.c_str ());
-						}
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
-						break;
-					case RTS2_VALUE_STRING:
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"])));
-						break;
-					default:
-						conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[i]["value"]), true));
-						break;
-				}
+				case RTS2_VALUE_FLOAT:
+					if (x_val.getType () == XmlRpcValue::TypeDouble)
+					{
+						d_val = (double) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						d_val = atof (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
+					break;
+				case RTS2_VALUE_STRING:
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2])));
+					break;
+				default:
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2]), true));
+					break;
 			}
 		}
 
@@ -461,12 +455,12 @@ class SetValues: public XmlRpcServerMethod
 			return std::string ("Set RTS2 value");
 		}
 
-} setValues (&xmlrpc_server);
+} setValue (&xmlrpc_server);
+
 
 /*
  *
  */
-
 class ListTargets: public XmlRpcServerMethod
 {
 	public:

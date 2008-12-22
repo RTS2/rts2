@@ -118,24 +118,21 @@ Rts2XmlRpcTest::doTest ()
 
 	runXmlMethod (R2X_VALUES_LIST, noArgs, result);
 
-	XmlRpcValue val;
-	val["device"] = "C0";
-	val["var"] = "scriptLen";
-	val["value"] = 100;
-	oneArg[0] = val;
-	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+	XmlRpcValue threeArg;
+	threeArg[0] = "C0";
+	threeArg[1] = "scriptLen";
+	threeArg[2] = 100;
+	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
-	val["device"] = "T0";
-	val["var"] = "OFFS";
-	val["value"] = "1 1";
-	oneArg[0] = val;
-	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+	threeArg[0] = "T0";
+	threeArg[1] = "OFFS";
+	threeArg[2] = "1 1";
+	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
-	val["device"] = "T0";
-	val["var"] = "OBJ";
-	val["value"] = "20 30";
-	oneArg[0] = val;
-	runXmlMethod (R2X_VALUES_SET, oneArg, result);
+	threeArg[0] = "T0";
+	threeArg[1] = "OBJ";
+	threeArg[2] = "20 30";
+	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
 	runXmlMethod (R2X_DEVICES_LIST, noArgs, result);
 
@@ -170,15 +167,13 @@ Rts2XmlRpcTest::doTest ()
 int
 Rts2XmlRpcTest::setVariable (const char *deviceName, const char *varName, const char *value)
 {
-	XmlRpcValue oneArg, result;
-	XmlRpcValue val;
+	XmlRpcValue threeArg, result;
 
-	val["device"] = deviceName;
-	val["var"] = varName;
-	val["value"] = value;
-	oneArg[0] = val;
+	threeArg[0] = deviceName;
+	threeArg[1] = varName;
+	threeArg[2] = value;
 
-	return runXmlMethod (R2X_VALUES_SET, oneArg, result);
+	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
 }
 
 
