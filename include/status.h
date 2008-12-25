@@ -164,10 +164,6 @@
 #define TEL_NO_WAIT_COP     0x00
 #define TEL_WAIT_COP        0x08
 
-#define TEL_MASK_SEARCHING  0x10
-#define TEL_NOSEARCH        0x00
-#define TEL_SEARCH          0x10
-
 #define TEL_MASK_TRACK      0x0020
 
 #define TEL_NOTRACK         0x0000

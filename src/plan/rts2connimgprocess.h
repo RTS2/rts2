@@ -74,8 +74,6 @@ class Rts2ConnImgProcess:public Rts2ConnProcess
 
 		virtual int newProcess ();
 		virtual int processLine ();
-
-		virtual int sendMsg (const char *msg);
 };
 
 class Rts2ConnObsProcess:public Rts2ConnProcess

@@ -74,9 +74,8 @@ Rts2ConnClient::init ()
 	}
 	ret = fcntl (sock, F_SETFL, O_NONBLOCK);
 	if (ret == -1)
-	{
 		return -1;
-	}
+	
 	ret = connect (sock, device_addr->ai_addr, device_addr->ai_addrlen);
 	freeaddrinfo (device_addr);
 	if (ret == -1)
@@ -219,7 +218,7 @@ Rts2Client::init ()
 		std::cerr << "Trying to contact centrald\n";
 		sleep (10);
 	}
-	addCentraldConnection (central_conn);
+	addCentraldConnection (central_conn, true);
 	return 0;
 }
 

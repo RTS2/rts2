@@ -226,9 +226,12 @@ Rts2DevClientCameraImage::exposureStarted ()
 	image->setValue ("YPLATE", yplate,
 		"yplate (scale in Y axis; divide by binning (BIN_V)!)");
 
+	image->setCameraName (getName ());
 	image->setInstrument (instrume.c_str ());
 	image->setTelescope (telescop.c_str ());
 	image->setOrigin (origin.c_str ());
+
+	image->setEnvironmentalValues ();
 
 	if (image->getTargetType () == TYPE_TERESTIAL
 		&& !isnan (ter_xoa) && !isnan (ter_yoa))

@@ -170,6 +170,7 @@
 #define RTS2_DT_PERCENTS              0x00050000
 #define RTS2_DT_ROTANG                0x00060000
 #define RTS2_DT_HEX                   0x00070000
+#define RTS2_DT_BYTESIZE              0x00080000
 
 #define RTS2_VALUE_INFOTIME           "infotime"
 

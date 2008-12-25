@@ -449,32 +449,6 @@ Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
 }
 
 
-Rts2CommandSearch::Rts2CommandSearch (Rts2DevClientTelescope * _tel, double searchRadius, double searchSpeed)
-:Rts2Command (_tel->getMaster ())
-{
-	char *
-		command;
-	asprintf (&command, "search %lf %lf", searchRadius, searchSpeed);
-	setCommand (command);
-	free (command);
-	tel = _tel;
-}
-
-
-int
-Rts2CommandSearch::commandReturnFailed (int status, Rts2Conn * conn)
-{
-	tel->searchFailed (status);
-	return Rts2Command::commandReturnFailed (status, conn);
-}
-
-
-Rts2CommandSearchStop::Rts2CommandSearchStop (Rts2DevClientTelescope * _tel)
-:Rts2Command (_tel->getMaster (), "searchstop")
-{
-}
-
-
 Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec)
 :Rts2Command (_master)
 {

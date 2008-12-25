@@ -48,6 +48,7 @@ class Rts2Config:public Rts2ConfigRaw
 	private:
 		static Rts2Config *pInstance;
 		struct ln_lnlat_posn observer;
+		double observatoryAltitude;
 		ObjectCheck *checker;
 		int astrometryTimeout;
 		double calibrationAirmassDistance;
@@ -209,6 +210,15 @@ class Rts2Config:public Rts2ConfigRaw
 		 * @return ln_lnlat_posn structure, which contains observer coordinates.
 		 */
 		struct ln_lnlat_posn *getObserver ();
+
+		/**
+		 * Return observatory altitude.
+		 */
+		double getObservatoryAltitude ()
+		{
+			return observatoryAltitude;
+		}
+
 		ObjectCheck *getObjectChecker ();
 
 		/**
@@ -331,6 +341,17 @@ class Rts2Config:public Rts2ConfigRaw
 		std::string observatoryDarkPath ()
 		{
 			return obs_darks;
+		}
+
+		/**
+		 * Returns vector of environment variables, which shall be recorded in FITS header.
+		 *
+		 * @param deviceName   Device for which environmental list is returned.
+		 * @param ret Vector of environmental variables names.
+		 */
+		void deviceWriteEnvVariables (const char *deviceName, std::vector <std::string> &ret)
+		{
+			getStringVector (deviceName, "environment", ret);
 		}
 };
 #endif							 /* !__RTS2_CONFIG__ */

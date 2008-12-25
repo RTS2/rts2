@@ -446,21 +446,6 @@ class Rts2CommandResyncMove:public Rts2Command
 		virtual int commandReturnFailed (int status, Rts2Conn * conn);
 };
 
-class Rts2CommandSearch:public Rts2Command
-{
-	Rts2DevClientTelescope *tel;
-	public:
-		Rts2CommandSearch (Rts2DevClientTelescope * _tel,
-			double searchRadius, double searchSpeed);
-		virtual int commandReturnFailed (int status, Rts2Conn * conn);
-};
-
-class Rts2CommandSearchStop:public Rts2Command
-{
-	public:
-		Rts2CommandSearchStop (Rts2DevClientTelescope * _tel);
-};
-
 class Rts2CommandChange:public Rts2Command
 {
 	Rts2DevClientTelescope *tel;

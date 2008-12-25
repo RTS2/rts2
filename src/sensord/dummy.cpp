@@ -28,8 +28,7 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 	public:
-		Rts2DevSensorDummy (int in_argc, char **in_argv):Rts2DevSensor (in_argc,
-			in_argv)
+		Rts2DevSensorDummy (int argc, char **argv):Rts2DevSensor (argc, argv)
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);

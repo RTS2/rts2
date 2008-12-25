@@ -437,6 +437,9 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 
 		int rlen = 0;
 
+		if (chip_id == 0)
+			gettimeofday (&slave1ReadoutStart, NULL);
+
 		while (rlen < (chipByteSize () / 2))
 		{
 			std::cout << "chip " << chip_id << " rlen " << rlen << std::endl;
@@ -485,11 +488,6 @@ Rts2DevCameraMiniccdIl::isExposing ()
 			slaveState = SLAVE2_EXPOSING;
 		case SLAVE2_EXPOSING:
 			ret = isChipExposing (0);
-			if (ret == 2)
-			{
-				gettimeofday (&slave1ReadoutStart, NULL);
-				ret = 1;
-			}
 			if (ret)
 				return ret;
 			// calculate firstReadoutTime

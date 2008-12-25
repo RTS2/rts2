@@ -50,12 +50,23 @@ class Rts2UserApp:public Rts2AppDb
 		int removeType ();
 		int editType ();
 	protected:
+		virtual void usage ();
 		virtual int processOption (int in_opt);
 		virtual int doProcessing ();
 	public:
 		Rts2UserApp (int argc, char **argv);
 		virtual ~Rts2UserApp (void);
 };
+
+void
+Rts2UserApp::usage ()
+{
+	std::cout << "\t" << getAppName () << " -l" << std::endl
+		<< "\t" << getAppName () << "-a <user_name>" << std::endl
+		<< "\t" << getAppName () << "-p <user_name>" << std::endl
+		<< "\t" << getAppName () << "-e <user_name>" << std::endl
+		<< "\t" << getAppName () << "-m <user_name>" << std::endl;
+}
 
 int
 Rts2UserApp::processOption (int in_opt)

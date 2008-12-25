@@ -411,8 +411,7 @@ Rts2Daemon::saveValue (Rts2CondValue * val)
 void
 Rts2Daemon::deleteSaveValue (Rts2CondValue * val)
 {
-	for (Rts2ValueVector::iterator iter = savedValues.begin ();
-		iter != savedValues.end (); iter++)
+	for (Rts2ValueVector::iterator iter = savedValues.begin (); iter != savedValues.end (); iter++)
 	{
 		Rts2Value *new_val = *iter;
 		if (new_val->isValue (val->getValue ()->getName ().c_str ()))
@@ -454,6 +453,12 @@ Rts2Daemon::loadValues ()
 			{
 				old_val->clearValueSave ();
 				// this will put to iter next value..
+				iter = savedValues.erase (iter);
+				continue;
+			}
+			else if (ret == -1)
+			{
+				// if change was qued
 				iter = savedValues.erase (iter);
 				continue;
 			}
@@ -704,8 +709,7 @@ Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * n
 
 
 int
-Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op,
-Rts2Value * new_value)
+Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
 {
 	int ret;
 

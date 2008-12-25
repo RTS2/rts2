@@ -22,7 +22,7 @@
 using namespace rts2dome;
 
 // check time in usec (1000000 ms = 1s)
-#define FRAM_CHECK_TIMEOUT 1000
+#define FRAM_CHECK_TIMEOUT    1000
 
 // following times are in seconds!
 #define FRAM_TIME_OPEN_RIGHT    24

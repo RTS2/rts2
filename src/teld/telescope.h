@@ -339,11 +339,6 @@ class Rts2DevTelescope:public Rts2Device
 			return -2;
 		}
 
-		virtual int isSearching ()
-		{
-			return -2;
-		}
-
 		/**
 		 * Check if telescope is parking. Called during telescope
 		 * park to detect if parking position was reached.
@@ -517,12 +512,6 @@ class Rts2DevTelescope:public Rts2Device
 		 * @return 0 on success, -1 on failure
 		 */
 		virtual int stopMove () = 0;
-		virtual int startSearch ()
-		{
-			return -1;
-		}
-		virtual int stopSearch ();
-		virtual int endSearch ();
 
 		/**
 		 * Set telescope to match given coordinates
@@ -613,7 +602,6 @@ class Rts2DevTelescope:public Rts2Device
 
 		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
 			bool onlyCorrect);
-		int startSearch (Rts2Conn * conn, double radius, double in_searchSpeed);
 
 		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
 

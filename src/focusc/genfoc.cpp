@@ -72,7 +72,10 @@ Rts2GenFocCamera::lostPriority ()
 void
 Rts2GenFocCamera::exposureStarted ()
 {
-	queCommand (new Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+	if (exe == NULL)
+	{
+		queCommand (new Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+	}
 	Rts2DevClientCameraFoc::exposureStarted ();
 }
 
@@ -203,6 +206,7 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 		}
 	}
 	Rts2DevClientCameraFoc::focusChange (focus);
+	queCommand (new Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
 }
 
 

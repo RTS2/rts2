@@ -80,6 +80,18 @@ class Rts2LogStream
 			return *this;
 		}
 
+		/**
+		 * Set fill value for log stream. Call fill method for ostream.
+		 *
+		 * @param _f  New fill value.
+		 *
+		 * @return Old fill character.
+		 */
+		char fill (char _f)
+		{
+			return ls.fill (_f);
+		}
+
 		inline void sendLog ();
 };
 

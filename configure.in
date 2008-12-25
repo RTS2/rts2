@@ -231,23 +231,6 @@ AM_CONDITIONAL(GPIBLIB, test x$GPIBLIB != xno)
 AC_SUBST(GPIBLIB)
 AC_SUBST(LIB_GPIB)
 
-# check for INDI sources
-AC_ARG_WITH(indi,
-[  --with-indi             build with INDI bridge],
-INDI="${withval}";
-LIB_INDI="-L${withval} ";
-INC_INDI="-I${withval} -I${withval}/libs",
-[INDI=no])
-
-if test "x$INDI" != "xno" ; then
-  AC_CHECK_HEADERS([${INDI}/indidevapi.h ${INDI}/indicom.h])
-fi
-
-AM_CONDITIONAL(INDI, test x$INDI != xno)
-AC_SUBST(INDI)
-AC_SUBST(LIB_INDI)
-AC_SUBST(INC_INDI)
-
 # Check for A3200
 AC_ARG_WITH(a3200,
 [  --with-a3200           path for A3200 SDK],
@@ -519,6 +502,7 @@ AC_OUTPUT([Makefile
 	   doc/doxyfile
 	   src/dome/Makefile
 	   src/indi/Makefile
+	   src/libindi/Makefile
 	   src/filterd/Makefile
 	   src/focusc/Makefile
 	   src/focusd/Makefile
@@ -564,7 +548,6 @@ echo "
   pgsql		${psql}
   gsoap         ${gsoap}
   gpib          ${GPIBLIB}
-  INDI          ${INDI}
   comedilib     ${COMEDI}
 
 

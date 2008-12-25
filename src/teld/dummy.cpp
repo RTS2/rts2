@@ -50,11 +50,6 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			return isMoving ();
 		}
 
-		virtual int isSearching ()
-		{
-			return USEC_SEC;
-		}
-
 		virtual int isParking ()
 		{
 			return isMoving ();
@@ -74,6 +69,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			config->loadFile ();
 			telLatitude->setValueDouble (config->getObserver ()->lat);
 			telLongitude->setValueDouble (config->getObserver ()->lng);
+			telAltitude->setValueDouble (config->getObservatoryAltitude ());
 			strcpy (telType, "Dummy");
 			return Rts2DevTelescope::initValues ();
 		}
@@ -100,11 +96,6 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 		{
 			getTarget (&dummyPos);
 			countLong = 0;
-			return 0;
-		}
-
-		virtual int startSearch ()
-		{
 			return 0;
 		}
 

@@ -37,9 +37,9 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
-	 	timerclear (dir_timeouts + i);
+		timerclear (dir_timeouts + i);
 	}
-	
+
 	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
 	pointingModel->addSelVal ("EQU");
 	pointingModel->addSelVal ("ALT-AZ");
@@ -88,10 +88,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	move_connection = NULL;
 
-	createValue (ignoreCorrection, "ignore_correction", "corrections below that value will be ignored", false, RTS2_DT_DEG_DIST, 0, true);
+	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST, 0, true);
 	ignoreCorrection->setValueDouble (0);
 
-	createValue (smallCorrection, "small_correction", "correction bellow that value will be considered as small",
+	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small",
 		false, RTS2_DT_DEG_DIST);
 	smallCorrection->setValueDouble (0);
 
@@ -179,6 +179,7 @@ Rts2DevTelescope::processOption (int in_opt)
 	return 0;
 }
 
+
 void
 Rts2DevTelescope::calculateCorrAltAz ()
 {
@@ -217,7 +218,7 @@ Rts2DevTelescope::getCorrZd ()
 {
 	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
 		return 0;
-	
+
 	calculateCorrAltAz ();
 
 	return corrAltAz.alt - tarAltAz.alt;
@@ -247,7 +248,7 @@ Rts2DevTelescope::getTargetDistance ()
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
 		return -1;
-	
+
 	return ln_get_angular_separation (&tel, &tar);
 }
 
@@ -485,7 +486,7 @@ Rts2DevTelescope::initValues ()
 		return ret;
 	tarRaDec->setFromValue (telRaDec);
 	objRaDec->setFromValue (telRaDec);
-	
+
 	return Rts2Device::initValues ();
 }
 
@@ -494,34 +495,7 @@ void
 Rts2DevTelescope::checkMoves ()
 {
 	int ret;
-	if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
-	{
-		ret = isSearching ();
-		if (ret >= 0)
-		{
-			setTimeout (ret);
-			if (moveInfoCount == moveInfoMax)
-			{
-				info ();
-				if (move_connection)
-					sendInfo (move_connection);
-				moveInfoCount = 0;
-			}
-			else
-			{
-				moveInfoCount++;
-			}
-		}
-		else if (ret == -1)
-		{
-			stopSearch ();
-		}
-		else if (ret == -2)
-		{
-			endSearch ();
-		}
-	}
-	else if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
 	{
 		ret = isMoving ();
 		if (ret >= 0)
@@ -672,26 +646,9 @@ Rts2DevTelescope::changeMasterState (int new_state)
 		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_SOFT_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
-	  	if ((getState () & TEL_MASK_MOVING) == 0)
+		if ((getState () & TEL_MASK_MOVING) == 0)
 			startPark (NULL);
 	return Rts2Device::changeMasterState (new_state);
-}
-
-
-int
-Rts2DevTelescope::stopSearch ()
-{
-	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
-	infoAll ();
-	return 0;
-}
-
-
-int
-Rts2DevTelescope::endSearch ()
-{
-	maskState (TEL_MASK_SEARCHING, TEL_NOSEARCH);
-	return 0;
 }
 
 
@@ -816,14 +773,6 @@ Rts2DevTelescope::info ()
 int
 Rts2DevTelescope::scriptEnds ()
 {
-	if ((getState () & TEL_MASK_SEARCHING) == TEL_SEARCH)
-	{
-		stopSearch ();
-	}
-	else
-	{
-		stopMove ();
-	}
 	corrImgId->setValueInteger (0);
 	return Rts2Device::scriptEnds ();
 }
@@ -867,22 +816,6 @@ Rts2DevTelescope::endMove ()
 		<< " requested " << l_req
 		<< sendLog;
 	return 0;
-}
-
-
-int
-Rts2DevTelescope::startSearch (Rts2Conn * conn, double radius,
-double in_searchSpeed)
-{
-	/*	int ret;
-		searchRadius = radius;
-		searchSpeed = in_searchSpeed;
-		ret = startSearch ();
-		if (ret)
-			return ret;
-		move_connection = conn;
-		maskState (TEL_MASK_SEARCHING, TEL_SEARCH); */
-	return -1;
 }
 
 

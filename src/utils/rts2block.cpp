@@ -123,14 +123,17 @@ Rts2Block::createConnection (int in_sock)
 void
 Rts2Block::addConnection (Rts2Conn *_conn)
 {
-	connections.push_back (_conn);
+	connections_added.push_back (_conn);
 }
 
 
 void
-Rts2Block::addCentraldConnection (Rts2Conn *_conn)
+Rts2Block::addCentraldConnection (Rts2Conn *_conn, bool added)
 {
-	centraldConns.push_back (_conn);
+	if (added)
+	  	centraldConns.push_back (_conn);
+	else
+		centraldConns_added.push_back (_conn);
 }
 
 
@@ -256,6 +259,18 @@ Rts2Block::idle ()
 		(*iter)->idle ();
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		(*iter)->idle ();
+
+	// add from queue..
+	for (iter = connections_added.begin (); iter != connections_added.end (); iter = connections_added.erase (iter))
+	{
+		connections.push_back (*iter);
+	}
+
+	for (iter = centraldConns_added.begin (); iter != centraldConns_added.end (); iter = centraldConns_added.erase (iter))
+	{
+		centraldConns.push_back (*iter);
+	}
+
 	return 0;
 }
 

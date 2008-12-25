@@ -359,11 +359,11 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>longtitude</option>
+	    <option>longitude</option>
 	  </term>
 	  <listitem>
-	    <para>Observatory longtitude in degrees. Positive values are east from Greenwich, negative are west - e.g. american
-	    locations should have negative longtitude, most of european positive.</para>
+	    <para>Observatory longitude in degrees. Positive values are east from Greenwich, negative are west - e.g. American
+	    locations should have negative longitude, most of European positive.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
@@ -1073,6 +1073,22 @@
 	  </term>
 	  <listitem>
 	    <para>Institution/observer.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>environment</option>
+	  </term>
+	  <listitem>
+	    <para>Space separated list of environmental variables names, which should be recorded to FITS header.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>env_VARIABLE_comment</option>
+	  </term>
+	  <listitem>
+	    <para>FITS header comment for the environmental variable with name VARIABLE. You can of course specify any name you like.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>

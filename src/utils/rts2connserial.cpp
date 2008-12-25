@@ -55,13 +55,6 @@ Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpee
 }
 
 
-Rts2ConnSerial::~Rts2ConnSerial (void)
-{
-	if (sock > 0)
-		close (sock);
-}
-
-
 const char *
 Rts2ConnSerial::getBaudSpeed ()
 {

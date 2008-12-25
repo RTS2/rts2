@@ -234,7 +234,7 @@ Rts2App::processOption (int in_opt)
 				<< "This program comes with ABSOLUTELY NO WARRANTY; for details see http://www.gnu.org. \
 This is free software, and you are welcome to redistribute it under certain conditions; see http://www.gnu.org for details."
 				<< std::endl
-				<< "See http://rts-2.sf.net for news and more."
+				<< "See http://rts2.org for news and more."
 				<< std::endl;
 
 			exit (EXIT_SUCCESS);
@@ -342,16 +342,18 @@ Rts2App::askForString (const char *desc, std::string & val)
 {
 	while (!getEndLoop ())
 	{
+		std::string new_val;
 		std::cout << desc << " [" << val << "]: ";
-		std::getline (std::cin, val);
+		std::getline (std::cin, new_val);
 		if (std::cin.eof ())
 		{
 			setEndLoop ();
 			return -1;
 		}
 		// use default value
-		if (val.length () == 0)
+		if (new_val.length () == 0)
 			break;
+		val = new_val;
 		if (!std::cin.fail ())
 			break;
 		std::cout << "Invalid string!" << std::endl;

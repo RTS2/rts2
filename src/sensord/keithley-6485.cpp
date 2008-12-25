@@ -1,6 +1,28 @@
+/* 
+ * Sensor daemon for cloudsensor (mrakomer) by Martin Kakona
+ * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "sensorgpib.h"
 
-class Rts2DevSensorKeithley:public Rts2DevSensorGpib
+namespace rts2sensor
+{
+
+class Keithley:public Rts2DevSensorGpib
 {
 	private:
 		int getGPIB (const char *buf, int &val);
@@ -9,8 +31,7 @@ class Rts2DevSensorKeithley:public Rts2DevSensorGpib
 		int getGPIB (double &rval);
 
 		int getGPIB (const char *buf, Rts2ValueDouble * val);
-		int getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count,
-			double scale = 1);
+		int getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count, double scale = 1);
 
 		int getGPIB (const char *buf, Rts2ValueBool * val);
 		int setGPIB (const char *buf, Rts2ValueBool * val);
@@ -25,14 +46,18 @@ class Rts2DevSensorKeithley:public Rts2DevSensorGpib
 		virtual int initValues ();
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevSensorKeithley (int argc, char **argv);
-		virtual ~ Rts2DevSensorKeithley (void);
+		Keithley (int argc, char **argv);
+		virtual ~ Keithley (void);
 
 		virtual int info ();
 };
 
+}
+
+using namespace rts2sensor;
+
 int
-Rts2DevSensorKeithley::getGPIB (const char *buf, int &val)
+Keithley::getGPIB (const char *buf, int &val)
 {
 	int ret;
 	char rb[200];
@@ -56,7 +81,7 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, int &val)
 
 
 int
-Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueString * val)
+Keithley::getGPIB (const char *buf, Rts2ValueString * val)
 {
 	int ret;
 	char rb[200];
@@ -80,7 +105,7 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueString * val)
 
 
 int
-Rts2DevSensorKeithley::getGPIB (double &rval)
+Keithley::getGPIB (double &rval)
 {
 	int ret;
 	char rb[200];
@@ -95,7 +120,7 @@ Rts2DevSensorKeithley::getGPIB (double &rval)
 
 
 int
-Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueDouble * val)
+Keithley::getGPIB (const char *buf, Rts2ValueDouble * val)
 {
 	int ret;
 	double rval;
@@ -111,8 +136,7 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueDouble * val)
 
 
 int
-Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueDoubleStat * val,
-int count, double scale)
+Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count, double scale)
 {
 	int ret;
 	int bsize = 5000;
@@ -157,7 +181,7 @@ int count, double scale)
 
 
 int
-Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueBool * val)
+Keithley::getGPIB (const char *buf, Rts2ValueBool * val)
 {
 	int ret;
 	char rb[10];
@@ -176,7 +200,7 @@ Rts2DevSensorKeithley::getGPIB (const char *buf, Rts2ValueBool * val)
 
 
 int
-Rts2DevSensorKeithley::setGPIB (const char *buf, Rts2ValueBool * val)
+Keithley::setGPIB (const char *buf, Rts2ValueBool * val)
 {
 	char wr[strlen (buf) + 5];
 	strcpy (wr, buf);
@@ -189,7 +213,7 @@ Rts2DevSensorKeithley::setGPIB (const char *buf, Rts2ValueBool * val)
 
 
 int
-Rts2DevSensorKeithley::waitOpc ()
+Keithley::waitOpc ()
 {
 	int ret;
 	int icount = 0;
@@ -208,7 +232,7 @@ Rts2DevSensorKeithley::waitOpc ()
 }
 
 
-Rts2DevSensorKeithley::Rts2DevSensorKeithley (int in_argc, char **in_argv):
+Keithley::Keithley (int in_argc, char **in_argv):
 Rts2DevSensorGpib (in_argc, in_argv)
 {
 	setPad (14);
@@ -221,13 +245,13 @@ Rts2DevSensorGpib (in_argc, in_argv)
 }
 
 
-Rts2DevSensorKeithley::~Rts2DevSensorKeithley (void)
+Keithley::~Keithley (void)
 {
 }
 
 
 int
-Rts2DevSensorKeithley::init ()
+Keithley::init ()
 {
 	int ret = Rts2DevSensorGpib::init ();
 	if (ret)
@@ -286,7 +310,7 @@ Rts2DevSensorKeithley::init ()
 
 
 int
-Rts2DevSensorKeithley::initValues ()
+Keithley::initValues ()
 {
 	int ret;
 	Rts2ValueString *model = new Rts2ValueString ("model");
@@ -299,7 +323,7 @@ Rts2DevSensorKeithley::initValues ()
 
 
 int
-Rts2DevSensorKeithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int ret;
 	if (old_value == azero)
@@ -318,7 +342,7 @@ Rts2DevSensorKeithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 
 int
-Rts2DevSensorKeithley::info ()
+Keithley::info ()
 {
 	int ret;
 	// disable display
@@ -375,6 +399,6 @@ Rts2DevSensorKeithley::info ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorKeithley device = Rts2DevSensorKeithley (argc, argv);
+	Keithley device = Keithley (argc, argv);
 	return device.run ();
 }

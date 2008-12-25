@@ -64,9 +64,15 @@ SplitStr(const std::string& text, const std::string& delimeter)
 	std::size_t delimlen = delimeter.length();
 
 	std::vector<std::string> result;
-	while(pos != std::string::npos)
+	
+	if (text.empty ())
+		return result;
+	
+	while (pos != std::string::npos)
 	{
 		pos = text.find(delimeter, oldpos);
+		if (pos - oldpos == 0)
+			continue;
 		result.push_back(text.substr(oldpos, pos - oldpos));
 		oldpos = pos + delimlen;
 	}

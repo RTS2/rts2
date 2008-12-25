@@ -468,69 +468,6 @@ Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
 }
 
 
-Rts2ScriptElementSearch::Rts2ScriptElementSearch (Rts2Script * in_script, double in_searchRadius, double in_searchSpeed):Rts2ScriptElement
-(in_script)
-{
-	searchRadius = in_searchRadius;
-	searchSpeed = in_searchSpeed;
-	processingState = NEED_SEARCH;
-}
-
-
-void
-Rts2ScriptElementSearch::postEvent (Rts2Event * event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_TEL_SEARCH_SUCCESS:
-			processingState = SEARCH_OK;
-			break;
-		case EVENT_TEL_SEARCH_END:
-		case EVENT_TEL_SEARCH_STOP:
-			processingState = SEARCH_FAILED;
-			break;
-	}
-	Rts2ScriptElement::postEvent (event);
-}
-
-
-int
-Rts2ScriptElementSearch::nextCommand (Rts2DevClientPhot * phot,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
-{
-	switch (processingState)
-	{
-		case NEED_SEARCH:
-			script->getMaster ()->
-				postEvent (new Rts2Event (EVENT_TEL_SEARCH_START, (void *) this));
-			if (!isnan (searchRadius))
-			{
-				// no one pick our task..lets move to next command
-				return NEXT_COMMAND_NEXT;
-			}
-			processingState = SEARCHING;
-		case SEARCHING:
-			return NEXT_COMMAND_WAIT_SEARCH;
-		case SEARCH_OK:
-			return NEXT_COMMAND_NEXT;
-		case SEARCH_FAILED:
-			// que end of script
-			*new_command = new Rts2CommandFilter (phot, 0);
-			getDevice (new_device);
-			// filterMoveCommand will result in call of either
-			// filterMoveFailed (calls now deleteScript) or filterMoveEnd
-			// (calls next command)
-			processingState = SEARCH_FAILED2;
-			return NEXT_COMMAND_KEEP;
-		case SEARCH_FAILED2:
-			// so we get there..
-			return NEXT_COMMAND_END_SCRIPT;
-	}
-	return 0;
-}
-
-
 Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *new_device, const char *chng_str):Rts2ScriptElement
 (in_script)
 {

@@ -306,7 +306,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	int ret;
 	struct ln_equ_posn *offset;
 	GuidingParams *gp;
-	Rts2ScriptElementSearch *searchEl;
 	switch (event->getType ())
 	{
 		case EVENT_KILL_ALL:
@@ -345,16 +344,6 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			cmdChng =
 				new Rts2CommandChange ((Rts2CommandChange *) event->getArg (), this);
 			checkInterChange ();
-			break;
-		case EVENT_TEL_SEARCH_START:
-			searchEl = (Rts2ScriptElementSearch *) event->getArg ();
-			queCommand (new
-				Rts2CommandSearch (this, searchEl->getSearchRadius (),
-				searchEl->getSearchSpeed ()));
-			searchEl->getJob ();
-			break;
-		case EVENT_TEL_SEARCH_SUCCESS:
-			queCommand (new Rts2CommandSearchStop (this));
 			break;
 		case EVENT_ENTER_WAIT:
 			if (cmdChng)
@@ -506,22 +495,6 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
 		currentTarget->moveFailed ();
 	Rts2DevClientTelescopeImage::moveFailed (status);
 	getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
-}
-
-
-void
-Rts2DevClientTelescopeExec::searchEnd ()
-{
-	Rts2DevClientTelescopeImage::searchEnd ();
-	getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SEARCH_END));
-}
-
-
-void
-Rts2DevClientTelescopeExec::searchFailed (int status)
-{
-	Rts2DevClientTelescopeImage::searchFailed (status);
-	getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SEARCH_END));
 }
 
 

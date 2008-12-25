@@ -1,7 +1,7 @@
 SUBDIRS = model
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
-	rts2-teld-d50 rts2-teld-kolonica
+	rts2-teld-d50 rts2-teld-kolonica rts2-teld-indi-bridge
 
 noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h
 
@@ -22,6 +22,10 @@ rts2_teld_d50_LDADD = fork.o ${LDADD}
 
 rts2_teld_kolonica_SOURCES = kolonica.cpp
 rts2_teld_kolonica_LDADD = fork.o ${LDADD}
+
+rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
+rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz ${LDADD}
+rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
 
 if PGSQL
 bin_PROGRAMS += rts2-telmodeltest

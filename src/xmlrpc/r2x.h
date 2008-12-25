@@ -23,16 +23,16 @@
 #define R2X_DEVICES_LIST              "rts2.devices.list"
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
-#define R2X_VALUES_LIST               "rts2.values.list"
-
 /**
- * Set RTS2 variable.
+ * Set RTS2 variable. Three parameter must be specified,w ith following meaning:
  *
  * @param device Name of device for which variable will be set.
  * @param var    Name of variable which will be set.
  * @param value  Value as string.
  */
-#define R2X_VALUES_SET                "rts2.values.set"
+#define R2X_VALUE_SET                 "rts2.value.set"
+
+#define R2X_VALUES_LIST               "rts2.values.list"
 
 #define R2X_TARGETS_LIST              "rts2.targets.list"
 #define R2X_TARGETS_INFO              "rts2.targets.info"

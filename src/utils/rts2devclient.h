@@ -185,8 +185,6 @@ class Rts2DevClientTelescope:public Rts2DevClient
 		bool moveWasCorrecting;
 		virtual void moveStart (bool correcting);
 		virtual void moveEnd ();
-		virtual void searchStart ();
-		virtual void searchEnd ();
 	public:
 		Rts2DevClientTelescope (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClientTelescope (void);
@@ -194,9 +192,6 @@ class Rts2DevClientTelescope:public Rts2DevClient
 		virtual void moveFailed (int status)
 		{
 			moveWasCorrecting = false;
-		}
-		virtual void searchFailed (int status)
-		{
 		}
 		virtual void stateChanged (Rts2ServerState * state);
 		virtual void postEvent (Rts2Event * event);

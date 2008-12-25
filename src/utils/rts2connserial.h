@@ -99,7 +99,6 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		Rts2ConnSerial (const char *_devName, Rts2Block * _master,
 			bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8,
 			parityT _parity = NONE, int _vTime = 40);
-		virtual ~Rts2ConnSerial (void);
 
 		/**
 		 * Init serial port.

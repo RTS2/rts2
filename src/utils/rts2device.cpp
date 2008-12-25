@@ -918,7 +918,7 @@ Rts2Device::init ()
 		Rts2Conn * conn_master = new Rts2DevConnMaster (this, device_host, getPort (),
 			device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
 		conn_master->init ();
-		addCentraldConnection (conn_master);
+		addCentraldConnection (conn_master, true);
 	}
 
 	return 0;

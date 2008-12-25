@@ -100,7 +100,14 @@ class Rts2Block: public Rts2App
 		long int idle_timeout;	 // in msec
 
 		connections_t connections;
+		
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t connections_added;
+
 		connections_t centraldConns;
+
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t centraldConns_added;
 
 		std::list <Rts2Address *> blockAddress;
 		std::list <Rts2ConnUser * > blockUsers;
@@ -256,8 +263,9 @@ class Rts2Block: public Rts2App
 		 * Add connection as connection to central server,
 		 *
 		 * @param _conn Connection which will be added.
+		 * @param added True if connection can be added directly
 		 */
-		void addCentraldConnection (Rts2Conn *_conn);
+		void addCentraldConnection (Rts2Conn *_conn, bool added);
 
 		/**
 		 * Return number of connections in connections structure.

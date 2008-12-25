@@ -39,9 +39,8 @@ class Rts2ConnFork:public Rts2ConnNoSend
 	private:
 		pid_t childPid;
 		time_t forkedTimeout;
-
 		// holds pipe with stderr. Stdout is stored in sock
-		int sockErr;
+		int sockerr;
 
 	protected:
 		char *exePath;
@@ -51,10 +50,21 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		 * Called when initialization of the connection fails at some point.
 		 */
 		virtual void initFailed ();
+
+		/**
+		 * Called with error line input. Default processing is to log it as MESSAGE_ERROR.
+		 *
+		 * @param errbuf  Buffer containing null terminated error line string.
+		 */
+		virtual void processErrorLine (char *errbuf);
 	public:
 		Rts2ConnFork (Rts2Block * in_master, const char *in_exe, int in_timeout =
 			0);
 		virtual ~ Rts2ConnFork (void);
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+
+		virtual int receive (fd_set * readset);
 
 		/**
 		 * Create and execute processing.
@@ -70,8 +80,6 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		virtual int init ();
 		virtual void stop ();
 		void term ();
-
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
 		virtual int idle ();
 

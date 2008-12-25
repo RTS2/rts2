@@ -17,6 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <math.h>
+
 #include "rts2config.h"
 
 Rts2Config *Rts2Config::pInstance = NULL;
@@ -28,8 +30,9 @@ Rts2Config::getSpecialValues ()
 	std::string horizon_file;
 
 	// get some commonly used values
-	ret += getDouble ("observatory", "longtitude", observer.lng);
+	ret += getDouble ("observatory", "longitude", observer.lng);
 	ret += getDouble ("observatory", "latitude", observer.lat);
+	ret += getDouble ("observatory", "altitude", observatoryAltitude, nan("f"));
 	// load horizont file..
 	getString ("observatory", "horizon", horizon_file, "");
 

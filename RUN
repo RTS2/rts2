@@ -13,6 +13,24 @@ First some hints:
   http://petr.kubanek.net, so try to contact him using a more interactive
   communication.
 
+Creating and populating /etc/rts2 directory
+===========================================
+
+First of all, you need to create /etc/rts2 directory. This directory holds RTS2
+configuration files. At beginning, we need only rts2.ini in this directory.  As
+root. issue following commands:
+
+root@host:$ mkdir /etc/rts2  # or some other directory, if you specify it during ./configure
+root@host:$ cd rts2
+root@host:rts2$ cp rts2.ini /etc/rts2/
+
+Now you need to edit /etc/rts2/rts2.ini and provide values for your
+installation (they are marked with xxxx, so just search for that and replace
+its occurences).
+
+We will come to pupulating /etc/rts2 with other files needed for devices etc.
+later.
+
 Creating database
 =================
 
@@ -61,7 +79,6 @@ Creating targets of your choice
 Probably the best way how to create a target is using rts2-newtarget. In order
 for it to work properly, you will need gsoap installed before you started the
 build. There is sample session:
-
 
 user@host:$ rts2-newtarget 
 Default values are written at []..
@@ -134,18 +151,11 @@ Running and testing RTS2
 
 So you want to start the beast up? You will need to (as root user):
 
-root@host:$ mkdir /etc/rts2  # or some other directory, if you specify it during ./configure
-root@host:$ cd rts2
-root@host:rts2$ cp rts2.ini /etc/rts2/
 root@host:rts2$ cp rts2.initd /etc/init.d/rts2
-
-Now you need to edit /etc/rts2/rts2.ini and provide values for your
-installation (they are marked with xxxx, so just search for that and replace
-its occurences).
 
 Before you will run to:
 
-root@host:rts2$ cp services devices centrald /etc/rts2
+root@host:rts2$ cp services devices centrald sd /etc/rts2
 
 and editing /etc/rts2/devices (please see man rts2.devices for details what to
 enter), so you will be able to do start RTS2 with:
