@@ -94,7 +94,7 @@ System::addPath (const char *path)
 
 System::System (int argc, char **argv):Rts2DevSensor (argc, argv)
 {
-	addOption ('p', "NULL", 1, "add this path to paths being monitored");
+	addOption ('p', NULL, 1, "add this path to paths being monitored");
 }
 
 int
