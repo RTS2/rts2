@@ -261,9 +261,6 @@ Rts2DevScript::postEvent (Rts2Event * event)
 				nextCommand ();
 			}
 			break;
-		case EVENT_SCRIPT_NUMBER:
-			*((int*)event->getArg ()) = scriptCount;
-			break;
 	}
 }
 

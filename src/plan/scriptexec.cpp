@@ -241,16 +241,10 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
 
 
 void
-Rts2ScriptExec::priorityChanged (Rts2Conn * conn, bool have)
+Rts2ScriptExec::deviceReady (Rts2Conn * conn)
 {
-	int scriptCount = 0;
-	// test if we did not assign script in previous runs of priority changed
-	conn->postEvent (new Rts2Event (EVENT_SCRIPT_NUMBER, (void *) &scriptCount));
-	if (have && scriptCount == 0)
-	{
-		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
-	}
+	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 
 
