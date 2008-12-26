@@ -80,6 +80,15 @@
 
   </refsect1>
   <refsect1>
+    <title>IMPORTNAT NOTE ABOUT MULTIPLE SERVERS</title>
+    <para>
+      You can specify multiple central servers using --server option. That is
+      perfectly legal, but be aware, that if such device will ask central
+      server for blocking information (before executing exposure, moving
+      mount,..), it will ask only the first central server.
+    </para>
+  </refsect1>
+  <refsect1>
     <title>EXAMPLES</title>
 
     <para>
