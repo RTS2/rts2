@@ -170,7 +170,6 @@ Rts2ImageSkyDb::updateDB ()
 		float d_img_exposure = -1;
 		float d_img_alt = -100;
 		float d_img_az = -100;
-		int d_epoch_id = epochId;
 		int d_med_id = 0;
 		int d_proccess_bitfield = processBitfiedl;
 		float d_img_fwhm;
@@ -218,7 +217,6 @@ Rts2ImageSkyDb::updateDB ()
 			img_az,
 			img_date,
 			img_usec,
-			epoch_id,
 			med_id,
 			process_bitfield,
 			img_fwhm,
@@ -239,7 +237,6 @@ Rts2ImageSkyDb::updateDB ()
 			:d_img_az,
 			to_timestamp (:d_img_date),
 			:d_img_usec,
-			:d_epoch_id,
 			:d_med_id,
 			:d_proccess_bitfield,
 			:d_img_fwhm :d_img_fwhm_ind,
@@ -261,7 +258,6 @@ Rts2ImageSkyDb::updateDB ()
 			SET
 				img_date = to_timestamp (:d_img_date),
 				img_usec = :d_img_usec,
-				epoch_id = :d_epoch_id,
 				med_id   = :d_med_id,
 				process_bitfield = :d_proccess_bitfield,
 				img_fwhm = :d_img_fwhm :d_img_fwhm_ind,
@@ -487,7 +483,7 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_
 Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec,
 float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
 const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
-double in_img_err, int in_epoch_id) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
+double in_img_err) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
 	targetId = in_tar_id;
 	targetIdSel = in_tar_id;
@@ -510,8 +506,6 @@ double in_img_err, int in_epoch_id) : Rts2ImageDb (in_img_date, in_img_usec, in_
 	pos_astr.ra = nan ("f");
 	pos_astr.dec = nan ("f");
 	processBitfiedl = in_process_bitfield;
-
-	epochId = in_epoch_id;
 
 	setFilter (in_img_filter);
 }

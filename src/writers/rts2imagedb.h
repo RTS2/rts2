@@ -110,8 +110,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 			float in_img_az, const char *in_camera_name,
 			const char *in_mount_name, bool in_delete_flag,
 			int in_process_bitfield, double in_img_err_ra,
-			double in_img_err_dec, double in_img_err,
-			int in_epoch_id);
+			double in_img_err_dec, double in_img_err);
 		virtual ~ Rts2ImageSkyDb (void);
 
 		virtual int toArchive ();

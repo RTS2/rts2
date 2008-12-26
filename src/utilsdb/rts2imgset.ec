@@ -75,7 +75,6 @@ Rts2ImgSet::load (std::string in_where)
 		int d_img_err_dec_ind;
 		int d_img_err_ind;
 
-		int d_epoch_id;
 	EXEC SQL END DECLARE SECTION;
 
 	asprintf (&stmp_c,
@@ -97,8 +96,7 @@ Rts2ImgSet::load (std::string in_where)
 		"process_bitfield,"
 		"img_err_ra,"
 		"img_err_dec,"
-		"img_err,"
-		"epoch_id"
+		"img_err"
 		" FROM "
 		"images,"
 		"observations"
@@ -132,8 +130,7 @@ Rts2ImgSet::load (std::string in_where)
 				:d_process_bitfield,
 				:d_img_err_ra :d_img_err_ra_ind,
 				:d_img_err_dec :d_img_err_dec_ind,
-				:d_img_err :d_img_err_ind,
-				:d_epoch_id;
+				:d_img_err :d_img_err_ind;
 		if (sqlca.sqlcode)
 			break;
 
@@ -177,7 +174,7 @@ Rts2ImgSet::load (std::string in_where)
 		push_back (new Rts2ImageSkyDb (d_tar_id, d_obs_id, d_img_id, d_obs_subtype,
 			d_img_date, d_img_usec, d_img_exposure, d_img_temperature, d_img_filter.arr, d_img_alt, d_img_az,
 			d_camera_name.arr, d_mount_name.arr, d_delete_flag, d_process_bitfield, d_img_err_ra,
-			d_img_err_dec, d_img_err, d_epoch_id));
+			d_img_err_dec, d_img_err));
 
 	}
 	free (stmp_c);

@@ -215,7 +215,6 @@ Rts2FitsFile (in_exposureStart)
 
 	initData ();
 
-	epochId = currTarget->getEpoch ();
 	targetId = currTarget->getTargetID ();
 	targetIdSel = currTarget->getObsTargetID ();
 	targetType = currTarget->getTargetType ();
@@ -243,7 +242,6 @@ Rts2FitsFile (in_exposureStart)
 
 	writeExposureStart ();
 
-	setValue ("EPOCH_ID", epochId, "image epoch ID of observation");
 	setValue ("TARGET", getTargetId (), "target id");
 	setValue ("TARSEL", getTargetIdSel (), "selector target id");
 	setValue ("TARTYPE", targetType, "target type");
@@ -280,7 +278,6 @@ Rts2FitsFile ()
 
 	openImage (in_filename, readOnly);
 	// get info..
-	getValue ("EPOCH_ID", epochId, verbose);
 	getValue ("TARGET", targetId, verbose);
 	getValue ("TARSEL", targetIdSel, verbose);
 	getValue ("TARTYPE", targetType, verbose);
@@ -674,7 +671,7 @@ char *
 Rts2Image::getImageBase ()
 {
 	static char buf[12];
-	sprintf (buf, "/images/%03i", epochId);
+	strcpy (buf, "/images/");
 	return buf;
 }
 

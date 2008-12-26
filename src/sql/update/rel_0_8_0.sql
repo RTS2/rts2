@@ -26,3 +26,11 @@ INSERT INTO accounts VALUES (1, 'Default account', 100);
 DROP TABLE darks;
 
 DROP TABLE flats;
+
+-- Drop epochs
+
+ALTER TABLE images DROP COLUMN epoch_id CASCADE;
+
+ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
+
+DROP TABLE epoch;
