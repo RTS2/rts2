@@ -780,10 +780,7 @@ void
 Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
 {
 	deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, in_owner_conn);
-	for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-	{
-		(*iter)->queCommand (deviceStatusCommand);
-	}
+	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
 }
 
 
