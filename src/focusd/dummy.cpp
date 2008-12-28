@@ -19,40 +19,88 @@
 
 #include "focuser.h"
 
-class Rts2DevFocuserDummy:public Rts2DevFocuser
+#define OPT_FOC_STEPS    OPT_LOCAL + 1001
+
+namespace rts2focusd
+{
+
+/**
+ * Class for dummy focuser. Can be used to create driver for new device.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Dummy:public Rts2DevFocuser
 {
 	private:
-		int steps;
+		Rts2ValueInteger *focSteps;
 	protected:
+		virtual int processOption (int opt);
+		virtual int initValues ();
+
 		virtual bool isAtStartPosition ()
 		{
 			return false;
 		}
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevFocuserDummy (int argc, char **argv);
-		~Rts2DevFocuserDummy (void);
-		virtual int initValues ();
+		Dummy (int argc, char **argv);
+		~Dummy (void);
 		virtual int ready ();
 		virtual int stepOut (int num);
 		virtual int isFocusing ();
 };
 
-Rts2DevFocuserDummy::Rts2DevFocuserDummy (int in_argc, char **in_argv):
+}
+
+using namespace rts2focusd;
+
+
+int
+Dummy::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == focSteps)
+		return 0;
+	return Rts2DevFocuser::setValue (old_value, new_value);
+}
+
+
+Dummy::Dummy (int in_argc, char **in_argv):
 Rts2DevFocuser (in_argc, in_argv)
 {
 	focStepSec = 1;
 	focType = std::string ("Dummy");
 	createFocTemp ();
+
+	createValue (focSteps, "focstep", "focuser steps (step size per second)", false);
+	focSteps->setValueInteger (1);
+
+	addOption (OPT_FOC_STEPS, "focstep", 1, "initial value of focuser steps");
 }
 
 
-Rts2DevFocuserDummy::~Rts2DevFocuserDummy ()
+Dummy::~Dummy ()
 {
 }
 
 
 int
-Rts2DevFocuserDummy::initValues ()
+Dummy::processOption (int opt)
+{
+	switch (opt)
+	{
+		case OPT_FOC_STEPS:
+			focSteps->setValueInteger (atoi (optarg));
+			break;
+		default:
+			return Rts2DevFocuser::processOption (opt);
+	}
+	return 0;
+}
+
+
+int
+Dummy::initValues ()
 {
 	focPos->setValueInteger (3000);
 	focTemp->setValueFloat (100);
@@ -61,29 +109,29 @@ Rts2DevFocuserDummy::initValues ()
 
 
 int
-Rts2DevFocuserDummy::ready ()
+Dummy::ready ()
 {
 	return 0;
 }
 
 
 int
-Rts2DevFocuserDummy::stepOut (int num)
+Dummy::stepOut (int num)
 {
-	steps = 1;
-	if (num < 0)
-		steps *= -1;
+	if ((focSteps->getValueInteger () < 0 && num > 0) || (focSteps->getValueInteger () > 0 && num < 0))
+		focSteps->setValueInteger (-1 * focSteps->getValueInteger ());
+	sendValueAll (focSteps);
 	return 0;
 }
 
 
 int
-Rts2DevFocuserDummy::isFocusing ()
+Dummy::isFocusing ()
 {
-	if (fabs (getFocPos () - focPositionNew) < fabs (steps))
-		focPos->setValueInteger (focPositionNew);
+	if (fabs (getFocPos () - getFocTarget ()) < fabs (focSteps->getValueInteger ()))
+		focPos->setValueInteger (getFocTarget ());
 	else
-		focPos->setValueInteger (getFocPos () + steps);
+		focPos->setValueInteger (getFocPos () + focSteps->getValueInteger ());
 	return Rts2DevFocuser::isFocusing ();
 }
 
@@ -91,6 +139,6 @@ Rts2DevFocuserDummy::isFocusing ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevFocuserDummy device = Rts2DevFocuserDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }
