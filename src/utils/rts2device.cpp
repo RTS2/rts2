@@ -940,7 +940,7 @@ Rts2Device::init ()
 	if (ret)
 		return ret;
 
-	asprintf (&lock_fname, LOCK_PREFIX "%s", device_name);
+	asprintf (&lock_fname, "%s%s", getLockPrefix (), device_name);
 	ret = checkLockFile (lock_fname);
 	if (ret < 0)
 		return ret;

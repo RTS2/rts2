@@ -38,6 +38,7 @@
 
 #define OPT_MODEFILE    1006
 #define OPT_LOGFILE     1007
+#define OPT_LOCKPREFIX  1008
 
 /**
  * Start of local option number playground.
