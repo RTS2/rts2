@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
 #include "../utils/rts2device.h"
 #include "../utils/rts2command.h"
 
 #include "indidevapi.h"
+#include "indidrivermain.h"
 #include "indicom.h"
 
 #define RTS2_GROUP  "RTS2"
@@ -31,15 +31,24 @@
 
 #define POLLMS      10		 /* poll period, ms */
 
-class Rts2Indi:public Rts2Device
+/**
+ * Class which acts as bridge between INDI and RTS2.
+ * 
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Indi:public Rts2Device
 {
 	protected:
+		const char *telescopeName;
+
 		virtual int willConnect (Rts2Address * in_addr);
-	public:
-		Rts2Indi (int argc, char **argv);
-		virtual ~ Rts2Indi (void);
 
 		virtual int init ();
+
+		virtual int processOption (int opt);
+	public:
+		Indi (int argc, char **argv);
+		virtual ~ Indi (void);
 
 		virtual int changeMasterState (int new_state);
 
@@ -51,28 +60,32 @@ class Rts2Indi:public Rts2Device
 };
 
 int
-Rts2Indi::willConnect (Rts2Address * in_addr)
+Indi::willConnect (Rts2Address * in_addr)
 {
 	return 1;
 }
 
 
-Rts2Indi::Rts2Indi (int in_argc, char **in_argv):
+Indi::Indi (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_INDI, "INDI")
 {
+	telescopeName = "T0";
+	setLockPrefix ("/tmp/rts2_");
 	setNotDeamonize ();
-	IDLog ("Initializing Rts2Indi");
+	IDLog ("Initializing Indi");
+
+	addOption ('t', NULL, 1, "telescope name (default to T0)");
 }
 
 
-Rts2Indi::~Rts2Indi (void)
+Indi::~Indi (void)
 {
 
 }
 
 
 int
-Rts2Indi::init ()
+Indi::init ()
 {
 	int ret;
 	ret = Rts2Device::init ();
@@ -84,8 +97,23 @@ Rts2Indi::init ()
 }
 
 
+int
+Indi::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 't':
+			telescopeName = optarg;
+			break;
+		default:
+			return Rts2Device::processOption (opt);
+	}
+	return 0;
+}
+
+
 void
-Rts2Indi::message (Rts2Message & msg)
+Indi::message (Rts2Message & msg)
 {
 	IDMessage (mydev, "%s %s", msg.getMessageOName (), msg.getMessageString ());
 }
@@ -150,10 +178,10 @@ static ISwitch abortSlewS[] =
 static ISwitchVectorProperty abortSlewSw =
 {mydev, "ABORT_MOTION", "Abort Slew/Track", BASIC_GROUP, IP_RW,	ISR_1OFMANY, 0, IPS_IDLE, abortSlewS, NARRAY (abortSlewS), 0, 0};
 
-static Rts2Indi *device = NULL;
+static Indi *device = NULL;
 
 void
-Rts2Indi::setStates ()
+Indi::setStates ()
 {
 	if (StatesSP.sp[0].s == ISS_ON)
 	{
@@ -177,9 +205,9 @@ Rts2Indi::setStates ()
 
 
 void
-Rts2Indi::setObjRaDec (double ra, double dec)
+Indi::setObjRaDec (double ra, double dec)
 {
-	Rts2Conn *tel = getOpenConnection ("T0");
+	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
 		tel->queCommand (new Rts2CommandResyncMove (this, (Rts2DevClientTelescope *)tel->getOtherDevClient (), ra, dec));
@@ -188,7 +216,7 @@ Rts2Indi::setObjRaDec (double ra, double dec)
 
 
 int
-Rts2Indi::changeMasterState (int new_state)
+Indi::changeMasterState (int new_state)
 {
 	StatesSP.s = IPS_BUSY;
 	IDSetSwitch (&StatesSP, NULL);
@@ -212,11 +240,11 @@ Rts2Indi::changeMasterState (int new_state)
 
 
 void
-Rts2Indi::ISPoll ()
+Indi::ISPoll ()
 {
 	oneRunLoop ();
 
-	Rts2Conn *tel = getOpenConnection ("T0");
+	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
 		Rts2Value *val = tel->getValue ("OBJ");
@@ -266,9 +294,6 @@ ISInit ()
 {
 	if (device)
 		return;
-
-	device = new Rts2Indi (0, NULL);
-
 	device->initDaemon ();
 }
 
@@ -313,8 +338,7 @@ ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[],
 
 
 void
-ISNewText (const char *dev, const char *name, char *texts[], char *names[],
-int n)
+ISNewText (const char *dev, const char *name, char *texts[], char *names[], int n)
 {
 	ISInit ();
 }
@@ -373,4 +397,15 @@ void
 ISSnoopDevice (XMLEle *root)
 {
 	ISInit ();
+}
+
+
+int
+main (int ac, char **av)
+{
+	device = new Indi (ac, av);
+	std::cerr << "new" << std::endl;
+	device->initDaemon ();
+	IDProcessParams (ac, av);
+	return IDMain ();
 }

@@ -100,6 +100,8 @@ extern void rmTimer (int tid);
 extern int deferLoop (int maxms, int *flagp);
 extern int deferLoop0 (int maxms, int *flagp);
 
+extern int eventLoopRun ();
+
 #ifdef __cplusplus
 }
 #endif
