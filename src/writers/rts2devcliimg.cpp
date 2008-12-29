@@ -428,6 +428,7 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 				|| strcmp (image->getFocuserName (), connection->getName ()))
 				break;
 			image->writeConn (getConnection (), EXPOSURE_START);
+			image->setFocPos (getConnection ()->getValue ("FOC_POS")->getValueInteger ());
 			break;
 		case EVENT_WRITE_TO_IMAGE_ENDS:
 			ci = (CameraImage *) event->getArg ();
