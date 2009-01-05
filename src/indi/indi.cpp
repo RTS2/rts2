@@ -148,8 +148,17 @@ static INumber eq[] =
 INumberVectorProperty eqNum =
 {mydev, "EQUATORIAL_COORD", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
 
+static INumber offs[] =
+{
+	{"RA", "RA  H:M:S", "%10.6m", -24., 24., 0., 0., 0, 0, 0},
+	{"DEC", "Dec D:M:S", "%10.6m", -90., 90., 0., 0., 0, 0, 0},
+};
+
 INumberVectorProperty eqOffsets =
-{mydev, "EQUATORIAL_OFFSET", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
+{mydev, "EQUATORIAL_OFFSET", "Equatorial offset", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (offs), 0, 0};
+
+INumberVectorProperty eqCorr =
+{mydev, "EQUATORIAL_CORRECTION", "Equatorial correction", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (offs), 0, 0};
 
 static INumber hor[] =
 {
@@ -273,9 +282,30 @@ Indi::ISPoll ()
 		}
 		IDSetNumber (&eqOffsets, NULL);
 
-		horNum.np[0].value = tel->getValueDouble ("ALT");
-		horNum.np[1].value = tel->getValueDouble ("AZ");
-		horNum.s = IPS_OK;
+		val = tel->getValue ("CORR_");
+		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
+		{
+			eqCorr.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
+			eqCorr.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqCorr.s = IPS_OK;
+		}
+		else
+		{
+		  	eqCorr.s = IPS_BUSY;
+		}
+		IDSetNumber (&eqCorr, NULL);
+
+		val = tel->getValue ("TEL_");
+		if (val && val->getValueBaseType () == RTS2_VALUE_ALTAZ)
+		{
+			horNum.np[0].value = ((Rts2ValueAltAz *) val)->getAlt ();
+			horNum.np[1].value = ((Rts2ValueAltAz *) val)->getAz ();
+			horNum.s = IPS_OK;
+		}
+		else
+		{
+		  	horNum.s = IPS_BUSY;
+		}
 		IDSetNumber (&horNum, NULL);
 
 		PowerS[0].s = ISS_ON;
