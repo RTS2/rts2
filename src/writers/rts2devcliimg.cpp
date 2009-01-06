@@ -367,33 +367,10 @@ Rts2DevClientTelescopeImage::getMountFlip ()
 
 
 void
-Rts2DevClientTelescopeImage::getAltAz (struct ln_hrz_posn *hrz)
-{
-	struct ln_equ_posn pos;
-	struct ln_lnlat_posn obs;
-	double gst;
-
-	getEqu (&pos);
-	getObs (&obs);
-	gst = getLocalSiderealDeg () - obs.lng;
-	gst = ln_range_degrees (gst) / 15.0;
-
-	ln_get_hrz_from_equ_sidereal_time (&pos, &obs, gst, hrz);
-}
-
-
-void
 Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
 {
 	obs->lng = getConnection ()->getValueDouble ("LONGITUD");
 	obs->lat = getConnection ()->getValueDouble ("LATITUDE");
-}
-
-
-double
-Rts2DevClientTelescopeImage::getLocalSiderealDeg ()
-{
-	return getConnection ()->getValueDouble ("siderealtime") * 15.0;
 }
 
 

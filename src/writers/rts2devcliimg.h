@@ -136,9 +136,7 @@ class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
 		void getEquTel (struct ln_equ_posn *tel);
 		void getEquTar (struct ln_equ_posn *tar);
 		int getMountFlip ();
-		void getAltAz (struct ln_hrz_posn *hrz);
 		void getObs (struct ln_lnlat_posn *obs);
-		double getLocalSiderealDeg ();
 		double getDistance (struct ln_equ_posn *in_pos);
 };
 
