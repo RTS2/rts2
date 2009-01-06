@@ -77,6 +77,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
+	createValue (airmass, "AIRMASS", "Airmass of target location");
+	createValue (hourAngle, "HA", "Location hour angle", true, RTS2_DT_RA);
+	createValue (lst, "LST", "Local Sidereal Time", true, RTS2_DT_RA);
+
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
 
@@ -374,7 +378,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 {
 	struct ln_equ_posn hadec;
 	double ra;
-	double lst;
+	double ls;
 	if (!model || !(correctionsMask->getValueInteger () & COR_MODEL))
 	{
 		model_change->ra = -1 * corrRaDec->getRa();
@@ -384,8 +388,8 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 		pos->dec = pos->dec + corrRaDec->getDec ();
 		return;
 	}
-	lst = getLstDeg (JD);
-	hadec.ra = ln_range_degrees (lst - pos->ra);
+	ls = getLstDeg (JD);
+	hadec.ra = ln_range_degrees (ls - pos->ra);
 	hadec.dec = pos->dec;
 
 	// change RA and DEC when modeling oposite side and we have only one model
@@ -419,7 +423,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	}
 
 	// get back from model - from HA
-	ra = ln_range_degrees (lst - hadec.ra);
+	ra = ln_range_degrees (ls - hadec.ra);
 
 	// calculate change
 	model_change->ra = ln_range_degrees (pos->ra - ra);
@@ -766,6 +770,12 @@ Rts2DevTelescope::info ()
 		rotang->setValueDouble (ln_range_degrees (defaultRotang + 180.0));
 	else
 		rotang->setValueDouble (defaultRotang);
+
+	// fill in airmass, ha and lst
+	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
+	lst->setValueDouble (getLstDeg (ln_get_julian_from_sys ()));
+	hourAngle->setValueDouble (lst->getValueDouble () - telRaDec->getRa ());
+
 	return Rts2Device::info ();
 }
 
