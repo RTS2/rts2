@@ -22,6 +22,8 @@
 
 #include "rts2daemon.h"
 
+using namespace rts2core;
+
 void
 Rts2Daemon::addConnectionSock (int in_sock)
 {
@@ -574,11 +576,25 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 				old_value->getFlags ());
 			break;
 		case RTS2_VALUE_ARRAY:
-			dup_val = new Rts2ValueStringArray (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits (),
-				old_value->getFlags ());
-			break;
+			switch (old_value->getValueBaseType ())
+			{
+				case RTS2_VALUE_STRING:
+					dup_val = new StringArray (old_value->getName (),
+						old_value->getDescription (),
+						old_value->getWriteToFits (),
+						old_value->getFlags ());
+					break;
+				case RTS2_VALUE_DOUBLE:
+					dup_val = new DoubleArray (old_value->getName (),
+						old_value->getDescription (),
+						old_value->getWriteToFits (),
+						old_value->getFlags ());
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "unknow array type: " << old_value->getValueBaseType () << sendLog;
+					break;
+			}
+
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 				getValueType () << sendLog;
