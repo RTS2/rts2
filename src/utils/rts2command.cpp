@@ -333,6 +333,17 @@ Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::st
 }
 
 
+Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2)
+:Rts2Command (_client->getMaster ())
+{
+	char *command;
+	asprintf (&command, PROTO_SET_VALUE " %s %c %f %f", _valName.c_str (), op,
+		_operand1, _operand2);
+	setCommand (command);
+	free (command);
+}
+
+
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, bool _operand)
 :Rts2Command (_client->getMaster ())
 {

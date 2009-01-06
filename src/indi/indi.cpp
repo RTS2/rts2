@@ -54,6 +54,7 @@ class Indi:public Rts2Device
 
 		void setStates ();
 		void setObjRaDec (double ra, double dec);
+		void setCorrRaDec (double ra, double dec);
 		void ISPoll ();
 
 		virtual void message (Rts2Message & msg);
@@ -224,6 +225,17 @@ Indi::setObjRaDec (double ra, double dec)
 }
 
 
+void
+Indi::setCorrRaDec (double ra, double dec)
+{
+	Rts2Conn *tel = getOpenConnection (telescopeName);
+	if (tel)
+	{
+		tel->queCommand (new Rts2CommandChangeValue ((Rts2DevClientTelescope *)tel->getOtherDevClient (), "CORR_", '=', ra, dec));
+	}
+}
+
+
 int
 Indi::changeMasterState (int new_state)
 {
@@ -346,6 +358,7 @@ ISGetProperties (const char *dev)
 	IDDefSwitch (&StatesSP, NULL);
 	IDDefNumber (&eqNum, NULL);
 	IDDefNumber (&eqOffsets, NULL);
+	IDDefNumber (&eqCorr, NULL);
 	IDDefNumber (&horNum, NULL);
 
 	IDDefSwitch (&OnCoordSetSw, NULL);
@@ -378,14 +391,15 @@ void
 ISNewNumber (const char *dev, const char *name, double values[], char *names[], int n)
 {
 	ISInit ();
+
+	double newRA;
+	double newDEC;
+
+	int i=0, nset=0;
+
 	if (!strcmp (name, eqNum.name))
 	{
-		double newRA;
-		double newDEC;
-
 		// parse move request
-		int i=0, nset=0;
-
 		for (nset = i = 0; i < n; i++)
 		{
 			INumber *eqp = IUFindNumber (&eqNum, names[i]);
@@ -413,6 +427,38 @@ ISNewNumber (const char *dev, const char *name, double values[], char *names[], 
 		{
 			eqNum.s = IPS_IDLE;
 			IDSetNumber(&eqNum, "RA or Dec missing or invalid");
+		}
+	}
+	else if (!strcmp (name, eqCorr.name))
+	{
+		// parse move request
+		for (nset = i = 0; i < n; i++)
+		{
+			INumber *eqp = IUFindNumber (&eqCorr, names[i]);
+			if (eqp == &eq[0])
+			{
+        	        	newRA = values[i];
+				nset += newRA >= 0 && newRA <= 24.0;
+			}
+			else if (eqp == &eq[1])
+			{
+				newDEC = values[i];
+				nset += newDEC >= -90.0 && newDEC <= 90.0;
+			}
+		}
+
+		if (nset == 2)
+		{
+			eqCorr.s = IPS_BUSY;
+			device->setCorrRaDec (newRA * 15.0, newDEC);
+			eqCorr.s = IPS_IDLE;
+			IDSetNumber(&eqCorr, NULL);
+			return;
+		}
+		else
+		{
+			eqCorr.s = IPS_IDLE;
+			IDSetNumber(&eqCorr, "RA or Dec missing or invalid");
 		}
 	}
 }

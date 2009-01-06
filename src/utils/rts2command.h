@@ -383,6 +383,7 @@ class Rts2CommandChangeValue:public Rts2Command
 		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long int _operand);
 		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand);
 		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand);
+		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2);
 		Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, bool _operand);
 		/**
 		 * Change rectangle value.
