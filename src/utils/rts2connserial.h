@@ -1,6 +1,6 @@
 /* 
  * Generic serial port connection.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -68,6 +68,9 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		// if we will preint port communication
 		bool debugPortComm;
 
+		// if debugging will be in hex only
+		bool logTrafficAsHex;
+
 		/**
 		 * Returns baud speed as string.
 		 */
@@ -81,6 +84,21 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		int getVTime ()
 		{
 			return vTime;
+		}
+
+		/**
+		 * Log buffer read from port, honest selection between hex and standard debugging.
+		 *
+		 * @param ls    Log stream used for debugging.
+		 * @param lbuf  Buffer which will be logged.
+		 * @param blen  Length of buffer to log.
+		 */
+		void logBuffer (Rts2LogStream &ls, char *lbuf, int blen)
+		{
+			if (logTrafficAsHex)
+				ls.logArrAsHex (lbuf, blen);
+			else
+			  	ls.logArr (lbuf, blen);
 		}
 
 		// set s_termios to port..
@@ -181,10 +199,12 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * Set if debug messages from port communication will be printed.
 		 *
 		 * @param printDebug  True if all port communication should be written to log.
+		 * @param logAsHex    If true, all logging will be in hex.
 		 */
-		void setDebug (bool printDebug = true)
+		void setDebug (bool printDebug = true, bool logAsHex = false)
 		{
 			debugPortComm = printDebug;
+			logTrafficAsHex = logAsHex;
 		}
 
 		/**

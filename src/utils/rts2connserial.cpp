@@ -1,6 +1,6 @@
 /* 
  * Generic serial port connection.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 #include "rts2connserial.h"
 #include "rts2block.h"
 #include <iomanip>
+
 
 int
 Rts2ConnSerial::setAttr ()
@@ -52,6 +53,7 @@ Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpee
 	vTime = _vTime;
 
 	debugPortComm = false;
+	logTrafficAsHex = false;
 }
 
 
@@ -303,7 +305,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 			{
 				Rts2LogStream ls = logStream (MESSAGE_ERROR);
 				ls << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully '";
-				ls.logArr (rbuf, rlen);
+				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
 
 				return -1;
@@ -363,7 +365,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 			{
 				Rts2LogStream ls = logStream (MESSAGE_DEBUG);
 				ls << "readed from port '";
-				ls.logArr (rbuf, rlen);
+				logBuffer (ls, rbuf, rlen);
 				ls << "'" << sendLog;
 			}
 			return rlen;
@@ -373,7 +375,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 	Rts2LogStream ls = logStream (MESSAGE_ERROR);
 	ls << "did not find end char '" << endChar
 		<< "', readed '";
-	ls.logArr (rbuf, rlen);
+	logBuffer (ls, rbuf, rlen);
 	ls << "'" << sendLog;
 	return -1;
 }
