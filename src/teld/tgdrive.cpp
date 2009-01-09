@@ -58,16 +58,6 @@ TGDrive::ecWrite (char *msg)
 	ec_buf[len] = 0x100 - cs;
 	len++;
 
-	Rts2LogStream ls = logStream (MESSAGE_DEBUG);
-	ls << "Will write ";
-	ls.fill ('0');
-	for (i = 0; i < len; i++)
-	{
-		int b = ec_buf[i];
-		ls << "0x" << std::hex << std::setw (2) << (0x000000ff & b) << " ";
-	}
-	ls << sendLog;
-
 	int ret = writePort (ec_buf, len);
 	if (ret)
 		throw TGDriveError (1);
@@ -80,11 +70,6 @@ TGDrive::ecRead (char *msg, int len)
 	// read header
 	int ret;
 	ret = readPort (msg, len);
-	if (ret != len)
-	{
-		logStream (MESSAGE_ERROR) << "msg[1] " << std::hex << (int) msg[0] << std::hex << (int) msg[1] << sendLog;
-		throw TGDriveError (1);
-	}
 	// check checksum..
 	unsigned char cs = 0;
 	for (int i = 1; i < len - 1; i++)
@@ -149,7 +134,7 @@ TGDrive::readStatus ()
 TGDrive::TGDrive (const char *_devName, Rts2Block *_master)
 :Rts2ConnSerial (_devName, _master, BS9600, C8, NONE, 20)
 {
-
+	setLogAsHex (true);
 }
 
 
