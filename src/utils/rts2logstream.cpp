@@ -25,16 +25,21 @@
 void
 Rts2LogStream::logArr (char *arr, int len)
 {
+	bool lastIsHex = false;
 	for (int i = 0; i < len; i++)
 	{
-		if (isalnum (arr[i]) || isblank (arr[i]))
+		if (isprint (arr[i]))
 		{
 			*this << arr[i];
+			lastIsHex = false;
 		}
 		else
 		{
 			int b = arr[i];
-			*this << "0x" << std::setfill ('0') << std::hex << std::setw (2) << (0x000000ff & b) << " ";
+			if (!lastIsHex)
+				*this << ' ';
+			*this << "0x" << std::setfill ('0') << std::hex << std::setw (2) << (0x000000ff & b) << ' ';
+			lastIsHex = true;
 		}
 	}
 }
