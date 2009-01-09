@@ -150,7 +150,7 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * @param buf Buffer where data will be readed.
 		 * @param b_len Lenght of buffer to read data.
 		 *
-		 * @return -1 on error, number of bytes readed on success.
+		 * @return -1 on error, number of read bytes on success.
 		 */
 		int readPort (char *rbuf, int b_len);
 
