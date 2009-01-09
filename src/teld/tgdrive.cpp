@@ -18,6 +18,7 @@
  */
 
 #include "tgdrive.h"
+#include <iomanip>
 
 // defines for protocol
 #define MSG_START       0x2B
@@ -39,7 +40,7 @@ TGDrive::ecWrite (char *msg)
 		ec_buf[i] = msg[i];
 
 	int len = 3;
-	char cs = msg[1] + msg[2];
+	unsigned char cs = msg[1] + msg[2];
 
 	// escape
 	for (; i < 3 + msg[2]; i++, len++)
@@ -54,8 +55,18 @@ TGDrive::ecWrite (char *msg)
 	}
 
 	// checksum
-	ec_buf[len] = ~cs;
+	ec_buf[len] = 0x100 - cs;
 	len++;
+
+	Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+	ls << "Will write ";
+	ls.fill ('0');
+	for (i = 0; i < len; i++)
+	{
+		int b = ec_buf[i];
+		ls << "0x" << std::hex << std::setw (2) << (0x000000ff & b) << " ";
+	}
+	ls << sendLog;
 
 	int ret = writePort (ec_buf, len);
 	if (ret)
@@ -70,18 +81,27 @@ TGDrive::ecRead (char *msg, int len)
 	int ret;
 	ret = readPort (msg, len);
 	if (ret != len)
+	{
+		logStream (MESSAGE_ERROR) << "msg[1] " << std::hex << (int) msg[0] << std::hex << (int) msg[1] << sendLog;
 		throw TGDriveError (1);
+	}
 	// check checksum..
-	char cs = 0;
+	unsigned char cs = 0;
 	for (int i = 1; i < len - 1; i++)
 		cs += msg[i];
-	if (msg[len - 1] != ~cs)
+
+	cs = 0x100 - cs;
+
+	if (msg[len - 1] != cs)
 	{
-	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) ~cs << " received " << std::hex << (int) msg[len - 1] << "." << sendLog;
-		throw TGDriveError (2);
+	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (int) msg[len - 1] << "." << sendLog;
+		// throw TGDriveError (2);
 	}
 	if (msg[1] != STAT_OK)
-		throw TGDriveError (msg[1]);
+	{
+		logStream (MESSAGE_ERROR) << "status is not OK, it is " << std::hex << (int) msg[1] << sendLog;
+//		throw TGDriveError (msg[1]);
+	}
 }
 
 void
@@ -101,6 +121,7 @@ TGDrive::writeMsg (char op, int16_t address)
 void
 TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 {
+	logStream (MESSAGE_ERROR) << "writeMsg " << len << sendLog;
 	char msg[6 + len];
 	msg[0] = MSG_START;
 	msg[1] = op;
@@ -108,8 +129,11 @@ TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 	msg[3] = len;
 	*((int16_t *) (msg + 4)) = address;
 	for (int i = 0; i < len; i++)
-		msg[i + 5] = data[i];
+	{
+		msg[i + 6] = data[i];
+	}
 
+	logStream (MESSAGE_ERROR) << "ecWrite " << sendLog;
 	ecWrite (msg);
 }
 
@@ -123,7 +147,7 @@ TGDrive::readStatus ()
 
 
 TGDrive::TGDrive (const char *_devName, Rts2Block *_master)
-:Rts2ConnSerial (_devName, _master, BS9600, C8, NONE, 1)
+:Rts2ConnSerial (_devName, _master, BS9600, C8, NONE, 20)
 {
 
 }
@@ -142,7 +166,7 @@ TGDrive::read2b (int16_t address)
 void
 TGDrive::write2b (int16_t address, int16_t data)
 {
-	writeMsg (0x02, address, (char *) data, 2);
+	writeMsg (0x02, address, (char *) &data, 2);
 	readStatus ();
 }
 
@@ -150,7 +174,7 @@ TGDrive::write2b (int16_t address, int16_t data)
 int32_t
 TGDrive::read4b (int16_t address)
 {
-	writeMsg (0xD2, address);
+	writeMsg (0xD4, address);
 	char msg[7];
 	ecRead (msg, 7);
 	return * (( int32_t *) (msg + 2));
@@ -161,6 +185,6 @@ TGDrive::read4b (int16_t address)
 void
 TGDrive::write4b (int16_t address, int32_t data)
 {
-	writeMsg (0x02, address, (char *) data, 4);
+	writeMsg (0x02, address, (char *) &data, 4);
 	readStatus ();
 }

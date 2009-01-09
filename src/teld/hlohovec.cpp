@@ -20,6 +20,9 @@
 #include "tgdrive.h"
 #include "telescope.h"
 
+#define OPT_RA            OPT_LOCALHOST + 2201
+#define OPT_DEC           OPT_LOCALHOST + 2202
+
 using namespace rts2teld;
 
 namespace rts2teld
@@ -66,7 +69,7 @@ class Hlohovec:public Rts2DevTelescope
 void
 Hlohovec::usage ()
 {
-	std::cout << "\t" << getAppName () << " -r /dev/ttyS0 -d /dev/ttyS1" << std::endl;
+	std::cout << "\t" << getAppName () << " --ra /dev/ttyS0 --dec /dev/ttyS1" << std::endl;
 }
 
 
@@ -75,10 +78,10 @@ Hlohovec::processOption (int opt)
 {
 	switch (opt)
 	{
-		case 'r':
+		case OPT_RA:
 			devRA = optarg;
 			break;
-		case 'd':
+		case OPT_DEC:
 			devDEC = optarg;
 			break;
 		default:
@@ -108,9 +111,21 @@ Hlohovec::init ()
 	}
 
 	raDrive = new TGDrive (devRA, this);
+	raDrive->setDebug ();
+	ret = raDrive->init ();
+	if (ret)
+		return ret;
+
+	raDrive->write2b (0x1ED, 2);
 
 	if (devDEC != NULL)
+	{
 		decDrive = new TGDrive (devDEC, this);
+		decDrive->setDebug ();
+		ret = decDrive->init ();
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -180,8 +195,8 @@ Hlohovec::Hlohovec (int argc, char **argv):Rts2DevTelescope (argc, argv)
 	createValue (dec_rPos, "AX_DEC_T", "Target DEC position", true);
 	createValue (dec_dPos, "AX_DEC_C", "Current DEC position", true);
 
-	addOption ('r', NULL, 1, "RA drive serial device");
-	addOption ('d', NULL, 1, "DEC drive serial device");
+	addOption (OPT_RA, "ra", 1, "RA drive serial device");
+	addOption (OPT_DEC, "dec", 1, "DEC drive serial device");
 }
 
 
