@@ -86,12 +86,8 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	if (debugModbusComm)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
-		ls << "send";
-		ls.fill ('0');
-		for (size_t i = 0; i < data_size; i++)
-		{
-			ls << " " << std::hex << std::setw (2) << (int) (send_data[i]);
-		}
+		ls << "send ";
+		ls.logArrAsHex (send_data, data_size);
 		ls << sendLog;
 	}
 
@@ -146,12 +142,8 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	if (debugModbusComm)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
-		ls << "recv";
-		ls.fill ('0');
-		for (size_t i = 0; i < reply_size; i++)
-		{
-			ls << " " << std::setw (2) << std::hex << (int) (reply_data[i]);
-		}
+		ls << "recv ";
+		ls.logArrAsHex (reply_data, reply_size);
 		ls << sendLog;
 	}
 

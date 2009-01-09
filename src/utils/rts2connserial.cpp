@@ -301,7 +301,11 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		{
 			if (ntries == 0)
 			{
-				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully " << sendLog;
+				Rts2LogStream ls = logStream (MESSAGE_ERROR);
+				ls << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully '";
+				ls.logArr (rbuf, rlen);
+				ls << "'" << sendLog;
+
 				return -1;
 			}
 			ntries--;
@@ -357,22 +361,20 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 			rlen += ret;
 			if (debugPortComm)
 			{
-				char *tmp_b = new char[rlen + 1];
-				memcpy (tmp_b, rbuf, rlen);
-				tmp_b[rlen] = '\0';
-				logStream (MESSAGE_DEBUG) << "readed from port '" << tmp_b << "'" << sendLog;
-				delete []tmp_b;
+				Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+				ls << "readed from port '";
+				ls.logArr (rbuf, rlen);
+				ls << "'" << sendLog;
 			}
 			return rlen;
 		}
 		rlen += ret;
 	}
-	char *tmp_b = new char[rlen + 1];
-	memcpy (tmp_b, rbuf, rlen);
-	tmp_b[rlen] = '\0';
-	logStream (MESSAGE_ERROR) << "did not find end char '" << endChar
-		<< "', readed '" << tmp_b << "'" << sendLog;
-	delete []tmp_b;
+	Rts2LogStream ls = logStream (MESSAGE_ERROR);
+	ls << "did not find end char '" << endChar
+		<< "', readed '";
+	ls.logArr (rbuf, rlen);
+	ls << "'" << sendLog;
 	return -1;
 }
 
