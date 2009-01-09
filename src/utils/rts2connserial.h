@@ -199,12 +199,21 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * Set if debug messages from port communication will be printed.
 		 *
 		 * @param printDebug  True if all port communication should be written to log.
-		 * @param logAsHex    If true, all logging will be in hex.
 		 */
-		void setDebug (bool printDebug = true, bool logAsHex = false)
+		void setDebug (bool printDebug = true)
 		{
 			debugPortComm = printDebug;
-			logTrafficAsHex = logAsHex;
+		}
+
+		
+		/**
+		 * Log all trafix as hex.
+		 *
+		 * @param logArrAsHex If true, all traffic will be logged in hex values.
+		 */
+		void setLogAsHex (bool logArrAsHex = true)
+		{
+			logTrafficAsHex = logArrAsHex;
 		}
 
 		/**
