@@ -301,7 +301,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 		{
 			if (ntries == 0)
 			{
-				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port" << sendLog;
+				logStream (MESSAGE_ERROR) << "read 0 bytes from serial port after reading " << rlen << " bytes sucessfully " << sendLog;
 				return -1;
 			}
 			ntries--;
