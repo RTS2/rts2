@@ -45,13 +45,13 @@ TelFork::sky2counts (int32_t & ac, int32_t & dc)
 int
 TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
-	double lst, ra, dec;
+	double ls, ra, dec;
 	struct ln_hrz_posn hrz;
 	struct ln_equ_posn model_change;
 	int ret;
 	bool flip = false;
 
-	lst = getLstDeg (JD);
+	ls = getLstDeg (JD);
 
 	ln_get_hrz_from_equ (pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
 	if (hrz.alt < -1)
@@ -64,7 +64,7 @@ TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 	}
 
 	// get hour angle
-	ra = ln_range_degrees (lst - pos->ra);
+	ra = ln_range_degrees (ls - pos->ra);
 	if (ra > 180.0)
 		ra -= 360.0;
 
@@ -146,7 +146,7 @@ TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 int
 TelFork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 {
-	double JD, lst;
+	double JD, ls;
 	int32_t homeOff;
 	int ret;
 
@@ -155,14 +155,14 @@ TelFork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 		return -1;
 
 	JD = ln_get_julian_from_sys ();
-	lst = getLstDeg (JD);
+	ls = getLstDeg (JD);
 
 	ac += homeOff;
 
 	ra = (double) (ac / haCpd) - haZero;
 	dec = (double) (dc / decCpd) + decZero;
 
-	ra = lst - ra;
+	ra = ls - ra;
 
 	// flipped
 	if (fabs (dec) > 90)
