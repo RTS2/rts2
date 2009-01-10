@@ -301,7 +301,6 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		virtual long isExposing ();
 		virtual int readoutStart ();
 		virtual int readoutOneLine ();
-		virtual void cancelPriorityOperations ();
 		virtual int endReadout ();
 	public:
 		Rts2CamdEdtSao (int in_argc, char **in_argv);
@@ -1001,13 +1000,6 @@ Rts2CamdEdtSao::readoutOneLine ()
 	if (ret < 0)
 		return -1;
 	return -2;
-}
-
-
-void
-Rts2CamdEdtSao::cancelPriorityOperations ()
-{
-	Rts2DevCamera::cancelPriorityOperations ();
 }
 
 
