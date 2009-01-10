@@ -19,12 +19,15 @@
 
 #include "sensord.h"
 
+using namespace rts2core;
+
 class Rts2DevSensorDummy:public Rts2DevSensor
 {
 	private:
 		Rts2ValueInteger *testInt;
 		Rts2ValueBool *goodWeather;
 		Rts2ValueDoubleStat *statTest;
+		DoubleArray *statContent;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 	public:
@@ -35,6 +38,8 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 			goodWeather->setValueBool (false);
 			setWeatherState (goodWeather->getValueBool ());
 			createValue (statTest, "test_stat", "test stat value", true);
+
+			createValue (statContent, "test_content", "test content", true);
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true);
 		}
@@ -62,8 +67,7 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 				statTest->addValue (aval);
 				statTest->calculate ();
 
-				statTest->addValue (aval);
-				statTest->calculate ();
+				statContent->addValue (aval);
 
 				infoAll ();
 				return 0;

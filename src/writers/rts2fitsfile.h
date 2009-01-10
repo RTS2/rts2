@@ -131,17 +131,31 @@ class Rts2FitsFile: public Rts2Expander
 		 * @param _tv Timeval used for expansio of time-related keywords in expression.
 		 */
 		Rts2FitsFile (const char *_expression, const struct timeval *_tv);
+
 		virtual ~Rts2FitsFile (void);
 
 		/**
-		 * Return filename of which holds all data from current image.
+		 * Return full filename.
 		 *
-		 * @return Filename of the FITS file.
+		 * @return Filename of this FITS file.
 		 */
-		virtual const char * getFileName ();
+		virtual const char *getFileName ();
 
+		/**
+		 * Close file.
+		 *
+		 * @return -1 on error, 0 on success
+		 */
 		virtual int closeFile ();
 
+		
+		/**
+		 * Expand FITS path.
+		 *
+		 * @param pathEx Path expansion string.
+		 *
+		 * @return Expanded path.
+		 */
 		std::string expandPath (std::string pathEx)
 		{
 			return expand (pathEx);
@@ -165,6 +179,11 @@ class Rts2FitsFile: public Rts2Expander
 		 */
 		int writeComment (const char *comment);
 
+		/**
+		 * Return true if image shall be written to disk before it is closed.
+		 *
+		 * @return True if images shall be written.
+		 */
 		bool shouldSaveImage ()
 		{
 			return (flags & IMAGE_SAVE);

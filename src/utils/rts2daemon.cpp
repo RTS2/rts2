@@ -22,6 +22,8 @@
 
 #include "rts2daemon.h"
 
+using namespace rts2core;
+
 void
 Rts2Daemon::addConnectionSock (int in_sock)
 {
@@ -38,6 +40,7 @@ Rts2Daemon::addConnectionSock (int in_sock)
 Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):
 Rts2Block (_argc, _argv)
 {
+	lockPrefix = NULL;
 	lockf = 0;
 
 	daemonize = DO_DAEMONIZE;
@@ -54,6 +57,8 @@ Rts2Block (_argc, _argv)
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
 	addOption (OPT_LOCALPORT, "local-port", 1,
 		"define local port on which we will listen to incoming requests");
+	addOption (OPT_LOCKPREFIX, "lock-prefix", 1,
+		"prefix for lock file");
 }
 
 
@@ -79,6 +84,9 @@ Rts2Daemon::processOption (int in_opt)
 			break;
 		case OPT_LOCALPORT:
 			setPort (atoi (optarg));
+			break;
+		case OPT_LOCKPREFIX:
+			setLockPrefix (optarg);
 			break;
 		default:
 			return Rts2Block::processOption (in_opt);
@@ -143,6 +151,15 @@ Rts2Daemon::doDeamonize ()
 	daemonize = IS_DAEMONIZED;
 	openlog (NULL, LOG_PID, LOG_DAEMON);
 	return 0;
+}
+
+
+const char *
+Rts2Daemon::getLockPrefix ()
+{
+	if (lockPrefix == NULL)
+		return LOCK_PREFIX;
+	return lockPrefix;
 }
 
 
@@ -559,11 +576,25 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 				old_value->getFlags ());
 			break;
 		case RTS2_VALUE_ARRAY:
-			dup_val = new Rts2ValueStringArray (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits (),
-				old_value->getFlags ());
-			break;
+			switch (old_value->getValueBaseType ())
+			{
+				case RTS2_VALUE_STRING:
+					dup_val = new StringArray (old_value->getName (),
+						old_value->getDescription (),
+						old_value->getWriteToFits (),
+						old_value->getFlags ());
+					break;
+				case RTS2_VALUE_DOUBLE:
+					dup_val = new DoubleArray (old_value->getName (),
+						old_value->getDescription (),
+						old_value->getWriteToFits (),
+						old_value->getFlags ());
+					break;
+				default:
+					logStream (MESSAGE_ERROR) << "unknow array type: " << old_value->getValueBaseType () << sendLog;
+					break;
+			}
+
 		default:
 			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
 				getValueType () << sendLog;

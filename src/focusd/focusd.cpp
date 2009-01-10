@@ -29,6 +29,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 	focTemp = NULL;
 
 	createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
+	createValue (focTarget, "TARGET", "focuser target value", true);
 
 	addOption ('o', "home", 1, "home position (default to 750!)");
 	addOption ('p', "start_position", 1,
@@ -63,7 +64,10 @@ Rts2DevFocuser::checkState ()
 		ret = isFocusing ();
 
 		if (ret >= 0)
+		{
 			setTimeout (ret);
+			sendValueAll (focPos);
+		}
 		else
 		{
 			ret = endFocusing ();
@@ -122,7 +126,7 @@ Rts2DevFocuser::setTo (int num)
 	if (ret)
 		return ret;
 
-	focPositionNew = num;
+	setFocTarget (num);
 	steps = num - getFocPos ();
 	setFocusTimeout ((int) ceil (abs (steps) / focStepSec) + 5);
 
@@ -145,7 +149,7 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
 	if (ret)
 		return ret;
 
-	focPositionNew = getFocPos () + num;
+	setFocTarget (getFocPos () + num);
 	setFocusTimeout ((int) ceil (abs (num) / focStepSec) + 5);
 
 	ret = stepOut (num);
@@ -217,7 +221,7 @@ Rts2DevFocuser::isFocusing ()
 	ret = info ();
 	if (ret)
 		return -1;
-	if (getFocPos () != focPositionNew)
+	if (getFocPos () != getFocTarget ())
 		return USEC_SEC;
 	return -2;
 }
@@ -252,7 +256,7 @@ Rts2DevFocuser::checkStartPosition ()
 int
 Rts2DevFocuser::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == focPos)
+	if (old_value == focPos || old_value == focTarget)
 	{
 		return setTo (NULL, new_value->getValueInteger ())? -2 : 1;
 	}

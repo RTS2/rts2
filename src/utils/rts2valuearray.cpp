@@ -1,6 +1,6 @@
 /* 
  * Array values.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008,2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,20 +22,22 @@
 
 #include "utilsfunc.h"
 
-Rts2ValueStringArray::Rts2ValueStringArray (std::string _val_name)
+using namespace rts2core;
+
+StringArray::StringArray (std::string _val_name)
 :Rts2Value (_val_name)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
-Rts2ValueStringArray::Rts2ValueStringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
+StringArray::StringArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
 :Rts2Value (_val_name, _description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_STRING;
 }
 
 int
-Rts2ValueStringArray::setValue (Rts2Conn * connection)
+StringArray::setValue (Rts2Conn * connection)
 {
 	value.clear ();
 
@@ -53,7 +55,7 @@ Rts2ValueStringArray::setValue (Rts2Conn * connection)
 
 
 int
-Rts2ValueStringArray::setValueCharArr (const char *_value)
+StringArray::setValueCharArr (const char *_value)
 {
 	value = SplitStr (std::string (_value), std::string (" "));
 	changed ();
@@ -62,7 +64,7 @@ Rts2ValueStringArray::setValueCharArr (const char *_value)
 
 
 const char *
-Rts2ValueStringArray::getValue ()
+StringArray::getValue ()
 {
 	_os = std::string ();
 	std::vector <std::string>::iterator iter = value.begin ();
@@ -79,14 +81,115 @@ Rts2ValueStringArray::getValue ()
 
 
 void
-Rts2ValueStringArray::setFromValue (Rts2Value * newValue)
+StringArray::setFromValue (Rts2Value * newValue)
 {
 	setValueCharArr (newValue->getValue ());
 }
 
 
 bool
-Rts2ValueStringArray::isEqual (Rts2Value *other_val)
+StringArray::isEqual (Rts2Value *other_val)
 {
 	return !strcmp (getValue (), other_val->getValue ());
+}
+
+DoubleArray::DoubleArray (std::string _val_name)
+:Rts2Value (_val_name)
+{
+	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
+}
+
+DoubleArray::DoubleArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
+:Rts2Value (_val_name, _description, writeToFits, flags)
+{
+	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE;
+}
+
+int
+DoubleArray::setValue (Rts2Conn * connection)
+{
+	value.clear ();
+
+	while (!(connection->paramEnd ()))
+	{
+		double nextVal;
+		int ret = connection->paramNextDouble (&nextVal);
+		if (ret)
+			return -2;
+		value.push_back (nextVal);
+	}
+	changed ();
+	return 0;
+}
+
+
+int
+DoubleArray::setValueCharArr (const char *_value)
+{
+	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
+	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
+	{
+		value.push_back (atof ((*iter).c_str ()));
+	}
+	changed ();
+	return 0;
+}
+
+
+const char *
+DoubleArray::getValue ()
+{
+	std::ostringstream oss;
+	std::vector <double>::iterator iter = value.begin ();
+	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	while (iter != value.end ())
+	{
+		oss << (*iter);
+		iter++;
+		if (iter == value.end ())
+			break;
+		oss << std::string (" ");
+	}
+	_os = oss.str ();
+	return _os.c_str ();
+}
+
+
+void
+DoubleArray::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+	{
+		value.clear ();
+		DoubleArray *nv = (DoubleArray *) newValue;
+		for (std::vector <double>::iterator iter = nv->valueBegin (); iter != nv->valueEnd (); iter++)
+			value.push_back (*iter);
+		changed ();
+	}
+	else
+	{
+		setValueCharArr (newValue->getValue ());
+	}
+}
+
+
+bool
+DoubleArray::isEqual (Rts2Value *other_val)
+{
+	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_DOUBLE))
+	{
+		DoubleArray *ov = (DoubleArray *) other_val;
+		if (ov->size () != value.size ())
+			return false;
+		
+		std::vector <double>::iterator iter1;
+		std::vector <double>::iterator iter2;
+		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
+		{
+			if (*iter1 != *iter2)
+				return false;
+		}
+		return true;
+	}
+	return false;
 }

@@ -503,12 +503,20 @@ stdinCB (int fd, void *ud)
 	printf ("callback: %d\n", ++(*(int*)ud));
 }
 
+
 int
-main (int ac, char *av[])
+eventLoopRun ()
 {
 	(void) addCallback (0, stdinCB, &user_a);
 	eventLoop();
-	exit(0);
+	return 0;
+}
+
+
+int
+main (int ac, char *av[])
+{
+	return eventLoopRun ();
 }
 
 #endif

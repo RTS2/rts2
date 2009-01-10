@@ -1,6 +1,6 @@
 /* 
  * Generic serial port connection.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -68,6 +68,9 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		// if we will preint port communication
 		bool debugPortComm;
 
+		// if debugging will be in hex only
+		bool logTrafficAsHex;
+
 		/**
 		 * Returns baud speed as string.
 		 */
@@ -81,6 +84,21 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		int getVTime ()
 		{
 			return vTime;
+		}
+
+		/**
+		 * Log buffer read from port, honest selection between hex and standard debugging.
+		 *
+		 * @param ls    Log stream used for debugging.
+		 * @param lbuf  Buffer which will be logged.
+		 * @param blen  Length of buffer to log.
+		 */
+		void logBuffer (Rts2LogStream &ls, char *lbuf, int blen)
+		{
+			if (logTrafficAsHex)
+				ls.logArrAsHex (lbuf, blen);
+			else
+			  	ls.logArr (lbuf, blen);
 		}
 
 		// set s_termios to port..
@@ -150,7 +168,7 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * @param buf Buffer where data will be readed.
 		 * @param b_len Lenght of buffer to read data.
 		 *
-		 * @return -1 on error, number of bytes readed on success.
+		 * @return -1 on error, number of read bytes on success.
 		 */
 		int readPort (char *rbuf, int b_len);
 
@@ -185,6 +203,17 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		void setDebug (bool printDebug = true)
 		{
 			debugPortComm = printDebug;
+		}
+
+		
+		/**
+		 * Log all trafix as hex.
+		 *
+		 * @param logArrAsHex If true, all traffic will be logged in hex values.
+		 */
+		void setLogAsHex (bool logArrAsHex = true)
+		{
+			logTrafficAsHex = logArrAsHex;
 		}
 
 		/**

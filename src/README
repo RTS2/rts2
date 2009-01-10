@@ -15,7 +15,6 @@ sensors		Various sensor devices
 indi		INDI (KStars) device driver
 logger		logd and logger (client)
 xmlrpc		xmlrpc daemon
-voevent		VOEvent listener - rts2-voeventd
-bridge		component which provides unique interface (running on single port) to all RTS2 functionalities
 scheduler       advanced schedulers for RTS2 night and longer runs
 libindi         libraries for indi communication
+stellarium	Stellarium client (allows control of arbitary telescope supported by RTS2)

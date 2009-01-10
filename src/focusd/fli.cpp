@@ -21,8 +21,9 @@
 #include "libfli.h"
 
 /**
- * FLI focuser driver. You will need FLIlib and option to ./configure (--with-fli=<llibflidir>)
- * to get that running. You can get libfli on http://www.moronski.com/fli
+ * FLI focuser driver. You will need FLIlib and option to ./configure
+ * (--with-fli=<llibflidir>) to get that running. Please read ../../INSTALL.fli
+ * for instructions.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */

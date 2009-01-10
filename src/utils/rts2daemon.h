@@ -88,6 +88,11 @@ class Rts2Daemon:public Rts2Block
 
 		bool doHupIdleLoop;
 
+		/**
+		 * Prefix (directory) for lock file.
+		 */
+		const char *lockPrefix;
+
 	protected:
 		
 		/**
@@ -132,7 +137,31 @@ class Rts2Daemon:public Rts2Block
 		virtual bool isRunning (Rts2Conn *conn) = 0;
 
 		int doDeamonize ();
+
+		/**
+		 * Set lock prefix.
+		 *
+		 * @param _lockPrefix New lock prefix.
+		 */
+		void setLockPrefix (const char *_lockPrefix)
+		{
+			lockPrefix = _lockPrefix;
+		}
+	
+		/**
+		 * Return prefix (directory) for lock files.
+		 *
+		 * @return Prefix for lock files.
+		 */
+		const char *getLockPrefix ();
+
+		/**
+		 * Write to lock file process PID, and lock it.
+		 *
+		 * @return 0 on success, -1 on error.
+		 */
 		int lockFile ();
+
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
 

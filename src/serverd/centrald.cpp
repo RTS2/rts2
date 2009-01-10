@@ -564,7 +564,7 @@ Rts2Centrald::init ()
 	centraldConnRunning (NULL);
 
 	char *lF;
-	asprintf (&lF, LOCK_PREFIX "centrald_%i", getPort ());
+	asprintf (&lF, "%scentrald_%i", getLockPrefix (), getPort ());
 	ret = checkLockFile (lF);
 	free (lF);
 

@@ -125,6 +125,21 @@ class Rts2DevTelescope:public Rts2Device
 		 */
 		Rts2ValueRaDec *telRaDec;
 
+		/**
+		 * Current airmass.
+		 */
+		Rts2ValueDouble *airmass;
+
+		/**
+		 * Hour angle.
+		 */
+		Rts2ValueDouble *hourAngle;
+
+		/**
+		 * Local sidereal time.
+		 */
+		Rts2ValueDouble *lst;
+
 	protected:
 		/**
 		 * Set telescope RA.

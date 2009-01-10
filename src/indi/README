@@ -1,7 +1,0 @@
-For it to work, you will need to add following to
-devGroup="Telescopes" in /usr/share/apps/kstars/drivers.xml:
-
-	<device label="RTS2" driver="RTS2 <-> INDI">
-		<Exec>rts2-indi</Exec>
-		<Version>0.1</Version>
-	</device>

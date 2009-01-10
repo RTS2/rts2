@@ -1,0 +1,47 @@
+From ~ November 2008, RTS2 contains modified INDI libraries, so you do not need
+to worry about passing right parameters to ./configure anymore. After make &&
+make install, you shall have rts2-indi in /usr/local/bin and typing
+
+rts2-indi -h
+
+will get you list of supported command line options.
+
+For INDI driver to work, you will need to follow this instructions:
+
+For kstars 3 and bellow, you will need to add following to
+devGroup="Telescopes" in /usr/share/apps/kstars/drivers.xml:
+
+	<device label="RTS2" driver="RTS2 <-> INDI">
+		<Exec>indi_rts2</Exec>
+		<Version>0.1</Version>
+	</device>
+
+For kstars 4 and up, you will need to add following to
+/usr/share/kde4/apps/kstars/drivers.xml:
+
+<ScopeDrivers>
+        ... your drivers
+        <driver>indi_rts2</driver>
+</ScopeDrivers>
+<devGroup group="Telescopes">
+        ... your devices
+        <device label="RTS2" focal_length="" aperture="">
+                <name>RTS2 INDI</name>
+                <driver>rts2-indi</driver>
+                <version>0.1</version>
+        </device>
+</devGroup>
+
+Following is common to all version of KStars:
+
+Now you need to create /usr/bin/indi_rts2 with following context:
+
+#!/bin/bash
+
+/home/petr/rts2/src/indi/rts2-indi -t T0
+
+You should replace T0 with name of your telescope device (see
+/etc/rts2/devices). Then chmod a+x /usr/bin/indi_rts2
+
+and select RTS2 driver in in INDI Device Manager, and you shall be able to move
+your scope, see its status in INDI Control pannel, and so on.

@@ -38,7 +38,7 @@ class Rts2DevFocuser:public Rts2Device
 	protected:
 		std::string focType;
 		Rts2ValueInteger *focPos;
-		int focPositionNew;
+		Rts2ValueInteger *focTarget;
 		Rts2ValueFloat *focTemp;
 		// minimal steps/sec count; 5 sec will be added to top it
 		int focStepSec;
@@ -72,19 +72,44 @@ class Rts2DevFocuser:public Rts2Device
 		{
 			createValue (focTemp, "FOC_TEMP", "focuser temperature");
 		}
-	public:
-		Rts2DevFocuser (int argc, char **argv);
 
-		// set switch state
-		virtual int setSwitch (int switch_num, int new_state)
+		/**
+		 * Returns focuser target value.
+		 *
+		 * @return Focuser target position.
+		 */
+		int getFocTarget ()
 		{
-			return -1;
+			return focTarget->getValueInteger ();
+		}
+
+		/**
+		 * Set focuser target position.
+		 *
+		 * @param _focTarget New target position.
+		 */
+		void setFocTarget (int _focTarget)
+		{
+			focTarget->setValueInteger (_focTarget);
 		}
 
 		// callback functions from focuser connection
 		virtual int initValues ();
 		virtual int idle ();
+
+	public:
+		Rts2DevFocuser (int argc, char **argv);
+
 		virtual int ready (Rts2Conn * conn);
+
+		/**
+		 * TODO remove
+		 */
+		virtual int setSwitch (int switch_num, int new_state)
+		{
+			return -1;
+		}
+
 		void checkState ();
 		int stepOut (Rts2Conn * conn, int num);
 		int setTo (Rts2Conn * conn, int num);

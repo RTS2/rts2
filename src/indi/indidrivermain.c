@@ -3,6 +3,7 @@
     Copyright (C) 2003-2006 Elwood C. Downey
 
 			Modified by Jasem Mutlaq (2003-2006)
+			Modified by Petr Kubanek (2008)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -44,9 +45,9 @@
 #include "base64.h"
 #include "eventloop.h"
 #include "indidevapi.h"
+#include "indidrivermain.h"
 #include "indicom.h"
 
-static void usage(void);
 static void clientMsgCB(int fd, void *arg);
 static int dispatch (XMLEle *root, char msg[]);
 static int crackDN (XMLEle *root, char **dev, char **name, char msg[]);
@@ -74,8 +75,8 @@ typedef struct
 
 static ROSC *roCheck;
 
-int
-main (int ac, char *av[])
+void
+IDProcessParams (int ac, char *av[])
 {
 #ifndef _WIN32
         setgid( getgid() );
@@ -89,22 +90,18 @@ main (int ac, char *av[])
 	for (me = av[0]; av[0][0]; av[0]++)
 	    if (av[0][0] == '/')
 		me = &av[0][1];
+}
 
-	/* crack args */
-	while (--ac && (*++av)[0] == '-')
-	    while (*++(*av))
-		switch (*(*av)) {
-		case 'v':	/* verbose */
-		    verbose++;
-		    break;
-		default:
-		    usage();
-		}
+void
+IDIncVerbosity ()
+{
+    verbose++;
+}
 
-	/* ac remaining args starting at av[0] */
-	if (ac > 0)
-	    usage();
 
+int
+IDMain ()
+{
 	/* init */
 	clixml =  newLilXML();
 	addCallback (0, clientMsgCB, NULL);
@@ -1139,9 +1136,9 @@ IUSnoopLight (XMLEle *root, ILightVectorProperty *lvp)
 	/* match each oneLight with one ILight */
 	for (ep = nextXMLEle(root,1); ep; ep = nextXMLEle(root,0)) {
 	    if (!strcmp (tagXMLEle(ep), "oneLight")) {
-		const char *name = findXMLAttValu (ep, "name");
+		const char *n_name = findXMLAttValu (ep, "name");
 		for (i = 0; i < lvp->nlp; i++) {
-		    if (!strcmp (lvp->lp[i].name, name)) {
+		    if (!strcmp (lvp->lp[i].name, n_name)) {
 			if (crackIPState(pcdataXMLEle(ep), &lvp->lp[i].s) < 0) {
 			    return (-1);	/* unrecognized state */
 			}
@@ -1178,9 +1175,9 @@ IUSnoopSwitch (XMLEle *root, ISwitchVectorProperty *svp)
 	/* match each oneSwitch with one ISwitch */
 	for (ep = nextXMLEle(root,1); ep; ep = nextXMLEle(root,0)) {
 	    if (!strcmp (tagXMLEle(ep), "oneSwitch")) {
-		const char *name = findXMLAttValu (ep, "name");
+		const char *n_name = findXMLAttValu (ep, "name");
 		for (i = 0; i < svp->nsp; i++) {
-		    if (!strcmp (svp->sp[i].name, name)) {
+		    if (!strcmp (svp->sp[i].name, n_name)) {
 			if (crackISState(pcdataXMLEle(ep), &svp->sp[i].s) < 0) {
 			    return (-1);	/* unrecognized state */
 			}
@@ -1218,10 +1215,10 @@ IUSnoopBLOB (XMLEle *root, IBLOBVectorProperty *bvp)
 	/* match each oneBLOB with one IBLOB */
 	for (ep = nextXMLEle(root,1); ep; ep = nextXMLEle(root,0)) {
 	    if (!strcmp (tagXMLEle(ep), "oneBLOB")) {
-		const char *name = findXMLAttValu (ep, "name");
+		const char *n_name = findXMLAttValu (ep, "name");
 		for (i = 0; i < bvp->nbp; i++) {
 		    IBLOB *bp = &bvp->bp[i];
-		    if (!strcmp (bp->name, name)) {
+		    if (!strcmp (bp->name, n_name)) {
 			strcpy (bp->format, findXMLAttValu (ep,"format"));
 			bp->size = atof (findXMLAttValu (ep,"size"));
 			bp->bloblen = pcdatalenXMLEle(ep)+1;
@@ -1236,18 +1233,6 @@ IUSnoopBLOB (XMLEle *root, IBLOBVectorProperty *bvp)
 
 	/* ok */
 	return (0);
-}
-
-/* print usage message and exit (1) */
-static void
-usage(void)
-{
-	fprintf (stderr, "Usage: %s [options]\n", me);
-	fprintf (stderr, "Purpose: INDI Device driver framework.\n");
-	fprintf (stderr, "Options:\n");
-	fprintf (stderr, " -v    : more verbose to stderr\n");
-
-	exit (1);
 }
 
 /* callback when INDI client message arrives on stdin.
@@ -1363,7 +1348,7 @@ dispatch (XMLEle *root, char msg[])
 	    static char **names;
 	    static int maxn;
 	    char *dev, *name;
-	    XMLEle *ep;
+	    XMLEle *n_ep;
 
 	    /* pull out device and name */
 	    if (crackDN (root, &dev, &name, msg) < 0)
@@ -1376,9 +1361,9 @@ dispatch (XMLEle *root, char msg[])
 	    }
 
 	    /* pull out each name/state pair */
-	    for (n = 0, ep = nextXMLEle(root,1); ep; ep = nextXMLEle(root,0)) {
-		if (strcmp (tagXMLEle(ep), "oneSwitch") == 0) {
-		    XMLAtt *na = findXMLAtt (ep, "name");
+	    for (n = 0, n_ep = nextXMLEle(root,1); n_ep; n_ep = nextXMLEle(root,0)) {
+		if (strcmp (tagXMLEle(n_ep), "oneSwitch") == 0) {
+		    XMLAtt *na = findXMLAtt (n_ep, "name");
 		    if (na) {
 			if (n >= maxn) {
 			    int newsz = (maxn=n+1)*sizeof(ISState);
@@ -1386,17 +1371,17 @@ dispatch (XMLEle *root, char msg[])
 			    newsz = maxn*sizeof(char *);
 			    names = (char **) realloc (names, newsz);
 			}
-			if (strcmp (pcdataXMLEle(ep),"On") == 0) {
+			if (strcmp (pcdataXMLEle(n_ep),"On") == 0) {
 			    states[n] = ISS_ON;
 			    names[n] = valuXMLAtt(na);
 			    n++;
-			} else if (strcmp (pcdataXMLEle(ep),"Off") == 0) {
+			} else if (strcmp (pcdataXMLEle(n_ep),"Off") == 0) {
 			    states[n] = ISS_OFF;
 			    names[n] = valuXMLAtt(na);
 			    n++;
 			} else 
 			    IDMessage (dev, "%s: must be On or Off: %s", name,
-							    pcdataXMLEle(ep));
+							    pcdataXMLEle(n_ep));
 		    }
 		}
 	    }
@@ -1478,7 +1463,6 @@ dispatch (XMLEle *root, char msg[])
 	    static int *sizes;
 	    static int maxn;
 	    char *dev, *name;
-	    int i;
 
 	    /* pull out device and name */
 	    if (crackDN (root, &dev, &name, msg) < 0)

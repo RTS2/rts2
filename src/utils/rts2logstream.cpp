@@ -1,6 +1,6 @@
 /* 
  * Log steam, used for logging output.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,6 +19,41 @@
 
 #include "rts2app.h"
 #include "rts2logstream.h"
+
+#include <iomanip>
+
+void
+Rts2LogStream::logArr (char *arr, int len)
+{
+	bool lastIsHex = false;
+	for (int i = 0; i < len; i++)
+	{
+		if (isprint (arr[i]))
+		{
+			*this << arr[i];
+			lastIsHex = false;
+		}
+		else
+		{
+			int b = arr[i];
+			if (!lastIsHex)
+				*this << ' ';
+			*this << "0x" << std::setfill ('0') << std::hex << std::setw (2) << (0x000000ff & b) << ' ';
+			lastIsHex = true;
+		}
+	}
+}
+
+
+void
+Rts2LogStream::logArrAsHex (char *arr, int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		int b = arr[i];
+		*this << "0x" << std::setfill ('0') << std::hex << std::setw (2) << (0x000000ff & b) << " ";
+	}
+}
 
 
 void

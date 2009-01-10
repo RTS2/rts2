@@ -1,6 +1,6 @@
 /* 
  * Log steam, used for logging output.
- * Copyright (C) 2006-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -91,6 +91,24 @@ class Rts2LogStream
 		{
 			return ls.fill (_f);
 		}
+
+		/**
+		 * Log character array as array of character and hex values
+		 * when it cannot be represented as character.  Hex values are
+		 * prefixed with 0x and separated by blanks.
+		 *
+		 * @param arr  Array which will be logged.  @param len  Lenght
+		 * of logged array.
+		 */
+		void logArr (char *arr, int len);
+
+		/**
+		 * Log character array as array of hex values (prefixed with 0x and separated by blanks)
+		 *
+		 * @param arr  Array which will be logged.
+		 * @param len  Lenght of logged array.
+		 */
+		void logArrAsHex (char *arr, int len);
 
 		inline void sendLog ();
 };

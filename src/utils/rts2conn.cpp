@@ -38,6 +38,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+using namespace rts2core;
+
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
@@ -1810,11 +1812,14 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 			switch (rts2Type & RTS2_BASE_TYPE)
 			{
 				case RTS2_VALUE_STRING:
-					new_value = new Rts2ValueStringArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					new_value = new StringArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				case RTS2_VALUE_DOUBLE:
+					new_value = new DoubleArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 					break;
 				default:
 					logStream (MESSAGE_ERROR) << "unsuported array type; " << rts2Type << sendLog;
-					break;
+					exit (10);
 			}
 			break;
 		default:

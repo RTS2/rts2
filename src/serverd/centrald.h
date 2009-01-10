@@ -29,6 +29,8 @@
 #include "../utils/rts2config.h"
 #include "status.h"
 
+using namespace rts2core;
+
 #ifndef HOST_NAME_MAX
 #define HOST_NAME_MAX   255
 #endif
@@ -70,8 +72,8 @@ class Rts2Centrald:public Rts2Daemon
 		Rts2ValueBool *morning_off;
 		Rts2ValueBool *morning_standby;
 
-		Rts2ValueStringArray *requiredDevices;
-		Rts2ValueStringArray *failedDevices;
+		StringArray *requiredDevices;
+		StringArray *failedDevices;
 
 		char *configFile;
 		std::string logFile;

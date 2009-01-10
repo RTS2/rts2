@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
 #include "../utils/rts2device.h"
 #include "../utils/rts2command.h"
 
 #include "indidevapi.h"
+#include "indidrivermain.h"
 #include "indicom.h"
 
 #define RTS2_GROUP  "RTS2"
@@ -31,48 +31,62 @@
 
 #define POLLMS      10		 /* poll period, ms */
 
-class Rts2Indi:public Rts2Device
+/**
+ * Class which acts as bridge between INDI and RTS2.
+ * 
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Indi:public Rts2Device
 {
 	protected:
+		const char *telescopeName;
+
 		virtual int willConnect (Rts2Address * in_addr);
-	public:
-		Rts2Indi (int argc, char **argv);
-		virtual ~ Rts2Indi (void);
 
 		virtual int init ();
+
+		virtual int processOption (int opt);
+	public:
+		Indi (int argc, char **argv);
+		virtual ~ Indi (void);
 
 		virtual int changeMasterState (int new_state);
 
 		void setStates ();
 		void setObjRaDec (double ra, double dec);
+		void setCorrRaDec (double ra, double dec);
 		void ISPoll ();
 
 		virtual void message (Rts2Message & msg);
 };
 
 int
-Rts2Indi::willConnect (Rts2Address * in_addr)
+Indi::willConnect (Rts2Address * in_addr)
 {
 	return 1;
 }
 
 
-Rts2Indi::Rts2Indi (int in_argc, char **in_argv):
+Indi::Indi (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_INDI, "INDI")
 {
+	telescopeName = "T0";
+	setLockPrefix ("/tmp/rts2_");
 	setNotDeamonize ();
-	IDLog ("Initializing Rts2Indi");
+	IDLog ("Initializing Indi");
+
+	addOption ('t', NULL, 1, "telescope name (default to T0)");
 }
 
 
-Rts2Indi::~Rts2Indi (void)
+Indi::~Indi (void)
 {
 
 }
 
 
 int
-Rts2Indi::init ()
+Indi::init ()
 {
 	int ret;
 	ret = Rts2Device::init ();
@@ -84,8 +98,23 @@ Rts2Indi::init ()
 }
 
 
+int
+Indi::processOption (int opt)
+{
+	switch (opt)
+	{
+		case 't':
+			telescopeName = optarg;
+			break;
+		default:
+			return Rts2Device::processOption (opt);
+	}
+	return 0;
+}
+
+
 void
-Rts2Indi::message (Rts2Message & msg)
+Indi::message (Rts2Message & msg)
 {
 	IDMessage (mydev, "%s %s", msg.getMessageOName (), msg.getMessageString ());
 }
@@ -120,8 +149,17 @@ static INumber eq[] =
 INumberVectorProperty eqNum =
 {mydev, "EQUATORIAL_COORD", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
 
+static INumber offs[] =
+{
+	{"RA", "RA  H:M:S", "%10.6m", -24., 24., 0., 0., 0, 0, 0},
+	{"DEC", "Dec D:M:S", "%10.6m", -90., 90., 0., 0., 0, 0, 0},
+};
+
 INumberVectorProperty eqOffsets =
-{mydev, "EQUATORIAL_OFFSET", "Equatorial J2000", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (eq), 0, 0};
+{mydev, "EQUATORIAL_OFFSET", "Equatorial offset", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (offs), 0, 0};
+
+INumberVectorProperty eqCorr =
+{mydev, "EQUATORIAL_CORRECTION", "Equatorial correction", BASIC_GROUP, IP_RW, 0, IPS_IDLE, eq, NARRAY (offs), 0, 0};
 
 static INumber hor[] =
 {
@@ -150,10 +188,10 @@ static ISwitch abortSlewS[] =
 static ISwitchVectorProperty abortSlewSw =
 {mydev, "ABORT_MOTION", "Abort Slew/Track", BASIC_GROUP, IP_RW,	ISR_1OFMANY, 0, IPS_IDLE, abortSlewS, NARRAY (abortSlewS), 0, 0};
 
-static Rts2Indi *device = NULL;
+static Indi *device = NULL;
 
 void
-Rts2Indi::setStates ()
+Indi::setStates ()
 {
 	if (StatesSP.sp[0].s == ISS_ON)
 	{
@@ -177,9 +215,9 @@ Rts2Indi::setStates ()
 
 
 void
-Rts2Indi::setObjRaDec (double ra, double dec)
+Indi::setObjRaDec (double ra, double dec)
 {
-	Rts2Conn *tel = getOpenConnection ("T0");
+	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
 		tel->queCommand (new Rts2CommandResyncMove (this, (Rts2DevClientTelescope *)tel->getOtherDevClient (), ra, dec));
@@ -187,8 +225,19 @@ Rts2Indi::setObjRaDec (double ra, double dec)
 }
 
 
+void
+Indi::setCorrRaDec (double ra, double dec)
+{
+	Rts2Conn *tel = getOpenConnection (telescopeName);
+	if (tel)
+	{
+		tel->queCommand (new Rts2CommandChangeValue ((Rts2DevClientTelescope *)tel->getOtherDevClient (), "CORR_", '=', ra, dec));
+	}
+}
+
+
 int
-Rts2Indi::changeMasterState (int new_state)
+Indi::changeMasterState (int new_state)
 {
 	StatesSP.s = IPS_BUSY;
 	IDSetSwitch (&StatesSP, NULL);
@@ -212,11 +261,11 @@ Rts2Indi::changeMasterState (int new_state)
 
 
 void
-Rts2Indi::ISPoll ()
+Indi::ISPoll ()
 {
 	oneRunLoop ();
 
-	Rts2Conn *tel = getOpenConnection ("T0");
+	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
 		Rts2Value *val = tel->getValue ("OBJ");
@@ -245,9 +294,30 @@ Rts2Indi::ISPoll ()
 		}
 		IDSetNumber (&eqOffsets, NULL);
 
-		horNum.np[0].value = tel->getValueDouble ("ALT");
-		horNum.np[1].value = tel->getValueDouble ("AZ");
-		horNum.s = IPS_OK;
+		val = tel->getValue ("CORR_");
+		if (val && val->getValueBaseType () == RTS2_VALUE_RADEC)
+		{
+			eqCorr.np[0].value = ((Rts2ValueRaDec *) val)->getRa () / 15.0;
+			eqCorr.np[1].value = ((Rts2ValueRaDec *) val)->getDec ();
+			eqCorr.s = IPS_OK;
+		}
+		else
+		{
+		  	eqCorr.s = IPS_BUSY;
+		}
+		IDSetNumber (&eqCorr, NULL);
+
+		val = tel->getValue ("TEL_");
+		if (val && val->getValueBaseType () == RTS2_VALUE_ALTAZ)
+		{
+			horNum.np[0].value = ((Rts2ValueAltAz *) val)->getAlt ();
+			horNum.np[1].value = ((Rts2ValueAltAz *) val)->getAz ();
+			horNum.s = IPS_OK;
+		}
+		else
+		{
+		  	horNum.s = IPS_BUSY;
+		}
 		IDSetNumber (&horNum, NULL);
 
 		PowerS[0].s = ISS_ON;
@@ -266,9 +336,6 @@ ISInit ()
 {
 	if (device)
 		return;
-
-	device = new Rts2Indi (0, NULL);
-
 	device->initDaemon ();
 }
 
@@ -291,6 +358,7 @@ ISGetProperties (const char *dev)
 	IDDefSwitch (&StatesSP, NULL);
 	IDDefNumber (&eqNum, NULL);
 	IDDefNumber (&eqOffsets, NULL);
+	IDDefNumber (&eqCorr, NULL);
 	IDDefNumber (&horNum, NULL);
 
 	IDDefSwitch (&OnCoordSetSw, NULL);
@@ -313,8 +381,7 @@ ISNewSwitch (const char *dev, const char *name, ISState * states, char *names[],
 
 
 void
-ISNewText (const char *dev, const char *name, char *texts[], char *names[],
-int n)
+ISNewText (const char *dev, const char *name, char *texts[], char *names[], int n)
 {
 	ISInit ();
 }
@@ -324,14 +391,15 @@ void
 ISNewNumber (const char *dev, const char *name, double values[], char *names[], int n)
 {
 	ISInit ();
+
+	double newRA;
+	double newDEC;
+
+	int i=0, nset=0;
+
 	if (!strcmp (name, eqNum.name))
 	{
-		double newRA;
-		double newDEC;
-
 		// parse move request
-		int i=0, nset=0;
-
 		for (nset = i = 0; i < n; i++)
 		{
 			INumber *eqp = IUFindNumber (&eqNum, names[i]);
@@ -361,6 +429,38 @@ ISNewNumber (const char *dev, const char *name, double values[], char *names[], 
 			IDSetNumber(&eqNum, "RA or Dec missing or invalid");
 		}
 	}
+	else if (!strcmp (name, eqCorr.name))
+	{
+		// parse move request
+		for (nset = i = 0; i < n; i++)
+		{
+			INumber *eqp = IUFindNumber (&eqCorr, names[i]);
+			if (eqp == &eq[0])
+			{
+        	        	newRA = values[i];
+				nset += newRA >= 0 && newRA <= 24.0;
+			}
+			else if (eqp == &eq[1])
+			{
+				newDEC = values[i];
+				nset += newDEC >= -90.0 && newDEC <= 90.0;
+			}
+		}
+
+		if (nset == 2)
+		{
+			eqCorr.s = IPS_BUSY;
+			device->setCorrRaDec (newRA * 15.0, newDEC);
+			eqCorr.s = IPS_IDLE;
+			IDSetNumber(&eqCorr, NULL);
+			return;
+		}
+		else
+		{
+			eqCorr.s = IPS_IDLE;
+			IDSetNumber(&eqCorr, "RA or Dec missing or invalid");
+		}
+	}
 }
 
 void
@@ -373,4 +473,15 @@ void
 ISSnoopDevice (XMLEle *root)
 {
 	ISInit ();
+}
+
+
+int
+main (int ac, char **av)
+{
+	device = new Indi (ac, av);
+	std::cerr << "new" << std::endl;
+	device->initDaemon ();
+	IDProcessParams (ac, av);
+	return IDMain ();
 }
