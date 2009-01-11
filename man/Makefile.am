@@ -23,7 +23,7 @@ EXTRA_DIST = \
     rts2-grbd.xml \
     rts2-user.xml \
     rts2-telmodeltest.xml \
-    rts.devices.xml \
+    rts2.devices.xml \
     rts2-centrald.xml
 
 man_MANS = \
