@@ -24,7 +24,8 @@ EXTRA_DIST = \
     rts2-user.xml \
     rts2-telmodeltest.xml \
     rts2.devices.xml \
-    rts2-centrald.xml
+    rts2-centrald.xml \
+    rts2-moodd.xml
 
 man_MANS = \
     rts2.7 \

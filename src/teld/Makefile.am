@@ -5,7 +5,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 
 noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h tgdrive.h
 
-EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp
+EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp tgdrive.cpp
 
 LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
