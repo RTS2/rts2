@@ -3,7 +3,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system
 
-noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h
+noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h davis.h
 
 EXTRA_DIST = sensord.cpp
 
