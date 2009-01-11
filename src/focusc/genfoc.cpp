@@ -422,11 +422,3 @@ Rts2GenFocClient::init ()
 	}
 	return 0;
 }
-
-
-void
-Rts2GenFocClient::centraldConnRunning (Rts2Conn * conn)
-{
-	Rts2Client::centraldConnRunning (conn);
-	conn->queCommand (new Rts2Command (this, "priority 137"));
-}

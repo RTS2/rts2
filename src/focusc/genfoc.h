@@ -86,8 +86,6 @@ class Rts2GenFocClient:public Rts2Client
 			int other_device_type);
 		virtual int init ();
 
-		virtual void centraldConnRunning (Rts2Conn *conn);
-
 		float defaultExpousure ()
 		{
 			return defExposure;
