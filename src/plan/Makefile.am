@@ -40,7 +40,8 @@ rts2_scriptor_LDADD += rts2scriptelementacquire.o rts2connimgprocess.o
 bin_PROGRAMS += rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
 	       rts2-plan
 
-rts2_executor_SOURCES = executor.cpp rts2devcliphot.cpp rts2execclidb.cpp
+nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
+rts2_executor_SOURCES = executor.cpp rts2execclidb.cpp
 rts2_executor_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_executor_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 rts2_executor_LDADD = rts2execcli.o rts2script.o rts2scriptelement.o rts2devscript.o rts2connimgprocess.o rts2scriptelementacquire.o \
@@ -51,11 +52,13 @@ rts2_imgproc_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_imgproc_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 rts2_imgproc_LDADD = rts2connimgprocess.o
 
-rts2_selector_SOURCES = selector.cpp rts2selector.cpp
+nodist_rts2_selector_SOURCES = rts2selector.cpp
+rts2_selector_SOURCES = selector.cpp
 rts2_selector_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_selector_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
-rts2_seltest_SOURCES = seltest.cpp rts2selector.cpp
+nodist_rts2_seltest_SOURCES = rts2selector.cpp
+rts2_seltest_SOURCES = seltest.cpp
 rts2_seltest_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_seltest_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
 
