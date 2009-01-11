@@ -14,11 +14,14 @@ if PGSQL
 
 bin_PROGRAMS += rts2-grbd rts2-augershooter
 
-rts2_grbd_SOURCES = grbd.cpp rts2conngrb.cpp rts2grbfw.cpp rts2grbexecconn.cpp
+
+nodist_rts2_grbd_SOURCES = rts2conngrb.cpp
+rts2_grbd_SOURCES = grbd.cpp rts2grbfw.cpp rts2grbexecconn.cpp
 rts2_grbd_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_grbd_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
-rts2_augershooter_SOURCES = augershooter.cpp rts2connshooter.cpp
+nodist_rts2_augershooter_SOURCES = rts2connshooter.cpp
+rts2_augershooter_SOURCES = augershooter.cpp
 rts2_augershooter_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_augershooter_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
