@@ -23,7 +23,7 @@
 #include <iomanip>
 
 void
-Rts2LogStream::logArr (char *arr, int len)
+Rts2LogStream::logArr (const char *arr, int len)
 {
 	bool lastIsHex = false;
 	for (int i = 0; i < len; i++)
@@ -46,7 +46,7 @@ Rts2LogStream::logArr (char *arr, int len)
 
 
 void
-Rts2LogStream::logArrAsHex (char *arr, int len)
+Rts2LogStream::logArrAsHex (const char *arr, int len)
 {
 	for (int i = 0; i < len; i++)
 	{
