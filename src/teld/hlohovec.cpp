@@ -189,7 +189,7 @@ Hlohovec::endPark ()
 int
 Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
-	if (old_value == dec_dPos)
+	if (old_value == ra_dPos)
 	{
 		try
 		{
