@@ -174,7 +174,7 @@ TGDrive::write2b (int16_t address, int16_t data)
 int32_t
 TGDrive::read4b (int16_t address)
 {
-	writeMsg (0xD4, address);
+	writeMsg (0xD2, address);
 	char msg[7];
 	ecRead (msg, 7);
 	return * (( int32_t *) (msg + 2));
