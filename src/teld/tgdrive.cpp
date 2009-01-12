@@ -77,9 +77,9 @@ TGDrive::ecRead (char *msg, int len)
 
 	cs = 0x100 - cs;
 
-	if (msg[len - 1] != cs)
+	if ((0x00ff & msg[len - 1]) != cs)
 	{
-	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (int) msg[len - 1] << "." << sendLog;
+	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (0x00ff & ((int) msg[len - 1])) << "." << sendLog;
 		throw TGDriveError (2);
 	}
 	if (msg[1] != STAT_OK)
