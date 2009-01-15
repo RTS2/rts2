@@ -26,14 +26,14 @@ $PSQLDB < create/views.sql
 
 # update to current version
 
-$PSQLDB < update/rel_0_5_1.sql
-$PSQLDB < update/rel_0_5_2.sql
-$PSQLDB < update/rel_0_6_0.sql
-$PSQLDB < update/rel_0_6_1.sql
-$PSQLDB < update/rel_0_6_2.sql
-$PSQLDB < update/rel_0_7_0.sql
-$PSQLDB < update/rel_0_7_1.sql
-$PSQLDB < update/rel_0_7_4.sql
+cd update
+
+for x in rel_*.sql; do
+	echo Applying updates to relase $x
+	$PSQLDB < $x
+done
+
+cd ..
 
 # load init data
 
