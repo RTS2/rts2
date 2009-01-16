@@ -33,6 +33,8 @@ for x in rel_*.sql; do
 	$PSQLDB < $x
 done
 
+cd ..
+
 # load init data
 
 $PSQLDB < init_data.sql
