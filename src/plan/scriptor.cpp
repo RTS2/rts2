@@ -96,8 +96,6 @@ Rts2Scriptor::init ()
 	if (ret)
 		return ret;
 
-	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
-
 	currentTarget = new Rts2TargetScr (this);
 	currentTarget->moveEnded ();
 
