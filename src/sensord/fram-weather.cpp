@@ -93,7 +93,7 @@ FramWeather::FramWeather (int argc, char **argv)
 int
 FramWeather::info ()
 {
-	return (getLastInfoTime () < connUpdateSep->getValueInteger ()) ? 0 : -1;
+	return (getNow () - getLastInfoTime () < connUpdateSep->getValueInteger ()) ? 0 : -1;
 }
 
 
