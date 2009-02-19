@@ -311,7 +311,7 @@ Watcher::isClosed ()
 {
 	time_t now;
 	time (&now);
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Watcher::isClosed dome timeout"
 			<< sendLog;
