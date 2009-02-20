@@ -148,7 +148,12 @@ Zelio::init ()
 	int ret = Dome::init ();
 	if (ret)
 		return ret;
-	
+
+	if (host == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "You must specify zeliho hostname (with -z option)." << sendLog;
+		return -1;
+	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
 	zelioConn->setDebug (true);
 	return zelioConn->init ();
