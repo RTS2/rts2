@@ -995,7 +995,6 @@ Rts2Device::sendMail (const char *subject, const char *text)
 int
 Rts2Device::killAll ()
 {
-	scriptEnds ();
 	return 0;
 }
 

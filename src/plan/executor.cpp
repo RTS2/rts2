@@ -32,7 +32,6 @@ class Rts2Executor:public Rts2DeviceDb
 	private:
 		Target * currentTarget;
 		Target *nextTarget;
-		Target *priorityTarget;
 		void queDarks ();
 		void queFlats ();
 		void beforeChange ();
@@ -65,7 +64,6 @@ class Rts2Executor:public Rts2DeviceDb
 
 		Rts2ValueInteger *next_id;
 		Rts2ValueString *next_name;
-		Rts2ValueInteger *priority_id;
 
 		Rts2ValueInteger *img_id;
 
@@ -111,7 +109,6 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
 	currentTarget = NULL;
 	nextTarget = NULL;
-	priorityTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts",
 		false);
 	scriptCount->setValueInteger (-1);
@@ -138,9 +135,6 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
 	createValue (next_id, "next", "ID of next target", false);
 	createValue (next_name, "next_name", "name of next target", false);
-
-	createValue (priority_id, "priority_target",
-		"ID of priority target (should be NULL in most cases)", false);
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
@@ -320,16 +314,8 @@ Rts2Executor::postEvent (Rts2Event * event)
 			}
 			break;
 		case EVENT_MOVE_FAILED:
-			if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
+			if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL)
 			{
-				// we are free to start new high-priority observation
-				if (currentTarget)
-					queTarget (currentTarget);
-				currentTarget = priorityTarget;
-				priorityTarget = NULL;
-				postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-				postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
-				infoAll ();
 				break;
 			}
 			postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
@@ -401,14 +387,6 @@ Rts2Executor::info ()
 	{
 		next_id->setValueInteger (-1);
 		next_name->setValueCharArr (NULL);
-	}
-	if (priorityTarget)
-	{
-		priority_id->setValueInteger (priorityTarget->getTargetID ());
-	}
-	else
-	{
-		priority_id->setValueInteger (-1);
 	}
 
 	return Rts2DeviceDb::info ();
@@ -487,7 +465,7 @@ Rts2Executor::setNow (int nextId)
 {
 	Target *newTarget;
 
-	if (!currentTarget && !priorityTarget)
+	if (!currentTarget)
 		return setNext (nextId);
 
 	newTarget = createTarget (nextId, observer);
@@ -509,12 +487,7 @@ Rts2Executor::setNow (Target * newTarget)
 		currentTarget->endObservation (-1);
 		queTarget (currentTarget);
 	}
-	currentTarget = NULL;
-
-	if (priorityTarget)
-		delete priorityTarget;	 // delete old priority target
-
-	priorityTarget = newTarget;
+	currentTarget = newTarget;
 
 	// at this situation, we would like to get rid of nextTarget as
 	// well
@@ -527,6 +500,10 @@ Rts2Executor::setNow (Target * newTarget)
 	clearAll ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	queAll (new Rts2CommandKillAll (this));
+
+	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+
 	infoAll ();
 
 	return 0;
@@ -574,25 +551,7 @@ Rts2Executor::setGrb (int grbId)
 	}
 	if (!currentTarget)
 	{
-		// if we don't observe anything..bring us to GRB..
-		if (priorityTarget)
-		{
-			// it's not same..
-			ret = grbTarget->compareWithTarget (priorityTarget, grb_sep_limit);
-			if (ret == 0)
-			{
-				return setNow (grbTarget);
-			}
-			else
-			{
-				// wait till it will be properly processed
-				return 0;
-			}
-		}
-		delete nextTarget;
-		nextTarget = grbTarget;
-		switchTarget ();
-		return 0;
+		return setNow (grbTarget);
 	}
 	// it's not same..
 	ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit);

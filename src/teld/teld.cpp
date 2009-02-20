@@ -781,6 +781,16 @@ Rts2DevTelescope::info ()
 
 
 int
+Rts2DevTelescope::killAll ()
+{
+	corrImgId->setValueInteger (0);
+	if (isMoving ())
+		stopMove ();
+	return Rts2Device::killAll ();
+}
+
+
+int
 Rts2DevTelescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);

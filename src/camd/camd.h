@@ -658,6 +658,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int info ();
 
+		virtual int killAll ();
 		virtual int scriptEnds ();
 
 		virtual long camWaitExpose ();

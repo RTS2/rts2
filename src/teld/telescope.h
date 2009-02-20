@@ -613,6 +613,7 @@ class Rts2DevTelescope:public Rts2Device
 		// callback functions from telescope connection
 		virtual int info ();
 
+		virtual int killAll ();
 		virtual int scriptEnds ();
 
 		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,

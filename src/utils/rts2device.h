@@ -375,7 +375,20 @@ class Rts2Device:public Rts2Daemon
 
 		int sendMail (const char *subject, const char *text);
 
-		int killAll ();
+		/**
+		 * The interrupt call. This is called on every device on
+		 * interruption. The device shall react by switching back to
+		 * initial state and be ready for next commands.
+		 *
+		 * @return -1 on error.
+		 */
+		virtual int killAll ();
+
+		/**
+		 * This is called from sequencer to let device know that scripts
+		 * has ended. Device shall respond by ending all operations and
+		 * reseting to original state.
+		 */
 		virtual int scriptEnds ();
 
 		const char *getDeviceName ()

@@ -366,6 +366,18 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 	}
 }
 
+int
+Rts2DevCamera::killAll ()
+{
+	quedExpNumber->setValueInteger (0);
+	sendValueAll (quedExpNumber);
+	
+	if (isExposing ())
+		stopExposure ();
+	
+	return Rts2ScriptDevice::killAll ();
+}
+
 
 int
 Rts2DevCamera::scriptEnds ()
