@@ -94,6 +94,7 @@ class Watcher:public Dome
 Watcher::Watcher (int argc, char **argv)
 :Dome (argc, argv)
 {
+	createValue (sw_state, "sw_state", "dome state", false);
 	smsExec = NULL;
 	addOption ('s', "execute_sms", 1, "execute this commmand to send sms about roof");
 
@@ -251,7 +252,7 @@ Watcher::isOpened ()
 	time_t now;
 	time (&now);
 	// timeout
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Watcher::isOpened timeout" <<
 			sendLog;
@@ -262,7 +263,11 @@ Watcher::isOpened ()
 		closeDomeReal ();
 		return -2;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+	{
+		return USEC_SEC;
+	}
+	return (getState () & DOME_DOME_MASK) == DOME_CLOSED ? 0 : -2;
 }
 
 
@@ -301,6 +306,8 @@ Watcher::startClose ()
 		return 0;
 
 	closeDomeReal ();
+
+	maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
 
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
