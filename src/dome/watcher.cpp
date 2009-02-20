@@ -176,6 +176,9 @@ Watcher::init ()
 	// SWITCH ON INTERFACE
 	outb (1, BASE + 1);
 
+	// close roof - security measurement
+	startClose ();
+
 	return 0;
 }
 
