@@ -177,8 +177,13 @@ Watcher::init ()
 	// SWITCH ON INTERFACE
 	outb (1, BASE + 1);
 
-	// close roof - security measurement
-	startClose ();
+	if (!isMoving ())
+	{
+		// close roof - security measurement
+		startClose ();
+
+		maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
+	}
 
 	return 0;
 }
@@ -307,8 +312,6 @@ Watcher::startClose ()
 
 	closeDomeReal ();
 
-	maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
-
 	time (&timeOpenClose);
 	timeOpenClose += ROOF_TIMEOUT;
 
@@ -331,7 +334,11 @@ Watcher::isClosed ()
 		openDomeReal ();
 		return -2;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+	{
+		return USEC_SEC;
+	}
+	return (getState () & DOME_DOME_MASK) == DOME_OPENED ? 0 : -2;
 }
 
 
