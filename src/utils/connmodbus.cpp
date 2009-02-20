@@ -195,9 +195,9 @@ ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_dat
 	if (ret)
 		return ret;
 
-	if (reply[0] != qty)
+	if (reply[0] != qty * 2)
 	{
-	 	logStream (MESSAGE_ERROR) << "Invalid quantity in reply packed!" << sendLog;
+	 	logStream (MESSAGE_ERROR) << "Invalid quantity in reply packet!" << sendLog;
 		return ret;
 	}
 
