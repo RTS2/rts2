@@ -370,20 +370,9 @@ Rts2DevCamera::checkQueChanges (int fakeState)
 int
 Rts2DevCamera::scriptEnds ()
 {
-	exposureConn = NULL;
-
-	stopExposure ();
-	endReadout ();
-	nAcc = 1;
-
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT,
-		CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT,
-		BOP_TEL_MOVE, 0, "chip exposure interrupted");
-
-	setTimeout (USEC_SEC);
-	// cancel any pending exposures
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
+
 	return Rts2ScriptDevice::scriptEnds ();
 }
 

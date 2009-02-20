@@ -75,7 +75,6 @@ class Rts2Executor:public Rts2DeviceDb
 	public:
 		Rts2Executor (int argc, char **argv);
 		virtual ~ Rts2Executor (void);
-		virtual int init ();
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
@@ -185,19 +184,6 @@ Rts2Executor::reloadConfig ()
 	observer = config->getObserver ();
 	config->getDouble ("grbd", "seplimit", grb_sep_limit);
 	config->getDouble ("grbd", "minsep", grb_min_sep);
-	return 0;
-}
-
-
-int
-Rts2Executor::init ()
-{
-	int ret;
-	ret = Rts2DeviceDb::init ();
-	if (ret)
-		return ret;
-	// set priority..
-	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
 	return 0;
 }
 
