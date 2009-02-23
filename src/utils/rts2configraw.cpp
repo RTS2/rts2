@@ -68,10 +68,12 @@ Rts2ConfigSection::getValue (const char *valueName, bool verbose)
 		if (val->isValue (name))
 			return val;
 	}
-	if (verbose)
+	if (verbose && find (missingValues.begin (), missingValues.end (), name) == missingValues.end ())
 	{
+	  	// check if that wasn't reported..
 		logStream (MESSAGE_WARNING) << "Cannot find value '" << name <<
 			"' in section '" << sectName << "'." << sendLog;
+		missingValues.push_back (name);
 	}
 	return NULL;
 }

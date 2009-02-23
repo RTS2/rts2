@@ -127,6 +127,7 @@ class Rts2ConfigSection:public std::list <Rts2ConfigValue >
 {
 	private:
 		std::string sectName;
+		std::vector <std::string> missingValues;
 		std::vector <std::string> *blockedBy;
 	public:
 		Rts2ConfigSection (const char *name);
