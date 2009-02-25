@@ -71,7 +71,7 @@ class OpenTpl: public Rts2ConnNoSend
 		
 		int tpl_command_no;
 		
-		int sendCommand (char *cmd, char *p1);
+		int sendCommand (char *cmd, char *p1, bool wait = true);
 
 		// loop till there isn't reply on connection from the command
 		int waitReply ();
@@ -88,13 +88,14 @@ class OpenTpl: public Rts2ConnNoSend
 		int tpl_set (const char *_name, double value, int *tpl_status);
 		int tpl_get (const char *_name, double &value, int *tpl_status);
 
-		int tpl_set (const char *_name, int value, int *tpl_status);
+		int tpl_set (const char *_name, int value, int *tpl_status, bool wait=true);
 		int tpl_get (const char *_name, int &value, int *tpl_status);
 
-		int tpl_setw (const char *_name, int value, int *tpl_status)
-		{
-			return tpl_set (_name, value, tpl_status);
-		}
+		/**
+		 * Sets telescope value, only waits for command OK - do not
+		 * wait for completion.
+		 */
+		int tpl_setww (const char *_name, int value, int *tpl_status);
 
 		int tpl_set (const char *_name, std::string value, int *tpl_status);
 		int tpl_get (const char *_name, std::string &value, int *tpl_status);
