@@ -294,7 +294,11 @@ OpenTpl::handleCommand (const char *buffer)
 		{
 			strcpy (valReply, "1");
 			return 0;
-		}	
+		}
+		if (!strcmp (subc, "ERROR"))
+		{
+			throw (OpenTplError ("Error while geting data"));
+		}
 		ce++;
 		// look for data = sign..
 		while (*ce != '\0' && *ce != '=')
