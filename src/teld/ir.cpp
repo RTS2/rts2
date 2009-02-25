@@ -25,8 +25,6 @@
 
 #define DEBUG_EXTRA
 
-using namespace OpenTPL;
-
 int
 Rts2TelescopeIr::coverClose ()
 {
@@ -365,7 +363,11 @@ Rts2TelescopeIr::initIrDevice ()
 		return -1;
 	}
 
-	irConn = new IrConn (ir_ip, ir_port);
+	irConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
+	
+	int ret = irConn->init ();
+	if (ret)
+		return ret;
 
 	// are we connected ?
 	if (!irConn->isOK ())
@@ -375,7 +377,7 @@ Rts2TelescopeIr::initIrDevice ()
 	}
 
 	// infoModel
-	int ret = infoModel ();
+	ret = infoModel ();
 	if (ret)
 		return ret;
 
@@ -412,12 +414,12 @@ Rts2TelescopeIr::initValues ()
 		return -1;
 
 	// switch mount type
-	if (config_mount == "\"AZ-ZD\"")
+	if (config_mount == "AZ-ZD")
 	{
 		setPointingModel (1);
 
 	}
-	else if (config_mount == "\"RA-DEC\"")
+	else if (config_mount == "RA-DEC")
 	{
 		setPointingModel (0);
 

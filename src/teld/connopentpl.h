@@ -23,6 +23,7 @@
 #include "../utils/rts2connnosend.h"
 
 #include <string>
+#include <ostream>
 
 #define TPL_OK              0
 #define TPL_ERR             1
@@ -38,10 +39,22 @@ namespace rts2core
  */
 class OpenTplError
 {
+	private:
+		const char *desc;
 	public:
-		OpenTplError ();
-};
+		OpenTplError (const char *_desc)
+		{
+			desc = _desc;
+		}
+		
+		const char *getDesc ()
+		{
+			return desc;
+		}
 
+		friend std::ostream & operator << (std::ostream & os , OpenTplError & err);
+
+};
 
 /**
  * Class for communicating with OpenTPL devices.
@@ -54,7 +67,7 @@ class OpenTpl: public Rts2ConnNoSend
 		std::string hostname;
 		int port;
 	
-		char valReply[100];
+		char valReply[500];
 		
 		int tpl_command_no;
 		

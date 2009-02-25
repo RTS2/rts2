@@ -26,6 +26,13 @@
 
 using namespace rts2core;
 
+std::ostream &
+operator << (std::ostream & os, OpenTplError & err)
+{
+	os << err.getDesc ();
+	return os;
+}
+
 int
 OpenTpl::sendCommand (char *cmd, char *p1)
 {
@@ -41,80 +48,89 @@ OpenTpl::sendCommand (char *cmd, char *p1)
 int
 OpenTpl::waitReply ()
 {
-	char buf[500];
-        char *buf_top = buf;
-	// read from socket till end of command is reached..
-	int rs = 0;
-	while (true)
+	try
 	{
-		int ret;
-		struct timeval read_tout;
-
-		read_tout.tv_sec = 5;
-		read_tout.tv_usec = 0;
-		
-		fd_set read_set;
-		fd_set write_set;
-		fd_set exp_set;
-
-		FD_ZERO (&read_set);
-		FD_ZERO (&write_set);
-		FD_ZERO (&exp_set);
-
-		FD_SET (sock, &read_set);
-
-		ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
-		if (ret <= 0)
+		char buf[500];
+		char *buf_top = buf;
+		// read from socket till end of command is reached..
+		int rs = 0;
+		while (true)
 		{
-			connectionError (-1);
-			return -1;
-		}
-        	int data_size = recv (sock, buf_top, 499 - (buf_top - buf), 0);
-		if (data_size < 0)
-		{
-			connectionError (-1);
-			return -1;
-		}
-		// now parse reply, look for '\n'
-		char *bt = buf_top;
-		while (bt < buf_top + data_size)
-		{
-			while (bt < buf_top + data_size && *bt != '\n')
-				bt++;
-			if (bt >= buf_top + data_size)
-				break;
-			*bt = '\0';
-			// parse line - get first character..
-			char *lp = buf;
-			while (*lp != '\0' && !isspace (*lp))
-				lp++;
-			// try to convert to number
-			char *ce;
-			long int cmd_num = strtol (buf, &ce, 10);
-			if (lp != ce)
+			int ret;
+			struct timeval read_tout;
+
+			read_tout.tv_sec = 5;
+			read_tout.tv_usec = 0;
+			
+			fd_set read_set;
+			fd_set write_set;
+			fd_set exp_set;
+
+			FD_ZERO (&read_set);
+			FD_ZERO (&write_set);
+			FD_ZERO (&exp_set);
+
+			FD_SET (sock, &read_set);
+
+			ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
+			if (ret <= 0)
 			{
-				logStream (MESSAGE_DEBUG) << "received info message " << buf << sendLog;
+				connectionError (-1);
+				return -1;
 			}
-			else if (cmd_num != tpl_command_no - 1)
+			int data_size = recv (sock, buf_top, 499 - (buf_top - buf), 0);
+			if (data_size < 0)
 			{
-				handleEvent (buf);
+				connectionError (-1);
+				return -1;
 			}
-			else
+			// now parse reply, look for '\n'
+			char *bt = buf_top;
+			while (bt < buf_top + data_size)
 			{
-				int cmd_ret = handleCommand (lp + 1);
-				if (cmd_ret == 1)
-					return 0;
-				if (cmd_ret == -1)
-					return -1;
+				while (bt < buf_top + data_size && *bt != '\n')
+					bt++;
+				if (bt >= buf_top + data_size)
+					break;
+				*bt = '\0';
+				// parse line - get first character..
+				char *lp = buf;
+				while (*lp != '\0' && !isspace (*lp))
+					lp++;
+				// try to convert to number
+				char *ce;
+				long int cmd_num = strtol (buf, &ce, 10);
+				if (lp != ce)
+				{
+					logStream (MESSAGE_DEBUG) << "received info message " << buf << sendLog;
+				}
+				else if (cmd_num != tpl_command_no - 1)
+				{
+					handleEvent (buf);
+				}
+				else
+				{
+					int cmd_ret = handleCommand (lp + 1);
+					if (cmd_ret == 1)
+						return 0;
+					if (cmd_ret == -1)
+						return -1;
+				}
+				// cpy buffer
+				memcpy (buf, bt + 1, data_size - (bt - buf));
+				data_size -= bt + 1 - buf;
+				buf_top = buf;
+				bt = buf_top;
+				std::cout << "data_size " << data_size << " buf " << buf << std::endl;
 			}
-			// cpy buffer
-			memcpy (buf, bt + 1, data_size - (bt - buf));
-			data_size -= bt + 1 - buf;
-			buf_top = buf;
-			bt = buf_top;
-			std::cout << "data_size " << data_size << " buf " << buf << std::endl;
 		}
 	}
+	catch (OpenTplError &er)
+	{
+		logStream (MESSAGE_ERROR) << er.getDesc () << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 OpenTpl::OpenTpl (Rts2Block *_master, std::string _hostname, int _port)
@@ -194,6 +210,7 @@ OpenTpl::tpl_get (const char *name, double &value, int *status)
 	sendCommand ("GET", name);
 	waitReply ();
 	value = atof (valReply);
+	return 0;
 }
 
 
@@ -212,6 +229,7 @@ OpenTpl::tpl_get (const char *_name, int &value, int *status)
 	sendCommand ("GET", _name);
 	waitReply ();
 	value = atoi (valReply);
+	return 0;
 }
 
 
@@ -230,6 +248,7 @@ OpenTpl::tpl_get (const char *_name, std::string &value, int *tpl_status)
 	sendCommand ("GET", _name);
 	waitReply ();
 	value = valReply;
+	return 0;
 }
 
 
@@ -254,6 +273,27 @@ OpenTpl::handleCommand (const char *buffer)
 	char *ce = buffer;
 	while (*ce != '\0' && *ce != ' ')
 		ce++;
-	logStream (MESSAGE_DEBUG) << "command " << buffer << sendLog;
+	*ce = '\0';
+	if (!strcmp (buffer, "DATA"))
+	{
+		ce++;
+		// look for data = sign..
+		while (*ce != '\0' && *ce != '=')
+			ce++;
+		if (*ce != '=')
+			throw OpenTplError ("Cannot find equal sign");
+		ce++;
+		// if it starts with "..
+		if (*ce == '"')
+		{
+			char *bt = ce + 1;
+			while (*bt != '"' && *bt != '\0')
+				bt++;
+			if (*bt != '"')
+				throw OpenTplError ("Cannot find ending \"");
+			*bt = '\0';
+		}
+		strcpy (valReply, ce+1);
+	}
 	return 0;
 }
