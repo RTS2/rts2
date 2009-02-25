@@ -335,7 +335,7 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	if (track == 0 && !park)
 	{
 		logStream (MESSAGE_WARNING) <<
-			"Tracking sudently stopped, reenable tracking" << sendLog;
+			"Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << sendLog;
 		setTelescopeTrack (irTracking);
 		sleep (1);
 		return USEC_SEC / 100;

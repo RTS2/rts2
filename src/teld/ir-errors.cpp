@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "irconn.h"
+#include "connopentpl.h"
 #include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
 
@@ -26,6 +26,8 @@
 
 #define OPT_SAMPLE          OPT_LOCAL+5
 #define OPT_RESET_MODEL     OPT_LOCAL+6
+
+using namespace rts2core;
 
 class IrAxis
 {
@@ -91,7 +93,7 @@ class Rts2DevIrError:public Rts2CliApp
 		op;
 
 		IrAxis getAxisStatus (const char *ax_name);
-		IrConn *irConn;
+		rts2core::OpenTpl *irConn;
 
 		int doReferenced ();
 	protected:
@@ -286,7 +288,7 @@ Rts2DevIrError::init ()
 		return -1;
 	}
 
-	irConn = new IrConn (ir_ip, ir_port);
+	irConn = new rts2core::OpenTpl (NULL, ir_ip, ir_port);
 
 	// are we connected ?
 	if (!irConn->isOK ())

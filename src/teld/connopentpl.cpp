@@ -123,7 +123,7 @@ OpenTpl::waitReply ()
 				data_size -= bt + 1 - buf;
 				buf_top = buf;
 				bt = buf_top;
-				std::cout << "data_size " << data_size << " buf " << buf << std::endl;
+				// std::cout << "data_size " << data_size << " buf " << buf << std::endl;
 			}
 		}
 	}
@@ -269,10 +269,11 @@ OpenTpl::handleEvent (const char *buffer)
 int
 OpenTpl::handleCommand (const char *buffer)
 {
+	logStream (MESSAGE_DEBUG) << "handleCommand " << buffer << sendLog;
 	// it is end of command sequence
 	if (!strcmp (buffer, "COMMAND COMPLETE\r"))
 	{
-		logStream (MESSAGE_DEBUG) << "cmd cmplt" << sendLog;
+		logStream (MESSAGE_DEBUG) << "cmd end, valReply " << valReply << sendLog;
 		return 1;
 	}
 	// get command
@@ -283,6 +284,18 @@ OpenTpl::handleCommand (const char *buffer)
 	if (!strcmp (buffer, "DATA"))
 	{
 		ce++;
+		char *subc = ce;
+		while (*ce != '\0' && *ce != ' ')
+			ce++;
+		if (*ce != ' ')
+			throw (OpenTplError ("Cannot find space in data command"));
+		*ce = '\0';
+		if (!strcmp (subc, "OK"))
+		{
+			strcpy (valReply, "1");
+			return 0;
+		}	
+		ce++;
 		// look for data = sign..
 		while (*ce != '\0' && *ce != '=')
 			ce++;
@@ -292,14 +305,15 @@ OpenTpl::handleCommand (const char *buffer)
 		// if it starts with "..
 		if (*ce == '"')
 		{
-			char *bt = ce + 1;
+			ce++;
+			char *bt = ce;
 			while (*bt != '"' && *bt != '\0')
 				bt++;
 			if (*bt != '"')
 				throw OpenTplError ("Cannot find ending \"");
 			*bt = '\0';
 		}
-		strcpy (valReply, ce+1);
+		strcpy (valReply, ce);
 	}
 	return 0;
 }

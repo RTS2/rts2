@@ -68,7 +68,7 @@ Rts2TelescopeIr::setTelescopeTrack (int new_track)
 	status = irConn->tpl_get ("POINTING.TRACK", old_track, &status);
 	if (status != TPL_OK)
 		return -1;
-	status = irConn->tpl_set ("POINTING.TRACK", new_track | (old_track & 128), &status);
+	status = irConn->tpl_setww ("POINTING.TRACK", new_track | (old_track & 128), &status);
 	if (status != TPL_OK)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot setTelescopeTrack" << sendLog;
@@ -558,7 +558,7 @@ Rts2TelescopeIr::checkPower ()
 
 	if (power_state == 0)
 	{
-		status = irConn->tpl_setw ("CABINET.POWER", 1, &status);
+		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
 		status = irConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
@@ -1006,7 +1006,7 @@ Rts2TelescopeIr::resetMount ()
 	int status = TPL_OK;
 	int power = 0;
 	double power_state;
-	status = irConn->tpl_setw ("CABINET.POWER", power, &status);
+	status = irConn->tpl_set ("CABINET.POWER", power, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "IR resetMount powering off: " << status <<

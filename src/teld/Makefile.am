@@ -3,7 +3,7 @@ SUBDIRS = model
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec rts2-teld-indi-bridge
 
-noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h tgdrive.h connopentpl.h
 
 EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp tgdrive.cpp
 
@@ -37,19 +37,15 @@ rts2_telmodeltest_SOURCES = telmodeltest.cpp
 rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@
 endif
 
-if OPENTPL
-bin_PROGRAMS += rts2-teld-ir rts2-ir-errors
+bin_PROGRAMS += rts2-teld-ir
 
-rts2_teld_ir_SOURCES = ir-main.cpp ir.cpp
+rts2_teld_ir_SOURCES = ir-main.cpp ir.cpp connopentpl.cpp
 rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
 rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
 
 rts2_ir_errors_SOURCES = ir-errors.cpp ir.cpp
 rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
 rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
-else
-EXTRA_DIST += ir.cpp ir-main.cpp ir-errors.cpp
-endif
 
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount

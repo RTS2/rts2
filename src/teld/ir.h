@@ -32,13 +32,10 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <opentpl/client.h>
 #include <list>
 #include <iostream>
 
-#include "irconn.h"
-
-using namespace OpenTPL;
+#include "connopentpl.h"
 
 /**
  * Base class for IR telescope.
@@ -91,7 +88,7 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		int infoModel ();
 
 	protected:
-		IrConn *irConn;
+		rts2core::OpenTpl *irConn;
 
 		time_t timeout;
 
