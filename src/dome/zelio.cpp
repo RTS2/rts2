@@ -33,17 +33,24 @@ class Zelio:public Dome
 	private:
 		HostString *host;
 
+		Rts2ValueInteger *J1XT1;
+		Rts2ValueInteger *J2XT1;
+		Rts2ValueInteger *J3XT1;
+		Rts2ValueInteger *J4XT1;
+
+		Rts2ValueInteger *O1XT1;
+		Rts2ValueInteger *O2XT1;
+		Rts2ValueInteger *O3XT1;
+		Rts2ValueInteger *O4XT1;
+
 		rts2core::ConnModbus *zelioConn;
 
 	protected:
 		virtual int processOption (int in_opt);
 
-	public:
-		Zelio (int argc, char **argv);
-		virtual ~Zelio (void);
 		virtual int init ();
 
-		virtual int info ();
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -52,6 +59,11 @@ class Zelio:public Dome
 		virtual int startClose ();
 		virtual long isClosed ();
 		virtual int endClose ();
+	public:
+		Zelio (int argc, char **argv);
+		virtual ~Zelio (void);
+
+		virtual int info ();
 };
 
 }
@@ -118,6 +130,16 @@ Zelio::processOption (int in_opt)
 Zelio::Zelio (int argc, char **argv)
 :Dome (argc, argv)
 {
+	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
+	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
+	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
+	createValue (J4XT1, "J4XT1", "fourth input", false, RTS2_DT_HEX);
+
+	createValue (O1XT1, "O1XT1", "first output", false, RTS2_DT_HEX);
+	createValue (O2XT1, "O2XT1", "second output", false, RTS2_DT_HEX);
+	createValue (O3XT1, "O3XT1", "third output", false, RTS2_DT_HEX);
+	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
+
 	host = NULL;
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
@@ -136,6 +158,16 @@ Zelio::info ()
 {
 	uint16_t ret[8];
 	zelioConn->readHoldingRegisters (16, 8, ret);
+
+	J1XT1->setValueInteger (ret[0]);
+	J2XT1->setValueInteger (ret[1]);
+	J3XT1->setValueInteger (ret[2]);
+	J4XT1->setValueInteger (ret[3]);
+
+	O1XT1->setValueInteger (ret[4]);
+	O2XT1->setValueInteger (ret[5]);
+	O3XT1->setValueInteger (ret[6]);
+	O4XT1->setValueInteger (ret[7]);
 
 	zelioConn->readHoldingRegisters (32, 4, ret);
 	return Dome::info ();
@@ -157,6 +189,21 @@ Zelio::init ()
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
 	zelioConn->setDebug (true);
 	return zelioConn->init ();
+}
+
+
+int
+Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == J1XT1)
+		return zelioConn->writeHoldingRegister (16, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	if (oldValue == J2XT1)
+		return zelioConn->writeHoldingRegister (17, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	if (oldValue == J3XT1)
+		return zelioConn->writeHoldingRegister (18, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	if (oldValue == J4XT1)
+		return zelioConn->writeHoldingRegister (19, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	return Dome::setValue (oldValue, newValue);
 }
 
 
