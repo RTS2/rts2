@@ -20,6 +20,39 @@
 #include "dome.h"
 #include "../utils/connmodbus.h"
 
+// Zelio registers
+
+#define ZREG_J1XT1       16
+#define ZREG_J2XT1       17
+#define ZREG_J3XT1       18
+#define ZREG_J4XT1       19
+
+#define ZREG_O1XT1       20
+#define ZREG_O2XT1       21
+#define ZREG_O3XT1       22
+#define ZREG_O4XT1       23
+
+// bite mask for O1 and O2 registers
+#define ZO_SW_AUTO       0x0001
+#define ZO_SW_OPENCLOSE  0x0002
+#define ZO_EP_OPEN       0x0004
+#define ZO_EP_CLOSE      0x0008
+#define ZO_RAIN          0x0010
+#define ZO_STATE_OPEN    0x0020
+#define ZO_STATE_CLOSE   0x0040
+#define ZO_TIMEO_CLOSE   0x0080
+#define ZO_TIMEO_OPEN    0x0100
+#define ZO_MOT_OPEN      0x0200
+#define ZO_MOT_CLOSE     0x0400
+#define ZO_BLOCK_OPEN    0x0800
+#define ZO_BLOCK_CLOSE   0x1000
+// 0x2000 unused
+#define ZO_EMERGENCY     0x4000
+#define ZO_DEADMAN       0x8000
+
+// bit mask for rain ignore
+#define ZI_IGNORE_RAIN  0x8000
+
 namespace rts2dome
 {
 
@@ -32,6 +65,23 @@ class Zelio:public Dome
 {
 	private:
 		HostString *host;
+		int16_t deadManNum;
+		time_t nextDeadCheck;
+
+		Rts2ValueInteger *deadTimeout;
+
+		Rts2ValueBool *rain;
+		Rts2ValueBool *emergencyButton;
+
+		Rts2ValueBool *swOpenLeft;
+		Rts2ValueBool *swCloseLeft;
+		Rts2ValueBool *swCloseRight;
+		Rts2ValueBool *swOpenRight;
+
+		Rts2ValueBool *motOpenLeft;
+		Rts2ValueBool *motCloseLeft;
+		Rts2ValueBool *motOpenRight;
+		Rts2ValueBool *motCloseRight;
 
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
@@ -47,10 +97,13 @@ class Zelio:public Dome
 
 	protected:
 		virtual int processOption (int in_opt);
+		virtual int idle ();
 
 		virtual int init ();
 
 		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+
+		virtual bool isGoodWeather ();
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -59,6 +112,7 @@ class Zelio:public Dome
 		virtual int startClose ();
 		virtual long isClosed ();
 		virtual int endClose ();
+
 	public:
 		Zelio (int argc, char **argv);
 		virtual ~Zelio (void);
@@ -73,14 +127,47 @@ using namespace rts2dome;
 int
 Zelio::startOpen ()
 {
-	return 0;
+	return zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
+}
+
+
+bool
+Zelio::isGoodWeather ()
+{
+	if (getIgnoreMeteo ())
+		return false;
+	int ret;
+	uint16_t reg;
+	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
+	if (ret)
+		return false;
+	// now check for rain..
+	if (reg & ZO_RAIN)
+	{
+		rain->setValueBool (true);	
+		return false;
+	}
+	if (reg & ZO_EMERGENCY)
+	{
+		emergencyButton->setValueBool (true);
+		return false;
+	}
+	return Dome::isGoodWeather ();
 }
 
 
 long
 Zelio::isOpened ()
 {
-	return -2;
+	int ret;
+	uint16_t regs[2];
+	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+	if (ret)
+		return -1;
+	// check states of end switches..
+	if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
+		return -2;
+	return 0;
 }
 
 
@@ -94,14 +181,22 @@ Zelio::endOpen ()
 int
 Zelio::startClose ()
 {
-	return 0;
+	return zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
 }
 
 
 long
 Zelio::isClosed ()
 {
-	return -2;
+	int ret;
+	uint16_t regs[2];
+	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+	if (ret)
+		return -1;
+	// check states of end switches..
+	if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
+		return -2;
+	return 0;
 }
 
 
@@ -127,9 +222,45 @@ Zelio::processOption (int in_opt)
 }
 
 
+int
+Zelio::idle ()
+{
+	if (isGoodWeather ())
+	{
+		if ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING)
+		{
+			time_t now = time (NULL);
+			if (now > nextDeadCheck)
+			{
+				zelioConn->writeHoldingRegister (17, deadManNum);
+				deadManNum = (++deadManNum) % 200;
+				nextDeadCheck = now + deadTimeout->getValueInteger () / 2;
+			}
+		}
+	}
+	return Dome::idle ();
+}
+
+
 Zelio::Zelio (int argc, char **argv)
 :Dome (argc, argv)
 {
+	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false);
+	deadTimeout->setValueInteger (60);
+
+	createValue (rain, "rain", "state of rain sensor", false);
+	createValue (emergencyButton, "emmergency", "state of emergency button", false);
+
+	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
+	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
+	createValue (swCloseRight, "sw_close_right", "state of right close switch", false);
+	createValue (swOpenRight, "sw_open_right", "state of right open switch", false);
+
+	createValue (motOpenLeft, "motor_open_left", "state of left opening motor", false);
+	createValue (motCloseLeft, "motor_close_left", "state of left closing motor", false);
+	createValue (motOpenRight, "motor_open_right", "state of right opening motor", false);
+	createValue (motCloseRight, "motor_close_right", "state of right closing motor", false);
+
 	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
 	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
 	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
@@ -141,6 +272,8 @@ Zelio::Zelio (int argc, char **argv)
 	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
 
 	host = NULL;
+	deadManNum = 0;
+	nextDeadCheck = 0;
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
 }
@@ -156,20 +289,36 @@ Zelio::~Zelio (void)
 int
 Zelio::info ()
 {
-	uint16_t ret[8];
-	zelioConn->readHoldingRegisters (16, 8, ret);
+	uint16_t regs[8];
+	int ret;
+	ret = zelioConn->readHoldingRegisters (16, 8, regs);
+	if (ret)
+		return -1;
 
-	J1XT1->setValueInteger (ret[0]);
-	J2XT1->setValueInteger (ret[1]);
-	J3XT1->setValueInteger (ret[2]);
-	J4XT1->setValueInteger (ret[3]);
+	rain->setValueBool (regs[4] & ZO_RAIN);
+	emergencyButton->setValueBool (regs[4] & ZO_EMERGENCY);
 
-	O1XT1->setValueInteger (ret[4]);
-	O2XT1->setValueInteger (ret[5]);
-	O3XT1->setValueInteger (ret[6]);
-	O4XT1->setValueInteger (ret[7]);
+	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
+	swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
+	swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
+	swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
 
-	zelioConn->readHoldingRegisters (32, 4, ret);
+	motOpenLeft->setValueBool (regs[4] & ZO_MOT_OPEN);
+	motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
+	motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
+	motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
+
+	J1XT1->setValueInteger (regs[0]);
+	J2XT1->setValueInteger (regs[1]);
+	J3XT1->setValueInteger (regs[2]);
+	J4XT1->setValueInteger (regs[3]);
+
+	O1XT1->setValueInteger (regs[4]);
+	O2XT1->setValueInteger (regs[5]);
+	O3XT1->setValueInteger (regs[6]);
+	O4XT1->setValueInteger (regs[7]);
+
+	zelioConn->readHoldingRegisters (32, 4, regs);
 	return Dome::info ();
 }
 
@@ -196,13 +345,13 @@ int
 Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == J1XT1)
-		return zelioConn->writeHoldingRegister (16, newValue->getValueInteger ()) == 0 ? 0 : -2;
+		return zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	if (oldValue == J2XT1)
-		return zelioConn->writeHoldingRegister (17, newValue->getValueInteger ()) == 0 ? 0 : -2;
+		return zelioConn->writeHoldingRegister (ZREG_J2XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	if (oldValue == J3XT1)
-		return zelioConn->writeHoldingRegister (18, newValue->getValueInteger ()) == 0 ? 0 : -2;
+		return zelioConn->writeHoldingRegister (ZREG_J3XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	if (oldValue == J4XT1)
-		return zelioConn->writeHoldingRegister (19, newValue->getValueInteger ()) == 0 ? 0 : -2;
+		return zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	return Dome::setValue (oldValue, newValue);
 }
 
