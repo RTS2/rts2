@@ -250,3 +250,10 @@ ConnModbus::readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data
 {
 	return callFunction (0x04, start, qty, reply_data, qty);
 }
+
+int
+ConnModbus::writeHoldingRegister (int16_t reg, int16_t val)
+{
+  	int16_t reply[2];
+	return callFunction (0x06, reg, val, reply, 2);
+}
