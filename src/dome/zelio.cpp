@@ -127,7 +127,18 @@ using namespace rts2dome;
 int
 Zelio::startOpen ()
 {
-	return zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
+	int ret;
+	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
+	if (ret)
+		return ret;
+	ret = zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
+	if (ret)
+		return ret;
+	ret = zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
+	if (ret)
+		return ret;
+	deadManNum = 0;
+	return ret;
 }
 
 
@@ -135,7 +146,7 @@ bool
 Zelio::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
-		return false;
+		return true;
 	int ret;
 	uint16_t reg;
 	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
@@ -165,7 +176,7 @@ Zelio::isOpened ()
 	if (ret)
 		return -1;
 	// check states of end switches..
-	if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
+	if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
 		return -2;
 	return 0;
 }
@@ -181,7 +192,10 @@ Zelio::endOpen ()
 int
 Zelio::startClose ()
 {
-	return zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+	int ret;
+	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+	sleep (2);
+	return ret;
 }
 
 
@@ -232,9 +246,9 @@ Zelio::idle ()
 			time_t now = time (NULL);
 			if (now > nextDeadCheck)
 			{
-				zelioConn->writeHoldingRegister (17, deadManNum);
-				deadManNum = (++deadManNum) % 200;
-				nextDeadCheck = now + deadTimeout->getValueInteger () / 2;
+				zelioConn->writeHoldingRegister (ZREG_J2XT1, deadManNum);
+				deadManNum = (++deadManNum) % 2;
+				nextDeadCheck = now + deadTimeout->getValueInteger () / 5;
 			}
 		}
 	}
@@ -337,7 +351,30 @@ Zelio::init ()
 	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
 	zelioConn->setDebug (true);
-	return zelioConn->init ();
+	ret = zelioConn->init ();
+	if (ret)
+		return ret;
+	ret = info ();
+	if (ret)
+		return ret;
+	// switch on dome state
+	if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
+	{
+		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+	}
+	else if (swCloseLeft->getValueBool () == true && swCloseRight->getValueBool () == true)
+	{
+		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+	}
+	else if (motOpenLeft->getValueBool () == true || motOpenRight->getValueBool () == true)
+	{
+		maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
+	}
+	else if (motCloseLeft->getValueBool () == true || motCloseRight->getValueBool () == true)
+	{
+		maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+	}
+	return 0;
 }
 
 
