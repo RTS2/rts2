@@ -255,5 +255,5 @@ int
 ConnModbus::writeHoldingRegister (int16_t reg, int16_t val)
 {
   	int16_t reply[2];
-	return callFunction (0x06, reg, val, reply, 2);
+	return callFunction (0x06, reg, val, reply, 4);
 }
