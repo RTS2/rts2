@@ -71,6 +71,7 @@ class Zelio:public Dome
 		Rts2ValueInteger *deadTimeout;
 
 		Rts2ValueBool *rain;
+		Rts2ValueBool *automode;
 		Rts2ValueBool *emergencyButton;
 
 		Rts2ValueBool *swOpenLeft;
@@ -263,6 +264,7 @@ Zelio::Zelio (int argc, char **argv)
 	deadTimeout->setValueInteger (60);
 
 	createValue (rain, "rain", "state of rain sensor", false);
+	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (emergencyButton, "emmergency", "state of emergency button", false);
 
 	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
@@ -310,6 +312,7 @@ Zelio::info ()
 		return -1;
 
 	rain->setValueBool (regs[4] & ZO_RAIN);
+	automode->setValueBool (regs[4] & ZO_SW_AUTO);
 	emergencyButton->setValueBool (regs[4] & ZO_EMERGENCY);
 
 	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
