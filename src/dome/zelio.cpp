@@ -46,7 +46,7 @@
 #define ZO_MOT_CLOSE     0x0400
 #define ZO_BLOCK_OPEN    0x0800
 #define ZO_BLOCK_CLOSE   0x1000
-// 0x2000 unused
+#define ZO_IGNORE_RAIN   0x2000
 #define ZO_EMERGENCY     0x4000
 #define ZO_DEADMAN       0x8000
 
@@ -71,6 +71,7 @@ class Zelio:public Dome
 		Rts2ValueInteger *deadTimeout;
 
 		Rts2ValueBool *rain;
+		Rts2ValueBool *ignoreRain;
 		Rts2ValueBool *automode;
 		Rts2ValueBool *emergencyButton;
 
@@ -153,11 +154,13 @@ Zelio::isGoodWeather ()
 	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
 	if (ret)
 		return false;
+	ignoreRain->setValueBool (reg & ZO_IGNORE_RAIN);	
 	// now check for rain..
-	if (reg & ZO_RAIN)
+	if (!(reg & ZO_RAIN))
 	{
-		rain->setValueBool (true);	
-		return false;
+		rain->setValueBool (true);
+		if (ignoreRain->getValueBool () == false)
+			return false;
 	}
 	if (reg & ZO_EMERGENCY)
 	{
@@ -264,6 +267,7 @@ Zelio::Zelio (int argc, char **argv)
 	deadTimeout->setValueInteger (60);
 
 	createValue (rain, "rain", "state of rain sensor", false);
+	createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (emergencyButton, "emmergency", "state of emergency button", false);
 
@@ -311,7 +315,8 @@ Zelio::info ()
 	if (ret)
 		return -1;
 
-	rain->setValueBool (regs[4] & ZO_RAIN);
+	rain->setValueBool (!(regs[4] & ZO_RAIN));
+	ignoreRain->setValueBool (regs[4] & ZO_IGNORE_RAIN);
 	automode->setValueBool (regs[4] & ZO_SW_AUTO);
 	emergencyButton->setValueBool (regs[4] & ZO_EMERGENCY);
 
@@ -353,7 +358,6 @@ Zelio::init ()
 		return -1;
 	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
-	zelioConn->setDebug (true);
 	ret = zelioConn->init ();
 	if (ret)
 		return ret;
