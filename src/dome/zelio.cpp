@@ -85,6 +85,16 @@ class Zelio:public Dome
 		Rts2ValueBool *motOpenRight;
 		Rts2ValueBool *motCloseRight;
 
+		Rts2ValueBool *timeoOpenLeft;
+		Rts2ValueBool *timeoCloseLeft;
+		Rts2ValueBool *timeoOpenRight;
+		Rts2ValueBool *timeoCloseRight;
+	
+		Rts2ValueBool *blockOpenLeft;
+		Rts2ValueBool *blockCloseLeft;
+		Rts2ValueBool *blockOpenRight;
+		Rts2ValueBool *blockCloseRight;
+
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
 		Rts2ValueInteger *J3XT1;
@@ -130,6 +140,16 @@ int
 Zelio::startOpen ()
 {
 	int ret;
+	// check auto state..
+	uint16_t reg;
+	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
+	if (ret)
+		return ret;
+	if (!(reg & ZO_SW_AUTO))
+	{
+		logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
+		return -1;
+	}
 	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
 	if (ret)
 		return ret;
@@ -154,17 +174,20 @@ Zelio::isGoodWeather ()
 	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
 	if (ret)
 		return false;
-	ignoreRain->setValueBool (reg & ZO_IGNORE_RAIN);	
+	ignoreRain->setValueBool (reg & ZO_IGNORE_RAIN);
+	sendValueAll (ignoreRain);
 	// now check for rain..
 	if (!(reg & ZO_RAIN))
 	{
 		rain->setValueBool (true);
+		sendValueAll (rain);
 		if (ignoreRain->getValueBool () == false)
 			return false;
 	}
 	if (reg & ZO_EMERGENCY)
 	{
 		emergencyButton->setValueBool (true);
+		sendValueAll (emergencyButton);
 		return false;
 	}
 	return Dome::isGoodWeather ();
@@ -281,6 +304,16 @@ Zelio::Zelio (int argc, char **argv)
 	createValue (motOpenRight, "motor_open_right", "state of right opening motor", false);
 	createValue (motCloseRight, "motor_close_right", "state of right closing motor", false);
 
+	createValue (timeoOpenLeft, "timeo_open_left", "left open timeout", false);
+	createValue (timeoCloseLeft, "timeo_close_left", "left close timeout", false);
+	createValue (timeoOpenRight, "timeo_open_right", "right open timeout", false);
+	createValue (timeoCloseRight, "timeo_close_right", "right close timeout", false);
+
+	createValue (blockOpenLeft, "block_open_left", "left open block", false);
+	createValue (blockCloseLeft, "block_close_left", "left close block", false);
+	createValue (blockOpenRight, "block_open_right", "right open block", false);
+	createValue (blockCloseRight, "block_close_left", "left close block", false);
+
 	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
 	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
 	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
@@ -329,6 +362,16 @@ Zelio::info ()
 	motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
 	motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
 	motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
+
+	timeoOpenLeft->setValueBool (regs[4] & ZO_TIMEO_OPEN);
+	timeoCloseLeft->setValueBool (regs[4] & ZO_TIMEO_CLOSE);
+	timeoOpenRight->setValueBool (regs[5] & ZO_TIMEO_OPEN);
+	timeoCloseRight->setValueBool (regs[5] & ZO_TIMEO_CLOSE);
+
+	blockOpenLeft->setValueBool (regs[4] & ZO_BLOCK_OPEN);
+	blockCloseLeft->setValueBool (regs[4] & ZO_BLOCK_CLOSE);
+	blockOpenRight->setValueBool (regs[5] & ZO_BLOCK_OPEN);
+	blockCloseRight->setValueBool (regs[5] & ZO_BLOCK_CLOSE);
 
 	J1XT1->setValueInteger (regs[0]);
 	J2XT1->setValueInteger (regs[1]);
