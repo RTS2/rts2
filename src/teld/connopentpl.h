@@ -71,7 +71,7 @@ class OpenTpl: public Rts2ConnNoSend
 		
 		int tpl_command_no;
 		
-		int sendCommand (char *cmd, char *p1, bool wait = true);
+		int sendCommand (const char *cmd, const char *p1, bool wait = true);
 
 		// loop till there isn't reply on connection from the command
 		int waitReply ();
@@ -111,7 +111,7 @@ class OpenTpl: public Rts2ConnNoSend
 		 *
 		 * @return -1 on unknow command, 0 on know command, 1 on command complete
 		 */
-		int handleCommand (const char *buffer); 
+		int handleCommand (char *buffer); 
 
 		/**
 		 * Check if connection to TPL is running.
