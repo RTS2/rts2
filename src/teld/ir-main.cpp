@@ -255,11 +255,22 @@ Rts2DevTelescopeIr::startPark ()
 	#endif
 	sleep (1);
 	status = TPL_OK;
+	double tra;
+	double tdec;
 	switch (getPointingModel ())
 	{
 		case 0:
-			status = irConn->tpl_set ("HA.TARGETPOS", 90, &status);
-			status = irConn->tpl_set ("DEC.TARGETPOS", 0, &status);
+			status = irConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
+			if (status != TPL_OK)
+				return -1;
+			// decide dec based on latitude
+			tdec = 90 - fabs (telLatitude->getValueDouble ());
+			if (telLatitude->getValueDouble () < 0)
+				tdec *= -1.0;
+
+			status = irConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
+			status = irConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
+			setTelescopeTrack (irTracking);
 			break;
 		case 1:
 			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);

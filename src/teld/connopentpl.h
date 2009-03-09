@@ -70,6 +70,9 @@ class OpenTpl: public Rts2ConnNoSend
 		char valReply[500];
 		
 		int tpl_command_no;
+
+		// used commands IDs - ID which waits for command complete
+		std::vector <int> used_command_ids;
 		
 		int sendCommand (const char *cmd, const char *p1, bool wait = true);
 
@@ -109,9 +112,13 @@ class OpenTpl: public Rts2ConnNoSend
 		/**
 		 * Handle command return from connection.
 		 *
-		 * @return -1 on unknow command, 0 on know command, 1 on command complete
+		 * @param buffer Buffer with command.
+		 * @param isActual If true, command is the actual command  - result of its execution can be written to valReply, and its error are propagated by throwinf OpenTplError.
+		 *
+		 * @return 0 on know command, 1 on command complete
+		 * @throws OpenTplError
 		 */
-		int handleCommand (char *buffer); 
+		int handleCommand (char *buffer, bool isActual); 
 
 		/**
 		 * Check if connection to TPL is running.

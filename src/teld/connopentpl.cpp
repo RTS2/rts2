@@ -19,6 +19,7 @@
 
 #include "connopentpl.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <netdb.h>
 #include <fcntl.h>
@@ -38,9 +39,17 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 {
 	std::ostringstream _os;
 	_os << tpl_command_no << " " << cmd << " " << p1 << '\n';
-	tpl_command_no++;
 	int ret = send (sock, _os.str().c_str (), _os.str().length (), 0);
 	logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+	if (ret > 0)
+	{
+		used_command_ids.push_back (tpl_command_no);
+		tpl_command_no++;
+	}
+	else if (ret < 0)
+	{
+		logStream (MESSAGE_DEBUG) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
+	}
 	if (wait == false)
 		return ret == (int) _os.str().length() ? 0 : -1;
 	return waitReply ();
@@ -76,6 +85,7 @@ OpenTpl::waitReply ()
 			ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 			if (ret <= 0)
 			{
+				logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 5 seconds, reinitiliazing" << sendLog;
 				connectionError (-1);
 				return -1;
 			}
@@ -112,21 +122,47 @@ OpenTpl::waitReply ()
 				{
 					logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
 				}
-				else if (cmd_num != tpl_command_no - 1)
+				else 
 				{
-					handleEvent (tpl_buf);
-				}
-				else
-				{
-					int cmd_ret = handleCommand (lp + 1);
+					int cmd_ret = handleCommand (lp + 1, cmd_num == *(--used_command_ids.end ()));
+					// command sucessfully ended..
 					if (cmd_ret == 1)
-						return 0;
-					if (cmd_ret == -1)
-						return -1;
+					{
+						// remove command from used_command_ids
+						std::vector <int>::iterator iter = std::find (used_command_ids.begin (), used_command_ids.end (), cmd_num);
+						Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+						ls << "iter " << *iter << " end-1 " << *(--(used_command_ids.end ())) << " size " << used_command_ids.size () << " eq " << (iter == --(used_command_ids.end ())) << " ";
+						for (std::vector <int>::iterator it2 = used_command_ids.begin (); it2 != used_command_ids.end (); it2++)
+						{
+							ls << (*it2) << " ";
+						}
+						ls << sendLog;
+						if (iter == --(used_command_ids.end ()))
+						{
+							if (iter == used_command_ids.begin ())
+							{
+								tpl_command_no = 1;
+							}
+							else
+							{
+								tpl_command_no = *(iter - 1) + 1;
+							}
+							used_command_ids.erase (iter);
+							Rts2LogStream ls2 = logStream (MESSAGE_DEBUG);
+							for (std::vector <int>::iterator it2 = used_command_ids.begin (); it2 != used_command_ids.end (); it2++)
+							{
+								ls2 << (*it2) << " ";
+							}
+							ls2 << sendLog;
+							return 0;
+						}
+						if (iter != used_command_ids.end ())
+							used_command_ids.erase (iter);
+					}
 				}
 				// cpy buffer
 				data_size = tpl_buf_top + data_size - bt;
-				memcpy (tpl_buf, bt + 1, data_size);
+				memmove (tpl_buf, bt + 1, data_size);
 				tpl_buf_top = tpl_buf + data_size - 1;
 				data_size = 0;
 				bt = tpl_buf;
@@ -273,23 +309,29 @@ OpenTpl::handleEvent (const char *buffer)
 
 
 int
-OpenTpl::handleCommand (char *buffer)
+OpenTpl::handleCommand (char *buffer, bool isActual)
 {
-//	logStream (MESSAGE_DEBUG) << "handleCommand " << buffer << sendLog;
-	// it is end of command sequence
-	if (!strcmp (buffer, "COMMAND COMPLETE\r"))
-	{
-//		logStream (MESSAGE_DEBUG) << "cmd end, valReply " << valReply << sendLog;
-		return 1;
-	}
 	// get command
 	char *ce = buffer;
 	while (*ce != '\0' && *ce != ' ')
 		ce++;
+	if (*ce == '\0')
+		throw OpenTplError ("Cannot handle command");
+
 	*ce = '\0';
-	if (!strcmp (buffer, "DATA"))
+	ce++;
+	if (!strcmp (buffer, "COMMAND"))
 	{
-		ce++;
+		while (isspace (*ce))
+			ce++;
+		if (!strcmp (ce, "COMPLETE\r"))
+			return 1;
+		if (!strcmp (ce, "OK\r"))
+			return 0;
+		logStream (MESSAGE_ERROR) << "unknow COMMAND subcommand " << ce << sendLog;
+	}
+	else if (!strcmp (buffer, "DATA"))
+	{
 		char *subc = ce;
 		while (*ce != '\0' && *ce != ' ')
 			ce++;
@@ -298,12 +340,16 @@ OpenTpl::handleCommand (char *buffer)
 		*ce = '\0';
 		if (!strcmp (subc, "OK"))
 		{
-			strcpy (valReply, "1");
+			if (isActual)
+				strcpy (valReply, "1");
 			return 0;
 		}
 		if (!strcmp (subc, "ERROR"))
 		{
-			throw (OpenTplError ("Error while geting data"));
+			if (isActual)
+				throw (OpenTplError ("Error while geting data"));
+			else
+				return 0;
 		}
 		ce++;
 		// look for data = sign..
@@ -323,7 +369,16 @@ OpenTpl::handleCommand (char *buffer)
 				throw OpenTplError ("Cannot find ending \"");
 			*bt = '\0';
 		}
-		strcpy (valReply, ce);
+		if (isActual)
+			strcpy (valReply, ce);
+	}
+	else if (!strcmp (buffer, "EVENT"))
+	{
+		handleEvent (buffer);
+	}
+	else
+	{
+		logStream (MESSAGE_ERROR) << "unknow reply type: " << buffer << sendLog;
 	}
 	return 0;
 }
