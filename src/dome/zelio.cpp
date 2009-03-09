@@ -174,15 +174,15 @@ Zelio::isGoodWeather ()
 	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
 	if (ret)
 		return false;
+	rain->setValueBool (!(reg & ZO_RAIN));
+	sendValueAll (rain);
 	ignoreRain->setValueBool (reg & ZO_IGNORE_RAIN);
 	sendValueAll (ignoreRain);
 	// now check for rain..
-	if (!(reg & ZO_RAIN))
+	if (!(reg & ZO_RAIN) && ignoreRain->getValueBool () == false)
 	{
-		rain->setValueBool (true);
-		sendValueAll (rain);
-		if (ignoreRain->getValueBool () == false)
-			return false;
+		setWeatherTimeout (3600);
+		return false;
 	}
 	if (reg & ZO_EMERGENCY)
 	{
