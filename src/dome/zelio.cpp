@@ -142,7 +142,7 @@ Zelio::startOpen ()
 	int ret;
 	// check auto state..
 	uint16_t reg;
-	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
+	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 	if (ret)
 		return ret;
 	if (!(reg & ZO_SW_AUTO))
@@ -171,7 +171,7 @@ Zelio::isGoodWeather ()
 		return true;
 	int ret;
 	uint16_t reg;
-	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 1, &reg);
+	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 	if (ret)
 		return false;
 	rain->setValueBool (!(reg & ZO_RAIN));
@@ -348,10 +348,10 @@ Zelio::info ()
 	if (ret)
 		return -1;
 
-	rain->setValueBool (!(regs[4] & ZO_RAIN));
-	ignoreRain->setValueBool (regs[4] & ZO_IGNORE_RAIN);
-	automode->setValueBool (regs[4] & ZO_SW_AUTO);
-	emergencyButton->setValueBool (regs[4] & ZO_EMERGENCY);
+	rain->setValueBool (!(regs[7] & ZO_RAIN));
+	ignoreRain->setValueBool (regs[7] & ZO_IGNORE_RAIN);
+	automode->setValueBool (regs[7] & ZO_SW_AUTO);
+	emergencyButton->setValueBool (regs[7] & ZO_EMERGENCY);
 
 	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
 	swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
