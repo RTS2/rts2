@@ -33,11 +33,8 @@
 #define ZREG_O4XT1       23
 
 // bite mask for O1 and O2 registers
-#define ZO_SW_AUTO       0x0001
-#define ZO_SW_OPENCLOSE  0x0002
 #define ZO_EP_OPEN       0x0004
 #define ZO_EP_CLOSE      0x0008
-#define ZO_RAIN          0x0010
 #define ZO_STATE_OPEN    0x0020
 #define ZO_STATE_CLOSE   0x0040
 #define ZO_TIMEO_CLOSE   0x0080
@@ -46,9 +43,16 @@
 #define ZO_MOT_CLOSE     0x0400
 #define ZO_BLOCK_OPEN    0x0800
 #define ZO_BLOCK_CLOSE   0x1000
-#define ZO_IGNORE_RAIN   0x2000
-#define ZO_EMERGENCY     0x4000
-#define ZO_DEADMAN       0x8000
+
+// bite mask for state register
+#define ZS_SW_AUTO       0x0001
+#define ZS_SW_OPENCLOSE  0x0002
+#define ZS_TIMEOUT       0x0004
+#define ZS_RAIN          0x0010
+#define ZS_WEATHER       0x1000
+#define ZS_IGNORE_RAIN   0x2000
+#define ZS_EMERGENCY_B   0x4000
+#define ZS_DEADMAN       0x8000
 
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN  0x8000
@@ -145,7 +149,7 @@ Zelio::startOpen ()
 	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 	if (ret)
 		return ret;
-	if (!(reg & ZO_SW_AUTO))
+	if (!(reg & ZS_SW_AUTO))
 	{
 		logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
 		return -1;
@@ -174,17 +178,17 @@ Zelio::isGoodWeather ()
 	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 	if (ret)
 		return false;
-	rain->setValueBool (!(reg & ZO_RAIN));
+	rain->setValueBool (!(reg & ZS_RAIN));
 	sendValueAll (rain);
-	ignoreRain->setValueBool (reg & ZO_IGNORE_RAIN);
+	ignoreRain->setValueBool (reg & ZS_IGNORE_RAIN);
 	sendValueAll (ignoreRain);
 	// now check for rain..
-	if (!(reg & ZO_RAIN) && ignoreRain->getValueBool () == false)
+	if (!(reg & ZS_RAIN) && ignoreRain->getValueBool () == false)
 	{
 		setWeatherTimeout (3600);
 		return false;
 	}
-	if (reg & ZO_EMERGENCY)
+	if (reg & ZS_EMERGENCY_B)
 	{
 		emergencyButton->setValueBool (true);
 		sendValueAll (emergencyButton);
@@ -348,10 +352,10 @@ Zelio::info ()
 	if (ret)
 		return -1;
 
-	rain->setValueBool (!(regs[7] & ZO_RAIN));
-	ignoreRain->setValueBool (regs[7] & ZO_IGNORE_RAIN);
-	automode->setValueBool (regs[7] & ZO_SW_AUTO);
-	emergencyButton->setValueBool (regs[7] & ZO_EMERGENCY);
+	rain->setValueBool (!(regs[7] & ZS_RAIN));
+	ignoreRain->setValueBool (regs[7] & ZS_IGNORE_RAIN);
+	automode->setValueBool (regs[7] & ZS_SW_AUTO);
+	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
 
 	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
 	swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
