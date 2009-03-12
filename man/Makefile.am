@@ -25,7 +25,9 @@ EXTRA_DIST = \
     rts2-telmodeltest.xml \
     rts2.devices.xml \
     rts2-centrald.xml \
-    rts2-moodd.xml
+    rts2-moodd.xml \
+    rts2-sensor-system.xml \
+    rts2-sensor-apcups.xml
 
 man_MANS = \
     rts2.7 \
@@ -52,7 +54,9 @@ man_MANS = \
     rts2-telmodeltest.1 \
     rts2.devices.5 \
     rts2-centrald.1 \
-    rts2-moodd.1
+    rts2-moodd.1 \
+    rts2-sensor-system.1 \
+    rts2-sensor-apcups.1
 
 doc_FOP = \
     rts2-man.fop \

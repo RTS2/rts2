@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-grbd">
+  <!ENTITY dhpackage   "rts2-sensor-system">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.3</productnumber>
+    <productnumber>0.7.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -49,7 +49,7 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-    <refpurpose>Receives GCNs allerts, create their targets in the database and executes arbitary script upon their arrival.</refpurpose>
+    <refpurpose>Monitor available disk space. Send warnings if disk space drops bellow predefined value.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
@@ -76,31 +76,7 @@
 	<arg choice="plain"><option>-d <replaceable>device name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--database <replaceable>database connection</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--debugdb</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--gcn_host</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--gcn_port</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--test</option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--forward <replaceable>port</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--add-exec <replaceable>command</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-        <arg choice="plain"><option>--exec_followups</option></arg>
+	<arg choice="plain"><option>-p <replaceable>path</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
 
@@ -121,8 +97,7 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>&dhpackage;</command> receives informations from GCN. Enables executing of a command
-      when new GCN message arrive. It can also retransmit GCN packets to behind-firewall hosts.
+      <command>&dhpackage;</command> monitor availabe disk space. It is responsible for producing alerts if disk space drops bellow certain value.
     </para>
 
   </refsect1>
@@ -163,103 +138,12 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
-        <listitem>
-          <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--test</option></term>
-        <listitem>
-          <para>If set, GCN test routines will be processed, writen to database and executed.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--add-exec <replaceable class="parameter">command</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify command which will be executed once the GCN notice with GRB
-	    arrives. The command received as parameters following informations:
-	    <variablelist>
-	      <varlistentry>
-	        <term>target_id</term>
-		<listitem>
-		  <para>
-                    GRB target ID. That is RTS2 Target ID of the GRB being processed.
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_id</term>
-		<listitem>
-		  <para>
-		    GRB ID, assigned by GCN. Should be unique with some cautions. It is better base GRB processing on
-		    RTS2 target ID, as that is more unique - e.g. if Swift starts follow-ups of Integral GRB, grb id of that
-		    follow-up observations is different from Integral ID.
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_seqn</term>
-		<listitem>
-		  <para>
-		    GRB sequential number. Used in old BATSE days, nowadays almost always 0 or 1.
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_type</term>
-		<listitem>
-		  <para>
-		    GRB packet type. Please see
-		    <ulink url="http://gcn.gsfc.nasa.gov/sock_pkt_def_doc.html"><citetitle>GCN website</citetitle></ulink> for
-		    complete list of type ids.
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_ra</term>
-		<listitem>
-		  <para>
-		    GRB RA specified in decimal degrees (e.g. expect 0..360 range).
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_dec</term>
-		<listitem>
-		  <para>
-		    GRB DEC specified in decimal degrees (-90..90 range).
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_date</term>
-		<listitem>
-		  <para>
-                    GRB date as ctime (sec since 1-1-1970).
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_errorbox</term>
-		<listitem>
-		  <para>
-		    GRB errobox size in decimal degrees, usually expect some small number (way bellow 1 degree).
-		  </para>
-		</listitem>
-	      </varlistentry>
-	      <varlistentry>
-	        <term>grb_isnew</term>
-		<listitem>
-		  <para>
-		    1 if this is new GRB, 0 if this message is update of an already know GRB.
-		  </para>
-		</listitem>
-	      </varlistentry>
-	    </variablelist>
-	  </para>
-        </listitem>
+        <term><option>-p <replaceable class="parameter">path</replaceable></option></term>
+	<listitem>
+           <para>
+             Specify path which will be monitored.
+	   </para>
+	</listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
