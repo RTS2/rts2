@@ -48,14 +48,17 @@
 #define ZS_SW_AUTO       0x0001
 #define ZS_SW_OPENCLOSE  0x0002
 #define ZS_TIMEOUT       0x0004
+#define ZS_POWER         0x0008
 #define ZS_RAIN          0x0010
 #define ZS_WEATHER       0x1000
-#define ZS_IGNORE_RAIN   0x2000
+#define ZS_OPENING_IGNR  0x2000
 #define ZS_EMERGENCY_B   0x4000
 #define ZS_DEADMAN       0x8000
 
+// bit for Q9 - remote switch
+#define ZI_Q9            0x4000
 // bit mask for rain ignore
-#define ZI_IGNORE_RAIN  0x8000
+#define ZI_IGNORE_RAIN   0x8000
 
 namespace rts2dome
 {
@@ -75,8 +78,12 @@ class Zelio:public Dome
 		Rts2ValueInteger *deadTimeout;
 
 		Rts2ValueBool *rain;
+		Rts2ValueBool *openingIgnoreRain;
 		Rts2ValueBool *ignoreRain;
 		Rts2ValueBool *automode;
+		Rts2ValueBool *timeoutOccured;
+		Rts2ValueBool *onPower;
+		Rts2ValueBool *weather;
 		Rts2ValueBool *emergencyButton;
 
 		Rts2ValueBool *swOpenLeft;
@@ -99,6 +106,8 @@ class Zelio:public Dome
 		Rts2ValueBool *blockOpenRight;
 		Rts2ValueBool *blockCloseRight;
 
+		Rts2ValueBool *Q9;
+
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
 		Rts2ValueInteger *J3XT1;
@@ -110,6 +119,8 @@ class Zelio:public Dome
 		Rts2ValueInteger *O4XT1;
 
 		rts2core::ConnModbus *zelioConn;
+
+	  	int setBitsInput (uint16_t reg, uint16_t mask, bool value);
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -141,19 +152,60 @@ class Zelio:public Dome
 using namespace rts2dome;
 
 int
+Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
+{
+	int ret;
+	uint16_t oldValue;
+	ret = zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &oldValue);
+	if (ret)
+		return ret;
+	// switch mask..
+	oldValue &= ~mask;
+	if (value)
+		oldValue |= mask;
+	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, oldValue);
+	return ret;
+}
+
+int
 Zelio::startOpen ()
 {
 	int ret;
 	// check auto state..
 	uint16_t reg;
+	uint16_t reg_J1;
 	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 	if (ret)
 		return ret;
+	ret = zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &reg_J1);
+	if (ret)
+	  	return ret;
 	if (!(reg & ZS_SW_AUTO))
 	{
 		logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
 		return -1;
 	}
+	if (reg & ZS_EMERGENCY_B)
+	{
+		logStream (MESSAGE_WARNING) << "emergency button pusshed" << sendLog;
+		return -1;
+	}
+	if (reg & ZS_TIMEOUT)
+	{
+		logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
+		return -1;
+	}
+	if (!(reg & ZS_POWER))
+	{
+		logStream (MESSAGE_WARNING) << "power failure" << sendLog;
+		return -1;
+	}
+	if (!(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
+	{
+		logStream (MESSAGE_WARNING) << "it is raining and rain is not ignored" << sendLog;
+		return -1;
+	}
+
 	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
 	if (ret)
 		return ret;
@@ -180,18 +232,14 @@ Zelio::isGoodWeather ()
 		return false;
 	rain->setValueBool (!(reg & ZS_RAIN));
 	sendValueAll (rain);
-	ignoreRain->setValueBool (reg & ZS_IGNORE_RAIN);
-	sendValueAll (ignoreRain);
+	weather->setValueBool (reg & ZS_WEATHER);
+	sendValueAll (weather);
+	openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
+	sendValueAll (openingIgnoreRain);
 	// now check for rain..
-	if (!(reg & ZS_RAIN) && ignoreRain->getValueBool () == false)
+	if (!(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
 		setWeatherTimeout (3600);
-		return false;
-	}
-	if (reg & ZS_EMERGENCY_B)
-	{
-		emergencyButton->setValueBool (true);
-		sendValueAll (emergencyButton);
 		return false;
 	}
 	return Dome::isGoodWeather ();
@@ -296,7 +344,12 @@ Zelio::Zelio (int argc, char **argv)
 	createValue (rain, "rain", "state of rain sensor", false);
 	createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	createValue (automode, "automode", "state of automatic dome mode", false);
+	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
+	createValue (onPower, "on_power", "true if power is connected", false);
+	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
 	createValue (emergencyButton, "emmergency", "state of emergency button", false);
+
+	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false);
 
 	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
 	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
@@ -353,8 +406,12 @@ Zelio::info ()
 		return -1;
 
 	rain->setValueBool (!(regs[7] & ZS_RAIN));
-	ignoreRain->setValueBool (regs[7] & ZS_IGNORE_RAIN);
+	ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
+	openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
 	automode->setValueBool (regs[7] & ZS_SW_AUTO);
+	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
+	onPower->setValueBool (regs[7] & ZS_POWER);
+	weather->setValueBool (regs[7] & ZS_WEATHER);
 	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
 
 	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
@@ -435,6 +492,10 @@ Zelio::init ()
 int
 Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
+	if (oldValue == Q9)
+	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ());
+	if (oldValue == ignoreRain)
+	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ());
 	if (oldValue == J1XT1)
 		return zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
 	if (oldValue == J2XT1)
