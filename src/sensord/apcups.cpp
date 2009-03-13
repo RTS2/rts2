@@ -25,6 +25,8 @@
 #include <netdb.h>
 #include <fcntl.h>
 
+#include <map>
+
 namespace rts2sensor
 {
 
@@ -38,6 +40,7 @@ namespace rts2sensor
 		private:
 			const char *hostname;
 			int port;
+			std::map <std::string, std::string> values;
 
 		public:
 			/**
@@ -65,6 +68,8 @@ namespace rts2sensor
 			 * @param _buf_size  Size of buffer for reply data.
 			 */
 			int command (const char *cmd, char *_buf, int _buf_size);
+
+			float getPercents (const char *val);
 	};
 
 	/**
@@ -77,6 +82,8 @@ namespace rts2sensor
 		private:
 			HostString *host;
 			ConnApcUps *connApc;
+
+			Rts2ValueFloat *bcharge;
 
 		protected:
 			virtual int processOption (int opt);
@@ -148,10 +155,19 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 		connectionError (-1);
 		return -1;
 	}
+	ret = send (sock, cmd, strlen (cmd), 0);
+	if (ret != strlen (cmd))
+	{
+		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
+		connectionError (-1);
+		return -1;
+	}
 
 	// receive data..
 	int left = 2;
 	bool data = false;
+        char reply_data[502];
+	int rsize = 0;
 
 	while (left > 0)
 	{
@@ -180,8 +196,7 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 	                return -1;
 	        }
 	
-	        char reply_data[left];
-	        ret = recv (sock, reply_data, left, 0);
+	        ret = recv (sock, reply_data + rsize, left, 0);
 	        if (ret < 0)
 	        {
 	                logStream (MESSAGE_ERROR) << "Cannot read from APC UPS socket, error " << strerror (errno) << sendLog;
@@ -190,17 +205,59 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 	        }
 		if (!data)
 		{
+		  	std::cout << "data" << std::endl;
 			left = ntohs (*((uint16_t *) reply_data));
-			data = true;	
+			data = true;
+			if (left == 0)
+				return 0;
 		}
 		else
 		{
 			left -= ret;
-			reply_data[ret] = '\0';
-			std::cout << reply_data << std::endl;
+			rsize += ret;
+		}
+		if (left == 0)
+		{
+			reply_data[rsize] = '\0';
+			// try to parse reply
+			if (reply_data[9] != ':')
+			{
+				logStream (MESSAGE_ERROR) << "Invalid reply data" << " " << ret << " " << reply_data << sendLog;
+				return -1;
+			}
+			reply_data[9] = '\0';
+			std::cout << "val '" << reply_data << "'" << std::endl;
+			if (strcmp (reply_data, "END APC  ") == 0)
+			{
+			  	std::cout << "END" << std::endl;
+			}
+			else
+			{
+				// eat any spaces..
+				char *pchr = reply_data + 8;
+				while (isspace (*pchr) && pchr > reply_data)
+				{
+					pchr--;
+				}
+				pchr[1] = '\0';
+				values[std::string (reply_data)] = std::string (reply_data + 10);
+			}
+			left = 2;
+			data = false;
+			rsize = 0;
 		}
 	}
 	return 0;
+}
+
+
+float
+ConnApcUps::getPercents (const char *val)
+{
+	std::map <std::string, std::string>::iterator iter = values.find (val);
+	if (values.find (val) == values.end ())
+		return nan("f");
+	return atof ((*iter).second.c_str());
 }
 
 
@@ -244,12 +301,17 @@ ApcUps::info ()
 	int ret;
 	char reply[500];
 	ret = connApc->command ("status", reply, 500);
+	if (ret)
+		return ret;
+	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
+	
 	return SensorWeather::info ();
 }
 
 
 ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 {
+	createValue (bcharge, "bcharge", "battery charge", false);
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 }
 
