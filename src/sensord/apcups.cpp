@@ -69,7 +69,10 @@ namespace rts2sensor
 			 */
 			int command (const char *cmd, char *_buf, int _buf_size);
 
+			const char *getString (const char *val);
 			float getPercents (const char *val);
+			float getTemp (const char *val);
+			int getTime (const char *val);
 	};
 
 	/**
@@ -83,7 +86,14 @@ namespace rts2sensor
 			HostString *host;
 			ConnApcUps *connApc;
 
+			Rts2ValueString *model;
+
+			Rts2ValueFloat *loadpct;
 			Rts2ValueFloat *bcharge;
+			Rts2ValueInteger *timeleft;
+			Rts2ValueFloat *itemp;
+			Rts2ValueInteger *tonbatt;
+			Rts2ValueString *status;
 
 		protected:
 			virtual int processOption (int opt);
@@ -251,6 +261,16 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 }
 
 
+const char*
+ConnApcUps::getString (const char *val)
+{
+	std::map <std::string, std::string>::iterator iter = values.find (val);
+	if (values.find (val) == values.end ())
+		return "";
+	return (*iter).second.c_str ();
+}
+
+
 float
 ConnApcUps::getPercents (const char *val)
 {
@@ -259,6 +279,32 @@ ConnApcUps::getPercents (const char *val)
 		return nan("f");
 	return atof ((*iter).second.c_str());
 }
+
+
+float
+ConnApcUps::getTemp (const char *val)
+{
+	const char *v = getString (val);
+	if (strchr (v, 'C'))
+		return nan("f");
+	return atof (v);
+}
+
+
+int
+ConnApcUps::getTime (const char *val)
+{
+	const char *v = getString (val);
+	if (strcasestr (v, "hours") != NULL)
+	  	return atof (v) * 3600;
+	if (strcasestr (v, "minutes") != NULL)
+		return atof (v) * 60;
+	if (strcasestr (v, "seconds") != NULL)
+	  	return atof (v);
+	return 0;
+}
+
+
 
 
 int
@@ -291,6 +337,7 @@ ApcUps::init ()
 	ret = info ();
 	if (ret)
 		return ret;
+	setIdleInfoInterval (10);
 	return 0;
 }
 
@@ -303,7 +350,13 @@ ApcUps::info ()
 	ret = connApc->command ("status", reply, 500);
 	if (ret)
 		return ret;
+	model->setValueString (connApc->getString ("MODEL"));
+	loadpct->setValueFloat (connApc->getPercents ("LOADPCT"));
 	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
+	timeleft->setValueInteger (connApc->getTime ("TONBATT"));
+	itemp->setValueFloat (connApc->getTemp ("ITEMP"));
+	tonbatt->setValueInteger (connApc->getTime ("TIMELEFT"));
+	status->setValueString (connApc->getString ("STATUS"));
 	
 	return SensorWeather::info ();
 }
@@ -311,7 +364,14 @@ ApcUps::info ()
 
 ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 {
+  	createValue (model, "model", "UPS mode", false);
+	createValue (loadpct, "load", "UPS load", false);
 	createValue (bcharge, "bcharge", "battery charge", false);
+	createValue (timeleft, "timeleft", "time left for on-UPS operations", false);
+	createValue (itemp, "temperature", "internal UPS temperature", false);
+	createValue (tonbatt, "tonbatt", "time on battery", false);
+	createValue (status, "status", "UPS status", false);
+
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 }
 
