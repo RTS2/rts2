@@ -250,7 +250,14 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 					pchr--;
 				}
 				pchr[1] = '\0';
-				values[std::string (reply_data)] = std::string (reply_data + 10);
+				char *dat = reply_data + rsize - 1;
+				while (isspace (*dat))
+					dat--;
+				dat[1] = '\0';
+				dat = reply_data + 10;
+				while (isspace (*dat))
+				  	dat++;
+				values[std::string (reply_data)] = std::string (dat);
 			}
 			left = 2;
 			data = false;
