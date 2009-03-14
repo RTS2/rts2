@@ -292,7 +292,7 @@ float
 ConnApcUps::getTemp (const char *val)
 {
 	const char *v = getString (val);
-	if (strchr (v, 'C'))
+	if (strchr (v, 'C') == NULL)
 		return nan("f");
 	return atof (v);
 }
