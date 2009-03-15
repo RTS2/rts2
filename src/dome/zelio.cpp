@@ -278,7 +278,8 @@ Zelio::startClose ()
 {
 	int ret;
 	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
-	sleep (2);
+	// 20 minutes timeout..
+	setWeatherTimeout (1200);
 	return ret;
 }
 
@@ -347,6 +348,7 @@ Zelio::Zelio (int argc, char **argv)
 	deadTimeout->setValueInteger (60);
 
 	createValue (rain, "rain", "state of rain sensor", false);
+	createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
 	createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
@@ -490,6 +492,7 @@ Zelio::init ()
 	{
 		maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
 	}
+	setIdleInfoInterval (20);
 	return 0;
 }
 
