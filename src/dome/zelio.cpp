@@ -245,6 +245,7 @@ Zelio::isGoodWeather ()
 	// not in auto mode..
 	if (!(reg & ZS_SW_AUTO))
 	{
+	  	setWeatherTimeout (30);
 		return false;
 	}
 	return Dome::isGoodWeather ();
