@@ -95,8 +95,10 @@ namespace rts2sensor
 			Rts2ValueInteger *tonbatt;
 			Rts2ValueString *status;
 
-			Rts2ValueTime *lastonbat;
 			Rts2ValueInteger *battimeout;
+
+			Rts2ValueFloat *minbcharge;
+			Rts2ValueInteger *mintimeleft;
 
 		protected:
 			virtual int processOption (int opt);
@@ -169,7 +171,7 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 		return -1;
 	}
 	ret = send (sock, cmd, strlen (cmd), 0);
-	if (ret != strlen (cmd))
+	if (ret != (int) strlen (cmd))
 	{
 		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
 		connectionError (-1);
@@ -358,7 +360,11 @@ ApcUps::info ()
 	char reply[500];
 	ret = connApc->command ("status", reply, 500);
 	if (ret)
+	{
+		logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
+		setWeatherTimeout (120);
 		return ret;
+	}
 	model->setValueString (connApc->getString ("MODEL"));
 	loadpct->setValueFloat (connApc->getPercents ("LOADPCT"));
 	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
@@ -369,12 +375,27 @@ ApcUps::info ()
 
 	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
 	{
+		logStream (MESSAGE_WARNING) <<  "too long on batteries: " << tonbatt->getValueInteger () << sendLog;
 		setWeatherTimeout (battimeout->getValueInteger () + 60);
+	}
+
+	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
+	{
+	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
+		setWeatherTimeout (1200);
+	}
+
+	if (timeleft->getValueInteger () < mintimeleft->getValueInteger ())
+	{
+	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << timeleft->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
+		setWeatherTimeout (1200);
+
 	}
 
 	// if there is any UPS error, set big timeout..
 	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
 	{
+		logStream (MESSAGE_WARNING) <<  "unknow status " << status->getValue () << sendLog;
 		setWeatherTimeout (1200);
 	}
 	
@@ -394,6 +415,11 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
 	battimeout->setValueInteger (60);
+
+	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
+	minbcharge->setValueFloat (50);
+	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
+	mintimeleft->setValueInteger (20);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 }
