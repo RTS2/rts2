@@ -95,6 +95,9 @@ namespace rts2sensor
 			Rts2ValueInteger *tonbatt;
 			Rts2ValueString *status;
 
+			Rts2ValueTime *lastonbat;
+			Rts2ValueInteger *battimeout;
+
 		protected:
 			virtual int processOption (int opt);
 			virtual int info ();
@@ -215,7 +218,6 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 	        }
 		if (!data)
 		{
-		  	std::cout << "data" << std::endl;
 			left = ntohs (*((uint16_t *) reply_data));
 			data = true;
 			if (left == 0)
@@ -236,7 +238,7 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 				return -1;
 			}
 			reply_data[9] = '\0';
-			std::cout << "val '" << reply_data << "'" << std::endl;
+			std::cout << "val '" << reply_data << "' " << reply_data + 10 << std::endl;
 			if (strcmp (reply_data, "END APC  ") == 0)
 			{
 			  	std::cout << "END" << std::endl;
@@ -360,10 +362,21 @@ ApcUps::info ()
 	model->setValueString (connApc->getString ("MODEL"));
 	loadpct->setValueFloat (connApc->getPercents ("LOADPCT"));
 	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
-	timeleft->setValueInteger (connApc->getTime ("TONBATT"));
+	timeleft->setValueInteger (connApc->getTime ("TIMELEFT"));
 	itemp->setValueFloat (connApc->getTemp ("ITEMP"));
-	tonbatt->setValueInteger (connApc->getTime ("TIMELEFT"));
+	tonbatt->setValueInteger (connApc->getTime ("TONBATT"));
 	status->setValueString (connApc->getString ("STATUS"));
+
+	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
+	{
+		setWeatherTimeout (battimeout->getValueInteger () + 60);
+	}
+
+	// if there is any UPS error, set big timeout..
+	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
+	{
+		setWeatherTimeout (1200);
+	}
 	
 	return SensorWeather::info ();
 }
@@ -378,6 +391,9 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (itemp, "temperature", "internal UPS temperature", false);
 	createValue (tonbatt, "tonbatt", "time on battery", false);
 	createValue (status, "status", "UPS status", false);
+
+	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
+	battimeout->setValueInteger (60);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 }
