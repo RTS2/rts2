@@ -419,7 +419,7 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
 	minbcharge->setValueFloat (50);
 	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
-	mintimeleft->setValueInteger (20);
+	mintimeleft->setValueInteger (1200);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 }
