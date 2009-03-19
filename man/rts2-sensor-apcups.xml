@@ -4,11 +4,11 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2008-02-16</date>">
+  <!ENTITY dhdate      "<date>2008-03-19</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-sensor-system">
+  <!ENTITY dhpackage   "rts2-sensor-apcups">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -76,7 +76,7 @@
 	<arg choice="plain"><option>-d <replaceable>device name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-p <replaceable>path</replaceable></option></arg>
+	<arg choice="plain"><option>-a <replaceable>hostname[:port]</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
 
@@ -97,7 +97,10 @@
     <title>DESCRIPTION</title>
 
     <para>
-      <command>&dhpackage;</command> monitor availabe disk space. It is responsible for producing alerts if disk space drops bellow certain value.
+      <command>&dhpackage;</command> connect to running APCUPS daemon. It allows display of an APC UPS as RTS2 device. It can 
+      switch vote for bad weather if system is on battery for some time, battery level drops bellow specified percentage or remaining battery
+	time drops bellow specified number of seconds.
+
     </para>
 
   </refsect1>
@@ -138,10 +141,10 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-p <replaceable class="parameter">path</replaceable></option></term>
+        <term><option>-a <replaceable class="parameter">hostname[:port]</replaceable></option></term>
 	<listitem>
            <para>
-             Specify path which will be monitored.
+             Specify hostname (and port) of server running APCUPSD. Port defaults to 3551, standard ACP UPSD port.
 	   </para>
 	</listitem>
       </varlistentry>
@@ -154,10 +157,6 @@
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
 	<manvolnum>7</manvolnum>
-      </citerefentry>
-      <citerefentry>
-        <refentrytitle>rts2.ini</refentrytitle>
-	<manvolnum>5</manvolnum>
       </citerefentry>
     </para>
 
