@@ -44,7 +44,7 @@ class ConnModbus: public Rts2ConnNoSend
 
 	public:
 		/**
-		 * Create connection to serial port.
+		 * Create connection to TCP/IP modbus server.
 		 *
 		 * @param _master     Reference to master holding this connection.
 		 * @param _hostname   Modbus server IP address or hostname.
