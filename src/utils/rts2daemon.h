@@ -332,14 +332,6 @@ class Rts2Daemon:public Rts2Block
 		virtual int idle ();
 
 		/**
-		 * Updates info_time to current time.
-		 */
-		void updateInfoTime ()
-		{
-			info_time->setValueDouble (getNow ());
-		}
-
-		/**
 		 * Set info time to supplied date. Please note that if you use this function,
 		 * you should consider not calling standard info () routine, which updates
 		 * info time - just overwrite its implementation with empty body.
@@ -385,6 +377,14 @@ class Rts2Daemon:public Rts2Block
 		{
 			idleInfoInterval = interval;
 			setTimeoutMin ((long int) interval * USEC_SEC);
+		}
+
+		/**
+		 * Updates info_time to current time.
+		 */
+		void updateInfoTime ()
+		{
+			info_time->setValueDouble (getNow ());
 		}
 
 		virtual void forkedInstance ();
