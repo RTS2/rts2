@@ -17,6 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+// how long after weather was bad can weather be good again; in
+// seconds
+#define BART_BAD_WEATHER_TIMEOUT    1200
+#define BART_BAD_WINDSPEED_TIMEOUT  1200
+#define BART_CONN_TIMEOUT           1200
+
 #ifndef __RTS2_DAVIS__
 #define __RTS2_DAVIS__
 
@@ -36,13 +42,21 @@ class Davis: public SensorWeather
 {
 	private:
 		DavisUdp *weatherConn;
-		double cloud_bad;
 
 		Rts2ValueFloat *temperature;
 		Rts2ValueFloat *humidity;
 		Rts2ValueBool *rain;
-		Rts2ValueFloat *windspeed;
+
+		Rts2ValueFloat *avgWindSpeed;
+		Rts2ValueFloat *peekWindSpeed;
+
+		Rts2ValueFloat *rainRate;
+
 		Rts2ValueDouble *cloud;
+		Rts2ValueDouble *cloud_bad;
+
+		Rts2ValueFloat *maxWindSpeed;
+		Rts2ValueFloat *maxPeekWindSpeed;
 
 		Rts2ValueInteger *udpPort;
 
@@ -50,8 +64,12 @@ class Davis: public SensorWeather
 		virtual int processOption (int _opt);
 		virtual int init ();
 
+		virtual int idle ();
+
 	public:
 		Davis (int argc, char **argv);
+
+		virtual int info ();
 
 		void setTemperature (float in_temp)
 		{
@@ -81,31 +99,49 @@ class Davis: public SensorWeather
 		{
 			return rain->getValueBool ();
 		}
-		void setWindSpeed (float in_windpseed)
+
+		void setAvgWindSpeed (float _avgWindSpeed)
 		{
-			windspeed->setValueFloat (in_windpseed);
+			avgWindSpeed->setValueFloat (_avgWindSpeed);
+			if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
+				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
 		}
-		float getWindSpeed ()
+
+		void setPeekWindSpeed (float _peekWindSpeed)
 		{
-			return windspeed->getValueFloat ();
+			peekWindSpeed->setValueFloat (_peekWindSpeed);
+			if (!isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
+				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
 		}
+
+		void setRainRate (float _rainRate)
+		{
+			rainRate->setValueFloat (_rainRate);
+			if (_rainRate > 0)
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+		}
+
 		void setCloud (double in_cloud)
 		{
+			if (cloud == NULL)
+			{
+				createValue (cloud, "CLOUD_S", "cloud sensor value");
+			}
 			cloud->setValueDouble (in_cloud);
-		}
-		double getCloud ()
-		{
-			return cloud->getValueDouble ();
-		}
-
-		int getMaxPeekWindspeed ()
-		{
-			return 50;
+			if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
+			{
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+			}
 		}
 
-		int getMaxWindSpeed ()
+		float getMaxPeekWindspeed ()
 		{
-			return 50;
+			return maxPeekWindSpeed->getValueFloat ();
+		}
+
+		float getMaxWindSpeed ()
+		{
+			return maxWindSpeed->getValueFloat ();
 		}
 };
 

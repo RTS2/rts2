@@ -118,14 +118,13 @@ DavisUdp::setWeatherTimeout (time_t wait_time)
 }
 
 
-DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, int _bad_windspeed_timeout, Davis * _master)
+DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master)
 :Rts2ConnNoSend (_master)
 {
 	weather_port = _weather_port;
 	weather_timeout = _weather_timeout;
 	conn_timeout = _conn_timeout;
 	bad_weather_timeout = _bad_weather_timeout;
-	bad_windspeed_timeout = _bad_windspeed_timeout;
 	master = _master;
 }
 
@@ -210,6 +209,7 @@ DavisUdp::receive (fd_set * set)
 		if (!ret_c)
 		{
 			setWeatherTimeout ((int) weatherTimeout);
+			master->updateInfoTime ();
 		}
 
 		weather->getValue ("rtIsRaining", rtIsRaining, ret);
@@ -221,7 +221,8 @@ DavisUdp::receive (fd_set * set)
 				rtIsRaining = (rtRainRate > 0);
 		}
 		weather->getValue ("rtRainRate", rtRainRate, ret);
-		weather->getValue ("rtWindAvgSpeed", windspeed, ret);
+		weather->getValue ("rtWindSpeed", peekwindspeed, ret);
+		weather->getValue ("rtWindAvgSpeed", avgWindSpeed, ret);
 		weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
 		weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
 		if (ret && ret_c)
@@ -279,9 +280,12 @@ DavisUdp::receive (fd_set * set)
 			rain = 0;
 		}
 		master->setTemperature (rtOutsideTemp);
+		master->setRainRate (rtRainRate);
 		master->setRainWeather (rain);
 		master->setHumidity (rtOutsideHum);
-		master->setWindSpeed (windspeed);
+		master->setAvgWindSpeed (avgWindSpeed);
+		master->setPeekWindSpeed (peekwindspeed);
+		master->updateInfoTime ();
 		if (!isnan (cloud))
 		{
 			master->setCloud (cloud);
@@ -289,16 +293,12 @@ DavisUdp::receive (fd_set * set)
 		delete weather;
 
 		time (&lastWeatherStatus);
-		logStream (MESSAGE_DEBUG) << "windspeed: " << windspeed << " rain: " <<
-			rain << " date: " << lastWeatherStatus << " status: " << ret <<
-			sendLog;
-		if (rain != 0 || windspeed > master->getMaxPeekWindspeed ())
+		logStream (MESSAGE_DEBUG) << "peekwindspeed: " << peekwindspeed << "avgwindspeed: " << avgWindSpeed 
+			<< " rain: " << rain << " date: " << lastWeatherStatus << " status: " << ret <<	sendLog;
+		if (rain != 0)
 		{
 			time (&lastBadWeather);
-			if (rain == 0 && windspeed > master->getMaxWindSpeed ())
-				setWeatherTimeout (bad_windspeed_timeout);
-			else
-				setWeatherTimeout (bad_weather_timeout);
+			setWeatherTimeout (bad_weather_timeout);
 		}
 		// ack message
 		sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));

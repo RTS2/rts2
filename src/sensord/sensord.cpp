@@ -38,7 +38,7 @@ SensorWeather::idle ()
 	if (isGoodWeather () == true && getWeatherState () == false)
 	{
 		// last chance - run info () again to see if the device does not change the mind about
-		// it weather status..
+		// its weather status..
 		int ret;
 		ret = info ();
 		if (ret)
