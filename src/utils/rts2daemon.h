@@ -346,10 +346,12 @@ class Rts2Daemon:public Rts2Block
 		/**
 		 * Get time from last info time in seconds (and second fractions).
 		 *
-		 * @return Difference from last info time in seconds.
+		 * @return Difference from last info time in seconds. 86400 (one day) if info time was not defined.
 		 */
 		double getLastInfoTime ()
 		{
+			if (isnan (info_time->getValueDouble ()))
+				return 86400;
 			return getNow () - info_time->getValueDouble ();	
 		}
 
