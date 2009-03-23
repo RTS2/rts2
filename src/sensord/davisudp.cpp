@@ -293,7 +293,7 @@ DavisUdp::receive (fd_set * set)
 		delete weather;
 
 		time (&lastWeatherStatus);
-		logStream (MESSAGE_DEBUG) << "peekwindspeed: " << peekwindspeed << "avgwindspeed: " << avgWindSpeed 
+		logStream (MESSAGE_DEBUG) << "peekwindspeed: " << peekwindspeed << " avgwindspeed: " << avgWindSpeed 
 			<< " rain: " << rain << " date: " << lastWeatherStatus << " status: " << ret <<	sendLog;
 		if (rain != 0)
 		{
