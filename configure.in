@@ -274,9 +274,12 @@ LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
 EOF
 exit 1])
 
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
+
 if test "x${cfitsio}" != "xno"; then
   if test "x${cfitsio}" != "xyes"; then
-    LDFLAGS="${LDFLAGS} -L${cfitsio}/lib"
+    LDFLAGS="${LDFLAGS} -L${cfitsio}"
   fi
   AC_CHECK_LIB([cfitsio], [ffinit], LIB_CFITSIO="-lcfitsio"; 
 , [cat <<EOF
@@ -286,8 +289,8 @@ if test "x${cfitsio}" != "xno"; then
 EOF
 exit 1])
   if test "x${cfitsio}" != "xyes"; then
-    LIB_CFITSIO="-L${cfitsio}/lib ${LIB_CFITSIO}"
-    CFITSIO_CFLAGS="-I${cfitsio}/include"
+    LIB_CFITSIO="-L${cfitsio} ${LIB_CFITSIO}"
+    CFITSIO_CFLAGS="-I${cfitsio}"
   else
     CFITSIO_CFLAGS=""
   fi
