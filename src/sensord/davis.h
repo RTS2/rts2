@@ -64,6 +64,8 @@ class Davis: public SensorWeather
 		virtual int processOption (int _opt);
 		virtual int init ();
 
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+
 		virtual int idle ();
 
 	public:

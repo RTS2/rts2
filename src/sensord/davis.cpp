@@ -75,6 +75,15 @@ Davis::init ()
 
 
 int
+Davis::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == maxWindSpeed || old_value == maxPeekWindSpeed)
+		return 0;
+	return SensorWeather::setValue (old_value, new_value);
+}
+
+
+int
 Davis::idle ()
 {
 	if (getLastInfoTime () > 120)
