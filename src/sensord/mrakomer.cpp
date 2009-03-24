@@ -187,7 +187,7 @@ Rts2SensorMrakomer::info ()
 int
 Rts2SensorMrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == heater)
+	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
 		return 0;
 	return SensorWeather::setValue (old_value, new_value);
 }
