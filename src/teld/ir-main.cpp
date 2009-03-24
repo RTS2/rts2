@@ -320,26 +320,27 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	}
 	else
 	{
-		// status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-		status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
-		tPos.ra *= 15.0;
-		status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
-		status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
-		cPos.ra *= 15.0;
-		status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 		// for EQU models, we must include target offset
 		if (getPointingModel () == 0)
 		{
+			status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
+			tPos.ra *= 15.0;
+			status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
+			status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
+			cPos.ra *= 15.0;
+			status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
+
 			double haOff, decOff;
 			status = irConn->tpl_get ("HA.OFFSET", haOff, &status);
 			status = irConn->tpl_get ("DEC.OFFSET", decOff, &status);
-			tPos.ra -= haOff;
+			tPos.ra += haOff;
 			tPos.dec -= decOff;
+			poin_dist = ln_get_angular_separation (&cPos, &tPos);
 		}
 	}
 	if (status != TPL_OK)
 		return -1;
-	poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	time (&now);
 	// get track..
 	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
