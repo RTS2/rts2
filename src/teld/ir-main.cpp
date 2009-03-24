@@ -104,7 +104,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	switch (getPointingModel ())
 	{
 		case 0:
-			offset = -1.0 * getCorrRa ();
+			offset = getCorrRa ();
 			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
 			offset = -1.0 * getCorrDec ();
 			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
