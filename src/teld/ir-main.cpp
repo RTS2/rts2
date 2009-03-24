@@ -297,11 +297,12 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	int track;
 	double poin_dist;
 	time_t now;
-	struct ln_equ_posn tPos;
-	struct ln_equ_posn cPos;
 	// if parking, check is different for EQU telescope
 	if (park)
 	{
+		struct ln_equ_posn tPos;
+		struct ln_equ_posn cPos;
+
 		switch (getPointingModel ())
 		{
 			case 0:
@@ -317,27 +318,11 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 				status = irConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
 				break;
 		}
+		poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	}
 	else
 	{
 		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-		// for EQU models, we must include target offset
-		if (getPointingModel () == 0)
-		{
-			status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
-			tPos.ra *= 15.0;
-			status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
-			status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
-			cPos.ra *= 15.0;
-			status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
-
-			double haOff, decOff;
-			status = irConn->tpl_get ("HA.OFFSET", haOff, &status);
-			status = irConn->tpl_get ("DEC.OFFSET", decOff, &status);
-			tPos.ra += haOff;
-			tPos.dec -= decOff;
-			poin_dist = ln_get_angular_separation (&cPos, &tPos);
-		}
 	}
 	if (status != TPL_OK)
 		return -1;
