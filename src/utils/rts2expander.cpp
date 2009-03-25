@@ -248,7 +248,7 @@ Rts2Expander::setExpandDate (const struct timeval *tv)
 	expandTv.tv_usec = tv->tv_usec;
 
 	localtime_r (&expandTv.tv_sec, &localDate);
-	gmtime_r (&expandTv.tv_usec, &utDate);
+	gmtime_r (&expandTv.tv_sec, &utDate);
 
 	expandDate = &utDate;
 }
