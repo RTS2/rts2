@@ -1,6 +1,6 @@
 /* 
  * Expanding mechanism.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,44 +34,46 @@
 class Rts2Expander
 {
 	private:
-		struct tm expandDate;
+		struct tm localDate;
+		struct tm utDate;
+		struct tm *expandDate;
 		struct timeval expandTv;
 
 		std::string getEpochString ();
 
 		int getYear ()
 		{
-			return expandDate.tm_year + 1900;
+			return expandDate->tm_year + 1900;
 		}
 
 		int getMonth ()
 		{
-			return expandDate.tm_mon + 1;
+			return expandDate->tm_mon + 1;
 		}
 
 		int getDay ()
 		{
-			return expandDate.tm_mday;
+			return expandDate->tm_mday;
 		}
 
 		int getYDay ()
 		{
-			return expandDate.tm_yday;
+			return expandDate->tm_yday;
 		}
 
 		int getHour ()
 		{
-			return expandDate.tm_hour;
+			return expandDate->tm_hour;
 		}
 
 		int getMin ()
 		{
-			return expandDate.tm_min;
+			return expandDate->tm_min;
 		}
 
 		int getSec ()
 		{
-			return expandDate.tm_sec;
+			return expandDate->tm_sec;
 		}
 
 	protected:
