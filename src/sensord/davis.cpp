@@ -133,6 +133,22 @@ Davis::info ()
 }
 
 
+void
+Davis::setCloud (double in_cloud)
+{
+      if (cloud == NULL)
+      {
+	      createValue (cloud, "CLOUD_S", "cloud sensor value");
+	      sendMetaInfo (cloud);
+      }
+      cloud->setValueDouble (in_cloud);
+      if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
+      {
+	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+      }
+}
+
+
 int
 main (int argc, char **argv)
 {

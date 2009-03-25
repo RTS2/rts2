@@ -123,18 +123,7 @@ class Davis: public SensorWeather
 				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
 		}
 
-		void setCloud (double in_cloud)
-		{
-			if (cloud == NULL)
-			{
-				createValue (cloud, "CLOUD_S", "cloud sensor value");
-			}
-			cloud->setValueDouble (in_cloud);
-			if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
-			{
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
-			}
-		}
+		void setCloud (double in_cloud);
 
 		float getMaxPeekWindspeed ()
 		{
