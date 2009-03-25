@@ -66,6 +66,13 @@ esac],[cfitsio=yes])
 
 AM_CONDITIONAL(CFITSIO, test x$cfitsio != xno)
 
+AC_ARG_WITH(ncurses,
+[  --with-ncurses       path to ncurses library or "yes" if ncurses is in standard path],
+[case "${withval}" in
+	yes) ncurses=yes ;;
+	*) ncurses=${withval} ;;
+esac],[ncurses=yes])
+
 AC_ARG_WITH(jpeg,
 [  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
 [case "${withval}" in
@@ -324,12 +331,24 @@ AM_CONDITIONAL(LIBWCS, test x$libwcs != xno)
 AC_SUBST(LIBWCS_CFLAGS)
 AC_SUBST(LIBWCS_LDFLAGS)
 
-AC_CHECK_LIB([ncurses], [mvwprintw], LIB_NCURSES="-lncurses";
+if test "x${ncurses}" != "xyes"; then
+  LDFLAGS="${LDFLAGS} -L${ncurses}/lib"
+fi     
+
+AC_CHECK_LIB([ncurses], [mvwprintw], LIBNCURSES_LDFLAGS="-lncurses";
 AC_SUBST(LIB_NCURSES), [cat << EOF
 **** You don't have ncurser libraries.
 **** Please install ncursers (you need devel package as well)
 EOF
 exit 1])
+
+if test "x${ncurses}" != "xyes"; then
+  LIBNCURSES_CFLAGS="-I${ncurses}/include"
+  LIBNCURSES_LDFLAGS="-L${ncurses}/lib -lncurses"
+fi
+
+AC_SUBST(LIBNCURSES_CFLAGS)
+AC_SUBST(LIBNCURSES_LDFLAGS)
 
 if test "x${libnova}" != "xno"; then
   if test "x${libnova}" != "xyes"; then
@@ -461,9 +480,9 @@ AC_GSOAP
 
 AH_TEMPLATE([HAVE_PGSQL_SOAP],[Whenever PGSQL and SOAP libraries are installed])
 
-AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap == xyes )
+AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap = xyes )
 
-if test x$psql = xyes -a x$gsoap == xyes ; then 
+if test x$psql = xyes -a x$gsoap = xyes ; then 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
 fi
 
