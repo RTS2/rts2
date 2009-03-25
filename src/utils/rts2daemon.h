@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -404,6 +404,9 @@ class Rts2Daemon:public Rts2Block
 		int infoAll ();
 		void constInfoAll ();
 		int sendInfo (Rts2Conn * conn);
+
+		int sendMetaInfo (Rts2Value * val);
+
 		int sendMetaInfo (Rts2Conn * conn);
 
 		virtual int setValue (Rts2Conn * conn, bool overwriteSaved);

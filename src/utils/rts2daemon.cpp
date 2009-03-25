@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -937,6 +937,18 @@ Rts2Daemon::checkValueSave (Rts2Value *val)
 	Rts2CondValue *cond_val = getCondValue (val);
 	if (cond_val && cond_val->needSaveValue ())
 		saveValue (cond_val);
+}
+
+
+int
+Rts2Daemon::sendMetaInfo (Rts2Value * val)
+{
+	connections_t::iterator iter;
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+		val->sendMetaInfo (*iter);
+	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+		val->sendMetaInfo (*iter);
+	return 0;
 }
 
 
