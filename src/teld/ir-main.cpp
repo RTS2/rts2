@@ -126,8 +126,12 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	{
 		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
 		status = irConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
-		logStream (MESSAGE_DEBUG) << " :" << modelQuality->getValueDouble () << " status "
-			<< status << sendLog;
+		status = irConn->getValueInteger ("POINTING.POINTINGPARAMS.RECORDCOUNT", model_recordcount, &status);
+		logStream (MESSAGE_DEBUG) << "modeling quality parameter: " << modelQuality->getValueDouble ()
+			<< " status "<< status
+			<< " recordcount " << model_recordcount->getValueInteger () << sendLog;
+		sendValueAll (modelQuality);
+		sendValueAll (model_recordcount);
 	}
 
 	if (derotatorOffset)

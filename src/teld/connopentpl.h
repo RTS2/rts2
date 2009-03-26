@@ -172,6 +172,25 @@ class OpenTpl: public Rts2ConnNoSend
 			return ret;
 		}
 
+		/**
+		 * Set Rts2ValueInteger from OpenTPL.
+		 *
+		 * @param _name Value name.
+		 * @param value Rts2ValueInteger which will be set.
+		 * @param tpl_status OpenTPL status.
+		 *
+		 * @return OpenTPL status of the get operation.
+		 */
+		int getValueInteger (const char *_name, Rts2ValueInteger *value, int *tpl_status)
+		{
+			int val;
+			int ret = tpl_get (_name, val, tpl_status);
+			if (ret == TPL_OK)
+				value->setValueInteger (val);
+
+			return ret;
+		}
+
 		int getError (int in_error, std::string & desc)
 		{
 			char *txt;

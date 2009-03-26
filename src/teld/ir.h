@@ -85,12 +85,12 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		Rts2ValueDouble *model_ca;
 		Rts2ValueDouble *model_flex;
 
-		Rts2ValueInteger *model_recordcount;
-
 		int infoModel ();
 
 	protected:
 		rts2core::OpenTpl *irConn;
+
+		Rts2ValueInteger *model_recordcount;
 
 		time_t timeout;
 
