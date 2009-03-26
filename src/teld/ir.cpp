@@ -322,11 +322,6 @@ Rts2TelescopeIr::initIrDevice ()
 		return -1;
 	}
 
-	// infoModel
-	ret = infoModel ();
-	if (ret)
-		return ret;
-
 	return 0;
 }
 
@@ -411,6 +406,11 @@ Rts2TelescopeIr::initValues ()
 		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES);
 		createValue (derotatorPower, "derotatorPower", "derotator power setting", false);
 	}
+
+	// infoModel
+	status = infoModel ();
+	if (status)
+		return status;
 
 	return Rts2DevTelescope::initValues ();
 }
