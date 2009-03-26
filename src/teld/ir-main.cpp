@@ -27,10 +27,12 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 	private:
 		struct ln_equ_posn target;
 		int irTracking;
+		Rts2ValueDouble *modelQuality;
 
 		double derOff;
 
 		int startMoveReal (double ra, double dec);
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -88,8 +90,6 @@ int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	//  status = setTelescopeTrack (0);
-
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
 	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
 	if (derotatorOffset && !getDerotatorPower ())
@@ -118,10 +118,13 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 
 	}
 
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
-		sendLog;
-	#endif
+	if (isModelOn () && (getCorrRa () != 0 || getCorrDec () != 0))
+	{
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+		status = irConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
+		logStream (MESSAGE_DEBUG) << " :" << modelQuality->getValueDouble () << " status "
+			<< status << sendLog;
+	}
 
 	if (derotatorOffset)
 	{
@@ -131,9 +134,7 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 			return status;
 	}
 
-	//  usleep (USEC_SEC);
 	status = setTelescopeTrack (irTracking);
-	usleep (USEC_SEC);
 	return status;
 }
 
@@ -159,6 +160,9 @@ Rts2DevTelescopeIr::startMove ()
 				return -1;
 			}
 			break;
+
+			if (target.dec < -89.85)
+				target.dec = -89.80;
 		case 1:
 			// move to zenit - move to different dec instead
 			if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
@@ -380,6 +384,8 @@ in_argv)
 	irTracking = 4;
 
 	derOff = 0;
+
+	createValue (modelQuality, "model_quality", "quality of model data", false);
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,

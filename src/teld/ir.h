@@ -77,8 +77,8 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 
 		// model values
 		Rts2ValueString *model_dumpFile;
-		Rts2ValueDouble *model_aoff;
-		Rts2ValueDouble *model_zoff;
+		Rts2ValueDouble *model_haoff;
+		Rts2ValueDouble *model_dzoff;
 		Rts2ValueDouble *model_ae;
 		Rts2ValueDouble *model_an;
 		Rts2ValueDouble *model_npae;

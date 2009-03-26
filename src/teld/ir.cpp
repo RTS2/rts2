@@ -143,83 +143,38 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
-	if (old_value == model_aoff)
+	if (old_value == model_haoff)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AOFF", new_value->getValueDouble (),
-			&status);
+		switch (getPointingModel ())
+		{
+			case 0:
+				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.HGFF", new_value->getValueDouble (),
+					&status);
+				break;
+			case 1:
+				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AGFF", new_value->getValueDouble (),
+					&status);
+				break;
+			default:
+				return -2;
+		}
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
-	if (old_value == model_zoff)
+	if (old_value == model_dzoff)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_ae)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AE", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_an)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_npae)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_ca)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_flex)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_aoff)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AOFF", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_zoff)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (),
-			&status);
+		switch (getPointingModel ())
+		{
+			case 0:
+				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.DOFF", new_value->getValueDouble (), &status);
+				break;
+			case 1:
+				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (), &status);
+				break;
+			default:
+				return -2;
+		}
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -293,15 +248,6 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv)
 	createValue (targetTime, "target_time", "reach target time in seconds", false);
 
 	createValue (mountTrack, "TRACK", "mount track");
-
-	createValue (model_dumpFile, "dump_file", "model dump file", false);
-	createValue (model_aoff, "aoff", "model azimuth offset", false,	RTS2_DT_DEG_DIST);
-	createValue (model_zoff, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
-	createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
-	createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
-	createValue (model_npae, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
-	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
-	createValue (model_flex, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
 
 	cover = NULL;
 
@@ -413,22 +359,33 @@ Rts2TelescopeIr::initValues ()
 	if (status != TPL_OK)
 		return -1;
 
+	createValue (model_dumpFile, "dump_file", "model dump file", false);
+
 	// switch mount type
 	if (config_mount == "AZ-ZD")
 	{
 		setPointingModel (1);
-
+		createValue (model_haoff, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_dzoff, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
 	}
 	else if (config_mount == "RA-DEC")
 	{
 		setPointingModel (0);
-
+		createValue (model_haoff, "doff", "model hour angle offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_dzoff, "hoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
 	}
 	else
 	{
 		logStream (MESSAGE_ERROR) << "Unsupported pointing model: '" << config_mount << "'" << sendLog;
 		return -1;
 	}
+
+	createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+	createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+	createValue (model_npae, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
+	createValue (model_flex, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
+
 	status = irConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
 	status = irConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
 	status = irConn->getValueDouble ("LOCAL.HEIGHT", telAltitude, &status);
@@ -658,19 +615,29 @@ Rts2TelescopeIr::infoModel ()
 	double aoff, zoff, ae, an, npae, ca, flex;
 
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+	switch (getPointingModel ())
+	{
+		case 0:
+			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.HOFF", aoff, &status);
+			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DOFF", zoff, &status);
+			break;
+		case 1:
+			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+			break;
+	}
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+
 	if (status != TPL_OK)
 		return -1;
 
-	//  model_dumpFile->setValueString (dumpfile);
-	model_aoff->setValueDouble (aoff);
-	model_zoff->setValueDouble (zoff);
+	model_dumpFile->setValueString (dumpfile);
+	model_haoff->setValueDouble (aoff);
+	model_dzoff->setValueDouble (zoff);
 	model_ae->setValueDouble (ae);
 	model_an->setValueDouble (an);
 	model_npae->setValueDouble (npae);
@@ -856,71 +823,6 @@ Rts2TelescopeIr::info ()
 	return Rts2DevTelescope::info ();
 }
 
-
-/*
-int
-Rts2TelescopeIr::correct (double cor_ra, double cor_dec, double real_ra,
-double real_dec)
-{
-	// idea - convert current & astrometry position to alt & az, get
-	// offset in alt & az, apply offset
-	struct ln_equ_posn eq_astr;
-	struct ln_equ_posn eq_target;
-	struct ln_hrz_posn hrz_astr;
-	struct ln_hrz_posn hrz_target;
-	struct ln_lnlat_posn observer;
-	double az_off = 0;
-	double alt_off = 0;
-	double sep;
-	double jd = ln_get_julian_from_sys ();
-	double quality;
-	double zd;
-	int sample = 1;
-	int status = TPL_OK;
-
-	eq_astr.ra = real_ra;
-	eq_astr.dec = real_dec;
-	eq_target.ra = real_ra + cor_ra;
-	eq_target.dec = real_dec + cor_dec;
-
-	applyLocCorr (&eq_target);
-
-	observer.lng = telLongitude->getValueDouble ();
-	observer.lat = telLatitude->getValueDouble ();
-	ln_get_hrz_from_equ (&eq_astr, &observer, jd, &hrz_astr);
-	ln_get_hrz_from_equ (&eq_target, &observer, jd, &hrz_target);
-	// calculate alt & az diff
-	az_off = hrz_target.az - hrz_astr.az;
-	alt_off = hrz_target.alt - hrz_astr.alt;
-
-	status = irConn->tpl_get ("ZD.CURRPOS", zd, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "IR correct cannot get ZD.CURRPOS" <<
-			sendLog;
-		return -1;
-	}
-	if (zd > 0)
-		alt_off *= -1;			 // get ZD offset - when ZD < 0, it's actuall alt offset
-	sep = ln_get_angular_separation (&eq_astr, &eq_target);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "IR correct az_off " << az_off << " zd_off " <<
-		alt_off << " sep " << sep << sendLog;
-	#endif
-	if (sep > 2)
-		return -1;
-	status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
-	status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
-	//  if (isModelOn ())
-	//    return (status ? -1 : 1);
-	// sample..
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", sample, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", quality, &status);
-	logStream (MESSAGE_DEBUG) << "IR correct quality: " << quality << " status "
-		<< status << sendLog;
-	return (status ? -1 : 1);
-}
-*/
 
 /**
  * OpenTCI/Bootes IR - POINTING.POINTINGPARAMS.xx:
