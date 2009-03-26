@@ -190,36 +190,35 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == model_an)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (),
-			&status);
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == model_npae)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (),
-			&status);
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == model_ca)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (),
-			&status);
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == model_flex)
 	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),
-			&status);
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),	&status);
+		if (status != TPL_OK)
+			return -2;
+		return 0;
+	}
+	if (old_value == model_recordcount)
+	{
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", new_value->getValueInteger (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -362,12 +361,16 @@ Rts2TelescopeIr::initValues ()
 		setPointingModel (1);
 		createValue (model_haoff, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
 		createValue (model_dzoff, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
 	}
 	else if (config_mount == "RA-DEC")
 	{
 		setPointingModel (0);
 		createValue (model_haoff, "doff", "model hour angle offset", false, RTS2_DT_DEG_DIST);
 		createValue (model_dzoff, "hoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
 	}
 	else
 	{
@@ -375,11 +378,11 @@ Rts2TelescopeIr::initValues ()
 		return -1;
 	}
 
-	createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
-	createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
 	createValue (model_npae, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
 	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
 	createValue (model_flex, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
+
+	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true);
 
 	status = irConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
 	status = irConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
@@ -613,6 +616,7 @@ Rts2TelescopeIr::infoModel ()
 
 	std::string dumpfile;
 	double aoff, zoff, ae, an, npae, ca, flex;
+	int recordcount;
 
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
 	switch (getPointingModel ())
@@ -632,6 +636,8 @@ Rts2TelescopeIr::infoModel ()
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
+	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
+
 	if (status != TPL_OK)
 		return -1;
 
@@ -643,6 +649,7 @@ Rts2TelescopeIr::infoModel ()
 	model_npae->setValueDouble (npae);
 	model_ca->setValueDouble (ca);
 	model_flex->setValueDouble (flex);
+	model_recordcount->setValueInteger (recordcount);
 	return 0;
 }
 
