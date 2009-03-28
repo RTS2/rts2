@@ -591,7 +591,7 @@ Rts2TelescopeIr::infoModel ()
 	{
 		double pv;
 		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
-		status = irConn->tpl_get (pn.c_str (), pn, &status);
+		status = irConn->tpl_get (pn.c_str (), pv, &status);
 		if (status != TPL_OK)
 			return -1;
 		(*iter)->setValueDouble (pv);
