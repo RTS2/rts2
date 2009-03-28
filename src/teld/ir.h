@@ -77,13 +77,7 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 
 		// model values
 		Rts2ValueString *model_dumpFile;
-		Rts2ValueDouble *model_haoff;
-		Rts2ValueDouble *model_dzoff;
-		Rts2ValueDouble *model_ae;
-		Rts2ValueDouble *model_an;
-		Rts2ValueDouble *model_npae;
-		Rts2ValueDouble *model_ca;
-		Rts2ValueDouble *model_flex;
+		std::vector <Rts2ValueDouble *> modelParams;
 
 		int infoModel ();
 

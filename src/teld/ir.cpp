@@ -143,78 +143,18 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
-	if (old_value == model_haoff)
+	// find model parameters..
+	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
-		switch (getPointingModel ())
+		if (old_value == *iter)
 		{
-			case 0:
-				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.HGFF", new_value->getValueDouble (),
-					&status);
-				break;
-			case 1:
-				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AGFF", new_value->getValueDouble (),
-					&status);
-				break;
-			default:
+			// construct name..
+			std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
+			status = irConn->tpl_set (pn.c_str (), new_value->getValueDouble (), &status);
+			if (status != TPL_OK)
 				return -2;
+			return 0;
 		}
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_dzoff)
-	{
-		switch (getPointingModel ())
-		{
-			case 0:
-				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.DOFF", new_value->getValueDouble (), &status);
-				break;
-			case 1:
-				status = irConn->tpl_set ("POINTING.POINTINGPARAMS.ZOFF", new_value->getValueDouble (), &status);
-				break;
-			default:
-				return -2;
-		}
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_ae)
-	{
-		status =
-			irConn->tpl_set ("POINTING.POINTINGPARAMS.AE", new_value->getValueDouble (),
-			&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_an)
-	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AN", new_value->getValueDouble (), &status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_npae)
-	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.NPAE", new_value->getValueDouble (), &status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_ca)
-	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.CA", new_value->getValueDouble (), &status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
-	}
-	if (old_value == model_flex)
-	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.FLEX", new_value->getValueDouble (),	&status);
-		if (status != TPL_OK)
-			return -2;
-		return 0;
 	}
 	if (old_value == model_recordcount)
 	{
@@ -355,32 +295,60 @@ Rts2TelescopeIr::initValues ()
 
 	createValue (model_dumpFile, "dump_file", "model dump file", false);
 
+	Rts2ValueDouble *modelP;
+
 	// switch mount type
-	if (config_mount == "AZ-ZD")
-	{
-		setPointingModel (1);
-		createValue (model_haoff, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_dzoff, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
-	}
-	else if (config_mount == "RA-DEC")
+	if (config_mount == "RA-DEC")
 	{
 		setPointingModel (0);
-		createValue (model_haoff, "doff", "model hour angle offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_dzoff, "hoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_ae, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
-		createValue (model_an, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "doff", "model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "hoff", "model declination encoder offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "me", "model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "ma", "model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "nphd", "model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "ch", "model east-west colimation error", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+	}
+	else if (config_mount == "AZ-ZD")
+	{
+/**
+ * OpenTCI/Bootes IR - POINTING.POINTINGPARAMS.xx:
+ * AOFF, ZOFF, AE, AN, NPAE, CA, FLEX
+ * AOFF, ZOFF = az / zd offset
+ * AE = azimut tilt east
+ * AN = az tilt north
+ * NPAE = az / zd not perpendicular
+ * CA = M1 tilt with respect to optical axis
+ * FLEX = sagging of tube
+ */
+		setPointingModel (1);
+		createValue (modelP, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
+		createValue (modelP, "flex", "model flex parameter", false, RTS2_DT_DEG_DIST);
+		modelParams.push_back (modelP);
 	}
 	else
 	{
 		logStream (MESSAGE_ERROR) << "Unsupported pointing model: '" << config_mount << "'" << sendLog;
 		return -1;
 	}
-
-	createValue (model_npae, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
-	createValue (model_ca, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
-	createValue (model_flex, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
 
 	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true);
 
@@ -615,26 +583,19 @@ Rts2TelescopeIr::infoModel ()
 	int status = TPL_OK;
 
 	std::string dumpfile;
-	double aoff, zoff, ae, an, npae, ca, flex;
 	int recordcount;
 
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
-	switch (getPointingModel ())
+
+	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
-		case 0:
-			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.HOFF", aoff, &status);
-			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DOFF", zoff, &status);
-			break;
-		case 1:
-			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-			status = irConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-			break;
+		double pv;
+		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
+		status = irConn->tpl_get (pn.c_str (), pn, &status);
+		if (status != TPL_OK)
+			return -1;
+		(*iter)->setValueDouble (pv);
 	}
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
 	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
 
@@ -642,13 +603,6 @@ Rts2TelescopeIr::infoModel ()
 		return -1;
 
 	model_dumpFile->setValueString (dumpfile);
-	model_haoff->setValueDouble (aoff);
-	model_dzoff->setValueDouble (zoff);
-	model_ae->setValueDouble (ae);
-	model_an->setValueDouble (an);
-	model_npae->setValueDouble (npae);
-	model_ca->setValueDouble (ca);
-	model_flex->setValueDouble (flex);
 	model_recordcount->setValueInteger (recordcount);
 	return 0;
 }
@@ -831,45 +785,26 @@ Rts2TelescopeIr::info ()
 }
 
 
-/**
- * OpenTCI/Bootes IR - POINTING.POINTINGPARAMS.xx:
- * AOFF, ZOFF, AE, AN, NPAE, CA, FLEX
- * AOFF, ZOFF = az / zd offset
- * AE = azimut tilt east
- * AN = az tilt north
- * NPAE = az / zd not perpendicular
- * CA = M1 tilt with respect to optical axis
- * FLEX = sagging of tube
- */
 int
 Rts2TelescopeIr::saveModel ()
 {
 	std::ofstream of;
-	int status = TPL_OK;
-	double aoff, zoff, ae, an, npae, ca, flex;
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "IR saveModel status: " << status <<
-			sendLog;
-		return -1;
-	}
 	of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
 	of.precision (20);
-	of << aoff << " "
-		<< zoff << " "
-		<< ae << " "
-		<< an << " " << npae << " " << ca << " " << flex << " " << std::endl;
+	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
+	{
+		double pv;
+		int status = TPL_OK;
+		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
+		status = irConn->tpl_get (pn.c_str (), pv, &status);
+		if (status != TPL_OK)
+			return -1;
+		of << pn << " " << pv << std::endl;
+	}
 	of.close ();
 	if (of.fail ())
 	{
-		logStream (MESSAGE_ERROR) << "IR saveModel file" << sendLog;
+		logStream (MESSAGE_ERROR) << "model saving failed" << sendLog;
 		return -1;
 	}
 	return 0;
@@ -881,31 +816,26 @@ Rts2TelescopeIr::loadModel ()
 {
 	std::ifstream ifs;
 	int status = TPL_OK;
-	double aoff, zoff, ae, an, npae, ca, flex;
 	try
 	{
+		std::string pn;
+		double pv;
 		ifs.open ("/etc/rts2/ir.model");
-		ifs >> aoff >> zoff >> ae >> an >> npae >> ca >> flex;
+		while (!ifs.eof ())
+		{
+			ifs >> pn >> pv;
+			std::string pnc = std::string ("POINTING.POINTINGPARAMS.") + pn;
+			status = irConn->tpl_set (pnc.c_str (), pv, &status);
+			if (status != TPL_OK)
+				return -1;
+		}
 	}
 	catch (std::exception & e)
 	{
 		logStream (MESSAGE_DEBUG) << "IR loadModel error" << sendLog;
 		return -1;
 	}
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = irConn->tpl_set ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
-	if (status)
-	{
-		logStream (MESSAGE_ERROR) << "IR saveModel status: " << status <<
-			sendLog;
-		return -1;
-	}
-	return 0;
+	return infoModel ();
 }
 
 

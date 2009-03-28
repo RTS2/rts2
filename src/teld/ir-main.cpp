@@ -343,26 +343,23 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
 	if (track == 0 && !park)
 	{
-		logStream (MESSAGE_WARNING) <<
-			"Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
+		logStream (MESSAGE_WARNING) << "Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
 		setTelescopeTrack (irTracking);
 		sleep (1);
 		return USEC_SEC / 100;
 	}
-	// 0.01 = 36 arcsec
-	if (fabs (poin_dist) <= 0.01)
+	// 0.005 = 18 arcsec
+	if (fabs (poin_dist) <= 0.005)
 	{
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist << sendLog;
 		#endif
 		return -2;
 	}
 	// finish due to timeout
 	if (timeout < now)
 	{
-		logStream (MESSAGE_ERROR) << "IR isMoving target distance in timeout "
-			<< poin_dist << "(" << status << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "checkMoves target distance in timeout " << poin_dist << " (" << status << ")" << sendLog;
 		return -1;
 	}
 	return USEC_SEC / 100;
