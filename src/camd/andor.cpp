@@ -42,7 +42,7 @@ using namespace std;
 
 #include "atmcdLXd.h"
 //That's root for andor2.77
-#define ANDOR_ROOT          "/usr/local/etc/andor"
+#define ANDOR_ROOT          (char *) "/usr/local/etc/andor"
 
 #define IXON_DEFAULT_GAIN   255
 #define IXON_MAX_GAIN       255
@@ -177,65 +177,58 @@ Rts2DevCameraAndor::isExposing ()
 	// if we are in acqusition mode 5
 	if (acqusitionMode->getValueInteger () == 5)
 	{
-		long first, last;
-		status = GetNumberNewImages (&first, &last);
+		status = WaitForAcquisitionTimeOut (50);
 		if (status == DRV_NO_NEW_DATA)
 		{
-			return 5;
+			return 0;
 		}
-		if (first == last)
-			return 5;
-		std::cout << "status GetNumberNewImages " << status << std::endl;
-		// there is new image, process it
-		std::cout << "Images " << first << " " << last << std::endl;
-		for (long i = first; i <= last; i++)
+		logStream (MESSAGE_DEBUG) << "new image " << status << sendLog;
+
+		// signal that we have data
+		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
+		// get the data
+		at_32 lAcquired = 0;
+		status = GetTotalNumberImagesAcquired (&lAcquired);
+		logStream (MESSAGE_DEBUG) << "Circular buffer size " << lAcquired << " status " << status << sendLog;
+		switch (getDataType ())
 		{
-			// signal that we have data
-			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip extended readout started");
-			long firstValid, lastValid;
-			// get the data
-			status = GetSizeOfCircularBuffer (&firstValid);
-			std::cout << "Circular buffer size " << firstValid << " status " << status << std::endl;
-			switch (getDataType ())
-			{
-				case RTS2_DATA_LONG:
-					if (GetImages (i, i, (long *) dataBuffer, chipUsedSize (), &firstValid, &lastValid) != DRV_SUCCESS)
-					{
-						logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
-						return -1;
-					}
-					break;
-				default:
-					if (GetImages16 (i, i, (unsigned short *) dataBuffer, chipUsedSize (), &firstValid, &lastValid) != DRV_SUCCESS)
-					{
-						logStream (MESSAGE_ERROR) << "Cannot get int data" << sendLog;
-						return -1;
-					}
-			}
-			std::cout << "First valid " << firstValid << " lastValid " << lastValid << std::endl;
-			// print first few pixels
-			std::cout << ((unsigned short *) dataBuffer)[0] << " " 
-				<< ((unsigned short *) dataBuffer)[1] << " "
-				<< ((unsigned short *) dataBuffer)[2] << " "
-				<< ((unsigned short *) dataBuffer)[3] << " "
-				<< ((unsigned short *) dataBuffer)[4];
-			// now send the data
-			ret = sendImage (dataBuffer, dataBufferSize);
-			if (ret)
-				return ret;
-			if (quedExpNumber->getValueInteger () == 0)
-			{
-				// stop exposure if we do not have any qued values
-				AbortAcquisition ();
-				FreeInternalMemory ();
-				logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
-				maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
-				return -3;
-			}
-			maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
-			quedExpNumber->dec ();
-			sendValueAll (quedExpNumber);
+			case RTS2_DATA_LONG:
+				if (GetMostRecentImage ((int32_t *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				{
+					logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
+					return -1;
+				}
+				break;
+			default:
+				if (GetMostRecentImage16 ((uint16_t *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				{
+					logStream (MESSAGE_ERROR) << "Cannot get int data" << sendLog;
+					return -1;
+				}
 		}
+		logStream (MESSAGE_DEBUG) << "Image "
+			<< ((unsigned short *) dataBuffer)[0] << " " 
+			<< ((unsigned short *) dataBuffer)[1] << " "
+			<< ((unsigned short *) dataBuffer)[2] << " "
+			<< ((unsigned short *) dataBuffer)[3] << " "
+			<< ((unsigned short *) dataBuffer)[4] << sendLog;
+		// now send the data
+		ret = sendImage (dataBuffer, dataBufferSize);
+		if (ret)
+			return ret;
+		if (quedExpNumber->getValueInteger () == 0)
+		{
+			// stop exposure if we do not have any qued values
+			AbortAcquisition ();
+			FreeInternalMemory ();
+			logStream (MESSAGE_INFO) << "Aborting acqusition" << sendLog;
+			maskStateChip (0, CAM_MASK_READING, CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
+			return -3;
+		}
+		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_EXPOSING | CAM_NOTREADING, BOP_TEL_MOVE, 0, "chip extended readout finished");
+		quedExpNumber->dec ();
+		sendValueAll (quedExpNumber);
+		incExposureNumber ();
 		return 100;
 	}
 	if ((ret = Rts2DevCamera::isExposing ()) != 0)
@@ -270,7 +263,7 @@ Rts2DevCameraAndor::readoutOneLine ()
 			ret = GetAcquiredFloatData ((float *)dataBuffer, chipUsedSize ());
 			break;
 		case RTS2_DATA_LONG:
-			ret = GetAcquiredData ((long *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredData ((int32_t *)dataBuffer, chipUsedSize ());
 			break;
 			// case RTS2_DATA_SHORT:
 		default:
@@ -528,6 +521,11 @@ Rts2DevCameraAndor::startExposure ()
 
 	if (ret != DRV_SUCCESS)
 	{
+		if (ret == DRV_ACQUIRING)
+		{
+			quedExpNumber->inc ();
+			return 0;
+		}
 		logStream (MESSAGE_ERROR) << "andor SetImage return " << ret << sendLog;
 		return -1;
 	}
@@ -653,6 +651,8 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
+	if (old_value == useRunTillAbort)
+		return 0;
 	if (old_value == outputAmp)
 	{
 		return SetOutputAmplifier (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
@@ -966,7 +966,7 @@ Rts2DevCameraAndor::printInfo ()
 			printf ("VIDEO");
 			break;
 		default:
-			printf ("<unknown> (code is %lu)", cap.ulCameraType);
+			printf ("<unknown> (code is %u)", cap.ulCameraType);
 			break;
 	}
 
