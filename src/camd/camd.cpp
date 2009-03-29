@@ -576,6 +576,7 @@ Rts2DevCamera::checkExposures ()
 		else
 		{
 			int expNum;
+			logStream (MESSAGE_DEBUG) << "camWaitExpose return " << ret << " quedExpNumber " << quedExpNumber->getValueInteger () << sendLog;
 			switch (ret)
 			{
 				case -3:
@@ -584,10 +585,10 @@ Rts2DevCamera::checkExposures ()
 					break;
 				case -2:
 					// remember exposure number
-					expNum = exposureNumber->getValueInteger ();
+					expNum = getExposureNumber ();
 					endExposure ();
 					// if new exposure does not start during endExposure (camReadout) call, drop exposure state
-					if (expNum == exposureNumber->getValueInteger ())
+					if (expNum == getExposureNumber ())
 						maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_FT,
 							CAM_NOEXPOSURE | CAM_NOFT,
 							BOP_TEL_MOVE, 0,
@@ -784,7 +785,7 @@ Rts2DevCamera::camStartExposureWithoutCheck ()
 {
 	int ret;
 
-	exposureNumber->inc ();
+	incExposureNumber ();
 	sendValueAll (exposureNumber);
 
 	ret = startExposure ();

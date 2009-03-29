@@ -251,6 +251,15 @@ class Rts2DevCamera:public Rts2ScriptDevice
 			return exposureNumber->getValueLong ();
 		}
 
+		/**
+		 * Increment exposure number. Must be called when new exposure started by "itself".
+		 */
+		void incExposureNumber ()
+		{
+			exposureNumber->inc ();
+			sendValueAll (exposureNumber);
+		}
+
 		const int getDataType ()
 		{
 			return ((DataType *) dataType->getData ())->type;
