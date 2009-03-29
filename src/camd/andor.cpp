@@ -445,6 +445,20 @@ int
 Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 {
 	int ret;
+	// check if channel is correct
+	int num;
+	ret = GetNumberHSSpeeds (ADChannel->getValueInteger (), in_amp, &num);
+	if (ret != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "cannot get number of horizontal shiwft speeds, error " << ret << sendLog;
+		return -1;
+	}
+	if (num < in_hsspeed)
+	{
+		logStream (MESSAGE_WARNING) << "cannot set horizontal shift speed to " << in_hsspeed
+			<< ", changing request to " << num << sendLog;
+		in_hsspeed = num;
+	}
 	if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "andor setHSSpeed amplifier " << in_amp << " speed " << in_hsspeed << " error " << ret <<
@@ -631,8 +645,7 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == VSAmp)
 		return setVSAmplitude (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == EMOn)
-		return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool ()? 0 : 1,
-		HSpeed->getValueInteger ()) == 0 ? 0 : -2;
+		return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool ()? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == HSpeed)
 		return setHSSpeed (EMOn->getValueBool ()? 0 : 1,
 		new_value->getValueInteger ()) == 0 ? 0 : -2;
