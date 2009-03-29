@@ -453,11 +453,11 @@ Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 		logStream (MESSAGE_ERROR) << "cannot get number of horizontal shiwft speeds, error " << ret << sendLog;
 		return -1;
 	}
-	if (num < in_hsspeed)
+	if (num <= in_hsspeed)
 	{
 		logStream (MESSAGE_WARNING) << "cannot set horizontal shift speed to " << in_hsspeed
 			<< ", changing request to " << num << sendLog;
-		in_hsspeed = num;
+		in_hsspeed = num - 1;
 	}
 	if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
 	{
