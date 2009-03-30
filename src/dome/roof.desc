@@ -22,9 +22,9 @@ The programme has the following characteristics:
   * rain button (when 1, it is not raining)
   * configurable timeout for roof closing/opening
   * configurable timeout for time between roof closing/opening (change of direction)
-  * independent operation of both roof halfs
+  * independent operation of both roof halfs, governed by power sensing input (I9)
   * any timeout (openign or closing) prevent roof from opening. Timeouts must
-    be rested by pressing and releasing emergency switch, or by power cycling the unit
+    be rested by pressing and releasing emergency switch, or by power cycling the unit. Roof can attempt close while in timeout.
 
 ===== Inputs =======
 
@@ -63,34 +63,11 @@ The programme has the following characteristics:
   * **J1XT1** 7 low bits are used for timeout control. So 127 seconds is maximal
     timout for roof control. The most significant bit - bit 16 - is used for
     weather override - if set to 1, roof will operate from computer even if it
-    is raining.
+    is raining. Bit 15 (4000) is used for control of Q9 switch.
 
-  * **J2XT1** Dead man button control. Ethernet module must receive different
-    number of this input within time specified in **J1XT1**. If different
-    number is not received, module will command roof to close.
-
-===== Roof states reported in ethernet outputs ======
-
-Each output is threated as a bit value. Almost all bits are used to gain
-understanding of roof operations. The bits have following meanings:
-
-  - state of manual/auto switch
-
-  - state of close/open switch.
-
-  - state of end-of-path open switch
-
-  - state of end-of-path close switch
-
-  - state of rain switch
-
-  - open final block
-
-  - close final block
-
-  - close switch timeout
-
-  - open switch timeout
+  * **J2XT1** Dead man button control. Ethernet module must receive changing 0
+    and 1 s wiithin time specified in **J1XT1**. If 0 or 1 is not received,
+    module will command roof to close.
 
 ===== Ethernet outputs ======
 
@@ -98,6 +75,71 @@ understanding of roof operations. The bits have following meanings:
 
   * **Q2XT1** State of left half of the roof.
 
-  * **Q4XT1** Number of seconds remaining for dead man button engagement.
+  * **Q3XT1** Number of seconds remaining for dead man button engagement.
 
+  * **Q4XT1** State of various emergency and other signals
 
+===== Roof states reported in ethernet outputs ======
+
+Each output is threated as a bit value. Almost all bits are used to gain
+understanding of roof operations. The bits have following meanings:
+
+  - 0001 not used 
+
+  - 0002 not used
+  
+  - 0004 state of end-of-path open switch
+
+  - 0008 state of end-of-path close switch
+
+  - 0010 not used
+
+  - 0020 state of final block for opening
+
+  - 0040 state of final block for closing
+
+  - 0080 timeout during closing
+
+  - 0100 timeout during opening
+
+  - 0200 motor commanded opening
+
+  - 0400 motor commanded closing
+
+  - 0800 opening blocked
+
+  - 1000 closing blocked
+  
+The device state (Q3XT1):
+
+  - 0001 state of manual/auto switch
+
+  - 0002 state of close/open switch.
+
+  - 0004 timeout occured - emergency declared
+
+  - 0008 power sensing (I9)
+
+  - 0010 rain declared
+
+  - 0020 not used
+
+  - 0040 not used
+  
+  - 0080 not used
+
+  - 0100 not used
+
+  - 0200 not used
+
+  - 0400 not used
+
+  - 0800 not used
+
+  - 1000 weather state - 1 if weather is favorable for observing
+
+  - 2000 ignore rain during opening - know problem of the opening switch
+
+  - 4000 emergency button pushed
+
+  - 8000 state of deadman signal
