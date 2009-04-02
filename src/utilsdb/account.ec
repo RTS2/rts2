@@ -58,8 +58,9 @@ Account::load ()
 
 	if (sqlca.sqlcode)
 	{
+	  	SqlError _err = SqlError ();
 		logStream (MESSAGE_ERROR) << "Loading account " << id
-			<< " gives error " << SqlError::getError () << sendLog;
+			<< " gives error " << _err << sendLog;
 		return -1;
 	}
 	name = std::string (d_account_name.arr);

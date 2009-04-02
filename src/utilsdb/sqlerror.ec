@@ -30,10 +30,3 @@ SqlError::getError ()
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
 	return _os.str ();
 }
-
-std::ostream &
-operator << (std::ostream & _os, SqlError & err)
-{
-	_os << err.getError ();
-	return _os;
-}
