@@ -249,10 +249,15 @@ Rts2TelescopeIr::initIrDevice ()
 	}
 
 	irConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
-	
-	int ret = irConn->init ();
-	if (ret)
-		return ret;
+
+	try
+	{	
+		irConn->init ();
+	}
+	catch (rts2core::ConnError er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+	}
 
 	// are we connected ?
 	if (!irConn->isOK ())
