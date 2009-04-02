@@ -1,6 +1,6 @@
 /* 
- * System sensor, displaying free disk space and more.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * APCUPS deamon sensor.
+ * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,11 +19,7 @@
 
 #include "sensord.h"
 
-#include "../utils/rts2connnosend.h"
-
-#include <iomanip>
-#include <netdb.h>
-#include <fcntl.h>
+#include "../utils/conntcp.h"
 
 #include <map>
 
@@ -35,11 +31,9 @@ namespace rts2sensor
 	 *
 	 * @author Petr Kubanek <petr@kubanek.net>
 	 */
-	class ConnApcUps: public Rts2ConnNoSend
+	class ConnApcUps: public rts2core::ConnTCP
 	{
 		private:
-			const char *hostname;
-			int port;
 			std::map <std::string, std::string> values;
 
 		public:
@@ -52,13 +46,6 @@ namespace rts2sensor
 			 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
 			 */
 			ConnApcUps (Rts2Block *_master, const char *_hostname, int _port);
-
-			/**
-			 * Init TCP/IP connection to given host.
-			 *
-			 * @return -1 on error, 0 on success.
-			 */
-			virtual int init ();
 
 			/**
 			 * Call command, get reply.
@@ -118,43 +105,8 @@ using namespace rts2sensor;
 
 
 ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)
-:Rts2ConnNoSend (_master)
+:rts2core::ConnTCP (_master, _hostname, _port)
 {
-	hostname = _hostname;
-	port = _port;
-}
-
-
-int
-ConnApcUps::init ()
-{
-	int ret;
-	struct sockaddr_in apc_addr;
-	struct hostent *hp;
-
-	sock = socket (AF_INET, SOCK_STREAM, 0);
-        if (sock == -1)
-        {
-                logStream (MESSAGE_ERROR) << "Cannot create socket for an APC UPS TCP/IP connection, error: " << strerror (errno) << sendLog;
-                return -1;
-        }
-
-        apc_addr.sin_family = AF_INET;
-        hp = gethostbyname(hostname);
-        bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
-        apc_addr.sin_port = htons(port);
-
-        ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
-        if (ret == -1)
-        {
-                logStream (MESSAGE_ERROR) << "Cannot connect socket, error: " << strerror (errno) << sendLog;
-                return -1;
-        }
-
-        ret = fcntl (sock, F_SETFL, O_NONBLOCK);
-        if (ret)
-                return -1;
-        return 0;
 }
 
 
@@ -342,9 +294,15 @@ ApcUps::init ()
 		return ret;
 	
 	connApc = new ConnApcUps (this, host->getHostname (), host->getPort ());
-	ret = connApc->init ();
-	if (ret)
-		return ret;
+	try
+	{
+		connApc->init ();
+	}
+	catch (rts2core::ConnError er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
+	}
 	ret = info ();
 	if (ret)
 		return ret;
