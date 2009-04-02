@@ -20,7 +20,7 @@
 #ifndef __RTS2_CONNOPENTPL__
 #define __RTS2_CONNOPENTPL__
 
-#include "../utils/rts2connnosend.h"
+#include "../utils/conntcp.h"
 
 #include <string>
 #include <ostream>
@@ -61,12 +61,9 @@ class OpenTplError
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class OpenTpl: public Rts2ConnNoSend
+class OpenTpl: public ConnTCP
 {
 	private:
-		std::string hostname;
-		int port;
-	
 		char valReply[500];
 		
 		int tpl_command_no;
@@ -84,7 +81,6 @@ class OpenTpl: public Rts2ConnNoSend
 		virtual ~OpenTpl ();
 
 		virtual int idle ();
-		virtual int init ();
 		
 		virtual int receive (fd_set *set);
 

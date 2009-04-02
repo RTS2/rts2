@@ -179,11 +179,8 @@ OpenTpl::waitReply ()
 }
 
 OpenTpl::OpenTpl (Rts2Block *_master, std::string _hostname, int _port)
-:Rts2ConnNoSend (_master)
+:ConnTCP (_master, _hostname.c_str(), _port)
 {
-	hostname = _hostname;
-	port = _port;
-
 	tpl_command_no = 1;
 }
 
@@ -200,39 +197,6 @@ OpenTpl::idle ()
 }
 
 
-int
-OpenTpl::init ()
-{
-        int ret;
-        struct  sockaddr_in modbus_addr;
-        struct  hostent *hp;
-
-        sock = socket (AF_INET,SOCK_STREAM,0);
-        if (sock == -1)
-        {
-                logStream (MESSAGE_ERROR) << "Cannot create socket for a Modbus TCP/IP connection, error: " << strerror (errno) << sendLog;
-                return -1;
-        }
-
-        modbus_addr.sin_family = AF_INET;
-        hp = gethostbyname(hostname.c_str ());
-        bcopy ( hp->h_addr, &(modbus_addr.sin_addr.s_addr), hp->h_length);
-        modbus_addr.sin_port = htons(port);
-
-        ret = connect (sock, (struct sockaddr *) &modbus_addr, sizeof(modbus_addr));
-        if (ret == -1)
-        {
-                logStream (MESSAGE_ERROR) << "Cannot connect socket, error: " << strerror (errno) << sendLog;
-                return -1;
-        }
-
-        ret = fcntl (sock, F_SETFL, O_NONBLOCK);
-        if (ret)
-                return -1;
-	return 0;
-}
-
-		
 int
 OpenTpl::receive (fd_set *set)
 {
