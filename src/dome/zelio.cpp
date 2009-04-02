@@ -470,9 +470,15 @@ Zelio::init ()
 		return -1;
 	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
-	ret = zelioConn->init ();
-	if (ret)
-		return ret;
+	try
+	{
+		zelioConn->init ();
+	}
+	catch (rts2core::ConnError er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
+	}
 	ret = info ();
 	if (ret)
 		return ret;
