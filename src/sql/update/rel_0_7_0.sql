@@ -12,7 +12,7 @@ CREATE INDEX message_oname ON message (message_oname);
 
 CREATE INDEX message_type ON message (message_type);
 
--- filters infomration
+-- filters information
 CREATE TABLE filters (
 	filter_id	varchar(3) PRIMARY KEY,
 	offset_ra	float8,
