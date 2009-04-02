@@ -1,0 +1,140 @@
+/* 
+ * Pure TCP connection.
+ * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "rts2connnosend.h"
+#include <ostream>
+
+namespace rts2core
+{
+
+/**
+ * Superclass for any connection errors. All errors which occurs on connection
+ * inherit from this class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnError
+{
+	private:
+		const char *msg;
+		int errn;
+	protected:
+		/**
+		 * Returns message associated with the error.
+		 */
+		const char *getMsg ()
+		{
+			return msg;
+		}
+
+		const char *getErrDetails ()
+		{
+			return strerror (errn);
+		}
+	public:
+		ConnError (const char *_msg)
+		{
+			msg = _msg;
+		}
+
+		ConnError (const char *_msg, int _errn)
+		{
+			msg = _msg;
+			errn = _errn;
+		}
+
+		friend std::ostream & operator << (std::ostream &_os, ConnError &_err)
+		{
+			_os << "connection error: " << _err.getMsg () << " - " << _err.getErrDetails ();
+			return _os;
+		}
+};
+
+
+/**
+ * Raised when connection cannot be created.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnCreateError:public ConnError
+{
+	public:
+		ConnCreateError (const char *_msg, int _errn):ConnError (_msg, _errn)
+		{
+		}
+};
+
+
+/**
+ * Error raised when connection cannot send data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnSendError:public ConnError
+{
+	public:
+		ConnSendError (const char *_msg):ConnError (_msg)
+		{
+		}
+};
+
+/**
+ * Class for TCP/IP connection.
+ *
+ * Provides basic operations on TCP/IP connection - establish it, send data to
+ * it, detect errors. This connection class is not inntended for RTS2
+ * communication, but for access to external TCp/IP services.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnTCP:public Rts2ConnNoSend
+{
+	private:
+		const char *hostname;
+		int port;
+	public:
+		/**
+		 * Create new connection to APC UPS daemon.
+		 *
+		 * @param _master   Reference to master holding this connection.
+		 *
+		 * @param _hostname APC UPSD IP address or hostname.
+		 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
+		 */
+		ConnTCP (Rts2Block *_master, const char *_hostname, int _port);
+
+		/**
+		 * Init TCP/IP connection to host given at constructor.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		virtual int init ();
+
+		/**
+		 * Send data to TCP/IP socket.
+		 *
+		 * @param data Data to send to the socket.
+		 * @param len  Data buffer length.
+		 */
+		void sendData (void *data, int len);
+
+		void sendData (char *data);
+};
+
+};

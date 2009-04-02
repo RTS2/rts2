@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2connnosend.h"
+#include "conntcp.h"
 
 namespace rts2core
 {
@@ -32,12 +32,10 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnModbus: public Rts2ConnNoSend
+class ConnModbus: public ConnTCP
 {
 	private:
 		bool debugModbusComm;
-		const char *hostname;
-		int port;
 
 		int16_t transId;
 		char unitId;
@@ -52,12 +50,6 @@ class ConnModbus: public Rts2ConnNoSend
 		 */
 		ConnModbus (Rts2Block *_master, const char *_hostname, int _port);
 
-		/**
-		 * Init modbus TCP/IP connection.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		virtual int init ();
 
 		/**
 		 * Set if debug messages from port communication will be printed.
