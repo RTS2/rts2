@@ -338,12 +338,11 @@ Rts2ConnCentraldClient::setState (int in_value)
 Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login, const char *in_password):Rts2Command
 (in_master)
 {
-	char * command;
+	std::ostringstream _os;
 	login = in_login;
 	password = in_password;
-	asprintf (&command, "login %s", login);
-	setCommand (command);
-	free (command);
+	_os << "login " << login;
+	setCommand (_os);
 	state = LOGIN_SEND;
 }
 
@@ -351,13 +350,12 @@ Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login,
 int
 Rts2CommandLogin::commandReturnOK (Rts2Conn * conn)
 {
-	char *command;
+	std::ostringstream _os;
 	switch (state)
 	{
 		case LOGIN_SEND:
-			asprintf (&command, "password %s", password);
-			setCommand (command);
-			free (command);
+			_os << "password " <<  password;
+			setCommand (_os);
 			state = PASSWORD_SEND;
 			// reque..
 			return RTS2_COMMAND_REQUE;

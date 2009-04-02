@@ -745,9 +745,8 @@ Rts2Conn::processLine ()
 		sendCommandEnd (DEVDEM_OK, "OK");
 	else if (ret == -2)
 	{
-		//      logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" <<
-		//      getCentraldId () << "] command: " << getCommand () << " ret: " << ret
-		//      << sendLog;
+		logStream (MESSAGE_DEBUG) << "Rts2Conn::processLine [" <<
+		 getCentraldId () << "] command: " << getCommand () << " ret: " << ret << sendLog;
 		sendCommandEnd (DEVDEM_E_COMMAND,
 			"invalid parameters/invalid number of parameters");
 	}
@@ -973,12 +972,9 @@ Rts2Conn::setCentraldId (int in_centrald_id)
 int
 Rts2Conn::sendPriorityInfo ()
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_PRIORITY_INFO " %i", havePriority ());
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_PRIORITY_INFO " " << havePriority ();
+	return sendMsg (_os);
 }
 
 
@@ -1406,14 +1402,21 @@ Rts2Conn::sendMsg (std::string msg)
 
 
 int
+Rts2Conn::sendMsg (std::ostringstream &_os)
+{
+	return sendMsg (_os.str ().c_str ());
+}
+
+
+int
 Rts2Conn::startBinaryData (long dataSize, int dataType)
 {
-	char *msg;
+	std::ostringstream _os;
 	dataConn++;
-	asprintf (&msg, PROTO_BINARY " %i %li %i", dataConn, dataSize, dataType);
+	_os << PROTO_BINARY " " << dataConn << " " << dataSize
+		<< " " << dataType;
 	int ret;
-	ret = sendMsg (msg);
-	free (msg);
+	ret = sendMsg (_os);
 	if (ret == -1)
 		return -1;
 	writeData[dataConn] = new Rts2DataWrite (dataSize);
@@ -1428,11 +1431,10 @@ Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 	binaryWriteTop = binaryWriteBuff = data;
 	char *binaryEnd = data + dataSize;
 
-	char *msg;
-	asprintf (&msg, PROTO_DATA " %i %li", data_conn, dataSize);
+	std::ostringstream _os;
+	_os << PROTO_DATA " " << data_conn << " " << dataSize;
 	int ret;
-	ret = sendMsg (msg);
-	free (msg);
+	ret = sendMsg (_os);
 	if (ret)
 		return ret;
 
@@ -1528,72 +1530,55 @@ Rts2Conn::sendMessage (Rts2Message & msg)
 int
 Rts2Conn::sendValue (std::string val_name, int value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %i", val_name.c_str (), value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " " << value;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %i %f", val_name.c_str (), val1, val2);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " " << val1
+		<< " " << val2;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValue (std::string val_name, const char *value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s \"%s\"", val_name.c_str (), value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " \"" << value << "\"";
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %s", val_name.c_str (), value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " " << value;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValue (std::string val_name, double value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %f", val_name.c_str (), value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " " << value;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s \"%s\" %i", val_name, val1, val2);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " \"" << val1 << "\" " << val2;
+	return sendMsg (_os);
 }
 
 
@@ -1601,35 +1586,31 @@ int
 Rts2Conn::sendValue (char *val_name, int val1, int val2,
 double val3, double val4, double val5, double val6)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %i %i %f %f %f %f", val_name, val1, val2,
-		val3, val4, val5, val6);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " "
+		<< val1 << " " << val2 << " "
+		<< val3 << " " << val4 << " "
+		<< val5 << " " << val6;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_VALUE " %s %li", val_name.c_str (), *value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_VALUE " " << val_name << " " << *value;
+	return sendMsg (_os);
 }
 
 
 int
 Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 {
-	char *msg;
-	asprintf (&msg, "%+04i \"%s\"", num, in_msg);
-	sendMsg (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << std::showpos << num;
+	_os << " " << in_msg;
+	sendMsg (_os);
 	if (commandInProgress)
 	{
 		setCommandInProgress (false);

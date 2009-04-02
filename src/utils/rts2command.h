@@ -76,7 +76,21 @@ class Rts2Command
 		Rts2Command (Rts2Block * _owner, const char *_text);
 		Rts2Command (Rts2Command * _command);
 		virtual ~ Rts2Command (void);
-		int setCommand (const char * _text);
+
+		/**
+		 * Set command for this command object.
+		 *
+		 * @param _os Ostring stream which will be used to set command.
+		 */
+		void setCommand (std::ostringstream &_os);
+
+		/**
+		 * Set command for this command object.
+		 *
+		 * @param _text Command text.
+		 */
+		void setCommand (const char * _text);
+
 		void setConnection (Rts2Conn * conn)
 		{
 			connection = conn;

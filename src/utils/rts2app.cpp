@@ -492,8 +492,12 @@ const char *in_mailAddress)
 		return 0;
 	}
 	forkedInstance ();
-	asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, in_mailAddress);
-	mailFile = popen (cmd, "w");
+	std::string cmd_s = std::string ("/usr/bin/mail -s '")
+		+ std::string (subject)
+		+ std::string ("' '")
+		+ std::string (in_mailAddress)
+		+ std::string ("'");
+	mailFile = popen (cmd_s.c_str (), "w");
 	if (!mailFile)
 	{
 		logStream (MESSAGE_ERROR) << "Rts2Block::sendMail popen: " <<

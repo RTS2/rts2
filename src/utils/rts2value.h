@@ -234,15 +234,16 @@ class Rts2Value
 		 * Create value. RA and DEC names will be composed by suffixing
 		 * in_val_name with RA and DEC strings.
 		 */
-		Rts2Value (std::string _val_name, std::string _description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2Value (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
 		virtual ~ Rts2Value (void)
 		{
 		}
+
 		int isValue (const char *in_val_name)
 		{
 			return !strcmp (in_val_name, valueName.c_str ());
 		}
+
 		std::string getName ()
 		{
 			return valueName;
@@ -291,6 +292,7 @@ class Rts2Value
 		{
 			return setValueCharArr (in_value.c_str ());
 		}
+
 		virtual int setValueInteger (int in_value)
 		{
 			return -1;
@@ -450,14 +452,13 @@ class Rts2Value
 class Rts2ValueString:public Rts2Value
 {
 	private:
-		char *value;
+		std::string value;
 	public:
 		Rts2ValueString (std::string in_val_name);
 		Rts2ValueString (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
 		virtual ~ Rts2ValueString (void)
 		{
-			delete[]value;
 		}
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
@@ -755,9 +756,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 	public:
 		Rts2ValueSelection (std::string in_val_name);
-		Rts2ValueSelection (std::string in_val_name, std::string in_description,
-			bool writeToFits = false, int32_t flags = 0);
-
+		Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits = false, int32_t flags = 0);
 		virtual ~Rts2ValueSelection (void);
 
 		virtual int setValue (Rts2Conn * connection);

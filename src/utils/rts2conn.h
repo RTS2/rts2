@@ -376,6 +376,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		virtual int sendMsg (const char *msg);
 		int sendMsg (std::string msg);
+		int sendMsg (std::ostringstream &_os);
 
 		/**
 		 * Switch connection to binary connection.

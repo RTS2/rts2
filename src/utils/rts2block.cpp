@@ -169,7 +169,7 @@ Rts2Block::findCentralId (int in_id)
 
 
 int
-Rts2Block::sendAll (char *msg)
+Rts2Block::sendAll (const char *msg)
 {
 	connections_t::iterator iter;
 	for (iter = connections.begin (); iter != connections.end (); iter++)
@@ -205,44 +205,36 @@ Rts2Block::sendMessageAll (Rts2Message & msg)
 void
 Rts2Block::sendStatusMessage (int state)
 {
-	char *msg;
-
-	asprintf (&msg, PROTO_STATUS " %i", state);
-	sendAll (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << PROTO_STATUS << " " << state;
+	sendAll (_os);
 }
 
 
 void
 Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
 {
-	char *msg;
-
-	asprintf (&msg, PROTO_STATUS " %i", state);
-	conn->sendMsg (msg);
-	free (msg);
+ 	std::ostringstream _os;
+	_os << PROTO_STATUS << " " << state;
+	conn->sendMsg (_os);
 }
 
 
 void
 Rts2Block::sendBopMessage (int state)
 {
-	char *msg;
-
-	asprintf (&msg, PROTO_BOP_STATE " %i", state);
-	sendAll (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << PROTO_BOP_STATE << " " << state;
+	sendAll (_os);
 }
 
 
 void
 Rts2Block::sendBopMessage (int state, Rts2Conn * conn)
 {
-	char *msg;
-
-	asprintf (&msg, PROTO_BOP_STATE " %i", state);
-	conn->sendMsg (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << PROTO_BOP_STATE << " " << state;
+	conn->sendMsg (_os);
 }
 
 
