@@ -808,8 +808,11 @@ Rts2DevCamera::camStartExposureWithoutCheck ()
 	if (sendOkInExposure && exposureConn)
 	{
 		sendOkInExposure = false;
-		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
+		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from queue");
 	}
+
+	logStream (MESSAGE_INFO) << "exposing for '"
+		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
 	return 0;
 }
@@ -849,6 +852,8 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 		sendValueAll (quedExpNumber);
 	}
 
+	exposureConn = conn;
+
 	ret = camStartExposure ();
 	if (ret)
 	{
@@ -856,9 +861,6 @@ Rts2DevCamera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	}
 	else
 	{
-		exposureConn = conn;
-		logStream (MESSAGE_INFO) << "exposing for '"
-			<< (conn ? conn->getName () : "null") << "'" << sendLog;
 	}
 	return ret;
 }
