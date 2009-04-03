@@ -19,6 +19,9 @@
 
 #include "connmodbus.h"
 
+#include <strings.h>
+#include <sys/socket.h>
+
 using namespace rts2core;
 
 ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port)
