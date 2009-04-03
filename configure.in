@@ -508,6 +508,7 @@ AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
 
 AM_CONDITIONAL(NOT_GETADDRINFO, test x${ac_cv_func_getaddrinfo} = xno)
+AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 
 AC_OUTPUT([Makefile
 	   man/Makefile
