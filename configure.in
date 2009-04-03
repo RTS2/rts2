@@ -486,8 +486,6 @@ if test x$psql = xyes -a x$gsoap = xyes ; then
   AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
 fi
 
-AC_CHECK_HEADERS
-
 # Checks for library functions.
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
