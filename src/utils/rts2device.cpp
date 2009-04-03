@@ -184,7 +184,6 @@ Rts2DevConn::setDeviceName (int _centrald_num, char *_name)
 {
 	setName (_centrald_num, _name);
 	// find centrald connection for us..
-	connections_t::iterator iter;
 	setConnState (CONN_RESOLVING_DEVICE);
 }
 

@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>

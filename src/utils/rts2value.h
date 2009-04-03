@@ -28,6 +28,8 @@
 #include <vector>
 #include <iostream>
 
+#include <libnova/libnova.h>
+
 /**
  * @file Various value classes.
  *
