@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <libnova/libnova.h>
+
 std::ostream & operator << (std::ostream & _os, Rts2ConfigValue val)
 {
 	_os << val.valueName;
@@ -450,7 +452,11 @@ Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &valu
 	ret = getString (section, valueName, valbuf);
 	if (ret)
 		return ret;
+#ifdef HAVE_STRTOF	
 	value = strtof (valbuf.c_str (), &retv);
+#else	
+	value = strtod (valbuf.c_str (), &retv);
+#endif	
 	if (*retv != '\0')
 	{
 		logStream (MESSAGE_ERROR) << "Cannot convert " << valbuf
