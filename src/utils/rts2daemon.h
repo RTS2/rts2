@@ -47,7 +47,8 @@ class Rts2Daemon:public Rts2Block
 		daemonize;
 		int listen_sock;
 		void addConnectionSock (int in_sock);
-		int lockf;
+		const char * lock_fname;
+		int lock_file;
 
 		// daemon state
 		int state;
@@ -116,7 +117,7 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void checkValueSave (Rts2Value *val);
 
-		int checkLockFile (const char *lock_fname);
+		int checkLockFile (const char *_lock_fname);
 		void setNotDeamonize ()
 		{
 			daemonize = DONT_DAEMONIZE;

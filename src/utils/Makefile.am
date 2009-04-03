@@ -21,10 +21,19 @@ librts2block_a_SOURCES = hoststring.cpp rts2app.cpp rts2block.cpp rts2daemon.cpp
 	riseset.cpp rts2valuerectangle.cpp rts2data.cpp radecparser.cpp \
 	rts2connserial.cpp connmodbus.cpp rts2format.cpp rts2valuearray.cpp
 
-# CYGWIN workaround
+EXTRA_DIST =
 
+# CYGWIN workaround
 if NOT_GETADDRINFO
 librts2block_a_SOURCES += getaddrinfo.c
+else
+EXTRA_DIST += getaddrinfo.c
+endif
+
+if NOT_GETOPT_LONG
+librts2block_a_SOURCES += getopt_own.c
+else
+EXTRA_DIST += getopt_own.c
 endif
 
 noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts2device.h rts2option.h \
@@ -34,7 +43,7 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 	rts2message.h conntcp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h rts2expander.h \
 	riseset.h rts2valuerectangle.h rts2data.h radecparser.h rts2connserial.h connmodbus.h rts2format.h \
-	rts2valuearray.h 
+	rts2valuearray.h getopt_own.h
 
 rts2_horizon_SOURCES = horizonapp.cpp
 rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a
