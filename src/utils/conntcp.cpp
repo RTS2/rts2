@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <netdb.h>
 #include <fcntl.h>
+#include <strings.h>
 
 using namespace rts2core;
 
