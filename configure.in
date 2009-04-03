@@ -495,7 +495,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock])
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod])
 
 AC_CHECK_HEADERS([limits.h]) 
 AC_FUNC_CHOWN 
