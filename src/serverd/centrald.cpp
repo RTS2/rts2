@@ -96,7 +96,7 @@ Rts2ConnCentrald::sendDeviceKey ()
 	dev_key = random ();
 	if (dev_key == 0)
 		dev_key = 1;
-	char *msg;
+	std::ostringstream _os;	
 	// device number could change..device names don't
 	char *dev_name;
 	Rts2Conn *dev;
@@ -110,9 +110,8 @@ Rts2ConnCentrald::sendDeviceKey ()
 		return -1;
 	}
 	setKey (dev_key);
-	asprintf (&msg, "authorization_key %s %i", dev_name, getKey ());
-	sendMsg (msg);
-	free (msg);
+	_os << "authorization_key " << dev_name << " " << getKey ();
+	sendMsg (_os);
 	return 0;
 }
 
@@ -146,23 +145,28 @@ Rts2ConnCentrald::sendInfo ()
 int
 Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 {
-	char *msg;
+	std::ostringstream _os;
 	int ret = -1;
 
 	switch (getType ())
 	{
 		case CLIENT_SERVER:
-			asprintf (&msg, "user %i %i %c %s",
-				getCentraldId (),
-				getPriority (), havePriority ()? '*' : '-', login);
-			ret = conn->sendMsg (msg);
-			free (msg);
+			_os << "user "
+				<< getCentraldId () << " "
+				<< getPriority () << " "
+				<< (havePriority ()? '*' : '-') << " "
+				<< login;
+			ret = conn->sendMsg (_os);
 			break;
 		case DEVICE_SERVER:
-			asprintf (&msg, "device %i %i %s %s %i %i",
-				getCentraldNum (), getCentraldId (), getName (), hostname, port, device_type);
-			ret = conn->sendMsg (msg);
-			free (msg);
+			_os << "device "
+				<< getCentraldNum () << " "
+				<< getCentraldId () << " "
+				<< getName () << " "
+				<< hostname << " "
+				<< port << " "
+				<< device_type;
+			ret = conn->sendMsg (_os);
 			break;
 		default:
 			break;
@@ -276,25 +280,18 @@ Rts2ConnCentrald::commandDevice ()
 int
 Rts2ConnCentrald::sendStatusInfo ()
 {
-	char *msg;
-	int ret;
-
-	asprintf (&msg, PROTO_STATUS " %i", master->getState ());
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_STATUS " " << master->getState ();
+	return sendMsg (_os);
 }
 
 
 int
 Rts2ConnCentrald::sendAValue (const char *val_name, int value)
 {
-	char *msg;
-	int ret;
-	asprintf (&msg, PROTO_AUTH " %s %i", val_name, value);
-	ret = sendMsg (msg);
-	free (msg);
-	return ret;
+	std::ostringstream _os;
+	_os << PROTO_AUTH " " << val_name << " " << value;
+	return sendMsg (_os);
 }
 
 
@@ -309,11 +306,10 @@ Rts2ConnCentrald::commandClient ()
 
 		if (strncmp (passwd, login, CLIENT_LOGIN_SIZE) == 0)
 		{
-			char *msg;
+			std::ostringstream _os;
 			authorized = 1;
-			asprintf (&msg, "logged_as %i", getCentraldId ());
-			sendMsg (msg);
-			free (msg);
+			_os << "logged_as " << getCentraldId ();
+			sendMsg (_os);
 			sendStatusInfo ();
 			return 0;
 		}
@@ -399,7 +395,7 @@ Rts2ConnCentrald::command ()
 			int centraldNum;
 			char *reg_device;
 			char *in_hostname;
-			char *msg;
+			std::ostringstream _os;
 
 			if (paramNextInteger (&centraldNum)
 				|| paramNextString (&reg_device)
@@ -422,10 +418,8 @@ Rts2ConnCentrald::command ()
 			sendStatusInfo ();
 			if (master->getPriorityClient () > -1)
 			{
-				asprintf (&msg, PROTO_PRIORITY " %i %i",
-					master->getPriorityClient (), 0);
-				sendMsg (msg);
-				free (msg);
+				_os << PROTO_PRIORITY " " << master->getPriorityClient () << " 0";
+				sendMsg (_os);
 			}
 
 			sendAValue ("registered_as", getCentraldId ());
@@ -620,11 +614,9 @@ Rts2Centrald::init ()
 
 	centraldConnRunning (NULL);
 
-	char *lF;
-	asprintf (&lF, "%scentrald_%i", getLockPrefix (), getPort ());
-	ret = checkLockFile (lF);
-	free (lF);
-
+	std::ostringstream _os;
+	_os << getLockPrefix () << getLockPrefix () << "centrald_" << getPort ();
+	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
 	ret = doDeamonize ();
@@ -792,11 +784,9 @@ Rts2Centrald::changePriority (time_t timeout)
 			conn->setHavePriority (1);
 	}
 	// send out priority change
-	char *msg;
-
-	asprintf (&msg, PROTO_PRIORITY " %i %li", priority_client, timeout);
-	sendAll (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << PROTO_PRIORITY " " << priority_client << " " << timeout;
+	sendAll (_os);
 
 	// and set and send new priority values
 	priorityClient->setValueCharArr (conn ? conn->getName () : "(null)");
