@@ -52,7 +52,7 @@ class Rts2NWindow:public Rts2NLayout
 			move (getX (), y);
 		}
 
-		virtual void clear ()
+		virtual void wclear (void)
 		{
 			werase (window);
 		}

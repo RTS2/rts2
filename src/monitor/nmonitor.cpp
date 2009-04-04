@@ -63,7 +63,7 @@ Rts2NMonitor::sendCommand ()
 	{
 		oldCommand = new Rts2Command (this, cmd_top);
 		conn->queCommand (oldCommand);
-		comWindow->clear ();
+		comWindow->wclear ();
 		comWindow->printCommand (command);
 		wmove (comWindow->getWriteWindow (), 0, 0);
 	}

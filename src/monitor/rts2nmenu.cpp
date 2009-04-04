@@ -60,7 +60,7 @@ Rts2NMenu::~Rts2NMenu (void)
 		selSubmenu = *selSubmenuIter;
 		delete selSubmenu;
 	}
-	submenus.clear ();
+	submenus.wclear ();
 }
 
 
