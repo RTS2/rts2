@@ -447,7 +447,7 @@ Rts2NDeviceCentralWindow::drawValuesList ()
 			&& !isnan (valDayHorizon->getValueDouble ()) && valEveningTime
 			&& valMorningTime)
 		{
-			stateChanges.wclear ();
+			stateChanges.clear ();
 
 			int curr_type = -1, next_type = -1;
 			time_t t_start;
