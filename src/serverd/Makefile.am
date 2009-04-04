@@ -9,7 +9,8 @@ rts2_centrald_LDFLAGS = ../utils/librts2block.a @LIB_NOVA@
 rts2_centrald_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_moodd_SOURCES = moodd.cpp
-rts2_moodd_LDFLAGS = ../utils/librts2block.a
+rts2_moodd_LDFLAGS = ../utils/librts2block.a @LIB_NOVA@
+rts2_moodd_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_state_SOURCES = rts2-state.cpp
 rts2_state_LDFLAGS = ../utils/librts2block.a @LIB_NOVA@
