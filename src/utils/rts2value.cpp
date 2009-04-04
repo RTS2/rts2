@@ -125,6 +125,10 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 int
 Rts2ValueString::setValueCharArr (const char *_value)
 {
+	if (_value == NULL)
+	{
+		_value = "";
+	}
 	if (value != std::string (_value))
 		changed ();
 
