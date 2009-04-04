@@ -23,6 +23,11 @@
 #include <string>
 #include <vector>
 #include <sys/types.h>
+#include <sstream>
+
+#include <string.h>
+
+#include "config.h"
 
 /**
  * Create directory recursively.
@@ -59,7 +64,7 @@ std::vector<char> Str2CharVector (std::string text);
  * @param val  Value which will be copied to character.
  */
 template < typename T >
-fillIn (char **p, T val)
+void fillIn (char **p, T val)
 {
 	std::ostringstream _os;
 	_os << val;
