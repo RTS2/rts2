@@ -615,7 +615,7 @@ Rts2Centrald::init ()
 	centraldConnRunning (NULL);
 
 	std::ostringstream _os;
-	_os << getLockPrefix () << getLockPrefix () << "centrald_" << getPort ();
+	_os << getLockPrefix () << "centrald_" << getPort ();
 	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
