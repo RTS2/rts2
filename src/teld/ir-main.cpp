@@ -160,6 +160,9 @@ Rts2DevTelescopeIr::startMove ()
 	switch (getPointingModel ())
 	{
 		case 0:
+			if (target.dec < -89.85)
+				target.dec = -89.80;
+
 			getTargetAltAz (&tAltAz);
 			if ((tAltAz.az < 5 || tAltAz.az > 355 || (tAltAz.az > 175 && tAltAz.az < 185))
 				&& tAltAz.alt < 15)
@@ -168,9 +171,6 @@ Rts2DevTelescopeIr::startMove ()
 				return -1;
 			}
 			break;
-
-			if (target.dec < -89.85)
-				target.dec = -89.80;
 		case 1:
 			// move to zenit - move to different dec instead
 			if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
