@@ -51,4 +51,27 @@ std::vector<std::string> SplitStr (const std::string& text, const std::string& d
  */
 std::vector<char> Str2CharVector (std::string text);
 
+
+/**
+ * Fill value to const char**.
+ *
+ * @param p    Pointer to char which will be filled,
+ * @param val  Value which will be copied to character.
+ */
+template < typename T >
+fillIn (char **p, T val)
+{
+	std::ostringstream _os;
+	_os << val;
+	*p = new char[_os.str ().length () + 1];
+	strcpy (*p, _os.str (). c_str ());
+}
+
+/**
+ * Replacement for isinf - on Solaris platform
+ */
+#ifndef HAVE_ISINF
+int isinf(double x) {return !finite(x) && x==x; }
+#endif
+
 #endif							 /* !__RTS_UTILSFUNC__ */
