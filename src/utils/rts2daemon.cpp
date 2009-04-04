@@ -24,6 +24,8 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "rts2daemon.h"
 
