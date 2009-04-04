@@ -465,18 +465,16 @@ Rts2DevClientWriteImage::infoFailed ()
 Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
 (in_owner)
 {
-	char *command;
-	asprintf (&command, "que_image %s", image->getImageName ());
-	setCommand (command);
-	free (command);
+  	std::ostringstream _os;
+	_os << "que_image " << image->getImageName ();
+	setCommand (_os);
 }
 
 
 Rts2CommandQueObs::Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId):
 Rts2Command (in_owner)
 {
-	char *command;
-	asprintf (&command, "que_obs %i", in_obsId);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "que_obs " << in_obsId;
+	setCommand (_os);
 }
