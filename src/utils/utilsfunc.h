@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#ifndef HAVE_ISINF
+#include <ieeefp.h>
+#endif
 /**
  * Create directory recursively.
  *
@@ -76,7 +79,7 @@ void fillIn (char **p, T val)
  * Replacement for isinf - on Solaris platform
  */
 #ifndef HAVE_ISINF
-int isinf(double x) {return !finite(x) && x==x; }
+int isinf(double x);
 #endif
 
 #endif							 /* !__RTS_UTILSFUNC__ */

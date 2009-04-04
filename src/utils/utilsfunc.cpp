@@ -90,3 +90,11 @@ Str2CharVector (std::string text)
 	}
 	return res;
 }
+
+#ifndef HAVE_ISINF
+int
+isinf(double x)
+{
+	return !finite(x) && x==x;
+}
+#endif
