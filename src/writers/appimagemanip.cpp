@@ -18,6 +18,7 @@
  */
 
 #include <config.h>
+#include <strings.h>
 
 #ifdef HAVE_PGSQL
 #include "rts2appdbimage.h"
