@@ -217,7 +217,7 @@ Rts2DevTelescopeIr::startMove ()
 		return -1;
 	}
 	if (sep > 2)
-	  	usleep (USEC_SEC / 50);
+	  	usleep (USEC_SEC / 5);
 	else if (sep > 2 / 60.0)
 		usleep (USEC_SEC / 100);
 	else
