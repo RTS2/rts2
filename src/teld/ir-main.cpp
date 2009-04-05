@@ -27,7 +27,9 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 	private:
 		struct ln_equ_posn target;
 		int irTracking;
+
 		Rts2ValueDouble *modelQuality;
+		Rts2ValueDouble *goodSep;
 
 		double derOff;
 
@@ -37,6 +39,8 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 		virtual int processOption (int in_opt);
 
 		virtual int initValues ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
 		Rts2DevTelescopeIr (int in_arcg, char **in_argv);
 		virtual int startMove ();
@@ -85,6 +89,14 @@ Rts2DevTelescopeIr::initValues ()
 	return Rts2Device::initValues ();
 }
 
+
+int
+Rts2DevTelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == goodSep)
+		return 0;
+	return Rts2TelescopeIr::setValue (old_value, new_value);
+}
 
 int
 Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
@@ -205,11 +217,11 @@ Rts2DevTelescopeIr::startMove ()
 		return -1;
 	}
 	if (sep > 2)
-		sleep (3);
+	  	usleep (USEC_SEC / 5);
 	else if (sep > 2 / 60.0)
-		usleep (USEC_SEC / 10);
+		usleep (USEC_SEC / 100);
 	else
-		usleep (USEC_SEC / 10);
+		usleep (USEC_SEC / 1000);
 
 	time (&timeout);
 	timeout += 30;
@@ -348,8 +360,7 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 		sleep (1);
 		return USEC_SEC / 100;
 	}
-	// 0.005 = 18 arcsec
-	if (fabs (poin_dist) <= 0.005)
+	if (fabs (poin_dist) <= goodSep->getValueDouble ()) 
 	{
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist << sendLog;
@@ -391,6 +402,9 @@ in_argv)
 	derOff = 0;
 
 	createValue (modelQuality, "model_quality", "quality of model data", false);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false);
+	// 1.8 arcsec
+	goodSep->setValueDouble (0.0005);
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,
