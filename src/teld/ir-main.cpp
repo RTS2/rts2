@@ -217,7 +217,7 @@ Rts2DevTelescopeIr::startMove ()
 		return -1;
 	}
 	if (sep > 2)
-	  	usleep (USEC_SEC / 5);
+	  	usleep (USEC_SEC / 50);
 	else if (sep > 2 / 60.0)
 		usleep (USEC_SEC / 100);
 	else
@@ -403,8 +403,8 @@ in_argv)
 
 	createValue (modelQuality, "model_quality", "quality of model data", false);
 	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false);
-	// 1.8 arcsec
-	goodSep->setValueDouble (0.0005);
+	// 2.7 arcsec
+	goodSep->setValueDouble (0.00075);
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,
