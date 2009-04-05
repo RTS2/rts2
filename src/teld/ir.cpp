@@ -692,14 +692,14 @@ Rts2TelescopeIr::info ()
 		switch (getPointingModel ())
 		{
 			case 0:
-				status = irConn->tpl_get ("HA.CURRPOS", t_telRa, &status);
-				status = irConn->tpl_get ("DEC.CURRPOS", t_telDec, &status);
+				status = irConn->tpl_get ("POINTING.CURRPOS.RA", t_telRa, &status);
+				t_telRa *= 15.0;
+				status = irConn->tpl_get ("POINTING.CURRPOS.DEC", t_telDec, &status);
 				if (status != TPL_OK)
 				{
 					return -1;
 				}
-				t_telRa = ln_range_degrees (ln_get_mean_sidereal_time (ln_get_julian_from_sys ()) - t_telRa);
-				setTelRaDec (t_telRa, t_telDec);
+				telFlip->setValueInteger (0);
 				break;
 			case 1:
 				hrz.az = az;
@@ -707,8 +707,8 @@ Rts2TelescopeIr::info ()
 				observer.lng = telLongitude->getValueDouble ();
 				observer.lat = telLatitude->getValueDouble ();
 				ln_get_equ_from_hrz (&hrz, &observer, ln_get_julian_from_sys (), &curr);
-				setTelRa (curr.ra);
-				setTelDec (curr.dec);
+				t_telRa = curr.ra;
+				t_telDec = curr.dec;
 				telFlip->setValueInteger (0);
 				break;
 		}
