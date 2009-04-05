@@ -9,6 +9,8 @@ EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp tgdrive.cpp
 
 LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
+AM_CXXFLAGS=@NOVA_CFLAGS@
+
 rts2_teld_gemini_SOURCES = gemini.cpp hms.c
 
 rts2_teld_dummy_SOURCES = dummy.cpp
