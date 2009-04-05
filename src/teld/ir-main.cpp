@@ -402,7 +402,7 @@ in_argv)
 	derOff = 0;
 
 	createValue (modelQuality, "model_quality", "quality of model data", false);
-	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST);
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
