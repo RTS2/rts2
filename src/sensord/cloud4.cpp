@@ -138,6 +138,8 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
 
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
+	addOption ('b', NULL, 1, "bad trigger point");
+	addOption ('g', NULL, 1, "good trigger point");
 }
 
 
