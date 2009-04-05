@@ -1,6 +1,6 @@
 /* 
  * Sensor daemon for cloudsensor (mrakomer) by Martin Kakona
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2009 Martin Jelinek
  *
  * This program is free software; you can redistribute it and/or
@@ -22,12 +22,15 @@
 
 #include "../utils/rts2connserial.h"
 
+namespace rts2sensor
+{
+
 /**
- * Class for cloudsensor.
+ * Class for cloudsensor, version 4.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Cloud4: public Rts2DevSensor
+class Cloud4: public SensorWeather
 {
 	private:
 		char *device_file;
@@ -36,6 +39,14 @@ class Rts2Cloud4: public Rts2DevSensor
 		Rts2ValueDoubleStat *tempDiff;
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
+
+		// use this value only for logging to detect if we reported trips
+		double lastTempDiff;
+		
+		Rts2ValueInteger *numVal;
+
+		Rts2ValueDouble *triggerBad;
+		Rts2ValueDouble *triggerGood;
 
 		Rts2ValueBool *heater;
 
@@ -55,12 +66,16 @@ class Rts2Cloud4: public Rts2DevSensor
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2Cloud4 (int in_argc, char **in_argv);
-		virtual ~Rts2Cloud4 (void);
+		Cloud4 (int in_argc, char **in_argv);
+		virtual ~Cloud4 (void);
 };
 
+};
+
+using namespace rts2sensor;
+
 int
-Rts2Cloud4::readSensor ()
+Cloud4::readSensor ()
 {
 	int ret;
 	char buf[128];
@@ -99,14 +114,23 @@ Rts2Cloud4::readSensor ()
 }
 
 
-Rts2Cloud4::Rts2Cloud4 (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
+Cloud4::Cloud4 (int in_argc, char **in_argv)
+:SensorWeather (in_argc, in_argv)
 {
 	mrakConn = NULL;
 
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference");
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
 	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
+
+	createValue (numVal, "num_stat", "number of measurements for weather statistic");
+	numVal->setValueInteger (20);
+
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true);
+	triggerBad->setValueDouble (nan ("f"));
+
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true);
+	triggerGood->setValueDouble (nan ("f"));
 
 	createValue (heater, "HEATER", "heater state", true);
 
@@ -117,33 +141,38 @@ Rts2Cloud4::Rts2Cloud4 (int in_argc, char **in_argv)
 }
 
 
-Rts2Cloud4::~Rts2Cloud4 (void)
+Cloud4::~Cloud4 (void)
 {
 	delete mrakConn;
 }
 
 
 int
-Rts2Cloud4::processOption (int in_opt)
+Cloud4::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case 'f':
 			device_file = optarg;
 			break;
+		case 'b':
+			triggerBad->setValueDouble (atof (optarg));
+			break;
+		case 'g':
+			triggerGood->setValueDouble (atof (optarg));
+			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return SensorWeather::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2Cloud4::init ()
+Cloud4::init ()
 {
 	int ret;
-	char buf[128];
-	ret = Rts2DevSensor::init ();
+	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
@@ -154,33 +183,64 @@ Rts2Cloud4::init ()
 	
 	mrakConn->flushPortIO ();
 
-	ret = mrakConn->writeRead ("s", 1, buf, 50, '\r');
-
+	if (!isnan (triggerGood->getValueDouble ()))
+		setWeatherState (false);
 	return 0;
 }
 
 
 int
-Rts2Cloud4::info ()
+Cloud4::info ()
 {
 	int ret;
 	ret = readSensor ();
 	if (ret)
+	{
+		if (getLastInfoTime () > 60)
+			setWeatherTimeout (60);
 		return -1;
-	return Rts2DevSensor::info ();
+	}
+	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
+	{
+		// trips..
+		if (tempDiff->getValueDouble () <= triggerBad->getValueDouble ())
+		{
+			if (getWeatherState () == true)
+			{
+				logStream (MESSAGE_INFO) << "setting weather to bad. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerBad->getValueDouble ()
+					<< sendLog;
+			}
+			setWeatherTimeout (300);
+		}
+		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
+		{
+			if (getWeatherState () == false && lastTempDiff < triggerGood->getValueDouble ())
+			{
+				logStream (MESSAGE_INFO) << "setting weather to good. TempDiff: " << tempDiff->getValueDouble ()
+					<< " trigger: " << triggerGood->getValueDouble ()
+					<< sendLog;
+			}
+		}
+	}
+	// record last value
+	lastTempDiff = tempDiff->getValueDouble ();
+	return SensorWeather::info ();
 }
 
 
 int
-Rts2Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	return Rts2DevSensor::setValue (old_value, new_value);
+	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
+		return 0;
+	return SensorWeather::setValue (old_value, new_value);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2Cloud4 device = Rts2Cloud4 (argc, argv);
+	Cloud4 device = Cloud4 (argc, argv);
 	return device.run ();
 }
