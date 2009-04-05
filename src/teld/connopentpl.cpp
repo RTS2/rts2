@@ -311,9 +311,15 @@ OpenTpl::handleCommand (char *buffer, bool isActual)
 		if (!strcmp (subc, "ERROR"))
 		{
 			if (isActual)
-				throw (OpenTplError ("Error while geting data"));
+			{
+			  	std::string desc = std::string ("DATA ERROR ") + std::string (ce);
+				throw (OpenTplError (desc.c_str ()));
+			}
 			else
+			{
+				logStream (MESSAGE_DEBUG) << "Error " << ce << sendLog;
 				return 0;
+			}
 		}
 		ce++;
 		// look for data = sign..
