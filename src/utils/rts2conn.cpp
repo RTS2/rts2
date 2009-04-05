@@ -1609,7 +1609,10 @@ int
 Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 {
 	std::ostringstream _os;
-	_os << std::showpos << num;
+	if (num == 0)
+		_os << "+0";
+	else
+		_os << std::showpos << num;
 	_os << " " << in_msg;
 	sendMsg (_os);
 	if (commandInProgress)
