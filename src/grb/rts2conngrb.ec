@@ -430,8 +430,8 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 			:d_swift_ra,
 			:d_swift_dec,
 			:d_swift_roll,
-			(TIMESTAMP 'epoch' + :d_swift_time * INTERVAL '1 seconds'),
-			(TIMESTAMP 'epoch' + :d_swift_received * INTERVAL '1 seconds'),
+			to_timestamp (:d_swift_time),
+			to_timestamp (:d_swift_received),
 			:d_swift_name,
 			:d_swift_obstime,
 			:d_swift_merit
@@ -470,8 +470,8 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 		nextval ('point_id'),
 			:d_integral_ra,
 			:d_integral_dec,
-			(TIMESTAMP 'epoch' + :d_integral_time * INTERVAL '1 seconds'),
-			(TIMESTAMP 'epoch' + :d_integral_received * INTERVAL '1 seconds')
+			to_timestamp (:d_integral_time),
+			to_timestamp (:d_integral_received)
 			);
 	if (sqlca.sqlcode != 0)
 	{
@@ -808,8 +808,8 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				:d_grb_ra,
 				:d_grb_dec,
 				:d_grb_is_grb,
-				(TIMESTAMP 'epoch' + :d_grb_date * INTERVAL '1 seconds'),
-				(TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
+				to_timestamp (:d_grb_date),
+				to_timestamp (:d_grb_update),
 				:d_grb_errorbox :d_grb_errorbox_ind
 			);
 		if (sqlca.sqlcode)
@@ -886,7 +886,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 						grb_ra = :d_grb_ra,
 						grb_dec = :d_grb_dec,
 						grb_is_grb = :d_grb_is_grb,
-						grb_last_update = (TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds')
+						grb_last_update = to_timestamp (:d_grb_update)
 					WHERE
 						tar_id = :d_tar_id;
 
@@ -1132,7 +1132,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 			:d_grb_id,
 			:d_grb_seqn,
 			:d_grb_type,
-			(TIMESTAMP 'epoch' + :d_grb_update * INTERVAL '1 seconds'),
+			to_timestamp (:d_grb_update),
 			:d_grb_update_usec,
 			ARRAY[:d_packet0, :d_packet1, :d_packet2, :d_packet3, :d_packet4, :d_packet5, :d_packet6, :d_packet7, :d_packet8, :d_packet9,
 				:d_packet10, :d_packet11, :d_packet12, :d_packet13, :d_packet14, :d_packet15, :d_packet16, :d_packet17, :d_packet18, :d_packet19,
@@ -1257,7 +1257,6 @@ Rts2ConnGrb::idle ()
 int
 Rts2ConnGrb::init_call ()
 {
-	char *s_port;
 	struct addrinfo hints;
 	struct addrinfo *info;
 	int ret;
@@ -1266,9 +1265,9 @@ Rts2ConnGrb::init_call ()
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
-	asprintf (&s_port, "%i", gcn_port);
-	ret = getaddrinfo (gcn_hostname, s_port, &hints, &info);
-	free (s_port);
+	std::ostringstream _os;
+	_os << gcn_port;
+	ret = getaddrinfo (gcn_hostname, _os.str ().c_str (), &hints, &info);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: " << gai_strerror (ret) << sendLog;
