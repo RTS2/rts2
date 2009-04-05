@@ -251,7 +251,11 @@ ValueBoxFloat::sendValue (Rts2Conn * connection)
 	char buf[200];
 	char *endptr;
 	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+#ifdef HAVE_STRTOF
 	float tval = strtof (buf, &endptr);
+#else
+	float tval = strtod (buf, &endptr);
+#endif
 	if (*endptr != '\0' && *endptr != ' ')
 	{
 		// log error;

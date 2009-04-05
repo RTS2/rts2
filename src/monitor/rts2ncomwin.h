@@ -15,10 +15,10 @@ class Rts2NComWin:public Rts2NWindow
 		virtual void draw ();
 		virtual void refresh ();
 
-		virtual void wclear ()
+		virtual void clear ()
 		{
 			werase (comwin);
-			Rts2NWindow::wclear ();
+			Rts2NWindow::clear ();
 		}
 
 		virtual bool setCursor ();
