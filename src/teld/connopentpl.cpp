@@ -308,6 +308,7 @@ OpenTpl::handleCommand (char *buffer, bool isActual)
 				strcpy (valReply, "1");
 			return 0;
 		}
+		ce++;
 		if (!strcmp (subc, "ERROR"))
 		{
 			if (isActual)
@@ -321,7 +322,6 @@ OpenTpl::handleCommand (char *buffer, bool isActual)
 				return 0;
 			}
 		}
-		ce++;
 		// look for data = sign..
 		while (*ce != '\0' && *ce != '=')
 			ce++;
