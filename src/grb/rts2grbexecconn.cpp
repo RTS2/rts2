@@ -1,6 +1,8 @@
+
 #include "rts2grbexecconn.h"
 
 #include <unistd.h>
+#include "../utils/utilsfunc.h"
 
 Rts2GrbExecConn::Rts2GrbExecConn (Rts2Block * in_master, char *execFile,
 int in_tar_id, int in_grb_id,
@@ -14,16 +16,16 @@ Rts2ConnFork (in_master, execFile)
 	// defaults..
 	argvs[0] = execFile;
 	// pass real arguments..
-	asprintf (&argvs[1], "%i", in_tar_id);
-	asprintf (&argvs[2], "%i", in_grb_id);
-	asprintf (&argvs[3], "%i", in_grb_seqn);
-	asprintf (&argvs[4], "%i", in_grb_type);
-	asprintf (&argvs[5], "%f", in_grb_ra);
-	asprintf (&argvs[6], "%f", in_grb_dec);
-	asprintf (&argvs[7], "%i", (in_grb_is_grb ? 1 : 0));
-	asprintf (&argvs[8], "%li", *in_grb_date);
-	asprintf (&argvs[9], "%f", in_grb_errorbox);
-	asprintf (&argvs[10], "%i", in_grb_isnew);
+	fillIn (&argvs[1], in_tar_id);
+	fillIn (&argvs[2], in_grb_id);
+	fillIn (&argvs[3], in_grb_seqn);
+	fillIn (&argvs[4], in_grb_type);
+	fillIn (&argvs[5], in_grb_ra);
+	fillIn (&argvs[6], in_grb_dec);
+	fillIn (&argvs[7], (in_grb_is_grb ? 1 : 0));
+	fillIn (&argvs[8], *in_grb_date);
+	fillIn (&argvs[9], in_grb_errorbox);
+	fillIn (&argvs[10], in_grb_isnew);
 	argvs[11] = NULL;
 }
 
