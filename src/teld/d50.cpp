@@ -50,6 +50,8 @@ class Rts2DevTelD50:public TelFork
 
 		Rts2ValueInteger *wormRaSpeed;
 
+		Rts2ValueBool *moveSleep;
+
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
 
@@ -235,6 +237,9 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 	wormDec->setValueBool (false);
 
 	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
+
+	createValue (moveSleep, "move_sleep", "sleep this number of seconds after finishing", false);
+	moveSleep->setValueInteger (7);
 
 	createValue (unitRa, "AXRA", "RA axis raw counts", true);
 	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
@@ -517,7 +522,7 @@ Rts2DevTelD50::isMoving ()
 	if (getTargetDistance () > 2)
 		return USEC_SEC / 10;
 	// wait to move to dest
-	sleep (6);
+	sleep (moveSleep->getValueInteger ());
 	// we reached destination
 	return -2;
 }
