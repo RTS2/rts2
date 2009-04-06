@@ -46,9 +46,9 @@ rts2_sensor_nut_SOURCES = nut.cpp
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2
 
-rts2_dome_bootes2_SOURCES = bootes2.cpp
-rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
+rts2_sensor_bootes2_SOURCES = bootes2.cpp
+rts2_sensor_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_sensor_bootes2_CPPFLAGS = @INC_COMEDI@
 
 else
 EXTRA_DIST += bootes2.cpp
