@@ -1,6 +1,6 @@
 /* 
  * Generic Modbus TCP/IP connection.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,6 +21,19 @@
 
 namespace rts2core
 {
+
+/**
+ * Class for modbus TPC/IP errors.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ModbusError:public ConnError
+{
+	public:
+		ModbusError (const char *desc):ConnError (desc)
+		{
+		}
+};
 
 /**
  * Modbus TCP/IP connection class.
@@ -70,9 +83,9 @@ class ConnModbus: public ConnTCP
 		 * @param reply      Data returned from function call.
 		 * @param reply_size Size of return data.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw ConnError if connection error occured.
 		 */
-		int callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size);
+		void callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size);
 
 		/**
 		 * Call modbus function with two unsigned integer parameters and return expected as char array.
@@ -82,8 +95,10 @@ class ConnModbus: public ConnTCP
 		 * @param p2         Second parameter.
 		 * @param reply      Data returned from function call.
 		 * @param reply_size Number of returned integers expected from the call.
+		 *
+		 * @throw ConnError if connection error occured.
 		 */
-		int callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size);
+		void callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size);
 
 		/**
 		 * Call modbus function with two unsigned integer parameters and return expected as array of unsigned interger.
@@ -94,7 +109,7 @@ class ConnModbus: public ConnTCP
 		 * @param reply      Data returned from function call.
 		 * @param qty        Number of returned integers expected from the call.
 		 */
-		int callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
+		void callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty);
 
 		/**
 		 * Read Modbus PLC coil states.
@@ -102,9 +117,9 @@ class ConnModbus: public ConnTCP
 		 * @param start   Coil start address.
 		 * @param size    Number of coils to read.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw         ConnError on error.
 		 */
-		int readCoils (int16_t start, int16_t size);
+		void readCoils (int16_t start, int16_t size);
 
 		/**
 		 * Read Modbus PLC discrete input states.
@@ -112,9 +127,9 @@ class ConnModbus: public ConnTCP
 		 * @param start   Discrete input start address.
 		 * @param size    Quantity of inputs.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw         ConnError on error.
 		 */
-		int readDiscreteInputs (int16_t start, int16_t size);
+		void readDiscreteInputs (int16_t start, int16_t size);
 
 		/**
 		 * Read holding registers.
@@ -123,9 +138,9 @@ class ConnModbus: public ConnTCP
 		 * @param qty        Quantity of registers.
 		 * @param reply_data Returned data, converted to uint16_t (including network endian conversion).
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw            ConnError on error.
 		 */
-		int readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
+		void readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
 
 		/**
 		 * Read input registers.
@@ -134,9 +149,9 @@ class ConnModbus: public ConnTCP
 		 * @param qty        Quantity of registers.
 		 * @param reply_data Returned data, converted to uint16_t (including network endian conversion).
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw            ConnError on error.
 		 */
-		int readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
+		void readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data);
 
 		/**
 		 * Write value to a register.
@@ -144,9 +159,9 @@ class ConnModbus: public ConnTCP
 		 * @param reg  Register address.
 		 * @param val  New register value.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw            ConnError on error.
 		 */
-		int writeHoldingRegister (int16_t reg, int16_t val);
+		void writeHoldingRegister (int16_t reg, int16_t val);
 };
 
 }

@@ -89,7 +89,34 @@ class ConnCreateError:public ConnError
 class ConnSendError:public ConnError
 {
 	public:
-		ConnSendError (const char *_msg):ConnError (_msg)
+		ConnSendError (const char *_msg, int _err):ConnError (_msg, _err)
+		{
+		}
+};
+
+
+/**
+ * Error raised when connection cannot send data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnTimeoutError:public ConnError
+{
+	public:
+		ConnTimeoutError (const char *_msg):ConnError (_msg)
+		{
+		}
+};
+
+/**
+ * Error when receiving data from socket.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnReceivingError:public ConnError
+{
+	public:
+		ConnReceivingError (const char *_msg, int _err):ConnError (_msg, _err)
 		{
 		}
 };
@@ -108,6 +135,8 @@ class ConnTCP:public Rts2ConnNoSend
 	private:
 		const char *hostname;
 		int port;
+
+		bool debug;
 	public:
 		/**
 		 * Create new connection to APC UPS daemon.
@@ -127,14 +156,40 @@ class ConnTCP:public Rts2ConnNoSend
 		virtual int init ();
 
 		/**
+		 * Set debugging flag. When debugging is enabled, all data send
+		 * to and from the socket will be logged using standard RTS2
+		 * logging with MESSAGE_DEBUG type.
+		 */
+		void setDebug (bool _debug = true)
+		{
+			debug = _debug;
+		}
+
+		/**
 		 * Send data to TCP/IP socket.
 		 *
-		 * @param data Data to send to the socket.
-		 * @param len  Data buffer length.
+		 * @param data   Data to send to the socket.
+		 * @param len    Data buffer length.
+		 * @param binary If true, data will be logged as hex characters.
+		 *
+		 * @throw ConnError on error.
 		 */
-		void sendData (void *data, int len);
+		void sendData (void *data, int len, bool binary = true);
 
-		void sendData (char *data);
+		void sendData (const char *data);
+
+		/**
+		 * Receive data from TCP/IP socket. Pefroms select call before,
+		 * wait for wtime second.
+		 *
+		 * @param data   Buffer of size at least len where data will be received.
+		 * @param len    Length of expected data.
+		 * @param wtime  Wait time in seconds.
+		 * @param binary True if data should be printed as binary.
+		 *
+		 * @throw ConnError on errror.
+		 */
+		void receiveData (void *data, size_t len, int wtime, bool binary = true);
 };
 
 };

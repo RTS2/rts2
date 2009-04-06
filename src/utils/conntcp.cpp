@@ -32,6 +32,7 @@ ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port)
 {
 	hostname = _hostname;
 	port = _port;
+	debug = false;
 }
 
 
@@ -64,4 +65,90 @@ ConnTCP::init ()
 }
 
 
+void
+ConnTCP::sendData (void *data, int len, bool binary)
+{
+	int rest = len;
+	while (rest > 0)
+	{
+		int ret;
+		ret = send (sock, (char *) data + (len - rest), rest, 0);
+		if (ret == -1)
+		{
+		  	if (errno == EINTR)
+				continue;
+			if (debug)
+			{
+				Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+				ls << "failed to send ";
+				if (binary)
+					ls.logArrAsHex ((char *) data, len);
+				else
+				  	ls << data;
+				ls << sendLog;
+			}
+			throw ConnSendError ("cannot send data", errno);
+		}
+		rest -= ret;
+	}
+	if (debug)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "send ";
+		if (binary)
+			ls.logArrAsHex ((char *) data, len);
+		else
+		  	ls << data;
+		ls << sendLog;
+	}
+}
 
+
+void
+ConnTCP::sendData (const char *data)
+{
+	sendData ((void *) data, strlen (data), false);
+}
+
+
+void
+ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
+{
+	int rest = len;
+
+	fd_set read_set;
+
+	struct timeval read_tout;
+	read_tout.tv_sec = wtime;
+	read_tout.tv_usec = 0;
+
+	while (rest > 0)
+	{
+		FD_ZERO (&read_set);
+
+		FD_SET (sock, &read_set);
+
+		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+		if (ret < 0)
+			throw ConnError ("error calling select function", errno);
+		else if (ret == 0)
+		  	throw ConnTimeoutError ("timeout during receiving data");
+
+		// read from descriptor
+		ret = recv (sock, (char *)data + (len - rest), rest, 0);
+		if (ret == -1)
+			throw ConnReceivingError ("cannot read from TCP/IP connection", errno);
+		rest -= ret;
+	}
+
+	if (debug)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "recv ";
+		if (binary)
+			ls.logArrAsHex ((char *)data, len);
+		else
+		  	ls << data;
+		ls << sendLog;
+	}
+}

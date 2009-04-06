@@ -154,69 +154,71 @@ using namespace rts2dome;
 int
 Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 {
-	int ret;
 	uint16_t oldValue;
-	ret = zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &oldValue);
-	if (ret)
-		return ret;
-	// switch mask..
-	oldValue &= ~mask;
-	if (value)
-		oldValue |= mask;
-	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, oldValue);
-	return ret;
+	try
+	{
+		zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &oldValue);
+		// switch mask..
+		oldValue &= ~mask;
+		if (value)
+			oldValue |= mask;
+		zelioConn->writeHoldingRegister (ZREG_J1XT1, oldValue);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 int
 Zelio::startOpen ()
 {
-	int ret;
 	// check auto state..
 	uint16_t reg;
 	uint16_t reg_J1;
-	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-	if (ret)
-		return ret;
-	ret = zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &reg_J1);
-	if (ret)
-	  	return ret;
-	if (!(reg & ZS_SW_AUTO))
+	try
 	{
-		logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
-		return -1;
-	}
-	if (reg & ZS_EMERGENCY_B)
-	{
-		logStream (MESSAGE_WARNING) << "emergency button pusshed" << sendLog;
-		return -1;
-	}
-	if (reg & ZS_TIMEOUT)
-	{
-		logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
-		return -1;
-	}
-	if (!(reg & ZS_POWER))
-	{
-		logStream (MESSAGE_WARNING) << "power failure" << sendLog;
-		return -1;
-	}
-	if (!(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
-	{
-		logStream (MESSAGE_WARNING) << "it is raining and rain is not ignored" << sendLog;
-		return -1;
-	}
+		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+		zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &reg_J1);
+		if (!(reg & ZS_SW_AUTO))
+		{
+			logStream (MESSAGE_WARNING) << "dome not in auto mode" << sendLog;
+			return -1;
+		}
+		if (reg & ZS_EMERGENCY_B)
+		{
+			logStream (MESSAGE_WARNING) << "emergency button pusshed" << sendLog;
+			return -1;
+		}
+		if (reg & ZS_TIMEOUT)
+		{
+			logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
+			return -1;
+		}
+		if (!(reg & ZS_POWER))
+		{
+			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
+			return -1;
+		}
+		if (!(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
+		{
+			logStream (MESSAGE_WARNING) << "it is raining and rain is not ignored" << sendLog;
+			return -1;
+		}
 
-	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
-	if (ret)
-		return ret;
-	ret = zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
-	if (ret)
-		return ret;
+		zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
+		zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
+		zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		return -1;
+	}
 	deadManNum = 0;
-	return ret;
+	return 0;
 }
 
 
@@ -225,11 +227,16 @@ Zelio::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
 		return true;
-	int ret;
 	uint16_t reg;
-	ret = zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-	if (ret)
+	try
+	{
+		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
 		return false;
+	}
 	rain->setValueBool (!(reg & ZS_RAIN));
 	sendValueAll (rain);
 	weather->setValueBool (reg & ZS_WEATHER);
@@ -255,11 +262,16 @@ Zelio::isGoodWeather ()
 long
 Zelio::isOpened ()
 {
-	int ret;
 	uint16_t regs[2];
-	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
-	if (ret)
+	try
+	{
+		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;
+	}
 	// check states of end switches..
 	if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
 		return -2;
@@ -277,22 +289,34 @@ Zelio::endOpen ()
 int
 Zelio::startClose ()
 {
-	int ret;
-	ret = zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+	try
+	{
+		zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+	 	return -1;
+	}
 	// 20 minutes timeout..
 	setWeatherTimeout (1200);
-	return ret;
+	return 0;
 }
 
 
 long
 Zelio::isClosed ()
 {
-	int ret;
 	uint16_t regs[2];
-	ret = zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
-	if (ret)
+	try
+	{
+		zelioConn->readHoldingRegisters (ZREG_O1XT1, 2, regs);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;
+	}
 	// check states of end switches..
 	if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
 		return -2;
@@ -332,7 +356,14 @@ Zelio::idle ()
 			time_t now = time (NULL);
 			if (now > nextDeadCheck)
 			{
-				zelioConn->writeHoldingRegister (ZREG_J2XT1, deadManNum);
+			  	try
+				{
+					zelioConn->writeHoldingRegister (ZREG_J2XT1, deadManNum);
+				}
+				catch (rts2core::ConnError err)
+				{
+					logStream (MESSAGE_ERROR) << err << sendLog;
+				}
 				deadManNum = (++deadManNum) % 2;
 				nextDeadCheck = now + deadTimeout->getValueInteger () / 5;
 			}
@@ -408,10 +439,15 @@ int
 Zelio::info ()
 {
 	uint16_t regs[8];
-	int ret;
-	ret = zelioConn->readHoldingRegisters (16, 8, regs);
-	if (ret)
+	try
+	{
+		zelioConn->readHoldingRegisters (16, 8, regs);
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;	
 		return -1;
+	}
 
 	rain->setValueBool (!(regs[7] & ZS_RAIN));
 	ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
@@ -452,7 +488,6 @@ Zelio::info ()
 	O3XT1->setValueInteger (regs[6]);
 	O4XT1->setValueInteger (regs[7]);
 
-	zelioConn->readHoldingRegisters (32, 4, regs);
 	return Dome::info ();
 }
 
@@ -511,14 +546,34 @@ Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ());
 	if (oldValue == ignoreRain)
 	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ());
-	if (oldValue == J1XT1)
-		return zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
-	if (oldValue == J2XT1)
-		return zelioConn->writeHoldingRegister (ZREG_J2XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
-	if (oldValue == J3XT1)
-		return zelioConn->writeHoldingRegister (ZREG_J3XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
-	if (oldValue == J4XT1)
-		return zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	try
+	{
+		if (oldValue == J1XT1)
+		{
+			zelioConn->writeHoldingRegister (ZREG_J1XT1, newValue->getValueInteger ());
+			return 0;
+		}
+		else if (oldValue == J2XT1)
+		{
+			zelioConn->writeHoldingRegister (ZREG_J2XT1, newValue->getValueInteger ());
+			return 0;
+		}
+		else if (oldValue == J3XT1)
+		{
+			zelioConn->writeHoldingRegister (ZREG_J3XT1, newValue->getValueInteger ());
+			return 0;
+		}
+		else if (oldValue == J4XT1)
+		{
+			zelioConn->writeHoldingRegister (ZREG_J4XT1, newValue->getValueInteger ());
+			return 0;
+		}
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		return -2;
+	}
 	return Dome::setValue (oldValue, newValue);
 }
 
