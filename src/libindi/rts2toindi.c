@@ -1,6 +1,9 @@
 /* 
  * Bridge functions to INDI protocol.
- * Copyright (C) 2008 Markus Wildi
+ * Copyright (C) 2008 Markus Wildi, Observatory Vermes
+ * 
+ * This code is heavily based on the work of Jasem Mutlaq and
+ * Elwood C. Downey, see indi.sf.net 
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +35,10 @@
 
 #include <zlib.h>
 #include "rts2toindi.h"
+
+
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+
 
 static int verbose=0;			 /* report extra info */
 
@@ -108,6 +115,7 @@ struct _xml_att
 	XMLEle *ce;					 /* containing element */
 };
 
+
 /* table of INDI definition elements, plus setBLOB.
  * we also look for set* if -m
  */
@@ -117,7 +125,7 @@ typedef struct
 	char *one;					 /* one element name */
 } get_INDIDef;
 
-static get_INDIDef get_defs[] =	 /* ToDo unify it with set_INDIDef */
+static get_INDIDef get_defs[] =	
 {
 	{"defTextVector",   "defText"},
 	{"defNumberVector", "defNumber"},
@@ -152,9 +160,10 @@ static INDIkwattr kwattr[] =
 
 /* *********************************************************** */
 /* *********************************************************** */
-/* *********************************************************** */
-/* *********************************************************** */
-/* *********************************************************** */
+
+/* table of INDI definition elements we can set
+ * N.B. do not change defs[] order, they are indexed via -x/-n/-s args
+ */
 
 static set_INDIDef set_defs[] =	 /* ToDo unify it with get_INDIDef */
 {
@@ -164,11 +173,23 @@ static set_INDIDef set_defs[] =	 /* ToDo unify it with get_INDIDef */
 };
 #define NDEFS   (sizeof(set_defs)/sizeof(set_defs[0]))
 
+
+
 /* ToDo */
+// INDI library internal functions
+int        listenINDIthread( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs) ;
+XMLEle     *getINDIthread( FILE *svrwfp, FILE *svrrfp) ;
+XMLEle     *getINDI( FILE *svrwfp, FILE *svrrfp) ;
+int        setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp) ;
+int        fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele) ;
+int        fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets) ;
+SearchDef  *malloc_getINDIproperty() ;
+SetPars    *malloc_setINDIproperty( SetPars *csets, int *ncsets) ;
+void       free_setINDIproperty( SetPars *csets, int ncsets) ;
+
 static void getprops( FILE *svrwfp, FILE *svrrfp);
-static XMLEle * get_listenINDI( FILE *svrwfp, FILE *svrrfp);
+static XMLEle *get_listenINDI( FILE *svrwfp, FILE *svrrfp, LilXML *setlillp);
 static int finished (void);
-static void onAlarm (int dummy);
 static int readServerChar(FILE *svrwfp, FILE *svrrfp);
 static void findDPE (XMLEle *root, FILE *svrwfp, FILE *svrrfp);
 static void findEle (XMLEle *root, const char *dev, const char *nam, char *defone, SearchDef *sp);
@@ -179,9 +200,6 @@ static void sendNew (FILE *fp, set_INDIDef *dp, SetPars *sp);
 static void sendSpecs(FILE *wfp, SetPars *fsets, int nsets);
 static void printpc (FILE *fp, XMLEle *ep, int level) ;
 
-#define TIMEOUT     35			 /* default timeout, secs */
-static int timeout = TIMEOUT;	 /* working timeout, secs */
-static LilXML *lillp;			 /* XML parser context */
 #define WILDCARD    '*'			 /* show all in this category */
 static int onematch;			 /* only one possible match */
 static int justvalue;			 /* if just one match show only value */
@@ -191,8 +209,68 @@ static int wflag;				 /* show wo properties too */
 static SearchDef *srchs;		 /* properties to look for */
 static int nsrchs;
 static SetPars *sets;			 /* set of properties to set */
+//ToDo
+FILE *gwfp ; 
+FILE *grfp ;
 
-int rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp)
+void *
+rts2listenINDIthread (void *indidevice)
+{
+    SearchDef *getINDIval=NULL;
+    int getINDIn=0 ;
+
+    while( 1==1)
+    {
+// get any updates from the INDI server and filter out the needed properties and values
+	listenINDIthread((char *)indidevice, "*", "*", "*", &getINDIn, &getINDIval) ;
+    }
+    return NULL ;
+}
+
+int listenINDIthread( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs)
+{
+    int i, j ;
+    nsrchs = 0 ;
+    srchs=NULL;
+    srchs=malloc_getINDIproperty(NULL, &nsrchs) ;
+
+    fill_getINDIproperty( device, data_type, property, elements) ;
+    XMLEle *root_return1= getINDIthread( gwfp, grfp) ;
+
+    for( i= 0; i < nsrchs; i++)
+    {
+	for( j= 0; j < srchs[i].ngev; j++)
+	{
+	    if( verbose)
+	    {
+		fprintf( stderr, "GOT %d/%d %s.%s.%s=%s, state >%s<\n", i, nsrchs, srchs[i].d, srchs[i].p, srchs[i].gev[j].ge, srchs[i].gev[j].gv, srchs[i].pstate) ;
+	    }
+	    if(!strcmp( srchs[i].gev[j].ge, "RA"))
+		{
+		    float findi_ra ;
+		    sscanf( srchs[i].gev[j].gv, "%f", &findi_ra) ;
+		    pthread_mutex_lock( &mutex1 );
+		    indi_ra= (double) findi_ra ;
+		    pthread_mutex_unlock( &mutex1 );
+		}
+		if(!strcmp( srchs[i].gev[j].ge, "DEC"))
+		{
+		    float findi_dec ;
+		    sscanf( srchs[i].gev[j].gv, "%f", &findi_dec) ;
+		    pthread_mutex_lock( &mutex1 );
+		    indi_dec= (double) findi_dec ;
+		    pthread_mutex_unlock( &mutex1 );
+		}
+	}
+    }
+    delXMLEle (root_return1) ;
+    *cnsrchs= nsrchs ;
+    *csrchs= srchs;
+    rts2free_getINDIproperty( srchs, nsrchs) ;
+    return 0 ;
+}
+
+int rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs)
 {
 	int i, j ;
 	nsrchs = 0 ;
@@ -200,7 +278,7 @@ int rts2getINDI( char *device, const char *data_type, const char *property, cons
 	srchs=malloc_getINDIproperty(NULL, &nsrchs) ;
 
 	fill_getINDIproperty( device, data_type, property, elements) ;
-	XMLEle *root_return1= getINDI( svrwfp, svrrfp) ;
+	XMLEle *root_return1= getINDI( gwfp, grfp) ;
 
 	if( verbose)
 	{
@@ -215,13 +293,13 @@ int rts2getINDI( char *device, const char *data_type, const char *property, cons
 	delXMLEle (root_return1) ;
 	*cnsrchs= nsrchs ;
 	*csrchs= srchs;
-	//was here free_getINDIproperty( srchs, nsrchs) ;
+
 	return 0 ;
 }
 
-
-XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp)
+XMLEle *getINDIthread( FILE *svrwfp, FILE *svrrfp)
 {
+    static LilXML *getlillp_thread;			 /* XML parser context */
 
 	if( verbose > 1)
 		fprintf( stderr, "rts2getindi: nsrchs %d\n", nsrchs) ;
@@ -229,27 +307,45 @@ XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp)
 	onematch = nsrchs == 1 && !srchs[0].wc;
 
 	/* build a parser context for cracking XML responses */
-	lillp = newLilXML();
+	getlillp_thread = newLilXML();
+
+	/* listen for responses, looking for d.p.e or timeout */
+	XMLEle *root_return= get_listenINDI( svrwfp, svrrfp, getlillp_thread);
+	delLilXML(getlillp_thread);			 //wildi
+
+	return root_return;
+}
+
+XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp)
+{
+    static LilXML *getlillp;			 /* XML parser context */
+
+	if( verbose > 1)
+		fprintf( stderr, "rts2getindi: nsrchs %d\n", nsrchs) ;
+	//ToDo: what does it (see original version)
+	onematch = nsrchs == 1 && !srchs[0].wc;
+
+	/* build a parser context for cracking XML responses */
+	getlillp = newLilXML();
 
 	/* issue getProperties */
 	getprops(svrwfp, svrrfp);
 
 	/* listen for responses, looking for d.p.e or timeout */
-	XMLEle *root_return= get_listenINDI( svrwfp, svrrfp);
-	delLilXML(lillp);			 //wildi
+	XMLEle *root_return= get_listenINDI( svrwfp, svrrfp, getlillp);
+	delLilXML(getlillp);			 //wildi
 
 	return root_return;
 }
 
-
-int rts2setINDI ( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp)
+int rts2setINDI ( char *device, const char *data_type, const char *property, const char *elements, const char *values)
 {
 	SetPars *xsets=NULL ;
 	int xnsets = 0 ;
 
 	xsets=malloc_setINDIproperty(NULL, &xnsets) ;
 	fill_setINDIproperty( device, data_type, property, elements, values, xsets, &xnsets) ;
-	setINDI( xsets,  xnsets, svrwfp, svrrfp) ;
+	setINDI( xsets,  xnsets, gwfp, grfp) ;
 
 	free_setINDIproperty( xsets, xnsets) ;
 	return 0 ;
@@ -258,33 +354,36 @@ int rts2setINDI ( char *device, const char *data_type, const char *property, con
 
 int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp)
 {
+    static LilXML *setlillp;			 /* XML parser context */
+
 	/* build a parser context for cracking XML responses */
-	lillp = newLilXML();
+	setlillp = newLilXML();
 
 	if( verbose > 1)
 		fprintf (stderr, "sendSpecs(svrwfp)\n");
 	sendSpecs(svrwfp, bsets, bnsets);
 
-	delLilXML(lillp);			 //wildi
+	delLilXML(setlillp);			 //wildi
 	return 0 ;
 }
-
 
 /* open a connection to the given host and port.
  * set svrwfp and svrrfp or die.
  */
 void
-openINDIServer (const char *host, int port, FILE **svrwfp, FILE **svrrfp)
+rts2openINDIServer (const char *host, int port)
 {
 	struct sockaddr_in serv_addr;
 	struct hostent *hp;
 	int sockfd;
+	int retval ;
 
 	/* lookup host address */
 	hp = gethostbyname (host);
 	if (!hp)
 	{
 		herror ("gethostbyname");
+		//ToDo
 		exit (2);
 	}
 
@@ -297,30 +396,34 @@ openINDIServer (const char *host, int port, FILE **svrwfp, FILE **svrrfp)
 	if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		perror ("socket");
+		//ToDo
 		exit(2);
 	}
-
 	/* connect */
-	if (connect (sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr))<0)
+	while ((retval= connect (sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)))<0)
 	{
-		perror ("connect");
-		exit(2);
+	    if (retval < 0) {
+		if (errno != EINPROGRESS)
+		{
+		    perror ("connect");
+		    //ToDo
+		    exit(2);
+		}
+	    }
 	}
-
 	/* prepare for line-oriented i/o with client */
-	*svrwfp = fdopen (sockfd, "w");
-	*svrrfp = fdopen (sockfd, "r");
+	gwfp = fdopen (sockfd, "w");
+	grfp = fdopen (sockfd, "r");
 
 	return ;
 }
 
-
-void closeINDIServer( FILE *svrwfp, FILE *svrrfp)
+void rts2closeINDIServer()
 {
 	int resw=0 ;
 	int resr=0 ;
-	resw= fclose( svrwfp) ;
-	resr= fclose( svrrfp) ;		 // necessary see valgrind
+	resw= fclose( gwfp) ;
+	resr= fclose( grfp) ;		 // necessary see valgrind
 
 	if(resw)
 	{
@@ -329,7 +432,6 @@ void closeINDIServer( FILE *svrwfp, FILE *svrrfp)
 	}
 	return ;
 }
-
 
 /* issue getProperties on one property and one device */
 static void
@@ -352,43 +454,26 @@ getprops(FILE *svrwfp, FILE *svrrfp)
 
 	if (onedev)
 	{
-		//fprintf(stderr, "onedev <getProperties version='%g' device='%s'/>\n",INDIV, onedev);
 		fprintf(svrwfp, "<getProperties version='%g' device='%s'/>\n",
 			INDIV, onedev);
 	}
 	else
 	{
-		fprintf(stderr, "NOT                 <getProperties version='%g' device='%s'/>\n",INDIV, onedev);
 		fprintf(svrwfp, "<getProperties version='%g'/>\n", INDIV);
-
 	}
 	fflush (svrwfp);
 	if (verbose)
 		fprintf (stderr, "Queried properties from %s\n", onedev?onedev:"*");
 }
 
-
-/* { */
-/*     fprintf(svrwfp, "<getProperties version='%g' device='%s'/>\n", INDIV, srchs[0].d); */
-/*     fflush (svrwfp); */
-
-/*     if (verbose) */
-/* 	fprintf(stderr, "<getProperties version='%g' device='%s'/>\n", INDIV, srchs[0].d); */
-
-/* } */
-
 /* listen for INDI traffic on svrrfp.
  * print matching srchs[] and return when see all.
  * timeout and exit if any trouble.
  */
 static XMLEle *
-get_listenINDI ( FILE *svrwfp, FILE *svrrfp)
+get_listenINDI ( FILE *svrwfp, FILE *svrrfp, LilXML *lillp)
 {
 	char msg[1024];
-
-	/* arrange to call onAlarm() if not seeing any more defXXX */
-	//signal (SIGALRM, onAlarm);
-	//alarm (timeout);
 
 	/* read from server, exit if find all requested properties */
 	while (1)
@@ -417,9 +502,6 @@ get_listenINDI ( FILE *svrwfp, FILE *svrrfp)
 		else if (msg[0])
 		{
 			fprintf (stderr, "Bad XML %s\n", msg);
-			// ToDo wildi Do not exit
-
-			exit(2);
 		}
 	}
 }
@@ -445,31 +527,6 @@ finished ()
 
 	return (0);
 }
-
-
-/* called after timeout seconds either because we are matching wild cards or
- * there is something still not found
- */
-static void
-onAlarm (int dummy)
-{
-	int trouble = 0;
-	int i;
-
-	fprintf( stderr, "ONALARM <-------------------------\n") ;
-	for (i = 0; i < nsrchs; i++)
-	{
-		if (!srchs[i].ok)
-		{
-			trouble = 1;
-			fprintf (stderr, "onAlaram No %s.%s.%s\n", srchs[i].d,
-				srchs[i].p, srchs[i].e);
-		}
-	}
-	fprintf( stderr, "ONALARM <-------------------------\n") ;
-	exit (trouble ? 1 : 0);
-}
-
 
 /* read one char from svrrfp */
 static int
@@ -547,7 +604,7 @@ findDPE (XMLEle *root, FILE *svrwfp, FILE *svrrfp)
 							else
 							{
 								if( verbose > 1 )
-									fprintf( stderr, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<findDPE i=%d, j=%d, name %s, srchs %s OK %d\n", i, j, nam, srchs[i].e, srchs[i].ok) ;
+									fprintf( stderr, "findDPE i=%d, j=%d, name %s, srchs %s OK %d\n", i, j, nam, srchs[i].e, srchs[i].ok) ;
 								findEle(root,dev,nam,get_defs[j].one,&srchs[i]);
 
 							}
@@ -572,8 +629,6 @@ findDPE (XMLEle *root, FILE *svrwfp, FILE *svrrfp)
 							if (!strncmp (get_defs[j].vec, "def", 3))
 							{
 								//fprintf( stderr, "-------->> reset timer %s\n", get_defs[j].vec) ;
-								 /* reset timer if def */
-								alarm (timeout);
 							}
 						}
 					}
@@ -851,41 +906,36 @@ sendSpecs(FILE *wfp, SetPars *fsets, int fnsets)
 
 
 void
-free_getINDIproperty( SearchDef *csrchs, int cnsrchs)
+rts2free_getINDIproperty( SearchDef *csrchs, int cnsrchs)
 {
 	int i= 0 ;
 	int j= 0 ;
-	//fprintf( stderr, "free_getINDIproperty: %d\n", cnsrchs) ;
 	for(i=0; i < cnsrchs ; i++)	 //wildi
 	{
-		//fprintf( stderr, "FREEXXXXX %s, %s\n", csrchs[i].d,  csrchs[i].p) ;
 		free( csrchs[i].d) ;
 		free( csrchs[i].p) ;
 		free( csrchs[i].e) ;
 
 		for( j=0 ; j < csrchs[i].ngev ; j++ )
 		{
-			//fprintf( stderr, "FREEEEEEEEEEEEEEEEEEEE %s, %s\n", csrchs[i].gev[j].ge,  csrchs[i].gev[j].gv) ;
 			free(csrchs[i].gev[j].ge) ;
 			free(csrchs[i].gev[j].gv) ;
 		}
-		free ( srchs[i].gev) ;	 // wildi wrong ?
+		free ( srchs[i].gev) ;
 		free ( srchs[i].pstate) ;
 	}
-	free( csrchs) ;				 // wildi wrong ?
+	free( csrchs) ;
 }
 
 
 SearchDef *malloc_getINDIproperty()
 {
 	if (!(srchs))
-	{
-								 /* realloc seed */
+	{						 /* realloc seed */
 		(srchs) = (SearchDef *) malloc (1);
 		nsrchs= 0 ;
 	}
 	srchs = (SearchDef *) realloc ( (srchs), ((nsrchs) + 1)*sizeof(SearchDef));
-	//fprintf( stderr, "malloc_getINDIproperty REALLOC %p\n",csrchs) ;
 
 	return srchs ;
 }
@@ -893,7 +943,6 @@ SearchDef *malloc_getINDIproperty()
 
 int fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele)
 {
-	//fprintf( stderr, "fill_getINDIproperty REALLOC %p\n",asrchs) ;
 	srchs[nsrchs].d = strcpy (malloc(strlen(dev)+1), dev);
 	srchs[nsrchs].p = strcpy (malloc(strlen(prop)+1), prop);
 	srchs[nsrchs].e = strcpy (malloc(strlen(ele)+1), ele);
@@ -935,7 +984,6 @@ void free_setINDIproperty( SetPars *csets, int ncsets)
 
 SetPars *malloc_setINDIproperty( SetPars *csets, int *ncsets)
 {
-	//fprintf( stderr, "malloc_setINDIproperty  SEED %p\n", csets) ;
 	if (!(csets))
 	{
 								 /* realloc seed */
@@ -1022,8 +1070,3 @@ int fill_setINDIproperty( char *dev, const char *type, const char *prop, const c
 
 	return 0 ;
 }
-
-
-/* scan e1[;e2...] v1[;v2,...] from e[] and v[] and add to spec sp.
- * exit if trouble.
- */

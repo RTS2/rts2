@@ -29,7 +29,7 @@ rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 rts2_teld_hlohovec_LDADD = tgdrive.o ${LDADD}
 
 rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
-rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz ${LDADD}
+rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
 rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
 
 if PGSQL
