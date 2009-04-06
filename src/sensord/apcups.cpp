@@ -113,114 +113,59 @@ ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)
 int
 ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 {
-	int ret;
 	uint16_t len = htons (strlen (cmd));
-	ret = send (sock, &len, 2, 0);
-	if (ret != 2)
+	while (true)
 	{
-		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
-		connectionError (-1);
-		return -1;
-	}
-	ret = send (sock, cmd, strlen (cmd), 0);
-	if (ret != (int) strlen (cmd))
-	{
-		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
-		connectionError (-1);
-		return -1;
-	}
-
-	// receive data..
-	int left = 2;
-	bool data = false;
-        char reply_data[502];
-	int rsize = 0;
-
-	while (left > 0)
-	{
-		fd_set read_set;
-
-	        struct timeval read_tout;
-	        read_tout.tv_sec = 20;
-	        read_tout.tv_usec = 0;
-	
-	        FD_ZERO (&read_set);
-	
-	        FD_SET (sock, &read_set);
-	
-	        ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
-	        if (ret < 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "error calling select function for apc ups, error: " << strerror (errno)
-	                        << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-	        else if (ret == 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "Timeout during call to select function. Calling connection error." << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-	
-	        ret = recv (sock, reply_data + rsize, left, 0);
-	        if (ret < 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "Cannot read from APC UPS socket, error " << strerror (errno) << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-		if (!data)
+		int rsize;
+		char reply_data[502];
+		try
 		{
-			left = ntohs (*((uint16_t *) reply_data));
-			data = true;
-			if (left == 0)
+			send (sock, &len, 2, 0);
+			send (sock, cmd, strlen (cmd), 0);
+	
+			receiveData (reply_data, 2, 5);
+	
+			rsize = ntohs (*((uint16_t *) reply_data));
+			if (rsize == 0)
 				return 0;
+			receiveData (reply_data, rsize, 2);
+		}
+		catch (rts2core::ConnError err)
+		{
+			logStream (MESSAGE_ERROR) << err << sendLog;
+			return -1;
+		}
+	
+		reply_data[rsize] = '\0';
+		// try to parse reply
+		if (reply_data[9] != ':')
+		{
+			logStream (MESSAGE_ERROR) << "Invalid reply data" << reply_data << sendLog;
+			return -1;
+		}
+		reply_data[9] = '\0';
+		std::cout << "val '" << reply_data << "' " << reply_data + 10 << std::endl;
+		if (strcmp (reply_data, "END APC  ") == 0)
+		{
+			return 0;
 		}
 		else
 		{
-			left -= ret;
-			rsize += ret;
-		}
-		if (left == 0)
-		{
-			reply_data[rsize] = '\0';
-			// try to parse reply
-			if (reply_data[9] != ':')
-			{
-				logStream (MESSAGE_ERROR) << "Invalid reply data" << " " << ret << " " << reply_data << sendLog;
-				return -1;
-			}
-			reply_data[9] = '\0';
-			std::cout << "val '" << reply_data << "' " << reply_data + 10 << std::endl;
-			if (strcmp (reply_data, "END APC  ") == 0)
-			{
-			  	std::cout << "END" << std::endl;
-			}
-			else
-			{
-				// eat any spaces..
-				char *pchr = reply_data + 8;
-				while (isspace (*pchr) && pchr > reply_data)
-				{
-					pchr--;
-				}
-				pchr[1] = '\0';
-				char *dat = reply_data + rsize - 1;
-				while (isspace (*dat))
-					dat--;
-				dat[1] = '\0';
-				dat = reply_data + 10;
-				while (isspace (*dat))
-				  	dat++;
-				values[std::string (reply_data)] = std::string (dat);
-			}
-			left = 2;
-			data = false;
-			rsize = 0;
+			// eat any spaces..
+			char *pchr = reply_data + 8;
+			while (isspace (*pchr) && pchr > reply_data)
+				pchr--;
+			pchr[1] = '\0';
+			char *dat = reply_data + rsize - 1;
+			while (isspace (*dat))
+				dat--;
+			dat[1] = '\0';
+			dat = reply_data + 10;
+			while (isspace (*dat))
+			  	dat++;
+			values[std::string (reply_data)] = std::string (dat);
 		}
 	}
-	return 0;
 }
 
 
