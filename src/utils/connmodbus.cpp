@@ -35,7 +35,6 @@ ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port)
 void
 ConnModbus::callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size)
 {
-	int ret;
 	char send_data[8 + data_size];
 	// fill header
 	*((uint16_t *) send_data) = htons (transId);
@@ -65,12 +64,6 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 		  	std::ostringstream _os;
 			_os << "Invalid reply from modbus read, reply function is 0x" << std::hex << (int) reply_data[7]
 				<< ", expected 0x" << std::hex << (int) func;
-			throw ModbusError (_os.str ().c_str ());
-		}
-		else if (ret != (int) reply_size)
-		{
-			std::ostringstream _os;
-			_os << "Cannot receive all reply data, received " << ret << ", expected " << reply_size;
 			throw ModbusError (_os.str ().c_str ());
 		}
 		bcopy (reply_data + 8, reply, reply_size - 8);
