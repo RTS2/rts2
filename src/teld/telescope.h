@@ -107,6 +107,13 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2ValueRaDec *corrRaDec;
 
 		/**
+		 * If this value is true, any software move of the telescope is blocked.
+		 */
+		Rts2ValueBool *blockMove;
+
+		Rts2ValueBool *blockOnStandby;
+
+		/**
 		 * Target HRZ coordinates.
 		 */
 		struct ln_hrz_posn tarAltAz;

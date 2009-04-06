@@ -32,6 +32,8 @@
 
 #include "model/telmodel.h"
 
+#define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
+
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
@@ -77,6 +79,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
+	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked");
+	blockMove->setValueBool (false);
+
+	createValue (blockOnStandby, "block_on_standby", "Block telescope movement if switched to standby/off mode. Enable it if switched back to on.");
+	blockOnStandby->setValueBool (false);
+
 	createValue (airmass, "AIRMASS", "Airmass of target location");
 	createValue (hourAngle, "HA", "Location hour angle", true, RTS2_DT_RA);
 	createValue (lst, "LST", "Local Sidereal Time", true, RTS2_DT_RA);
@@ -112,17 +120,14 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	standbyPark = false;
 
-	addOption ('m', NULL, 1,
-		"name of file holding model parameters, calculated by T-Point");
-	addOption ('l', NULL, 1,
-		"separation limit (corrections above that number in degrees will be ignored)");
-	addOption ('g', NULL, 1,
-		"minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
+	addOption ('m', NULL, 1, "name of file holding model parameters, calculated by T-Point");
+	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
+	addOption ('g', NULL, 1, "minimal good separation. Correction above that number will be aplied immediately. Default to 180 deg");
 
-	addOption ('c', NULL, 1,
-		"minimal value for corrections. Corrections bellow that value will be rejected.");
+	addOption ('c', NULL, 1, "minimal value for corrections. Corrections bellow that value will be rejected.");
 
 	addOption ('s', NULL, 0, "park when switched to standby");
+	addOption (OPT_BLOCK_ON_STANDBY, "block-on-standby", 0, "block telescope movement when switching to standby");
 
 	addOption ('r', NULL, 1, "telescope rotang");
 
@@ -169,6 +174,9 @@ Rts2DevTelescope::processOption (int in_opt)
 			break;
 		case 'c':
 			ignoreCorrection->setValueDouble (atof (optarg));
+			break;
+		case OPT_BLOCK_ON_STANDBY:
+			blockOnStandby->setValueBool (true);
 			break;
 		case 's':
 			standbyPark = true;
@@ -292,7 +300,9 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		|| old_value == rotang
 		|| old_value == smallCorrection
 		|| old_value == ignoreCorrection
-		|| old_value == correctionsMask)
+		|| old_value == correctionsMask
+		|| old_value == blockMove
+		|| old_value == blockOnStandby)
 	{
 		return 0;
 	}
@@ -645,10 +655,20 @@ Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
 int
 Rts2DevTelescope::changeMasterState (int new_state)
 {
+	if (blockOnStandby->getValueBool () == true)
+	{
+		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
+		  || (new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
+		  || (new_state & SERVERD_STANDBY_MASK))
+			blockMove->setValueBool (true);
+		else
+			blockMove->setValueBool (false);
+	}
+
 	// park us during day..
 	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
-		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_SOFT_OFF)
-		|| ((new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF)
+		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
 	{
 		if ((getState () & TEL_MASK_MOVING) == 0)
@@ -834,6 +854,12 @@ Rts2DevTelescope::endMove ()
 int
 Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 {
+	if (blockMove->getValueBool () == true)
+	{
+		logStream (MESSAGE_ERROR) << "Telescope move blocked" << sendLog;
+		return -1;
+	}
+
 	int ret;
 
 	struct ln_equ_posn pos;
@@ -930,6 +956,11 @@ Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 int
 Rts2DevTelescope::startPark (Rts2Conn * conn)
 {
+	if (blockMove->getValueBool () == true)
+	{
+		logStream (MESSAGE_ERROR) << "Telescope parking blocked" << sendLog;
+		return -1;
+	}
 	int ret;
 	ret = startPark ();
 	if (ret)
