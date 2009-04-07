@@ -103,6 +103,7 @@ class Rts2Conn:public Rts2Object
 		char *buf;
 		size_t buf_size;
 		char *buf_top;
+
 		char *command_buf_top;
 
 		char *full_data_end;	 // points to end of full data
@@ -418,7 +419,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		int sendCommandEnd (int num, const char *in_msg);
 
-		virtual int processLine ();
+		virtual void processLine ();
 
 		/**
 		 * Called when select call indicates that socket holds new
@@ -454,7 +455,7 @@ class Rts2Conn:public Rts2Object
 			port = in_port;
 		}
 		void setOtherType (int other_device_type);
-		void getAddress (char *addrBuf, int buf_size);
+		void getAddress (char *addrBuf, int _buf_size);
 		int getLocalPort ()
 		{
 			return port;

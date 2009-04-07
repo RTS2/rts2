@@ -598,7 +598,7 @@ Rts2Conn::masterStateChanged ()
 }
 
 
-int
+void
 Rts2Conn::processLine ()
 {
 	// starting at command_start, we have complete line, which was
@@ -645,20 +645,25 @@ Rts2Conn::processLine ()
 	{
 		char *msg;
 		if (paramNextString (&msg) || !paramEnd ())
-			return -1;
-		if (!strcmp (msg, "ready"))
+		{
+			ret = -2;
+		}
+		else if (!strcmp (msg, "ready"))
 		{
 			#ifdef DEBUG_EXTRA
 			std::cout << "Send T OK" << std::endl;
 			#endif
 			sendMsg (PROTO_TECHNICAL " OK");
-			return -1;
+			ret = -1;
 		}
-		if (!strcmp (msg, "OK"))
+		else if (!strcmp (msg, "OK"))
 		{
-			return -1;
+			ret = -1;
 		}
-		return -2;
+		else
+		{
+			ret = -2;
+		}
 	}
 	// metainfo with values
 	else if (isCommand (PROTO_METAINFO))
@@ -669,15 +674,27 @@ Rts2Conn::processLine ()
 		if (paramNextInteger (&m_type)
 			|| paramNextString (&m_name)
 			|| paramNextString (&m_descr) || !paramEnd ())
-			return -2;
-		return metaInfo (m_type, std::string (m_name), std::string (m_descr));
+		{
+		 	ret = -2;
+		}
+		else
+		{
+			ret = metaInfo (m_type, std::string (m_name), std::string (m_descr));
+		}
 	}
 	else if (isCommand (PROTO_VALUE))
 	{
 		char *m_name;
 		if (paramNextString (&m_name))
-			return -2;
-		return commandValue (m_name);
+		{
+			ret = -2;
+		}
+		else
+		{
+			ret = commandValue (m_name);
+			if (ret == 0)
+				ret = -1;
+		}
 	}
 	else if (isCommand (PROTO_SELMETAINFO))
 	{
@@ -685,8 +702,13 @@ Rts2Conn::processLine ()
 		char *sel_name;
 		if (paramNextString (&m_name)
 			|| paramNextString (&sel_name) || !paramEnd ())
-			return -2;
-		return selMetaInfo (m_name, sel_name);
+		{
+		  	ret = -2;
+		}
+		else
+		{
+			ret = selMetaInfo (m_name, sel_name);
+		}
 	}
 	else if (isCommand (PROTO_SET_VALUE))
 	{
@@ -709,12 +731,14 @@ Rts2Conn::processLine ()
 			// end connection - we cannot process this command
 			activeReadData = -1;
 			connectionError (-2);
-			return -1;
+			ret = -2;
 		}
-
-		readData[data_conn] = new Rts2DataRead (data_size, data_type);
-		newDataConn (data_conn);
-		return -1;
+		else
+		{
+			readData[data_conn] = new Rts2DataRead (data_size, data_type);
+			newDataConn (data_conn);
+			ret = -1;
+		}
 	}
 	else if (isCommand (PROTO_DATA))
 	{
@@ -725,9 +749,12 @@ Rts2Conn::processLine ()
 			// end connection - bad binary data header
 			activeReadData = -1;
 			connectionError (-2);
-			return -1;
+			ret = -2;
 		}
-		return -1;
+		else
+		{
+			ret = -1;
+		}
 	}
 	else if (isCommandReturn ())
 	{
@@ -751,7 +778,6 @@ Rts2Conn::processLine ()
 		sendCommandEnd (DEVDEM_E_COMMAND,
 			"invalid parameters/invalid number of parameters");
 	}
-	return ret;
 }
 
 
@@ -936,12 +962,12 @@ Rts2Conn::setAddress (struct in_addr *in_address)
 
 
 void
-Rts2Conn::getAddress (char *addrBuf, int in_buf_size)
+Rts2Conn::getAddress (char *addrBuf, int _buf_size)
 {
 	char *addr_s;
 	addr_s = inet_ntoa (addr);
-	strncpy (addrBuf, addr_s, in_buf_size);
-	addrBuf[in_buf_size - 1] = '0';
+	strncpy (addrBuf, addr_s, _buf_size);
+	addrBuf[_buf_size - 1] = '0';
 }
 
 
@@ -1899,9 +1925,9 @@ Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
 {
 	Rts2Value *val = getValue (value_name);
 	if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
-		return -1;
+		return -2;
 	((Rts2ValueSelection *) val)->addSelVal (sel_name);
-	return 0;
+	return -1;
 }
 
 
