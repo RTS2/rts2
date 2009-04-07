@@ -46,7 +46,7 @@ Rts2MessageDB::insertDB ()
       )
     VALUES
       (
-      (TIMESTAMP 'epoch' + :d_message_time * INTERVAL '1 seconds'),
+      to_timestamp (:d_message_time),
       :d_message_oname,
       :d_message_type,
       :d_message_string
