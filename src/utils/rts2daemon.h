@@ -341,7 +341,17 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void setInfoTime (struct tm *_date)
 		{
-			info_time->setValueInteger (mktime (_date));
+			setInfoTime (mktime (_date));
+		}
+
+		/**
+		 * Set infotime from time_t structure.
+		 *
+		 * @param _time Time_t holding time (in seconds from 1-1-1970) to which set info time.
+		 */
+		void setInfoTime (time_t _time)
+		{
+			info_time->setValueInteger (_time);
 		}
 
 		/**
@@ -405,8 +415,6 @@ class Rts2Daemon:public Rts2Block
 		int infoAll ();
 		void constInfoAll ();
 		int sendInfo (Rts2Conn * conn);
-
-		int sendMetaInfo (Rts2Value * val);
 
 		int sendMetaInfo (Rts2Conn * conn);
 

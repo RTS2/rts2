@@ -963,18 +963,6 @@ Rts2Daemon::checkValueSave (Rts2Value *val)
 
 
 int
-Rts2Daemon::sendMetaInfo (Rts2Value * val)
-{
-	connections_t::iterator iter;
-	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-		val->sendMetaInfo (*iter);
-	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-		val->sendMetaInfo (*iter);
-	return 0;
-}
-
-
-int
 Rts2Daemon::sendMetaInfo (Rts2Conn * conn)
 {
 	int ret;

@@ -139,7 +139,7 @@ Davis::setCloud (double in_cloud)
       if (cloud == NULL)
       {
 	      createValue (cloud, "CLOUD_S", "cloud sensor value");
-	      sendMetaInfo (cloud);
+	      updateMetaInformations (cloud);
       }
       cloud->setValueDouble (in_cloud);
       if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
