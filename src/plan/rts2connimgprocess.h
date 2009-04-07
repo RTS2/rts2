@@ -73,7 +73,7 @@ class Rts2ConnImgProcess:public Rts2ConnProcess
 		virtual ~ Rts2ConnImgProcess (void);
 
 		virtual int newProcess ();
-		virtual int processLine ();
+		virtual void processLine ();
 };
 
 class Rts2ConnObsProcess:public Rts2ConnProcess
@@ -90,7 +90,7 @@ class Rts2ConnObsProcess:public Rts2ConnProcess
 			const char *in_exe, int in_obsId, int in_timeout);
 
 		virtual int newProcess ();
-		virtual int processLine ();
+		virtual void processLine ();
 };
 
 class Rts2ConnDarkProcess:public Rts2ConnProcess
@@ -99,7 +99,7 @@ class Rts2ConnDarkProcess:public Rts2ConnProcess
 		Rts2ConnDarkProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
-		virtual int processLine ();
+		virtual void processLine ();
 };
 
 class Rts2ConnFlatProcess:public Rts2ConnProcess
@@ -108,6 +108,6 @@ class Rts2ConnFlatProcess:public Rts2ConnProcess
 		Rts2ConnFlatProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
-		virtual int processLine ();
+		virtual void processLine ();
 };
 #endif							 /* !__RTS2CONNIMGPROCESS__ */

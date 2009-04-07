@@ -21,6 +21,7 @@
 #include "rts2script.h"
 
 #include "../utils/rts2command.h"
+#include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2taruser.h"
 #include "../utilsdb/rts2obs.h"
 
@@ -84,7 +85,7 @@ Rts2ConnImgProcess::newProcess ()
 }
 
 
-int
+void
 Rts2ConnImgProcess::processLine ()
 {
 	int ret;
@@ -102,7 +103,7 @@ Rts2ConnImgProcess::processLine ()
 	#endif						 /* !DEBUG_EXTRA */
 		logStream (MESSAGE_DEBUG) << "receive: " << getCommand () << " sscanf: "
 			<< ret << sendLog;
-	return -1;
+	return;
 }
 
 
@@ -240,9 +241,9 @@ Rts2ConnProcess (in_master, in_exe, in_timeout)
 		obs = NULL;
 	}
 
-	asprintf (&obsIdCh, "%i", obsId);
-	asprintf (&obsTarIdCh, "%i", obs->getTargetId ());
-	asprintf (&obsTarTypeCh, "%c", obs->getTargetType ());
+	fillIn (&obsIdCh, obsId);
+	fillIn (&obsTarIdCh, obs->getTargetId ());
+	fillIn (&obsTarTypeCh, obs->getTargetType ());
 
 	delete obs;
 }
@@ -268,11 +269,11 @@ Rts2ConnObsProcess::newProcess ()
 }
 
 
-int
+void
 Rts2ConnObsProcess::processLine ()
 {
 	// no error
-	return -1;
+	return;
 }
 
 
@@ -282,10 +283,10 @@ Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, const char *in_
 }
 
 
-int
+void
 Rts2ConnDarkProcess::processLine ()
 {
-	return -1;
+	return;
 }
 
 
@@ -295,8 +296,8 @@ Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, const char *in_
 }
 
 
-int
+void
 Rts2ConnFlatProcess::processLine ()
 {
-	return -1;
+	return;
 }

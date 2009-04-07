@@ -200,7 +200,7 @@ Rts2ConnFocus::newProcess ()
 }
 
 
-int
+void
 Rts2ConnFocus::processLine ()
 {
 	int ret;
@@ -211,7 +211,7 @@ Rts2ConnFocus::processLine ()
 		logStream (MESSAGE_DEBUG) << "Get change: " << id << " " << change <<
 			sendLog;
 		if (change == INT_MAX)
-			return -1;			 // that's not expected .. ignore it
+			return;			 // that's not expected .. ignore it
 		getMaster ()->postEvent (new Rts2Event (endEvent, (void *) this));
 		// post it to focuser
 	}
@@ -235,7 +235,7 @@ Rts2ConnFocus::processLine ()
 				fwhm << ", " << sr.flags << ")" << sendLog;
 		}
 	}
-	return -1;
+	return;
 }
 
 
