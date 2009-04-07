@@ -466,29 +466,25 @@ Rts2xfocusCamera::drawStars (Rts2Image * image)
 void
 Rts2xfocusCamera::printInfo ()
 {
-	char *stringBuf;
-	int len;
 	XSetBackground (master->getDisplay (), gc, master->getRGB (0)->pixel);
-	len = asprintf (&stringBuf, "L: %d M: %d H: %d Min: %d Max: %d",
-		low, med, hig, min, max);
+	std::ostringstream _os;
+	_os << "L: " << low << " M: " << med << " H: " << hig << " Min: " << min << " Max: " << max;
 	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 100,
-		20, stringBuf, len);
-	free (stringBuf);
-
-	len = asprintf (&stringBuf, "Avg: %.2f Stdev: %.2f Bg Stdev: %.2f", average,
-		stdev, bg_stdev);
+		20, _os.str ().c_str (), _os.str ().length ());
+	std::ostringstream _os1;
+	_os1.precision (2);
+	_os1 << "avg " << average << " Stdev: " << stdev << " Bg Stdev: " << bg_stdev;
 	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
-		32, stringBuf, len);
-	free (stringBuf);
+		32, _os1.str ().c_str (), _os1.str ().length ());
 
 	if (lastImage)
 	{
-		len = asprintf (&stringBuf, "[%li,%li:%li,%li] binn: %i:%i exposureTime: %.3f s",
-			lastX, lastY, lastSizeX, lastSizeY, binningsX, binningsY,
-			getConnection ()->getValue ("exposure")->getValueDouble ());
+	  	std::ostringstream _os2;
+		_os2 << "[" << lastX << "," << lastY << ":" << lastSizeX << "," << lastSizeY
+			<< "] binn: " << binningsX << ":" << binningsY
+			<< " exposureTime: " << getConnection ()->getValue ("exposure")->getValueDouble ();
 		XDrawImageString (master->getDisplay (), pixmap, gc,
-			pixmapWidth / 2 - 150, pixmapHeight - 20, stringBuf, len);
-		free (stringBuf);
+			pixmapWidth / 2 - 150, pixmapHeight - 20, _os2.str ().c_str (), _os2.str ().length ());
 	}
 }
 
