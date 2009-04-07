@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "dome.h"
+#include "sensord.h"
 
 #include <comedilib.h>
 
@@ -162,32 +162,6 @@ Bootes2::updateStatus ()
 
 
 int
-Bootes2::roofChange ()
-{
-	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot set roof to off" << sendLog;
-		return -1;
-	}
-	usleep (ROOF_PULSE);
-	if (comedi_dio_write (comediDevice, 2, 0, 1) != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to on" << sendLog;
-		return -1;
-	}
-	usleep (ROOF_PULSE);
-	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
-		return 0;
-	}
-
-	usleep (ROOF_TIMEOUT);
-	return 0;
-}
-
-
-int
 Bootes2::processOption (int _opt)
 {
 	switch (_opt)
@@ -196,7 +170,7 @@ Bootes2::processOption (int _opt)
 			comediFile = optarg;
 			break;
 		default:
-			return Dome::processOption (_opt);
+			return SensorWeather::processOption (_opt);
 	}
 	return 0;
 }
@@ -206,7 +180,7 @@ int
 Bootes2::init ()
 {
 	int ret;
-	ret = Dome::init ();
+	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
@@ -264,7 +238,7 @@ Bootes2::info ()
 }
 
 
-Bootes2::Bootes2 (int argc, char **argv): Dome (argc, argv)
+Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 {
 	comediFile = "/dev/comedi0";
 
