@@ -862,10 +862,7 @@ Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 		iter != constValues.end (); iter++)
 	{
 		Rts2Value *val = *iter;
-		int ret;
-		ret = val->send (conn);
-		if (ret)
-			return ret;
+		val->send (conn);
 	}
 	return 0;
 }
@@ -933,12 +930,10 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
 		iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
-		int ret;
-		ret = val->send (conn);
-		if (ret)
-			return ret;
+		val->send (conn);
 	}
-	return info_time->send (conn);
+	info_time->send (conn);
+	return 0;
 }
 
 
