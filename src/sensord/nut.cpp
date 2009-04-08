@@ -34,7 +34,7 @@ namespace rts2sensor
 		private:
 			std::string upsName;
 
-			template <typename t> void getVal (const char *var, t val);
+			template <typename t> void getVal (const char *var, t &val);
 		public:
 			/**
 			 * Create new connection to NUT UPS daemon.
@@ -58,6 +58,7 @@ namespace rts2sensor
 			void getValue (const char *var, Rts2ValueFloat *value);
 
 			void getValue (const char *var, Rts2ValueInteger *value);
+			void getValue (const char *var, Rts2ValueString *value);
 	};
 
 	/**
@@ -77,6 +78,8 @@ namespace rts2sensor
 			Rts2ValueFloat *loadpct;
 			Rts2ValueFloat *bcharge;
 			Rts2ValueInteger *bruntime;
+
+			Rts2ValueString *upsstatus;
 			
 			Rts2ValueFloat *minbcharge;
 			Rts2ValueInteger *mintimeleft;
@@ -86,6 +89,8 @@ namespace rts2sensor
 			virtual int info ();
 
 			virtual int init ();
+
+			virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 		public:
 			NUT (int argc, char **argv);
@@ -101,22 +106,36 @@ using namespace rts2sensor;
 ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName)
 :rts2core::ConnTCP (_master, _hostname, _port)
 {
-	upsName = std::string (upsName);
+	upsName = std::string (_upsName);
 }
 
 
 template <typename t> void
-ConnNUT::getVal (const char *var, t val)
+ConnNUT::getVal (const char *var, t &val)
 {
 	std::istringstream *_is = NULL;
 
 	sendData (std::string ("GET VAR ") + upsName
-		+ std::string (var) + std::string ("\n"));
+		+ " " + std::string (var) + std::string ("\n"));
 	receiveData (&_is, 2, '\n');
 
 	std::string var_str, ups_name, var_name;
+	char ap;
 
-	*_is >> var_str >> ups_name >> var_name >> val;
+	*_is >> var_str;
+
+	if (var_str != "VAR")
+	{
+		delete _is;
+		throw rts2core::ConnError ((std::string ("Error getting ") + var + " " + var_str).c_str ());
+	}
+	
+	*_is >> ups_name >> var_name >> ap >> val >> ap;
+	if (!(_is->good () && ap == '"'))
+	{
+		delete _is;
+		throw rts2core::ConnError ("Failed parsing reply");
+	}
 
 	delete _is;
 }
@@ -136,6 +155,55 @@ ConnNUT::getValue (const char *var, Rts2ValueInteger *value)
 	int val;
 	getVal (var, val);
 	value->setValueInteger (val);
+}
+
+
+void
+ConnNUT::getValue (const char *var, Rts2ValueString *value)
+{
+	std::istringstream *_is = NULL;
+
+	sendData (std::string ("GET VAR ") + upsName
+		+ " " + std::string (var) + std::string ("\n"));
+	receiveData (&_is, 2, '\n');
+
+	std::string var_str, ups_name, var_name;
+	char ap;
+
+	*_is >> var_str;
+
+	if (var_str != "VAR")
+	{
+		delete _is;
+		throw rts2core::ConnError ((std::string ("Error getting ") + var + " " + var_str).c_str ());
+	}
+	
+	*_is >> ups_name >> var_name >> ap;
+	if (!(_is->good () && ap == '"'))
+	{
+		delete _is;
+		throw rts2core::ConnError ("Failed parsing reply");
+	}
+
+	std::string val;
+	while (true)
+	{
+		std::string v;
+		*_is >> v;
+		if (_is->fail ())
+		{
+			delete _is;
+			throw rts2core::ConnError ("Failed parsing reply");
+		}
+		if (v[v.length () - 1] == '"')
+		{
+			val += v.substr (0, v.length () - 1);
+			value->setValueString (val);
+			delete _is;
+			return;
+		}	
+		val += v + ' ';
+	}
 }
 
 
@@ -178,8 +246,20 @@ NUT::init ()
 	ret = info ();
 	if (ret)
 		return ret;
+	
+	connNUT->getValue ("ups.model", model);
+
 	setIdleInfoInterval (10);
 	return 0;
+}
+
+
+int
+NUT::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == minbcharge || old_value == mintimeleft)
+		return 0;
+	return SensorWeather::setValue (old_value, new_value);
 }
 
 
@@ -191,6 +271,7 @@ NUT::info ()
 		connNUT->getValue ("ups.load", loadpct);
 		connNUT->getValue ("battery.charge", bcharge);
 		connNUT->getValue ("battery.runtime", bruntime);
+		connNUT->getValue ("ups.status", upsstatus);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -214,11 +295,11 @@ NUT::info ()
 	}
 
 	// if there is any UPS error, set big timeout..
-/*	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
+	if (!(upsstatus->getValue () == std::string("OL CHRG") || upsstatus->getValue () == std::string ("OB DISCHRG")))
 	{
-		logStream (MESSAGE_WARNING) <<  "unknow status " << status->getValue () << sendLog;
+		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
 		setWeatherTimeout (1200);
-	}*/
+	}
 	
 	return SensorWeather::info ();
 }
@@ -230,11 +311,11 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	upsName = NULL;
 	connNUT = NULL;
 
-//  	createValue (model, "model", "UPS mode", false);
-	createValue (loadpct, "load", "UPS load", false);
-	createValue (bcharge, "bcharge", "battery charge", false);
-	createValue (bruntime, "bruntime", "time left for on-UPS operations", false);
-//	createValue (status, "status", "UPS status", false);
+  	createValue (model, "ups.model", "UPS mode", false);
+	createValue (loadpct, "ups.load", "UPS load", false);
+	createValue (bcharge, "batter.charge", "battery charge", false);
+	createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
+	createValue (upsstatus, "ups.status", "UPS status", false);
 
 	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
 	minbcharge->setValueFloat (50);
