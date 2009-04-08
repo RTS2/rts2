@@ -180,6 +180,8 @@ class ConnTCP:public Rts2ConnNoSend
 
 		void sendData (const char *data);
 
+		void sendData (std::string data);
+
 		/**
 		 * Receive data from TCP/IP socket. Pefroms select call before,
 		 * wait for wtime second.

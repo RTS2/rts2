@@ -73,6 +73,10 @@ ConnTCP::init ()
 
         apc_addr.sin_family = AF_INET;
         hp = gethostbyname(hostname);
+	if (hp == NULL)
+	{
+		throw ConnCreateError ((std::string ("unknow hostname ") + std::string (hostname)).c_str (), errno);
+	}
         bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
         apc_addr.sin_port = htons(port);
 
@@ -130,6 +134,13 @@ void
 ConnTCP::sendData (const char *data)
 {
 	sendData ((void *) data, strlen (data), false);
+}
+
+
+void
+ConnTCP::sendData (std::string data)
+{
+	sendData ((void *) data.c_str (), data.length (), false);
 }
 
 
