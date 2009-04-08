@@ -21,8 +21,6 @@
 
 #include "../utils/conntcp.h"
 
-#include <map>
-
 namespace rts2sensor
 {
 
@@ -34,34 +32,36 @@ namespace rts2sensor
 	class ConnNUT: public rts2core::ConnTCP
 	{
 		private:
-			std::map <std::string, std::string> values;
+			std::string upsName;
 
+			template <typename t> void getVal (const char *var, t val);
 		public:
 			/**
-			 * Create new connection to APC UPS daemon.
+			 * Create new connection to NUT UPS daemon.
 			 *
 			 * @param _master   Reference to master holding this connection.
 			 *
-			 * @param _hostname APC UPSD IP address or hostname.
-			 * @param _port     Portnumber of APC UPSD daemon (default to 3493).
+			 * @param _hostname NUT UPSD IP address or hostname.
+			 * @param _port     Portnumber of NUP UPS daemon (default to 3493).
+			 * @param _upsName  Name of UPS.
 			 */
-			ConnNUT (Rts2Block *_master, const char *_hostname, int _port);
+			ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName);
 
 			/**
-			 * Call command, get reply.
+			 * Call GET VAR command to receive variable from UPS.
 			 *
-			 * @param cmd       Command.
+			 * @param var    Variable name.
+			 * @param value  Variable value.
+			 *
+			 * @throw ConnError
 			 */
-			int command (const char *cmd);
+			void getValue (const char *var, Rts2ValueFloat *value);
 
-			const char *getString (const char *val);
-			float getPercents (const char *val);
-			float getTemp (const char *val);
-			int getTime (const char *val);
+			void getValue (const char *var, Rts2ValueInteger *value);
 	};
 
 	/**
-	 * Sensor for accessing APC UPS informations.
+	 * Sensor for accessing NUT UPS informations.
 	 *
 	 * @author Petr Kubanek <petr@kubanek.net>
 	 */
@@ -69,19 +69,15 @@ namespace rts2sensor
 	{
 		private:
 			HostString *host;
+			const char *upsName;
 			ConnNUT *connNUT;
 
 			Rts2ValueString *model;
 
 			Rts2ValueFloat *loadpct;
 			Rts2ValueFloat *bcharge;
-			Rts2ValueInteger *timeleft;
-			Rts2ValueFloat *itemp;
-			Rts2ValueInteger *tonbatt;
-			Rts2ValueString *status;
-
-			Rts2ValueInteger *battimeout;
-
+			Rts2ValueInteger *bruntime;
+			
 			Rts2ValueFloat *minbcharge;
 			Rts2ValueInteger *mintimeleft;
 
@@ -102,93 +98,63 @@ namespace rts2sensor
 using namespace rts2sensor;
 
 
-ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port)
+ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName)
 :rts2core::ConnTCP (_master, _hostname, _port)
 {
+	upsName = std::string (upsName);
 }
 
 
-int
-ConnNUT::command (const char *cmd)
+template <typename t> void
+ConnNUT::getVal (const char *var, t val)
 {
 	std::istringstream *_is = NULL;
-	try
-	{
-		sendData (cmd);
-		sendData ("\n");
-		
-		receiveData (&_is, 2, '\n');
 
-		std::string str;
+	sendData (std::string ("GET VAR ") + upsName
+		+ std::string (var) + std::string ("\n"));
+	receiveData (&_is, 2, '\n');
 
-		*_is >> str;
-		std::cout << str << std::endl;
+	std::string var_str, ups_name, var_name;
 
-		delete _is;
-		return 0;
-	}
-	catch (rts2core::ConnError err)
-	{
-		logStream (MESSAGE_ERROR) << err << sendLog;
-		delete _is;
-		return -1;
-	}
+	*_is >> var_str >> ups_name >> var_name >> val;
+
+	delete _is;
 }
 
-
-const char*
-ConnNUT::getString (const char *val)
+void
+ConnNUT::getValue (const char *var, Rts2ValueFloat *value)
 {
-	std::map <std::string, std::string>::iterator iter = values.find (val);
-	if (values.find (val) == values.end ())
-		return "";
-	return (*iter).second.c_str ();
+	float val;
+	getVal (var, val);
+	value->setValueFloat (val);
 }
 
 
-float
-ConnNUT::getPercents (const char *val)
+void
+ConnNUT::getValue (const char *var, Rts2ValueInteger *value)
 {
-	std::map <std::string, std::string>::iterator iter = values.find (val);
-	if (values.find (val) == values.end ())
-		return nan("f");
-	return atof ((*iter).second.c_str());
+	int val;
+	getVal (var, val);
+	value->setValueInteger (val);
 }
-
-
-float
-ConnNUT::getTemp (const char *val)
-{
-	const char *v = getString (val);
-	if (strchr (v, 'C') == NULL)
-		return nan("f");
-	return atof (v);
-}
-
-
-int
-ConnNUT::getTime (const char *val)
-{
-	const char *v = getString (val);
-	if (strcasestr (v, "hours") != NULL)
-	  	return atof (v) * 3600;
-	if (strcasestr (v, "minutes") != NULL)
-		return atof (v) * 60;
-	if (strcasestr (v, "seconds") != NULL)
-	  	return atof (v);
-	return 0;
-}
-
-
 
 
 int
 NUT::processOption (int opt)
 {
+	char *p;
 	switch (opt)
 	{
 		case 'n':
-			host = new HostString (optarg, "3493");
+			p = strchr (optarg, '@');
+			if (p == NULL)
+			{
+				logStream (MESSAGE_ERROR) << "cannot locate @ at -n parameter (" << optarg << ")" << sendLog;
+				return -1;
+			}
+			*p = '\0';
+			upsName = optarg;
+			host = new HostString (p + 1, "3493");
 			break;
 		default:
 			return SensorWeather::processOption (opt);
@@ -205,7 +171,7 @@ NUT::init ()
 	if (ret)
 		return ret;
 	
-	connNUT = new ConnNUT (this, host->getHostname (), host->getPort ());
+	connNUT = new ConnNUT (this, host->getHostname (), host->getPort (), upsName);
 	ret = connNUT->init ();
 	if (ret)
 		return ret;
@@ -220,39 +186,39 @@ NUT::init ()
 int
 NUT::info ()
 {
-	int ret;
-	ret = connNUT->command ("GET VAR MGEUPS ups.load");
-	if (ret)
+	try
 	{
-		logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
-		setWeatherTimeout (120);
-		return ret;
+		connNUT->getValue ("ups.load", loadpct);
+		connNUT->getValue ("battery.charge", bcharge);
+		connNUT->getValue ("battery.runtime", bruntime);
 	}
-	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
+	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_WARNING) <<  "too long on batteries: " << tonbatt->getValueInteger () << sendLog;
-		setWeatherTimeout (battimeout->getValueInteger () + 60);
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		return -1;
 	}
 
+	// perform variable checks..
+	
 	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
 		setWeatherTimeout (1200);
 	}
 
-	if (timeleft->getValueInteger () < mintimeleft->getValueInteger ())
+	if (bruntime->getValueInteger () < mintimeleft->getValueInteger ())
 	{
-	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << timeleft->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
+	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
 		setWeatherTimeout (1200);
 
 	}
 
 	// if there is any UPS error, set big timeout..
-	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
+/*	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
 	{
 		logStream (MESSAGE_WARNING) <<  "unknow status " << status->getValue () << sendLog;
 		setWeatherTimeout (1200);
-	}
+	}*/
 	
 	return SensorWeather::info ();
 }
@@ -260,23 +226,22 @@ NUT::info ()
 
 NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 {
-  	createValue (model, "model", "UPS mode", false);
+	host = NULL;
+	upsName = NULL;
+	connNUT = NULL;
+
+//  	createValue (model, "model", "UPS mode", false);
 	createValue (loadpct, "load", "UPS load", false);
 	createValue (bcharge, "bcharge", "battery charge", false);
-	createValue (timeleft, "timeleft", "time left for on-UPS operations", false);
-	createValue (itemp, "temperature", "internal UPS temperature", false);
-	createValue (tonbatt, "tonbatt", "time on battery", false);
-	createValue (status, "status", "UPS status", false);
-
-	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
-	battimeout->setValueInteger (60);
+	createValue (bruntime, "bruntime", "time left for on-UPS operations", false);
+//	createValue (status, "status", "UPS status", false);
 
 	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
 	minbcharge->setValueFloat (50);
 	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
 	mintimeleft->setValueInteger (1200);
 
-	addOption ('n', NULL, 1, "hostname[:port] of NUT");
+	addOption ('n', NULL, 1, "upsname@hostname[:port] of NUT");
 }
 
 
