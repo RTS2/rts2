@@ -43,7 +43,7 @@ namespace rts2sensor
 			 * @param _master   Reference to master holding this connection.
 			 *
 			 * @param _hostname APC UPSD IP address or hostname.
-			 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
+			 * @param _port     Portnumber of APC UPSD daemon (default to 3493).
 			 */
 			ConnNUT (Rts2Block *_master, const char *_hostname, int _port);
 
@@ -119,6 +119,11 @@ ConnNUT::command (const char *cmd)
 		
 		receiveData (&_is, 2, '\n');
 
+		std::string str;
+
+		*_is >> str;
+		std::cout << str << std::endl;
+
 		delete _is;
 		return 0;
 	}
@@ -182,8 +187,8 @@ NUT::processOption (int opt)
 {
 	switch (opt)
 	{
-		case 'a':
-			host = new HostString (optarg, "3551");
+		case 'n':
+			host = new HostString (optarg, "3493");
 			break;
 		default:
 			return SensorWeather::processOption (opt);
@@ -216,7 +221,7 @@ int
 NUT::info ()
 {
 	int ret;
-	ret = connNUT->command ("GET VAR onbatt");
+	ret = connNUT->command ("GET VAR MGEUPS ups.load");
 	if (ret)
 	{
 		logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
@@ -271,7 +276,7 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
 	mintimeleft->setValueInteger (1200);
 
-	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
+	addOption ('n', NULL, 1, "hostname[:port] of NUT");
 }
 
 
