@@ -114,7 +114,6 @@ Watcher::~Watcher (void)
 void
 Watcher::executeSms (smsType_t type)
 {
-	char *cmd;
 	const char *msg;
 	switch (type)
 	{
@@ -131,9 +130,9 @@ Watcher::executeSms (smsType_t type)
 			sendDublinMail ("WARNING CANNOT OPEN DOME! ROOF FAILED!");
 			break;
 	}
-	asprintf (&cmd, "%s '%s'", smsExec, msg);
-	system (cmd);
-	free (cmd);
+	std::string cmd = std::string (smsExec)
+		+ std::string ("'") + std::string (msg) + std::string ("'"); 
+	system (cmd.c_str ());
 }
 
 
@@ -366,18 +365,13 @@ Watcher::isOnString (int mask)
 int
 Watcher::sendDublinMail (const char *subject)
 {
-	char *text;
+	std::ostringstream _os;
 	int ret;
-	asprintf (&text, "%s.\n"
-		"CLOSE SWITCH:%s\n"
-		"OPEN SWITCH:%s\n"
-		"Weather::isGoodWeather %i\n",
-		subject,
-		isOnString (4),
-		isOnString (1),
-		isGoodWeather ());
-	ret = sendMail (subject, text);
-	free (text);
+	_os << subject
+		<< "CLOSE SWITCH: " << isOnString (4) << std::endl
+		<< "OPEN SWITCH: " << isOnString (1) << std::endl
+		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl;
+	ret = sendMail (subject, _os.str ().c_str ());
 	return ret;
 }
 

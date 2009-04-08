@@ -82,8 +82,6 @@ WeatherTimeout::doProcessing ()
 	struct sockaddr_in serv_addr;
 	int ret;
 	struct hostent *server_info;
-	char *send_string;
-	int msg_size;
 
 	char buf[4];
 
@@ -117,9 +115,11 @@ WeatherTimeout::doProcessing ()
 		return 1;
 	}
 
-	msg_size = asprintf (&send_string, "weatherTimeout=%i", timeout);
+	std::ostringstream _os;
+	_os << "weatherTimeout=" << timeout;
+
 	ret =
-		sendto (sock, send_string, msg_size, 0,
+		sendto (sock, _os.str ().c_str (), _os.str ().length (), 0,
 		(struct sockaddr *) &serv_addr, sizeof (serv_addr));
 	if (ret < 0)
 	{
@@ -138,7 +138,6 @@ WeatherTimeout::doProcessing ()
 	buf[3] = 0;
 
 	logStream (MESSAGE_DEBUG) << "Read " << buf << sendLog;
-	free (send_string);
 
 	close (sock);
 	return 0;
