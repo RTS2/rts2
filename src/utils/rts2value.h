@@ -415,7 +415,7 @@ class Rts2Value
 		 *
 		 * @param connection Connection on which value will be send.
 		 */
-		virtual int send (Rts2Conn * connection);
+		virtual void send (Rts2Conn * connection);
 
 		/**
 		 * Reset value change bit, so changes will be recorded from now on.
@@ -466,7 +466,7 @@ class Rts2ValueString:public Rts2Value
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
-		virtual int send (Rts2Conn * connection);
+		virtual void send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
 };

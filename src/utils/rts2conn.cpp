@@ -687,13 +687,14 @@ Rts2Conn::processLine ()
 		char *m_name;
 		if (paramNextString (&m_name))
 		{
-			ret = -2;
+			logStream (MESSAGE_DEBUG)
+				<< "Cannot get parameter for SET_VALUE on connection " << getCentraldId () << sendLog;
+			ret = -1;
 		}
 		else
 		{
-			ret = commandValue (m_name);
-			if (ret == 0)
-				ret = -1;
+			commandValue (m_name);
+			ret = -1;
 		}
 	}
 	else if (isCommand (PROTO_SELMETAINFO))
@@ -1576,6 +1577,10 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 int
 Rts2Conn::sendValue (std::string val_name, const char *value)
 {
+	if (getConnState () == CONN_INPROGRESS)
+	{
+		return -1;
+	}
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " \"" << value << "\"";
 	return sendMsg (_os);
@@ -1585,6 +1590,10 @@ Rts2Conn::sendValue (std::string val_name, const char *value)
 int
 Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 {
+	if (getConnState () == CONN_INPROGRESS)
+	{
+		return -1;
+	}
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << value;
 	return sendMsg (_os);

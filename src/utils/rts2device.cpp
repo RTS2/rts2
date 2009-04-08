@@ -705,8 +705,7 @@ Rts2Device::setMode (int new_mode, bool defaultValues)
 	}
 	Rts2ConfigSection *sect = (*modeconf)[new_mode];
 	// setup values
-	for (Rts2ConfigSection::iterator iter = sect->begin ();
-		iter != sect->end (); iter++)
+	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
 		Rts2Value *val = getValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)

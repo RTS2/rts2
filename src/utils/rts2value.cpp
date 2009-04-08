@@ -79,14 +79,15 @@ Rts2Value::sendMetaInfo (Rts2Conn * connection)
 	if (ret < 0)
 		return ret;
 
-	return send (connection);
+	send (connection);
+	return 0;
 }
 
 
-int
+void
 Rts2Value::send (Rts2Conn * connection)
 {
-	return connection->sendValueRaw (getName (), getValue ());
+	connection->sendValueRaw (getName (), getValue ());
 }
 
 
@@ -148,10 +149,10 @@ Rts2ValueString::setValueInteger (int in_value)
 }
 
 
-int
+void
 Rts2ValueString::send (Rts2Conn * connection)
 {
-	return connection->sendValue (getName (), getValue ());
+	connection->sendValue (getName (), getValue ());
 }
 
 
