@@ -137,6 +137,8 @@ class ConnTCP:public Rts2ConnNoSend
 		int port;
 
 		bool debug;
+
+		bool checkBufferForChar (std::istringstream **_is, char end_char);
 	public:
 		/**
 		 * Create new connection to APC UPS daemon.
@@ -190,6 +192,15 @@ class ConnTCP:public Rts2ConnNoSend
 		 * @throw ConnError on errror.
 		 */
 		void receiveData (void *data, size_t len, int wtime, bool binary = true);
+
+		/**
+		 * Receive data from connection till character in end is encoutered.
+		 *
+		 * @param _is    Input string stream which will receive data.
+		 * @param wtime  Wait time in seconds.
+		 * @param end    End character.
+		 */
+		void receiveData (std::istringstream **_is, int wtime, char end_char);
 };
 
 };

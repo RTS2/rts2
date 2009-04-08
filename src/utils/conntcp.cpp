@@ -36,6 +36,28 @@ ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port)
 }
 
 
+bool
+ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
+{
+	// look for endchar in received data..
+	for (char *p = buf; p < buf_top; p++)
+	{
+		if (*p == end_char)
+		{
+			*p = '\0';
+			*_is = new std::istringstream (std::string (buf));
+			if (p != buf_top)
+			{
+				memmove (buf, p + 1, buf_top - p - 1);
+				buf_top -= p + 1 - buf;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+
 int
 ConnTCP::init ()
 {
@@ -151,4 +173,50 @@ ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 		  	ls << data;
 		ls << sendLog;
 	}
+}
+
+
+void
+ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
+{
+	// check if buffer contains end character..
+	
+	fd_set read_set;
+
+	struct timeval read_tout;
+	read_tout.tv_sec = wtime;
+	read_tout.tv_usec = 0;
+
+	if (checkBufferForChar (_is, end_char))
+		return;
+
+	while (true)
+	{
+	 	checkBufferSize ();
+		FD_ZERO (&read_set);
+
+		FD_SET (sock, &read_set);
+
+		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
+		if (ret < 0)
+			throw ConnError ("error calling select function", errno);
+		else if (ret == 0)
+		  	throw ConnTimeoutError ("timeout during receiving data");
+
+		// read from descriptor
+		ret = recv (sock, buf_top, buf_size - (buf_top - buf), 0);
+		if (ret == -1)
+			throw ConnReceivingError ("cannot read from TCP/IP connection", errno);
+		buf_top += ret;
+		if (debug)
+		{
+			*(buf_top + 1) = '\0';
+			logStream (MESSAGE_DEBUG) << "received " << buf << sendLog;
+		}
+
+		// look for end character..
+		if (checkBufferForChar (_is, end_char))
+			return;
+	}
+
 }

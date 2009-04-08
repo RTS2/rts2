@@ -100,10 +100,6 @@ class Rts2Value;
 class Rts2Conn:public Rts2Object
 {
 	private:
-		char *buf;
-		size_t buf_size;
-		char *buf_top;
-
 		char *command_buf_top;
 
 		char *full_data_end;	 // points to end of full data
@@ -193,6 +189,10 @@ class Rts2Conn:public Rts2Object
 		void dataReceived ();
 
 	protected:
+		char *buf;
+		size_t buf_size;
+		char *buf_top;
+
 		/**
 		 * Other side of connection state.
 		 */
@@ -209,6 +209,11 @@ class Rts2Conn:public Rts2Object
 		Rts2Block *master;
 		char *command_start;
 		int sock;
+
+		/**
+		 * Check if buffer is fully filled. If that's the case, increase buffer size.
+		 */
+		void checkBufferSize ();
 
 		virtual int acceptConn ();
 

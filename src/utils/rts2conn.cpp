@@ -509,6 +509,22 @@ Rts2Conn::authorizationFailed ()
 }
 
 
+void
+Rts2Conn::checkBufferSize ()
+{
+	// increase buffer if it's too small
+	if (((int) buf_size) == (buf_top - buf))
+	{
+		char *new_buf = new char[buf_size + MAX_DATA + 1];
+		memcpy (new_buf, buf, buf_size);
+		buf_top = new_buf + (buf_top - buf);
+		buf_size += MAX_DATA;
+		delete[]buf;
+		buf = new_buf;
+	}
+}
+
+
 int
 Rts2Conn::acceptConn ()
 {
@@ -867,17 +883,7 @@ Rts2Conn::receive (fd_set * readset)
 			dataReceived ();
 			return data_size;
 		}
-		// increase buffer if it's too small
-		if (((int) buf_size) == (buf_top - buf))
-		{
-			char *new_buf = new char[buf_size + MAX_DATA + 1];
-			memcpy (new_buf, buf, buf_size);
-			buf_top = new_buf + (buf_top - buf);
-			buf_size += MAX_DATA;
-			delete[]buf;
-			buf = new_buf;
-			// read us again..
-		}
+		checkBufferSize ();
 		data_size = read (sock, buf_top, buf_size - (buf_top - buf));
 		// ignore EINTR
 		if (data_size == -1 && errno == EINTR)
