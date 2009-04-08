@@ -51,12 +51,10 @@ namespace rts2sensor
 			 * Call command, get reply.
 			 *
 			 * @param cmd       Command.
-			 * @param _buf       Buffer holding reply data.
-			 * @param _buf_size  Size of buffer for reply data.
 			 *
 			 * @throw ConnError
 			 */
-			int command (const char *cmd, char *_buf, int _buf_size);
+			int command (const char *cmd);
 
 			const char *getString (const char *val);
 			float getPercents (const char *val);
@@ -116,7 +114,7 @@ ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)
 
 
 int
-ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
+ConnApcUps::command (const char *cmd)
 {
 	uint16_t len = htons (strlen (cmd));
 	while (true)
@@ -124,8 +122,8 @@ ConnApcUps::command (const char *cmd, char *_buf, int _buf_size)
 		int rsize;
 		char reply_data[502];
 
-		send (sock, &len, 2, 0);
-		send (sock, cmd, strlen (cmd), 0);
+		sendData (&len, 2, true);
+		sendData (cmd);
 
 		receiveData (reply_data, 2, 5);
 
@@ -257,12 +255,11 @@ int
 ApcUps::info ()
 {
 	int ret;
-	char reply[500];
 	ConnApcUps *connApc = new ConnApcUps (this, host->getHostname (), host->getPort ());
 	try
 	{
 		connApc->init ();
-		ret = connApc->command ("status", reply, 500);
+		ret = connApc->command ("status");
 		if (ret)
 		{
 			logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;

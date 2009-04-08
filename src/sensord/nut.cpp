@@ -31,7 +31,7 @@ namespace rts2sensor
 	 *
 	 * @author Petr Kubanek <petr@kubanek.net>
 	 */
-	class ConnNut: public rts2core::ConnTCP
+	class ConnNUT: public rts2core::ConnTCP
 	{
 		private:
 			std::map <std::string, std::string> values;
@@ -45,16 +45,14 @@ namespace rts2sensor
 			 * @param _hostname APC UPSD IP address or hostname.
 			 * @param _port     Portnumber of APC UPSD daemon (default to 3551).
 			 */
-			ConnNut (Rts2Block *_master, const char *_hostname, int _port);
+			ConnNUT (Rts2Block *_master, const char *_hostname, int _port);
 
 			/**
 			 * Call command, get reply.
 			 *
 			 * @param cmd       Command.
-			 * @param _buf       Buffer holding reply data.
-			 * @param _buf_size  Size of buffer for reply data.
 			 */
-			int command (const char *cmd, char *_buf, int _buf_size);
+			int command (const char *cmd);
 
 			const char *getString (const char *val);
 			float getPercents (const char *val);
@@ -67,11 +65,11 @@ namespace rts2sensor
 	 *
 	 * @author Petr Kubanek <petr@kubanek.net>
 	 */
-	class Nut:public SensorWeather
+	class NUT:public SensorWeather
 	{
 		private:
 			HostString *host;
-			ConnNut *connApc;
+			ConnNUT *connNUT;
 
 			Rts2ValueString *model;
 
@@ -94,8 +92,8 @@ namespace rts2sensor
 			virtual int init ();
 
 		public:
-			Nut (int argc, char **argv);
-			virtual ~Nut (void);
+			NUT (int argc, char **argv);
+			virtual ~NUT (void);
 	};
 
 }
@@ -104,128 +102,37 @@ namespace rts2sensor
 using namespace rts2sensor;
 
 
-ConnNut::ConnNut (Rts2Block *_master, const char *_hostname, int _port)
+ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port)
 :rts2core::ConnTCP (_master, _hostname, _port)
 {
 }
 
 
 int
-ConnNut::command (const char *cmd, char *_buf, int _buf_size)
+ConnNUT::command (const char *cmd)
 {
-	int ret;
-	uint16_t len = htons (strlen (cmd));
-	ret = send (sock, &len, 2, 0);
-	if (ret != 2)
+	std::istringstream *_is = NULL;
+	try
 	{
-		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
-		connectionError (-1);
+		sendData (cmd);
+		sendData ("\n");
+		
+		receiveData (&_is, 2, '\n');
+
+		delete _is;
+		return 0;
+	}
+	catch (rts2core::ConnError err)
+	{
+		logStream (MESSAGE_ERROR) << err << sendLog;
+		delete _is;
 		return -1;
 	}
-	ret = send (sock, cmd, strlen (cmd), 0);
-	if (ret != (int) strlen (cmd))
-	{
-		logStream (MESSAGE_DEBUG) << "Cannot send data to TCP/IP port" << sendLog;
-		connectionError (-1);
-		return -1;
-	}
-
-	// receive data..
-	int left = 2;
-	bool data = false;
-        char reply_data[502];
-	int rsize = 0;
-
-	while (left > 0)
-	{
-		fd_set read_set;
-
-	        struct timeval read_tout;
-	        read_tout.tv_sec = 20;
-	        read_tout.tv_usec = 0;
-	
-	        FD_ZERO (&read_set);
-	
-	        FD_SET (sock, &read_set);
-	
-	        ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
-	        if (ret < 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "error calling select function for apc ups, error: " << strerror (errno)
-	                        << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-	        else if (ret == 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "Timeout during call to select function. Calling connection error." << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-	
-	        ret = recv (sock, reply_data + rsize, left, 0);
-	        if (ret < 0)
-	        {
-	                logStream (MESSAGE_ERROR) << "Cannot read from APC UPS socket, error " << strerror (errno) << sendLog;
-	                connectionError (-1);
-	                return -1;
-	        }
-		if (!data)
-		{
-			left = ntohs (*((uint16_t *) reply_data));
-			data = true;
-			if (left == 0)
-				return 0;
-		}
-		else
-		{
-			left -= ret;
-			rsize += ret;
-		}
-		if (left == 0)
-		{
-			reply_data[rsize] = '\0';
-			// try to parse reply
-			if (reply_data[9] != ':')
-			{
-				logStream (MESSAGE_ERROR) << "Invalid reply data" << " " << ret << " " << reply_data << sendLog;
-				return -1;
-			}
-			reply_data[9] = '\0';
-			std::cout << "val '" << reply_data << "' " << reply_data + 10 << std::endl;
-			if (strcmp (reply_data, "END APC  ") == 0)
-			{
-			  	std::cout << "END" << std::endl;
-			}
-			else
-			{
-				// eat any spaces..
-				char *pchr = reply_data + 8;
-				while (isspace (*pchr) && pchr > reply_data)
-				{
-					pchr--;
-				}
-				pchr[1] = '\0';
-				char *dat = reply_data + rsize - 1;
-				while (isspace (*dat))
-					dat--;
-				dat[1] = '\0';
-				dat = reply_data + 10;
-				while (isspace (*dat))
-				  	dat++;
-				values[std::string (reply_data)] = std::string (dat);
-			}
-			left = 2;
-			data = false;
-			rsize = 0;
-		}
-	}
-	return 0;
 }
 
 
 const char*
-ConnNut::getString (const char *val)
+ConnNUT::getString (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -235,7 +142,7 @@ ConnNut::getString (const char *val)
 
 
 float
-ConnNut::getPercents (const char *val)
+ConnNUT::getPercents (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -245,7 +152,7 @@ ConnNut::getPercents (const char *val)
 
 
 float
-ConnNut::getTemp (const char *val)
+ConnNUT::getTemp (const char *val)
 {
 	const char *v = getString (val);
 	if (strchr (v, 'C') == NULL)
@@ -255,7 +162,7 @@ ConnNut::getTemp (const char *val)
 
 
 int
-ConnNut::getTime (const char *val)
+ConnNUT::getTime (const char *val)
 {
 	const char *v = getString (val);
 	if (strcasestr (v, "hours") != NULL)
@@ -271,7 +178,7 @@ ConnNut::getTime (const char *val)
 
 
 int
-Nut::processOption (int opt)
+NUT::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -286,15 +193,15 @@ Nut::processOption (int opt)
 
 
 int
-Nut::init ()
+NUT::init ()
 {
   	int ret;
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 	
-	connApc = new ConnNut (this, host->getHostname (), host->getPort ());
-	ret = connApc->init ();
+	connNUT = new ConnNUT (this, host->getHostname (), host->getPort ());
+	ret = connNUT->init ();
 	if (ret)
 		return ret;
 	ret = info ();
@@ -306,25 +213,16 @@ Nut::init ()
 
 
 int
-Nut::info ()
+NUT::info ()
 {
 	int ret;
-	char reply[500];
-	ret = connApc->command ("status", reply, 500);
+	ret = connNUT->command ("GET VAR onbatt");
 	if (ret)
 	{
 		logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
 		setWeatherTimeout (120);
 		return ret;
 	}
-	model->setValueString (connApc->getString ("MODEL"));
-	loadpct->setValueFloat (connApc->getPercents ("LOADPCT"));
-	bcharge->setValueFloat (connApc->getPercents ("BCHARGE"));
-	timeleft->setValueInteger (connApc->getTime ("TIMELEFT"));
-	itemp->setValueFloat (connApc->getTemp ("ITEMP"));
-	tonbatt->setValueInteger (connApc->getTime ("TONBATT"));
-	status->setValueString (connApc->getString ("STATUS"));
-
 	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
 	{
 		logStream (MESSAGE_WARNING) <<  "too long on batteries: " << tonbatt->getValueInteger () << sendLog;
@@ -355,7 +253,7 @@ Nut::info ()
 }
 
 
-Nut::Nut (int argc, char **argv):SensorWeather (argc, argv)
+NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 {
   	createValue (model, "model", "UPS mode", false);
 	createValue (loadpct, "load", "UPS load", false);
@@ -377,15 +275,15 @@ Nut::Nut (int argc, char **argv):SensorWeather (argc, argv)
 }
 
 
-Nut::~Nut (void)
+NUT::~NUT (void)
 {
-	delete connApc;
+	delete connNUT;
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Nut device = Nut (argc, argv);
+	NUT device = NUT (argc, argv);
 	return device.run ();
 }
