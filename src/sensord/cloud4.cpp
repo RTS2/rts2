@@ -91,8 +91,6 @@ Cloud4::readSensor ()
 	temp0/=100.0;
 	temp1/=100.0;
 
-	logStream (MESSAGE_INFO) << "MM4 reply was: " << tno
-		<< " " << temp0 << " " << temp1 << " " << x << sendLog;
 	if (x != 3) 
 	{
 		logStream (MESSAGE_ERROR) << "cannot parse reply from cloud senso, reply was: '"
