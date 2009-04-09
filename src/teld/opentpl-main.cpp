@@ -174,14 +174,6 @@ Rts2DevTelescopeIr::startMove ()
 		case 0:
 			if (target.dec < -89.85)
 				target.dec = -89.80;
-
-			getTargetAltAz (&tAltAz);
-			if ((tAltAz.az < 5 || tAltAz.az > 355 || (tAltAz.az > 175 && tAltAz.az < 185))
-				&& tAltAz.alt < 15)
-			{
-				logStream (MESSAGE_ERROR) << "Cannot move to target, as it's too close to dome" << sendLog;
-				return -1;
-			}
 			break;
 		case 1:
 			// move to zenit - move to different dec instead

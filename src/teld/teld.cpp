@@ -33,6 +33,7 @@
 #include "model/telmodel.h"
 
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
+#define OPT_HORIZON           OPT_LOCAL + 118
 
 Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
@@ -119,6 +120,8 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	model = NULL;
 
 	standbyPark = false;
+	horizonFile = NULL;
+	hardHorizon = NULL;
 
 	addOption ('m', NULL, 1, "name of file holding model parameters, calculated by T-Point");
 	addOption ('l', NULL, 1, "separation limit (corrections above that number in degrees will be ignored)");
@@ -130,6 +133,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	addOption (OPT_BLOCK_ON_STANDBY, "block-on-standby", 0, "block telescope movement when switching to standby");
 
 	addOption ('r', NULL, 1, "telescope rotang");
+	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
 
 	// default is to aply model corrections
 	createValue (correctionsMask, "RTS_COR", "RTS2 corrections bitmask", true);
@@ -184,6 +188,9 @@ Rts2DevTelescope::processOption (int in_opt)
 		case 'r':
 			defaultRotang = atof (optarg);
 			rotang->setValueDouble (defaultRotang);
+			break;
+		case OPT_HORIZON:
+			horizonFile = optarg;
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -487,6 +494,11 @@ Rts2DevTelescope::init ()
 			return ret;
 	}
 
+	if (horizonFile)
+	{
+		hardHorizon = new ObjectCheck (horizonFile);
+	}
+
 	return 0;
 }
 
@@ -758,7 +770,7 @@ Rts2DevTelescope::stopGuideAll ()
 }
 
 
-int
+void
 Rts2DevTelescope::getAltAz ()
 {
 	struct ln_equ_posn telpos;
@@ -776,15 +788,12 @@ Rts2DevTelescope::getAltAz ()
 		&hrz);
 
 	telAltAz->setValueAltAz (hrz.alt, hrz.az);
-
-	return 0;
 }
 
 
 int
 Rts2DevTelescope::info ()
 {
-
 	// calculate alt+az
 	getAltAz ();
 
@@ -854,12 +863,6 @@ Rts2DevTelescope::endMove ()
 int
 Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 {
-	if (blockMove->getValueBool () == true)
-	{
-		logStream (MESSAGE_ERROR) << "Telescope move blocked" << sendLog;
-		return -1;
-	}
-
 	int ret;
 
 	struct ln_equ_posn pos;
@@ -905,6 +908,25 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	telRaDec->setValueRaDec (pos.ra, pos.dec);
 
 	moveInfoCount = 0;
+
+	if (hardHorizon)
+	{
+		struct ln_hrz_posn hrpos;
+		getAltAz ();
+		hrpos.az = telAltAz->getAz ();
+		hrpos.alt = telAltAz->getAlt ();
+		if (!hardHorizon->is_good (&hrpos))
+		{
+			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;
+			return -1;
+		}
+	}
+
+	if (blockMove->getValueBool () == true)
+	{
+		logStream (MESSAGE_ERROR) << "Telescope move blocked" << sendLog;
+		return -1;
+	}
 
 	ret = startMove ();
 	if (ret)

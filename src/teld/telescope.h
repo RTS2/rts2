@@ -26,6 +26,7 @@
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
+#include "../utils/objectcheck.h"
 
 // types of corrections
 #define COR_ABERATION        0x01
@@ -261,6 +262,9 @@ class Rts2DevTelescope:public Rts2Device
 		Rts2TelModel *model;
 
 		bool standbyPark;
+		const char *horizonFile;
+
+		ObjectCheck *hardHorizon;
 
 		/**
 		 * Apply aberation correction.
@@ -624,7 +628,7 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int stopGuide (char dir);
 		virtual int stopGuideAll ();
 
-		virtual int getAltAz ();
+		virtual void getAltAz ();
 
 		// callback functions from telescope connection
 		virtual int info ();

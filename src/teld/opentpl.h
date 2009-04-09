@@ -116,7 +116,7 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		virtual ~ Rts2TelescopeIr (void);
 		virtual int ready ();
 
-		virtual int getAltAz ();
+		virtual void getAltAz ();
 
 		virtual int info ();
 		virtual int saveModel ();

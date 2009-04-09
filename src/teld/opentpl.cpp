@@ -633,24 +633,19 @@ Rts2TelescopeIr::ready ()
 }
 
 
-int
+void
 Rts2TelescopeIr::getAltAz ()
 {
 	int status = TPL_OK;
 	double zd, az;
 
 	if (getPointingModel () == 0)
-		return Rts2DevTelescope::getAltAz ();
+		Rts2DevTelescope::getAltAz ();
 
 	status = irConn->tpl_get ("ZD.REALPOS", zd, &status);
 	status = irConn->tpl_get ("AZ.REALPOS", az, &status);
 
-	if (status != TPL_OK)
-		return -1;
-
 	telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
-
-	return 0;
 }
 
 
