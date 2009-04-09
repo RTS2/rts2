@@ -918,6 +918,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;
+			if (conn)
+				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
 			return -1;
 		}
 	}
@@ -925,6 +927,8 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	if (blockMove->getValueBool () == true)
 	{
 		logStream (MESSAGE_ERROR) << "Telescope move blocked" << sendLog;
+		if (conn)
+			conn->sendCommandEnd (DEVDEM_E_HW, "telescope move blocked");
 		return -1;
 	}
 
