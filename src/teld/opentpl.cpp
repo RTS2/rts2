@@ -21,7 +21,7 @@
 #include <fstream>
 
 #include "../utils/rts2config.h"
-#include "ir.h"
+#include "opentpl.h"
 
 #define DEBUG_EXTRA
 

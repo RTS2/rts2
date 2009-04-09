@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "ir.h"
+#include "opentpl.h"
 
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 1
