@@ -40,14 +40,14 @@ namespace rts2core
 class OpenTplError
 {
 	private:
-		const char *desc;
+		std::string desc;
 	public:
-		OpenTplError (const char *_desc)
+		OpenTplError (std::string _desc)
 		{
 			desc = _desc;
 		}
 		
-		const char *getDesc ()
+		const std::string& getDesc ()
 		{
 			return desc;
 		}

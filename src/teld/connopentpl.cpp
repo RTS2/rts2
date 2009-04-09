@@ -40,7 +40,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	std::ostringstream _os;
 	_os << tpl_command_no << " " << cmd << " " << p1 << '\n';
 	int ret = send (sock, _os.str().c_str (), _os.str().length (), 0);
-	logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+//	logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
 	if (ret > 0)
 	{
 		used_command_ids.push_back (tpl_command_no);
@@ -48,7 +48,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	}
 	else if (ret < 0)
 	{
-		logStream (MESSAGE_DEBUG) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
+		logStream (MESSAGE_ERROR) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
 	}
 	if (wait == false)
 		return ret == (int) _os.str().length() ? 0 : -1;
@@ -97,7 +97,7 @@ OpenTpl::waitReply ()
 			}
 			// print which new data were received..
 			*(tpl_buf_top + data_size) = '\0';
-			logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
+			//logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
 			// now parse reply, look for '\n'
 			char *bt = tpl_buf_top;
 			while (bt < tpl_buf_top + data_size)
@@ -110,7 +110,7 @@ OpenTpl::waitReply ()
 					break;
 				}
 				*bt = '\0';
-				logStream (MESSAGE_DEBUG) << "received: " << tpl_buf << sendLog;
+				// logStream (MESSAGE_DEBUG) << "received: " << tpl_buf << sendLog;
 				// parse line - get first character..
 				char *lp = tpl_buf;
 				while (*lp != '\0' && !isspace (*lp))
@@ -120,7 +120,7 @@ OpenTpl::waitReply ()
 				long int cmd_num = strtol (tpl_buf, &ce, 10);
 				if (lp != ce)
 				{
-					logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
+					// logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
 				}
 				else 
 				{
@@ -130,13 +130,6 @@ OpenTpl::waitReply ()
 					{
 						// remove command from used_command_ids
 						std::vector <int>::iterator iter = std::find (used_command_ids.begin (), used_command_ids.end (), cmd_num);
-						Rts2LogStream ls = logStream (MESSAGE_DEBUG);
-						ls << "iter " << *iter << " end-1 " << *(--(used_command_ids.end ())) << " size " << used_command_ids.size () << " eq " << (iter == --(used_command_ids.end ())) << " ";
-						for (std::vector <int>::iterator it2 = used_command_ids.begin (); it2 != used_command_ids.end (); it2++)
-						{
-							ls << (*it2) << " ";
-						}
-						ls << sendLog;
 						if (iter == --(used_command_ids.end ()))
 						{
 							if (iter == used_command_ids.begin ())
@@ -148,12 +141,6 @@ OpenTpl::waitReply ()
 								tpl_command_no = *(iter - 1) + 1;
 							}
 							used_command_ids.erase (iter);
-							Rts2LogStream ls2 = logStream (MESSAGE_DEBUG);
-							for (std::vector <int>::iterator it2 = used_command_ids.begin (); it2 != used_command_ids.end (); it2++)
-							{
-								ls2 << (*it2) << " ";
-							}
-							ls2 << sendLog;
 							return 0;
 						}
 						if (iter != used_command_ids.end ())
@@ -344,7 +331,7 @@ OpenTpl::handleCommand (char *buffer, bool isActual)
 	}
 	else if (!strcmp (buffer, "EVENT"))
 	{
-		handleEvent (buffer);
+		handleEvent (ce);
 	}
 	else
 	{
