@@ -401,6 +401,14 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>min_alt</option>
+	  </term>
+	  <listitem>
+	    <para>Minimum altitude for an object to be selected. Entered in degrees.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>epoch_id</option>
 	  </term>
 	  <listitem>
