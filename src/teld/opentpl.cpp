@@ -640,12 +640,16 @@ Rts2TelescopeIr::getAltAz ()
 	double zd, az;
 
 	if (getPointingModel () == 0)
+	{
 		Rts2DevTelescope::getAltAz ();
+	}
+	else
+	{
+		status = irConn->tpl_get ("ZD.REALPOS", zd, &status);
+		status = irConn->tpl_get ("AZ.REALPOS", az, &status);
 
-	status = irConn->tpl_get ("ZD.REALPOS", zd, &status);
-	status = irConn->tpl_get ("AZ.REALPOS", az, &status);
-
-	telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
+		telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
+	}
 }
 
 
