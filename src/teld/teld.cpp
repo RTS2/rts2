@@ -80,10 +80,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
-	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked");
+	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked", false);
 	blockMove->setValueBool (false);
 
-	createValue (blockOnStandby, "block_on_standby", "Block telescope movement if switched to standby/off mode. Enable it if switched back to on.");
+	createValue (blockOnStandby, "block_on_standby", "Block telescope movement if switched to standby/off mode. Enable it if switched back to on.", false);
 	blockOnStandby->setValueBool (false);
 
 	createValue (airmass, "AIRMASS", "Airmass of target location");
