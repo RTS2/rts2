@@ -21,6 +21,10 @@
 #include "telescope.h"
 #include "rts2toindi.h"
 
+#define OPT_INDI_SERVER		OPT_LOCAL + 53
+#define OPT_INDI_PORT		OPT_LOCAL + 54
+#define OPT_INDI_DEVICE		OPT_LOCAL + 55
+
 namespace rts2telescope
 {
 
@@ -271,9 +275,9 @@ INDIBridge::INDIBridge (int argc, char ** argv): Rts2DevTelescope (argc, argv)
         indiport= 7624 ;
 	strcpy( indidevice, "LX200 Astro-Physics");
 
-	addOption ('u', "indiserver", 1, "host name or IP address of the INDI server, default: 127.0.0.1");
-	addOption ('v', "indiport"  , 1, "port at which the INDI server listens, default here 7624");
-	addOption ('x', "indidevice", 1, "name of the INDI device");
+	addOption (OPT_INDI_SERVER, "indiserver", 1, "host name or IP address of the INDI server, default: 127.0.0.1");
+	addOption (OPT_INDI_PORT, "indiport"  , 1, "port at which the INDI server listens, default here 7624");
+	addOption (OPT_INDI_DEVICE, "indidevice", 1, "name of the INDI device");
 
 	move_state = NOTMOVE;
 }
