@@ -304,7 +304,8 @@ NUT::info ()
 	}
 
 	// if there is any UPS error, set big timeout..
-	if (!(upsstatus->getValue () == std::string("OL CHRG") || upsstatus->getValue () == std::string ("OB DISCHRG")))
+	if (!(upsstatus->getValue () == std::string("OL CHRG") || upsstatus->getValue () == std::string ("OB DISCHRG")
+	  	|| upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("OB")))
 	{
 		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
 		setWeatherTimeout (1200);
