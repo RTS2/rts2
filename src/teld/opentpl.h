@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_TELD_IR__
-#define __RTS2_TELD_IR__
+#ifndef __RTS2_TELD_OPENTPL__
+#define __RTS2_TELD_OPENTPL__
 
 #include <errno.h>
 #include <string.h>
@@ -37,12 +37,15 @@
 
 #include "connopentpl.h"
 
+namespace rts2teld
+{
+
 /**
- * Base class for IR telescope.
+ * Base class for OpenTPL telescope.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TelescopeIr:public Rts2DevTelescope
+class TelOpenTPL:public Telescope
 {
 	private:
 		std::string ir_ip;
@@ -112,8 +115,8 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 			return derotatorPower->getValueBool ();
 		}
 	public:
-		Rts2TelescopeIr (int argc, char **argv);
-		virtual ~ Rts2TelescopeIr (void);
+		TelOpenTPL (int argc, char **argv);
+		virtual ~ TelOpenTPL (void);
 		virtual int ready ();
 
 		virtual void getAltAz ();
@@ -123,4 +126,6 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 		virtual int loadModel ();
 		virtual int resetMount ();
 };
-#endif							 /* !__RTS2_TELD_IR__ */
+
+};
+#endif							 /* !__RTS2_TELD_OPENTPL__ */

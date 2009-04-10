@@ -22,7 +22,10 @@
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 1
 
-class Rts2DevTelescopeIr:public Rts2TelescopeIr
+namespace rts2teld
+{
+
+class OpenTPL:public TelOpenTPL
 {
 	private:
 		struct ln_equ_posn target;
@@ -42,7 +45,7 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevTelescopeIr (int in_arcg, char **in_argv);
+		OpenTPL (int in_arcg, char **in_argv);
 		virtual int startMove ();
 		virtual int isMoving ();
 		virtual int stopMove ();
@@ -58,8 +61,12 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 		virtual int changeMasterState (int new_state);
 };
 
+};
+
+using namespace rts2teld;
+
 int
-Rts2DevTelescopeIr::processOption (int in_opt)
+OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -70,17 +77,17 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 			derOff = atof (optarg);
 			break;
 		default:
-			return Rts2TelescopeIr::processOption (in_opt);
+			return TelOpenTPL::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevTelescopeIr::initValues ()
+OpenTPL::initValues ()
 {
 	int ret;
-	ret = Rts2TelescopeIr::initValues ();
+	ret = TelOpenTPL::initValues ();
 	if (ret)
 		return ret;
 	if (derotatorOffset)
@@ -91,15 +98,15 @@ Rts2DevTelescopeIr::initValues ()
 
 
 int
-Rts2DevTelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
+OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == goodSep)
 		return 0;
-	return Rts2TelescopeIr::setValue (old_value, new_value);
+	return TelOpenTPL::setValue (old_value, new_value);
 }
 
 int
-Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
+OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
@@ -160,12 +167,10 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 
 
 int
-Rts2DevTelescopeIr::startMove ()
+OpenTPL::startMove ()
 {
 	int status = 0;
 	double sep;
-
-	struct ln_hrz_posn tAltAz;
 
 	getTarget (&target);
 
@@ -222,14 +227,14 @@ Rts2DevTelescopeIr::startMove ()
 
 
 int
-Rts2DevTelescopeIr::isMoving ()
+OpenTPL::isMoving ()
 {
 	return moveCheck (false);
 }
 
 
 int
-Rts2DevTelescopeIr::stopMove ()
+OpenTPL::stopMove ()
 {
 	int status = 0;
 	double zd;
@@ -260,7 +265,7 @@ Rts2DevTelescopeIr::stopMove ()
 
 
 int
-Rts2DevTelescopeIr::startPark ()
+OpenTPL::startPark ()
 {
 	int status = TPL_OK;
 	// Park to south+zenith
@@ -307,7 +312,7 @@ Rts2DevTelescopeIr::startPark ()
 
 
 int
-Rts2DevTelescopeIr::moveCheck (bool park)
+OpenTPL::moveCheck (bool park)
 {
 	int status = TPL_OK;
 	int track;
@@ -370,14 +375,14 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 
 
 int
-Rts2DevTelescopeIr::isParking ()
+OpenTPL::isParking ()
 {
 	return moveCheck (true);
 }
 
 
 int
-Rts2DevTelescopeIr::endPark ()
+OpenTPL::endPark ()
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
@@ -386,7 +391,7 @@ Rts2DevTelescopeIr::endPark ()
 }
 
 
-Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2TelescopeIr (in_argc,
+OpenTPL::OpenTPL (int in_argc, char **in_argv):TelOpenTPL (in_argc,
 in_argv)
 {
 	irTracking = 4;
@@ -405,7 +410,7 @@ in_argv)
 
 
 int
-Rts2DevTelescopeIr::startWorm ()
+OpenTPL::startWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (irTracking);
@@ -416,7 +421,7 @@ Rts2DevTelescopeIr::startWorm ()
 
 
 int
-Rts2DevTelescopeIr::stopWorm ()
+OpenTPL::stopWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (0);
@@ -427,7 +432,7 @@ Rts2DevTelescopeIr::stopWorm ()
 
 
 int
-Rts2DevTelescopeIr::changeMasterState (int new_state)
+OpenTPL::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -440,13 +445,13 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
 			coverClose ();
 			break;
 	}
-	return Rts2DevTelescope::changeMasterState (new_state);
+	return TelOpenTPL::changeMasterState (new_state);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeIr device = Rts2DevTelescopeIr (argc, argv);
+	OpenTPL device = OpenTPL (argc, argv);
 	return device.run ();
 }

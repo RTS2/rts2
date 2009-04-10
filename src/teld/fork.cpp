@@ -22,8 +22,10 @@
 
 #include "../utils/libnova_cpp.h"
 
+using namespace rts2teld;
+
 int
-TelFork::sky2counts (int32_t & ac, int32_t & dc)
+Fork::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
@@ -43,7 +45,7 @@ TelFork::sky2counts (int32_t & ac, int32_t & dc)
 
 
 int
-TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
 	double ls, ra, dec;
 	struct ln_hrz_posn hrz;
@@ -144,7 +146,7 @@ TelFork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double
 
 
 int
-TelFork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
+Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 {
 	double JD, ls;
 	int32_t homeOff;
@@ -198,15 +200,15 @@ TelFork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 }
 
 
-TelFork::TelFork (int in_argc, char **in_argv):
-Rts2DevTelescope (in_argc, in_argv)
+Fork::Fork (int in_argc, char **in_argv):
+Telescope (in_argc, in_argv)
 {
 	haZero = decZero = haCpd = decCpd = nan("f");
 	ra_ticks = dec_ticks = 0;
 }
 
 
-TelFork::~TelFork (void)
+Fork::~Fork (void)
 {
 
 }

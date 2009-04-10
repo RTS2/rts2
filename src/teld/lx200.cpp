@@ -56,7 +56,10 @@
 #define TEL_LONG  -6.239166667
 #define TEL_LAT   53.3155555555
 
-class Rts2DevTelescopeLX200:public Rts2DevTelescope
+namespace rts2teld
+{
+
+class LX200:public Telescope
 {
 	private:
 		const char *device_file;
@@ -98,8 +101,8 @@ class Rts2DevTelescopeLX200:public Rts2DevTelescope
 
 		void set_move_timeout (time_t plus_time);
 	public:
-		Rts2DevTelescopeLX200 (int argc, char **argv);
-		virtual ~ Rts2DevTelescopeLX200 (void);
+		LX200 (int argc, char **argv);
+		virtual ~ LX200 (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int ready ();
@@ -122,6 +125,10 @@ class Rts2DevTelescopeLX200:public Rts2DevTelescope
 		virtual int stopDir (char *dir);
 };
 
+};
+
+using namespace rts2teld;
+
 /*!
  * Reads some data directly from tel_desc.
  *
@@ -135,7 +142,7 @@ class Rts2DevTelescopeLX200:public Rts2DevTelescope
  * @return -1 on failure, otherwise number of read data
  */
 int
-Rts2DevTelescopeLX200::tel_read (char *buf, int count)
+LX200::tel_read (char *buf, int count)
 {
 	int readed;
 
@@ -169,7 +176,7 @@ Rts2DevTelescopeLX200::tel_read (char *buf, int count)
  * @see tel_read() for description
  */
 int
-Rts2DevTelescopeLX200::tel_read_hash (char *buf, int count)
+LX200::tel_read_hash (char *buf, int count)
 {
 	int readed;
 	buf[0] = 0;
@@ -201,7 +208,7 @@ Rts2DevTelescopeLX200::tel_read_hash (char *buf, int count)
  */
 
 int
-Rts2DevTelescopeLX200::tel_write (const char *buf, int count)
+LX200::tel_write (const char *buf, int count)
 {
 	logStream (MESSAGE_DEBUG) << "LX200 tel_write :will write: " << buf <<
 		sendLog;
@@ -225,7 +232,7 @@ Rts2DevTelescopeLX200::tel_write (const char *buf, int count)
  */
 
 int
-Rts2DevTelescopeLX200::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
+LX200::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 	char *buf;
@@ -261,7 +268,7 @@ Rts2DevTelescopeLX200::tel_write_read (const char *wbuf, int wcount, char *rbuf,
  * @see tel_write_read for definition
  */
 int
-Rts2DevTelescopeLX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
+LX200::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount;
 
@@ -286,7 +293,7 @@ Rts2DevTelescopeLX200::tel_write_read_hash (const char *wbuf, int wcount, char *
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_read_hms (double *hmsptr, const char *command)
+LX200::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -304,7 +311,7 @@ Rts2DevTelescopeLX200::tel_read_hms (double *hmsptr, const char *command)
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_read_ra ()
+LX200::tel_read_ra ()
 {
 	double new_ra;
 	if (tel_read_hms (&new_ra, "#:GR#"))
@@ -320,7 +327,7 @@ Rts2DevTelescopeLX200::tel_read_ra ()
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_read_dec ()
+LX200::tel_read_dec ()
 {
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
@@ -340,7 +347,7 @@ Rts2DevTelescopeLX200::tel_read_dec ()
  * Hardcode latitude and return 0
  */
 int
-Rts2DevTelescopeLX200::tel_read_latitude ()
+LX200::tel_read_latitude ()
 {
 	return 0;
 }
@@ -356,7 +363,7 @@ Rts2DevTelescopeLX200::tel_read_latitude ()
  * Hardcode longtitude and return 0
  */
 int
-Rts2DevTelescopeLX200::tel_read_longtitude ()
+LX200::tel_read_longtitude ()
 {
 	return 0;
 }
@@ -371,7 +378,7 @@ Rts2DevTelescopeLX200::tel_read_longtitude ()
  * @param command	command to write on tel_desc
  */
 int
-Rts2DevTelescopeLX200::tel_rep_write (char *command)
+LX200::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -404,7 +411,7 @@ Rts2DevTelescopeLX200::tel_rep_write (char *command)
  * @return 0
  */
 void
-Rts2DevTelescopeLX200::tel_normalize (double *ra, double *dec)
+LX200::tel_normalize (double *ra, double *dec)
 {
 	if (*ra < 0)
 								 //normalize ra
@@ -428,7 +435,7 @@ Rts2DevTelescopeLX200::tel_normalize (double *ra, double *dec)
  * @return -1 and errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_write_ra (double ra)
+LX200::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -452,7 +459,7 @@ Rts2DevTelescopeLX200::tel_write_ra (double ra)
  * @return -1 and errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_write_dec (double dec)
+LX200::tel_write_dec (double dec)
 {
 	char command[15];
 	int h, m, s;
@@ -467,7 +474,7 @@ Rts2DevTelescopeLX200::tel_write_dec (double dec)
 }
 
 
-Rts2DevTelescopeLX200::Rts2DevTelescopeLX200 (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+LX200::LX200 (int in_argc, char **in_argv):Telescope (in_argc,
 in_argv)
 {
 	device_file = "/dev/ttyS0";
@@ -481,14 +488,14 @@ in_argv)
 }
 
 
-Rts2DevTelescopeLX200::~Rts2DevTelescopeLX200 (void)
+LX200::~LX200 (void)
 {
 	close (tel_desc);
 }
 
 
 int
-Rts2DevTelescopeLX200::processOption (int in_opt)
+LX200::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -496,7 +503,7 @@ Rts2DevTelescopeLX200::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
@@ -511,14 +518,14 @@ Rts2DevTelescopeLX200::processOption (int in_opt)
  * @return 0 on succes, -1 & set errno otherwise
  */
 int
-Rts2DevTelescopeLX200::init ()
+LX200::init ()
 {
 	struct termios tel_termios;
 	char rbuf[10];
 
 	int status;
 
-	status = Rts2DevTelescope::init ();
+	status = Telescope::init ();
 	if (status)
 		return status;
 
@@ -577,7 +584,7 @@ Rts2DevTelescopeLX200::init ()
 
 
 int
-Rts2DevTelescopeLX200::ready ()
+LX200::ready ()
 {
 	return tel_desc > 0 ? 0 : -1;
 }
@@ -588,7 +595,7 @@ Rts2DevTelescopeLX200::ready ()
  *
  */
 int
-Rts2DevTelescopeLX200::initValues ()
+LX200::initValues ()
 {
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
@@ -598,17 +605,17 @@ Rts2DevTelescopeLX200::initValues ()
 
 	telFlip->setValueInteger (0);
 
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
 int
-Rts2DevTelescopeLX200::info ()
+LX200::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
@@ -627,7 +634,7 @@ Rts2DevTelescopeLX200::info ()
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
 int
-Rts2DevTelescopeLX200::tel_set_rate (char new_rate)
+LX200::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
@@ -636,7 +643,7 @@ Rts2DevTelescopeLX200::tel_set_rate (char new_rate)
 
 
 int
-Rts2DevTelescopeLX200::telescope_start_move (char direction)
+LX200::telescope_start_move (char direction)
 {
 	char command[6];
 	tel_set_rate (RATE_FIND);
@@ -646,7 +653,7 @@ Rts2DevTelescopeLX200::telescope_start_move (char direction)
 
 
 int
-Rts2DevTelescopeLX200::telescope_stop_move (char direction)
+LX200::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
@@ -663,7 +670,7 @@ Rts2DevTelescopeLX200::telescope_stop_move (char direction)
  * @return -1 on error, otherwise 0
  */
 int
-Rts2DevTelescopeLX200::tel_slew_to (double ra, double dec)
+LX200::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
@@ -689,7 +696,7 @@ Rts2DevTelescopeLX200::tel_slew_to (double ra, double dec)
  * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
 int
-Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
+LX200::tel_check_coords (double ra, double dec)
 {
 	// ADDED BY JF
 	double JD;
@@ -736,7 +743,7 @@ Rts2DevTelescopeLX200::tel_check_coords (double ra, double dec)
 
 
 void
-Rts2DevTelescopeLX200::set_move_timeout (time_t plus_time)
+LX200::set_move_timeout (time_t plus_time)
 {
 	time_t now;
 	time (&now);
@@ -746,7 +753,7 @@ Rts2DevTelescopeLX200::set_move_timeout (time_t plus_time)
 
 
 int
-Rts2DevTelescopeLX200::startMove ()
+LX200::startMove ()
 {
 	int ret;
 
@@ -767,7 +774,7 @@ Rts2DevTelescopeLX200::startMove ()
 
 
 int
-Rts2DevTelescopeLX200::isMoving ()
+LX200::isMoving ()
 {
 	int ret;
 
@@ -814,7 +821,7 @@ Rts2DevTelescopeLX200::isMoving ()
 
 
 int
-Rts2DevTelescopeLX200::stopMove ()
+LX200::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
@@ -841,7 +848,7 @@ Rts2DevTelescopeLX200::stopMove ()
  */
 
 int
-Rts2DevTelescopeLX200::setTo (double ra, double dec)
+LX200::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
@@ -872,7 +879,7 @@ Rts2DevTelescopeLX200::setTo (double ra, double dec)
  * @return -1 and set errno on error, 0 otherwise.
  */
 int
-Rts2DevTelescopeLX200::correct (double cor_ra, double cor_dec, double real_ra,
+LX200::correct (double cor_ra, double cor_dec, double real_ra,
 double real_dec)
 {
 	if (setTo (real_ra, real_dec))
@@ -887,28 +894,28 @@ double real_dec)
  * @return -1 and errno on error, 0 otherwise
  */
 int
-Rts2DevTelescopeLX200::startPark ()
+LX200::startPark ()
 {
 	return tel_slew_to (0, 0);
 }
 
 
 int
-Rts2DevTelescopeLX200::isParking ()
+LX200::isParking ()
 {
 	return -2;
 }
 
 
 int
-Rts2DevTelescopeLX200::endPark ()
+LX200::endPark ()
 {
 	return 0;
 }
 
 
 int
-Rts2DevTelescopeLX200::startDir (char *dir)
+LX200::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -924,7 +931,7 @@ Rts2DevTelescopeLX200::startDir (char *dir)
 
 
 int
-Rts2DevTelescopeLX200::stopDir (char *dir)
+LX200::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -941,6 +948,6 @@ Rts2DevTelescopeLX200::stopDir (char *dir)
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeLX200 device = Rts2DevTelescopeLX200 (argc, argv);
+	LX200 device = LX200 (argc, argv);
 	return device.run ();
 }

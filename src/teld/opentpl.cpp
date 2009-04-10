@@ -23,10 +23,12 @@
 #include "../utils/rts2config.h"
 #include "opentpl.h"
 
+using namespace rts2teld;
+
 #define DEBUG_EXTRA
 
 int
-Rts2TelescopeIr::coverClose ()
+TelOpenTPL::coverClose ()
 {
 	if (cover == NULL)
 		return 0;
@@ -45,7 +47,7 @@ Rts2TelescopeIr::coverClose ()
 
 
 int
-Rts2TelescopeIr::coverOpen ()
+TelOpenTPL::coverOpen ()
 {
 	if (cover == NULL)
 		return 0;
@@ -61,7 +63,7 @@ Rts2TelescopeIr::coverOpen ()
 
 
 int
-Rts2TelescopeIr::setTelescopeTrack (int new_track)
+TelOpenTPL::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
 	int old_track;
@@ -78,7 +80,7 @@ Rts2TelescopeIr::setTelescopeTrack (int new_track)
 
 
 int
-Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
+TelOpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
@@ -164,12 +166,12 @@ Rts2TelescopeIr::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return 0;
 	}
 
-	return Rts2DevTelescope::setValue (old_value, new_value);
+	return Telescope::setValue (old_value, new_value);
 }
 
 
-Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv)
-:Rts2DevTelescope (in_argc, in_argv)
+TelOpenTPL::TelOpenTPL (int in_argc, char **in_argv)
+:Telescope (in_argc, in_argv)
 {
 	ir_port = 0;
 	irConn = NULL;
@@ -200,14 +202,14 @@ Rts2TelescopeIr::Rts2TelescopeIr (int in_argc, char **in_argv)
 }
 
 
-Rts2TelescopeIr::~Rts2TelescopeIr (void)
+TelOpenTPL::~TelOpenTPL (void)
 {
 	delete irConn;
 }
 
 
 int
-Rts2TelescopeIr::processOption (int in_opt)
+TelOpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -221,14 +223,14 @@ Rts2TelescopeIr::processOption (int in_opt)
 			doCheckPower = true;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2TelescopeIr::initIrDevice ()
+TelOpenTPL::initIrDevice ()
 {
 	Rts2Config *config = Rts2Config::instance ();
 	config->loadFile (NULL);
@@ -271,10 +273,10 @@ Rts2TelescopeIr::initIrDevice ()
 
 
 int
-Rts2TelescopeIr::init ()
+TelOpenTPL::init ()
 {
 	int ret;
-	ret = Rts2DevTelescope::init ();
+	ret = Telescope::init ();
 	if (ret)
 		return ret;
 
@@ -287,7 +289,7 @@ Rts2TelescopeIr::init ()
 
 
 int
-Rts2TelescopeIr::initValues ()
+TelOpenTPL::initValues ()
 {
 	int status = TPL_OK;
 	std::string serial;
@@ -388,12 +390,12 @@ Rts2TelescopeIr::initValues ()
 	if (status)
 		return status;
 
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
 void
-Rts2TelescopeIr::checkErrors ()
+TelOpenTPL::checkErrors ()
 {
 	int status = TPL_OK;
 	std::string list;
@@ -432,7 +434,7 @@ Rts2TelescopeIr::checkErrors ()
 
 
 void
-Rts2TelescopeIr::checkCover ()
+TelOpenTPL::checkCover ()
 {
 	int status = TPL_OK;
 	switch (cover_state)
@@ -473,7 +475,7 @@ Rts2TelescopeIr::checkCover ()
 
 
 void
-Rts2TelescopeIr::checkPower ()
+TelOpenTPL::checkPower ()
 {
 	int status = TPL_OK;
 	double power_state;
@@ -558,7 +560,7 @@ Rts2TelescopeIr::checkPower ()
 
 
 void
-Rts2TelescopeIr::getCover ()
+TelOpenTPL::getCover ()
 {
 	double cor_tmp;
 	int status = TPL_OK;
@@ -570,7 +572,7 @@ Rts2TelescopeIr::getCover ()
 
 
 void
-Rts2TelescopeIr::initCoverState ()
+TelOpenTPL::initCoverState ()
 {
 	getCover ();
 	if (cover->getValueDouble () == 0)
@@ -583,7 +585,7 @@ Rts2TelescopeIr::initCoverState ()
 
 
 int
-Rts2TelescopeIr::infoModel ()
+TelOpenTPL::infoModel ()
 {
 	int status = TPL_OK;
 
@@ -614,7 +616,7 @@ Rts2TelescopeIr::infoModel ()
 
 
 int
-Rts2TelescopeIr::idle ()
+TelOpenTPL::idle ()
 {
 	// check for power..
 	checkPower ();
@@ -622,26 +624,26 @@ Rts2TelescopeIr::idle ()
 	checkErrors ();
 	if (cover)
 		checkCover ();
-	return Rts2DevTelescope::idle ();
+	return Telescope::idle ();
 }
 
 
 int
-Rts2TelescopeIr::ready ()
+TelOpenTPL::ready ()
 {
 	return !irConn->isOK ();
 }
 
 
 void
-Rts2TelescopeIr::getAltAz ()
+TelOpenTPL::getAltAz ()
 {
 	int status = TPL_OK;
 	double zd, az;
 
 	if (getPointingModel () == 0)
 	{
-		Rts2DevTelescope::getAltAz ();
+		Telescope::getAltAz ();
 	}
 	else
 	{
@@ -654,7 +656,7 @@ Rts2TelescopeIr::getAltAz ()
 
 
 int
-Rts2TelescopeIr::info ()
+TelOpenTPL::info ()
 {
 	double zd, az;
 	#ifdef DEBUG_EXTRA
@@ -785,12 +787,12 @@ Rts2TelescopeIr::info ()
 		targetTime->setValueDouble (point_time);
 	}
 
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
 int
-Rts2TelescopeIr::saveModel ()
+TelOpenTPL::saveModel ()
 {
 	std::ofstream of;
 	of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
@@ -816,7 +818,7 @@ Rts2TelescopeIr::saveModel ()
 
 
 int
-Rts2TelescopeIr::loadModel ()
+TelOpenTPL::loadModel ()
 {
 	std::ifstream ifs;
 	int status = TPL_OK;
@@ -844,7 +846,7 @@ Rts2TelescopeIr::loadModel ()
 
 
 int
-Rts2TelescopeIr::resetMount ()
+TelOpenTPL::resetMount ()
 {
 	int status = TPL_OK;
 	int power = 0;
@@ -875,5 +877,5 @@ Rts2TelescopeIr::resetMount ()
 			break;
 		}
 	}
-	return Rts2DevTelescope::resetMount ();
+	return Telescope::resetMount ();
 }

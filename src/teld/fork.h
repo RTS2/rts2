@@ -19,6 +19,9 @@
 
 #include "telescope.h"
 
+namespace rts2teld
+{
+
 /**
  * Abstract fork mount.
  *
@@ -27,7 +30,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class TelFork: public Rts2DevTelescope
+class Fork: public Telescope
 {
 	protected:
 		/**
@@ -61,6 +64,8 @@ class TelFork: public Rts2DevTelescope
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
 	public:
-		TelFork (int in_argc, char **in_argv);
-		virtual ~TelFork (void);
+		Fork (int in_argc, char **in_argv);
+		virtual ~Fork (void);
+};
+
 };

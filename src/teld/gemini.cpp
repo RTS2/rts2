@@ -57,7 +57,7 @@
 namespace rts2teld
 {
 
-class Gemini:public Rts2DevTelescope
+class Gemini:public Telescope
 {
 	private:
 
@@ -860,7 +860,7 @@ Gemini::tel_write_dec (double dec)
 }
 
 
-Gemini::Gemini (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc,
 in_argv)
 {
 	createValue (telLocalTime, "localtime", "telescope local time", false);
@@ -983,7 +983,7 @@ Gemini::processOption (int in_opt)
 			forceLatLon = true;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
@@ -1115,7 +1115,7 @@ Gemini::init ()
 {
 	int ret;
 
-	ret = Rts2DevTelescope::init ();
+	ret = Telescope::init ();
 	if (ret)
 		return ret;
 
@@ -1252,7 +1252,7 @@ Gemini::initValues ()
 	strcat (telType, buf);
 	telAltitude->setValueDouble (600);
 
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
@@ -1336,7 +1336,7 @@ Gemini::idle ()
 			ret = -1;
 		}
 	}
-	return Rts2DevTelescope::idle ();
+	return Telescope::idle ();
 }
 
 
@@ -1345,7 +1345,7 @@ Gemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == resetState)
 		return 0;
-	return Rts2DevTelescope::setValue (old_value, new_value);
+	return Telescope::setValue (old_value, new_value);
 }
 
 
@@ -1353,7 +1353,7 @@ int
 Gemini::changeMasterState (int new_state)
 {
 	matchCount = 0;
-	return Rts2DevTelescope::changeMasterState (new_state);
+	return Telescope::changeMasterState (new_state);
 }
 
 
@@ -1390,7 +1390,7 @@ Gemini::info ()
 		telFlip->setValueInteger (getFlip ());
 	}
 
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
@@ -1730,12 +1730,12 @@ Gemini::endMove ()
 			startWorm ();
 		decChanged = false;
 		timerclear (&changeTime);
-		return Rts2DevTelescope::endMove ();
+		return Telescope::endMove ();
 	}
 	#endif
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
-	return Rts2DevTelescope::endMove ();
+	return Telescope::endMove ();
 }
 
 
@@ -1842,7 +1842,7 @@ Gemini::startMoveFixed (double tar_ha, double tar_dec)
 	ret = startMoveFixedReal ();
 	// move OK
 	if (!ret)
-		return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
+		return Telescope::startMoveFixed (tar_ha, tar_dec);
 	// try to do small change..
 	#ifndef L4_GUIDE
 	if (!isnan (fixed_ha) && fabs (ha_diff) < 5 && fabs (dec_diff) < 5)
@@ -1854,7 +1854,7 @@ Gemini::startMoveFixed (double tar_ha, double tar_dec)
 			lastMoveDec += dec_diff;
 			// move_fixed = 0;    // we are performing change, not moveFixed
 			maskState (TEL_MASK_MOVING, TEL_MOVING, "change started");
-			return Rts2DevTelescope::startMoveFixed (tar_ha, tar_dec);
+			return Telescope::startMoveFixed (tar_ha, tar_dec);
 		}
 	}
 	#endif
@@ -1904,7 +1904,7 @@ Gemini::endMoveFixed ()
 	tel_gemini_get (130, track);
 	setTimeout (USEC_SEC);
 	if (tel_conn->writePort (":ONfixed#", 9) == 0)
-		return Rts2DevTelescope::endMoveFixed ();
+		return Telescope::endMoveFixed ();
 	return -1;
 }
 */
@@ -2485,7 +2485,7 @@ Gemini::resetMount ()
 	ret = tel_gemini_set (65535, 65535);
 	if (ret)
 		return ret;
-	return Rts2DevTelescope::resetMount ();
+	return Telescope::resetMount ();
 }
 
 
@@ -2506,7 +2506,7 @@ Gemini::startGuide (char dir, double dir_dist)
 			ret = telescope_start_move (dir);
 			if (ret)
 				return ret;
-			return Rts2DevTelescope::startGuide (dir, dir_dist);
+			return Telescope::startGuide (dir, dir_dist);
 	}
 	return -2;
 }
@@ -2525,7 +2525,7 @@ Gemini::stopGuide (char dir)
 			ret = telescope_stop_move (dir);
 			if (ret)
 				return ret;
-			return Rts2DevTelescope::stopGuide (dir);
+			return Telescope::stopGuide (dir);
 	}
 	return -2;
 }
@@ -2535,7 +2535,7 @@ int
 Gemini::stopGuideAll ()
 {
 	telescope_stop_goto ();
-	return Rts2DevTelescope::stopGuideAll ();
+	return Telescope::stopGuideAll ();
 }
 
 

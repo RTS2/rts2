@@ -35,7 +35,9 @@
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118
 
-Rts2DevTelescope::Rts2DevTelescope (int in_argc, char **in_argv):
+using namespace rts2teld;
+
+Telescope::Telescope (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
@@ -147,14 +149,14 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 }
 
 
-Rts2DevTelescope::~Rts2DevTelescope (void)
+Telescope::~Telescope (void)
 {
 	delete model;
 }
 
 
 double
-Rts2DevTelescope::getLocSidTime (double JD)
+Telescope::getLocSidTime (double JD)
 {
 	double ret;
 	ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongitude->getValueDouble ();
@@ -163,7 +165,7 @@ Rts2DevTelescope::getLocSidTime (double JD)
 
 
 int
-Rts2DevTelescope::processOption (int in_opt)
+Telescope::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -200,7 +202,7 @@ Rts2DevTelescope::processOption (int in_opt)
 
 
 void
-Rts2DevTelescope::calculateCorrAltAz ()
+Telescope::calculateCorrAltAz ()
 {
 	struct ln_equ_posn equ_target;
 	struct ln_equ_posn equ_corr;
@@ -233,7 +235,7 @@ Rts2DevTelescope::calculateCorrAltAz ()
 
 
 double
-Rts2DevTelescope::getCorrZd ()
+Telescope::getCorrZd ()
 {
 	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
 		return 0;
@@ -245,7 +247,7 @@ Rts2DevTelescope::getCorrZd ()
 
 
 double
-Rts2DevTelescope::getCorrAz ()
+Telescope::getCorrAz ()
 {
 	if (corrRaDec->getRa () == 0 && corrRaDec->getDec () == 0)
 		return 0;
@@ -257,7 +259,7 @@ Rts2DevTelescope::getCorrAz ()
 
 
 double
-Rts2DevTelescope::getTargetDistance ()
+Telescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
 	getTarget (&tar);
@@ -273,14 +275,14 @@ Rts2DevTelescope::getTargetDistance ()
 
 
 void
-Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz)
+Telescope::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	getTargetAltAz (hrz, ln_get_julian_from_sys ());
 }
 
 
 void
-Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
+Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 {
 	struct ln_equ_posn tar;
 	getTarget (&tar);
@@ -292,7 +294,7 @@ Rts2DevTelescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 
 
 double
-Rts2DevTelescope::getLstDeg (double JD)
+Telescope::getLstDeg (double JD)
 {
 	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
 		telLongitude->getValueDouble ());
@@ -300,7 +302,7 @@ Rts2DevTelescope::getLstDeg (double JD)
 
 
 int
-Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == modelLimit
 		|| old_value == telFov
@@ -327,7 +329,7 @@ Rts2DevTelescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 
 void
-Rts2DevTelescope::valueChanged (Rts2Value * changed_value)
+Telescope::valueChanged (Rts2Value * changed_value)
 {
 	if (changed_value == objRaDec
 		|| changed_value == offsetRaDec
@@ -340,21 +342,21 @@ Rts2DevTelescope::valueChanged (Rts2Value * changed_value)
 
 
 void
-Rts2DevTelescope::applyAberation (struct ln_equ_posn *pos, double JD)
+Telescope::applyAberation (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_equ_aber (pos, JD, pos);
 }
 
 
 void
-Rts2DevTelescope::applyPrecession (struct ln_equ_posn *pos, double JD)
+Telescope::applyPrecession (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_equ_prec (pos, JD, pos);
 }
 
 
 void
-Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
+Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_hrz_posn hrz;
 	struct ln_lnlat_posn obs;
@@ -371,7 +373,7 @@ Rts2DevTelescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 
 
 void
-Rts2DevTelescope::incMoveNum ()
+Telescope::incMoveNum ()
 {
 	// reset offsets
 	offsetRaDec->setValueRaDec (0, 0);
@@ -391,7 +393,7 @@ Rts2DevTelescope::incMoveNum ()
 
 
 void
-Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
+Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
 {
 	struct ln_equ_posn hadec;
 	double ra;
@@ -466,7 +468,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 	}
 
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2DevTelescope::applyModel offsets ra: "
+		<< "Telescope::applyModel offsets ra: "
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
 
@@ -479,7 +481,7 @@ Rts2DevTelescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model
 
 
 int
-Rts2DevTelescope::init ()
+Telescope::init ()
 {
 	int ret;
 	ret = Rts2Device::init ();
@@ -488,7 +490,7 @@ Rts2DevTelescope::init ()
 
 	if (modelFile)
 	{
-		model = new Rts2TelModel (this, modelFile);
+		model = new rts2telmodel::Model (this, modelFile);
 		ret = model->load ();
 		if (ret)
 			return ret;
@@ -504,7 +506,7 @@ Rts2DevTelescope::init ()
 
 
 int
-Rts2DevTelescope::initValues ()
+Telescope::initValues ()
 {
 	int ret;
 	ret = info ();
@@ -518,7 +520,7 @@ Rts2DevTelescope::initValues ()
 
 
 void
-Rts2DevTelescope::checkMoves ()
+Telescope::checkMoves ()
 {
 	int ret;
 	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
@@ -606,7 +608,7 @@ Rts2DevTelescope::checkMoves ()
 
 
 void
-Rts2DevTelescope::checkGuiding ()
+Telescope::checkGuiding ()
 {
 	struct timeval now;
 	gettimeofday (&now, NULL);
@@ -622,7 +624,7 @@ Rts2DevTelescope::checkGuiding ()
 
 
 int
-Rts2DevTelescope::idle ()
+Telescope::idle ()
 {
 	checkMoves ();
 	checkGuiding ();
@@ -631,7 +633,7 @@ Rts2DevTelescope::idle ()
 
 
 void
-Rts2DevTelescope::postEvent (Rts2Event * event)
+Telescope::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -644,7 +646,7 @@ Rts2DevTelescope::postEvent (Rts2Event * event)
 
 
 int
-Rts2DevTelescope::willConnect (Rts2Address * in_addr)
+Telescope::willConnect (Rts2Address * in_addr)
 {
 	if (in_addr->getType () == DEVICE_TYPE_COPULA)
 		return 1;
@@ -653,7 +655,7 @@ Rts2DevTelescope::willConnect (Rts2Address * in_addr)
 
 
 Rts2DevClient *
-Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
+Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -665,7 +667,7 @@ Rts2DevTelescope::createOtherType (Rts2Conn * conn, int other_device_type)
 
 
 int
-Rts2DevTelescope::changeMasterState (int new_state)
+Telescope::changeMasterState (int new_state)
 {
 	if (blockOnStandby->getValueBool () == true)
 	{
@@ -691,7 +693,7 @@ Rts2DevTelescope::changeMasterState (int new_state)
 
 
 int
-Rts2DevTelescope::startGuide (char dir, double dir_dist)
+Telescope::startGuide (char dir, double dir_dist)
 {
 	/*	struct timeval *tv;
 		struct timeval tv_add;
@@ -731,7 +733,7 @@ Rts2DevTelescope::startGuide (char dir, double dir_dist)
 
 
 int
-Rts2DevTelescope::stopGuide (char dir)
+Telescope::stopGuide (char dir)
 {
 	/*	int state_dir;
 		switch (dir)
@@ -762,7 +764,7 @@ Rts2DevTelescope::stopGuide (char dir)
 
 
 int
-Rts2DevTelescope::stopGuideAll ()
+Telescope::stopGuideAll ()
 {
 	logStream (MESSAGE_INFO) << "telescope stopGuideAll" << sendLog;
 	maskState (TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
@@ -771,7 +773,7 @@ Rts2DevTelescope::stopGuideAll ()
 
 
 void
-Rts2DevTelescope::getAltAz ()
+Telescope::getAltAz ()
 {
 	struct ln_equ_posn telpos;
 	struct ln_lnlat_posn observer;
@@ -792,7 +794,7 @@ Rts2DevTelescope::getAltAz ()
 
 
 int
-Rts2DevTelescope::info ()
+Telescope::info ()
 {
 	// calculate alt+az
 	getAltAz ();
@@ -812,7 +814,7 @@ Rts2DevTelescope::info ()
 
 
 int
-Rts2DevTelescope::scriptEnds ()
+Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
 	return Rts2Device::scriptEnds ();
@@ -820,7 +822,7 @@ Rts2DevTelescope::scriptEnds ()
 
 
 void
-Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
+Telescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
 	// apply all posible corrections
 	if (correctionsMask->getValueInteger () & COR_ABERATION)
@@ -833,7 +835,7 @@ Rts2DevTelescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 
 
 void
-Rts2DevTelescope::applyCorrections (double &tar_ra, double &tar_dec)
+Telescope::applyCorrections (double &tar_ra, double &tar_dec)
 {
 	struct ln_equ_posn pos;
 	pos.ra = tar_ra;
@@ -847,7 +849,7 @@ Rts2DevTelescope::applyCorrections (double &tar_ra, double &tar_dec)
 
 
 int
-Rts2DevTelescope::endMove ()
+Telescope::endMove ()
 {
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
 	LibnovaRaDec l_req (tarRaDec->getRa (), tarRaDec->getDec ());
@@ -861,7 +863,7 @@ Rts2DevTelescope::endMove ()
 
 
 int
-Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
+Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 {
 	int ret;
 
@@ -969,7 +971,7 @@ Rts2DevTelescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 
 int
-Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
+Telescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 {
 	int ret;
 	ret = setTo (set_ra, set_dec);
@@ -980,7 +982,7 @@ Rts2DevTelescope::setTo (Rts2Conn * conn, double set_ra, double set_dec)
 
 
 int
-Rts2DevTelescope::startPark (Rts2Conn * conn)
+Telescope::startPark (Rts2Conn * conn)
 {
 	if (blockMove->getValueBool () == true)
 	{
@@ -1006,7 +1008,7 @@ Rts2DevTelescope::startPark (Rts2Conn * conn)
 
 
 int
-Rts2DevTelescope::getFlip ()
+Telescope::getFlip ()
 {
 	int ret;
 	ret = info ();
@@ -1017,13 +1019,13 @@ Rts2DevTelescope::getFlip ()
 
 
 void
-Rts2DevTelescope::signaledHUP ()
+Telescope::signaledHUP ()
 {
 	int ret;
 	if (modelFile)
 	{
 		delete model;
-		model = new Rts2TelModel (this, modelFile);
+		model = new rts2telmodel::Model (this, modelFile);
 		ret = model->load ();
 		if (ret)
 		{
@@ -1043,7 +1045,7 @@ Rts2DevTelescope::signaledHUP ()
 
 
 int
-Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
+Telescope::commandAuthorized (Rts2Conn * conn)
 {
 	double obj_ra;
 	double obj_dec;
@@ -1207,7 +1209,7 @@ Rts2DevTelescope::commandAuthorized (Rts2Conn * conn)
 
 
 void
-Rts2DevTelescope::setFullBopState (int new_state)
+Telescope::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
 	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))

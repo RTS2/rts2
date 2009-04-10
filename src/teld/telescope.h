@@ -35,7 +35,13 @@
 // if we will use model corrections..
 #define COR_MODEL            0x08
 
-class Rts2TelModel;
+namespace rts2telmodel
+{
+	class Model;
+};
+
+namespace rts2teld
+{
 
 /**
  * Basic class for telescope drivers.
@@ -50,7 +56,7 @@ class Rts2TelModel;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevTelescope:public Rts2Device
+class Telescope:public Rts2Device
 {
 	private:
 		Rts2Conn * move_connection;
@@ -259,7 +265,7 @@ class Rts2DevTelescope:public Rts2Device
 		struct timeval dir_timeouts[4];
 
 		char *modelFile;
-		Rts2TelModel *model;
+		rts2telmodel::Model *model;
 
 		bool standbyPark;
 		const char *horizonFile;
@@ -609,8 +615,8 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 	public:
-		Rts2DevTelescope (int argc, char **argv);
-		virtual ~ Rts2DevTelescope (void);
+		Telescope (int argc, char **argv);
+		virtual ~ Telescope (void);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -689,5 +695,7 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int commandAuthorized (Rts2Conn * conn);
 
 		virtual void setFullBopState (int new_state);
+};
+
 };
 #endif							 /* !__RTS2_TELD_CPP__ */

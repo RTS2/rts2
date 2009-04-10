@@ -27,6 +27,10 @@
  * @defgroup RTS2TPoint TPoint interface
  */
 
+namespace rts2telmodel
+{
+};
+
 #include "../telescope.h"
 #include "../../utils/rts2config.h"
 
@@ -37,7 +41,11 @@
 #include <vector>
 #include <iostream>
 
-class Rts2ModelTerm;
+
+namespace rts2telmodel
+{
+
+class ModelTerm;
 
 /**
  * Conditions for model calculation.
@@ -48,12 +56,12 @@ class Rts2ModelTerm;
  *
  * @ingroup RTS2TPoint
  */
-class Rts2ObsConditions
+class ObsConditions
 {
 	private:
-		Rts2DevTelescope * telescope;
+		rts2teld::Telescope * telescope;
 	public:
-		Rts2ObsConditions (Rts2DevTelescope * in_telescope)
+		ObsConditions (rts2teld::Telescope * in_telescope)
 		{
 			telescope = in_telescope;
 		}
@@ -79,10 +87,10 @@ class Rts2ObsConditions
  *
  * @ingroup RTS2TPoint
  */
-class Rts2TelModel
+class Model
 {
 	private:
-		Rts2ObsConditions * cond;
+		ObsConditions * cond;
 		const char *modelFile;
 
 		char caption[81];		 // Model description: 80 chars + NULL
@@ -91,10 +99,10 @@ class Rts2TelModel
 		double rms;				 // sky RMS (arcseconds)
 		double refA;			 // refraction constant A (arcseconds)
 		double refB;			 // refraction constant B (arcseconds)
-		std::vector < Rts2ModelTerm * >terms;
+		std::vector < ModelTerm * >terms;
 	public:
-		Rts2TelModel (Rts2DevTelescope * in_telescope, const char *in_modelFile);
-		virtual ~ Rts2TelModel (void);
+		Model (rts2teld::Telescope * in_telescope, const char *in_modelFile);
+		virtual ~ Model (void);
 		int load ();
 		/**
 		 * Apply model to coordinates. Pos.ra is hour angle, not RA.
@@ -116,10 +124,13 @@ class Rts2TelModel
 			return rms / 3600;
 		}
 
-		friend std::istream & operator >> (std::istream & is, Rts2TelModel * model);
-		friend std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
+		std::istream & load (std::istream & is);
+		std::ostream & print (std::ostream & os);
 };
 
-std::istream & operator >> (std::istream & is, Rts2TelModel * model);
-std::ostream & operator << (std::ostream & os, Rts2TelModel * model);
+
+std::istream & operator >> (std::istream & is, Model * model);
+std::ostream & operator << (std::ostream & os, Model * model);
+
+};
 #endif							 /* !__RTS2_TELMODEL__ */

@@ -130,7 +130,10 @@ ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
 }
 
 
-class Rts2DevTelParamount:public Rts2DevGEM
+namespace rts2teld
+{
+
+class Paramount:public Rts2DevGEM
 {
 	private:
 		MKS3Id axis0;
@@ -200,16 +203,20 @@ class Rts2DevTelParamount:public Rts2DevGEM
 		virtual int saveModel ();
 		virtual int loadModel ();
 	public:
-		Rts2DevTelParamount (int in_argc, char **in_argv);
-		virtual ~ Rts2DevTelParamount (void);
+		Paramount (int in_argc, char **in_argv);
+		virtual ~ Paramount (void);
 
 		virtual int idle ();
 
 		virtual int info ();
 };
 
+};
+
+using namespace rts2teld;
+
 int
-Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
+Paramount::checkRetAxis (const MKS3Id & axis, int reta)
 {
 	const char *msg = NULL;
 	messageType_t msg_type = MESSAGE_ERROR;
@@ -336,7 +343,7 @@ Rts2DevTelParamount::checkRetAxis (const MKS3Id & axis, int reta)
 
 
 int
-Rts2DevTelParamount::checkRet ()
+Paramount::checkRet ()
 {
 	int reta0, reta1;
 	reta0 = checkRetAxis (axis0, ret0);
@@ -348,7 +355,7 @@ Rts2DevTelParamount::checkRet ()
 
 
 int
-Rts2DevTelParamount::updateStatus ()
+Paramount::updateStatus ()
 {
 	CWORD16 old_status = status0;
 	ret0 = MKS3StatusGet (axis0, &status0);
@@ -365,7 +372,7 @@ Rts2DevTelParamount::updateStatus ()
 
 
 int
-Rts2DevTelParamount::saveAxis (std::ostream & os, const MKS3Id & axis)
+Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
 {
 	int ret;
 	CWORD16 pMajor, pMinor, pBuild;
@@ -391,7 +398,7 @@ Rts2DevTelParamount::saveAxis (std::ostream & os, const MKS3Id & axis)
 
 
 int
-Rts2DevTelParamount::getHomeOffset (int32_t & off)
+Paramount::getHomeOffset (int32_t & off)
 {
 	int ret;
 	CWORD32 en0, pos0;
@@ -408,7 +415,7 @@ Rts2DevTelParamount::getHomeOffset (int32_t & off)
 
 
 int
-Rts2DevTelParamount::updateLimits ()
+Paramount::updateLimits ()
 {
 	int ret;
 	ret = MKS3ConstsLimMinGet (axis0, &acMin);
@@ -428,7 +435,7 @@ Rts2DevTelParamount::updateLimits ()
 }
 
 
-Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv)
+Paramount::Paramount (int in_argc, char **in_argv)
 :Rts2DevGEM (in_argc, in_argv)
 {
 	createValue (axRa, "AXRA", "RA axis count", true);
@@ -545,7 +552,7 @@ Rts2DevTelParamount::Rts2DevTelParamount (int in_argc, char **in_argv)
 }
 
 
-Rts2DevTelParamount::~Rts2DevTelParamount (void)
+Paramount::~Paramount (void)
 {
 	delete track0;
 	delete track1;
@@ -553,7 +560,7 @@ Rts2DevTelParamount::~Rts2DevTelParamount (void)
 
 
 int
-Rts2DevTelParamount::processOption (int in_opt)
+Paramount::processOption (int in_opt)
 {
 	double rec_sec;
 	switch (in_opt)
@@ -584,7 +591,7 @@ Rts2DevTelParamount::processOption (int in_opt)
 
 
 int
-Rts2DevTelParamount::init ()
+Paramount::init ()
 {
 	CWORD16 motorState0, motorState1;
 	CWORD32 pos0, pos1;
@@ -694,16 +701,16 @@ Rts2DevTelParamount::init ()
 
 
 int
-Rts2DevTelParamount::initValues ()
+Paramount::initValues ()
 {
 	// ignore corrections bellow 5 arcsec
 	setIgnoreCorrection (5/3600);
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
 void
-Rts2DevTelParamount::updateTrack ()
+Paramount::updateTrack ()
 {
 	double JD;
 	struct ln_equ_posn corr_pos;
@@ -756,7 +763,7 @@ Rts2DevTelParamount::updateTrack ()
 
 
 int
-Rts2DevTelParamount::idle ()
+Paramount::idle ()
 {
 //	struct timeval now;
 	int32_t homeOff, ac = 0;
@@ -823,7 +830,7 @@ Rts2DevTelParamount::idle ()
 
 
 int
-Rts2DevTelParamount::info ()
+Paramount::info ()
 {
 	int32_t ac = 0, dc = 0;
 	int ret;
@@ -846,7 +853,7 @@ Rts2DevTelParamount::info ()
 
 
 int
-Rts2DevTelParamount::startMove ()
+Paramount::startMove ()
 {
 	int ret;
 	CWORD32 ac = 0;
@@ -931,7 +938,7 @@ Rts2DevTelParamount::startMove ()
 	moveState = TEL_SLEW;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevTelParamount::startMove " << ac <<
+	logStream (MESSAGE_DEBUG) << "Paramount::startMove " << ac <<
 		" " << dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
@@ -956,7 +963,7 @@ Rts2DevTelParamount::startMove ()
 
 
 int
-Rts2DevTelParamount::isMoving ()
+Paramount::isMoving ()
 {
 	int ret;
 	// we were called from idle loop
@@ -1001,7 +1008,7 @@ Rts2DevTelParamount::isMoving ()
 
 
 int
-Rts2DevTelParamount::endMove ()
+Paramount::endMove ()
 {
 	int ret;
 	//  int ret_track;
@@ -1032,7 +1039,7 @@ Rts2DevTelParamount::endMove ()
 
 
 int
-Rts2DevTelParamount::stopMove ()
+Paramount::stopMove ()
 {
 	int ret;
 	// if we issue startMove after abort, we will get to position after homing is performed
@@ -1051,7 +1058,7 @@ Rts2DevTelParamount::stopMove ()
 
 
 int
-Rts2DevTelParamount::startPark ()
+Paramount::startPark ()
 {
 	int ret;
 
@@ -1093,7 +1100,7 @@ Rts2DevTelParamount::startPark ()
 
 
 int
-Rts2DevTelParamount::isParking ()
+Paramount::isParking ()
 {
 	int ret;
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
@@ -1117,7 +1124,7 @@ Rts2DevTelParamount::isParking ()
 
 
 int
-Rts2DevTelParamount::endPark ()
+Paramount::endPark ()
 {
 	int ret;
 	ret = updateStatus ();
@@ -1132,7 +1139,7 @@ Rts2DevTelParamount::endPark ()
 
 
 int
-Rts2DevTelParamount::saveFlash ()
+Paramount::saveFlash ()
 {
 	CWORD16 data[4000];
 	int file = open ("/etc/rts2/flash", O_CREAT | O_TRUNC);
@@ -1144,7 +1151,7 @@ Rts2DevTelParamount::saveFlash ()
 
 
 int
-Rts2DevTelParamount::saveModel ()
+Paramount::saveModel ()
 {
 	// dump Paramount stuff
 	int ret;
@@ -1163,7 +1170,7 @@ Rts2DevTelParamount::saveModel ()
 
 
 int
-Rts2DevTelParamount::loadModelFromFile ()
+Paramount::loadModelFromFile ()
 {
 	std::string name;
 	std::ifstream is (paramount_cfg);
@@ -1236,7 +1243,7 @@ Rts2DevTelParamount::loadModelFromFile ()
 
 
 int
-Rts2DevTelParamount::loadModel ()
+Paramount::loadModel ()
 {
 	int ret;
 
@@ -1262,6 +1269,6 @@ Rts2DevTelParamount::loadModel ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelParamount device = Rts2DevTelParamount (argc, argv);
+	Paramount device = Paramount (argc, argv);
 	return device.run ();
 }

@@ -29,7 +29,12 @@
 #include <string>
 #include <vector>
 
-class Rts2DevTelescopeModelTest:public Rts2DevTelescope
+using namespace rts2telmodel;
+
+namespace rts2teld
+{
+
+class ModelTest:public Telescope
 {
 	protected:
 		int startMove ()
@@ -52,7 +57,7 @@ class Rts2DevTelescopeModelTest:public Rts2DevTelescope
 		}
 
 	public:
-		Rts2DevTelescopeModelTest ():Rts2DevTelescope (0, NULL)
+		ModelTest ():Telescope (0, NULL)
 		{
 			createConstValue (telLongitude, "LONGITUD", "telescope longtitude");
 			createConstValue (telLatitude, "LATITUDE", "telescope latitude");
@@ -74,9 +79,9 @@ class TelModelTest:public Rts2CliApp
 {
 	private:
 		char *modelFile;
-		Rts2TelModel *model;
+		Model *model;
 		std::vector < std::string > runFiles;
-		Rts2DevTelescopeModelTest *telescope;
+		ModelTest *telescope;
 		int errors;
 		bool verbose;
 		// if input are images
@@ -99,6 +104,10 @@ class TelModelTest:public Rts2CliApp
 		virtual int init ();
 		virtual int doProcessing ();
 };
+
+};
+
+using namespace rts2teld;
 
 
 TelModelTest::TelModelTest (int in_argc, char **in_argv):
@@ -183,10 +192,10 @@ TelModelTest::init ()
 		return -1;
 	}
 
-	telescope = new Rts2DevTelescopeModelTest ();
+	telescope = new ModelTest ();
 	telescope->setCorrectionMask (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
 
-	model = new Rts2TelModel (telescope, modelFile);
+	model = new Model (telescope, modelFile);
 	ret = model->load ();
 
 	return ret;

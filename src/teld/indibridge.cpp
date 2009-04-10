@@ -25,10 +25,10 @@
 #define OPT_INDI_PORT		OPT_LOCAL + 54
 #define OPT_INDI_DEVICE		OPT_LOCAL + 55
 
-namespace rts2telescope
+namespace rts2teld
 {
 
-class INDIBridge: public Rts2DevTelescope
+class INDIBridge: public Telescope
 {
 
 	private:
@@ -67,7 +67,7 @@ class INDIBridge: public Rts2DevTelescope
 
 };
 
-using namespace rts2telescope;
+using namespace rts2teld;
 
 int
 INDIBridge::tel_read_geo ()
@@ -144,12 +144,12 @@ INDIBridge::tel_check_coords (double ra, double dec)
 	time (&now);
 	if (now > move_timeout)
 	{
-	    //fprintf( stderr, "Rts2DevTelescopeINDIap::tel_check_coords OUT timed out\n") ;
+	    //fprintf( stderr, "TelescopeINDIap::tel_check_coords OUT timed out\n") ;
 		return 2;
 	}
 	if (tel_read_ra_dec ())
 	{
-	    //fprintf( stderr, "Rts2DevTelescopeINDIap::tel_check_coords OUT bad status RA/DEC\n") ;
+	    //fprintf( stderr, "TelescopeINDIap::tel_check_coords OUT bad status RA/DEC\n") ;
 		return -1;
 	}
 	// ADDED BY JF
@@ -174,7 +174,7 @@ INDIBridge::tel_check_coords (double ra, double dec)
 
 	if (sep > 0.1)
 		return 0;
-	//fprintf( stderr, "Rts2DevTelescopeINDIap::tel_check_coords OUT status SEP target: %8.5f %8.5f, object: %8.5f %8.5f\n", target.ra, target.dec, object.ra, object.dec) ;
+	//fprintf( stderr, "TelescopeINDIap::tel_check_coords OUT status SEP target: %8.5f %8.5f, object: %8.5f %8.5f\n", target.ra, target.dec, object.ra, object.dec) ;
 	return 1;
 }
 
@@ -265,11 +265,11 @@ INDIBridge::info ()
 	{
 		return -1;
 	}
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
-INDIBridge::INDIBridge (int argc, char ** argv): Rts2DevTelescope (argc, argv)
+INDIBridge::INDIBridge (int argc, char ** argv): Telescope (argc, argv)
 {
         strcpy( indiserver, "127.0.0.1");
         indiport= 7624 ;
@@ -289,7 +289,7 @@ INDIBridge::init ()
 	int status;
 
 	//fprintf( stderr, "INDIBridge::init IN, %s, %d, %s\n", indiserver, indiport, indidevice) ;
-	status = Rts2DevTelescope::init ();
+	status = Telescope::init ();
 	if (status)
 	{
 	    //fprintf( stderr, "INDIBridge::init OUT bad status %d===================\n", status) ;
@@ -326,7 +326,7 @@ INDIBridge::initValues ()
 	telFlip->setValueInteger (0);
 
 	result = pthread_create( &thread_0, NULL, rts2listenINDIthread, indidevice) ;
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
@@ -351,7 +351,7 @@ INDIBridge::processOption (int in_opt)
 			strcpy( indidevice, optarg) ;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }

@@ -30,7 +30,10 @@
  * Dummy teld for testing purposes.
  */
 
-class Rts2DevTelescopeDummy:public Rts2DevTelescope
+namespace rts2teld
+{
+
+class Dummy:public Telescope
 {
 	private:
 		struct ln_equ_posn dummyPos;
@@ -55,7 +58,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			return isMoving ();
 		}
 	public:
-		Rts2DevTelescopeDummy (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+		Dummy (int in_argc, char **in_argv):Telescope (in_argc,
 			in_argv)
 		{
 			dummyPos.ra = 0;
@@ -71,7 +74,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 			telLongitude->setValueDouble (config->getObserver ()->lng);
 			telAltitude->setValueDouble (config->getObservatoryAltitude ());
 			strcpy (telType, "Dummy");
-			return Rts2DevTelescope::initValues ();
+			return Telescope::initValues ();
 		}
 
 		virtual int ready ()
@@ -82,7 +85,7 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 		virtual int info ()
 		{
 			setTelRaDec (dummyPos.ra, dummyPos.dec);
-			return Rts2DevTelescope::info ();
+			return Telescope::info ();
 		}
 
 		virtual int startMove ()
@@ -118,9 +121,13 @@ class Rts2DevTelescopeDummy:public Rts2DevTelescope
 		}
 };
 
+};
+
+using namespace rts2teld;
+
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeDummy device = Rts2DevTelescopeDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }

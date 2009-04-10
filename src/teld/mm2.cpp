@@ -70,7 +70,10 @@
 #define MIN(a,b)  ((a) < (b) ? (a) : (b))
 #define MAX(a,b)  ((a) > (b) ? (a) : (b))
 
-class Rts2DevTelescopeMM2:public Rts2DevTelescope
+namespace rts2teld
+{
+
+class MM2:public Telescope
 {
 	private:
 		const char *device_file;
@@ -140,8 +143,8 @@ class Rts2DevTelescopeMM2:public Rts2DevTelescope
 		virtual int initValues ();
 
 	public:
-		Rts2DevTelescopeMM2 (int in_argc, char **in_argv);
-		virtual ~ Rts2DevTelescopeMM2 (void);
+		MM2 (int in_argc, char **in_argv);
+		virtual ~ MM2 (void);
 
 		virtual int idle ();
 		virtual int ready ();
@@ -166,6 +169,10 @@ class Rts2DevTelescopeMM2:public Rts2DevTelescope
 		virtual int stopDir (char *dir);
 };
 
+};
+
+using namespace rts2teld;
+
 /*!
  * Reads some data directly from tel_desc.
  *
@@ -179,7 +186,7 @@ class Rts2DevTelescopeMM2:public Rts2DevTelescope
  * @return -1 on failure, otherwise number of read data
  */
 int
-Rts2DevTelescopeMM2::tel_read (char *buf, int count)
+MM2::tel_read (char *buf, int count)
 {
 	int readed;
 
@@ -213,7 +220,7 @@ Rts2DevTelescopeMM2::tel_read (char *buf, int count)
  * @see tel_read() for description
  */
 int
-Rts2DevTelescopeMM2::tel_read_hash (char *buf, int count)
+MM2::tel_read_hash (char *buf, int count)
 {
 	int readed;
 	buf[0] = 0;
@@ -245,7 +252,7 @@ Rts2DevTelescopeMM2::tel_read_hash (char *buf, int count)
  */
 
 int
-Rts2DevTelescopeMM2::tel_write (const char *buf, int count)
+MM2::tel_write (const char *buf, int count)
 {
 	logStream (MESSAGE_DEBUG) << "MM2 tel_write: will write: " << buf <<
 		sendLog;
@@ -269,7 +276,7 @@ Rts2DevTelescopeMM2::tel_write (const char *buf, int count)
  */
 
 int
-Rts2DevTelescopeMM2::tel_write_read (const char *wbuf, int wcount, char *rbuf,
+MM2::tel_write_read (const char *wbuf, int wcount, char *rbuf,
 int rcount)
 {
 	int tmp_rcount;
@@ -306,7 +313,7 @@ int rcount)
  * @see tel_write_read for definition
  */
 int
-Rts2DevTelescopeMM2::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf,
+MM2::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf,
 int rcount)
 {
 	int tmp_rcount;
@@ -332,7 +339,7 @@ int rcount)
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_read_hms (double *hmsptr, const char *command)
+MM2::tel_read_hms (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -350,7 +357,7 @@ Rts2DevTelescopeMM2::tel_read_hms (double *hmsptr, const char *command)
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_read_ra ()
+MM2::tel_read_ra ()
 {
 	double new_ra;
 	if (tel_read_hms (&new_ra, "#:GR#"))
@@ -366,7 +373,7 @@ Rts2DevTelescopeMM2::tel_read_ra ()
  * @return -1 and set errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_read_dec ()
+MM2::tel_read_dec ()
 {
 	double t_telDec;
 	if (tel_read_hms (&t_telDec, "#:GD#"))
@@ -383,7 +390,7 @@ Rts2DevTelescopeMM2::tel_read_dec ()
  *
  */
 int
-Rts2DevTelescopeMM2::tel_read_latitude ()
+MM2::tel_read_latitude ()
 {
 	return 0;
 }
@@ -396,7 +403,7 @@ Rts2DevTelescopeMM2::tel_read_latitude ()
  *
  */
 int
-Rts2DevTelescopeMM2::tel_read_longtitude ()
+MM2::tel_read_longtitude ()
 {
 	return 0;
 }
@@ -411,7 +418,7 @@ Rts2DevTelescopeMM2::tel_read_longtitude ()
  * @param command	command to write on tel_desc
  */
 int
-Rts2DevTelescopeMM2::tel_rep_write (char *command)
+MM2::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -444,7 +451,7 @@ Rts2DevTelescopeMM2::tel_rep_write (char *command)
  * @return 0
  */
 void
-Rts2DevTelescopeMM2::tel_normalize (double *ra, double *dec)
+MM2::tel_normalize (double *ra, double *dec)
 {
 	if (*ra < 0)
 								 //normalize ra
@@ -468,7 +475,7 @@ Rts2DevTelescopeMM2::tel_normalize (double *ra, double *dec)
  * @return -1 and errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_write_ra (double ra)
+MM2::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -492,7 +499,7 @@ Rts2DevTelescopeMM2::tel_write_ra (double ra)
  * @return -1 and errno on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_write_dec (double dec)
+MM2::tel_write_dec (double dec)
 {
 	char command[15];
 	int h, m, s;
@@ -507,7 +514,7 @@ Rts2DevTelescopeMM2::tel_write_dec (double dec)
 }
 
 
-Rts2DevTelescopeMM2::Rts2DevTelescopeMM2 (int in_argc, char **in_argv):Rts2DevTelescope (in_argc,
+MM2::MM2 (int in_argc, char **in_argv):Telescope (in_argc,
 in_argv)
 {
 	createValue (axRa, "CNT_RA", "RA counts", true);
@@ -524,7 +531,7 @@ in_argv)
 }
 
 
-Rts2DevTelescopeMM2::~Rts2DevTelescopeMM2 (void)
+MM2::~MM2 (void)
 {
 	int ret;
 	// park us before deleting us
@@ -539,7 +546,7 @@ Rts2DevTelescopeMM2::~Rts2DevTelescopeMM2 (void)
 
 
 int
-Rts2DevTelescopeMM2::processOption (int in_opt)
+MM2::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -547,7 +554,7 @@ Rts2DevTelescopeMM2::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (in_opt);
+			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
@@ -562,14 +569,14 @@ Rts2DevTelescopeMM2::processOption (int in_opt)
  * @return 0 on succes, -1 & set errno otherwise
  */
 int
-Rts2DevTelescopeMM2::init ()
+MM2::init ()
 {
 	struct termios tel_termios;
 	char rbuf[10];
 
 	int status;
 
-	status = Rts2DevTelescope::init ();
+	status = Telescope::init ();
 	if (status)
 		return status;
 
@@ -661,7 +668,7 @@ Rts2DevTelescopeMM2::init ()
 
 
 int
-Rts2DevTelescopeMM2::initValues ()
+MM2::initValues ()
 {
 	telLongitude->setValueDouble (TEL_LONG);
 	telLatitude->setValueDouble (TEL_LAT);
@@ -674,12 +681,12 @@ Rts2DevTelescopeMM2::initValues ()
 
 	telFlip->setValueInteger (0);
 
-	return Rts2DevTelescope::initValues ();
+	return Telescope::initValues ();
 }
 
 
 int
-Rts2DevTelescopeMM2::idle ()
+MM2::idle ()
 {
 	time_t now;
 	// if we don't update pos for more then 5 seconds..
@@ -738,24 +745,24 @@ Rts2DevTelescopeMM2::idle ()
 			getValueDouble () << " last_pos_ra " << last_pos_ra << sendLog;
 		time (&last_pos_update);
 	}
-	return Rts2DevTelescope::idle ();
+	return Telescope::idle ();
 }
 
 
 int
-Rts2DevTelescopeMM2::ready ()
+MM2::ready ()
 {
 	return tel_desc > 0 ? 0 : -1;
 }
 
 
 int
-Rts2DevTelescopeMM2::info ()
+MM2::info ()
 {
 	if (tel_read_ra () || tel_read_dec ())
 		return -1;
 
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
@@ -774,7 +781,7 @@ Rts2DevTelescopeMM2::info ()
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
 int
-Rts2DevTelescopeMM2::tel_set_rate (char new_rate)
+MM2::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, "#:R%c#", new_rate);
@@ -783,7 +790,7 @@ Rts2DevTelescopeMM2::tel_set_rate (char new_rate)
 
 
 int
-Rts2DevTelescopeMM2::telescope_start_move (char direction)
+MM2::telescope_start_move (char direction)
 {
 	char command[6];
 	tel_set_rate (RATE_FIND);
@@ -793,7 +800,7 @@ Rts2DevTelescopeMM2::telescope_start_move (char direction)
 
 
 int
-Rts2DevTelescopeMM2::telescope_stop_move (char direction)
+MM2::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
@@ -810,7 +817,7 @@ Rts2DevTelescopeMM2::telescope_stop_move (char direction)
  * @return -1 on error, otherwise 0
  */
 int
-Rts2DevTelescopeMM2::tel_slew_to (double ra, double dec)
+MM2::tel_slew_to (double ra, double dec)
 {
 	char retstr;
 
@@ -834,12 +841,12 @@ Rts2DevTelescopeMM2::tel_slew_to (double ra, double dec)
 
 
 /*!
- * Check, if telescope match target coordinates (set during tel_slew_to with Rts2DevTelescope::setTarget)
+ * Check, if telescope match target coordinates (set during tel_slew_to with Telescope::setTarget)
  *
  * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
  */
 int
-Rts2DevTelescopeMM2::tel_check_coords ()
+MM2::tel_check_coords ()
 {
 	// ADDED BY JF
 	double JD;
@@ -884,7 +891,7 @@ Rts2DevTelescopeMM2::tel_check_coords ()
 
 
 void
-Rts2DevTelescopeMM2::toggle_mode (int in_togle_count)
+MM2::toggle_mode (int in_togle_count)
 {
 	int status;
 	for (int i = 0; i < in_togle_count; i++)
@@ -912,7 +919,7 @@ Rts2DevTelescopeMM2::toggle_mode (int in_togle_count)
 
 
 void
-Rts2DevTelescopeMM2::set_move_timeout (time_t plus_time)
+MM2::set_move_timeout (time_t plus_time)
 {
 	time_t now;
 	time (&now);
@@ -922,7 +929,7 @@ Rts2DevTelescopeMM2::set_move_timeout (time_t plus_time)
 
 
 int
-Rts2DevTelescopeMM2::startMove ()
+MM2::startMove ()
 {
 	int ret;
 	if (cw_pos == UNKNOW)
@@ -1020,7 +1027,7 @@ Rts2DevTelescopeMM2::startMove ()
 
 
 int
-Rts2DevTelescopeMM2::isMoving ()
+MM2::isMoving ()
 {
 	int ret;
 
@@ -1086,16 +1093,16 @@ Rts2DevTelescopeMM2::isMoving ()
 
 
 int
-Rts2DevTelescopeMM2::endMove ()
+MM2::endMove ()
 {
 	// wait for mount to settle down after move
 	sleep (2);
-	return Rts2DevTelescope::endMove ();
+	return Telescope::endMove ();
 }
 
 
 int
-Rts2DevTelescopeMM2::stopMove ()
+MM2::stopMove ()
 {
 	char dirs[] = { 'e', 'w', 'n', 's' };
 	int i;
@@ -1122,7 +1129,7 @@ Rts2DevTelescopeMM2::stopMove ()
  */
 
 int
-Rts2DevTelescopeMM2::setTo (double ra, double dec)
+MM2::setTo (double ra, double dec)
 {
 	char readback[101];
 	int ret;
@@ -1153,7 +1160,7 @@ Rts2DevTelescopeMM2::setTo (double ra, double dec)
  * @return -1 and set errno on error, 0 otherwise.
  */
 int
-Rts2DevTelescopeMM2::correct (double cor_ra, double cor_dec, double real_ra,
+MM2::correct (double cor_ra, double cor_dec, double real_ra,
 double real_dec)
 {
 	if (setTo (real_ra, real_dec))
@@ -1168,7 +1175,7 @@ double real_dec)
  * @return -1 and errno on error, 0 otherwise
  */
 int
-Rts2DevTelescopeMM2::startPark ()
+MM2::startPark ()
 {
 	int ret;
 	homeHA = getLocSidTime () * 15.0 + 90;
@@ -1180,7 +1187,7 @@ Rts2DevTelescopeMM2::startPark ()
 
 
 int
-Rts2DevTelescopeMM2::isParking ()
+MM2::isParking ()
 {
 	int ret;
 
@@ -1203,7 +1210,7 @@ Rts2DevTelescopeMM2::isParking ()
 
 
 int
-Rts2DevTelescopeMM2::endPark ()
+MM2::endPark ()
 {
 	stopWorm ();
 	return 0;
@@ -1211,7 +1218,7 @@ Rts2DevTelescopeMM2::endPark ()
 
 
 int
-Rts2DevTelescopeMM2::stopWorm ()
+MM2::stopWorm ()
 {
 	toggle_mode (2);
 	worm_state = STOPED;
@@ -1220,7 +1227,7 @@ Rts2DevTelescopeMM2::stopWorm ()
 
 
 void
-Rts2DevTelescopeMM2::goodPark ()
+MM2::goodPark ()
 {
 	last_pos_ra = getTelRa ();
 	axRa->setValueDouble (ln_range_degrees
@@ -1241,7 +1248,7 @@ Rts2DevTelescopeMM2::goodPark ()
 
 
 int
-Rts2DevTelescopeMM2::startDir (char *dir)
+MM2::startDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -1257,7 +1264,7 @@ Rts2DevTelescopeMM2::startDir (char *dir)
 
 
 int
-Rts2DevTelescopeMM2::stopDir (char *dir)
+MM2::stopDir (char *dir)
 {
 	switch (*dir)
 	{
@@ -1274,6 +1281,6 @@ Rts2DevTelescopeMM2::stopDir (char *dir)
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeMM2 device = Rts2DevTelescopeMM2 (argc, argv);
+	MM2 device = MM2 (argc, argv);
 	return device.run ();
 }

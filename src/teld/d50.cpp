@@ -25,7 +25,10 @@
 #include "../utils/rts2connserial.h"
 #include "../utils/libnova_cpp.h"
 
-class Rts2DevTelD50:public TelFork
+namespace rts2teld
+{
+
+class D50:public Fork
 {
 	private:
 		const char *device_name;
@@ -80,8 +83,8 @@ class Rts2DevTelD50:public TelFork
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevTelD50 (int in_argc, char **in_argv);
-		virtual ~ Rts2DevTelD50 (void);
+		D50 (int in_argc, char **in_argv);
+		virtual ~ D50 (void);
 
 		virtual int init ();
 
@@ -95,9 +98,13 @@ class Rts2DevTelD50:public TelFork
 		virtual int endPark ();
 };
 
+};
+
+using namespace rts2teld;
+
 
 int
-Rts2DevTelD50::write_both (const char *command, int len)
+D50::write_both (const char *command, int len)
 {
 	int ret;
 	ret = tel_write_unit (1, command, len);
@@ -109,7 +116,7 @@ Rts2DevTelD50::write_both (const char *command, int len)
 
 
 int
-Rts2DevTelD50::tel_write (const char command, int32_t value)
+D50::tel_write (const char command, int32_t value)
 {
 	static char buf[50];
 	int len = sprintf (buf, "%c%i\x0d", command, value);
@@ -118,7 +125,7 @@ Rts2DevTelD50::tel_write (const char command, int32_t value)
 
 
 int
-Rts2DevTelD50::tel_write_unit (int unit, const char command)
+D50::tel_write_unit (int unit, const char command)
 {
 	int ret;
 	// switch unit
@@ -130,7 +137,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char command)
 
 
 int
-Rts2DevTelD50::tel_write_unit (int unit, const char *command, int len)
+D50::tel_write_unit (int unit, const char *command, int len)
 {
 	int ret;
 	// switch unit
@@ -142,7 +149,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char *command, int len)
 
 
 int
-Rts2DevTelD50::tel_write_unit (int unit, const char command, int32_t value)
+D50::tel_write_unit (int unit, const char command, int32_t value)
 {
 	int ret;
 	// switch unit
@@ -154,7 +161,7 @@ Rts2DevTelD50::tel_write_unit (int unit, const char command, int32_t value)
 
 
 int
-Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	static char buf[16];
@@ -191,7 +198,7 @@ Rts2DevTelD50::tel_read (const char command, Rts2ValueInteger * value, Rts2Value
 
 
 int
-Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+D50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	ret = tel_write ('x', unit);
@@ -201,8 +208,8 @@ Rts2DevTelD50::tel_read_unit (int unit, const char command, Rts2ValueInteger * v
 }
 
 
-Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
-:TelFork (in_argc, in_argv)
+D50::D50 (int in_argc, char **in_argv)
+:Fork (in_argc, in_argv)
 {
 	d50Conn = NULL;
 
@@ -264,14 +271,14 @@ Rts2DevTelD50::Rts2DevTelD50 (int in_argc, char **in_argv)
 }
 
 
-Rts2DevTelD50::~Rts2DevTelD50 (void)
+D50::~D50 (void)
 {
 	delete d50Conn;
 }
 
 
 int
-Rts2DevTelD50::processOption (int in_opt)
+D50::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -279,14 +286,14 @@ Rts2DevTelD50::processOption (int in_opt)
 			device_name = optarg;
 			break;
 		default:
-			return TelFork::processOption (in_opt);
+			return Fork::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevTelD50::getHomeOffset (int32_t & off)
+D50::getHomeOffset (int32_t & off)
 {
 	off = 0;
 	return 0;
@@ -294,11 +301,11 @@ Rts2DevTelD50::getHomeOffset (int32_t & off)
 
 
 int
-Rts2DevTelD50::init ()
+D50::init ()
 {
 	int ret;
 
-	ret = TelFork::init ();
+	ret = Fork::init ();
 	if (ret)
 		return ret;
 
@@ -348,7 +355,7 @@ Rts2DevTelD50::init ()
 
 
 int
-Rts2DevTelD50::updateLimits ()
+D50::updateLimits ()
 {
 	acMin = (int32_t) (haCpd * -180);
 	acMax = (int32_t) (haCpd * 180);
@@ -358,13 +365,13 @@ Rts2DevTelD50::updateLimits ()
 
 
 void
-Rts2DevTelD50::updateTrack ()
+D50::updateTrack ()
 {
 }
 
 
 int
-Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
+D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == motorRa)
 	{
@@ -424,12 +431,12 @@ Rts2DevTelD50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 
-	return TelFork::setValue (old_value, new_value);
+	return Fork::setValue (old_value, new_value);
 }
 
 
 int
-Rts2DevTelD50::info ()
+D50::info ()
 {
 	int ret;
 	ret = tel_read_unit (1, 'u', unitRa, procRa);
@@ -449,12 +456,12 @@ Rts2DevTelD50::info ()
 	setTelRa (t_telRa);
 	setTelDec (t_telDec);
 
-	return TelFork::info ();
+	return Fork::info ();
 }
 
 
 int
-Rts2DevTelD50::startMove ()
+D50::startMove ()
 {
 	int ret;
 
@@ -512,7 +519,7 @@ Rts2DevTelD50::startMove ()
 
 
 int
-Rts2DevTelD50::isMoving ()
+D50::isMoving ()
 {
 	int ret;
 	ret = info ();
@@ -529,14 +536,14 @@ Rts2DevTelD50::isMoving ()
 
 
 int
-Rts2DevTelD50::endMove ()
+D50::endMove ()
 {
-	return TelFork::endMove ();
+	return Fork::endMove ();
 }
 
 
 int
-Rts2DevTelD50::stopMove ()
+D50::stopMove ()
 {
 	int ret;
 	ret = tel_write_unit (1, 'k');
@@ -551,7 +558,7 @@ Rts2DevTelD50::stopMove ()
 
 
 int
-Rts2DevTelD50::startPark ()
+D50::startPark ()
 {
 	int ret;
 	// switch off worms..
@@ -580,7 +587,7 @@ Rts2DevTelD50::startPark ()
 
 
 int
-Rts2DevTelD50::isParking ()
+D50::isParking ()
 {	
 	int ret;
 	ret = info ();
@@ -594,7 +601,7 @@ Rts2DevTelD50::isParking ()
 
 
 int
-Rts2DevTelD50::endPark ()
+D50::endPark ()
 {
 	return 0;
 }
@@ -603,6 +610,6 @@ Rts2DevTelD50::endPark ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelD50 device = Rts2DevTelD50 (argc, argv);
+	D50 device = D50 (argc, argv);
 	return device.run ();
 }
