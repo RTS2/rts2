@@ -21,6 +21,9 @@
 
 #include "../utils/conntcp.h"
 
+#define OPT_MINBCHARGE   OPT_LOCAL + 221
+#define OPT_MINBRUNTIM   OPT_LOCAL + 222
+
 namespace rts2sensor
 {
 
@@ -224,6 +227,12 @@ NUT::processOption (int opt)
 			upsName = optarg;
 			host = new HostString (p + 1, "3493");
 			break;
+		case OPT_MINBCHARGE:
+			minbcharge->setValueCharArr (optarg);
+			break;
+		case OPT_MINBRUNTIM:
+			mintimeleft->setValueCharArr (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (opt);
 	}
@@ -313,7 +322,7 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 
   	createValue (model, "ups.model", "UPS mode", false);
 	createValue (loadpct, "ups.load", "UPS load", false);
-	createValue (bcharge, "batter.charge", "battery charge", false);
+	createValue (bcharge, "battery.charge", "battery charge", false);
 	createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
 	createValue (upsstatus, "ups.status", "UPS status", false);
 
@@ -323,6 +332,9 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	mintimeleft->setValueInteger (1200);
 
 	addOption ('n', NULL, 1, "upsname@hostname[:port] of NUT");
+
+	addOption (OPT_MINBCHARGE, "min-battery.charge", 1, "minimal battery charge (in % - 0 - 100) to declare good weather");
+	addOption (OPT_MINBRUNTIM, "min-battery.runtime", 1, "minimal battery runtime (in seconde) to declare good weather");
 }
 
 
