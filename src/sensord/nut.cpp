@@ -321,7 +321,7 @@ NUT::info ()
 	// we are online - increase onbatterytimeout
 	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("OL"))
 	{
-		onbatterytimeout->setValueInteger (getNow () + maxonbattery->getValueInteger ());
+		onbatterytimeout->setValueInteger ((int) getNow () + maxonbattery->getValueInteger ());
 	}
 	
 
@@ -355,7 +355,7 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
 	mintimeleft->setValueInteger (1200);
 
-	createValue (maxonbattery, "max_onbattery", "maximal time we are allowed to run on battery", "false");
+	createValue (maxonbattery, "max_onbattery", "maximal time we are allowed to run on battery", false);
 	maxonbattery->setValueInteger (60);
 
 	addOption ('n', NULL, 1, "upsname@hostname[:port] of NUT");
