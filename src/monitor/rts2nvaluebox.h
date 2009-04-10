@@ -147,7 +147,7 @@ class ValueBoxSelection:public ValueBox, Rts2NSelWindow
 
 
 /**
- * Provides edit box for editting 
+ * Provides edit box for editting rectangle (4 numbers)
  */
 class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
 {
@@ -162,6 +162,24 @@ class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
 		virtual void sendValue (Rts2Conn * connection);
 		virtual bool setCursor ();
 };
+
+/**
+ * Provides edit box for editting  RA DeC
+ */
+class ValueBoxRaDec:public ValueBox, Rts2NWindowEdit
+{
+	private:
+		Rts2NWindowEditDigits * edt[2];
+		int edtSelected;
+	public:
+		ValueBoxRaDec (Rts2NWindow * top, Rts2ValueRaDec * _val, int _x, int _y);
+		virtual ~ValueBoxRaDec ();
+		virtual keyRet injectKey (int key);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+		virtual bool setCursor ();
+};
+
 
 }
 

@@ -477,3 +477,90 @@ ValueBoxRectangle::setCursor ()
 {
 	return edt[edtSelected]->setCursor ();
 }
+
+ValueBoxRaDec::ValueBoxRaDec (Rts2NWindow * top, Rts2ValueRaDec * _val, int _x, int _y)
+:ValueBox (top, _val),
+Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
+{
+	edt[0] = new Rts2NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1,
+		10, 1, 0, 0, 300, 1, false);
+	edt[1] = new Rts2NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1,
+		10, 1, 0, 0, 300, 1, false);
+
+	edt[0]->setValueDouble (_val->getRa ());
+	edt[1]->setValueDouble (_val->getDec ());
+
+	edtSelected = 0;
+}
+
+
+ValueBoxRaDec::~ValueBoxRaDec ()
+{
+	edtSelected = -1;
+	for (int i = 0; i < 2; i++)
+		delete edt[i];
+}
+
+
+keyRet
+ValueBoxRaDec::injectKey (int key)
+{
+	switch (key)
+	{
+		case '\t':
+		case KEY_STAB:
+			edt[edtSelected]->setNormal ();
+			edtSelected = (edtSelected + 1) % 2;
+			draw ();
+			return RKEY_HANDLED;
+		case KEY_BTAB:
+			edt[edtSelected]->setNormal ();
+			if (edtSelected == 0)
+				edtSelected = 1;
+			else
+				edtSelected--;
+			draw ();
+			return RKEY_HANDLED;
+	}
+
+	return edt[edtSelected]->injectKey (key);	
+}
+
+
+void
+ValueBoxRaDec::draw ()
+{
+	// draw border..
+	Rts2NWindowEdit::draw ();
+	werase (getWriteWindow ());
+	// draws entry boxes..
+	for (int i = 0; i < 2; i++)
+		edt[i]->draw ();
+
+	edt[edtSelected]->setUnderline ();
+
+	// draws labels..
+	mvwprintw (getWriteWindow (), 0, 0, " RA:");
+	mvwprintw (getWriteWindow (), 0, 15, "DEC:");
+
+	refresh ();
+	for (int i = 0; i < 2; i++)
+		edt[i]->refresh ();
+}
+
+
+void
+ValueBoxRaDec::sendValue (Rts2Conn * connection)
+{
+	if (!connection->getOtherDevClient ())
+		return;
+	connection->queCommand (new Rts2CommandChangeValue (connection->getOtherDevClient (),
+		getValue ()->getName (), '=', edt[0]->getValueDouble (), edt[1]->getValueDouble ()));
+}
+
+
+bool
+ValueBoxRaDec::setCursor ()
+{
+	return edt[edtSelected]->setCursor ();
+}
