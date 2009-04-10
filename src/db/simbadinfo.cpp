@@ -90,7 +90,8 @@ Rts2SimbadInfo::doProcessing ()
 		}
 		struct ln_equ_posn pos;
 		target->getPosition (&pos);
-		std::cout << pos.ra << " " << pos.dec << std::endl;
+		std::cout.precision (15);
+		std::cout << pos.ra << "\t" << pos.dec << std::endl;
 		return 0;
 	}
 	static double radius = 10.0 / 60.0;

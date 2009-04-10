@@ -33,6 +33,14 @@ ConstTarget ()
 	simbadBMag = nan ("f");
 	propMotions.ra = nan ("f");
 	propMotions.dec = nan ("f");
+
+	simbadOut = NULL;
+}
+
+
+Rts2SimbadTarget::~Rts2SimbadTarget (void)
+{
+	delete simbadOut;
 }
 
 
@@ -61,15 +69,13 @@ Rts2SimbadTarget::load ()
 	}
 	istringstream *iss = new istringstream ();
 
+	simbadOut = new ostringstream ();
+
 	#ifdef WITH_FAST
-	cout << "Simbad response for '" << getTargetName () << "': " << endl
-		<< "***************************" << endl
-		<< sesame_r << endl << "***************************" << endl;
+	*simbadOut << sesame_r;
 	iss->str (sesame_r);
 	#else
-	cout << "Simbad response for '" << getTargetName () << "': " << endl
-		<< "***************************" << endl
-		<< sesame_r._return_ << endl << "***************************" << endl;
+	*simbadOut << sesame_r._return_;
 	iss->str (sesame_r._return_);
 	#endif
 
@@ -148,7 +154,7 @@ Rts2SimbadTarget::load ()
 		}
 		else
 		{
-			cout << "Unknow " << str_type << endl;
+			cerr << "Unknow " << str_type << endl;
 			iss->getline (buf, LINEBUF);
 		}
 	}
