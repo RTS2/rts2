@@ -39,11 +39,12 @@
 #endif							 /* HAVE_PGSQL */
 #define IMAGEOP_TEST      0x0004
 #define IMAGEOP_PRINT     0x0008
-#define IMAGEOP_COPY      0x0010
-#define IMAGEOP_SYMLINK	  0x0020
-#define IMAGEOP_MOVE      0x0040
-#define IMAGEOP_EVAL      0x0080
-#define IMAGEOP_CREATEWCS 0x0100
+#define IMAGEOP_FPRINT    0x0010
+#define IMAGEOP_COPY      0x0020
+#define IMAGEOP_SYMLINK	  0x0040
+#define IMAGEOP_MOVE      0x0080
+#define IMAGEOP_EVAL      0x0100
+#define IMAGEOP_CREATEWCS 0x0200
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 
@@ -223,6 +224,10 @@ Rts2AppImageManip::processOption (int in_opt)
 			operation |= IMAGEOP_PRINT;
 			print_expr = optarg;
 			break;
+		case 'P':
+			operation |= IMAGEOP_FPRINT;
+			print_expr = optarg;
+			break;
 		case 'c':
 			operation |= IMAGEOP_COPY;
 			copy_expr = optarg;
@@ -306,6 +311,8 @@ Rts2AppImageManip::processImage (Rts2Image * image)
 		testImage (image);
 	if (operation & IMAGEOP_PRINT)
 		std::cout << image->expandPath (print_expr) << std::endl;
+	if (operation & IMAGEOP_FPRINT)
+	  	std::cout << image->getImageName () << " " << image->expandPath (print_expr) << std::endl;
 	if (operation & IMAGEOP_COPY)
 		image->copyImageExpand (copy_expr);
 	if (operation & IMAGEOP_MOVE)
@@ -351,6 +358,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	off_y = 0;
 
 	addOption ('p', NULL, 1, "print image expression");
+	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
