@@ -23,6 +23,7 @@
 
 #define OPT_MINBCHARGE   OPT_LOCAL + 221
 #define OPT_MINBRUNTIM   OPT_LOCAL + 222
+#define OPT_MAXONBAT     OPT_LOCAL + 223
 
 namespace rts2sensor
 {
@@ -82,10 +83,13 @@ namespace rts2sensor
 			Rts2ValueFloat *bcharge;
 			Rts2ValueInteger *bruntime;
 
+			Rts2ValueTime *onbatterytimeout;
+
 			Rts2ValueString *upsstatus;
 			
 			Rts2ValueFloat *minbcharge;
 			Rts2ValueInteger *mintimeleft;
+			Rts2ValueInteger *maxonbattery;
 
 		protected:
 			virtual int processOption (int opt);
@@ -233,6 +237,9 @@ NUT::processOption (int opt)
 		case OPT_MINBRUNTIM:
 			mintimeleft->setValueCharArr (optarg);
 			break;
+		case OPT_MAXONBAT:
+			maxonbattery->setValueCharArr (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (opt);
 	}
@@ -310,6 +317,19 @@ NUT::info ()
 		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
 		setWeatherTimeout (1200);
 	}
+
+	// we are online - increase onbatterytimeout
+	if (upsstatus->getValue () == std::string ("OL CHRG") || upsstatus->getValue () == std::string ("OL"))
+	{
+		onbatterytimeout->setValueInteger (getNow () + maxonbattery->getValueInteger ());
+	}
+	
+
+	if (onbatterytimeout->getValueInteger () <= getNow ())
+	{
+		logStream (MESSAGE_WARNING) << "running for too long on battery" << sendLog;
+		setWeatherTimeout (1200);
+	}
 	
 	return SensorWeather::info ();
 }
@@ -325,6 +345,9 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (loadpct, "ups.load", "UPS load", false);
 	createValue (bcharge, "battery.charge", "battery charge", false);
 	createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
+
+	createValue (onbatterytimeout, "on_battery", "Till this time we are allowed to run even on battery", false);
+
 	createValue (upsstatus, "ups.status", "UPS status", false);
 
 	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
@@ -332,10 +355,14 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
 	mintimeleft->setValueInteger (1200);
 
+	createValue (maxonbattery, "max_onbattery", "maximal time we are allowed to run on battery", "false");
+	maxonbattery->setValueInteger (60);
+
 	addOption ('n', NULL, 1, "upsname@hostname[:port] of NUT");
 
 	addOption (OPT_MINBCHARGE, "min-battery.charge", 1, "minimal battery charge (in % - 0 - 100) to declare good weather");
 	addOption (OPT_MINBRUNTIM, "min-battery.runtime", 1, "minimal battery runtime (in seconde) to declare good weather");
+	addOption (OPT_MAXONBAT, "max-onbattery", 1, "maximal time on battery before declaring bad weather. Default to 60 seconds.");
 }
 
 
