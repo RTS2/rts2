@@ -1,6 +1,6 @@
 /* 
  * Driver for OpenTPL mounts.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,14 +21,135 @@
 #include <fstream>
 
 #include "../utils/rts2config.h"
-#include "opentpl.h"
+
+#include "telescope.h"
+#include "connopentpl.h"
+
+#define BLIND_SIZE            1.0
+#define OPT_ROTATOR_OFFSET    OPT_LOCAL + 1
+
+namespace rts2teld
+{
+
+/**
+ * Base class for OpenTPL telescope.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class OpenTPL:public Telescope
+{
+	private:
+		std::string ir_ip;
+		int ir_port;
+
+		enum { OPENED, OPENING, CLOSING, CLOSED } cover_state;
+
+		void checkErrors ();
+		void checkCover ();
+		void checkPower ();
+
+		bool doCheckPower;
+
+		void getCover ();
+		void initCoverState ();
+
+		std::string errorList;
+
+		Rts2ValueBool *cabinetPower;
+		Rts2ValueFloat *cabinetPowerState;
+
+		Rts2ValueDouble *derotatorCurrpos;
+
+		Rts2ValueBool *derotatorPower;
+
+		Rts2ValueDouble *targetDist;
+		Rts2ValueDouble *targetTime;
+
+		Rts2ValueDouble *cover;
+
+		Rts2ValueInteger *mountTrack;
+
+		// model values
+		Rts2ValueString *model_dumpFile;
+		std::vector <Rts2ValueDouble *> modelParams;
+
+		int infoModel ();
+
+		struct ln_equ_posn target;
+		int irTracking;
+
+		Rts2ValueDouble *modelQuality;
+		Rts2ValueDouble *goodSep;
+
+		double derOff;
+
+		int startMoveReal (double ra, double dec);
+
+	protected:
+		rts2core::OpenTpl *irConn;
+
+		Rts2ValueInteger *model_recordcount;
+
+		time_t timeout;
+
+		virtual int processOption (int in_opt);
+
+		virtual int initIrDevice ();
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+
+		Rts2ValueDouble *derotatorOffset;
+
+		int coverClose ();
+		int coverOpen ();
+
+		int domeOpen ();
+		int domeClose ();
+
+		int setTelescopeTrack (int new_track);
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		bool getDerotatorPower ()
+		{
+			return derotatorPower->getValueBool ();
+		}
+	public:
+		OpenTPL (int argc, char **argv);
+		virtual ~ OpenTPL (void);
+		virtual int ready ();
+
+		virtual void getAltAz ();
+
+		virtual int info ();
+		virtual int saveModel ();
+		virtual int loadModel ();
+		virtual int resetMount ();
+
+		virtual int startMove ();
+		virtual int isMoving ();
+		virtual int stopMove ();
+
+		virtual int stopWorm ();
+		virtual int startWorm ();
+
+		virtual int startPark ();
+		int moveCheck (bool park);
+		virtual int isParking ();
+		virtual int endPark ();
+
+		virtual int changeMasterState (int new_state);
+};
+
+};
 
 using namespace rts2teld;
 
 #define DEBUG_EXTRA
 
 int
-TelOpenTPL::coverClose ()
+OpenTPL::coverClose ()
 {
 	if (cover == NULL)
 		return 0;
@@ -47,7 +168,7 @@ TelOpenTPL::coverClose ()
 
 
 int
-TelOpenTPL::coverOpen ()
+OpenTPL::coverOpen ()
 {
 	if (cover == NULL)
 		return 0;
@@ -63,7 +184,7 @@ TelOpenTPL::coverOpen ()
 
 
 int
-TelOpenTPL::setTelescopeTrack (int new_track)
+OpenTPL::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
 	int old_track;
@@ -80,7 +201,7 @@ TelOpenTPL::setTelescopeTrack (int new_track)
 
 
 int
-TelOpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
+OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
@@ -165,18 +286,24 @@ TelOpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
+	if (old_value == goodSep)
+		return 0;
 
 	return Telescope::setValue (old_value, new_value);
 }
 
 
-TelOpenTPL::TelOpenTPL (int in_argc, char **in_argv)
+OpenTPL::OpenTPL (int in_argc, char **in_argv)
 :Telescope (in_argc, in_argv)
 {
 	ir_port = 0;
 	irConn = NULL;
 
 	doCheckPower = false;
+
+	irTracking = 4;
+
+	derOff = 0;
 
 	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
@@ -192,24 +319,33 @@ TelOpenTPL::TelOpenTPL (int in_argc, char **in_argv)
 
 	cover = NULL;
 
+	strcpy (telType, "BOOTES_IR");
+
+	createValue (modelQuality, "model_quality", "quality of model data", false);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST);
+	// 2.7 arcsec
+	goodSep->setValueDouble (0.00075);
+
 	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
 	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
 	addOption ('p', "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
-	strcpy (telType, "BOOTES_IR");
+	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
+	addOption ('t', "ir_tracking", 1,
+		"IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 
 	cover_state = CLOSED;
 }
 
 
-TelOpenTPL::~TelOpenTPL (void)
+OpenTPL::~OpenTPL (void)
 {
 	delete irConn;
 }
 
 
 int
-TelOpenTPL::processOption (int in_opt)
+OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -222,6 +358,12 @@ TelOpenTPL::processOption (int in_opt)
 		case 'p':
 			doCheckPower = true;
 			break;
+		case 't':
+			irTracking = atoi (optarg);
+			break;
+		case OPT_ROTATOR_OFFSET:
+			derOff = atof (optarg);
+			break;
 		default:
 			return Telescope::processOption (in_opt);
 	}
@@ -230,7 +372,7 @@ TelOpenTPL::processOption (int in_opt)
 
 
 int
-TelOpenTPL::initIrDevice ()
+OpenTPL::initIrDevice ()
 {
 	Rts2Config *config = Rts2Config::instance ();
 	config->loadFile (NULL);
@@ -273,7 +415,7 @@ TelOpenTPL::initIrDevice ()
 
 
 int
-TelOpenTPL::init ()
+OpenTPL::init ()
 {
 	int ret;
 	ret = Telescope::init ();
@@ -289,7 +431,7 @@ TelOpenTPL::init ()
 
 
 int
-TelOpenTPL::initValues ()
+OpenTPL::initValues ()
 {
 	int status = TPL_OK;
 	std::string serial;
@@ -390,12 +532,15 @@ TelOpenTPL::initValues ()
 	if (status)
 		return status;
 
+	if (derotatorOffset)
+		derotatorOffset->setValueDouble (derOff);
+
 	return Telescope::initValues ();
 }
 
 
 void
-TelOpenTPL::checkErrors ()
+OpenTPL::checkErrors ()
 {
 	int status = TPL_OK;
 	std::string list;
@@ -434,7 +579,7 @@ TelOpenTPL::checkErrors ()
 
 
 void
-TelOpenTPL::checkCover ()
+OpenTPL::checkCover ()
 {
 	int status = TPL_OK;
 	switch (cover_state)
@@ -475,7 +620,7 @@ TelOpenTPL::checkCover ()
 
 
 void
-TelOpenTPL::checkPower ()
+OpenTPL::checkPower ()
 {
 	int status = TPL_OK;
 	double power_state;
@@ -560,7 +705,7 @@ TelOpenTPL::checkPower ()
 
 
 void
-TelOpenTPL::getCover ()
+OpenTPL::getCover ()
 {
 	double cor_tmp;
 	int status = TPL_OK;
@@ -572,7 +717,7 @@ TelOpenTPL::getCover ()
 
 
 void
-TelOpenTPL::initCoverState ()
+OpenTPL::initCoverState ()
 {
 	getCover ();
 	if (cover->getValueDouble () == 0)
@@ -585,7 +730,7 @@ TelOpenTPL::initCoverState ()
 
 
 int
-TelOpenTPL::infoModel ()
+OpenTPL::infoModel ()
 {
 	int status = TPL_OK;
 
@@ -616,7 +761,68 @@ TelOpenTPL::infoModel ()
 
 
 int
-TelOpenTPL::idle ()
+OpenTPL::startMoveReal (double ra, double dec)
+{
+	int status = TPL_OK;
+	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
+	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
+	if (derotatorOffset && !getDerotatorPower ())
+	{
+		status = irConn->tpl_set ("DEROTATOR[3].POWER", 1, &status);
+		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
+	}
+
+	double offset;
+	int track;
+
+	// apply corrections
+	switch (getPointingModel ())
+	{
+		case 0:
+			offset = getCorrRa ();
+			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
+			status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+			offset = getCorrDec ();
+			if (track == 3)
+				offset *= -1.0;
+			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
+			break;
+		case 1:
+			offset = getCorrZd ();
+			status = irConn->tpl_set ("ZD.OFFSET", offset, &status);
+			offset = getCorrAz ();
+			status = irConn->tpl_set ("AZ.OFFSET", offset, &status);
+			break;
+
+	}
+
+	if (isModelOn () && (getCorrRa () != 0 || getCorrDec () != 0))
+	{
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+		status = irConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
+		status = irConn->getValueInteger ("POINTING.POINTINGPARAMS.RECORDCOUNT", model_recordcount, &status);
+		logStream (MESSAGE_DEBUG) << "modeling quality parameter: " << modelQuality->getValueDouble ()
+			<< " status "<< status
+			<< " recordcount " << model_recordcount->getValueInteger () << sendLog;
+		sendValueAll (modelQuality);
+		sendValueAll (model_recordcount);
+	}
+
+	if (derotatorOffset)
+	{
+		status = irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
+
+		if (status != TPL_OK)
+			return status;
+	}
+
+	status = setTelescopeTrack (irTracking);
+	return status;
+}
+
+
+int
+OpenTPL::idle ()
 {
 	// check for power..
 	checkPower ();
@@ -629,14 +835,14 @@ TelOpenTPL::idle ()
 
 
 int
-TelOpenTPL::ready ()
+OpenTPL::ready ()
 {
 	return !irConn->isOK ();
 }
 
 
 void
-TelOpenTPL::getAltAz ()
+OpenTPL::getAltAz ()
 {
 	int status = TPL_OK;
 	double zd, az;
@@ -656,7 +862,7 @@ TelOpenTPL::getAltAz ()
 
 
 int
-TelOpenTPL::info ()
+OpenTPL::info ()
 {
 	double zd, az;
 	#ifdef DEBUG_EXTRA
@@ -792,7 +998,7 @@ TelOpenTPL::info ()
 
 
 int
-TelOpenTPL::saveModel ()
+OpenTPL::saveModel ()
 {
 	std::ofstream of;
 	of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
@@ -818,7 +1024,7 @@ TelOpenTPL::saveModel ()
 
 
 int
-TelOpenTPL::loadModel ()
+OpenTPL::loadModel ()
 {
 	std::ifstream ifs;
 	int status = TPL_OK;
@@ -846,7 +1052,7 @@ TelOpenTPL::loadModel ()
 
 
 int
-TelOpenTPL::resetMount ()
+OpenTPL::resetMount ()
 {
 	int status = TPL_OK;
 	int power = 0;
@@ -878,4 +1084,277 @@ TelOpenTPL::resetMount ()
 		}
 	}
 	return Telescope::resetMount ();
+}
+
+
+int
+OpenTPL::startMove ()
+{
+	int status = 0;
+	double sep;
+
+	getTarget (&target);
+
+	switch (getPointingModel ())
+	{
+		case 0:
+			if (target.dec < -89.85)
+				target.dec = -89.80;
+			break;
+		case 1:
+			// move to zenit - move to different dec instead
+			if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
+			{
+				if (fabs (target.ra / 15.0 - getLocSidTime ()) <= BLIND_SIZE / 15.0)
+				{
+					target.dec = telLatitude->getValueDouble () - BLIND_SIZE;
+				}
+			}
+
+			double az_off = 0;
+			double alt_off = 0;
+			status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
+			status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
+			if (status)
+			{
+				logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
+				return -1;
+			}
+			break;
+	}
+
+	status = startMoveReal (target.ra, target.dec);
+	if (status)
+		return -1;
+
+	// wait till we get it processed
+	status = irConn->tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "cannot get target separation" << sendLog;
+		return -1;
+	}
+	if (sep > 2)
+	  	usleep (USEC_SEC / 5);
+	else if (sep > 2 / 60.0)
+		usleep (USEC_SEC / 100);
+	else
+		usleep (USEC_SEC / 1000);
+
+	time (&timeout);
+	timeout += 30;
+	return 0;
+}
+
+
+int
+OpenTPL::isMoving ()
+{
+	return moveCheck (false);
+}
+
+
+int
+OpenTPL::stopMove ()
+{
+	int status = 0;
+	double zd;
+	info ();
+	// ZD check..
+	status = irConn->tpl_get ("ZD.CURRPOS", zd, &status);
+	if (status)
+	{
+		logStream (MESSAGE_DEBUG) << "IR stopMove cannot get ZD! (" << status <<
+			")" << sendLog;
+		return -1;
+	}
+	if (fabs (zd) < 1)
+	{
+		logStream (MESSAGE_DEBUG) << "IR stopMove suspicious ZD.. " << zd <<
+			sendLog;
+		status = setTelescopeTrack (0);
+		if (status)
+		{
+			logStream (MESSAGE_DEBUG) << "IR stopMove cannot set track: " <<
+				status << sendLog;
+			return -1;
+		}
+		return 0;
+	}
+	return 0;
+}
+
+
+int
+OpenTPL::startPark ()
+{
+	int status = TPL_OK;
+	// Park to south+zenith
+	status = setTelescopeTrack (0);
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
+		sendLog;
+	#endif
+	sleep (1);
+	status = TPL_OK;
+	double tra;
+	double tdec;
+	switch (getPointingModel ())
+	{
+		case 0:
+			status = irConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
+			if (status != TPL_OK)
+				return -1;
+			// decide dec based on latitude
+			tdec = 90 - fabs (telLatitude->getValueDouble ());
+			if (telLatitude->getValueDouble () < 0)
+				tdec *= -1.0;
+
+			status = irConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
+			status = irConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
+			setTelescopeTrack (irTracking);
+			break;
+		case 1:
+			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
+			status = irConn->tpl_set ("ZD.TARGETPOS", 0, &status);
+			status = irConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
+			break;
+	}
+	if (status)
+	{
+		logStream (MESSAGE_ERROR) << "IR startPark status " <<
+			status << sendLog;
+		return -1;
+	}
+	time (&timeout);
+	timeout += 300;
+	return 0;
+}
+
+
+int
+OpenTPL::moveCheck (bool park)
+{
+	int status = TPL_OK;
+	int track;
+	double poin_dist;
+	time_t now;
+	// if parking, check is different for EQU telescope
+	if (park)
+	{
+		struct ln_equ_posn tPos;
+		struct ln_equ_posn cPos;
+
+		switch (getPointingModel ())
+		{
+			case 0:
+				status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
+				status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
+				status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
+				status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+				break;
+			case 1:
+				status = irConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
+				status = irConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
+				status = irConn->tpl_get ("ZD.CURRPOS", cPos.ra, &status);
+				status = irConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
+				break;
+		}
+		poin_dist = ln_get_angular_separation (&cPos, &tPos);
+	}
+	else
+	{
+		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+	}
+	if (status != TPL_OK)
+		return -1;
+	time (&now);
+	// get track..
+	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+	if (track == 0 && !park)
+	{
+		logStream (MESSAGE_WARNING) << "Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
+		setTelescopeTrack (irTracking);
+		sleep (1);
+		return USEC_SEC / 100;
+	}
+	if (fabs (poin_dist) <= goodSep->getValueDouble ()) 
+	{
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist << sendLog;
+		#endif
+		return -2;
+	}
+	// finish due to timeout
+	if (timeout < now)
+	{
+		logStream (MESSAGE_ERROR) << "checkMoves target distance in timeout " << poin_dist << " (" << status << ")" << sendLog;
+		return -1;
+	}
+	return USEC_SEC / 100;
+}
+
+
+int
+OpenTPL::isParking ()
+{
+	return moveCheck (true);
+}
+
+
+int
+OpenTPL::endPark ()
+{
+	#ifdef DEBUG_EXTRA
+	logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
+	#endif
+	return 0;
+}
+
+
+int
+OpenTPL::startWorm ()
+{
+	int status = TPL_OK;
+	status = setTelescopeTrack (irTracking);
+	if (status != TPL_OK)
+		return -1;
+	return 0;
+}
+
+
+int
+OpenTPL::stopWorm ()
+{
+	int status = TPL_OK;
+	status = setTelescopeTrack (0);
+	if (status)
+		return -1;
+	return 0;
+}
+
+
+int
+OpenTPL::changeMasterState (int new_state)
+{
+	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	{
+		case SERVERD_DUSK:
+		case SERVERD_NIGHT:
+		case SERVERD_DAWN:
+			coverOpen ();
+			break;
+		default:
+			coverClose ();
+			break;
+	}
+	return Telescope::changeMasterState (new_state);
+}
+
+
+int
+main (int argc, char **argv)
+{
+	OpenTPL device = OpenTPL (argc, argv);
+	return device.run ();
 }

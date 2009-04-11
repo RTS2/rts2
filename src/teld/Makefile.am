@@ -1,9 +1,10 @@
 SUBDIRS = model
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
-	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec rts2-teld-indi-bridge
+	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
+	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge
 
-noinst_HEADERS = telescope.h rts2devclicop.h opentpl.h hms.h gem.h fork.h tgdrive.h connopentpl.h
+noinst_HEADERS = telescope.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h connopentpl.h
 
 EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp tgdrive.cpp
 
@@ -28,6 +29,9 @@ rts2_teld_kolonica_LDADD = fork.o ${LDADD}
 rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 rts2_teld_hlohovec_LDADD = tgdrive.o ${LDADD}
 
+rts2_teld_opentpl_SOURCES = opentpl.cpp connopentpl.cpp
+rts2_opentpl_errors_SOURCES = opentpl-errors.cpp connopentpl.cpp
+
 rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
 rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
 rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
@@ -38,12 +42,6 @@ bin_PROGRAMS += rts2-telmodeltest
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
 rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@
 endif
-
-bin_PROGRAMS += rts2-teld-opentpl rts2-opentpl-errors
-
-rts2_teld_opentpl_SOURCES = opentpl-main.cpp opentpl.cpp connopentpl.cpp
-
-rts2_opentpl_errors_SOURCES = opentpl-errors.cpp opentpl.cpp connopentpl.cpp
 
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount
