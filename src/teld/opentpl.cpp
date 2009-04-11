@@ -808,7 +808,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 	{
 		case POINTING_RADEC:
 			offset = getCorrRa ();
-			status = opentplConn->tpl_set ("HA.OFFSET", offset, &status);
+			status = opentplConn->tpl_set ("HA.OFFSET", -1 * offset, &status);
 			status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
 			offset = getCorrDec ();
 			if (track == 3)
@@ -962,7 +962,7 @@ OpenTPL::info ()
 	{
 		case POINTING_RADEC:
 			status = opentplConn->tpl_get ("POINTING.CURRENT.DH", va1, &status);
-			status = opentplConn->tpl_get ("POINTING.CURRENT.DD", va1, &status);
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DD", va2, &status);
 
 			if (status != TPL_OK)
 				return -1;
@@ -971,7 +971,7 @@ OpenTPL::info ()
 			break;
 		case POINTING_ALTAZ:
 			status = opentplConn->tpl_get ("POINTING.CURRENT.DA", va1, &status);
-			status = opentplConn->tpl_get ("POINTING.CURRENT.DZ", va1, &status);
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DZ", va2, &status);
 
 			if (status != TPL_OK)
 				return -1;
