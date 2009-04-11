@@ -29,6 +29,7 @@
 #define OPT_CHECK_POWER       OPT_LOCAL + 1
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
 #define OPT_OPENTPL_SERVER    OPT_LOCAL + 3
+#define OPT_PARK_POS          OPT_LOCAL + 4
 
 namespace rts2teld
 {
@@ -336,8 +337,8 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
-	addOption ('t', "ir_tracking", 1,
-		"IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
+	addOption ('t', NULL, 1, "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
+	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
 
 	cover_state = CLOSED;
 }
@@ -360,11 +361,28 @@ OpenTPL::processOption (int in_opt)
 		case OPT_CHECK_POWER:
 			doCheckPower = true;
 			break;
+		case OPT_ROTATOR_OFFSET:
+			derOff = atof (optarg);
+			break;
 		case 't':
 			irTracking = atoi (optarg);
 			break;
-		case OPT_ROTATOR_OFFSET:
-			derOff = atof (optarg);
+		case OPT_PARK_POS:
+			{
+				std::istringstream *is;
+				is = new std::istringstream (std::string(optarg));
+				double palt,paz;
+				char c;
+				*is >> palt >> c >> paz;
+				if (is->fail () || c != ':')
+				{
+					logStream (MESSAGE_ERROR) << "Cannot parse alt-az park position " << optarg << sendLog;
+					delete is;
+					return -1;
+				}
+				delete is;
+				parkPos->setValueAltAz (palt, paz);
+			}
 			break;
 		default:
 			return Telescope::processOption (in_opt);
@@ -1189,38 +1207,40 @@ OpenTPL::startPark ()
 	// Park to south+zenith
 	status = setTelescopeTrack (0);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "IR startPark tracking status " << status <<
+	logStream (MESSAGE_DEBUG) << "startPark tracking status " << status <<
 		sendLog;
 	#endif
 	sleep (1);
 	status = TPL_OK;
-	double tra;
-	double tdec;
+
+	struct ln_hrz_posn hrzPark;
+	struct ln_equ_posn equPark;
+	struct ln_lnlat_posn observer;
+
 	switch (getPointingModel ())
 	{
 		case 0:
-			status = opentplConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
-			if (status != TPL_OK)
-				return -1;
-			// decide dec based on latitude
-			tdec = 90 - fabs (telLatitude->getValueDouble ());
-			if (telLatitude->getValueDouble () < 0)
-				tdec *= -1.0;
+			observer.lng = telLongitude->getValueDouble ();
+			observer.lat = telLatitude->getValueDouble ();
 
-			status = opentplConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
-			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
+			hrzPark.alt = parkPos->getAlt ();
+			hrzPark.az = parkPos->getAz ();
+
+			ln_get_equ_from_hrz (&hrzPark, &observer, ln_get_julian_from_sys (), &equPark);
+
+			status = opentplConn->tpl_set ("POINTING.TARGET.RA", equPark.ra, &status);
+			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", equPark.dec, &status);
 			setTelescopeTrack (irTracking);
 			break;
 		case 1:
-			status = opentplConn->tpl_set ("AZ.TARGETPOS", 0, &status);
-			status = opentplConn->tpl_set ("ZD.TARGETPOS", 0, &status);
+			status = opentplConn->tpl_set ("AZ.TARGETPOS", parkPos->getAz (), &status);
+			status = opentplConn->tpl_set ("ZD.TARGETPOS", 90 - parkPos->getAlt (), &status);
 			status = opentplConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
 			break;
 	}
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "IR startPark status " <<
-			status << sendLog;
+		logStream (MESSAGE_ERROR) << "startPark status " << status << sendLog;
 		return -1;
 	}
 	time (&timeout);
