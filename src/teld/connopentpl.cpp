@@ -195,7 +195,7 @@ int
 OpenTpl::tpl_set (const char *_name, double value, int *tpl_status)
 {
 	std::ostringstream _os;
-	_os << _name << '=' << value;
+	_os << _name << '=' << std::setprecision(10) << value;
 	sendCommand ("SET", _os.str().c_str());
 	return 0;
 }
