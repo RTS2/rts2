@@ -1228,7 +1228,7 @@ OpenTPL::startPark ()
 
 			ln_get_equ_from_hrz (&hrzPark, &observer, ln_get_julian_from_sys (), &equPark);
 
-			status = opentplConn->tpl_set ("POINTING.TARGET.RA", equPark.ra, &status);
+			status = opentplConn->tpl_set ("POINTING.TARGET.RA", equPark.ra / 15.0, &status);
 			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", equPark.dec, &status);
 			setTelescopeTrack (irTracking);
 			break;
