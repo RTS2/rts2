@@ -289,6 +289,11 @@ AppOpenTPLError::init ()
 	}
 
 	irConn = new rts2core::OpenTpl (NULL, ir_ip, ir_port);
+	ret = irConn->init();
+	if (ret)
+	{
+		return -1;
+	}
 
 	// are we connected ?
 	if (!irConn->isOK ())
