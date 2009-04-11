@@ -473,7 +473,7 @@ OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (om_radec, "MO", "[arcmin] target pointing correction", true, RTS2_DT_DEG_DIST);
+		createValue (om_radec, "MO", "[arcmin] target pointing correction", true, RTS2_DT_DEGREES);
 
 		createValue (modelP, "doff", "[arcmin] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
@@ -504,7 +504,7 @@ OpenTPL::initValues ()
  */
 		setPointingModel (POINTING_ALTAZ);
 
-		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
+		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
 
 		createValue (modelP, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
