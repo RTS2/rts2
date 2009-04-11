@@ -360,7 +360,7 @@ OpenTPL::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case OPT_OPENTPL_SERVER:
-			openTPLServer = new HostString (optarg);
+			openTPLServer = new HostString (optarg, "65432");
 			break;
 		case OPT_CHECK_POWER:
 			doCheckPower = true;
