@@ -69,8 +69,7 @@ ObjectCheck
 	public:
 		ObjectCheck (const char *horizon_file);
 
-		~
-			ObjectCheck ();
+		~ObjectCheck ();
 		/**
 		 * Check, if that target can be observerd.
 		 *

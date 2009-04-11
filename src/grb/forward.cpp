@@ -193,7 +193,6 @@ Rts2ConnFwGrb::idle ()
 int
 Rts2ConnFwGrb::init_call ()
 {
-	char *s_port;
 	struct addrinfo hints;
 	struct addrinfo *info;
 	int ret;
@@ -202,9 +201,9 @@ Rts2ConnFwGrb::init_call ()
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
-	asprintf (&s_port, "%i", gcn_port);
-	ret = getaddrinfo (gcn_hostname, s_port, &hints, &info);
-	free (s_port);
+	std::ostringstream _os;
+	_os << gcn_port;
+	ret = getaddrinfo (gcn_hostname, _os.str ().c_str (), &hints, &info);
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: "

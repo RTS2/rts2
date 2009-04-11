@@ -18,6 +18,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "config.h"
+
+#ifdef HAVE_PGSQL
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/rts2obsset.h"
@@ -27,6 +30,10 @@
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"
+#else
+#include "../utils/rts2device.h"
+#endif /* HAVE_PGSQL */
+
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 #include "xmlrpc++/XmlRpc.h"
@@ -55,7 +62,11 @@ XmlRpcServer xmlrpc_server;
  *
  * @addgroup XMLRPC
  */
+#ifdef HAVE_PGSQL
 class Rts2XmlRpcd:public Rts2DeviceDb
+#else
+class Rts2XmlRpcd:public Rts2Device
+#endif
 {
 	private:
 		int rpcPort;
@@ -80,7 +91,11 @@ Rts2XmlRpcd::processOption (int in_opt)
 			rpcPort = atoi (optarg);
 			break;
 		default:
+#ifdef HAVE_PGSQL
 			return Rts2DeviceDb::processOption (in_opt);
+#else
+			return Rts2Device::processOption (in_opt);
+#endif
 	}
 	return 0;
 }
@@ -90,7 +105,11 @@ int
 Rts2XmlRpcd::init ()
 {
 	int ret;
+#ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::init ();
+#else
+	ret = Rts2Device::init ();
+#endif
 	if (ret)
 		return ret;
 
@@ -107,7 +126,11 @@ Rts2XmlRpcd::init ()
 void
 Rts2XmlRpcd::addSelectSocks ()
 {
+#ifdef HAVE_PGSQL
 	Rts2DeviceDb::addSelectSocks ();
+#else
+	Rts2Device::addSelectSocks ();
+#endif
 	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
 }
 
@@ -115,12 +138,19 @@ Rts2XmlRpcd::addSelectSocks ()
 void
 Rts2XmlRpcd::selectSuccess ()
 {
+#ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
+#else
+	Rts2Device::selectSuccess ();
+#endif
 	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
 
-
+#ifdef HAVE_PGSQL
 Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+#else
+Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+#endif
 {
 	rpcPort = 8889;
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
@@ -131,11 +161,14 @@ Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVI
 void
 Rts2XmlRpcd::message (Rts2Message & msg)
 {
+// log message to DB, if database is present
+#ifdef HAVE_PGSQL
 	if (msg.isNotDebug ())
 	{
 		Rts2MessageDB msgDB (msg);
 		msgDB.insertDB ();
 	}
+#endif
 }
 
 
@@ -460,6 +493,7 @@ class SetValue: public XmlRpcServerMethod
 } setValue (&xmlrpc_server);
 
 
+#ifdef HAVE_PGSQL
 /*
  *
  */
@@ -678,6 +712,8 @@ class UserLogin: public XmlRpcServerMethod
 			result = verifyUser (params[0], params[1]);
 		}
 } userLogin (&xmlrpc_server);
+
+#endif /* HAVE_PGSQL */
 
 int
 main (int argc, char **argv)

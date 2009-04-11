@@ -20,7 +20,11 @@
 #ifndef __RTS2_OPTION__
 #define __RTS2_OPTION__
 
+#ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
+#else
+#include "getopt_own.h"
+#endif
 #include <malloc.h>
 #include <stdio.h>
 

@@ -19,6 +19,9 @@
 
 #include "telescope.h"
 
+namespace rts2teld
+{
+
 /**
  * Abstract German Equatorial Mount class.
  *
@@ -26,7 +29,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevGEM: public Rts2DevTelescope
+class GEM: public Telescope
 {
 	protected:
 		/**
@@ -60,6 +63,8 @@ class Rts2DevGEM: public Rts2DevTelescope
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
 	public:
-		Rts2DevGEM (int in_argc, char **in_argv);
-		virtual ~Rts2DevGEM (void);
+		GEM (int in_argc, char **in_argv);
+		virtual ~GEM (void);
+};
+
 };

@@ -1,6 +1,6 @@
 /* 
  * Expanding mechanism.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -166,8 +166,14 @@ std::string Rts2Expander::expandVariable (char var)
 		case 's':
 			ret += getMSecString ();
 			break;
+		case 'U':
+			expandDate = &utDate;
+			break;
+		case 'L':
+			expandDate = &localDate;
+			break;
 		case 'Z':
-			ret += tzname[(expandDate.tm_isdst > 0) ? 1 : 0];
+			ret += tzname[(expandDate->tm_isdst > 0) ? 1 : 0];
 			break;
 		default:
 			ret += '%';
@@ -241,7 +247,10 @@ Rts2Expander::setExpandDate (const struct timeval *tv)
 	expandTv.tv_sec = tv->tv_sec;
 	expandTv.tv_usec = tv->tv_usec;
 
-	localtime_r (&expandTv.tv_sec, &expandDate);
+	localtime_r (&expandTv.tv_sec, &localDate);
+	gmtime_r (&expandTv.tv_sec, &utDate);
+
+	expandDate = &utDate;
 }
 
 

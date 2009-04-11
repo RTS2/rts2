@@ -94,6 +94,7 @@ class Watcher:public Dome
 Watcher::Watcher (int argc, char **argv)
 :Dome (argc, argv)
 {
+	createValue (sw_state, "sw_state", "dome state", false);
 	smsExec = NULL;
 	addOption ('s', "execute_sms", 1, "execute this commmand to send sms about roof");
 
@@ -113,7 +114,6 @@ Watcher::~Watcher (void)
 void
 Watcher::executeSms (smsType_t type)
 {
-	char *cmd;
 	const char *msg;
 	switch (type)
 	{
@@ -130,9 +130,9 @@ Watcher::executeSms (smsType_t type)
 			sendDublinMail ("WARNING CANNOT OPEN DOME! ROOF FAILED!");
 			break;
 	}
-	asprintf (&cmd, "%s '%s'", smsExec, msg);
-	system (cmd);
-	free (cmd);
+	std::string cmd = std::string (smsExec)
+		+ std::string ("'") + std::string (msg) + std::string ("'"); 
+	system (cmd.c_str ());
 }
 
 
@@ -175,6 +175,14 @@ Watcher::init ()
 
 	// SWITCH ON INTERFACE
 	outb (1, BASE + 1);
+
+	if (!isMoving ())
+	{
+		// close roof - security measurement
+		startClose ();
+
+		maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome after init");
+	}
 
 	return 0;
 }
@@ -248,7 +256,7 @@ Watcher::isOpened ()
 	time_t now;
 	time (&now);
 	// timeout
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Watcher::isOpened timeout" <<
 			sendLog;
@@ -259,7 +267,11 @@ Watcher::isOpened ()
 		closeDomeReal ();
 		return -2;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+	{
+		return USEC_SEC;
+	}
+	return (getState () & DOME_DOME_MASK) == DOME_CLOSED ? 0 : -2;
 }
 
 
@@ -311,7 +323,7 @@ Watcher::isClosed ()
 {
 	time_t now;
 	time (&now);
-	if (now > timeOpenClose)
+	if (timeOpenClose > 0 && now > timeOpenClose)
 	{
 		logStream (MESSAGE_ERROR) << "Watcher::isClosed dome timeout"
 			<< sendLog;
@@ -321,7 +333,11 @@ Watcher::isClosed ()
 		openDomeReal ();
 		return -2;
 	}
-	return (isMoving ()? USEC_SEC : -2);
+	if (isMoving ())
+	{
+		return USEC_SEC;
+	}
+	return (getState () & DOME_DOME_MASK) == DOME_OPENED ? 0 : -2;
 }
 
 
@@ -349,18 +365,13 @@ Watcher::isOnString (int mask)
 int
 Watcher::sendDublinMail (const char *subject)
 {
-	char *text;
+	std::ostringstream _os;
 	int ret;
-	asprintf (&text, "%s.\n"
-		"CLOSE SWITCH:%s\n"
-		"OPEN SWITCH:%s\n"
-		"Weather::isGoodWeather %i\n",
-		subject,
-		isOnString (4),
-		isOnString (1),
-		isGoodWeather ());
-	ret = sendMail (subject, text);
-	free (text);
+	_os << subject
+		<< "CLOSE SWITCH: " << isOnString (4) << std::endl
+		<< "OPEN SWITCH: " << isOnString (1) << std::endl
+		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl;
+	ret = sendMail (subject, _os.str ().c_str ());
 	return ret;
 }
 

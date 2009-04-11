@@ -21,19 +21,26 @@
 #include "modelterm.h"
 #include <math.h>
 
-std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term)
+using namespace rts2telmodel;
+
+std::ostream & 
+ModelTerm::print (std::ostream & os)
 {
 	// correction is (internally) in degrees!
-	os << term->name << " " << (term->corr *
-		3600.0) << " " << term->sigma << std::endl;
+	os << name << " " << (corr * 3600.0) << " " << sigma << std::endl;
 	return os;
 }
 
 
+inline std::ostream & operator << (std::ostream & os, ModelTerm * term)
+{
+	return term->print (os);
+}
+
 // status OK
 void
-Rts2TermME::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermME::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	// simple method
 	double dh;
@@ -49,8 +56,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status OK
 void
-Rts2TermMA::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermMA::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	double d, h;
 
@@ -66,8 +73,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: OK
 void
-Rts2TermIH::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermIH::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra = ln_range_degrees (pos->ra + corr);
 }
@@ -75,8 +82,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: OK
 void
-Rts2TermID::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermID::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	// Add a zero point to the declination
 	pos->dec = pos->dec + corr;
@@ -86,8 +93,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: OK
 void
-Rts2TermCH::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermCH::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra += corr / cos (ln_deg_to_rad (pos->dec));
 }
@@ -95,8 +102,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: OK
 void
-Rts2TermNP::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermNP::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra += corr * tan (ln_deg_to_rad (pos->dec));
 }
@@ -104,8 +111,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: ok
 void
-Rts2TermPHH::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermPHH::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra =
 		pos->ra + ln_rad_to_deg (ln_deg_to_rad (corr) * ln_deg_to_rad (pos->ra));
@@ -114,8 +121,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: ok
 void
-Rts2TermPDD::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermPDD::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->dec =
 		pos->dec -
@@ -125,8 +132,8 @@ Rts2ObsConditions * obs_conditions)
 
 // status: testing
 void
-Rts2TermA1H::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermA1H::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra =
 		pos->ra -
@@ -136,7 +143,7 @@ Rts2ObsConditions * obs_conditions)
 
 // status: testing
 void
-Rts2TermA1D::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
+TermA1D::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
 	pos->dec =
 		pos->dec -
@@ -145,7 +152,7 @@ Rts2TermA1D::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
 
 
 void
-Rts2TermTF::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
+TermTF::apply (struct ln_equ_posn *pos, ObsConditions * obs_conditions)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
@@ -158,8 +165,8 @@ Rts2TermTF::apply (struct ln_equ_posn *pos, Rts2ObsConditions * obs_conditions)
 
 
 void
-Rts2TermTX::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermTX::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
@@ -176,40 +183,40 @@ Rts2ObsConditions * obs_conditions)
 
 
 void
-Rts2TermHCEC::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermHCEC::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra += corr * cos (ln_deg_to_rad (pos->ra));
 }
 
 
 void
-Rts2TermHCES::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermHCES::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->ra += corr * sin (ln_deg_to_rad (pos->ra));
 }
 
 
 void
-Rts2TermDCEC::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermDCEC::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->dec += corr * cos (ln_deg_to_rad (pos->dec));
 }
 
 
 void
-Rts2TermDCES::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermDCES::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	pos->dec += corr * sin (ln_deg_to_rad (pos->dec));
 }
 
 
 void
-Rts2TermDAB::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermDAB::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
@@ -226,8 +233,8 @@ Rts2ObsConditions * obs_conditions)
 
 
 void
-Rts2TermDAF::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermDAF::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	double d, h, f;
 	d = ln_deg_to_rad (pos->dec);
@@ -238,9 +245,9 @@ Rts2ObsConditions * obs_conditions)
 }
 
 
-Rts2TermHarmonics::Rts2TermHarmonics (double in_corr, double in_sigma,
+TermHarmonics::TermHarmonics (double in_corr, double in_sigma,
 const char *in_name):
-Rts2ModelTerm (in_name, in_corr, in_sigma)
+ModelTerm (in_name, in_corr, in_sigma)
 {
 	func[0] = NOT;
 	func[1] = NOT;
@@ -258,7 +265,7 @@ Rts2ModelTerm (in_name, in_corr, in_sigma)
 
 
 const char *
-Rts2TermHarmonics::getFunc (const char *in_func, int i)
+TermHarmonics::getFunc (const char *in_func, int i)
 {
 	const char *end = in_func + 1;
 	int times = 1;
@@ -293,8 +300,8 @@ Rts2TermHarmonics::getFunc (const char *in_func, int i)
 
 
 double
-Rts2TermHarmonics::getValue (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions, int i)
+TermHarmonics::getValue (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions, int i)
 {
 	double val = mul[i];
 	//  struct ln_hrz_posn hrz;
@@ -318,8 +325,8 @@ Rts2ObsConditions * obs_conditions, int i)
 
 
 double
-Rts2TermHarmonics::getMember (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions, int i)
+TermHarmonics::getMember (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions, int i)
 {
 	double val;
 	switch (func[i])
@@ -340,8 +347,8 @@ Rts2ObsConditions * obs_conditions, int i)
 
 
 void
-Rts2TermHarmonics::apply (struct ln_equ_posn *pos,
-Rts2ObsConditions * obs_conditions)
+TermHarmonics::apply (struct ln_equ_posn *pos,
+ObsConditions * obs_conditions)
 {
 	double resVal = corr;
 	for (int i = 0; i < 2; i++)

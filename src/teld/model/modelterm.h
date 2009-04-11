@@ -23,6 +23,9 @@
 
 #include "telmodel.h"
 
+namespace rts2telmodel
+{
+
 /**
  * @file
  * Include classes for various TPoint terms.
@@ -30,17 +33,17 @@
  * @defgroup RTS2TPointTerm Modelling terms for TPOINT
  */
 
-class Rts2ObsConditions;
+class ObsConditions;
 
 /**
  * Represents model term. Child of that class are created
- * in Rts2TelModel::load, and used in apply functions.
+ * in TelModel::load, and used in apply functions.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2ModelTerm
+class ModelTerm
 {
 	private:
 		// term name
@@ -49,19 +52,19 @@ class Rts2ModelTerm
 		double corr;			 // corection parameter, always in degrees!
 		double sigma;			 // model sigma
 	public:
-		Rts2ModelTerm (const char *in_name, double in_corr, double in_sigma)
+		ModelTerm (const char *in_name, double in_corr, double in_sigma)
 		{
 			name = std::string (in_name);
 			corr = in_corr;
 			sigma = in_sigma;
 		}
-		virtual ~ Rts2ModelTerm (void)
+		virtual ~ ModelTerm (void)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions) = 0;
+			ObsConditions * obs_conditions) = 0;
 		virtual void reverse (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions)
+			ObsConditions * obs_conditions)
 		{
 			struct ln_equ_posn pos_old;
 			pos_old.ra = pos->ra;
@@ -71,10 +74,10 @@ class Rts2ModelTerm
 			pos->dec = 2 * pos_old.dec - pos->dec;
 		}
 
-		friend std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
+		std::ostream & print (std::ostream & os);
 };
 
-std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
+std::ostream & operator << (std::ostream & os, ModelTerm * term);
 
 /**
  * Polar axis misalignment in elevation term.
@@ -83,15 +86,15 @@ std::ostream & operator << (std::ostream & os, Rts2ModelTerm * term);
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermME:public Rts2ModelTerm
+class TermME:public ModelTerm
 {
 	public:
-		Rts2TermME (double in_corr, double in_sigma):Rts2ModelTerm ("ME", in_corr,
+		TermME (double in_corr, double in_sigma):ModelTerm ("ME", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -101,15 +104,15 @@ class Rts2TermME:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermMA:public Rts2ModelTerm
+class TermMA:public ModelTerm
 {
 	public:
-		Rts2TermMA (double in_corr, double in_sigma):Rts2ModelTerm ("MA", in_corr,
+		TermMA (double in_corr, double in_sigma):ModelTerm ("MA", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -119,15 +122,15 @@ class Rts2TermMA:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermIH:public Rts2ModelTerm
+class TermIH:public ModelTerm
 {
 	public:
-		Rts2TermIH (double in_corr, double in_sigma):Rts2ModelTerm ("IH", in_corr,
+		TermIH (double in_corr, double in_sigma):ModelTerm ("IH", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -137,15 +140,15 @@ class Rts2TermIH:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermID:public Rts2ModelTerm
+class TermID:public ModelTerm
 {
 	public:
-		Rts2TermID (double in_corr, double in_sigma):Rts2ModelTerm ("ID", in_corr,
+		TermID (double in_corr, double in_sigma):ModelTerm ("ID", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -155,15 +158,15 @@ class Rts2TermID:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermCH:public Rts2ModelTerm
+class TermCH:public ModelTerm
 {
 	public:
-		Rts2TermCH (double in_corr, double in_sigma):Rts2ModelTerm ("CH", in_corr,
+		TermCH (double in_corr, double in_sigma):ModelTerm ("CH", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -173,15 +176,15 @@ class Rts2TermCH:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermNP:public Rts2ModelTerm
+class TermNP:public ModelTerm
 {
 	public:
-		Rts2TermNP (double in_corr, double in_sigma):Rts2ModelTerm ("NP", in_corr,
+		TermNP (double in_corr, double in_sigma):ModelTerm ("NP", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -191,15 +194,15 @@ class Rts2TermNP:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermPHH:public Rts2ModelTerm
+class TermPHH:public ModelTerm
 {
 	public:
-		Rts2TermPHH (double in_corr, double in_sigma):Rts2ModelTerm ("PHH", in_corr,
+		TermPHH (double in_corr, double in_sigma):ModelTerm ("PHH", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -207,15 +210,15 @@ class Rts2TermPHH:public Rts2ModelTerm
  *
  * @author Martin Jelinek <mates@iaa.es>
  */
-class Rts2TermPDD:public Rts2ModelTerm
+class TermPDD:public ModelTerm
 {
 	public:
-		Rts2TermPDD (double in_corr, double in_sigma):Rts2ModelTerm ("PDD", in_corr,
+		TermPDD (double in_corr, double in_sigma):ModelTerm ("PDD", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -225,15 +228,15 @@ class Rts2TermPDD:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermA1H:public Rts2ModelTerm
+class TermA1H:public ModelTerm
 {
 	public:
-		Rts2TermA1H (double in_corr, double in_sigma):Rts2ModelTerm ("A1H", in_corr,
+		TermA1H (double in_corr, double in_sigma):ModelTerm ("A1H", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -243,15 +246,15 @@ class Rts2TermA1H:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermA1D:public Rts2ModelTerm
+class TermA1D:public ModelTerm
 {
 	public:
-		Rts2TermA1D (double in_corr, double in_sigma):Rts2ModelTerm ("A1D", in_corr,
+		TermA1D (double in_corr, double in_sigma):ModelTerm ("A1D", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -261,15 +264,15 @@ class Rts2TermA1D:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermTF:public Rts2ModelTerm
+class TermTF:public ModelTerm
 {
 	public:
-		Rts2TermTF (double in_corr, double in_sigma):Rts2ModelTerm ("TF", in_corr,
+		TermTF (double in_corr, double in_sigma):ModelTerm ("TF", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -279,15 +282,15 @@ class Rts2TermTF:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermTX:public Rts2ModelTerm
+class TermTX:public ModelTerm
 {
 	public:
-		Rts2TermTX (double in_corr, double in_sigma):Rts2ModelTerm ("TX", in_corr,
+		TermTX (double in_corr, double in_sigma):ModelTerm ("TX", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -297,16 +300,16 @@ class Rts2TermTX:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermHCEC:public Rts2ModelTerm
+class TermHCEC:public ModelTerm
 {
 	public:
-		Rts2TermHCEC (double in_corr, double in_sigma):Rts2ModelTerm ("HCEC",
+		TermHCEC (double in_corr, double in_sigma):ModelTerm ("HCEC",
 			in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -316,16 +319,16 @@ class Rts2TermHCEC:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermHCES:public Rts2ModelTerm
+class TermHCES:public ModelTerm
 {
 	public:
-		Rts2TermHCES (double in_corr, double in_sigma):Rts2ModelTerm ("HCES",
+		TermHCES (double in_corr, double in_sigma):ModelTerm ("HCES",
 			in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -335,16 +338,16 @@ class Rts2TermHCES:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermDCEC:public Rts2ModelTerm
+class TermDCEC:public ModelTerm
 {
 	public:
-		Rts2TermDCEC (double in_corr, double in_sigma):Rts2ModelTerm ("DCEC",
+		TermDCEC (double in_corr, double in_sigma):ModelTerm ("DCEC",
 			in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -354,16 +357,16 @@ class Rts2TermDCEC:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermDCES:public Rts2ModelTerm
+class TermDCES:public ModelTerm
 {
 	public:
-		Rts2TermDCES (double in_corr, double in_sigma):Rts2ModelTerm ("DCES",
+		TermDCES (double in_corr, double in_sigma):ModelTerm ("DCES",
 			in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -373,15 +376,15 @@ class Rts2TermDCES:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermDAB:public Rts2ModelTerm
+class TermDAB:public ModelTerm
 {
 	public:
-		Rts2TermDAB (double in_corr, double in_sigma):Rts2ModelTerm ("DAB", in_corr,
+		TermDAB (double in_corr, double in_sigma):ModelTerm ("DAB", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 /**
@@ -391,15 +394,15 @@ class Rts2TermDAB:public Rts2ModelTerm
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermDAF:public Rts2ModelTerm
+class TermDAF:public ModelTerm
 {
 	public:
-		Rts2TermDAF (double in_corr, double in_sigma):Rts2ModelTerm ("DAF", in_corr,
+		TermDAF (double in_corr, double in_sigma):ModelTerm ("DAF", in_corr,
 			in_sigma)
 		{
 		}
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
 };
 
 typedef enum
@@ -414,7 +417,7 @@ sincos_t;
  *
  * @ingroup RTS2TPointTerm
  */
-class Rts2TermHarmonics:public Rts2ModelTerm
+class TermHarmonics:public ModelTerm
 {
 	private:
 		char resType;
@@ -424,12 +427,14 @@ class Rts2TermHarmonics:public Rts2ModelTerm
 
 		const char *getFunc (const char *in_func, int i);
 		double getValue (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions, int i);
+			ObsConditions * obs_conditions, int i);
 		double getMember (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions, int i);
+			ObsConditions * obs_conditions, int i);
 	public:
-		Rts2TermHarmonics (double in_corr, double in_sigma, const char *in_name);
+		TermHarmonics (double in_corr, double in_sigma, const char *in_name);
 		virtual void apply (struct ln_equ_posn *pos,
-			Rts2ObsConditions * obs_conditions);
+			ObsConditions * obs_conditions);
+};
+
 };
 #endif							 /*! __RTS2_MODELTERM__ */

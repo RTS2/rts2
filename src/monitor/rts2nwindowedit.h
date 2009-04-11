@@ -100,5 +100,19 @@ class Rts2NWindowEditDigits:public Rts2NWindowEdit
 	public:
 		Rts2NWindowEditDigits (int _x, int _y, int w, int h,
 			int _ex, int _ey, int _ew, int _eh, bool border = true);
+
+		/**
+		 * Sets edit window value.
+		 */
+		void setValueDouble (double _val)
+		{
+			wprintw (getWriteWindow (), "%f", _val);
+		}
+
+		/**
+		 * Returns integer value of the field. Returns 0 if field is empty.
+		 */
+		int getValueDouble ();
+
 };
 #endif							 /* !__RTS2_NWINDOWEDIT__ */

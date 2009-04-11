@@ -497,6 +497,6 @@ main (int argc, char ** argv)
 	}
 	catch (rts2db::SqlError err)
 	{
-		std::cerr << err.getError () << std::endl;
+		std::cerr << err << std::endl;
 	}
 }

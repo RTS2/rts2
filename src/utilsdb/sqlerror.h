@@ -31,12 +31,12 @@ namespace rts2db {
  */
 class SqlError
 {
-	private:
-		static std::string getError ();
 	public:
 		SqlError ()
 		{
 		}
+
+		static std::string getError ();
 
 		friend std::ostream & operator << (std::ostream & _os, SqlError & err)
 		{

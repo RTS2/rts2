@@ -79,21 +79,21 @@ Rts2Value::sendMetaInfo (Rts2Conn * connection)
 	if (ret < 0)
 		return ret;
 
-	return send (connection);
+	send (connection);
+	return 0;
 }
 
 
-int
+void
 Rts2Value::send (Rts2Conn * connection)
 {
-	return connection->sendValueRaw (getName (), getValue ());
+	connection->sendValueRaw (getName (), getValue ());
 }
 
 
 Rts2ValueString::Rts2ValueString (std::string in_val_name):
 Rts2Value (in_val_name)
 {
-	value = NULL;
 	rts2Type |= RTS2_VALUE_STRING;
 }
 
@@ -101,7 +101,6 @@ Rts2Value (in_val_name)
 Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
 Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = NULL;
 	rts2Type |= RTS2_VALUE_STRING;
 }
 
@@ -109,7 +108,7 @@ Rts2Value (in_val_name, in_description, writeToFits, flags)
 const char *
 Rts2ValueString::getValue ()
 {
-	return value;
+	return value.c_str ();
 }
 
 
@@ -127,17 +126,14 @@ Rts2ValueString::setValue (Rts2Conn * connection)
 int
 Rts2ValueString::setValueCharArr (const char *_value)
 {
-	if ((value != _value) && (value == NULL || _value == NULL || strcmp (value, _value)))
+	if (_value == NULL)
+	{
+		_value = "";
+	}
+	if (value != std::string (_value))
 		changed ();
 
-	delete[]value;
-	if (!_value)
-	{
-		value = NULL;
-		return -1;
-	}
-	value = new char[strlen (_value) + 1];
-	strcpy (value, _value);
+	value = std::string (_value);
 	return 0;
 }
 
@@ -145,17 +141,18 @@ Rts2ValueString::setValueCharArr (const char *_value)
 int
 Rts2ValueString::setValueInteger (int in_value)
 {
-	delete[]value;
-	asprintf (&value, "%i", in_value);
+	std::ostringstream _os;
+	_os << in_value;
+	value = _os.str ();
 	changed ();
 	return 0;
 }
 
 
-int
+void
 Rts2ValueString::send (Rts2Conn * connection)
 {
-	return connection->sendValue (getName (), getValue ());
+	connection->sendValue (getName (), getValue ());
 }
 
 

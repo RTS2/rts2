@@ -56,7 +56,8 @@ FramWeather::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	if (old_value == maxWindSpeed
 		|| old_value == timeoutConn
 		|| old_value == timeoutRain
-		|| old_value == timeoutWindspeed)
+		|| old_value == timeoutWindspeed
+		|| old_value == connUpdateSep)
 		return 0;
 	return SensorWeather::setValue (old_value, new_value);
 }

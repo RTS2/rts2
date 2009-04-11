@@ -22,8 +22,10 @@
 
 #include "../utils/libnova_cpp.h"
 
+using namespace rts2teld;
+
 int
-Rts2DevGEM::sky2counts (int32_t & ac, int32_t & dc)
+GEM::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
@@ -43,7 +45,7 @@ Rts2DevGEM::sky2counts (int32_t & ac, int32_t & dc)
 
 
 int
-Rts2DevGEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
 	double ls, ra, dec;
 	struct ln_hrz_posn hrz;
@@ -155,7 +157,7 @@ Rts2DevGEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, dou
 
 
 int
-Rts2DevGEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
+GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 {
 	double JD, ls;
 	int32_t homeOff;
@@ -209,8 +211,8 @@ Rts2DevGEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 }
 
 
-Rts2DevGEM::Rts2DevGEM (int in_argc, char **in_argv):
-Rts2DevTelescope (in_argc, in_argv)
+GEM::GEM (int in_argc, char **in_argv):
+Telescope (in_argc, in_argv)
 {
 	haZero = decZero = haCpd = decCpd = nan("f");
 
@@ -218,7 +220,7 @@ Rts2DevTelescope (in_argc, in_argv)
 }
 
 
-Rts2DevGEM::~Rts2DevGEM (void)
+GEM::~GEM (void)
 {
 
 }

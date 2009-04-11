@@ -77,29 +77,44 @@ TGDrive::ecRead (char *msg, int len)
 
 	cs = 0x100 - cs;
 
-	if (msg[len - 1] != cs)
+	if ((0x00ff & msg[len - 1]) != cs)
 	{
-	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (int) msg[len - 1] << "." << sendLog;
-		// throw TGDriveError (2);
+	  	logStream (MESSAGE_ERROR) << "invalid checksum, expected " << std::hex << (int) cs << " received " << std::hex << (0x00ff & ((int) msg[len - 1])) << "." << sendLog;
+		throw TGDriveError (2);
 	}
 	if (msg[1] != STAT_OK)
 	{
 		logStream (MESSAGE_ERROR) << "status is not OK, it is " << std::hex << (int) msg[1] << sendLog;
-//		throw TGDriveError (msg[1]);
+		throw TGDriveError (msg[1]);
 	}
 }
 
 void
 TGDrive::writeMsg (char op, int16_t address)
 {
-	char msg[6];
+	char msg[7];
 
 	msg[0] = MSG_START;
 	msg[1] = op;
-	msg[2] = 2;
-	*((int16_t *) (msg + 3)) = address;
+	*((int16_t *) (msg + 2)) = address;
+	char cs = 0x100 - (op + msg[2] + msg[3]);
+	int len = 2;
+	for (int i = 2; i < 4; i++, len++)
+	{
+		if (msg[len] == MSG_START)
+		{
+			if (i == 2)
+				msg[len + 2] = msg[len];
+			len++;
+			msg[len] = MSG_START;
+		}
+	}
+	msg[len] = cs;
+	len++;
 
-	ecWrite (msg);
+	int ret = writePort (msg, len);
+	if (ret)
+		throw TGDriveError (1);
 }
 
 
@@ -159,7 +174,7 @@ TGDrive::write2b (int16_t address, int16_t data)
 int32_t
 TGDrive::read4b (int16_t address)
 {
-	writeMsg (0xD4, address);
+	writeMsg (0xD2, address);
 	char msg[7];
 	ecRead (msg, 7);
 	return * (( int32_t *) (msg + 2));

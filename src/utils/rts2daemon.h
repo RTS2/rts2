@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -47,7 +47,8 @@ class Rts2Daemon:public Rts2Block
 		daemonize;
 		int listen_sock;
 		void addConnectionSock (int in_sock);
-		int lockf;
+		const char * lock_fname;
+		int lock_file;
 
 		// daemon state
 		int state;
@@ -116,7 +117,7 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void checkValueSave (Rts2Value *val);
 
-		int checkLockFile (const char *lock_fname);
+		int checkLockFile (const char *_lock_fname);
 		void setNotDeamonize ()
 		{
 			daemonize = DONT_DAEMONIZE;
@@ -332,14 +333,6 @@ class Rts2Daemon:public Rts2Block
 		virtual int idle ();
 
 		/**
-		 * Updates info_time to current time.
-		 */
-		void updateInfoTime ()
-		{
-			info_time->setValueDouble (getNow ());
-		}
-
-		/**
 		 * Set info time to supplied date. Please note that if you use this function,
 		 * you should consider not calling standard info () routine, which updates
 		 * info time - just overwrite its implementation with empty body.
@@ -348,16 +341,28 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void setInfoTime (struct tm *_date)
 		{
-			info_time->setValueInteger (mktime (_date));
+			setInfoTime (mktime (_date));
+		}
+
+		/**
+		 * Set infotime from time_t structure.
+		 *
+		 * @param _time Time_t holding time (in seconds from 1-1-1970) to which set info time.
+		 */
+		void setInfoTime (time_t _time)
+		{
+			info_time->setValueInteger (_time);
 		}
 
 		/**
 		 * Get time from last info time in seconds (and second fractions).
 		 *
-		 * @return Difference from last info time in seconds.
+		 * @return Difference from last info time in seconds. 86400 (one day) if info time was not defined.
 		 */
 		double getLastInfoTime ()
 		{
+			if (isnan (info_time->getValueDouble ()))
+				return 86400;
 			return getNow () - info_time->getValueDouble ();	
 		}
 
@@ -387,6 +392,14 @@ class Rts2Daemon:public Rts2Block
 			setTimeoutMin ((long int) interval * USEC_SEC);
 		}
 
+		/**
+		 * Updates info_time to current time.
+		 */
+		void updateInfoTime ()
+		{
+			info_time->setValueDouble (getNow ());
+		}
+
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
@@ -402,6 +415,7 @@ class Rts2Daemon:public Rts2Block
 		int infoAll ();
 		void constInfoAll ();
 		int sendInfo (Rts2Conn * conn);
+
 		int sendMetaInfo (Rts2Conn * conn);
 
 		virtual int setValue (Rts2Conn * conn, bool overwriteSaved);

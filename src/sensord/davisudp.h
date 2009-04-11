@@ -66,10 +66,10 @@ class DavisUdp:public Rts2ConnNoSend
 		int weather_timeout;
 		int conn_timeout;
 		int bad_weather_timeout;
-		int bad_windspeed_timeout;
 
 		int rain;
-		float windspeed;
+		float peekwindspeed;
+		float avgWindSpeed;
 		time_t lastWeatherStatus;
 		time_t lastBadWeather;
 
@@ -85,7 +85,7 @@ class DavisUdp:public Rts2ConnNoSend
 	public:
 		DavisUdp (int _weather_port, int _weather_timeout,
 			int _conn_timeout, int _bad_weather_timeout,
-			int _bad_windspeed_timeout, Davis * _master);
+			Davis * _master);
 
 		virtual int init ();
 

@@ -20,7 +20,8 @@
 #ifndef __RTS2_DATA__
 #define __RTS2_DATA__
 
-#include "errno.h"
+#include <errno.h>
+#include <unistd.h>
 
 class Rts2Conn;
 

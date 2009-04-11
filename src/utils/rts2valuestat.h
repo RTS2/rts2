@@ -57,7 +57,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		virtual int setValue (Rts2Conn * connection);
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual int send (Rts2Conn * connection);
+		virtual void send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 
 		int getNumMes ()

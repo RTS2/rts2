@@ -374,7 +374,19 @@ class Rts2Block: public Rts2App
 		 *
 		 * @return -1 on error, otherwise 0.
 		 */
-		int sendAll (char *msg);
+		int sendAll (const char *msg);
+
+		/**
+		 * Send message to all connections.
+		 *
+		 * @param _os Output stream holding the message.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int sendAll (std::ostringstream &_os)
+		{
+			return sendAll (_os.str ().c_str ());
+		}
 
 		/**
 		 * Send variable value to all connections.

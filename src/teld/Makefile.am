@@ -3,11 +3,13 @@ SUBDIRS = model
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec rts2-teld-indi-bridge
 
-noinst_HEADERS = telescope.h rts2devclicop.h ir.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = telescope.h rts2devclicop.h opentpl.h hms.h gem.h fork.h tgdrive.h connopentpl.h
 
-EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp
+EXTRA_DIST = teld.cpp rts2devclicop.cpp gem.cpp fork.cpp tgdrive.cpp
 
 LDADD = teld.o gem.o rts2devclicop.o ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
+
+AM_CXXFLAGS=@NOVA_CFLAGS@
 
 rts2_teld_gemini_SOURCES = gemini.cpp hms.c
 
@@ -27,7 +29,7 @@ rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 rts2_teld_hlohovec_LDADD = tgdrive.o ${LDADD}
 
 rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
-rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz ${LDADD}
+rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}
 rts2_teld_indi_bridge_CPPFLAGS = -I../libindi
 
 if PGSQL
@@ -37,19 +39,11 @@ rts2_telmodeltest_SOURCES = telmodeltest.cpp
 rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@
 endif
 
-if OPENTPL
-bin_PROGRAMS += rts2-teld-ir rts2-ir-errors
+bin_PROGRAMS += rts2-teld-opentpl rts2-opentpl-errors
 
-rts2_teld_ir_SOURCES = ir-main.cpp ir.cpp
-rts2_teld_ir_LDFLAGS = @LIB_OPENTPL@
-rts2_teld_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
+rts2_teld_opentpl_SOURCES = opentpl-main.cpp opentpl.cpp connopentpl.cpp
 
-rts2_ir_errors_SOURCES = ir-errors.cpp ir.cpp
-rts2_ir_errors_LDFLAGS = @LIB_OPENTPL@
-rts2_ir_errors_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
-else
-EXTRA_DIST += ir.cpp ir-main.cpp ir-errors.cpp
-endif
+rts2_opentpl_errors_SOURCES = opentpl-errors.cpp opentpl.cpp connopentpl.cpp
 
 if PARALIB
 bin_PROGRAMS += rts2-teld-paramount

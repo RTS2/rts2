@@ -33,7 +33,7 @@ namespace rts2teld
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Hlohovec:public Rts2DevTelescope
+class Hlohovec:public Telescope
 {
 	private:
 		TGDrive *raDrive;
@@ -57,6 +57,8 @@ class Hlohovec:public Rts2DevTelescope
 		virtual int endMove ();
 		virtual int startPark ();
 		virtual int endPark ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 		
 	public:
 		Hlohovec (int argc, char **argv);
@@ -85,7 +87,7 @@ Hlohovec::processOption (int opt)
 			devDEC = optarg;
 			break;
 		default:
-			return Rts2DevTelescope::processOption (opt);
+			return Telescope::processOption (opt);
 	}
 	return 0;
 }
@@ -95,7 +97,7 @@ int
 Hlohovec::init ()
 {
 	int ret;
-	ret = Rts2DevTelescope::init ();
+	ret = Telescope::init ();
 	if (ret)
 		return ret;
 
@@ -112,6 +114,7 @@ Hlohovec::init ()
 
 	raDrive = new TGDrive (devRA, this);
 	raDrive->setDebug ();
+	raDrive->setLogAsHex ();
 	ret = raDrive->init ();
 	if (ret)
 		return ret;
@@ -122,6 +125,7 @@ Hlohovec::init ()
 	{
 		decDrive = new TGDrive (devDEC, this);
 		decDrive->setDebug ();
+		decDrive->setLogAsHex ();
 		ret = decDrive->init ();
 		if (ret)
 			return ret;
@@ -143,7 +147,7 @@ Hlohovec::info ()
 		dec_rPos->setValueInteger (decDrive->read4b (TGA_CURRPOS));
 	}
 
-	return Rts2DevTelescope::info ();
+	return Telescope::info ();
 }
 
 
@@ -182,7 +186,26 @@ Hlohovec::endPark ()
 }
 
 
-Hlohovec::Hlohovec (int argc, char **argv):Rts2DevTelescope (argc, argv)
+int
+Hlohovec::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == ra_dPos)
+	{
+		try
+		{
+			raDrive->write4b (TGA_TARPOS, new_value->getValueInteger ());
+			return 0;
+		}
+		catch (TGDriveError e)
+		{
+			return -2;
+		}
+	}
+	return Telescope::setValue (old_value, new_value);
+}
+
+
+Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 {
 	raDrive = NULL;
 	decDrive = NULL;

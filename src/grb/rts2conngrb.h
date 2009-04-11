@@ -38,8 +38,8 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 
 		int gcnReceivedBytes;	 // number of bytes received
 
-		long lbuf[SIZ_PKT];		 // local buffer - swaped for Linux
-		long nbuf[SIZ_PKT];		 // network buffer
+		int32_t lbuf[SIZ_PKT];		 // local buffer - swaped for Linux
+		int32_t nbuf[SIZ_PKT];		 // network buffer
 		struct timeval last_packet;
 		double here_sod;		 // machine SOD (seconds after 0 GMT)
 		double last_imalive_sod; // SOD of the previous imalive packet

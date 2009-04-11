@@ -173,7 +173,6 @@ Rts2DevConn::setDeviceName (int _centrald_num, char *_name)
 {
 	setName (_centrald_num, _name);
 	// find centrald connection for us..
-	connections_t::iterator iter;
 	setConnState (CONN_RESOLVING_DEVICE);
 }
 
@@ -246,11 +245,10 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 	Rts2Conn::setConnState (new_conn_state);
 	if (new_conn_state == CONN_AUTH_OK)
 	{
-		char *msg;
-		asprintf (&msg, "this_device %s %i", master->getDeviceName (),
-			master->getDeviceType ());
-		sendMsg (msg);
-		free (msg);
+	 	std::ostringstream _os;
+		_os << "this_device " << master->getDeviceName ()
+			<< " " << master->getDeviceType ();
+		sendMsg (_os);
 		master->sendMetaInfo (this);
 		master->baseInfo (this);
 		master->info (this);
@@ -681,8 +679,7 @@ Rts2Device::setMode (int new_mode, bool defaultValues)
 	}
 	Rts2ConfigSection *sect = (*modeconf)[new_mode];
 	// setup values
-	for (Rts2ConfigSection::iterator iter = sect->begin ();
-		iter != sect->end (); iter++)
+	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
 		Rts2Value *val = getValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)
@@ -882,16 +879,14 @@ int
 Rts2Device::init ()
 {
 	int ret;
-	char *lock_fname;
-
 	// try to open log file..
 
 	ret = Rts2Daemon::init ();
 	if (ret)
 		return ret;
 
-	asprintf (&lock_fname, "%s%s", getLockPrefix (), device_name);
-	ret = checkLockFile (lock_fname);
+	std::string s = std::string (getLockPrefix ()) + std::string (device_name);
+	ret = checkLockFile (s.c_str ());
 	if (ret < 0)
 		return ret;
 	ret = doDeamonize ();
@@ -900,8 +895,6 @@ Rts2Device::init ()
 	ret = lockFile ();
 	if (ret)
 		return ret;
-
-	free (lock_fname);
 
 	// add localhost and server..
 	if (centraldHosts.size () == 0)

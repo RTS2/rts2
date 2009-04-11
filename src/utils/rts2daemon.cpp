@@ -1,6 +1,6 @@
 /* 
  * Daemon class.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,10 +17,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <fcntl.h>
 #include <syslog.h>
+#include <sys/fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/file.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "rts2daemon.h"
+
+#ifndef LOCK_SH
+#define   LOCK_SH   1    /* shared lock */
+#endif
+
+#ifndef LOCK_EX
+#define   LOCK_EX   2    /* exclusive lock */
+#endif
+
+#ifndef LOCK_NB
+#define   LOCK_NB   4    /* don't block when locking */
+#endif
+
+#ifndef LOCK_UN
+#define   LOCK_UN   8    /* unlock */
+#endif
 
 using namespace rts2core;
 
@@ -41,7 +64,8 @@ Rts2Daemon::Rts2Daemon (int _argc, char **_argv, int _init_state):
 Rts2Block (_argc, _argv)
 {
 	lockPrefix = NULL;
-	lockf = 0;
+	lock_fname = NULL;
+	lock_file = 0;
 
 	daemonize = DO_DAEMONIZE;
 
@@ -67,8 +91,8 @@ Rts2Daemon::~Rts2Daemon (void)
 	savedValues.clear ();
 	if (listen_sock >= 0)
 		close (listen_sock);
-	if (lockf)
-		close (lockf);
+	if (lock_file)
+		close (lock_file);
 	delete info_time;
 	closelog ();
 }
@@ -96,20 +120,33 @@ Rts2Daemon::processOption (int in_opt)
 
 
 int
-Rts2Daemon::checkLockFile (const char *lock_fname)
+Rts2Daemon::checkLockFile (const char *_lock_fname)
 {
 	int ret;
+	lock_fname = _lock_fname;
 	mode_t old_mask = umask (022);
-	lockf = open (lock_fname, O_RDWR | O_CREAT, 0666);
+	lock_file = open (lock_fname, O_RDWR | O_CREAT, 0666);
 	umask (old_mask);
-	if (lockf == -1)
+	if (lock_file == -1)
 	{
 		logStream (MESSAGE_ERROR) << "cannot create lock file " << lock_fname
 			<< strerror (errno) << " - do you have correct permission? Try to run daemon as root (sudo,..)"
 			<< sendLog;
 		return -1;
 	}
-	ret = flock (lockf, LOCK_EX | LOCK_NB);
+#ifdef HAVE_FLOCK
+	ret = flock (lock_file, LOCK_EX | LOCK_NB);
+#else
+	struct flock fl;
+
+	fl.l_type   = F_WRLCK;  /* F_RDLCK, F_WRLCK, F_UNLCK    */
+	fl.l_whence = SEEK_SET; /* SEEK_SET, SEEK_CUR, SEEK_END */
+	fl.l_start  = 0;        /* Offset from l_whence         */
+	fl.l_len    = 0;        /* length, 0 = to EOF           */
+	fl.l_pid    = getpid(); /* our PID                      */
+
+	ret = fcntl(lock_file, F_SETLKW, &fl);  /* F_GETLK, F_SETLK, F_SETLKW */
+#endif
 	if (ret)
 	{
 		if (errno == EWOULDBLOCK)
@@ -166,27 +203,12 @@ Rts2Daemon::getLockPrefix ()
 int
 Rts2Daemon::lockFile ()
 {
-	FILE *lock_file;
-	int ret;
-	if (!lockf)
-		return -1;
-	lock_file = fdopen (lockf, "w+");
 	if (!lock_file)
-	{
-		logStream (MESSAGE_ERROR) << "cannot open lock file for writing" <<
-			sendLog;
 		return -1;
-	}
-
-	fprintf (lock_file, "%i\n", getpid ());
-
-	ret = fflush (lock_file);
-	if (ret)
-	{
-		logStream (MESSAGE_DEBUG) << "cannot flush lock file " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
+	std::ofstream _os (lock_fname);
+	_os << getpid () << std::endl;
+	_os.flush ();
+	_os.close ();
 	return 0;
 }
 
@@ -840,10 +862,7 @@ Rts2Daemon::sendBaseInfo (Rts2Conn * conn)
 		iter != constValues.end (); iter++)
 	{
 		Rts2Value *val = *iter;
-		int ret;
-		ret = val->send (conn);
-		if (ret)
-			return ret;
+		val->send (conn);
 	}
 	return 0;
 }
@@ -911,12 +930,10 @@ Rts2Daemon::sendInfo (Rts2Conn * conn)
 		iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
-		int ret;
-		ret = val->send (conn);
-		if (ret)
-			return ret;
+		val->send (conn);
 	}
-	return info_time->send (conn);
+	info_time->send (conn);
+	return 0;
 }
 
 

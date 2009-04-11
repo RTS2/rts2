@@ -1,5 +1,3 @@
-# $Id$
-
 noinst_LIBRARIES = librts2image.a 
 
 noinst_HEADERS = rts2fitsfile.h rts2image.h rts2devcliimg.h cameraimage.h rts2imagedb.h rts2devclifoc.h rts2appdbimage.h rts2appimage.h
@@ -21,7 +19,9 @@ if PGSQL
 
 noinst_LIBRARIES += librts2imagedb.a
 
-librts2imagedb_a_SOURCES = rts2fitsfile.cpp rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp cameraimage.cpp rts2imagedb.cpp rts2devclifoc.cpp
+
+nodist_librts2imagedb_a_SOURCES = rts2imagedb.cpp
+librts2imagedb_a_SOURCES = rts2fitsfile.cpp rts2image.cpp imageastrometry.cpp ham.cpp rts2devcliimg.cpp cameraimage.cpp rts2devclifoc.cpp
 librts2imagedb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 rts2_image_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@

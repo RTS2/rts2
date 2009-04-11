@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "irconn.h"
+#include "connopentpl.h"
 #include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
 
@@ -27,7 +27,9 @@
 #define OPT_SAMPLE          OPT_LOCAL+5
 #define OPT_RESET_MODEL     OPT_LOCAL+6
 
-class IrAxis
+using namespace rts2core;
+
+class OpenTPLAxis
 {
 	private:
 		double referenced;
@@ -40,13 +42,13 @@ class IrAxis
 		int version;
 		const char *name;
 	public:
-		IrAxis (const char *_name, double _referenced, double _currpos,
+		OpenTPLAxis (const char *_name, double _referenced, double _currpos,
 			double _targetpos, double _offset, double _realpos,
 			double _power, double _power_state, int _version);
-		friend std::ostream & operator << (std::ostream & _os, IrAxis irax);
+		friend std::ostream & operator << (std::ostream & _os, OpenTPLAxis irax);
 };
 
-IrAxis::IrAxis (const char *_name, double _referenced, double _currpos,
+OpenTPLAxis::OpenTPLAxis (const char *_name, double _referenced, double _currpos,
 double _targetpos, double _offset, double _realpos,
 double _power, double _power_state, int _version)
 {
@@ -62,7 +64,7 @@ double _power, double _power_state, int _version)
 }
 
 
-std::ostream & operator << (std::ostream & _os, IrAxis irax)
+std::ostream & operator << (std::ostream & _os, OpenTPLAxis irax)
 {
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
@@ -80,7 +82,7 @@ std::ostream & operator << (std::ostream & _os, IrAxis irax)
 }
 
 
-class Rts2DevIrError:public Rts2CliApp
+class AppOpenTPLError:public Rts2CliApp
 {
 	private:
 		std::string ir_ip;
@@ -90,8 +92,8 @@ class Rts2DevIrError:public Rts2CliApp
 		enum { NO_OP, CAL, RESET, REFERENCED, SAMPLE }
 		op;
 
-		IrAxis getAxisStatus (const char *ax_name);
-		IrConn *irConn;
+		OpenTPLAxis getAxisStatus (const char *ax_name);
+		rts2core::OpenTpl *irConn;
 
 		int doReferenced ();
 	protected:
@@ -99,16 +101,16 @@ class Rts2DevIrError:public Rts2CliApp
 		virtual int processArgs (const char *arg);
 		virtual int init ();
 	public:
-		Rts2DevIrError (int in_argc, char **in_argv);
-		virtual ~ Rts2DevIrError (void)
+		AppOpenTPLError (int in_argc, char **in_argv);
+		virtual ~ AppOpenTPLError (void)
 		{
 			delete irConn;
 		}
 		virtual int doProcessing ();
 };
 
-IrAxis
-Rts2DevIrError::getAxisStatus (const char *ax_name)
+OpenTPLAxis
+AppOpenTPLError::getAxisStatus (const char *ax_name)
 {
 	double referenced = nan ("f");
 	double currpos = nan ("f");
@@ -153,13 +155,13 @@ Rts2DevIrError::getAxisStatus (const char *ax_name)
 	(*os) << ax_name << ".VERSION";
 	status = irConn->tpl_get (os->str ().c_str (), version, &status);
 	delete os;
-	return IrAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
+	return OpenTPLAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
 		power, power_state, version);
 }
 
 
 int
-Rts2DevIrError::doReferenced ()
+AppOpenTPLError::doReferenced ()
 {
 	int status = 0;
 	int track;
@@ -204,7 +206,7 @@ Rts2DevIrError::doReferenced ()
 }
 
 
-Rts2DevIrError::Rts2DevIrError (int in_argc, char **in_argv):
+AppOpenTPLError::AppOpenTPLError (int in_argc, char **in_argv):
 Rts2CliApp (in_argc, in_argv)
 {
 	ir_port = 0;
@@ -223,7 +225,7 @@ Rts2CliApp (in_argc, in_argv)
 
 
 int
-Rts2DevIrError::processOption (int in_opt)
+AppOpenTPLError::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -253,7 +255,7 @@ Rts2DevIrError::processOption (int in_opt)
 
 
 int
-Rts2DevIrError::processArgs (const char *arg)
+AppOpenTPLError::processArgs (const char *arg)
 {
 	errList.push_back (arg);
 	return 0;
@@ -261,7 +263,7 @@ Rts2DevIrError::processArgs (const char *arg)
 
 
 int
-Rts2DevIrError::init ()
+AppOpenTPLError::init ()
 {
 	int ret;
 	ret = Rts2App::init ();
@@ -286,7 +288,7 @@ Rts2DevIrError::init ()
 		return -1;
 	}
 
-	irConn = new IrConn (ir_ip, ir_port);
+	irConn = new rts2core::OpenTpl (NULL, ir_ip, ir_port);
 
 	// are we connected ?
 	if (!irConn->isOK ())
@@ -299,7 +301,7 @@ Rts2DevIrError::init ()
 
 
 int
-Rts2DevIrError::doProcessing ()
+AppOpenTPLError::doProcessing ()
 {
 	std::string descri;
 	for (std::list < const char *>::iterator iter = errList.begin ();
@@ -381,6 +383,6 @@ Rts2DevIrError::doProcessing ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevIrError device = Rts2DevIrError (argc, argv);
+	AppOpenTPLError device = AppOpenTPLError (argc, argv);
 	return device.run ();
 }

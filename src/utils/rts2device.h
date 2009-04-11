@@ -126,10 +126,13 @@ class Rts2CommandRegister:public Rts2Command
 		Rts2CommandRegister (Rts2Block * in_master, int centrald_num, const char *device_name, int device_type, const char *device_host, int device_port)
 			:Rts2Command (in_master)
 		{
-			char *buf;
-			asprintf (&buf, "register %i %s %i %s %i", centrald_num, device_name, device_type, device_host, device_port);
-			setCommand (buf);
-			free (buf);
+			std::ostringstream _os;
+			_os << "register " << centrald_num
+				<< " " << device_name
+				<< " " << device_type
+				<< " " << device_host
+				<< " " << device_port;
+			setCommand (_os);
 		}
 
 		virtual int commandReturnOK (Rts2Conn *conn)

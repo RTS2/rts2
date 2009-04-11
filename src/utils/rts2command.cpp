@@ -51,13 +51,17 @@ Rts2Command::Rts2Command (Rts2Command * _command)
 	originator = NULL;
 }
 
+void
+Rts2Command::setCommand (std::ostringstream &_os)
+{
+	setCommand (_os.str().c_str());
+}
 
-int
+void
 Rts2Command::setCommand (const char *_text)
 {
 	text = new char[strlen (_text) + 1];
 	strcpy (text, _text);
-	return 0;
 }
 
 
@@ -140,11 +144,11 @@ Rts2CommandSendKey::Rts2CommandSendKey (Rts2Block * _master, int _centrald_id, i
 int
 Rts2CommandSendKey::send ()
 {
-	char *command;
-	asprintf (&command, "auth %i %i %i",
-		centrald_id, centrald_num, key);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "auth " << centrald_id
+		<< " " << centrald_num
+		<< " " << key;
+	setCommand (_os);
 	return Rts2Command::send ();
 }
 
@@ -152,20 +156,18 @@ Rts2CommandSendKey::send ()
 Rts2CommandAuthorize::Rts2CommandAuthorize (Rts2Block * _master, int centralId, int key)
 :Rts2Command (_master)
 {
-	char *buf;
-	asprintf (&buf, "authorize %i %i", centralId, key);
-	setCommand (buf);
-	free (buf);
+	std::ostringstream _os;
+	_os << "authorize " << centralId << " " << key;
+	setCommand (_os);
 }
 
 
 Rts2CommandKey::Rts2CommandKey (Rts2Block * _master, const char *device_name)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "key %s", device_name);
-	setCommand (command);
-	free (command);
+ 	std::ostringstream _os;
+	_os << "key " << device_name;
+	setCommand (_os);
 }
 
 
@@ -178,11 +180,7 @@ Rts2CommandCameraSettings::Rts2CommandCameraSettings (Rts2DevClientCamera * _cam
 Rts2CommandExposure::Rts2CommandExposure (Rts2Block * _master, Rts2DevClientCamera * _camera, int _bopMask)
 :Rts2Command (_master)
 {
-	char *command;
-								 //, (exp_type == EXP_LIGHT ? 1 : 0), exp_time);
-	asprintf (&command, "expose");
-	setCommand (command);
-	free (command);
+	setCommand ("expose");
 	camera = _camera;
 	setBopMask (_bopMask);
 }
@@ -206,10 +204,9 @@ Rts2Command (_master)
 void
 Rts2CommandFilter::setCommandFilter (int filter)
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " filter = %i", filter);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " filter = " << filter;
+	setCommand (_os);
 }
 
 
@@ -272,116 +269,102 @@ Rts2CommandFilter::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandBox::Rts2CommandBox (Rts2DevClientCamera * _camera, int x, int y, int w, int h):
 Rts2CommandCameraSettings (_camera)
 {
-	char *command;
-	asprintf (&command, "box %i %i %i %i", x, y, w, h);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "box " << x << " " << y << " " << w << " " << h;
+	setCommand (_os);
 }
 
 
 Rts2CommandCenter::Rts2CommandCenter (Rts2DevClientCamera * _camera, int width = -1, int height = -1)
 :Rts2CommandCameraSettings (_camera)
 {
-	char *command;
-	asprintf (&command, "center %i %i", width, height);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "center " << width << " " << height;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, int _operand)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %i", _valName.c_str (), op,
-		_operand);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " <<  _valName << " " << op << " " << _operand;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, long _operand)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %li", _valName.c_str (), op,
-		_operand);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, float _operand)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %f", _valName.c_str (), op,
-		_operand);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %f", _valName.c_str (), op,
-		_operand);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " << _operand;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, double _operand1, double _operand2)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %f %f", _valName.c_str (), op,
-		_operand1, _operand2);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op
+		<< " " << _operand1 << " " << _operand2;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, bool _operand)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %i", _valName.c_str (), op,
-		_operand ? 1 : 0);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op << " " 
+		<< (_operand ? 1 : 0);
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client,std::string _valName, char op, int x, int y, int w, int h)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
-	asprintf (&command, PROTO_SET_VALUE " %s %c %i %i %i %i", _valName.c_str (), op,
-		x, y, w, h);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << PROTO_SET_VALUE " " << _valName << " " << op
+		<< " " << x << " " << y << " " << w << " " << h;
+	setCommand (_os);
 }
 
 
 Rts2CommandChangeValue::Rts2CommandChangeValue (Rts2DevClient * _client, std::string _valName, char op, std::string _operand, bool raw)
 :Rts2Command (_client->getMaster ())
 {
-	char *command;
+	std::ostringstream _os;
 	if (raw)
 	{
-		asprintf (&command, PROTO_SET_VALUE " %s %c %s", _valName.c_str (),
-			op, _operand.c_str ());
+		_os << PROTO_SET_VALUE " " << _valName << " " << op
+			<< " " << _operand;
 	}
 	else
 	{
-		asprintf (&command, PROTO_SET_VALUE " %s %c \"%s\"", _valName.c_str (),
-			op, _operand.c_str ());
+		_os << PROTO_SET_VALUE " " << _valName << " " << op
+			<< " \"" << _operand << "\"";
 	}
-	setCommand (command);
-	free (command);
+	setCommand (_os);
 }
 
 
@@ -395,10 +378,9 @@ Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * 
 Rts2CommandMove::Rts2CommandMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "move %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "move " << ra << " " << dec;
+	setCommand (_os);
 	tel = _tel;
 }
 
@@ -414,10 +396,9 @@ Rts2CommandMove::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandMoveUnmodelled::Rts2CommandMoveUnmodelled (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
 :Rts2CommandMove (_master, _tel)
 {
-	char *command;
-	asprintf (&command, "move_not_model %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "move_not_model " << ra << " " << dec;
+	setCommand (_os);
 }
 
 
@@ -425,10 +406,9 @@ Rts2CommandMoveFixed::Rts2CommandMoveFixed (Rts2Block * _master, Rts2DevClientTe
 double ra, double dec)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "fixed %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "fixed " << ra << " " << dec;
+	setCommand (_os);
 	tel = _tel;
 }
 
@@ -444,10 +424,9 @@ Rts2CommandMoveFixed::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandResyncMove::Rts2CommandResyncMove (Rts2Block * _master, Rts2DevClientTelescope * _tel, double ra, double dec)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "resync %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "resync " << ra << " " << dec;
+	setCommand (_os);
 	tel = _tel;
 }
 
@@ -463,10 +442,9 @@ Rts2CommandResyncMove::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandChange::Rts2CommandChange (Rts2Block * _master, double ra, double dec)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "change %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "change " << ra << " " << dec;
+	setCommand (_os);
 	tel = NULL;
 }
 
@@ -475,10 +453,9 @@ Rts2CommandChange::Rts2CommandChange (Rts2DevClientTelescope * _tel,
 double ra, double dec)
 :Rts2Command (_tel->getMaster ())
 {
-	char *command;
-	asprintf (&command, "change %lf %lf", ra, dec);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "change " << ra << " " << dec;
+	setCommand (_os);
 	tel = _tel;
 }
 
@@ -502,42 +479,39 @@ Rts2CommandChange::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandCorrect::Rts2CommandCorrect (Rts2Block * _master, int corr_mark, int corr_img, int img_id, double ra_corr, double dec_corr, double pos_err)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "correct %i %i %i %lf %lf %lf", corr_mark, corr_img,
-		img_id, ra_corr, dec_corr, pos_err);
-	setCommand (command);
-	free (command);
+ 	std::ostringstream _os;
+	_os << "correct " << corr_mark << " " << corr_img
+		<< " " << img_id << " " << ra_corr
+		<< " " << dec_corr << " " << pos_err;
+	setCommand (_os);
 }
 
 
 Rts2CommandStartGuide::Rts2CommandStartGuide (Rts2Block * _master, char dir, double dir_dist)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "start_guide %c %lf", dir, dir_dist);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "start_guide " << dir << " " << dir_dist;
+	setCommand (_os);
 }
 
 
 Rts2CommandStopGuide::Rts2CommandStopGuide (Rts2Block * _master, char dir)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "stop_guide %c", dir);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "stop_guide " << dir;
+	setCommand (_os);
 }
 
 
 Rts2CommandCupolaMove::Rts2CommandCupolaMove (Rts2DevClientCupola * _copula, double ra, double dec)
 :Rts2Command (_copula->getMaster ())
 {
-	char *msg;
+	std::ostringstream _os;
 	copula = _copula;
-	asprintf (&msg, "move %f %f", ra, dec);
-	setCommand (msg);
-	free (msg);
+	_os << "move " << ra << " " << dec;
+	setCommand (_os);
 }
 
 
@@ -553,10 +527,9 @@ Rts2CommandCupolaMove::commandReturnFailed (int status, Rts2Conn * conn)
 void
 Rts2CommandChangeFocus::change (int _steps)
 {
-	char *msg;
-	asprintf (&msg, "step %i", _steps);
-	setCommand (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << "step " << _steps;
+	setCommand (_os);
 }
 
 
@@ -592,10 +565,9 @@ Rts2CommandChangeFocus::commandReturnFailed (int status, Rts2Conn * conn)
 void
 Rts2CommandSetFocus::set (int _steps)
 {
-	char *msg;
-	asprintf (&msg, "set %i", _steps);
-	setCommand (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << "set " << _steps;
+	setCommand (_os);
 }
 
 
@@ -632,11 +604,9 @@ Rts2CommandMirror::Rts2CommandMirror (Rts2DevClientMirror * _mirror, int _pos)
 :Rts2Command (_mirror->getMaster ())
 {
 	mirror = _mirror;
-	char *
-		msg;
-	asprintf (&msg, "set %c", (_pos == 0 ? 'A' : 'B'));
-	setCommand (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << "set " << (_pos == 0 ? "A" : "B");
+	setCommand (_os);
 }
 
 
@@ -653,11 +623,9 @@ Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, int _filt
 :Rts2Command (_phot->getMaster ())
 {
 	phot = _phot;
-	char *
-		msg;
-	asprintf (&msg, "intfil %i %f %i", _filter, _exp, _count);
-	setCommand (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << "intfil " << _filter << " " << _exp << " " <<_count;
+	setCommand (_os);
 }
 
 
@@ -665,10 +633,9 @@ Rts2CommandIntegrate::Rts2CommandIntegrate (Rts2DevClientPhot * _phot, float _ex
 :Rts2Command (_phot->getMaster ())
 {
 	phot = _phot;
-	char *msg;
-	asprintf (&msg, "integrate %f %i", _exp, _count);
-	setCommand (msg);
-	free (msg);
+	std::ostringstream _os;
+	_os << "integrate " << _exp << " " << _count;
+	setCommand (_os);
 }
 
 
@@ -684,30 +651,27 @@ Rts2CommandIntegrate::commandReturnFailed (int status, Rts2Conn * conn)
 Rts2CommandExecNext::Rts2CommandExecNext (Rts2Block * _master, int next_id)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "next %i", next_id);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "next " << next_id;
+	setCommand (_os);
 }
 
 
 Rts2CommandExecNow::Rts2CommandExecNow (Rts2Block * _master, int now_id)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "now %i", now_id);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "now " << now_id;
+	setCommand (_os);
 }
 
 
 Rts2CommandExecGrb::Rts2CommandExecGrb (Rts2Block * _master, int grb_id)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "grb %i", grb_id);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "grb " << grb_id;
+	setCommand (_os);
 }
 
 
@@ -735,10 +699,9 @@ Rts2CommandScriptEnds::Rts2CommandScriptEnds (Rts2Block *_master)
 Rts2CommandMessageMask::Rts2CommandMessageMask (Rts2Block * _master, int _mask)
 :Rts2Command (_master)
 {
-	char *command;
-	asprintf (&command, "message_mask %i", _mask);
-	setCommand (command);
-	free (command);
+	std::ostringstream _os;
+	_os << "message_mask " << _mask;
+	setCommand (_os);
 }
 
 

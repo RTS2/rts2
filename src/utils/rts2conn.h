@@ -100,9 +100,6 @@ class Rts2Value;
 class Rts2Conn:public Rts2Object
 {
 	private:
-		char *buf;
-		size_t buf_size;
-		char *buf_top;
 		char *command_buf_top;
 
 		char *full_data_end;	 // points to end of full data
@@ -190,6 +187,10 @@ class Rts2Conn:public Rts2Object
 		void dataReceived ();
 
 	protected:
+		char *buf;
+		size_t buf_size;
+		char *buf_top;
+
 		/**
 		 * Other side of connection state.
 		 */
@@ -210,6 +211,11 @@ class Rts2Conn:public Rts2Object
 		 * Connection file descriptor.
 		 */
 		int sock;
+
+		/**
+		 * Check if buffer is fully filled. If that's the case, increase buffer size.
+		 */
+		void checkBufferSize ();
 
 		virtual int acceptConn ();
 
@@ -378,6 +384,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		virtual int sendMsg (const char *msg);
 		int sendMsg (std::string msg);
+		int sendMsg (std::ostringstream &_os);
 
 		/**
 		 * Switch connection to binary connection.
@@ -419,7 +426,7 @@ class Rts2Conn:public Rts2Object
 		 */
 		int sendCommandEnd (int num, const char *in_msg);
 
-		virtual int processLine ();
+		virtual void processLine ();
 
 		/**
 		 * Called when select call indicates that socket holds new
@@ -455,7 +462,7 @@ class Rts2Conn:public Rts2Object
 			port = in_port;
 		}
 		void setOtherType (int other_device_type);
-		void getAddress (char *addrBuf, int buf_size);
+		void getAddress (char *addrBuf, int _buf_size);
 		int getLocalPort ()
 		{
 			return port;

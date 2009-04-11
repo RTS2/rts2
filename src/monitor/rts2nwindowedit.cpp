@@ -44,7 +44,7 @@ Rts2NWindowEdit::~Rts2NWindowEdit (void)
 bool
 Rts2NWindowEdit::passKey (int key)
 {
-	return isalnum (key) || isspace (key);
+	return isalnum (key) || isspace (key) || key == '.'  || key == ',';
 }
 
 
@@ -175,4 +175,20 @@ Rts2NWindowEditDigits::passKey (int key)
 	if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
 		return true;
 	return false;
+}
+
+
+int
+Rts2NWindowEditDigits::getValueDouble ()
+{
+	char buf[200];
+	char *endptr;
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+	double tval = strtod (buf, &endptr);
+	if (*endptr != '\0' && *endptr != ' ')
+	{
+		// log error;
+		return 0;
+	}
+	return tval;
 }

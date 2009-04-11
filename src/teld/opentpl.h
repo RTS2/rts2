@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_TELD_IR__
-#define __RTS2_TELD_IR__
+#ifndef __RTS2_TELD_OPENTPL__
+#define __RTS2_TELD_OPENTPL__
 
 #include <errno.h>
 #include <string.h>
@@ -32,20 +32,20 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <opentpl/client.h>
 #include <list>
 #include <iostream>
 
-#include "irconn.h"
+#include "connopentpl.h"
 
-using namespace OpenTPL;
+namespace rts2teld
+{
 
 /**
- * Base class for IR telescope.
+ * Base class for OpenTPL telescope.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TelescopeIr:public Rts2DevTelescope
+class TelOpenTPL:public Telescope
 {
 	private:
 		std::string ir_ip;
@@ -80,18 +80,14 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 
 		// model values
 		Rts2ValueString *model_dumpFile;
-		Rts2ValueDouble *model_aoff;
-		Rts2ValueDouble *model_zoff;
-		Rts2ValueDouble *model_ae;
-		Rts2ValueDouble *model_an;
-		Rts2ValueDouble *model_npae;
-		Rts2ValueDouble *model_ca;
-		Rts2ValueDouble *model_flex;
+		std::vector <Rts2ValueDouble *> modelParams;
 
 		int infoModel ();
 
 	protected:
-		IrConn *irConn;
+		rts2core::OpenTpl *irConn;
+
+		Rts2ValueInteger *model_recordcount;
 
 		time_t timeout;
 
@@ -119,15 +115,17 @@ class Rts2TelescopeIr:public Rts2DevTelescope
 			return derotatorPower->getValueBool ();
 		}
 	public:
-		Rts2TelescopeIr (int argc, char **argv);
-		virtual ~ Rts2TelescopeIr (void);
+		TelOpenTPL (int argc, char **argv);
+		virtual ~ TelOpenTPL (void);
 		virtual int ready ();
 
-		virtual int getAltAz ();
+		virtual void getAltAz ();
 
 		virtual int info ();
 		virtual int saveModel ();
 		virtual int loadModel ();
 		virtual int resetMount ();
 };
-#endif							 /* !__RTS2_TELD_IR__ */
+
+};
+#endif							 /* !__RTS2_TELD_OPENTPL__ */

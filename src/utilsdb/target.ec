@@ -1685,7 +1685,7 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "createTarget cannot get entry from targets table for target with ID " << db_tar_id << sendLog;
+		logStream (MESSAGE_ERROR) << "createTarget cannot get entry from targets table for target with ID " << db_tar_id << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		return NULL;
 	}
 

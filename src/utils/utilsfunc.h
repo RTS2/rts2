@@ -23,7 +23,15 @@
 #include <string>
 #include <vector>
 #include <sys/types.h>
+#include <sstream>
 
+#include <string.h>
+
+#include "config.h"
+
+#ifndef HAVE_ISINF
+#include <ieeefp.h>
+#endif
 /**
  * Create directory recursively.
  *
@@ -50,5 +58,28 @@ std::vector<std::string> SplitStr (const std::string& text, const std::string& d
  * @param text   Text which will be splited.
  */
 std::vector<char> Str2CharVector (std::string text);
+
+
+/**
+ * Fill value to const char**.
+ *
+ * @param p    Pointer to char which will be filled,
+ * @param val  Value which will be copied to character.
+ */
+template < typename T >
+void fillIn (char **p, T val)
+{
+	std::ostringstream _os;
+	_os << val;
+	*p = new char[_os.str ().length () + 1];
+	strcpy (*p, _os.str (). c_str ());
+}
+
+/**
+ * Replacement for isinf - on Solaris platform
+ */
+#ifndef HAVE_ISINF
+int isinf(double x);
+#endif
 
 #endif							 /* !__RTS_UTILSFUNC__ */

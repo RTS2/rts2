@@ -39,8 +39,11 @@ class Rts2SimbadTarget:public ConstTarget
 		std::string simbadType;
 		struct ln_equ_posn propMotions;
 		float simbadBMag;
+
+		std::ostringstream *simbadOut;
 	public:
 		Rts2SimbadTarget (const char *in_name);
+		virtual ~Rts2SimbadTarget (void);
 
 		virtual int load ();
 

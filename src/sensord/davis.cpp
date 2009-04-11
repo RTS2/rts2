@@ -24,15 +24,11 @@
 // aren't as precise as we want and we observe dropouts quite often
 #define BART_WEATHER_TIMEOUT        360
 
-// how long after weather was bad can weather be good again; in
-// seconds
-#define BART_BAD_WEATHER_TIMEOUT    360
-#define BART_BAD_WINDSPEED_TIMEOUT  360
-#define BART_CONN_TIMEOUT           360
+#define DEF_WEATHER_TIMEOUT         600
 
-#define DEF_WEATHER_TIMEOUT 600
-
-#define OPT_UDP             OPT_LOCAL + 1001
+#define OPT_UDP                     OPT_LOCAL + 1001
+#define OPT_AVG_WINDSPEED           OPT_LOCAL + 1002
+#define OPT_PEEK_WINDSPEED          OPT_LOCAL + 1003
 
 using namespace rts2sensor;
 
@@ -42,10 +38,18 @@ Davis::processOption (int _opt)
 	switch (_opt)
 	{
 		case 'b':
-			cloud_bad = atof (optarg);
+			if (cloud_bad == NULL)
+				createValue (cloud_bad, "cloud_bad", "bad cloud trigger", false);
+			cloud_bad->setValueCharArr (optarg);
 			break;
 		case OPT_UDP:
 			udpPort->setValueInteger (atoi (optarg));
+			break;
+		case OPT_PEEK_WINDSPEED:
+			maxPeekWindSpeed->setValueCharArr (optarg);
+			break;
+		case OPT_AVG_WINDSPEED:
+			maxWindSpeed->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (_opt);
@@ -62,9 +66,7 @@ Davis::init ()
 		return ret;
 
 	weatherConn = new DavisUdp (udpPort->getValueInteger (), BART_WEATHER_TIMEOUT,
-		BART_CONN_TIMEOUT,
-		BART_BAD_WEATHER_TIMEOUT,
-		BART_BAD_WINDSPEED_TIMEOUT, this);
+		BART_CONN_TIMEOUT, BART_BAD_WEATHER_TIMEOUT, this);
 	weatherConn->init ();
 	addConnection (weatherConn);
 
@@ -72,28 +74,78 @@ Davis::init ()
 }
 
 
-Davis::Davis (int argc, char **argv)
-:SensorWeather (argc, argv)
+int
+Davis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
-	createValue (temperature, "DOME_TMP", "temperature in degrees C");
-	createValue (humidity, "DOME_HUM", "(outside) humidity");
-	createValue (rain, "RAIN", "whenever is raining");
+	if (old_value == maxWindSpeed || old_value == maxPeekWindSpeed)
+		return 0;
+	return SensorWeather::setValue (old_value, new_value);
+}
+
+
+int
+Davis::idle ()
+{
+	if (getLastInfoTime () > 120)
+		setWeatherTimeout (300);
+	return SensorWeather::idle ();
+}
+
+
+Davis::Davis (int argc, char **argv)
+:SensorWeather (argc, argv, 180)
+{
+	createValue (temperature, "DOME_TMP", "temperature in degrees C", true);
+	createValue (humidity, "DOME_HUM", "(outside) humidity", true);
+	createValue (rain, "RAIN", "whenever is raining", true);
 	rain->setValueInteger (true);
 
-	createValue (windspeed, "WINDSPED", "windspeed");
-	// as soon as we get update from meteo, we will solve it. We have rain now, so dome will remain closed at start
+	createValue (avgWindSpeed, "AVGWIND", "average windspeed", true);
+	createValue (peekWindSpeed, "PEEKWIND", "peek windspeed", true);
+
+	createValue (rainRate, "rain_rate", "rain rate from bucket sensor", false);
+        
+	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false);
+	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false);
+
+	maxWindSpeed->setValueFloat (nan ("f"));
+	maxPeekWindSpeed->setValueFloat (nan ("f"));
 
 	weatherConn = NULL;
-	cloud_bad = 0;
 
-	createValue (cloud, "CLOUD_S", "cloud sensor value");
+	cloud = NULL;
+	cloud_bad = NULL;
 
 	createValue (udpPort, "udp-port", "port for UDP connection from meteopoll", false);
 	udpPort->setValueInteger (1500);
 
-	addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
-	addOption ('P', "max_peek_windspeed", 1, "maximal allowed windspeed (in km/h");
+	addOption (OPT_PEEK_WINDSPEED, "max-peek-windspeed", 1, "maximal allowed peek windspeed (in m/sec)");
+	addOption (OPT_AVG_WINDSPEED, "max-avg-windspeed", 1, "maximal allowed average windspeed (in m/sec");
 	addOption (OPT_UDP, "udp-port", 1, "UDP port for incoming weather connections");
+}
+
+
+int
+Davis::info ()
+{
+	// do not call infotime update..
+	return 0;
+}
+
+
+void
+Davis::setCloud (double in_cloud)
+{
+      if (cloud == NULL)
+      {
+	      createValue (cloud, "CLOUD_S", "cloud sensor value");
+	      updateMetaInformations (cloud);
+      }
+      cloud->setValueDouble (in_cloud);
+      if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
+      {
+	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+      }
 }
 
 

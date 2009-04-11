@@ -21,13 +21,16 @@
 
 #include "../utils/rts2connserial.h"
 
+namespace rts2teld
+{
+
 /**
  * Driver for Kolonica telescope.
  *
  * @author Petr Kubanek <peter@kubanek.net>
  * @author Marek Chrastina
  */
-class TelKolonica:public TelFork
+class Kolonica:public Fork
 {
 	private:
 		const char *telDev;
@@ -114,13 +117,16 @@ class TelKolonica:public TelFork
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 	public:
-		TelKolonica (int in_argc, char **in_argv);
-		virtual ~TelKolonica (void);
+		Kolonica (int in_argc, char **in_argv);
+		virtual ~Kolonica (void);
 };
 
+};
+
+using namespace rts2teld;
 
 void
-TelKolonica::intToBin (unsigned long num, char *buf, int len)
+Kolonica::intToBin (unsigned long num, char *buf, int len)
 {
 	int i;
       
@@ -132,7 +138,7 @@ TelKolonica::intToBin (unsigned long num, char *buf, int len)
 
 
 int
-TelKolonica::telWait (long num)
+Kolonica::telWait (long num)
 {
 	char buf[5];
 	buf[0] = 'W';
@@ -143,7 +149,7 @@ TelKolonica::telWait (long num)
 
 
 int
-TelKolonica::changeAxis (int axId)
+Kolonica::changeAxis (int axId)
 {
 	char buf[3];
 	buf[0] = 'X';
@@ -163,7 +169,7 @@ TelKolonica::changeAxis (int axId)
 
 
 int
-TelKolonica::setAltAxis (long value)
+Kolonica::setAltAxis (long value)
 {
 	char buf[5];
 
@@ -187,7 +193,7 @@ TelKolonica::setAltAxis (long value)
 
 
 int
-TelKolonica::setAzAxis (long value)
+Kolonica::setAzAxis (long value)
 {
  	char buf[5];
 
@@ -211,7 +217,7 @@ TelKolonica::setAzAxis (long value)
 
 
 int
-TelKolonica::setMotor (int axId, bool on)
+Kolonica::setMotor (int axId, bool on)
 {
 	char buf[3];
 
@@ -226,7 +232,7 @@ TelKolonica::setMotor (int axId, bool on)
 
 
 int
-TelKolonica::processOption (int in_opt)
+Kolonica::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -234,17 +240,17 @@ TelKolonica::processOption (int in_opt)
 			telDev = optarg;
 			break;
 		default:
-			return TelFork::processOption (in_opt);
+			return Fork::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-TelKolonica::init ()
+Kolonica::init ()
 {
 	int ret;
-	ret = TelFork::init ();
+	ret = Fork::init ();
 	if (ret)
 		return ret;
 	
@@ -262,49 +268,49 @@ TelKolonica::init ()
 
 
 int
-TelKolonica::startMove()
+Kolonica::startMove()
 {
 	return -1;
 }
 
 
 int
-TelKolonica::stopMove()
+Kolonica::stopMove()
 {
 	return -1;
 }
 
 
 int
-TelKolonica::startPark()
+Kolonica::startPark()
 {
 	return -1;
 }
 
 
 int
-TelKolonica::endPark()
+Kolonica::endPark()
 {
 	return -1;
 }
 
 
 int
-TelKolonica::updateLimits()
+Kolonica::updateLimits()
 {
 	return -1;
 }
 
 
 int
-TelKolonica::getHomeOffset(int32_t&)
+Kolonica::getHomeOffset(int32_t&)
 {
 	return 0;
 }
 
 
 int
-TelKolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
+Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == axAlt)
 	{
@@ -322,12 +328,12 @@ TelKolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	{
 		return setMotor (2, ((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
-	return TelFork::setValue (old_value, new_value);
+	return Fork::setValue (old_value, new_value);
 }
 
 
-TelKolonica::TelKolonica (int in_argc, char **in_argv)
-:TelFork (in_argc, in_argv)
+Kolonica::Kolonica (int in_argc, char **in_argv)
+:Fork (in_argc, in_argv)
 {
 	telDev = "/dev/ttyS0";
 	telConn = NULL;
@@ -342,7 +348,7 @@ TelKolonica::TelKolonica (int in_argc, char **in_argv)
 }
 
 
-TelKolonica::~TelKolonica (void)
+Kolonica::~Kolonica (void)
 {
 	delete telConn;
 }
@@ -350,6 +356,6 @@ TelKolonica::~TelKolonica (void)
 int
 main (int argc, char **argv)
 {
-	TelKolonica device = TelKolonica (argc, argv);
+	Kolonica device = Kolonica (argc, argv);
 	return device.run ();
 }

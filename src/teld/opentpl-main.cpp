@@ -17,26 +17,35 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "ir.h"
+#include "opentpl.h"
 
 #define BLIND_SIZE            1.0
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 1
 
-class Rts2DevTelescopeIr:public Rts2TelescopeIr
+namespace rts2teld
+{
+
+class OpenTPL:public TelOpenTPL
 {
 	private:
 		struct ln_equ_posn target;
 		int irTracking;
 
+		Rts2ValueDouble *modelQuality;
+		Rts2ValueDouble *goodSep;
+
 		double derOff;
 
 		int startMoveReal (double ra, double dec);
+
 	protected:
 		virtual int processOption (int in_opt);
 
 		virtual int initValues ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevTelescopeIr (int in_arcg, char **in_argv);
+		OpenTPL (int in_arcg, char **in_argv);
 		virtual int startMove ();
 		virtual int isMoving ();
 		virtual int stopMove ();
@@ -52,8 +61,12 @@ class Rts2DevTelescopeIr:public Rts2TelescopeIr
 		virtual int changeMasterState (int new_state);
 };
 
+};
+
+using namespace rts2teld;
+
 int
-Rts2DevTelescopeIr::processOption (int in_opt)
+OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -64,17 +77,17 @@ Rts2DevTelescopeIr::processOption (int in_opt)
 			derOff = atof (optarg);
 			break;
 		default:
-			return Rts2TelescopeIr::processOption (in_opt);
+			return TelOpenTPL::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevTelescopeIr::initValues ()
+OpenTPL::initValues ()
 {
 	int ret;
-	ret = Rts2TelescopeIr::initValues ();
+	ret = TelOpenTPL::initValues ();
 	if (ret)
 		return ret;
 	if (derotatorOffset)
@@ -85,11 +98,17 @@ Rts2DevTelescopeIr::initValues ()
 
 
 int
-Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
+OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == goodSep)
+		return 0;
+	return TelOpenTPL::setValue (old_value, new_value);
+}
+
+int
+OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	//  status = setTelescopeTrack (0);
-
 	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
 	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
 	if (derotatorOffset && !getDerotatorPower ())
@@ -99,14 +118,18 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 	}
 
 	double offset;
+	int track;
 
 	// apply corrections
 	switch (getPointingModel ())
 	{
 		case 0:
-			offset = -1.0 * getCorrRa ();
+			offset = getCorrRa ();
 			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
-			offset = -1.0 * getCorrDec ();
+			status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+			offset = getCorrDec ();
+			if (track == 3)
+				offset *= -1.0;
 			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
 			break;
 		case 1:
@@ -118,10 +141,17 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 
 	}
 
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "IR startMove TRACK status " << status <<
-		sendLog;
-	#endif
+	if (isModelOn () && (getCorrRa () != 0 || getCorrDec () != 0))
+	{
+		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+		status = irConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
+		status = irConn->getValueInteger ("POINTING.POINTINGPARAMS.RECORDCOUNT", model_recordcount, &status);
+		logStream (MESSAGE_DEBUG) << "modeling quality parameter: " << modelQuality->getValueDouble ()
+			<< " status "<< status
+			<< " recordcount " << model_recordcount->getValueInteger () << sendLog;
+		sendValueAll (modelQuality);
+		sendValueAll (model_recordcount);
+	}
 
 	if (derotatorOffset)
 	{
@@ -131,33 +161,24 @@ Rts2DevTelescopeIr::startMoveReal (double ra, double dec)
 			return status;
 	}
 
-	//  usleep (USEC_SEC);
 	status = setTelescopeTrack (irTracking);
-	usleep (USEC_SEC);
 	return status;
 }
 
 
 int
-Rts2DevTelescopeIr::startMove ()
+OpenTPL::startMove ()
 {
 	int status = 0;
 	double sep;
-
-	struct ln_hrz_posn tAltAz;
 
 	getTarget (&target);
 
 	switch (getPointingModel ())
 	{
 		case 0:
-			getTargetAltAz (&tAltAz);
-			if ((tAltAz.az < 5 || tAltAz.az > 355 || (tAltAz.az > 175 && tAltAz.az < 185))
-				&& tAltAz.alt < 15)
-			{
-				logStream (MESSAGE_ERROR) << "Cannot move to target, as it's too close to dome" << sendLog;
-				return -1;
-			}
+			if (target.dec < -89.85)
+				target.dec = -89.80;
 			break;
 		case 1:
 			// move to zenit - move to different dec instead
@@ -193,11 +214,11 @@ Rts2DevTelescopeIr::startMove ()
 		return -1;
 	}
 	if (sep > 2)
-		sleep (3);
+	  	usleep (USEC_SEC / 5);
 	else if (sep > 2 / 60.0)
-		usleep (USEC_SEC / 10);
+		usleep (USEC_SEC / 100);
 	else
-		usleep (USEC_SEC / 10);
+		usleep (USEC_SEC / 1000);
 
 	time (&timeout);
 	timeout += 30;
@@ -206,14 +227,14 @@ Rts2DevTelescopeIr::startMove ()
 
 
 int
-Rts2DevTelescopeIr::isMoving ()
+OpenTPL::isMoving ()
 {
 	return moveCheck (false);
 }
 
 
 int
-Rts2DevTelescopeIr::stopMove ()
+OpenTPL::stopMove ()
 {
 	int status = 0;
 	double zd;
@@ -244,7 +265,7 @@ Rts2DevTelescopeIr::stopMove ()
 
 
 int
-Rts2DevTelescopeIr::startPark ()
+OpenTPL::startPark ()
 {
 	int status = TPL_OK;
 	// Park to south+zenith
@@ -255,11 +276,22 @@ Rts2DevTelescopeIr::startPark ()
 	#endif
 	sleep (1);
 	status = TPL_OK;
+	double tra;
+	double tdec;
 	switch (getPointingModel ())
 	{
 		case 0:
-			status = irConn->tpl_set ("HA.TARGETPOS", 90, &status);
-			status = irConn->tpl_set ("DEC.TARGETPOS", 0, &status);
+			status = irConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
+			if (status != TPL_OK)
+				return -1;
+			// decide dec based on latitude
+			tdec = 90 - fabs (telLatitude->getValueDouble ());
+			if (telLatitude->getValueDouble () < 0)
+				tdec *= -1.0;
+
+			status = irConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
+			status = irConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
+			setTelescopeTrack (irTracking);
 			break;
 		case 1:
 			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
@@ -280,17 +312,18 @@ Rts2DevTelescopeIr::startPark ()
 
 
 int
-Rts2DevTelescopeIr::moveCheck (bool park)
+OpenTPL::moveCheck (bool park)
 {
 	int status = TPL_OK;
 	int track;
 	double poin_dist;
 	time_t now;
-	struct ln_equ_posn tPos;
-	struct ln_equ_posn cPos;
 	// if parking, check is different for EQU telescope
 	if (park)
 	{
+		struct ln_equ_posn tPos;
+		struct ln_equ_posn cPos;
+
 		switch (getPointingModel ())
 		{
 			case 0:
@@ -306,54 +339,35 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 				status = irConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
 				break;
 		}
+		poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	}
 	else
 	{
-		// status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-		status = irConn->tpl_get ("POINTING.TARGET.RA", tPos.ra, &status);
-		tPos.ra *= 15.0;
-		status = irConn->tpl_get ("POINTING.TARGET.DEC", tPos.dec, &status);
-		status = irConn->tpl_get ("POINTING.CURRENT.RA", cPos.ra, &status);
-		cPos.ra *= 15.0;
-		status = irConn->tpl_get ("POINTING.CURRENT.DEC", cPos.dec, &status);
-		// for EQU models, we must include target offset
-		if (getPointingModel () == 0)
-		{
-			double haOff, decOff;
-			status = irConn->tpl_get ("HA.OFFSET", haOff, &status);
-			status = irConn->tpl_get ("DEC.OFFSET", decOff, &status);
-			tPos.ra -= haOff;
-			tPos.dec -= decOff;
-		}
+		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 	}
 	if (status != TPL_OK)
 		return -1;
-	poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	time (&now);
 	// get track..
 	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
 	if (track == 0 && !park)
 	{
-		logStream (MESSAGE_WARNING) <<
-			"Tracking sudently stopped, reenable tracking" << sendLog;
+		logStream (MESSAGE_WARNING) << "Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
 		setTelescopeTrack (irTracking);
 		sleep (1);
 		return USEC_SEC / 100;
 	}
-	// 0.01 = 36 arcsec
-	if (fabs (poin_dist) <= 0.01)
+	if (fabs (poin_dist) <= goodSep->getValueDouble ()) 
 	{
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist << sendLog;
 		#endif
 		return -2;
 	}
 	// finish due to timeout
 	if (timeout < now)
 	{
-		logStream (MESSAGE_ERROR) << "IR isMoving target distance in timeout "
-			<< poin_dist << "(" << status << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "checkMoves target distance in timeout " << poin_dist << " (" << status << ")" << sendLog;
 		return -1;
 	}
 	return USEC_SEC / 100;
@@ -361,14 +375,14 @@ Rts2DevTelescopeIr::moveCheck (bool park)
 
 
 int
-Rts2DevTelescopeIr::isParking ()
+OpenTPL::isParking ()
 {
 	return moveCheck (true);
 }
 
 
 int
-Rts2DevTelescopeIr::endPark ()
+OpenTPL::endPark ()
 {
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
@@ -377,12 +391,17 @@ Rts2DevTelescopeIr::endPark ()
 }
 
 
-Rts2DevTelescopeIr::Rts2DevTelescopeIr (int in_argc, char **in_argv):Rts2TelescopeIr (in_argc,
+OpenTPL::OpenTPL (int in_argc, char **in_argv):TelOpenTPL (in_argc,
 in_argv)
 {
 	irTracking = 4;
 
 	derOff = 0;
+
+	createValue (modelQuality, "model_quality", "quality of model data", false);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST);
+	// 2.7 arcsec
+	goodSep->setValueDouble (0.00075);
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,
@@ -391,7 +410,7 @@ in_argv)
 
 
 int
-Rts2DevTelescopeIr::startWorm ()
+OpenTPL::startWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (irTracking);
@@ -402,7 +421,7 @@ Rts2DevTelescopeIr::startWorm ()
 
 
 int
-Rts2DevTelescopeIr::stopWorm ()
+OpenTPL::stopWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (0);
@@ -413,7 +432,7 @@ Rts2DevTelescopeIr::stopWorm ()
 
 
 int
-Rts2DevTelescopeIr::changeMasterState (int new_state)
+OpenTPL::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -426,13 +445,13 @@ Rts2DevTelescopeIr::changeMasterState (int new_state)
 			coverClose ();
 			break;
 	}
-	return Rts2DevTelescope::changeMasterState (new_state);
+	return TelOpenTPL::changeMasterState (new_state);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevTelescopeIr device = Rts2DevTelescopeIr (argc, argv);
+	OpenTPL device = OpenTPL (argc, argv);
 	return device.run ();
 }

@@ -332,15 +332,13 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 	int loops;
 	int nwrite;
 
-	char *full_name;
-	asprintf (&full_name, "/home/ccdtest/bin/%s", filename);
+	std::string full_name = std::string ("/home/ccdtest/bin/") + std::string (filename);
 
-	fp = fopen (full_name, "r");
+	fp = fopen (full_name.c_str(), "r");
 	if (!fp)
 	{
 		logStream (MESSAGE_ERROR) << "cannot open file " << full_name <<
 			sendLog;
-		free (full_name);
 		return -1;
 	}
 	cptr = &cbuf;
@@ -359,7 +357,6 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 	logStream (MESSAGE_DEBUG) << "From " << full_name
 		<< " written " << loops << " serial commands."
 		<< sendLog;
-	free (full_name);
 	return 0;
 }
 

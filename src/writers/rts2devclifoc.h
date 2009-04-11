@@ -56,7 +56,7 @@ class Rts2ConnFocus:public Rts2ConnFork
 			const char *in_exe, int in_endEvent);
 		virtual ~ Rts2ConnFocus (void);
 		virtual int newProcess ();
-		virtual int processLine ();
+		virtual void processLine ();
 		int getChange ()
 		{
 			return change;

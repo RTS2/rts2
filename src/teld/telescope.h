@@ -1,6 +1,6 @@
 /* 
  * Telescope control daemon.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
+#include "../utils/objectcheck.h"
 
 // types of corrections
 #define COR_ABERATION        0x01
@@ -32,7 +33,13 @@
 // if we will use model corrections..
 #define COR_MODEL            0x08
 
-class Rts2TelModel;
+namespace rts2telmodel
+{
+	class Model;
+};
+
+namespace rts2teld
+{
 
 /**
  * Basic class for telescope drivers.
@@ -47,7 +54,7 @@ class Rts2TelModel;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevTelescope:public Rts2Device
+class Telescope:public Rts2Device
 {
 	private:
 		Rts2Conn * move_connection;
@@ -103,6 +110,13 @@ class Rts2DevTelescope:public Rts2Device
 		 * Corrections from astrometry/user.
 		 */
 		Rts2ValueRaDec *corrRaDec;
+
+		/**
+		 * If this value is true, any software move of the telescope is blocked.
+		 */
+		Rts2ValueBool *blockMove;
+
+		Rts2ValueBool *blockOnStandby;
 
 		/**
 		 * Target HRZ coordinates.
@@ -249,9 +263,12 @@ class Rts2DevTelescope:public Rts2Device
 		struct timeval dir_timeouts[4];
 
 		char *modelFile;
-		Rts2TelModel *model;
+		rts2telmodel::Model *model;
 
 		bool standbyPark;
+		const char *horizonFile;
+
+		ObjectCheck *hardHorizon;
 
 		/**
 		 * Apply aberation correction.
@@ -589,8 +606,8 @@ class Rts2DevTelescope:public Rts2Device
 		}
 
 	public:
-		Rts2DevTelescope (int argc, char **argv);
-		virtual ~ Rts2DevTelescope (void);
+		Telescope (int argc, char **argv);
+		virtual ~ Telescope (void);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -608,12 +625,11 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int stopGuide (char dir);
 		virtual int stopGuideAll ();
 
-		virtual int getAltAz ();
+		virtual void getAltAz ();
 
 		// callback functions from telescope connection
 		virtual int info ();
 
-		virtual int killAll ();
 		virtual int scriptEnds ();
 
 		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
@@ -670,5 +686,7 @@ class Rts2DevTelescope:public Rts2Device
 		virtual int commandAuthorized (Rts2Conn * conn);
 
 		virtual void setFullBopState (int new_state);
+};
+
 };
 #endif							 /* !__RTS2_TELD_CPP__ */

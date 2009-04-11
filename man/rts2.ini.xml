@@ -228,10 +228,18 @@
       </varlistentry>
       <varlistentry>
         <term>
+	  <option>L</option>
+        </term>
+        <listitem>
+          <para>Switch all next printed dates to local time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>M</option>
         </term>
         <listitem>
-          <para>Exposure start Minute.</para>
+          <para>Exposure start Minute - either local or UT time.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -240,6 +248,14 @@
         </term>
         <listitem>
           <para>Exposure start month.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>n</option>
+        </term>
+        <listitem>
+          <para>Exposure number.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -295,6 +311,14 @@
       </varlistentry>
       <varlistentry>
         <term>
+	  <option>U</option>
+        </term>
+        <listitem>
+          <para>Switch all next printed dates to UT time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>y</option>
         </term>
         <listitem>
@@ -303,10 +327,10 @@
       </varlistentry>
       <varlistentry>
         <term>
-	  <option>n</option>
+	  <option>Z</option>
         </term>
         <listitem>
-          <para>Exposure number.</para>
+          <para>Exposure time zone.</para>
         </listitem>
       </varlistentry>
     </variablelist>
@@ -373,6 +397,14 @@
 	  <listitem>
 	    <para>Observatory latitude in degrees. Positive values are for northern hemisphere locations, negative for southern hemisphere
 	    - e.g. Republic of South Africa locations should have negative values, all Europe locations positive.</para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>min_alt</option>
+	  </term>
+	  <listitem>
+	    <para>Minimum altitude for an object to be selected. Entered in degrees.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>

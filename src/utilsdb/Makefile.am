@@ -22,14 +22,15 @@ if PGSQL
 bin_PROGRAMS = rts2-airmasscale
 noinst_LIBRARIES = librts2blockdb.a
 
-rts2_airmasscale_SOURCES = airmasscale.cpp
+nodist_rts2_airmasscale_SOURCES = airmasscale.cpp
 rts2_airmasscale_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_airmasscale_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ librts2blockdb.a ../utils/librts2block.a
 
-librts2blockdb_a_SOURCES = sqlerror.cpp rts2devicedb.cpp target.cpp sub_targets.cpp rts2appdb.cpp rts2sqlcolumn.cpp rts2obs.cpp \
+nodist_librts2blockdb_a_SOURCES = sqlerror.cpp rts2devicedb.cpp target.cpp sub_targets.cpp rts2appdb.cpp rts2sqlcolumn.cpp rts2obs.cpp \
 	rts2obsset.cpp rts2taruser.cpp rts2count.cpp rts2imgset.cpp rts2targetset.cpp rts2plan.cpp rts2planset.cpp \
 	rts2prop.cpp rts2camlist.cpp target_auger.cpp rts2messagedb.cpp rts2targetplanet.cpp rts2targetgrb.cpp \
 	rts2imgsetstat.cpp rts2targetell.cpp rts2user.cpp rts2userset.cpp account.cpp accountset.cpp
+librts2blockdb_a_SOURCES = rts2imgsetstat.cpp
 librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 
 %.cpp: %.ec

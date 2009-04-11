@@ -1,6 +1,9 @@
 /* 
  * Bridge functions to INDI protocol.
- * Copyright (C) 2008 Markus Wildi
+ * Copyright (C) 2008 Markus Wildi, Observatory Vermes
+ *
+ * This code is heavily based on the work of Jasem Mutlaq and
+ * Elwood C. Downey, see indi.sf.net
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,14 +20,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <pthread.h>
+
 #include "indiapi.h"
 #include "lilxml.h"
 #include "base64.h"
 
+// used to exchange values from INDI to RTS2
+float indi_ra ;
+float indi_dec ;
+
 typedef struct
 {
-	char *ge, *gv;				 /* element name and value */
-	//int ok;  ToDo				/* set when found */
+	char *ge, *gv;	   /* element name and value */
 } GetEV;
 
 typedef struct
@@ -69,31 +77,24 @@ typedef struct
 
 typedef struct
 {
-	char *d;					 /* device */
-	char *p;					 /* property */
-	SetEV *ev;					 /* elements */
-	int nev;					 /* n elements */
+	char *d;				 /* device */
+	char *p;				 /* property */
+	SetEV *ev;				 /* elements */
+	int nev;				 /* n elements */
 	set_INDIDef *dp;			 /* one of defs if known, else NULL */
 } SetPars;
-
-#define INDIPORT        7624	 /* default port */
 
 #ifdef __cplusplus
 extern "C"
 {
-	#endif
-	XMLEle *getINDI( FILE *svrwfp, FILE *svrrfp) ;
-	int setINDI ( SetPars *bsets, int bnsets, FILE *svrwfp, FILE *svrrfp) ;
-	int        rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs, FILE *svrwfp, FILE *svrrfp) ;
-	int        rts2setINDI( char *device, const char *data_type, const char *property, const char *elements, const char *values, FILE *svrwfp, FILE *svrrfp) ;
-	int        fill_getINDIproperty( char *dev, const char *type, const char *prop, const char *ele) ;
-	int        fill_setINDIproperty( char *dev, const char *type, const char *prop, const char *ele, const char *val, SetPars *dsets, int *dnsets) ;
-	SearchDef *malloc_getINDIproperty() ;
-	SetPars   *malloc_setINDIproperty( SetPars *csets, int *ncsets) ;
-	void       free_getINDIproperty( SearchDef *csrchs, int ncsrchs) ;
-	void       free_setINDIproperty( SetPars *csets, int ncsets) ;
-	void       openINDIServer( const char *host, int port, FILE **svrwfp, FILE **svrrfp);
-	void       closeINDIServer( FILE *svrwfp, FILE *svrrfp);
-	#ifdef __cplusplus
+#endif
+// The "offical" API of the library
+	int        rts2getINDI( char *device, const char *data_type, const char *property, const char *elements, int *cnsrchs, SearchDef **csrchs) ;
+	int        rts2setINDI( char *device, const char *data_type, const char *property, const char *elements, const char *values) ;
+	void       rts2openINDIServer( const char *host, int port);
+	void       rts2closeINDIServer();
+        void       *rts2listenINDIthread (void * arg) ;
+	void       rts2free_getINDIproperty( SearchDef *csrchs, int ncsrchs) ;
+#ifdef __cplusplus
 }
 #endif

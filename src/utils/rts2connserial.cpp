@@ -215,11 +215,10 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 	int wlen = 0;
 	if (debugPortComm)
 	{
-		char *tmp_b = new char[b_len + 1];
-		memcpy (tmp_b, wbuf, b_len);
-		tmp_b[b_len] = '\0';
-		logStream (MESSAGE_DEBUG) << "will write to port: '" << tmp_b << "'" << sendLog;
-		delete []tmp_b;
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "will write to port: '";
+		logBuffer (ls, wbuf, b_len);
+		ls <<  "'" << sendLog;
 	}
 	while (wlen < b_len)
 	{

@@ -71,6 +71,9 @@
       	    <option>-p <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
+      	    <option>-f <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
 	    <option>-c <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
@@ -165,7 +168,17 @@
         <listitem>
           <para>
 	    Specify expresion to print out. For each file, expression will be
-	    printed to standard output, one expresion on each line.
+	    printed to standard output, one expresion on each line. Please see
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    for expresion descrition.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-P <replaceable>RTS2 expression</replaceable></option></term>
+        <listitem>
+          <para>
+	    Similar to -p. Add filename to the beginning of line.
 	  </para>
         </listitem>
       </varlistentry>

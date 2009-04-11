@@ -189,66 +189,6 @@ Bootes2::updateTemperature ()
 int
 Bootes2::updateStatus ()
 {
-	int ret;
-	unsigned int value;
-	int sw_val = 0;
-	ret = comedi_dio_read (comediDevice, 3, 0, &value);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read first close end switch (subdev 3, channel 2)" << sendLog;
-		return -1;
-	}
-	if (value)
-	  	sw_val |= DOME_C1;
-
-	ret = comedi_dio_read (comediDevice, 3, 1, &value);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read second close end switch (subdev 3, channel 3)" << sendLog;
-		return -1;
-	}
-	if (value)
-	  	sw_val |= DOME_C2;
-
-	ret = comedi_dio_read (comediDevice, 3, 2, &value);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read first open end switch (subdev 3, channel 0)" << sendLog;
-		return -1;
-	}
-	if (value)
-		sw_val |= DOME_O1;
-
-	ret = comedi_dio_read (comediDevice, 3, 3, &value);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read second open end switch (subdev 3, channel 1)" << sendLog;
-		return -1;
-	}
-	if (value)
-	  	sw_val |= DOME_O2;
-
-	ret = comedi_dio_read (comediDevice, 3, 5, &value);
-	if (ret != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
-		return -1;
-	}
-	if (value == 0)
-	{
-		setWeatherTimeout (RAIN_TIMEOUT);
-		raining->setValueBool (true);
-	}
-	else
-	{
-		raining->setValueBool (false);
-	}
-
-	logStream (MESSAGE_DEBUG) << "sw_state " << std::hex << sw_state->getValueInteger () <<
-		" raining " << raining->getValueBool () << sendLog;
-
-	sw_state->setValueInteger (sw_val);
-
 	return 0;
 }
 
@@ -351,9 +291,6 @@ Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
-	ret = updateStatus ();
-	if (ret)
-		return -1;
 
 	if (sw_state->getValueInteger () == (DOME_C1 | DOME_C2))
 		setState (DOME_CLOSED, "Dome is closed");
@@ -376,13 +313,6 @@ Bootes2::startOpen ()
 	if (!isGoodWeather ())
 		return -1;
 
-	ret = updateStatus ();
-	if (ret)
-	 	return -1;
-	// only open if we are closed
-	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
-		return 0;
-	
 	return roofChange ();
 }
 

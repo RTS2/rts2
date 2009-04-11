@@ -19,7 +19,7 @@ user@host:~/apogee$ make apogee_USB.so
 
 Then you will need to run ./configure from rts2 with --with-alta option:
 
-user@host:~/fliusb/libfli$ cd ~/rts2
+user@host:~/apogee$ cd ~/rts2
 user@host:~/rts2$ ./configure --without-wcs --with-alta=$HOME/apogee
 
 Then run make and (as root) make install. Please see RUN file for details on

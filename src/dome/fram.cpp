@@ -854,27 +854,20 @@ Fram::info ()
 int
 Fram::sendFramMail (const char *subject)
 {
-	char *openText;
 	int ret;
 	ret = zjisti_stav_portu_rep ();
-	asprintf (&openText, "%s.\n"
-		"End switch status:\n"
-		"CLOSE SWITCH RIGHT:%s CLOSE SWITCH LEFT:%s\n"
-		" OPEN SWITCH RIGHT:%s  OPEN SWITCH LEFT:%s\n"
-		"Weather::isGoodWeather %i\n"
-		"port state: %i\n"
-		"closingNum: %i lastClosing: %s",
-		subject,
-		isOnString (KONCAK_ZAVRENI_PRAVY),
-		isOnString (KONCAK_ZAVRENI_LEVY),
-		isOnString (KONCAK_OTEVRENI_PRAVY),
-		isOnString (KONCAK_OTEVRENI_LEVY),
-		isGoodWeather (),
-		ret,
-		closingNum,
-		ctime (&lastClosing));
-	ret = sendMail (subject, openText);
-	free (openText);
+	std::ostringstream _os;
+	_os << subject << std::endl
+		<< "End switch status:" << std::endl
+		<< "CLOSE SWITCH RIGHT: " << isOnString (KONCAK_ZAVRENI_PRAVY)
+		<< "CLOSE SWITCH LEFT: " << isOnString (KONCAK_ZAVRENI_LEVY) << std::endl
+		<< "OPEN SWITCH RIGHT: " << isOnString (KONCAK_OTEVRENI_PRAVY)
+		<< "OPEN SWITCH LEFT: " << isOnString (KONCAK_OTEVRENI_LEVY) << std::endl
+		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl
+		<< "port state: " << ret << std::endl
+		<< "closingNum: " << closingNum
+		<< "lastClosing: " << ctime (&lastClosing);
+	ret = sendMail (subject, _os.str ().c_str ());
 	return ret;
 }
 

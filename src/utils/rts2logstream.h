@@ -100,7 +100,7 @@ class Rts2LogStream
 		 * @param arr  Array which will be logged.  @param len  Lenght
 		 * of logged array.
 		 */
-		void logArr (char *arr, int len);
+		void logArr (const char *arr, int len);
 
 		/**
 		 * Log character array as array of hex values (prefixed with 0x and separated by blanks)
@@ -108,7 +108,7 @@ class Rts2LogStream
 		 * @param arr  Array which will be logged.
 		 * @param len  Lenght of logged array.
 		 */
-		void logArrAsHex (char *arr, int len);
+		void logArrAsHex (const char *arr, int len);
 
 		inline void sendLog ();
 };

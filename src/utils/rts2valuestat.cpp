@@ -116,12 +116,12 @@ Rts2ValueDoubleStat::getDisplayValue ()
 }
 
 
-int
+void
 Rts2ValueDoubleStat::send (Rts2Conn * connection)
 {
 	if (numMes != (int) valueList.size ())
 		calculate ();
-	return Rts2ValueDouble::send (connection);
+	Rts2ValueDouble::send (connection);
 }
 
 

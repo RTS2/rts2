@@ -1,0 +1,30 @@
+Instructions for Comedi devices
+===============================
+
+
+Comedi is a project to provide drivers for various measurement cards. It can be
+downloaded from http://www.comedi.org, but easier is to apt-get install
+comedi-sources libcomedi-dev.
+
+To compile modules:
+
+cd /usr/src/
+tar xjf comedi.tar.bz2
+cd modules/comedi
+./configure
+make
+
+If you hit any problems, let me know (petr [at] kubanek [dot] net). There is a
+know issue with kernels above 2.6.26, I have patch for those.
+
+Once you will have comedi installed, just rerun ./configure, it will detect
+that libcomedi is installed and will build all devices which depends on it.
+After ./configure reports yes for Comedi driver, just rerun make to build all
+comedi dependend devices.
+
+Currently only weather sensor for Bootes 2 dome depends on Comedi library - its
+source is located in src/sensord/bootes2.cpp. You can check this for example how
+to use Comedi device in your application.
+
+Then run make and (as root) make install. Please see RUN file for details on
+that.
