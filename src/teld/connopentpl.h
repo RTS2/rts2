@@ -117,17 +117,6 @@ class OpenTpl: public ConnTCP
 		int handleCommand (char *buffer, bool isActual); 
 
 		/**
-		 * Check if connection to TPL is running.
-		 *
-		 * @return True if connetion is running.
-		 */
-		bool isOK ()
-		{
-			return true;
-			// return (tplc->IsAuth () && tplc->IsConnected ());
-		}
-
-		/**
 		 * Check if given module exists.
 		 *
 		 * @param _name  Module _name.

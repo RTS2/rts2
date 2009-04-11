@@ -89,7 +89,7 @@ class OpenTPL:public Telescope
 		int startMoveReal (double ra, double dec);
 
 	protected:
-		rts2core::OpenTpl *irConn;
+		rts2core::OpenTpl *opentplConn;
 
 		Rts2ValueInteger *model_recordcount;
 
@@ -160,9 +160,9 @@ OpenTPL::coverClose ()
 	double targetPos;
 	if (cover_state == CLOSED)
 		return 0;
-	status = irConn->tpl_set ("COVER.TARGETPOS", 0, &status);
-	status = irConn->tpl_set ("COVER.POWER", 1, &status);
-	status = irConn->tpl_get ("COVER.TARGETPOS", targetPos, &status);
+	status = opentplConn->tpl_set ("COVER.TARGETPOS", 0, &status);
+	status = opentplConn->tpl_set ("COVER.POWER", 1, &status);
+	status = opentplConn->tpl_get ("COVER.TARGETPOS", targetPos, &status);
 	cover_state = CLOSING;
 	logStream (MESSAGE_INFO) << "closing cover, status" << status <<
 		" target position " << targetPos << sendLog;
@@ -178,8 +178,8 @@ OpenTPL::coverOpen ()
 	int status = TPL_OK;
 	if (cover_state == OPENED)
 		return 0;
-	status = irConn->tpl_set ("COVER.TARGETPOS", 1, &status);
-	status = irConn->tpl_set ("COVER.POWER", 1, &status);
+	status = opentplConn->tpl_set ("COVER.TARGETPOS", 1, &status);
+	status = opentplConn->tpl_set ("COVER.POWER", 1, &status);
 	cover_state = OPENING;
 	logStream (MESSAGE_INFO) << "opening cover, status" << status << sendLog;
 	return status;
@@ -191,10 +191,10 @@ OpenTPL::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
 	int old_track;
-	status = irConn->tpl_get ("POINTING.TRACK", old_track, &status);
+	status = opentplConn->tpl_get ("POINTING.TRACK", old_track, &status);
 	if (status != TPL_OK)
 		return -1;
-	status = irConn->tpl_setww ("POINTING.TRACK", new_track | (old_track & 128), &status);
+	status = opentplConn->tpl_setww ("POINTING.TRACK", new_track | (old_track & 128), &status);
 	if (status != TPL_OK)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot setTelescopeTrack" << sendLog;
@@ -210,7 +210,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == cabinetPower)
 	{
 		status =
-			irConn->tpl_set ("CABINET.POWER",
+			opentplConn->tpl_set ("CABINET.POWER",
 			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
 			&status);
 		if (status != TPL_OK)
@@ -220,7 +220,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == derotatorOffset)
 	{
 		status =
-			irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (),
+			opentplConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (),
 			&status);
 		if (status != TPL_OK)
 			return -2;
@@ -229,7 +229,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == derotatorCurrpos)
 	{
 		status =
-			irConn->tpl_set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (),
+			opentplConn->tpl_set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (),
 			&status);
 		if (status != TPL_OK)
 			return -2;
@@ -238,7 +238,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == derotatorPower)
 	{
 		status =
-			irConn->tpl_set ("DEROTATOR[3].POWER",
+			opentplConn->tpl_set ("DEROTATOR[3].POWER",
 			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
 			&status);
 		if (status != TPL_OK)
@@ -276,7 +276,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		{
 			// construct name..
 			std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
-			status = irConn->tpl_set (pn.c_str (), new_value->getValueDouble (), &status);
+			status = opentplConn->tpl_set (pn.c_str (), new_value->getValueDouble (), &status);
 			if (status != TPL_OK)
 				return -2;
 			return 0;
@@ -284,7 +284,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == model_recordcount)
 	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", new_value->getValueInteger (), &status);
+		status = opentplConn->tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", new_value->getValueInteger (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -301,7 +301,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 {
 	openTPLServer = NULL;
 
-	irConn = NULL;
+	opentplConn = NULL;
 
 	doCheckPower = false;
 
@@ -345,7 +345,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 
 OpenTPL::~OpenTPL (void)
 {
-	delete irConn;
+	delete opentplConn;
 }
 
 
@@ -399,22 +399,15 @@ OpenTPL::initIrDevice ()
 		return -1;
 	}
 
-	irConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
+	opentplConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
 
 	try
 	{	
-		irConn->init ();
+		opentplConn->init ();
 	}
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
-	}
-
-	// are we connected ?
-	if (!irConn->isOK ())
-	{
-		std::cerr << "Connection to server failed" << std::endl;
-		return -1;
 	}
 
 	return 0;
@@ -445,7 +438,7 @@ OpenTPL::initValues ()
 
 	std::string config_mount;
 
-	status = irConn->tpl_get ("CONFIG.MOUNT", config_mount, &status);
+	status = opentplConn->tpl_get ("CONFIG.MOUNT", config_mount, &status);
 	if (status != TPL_OK)
 		return -1;
 
@@ -508,26 +501,26 @@ OpenTPL::initValues ()
 
 	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true);
 
-	status = irConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
-	status = irConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
-	status = irConn->getValueDouble ("LOCAL.HEIGHT", telAltitude, &status);
+	status = opentplConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
+	status = opentplConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
+	status = opentplConn->getValueDouble ("LOCAL.HEIGHT", telAltitude, &status);
 
 	if (status != TPL_OK)
 	{
 		return -1;
 	}
 
-	irConn->tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
+	opentplConn->tpl_get ("CABINET.SETUP.HW_ID", serial, &status);
 	addConstValue ("IR_HWID", "serial number", serial.c_str ());
 
-	if (irConn->haveModule ("COVER"))
+	if (opentplConn->haveModule ("COVER"))
 	{
 		createValue (cover, "cover", "cover state (1 = opened)", false);
 		initCoverState ();
 	}
 
 	// nasmith derotator
-	if (irConn->haveModule ("DEROTATOR[3]"))
+	if (opentplConn->haveModule ("DEROTATOR[3]"))
 	{
 		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG, 0, true);
 		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES);
@@ -552,18 +545,18 @@ OpenTPL::checkErrors ()
 	int status = TPL_OK;
 	std::string list;
 
-	status = irConn->tpl_get ("CABINET.STATUS.LIST", list, &status);
+	status = opentplConn->tpl_get ("CABINET.STATUS.LIST", list, &status);
 	if (status == 0 && list.length () > 2 && list != errorList)
 	{
 		// print errors to log & ends..
 		logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
 			list << sendLog;
 		errorList = list;
-		irConn->tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
+		opentplConn->tpl_set ("CABINET.STATUS.CLEAR", 1, &status);
 		if (list == "\"ERR_Soft_Limit_max:4:ZD\"")
 		{
 			double zd;
-			status = irConn->tpl_get ("ZD.CURRPOS", zd, &status);
+			status = opentplConn->tpl_get ("ZD.CURRPOS", zd, &status);
 			if (!status)
 			{
 				if (zd < -80)
@@ -575,7 +568,7 @@ OpenTPL::checkErrors ()
 					"IR checkErrors set pointing status " << status << sendLog;
 				sleep (1);
 				status = TPL_OK;
-				status = irConn->tpl_set ("ZD.TARGETPOS", zd, &status);
+				status = opentplConn->tpl_set ("ZD.TARGETPOS", zd, &status);
 				logStream (MESSAGE_ERROR) <<
 					"IR checkErrors zd soft limit reset " <<
 					zd << " (" << status << ")" << sendLog;
@@ -595,7 +588,7 @@ OpenTPL::checkCover ()
 			getCover ();
 			if (cover->getValueDouble () == 1.0)
 			{
-				irConn->tpl_set ("COVER.POWER", 0, &status);
+				opentplConn->tpl_set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) << "IR checkCover opened " << status <<
 					sendLog;
@@ -609,7 +602,7 @@ OpenTPL::checkCover ()
 			getCover ();
 			if (cover->getValueDouble () == 0.0)
 			{
-				irConn->tpl_set ("COVER.POWER", 0, &status);
+				opentplConn->tpl_set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG) << "IR checkCover closed " << status <<
 					sendLog;
@@ -632,7 +625,7 @@ OpenTPL::checkPower ()
 	int status = TPL_OK;
 	double power_state;
 	double referenced;
-	status = irConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
+	status = opentplConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "IR checkPower tpl_ret " << status <<
@@ -645,8 +638,8 @@ OpenTPL::checkPower ()
 
 	if (power_state == 0)
 	{
-		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
-		status = irConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
+		status = opentplConn->tpl_set ("CABINET.POWER", 1, &status);
+		status = opentplConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "IR checkPower set power ot 1 ret " <<
@@ -658,7 +651,7 @@ OpenTPL::checkPower ()
 			logStream (MESSAGE_DEBUG) << "IR checkPower waiting for power up" <<
 				sendLog;
 			sleep (5);
-			status = irConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
+			status = opentplConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "IR checkPower power_state ret " <<
@@ -669,7 +662,7 @@ OpenTPL::checkPower ()
 	}
 	while (true)
 	{
-		status = irConn->tpl_get ("CABINET.REFERENCED", referenced, &status);
+		status = opentplConn->tpl_get ("CABINET.REFERENCED", referenced, &status);
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "IR checkPower get referenced " <<
@@ -682,7 +675,7 @@ OpenTPL::checkPower ()
 			<< sendLog;
 		if (referenced == 0)
 		{
-			status = irConn->tpl_set ("CABINET.REINIT", 1, &status);
+			status = opentplConn->tpl_set ("CABINET.REINIT", 1, &status);
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "IR checkPower reinit " <<
@@ -716,7 +709,7 @@ OpenTPL::getCover ()
 {
 	double cor_tmp;
 	int status = TPL_OK;
-	irConn->tpl_get ("COVER.REALPOS", cor_tmp, &status);
+	opentplConn->tpl_get ("COVER.REALPOS", cor_tmp, &status);
 	if (status)
 		return;
 	cover->setValueDouble (cor_tmp);
@@ -744,19 +737,19 @@ OpenTPL::infoModel ()
 	std::string dumpfile;
 	int recordcount;
 
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
+	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
 
 	for (std::vector <Rts2ValueDouble *>::iterator iter = modelParams.begin (); iter != modelParams.end (); iter++)
 	{
 		double pv;
 		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
-		status = irConn->tpl_get (pn.c_str (), pv, &status);
+		status = opentplConn->tpl_get (pn.c_str (), pv, &status);
 		if (status != TPL_OK)
 			return -1;
 		(*iter)->setValueDouble (pv);
 	}
 
-	status = irConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
+	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT", recordcount, &status);
 
 	if (status != TPL_OK)
 		return -1;
@@ -771,12 +764,12 @@ int
 OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	status = irConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
-	status = irConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
+	status = opentplConn->tpl_set ("POINTING.TARGET.RA", ra / 15.0, &status);
+	status = opentplConn->tpl_set ("POINTING.TARGET.DEC", dec, &status);
 	if (derotatorOffset && !getDerotatorPower ())
 	{
-		status = irConn->tpl_set ("DEROTATOR[3].POWER", 1, &status);
-		status = irConn->tpl_set ("CABINET.POWER", 1, &status);
+		status = opentplConn->tpl_set ("DEROTATOR[3].POWER", 1, &status);
+		status = opentplConn->tpl_set ("CABINET.POWER", 1, &status);
 	}
 
 	double offset;
@@ -787,27 +780,27 @@ OpenTPL::startMoveReal (double ra, double dec)
 	{
 		case 0:
 			offset = getCorrRa ();
-			status = irConn->tpl_set ("HA.OFFSET", offset, &status);
-			status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+			status = opentplConn->tpl_set ("HA.OFFSET", offset, &status);
+			status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
 			offset = getCorrDec ();
 			if (track == 3)
 				offset *= -1.0;
-			status = irConn->tpl_set ("DEC.OFFSET", offset, &status);
+			status = opentplConn->tpl_set ("DEC.OFFSET", offset, &status);
 			break;
 		case 1:
 			offset = getCorrZd ();
-			status = irConn->tpl_set ("ZD.OFFSET", offset, &status);
+			status = opentplConn->tpl_set ("ZD.OFFSET", offset, &status);
 			offset = getCorrAz ();
-			status = irConn->tpl_set ("AZ.OFFSET", offset, &status);
+			status = opentplConn->tpl_set ("AZ.OFFSET", offset, &status);
 			break;
 
 	}
 
 	if (isModelOn () && (getCorrRa () != 0 || getCorrDec () != 0))
 	{
-		status = irConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
-		status = irConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
-		status = irConn->getValueInteger ("POINTING.POINTINGPARAMS.RECORDCOUNT", model_recordcount, &status);
+		status = opentplConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+		status = opentplConn->getValueDouble ("POINTING.POINTINGPARAMS.CALCULATE", modelQuality, &status);
+		status = opentplConn->getValueInteger ("POINTING.POINTINGPARAMS.RECORDCOUNT", model_recordcount, &status);
 		logStream (MESSAGE_DEBUG) << "modeling quality parameter: " << modelQuality->getValueDouble ()
 			<< " status "<< status
 			<< " recordcount " << model_recordcount->getValueInteger () << sendLog;
@@ -817,7 +810,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 
 	if (derotatorOffset)
 	{
-		status = irConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
+		status = opentplConn->tpl_set ("DEROTATOR[3].OFFSET", -1 * derotatorOffset->getValueDouble () , &status);
 
 		if (status != TPL_OK)
 			return status;
@@ -844,7 +837,7 @@ OpenTPL::idle ()
 int
 OpenTPL::ready ()
 {
-	return !irConn->isOK ();
+	return 0;
 }
 
 
@@ -860,8 +853,8 @@ OpenTPL::getAltAz ()
 	}
 	else
 	{
-		status = irConn->tpl_get ("ZD.REALPOS", zd, &status);
-		status = irConn->tpl_get ("AZ.REALPOS", az, &status);
+		status = opentplConn->tpl_get ("ZD.REALPOS", zd, &status);
+		status = opentplConn->tpl_get ("AZ.REALPOS", az, &status);
 
 		telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
 	}
@@ -883,17 +876,14 @@ OpenTPL::info ()
 	int cab_power;
 	double cab_power_state;
 
-	if (!irConn->isOK ())
-		return -1;
-
-	status = irConn->tpl_get ("CABINET.POWER", cab_power, &status);
-	status = irConn->tpl_get ("CABINET.POWER_STATE", cab_power_state, &status);
+	status = opentplConn->tpl_get ("CABINET.POWER", cab_power, &status);
+	status = opentplConn->tpl_get ("CABINET.POWER_STATE", cab_power_state, &status);
 	if (status != TPL_OK)
 		return -1;
 	cabinetPower->setValueBool (cab_power == 1);
 	cabinetPowerState->setValueFloat (cab_power_state);
 
-	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+	status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
 	if (status != TPL_OK)
 		return -1;
 
@@ -906,9 +896,9 @@ OpenTPL::info ()
 		switch (getPointingModel ())
 		{
 			case 0:
-				status = irConn->tpl_get ("POINTING.CURRPOS.RA", t_telRa, &status);
+				status = opentplConn->tpl_get ("POINTING.CURRPOS.RA", t_telRa, &status);
 				t_telRa *= 15.0;
-				status = irConn->tpl_get ("POINTING.CURRPOS.DEC", t_telDec, &status);
+				status = opentplConn->tpl_get ("POINTING.CURRPOS.DEC", t_telDec, &status);
 				if (status != TPL_OK)
 				{
 					return -1;
@@ -929,9 +919,9 @@ OpenTPL::info ()
 	}
 	else
 	{
-		status = irConn->tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
+		status = opentplConn->tpl_get ("POINTING.CURRENT.RA", t_telRa, &status);
 		t_telRa *= 15.0;
-		status = irConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
+		status = opentplConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
 
 		telFlip->setValueInteger (0);
 	}
@@ -945,8 +935,8 @@ OpenTPL::info ()
 	switch (getPointingModel ())
 	{
 		case 0:
-			status = irConn->tpl_get ("HA.CURRSPEED", zd_speed, &status);
-			status = irConn->tpl_get ("DEC.CURRSPEED", az_speed, &status);
+			status = opentplConn->tpl_get ("HA.CURRSPEED", zd_speed, &status);
+			status = opentplConn->tpl_get ("DEC.CURRSPEED", az_speed, &status);
 
 			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
 				<< " dec " << getTelDec ()
@@ -957,8 +947,8 @@ OpenTPL::info ()
 			break;
 
 		case 1:
-			status = irConn->tpl_get ("ZD.CURRSPEED", zd_speed, &status);
-			status = irConn->tpl_get ("AZ.CURRSPEED", az_speed, &status);
+			status = opentplConn->tpl_get ("ZD.CURRSPEED", zd_speed, &status);
+			status = opentplConn->tpl_get ("AZ.CURRSPEED", az_speed, &status);
 
 			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
 				<< " dec " << getTelDec ()
@@ -975,9 +965,9 @@ OpenTPL::info ()
 
 	if (derotatorOffset)
 	{
-		irConn->getValueDouble ("DEROTATOR[3].OFFSET", derotatorOffset, &status);
-		irConn->getValueDouble ("DEROTATOR[3].CURRPOS", derotatorCurrpos, &status);
-		irConn->tpl_get ("DEROTATOR[3].POWER", derPower, &status);
+		opentplConn->getValueDouble ("DEROTATOR[3].OFFSET", derotatorOffset, &status);
+		opentplConn->getValueDouble ("DEROTATOR[3].CURRPOS", derotatorCurrpos, &status);
+		opentplConn->tpl_get ("DEROTATOR[3].POWER", derPower, &status);
 		if (status == TPL_OK)
 		{
 			derotatorPower->setValueBool (derPower == 1);
@@ -992,8 +982,8 @@ OpenTPL::info ()
 	status = TPL_OK;
 	double point_dist;
 	double point_time;
-	status = irConn->tpl_get ("POINTING.TARGETDISTANCE", point_dist, &status);
-	status = irConn->tpl_get ("POINTING.SLEWINGTIME", point_time, &status);
+	status = opentplConn->tpl_get ("POINTING.TARGETDISTANCE", point_dist, &status);
+	status = opentplConn->tpl_get ("POINTING.SLEWINGTIME", point_time, &status);
 	if (status == TPL_OK)
 	{
 		targetDist->setValueDouble (point_dist);
@@ -1015,7 +1005,7 @@ OpenTPL::saveModel ()
 		double pv;
 		int status = TPL_OK;
 		std::string pn = std::string ("POINTING.POINTINGPARAMS.") + (*iter)->getName ();
-		status = irConn->tpl_get (pn.c_str (), pv, &status);
+		status = opentplConn->tpl_get (pn.c_str (), pv, &status);
 		if (status != TPL_OK)
 			return -1;
 		of << pn << " " << pv << std::endl;
@@ -1044,7 +1034,7 @@ OpenTPL::loadModel ()
 		{
 			ifs >> pn >> pv;
 			std::string pnc = std::string ("POINTING.POINTINGPARAMS.") + pn;
-			status = irConn->tpl_set (pnc.c_str (), pv, &status);
+			status = opentplConn->tpl_set (pnc.c_str (), pv, &status);
 			if (status != TPL_OK)
 				return -1;
 		}
@@ -1064,7 +1054,7 @@ OpenTPL::resetMount ()
 	int status = TPL_OK;
 	int power = 0;
 	double power_state;
-	status = irConn->tpl_set ("CABINET.POWER", power, &status);
+	status = opentplConn->tpl_set ("CABINET.POWER", power, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "IR resetMount powering off: " << status <<
@@ -1076,7 +1066,7 @@ OpenTPL::resetMount ()
 		logStream (MESSAGE_DEBUG) << "IR resetMount waiting for power down" <<
 			sendLog;
 		sleep (5);
-		status = irConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
+		status = opentplConn->tpl_get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "IR resetMount power_state ret: " <<
@@ -1120,8 +1110,8 @@ OpenTPL::startMove ()
 
 			double az_off = 0;
 			double alt_off = 0;
-			status = irConn->tpl_set ("AZ.OFFSET", az_off, &status);
-			status = irConn->tpl_set ("ZD.OFFSET", alt_off, &status);
+			status = opentplConn->tpl_set ("AZ.OFFSET", az_off, &status);
+			status = opentplConn->tpl_set ("ZD.OFFSET", alt_off, &status);
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
@@ -1135,7 +1125,7 @@ OpenTPL::startMove ()
 		return -1;
 
 	// wait till we get it processed
-	status = irConn->tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
+	status = opentplConn->tpl_get ("POINTING.TARGETDISTANCE", sep, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "cannot get target separation" << sendLog;
@@ -1168,7 +1158,7 @@ OpenTPL::stopMove ()
 	double zd;
 	info ();
 	// ZD check..
-	status = irConn->tpl_get ("ZD.CURRPOS", zd, &status);
+	status = opentplConn->tpl_get ("ZD.CURRPOS", zd, &status);
 	if (status)
 	{
 		logStream (MESSAGE_DEBUG) << "IR stopMove cannot get ZD! (" << status <<
@@ -1209,7 +1199,7 @@ OpenTPL::startPark ()
 	switch (getPointingModel ())
 	{
 		case 0:
-			status = irConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
+			status = opentplConn->tpl_get ("POINTING.CURRENT.SIDEREAL_TIME", tra, &status);
 			if (status != TPL_OK)
 				return -1;
 			// decide dec based on latitude
@@ -1217,14 +1207,14 @@ OpenTPL::startPark ()
 			if (telLatitude->getValueDouble () < 0)
 				tdec *= -1.0;
 
-			status = irConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
-			status = irConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
+			status = opentplConn->tpl_set ("POINTING.TARGET.RA", tra, &status);
+			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", tdec, &status);
 			setTelescopeTrack (irTracking);
 			break;
 		case 1:
-			status = irConn->tpl_set ("AZ.TARGETPOS", 0, &status);
-			status = irConn->tpl_set ("ZD.TARGETPOS", 0, &status);
-			status = irConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
+			status = opentplConn->tpl_set ("AZ.TARGETPOS", 0, &status);
+			status = opentplConn->tpl_set ("ZD.TARGETPOS", 0, &status);
+			status = opentplConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
 			break;
 	}
 	if (status)
@@ -1255,29 +1245,29 @@ OpenTPL::moveCheck (bool park)
 		switch (getPointingModel ())
 		{
 			case 0:
-				status = irConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
-				status = irConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
-				status = irConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
-				status = irConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+				status = opentplConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
+				status = opentplConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
+				status = opentplConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
+				status = opentplConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
 				break;
 			case 1:
-				status = irConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
-				status = irConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
-				status = irConn->tpl_get ("ZD.CURRPOS", cPos.ra, &status);
-				status = irConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
+				status = opentplConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
+				status = opentplConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
+				status = opentplConn->tpl_get ("ZD.CURRPOS", cPos.ra, &status);
+				status = opentplConn->tpl_get ("AZ.CURRPOS", cPos.dec, &status);
 				break;
 		}
 		poin_dist = ln_get_angular_separation (&cPos, &tPos);
 	}
 	else
 	{
-		status = irConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
+		status = opentplConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 	}
 	if (status != TPL_OK)
 		return -1;
 	time (&now);
 	// get track..
-	status = irConn->tpl_get ("POINTING.TRACK", track, &status);
+	status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
 	if (track == 0 && !park)
 	{
 		logStream (MESSAGE_WARNING) << "Tracking sudently stopped, reenable tracking (track=" << track << " park = " << park << ")" << sendLog;
