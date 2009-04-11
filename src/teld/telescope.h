@@ -35,6 +35,11 @@
 // if we will use model corrections..
 #define COR_MODEL            0x08
 
+// pointing models
+#define POINTING_RADEC       0
+#define POINTING_ALTAZ       1
+#define POINTING_ALTALT      2
+
 namespace rts2telmodel
 {
 	class Model;

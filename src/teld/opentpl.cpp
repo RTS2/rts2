@@ -85,6 +85,10 @@ class OpenTPL:public Telescope
 		Rts2ValueDouble *modelQuality;
 		Rts2ValueDouble *goodSep;
 
+		// modeling offsets
+		Rts2ValueRaDec *om_radec;
+		Rts2ValueAltAz *om_altaz;
+
 		double derOff;
 
 		int startMoveReal (double ra, double dec);
@@ -467,20 +471,23 @@ OpenTPL::initValues ()
 	// switch mount type
 	if (config_mount == "RA-DEC")
 	{
-		setPointingModel (0);
-		createValue (modelP, "doff", "model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
+		setPointingModel (POINTING_RADEC);
+
+		createValue (om_radec, "MO", "[arcmin] target pointing correction", true, RTS2_DT_DEG_DIST);
+
+		createValue (modelP, "doff", "[arcmin] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "hoff", "model declination encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "hoff", "[arcmin] model declination encoder offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "me", "model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "me", "[arcmin] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ma", "model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ma", "[arcmin] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "nphd", "model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "nphd", "[arcmin] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ch", "model east-west colimation error", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ch", "[arcmin] model east-west colimation error", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "model flex parameter", false,	RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[arcmin] model flex parameter", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
 	}
 	else if (config_mount == "AZ-ZD")
@@ -495,7 +502,10 @@ OpenTPL::initValues ()
  * CA = M1 tilt with respect to optical axis
  * FLEX = sagging of tube
  */
-		setPointingModel (1);
+		setPointingModel (POINTING_ALTAZ);
+
+		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEG_DIST);
+
 		createValue (modelP, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
 		createValue (modelP, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
@@ -796,7 +806,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 	// apply corrections
 	switch (getPointingModel ())
 	{
-		case 0:
+		case POINTING_RADEC:
 			offset = getCorrRa ();
 			status = opentplConn->tpl_set ("HA.OFFSET", offset, &status);
 			status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
@@ -805,7 +815,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 				offset *= -1.0;
 			status = opentplConn->tpl_set ("DEC.OFFSET", offset, &status);
 			break;
-		case 1:
+		case POINTING_ALTAZ:
 			offset = getCorrZd ();
 			status = opentplConn->tpl_set ("ZD.OFFSET", offset, &status);
 			offset = getCorrAz ();
@@ -865,16 +875,17 @@ OpenTPL::getAltAz ()
 	int status = TPL_OK;
 	double zd, az;
 
-	if (getPointingModel () == 0)
+	switch (getPointingModel ())
 	{
-		Telescope::getAltAz ();
-	}
-	else
-	{
-		status = opentplConn->tpl_get ("ZD.REALPOS", zd, &status);
-		status = opentplConn->tpl_get ("AZ.REALPOS", az, &status);
+		case POINTING_RADEC:
+			Telescope::getAltAz ();
+			break;
+		case POINTING_ALTAZ:
+			status = opentplConn->tpl_get ("ZD.REALPOS", zd, &status);
+			status = opentplConn->tpl_get ("AZ.REALPOS", az, &status);
 
-		telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
+			telAltAz->setValueAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
+			break;
 	}
 }
 
@@ -913,7 +924,7 @@ OpenTPL::info ()
 		struct ln_equ_posn curr;
 		switch (getPointingModel ())
 		{
-			case 0:
+			case POINTING_RADEC:
 				status = opentplConn->tpl_get ("POINTING.CURRPOS.RA", t_telRa, &status);
 				t_telRa *= 15.0;
 				status = opentplConn->tpl_get ("POINTING.CURRPOS.DEC", t_telDec, &status);
@@ -923,7 +934,7 @@ OpenTPL::info ()
 				}
 				telFlip->setValueInteger (0);
 				break;
-			case 1:
+			case POINTING_ALTAZ:
 				hrz.az = az;
 				hrz.alt = 90 - fabs (zd);
 				observer.lng = telLongitude->getValueDouble ();
@@ -942,6 +953,31 @@ OpenTPL::info ()
 		status = opentplConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
 
 		telFlip->setValueInteger (0);
+	}
+
+	double va1,va2;
+
+	// get offsets..
+	switch (getPointingModel ())
+	{
+		case POINTING_RADEC:
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DH", va1, &status);
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DD", va1, &status);
+
+			if (status != TPL_OK)
+				return -1;
+
+			om_radec->setValueRaDec (va1, va2);
+			break;
+		case POINTING_ALTAZ:
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DA", va1, &status);
+			status = opentplConn->tpl_get ("POINTING.CURRENT.DZ", va1, &status);
+
+			if (status != TPL_OK)
+				return -1;
+
+			om_altaz->setValueAltAz (va1, va2);
+			break;
 	}
 
 	if (status != TPL_OK)
@@ -1112,11 +1148,11 @@ OpenTPL::startMove ()
 
 	switch (getPointingModel ())
 	{
-		case 0:
+		case POINTING_RADEC:
 			if (target.dec < -89.85)
 				target.dec = -89.80;
 			break;
-		case 1:
+		case POINTING_ALTAZ:
 			// move to zenit - move to different dec instead
 			if (fabs (target.dec - telLatitude->getValueDouble ()) <= BLIND_SIZE)
 			{
@@ -1219,7 +1255,7 @@ OpenTPL::startPark ()
 
 	switch (getPointingModel ())
 	{
-		case 0:
+		case POINTING_RADEC:
 			observer.lng = telLongitude->getValueDouble ();
 			observer.lat = telLatitude->getValueDouble ();
 
@@ -1232,7 +1268,7 @@ OpenTPL::startPark ()
 			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", equPark.dec, &status);
 			setTelescopeTrack (irTracking);
 			break;
-		case 1:
+		case POINTING_ALTAZ:
 			status = opentplConn->tpl_set ("AZ.TARGETPOS", parkPos->getAz (), &status);
 			status = opentplConn->tpl_set ("ZD.TARGETPOS", 90 - parkPos->getAlt (), &status);
 			status = opentplConn->tpl_set ("DEROTATOR[3].POWER", 0, &status);
@@ -1264,13 +1300,13 @@ OpenTPL::moveCheck (bool park)
 
 		switch (getPointingModel ())
 		{
-			case 0:
+			case POINTING_RADEC:
 				status = opentplConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
 				status = opentplConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
 				status = opentplConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
 				status = opentplConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
 				break;
-			case 1:
+			case POINTING_ALTAZ:
 				status = opentplConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
 				status = opentplConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
 				status = opentplConn->tpl_get ("ZD.CURRPOS", cPos.ra, &status);
