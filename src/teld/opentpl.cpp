@@ -26,7 +26,9 @@
 #include "connopentpl.h"
 
 #define BLIND_SIZE            1.0
-#define OPT_ROTATOR_OFFSET    OPT_LOCAL + 1
+#define OPT_CHECK_POWER       OPT_LOCAL + 1
+#define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
+#define OPT_OPENTPL_SERVER    OPT_LOCAL + 3
 
 namespace rts2teld
 {
@@ -39,8 +41,7 @@ namespace rts2teld
 class OpenTPL:public Telescope
 {
 	private:
-		std::string ir_ip;
-		int ir_port;
+		HostString *openTPLServer;
 
 		enum { OPENED, OPENING, CLOSING, CLOSED } cover_state;
 
@@ -68,6 +69,8 @@ class OpenTPL:public Telescope
 		Rts2ValueDouble *cover;
 
 		Rts2ValueInteger *mountTrack;
+
+		Rts2ValueAltAz *parkPos;
 
 		// model values
 		Rts2ValueString *model_dumpFile;
@@ -296,7 +299,8 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 OpenTPL::OpenTPL (int in_argc, char **in_argv)
 :Telescope (in_argc, in_argv)
 {
-	ir_port = 0;
+	openTPLServer = NULL;
+
 	irConn = NULL;
 
 	doCheckPower = false;
@@ -304,20 +308,19 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	irTracking = 4;
 
 	derOff = 0;
-
-	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
-	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
-
 	derotatorOffset = NULL;
 	derotatorCurrpos = NULL;
 	derotatorPower = NULL;
+
+	cover = NULL;
+
+	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
+	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
 
 	createValue (targetDist, "target_dist", "distance in degrees to target", false, RTS2_DT_DEG_DIST);
 	createValue (targetTime, "target_time", "reach target time in seconds", false);
 
 	createValue (mountTrack, "TRACK", "mount track");
-
-	cover = NULL;
 
 	strcpy (telType, "BOOTES_IR");
 
@@ -326,9 +329,11 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
-	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
-	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
-	addOption ('p', "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
+	createValue (parkPos, "park_position", "mount park position", false);
+	parkPos->setValueAltAz (70, 0);
+
+	addOption (OPT_OPENTPL_SERVER, "mount-host", 1, "OpenTPL server TCP/IP address and port (separated by :)");
+	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', "ir_tracking", 1,
@@ -349,13 +354,10 @@ OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'I':
-			ir_ip = std::string (optarg);
+		case OPT_OPENTPL_SERVER:
+			openTPLServer = new HostString (optarg);
 			break;
-		case 'N':
-			ir_port = atoi (optarg);
-			break;
-		case 'p':
+		case OPT_CHECK_POWER:
 			doCheckPower = true;
 			break;
 		case 't':
@@ -374,17 +376,22 @@ OpenTPL::processOption (int in_opt)
 int
 OpenTPL::initIrDevice ()
 {
-	Rts2Config *config = Rts2Config::instance ();
-	config->loadFile (NULL);
-	// try to get default from config file
-	if (ir_ip.length () == 0)
+	std::string ir_ip;
+	int ir_port = 0;
+	if (openTPLServer)
 	{
-		config->getString ("ir", "ip", ir_ip);
+		ir_ip = openTPLServer->getHostname ();
+		ir_port = openTPLServer->getPort ();
 	}
-	if (!ir_port)
+	else
 	{
+		Rts2Config *config = Rts2Config::instance ();
+		config->loadFile (NULL);
+		// try to get default from config file
+		config->getString ("ir", "ip", ir_ip);
 		config->getInteger ("ir", "port", ir_port);
 	}
+
 	if (ir_ip.length () == 0 || !ir_port)
 	{
 		std::cerr << "Invalid port or IP address of mount controller PC"
