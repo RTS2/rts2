@@ -1,6 +1,6 @@
 /* 
  * Image manipulation program.
- * Copyright (C) 2006-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -45,13 +45,17 @@
 #define IMAGEOP_MOVE      0x0080
 #define IMAGEOP_EVAL      0x0100
 #define IMAGEOP_CREATEWCS 0x0200
+#define IMAGEOP_MODEL     0x0400
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 
+namespace rts2image
+{
+
 #ifdef HAVE_PGSQL
-class Rts2AppImageManip:public Rts2AppDbImage
+class AppImage:public Rts2AppDbImage
 #else
-class Rts2AppImageManip:public Rts2AppImage
+class AppImage:public Rts2AppImage
 #endif							 /* HAVE_PGSQL */
 {
 	private:
@@ -63,9 +67,10 @@ class Rts2AppImageManip:public Rts2AppImage
 	#ifdef HAVE_PGSQL
 		int insert (Rts2ImageDb * image);
 	#endif
-		int testImage (Rts2Image * image);
-		int testEval (Rts2Image * image);
+		void testImage (Rts2Image * image);
+		void testEval (Rts2Image * image);
 		void createWCS (Rts2Image * image);
+		void printModel (Rts2Image * image);
 
 		double off_x, off_y;
 
@@ -83,13 +88,17 @@ class Rts2AppImageManip:public Rts2AppImage
 		virtual int processImage (Rts2Image * image);
 	#endif						 /* HAVE_PGSQL */
 
-		virtual void help ();
+		virtual void usage ();
 	public:
-		Rts2AppImageManip (int in_argc, char **in_argv, bool in_readOnly);
+		AppImage (int in_argc, char **in_argv, bool in_readOnly);
 };
 
+};
+
+using namespace rts2image;
+
 void
-Rts2AppImageManip::printOffset (double x, double y, Rts2Image * image)
+AppImage::printOffset (double x, double y, Rts2Image * image)
 {
 	double sep;
 	double x_out;
@@ -119,7 +128,7 @@ Rts2AppImageManip::printOffset (double x, double y, Rts2Image * image)
 
 
 int
-Rts2AppImageManip::addDate (Rts2Image * image)
+AppImage::addDate (Rts2Image * image)
 {
 	int ret;
 	time_t t;
@@ -135,14 +144,14 @@ Rts2AppImageManip::addDate (Rts2Image * image)
 
 #ifdef HAVE_PGSQL
 int
-Rts2AppImageManip::insert (Rts2ImageDb * image)
+AppImage::insert (Rts2ImageDb * image)
 {
 	return image->saveImage ();
 }
 #endif							 /* HAVE_PGSQL */
 
-int
-Rts2AppImageManip::testImage (Rts2Image * image)
+void
+AppImage::testImage (Rts2Image * image)
 {
 	double ra, dec, x, y;
 	std::cout
@@ -186,26 +195,22 @@ Rts2AppImageManip::testImage (Rts2Image * image)
 	printOffset (image->getXoA (), image->getYoA () - 50, image);
 
 	printOffset (152, 150, image);
-
-	return 0;
 }
 
 
-int
-Rts2AppImageManip::testEval (Rts2Image * image)
+void
+AppImage::testEval (Rts2Image * image)
 {
 	float value, error;
 
 	image->evalAF (&value, &error);
 
 	std::cout << "value: " << value << " error: " << error << std::endl;
-
-	return 0;
 }
 
 
 void
-Rts2AppImageManip::createWCS (Rts2Image * image)
+AppImage::createWCS (Rts2Image * image)
 {
 	int ret = image->createWCS (off_x, off_y);
 
@@ -214,8 +219,28 @@ Rts2AppImageManip::createWCS (Rts2Image * image)
 }
 
 
+void
+AppImage::printModel (Rts2Image *image)
+{
+	try
+	{
+  		std::cout << image->getCoord ("OBJ") << " " << image->getCoord ("TAR")
+			<< '\t' << LibnovaDegDist (image->getValue ("RA_ERR"))
+			<< '\t' << LibnovaDegDist (image->getValue ("DEC_ERR"))
+			<< '\t' << LibnovaDegDist (image->getValue ("POS_ERR"))
+			<< '\t' << LibnovaDegDist (image->getValue ("CORR_RA"))
+			<< '\t' << LibnovaDegDist (image->getValue ("CORR_DEC"))
+			<< std::endl;
+	}
+	catch (KeyNotFound er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+	}
+}
+
+
 int
-Rts2AppImageManip::processOption (int in_opt)
+AppImage::processOption (int in_opt)
 {
 	char *off_sep;
 	switch (in_opt)
@@ -227,6 +252,9 @@ Rts2AppImageManip::processOption (int in_opt)
 		case 'P':
 			operation |= IMAGEOP_FPRINT;
 			print_expr = optarg;
+			break;
+		case 'r':
+			operation |= IMAGEOP_MODEL;
 			break;
 		case 'c':
 			operation |= IMAGEOP_COPY;
@@ -286,7 +314,7 @@ Rts2AppImageManip::processOption (int in_opt)
 
 
 #ifdef HAVE_PGSQL
-bool Rts2AppImageManip::doInitDB ()
+bool AppImage::doInitDB ()
 {
 	return (operation & IMAGEOP_MOVE) || (operation & IMAGEOP_INSERT);
 }
@@ -294,9 +322,9 @@ bool Rts2AppImageManip::doInitDB ()
 
 int
 #ifdef HAVE_PGSQL
-Rts2AppImageManip::processImage (Rts2ImageDb * image)
+AppImage::processImage (Rts2ImageDb * image)
 #else
-Rts2AppImageManip::processImage (Rts2Image * image)
+AppImage::processImage (Rts2Image * image)
 #endif							 /* HAVE_PGSQL */
 {
 	if (operation == IMAGEOP_NOOP)
@@ -313,6 +341,8 @@ Rts2AppImageManip::processImage (Rts2Image * image)
 		std::cout << image->expandPath (print_expr) << std::endl;
 	if (operation & IMAGEOP_FPRINT)
 	  	std::cout << image->getImageName () << " " << image->expandPath (print_expr) << std::endl;
+	if (operation & IMAGEOP_MODEL)
+	  	printModel (image);
 	if (operation & IMAGEOP_COPY)
 		image->copyImageExpand (copy_expr);
 	if (operation & IMAGEOP_MOVE)
@@ -328,24 +358,16 @@ Rts2AppImageManip::processImage (Rts2Image * image)
 
 
 void
-Rts2AppImageManip::help ()
+AppImage::usage ()
 {
-	#ifdef HAVE_PGSQL
-	Rts2AppDbImage::help ();
-	#else
-	Rts2AppImage::help ();
-	#endif						 /* HAVE_PGSQL */
-	std::cout << "Examples:" << std::endl
-		<<
-		"  rts2-image -w 123.fits                 .. write WCS to file 123, based on information stored by RTS2 in the file"
-		<< std::
-		endl <<
-		"  rts2-image -w -o 20.12:10.56 123.fits  .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS"
-		<< std::endl;
+	std::cout 
+		<< "  rts2-image -w 123.fits                     .. write WCS to file 123, based on information stored by RTS2 in the file"	<< std::endl
+		<< "  rts2-image -w -o 20.12:10.56 123.fits      .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS" << std::endl
+		<< "  rts2-image -P !DATE_OBS/!POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl;
 }
 
 
-Rts2AppImageManip::Rts2AppImageManip (int in_argc, char **in_argv, bool in_readOnly):
+AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
 #ifdef HAVE_PGSQL
 Rts2AppDbImage (in_argc, in_argv, in_readOnly)
 #else
@@ -359,6 +381,8 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
+	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
+	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
@@ -366,16 +390,14 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");
 	addOption ('e', NULL, 0, "image evaluation for AF purpose");
 	addOption ('t', NULL, 0, "test various image routines");
-	addOption ('w', NULL, 0,
-		"write WCS to FITS file, based on the RTS2 informations recorded in fits header");
-	addOption ('o', NULL, 1,
-		"X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
+	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
+	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2AppImageManip app = Rts2AppImageManip (argc, argv, true);
+	AppImage app = AppImage (argc, argv, true);
 	return app.run ();
 }

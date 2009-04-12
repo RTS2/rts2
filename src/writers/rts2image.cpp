@@ -34,6 +34,8 @@
 #include <iomanip>
 #include <sstream>
 
+using namespace rts2image;
+
 void
 Rts2Image::initData ()
 {
@@ -403,9 +405,8 @@ std::string Rts2Image::expandVariable (std::string expression)
 	g_ret = getValue (expression.c_str (), valB, 200, true);
 	if (g_ret)
 	{
-		ret = '$';
+		ret = '!';
 		ret += expression;
-		ret += '$';
 	}
 	else
 	{
@@ -1026,6 +1027,20 @@ bool required, char *comment)
 	}
 	fits_read_key_longstr (ffile, (char *) name, value, comment, &fits_status);
 	return fitsStatusGetValue (name, required);
+}
+
+
+double
+Rts2Image::getValue (const char *name)
+{
+	double ret;
+	fits_read_key_dbl (ffile, (char *) name, &ret, NULL, &fits_status);
+	if (fits_status != 0)
+	{
+		fits_status = 0;
+		throw KeyNotFound (this, name);
+	}
+	return ret;
 }
 
 
