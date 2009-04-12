@@ -955,7 +955,7 @@ OpenTPL::info ()
 		t_telRa *= 15.0;
 		status = opentplConn->tpl_get ("POINTING.CURRENT.DEC", t_telDec, &status);
 
-		telFlip->setValueInteger (0);
+		telFlip->setValueInteger (track == 2 ? 1 : 0);
 	}
 
 	double va1,va2;
