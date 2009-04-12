@@ -855,8 +855,6 @@ OpenTPL::startMoveReal (double ra, double dec)
 int
 OpenTPL::idle ()
 {
-	// check for power..
-	// checkPower ();
 	// check for errors..
 	checkErrors ();
 	if (cover)
