@@ -1302,10 +1302,7 @@ OpenTPL::moveCheck (bool park)
 		switch (getPointingModel ())
 		{
 			case POINTING_RADEC:
-				status = opentplConn->tpl_get ("HA.TARGETPOS", tPos.ra, &status);
-				status = opentplConn->tpl_get ("DEC.TARGETPOS", tPos.dec, &status);
-				status = opentplConn->tpl_get ("HA.CURRPOS", cPos.ra, &status);
-				status = opentplConn->tpl_get ("DEC.CURRPOS", cPos.dec, &status);
+				status = opentplConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
 				break;
 			case POINTING_ALTAZ:
 				status = opentplConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
