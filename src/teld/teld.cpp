@@ -950,7 +950,13 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (onlyCorrect)
 	{
-		logStream (MESSAGE_INFO) << "correcting to " << syncTo << " from " << syncFrom << sendLog;
+		LibnovaDegDist c_ra (corrRaDec->getRa ());
+		LibnovaDegDist c_dec (corrRaDec->getDec ());
+
+		logStream (MESSAGE_INFO) << "correcting to " << syncTo
+			<< " from " << syncFrom
+			<< " distances " << c_ra << " " << c_dec << sendLog;
+
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
 			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	}
