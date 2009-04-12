@@ -1361,9 +1361,7 @@ OpenTPL::isParking ()
 int
 OpenTPL::endPark ()
 {
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "IR endPark" << sendLog;
-	#endif
+	setTelescopeTrack (0);
 	return 0;
 }
 
