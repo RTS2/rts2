@@ -54,10 +54,12 @@ class LibnovaRa
 		{
 			ra = nan ("f");
 		}
+
 		LibnovaRa (double in_ra)
 		{
 			ra = in_ra;
 		}
+		
 		double getRa ()
 		{
 			return ra;
@@ -347,6 +349,7 @@ class LibnovaDegDist:public LibnovaDeg
 		LibnovaDegDist ():LibnovaDeg ()
 		{
 		}
+
 		LibnovaDegDist (double in_deg):LibnovaDeg (in_deg)
 		{
 		}
@@ -376,10 +379,10 @@ class LibnovaRaDec
 			dec = NULL;
 		}
 
-		LibnovaRaDec (LibnovaRaDec &in_libnova)
+		LibnovaRaDec (const LibnovaRaDec &in_libnova)
 		{
-			ra = new LibnovaRa (in_libnova.getRa ());
-			dec = new LibnovaDec (in_libnova.getDec ());
+			ra = new LibnovaRa (in_libnova.ra->getRa ());
+			dec = new LibnovaDec (in_libnova.dec->getDec ());
 		}
 
 		LibnovaRaDec (struct ln_equ_posn *pos)
