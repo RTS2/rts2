@@ -1241,13 +1241,6 @@ int
 OpenTPL::startPark ()
 {
 	int status = TPL_OK;
-	// Park to south+zenith
-	status = setTelescopeTrack (0);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "startPark tracking status " << status <<
-		sendLog;
-	#endif
-	sleep (1);
 	status = TPL_OK;
 
 	struct ln_hrz_posn hrzPark;
@@ -1268,6 +1261,7 @@ OpenTPL::startPark ()
 			status = opentplConn->tpl_set ("POINTING.TARGET.RA", equPark.ra / 15.0, &status);
 			status = opentplConn->tpl_set ("POINTING.TARGET.DEC", equPark.dec, &status);
 			setTelescopeTrack (irTracking);
+			sleep (4);
 			break;
 		case POINTING_ALTAZ:
 			status = opentplConn->tpl_set ("AZ.TARGETPOS", parkPos->getAz (), &status);
