@@ -363,7 +363,7 @@ AppImage::usage ()
 	std::cout 
 		<< "  rts2-image -w 123.fits                     .. write WCS to file 123, based on information stored by RTS2 in the file"	<< std::endl
 		<< "  rts2-image -w -o 20.12:10.56 123.fits      .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS" << std::endl
-		<< "  rts2-image -P !DATE_OBS/!POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl;
+		<< "  rts2-image -P @DATE_OBS/@POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl;
 }
 
 

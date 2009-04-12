@@ -405,8 +405,7 @@ std::string Rts2Image::expandVariable (std::string expression)
 	g_ret = getValue (expression.c_str (), valB, 200, true);
 	if (g_ret)
 	{
-		ret = '!';
-		ret += expression;
+		return Rts2Expander::expandVariable (expression);
 	}
 	else
 	{

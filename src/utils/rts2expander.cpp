@@ -186,7 +186,7 @@ std::string Rts2Expander::expandVariable (char var)
 std::string Rts2Expander::expandVariable (std::string expression)
 {
 	std::string ret;
-	ret = '#';
+	ret = '@';
 	ret += expression;
 	return ret;
 }
@@ -208,9 +208,9 @@ std::string Rts2Expander::expand (std::string expression)
 				}
 				break;
 				// that one enables to copy values from image header to expr
-			case '!':
+			case '@':
 				exp = "";
-				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_'); iter++)
+				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-'); iter++)
 					exp += *iter;
 				iter--;
 				ret += expandVariable (exp);

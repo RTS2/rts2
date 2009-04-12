@@ -125,29 +125,29 @@
       <variablelist>
         <varlistentry>
 	  <term>
-	    <option>!DATE-OBS/%F/%f</option>
+	    <option>@DATE-OBS/%F/%f</option>
 	  </term>
   	  <listitem>
 	    <para>
 	      2006-10-17T18:22:03.447/R/20061017182203-0447.fits, if DATE-OBS keyword is filled.
 	    </para>
 	    <para>
-	      !DATE-OBS/R/20061017182203-0447.fits, if DATE-OBS keyword cannot be found.
+	      @DATE-OBS/R/20061017182203-0447.fits, if DATE-OBS keyword cannot be found.
 	    </para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
     </refsect2>
     <para>
-      Substrings begining with ! are escaped to keyword value with name equal
+      Substrings begining with @ are escaped to keyword value with name equal
       to value characters and number only string which follows. If this value
-      is not found in header, string ![name] will be put to path, where [name]
-      is string after !.
+      is not found in header, string @[name] will be put to path, where [name]
+      is string after @.
     </para>
     <para>
-      For example, string !DATE-OBS will be expanded to keyword value of
+      For example, string @DATE-OBS will be expanded to keyword value of
       DATE-OBS keyword. If DATE-OBS keyword cannot be found, it will be copied,
-      e.g. remain !DATE-OBS.
+      e.g. remain @DATE-OBS.
     </para>
     <para> 
       Substrings begining with % are expanded to various image-related values.
