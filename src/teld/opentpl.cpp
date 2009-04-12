@@ -917,7 +917,7 @@ OpenTPL::info ()
 	if (status != TPL_OK)
 		return -1;
 
-	if (!track)
+	if (!track && getPointingModel () != POINTING_RADEC)
 	{
 		// telRA, telDec are invalid: compute them from ZD/AZ
 		struct ln_hrz_posn hrz;
@@ -925,16 +925,6 @@ OpenTPL::info ()
 		struct ln_equ_posn curr;
 		switch (getPointingModel ())
 		{
-			case POINTING_RADEC:
-				status = opentplConn->tpl_get ("POINTING.CURRPOS.RA", t_telRa, &status);
-				t_telRa *= 15.0;
-				status = opentplConn->tpl_get ("POINTING.CURRPOS.DEC", t_telDec, &status);
-				if (status != TPL_OK)
-				{
-					return -1;
-				}
-				telFlip->setValueInteger (0);
-				break;
 			case POINTING_ALTAZ:
 				hrz.az = az;
 				hrz.alt = 90 - fabs (zd);
@@ -1288,16 +1278,13 @@ OpenTPL::moveCheck (bool park)
 	double poin_dist;
 	time_t now;
 	// if parking, check is different for EQU telescope
-	if (park)
+	if (park && getPointingModel () != POINTING_RADEC)
 	{
 		struct ln_equ_posn tPos;
 		struct ln_equ_posn cPos;
 
 		switch (getPointingModel ())
 		{
-			case POINTING_RADEC:
-				status = opentplConn->tpl_get ("POINTING.TARGETDISTANCE", poin_dist, &status);
-				break;
 			case POINTING_ALTAZ:
 				status = opentplConn->tpl_get ("ZD.TARGETPOS", tPos.ra, &status);
 				status = opentplConn->tpl_get ("AZ.TARGETPOS", tPos.dec, &status);
