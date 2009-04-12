@@ -64,7 +64,6 @@ Rts2TestApp::run ()
 	observer = conf->getObserver ();
 	std::cout << "observatory long " << observer->lng << std::endl;
 	std::cout << "observatory lat " << observer->lat << std::endl;
-	std::cout << "C0 rotang: " << conf->getDouble ("C0", "rotang", value);
 	std::cout << " val " << value << std::endl;
 	std::cout << "C1 name ret: " << conf->getString ("C1", "name", buf);
 	std::cout << " val " << buf << std::endl;
