@@ -218,8 +218,8 @@ default values for variables like `CC', `cache_file', and `prefix'.
 `CONFIG_SITE' environment variable to the location of the site script.
 A warning: not all `configure' scripts look for a site script.
 
-Operation Controls
-==================
+Comilation Controls
+===================
 
    `configure' recognizes the following options to control how it
 operates.
