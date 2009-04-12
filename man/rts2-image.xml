@@ -71,6 +71,9 @@
       	    <option>-p <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
+            <option>-P <replaceable>RTS2 expression</replaceable></option>
+	  </arg>
+	  <arg choice="plain">
       	    <option>-f <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
