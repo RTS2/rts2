@@ -40,6 +40,7 @@ class Bootes2: public SensorWeather
 		comedi_t *comediDevice;
 		const char *comediFile;
 
+		Rts2ValueBool *raining;
 	
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
@@ -221,6 +222,27 @@ int
 Bootes2::info ()
 {
 	int ret;
+	uint32_t value;
+	ret = comedi_dio_read (comediDevice, 3, 5, &value);
+	if (ret != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
+		setWeatherTimeout (3600);
+		return -1;
+	}
+	if (value == 0)
+	{
+		setWeatherTimeout (3600);
+		if (raining->getValueBool () == false)
+			logStream (MESSAGE_INFO) << "raining, switching to bad weather" << sendLog;
+		raining->setValueBool (true);
+	}
+	else
+	{
+		if (raining->getValueBool () == true)
+			logStream (MESSAGE_INFO) << "rains ends" << sendLog;
+		raining->setValueBool (false);
+	}
 	ret = updateTemperature ();
 	if (ret)
 	{
@@ -241,6 +263,8 @@ Bootes2::info ()
 Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 {
 	comediFile = "/dev/comedi0";
+
+	createValue (raining, "raining", "if it is raining (from rain detector)", false);
 
 	createValue (tempMeas, "TEMP", "outside temperature", true);
 	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
