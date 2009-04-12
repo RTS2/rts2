@@ -808,7 +808,10 @@ OpenTPL::startMoveReal (double ra, double dec)
 	{
 		case POINTING_RADEC:
 			offset = getCorrRa ();
-			status = opentplConn->tpl_set ("HA.OFFSET", -1 * offset, &status);
+			// for north, we have to switch offset..
+			if (telLatitude->getValueDouble () > 0)
+				offset *= -1;
+			status = opentplConn->tpl_set ("HA.OFFSET", offset, &status);
 			status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
 			offset = getCorrDec ();
 			if (track == 3)
@@ -853,7 +856,7 @@ int
 OpenTPL::idle ()
 {
 	// check for power..
-	checkPower ();
+	// checkPower ();
 	// check for errors..
 	checkErrors ();
 	if (cover)
