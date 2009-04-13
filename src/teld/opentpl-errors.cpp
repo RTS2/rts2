@@ -125,35 +125,35 @@ AppOpenTPLError::getAxisStatus (const char *ax_name)
 
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".REFERENCED";
-	status = opentplConn->tpl_get (os->str ().c_str (), referenced, &status);
+	status = opentplConn->get (os->str ().c_str (), referenced, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".CURRPOS";
-	status = opentplConn->tpl_get (os->str ().c_str (), currpos, &status);
+	status = opentplConn->get (os->str ().c_str (), currpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".TARGETPOS";
-	status = opentplConn->tpl_get (os->str ().c_str (), targetpos, &status);
+	status = opentplConn->get (os->str ().c_str (), targetpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".OFFSET";
-	status = opentplConn->tpl_get (os->str ().c_str (), offset, &status);
+	status = opentplConn->get (os->str ().c_str (), offset, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".REALPOS";
-	status = opentplConn->tpl_get (os->str ().c_str (), realpos, &status);
+	status = opentplConn->get (os->str ().c_str (), realpos, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".POWER";
-	status = opentplConn->tpl_get (os->str ().c_str (), power, &status);
+	status = opentplConn->get (os->str ().c_str (), power, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".POWER";
-	status = opentplConn->tpl_get (os->str ().c_str (), power_state, &status);
+	status = opentplConn->get (os->str ().c_str (), power_state, &status);
 	delete os;
 	os = new std::ostringstream ();
 	(*os) << ax_name << ".VERSION";
-	status = opentplConn->tpl_get (os->str ().c_str (), version, &status);
+	status = opentplConn->get (os->str ().c_str (), version, &status);
 	delete os;
 	return OpenTPLAxis (ax_name, referenced, currpos, targetpos, offset, realpos,
 		power, power_state, version);
@@ -167,26 +167,26 @@ AppOpenTPLError::doReferenced ()
 	int track;
 	double fpar;
 	std::string slist;
-	status = opentplConn->tpl_get ("CABINET.REFERENCED", fpar, &status);
+	status = opentplConn->get ("CABINET.REFERENCED", fpar, &status);
 	std::cout << "CABINET.REFERENCED " << fpar << std::endl;
-	status = opentplConn->tpl_get ("CABINET.POWER", fpar, &status);
+	status = opentplConn->get ("CABINET.POWER", fpar, &status);
 	std::cout << "CABINET.POWER " << fpar << std::endl;
-	status = opentplConn->tpl_get ("CABINET.POWER_STATE", fpar, &status);
+	status = opentplConn->get ("CABINET.POWER_STATE", fpar, &status);
 	std::cout << "CABINET.POWER_STATE " << fpar << std::endl;
 
-	status = opentplConn->tpl_get ("CABINET.STATUS.LIST", slist, &status);
+	status = opentplConn->get ("CABINET.STATUS.LIST", slist, &status);
 	std::cout << "CABINET.STATUS.LIST " << slist << std::endl;
 
-	status = opentplConn->tpl_get ("POINTING.TRACK", track, &status);
+	status = opentplConn->get ("POINTING.TRACK", track, &status);
 	std::cout << "POINTING.TRACK " << track << std::endl;
-	status = opentplConn->tpl_get ("POINTING.CURRENT.RA", fpar, &status);
+	status = opentplConn->get ("POINTING.CURRENT.RA", fpar, &status);
 	std::cout << "POINTING.CURRENT.RA " << fpar << std::endl;
-	status = opentplConn->tpl_get ("POINTING.CURRENT.DEC", fpar, &status);
+	status = opentplConn->get ("POINTING.CURRENT.DEC", fpar, &status);
 	std::cout << "POINTING.CURRENT.DEC " << fpar << std::endl;
 
-	status = opentplConn->tpl_get ("POINTING.TARGET.RA", fpar, &status);
+	status = opentplConn->get ("POINTING.TARGET.RA", fpar, &status);
 	std::cout << "POINTING.TARGET.RA " << fpar << std::endl;
-	status = opentplConn->tpl_get ("POINTING.TARGET.DEC", fpar, &status);
+	status = opentplConn->get ("POINTING.TARGET.DEC", fpar, &status);
 	std::cout << "POINTING.TARGET.DEC " << fpar << std::endl;
 
 	std::cout << getAxisStatus ("ZD");
@@ -318,17 +318,17 @@ AppOpenTPLError::doProcessing ()
 	switch (op)
 	{
 		case SAMPLE:
-			status = opentplConn->tpl_set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
+			status = opentplConn->set ("POINTING.POINTINGPARAMS.SAMPLE", 1, &status);
 		case NO_OP:
 			break;
 		case CAL:
 			fparam = 2;
-			status = opentplConn->tpl_set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
+			status = opentplConn->set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 			break;
 		case RESET:
 			fparam = 0;
 			status =
-				opentplConn->tpl_set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
+				opentplConn->set ("POINTING.POINTINGPARAMS.RECORDCOUNT", fparam, &status);
 			break;
 		case REFERENCED:
 			return doReferenced ();
@@ -340,14 +340,14 @@ AppOpenTPLError::doProcessing ()
 	int track;
 	std::string dumpfile;
 
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.AE", ae, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.AN", an, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.CA", ca, &status);
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.DUMPFILE", dumpfile, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.AOFF", aoff, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.ZOFF", zoff, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.AE", ae, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.AN", an, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.NPAE", npae, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.CA", ca, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.FLEX", flex, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.DUMPFILE " << dumpfile << std::endl;
 	std::cout.precision (20);
@@ -359,22 +359,22 @@ AppOpenTPLError::doProcessing ()
 	std::cout << "CA = " << ca << std::endl;
 	std::cout << "FLEX = " << flex << std::endl;
 	// dump offsets
-	status = opentplConn->tpl_get ("AZ.OFFSET", aoff, &status);
-	status = opentplConn->tpl_get ("ZD.OFFSET", zoff, &status);
+	status = opentplConn->get ("AZ.OFFSET", aoff, &status);
+	status = opentplConn->get ("ZD.OFFSET", zoff, &status);
 
 	std::cout << "AZ.OFFSET " << aoff << std::endl;
 	std::cout << "ZD.OFFSET " << zoff << std::endl;
 
-	status = opentplConn->tpl_get ("POINTING.TRACK ", track, &status);
+	status = opentplConn->get ("POINTING.TRACK ", track, &status);
 	std::cout << "POINTING.TRACK " << track << std::endl;
 
 	status =
-		opentplConn->tpl_get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
+		opentplConn->get ("POINTING.POINTINGPARAMS.RECORDCOUNT ", recordcount, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.RECORDCOUNT " << recordcount << std::
 		endl;
 
-	status = opentplConn->tpl_get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
+	status = opentplConn->get ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 
 	std::cout << "POINTING.POINTINGPARAMS.CALCULATE " << fparam << std::endl;
 

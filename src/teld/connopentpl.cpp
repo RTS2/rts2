@@ -185,14 +185,14 @@ OpenTpl::idle ()
 
 
 int
-OpenTpl::receive (fd_set *set)
+OpenTpl::receive (fd_set *fset)
 {
 	return -1;
 }
 
 
 int
-OpenTpl::tpl_set (const char *_name, double value, int *tpl_status)
+OpenTpl::set (const char *_name, double value, int *tpl_status)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << std::setprecision(10) << value;
@@ -202,7 +202,7 @@ OpenTpl::tpl_set (const char *_name, double value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_get (const char *_name, double &value, int *tpl_status)
+OpenTpl::get (const char *_name, double &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atof (valReply);
@@ -211,7 +211,7 @@ OpenTpl::tpl_get (const char *_name, double &value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_set (const char *_name, int value, int *tpl_status, bool wait)
+OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
@@ -219,14 +219,14 @@ OpenTpl::tpl_set (const char *_name, int value, int *tpl_status, bool wait)
 }
 
 int
-OpenTpl::tpl_setww (const char *_name, int value, int *tpl_status)
+OpenTpl::setww (const char *_name, int value, int *tpl_status)
 {
-	return tpl_set (_name, value, tpl_status, false);
+	return set (_name, value, tpl_status, false);
 }
 
 
 int
-OpenTpl::tpl_get (const char *_name, int &value, int *tpl_status)
+OpenTpl::get (const char *_name, int &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atoi (valReply);
@@ -235,7 +235,7 @@ OpenTpl::tpl_get (const char *_name, int &value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_set (const char *_name, std::string value, int *tpl_status)
+OpenTpl::set (const char *_name, std::string value, int *tpl_status)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
@@ -244,7 +244,7 @@ OpenTpl::tpl_set (const char *_name, std::string value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_get (const char *_name, std::string &value, int *tpl_status)
+OpenTpl::get (const char *_name, std::string &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = valReply;

@@ -82,22 +82,22 @@ class OpenTpl: public ConnTCP
 
 		virtual int idle ();
 		
-		virtual int receive (fd_set *set);
+		virtual int receive (fd_set *fset);
 
-		int tpl_set (const char *_name, double value, int *tpl_status);
-		int tpl_get (const char *_name, double &value, int *tpl_status);
+		int set (const char *_name, double value, int *tpl_status);
+		int get (const char *_name, double &value, int *tpl_status);
 
-		int tpl_set (const char *_name, int value, int *tpl_status, bool wait=true);
-		int tpl_get (const char *_name, int &value, int *tpl_status);
+		int set (const char *_name, int value, int *tpl_status, bool wait=true);
+		int get (const char *_name, int &value, int *tpl_status);
 
 		/**
 		 * Sets telescope value, only waits for command OK - do not
 		 * wait for completion.
 		 */
-		int tpl_setww (const char *_name, int value, int *tpl_status);
+		int setww (const char *_name, int value, int *tpl_status);
 
-		int tpl_set (const char *_name, std::string value, int *tpl_status);
-		int tpl_get (const char *_name, std::string &value, int *tpl_status);
+		int set (const char *_name, std::string value, int *tpl_status);
+		int get (const char *_name, std::string &value, int *tpl_status);
 
 		/**
 		 * Handle event from connection.
@@ -131,7 +131,7 @@ class OpenTpl: public ConnTCP
 			strcpy (vName, _name);
 			strcat (vName, ".VERSION");
 
-			tpl_status = tpl_get (vName, ver, &tpl_status);
+			tpl_status = get (vName, ver, &tpl_status);
 
 			delete []vName;
 
@@ -150,7 +150,7 @@ class OpenTpl: public ConnTCP
 		int getValueDouble (const char *_name, Rts2ValueDouble *value, int *tpl_status)
 		{
 			double val;
-			int ret = tpl_get (_name, val, tpl_status);
+			int ret = get (_name, val, tpl_status);
 			if (ret == TPL_OK)
 				value->setValueDouble (val);
 
@@ -169,7 +169,7 @@ class OpenTpl: public ConnTCP
 		int getValueInteger (const char *_name, Rts2ValueInteger *value, int *tpl_status)
 		{
 			int val;
-			int ret = tpl_get (_name, val, tpl_status);
+			int ret = get (_name, val, tpl_status);
 			if (ret == TPL_OK)
 				value->setValueInteger (val);
 
@@ -184,7 +184,7 @@ class OpenTpl: public ConnTCP
 			int tpl_status = TPL_OK;
 			int errNum = in_error & 0x00ffffff;
 			asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
-			tpl_status = tpl_get (txt, err_desc, &tpl_status);
+			tpl_status = get (txt, err_desc, &tpl_status);
 			if (tpl_status)
 				os << "Telescope getting error: " << tpl_status
 					<<  " sev:" <<  std::hex << (in_error & 0xff000000)
