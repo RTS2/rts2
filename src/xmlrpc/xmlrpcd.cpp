@@ -69,6 +69,9 @@ class Rts2XmlRpcd:public Rts2Device
 	private:
 		int rpcPort;
 	protected:
+#ifndef HAVE_PGSQL
+		virtual int willConnect (Rts2Address * _addr);
+#endif
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual void addSelectSocks ();
@@ -79,6 +82,18 @@ class Rts2XmlRpcd:public Rts2Device
 
 		virtual void message (Rts2Message & msg);
 };
+
+#ifndef HAVE_PGSQL
+int
+Rts2XmlRpcd::willConnect (Rts2Address *_addr)
+{
+       if (_addr->getType () < getDeviceType ()
+                || (_addr->getType () == getDeviceType ()
+                && strcmp (_addr->getName (), getDeviceName ()) < 0))
+                return 1;
+        return 0;
+}
+#endif
 
 int
 Rts2XmlRpcd::processOption (int in_opt)
