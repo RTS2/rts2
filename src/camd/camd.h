@@ -596,7 +596,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		{
 			createValue (tempSet, "CCD_SET", "CCD set temperature", true, 0, CAM_WORKING, false);
 			createValue (nightCoolTemp, "nightcool", "night cooling temperature", false);
-			nightCoolTemp->setValueFloat (nan("f"));
+			nightCoolTemp->setValueFloat (rts2_nan("f"));
 			addOption ('c', NULL, 1, "night cooling temperature");
 		}
 

@@ -26,6 +26,18 @@
 
 #include "radecparser.h"
 
+#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
+
+/* Not a Number function generator */
+double rts2_nan (const char *code)
+{
+        double zero = 0.0;
+
+        return zero/0.0;
+}
+
+#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
+
 Rts2Value::Rts2Value (std::string _val_name)
 {
 	valueName = _val_name;
@@ -251,7 +263,7 @@ Rts2ValueInteger::isEqual (Rts2Value * other_value)
 Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
 (in_val_name)
 {
-	value = nan ("f");
+	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
@@ -259,7 +271,7 @@ Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
 Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
 Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = nan ("f");
+	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
@@ -396,7 +408,7 @@ Rts2ValueTime::getValueTime (struct timeval &tv)
 Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
 Rts2Value (in_val_name)
 {
-	value = nan ("f");
+	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
@@ -404,7 +416,7 @@ Rts2Value (in_val_name)
 Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
 Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	value = nan ("f");
+	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
@@ -774,8 +786,8 @@ Rts2ValueLong::isEqual (Rts2Value * other_value)
 Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name)
 :Rts2Value (in_val_name)
 {
-	ra = nan ("f");
-	decl = nan ("f");
+	ra = rts2_nan ("f");
+	decl = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
@@ -784,8 +796,8 @@ Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_descript
 bool writeToFits, int32_t flags)
 :Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	ra = nan ("f");
-	decl = nan ("f");
+	ra = rts2_nan ("f");
+	decl = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
@@ -905,8 +917,8 @@ Rts2ValueRaDec::isEqual (Rts2Value *other_value)
 Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name)
 :Rts2Value (in_val_name)
 {
-	alt = nan ("f");
-	az = nan ("f");
+	alt = rts2_nan ("f");
+	az = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 
@@ -915,8 +927,8 @@ Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name, std::string in_descript
 bool writeToFits, int32_t flags)
 :Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
-	alt = nan ("f");
-	az = nan ("f");
+	alt = rts2_nan ("f");
+	az = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 

@@ -28,8 +28,6 @@
 #include <vector>
 #include <iostream>
 
-#include <libnova/libnova.h>
-
 /**
  * @file Various value classes.
  *
@@ -194,6 +192,18 @@
 
 #include <status.h>
 
+#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
+
+/* Not a Number function generator */
+double rts2_nan (const char *code);
+
+#else
+
+#define rts2_nan(f)  nan(f)
+
+#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
+
+
 class Rts2Conn;
 
 /**
@@ -341,11 +351,11 @@ class Rts2Value
 		}
 		virtual double getValueDouble ()
 		{
-			return nan ("f");
+			return rts2_nan ("f");
 		}
 		virtual float getValueFloat ()
 		{
-			return nan ("f");
+			return rts2_nan ("f");
 		}
 		virtual int getValueInteger ()
 		{
@@ -1013,11 +1023,11 @@ class Rts2ValueRaDec: public Rts2Value
 		virtual const char *getValue ();
 		virtual double getValueDouble ()
 		{
-			return nan("f");
+			return rts2_nan("f");
 		}
 		virtual float getValueFloat ()
 		{
-			return nan("f");
+			return rts2_nan("f");
 		}
 		virtual int getValueInteger ()
 		{
@@ -1130,11 +1140,11 @@ class Rts2ValueAltAz: public Rts2Value
 		virtual const char *getValue ();
 		virtual double getValueDouble ()
 		{
-			return nan("f");
+			return rts2_nan("f");
 		}
 		virtual float getValueFloat ()
 		{
-			return nan("f");
+			return rts2_nan("f");
 		}
 		virtual int getValueInteger ()
 		{

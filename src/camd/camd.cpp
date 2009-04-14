@@ -32,8 +32,8 @@
 void
 Rts2DevCamera::initData ()
 {
-	pixelX = nan ("f");
-	pixelY = nan ("f");
+	pixelX = rts2_nan ("f");
+	pixelY = rts2_nan ("f");
 
 	nAcc = 1;
 }
