@@ -25,6 +25,7 @@
 #include "rts2swaitfor.h"
 #include "../utilsdb/scriptcommands.h"
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
 
 // test if next element is one that is given
