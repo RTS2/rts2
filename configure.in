@@ -99,6 +99,17 @@ AC_ARG_WITH(wcs,
 esac],[libwcs=yes])
 
 
+# check for EPICS
+AC_ARG_WITH(epics,
+[  --with-epics 	path to EPICS library, build epics dependent binaries],
+[case "${withval}" in
+	yes) epics=yes ;;
+	no)  epics=no ;;
+	*) epics=${withval} ;;
+esac],[epics=no])
+
+AM_CONDITIONAL(EPICS, test x$epics != xno)
+
 AC_ARG_WITH(sbig,
 [  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
 SBIG="${withval}";
@@ -413,6 +424,19 @@ EOF
 	exit 1])
 fi
 
+if test "x$epics" != "xno"; then
+  	if test "x$epics" != "xyes"; then
+		LDFLAGS="${LDFLAGS} -L${epics}/lib/solaris-sparc-gnu"
+	fi
+	AC_CHECK_LIB([ca], [ca_context_create],
+	LIB_EPICS="-L${epics}/lib/solaris-sparc-gnu -lCom"; AC_SUBST(LIB_EPICS),
+	[cat << EOF
+**** You don't have epics library installed.
+**** Please try to get it from http://www.aps.anl.gov/epics
+EOF
+	exit 1])
+fi
+
 AC_MSG_CHECKING(for date)
 DATE=`date +%Y-%m-%d`
 if test "z"$DATE = "z" ; then
@@ -567,6 +591,7 @@ echo "
   gsoap         ${gsoap}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
+  epics         ${epics}
 
 
 CCD's:
