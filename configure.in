@@ -15,6 +15,41 @@ AC_PROG_MAKE_SET
 # check for lang
 AC_LANG_CPLUSPLUS
 
+CFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CFLAGS)
+CXXFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CXXFLAGS)
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_TYPE_SIGNAL
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf])
+
+AC_CHECK_HEADERS([limits.h]) 
+AC_FUNC_CHOWN 
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES 
+AC_FUNC_STAT
+AC_FUNC_STRFTIME 
+AC_FUNC_VPRINTF 
+AC_TYPE_MODE_T
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS([argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+
 AC_ARG_ENABLE(focusing,
 [  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
 [case "${enableval}" in
@@ -419,17 +454,39 @@ if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF
 **** You don't have comedi library installed.
-**** Please try to get it somewhere.
+**** Please download it from http://www.comedi.org
 EOF
 	exit 1])
 fi
 
 if test "x$epics" != "xno"; then
   	if test "x$epics" != "xyes"; then
-		LDFLAGS="${LDFLAGS} -L${epics}/lib/solaris-sparc-gnu"
+		if test "x$EPICS_HOST_ARCH" = "x"; then
+		  	cat << EOF
+**** Please define EPICS_HOST_ARCH varible. It content should be same as
+**** the variable you used when you build EPICS library.
+EOF
+			exit 1
+		fi
+		LDFLAGS="${LDFLAGS} -L${epics}/lib/${EPICS_HOST_ARCH}"
+		LIB_EPICS="-L${epics}/lib/${EPICS_HOST_ARCH} -lca"
+		if echo $EPICS_HOST_ARCH | grep ^linux; then
+			INC_EPICS="-I${epics}/include -I${epics}/include/os/Linux"
+		else
+		if echo $EPICS_HOST_ARCH | grep ^solaris; then
+			INC_EPICS="-I${epics}/include -I${epics}/include/os/solaris"
+		else
+		  	echo "**** Unsupported EPICS_HOST_ARCH argument ${EPICS_HOST_ARCH}"
+			exit 1
+		fi
+		fi
+		AC_SUBST(INC_EPICS)
+	else
+		LIB_EPICS="-lca"
+		INC_EPICS=""
 	fi
 	AC_CHECK_LIB([ca], [ca_context_create],
-	LIB_EPICS="-L${epics}/lib/solaris-sparc-gnu -lCom"; AC_SUBST(LIB_EPICS),
+	AC_SUBST(LIB_EPICS),
 	[cat << EOF
 **** You don't have epics library installed.
 **** Please try to get it from http://www.aps.anl.gov/epics
@@ -446,30 +503,12 @@ else
 	AC_MSG_RESULT($DATE)
 fi
 
+AC_SUBST(LDFLAGS)
+
 AC_SUBST(DATE)
 
 debug=""
 AC_SUBST(debug)
-
-CFLAGS="-Wall -Wshadow -g"
-AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g"
-AC_SUBST(CXXFLAGS)
-
-LDFLAGS=""
-AC_SUBST(LDFLAGS)
-
-# Checks for header files.
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
@@ -507,24 +546,6 @@ AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap = xyes )
 if test x$psql = xyes -a x$gsoap = xyes ; then 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
 fi
-
-# Checks for library functions.
-AC_FUNC_FORK
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MKTIME
-AC_TYPE_SIGNAL
-AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf])
-
-AC_CHECK_HEADERS([limits.h]) 
-AC_FUNC_CHOWN 
-AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES 
-AC_FUNC_STAT
-AC_FUNC_STRFTIME 
-AC_FUNC_VPRINTF 
-AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
