@@ -68,6 +68,10 @@ The programme has the following characteristics:
   * **J2XT1** Dead man button control. Ethernet module must receive changing 0
     and 1 s wiithin time specified in **J1XT1**. If 0 or 1 is not received,
     module will command roof to close.
+    
+    On model with compressor (see * in output description), 8 bits (8-15) are
+    used for closing timeout control. Bit 16 is then a bit which override
+    default roof value with value specified in bits 8-15.
 
 ===== Ethernet outputs ======
 
@@ -110,7 +114,7 @@ understanding of roof operations. The bits have following meanings:
 
   - 1000 closing blocked
   
-The device state (Q3XT1):
+The device state (Q4XT1):
 
   - 0001 state of manual/auto switch
 
@@ -118,11 +122,11 @@ The device state (Q3XT1):
 
   - 0004 timeout occured - emergency declared
 
-  - 0008 power sensing (I9)
+  - 0008 power sensing (I9) - not pressent on compressor models
 
   - 0010 rain declared
 
-  - 0020 not used
+  - 0020 compressor running - only on model with compressor
 
   - 0040 not used
   
@@ -134,11 +138,11 @@ The device state (Q3XT1):
 
   - 0400 not used
 
-  - 0800 not used
+  - 0800 compressor (B2) model *
 
   - 1000 weather state - 1 if weather is favorable for observing
 
-  - 2000 ignore rain during opening - know problem of the opening switch
+  - 2000 ignore rain during opening - know problem of the opening on some domes. Is not present on compressor models.
 
   - 4000 emergency button pushed
 
