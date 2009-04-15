@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2connimgprocess.h"
+#include "connimgprocess.h"
 #include "rts2script.h"
 
 #include "../utils/rts2command.h"
@@ -33,16 +33,18 @@
 
 #include <sstream>
 
-Rts2ConnProcess::Rts2ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):
+using namespace rts2plan;
+
+ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):
 Rts2ConnFork (in_master, in_exe, in_timeout)
 {
 }
 
 
-Rts2ConnImgProcess::Rts2ConnImgProcess (Rts2Block * in_master,
+ConnImgProcess::ConnImgProcess (Rts2Block * in_master,
 const char *in_exe,
 const char *in_path, int in_timeout):
-Rts2ConnProcess (in_master, in_exe, in_timeout)
+ConnProcess (in_master, in_exe, in_timeout)
 {
 	imgPath = new char[strlen (in_path) + 1];
 	strcpy (imgPath, in_path);
@@ -50,19 +52,19 @@ Rts2ConnProcess (in_master, in_exe, in_timeout)
 }
 
 
-Rts2ConnImgProcess::~Rts2ConnImgProcess (void)
+ConnImgProcess::~ConnImgProcess (void)
 {
 	delete[]imgPath;
 }
 
 
 int
-Rts2ConnImgProcess::newProcess ()
+ConnImgProcess::newProcess ()
 {
 	Rts2Image *image;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::newProcess exe: " <<
+	logStream (MESSAGE_DEBUG) << "ConnImgProcess::newProcess exe: " <<
 		exePath << " img: " << imgPath << " (" << getpid () << ")" << sendLog;
 	#endif
 
@@ -78,7 +80,7 @@ Rts2ConnImgProcess::newProcess ()
 	if (exePath)
 	{
 		execl (exePath, exePath, imgPath, (char *) NULL);
-		logStream (MESSAGE_ERROR) << "Rts2ConnImgProcess::newProcess: " <<
+		logStream (MESSAGE_ERROR) << "ConnImgProcess::newProcess: " <<
 			strerror (errno) << sendLog;
 	}
 	return -2;
@@ -86,7 +88,7 @@ Rts2ConnImgProcess::newProcess ()
 
 
 void
-Rts2ConnImgProcess::processLine ()
+ConnImgProcess::processLine ()
 {
 	int ret;
 	ret = sscanf (getCommand (),
@@ -108,22 +110,28 @@ Rts2ConnImgProcess::processLine ()
 
 
 void
-Rts2ConnImgProcess::connectionError (int last_data_size)
+ConnImgProcess::connectionError (int last_data_size)
 {
 	int ret;
 	const char *telescopeName;
 	int corr_mark, corr_img;
-	Rts2ImageSkyDb *image;
 
 	if (last_data_size < 0 && errno == EAGAIN)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2ConnImgProcess::connectionError " <<
+		logStream (MESSAGE_DEBUG) << "ConnImgProcess::connectionError " <<
 			strerror (errno) << " #" << errno << " last_data_size " <<
 			last_data_size << sendLog;
 		return;
 	}
 
+#ifdef HAVE_PGSQL
+	Rts2ImageSkyDb *image;
 	image = new Rts2ImageSkyDb (imgPath);
+#else
+	Rts2Image *image;
+	image = new Rts2Image (imgPath);
+#endif
+
 	switch (astrometryStat)
 	{
 		case NOT_ASTROMETRY:
@@ -159,11 +167,9 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 
 					double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-					telConn->queCommand (
-						new Rts2CommandCorrect (master, corr_mark,
-						corr_img, image->getImgId (),
-						ra_err / 60.0, dec_err / 60.0, posErr)
-						);
+					telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,
+						corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
+					);
 				}
 			}
 			sendOKMail (image);
@@ -184,8 +190,9 @@ Rts2ConnImgProcess::connectionError (int last_data_size)
 }
 
 
+#ifdef HAVE_PGSQL
 void
-Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
+ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 {
 	// is first such image..
 	if (image->getOKCount () == 1)
@@ -203,14 +210,13 @@ Rts2ConnImgProcess::sendOKMail (Rts2ImageDb * image)
 			<< ") GET ASTROMETRY (IMG_ID #" << image->getImgId () << ")";
 		std::ostringstream os;
 		os << *image;
-		master->sendMailTo (subject.str ().c_str (), os.str ().c_str (),
-			mails.c_str ());
+		master->sendMailTo (subject.str ().c_str (), os.str ().c_str (), mails.c_str ());
 	}
 }
 
 
 void
-Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
+ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 {
 	int ret;
 	int obsId;
@@ -225,19 +231,19 @@ Rts2ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 			postEvent (new Rts2Event (EVENT_ALL_PROCESSED, (void *) &obsId));
 	}
 }
+#endif
 
-
-Rts2ConnObsProcess::Rts2ConnObsProcess (Rts2Block * in_master,
+ConnObsProcess::ConnObsProcess (Rts2Block * in_master,
 const char *in_exe, int in_obsId,
 int in_timeout):
-Rts2ConnProcess (in_master, in_exe, in_timeout)
+ConnProcess (in_master, in_exe, in_timeout)
 {
 	obsId = in_obsId;
 	obs = new Rts2Obs (obsId);
 	if (obs->load ())
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
+			"ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
 		obs = NULL;
 	}
 
@@ -250,10 +256,10 @@ Rts2ConnProcess (in_master, in_exe, in_timeout)
 
 
 int
-Rts2ConnObsProcess::newProcess ()
+ConnObsProcess::newProcess ()
 {
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2ConnObsProcess::newProcess exe: " <<
+	logStream (MESSAGE_DEBUG) << "ConnObsProcess::newProcess exe: " <<
 		exePath << " obsid: " << obsId << " pid: " << getpid () << sendLog;
 	#endif
 
@@ -262,7 +268,7 @@ Rts2ConnObsProcess::newProcess ()
 		execl (exePath, exePath, obsIdCh, obsTarIdCh, obsTarTypeCh,
 			(char *) NULL);
 		// if we get there, it's error in execl
-		logStream (MESSAGE_ERROR) << "Rts2ConnObsProcess::newProcess: " <<
+		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess: " <<
 			strerror (errno) << sendLog;
 	}
 	return -2;
@@ -270,34 +276,34 @@ Rts2ConnObsProcess::newProcess ()
 
 
 void
-Rts2ConnObsProcess::processLine ()
+ConnObsProcess::processLine ()
 {
 	// no error
 	return;
 }
 
 
-Rts2ConnDarkProcess::Rts2ConnDarkProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
-:Rts2ConnProcess (in_master, in_exe, in_timeout)
+ConnDarkProcess::ConnDarkProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
+:ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 
 
 void
-Rts2ConnDarkProcess::processLine ()
+ConnDarkProcess::processLine ()
 {
 	return;
 }
 
 
-Rts2ConnFlatProcess::Rts2ConnFlatProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
-:Rts2ConnProcess (in_master, in_exe, in_timeout)
+ConnFlatProcess::ConnFlatProcess (Rts2Block * in_master, const char *in_exe, int in_timeout)
+:ConnProcess (in_master, in_exe, in_timeout)
 {
 }
 
 
 void
-Rts2ConnFlatProcess::processLine ()
+ConnFlatProcess::processLine ()
 {
 	return;
 }

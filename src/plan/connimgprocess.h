@@ -1,6 +1,6 @@
 /*
  * Connections for image processing forked instances.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,16 +24,19 @@
 #include "../writers/rts2imagedb.h"
 #include "../utilsdb/rts2obs.h"
 
+namespace rts2plan
+{
+
 typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT }
 astrometry_stat_t;
 
-class Rts2ConnProcess:public Rts2ConnFork
+class ConnProcess:public Rts2ConnFork
 {
 	protected:
 		astrometry_stat_t astrometryStat;
 	public:
-		Rts2ConnProcess (Rts2Block * in_master,
+		ConnProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		astrometry_stat_t getAstrometryStat ()
@@ -52,7 +55,7 @@ class Rts2ConnProcess:public Rts2ConnFork
  * Hence passing full image path will be sufficient for finding
  * it.
  */
-class Rts2ConnImgProcess:public Rts2ConnProcess
+class ConnImgProcess:public ConnProcess
 {
 	private:
 		char *imgPath;
@@ -60,23 +63,33 @@ class Rts2ConnImgProcess:public Rts2ConnProcess
 		long id;
 		double ra, dec, ra_err, dec_err;
 
+#ifdef HAVE_PGSQL
 		void sendOKMail (Rts2ImageDb * image);
 		void sendProcEndMail (Rts2ImageDb * image);
+#else
+		void sendOKMail (Rts2Image * image)
+		{
+		}
+
+		void sendProcEndMail (Rts2Image * image)
+		{
+		}
+#endif
 
 	protected:
 		virtual void connectionError (int last_data_size);
 
 	public:
-		Rts2ConnImgProcess (Rts2Block * in_master,
+		ConnImgProcess (Rts2Block * in_master,
 			const char *in_exe, const char *in_path,
 			int in_timeout);
-		virtual ~ Rts2ConnImgProcess (void);
+		virtual ~ ConnImgProcess (void);
 
 		virtual int newProcess ();
 		virtual void processLine ();
 };
 
-class Rts2ConnObsProcess:public Rts2ConnProcess
+class ConnObsProcess:public ConnProcess
 {
 	private:
 		int obsId;
@@ -86,28 +99,30 @@ class Rts2ConnObsProcess:public Rts2ConnProcess
 		char *obsTarIdCh;
 		char *obsTarTypeCh;
 	public:
-		Rts2ConnObsProcess (Rts2Block * in_master,
+		ConnObsProcess (Rts2Block * in_master,
 			const char *in_exe, int in_obsId, int in_timeout);
 
 		virtual int newProcess ();
 		virtual void processLine ();
 };
 
-class Rts2ConnDarkProcess:public Rts2ConnProcess
+class ConnDarkProcess:public ConnProcess
 {
 	public:
-		Rts2ConnDarkProcess (Rts2Block * in_master,
+		ConnDarkProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual void processLine ();
 };
 
-class Rts2ConnFlatProcess:public Rts2ConnProcess
+class ConnFlatProcess:public ConnProcess
 {
 	public:
-		Rts2ConnFlatProcess (Rts2Block * in_master,
+		ConnFlatProcess (Rts2Block * in_master,
 			const char *in_exe, int in_timeout);
 
 		virtual void processLine ();
+};
+
 };
 #endif							 /* !__RTS2CONNIMGPROCESS__ */

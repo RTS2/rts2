@@ -1,6 +1,6 @@
 /*
  * Image processor body.
- * Copyright (C) 2003-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,9 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utilsdb/rts2devicedb.h"
 #include "status.h"
-#include "rts2connimgprocess.h"
+#include "connimgprocess.h"
 #include "rts2script.h"
 
 #include <glob.h>
@@ -30,13 +29,29 @@
 #include <iostream>
 #include <stdio.h>
 
-class Rts2ImageProc;
+#ifdef HAVE_PGSQL
+#include "../utilsdb/rts2devicedb.h"
+#else
+#include "../utils/rts2device.h"
+#endif
 
-class Rts2ImageProc:public Rts2DeviceDb
+namespace rts2plan
+{
+
+/**
+ * Image processor main class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+#ifdef HAVE_PGSQL
+class ImageProc:public Rts2DeviceDb
+#else
+class ImageProc:public Rts2Device
+#endif
 {
 	private:
-		std::list < Rts2ConnProcess * >imagesQue;
-		Rts2ConnProcess *runningImage;
+		std::list < ConnProcess * >imagesQue;
+		ConnProcess *runningImage;
 		Rts2ValueInteger *goodImages;
 		Rts2ValueInteger *trashImages;
 		Rts2ValueInteger *morningImages;
@@ -54,8 +69,8 @@ class Rts2ImageProc:public Rts2DeviceDb
 	protected:
 		virtual int reloadConfig ();
 	public:
-		Rts2ImageProc (int argc, char **argv);
-		virtual ~ Rts2ImageProc (void);
+		ImageProc (int argc, char **argv);
+		virtual ~ ImageProc (void);
 
 		virtual void postEvent (Rts2Event * event);
 		virtual int idle ();
@@ -70,7 +85,7 @@ class Rts2ImageProc:public Rts2DeviceDb
 
 		virtual int deleteConnection (Rts2Conn * conn);
 
-		int que (Rts2ConnProcess * newProc);
+		int que (ConnProcess * newProc);
 
 		int queImage (const char *in_path);
 		int doImage (const char *in_path);
@@ -81,13 +96,21 @@ class Rts2ImageProc:public Rts2DeviceDb
 		int queFlats ();
 
 		int checkNotProcessed ();
-		void changeRunning (Rts2ConnProcess * newImage);
+		void changeRunning (ConnProcess * newImage);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-Rts2ImageProc::Rts2ImageProc (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC, "IMGP")
+};
+
+using namespace rts2plan;
+
+ImageProc::ImageProc (int _argc, char **_argv)
+#ifdef HAVE_PGSQL
+:Rts2DeviceDb (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
+#else
+:Rts2Device (_argc, _argv, DEVICE_TYPE_IMGPROC, "IMGP")
+#endif
 {
 	runningImage = NULL;
 
@@ -113,7 +136,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_IMGPROC, "IMGP")
 }
 
 
-Rts2ImageProc::~Rts2ImageProc (void)
+ImageProc::~ImageProc (void)
 {
 	if (runningImage)
 		delete runningImage;
@@ -123,10 +146,14 @@ Rts2ImageProc::~Rts2ImageProc (void)
 
 
 int
-Rts2ImageProc::reloadConfig ()
+ImageProc::reloadConfig ()
 {
 	int ret;
+#ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::reloadConfig ();
+#else
+	ret = Rts2Device::reloadConfig ();
+#endif
 	if (ret)
 		return ret;
 
@@ -137,7 +164,7 @@ Rts2ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2ImageProc::init cannot get astrometry string, exiting!" <<
+			"ImageProc::init cannot get astrometry string, exiting!" <<
 			sendLog;
 		return ret;
 	}
@@ -146,7 +173,7 @@ Rts2ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2ImageProc::init cannot get obs process script, exiting" <<
+			"ImageProc::init cannot get obs process script, exiting" <<
 			sendLog;
 		return ret;
 	}
@@ -155,7 +182,7 @@ Rts2ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2ImageProc::init cannot get dark process script, exiting" <<
+			"ImageProc::init cannot get dark process script, exiting" <<
 			sendLog;
 		return ret;
 	}
@@ -164,7 +191,7 @@ Rts2ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"Rts2ImageProc::init cannot get flat process script, exiting" <<
+			"ImageProc::init cannot get flat process script, exiting" <<
 			sendLog;
 	}
 	return ret;
@@ -172,7 +199,7 @@ Rts2ImageProc::reloadConfig ()
 
 
 void
-Rts2ImageProc::postEvent (Rts2Event * event)
+ImageProc::postEvent (Rts2Event * event)
 {
 	int obsId;
 	switch (event->getType ())
@@ -182,35 +209,47 @@ Rts2ImageProc::postEvent (Rts2Event * event)
 			queObs (obsId);
 			break;
 	}
+#ifdef HAVE_PGSQL
 	Rts2DeviceDb::postEvent (event);
+#else
+	Rts2Device::postEvent (event);
+#endif
 }
 
 
 int
-Rts2ImageProc::idle ()
+ImageProc::idle ()
 {
-	std::list < Rts2ConnProcess * >::iterator img_iter;
+	std::list < ConnProcess * >::iterator img_iter;
 	if (!runningImage && imagesQue.size () != 0)
 	{
 		img_iter = imagesQue.begin ();
-		Rts2ConnProcess *newImage = *img_iter;
+		ConnProcess *newImage = *img_iter;
 		imagesQue.erase (img_iter);
 		changeRunning (newImage);
 	}
+#ifdef HAVE_PGSQL
+	return Rts2DeviceDb::idle ();
+#else
 	return Rts2Device::idle ();
+#endif
 }
 
 
 int
-Rts2ImageProc::info ()
+ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
+#ifdef HAVE_PGSQL
 	return Rts2DeviceDb::info ();
+#else
+	return Rts2Device::info ();
+#endif
 }
 
 
 int
-Rts2ImageProc::changeMasterState (int new_state)
+ImageProc::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -234,14 +273,18 @@ Rts2ImageProc::changeMasterState (int new_state)
 				checkNotProcessed ();
 	}
 	// start dark & flat processing
+#ifdef HAVE_PGSQL
 	return Rts2DeviceDb::changeMasterState (new_state);
+#else
+	return Rts2Device::changeMasterState (new_state);
+#endif
 }
 
 
 int
-Rts2ImageProc::deleteConnection (Rts2Conn * conn)
+ImageProc::deleteConnection (Rts2Conn * conn)
 {
-	std::list < Rts2ConnProcess * >::iterator img_iter;
+	std::list < ConnProcess * >::iterator img_iter;
 	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
 		img_iter++)
 	{
@@ -296,12 +339,16 @@ Rts2ImageProc::deleteConnection (Rts2Conn * conn)
 			}
 		}
 	}
+#ifdef HAVE_PGSQL
 	return Rts2DeviceDb::deleteConnection (conn);
+#else
+	return Rts2Device::deleteConnection (conn);
+#endif
 }
 
 
 void
-Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
+ImageProc::changeRunning (ConnProcess * newImage)
 {
 	int ret;
 	if (runningImage)
@@ -339,7 +386,7 @@ Rts2ImageProc::changeRunning (Rts2ConnProcess * newImage)
 
 
 int
-Rts2ImageProc::que (Rts2ConnProcess * newProc)
+ImageProc::que (ConnProcess * newProc)
 {
 	if (runningImage)
 		imagesQue.push_front (newProc);
@@ -351,20 +398,20 @@ Rts2ImageProc::que (Rts2ConnProcess * newProc)
 
 
 int
-Rts2ImageProc::queImage (const char *in_path)
+ImageProc::queImage (const char *in_path)
 {
-	Rts2ConnImgProcess *newImageConn;
-	newImageConn = new Rts2ConnImgProcess (this, defaultImgProcess.c_str (),
+	ConnImgProcess *newImageConn;
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (),
 		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
 	return que (newImageConn);
 }
 
 
 int
-Rts2ImageProc::doImage (const char *in_path)
+ImageProc::doImage (const char *in_path)
 {
-	Rts2ConnImgProcess *newImageConn;
-	newImageConn = new Rts2ConnImgProcess (this, defaultImgProcess.c_str (),
+	ConnImgProcess *newImageConn;
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (),
 		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
 	changeRunning (newImageConn);
 	infoAll ();
@@ -373,37 +420,37 @@ Rts2ImageProc::doImage (const char *in_path)
 
 
 int
-Rts2ImageProc::queObs (int obsId)
+ImageProc::queObs (int obsId)
 {
-	Rts2ConnObsProcess *newObsConn;
-	newObsConn = new Rts2ConnObsProcess (this, defaultObsProcess.c_str (),
+	ConnObsProcess *newObsConn;
+	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (),
 		obsId, Rts2Config::instance ()->getObsProcessTimeout ());
 	return que (newObsConn);
 }
 
 
 int
-Rts2ImageProc::queDarks ()
+ImageProc::queDarks ()
 {
-	Rts2ConnDarkProcess *newDarkConn;
-	newDarkConn = new Rts2ConnDarkProcess (this, defaultDarkProcess.c_str (),
+	ConnDarkProcess *newDarkConn;
+	newDarkConn = new ConnDarkProcess (this, defaultDarkProcess.c_str (),
 		Rts2Config::instance ()->getDarkProcessTimeout ());
 	return que (newDarkConn);
 }
 
 
 int
-Rts2ImageProc::queFlats ()
+ImageProc::queFlats ()
 {
-	Rts2ConnFlatProcess *newFlatConn;
-	newFlatConn = new Rts2ConnFlatProcess (this, defaultFlatProcess.c_str (),
+	ConnFlatProcess *newFlatConn;
+	newFlatConn = new ConnFlatProcess (this, defaultFlatProcess.c_str (),
 		Rts2Config::instance ()->getFlatProcessTimeout ());
 	return que (newFlatConn);
 }
 
 
 int
-Rts2ImageProc::checkNotProcessed ()
+ImageProc::checkNotProcessed ()
 {
 	std::string image_glob;
 	int ret;
@@ -433,7 +480,7 @@ Rts2ImageProc::checkNotProcessed ()
 
 
 int
-Rts2ImageProc::commandAuthorized (Rts2Conn * conn)
+ImageProc::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("que_image"))
 	{
@@ -468,14 +515,17 @@ Rts2ImageProc::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return queFlats ();
 	}
-
+#ifdef HAVE_PGSQL
 	return Rts2DeviceDb::commandAuthorized (conn);
+#else
+	return Rts2Device::commandAuthorized (conn);
+#endif
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2ImageProc imgproc = Rts2ImageProc (argc, argv);
+	ImageProc imgproc = ImageProc (argc, argv);
 	return imgproc.run ();
 }

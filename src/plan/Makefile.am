@@ -1,7 +1,7 @@
 # $Id$
 
 bin_PROGRAMS = rts2-scriptexec rts2-scriptor
-noinst_HEADERS = rts2execcli.h rts2script.h rts2connimgprocess.h rts2selector.h rts2scriptelement.h \
+noinst_HEADERS = rts2execcli.h rts2script.h connimgprocess.h rts2selector.h rts2scriptelement.h \
 		 rts2devscript.h rts2devcliphot.h rts2spiral.h rts2scriptblock.h rts2scriptguiding.h \
 		 rts2execclidb.h rts2scriptelementacquire.h scriptexec.h rts2targetscr.h \
 		 rts2setarget.h rts2sehex.h rts2swaitfor.h rts2scriptinterface.h
@@ -29,7 +29,7 @@ rts2_scriptor_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 if PGSQL
 
-libscript_a_SOURCES += rts2execclidb.cpp rts2scriptelementacquire.cpp rts2connimgprocess.cpp
+libscript_a_SOURCES += rts2execclidb.cpp rts2scriptelementacquire.cpp connimgprocess.cpp
 
 rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptexec_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
