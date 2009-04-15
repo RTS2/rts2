@@ -81,7 +81,7 @@ ConnImgProcess::newProcess ()
 	{
 		execl (exePath, exePath, imgPath, (char *) NULL);
 		logStream (MESSAGE_ERROR) << "ConnImgProcess::newProcess: " <<
-			strerror (errno) << sendLog;
+			exePath << " " << imgPath << " " << strerror (errno) << sendLog;
 	}
 	return -2;
 }
