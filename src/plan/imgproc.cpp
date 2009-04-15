@@ -51,6 +51,9 @@ class ImageProc:public Rts2Device
 #endif
 {
 	private:
+#ifndef HAVE_PGSQL
+		const char *configFile;
+#endif
 		std::list < ConnProcess * >imagesQue;
 		ConnProcess *runningImage;
 		Rts2ValueInteger *goodImages;
@@ -69,6 +72,9 @@ class ImageProc:public Rts2Device
 		int reprocessingPossible;
 	protected:
 		virtual int reloadConfig ();
+#ifndef HAVE_PGSQL
+		virtual int processOption (int opt);
+#endif
 	public:
 		ImageProc (int argc, char **argv);
 		virtual ~ ImageProc (void);
@@ -118,12 +124,10 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (goodImages, "good_images", "number of good images", false);
 	goodImages->setValueInteger (0);
 
-	createValue (trashImages, "trash_images",
-		"number of images which ended in trash (bad images)", false);
+	createValue (trashImages, "trash_images", "number of images which ended in trash (bad images)", false);
 	trashImages->setValueInteger (0);
 
-	createValue (morningImages, "morning_images",
-		"number of images which will be processed at morning", false);
+	createValue (morningImages, "morning_images", "number of images which will be processed at morning", false);
 	morningImages->setValueInteger (0);
 
 	createValue (queSize, "que_size", "size of image que", false);
@@ -134,6 +138,11 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	reprocessingPossible = 0;
 
 	sendStop = 0;
+
+#ifndef HAVE_PGSQL
+	configFile = NULL;
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
+#endif
 }
 
 
@@ -150,14 +159,18 @@ int
 ImageProc::reloadConfig ()
 {
 	int ret;
+	
+	Rts2Config *config;
 #ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::reloadConfig ();
+	config = Rts2Config::instance ();
+#else
+	config = Rts2Config::instance ();
+	ret = config->loadFile (configFile);
 #endif
 	if (ret)
 		return ret;
 
-	Rts2Config *config;
-	config = Rts2Config::instance ();
 
 	ret = config->getString ("imgproc", "astrometry", defaultImgProcess);
 	if (ret)
@@ -195,6 +208,23 @@ ImageProc::reloadConfig ()
 	}
 	return ret;
 }
+
+
+#ifndef HAVE_PGSQL
+int
+ImageProc::processOption (int opt)
+{
+	switch (opt)
+	{
+		case OPT_CONFIG:
+			configFile = optarg;
+			break;
+		default:
+			return Rts2Device::processOption (opt);
+	}
+	return 0;
+}
+#endif
 
 
 void
