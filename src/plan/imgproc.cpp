@@ -33,6 +33,7 @@
 #include "../utilsdb/rts2devicedb.h"
 #else
 #include "../utils/rts2device.h"
+#include "../utils/rts2config.h"
 #endif
 
 namespace rts2plan
@@ -151,8 +152,6 @@ ImageProc::reloadConfig ()
 	int ret;
 #ifdef HAVE_PGSQL
 	ret = Rts2DeviceDb::reloadConfig ();
-#else
-	ret = Rts2Device::reloadConfig ();
 #endif
 	if (ret)
 		return ret;
