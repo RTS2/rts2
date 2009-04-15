@@ -20,6 +20,16 @@ AC_SUBST(CFLAGS)
 CXXFLAGS="-Wall -Wshadow -g"
 AC_SUBST(CXXFLAGS)
 
+AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
+LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
+**** You don't have math library.
+**** Please install one and make sure, that it is available. 
+EOF
+exit 1])
+
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
+
 # Checks for library functions.
 AC_FUNC_FORK
 AC_PROG_GCC_TRADITIONAL
@@ -318,16 +328,6 @@ AC_DEFINE_UNQUOTED(CENTRALD_PORT, "$CENTRALD_PORT", [Default centrald port])
 
 
 # Checks for libraries.
-
-AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
-LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
-**** You don't have math library.
-**** Please install one and make sure, that it is available. 
-EOF
-exit 1])
-
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(nsl, gethostbyname)
 
 if test "x${cfitsio}" != "xno"; then
   if test "x${cfitsio}" != "xyes"; then
