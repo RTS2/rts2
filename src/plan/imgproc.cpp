@@ -74,6 +74,7 @@ class ImageProc:public Rts2Device
 		virtual int reloadConfig ();
 #ifndef HAVE_PGSQL
 		virtual int processOption (int opt);
+		virtual int init ();
 #endif
 	public:
 		ImageProc (int argc, char **argv);
@@ -106,6 +107,11 @@ class ImageProc:public Rts2Device
 		void changeRunning (ConnProcess * newImage);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual void signaledHUP ()
+		{
+			reloadConfig ();
+		}
 };
 
 };
@@ -176,7 +182,7 @@ ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"ImageProc::init cannot get astrometry string, exiting!" <<
+			"ImageProc::reloadConfig cannot get astrometry string, exiting!" <<
 			sendLog;
 		return ret;
 	}
@@ -185,7 +191,7 @@ ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"ImageProc::init cannot get obs process script, exiting" <<
+			"ImageProc::reloadConfig cannot get obs process script, exiting" <<
 			sendLog;
 		return ret;
 	}
@@ -194,7 +200,7 @@ ImageProc::reloadConfig ()
 	if (ret)
 	{
 		logStream (MESSAGE_ERROR) <<
-			"ImageProc::init cannot get dark process script, exiting" <<
+			"ImageProc::reloadConfig cannot get dark process script, exiting" <<
 			sendLog;
 		return ret;
 	}
@@ -223,6 +229,16 @@ ImageProc::processOption (int opt)
 			return Rts2Device::processOption (opt);
 	}
 	return 0;
+}
+
+int
+ImageProc::init ()
+{
+	int ret;
+	ret = Rts2Device::init ();
+	if (ret)
+		return ret;
+	return reloadConfig ();
 }
 #endif
 
