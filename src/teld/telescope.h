@@ -442,6 +442,15 @@ class Telescope:public Rts2Device
 		}
 
 		/**
+		 * Returns true if target was changed from last
+		 * sucessfull move command.
+		 */
+		bool targetChangeFromLastMove ()
+		{
+			return tarRaDec->wasChanged ();
+		}
+
+		/**
 		 * Return corrections in RA/HA.
 		 *
 		 * @return RA correction (in degrees).
@@ -509,6 +518,9 @@ class Telescope:public Rts2Device
 		 */
 		void getTargetAltAz (struct ln_hrz_posn *hrz);
 		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+
+		double getTargetHa ();
+		double getTargetHa (double jd);
 
 		double getLstDeg (double JD);
 

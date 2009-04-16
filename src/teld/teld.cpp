@@ -294,6 +294,20 @@ Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 
 
 double
+Telescope::getTargetHa ()
+{
+	return getTargetHa (ln_get_julian_from_sys ());
+}
+
+
+double
+Telescope::getTargetHa (double jd)
+{
+	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - telRaDec->getRa ());
+}
+
+
+double
 Telescope::getLstDeg (double JD)
 {
 	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
@@ -944,6 +958,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	infoAll ();
 
+	tarRaDec->resetValueChanged ();
 	objRaDec->resetValueChanged ();
 	offsetRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
