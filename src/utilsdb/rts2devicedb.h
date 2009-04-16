@@ -44,7 +44,7 @@ class Rts2DeviceDb:public Rts2Device
 		/**
 		 * Init database connection.
 		 *
-		 * @return -1 on error, 0 on sucess.
+		 * @return -1 on error, 0 on sucess. 
 		 */
 		int initDB ();
 		virtual int init ();
