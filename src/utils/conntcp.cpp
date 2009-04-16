@@ -87,6 +87,7 @@ ConnTCP::init ()
         ret = fcntl (sock, F_SETFL, O_NONBLOCK);
         if (ret)
 		throw ConnCreateError ("cannot set socket non-blocking", errno);
+        setConnState (CONN_CONNECTED);
         return 0;
 }
 
