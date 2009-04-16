@@ -23,12 +23,11 @@
 #include "../utils/rts2config.h"
 
 #include "telescope.h"
-#include "connopentpl.h"
+#include "../utils/connopentpl.h"
 
 #define BLIND_SIZE            1.0
 #define OPT_CHECK_POWER       OPT_LOCAL + 1
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
-#define OPT_OPENTPL_SERVER    OPT_LOCAL + 3
 #define OPT_PARK_POS          OPT_LOCAL + 4
 
 namespace rts2teld
@@ -91,6 +90,8 @@ class OpenTPL:public Telescope
 
 		double derOff;
 
+		int initOpenTplDevice ();
+
 		int startMoveReal (double ra, double dec);
 
 	protected:
@@ -102,7 +103,6 @@ class OpenTPL:public Telescope
 
 		virtual int processOption (int in_opt);
 
-		virtual int initIrDevice ();
 		virtual int init ();
 		virtual int initValues ();
 		virtual int idle ();
@@ -337,7 +337,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	createValue (parkPos, "park_position", "mount park position", false);
 	parkPos->setValueAltAz (70, 0);
 
-	addOption (OPT_OPENTPL_SERVER, "mount-host", 1, "OpenTPL server TCP/IP address and port (separated by :)");
+	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
 	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
@@ -396,7 +396,7 @@ OpenTPL::processOption (int in_opt)
 
 
 int
-OpenTPL::initIrDevice ()
+OpenTPL::initOpenTplDevice ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -444,7 +444,7 @@ OpenTPL::init ()
 	if (ret)
 		return ret;
 
-	ret = initIrDevice ();
+	ret = initOpenTplDevice ();
 	if (ret)
 		return ret;
 

@@ -1,6 +1,6 @@
 SUBDIRS = model
 
-noinst_HEADERS = telescope.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h connopentpl.h
+noinst_HEADERS = telescope.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
 
 noinst_LIBRARIES = librts2teld.a
 
@@ -31,8 +31,8 @@ rts2_teld_kolonica_SOURCES = kolonica.cpp
 
 rts2_teld_hlohovec_SOURCES = hlohovec.cpp
 
-rts2_teld_opentpl_SOURCES = opentpl.cpp connopentpl.cpp
-rts2_opentpl_errors_SOURCES = opentpl-errors.cpp connopentpl.cpp
+rts2_teld_opentpl_SOURCES = opentpl.cpp 
+rts2_opentpl_errors_SOURCES = opentpl-errors.cpp
 
 rts2_teld_indi_bridge_SOURCES = indibridge.cpp hms.c
 rts2_teld_indi_bridge_LDADD = -L../libindi -lindi -lz @LIB_PTHREAD@ ${LDADD}

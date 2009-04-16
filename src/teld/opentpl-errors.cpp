@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "connopentpl.h"
+#include "../utils/connopentpl.h"
 #include "../utils/rts2cliapp.h"
 #include "../utils/rts2config.h"
 
