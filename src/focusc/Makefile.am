@@ -6,6 +6,8 @@ noinst_HEADERS = genfoc.h
 
 EXTRA_DIST = genfoc.cpp
 
+genfoc_o_CXXFLAGS = @CFITSIO_CFLAGS@
+
 rts2_focusc_SOURCES = focusc.cpp
 rts2_focusc_LDFLAGS = ../writers/librts2image.a ../utils/librts2block.a @LIB_M@ @LIB_CFITSIO@ @LIB_NOVA@
 rts2_focusc_LDADD = genfoc.o
