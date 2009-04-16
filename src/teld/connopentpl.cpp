@@ -48,6 +48,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	}
 	else if (ret < 0)
 	{
+	 	connectionError (-1);
 		logStream (MESSAGE_ERROR) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
 	}
 	if (wait == false)
@@ -90,7 +91,7 @@ OpenTpl::waitReply ()
 				return -1;
 			}
 			int data_size = recv (sock, tpl_buf_top, 499 - (tpl_buf_top - tpl_buf), 0);
-			if (data_size < 0)
+			if (data_size <= 0)
 			{
 				connectionError (-1);
 				return -1;

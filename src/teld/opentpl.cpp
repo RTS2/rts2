@@ -421,15 +421,15 @@ OpenTPL::initIrDevice ()
 		return -1;
 	}
 
-	opentplConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
-
 	try
 	{	
+		opentplConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
 		opentplConn->init ();
 	}
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
 	}
 
 	return 0;
@@ -792,8 +792,13 @@ int
 OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	status = opentplConn->set ("POINTING.TARGET.RA", ra / 15.0, &status);
-	status = opentplConn->set ("POINTING.TARGET.DEC", dec, &status);
+	if (targetChangeFromLastMove ())
+	{
+		status = opentplConn->set ("POINTING.TARGET.RA", ra / 15.0, &status);
+		status = opentplConn->set ("POINTING.TARGET.DEC", dec, &status);	
+
+		status = setTelescopeTrack (irTracking);
+	}
 	if (derotatorOffset && !getDerotatorPower ())
 	{
 		status = opentplConn->set ("DEROTATOR[3].POWER", 1, &status);
@@ -847,7 +852,6 @@ OpenTPL::startMoveReal (double ra, double dec)
 			return status;
 	}
 
-	status = setTelescopeTrack (irTracking);
 	return status;
 }
 
@@ -859,6 +863,18 @@ OpenTPL::idle ()
 	checkErrors ();
 	if (cover)
 		checkCover ();
+	if (opentplConn->getConnState () == CONN_DELETE)
+	{
+		try
+		{
+			opentplConn->init ();
+		}
+		catch (rts2core::ConnError er)
+		{
+			logStream (MESSAGE_ERROR) << "cannot reinit connection to telescope " << er << sendLog;
+			sleep (5);
+		}
+	}
 	return Telescope::idle ();
 }
 
@@ -1053,7 +1069,7 @@ OpenTPL::saveModel ()
 		status = opentplConn->get (pn.c_str (), pv, &status);
 		if (status != TPL_OK)
 			return -1;
-		of << pn << " " << pv << std::endl;
+		of << (*iter)->getName () << " " << pv << std::endl;
 	}
 	of.close ();
 	if (of.fail ())
