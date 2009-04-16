@@ -1,6 +1,7 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-weathertimeout \
-	rts2-dome-bootes1a rts2-dome-bootes1b rts2-dome-zelio
+	rts2-dome-bootes1a rts2-dome-bootes1b rts2-dome-zelio \
+	rts2-dome-opentpl
 
 
 noinst_HEADERS = dome.h cupola.h ford.h
@@ -32,17 +33,7 @@ rts2_dome_bootes1b_LDADD = ford.o ${LDADD}
 
 rts2_dome_zelio_SOURCES = zelio.cpp
 
-if OPENTPL
-bin_PROGRAMS += rts2-dome-ir
-
-rts2_dome_ir_SOURCES = ir.cpp
-rts2_dome_ir_LDFLAGS = @LIB_OPENTPL@
-rts2_dome_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
-
-else
-EXTRA_DIST += ir.cpp
-endif
-
+rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-dome-bootes2

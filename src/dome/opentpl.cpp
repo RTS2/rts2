@@ -1,6 +1,6 @@
 /* 
- * Driver for IR (OpenTPL) dome.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Driver for OpenTPL domes.
+ * Copyright (C) 2008-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@
  */
 
 #include "dome.h"
-#include "irconn.h"
+#include "../utils/connopentpl.h"
 #include "../utils/rts2config.h"
 
 #include <libnova/libnova.h>
@@ -31,13 +31,12 @@ namespace rts2dome
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Ir:public Dome
+class OpenTpl:public Dome
 {
 	private:
-		std::string ir_ip;
-		int ir_port;
+		HostString *openTPLServer;
 
-		IrConn *irConn;
+		rts2core::OpenTpl *opentplConn;
 
 		Rts2ValueFloat *domeUp;
 		Rts2ValueFloat *domeDown;
@@ -57,7 +56,7 @@ class Ir:public Dome
 		 * @return -1 on error, 0 on success.
 		 */
 		int setDomeTrack (bool new_auto);
-		int initIrDevice ();
+		int initOpenTplDevice ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -65,8 +64,8 @@ class Ir:public Dome
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 	public:
-		Ir (int argc, char **argv);
-		virtual ~ Ir (void);
+		OpenTpl (int argc, char **argv);
+		virtual ~ OpenTpl (void);
 		virtual int init ();
 
 		virtual int info ();
@@ -85,7 +84,7 @@ class Ir:public Dome
 using namespace rts2dome;
 
 int
-Ir::setValue (Rts2Value *old_value, Rts2Value *new_value)
+OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {	
 	int status = TPL_OK;
 	if (old_value == domeAutotrack)
@@ -97,21 +96,21 @@ Ir::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == domeUp)
 	{
-		status = irConn->tpl_set ("DOME[1].TARGETPOS", new_value->getValueFloat (), &status);
+		status = opentplConn->set ("DOME[1].TARGETPOS", new_value->getValueFloat (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == domeDown)
 	{
-		status = irConn->tpl_set ("DOME[2].TARGETPOS", new_value->getValueFloat (), &status);
+		status = opentplConn->set ("DOME[2].TARGETPOS", new_value->getValueFloat (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == domeTargetAz)
 	{
-		status = irConn->tpl_set ("DOME[0].TARGETPOS",
+		status = opentplConn->set ("DOME[0].TARGETPOS",
 			ln_range_degrees (new_value->getValueDouble () - 180.0),
 			&status);
 		if (status != TPL_OK)
@@ -121,7 +120,7 @@ Ir::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	}
 	if (old_value == domePower)
 	{
-		status =  irConn->tpl_set ("DOME[0].POWER",
+		status =  opentplConn->set ("DOME[0].POWER",
 			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
 			&status);
 		if (status != TPL_OK)
@@ -134,11 +133,11 @@ Ir::setValue (Rts2Value *old_value, Rts2Value *new_value)
 
 
 int
-Ir::startOpen ()
+OpenTpl::startOpen ()
 {
 	int status = TPL_OK;
-	status = irConn->tpl_set ("DOME[1].TARGETPOS", 1, &status);
-	status = irConn->tpl_set ("DOME[2].TARGETPOS", 1, &status);
+	status = opentplConn->set ("DOME[1].TARGETPOS", 1, &status);
+	status = opentplConn->set ("DOME[2].TARGETPOS", 1, &status);
 	logStream (MESSAGE_INFO) << "opening dome, status " << status << sendLog;
 	if (status != TPL_OK)
 		return -1;
@@ -147,12 +146,12 @@ Ir::startOpen ()
 
 
 long
-Ir::isOpened ()
+OpenTpl::isOpened ()
 {
 	int status = TPL_OK;
 	double pos1, pos2;
-	status = irConn->tpl_get ("DOME[1].CURRPOS", pos1, &status);
-	status = irConn->tpl_get ("DOME[2].CURRPOS", pos2, &status);
+	status = opentplConn->get ("DOME[1].CURRPOS", pos1, &status);
+	status = opentplConn->get ("DOME[2].CURRPOS", pos2, &status);
 
 	if (status != TPL_OK)
 		return -1;
@@ -165,18 +164,18 @@ Ir::isOpened ()
 
 
 int
-Ir::endOpen ()
+OpenTpl::endOpen ()
 {
 	return 0;
 }
 
 
 int
-Ir::startClose ()
+OpenTpl::startClose ()
 {
 	int status = TPL_OK;
-	status = irConn->tpl_set ("DOME[1].TARGETPOS", 0, &status);
-	status = irConn->tpl_set ("DOME[2].TARGETPOS", 0, &status);
+	status = opentplConn->set ("DOME[1].TARGETPOS", 0, &status);
+	status = opentplConn->set ("DOME[2].TARGETPOS", 0, &status);
 	logStream (MESSAGE_INFO) << "closing dome, status " << status << sendLog;
 	if (status != TPL_OK)
 		return -1;
@@ -185,12 +184,12 @@ Ir::startClose ()
 
 
 long
-Ir::isClosed ()
+OpenTpl::isClosed ()
 {
 	int status = TPL_OK;
 	double pos1, pos2;
-	status = irConn->tpl_get ("DOME[1].CURRPOS", pos1, &status);
-	status = irConn->tpl_get ("DOME[2].CURRPOS", pos2, &status);
+	status = opentplConn->get ("DOME[1].CURRPOS", pos1, &status);
+	status = opentplConn->get ("DOME[2].CURRPOS", pos2, &status);
 
 	if (status != TPL_OK)
 		return -1;
@@ -203,22 +202,19 @@ Ir::isClosed ()
 
 
 int
-Ir::endClose ()
+OpenTpl::endClose ()
 {
 	return 0;
 }
 
 
 int
-Ir::processOption (int in_opt)
+OpenTpl::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'I':
-			ir_ip = std::string (optarg);
-			break;
-		case 'N':
-			ir_port = atoi (optarg);
+		case OPT_OPENTPL_SERVER:
+			openTPLServer = new HostString (optarg, "65432");
 			break;
 		default:
 			return Dome::processOption (in_opt);
@@ -227,11 +223,11 @@ Ir::processOption (int in_opt)
 }
 
 
-Ir::Ir (int argc, char **argv)
+OpenTpl::OpenTpl (int argc, char **argv)
 :Dome (argc, argv)
 {
-	ir_ip = std::string ("");
-	ir_port = 0;
+	openTPLServer = NULL;
+	opentplConn = NULL;
 
 	createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false);
 	domeAutotrack->setValueBool (true);
@@ -244,27 +240,26 @@ Ir::Ir (int argc, char **argv)
 	createValue (domePower, "dome_power", "if dome have power", false);
 	createValue (domeTarDist, "dome_tar_dist", "dome target distance", false, RTS2_DT_DEG_DIST);
 
-	addOption ('I', "ir_ip", 1, "IR TCP/IP address");
-	addOption ('N', "ir_port", 1, "IR TCP/IP port number");
+	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
 }
 
 
-Ir::~Ir (void)
+OpenTpl::~OpenTpl (void)
 {
 
 }
 
 
 int
-Ir::setDomeTrack (bool new_auto)
+OpenTpl::setDomeTrack (bool new_auto)
 {
 	int status = TPL_OK;
 	int old_track;
-	status = irConn->tpl_get ("POINTING.TRACK", old_track, &status);
+	status = opentplConn->get ("POINTING.TRACK", old_track, &status);
 	if (status != TPL_OK)
 		return -1;
 	old_track &= ~128;
-	status = irConn->tpl_set ("POINTING.TRACK", old_track | (new_auto ? 128 : 0), &status);
+	status = opentplConn->set ("POINTING.TRACK", old_track | (new_auto ? 128 : 0), &status);
 	if (status != TPL_OK)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot setDomeTrack" << sendLog;
@@ -274,19 +269,24 @@ Ir::setDomeTrack (bool new_auto)
 
 
 int
-Ir::initIrDevice ()
+OpenTpl::initOpenTplDevice ()
 {
-	Rts2Config *config = Rts2Config::instance ();
-	config->loadFile (NULL);
-	// try to get default from config file
-	if (ir_ip.length () == 0)
+	std::string ir_ip;
+	int ir_port = 0;
+	if (openTPLServer)
 	{
-		config->getString ("ir", "ip", ir_ip);
+		ir_ip = openTPLServer->getHostname ();
+		ir_port = openTPLServer->getPort ();
 	}
-	if (!ir_port)
+	else
 	{
+		Rts2Config *config = Rts2Config::instance ();
+		config->loadFile (NULL);
+		// try to get default from config file
+		config->getString ("ir", "ip", ir_ip);
 		config->getInteger ("ir", "port", ir_port);
 	}
+
 	if (ir_ip.length () == 0 || !ir_port)
 	{
 		std::cerr << "Invalid port or IP address of mount controller PC"
@@ -294,12 +294,14 @@ Ir::initIrDevice ()
 		return -1;
 	}
 
-	irConn = new IrConn (ir_ip, ir_port);
-
-	// are we connected ?
-	if (!irConn->isOK ())
+	try
+	{	
+		opentplConn = new rts2core::OpenTpl (this, ir_ip, ir_port);
+		opentplConn->init ();
+	}
+	catch (rts2core::ConnError er)
 	{
-		std::cerr << "Connection to server failed" << std::endl;
+		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
 
@@ -308,16 +310,16 @@ Ir::initIrDevice ()
 
 
 int
-Ir::info ()
+OpenTpl::info ()
 {
 	double dome_curr_az, dome_target_az, dome_tar_dist, dome_power, dome_up, dome_down;
 	int status = TPL_OK;
-	status = irConn->tpl_get ("DOME[0].CURRPOS", dome_curr_az, &status);
-	status = irConn->tpl_get ("DOME[0].TARGETPOS", dome_target_az, &status);
-	status = irConn->tpl_get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
-	status = irConn->tpl_get ("DOME[0].POWER", dome_power, &status);
-	status = irConn->tpl_get ("DOME[1].CURRPOS", dome_up, &status);
-	status = irConn->tpl_get ("DOME[2].CURRPOS", dome_down, &status);
+	status = opentplConn->get ("DOME[0].CURRPOS", dome_curr_az, &status);
+	status = opentplConn->get ("DOME[0].TARGETPOS", dome_target_az, &status);
+	status = opentplConn->get ("DOME[0].TARGETDISTANCE", dome_tar_dist, &status);
+	status = opentplConn->get ("DOME[0].POWER", dome_power, &status);
+	status = opentplConn->get ("DOME[1].CURRPOS", dome_up, &status);
+	status = opentplConn->get ("DOME[2].CURRPOS", dome_down, &status);
 	if (status == TPL_OK)
 	{
 		domeCurrAz->setValueDouble (ln_range_degrees (dome_curr_az + 180));
@@ -333,18 +335,18 @@ Ir::info ()
 
 
 int
-Ir::init ()
+OpenTpl::init ()
 {
 	int ret = Dome::init ();
 	if (ret)
 		return ret;
-	return initIrDevice ();
+	return initOpenTplDevice ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Ir device = Ir (argc, argv);
+	OpenTpl device = OpenTpl (argc, argv);
 	return device.run ();
 }
