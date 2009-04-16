@@ -103,21 +103,6 @@ Rts2DevFocuser::idle ()
 
 
 int
-Rts2DevFocuser::ready (Rts2Conn * conn)
-{
-	int ret;
-
-	ret = ready ();
-	if (ret)
-	{
-		conn->sendCommandEnd (DEVDEM_E_HW, "focuser not ready");
-		return -1;
-	}
-	return 0;
-}
-
-
-int
 Rts2DevFocuser::setTo (int num)
 {
 	int ret;
@@ -269,7 +254,6 @@ Rts2DevFocuser::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{
-		conn->sendMsg ("ready - is focuser ready?");
 		conn->sendMsg ("info  - information about focuser");
 		conn->sendMsg ("step  - move by given steps offset");
 		conn->sendMsg ("set   - set to given position");

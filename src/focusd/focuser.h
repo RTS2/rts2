@@ -46,13 +46,10 @@ class Rts2DevFocuser:public Rts2Device
 
 		virtual int processOption (int in_opt);
 
-		// callback functions
-		virtual int ready ()
+		virtual int stepOut (int num)
 		{
 			return -1;
-		};
-
-		virtual int stepOut (int num) = 0;
+		}
 		// set to given number
 		// default to use stepOut function
 		virtual int setTo (int num);
@@ -99,8 +96,6 @@ class Rts2DevFocuser:public Rts2Device
 
 	public:
 		Rts2DevFocuser (int argc, char **argv);
-
-		virtual int ready (Rts2Conn * conn);
 
 		/**
 		 * TODO remove

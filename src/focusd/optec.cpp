@@ -49,7 +49,6 @@ class Rts2DevFocuserOptec:public Rts2DevFocuser
 		~Rts2DevFocuserOptec (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int stepOut (int num);
@@ -185,13 +184,6 @@ bool Rts2DevFocuserOptec::isAtStartPosition ()
 	if (ret)
 		return false;
 	return (getFocPos () == 3500);
-}
-
-
-int
-Rts2DevFocuserOptec::ready ()
-{
-	return 0;
 }
 
 

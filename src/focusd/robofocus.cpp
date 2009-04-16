@@ -61,7 +61,6 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 		~Rts2DevFocuserRobofocus (void);
 
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int stepOut (int num);
@@ -137,13 +136,6 @@ Rts2DevFocuserRobofocus::init ()
 	if (ret)
 	  	return -1;
 
-	return 0;
-}
-
-
-int
-Rts2DevFocuserRobofocus::ready ()
-{
 	return 0;
 }
 

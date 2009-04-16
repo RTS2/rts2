@@ -46,7 +46,6 @@ class Dummy:public Rts2DevFocuser
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
-		virtual int ready ();
 		virtual int stepOut (int num);
 		virtual int isFocusing ();
 };
@@ -105,13 +104,6 @@ Dummy::initValues ()
 	focPos->setValueInteger (3000);
 	focTemp->setValueFloat (100);
 	return Rts2DevFocuser::initValues ();
-}
-
-
-int
-Dummy::ready ()
-{
-	return 0;
 }
 
 

@@ -41,7 +41,6 @@ class Rts2DevFocuserFli:public Rts2DevFocuser
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int stepOut (int num);
@@ -149,13 +148,6 @@ Rts2DevFocuserFli::init ()
 		return -1;
 
 	return 0;
-}
-
-
-int
-Rts2DevFocuserFli::ready ()
-{
-	return info ();
 }
 
 
