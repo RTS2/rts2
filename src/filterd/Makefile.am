@@ -2,9 +2,11 @@ bin_PROGRAMS = rts2-filterd-ifw rts2-filterd-dummy
 
 noinst_HEADERS = filterd.h
 
-EXTRA_DIST = filterd.cpp
+noinst_LIBRARIES  = librts2filterd.a
 
-LDADD = filterd.o ../utils/librts2block.a
+librts2filterd_a_SOURCES = filterd.cpp
+
+LDADD = librts2filterd.a ../utils/librts2block.a
 
 rts2_filterd_ifw_SOURCES = ifw.cpp
 
