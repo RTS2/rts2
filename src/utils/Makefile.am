@@ -43,7 +43,15 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 	rts2message.h conntcp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h rts2expander.h \
 	riseset.h rts2valuerectangle.h rts2data.h radecparser.h rts2connserial.h connmodbus.h rts2format.h \
-	rts2valuearray.h getopt_own.h
+	rts2valuearray.h getopt_own.h connepics.h
+
+if EPICS
+noinst_LIBRARIES += librts2epics.a
+librts2epics_a_SOURCES = connepics.cpp
+librts2epics_a_CXXFLAGS = @INC_EPICS@
+else
+EXTRA_DIST += connepics.cpp
+endif
 
 rts2_horizon_SOURCES = horizonapp.cpp
 rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a
