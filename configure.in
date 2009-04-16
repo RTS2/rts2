@@ -226,19 +226,6 @@ AC_SUBST(FLI)
 AC_SUBST(LIB_FLI)
 AC_SUBST(INC_FLI)
 
-# check for OPENTPL
-AC_ARG_WITH(opentpl,
-[  --with-opentpl          path to OPEN TPL mount driver, build IR driver],
-OPENTPL="${withval}";
-LIB_OPENTPL="-L${OPENTPL}/lib -lssl -lopentpl -lttcommon";
-INC_OPENTPL="-I${OPENTPL}/include",
-[OPENTPL=no])
-
-AM_CONDITIONAL(OPENTPL, test x$OPENTPL != xno)
-AC_SUBST(OPENTPL)
-AC_SUBST(LIB_OPENTPL)
-AC_SUBST(INC_OPENTPL)
-
 # check for COMEDI
 AC_ARG_WITH(comedi,
 [  --with-comedi	path to COMEDI library, build comedi dependent binaries],
@@ -623,7 +610,6 @@ CCD's:
   fli           ${FLI}
 
 MOUNT's:
-  opentpl       ${OPENTPL}
   paralib       ${PARALIB}
 
 DOME's:
