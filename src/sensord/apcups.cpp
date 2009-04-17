@@ -199,11 +199,11 @@ ConnApcUps::getTime (const char *val)
 {
 	const char *v = getString (val);
 	if (strcasestr (v, "hours") != NULL)
-	  	return atof (v) * 3600;
+	  	return (int) (atof (v) * 3600);
 	if (strcasestr (v, "minutes") != NULL)
-		return atof (v) * 60;
+		return (int) (atof (v) * 60);
 	if (strcasestr (v, "seconds") != NULL)
-	  	return atof (v);
+	  	return atoi (v);
 	throw rts2core::ConnError ("Cannot convert time");
 }
 
