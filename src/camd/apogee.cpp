@@ -83,7 +83,6 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
-		virtual int ready ();
 		virtual int info ();
 
 		virtual int camChipInfo (int chip);
@@ -856,17 +855,6 @@ Rts2DevCameraApogee::init ()
 	strcpy (serialNumber, "007");
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraApogee::ready ()
-{
-	int ret;
-	ret = camera->read_Present ();
-	if (!ret)
-		return -1;
-	return 0;
 }
 
 

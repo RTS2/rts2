@@ -58,7 +58,6 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
-		virtual int ready ();
 		virtual int info ();
 
 		virtual int camChipInfo (int chip);
@@ -311,15 +310,6 @@ Rts2DevCameraAlta::init ()
 	sprintf (serialNumber, "%i", alta->m_CameraId);
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraAlta::ready ()
-{
-	int ret;
-	ret = alta->read_Present ();
-	return (ret ? 0 : -1);
 }
 
 

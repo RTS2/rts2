@@ -29,11 +29,6 @@ class Rts2DevPhotDummy:public Rts2DevPhot
 			return Rts2DevPhot::init ();
 		}
 
-		virtual int ready ()
-		{
-			return 0;
-		};
-
 		virtual int homeFilter ();
 		virtual int startFilterMove (int new_filter);
 		virtual long isFilterMoving ();

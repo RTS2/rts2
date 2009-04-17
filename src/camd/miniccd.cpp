@@ -54,7 +54,6 @@ class Rts2DevCameraMiniccd:public Rts2DevCamera
 		Rts2DevCameraMiniccd (int argc, char **argv);
 		virtual ~ Rts2DevCameraMiniccd (void);
 
-		virtual int ready ();
 		virtual int setCoolTemp (float _temp);
 		virtual int camFilter (int new_filter);
 };
@@ -331,13 +330,6 @@ Rts2DevCameraMiniccd::init ()
 	*top = '\0';
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraMiniccd::ready ()
-{
-	return !(fd_ccd != -1);
 }
 
 

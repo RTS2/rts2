@@ -159,10 +159,6 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			initCameraChip (width, height, 0, 0);
 			return Rts2DevCamera::initChips ();
 		}
-		virtual int ready ()
-		{
-			return 0;
-		}
 		virtual int info ()
 		{
 			usleep (infoSleep);

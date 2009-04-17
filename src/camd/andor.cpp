@@ -152,7 +152,6 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual bool supportFrameTransfer ();
 
 		// callback functions for Camera alone
-		virtual int ready ();
 		virtual int info ();
 		virtual int scriptEnds ();
 		virtual int camChipInfo (int chip);
@@ -1173,13 +1172,6 @@ Rts2DevCameraAndor::initAndorValues ()
 		fanMode->addSelVal ("LOW");
 		fanMode->addSelVal ("OFF");
 	}
-}
-
-
-int
-Rts2DevCameraAndor::ready ()
-{
-	return 0;
 }
 
 

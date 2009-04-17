@@ -82,10 +82,6 @@ class ImageProc:public Rts2Device
 
 		virtual void postEvent (Rts2Event * event);
 		virtual int idle ();
-		virtual int ready ()
-		{
-			return 0;
-		}
 
 		virtual int info ();
 

@@ -125,7 +125,6 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int init ();
 
 		// callback functions for Camera alone
-		virtual int ready ();
 		virtual int info ();
 		virtual int camChipInfo ();
 		virtual long camWaitExpose ();
@@ -447,16 +446,6 @@ Rts2DevCameraSbig::init ()
 	strcpy (serialNumber, resI.serialNumber);
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraSbig::ready ()
-{
-	double ccdTemp;
-	PAR_ERROR ret;
-	ret = pcam->GetCCDTemperature (ccdTemp);
-	return checkSbigHw (ret);
 }
 
 

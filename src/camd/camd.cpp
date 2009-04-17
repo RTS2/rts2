@@ -1095,7 +1095,6 @@ Rts2DevCamera::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{
-		conn->sendMsg ("ready - is camera ready?");
 		conn->sendMsg ("info - information about camera");
 		conn->sendMsg ("chipinfo <chip> - information about chip");
 		conn->sendMsg ("expose - start exposition");

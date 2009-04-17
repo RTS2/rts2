@@ -72,7 +72,6 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 		virtual ~Rts2DevCameraUrvc2 (void);
 
 		virtual int init ();
-		virtual int ready ();
 		virtual int info ();
 		virtual int camChipInfo (int chip)
 		{
@@ -430,16 +429,6 @@ Rts2DevCameraUrvc2::init ()
 	strcpy (serialNumber, (char *) eePtr.serialNumber);
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraUrvc2::ready ()
-{
-	StatusResults gvr;
-	if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
-		return -1;
-	return 0;
 }
 
 

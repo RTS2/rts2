@@ -175,7 +175,6 @@ Rts2DevFilterd::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("help"))
 	{
-		conn->sendMsg ("ready - is filter ready?");
 		conn->sendMsg ("info - information about camera");
 		conn->sendMsg ("exit - exit from connection");
 		conn->sendMsg ("help - print, what you are reading just now");

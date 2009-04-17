@@ -363,11 +363,6 @@ class Rts2Device:public Rts2Daemon
 		 */
 		int sendMasters (const char *msg);
 
-		// callback functions for device
-		virtual int ready ();
-
-		virtual int ready (Rts2Conn * conn);
-
 		virtual void centraldConnRunning (Rts2Conn *conn);
 
 		/**

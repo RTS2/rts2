@@ -46,11 +46,6 @@ class Dummy:public Telescope
 			return Telescope::initValues ();
 		}
 
-		virtual int ready ()
-		{
-			return 0;
-		}
-
 		virtual int info ()
 		{
 			setTelRaDec (dummyPos.ra, dummyPos.dec);

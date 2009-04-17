@@ -322,11 +322,6 @@ Rts2ConnCentrald::commandClient ()
 	}
 	if (authorized)
 	{
-		if (isCommand ("ready"))
-		{
-			return 0;
-		}
-
 		if (isCommand ("info"))
 		{
 			master->info ();

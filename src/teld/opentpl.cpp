@@ -126,7 +126,6 @@ class OpenTPL:public Telescope
 	public:
 		OpenTPL (int argc, char **argv);
 		virtual ~ OpenTPL (void);
-		virtual int ready ();
 
 		virtual void getAltAz ();
 
@@ -876,13 +875,6 @@ OpenTPL::idle ()
 		}
 	}
 	return Telescope::idle ();
-}
-
-
-int
-OpenTPL::ready ()
-{
-	return 0;
 }
 
 

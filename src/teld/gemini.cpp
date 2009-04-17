@@ -368,7 +368,6 @@ class Gemini:public Telescope
 		virtual ~ Gemini (void);
 		virtual int init ();
 		virtual int changeMasterState (int new_state);
-		virtual int ready ();
 		virtual int info ();
 		virtual int startMove ();
 		virtual int isMoving ();
@@ -1354,13 +1353,6 @@ Gemini::changeMasterState (int new_state)
 {
 	matchCount = 0;
 	return Telescope::changeMasterState (new_state);
-}
-
-
-int
-Gemini::ready ()
-{
-	return 0;
 }
 
 

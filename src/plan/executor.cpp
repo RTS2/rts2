@@ -83,10 +83,6 @@ class Rts2Executor:public Rts2DeviceDb
 
 		virtual void deviceReady (Rts2Conn * conn);
 
-		virtual int ready ()
-		{
-			return 0;
-		}
 		virtual int info ();
 
 		virtual int changeMasterState (int new_state);

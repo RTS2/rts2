@@ -83,11 +83,6 @@ class Rts2Soapd:public Rts2DeviceDb
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
-		virtual int ready ()
-		{
-			return 0;
-		}
-
 		virtual void message (Rts2Message & msg);
 };
 

@@ -85,7 +85,6 @@ class Rts2DevCameraFli:public Rts2DevCamera
 
 		virtual int init ();
 
-		virtual int ready ();
 		virtual int info ();
 
 		virtual int camChipInfo (int chip);
@@ -434,18 +433,6 @@ Rts2DevCameraFli::init ()
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
 
 	return initChips ();
-}
-
-
-int
-Rts2DevCameraFli::ready ()
-{
-	long fwrev;
-	LIBFLIAPI ret;
-	ret = FLIGetFWRevision (dev, &fwrev);
-	if (ret)
-		return -1;
-	return 0;
 }
 
 
