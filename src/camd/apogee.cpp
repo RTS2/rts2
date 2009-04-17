@@ -45,6 +45,9 @@ const int CCD_OPEN_LOOPTST = 3;	 // Loopback test failed, no camera found
 const int CCD_OPEN_ALLOC = 4;	 // Memory alloc failed - system error
 const int CCD_OPEN_NTIO = 5;	 // NT I/O driver not present
 
+namespace rts2camd
+{
+
 /**
  * Driver for Apogee camera.
  *
@@ -52,7 +55,7 @@ const int CCD_OPEN_NTIO = 5;	 // NT I/O driver not present
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCameraApogee:public Rts2DevCamera
+class Apogee:public Camera
 {
 	private:
 		CCameraIO *camera;
@@ -78,8 +81,8 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 		virtual int endReadout ();
 
 	public:
-		Rts2DevCameraApogee (int argc, char **argv);
-		virtual ~ Rts2DevCameraApogee (void);
+		Apogee (int argc, char **argv);
+		virtual ~ Apogee (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
@@ -91,29 +94,33 @@ class Rts2DevCameraApogee:public Rts2DevCamera
 		virtual void afterNight ();
 };
 
+};
+
+using namespace rts2camd;
+
 int
-Rts2DevCameraApogee::initChips ()
+Apogee::initChips ()
 {
 	setSize (camera->m_ImgColumns, camera->m_ImgRows, 0, 0);
 	setBinning (1, 1);
 	pixelX = camera->m_PixelXSize;
 	pixelY = camera->m_PixelYSize;
 
-	return Rts2DevCamera::initChips ();
+	return Camera::initChips ();
 }
 
 
 int
-Rts2DevCameraApogee::setBinning (int in_vert, int in_hori)
+Apogee::setBinning (int in_vert, int in_hori)
 {
 	camera->m_ExposureBinX = in_hori;
 	camera->m_ExposureBinY = in_vert;
-	return Rts2DevCamera::setBinning (in_vert, in_hori);
+	return Camera::setBinning (in_vert, in_hori);
 }
 
 
 int
-Rts2DevCameraApogee::startExposure ()
+Apogee::startExposure ()
 {
 	bool ret;
 	ret = camera->Expose (getExposure (), getExpType () ? 0 : 1);
@@ -130,12 +137,12 @@ Rts2DevCameraApogee::startExposure ()
 
 
 long
-Rts2DevCameraApogee::isExposing ()
+Apogee::isExposing ()
 {
 	long ret;
 	time_t now;
 	Camera_Status status;
-	ret = Rts2DevCamera::isExposing ();
+	ret = Camera::isExposing ();
 	if (ret > 0)
 		return ret;
 
@@ -170,24 +177,24 @@ Rts2DevCameraApogee::isExposing ()
 
 
 int
-Rts2DevCameraApogee::endExposure ()
+Apogee::endExposure ()
 {
 	camera->m_WaitingforTrigger = false;
-	return Rts2DevCamera::endExposure ();
+	return Camera::endExposure ();
 }
 
 
 int
-Rts2DevCameraApogee::stopExposure ()
+Apogee::stopExposure ()
 {
 	camera->Reset ();
 	camera->Flush ();
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
 int
-Rts2DevCameraApogee::readoutOneLine ()
+Apogee::readoutOneLine ()
 {
 	bool status;
 	short int width, height;
@@ -211,11 +218,11 @@ Rts2DevCameraApogee::readoutOneLine ()
 
 
 int
-Rts2DevCameraApogee::endReadout ()
+Apogee::endReadout ()
 {
 	camera->Reset ();
 	camera->Flush ();
-	return Rts2DevCamera::endReadout ();
+	return Camera::endReadout ();
 }
 
 
@@ -226,7 +233,7 @@ Rts2DevCameraApogee::endReadout ()
 // and the paramter string in retbuff.
 //-------------------------------------------------------------
 bool
-Rts2DevCameraApogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff, short bufflen, short *parmlen)
+Apogee::CfgGet (FILE * inifp, const char *inisect, const char *iniparm, char *retbuff, short bufflen, short *parmlen)
 {
 	short gotsect;
 	char tbuf[256];
@@ -321,7 +328,7 @@ Rts2DevCameraApogee::CfgGet (FILE * inifp, const char *inisect, const char *inip
 // values are used for the m_BaseAddress and m_RegisterOffset properties overriding those
 // settings in the INI file.
 int
-Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
+Apogee::config_load (short BaseAddress, short RegOffset)
 {
 	short plen;
 	char retbuf[256];
@@ -773,8 +780,8 @@ Rts2DevCameraApogee::config_load (short BaseAddress, short RegOffset)
 }
 
 
-Rts2DevCameraApogee::Rts2DevCameraApogee (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Apogee::Apogee (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
@@ -805,14 +812,14 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraApogee::~Rts2DevCameraApogee (void)
+Apogee::~Apogee (void)
 {
 	delete camera;
 }
 
 
 int
-Rts2DevCameraApogee::processOption (int in_opt)
+Apogee::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -823,17 +830,17 @@ Rts2DevCameraApogee::processOption (int in_opt)
 			cfgname = optarg;
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCameraApogee::init ()
+Apogee::init ()
 {
 	int ret;
-	ret = Rts2DevCamera::init ();
+	ret = Camera::init ();
 	if (ret)
 		return ret;
 
@@ -859,25 +866,25 @@ Rts2DevCameraApogee::init ()
 
 
 int
-Rts2DevCameraApogee::info ()
+Apogee::info ()
 {
 	coolerStatus->setValueInteger (camera->read_CoolerStatus ());
 	coolerMode->setValueInteger (camera->read_CoolerMode ());
 	tempSet->setValueDouble (camera->read_CoolerSetPoint ());
 	tempCCD->setValueDouble (camera->read_Temperature ());
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraApogee::camChipInfo (int chip)
+Apogee::camChipInfo (int chip)
 {
 	return 0;
 }
 
 
 void
-Rts2DevCameraApogee::afterNight ()
+Apogee::afterNight ()
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();
@@ -891,7 +898,7 @@ Rts2DevCameraApogee::afterNight ()
 
 
 int
-Rts2DevCameraApogee::setCoolTemp (float new_temp)
+Apogee::setCoolTemp (float new_temp)
 {
 	Camera_CoolerMode cMode;
 	cMode = camera->read_CoolerMode ();
@@ -907,6 +914,6 @@ Rts2DevCameraApogee::setCoolTemp (float new_temp)
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraApogee device = Rts2DevCameraApogee (argc, argv);
+	Apogee device = Apogee (argc, argv);
 	return device.run ();
 }

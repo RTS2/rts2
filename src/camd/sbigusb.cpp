@@ -59,12 +59,15 @@ ambient_ad2c (unsigned int ad)
 	return 25.0 - 45.0 * (log (r / 3.0) / 2.0529692213);
 }
 
+namespace rts2camd
+{
+
 /**
  * Class for USB SBIG camera.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCameraSbig:public Rts2DevCamera
+class Sbig:public Camera
 {
 	private:
 		CSBIGCam * pcam;
@@ -72,7 +75,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		{
 			if (ret == CE_NO_ERROR)
 				return 0;
-			logStream (MESSAGE_ERROR) << "Rts2DevCameraSbig::checkSbigHw ret: " << ret
+			logStream (MESSAGE_ERROR) << "Sbig::checkSbigHw ret: " << ret
 				<< sendLog;
 			return -1;
 		}
@@ -95,7 +98,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int initChips ();
 		virtual void initBinnings ()
 		{
-			Rts2DevCamera::initBinnings ();
+			Camera::initBinnings ();
 
 			addBinning2D (2, 2);
 			addBinning2D (3, 3);
@@ -108,7 +111,7 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 			// use only modes 0, 1, 2, which equals to binning 1x1, 2x2, 3x3
 			// it doesn't seems that Sbig offers more binning :(
 			sbig_readout_mode = in_vert - 1;
-			return Rts2DevCamera::setBinning (in_vert, in_hori);
+			return Camera::setBinning (in_vert, in_hori);
 		}
 		virtual int startExposure ();
 		virtual long isExposing ();
@@ -119,8 +122,8 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2DevCameraSbig (int argc, char **argv);
-		virtual ~ Rts2DevCameraSbig ();
+		Sbig (int argc, char **argv);
+		virtual ~ Sbig ();
 
 		virtual int init ();
 
@@ -137,18 +140,22 @@ class Rts2DevCameraSbig:public Rts2DevCamera
 		virtual int camCoolShutdown ();
 };
 
+};
+
+using namespace rts2camd;
+
 int
-Rts2DevCameraSbig::initChips ()
+Sbig::initChips ()
 {
 	GetCCDInfoParams req;
 	req.request = CCD_INFO_IMAGING;
 	sbig_readout_mode = 0;
 	SBIGUnivDrvCommand (CC_GET_CCD_INFO, &req, &chip_info);
-	return Rts2DevCamera::initChips ();
+	return Camera::initChips ();
 };
 
 int
-Rts2DevCameraSbig::startExposure ()
+Sbig::startExposure ()
 {
 	PAR_ERROR ret;
 	if (!pcam->CheckLink ())
@@ -168,10 +175,10 @@ Rts2DevCameraSbig::startExposure ()
 
 
 long
-Rts2DevCameraSbig::isExposing ()
+Sbig::isExposing ()
 {
 	long ret;
-	ret = Rts2DevCamera::isExposing ();
+	ret = Camera::isExposing ();
 	if (ret > 0)
 		return ret;
 
@@ -187,7 +194,7 @@ Rts2DevCameraSbig::isExposing ()
 
 
 int
-Rts2DevCameraSbig::readoutStart ()
+Sbig::readoutStart ()
 {
 	StartReadoutParams srp;
 	srp.ccd = 0;
@@ -200,22 +207,22 @@ Rts2DevCameraSbig::readoutStart ()
 	rlp.pixelStart = chipUsedReadout->getXInt () / binningVertical ();
 	rlp.pixelLength = chipUsedReadout->getWidthInt () / binningVertical ();
 	rlp.readoutMode = sbig_readout_mode;
-	return Rts2DevCamera::readoutStart ();
+	return Camera::readoutStart ();
 }
 
 
 int
-Rts2DevCameraSbig::endReadout ()
+Sbig::endReadout ()
 {
 	EndReadoutParams erp;
 	erp.ccd = 0;
 	SBIGUnivDrvCommand (CC_END_READOUT, &erp, NULL);
-	return Rts2DevCamera::endReadout ();
+	return Camera::endReadout ();
 }
 
 
 int
-Rts2DevCameraSbig::readoutOneLine ()
+Sbig::readoutOneLine ()
 {
 	int ret;
 
@@ -240,7 +247,7 @@ Rts2DevCameraSbig::readoutOneLine ()
 
 
 int
-Rts2DevCameraSbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -264,12 +271,12 @@ Rts2DevCameraSbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return set_fan (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
-Rts2DevCameraSbig::Rts2DevCameraSbig (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Sbig::Sbig (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempSet ();
@@ -298,14 +305,14 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraSbig::~Rts2DevCameraSbig ()
+Sbig::~Sbig ()
 {
 	delete pcam;
 }
 
 
 int
-Rts2DevCameraSbig::processOption (int in_opt)
+Sbig::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -323,14 +330,14 @@ Rts2DevCameraSbig::processOption (int in_opt)
 			reqSerialNumber = optarg;
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 SBIG_DEVICE_TYPE
-Rts2DevCameraSbig::getDevType ()
+Sbig::getDevType ()
 {
 	switch (usb_port)
 	{
@@ -352,12 +359,12 @@ Rts2DevCameraSbig::getDevType ()
 
 
 int
-Rts2DevCameraSbig::init ()
+Sbig::init ()
 {
 	int ret_c_init;
 	OpenDeviceParams odp;
 
-	ret_c_init = Rts2DevCamera::init ();
+	ret_c_init = Camera::init ();
 	if (ret_c_init)
 		return ret_c_init;
 
@@ -450,7 +457,7 @@ Rts2DevCameraSbig::init ()
 
 
 int
-Rts2DevCameraSbig::info ()
+Sbig::info ()
 {
 	QueryTemperatureStatusResults qtsr;
 	QueryCommandStatusParams qcsp;
@@ -465,22 +472,22 @@ Rts2DevCameraSbig::info ()
 	tempSet->setValueFloat (pcam->ADToDegreesC (qtsr.ccdSetpoint, TRUE));
 	tempCCD->setValueFloat (pcam->ADToDegreesC (qtsr.ccdThermistor, TRUE));
 	coolingPower->setValueInteger (qtsr.power);
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraSbig::camChipInfo ()
+Sbig::camChipInfo ()
 {
 	return 0;
 }
 
 
 long
-Rts2DevCameraSbig::camWaitExpose ()
+Sbig::camWaitExpose ()
 {
 	long ret;
-	ret = Rts2DevCamera::camWaitExpose ();
+	ret = Camera::camWaitExpose ();
 	if (ret == -2)
 	{
 		camStopExpose ();		 // SBIG devices are strange, there is same command for forced stop and normal stop
@@ -491,7 +498,7 @@ Rts2DevCameraSbig::camWaitExpose ()
 
 
 int
-Rts2DevCameraSbig::camStopExpose ()
+Sbig::camStopExpose ()
 {
 	PAR_ERROR ret;
 	if (!pcam->CheckLink ())
@@ -508,21 +515,21 @@ Rts2DevCameraSbig::camStopExpose ()
 
 
 int
-Rts2DevCameraSbig::camBox (int x, int y, int width, int height)
+Sbig::camBox (int x, int y, int width, int height)
 {
 	return -1;
 }
 
 
 int
-Rts2DevCameraSbig::camStopRead ()
+Sbig::camStopRead ()
 {
 	return -1;
 }
 
 
 int
-Rts2DevCameraSbig::fanState (int newFanState)
+Sbig::fanState (int newFanState)
 {
 	PAR_ERROR ret;
 	MiscellaneousControlParams mcp;
@@ -535,7 +542,7 @@ Rts2DevCameraSbig::fanState (int newFanState)
 
 
 int
-Rts2DevCameraSbig::camCoolMax ()
+Sbig::camCoolMax ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -549,7 +556,7 @@ Rts2DevCameraSbig::camCoolMax ()
 
 
 int
-Rts2DevCameraSbig::camCoolHold ()
+Sbig::camCoolHold ()
 {
 	int ret;
 	ret = fanState (TRUE);
@@ -566,7 +573,7 @@ Rts2DevCameraSbig::camCoolHold ()
 
 
 int
-Rts2DevCameraSbig::setCoolTemp (float new_temp)
+Sbig::setCoolTemp (float new_temp)
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -582,7 +589,7 @@ Rts2DevCameraSbig::setCoolTemp (float new_temp)
 
 
 int
-Rts2DevCameraSbig::camCoolShutdown ()
+Sbig::camCoolShutdown ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -598,6 +605,6 @@ Rts2DevCameraSbig::camCoolShutdown ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraSbig device = Rts2DevCameraSbig (argc, argv);
+	Sbig device = Sbig (argc, argv);
 	return device.run ();
 }

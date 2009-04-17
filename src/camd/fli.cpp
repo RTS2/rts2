@@ -30,12 +30,15 @@
 
 #include "libfli.h"
 
+namespace rts2camd
+{
+
 /**
  * Class for control of FLI CCD.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCameraFli:public Rts2DevCamera
+class Fli:public Camera
 {
 	private:
 		Rts2ValueSelection *fliShutter;
@@ -54,7 +57,7 @@ class Rts2DevCameraFli:public Rts2DevCamera
 
 		virtual void initBinnings ()
 		{
-			Rts2DevCamera::initBinnings ();
+			Camera::initBinnings ();
 
 			addBinning2D (2, 2);
 			addBinning2D (4, 4);
@@ -78,8 +81,8 @@ class Rts2DevCameraFli:public Rts2DevCamera
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevCameraFli (int in_argc, char **in_argv);
-		virtual ~ Rts2DevCameraFli (void);
+		Fli (int in_argc, char **in_argv);
+		virtual ~ Fli (void);
 
 		virtual int processOption (int in_opt);
 
@@ -93,8 +96,12 @@ class Rts2DevCameraFli:public Rts2DevCamera
 		virtual void afterNight ();
 };
 
+};
+
+using namespace rts2camd;
+
 int
-Rts2DevCameraFli::initChips ()
+Fli::initChips ()
 {
 	LIBFLIAPI ret;
 	long x, y, w, h;
@@ -116,7 +123,7 @@ Rts2DevCameraFli::initChips ()
 
 
 int
-Rts2DevCameraFli::startExposure ()
+Fli::startExposure ()
 {
 	LIBFLIAPI ret;
 
@@ -149,7 +156,7 @@ Rts2DevCameraFli::startExposure ()
 
 
 long
-Rts2DevCameraFli::isExposing ()
+Fli::isExposing ()
 {
 	LIBFLIAPI ret;
 	long tl;
@@ -162,7 +169,7 @@ Rts2DevCameraFli::isExposing ()
 
 
 int
-Rts2DevCameraFli::stopExposure ()
+Fli::stopExposure ()
 {
 	LIBFLIAPI ret;
 	long timer;
@@ -176,12 +183,12 @@ Rts2DevCameraFli::stopExposure ()
 		if (ret)
 			return ret;
 	}
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
 int
-Rts2DevCameraFli::readoutOneLine ()
+Fli::readoutOneLine ()
 {
 	LIBFLIAPI ret;
 	char *bufferTop = dataBuffer;
@@ -201,7 +208,7 @@ Rts2DevCameraFli::readoutOneLine ()
 
 
 int
-Rts2DevCameraFli::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == fliShutter)
 	{
@@ -227,12 +234,12 @@ Rts2DevCameraFli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		ret = FLIControlShutter (dev, ret);
 		return ret ? -2 : 0;
 	}
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
-Rts2DevCameraFli::Rts2DevCameraFli (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Fli::Fli (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
@@ -260,14 +267,14 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraFli::~Rts2DevCameraFli (void)
+Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
 
 int
-Rts2DevCameraFli::processOption (int in_opt)
+Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -310,14 +317,14 @@ Rts2DevCameraFli::processOption (int in_opt)
 			nflush = atoi (optarg);
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCameraFli::init ()
+Fli::init ()
 {
 	LIBFLIAPI ret;
 
@@ -328,7 +335,7 @@ Rts2DevCameraFli::init ()
 
 	//long serno = 0;
 
-	ret_c = Rts2DevCamera::init ();
+	ret_c = Camera::init ();
 	if (ret_c)
 		return ret_c;
 
@@ -341,7 +348,7 @@ Rts2DevCameraFli::init ()
 
 	if (names[0] == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevCameraFli::init No device found!"
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
 			<< sendLog;
 		return -1;
 	}
@@ -437,7 +444,7 @@ Rts2DevCameraFli::init ()
 
 
 int
-Rts2DevCameraFli::info ()
+Fli::info ()
 {
 	LIBFLIAPI ret;
 	double fliTemp;
@@ -445,19 +452,19 @@ Rts2DevCameraFli::info ()
 	if (ret)
 		return -1;
 	tempCCD->setValueDouble (fliTemp);
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraFli::camChipInfo (int chip)
+Fli::camChipInfo (int chip)
 {
 	return 0;
 }
 
 
 int
-Rts2DevCameraFli::setCoolTemp (float new_temp)
+Fli::setCoolTemp (float new_temp)
 {
 	LIBFLIAPI ret;
 	ret = FLISetTemperature (dev, new_temp);
@@ -469,16 +476,16 @@ Rts2DevCameraFli::setCoolTemp (float new_temp)
 
 
 void
-Rts2DevCameraFli::afterNight ()
+Fli::afterNight ()
 {
 	setCoolTemp (40);
-	Rts2DevCamera::afterNight ();
+	Camera::afterNight ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraFli device = Rts2DevCameraFli (argc, argv);
+	Fli device = Fli (argc, argv);
 	return device.run ();
 }

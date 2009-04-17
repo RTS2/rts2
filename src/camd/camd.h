@@ -38,6 +38,9 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
+namespace rts2camd
+{
+
 /**
  * Class which holds 2D binning informations.
  *
@@ -104,7 +107,7 @@ class DataType: public Rts2SelData
  * camera enters IDLE cycle.
  *
  * Folowing state diagram depict possible state transation inside
- * Rts2DevCamera.
+ * Camera.
  *
  * @dot
 digraph "Camera states" {
@@ -135,7 +138,7 @@ digraph "Camera states" {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCamera:public Rts2ScriptDevice
+class Camera:public Rts2ScriptDevice
 {
 	private:
 		// comes from CameraChip
@@ -386,7 +389,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 		char *ccdRealType;
 		char serialNumber[64];
 
-		Rts2Filter *filter;
+		Filter *filter;
 
 		virtual void checkQueChanges (int fakeState);
 
@@ -649,8 +652,8 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		// end of CameraChip
 
-		Rts2DevCamera (int argc, char **argv);
-		virtual ~ Rts2DevCamera (void);
+		Camera (int argc, char **argv);
+		virtual ~ Camera (void);
 
 		virtual int initChips ();
 		virtual int initValues ();
@@ -747,4 +750,7 @@ class Rts2DevCamera:public Rts2ScriptDevice
 
 		virtual void setFullBopState (int new_state);
 };
+
+};
+
 #endif							 /* !__RTS2_CAMERA_CPP__ */

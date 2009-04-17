@@ -23,12 +23,15 @@
 #define OPT_HEIGHT       OPT_LOCAL + 2
 #define OPT_DATA_SIZE    OPT_LOCAL + 3
 
+namespace rts2camd
+{
+
 /**
  * Class for a dummy camera.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCameraDummy:public Rts2DevCamera
+class Dummy:public Camera
 {
 	private:
 		bool supportFrameT;
@@ -42,7 +45,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 	protected:
 		virtual void initBinnings ()
 		{
-			Rts2DevCamera::initBinnings ();
+			Camera::initBinnings ();
 
 			addBinning2D (2, 2);
 			addBinning2D (3, 3);
@@ -54,7 +57,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 
 		virtual void initDataTypes ()
 		{
-			Rts2DevCamera::initDataTypes ();
+			Camera::initDataTypes ();
 			addDataType (RTS2_DATA_BYTE);
 			addDataType (RTS2_DATA_SHORT);
 			addDataType (RTS2_DATA_LONG);
@@ -76,10 +79,10 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			{
 				return 0;
 			}
-			return Rts2DevCamera::setValue (old_value, new_value);
+			return Camera::setValue (old_value, new_value);
 		}
 	public:
-		Rts2DevCameraDummy (int in_argc, char **in_argv):Rts2DevCamera (in_argc, in_argv)
+		Dummy (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 		{
 			createTempCCD ();
 
@@ -107,7 +110,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 			addOption (OPT_DATA_SIZE, "datasize", 1, "size of data block transmitted over TCP/IP");
 		}
 
-		virtual ~Rts2DevCameraDummy (void)
+		virtual ~Dummy (void)
 		{
 			readoutSleep = NULL;
 		}
@@ -135,14 +138,14 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 					dataSize = atoi (optarg);
 					break;
 				default:
-					return Rts2DevCamera::processOption (in_opt);
+					return Camera::processOption (in_opt);
 			}
 			return 0;
 		}
 		virtual int init ()
 		{
 			int ret;
-			ret = Rts2DevCamera::init ();
+			ret = Camera::init ();
 			if (ret)
 				return ret;
 
@@ -157,13 +160,13 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		virtual int initChips ()
 		{
 			initCameraChip (width, height, 0, 0);
-			return Rts2DevCamera::initChips ();
+			return Camera::initChips ();
 		}
 		virtual int info ()
 		{
 			usleep (infoSleep);
 			tempCCD->setValueDouble (100);
-			return Rts2DevCamera::info ();
+			return Camera::info ();
 		}
 		virtual int camChipInfo ()
 		{
@@ -177,7 +180,7 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		virtual long suggestBufferSize ()
 		{
 			if (dataSize < 0)
-				return Rts2DevCamera::suggestBufferSize ();
+				return Camera::suggestBufferSize ();
 			return dataSize;
 		}
 		virtual int readoutOneLine ();
@@ -188,9 +191,12 @@ class Rts2DevCameraDummy:public Rts2DevCamera
 		}
 };
 
+};
+
+using namespace rts2camd;
 
 int
-Rts2DevCameraDummy::readoutOneLine ()
+Dummy::readoutOneLine ()
 {
 	int ret;
 	long usedSize = dataBufferSize;
@@ -222,6 +228,6 @@ Rts2DevCameraDummy::readoutOneLine ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraDummy device = Rts2DevCameraDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }

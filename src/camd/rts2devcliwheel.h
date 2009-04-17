@@ -26,20 +26,26 @@
 #define EVENT_FILTER_MOVE_END RTS2_LOCAL_EVENT + 651
 #define EVENT_FILTER_GET  RTS2_LOCAL_EVENT + 652
 
+namespace rts2camd
+{
+
 struct filterStart
 {
 	char *filterName;
 	int filter;
 };
 
-class Rts2DevClientFilterCamera:public Rts2DevClientFilter
+class ClientFilterCamera:public Rts2DevClientFilter
 {
 	protected:
 		virtual void filterMoveEnd ();
 	public:
-		Rts2DevClientFilterCamera (Rts2Conn * conn);
-		virtual ~ Rts2DevClientFilterCamera (void);
+		ClientFilterCamera (Rts2Conn * conn);
+		virtual ~ ClientFilterCamera (void);
 		virtual void filterMoveFailed (int status);
 		virtual void postEvent (Rts2Event * event);
 };
+
+};
+
 #endif							 /* !__RTS2_DEVCLI_CAM_WHEEL__ */

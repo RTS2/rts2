@@ -28,6 +28,9 @@
  * update regulary.
  */
 
+namespace rts2camd
+{
+
 // helper struct for splitModes
 typedef struct SplitConf
 {
@@ -55,7 +58,7 @@ edtAlgoType;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ValueEdt: public Rts2ValueDoubleMinMax
+class ValueEdt: public Rts2ValueDoubleMinMax
 {
 	private:
 		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
@@ -63,10 +66,10 @@ class Rts2ValueEdt: public Rts2ValueDoubleMinMax
 		// algorith used to compute hex suffix value
 		edtAlgoType algo;
 	public:
-		Rts2ValueEdt (std::string in_val_name);
-		Rts2ValueEdt (std::string in_val_name, std::string in_description,
+		ValueEdt (std::string in_val_name);
+		ValueEdt (std::string in_val_name, std::string in_description,
 			bool writeToFits = true, int32_t flags = 0);
-		~Rts2ValueEdt (void);
+		~ValueEdt (void);
 
 		// init EDT part of variable
 		void initEdt (long in_reg, edtAlgoType in_algo);
@@ -77,26 +80,30 @@ class Rts2ValueEdt: public Rts2ValueDoubleMinMax
 		long getHexValue (float in_v);
 };
 
-Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name)
+};
+
+using namespace rts2camd;
+
+ValueEdt::ValueEdt (std::string in_val_name)
 :Rts2ValueDoubleMinMax (in_val_name)
 {
 }
 
 
-Rts2ValueEdt::Rts2ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
+ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
 :Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
 {
 
 }
 
 
-Rts2ValueEdt::~Rts2ValueEdt (void)
+ValueEdt::~ValueEdt (void)
 {
 }
 
 
 void
-Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
+ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 {
 	reg = (in_reg << 12);
 	algo = in_algo;
@@ -129,7 +136,7 @@ Rts2ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 
 
 long
-Rts2ValueEdt::getHexValue (float in_v)
+ValueEdt::getHexValue (float in_v)
 {
 	long val = 0;
 	// calculate value by algorithm
@@ -154,6 +161,9 @@ Rts2ValueEdt::getHexValue (float in_v)
 	return reg | val;
 }
 
+
+namespace rts2camd
+{
 
 /**
  * Possible types of EDTSEO commands for LSST controller.
@@ -180,7 +190,7 @@ typedef enum
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2CamdEdtSao:public Rts2DevCamera
+class EdtSao:public Camera
 {
 	private:
 		PdvDev * pd;
@@ -253,26 +263,26 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		int setParallelClockSpeed (int new_clockSpeed);
 
 		// registers
-		Rts2ValueEdt *phi;
-		Rts2ValueEdt *plo;
+		ValueEdt *phi;
+		ValueEdt *plo;
 
-		Rts2ValueEdt *shi;
-		Rts2ValueEdt *slo;
+		ValueEdt *shi;
+		ValueEdt *slo;
 
-		Rts2ValueEdt *rhi;
-		Rts2ValueEdt *rlo;
+		ValueEdt *rhi;
+		ValueEdt *rlo;
 
-		Rts2ValueEdt *rd;
+		ValueEdt *rd;
 
-		Rts2ValueEdt *od1r;
-		Rts2ValueEdt *od2l;
-		Rts2ValueEdt *og1r;
-		Rts2ValueEdt *og2l;
+		ValueEdt *od1r;
+		ValueEdt *od2l;
+		ValueEdt *og1r;
+		ValueEdt *og2l;
 
-		Rts2ValueEdt *dd;
+		ValueEdt *dd;
 
-		int setEdtValue (Rts2ValueEdt * old_value, float new_value);
-		int setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value);
+		int setEdtValue (ValueEdt * old_value, float new_value);
+		int setEdtValue (ValueEdt * old_value, Rts2Value * new_value);
 
 		// write single command to controller
 		void writeCommand (bool parallel, int addr, command_t command);
@@ -304,16 +314,17 @@ class Rts2CamdEdtSao:public Rts2DevCamera
 		virtual void cancelPriorityOperations ();
 		virtual int endReadout ();
 	public:
-		Rts2CamdEdtSao (int in_argc, char **in_argv);
-		virtual ~ Rts2CamdEdtSao (void);
+		EdtSao (int in_argc, char **in_argv);
+		virtual ~ EdtSao (void);
 
 		virtual int init ();
 		virtual int initValues ();
 };
 
+};
 
 int
-Rts2CamdEdtSao::edtwrite (unsigned long lval)
+EdtSao::edtwrite (unsigned long lval)
 {
 	unsigned long lsval = lval;
 	if (ft_byteswap ())
@@ -324,7 +335,7 @@ Rts2CamdEdtSao::edtwrite (unsigned long lval)
 
 
 int
-Rts2CamdEdtSao::writeBinFile (const char *filename)
+EdtSao::writeBinFile (const char *filename)
 {
 	// taken from edtwriteblk.c, heavily modified
 	FILE *fp;
@@ -363,7 +374,7 @@ Rts2CamdEdtSao::writeBinFile (const char *filename)
 
 
 void
-Rts2CamdEdtSao::reset ()
+EdtSao::reset ()
 {
 	pdv_flush_fifo (pd);
 	pdv_reset_serial (pd);
@@ -377,7 +388,7 @@ Rts2CamdEdtSao::reset ()
 
 
 int
-Rts2CamdEdtSao::setDAC ()
+EdtSao::setDAC ()
 {
 	// values taken from ccdsetup script
 	int ret;
@@ -453,7 +464,7 @@ Rts2CamdEdtSao::setDAC ()
 
 
 void
-Rts2CamdEdtSao::probe ()
+EdtSao::probe ()
 {
 	status = edt_reg_read (pd, PDV_STAT);
 	shutter = status & PDV_CHAN_ID0;
@@ -462,7 +473,7 @@ Rts2CamdEdtSao::probe ()
 
 
 int
-Rts2CamdEdtSao::fclr (int num)
+EdtSao::fclr (int num)
 {
 	time_t now;
 	time_t end_time;
@@ -512,7 +523,7 @@ Rts2CamdEdtSao::fclr (int num)
 
 
 void
-Rts2CamdEdtSao::fclr_r (int num)
+EdtSao::fclr_r (int num)
 {
 	while (fclr (num) != 0)
 	{
@@ -524,7 +535,7 @@ Rts2CamdEdtSao::fclr_r (int num)
 
 
 int
-Rts2CamdEdtSao::setParallelClockSpeed (int new_speed)
+EdtSao::setParallelClockSpeed (int new_speed)
 {
   	unsigned long ns = 0x46000000;	
 	ns |= (new_speed & 0x00ff);
@@ -533,7 +544,7 @@ Rts2CamdEdtSao::setParallelClockSpeed (int new_speed)
 
 
 int
-Rts2CamdEdtSao::initChips ()
+EdtSao::initChips ()
 {
 	int ret;
 
@@ -566,7 +577,7 @@ Rts2CamdEdtSao::initChips ()
 
 
 void
-Rts2CamdEdtSao::writeCommand (bool parallel, int addr, command_t command)
+EdtSao::writeCommand (bool parallel, int addr, command_t command)
 {
 	u_char cmd[4];
 	cmd[0] = 0x42;
@@ -583,7 +594,7 @@ Rts2CamdEdtSao::writeCommand (bool parallel, int addr, command_t command)
 }
 
 void
-Rts2CamdEdtSao::writeCommandEnd ()
+EdtSao::writeCommandEnd ()
 {
 	u_char cmd[4];
 	cmd[0] = cmd[1] = cmd[2] = cmd[3] = 0;
@@ -592,7 +603,7 @@ Rts2CamdEdtSao::writeCommandEnd ()
 
 
 int
-Rts2CamdEdtSao::writePattern (const SplitConf *conf)
+EdtSao::writePattern (const SplitConf *conf)
 {
 	// write parallel commands
 	int addr = 0;
@@ -654,7 +665,7 @@ Rts2CamdEdtSao::writePattern (const SplitConf *conf)
 
 
 int
-Rts2CamdEdtSao::startExposure ()
+EdtSao::startExposure ()
 {
 	int ret;
 	// taken from readout script
@@ -691,18 +702,18 @@ Rts2CamdEdtSao::startExposure ()
 
 
 int
-Rts2CamdEdtSao::stopExposure ()
+EdtSao::stopExposure ()
 {
 	edtwrite (0x50020000);		 /* close shutter */
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
 long
-Rts2CamdEdtSao::isExposing ()
+EdtSao::isExposing ()
 {
 	int ret;
-	ret = Rts2DevCamera::isExposing ();
+	ret = Camera::isExposing ();
 	if (ret)
 		return ret;
 	// taken from expose.c
@@ -717,7 +728,7 @@ Rts2CamdEdtSao::isExposing ()
 
 
 int
-Rts2CamdEdtSao::readoutStart ()
+EdtSao::readoutStart ()
 {
 	int ret;
 	int width, height;
@@ -754,7 +765,7 @@ Rts2CamdEdtSao::readoutStart ()
 	db = bits2bytes (depth);
 	imagesize = chipUsedReadout->getWidthInt () * chipUsedReadout->getHeightInt () * db;
 
-	ret = Rts2DevCamera::readoutStart ();
+	ret = Camera::readoutStart ();
 	if (ret)
 		return ret;
 
@@ -791,7 +802,7 @@ Rts2CamdEdtSao::readoutStart ()
 
 
 int
-Rts2CamdEdtSao::readoutOneLine ()
+EdtSao::readoutOneLine ()
 {
 	int i, j;
 	int ret;
@@ -1002,26 +1013,26 @@ Rts2CamdEdtSao::readoutOneLine ()
 
 
 void
-Rts2CamdEdtSao::cancelPriorityOperations ()
+EdtSao::cancelPriorityOperations ()
 {
-	Rts2DevCamera::cancelPriorityOperations ();
+	Camera::cancelPriorityOperations ();
 }
 
 
 int
-Rts2CamdEdtSao::endReadout ()
+EdtSao::endReadout ()
 {
 	pdv_stop_continuous (pd);
 	pdv_flush_fifo (pd);
 	pdv_reset_serial (pd);
 	edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
 	writeBinFile ("e2v_pidlesc.bin");
-	return Rts2DevCamera::endReadout ();
+	return Camera::endReadout ();
 }
 
 
-Rts2CamdEdtSao::Rts2CamdEdtSao (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+EdtSao::EdtSao (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	devname[0] = '\0';
 	devunit = 0;
@@ -1108,14 +1119,14 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2CamdEdtSao::~Rts2CamdEdtSao (void)
+EdtSao::~EdtSao (void)
 {
 	edt_close (pd);
 }
 
 
 int
-Rts2CamdEdtSao::processOption (int in_opt)
+EdtSao::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -1140,14 +1151,14 @@ Rts2CamdEdtSao::processOption (int in_opt)
 			verbose = true;
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, float new_value)
+EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 {
 	if (old_value->testValue (new_value) == false)
 		return -2;
@@ -1157,14 +1168,14 @@ Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, float new_value)
 
 
 int
-Rts2CamdEdtSao::setEdtValue (Rts2ValueEdt * old_value, Rts2Value * new_value)
+EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 {
 	return edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
 }
 
 
 int
-Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
+EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == splitMode)
 	{
@@ -1184,7 +1195,7 @@ Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		|| old_value == dd
 		)
 	{
-		return setEdtValue ((Rts2ValueEdt *) old_value, new_value);
+		return setEdtValue ((ValueEdt *) old_value, new_value);
 	}
 	if (old_value == edtGain)
 	{
@@ -1194,15 +1205,15 @@ Rts2CamdEdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return (setParallelClockSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2);
 	}
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
 int
-Rts2CamdEdtSao::init ()
+EdtSao::init ()
 {
 	int ret;
-	ret = Rts2DevCamera::init ();
+	ret = Camera::init ();
 	if (ret)
 		return ret;
 
@@ -1225,19 +1236,19 @@ Rts2CamdEdtSao::init ()
 
 
 int
-Rts2CamdEdtSao::initValues ()
+EdtSao::initValues ()
 {
 	addConstValue ("DEVNAME", "device name", devname);
 	addConstValue ("DEVNUM", "device unit number", devunit);
 	addConstValue ("DEVNT", "device no timeout", notimeout);
 	addConstValue ("SDELAY", "device serial delay", sdelay);
-	return Rts2DevCamera::initValues ();
+	return Camera::initValues ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2CamdEdtSao device = Rts2CamdEdtSao (argc, argv);
+	EdtSao device = EdtSao (argc, argv);
 	return device.run ();
 }

@@ -6,9 +6,11 @@ bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-urvc2 rts2-camd-
 
 noinst_HEADERS = camd.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
 
-EXTRA_DIST = camd.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
+noinst_LIBRARIES = librts2camd.a
 
-LDADD = camd.o rts2devcliwheel.o rts2devclifocuser.o ../utils/librts2block.a
+librts2camd_a_SOURCES = camd.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
+
+LDADD = librts2camd.a ../utils/librts2block.a
 
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
