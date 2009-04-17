@@ -476,7 +476,6 @@ Rts2App::sendMailTo (const char *subject, const char *text,
 const char *in_mailAddress)
 {
 	int ret;
-	char *cmd;
 	FILE *mailFile;
 
 	// fork so we will not inhibit calling process..
@@ -506,7 +505,6 @@ const char *in_mailAddress)
 	}
 	fprintf (mailFile, "%s", text);
 	pclose (mailFile);
-	free (cmd);
 	exit (0);
 }
 
