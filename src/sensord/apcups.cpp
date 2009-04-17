@@ -334,8 +334,8 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (tonbatt, "tonbatt", "time on battery", false);
 	createValue (status, "status", "UPS status", false);
 
-	createValue (xOnBatt, "xonbatt", "time of last on battery event");
-	createValue (xOffBatt, "xoffbatt", "time of last off battery event");
+	createValue (xOnBatt, "xonbatt", "time of last on battery event", false);
+	createValue (xOffBatt, "xoffbatt", "time of last off battery event", false);
 
 	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
 	battimeout->setValueInteger (60);
