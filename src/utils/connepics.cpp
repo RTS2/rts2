@@ -164,6 +164,18 @@ ConnEpics::queueSet (chid _vchid, int value)
 
 
 void
+ConnEpics::queueSet (chid _vchid, double value)
+{
+	int result;
+	result = ca_array_put (DBR_DOUBLE, 1, _vchid, &value);
+	if (result != ECA_NORMAL)
+	{
+		throw ConnEpicsErrorChannel ("error calling ca_array_put for ", ca_name (_vchid), result);
+	}
+}
+
+
+void
 ConnEpics::queueSetEnum (chid _vchid, int value)
 {
 	int result;

@@ -168,6 +168,7 @@ class ConnEpics: public Rts2ConnNoSend
 		 * Set integer value.
 		 */
 		void queueSet (chid _vchid, int value);
+		void queueSet (chid _vchid, double value);
 
 		void queueSetEnum (chid _vchid, int value);
 
