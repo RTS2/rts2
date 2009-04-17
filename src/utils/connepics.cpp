@@ -79,6 +79,27 @@ ConnEpics::createChannel (const char *pvname)
 	return pchid;
 }
 
+void
+ConnEpics::deleteChannel (chid _ch)
+{
+	int result = ca_clear_channel (_ch);
+	if (result != ECA_NORMAL)
+	{
+		throw ConnEpicsError ("cannot delete channel", result);
+	}
+}
+
+
+void
+ConnEpics::get (chid _ch, double *val)
+{
+	int result = ca_array_get (DBR_DOUBLE, 1, _ch, val);
+	if (result != ECA_NORMAL)
+	{
+		throw ConnEpicsErrorChannel ("cannot get value from channel", ca_name (_ch), result);
+	}
+}
+
 
 void
 ConnEpics::queueGetValue (Rts2Value *value)

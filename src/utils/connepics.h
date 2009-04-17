@@ -150,6 +150,13 @@ class ConnEpics: public Rts2ConnNoSend
 		}
 
 		/**
+		 * Deletes channel.
+		 */
+		void deleteChannel (chid _ch);
+
+		void get (chid _ch, double *val);
+
+		/**
 		 * This function request value update. You are responsible to
 		 * call ConnEpics::callPendIO() to actually perform the
 		 * request. Value will not be update before you call
