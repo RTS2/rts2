@@ -215,7 +215,13 @@ ConnApcUps::getDate (const char *val)
 	struct tm _tm;
 	char *te = strptime (v, "%a %b %d %X NZST %Y", &_tm);
 	if (te == NULL || *te != '\0')
-		throw rts2core::ConnError ("Cannot convert date");
+	{
+		te = strptime (v, "%a %b %d %X UTC %Y", &_tm);
+		if (te == NULL || *te != '\0')
+		{
+			throw rts2core::ConnError ("Cannot convert date");
+		}
+	}
 	return mktime (&_tm);
 }
 
