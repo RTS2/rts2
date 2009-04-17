@@ -178,21 +178,20 @@ class OpenTpl: public ConnTCP
 
 		int getError (int in_error, std::string & desc)
 		{
-			char *txt;
 			std::string err_desc;
 			std::ostringstream os;
 			int tpl_status = TPL_OK;
 			int errNum = in_error & 0x00ffffff;
-			asprintf (&txt, "CABINET.STATUS.TEXT[%i]", errNum);
-			tpl_status = get (txt, err_desc, &tpl_status);
+			std::ostringstream _os;
+			_os << "CABINET.STATUS.TEXT[" << errNum << "]";
+			tpl_status = get (_os.str ().c_str (), err_desc, &tpl_status);
 			if (tpl_status)
-				os << "Telescope getting error: " << tpl_status
+				os << "rts2core::OpenTpl getting error: " << tpl_status
 					<<  " sev:" <<  std::hex << (in_error & 0xff000000)
 					<< " err:" << std::hex << errNum;
 			else
-				os << "Telescope sev: " << std::hex << (in_error & 0xff000000)
+				os << "rts2core::OpenTpl sev: " << std::hex << (in_error & 0xff000000)
 					<< " err:" << std::hex << errNum << " desc: " << err_desc;
-			free (txt);
 			desc = os.str ();
 			return tpl_status;
 		}
