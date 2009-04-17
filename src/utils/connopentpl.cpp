@@ -193,11 +193,11 @@ OpenTpl::receive (fd_set *fset)
 
 
 int
-OpenTpl::set (const char *_name, double value, int *tpl_status)
+OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << std::setprecision(10) << value;
-	sendCommand ("SET", _os.str().c_str());
+	sendCommand ("SET", _os.str().c_str(), wait);
 	return 0;
 }
 
@@ -217,12 +217,6 @@ OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str(), wait);
-}
-
-int
-OpenTpl::setww (const char *_name, int value, int *tpl_status)
-{
-	return set (_name, value, tpl_status, false);
 }
 
 

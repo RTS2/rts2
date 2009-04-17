@@ -84,7 +84,7 @@ class OpenTpl: public ConnTCP
 		
 		virtual int receive (fd_set *fset);
 
-		int set (const char *_name, double value, int *tpl_status);
+		int set (const char *_name, double value, int *tpl_status, bool wait=true);
 		int get (const char *_name, double &value, int *tpl_status);
 
 		int set (const char *_name, int value, int *tpl_status, bool wait=true);
@@ -94,7 +94,10 @@ class OpenTpl: public ConnTCP
 		 * Sets telescope value, only waits for command OK - do not
 		 * wait for completion.
 		 */
-		int setww (const char *_name, int value, int *tpl_status);
+		template <typename t> int setww (const char *_name, t value, int *tpl_status)
+		{
+			return set (_name, value, tpl_status, false);
+		}
 
 		int set (const char *_name, std::string value, int *tpl_status);
 		int get (const char *_name, std::string &value, int *tpl_status);
