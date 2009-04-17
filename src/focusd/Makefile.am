@@ -2,7 +2,7 @@ SUBDIRS =
 
 bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl
 
-noinst_HEADERS = focuser.h
+noinst_HEADERS = focusd.h
 
 noinst_LIBRARIES = librts2focusd.a
 

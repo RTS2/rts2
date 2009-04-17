@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2005-2007 Stanislav Vitek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,6 +22,8 @@
 
 #include "../utils/rts2device.h"
 
+namespace rts2focusd
+{
 /**
  * Abstract base class for focuser.
  *
@@ -30,7 +32,7 @@
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Stanisla Vitek
  */
-class Rts2DevFocuser:public Rts2Device
+class Focusd:public Rts2Device
 {
 	private:
 		time_t focusTimeout;
@@ -95,7 +97,7 @@ class Rts2DevFocuser:public Rts2Device
 		virtual int idle ();
 
 	public:
-		Rts2DevFocuser (int argc, char **argv);
+		Focusd (int argc, char **argv);
 
 		/**
 		 * TODO remove
@@ -117,5 +119,7 @@ class Rts2DevFocuser:public Rts2Device
 		}
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+};
+
 };
 #endif

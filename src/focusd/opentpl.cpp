@@ -23,9 +23,12 @@
 #include "../utils/connopentpl.h"
 #include "../utils/rts2config.h"
 
-#include "focuser.h"
+#include "focusd.h"
 
-class Rts2DevFocuserOpenTpl:public Rts2DevFocuser
+namespace rts2focusd
+{
+
+class OpenTpl:public Focusd
 {
 	private:
 		HostString *openTPLServer;
@@ -40,8 +43,8 @@ class Rts2DevFocuserOpenTpl:public Rts2DevFocuser
 		virtual int endFocusing ();
 		virtual bool isAtStartPosition ();
 	public:
-		Rts2DevFocuserOpenTpl (int argc, char **argv);
-		virtual ~ Rts2DevFocuserOpenTpl (void);
+		OpenTpl (int argc, char **argv);
+		virtual ~ OpenTpl (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int initValues ();
@@ -50,9 +53,11 @@ class Rts2DevFocuserOpenTpl:public Rts2DevFocuser
 		virtual int isFocusing ();
 };
 
+};
 
-Rts2DevFocuserOpenTpl::Rts2DevFocuserOpenTpl (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
-in_argv)
+using namespace rts2focusd;
+
+OpenTpl::OpenTpl (int argc, char **argv):Focusd (argc, argv)
 {
 	openTPLServer = NULL;
 	opentplConn = NULL;
@@ -63,14 +68,14 @@ in_argv)
 }
 
 
-Rts2DevFocuserOpenTpl::~Rts2DevFocuserOpenTpl ()
+OpenTpl::~OpenTpl ()
 {
 	delete opentplConn;
 }
 
 
 int
-Rts2DevFocuserOpenTpl::processOption (int in_opt)
+OpenTpl::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -78,14 +83,14 @@ Rts2DevFocuserOpenTpl::processOption (int in_opt)
 			openTPLServer = new HostString (optarg, "65432");
 			break;
 		default:
-			return Rts2DevFocuser::processOption (in_opt);
+			return Focusd::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevFocuserOpenTpl::initOpenTplDevice ()
+OpenTpl::initOpenTplDevice ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -126,10 +131,10 @@ Rts2DevFocuserOpenTpl::initOpenTplDevice ()
 
 
 int
-Rts2DevFocuserOpenTpl::init ()
+OpenTpl::init ()
 {
 	int ret;
-	ret = Rts2DevFocuser::init ();
+	ret = Focusd::init ();
 	if (ret)
 		return ret;
 
@@ -142,15 +147,15 @@ Rts2DevFocuserOpenTpl::init ()
 
 
 int
-Rts2DevFocuserOpenTpl::initValues ()
+OpenTpl::initValues ()
 {
 	focType = std::string ("FIR");
-	return Rts2DevFocuser::initValues ();
+	return Focusd::initValues ();
 }
 
 
 int
-Rts2DevFocuserOpenTpl::info ()
+OpenTpl::info ()
 {
 	int status = 0;
 
@@ -161,12 +166,12 @@ Rts2DevFocuserOpenTpl::info ()
 
 	realPos->setValueInteger ((int) (f_realPos * 1000.0));
 
-	return Rts2DevFocuser::info ();
+	return Focusd::info ();
 }
 
 
 int
-Rts2DevFocuserOpenTpl::setTo (int num)
+OpenTpl::setTo (int num)
 {
 	int status = 0;
 
@@ -202,7 +207,7 @@ Rts2DevFocuserOpenTpl::setTo (int num)
 
 
 int
-Rts2DevFocuserOpenTpl::isFocusing ()
+OpenTpl::isFocusing ()
 {
 	double targetdistance;
 	int status = 0;
@@ -218,7 +223,7 @@ Rts2DevFocuserOpenTpl::isFocusing ()
 
 
 int
-Rts2DevFocuserOpenTpl::endFocusing ()
+OpenTpl::endFocusing ()
 {
 	int status = 0;
 	int power = 0;
@@ -234,7 +239,7 @@ Rts2DevFocuserOpenTpl::endFocusing ()
 
 
 bool
-Rts2DevFocuserOpenTpl::isAtStartPosition ()
+OpenTpl::isAtStartPosition ()
 {
 	int ret;
 	ret = info ();
@@ -247,6 +252,6 @@ Rts2DevFocuserOpenTpl::isAtStartPosition ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevFocuserOpenTpl device = Rts2DevFocuserOpenTpl (argc, argv);
+	OpenTpl device = OpenTpl (argc, argv);
 	return device.run ();
 }

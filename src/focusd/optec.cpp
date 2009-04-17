@@ -19,8 +19,11 @@
 
 #define FOCUSER_PORT "/dev/ttyS0"
 
-#include "focuser.h"
+#include "focusd.h"
 #include "../utils/rts2connserial.h"
+
+namespace rts2focusd
+{
 
 /**
  * Class for Optec focuser.
@@ -28,7 +31,7 @@
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Stanislav Vitek
  */
-class Rts2DevFocuserOptec:public Rts2DevFocuser
+class Optec:public Focusd
 {
 	private:
 		const char *device_file;
@@ -45,8 +48,8 @@ class Rts2DevFocuserOptec:public Rts2DevFocuser
 	protected:
 		virtual bool isAtStartPosition ();
 	public:
-		Rts2DevFocuserOptec (int argc, char **argv);
-		~Rts2DevFocuserOptec (void);
+		Optec (int argc, char **argv);
+		~Optec (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int initValues ();
@@ -55,9 +58,11 @@ class Rts2DevFocuserOptec:public Rts2DevFocuser
 		virtual int isFocusing ();
 };
 
+};
 
-Rts2DevFocuserOptec::Rts2DevFocuserOptec (int in_argc, char **in_argv):Rts2DevFocuser (in_argc,
-in_argv)
+using namespace rts2focusd;
+
+Optec::Optec (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 	damagedTempSens = false;
@@ -69,14 +74,14 @@ in_argv)
 }
 
 
-Rts2DevFocuserOptec::~Rts2DevFocuserOptec ()
+Optec::~Optec ()
 {
 	delete optecConn;
 }
 
 
 int
-Rts2DevFocuserOptec::processOption (int in_opt)
+Optec::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -87,7 +92,7 @@ Rts2DevFocuserOptec::processOption (int in_opt)
 			damagedTempSens = true;
 			break;
 		default:
-			return Rts2DevFocuser::processOption (in_opt);
+			return Focusd::processOption (in_opt);
 	}
 	return 0;
 }
@@ -99,12 +104,12 @@ Rts2DevFocuserOptec::processOption (int in_opt)
  * @return 0 on succes, -1 & set errno otherwise
  */
 int
-Rts2DevFocuserOptec::init ()
+Optec::init ()
 {
 	char rbuf[10];
 	int ret;
 
-	ret = Rts2DevFocuser::init ();
+	ret = Focusd::init ();
 
 	if (ret)
 		return ret;
@@ -136,7 +141,7 @@ Rts2DevFocuserOptec::init ()
 
 
 int
-Rts2DevFocuserOptec::getPos (Rts2ValueInteger * position)
+Optec::getPos (Rts2ValueInteger * position)
 {
 	char rbuf[9];
 
@@ -157,7 +162,7 @@ Rts2DevFocuserOptec::getPos (Rts2ValueInteger * position)
 
 
 int
-Rts2DevFocuserOptec::getTemp ()
+Optec::getTemp ()
 {
 	char rbuf[10];
 
@@ -177,7 +182,7 @@ Rts2DevFocuserOptec::getTemp ()
 }
 
 
-bool Rts2DevFocuserOptec::isAtStartPosition ()
+bool Optec::isAtStartPosition ()
 {
 	int ret;
 	ret = getPos (focPos);
@@ -188,15 +193,15 @@ bool Rts2DevFocuserOptec::isAtStartPosition ()
 
 
 int
-Rts2DevFocuserOptec::initValues ()
+Optec::initValues ()
 {
 	focType = std::string ("OPTEC_TCF");
-	return Rts2DevFocuser::initValues ();
+	return Focusd::initValues ();
 }
 
 
 int
-Rts2DevFocuserOptec::info ()
+Optec::info ()
 {
 	int ret;
 	ret = getPos (focPos);
@@ -205,12 +210,12 @@ Rts2DevFocuserOptec::info ()
 	ret = getTemp ();
 	if (ret)
 		return ret;
-	return Rts2DevFocuser::info ();
+	return Focusd::info ();
 }
 
 
 int
-Rts2DevFocuserOptec::stepOut (int num)
+Optec::stepOut (int num)
 {
 	char command[7], rbuf[7];
 	char add = ' ';
@@ -254,7 +259,7 @@ Rts2DevFocuserOptec::stepOut (int num)
 
 
 int
-Rts2DevFocuserOptec::isFocusing ()
+Optec::isFocusing ()
 {
 	// stepout command waits till focusing end
 	return -2;
@@ -264,6 +269,6 @@ Rts2DevFocuserOptec::isFocusing ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevFocuserOptec device = Rts2DevFocuserOptec (argc, argv);
+	Optec device = Optec (argc, argv);
 	return device.run ();
 }
