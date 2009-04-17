@@ -23,6 +23,8 @@
 
 #include <map>
 
+#define OPT_MINB_TIME      OPT_LOCAL + 122
+
 namespace rts2sensor
 {
 
@@ -234,6 +236,9 @@ ApcUps::processOption (int opt)
 		case 'a':
 			host = new HostString (optarg, "3551");
 			break;
+		case OPT_MINB_TIME:
+			mintimeleft->setValueCharArr (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (opt);
 	}
@@ -346,6 +351,7 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	mintimeleft->setValueInteger (1200);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
+	addOption (OPT_MINB_TIME, "min-btime", 1, "minimal battery run time");
 }
 
 
