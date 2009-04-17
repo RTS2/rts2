@@ -18,7 +18,7 @@ rts2_focusd_dummy_SOURCES = dummy.cpp
 
 rts2_focusd_opentpl_SOURCES = opentpl.cpp
 rts2_focusd_opentpl_LDFLAGS = @LIB_NOVA@
-rts2_focusd_opentpl_CPPFLAGS = @INC_NOVA@
+rts2_focusd_opentpl_CPPFLAGS = @NOVA_CFLAGS@
 
 if FLI
 bin_PROGRAMS += rts2-focusd-fli
