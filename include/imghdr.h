@@ -63,14 +63,14 @@
 
 struct imghdr
 {
-	int data_type;
-	int naxes;					 //! Number of axes.
-	long sizes[MAX_AXES];		 //! Sizes in given axes.
-	int binnings[MAX_AXES];		 //! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
-	int filter;					 //! Camera filter
-	int shutter;
-	int x, y;					 //! image beginning (detector coordinates)
+	int16_t data_type;
+	int16_t naxes;					 //! Number of axes.
+	int32_t sizes[MAX_AXES];		 //! Sizes in given axes.
+	int16_t binnings[MAX_AXES];		 //! Binning in each axe - eg. 2 -> 1 image pixel on given axis is equal 2 ccd pixels.
+	int16_t filter;					 //! Camera filter
+	int16_t shutter;
+	int16_t x, y;					 //! image beginning (detector coordinates)
 	double subexp;				 //! image subexposure
-	int nacc;					 //! number of accumulations used to take image
+	int16_t nacc;					 //! number of accumulations used to take image
 };
 #endif							 // __RTS_IMGHDR__
