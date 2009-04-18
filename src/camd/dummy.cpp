@@ -94,6 +94,7 @@ class Dummy:public Camera
 			createValue (genType, "gen_type", "data generation algorithm", true, 0);
 			genType->addSelVal (std::string ("random"));
 			genType->addSelVal (std::string ("linear"));
+			genType->addSelVal (std::string ("linear shifted"));
 			genType->setValueInteger (0);
 
 			createExpType ();
@@ -211,6 +212,10 @@ Dummy::readoutOneLine ()
 				dataBuffer[i] = 10 + 10 * ((double) rand ()) / RAND_MAX;
 				break;
 			case 1:  // linear
+				dataBuffer[i] = i;
+				break;
+			case 2:
+				// linear shifted
 				dataBuffer[i] = i + (int) (getExposureNumber () * 10);
 				break;
 		}
