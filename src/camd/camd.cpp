@@ -201,22 +201,22 @@ Camera::sendFirstLine ()
 	int w, h;
 	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
 	h = chipUsedReadout->getHeightInt () / binningVertical ();
-	focusingHeader.data_type = getDataType ();
-	focusingHeader.naxes = 2;
-	focusingHeader.sizes[0] = chipUsedReadout->getWidthInt () / binningHorizontal ();
-	focusingHeader.sizes[1] = chipUsedReadout->getHeightInt () / binningVertical ();
-	focusingHeader.binnings[0] = binningVertical ();
-	focusingHeader.binnings[1] = binningHorizontal ();
-	focusingHeader.x = chipUsedReadout->getXInt ();
-	focusingHeader.y = chipUsedReadout->getYInt ();
-	focusingHeader.filter = getLastFilterNum ();
+	focusingHeader.data_type = htons (getDataType ());
+	focusingHeader.naxes = htons (2);
+	focusingHeader.sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
+	focusingHeader.sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
+	focusingHeader.binnings[0] = htons (binningVertical ());
+	focusingHeader.binnings[1] = htons (binningHorizontal ());
+	focusingHeader.x = htons (chipUsedReadout->getXInt ());
+	focusingHeader.y = htons (chipUsedReadout->getYInt ());
+	focusingHeader.filter = htons (getLastFilterNum ());
 	// light - dark images
 	if (expType)
 		focusingHeader.shutter = expType->getValueInteger ();
 	else
 		focusingHeader.shutter = 0;
 	focusingHeader.subexp = subExposure->getValueDouble ();
-	focusingHeader.nacc = nAcc;
+	focusingHeader.nacc = htons (nAcc);
 
 	return sendReadoutData ((char *) &focusingHeader, sizeof (imghdr));
 }
