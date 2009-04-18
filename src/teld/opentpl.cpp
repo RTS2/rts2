@@ -291,6 +291,9 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		status = opentplConn->set ("POINTING.POINTINGPARAMS.RECORDCOUNT", new_value->getValueInteger (), &status);
 		if (status != TPL_OK)
 			return -2;
+		status = infoModel ();
+		if (status)
+			return -2;
 		return 0;
 	}
 	if (old_value == goodSep)
@@ -1050,6 +1053,10 @@ OpenTPL::info ()
 int
 OpenTPL::saveModel ()
 {
+	int ret;
+	ret = infoModel ();
+	if (ret)
+		return ret;
 	std::ofstream of;
 	of.open ("/etc/rts2/ir.model", std::ios_base::out | std::ios_base::trunc);
 	of.precision (20);
