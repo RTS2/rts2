@@ -543,7 +543,11 @@ class ListTargets: public XmlRpcServerMethod
 				else
 					retVar["comment"] = "";
 				value = (*tar_iter)->getLastObs();
-				retVar["last"] = value;
+				retVar["last_obs"] = value;
+				struct ln_equ_posn pos;
+				(*tar_iter)->getPosition (&pos, ln_get_julian_from_sys ());
+				retVar["ra"] = pos.ra;
+				retVar["dec"] = pos.dec;
 				result[i++] = retVar;
 			}
 		}
