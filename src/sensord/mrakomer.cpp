@@ -217,6 +217,8 @@ Mrakomer::idle ()
 			  	heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
 			heater->setValueBool (!heater->getValueBool ());
 		}
+		sendValueAll (heater);
+		sendValueAll (heatStateChangeTime);
 	}
 	return SensorWeather::idle ();
 }
