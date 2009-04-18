@@ -517,6 +517,50 @@ class ListTargets: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
+			Rts2TargetSet *tar_set = new Rts2TargetSet ();
+			double value;
+			int i = 0;
+			XmlRpcValue retVar;
+
+			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			{
+				retVar["id"] = (*tar_iter)->getTargetID ();
+				retVar["type"] = (*tar_iter)->getTargetType ();
+				if ((*tar_iter)->getTargetName ())
+					retVar["name"] = (*tar_iter)->getTargetName ();
+				else
+					retVar["name"] = "NULL";
+
+				retVar["enabled"] = (*tar_iter)->getTargetEnabled ();
+				if ((*tar_iter)->getTargetComment ())
+					retVar["comment"] = (*tar_iter)->getTargetComment ();
+				else
+					retVar["comment"] = "";
+				value = (*tar_iter)->getLastObs();
+				retVar["last_obs"] = value;
+				struct ln_equ_posn pos;
+				(*tar_iter)->getPosition (&pos, ln_get_julian_from_sys ());
+				retVar["ra"] = pos.ra;
+				retVar["dec"] = pos.dec;
+				result[i++] = retVar;
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns all targets");
+		}
+
+} listTargets (&xmlrpc_server);
+
+
+class ListTargetsByType: public XmlRpcServerMethod
+{
+	public:
+		ListTargetsByType (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_TYPE_LIST, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
 			char target_types[params.size ()+1];
 			int j;
 			for (j = 0; j < params.size (); j++)
@@ -557,7 +601,8 @@ class ListTargets: public XmlRpcServerMethod
 			return std::string ("Returns all targets");
 		}
 
-} listTargets (&xmlrpc_server);
+} listTargetsByType (&xmlrpc_server);
+
 
 class TargetInfo: public XmlRpcServerMethod
 {

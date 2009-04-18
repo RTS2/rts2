@@ -34,9 +34,20 @@
 
 #define R2X_VALUES_LIST               "rts2.values.list"
 
+/**
+ * List all available targets.
+ */
 #define R2X_TARGETS_LIST              "rts2.targets.list"
-#define R2X_TARGETS_INFO              "rts2.targets.info"
 
+/**
+ * List targets by type.
+ *
+ * @param Array of types which will be listed.
+ */
+#define R2X_TARGETS_TYPE_LIST         "rts2.targets.type.list"
+
+
+#define R2X_TARGETS_INFO              "rts2.targets.info"
 
 /**
  * List observations for given target.
