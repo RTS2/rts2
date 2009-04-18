@@ -611,7 +611,7 @@ class TargetInfo: public XmlRpcServerMethod
 class ListObservations: public XmlRpcServerMethod
 {
 	public:
-		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATIONS_LIST, s) {}
+		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -637,7 +637,7 @@ class ListObservations: public XmlRpcServerMethod
 class ListImages: public XmlRpcServerMethod
 {
 	public:
-		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_IMAGES_LIST, s) {}
+		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATION_IMAGES_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
