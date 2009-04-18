@@ -650,8 +650,17 @@ class ListImages: public XmlRpcServerMethod
 			int i = 0;
 			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
+				double eRa, eDec, eRad;
+				eRa = eDec = eRad = nan ("f");
 				Rts2Image *image = *img_iter;
 				retVar["filename"] = image->getImageName ();
+				retVar["start"] = image->getExposureStart ();
+				retVar["exposure"] = image->getExposureLength ();
+				retVar["filter"] = image->getFilter ();
+				image->getError (eRa, eDec, eRad);
+				retVar["error_ra"] = eRa;
+				retVar["error_dec"] = eDec;
+				retVar["error_pos"] = eRad;
 				result[i++] = retVar;
 			}
 		}
