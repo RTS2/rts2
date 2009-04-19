@@ -25,8 +25,6 @@
 PG_MODULE_MAGIC;
 #endif
 
-#include <libwcs/wcs.h>
-
 #include <ctype.h>
 #include <stdio.h>
 
