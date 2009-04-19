@@ -615,7 +615,6 @@ class TargetInfo: public XmlRpcServerMethod
 			XmlRpcValue retVar;
 			int i;
 			double JD;
-			time_t now;
 
 			for (i = 0; i < params.size(); i++)
 				targets.push_back (params[i]);
@@ -629,8 +628,6 @@ class TargetInfo: public XmlRpcServerMethod
 			{
 				JD = ln_get_julian_from_sys ();
 
-				ln_get_timet_from_julian (JD, &now);
-
 				XmlStream xs (&retVar);
 				xs << *(*tar_iter);
 
@@ -640,17 +637,13 @@ class TargetInfo: public XmlRpcServerMethod
 				int j = 0;
 				for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
 				{
-					retVar["observation"][j] =  (*obs_iter).getObsId();
-					// retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
+					retVar["observation"][j]["obsid"] =  (*obs_iter).getObsId();
+					retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
 				}
 
-				/*
-					XmlStream xs (&retVar);
-
-					// xs << InfoVal<XmlRpcValue> ("HOUR", (*tar_iter)->getHourAngle (JD));
-					Target *tar = *tar_iter;
-					tar->sendInfo (xs, JD);
-				*/
+				retVar["HOUR"] = (*tar_iter)->getHourAngle (JD);
+				Target *tar = *tar_iter;
+				tar->sendInfo (xs, JD);
 				result[i++] = retVar;
 			}
 		}
