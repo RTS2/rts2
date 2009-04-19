@@ -162,6 +162,8 @@ class Camera:public Rts2ScriptDevice
 		int currentImageData;
 								 // DARK of LIGHT frames
 		Rts2ValueFloat *exposure;
+		Rts2ValueInteger *flip;
+		bool defaultFlip;
 
 		Rts2ValueRectangle *chipSize;
 
@@ -227,6 +229,28 @@ class Camera:public Rts2ScriptDevice
 		 * Shutter control.
 		 */
 		Rts2ValueSelection *expType;
+
+		/**
+		 * Change flip of the camera. This is usually done when chaning
+		 * readout channel on devices with tho channels.
+		 *
+		 * @param bool True if flip is changed, false if it should be
+		 * reset to default.
+		 */
+		void changeFlip (bool change)
+		{
+			flip->setValueInteger (change ? !defaultFlip : defaultFlip);
+			sendValueAll (flip);
+		}
+
+		/**
+		 * Set flip and default flip.
+		 */
+		void setDefaultFlip (int _flip)
+		{
+			flip->setValueInteger (_flip);
+			defaultFlip = _flip;
+		}
 
 		/**
 		 * Change state of camera chip.

@@ -343,6 +343,7 @@ Camera (in_argc, in_argv)
 
 	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING, true);
 	EMOn->setValueBool (true);
+	setDefaultFlip (0);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING, true);
 	HSpeed->setValueInteger (1);
@@ -472,6 +473,7 @@ Andor::setHSSpeed (int in_amp, int in_hsspeed)
 		return -1;
 	}
 	EMOn->setValueBool (in_amp == 0 ? true : false);
+	changeFlip (!EMOn->getValueBool ());
 	HSpeed->setValueInteger (in_hsspeed);
 	return 0;
 

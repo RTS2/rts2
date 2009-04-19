@@ -45,7 +45,6 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	config->getDouble (connection->getName (), "yoa", yoa);
 	config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
 	config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
-	config->getInteger (connection->getName (), "flip", flip);
 
 	telescop[0] = '\0';
 	instrume[0] = '\0';
@@ -244,8 +243,6 @@ Rts2DevClientCameraImage::exposureStarted ()
 		image->setXoA (xoa);
 		image->setYoA (yoa);
 	}
-	image->setValue ("FLIP", flip,
-		"camera flip (since most astrometry devices works as mirrors");
 	focuser = getConnection ()->getValueChar ("focuser");
 	if (focuser)
 	{

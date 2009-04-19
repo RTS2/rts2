@@ -29,6 +29,8 @@
 #include "rts2devcliwheel.h"
 #include "rts2devclifocuser.h"
 
+#define OPT_FLIP    OPT_LOCAL + 401
+
 using namespace rts2camd;
 
 void
@@ -276,6 +278,9 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (exposure, "exposure", "current exposure time", false, 0, CAM_WORKING);
 	exposure->setValueDouble (1);
 
+	createValue (flip, "FLIP", "camera flip (since most astrometry devices works as mirrors", true);
+	setDefaultFlip (1);
+
 	sendOkInExposure = false;
 
 	createValue (subExposure, "subexposure", "current subexposure", false, 0, CAM_WORKING, true);
@@ -297,12 +302,13 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	createValue (rnoise, "RNOISE", "CCD readout noise");
 
 	// other options..
-	addOption ('F', "focuser", 1, "name of focuser device, which will be granted to do exposures without priority");
-	addOption ('W', "filterwheel", 1, "name of device which is used as filter wheel");
+	addOption ('F', NULL, 1, "name of focuser device, which will be granted to do exposures without priority");
+	addOption ('W', NULL, 1, "name of device which is used as filter wheel");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('s', "subexposure", 1, "default subexposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption ('r', NULL, 1, "camera rotang");
+	addOption (OPT_FLIP, "flip", 1, "camera flip (default to 1)");
 }
 
 
@@ -423,7 +429,7 @@ Camera::processOption (int in_opt)
 			wheelDevice = optarg;
 			break;
 		case 'e':
-			exposure->setValueDouble (atof (optarg));
+			exposure->setValueCharArr (optarg);
 			break;
 		case 's':
 			setSubExposure (atof (optarg));
@@ -434,10 +440,13 @@ Camera::processOption (int in_opt)
 		case 'c':
 			if (nightCoolTemp == NULL)
 				return Rts2ScriptDevice::processOption (in_opt);
-			nightCoolTemp->setValueFloat (atof (optarg));
+			nightCoolTemp->setValueCharArr (optarg);
 			break;
 		case 'r':
 			rotang->setValueCharArr (optarg);
+			break;
+		case OPT_FLIP:
+			flip->setValueCharArr (optarg);
 			break;
 		default:
 			return Rts2ScriptDevice::processOption (in_opt);
@@ -558,6 +567,8 @@ Camera::initValues ()
 
 	initBinnings ();
 	initDataTypes ();
+
+	defaultFlip = flip->getValueInteger ();
 
 	return Rts2ScriptDevice::initValues ();
 }
