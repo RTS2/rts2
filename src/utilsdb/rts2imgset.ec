@@ -47,7 +47,7 @@ int
 Rts2ImgSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		char *stmp_c;
+		const char *stmp_c;
 
 		int d_tar_id;
 		int d_obs_id;
@@ -78,8 +78,9 @@ Rts2ImgSet::load (std::string in_where)
 		int d_epoch_id;
 	EXEC SQL END DECLARE SECTION;
 
-	asprintf (&stmp_c,
-		"SELECT "
+	std::ostringstream _os;
+	
+	_os << "SELECT "
 		"tar_id,"
 		"img_id,"
 		"images.obs_id,"
@@ -103,9 +104,11 @@ Rts2ImgSet::load (std::string in_where)
 		"images,"
 		"observations"
 		" WHERE "
-		" images.obs_id = observations.obs_id AND %s "
+		" images.obs_id = observations.obs_id AND " << in_where <<
 		" ORDER BY "
-		"img_id DESC;", in_where.c_str());
+		"img_id DESC;";
+
+	stmp_c = _os.str ().c_str ();
 
 	EXEC SQL PREPARE cur_images_stmp FROM :stmp_c;
 
@@ -180,7 +183,6 @@ Rts2ImgSet::load (std::string in_where)
 			d_img_err_dec, d_img_err, d_epoch_id));
 
 	}
-	free (stmp_c);
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		logStream(MESSAGE_ERROR) << "Rts2ImgSet::load error in DB: " << sqlca.sqlerrm.sqlerrmc << sendLog;

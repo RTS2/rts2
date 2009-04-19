@@ -239,7 +239,7 @@ PossibleDarks::defaultDark ()
 	while (*tmp_s)
 	{
 		// skip blanks..
-		while (*tmp_s && isblank (*tmp_s))
+		while (*tmp_s && (isspace (*tmp_s) || *tmp_s == '\t'))
 			tmp_s++;
 		if (!*tmp_s)
 			break;
@@ -761,10 +761,10 @@ CalibrationTarget::load ()
 		}
 		if (obs_target_id != -1)
 			break;
-		char *logmsg;
-		asprintf (&logmsg, "CalibrationTarget::load cannot find any target for airmass between %f and %f", d_airmass_start, d_airmass_end);
-		logMsgDb (logmsg, MESSAGE_DEBUG);
-		free (logmsg);
+		std::ostringstream _os;
+		_os << "CalibrationTarget::load cannot find any target for airmass between "
+			<< d_airmass_start << " and " << d_airmass_end << sendLog;
+		logMsgDb (_os.str ().c_str (), MESSAGE_DEBUG);
 	}
 	// change priority for bad targets..
 	for (cal_iter = bad_list.begin (); cal_iter != bad_list.end (); cal_iter++)
