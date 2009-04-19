@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-AM_CXXFLAGS=@NOVA_CFLAGS@
+AM_CXXFLAGS=@NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 noinst_HEADERS = rts2devicedb.h target.h rts2appdb.h rts2sqlcolumn.h rts2obs.h rts2obsset.h \
 	rts2taruser.h rts2count.h rts2imgset.h rts2targetset.h rts2plan.h rts2planset.h rts2prop.h \
