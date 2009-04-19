@@ -46,7 +46,7 @@ class Fli:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int stepOut (int num);
+		virtual int setTo (int num);
 		virtual int home ();
 
 	public:
@@ -194,9 +194,15 @@ Fli::info ()
 
 
 int
-Fli::stepOut (int num)
+Fli::setTo (int num)
 {
 	LIBFLIAPI ret;
+	ret = info ();
+	if (ret)
+		return ret;
+
+	num -= focPos->getValueInteger ();
+
 	ret = FLIStepMotorAsync (dev, (long) num);
 	if (ret)
 		return -1;

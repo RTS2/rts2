@@ -46,7 +46,7 @@ class Dummy:public Focusd
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
-		virtual int stepOut (int num);
+		virtual int setTo (int num);
 		virtual int isFocusing ();
 };
 
@@ -66,7 +66,6 @@ Dummy::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 {
-	focStepSec = 1;
 	focType = std::string ("Dummy");
 	createFocTemp ();
 
@@ -107,10 +106,12 @@ Dummy::initValues ()
 
 
 int
-Dummy::stepOut (int num)
+Dummy::setTo (int num)
 {
-	if ((focSteps->getValueInteger () < 0 && num > 0) || (focSteps->getValueInteger () > 0 && num < 0))
-		focSteps->setValueInteger (-1 * focSteps->getValueInteger ());
+	if (focPos->getValueInteger () > num)
+		focSteps->setValueInteger (-1 * fabs (focSteps->getValueInteger ()));
+	else	
+		focSteps->setValueInteger (fabs (focSteps->getValueInteger ()));
 	sendValueAll (focSteps);
 	return 0;
 }
