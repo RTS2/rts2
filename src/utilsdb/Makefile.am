@@ -23,7 +23,7 @@ bin_PROGRAMS = rts2-airmasscale
 noinst_LIBRARIES = librts2blockdb.a
 
 nodist_rts2_airmasscale_SOURCES = airmasscale.cpp
-rts2_airmasscale_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
+rts2_airmasscale_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_airmasscale_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ librts2blockdb.a ../utils/librts2block.a
 
 nodist_librts2blockdb_a_SOURCES = rts2devicedb.cpp target.cpp sub_targets.cpp rts2appdb.cpp rts2sqlcolumn.cpp rts2obs.cpp \
@@ -31,7 +31,7 @@ nodist_librts2blockdb_a_SOURCES = rts2devicedb.cpp target.cpp sub_targets.cpp rt
 	rts2prop.cpp rts2camlist.cpp target_auger.cpp rts2messagedb.cpp rts2targetplanet.cpp rts2targetgrb.cpp \
 	rts2imgsetstat.cpp rts2targetell.cpp rts2user.cpp rts2userset.cpp
 librts2blockdb_a_SOURCES = rts2imgsetstat.cpp
-librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
+librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^
