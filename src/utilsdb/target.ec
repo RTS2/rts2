@@ -1049,18 +1049,18 @@ Target::getRaDistance (struct ln_equ_posn *in_pos, double JD)
 double
 Target::getSolarDistance (double JD)
 {
-	struct ln_equ_posn sun;
-	ln_get_solar_equ_coords (JD, &sun);
-	return getDistance (&sun, JD);
+	struct ln_equ_posn eq_sun;
+	ln_get_solar_equ_coords (JD, &eq_sun);
+	return getDistance (&eq_sun, JD);
 }
 
 
 double
 Target::getSolarRaDistance (double JD)
 {
-	struct ln_equ_posn sun;
-	ln_get_solar_equ_coords (JD, &sun);
-	return getRaDistance (&sun, JD);
+	struct ln_equ_posn eq_sun;
+	ln_get_solar_equ_coords (JD, &eq_sun);
+	return getRaDistance (&eq_sun, JD);
 }
 
 
