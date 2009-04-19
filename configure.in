@@ -456,7 +456,7 @@ EOF
 			exit 1
 		fi
 		LDFLAGS="${LDFLAGS} -L${epics}/lib/${EPICS_HOST_ARCH}"
-		LIB_EPICS="-L${epics}/lib/${EPICS_HOST_ARCH} -lca"
+		LIB_EPICS="-L${epics}/lib/${EPICS_HOST_ARCH}"
 		if echo $EPICS_HOST_ARCH | grep ^linux; then
 			INC_EPICS="-I${epics}/include -I${epics}/include/os/Linux"
 		else
@@ -467,18 +467,20 @@ EOF
 			exit 1
 		fi
 		fi
-		AC_SUBST(INC_EPICS)
 	else
-		LIB_EPICS="-lca"
+		LIB_EPICS=""
 		INC_EPICS=""
 	fi
 	AC_CHECK_LIB([ca], [ca_context_create],
-	AC_SUBST(LIB_EPICS),
+	LIB_EPICS="-lca ${LIB_EPICS}",
 	[cat << EOF
 **** You don't have epics library installed.
 **** Please try to get it from http://www.aps.anl.gov/epics
 EOF
 	exit 1])
+
+	AC_SUBST(LIB_EPICS)
+	AC_SUBST(INC_EPICS)
 fi
 
 AC_MSG_CHECKING(for date)
@@ -490,6 +492,8 @@ else
 	AC_MSG_RESULT($DATE)
 fi
 
+LDADD = ""
+AC_SUBST(LDADD)
 AC_SUBST(LDFLAGS)
 
 AC_SUBST(DATE)
