@@ -281,7 +281,7 @@ DavisUdp::receive (fd_set * set)
 		}
 		master->setTemperature (rtOutsideTemp);
 		master->setRainRate (rtRainRate);
-		master->setRainWeather (rain);
+		master->setRain (rain);
 		master->setHumidity (rtOutsideHum);
 		master->setAvgWindSpeed (avgWindSpeed);
 		master->setPeekWindSpeed (peekwindspeed);
@@ -293,8 +293,6 @@ DavisUdp::receive (fd_set * set)
 		delete weather;
 
 		time (&lastWeatherStatus);
-		logStream (MESSAGE_DEBUG) << "peekwindspeed: " << peekwindspeed << " avgwindspeed: " << avgWindSpeed 
-			<< " rain: " << rain << " date: " << lastWeatherStatus << " status: " << ret <<	sendLog;
 		if (rain != 0)
 		{
 			time (&lastBadWeather);

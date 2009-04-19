@@ -93,10 +93,6 @@ class Davis: public SensorWeather
 		{
 			rain->setValueBool (_rain);
 		}
-		virtual void setRainWeather (int in_rain)
-		{
-			setRain (in_rain);
-		}
 		bool getRain ()
 		{
 			return rain->getValueBool ();
