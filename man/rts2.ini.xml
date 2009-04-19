@@ -985,17 +985,6 @@
 	</varlistentry>
         <varlistentry>
 	  <term>
-	    <option>rotang</option>
-	  </term>
-	  <listitem>
-	    <para>Camera rotational angle. This value is angle between X axis
-	    and north direction on image plate. ROTANG is also affected by
-	    telescope flip and derotator setting, so for definite value either
-	    see rts2-mon or ROTANG entry in the FITS headers.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
 	    <option>xoa</option>
 	  </term>
 	  <listitem>
