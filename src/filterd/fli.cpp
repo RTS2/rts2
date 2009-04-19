@@ -20,7 +20,10 @@
 #include "libfli.h"
 #include "libfli-filter-focuser.h"
 
-class Rts2DevFilterdFli:public Rts2DevFilterd
+namespace rts2filterd
+{
+
+class Fli:public Filterd
 {
 	private:
 		flidev_t dev;
@@ -35,16 +38,19 @@ class Rts2DevFilterdFli:public Rts2DevFilterd
 		virtual int setFilterNum (int new_filter);
 
 	public:
-		Rts2DevFilterdFli (int in_argc, char **in_argv);
-		virtual ~ Rts2DevFilterdFli (void);
+		Fli (int in_argc, char **in_argv);
+		virtual ~ Fli (void);
 		virtual int processOption (int in_opt);
 		virtual int init (void);
 
 		virtual int homeFilter ();
 };
 
-Rts2DevFilterdFli::Rts2DevFilterdFli (int in_argc, char **in_argv):
-Rts2DevFilterd (in_argc, in_argv)
+};
+
+using namespace rts2filterd;
+
+Fli::Fli (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 {
 	deviceDomain = FLIDEVICE_FILTERWHEEL | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
@@ -55,14 +61,14 @@ Rts2DevFilterd (in_argc, in_argv)
 }
 
 
-Rts2DevFilterdFli::~Rts2DevFilterdFli (void)
+Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
 
 int
-Rts2DevFilterdFli::processOption (int in_opt)
+Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -96,20 +102,20 @@ Rts2DevFilterdFli::processOption (int in_opt)
 			}
 			break;
 		default:
-			return Rts2DevFilterd::processOption (in_opt);
+			return Filterd::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevFilterdFli::init (void)
+Fli::init (void)
 {
 	LIBFLIAPI ret;
 	char **names;
 	char *nam_sep;
 
-	ret = Rts2DevFilterd::init ();
+	ret = Filterd::init ();
 	if (ret)
 		return ret;
 
@@ -122,7 +128,7 @@ Rts2DevFilterdFli::init (void)
 
 	if (names[0] == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevFilterdFli::init No device found!"
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
 			<< sendLog;
 		return -1;
 	}
@@ -145,7 +151,7 @@ Rts2DevFilterdFli::init (void)
 
 
 int
-Rts2DevFilterdFli::getFilterNum (void)
+Fli::getFilterNum (void)
 {
 	long ret_f;
 	LIBFLIAPI ret;
@@ -157,7 +163,7 @@ Rts2DevFilterdFli::getFilterNum (void)
 
 
 int
-Rts2DevFilterdFli::setFilterNum (int new_filter)
+Fli::setFilterNum (int new_filter)
 {
 	LIBFLIAPI ret;
 	if (new_filter < -1 || new_filter >= filter_count)
@@ -171,7 +177,7 @@ Rts2DevFilterdFli::setFilterNum (int new_filter)
 
 
 int
-Rts2DevFilterdFli::homeFilter ()
+Fli::homeFilter ()
 {
 	return setFilterNum (FLI_FILTERPOSITION_HOME);
 }
@@ -180,6 +186,6 @@ Rts2DevFilterdFli::homeFilter ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevFilterdFli device = Rts2DevFilterdFli (argc, argv);
+	Fli device = Fli (argc, argv);
 	return device.run ();
 }

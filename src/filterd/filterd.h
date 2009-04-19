@@ -22,6 +22,9 @@
 
 #include "../utils/rts2device.h"
 
+namespace rts2filterd
+{
+
 /**
  * This class is used for filter devices.
  * It's directly attached to camera, so idependent filter devices can
@@ -29,7 +32,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevFilterd:public Rts2Device
+class Filterd:public Rts2Device
 {
 	private:
 		/**
@@ -52,8 +55,8 @@ class Rts2DevFilterd:public Rts2Device
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2DevFilterd (int in_argc, char **in_argv);
-		virtual ~ Rts2DevFilterd (void);
+		Filterd (int in_argc, char **in_argv);
+		virtual ~ Filterd (void);
 
 		virtual int info ();
 
@@ -62,5 +65,7 @@ class Rts2DevFilterd:public Rts2Device
 		virtual int homeFilter ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+};
+
 };
 #endif							 /* !__RTS2_FILTERD__ */

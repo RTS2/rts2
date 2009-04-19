@@ -20,13 +20,16 @@
 #include "filterd.h"
 #include "../utils/rts2connserial.h"
 
+namespace rts2filterd
+{
+
 /**
  * Class for OPTEC filter wheel.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  * @author John French
  */
-class Rts2DevFilterdIfw:public Rts2DevFilterd
+class Ifw:public Filterd
 {
 	private:
 		char *dev_file;
@@ -38,8 +41,8 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
 
 		int homeCount;
 	public:
-		Rts2DevFilterdIfw (int in_argc, char **in_argv);
-		virtual ~ Rts2DevFilterdIfw (void);
+		Ifw (int in_argc, char **in_argv);
+		virtual ~ Ifw (void);
 		virtual int processOption (int in_opt);
 		virtual int init (void);
 		virtual int changeMasterState (int new_state);
@@ -49,9 +52,12 @@ class Rts2DevFilterdIfw:public Rts2DevFilterd
 		virtual int homeFilter ();
 };
 
+};
+
+using namespace rts2filterd;
 
 int
-Rts2DevFilterdIfw::homeFilter ()
+Ifw::homeFilter ()
 {
 	int ret;
 	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 6, '\r');
@@ -66,7 +72,7 @@ Rts2DevFilterdIfw::homeFilter ()
 
 
 void
-Rts2DevFilterdIfw::shutdown (void)
+Ifw::shutdown (void)
 {
 	int n;
 
@@ -90,7 +96,7 @@ Rts2DevFilterdIfw::shutdown (void)
 }
 
 
-Rts2DevFilterdIfw::Rts2DevFilterdIfw (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
+Ifw::Ifw (int in_argc, char **in_argv):Filterd (in_argc,
 in_argv)
 {
 	ifwConn = NULL;
@@ -100,7 +106,7 @@ in_argv)
 }
 
 
-Rts2DevFilterdIfw::~Rts2DevFilterdIfw (void)
+Ifw::~Ifw (void)
 {
 	shutdown ();
 	delete ifwConn;
@@ -108,7 +114,7 @@ Rts2DevFilterdIfw::~Rts2DevFilterdIfw (void)
 
 
 int
-Rts2DevFilterdIfw::processOption (int in_opt)
+Ifw::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -116,18 +122,18 @@ Rts2DevFilterdIfw::processOption (int in_opt)
 			dev_file = optarg;
 			break;
 		default:
-			return Rts2DevFilterd::processOption (in_opt);
+			return Filterd::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevFilterdIfw::init (void)
+Ifw::init (void)
 {
 	int ret;
 
-	ret = Rts2DevFilterd::init ();
+	ret = Filterd::init ();
 	if (ret)
 		return ret;
 
@@ -158,7 +164,7 @@ Rts2DevFilterdIfw::init (void)
 
 
 int
-Rts2DevFilterdIfw::changeMasterState (int new_state)
+Ifw::changeMasterState (int new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -177,7 +183,7 @@ Rts2DevFilterdIfw::changeMasterState (int new_state)
 
 
 int
-Rts2DevFilterdIfw::getFilterNum (void)
+Ifw::getFilterNum (void)
 {
 	int filter_number;
 	int n;
@@ -205,7 +211,7 @@ Rts2DevFilterdIfw::getFilterNum (void)
 
 
 int
-Rts2DevFilterdIfw::setFilterNum (int new_filter)
+Ifw::setFilterNum (int new_filter)
 {
 	char set_filter[] = "WGOTOx";
 	int ret;
@@ -253,6 +259,6 @@ Rts2DevFilterdIfw::setFilterNum (int new_filter)
 int
 main (int argc, char **argv)
 {
-	Rts2DevFilterdIfw device = Rts2DevFilterdIfw (argc, argv);
+	Ifw device = Ifw (argc, argv);
 	return device.run ();
 }

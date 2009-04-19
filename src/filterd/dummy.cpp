@@ -19,7 +19,10 @@
 
 #include "filterd.h"
 
-class Rts2DevFilterdDummy:public Rts2DevFilterd
+namespace rts2filterd
+{
+
+class Dummy:public Filterd
 {
 	private:
 		int filterNum;
@@ -39,7 +42,7 @@ class Rts2DevFilterdDummy:public Rts2DevFilterd
 		}
 
 	public:
-		Rts2DevFilterdDummy (int in_argc, char **in_argv):Rts2DevFilterd (in_argc,
+		Dummy (int in_argc, char **in_argv):Filterd (in_argc,
 			in_argv)
 		{
 			filterNum = 0;
@@ -55,15 +58,19 @@ class Rts2DevFilterdDummy:public Rts2DevFilterd
 					filterSleep = atoi (optarg);
 					break;
 				default:
-					return Rts2DevFilterd::processOption (in_opt);
+					return Filterd::processOption (in_opt);
 			}
 			return 0;
 		}
 };
 
+};
+
+using namespace rts2filterd;
+
 int
 main (int argc, char **argv)
 {
-	Rts2DevFilterdDummy device = Rts2DevFilterdDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }
