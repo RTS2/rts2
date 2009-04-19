@@ -200,7 +200,9 @@ Mrakomer::info ()
 int
 Mrakomer::idle ()
 {
-	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
+	int ms = getMasterState () & SERVERD_STATUS_MASK;
+	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0
+	  && (ms == SERVERD_DUSK || ms == SERVERD_NIGHT || ms == SERVERD_DAWN))
 	{
 		if (isnan (heatStateChangeTime->getValueDouble ()))
 		{
