@@ -1019,6 +1019,11 @@ Telescope::startPark (Rts2Conn * conn)
 	}
 	else
 	{
+		tarRaDec->resetValueChanged ();
+		objRaDec->resetValueChanged ();
+		offsetRaDec->resetValueChanged ();
+		corrRaDec->resetValueChanged ();
+
 		incMoveNum ();
 		setParkTimeNow ();
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
