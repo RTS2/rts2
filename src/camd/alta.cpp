@@ -22,6 +22,9 @@
 #include "camd.h"
 #include "ApnCamera.h"
 
+namespace rts2camd
+{
+
 /**
  * Driver for Apogee Alta cameras.
  *
@@ -29,7 +32,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevCameraAlta:public Rts2DevCamera
+class Alta:public Camera
 {
 	private:
 		CApnCamera * alta;
@@ -53,12 +56,11 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2DevCameraAlta (int argc, char **argv);
-		virtual ~ Rts2DevCameraAlta (void);
+		Alta (int argc, char **argv);
+		virtual ~ Alta (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
 
-		virtual int ready ();
 		virtual int info ();
 
 		virtual int camChipInfo (int chip);
@@ -67,8 +69,12 @@ class Rts2DevCameraAlta:public Rts2DevCamera
 		virtual void afterNight ();
 };
 
+};
+
+using namespace rts2camd;
+
 void
-Rts2DevCameraAlta::setBitDepth (int newBit)
+Alta::setBitDepth (int newBit)
 {
 	switch (newBit)
 	{
@@ -81,7 +87,7 @@ Rts2DevCameraAlta::setBitDepth (int newBit)
 
 
 int
-Rts2DevCameraAlta::initChips ()
+Alta::initChips ()
 {
 	setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
 	setBinning (1, 1);
@@ -89,12 +95,12 @@ Rts2DevCameraAlta::initChips ()
 	pixelY = nan ("f");
 	//  gain = alta->m_ReportedGainSixteenBit;
 
-	return Rts2DevCamera::initChips ();
+	return Camera::initChips ();
 }
 
 
 void
-Rts2DevCameraAlta::initBinnings ()
+Alta::initBinnings ()
 {
 	addBinning2D (1,1);
 	addBinning2D (2,2);
@@ -113,16 +119,16 @@ Rts2DevCameraAlta::initBinnings ()
 
 
 int
-Rts2DevCameraAlta::setBinning (int in_vert, int in_hori)
+Alta::setBinning (int in_vert, int in_hori)
 {
 	alta->write_RoiBinningH (in_hori);
 	alta->write_RoiBinningV (in_vert);
-	return Rts2DevCamera::setBinning (in_vert, in_hori);
+	return Camera::setBinning (in_vert, in_hori);
 }
 
 
 int
-Rts2DevCameraAlta::startExposure ()
+Alta::startExposure ()
 {
 	int ret;
 	ret = alta->Expose (getExposure (), getExpType () ? 0 : 1);
@@ -140,11 +146,11 @@ Rts2DevCameraAlta::startExposure ()
 
 
 long
-Rts2DevCameraAlta::isExposing ()
+Alta::isExposing ()
 {
 	long ret;
 	Apn_Status status;
-	ret = Rts2DevCamera::isExposing ();
+	ret = Camera::isExposing ();
 	if (ret > 0)
 		return ret;
 
@@ -160,16 +166,16 @@ Rts2DevCameraAlta::isExposing ()
 
 
 int
-Rts2DevCameraAlta::stopExposure ()
+Alta::stopExposure ()
 {
 	// we need to digitize image:(
 	alta->StopExposure (true);
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
 int
-Rts2DevCameraAlta::readoutOneLine ()
+Alta::readoutOneLine ()
 {
 	int ret;
 
@@ -189,7 +195,7 @@ Rts2DevCameraAlta::readoutOneLine ()
 
 
 int
-Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == bitDepth)
 	{
@@ -207,12 +213,12 @@ Rts2DevCameraAlta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return 0;
 	}
 
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
-Rts2DevCameraAlta::Rts2DevCameraAlta (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Alta::Alta (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -248,7 +254,7 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
+Alta::~Alta (void)
 {
 	if (alta)
 	{
@@ -259,7 +265,7 @@ Rts2DevCameraAlta::~Rts2DevCameraAlta (void)
 
 
 int
-Rts2DevCameraAlta::processOption (int in_opt)
+Alta::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -270,17 +276,17 @@ Rts2DevCameraAlta::processOption (int in_opt)
 			nightCoolTemp->setValueFloat (atof (optarg));
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCameraAlta::init ()
+Alta::init ()
 {
 	int ret;
-	ret = Rts2DevCamera::init ();
+	ret = Camera::init ();
 	if (ret)
 	{
 		return ret;
@@ -315,16 +321,7 @@ Rts2DevCameraAlta::init ()
 
 
 int
-Rts2DevCameraAlta::ready ()
-{
-	int ret;
-	ret = alta->read_Present ();
-	return (ret ? 0 : -1);
-}
-
-
-int
-Rts2DevCameraAlta::info ()
+Alta::info ()
 {
 	coolerStatus->setValueInteger (alta->read_CoolerStatus ());
 	coolerEnabled->setValueBool (alta->read_CoolerEnable ());
@@ -332,19 +329,19 @@ Rts2DevCameraAlta::info ()
 	tempCCD->setValueFloat (alta->read_TempCCD ());
 	tempAir->setValueFloat (alta->read_TempHeatsink ());
 	fanMode->setValueInteger (alta->read_FanMode ());
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraAlta::camChipInfo (int chip)
+Alta::camChipInfo (int chip)
 {
 	return 0;
 }
 
 
 int
-Rts2DevCameraAlta::setCoolTemp (float new_temp)
+Alta::setCoolTemp (float new_temp)
 {
 	alta->write_CoolerEnable (true);
 	alta->write_FanMode (Apn_FanMode_High);
@@ -354,7 +351,7 @@ Rts2DevCameraAlta::setCoolTemp (float new_temp)
 
 
 void
-Rts2DevCameraAlta::afterNight ()
+Alta::afterNight ()
 {
 	alta->write_CoolerEnable (false);
 	alta->write_FanMode (Apn_FanMode_Low);
@@ -365,6 +362,6 @@ Rts2DevCameraAlta::afterNight ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraAlta device = Rts2DevCameraAlta (argc, argv);
+	Alta device = Alta (argc, argv);
 	return device.run ();
 }

@@ -33,6 +33,11 @@
 // if we will use model corrections..
 #define COR_MODEL            0x08
 
+// pointing models
+#define POINTING_RADEC       0
+#define POINTING_ALTAZ       1
+#define POINTING_ALTALT      2
+
 namespace rts2telmodel
 {
 	class Model;
@@ -428,6 +433,15 @@ class Telescope:public Rts2Device
 		}
 
 		/**
+		 * Returns true if target was changed from last
+		 * sucessfull move command.
+		 */
+		bool targetChangeFromLastMove ()
+		{
+			return tarRaDec->wasChanged ();
+		}
+
+		/**
 		 * Return corrections in RA/HA.
 		 *
 		 * @return RA correction (in degrees).
@@ -495,6 +509,9 @@ class Telescope:public Rts2Device
 		 */
 		void getTargetAltAz (struct ln_hrz_posn *hrz);
 		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+
+		double getTargetHa ();
+		double getTargetHa (double jd);
 
 		double getLstDeg (double JD);
 

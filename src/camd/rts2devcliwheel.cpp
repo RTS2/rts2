@@ -20,20 +20,22 @@
 #include "rts2devcliwheel.h"
 #include "../utils/rts2command.h"
 
-Rts2DevClientFilterCamera::Rts2DevClientFilterCamera (Rts2Conn * conn):Rts2DevClientFilter
+using namespace rts2camd;
+
+ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):Rts2DevClientFilter
 (conn)
 {
 }
 
 
-Rts2DevClientFilterCamera::~Rts2DevClientFilterCamera (void)
+ClientFilterCamera::~ClientFilterCamera (void)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 }
 
 
 void
-Rts2DevClientFilterCamera::filterMoveEnd ()
+ClientFilterCamera::filterMoveEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 	Rts2DevClientFilter::filterMoveEnd ();
@@ -41,7 +43,7 @@ Rts2DevClientFilterCamera::filterMoveEnd ()
 
 
 void
-Rts2DevClientFilterCamera::filterMoveFailed (int status)
+ClientFilterCamera::filterMoveFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 	Rts2DevClientFilter::filterMoveFailed (status);
@@ -49,7 +51,7 @@ Rts2DevClientFilterCamera::filterMoveFailed (int status)
 
 
 void
-Rts2DevClientFilterCamera::postEvent (Rts2Event * event)
+ClientFilterCamera::postEvent (Rts2Event * event)
 {
 	struct filterStart *fs;
 	switch (event->getType ())

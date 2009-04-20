@@ -1729,7 +1729,7 @@ Rts2Conn::paramNextDouble (double *num)
 		return -1;
 	if (!strcmp (str_num, "nan"))
 	{
-		*num = nan ("f");
+		*num = rts2_nan ("f");
 		return 0;
 	}
 	ret = sscanf (str_num, "%lf", num);
@@ -1887,7 +1887,7 @@ Rts2Conn::getValueDouble (const char *value_name)
 	val = getValue (value_name);
 	if (val)
 		return val->getValueDouble ();
-	return nan ("f");
+	return rts2_nan ("f");
 }
 
 

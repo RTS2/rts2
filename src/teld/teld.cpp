@@ -294,6 +294,20 @@ Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 
 
 double
+Telescope::getTargetHa ()
+{
+	return getTargetHa (ln_get_julian_from_sys ());
+}
+
+
+double
+Telescope::getTargetHa (double jd)
+{
+	return ln_range_degrees (ln_get_apparent_sidereal_time (jd) - telRaDec->getRa ());
+}
+
+
+double
 Telescope::getLstDeg (double JD)
 {
 	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
@@ -944,13 +958,20 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	infoAll ();
 
+	tarRaDec->resetValueChanged ();
 	objRaDec->resetValueChanged ();
 	offsetRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
 
 	if (onlyCorrect)
 	{
-		logStream (MESSAGE_INFO) << "correcting to " << syncTo << " from " << syncFrom << sendLog;
+		LibnovaDegDist c_ra (corrRaDec->getRa ());
+		LibnovaDegDist c_dec (corrRaDec->getDec ());
+
+		logStream (MESSAGE_INFO) << "correcting to " << syncTo
+			<< " from " << syncFrom
+			<< " distances " << c_ra << " " << c_dec << sendLog;
+
 		maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | TEL_MASK_NEED_STOP | BOP_EXPOSURE,
 			TEL_CORRECTING | TEL_MOVING | BOP_EXPOSURE, "correction move started");
 	}

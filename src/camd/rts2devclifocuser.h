@@ -27,20 +27,26 @@
 
 #include "../utils/rts2devclient.h"
 
+namespace rts2camd
+{
+
 struct focuserMove
 {
 	char *focuserName;
 	int value;
 };
 
-class Rts2DevClientFocusCamera:public Rts2DevClientFocus
+class ClientFocusCamera:public Rts2DevClientFocus
 {
 	protected:
 		virtual void focusingEnd ();
 	public:
-		Rts2DevClientFocusCamera (Rts2Conn * in_connection);
-		virtual ~ Rts2DevClientFocusCamera (void);
+		ClientFocusCamera (Rts2Conn * in_connection);
+		virtual ~ ClientFocusCamera (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual void focusingFailed (int status);
 };
+
+};
+
 #endif							 /*! __RTS2_DEVCLI_FOCUSER__ */

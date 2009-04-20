@@ -26,10 +26,13 @@
 #define CMD_TEMP_GET          "FT"
 #define CMD_FOCUS_GOTO        "FG"
 
-#include "focuser.h"
+#include "focusd.h"
 #include "../utils/rts2connserial.h"
 
-class Rts2DevFocuserRobofocus:public Rts2DevFocuser
+namespace rts2focusd
+{
+
+class Robofocus:public Focusd
 {
 	private:
 		const char *device_file;
@@ -57,11 +60,10 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 			return false;
 		}
 	public:
-		Rts2DevFocuserRobofocus (int argc, char **argv);
-		~Rts2DevFocuserRobofocus (void);
+		Robofocus (int argc, char **argv);
+		~Robofocus (void);
 
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int stepOut (int num);
@@ -69,9 +71,11 @@ class Rts2DevFocuserRobofocus:public Rts2DevFocuser
 		virtual int setSwitch (int switch_num, int new_state);
 };
 
-Rts2DevFocuserRobofocus::Rts2DevFocuserRobofocus (int in_argc,
-char **in_argv):
-Rts2DevFocuser (in_argc, in_argv)
+};
+
+using namespace rts2focusd;
+
+Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 
@@ -85,14 +89,14 @@ Rts2DevFocuser (in_argc, in_argv)
 }
 
 
-Rts2DevFocuserRobofocus::~Rts2DevFocuserRobofocus ()
+Robofocus::~Robofocus ()
 {
   	delete robofocConn;
 }
 
 
 int
-Rts2DevFocuserRobofocus::processOption (int in_opt)
+Robofocus::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -100,7 +104,7 @@ Rts2DevFocuserRobofocus::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		default:
-			return Rts2DevFocuser::processOption (in_opt);
+			return Focusd::processOption (in_opt);
 	}
 	return 0;
 }
@@ -112,11 +116,11 @@ Rts2DevFocuserRobofocus::processOption (int in_opt)
  * @return 0 on succes, -1 & set errno otherwise
  */
 int
-Rts2DevFocuserRobofocus::init ()
+Robofocus::init ()
 {
 	int ret;
 
-	ret = Rts2DevFocuser::init ();
+	ret = Focusd::init ();
 
 	if (ret)
 		return ret;
@@ -142,23 +146,16 @@ Rts2DevFocuserRobofocus::init ()
 
 
 int
-Rts2DevFocuserRobofocus::ready ()
-{
-	return 0;
-}
-
-
-int
-Rts2DevFocuserRobofocus::initValues ()
+Robofocus::initValues ()
 {
 	focType = std::string ("ROBOFOCUS");
 	addConstValue ("switch_num", switchNum);
-	return Rts2DevFocuser::initValues ();
+	return Focusd::initValues ();
 }
 
 
 int
-Rts2DevFocuserRobofocus::info ()
+Robofocus::info ()
 {
 	getPos (focPos);
 	getTemp (focTemp);
@@ -166,12 +163,12 @@ Rts2DevFocuserRobofocus::info ()
 	int swstate = getSwitchState ();
 	if (swstate >= 0)
 		focSwitches->setValueInteger (swstate);
-	return Rts2DevFocuser::info ();
+	return Focusd::info ();
 }
 
 
 int
-Rts2DevFocuserRobofocus::getPos (Rts2ValueInteger * position)
+Robofocus::getPos (Rts2ValueInteger * position)
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -190,7 +187,7 @@ Rts2DevFocuserRobofocus::getPos (Rts2ValueInteger * position)
 
 
 int
-Rts2DevFocuserRobofocus::getTemp (Rts2ValueFloat * temp)
+Robofocus::getTemp (Rts2ValueFloat * temp)
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -210,7 +207,7 @@ Rts2DevFocuserRobofocus::getTemp (Rts2ValueFloat * temp)
 
 
 int
-Rts2DevFocuserRobofocus::getSwitchState ()
+Robofocus::getSwitchState ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -233,7 +230,7 @@ Rts2DevFocuserRobofocus::getSwitchState ()
 
 
 int
-Rts2DevFocuserRobofocus::stepOut (int num)
+Robofocus::stepOut (int num)
 {
 	if (num < 0)
 		return focus_move (CMD_FOCUS_MOVE_IN, -1 * num);
@@ -242,7 +239,7 @@ Rts2DevFocuserRobofocus::stepOut (int num)
 
 
 int
-Rts2DevFocuserRobofocus::setTo (int num)
+Robofocus::setTo (int num)
 {
 	char command[9], command_buf[10];
 	sprintf (command, "FG%06i", num);
@@ -255,7 +252,7 @@ Rts2DevFocuserRobofocus::setTo (int num)
 
 
 int
-Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
+Robofocus::setSwitch (int switch_num, int new_state)
 {
 	char command[10], rbuf[10];
 	char command_buffer[9] = "FP001111";
@@ -282,7 +279,7 @@ Rts2DevFocuserRobofocus::setSwitch (int switch_num, int new_state)
 
 
 int
-Rts2DevFocuserRobofocus::focus_move (const char *cmd, int steps)
+Robofocus::focus_move (const char *cmd, int steps)
 {
 	char command[10];
 	char command_buffer[9];
@@ -313,7 +310,7 @@ Rts2DevFocuserRobofocus::focus_move (const char *cmd, int steps)
 
 
 int
-Rts2DevFocuserRobofocus::isFocusing ()
+Robofocus::isFocusing ()
 {
 	char rbuf[10];
 	int ret;
@@ -335,7 +332,7 @@ Rts2DevFocuserRobofocus::isFocusing ()
 
 // Calculate checksum (according to RoboFocus spec.)
 void
-Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
+Robofocus::compute_checksum (char *cmd)
 {
 	int bytesum = 0;
 	unsigned int size, i;
@@ -352,6 +349,6 @@ Rts2DevFocuserRobofocus::compute_checksum (char *cmd)
 int
 main (int argc, char **argv)
 {
-	Rts2DevFocuserRobofocus device = Rts2DevFocuserRobofocus (argc, argv);
+	Robofocus device = Robofocus (argc, argv);
 	return device.run ();
 }

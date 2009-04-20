@@ -71,6 +71,9 @@ class Rts2XmlRpcd:public Rts2Device
 	private:
 		int rpcPort;
 	protected:
+#ifndef HAVE_PGSQL
+		virtual int willConnect (Rts2Address * _addr);
+#endif
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual void addSelectSocks ();
@@ -81,6 +84,18 @@ class Rts2XmlRpcd:public Rts2Device
 
 		virtual void message (Rts2Message & msg);
 };
+
+#ifndef HAVE_PGSQL
+int
+Rts2XmlRpcd::willConnect (Rts2Address *_addr)
+{
+       if (_addr->getType () < getDeviceType ()
+                || (_addr->getType () == getDeviceType ()
+                && strcmp (_addr->getName (), getDeviceName ()) < 0))
+                return 1;
+        return 0;
+}
+#endif
 
 int
 Rts2XmlRpcd::processOption (int in_opt)
@@ -639,8 +654,17 @@ class ListImages: public XmlRpcServerMethod
 			int i = 0;
 			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
+				double eRa, eDec, eRad;
+				eRa = eDec = eRad = nan ("f");
 				Rts2Image *image = *img_iter;
 				retVar["filename"] = image->getFileName ();
+				retVar["start"] = image->getExposureStart ();
+				retVar["exposure"] = image->getExposureLength ();
+				retVar["filter"] = image->getFilter ();
+				image->getError (eRa, eDec, eRad);
+				retVar["error_ra"] = eRa;
+				retVar["error_dec"] = eDec;
+				retVar["error_pos"] = eRad;
 				result[i++] = retVar;
 			}
 		}

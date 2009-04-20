@@ -53,6 +53,9 @@ using namespace std;
 
 #define OPT_ANDOR_ROOT        OPT_LOCAL + 1
 
+namespace rts2camd
+{
+
 /**
  * Andor camera, as seen by the outside world.
  *
@@ -61,7 +64,7 @@ using namespace std;
  * respond reasonably well to the absence of iXon features
  *
  */
-class Rts2DevCameraAndor:public Rts2DevCamera
+class Andor:public Camera
 {
 	private:
 		char *andorRoot;
@@ -143,8 +146,8 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual int readoutOneLine ();
 
 	public:
-		Rts2DevCameraAndor (int argc, char **argv);
-		virtual ~Rts2DevCameraAndor (void);
+		Andor (int argc, char **argv);
+		virtual ~Andor (void);
 
 		virtual int initChips ();
 		virtual int init ();
@@ -152,7 +155,6 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual bool supportFrameTransfer ();
 
 		// callback functions for Camera alone
-		virtual int ready ();
 		virtual int info ();
 		virtual int scriptEnds ();
 		virtual int camChipInfo (int chip);
@@ -160,17 +162,21 @@ class Rts2DevCameraAndor:public Rts2DevCamera
 		virtual void afterNight ();
 };
 
+};
+
+using namespace rts2camd;
+
 int
-Rts2DevCameraAndor::stopExposure ()
+Andor::stopExposure ()
 {
 	AbortAcquisition ();
 	FreeInternalMemory ();
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
 long
-Rts2DevCameraAndor::isExposing ()
+Andor::isExposing ()
 {
 	int status;
 	int ret;
@@ -231,7 +237,7 @@ Rts2DevCameraAndor::isExposing ()
 		incExposureNumber ();
 		return 100;
 	}
-	if ((ret = Rts2DevCamera::isExposing ()) != 0)
+	if ((ret = Camera::isExposing ()) != 0)
 		return ret;
 	if (GetStatus (&status) != DRV_SUCCESS)
 		return -1;
@@ -254,7 +260,7 @@ Rts2DevCameraAndor::isExposing ()
 // the entire image from the camera (into dest).  Subsequent calls return
 // lines from dest.
 int
-Rts2DevCameraAndor::readoutOneLine ()
+Andor::readoutOneLine ()
 {
 	int ret;
 	switch (getDataType ())
@@ -291,22 +297,22 @@ Rts2DevCameraAndor::readoutOneLine ()
 
 
 bool
-Rts2DevCameraAndor::supportFrameTransfer ()
+Andor::supportFrameTransfer ()
 {
 	return useFT->getValueBool () && (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER) && useRunTillAbort->getValueBool ();
 }
 
 
 void
-Rts2DevCameraAndor::closeShutter ()
+Andor::closeShutter ()
 {
 	SetShutter (1, ANDOR_SHUTTER_CLOSED, 50, 50);
 	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
 }
 
 
-Rts2DevCameraAndor::Rts2DevCameraAndor (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Andor::Andor (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempCCD ();
 	createTempSet ();
@@ -379,26 +385,26 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraAndor::~Rts2DevCameraAndor (void)
+Andor::~Andor (void)
 {
 	ShutDown ();
 }
 
 
 void
-Rts2DevCameraAndor::help ()
+Andor::help ()
 {
 	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl;
 	std::
 		cout <<
 		"Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1, those are default"
 		<< std::endl;
-	Rts2DevCamera::help ();
+	Camera::help ();
 }
 
 
 int
-Rts2DevCameraAndor::setGain (int in_gain)
+Andor::setGain (int in_gain)
 {
 	int ret;
 	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
@@ -412,7 +418,7 @@ Rts2DevCameraAndor::setGain (int in_gain)
 
 
 int
-Rts2DevCameraAndor::setADChannel (int in_adchan)
+Andor::setADChannel (int in_adchan)
 {
 	int ret;
 	if ((ret = SetADChannel (in_adchan)) != DRV_SUCCESS)
@@ -427,7 +433,7 @@ Rts2DevCameraAndor::setADChannel (int in_adchan)
 
 
 int
-Rts2DevCameraAndor::setVSAmplitude (int in_vsamp)
+Andor::setVSAmplitude (int in_vsamp)
 {
 	int ret;
 	if ((ret = SetVSAmplitude (in_vsamp)) != DRV_SUCCESS)
@@ -442,7 +448,7 @@ Rts2DevCameraAndor::setVSAmplitude (int in_vsamp)
 
 
 int
-Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
+Andor::setHSSpeed (int in_amp, int in_hsspeed)
 {
 	int ret;
 	// check if channel is correct
@@ -473,7 +479,7 @@ Rts2DevCameraAndor::setHSSpeed (int in_amp, int in_hsspeed)
 
 
 int
-Rts2DevCameraAndor::setVSSpeed (int in_vsspeed)
+Andor::setVSSpeed (int in_vsspeed)
 {
 	int ret;
 	if ((ret = SetVSSpeed (in_vsspeed)) != DRV_SUCCESS)
@@ -488,7 +494,7 @@ Rts2DevCameraAndor::setVSSpeed (int in_vsspeed)
 
 
 int
-Rts2DevCameraAndor::setFTShutter (bool force)
+Andor::setFTShutter (bool force)
 {
 	FTShutter->setValueBool (force);
 	return 0;
@@ -496,7 +502,7 @@ Rts2DevCameraAndor::setFTShutter (bool force)
 
 
 int
-Rts2DevCameraAndor::setAcquisitionMode (int mode)
+Andor::setAcquisitionMode (int mode)
 {
 	if (SetAcquisitionMode (mode) != DRV_SUCCESS)
 		return -1;
@@ -506,25 +512,25 @@ Rts2DevCameraAndor::setAcquisitionMode (int mode)
 
 
 void
-Rts2DevCameraAndor::cancelPriorityOperations ()
+Andor::cancelPriorityOperations ()
 {
 	if (!isnan (defaultGain) && gain)
 		setGain (defaultGain);
-	Rts2DevCamera::cancelPriorityOperations ();
+	Camera::cancelPriorityOperations ();
 }
 
 
 void
-Rts2DevCameraAndor::initDataTypes ()
+Andor::initDataTypes ()
 {
-	Rts2DevCamera::initDataTypes ();
+	Camera::initDataTypes ();
 	addDataType (RTS2_DATA_LONG);
 	addDataType (RTS2_DATA_FLOAT);
 }
 
 
 int
-Rts2DevCameraAndor::startExposure ()
+Andor::startExposure ()
 {
 	int ret;
 
@@ -628,15 +634,15 @@ Rts2DevCameraAndor::startExposure ()
 // scriptEnds
 // Ensure that we definitely leave the shutter closed.
 int
-Rts2DevCameraAndor::scriptEnds ()
+Andor::scriptEnds ()
 {
 	//	closeShutter ();
-	return Rts2DevCamera::scriptEnds ();
+	return Camera::scriptEnds ();
 }
 
 
 int
-Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == gain)
 		return setGain (new_value->getValueInteger ());
@@ -699,12 +705,12 @@ Rts2DevCameraAndor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return SetFanMode (new_value->getValueInteger ()) == DRV_SUCCESS ? 0 : -2;
 	}
 
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
 int
-Rts2DevCameraAndor::processOption (int in_opt)
+Andor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -728,7 +734,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
 		case 'S':
 			shutter_with_ft = true;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
@@ -744,7 +750,7 @@ Rts2DevCameraAndor::processOption (int in_opt)
  */
 
 void
-Rts2DevCameraAndor::printCapabilities ()
+Andor::printCapabilities ()
 {
 	printf ("Acquisition modes: ");
 	if (cap.ulAcqModes == 0)
@@ -824,7 +830,7 @@ Rts2DevCameraAndor::printCapabilities ()
  */
 
 int
-Rts2DevCameraAndor::printNumberADCs ()
+Andor::printNumberADCs ()
 {
 	int ret, n_ad;
 	if ((ret = GetNumberADChannels (&n_ad)) != DRV_SUCCESS)
@@ -857,7 +863,7 @@ Rts2DevCameraAndor::printNumberADCs ()
 
 
 int
-Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
+Andor::printHSSpeeds (int camera_type, int ad, int amp)
 {
 	int ret;
 	int nhs, npreamps;
@@ -923,7 +929,7 @@ Rts2DevCameraAndor::printHSSpeeds (int camera_type, int ad, int amp)
 
 
 int
-Rts2DevCameraAndor::printVSSpeeds ()
+Andor::printVSSpeeds ()
 {
 	int ret, vspeeds;
 	if ((ret = GetNumberVSSpeeds (&vspeeds)) != DRV_SUCCESS)
@@ -948,7 +954,7 @@ Rts2DevCameraAndor::printVSSpeeds ()
 
 
 int
-Rts2DevCameraAndor::printInfo ()
+Andor::printInfo ()
 {
 	int ret;
 	int n_ad, n_amp;
@@ -1007,7 +1013,7 @@ Rts2DevCameraAndor::printInfo ()
 
 
 int
-Rts2DevCameraAndor::initChips ()
+Andor::initChips ()
 {
 	int ret;
 	float x_um, y_um;
@@ -1056,12 +1062,12 @@ Rts2DevCameraAndor::initChips ()
 
 
 int
-Rts2DevCameraAndor::init ()
+Andor::init ()
 {
 	unsigned long err;
 	int ret;
 
-	if ((ret = Rts2DevCamera::init ()) != 0)
+	if ((ret = Camera::init ()) != 0)
 		return ret;
 
 	err = Initialize (andorRoot);
@@ -1126,7 +1132,7 @@ Rts2DevCameraAndor::init ()
 
 
 void
-Rts2DevCameraAndor::initAndorValues ()
+Andor::initAndorValues ()
 {
 	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
 	{
@@ -1176,15 +1182,8 @@ Rts2DevCameraAndor::initAndorValues ()
 }
 
 
-int
-Rts2DevCameraAndor::ready ()
-{
-	return 0;
-}
-
-
 void
-Rts2DevCameraAndor::getTemp ()
+Andor::getTemp ()
 {
 	int c_status;
 	float tmpTemp;
@@ -1228,25 +1227,25 @@ Rts2DevCameraAndor::getTemp ()
 
 
 int
-Rts2DevCameraAndor::info ()
+Andor::info ()
 {
 	if (isIdle ())
 	{
 		getTemp ();
 	}
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraAndor::camChipInfo (int chip)
+Andor::camChipInfo (int chip)
 {
 	return 0;
 }
 
 
 int
-Rts2DevCameraAndor::setCoolTemp (float new_temp)
+Andor::setCoolTemp (float new_temp)
 {
 	int status;
 	status = CoolerON ();
@@ -1267,7 +1266,7 @@ Rts2DevCameraAndor::setCoolTemp (float new_temp)
 
 
 void
-Rts2DevCameraAndor::afterNight ()
+Andor::afterNight ()
 {
 	CoolerOFF ();
 	SetTemperature (20);
@@ -1279,6 +1278,6 @@ Rts2DevCameraAndor::afterNight ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraAndor device = Rts2DevCameraAndor (argc, argv);
+	Andor device = Andor (argc, argv);
 	return device.run ();
 }

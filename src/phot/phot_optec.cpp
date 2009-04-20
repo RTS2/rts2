@@ -41,10 +41,6 @@ class Rts2DevPhotOptec:public Rts2DevPhot
 
 		virtual long getCount ();
 
-		virtual int ready ()
-		{
-			return 0;
-		};
 		virtual int baseInfo ()
 		{
 			return 0;

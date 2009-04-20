@@ -1,12 +1,14 @@
 SUBDIRS = 
 
-bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy
+bin_PROGRAMS = rts2-focusd-optec rts2-focusd-robofocus rts2-focusd-dummy rts2-focusd-opentpl
 
-noinst_HEADERS = focuser.h
+noinst_HEADERS = focusd.h
 
-EXTRA_DIST = focusd.cpp
+noinst_LIBRARIES = librts2focusd.a
 
-LDADD = focusd.o ../utils/librts2block.a
+librts2focusd_a_SOURCES = focusd.cpp
+
+LDADD = librts2focusd.a ../utils/librts2block.a
 
 rts2_focusd_optec_SOURCES = optec.cpp
 
@@ -14,12 +16,9 @@ rts2_focusd_robofocus_SOURCES = robofocus.cpp
 
 rts2_focusd_dummy_SOURCES = dummy.cpp
 
-if OPENTPL
-bin_PROGRAMS += rts2-focusd-ir
-rts2_focusd_ir_SOURCES = ir.cpp
-rts2_focusd_ir_LDFLAGS = @LIB_OPENTPL@ @LIB_PTHREAD@ @LIB_M@ @LIB_CFITSIO@ @LIB_NOVA@
-rts2_focusd_ir_CPPFLAGS = -D HAVE_SYS_IPC_H -fpermissive @INC_OPENTPL@
-endif
+rts2_focusd_opentpl_SOURCES = opentpl.cpp
+rts2_focusd_opentpl_LDFLAGS = @LIB_NOVA@
+rts2_focusd_opentpl_CPPFLAGS = @NOVA_CFLAGS@
 
 if FLI
 bin_PROGRAMS += rts2-focusd-fli

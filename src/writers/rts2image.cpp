@@ -33,6 +33,8 @@
 #include <iomanip>
 #include <sstream>
 
+using namespace rts2image;
+
 void
 Rts2Image::initData ()
 {
@@ -393,9 +395,7 @@ std::string Rts2Image::expandVariable (std::string expression)
 	g_ret = getValue (expression.c_str (), valB, 200, true);
 	if (g_ret)
 	{
-		ret = '$';
-		ret += expression;
-		ret += '$';
+		return Rts2Expander::expandVariable (expression);
 	}
 	else
 	{
@@ -986,6 +986,20 @@ bool required, char *comment)
 }
 
 
+double
+Rts2Image::getValue (const char *name)
+{
+	double ret;
+	fits_read_key_dbl (getFitsFile (), (char *) name, &ret, NULL, &fits_status);
+	if (fits_status != 0)
+	{
+		fits_status = 0;
+		throw KeyNotFound (this, name);
+	}
+	return ret;
+}
+
+
 int
 Rts2Image::getValues (const char *name, int *values, int num, bool required,
 int nstart)
@@ -1043,15 +1057,15 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
 	if (!getFitsFile ())
 		return 0;
-	writePhysical (im_h->x, im_h->y, im_h->binnings[0], im_h->binnings[1]);
-	filter_i = im_h->filter;
-	setValue ("CAM_FILT", filter_i, "filter used for image");
-	setValue ("SHUTTER", im_h->shutter,
+	writePhysical (ntohs (im_h->x), ntohs (im_h->y), ntohs (im_h->binnings[0]), ntohs (im_h->binnings[1]));
+	filter_i = ntohs (im_h->filter);
+	setValue ("CAM_FILT", ntohs (filter_i), "filter used for image");
+	setValue ("SHUTTER", ntohs (im_h->shutter),
 		"shutter state (1 - open, 2 - closed, 3 - synchro)");
 	setValue ("SUBEXP", im_h->subexp, "subexposure length");
-	setValue ("NACC", im_h->nacc, "number of accumulations");
+	setValue ("NACC", ntohs (im_h->nacc), "number of accumulations");
 	// dark images don't need to wait till imgprocess will pick them up for reprocessing
-	switch (im_h->shutter)
+	switch (ntohs (im_h->shutter))
 	{
 		case 0:
 			shutter = SHUT_OPENED;
@@ -1089,16 +1103,16 @@ Rts2Image::writeDate (char *in_data, char *fullTop)
 
 	im_h = (struct imghdr *) in_data;
 	// we have to copy data to FITS anyway, so let's do it right now..
-	if (im_h->naxes != 2)
+	if (ntohs (im_h->naxes) != 2)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Image::writeDate not 2D image " << im_h->naxes << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2Image::writeDate not 2D image " << ntohs (im_h->naxes) << sendLog;
 		return -1;
 	}
 	flags |= IMAGE_SAVE;
-	imageType = im_h->data_type;
+	imageType = ntohs (im_h->data_type);
 
-	naxis[0] = im_h->sizes[0];
-	naxis[1] = im_h->sizes[1];
+	naxis[0] = ntohl (im_h->sizes[0]);
+	naxis[1] = ntohl (im_h->sizes[1]);
 
 	delete[]imageData;
 
@@ -1164,11 +1178,11 @@ Rts2Image::writeDate (char *in_data, char *fullTop)
 
 	if (imageType == RTS2_DATA_SBYTE)
 	{
-		fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, im_h->naxes, naxis, &fits_status);
+		fits_resize_img (getFitsFile (), RTS2_DATA_BYTE, ntohs (im_h->naxes), naxis, &fits_status);
 	}
 	else
 	{
-		fits_resize_img (getFitsFile (), imageType, im_h->naxes, naxis, &fits_status);
+		fits_resize_img (getFitsFile (), imageType, ntohs (im_h->naxes), naxis, &fits_status);
 	}
 	if (fits_status)
 	{

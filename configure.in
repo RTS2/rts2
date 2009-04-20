@@ -9,12 +9,56 @@ AM_MAINTAINER_MODE
 
 # Checks for programs.
 AC_PROG_CXX
+AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
 # check for lang
 AC_LANG_CPLUSPLUS
 
-AC_PROG_LIBTOOL
+CFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CFLAGS)
+CXXFLAGS="-Wall -Wshadow -g"
+AC_SUBST(CXXFLAGS)
+
+AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
+LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
+**** You don't have math library.
+**** Please install one and make sure, that it is available. 
+EOF
+exit 1])
+
+AC_CHECK_LIB(socket, socket)
+AC_CHECK_LIB(nsl, gethostbyname)
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_MALLOC
+AC_FUNC_MKTIME
+AC_TYPE_SIGNAL
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf])
+
+AC_CHECK_HEADERS([limits.h]) 
+AC_FUNC_CHOWN 
+AC_FUNC_MEMCMP
+AC_FUNC_SELECT_ARGTYPES 
+AC_FUNC_STAT
+AC_FUNC_STRFTIME 
+AC_FUNC_VPRINTF 
+AC_TYPE_MODE_T
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS([argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
 
 AC_ARG_ENABLE(focusing,
 [  --disable-focusing      disables focusing in camd (=>camd doesn't need cfitsio to build)],
@@ -100,6 +144,17 @@ AC_ARG_WITH(wcs,
 esac],[libwcs=yes])
 
 
+# check for EPICS
+AC_ARG_WITH(epics,
+[  --with-epics 	path to EPICS library, build epics dependent binaries],
+[case "${withval}" in
+	yes) epics=yes ;;
+	no)  epics=no ;;
+	*) epics=${withval} ;;
+esac],[epics=no])
+
+AM_CONDITIONAL(EPICS, test x$epics != xno)
+
 AC_ARG_WITH(sbig,
 [  --with-sbig             path to SBIG USB CCD driver, build SBIG USB CCD driver],
 SBIG="${withval}";
@@ -170,19 +225,6 @@ AM_CONDITIONAL(FLI, test x$FLI != xno)
 AC_SUBST(FLI)
 AC_SUBST(LIB_FLI)
 AC_SUBST(INC_FLI)
-
-# check for OPENTPL
-AC_ARG_WITH(opentpl,
-[  --with-opentpl          path to OPEN TPL mount driver, build IR driver],
-OPENTPL="${withval}";
-LIB_OPENTPL="-L${OPENTPL}/lib -lssl -lopentpl -lttcommon";
-INC_OPENTPL="-I${OPENTPL}/include",
-[OPENTPL=no])
-
-AM_CONDITIONAL(OPENTPL, test x$OPENTPL != xno)
-AC_SUBST(OPENTPL)
-AC_SUBST(LIB_OPENTPL)
-AC_SUBST(INC_OPENTPL)
 
 # check for COMEDI
 AC_ARG_WITH(comedi,
@@ -273,16 +315,6 @@ AC_DEFINE_UNQUOTED(CENTRALD_PORT, "$CENTRALD_PORT", [Default centrald port])
 
 
 # Checks for libraries.
-
-AC_CHECK_LIB([m], [sqrt], LIB_M="-lm";
-LIBS="${LIBS} -lm"; AC_SUBST(LIB_M), [cat << EOF
-**** You don't have math library.
-**** Please install one and make sure, that it is available. 
-EOF
-exit 1])
-
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(nsl, gethostbyname)
 
 if test "x${cfitsio}" != "xno"; then
   if test "x${cfitsio}" != "xyes"; then
@@ -409,7 +441,42 @@ if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF
 **** You don't have comedi library installed.
-**** Please try to get it somewhere.
+**** Please download it from http://www.comedi.org
+EOF
+	exit 1])
+fi
+
+if test "x$epics" != "xno"; then
+  	if test "x$epics" != "xyes"; then
+		if test "x$EPICS_HOST_ARCH" = "x"; then
+		  	cat << EOF
+**** Please define EPICS_HOST_ARCH varible. It content should be same as
+**** the variable you used when you build EPICS library.
+EOF
+			exit 1
+		fi
+		LDFLAGS="${LDFLAGS} -L${epics}/lib/${EPICS_HOST_ARCH}"
+		LIB_EPICS="-L${epics}/lib/${EPICS_HOST_ARCH} -lca"
+		if echo $EPICS_HOST_ARCH | grep ^linux; then
+			INC_EPICS="-I${epics}/include -I${epics}/include/os/Linux"
+		else
+		if echo $EPICS_HOST_ARCH | grep ^solaris; then
+			INC_EPICS="-I${epics}/include -I${epics}/include/os/solaris"
+		else
+		  	echo "**** Unsupported EPICS_HOST_ARCH argument ${EPICS_HOST_ARCH}"
+			exit 1
+		fi
+		fi
+		AC_SUBST(INC_EPICS)
+	else
+		LIB_EPICS="-lca"
+		INC_EPICS=""
+	fi
+	AC_CHECK_LIB([ca], [ca_context_create],
+	AC_SUBST(LIB_EPICS),
+	[cat << EOF
+**** You don't have epics library installed.
+**** Please try to get it from http://www.aps.anl.gov/epics
 EOF
 	exit 1])
 fi
@@ -423,31 +490,12 @@ else
 	AC_MSG_RESULT($DATE)
 fi
 
-AC_SUBST(DATE)
-
-#debug="-DDEBUG"
-debug=""
-AC_SUBST(debug)
-
-CFLAGS="-Wall -Wshadow -g"
-AC_SUBST(CFLAGS)
-CXXFLAGS="-Wall -Wshadow -g"
-AC_SUBST(CXXFLAGS)
-
-LDFLAGS=""
 AC_SUBST(LDFLAGS)
 
-# Checks for header files.
-AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+AC_SUBST(DATE)
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_PID_T
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
-AC_STRUCT_TM
+debug=""
+AC_SUBST(debug)
 
 AH_TEMPLATE([HAVE_PGSQL],[Whenever PGSQL is installed])
 AH_TEMPLATE([HAVE_PGSQL_8], [If PGSQL version is 8 or higher])
@@ -485,24 +533,6 @@ AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap = xyes )
 if test x$psql = xyes -a x$gsoap = xyes ; then 
   AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
 fi
-
-# Checks for library functions.
-AC_FUNC_FORK
-AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
-AC_FUNC_MKTIME
-AC_TYPE_SIGNAL
-AC_FUNC_STRTOD
-AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf])
-
-AC_CHECK_HEADERS([limits.h]) 
-AC_FUNC_CHOWN 
-AC_FUNC_MEMCMP
-AC_FUNC_SELECT_ARGTYPES 
-AC_FUNC_STAT
-AC_FUNC_STRFTIME 
-AC_FUNC_VPRINTF 
-AC_TYPE_MODE_T
 
 AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
@@ -570,6 +600,7 @@ echo "
   gsoap         ${gsoap}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
+  epics         ${epics}
 
 
 CCD's:
@@ -580,7 +611,6 @@ CCD's:
   fli           ${FLI}
 
 MOUNT's:
-  opentpl       ${OPENTPL}
   paralib       ${PARALIB}
 
 DOME's:

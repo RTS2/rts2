@@ -26,10 +26,10 @@ void
 Rts2ValueDoubleStat::clearStat ()
 {
 	numMes = 0;
-	mode = nan ("f");
-	min = nan ("f");
-	max = nan ("f");
-	stdev = nan ("f");
+	mode = rts2_nan ("f");
+	min = rts2_nan ("f");
+	max = rts2_nan ("f");
+	stdev = rts2_nan ("f");
 	valueList.clear ();
 }
 

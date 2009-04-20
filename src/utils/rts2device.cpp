@@ -585,11 +585,7 @@ Rts2Device::createConnection (int in_sock)
 int
 Rts2Device::commandAuthorized (Rts2Conn * conn)
 {
-	if (conn->isCommand ("ready"))
-	{
-		return ready (conn);
-	}
-	else if (conn->isCommand ("info"))
+	if (conn->isCommand ("info"))
 	{
 		return info (conn);
 	}
@@ -947,13 +943,6 @@ Rts2Device::sendMasters (const char *msg)
 }
 
 
-int
-Rts2Device::ready ()
-{
-	return -1;
-}
-
-
 void
 Rts2Device::centraldConnRunning (Rts2Conn *conn)
 {
@@ -996,20 +985,6 @@ int
 Rts2Device::scriptEnds ()
 {
 	loadValues ();
-	return 0;
-}
-
-
-int
-Rts2Device::ready (Rts2Conn * conn)
-{
-	int ret;
-	ret = ready ();
-	if (ret)
-	{
-		conn->sendCommandEnd (DEVDEM_E_HW, "device not ready");
-		return -1;
-	}
 	return 0;
 }
 

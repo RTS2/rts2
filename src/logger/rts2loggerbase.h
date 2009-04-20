@@ -21,6 +21,7 @@
 #include "../utils/rts2displayvalue.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2expander.h"
+#include "../utils/utilsfunc.h"
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800
 

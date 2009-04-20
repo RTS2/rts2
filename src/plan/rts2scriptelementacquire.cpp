@@ -17,11 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2connimgprocess.h"
+#include "connimgprocess.h"
 #include "rts2scriptelementacquire.h"
 
 #include "../writers/rts2devclifoc.h"
 #include "../utils/rts2config.h"
+
+using namespace rts2plan;
 
 Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script,
 double in_precision,
@@ -166,7 +168,7 @@ int
 Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 {
 	int ret;
-	Rts2ConnImgProcess *processor;
+	ConnImgProcess *processor;
 
 	if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
 	{
@@ -178,7 +180,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 	}
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
-	processor = new Rts2ConnImgProcess (script->getMaster (),
+	processor = new ConnImgProcess (script->getMaster (),
 		defaultImgProccess.c_str (), image->getFileName (),
 		Rts2Config::instance ()->getAstrometryTimeout ()
 		);

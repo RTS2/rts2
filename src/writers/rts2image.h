@@ -260,6 +260,15 @@ class Rts2Image:public Rts2FitsFile
 		int getValue (const char *name, char *value, int valLen, bool required = false, char *comment = NULL);
 		int getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
 
+		/**
+		 * Get double value from image.
+		 *
+		 * @param name Value name.
+		 * @return Value
+		 * @throw KeyNotFound
+		 */
+		double getValue (const char *name);
+
 		int getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
 		int getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
 		int getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
@@ -581,6 +590,17 @@ class Rts2Image:public Rts2FitsFile
 		int getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name);
 
 		/**
+		 * Return libnova RA DEC with coordinates.
+		 *
+		 * @param prefix String prefixin RADEC coordinate. Suffix is RA and DEC.
+		 *
+		 * @return LibnovaRaDec object with coordinates.
+		 *
+		 * @throw KeyNotFound
+		 */
+		LibnovaRaDec getCoord (const char *prefix);
+
+		/**
 		 * Get object coordinates. Object coordinates are
 		 * J2000 coordinates of object which observer would like to
 		 * observe.
@@ -692,6 +712,35 @@ class Rts2Image:public Rts2FitsFile
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);
+
+namespace rts2image
+{
+
+/**
+ * Thrown where we cannot find header in the image.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class KeyNotFound
+{
+	private:
+		const char *fileName;
+		const char *header;
+	public:
+		KeyNotFound (Rts2Image *_image, const char *_header)
+		{
+			header = _header;
+			fileName = _image->getFileName ();
+		}
+		
+		friend std::ostream & operator << (std::ostream &_os, KeyNotFound &_err)
+		{
+			_os << "keyword " << _err.header << " missing in fits file " << _err.fileName;
+			return _os;
+		}
+};
+
+};
 
 //Rts2Image & operator - (Rts2Image & img_1, Rts2Image & img_2);
 //Rts2Image & operator + (Rts2Image & img_, Rts2Image & img_2);

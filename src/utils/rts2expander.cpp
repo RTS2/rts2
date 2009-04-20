@@ -186,9 +186,8 @@ std::string Rts2Expander::expandVariable (char var)
 std::string Rts2Expander::expandVariable (std::string expression)
 {
 	std::string ret;
-	ret = '$';
+	ret = '@';
 	ret += expression;
-	ret += '$';
 	return ret;
 }
 
@@ -197,8 +196,7 @@ std::string Rts2Expander::expand (std::string expression)
 {
 	std::string ret = "";
 	std::string exp;
-	for (std::string::iterator iter = expression.begin ();
-		iter != expression.end (); iter++)
+	for (std::string::iterator iter = expression.begin (); iter != expression.end (); iter++)
 	{
 		switch (*iter)
 		{
@@ -210,19 +208,12 @@ std::string Rts2Expander::expand (std::string expression)
 				}
 				break;
 				// that one enables to copy values from image header to expr
-			case '$':
+			case '@':
 				exp = "";
-				for (iter++; (iter != expression.end ()) && (*iter != '$'); iter++)
+				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-'); iter++)
 					exp += *iter;
-				if (iter == expression.end ())
-				{
-					ret += '$';
-					ret += exp;
-				}
-				else
-				{
-					ret += expandVariable (exp);
-				}
+				iter--;
+				ret += expandVariable (exp);
 				break;
 			default:
 				ret += *iter;

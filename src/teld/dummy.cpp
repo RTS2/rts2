@@ -17,12 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
-#include <libnova/libnova.h>
-
 #include "telescope.h"
 #include "../utils/rts2config.h"
 
@@ -39,6 +33,24 @@ class Dummy:public Telescope
 		struct ln_equ_posn dummyPos;
 		long countLong;
 	protected:
+
+		virtual int initValues ()
+		{
+			Rts2Config *config;
+			config = Rts2Config::instance ();
+			config->loadFile ();
+			telLatitude->setValueDouble (config->getObserver ()->lat);
+			telLongitude->setValueDouble (config->getObserver ()->lng);
+			telAltitude->setValueDouble (config->getObservatoryAltitude ());
+			strcpy (telType, "Dummy");
+			return Telescope::initValues ();
+		}
+
+		virtual int info ()
+		{
+			setTelRaDec (dummyPos.ra, dummyPos.dec);
+			return Telescope::info ();
+		}
 
 		virtual int isMoving ()
 		{
@@ -63,29 +75,6 @@ class Dummy:public Telescope
 		{
 			dummyPos.ra = 0;
 			dummyPos.dec = 0;
-		}
-
-		virtual int initValues ()
-		{
-			Rts2Config *config;
-			config = Rts2Config::instance ();
-			config->loadFile ();
-			telLatitude->setValueDouble (config->getObserver ()->lat);
-			telLongitude->setValueDouble (config->getObserver ()->lng);
-			telAltitude->setValueDouble (config->getObservatoryAltitude ());
-			strcpy (telType, "Dummy");
-			return Telescope::initValues ();
-		}
-
-		virtual int ready ()
-		{
-			return 0;
-		}
-
-		virtual int info ()
-		{
-			setTelRaDec (dummyPos.ra, dummyPos.dec);
-			return Telescope::info ();
 		}
 
 		virtual int startMove ()

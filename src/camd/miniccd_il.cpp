@@ -25,7 +25,10 @@
 #include "../utils/rts2device.h"
 
 
-class Rts2DevCameraMiniccdIl:public Rts2DevCamera
+namespace rts2camd
+{
+
+class MiniccdIl:public Camera
 {
 	private:
 		int fd_ccd;
@@ -73,17 +76,19 @@ class Rts2DevCameraMiniccdIl:public Rts2DevCamera
 		virtual int stopExposure ();
 		virtual int readoutOneLine ();
 	public:
-		Rts2DevCameraMiniccdIl (int argc, char **argv);
-		virtual ~ Rts2DevCameraMiniccdIl (void);
+		MiniccdIl (int argc, char **argv);
+		virtual ~ MiniccdIl (void);
 
-		virtual int ready ();
 		virtual int setCoolTemp (float new_temp);
 		virtual int camFilter (int new_filter);
 };
 
+};
+
+using namespace rts2camd;
 
 void
-Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
+MiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 {
 	uint16_t *rtop = (uint16_t *) dataBuffer;
 	for (int r = 0; r < chipUsedReadout->getHeightInt () / 2; r++)
@@ -257,7 +262,7 @@ Rts2DevCameraMiniccdIl::doBinning (uint16_t * row1, uint16_t * row2)
 
 
 int
-Rts2DevCameraMiniccdIl::initChips ()
+MiniccdIl::initChips ()
 {
 	int in_width;
 	int in_height;
@@ -277,7 +282,7 @@ Rts2DevCameraMiniccdIl::initChips ()
 		if (fd_chip[i] < 0)
 		{
 			logStream (MESSAGE_ERROR)
-				<< "Rts2DevCameraMiniccdIl::initChips cannot open device file " << chip_name << ": " <<
+				<< "MiniccdIl::initChips cannot open device file " << chip_name << ": " <<
 				strerror (errno) << sendLog;
 			return -1;
 		}
@@ -293,7 +298,7 @@ Rts2DevCameraMiniccdIl::initChips ()
 		if (msg_len != CCD_MSG_CCD_LEN)
 		{
 			logStream (MESSAGE_ERROR)
-				<< "Rts2DevCameraMiniccdIl::init CCD message length wrong: "
+				<< "MiniccdIl::init CCD message length wrong: "
 				<< msg_len << " " << strerror (errno) << sendLog;
 			return -1;
 		}
@@ -329,7 +334,7 @@ Rts2DevCameraMiniccdIl::initChips ()
 
 
 void
-Rts2DevCameraMiniccdIl::initDataTypes ()
+MiniccdIl::initDataTypes ()
 {
 	switch (sizeof_pixel)
 	{
@@ -344,7 +349,7 @@ Rts2DevCameraMiniccdIl::initDataTypes ()
 
 
 int
-Rts2DevCameraMiniccdIl::startChipExposure (int chip_id, int ccd_flags)
+MiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_EXP_LEN / CCD_ELEM_SIZE];
 	int exposure_msec = (int) (getExposure () * 1000);
@@ -376,7 +381,7 @@ Rts2DevCameraMiniccdIl::startChipExposure (int chip_id, int ccd_flags)
 
 
 int
-Rts2DevCameraMiniccdIl::startExposure ()
+MiniccdIl::startExposure ()
 {
 	int ret;
 
@@ -398,7 +403,7 @@ Rts2DevCameraMiniccdIl::startExposure ()
 
 
 long
-Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
+MiniccdIl::isChipExposing (int chip_id)
 {
   	fd_set set;
 	struct timeval read_tout;
@@ -466,7 +471,7 @@ Rts2DevCameraMiniccdIl::isChipExposing (int chip_id)
 }
 
 long
-Rts2DevCameraMiniccdIl::isExposing ()
+MiniccdIl::isExposing ()
 {
 	struct timeval now;
 	long ret;
@@ -509,7 +514,7 @@ Rts2DevCameraMiniccdIl::isExposing ()
 
 
 int
-Rts2DevCameraMiniccdIl::readoutOneLine ()
+MiniccdIl::readoutOneLine ()
 {
 	int ret;
 
@@ -538,7 +543,7 @@ Rts2DevCameraMiniccdIl::readoutOneLine ()
 
 
 void
-Rts2DevCameraMiniccdIl::stopChipExposure (int chip_id)
+MiniccdIl::stopChipExposure (int chip_id)
 {
 	CCD_ELEM_TYPE msg[CCD_MSG_ABORT_LEN / CCD_ELEM_SIZE];
 	/*
@@ -552,16 +557,16 @@ Rts2DevCameraMiniccdIl::stopChipExposure (int chip_id)
 }
 
 int
-Rts2DevCameraMiniccdIl::stopExposure ()
+MiniccdIl::stopExposure ()
 {
 	stopChipExposure (0);
 	stopChipExposure (1);
-	return Rts2DevCamera::stopExposure ();
+	return Camera::stopExposure ();
 }
 
 
-Rts2DevCameraMiniccdIl::Rts2DevCameraMiniccdIl (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+MiniccdIl::MiniccdIl (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	fd_ccd = -1;
 	device_file = NULL;
@@ -578,7 +583,7 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraMiniccdIl::~Rts2DevCameraMiniccdIl (void)
+MiniccdIl::~MiniccdIl (void)
 {
 	close (fd_ccd);
 	close (fd_chip[0]);
@@ -587,7 +592,7 @@ Rts2DevCameraMiniccdIl::~Rts2DevCameraMiniccdIl (void)
 
 
 int
-Rts2DevCameraMiniccdIl::processOption (int in_opt)
+MiniccdIl::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -595,19 +600,19 @@ Rts2DevCameraMiniccdIl::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		default:
-			return Rts2DevCamera::processOption (in_opt);
+			return Camera::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevCameraMiniccdIl::init ()
+MiniccdIl::init ()
 {
 	int ret;
 	int msg_len;
 
-	ret = Rts2DevCamera::init ();
+	ret = Camera::init ();
 	if (ret)
 		return ret;
 
@@ -618,7 +623,7 @@ Rts2DevCameraMiniccdIl::init ()
 	if (fd_ccd < 0)
 	{
 		logStream (MESSAGE_ERROR)
-			<< "Rts2DevCameraMiniccdIl::init Unable to open device: "
+			<< "MiniccdIl::init Unable to open device: "
 			<< device_file << " " << strerror (errno) << sendLog;
 		return -1;
 	}
@@ -670,14 +675,7 @@ Rts2DevCameraMiniccdIl::init ()
 
 
 int
-Rts2DevCameraMiniccdIl::ready ()
-{
-	return !(fd_ccd != -1);
-}
-
-
-int
-Rts2DevCameraMiniccdIl::setCoolTemp (float _temp)
+MiniccdIl::setCoolTemp (float _temp)
 {
 	if (!tempControl->getValueBool ())
 		return 0;
@@ -697,7 +695,7 @@ Rts2DevCameraMiniccdIl::setCoolTemp (float _temp)
 
 
 int
-Rts2DevCameraMiniccdIl::camFilter (int in_filter)
+MiniccdIl::camFilter (int in_filter)
 {
 	return 0;
 }
@@ -706,6 +704,6 @@ Rts2DevCameraMiniccdIl::camFilter (int in_filter)
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraMiniccdIl device = Rts2DevCameraMiniccdIl (argc, argv);
+	MiniccdIl device = MiniccdIl (argc, argv);
 	return device.run ();
 }

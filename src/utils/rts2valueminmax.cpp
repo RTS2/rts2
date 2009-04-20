@@ -23,8 +23,8 @@
 Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name)
 :Rts2ValueDouble (in_val_name)
 {
-	min = nan ("f");
-	max = nan ("f");
+	min = rts2_nan ("f");
+	max = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 
@@ -32,8 +32,8 @@ Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name)
 Rts2ValueDoubleMinMax::Rts2ValueDoubleMinMax (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
 :Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
-	min = nan ("f");
-	max = nan ("f");
+	min = rts2_nan ("f");
+	max = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_MMAX | RTS2_VALUE_DOUBLE;
 }
 

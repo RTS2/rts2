@@ -26,11 +26,6 @@ class Rts2DevMirrorDummy:public Rts2DevMirror
 			sleep (10);
 			return Rts2DevMirror::endClose ();
 		}
-
-		virtual int ready ()
-		{
-			return -1;
-		}
 };
 
 int

@@ -56,7 +56,6 @@ class Rts2DevDomeDcm:public Rts2DevDome
 		virtual ~ Rts2DevDomeDcm (void);
 		virtual int init ();
 
-		virtual int ready ();
 };
 
 Rts2ConnDcm::Rts2ConnDcm (int in_weather_port, Rts2DevDomeDcm * in_master):
@@ -199,13 +198,6 @@ Rts2DevDomeDcm::init ()
 
 	addConnection (weatherConn);
 
-	return 0;
-}
-
-
-int
-Rts2DevDomeDcm::ready ()
-{
 	return 0;
 }
 

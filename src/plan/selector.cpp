@@ -95,11 +95,6 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		virtual ~ Rts2SelectorDev (void);
 		virtual int idle ();
 
-		virtual int ready ()
-		{
-			return 0;
-		}
-
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 		virtual void postEvent (Rts2Event * event);

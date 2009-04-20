@@ -21,7 +21,6 @@
 
 #include "rts2devscript.h"
 #include "rts2script.h"
-#include "rts2connimgprocess.h"
 
 #include "../utils/rts2config.h"
 #include "../writers/rts2image.h"

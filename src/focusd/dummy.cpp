@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "focuser.h"
+#include "focusd.h"
 
 #define OPT_FOC_STEPS    OPT_LOCAL + 1001
 
@@ -29,7 +29,7 @@ namespace rts2focusd
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Dummy:public Rts2DevFocuser
+class Dummy:public Focusd
 {
 	private:
 		Rts2ValueInteger *focSteps;
@@ -46,7 +46,6 @@ class Dummy:public Rts2DevFocuser
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
-		virtual int ready ();
 		virtual int stepOut (int num);
 		virtual int isFocusing ();
 };
@@ -61,12 +60,11 @@ Dummy::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == focSteps)
 		return 0;
-	return Rts2DevFocuser::setValue (old_value, new_value);
+	return Focusd::setValue (old_value, new_value);
 }
 
 
-Dummy::Dummy (int in_argc, char **in_argv):
-Rts2DevFocuser (in_argc, in_argv)
+Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 {
 	focStepSec = 1;
 	focType = std::string ("Dummy");
@@ -93,7 +91,7 @@ Dummy::processOption (int opt)
 			focSteps->setValueInteger (atoi (optarg));
 			break;
 		default:
-			return Rts2DevFocuser::processOption (opt);
+			return Focusd::processOption (opt);
 	}
 	return 0;
 }
@@ -104,14 +102,7 @@ Dummy::initValues ()
 {
 	focPos->setValueInteger (3000);
 	focTemp->setValueFloat (100);
-	return Rts2DevFocuser::initValues ();
-}
-
-
-int
-Dummy::ready ()
-{
-	return 0;
+	return Focusd::initValues ();
 }
 
 
@@ -132,7 +123,7 @@ Dummy::isFocusing ()
 		focPos->setValueInteger (getFocTarget ());
 	else
 		focPos->setValueInteger (getFocPos () + focSteps->getValueInteger ());
-	return Rts2DevFocuser::isFocusing ();
+	return Focusd::isFocusing ();
 }
 
 

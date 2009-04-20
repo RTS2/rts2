@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2005-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2005-2007 Stanislav Vitek
  *
  * This program is free software; you can redistribute it and/or modify
@@ -17,9 +17,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "focuser.h"
+#include "focusd.h"
 
-Rts2DevFocuser::Rts2DevFocuser (int in_argc, char **in_argv):
+using namespace rts2focusd;
+
+Focusd::Focusd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	focStepSec = 100;
@@ -38,7 +40,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 
 
 int
-Rts2DevFocuser::processOption (int in_opt)
+Focusd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -56,7 +58,7 @@ Rts2DevFocuser::processOption (int in_opt)
 
 
 void
-Rts2DevFocuser::checkState ()
+Focusd::checkState ()
 {
 	if ((getState () & FOC_MASK_FOCUSING) == FOC_FOCUSING)
 	{
@@ -86,7 +88,7 @@ Rts2DevFocuser::checkState ()
 
 
 int
-Rts2DevFocuser::initValues ()
+Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
@@ -95,7 +97,7 @@ Rts2DevFocuser::initValues ()
 
 
 int
-Rts2DevFocuser::idle ()
+Focusd::idle ()
 {
 	checkState ();
 	return Rts2Device::idle ();
@@ -103,22 +105,7 @@ Rts2DevFocuser::idle ()
 
 
 int
-Rts2DevFocuser::ready (Rts2Conn * conn)
-{
-	int ret;
-
-	ret = ready ();
-	if (ret)
-	{
-		conn->sendCommandEnd (DEVDEM_E_HW, "focuser not ready");
-		return -1;
-	}
-	return 0;
-}
-
-
-int
-Rts2DevFocuser::setTo (int num)
+Focusd::setTo (int num)
 {
 	int ret;
 	int steps;
@@ -135,14 +122,14 @@ Rts2DevFocuser::setTo (int num)
 
 
 int
-Rts2DevFocuser::home ()
+Focusd::home ()
 {
 	return setTo (homePos);
 }
 
 
 int
-Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
+Focusd::stepOut (Rts2Conn * conn, int num)
 {
 	int ret;
 	ret = info ();
@@ -170,7 +157,7 @@ Rts2DevFocuser::stepOut (Rts2Conn * conn, int num)
 
 
 int
-Rts2DevFocuser::setTo (Rts2Conn * conn, int num)
+Focusd::setTo (Rts2Conn * conn, int num)
 {
 	int ret;
 	ret = setTo (num);
@@ -184,7 +171,7 @@ Rts2DevFocuser::setTo (Rts2Conn * conn, int num)
 
 
 int
-Rts2DevFocuser::home (Rts2Conn * conn)
+Focusd::home (Rts2Conn * conn)
 {
 	int ret;
 	ret = home ();
@@ -198,7 +185,7 @@ Rts2DevFocuser::home (Rts2Conn * conn)
 
 
 int
-Rts2DevFocuser::autoFocus (Rts2Conn * conn)
+Focusd::autoFocus (Rts2Conn * conn)
 {
 	/* ask for priority */
 
@@ -211,7 +198,7 @@ Rts2DevFocuser::autoFocus (Rts2Conn * conn)
 
 
 int
-Rts2DevFocuser::isFocusing ()
+Focusd::isFocusing ()
 {
 	int ret;
 	time_t now;
@@ -228,14 +215,14 @@ Rts2DevFocuser::isFocusing ()
 
 
 int
-Rts2DevFocuser::endFocusing ()
+Focusd::endFocusing ()
 {
 	return 0;
 }
 
 
 void
-Rts2DevFocuser::setFocusTimeout (int timeout)
+Focusd::setFocusTimeout (int timeout)
 {
 	time (&focusTimeout);
 	focusTimeout += timeout;
@@ -243,7 +230,7 @@ Rts2DevFocuser::setFocusTimeout (int timeout)
 
 
 int
-Rts2DevFocuser::checkStartPosition ()
+Focusd::checkStartPosition ()
 {
 	if (startPosition != INT_MIN && isAtStartPosition ())
 	{
@@ -254,7 +241,7 @@ Rts2DevFocuser::checkStartPosition ()
 
 
 int
-Rts2DevFocuser::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == focPos || old_value == focTarget)
 	{
@@ -265,11 +252,10 @@ Rts2DevFocuser::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 
 int
-Rts2DevFocuser::commandAuthorized (Rts2Conn * conn)
+Focusd::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{
-		conn->sendMsg ("ready - is focuser ready?");
 		conn->sendMsg ("info  - information about focuser");
 		conn->sendMsg ("step  - move by given steps offset");
 		conn->sendMsg ("set   - set to given position");

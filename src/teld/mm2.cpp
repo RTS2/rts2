@@ -147,7 +147,6 @@ class MM2:public Telescope
 		virtual ~ MM2 (void);
 
 		virtual int idle ();
-		virtual int ready ();
 		virtual int info ();
 
 		virtual int setTo (double set_ra, double set_dec);
@@ -746,13 +745,6 @@ MM2::idle ()
 		time (&last_pos_update);
 	}
 	return Telescope::idle ();
-}
-
-
-int
-MM2::ready ()
-{
-	return tel_desc > 0 ? 0 : -1;
 }
 
 

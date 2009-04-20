@@ -73,7 +73,6 @@ class CommandInfo:public Rts2Command
 		}
 		virtual int commandReturnOK (Rts2Conn * conn)
 		{
-			owner->queAll ("ready");
 			owner->queAll ("base_info");
 			owner->queAll ("info");
 			return Rts2Command::commandReturnOK (conn);

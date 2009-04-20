@@ -105,7 +105,6 @@ class LX200:public Telescope
 		virtual ~ LX200 (void);
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 
@@ -580,13 +579,6 @@ LX200::init ()
 		return 0;
 	}
 	return 0;
-}
-
-
-int
-LX200::ready ()
-{
-	return tel_desc > 0 ? 0 : -1;
 }
 
 

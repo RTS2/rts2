@@ -23,8 +23,8 @@
 #include "../utils/rts2block.h"
 
 #include <ostream>
-#include <libnova/libnova.h>
 #include <sys/time.h>
+#include <libnova/libnova.h>
 #include <time.h>
 
 /**

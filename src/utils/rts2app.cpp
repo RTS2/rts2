@@ -93,8 +93,7 @@ Rts2App::initOptions ()
 
 	struct option *long_option, *an_option;
 
-	long_option =
-		(struct option *) malloc (sizeof (struct option) * (options.size () + 1));
+	long_option = (struct option *) malloc (sizeof (struct option) * (options.size () + 1));
 
 	char *opt_char = new char[options.size () * 3 + 1];
 

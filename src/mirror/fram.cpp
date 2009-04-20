@@ -51,8 +51,6 @@ class Rts2DevMirrorFram:public Rts2DevMirror
 		virtual int processOption (int in_op);
 		virtual int init ();
 
-		virtual int ready ();
-
 		virtual int startOpen ();
 		virtual int isOpened ();
 
@@ -267,14 +265,6 @@ Rts2DevMirrorFram::mirror_set ()
 		}
 	}
 	return -1;
-}
-
-
-int
-Rts2DevMirrorFram::ready ()
-{
-	int pos;
-	return mirror_get (&pos);
 }
 
 

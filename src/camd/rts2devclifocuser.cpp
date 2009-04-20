@@ -20,19 +20,20 @@
 #include "rts2devclifocuser.h"
 #include "../utils/rts2command.h"
 
-Rts2DevClientFocusCamera::Rts2DevClientFocusCamera (Rts2Conn * in_connection):Rts2DevClientFocus
-(in_connection)
+using namespace rts2camd;
+
+ClientFocusCamera::ClientFocusCamera (Rts2Conn * in_connection):Rts2DevClientFocus (in_connection)
 {
 }
 
 
-Rts2DevClientFocusCamera::~Rts2DevClientFocusCamera (void)
+ClientFocusCamera::~ClientFocusCamera (void)
 {
 }
 
 
 void
-Rts2DevClientFocusCamera::postEvent (Rts2Event * event)
+ClientFocusCamera::postEvent (Rts2Event * event)
 {
 	struct focuserMove *fm;
 	fm = (focuserMove *) event->getArg ();
@@ -65,7 +66,7 @@ Rts2DevClientFocusCamera::postEvent (Rts2Event * event)
 
 
 void
-Rts2DevClientFocusCamera::focusingEnd ()
+ClientFocusCamera::focusingEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
 	Rts2DevClientFocus::focusingEnd ();
@@ -73,7 +74,7 @@ Rts2DevClientFocusCamera::focusingEnd ()
 
 
 void
-Rts2DevClientFocusCamera::focusingFailed (int status)
+ClientFocusCamera::focusingFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
 	Rts2DevClientFocus::focusingFailed (status);

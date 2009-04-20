@@ -1,11 +1,15 @@
 RTS2 - Remote Telescope System, 2nd Version
 ===========================================
 
-This is an attempt to make opensource software for robotics telescope
-observatory.
+RTS2 is software for fully autonomous robotics telescope observatory. It takes
+care of details necessary for observatory operation. It keeps care of closing
+it when bad weather arrives, open when weather permits operation. It is fully
+flexible, providing ready support for a wide range of devices.
 
-What it isn't:
- - box software. It's still work in progress, some things works, some not
+It boast own selector for selecting target, and own bookkeeping of
+observations.
+
+What RTS2 is not:
  - interactive planetarium
  - human directed hunter of nice objects with robotics telescope - look for
    INDI, if you are looking for that, our goal is to make all observations
@@ -15,7 +19,5 @@ For futher details, please see:
 
   http://www.rts2.org
 
-For comments, please email to pkubanek (at) sf [dot] net or petr (at) kubanek
-[dot] net.
-
-Petr Kubanek
+For questions, comments, suggestions and problems, please email to petr (at)
+kubanek [dot] net.

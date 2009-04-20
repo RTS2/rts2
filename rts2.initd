@@ -72,8 +72,10 @@ function rts2-reload
 {
 	if grep '^centrald' $CENTRALD_FILE 2>&1 > /dev/null; then
 		echo -n "Sending SIGHUP to centrald daemon:"
-		kill -1 `cat ${RTS2_PID_PREFIX}centrald`
-		echo "rts2-centrald."
+		for cf in ${RTS2_PID_PREFIX}centrald_*; do
+		  	kill -1 `cat $cf`
+			echo "rts2-centrald "
+		done
 	fi
 	echo -n "Sending SIGHUP to RTS2 daemons:"
 	cat $DEVICE_CONFIG | sed -e 's/#.*$//' | egrep -v '^\s*$' | while read device type device_name options; do

@@ -48,6 +48,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	}
 	else if (ret < 0)
 	{
+	 	connectionError (-1);
 		logStream (MESSAGE_ERROR) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
 	}
 	if (wait == false)
@@ -90,7 +91,7 @@ OpenTpl::waitReply ()
 				return -1;
 			}
 			int data_size = recv (sock, tpl_buf_top, 499 - (tpl_buf_top - tpl_buf), 0);
-			if (data_size < 0)
+			if (data_size <= 0)
 			{
 				connectionError (-1);
 				return -1;
@@ -185,24 +186,24 @@ OpenTpl::idle ()
 
 
 int
-OpenTpl::receive (fd_set *set)
+OpenTpl::receive (fd_set *fset)
 {
 	return -1;
 }
 
 
 int
-OpenTpl::tpl_set (const char *_name, double value, int *tpl_status)
+OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
-	_os << _name << '=' << value;
-	sendCommand ("SET", _os.str().c_str());
+	_os << _name << '=' << std::setprecision(10) << value;
+	sendCommand ("SET", _os.str().c_str(), wait);
 	return 0;
 }
 
 
 int
-OpenTpl::tpl_get (const char *_name, double &value, int *tpl_status)
+OpenTpl::get (const char *_name, double &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atof (valReply);
@@ -211,22 +212,16 @@ OpenTpl::tpl_get (const char *_name, double &value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_set (const char *_name, int value, int *tpl_status, bool wait)
+OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str(), wait);
 }
 
-int
-OpenTpl::tpl_setww (const char *_name, int value, int *tpl_status)
-{
-	return tpl_set (_name, value, tpl_status, false);
-}
-
 
 int
-OpenTpl::tpl_get (const char *_name, int &value, int *tpl_status)
+OpenTpl::get (const char *_name, int &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atoi (valReply);
@@ -235,7 +230,7 @@ OpenTpl::tpl_get (const char *_name, int &value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_set (const char *_name, std::string value, int *tpl_status)
+OpenTpl::set (const char *_name, std::string value, int *tpl_status)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
@@ -244,7 +239,7 @@ OpenTpl::tpl_set (const char *_name, std::string value, int *tpl_status)
 
 
 int
-OpenTpl::tpl_get (const char *_name, std::string &value, int *tpl_status)
+OpenTpl::get (const char *_name, std::string &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = valReply;

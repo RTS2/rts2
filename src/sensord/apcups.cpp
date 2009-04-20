@@ -23,6 +23,8 @@
 
 #include <map>
 
+#define OPT_MINB_TIME      OPT_LOCAL + 122
+
 namespace rts2sensor
 {
 
@@ -199,11 +201,11 @@ ConnApcUps::getTime (const char *val)
 {
 	const char *v = getString (val);
 	if (strcasestr (v, "hours") != NULL)
-	  	return atof (v) * 3600;
+	  	return (int) (atof (v) * 3600);
 	if (strcasestr (v, "minutes") != NULL)
-		return atof (v) * 60;
+		return (int) (atof (v) * 60);
 	if (strcasestr (v, "seconds") != NULL)
-	  	return atof (v);
+	  	return atoi (v);
 	throw rts2core::ConnError ("Cannot convert time");
 }
 
@@ -215,7 +217,13 @@ ConnApcUps::getDate (const char *val)
 	struct tm _tm;
 	char *te = strptime (v, "%a %b %d %X NZST %Y", &_tm);
 	if (te == NULL || *te != '\0')
-		throw rts2core::ConnError ("Cannot convert date");
+	{
+		te = strptime (v, "%a %b %d %X UTC %Y", &_tm);
+		if (te == NULL || *te != '\0')
+		{
+			throw rts2core::ConnError ("Cannot convert date");
+		}
+	}
 	return mktime (&_tm);
 }
 
@@ -227,6 +235,9 @@ ApcUps::processOption (int opt)
 	{
 		case 'a':
 			host = new HostString (optarg, "3551");
+			break;
+		case OPT_MINB_TIME:
+			mintimeleft->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (opt);
@@ -328,8 +339,8 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (tonbatt, "tonbatt", "time on battery", false);
 	createValue (status, "status", "UPS status", false);
 
-	createValue (xOnBatt, "xonbatt", "time of last on battery event");
-	createValue (xOffBatt, "xoffbatt", "time of last off battery event");
+	createValue (xOnBatt, "xonbatt", "time of last on battery event", false);
+	createValue (xOffBatt, "xoffbatt", "time of last off battery event", false);
 
 	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
 	battimeout->setValueInteger (60);
@@ -340,6 +351,7 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	mintimeleft->setValueInteger (1200);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
+	addOption (OPT_MINB_TIME, "min-btime", 1, "minimal battery run time");
 }
 
 

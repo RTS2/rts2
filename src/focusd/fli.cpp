@@ -16,9 +16,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "focuser.h"
+#include "focusd.h"
 
 #include "libfli.h"
+
+namespace rts2focusd
+{
 
 /**
  * FLI focuser driver. You will need FLIlib and option to ./configure
@@ -27,7 +30,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevFocuserFli:public Rts2DevFocuser
+class Fli:public Focusd
 {
 	private:
 		flidev_t dev;
@@ -41,19 +44,22 @@ class Rts2DevFocuserFli:public Rts2DevFocuser
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int ready ();
 		virtual int initValues ();
 		virtual int info ();
 		virtual int stepOut (int num);
 		virtual int home ();
 
 	public:
-		Rts2DevFocuserFli (int in_argc, char **in_argv);
-		virtual ~ Rts2DevFocuserFli (void);
+		Fli (int argc, char **argv);
+		virtual ~ Fli (void);
 };
 
-Rts2DevFocuserFli::Rts2DevFocuserFli (int in_argc, char **in_argv):
-Rts2DevFocuser (in_argc, in_argv)
+};
+
+using namespace rts2focusd;
+
+Fli::Fli (int argc, char **argv)
+:Focusd (argc, argv)
 {
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
@@ -64,14 +70,14 @@ Rts2DevFocuser (in_argc, in_argv)
 }
 
 
-Rts2DevFocuserFli::~Rts2DevFocuserFli (void)
+Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
 
 int
-Rts2DevFocuserFli::processOption (int in_opt)
+Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -107,21 +113,21 @@ Rts2DevFocuserFli::processOption (int in_opt)
 			}
 			break;
 		default:
-			return Rts2DevFocuser::processOption (in_opt);
+			return Focusd::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevFocuserFli::init ()
+Fli::init ()
 {
 	LIBFLIAPI ret;
 	int ret_f;
 	char **names;
 	char *nam_sep;
 
-	ret_f = Rts2DevFocuser::init ();
+	ret_f = Focusd::init ();
 	if (ret_f)
 		return ret_f;
 
@@ -134,7 +140,7 @@ Rts2DevFocuserFli::init ()
 
 	if (names[0] == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2DevFocuserFli::init No device found!"
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
 			<< sendLog;
 		return -1;
 	}
@@ -153,14 +159,7 @@ Rts2DevFocuserFli::init ()
 
 
 int
-Rts2DevFocuserFli::ready ()
-{
-	return info ();
-}
-
-
-int
-Rts2DevFocuserFli::initValues ()
+Fli::initValues ()
 {
 	LIBFLIAPI ret;
 
@@ -173,12 +172,12 @@ Rts2DevFocuserFli::initValues ()
 		return -1;
 	}
 	focType = std::string (ft);
-	return Rts2DevFocuser::initValues ();
+	return Focusd::initValues ();
 }
 
 
 int
-Rts2DevFocuserFli::info ()
+Fli::info ()
 {
 	LIBFLIAPI ret;
 
@@ -190,12 +189,12 @@ Rts2DevFocuserFli::info ()
 
 	focPos->setValueInteger ((int) steps);
 
-	return Rts2DevFocuser::info ();
+	return Focusd::info ();
 }
 
 
 int
-Rts2DevFocuserFli::stepOut (int num)
+Fli::stepOut (int num)
 {
 	LIBFLIAPI ret;
 	ret = FLIStepMotorAsync (dev, (long) num);
@@ -206,18 +205,18 @@ Rts2DevFocuserFli::stepOut (int num)
 
 
 int
-Rts2DevFocuserFli::home ()
+Fli::home ()
 {
 	LIBFLIAPI ret;
 	ret = FLIHomeFocuser (dev);
 	if (ret)
 		return -1;
-	return Rts2DevFocuser::home ();
+	return Focusd::home ();
 }
 
 
 int
-Rts2DevFocuserFli::isFocusing ()
+Fli::isFocusing ()
 {
 	LIBFLIAPI ret;
 	long rem;
@@ -232,7 +231,7 @@ Rts2DevFocuserFli::isFocusing ()
 
 
 bool
-Rts2DevFocuserFli::isAtStartPosition ()
+Fli::isAtStartPosition ()
 {
 	int ret;
 	ret = info ();
@@ -245,6 +244,6 @@ Rts2DevFocuserFli::isAtStartPosition ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevFocuserFli device = Rts2DevFocuserFli (argc, argv);
+	Fli device = Fli (argc, argv);
 	return device.run ();
 }

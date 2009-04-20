@@ -133,7 +133,7 @@ ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
 namespace rts2teld
 {
 
-class Paramount:public Rts2DevGEM
+class Paramount:public GEM
 {
 	private:
 		MKS3Id axis0;
@@ -436,7 +436,7 @@ Paramount::updateLimits ()
 
 
 Paramount::Paramount (int in_argc, char **in_argv)
-:Rts2DevGEM (in_argc, in_argv)
+:GEM (in_argc, in_argv)
 {
 	createValue (axRa, "AXRA", "RA axis count", true);
 	createValue (axDec, "AXDEC", "DEC axis count", true);
@@ -584,7 +584,7 @@ Paramount::processOption (int in_opt)
 			park_axis[1] = atoi (optarg);
 			break;
 		default:
-			return Rts2DevGEM::processOption (in_opt);
+			return GEM::processOption (in_opt);
 	}
 	return 0;
 }
@@ -598,7 +598,7 @@ Paramount::init ()
 	int ret;
 	int i;
 
-	ret = Rts2DevGEM::init ();
+	ret = GEM::init ();
 	if (ret)
 		return ret;
 
@@ -825,7 +825,7 @@ Paramount::idle ()
 		updateTrack ();
 		} */
 	// check for some critical stuff
-	return Rts2DevGEM::idle ();
+	return GEM::idle ();
 }
 
 
@@ -848,7 +848,7 @@ Paramount::info ()
 	axDec->setValueLong (dc);
 	if (ret)
 		return ret;
-	return Rts2DevGEM::info ();
+	return GEM::info ();
 }
 
 
@@ -1033,7 +1033,7 @@ Paramount::endMove ()
 	// 1 sec sleep to get time to settle down
 	sleep (1);
 	if (!ret)
-		return Rts2DevGEM::endMove ();
+		return GEM::endMove ();
 	return ret;
 }
 

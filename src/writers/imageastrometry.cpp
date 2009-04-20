@@ -22,6 +22,8 @@
 
 #include "rts2image.h"
 
+using namespace rts2image;
+
 /*
  *
  * Most probably will converge to WCS class solution (or even WCSlib incorporation) in future.
@@ -233,6 +235,23 @@ Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char 
 	if (ret)
 		return ret;
 	return 0;
+}
+
+
+LibnovaRaDec
+Rts2Image::getCoord (const char *prefix)
+{
+	struct ln_equ_posn pos;
+	int ret;
+	std::string p = std::string (prefix) + "RA";
+	ret = getValue (p.c_str (), pos.ra, true);
+	if (ret)
+		throw KeyNotFound (this, p.c_str ());
+	p = std::string (prefix) + "DEC";
+	ret = getValue (p.c_str (), pos.dec, true);
+	if (ret)
+		throw KeyNotFound (this, p.c_str ());
+	return LibnovaRaDec (pos.ra, pos.dec);
 }
 
 

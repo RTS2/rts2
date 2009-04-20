@@ -253,7 +253,7 @@ class Rts2Device:public Rts2Daemon
 		{
 			if (!conn->isConnState (CONN_AUTH_OK))
 			{
-				logStream (MESSAGE_DEBUG) << "is_runnning " << conn->getConnState () << sendLog;
+				logStream (MESSAGE_DEBUG) << "is_running " << conn->getConnState () << sendLog;
 			}
 			return conn->isConnState (CONN_AUTH_OK);
 		}
@@ -354,11 +354,6 @@ class Rts2Device:public Rts2Daemon
 		 * @return 0 on success, -1 on error.
 		 */
 		int sendMasters (const char *msg);
-
-		// callback functions for device
-		virtual int ready ();
-
-		virtual int ready (Rts2Conn * conn);
 
 		virtual void centraldConnRunning (Rts2Conn *conn);
 

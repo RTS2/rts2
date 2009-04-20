@@ -37,12 +37,15 @@
 
 #define DEFAULT_CAMERA  ST8_CAMERA	// in case geteeprom fails
 
+namespace rts2camd
+{
+
 /**
  * Alternative driver for SBIG camera.
  *
  * RTS2 urvc2 interface.
  */
-class Rts2DevCameraUrvc2:public Rts2DevCamera
+class Urvc2:public Camera
 {
 	private:
 		EEPROMContents eePtr;	 // global to prevent multiple EEPROM calls
@@ -68,11 +71,10 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevCameraUrvc2 (int argc, char **argv);
-		virtual ~Rts2DevCameraUrvc2 (void);
+		Urvc2 (int argc, char **argv);
+		virtual ~Urvc2 (void);
 
 		virtual int init ();
-		virtual int ready ();
 		virtual int info ();
 		virtual int camChipInfo (int chip)
 		{
@@ -93,32 +95,36 @@ class Rts2DevCameraUrvc2:public Rts2DevCamera
  * It needs it as there is now filter is an extra object.
  */
 
-class Rts2FilterUrvc2:public Rts2Filter
+class FilterUrvc2:public Filter
 {
-	Rts2DevCameraUrvc2 *camera;
+	Urvc2 *camera;
 	int filter;
 	public:
-		Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera);
-		virtual ~ Rts2FilterUrvc2 (void);
+		FilterUrvc2 (Urvc2 * in_camera);
+		virtual ~ FilterUrvc2 (void);
 		virtual int init (void);
 		virtual int getFilterNum (void);
 		virtual int setFilterNum (int new_filter);
 };
 
-Rts2FilterUrvc2::Rts2FilterUrvc2 (Rts2DevCameraUrvc2 * in_camera):Rts2Filter ()
+};
+
+using namespace rts2camd;
+
+FilterUrvc2::FilterUrvc2 (Urvc2 * in_camera):Filter ()
 {
 	camera = in_camera;
 }
 
 
-Rts2FilterUrvc2::~Rts2FilterUrvc2 (void)
+FilterUrvc2::~FilterUrvc2 (void)
 {
 	setFilterNum (0);
 }
 
 
 int
-Rts2FilterUrvc2::init ()
+FilterUrvc2::init ()
 {
 	setFilterNum (0);
 	return 0;
@@ -126,14 +132,14 @@ Rts2FilterUrvc2::init ()
 
 
 int
-Rts2FilterUrvc2::getFilterNum (void)
+FilterUrvc2::getFilterNum (void)
 {
 	return filter;
 }
 
 
 int
-Rts2FilterUrvc2::setFilterNum (int new_filter)
+FilterUrvc2::setFilterNum (int new_filter)
 {
 	PulseOutParams pop;
 
@@ -155,7 +161,7 @@ Rts2FilterUrvc2::setFilterNum (int new_filter)
 
 
 void
-Rts2DevCameraUrvc2::get_eeprom ()
+Urvc2::get_eeprom ()
 {
 	if (GetEEPROM (cameraID, &eePtr) != CE_NO_ERROR)
 	{
@@ -186,7 +192,7 @@ Rts2DevCameraUrvc2::get_eeprom ()
 
 
 void
-Rts2DevCameraUrvc2::init_shutter ()
+Urvc2::init_shutter ()
 {
 	MiscellaneousControlParams ctrl;
 	StatusResults sr;
@@ -206,7 +212,7 @@ Rts2DevCameraUrvc2::init_shutter ()
 
 
 int
-Rts2DevCameraUrvc2::set_fan (bool fan_state)
+Urvc2::set_fan (bool fan_state)
 {
 	MiscellaneousControlParams ctrl;
 	StatusResults sr;
@@ -225,7 +231,7 @@ Rts2DevCameraUrvc2::set_fan (bool fan_state)
 
 
 int
-Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel)
+Urvc2::setcool (int reg, int setpt, int prel)
 {
 	MicroTemperatureRegulationParams cool;
 
@@ -246,15 +252,15 @@ Rts2DevCameraUrvc2::setcool (int reg, int setpt, int prel)
 
 
 int
-Rts2DevCameraUrvc2::initChips ()
+Urvc2::initChips ()
 {
 	OpenCCD (0, &C);
-	return Rts2DevCamera::initChips ();
+	return Camera::initChips ();
 }
 
 
 int
-Rts2DevCameraUrvc2::startExposure ()
+Urvc2::startExposure ()
 {
 	#ifdef INIT_SHUTTER
 	init_shutter ();
@@ -267,10 +273,10 @@ Rts2DevCameraUrvc2::startExposure ()
 
 
 long
-Rts2DevCameraUrvc2::isExposing ()
+Urvc2::isExposing ()
 {
 	int ret;
-	ret = Rts2DevCamera::isExposing ();
+	ret = Camera::isExposing ();
 	if (ret > 0)
 		return ret;
 	int imstate;
@@ -286,7 +292,7 @@ Rts2DevCameraUrvc2::isExposing ()
 
 
 int
-Rts2DevCameraUrvc2::readoutOneLine ()
+Urvc2::readoutOneLine ()
 {
 	if (CCDReadout ((short unsigned int *) dataBuffer, C, chipUsedReadout->getXInt () / binningVertical (),
 		chipUsedReadout->getYInt () / binningHorizontal (),
@@ -305,7 +311,7 @@ Rts2DevCameraUrvc2::readoutOneLine ()
 
 
 int
-Rts2DevCameraUrvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -329,12 +335,12 @@ Rts2DevCameraUrvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return set_fan (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	}
-	return Rts2DevCamera::setValue (old_value, new_value);
+	return Camera::setValue (old_value, new_value);
 }
 
 
-Rts2DevCameraUrvc2::Rts2DevCameraUrvc2 (int in_argc, char **in_argv):
-Rts2DevCamera (in_argc, in_argv)
+Urvc2::Urvc2 (int in_argc, char **in_argv):
+Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -358,14 +364,14 @@ Rts2DevCamera (in_argc, in_argv)
 }
 
 
-Rts2DevCameraUrvc2::~Rts2DevCameraUrvc2 (void)
+Urvc2::~Urvc2 (void)
 {
 	CloseCCD (C);
 }
 
 
 int
-Rts2DevCameraUrvc2::init ()
+Urvc2::init ()
 {
 	short base;
 	int i;
@@ -374,7 +380,7 @@ Rts2DevCameraUrvc2::init ()
 	GetVersionResults gvr;
 	int ret;
 
-	ret = Rts2DevCamera::init ();
+	ret = Camera::init ();
 	if (ret)
 		return ret;
 
@@ -424,7 +430,7 @@ Rts2DevCameraUrvc2::init ()
 	logStream (MESSAGE_DEBUG) << "urvc2 init return " << Cams[eePtr.model].
 		horzImage << sendLog;
 
-	filter = new Rts2FilterUrvc2 (this);
+	filter = new FilterUrvc2 (this);
 
 	strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
 	strcpy (serialNumber, (char *) eePtr.serialNumber);
@@ -434,17 +440,7 @@ Rts2DevCameraUrvc2::init ()
 
 
 int
-Rts2DevCameraUrvc2::ready ()
-{
-	StatusResults gvr;
-	if (MicroCommand (MC_STATUS, cameraID, NULL, &gvr))
-		return -1;
-	return 0;
-}
-
-
-int
-Rts2DevCameraUrvc2::info ()
+Urvc2::info ()
 {
 	StatusResults gvr;
 	QueryTemperatureStatusResults qtsr;
@@ -459,12 +455,12 @@ Rts2DevCameraUrvc2::info ()
 	tempAir->setValueDouble (ambient_ad2c (qtsr.ambientThermistor));
 	tempCCD->setValueDouble (ccd_ad2c (qtsr.ccdThermistor));
 	fan->setValueBool (gvr.fanEnabled);
-	return Rts2DevCamera::info ();
+	return Camera::info ();
 }
 
 
 int
-Rts2DevCameraUrvc2::stopExposure ()
+Urvc2::stopExposure ()
 {
 	EndExposureParams eep;
 	eep.ccd = 0;
@@ -477,14 +473,14 @@ Rts2DevCameraUrvc2::stopExposure ()
 
 
 int
-Rts2DevCameraUrvc2::setCoolTemp (float coolpoint)
+Urvc2::setCoolTemp (float coolpoint)
 {
 	return setcool (1, ccd_c2ad (coolpoint) + 0x7, 0xaf);
 }
 
 
 void
-Rts2DevCameraUrvc2::afterNight ()
+Urvc2::afterNight ()
 {
 	setcool (0, 0, 0);
 }
@@ -493,6 +489,6 @@ Rts2DevCameraUrvc2::afterNight ()
 int
 main (int argc, char **argv)
 {
-	Rts2DevCameraUrvc2 device = Rts2DevCameraUrvc2 (argc, argv);
+	Urvc2 device = Urvc2 (argc, argv);
 	return device.run ();
 }

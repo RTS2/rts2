@@ -192,5 +192,4 @@ void
 Rts2DeviceDb::signaledHUP ()
 {
 	reloadConfig();
-	Rts2DeviceDb::reloadConfig ();
 }
