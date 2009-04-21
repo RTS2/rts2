@@ -20,7 +20,10 @@
 #include "sensord.h"
 #include "../utils/rts2connserial.h"
 
-class Rts2DevSensorDS21;
+namespace rts2sensord
+{
+
+class DS21;
 
 /**
  * Holds values and perform operations on them for one axis.
@@ -30,7 +33,7 @@ class Rts2DevSensorDS21;
 class DS21Axis
 {
 	private:
-		Rts2DevSensorDS21 *master;
+		DS21 *master;
 		char anum;
 
 		Rts2ValueBool *enabled;
@@ -47,7 +50,7 @@ class DS21Axis
 		/**
 		 * @param in_anum Number of the axis being constructed.
 		 */
-		DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum);
+		DS21Axis (DS21 *in_master, char in_anum);
 		/**
 		 * @return -3 when value was not found in this axis.
 		 */
@@ -68,7 +71,7 @@ class DS21Axis
  *
  */
 
-class Rts2DevSensorDS21: public Rts2DevSensor
+class DS21: public Sensor
 {
 	private:
 		const char *dev;
@@ -89,8 +92,8 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 
 	public:
-		Rts2DevSensorDS21 (int in_argc, char **in_argv);
-		virtual ~Rts2DevSensorDS21 (void);
+		DS21 (int argc, char **argv);
+		virtual ~DS21 (void);
 
 		template < typename T > void createAxisValue( T * &val, char anum,
 			const char *in_val_name, const char *in_desc, bool writeToFits, int flags = 0)
@@ -132,7 +135,11 @@ class Rts2DevSensorDS21: public Rts2DevSensor
 		}
 };
 
-DS21Axis::DS21Axis (Rts2DevSensorDS21 *in_master, char in_anum)
+};
+
+using namespace rts2sensord;
+
+DS21Axis::DS21Axis (DS21 *in_master, char in_anum)
 {
 	master = in_master;
 	anum = in_anum;
@@ -228,7 +235,7 @@ DS21Axis::updateStatus ()
 
 
 int
-Rts2DevSensorDS21::processOption (int in_opt)
+DS21::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -236,18 +243,18 @@ Rts2DevSensorDS21::processOption (int in_opt)
 			dev = optarg;
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevSensorDS21::init ()
+DS21::init ()
 {
 	int ret;
 
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
@@ -268,14 +275,14 @@ Rts2DevSensorDS21::init ()
 
 
 int
-Rts2DevSensorDS21::idle ()
+DS21::idle ()
 {
 	if (blockingExposure ())
 	{
 		for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
 		{
 			if ((*iter).isMoving ())
-				return Rts2DevSensor::idle ();
+				return Sensor::idle ();
 		}
 		clearExposure ();
 		for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
@@ -284,12 +291,12 @@ Rts2DevSensorDS21::idle ()
 		}
 		setTimeout (10);
 	}
-	return Rts2DevSensor::idle ();
+	return Sensor::idle ();
 }
 
 
 int
-Rts2DevSensorDS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
+DS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
 	{
@@ -297,12 +304,11 @@ Rts2DevSensorDS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		if (ret != -3)
 			return ret;
 	}
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 
-Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
+DS21::DS21 (int argc, char **argv):Sensor (argc, argv)
 {
 	dev = "/dev/ttyS0";
 	ds21 = NULL;
@@ -311,14 +317,14 @@ Rts2DevSensorDS21::Rts2DevSensorDS21 (int in_argc, char **in_argv)
 }
 
 
-Rts2DevSensorDS21::~Rts2DevSensorDS21 (void)
+DS21::~DS21 (void)
 {
 	delete ds21;
 }
 
 
 int
-Rts2DevSensorDS21::info ()
+DS21::info ()
 {
 	int ret;
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
@@ -327,19 +333,19 @@ Rts2DevSensorDS21::info ()
 		if (ret)
 			return ret;
 	}
-	return Rts2DevSensor::info ();
+	return Sensor::info ();
 }
 
 
 int
-Rts2DevSensorDS21::home ()
+DS21::home ()
 {
 	return writePort (0, "GH");
 }
 
 
 int
-Rts2DevSensorDS21::commandAuthorized (Rts2Conn *conn)
+DS21::commandAuthorized (Rts2Conn *conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -347,12 +353,12 @@ Rts2DevSensorDS21::commandAuthorized (Rts2Conn *conn)
 			return -2;
 		return home ();
 	}
-	return Rts2DevSensor::commandAuthorized (conn);
+	return Sensor::commandAuthorized (conn);
 }
 
 
 int
-Rts2DevSensorDS21::writePort (char anum, const char *msg)
+DS21::writePort (char anum, const char *msg)
 {
 	int blen = strlen (msg);
 	char *buf = new char[blen + 4];
@@ -369,7 +375,7 @@ Rts2DevSensorDS21::writePort (char anum, const char *msg)
 
 
 int
-Rts2DevSensorDS21::readPort (char *buf, int blen)
+DS21::readPort (char *buf, int blen)
 {
 	int ret = ds21->readPort (buf, blen, '\n');
 	if (ret == -1)
@@ -382,7 +388,7 @@ Rts2DevSensorDS21::readPort (char *buf, int blen)
 
 
 int
-Rts2DevSensorDS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
+DS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
 {
 	int ret;
 	ret = writePort (anum, msg);
@@ -394,7 +400,7 @@ Rts2DevSensorDS21::writeReadPort (char anum, const char *msg, char *buf, int ble
 
 
 int
-Rts2DevSensorDS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
+DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 {
 	int ret;
 	const char *sval = val->getValue ();
@@ -410,7 +416,7 @@ Rts2DevSensorDS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 
 
 int
-Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
+DS21::readValue (char anum, const char *cmd, Rts2Value *val)
 {
 	int ret;
 	char buf[500];
@@ -425,7 +431,7 @@ Rts2DevSensorDS21::readValue (char anum, const char *cmd, Rts2Value *val)
 
 
 int
-Rts2DevSensorDS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
+DS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
 {
 	int ret;
 	char buf[500];
@@ -456,6 +462,6 @@ Rts2DevSensorDS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorDS21 device = Rts2DevSensorDS21 (argc, argv);
+	DS21 device = DS21 (argc, argv);
 	return device.run ();
 }

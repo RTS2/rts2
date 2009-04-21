@@ -24,7 +24,10 @@
 
 #include <gpib/ib.h>
 
-class Rts2DevSensorGpib:public Rts2DevSensor
+namespace rts2sensord
+{
+
+class Gpib:public Sensor
 {
 	private:
 		int minor;
@@ -46,7 +49,9 @@ class Rts2DevSensorGpib:public Rts2DevSensor
 			pad = in_pad;
 		}
 	public:
-		Rts2DevSensorGpib (int in_argc, char **in_argv);
-		virtual ~ Rts2DevSensorGpib (void);
+		Gpib (int in_argc, char **in_argv);
+		virtual ~ Gpib (void);
+};
+
 };
 #endif							 /* !__RTS2_SENSOR_GPIB__ */

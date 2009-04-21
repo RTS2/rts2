@@ -22,7 +22,7 @@
 
 #include "../utils/rts2connserial.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -72,7 +72,7 @@ class Cloud4: public SensorWeather
 
 };
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Cloud4::readSensor ()

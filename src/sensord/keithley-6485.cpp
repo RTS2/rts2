@@ -19,10 +19,10 @@
 
 #include "sensorgpib.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
-class Keithley:public Rts2DevSensorGpib
+class Keithley:public Gpib
 {
 	private:
 		int getGPIB (const char *buf, int &val);
@@ -52,9 +52,9 @@ class Keithley:public Rts2DevSensorGpib
 		virtual int info ();
 };
 
-}
+};
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Keithley::getGPIB (const char *buf, int &val)
@@ -233,7 +233,7 @@ Keithley::waitOpc ()
 
 
 Keithley::Keithley (int in_argc, char **in_argv):
-Rts2DevSensorGpib (in_argc, in_argv)
+Gpib (in_argc, in_argv)
 {
 	setPad (14);
 
@@ -253,7 +253,7 @@ Keithley::~Keithley (void)
 int
 Keithley::init ()
 {
-	int ret = Rts2DevSensorGpib::init ();
+	int ret = Gpib::init ();
 	if (ret)
 		return ret;
 	ret = gpibWrite ("TRIG:DEL 0");
@@ -318,7 +318,7 @@ Keithley::initValues ()
 	if (ret)
 		return -1;
 	addConstValue (model);
-	return Rts2DevSensorGpib::initValues ();
+	return Gpib::initValues ();
 }
 
 
@@ -337,7 +337,7 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return 0;
 	}
-	return Rts2DevSensorGpib::setValue (old_value, new_value);
+	return Gpib::setValue (old_value, new_value);
 }
 
 
@@ -392,7 +392,7 @@ Keithley::info ()
 	ret = getGPIB ("TRAC:DATA?", current, countNum->getValueInteger (), 1e+12);
 	if (ret)
 		return ret;
-	return Rts2DevSensorGpib::info ();
+	return Gpib::info ();
 }
 
 

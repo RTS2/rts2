@@ -29,7 +29,10 @@
 // when we'll have more then 3 axes, please change this
 #define MAX_REQUESTED 3
 
-class Rts2DevSensorA3200:public Rts2DevSensor
+namespace rts2sensord
+{
+
+class A3200:public Sensor
 {
 	private:
 		HAERCTRL hAerCtrl;
@@ -54,8 +57,8 @@ class Rts2DevSensorA3200:public Rts2DevSensor
 		virtual int processOption (int in_opt);
 
 	public:
-		Rts2DevSensorA3200 (int in_argc, char **in_argv);
-		virtual ~ Rts2DevSensorA3200 (void);
+		A3200 (int in_argc, char **in_argv);
+		virtual ~ A3200 (void);
 
 		virtual int init ();
 		virtual int info ();
@@ -63,8 +66,12 @@ class Rts2DevSensorA3200:public Rts2DevSensor
 		int commandAuthorized (Rts2Conn * conn);
 };
 
+};
+
+using namespace rts2sensord;
+
 void
-Rts2DevSensorA3200::logErr (char *proc, AERERR_CODE eRc)
+A3200::logErr (char *proc, AERERR_CODE eRc)
 {
 	TCHAR szMsg[MAX_TEXT_LEN];
 
@@ -74,7 +81,7 @@ Rts2DevSensorA3200::logErr (char *proc, AERERR_CODE eRc)
 
 
 int
-Rts2DevSensorA3200::moveEnable ()
+A3200::moveEnable ()
 {
 	AERERR_CODE eRc;
 	eRc = AerMoveMEnable (hAerCtrl, mAxis);
@@ -94,7 +101,7 @@ Rts2DevSensorA3200::moveEnable ()
 
 
 int
-Rts2DevSensorA3200::home ()
+A3200::home ()
 {
 	AERERR_CODE eRc;
 	int ret = moveEnable ();
@@ -133,7 +140,7 @@ Rts2DevSensorA3200::home ()
 
 
 int
-Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
+A3200::moveAxis (AXISINDEX ax, LONG tar)
 {
 	AERERR_CODE eRc;
 	blockExposure ();
@@ -165,7 +172,7 @@ Rts2DevSensorA3200::moveAxis (AXISINDEX ax, LONG tar)
 
 
 int
-Rts2DevSensorA3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
+A3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == ax1)
 	{
@@ -179,12 +186,12 @@ Rts2DevSensorA3200::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return moveAxis (AXISINDEX_3, new_value->getValueDouble () * AX_SCALE3);
 	}
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 
-Rts2DevSensorA3200::Rts2DevSensorA3200 (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
+A3200::A3200 (int in_argc, char **in_argv)
+:Sensor (in_argc, in_argv)
 {
 	hAerCtrl = NULL;
 
@@ -201,14 +208,14 @@ Rts2DevSensorA3200::Rts2DevSensorA3200 (int in_argc, char **in_argv)
 }
 
 
-Rts2DevSensorA3200::~Rts2DevSensorA3200 (void)
+A3200::~A3200 (void)
 {
 	AerSysStop (hAerCtrl);
 }
 
 
 int
-Rts2DevSensorA3200::processOption (int in_opt)
+A3200::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -216,16 +223,16 @@ Rts2DevSensorA3200::processOption (int in_opt)
 			initFile = optarg;
 			return 0;
 	}
-	return Rts2DevSensor::processOption (in_opt);
+	return Sensor::processOption (in_opt);
 }
 
 
 int
-Rts2DevSensorA3200::init ()
+A3200::init ()
 {
 	AERERR_CODE eRc = AERERR_NOERR;
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
@@ -244,7 +251,7 @@ Rts2DevSensorA3200::init ()
 
 
 int
-Rts2DevSensorA3200::info ()
+A3200::info ()
 {
 	DWORD dwUnits;
 	DWORD dwDriveStatus[MAX_REQUESTED];
@@ -271,12 +278,12 @@ Rts2DevSensorA3200::info ()
 	ax1->setValueDouble (dPosition[0] / AX_SCALE1);
 	ax2->setValueDouble (dPosition[1] / AX_SCALE2);
 	ax3->setValueDouble (dPosition[2] / AX_SCALE3);
-	return Rts2DevSensor::info ();
+	return Sensor::info ();
 }
 
 
 int
-Rts2DevSensorA3200::commandAuthorized (Rts2Conn * conn)
+A3200::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -284,13 +291,13 @@ Rts2DevSensorA3200::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return home ();
 	}
-	return Rts2DevSensor::commandAuthorized (conn);
+	return Sensor::commandAuthorized (conn);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorA3200 device = Rts2DevSensorA3200 (argc, argv);
+	A3200 device = A3200 (argc, argv);
 	return device.run ();
 }

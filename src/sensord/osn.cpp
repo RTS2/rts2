@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -52,7 +52,7 @@ class Osn: public SensorWeather
 
 }
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Osn::info ()

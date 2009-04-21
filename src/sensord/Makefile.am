@@ -6,9 +6,13 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 
 noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h davis.h
 
-EXTRA_DIST = sensord.cpp
+EXTRA_DIST = 
 
-LDADD = sensord.o ../utils/librts2block.a
+noinst_LIBRARIES = librts2sensord.a
+
+librts2sensord_a_SOURCES = sensord.cpp
+
+LDADD = librts2sensord.a ../utils/librts2block.a
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 

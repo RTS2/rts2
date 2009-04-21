@@ -21,7 +21,10 @@
 #include "../utils/rts2connserial.h"
 #include <errno.h>
 
-class Rts2DevSensorMS257:public Rts2DevSensor
+namespace rts2sensord
+{
+
+class MS257:public Sensor
 {
 	private:
 		Rts2ValueDouble * msVer;
@@ -59,15 +62,19 @@ class Rts2DevSensorMS257:public Rts2DevSensor
 		virtual int processOption (int in_opt);
 
 	public:
-		Rts2DevSensorMS257 (int in_argc, char **in_argv);
-		virtual ~ Rts2DevSensorMS257 (void);
+		MS257 (int in_argc, char **in_argv);
+		virtual ~ MS257 (void);
 
 		virtual int init ();
 		virtual int info ();
 };
 
+};
+
+using namespace rts2sensord;
+
 void
-Rts2DevSensorMS257::resetDevice ()
+MS257::resetDevice ()
 {
 	sleep (5);
 	ms257Dev->flushPortIO ();
@@ -76,7 +83,7 @@ Rts2DevSensorMS257::resetDevice ()
 
 
 int
-Rts2DevSensorMS257::writePort (const char *str)
+MS257::writePort (const char *str)
 {
 	int ret;
 	ret = ms257Dev->writePort (str, strlen (str));
@@ -96,7 +103,7 @@ Rts2DevSensorMS257::writePort (const char *str)
 
 
 int
-Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
+MS257::readPort (char **rstr, const char *cmd)
 {
 	static char buf[20];
 	int i = 0;
@@ -127,7 +134,7 @@ Rts2DevSensorMS257::readPort (char **rstr, const char *cmd)
 
 
 int
-Rts2DevSensorMS257::readPort (int &ret, const char *cmd)
+MS257::readPort (int &ret, const char *cmd)
 {
 	int r;
 	char *rstr;
@@ -140,7 +147,7 @@ Rts2DevSensorMS257::readPort (int &ret, const char *cmd)
 
 
 int
-Rts2DevSensorMS257::readPort (double &ret, const char *cmd)
+MS257::readPort (double &ret, const char *cmd)
 {
 	int r;
 	char *rstr;
@@ -153,7 +160,7 @@ Rts2DevSensorMS257::readPort (double &ret, const char *cmd)
 
 
 template < typename T > int
-Rts2DevSensorMS257::writeValue (const char *valueName, T val, char qStr)
+MS257::writeValue (const char *valueName, T val, char qStr)
 {
 	int ret;
 	char *rstr;
@@ -173,7 +180,7 @@ Rts2DevSensorMS257::writeValue (const char *valueName, T val, char qStr)
 
 
 template < typename T > int
-Rts2DevSensorMS257::readValue (const char *valueName, T & val)
+MS257::readValue (const char *valueName, T & val)
 {
 	int ret;
 	char buf[strlen (valueName + 1)];
@@ -188,7 +195,7 @@ Rts2DevSensorMS257::readValue (const char *valueName, T & val)
 
 
 int
-Rts2DevSensorMS257::readRts2Value (const char *valueName, Rts2Value * val)
+MS257::readRts2Value (const char *valueName, Rts2Value * val)
 {
 	int ret;
 	int iret;
@@ -211,7 +218,7 @@ Rts2DevSensorMS257::readRts2Value (const char *valueName, Rts2Value * val)
 
 
 int
-Rts2DevSensorMS257::readRts2ValueFilter (const char *valueName,
+MS257::readRts2ValueFilter (const char *valueName,
 Rts2ValueInteger * val)
 {
 	int ret;
@@ -232,8 +239,8 @@ Rts2ValueInteger * val)
 }
 
 
-Rts2DevSensorMS257::Rts2DevSensorMS257 (int in_argc, char **in_argv):
-Rts2DevSensor (in_argc, in_argv)
+MS257::MS257 (int in_argc, char **in_argv):
+Sensor (in_argc, in_argv)
 {
 	ms257Dev = NULL;
 	dev = "/dev/ttyS0";
@@ -261,14 +268,14 @@ Rts2DevSensor (in_argc, in_argv)
 }
 
 
-Rts2DevSensorMS257::~Rts2DevSensorMS257 ()
+MS257::~MS257 ()
 {
 	delete ms257Dev;
 }
 
 
 int
-Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
+MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == wavelenght)
 	{
@@ -315,12 +322,12 @@ Rts2DevSensorMS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return writeValue ("GRAT", new_value->getValueInteger (), '!');
 	}
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 
 int
-Rts2DevSensorMS257::processOption (int in_opt)
+MS257::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -328,18 +335,18 @@ Rts2DevSensorMS257::processOption (int in_opt)
 			dev = optarg;
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevSensorMS257::init ()
+MS257::init ()
 {
 	int ret;
 
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
@@ -374,7 +381,7 @@ Rts2DevSensorMS257::init ()
 
 
 int
-Rts2DevSensorMS257::info ()
+MS257::info ()
 {
 	int ret;
 	ret = readRts2Value ("PW", wavelenght);
@@ -425,13 +432,13 @@ Rts2DevSensorMS257::info ()
 	ret = readRts2ValueFilter ("GRAT", grat);
 	if (ret)
 		return ret;
-	return Rts2DevSensor::info ();
+	return Sensor::info ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorMS257 device = Rts2DevSensorMS257 (argc, argv);
+	MS257 device = MS257 (argc, argv);
 	return device.run ();
 }

@@ -29,7 +29,7 @@
 #include "sensord.h"
 #include "davisudp.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -92,6 +92,8 @@ class Davis: public SensorWeather
 		void setRain (bool _rain)
 		{
 			rain->setValueBool (_rain);
+			if (_rain)
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
 		}
 		bool getRain ()
 		{

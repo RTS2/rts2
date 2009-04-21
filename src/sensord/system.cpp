@@ -21,7 +21,7 @@
 
 #include <sys/vfs.h>
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -30,7 +30,7 @@ namespace rts2sensor
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class System:public Rts2DevSensor
+class System:public Sensor
 {
 	private:
 		std::vector <std::string> paths;
@@ -46,7 +46,7 @@ class System:public Rts2DevSensor
 
 };
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 System::processOption (int opt)
@@ -56,7 +56,7 @@ System::processOption (int opt)
 		case 'p':
 			return addPath (optarg);
 		default:
-			return Rts2DevSensor::processOption (opt);
+			return Sensor::processOption (opt);
 	}
 	return 0;
 }
@@ -78,7 +78,7 @@ System::info ()
 				((Rts2ValueDouble *) val)->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
 		}
 	}
-	return Rts2DevSensor::info ();
+	return Sensor::info ();
 }
 
 int
@@ -92,7 +92,7 @@ System::addPath (const char *path)
 }
 
 
-System::System (int argc, char **argv):Rts2DevSensor (argc, argv)
+System::System (int argc, char **argv):Sensor (argc, argv)
 {
 	addOption ('p', NULL, 1, "add this path to paths being monitored");
 }

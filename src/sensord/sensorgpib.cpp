@@ -19,8 +19,10 @@
 
 #include "sensorgpib.h"
 
+using namespace rts2sensord;
+
 int
-Rts2DevSensorGpib::gpibWrite (const char *buf)
+Gpib::gpibWrite (const char *buf)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, buf, strlen (buf));
@@ -37,7 +39,7 @@ Rts2DevSensorGpib::gpibWrite (const char *buf)
 
 
 int
-Rts2DevSensorGpib::gpibRead (void *buf, int blen)
+Gpib::gpibRead (void *buf, int blen)
 {
 	int ret;
 	ret = ibrd (gpib_dev, buf, blen);
@@ -56,7 +58,7 @@ Rts2DevSensorGpib::gpibRead (void *buf, int blen)
 
 
 int
-Rts2DevSensorGpib::gpibWriteRead (const char *buf, char *val, int blen)
+Gpib::gpibWriteRead (const char *buf, char *val, int blen)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, buf, strlen (buf));
@@ -88,7 +90,7 @@ Rts2DevSensorGpib::gpibWriteRead (const char *buf, char *val, int blen)
 
 
 int
-Rts2DevSensorGpib::gpibWaitSRQ ()
+Gpib::gpibWaitSRQ ()
 {
 	int ret;
 	short res;
@@ -107,7 +109,7 @@ Rts2DevSensorGpib::gpibWaitSRQ ()
 
 
 int
-Rts2DevSensorGpib::processOption (int in_opt)
+Gpib::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -125,7 +127,7 @@ Rts2DevSensorGpib::processOption (int in_opt)
 
 
 int
-Rts2DevSensorGpib::init ()
+Gpib::init ()
 {
 	int ret;
 	ret = Rts2DevSensor::init ();
@@ -143,8 +145,7 @@ Rts2DevSensorGpib::init ()
 }
 
 
-Rts2DevSensorGpib::Rts2DevSensorGpib (int in_argc, char **in_argv):Rts2DevSensor (in_argc,
-in_argv)
+Gpib::Gpib (int argc, char **argv):Rts2DevSensor (argc, argv)
 {
 	gpib_dev = -1;
 
@@ -156,7 +157,7 @@ in_argv)
 }
 
 
-Rts2DevSensorGpib::~Rts2DevSensorGpib (void)
+Gpib::~Gpib (void)
 {
 	ibclr (gpib_dev);
 	ibonl (gpib_dev, 0);

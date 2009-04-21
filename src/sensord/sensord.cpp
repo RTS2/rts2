@@ -19,14 +19,15 @@
 
 #include "sensord.h"
 
-Rts2DevSensor::Rts2DevSensor (int argc, char **argv):
-Rts2Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
+using namespace rts2sensord;
+
+Sensor::Sensor (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SENSOR, "S1")
 {
 	setIdleInfoInterval (60);
 }
 
 
-Rts2DevSensor::~Rts2DevSensor (void)
+Sensor::~Sensor (void)
 {
 }
 
@@ -42,14 +43,14 @@ SensorWeather::idle ()
 		int ret;
 		ret = info ();
 		if (ret)
-			return Rts2DevSensor::idle ();
+			return Sensor::idle ();
 		if (isGoodWeather () == true)
 		{
 			logStream (MESSAGE_DEBUG) << "switching to GOOD_WEATHER after next_good_weather timeout expires" << sendLog;
 			setWeatherState (true);
 		}
 	}
-	return Rts2DevSensor::idle ();
+	return Sensor::idle ();
 }
 
 
@@ -63,7 +64,7 @@ SensorWeather::isGoodWeather ()
 
 
 SensorWeather::SensorWeather (int argc, char **argv, int _timeout)
-:Rts2DevSensor (argc, argv)
+:Sensor (argc, argv)
 {
 	createValue (nextGoodWeather, "next_good_weather", "date and time of next good weather");
 	setWeatherTimeout (_timeout);

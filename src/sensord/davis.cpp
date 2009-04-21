@@ -30,7 +30,7 @@
 #define OPT_AVG_WINDSPEED           OPT_LOCAL + 1002
 #define OPT_PEEK_WINDSPEED          OPT_LOCAL + 1003
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Davis::processOption (int _opt)
