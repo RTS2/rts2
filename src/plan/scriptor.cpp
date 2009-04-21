@@ -205,15 +205,12 @@ Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 	logStream (MESSAGE_DEBUG) << "Script '" << buf << "'." << sendLog;
 	pclose (gen);
 
-	try
+	std::map <std::string, Rts2ValueString *>::iterator iter = scriptVar.find (in_deviceName);
+	if (iter != scriptVar.end ())
 	{
-	  	Rts2ValueString *val = scriptVar.at (in_deviceName);
+		Rts2ValueString *val = (*iter).second;
 		val->setValueString (filebuf);
 		sendValueAll (val);
-	}
-	catch (std::out_of_range ex)
-	{
-
 	}
 
 	free (filebuf);
