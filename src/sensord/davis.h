@@ -52,7 +52,11 @@ class Davis: public SensorWeather
 
 		Rts2ValueFloat *rainRate;
 
+		Rts2ValueDouble *wetness;
+
 		Rts2ValueDouble *cloud;
+		Rts2ValueDouble *cloudTop;
+		Rts2ValueDouble *cloudBottom;
 		Rts2ValueDouble *cloud_bad;
 
 		Rts2ValueFloat *maxWindSpeed;
@@ -121,7 +125,9 @@ class Davis: public SensorWeather
 				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
 		}
 
-		void setCloud (double in_cloud);
+		void setWetness (double _wetness);
+
+		void setCloud (double _cloud, double _top, double _bottom);
 
 		float getMaxPeekWindspeed ()
 		{

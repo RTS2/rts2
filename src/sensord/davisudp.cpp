@@ -177,7 +177,6 @@ DavisUdp::receive (fd_set * set)
 	float rtCloudBottom;
 	float rtOutsideHum;
 	float rtOutsideTemp;
-	float weatherTimeout = FRAM_CONN_TIMEOUT;
 	double cloud = nan ("f");
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
@@ -242,6 +241,7 @@ DavisUdp::receive (fd_set * set)
 			{
 				float dew;
 				float vapor;
+				master->setWetness (rtWetness);
 				vapor =
 					(rtOutsideHum / 100) * 0.611 * exp (17.27 * rtOutsideTemp /
 					(rtOutsideTemp + 237.3));
@@ -281,7 +281,7 @@ DavisUdp::receive (fd_set * set)
 		master->updateInfoTime ();
 		if (!isnan (cloud))
 		{
-			master->setCloud (cloud);
+			master->setCloud (cloud, rtCloudTop, rtCloudBottom);
 		}
 		delete weather;
 
