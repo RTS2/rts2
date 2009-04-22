@@ -763,7 +763,7 @@ CalibrationTarget::load ()
 			break;
 		std::ostringstream _os;
 		_os << "CalibrationTarget::load cannot find any target for airmass between "
-			<< d_airmass_start << " and " << d_airmass_end << sendLog;
+			<< d_airmass_start << " and " << d_airmass_end ;
 		logMsgDb (_os.str ().c_str (), MESSAGE_DEBUG);
 	}
 	// change priority for bad targets..
@@ -1026,6 +1026,8 @@ ModelTarget::calPosition ()
 			ra_noise -= noise;
 			dec_noise = 2 * noise * ((double) random () / RAND_MAX);
 			dec_noise -= noise;
+			if (!isAboveHorizon (&hrz_poz))
+				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2 * noise;
 	}
 	// null ra + dec .. for recurent call do getPosition (JD..)
 	equ_poz.ra = -1000;
