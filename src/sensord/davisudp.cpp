@@ -229,6 +229,14 @@ DavisUdp::receive (fd_set * set)
 		weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
 		if (ret_c == 0)
 			cloud = rtCloudBottom - rtCloudTop;
+		ret_c = 0;
+
+		weather->getValue ("rtWetness", rtWetness, ret_c);
+		if (ret_c == 0)
+			master->setWetness (rtWetness);
+		else
+			ret_c = 0;
+
 		if (rtRainRate != 0)
 		{
 			rain = 1;
@@ -241,7 +249,6 @@ DavisUdp::receive (fd_set * set)
 			{
 				float dew;
 				float vapor;
-				master->setWetness (rtWetness);
 				vapor =
 					(rtOutsideHum / 100) * 0.611 * exp (17.27 * rtOutsideTemp /
 					(rtOutsideTemp + 237.3));
