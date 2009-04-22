@@ -965,26 +965,6 @@
       <variablelist>
         <varlistentry>
 	  <term>
-	    <option>xplate</option>
-	  </term>
-	  <listitem>
-	    <para>X plate size in arc seconds. Size of one pixel along X axis.
-	    This value is used for ; astrometry package (past) to enable
-	    calculation of precise position.</para>
-          </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>yplate</option>
-	  </term>
-	  <listitem>
-	    <para>Y plate size in arc seconds. Size of one pixel along X axis.
-	    This value is used for ; astrometry package (past) to enable
-	    calculation of precise position.</para>
-          </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
 	    <option>xoa</option>
 	  </term>
 	  <listitem>
