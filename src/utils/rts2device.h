@@ -255,10 +255,6 @@ class Rts2Device:public Rts2Daemon
 
 		virtual bool isRunning (Rts2Conn *conn)
 		{
-			if (!conn->isConnState (CONN_AUTH_OK))
-			{
-				logStream (MESSAGE_DEBUG) << "is_running " << conn->getConnState () << sendLog;
-			}
 			return conn->isConnState (CONN_AUTH_OK);
 		}
 
