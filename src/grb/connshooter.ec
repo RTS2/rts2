@@ -1,4 +1,4 @@
-#include "rts2connshooter.h"
+#include "connshooter.h"
 #include "../utils/libnova_cpp.h"
 
 #include <errno.h>
@@ -16,8 +16,10 @@ EXEC SQL include sqlca;
 
 #define GPS_OFFSET  315964800
 
+using namespace rts2too;
+
 void
-Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
+ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
   // we need to handle somehow better leap seconds, but that can wait
   out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
@@ -26,7 +28,7 @@ Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 
 // is called when nbuf contains '\n'
 int
-Rts2ConnShooter::processAuger ()
+ConnShooter::processAuger ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
     //  int db_auger_t3id;
@@ -142,7 +144,7 @@ Rts2ConnShooter::processAuger ()
 
   if (_is.fail ())
   {
-    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
+    logStream (MESSAGE_ERROR) << "ConnShooter::processAuger failed reading stream" << sendLog;
     return -1;
   }
 
@@ -156,7 +158,7 @@ Rts2ConnShooter::processAuger ()
     || now - db_auger_date > maxTime
     || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
   {
-    logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
+    logStream (MESSAGE_INFO) << "ConnShooter::processAuger ignore (gap_comp "
       << gap_comp
       << " date " << LibnovaDateDouble (db_auger_date)
       << " gap_isT5 " << gap_isT5
@@ -190,7 +192,7 @@ Rts2ConnShooter::processAuger ()
   if (sqlca.sqlcode)
   {
     logStream (MESSAGE_ERROR)
-      << "Rts2ConnShooter::processAuger cannot add new value to db: "
+      << "ConnShooter::processAuger cannot add new value to db: "
       << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
     EXEC SQL ROLLBACK;
     return -1;
@@ -200,9 +202,7 @@ Rts2ConnShooter::processAuger ()
 }
 
 
-Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter *
-in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
-(in_master)
+ConnShooter::ConnShooter (int in_port, AugerShooter *in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   port = in_port;
@@ -220,13 +220,13 @@ in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
 }
 
 
-Rts2ConnShooter::~Rts2ConnShooter (void)
+ConnShooter::~ConnShooter (void)
 {
 }
 
 
 int
-Rts2ConnShooter::idle ()
+ConnShooter::idle ()
 {
   int ret;
   int err;
@@ -241,12 +241,12 @@ Rts2ConnShooter::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
       {
-        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
+        logStream (MESSAGE_ERROR) << "ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
         connectionError (-1);
       }
       else if (err)
       {
-        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (err) << sendLog;
+        logStream (MESSAGE_ERROR) << "ConnShooter::idle getsockopt " << strerror (err) << sendLog;
         connectionError (-1);
       }
       else
@@ -266,7 +266,7 @@ Rts2ConnShooter::idle ()
 
 
 int
-Rts2ConnShooter::init_listen ()
+ConnShooter::init_listen ()
 {
   int ret;
 
@@ -275,7 +275,7 @@ Rts2ConnShooter::init_listen ()
   sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock == -1)
   {
-    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen socket " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen socket " << strerror (errno) << sendLog;
     return -1;
   }
   struct sockaddr_in server;
@@ -286,7 +286,7 @@ Rts2ConnShooter::init_listen ()
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
   if (ret)
   {
-    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
     return -1;
   }
 
@@ -294,7 +294,7 @@ Rts2ConnShooter::init_listen ()
     bind (sock, (struct sockaddr *) &server, sizeof (server));
   if (ret)
   {
-    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
     return -1;
   }
   setConnState (CONN_CONNECTED);
@@ -303,16 +303,16 @@ Rts2ConnShooter::init_listen ()
 
 
 int
-Rts2ConnShooter::init ()
+ConnShooter::init ()
 {
   return init_listen ();
 }
 
 
 void
-Rts2ConnShooter::connectionError (int last_data_size)
+ConnShooter::connectionError (int last_data_size)
 {
-  logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
+  logStream (MESSAGE_DEBUG) << "ConnShooter::connectionError" << sendLog;
   if (sock > 0)
   {
     close (sock);
@@ -327,7 +327,7 @@ Rts2ConnShooter::connectionError (int last_data_size)
 
 
 int
-Rts2ConnShooter::receive (fd_set * set)
+ConnShooter::receive (fd_set * set)
 {
   int ret = 0;
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -344,7 +344,7 @@ Rts2ConnShooter::receive (fd_set * set)
     }
     nbuf[ret] = '\0';
     processAuger ();
-    logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::receive data: " << nbuf << sendLog;
+    logStream (MESSAGE_DEBUG) << "ConnShooter::receive data: " << nbuf << sendLog;
     successfullRead ();
     gettimeofday (&last_packet, NULL);
     // enable others to catch-up (FW connections will forward packet to their sockets)
@@ -355,14 +355,14 @@ Rts2ConnShooter::receive (fd_set * set)
 
 
 int
-Rts2ConnShooter::lastPacket ()
+ConnShooter::lastPacket ()
 {
   return last_packet.tv_sec;
 }
 
 
 double
-Rts2ConnShooter::lastTargetTime ()
+ConnShooter::lastTargetTime ()
 {
   return last_target_time;
 }

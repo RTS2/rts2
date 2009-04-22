@@ -7,7 +7,9 @@
 #include "augershooter.h"
 #include "../utils/rts2command.h"
 
-Rts2DevAugerShooter::Rts2DevAugerShooter (int in_argc, char **in_argv):
+using namespace rts2too;
+
+AugerShooter::AugerShooter (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
 	shootercnn = NULL;
@@ -23,13 +25,13 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 }
 
 
-Rts2DevAugerShooter::~Rts2DevAugerShooter (void)
+AugerShooter::~AugerShooter (void)
 {
 }
 
 
 int
-Rts2DevAugerShooter::processOption (int in_opt)
+AugerShooter::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -44,7 +46,7 @@ Rts2DevAugerShooter::processOption (int in_opt)
 
 
 int
-Rts2DevAugerShooter::init ()
+AugerShooter::init ()
 {
 	int ret;
 	ret = Rts2DeviceDb::init ();
@@ -59,7 +61,7 @@ Rts2DevAugerShooter::init ()
 	int maxTime = 600;
 	config->getInteger ("augershooter", "maxtime", maxTime);
 
-	shootercnn = new Rts2ConnShooter (port, this, minEnergy, maxTime);
+	shootercnn = new ConnShooter (port, this, minEnergy, maxTime);
 
 	ret = shootercnn->init ();
 
@@ -73,7 +75,7 @@ Rts2DevAugerShooter::init ()
 
 
 int
-Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
+AugerShooter::newShower (double lastDate, double ra, double dec)
 {
 	Rts2Conn *exec;
 	lastAugerDate->setValueDouble (lastDate);
@@ -95,7 +97,7 @@ Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
 
 
 bool
-Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+AugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
 	return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
 		&& ra == lastAugerRa->getValueDouble ()
@@ -106,6 +108,6 @@ Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 int
 main (int argc, char **argv)
 {
-	Rts2DevAugerShooter device = Rts2DevAugerShooter (argc, argv);
+	AugerShooter device = AugerShooter (argc, argv);
 	return device.run ();
 }

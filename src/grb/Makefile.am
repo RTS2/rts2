@@ -1,8 +1,8 @@
 bin_PROGRAMS = rts2-grbforward
 
-noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2grbexecconn.h rts2connshooter.h augershooter.h
+noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2grbexecconn.h connshooter.h augershooter.h
 
-EXTRA_DIST = rts2conngrb.ec rts2connshooter.ec
+EXTRA_DIST = rts2conngrb.ec connshooter.ec
 
 CLEANFILES = rts2conngrb.cpp rts2connshooter.cpp
 
@@ -14,14 +14,11 @@ if PGSQL
 
 bin_PROGRAMS += rts2-grbd rts2-augershooter
 
-
-nodist_rts2_grbd_SOURCES = rts2conngrb.cpp
-rts2_grbd_SOURCES = grbd.cpp rts2grbfw.cpp rts2grbexecconn.cpp
+rts2_grbd_SOURCES = grbd.cpp rts2grbfw.cpp rts2grbexecconn.cpp rts2conngrb.cpp
 rts2_grbd_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_grbd_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
-nodist_rts2_augershooter_SOURCES = rts2connshooter.cpp
-rts2_augershooter_SOURCES = augershooter.cpp
+rts2_augershooter_SOURCES = augershooter.cpp connshooter.cpp
 rts2_augershooter_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_augershooter_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 
