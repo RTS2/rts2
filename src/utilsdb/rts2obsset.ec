@@ -30,7 +30,7 @@ void
 Rts2ObsSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		const char *stmp_c;
+		char *stmp_c;
 
 		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
 		VARCHAR db_tar_name[150];
@@ -80,9 +80,12 @@ Rts2ObsSet::load (std::string in_where)
 		"observations.tar_id = targets.tar_id "
 		"AND " << in_where << 
 		" ORDER BY obs_id DESC;";
-	stmp_c  = _os.str ().c_str ();
+	stmp_c  = new char[_os.str ().length () + 1];
+	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE obs_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
 
 	EXEC SQL DECLARE obs_cur_timestamps CURSOR FOR obs_stmp;
 

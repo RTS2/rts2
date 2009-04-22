@@ -50,7 +50,7 @@ void
 Rts2TargetSet::load (std::string in_where, std::string order_by)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-	const char *stmp_c;
+	char *stmp_c;
 	int db_tar_id;
 	EXEC SQL END DECLARE SECTION;
 
@@ -65,9 +65,12 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 		" WHERE " << in_where << 
 		" ORDER BY " << order_by << ";";
 
-	stmp_c = _os.str ().c_str ();
+	stmp_c = new char[_os.str ().length ()];
+	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE tar_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
 
 	EXEC SQL DECLARE tar_cur CURSOR FOR tar_stmp;
 

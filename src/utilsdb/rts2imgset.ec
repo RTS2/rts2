@@ -47,7 +47,7 @@ int
 Rts2ImgSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		const char *stmp_c;
+		char *stmp_c;
 
 		int d_tar_id;
 		int d_obs_id;
@@ -108,9 +108,12 @@ Rts2ImgSet::load (std::string in_where)
 		" ORDER BY "
 		"img_id DESC;";
 
-	stmp_c = _os.str ().c_str ();
+	stmp_c = new char[_os.str ().length ()];
+	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE cur_images_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
 
 	EXEC SQL DECLARE cur_images CURSOR FOR cur_images_stmp;
 
