@@ -30,7 +30,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 	focTemp = NULL;
 
 	createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
-	createValue (focTarget, "TARGET", "focuser target value", true);
+	createValue (focTarget, "FOC_TAR", "focuser target value", true);
 
 	addOption ('o', "home", 1, "home position (default to 750!)");
 	addOption ('p', "start_position", 1,

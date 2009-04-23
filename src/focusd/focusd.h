@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2005-2007 Stanislav Vitek
  *
@@ -22,8 +22,12 @@
 
 #include "../utils/rts2device.h"
 
+/**
+ * Focuser interface.
+ */
 namespace rts2focusd
 {
+
 /**
  * Abstract base class for focuser.
  *
