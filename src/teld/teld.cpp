@@ -897,9 +897,6 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	{
 		corrRaDec->incValueRaDec (waitingCorrRaDec->getRa (), waitingCorrRaDec->getDec ());
 
-		waitingCorrRaDec->setValueRaDec (0, 0);
-		waitingCorrRaDec->resetValueChanged ();
-
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
 	}
 
@@ -962,6 +959,12 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	objRaDec->resetValueChanged ();
 	offsetRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
+
+	if (waitingCorrRaDec->wasChanged ())
+	{
+		waitingCorrRaDec->setValueRaDec (0, 0);
+		waitingCorrRaDec->resetValueChanged ();
+	}
 
 	if (onlyCorrect)
 	{

@@ -45,6 +45,9 @@ namespace rts2telmodel
 	class Model;
 };
 
+/**
+ * Telescope interface and relating things (modelling, pointing, ...)
+ */
 namespace rts2teld
 {
 
@@ -468,6 +471,26 @@ class Telescope:public Rts2Device
 		double getCorrDec ()
 		{
 		  	return corrRaDec->getDec ();
+		}
+
+		/**
+		 * Return offset from last applied correction.
+		 *
+		 * @return RA offset - corrections which arrives from last applied correction.
+		 */
+		double getWaitCorrRa ()
+		{
+			return waitingCorrRaDec->getRa ();
+		}
+
+		/**
+		 * Return offset from last applied correction.
+		 *
+		 * @return DEC offset - corrections which arrives from last applied correction.
+		 */
+		double getWaitCorrDec ()
+		{
+			return waitingCorrRaDec->getDec ();
 		}
 
 		/**
