@@ -199,7 +199,7 @@ Andor::isExposing ()
 		switch (getDataType ())
 		{
 			case RTS2_DATA_LONG:
-				if (GetMostRecentImage ((int32_t *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				if (GetMostRecentImage ((at_32 *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
 				{
 					logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
 					return -1;
@@ -269,7 +269,7 @@ Andor::readoutOneLine ()
 			ret = GetAcquiredFloatData ((float *)dataBuffer, chipUsedSize ());
 			break;
 		case RTS2_DATA_LONG:
-			ret = GetAcquiredData ((int32_t *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredData ((at_32 *)dataBuffer, chipUsedSize ());
 			break;
 			// case RTS2_DATA_SHORT:
 		default:
@@ -987,7 +987,7 @@ Andor::printInfo ()
 			printf ("VIDEO");
 			break;
 		default:
-			printf ("<unknown> (code is %u)", cap.ulCameraType);
+			printf ("<unknown> (code is %li)", cap.ulCameraType);
 			break;
 	}
 
