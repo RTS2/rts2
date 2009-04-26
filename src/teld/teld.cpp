@@ -683,6 +683,16 @@ Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
 int
 Telescope::changeMasterState (int new_state)
 {
+	// park us during day..
+	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
+		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
+	{
+		if ((getState () & TEL_MASK_MOVING) == 0)
+			startPark (NULL);
+	}
+
 	if (blockOnStandby->getValueBool () == true)
 	{
 		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
@@ -693,15 +703,6 @@ Telescope::changeMasterState (int new_state)
 			blockMove->setValueBool (false);
 	}
 
-	// park us during day..
-	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
-		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
-		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
-	{
-		if ((getState () & TEL_MASK_MOVING) == 0)
-			startPark (NULL);
-	}
 	return Rts2Device::changeMasterState (new_state);
 }
 
@@ -822,6 +823,19 @@ Telescope::info ()
 	airmass->setValueDouble (ln_get_airmass (telAltAz->getAlt (), 750));
 	lst->setValueDouble (getLstDeg (ln_get_julian_from_sys ()));
 	hourAngle->setValueDouble (lst->getValueDouble () - telRaDec->getRa ());
+
+	// check if we aren't bellow hard horizon - if yes, stop worm..
+	if (hardHorizon)
+	{
+		struct ln_hrz_posn hrpos;
+		getAltAz ();
+		hrpos.az = telAltAz->getAz ();
+		hrpos.alt = telAltAz->getAlt ();
+		if (!hardHorizon->is_good (&hrpos))
+		{
+			stopWorm ();
+		}
+	}
 
 	return Rts2Device::info ();
 }
