@@ -25,6 +25,9 @@
 
 #define DEF_WEATHER_TIMEOUT 10
 
+/**
+ * Dome, copulas and roof controllers.
+ */
 namespace rts2dome {
 
 /**
