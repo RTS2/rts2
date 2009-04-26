@@ -115,6 +115,10 @@ ConnEpics::queueGetValue (Rts2Value *value)
 			pchtype = DBR_DOUBLE;
 			val->storage = malloc (sizeof (double));
 			break;
+		case RTS2_VALUE_SELECTION:
+			pchtype = DBR_DOUBLE;
+			val->storage = malloc (sizeof (double));
+			break;
 		case RTS2_VALUE_INTEGER:
 			pchtype = DBR_INT;
 			val->storage = malloc (sizeof (int));
@@ -149,6 +153,11 @@ ConnEpics::queueSetValue (Rts2Value *value)
 			pchtype = DBR_DOUBLE;
 			data = malloc (sizeof (double));
 			*((double *)data) = ((Rts2ValueDouble *) value)->getValueDouble ();
+			break;
+		case RTS2_VALUE_SELECTION:
+			pchtype = DBR_DOUBLE;
+			data = malloc (sizeof (double));
+			*((double *)data) = ((Rts2ValueDouble *) value)->getValueInteger ();
 			break;
 		case RTS2_VALUE_INTEGER:
 			pchtype = DBR_INT;
@@ -226,6 +235,8 @@ ConnEpics::callPendIO ()
 				case RTS2_VALUE_DOUBLE:
 					((Rts2ValueDouble *) (*iter).value)->setValueDouble (*((double *) (*iter).storage));
 					break;
+				case RTS2_VALUE_SELECTION:
+					((Rts2ValueSelection *) (*iter).value)->setValueInteger (*((double *) (*iter).storage));
 				case RTS2_VALUE_INTEGER:
 					(*iter).value->setValueInteger (*((int*) (*iter).storage));
 					break;
