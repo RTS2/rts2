@@ -1411,9 +1411,6 @@ Rts2ConnGrb::receive (fd_set *set)
 	}
 	else if (sock >= 0 && FD_ISSET (sock, set))
 	{
-		// translate packages to linux..
-		short *sp;				 // Ptr to a short; used for the swapping
-		short pl, ph;			 // Low part & high part
 		ret = read (sock, ((char*) nbuf) + gcnReceivedBytes, sizeof (nbuf) - gcnReceivedBytes);
 		if (ret == 0 && isConnState (CONN_CONNECTING))
 		{
@@ -1432,27 +1429,19 @@ Rts2ConnGrb::receive (fd_set *set)
 		successfullRead ();
 		gettimeofday (&last_packet, NULL);
 		// swap bytes..
-		for (int i=0; i < SIZ_PKT; i++)
+		for (int i=0; i < SIZ_PKT / 2; i++)
 		{
-			nbuf[i] = ntohs (lbuf[i]);
+			lbuf[i] = ntohl (nbuf[i]);
 		}
 
 		/* Immediately echo back the packet so GCN can monitor:
 		 * (1) the actual receipt by the site, and
 		 * (2) the roundtrip travel times.
 		 * Everything except KILL's get echo-ed back.            */
-		if(nbuf[PKT_TYPE] != TYPE_KILL_SOCKET)
+		if(lbuf[PKT_TYPE] != TYPE_KILL_SOCKET)
 		{
 			write (sock, (char *)nbuf, sizeof(nbuf));
 			successfullSend ();
-		}
-		sp = (short *)lbuf;
-		for(int i=0; i<SIZ_PKT; i++)
-		{
-			pl = sp[2*i];
-			ph = sp[2*i + 1];
-			sp[2*i] = ph;
-			sp[2*i + 1] = pl;
 		}
 		t = gmtime (&last_packet.tv_sec);
 		here_sod = t->tm_hour*3600 + t->tm_min*60 + t->tm_sec + last_packet.tv_usec / USEC_SEC;
