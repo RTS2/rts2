@@ -347,8 +347,8 @@ if test "x${libwcs}" != "xno"; then
 **** You can download one from
 **** http://tdc-www.harvard.edu/software/wcstools/.
 **** Please note that there is no standart procedure to install
-**** that library. You have to put headers and lib* files from
-**** libwcs directory somewhere, where I can acces them
+**** that library. Please see INSTALL file for instructions how to install
+**** WCS library.
 EOF
   exit 1])
   if test "x${libwcs}" != "xyes"; then
