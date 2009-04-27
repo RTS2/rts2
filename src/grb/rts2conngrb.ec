@@ -1431,6 +1431,12 @@ Rts2ConnGrb::receive (fd_set *set)
 		gcnReceivedBytes = 0;
 		successfullRead ();
 		gettimeofday (&last_packet, NULL);
+		// swap bytes..
+		for (int i=0; i < SIZ_PKT; i++)
+		{
+			nbuf[i] = ntohs (lbuf[i]);
+		}
+
 		/* Immediately echo back the packet so GCN can monitor:
 		 * (1) the actual receipt by the site, and
 		 * (2) the roundtrip travel times.
@@ -1440,7 +1446,6 @@ Rts2ConnGrb::receive (fd_set *set)
 			write (sock, (char *)nbuf, sizeof(nbuf));
 			successfullSend ();
 		}
-		swab (nbuf, lbuf, SIZ_PKT * sizeof (lbuf[0]));
 		sp = (short *)lbuf;
 		for(int i=0; i<SIZ_PKT; i++)
 		{
