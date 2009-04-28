@@ -3,7 +3,7 @@
 EXTRA_DIST = \
     rts2.xml \
     rts2.ini.xml \
-    rts2-devices.xml \
+    rts2-device.xml \
     rts2-mon.xml \
     rts2-target.xml \
     rts2-targetinfo.xml \
@@ -34,7 +34,7 @@ EXTRA_DIST = \
 man_MANS = \
     rts2.7 \
     rts2.ini.5 \
-    rts2-devices.7 \
+    rts2-device.7 \
     rts2-mon.1 \
     rts2-target.1 \
     rts2-targetinfo.1 \

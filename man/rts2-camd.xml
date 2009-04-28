@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2009-04-21</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-camd">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.7.4</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Generic manual page for camera drivers.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>-i</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--local-port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--localhost <replaceable>hostname</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--modefile <replaceable>filename</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-d <replaceable>device name</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+       RTS2 uses device drivers to communicate with various available hardware.
+       Device drivers are stand-alone binaries. They connect to RTS2 system
+       using TCP/IP connection, and register to the system. They also know how
+       to talk to different supported devices, and transfer RTS2 command and
+       variables to those devices commmands and variables. Last, but not least,
+       they provide RTS2 with messages about their functionality and status.
+     </para>
+     <para>
+       This manual page document generic devices options. To see devices
+       options please consult man pages for generic devices (rts2-camd, ..) and
+       man pages for specific devices (rts2-camd-fli,..). See links bellow for 
+       help in finding those informations.
+     </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      RTS2 follows the usual &gnu; command line syntax, with long options
+      starting with two dashes (`--').  A summary of options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options and ussuall usage.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of the program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--server <replaceable class="parameter">server-name[:port]</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify name of the host and possibly port, which runs
+	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	    This option is needed only for setups that use multiple computers.
+	    Its default is localhost for hostname and 617 for port number. If
+	    only hostname is provided, default port number - 617 - is used. 
+	    Default will work for simple setups.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-camd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
