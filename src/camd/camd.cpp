@@ -30,6 +30,7 @@
 #include "rts2devclifocuser.h"
 
 #define OPT_FLIP    OPT_LOCAL + 401
+#define OPT_PLATE   OPT_LOCAL + 402
 
 using namespace rts2camd;
 
@@ -42,6 +43,35 @@ Camera::initData ()
 	nAcc = 1;
 }
 
+
+int
+Camera::setPlate (const char *arg)
+{
+	double x, y;
+	int ret = sscanf (arg, "%lf:%lf", &x, &y);
+	if (ret != 2)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot parse plate - expected two numbers separated by :" << sendLog;
+		return -1;
+	}
+	setDefaultPlate (x, y);
+	return 0;
+}
+
+
+void
+Camera::setDefaultPlate (double x, double y)
+{
+	if (xplate == NULL)
+		createValue (xplate, "XPLATE", "[arcsec] X plate scale");
+	if (yplate == NULL)
+	  	createValue (yplate, "YPLATE", "[arcsec] Y plate scale");
+	xplate->setValueDouble (x);
+	yplate->setValueDouble (y);
+
+	defaultXplate = x;
+	defaultYplate = y;
+}
 
 void
 Camera::initCameraChip ()
@@ -63,6 +93,16 @@ Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in
 int
 Camera::setBinning (int in_vert, int in_hori)
 {
+	if (xplate)
+	{
+		xplate->setValueDouble (defaultXplate * in_hori);
+		sendValueAll (xplate);
+	}
+	if (yplate)
+	{
+		yplate->setValueDouble (defaultYplate * in_vert);
+		sendValueAll (yplate);
+	}
 	return 0;
 }
 
@@ -253,6 +293,12 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
+	xplate = NULL;
+	yplate = NULL;
+
+	defaultXplate = rts2_nan ("f");
+	defaultYplate = rts2_nan ("f");
+
 	currentImageData = -1;
 
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, 0, 0, true);
@@ -309,6 +355,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
 	addOption ('r', NULL, 1, "camera rotang");
 	addOption (OPT_FLIP, "flip", 1, "camera flip (default to 1)");
+	addOption (OPT_PLATE, "plate", 1, "camera plate scale, x:y");
 }
 
 
@@ -448,6 +495,8 @@ Camera::processOption (int in_opt)
 		case OPT_FLIP:
 			flip->setValueCharArr (optarg);
 			break;
+		case OPT_PLATE:
+			return setPlate (optarg);
 		default:
 			return Rts2ScriptDevice::processOption (in_opt);
 	}
@@ -562,9 +611,6 @@ Camera::initValues ()
 
 	addConstValue ("chips", 1);
 
-	addConstValue ("pixelX", "X pixel size", pixelX);
-	addConstValue ("pixelY", "Y pixel size", pixelY);
-
 	initBinnings ();
 	initDataTypes ();
 
@@ -671,7 +717,8 @@ Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		|| old_value == quedExpNumber
 		|| old_value == expType
 		|| old_value == rotang
-		|| old_value == nightCoolTemp)
+		|| old_value == nightCoolTemp
+		|| old_value == binning)
 	{
 		return 0;
 	}
@@ -691,17 +738,33 @@ Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return setCoolTemp (new_value->getValueFloat ()) == 0 ? 0 : -2;
 	}
-	if (old_value == binning)
-	{
-		Binning2D *bin = (Binning2D *) binning->getData ();
-		return setBinning (bin->horizontal, bin->vertical);
-	}
 	if (old_value == chipUsedReadout)
 	{
 		Rts2ValueRectangle *rect = (Rts2ValueRectangle *) new_value;
 		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt ()) == 0 ? 0 : -2;
 	}
+	if (old_value == xplate)
+	{
+		setDefaultPlate (new_value->getValueDouble (), yplate->getValueDouble ());
+		return 0;
+	}
+	if (old_value == yplate)
+	{
+		setDefaultPlate (xplate->getValueDouble (), new_value->getValueDouble ());
+		return 0;
+	}
 	return Rts2ScriptDevice::setValue (old_value, new_value);
+}
+
+
+void
+Camera::valueChanged (Rts2Value *changed_value)
+{
+	if (changed_value == binning)
+	{
+		Binning2D *bin = (Binning2D *) binning->getData ();
+		setBinning (bin->horizontal, bin->vertical);
+	}
 }
 
 

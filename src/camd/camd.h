@@ -38,6 +38,9 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
+/**
+ * Camera and CCD interfaces.
+ */
 namespace rts2camd
 {
 
@@ -164,6 +167,14 @@ class Camera:public Rts2ScriptDevice
 		Rts2ValueFloat *exposure;
 		Rts2ValueInteger *flip;
 		bool defaultFlip;
+
+		Rts2ValueDouble *xplate;
+		Rts2ValueDouble *yplate;
+		double defaultXplate;
+		double defaultYplate;
+
+		int setPlate (const char *arg);
+		void setDefaultPlate (double x, double y);
 
 		Rts2ValueRectangle *chipSize;
 
@@ -575,6 +586,8 @@ class Camera:public Rts2ScriptDevice
 		virtual int stopExposure ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual void valueChanged (Rts2Value *changed_value);
 
 		/**
 		 * Create shutter variable,

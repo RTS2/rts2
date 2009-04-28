@@ -86,13 +86,10 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		int saveImage;
 
 		// some camera characteristics..
-		double xplate;
-		double yplate;
 		double xoa;
 		double yoa;
 		double ter_xoa;
 		double ter_yoa;
-		int flip;
 		std::string instrume;
 		std::string telescop;
 		std::string origin;
