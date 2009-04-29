@@ -153,7 +153,7 @@ Rts2NWindowEditIntegers::getValueInteger ()
 {
 	char buf[200];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
 	int tval = strtol (buf, &endptr, 10);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
@@ -184,7 +184,7 @@ Rts2NWindowEditDigits::getValueDouble ()
 {
 	char buf[200];
 	char *endptr;
-	mvwinnstr (getWriteWindow (), 0, 0, buf, 200);
+	mvwinnstr (getWriteWindow (), 0, 0, buf, 199);
 	double tval = strtod (buf, &endptr);
 	if (*endptr != '\0' && *endptr != ' ')
 	{
