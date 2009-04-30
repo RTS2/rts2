@@ -106,8 +106,31 @@ class Dome:public Rts2Device
 		 */
 		virtual int endOpen () = 0;
 
+		/**
+		 * Called when dome needs to be closed. Should start dome
+		 * closing sequence.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int startClose () = 0;
+
+		/**
+		 * Called to check if dome is closed. It is called also outside
+		 * of the closing sequence, to check if dome is closed when bad
+		 * weather arrives. When implemented correctly, it should check
+		 * state of dome end switches, and return proper values.
+		 *
+		 * @return -2 if dome is closed, -1 if there was an error, >=0 is timeout in miliseconds till
+		 * next isClosed call (when dome is closing).
+		 */
 		virtual long isClosed () = 0;
+
+		/**
+		 * Called after dome is closed. Can turn of various devices
+		 * used to close dome,..
+		 *
+		 * @return -1 on error, 0 on sucess.
+		 */
 		virtual int endClose () = 0;
 
 		// called when dome passed some states..
