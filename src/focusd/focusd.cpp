@@ -25,15 +25,18 @@ Focusd::Focusd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	homePos = 750;
-	startPosition = INT_MIN;
 
-	focTemp = NULL;
+	temperature = NULL;
 
-	createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
-	createValue (focTarget, "FOC_TAR", "focuser target value", true);
+	createValue (position, "FOC_POS", "focuser position", true);
+	createValue (target, "FOC_TAR", "focuser target position", true);
+
+	createValue (defaultPosition, "FOC_DEF", "default target value", true);
+	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true);
+	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true);
 
 	addOption ('o', "home", 1, "home position (default to 750!)");
-	addOption ('p', "start_position", 1,
+	addOption ('p', NULL, 1,
 		"focuser start position (focuser will be set to this one, if initial position is detected");
 }
 
@@ -47,7 +50,7 @@ Focusd::processOption (int in_opt)
 			homePos = atoi (optarg);
 			break;
 		case 'p':
-			startPosition = atoi (optarg);
+			defaultPosition->setValueCharArr (optarg);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
@@ -67,7 +70,7 @@ Focusd::checkState ()
 		if (ret >= 0)
 		{
 			setTimeout (ret);
-			sendValueAll (focPos);
+			sendValueAll (position);
 		}
 		else
 		{
@@ -91,6 +94,11 @@ Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
+	if (isAtStartPosition () == false)
+	{
+		setPosition (defaultPosition->getValueInteger ());
+	}
+
 	return Rts2Device::initValues ();
 }
 
@@ -106,20 +114,23 @@ Focusd::idle ()
 int
 Focusd::home ()
 {
-	return setTo (homePos);
+	return setPosition (homePos);
 }
 
 
 int
-Focusd::setTo (Rts2Conn * conn, int num)
+Focusd::setPosition (int num)
 {
 	int ret;
-	setFocTarget (num);
+	target->setValueInteger (num);
+	sendValueAll (target);
 	ret = setTo (num);
-	if (ret && conn)
-		conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
-	else
-		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set focuser to " << num << sendLog;
+		return ret;
+	}
+	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
 	return ret;
 }
 
@@ -162,7 +173,7 @@ Focusd::isFocusing ()
 	ret = info ();
 	if (ret)
 		return -1;
-	if (getFocPos () != getFocTarget ())
+	if (getPosition () != getTarget ())
 		return USEC_SEC;
 	return -2;
 }
@@ -176,26 +187,28 @@ Focusd::endFocusing ()
 
 
 int
-Focusd::checkStartPosition ()
-{
-	if (startPosition != INT_MIN && isAtStartPosition ())
-	{
-		return setTo (NULL, startPosition);
-	}
-	return 0;
-}
-
-
-int
 Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == focPos || old_value == focTarget)
+	if (old_value == position || old_value == target)
 	{
-		return setTo (NULL, new_value->getValueInteger ())? -2 : 1;
+		return setPosition (new_value->getValueInteger ())? -2 : 0;
+	}
+	if (old_value == defaultPosition || old_value == focusingOffset || old_value == tempOffset)
+	{
+		return updatePosition (new_value->getValueInteger () - old_value->getValueInteger ())? -2 : 0;
 	}
 	return Rts2Device::setValue (old_value, new_value);
 }
 
+
+int
+Focusd::scriptEnds ()
+{
+	updatePosition (-1 * tempOffset->getValueInteger ());
+	tempOffset->setValueInteger (0);
+	sendValueAll (tempOffset);
+	return Rts2Device::scriptEnds ();
+}
 
 int
 Focusd::commandAuthorized (Rts2Conn * conn)
@@ -203,21 +216,10 @@ Focusd::commandAuthorized (Rts2Conn * conn)
 	if (conn->isCommand ("help"))
 	{
 		conn->sendMsg ("info  - information about focuser");
-		conn->sendMsg ("set   - set to given position");
 		conn->sendMsg ("focus - auto focusing");
 		conn->sendMsg ("exit  - exit from connection");
 		conn->sendMsg ("help  - print, what you are reading just now");
 		return 0;
-	}
-	else if (conn->isCommand ("set"))
-	{
-		int num;
-		// CHECK_PRIORITY;
-
-		if (conn->paramNextInteger (&num) || !conn->paramEnd ())
-			return -2;
-
-		return setTo (conn, num);
 	}
 	else if (conn->isCommand ("focus"))
 	{

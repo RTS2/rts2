@@ -187,7 +187,7 @@ Fli::info ()
 	if (ret)
 		return -1;
 
-	focPos->setValueInteger ((int) steps);
+	position->setValueInteger ((int) steps);
 
 	return Focusd::info ();
 }
@@ -201,7 +201,7 @@ Fli::setTo (int num)
 	if (ret)
 		return ret;
 
-	num -= focPos->getValueInteger ();
+	num -= position->getValueInteger ();
 
 	ret = FLIStepMotorAsync (dev, (long) num);
 	if (ret)
@@ -243,7 +243,7 @@ Fli::isAtStartPosition ()
 	ret = info ();
 	if (ret)
 		return false;
-	return getFocPos () == 0;
+	return getPosition () == 0;
 }
 
 

@@ -141,10 +141,7 @@ OpenTpl::init ()
 		return ret;
 
 	ret = initOpenTplDevice ();
-	if (ret)
-		return ret;
-
-	return checkStartPosition ();
+	return ret;
 }
 
 
@@ -202,7 +199,7 @@ OpenTpl::setTo (int num)
 			sendLog;
 		return -1;
 	}
-	focPos->setValueInteger (num);
+	position->setValueInteger (num);
 	return 0;
 }
 
@@ -246,7 +243,7 @@ OpenTpl::isAtStartPosition ()
 	ret = info ();
 	if (ret)
 		return false;
-	return (fabs ((float) getFocPos () - 15200 ) < 100);
+	return (fabs ((float) getPosition () - 15200 ) < 100);
 }
 
 

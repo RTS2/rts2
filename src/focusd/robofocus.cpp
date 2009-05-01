@@ -48,8 +48,8 @@ class Robofocus:public Focusd
 		int focus_move (const char *cmd, int steps);
 		void compute_checksum (char *cmd);
 
-		int getPos (Rts2ValueInteger * position);
-		int getTemp (Rts2ValueFloat * temperature);
+		int getPos ();
+		int getTemp ();
 		int getSwitchState ();
 	protected:
 		virtual int processOption (int in_opt);
@@ -81,7 +81,7 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 	createValue (focSwitches, "switches", "focuser switches", false);
 	switchNum = 4;
 
-	createFocTemp ();
+	createTemperature ();
 
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 
@@ -156,8 +156,8 @@ Robofocus::initValues ()
 int
 Robofocus::info ()
 {
-	getPos (focPos);
-	getTemp (focTemp);
+	getPos ();
+	getTemp ();
 	// querry for switch state
 	int swstate = getSwitchState ();
 	if (swstate >= 0)
@@ -167,7 +167,7 @@ Robofocus::info ()
 
 
 int
-Robofocus::getPos (Rts2ValueInteger * position)
+Robofocus::getPos ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -186,7 +186,7 @@ Robofocus::getPos (Rts2ValueInteger * position)
 
 
 int
-Robofocus::getTemp (Rts2ValueFloat * temp)
+Robofocus::getTemp ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -200,7 +200,7 @@ Robofocus::getTemp (Rts2ValueFloat * temp)
 	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 								 // return temp in Celsius
-	temp->setValueFloat ((atof (rbuf + 2) / 2) - 273.15);
+	temperature->setValueFloat ((atof (rbuf + 2) / 2) - 273.15);
 	return 0;
 }
 
