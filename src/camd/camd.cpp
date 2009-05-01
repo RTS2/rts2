@@ -254,7 +254,7 @@ Camera::sendFirstLine ()
 	focusingHeader.filter = htons (getLastFilterNum ());
 	// light - dark images
 	if (expType)
-		focusingHeader.shutter = expType->getValueInteger ();
+		focusingHeader.shutter = htons (expType->getValueInteger ());
 	else
 		focusingHeader.shutter = 0;
 	focusingHeader.subexp = subExposure->getValueDouble ();
