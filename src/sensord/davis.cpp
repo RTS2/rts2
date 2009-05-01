@@ -86,8 +86,14 @@ Davis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 int
 Davis::idle ()
 {
-	if (getLastInfoTime () > 120)
+	if (getLastInfoTime () > 180)
+	{
+		if (isGoodWeather ())
+		{
+			logStream (MESSAGE_ERROR) << "Weather station did not send any data for 180 seconds, switching to bad weather" << sendLog;
+		}
 		setWeatherTimeout (300);
+	}
 	return SensorWeather::idle ();
 }
 
