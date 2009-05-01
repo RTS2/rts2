@@ -188,8 +188,7 @@ void
 Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
 	// if unknow type, don't process image..
-	if (image->getShutter () != SHUT_OPENED
-		|| image->getImageType () == IMGTYPE_FLAT)
+	if (image->getShutter () != SHUT_OPENED)
 		return;
 
 	// find image processor with lowest que number..
@@ -197,7 +196,15 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
 	if (!minConn)
 		return;
 	image->saveImage ();
-	minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
+
+	if (image->getImageType () == IMGTYPE_FLAT)
+	{
+		minConn->queCommand (new Rts2CommandQueFlat (getMaster (), image));	
+	}
+	else
+	{
+		minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
+	}
 }
 
 
