@@ -458,6 +458,14 @@ Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * imag
 }
 
 
+Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image):Rts2Command
+(in_owner)
+{
+  	std::ostringstream _os;
+	_os << "que_flat " << image->getImageName ();
+	setCommand (_os);
+}
+
 Rts2CommandQueObs::Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId):
 Rts2Command (in_owner)
 {
