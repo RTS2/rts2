@@ -45,14 +45,6 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 		timerclear (dir_timeouts + i);
 	}
 
-	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
-	pointingModel->addSelVal ("EQU");
-	pointingModel->addSelVal ("ALT-AZ");
-
-	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true);
-	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true);
-	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
-
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true);
 	// users offset
@@ -81,6 +73,15 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
+
+	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
+
+	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
+	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
+	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
+
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
