@@ -22,7 +22,7 @@
 
 #include "../utils/rts2config.h"
 
-#include "telescope.h"
+#include "teld.h"
 #include "../utils/connopentpl.h"
 
 #define BLIND_SIZE            1.0
@@ -412,8 +412,8 @@ OpenTPL::initOpenTplDevice ()
 		Rts2Config *config = Rts2Config::instance ();
 		config->loadFile (NULL);
 		// try to get default from config file
-		config->getString ("ir", "ip", ir_ip);
-		config->getInteger ("ir", "port", ir_port);
+		config->getString ("opentpl", "ip", ir_ip);
+		config->getInteger ("opentpl", "port", ir_port);
 	}
 
 	if (ir_ip.length () == 0 || !ir_port)

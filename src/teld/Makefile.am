@@ -1,6 +1,6 @@
 SUBDIRS = model
 
-noinst_HEADERS = telescope.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = teld.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
 
 noinst_LIBRARIES = librts2teld.a
 

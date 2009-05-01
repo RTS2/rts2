@@ -18,7 +18,7 @@
  */
 
 #include "tgdrive.h"
-#include "telescope.h"
+#include "teld.h"
 
 #define OPT_RA            OPT_LOCALHOST + 2201
 #define OPT_DEC           OPT_LOCALHOST + 2202
