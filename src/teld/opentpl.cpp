@@ -343,7 +343,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
-	addOption ('t', NULL, 1, "IR tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
+	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
 
 	cover_state = CLOSED;
@@ -541,7 +541,7 @@ OpenTPL::initValues ()
 	}
 
 	opentplConn->get ("CABINET.SETUP.HW_ID", serial, &status);
-	addConstValue ("IR_HWID", "serial number", serial.c_str ());
+	addConstValue ("HWID", "serial number", serial.c_str ());
 
 	if (opentplConn->haveModule ("COVER"))
 	{
@@ -579,7 +579,7 @@ OpenTPL::checkErrors ()
 	if (status == 0 && list.length () > 2 && list != errorList)
 	{
 		// print errors to log & ends..
-		logStream (MESSAGE_ERROR) << "IR checkErrors Telescope errors " <<
+		logStream (MESSAGE_ERROR) << "checkErrors Telescope errors " <<
 			list << sendLog;
 		errorList = list;
 		opentplConn->set ("CABINET.STATUS.CLEAR", 1, &status);
@@ -595,12 +595,12 @@ OpenTPL::checkErrors ()
 					zd = 85;
 				status = setTelescopeTrack (0);
 				logStream (MESSAGE_DEBUG) <<
-					"IR checkErrors set pointing status " << status << sendLog;
+					"checkErrors set pointing status " << status << sendLog;
 				sleep (1);
 				status = TPL_OK;
 				status = opentplConn->set ("ZD.TARGETPOS", zd, &status);
 				logStream (MESSAGE_ERROR) <<
-					"IR checkErrors zd soft limit reset " <<
+					"checkErrors zd soft limit reset " <<
 					zd << " (" << status << ")" << sendLog;
 			}
 		}
@@ -620,7 +620,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "IR checkCover opened " << status <<
+				logStream (MESSAGE_DEBUG) << "checkCover opened " << status <<
 					sendLog;
 			#endif
 				cover_state = OPENED;
@@ -634,7 +634,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "IR checkCover closed " << status <<
+				logStream (MESSAGE_DEBUG) << "checkCover closed " << status <<
 					sendLog;
 			#endif
 				cover_state = CLOSED;
@@ -658,7 +658,7 @@ OpenTPL::checkPower ()
 	status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "IR checkPower tpl_ret " << status <<
+		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status <<
 			sendLog;
 		return;
 	}
@@ -672,19 +672,19 @@ OpenTPL::checkPower ()
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "IR checkPower set power ot 1 ret " <<
+			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " <<
 				status << sendLog;
 			return;
 		}
 		while (power_state == 0.5)
 		{
-			logStream (MESSAGE_DEBUG) << "IR checkPower waiting for power up" <<
+			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" <<
 				sendLog;
 			sleep (5);
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "IR checkPower power_state ret " <<
+				logStream (MESSAGE_ERROR) << "checkPower power_state ret " <<
 					status << sendLog;
 				return;
 			}
@@ -695,20 +695,20 @@ OpenTPL::checkPower ()
 		status = opentplConn->get ("CABINET.REFERENCED", referenced, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "IR checkPower get referenced " <<
+			logStream (MESSAGE_ERROR) << "checkPower get referenced " <<
 				status << sendLog;
 			return;
 		}
 		if (referenced == 1)
 			break;
-		logStream (MESSAGE_DEBUG) << "IR checkPower referenced " << referenced
+		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced
 			<< sendLog;
 		if (referenced == 0)
 		{
 			status = opentplConn->set ("CABINET.REINIT", 1, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "IR checkPower reinit " <<
+				logStream (MESSAGE_ERROR) << "checkPower reinit " <<
 					status << sendLog;
 				return;
 			}
@@ -994,7 +994,7 @@ OpenTPL::info ()
 			status = opentplConn->get ("HA.CURRSPEED", zd_speed, &status);
 			status = opentplConn->get ("DEC.CURRSPEED", az_speed, &status);
 
-			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
+			logStream (MESSAGE_DEBUG) << "info ra " << getTelRa ()
 				<< " dec " << getTelDec ()
 				<< " ha_speed " << az_speed
 				<< " dec_speed " << zd_speed
@@ -1006,7 +1006,7 @@ OpenTPL::info ()
 			status = opentplConn->get ("ZD.CURRSPEED", zd_speed, &status);
 			status = opentplConn->get ("AZ.CURRSPEED", az_speed, &status);
 
-			logStream (MESSAGE_DEBUG) << "IR info ra " << getTelRa ()
+			logStream (MESSAGE_DEBUG) << "info ra " << getTelRa ()
 				<< " dec " << getTelDec ()
 				<< " az_speed " << az_speed
 				<< " zd_speed " << zd_speed
@@ -1101,7 +1101,7 @@ OpenTPL::loadModel ()
 	}
 	catch (std::exception & e)
 	{
-		logStream (MESSAGE_DEBUG) << "IR loadModel error" << sendLog;
+		logStream (MESSAGE_DEBUG) << "loadModel error" << sendLog;
 		return -1;
 	}
 	return infoModel ();
@@ -1117,25 +1117,25 @@ OpenTPL::resetMount ()
 	status = opentplConn->set ("CABINET.POWER", power, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "IR resetMount powering off: " << status <<
+		logStream (MESSAGE_ERROR) << "resetMount powering off: " << status <<
 			sendLog;
 		return -1;
 	}
 	while (true)
 	{
-		logStream (MESSAGE_DEBUG) << "IR resetMount waiting for power down" <<
+		logStream (MESSAGE_DEBUG) << "resetMount waiting for power down" <<
 			sendLog;
 		sleep (5);
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "IR resetMount power_state ret: " <<
+			logStream (MESSAGE_ERROR) << "resetMount power_state ret: " <<
 				status << sendLog;
 			return -1;
 		}
 		if (power_state == 0 || power_state == -1)
 		{
-			logStream (MESSAGE_DEBUG) << "IR resetMount final power_state: " <<
+			logStream (MESSAGE_DEBUG) << "resetMount final power_state: " <<
 				power_state << sendLog;
 			break;
 		}
@@ -1174,7 +1174,7 @@ OpenTPL::startMove ()
 			status = opentplConn->set ("ZD.OFFSET", alt_off, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "IR startMove cannot zero offset" << sendLog;
+				logStream (MESSAGE_ERROR) << "startMove cannot zero offset" << sendLog;
 				return -1;
 			}
 			break;
@@ -1221,18 +1221,18 @@ OpenTPL::stopMove ()
 	status = opentplConn->get ("ZD.CURRPOS", zd, &status);
 	if (status)
 	{
-		logStream (MESSAGE_DEBUG) << "IR stopMove cannot get ZD! (" << status <<
+		logStream (MESSAGE_DEBUG) << "stopMove cannot get ZD! (" << status <<
 			")" << sendLog;
 		return -1;
 	}
 	if (fabs (zd) < 1)
 	{
-		logStream (MESSAGE_DEBUG) << "IR stopMove suspicious ZD.. " << zd <<
+		logStream (MESSAGE_DEBUG) << "stopMove suspicious ZD.. " << zd <<
 			sendLog;
 		status = setTelescopeTrack (0);
 		if (status)
 		{
-			logStream (MESSAGE_DEBUG) << "IR stopMove cannot set track: " <<
+			logStream (MESSAGE_DEBUG) << "stopMove cannot set track: " <<
 				status << sendLog;
 			return -1;
 		}
@@ -1328,7 +1328,7 @@ OpenTPL::moveCheck (bool park)
 	if (fabs (poin_dist) <= goodSep->getValueDouble ()) 
 	{
 		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "IR isMoving target distance " << poin_dist << sendLog;
+		logStream (MESSAGE_DEBUG) << "isMoving target distance " << poin_dist << sendLog;
 		#endif
 		return -2;
 	}
