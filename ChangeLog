@@ -1,6 +1,10 @@
 0.7.5
 =====
 
+2009-05-02
+ * added %N, %Y, %D , %O and %a expansions
+ * changed focuser driver - added offsets for different values
+
 2009-04-19
  * removed flip from rts2.ini, as it is now stored directly in camera
 
