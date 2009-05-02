@@ -436,7 +436,7 @@ class Telescope:public Rts2Device
 		 */
 		void setTarget (double ra, double dec)
 		{
-			oriRaDec->setValueRaDec (ra, dec);
+			tarRaDec->setValueRaDec (ra, dec);
 		}
 
 		/**
