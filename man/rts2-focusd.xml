@@ -142,7 +142,7 @@
         <term>FOC_TOFF</term>
 	<para>
 	  Focuser temporar offset used during focusing. You should use this
-	  varaible during focusing script to probeb focus at different offsets.
+	  variable during focusing script to probe focus at different offsets.
 	  If your focuser is named <emphasis>F0</emphasis>, and you would like
 	  to probe focusing range 100 steps bellow to 100 steps above default
 	  focuser position, the focusing script should look like:
@@ -152,7 +152,7 @@
 	</para>
 	<para>
 	  When script is finished, RTS2 will change
-	  <emphasis>FOC_TOFF</emphasis> to 0, which will cause foruser to move
+	  <emphasis>FOC_TOFF</emphasis> to 0, which will cause focuser to move
 	  to default value. You can change either <emphasis>FOC_FOFF</emphasis>
 	  or <emphasis>FOC_DEF</emphasis> to set new focusing position.
 	</para>
