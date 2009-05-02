@@ -51,6 +51,8 @@ class Fli:public Focusd
 	public:
 		Fli (int argc, char **argv);
 		virtual ~ Fli (void);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 };
@@ -235,7 +237,7 @@ Fli::isAtStartPosition ()
 }
 
 int
-Focusd::commandAuthorized (Rts2Conn * conn)
+Fli::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -243,7 +245,7 @@ Focusd::commandAuthorized (Rts2Conn * conn)
 		ret = FLIHomeFocuser (dev);
 		if (ret)
 		{
-			sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
 			return -1;
 		}
 		return 0;
