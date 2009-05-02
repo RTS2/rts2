@@ -87,14 +87,14 @@ Rts2Image::initData ()
 }
 
 
-Rts2Image::Rts2Image ():Rts2Expander ()
+Rts2Image::Rts2Image ():rts2core::Expander ()
 {
 	initData ();
 	flags = IMAGE_KEEP_DATA;
 }
 
 
-Rts2Image::Rts2Image (Rts2Image * in_image):Rts2Expander (in_image)
+Rts2Image::Rts2Image (Rts2Image * in_image):rts2core::Expander (in_image)
 {
 	ffile = in_image->ffile;
 	in_image->ffile = NULL;
@@ -162,8 +162,7 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2Expander (in_image)
 }
 
 
-Rts2Image::Rts2Image (const struct timeval *in_exposureStart):
-Rts2Expander (in_exposureStart)
+Rts2Image::Rts2Image (const struct timeval *in_exposureStart):rts2core::Expander (in_exposureStart)
 {
 	initData ();
 	flags = IMAGE_KEEP_DATA;
@@ -171,9 +170,7 @@ Rts2Expander (in_exposureStart)
 }
 
 
-Rts2Image::Rts2Image (const struct timeval *in_exposureStart,
-float in_img_exposure):
-Rts2Expander (in_exposureStart)
+Rts2Image::Rts2Image (const struct timeval *in_exposureStart, float in_img_exposure):rts2core::Expander (in_exposureStart)
 {
 	initData ();
 	writeExposureStart ();
@@ -182,7 +179,7 @@ Rts2Expander (in_exposureStart)
 
 
 Rts2Image::Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure)
-:Rts2Expander ()
+:rts2core::Expander ()
 {
 	struct timeval tv;
 	initData ();
@@ -195,7 +192,7 @@ Rts2Image::Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure)
 
 
 Rts2Image::Rts2Image (char *in_filename, const struct timeval *in_exposureStart)
-:Rts2Expander (in_exposureStart)
+:rts2core::Expander (in_exposureStart)
 {
 	initData ();
 
@@ -205,7 +202,7 @@ Rts2Image::Rts2Image (char *in_filename, const struct timeval *in_exposureStart)
 
 
 Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection)
-:Rts2Expander (in_exposureStart)
+:rts2core::Expander (in_exposureStart)
 {
 	initData ();
 	setCameraName (in_connection->getName ());
@@ -217,7 +214,7 @@ Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct tim
 
 
 Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *in_exposureStart)
-:Rts2Expander (in_exposureStart)
+:rts2core::Expander (in_exposureStart)
 {
 	std::string in_filename;
 
@@ -279,7 +276,7 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, con
 
 
 Rts2Image::Rts2Image (const char *in_filename, bool verbose, bool readOnly):
-Rts2Expander ()
+rts2core::Expander ()
 {
 	int ret;
 	struct timeval tv;
@@ -388,10 +385,10 @@ std::string Rts2Image::expandVariable (char expression)
 			return getTargetString ();
 		case 't':
 			return getTargetSelString ();
-		case 'n':
+		case 'N':
 			return getExposureNumberString ();
 		default:
-			return Rts2Expander::expandVariable (expression);
+			return rts2core::Expander::expandVariable (expression);
 	}
 }
 
@@ -405,7 +402,7 @@ std::string Rts2Image::expandVariable (std::string expression)
 	g_ret = getValue (expression.c_str (), valB, 200, true);
 	if (g_ret)
 	{
-		return Rts2Expander::expandVariable (expression);
+		return rts2core::Expander::expandVariable (expression);
 	}
 	else
 	{

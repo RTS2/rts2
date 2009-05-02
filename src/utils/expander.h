@@ -24,6 +24,9 @@
 #include <time.h>
 #include <sys/time.h>
 
+namespace rts2core
+{
+
 /**
  * This class is common ancestor to expending mechanism.
  * Short one-letter variables are prefixed with %, two letters and longer
@@ -31,11 +34,12 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Expander
+class Expander
 {
 	private:
 		struct tm localDate;
 		struct tm utDate;
+		struct tm nightDate;
 		struct tm *expandDate;
 		struct timeval expandTv;
 
@@ -76,6 +80,21 @@ class Rts2Expander
 			return expandDate->tm_sec;
 		}
 
+		int getNightYear ()
+		{
+			return nightDate.tm_year + 1900;
+		}
+
+		int getNightMonth ()
+		{
+			return nightDate.tm_mon + 1;
+		}
+
+		int getNightDay ()
+		{
+			return nightDate.tm_mday;
+		}
+
 	protected:
 		/**
 		 * ID of current epoch.
@@ -84,10 +103,10 @@ class Rts2Expander
 		virtual std::string expandVariable (char var);
 		virtual std::string expandVariable (std::string expression);
 	public:
-		Rts2Expander ();
-		Rts2Expander (const struct timeval *tv);
-		Rts2Expander (Rts2Expander * in_expander);
-		virtual ~ Rts2Expander (void);
+		Expander ();
+		Expander (const struct timeval *tv);
+		Expander (Expander * in_expander);
+		virtual ~ Expander (void);
 		std::string expand (std::string expression);
 		/**
 		 * Sets expanding date to current sysdate.
@@ -105,15 +124,17 @@ class Rts2Expander
 		const struct timeval *getExpandDate ();
 
 		// date related functions
-		std::string getYearString ();
-		std::string getMonthString ();
-		std::string getDayString ();
+		std::string getYearString (int year);
+		std::string getMonthString (int month);
+		std::string getDayString (int day);
 		std::string getYDayString ();
 
 		std::string getHourString ();
 		std::string getMinString ();
 		std::string getSecString ();
 		std::string getMSecString ();
+
+		std::string getNightString ();
 
 		long getCtimeSec ()
 		{
@@ -125,4 +146,7 @@ class Rts2Expander
 			return expandTv.tv_usec;
 		}
 };
+
+};
+
 #endif							 /* !__RTS2_EXPANDER__ */

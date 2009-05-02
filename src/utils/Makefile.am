@@ -17,7 +17,7 @@ librts2block_a_SOURCES = hoststring.cpp rts2app.cpp rts2block.cpp rts2daemon.cpp
 	rts2connfork.cpp objectcheck.cpp libnova_cpp.cpp timestamp.cpp rts2askchoice.cpp \
 	rts2message.cpp conntcp.cpp rts2conn.cpp rts2logstream.cpp rts2centralstate.cpp rts2target.cpp \
 	rts2displayvalue.cpp rts2scriptdevice.cpp \
-	rts2cliapp.cpp rts2valueminmax.cpp rts2expander.cpp \
+	rts2cliapp.cpp rts2valueminmax.cpp expander.cpp \
 	riseset.cpp rts2valuerectangle.cpp rts2data.cpp radecparser.cpp \
 	rts2connserial.cpp connmodbus.cpp rts2format.cpp rts2valuearray.cpp \
 	connopentpl.cpp
@@ -42,7 +42,7 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 	rts2devclient.h rts2event.h rts2configraw.h rts2config.h rts2object.h rts2connnosend.h \
 	rts2connfork.h objectcheck.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
 	rts2message.h conntcp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
-	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h rts2expander.h \
+	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h expander.h \
 	riseset.h rts2valuerectangle.h rts2data.h radecparser.h rts2connserial.h connmodbus.h rts2format.h \
 	rts2valuearray.h getopt_own.h connopentpl.h connepics.h
 

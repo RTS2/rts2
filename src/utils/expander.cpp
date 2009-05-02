@@ -18,39 +18,41 @@
  */
 
 #include "rts2block.h"
-#include "rts2expander.h"
+#include "expander.h"
 #include "rts2config.h"
 
 #include <iomanip>
 #include <sstream>
 
-Rts2Expander::Rts2Expander ()
+using namespace rts2core;
+
+Expander::Expander ()
 {
 	epochId = -1;
 	setExpandDate ();
 }
 
 
-Rts2Expander::Rts2Expander (const struct timeval *tv)
+Expander::Expander (const struct timeval *tv)
 {
 	epochId = -1;
 	setExpandDate (tv);
 }
 
 
-Rts2Expander::Rts2Expander (Rts2Expander * in_expander)
+Expander::Expander (Expander * in_expander)
 {
 	epochId = in_expander->epochId;
 	setExpandDate (in_expander->getExpandDate ());
 }
 
 
-Rts2Expander::~Rts2Expander (void)
+Expander::~Expander (void)
 {
 }
 
 
-std::string Rts2Expander::getEpochString ()
+std::string Expander::getEpochString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -59,34 +61,34 @@ std::string Rts2Expander::getEpochString ()
 }
 
 
-std::string Rts2Expander::getYearString ()
+std::string Expander::getYearString (int year)
 {
 	std::ostringstream _os;
 	_os.fill ('0');
-	_os << std::setw (4) << getYear ();
+	_os << std::setw (4) << year;
 	return _os.str ();
 }
 
 
-std::string Rts2Expander::getMonthString ()
+std::string Expander::getMonthString (int month)
 {
 	std::ostringstream _os;
 	_os.fill ('0');
-	_os << std::setw (2) << getMonth ();
+	_os << std::setw (2) << month;
 	return _os.str ();
 }
 
 
-std::string Rts2Expander::getDayString ()
+std::string Expander::getDayString (int day)
 {
 	std::ostringstream _os;
 	_os.fill ('0');
-	_os << std::setw (2) << getDay ();
+	_os << std::setw (2) << day;
 	return _os.str ();
 }
 
 
-std::string Rts2Expander::getYDayString ()
+std::string Expander::getYDayString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -95,7 +97,7 @@ std::string Rts2Expander::getYDayString ()
 }
 
 
-std::string Rts2Expander::getHourString ()
+std::string Expander::getHourString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -104,7 +106,7 @@ std::string Rts2Expander::getHourString ()
 }
 
 
-std::string Rts2Expander::getMinString ()
+std::string Expander::getMinString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -113,7 +115,7 @@ std::string Rts2Expander::getMinString ()
 }
 
 
-std::string Rts2Expander::getSecString ()
+std::string Expander::getSecString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -122,7 +124,7 @@ std::string Rts2Expander::getSecString ()
 }
 
 
-std::string Rts2Expander::getMSecString ()
+std::string Expander::getMSecString ()
 {
 	std::ostringstream _os;
 	_os.fill ('0');
@@ -131,7 +133,18 @@ std::string Rts2Expander::getMSecString ()
 }
 
 
-std::string Rts2Expander::expandVariable (char var)
+std::string Expander::getNightString ()
+{
+	std::ostringstream _os;
+	_os.fill ('0');
+	_os << std::setw (4) << getNightYear ()
+		<< std::setw (2) << getNightMonth ()
+		<< std::setw (2) << getNightDay ();
+	return _os.str ();
+}
+
+
+std::string Expander::expandVariable (char var)
 {
 	std::string ret = "";
 	switch (var)
@@ -140,16 +153,19 @@ std::string Rts2Expander::expandVariable (char var)
 			return "%";
 			break;
 		case 'y':
-			ret += getYearString ();
+			ret += getYearString (getYear ());
 			break;
-		case 'D':
+		case 'a':
 			ret += getYDayString ();
 			break;
+		case 'n':
+			ret += getNightString ();
+			break;
 		case 'm':
-			ret += getMonthString ();
+			ret += getMonthString (getMonth ());
 			break;
 		case 'd':
-			ret += getDayString ();
+			ret += getDayString (getDay ());
 			break;
 		case 'e':
 			ret += getEpochString ();
@@ -175,6 +191,14 @@ std::string Rts2Expander::expandVariable (char var)
 		case 'Z':
 			ret += tzname[(expandDate->tm_isdst > 0) ? 1 : 0];
 			break;
+		case 'Y':
+			ret += getYearString (getNightYear ());
+			break;
+		case 'O':
+			ret += getMonthString (getNightMonth ());
+			break;
+		case 'D':
+			ret += getDayString (getNightDay ());
 		default:
 			ret += '%';
 			ret += var;
@@ -183,7 +207,7 @@ std::string Rts2Expander::expandVariable (char var)
 }
 
 
-std::string Rts2Expander::expandVariable (std::string expression)
+std::string Expander::expandVariable (std::string expression)
 {
 	std::string ret;
 	ret = '@';
@@ -192,7 +216,7 @@ std::string Rts2Expander::expandVariable (std::string expression)
 }
 
 
-std::string Rts2Expander::expand (std::string expression)
+std::string Expander::expand (std::string expression)
 {
 	std::string ret = "";
 	std::string exp;
@@ -224,7 +248,7 @@ std::string Rts2Expander::expand (std::string expression)
 
 
 void
-Rts2Expander::setExpandDate ()
+Expander::setExpandDate ()
 {
 	struct timeval tv;
 	gettimeofday (&tv, NULL);
@@ -233,27 +257,30 @@ Rts2Expander::setExpandDate ()
 
 
 void
-Rts2Expander::setExpandDate (const struct timeval *tv)
+Expander::setExpandDate (const struct timeval *tv)
 {
 	expandTv.tv_sec = tv->tv_sec;
 	expandTv.tv_usec = tv->tv_usec;
 
 	localtime_r (&expandTv.tv_sec, &localDate);
 	gmtime_r (&expandTv.tv_sec, &utDate);
+	
+	time_t nightT = expandTv.tv_sec + Rts2Config::instance ()->getObservatoryLongitude () / 15.0 - 86400 / 2;
+	gmtime_r (&nightT, &nightDate);
 
 	expandDate = &utDate;
 }
 
 
 double
-Rts2Expander::getExpandDateCtime ()
+Expander::getExpandDateCtime ()
 {
 	return expandTv.tv_sec + ((double) expandTv.tv_usec / USEC_SEC);
 }
 
 
 const struct timeval *
-Rts2Expander::getExpandDate ()
+Expander::getExpandDate ()
 {
 	return &expandTv;
 }

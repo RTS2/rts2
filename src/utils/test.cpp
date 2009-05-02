@@ -30,7 +30,7 @@
 
 #include "rts2app.h"
 #include "rts2config.h"
-#include "rts2expander.h"
+#include "expander.h"
 
 class Rts2TestApp:public Rts2App
 {
@@ -106,7 +106,7 @@ Rts2TestApp::run ()
 	}
 
 	// now do test expansions..
-	Rts2Expander *exp = new Rts2Expander ();
+	rts2core::Expander *exp = new rts2core::Expander ();
 	std::cout << "%Z%D:%y-%m-%dT%H:%M:%S:%s:%u: " << exp->
 		expand ("%Z%D:%y-%m-%dT%H:%M:%S:%s:%u") << std::endl;
 	delete exp;

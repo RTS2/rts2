@@ -214,6 +214,16 @@ class Rts2Config:public Rts2ConfigRaw
 		struct ln_lnlat_posn *getObserver ();
 
 		/**
+		 * Returns observatory longitude.
+		 *
+		 * @return Observatory longitude.
+		 */
+		double getObservatoryLongitude ()
+		{
+			return getObserver ()->lng;
+		}
+
+		/**
 		 * Return observatory altitude.
 		 */
 		double getObservatoryAltitude ()

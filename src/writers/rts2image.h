@@ -37,7 +37,7 @@
 #include "imghdr.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2devclient.h"
-#include "../utils/rts2expander.h"
+#include "../utils/expander.h"
 #include "../utils/rts2target.h"
 
 /**
@@ -78,7 +78,7 @@ imageWriteWhich_t;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Image:public Rts2Expander
+class Rts2Image:public rts2core::Expander
 {
 	private:
 		unsigned short *data;

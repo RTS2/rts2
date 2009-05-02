@@ -157,6 +157,14 @@
     <variablelist>
       <varlistentry>
         <term>
+	  <option>a</option>
+        </term>
+        <listitem>
+          <para>Exposure start day in the year</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>b</option>
         </term>
         <listitem>
@@ -176,7 +184,7 @@
 	  <option>D</option>
         </term>
         <listitem>
-          <para>Exposure start day in the year</para>
+          <para>Exposure start night day of the month.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -232,7 +240,7 @@
 	  <option>L</option>
         </term>
         <listitem>
-          <para>Switch all next printed dates to local time.</para>
+          <para>Switch to print next dates in local time.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -253,10 +261,26 @@
       </varlistentry>
       <varlistentry>
         <term>
-	  <option>n</option>
+	  <option>N</option>
         </term>
         <listitem>
           <para>Exposure number.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>n</option>
+	</term>
+	<listitem>
+	  <para>Night date -format as YYYYMMDD, e.g. when it is 2009-01-05 01:30 UT, %N is expanded to 20090430.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>O</option>
+        </term>
+        <listitem>
+          <para>Exposure start night month.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -316,6 +340,14 @@
         </term>
         <listitem>
           <para>Switch all next printed dates to UT time.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>Y</option>
+        </term>
+        <listitem>
+          <para>Night year of the start of exposure.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
