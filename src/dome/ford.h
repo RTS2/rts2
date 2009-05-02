@@ -51,22 +51,64 @@ class Ford: public Dome
 		int vypni_pin (unsigned char c_port, unsigned char pin);
 
 	protected:
+	 	/**
+		 * Refresh status information on all ports.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		int zjisti_stav_portu ();
 
+		/**
+		 * Switch on pin.
+		 *
+		 * @param i Port addresss.
+		 * @return 0 on success, -1 on error.
+		 */
 		int ZAP (int i);
+
+		/**
+		 * Switch off pin.
+		 * 
+		 * @param i Port address.
+		 * @return 0 on success, -1 on error.
+		 */
 		int VYP (int i);
 
 		/**
 		 * Switch off two pins.
 		 *
-		 * @param _pin1      First pin address (specified as pointer to adress array)
-		 * @param _pin2	     Second pin address 
+		 * @param pin1      First pin address (specified as pointer to adress array)
+		 * @param pin2	    Second pin address 
 		 */
 		int switchOffPins (int pin1, int pin2);
+
+		/**
+		 * Switch off two three pins.
+		 *
+		 * @param pin1      First pin address (specified as pointer to adress array).
+		 * @param pin2	    Second pin address. 
+		 * @param pin3	    Third pin address.
+		 */
 		int switchOffPins (int pin1, int pin2, int pin3);
+
+		/**
+		 * Switch off two three pins.
+		 *
+		 * @param pin1      First pin address (specified as pointer to adress array).
+		 * @param pin2	    Second pin address. 
+		 * @param pin3	    Third pin address.
+		 * @param png4      Forth pin address.
+		 */
 		int switchOffPins (int pin1, int pin2, int pin3, int pin4);
 
 		bool getPortState (int c_port);
+
+		/**
+		 * Check if given pin is on.
+		 *
+		 * @param c_port  Pin address.
+		 * @return -1 on error, 0 if pin is off, 1 if it's on.
+		 */
 		int isOn (int c_port);
 		virtual int processOption (int in_opt);
 		virtual int init ();
