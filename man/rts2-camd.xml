@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2009-04-21</date>">
+  <!ENTITY dhdate      "<date>2009-05-02</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.4</productnumber>
+    <productnumber>0.7.5</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -55,16 +55,16 @@
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <arg choice="opt">
-	<arg choice="plain"><option>-i</option></arg>
+	<arg choice="plain"><option>-F <replaceable>focuser name</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--local-port <replaceable>port number</replaceable></option></arg>
+	<arg choice="plain"><option>-W <replaceable>filter wheel</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--localhost <replaceable>hostname</replaceable></option></arg>
+	<arg choice="plain"><option>-e <replaceable>default exposure</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
+	<arg choice="plain"><option>-s <replaceable>hostname[:port]</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>--modefile <replaceable>filename</replaceable></option></arg>
@@ -74,35 +74,16 @@
       </arg>
     </cmdsynopsis>
 
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-    </cmdsynopsis>
-
   </refsynopsisdiv>
 
   <refsect1 id="description">
     <title>DESCRIPTION</title>
 
     <para>
-       RTS2 uses device drivers to communicate with various available hardware.
-       Device drivers are stand-alone binaries. They connect to RTS2 system
-       using TCP/IP connection, and register to the system. They also know how
-       to talk to different supported devices, and transfer RTS2 command and
-       variables to those devices commmands and variables. Last, but not least,
-       they provide RTS2 with messages about their functionality and status.
-     </para>
-     <para>
-       This manual page document generic devices options. To see devices
-       options please consult man pages for generic devices (rts2-camd, ..) and
-       man pages for specific devices (rts2-camd-fli,..). See links bellow for 
-       help in finding those informations.
+       This manual page describes camera drivers availabe in RTS2, and common
+       options for camera driver. For description of options common to all
+       devices, please consult
+       <citerefentry><refentrytitle>rts2-device</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
      </para>
   </refsect1>
   <refsect1 id="options">
@@ -143,6 +124,16 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Camera drivers</title>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-camd-fli</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      Finger Lages Instruments RTS2 driver.
+    </para>
+  </refsect1>
+  <refsect1>
     <title>SEE ALSO</title>
 
     <para>
@@ -151,7 +142,7 @@
 	<manvolnum>7</manvolnum>
       </citerefentry>
       <citerefentry>
-        <refentrytitle>rts2-camd</refentrytitle>
+        <refentrytitle>rts2-device</refentrytitle>
 	<manvolnum>7</manvolnum>
       </citerefentry>
     </para>

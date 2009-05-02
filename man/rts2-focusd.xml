@@ -1,0 +1,187 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2009-05-02</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-focusd">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.7.5</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Generic manual page for focuser drivers.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <arg choice="opt">
+	<arg choice="plain"><option>--start-position <replaceable>start position</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+       This manual page describes focuser drivers available for RTS2, and
+       common options for focuser drivers. For description of options common to
+       all devices, please consult
+       <citerefentry><refentrytitle>rts2-device</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+     </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      RTS2 follows the usual &gnu; command line syntax, with long options
+      starting with two dashes (`--').  A summary of options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--start-position</option></term>
+        <listitem>
+          <para>
+	    Specify focuser start position. This is the position to which
+	    focuser will move after startup. When it is possible to distinguish
+	    from the state of underlying hardware if focuser was reinitialized,
+	    the start-up position is used only if the focuser was
+	    reinitialized.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Common variables</title>
+    <para>
+      Focuser interface provides common variables, visible in
+      <citerefentry><refentrytitle>rts2-mon</refentrytitle><manvolnum>1</manvolnum></citerefentry> and <citerefentry><refentrytitle>rts2-xmlrpcclient</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      They govern focuser behaviour and show its state. They are described
+      bellow. RTS2 focuser interface always use integer numbers to show focuser
+      position. If float numbers are used in original hardware, they are
+      multiplied before they are used in RTS2. For example,
+      <citerefentry><refentrytitle>rts2-focusd-optec</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+      uses milimeters as native display units. In RTS2 they are shown as
+      integers multiplied by 100, and when they are used, the RTS2 value is
+      divided by 100 before it is send to focuser.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term>FOC_POS</term>
+	<para>
+	  This variable show actual focuser position. If set, it will cause
+	  focuser to move to set position. If focuser is moved to position, it
+	  shows the actual focuser position.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>FOC_TAR</term>
+	<para>
+	  Focuser target position. This shows desired focuser position. If set,
+	  it will cause to move focuser to set position.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>FOC_DEF</term>
+	<para>
+	  Default focuser position. This is used together with FOC_FOFF and FOC_TOFF for autofocusing. If it is changed, target position is set to sum of <emphasis>FOC_DEF</emphasis>, <emphasis>FOC_FOFF</emphasis> and <emphasis>FOC_TOFF</emphasis>.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>FOC_FOFF</term>
+	<para>
+	  Focuser offset found during focusing. This is used to temporary shift
+	  focus. If focuser driver is restarted, it is moved back to
+	  <emphasis>FOC_DEF</emphasis> position.
+	</para>
+      </varlistentry>
+      <varlistentry>
+        <term>FOC_TOFF</term>
+	<para>
+	  Focuser temporar offset used during focusing. You should use this
+	  varaible during focusing script to probeb focus at different offsets.
+	  If your focuser is named <emphasis>F0</emphasis>, and you would like
+	  to probe focusing range 100 steps bellow to 100 steps above default
+	  focuser position, the focusing script should look like:
+	</para>
+	<para>
+	  <emphasis>F0.FOC_TOFF=-100 for 20 { E 10 F0.FOC_TOFF+=10 }</emphasis>
+	</para>
+	<para>
+	  When script is finished, RTS2 will change
+	  <emphasis>FOC_TOFF</emphasis> to 0, which will cause foruser to move
+	  to default value. You can change either <emphasis>FOC_FOFF</emphasis>
+	  or <emphasis>FOC_DEF</emphasis> to set new focusing position.
+	</para>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Focuser drivers</title>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-focusd-fli</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      Finger Lages Instruments RTS2 driver.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-device</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
