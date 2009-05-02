@@ -22,6 +22,7 @@
 #include "../utils/rts2cliapp.h"
 #include <iostream>
 #include <vector>
+#include <string.h>
 
 #include "r2x.h"
 
@@ -29,19 +30,22 @@ using namespace XmlRpc;
 
 #define OPT_HOST             OPT_LOCAL + 1
 
+namespace rts2xmlrpc
+{
+
 /**
  * Class for testing XML-RPC.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2XmlRpcTest: public Rts2CliApp
+class Client: public Rts2CliApp
 {
 	private:
 		int xmlPort;
 		const char *xmlHost;
 		int xmlVerbosity;
 
-		enum {TEST, SET_VARIABLE} xmlOp;
+		enum {TEST, SET_VARIABLE, GET_VARIABLE} xmlOp;
 
 		std::vector <const char *> args;
 
@@ -65,7 +69,7 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int doTest ();
+		int doClient ();
 
 		/**
 		 * Set XML-RPC variable.
@@ -73,6 +77,11 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		 * @return -1 on error, 0 on success.
 		 */
 		int setVariable (const char *deviceName, const char *varName, const char *value);
+
+		/**
+		 * Return variables in args.
+		 */
+		int getVariables ();
 	protected:
 		virtual void usage ();
 
@@ -83,12 +92,16 @@ class Rts2XmlRpcTest: public Rts2CliApp
 		virtual int doProcessing ();
 
 	public:
-		Rts2XmlRpcTest (int argc, char **argv);
-		virtual ~Rts2XmlRpcTest (void);
+		Client (int argc, char **argv);
+		virtual ~Client (void);
 };
 
+};
+
+using namespace rts2xmlrpc;
+
 int
-Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
+Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
 {
 	int ret;
 
@@ -107,7 +120,7 @@ Rts2XmlRpcTest::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcVal
 
 
 int
-Rts2XmlRpcTest::doTest ()
+Client::doClient ()
 {
 	XmlRpcValue noArgs, oneArg, result;
 
@@ -165,7 +178,7 @@ Rts2XmlRpcTest::doTest ()
 }
 
 int
-Rts2XmlRpcTest::setVariable (const char *deviceName, const char *varName, const char *value)
+Client::setVariable (const char *deviceName, const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
 
@@ -177,8 +190,66 @@ Rts2XmlRpcTest::setVariable (const char *deviceName, const char *varName, const 
 }
 
 
+int
+Client::getVariables ()
+{
+	int e = 0;
+	// store results per device
+	std::map <const char*, XmlRpcValue> results;
+	char* a;
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		const char* arg = (*iter);
+		// look for dot..
+		delete[] a;
+		a = new char[strlen(arg)+1];
+		strcpy (a, arg);
+		char *dot = strchr (a, '.');
+		if (dot == NULL)
+		{
+			e++;
+			std::cerr << "Cannot parse " << arg << " - cannot find a dot separating devices" << std::endl;
+			continue;
+		}
+		*dot = '\0';
+		dot++;
+		// get device - if it isn't present
+		if (results.find (a) == results.end ())
+		{
+			XmlRpcValue oneArg, result;
+			oneArg = a;
+			int ret = runXmlMethod (R2X_DEVICES_VALUES_LIST, oneArg, result, false);
+			if (ret)
+			{
+				e++;
+				continue;
+			}
+			results[a] = result;
+		}
+		// find value among result..
+		std::map <const char *, XmlRpcValue>::iterator riter = results.find (a);
+		int j;
+		for (j = 0; j < (*riter).second.size(); j++)
+		{
+			if ((*riter).second[j]["name"] == std::string (dot))
+			{
+				std::cout << a << "." << dot
+					<< "=" << (*riter).second[j]["value"] << std::endl;
+				break;
+			}
+		}
+		if (j == (*riter).second.size ())
+		{
+			std::cerr << "Cannot find " << a << "." << dot << std::endl;
+			e++;
+		}
+  	}
+	delete[] a;
+	return (e == 0) ? 0 : -1;
+}
+
 void
-Rts2XmlRpcTest::usage ()
+Client::usage ()
 {
 	std::cout << "  " << getAppName () << " -s <device name> <variable name> <value>" << std::endl
 		<< " To set T0.OBJ to 10 20, run: " << std::endl
@@ -186,7 +257,7 @@ Rts2XmlRpcTest::usage ()
 }
 
 int
-Rts2XmlRpcTest::processOption (int in_opt)
+Client::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -202,6 +273,9 @@ Rts2XmlRpcTest::processOption (int in_opt)
 		case 's':
 			xmlOp = SET_VARIABLE;
 			break;
+		case 'g':
+			xmlOp = GET_VARIABLE;
+			break;
 		default:
 			return Rts2CliApp::processOption (in_opt);
 	}
@@ -210,9 +284,9 @@ Rts2XmlRpcTest::processOption (int in_opt)
 
 
 int
-Rts2XmlRpcTest::processArgs (const char *arg)
+Client::processArgs (const char *arg)
 {
-	if (xmlOp != SET_VARIABLE)
+	if (!(xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLE))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -220,12 +294,12 @@ Rts2XmlRpcTest::processArgs (const char *arg)
 
 
 int
-Rts2XmlRpcTest::doProcessing ()
+Client::doProcessing ()
 {
 	switch (xmlOp)
 	{
 		case TEST:
-			return doTest ();
+			return doClient ();
 		case SET_VARIABLE:
 			if (args.size () != 3)
 			{
@@ -234,13 +308,15 @@ Rts2XmlRpcTest::doProcessing ()
 				return -1;
 			}
 			return setVariable (args[0], args[1], args[2]);
+		case GET_VARIABLE:
+			return getVariables ();
 	}
 	return -1;
 }
 
 
 int
-Rts2XmlRpcTest::init ()
+Client::init ()
 {
 	int ret;
 	ret = Rts2CliApp::init ();
@@ -252,7 +328,7 @@ Rts2XmlRpcTest::init ()
 }
 
 
-Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
+Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 {
 	xmlPort = 8889;
 	xmlHost = "localhost";
@@ -266,10 +342,11 @@ Rts2XmlRpcTest::Rts2XmlRpcTest (int in_argc, char **in_argv): Rts2CliApp (in_arg
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption ('s', NULL, 0, "set variables specified by variable list.");
+	addOption ('g', NULL, 0, "get variables specified as arguments");
 }
 
 
-Rts2XmlRpcTest::~Rts2XmlRpcTest (void)
+Client::~Client (void)
 {
 	delete xmlClient;
 }
@@ -277,6 +354,6 @@ Rts2XmlRpcTest::~Rts2XmlRpcTest (void)
 
 int main(int argc, char** argv)
 {
-	Rts2XmlRpcTest app (argc, argv);
+	Client app (argc, argv);
 	return app.run();
 }
