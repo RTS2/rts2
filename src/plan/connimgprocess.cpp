@@ -136,6 +136,7 @@ ConnImgProcess::connectionError (int last_data_size)
 		// just return..
 		delete image;
 		Rts2ConnFork::connectionError (last_data_size);
+		return;
 	}
 
 	switch (astrometryStat)
