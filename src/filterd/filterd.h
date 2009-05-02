@@ -22,6 +22,9 @@
 
 #include "../utils/rts2device.h"
 
+/**
+ * Filter wheel and related classes.
+ */
 namespace rts2filterd
 {
 
