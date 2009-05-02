@@ -199,6 +199,7 @@ std::string Expander::expandVariable (char var)
 			break;
 		case 'D':
 			ret += getDayString (getNightDay ());
+                        break;
 		default:
 			ret += '%';
 			ret += var;
