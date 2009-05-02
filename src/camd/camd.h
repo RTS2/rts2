@@ -231,6 +231,17 @@ class Camera:public Rts2ScriptDevice
 			return exposureEnd->getValueDouble ();
 		}
 
+		/**
+		 * Decrease/increase exposure end with given offset.
+		 *
+		 * @param off Time offset (in seconds). If positive, isExposing
+		 * will run longer then nominal exposure time.
+		 */
+		void changeExposureEnd (double off)
+		{
+			exposureEnd->setValueDouble (exposureEnd->getValueDouble () + off);
+		}
+
 		Rts2ValueDouble *subExposure;
 
 		//! number of connection waiting to be executed
@@ -582,7 +593,19 @@ class Camera:public Rts2ScriptDevice
 		 * 	-3 when exposure ended because there were not any exposures in exposure que
 		 */
 		virtual long isExposing ();
+
+		/**
+		 * Called after isExposing returned 0.
+		 * 
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int endExposure ();
+
+		/**
+		 * Hook to stop exposure.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int stopExposure ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
