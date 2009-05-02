@@ -153,7 +153,7 @@ std::string Expander::expandVariable (char var)
 			return "%";
 			break;
 		case 'y':
-			ret += getYearString (getYear ());
+			ret += getYearString ();
 			break;
 		case 'a':
 			ret += getYDayString ();
@@ -162,10 +162,10 @@ std::string Expander::expandVariable (char var)
 			ret += getNightString ();
 			break;
 		case 'm':
-			ret += getMonthString (getMonth ());
+			ret += getMonthString ();
 			break;
 		case 'd':
-			ret += getDayString (getDay ());
+			ret += getDayString ();
 			break;
 		case 'e':
 			ret += getEpochString ();

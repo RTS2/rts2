@@ -124,8 +124,20 @@ class Expander
 		const struct timeval *getExpandDate ();
 
 		// date related functions
+		std::string getYearString ()
+		{
+			return getYearString (getYear ());
+		}
 		std::string getYearString (int year);
+		std::string getMonthString ()
+		{
+			return getMonthString (getMonth ());
+		}
 		std::string getMonthString (int month);
+		std::string getDayString ()
+		{
+			return getDayString (getDay ());
+		}
 		std::string getDayString (int day);
 		std::string getYDayString ();
 
