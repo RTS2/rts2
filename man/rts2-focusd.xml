@@ -108,7 +108,7 @@
       divided by 100 before it is send to focuser.
     </para>
 
-    <variablelist>
+   <variablelist>
       <varlistentry>
         <term>FOC_POS</term>
 	<para>
@@ -158,6 +158,17 @@
 	</para>
       </varlistentry>
     </variablelist>
+
+    <para>
+      The following equation should be true when you change focus with
+      <emphasis>FOC_DEF</emphasis>, <emphasis>FOC_FOFF</emphasis> and
+      <emphasis>FOC_TOFF</emphasis>:
+    </para>
+    
+    <para>
+      <emphasis>FOC_TAR = FOC_DEF + FOC_FOFF + FOC_TOFF</emphasis>
+    </para>
+
   </refsect1>
   <refsect1>
     <title>Focuser drivers</title>
