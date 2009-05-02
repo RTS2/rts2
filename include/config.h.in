@@ -66,9 +66,6 @@
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
-/* Define to 1 if you have the `ca' library (-lca). */
-#undef HAVE_LIBCA
-
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 

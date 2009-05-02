@@ -19,8 +19,9 @@
 
 #include "filterd.h"
 
-Rts2DevFilterd::Rts2DevFilterd (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
+using namespace rts2filterd;
+
+Filterd::Filterd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
 	createValue (filter, "filter", "used filter", false);
 
@@ -28,13 +29,13 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 }
 
 
-Rts2DevFilterd::~Rts2DevFilterd (void)
+Filterd::~Filterd (void)
 {
 }
 
 
 int
-Rts2DevFilterd::processOption (int in_opt)
+Filterd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -48,14 +49,14 @@ Rts2DevFilterd::processOption (int in_opt)
 
 
 int
-Rts2DevFilterd::initValues ()
+Filterd::initValues ()
 {
 	return Rts2Device::initValues ();
 }
 
 
 int
-Rts2DevFilterd::info ()
+Filterd::info ()
 {
 	filter->setValueInteger (getFilterNum ());
 	return Rts2Device::info ();
@@ -63,21 +64,21 @@ Rts2DevFilterd::info ()
 
 
 int
-Rts2DevFilterd::getFilterNum ()
+Filterd::getFilterNum ()
 {
 	return -1;
 }
 
 
 int
-Rts2DevFilterd::setFilterNum (int new_filter)
+Filterd::setFilterNum (int new_filter)
 {
 	return -1;
 }
 
 
 int
-Rts2DevFilterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Filterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == filter)
 		return setFilterNumMask (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -86,14 +87,14 @@ Rts2DevFilterd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 
 
 int
-Rts2DevFilterd::homeFilter ()
+Filterd::homeFilter ()
 {
 	return -1;
 }
 
 
 int
-Rts2DevFilterd::setFilters (char *filters)
+Filterd::setFilters (char *filters)
 {
 	char *top;
 	while (*filters)
@@ -126,7 +127,7 @@ Rts2DevFilterd::setFilters (char *filters)
 
 
 int
-Rts2DevFilterd::setFilterNumMask (int new_filter)
+Filterd::setFilterNumMask (int new_filter)
 {
 	int ret;
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_MOVE | BOP_EXPOSURE,
@@ -145,7 +146,7 @@ Rts2DevFilterd::setFilterNumMask (int new_filter)
 
 
 int
-Rts2DevFilterd::setFilterNum (Rts2Conn * conn, int new_filter)
+Filterd::setFilterNum (Rts2Conn * conn, int new_filter)
 {
 	int ret;
 	ret = setFilterNumMask (new_filter);
@@ -158,7 +159,7 @@ Rts2DevFilterd::setFilterNum (Rts2Conn * conn, int new_filter)
 
 
 int
-Rts2DevFilterd::commandAuthorized (Rts2Conn * conn)
+Filterd::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("filter"))
 	{

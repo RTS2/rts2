@@ -162,10 +162,10 @@ Rts2XmlRpcTest::doTest ()
 	}
 
 	oneArg[0] = "f";
-	runXmlMethod (R2X_TARGETS_LIST, oneArg, result);
+	runXmlMethod (R2X_TARGETS_TYPE_LIST, oneArg, result);
 
 	oneArg[0] = 2600;
-	runXmlMethod (R2X_IMAGES_LIST, oneArg, result);
+	runXmlMethod (R2X_OBSERVATION_IMAGES_LIST, oneArg, result);
 
 	oneArg[0] = 4;
 	oneArg[1] = 2;

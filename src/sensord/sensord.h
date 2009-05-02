@@ -23,6 +23,12 @@
 #include "../utils/rts2device.h"
 
 /**
+ * Abstract sensors, SensorWeather with functions to set weather state, and various other sensors.
+ */
+namespace rts2sensord
+{
+
+/**
  * Class for a sensor. Sensor can be any device which produce some information
  * which RTS2 can use.
  *
@@ -31,11 +37,11 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevSensor:public Rts2Device
+class Sensor:public Rts2Device
 {
 	public:
-		Rts2DevSensor (int argc, char **argv);
-		virtual ~ Rts2DevSensor (void);
+		Sensor (int argc, char **argv);
+		virtual ~ Sensor (void);
 };
 
 /**
@@ -45,7 +51,7 @@ class Rts2DevSensor:public Rts2Device
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SensorWeather:public Rts2DevSensor
+class SensorWeather:public Sensor
 {
 	private:
 		Rts2ValueTime *nextGoodWeather;
@@ -70,6 +76,8 @@ class SensorWeather:public Rts2DevSensor
 		}
 
 		void setWeatherTimeout (time_t wait_time);
+};
+
 };
 
 #endif							 /* !__RTS2_CRYOCON__ */

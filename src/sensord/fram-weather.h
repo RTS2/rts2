@@ -25,7 +25,7 @@
 
 #include <libnova/libnova.h>
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**

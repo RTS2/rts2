@@ -25,7 +25,7 @@
 
 #define OPT_MINB_TIME      OPT_LOCAL + 122
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 	/**
@@ -106,7 +106,7 @@ namespace rts2sensor
 }
 
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)

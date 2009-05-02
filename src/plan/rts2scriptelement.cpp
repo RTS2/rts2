@@ -23,6 +23,7 @@
 #include "rts2script.h"
 
 #include "../utils/rts2config.h"
+#include "../utils/utilsfunc.h"
 #include "../writers/rts2image.h"
 #include "../writers/rts2devclifoc.h"
 

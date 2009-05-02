@@ -31,21 +31,15 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 
 	Rts2Config *config = Rts2Config::instance ();
 
-	xplate = 1;
-	yplate = 1;
 	xoa = 0;
 	yoa = 0;
 	ter_xoa = nan ("f");
 	ter_yoa = nan ("f");
-	flip = 1;
 
-	config->getDouble (connection->getName (), "xplate", xplate);
-	config->getDouble (connection->getName (), "yplate", yplate);
 	config->getDouble (connection->getName (), "xoa", xoa);
 	config->getDouble (connection->getName (), "yoa", yoa);
 	config->getDouble (connection->getName (), "ter_xoa", ter_xoa);
 	config->getDouble (connection->getName (), "ter_yoa", ter_yoa);
-	config->getInteger (connection->getName (), "flip", flip);
 
 	telescop[0] = '\0';
 	instrume[0] = '\0';
@@ -221,11 +215,6 @@ Rts2DevClientCameraImage::exposureStarted ()
 		return;
 	image->setExposureLength (exposureTime);
 
-	image->setValue ("XPLATE", xplate,
-		"xplate (scale in X axis; divide by binning (BIN_H)!)");
-	image->setValue ("YPLATE", yplate,
-		"yplate (scale in Y axis; divide by binning (BIN_V)!)");
-
 	image->setCameraName (getName ());
 	image->setInstrument (instrume.c_str ());
 	image->setTelescope (telescop.c_str ());
@@ -244,8 +233,6 @@ Rts2DevClientCameraImage::exposureStarted ()
 		image->setXoA (xoa);
 		image->setYoA (yoa);
 	}
-	image->setValue ("FLIP", flip,
-		"camera flip (since most astrometry devices works as mirrors");
 	focuser = getConnection ()->getValueChar ("focuser");
 	if (focuser)
 	{

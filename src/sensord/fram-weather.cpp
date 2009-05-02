@@ -19,7 +19,7 @@
 
 #include "fram-weather.h"
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 int

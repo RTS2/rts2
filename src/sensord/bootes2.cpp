@@ -24,7 +24,7 @@
 // top read all informations from temperature sensor
 #define LIFOSIZE          60
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -89,7 +89,7 @@ class Bootes2: public SensorWeather
 
 }
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 int

@@ -19,19 +19,20 @@
 
 #include "sensord.h"
 
-using namespace rts2core;
+namespace rts2sensord
+{
 
-class Rts2DevSensorDummy:public Rts2DevSensor
+class Dummy:public Sensor
 {
 	private:
 		Rts2ValueInteger *testInt;
 		Rts2ValueBool *goodWeather;
 		Rts2ValueDoubleStat *statTest;
-		DoubleArray *statContent;
+		rts2core::DoubleArray *statContent;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 	public:
-		Rts2DevSensorDummy (int argc, char **argv):Rts2DevSensor (argc, argv)
+		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);
@@ -54,7 +55,7 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool ());
 				return 0;
 			}
-			return Rts2DevSensor::setValue (old_value, newValue);
+			return Sensor::setValue (old_value, newValue);
 		}
 
 		virtual int commandAuthorized (Rts2Conn * conn)
@@ -72,13 +73,17 @@ class Rts2DevSensorDummy:public Rts2DevSensor
 				infoAll ();
 				return 0;
 			}
-			return Rts2DevSensor::commandAuthorized (conn);
+			return Sensor::commandAuthorized (conn);
 		}
 };
+
+};
+
+using namespace rts2sensord;
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorDummy device = Rts2DevSensorDummy (argc, argv);
+	Dummy device = Dummy (argc, argv);
 	return device.run ();
 }

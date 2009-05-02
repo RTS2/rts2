@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2005-2007 Stanislav Vitek
  *
@@ -22,15 +22,19 @@
 
 #include "../utils/rts2device.h"
 
+/**
+ * Focuser interface.
+ */
 namespace rts2focusd
 {
+
 /**
  * Abstract base class for focuser.
  *
  * Defines interface for fouser, put on various variables etc..
  *
  * @author Petr Kubanek <petr@kubanek.net>
- * @author Stanisla Vitek
+ * @author Stanislav Vitek
  */
 class Focusd:public Rts2Device
 {
@@ -39,28 +43,21 @@ class Focusd:public Rts2Device
 		int homePos;
 	protected:
 		std::string focType;
+
 		Rts2ValueInteger *focPos;
 		Rts2ValueInteger *focTarget;
 		Rts2ValueFloat *focTemp;
-		// minimal steps/sec count; 5 sec will be added to top it
-		int focStepSec;
+
 		int startPosition;
 
 		virtual int processOption (int in_opt);
 
-		virtual int stepOut (int num)
-		{
-			return -1;
-		}
-		// set to given number
-		// default to use stepOut function
-		virtual int setTo (int num);
+		virtual int setTo (int num) = 0;
+
 		virtual int home ();
 
 		virtual int isFocusing ();
 		virtual int endFocusing ();
-
-		void setFocusTimeout (int timeout);
 
 		virtual bool isAtStartPosition () = 0;
 		int checkStartPosition ();
@@ -108,7 +105,6 @@ class Focusd:public Rts2Device
 		}
 
 		void checkState ();
-		int stepOut (Rts2Conn * conn, int num);
 		int setTo (Rts2Conn * conn, int num);
 		int home (Rts2Conn * conn);
 		int autoFocus (Rts2Conn * conn);

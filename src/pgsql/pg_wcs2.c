@@ -25,8 +25,6 @@
 PG_MODULE_MAGIC;
 #endif
 
-#include <libwcs/wcs.h>
-
 #include <ctype.h>
 #include <stdio.h>
 
@@ -164,8 +162,8 @@ wcs2_in (PG_FUNCTION_ARGS)
       ARG_INT (equinox);
       else
       {
-	char *warning;
-	asprintf (&warning, "unknow string %s %s", cmd, arg);
+	char *warning = malloc (200 + strlen (cmd) + strlen (arg));
+	sprintf (warning, "unknow string %s %s", cmd, arg);
 	elog (NOTICE, warning);
 	free (warning);
       }

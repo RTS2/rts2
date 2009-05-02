@@ -24,7 +24,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-namespace rts2sensor
+namespace rts2sensord
 {
   
 /**
@@ -55,7 +55,7 @@ class BartRain: public SensorWeather
 
 }
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 int

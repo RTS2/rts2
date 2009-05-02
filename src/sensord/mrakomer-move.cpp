@@ -20,7 +20,7 @@
 #include "sensord.h"
 #include "../utils/rts2connserial.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -72,7 +72,7 @@ class MrakomerMove:public SensorWeather
 
 }
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 int

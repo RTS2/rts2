@@ -66,7 +66,6 @@ class Robofocus:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int stepOut (int num);
 		virtual int setTo (int num);
 		virtual int setSwitch (int switch_num, int new_state);
 };
@@ -226,15 +225,6 @@ Robofocus::getSwitchState ()
 			ret |= (1 << i);
 	}
 	return ret;
-}
-
-
-int
-Robofocus::stepOut (int num)
-{
-	if (num < 0)
-		return focus_move (CMD_FOCUS_MOVE_IN, -1 * num);
-	return focus_move (CMD_FOCUS_MOVE_OUT, num);
 }
 
 

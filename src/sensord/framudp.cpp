@@ -27,7 +27,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 ConnFramWeather::ConnFramWeather (int _weather_port, int _weather_timeout, FramWeather * _master)
 :Rts2ConnNoSend (_master)

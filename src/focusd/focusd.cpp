@@ -24,14 +24,13 @@ using namespace rts2focusd;
 Focusd::Focusd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
-	focStepSec = 100;
 	homePos = 750;
 	startPosition = INT_MIN;
 
 	focTemp = NULL;
 
 	createValue (focPos, "FOC_POS", "focuser position", true, 0, 0, true);
-	createValue (focTarget, "TARGET", "focuser target value", true);
+	createValue (focTarget, "FOC_TAR", "focuser target value", true);
 
 	addOption ('o', "home", 1, "home position (default to 750!)");
 	addOption ('p', "start_position", 1,
@@ -105,23 +104,6 @@ Focusd::idle ()
 
 
 int
-Focusd::setTo (int num)
-{
-	int ret;
-	int steps;
-	ret = info ();
-	if (ret)
-		return ret;
-
-	setFocTarget (num);
-	steps = num - getFocPos ();
-	setFocusTimeout ((int) ceil (abs (steps) / focStepSec) + 5);
-
-	return stepOut (steps);
-}
-
-
-int
 Focusd::home ()
 {
 	return setTo (homePos);
@@ -129,43 +111,15 @@ Focusd::home ()
 
 
 int
-Focusd::stepOut (Rts2Conn * conn, int num)
-{
-	int ret;
-	ret = info ();
-	if (ret)
-		return ret;
-
-	setFocTarget (getFocPos () + num);
-	setFocusTimeout ((int) ceil (abs (num) / focStepSec) + 5);
-
-	ret = stepOut (num);
-	if (ret)
-	{
-		if (conn)
-		{
-			conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
-		}
-	}
-	else
-	{
-		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE,
-			FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
-	}
-	return ret;
-}
-
-
-int
 Focusd::setTo (Rts2Conn * conn, int num)
 {
 	int ret;
+	setFocTarget (num);
 	ret = setTo (num);
 	if (ret && conn)
 		conn->sendCommandEnd (DEVDEM_E_HW, "cannot step out");
 	else
-		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE,
-			"focusing started");
+		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
 	return ret;
 }
 
@@ -221,14 +175,6 @@ Focusd::endFocusing ()
 }
 
 
-void
-Focusd::setFocusTimeout (int timeout)
-{
-	time (&focusTimeout);
-	focusTimeout += timeout;
-}
-
-
 int
 Focusd::checkStartPosition ()
 {
@@ -257,22 +203,11 @@ Focusd::commandAuthorized (Rts2Conn * conn)
 	if (conn->isCommand ("help"))
 	{
 		conn->sendMsg ("info  - information about focuser");
-		conn->sendMsg ("step  - move by given steps offset");
 		conn->sendMsg ("set   - set to given position");
 		conn->sendMsg ("focus - auto focusing");
 		conn->sendMsg ("exit  - exit from connection");
 		conn->sendMsg ("help  - print, what you are reading just now");
 		return 0;
-	}
-	else if (conn->isCommand ("step"))
-	{
-		int num;
-		// CHECK_PRIORITY;
-
-		if (conn->paramNextInteger (&num) || !conn->paramEnd ())
-			return -2;
-
-		return stepOut (conn, num);
 	}
 	else if (conn->isCommand ("set"))
 	{

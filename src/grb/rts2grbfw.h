@@ -25,7 +25,7 @@ class Rts2GrbForwardConnection:public Rts2ConnNoSend
 class Rts2GrbForwardClientConn:public Rts2ConnNoSend
 {
 	private:
-		void forwardPacket (long *nbuf);
+		void forwardPacket (int32_t *nbuf);
 	public:
 		Rts2GrbForwardClientConn (int in_sock, Rts2Block * in_master);
 		virtual void postEvent (Rts2Event * event);

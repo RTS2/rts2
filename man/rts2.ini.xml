@@ -965,48 +965,6 @@
       <variablelist>
         <varlistentry>
 	  <term>
-	    <option>xplate</option>
-	  </term>
-	  <listitem>
-	    <para>X plate size in arc seconds. Size of one pixel along X axis.
-	    This value is used for ; astrometry package (past) to enable
-	    calculation of precise position.</para>
-          </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>yplate</option>
-	  </term>
-	  <listitem>
-	    <para>Y plate size in arc seconds. Size of one pixel along X axis.
-	    This value is used for ; astrometry package (past) to enable
-	    calculation of precise position.</para>
-          </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>rotang</option>
-	  </term>
-	  <listitem>
-	    <para>Camera rotational angle. This value is angle between X axis
-	    and north direction on image plate. ROTANG is also affected by
-	    telescope flip and derotator setting, so for definite value either
-	    see rts2-mon or ROTANG entry in the FITS headers.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
-	    <option>rotang</option>
-	  </term>
-	  <listitem>
-	    <para>Camera rotational angle. This value is angle between X axis
-	    and north direction on image plate. ROTANG is also affected by
-	    telescope flip and derotator setting, so for definite value either
-	    see rts2-mon or ROTANG entry in the FITS headers.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
 	    <option>xoa</option>
 	  </term>
 	  <listitem>
@@ -1023,16 +981,6 @@
 	    <para>Y Optical Axis ofset in pixels. This value describes where on
 	    which CCD pixel is located telescope optical axis. Can be a float
 	    value. Defaults to half of the Y detector pixel size.</para>
-	  </listitem>
-	</varlistentry>
-       <varlistentry>
-	  <term>
-	    <option>flip</option>
-	  </term>
-	  <listitem>
-	    <para>Camera flip. If north is along positive X axis, flip is 0
-	    when west is along positive Y axis, and 1 if west is along negative
-	    Y axis. Defaults to 1.</para>
 	  </listitem>
 	</varlistentry>
         <varlistentry>

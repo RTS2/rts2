@@ -519,6 +519,51 @@ class ListTargets: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
+			Rts2TargetSet *tar_set = new Rts2TargetSet ();
+			double value;
+			int i = 0;
+			XmlRpcValue retVar;
+
+			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			{
+				Target *tar = (*tar_iter).second;
+				retVar["id"] = tar->getTargetID ();
+				retVar["type"] = tar->getTargetType ();
+				if (tar->getTargetName ())
+					retVar["name"] = tar->getTargetName ();
+				else
+					retVar["name"] = "NULL";
+
+				retVar["enabled"] = tar->getTargetEnabled ();
+				if (tar->getTargetComment ())
+					retVar["comment"] = tar->getTargetComment ();
+				else
+					retVar["comment"] = "";
+				value = tar->getLastObs();
+				retVar["last_obs"] = value;
+				struct ln_equ_posn pos;
+				tar->getPosition (&pos, ln_get_julian_from_sys ());
+				retVar["ra"] = pos.ra;
+				retVar["dec"] = pos.dec;
+				result[i++] = retVar;
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns all targets");
+		}
+
+} listTargets (&xmlrpc_server);
+
+
+class ListTargetsByType: public XmlRpcServerMethod
+{
+	public:
+		ListTargetsByType (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_TYPE_LIST, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
 			char target_types[params.size ()+1];
 			int j;
 			for (j = 0; j < params.size (); j++)
@@ -546,7 +591,11 @@ class ListTargets: public XmlRpcServerMethod
 				else
 					retVar["comment"] = "";
 				value = tar->getLastObs();
-				retVar["last"] = value;
+				retVar["last_obs"] = value;
+				struct ln_equ_posn pos;
+				tar->getPosition (&pos, ln_get_julian_from_sys ());
+				retVar["ra"] = pos.ra;
+				retVar["dec"] = pos.dec;
 				result[i++] = retVar;
 			}
 		}
@@ -556,7 +605,8 @@ class ListTargets: public XmlRpcServerMethod
 			return std::string ("Returns all targets");
 		}
 
-} listTargets (&xmlrpc_server);
+} listTargetsByType (&xmlrpc_server);
+
 
 class TargetInfo: public XmlRpcServerMethod
 {
@@ -569,7 +619,6 @@ class TargetInfo: public XmlRpcServerMethod
 			XmlRpcValue retVar;
 			int i;
 			double JD;
-			time_t now;
 
 			for (i = 0; i < params.size(); i++)
 				targets.push_back (params[i]);
@@ -583,28 +632,23 @@ class TargetInfo: public XmlRpcServerMethod
 			{
 				JD = ln_get_julian_from_sys ();
 
-				ln_get_timet_from_julian (JD, &now);
+				Target *tar = (*tar_iter).second;
 
 				XmlStream xs (&retVar);
-				xs << *((*tar_iter).second);
+				xs << *tar;
 
 				// observations
 				Rts2ObsSet *obs_set;
-				obs_set = new Rts2ObsSet ((*tar_iter).second->getTargetID ());
+				obs_set = new Rts2ObsSet (tar->getTargetID ());
 				int j = 0;
 				for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
 				{
-					retVar["observation"][j] =  (*obs_iter).getObsId();
-					// retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
+					retVar["observation"][j]["obsid"] =  (*obs_iter).getObsId();
+					retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
 				}
 
-				/*
-					XmlStream xs (&retVar);
-
-					// xs << InfoVal<XmlRpcValue> ("HOUR", (*tar_iter)->getHourAngle (JD));
-					Target *tar = *tar_iter;
-					tar->sendInfo (xs, JD);
-				*/
+				retVar["HOUR"] = tar->getHourAngle (JD);
+				tar->sendInfo (xs, JD);
 				result[i++] = retVar;
 			}
 		}
@@ -614,7 +658,7 @@ class TargetInfo: public XmlRpcServerMethod
 class ListObservations: public XmlRpcServerMethod
 {
 	public:
-		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATIONS_LIST, s) {}
+		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -641,7 +685,7 @@ class ListObservations: public XmlRpcServerMethod
 class ListImages: public XmlRpcServerMethod
 {
 	public:
-		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_IMAGES_LIST, s) {}
+		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATION_IMAGES_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{

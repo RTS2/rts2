@@ -57,17 +57,21 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 
 	std::list <int> target_ids;
 
-	asprintf (&stmp_c,
-		"SELECT "
+	std::ostringstream _os;
+
+	_os << "SELECT "
 		"tar_id"
 		" FROM "
 		"targets"
-		" WHERE "
-		"%s"
-		" ORDER BY %s;",
-		in_where.c_str(), order_by.c_str());
+		" WHERE " << in_where << 
+		" ORDER BY " << order_by << ";";
+
+	stmp_c = new char[_os.str ().length ()];
+	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE tar_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
 
 	EXEC SQL DECLARE tar_cur CURSOR FOR tar_stmp;
 
@@ -86,7 +90,6 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 		logStream (MESSAGE_ERROR) << "Rts2TargetSet::load cannot load targets" << sendLog;
 	}
 	EXEC SQL CLOSE tar_cur;
-	free (stmp_c);
 	EXEC SQL ROLLBACK;
 
 	load (target_ids);

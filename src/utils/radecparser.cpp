@@ -30,35 +30,18 @@ parseRaDec (const char *radec, double &ra, double &dec)
 	dec = 0;
 	int dec_sign = 1;
 	int step = 1;
-	enum { NOT_GET, RA, DEC }
-	state;
+	enum { NOT_GET, RA, DEC } state;
 	bool ra_six = false;
 
 	state = NOT_GET;
 	while (1)
 	{
-		std::string next;
-		is >> next;
+		double val;
+		// try to get number and something after it..
+		is >> val;
 		if (is.fail ())
 			break;
-		std::istringstream next_num (next);
-		int next_c = next_num.peek ();
-		if (next_c == '+' || next_c == '-')
-		{
-			if (state != RA)
-				return -1;
-			state = DEC;
-			step = 1;
-			if (next_c == '-')
-			{
-				dec_sign = -1;
-				next_num.get ();
-			}
-		}
-		double val;
-		next_num >> val;
-		if (next_num.fail ())
-			break;
+
 		switch (state)
 		{
 			case NOT_GET:
@@ -74,7 +57,42 @@ parseRaDec (const char *radec, double &ra, double &dec)
 				step *= 60;
 				break;
 		}
+
+		// find start of next number.
+		while (true)
+		{
+			char next_ch;
+			next_ch = is.peek ();
+			if (is.fail ())
+				break;
+			if (isdigit (next_ch) || next_ch == '.')
+				break;
+			next_ch = is.get ();
+			if (is.fail ())
+				break;
+			if (next_ch == '+' || next_ch == '-')
+			{
+				if (state != RA)
+					return -1;
+				state = DEC;
+				step = 1;
+				if (next_ch == '-')
+				{
+					dec_sign = -1;
+				}
+				break;
+			}
+			else if (!(isspace (next_ch) || next_ch == ':'))
+			{
+				break;
+			}
+		}
+
 	}
+
+	dec *= dec_sign;
+	if (ra_six)
+		ra *= 15;
 
 	if (state == DEC)
 		return 0;

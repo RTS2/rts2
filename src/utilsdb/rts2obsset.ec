@@ -59,7 +59,8 @@ Rts2ObsSet::load (std::string in_where)
 
 	initObsSet ();
 
-	asprintf (&stmp_c,
+	std::ostringstream _os;
+	_os << 
 		"SELECT "
 		"tar_name,"
 		"observations.tar_id,"
@@ -77,11 +78,14 @@ Rts2ObsSet::load (std::string in_where)
 		"observations, targets"
 		" WHERE "
 		"observations.tar_id = targets.tar_id "
-		"AND %s"
-		" ORDER BY obs_id DESC;",
-		in_where.c_str());
+		"AND " << in_where << 
+		" ORDER BY obs_id DESC;";
+	stmp_c  = new char[_os.str ().length () + 1];
+	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE obs_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
 
 	EXEC SQL DECLARE obs_cur_timestamps CURSOR FOR obs_stmp;
 
@@ -140,7 +144,6 @@ Rts2ObsSet::load (std::string in_where)
 			<< sqlca.sqlerrm.sqlerrmc << sendLog;
 	}
 	EXEC SQL CLOSE obs_cur_timestamps;
-	free (stmp_c);
 	EXEC SQL ROLLBACK;
 }
 

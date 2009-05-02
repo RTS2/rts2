@@ -3,6 +3,7 @@
 EXTRA_DIST = \
     rts2.xml \
     rts2.ini.xml \
+    rts2-device.xml \
     rts2-mon.xml \
     rts2-target.xml \
     rts2-targetinfo.xml \
@@ -27,11 +28,13 @@ EXTRA_DIST = \
     rts2-centrald.xml \
     rts2-moodd.xml \
     rts2-sensor-system.xml \
-    rts2-sensor-apcups.xml
+    rts2-sensor-apcups.xml \
+    rts2-camd.xml
 
 man_MANS = \
     rts2.7 \
     rts2.ini.5 \
+    rts2-device.7 \
     rts2-mon.1 \
     rts2-target.1 \
     rts2-targetinfo.1 \
@@ -56,7 +59,8 @@ man_MANS = \
     rts2-centrald.1 \
     rts2-moodd.1 \
     rts2-sensor-system.1 \
-    rts2-sensor-apcups.1
+    rts2-sensor-apcups.1 \
+    rts2-camd.7
 
 doc_FOP = \
     rts2-man.fop \

@@ -1,6 +1,9 @@
 #include "sensorgpib.h"
 
-class Rts2DevSensorCryocon;
+namespace rts2sensord
+{
+
+class Cryocon;
 
 /**
  * Structure which holds information about input channel
@@ -12,7 +15,7 @@ class Rts2ValueTempInput
 	public:
 		std::list < Rts2Value * >values;
 
-		Rts2ValueTempInput (Rts2DevSensorCryocon * dev, char in_chan);
+		Rts2ValueTempInput (Cryocon * dev, char in_chan);
 
 		char getChannel ()
 		{
@@ -40,7 +43,7 @@ class Rts2ValueLoop
 		Rts2ValueDouble *htrread;
 		Rts2ValueFloat *pmanual;
 
-		Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop);
+		Rts2ValueLoop (Cryocon * dev, int in_loop);
 
 		std::list < Rts2Value * >values;
 
@@ -50,7 +53,7 @@ class Rts2ValueLoop
 		}
 };
 
-class Rts2DevSensorCryocon:public Rts2DevSensorGpib
+class Cryocon:public SensorGpib
 {
 	int write (const char *buf, const char *newVal);
 
@@ -80,8 +83,8 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 		virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
 
 	public:
-		Rts2DevSensorCryocon (int argc, char **argv);
-		virtual ~ Rts2DevSensorCryocon (void);
+		Cryocon (int argc, char **argv);
+		virtual ~ Cryocon (void);
 
 		void createTempInputValue (Rts2ValueDouble ** val, char chan,
 			const char *name, const char *desc);
@@ -104,7 +107,11 @@ class Rts2DevSensorCryocon:public Rts2DevSensorGpib
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-Rts2ValueTempInput::Rts2ValueTempInput (Rts2DevSensorCryocon * dev,
+};
+
+using namespace rts2sensord;
+
+Rts2ValueTempInput::Rts2ValueTempInput (Cryocon * dev,
 char in_chan)
 {
 	chan = in_chan;
@@ -135,7 +142,7 @@ char in_chan)
 }
 
 
-Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
+Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 {
 	loop = in_loop;
 
@@ -196,7 +203,7 @@ Rts2ValueLoop::Rts2ValueLoop (Rts2DevSensorCryocon * dev, int in_loop)
 
 
 int
-Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
+Cryocon::write (const char *buf, const char *newVal)
 {
 	int ret;
 	char *vbuf = new char[strlen (buf) + strlen (newVal) + 2];
@@ -210,7 +217,7 @@ Rts2DevSensorCryocon::write (const char *buf, const char *newVal)
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *buf, Rts2Value * val)
+Cryocon::writeRead (const char *buf, Rts2Value * val)
 {
 	switch (val->getValueType ())
 	{
@@ -231,7 +238,7 @@ Rts2DevSensorCryocon::writeRead (const char *buf, Rts2Value * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
+Cryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
 {
 	char rb[500];
 	char *retTop;
@@ -284,7 +291,7 @@ Rts2DevSensorCryocon::writeRead (const char *subsystem, std::list < Rts2Value * 
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueDouble * val)
+Cryocon::writeRead (const char *buf, Rts2ValueDouble * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -296,7 +303,7 @@ Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueDouble * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueFloat * val)
+Cryocon::writeRead (const char *buf, Rts2ValueFloat * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -308,7 +315,7 @@ Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueFloat * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueBool * val)
+Cryocon::writeRead (const char *buf, Rts2ValueBool * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -320,7 +327,7 @@ Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueBool * val)
 
 
 int
-Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueSelection * val)
+Cryocon::writeRead (const char *buf, Rts2ValueSelection * val)
 {
 	char rb[50];
 	int ret = gpibWriteRead (buf, rb);
@@ -331,7 +338,7 @@ Rts2DevSensorCryocon::writeRead (const char *buf, Rts2ValueSelection * val)
 
 
 const char *
-Rts2DevSensorCryocon::getLoopVal (int l, Rts2Value * val)
+Cryocon::getLoopVal (int l, Rts2Value * val)
 {
 	static char buf[100];
 	strcpy (buf, "LOOP ");
@@ -344,7 +351,7 @@ Rts2DevSensorCryocon::getLoopVal (int l, Rts2Value * val)
 
 
 int
-Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
+Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 {
 	for (int l = 0; l < 2; l++)
 		for (std::list < Rts2Value * >::iterator iter = loops[l]->values.begin ();
@@ -360,12 +367,12 @@ Rts2DevSensorCryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 			return gpibWrite ("CONTROL");
 		return gpibWrite ("STOP");
 	}
-	return Rts2DevSensorGpib::setValue (oldValue, newValue);
+	return SensorGpib::setValue (oldValue, newValue);
 }
 
 
-Rts2DevSensorCryocon::Rts2DevSensorCryocon (int in_argc, char **in_argv):
-Rts2DevSensorGpib (in_argc, in_argv)
+Cryocon::Cryocon (int in_argc, char **in_argv):
+SensorGpib (in_argc, in_argv)
 {
 	int i;
 
@@ -396,13 +403,13 @@ Rts2DevSensorGpib (in_argc, in_argv)
 }
 
 
-Rts2DevSensorCryocon::~Rts2DevSensorCryocon (void)
+Cryocon::~Cryocon (void)
 {
 }
 
 
 void
-Rts2DevSensorCryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
+Cryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
 const char *name,
 const char *desc)
 {
@@ -420,7 +427,7 @@ const char *desc)
 
 
 int
-Rts2DevSensorCryocon::info ()
+Cryocon::info ()
 {
 	int ret;
 	char buf[50] = "INPUT ";
@@ -455,12 +462,12 @@ Rts2DevSensorCryocon::info ()
 	ret = writeRead ("CONTROL?", heaterEnabled);
 	if (ret)
 		return ret;
-	return Rts2DevSensorGpib::info ();
+	return SensorGpib::info ();
 }
 
 
 int
-Rts2DevSensorCryocon::commandAuthorized (Rts2Conn * conn)
+Cryocon::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("control"))
 	{
@@ -471,13 +478,13 @@ Rts2DevSensorCryocon::commandAuthorized (Rts2Conn * conn)
 		return gpibWrite ("STOP");
 	}
 
-	return Rts2DevSensorGpib::commandAuthorized (conn);
+	return SensorGpib::commandAuthorized (conn);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorCryocon device = Rts2DevSensorCryocon (argc, argv);
+	Cryocon device = Cryocon (argc, argv);
 	return device.run ();
 }

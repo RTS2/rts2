@@ -459,11 +459,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 	struct ln_dms deg_dms;
 	l_deg.toDms (&deg_dms);
 	char old_fill = _os.fill ('0');
-	int old_precison = _os.precision (0);
+	int old_precison = _os.precision (2);
 	std::ios_base::fmtflags old_settings = _os.flags ();
 	_os << (deg_dms.neg ? '-' : '+')
 		<< std::setw (2) << deg_dms.degrees
-		<< std::setw (2) << deg_dms.minutes << std::setw (2) << deg_dms.seconds;
+		<< std::setw (2) << deg_dms.minutes
+		<< std::setw (5) << deg_dms.seconds;
 	_os.setf (old_settings);
 	_os.precision (old_precison);
 	_os.fill (old_fill);

@@ -21,12 +21,15 @@
 
 #include "../utils/rts2connserial.h"
 
+namespace rts2sensord
+{
+
 /**
  * Driver for Newport Lamp power supply.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevSensorNewportLamp: public Rts2DevSensor
+class NewportLamp: public Sensor
 {
 	private:
 		char *lampDev;
@@ -61,13 +64,16 @@ class Rts2DevSensorNewportLamp: public Rts2DevSensor
 		virtual int info ();
 
 	public:
-		Rts2DevSensorNewportLamp (int in_argc, char **in_argv);
-		virtual ~Rts2DevSensorNewportLamp (void);
+		NewportLamp (int in_argc, char **in_argv);
+		virtual ~NewportLamp (void);
 };
 
+};
+
+using namespace rts2sensord;
 
 int
-Rts2DevSensorNewportLamp::writeCommand (const char *cmd)
+NewportLamp::writeCommand (const char *cmd)
 {
 	int ret;
 	ret = lampSerial->writePort (cmd, strlen (cmd));
@@ -81,7 +87,7 @@ Rts2DevSensorNewportLamp::writeCommand (const char *cmd)
 
 
 int
-Rts2DevSensorNewportLamp::writeValue (const char *valueName, float val)
+NewportLamp::writeValue (const char *valueName, float val)
 {
 	std::ostringstream _os;
 	_os.precision (1);
@@ -94,7 +100,7 @@ Rts2DevSensorNewportLamp::writeValue (const char *valueName, float val)
 
 
 int
-Rts2DevSensorNewportLamp::writeValue (const char *valueName, int val)
+NewportLamp::writeValue (const char *valueName, int val)
 {
 	std::ostringstream _os;
 	_os << valueName << '=' << val << '\r';
@@ -106,7 +112,7 @@ Rts2DevSensorNewportLamp::writeValue (const char *valueName, int val)
 
 
 template < typename T > int
-Rts2DevSensorNewportLamp::readValue (const char *valueName, T & val)
+NewportLamp::readValue (const char *valueName, T & val)
 {
 	int ret;
 	char buf[50];
@@ -124,7 +130,7 @@ Rts2DevSensorNewportLamp::readValue (const char *valueName, T & val)
 
 
 int
-Rts2DevSensorNewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
+NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
 {
 	int ret;
 	char buf[50];
@@ -142,7 +148,7 @@ Rts2DevSensorNewportLamp::getStatus (const char *valueName, Rts2ValueInteger *va
 }
 
 int
-Rts2DevSensorNewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
+NewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
 {
 	int ret;
 	ret = lampSerial->writePort (valueName, strlen (valueName));
@@ -155,8 +161,7 @@ Rts2DevSensorNewportLamp::readStatus (const char *valueName, Rts2ValueInteger *v
 }
 
 
-Rts2DevSensorNewportLamp::Rts2DevSensorNewportLamp (int in_argc, char **in_argv)
-:Rts2DevSensor (in_argc, in_argv)
+NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 {
 	lampSerial = NULL;
 
@@ -180,13 +185,13 @@ Rts2DevSensorNewportLamp::Rts2DevSensorNewportLamp (int in_argc, char **in_argv)
 }
 
 
-Rts2DevSensorNewportLamp::~Rts2DevSensorNewportLamp ()
+NewportLamp::~NewportLamp ()
 {
 	delete lampSerial;
 }
 
 int
-Rts2DevSensorNewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
+NewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int ret;
 	if (old_value == on)
@@ -205,12 +210,12 @@ Rts2DevSensorNewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value
 	{
 	  	return writeValue ("P-PRESET", new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 
 int
-Rts2DevSensorNewportLamp::processOption (int in_opt)
+NewportLamp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -218,17 +223,17 @@ Rts2DevSensorNewportLamp::processOption (int in_opt)
 			lampDev = optarg;
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
 
 int
-Rts2DevSensorNewportLamp::init ()
+NewportLamp::init ()
 {
 	int ret;
 
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 	
@@ -254,7 +259,7 @@ Rts2DevSensorNewportLamp::init ()
 
 
 int
-Rts2DevSensorNewportLamp::info ()
+NewportLamp::info ()
 {
 	int ret;
 	ret = readStatus ("STB", status);
@@ -291,13 +296,13 @@ Rts2DevSensorNewportLamp::info ()
 	ret = readValue ("LAMP HRS", hours);
 	if (ret)
 		return ret;
-	return Rts2DevSensor::info (); 
+	return Sensor::info (); 
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorNewportLamp device = Rts2DevSensorNewportLamp (argc, argv);
+	NewportLamp device = NewportLamp (argc, argv);
 	return device.run ();
 }

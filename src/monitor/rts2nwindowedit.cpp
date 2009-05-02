@@ -54,6 +54,7 @@ Rts2NWindowEdit::injectKey (int key)
 	switch (key)
 	{
 		case KEY_BACKSPACE:
+		case 127:
 			getyx (comwin, y, x);
 			mvwdelch (comwin, y, x - 1);
 			return RKEY_HANDLED;

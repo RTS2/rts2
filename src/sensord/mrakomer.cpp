@@ -21,7 +21,7 @@
 
 #include "../utils/rts2connserial.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 /**
@@ -77,7 +77,7 @@ class Mrakomer: public SensorWeather
 
 };
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Mrakomer::readSensor ()
@@ -202,20 +202,28 @@ Mrakomer::idle ()
 {
 	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
 	{
-		if (isnan (heatStateChangeTime->getValueDouble ()))
+		int ms = getMasterState () & SERVERD_STATUS_MASK;
+		if (!(ms == SERVERD_DUSK || ms == SERVERD_NIGHT || ms == SERVERD_DAWN))
 		{
-			heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
-			heater->setValueBool (true);
-			setIdleInfoInterval (heatDuration->getValueInteger ());
-			setIdleInfoInterval (heatInterval->getValueInteger ());
+			heater->setValueBool (false);
 		}
-		else if (heatStateChangeTime->getValueDouble () < getNow ())
+		else
 		{
-			if (heater->getValueBool ())
-				heatStateChangeTime->setValueDouble (getNow () + heatInterval->getValueInteger ());
-			else
-			  	heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
-			heater->setValueBool (!heater->getValueBool ());
+			if (isnan (heatStateChangeTime->getValueDouble ()))
+			{
+				heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
+				heater->setValueBool (true);
+				setIdleInfoInterval (heatDuration->getValueInteger ());
+				setIdleInfoInterval (heatInterval->getValueInteger ());
+			}
+			else if (heatStateChangeTime->getValueDouble () < getNow ())
+			{
+				if (heater->getValueBool ())
+					heatStateChangeTime->setValueDouble (getNow () + heatInterval->getValueInteger ());
+				else
+				  	heatStateChangeTime->setValueDouble (getNow () + heatDuration->getValueInteger ());
+				heater->setValueBool (!heater->getValueBool ());
+			}
 		}
 		sendValueAll (heater);
 		sendValueAll (heatStateChangeTime);

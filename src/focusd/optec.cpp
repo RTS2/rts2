@@ -54,7 +54,7 @@ class Optec:public Focusd
 		virtual int init ();
 		virtual int initValues ();
 		virtual int info ();
-		virtual int stepOut (int num);
+		virtual int setTo (int num);
 		virtual int isFocusing ();
 };
 
@@ -215,7 +215,7 @@ Optec::info ()
 
 
 int
-Optec::stepOut (int num)
+Optec::setTo (int num)
 {
 	char command[7], rbuf[7];
 	char add = ' ';
@@ -225,17 +225,18 @@ Optec::stepOut (int num)
 	if (ret)
 		return ret;
 
-	if (getFocPos () + num > 7000 || getFocPos () + num < 0)
+	if (num > 7000 || num < 0)
 		return -1;
 
-	if (num < 0)
+	if (focPos->getValueInteger () > num)
 	{
 		add = 'I';
-		num *= -1;
+		num = focPos->getValueInteger () - num;
 	}
 	else
 	{
 		add = 'O';
+		num = num - focPos->getValueInteger ();
 	}
 
 	// maximal time fore move is +- 40 sec

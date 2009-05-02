@@ -18,10 +18,33 @@ Instalation from SVN
    Package gsoap is needed if you want SIMBAD name resolving and other nice
    stuff.
 
+   WCS libraries are needed for database and for rts2-f2j binary. If you wish
+   to use them, you must manually install WCS using folowing steps:
+
+user@host:wget http://tdc-www.harvard.edu/software/wcstools/wcstools-3.7.7.tar.gz
+user@host:tar xzf wcstools-3.7.7.tar.gz
+user@host:cd wcstools-3.7.7/
+user@host:~/wcstools-3.7.7$ make
+...
+ar rv libned.a ned_cli.o ned_cif.o ned_err.o ned_sk.o
+ar: creating libned.a
+a - ned_cli.o
+a - ned_cif.o
+a - ned_err.o
+a - ned_sk.o
+ranlib libned.a
+make[1]: Leaving directory `/home/petr/wcstools-3.7.7/libned'
+cc -g -o bin/nedpos nedpos.c libwcs/libwcs.a -lm libned/libned.a
+cc -g -o bin/bincat bincat.c libwcs/libwcs.a -lm
+user@host:~/wcstools-3.7.7$ cd libwcs
+user@host:~/wcstools-3.7.7/libwcs$ sudo mkdir /usr/local/include/libwcs
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp *.h /usr/local/include/libwcs/
+user@host:~/wcstools-3.7.7/libwcs$ sudo cp libwcs.a /usr/local/lib/
+
    For inpatient (works on Debian/etch, Ubuntu, SuSe, ..)
 
-user@host:svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
-user@host:cd rts2
+user@host:$ svn co https://rts-2.svn.sf.net/svnroot/rts-2/trunk/rts-2 rts2
+user@host:$ cd rts2
 user@host:~/rts2$ ./autogen.sh
 user@host:~/rts2$ ./configure --without-wcs
 

@@ -1,6 +1,6 @@
 # Process this file with automake to produce Makefile.in
 
-AM_CXXFLAGS=@NOVA_CFLAGS@
+AM_CXXFLAGS=@NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 noinst_HEADERS = sqlerror.h rts2devicedb.h target.h rts2appdb.h rts2sqlcolumn.h rts2obs.h rts2obsset.h \
 	rts2taruser.h rts2count.h rts2imgset.h rts2targetset.h rts2plan.h rts2planset.h rts2prop.h \
@@ -23,7 +23,7 @@ bin_PROGRAMS = rts2-airmasscale
 noinst_LIBRARIES = librts2blockdb.a
 
 nodist_rts2_airmasscale_SOURCES = airmasscale.cpp
-rts2_airmasscale_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
+rts2_airmasscale_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_airmasscale_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ librts2blockdb.a ../utils/librts2block.a
 
 nodist_librts2blockdb_a_SOURCES = sqlerror.cpp rts2devicedb.cpp target.cpp sub_targets.cpp rts2appdb.cpp rts2sqlcolumn.cpp rts2obs.cpp \
@@ -31,7 +31,7 @@ nodist_librts2blockdb_a_SOURCES = sqlerror.cpp rts2devicedb.cpp target.cpp sub_t
 	rts2prop.cpp rts2camlist.cpp target_auger.cpp rts2messagedb.cpp rts2targetplanet.cpp rts2targetgrb.cpp \
 	rts2imgsetstat.cpp rts2targetell.cpp rts2user.cpp rts2userset.cpp account.cpp accountset.cpp
 librts2blockdb_a_SOURCES = rts2imgsetstat.cpp
-librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
+librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

@@ -22,7 +22,7 @@
 
 #include "../utils/rts2connnosend.h"
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 class Davis;

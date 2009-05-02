@@ -113,7 +113,7 @@ in_master)
 
 
 void
-Rts2GrbForwardClientConn::forwardPacket (long *nbuf)
+Rts2GrbForwardClientConn::forwardPacket (int32_t *nbuf)
 {
 	int ret;
 	ret = write (sock, nbuf, SIZ_PKT * sizeof (nbuf[0]));
@@ -133,7 +133,7 @@ Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case RTS2_EVENT_GRB_PACKET:
-			forwardPacket ((long *) event->getArg ());
+			forwardPacket ((int32_t *) event->getArg ());
 			break;
 	}
 	Rts2ConnNoSend::postEvent (event);
@@ -143,7 +143,7 @@ Rts2GrbForwardClientConn::postEvent (Rts2Event * event)
 int
 Rts2GrbForwardClientConn::receive (fd_set * set)
 {
-	static long loc_buf[SIZ_PKT];
+	static int32_t loc_buf[SIZ_PKT];
 	if (sock < 0)
 		return -1;
 

@@ -1,5 +1,8 @@
 #include "sensorgpib.h"
 
+namespace rts2sensord
+{
+
 struct keithG4Header
 {
 	// header
@@ -10,7 +13,7 @@ struct keithG4Header
 	int16_t bytecount;
 };
 
-class Rts2DevSensorKeithley487:public Rts2DevSensorGpib
+class Keithley487:public Gpib
 {
 	private:
 		Rts2ValueFloat * curr;
@@ -22,12 +25,14 @@ class Rts2DevSensorKeithley487:public Rts2DevSensorGpib
 		virtual int info ();
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
-		Rts2DevSensorKeithley487 (int in_argc, char **in_argv);
+		Keithley487 (int argc, char **argv);
 };
 
-Rts2DevSensorKeithley487::Rts2DevSensorKeithley487 (int in_argc,
-char **in_argv):
-Rts2DevSensorGpib (in_argc, in_argv)
+};
+
+using namespace rts2sensord;
+
+Keithley487::Keithley487 (int argc,char **argv):Gpib (argc, argv)
 {
 	setPad (23);
 
@@ -47,10 +52,10 @@ Rts2DevSensorGpib (in_argc, in_argv)
 
 
 int
-Rts2DevSensorKeithley487::init ()
+Keithley487::init ()
 {
 	int ret;
-	ret = Rts2DevSensorGpib::init ();
+	ret = Gpib::init ();
 	if (ret)
 		return ret;
 	// binary for Intel
@@ -59,7 +64,7 @@ Rts2DevSensorKeithley487::init ()
 
 
 int
-Rts2DevSensorKeithley487::info ()
+Keithley487::info ()
 {
 	int ret;
 	struct
@@ -83,12 +88,12 @@ Rts2DevSensorKeithley487::info ()
 	// scale properly..
 	curr->setValueFloat (*((float *) (&(oneShot.value))) * 1e+12);
 
-	return Rts2DevSensorGpib::info ();
+	return Gpib::info ();
 }
 
 
 int
-Rts2DevSensorKeithley487::setValue (Rts2Value * old_value,
+Keithley487::setValue (Rts2Value * old_value,
 Rts2Value * new_value)
 {
 	char buf[50];
@@ -110,13 +115,13 @@ Rts2Value * new_value)
 		snprintf (buf, 50, "C%iX", new_value->getValueInteger ());
 		return gpibWrite (buf);
 	}
-	return Rts2DevSensorGpib::setValue (old_value, new_value);
+	return Gpib::setValue (old_value, new_value);
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorKeithley487 device = Rts2DevSensorKeithley487 (argc, argv);
+	Keithley487 device = Keithley487 (argc, argv);
 	return device.run ();
 }

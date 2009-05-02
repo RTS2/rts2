@@ -188,25 +188,6 @@ ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 //	ret = config->getString (deviceName, "darks", dark_exps);
 
 
-/*int
-PossibleDarks::getScript (std::string &buf)
-{
-	std::list <float>::iterator dark_exp;
-	if (dark_exposures.size () == 0)
-	{
-		dbDark ();
-	}
-	std::ostringstream _os;
-	for (dark_exp = dark_exposures.begin (); dark_exp != dark_exposures.end (); dark_exp++)
-	{
-		float dark_ex = *dark_exp;
-		_os << "D " << dark_ex << ' ';
-	}
-	buf = _os.str ();
-	return 0;
-}*/
-
-
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
 	currPos.ra = 0;
@@ -249,10 +230,10 @@ FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarge
 void
 FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 {
-	struct ln_equ_posn sun;
+	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn hrz;
-	ln_get_solar_equ_coords (JD, &sun);
-	ln_get_hrz_from_equ (&sun, observer, JD, &hrz);
+	ln_get_solar_equ_coords (JD, &eq_sun);
+	ln_get_hrz_from_equ (&eq_sun, observer, JD, &hrz);
 	hrz.alt = 40;
 	hrz.az = ln_range_degrees (hrz.az + 180);
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
@@ -554,10 +535,10 @@ CalibrationTarget::load ()
 		}
 		if (obs_target_id != -1)
 			break;
-		char *logmsg;
-		asprintf (&logmsg, "CalibrationTarget::load cannot find any target for airmass between %f and %f", d_airmass_start, d_airmass_end);
-		logMsgDb (logmsg, MESSAGE_DEBUG);
-		free (logmsg);
+		std::ostringstream _os;
+		_os << "CalibrationTarget::load cannot find any target for airmass between "
+			<< d_airmass_start << " and " << d_airmass_end ;
+		logMsgDb (_os.str ().c_str (), MESSAGE_DEBUG);
 	}
 	// change priority for bad targets..
 	for (cal_iter = bad_list.begin (); cal_iter != bad_list.end (); cal_iter++)
@@ -816,6 +797,8 @@ ModelTarget::calPosition ()
 			ra_noise -= noise;
 			dec_noise = 2 * noise * ((double) random () / RAND_MAX);
 			dec_noise -= noise;
+			if (!isAboveHorizon (&hrz_poz))
+				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2 * noise;
 	}
 	// null ra + dec .. for recurent call do getPosition (JD..)
 	equ_poz.ra = -1000;

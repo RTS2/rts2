@@ -40,17 +40,19 @@ class OpenTpl:public Focusd
 		int initOpenTplDevice ();
 
 	protected:
+		virtual int init ();
+		virtual int initValues ();
+		virtual int info ();
+
 		virtual int endFocusing ();
 		virtual bool isAtStartPosition ();
+
+		virtual int setTo (int num);
+		virtual int isFocusing ();
 	public:
 		OpenTpl (int argc, char **argv);
 		virtual ~ OpenTpl (void);
 		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual int initValues ();
-		virtual int info ();
-		virtual int setTo (int num);
-		virtual int isFocusing ();
 };
 
 };
@@ -200,7 +202,6 @@ OpenTpl::setTo (int num)
 			sendLog;
 		return -1;
 	}
-	setFocusTimeout (100);
 	focPos->setValueInteger (num);
 	return 0;
 }

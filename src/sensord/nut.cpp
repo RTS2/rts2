@@ -25,7 +25,7 @@
 #define OPT_MINBRUNTIM   OPT_LOCAL + 222
 #define OPT_MAXONBAT     OPT_LOCAL + 223
 
-namespace rts2sensor
+namespace rts2sensord
 {
 
 	/**
@@ -107,7 +107,7 @@ namespace rts2sensor
 }
 
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 
 ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName)

@@ -37,6 +37,7 @@ class Rts2SimbadInfo:public Rts2TargetApp
 {
 	private:
 		char *name;
+		bool prettyPrint;
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -51,7 +52,9 @@ Rts2SimbadInfo::Rts2SimbadInfo (int in_argc, char **in_argv):
 Rts2TargetApp (in_argc, in_argv)
 {
 	name = NULL;
+	prettyPrint = false;
 	addOption ('p', NULL, 1, "prints target coordinates and exit");
+	addOption ('P', NULL, 1, "pretty print extented target coordinates and exit");
 }
 
 
@@ -65,6 +68,8 @@ Rts2SimbadInfo::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case 'P':
+			prettyPrint = true;
 		case 'p':
 			name = optarg;
 			break;
@@ -90,8 +95,18 @@ Rts2SimbadInfo::doProcessing ()
 		}
 		struct ln_equ_posn pos;
 		target->getPosition (&pos);
-		std::cout.precision (15);
-		std::cout << pos.ra << "\t" << pos.dec << std::endl;
+		if (prettyPrint)
+		{
+			struct ln_hrz_posn hrz;
+			target->getAltAz (&hrz);
+			std::cout << "EQU " << LibnovaRaDec (&pos) << std::endl
+				<< "HRZ " << LibnovaHrz (&hrz) << std::endl;
+		}
+		else
+		{
+			std::cout.precision (15);
+			std::cout << pos.ra << "\t" << pos.dec << std::endl;
+		}
 		return 0;
 	}
 	static double radius = 10.0 / 60.0;

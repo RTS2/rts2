@@ -30,7 +30,7 @@
 #define OPT_AVG_WINDSPEED           OPT_LOCAL + 1002
 #define OPT_PEEK_WINDSPEED          OPT_LOCAL + 1003
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 int
 Davis::processOption (int _opt)
@@ -113,7 +113,11 @@ Davis::Davis (int argc, char **argv)
 
 	weatherConn = NULL;
 
+	wetness = NULL;
+
 	cloud = NULL;
+	cloudTop = NULL;
+	cloudBottom = NULL;
 	cloud_bad = NULL;
 
 	createValue (udpPort, "udp-port", "port for UDP connection from meteopoll", false);
@@ -134,14 +138,33 @@ Davis::info ()
 
 
 void
-Davis::setCloud (double in_cloud)
+Davis::setWetness (double _wetness)
+{
+      if (wetness == NULL)
+      {
+	      createValue (wetness, "WETNESS", "wetness index");
+	      updateMetaInformations (wetness);
+      }
+      wetness->setValueDouble (_wetness);
+}
+
+
+void
+Davis::setCloud (double _cloud, double _top, double _bottom)
 {
       if (cloud == NULL)
       {
-	      createValue (cloud, "CLOUD_S", "cloud sensor value");
+	      createValue (cloud, "CLOUD_S", "cloud sensor value", true);
 	      updateMetaInformations (cloud);
+	      createValue (cloudTop, "CLOUD_T", "cloud sensor top temperature", true);
+	      updateMetaInformations (cloudTop);
+	      createValue (cloudBottom, "CLOUD_B", "cloud sensor bottom temperature", true);
+	      updateMetaInformations (cloudBottom);
       }
-      cloud->setValueDouble (in_cloud);
+
+      cloud->setValueDouble (_cloud);
+      cloudTop->setValueDouble (_top);
+      cloudBottom->setValueDouble (_bottom);
       if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
       {
 	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	

@@ -431,10 +431,19 @@
 
     <para>
       teld-*, camd-*, filterd-*, dome-*, focusd-*, mirrord-*
-      <citerefentry>
-        <refentrytitle>rts2-camd-andor</refentrytitle>
-	<manvolnum>1</manvolnum>
-      </citerefentry>
+      <refsect2>
+        <title>Cameras</title>
+	<para>
+  	  <citerefentry>
+            <refentrytitle>rts2-camd</refentrytitle>
+	    <manvolnum>7</manvolnum>
+          </citerefentry>
+          <citerefentry>
+            <refentrytitle>rts2-camd-andor</refentrytitle>
+	    <manvolnum>1</manvolnum>
+          </citerefentry>
+	</para>
+      </refsect2>
     </para>
 
   </refsect1>

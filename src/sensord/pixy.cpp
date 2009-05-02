@@ -22,7 +22,10 @@
 #include "sensord.h"
 #include "../utils/rts2connserial.h"
 
-class Rts2SensorPixy;
+namespace rts2sensord
+{
+
+class Pixy;
 
 /**
  * Sensor connection.
@@ -40,7 +43,7 @@ class Rts2ConnPixy:public Rts2ConnSerial
 	protected:
 		virtual int receive (fd_set *set);
 	public:
-		Rts2ConnPixy (const char *in_devName, Rts2SensorPixy * in_master,
+		Rts2ConnPixy (const char *in_devName, Pixy * in_master,
 			bSpeedT in_baudSpeed = BS9600, cSizeT in_cSize = C8,
 			parityT in_parity = NONE, int in_vTime = 40);
 };
@@ -50,7 +53,7 @@ class Rts2ConnPixy:public Rts2ConnSerial
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2SensorPixy:public Rts2DevSensor
+class Pixy:public Sensor
 {
 	private:
 		char *device_port;
@@ -62,8 +65,8 @@ class Rts2SensorPixy:public Rts2DevSensor
 		virtual int init ();
 		virtual int info ();
 	public:
-		Rts2SensorPixy (int argc, char **argv);
-		virtual ~Rts2SensorPixy (void);
+		Pixy (int argc, char **argv);
+		virtual ~Pixy (void);
 
 		/**
 		 * Called when PIXY receives some data..
@@ -71,6 +74,9 @@ class Rts2SensorPixy:public Rts2DevSensor
 		void pixyReceived (char lastVal);
 };
 
+};
+
+using namespace rts2sensord;
 
 int
 Rts2ConnPixy::receive (fd_set *set)
@@ -81,13 +87,13 @@ Rts2ConnPixy::receive (fd_set *set)
 	if (readPort (lastVal) != 1)
 		return 0;
 
-	((Rts2SensorPixy *)getMaster ())->pixyReceived (lastVal);
+	((Pixy *)getMaster ())->pixyReceived (lastVal);
 		
 	return 1;
 }
 
 
-Rts2ConnPixy::Rts2ConnPixy (const char *in_devName, Rts2SensorPixy * in_master,
+Rts2ConnPixy::Rts2ConnPixy (const char *in_devName, Pixy * in_master,
 			bSpeedT in_baudSpeed, cSizeT in_cSize,
 			parityT in_parity, int in_vTime)
 :Rts2ConnSerial (in_devName, in_master, in_baudSpeed, in_cSize, in_parity, in_vTime)
@@ -96,7 +102,7 @@ Rts2ConnPixy::Rts2ConnPixy (const char *in_devName, Rts2SensorPixy * in_master,
 
 
 int
-Rts2SensorPixy::processOption (int in_opt)
+Pixy::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -104,16 +110,16 @@ Rts2SensorPixy::processOption (int in_opt)
 			device_port = optarg;
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
 
 int
-Rts2SensorPixy::init ()
+Pixy::init ()
 {
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 	
@@ -127,15 +133,14 @@ Rts2SensorPixy::init ()
 
 
 int
-Rts2SensorPixy::info ()
+Pixy::info ()
 {
 	// do not set infotime
 	return 0;
 }
 
 
-Rts2SensorPixy::Rts2SensorPixy (int argc, char **argv)
-:Rts2DevSensor (argc, argv)
+Pixy::Pixy (int argc, char **argv):Sensor (argc, argv)
 {
 	pixyConn = NULL;
 
@@ -145,13 +150,13 @@ Rts2SensorPixy::Rts2SensorPixy (int argc, char **argv)
 }
 
 
-Rts2SensorPixy::~Rts2SensorPixy (void)
+Pixy::~Pixy (void)
 {
 }
 
 
 void
-Rts2SensorPixy::pixyReceived (char lastVal)
+Pixy::pixyReceived (char lastVal)
 {
 	lightening->setValueInteger (lastVal - '0');
 	sendValueAll (lightening);
@@ -162,6 +167,6 @@ Rts2SensorPixy::pixyReceived (char lastVal)
 int
 main (int argc, char **argv)
 {
-	Rts2SensorPixy device = Rts2SensorPixy (argc, argv);
+	Pixy device = Pixy (argc, argv);
 	return device.run ();
 }

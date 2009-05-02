@@ -24,6 +24,7 @@ keyRet Rts2NComWin::injectKey (int key)
 	switch (key)
 	{
 		case KEY_BACKSPACE:
+		case 127:
 			getyx (comwin, y, x);
 			mvwdelch (comwin, y, x - 1);
 			break;

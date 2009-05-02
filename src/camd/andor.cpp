@@ -199,7 +199,7 @@ Andor::isExposing ()
 		switch (getDataType ())
 		{
 			case RTS2_DATA_LONG:
-				if (GetMostRecentImage ((int32_t *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
+				if (GetMostRecentImage ((at_32 *) dataBuffer, chipUsedSize ()) != DRV_SUCCESS)
 				{
 					logStream (MESSAGE_ERROR) << "Cannot get long data" << sendLog;
 					return -1;
@@ -269,7 +269,7 @@ Andor::readoutOneLine ()
 			ret = GetAcquiredFloatData ((float *)dataBuffer, chipUsedSize ());
 			break;
 		case RTS2_DATA_LONG:
-			ret = GetAcquiredData ((int32_t *)dataBuffer, chipUsedSize ());
+			ret = GetAcquiredData ((at_32 *)dataBuffer, chipUsedSize ());
 			break;
 			// case RTS2_DATA_SHORT:
 		default:
@@ -343,6 +343,7 @@ Camera (in_argc, in_argv)
 
 	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING, true);
 	EMOn->setValueBool (true);
+	setDefaultFlip (0);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING, true);
 	HSpeed->setValueInteger (1);
@@ -472,6 +473,7 @@ Andor::setHSSpeed (int in_amp, int in_hsspeed)
 		return -1;
 	}
 	EMOn->setValueBool (in_amp == 0 ? true : false);
+	changeFlip (!EMOn->getValueBool ());
 	HSpeed->setValueInteger (in_hsspeed);
 	return 0;
 
@@ -985,7 +987,7 @@ Andor::printInfo ()
 			printf ("VIDEO");
 			break;
 		default:
-			printf ("<unknown> (code is %u)", cap.ulCameraType);
+			printf ("<unknown> (code is %li)", cap.ulCameraType);
 			break;
 	}
 

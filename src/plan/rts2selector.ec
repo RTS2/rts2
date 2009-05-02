@@ -72,7 +72,7 @@ Rts2Selector::~Rts2Selector (void)
 int
 Rts2Selector::selectNext (int masterState)
 {
-	struct ln_equ_posn sun;
+	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
 	double JD;
 	int ret;
@@ -93,8 +93,8 @@ Rts2Selector::selectNext (int masterState)
 			if (flat_sun_min >= flat_sun_max)
 				return selectDarks ();
 			JD = ln_get_julian_from_sys ();
-			ln_get_solar_equ_coords (JD, &sun);
-			ln_get_hrz_from_equ (&sun, observer, JD, &sun_hrz);
+			ln_get_solar_equ_coords (JD, &eq_sun);
+			ln_get_hrz_from_equ (&eq_sun, observer, JD, &sun_hrz);
 			if (sun_hrz.alt >= flat_sun_min && sun_hrz.alt <= flat_sun_max)
 				return selectFlats ();
 			// don't break..

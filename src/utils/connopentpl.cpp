@@ -50,6 +50,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	{
 	 	connectionError (-1);
 		logStream (MESSAGE_ERROR) << "error " << strerror(errno) << " " << errno << " sock " << sock << sendLog;
+		return -1;
 	}
 	if (wait == false)
 		return ret == (int) _os.str().length() ? 0 : -1;
@@ -65,7 +66,7 @@ OpenTpl::waitReply ()
 		char tpl_buf[500];
 		char *tpl_buf_top = tpl_buf;
 		// read from socket till end of command is reached..
-		while (true)
+		while (sock > 0)
 		{
 			int ret;
 			struct timeval read_tout;

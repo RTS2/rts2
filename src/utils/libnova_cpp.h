@@ -490,10 +490,10 @@ class LibnovaHrz
 			az = NULL;
 		}
 
-		LibnovaHrz (LibnovaHrz & in_libnova)
+		LibnovaHrz (const LibnovaHrz & in_libnova)
 		{
-			alt = new LibnovaDeg90 (in_libnova.getAlt ());
-			az = new LibnovaDeg360 (in_libnova.getAz ());
+			alt = new LibnovaDeg90 (in_libnova.alt->getDeg ());
+			az = new LibnovaDeg360 (in_libnova.az->getDeg ());
 		}
 
 		LibnovaHrz (struct ln_hrz_posn *hrz)

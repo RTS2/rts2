@@ -384,7 +384,10 @@ Dome::setWeatherTimeout (time_t wait_time)
 	time (&next);
 	next += wait_time;
 	if (next > nextGoodWeather->getValueInteger ())
+	{
 		nextGoodWeather->setValueInteger (next);
+		sendValueAll (nextGoodWeather);
+	}
 }
 
 

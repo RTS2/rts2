@@ -25,7 +25,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-using namespace rts2sensor;
+using namespace rts2sensord;
 
 #define FRAM_CONN_TIMEOUT    60
 
@@ -177,7 +177,6 @@ DavisUdp::receive (fd_set * set)
 	float rtCloudBottom;
 	float rtOutsideHum;
 	float rtOutsideTemp;
-	float weatherTimeout = FRAM_CONN_TIMEOUT;
 	double cloud = nan ("f");
 	if (sock >= 0 && FD_ISSET (sock, set))
 	{
@@ -204,13 +203,6 @@ DavisUdp::receive (fd_set * set)
 		WeatherBuf *weather = new WeatherBuf ();
 		ret = weather->parse (Wbuf);
 		ret_c = ret;
-		weather->getValue ("weatherTimeout", weatherTimeout, ret_c);
-		// if we found weatherTimeout - that's message beeing send to us to set timeout
-		if (!ret_c)
-		{
-			setWeatherTimeout ((int) weatherTimeout);
-			master->updateInfoTime ();
-		}
 
 		weather->getValue ("rtIsRaining", rtIsRaining, ret);
 		if (ret)
@@ -225,7 +217,7 @@ DavisUdp::receive (fd_set * set)
 		weather->getValue ("rtWindAvgSpeed", avgWindSpeed, ret);
 		weather->getValue ("rtOutsideHum", rtOutsideHum, ret);
 		weather->getValue ("rtOutsideTemp", rtOutsideTemp, ret);
-		if (ret && ret_c)
+		if (ret)
 		{
 			rain = 1;
 			setWeatherTimeout (conn_timeout);
@@ -237,6 +229,14 @@ DavisUdp::receive (fd_set * set)
 		weather->getValue ("rtCloudBottom", rtCloudBottom, ret_c);
 		if (ret_c == 0)
 			cloud = rtCloudBottom - rtCloudTop;
+		ret_c = 0;
+
+		weather->getValue ("rtWetness", rtWetness, ret_c);
+		if (ret_c == 0)
+			master->setWetness (rtWetness);
+		else
+			ret_c = 0;
+
 		if (rtRainRate != 0)
 		{
 			rain = 1;
@@ -281,20 +281,18 @@ DavisUdp::receive (fd_set * set)
 		}
 		master->setTemperature (rtOutsideTemp);
 		master->setRainRate (rtRainRate);
-		master->setRainWeather (rain);
+		master->setRain (rain);
 		master->setHumidity (rtOutsideHum);
 		master->setAvgWindSpeed (avgWindSpeed);
 		master->setPeekWindSpeed (peekwindspeed);
 		master->updateInfoTime ();
 		if (!isnan (cloud))
 		{
-			master->setCloud (cloud);
+			master->setCloud (cloud, rtCloudTop, rtCloudBottom);
 		}
 		delete weather;
 
 		time (&lastWeatherStatus);
-		logStream (MESSAGE_DEBUG) << "peekwindspeed: " << peekwindspeed << " avgwindspeed: " << avgWindSpeed 
-			<< " rain: " << rain << " date: " << lastWeatherStatus << " status: " << ret <<	sendLog;
 		if (rain != 0)
 		{
 			time (&lastBadWeather);

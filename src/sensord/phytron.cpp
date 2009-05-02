@@ -22,12 +22,15 @@
 
 #define CMDBUF_LEN  20
 
+namespace rts2sensord
+{
+
 /**
  * Class for Phytron stepper motor controllers.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevSensorPhytron:public Rts2DevSensor
+class Phytron:public Sensor
 {
 	private:
 		Rts2ConnSerial *phytronDev;
@@ -52,15 +55,19 @@ class Rts2DevSensorPhytron:public Rts2DevSensor
 		virtual int processOption (int in_opt);
 
 	public:
-		Rts2DevSensorPhytron (int in_argc, char **in_argv);
-		virtual ~ Rts2DevSensorPhytron (void);
+		Phytron (int in_argc, char **in_argv);
+		virtual ~ Phytron (void);
 
 		virtual int init ();
 		virtual int info ();
 };
 
+};
+
+using namespace rts2sensord;
+
 int
-Rts2DevSensorPhytron::writePort (const char *str)
+Phytron::writePort (const char *str)
 {
 	int ret;
 	// send prefix
@@ -89,14 +96,14 @@ Rts2DevSensorPhytron::writePort (const char *str)
 
 
 int
-Rts2DevSensorPhytron::readPort ()
+Phytron::readPort ()
 {
 	return phytronDev->readPort (cmdbuf, CMDBUF_LEN, '\003') > 0 ? 0 : -1;
 }
 
 
 int
-Rts2DevSensorPhytron::readValue (int ax, int reg, Rts2ValueInteger *val)
+Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iR", ax, reg);
@@ -120,7 +127,7 @@ Rts2DevSensorPhytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 
 
 int
-Rts2DevSensorPhytron::readAxis ()
+Phytron::readAxis ()
 {
 	int ret;
 	ret = readValue (1, 21, axis0);
@@ -134,7 +141,7 @@ Rts2DevSensorPhytron::readAxis ()
 
 
 int
-Rts2DevSensorPhytron::setValue (int ax, int reg, Rts2ValueInteger *val)
+Phytron::setValue (int ax, int reg, Rts2ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iS%i", ax, reg, val->getValueInteger ());
@@ -147,7 +154,7 @@ Rts2DevSensorPhytron::setValue (int ax, int reg, Rts2ValueInteger *val)
 
 
 int
-Rts2DevSensorPhytron::setAxis (int new_val)
+Phytron::setAxis (int new_val)
 {
 	int ret;
 	sprintf (cmdbuf, "01A%i", new_val);
@@ -167,8 +174,7 @@ Rts2DevSensorPhytron::setAxis (int new_val)
 }
 
 
-Rts2DevSensorPhytron::Rts2DevSensorPhytron (int in_argc, char **in_argv):
-Rts2DevSensor (in_argc, in_argv)
+Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 {
 	phytronDev = NULL;
 	dev = "/dev/ttyS0";
@@ -191,25 +197,25 @@ Rts2DevSensor (in_argc, in_argv)
 }
 
 
-Rts2DevSensorPhytron::~Rts2DevSensorPhytron (void)
+Phytron::~Phytron (void)
 {
 	delete phytronDev;
 }
 
 
 int
-Rts2DevSensorPhytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
+Phytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == axis0)
 		return setAxis (new_value->getValueInteger ());
 	if (old_value == runFreq)
 		return setValue (1, 14, (Rts2ValueInteger *)new_value);
-	return Rts2DevSensor::setValue (old_value, new_value);
+	return Sensor::setValue (old_value, new_value);
 }
 
 
 int
-Rts2DevSensorPhytron::processOption (int in_opt)
+Phytron::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -217,18 +223,18 @@ Rts2DevSensorPhytron::processOption (int in_opt)
 			dev = optarg;
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
 
 
 int
-Rts2DevSensorPhytron::init ()
+Phytron::init ()
 {
 	int ret;
 
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
@@ -249,19 +255,19 @@ Rts2DevSensorPhytron::init ()
 
 
 int
-Rts2DevSensorPhytron::info ()
+Phytron::info ()
 {
 	int ret;
 	ret = readAxis ();
 	if (ret)
 		return ret;
-	return Rts2DevSensor::info ();
+	return Sensor::info ();
 }
 
 
 int
 main (int argc, char **argv)
 {
-	Rts2DevSensorPhytron device (argc, argv);
+	Phytron device (argc, argv);
 	return device.run ();
 }
