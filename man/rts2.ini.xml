@@ -262,18 +262,18 @@
       <varlistentry>
         <term>
 	  <option>N</option>
-        </term>
-        <listitem>
-          <para>Exposure number.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term>
-	  <option>n</option>
 	</term>
 	<listitem>
 	  <para>Night date -format as YYYYMMDD, e.g. when it is 2009-01-05 01:30 UT, %N is expanded to 20090430.</para>
 	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>n</option>
+        </term>
+        <listitem>
+          <para>Exposure number.</para>
+        </listitem>
       </varlistentry>
       <varlistentry>
         <term>

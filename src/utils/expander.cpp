@@ -158,7 +158,7 @@ std::string Expander::expandVariable (char var)
 		case 'a':
 			ret += getYDayString ();
 			break;
-		case 'n':
+		case 'N':
 			ret += getNightString ();
 			break;
 		case 'm':

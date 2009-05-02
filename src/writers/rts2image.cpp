@@ -385,7 +385,7 @@ std::string Rts2Image::expandVariable (char expression)
 			return getTargetString ();
 		case 't':
 			return getTargetSelString ();
-		case 'N':
+		case 'n':
 			return getExposureNumberString ();
 		default:
 			return rts2core::Expander::expandVariable (expression);
