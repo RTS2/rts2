@@ -27,7 +27,7 @@
 #include "../utils/rts2device.h"
 #include "../utils/libnova_cpp.h"
 
-#include "telescope.h"
+#include "teld.h"
 #include "rts2devclicop.h"
 
 #include "model/telmodel.h"
@@ -45,19 +45,13 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 		timerclear (dir_timeouts + i);
 	}
 
-	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
-	pointingModel->addSelVal ("EQU");
-	pointingModel->addSelVal ("ALT-AZ");
-
-	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true);
-	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true);
-	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
-
 	// object
-	createValue (objRaDec, "OBJ", "object position (J2000)", true);
+	createValue (oriRaDec, "ORI", "original position (J2000)", true);
 	// users offset
 	createValue (offsetRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
 	offsetRaDec->setValueRaDec (0, 0);
+
+	createValue (objRaDec, "OBJ", "telescope FOV center position (J200) - with offsets applied", true);
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
@@ -79,6 +73,15 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
 
 	createValue (telAltAz, "TEL_", "horizontal telescope coordinates", true);
+
+	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
+	pointingModel->addSelVal ("EQU");
+	pointingModel->addSelVal ("ALT-AZ");
+
+	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
+	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
+	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
+
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
@@ -329,7 +332,7 @@ Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return 0;
 	}
-	if (old_value == objRaDec
+	if (old_value == oriRaDec
 		|| old_value == offsetRaDec
 		|| old_value == corrRaDec
 		|| old_value == waitingCorrRaDec
@@ -345,7 +348,7 @@ Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 void
 Telescope::valueChanged (Rts2Value * changed_value)
 {
-	if (changed_value == objRaDec
+	if (changed_value == oriRaDec
 		|| changed_value == offsetRaDec
 		|| changed_value == corrRaDec)
 	{
@@ -527,6 +530,7 @@ Telescope::initValues ()
 	if (ret)
 		return ret;
 	tarRaDec->setFromValue (telRaDec);
+	oriRaDec->setFromValue (telRaDec);
 	objRaDec->setFromValue (telRaDec);
 
 	return Rts2Device::initValues ();
@@ -898,11 +902,11 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	struct ln_equ_posn pos;
 
 	// if object was not specified, do not move
-	if (isnan (objRaDec->getRa ()) || isnan (objRaDec->getDec ()))
+	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
 		return -1;
 
 	// object changed from last call to startResyncMove
-	if (objRaDec->wasChanged ())
+	if (oriRaDec->wasChanged ())
 	{
 		incMoveNum ();
 	}
@@ -914,11 +918,14 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
 	}
 
-	LibnovaRaDec l_obj (objRaDec->getRa (), objRaDec->getDec ());
+	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
-	pos.ra = ln_range_degrees (objRaDec->getRa () + offsetRaDec->getRa ());
-	pos.dec = objRaDec->getDec () + offsetRaDec->getDec ();
+	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsetRaDec->getRa ());
+	pos.dec = oriRaDec->getDec () + offsetRaDec->getDec ();
+
+	objRaDec->setValueRaDec (pos.ra, pos.dec);
+	sendValueAll (objRaDec);
 
 	// apply corrections
 	applyCorrections (&pos, ln_get_julian_from_sys ());
@@ -970,7 +977,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	infoAll ();
 
 	tarRaDec->resetValueChanged ();
-	objRaDec->resetValueChanged ();
+	oriRaDec->resetValueChanged ();
 	offsetRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
 
@@ -1037,7 +1044,7 @@ Telescope::startPark (Rts2Conn * conn)
 	else
 	{
 		tarRaDec->resetValueChanged ();
-		objRaDec->resetValueChanged ();
+		oriRaDec->resetValueChanged ();
 		offsetRaDec->resetValueChanged ();
 		corrRaDec->resetValueChanged ();
 
@@ -1101,7 +1108,7 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 			|| !conn->paramEnd ())
 			return -2;
 		modelOn ();
-		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("move_not_model"))
@@ -1110,7 +1117,7 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 			|| !conn->paramEnd ())
 			return -2;
 		modelOff ();
-		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("resync"))
@@ -1118,7 +1125,7 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
-		objRaDec->setValueRaDec (obj_ra, obj_dec);
+		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("fixed"))

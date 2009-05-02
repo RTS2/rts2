@@ -20,7 +20,7 @@
 #include "../utils/rts2devclient.h"
 #include "../utils/rts2displayvalue.h"
 #include "../utils/rts2command.h"
-#include "../utils/rts2expander.h"
+#include "../utils/expander.h"
 #include "../utils/utilsfunc.h"
 
 #define EVENT_SET_LOGFILE RTS2_LOCAL_EVENT+800
@@ -40,7 +40,7 @@ class Rts2DevClientLogger:public Rts2DevClient
 
 		std::ostream * outputStream;
 
-		Rts2Expander * exp;
+		rts2core::Expander * exp;
 		std::string expandPattern;
 		std::string expandedFilename;
 

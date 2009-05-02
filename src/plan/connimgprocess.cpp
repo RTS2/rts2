@@ -125,12 +125,19 @@ ConnImgProcess::connectionError (int last_data_size)
 	}
 
 #ifdef HAVE_PGSQL
-	Rts2ImageSkyDb *image;
-	image = new Rts2ImageSkyDb (imgPath);
+	Rts2ImageDb *image;
+	image = getValueImageType (new Rts2ImageDb (imgPath));
 #else
 	Rts2Image *image;
 	image = new Rts2Image (imgPath);
 #endif
+	if (image->getImageType () == IMGTYPE_FLAT)
+	{
+		// just return..
+		delete image;
+		Rts2ConnFork::connectionError (last_data_size);
+		return;
+	}
 
 	switch (astrometryStat)
 	{

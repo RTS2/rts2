@@ -30,7 +30,7 @@
 #include <libnova/libnova.h>
 #include <sys/ioctl.h>
 
-#include "telescope.h"
+#include "teld.h"
 #include "hms.h"
 #include "status.h"
 

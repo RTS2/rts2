@@ -160,6 +160,12 @@ class Rts2CommandQueImage:public Rts2Command
 		Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
 };
 
+class Rts2CommandQueFlat:public Rts2Command
+{
+	public:
+		Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image);
+};
+
 class Rts2CommandQueObs:public Rts2Command
 {
 	public:

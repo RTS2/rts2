@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2expander.h"
+#include "../utils/expander.h"
 
 #include <fitsio.h>
 
@@ -36,7 +36,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2FitsFile: public Rts2Expander
+class Rts2FitsFile: public rts2core::Expander
 {
 	private:
 		/**

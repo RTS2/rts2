@@ -642,8 +642,7 @@ Rts2Executor::doSwitch ()
 	int nextId;
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2
-		&& (!nextTarget
-		|| nextTarget->getTargetID () == currentTarget->getTargetID ()))
+		&& (!nextTarget	|| nextTarget->getTargetID () == currentTarget->getTargetID ()))
 	{
 		delete nextTarget;
 		// create again our target..since conditions changed, we will get different target id
@@ -656,7 +655,7 @@ Rts2Executor::doSwitch ()
 		// go to post-process
 		if (currentTarget)
 		{
-			// nex target is defined - tested on line -5
+			// next target is defined - tested on line -5
 			nextId = nextTarget->getTargetID ();
 			ret = currentTarget->endObservation (nextId);
 			if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
@@ -676,6 +675,8 @@ Rts2Executor::doSwitch ()
 	}
 	if (currentTarget)
 	{
+		// send script_ends to all devices..
+		queAll (new Rts2CommandScriptEnds (this));
 		postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 		postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
 	}

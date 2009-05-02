@@ -26,7 +26,7 @@
 
 #include <libnova/libnova.h>
 
-#include "telescope.h"
+#include "teld.h"
 #include "hms.h"
 #include "../utils/rts2connserial.h"
 #include "../utils/rts2config.h"

@@ -31,7 +31,7 @@ namespace rts2telmodel
 {
 };
 
-#include "../telescope.h"
+#include "../teld.h"
 #include "../../utils/rts2config.h"
 
 #include "modelterm.h"

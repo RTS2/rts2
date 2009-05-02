@@ -779,12 +779,15 @@ ModelTarget::getNextPosition ()
 int
 ModelTarget::calPosition ()
 {
+	double m_alt;
 	switch (modelStepType)
 	{
 		case -2:
 			hrz_poz.az = 360 * ((double) random () / RAND_MAX);
-			hrz_poz.alt = 2 + 88 * ((double) random () / RAND_MAX);
-			hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / 90.0));
+			hrz_poz.alt = 0;
+			m_alt = (88 - Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0));
+			hrz_poz.alt = m_alt * ((double) random () / RAND_MAX);
+			hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / m_alt));
 			if (!isAboveHorizon (&hrz_poz))
 				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
 			ra_noise = 0;

@@ -8,7 +8,7 @@
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
-  <!ENTITY dhpackage   "rts2-devices">
+  <!ENTITY dhpackage   "rts2-device">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
   <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
@@ -200,15 +200,28 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Device drivers classes</title>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-camd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      CCD camera drivers.
+    </para>
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2-focusd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      Focuser drivers.
+    </para>
+  </refsect1>
+  <refsect1>
     <title>SEE ALSO</title>
 
     <para>
       <citerefentry>
         <refentrytitle>rts2</refentrytitle>
-	<manvolnum>7</manvolnum>
-      </citerefentry>
-      <citerefentry>
-        <refentrytitle>rts2-camd</refentrytitle>
 	<manvolnum>7</manvolnum>
       </citerefentry>
     </para>

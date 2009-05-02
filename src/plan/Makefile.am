@@ -16,7 +16,6 @@ libscript_a_SOURCES = rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2d
 		rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp \
 		rts2scriptinterface.cpp
 libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-libscript_a_LDFLAGS = @LIB_NOVA@ @LIB_CFITSIO@
 
 
 rts2_scriptexec_SOURCES = scriptexec.cpp 

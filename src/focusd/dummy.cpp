@@ -67,7 +67,7 @@ Dummy::setValue (Rts2Value * old_value, Rts2Value * new_value)
 Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 {
 	focType = std::string ("Dummy");
-	createFocTemp ();
+	createTemperature ();
 
 	createValue (focSteps, "focstep", "focuser steps (step size per second)", false);
 	focSteps->setValueInteger (1);
@@ -99,8 +99,7 @@ Dummy::processOption (int opt)
 int
 Dummy::initValues ()
 {
-	focPos->setValueInteger (3000);
-	focTemp->setValueFloat (100);
+	temperature->setValueFloat (100);
 	return Focusd::initValues ();
 }
 
@@ -108,7 +107,7 @@ Dummy::initValues ()
 int
 Dummy::setTo (int num)
 {
-	if (focPos->getValueInteger () > num)
+	if (position->getValueInteger () > num)
 		focSteps->setValueInteger (-1 * fabs (focSteps->getValueInteger ()));
 	else	
 		focSteps->setValueInteger (fabs (focSteps->getValueInteger ()));
@@ -120,10 +119,10 @@ Dummy::setTo (int num)
 int
 Dummy::isFocusing ()
 {
-	if (fabs (getFocPos () - getFocTarget ()) < fabs (focSteps->getValueInteger ()))
-		focPos->setValueInteger (getFocTarget ());
+	if (fabs (getPosition () - getTarget ()) < fabs (focSteps->getValueInteger ()))
+		position->setValueInteger (getTarget ());
 	else
-		focPos->setValueInteger (getFocPos () + focSteps->getValueInteger ());
+		position->setValueInteger (getPosition () + focSteps->getValueInteger ());
 	return Focusd::isFocusing ();
 }
 

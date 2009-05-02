@@ -41,14 +41,27 @@ class Focusd:public Rts2Device
 	private:
 		time_t focusTimeout;
 		int homePos;
+
+		/**
+		 * Update target value by given offset.
+		 *
+		 * @param off Offset
+		 */
+		int updatePosition (int off)
+		{
+			return setPosition (target->getValueInteger () + off);
+		}
+
 	protected:
 		std::string focType;
 
-		Rts2ValueInteger *focPos;
-		Rts2ValueInteger *focTarget;
-		Rts2ValueFloat *focTemp;
+		Rts2ValueInteger *position;
+		Rts2ValueInteger *target;
+		Rts2ValueFloat *temperature;
 
-		int startPosition;
+		Rts2ValueInteger *defaultPosition;
+		Rts2ValueInteger *focusingOffset;
+		Rts2ValueInteger *tempOffset;
 
 		virtual int processOption (int in_opt);
 
@@ -60,13 +73,12 @@ class Focusd:public Rts2Device
 		virtual int endFocusing ();
 
 		virtual bool isAtStartPosition () = 0;
-		int checkStartPosition ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-		void createFocTemp ()
+		void createTemperature ()
 		{
-			createValue (focTemp, "FOC_TEMP", "focuser temperature");
+			createValue (temperature, "FOC_TEMP", "focuser temperature");
 		}
 
 		/**
@@ -74,19 +86,9 @@ class Focusd:public Rts2Device
 		 *
 		 * @return Focuser target position.
 		 */
-		int getFocTarget ()
+		int getTarget ()
 		{
-			return focTarget->getValueInteger ();
-		}
-
-		/**
-		 * Set focuser target position.
-		 *
-		 * @param _focTarget New target position.
-		 */
-		void setFocTarget (int _focTarget)
-		{
-			focTarget->setValueInteger (_focTarget);
+			return target->getValueInteger ();
 		}
 
 		// callback functions from focuser connection
@@ -105,14 +107,16 @@ class Focusd:public Rts2Device
 		}
 
 		void checkState ();
-		int setTo (Rts2Conn * conn, int num);
+		int setPosition (int num);
 		int home (Rts2Conn * conn);
 		int autoFocus (Rts2Conn * conn);
 
-		int getFocPos ()
+		int getPosition ()
 		{
-			return focPos->getValueInteger ();
+			return position->getValueInteger ();
 		}
+
+		virtual int scriptEnds ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 };

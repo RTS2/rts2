@@ -29,7 +29,8 @@ EXTRA_DIST = \
     rts2-moodd.xml \
     rts2-sensor-system.xml \
     rts2-sensor-apcups.xml \
-    rts2-camd.xml
+    rts2-camd.xml \
+    rts2-focusd.xml
 
 man_MANS = \
     rts2.7 \
@@ -60,7 +61,8 @@ man_MANS = \
     rts2-moodd.1 \
     rts2-sensor-system.1 \
     rts2-sensor-apcups.1 \
-    rts2-camd.7
+    rts2-camd.7 \
+    rts2-focusd.7
 
 doc_FOP = \
     rts2-man.fop \

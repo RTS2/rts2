@@ -40,10 +40,8 @@ class Optec:public Focusd
 		int status;
 		bool damagedTempSens;
 
-		Rts2ValueFloat *focTemp;
-
 		// high-level I/O functions
-		int getPos (Rts2ValueInteger * position);
+		int getPos ();
 		int getTemp ();
 	protected:
 		virtual bool isAtStartPosition ();
@@ -66,7 +64,6 @@ Optec::Optec (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 	damagedTempSens = false;
-	focTemp = NULL;
 
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
 	addOption ('D', "damaged_temp_sensor", 0,
@@ -116,8 +113,7 @@ Optec::init ()
 
 	if (!damagedTempSens)
 	{
-		createFocTemp ();
-		createValue (focTemp, "FOC_TEMP", "focuser temperature");
+		createTemperature ();
 	}
 
 	optecConn = new Rts2ConnSerial (device_file, this, BS19200, C8, NONE, 40);
@@ -134,14 +130,12 @@ Optec::init ()
 	if (rbuf[0] != '!')
 		return -1;
 
-	ret = checkStartPosition ();
-
 	return ret;
 }
 
 
 int
-Optec::getPos (Rts2ValueInteger * position)
+Optec::getPos ()
 {
 	char rbuf[9];
 
@@ -176,7 +170,7 @@ Optec::getTemp ()
 	else
 	{
 		rbuf[7] = '\0';
-		focTemp->setValueFloat (atof ((rbuf + 2)));
+		temperature->setValueFloat (atof ((rbuf + 2)));
 	}
 	return 0;
 }
@@ -185,10 +179,10 @@ Optec::getTemp ()
 bool Optec::isAtStartPosition ()
 {
 	int ret;
-	ret = getPos (focPos);
+	ret = getPos ();
 	if (ret)
 		return false;
-	return (getFocPos () == 3500);
+	return (getPosition () == 3500);
 }
 
 
@@ -204,7 +198,7 @@ int
 Optec::info ()
 {
 	int ret;
-	ret = getPos (focPos);
+	ret = getPos ();
 	if (ret)
 		return ret;
 	ret = getTemp ();
@@ -221,22 +215,22 @@ Optec::setTo (int num)
 	char add = ' ';
 	int ret;
 
-	ret = getPos (focPos);
+	ret = getPos ();
 	if (ret)
 		return ret;
 
 	if (num > 7000 || num < 0)
 		return -1;
 
-	if (focPos->getValueInteger () > num)
+	if (position->getValueInteger () > num)
 	{
 		add = 'I';
-		num = focPos->getValueInteger () - num;
+		num = position->getValueInteger () - num;
 	}
 	else
 	{
 		add = 'O';
-		num = num - focPos->getValueInteger ();
+		num = num - position->getValueInteger ();
 	}
 
 	// maximal time fore move is +- 40 sec

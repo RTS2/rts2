@@ -33,12 +33,6 @@
 #define WATCHER_DOME_CLOSED               0
 #define WATCHER_DOME_UNKNOWN             -1
 
-#define WATCHER_METEO_TIMEOUT            80
-
-#define WATCHER_BAD_WEATHER_TIMEOUT    3600
-#define WATCHER_BAD_WINDSPEED_TIMEOUT   360
-#define WATCHER_CONN_TIMEOUT            360
-
 #define BASE                         0xde00
 
 typedef enum

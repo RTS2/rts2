@@ -174,8 +174,7 @@ Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool 
 }
 
 
-Rts2FitsFile::Rts2FitsFile ():
-Rts2Expander ()
+Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 {
 	ffile = NULL;
 	fileName = NULL;
@@ -183,8 +182,7 @@ Rts2Expander ()
 }
 
 
-Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):
-Rts2Expander ()
+Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander ()
 {
 	fileName = NULL;
 
@@ -197,8 +195,7 @@ Rts2Expander ()
 }
 
 
-Rts2FitsFile::Rts2FitsFile (const char *_fileName):
-Rts2Expander ()
+Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 {
 	fileName = NULL;
 	fits_status = 0;
@@ -207,8 +204,7 @@ Rts2Expander ()
 }
 
 
-Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):
-Rts2Expander (_tv)
+Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	ffile = NULL;
 	fileName = NULL;
@@ -216,8 +212,7 @@ Rts2Expander (_tv)
 }
 
 
-Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):
-Rts2Expander (_tv)
+Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	fileName = NULL;
 	fits_status = 0;

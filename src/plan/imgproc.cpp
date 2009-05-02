@@ -94,6 +94,8 @@ class ImageProc:public Rts2Device
 		int queImage (const char *in_path);
 		int doImage (const char *in_path);
 
+		int queFlat (const char *in_path);
+
 		int queObs (int obsId);
 
 		int queDarks ();
@@ -189,7 +191,6 @@ ImageProc::reloadConfig ()
 		logStream (MESSAGE_ERROR) <<
 			"ImageProc::reloadConfig cannot get obs process script, exiting" <<
 			sendLog;
-		return ret;
 	}
 
 	ret = config->getString ("imgproc", "darkprocess", defaultDarkProcess);
@@ -198,7 +199,6 @@ ImageProc::reloadConfig ()
 		logStream (MESSAGE_ERROR) <<
 			"ImageProc::reloadConfig cannot get dark process script, exiting" <<
 			sendLog;
-		return ret;
 	}
 
 	ret = config->getString ("imgproc", "flatprocess", defaultFlatProcess);
@@ -461,6 +461,16 @@ ImageProc::doImage (const char *in_path)
 
 
 int
+ImageProc::queFlat (const char *in_path)
+{
+	ConnImgProcess *newImageConn;
+	newImageConn = new ConnImgProcess (this, defaultFlatProcess.c_str (),
+		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
+	return que (newImageConn);
+}
+
+
+int
 ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
@@ -536,6 +546,13 @@ ImageProc::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
 			return -2;
 		return doImage (in_imageName);
+	}
+	else if (conn->isCommand ("que_flat"))
+	{
+		char *in_imageName;
+		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+			return -2;
+		return queFlat (in_imageName);
 	}
 	else if (conn->isCommand ("que_obs"))
 	{

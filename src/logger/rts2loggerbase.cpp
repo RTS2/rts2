@@ -72,7 +72,7 @@ Rts2DevClientLogger::setOutputFile (const char *pattern)
 {
 	if (exp == NULL)
 	{
-		exp = new Rts2Expander ();
+		exp = new rts2core::Expander ();
 	}
 	expandPattern = std::string (pattern);
 	changeOutputStream ();

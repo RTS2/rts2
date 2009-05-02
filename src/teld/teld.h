@@ -21,6 +21,8 @@
 #define __RTS2_TELD_CPP__
 
 #include <libnova/libnova.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2device.h"
@@ -101,12 +103,18 @@ class Telescope:public Rts2Device
 		/**
 		 * Object we are observing.
 		 */
-		Rts2ValueRaDec *objRaDec;
+		Rts2ValueRaDec *oriRaDec;
 
 		/**
 		 * User offsets, used to create dithering pattern.
 		 */
 		Rts2ValueRaDec *offsetRaDec;
+
+		/**
+		 * Real coordinates of the object, after offsets are applied.
+		 * objRaDec = oriRaDec + offsetRaDec
+		 */
+		Rts2ValueRaDec *objRaDec;
 
 		/**
 		 * Target we are pointing to
@@ -421,7 +429,7 @@ class Telescope:public Rts2Device
 		 */
 		void setTarget (double ra, double dec)
 		{
-			objRaDec->setValueRaDec (ra, dec);
+			tarRaDec->setValueRaDec (ra, dec);
 		}
 
 		/**
