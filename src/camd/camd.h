@@ -447,6 +447,7 @@ class Camera:public Rts2ScriptDevice
 		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
 
 		virtual int startExposure () = 0;
+
 		virtual void afterReadout ();
 
 		virtual int endReadout ();
@@ -728,7 +729,6 @@ class Camera:public Rts2ScriptDevice
 
 		virtual int idle ();
 
-//		virtual int changeMasterState (int new_state);
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int info ();
 
