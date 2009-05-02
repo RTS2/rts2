@@ -1266,6 +1266,9 @@ OpenTPL::startPark ()
 			status = opentplConn->set ("POINTING.TARGET.RA", equPark.ra / 15.0, &status);
 			status = opentplConn->set ("POINTING.TARGET.DEC", equPark.dec, &status);
 			setTelescopeTrack (irTracking);
+
+			setTarget (equPark.ra, equPark.dec);
+
 			sleep (4);
 			break;
 		case POINTING_ALTAZ:
