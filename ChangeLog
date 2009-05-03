@@ -3,6 +3,7 @@
 
 2009-05-03
  * changed Camera::readoutOneLine to doReadout
+ * variables names are case insensitive (even in scripts)
 
 2009-05-02
  * added %N, %Y, %D , %O and %a expansions
