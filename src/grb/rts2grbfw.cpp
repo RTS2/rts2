@@ -23,6 +23,8 @@
 
 #include <errno.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 Rts2GrbForwardConnection::Rts2GrbForwardConnection (Rts2Block * in_master,
 int in_forwardPort):
