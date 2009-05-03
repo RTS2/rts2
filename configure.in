@@ -339,7 +339,7 @@ fi
 
 if test "x${libwcs}" != "xno"; then
   if test "x${libwcs}" != "xyes"; then
-    LDFLAGS="${LDFLAGS} -L${libwcs}"
+    LDFLAGS="${LDFLAGS} -L${libwcs}/libwcs"
   fi
   AC_CHECK_LIB([wcs], [wcs2pix], LIBWCS_LDFLAGS="-lwcs", 
   [cat <<EOF
