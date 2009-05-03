@@ -683,7 +683,7 @@ Camera::checkReadouts ()
 	int ret;
 	if ((getStateChip (0) & CAM_MASK_READING) != CAM_READING)
 		return;
-	ret = readoutOneLine ();
+	ret = doReadout ();
 	if (ret >= 0)
 	{
 		setTimeout (ret);

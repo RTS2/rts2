@@ -1,6 +1,9 @@
 0.7.5
 =====
 
+2009-05-03
+ * changed Camera::readoutOneLine to doReadout
+
 2009-05-02
  * added %N, %Y, %D , %O and %a expansions
  * changed focuser driver - added offsets for different values

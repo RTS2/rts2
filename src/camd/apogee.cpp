@@ -77,7 +77,7 @@ class Apogee:public Camera
 		virtual long isExposing ();
 		virtual int endExposure ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 		virtual int endReadout ();
 
 	public:
@@ -194,7 +194,7 @@ Apogee::stopExposure ()
 
 
 int
-Apogee::readoutOneLine ()
+Apogee::doReadout ()
 {
 	bool status;
 	short int width, height;
@@ -207,7 +207,7 @@ Apogee::readoutOneLine ()
 	camera->m_ExposureNumX = getUsedWidthBinned ();
 	camera->m_ExposureNumY = getUsedHeightBinned ();
 	status = camera->GetImage ((short unsigned int*) dataBuffer, width, height);
-	logStream (MESSAGE_DEBUG) << "apogee readoutOneLine status " << status << sendLog;
+	logStream (MESSAGE_DEBUG) << "apogee doReadout status " << status << sendLog;
 	if (!status)
 		return -1;
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());

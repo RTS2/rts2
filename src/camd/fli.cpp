@@ -77,7 +77,7 @@ class Fli:public Camera
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
@@ -188,7 +188,7 @@ Fli::stopExposure ()
 
 
 int
-Fli::readoutOneLine ()
+Fli::doReadout ()
 {
 	LIBFLIAPI ret;
 	char *bufferTop = dataBuffer;

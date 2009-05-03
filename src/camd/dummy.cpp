@@ -184,7 +184,7 @@ class Dummy:public Camera
 				return Camera::suggestBufferSize ();
 			return dataSize;
 		}
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 		virtual bool supportFrameTransfer ()
 		{
@@ -197,7 +197,7 @@ class Dummy:public Camera
 using namespace rts2camd;
 
 int
-Dummy::readoutOneLine ()
+Dummy::doReadout ()
 {
 	int ret;
 	long usedSize = dataBufferSize;

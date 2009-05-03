@@ -51,7 +51,7 @@ class Alta:public Camera
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -175,7 +175,7 @@ Alta::stopExposure ()
 
 
 int
-Alta::readoutOneLine ()
+Alta::doReadout ()
 {
 	int ret;
 

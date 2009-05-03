@@ -143,7 +143,7 @@ class Andor:public Camera
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 	public:
 		Andor (int argc, char **argv);
@@ -260,7 +260,7 @@ Andor::isExposing ()
 // the entire image from the camera (into dest).  Subsequent calls return
 // lines from dest.
 int
-Andor::readoutOneLine ()
+Andor::doReadout ()
 {
 	int ret;
 	switch (getDataType ())

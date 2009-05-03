@@ -117,7 +117,7 @@ class Sbig:public Camera
 		virtual long isExposing ();
 		virtual int readoutStart ();
 		virtual int endReadout ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -222,7 +222,7 @@ Sbig::endReadout ()
 
 
 int
-Sbig::readoutOneLine ()
+Sbig::doReadout ()
 {
 	int ret;
 

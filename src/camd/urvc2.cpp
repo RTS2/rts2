@@ -67,7 +67,7 @@ class Urvc2:public Camera
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
@@ -292,14 +292,14 @@ Urvc2::isExposing ()
 
 
 int
-Urvc2::readoutOneLine ()
+Urvc2::doReadout ()
 {
 	if (CCDReadout ((short unsigned int *) dataBuffer, C, chipUsedReadout->getXInt () / binningVertical (),
 		chipUsedReadout->getYInt () / binningHorizontal (),
 		getUsedWidthBinned (), getUsedHeightBinned (), binningVertical ()))
 	{
 		logStream (MESSAGE_DEBUG)
-			<< "urvc2 chip readoutOneLine readout return not-null" << sendLog;
+			<< "urvc2 chip doReadout readout return not-null" << sendLog;
 		return -1;
 	}
 	int ret;

@@ -446,13 +446,34 @@ class Camera:public Rts2ScriptDevice
 		void initCameraChip ();
 		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
 
+		/**
+		 * Hook to start exposure. Should send commands to camera to
+		 * start exposure.  Usually maps to single call to camera API
+		 * to start exposure.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
 		virtual int startExposure () = 0;
 
 		virtual void afterReadout ();
 
 		virtual int endReadout ();
 
-		virtual int readoutOneLine () = 0;
+		/**
+		 * Read some part of the chip. If device has slow readout, and support
+		 * reading by lines, this routine shall read one line. This routine <b>MUST</b>
+		 * call sendReadoutData to send out data readed from chip. If it reads full buffer,
+		 * it can send whole buffer (=whole image).
+		 *
+		 * This routine is called from camera deamon as long as it
+		 * returns 0 or positive numbers. Once it returns negative
+		 * number, it is not called till next exposure.
+		 *
+		 * @return -1 on error, -2 when readout is finished, >=0 time
+		 * for next readout call.
+		 */
+		virtual int doReadout () = 0;
+
 		void clearReadout ();
 
 		void setSize (int in_width, int in_height, int in_x, int in_y)

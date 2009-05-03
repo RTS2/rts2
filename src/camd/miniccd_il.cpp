@@ -74,7 +74,7 @@ class MiniccdIl:public Camera
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 	public:
 		MiniccdIl (int argc, char **argv);
 		virtual ~ MiniccdIl (void);
@@ -514,7 +514,7 @@ MiniccdIl::isExposing ()
 
 
 int
-MiniccdIl::readoutOneLine ()
+MiniccdIl::doReadout ()
 {
 	int ret;
 
