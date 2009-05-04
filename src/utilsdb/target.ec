@@ -1955,9 +1955,9 @@ Target::sendInfo (Rts2InfoValStream & _os, double JD)
 
 
 Rts2TargetSet *
-Target::getCalTargets (double JD)
+Target::getCalTargets (double JD, double minaird)
 {
-	return new Rts2TargetSetCalibration (this, JD);
+	return new Rts2TargetSetCalibration (this, JD, minaird);
 }
 
 

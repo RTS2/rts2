@@ -507,7 +507,7 @@ class Target:public Rts2Target
 			return getCalTargets (ln_get_julian_from_sys ());
 		}
 
-		virtual Rts2TargetSet *getCalTargets (double JD);
+		virtual Rts2TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
 
 		virtual void writeToImage (Rts2Image * image, double JD);
 };
