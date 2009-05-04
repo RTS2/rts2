@@ -1,9 +1,13 @@
 0.7.5
 =====
 
+2009-05-04
+ * added possibility to select minimal airmass distance for calibration observation selection
+
 2009-05-03
  * changed Camera::readoutOneLine to doReadout
  * variables names are case insensitive (even in scripts)
+ * queue command for executor (executor enables queing of targets)
 
 2009-05-02
  * added %N, %Y, %D , %O and %a expansions

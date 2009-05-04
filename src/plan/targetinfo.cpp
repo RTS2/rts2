@@ -67,7 +67,9 @@ get_norm_hour (double JD)
 #define GNUPLOT_BONUS_ONLY  0x20
 #define GNUPLOT_FULL_DAY    0x40
 
-class Rts2TargetInfo:public Rts2AppDb
+namespace rts2plan {
+
+class TargetInfo:public Rts2AppDb
 {
 	private:
 		std::list < int >targets;
@@ -95,18 +97,24 @@ class Rts2TargetInfo:public Rts2AppDb
 
 		double JD;
 
+		double airmd;
+
 		virtual int processOption (int in_opt);
 
 		virtual int processArgs (const char *arg);
 		virtual int init ();
 	public:
-		Rts2TargetInfo (int argc, char **argv);
-		virtual ~ Rts2TargetInfo (void);
+		TargetInfo (int argc, char **argv);
+		virtual ~ TargetInfo (void);
 
 		virtual int doProcessing ();
 };
 
-Rts2TargetInfo::Rts2TargetInfo (int in_argc, char **in_argv):
+};
+
+using namespace rts2plan;
+
+TargetInfo::TargetInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
 	obs = NULL;
@@ -124,6 +132,8 @@ Rts2AppDb (in_argc, in_argv)
 
 	JD = ln_get_julian_from_sys ();
 
+	airmd = rts2_nan ("f");
+
 	addOption ('s', NULL, 0, "print only selectable targets");
 	addOption ('e', NULL, 1,
 		"print extended informations (visibility prediction,..)");
@@ -132,6 +142,7 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
 	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
 	addOption ('m', NULL, 0, "do not plot moon");
+	addOption ('a', NULL, 1, "specify airmass distance for calibration targets selection (and print calibration targets)");
 	addOption ('c', NULL, 0, "print recommended calibration targets");
 	addOption ('o', NULL, 2, "print observations (in given time range)");
 	addOption ('i', NULL, 2, "print images (in given time range)");
@@ -147,14 +158,14 @@ Rts2AppDb (in_argc, in_argv)
 }
 
 
-Rts2TargetInfo::~Rts2TargetInfo ()
+TargetInfo::~TargetInfo ()
 {
 	cameras.clear ();
 }
 
 
 int
-Rts2TargetInfo::processOption (int in_opt)
+TargetInfo::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
@@ -191,6 +202,8 @@ Rts2TargetInfo::processOption (int in_opt)
 		case 'm':
 			addMoon = false;
 			break;
+		case 'a':
+			airmd = atof (optarg);
 		case 'c':
 			printCalTargets = true;
 			break;
@@ -245,7 +258,7 @@ Rts2TargetInfo::processOption (int in_opt)
 
 
 int
-Rts2TargetInfo::processArgs (const char *arg)
+TargetInfo::processArgs (const char *arg)
 {
 	// try to create that target..
 	int tar_id;
@@ -262,7 +275,7 @@ Rts2TargetInfo::processArgs (const char *arg)
 
 
 void
-Rts2TargetInfo::printTargetInfo ()
+TargetInfo::printTargetInfo ()
 {
 	if (!(printImages & DISPLAY_FILENAME))
 	{
@@ -308,7 +321,7 @@ Rts2TargetInfo::printTargetInfo ()
 	if (printCalTargets)
 	{
 		Rts2TargetSet *cal;
-		cal = target->getCalTargets (JD);
+		cal = target->getCalTargets (JD, airmd);
 		std::cout << "==================================" << std::endl <<
 			"Calibration targets" << std::endl;
 		cal->print (std::cout, JD);
@@ -339,7 +352,7 @@ Rts2TargetInfo::printTargetInfo ()
 
 
 void
-Rts2TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
+TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
 double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
@@ -352,7 +365,7 @@ double pend, double step)
 
 
 void
-Rts2TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg,
+TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg,
 double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
@@ -364,14 +377,14 @@ double pend, double step)
 
 
 void
-Rts2TargetInfo::printTargetInfoDS9 ()
+TargetInfo::printTargetInfoDS9 ()
 {
 	target->printDS9Reg (std::cout, JD);
 }
 
 
 int
-Rts2TargetInfo::printTargets (Rts2TargetSet & set)
+TargetInfo::printTargets (Rts2TargetSet & set)
 {
 	Rts2TargetSet::iterator iter;
 	struct ln_rst_time t_rst;
@@ -652,7 +665,7 @@ Rts2TargetInfo::printTargets (Rts2TargetSet & set)
 
 
 int
-Rts2TargetInfo::init ()
+TargetInfo::init ()
 {
 	int ret;
 
@@ -677,7 +690,7 @@ Rts2TargetInfo::init ()
 
 
 int
-Rts2TargetInfo::doProcessing ()
+TargetInfo::doProcessing ()
 {
 	if (printSelectable)
 	{
@@ -707,6 +720,6 @@ Rts2TargetInfo::doProcessing ()
 int
 main (int argc, char **argv)
 {
-	Rts2TargetInfo app = Rts2TargetInfo (argc, argv);
+	TargetInfo app = TargetInfo (argc, argv);
 	return app.run ();
 }
