@@ -65,7 +65,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 		" WHERE " << in_where << 
 		" ORDER BY " << order_by << ";";
 
-	stmp_c = new char[_os.str ().length ()];
+	stmp_c = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE tar_stmp FROM :stmp_c;
