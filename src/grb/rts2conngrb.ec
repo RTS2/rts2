@@ -1429,7 +1429,7 @@ Rts2ConnGrb::receive (fd_set *set)
 		successfullRead ();
 		gettimeofday (&last_packet, NULL);
 		// swap bytes..
-		for (int i=0; i < SIZ_PKT / 2; i++)
+		for (int i=0; i < SIZ_PKT; i++)
 		{
 			lbuf[i] = ntohl (nbuf[i]);
 		}
