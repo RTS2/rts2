@@ -330,9 +330,9 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	sendOkInExposure = false;
 
 	createValue (subExposure, "subexposure", "current subexposure", false, 0, CAM_WORKING, true);
-	createValue (camFilterVal, "filter", "used filter number", false, 0, CAM_EXPOSING, false);
+	createValue (camFilterVal, "filter", "used filter number", false, 0, CAM_EXPOSING);
 
-	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING, true);
+	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING);
 
 	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
 	rotang->setValueDouble (0);
