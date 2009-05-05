@@ -675,6 +675,34 @@ Rts2Image::symlinkImageExpand (std::string link_ex)
 
 
 int
+Rts2Image::linkImage (const char *link_filename)
+{
+	int ret;
+
+	if (!getImageName ())
+		return -1;
+
+	ret = mkpath (link_filename, 0777);
+	if (ret)
+		return ret;
+	return link (getImageName (), link_filename);
+}
+
+
+int
+Rts2Image::linkImageExpand (std::string link_ex)
+{
+	std::string link_filename;
+
+	if (!getImageName ())
+		return -1;
+
+	link_filename = expandPath (link_ex);
+	return linkImage (link_filename.c_str ());
+}
+
+
+int
 Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
 {
 	fitsfile *fp;
@@ -1142,7 +1170,7 @@ Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 	setValue ("LTV1", -1 * (double) x, "image beginning - detector X coordinate");
 	setValue ("LTM1_1", ((double) 1) / bin_x, "delta along X axis");
 	setValue ("LTV2", -1 * (double) y, "image beginning - detector Y coordinate");
-	setValue ("LRM2_2", ((double) 1) / bin_y, "delta along Y axis");
+	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
 
