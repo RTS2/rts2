@@ -272,7 +272,7 @@ ConnShooter::init_listen ()
 
   connectionError (-1);
 
-  sock = socket (PF_INET, SOCK_DGRAM, 0);
+  sock = socket (AF_INET, SOCK_DGRAM, 0);
   if (sock == -1)
   {
     logStream (MESSAGE_ERROR) << "ConnShooter::init_listen socket " << strerror (errno) << sendLog;
