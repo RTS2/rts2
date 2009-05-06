@@ -110,10 +110,6 @@ class Target:public Rts2Target
 
 		void writeAirmass (std::ostream & _os, double jd);
 
-		void printAltTable (std::ostream & _os, double jd_start, double h_start,
-			double h_end, double h_step = 1.0, bool header = true);
-		void printAltTable (std::ostream & _os, double JD);
-
 	protected:
 		char *target_comment;
 		struct ln_lnlat_posn *observer;
@@ -426,13 +422,43 @@ class Target:public Rts2Target
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		/**
-		 * print short target info
+		 * Print target altitude in 1 hour interval.
+		 *
+		 * @param _os       Stream where informations will be printed.
+		 * @param jd_start  Print heigh from this Julian Date.
+		 * @param h_start   Print heigh from this hour.
+		 * @param h_end     Print heigh to this hour.
+		 * @param h_step    Step in hours. Default to 1 hour step.
+		 * @param header    If this routine should print header
+		 */
+		void printAltTable (std::ostream & _os, double jd_start, double h_start,
+			double h_end, double h_step = 1.0, bool header = true);
+
+		/**
+		 * Prints target altitude informations.
+		 *
+		 * @param _os   Stream which will receive target informations.
+		 * @param JD    Julian date around which the information will be based.
+		 */
+		void printAltTable (std::ostream & _os, double JD);
+
+
+		/**
+		 * Print short version of target informations.
+		 *
+		 * @param _os Stream which will receive target informations.
 		 */
 		void printShortInfo (std::ostream & _os)
 		{
 			printShortInfo (_os, ln_get_julian_from_sys ());
 		}
 
+		/**
+		 * Prints short target information to given date.
+		 *
+		 * @param _os  Stream which will receive target informations.
+		 * @param JD   Julian date for which which informations should be calculated.
+		 */
 		virtual void printShortInfo (std::ostream & _os, double JD);
 
 		/**
