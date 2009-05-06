@@ -153,11 +153,11 @@
     <title>EXAMPLES</title>
 
     <screen>
-      <command>&dhpackage;</command> <option>-v</option> <replaceable>'M 31'</replaceable></option> <replaceable>m57</replaceable>
+      <command>&dhpackage;</command> <option>-v</option> <replaceable>'M 31'</replaceable> <replaceable>m57</replaceable>
     </screen>
 
     <screen>
-      <command>&dhpackage;</command> <replaceable>'M 31'</replaceable></option> <replaceable>m57</replaceable>
+      <command>&dhpackage;</command> <replaceable>'M 31'</replaceable> <replaceable>m57</replaceable>
     </screen>
 
   </refsect1>
