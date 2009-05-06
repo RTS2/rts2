@@ -38,6 +38,7 @@ class Rts2SimbadInfo:public Rts2TargetApp
 	private:
 		char *name;
 		bool prettyPrint;
+		bool visibilityPrint;
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -53,8 +54,11 @@ Rts2TargetApp (in_argc, in_argv)
 {
 	name = NULL;
 	prettyPrint = false;
+	visibilityPrint = false;
+
 	addOption ('p', NULL, 1, "prints target coordinates and exit");
 	addOption ('P', NULL, 1, "pretty print extented target coordinates and exit");
+	addOption ('v', NULL, 1, "pretty print target visibility and exit");
 }
 
 
@@ -71,6 +75,10 @@ Rts2SimbadInfo::processOption (int in_opt)
 		case 'P':
 			prettyPrint = true;
 		case 'p':
+			name = optarg;
+			break;
+		case 'v':
+			visibilityPrint = true;
 			name = optarg;
 			break;
 		default:
@@ -95,6 +103,10 @@ Rts2SimbadInfo::doProcessing ()
 		}
 		struct ln_equ_posn pos;
 		target->getPosition (&pos);
+		if (visibilityPrint)
+		{
+			target->printAltTable (std::cout, ln_get_julian_from_sys ());	
+		}
 		if (prettyPrint)
 		{
 			struct ln_hrz_posn hrz;
