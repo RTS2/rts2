@@ -50,6 +50,8 @@ class SimbadInfo:public Rts2TargetApp
 		bool prettyPrint;
 		bool visibilityPrint;
 	protected:
+		virtual void usage ();
+
 		virtual int processOption (int _opt);
 		virtual int processArgs (const char *_arg);
 
@@ -77,6 +79,15 @@ SimbadInfo::SimbadInfo (int argc, char **argv):Rts2TargetApp (argc, argv)
 
 SimbadInfo::~SimbadInfo ()
 {
+}
+
+
+void
+SimbadInfo::usage ()
+{
+	std::cout << "\t" << getAppName () << " 'M 31' 'NGC 321' 'IGR J05346-5759' 'TW Pic'" << std::endl
+		<< "\t" << getAppName () << " -v 'M 31'" << std::endl;
+;
 }
 
 

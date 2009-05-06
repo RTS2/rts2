@@ -1,6 +1,9 @@
 0.7.5
 =====
 
+2009-05-06
+ * improvements of rts2-simbadinfo, added manual page
+
 2009-05-04
  * added possibility to select minimal airmass distance for calibration observation selection
 
