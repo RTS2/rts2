@@ -71,8 +71,5 @@ Rts2Address::getSockaddr (struct addrinfo **info)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = 0;
 	sprintf (s_port, "%i", port);
-	ret = getaddrinfo (host, s_port, &hints, info);
-	if (ret)
-		return -1;
-	return 0;
+	return getaddrinfo (host, s_port, &hints, info);
 }

@@ -70,7 +70,25 @@ class Rts2Address
 		Rts2Address (int _host_num, int _centrald_num, int _centrald_id, const char *_name, const char *_host, int _port, int _type);
 		virtual ~ Rts2Address (void);
 		int update (int _centrald_num, const char *_name, const char *new_host, int new_port, int new_type);
+
+		/**
+		 * Get address of the host, so we can issue socket call to
+		 * create socket.
+		 *
+		 * @return 0 on success, error values specified in getaddrinfo
+		 * for errror.
+		 */
 		int getSockaddr (struct addrinfo **info);
+
+		/**
+		 * Return host associated with this address.
+		 *
+		 * @return Host associated with this address.
+		 */
+		const char* getHost ()
+		{
+			return host;
+		}
 
 		/**
 		 * Return number of centrald connection which creates

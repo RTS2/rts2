@@ -98,13 +98,12 @@ Rts2DevConn::init ()
 
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor: " <<
-			strerror (errno) << sendLog;
-		return ret;
+		logStream (MESSAGE_ERROR) << "Rts2Address::getAddress getaddrinfor for host " << address->getHost () << ":"
+			<< gai_strerror (ret) << sendLog;
+		return -1;
 	}
-	sock =
-		socket (device_addr->ai_family, device_addr->ai_socktype,
-		device_addr->ai_protocol);
+	sock = socket (device_addr->ai_family,
+		device_addr->ai_socktype, device_addr->ai_protocol);
 	if (sock == -1)
 	{
 		return -1;
