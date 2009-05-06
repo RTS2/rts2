@@ -868,6 +868,9 @@ Camera::camStartExposureWithoutCheck ()
 	if (ret)
 		return ret;
 
+	logStream (MESSAGE_INFO) << "exposing for '"
+		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+
 	infoAll ();
 	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING,
 		BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
@@ -945,8 +948,6 @@ Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	else
 	{
 		exposureConn = conn;
-		logStream (MESSAGE_INFO) << "exposing for '"
-			<< (conn ? conn->getName () : "null") << "'" << sendLog;
 	}
 	return ret;
 }
