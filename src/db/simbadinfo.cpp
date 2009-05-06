@@ -33,53 +33,65 @@
 #include <stdlib.h>
 #include <sstream>
 
-class Rts2SimbadInfo:public Rts2TargetApp
+namespace rts2db
+{
+
+
+/**
+ * Prints informations about object. Object names are
+ * resolved using Simbad resolver.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class SimbadInfo:public Rts2TargetApp
 {
 	private:
-		char *name;
+		std::list <const char *> names;
 		bool prettyPrint;
 		bool visibilityPrint;
 	protected:
-		virtual int processOption (int in_opt);
+		virtual int processOption (int _opt);
+		virtual int processArgs (const char *_arg);
 
 	public:
-		Rts2SimbadInfo (int in_argc, char **in_argv);
-		virtual ~ Rts2SimbadInfo (void);
+		SimbadInfo (int argc, char **argv);
+		virtual ~ SimbadInfo (void);
 
 		virtual int doProcessing ();
 };
 
-Rts2SimbadInfo::Rts2SimbadInfo (int in_argc, char **in_argv):
-Rts2TargetApp (in_argc, in_argv)
+};
+
+using namespace rts2db;
+
+SimbadInfo::SimbadInfo (int argc, char **argv):Rts2TargetApp (argc, argv)
 {
-	name = NULL;
 	prettyPrint = false;
 	visibilityPrint = false;
 
-	addOption ('p', NULL, 1, "prints target coordinates and exit");
-	addOption ('P', NULL, 1, "pretty print extented target coordinates and exit");
-	addOption ('v', NULL, 1, "pretty print target visibility and exit");
+	addOption ('p', NULL, 0, "prints target coordinates and exit");
+	addOption ('P', NULL, 0, "pretty print extented target coordinates and exit");
+	addOption ('v', NULL, 0, "pretty print target visibility and exit");
 }
 
 
-Rts2SimbadInfo::~Rts2SimbadInfo ()
+SimbadInfo::~SimbadInfo ()
 {
 }
 
 
 int
-Rts2SimbadInfo::processOption (int in_opt)
+SimbadInfo::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case 'P':
 			prettyPrint = true;
+			break;
 		case 'p':
-			name = optarg;
 			break;
 		case 'v':
 			visibilityPrint = true;
-			name = optarg;
 			break;
 		default:
 			return Rts2AppDb::processOption (in_opt);
@@ -89,17 +101,24 @@ Rts2SimbadInfo::processOption (int in_opt)
 
 
 int
-Rts2SimbadInfo::doProcessing ()
+SimbadInfo::processArgs (const char *arg)
+{
+	names.push_back (arg);
+	return 0;
+}
+
+
+int
+SimbadInfo::doProcessing ()
 {
 	int ret;
-	if (name)
+	for (std::list <const char *>::iterator iter = names.begin (); iter != names.end (); iter++)
 	{
-		target = new Rts2SimbadTarget (name);
+		target = new Rts2SimbadTarget (*iter);
 		ret = target->load ();
 		if (ret)
 		{
-			std::cerr << "Cannot resolve name " << name << std::endl;
-			return -1;
+			std::cerr << "Cannot resolve " << *iter << std::endl;
 		}
 		struct ln_equ_posn pos;
 		target->getPosition (&pos);
@@ -119,8 +138,10 @@ Rts2SimbadInfo::doProcessing ()
 			std::cout.precision (15);
 			std::cout << pos.ra << "\t" << pos.dec << std::endl;
 		}
-		return 0;
 	}
+	if (names.size () != 0)
+		return 0;
+
 	static double radius = 10.0 / 60.0;
 	// ask for target ID..
 	std::cout << "Default values are written at [].." << std::endl;
@@ -165,6 +186,6 @@ Rts2SimbadInfo::doProcessing ()
 int
 main (int argc, char **argv)
 {
-	Rts2SimbadInfo app = Rts2SimbadInfo (argc, argv);
+	SimbadInfo app = SimbadInfo (argc, argv);
 	return app.run ();
 }
