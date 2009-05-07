@@ -612,6 +612,12 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 						old_value->getWriteToFits (),
 						old_value->getFlags ());
 					break;
+				case RTS2_VALUE_INTEGER:
+					dup_val = new IntegerArray (old_value->getName (),
+						old_value->getDescription (),
+						old_value->getWriteToFits (),
+						old_value->getFlags ());
+					break;
 				default:
 					logStream (MESSAGE_ERROR) << "unknow array type: " << old_value->getValueBaseType () << sendLog;
 					break;
