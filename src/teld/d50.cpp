@@ -90,7 +90,7 @@ class D50:public Fork
 
 		virtual int info ();
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int endMove ();
 		virtual int stopMove ();
 
@@ -267,7 +267,7 @@ D50::D50 (int in_argc, char **in_argv)
 	accDec->setValueInteger (15);
 
 	// apply all correction for paramount
-	correctionsMask->setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+	setCorrections (true, true, true);
 }
 
 
@@ -461,7 +461,7 @@ D50::info ()
 
 
 int
-D50::startMove ()
+D50::startResync ()
 {
 	int ret;
 

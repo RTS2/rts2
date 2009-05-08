@@ -52,7 +52,7 @@ class Hlohovec:public Telescope
 		virtual int init ();
 		virtual int info ();
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int stopMove ();
 		virtual int endMove ();
 		virtual int startPark ();
@@ -152,7 +152,7 @@ Hlohovec::info ()
 
 
 int
-Hlohovec::startMove ()
+Hlohovec::startResync ()
 {
 	return 0;
 }

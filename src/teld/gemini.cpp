@@ -369,7 +369,7 @@ class Gemini:public Telescope
 		virtual int init ();
 		virtual int changeMasterState (int new_state);
 		virtual int info ();
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int endMove ();
 		virtual int stopMove ();
@@ -956,17 +956,16 @@ Gemini::processOption (int in_opt)
 			switch (*optarg)
 			{
 				case '0':
-					correctionsMask->
-						setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+					setCorrections (true, true, true);
 					break;
 				case '1':
-					correctionsMask->setValueInteger (COR_REFRACTION);
+					setCorrections (false, false, true);
 					break;
 				case '2':
-					correctionsMask->setValueInteger (COR_ABERATION | COR_PRECESSION);
+					setCorrections (true, true, false);
 					break;
 				case '3':
-					correctionsMask->setValueInteger (0);
+					setCorrections (false, false, false);
 					break;
 				default:
 					std::cerr << "Invalid correction option " << optarg << std::endl;
@@ -1094,17 +1093,15 @@ Gemini::setCorrection ()
 {
 	if (gem_version < 4)
 		return 0;
-	switch (correctionsMask->getValueInteger ())
-	{
-		case COR_ABERATION | COR_PRECESSION | COR_REFRACTION:
-			return tel_conn->writePort (":p0#", 4);
-		case COR_REFRACTION:
-			return tel_conn->writePort (":p1#", 4);
-		case COR_ABERATION | COR_PRECESSION:
-			return tel_conn->writePort (":p2#", 4);
-		case 0:
-			return tel_conn->writePort (":p3#", 4);
-	}
+	
+	if (calculateAberation () && calculatePrecession () && calculateRefraction ())
+		return tel_conn->writePort (":p0#", 4);
+	if (!calculateAberation () && !calculatePrecession () && calculateRefraction ())	
+		return tel_conn->writePort (":p1#", 4);
+	if (calculateAberation () && calculatePrecession () && !calculateRefraction ())
+		return tel_conn->writePort (":p2#", 4);
+	if (!calculateAberation () && !calculatePrecession () && !calculateRefraction ())
+		return tel_conn->writePort (":p3#", 4);
 	return -1;
 }
 
@@ -1478,7 +1475,7 @@ Gemini::tel_start_move ()
 
 
 int
-Gemini::startMove ()
+Gemini::startResync ()
 {
 	int newFlip = telFlip->getValueInteger ();
 	bool willFlip = false;

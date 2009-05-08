@@ -47,7 +47,7 @@ class INDIBridge: public Telescope
 		double lastMoveRa, lastMoveDec;
 
 	protected:
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int stopMove ();
 		virtual int startPark ();
@@ -190,7 +190,7 @@ INDIBridge::set_move_timeout (time_t plus_time)
 
 
 int
-INDIBridge::startMove ()
+INDIBridge::startResync ()
 {
 	int ret ;
 

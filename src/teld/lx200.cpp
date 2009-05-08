@@ -52,10 +52,6 @@
 #define HOME_RA   37.9542
 #define HOME_DEC  87.3075
 
-// hard-coded LOT & LAT
-#define TEL_LONG  -6.239166667
-#define TEL_LAT   53.3155555555
-
 namespace rts2teld
 {
 
@@ -112,7 +108,7 @@ class LX200:public Telescope
 		virtual int correct (double cor_ra, double cor_dec, double real_ra,
 			double real_dec);
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int stopMove ();
 
@@ -745,7 +741,7 @@ LX200::set_move_timeout (time_t plus_time)
 
 
 int
-LX200::startMove ()
+LX200::startResync ()
 {
 	int ret;
 

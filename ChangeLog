@@ -2,6 +2,7 @@
 =====
 2009-05-08
  * queue executor - it is now able to accept queue command to queue next targets
+ * startResync function for telescope, change in how abberation etc. are reported
 
 2009-05-06
  * getMinFlatHeigh, min_flat_heigh
