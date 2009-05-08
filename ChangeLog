@@ -1,5 +1,7 @@
 0.7.5
 =====
+2009-05-08
+ * queue executor - it is now able to accept queue command to queue next targets
 
 2009-05-06
  * getMinFlatHeigh, min_flat_heigh
