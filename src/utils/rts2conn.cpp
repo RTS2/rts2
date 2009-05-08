@@ -1492,12 +1492,16 @@ Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 		else
 		{
 			binaryWriteTop += ret;
+			dataSize -= ret;
 			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
-			((*iter).second)->dataWritten (ret);
-			if (writeData[data_conn]->getDataSize () <= 0)
+			if (iter != writeData.end ())
 			{
-				delete ((*iter).second);
-				writeData.erase (iter);
+				((*iter).second)->dataWritten (ret);
+				if (writeData[data_conn]->getDataSize () <= 0)
+				{
+					delete ((*iter).second);
+					writeData.erase (iter);
+				}
 			}
 		}
 	}
