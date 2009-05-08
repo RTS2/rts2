@@ -231,7 +231,7 @@ IntegerArray::setValueCharArr (const char *_value)
 	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
 	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
 	{
-		value.push_back (atof ((*iter).c_str ()));
+		value.push_back (atoi ((*iter).c_str ()));
 	}
 	changed ();
 	return 0;
