@@ -196,7 +196,7 @@ Client::getVariables ()
 	int e = 0;
 	// store results per device
 	std::map <const char*, XmlRpcValue> results;
-	char* a;
+	char* a = NULL;
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
 	{
 		const char* arg = (*iter);
