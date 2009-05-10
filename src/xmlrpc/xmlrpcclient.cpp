@@ -162,6 +162,8 @@ Client::doClient ()
 		}
 	}
 
+	runXmlMethod (R2X_TARGETS_LIST, noArgs, result);
+
 	oneArg[0] = "f";
 	runXmlMethod (R2X_TARGETS_TYPE_LIST, oneArg, result);
 
