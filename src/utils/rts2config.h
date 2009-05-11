@@ -1,6 +1,6 @@
 /* 
  * Configuration file read routines.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -385,5 +385,28 @@ class Rts2Config:public Rts2ConfigRaw
 		{
 			getStringVector (deviceName, "environment", ret);
 		}
+
+		/**
+		 * Returns time_t with date for night which includes given time.
+		 *
+		 * @param _in Time_t containing date for which night should be calculated.
+		 * @return time_t, which converted to year month day with gmtime will get night date.
+		 */
+		time_t getNight (time_t _in)
+		{
+			return _in + Rts2Config::instance ()->getObservatoryLongitude () / 15.0 - 86400 / 2;
+		}
+
+		/**
+		 * Returns begining time in "night" time. Night time starts
+		 * around noon on given day and run till next day noon.
+		 *
+		 * @param year  Year for which night will be calculated.
+		 * @param month Month for which night will be calculated.
+		 * @param day   Day for which night will be calculated.
+		 *
+		 * @return Time of night start.
+		 */
+		time_t getNight (int year, int month, int day);
 };
 #endif							 /* !__RTS2_CONFIG__ */

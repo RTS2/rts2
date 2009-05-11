@@ -266,7 +266,7 @@ Expander::setExpandDate (const struct timeval *tv)
 	localtime_r (&expandTv.tv_sec, &localDate);
 	gmtime_r (&expandTv.tv_sec, &utDate);
 	
-	time_t nightT = expandTv.tv_sec + Rts2Config::instance ()->getObservatoryLongitude () / 15.0 - 86400 / 2;
+	time_t nightT = Rts2Config::instance ()->getNight (expandTv.tv_sec);
 	gmtime_r (&nightT, &nightDate);
 
 	expandDate = &utDate;
