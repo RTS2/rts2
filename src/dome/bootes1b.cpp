@@ -28,7 +28,7 @@ typedef enum
 	PORT_3,
 	PORT_4,
 	DOMESWITCH,
-	PORT_6,
+	ASM_SWITCH,
 	TEL_SWITCH,
 	PORT_8,
 	// A
@@ -66,6 +66,7 @@ class Bootes1B:public Ford
 
 		Rts2ValueBool *rain;
 		Rts2ValueBool *telSwitch;
+		Rts2ValueBool *asmSwitch;
 
 	protected:
 		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
@@ -102,6 +103,9 @@ Bootes1B::Bootes1B (int argc, char **argv)
 	createValue (telSwitch, "tel_switch", "switch for telescope", false);
 	telSwitch->setValueBool (true);
 
+	createValue (asmSwitch, "asm_switch", "switch for ASM", false);
+	asmSwitch->setValueBool (true);
+
 	lastWeatherCheckState = -1;
 
 	timeOpenClose = 0;
@@ -126,6 +130,17 @@ Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
 		else
 		{
 			return VYP(TEL_SWITCH) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == asmSwitch)
+	{
+		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		{
+			return ZAP(ASM_SWITCH) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return VYP(ASM_SWITCH) == 0 ? 0 : -2;
 		}
 	}
 	return Ford::setValue (old_value, new_value);
@@ -209,6 +224,7 @@ Bootes1B::init ()
 
 	// switch on telescope
 	ZAP (TEL_SWITCH);
+	ZAP (ASM_SWITCH);
 
 	return 0;
 }
