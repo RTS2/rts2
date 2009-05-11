@@ -37,8 +37,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -48,8 +47,12 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true);
 	// users offset
-	createValue (offsetRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
-	offsetRaDec->setValueRaDec (0, 0);
+	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
+	offsRaDec->setValueRaDec (0, 0);
+
+	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES, 0, true);
+	woffsRaDec->setValueRaDec (0, 0);
+	woffsRaDec->resetValueChanged ();
 
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J200) - with offsets applied", true);
 
@@ -59,9 +62,10 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 		0, true);
 	corrRaDec->setValueRaDec (0, 0);
 
-	createValue (waitingCorrRaDec, "wcorr", "corrections which waits for being applied",
+	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied",
 		false, RTS2_DT_DEGREES, 0, true);
-	waitingCorrRaDec->setValueRaDec (0, 0);
+	wcorrRaDec->setValueRaDec (0, 0);
+	wcorrRaDec->resetValueChanged ();
 
 	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction",
 		false, 0, 0, true);
@@ -77,6 +81,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 	createValue (pointingModel, "pointing", "pointing model (equ, alt-az, ...)", false, 0, 0, true);
 	pointingModel->addSelVal ("EQU");
 	pointingModel->addSelVal ("ALT-AZ");
+	pointingModel->addSelVal ("ALT-ALT");
 
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
@@ -121,6 +126,19 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
+	// default is to aply model corrections
+	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false);
+	calAberation->setValueBool (false);
+
+	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false);
+	calPrecession->setValueBool (false);
+
+	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false);
+	calRefraction->setValueBool (false);
+
+	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false);
+	calModel->setValueBool (false);
+
 	modelFile = NULL;
 	model = NULL;
 
@@ -139,10 +157,6 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 
 	addOption ('r', NULL, 1, "telescope rotang");
 	addOption (OPT_HORIZON, "horizon", 1, "telescope hard horizon");
-
-	// default is to aply model corrections
-	createValue (correctionsMask, "RTS_COR", "RTS2 corrections bitmask", true);
-	correctionsMask->setValueInteger (COR_MODEL);
 
 	// send telescope position every 60 seconds
 	setIdleInfoInterval (60);
@@ -174,6 +188,7 @@ Telescope::processOption (int in_opt)
 	{
 		case 'm':
 			modelFile = optarg;
+			calModel->setValueBool (true);
 			break;
 		case 'l':
 			modelLimit->setValueDouble (atof (optarg));
@@ -326,18 +341,25 @@ Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		|| old_value == rotang
 		|| old_value == smallCorrection
 		|| old_value == ignoreCorrection
-		|| old_value == correctionsMask
+		|| old_value == calAberation
+		|| old_value == calPrecession
+		|| old_value == calRefraction
+		|| old_value == calModel
 		|| old_value == blockMove
 		|| old_value == blockOnStandby)
 	{
 		return 0;
 	}
 	if (old_value == oriRaDec
-		|| old_value == offsetRaDec
+		|| old_value == offsRaDec
 		|| old_value == corrRaDec
-		|| old_value == waitingCorrRaDec
+		|| old_value == wcorrRaDec
 		|| old_value == corrImgId
 		|| old_value == wCorrImgId)
+	{
+		return 0;
+	}
+	if (old_value == woffsRaDec)
 	{
 		return 0;
 	}
@@ -348,8 +370,12 @@ Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 void
 Telescope::valueChanged (Rts2Value * changed_value)
 {
+	if (changed_value == woffsRaDec)
+	{
+		maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
+	}
 	if (changed_value == oriRaDec
-		|| changed_value == offsetRaDec
+		|| changed_value == offsRaDec
 		|| changed_value == corrRaDec)
 	{
 		startResyncMove (NULL, false);
@@ -393,14 +419,17 @@ void
 Telescope::incMoveNum ()
 {
 	// reset offsets
-	offsetRaDec->setValueRaDec (0, 0);
-	offsetRaDec->resetValueChanged ();
+	offsRaDec->setValueRaDec (0, 0);
+	offsRaDec->resetValueChanged ();
+
+	woffsRaDec->setValueRaDec (0, 0);
+	woffsRaDec->resetValueChanged ();
 
 	corrRaDec->setValueRaDec (0, 0);
 	corrRaDec->resetValueChanged ();
 
-	waitingCorrRaDec->setValueRaDec (0, 0);
-	waitingCorrRaDec->resetValueChanged ();
+	wcorrRaDec->setValueRaDec (0, 0);
+	wcorrRaDec->resetValueChanged ();
 
 	moveNum->inc ();
 
@@ -415,7 +444,7 @@ Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change
 	struct ln_equ_posn hadec;
 	double ra;
 	double ls;
-	if (!model || !(correctionsMask->getValueInteger () & COR_MODEL))
+	if (!model || calModel->getValueBool () == false)
 	{
 		model_change->ra = -1 * corrRaDec->getRa();
 		model_change->dec = -1 * corrRaDec->getDec();
@@ -857,11 +886,11 @@ void
 Telescope::applyCorrections (struct ln_equ_posn *pos, double JD)
 {
 	// apply all posible corrections
-	if (correctionsMask->getValueInteger () & COR_ABERATION)
+	if (calAberation->getValueBool () == true)
 		applyAberation (pos, JD);
-	if (correctionsMask->getValueInteger () & COR_PRECESSION)
+	if (calPrecession->getValueBool () == true)
 		applyPrecession (pos, JD);
-	if (correctionsMask->getValueInteger () & COR_REFRACTION)
+	if (calRefraction->getValueBool () == true)
 		applyRefraction (pos, JD);
 }
 
@@ -911,18 +940,23 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		incMoveNum ();
 	}
 	// if some value is waiting to be applied..
-	else if (waitingCorrRaDec->wasChanged ())
+	else if (wcorrRaDec->wasChanged ())
 	{
-		corrRaDec->incValueRaDec (waitingCorrRaDec->getRa (), waitingCorrRaDec->getDec ());
+		corrRaDec->incValueRaDec (wcorrRaDec->getRa (), wcorrRaDec->getDec ());
 
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
+	}
+
+	if (woffsRaDec->wasChanged ())
+	{
+		offsRaDec->incValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
 
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
 
 	// first apply offset
-	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsetRaDec->getRa ());
-	pos.dec = oriRaDec->getDec () + offsetRaDec->getDec ();
+	pos.ra = ln_range_degrees (oriRaDec->getRa () + offsRaDec->getRa ());
+	pos.dec = oriRaDec->getDec () + offsRaDec->getDec ();
 
 	objRaDec->setValueRaDec (pos.ra, pos.dec);
 	sendValueAll (objRaDec);
@@ -966,7 +1000,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		return -1;
 	}
 
-	ret = startMove ();
+	ret = startResync ();
 	if (ret)
 	{
 		if (conn)
@@ -978,13 +1012,19 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	tarRaDec->resetValueChanged ();
 	oriRaDec->resetValueChanged ();
-	offsetRaDec->resetValueChanged ();
+	offsRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
 
-	if (waitingCorrRaDec->wasChanged ())
+	if (woffsRaDec->wasChanged ())
 	{
-		waitingCorrRaDec->setValueRaDec (0, 0);
-		waitingCorrRaDec->resetValueChanged ();
+		woffsRaDec->setValueRaDec (0, 0);
+		woffsRaDec->resetValueChanged ();
+	}
+
+	if (wcorrRaDec->wasChanged ())
+	{
+		wcorrRaDec->setValueRaDec (0, 0);
+		wcorrRaDec->resetValueChanged ();
 	}
 
 	if (onlyCorrect)
@@ -1045,7 +1085,7 @@ Telescope::startPark (Rts2Conn * conn)
 	{
 		tarRaDec->resetValueChanged ();
 		oriRaDec->resetValueChanged ();
-		offsetRaDec->resetValueChanged ();
+		offsRaDec->resetValueChanged ();
 		corrRaDec->resetValueChanged ();
 
 		incMoveNum ();
@@ -1172,7 +1212,7 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 				return -1;
 			}
 
-			waitingCorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
+			wcorrRaDec->setValueRaDec (total_cor_ra, total_cor_dec);
 
 			posErr->setValueDouble (pos_err);
 			sendValueAll (posErr);
@@ -1182,7 +1222,7 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 
 			if (pos_err < smallCorrection->getValueDouble ())
 				return startResyncMove (conn, true);
-			sendValueAll (waitingCorrRaDec);
+			sendValueAll (wcorrRaDec);
 			// else set BOP_EXPOSURE, and wait for result of statusUpdate call
 			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for correction");
 			// correction was accepted, will be carried once it will be possible
@@ -1203,7 +1243,8 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
-		offsetRaDec->incValueRaDec (obj_ra, obj_dec);
+		offsRaDec->incValueRaDec (obj_ra, obj_dec);
+		woffsRaDec->incValueRaDec (obj_ra, obj_dec);
 		return startResyncMove (conn, true);
 	}
 	else if (conn->isCommand ("save_model"))
@@ -1259,6 +1300,6 @@ void
 Telescope::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
-	if (waitingCorrRaDec->wasChanged () && !(new_state & BOP_TEL_MOVE))
+	if ((woffsRaDec->wasChanged () || wcorrRaDec->wasChanged ()) && !(new_state & BOP_TEL_MOVE))
 		startResyncMove (NULL, true);
 }

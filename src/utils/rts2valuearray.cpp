@@ -193,3 +193,105 @@ DoubleArray::isEqual (Rts2Value *other_val)
 	}
 	return false;
 }
+
+
+IntegerArray::IntegerArray (std::string _val_name)
+:Rts2Value (_val_name)
+{
+	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
+}
+
+IntegerArray::IntegerArray (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
+:Rts2Value (_val_name, _description, writeToFits, flags)
+{
+	rts2Type |= RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER;
+}
+
+int
+IntegerArray::setValue (Rts2Conn * connection)
+{
+	value.clear ();
+
+	while (!(connection->paramEnd ()))
+	{
+		int nextVal;
+		int ret = connection->paramNextInteger (&nextVal);
+		if (ret)
+			return -2;
+		value.push_back (nextVal);
+	}
+	changed ();
+	return 0;
+}
+
+
+int
+IntegerArray::setValueCharArr (const char *_value)
+{
+	std::vector <std::string> sv = SplitStr (std::string (_value), std::string (" "));
+	for (std::vector <std::string>::iterator iter = sv.begin (); iter != sv.end (); iter++)
+	{
+		value.push_back (atoi ((*iter).c_str ()));
+	}
+	changed ();
+	return 0;
+}
+
+
+const char *
+IntegerArray::getValue ()
+{
+	std::ostringstream oss;
+	std::vector <int>::iterator iter = value.begin ();
+	oss.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	while (iter != value.end ())
+	{
+		oss << (*iter);
+		iter++;
+		if (iter == value.end ())
+			break;
+		oss << std::string (" ");
+	}
+	_os = oss.str ();
+	return _os.c_str ();
+}
+
+
+void
+IntegerArray::setFromValue (Rts2Value * newValue)
+{
+	if (newValue->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
+	{
+		value.clear ();
+		IntegerArray *nv = (IntegerArray *) newValue;
+		for (std::vector <int>::iterator iter = nv->valueBegin (); iter != nv->valueEnd (); iter++)
+			value.push_back (*iter);
+		changed ();
+	}
+	else
+	{
+		setValueCharArr (newValue->getValue ());
+	}
+}
+
+
+bool
+IntegerArray::isEqual (Rts2Value *other_val)
+{
+	if (other_val->getValueType () == (RTS2_VALUE_ARRAY | RTS2_VALUE_INTEGER))
+	{
+		IntegerArray *ov = (IntegerArray *) other_val;
+		if (ov->size () != value.size ())
+			return false;
+		
+		std::vector <int>::iterator iter1;
+		std::vector <int>::iterator iter2;
+		for (iter1 = valueBegin (), iter2 = ov->valueBegin (); iter1 != valueEnd () && iter2 != ov->valueEnd (); iter1++, iter2++)
+		{
+			if (*iter1 != *iter2)
+				return false;
+		}
+		return true;
+	}
+	return false;
+}

@@ -134,7 +134,7 @@ class OpenTPL:public Telescope
 		virtual int loadModel ();
 		virtual int resetMount ();
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int stopMove ();
 
@@ -794,7 +794,7 @@ int
 OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
-	if (targetChangeFromLastMove ())
+	if (targetChangeFromLastResync ())
 	{
 		status = opentplConn->set ("POINTING.TARGET.RA", ra / 15.0, &status);
 		status = opentplConn->set ("POINTING.TARGET.DEC", dec, &status);	
@@ -990,7 +990,7 @@ OpenTPL::info ()
 	#ifdef DEBUG_EXTRA
 	switch (getPointingModel ())
 	{
-		case 0:
+		case POINTING_RADEC:
 			status = opentplConn->get ("HA.CURRSPEED", zd_speed, &status);
 			status = opentplConn->get ("DEC.CURRSPEED", az_speed, &status);
 
@@ -1002,7 +1002,7 @@ OpenTPL::info ()
 				<< sendLog;
 			break;
 
-		case 1:
+		case POINTING_ALTAZ:
 			status = opentplConn->get ("ZD.CURRSPEED", zd_speed, &status);
 			status = opentplConn->get ("AZ.CURRSPEED", az_speed, &status);
 
@@ -1145,7 +1145,7 @@ OpenTPL::resetMount ()
 
 
 int
-OpenTPL::startMove ()
+OpenTPL::startResync ()
 {
 	int status = 0;
 	double sep;

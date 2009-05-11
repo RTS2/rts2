@@ -86,6 +86,9 @@
 	<arg choice="plain"><option>-m</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-a</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-c</option></arg>
       </arg>
       <arg choice="opt">
@@ -236,9 +239,18 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-a</option></term>
+        <listitem>
+	  <para>Specify airmass distance for calibration targets and prints
+	  them. This change default value specified in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-c</option></term>
         <listitem>
-          <para>Find calibration files for given source and print them.</para>
+          <para>Find calibration files for given source and print them. Targets are selected within certain range of airmasses.</para>
         </listitem>
       </varlistentry>
       <varlistentry>

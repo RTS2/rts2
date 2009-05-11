@@ -51,6 +51,7 @@ class Rts2Config:public Rts2ConfigRaw
 		double observatoryAltitude;
 		ObjectCheck *checker;
 		int astrometryTimeout;
+		double minFlatHeigh;
 		double calibrationAirmassDistance;
 		double calibrationLunarDist;
 		int calibrationValidTime;
@@ -147,6 +148,16 @@ class Rts2Config:public Rts2ConfigRaw
 		int getFlatProcessTimeout ()
 		{
 			return astrometryTimeout;
+		}
+
+		/**
+		 * Returns minimal heigh for flat observations.
+		 *
+		 * @return Minmal flat heigh.
+		 */
+		double getMinFlatHeigh ()
+		{
+			return minFlatHeigh;
 		}
 
 		/**

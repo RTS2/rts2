@@ -52,7 +52,7 @@ class Miniccd:public Camera
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 	public:
 		Miniccd (int argc, char **argv);
 		virtual ~ Miniccd (void);
@@ -210,7 +210,7 @@ Miniccd::isExposing ()
 
 
 int
-Miniccd::readoutOneLine ()
+Miniccd::doReadout ()
 {
 	int ret;
 

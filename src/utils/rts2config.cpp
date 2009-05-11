@@ -45,6 +45,8 @@ Rts2Config::getSpecialValues ()
 	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
 	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
 
+	getDouble ("observatory", "min_flat_heigh", minFlatHeigh, 10);
+
 	checker = new ObjectCheck (horizon_file.c_str ());
 	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout, 3600);
 	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance, 0.1);

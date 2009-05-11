@@ -37,7 +37,7 @@ namespace rts2teld
 class ModelTest:public Telescope
 {
 	protected:
-		int startMove ()
+		int startResync ()
 		{
 			return 0;
 		}
@@ -193,7 +193,7 @@ TelModelTest::init ()
 	}
 
 	telescope = new ModelTest ();
-	telescope->setCorrectionMask (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+	telescope->setCorrections (true, true, true);
 
 	model = new Model (telescope, modelFile);
 	ret = model->load ();
@@ -351,7 +351,7 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 			else
 			{
 				JD = ln_get_julian_day (&date);
-				telescope->setCorrectionMask (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+				telescope->setCorrections (true, true, true);
 				iss >> temp >> press;
 				if (iss.fail ())
 				{

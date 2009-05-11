@@ -153,7 +153,7 @@ class MM2:public Telescope
 		virtual int correct (double cor_ra, double cor_dec, double real_ra,
 			double real_dec);
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int isMoving ();
 		virtual int endMove ();
 		virtual int stopMove ();
@@ -921,7 +921,7 @@ MM2::set_move_timeout (time_t plus_time)
 
 
 int
-MM2::startMove ()
+MM2::startResync ()
 {
 	int ret;
 	if (cw_pos == UNKNOW)

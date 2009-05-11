@@ -177,7 +177,7 @@ class
 Rts2TargetSetCalibration:public Rts2TargetSet
 {
 	public:
-		Rts2TargetSetCalibration (Target * in_masterTarget, double JD);
+		Rts2TargetSetCalibration (Target * in_masterTarget, double JD, double airmdis = rts2_nan ("f"));
 };
 
 class TargetGRB;

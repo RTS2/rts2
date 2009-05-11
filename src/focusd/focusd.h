@@ -40,7 +40,6 @@ class Focusd:public Rts2Device
 {
 	private:
 		time_t focusTimeout;
-		int homePos;
 
 		/**
 		 * Update target value by given offset.
@@ -66,8 +65,6 @@ class Focusd:public Rts2Device
 		virtual int processOption (int in_opt);
 
 		virtual int setTo (int num) = 0;
-
-		virtual int home ();
 
 		virtual int isFocusing ();
 		virtual int endFocusing ();
@@ -108,7 +105,6 @@ class Focusd:public Rts2Device
 
 		void checkState ();
 		int setPosition (int num);
-		int home (Rts2Conn * conn);
 		int autoFocus (Rts2Conn * conn);
 
 		int getPosition ()

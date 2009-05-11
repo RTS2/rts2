@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2009-05-06</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-simbadinfo">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.7.5</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Get target informations from Simbad name resolver, and prints them.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-p</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-P</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-v</option></arg>
+      </arg>
+      <arg choice="plain" rep="repeat"><replaceable>simbad name(s) to resolve</replaceable></arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> tries to resolve provided names from
+      Simbad name resolver, and provide informations about them. If Simbad
+      resolver is not able to resolve object name for any reason, the programme
+      prints warnign message and exit.
+    </para>
+
+    <para>
+      Names of the object to resolve can be specified on command line. If the
+      object name include spaces, please escape them so the shell will not eat
+      them - you will need to place ' or " around them.
+    </para>
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--config <replaceable class="parameter">configuration file</replaceable></option></term>
+        <listitem>
+          <para>Specify configuration file. Defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-p</option></term>
+        <listitem>
+          <para>
+	    Prints object right ascenation and declination as numbers (RA is in 0..360 range, DEC is in -90..+90). Those numbers
+  	    can be feeded directly to RTS2 database.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-P</option></term>
+	<listitem>
+	  <para>
+	    Pretty print object right ascenation and declination, using ussuall sexadecimal notation.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-v</option></term>
+	<listitem>
+	  <para>
+	    Print source visibility informations. Please consult
+	    <citerefentry><refentrytitle>rts2-targetinfo</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	    for description of this table.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>EXAMPLES</title>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-v</option> <replaceable>'M 31'</replaceable> <replaceable>m57</replaceable>
+    </screen>
+
+    <screen>
+      <command>&dhpackage;</command> <replaceable>'M 31'</replaceable> <replaceable>m57</replaceable>
+    </screen>
+
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-targetinfo</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-horizon</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+  </refsect1>
+</refentry>

@@ -28,13 +28,6 @@
 #include "../utils/rts2device.h"
 #include "../utils/objectcheck.h"
 
-// types of corrections
-#define COR_ABERATION        0x01
-#define COR_PRECESSION       0x02
-#define COR_REFRACTION       0x04
-// if we will use model corrections..
-#define COR_MODEL            0x08
-
 // pointing models
 #define POINTING_RADEC       0
 #define POINTING_ALTAZ       1
@@ -62,6 +55,34 @@ namespace rts2teld
  * refraction. Then this number is feeded to TPoint model and used to point
  * telescope.
  *
+ * Those values are important for telescope:
+ *
+ * <ul>
+ *   <li><b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are
+ *          usually entered by observing program (rts2-executor).</li>
+ *   <li><b>OFFSRA, OFFSDEC</b> contains offsets applied to precessed coordinates.</li>
+ *   <li><b>OBJRA,OBHDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.</li>
+ *   <li><b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in CORR_RA and CORR_DEC</li>
+ *   <li><b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC</li>
+ *   <li><b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA, TARDEC - CORR_DEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.<li>
+ *   <li><b>MODRA.MODDEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).</li>
+ * </ul>
+ *
+ * Following auxiliary values are used to track telescope offsets:
+ *
+ * <ul>
+ *   <li><b>woffsRA, woffsDEC</b> contains offsets which weren't yet applied. They can be set either directly or when you change OFFS value. When move command is executed, OFFSRA += woffsRA, OFFSDEC += woffsDEC and woffsRA and woffsDEC are set to 0.</li>
+ *   <li><b>wcorrRA, wcorrDEC</b> contains corrections which weren't yet
+ *   applied. They can be set either directy or by correct command. When move
+ *   command is executed, CORRRA += wcorrRA, CORRDEC += wcorrDEC and wcorrRA = 0, wcorrDEC = 0.</li>
+ * </ul>
+ *
+ * Please see startResync() documentation for functions available to
+ * retrieve various coordinates. startResync is the routine which is called
+ * each time coordinates written as target should be matched to physical
+ * telescope coordinates. Using various methods in the class, driver can 
+ * get various coordinates which will be put to telescope.
+ *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class Telescope:public Rts2Device
@@ -70,8 +91,6 @@ class Telescope:public Rts2Device
 		Rts2Conn * move_connection;
 		int moveInfoCount;
 		int moveInfoMax;
-
-		// object + telescope position
 
 		/**
 		 * Last error.
@@ -108,17 +127,22 @@ class Telescope:public Rts2Device
 		/**
 		 * User offsets, used to create dithering pattern.
 		 */
-		Rts2ValueRaDec *offsetRaDec;
+		Rts2ValueRaDec *offsRaDec;
+
+		/**
+		 * Offsets which should be applied from last movement.
+		 */
+		Rts2ValueRaDec *woffsRaDec;
 
 		/**
 		 * Real coordinates of the object, after offsets are applied.
-		 * objRaDec = oriRaDec + offsetRaDec
+		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
 		 */
 		Rts2ValueRaDec *objRaDec;
 
 		/**
-		 * Target we are pointing to
-		 * object + user offsets = target
+		 * Target we are pointing to. Coordinates feeded to telescope.
+		 * TAR[RA|DEC] = OBJ[RA|DEC] + modelling, precession, etc.
 		 */
 		Rts2ValueRaDec *tarRaDec;
 
@@ -128,11 +152,24 @@ class Telescope:public Rts2Device
 		Rts2ValueRaDec *corrRaDec;
 
 		/**
+		 * RA DEC correction which waits to be applied.
+		 */
+		Rts2ValueRaDec *wcorrRaDec;
+
+		/**
 		 * If this value is true, any software move of the telescope is blocked.
 		 */
 		Rts2ValueBool *blockMove;
 
 		Rts2ValueBool *blockOnStandby;
+
+		// object + telescope position
+
+		Rts2ValueBool *calAberation;
+		Rts2ValueBool *calPrecession;
+		Rts2ValueBool *calRefraction;
+		Rts2ValueBool *calModel;
+
 
 		/**
 		 * Target HRZ coordinates.
@@ -143,11 +180,6 @@ class Telescope:public Rts2Device
 		 * Target HRZ coordinates with corrections applied.
 		 */
 		struct ln_hrz_posn corrAltAz;
-
-		/**
-		 * RA DEC correction which waits to be applied.
-		 */
-		Rts2ValueRaDec *waitingCorrRaDec;
 
 		/**
 		 * Telescope RA and DEC. In perfect world readed from sensors.
@@ -169,6 +201,12 @@ class Telescope:public Rts2Device
 		 * Local sidereal time.
 		 */
 		Rts2ValueDouble *lst;
+
+		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
+			bool onlyCorrect);
+
+		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
+
 
 	protected:
 		/**
@@ -312,8 +350,6 @@ class Telescope:public Rts2Device
 		Rts2ValueSelection *pointingModel;
 
 	protected:
-		Rts2ValueInteger * correctionsMask;
-
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
@@ -422,6 +458,26 @@ class Telescope:public Rts2Device
 		double getLocSidTime (double JD);
 
 		/**
+		 * Returns true if origin was changed from the last movement.
+		 *
+		 * @see targetChangeFromLastResync
+		 */
+		bool originChangedFromLastResync ()
+		{
+			return oriRaDec->wasChanged ();
+		}
+
+		/**
+		 * Returns original, J2000 coordinates, used as observational
+		 * target.
+		 */
+		void getOrigin (struct ln_equ_posn _ori)
+		{
+			_ori.ra = oriRaDec->getRa ();
+			_ori.dec = oriRaDec->getDec ();
+		}
+
+		/**
 		 * Sets new movement target.
 		 *
 		 * @param ra New object right ascenation.
@@ -433,7 +489,9 @@ class Telescope:public Rts2Device
 		}
 
 		/**
-		 * Return target position.
+		 * Return target position. This is equal to ORI[RA|DEC] +
+		 * OFFS[RA|DEC] + any transformations required for mount
+		 * operation.
 		 *
 		 * @param out_tar Target position
 		 */
@@ -443,11 +501,19 @@ class Telescope:public Rts2Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
+
 		/**
-		 * Returns true if target was changed from last
-		 * sucessfull move command.
+		 * Returns true if target was changed from the last
+		 * sucessfull move command. Target position is position which includes
+		 * telescope transformations (precession, modelling) and offsets specified by
+		 * OFFS.
+		 *
+		 * If telescope has different strategy for setting offsets,
+		 * e.g. offsets can be send by separate command, please use
+		 * originChangedFromLastResync() and apply offsets retrieved by
+		 * getUnappliedRaOffsetRa() and getUnappliedDecOffsetDec().
 		 */
-		bool targetChangeFromLastMove ()
+		bool targetChangeFromLastResync ()
 		{
 			return tarRaDec->wasChanged ();
 		}
@@ -479,7 +545,7 @@ class Telescope:public Rts2Device
 		 */
 		double getWaitCorrRa ()
 		{
-			return waitingCorrRaDec->getRa ();
+			return wcorrRaDec->getRa ();
 		}
 
 		/**
@@ -489,7 +555,7 @@ class Telescope:public Rts2Device
 		 */
 		double getWaitCorrDec ()
 		{
-			return waitingCorrRaDec->getDec ();
+			return wcorrRaDec->getDec ();
 		}
 
 		/**
@@ -568,12 +634,19 @@ class Telescope:public Rts2Device
 		}
 
 		/**
-		 * Send telescope to requested coordinates. Coordinates
-		 * can be obtained using getTarget () call.
+		 * Send telescope to requested coordinates. This function does not
+		 * have any parameters, as they are various ways how to obtain
+		 * telescope coordinates.
+		 *
+		 * If you want to get raw, J2000 target coordinates, without any offsets, check with
+		 *
 		 *
 		 * @return 0 on success, -1 on error.
+		 *
+		 * @see originChangedFromLastResync
+		 * @see getOrigin()
 		 */
-		virtual int startMove () = 0;
+		virtual int startResync () = 0;
 
 		/**
 		 * Called at the end of telescope movement, after isMoving return
@@ -680,11 +753,6 @@ class Telescope:public Rts2Device
 
 		virtual int scriptEnds ();
 
-		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
-			bool onlyCorrect);
-
-		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
-
 		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
 
 		int startPark (Rts2Conn * conn);
@@ -697,35 +765,59 @@ class Telescope:public Rts2Device
 		void applyCorrections (struct ln_equ_posn *pos, double JD);
 
 		/**
-		 * Set telescope corrections mask.
+		 * Set telescope correctios.
 		 *
-		 * @param newMask   New telescope corrections mask.
+		 * @param _aberation     If aberation should be calculated.
+		 * @param _precession    If precession should be calculated.
+		 * @param _refraction    If refraction should be calculated.
 		 */
-		void setCorrectionMask (int newMask)
+		void setCorrections (bool _aberation, bool _precession, bool _refraction)
 		{
-			correctionsMask->setValueInteger (newMask);
+			calAberation->setValueBool (_aberation);
+			calPrecession->setValueBool (_precession);
+			calRefraction->setValueBool (_refraction);
 		}
 
 		/**
-		 * Swicth model on.
+		 * If aberation should be calculated in RTS2.
+		 */
+		bool calculateAberation ()
+		{
+			return calAberation->getValueBool ();
+		}
+
+		/**
+		 * If precession should be calculated in RTS2.
+		 */
+		bool calculatePrecession ()
+		{
+			return calPrecession->getValueBool ();
+		}
+
+		/**
+		 * If refraction should be calculated in RTS2.
+		 */
+		bool calculateRefraction ()
+		{
+			return calRefraction->getValueBool ();
+		}
+
+		/**
+		 * Switch model off model will not be used to transform coordinates.
 		 */
 		void modelOff ()
 		{
-			correctionsMask->setValueInteger (
-				correctionsMask->getValueInteger () & ~COR_MODEL
-				);
+		  	calModel->setValueBool (false);
 		}
 
 		void modelOn ()
 		{
-			correctionsMask->setValueInteger (
-				correctionsMask->getValueInteger () | COR_MODEL
-				);
+		  	calModel->setValueBool (true);
 		}
 
 		bool isModelOn ()
 		{
-			return (correctionsMask->getValueInteger () & COR_MODEL);
+			return (calModel->getValueBool ());
 		}
 
 		// reload model

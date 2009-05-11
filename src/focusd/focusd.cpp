@@ -19,13 +19,13 @@
 
 #include "focusd.h"
 
+#define OPT_START  OPT_LOCAL + 235
+
 using namespace rts2focusd;
 
 Focusd::Focusd (int in_argc, char **in_argv):
 Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
-	homePos = 750;
-
 	temperature = NULL;
 
 	createValue (position, "FOC_POS", "focuser position", true);
@@ -35,8 +35,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true);
 	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true);
 
-	addOption ('o', "home", 1, "home position (default to 750!)");
-	addOption ('p', NULL, 1,
+	addOption (OPT_START, "start-position", 1,
 		"focuser start position (focuser will be set to this one, if initial position is detected");
 }
 
@@ -46,10 +45,7 @@ Focusd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'o':
-			homePos = atoi (optarg);
-			break;
-		case 'p':
+		case OPT_START:
 			defaultPosition->setValueCharArr (optarg);
 			break;
 		default:
@@ -98,6 +94,10 @@ Focusd::initValues ()
 	{
 		setPosition (defaultPosition->getValueInteger ());
 	}
+	else
+	{
+		target->setValueInteger (getPosition ());
+	}
 
 	return Rts2Device::initValues ();
 }
@@ -108,13 +108,6 @@ Focusd::idle ()
 {
 	checkState ();
 	return Rts2Device::idle ();
-}
-
-
-int
-Focusd::home ()
-{
-	return setPosition (homePos);
 }
 
 
@@ -131,20 +124,6 @@ Focusd::setPosition (int num)
 		return ret;
 	}
 	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
-	return ret;
-}
-
-
-int
-Focusd::home (Rts2Conn * conn)
-{
-	int ret;
-	ret = home ();
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
-	else
-		maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE,
-			"homing started");
 	return ret;
 }
 
@@ -226,12 +205,6 @@ Focusd::commandAuthorized (Rts2Conn * conn)
 		// CHECK_PRIORITY;
 
 		return autoFocus (conn);
-	}
-	else if (conn->isCommand ("home"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		return home (conn);
 	}
 	else if (conn->isCommand ("switch"))
 	{

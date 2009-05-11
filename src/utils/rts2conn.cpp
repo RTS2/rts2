@@ -1415,12 +1415,16 @@ Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 		else
 		{
 			binaryWriteTop += ret;
+			dataSize -= ret;
 			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
-			((*iter).second)->dataWritten (ret);
-			if (writeData[data_conn]->getDataSize () <= 0)
+			if (iter != writeData.end ())
 			{
-				delete ((*iter).second);
-				writeData.erase (iter);
+				((*iter).second)->dataWritten (ret);
+				if (writeData[data_conn]->getDataSize () <= 0)
+				{
+					delete ((*iter).second);
+					writeData.erase (iter);
+				}
 			}
 		}
 	}
@@ -1843,6 +1847,9 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 					break;
 				case RTS2_VALUE_DOUBLE:
 					new_value = new DoubleArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
+					break;
+				case RTS2_VALUE_INTEGER:
+					new_value = new IntegerArray (m_name, desc, rts2Type & RTS2_VALUE_FITS, rts2Type);
 					break;
 				default:
 					logStream (MESSAGE_ERROR) << "unsuported array type; " << rts2Type << sendLog;

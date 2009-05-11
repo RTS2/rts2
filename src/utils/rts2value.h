@@ -253,7 +253,7 @@ class Rts2Value
 
 		int isValue (const char *in_val_name)
 		{
-			return !strcmp (in_val_name, valueName.c_str ());
+			return !strcasecmp (in_val_name, valueName.c_str ());
 		}
 
 		std::string getName ()

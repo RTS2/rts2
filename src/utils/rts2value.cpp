@@ -907,7 +907,7 @@ Rts2ValueRaDec::isEqual (Rts2Value *other_value)
 {
 	if (other_value->getValueType () == RTS2_VALUE_RADEC)
 	{
-		return getRa () == ((Rts2ValueRaDec*)other_value)->getDec ()
+		return getRa () == ((Rts2ValueRaDec*)other_value)->getRa ()
 			&& getDec () == ((Rts2ValueRaDec*)other_value)->getDec ();
 	}
 	return false;

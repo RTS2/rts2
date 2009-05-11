@@ -107,7 +107,7 @@ class Kolonica:public Fork
 		virtual int init ();
 
 
-		virtual int startMove();
+		virtual int startResync ();
 		virtual int stopMove();
 		virtual int startPark();
 		virtual int endPark();
@@ -268,14 +268,14 @@ Kolonica::init ()
 
 
 int
-Kolonica::startMove()
+Kolonica::startResync ()
 {
 	return -1;
 }
 
 
 int
-Kolonica::stopMove()
+Kolonica::stopMove ()
 {
 	return -1;
 }

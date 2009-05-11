@@ -106,7 +106,7 @@ Rts2ImgSet::load (std::string in_where)
 		" ORDER BY "
 		"img_id DESC;";
 
-	stmp_c = new char[_os.str ().length ()];
+	stmp_c = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE cur_images_stmp FROM :stmp_c;

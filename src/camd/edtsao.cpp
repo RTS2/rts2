@@ -310,7 +310,7 @@ class EdtSao:public Camera
 		virtual int stopExposure ();
 		virtual long isExposing ();
 		virtual int readoutStart ();
-		virtual int readoutOneLine ();
+		virtual int doReadout ();
 		virtual int endReadout ();
 	public:
 		EdtSao (int in_argc, char **in_argv);
@@ -801,7 +801,7 @@ EdtSao::readoutStart ()
 
 
 int
-EdtSao::readoutOneLine ()
+EdtSao::doReadout ()
 {
 	int i, j;
 	int ret;

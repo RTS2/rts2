@@ -66,7 +66,7 @@ Rts2TargetSet::load (std::string in_where, std::string order_by)
 		" WHERE " << in_where << 
 		" ORDER BY " << order_by << ";";
 
-	stmp_c = new char[_os.str ().length ()];
+	stmp_c = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
 
 	EXEC SQL PREPARE tar_stmp FROM :stmp_c;
@@ -316,7 +316,7 @@ Rts2TargetSetSelectable::Rts2TargetSetSelectable (const char *target_type, struc
 }
 
 
-Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, double JD):Rts2TargetSet (in_masterTarget->getObserver (), false)
+Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, double JD, double airmdis):Rts2TargetSet (in_masterTarget->getObserver (), false)
 {
 	double airmass = in_masterTarget->getAirmass (JD);
 	std::ostringstream os, func, ord;
@@ -326,7 +326,9 @@ Rts2TargetSetCalibration::Rts2TargetSetCalibration (Target *in_masterTarget, dou
 		<< in_masterTarget->getObserver ()->lng << ", "
 		<< in_masterTarget->getObserver ()->lat << ", "
 		<< JD << ") - " << airmass << ")";
-	os << func.str () << " < " << Rts2Config::instance()->getCalibrationAirmassDistance ()
+	if (isnan (airmdis))
+		airmdis = Rts2Config::instance()->getCalibrationAirmassDistance ();
+	os << func.str () << " < " << airmdis
 		<< " AND ((type_id = 'c' AND tar_id <> 6) or type_id = 'l') AND tar_enabled = true";
 	ord << func.str () << " ASC";
 	load (os.str (), ord.str ());

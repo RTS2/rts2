@@ -238,6 +238,25 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		int symlinkImageExpand (std::string link_ex);
 
+
+		/**
+		 * Create hardlink of the image.
+		 *
+		 * @param link_name  Pathe where link will be created.
+		 * 
+		 * @return 0 on success, otherwise returns system error code.
+		 */
+		int linkImage (const char *link_name);
+
+		/**
+		 * Create hardlink of the image. The location is specified as expansion string.
+		 *
+		 * @param link_ex   Path where image link will be created. Any 
+		 * 
+		 * @return 0 on success, otherwise returns system errror code.
+		 */
+		int linkImageExpand (std::string link_ex);
+
 		int saveImageData (const char *save_filename, unsigned short *in_data);
 
 		int setValue (const char *name, bool value, const char *comment);

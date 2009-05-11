@@ -151,6 +151,67 @@ class DoubleArray: public Rts2Value
 		}
 };
 
+
+/**
+ * Holds array of integer values.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @ingroup RTS2Value
+ */
+class IntegerArray: public Rts2Value
+{
+	private:
+		std::vector <int> value;
+		std::string _os;
+	
+	public:
+		IntegerArray (std::string _val_name);
+		IntegerArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
+		
+		virtual ~IntegerArray ()
+		{
+		}
+
+		virtual int setValue (Rts2Conn * connection);
+		virtual int setValueCharArr (const char *_value);
+		virtual const char *getValue ();
+		virtual void setFromValue (Rts2Value *newValue);
+		virtual bool isEqual (Rts2Value *other_val);
+
+		void setValueArray (std::vector <int> _arr)
+		{
+			value = _arr;
+		}
+
+		/**
+		 * Add value to array.
+		 *
+		 * @param _val Value which will be added.
+		 */
+		void addValue (int _val)
+		{
+			value.push_back (_val);
+			changed ();
+		}
+
+		std::vector <int>::iterator valueBegin ()
+		{
+			return value.begin ();
+		}
+
+		std::vector <int>::iterator valueEnd ()
+		{
+			return value.end ();
+		}
+
+		size_t size ()
+		{
+			return value.size ();
+		}
+};
+
+
 }
 
 #endif // ! __RTS2_VALUEARRAY__

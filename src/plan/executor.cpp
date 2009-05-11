@@ -17,26 +17,37 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "../utils/rts2valuearray.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/target.h"
 #include "rts2execcli.h"
 #include "rts2execclidb.h"
 #include "rts2devcliphot.h"
 
-#include <vector>
-
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
 
-class Rts2Executor:public Rts2DeviceDb
+namespace rts2plan
+{
+
+class Executor:public Rts2DeviceDb
 {
 	private:
 		Target * currentTarget;
-		Target *nextTarget;
+		std::list <Target *> nextTargets;
+
+		void clearNextTargets ();
+
 		void queDarks ();
 		void queFlats ();
 		void beforeChange ();
 		void doSwitch ();
 		void switchTarget ();
+
+		int setNext (int nextId);
+		int queueTarget (int nextId);
+		int setNow (int nextId);
+		int setGrb (int grbId);
+		int setShower ();
 
 								 // -1 means no exposure registered (yet), > 0 means scripts in progress, 0 means all script finished
 		Rts2ValueInteger *scriptCount;
@@ -53,7 +64,7 @@ class Rts2Executor:public Rts2DeviceDb
 
 		int setNow (Target * newTarget);
 
-		void queTarget (Target * in_target);
+		void processTarget (Target * in_target);
 		void updateScriptCount ();
 
 		Rts2ValueInteger *current_id;
@@ -65,14 +76,17 @@ class Rts2Executor:public Rts2DeviceDb
 		Rts2ValueInteger *next_id;
 		Rts2ValueString *next_name;
 
+		rts2core::IntegerArray *next_ids;
+		rts2core::StringArray *next_names;
+
 		Rts2ValueInteger *img_id;
 
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
 	public:
-		Rts2Executor (int argc, char **argv);
-		virtual ~ Rts2Executor (void);
+		Executor (int argc, char **argv);
+		virtual ~ Executor (void);
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
@@ -83,11 +97,6 @@ class Rts2Executor:public Rts2DeviceDb
 		virtual int info ();
 
 		virtual int changeMasterState (int new_state);
-
-		int setNext (int nextId);
-		int setNow (int nextId);
-		int setGrb (int grbId);
-		int setShower ();
 
 		int end ()
 		{
@@ -100,11 +109,15 @@ class Rts2Executor:public Rts2DeviceDb
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
-Rts2Executor::Rts2Executor (int in_argc, char **in_argv):
+};
+
+using namespace rts2plan;
+
+
+Executor::Executor (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
 	currentTarget = NULL;
-	nextTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts",
 		false);
 	scriptCount->setValueInteger (-1);
@@ -131,6 +144,8 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
 	createValue (next_id, "next", "ID of next target", false);
 	createValue (next_name, "next_name", "name of next target", false);
+	createValue (next_ids, "next_ids", "IDs of next target(s)", false);
+	createValue (next_names, "next_names", "name of next target(s)", false);
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
@@ -139,16 +154,16 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 }
 
 
-Rts2Executor::~Rts2Executor (void)
+Executor::~Executor (void)
 {
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	delete currentTarget;
-	delete nextTarget;
+	clearNextTargets ();
 }
 
 
 int
-Rts2Executor::processOption (int in_opt)
+Executor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -163,7 +178,7 @@ Rts2Executor::processOption (int in_opt)
 
 
 int
-Rts2Executor::reloadConfig ()
+Executor::reloadConfig ()
 {
 	int ret;
 	Rts2Config *config;
@@ -179,7 +194,7 @@ Rts2Executor::reloadConfig ()
 
 
 Rts2DevClient *
-Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
+Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -203,7 +218,7 @@ Rts2Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 
 
 void
-Rts2Executor::postEvent (Rts2Event * event)
+Executor::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -259,8 +274,8 @@ Rts2Executor::postEvent (Rts2Event * event)
 			updateScriptCount ();
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
-				"EVENT_SCRIPT_ENDED Rts2Executor currentTarget " << currentTarget <<
-				" nextTarget " << nextTarget << sendLog;
+				"EVENT_SCRIPT_ENDED Executor currentTarget " << currentTarget <<
+				" nextTarget " << nextTargets.size () << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			if (currentTarget)
 			{
@@ -272,9 +287,8 @@ Rts2Executor::postEvent (Rts2Event * event)
 				}
 				// scriptCount is not 0, but we hit continues target..
 				else if (currentTarget->isContinues () == 1
-					&& (nextTarget == NULL
-					|| nextTarget->getTargetID () ==
-					currentTarget->getTargetID ()))
+					&& (nextTargets.size () == 0 || nextTargets.front()->getTargetID () == currentTarget->getTargetID ())
+					)
 				{
 					// wait, if we are in stop..don't que it again..
 					if ((getState () & EXEC_MASK_END) != EXEC_END)
@@ -347,7 +361,7 @@ Rts2Executor::postEvent (Rts2Event * event)
 
 
 void
-Rts2Executor::deviceReady (Rts2Conn * conn)
+Executor::deviceReady (Rts2Conn * conn)
 {
 	if (currentTarget)
 		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
@@ -355,7 +369,7 @@ Rts2Executor::deviceReady (Rts2Conn * conn)
 
 
 int
-Rts2Executor::info ()
+Executor::info ()
 {
 	updateScriptCount ();
 	if (currentTarget)
@@ -374,15 +388,26 @@ Rts2Executor::info ()
 		current_obsid->setValueInteger (-1);
 		img_id->setValueInteger (-1);
 	}
-	if (nextTarget)
+	std::vector <int> _id_arr;
+	std::vector <std::string> _name_arr;
+	if (nextTargets.size () != 0)
 	{
-		next_id->setValueInteger (nextTarget->getTargetID ());
-		next_name->setValueCharArr (nextTarget->getTargetName ());
+		next_id->setValueInteger (nextTargets.front ()->getTargetID ());
+		next_name->setValueCharArr (nextTargets.front ()->getTargetName ());
+		for (std::list <Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
+		{
+			_id_arr.push_back ((*iter)->getTargetID ());
+			_name_arr.push_back ((*iter)->getTargetName ());
+		}
+		next_ids->setValueArray (_id_arr);
+		next_names->setValueArray (_name_arr);
 	}
 	else
 	{
 		next_id->setValueInteger (-1);
 		next_name->setValueCharArr (NULL);
+		next_ids->setValueArray (_id_arr);
+		next_names->setValueArray (_name_arr);
 	}
 
 	return Rts2DeviceDb::info ();
@@ -390,7 +415,7 @@ Rts2Executor::info ()
 
 
 int
-Rts2Executor::changeMasterState (int new_state)
+Executor::changeMasterState (int new_state)
 {
 	if (ignoreDay)
 		return Rts2DeviceDb::changeMasterState (new_state);
@@ -406,7 +431,7 @@ Rts2Executor::changeMasterState (int new_state)
 			{
 				maskState (EXEC_MASK_END, EXEC_NOT_END);
 			}
-			if (!currentTarget && nextTarget)
+			if (!currentTarget && nextTargets.size () != 0)
 			{
 				switchTarget ();
 			}
@@ -414,9 +439,9 @@ Rts2Executor::changeMasterState (int new_state)
 		case (SERVERD_DAWN | SERVERD_STANDBY):
 		case (SERVERD_NIGHT | SERVERD_STANDBY):
 		case (SERVERD_DUSK | SERVERD_STANDBY):
-			delete nextTarget;
+			clearNextTargets ();
 			// next will be dark..
-			nextTarget = createTarget (1, observer);
+			nextTargets.push_front (createTarget (1, observer));
 			if (!currentTarget)
 			{
 				switchTarget ();
@@ -433,21 +458,28 @@ Rts2Executor::changeMasterState (int new_state)
 
 
 int
-Rts2Executor::setNext (int nextId)
+Executor::setNext (int nextId)
 {
-	if (nextTarget)
+	if (nextTargets.size() != 0)
 	{
-		if (nextTarget->getTargetID () == nextId)
+		if (nextTargets.front ()->getTargetID () == nextId)
 			// we observe the same target..
 			return 0;
-		delete nextTarget;
+		clearNextTargets ();
 	}
-	nextTarget = createTarget (nextId, observer);
-	if (!nextTarget)
+	return queueTarget (nextId);
+}
+
+
+int
+Executor::queueTarget (int tarId)
+{
+	Target *nt = createTarget (tarId, observer);
+	if (!nt)
 	{
-		// error
 		return -2;
 	}
+	nextTargets.push_back (nt);
 	if (!currentTarget)
 		switchTarget ();
 	else
@@ -457,7 +489,7 @@ Rts2Executor::setNext (int nextId)
 
 
 int
-Rts2Executor::setNow (int nextId)
+Executor::setNow (int nextId)
 {
 	Target *newTarget;
 
@@ -476,22 +508,18 @@ Rts2Executor::setNow (int nextId)
 
 
 int
-Rts2Executor::setNow (Target * newTarget)
+Executor::setNow (Target * newTarget)
 {
 	if (currentTarget)
 	{
 		currentTarget->endObservation (-1);
-		queTarget (currentTarget);
+		processTarget (currentTarget);
 	}
 	currentTarget = newTarget;
 
 	// at this situation, we would like to get rid of nextTarget as
 	// well
-	if (nextTarget)
-	{
-		delete nextTarget;
-		nextTarget = NULL;
-	}
+	clearNextTargets ();
 
 	clearAll ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
@@ -507,7 +535,7 @@ Rts2Executor::setNow (Target * newTarget)
 
 
 int
-Rts2Executor::setGrb (int grbId)
+Executor::setGrb (int grbId)
 {
 	Target *grbTarget;
 	struct ln_hrz_posn grbHrz;
@@ -518,7 +546,7 @@ Rts2Executor::setGrb (int grbId)
 		|| getMasterState () == SERVERD_DUSK
 		|| getMasterState () == SERVERD_DAWN))
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb daylight GRB ignored"
+		logStream (MESSAGE_DEBUG) << "Executor::setGrb daylight GRB ignored"
 			<< sendLog;
 		return -2;
 	}
@@ -562,20 +590,20 @@ Rts2Executor::setGrb (int grbId)
 		return 0;
 	}
 	// otherwise set us as next target
-	delete nextTarget;
-	nextTarget = grbTarget;
+	clearNextTargets ();
+	nextTargets.push_back (grbTarget);
 	return 0;
 }
 
 
 int
-Rts2Executor::setShower ()
+Executor::setShower ()
 {
 	// is during night and ready?
 	if (!(getMasterState () == SERVERD_NIGHT))
 	{
 		logStream (MESSAGE_DEBUG) <<
-			"Rts2Executor::setShow daylight shower ignored" << sendLog;
+			"Executor::setShower daylight shower ignored" << sendLog;
 		return -2;
 	}
 
@@ -584,7 +612,7 @@ Rts2Executor::setShower ()
 
 
 int
-Rts2Executor::stop ()
+Executor::stop ()
 {
 	postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
 	updateScriptCount ();
@@ -595,7 +623,18 @@ Rts2Executor::stop ()
 
 
 void
-Rts2Executor::queDarks ()
+Executor::clearNextTargets ()
+{
+	for (std::list <Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
+	{
+		delete *iter;
+	}
+	nextTargets.clear ();
+}
+
+
+void
+Executor::queDarks ()
 {
 	Rts2Conn *minConn = getMinConn ("que_size");
 	if (!minConn)
@@ -605,7 +644,7 @@ Rts2Executor::queDarks ()
 
 
 void
-Rts2Executor::queFlats ()
+Executor::queFlats ()
 {
 	Rts2Conn *minConn = getMinConn ("que_size");
 	if (!minConn)
@@ -615,7 +654,7 @@ Rts2Executor::queFlats ()
 
 
 void
-Rts2Executor::beforeChange ()
+Executor::beforeChange ()
 {
 	// both currentTarget and nextTarget are defined
 	char currType;
@@ -624,8 +663,8 @@ Rts2Executor::beforeChange ()
 		currType = currentTarget->getTargetType ();
 	else
 		currType = TYPE_UNKNOW;
-	if (nextTarget)
-		nextType = nextTarget->getTargetType ();
+	if (nextTargets.size () != 0)
+		nextType = nextTargets.front ()->getTargetType ();
 	else
 		nextType = currType;
 	if (currType == TYPE_DARK && nextType != TYPE_DARK)
@@ -636,41 +675,41 @@ Rts2Executor::beforeChange ()
 
 
 void
-Rts2Executor::doSwitch ()
+Executor::doSwitch ()
 {
 	int ret;
 	int nextId;
 	// we need to change current target - usefull for planner runs
 	if (currentTarget && currentTarget->isContinues () == 2
-		&& (!nextTarget	|| nextTarget->getTargetID () == currentTarget->getTargetID ()))
+		&& (nextTargets.size () == 0 || nextTargets.front ()->getTargetID () == currentTarget->getTargetID ()))
 	{
-		delete nextTarget;
+		nextTargets.pop_front ();
 		// create again our target..since conditions changed, we will get different target id
-		nextTarget = createTarget (currentTarget->getTargetID (), observer);
+		nextTargets.push_front (createTarget (currentTarget->getTargetID (), observer));
 	}
 	// check dark and flat processing
 	beforeChange ();
-	if (nextTarget)
+	if (nextTargets.size () != 0)
 	{
 		// go to post-process
 		if (currentTarget)
 		{
 			// next target is defined - tested on line -5
-			nextId = nextTarget->getTargetID ();
+			nextId = (*nextTargets.begin ())->getTargetID ();
 			ret = currentTarget->endObservation (nextId);
 			if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
 				// don't que only in case nextTarget and currentTarget are
 				// same and endObservation returns 1
 			{
-				queTarget (currentTarget);
-				currentTarget = nextTarget;
-				nextTarget = NULL;
+				processTarget (currentTarget);
+				currentTarget = nextTargets.front ();
+				nextTargets.pop_front ();
 			}
 		}
 		else
 		{
-			currentTarget = nextTarget;
-			nextTarget = NULL;
+			currentTarget = nextTargets.front ();
+			nextTargets.pop_front ();
 		}
 	}
 	if (currentTarget)
@@ -684,7 +723,7 @@ Rts2Executor::doSwitch ()
 
 
 void
-Rts2Executor::switchTarget ()
+Executor::switchTarget ()
 {
 	if ((getState () & EXEC_MASK_END) == EXEC_END)
 	{
@@ -693,14 +732,10 @@ Rts2Executor::switchTarget ()
 		if (currentTarget)
 		{
 			currentTarget->endObservation (-1);
-			queTarget (currentTarget);
+			processTarget (currentTarget);
 		}
 		currentTarget = NULL;
-		if (nextTarget)
-		{
-			delete nextTarget;
-			nextTarget = NULL;
-		}
+		clearNextTargets ();
 	}
 	else if (ignoreDay)
 	{
@@ -719,7 +754,7 @@ Rts2Executor::switchTarget ()
 				break;
 			case SERVERD_DUSK | SERVERD_STANDBY:
 			case SERVERD_DAWN | SERVERD_STANDBY:
-				if (!currentTarget && nextTarget && nextTarget->getTargetID () == 1)
+				if (!currentTarget && nextTargets.size () != 0 && nextTargets.front ()->getTargetID () == 1)
 				{
 					// switch to dark..
 					doSwitch ();
@@ -729,14 +764,10 @@ Rts2Executor::switchTarget ()
 				if (currentTarget)
 				{
 					currentTarget->endObservation (-1);
-					queTarget (currentTarget);
+					processTarget (currentTarget);
 				}
 				currentTarget = NULL;
-				if (nextTarget)
-				{
-					delete nextTarget;
-					nextTarget = NULL;
-				}
+				clearNextTargets ();
 		}
 	}
 	infoAll ();
@@ -744,7 +775,7 @@ Rts2Executor::switchTarget ()
 
 
 void
-Rts2Executor::queTarget (Target * in_target)
+Executor::processTarget (Target * in_target)
 {
 	int ret;
 	// test for final acq..
@@ -766,7 +797,7 @@ Rts2Executor::queTarget (Target * in_target)
 
 
 void
-Rts2Executor::updateScriptCount ()
+Executor::updateScriptCount ()
 {
 	int scriptRunning = 0;
 	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &scriptRunning));
@@ -775,7 +806,7 @@ Rts2Executor::updateScriptCount ()
 
 
 int
-Rts2Executor::commandAuthorized (Rts2Conn * conn)
+Executor::commandAuthorized (Rts2Conn * conn)
 {
 	int tar_id;
 	if (conn->isCommand ("grb"))
@@ -798,6 +829,12 @@ Rts2Executor::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return setNow (tar_id);
 	}
+	else if (conn->isCommand ("queue"))
+	{
+		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
+			return -2;
+		return queueTarget (tar_id);
+	}
 	else if (conn->isCommand ("next"))
 	{
 		if (conn->paramNextInteger (&tar_id) || !conn->paramEnd ())
@@ -816,6 +853,13 @@ Rts2Executor::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		return stop ();
 	}
+	else if (conn->isCommand ("clear"))
+	{
+		if (!conn->paramEnd ())
+		  	return -2;
+		clearNextTargets ();
+		return 0;
+	}
 	return Rts2DeviceDb::commandAuthorized (conn);
 }
 
@@ -823,6 +867,6 @@ Rts2Executor::commandAuthorized (Rts2Conn * conn)
 int
 main (int argc, char **argv)
 {
-	Rts2Executor executor = Rts2Executor (argc, argv);
+	Executor executor = Executor (argc, argv);
 	return executor.run ();
 }

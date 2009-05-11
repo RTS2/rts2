@@ -307,7 +307,7 @@ FlatTarget::load ()
 		d_tar.dec = d_tar_dec;
 		// we should be at least 10 deg above horizon to be considered..
 		ln_get_hrz_from_equ (&d_tar, observer, JD, &hrz);
-		if (hrz.alt < 10)
+		if (hrz.alt < Rts2Config::instance ()->getMinFlatHeigh ())
 			continue;
 		// and of course we should be above horizon..
 		if (!isAboveHorizon (&hrz))

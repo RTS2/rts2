@@ -192,7 +192,7 @@ class Paramount:public GEM
 		// returns actual home offset
 		virtual int getHomeOffset (int32_t & off);
 
-		virtual int startMove ();
+		virtual int startResync ();
 		virtual int endMove ();
 		virtual int stopMove ();
 
@@ -494,8 +494,7 @@ Paramount::Paramount (int in_argc, char **in_argv)
 	track1 = NULL;
 
 	// apply all correction for paramount
-	correctionsMask->
-		setValueInteger (COR_ABERATION | COR_PRECESSION | COR_REFRACTION);
+	setCorrections (true, true, true);
 
 	// int paramout values
 	paramountValues.
@@ -726,7 +725,7 @@ Paramount::updateTrack ()
 		JD = ln_get_julian_from_sys ();
 
 		getTarget (&corr_pos);
-		startMove ();
+		startResync ();
 		return;
 	}
 	double track_delta;
@@ -853,7 +852,7 @@ Paramount::info ()
 
 
 int
-Paramount::startMove ()
+Paramount::startResync ()
 {
 	int ret;
 	CWORD32 ac = 0;
@@ -938,7 +937,7 @@ Paramount::startMove ()
 	moveState = TEL_SLEW;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Paramount::startMove " << ac <<
+	logStream (MESSAGE_DEBUG) << "Paramount::startResync " << ac <<
 		" " << dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
@@ -973,7 +972,7 @@ Paramount::isMoving ()
 			return USEC_SEC / 10;
 		moveState = TEL_SLEW;
 		// re-move
-		return startMove ();
+		return startResync ();
 	}
 	// check axis state..
 	if (status0 & SERVO_STATE_UN)

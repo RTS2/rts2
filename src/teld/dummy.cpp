@@ -77,7 +77,7 @@ class Dummy:public Telescope
 			dummyPos.dec = 0;
 		}
 
-		virtual int startMove ()
+		virtual int startResync ()
 		{
 			getTarget (&dummyPos);
 			countLong = 0;

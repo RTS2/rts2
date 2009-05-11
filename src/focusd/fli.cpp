@@ -47,11 +47,12 @@ class Fli:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (int num);
-		virtual int home ();
 
 	public:
 		Fli (int argc, char **argv);
 		virtual ~ Fli (void);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 };
@@ -211,17 +212,6 @@ Fli::setTo (int num)
 
 
 int
-Fli::home ()
-{
-	LIBFLIAPI ret;
-	ret = FLIHomeFocuser (dev);
-	if (ret)
-		return -1;
-	return Focusd::home ();
-}
-
-
-int
 Fli::isFocusing ()
 {
 	LIBFLIAPI ret;
@@ -244,6 +234,23 @@ Fli::isAtStartPosition ()
 	if (ret)
 		return false;
 	return getPosition () == 0;
+}
+
+int
+Fli::commandAuthorized (Rts2Conn * conn)
+{
+	if (conn->isCommand ("home"))
+	{
+		LIBFLIAPI ret;
+		ret = FLIHomeFocuser (dev);
+		if (ret)
+		{
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot home focuser");
+			return -1;
+		}
+		return 0;
+	}
+	return Focusd::commandAuthorized (conn);
 }
 
 
