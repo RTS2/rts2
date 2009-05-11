@@ -143,7 +143,8 @@ TelModelTest::~TelModelTest (void)
 void
 TelModelTest::usage ()
 {
-	std::cout << "-m <model_file> [-e[e]] [-N] [-v] (-i <images> | <model datafile>)" << std::endl;
+	std::cout << "\t" << getAppName () << "-m /etc/rts2/model -e -v model_test" << std::endl
+		<< "\t" << getAppName () << "-r" << std::endl;
 } 
 
 
