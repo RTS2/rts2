@@ -262,7 +262,9 @@ Rts2ScheduleApp::printMeritsStatistics ()
 void
 Rts2ScheduleApp::usage ()
 {
-	std::cout << "\t" << getAppName () << std::endl;
+	std::cout << "\t" << getAppName () << std::endl
+		<< " To get schedule from 17th January 2006 01:17:18 UT to 18th January 2006 01:17:18 UT" << std::endl
+		<< "\t" << getAppName () << "--start 2006-01-17T01:17:18 --end 2006-01-18T02:03:04" << std::endl;
 }
 
 
