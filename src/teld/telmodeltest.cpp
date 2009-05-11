@@ -86,6 +86,7 @@ class TelModelTest:public Rts2CliApp
 		bool verbose;
 		// if input are images
 		bool image;
+		bool rpoint;
 
 		void test (double ra, double dec);
 		void runOnFile (std::string filename, std::ostream & os);
@@ -97,12 +98,13 @@ class TelModelTest:public Rts2CliApp
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
 
+		virtual int doProcessing ();
+
 	public:
 		TelModelTest (int in_argc, char **in_argv);
 		virtual ~ TelModelTest (void);
 
 		virtual int init ();
-		virtual int doProcessing ();
 };
 
 };
@@ -120,12 +122,14 @@ Rts2CliApp (in_argc, in_argv)
 	telescope = NULL;
 	errors = 0;
 	image = false;
+	rpoint = false;
 	verbose = false;
 	addOption ('m', NULL, 1, "Model file to use");
 	addOption ('e', NULL, 0, "Print errors. Use two e to print errors in RA and DEC.");
 	addOption ('N', NULL, 0, "Print numbers, do not pretty print.");
 	addOption ('v', NULL, 0, "Report model progress");
 	addOption ('i', NULL, 0, "Print model for given images");
+	addOption ('r', NULL, 0, "Print random RA DEC, handy for telescope pointing tests");
 }
 
 
@@ -163,6 +167,9 @@ TelModelTest::processOption (int in_opt)
 		case 'i':
 			image = true;
 			break;
+		case 'r':
+			rpoint = true;
+			break;
 		default:
 			return Rts2App::processOption (in_opt);
 	}
@@ -186,11 +193,14 @@ TelModelTest::init ()
 	if (ret)
 		return ret;
 
-	if (runFiles.empty ())
+	if (!rpoint && runFiles.empty ())
 	{
 		help ();
 		return -1;
 	}
+
+	if (rpoint)
+		return 0;
 
 	telescope = new ModelTest ();
 	telescope->setCorrections (true, true, true);
@@ -461,6 +471,16 @@ TelModelTest::runOnDatFile (std::string filename, std::ostream & os)
 int
 TelModelTest::doProcessing ()
 {
+	if (rpoint)
+	{
+		struct ln_hrz_posn hrz;
+		hrz.alt = 90 - 85 * (((double) random ()) / RAND_MAX);
+		hrz.az = 360 * (((double) random ()) / RAND_MAX);
+		struct ln_equ_posn equ;
+		ln_get_equ_from_hrz (&hrz, Rts2Config::instance ()->getObserver (), ln_get_julian_from_sys (), &equ);
+		std::cout << equ.ra << " " << equ.dec << std::endl;
+		return 0;
+	}
 	if (!runFiles.empty ())
 	{
 		for (std::vector < std::string >::iterator iter = runFiles.begin ();
