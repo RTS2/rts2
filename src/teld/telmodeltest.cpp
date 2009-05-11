@@ -473,6 +473,7 @@ TelModelTest::doProcessing ()
 {
 	if (rpoint)
 	{
+		srandom (time (NULL));
 		struct ln_hrz_posn hrz;
 		hrz.alt = 90 - 85 * (((double) random ()) / RAND_MAX);
 		hrz.az = 360 * (((double) random ()) / RAND_MAX);
