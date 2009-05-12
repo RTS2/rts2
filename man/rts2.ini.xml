@@ -576,6 +576,28 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>flat_sun_min</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Flats will be taken when Sun altitude is above this number (e.g.
+	      put -7 there if you want to have flats in -7; -5 interval).
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>flat_sun_max</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Flats will be taken when Sun altitude is above this number (e.g.
+	      put -5 there if you want to have flats in -7; -5 interval).
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
