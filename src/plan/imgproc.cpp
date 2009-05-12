@@ -281,6 +281,7 @@ int
 ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
+	sendValueAll (queSize);
 #ifdef HAVE_PGSQL
 	return Rts2DeviceDb::info ();
 #else
@@ -335,6 +336,8 @@ ImageProc::deleteConnection (Rts2Conn * conn)
 			imagesQue.erase (img_iter);
 		}
 	}
+	queSize->setValueInteger (imagesQue.size ());
+	sendValueAll (queSize);
 	if (runningImage)
 		runningImage->deleteConnection (conn);
 	if (conn == runningImage)
@@ -345,12 +348,15 @@ ImageProc::deleteConnection (Rts2Conn * conn)
 		{
 			case GET:
 				goodImages->inc ();
+				sendValueAll (goodImages);
 				break;
 			case TRASH:
 				trashImages->inc ();
+				sendValueAll (trashImages);
 				break;
 			case MORNING:
 				morningImages->inc ();
+				sendValueAll (morningImages);
 				break;
 			default:
 				break;
