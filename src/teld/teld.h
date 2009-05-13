@@ -738,7 +738,18 @@ class Telescope:public Rts2Device
 		 * function updates telAltAz value. If you want to get target
 		 * altitude and azimuth, please use getTargetAltAz().
 		 */
-		virtual void getAltAz ();
+		virtual void getTelAltAz ();
+
+		/**
+		 * Sets telescope altitude and azimut to given values.
+		 *
+		 * @param _alt Telescope altitude.
+		 * @param _az  Telescope azimut.
+		 */
+		void setTelAltAz (double _alt, double _az)
+		{
+			telAltAz->setValueAltAz (_alt, _az);
+		}
 
 	public:
 		Telescope (int argc, char **argv);

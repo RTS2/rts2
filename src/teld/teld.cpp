@@ -821,7 +821,7 @@ Telescope::stopGuideAll ()
 
 
 void
-Telescope::getAltAz ()
+Telescope::getTelAltAz ()
 {
 	struct ln_equ_posn telpos;
 	struct ln_lnlat_posn observer;
@@ -837,7 +837,7 @@ Telescope::getAltAz ()
 		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()),
 		&hrz);
 
-	telAltAz->setValueAltAz (hrz.alt, hrz.az);
+	setTelAltAz (hrz.alt, hrz.az);
 }
 
 
@@ -845,7 +845,7 @@ int
 Telescope::info ()
 {
 	// calculate alt+az
-	getAltAz ();
+	getTelAltAz ();
 
 	if (telFlip->getValueInteger ())
 		rotang->setValueDouble (ln_range_degrees (defaultRotang + 180.0));
@@ -861,7 +861,8 @@ Telescope::info ()
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
-		getTargetAltAz (&hrpos);
+		hrpos.alt = telAltAz->getAlt ();
+		hrpos.az = telAltAz->getAz ();
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			stopWorm ();
@@ -978,9 +979,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
-		getAltAz ();
-		hrpos.az = telAltAz->getAz ();
-		hrpos.alt = telAltAz->getAlt ();
+		getTargetAltAz (&hrpos);
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;
