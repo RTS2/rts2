@@ -123,7 +123,7 @@ class OpenTPL:public Telescope
 		{
 			return derotatorPower->getValueBool ();
 		}
-		virtual void getTelAltAz ();
+		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
 
 	public:
 		OpenTPL (int argc, char **argv);
@@ -882,21 +882,20 @@ OpenTPL::idle ()
 
 
 void
-OpenTPL::getTelAltAz ()
+OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	int status = TPL_OK;
-	double zd, az;
-
 	switch (getPointingModel ())
 	{
 		case POINTING_RADEC:
-			Telescope::getTelAltAz ();
+			Telescope::getTelAltAz (hrz);
 			break;
 		case POINTING_ALTAZ:
-			status = opentplConn->get ("ZD.REALPOS", zd, &status);
-			status = opentplConn->get ("AZ.REALPOS", az, &status);
+			status = opentplConn->get ("ZD.REALPOS", hrz->alt, &status);
+			status = opentplConn->get ("AZ.REALPOS", hrz->az, &status);
 
-			setTelAltAz (90 - fabs (zd), ln_range_degrees (az + 180));
+			hrz->alt = 90 - fabs (hrz->alt);
+			hrz->az = ln_range_degrees (hrz->az + 180);
 			break;
 	}
 }

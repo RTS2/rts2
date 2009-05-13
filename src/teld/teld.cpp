@@ -821,11 +821,10 @@ Telescope::stopGuideAll ()
 
 
 void
-Telescope::getTelAltAz ()
+Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn telpos;
 	struct ln_lnlat_posn observer;
-	struct ln_hrz_posn hrz;
 
 	telpos.ra = telRaDec->getRa ();
 	telpos.dec = telRaDec->getDec ();
@@ -835,17 +834,17 @@ Telescope::getTelAltAz ()
 
 	ln_get_hrz_from_equ_sidereal_time (&telpos, &observer,
 		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()),
-		&hrz);
-
-	setTelAltAz (hrz.alt, hrz.az);
+		hrz);
 }
 
 
 int
 Telescope::info ()
 {
+	struct ln_hrz_posn hrz;
 	// calculate alt+az
-	getTelAltAz ();
+	getTelAltAz (&hrz);
+	telAltAz->setValueAltAz (hrz.alt, hrz.az);
 
 	if (telFlip->getValueInteger ())
 		rotang->setValueDouble (ln_range_degrees (defaultRotang + 180.0));
