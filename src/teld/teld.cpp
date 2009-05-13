@@ -180,6 +180,50 @@ Telescope::getLocSidTime (double JD)
 	return ln_range_degrees (ret) / 15.0;
 }
 
+void
+Telescope::moveNowTo (struct ln_equ_posn *equ)
+{
+	// clear offsets
+	incMoveNum ();
+	// set target
+	oriRaDec->setValueRaDec (equ->ra, equ->dec);
+	sendValueAll (oriRaDec);
+	objRaDec->setValueRaDec (equ->ra, equ->dec);
+	sendValueAll (objRaDec);
+
+	// apply corrections
+	applyCorrections (equ, ln_get_julian_from_sys ());
+
+	// now we have target position, which can be feeded to telescope
+	tarRaDec->setValueRaDec (equ->ra, equ->dec);
+
+	// calculate target after corrections
+	equ->ra = ln_range_degrees (equ->ra - corrRaDec->getRa ());
+	equ->dec = equ->dec - corrRaDec->getDec ();
+	telRaDec->setValueRaDec (equ->ra, equ->dec);
+
+	moveInfoCount = 0;
+
+	if (hardHorizon)
+	{
+		struct ln_hrz_posn hrpos;
+		getTargetAltAz (&hrpos);
+		if (!hardHorizon->is_good (&hrpos))
+		{
+			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope (during moveNowTo)" << sendLog;
+			return;
+		}
+	}
+
+	if (blockMove->getValueBool () == true)
+	{
+		logStream (MESSAGE_ERROR) << "telescope move blocked during moveNowTo" << sendLog;
+		return;
+	}
+
+	startResync ();
+}
+
 
 int
 Telescope::processOption (int in_opt)
