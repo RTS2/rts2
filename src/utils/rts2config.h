@@ -394,7 +394,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 */
 		time_t getNight (time_t _in)
 		{
-			return _in + Rts2Config::instance ()->getObservatoryLongitude () / 15.0 - 86400 / 2;
+			return _in + time_t (Rts2Config::instance ()->getObservatoryLongitude () / 15.0 - 86400 / 2);
 		}
 
 		/**
