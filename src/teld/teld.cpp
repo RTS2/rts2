@@ -127,16 +127,16 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	// default is to aply model corrections
-	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false);
+	createValue (calAberation, "CAL_ABER", "aberation is calculated by RTS2 driver", false);
 	calAberation->setValueBool (false);
 
-	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false);
+	createValue (calPrecession, "CAL_PREC", "precession is calculated by RTS2 driver", false);
 	calPrecession->setValueBool (false);
 
-	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false);
+	createValue (calRefraction, "CAL_REFR", "refraction is calculated by RTS2 driver", false);
 	calRefraction->setValueBool (false);
 
-	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false);
+	createValue (calModel, "CAL_MODE", "model is calculated by RTS2 driver", false);
 	calModel->setValueBool (false);
 
 	modelFile = NULL;
@@ -861,9 +861,7 @@ Telescope::info ()
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
-		getAltAz ();
-		hrpos.az = telAltAz->getAz ();
-		hrpos.alt = telAltAz->getAlt ();
+		getTargetAltAz (&hrpos);
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			stopWorm ();
