@@ -447,7 +447,10 @@ Rts2Image::createImage (char *in_filename)
 int
 Rts2Image::openImage (const char *_filename, bool readOnly)
 {
-	if (openFile (_filename, readOnly))
+	if (_filename)
+		setFileName (_filename);
+
+	if (openFile (getFileName (), readOnly))
 		return -1;
 
 	flags |= IMAGE_SAVE;
@@ -546,7 +549,7 @@ Rts2Image::renameImage (const char *new_filename)
 		ret = rename (getFileName (), new_filename);
 		if (!ret)
 		{
-			openImage ();
+			openImage (new_filename);
 		}
 	}
 	return ret;
