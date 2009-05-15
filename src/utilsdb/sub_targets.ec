@@ -449,6 +449,7 @@ DarkTarget::startSlew (struct ln_equ_posn *position)
 
 FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
+	setTargetName ("flat target");
 }
 
 
