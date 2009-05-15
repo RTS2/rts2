@@ -351,7 +351,7 @@ Rts2Image::createWCS (double x_off, double y_off)
 	if (ret)
 		return ret;
 
-	double rotang = getRotang ();
+	double rotang = ln_rad_to_deg (getRotang ());
 
 	// now create the record
 	setValue ("RADECSYS", "FK5", "WCS coordinate system");

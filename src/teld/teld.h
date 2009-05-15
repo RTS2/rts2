@@ -120,7 +120,7 @@ class Telescope:public Rts2Device
 		Rts2ValueDouble *telFov;
 
 		/**
-		 * Object we are observing.
+		 * Object we are observing original positions.
 		 */
 		Rts2ValueRaDec *oriRaDec;
 
@@ -458,6 +458,13 @@ class Telescope:public Rts2Device
 		double getLocSidTime (double JD);
 
 		/**
+		 * Unconditional move to specified equatorial position.
+		 * Clear all offsets etc. Usefull for emergency situations
+		 * quick move.
+		 */
+		void moveNowTo (struct ln_equ_posn *equ);
+
+		/**
 		 * Returns true if origin was changed from the last movement.
 		 *
 		 * @see targetChangeFromLastResync
@@ -726,6 +733,13 @@ class Telescope:public Rts2Device
 			return 0;
 		}
 
+		/**
+		 * Get current telescope altitude and azimuth. This
+		 * function updates telAltAz value. If you want to get target
+		 * altitude and azimuth, please use getTargetAltAz().
+		 */
+		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
+
 	public:
 		Telescope (int argc, char **argv);
 		virtual ~ Telescope (void);
@@ -745,8 +759,6 @@ class Telescope:public Rts2Device
 		virtual int startGuide (char dir, double dir_dist);
 		virtual int stopGuide (char dir);
 		virtual int stopGuideAll ();
-
-		virtual void getAltAz ();
 
 		// callback functions from telescope connection
 		virtual int info ();
