@@ -133,7 +133,6 @@ class Andor:public Camera
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void help ();
-		virtual void cancelPriorityOperations ();
 
 		virtual void initDataTypes ();
 
@@ -514,15 +513,6 @@ Andor::setAcquisitionMode (int mode)
 
 
 void
-Andor::cancelPriorityOperations ()
-{
-	if (!isnan (defaultGain) && gain)
-		setGain (defaultGain);
-	Camera::cancelPriorityOperations ();
-}
-
-
-void
 Andor::initDataTypes ()
 {
 	Camera::initDataTypes ();
@@ -638,6 +628,8 @@ Andor::startExposure ()
 int
 Andor::scriptEnds ()
 {
+	if (!isnan (defaultGain) && gain)
+		setGain (defaultGain);
 	//	closeShutter ();
 	return Camera::scriptEnds ();
 }
