@@ -300,7 +300,6 @@ Rts2ImageSkyDb::updateAstrometry ()
 	double cdelt[2];
 	double crota[2];
 	double equinox;
-	double epoch;
 
 	int ret;
 
@@ -328,9 +327,6 @@ Rts2ImageSkyDb::updateAstrometry ()
 	ret = getValue ("EQUINOX", equinox);
 	if (ret)
 		return -1;
-	ret = getValue ("EPOCH_ID", epoch);
-	if (ret)
-		return -1;
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
@@ -338,9 +334,9 @@ Rts2ImageSkyDb::updateAstrometry ()
 
 	snprintf (s_astrometry.arr, 2000,
 		"NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
-		"CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f",
+		"CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f",
 		a_naxis[0], a_naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
-		crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox, epoch);
+		crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox);
 	s_astrometry.len = strlen (s_astrometry.arr);
 
 	EXEC SQL UPDATE
