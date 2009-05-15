@@ -162,10 +162,10 @@ template < class img > img * setValueImageType (img * in_image)
 	else
 	{
 		ret_i = new Rts2ImageSkyDb (in_image);
+		delete in_image;
 		imgTypeText = "object";
 	}
 	ret_i->setValue ("IMAGETYP", imgTypeText, "IRAF based image type");
-	delete in_image;
 	return ret_i;
 }
 
