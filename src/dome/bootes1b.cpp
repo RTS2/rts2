@@ -28,7 +28,7 @@ typedef enum
 	PORT_3,
 	PORT_4,
 	DOMESWITCH,
-	PORT_6,
+	ASM_SWITCH,
 	TEL_SWITCH,
 	PORT_8,
 	// A
@@ -65,8 +65,12 @@ class Bootes1B:public Ford
 		Rts2ValueTime *ignoreRainSensorTime;
 
 		Rts2ValueBool *rain;
+		Rts2ValueBool *telSwitch;
+		Rts2ValueBool *asmSwitch;
 
 	protected:
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+
 		virtual bool isGoodWeather ();
 
 		virtual int startOpen ();
@@ -82,8 +86,6 @@ class Bootes1B:public Ford
 		virtual int init ();
 
 		virtual int info ();
-
-		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 }
@@ -98,6 +100,12 @@ Bootes1B::Bootes1B (int argc, char **argv)
 
 	createValue (rain, "rain", "state of the rain detector", false);
 
+	createValue (telSwitch, "tel_switch", "switch for telescope", false);
+	telSwitch->setValueBool (true);
+
+	createValue (asmSwitch, "asm_switch", "switch for ASM", false);
+	asmSwitch->setValueBool (true);
+
 	lastWeatherCheckState = -1;
 
 	timeOpenClose = 0;
@@ -107,6 +115,35 @@ Bootes1B::Bootes1B (int argc, char **argv)
 
 Bootes1B::~Bootes1B (void)
 {
+}
+
+
+int
+Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == telSwitch)
+	{
+		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		{
+			return ZAP(TEL_SWITCH) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return VYP(TEL_SWITCH) == 0 ? 0 : -2;
+		}
+	}
+	if (old_value == asmSwitch)
+	{
+		if (((Rts2ValueBool* )new_value)->getValueBool () == true)
+		{
+			return ZAP(ASM_SWITCH) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return VYP(ASM_SWITCH) == 0 ? 0 : -2;
+		}
+	}
+	return Ford::setValue (old_value, new_value);
 }
 
 
@@ -187,6 +224,7 @@ Bootes1B::init ()
 
 	// switch on telescope
 	ZAP (TEL_SWITCH);
+	ZAP (ASM_SWITCH);
 
 	return 0;
 }
@@ -347,23 +385,6 @@ Bootes1B::endClose ()
 {
 	timeOpenClose = 0;
 	return 0;
-}
-
-
-int
-Bootes1B::commandAuthorized (Rts2Conn * conn)
-{
-	if (conn->isCommand ("telon"))
-	{
-		ZAP (TEL_SWITCH);
-		return 0;
-	}
-	if (conn->isCommand ("teloff"))
-	{
-		VYP (TEL_SWITCH);
-		return 0;
-	}
-	return Ford::commandAuthorized (conn);
 }
 
 

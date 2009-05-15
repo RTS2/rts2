@@ -115,3 +115,21 @@ Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
 {
 	return getDouble (device, "minflux", minFlux);
 }
+
+time_t
+Rts2Config::getNight (int year, int month, int day)
+{
+	struct tm _tm;
+	_tm.tm_year = year - 1900;
+	_tm.tm_mon = month - 1;
+	_tm.tm_mday = day;
+	_tm.tm_hour = _tm.tm_min = _tm.tm_sec = 0;
+
+	std::string old_tz = std::string (getenv ("TZ"));
+
+	setenv ("TZ", "UTC", 1);
+	time_t n = mktime (&_tm);
+	setenv ("TZ", old_tz.c_str(), 1);
+
+	return getNight (n);
+}

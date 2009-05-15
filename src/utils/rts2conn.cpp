@@ -1399,8 +1399,8 @@ Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 	{
 		if (dataSize > getWriteBinaryDataSize (data_conn))
 		{
-			logStream (MESSAGE_ERROR) << "Attemp to send too much data "
-				<< dataSize << " " << getWriteBinaryDataSize (data_conn) << sendLog;
+			logStream (MESSAGE_ERROR) << "Attemp to send too much data - "
+				<< dataSize << "bytes, but there are only " << getWriteBinaryDataSize (data_conn) << " bytes remain to be send" << sendLog;
 			dataSize = getWriteBinaryDataSize (data_conn);
 		}
 		ret = send (sock, binaryWriteTop, dataSize, 0);

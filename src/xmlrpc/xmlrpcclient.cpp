@@ -154,7 +154,7 @@ Client::doClient ()
 	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
 	threeArg[0] = "T0";
-	threeArg[1] = "OBJ";
+	threeArg[1] = "ORI";
 	threeArg[2] = "20 30";
 	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
@@ -172,6 +172,8 @@ Client::doClient ()
 				<< "=" << resultValues[j]["value"] << std::endl;
 		}
 	}
+
+	runXmlMethod (R2X_TARGETS_LIST, noArgs, result);
 
 	oneArg[0] = "f";
 	runXmlMethod (R2X_TARGETS_TYPE_LIST, oneArg, result);
@@ -273,8 +275,11 @@ void
 Client::usage ()
 {
 	std::cout << "  " << getAppName () << " -s <device name> <variable name> <value>" << std::endl
-		<< " To set T0.OBJ to 10 20, run: " << std::endl
-		<< "  " << getAppName () << " -s T0 OBJ \"10 20\"" << std::endl; 
+		<< " To set T0.ORI to 10 20, run: " << std::endl
+		<< "  " << getAppName () << " -s T0 ORI \"10 20\"" << std::endl
+		<< " So to run random pointing, run: " << std::endl
+		<< "  " << getAppName () << " -s T0 ORI \"`rts2-telmodeltest -r`\"" << std::endl; 
+
 }
 
 int

@@ -316,6 +316,7 @@ FlatTarget::load ()
 		curDist = ln_get_angular_separation (&d_tar, &antiSolarPosition);
 		if (curDist < minAntiDist)
 		{
+			// check if it is too far from moon..
 			obs_target_id = d_tar_id;
 			minAntiDist = curDist;
 		}
@@ -789,7 +790,7 @@ ModelTarget::calPosition ()
 			hrz_poz.alt = m_alt * ((double) random () / RAND_MAX);
 			hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / m_alt));
 			if (!isAboveHorizon (&hrz_poz))
-				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
+				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2;
 			ra_noise = 0;
 			dec_noise = 0;
 			break;
