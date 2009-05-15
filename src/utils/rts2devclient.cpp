@@ -250,6 +250,7 @@ bool Rts2DevClientCamera::isExposing ()
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
 (in_connection)
 {
+	moveWasCorrecting = false;
 }
 
 
