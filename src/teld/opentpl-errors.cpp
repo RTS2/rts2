@@ -275,11 +275,11 @@ AppOpenTPLError::init ()
 	// try to get default from config file
 	if (ir_ip.length () == 0)
 	{
-		config->getString ("ir", "ip", ir_ip);
+		config->getString ("opentpl", "ip", ir_ip);
 	}
 	if (!ir_port)
 	{
-		config->getInteger ("ir", "port", ir_port);
+		config->getInteger ("opentpl", "port", ir_port);
 	}
 	if (ir_ip.length () == 0 || !ir_port)
 	{
