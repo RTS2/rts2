@@ -34,3 +34,7 @@ ALTER TABLE images DROP COLUMN epoch_id CASCADE;
 ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
 
 DROP TABLE epoch;
+
+-- Add column with full image path
+
+ALTER TABLE images ADD COLUMN img_path varchar(100);

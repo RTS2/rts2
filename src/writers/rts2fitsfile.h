@@ -45,6 +45,7 @@ class Rts2FitsFile: public rts2core::Expander
 		fitsfile *ffile;
 
 		char *fileName;
+		char *absoluteFileName;
 
 	protected:
 		int fits_status;
@@ -135,11 +136,25 @@ class Rts2FitsFile: public rts2core::Expander
 		virtual ~Rts2FitsFile (void);
 
 		/**
-		 * Return full filename.
+		 * Return absolute filename. As filename is created in
+		 * setFileName() call and it is check if it's absolute,
+		 * the returned string is always absolute (e.g. begins with /).
 		 *
 		 * @return Filename of this FITS file.
+		 * @see setFileName()
 		 */
-		virtual const char *getFileName ();
+		const char *getFileName ()
+		{
+			return fileName;
+		}
+
+		/**
+		 * Return absolute filename.
+		 */
+		const char *getAbsoluteFileName ()
+		{
+			return absoluteFileName;
+		}
 
 		/**
 		 * Close file.

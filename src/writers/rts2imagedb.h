@@ -77,6 +77,8 @@ class Rts2ImageDb:public Rts2Image
 
 		virtual int saveImage ();
 
+		virtual int renameImage (const char *new_filename);
+
 		friend std::ostream & operator << (std::ostream & _os,
 			Rts2ImageDb & img_db);
 };
@@ -118,8 +120,6 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 
 		virtual int saveImage ();
 		virtual int deleteImage ();
-
-		virtual const char* getFileName ();
 
 		virtual bool haveOKAstrometry ()
 		{

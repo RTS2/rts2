@@ -100,11 +100,8 @@ ConnImgProcess::processLine ()
 		astrometryStat = GET;
 		// inform others..
 	}
-	#ifndef DEBUG_EXTRA
-	else
-	#endif						 /* !DEBUG_EXTRA */
-		logStream (MESSAGE_DEBUG) << "receive: " << getCommand () << " sscanf: "
-			<< ret << sendLog;
+	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: "
+		<< ret << sendLog;
 	return;
 }
 

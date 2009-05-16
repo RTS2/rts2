@@ -41,27 +41,32 @@ Rts2FitsFile::getFitsErrors ()
 void
 Rts2FitsFile::setFileName (const char *_fileName)
 {
-	if (fileName)
-		delete[] fileName;
+	if (fileName != absoluteFileName)
+		delete[] absoluteFileName;
+	delete[] fileName;
 
 	if (_fileName == NULL)
 	{
 		fileName = NULL;
+		absoluteFileName = NULL;
 		return;
 	}
 
 	fileName = new char[strlen (_fileName) + 1];
-	// ignore special fitsion names..
-	if (*_fileName == '!')
-		_fileName++;
 	strcpy (fileName, _fileName);
-}
 
-
-const char *
-Rts2FitsFile::getFileName ()
-{
-	return fileName;
+	// not an absolute filename..
+	if (fileName[0] != '/')
+	{
+		char *path = get_current_dir_name ();
+		absoluteFileName = new char[strlen (path) + strlen(_fileName) + 1];
+		strcpy (absoluteFileName, path);
+		strcpy (absoluteFileName + strlen (path), fileName);
+	}
+	else
+	{
+		absoluteFileName = fileName;
+	}
 }
 
 
@@ -178,6 +183,7 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 {
 	ffile = NULL;
 	fileName = NULL;
+	absoluteFileName = NULL;
 	fits_status = 0;
 }
 
@@ -185,6 +191,7 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander ()
 {
 	fileName = NULL;
+	absoluteFileName = NULL;
 
 	setFitsFile (_fitsfile->getFitsFile ());
 	_fitsfile->setFitsFile (NULL);
@@ -198,6 +205,7 @@ Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander ()
 Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 {
 	fileName = NULL;
+	absoluteFileName = NULL;
 	fits_status = 0;
 
 	createFile (_fileName);
@@ -208,6 +216,7 @@ Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	ffile = NULL;
 	fileName = NULL;
+	absoluteFileName = NULL;
 	fits_status = 0;
 }
 
@@ -215,6 +224,7 @@ Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	fileName = NULL;
+	absoluteFileName = NULL;
 	fits_status = 0;
 
 	createFile (expandPath (_expression));
@@ -225,6 +235,8 @@ Rts2FitsFile::~Rts2FitsFile (void)
 {
 	closeFile ();
 
+	if (fileName != absoluteFileName)
+		delete[] absoluteFileName;
 	delete[] fileName;
 }
 

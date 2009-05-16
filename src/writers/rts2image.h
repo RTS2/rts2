@@ -189,17 +189,17 @@ class Rts2Image:public Rts2FitsFile
 		virtual int toMasterFlat ();
 		virtual int toTrash ();
 
-		virtual img_type_t getImageType ()
-		{
-			return IMGTYPE_UNKNOW;
-		}
+		virtual img_type_t getImageType ();
 
 		shutter_t getShutter ()
 		{
 			return shutter;
 		}
 
-		int renameImage (const char *new_filename);
+		/**
+		 * Rename images to new path.
+		 */
+		virtual int renameImage (const char *new_filename);
 		int renameImageExpand (std::string new_ex);
 
 		/**

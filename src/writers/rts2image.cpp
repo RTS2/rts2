@@ -535,6 +535,21 @@ Rts2Image::toTrash ()
 	return renameImageExpand (Rts2Config::instance ()->observatoryTrashPath ());
 }
 
+img_type_t
+Rts2Image::getImageType ()
+{
+	int ret;
+	char t_type[50];
+	ret = getValue ("IMAGETYP", t_type, 50, NULL);
+	if (ret)
+		return IMGTYPE_UNKNOW;
+	if (!strcmp (t_type, "flat"))
+		return IMGTYPE_OBJECT;
+	if (!strcmp (t_type, "dark"))
+	  	return IMGTYPE_DARK;
+	return IMGTYPE_OBJECT;
+}
+
 
 int
 Rts2Image::renameImage (const char *new_filename)

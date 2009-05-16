@@ -143,6 +143,39 @@ Rts2ImageDb::saveImage ()
 }
 
 
+int
+Rts2ImageDb::renameImage (const char *new_filename)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR d_img_path[100];
+	int d_img_id = imgId;
+	int d_obs_id = obsId;
+	EXEC SQL END DECLARE SECTION;
+
+	int ret = Rts2Image::renameImage (new_filename);
+	if (ret)
+		return ret;
+
+	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
+	d_img_path.len = strlen (getAbsoluteFileName ()) > 100 ? 100: strlen (getAbsoluteFileName ());
+
+	EXEC SQL UPDATE
+		images
+	SET
+		img_path = :d_img_path
+	WHERE
+		img_id = :d_img_id AND obs_id = :d_obs_id;
+	if (sqlca.sqlcode != 0)
+	{
+		reportSqlError ("renameImage");
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 {
 	img_db.print (_os);
@@ -160,6 +193,7 @@ int
 Rts2ImageSkyDb::updateDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
+		VARCHAR d_img_path[100];
 		int d_img_id = imgId;
 		int d_obs_id = obsId;
 		char d_obs_subtype = 'S';
@@ -183,6 +217,9 @@ Rts2ImageSkyDb::updateDB ()
 		VARCHAR d_img_filter[3];
 	EXEC SQL END DECLARE SECTION;
 
+	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
+	d_img_path.len = strlen (getAbsoluteFileName ()) > 100 ? 100: strlen (getAbsoluteFileName ());
+
 	strncpy (d_mount_name.arr, getMountName (), 8);
 	d_mount_name.len = strlen (getMountName ());
 
@@ -205,6 +242,7 @@ Rts2ImageSkyDb::updateDB ()
 		INSERT INTO
 			images
 			(
+			img_path,
 			img_id,
 			obs_id,
 			obs_subtype,
@@ -225,6 +263,7 @@ Rts2ImageSkyDb::updateDB ()
 			)
 		VALUES
 			(
+			:d_img_path,
 			:d_img_id,
 			:d_obs_id,
 			:d_obs_subtype,
@@ -248,7 +287,7 @@ Rts2ImageSkyDb::updateDB ()
 	{
 		if (sqlca.sqlcode != ECPG_PGSQL)
 		{
-			printf ("Cannot insert new image, triing update (error: %li %s)\n",
+			printf ("Cannot insert new image, triyng update (error: %li %s)\n",
 				sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 		}
 		EXEC SQL ROLLBACK;
@@ -256,6 +295,7 @@ Rts2ImageSkyDb::updateDB ()
 			UPDATE
 				images
 			SET
+				img_path = :d_img_path,
 				img_date = to_timestamp (:d_img_date),
 				img_usec = :d_img_usec,
 				med_id   = :d_med_id,
@@ -264,8 +304,7 @@ Rts2ImageSkyDb::updateDB ()
 				img_limmag = :d_img_limmag :d_img_limmag_ind,
 				img_qmagmax = :d_img_qmagmax :d_img_qmagmax_ind
 			WHERE
-				img_id = :d_img_id
-			AND obs_id = :d_obs_id;
+				img_id = :d_img_id AND obs_id = :d_obs_id;
 		// still error.. return -1
 		if (sqlca.sqlcode != 0)
 		{
@@ -579,15 +618,6 @@ Rts2ImageSkyDb::deleteImage ()
 				img_id = :d_img_id
 			AND obs_id = :d_obs_id;
 	}
-	else if (getImageType () == IMGTYPE_DARK)
-	{
-		EXEC SQL
-			DELETE FROM
-				darks
-			WHERE
-				img_id = :d_img_id
-			AND obs_id = :d_obs_id;
-	}
 	if (sqlca.sqlcode)
 	{
 		reportSqlError ("Rts2ImageSkyDb::deleteImage");
@@ -598,35 +628,6 @@ Rts2ImageSkyDb::deleteImage ()
 		EXEC SQL COMMIT;
 	}
 	return Rts2Image::deleteImage ();
-}
-
-
-const char *
-Rts2ImageSkyDb::getFileName ()
-{
-	if (Rts2Image::getFileName ())
-		return Rts2Image::getFileName ();
-
-	std::ostringstream _os;
-	_os << getImageBase ();
-	if (processBitfiedl & ASTROMETRY_PROC)
-	{
-		if (processBitfiedl & ASTROMETRY_OK)
-		{
-			_os << "/archive/" << getTargetString () << "/" << getCameraName () << "/object";
-		}
-		else
-		{
-			_os << "/trash/" << getTargetString () << "/" << getCameraName ();
-		}
-	}
-	else
-	{
-		_os << "/que/" << getCameraName ();
-	}
-	_os << "/" << getOnlyFileName ();
-	setFileName (_os.str().c_str ());
-	return getFileName ();
 }
 
 
