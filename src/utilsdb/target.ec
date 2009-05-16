@@ -23,7 +23,7 @@
 #include "rts2targetgrb.h"
 #include "rts2targetell.h"
 #include "rts2obs.h"
-#include "rts2obsset.h"
+#include "observationset.h"
 #include "rts2targetset.h"
 
 #include "../utils/infoval.h"
@@ -36,6 +36,8 @@
 #include <iomanip>
 
 EXEC SQL include sqlca;
+
+using namespace rts2db;
 
 void
 Target::logMsgDb (const char *message, messageType_t msgType)
@@ -359,6 +361,8 @@ Target::loadTarget (int in_tar_id)
 	EXEC SQL BEGIN DECLARE SECTION;
 		// cannot use TARGET_NAME_LEN, as some versions of ecpg complains about it
 		VARCHAR d_tar_name[150];
+		VARCHAR d_tar_info[2000];
+		int d_tar_info_ind;
 		float d_tar_priority;
 		int d_tar_priority_ind;
 		float d_tar_bonus;
@@ -374,6 +378,7 @@ Target::loadTarget (int in_tar_id)
 	EXEC SQL
 		SELECT
 			tar_name,
+			tar_info,
 			tar_priority,
 			tar_bonus,
 			EXTRACT (EPOCH FROM tar_bonus_time),
@@ -381,6 +386,7 @@ Target::loadTarget (int in_tar_id)
 			tar_enabled
 		INTO
 			:d_tar_name,
+			:d_tar_info :d_tar_info_ind,
 			:d_tar_priority :d_tar_priority_ind,
 			:d_tar_bonus :d_tar_bonus_ind,
 			:d_tar_bonus_time :d_tar_bonus_time_ind,
@@ -401,6 +407,18 @@ Target::loadTarget (int in_tar_id)
 	target_name = new char[d_tar_name.len + 1];
 	strncpy (target_name, d_tar_name.arr, d_tar_name.len);
 	target_name[d_tar_name.len] = '\0';
+
+	if (d_tar_info_ind >= 0)
+	{
+		char t_tar_info[d_tar_info.len + 1];
+		strncpy (t_tar_info, d_tar_info.arr, d_tar_info.len);
+		t_tar_info[d_tar_info.len] = '\0';
+		tar_info = std::string (t_tar_info);
+	}
+	else
+	{
+		tar_info = std::string ("");
+	}
 
 	if (d_tar_priority_ind >= 0)
 		tar_priority = d_tar_priority;
@@ -1611,7 +1629,7 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	Rts2ObsSet obsset = Rts2ObsSet (&tar_pos, radius);
+	ObservationSet obsset = ObservationSet (&tar_pos, radius);
 	_os << obsset;
 
 	return obsset.size ();
@@ -1802,7 +1820,7 @@ sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int pri
 			if (count > 0)
 			{
 				std::string subject_text = std::string ("END OF NIGHT, TARGET #");
-				Rts2ObsSet obsset = Rts2ObsSet (db_tar_id, t_from, t_to);
+				ObservationSet obsset = ObservationSet (db_tar_id, t_from, t_to);
 				tar->getTargetSubject (subject_text);
 				std::ostringstream os;
 				obsset.printImages (printImages);
@@ -2012,7 +2030,7 @@ Target::writeToImage (Rts2Image * image, double JD)
 	struct ln_hrz_posn hmoon;
 	ln_get_lunar_equ_coords (JD, &moon);
 	ln_get_hrz_from_equ (&moon, observer, JD, &hmoon);
-	image->setValue ("MOONANGL", getDistance (&moon, JD), "angle between the observation and the moon");
+	image->setValue ("MOONDIST", getDistance (&moon, JD), "angular distance to between observation and the moon");
 	image->setValue ("MOONRA", moon.ra, "lunar RA");
 	image->setValue ("MOONDEC", moon.dec, "lunar DEC");
 	image->setValue ("MOONPHA", ln_get_lunar_phase (JD) / 1.8, "moon phase");

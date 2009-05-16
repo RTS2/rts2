@@ -296,7 +296,7 @@ Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
 {
   	Rts2Night night = Rts2Night (obsNight, Rts2Config::instance ()->getObserver ());
 
-	Rts2ObsSet obsSet = Rts2ObsSet (night.getFrom (), night.getTo ());
+	rts2db::ObservationSet obsSet = rts2db::ObservationSet (night.getFrom (), night.getTo ());
 
 	if (obsSet.size () == 0)
 	{

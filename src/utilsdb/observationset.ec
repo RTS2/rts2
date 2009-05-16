@@ -18,16 +18,19 @@
  */
 
 #include "imgdisplay.h"
-#include "rts2obsset.h"
+#include "observationset.h"
 #include "target.h"
 
 #include <algorithm>
 #include <sstream>
 
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2config.h"
+
+using namespace rts2db;
 
 void
-Rts2ObsSet::load (std::string in_where)
+ObservationSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		char *stmp_c;
@@ -57,7 +60,7 @@ Rts2ObsSet::load (std::string in_where)
 		int db_obs_end_ind;
 	EXEC SQL END DECLARE SECTION;
 
-	initObsSet ();
+	initObservationSet ();
 
 	std::ostringstream _os;
 	_os << 
@@ -140,7 +143,7 @@ Rts2ObsSet::load (std::string in_where)
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ObsSet::Rts2ObsSet cannot load observation set:"
+		logStream (MESSAGE_ERROR) << "ObservationSet::ObservationSet cannot load observation set:"
 			<< sqlca.sqlerrm.sqlerrmc << sendLog;
 	}
 	EXEC SQL CLOSE obs_cur_timestamps;
@@ -148,12 +151,12 @@ Rts2ObsSet::load (std::string in_where)
 }
 
 
-Rts2ObsSet::Rts2ObsSet (void)
+ObservationSet::ObservationSet (void)
 {
 }
 
 
-Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t)
+ObservationSet::ObservationSet (int in_tar_id, const time_t * start_t, const time_t * end_t)
 {
 	std::ostringstream os;
 	os << "observations.tar_id = "
@@ -169,7 +172,7 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * en
 }
 
 
-Rts2ObsSet::Rts2ObsSet (const time_t * start_t, const time_t * end_t)
+ObservationSet::ObservationSet (const time_t * start_t, const time_t * end_t)
 {
 	std::ostringstream os;
 	os << "observations.obs_slew >= to_timestamp ("
@@ -183,7 +186,7 @@ Rts2ObsSet::Rts2ObsSet (const time_t * start_t, const time_t * end_t)
 }
 
 
-Rts2ObsSet::Rts2ObsSet (int in_tar_id)
+ObservationSet::ObservationSet (int in_tar_id)
 {
 	std::ostringstream os;
 	os << "observations.tar_id = "
@@ -192,7 +195,29 @@ Rts2ObsSet::Rts2ObsSet (int in_tar_id)
 }
 
 
-Rts2ObsSet::Rts2ObsSet (char type_id, int state_mask, bool inv)
+ObservationSet::ObservationSet (int year, int month)
+{
+	time_t start_t = Rts2Config::instance ()->getNight (year,month,1);
+	month++;
+	if (month > 12)
+	{
+		year++;
+		month -= 12;
+	}
+	time_t end_t = Rts2Config::instance ()->getNight (year,month, 1);
+	std::ostringstream os;
+	os << "observations.obs_slew >= to_timestamp ("
+		<< start_t
+		<< ") AND ((observations.obs_slew <= to_timestamp ("
+		<< end_t
+		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
+		<< end_t
+		<< "))";
+	load (os.str());
+}
+
+
+ObservationSet::ObservationSet (char type_id, int state_mask, bool inv)
 {
 	std::ostringstream os;
 	os << "(targets.type_id = "
@@ -209,7 +234,7 @@ Rts2ObsSet::Rts2ObsSet (char type_id, int state_mask, bool inv)
 }
 
 
-Rts2ObsSet::Rts2ObsSet (struct ln_equ_posn * position, double radius)
+ObservationSet::ObservationSet (struct ln_equ_posn * position, double radius)
 {
 	std::ostringstream os;
 	os << "ln_angular_separation (observations.obs_ra, observations.obs_dec, "
@@ -220,14 +245,14 @@ Rts2ObsSet::Rts2ObsSet (struct ln_equ_posn * position, double radius)
 }
 
 
-Rts2ObsSet::~Rts2ObsSet (void)
+ObservationSet::~ObservationSet (void)
 {
 	clear ();
 }
 
 
 int
-Rts2ObsSet::computeStatistics ()
+ObservationSet::computeStatistics ()
 {
 	int anum = 0;
 
@@ -282,7 +307,7 @@ Rts2ObsSet::computeStatistics ()
 
 
 void
-Rts2ObsSet::printStatistics (std::ostream & _os)
+ObservationSet::printStatistics (std::ostream & _os)
 {
 	computeStatistics ();
 	int success = getSuccess ();
@@ -296,10 +321,7 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 		<< " without astrometry:" << (allNum - goodNum);
 	if (allNum > 0)
 	{
-		_os << " (" << (((double)(goodNum * 100)) / allNum) << "%)"
-		  << std::endl
-		  << "altitude merit: " << altitudeMerit ()
-		  << " distance merit: " << distanceMerit ();
+		_os << " (" << (((double)(goodNum * 100)) / allNum) << "%)";
 	}
 	_os << std::endl;
 	if (goodNum > 0)
@@ -319,10 +341,10 @@ Rts2ObsSet::printStatistics (std::ostream & _os)
 
 
 std::map <int, int>
-Rts2ObsSet::getTargetObservations ()
+ObservationSet::getTargetObservations ()
 {
 	std::map <int, int> ret;
-	for (Rts2ObsSet::iterator iter = begin (); iter != end (); iter++)
+	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
 	{
 		ret[(*iter).getTargetId ()]++;
 	}
@@ -330,11 +352,11 @@ Rts2ObsSet::getTargetObservations ()
 }
 
 double
-Rts2ObsSet::altitudeMerit ()
+ObservationSet::altitudeMerit ()
 {
 	double altMerit = 0;
 	int s = 0;
-	for (Rts2ObsSet::iterator iter = begin (); iter != end (); iter++)
+	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
 	{
 		double am = (*iter).altitudeMerit (getJDStart (), getJDEnd ());
 		if (isnan (am))
@@ -348,14 +370,14 @@ Rts2ObsSet::altitudeMerit ()
 
 
 double
-Rts2ObsSet::distanceMerit ()
+ObservationSet::distanceMerit ()
 {
 	double distMerit = 0;
 
 	unsigned int s = 0;
 
-	Rts2ObsSet::iterator iter1 = begin ();
-	Rts2ObsSet::iterator iter2 = begin () + 1;
+	ObservationSet::iterator iter1 = begin ();
+	ObservationSet::iterator iter2 = begin () + 1;
 
 	for (; iter2 != end (); iter1++, iter2++)
 	{
@@ -379,19 +401,20 @@ Rts2ObsSet::distanceMerit ()
 }
 
 
-std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
+std::ostream &
+ObservationSet::print (std::ostream &_os)
 {
 	// list of target ids we already printed
 	std::vector <int> processedTargets;
 
 	std::vector <Rts2Obs>::iterator obs_iter;
 
-	if (!obs_set.isCollocated ())
+	if (!isCollocated ())
 		_os << "Observations list follow:" << std::endl;
 
-	for (obs_iter = obs_set.begin (); obs_iter != obs_set.end (); obs_iter++)
+	for (obs_iter = begin (); obs_iter != end (); obs_iter++)
 	{
-		if (obs_set.isCollocated ())
+		if (isCollocated ())
 		{
 			int tar_id = (*obs_iter).getTargetId ();
 			if (find (processedTargets.begin (), processedTargets.end (), tar_id) == processedTargets.end ())
@@ -403,7 +426,7 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
 				double totalSlewTime = 0;
 				int obsNum = 0;
 				// compute target image statitics..
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != obs_set.end (); obs_iter2 ++)
+				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
@@ -429,25 +452,25 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
 
 				// print record that we found the observation
 				// find all observations of target
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != obs_set.end (); obs_iter2 ++)
+				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
-						if (obs_set.getPrintImages () == 0 && obs_set.getPrintCounts () == 0)
+						if (getPrintImages () == 0 && getPrintCounts () == 0)
 						{
 							// print time of observation
 							_os << Timestamp ((*obs_iter2).getObsStart ()) << SEP;
 						}
 						else
 						{
-							(*obs_iter2).setPrintImages (obs_set.getPrintImages ());
-							(*obs_iter2).setPrintCounts (obs_set.getPrintCounts ());
+							(*obs_iter2).setPrintImages (getPrintImages ());
+							(*obs_iter2).setPrintCounts (getPrintCounts ());
 							(*obs_iter2).setPrintHeader (false);
 							_os << (*obs_iter2);
 						}
 					}
 				}
-				if (obs_set.getPrintImages () == 0 && obs_set.getPrintCounts () == 0)
+				if (getPrintImages () == 0 && getPrintCounts () == 0)
 				{
 					_os << std::endl;
 				}
@@ -455,8 +478,8 @@ std::ostream & operator << (std::ostream &_os, Rts2ObsSet &obs_set)
 		}
 		else
 		{
-			(*obs_iter).setPrintImages (obs_set.getPrintImages ());
-			(*obs_iter).setPrintCounts (obs_set.getPrintCounts ());
+			(*obs_iter).setPrintImages (getPrintImages ());
+			(*obs_iter).setPrintCounts (getPrintCounts ());
 			_os << (*obs_iter);
 		}
 	}

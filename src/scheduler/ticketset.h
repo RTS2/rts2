@@ -18,7 +18,7 @@
  */
 #include "ticket.h"
 
-#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/observationset.h"
 
 #include <map>
 
@@ -59,7 +59,7 @@ class TicketSet: public std::map <int, Ticket *>
 		 * @param tarSet Rts2TargetSet which contains target objects for scheduling tickets.
 		 * @param obsSet Observation set.
 		 */
-		void constructFromObsSet (Rts2TargetSet *tarSet, Rts2ObsSet &obsSet);
+		void constructFromObsSet (Rts2TargetSet *tarSet, rts2db::ObservationSet &obsSet);
 };
 
 }

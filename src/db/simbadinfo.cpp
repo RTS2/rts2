@@ -19,7 +19,6 @@
 
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
-#include "../utilsdb/rts2obsset.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2askchoice.h"

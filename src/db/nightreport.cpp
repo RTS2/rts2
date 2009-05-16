@@ -22,7 +22,7 @@
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2format.h"
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/observationset.h"
 
 #include "imgdisplay.h"
 
@@ -58,9 +58,9 @@ class Rts2NightReport:public Rts2AppDb
 		void printObsList ();
 		void printStatistics ();
 		void printFromTo (time_t *t_start, time_t *t_end, bool printEmpty);
-		Rts2ObsSet *obs_set;
+		rts2db::ObservationSet *obs_set;
 
-		std::vector <Rts2ObsSet *> allObs;
+		std::vector <rts2db::ObservationSet *> allObs;
 
 	protected:
 		virtual void usage ();
@@ -112,7 +112,7 @@ Rts2AppDb (in_argc, in_argv)
 Rts2NightReport::~Rts2NightReport (void)
 {
 	delete tm_night;
-	for (std::vector <Rts2ObsSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
+	for (std::vector <rts2db::ObservationSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
 	{
 		delete (*iter);
 	}
@@ -228,7 +228,7 @@ Rts2NightReport::printStatistics ()
 void
 Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 {
-	obs_set = new Rts2ObsSet (t_start, t_end);
+	obs_set = new rts2db::ObservationSet (t_start, t_end);
 
 	if (!printEmpty && obs_set->empty ())
 	{
@@ -316,7 +316,7 @@ Rts2NightReport::doProcessing ()
 		std::cout << " Date                          Images      % of good" << std::endl
 			<< "                    Observations   Good Images" << std::endl;
 
-		for (std::vector <Rts2ObsSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
+		for (std::vector <rts2db::ObservationSet *>::iterator iter = allObs.begin (); iter != allObs.end (); iter++)
 		{
 			std::cout << SEP << Timestamp (t_start)
 				<< SEP << std::setw (5) << (*iter)->size ()

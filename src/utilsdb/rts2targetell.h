@@ -1,6 +1,6 @@
 /*
- * Class for elliptical bodies.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Class for targets representing bodies on elliptical orbits.
+ * Copyright (C) 2005-2007,2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

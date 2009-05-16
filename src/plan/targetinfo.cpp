@@ -21,7 +21,7 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
-#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/observationset.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
 #include "../utils/libnova_cpp.h"
@@ -330,7 +330,7 @@ TargetInfo::printTargetInfo ()
 	// print observations..
 	if (printObservations)
 	{
-		Rts2ObsSet obsSet = Rts2ObsSet (target->getTargetID ());
+		rts2db::ObservationSet obsSet = rts2db::ObservationSet (target->getTargetID ());
 		if (printImages)
 			obsSet.printImages (printImages);
 		if (printCounts)

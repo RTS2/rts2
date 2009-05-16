@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+namespace rts2db {
+
 /**
  * Observations set class.
  *
@@ -36,8 +38,7 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-
-class Rts2ObsSet:public std::vector <Rts2Obs >
+class ObservationSet:public std::vector <Rts2Obs >
 {
 	private:
 		int images;
@@ -45,7 +46,7 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		bool collocated;
 		int successNum;
 		int failedNum;
-		void initObsSet ()
+		void initObservationSet ()
 		{
 			images = 0;
 			counts = 0;
@@ -82,13 +83,21 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		double errAvgDec;
 		double errAvgRad;
 	public:
-		Rts2ObsSet (void);
-		Rts2ObsSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
-		Rts2ObsSet (const time_t * start_t, const time_t * end_t);
-		Rts2ObsSet (int in_tar_id);
-		Rts2ObsSet (char type_id, int state_mask, bool inv = false);
-		Rts2ObsSet (struct ln_equ_posn *position, double radius);
-		virtual ~ Rts2ObsSet (void);
+		ObservationSet (void);
+		ObservationSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
+		ObservationSet (const time_t * start_t, const time_t * end_t);
+		ObservationSet (int in_tar_id);
+
+		/**
+		 * Load all observations during given month in a given year.
+		 *
+		 * @param year   Observation year
+		 * @param month  Observation month
+		 */ 
+		ObservationSet (int year, int month);
+		ObservationSet (char type_id, int state_mask, bool inv = false);
+		ObservationSet (struct ln_equ_posn *position, double radius);
+		virtual ~ ObservationSet (void);
 
 		void  printImages (int in_images)
 		{
@@ -169,6 +178,7 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 			return (*(begin ())).getObsJDEnd ();
 		}
 
+
 		/**
 		 * Return map of targetsId and number of their observations.
 		 * The returning map has as a key targetId, and as value number of observations
@@ -194,8 +204,13 @@ class Rts2ObsSet:public std::vector <Rts2Obs >
 		 */
 		double distanceMerit ();
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
+		std::ostream & print (std::ostream &_os);
+
+		friend std::ostream & operator << (std::ostream & _os, ObservationSet & obs_set)
+		{
+			return obs_set.print (_os);
+		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2ObsSet & obs_set);
+}
 #endif							 /* !__RTS2_OBS_SET__ */

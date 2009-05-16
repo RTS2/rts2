@@ -118,7 +118,7 @@ TicketSet::load (Rts2TargetSet *tarSet)
 
 
 void
-TicketSet::constructFromObsSet (Rts2TargetSet *tarSet, Rts2ObsSet &obsSet)
+TicketSet::constructFromObsSet (Rts2TargetSet *tarSet, rts2db::ObservationSet &obsSet)
 {
 	int ticket_id = 1;
 	std::map <int, int> tarObs = obsSet.getTargetObservations ();
