@@ -225,7 +225,6 @@ XmlRpcSocket::nbWrite(int fd, std::string& s, int *bytesSoFar)
 		}
 		else if (nonFatalError())
 		{
-			wouldBlock = true;
 		}
 		else
 		{

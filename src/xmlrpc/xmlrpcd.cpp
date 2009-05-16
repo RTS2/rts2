@@ -1,6 +1,6 @@
 /* 
  * XML-RPC daemon.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@
 #ifdef HAVE_PGSQL
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2imgset.h"
-#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2messagedb.h"
 #include "../utilsdb/rts2targetset.h"
 #include "../utilsdb/rts2user.h"
@@ -632,10 +632,10 @@ class TargetInfo: public XmlRpcServerMethod
 				xs << *(*tar_iter);
 
 				// observations
-				Rts2ObsSet *obs_set;
-				obs_set = new Rts2ObsSet ((*tar_iter)->getTargetID ());
+				rts2db::ObservationSet *obs_set;
+				obs_set = new rts2db::ObservationSet ((*tar_iter)->getTargetID ());
 				int j = 0;
-				for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
+				for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
 				{
 					retVar["observation"][j]["obsid"] =  (*obs_iter).getObsId();
 					retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
@@ -650,31 +650,69 @@ class TargetInfo: public XmlRpcServerMethod
 
 } targetInfo (&xmlrpc_server);
 
-class ListObservations: public XmlRpcServerMethod
+class ListTargetObservations: public XmlRpcServerMethod
 {
 	public:
-		ListObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
+		ListTargetObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
-			Rts2ObsSet *obs_set;
-			obs_set = new Rts2ObsSet ((int)params[0]);
+			rts2db::ObservationSet *obs_set;
+			obs_set = new rts2db::ObservationSet ((int)params[0]);
 			int i = 0;
-			for (Rts2ObsSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			time_t t;
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
 				retVar["obs_ra"] = (*obs_iter).getObsRa();
 				retVar["obs_dec"] = (*obs_iter).getObsDec();
-				retVar["obs_start"] = (*obs_iter).getObsStart();
-				retVar["obs_end"] = (*obs_iter).getObsEnd();
+				t = (*obs_iter).getObsStart();
+				retVar["obs_start"] = XmlRpcValue (gmtime (&t));
+				t = (*obs_iter).getObsEnd();
+				retVar["obs_end"] = XmlRpcValue (gmtime(&t));
 				retVar["obs_images"] = (*obs_iter).getNumberOfImages();
 
 				result[i] = retVar;
 			}
 		}
 
-} listObservations (&xmlrpc_server);
+} listTargetObservations (&xmlrpc_server);
+
+class ListMonthObservations: public XmlRpcServerMethod
+{
+	public:
+		ListMonthObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATIONS_MONTH, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			XmlRpcValue retVar;
+			rts2db::ObservationSet *obs_set;
+			obs_set = new rts2db::ObservationSet ((int)params[0], (int)params[1]);
+			int i = 0;
+			time_t t;
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			{
+				retVar["id"] = (*obs_iter).getObsId();
+				retVar["tar_id"] = (*obs_iter).getTargetId ();
+				retVar["tar_name"] = (*obs_iter).getTargetName ();
+				retVar["obs_ra"] = (*obs_iter).getObsRa();
+				retVar["obs_dec"] = (*obs_iter).getObsDec();
+				t = (time_t) ((*obs_iter).getObsStart());
+				if (t < 0)
+				  t = 0;
+				retVar["obs_start"] = XmlRpcValue (gmtime (&t));
+				t = (time_t) ((*obs_iter).getObsEnd());
+				if (t < 0)
+				  t = 0;
+				retVar["obs_end"] = XmlRpcValue (gmtime (&t));
+				retVar["obs_images"] = (*obs_iter).getNumberOfImages();
+
+				result[i] = retVar;
+			}
+		}
+
+} listMonthObservations (&xmlrpc_server);
 
 class ListImages: public XmlRpcServerMethod
 {
@@ -707,6 +745,7 @@ class ListImages: public XmlRpcServerMethod
 			}
 		}
 } listImages (&xmlrpc_server);
+
 
 class GetMessages: public XmlRpcServerMethod
 {

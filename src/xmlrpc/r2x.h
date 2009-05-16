@@ -64,6 +64,14 @@
  */
 #define R2X_OBSERVATION_IMAGES_LIST          "rts2.observation.images.list"
 
+/**
+ * Provides observation statistics for given month.
+ *
+ * @param year   Year (ussually > 2000)
+ * @param month  Month (1-12)
+ */
+#define R2X_OBSERVATIONS_MONTH               "rts2.observations.month"
+
 #define R2X_MESSAGES_GET              "rts2.messages.get"
 
 /**
