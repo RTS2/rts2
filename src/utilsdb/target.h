@@ -85,9 +85,11 @@ class Rts2Image;
 class Target:public Rts2Target
 {
 	private:
+		// holds current target observation
 		Rts2Obs * observation;
 
 		int type;				 // light, dark, flat, flat_dark
+		std::string tar_info;
 
 		int startCalledNum;		 // how many times startObservation was called - good to know for targets
 		double airmassScale;
