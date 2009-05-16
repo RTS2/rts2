@@ -125,11 +125,16 @@ Rts2Config::getNight (int year, int month, int day)
 	_tm.tm_mday = day;
 	_tm.tm_hour = _tm.tm_min = _tm.tm_sec = 0;
 
-	std::string old_tz = std::string (getenv ("TZ"));
+	std::string old_tz;
+	if (getenv("TZ"))
+	  old_tz = std::string (getenv ("TZ"));
 
 	setenv ("TZ", "UTC", 1);
 	time_t n = mktime (&_tm);
-	setenv ("TZ", old_tz.c_str(), 1);
+	if (old_tz.length () > 0)
+		setenv ("TZ", old_tz.c_str(), 1);
+	else
+		unsetenv ("TZ");
 
 	return getNight (n);
 }
