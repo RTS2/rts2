@@ -1,7 +1,7 @@
 #include "imgdisplay.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2obs.h"
-#include "../utilsdb/rts2obsset.h"
+#include "../utilsdb/observationset.h"
 
 #include <list>
 #include <iostream>
@@ -9,7 +9,7 @@
 class Rts2ObsInfo:public Rts2AppDb
 {
 	private:
-		Rts2ObsSet * obsset;
+		rts2db::ObservationSet * obsset;
 		enum
 		{
 			BASIC_INFO, EXT_INFO, IMAGES, IMAGES_ASTR_OK, IMAGES_TRASH,
@@ -31,7 +31,7 @@ class Rts2ObsInfo:public Rts2AppDb
 Rts2ObsInfo::Rts2ObsInfo (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
-	obsset = new Rts2ObsSet ();
+	obsset = new rts2db::ObservationSet ();
 	imageFlag = 0;
 	addOption ('a', "action", 1,
 		"i->images, a->with astrometry, t->trash images, q->que images (not yet processed)\n\tf->falts, d->darks");
@@ -116,7 +116,7 @@ Rts2ObsInfo::displayFlats ()
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new Rts2ObsSet (TYPE_FLAT, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet (TYPE_FLAT, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }
@@ -128,7 +128,7 @@ Rts2ObsInfo::displayDarks ()
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new Rts2ObsSet (TYPE_DARK, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet (TYPE_DARK, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }
@@ -147,7 +147,7 @@ int
 Rts2ObsInfo::doProcessing ()
 {
 	int ret;
-	Rts2ObsSet::iterator iter;
+	rts2db::ObservationSet::iterator iter;
 	for (iter = obsset->begin (); iter != obsset->end (); iter++)
 	{
 		Rts2Obs obs = (Rts2Obs) * iter;
