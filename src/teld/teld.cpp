@@ -47,10 +47,10 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	// object
 	createValue (oriRaDec, "ORI", "original position (J2000)", true);
 	// users offset
-	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0, true);
+	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
-	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES, 0, true);
+	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES, 0);
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
@@ -59,11 +59,11 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
 	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES,
-		0, true);
+		0);
 	corrRaDec->setValueRaDec (0, 0);
 
 	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied",
-		false, RTS2_DT_DEGREES, 0, true);
+		false, RTS2_DT_DEGREES, 0);
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
