@@ -419,6 +419,22 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		nbeg = get_norm_hour (n_rst.set);
 		nend = get_norm_hour (n_rst.rise);
 
+		if (nbeg < sset || sset > rise)
+		{
+			sset -= 24.0;
+			nbeg -= 24.0;
+		}
+
+		if (nbeg < sset)
+		{
+			nbeg += 24.0;
+		}
+
+		if (rise < nend)
+		{
+			rise += 24.0;
+		}
+
 		if (printGNUplot & GNUPLOT_FULL_DAY)
 		{
 			gbeg = get_norm_hour (t_rst.transit) - 12.0;
@@ -428,12 +444,6 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		{
 			gbeg = sset - 1.0;
 			gend = rise + 1.0;
-		}
-
-		if (nbeg < sset || sset > rise)
-		{
-			sset -= 24.0;
-			nbeg -= 24.0;
 		}
 
 		old_fill = std::cout.fill ('0');
