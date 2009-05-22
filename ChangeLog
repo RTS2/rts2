@@ -1,5 +1,12 @@
 0.7.5
 =====
+
+2009-05-22
+ * Changed way how MPC ephemerides are stored in database and handled
+
+2009-05-17
+ * MPC data are stored in tar_info
+
 2009-05-08
  * queue executor - it is now able to accept queue command to queue next targets
  * startResync function for telescope, change in how abberation etc. are reported
