@@ -32,54 +32,17 @@ EllTarget::EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_ta
 int
 EllTarget::load ()
 {
-	EXEC SQL BEGIN DECLARE SECTION;
-		double ell_minpause;
-		double ell_a;
-		double ell_e;
-		double ell_i;
-		double ell_w;
-		double ell_omega;
-		double ell_n;
-		double ell_JD;
-		//  double min_m;			// minimal magnitude
-		int db_tar_id = getTargetID ();
-	EXEC SQL END DECLARE SECTION;
+	int ret = Target::load ();
+	if (ret)
+		return ret;
+	// try to parse MPC string..
+	return orbitFromMPC (getTargetInfo ());
+}
 
-	EXEC SQL SELECT
-			EXTRACT(EPOCH FROM ell_minpause),
-			ell_a,
-			ell_e,
-			ell_i,
-			ell_w,
-			ell_omega,
-			ell_n,
-			ell_JD
-		INTO
-			:ell_minpause,
-			:ell_a,
-			:ell_e,
-			:ell_i,
-			:ell_w,
-			:ell_omega,
-			:ell_n,
-			:ell_JD
-		FROM
-			ell
-		WHERE
-			ell.tar_id = :db_tar_id;
-	if (sqlca.sqlcode)
-	{
-		logMsgDb ("EllTarget::load", MESSAGE_ERROR);
-		return -1;
-	}
-	orbit.a = ell_a;
-	orbit.e = ell_e;
-	orbit.i = ell_i;
-	orbit.w = ell_w;
-	orbit.omega = ell_omega;
-	orbit.n = ell_n;
-	orbit.JD = ell_JD;
-	return Target::load ();
+int
+EllTarget::orbitFromMPC (const char *mpc)
+{
+	return LibnovaEllFromMPC (&orbit, designation, mpc);
 }
 
 
