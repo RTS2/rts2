@@ -25,6 +25,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+double
+random_num ()
+{
+#ifndef sun
+	return (double) random () / RAND_MAX;
+#else
+	return (double) random () / INT_MAX;
+#endif
+}
+
 int
 mkpath (const char *path, mode_t mode)
 {

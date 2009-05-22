@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <sstream>
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "config.h"
@@ -33,6 +34,11 @@
 #ifndef HAVE_ISINF
 #include <ieeefp.h>
 #endif
+
+/**
+ * Return random number in 0-1 range.
+ */
+double random_num ();
 
 /**
  * Create directory recursively.
