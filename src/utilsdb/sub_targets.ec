@@ -23,6 +23,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 #include "../utils/infoval.h"
+#include "../utils/utilsfunc.h"
 
 #include <iomanip>
 #include <sstream>
@@ -785,10 +786,10 @@ ModelTarget::calPosition ()
 	switch (modelStepType)
 	{
 		case -2:
-			hrz_poz.az = 360 * ((double) random () / RAND_MAX);
+			hrz_poz.az = 360 * random_num ();
 			hrz_poz.alt = 0;
 			m_alt = (88 - Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0));
-			hrz_poz.alt = m_alt * ((double) random () / RAND_MAX);
+			hrz_poz.alt = m_alt * random_num ();
 			hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / m_alt));
 			if (!isAboveHorizon (&hrz_poz))
 				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2;
@@ -798,9 +799,9 @@ ModelTarget::calPosition ()
 		default:
 			hrz_poz.az = az_start + az_step * (step / alt_size);
 			hrz_poz.alt = alt_start + alt_step * (step % alt_size);
-			ra_noise = 2 * noise * ((double) random () / RAND_MAX);
+			ra_noise = 2 * noise * random_num ();
 			ra_noise -= noise;
-			dec_noise = 2 * noise * ((double) random () / RAND_MAX);
+			dec_noise = 2 * noise * random_num ();
 			dec_noise -= noise;
 			if (!isAboveHorizon (&hrz_poz))
 				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2 * noise;
