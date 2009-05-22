@@ -257,7 +257,7 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference", true);
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
-	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
+	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
 
 	createValue (numVal, "num_stat", "number of measurements for weather statistic", false);
 	numVal->setValueInteger (20);
