@@ -116,6 +116,15 @@ Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
 	return getDouble (device, "minflux", minFlux);
 }
 
+
+time_t
+Rts2Config::getNight ()
+{
+	time_t now = getNight (time (NULL));
+	struct tm *tm_s = gmtime (&now);
+	return getNight (tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday);
+}
+
 time_t
 Rts2Config::getNight (int year, int month, int day)
 {
@@ -123,11 +132,12 @@ Rts2Config::getNight (int year, int month, int day)
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;
-	_tm.tm_hour = _tm.tm_min = _tm.tm_sec = 0;
+	_tm.tm_hour = 12 - getObservatoryLongitude () / 15;
+	_tm.tm_min = _tm.tm_sec = 0;
 
 	std::string old_tz;
 	if (getenv("TZ"))
-	  old_tz = std::string (getenv ("TZ"));
+		old_tz = std::string (getenv ("TZ"));
 
 	setenv ("TZ", "UTC", 1);
 	time_t n = mktime (&_tm);
@@ -136,5 +146,5 @@ Rts2Config::getNight (int year, int month, int day)
 	else
 		unsetenv ("TZ");
 
-	return getNight (n);
+	return n;
 }

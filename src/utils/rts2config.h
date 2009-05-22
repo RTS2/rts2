@@ -376,6 +376,12 @@ class Rts2Config:public Rts2ConfigRaw
 		}
 
 		/**
+		 * Return UT noon of currently running night on the observatory
+		 * site. Timezone shift is estimated from longitude.
+		 */
+		time_t getNight ();
+
+		/**
 		 * Returns time_t with date for night which includes given time.
 		 *
 		 * @param _in Time_t containing date for which night should be calculated.
@@ -394,7 +400,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 * @param month Month for which night will be calculated.
 		 * @param day   Day for which night will be calculated.
 		 *
-		 * @return Time of night start.
+		 * @return Time of night start - UT midi of day on which night starts.
 		 */
 		time_t getNight (int year, int month, int day);
 };
