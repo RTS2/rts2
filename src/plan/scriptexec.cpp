@@ -130,6 +130,8 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
 	addOption ('f', NULL, 1, "script filename");
 
 	addOption ('e', NULL, 1, "filename expand string");
+
+	srandom (time (NULL));
 }
 
 

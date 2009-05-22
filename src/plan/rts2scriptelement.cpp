@@ -27,6 +27,7 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devclifoc.h"
 
+
 Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 {
 	script = in_script;
@@ -498,7 +499,37 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	if (op == '\0')
 		return;
 	operand = chng_s.substr (op_end + 1);
-	// try to split operand comming in two pieces
+	// substitute random numbers
+	std::string::size_type pos = 0;
+	while ((pos = operand.find ("rand")) != std::string::npos)
+	{
+		std::ostringstream _os;
+		// find range
+		if (operand[pos + 4] != '(')
+		{
+			_os << random_num ();
+			operand.replace (pos, 4, _os.str ());
+		}
+		std::string::size_type endp = operand.find (")", pos + 5);
+		if (endp == std::string::npos)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot parse rand range - missing ) in " << operand.substr (pos) << sendLog;
+			return;
+		}
+		std::string ps = operand.substr (pos + 5, endp - pos - 5);
+		std::istringstream _is (ps);
+		double p1, p2;
+		char ch;
+		_is >> p1 >> ch >> p2;
+		if (_is.fail () || ch != ',')
+		{
+			logStream (MESSAGE_ERROR) << "Cannot parse " << ps << sendLog;
+			return;
+		}
+		_os << p1 + (p2 - p1) * random_num ();
+		operand.replace (pos, ps.size () + 6, _os.str ());
+	}
+	// try to split operand comming in two or more pieces
 	if (operand[0] == '(' && operand[operand.length () - 1] == ')')
 	{
 		// substitute ',' with space..
