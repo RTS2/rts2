@@ -82,7 +82,7 @@ ObservationSet::load (std::string in_where)
 		" WHERE "
 		"observations.tar_id = targets.tar_id "
 		"AND " << in_where << 
-		" ORDER BY obs_id DESC;";
+		" ORDER BY obs_id ASC;";
 	stmp_c  = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
 
@@ -216,6 +216,21 @@ ObservationSet::ObservationSet (int year, int month)
 	load (os.str());
 }
 
+
+ObservationSet::ObservationSet (int year, int month, int day)
+{
+	time_t start_t = Rts2Config::instance ()->getNight (year,month,day);
+	time_t end_t = start_t + 86400 - 600;
+	std::ostringstream os;
+	os << "observations.obs_slew >= to_timestamp ("
+		<< start_t
+		<< ") AND ((observations.obs_slew <= to_timestamp ("
+		<< end_t
+		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
+		<< end_t
+		<< "))";
+	load (os.str());
+}
 
 ObservationSet::ObservationSet (char type_id, int state_mask, bool inv)
 {

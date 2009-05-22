@@ -95,6 +95,16 @@ class ObservationSet:public std::vector <Rts2Obs >
 		 * @param month  Observation month
 		 */ 
 		ObservationSet (int year, int month);
+
+		/**
+		 * Load all observations performed during given night.
+		 *
+		 * @param year   Observation year
+		 * @param month  Observation month
+		 * @param day    Observation day
+		 */
+		ObservationSet (int year, int month, int day);
+
 		ObservationSet (char type_id, int state_mask, bool inv = false);
 		ObservationSet (struct ln_equ_posn *position, double radius);
 		virtual ~ ObservationSet (void);
