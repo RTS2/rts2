@@ -136,7 +136,7 @@ Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;
-		ci->image->writeDate (data->getDataBuff (), data->getDataTop ());
+		ci->image->writeData (data->getDataBuff (), data->getDataTop ());
 		ci->setDataWriten ();
 		if (ci->canDelete ())
 		{

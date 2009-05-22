@@ -1129,7 +1129,7 @@ Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 
 
 int
-Rts2Image::writeDate (char *in_data, char *fullTop)
+Rts2Image::writeData (char *in_data, char *fullTop)
 {
 	struct imghdr *im_h;
 	unsigned short *pixel;
@@ -1284,6 +1284,20 @@ Rts2Image::writeDate (char *in_data, char *fullTop)
 	logStream (MESSAGE_DEBUG) << "writeDate returns " << ret << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	return ret;
+}
+
+
+void
+Rts2Image::getHistogram (int *histogram, int nbins)
+{
+
+}
+
+
+int
+Rts2Image::writeAsJPEG (int quality)
+{
+
 }
 
 
