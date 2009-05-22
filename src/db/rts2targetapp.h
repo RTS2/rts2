@@ -40,6 +40,12 @@ class Rts2TargetApp:public Rts2AppDb
 		 */
 		Target * target;
 		struct ln_lnlat_posn *obs;
+
+		/**
+		 * Tries to resolve object from provided string.
+		 */
+		int getObject (const char *obj_text);
+
 		int askForDegrees (const char *desc, double &val);
 		int askForObject (const char *desc, std::string obj_text =
 			std::string (""));
