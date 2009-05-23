@@ -7,9 +7,16 @@ This is a roof module for Zelio Logic. To view and use it, you need to download
 Schneider Zelio logic editor. The editor runs under Linux on Wine - ask me for
 details if you cannot get it running.
 
-The programme is designed for clam shell type roof with two halfs opening and
-closing, four end -of-path sensors and two motors. If your needs are different,
-please either help yourself or contact me with questions.
+The programme is designed for clam shell type roof with either a single roof or
+two halfs opening and closing, four end -of-path sensors and two motors. If
+your needs are different, please either help yourself or contact me with
+questions.
+
+Following production programs are available:
+
+roof.zm2 - original roof design, operated by two electrics motors
+roof_b2.zm2 - similar to roof.zm2, but operated using hydraulics and compressor
+roof_simple.zm2 - simple roof with only one half
 
 The programme has the following characteristics:
 
@@ -136,13 +143,13 @@ The device state (Q4XT1):
 
   - 0200 not used
 
-  - 0400 not used
+  - 0400 simple (only one roof, all-sky) model **
 
   - 0800 compressor (B2) model *
 
   - 1000 weather state - 1 if weather is favorable for observing
 
-  - 2000 ignore rain during opening - know problem of the opening on some domes. Is not present on compressor models.
+  - 2000 ignore rain during opening - know problem of the opening on some domes. Is not present on compressor and simple models.
 
   - 4000 emergency button pushed
 
