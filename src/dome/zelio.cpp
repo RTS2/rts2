@@ -78,8 +78,9 @@ class Zelio:public Dome
 		int16_t deadManNum;
 		time_t nextDeadCheck;
 
-
 		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE } zelioModel;
+
+		Rts2ValueString *zelioModelString;
 
 		Rts2ValueInteger *deadTimeout;
 
@@ -417,6 +418,8 @@ Zelio::Zelio (int argc, char **argv)
 {
 	zelioModel = ZELIO_UNKNOW;
 
+	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
+
 	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false);
 	deadTimeout->setValueInteger (60);
 
@@ -546,14 +549,17 @@ Zelio::init ()
 	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE);
 	switch (model)
 	{
+		case 0:
+			zelioModel = ZELIO_BOOTES3;
+			zelioModelString->setValueString ("ZELIO_BOOTES3");
+			break;
 		case ZS_COMPRESSOR:
 			zelioModel = ZELIO_COMPRESSOR;
+			zelioModelString->setValueString ("ZELIO_COMPRESSOR");
 			break;
 		case ZS_SIMPLE:
 			zelioModel = ZELIO_SIMPLE;
-			break;
-		case 0:
-			zelioModel = ZELIO_BOOTES3;
+			zelioModelString->setValueString ("ZELIO_SIMPLE");
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "cannot retrieve dome model (" << model << ")" << sendLog;
