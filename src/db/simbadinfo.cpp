@@ -124,11 +124,11 @@ SimbadInfo::doProcessing ()
 	int ret;
 	for (std::list <const char *>::iterator iter = names.begin (); iter != names.end (); iter++)
 	{
-		target = new Rts2SimbadTarget (*iter);
-		ret = target->load ();
+		ret = getObject (*iter);
 		if (ret)
 		{
 			std::cerr << "Cannot resolve " << *iter << std::endl;
+			continue;
 		}
 		struct ln_equ_posn pos;
 		target->getPosition (&pos);

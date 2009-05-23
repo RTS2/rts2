@@ -754,3 +754,59 @@ std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos)
 		<< (l_pos.getLatitude () > 0 ? " N" : " S");
 	return _os;
 }
+
+int epochtonum (char ch)
+{
+	if (ch >= '0' && ch <= '9')
+		return ch - '0';
+	if (ch >= 'A' && ch <= 'Z')
+		return ch - 'A' + 10;
+	return -1;
+}
+
+
+int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, const char *mpc)
+{
+	double H,G;
+	int nobs, opp;
+
+	std::string epoch_str;
+	struct ln_date epoch;
+
+	std::istringstream is (mpc);
+
+	double M;
+
+	is >> designation >> H >> G >> epoch_str >> M >> orbit->w >> orbit->omega
+	  >> orbit->i >> orbit->e >> orbit->n >> orbit->a;
+
+	if (is.fail ())
+		return -1;
+	
+	char reference[14];
+	is.read (reference, 13);
+
+	is >> nobs >> opp;
+	if (is.fail ())
+		return -1;
+
+	char arc[11];
+	is.read (arc, 10);
+
+	double rms;
+	is >> rms;
+
+	if (is.fail ())
+		return -1;
+
+	epoch.years = epochtonum (epoch_str[0]) * 100 + (epoch_str[1] - '0') * 10 + (epoch_str[2] - '0');
+	epoch.months = epochtonum (epoch_str[3]);
+	epoch.days = epochtonum (epoch_str[4]);
+	epoch.hours = epoch.minutes = 0;
+	epoch.seconds = 0;
+		
+	// caculate perigee passage..
+	orbit->JD = ln_get_julian_day (&epoch) - M / orbit->n;
+
+	return 0;
+}

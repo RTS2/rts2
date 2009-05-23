@@ -78,9 +78,8 @@ class Rts2NightReport:public Rts2AppDb
 Rts2NightReport::Rts2NightReport (int in_argc, char **in_argv):
 Rts2AppDb (in_argc, in_argv)
 {
-	time (&t_to);
-	// 24 hours before..
-	t_from = t_to - 86400;
+	t_from = 0;
+	t_to = 0;
 	tm_night = NULL;
 	obs_set = NULL;
 	printImages = 0;
@@ -191,6 +190,11 @@ Rts2NightReport::init ()
 	ret = Rts2AppDb::init ();
 	if (ret)
 		return ret;
+
+	if (t_from == 0)
+		t_from = Rts2Config::instance ()->getNight ();
+	if (t_to == 0)
+	  	t_to = Rts2Config::instance ()->getNight () + 86400;
 
 	if (tm_night)
 	{

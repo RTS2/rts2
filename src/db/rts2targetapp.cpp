@@ -21,6 +21,7 @@
 #include "simbad/rts2simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
+#include "../utilsdb/rts2targetell.h"
 
 #include <sstream>
 #include <iostream>
@@ -36,6 +37,54 @@ Rts2AppDb (in_argc, in_argv)
 Rts2TargetApp::~Rts2TargetApp (void)
 {
 	delete target;
+}
+
+
+int
+Rts2TargetApp::getObject (const char *obj_text)
+{
+	LibnovaRaDec raDec;
+
+	int ret = raDec.parseString (obj_text);
+	if (ret == 0)
+	{
+		std::string new_prefix;
+
+		// default prefix for new RTS2 sources
+		new_prefix = std::string ("RTS2_");
+
+		// set name..
+		ConstTarget *constTarget = new ConstTarget ();
+		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
+		std::ostringstream os;
+
+		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
+		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
+		constTarget->setTargetName (os.str ().c_str ());
+		target = constTarget;
+		return 0;
+	}
+	// if it's MPCE..
+	target = new EllTarget ();
+	ret = ((EllTarget *) target)->orbitFromMPC (obj_text);
+	if (ret == 0)
+	{
+		return 0;
+	}
+
+	delete target;
+
+	// try to get target from SIMBAD
+	target = new Rts2SimbadTarget (obj_text);
+	ret = target->load ();
+	if (ret)
+	{
+		delete target;
+		target = NULL;
+		return -1;
+	}
+
+	return 0;
 }
 
 
@@ -70,37 +119,7 @@ Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 			return ret;
 	}
 
-	LibnovaRaDec raDec;
-
-	ret = raDec.parseString (obj_text.c_str ());
-	if (ret == 0)
-	{
-		std::string new_prefix;
-
-		// default prefix for new RTS2 sources
-		new_prefix = std::string ("RTS2_");
-
-		// set name..
-		ConstTarget *constTarget = new ConstTarget ();
-		constTarget->setPosition (raDec.getRa (), raDec.getDec ());
-		std::ostringstream os;
-
-		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
-		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
-		constTarget->setTargetName (os.str ().c_str ());
-		target = constTarget;
-		return 0;
-	}
-	// try to get target from SIMBAD
-	target = new Rts2SimbadTarget (obj_text.c_str ());
-	ret = target->load ();
-	if (ret)
-	{
-		delete target;
-		target = NULL;
-		return -1;
-	}
-	return 0;
+	return getObject (obj_text.c_str ());
 }
 
 

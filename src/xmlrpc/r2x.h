@@ -21,6 +21,16 @@
 #define __RTS2_R2X__
 
 #define R2X_DEVICES_LIST              "rts2.devices.list"
+
+/**
+ * Return type of the device.
+ *
+ * @param Device name.
+ *
+ * @return Device type string (camera, telescope, ..).
+ */
+#define R2X_DEVICE_TYPE               "rts2.device.type"
+
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
 /**

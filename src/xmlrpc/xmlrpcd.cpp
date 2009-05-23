@@ -248,6 +248,24 @@ class ListDevices: public XmlRpcServerMethod
 } listDevices (&xmlrpc_server);
 
 /**
+ * Get device type. Returns string describing device type.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class DeviceType: public XmlRpcServerMethod
+{
+	protected:
+		DeviceType (const char *_name, XmlRpcServer* s): XmlRpcServerMethod (_name, s)
+		{
+		}
+	public:
+		ListValues (XmlRpcServer* s)
+
+} deviceType (&xmlrpc_server);
+
+/**
  * List name of all values accessible from server.
  *
  * @author Petr Kubanek <petr@kubanek.net>

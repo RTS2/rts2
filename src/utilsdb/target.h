@@ -356,6 +356,21 @@ class Target:public Rts2Target
 
 		int secToObjectMeridianPass (double JD);
 
+		/**
+		 * Sets target information string.
+		 *
+		 * @param _tar_info New target info parameter.
+		 */
+		void setTargetInfo (std::string _tar_info)
+		{
+			tar_info = _tar_info;
+		}
+
+		const char *getTargetInfo ()
+		{
+			return tar_info.c_str ();
+		}
+
 		const char *getTargetComment ()
 		{
 			return target_comment;
@@ -601,6 +616,12 @@ class Target:public Rts2Target
 
 		virtual Rts2TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
 
+		/**
+		 * Write target metadata to image.
+		 *
+		 * @param image Image which will receive target metadata.
+		 * @param JD    Date for which metadata will be written.
+		 */
 		virtual void writeToImage (Rts2Image * image, double JD);
 };
 

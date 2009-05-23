@@ -24,18 +24,36 @@
 
 /**
  * Represent target of body moving on elliptical orbit.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class EllTarget:public Target
 {
 	private:
 		struct ln_ell_orbit orbit;
+
+		std::string designation;
 		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 	public:
 		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
+		EllTarget (std::string _tar_info):Target ()
+		{
+			setTargetInfo (_tar_info);
+		}
 		EllTarget ():Target ()
 		{
 		};
 		virtual int load ();
+
+		/**
+		 * Get orbit structure from target info.
+		 *
+		 * @param mpc MPC 1-line element.
+		 *
+		 * @return -1 on error, 0 on success
+		 */
+		int orbitFromMPC (const char *mpc);
+
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 

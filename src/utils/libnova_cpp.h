@@ -714,6 +714,19 @@ class LibnovaPos
 		friend std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
 };
 
+/**
+ * Fill ln_ell_orbit structure from MPC string. Orbit type (hyperbolic,
+ * parabollic or elliptical) is governed by orbit.e parameter > 1 is
+ * for parabollic, == 1 is hyperbolic and < 1 is for elliptical targets.
+ *
+ * @param orbit        Orbit structure, which will be loaded from MPC string.
+ * @param description  MPC object description.
+ * @param mpc          MPC string.
+ *
+ * @return -1 on error, 0 on succes.
+ */
+int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &description, const char *mpc);
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
