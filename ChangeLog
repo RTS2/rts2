@@ -1,5 +1,7 @@
 0.7.5
 =====
+2009-05-24
+ * Added astrometry_devices to imgproc section from rts2.ini
 
 2009-05-22
  * Changed way how MPC ephemerides are stored in database and handled

@@ -21,6 +21,7 @@
 #include "rts2script.h"
 
 #include "../utils/rts2command.h"
+#include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2taruser.h"
 #include "../utilsdb/rts2obs.h"
@@ -160,7 +161,7 @@ ConnImgProcess::connectionError (int last_data_size)
 				Rts2Conn *telConn;
 				telConn = master->findName (telescopeName);
 				// correction error should be in degrees
-				if (telConn)
+				if (telConn && Rts2Config::instance ()->isAstrometryDevice (image->getCameraName ()))
 				{
 					struct ln_equ_posn pos1, pos2;
 					pos1.ra = ra;

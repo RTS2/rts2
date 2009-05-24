@@ -30,6 +30,7 @@
 #include "objectcheck.h"
 
 #include <libnova/libnova.h>
+#include <algorithm>
 
 /**
  * Represent full Config class, which includes support for Libnova types and
@@ -66,6 +67,7 @@ class Rts2Config:public Rts2ConfigRaw
 		int grbd_validity;
 
 		std::vector <std::string> obs_requiredDevices;
+		std::vector <std::string> imgproc_astrometryDevices;
 
 		std::string obs_quePath;
 		std::string obs_acqPath;
@@ -297,6 +299,32 @@ class Rts2Config:public Rts2ConfigRaw
 		std::vector <std::string> observatoryRequiredDevices ()
 		{
 			return obs_requiredDevices;
+		}
+
+
+		/**
+		 * Get names of devices which shall be ignored for astrometry
+		 * updates.
+		 *
+		 * @return List of device names, which shall be ignored.
+		 */
+		std::vector <std::string> imgprocAstrometryDevices ()
+		{
+			return imgproc_astrometryDevices;
+		}
+
+
+		/**
+		 * Return true if astrometry from this device should be ignored
+		 * for corrections.
+		 *
+		 * @param name Device name.
+		 *
+		 * @return True if device astromery should be 
+		 */
+		bool isAstrometryDevice (const char *device_name)
+		{
+			return (imgproc_astrometryDevices.size () == 0 || std::find (imgproc_astrometryDevices.begin (), imgproc_astrometryDevices.end (), std::string (device_name)) != imgproc_astrometryDevices.end ());
 		}
 
 		/**
