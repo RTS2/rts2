@@ -104,7 +104,7 @@ Rts2ImgSet::load (std::string in_where)
 		" WHERE "
 		" images.obs_id = observations.obs_id AND " << in_where <<
 		" ORDER BY "
-		"img_id DESC;";
+		"img_id ASC;";
 
 	stmp_c = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
