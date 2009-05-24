@@ -544,7 +544,7 @@ Rts2Image::getImageType ()
 	if (ret)
 		return IMGTYPE_UNKNOW;
 	if (!strcmp (t_type, "flat"))
-		return IMGTYPE_OBJECT;
+		return IMGTYPE_FLAT;
 	if (!strcmp (t_type, "dark"))
 	  	return IMGTYPE_DARK;
 	return IMGTYPE_OBJECT;
