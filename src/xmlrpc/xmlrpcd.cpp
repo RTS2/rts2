@@ -256,12 +256,21 @@ class ListDevices: public XmlRpcServerMethod
  */
 class DeviceType: public XmlRpcServerMethod
 {
-	protected:
-		DeviceType (const char *_name, XmlRpcServer* s): XmlRpcServerMethod (_name, s)
+	public:
+		DeviceType (XmlRpcServer* s): XmlRpcServerMethod (R2X_DEVICE_TYPE, s)
 		{
 		}
-	public:
-		ListValues (XmlRpcServer* s)
+
+		void execute (XmlRpcValue& params, XmlRpcValue &result)
+		{
+			if (params.size () != 1)
+				throw XmlRpcException ("Single device name expected");
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+			if (conn == NULL)
+				throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
+			result = conn->getOtherType ();
+		}
 
 } deviceType (&xmlrpc_server);
 
@@ -524,6 +533,88 @@ class SetValue: public XmlRpcServerMethod
 		}
 
 } setValue (&xmlrpc_server);
+
+class IncValue: public XmlRpcServerMethod
+{
+	public:
+		IncValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_INC, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			std::string devName = params[0];
+			std::string valueName = params[1];
+			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			if (!conn)
+			{
+				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+			}
+			Rts2Value *val = conn->getValue (valueName.c_str ());
+			if (!val)
+			{
+				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
+			}
+
+			int i_val;
+			double d_val;
+			std::string s_val;
+			XmlRpcValue x_val = params[2];
+			switch (val->getValueBaseType ())
+			{
+				case RTS2_VALUE_INTEGER:
+				case RTS2_VALUE_LONGINT:
+					if (x_val.getType () == XmlRpcValue::TypeInt)
+					{
+						i_val = (int) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						i_val = atoi (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
+					break;
+				case RTS2_VALUE_DOUBLE:
+					if (x_val.getType () == XmlRpcValue::TypeDouble)
+					{
+						d_val = (double) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						d_val = atof (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
+					break;
+
+				case RTS2_VALUE_FLOAT:
+					if (x_val.getType () == XmlRpcValue::TypeDouble)
+					{
+						d_val = (double) (x_val);
+					}
+					else
+					{
+						s_val = (std::string) (x_val);
+						d_val = atof (s_val.c_str ());
+					}
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
+					break;
+				case RTS2_VALUE_STRING:
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
+					break;
+				default:
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
+					break;
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Increment RTS2 value");
+		}
+
+} incValue (&xmlrpc_server);
+
 
 
 #ifdef HAVE_PGSQL

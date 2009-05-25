@@ -34,13 +34,21 @@
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
 /**
- * Set RTS2 variable. Three parameter must be specified,w ith following meaning:
+ * Set RTS2 variable. Three parameters must be specified, with following meaning:
  *
  * @param device Name of device for which variable will be set.
  * @param var    Name of variable which will be set.
  * @param value  Value as string.
  */
 #define R2X_VALUE_SET                 "rts2.value.set"
+
+/**
+ * Increment RTS2 variable. Three parameters must be specified, with following meaning:
+ * @param device Name of device for which variable will be set.
+ * @param var    Name of variable which will be set.
+ * @param value  Value increment as string.
+ */
+#define R2X_VALUE_INC                 "rts2.value.inc"
 
 #define R2X_VALUES_LIST               "rts2.values.list"
 

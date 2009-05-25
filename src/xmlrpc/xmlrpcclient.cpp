@@ -47,11 +47,16 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {TEST, SET_VARIABLE, SCHED_TICKET, GET_VARIABLE} xmlOp;
+		enum {TEST, SET_VARIABLE, SCHED_TICKET, GET_VARIABLES, INC_VARIABLE, GET_TYPES} xmlOp;
 
 		std::vector <const char *> args;
 
 		XmlRpcClient* xmlClient;
+
+		/**
+                 * Split variable name to 
+		 */
+		int splitDeviceVariable (const char *device, std::string &deviceName, std::string varName);
 
 		/**
 		 * Run one XML-RPC method. Prints out method execution
@@ -78,7 +83,14 @@ class Client: public Rts2CliApp
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int setVariable (const char *deviceName, const char *varName, const char *value);
+		int setVariables (const char *varName, const char *value);
+
+		/**
+		 * Increase XML-RPC variable.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int incVariable (const char *varName, const char *value);
 
 		/**
 		 * Prints informations about given ticket.
@@ -90,9 +102,14 @@ class Client: public Rts2CliApp
 		int schedTicketInfo (int ticketId);
 
 		/**
-		 * Return variables in args.
+		 * Return variables. Variables names are in args.
 		 */
 		int getVariables ();
+
+		/**
+		 * Return device types. Device names are in args.
+		 */
+		int getTypes ();
 	protected:
 		virtual void usage ();
 
@@ -110,6 +127,19 @@ class Client: public Rts2CliApp
 };
 
 using namespace rts2xmlrpc;
+
+
+int
+Client::splitDeviceVariable (const char *device, std::string &deviceName, std::string varName)
+{
+	std::string full(device);
+	std::size_t dot = full.find ('.');
+	if (dot == std::string::npos)
+		return -1;
+	deviceName = full.substr (0, dot);
+	varName = full.substr (dot + 1);
+	return 0;
+}
 
 int
 Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
@@ -191,12 +221,25 @@ Client::doClient ()
 }
 
 int
-Client::setVariable (const char *deviceName, const char *varName, const char *value)
+Client::setVariables (const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
 
-	threeArg[0] = deviceName;
-	threeArg[1] = varName;
+	if (splitDeviceVariable (varName, threeArg[0], threeArg[1]))
+		return -1;
+	threeArg[2] = value;
+
+	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
+}
+
+
+int
+Client::incVariable (const char *varName, const char *value)
+{
+	XmlRpcValue threeArg, result;
+
+	if (splitDeviceVariable (varName, threeArg[0], threeArg[1]))
+		return -1;
 	threeArg[2] = value;
 
 	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
@@ -271,15 +314,38 @@ Client::getVariables ()
 	return (e == 0) ? 0 : -1;
 }
 
+
+int
+Client::getTypes ()
+{
+	int e = 0;
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		const char* arg = (*iter);
+		XmlRpcValue oneArg, result;
+		oneArg = arg;
+		int ret = runXmlMethod (R2X_DEVICE_TYPE, oneArg, result, false);
+		if (ret)
+		{
+			e++;
+			continue;
+		}
+		std::cout << arg << " TYPE " << result << std::endl;
+  	}
+	return (e == 0) ? 0 : -1;
+}
+
 void
 Client::usage ()
 {
-	std::cout << "  " << getAppName () << " -s <device name> <variable name> <value>" << std::endl
+	std::cout << "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
 		<< " To set T0.ORI to 10 20, run: " << std::endl
-		<< "  " << getAppName () << " -s T0 ORI \"10 20\"" << std::endl
+		<< "  " << getAppName () << " -s T0.ORI \"10 20\"" << std::endl
 		<< " So to run random pointing, run: " << std::endl
-		<< "  " << getAppName () << " -s T0 ORI \"`rts2-telmodeltest -r`\"" << std::endl; 
-
+		<< "  " << getAppName () << " -s T0.ORI \"`rts2-telmodeltest -r`\"" << std::endl
+		<< "  " << getAppName () << " -a <device name>.<variable name> <value>" << std::endl
+		<< " So to add value 0.1,0.1 to T0.OFFS, run: " << std::endl
+		<< "  " << getAppName () << " -a T0.OFFS \"0.1 0.1\"" << std::endl;
 }
 
 int
@@ -299,12 +365,18 @@ Client::processOption (int in_opt)
 		case 's':
 			xmlOp = SET_VARIABLE;
 			break;
+		case 'i':
+			xmlOp = INC_VARIABLE;
+			break;
 		case OPT_SCHED_TICKET:
 			schedTicket = atoi (optarg);
 			xmlOp = SCHED_TICKET;
 			break;
 		case 'g':
-			xmlOp = GET_VARIABLE;
+			xmlOp = GET_VARIABLES;
+			break;
+		case 't':
+			xmlOp = GET_TYPES;
 			break;
 		default:
 			return Rts2CliApp::processOption (in_opt);
@@ -316,7 +388,7 @@ Client::processOption (int in_opt)
 int
 Client::processArgs (const char *arg)
 {
-	if (!(xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLE))
+	if (!(xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -331,17 +403,27 @@ Client::doProcessing ()
 		case TEST:
 			return doClient ();
 		case SET_VARIABLE:
-			if (args.size () != 3)
+			if (args.size () != 2)
 			{
 				logStream (MESSAGE_ERROR) << "Invalid number of parameters - " << args.size () 
-					<< ", expected 3." << sendLog;
+					<< ", expected 2." << sendLog;
 				return -1;
 			}
-			return setVariable (args[0], args[1], args[2]);
+			return setVariables (args[0], args[1]);
+		case INC_VARIABLE:
+			if (args.size () != 2)
+			{
+				logStream (MESSAGE_ERROR) << "Invalid number of parameters - " << args.size () 
+					<< ", expected 2." << sendLog;
+				return -1;
+			}
+			return incVariable (args[0], args[1]);
 		case SCHED_TICKET:
 			return schedTicketInfo (schedTicket);
-		case GET_VARIABLE:
+		case GET_VARIABLES:
 			return getVariables ();
+		case GET_TYPES:
+			return getTypes ();
 	}
 	return -1;
 }
@@ -373,9 +455,11 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
-	addOption ('s', NULL, 0, "set variables specified by variable list.");
+	addOption ('s', NULL, 0, "set variables specified by variable list");
+	addOption ('a', NULL, 0, "add to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
-	addOption ('g', NULL, 0, "get variables specified as arguments");
+	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
+	addOption ('t', NULL, 0, "get device(s) type");
 }
 
 
