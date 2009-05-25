@@ -18,6 +18,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include "rts2config.h"
 
@@ -130,6 +131,8 @@ time_t
 Rts2Config::getNight (int year, int month, int day)
 {
 	struct tm _tm;
+	static char p_tz[100];
+
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;
@@ -140,12 +143,17 @@ Rts2Config::getNight (int year, int month, int day)
 	if (getenv("TZ"))
 		old_tz = std::string (getenv ("TZ"));
 
-	setenv ("TZ", "UTC", 1);
+	putenv ((char*) "TZ=UTC");
+
 	time_t n = mktime (&_tm);
+
+	strcpy (p_tz, "TZ=");
+
 	if (old_tz.length () > 0)
-		setenv ("TZ", old_tz.c_str(), 1);
-	else
-		unsetenv ("TZ");
+	{
+		strncat (p_tz, old_tz.c_str (), 96);
+	}
+	putenv (p_tz);
 
 	return n;
 }
