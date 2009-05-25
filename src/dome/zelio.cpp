@@ -571,23 +571,49 @@ Zelio::init ()
 	ret = info ();
 	if (ret)
 		return ret;
-	
+
 	// switch on dome state
-	if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
+	switch (zelioModel)
 	{
-		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
-	}
-	else if (swCloseLeft->getValueBool () == true && swCloseRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
-	}
-	else if (motOpenLeft->getValueBool () == true || motOpenRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
-	}
-	else if (motCloseLeft->getValueBool () == true || motCloseRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR:
+			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+			}
+			else if (swCloseLeft->getValueBool () == true && swCloseRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+			}
+			else if (motOpenLeft->getValueBool () == true || motOpenRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
+			}
+			else if (motCloseLeft->getValueBool () == true || motCloseRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+			}
+			break;
+		case ZELIO_SIMPLE:
+			if (swOpenLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+			}
+			else if (swCloseLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+			}
+			else if (motOpenLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
+			}
+			  else if (motCloseLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+			}
+			break;
+		case ZELIO_UNKNOW:
+			return -1;
 	}
 	setIdleInfoInterval (20);
 	return 0;
@@ -611,6 +637,7 @@ Zelio::createZelioValues ()
 
 			createValue (blockOpenLeft, "block_open", "open block", false);
 			createValue (blockCloseLeft, "block_close", "close block", false);
+			break;
 		
 		case ZELIO_BOOTES3:
 			createValue (onPower, "on_power", "true if power is connected", false);
