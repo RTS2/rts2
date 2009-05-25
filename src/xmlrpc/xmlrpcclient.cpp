@@ -56,7 +56,7 @@ class Client: public Rts2CliApp
 		/**
                  * Split variable name to 
 		 */
-		int splitDeviceVariable (const char *device, std::string &deviceName, std::string varName);
+		int splitDeviceVariable (const char *device, std::string &deviceName, std::string &varName);
 
 		/**
 		 * Run one XML-RPC method. Prints out method execution
@@ -130,7 +130,7 @@ using namespace rts2xmlrpc;
 
 
 int
-Client::splitDeviceVariable (const char *device, std::string &deviceName, std::string varName)
+Client::splitDeviceVariable (const char *device, std::string &deviceName, std::string &varName)
 {
 	std::string full(device);
 	std::size_t dot = full.find ('.');
@@ -237,7 +237,6 @@ int
 Client::incVariable (const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
-
 	if (splitDeviceVariable (varName, threeArg[0], threeArg[1]))
 		return -1;
 	threeArg[2] = value;
@@ -456,7 +455,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
-	addOption ('a', NULL, 0, "add to variables specified by variable list");
+	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
 	addOption ('t', NULL, 0, "get device(s) type");
