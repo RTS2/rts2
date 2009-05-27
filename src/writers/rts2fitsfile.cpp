@@ -188,7 +188,7 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 }
 
 
-Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander ()
+Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 {
 	fileName = NULL;
 	absoluteFileName = NULL;
