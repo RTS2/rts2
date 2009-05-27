@@ -33,11 +33,5 @@ int
 main (int argc, char **argv)
 {
 	Rts2MoveArchive app = Rts2MoveArchive (argc, argv);
-	int ret;
-	ret = app.init ();
-	if (ret)
-	{
-		return ret;
-	}
 	return app.run ();
 }
