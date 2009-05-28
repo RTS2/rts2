@@ -158,7 +158,7 @@ Rts2NCentraldWindow::printState (Rts2Conn * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
-	wprintw (getWriteWindow (), "%s %s (%x)", conn->getName (),
+	wprintw (getWriteWindow (), "%s %s (%x)\n", conn->getName (),
 		conn->getStateString ().c_str (), conn->getState ());
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
