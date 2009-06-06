@@ -81,6 +81,7 @@ class Andor:public Camera
 		Rts2ValueSelection *tempStatus;
 
 		Rts2ValueInteger *gain;
+		Rts2ValueInteger *emccdgain;
 
 		Rts2ValueBool *useFT;
 		Rts2ValueBool *useRunTillAbort;
@@ -114,6 +115,7 @@ class Andor:public Camera
 
 		void getTemp ();
 		int setGain (int in_gain);
+		int setEMCCDGain (int in_gain);
 		int setADChannel (int in_adchan);
 		int setVSAmplitude (int in_vsamp);
 		int setHSSpeed (int in_amp, int in_hsspeed);
@@ -407,12 +409,26 @@ int
 Andor::setGain (int in_gain)
 {
 	int ret;
-	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
+	if ((ret = SetGain (in_gain)) != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "andor setGain error " << ret << sendLog;
 		return -1;
 	}
 	gain->setValueInteger (in_gain);
+	return 0;
+}
+
+
+int
+Andor::setEMCCDGain (int in_gain)
+{
+	int ret;
+	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "andor setEMCCDGain error " << ret << sendLog;
+		return -1;
+	}
+	emccdgain->setValueInteger (in_gain);
 	return 0;
 }
 
@@ -639,7 +655,9 @@ int
 Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == gain)
-		return setGain (new_value->getValueInteger ());
+		return setGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	if (old_value == emccdgain)
+		return setEMCCDGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == ADChannel)
 		return setADChannel (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSAmp)
@@ -1138,11 +1156,17 @@ Andor::initAndorValues ()
 		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
 		outPreAmpGain->setValueInteger (0);
 	}
-	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
+	if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
 	{
 		createValue (gain, "GAIN", "CCD gain", true, 0,
 			CAM_WORKING, true);
 		setGain (defaultGain);
+	}
+	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
+	{
+		createValue (emccdgain, "EMCCDGAIN", "EM CCD gain", true, 0,
+			CAM_WORKING, true);
+		setEMCCDGain (defaultGain);
 
 		if (cap.ulEMGainCapability != 0)
 		{
