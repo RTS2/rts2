@@ -135,6 +135,7 @@ class Andor:public Camera
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void help ();
+		virtual void usage ();
 
 		virtual void initDataTypes ();
 
@@ -396,14 +397,30 @@ Andor::~Andor (void)
 void
 Andor::help ()
 {
-	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl;
-	std::
-		cout <<
-		"Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1, those are default"
+	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl
+		<< std::endl <<
+		"\tOptimal values for speeds on iXon are: HSPEED=0 VSPEED=0. Those can be changed by modefile, specified by --modefile argument. There is an example modefile, which specify two modes:\n"
+		<< std::endl << 
+"[default]\n"
+"EMON=on\n"
+"HSPEED=1\n"
+"VSPEED=1\n"
+"\n"
+"[classic]\n"
+"EMON=off\n"
+"HSPEED=3\n"
+"VSPEED=1\n"
+
 		<< std::endl;
 	Camera::help ();
 }
 
+
+void
+Andor::usage ()
+{
+	std::cout << "\t" << getAppName () << " -c -70 -d C1" << std::endl;
+}
 
 int
 Andor::setGain (int in_gain)
