@@ -40,9 +40,7 @@ class Robofocus:public Focusd
 		char checksum;
 		int step_num;
 
-								 // bitfield holding power switches state - for Robofocus
-		Rts2ValueInteger *focSwitches;
-		int switchNum;
+		Rts2ValueBool *switches[4];
 
 		// high-level I/O functions
 		int focus_move (const char *cmd, int steps);
@@ -51,6 +49,8 @@ class Robofocus:public Focusd
 		int getPos ();
 		int getTemp ();
 		int getSwitchState ();
+		int setSwitch (int switch_num, bool new_state);
+
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int isFocusing ();
@@ -59,6 +59,8 @@ class Robofocus:public Focusd
 		{
 			return false;
 		}
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
 		Robofocus (int argc, char **argv);
 		~Robofocus (void);
@@ -67,7 +69,6 @@ class Robofocus:public Focusd
 		virtual int initValues ();
 		virtual int info ();
 		virtual int setTo (int num);
-		virtual int setSwitch (int switch_num, int new_state);
 };
 
 };
@@ -78,8 +79,14 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 {
 	device_file = FOCUSER_PORT;
 
-	createValue (focSwitches, "switches", "focuser switches", false);
-	switchNum = 4;
+	for (int i = 0; i < 4; i++)
+	{
+		std::ostringstream _name;
+		std::ostringstream _desc;
+		_name << "switch_" << i+1;
+		_desc << "plug number " << i+1;
+		createValue (switches[i], _name.str().c_str(), _desc.str().c_str(), false);
+	}
 
 	createTemperature ();
 
@@ -132,11 +139,11 @@ Robofocus::init ()
 	robofocConn->flushPortIO ();
 
 	// turn paramount on
-	ret = setSwitch (1, 1);
+	ret = setSwitch (1, true);
 	if (ret)
 		return -1;
 
-	ret = setSwitch (2, 1);
+	ret = setSwitch (2, false);
 	if (ret)
 	  	return -1;
 
@@ -148,7 +155,6 @@ int
 Robofocus::initValues ()
 {
 	focType = std::string ("ROBOFOCUS");
-	addConstValue ("switch_num", switchNum);
 	return Focusd::initValues ();
 }
 
@@ -161,7 +167,12 @@ Robofocus::info ()
 	// querry for switch state
 	int swstate = getSwitchState ();
 	if (swstate >= 0)
-		focSwitches->setValueInteger (swstate);
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			switches[i]->setValueBool (swstate & (1 << i));
+		}
+	}
 	return Focusd::info ();
 }
 
@@ -219,7 +230,7 @@ Robofocus::getSwitchState ()
 	if (robofocConn->writeRead (command, 9, rbuf, 9) != 9)
 		return -1;
 	ret = 0;
-	for (int i = 0; i < switchNum; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		if (rbuf[i + 4] == '2')
 			ret |= (1 << i);
@@ -242,21 +253,23 @@ Robofocus::setTo (int num)
 
 
 int
-Robofocus::setSwitch (int switch_num, int new_state)
+Robofocus::setSwitch (int switch_num, bool new_state)
 {
 	char command[10], rbuf[10];
 	char command_buffer[9] = "FP001111";
-	if (switch_num >= switchNum)
+	if (switch_num >= 4)
+	{
 		return -1;
+	}
 	int swstate = getSwitchState ();
 	if (swstate < 0)
 		return -1;
-	for (int i = 0; i < switchNum; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		if (swstate & (1 << i))
 			command_buffer[i + 4] = '2';
 	}
-	command_buffer[switch_num + 4] = (new_state == 1 ? '2' : '1');
+	command_buffer[switch_num + 4] = (new_state ? '2' : '1');
 	compute_checksum (command_buffer);
 	sprintf (command, "%s%c", command_buffer, checksum);
 
@@ -317,6 +330,20 @@ Robofocus::isFocusing ()
 		return -2;
 	}
 	return 0;
+}
+
+
+int
+Robofocus::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		if (switches[i] == oldValue)
+		{
+			return setSwitch (i, ((Rts2ValueBool *) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		}
+	}
+	return Focusd::setValue (oldValue, newValue);
 }
 
 

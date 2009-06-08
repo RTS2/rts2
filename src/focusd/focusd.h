@@ -95,14 +95,6 @@ class Focusd:public Rts2Device
 	public:
 		Focusd (int argc, char **argv);
 
-		/**
-		 * TODO remove
-		 */
-		virtual int setSwitch (int switch_num, int new_state)
-		{
-			return -1;
-		}
-
 		void checkState ();
 		int setPosition (int num);
 		int autoFocus (Rts2Conn * conn);
