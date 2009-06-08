@@ -50,6 +50,9 @@
 #define ZS_TIMEOUT       0x0004
 #define ZS_POWER         0x0008
 #define ZS_RAIN          0x0010
+#define ZS_COMP_RUN      0x0020
+// does not have rain signal
+#define ZS_WITHOUT_RAIN  0x0040
 #define ZS_SIMPLE        0x0400
 #define ZS_COMPRESSOR    0x0800
 #define ZS_WEATHER       0x1000
@@ -79,6 +82,9 @@ class Zelio:public Dome
 		time_t nextDeadCheck;
 
 		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE } zelioModel;
+
+		// if model have hardware rain signal
+		bool haveRainSignal;
 
 		Rts2ValueString *zelioModelString;
 
@@ -211,7 +217,7 @@ Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
 			return -1;
 		}
-		if (!(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
+		if (haveRainSignal && !(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
 		{
 			logStream (MESSAGE_WARNING) << "it is raining and rain is not ignored" << sendLog;
 			return -1;
@@ -246,14 +252,17 @@ Zelio::isGoodWeather ()
 		logStream (MESSAGE_ERROR) << err << sendLog;
 		return false;
 	}
-	rain->setValueBool (!(reg & ZS_RAIN));
-	sendValueAll (rain);
+	if (haveRainSignal)
+	{
+		rain->setValueBool (!(reg & ZS_RAIN));
+		sendValueAll (rain);
+		openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
+		sendValueAll (openingIgnoreRain);
+	}
 	weather->setValueBool (reg & ZS_WEATHER);
 	sendValueAll (weather);
-	openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
-	sendValueAll (openingIgnoreRain);
 	// now check for rain..
-	if (!(reg & ZS_RAIN) && weather->getValueBool () == false)
+	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
 		setWeatherTimeout (3600);
 		return false;
@@ -417,15 +426,13 @@ Zelio::Zelio (int argc, char **argv)
 :Dome (argc, argv)
 {
 	zelioModel = ZELIO_UNKNOW;
+	haveRainSignal = true;
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
 	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false);
 	deadTimeout->setValueInteger (60);
 
-	createValue (rain, "rain", "state of rain sensor", false);
-	createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
-	createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
@@ -462,9 +469,12 @@ Zelio::info ()
 		return -1;
 	}
 
-	rain->setValueBool (!(regs[7] & ZS_RAIN));
-	ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
-	openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
+	if (haveRainSignal)
+	{
+		rain->setValueBool (!(regs[7] & ZS_RAIN));
+		ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
+		openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
+	}
 	automode->setValueBool (regs[7] & ZS_SW_AUTO);
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
 	weather->setValueBool (regs[7] & ZS_WEATHER);
@@ -565,6 +575,8 @@ Zelio::init ()
 			logStream (MESSAGE_ERROR) << "cannot retrieve dome model (" << model << ")" << sendLog;
 			return -1;
 	}
+	// have this model rain signal?
+	haveRainSignal = !(regs[7] & ZS_WITHOUT_RAIN);
 
 	createZelioValues ();
 
@@ -665,6 +677,14 @@ Zelio::createZelioValues ()
 			break;
 		case ZELIO_UNKNOW:
 			break;
+	}
+
+	// create rain values only if rain sensor is present
+	if (haveRainSignal)
+	{
+		createValue (rain, "rain", "state of rain sensor", false);
+		createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
+		createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	}
 
 	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);

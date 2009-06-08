@@ -16,7 +16,8 @@ Following production programs are available:
 
 roof.zm2 - original roof design, operated by two electrics motors
 roof_b2.zm2 - similar to roof.zm2, but operated using hydraulics and compressor
-roof_simple.zm2 - simple roof with only one half
+roof_simple.zm2 - simple roof. This has only one roof to open/close. Due to limited space on Zelio, does not have emergency signal entry
+roof_watcher.zm2 - similar to roof_simple, but has emergency signal input, and does not have rain signal input
 
 The programme has the following characteristics:
 
@@ -82,9 +83,9 @@ The programme has the following characteristics:
 
 ===== Ethernet outputs ======
 
-  * **Q1XT1** State of right half of the roof.
+  * **Q1XT1** State of right half of the roof, or roof if it is model with only one roof
 
-  * **Q2XT1** State of left half of the roof.
+  * **Q2XT1** State of left half of the roof, or not used for models with single roof
 
   * **Q3XT1** Number of seconds remaining for dead man button engagement.
 
@@ -135,7 +136,7 @@ The device state (Q4XT1):
 
   - 0020 compressor running - only on model with compressor
 
-  - 0040 not used
+  - 0040 does not have rain signal
   
   - 0080 not used
 
@@ -143,7 +144,7 @@ The device state (Q4XT1):
 
   - 0200 not used
 
-  - 0400 simple (only one roof, all-sky) model **
+  - 0400 simple (only one roof, all-sky + watcher) model **
 
   - 0800 compressor (B2) model *
 
