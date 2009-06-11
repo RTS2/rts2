@@ -286,7 +286,7 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
 
-	setTimeout (20);
+	setIdleInfoInterval (20);
 }
 
 
