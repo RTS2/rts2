@@ -37,7 +37,7 @@
 using namespace rts2plan;
 
 ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):
-Rts2ConnFork (in_master, in_exe, in_timeout)
+rts2core::ConnFork (in_master, in_exe, false, in_timeout)
 {
 }
 
@@ -133,7 +133,7 @@ ConnImgProcess::connectionError (int last_data_size)
 	{
 		// just return..
 		delete image;
-		Rts2ConnFork::connectionError (last_data_size);
+		rts2core::ConnFork::connectionError (last_data_size);
 		return;
 	}
 
@@ -190,7 +190,7 @@ ConnImgProcess::connectionError (int last_data_size)
 	else
 		master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
 	delete image;
-	Rts2ConnFork::connectionError (last_data_size);
+	rts2core::ConnFork::connectionError (last_data_size);
 }
 
 

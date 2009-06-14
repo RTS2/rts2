@@ -31,7 +31,7 @@ typedef enum
 { NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT }
 astrometry_stat_t;
 
-class ConnProcess:public Rts2ConnFork
+class ConnProcess:public rts2core::ConnFork
 {
 	protected:
 		astrometry_stat_t astrometryStat;

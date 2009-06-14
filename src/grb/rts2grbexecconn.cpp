@@ -10,7 +10,7 @@ int in_grb_seqn, int in_grb_type,
 double in_grb_ra, double in_grb_dec,
 bool in_grb_is_grb, time_t * in_grb_date,
 float in_grb_errorbox, int in_grb_isnew):
-Rts2ConnFork (in_master, execFile)
+rts2core::ConnFork (in_master, execFile, false)
 {
 	argvs = new char *[12];
 	// defaults..

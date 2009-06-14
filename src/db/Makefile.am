@@ -2,10 +2,10 @@
 
 if PGSQL
 
-AM_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
-AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@
+AM_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 
-bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user
+bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo
 
 noinst_HEADERS = rts2targetapp.h
 
@@ -33,7 +33,6 @@ rts2_user_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../u
 SUBDIRS = simbad
 
 if GSOAP
-bin_PROGRAMS+=rts2-newtarget rts2-simbadinfo
 
 rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
 rts2_newtarget_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_LDFLAGS)
@@ -42,6 +41,16 @@ rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
 rts2_simbadinfo_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
 rts2_simbadinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a @LIB_GSOAP@ $(AM_LDFLAGS)
+
+else
+
+rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
+rts2_newtarget_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_LDFLAGS)
+rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
+
+rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
+rts2_simbadinfo_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
+rts2_simbadinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
 
 endif
 

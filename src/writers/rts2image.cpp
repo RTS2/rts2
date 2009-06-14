@@ -33,6 +33,8 @@
 #include <iomanip>
 #include <sstream>
 
+#include <jpeglib.h>
+
 using namespace rts2image;
 
 void
@@ -55,7 +57,6 @@ Rts2Image::initData ()
 	stdev = 0;
 	bg_stdev = 0;
 	min = max = mean = 0;
-	histogram = NULL;
 	imageData = NULL;
 	imageType = RTS2_DATA_USHORT;
 	sexResults = NULL;
@@ -114,8 +115,6 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	min = in_image->min;
 	max = in_image->max;
 	mean = in_image->mean;
-	histogram = in_image->histogram;
-	in_image->histogram = NULL;
 	isAcquiring = in_image->isAcquiring;
 	total_rotang = in_image->total_rotang;
 
@@ -1179,7 +1178,7 @@ Rts2Image::writeData (char *in_data, char *fullTop)
 
 	if ((dataSize / getPixelByteSize ()) > 0)
 	{
-		average /= dataSize / 2;
+		average /= dataSize / getPixelByteSize ();
 		// calculate stdev
 		pixel = (unsigned short *) pixelData;
 		while (pixel < (unsigned short *) fullTop)
@@ -1194,7 +1193,7 @@ Rts2Image::writeData (char *in_data, char *fullTop)
 			stdev += tmp_ss;
 			pixel++;
 		}
-		stdev = sqrt (stdev / (dataSize / 2));
+		stdev = sqrt (stdev / (dataSize / getPixelByteSize ()));
 		bg_stdev = sqrt (bg_stdev / bg_size);
 	}
 	else
@@ -1288,17 +1287,151 @@ Rts2Image::writeData (char *in_data, char *fullTop)
 
 
 void
-Rts2Image::getHistogram (int *histogram, int nbins)
+Rts2Image::getHistogram (long *histogram, long nbins)
 {
-
+	memset (histogram, 0, nbins * sizeof(int));
+	int bins;
+	loadData ();
+	switch (imageType)
+	{
+		case RTS2_DATA_USHORT:
+			bins = 65535 / nbins;
+			for (uint16_t *d = (uint16_t *)imageData; d < ((uint16_t *)imageData) + getNPixels (); d++)
+			{
+				histogram[*d / bins]++;
+			}
+			break;
+		default:
+			break;
+	}
 }
 
+#ifdef HAVE_LIBJPEG
 
 int
-Rts2Image::writeAsJPEG (int quality)
+Rts2Image::writeAsJPEG (std::string expand_str, float quantiles, int quality)
 {
+	long hist[65535];
+	getHistogram (hist, 65535);
 
+	long psum = 0;
+	int low = -1;
+	int high = -1;
+
+	int i;
+
+	// find quantiles
+	for (i = 0; i < 65535; i++)
+	{
+		psum += hist[i];
+		if (psum > getNPixels() * quantiles)
+		{
+			low = i;
+			break;
+		}
+	}
+
+	if (low == -1)
+	{
+		low = 65535;
+		high = 65535;
+	}
+	else
+	{
+		for (; i < 65535; i++)
+		{
+			psum += hist[i];
+			if (psum > getNPixels () * (1 - quantiles))
+			{
+				high = i;
+				break;
+			}
+		}
+		if (high == -1)
+		{
+			high = 65535;
+		}
+	}
+
+	// fill JSAMPLE JPEG buffer
+	JSAMPLE image_buffer[getHeight () * getWidth () * 3];
+
+	long k = 0;
+
+	std::cout << "low " << low << " high " << high << std::endl;
+
+	for (i = 0; i < getNPixels (); i++)
+	{
+		char n;
+		uint16_t pix = ((uint16_t *)imageData)[i];
+		if (pix <= low)
+		{
+			n = 0;
+		}
+		else if (pix >= high)
+		{
+			n = 255;
+		}
+		else
+		{
+			// linear scaling
+			n = 255 * ((double (pix - low)) / (high - low));
+		}
+		image_buffer[k++] = n;
+	  	image_buffer[k++] = n;
+		image_buffer[k++] = n;
+	}
+
+	// init and write JPEG..
+	struct jpeg_compress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+
+	cinfo.err = jpeg_std_error (&jerr);
+
+	std::string new_filename = expandPath (expand_str);
+	
+	int ret = mkpath (new_filename.c_str (), 0777);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot create directory for file '" << new_filename << "'" << sendLog;
+		return -1;
+	}
+
+	FILE *out = fopen (new_filename.c_str (), "wb");
+	if (out == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot create JPEG file '" << new_filename << "'" << sendLog;
+		return -1;
+	}
+
+	jpeg_create_compress (&cinfo);
+	jpeg_stdio_dest (&cinfo, out);
+
+	cinfo.image_width = getWidth ();
+	cinfo.image_height = getHeight ();
+	cinfo.input_components = 3;
+	cinfo.in_color_space = JCS_RGB;
+
+	jpeg_set_defaults (&cinfo);
+	jpeg_set_quality (&cinfo, quality, TRUE);
+	jpeg_start_compress (&cinfo, TRUE);
+
+	for (i = 0; i < getHeight (); i++)
+	{
+		JSAMPROW rowdata[1];
+		rowdata[0] = &image_buffer[i * getWidth () * 3];
+		jpeg_write_scanlines (&cinfo, rowdata, 1);
+	}
+
+	jpeg_finish_compress (&cinfo);
+	jpeg_destroy_compress (&cinfo);
+
+	fclose (out);
+
+	return 0;
 }
+
+#endif /* HAVE_LIBJPEG */
 
 
 double
@@ -1450,54 +1583,54 @@ Rts2Image::loadData ()
 	}
 	fits_get_img_equivtype (getFitsFile (), &imageType, &fits_status);
 	fitsStatusGetValue ("image equivType loadData", true);
-	imageData = new char[getWidth () * getHeight () * getPixelByteSize ()];
+	imageData = new char[getNPixels () * getPixelByteSize ()];
 	switch (imageType)
 	{
 		case RTS2_DATA_BYTE:
 			fits_read_img_byt (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(unsigned char *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_SHORT:
 			fits_read_img_sht (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(int16_t *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_LONG:
 			fits_read_img_lng (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(long int *) imageData, &anyNull, &fits_status);
 			break;
 
 		case RTS2_DATA_LONGLONG:
 			fits_read_img_lnglng (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(LONGLONG *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_FLOAT:
 			fits_read_img_flt (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(float *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_DOUBLE:
 			fits_read_img_dbl (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(double *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_SBYTE:
 			fits_read_img_sbyt (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(signed char *) imageData, &anyNull, &fits_status);
 			break;
 		case RTS2_DATA_USHORT:
 			fits_read_img_usht (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(short unsigned int *) imageData, &anyNull,
 				&fits_status);
 			break;
 		case RTS2_DATA_ULONG:
 			fits_read_img_ulng (getFitsFile (), 0, 1,
-				getWidth () * getHeight (), 0,
+				getNPixels (), 0,
 				(unsigned long *) imageData, &anyNull,
 				&fits_status);
 			break;

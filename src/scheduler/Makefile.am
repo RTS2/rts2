@@ -10,8 +10,8 @@ librts2scheduler_a_CXXFLAGS = @LIBPG_CFLAGS@
 bin_PROGRAMS = rts2-scheduler
 
 rts2_scheduler_SOURCES = scheduler.cpp
-rts2_scheduler_CXXFLAGS = @LIBPG_CFLAGS@
-rts2_scheduler_LDFLAGS = librts2scheduler.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@
+rts2_scheduler_CXXFLAGS = @LIBPG_CFLAGS@ @LIB_JPEG@
+rts2_scheduler_LDFLAGS = librts2scheduler.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @JPEG_CFLAGS@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

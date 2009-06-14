@@ -32,12 +32,16 @@ rts2_dome_zelio_SOURCES = zelio.cpp
 rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 if COMEDI
-bin_PROGRAMS += rts2-dome-bootes2
+bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec
 
 rts2_dome_bootes2_SOURCES = bootes2.cpp
 rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
 rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
 
+rts2_dome_bootes2_SOURCES = ieec.cpp
+rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
+
 else
-EXTRA_DIST += bootes2.cpp
+EXTRA_DIST += bootes2.cpp ieec.cpp
 endif

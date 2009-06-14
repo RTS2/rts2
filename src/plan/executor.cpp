@@ -25,6 +25,7 @@
 #include "rts2devcliphot.h"
 
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
+#define OPT_DONT_DARK     OPT_LOCAL + 101
 
 namespace rts2plan
 {
@@ -55,7 +56,6 @@ class Executor:public Rts2DeviceDb
 		std::vector < Target * >targetsQue;
 		struct ln_lnlat_posn *observer;
 
-		int ignoreDay;
 		double grb_sep_limit;
 		double grb_min_sep;
 
@@ -76,6 +76,9 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueInteger *next_id;
 		Rts2ValueString *next_name;
 
+		Rts2ValueBool *doDarks;
+		Rts2ValueBool *ignoreDay;
+
 		rts2core::IntegerArray *next_ids;
 		rts2core::StringArray *next_names;
 
@@ -84,6 +87,8 @@ class Executor:public Rts2DeviceDb
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
 		Executor (int argc, char **argv);
 		virtual ~ Executor (void);
@@ -149,8 +154,14 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
-	ignoreDay = 0;
+	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false);
+	doDarks->setValueBool (true);
+
+	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false);
+	ignoreDay->setValueBool (false);
+
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
+	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 }
 
 
@@ -168,7 +179,10 @@ Executor::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case OPT_IGNORE_DAY:
-			ignoreDay = 1;
+			ignoreDay->setValueBool (true);
+			break;
+		case OPT_DONT_DARK:
+			doDarks->setValueBool (false);
 			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
@@ -190,6 +204,15 @@ Executor::reloadConfig ()
 	config->getDouble ("grbd", "seplimit", grb_sep_limit);
 	config->getDouble ("grbd", "minsep", grb_min_sep);
 	return 0;
+}
+
+
+int
+Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == doDarks || oldValue == ignoreDay)
+		return 0;
+	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
 
@@ -417,7 +440,7 @@ Executor::info ()
 int
 Executor::changeMasterState (int new_state)
 {
-	if (ignoreDay)
+	if (ignoreDay->getValueBool () == true)
 		return Rts2DeviceDb::changeMasterState (new_state);
 
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
@@ -428,23 +451,20 @@ Executor::changeMasterState (int new_state)
 		case SERVERD_DUSK:
 			// unblock stop state
 			if ((getState () & EXEC_MASK_END) == EXEC_END)
-			{
 				maskState (EXEC_MASK_END, EXEC_NOT_END);
-			}
 			if (!currentTarget && nextTargets.size () != 0)
-			{
 				switchTarget ();
-			}
 			break;
 		case (SERVERD_DAWN | SERVERD_STANDBY):
 		case (SERVERD_NIGHT | SERVERD_STANDBY):
 		case (SERVERD_DUSK | SERVERD_STANDBY):
 			clearNextTargets ();
 			// next will be dark..
-			nextTargets.push_front (createTarget (1, observer));
-			if (!currentTarget)
+			if (doDarks->getValueBool () == true)
 			{
-				switchTarget ();
+				nextTargets.push_front (createTarget (1, observer));
+				if (!currentTarget)
+					switchTarget ();
 			}
 			break;
 		default:
@@ -737,7 +757,7 @@ Executor::switchTarget ()
 		currentTarget = NULL;
 		clearNextTargets ();
 	}
-	else if (ignoreDay)
+	else if (ignoreDay->getValueBool () == true)
 	{
 		doSwitch ();
 	}

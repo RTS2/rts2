@@ -23,7 +23,7 @@
 #include "../utils/rts2connfork.h"
 
 // executes GRB programm..
-class Rts2GrbExecConn:public Rts2ConnFork
+class Rts2GrbExecConn:public rts2core::ConnFork
 {
 	private:
 		char **argvs;

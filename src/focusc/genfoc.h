@@ -119,8 +119,6 @@ class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 	protected:
 		unsigned short low, med, hig, max, min;
 		double average;
-		double stdev;
-		double bg_stdev;
 		int autoSave;
 
 		std::list < fwhmData * >fwhmDatas;

@@ -35,13 +35,16 @@
 #endif /* HAVE_PGSQL */
 
 #include "../utils/libnova_cpp.h"
+#include "../utils/rts2connfork.h"
 #include "../utils/timestamp.h"
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
+#include "session.h"
 
 #include "r2x.h"
 
 using namespace XmlRpc;
+using namespace rts2xml;
 
 /**
  * @file
@@ -55,21 +58,46 @@ using namespace XmlRpc;
  */
 XmlRpcServer xmlrpc_server;
 
+namespace rts2xmlrpc
+{
+
 /**
- * XML-RPC
+ * XML-RPC client class. Provides functions for XML-RPCd to react on state
+ * and value changes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class XmlDevClient:public Rts2DevClient
+{
+	public:
+		XmlDevClient (Rts2Conn *conn):Rts2DevClient (conn)
+		{
+
+		}
+
+	virtual void stateChanged (Rts2ServerState * state);
+};
+
+
+/**
+ * XML-RPC daemon class.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
  * @addgroup XMLRPC
  */
 #ifdef HAVE_PGSQL
-class Rts2XmlRpcd:public Rts2DeviceDb
+class XmlRpcd:public Rts2DeviceDb
 #else
-class Rts2XmlRpcd:public Rts2Device
+class XmlRpcd:public Rts2Device
 #endif
 {
 	private:
 		int rpcPort;
+		std::map <std::string, Session*> sessions;
+
 	protected:
 #ifndef HAVE_PGSQL
 		virtual int willConnect (Rts2Address * _addr);
@@ -80,14 +108,50 @@ class Rts2XmlRpcd:public Rts2Device
 		virtual void selectSuccess ();
 
 	public:
-		Rts2XmlRpcd (int argc, char **argv);
+		XmlRpcd (int argc, char **argv);
+		virtual ~XmlRpcd ();
+
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+
+		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
 
 		virtual void message (Rts2Message & msg);
+
+		/**
+		 * Create new session for given user.
+		 *
+		 * @param _username  Name of the user.
+		 * @param _timeout   Timeout in seconds for session validity.
+		 *
+		 * @return String with session ID.
+		 */
+		std::string addSession (std::string _username, time_t _timeout);
+
+
+		/**
+		 * Returns true if session with a given sessionId exists.
+		 *
+		 * @param sessionId  Session ID.
+		 *
+		 * @return True if session with a given session ID exists.
+		 */
+		bool existsSession (std::string sessionId);
 };
+
+};
+
+using namespace rts2xmlrpc;
+
+void
+XmlDevClient::stateChanged (Rts2ServerState * state)
+{
+	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
+	Rts2DevClient::stateChanged (state);
+}
 
 #ifndef HAVE_PGSQL
 int
-Rts2XmlRpcd::willConnect (Rts2Address *_addr)
+XmlRpcd::willConnect (Rts2Address *_addr)
 {
        if (_addr->getType () < getDeviceType ()
                 || (_addr->getType () == getDeviceType ()
@@ -98,7 +162,7 @@ Rts2XmlRpcd::willConnect (Rts2Address *_addr)
 #endif
 
 int
-Rts2XmlRpcd::processOption (int in_opt)
+XmlRpcd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -117,7 +181,7 @@ Rts2XmlRpcd::processOption (int in_opt)
 
 
 int
-Rts2XmlRpcd::init ()
+XmlRpcd::init ()
 {
 	int ret;
 #ifdef HAVE_PGSQL
@@ -139,7 +203,7 @@ Rts2XmlRpcd::init ()
 
 
 void
-Rts2XmlRpcd::addSelectSocks ()
+XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::addSelectSocks ();
@@ -151,7 +215,7 @@ Rts2XmlRpcd::addSelectSocks ()
 
 
 void
-Rts2XmlRpcd::selectSuccess ()
+XmlRpcd::selectSuccess ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
@@ -162,9 +226,9 @@ Rts2XmlRpcd::selectSuccess ()
 }
 
 #ifdef HAVE_PGSQL
-Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
 #else
-Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
 #endif
 {
 	rpcPort = 8889;
@@ -173,8 +237,41 @@ Rts2XmlRpcd::Rts2XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE
 }
 
 
+XmlRpcd::~XmlRpcd ()
+{
+	for (std::map <std::string, Session *>::iterator iter = sessions.begin (); iter != sessions.end (); iter++)
+	{
+		delete (*iter).second;
+	}
+	sessions.clear ();
+}
+
+
+Rts2DevClient *
+XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+	return new XmlDevClient (conn);
+}
+
+
 void
-Rts2XmlRpcd::message (Rts2Message & msg)
+XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
+{
+	int ret;
+	rts2core::ConnFork *cf = new rts2core::ConnFork (this, "/etc/rts2/state", true, 100);
+	ret = cf->init ();
+	if (ret)
+	{
+		delete cf;
+		return;
+	}
+
+	addConnection (cf);
+}
+
+
+void
+XmlRpcd::message (Rts2Message & msg)
 {
 // log message to DB, if database is present
 #ifdef HAVE_PGSQL
@@ -185,6 +282,94 @@ Rts2XmlRpcd::message (Rts2Message & msg)
 	}
 #endif
 }
+
+
+std::string
+XmlRpcd::addSession (std::string _username, time_t _timeout)
+{
+	Session *s = new Session (_username, time(NULL) + _timeout);
+	sessions[s->getSessionId()] = s;
+	return s->getSessionId ();
+}
+
+
+bool
+XmlRpcd::existsSession (std::string sessionId)
+{
+	std::map <std::string, Session*>::iterator iter = sessions.find (sessionId);
+	if (iter == sessions.end ())
+	{
+		return false;
+	}
+	return true;
+}
+
+
+/**
+ * Return session ID for user, if login is allowed.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class Login: public XmlRpcServerMethod
+{
+	public:
+		Login (XmlRpcServer* s): XmlRpcServerMethod (R2X_LOGIN, s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 2)
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+
+			if (verifyUser (params[0], params[1]) == false)
+			{
+				throw XmlRpcException ("Invalid login or password");
+			}
+
+			result = ((XmlRpcd *) getMasterApp ())->addSession (params[0], 3600);
+		}
+
+		std::string help ()
+		{
+			return std::string ("Return session ID for user if logged properly");
+		}
+} login(&xmlrpc_server);
+
+/**
+ * Represents session methods. Thouse must be executed with session ID passed as the first parameter.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class SessionMethod: public XmlRpcServerMethod
+{
+	public:
+		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size() < 1)
+			{
+				throw XmlRpcException ("Session method must have a valid session ID as first parameter");
+			}
+			if (((XmlRpcd *) getMasterApp ())->existsSession (params[0]) == false)
+			{
+				throw XmlRpcException ("Invalid session ID");
+			}
+			params.popFront ();
+			sessionExecute (params, result);
+		}
+
+		virtual void sessionExecute (XmlRpcValue& params, XmlRpcValue& result) = 0;
+};
 
 
 /**
@@ -203,7 +388,7 @@ class DeviceCount: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			result = ((Rts2XmlRpcd *) getMasterApp ())->connectionSize ();
+			result = ((XmlRpcd *) getMasterApp ())->connectionSize ();
 		}
 
 		std::string help ()
@@ -219,16 +404,16 @@ class DeviceCount: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class ListDevices: public XmlRpcServerMethod
+class ListDevices: public SessionMethod
 {
 	public:
-		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_LIST, s)
+		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			connections_t::iterator iter;
 			int i = 0;
 			for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++, i++)
@@ -246,6 +431,7 @@ class ListDevices: public XmlRpcServerMethod
 			return std::string ("Returns name of devices conencted to the system");
 		}
 } listDevices (&xmlrpc_server);
+
 
 /**
  * Get device type. Returns string describing device type.
@@ -265,7 +451,7 @@ class DeviceType: public XmlRpcServerMethod
 		{
 			if (params.size () != 1)
 				throw XmlRpcException ("Single device name expected");
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 			if (conn == NULL)
 				throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
@@ -273,6 +459,52 @@ class DeviceType: public XmlRpcServerMethod
 		}
 
 } deviceType (&xmlrpc_server);
+
+
+/**
+ * List device status.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class DevicesStatus: public XmlRpcServerMethod
+{
+	public:
+		DevicesStatus (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_STATUS, s)
+		{
+		}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 1)
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			std::string p1 = std::string (params[0]);
+
+			Rts2Conn *conn;
+
+			if (p1 == "centrald" || p1 == "")
+				conn = *(serv->getCentraldConns ()->begin ());
+			else
+				conn = serv->getOpenConnection (p1.c_str ());
+
+			if (conn == NULL)
+			{
+				throw XmlRpcException ("Cannot find specified device");
+			}
+			result[0] = conn->getStateString ();
+			result[1] = conn->getRealState ();
+		}
+
+		std::string help ()
+		{
+			return std::string ("Returns state of devices");
+		}
+} devicesStatus (&xmlrpc_server);
+
 
 /**
  * List name of all values accessible from server.
@@ -295,7 +527,7 @@ class ListValues: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
 			connections_t::iterator iter;
 			Rts2ValueVector::iterator variter;
@@ -345,7 +577,7 @@ class ListValuesDevice: public ListValues
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
 			int i = 0;
 			// print results for single device..
@@ -462,7 +694,7 @@ class SetValue: public XmlRpcServerMethod
 		{
 			std::string devName = params[0];
 			std::string valueName = params[1];
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
 			if (!conn)
 			{
@@ -543,7 +775,7 @@ class IncValue: public XmlRpcServerMethod
 		{
 			std::string devName = params[0];
 			std::string valueName = params[1];
-			Rts2XmlRpcd *serv = (Rts2XmlRpcd *) getMasterApp ();
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
 			if (!conn)
 			{
@@ -764,6 +996,49 @@ class TargetInfo: public XmlRpcServerMethod
 
 } targetInfo (&xmlrpc_server);
 
+class TargetAltitude: public XmlRpcServerMethod
+{
+	public:
+		TargetAltitude (XmlRpcServer *s) : XmlRpcServerMethod (R2X_TARGET_ALTITUDE, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 4)
+			{
+				throw XmlRpcException ("Invalid number of parameters");
+			}
+			Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
+			if (tar == NULL)
+			{
+				throw XmlRpcException ("Cannot create target");
+			}
+			time_t tfrom = (int)params[1];
+			double jd_from = ln_get_julian_from_timet (&tfrom);
+			time_t tto = (int)params[2];
+			double jd_to = ln_get_julian_from_timet (&tto);
+			double stepsize = ((double)params[3]) / 86400;
+			// test for insane request
+			if ((jd_to - jd_from) / stepsize > 10000)
+			{
+				throw XmlRpcException ("Too many points");
+			}
+			int i;
+			double j;
+			for (i = 0, j = jd_from; j < jd_to; i++, j += stepsize)
+			{
+				result[i][0] = j;
+				ln_hrz_posn hrz;
+				tar->getAltAz (&hrz, j);
+				result[i][1] = hrz.alt;
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Return 2D array with informations about target height at diferent times.");
+		}
+} targetAltitude (&xmlrpc_server);
+
 class ListTargetObservations: public XmlRpcServerMethod
 {
 	public:
@@ -789,6 +1064,11 @@ class ListTargetObservations: public XmlRpcServerMethod
 
 				result[i] = retVar;
 			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("returns observations of given target");
 		}
 
 } listTargetObservations (&xmlrpc_server);
@@ -932,6 +1212,6 @@ class UserLogin: public XmlRpcServerMethod
 int
 main (int argc, char **argv)
 {
-	Rts2XmlRpcd device = Rts2XmlRpcd (argc, argv);
+	XmlRpcd device = XmlRpcd (argc, argv);
 	return device.run ();
 }

@@ -20,6 +20,20 @@
 #ifndef __RTS2_R2X__
 #define __RTS2_R2X__
 
+/**
+ * Return session id for new user, if login is allowed.
+ *
+ * @param login     User login name.
+ * @param password  Password for login.
+ * @return SessionID
+ */
+#define R2X_LOGIN	              "rts2.login"
+
+/**
+ * Return array with name of devices presented in the system.
+ *
+ * @return Arry with names of devices presented in the system.
+ */
 #define R2X_DEVICES_LIST              "rts2.devices.list"
 
 /**
@@ -30,6 +44,15 @@
  * @return Device type string (camera, telescope, ..).
  */
 #define R2X_DEVICE_TYPE               "rts2.device.type"
+
+/**
+ * Return device status. If you would like to get state of system (=centrald), specify as device name "centrald".
+ *
+ * @param Device name.
+ *
+ * @return two arguments - first is device state as string, second as its numeric representation.
+ */
+#define R2X_DEVICES_STATUS            "rts2.devices.status"
 
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
@@ -68,12 +91,30 @@
 #define R2X_TARGETS_INFO              "rts2.targets.info"
 
 /**
+ * Return altitude of object during given night.
+ *
+ * @param tarid     Target id.
+ * @param from      Computer time (seconds from 1970) of altitude information start.
+ * @param to        Computer time (seconds from 1970) of altitude information end.
+ * @param stepsize  Size of steps between altitudes in seconds.
+ *
+ * @return Array
+ */
+#define R2X_TARGET_ALTITUDE           "rts2.target.altitude"
+
+/**
  * List observations for given target.
  *
  * @param tarId  Target id.
  */
 #define R2X_TARGET_OBSERVATIONS_LIST         "rts2.target.observations.list"
 
+/**
+ * Return single observation.
+ *
+ * @param obsid  Observation ID.
+ */
+#define R2X_OBSERVATION_INFO                 "rts2.observation.info"
 
 /**
  * List images which belongs to given observation.
@@ -93,6 +134,7 @@
 #define R2X_MESSAGES_GET              "rts2.messages.get"
 
 #define R2X_TICKET_INFO               "rts2.tickets.info"
+
 
 /**
  * User login. Provides username and password, out true/false - true if login is OK

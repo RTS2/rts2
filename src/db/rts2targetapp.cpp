@@ -73,18 +73,18 @@ Rts2TargetApp::getObject (const char *obj_text)
 	}
 
 	delete target;
+	target = NULL;
 
+#ifdef HAVE_PGSQL_SOAP
 	// try to get target from SIMBAD
 	target = new Rts2SimbadTarget (obj_text);
 	ret = target->load ();
-	if (ret)
-	{
-		delete target;
-		target = NULL;
-		return -1;
-	}
-
-	return 0;
+	if (ret == 0)
+		return 0;
+	delete target;
+	target = NULL;
+#endif
+	return -1;
 }
 
 

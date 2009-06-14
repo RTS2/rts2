@@ -99,7 +99,6 @@ class Rts2Image:public Rts2FitsFile
 		short int min;
 		short int max;
 		short int mean;
-		int *histogram;
 		int isAcquiring;
 		// that value is nan when rotang was already set;
 		// it is calculated as sum of partial rotangs.
@@ -310,17 +309,24 @@ class Rts2Image:public Rts2FitsFile
 		/**
 		 * Build image histogram.
 		 *
-		 * @param histogram Array of size hist_size which holds histogram bins.
-		 * @param hist_size Size of histogram.
+		 * @param histogram Array of size nbins.
+		 * @param nbins     Number of histogram bins.
 		 */
-		void getHistogram (int *histogram, int nbins);
+		void getHistogram (long *histogram, long nbins);
 
+#ifdef HAVE_LIBJPEG
 		/**
 		 * Write image as JPEG to provided data buffer.
 		 * Buffer will be allocated by this call and should
 		 * be free afterwards.
+		 *
+		 * @param expand_str Expand string for image name
+		 * @param quantiles  Quantiles in 0-1 range for image scaling
+		 * @param quality    Image quality
+		 *
 		 */
-		int writeAsJPEG (int quality = 0);
+		int writeAsJPEG (std::string expand_str, float quantiles=0.005, int quality = 100);
+#endif
 
 		double getAstrometryErr ();
 
@@ -531,6 +537,14 @@ class Rts2Image:public Rts2FitsFile
 		long getHeight ()
 		{
 			return naxis[1];
+		}
+
+		/**
+		 * Returns number of pixels.
+		 */
+		long getNPixels ()
+		{
+			return getWidth () * getHeight ();
 		}
 
 		/**

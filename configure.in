@@ -415,6 +415,7 @@ if test "x"$xfocusc = "xyes"; then
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
+AH_TEMPLATE([HAVE_LIBJPEG],[Whenever JPEG is installed])
 
 if test "x${libjpeg}" != "xno"; then
   if test "x${libjpeg}" != "xyes"; then
@@ -434,8 +435,8 @@ EOF
   fi
   AC_SUBST(LIB_JPEG)
   AC_SUBST(JPEG_CFLAGS)
+  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
 fi
-
 
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";

@@ -170,6 +170,13 @@ Client::doClient ()
 	oneArg[0] = "DeviceCount";
 	runXmlMethod ("system.methodHelp", oneArg, result);
 
+	XmlRpcValue twoArg;
+	twoArg[0] = "petr";
+	twoArg[1] = "test";
+
+	runXmlMethod (R2X_LOGIN, twoArg, result);
+	std::string sessionId = result;
+
 	runXmlMethod (R2X_VALUES_LIST, noArgs, result);
 
 	XmlRpcValue threeArg;
@@ -188,7 +195,8 @@ Client::doClient ()
 	threeArg[2] = "20 30";
 	runXmlMethod (R2X_VALUE_SET, threeArg, result);
 
-	runXmlMethod (R2X_DEVICES_LIST, noArgs, result);
+	oneArg[0] = sessionId;
+	runXmlMethod (R2X_DEVICES_LIST, oneArg, result);
 
 	for (int i = 0; i < result.size (); i++)
 	{

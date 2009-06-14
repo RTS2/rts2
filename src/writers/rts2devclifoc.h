@@ -41,7 +41,7 @@ class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
 		virtual void postEvent (Rts2Event * event);
 };
 
-class Rts2ConnFocus:public Rts2ConnFork
+class Rts2ConnFocus:public rts2core::ConnFork
 {
 	private:
 		char *img_path;

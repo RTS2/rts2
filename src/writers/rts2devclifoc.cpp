@@ -148,7 +148,7 @@ Rts2DevClientFocusFoc::focusingEnd ()
 
 Rts2ConnFocus::Rts2ConnFocus (Rts2Block * in_master, Rts2Image * in_image,
 const char *in_exe, int in_endEvent):
-Rts2ConnFork (in_master, in_exe)
+rts2core::ConnFork (in_master, in_exe, false)
 {
 	change = INT_MAX;
 	img_path = new char[strlen (in_image->getFileName ()) + 1];

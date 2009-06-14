@@ -66,6 +66,9 @@
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
+/* Whenever JPEG is installed */
+#undef HAVE_LIBJPEG
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 

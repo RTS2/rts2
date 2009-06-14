@@ -24,27 +24,29 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-Rts2ConnFork::Rts2ConnFork (Rts2Block * in_master, const char *in_exe,
-int in_timeout):
-Rts2ConnNoSend (in_master)
+using namespace rts2core;
+
+ConnFork::ConnFork (Rts2Block *_master, const char *_exe, bool _fillConnEnvVars, int _timeout):
+Rts2ConnNoSend (_master)
 {
 	childPid = -1;
 	sockerr = -1;
-	exePath = new char[strlen (in_exe) + 1];
-	strcpy (exePath, in_exe);
-	if (in_timeout > 0)
+	exePath = new char[strlen (_exe) + 1];
+	strcpy (exePath, _exe);
+	if (_timeout > 0)
 	{
 		time (&forkedTimeout);
-		forkedTimeout += in_timeout;
+		forkedTimeout += _timeout;
 	}
 	else
 	{
 		forkedTimeout = 0;
 	}
+	fillConnEnvVars = _fillConnEnvVars;
 }
 
 
-Rts2ConnFork::~Rts2ConnFork (void)
+ConnFork::~ConnFork (void)
 {
 	if (childPid > 0)
 		kill (-childPid, SIGINT);
@@ -55,7 +57,7 @@ Rts2ConnFork::~Rts2ConnFork (void)
 
 
 int
-Rts2ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (sockerr > 0)
 		FD_SET (sockerr, readset);
@@ -64,7 +66,7 @@ Rts2ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 
 
 int
-Rts2ConnFork::receive (fd_set * readset)
+ConnFork::receive (fd_set * readset)
 {
 	if (sockerr > 0 && FD_ISSET (sockerr, readset))
 	{
@@ -91,12 +93,12 @@ Rts2ConnFork::receive (fd_set * readset)
 
 
 void
-Rts2ConnFork::connectionError (int last_data_size)
+ConnFork::connectionError (int last_data_size)
 {
 	if (last_data_size < 0 && errno == EAGAIN)
 	{
 		logStream (MESSAGE_DEBUG) <<
-			"Rts2ConnFork::connectionError reported EAGAIN - that should not happen, ignoring"
+			"ConnFork::connectionError reported EAGAIN - that should not happen, ignoring"
 			<< sendLog;
 		return;
 	}
@@ -105,34 +107,33 @@ Rts2ConnFork::connectionError (int last_data_size)
 
 
 void
-Rts2ConnFork::beforeFork ()
+ConnFork::beforeFork ()
 {
 }
 
 
 void
-Rts2ConnFork::initFailed ()
+ConnFork::initFailed ()
 {
 }
 
 
 void
-Rts2ConnFork::processErrorLine (char *errbuf)
+ConnFork::processErrorLine (char *errbuf)
 {
 	logStream (MESSAGE_ERROR) << "From error pipe received: " << errbuf << "." << sendLog;
 }
 
+
 int
-Rts2ConnFork::newProcess ()
+ConnFork::newProcess ()
 {
-	// create new process with execl..
-	// now empty
-	return -1;
+	return execl (exePath, NULL);
 }
 
 
 int
-Rts2ConnFork::init ()
+ConnFork::init ()
 {
 	int ret;
 	if (childPid > 0)
@@ -191,6 +192,23 @@ Rts2ConnFork::init ()
 	close (filedeserr[0]);
 	dup2 (filedeserr[1], 2);
 
+	// if required, pass environemnt values about connections..
+	if (fillConnEnvVars)
+	{
+		connections_t *conns = getMaster () ->getConnections ();
+		for (connections_t::iterator citer = conns->begin (); citer != conns->end (); citer++)
+		{
+			Rts2Conn *conn = *citer;
+			for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
+			{
+				Rts2Value *val = (*viter);
+				char *envV = new char [strlen (conn->getName ()) + val->getName ().length () + strlen (val->getValue ()) + 3];
+				sprintf (envV, "%s_%s=%s", conn->getName (), val->getName ().c_str (), val->getValue ());
+				putenv (envV);
+			}
+		}
+	}
+
 	// close all sockets so when we crash, we don't get any dailing
 	// sockets
 	master->forkedInstance ();
@@ -199,14 +217,14 @@ Rts2ConnFork::init ()
 
 	ret = newProcess ();
 	if (ret)
-		logStream (MESSAGE_ERROR) << "Rts2ConnFork::init newProcess return : " <<
+		logStream (MESSAGE_ERROR) << "ConnFork::init newProcess return : " <<
 			ret << " " << strerror (errno) << sendLog;
 	exit (0);
 }
 
 
 void
-Rts2ConnFork::stop ()
+ConnFork::stop ()
 {
 	if (childPid > 0)
 		kill (-childPid, SIGSTOP);
@@ -214,7 +232,7 @@ Rts2ConnFork::stop ()
 
 
 void
-Rts2ConnFork::term ()
+ConnFork::term ()
 {
 	if (childPid > 0)
 		kill (-childPid, SIGKILL);
@@ -223,7 +241,7 @@ Rts2ConnFork::term ()
 
 
 int
-Rts2ConnFork::idle ()
+ConnFork::idle ()
 {
 	if (forkedTimeout > 0)
 	{
@@ -240,7 +258,7 @@ Rts2ConnFork::idle ()
 
 
 void
-Rts2ConnFork::childReturned (pid_t in_child_pid)
+ConnFork::childReturned (pid_t in_child_pid)
 {
 	if (childPid == in_child_pid)
 	{

@@ -22,6 +22,9 @@
 
 #include "rts2connnosend.h"
 
+namespace rts2core
+{
+
 /**
  * Class representing forked connection, used to controll process which runs in
  * paraller with current execution line.
@@ -34,13 +37,14 @@
  *
  * @ingroup RTS2Block
  */
-class Rts2ConnFork:public Rts2ConnNoSend
+class ConnFork:public Rts2ConnNoSend
 {
 	private:
 		pid_t childPid;
 		time_t forkedTimeout;
 		// holds pipe with stderr. Stdout is stored in sock
 		int sockerr;
+		bool fillConnEnvVars;
 
 	protected:
 		char *exePath;
@@ -58,9 +62,8 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		 */
 		virtual void processErrorLine (char *errbuf);
 	public:
-		Rts2ConnFork (Rts2Block * in_master, const char *in_exe, int in_timeout =
-			0);
-		virtual ~ Rts2ConnFork (void);
+		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
+		virtual ~ ConnFork (void);
 
 		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
@@ -89,5 +92,7 @@ class Rts2ConnFork:public Rts2ConnNoSend
 		{
 			// insert here some post-processing
 		}
+};
+
 };
 #endif							 /* !__RTS2_CONN_FORK__ */

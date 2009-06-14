@@ -22,4 +22,8 @@ libsimbad_a_CXXFLAGS = @LIB_GSOAP_CFLAGS@
 
 CLEANFILES = $(SOAP_CPP_SRC) *.req.xml *.res.xml *.nsmap *.xsd *Proxy\.h $(SOAPHEADER)
 
+else
+
+EXTRA_DIST += simbad.h rts2simbadtarget.cpp
+
 endif

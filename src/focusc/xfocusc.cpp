@@ -474,7 +474,7 @@ Rts2xfocusCamera::printInfo ()
 		20, _os.str ().c_str (), _os.str ().length ());
 	std::ostringstream _os1;
 	_os1.precision (2);
-	_os1 << "avg " << average << " Stdev: " << stdev << " Bg Stdev: " << bg_stdev;
+	_os1 << "avg " << average;
 	XDrawImageString (master->getDisplay (), pixmap, gc, pixmapWidth / 2 - 50,
 		32, _os1.str ().c_str (), _os1.str ().length ());
 
@@ -905,7 +905,7 @@ Rts2xfocusCamera::processImage (Rts2Image * image)
 	low = (short unsigned int) (median - 3 * sigma);
 	hig = (short unsigned int) (median + 5 * sigma);
 
-	std::cout << "Window median:" << median << " stdev " << sigma
+	std::cout << "Window median:" << median << " sigma " << sigma
 		<< " low:" << low << " hig:" << hig << std::endl;
 
 	// transfer iP to pixmap, zoom it on fly

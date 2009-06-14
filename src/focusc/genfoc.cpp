@@ -32,8 +32,6 @@ Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 	master = in_master;
 
 	average = 0;
-	stdev = 0;
-	bg_stdev = 0;
 
 	low = med = hig = 0;
 

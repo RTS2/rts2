@@ -46,6 +46,7 @@
 #define IMAGEOP_EVAL      0x0100
 #define IMAGEOP_CREATEWCS 0x0200
 #define IMAGEOP_MODEL     0x0400
+#define IMAGEOP_JPEG      0x0800
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 
@@ -74,10 +75,11 @@ class AppImage:public Rts2AppImage
 
 		double off_x, off_y;
 
-		std::string print_expr;
-		std::string copy_expr;
-		std::string link_expr;
-		std::string move_expr;
+		const char* print_expr;
+		const char* copy_expr;
+		const char* link_expr;
+		const char* move_expr;
+		const char* jpeg_expr;
 	protected:
 		virtual int processOption (int in_opt);
 	#ifdef HAVE_PGSQL
@@ -302,12 +304,19 @@ AppImage::processOption (int in_opt)
 				off_y = off_x;
 			}
 			break;
+		#ifdef HAVE_LIBJPEG
+		case 'j':
+			operation |= IMAGEOP_JPEG;
+			jpeg_expr = optarg;
+			break;
 		default:
+		#endif /* HAVE_LIBJPEG */
+
 		#ifdef HAVE_PGSQL
 			return Rts2AppDbImage::processOption (in_opt);
 		#else
 			return Rts2AppImage::processOption (in_opt);
-		#endif
+		#endif /* HAVE_PGSQL */
 	}
 	return 0;
 }
@@ -353,6 +362,10 @@ AppImage::processImage (Rts2Image * image)
 		testEval (image);
 	if (operation & IMAGEOP_CREATEWCS)
 		createWCS (image);
+#ifdef HAVE_LIBJPEG
+	if (operation & IMAGEOP_JPEG)
+	  	image->writeAsJPEG (jpeg_expr, 0);
+#endif /* HAVE_LIBJPEG */
 	return 0;
 }
 
@@ -392,6 +405,9 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
+#ifdef HAVE_LIBJPEG
+	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
+#endif /* HAVE_LIBJPEG */
 }
 
 
