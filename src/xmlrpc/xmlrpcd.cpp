@@ -35,7 +35,7 @@
 #endif /* HAVE_PGSQL */
 
 #include "../utils/libnova_cpp.h"
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 #include "../utils/timestamp.h"
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"

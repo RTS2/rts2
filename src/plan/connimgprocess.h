@@ -20,7 +20,7 @@
 #ifndef __RTS2CONNIMGPROCESS__
 #define __RTS2CONNIMGPROCESS__
 
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 #include "../writers/rts2imagedb.h"
 #include "../utilsdb/rts2obs.h"
 

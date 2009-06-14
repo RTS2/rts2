@@ -2,7 +2,7 @@
 #define __RTS2_DEVCLIFOC__
 
 #include "rts2devcliimg.h"
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 
 #include <fstream>
 #include <vector>

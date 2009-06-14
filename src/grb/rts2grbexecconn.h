@@ -20,7 +20,7 @@
 #ifndef __RTS2_GRBEXECCONN__
 #define __RTS2_GRBEXECCONN__
 
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 
 // executes GRB programm..
 class Rts2GrbExecConn:public rts2core::ConnFork
