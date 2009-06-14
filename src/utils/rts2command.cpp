@@ -528,7 +528,7 @@ void
 Rts2CommandChangeFocus::change (int _steps)
 {
 	std::ostringstream _os;
-	_os << "X FOC_TOFFS+=" << _steps;
+	_os << "X FOC_TOFFS += " << _steps;
 	setCommand (_os);
 }
 
