@@ -101,6 +101,9 @@
         <arg choice="plain"><option>-I</option></arg>
       </arg>
       <arg choice="opt">
+        <arg choice="plain"><option>-l</option></arg>
+      </arg>
+      <arg choice="opt">
         <arg choice="plain"><option>-p</option></arg>
       </arg>
       <arg choice="opt">
@@ -269,6 +272,12 @@
         <term><option>-I</option></term>
         <listitem>
           <para>Images summary rows.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-l</option></term>
+        <listitem>
+          <para>Print absolute filenames of the images which belongs to the target.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
