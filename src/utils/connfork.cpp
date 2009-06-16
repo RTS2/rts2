@@ -128,7 +128,7 @@ ConnFork::processErrorLine (char *errbuf)
 int
 ConnFork::newProcess ()
 {
-	return execl (exePath, NULL);
+	return execl (exePath, exePath, (char *) NULL);
 }
 
 
@@ -199,10 +199,18 @@ ConnFork::init ()
 		for (connections_t::iterator citer = conns->begin (); citer != conns->end (); citer++)
 		{
 			Rts2Conn *conn = *citer;
+			std::ostringstream _os;
+			_os << conn->getState ();
+
+			// put to environment device state
+			char *envV = new char [strlen (conn->getName ()) + _os.str ().length () + 8];
+			sprintf (envV, "%s_state=%s", conn->getName (), _os.str ().c_str ());
+			putenv (envV);
+
 			for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
 			{
 				Rts2Value *val = (*viter);
-				char *envV = new char [strlen (conn->getName ()) + val->getName ().length () + strlen (val->getValue ()) + 3];
+				envV = new char [strlen (conn->getName ()) + val->getName ().length () + strlen (val->getValue ()) + 3];
 				sprintf (envV, "%s_%s=%s", conn->getName (), val->getName ().c_str (), val->getValue ());
 				putenv (envV);
 			}
