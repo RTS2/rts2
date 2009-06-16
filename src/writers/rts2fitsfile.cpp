@@ -58,7 +58,13 @@ Rts2FitsFile::setFileName (const char *_fileName)
 	// not an absolute filename..
 	if (fileName[0] != '/')
 	{
-		char *path = get_current_dir_name ();
+		char path[1000];
+		char *p = getcwd (path, 1000);
+		if (p == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "too long cwd" << sendLog;
+			return;
+		}
 		absoluteFileName = new char[strlen (path) + strlen(_fileName) + 1];
 		strcpy (absoluteFileName, path);
 		strcpy (absoluteFileName + strlen (path), fileName);
