@@ -53,7 +53,7 @@ class Rts2ValueLoop
 		}
 };
 
-class Cryocon:public SensorGpib
+class Cryocon:public Gpib
 {
 	int write (const char *buf, const char *newVal);
 
@@ -367,12 +367,11 @@ Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 			return gpibWrite ("CONTROL");
 		return gpibWrite ("STOP");
 	}
-	return SensorGpib::setValue (oldValue, newValue);
+	return Gpib::setValue (oldValue, newValue);
 }
 
 
-Cryocon::Cryocon (int in_argc, char **in_argv):
-SensorGpib (in_argc, in_argv)
+Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	int i;
 
@@ -462,7 +461,7 @@ Cryocon::info ()
 	ret = writeRead ("CONTROL?", heaterEnabled);
 	if (ret)
 		return ret;
-	return SensorGpib::info ();
+	return Gpib::info ();
 }
 
 
@@ -478,7 +477,7 @@ Cryocon::commandAuthorized (Rts2Conn * conn)
 		return gpibWrite ("STOP");
 	}
 
-	return SensorGpib::commandAuthorized (conn);
+	return Gpib::commandAuthorized (conn);
 }
 
 

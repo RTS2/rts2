@@ -120,7 +120,7 @@ Gpib::processOption (int in_opt)
 			pad = atoi (optarg);
 			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (in_opt);
 	}
 	return 0;
 }
@@ -130,7 +130,7 @@ int
 Gpib::init ()
 {
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
@@ -145,7 +145,7 @@ Gpib::init ()
 }
 
 
-Gpib::Gpib (int argc, char **argv):Rts2DevSensor (argc, argv)
+Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
 	gpib_dev = -1;
 
