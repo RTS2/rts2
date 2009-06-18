@@ -326,10 +326,14 @@ class Login: public XmlRpcServerMethod
 				throw XmlRpcException ("Invalid number of parameters");
 			}
 
+#ifdef HAVE_PGSQL
 			if (verifyUser (params[0], params[1]) == false)
 			{
 				throw XmlRpcException ("Invalid login or password");
 			}
+#else
+			throw XmlRpcException ("Login not supported");
+#endif /* HAVE_PGSQL */
 
 			result = ((XmlRpcd *) getMasterApp ())->addSession (params[0], 3600);
 		}
@@ -341,7 +345,7 @@ class Login: public XmlRpcServerMethod
 } login(&xmlrpc_server);
 
 /**
- * Represents session methods. Thouse must be executed with session ID passed as the first parameter.
+ * Represents session methods. Those must be executed with session ID passed as the first parameter.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
