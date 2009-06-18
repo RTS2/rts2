@@ -15,7 +15,7 @@ rts2_xmlrpcd_LDFLAGS = ../scheduler/librts2scheduler.a ../utilsdb/librts2blockdb
 else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp session.cpp
-rts2_xmlrpcd_CXXFLAGS = @NOVA_CFLAGS@a @JPEG_CFLAGS@
+rts2_xmlrpcd_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@
 rts2_xmlrpcd_LDFLAGS = ../writers/librts2image.a ../utils/librts2block.a xmlrpc++/libxmlrpc_rts2.a @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ $(AM_LDFLAGS)
 
 endif
