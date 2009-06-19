@@ -117,14 +117,12 @@ class Rts2Obs
 		 */
 		Target *getTarget ()
 		{
-			try
-			{
-				return rts2db::TargetSetSingleton::instance ()->at(getTargetId ());
+                 	Rts2TargetSet::iterator iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
+			if (iter == rts2db::TargetSetSingleton::instance ()->end ())
+    			{
+                         	return NULL;
 			}
-			catch (std::out_of_range _e)
-			{
-				return NULL;
-			}
+                        return (*iter).second;
 		}
 
 		/**
