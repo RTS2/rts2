@@ -221,8 +221,6 @@ class Rts2Device:public Rts2Daemon
 
 		char *device_host;
 
-		char *mailAddress;
-
 		/**
 		 * Set mode from modefile.
 		 *
@@ -366,8 +364,6 @@ class Rts2Device:public Rts2Daemon
 		// only devices can send messages
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
-
-		int sendMail (const char *subject, const char *text);
 
 		/**
 		 * The interrupt call. This is called on every device on

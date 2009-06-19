@@ -70,9 +70,6 @@
 	<arg choice="plain"><option>--modefile <replaceable>filename</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-	<arg choice="plain"><option>-M <replaceable>mailaddress</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
 	<arg choice="plain"><option>-d <replaceable>device name</replaceable></option></arg>
       </arg>
       <arg choice="opt">

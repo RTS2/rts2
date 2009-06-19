@@ -123,8 +123,6 @@ class Fram:public Ford
 		int closingNum;
 		int lastClosingNum;
 
-		bool sendContFailMail;
-
 		int openWDC ();
 		void closeWDC ();
 
@@ -159,8 +157,6 @@ class Fram:public Ford
 		Fram (int argc, char **argv);
 		virtual ~Fram (void);
 		virtual int info ();
-
-		int sendFramMail (const char *subject);
 };
 
 }
@@ -550,14 +546,9 @@ Fram::endOpen ()
 	ret = zjisti_stav_portu_rep ();	 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
 	if (!ret && isOn (KONCAK_OTEVRENI_PRAVY) && isOn (KONCAK_OTEVRENI_LEVY) &&
 		!isOn (KONCAK_ZAVRENI_PRAVY) && !isOn (KONCAK_ZAVRENI_LEVY))
-	{
-		sendFramMail ("FRAM dome opened");
-	}
-	else
-	{
-		sendFramMail ("WARNING FRAM dome opened with wrong end swithes status");
-	}
-	return 0;
+		return 0;
+	// incorrect state -> error
+	return -1;
 }
 
 
@@ -579,14 +570,8 @@ Fram::startClose ()
 	if (zjisti_stav_portu_rep () == -1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read from port at close!" << sendLog;
-		if (!sendContFailMail)
-		{
-			sendFramMail ("ERROR FRAM DOME CANNOT BE CLOSED DUE TO ROOF CONTROLLER FAILURE!!");
-			sendContFailMail = true;
-		}
 		return -1;
 	}
-	sendContFailMail = false;
 	if (movingState != MOVE_NONE)
 	{
 		stopMove ();
@@ -607,7 +592,6 @@ Fram::startClose ()
 	{
 		logStream (MESSAGE_WARNING) <<
 			"max closing retry reached, do not try closing again" << sendLog;
-		sendFramMail ("FRAM WARNING - !!max closing retry reached!!");
 		return -1;
 	}
 
@@ -711,18 +695,13 @@ Fram::endClose ()
 	time (&lastClosing);
 	if (closingNum != lastClosingNum)
 	{
+		lastClosingNum = closingNum;
 		if (!ret && !isOn (KONCAK_OTEVRENI_PRAVY)
 			&& !isOn (KONCAK_OTEVRENI_LEVY)
 			&& isOn (KONCAK_ZAVRENI_PRAVY)
 			&& isOn (KONCAK_ZAVRENI_LEVY))
-		{
-			sendFramMail ("FRAM dome closed");
-		}
-		else
-		{
-			sendFramMail ("WARNING FRAM dome closed with wrong end switches state");
-		}
-		lastClosingNum = closingNum;
+			return 0;
+		return -1;
 	}
 	return 0;
 }
@@ -782,8 +761,6 @@ Fram::init ()
 		domeCloseStart ();
 	}
 		
-	sendFramMail ("FRAM DOME restart");
-
 	return 0;
 }
 
@@ -816,8 +793,6 @@ Fram::Fram (int argc, char **argv)
 	closingNum = 0;
 	lastClosingNum = -1;
 
-	sendContFailMail = false;
-
 	addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
 	addOption ('t', "wdc_timeout", 1, "WDC timeout (default to 30 seconds");
 }
@@ -848,27 +823,6 @@ Fram::info ()
 	  	wdcTemperature->setValueDouble (getWDCTemp (2));
 	}
 	return Ford::info ();
-}
-
-
-int
-Fram::sendFramMail (const char *subject)
-{
-	int ret;
-	ret = zjisti_stav_portu_rep ();
-	std::ostringstream _os;
-	_os << subject << std::endl
-		<< "End switch status:" << std::endl
-		<< "CLOSE SWITCH RIGHT: " << isOnString (KONCAK_ZAVRENI_PRAVY)
-		<< "CLOSE SWITCH LEFT: " << isOnString (KONCAK_ZAVRENI_LEVY) << std::endl
-		<< "OPEN SWITCH RIGHT: " << isOnString (KONCAK_OTEVRENI_PRAVY)
-		<< "OPEN SWITCH LEFT: " << isOnString (KONCAK_OTEVRENI_LEVY) << std::endl
-		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl
-		<< "port state: " << ret << std::endl
-		<< "closingNum: " << closingNum
-		<< "lastClosing: " << ctime (&lastClosing);
-	ret = sendMail (subject, _os.str ().c_str ());
-	return ret;
 }
 
 

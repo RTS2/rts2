@@ -553,8 +553,6 @@ Rts2Daemon (in_argc, in_argv)
 
 	device_host = NULL;
 
-	mailAddress = NULL;
-
 	deviceStatusCommand = NULL;
 
 	// now add options..
@@ -563,7 +561,6 @@ Rts2Daemon (in_argc, in_argv)
 	addOption (OPT_SERVER, "server", 1,
 		"hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
-	addOption ('M', NULL, 1, "send report mails to this adresses");
 	addOption ('d', NULL, 1, "name of device");
 }
 
@@ -754,9 +751,6 @@ Rts2Device::processOption (int in_opt)
 			break;
 		case OPT_MODEFILE:
 			modefile = optarg;
-			break;
-		case 'M':
-			mailAddress = optarg;
 			break;
 		case 'd':
 			device_name = optarg;
@@ -959,17 +953,6 @@ Rts2Device::sendMessage (messageType_t in_messageType, const char *in_messageStr
 		Rts2Message msg = Rts2Message (getDeviceName (), in_messageType, in_messageString);
 		(*iter)->sendMessage (msg);
 	}
-}
-
-
-int
-Rts2Device::sendMail (const char *subject, const char *text)
-{
-	// no mail will be send
-	if (!mailAddress)
-		return 0;
-
-	return sendMailTo (subject, text, mailAddress);
 }
 
 
