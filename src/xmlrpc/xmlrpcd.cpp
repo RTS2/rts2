@@ -43,6 +43,8 @@
 
 #include "r2x.h"
 
+#define OPT_STATE_CHANGE        OPT_LOCAL + 76
+
 using namespace XmlRpc;
 using namespace rts2xml;
 
@@ -61,6 +63,90 @@ XmlRpcServer xmlrpc_server;
 namespace rts2xmlrpc
 {
 
+
+/**
+ * Class for mapping between device names, state bit masks and 
+ * command to be executed.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class StateChangeCommand
+{
+	private:
+		std::string deviceName;
+		int changeMask;
+		int newStateValue;
+		std::string commandName;
+
+	public:
+		StateChangeCommand (std::string _deviceName, int _changeMask, int _newStateValue, std::string _commandName)
+		{
+			deviceName = _deviceName;
+			changeMask = _changeMask;
+			newStateValue = _newStateValue;
+			commandName = _commandName;
+		}
+
+		/**
+		 * Returns command associated with this state change.
+		 */
+		std::string getCommand ()
+		{
+			return commandName;
+		}
+
+		/**
+		 * Returns true if command should be executed on state change between two states.
+		 *
+		 * @param oldState Old device state.
+		 * @param newState New device state.
+		 *
+		 * @return True if command should be executed.
+		 */
+		bool executeOnStateChange (int oldState, int newState)
+		{
+			if (changeMask < 0)
+				return (newStateValue < 0 || newState == newStateValue);
+			return (oldState & changeMask) != (newState & changeMask)
+				&& (newStateValue < 0 || ((newState & changeMask) == newStateValue));
+		}
+
+		/**
+		 * Returns true if this entry belongs to given device.
+		 */
+		bool isForDevice (std::string _deviceName, int _deviceType)
+		{
+			return deviceName == _deviceName;
+		}
+};
+
+
+/**
+ * Holds a list of StateChangeCommands.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class StateCommands:public std::list <StateChangeCommand>
+{
+	public:
+		StateCommands ()
+		{
+		}
+
+		~StateCommands ()
+		{
+		}
+
+		/**
+		 * Load a list of StateChangeCommand from file.
+		 *
+		 * @param file Name of file holding the list.
+		 *
+		 * @throw stream errors.
+		 */
+		void load (const char *file);
+};
+
 /**
  * XML-RPC client class. Provides functions for XML-RPCd to react on state
  * and value changes.
@@ -77,7 +163,7 @@ class XmlDevClient:public Rts2DevClient
 
 		}
 
-	virtual void stateChanged (Rts2ServerState * state);
+		virtual void stateChanged (Rts2ServerState * state);
 };
 
 
@@ -96,7 +182,10 @@ class XmlRpcd:public Rts2Device
 {
 	private:
 		int rpcPort;
+		const char *stateChangeFile;
 		std::map <std::string, Session*> sessions;
+
+		StateCommands stateCommands;
 
 	protected:
 #ifndef HAVE_PGSQL
@@ -106,6 +195,8 @@ class XmlRpcd:public Rts2Device
 		virtual int init ();
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
+
+		virtual void signaledHUP ();
 
 	public:
 		XmlRpcd (int argc, char **argv);
@@ -142,6 +233,49 @@ class XmlRpcd:public Rts2Device
 
 using namespace rts2xmlrpc;
 
+
+void
+StateCommands::load (const char *file)
+{
+	clear ();
+	std::ifstream fs;
+	fs.open (file);
+	if (fs.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "cannot open XML-RPC state config file " << file << sendLog;
+		return;
+	}
+	// parse the file..
+	while (!fs.fail ())
+	{
+		std::string line;
+		getline (fs, line);
+		if (fs.fail ())
+			break;
+		// eat commen strings
+		size_type ci = line.find ('#');
+		if (ci != std::string::npos)
+		{
+			line = line.substr (0, ci);
+		}
+		if (line.length () == 0)
+			continue;
+		// we have the string, try to get out what we need
+		std::string deviceName;
+		int changeMask;
+		int newStateValue;
+		std::string commandName;
+		std::istringstream is (line);
+		is >> deviceName >> changeMask >> newStateValue >> commandName;
+		if (is.fail ())
+		{
+			logStream (MESSAGE_ERROR) << "Cannot parse XML-RPC state config line " << line << sendLog;
+			continue;
+		}
+		push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+	}
+}
+
 void
 XmlDevClient::stateChanged (Rts2ServerState * state)
 {
@@ -168,6 +302,9 @@ XmlRpcd::processOption (int in_opt)
 	{
 		case 'p':
 			rpcPort = atoi (optarg);
+			break;
+		case OPT_STATE_CHANGE:
+			stateChangeFile = optarg;
 			break;
 		default:
 #ifdef HAVE_PGSQL
@@ -198,6 +335,12 @@ XmlRpcd::init ()
 	xmlrpc_server.bindAndListen (rpcPort);
 	xmlrpc_server.enableIntrospection (true);
 
+	// try states..
+	if (stateChangeFile != NULL)
+	{
+		stateCommands.load (stateChangeFile);
+	}
+
 	return ret;
 }
 
@@ -225,6 +368,22 @@ XmlRpcd::selectSuccess ()
 	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
 
+
+void
+XmlRpcd::signaledHUP ()
+{
+#ifdef HAVE_PGSQL
+	Rts2DeviceDb::selectSuccess ();
+#else
+	Rts2Device::selectSuccess ();
+#endif
+	// try states..
+	if (stateChangeFile != NULL)
+	{
+		stateCommands.load (stateChangeFile);
+	}
+}
+
 #ifdef HAVE_PGSQL
 XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
 #else
@@ -232,7 +391,10 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 #endif
 {
 	rpcPort = 8889;
+	stateChangeFile = NULL;
+
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
+	addOption (OPT_STATE_CHANGE, "state-file", 1, "state changes file, list commands which are executed on state change");
 	XmlRpc::setVerbosity (0);
 }
 
@@ -257,16 +419,24 @@ XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
 void
 XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 {
-	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (this, "/etc/rts2/state", true, 100);
-	ret = cf->init ();
-	if (ret)
+	// look if there is some state change command entry, which match us..
+	for (StateCommands::iterator iter = stateCommands.begin (); iter != stateCommands.end (); iter++)
 	{
-		delete cf;
-		return;
-	}
+		StateChangeCommand sc = (*iter);
+		if (sc.isForDevice (conn->getName (), conn->getOtherType ()) && sc.executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
+		{
+			int ret;
+			rts2core::ConnFork *cf = new rts2core::ConnFork (this, sc.getCommand ().c_str (), true, 100);
+			ret = cf->init ();
+			if (ret)
+			{
+				delete cf;
+				return;
+			}
 
-	addConnection (cf);
+			addConnection (cf);
+		}
+	}
 }
 
 
