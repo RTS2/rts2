@@ -35,11 +35,14 @@ ConstTarget ()
 	propMotions.dec = nan ("f");
 
 	simbadOut = NULL;
+
+	http_proxy = NULL;
 }
 
 
 Rts2SimbadTarget::~Rts2SimbadTarget (void)
 {
+	delete []http_proxy;
 	delete simbadOut;
 }
 
@@ -51,6 +54,30 @@ Rts2SimbadTarget::load ()
 	char buf[LINEBUF];
 
 	SesameSoapBinding *bind = new SesameSoapBinding();
+
+	char *proxy_s = getenv ("http_proxy");
+	if (proxy_s != NULL)
+	{
+	 	char *p;
+		if (strncmp ("http://", proxy_s, 7))
+		{
+			logStream (MESSAGE_ERROR) << "cannot find http:// in http_proxy variable " << proxy_s << sendLog;
+			return -1;
+		}
+		// copy to new value..
+		http_proxy = new char[strlen (proxy_s) - 6];
+		strcpy (http_proxy, proxy_s + 7);
+		p = strchr (http_proxy, ':');
+		if (p == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "cannot find port number in http_proxy variable " << proxy_s << sendLog;
+			return -1;
+		}
+		*p = '\0';
+
+		bind->soap->proxy_host = http_proxy; // IP or domain
+		bind->soap->proxy_port = atoi (p+1);
+	}
 
 	#ifdef WITH_FAST
 	std::string sesame_r;
