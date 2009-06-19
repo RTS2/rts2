@@ -49,10 +49,10 @@ class Rts2DeviceDb:public Rts2Device
 		int initDB ();
 		virtual int init ();
 		virtual void forkedInstance ();
+
+		virtual void signaledHUP ();
 	public:
 		Rts2DeviceDb (int argc, char **argv, int in_device_type, const char *default_name);
 		virtual ~ Rts2DeviceDb (void);
-
-		virtual void signaledHUP ();
 };
 #endif							 /* !__RTS2_DEVICEDB__ */

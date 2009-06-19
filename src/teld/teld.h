@@ -640,6 +640,9 @@ class Telescope:public Rts2Device
 			return Rts2Device::deleteConnection (in_conn);
 		}
 
+		// reload model
+		virtual void signaledHUP ();
+
 		/**
 		 * Send telescope to requested coordinates. This function does not
 		 * have any parameters, as they are various ways how to obtain
@@ -831,9 +834,6 @@ class Telescope:public Rts2Device
 		{
 			return (calModel->getValueBool ());
 		}
-
-		// reload model
-		virtual void signaledHUP ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 

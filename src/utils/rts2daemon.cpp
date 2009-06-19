@@ -1067,41 +1067,6 @@ Rts2Daemon::maskState (int state_mask, int new_state, const char *description)
 }
 
 
-int
-Rts2Daemon::sendMailTo (const char *subject, const char *text, const char *in_mailAddress)
-{
-	int ret;
-	char *cmd;
-	FILE *mailFile;
-
-	// fork so we will not inhibit calling process..
-	ret = fork ();
-	if (ret == -1)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2Block::sendMail fork: " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-	if (ret != 0)
-	{
-		return 0;
-	}
-	forkedInstance ();
-	asprintf (&cmd, "/usr/bin/mail -s '%s' '%s'", subject, in_mailAddress);
-	mailFile = popen (cmd, "w");
-	if (!mailFile)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2Block::sendMail popen: " <<
-			strerror (errno) << sendLog;
-		exit (0);
-	}
-	fprintf (mailFile, "%s", text);
-	pclose (mailFile);
-	free (cmd);
-	exit (0);
-}
-
-
 void
 Rts2Daemon::signaledHUP ()
 {

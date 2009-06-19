@@ -435,6 +435,16 @@ class Rts2Daemon:public Rts2Block
 		 * @param description Text description of state change.
 		 */
 		virtual void stateChanged (int new_state, int old_state, const char *description);
+
+		/**
+		 * Called from idle loop after HUP signal occured.
+		 *
+		 * This is most probably callback you needed for handling HUP signal.
+		 * Handling HUP signal when it occurs can be rather dangerous, as it might
+		 * reloacte memory location - if you read pointer before HUP signal and use
+		 * it after HUP signal, RTS2 does not guarantee that it will be still valid.
+		 */
+		virtual void signaledHUP ();
 	public:
 		/**
 		 * Called when state is changed.
@@ -460,16 +470,6 @@ class Rts2Daemon:public Rts2Block
 		{
 			return state & ~DEVICE_ERROR_MASK;
 		}
-
-		/**
-		 * Send e-mail to recepient.
-		 * Requires /usr/bin/mail binary. Send email with subject to specified email addresses.
-		 *
-		 * @param subject         Subject string.
-		 * @param text            Message text.
-		 * @param in_mailAddress  E-mails of recipients.
-		 */
-		int sendMailTo (const char *subject, const char *text, const char *in_mailAddress);
 
 		/**
 		 * Call external script on trigger. External script gets in
@@ -508,15 +508,6 @@ class Rts2Daemon:public Rts2Block
 				maskState (WEATHER_MASK, BAD_WEATHER, "weather set to bad");
 		}
 
-		/**
-		 * Called from idle loop after HUP signal occured.
-		 *
-		 * This is most probably callback you needed for handling HUP signal.
-		 * Handling HUP signal when it occurs can be rather dangerous, as it might
-		 * reloacte memory location - if you read pointer before HUP signal and use
-		 * it after HUP signal, RTS2 does not guarantee that it will be still valid.
-		 */
-		virtual void signaledHUP ();
 		virtual void sigHUP (int sig);
 };
 #endif							 /* ! __RTS2_DAEMON__ */

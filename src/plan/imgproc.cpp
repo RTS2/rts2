@@ -76,6 +76,10 @@ class ImageProc:public Rts2Device
 		virtual int processOption (int opt);
 		virtual int init ();
 #endif
+		virtual void signaledHUP ()
+		{
+			reloadConfig ();
+		}
 	public:
 		ImageProc (int argc, char **argv);
 		virtual ~ ImageProc (void);
@@ -105,11 +109,6 @@ class ImageProc:public Rts2Device
 		void changeRunning (ConnProcess * newImage);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
-
-		virtual void signaledHUP ()
-		{
-			reloadConfig ();
-		}
 };
 
 };
