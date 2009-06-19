@@ -654,7 +654,7 @@ EdtSao::writePattern (const SplitConf *conf)
 	}
 	else
 	{
-		for (i = 0; i < 1020; i++)
+		for (i = 0; i < getWidth () / 2; i++)
 			writeCommand (false, addr++, READ);
 	}
 	writeCommand (false, addr++, HEND);
@@ -688,7 +688,7 @@ EdtSao::startExposure ()
 		return ret;
 	writeBinFile ("e2v_nidlesc.bin");
 	fclr_r (5);
-	if (channels != 1)
+//	if (channels != 1)
 		writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
@@ -721,7 +721,7 @@ EdtSao::isExposing ()
 	if ((!overrun && shutter) || overrun)
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
-	if (channels != 1)
+//	if (channels != 1)
 		writeBinFile ("e2v_unfreezesc.bin");
 	return 0;
 }
@@ -752,7 +752,7 @@ EdtSao::readoutStart ()
 	if (channels == 1)
 		width = getUsedWidth ();
 	else
-		width = 1020;
+		width = getWidth () / 2;
 	height = getUsedHeight ();
 	ret = pdv_setsize (pd, width * channels * dsub, height);
 	if (ret == -1)
@@ -1047,6 +1047,8 @@ Camera (in_argc, in_argv)
 	addOption ('p', "devname", 1, "device name");
 	addOption ('n', "devunit", 1, "device unit number");
 	addOption ('H', NULL, 1, "chip height - number of rows");
+	// add overscan pixel option
+	addOption ('S', "hskip", 1, "number of lines to skip (overscan pixels)");
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
 	addOption ('s', "sdelay", 1, "serial delay");
 	addOption ('v', "verbose", 0, "verbose report");
@@ -1070,10 +1072,9 @@ Camera (in_argc, in_argv)
 
 	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, 0, CAM_WORKING, true);
 	parallelClockSpeed->setValueInteger (6);
-	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
 
 	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true);
-	skipLines->setValueInteger (50);
+	skipLines->setValueInteger (0);
 
 	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING, true);
 	chipHeight->setValueInteger (520);
@@ -1138,9 +1139,12 @@ EdtSao::processOption (int in_opt)
 		case 'n':
 			devunit = atoi (optarg);
 			break;
-		case 'H':
+	        case 'H':
 			chipHeight->setValueInteger (atoi (optarg));
 			break;
+	        case 'S':
+	                skipLines -> setValueInteger (atoi (optarg));
+	                break;
 		case OPT_NOTIMEOUT:
 			notimeout = true;
 			break;
@@ -1230,6 +1234,8 @@ EdtSao::init ()
 		ccd_picture_timeout (pd, 0);
 
 	ccd_set_serial_delay (pd, sdelay);
+
+	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
 
 	return initChips ();
 }
