@@ -141,6 +141,8 @@ class Rts2Centrald:public Rts2Daemon
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 
+		virtual void signaledHUP ();
+
 	public:
 		Rts2Centrald (int argc, char **argv);
 		virtual ~ Rts2Centrald (void);
@@ -206,9 +208,6 @@ class Rts2Centrald:public Rts2Daemon
 			const char *in_messageString);
 
 		virtual void message (Rts2Message & msg);
-
-
-		virtual void signaledHUP ();
 
 		/**
 		 * Called when conditions which determines weather state changed.
