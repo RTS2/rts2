@@ -2,7 +2,7 @@ noinst_LIBRARIES = librts2image.a
 
 noinst_HEADERS = rts2fitsfile.h rts2image.h rts2devcliimg.h cameraimage.h rts2imagedb.h rts2devclifoc.h rts2appdbimage.h rts2appimage.h
 
-LDADD = @LIB_M@ @LIB_NOVA@
+LDADD = @LIB_M@ @LIB_NOVA@ @JPEG_CFLAGS@
 
 EXTRA_DIST = rts2imagedb.ec
 
