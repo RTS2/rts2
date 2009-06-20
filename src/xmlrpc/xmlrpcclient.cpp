@@ -174,8 +174,14 @@ Client::doClient ()
 	twoArg[0] = "petr";
 	twoArg[1] = "test";
 
-	runXmlMethod (R2X_LOGIN, twoArg, result);
-	std::string sessionId = result;
+	try
+	{
+		runXmlMethod (R2X_LOGIN, twoArg, result);
+		std::string sessionId = result;
+	} catch (XmlRpcException e)
+	{
+		std::cerr << "Login throws and error: " << e.getMessage () << std::endl;
+	}
 
 	runXmlMethod (R2X_VALUES_LIST, noArgs, result);
 
@@ -194,9 +200,6 @@ Client::doClient ()
 	threeArg[1] = "ORI";
 	threeArg[2] = "20 30";
 	runXmlMethod (R2X_VALUE_SET, threeArg, result);
-
-	oneArg[0] = sessionId;
-	runXmlMethod (R2X_DEVICES_LIST, oneArg, result);
 
 	for (int i = 0; i < result.size (); i++)
 	{
