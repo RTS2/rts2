@@ -36,7 +36,7 @@ EllTarget::load ()
 	if (ret)
 		return ret;
 	// try to parse MPC string..
-	return orbitFromMPC (getTargetInfo ());
+	return LibnovaEllFromMPC (&orbit, designation, getTargetInfo ());
 }
 
 int
@@ -47,6 +47,7 @@ EllTarget::orbitFromMPC (const char *mpc)
 	if (ret)
 		return ret;
 	setTargetName (designation.c_str ());
+	setTargetInfo (mpc);
 	return ret;
 }
 
