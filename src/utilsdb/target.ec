@@ -491,6 +491,8 @@ Target::save (bool overwrite, int tar_id)
 		long db_tar_bonus_time = *(getTargetBonusTime ());
 		int db_tar_bonus_time_ind;
 		bool db_tar_enabled = getTargetEnabled ();
+		VARCHAR db_tar_info[2000];
+		int db_tar_info_ind;
 	EXEC SQL END DECLARE SECTION;
 	// fill in name and comment..
 	if (getTargetName ())
@@ -534,6 +536,19 @@ Target::save (bool overwrite, int tar_id)
 			db_tar_bonus_time_ind = -1;
 		}
 	}
+	if (getTargetInfo ())
+	{
+		db_tar_info.len = strlen (getTargetInfo ());
+		if (db_tar_info.len > 2000)
+			db_tar_info.len = 2000;
+		strncpy (db_tar_info.arr, getTargetInfo (), db_tar_info.len);
+		db_tar_info_ind = 0;
+	}
+	else
+	{
+		db_tar_info.len = 0;
+		db_tar_info_ind = -1;
+	}
 
 	// try inserting it..
 	EXEC SQL
@@ -547,7 +562,8 @@ Target::save (bool overwrite, int tar_id)
 			tar_bonus,
 			tar_bonus_time,
 			tar_next_observable,
-			tar_enabled
+			tar_enabled,
+			tar_info
 			)
 		VALUES
 			(
@@ -559,7 +575,8 @@ Target::save (bool overwrite, int tar_id)
 			:db_tar_bonus :db_tar_bonus_ind,
 			to_timestamp (:db_tar_bonus_time :db_tar_bonus_time_ind),
 		null,
-			:db_tar_enabled
+			:db_tar_enabled,
+			:db_tar_info :db_tar_info_ind
 			);
 	// insert failed - try update
 	if (sqlca.sqlcode)
@@ -581,7 +598,8 @@ Target::save (bool overwrite, int tar_id)
 				tar_priority = :db_tar_priority,
 				tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
 				tar_bonus_time = to_timestamp(:db_tar_bonus_time :db_tar_bonus_time_ind),
-				tar_enabled = :db_tar_enabled
+				tar_enabled = :db_tar_enabled,
+				tar_info = :db_tar_info :db_tar_info_ind
 			WHERE
 				tar_id = :db_tar_id;
 
