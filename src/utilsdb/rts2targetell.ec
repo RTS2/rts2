@@ -48,6 +48,7 @@ EllTarget::orbitFromMPC (const char *mpc)
 		return ret;
 	setTargetName (designation.c_str ());
 	setTargetInfo (mpc);
+	setTargetType (TYPE_ELLIPTICAL);
 	return ret;
 }
 
