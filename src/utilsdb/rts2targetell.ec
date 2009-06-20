@@ -42,7 +42,12 @@ EllTarget::load ()
 int
 EllTarget::orbitFromMPC (const char *mpc)
 {
-	return LibnovaEllFromMPC (&orbit, designation, mpc);
+	int ret;
+	ret = LibnovaEllFromMPC (&orbit, designation, mpc);
+	if (ret)
+		return ret;
+	setTargetName (designation.c_str ());
+	return ret;
 }
 
 
