@@ -64,7 +64,7 @@ Rts2TargetApp::getObject (const char *obj_text)
 		target = constTarget;
 		return 0;
 	}
-	// if it's MPCE..
+	// if it's MPC ephemeris..
 	target = new EllTarget ();
 	ret = ((EllTarget *) target)->orbitFromMPC (obj_text);
 	if (ret == 0)
