@@ -61,6 +61,7 @@ Rts2TargetApp::getObject (const char *obj_text)
 		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
 		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
 		constTarget->setTargetName (os.str ().c_str ());
+		constTarget->setTargetType (TYPE_OPORTUNITY);
 		target = constTarget;
 		return 0;
 	}
@@ -80,7 +81,10 @@ Rts2TargetApp::getObject (const char *obj_text)
 	target = new Rts2SimbadTarget (obj_text);
 	ret = target->load ();
 	if (ret == 0)
+	{
+		target->setTargetType (TYPE_OPORTUNITY);
 		return 0;
+	}
 	delete target;
 	target = NULL;
 #endif
