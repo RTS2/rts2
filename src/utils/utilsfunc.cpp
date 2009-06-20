@@ -108,3 +108,10 @@ isinf(double x)
 	return !finite(x) && x==x;
 }
 #endif
+
+#ifndef isfinite
+int isfinite(double x)
+{
+	return finite(x) && !isnan(x);
+}
+#endif

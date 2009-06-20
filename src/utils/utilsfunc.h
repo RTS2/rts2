@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "config.h"
+#include <math.h>
 
 #ifndef HAVE_ISINF
 #include <ieeefp.h>
@@ -88,6 +89,57 @@ void fillIn (char **p, T val)
  */
 #ifndef HAVE_ISINF
 int isinf(double x);
+#endif
+
+#ifndef HUGE_VALF
+
+#if __GNUC_PREREQ(3,3)
+# define HUGE_VALF	(__builtin_huge_valf())
+#elif __GNUC_PREREQ(2,96)
+# define HUGE_VALF	(__extension__ 0x1.0p255f)
+#elif defined __GNUC__
+
+#   define HUGE_VALF \
+  (__extension__							      \
+   ((union { unsigned __l __attribute__((__mode__(__SI__))); float __d; })    \
+    { __l: 0x7f800000UL }).__d)
+
+#else /* not GCC */
+
+typedef union { unsigned char __c[4]; float __f; } __huge_valf_t;
+
+# if __BYTE_ORDER == __BIG_ENDIAN
+#  define __HUGE_VALF_bytes	{ 0x7f, 0x80, 0, 0 }
+# endif
+# if __BYTE_ORDER == __LITTLE_ENDIAN
+#  define __HUGE_VALF_bytes	{ 0, 0, 0x80, 0x7f }
+# endif
+
+static __huge_valf_t __huge_valf = { __HUGE_VALF_bytes };
+# define HUGE_VALF	(__huge_valf.__f)
+
+#endif	/* GCC.  */
+
+#endif
+
+/**
+ * Define INIFINITY
+ */
+#ifndef INFINITY
+
+#if __GNUC_PREREQ(3,3)
+# define INFINITY	(__builtin_inff())
+#else
+# define INFINITY	HUGE_VALF
+#endif
+
+#endif
+
+/**
+ * Replacement for isfinite - on Solaris platform
+ */
+#ifndef isfinite
+int isfinite(double x);
 #endif
 
 #ifndef timerisset
