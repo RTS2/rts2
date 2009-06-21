@@ -563,6 +563,7 @@ AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 AC_OUTPUT([Makefile
 	   man/Makefile
 	   include/Makefile
+	   conf/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
