@@ -66,6 +66,12 @@ class ConnFork:public Rts2ConnNoSend
 		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
 		virtual ~ ConnFork (void);
 
+
+		/**
+		 * Add argument to command which will be executed.
+		 *
+		 * @param arg Argument which will be added.
+		 */
 		template < typename T > void addArg (T arg)
 		{
 			std::ostringstream _os;
