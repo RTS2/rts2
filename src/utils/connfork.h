@@ -66,9 +66,11 @@ class ConnFork:public Rts2ConnNoSend
 		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
 		virtual ~ ConnFork (void);
 
-		void addArg (std::string arg)
+		template < typename T > void addArg (T arg)
 		{
-			argv.push_back (arg);
+			std::ostringstream _os;
+			_os << arg;
+			argv.push_back (_os.str ());
 		}
 
 		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
