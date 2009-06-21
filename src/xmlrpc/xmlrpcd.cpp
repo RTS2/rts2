@@ -40,6 +40,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
 #include "session.h"
+#include "stateevents.h"
 
 #include "r2x.h"
 
@@ -62,90 +63,6 @@ XmlRpcServer xmlrpc_server;
 
 namespace rts2xmlrpc
 {
-
-
-/**
- * Class for mapping between device names, state bit masks and 
- * command to be executed.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class StateChangeCommand
-{
-	private:
-		std::string deviceName;
-		int changeMask;
-		int newStateValue;
-		std::string commandName;
-
-	public:
-		StateChangeCommand (std::string _deviceName, int _changeMask, int _newStateValue, std::string _commandName)
-		{
-			deviceName = _deviceName;
-			changeMask = _changeMask;
-			newStateValue = _newStateValue;
-			commandName = _commandName;
-		}
-
-		/**
-		 * Returns command associated with this state change.
-		 */
-		std::string getCommand ()
-		{
-			return commandName;
-		}
-
-		/**
-		 * Returns true if command should be executed on state change between two states.
-		 *
-		 * @param oldState Old device state.
-		 * @param newState New device state.
-		 *
-		 * @return True if command should be executed.
-		 */
-		bool executeOnStateChange (int oldState, int newState)
-		{
-			if (changeMask < 0)
-				return (newStateValue < 0 || newState == newStateValue);
-			return (oldState & changeMask) != (newState & changeMask)
-				&& (newStateValue < 0 || ((newState & changeMask) == newStateValue));
-		}
-
-		/**
-		 * Returns true if this entry belongs to given device.
-		 */
-		bool isForDevice (std::string _deviceName, int _deviceType)
-		{
-			return deviceName == _deviceName;
-		}
-};
-
-
-/**
- * Holds a list of StateChangeCommands.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class StateCommands:public std::list <StateChangeCommand>
-{
-	public:
-		StateCommands ()
-		{
-		}
-
-		~StateCommands ()
-		{
-		}
-
-		/**
-		 * Load a list of StateChangeCommand from file.
-		 *
-		 * @param file Name of file holding the list.
-		 *
-		 * @throw stream errors.
-		 */
-		void load (const char *file);
-};
 
 /**
  * XML-RPC client class. Provides functions for XML-RPCd to react on state
@@ -232,49 +149,6 @@ class XmlRpcd:public Rts2Device
 };
 
 using namespace rts2xmlrpc;
-
-
-void
-StateCommands::load (const char *file)
-{
-	clear ();
-	std::ifstream fs;
-	fs.open (file);
-	if (fs.fail ())
-	{
-		logStream (MESSAGE_ERROR) << "cannot open XML-RPC state config file " << file << sendLog;
-		return;
-	}
-	// parse the file..
-	while (!fs.fail ())
-	{
-		std::string line;
-		getline (fs, line);
-		if (fs.fail ())
-			break;
-		// eat commen strings
-		size_type ci = line.find ('#');
-		if (ci != std::string::npos)
-		{
-			line = line.substr (0, ci);
-		}
-		if (line.length () == 0)
-			continue;
-		// we have the string, try to get out what we need
-		std::string deviceName;
-		int changeMask;
-		int newStateValue;
-		std::string commandName;
-		std::istringstream is (line);
-		is >> deviceName >> changeMask >> newStateValue >> commandName;
-		if (is.fail ())
-		{
-			logStream (MESSAGE_ERROR) << "Cannot parse XML-RPC state config line " << line << sendLog;
-			continue;
-		}
-		push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
-	}
-}
 
 void
 XmlDevClient::stateChanged (Rts2ServerState * state)
