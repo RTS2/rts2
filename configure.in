@@ -127,6 +127,21 @@ esac],[libjpeg=yes])
 
 AM_CONDITIONAL(LIBJPEG, test x$libjpeg != xno)
 
+dnl Check for the XML library
+XML_CONFIG=xml2-config
+AC_MSG_CHECKING(looking for xml2 library)
+if ${XML_CONFIG} --libs print > /dev/null 2>&1
+then
+	XMLVERS=`${XML_CONFIG} --version`
+	LIBXML_LIBS=`${XML_CONFIG} --libs`
+	LIBXML_CFLAGS=`${XML_CONFIG} --cflags`
+	AC_SUBST(LIBXML_LIBS)
+	AC_SUBST(LIBXML_CFLAGS)
+	AC_MSG_RESULT(${XMLVERS} found)
+else
+	AC_MSG_ERROR([Could not find libxml anywhere, apt-get install libxml2-dev or check ftp://xmlsoft.org/])
+fi
+
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
 [case "${withval}" in
