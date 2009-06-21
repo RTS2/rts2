@@ -1,6 +1,6 @@
 bin_PROGRAMS = rts2-grbforward
 
-noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2grbexecconn.h rts2connshooter.h augershooter.h
+noinst_HEADERS = grbd.h grbconst.h rts2conngrb.h rts2grbfw.h rts2connshooter.h augershooter.h
 
 EXTRA_DIST = rts2conngrb.ec rts2connshooter.ec
 
@@ -16,7 +16,7 @@ bin_PROGRAMS += rts2-grbd rts2-augershooter
 
 
 nodist_rts2_grbd_SOURCES = rts2conngrb.cpp
-rts2_grbd_SOURCES = grbd.cpp rts2grbfw.cpp rts2grbexecconn.cpp
+rts2_grbd_SOURCES = grbd.cpp rts2grbfw.cpp
 rts2_grbd_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@
 rts2_grbd_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_M@ ../utils/librts2block.a ../utilsdb/librts2blockdb.a
 

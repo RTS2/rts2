@@ -18,8 +18,7 @@
  */
 
 #include "rts2conngrb.h"
-
-#include "rts2grbexecconn.h"
+#include "../utils/connfork.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -1000,9 +999,18 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	if (addExe)
 	{
 		int execRet;
-		Rts2GrbExecConn *execConn = new Rts2GrbExecConn (master, addExe, d_tar_id,
-			grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, grb_date,
-			grb_errorbox, grb_isnew);
+		rts2core::ConnFork *execConn = new rts2core::ConnFork (master, addExe, false, 100);
+
+		execConn->addArg (d_tar_id);
+		execConn->addArg (grb_id);
+		execConn->addArg (grb_seqn);
+		execConn->addArg (grb_type);
+		execConn->addArg (grb_ra);
+		execConn->addArg (grb_dec);
+		execConn->addArg (grb_is_grb);
+		execConn->addArg (grb_date);
+		execConn->addArg (grb_errorbox);
+		execConn->addArg (grb_isnew);
 
 		execRet = execConn->init ();
 		if (execRet < 0)
