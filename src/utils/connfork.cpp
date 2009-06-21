@@ -128,7 +128,12 @@ ConnFork::processErrorLine (char *errbuf)
 int
 ConnFork::newProcess ()
 {
-	return execl (exePath, exePath, (char *) NULL);
+	char * args[argv.size () + 2];
+	args[0] = exePath;
+	for (size_t i = 0; i < argv.size (); i++)
+		args[i + 1] = (char *) argv[i].c_str ();
+	args[argv.size () + 1] = NULL;
+	return execv (exePath, args);
 }
 
 

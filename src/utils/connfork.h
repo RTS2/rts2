@@ -41,6 +41,7 @@ class ConnFork:public Rts2ConnNoSend
 {
 	private:
 		pid_t childPid;
+		std::vector <std::string> argv;
 		time_t forkedTimeout;
 		// holds pipe with stderr. Stdout is stored in sock
 		int sockerr;
@@ -64,6 +65,11 @@ class ConnFork:public Rts2ConnNoSend
 	public:
 		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
 		virtual ~ ConnFork (void);
+
+		void addArg (std::string arg)
+		{
+			argv.push_back (arg);
+		}
 
 		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
