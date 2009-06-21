@@ -23,7 +23,8 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2logstream.h"
 
-#include <fstream>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 using namespace rts2xmlrpc;
 
@@ -31,40 +32,106 @@ void
 StateCommands::load (const char *file)
 {
 	clear ();
-	std::ifstream fs;
-	fs.open (file);
-	if (fs.fail ())
+
+	xmlDoc *doc = NULL;
+	xmlNode *root_element = NULL;
+
+	LIBXML_TEST_VERSION
+
+	doc = xmlReadFile (file, NULL, 0);
+	if (doc == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot open XML-RPC state config file " << file << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot parse XML file " << file << sendLog;
 		return;
 	}
-	// parse the file..
-	while (!fs.fail ())
+
+	root_element = xmlDocGetRootElement (doc);
+
+	if (strcmp ((const char *) root_element->name, "states"))
 	{
-		std::string line;
-		getline (fs, line);
-		if (fs.fail ())
-			break;
-		// eat commen strings
-		size_type ci = line.find ('#');
-		if (ci != std::string::npos)
-		{
-			line = line.substr (0, ci);
-		}
-		if (line.length () == 0)
-			continue;
-		// we have the string, try to get out what we need
-		std::string deviceName;
-		int changeMask;
-		int newStateValue;
-		std::string commandName;
-		std::istringstream is (line);
-		is >> deviceName >> changeMask >> newStateValue >> commandName;
-		if (is.fail ())
-		{
-			logStream (MESSAGE_ERROR) << "Cannot parse XML-RPC state config line " << line << sendLog;
-			continue;
-		}
-		push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+		logStream (MESSAGE_ERROR) << "invalid root element name, expected states, is " << root_element->name << sendLog;
+		return;
 	}
+
+	// traverse triggers..
+	xmlNode *event = root_element->children;
+	if (event == NULL)
+	{
+		logStream (MESSAGE_WARNING) << "no event specified" << sendLog;
+		return;
+	}
+	for (; event; event=event->next)
+	{
+		if (event->type == XML_TEXT_NODE)
+			continue;
+		if (xmlStrEqual (event->name, (xmlChar *) "device"))
+		{
+			// parse it...
+			std::string deviceName;
+			int changeMask = INT_MAX;
+			int newStateValue = INT_MAX;
+			std::string commandName;
+
+			// look for attributes
+			xmlAttr *properties = event->properties;
+			for (; properties; properties = properties->next)
+			{
+				if (properties->children == NULL)
+				{
+					logStream (MESSAGE_ERROR) << "empty property on line " << event->line << sendLog;
+					return;
+				}
+				if (xmlStrEqual (properties->name, (xmlChar *) "name"))
+				{
+					deviceName = std::string ((char *) properties->children->content);
+				}
+				else if (xmlStrEqual (properties->name, (xmlChar *) "state-mask"))
+				{
+					changeMask = atoi ((char *) properties->children->content);
+				}
+				else if (xmlStrEqual (properties->name, (xmlChar *) "state"))
+				{
+					newStateValue = atoi ((char *) properties->children->content);
+				}
+			}
+			xmlNode *action = event->children;
+			if (action == NULL)
+			{
+				logStream (MESSAGE_ERROR) << "device on line " << event->line << " does not specify action type" << sendLog;
+				return;
+			}
+			while (action->type == XML_TEXT_NODE && action->next)
+				action = action->next;
+
+			if (xmlStrEqual (action->name, (xmlChar *) "command"))
+			{
+				if (action->children == NULL)
+				{
+					logStream (MESSAGE_ERROR) << "no action specified on line " << action->line << sendLog;
+					return;
+				}
+				commandName = std::string ((char *) action->children->content);
+				push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "unknow action type on line " << action->line << sendLog;
+				return;
+			}
+			if (action->next != NULL && action->next->type != XML_TEXT_NODE)
+			{
+				logStream (MESSAGE_ERROR) << "multiple actions are not (yet) allowed on line " << event->children->next->line << sendLog;
+				return;
+			}
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "unknow event type " << event->name
+				<< " on line " << event->line << sendLog;
+			return;
+		}
+	}
+
+	xmlFreeDoc (doc);
+	xmlCleanupParser ();
 }

@@ -301,6 +301,8 @@ XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 		{
 			int ret;
 			rts2core::ConnFork *cf = new rts2core::ConnFork (this, sc.getCommand ().c_str (), true, 100);
+			cf->addArg (conn->getName ());
+			cf->addArg (conn->getStateString ());
 			ret = cf->init ();
 			if (ret)
 			{
