@@ -32,7 +32,8 @@ EXTRA_DIST = \
     rts2-camd.xml \
     rts2-focusd.xml \
     rts2-teld.xml \
-    rts2-simbadinfo.xml
+    rts2-simbadinfo.xml \
+    rts2-xmlrpcd.xml
 
 man_MANS = \
     rts2.7 \
@@ -66,7 +67,8 @@ man_MANS = \
     rts2-camd.7 \
     rts2-focusd.7 \
     rts2-teld.7 \
-    rts2-simbadinfo.1
+    rts2-simbadinfo.1 \
+    rts2-xmlrpcd.7
 
 doc_FOP = \
     rts2-man.fop \

@@ -2,12 +2,12 @@ Source: rts2
 Section: science
 Priority: optional
 Maintainer: Petr Kubanek <petr@kubanek.net>
-Build-Depends: debhelper (>= 4.0.0), autotools-dev, libnova-dev (>= 0.12.0), libecpg-dev, xsltproc, docbook-xsl
+Build-Depends: debhelper (>= 4.0.0), autotools-dev, libnova-dev (>= 0.12.0), libecpg-dev, xsltproc, docbook-xsl, libxml2-dev, libncurses5-dev
 Standards-Version: 3.6.1
 
 Package: rts2
 Architecture: any
-Depends: ${misc:Depends}, libnova (>= 0.12.0)
+Depends: ${misc:Depends}, libnova (>= 0.12.0), libxml2, libncurses5
 Description: Remote Telescope System 2nd Version
  Complete system for driving your astronomical observatory with various
  instruments. See http://rts-2.sf.net for details.

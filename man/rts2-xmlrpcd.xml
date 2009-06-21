@@ -1,0 +1,205 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2009-06-20</date>">
+  <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-xmlrpcd">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.0</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2008</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>
+      Provides XML-RPC access to RTS2 and state and values changes triggered
+      scripts.
+    </refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>-i</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--local-port <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--logfile <replaceable>log file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-p <replaceable>port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--event-file <replaceable>event file</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> provides XML-RPC access to RTS2 functions.
+      Commands are described on the web, on <ulink
+      url="http://rts2.org/wiki/code:xmlrpc">http://rts2.org/wiki/code:xmlrpc</ulink>.
+    </para>
+
+    <para>
+      Besides this, XML-RPC provides flexible triggering mechanism for reacting
+      on device states and values changes.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <para>
+      This program follows the usual &gnu; command line syntax,
+      with long options starting with two dashes (`--').  A summary of
+      options is included below. Standard options are documented in
+      <citerefentry><refentrytitle>rts2-device</refentrytitle><manvolnum>7</manvolnum></citerefentry>.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-p <replaceable class="parameter">port number</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify XML-RPC port. Daemon will listen on this port for incoming
+	    XML-RPC connections.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--event-file <replaceable class="parameter">event file path</replaceable></option></term>
+        <listitem>
+	  <para>
+	    Specify event trigger file. Read bellow on format used for this
+	    file.  Sending <emphasis>signal 1</emphasis> to
+	    <emphasis>rts2-xmlrcd</emphasis> will force reload of event file.
+	  </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Event trigger configuration file</title>
+    <para>
+      This is description of event triggering file. It is the XML file
+      specified with <emphasis>--event-file</emphasis> option. Configuration
+      file can be validated with provided XML schema file.
+    </para>
+    <para>
+      To start with, there is a sample configuration file.
+    </para>
+    <programlisting>
+<![CDATA[
+<events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
+  <device name="C0" state-mask="2" state="2">
+    <command>/etc/rts2/event.d/c0_reading</command>
+  </device>
+  <device name="DOME" state-mask="7" state="4">
+    <command>/etc/rts2/event.d/dome_opened</command>
+  </device>
+  <device name="DOME" state-mask="7" state="1">
+    <command>/etc/rts2/event.d/dome_closed</command>
+  </device>
+</events>
+]]>
+    </programlisting>
+    <para>
+      This event file, when passed to rts2-xmlrpcd with --event-file option, will:
+      <itemizedlist>
+        <listitem>
+	  <para>
+	    execute <command>/etc/rts2/event.d/c0_reading</command> when camera C0 start reading of the chip (switch from second state bit from 0 to 1).
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    execute <command>/etc/rts2/event.d/dome_opened</command> when dome
+	    device with name DOME changes third bit (0x04) from 0 to 1, e.g. when it switched to opened state.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    execute <command>/etc/rts2/event.d/dome_closed</command> when dome
+	    device with name DOME changes first bit (0x01) from 0 to 1, e.g. when it switched to opened state.
+	  </para>
+	</listitem>
+      </itemizedlist>
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>

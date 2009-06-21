@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Validation file for events file.
+  Validate with xmllint -schema events.xsd events
+
+  Copyright 2009 Petr Kubanek petr@kubanek.net
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="events">
+    <xs:sequence>
+      <xs:element name="device" minOccurs="0" maxOccurs="unbounded">
+	<xs:complexType>
+	  <xs:sequence>
+	    <xs:element name="command" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+	  </xs:sequence>
+          <xs:attribute name="name" type="xs:string"/>
+	  <xs:attribute name="state-mask" type="xs:integer"/>
+	  <xs:attribute name="state" type="xs:integer"/>
+	</xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="events" type="events"/>
+</xs:schema>

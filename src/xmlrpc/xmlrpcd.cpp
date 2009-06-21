@@ -268,7 +268,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 	stateChangeFile = NULL;
 
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
-	addOption (OPT_STATE_CHANGE, "state-file", 1, "state changes file, list commands which are executed on state change");
+	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	XmlRpc::setVerbosity (0);
 }
 

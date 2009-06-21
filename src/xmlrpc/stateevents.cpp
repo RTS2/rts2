@@ -47,9 +47,9 @@ StateCommands::load (const char *file)
 
 	root_element = xmlDocGetRootElement (doc);
 
-	if (strcmp ((const char *) root_element->name, "states"))
+	if (strcmp ((const char *) root_element->name, "events"))
 	{
-		logStream (MESSAGE_ERROR) << "invalid root element name, expected states, is " << root_element->name << sendLog;
+		logStream (MESSAGE_ERROR) << "invalid root element name, expected events, is " << root_element->name << sendLog;
 		return;
 	}
 
@@ -100,28 +100,25 @@ StateCommands::load (const char *file)
 				logStream (MESSAGE_ERROR) << "device on line " << event->line << " does not specify action type" << sendLog;
 				return;
 			}
-			while (action->type == XML_TEXT_NODE && action->next)
-				action = action->next;
-
-			if (xmlStrEqual (action->name, (xmlChar *) "command"))
+			for (; action != NULL; action = action->next)
 			{
-				if (action->children == NULL)
+				if (action->type == XML_TEXT_NODE)
+					continue;
+				if (xmlStrEqual (action->name, (xmlChar *) "command"))
 				{
-					logStream (MESSAGE_ERROR) << "no action specified on line " << action->line << sendLog;
+					if (action->children == NULL)
+					{
+						logStream (MESSAGE_ERROR) << "no action specified on line " << action->line << sendLog;
+						return;
+					}
+					commandName = std::string ((char *) action->children->content);
+					push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+				}
+				else
+				{
+					logStream (MESSAGE_ERROR) << "unknow action type on line " << action->line << sendLog;
 					return;
 				}
-				commandName = std::string ((char *) action->children->content);
-				push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
-			}
-			else
-			{
-				logStream (MESSAGE_ERROR) << "unknow action type on line " << action->line << sendLog;
-				return;
-			}
-			if (action->next != NULL && action->next->type != XML_TEXT_NODE)
-			{
-				logStream (MESSAGE_ERROR) << "multiple actions are not (yet) allowed on line " << event->children->next->line << sendLog;
-				return;
 			}
 		}
 		else
