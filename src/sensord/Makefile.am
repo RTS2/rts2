@@ -12,7 +12,8 @@ noinst_LIBRARIES = librts2sensord.a
 
 librts2sensord_a_SOURCES = sensord.cpp
 
-LDADD = librts2sensord.a ../utils/librts2block.a
+LDADD = librts2sensord.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
@@ -33,7 +34,6 @@ rts2_sensor_pixy_SOURCES = pixy.cpp
 rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp
 
 rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
-rts2_sensor_fram_weather_LDADD = ${LDADD} @LIB_NOVA@
 
 rts2_sensor_bart_rain_SOURCES = bart-rain.cpp
 

@@ -7,7 +7,7 @@ EXTRA_DIST = rts2conngrb.ec rts2connshooter.ec
 CLEANFILES = rts2conngrb.cpp rts2connshooter.cpp
 
 rts2_grbforward_SOURCES = forward.cpp rts2grbfw.cpp
-rts2_grbforward_LDFLAGS = @LIB_M@ ../utils/librts2block.a
+rts2_grbforward_LDFLAGS = @LIB_M@ ../utils/librts2block.a @LIB_NOVA@
 rts2_grbforward_CXXFLAGS = @NOVA_CFLAGS@
 
 if PGSQL
