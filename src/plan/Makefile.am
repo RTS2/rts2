@@ -1,6 +1,6 @@
 # $Id$
 
-bin_PROGRAMS = rts2-scriptexec rts2-scriptor
+bin_PROGRAMS = rts2-scriptexec rts2-scriptor rts2-imgproc
 noinst_HEADERS = rts2execcli.h rts2script.h connimgprocess.h rts2selector.h rts2scriptelement.h \
 		 rts2devscript.h rts2devcliphot.h rts2spiral.h rts2scriptblock.h rts2scriptguiding.h \
 		 rts2execclidb.h rts2scriptelementacquire.h scriptexec.h rts2targetscr.h \
@@ -36,7 +36,7 @@ rts2_scriptexec_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/lib
 rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptor_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
-bin_PROGRAMS += rts2-executor rts2-imgproc rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
+bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
 	       rts2-plan
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp

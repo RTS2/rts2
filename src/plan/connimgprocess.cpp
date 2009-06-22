@@ -218,6 +218,7 @@ const char *in_exe, int in_obsId,
 int in_timeout):
 ConnProcess (in_master, in_exe, in_timeout)
 {
+#ifdef HAVE_PGSQL
 	obsId = in_obsId;
 	obs = new Rts2Obs (obsId);
 	if (obs->load ())
@@ -232,6 +233,7 @@ ConnProcess (in_master, in_exe, in_timeout)
 	fillIn (&obsTarTypeCh, obs->getTargetType ());
 
 	delete obs;
+#endif
 }
 
 
