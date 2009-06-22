@@ -10,7 +10,8 @@ noinst_LIBRARIES = librts2camd.a
 
 librts2camd_a_SOURCES = camd.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
 
-LDADD = librts2camd.a ../utils/librts2block.a
+LDADD = librts2camd.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
 
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
