@@ -108,11 +108,6 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	}
 	switch (value->getValueType ())
 	{
-		case RTS2_VALUE_TIME:
-			_os << LibnovaDateDouble (value->getValueDouble ())
-				<< " (" << TimeDiff (now, value->getValueDouble ()) << ")";
-			printValue (value->getName ().c_str (), _os.str ().c_str ());
-			break;
 		case RTS2_VALUE_RADEC:
 			{
 				if (value->getValueDisplayType () == RTS2_DT_DEGREES)
