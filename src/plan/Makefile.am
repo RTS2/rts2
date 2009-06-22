@@ -12,7 +12,7 @@ CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
 
 noinst_LIBRARIES = libscript.a
 
-libscript_a_SOURCES = rts2execcli.cpp rts2script.cpp rts2scriptelement.cpp rts2devscript.cpp rts2spiral.cpp \
+libscript_a_SOURCES = rts2execcli.cpp rts2script.cpp connimgprocess.cpp rts2scriptelement.cpp rts2devscript.cpp rts2spiral.cpp \
 		rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp \
 		rts2scriptinterface.cpp
 libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
@@ -28,7 +28,7 @@ rts2_scriptor_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 if PGSQL
 
-libscript_a_SOURCES += rts2execclidb.cpp rts2scriptelementacquire.cpp connimgprocess.cpp
+libscript_a_SOURCES += rts2execclidb.cpp rts2scriptelementacquire.cpp
 
 rts2_scriptexec_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptexec_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
@@ -77,5 +77,9 @@ else
 
 rts2_scriptexec_LDFLAGS = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 rts2_scriptor_LDFLAGS = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+
+rts2_imgproc_SOURCES = imgproc.cpp 
+rts2_imgproc_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+rts2_imgproc_LDFLAGS = libscript.a ../writers/librts2image.a ../utils/librts2block.a @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 endif
