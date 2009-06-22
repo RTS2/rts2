@@ -215,8 +215,16 @@ ConnFork::init ()
 			for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
 			{
 				Rts2Value *val = (*viter);
-				envV = new char [strlen (conn->getName ()) + val->getName ().length () + strlen (val->getValue ()) + 3];
-				sprintf (envV, "%s_%s=%s", conn->getName (), val->getName ().c_str (), val->getValue ());
+				// replace non-alpha characters
+				std::string valn = val->getName ();
+				for (std::string::iterator siter = valn.begin (); siter != valn.end (); siter++)
+				{
+					if (!isalnum (*siter))
+						(*siter) = '_';
+				}
+
+				envV = new char [strlen (conn->getName ()) + valn.length () + strlen (val->getDisplayValue ()) + 3];
+				sprintf (envV, "%s_%s=%s", conn->getName (), valn.c_str (), val->getDisplayValue ());
 				putenv (envV);
 			}
 		}
