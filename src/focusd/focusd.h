@@ -41,16 +41,6 @@ class Focusd:public Rts2Device
 	private:
 		time_t focusTimeout;
 
-		/**
-		 * Update target value by given offset.
-		 *
-		 * @param off Offset
-		 */
-		int updatePosition (int off)
-		{
-			return setPosition (target->getValueInteger () + off);
-		}
-
 	protected:
 		std::string focType;
 
