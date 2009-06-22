@@ -499,6 +499,12 @@ Executor::queueTarget (int tarId)
 	{
 		return -2;
 	}
+	if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
+	{
+		stop ();
+		delete nt;
+		return 0;
+	}
 	nextTargets.push_back (nt);
 	if (!currentTarget)
 		switchTarget ();
