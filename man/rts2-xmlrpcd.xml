@@ -138,6 +138,47 @@
         </listitem>
       </varlistentry>
     </variablelist>
+  </refsect1> 
+  <refsect1>
+    <title>Event actions</title>
+     
+    <refsect2>command</refsect2>
+
+    <para>
+      This executes given command. The command is executed with environmental
+      variables filled with values of all devices presents. Environemntal
+      variables names are formed from device name and variable name joined with
+      underscore (_). Their value is something sensible, what can be printed
+      out (booleans as true/false string, double numbers in readable form, RA
+      and DEC in sexadecimal notation,..).
+    </para>
+
+    <para>
+      Moreover, device state is also present in environment, as device name
+      joined with _state. Let's suppose we have a device S1, with variable DBL
+      with value 0.123. Device is currently in state 1. If you put in command
+      script which will call set and store all environemtal variables to file,
+      you will get this for S1:
+    </para>
+    <programlisting>
+<![CDATA[
+S1_DBL=0.123
+S1_state=1
+]]>
+    </programlisting>
+    <para>
+      So to send email with status of dome switches, which are in DOME device
+      variables end_switch_open and end_switch_close, you should modify following program:
+    </para>
+    <programlisting>
+<![CDATA[
+#!/bin/bash
+
+echo "Hi, dome end switches values: $DOME_end_switch_open $DOME_end_switch_close
+
+Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
+]]>
+    </programlisting>
   </refsect1>
   <refsect1>
     <title>Event trigger configuration file</title>
