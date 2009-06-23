@@ -137,7 +137,7 @@ class Sbig:public Camera
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
-		virtual int camCoolShutdown ();
+		virtual int afterNight ();
 };
 
 };
@@ -589,7 +589,7 @@ Sbig::setCoolTemp (float new_temp)
 
 
 int
-Sbig::camCoolShutdown ()
+Sbig::afterNight ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
