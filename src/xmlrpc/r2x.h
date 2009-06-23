@@ -73,6 +73,13 @@
  */
 #define R2X_VALUE_INC                 "rts2.value.inc"
 
+/**
+ * Retrieve messages from message buffer.
+ *
+ * @return Array with string - messages from buffer.
+ */
+#define R2X_MESSAGES_GET              "rts2.messages.get"
+
 #define R2X_VALUES_LIST               "rts2.values.list"
 
 /**
@@ -130,8 +137,6 @@
  * @param month  Month (1-12)
  */
 #define R2X_OBSERVATIONS_MONTH               "rts2.observations.month"
-
-#define R2X_MESSAGES_GET              "rts2.messages.get"
 
 #define R2X_TICKET_INFO               "rts2.tickets.info"
 

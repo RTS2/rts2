@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include <deque>
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/rts2devicedb.h"
@@ -102,6 +103,8 @@ class XmlRpcd:public Rts2Device
 		const char *stateChangeFile;
 		std::map <std::string, Session*> sessions;
 
+		std::deque <Rts2Message> messages;
+
 		StateCommands stateCommands;
 
 	protected:
@@ -144,6 +147,14 @@ class XmlRpcd:public Rts2Device
 		 * @return True if session with a given session ID exists.
 		 */
 		bool existsSession (std::string sessionId);
+
+		/**
+		 * Returns messages buffer.
+		 */
+		std::deque <Rts2Message> & getMessages ()
+		{
+			return messages;
+		}
 };
 
 };
@@ -214,6 +225,8 @@ XmlRpcd::init ()
 	{
 		stateCommands.load (stateChangeFile);
 	}
+
+	setMessageMask (MESSAGE_MASK_ALL);
 
 	return ret;
 }
@@ -327,6 +340,12 @@ XmlRpcd::message (Rts2Message & msg)
 		msgDB.insertDB ();
 	}
 #endif
+	while (messages.size () > 42) // messagesBufferSize ())
+	{
+		messages.pop_front ();
+	}
+
+	messages.push_back (msg);
 }
 
 
@@ -378,7 +397,8 @@ class Login: public XmlRpcServerMethod
 				throw XmlRpcException ("Invalid login or password");
 			}
 #else
-			throw XmlRpcException ("Login not supported");
+			if (! (params[0] ==  std::string ("petr") && params[1] == std::string ("test")))
+				throw XmlRpcException ("Login not supported");
 #endif /* HAVE_PGSQL */
 
 			result = ((XmlRpcd *) getMasterApp ())->addSession (params[0], 3600);
@@ -898,6 +918,25 @@ class IncValue: public XmlRpcServerMethod
 } incValue (&xmlrpc_server);
 
 
+class GetMessages: public XmlRpcServerMethod
+{
+	public:
+		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_MESSAGES_GET, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			int i = 0;
+			XmlRpcValue retVar;
+			for (std::deque <Rts2Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin ();
+				iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++, i++)
+			{
+				Rts2Message msg = *iter;
+				result[i] = msg.toString ();
+			}
+
+		}
+} getMessages (&xmlrpc_server);
+
 
 #ifdef HAVE_PGSQL
 /*
@@ -1189,29 +1228,6 @@ class ListImages: public XmlRpcServerMethod
 			}
 		}
 } listImages (&xmlrpc_server);
-
-
-class GetMessages: public XmlRpcServerMethod
-{
-	public:
-		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_MESSAGES_GET, s) {}
-
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
-		{
-			int i = 0;
-			XmlRpcValue retVar;
-			std::list < Rts2Message > messages;
-			// setMessageMask (MESSAGE_MASK_ALL);
-
-			for (std::list < Rts2Message >::iterator iter = messages.begin (); iter != messages.end (); iter++, i++)
-			{
-				Rts2Message msg = *iter;
-				retVar[i] = msg.toString ().c_str ();
-				result[i] = retVar;
-			}
-
-		}
-} getMessages (&xmlrpc_server);
 
 
 class TicketInfo: public XmlRpcServerMethod
