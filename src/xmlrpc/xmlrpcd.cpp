@@ -930,8 +930,13 @@ class GetMessages: public XmlRpcServerMethod
 			for (std::deque <Rts2Message>::iterator iter = ((XmlRpcd *) getMasterApp ())->getMessages ().begin ();
 				iter != ((XmlRpcd *) getMasterApp ())->getMessages ().end (); iter++, i++)
 			{
+				XmlRpcValue val;
 				Rts2Message msg = *iter;
-				result[i] = msg.toString ();
+				val["type"] = msg.getTypeString ();
+				val["origin"] = msg.getMessageOName ();
+				val["timestamp"] = msg.getMessageTime ();
+				val["message"] = msg.getMessageString ();
+				result[i] = val;
 			}
 
 		}

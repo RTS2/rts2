@@ -393,7 +393,12 @@ Client::getMessages ()
 
 	for (int i = 0; i < result.size (); i++)
 	{
-		std::cout << std::setw (5) << std::right << (i + 1) << ": " << result[i] << std::endl;
+		std::cout << std::setw (5) << std::right << (i + 1) << ": "
+			<< result[i]["timestamp"] << " "
+			<< result[i]["origin"] << " "
+			<< result[i]["type"] << " "
+			<< result[i]["message"]
+			<< std::endl;
 	}
 	
 	return ret;
