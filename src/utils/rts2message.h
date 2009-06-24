@@ -20,7 +20,8 @@
 #ifndef __RTS2_MESSAGE__
 #define __RTS2_MESSAGE__
 
-#include "message.h"
+#include <status.h>
+#include <message.h>
 
 #include <sys/time.h>
 #include <string>
@@ -94,7 +95,28 @@ class Rts2Message
 			return messageType;
 		}
 
-		inline double getMessageTime ();
+		/**
+		 * Return message type as string.
+		 */
+		const char* getTypeString ()
+		{
+			switch (getType ())
+			{
+				case MESSAGE_ERROR:
+					return "error";
+				case MESSAGE_WARNING:
+					return "warning";
+				case MESSAGE_INFO:
+					return "info";
+				case MESSAGE_DEBUG:
+					return "debug";
+			}
+		}
+
+		double getMessageTime ()
+		{
+			return messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
+		}
 };
 
 std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg);

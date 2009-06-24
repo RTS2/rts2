@@ -72,8 +72,6 @@
 /** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
 
-#define USEC_SEC    1000000
-
 class Rts2Command;
 
 class Rts2ClientTCPDataConn;

@@ -17,7 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2block.h"
 #include "rts2message.h"
 #include "timestamp.h"
 
@@ -114,13 +113,6 @@ std::string Rts2Message::toString ()
 		Timestamp (&messageTime)
 		<< " " << messageOName << " " << messageType << " " << messageString;
 	return os.str ();
-}
-
-
-double
-Rts2Message::getMessageTime ()
-{
-	return messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
 }
 
 
