@@ -98,15 +98,6 @@ class StateCommands:public std::list <StateChangeCommand>
 		~StateCommands ()
 		{
 		}
-
-		/**
-		 * Load a list of StateChangeCommand from file.
-		 *
-		 * @param file Name of file holding the list.
-		 *
-		 * @throw stream errors.
-		 */
-		void load (const char *file);
 };
 
 }

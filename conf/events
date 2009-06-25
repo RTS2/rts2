@@ -1,14 +1,31 @@
 <!--
-  Configuration file for states
+  Configuration file for events actions.
+  Please read man rts2-xmlrpcd to learn more.
+  Petr Kubanek <petr@kubanek.net>
 -->
 <events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
-  <device name="C0" state-mask="1" state="2">
-    <command>/etc/rts2/event.d/c0_reading</command>
+  <device name="C0">
+    <state state-mask="1" state="2">
+      <command>/etc/rts2/event.d/c0_reading</command>
+    </state>
+    <value name="exposure">
+      <command>/etc/rts2/event.d/exposure_state</command>
+    </value>
   </device>
-  <device name="DOME" state-mask="7" state="4">
-    <command>/etc/rts2/event.d/dome_opened</command>
+  <device name="DOME">
+    <state state="4">
+      <command>/etc/rts2/event.d/dome_opened</command>
+    </state>
+    <state state="1">
+      <command>/etc/rts2/event.d/dome_closed</command>
+    </state>
+    <value name="sw_open_left|sw_close_left|sw_open_right|sw_close_right">
+      <record/>
+    </value>
   </device>
-  <device name="DOME" state-mask="7" state="1">
-    <command>/etc/rts2/event.d/dome_closed</command>
+  <device name="PRESS">
+    <value name="pressure">
+      <record/>
+    </value>
   </device>
 </events>

@@ -6,16 +6,46 @@
   Copyright 2009 Petr Kubanek petr@kubanek.net
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <!-- allowed actions -->
+  <xs:complexType name="action">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element name="command" type="xs:string" minOccurs="0"/>
+      <xs:element name="email" type="xs:string" minOccurs="0"/>
+      <xs:element name="sql" type="xs:string" minOccurs="0"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <!-- state changes -->
+  <xs:complexType name="state">
+    <xs:complexContent>
+      <xs:extension base="action">
+        <xs:attribute name="state-mask" type="xs:integer"/>
+        <xs:attribute name="state" type="xs:integer" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  
+  <!-- value changes -->
+  <xs:complexType name="value">
+    <xs:complexContent>
+      <xs:extension base="action">
+	<xs:sequence>
+	  <xs:element name="record" minOccurs="0"/>
+	</xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
   <xs:complexType name="events">
     <xs:sequence>
       <xs:element name="device" minOccurs="0" maxOccurs="unbounded">
 	<xs:complexType>
 	  <xs:sequence>
-	    <xs:element name="command" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+	    <xs:element name="state" type="state" minOccurs="0" maxOccurs="unbounded"/>
+	    <xs:element name="value" type="value" minOccurs="0" maxOccurs="unbounded"/>
 	  </xs:sequence>
           <xs:attribute name="name" type="xs:string"/>
-	  <xs:attribute name="state-mask" type="xs:integer"/>
-	  <xs:attribute name="state" type="xs:integer"/>
 	</xs:complexType>
       </xs:element>
     </xs:sequence>

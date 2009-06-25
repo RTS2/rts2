@@ -41,7 +41,7 @@
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
 #include "session.h"
-#include "stateevents.h"
+#include "events.h"
 
 #include "r2x.h"
 
@@ -82,6 +82,8 @@ class XmlDevClient:public Rts2DevClient
 		}
 
 		virtual void stateChanged (Rts2ServerState * state);
+
+		virtual void valueChanged (Rts2Value * value);
 };
 
 
@@ -105,7 +107,7 @@ class XmlRpcd:public Rts2Device
 
 		std::deque <Rts2Message> messages;
 
-		StateCommands stateCommands;
+		Events events;
 
 	protected:
 #ifndef HAVE_PGSQL
@@ -125,6 +127,8 @@ class XmlRpcd:public Rts2Device
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
 		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
+
+		void valueChangedEvent (Rts2Conn *conn, Rts2Value *new_value);
 
 		virtual void message (Rts2Message & msg);
 
@@ -166,6 +170,13 @@ XmlDevClient::stateChanged (Rts2ServerState * state)
 {
 	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
 	Rts2DevClient::stateChanged (state);
+}
+
+void
+XmlDevClient::valueChanged (Rts2Value * value)
+{
+	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
+	Rts2DevClient::valueChanged (value);
 }
 
 #ifndef HAVE_PGSQL
@@ -223,7 +234,7 @@ XmlRpcd::init ()
 	// try states..
 	if (stateChangeFile != NULL)
 	{
-		stateCommands.load (stateChangeFile);
+		events.load (stateChangeFile);
 	}
 
 	setMessageMask (MESSAGE_MASK_ALL);
@@ -267,7 +278,7 @@ XmlRpcd::signaledHUP ()
 	// try states..
 	if (stateChangeFile != NULL)
 	{
-		stateCommands.load (stateChangeFile);
+		events.load (stateChangeFile);
 	}
 }
 
@@ -307,7 +318,7 @@ void
 XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 {
 	// look if there is some state change command entry, which match us..
-	for (StateCommands::iterator iter = stateCommands.begin (); iter != stateCommands.end (); iter++)
+	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
 	{
 		StateChangeCommand sc = (*iter);
 		if (sc.isForDevice (conn->getName (), conn->getOtherType ()) && sc.executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
@@ -324,6 +335,28 @@ XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 			}
 
 			addConnection (cf);
+		}
+	}
+}
+
+
+void
+XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
+{
+	// look if there is some state change command entry, which match us..
+	for (ValueCommands::iterator iter = events.valueCommands.begin (); iter != events.valueCommands.end (); iter++)
+	{
+		ValueChangeCommand vc = (*iter);
+		if (vc.isForValue (conn->getName (), new_value->getName ()))
+		{
+			try
+			{
+				vc.run (new_value, conn->getInfoTime ());
+			}
+			catch (rts2db::SqlError err)
+			{
+				logStream (MESSAGE_ERROR) << err << sendLog;
+			}
 		}
 	}
 }
