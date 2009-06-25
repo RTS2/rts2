@@ -110,6 +110,8 @@ class Rts2Message
 					return "info";
 				case MESSAGE_DEBUG:
 					return "debug";
+				default:
+					return "unknown";
 			}
 		}
 
