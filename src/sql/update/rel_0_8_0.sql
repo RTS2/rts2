@@ -21,6 +21,10 @@ CREATE TABLE tickets (
 
 INSERT INTO accounts VALUES (1, 'Default account', 100);
 
+GRANT ALL ON accounts TO GROUP observers;
+
+GRANT ALL ON tickets TO GROUP observers;
+
 --- Drop darks and flats
 
 DROP TABLE darks;
@@ -38,3 +42,23 @@ DROP TABLE epoch;
 -- Add column with full image path
 
 ALTER TABLE images ADD COLUMN img_path varchar(100);
+
+-- create table to record double values
+
+CREATE TABLE recvals (
+	recval_id		integer PRIMARY KEY,
+	device_name		varchar(25),
+	value_name		varchar(25)
+);
+
+CREATE TABLE records (
+	recval_id		integer REFERENCES recvals(recval_id) not NULL,
+	rectime			timestamp,
+	value			float8
+);
+
+CREATE SEQUENCE recval_ids;
+
+GRANT ALL ON recvals TO GROUP observers;
+GRANT ALL ON records TO GROUP observers;
+GRANT ALL ON recval_ids TO GROUP observers;
