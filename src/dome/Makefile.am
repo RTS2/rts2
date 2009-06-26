@@ -38,9 +38,9 @@ rts2_dome_bootes2_SOURCES = bootes2.cpp
 rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
 rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
 
-rts2_dome_bootes2_SOURCES = ieec.cpp
-rts2_dome_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
-rts2_dome_bootes2_CPPFLAGS = @INC_COMEDI@
+rts2_dome_ieec_SOURCES = ieec.cpp
+rts2_dome_ieec_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_dome_ieec_CPPFLAGS = @INC_COMEDI@
 
 else
 EXTRA_DIST += bootes2.cpp ieec.cpp
