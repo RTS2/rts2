@@ -140,11 +140,25 @@
 
 #define R2X_TICKET_INFO               "rts2.tickets.info"
 
-
+/**
+ * List values which are recored to database.
+ *
+ * @return array with structure containing informations about each record:
+ *    recvalid,device, value, from, to, recnums
+ */
 #define R2X_RECORDS_VALUES            "rts2.records.values"
 
+/**
+ * Retrieve records from database, with a given cadence.
+ *
+ * @param id           Value to return
+ * @param device       Device name
+ * @param value_name   Value name
+ * @param from         From this time
+ * @param to           To this time
+ * @param numrecs      Observation cadence in seconds
+ */
 #define R2X_RECORDS_GET               "rts2.records.get"
-
 
 /**
  * User login. Provides username and password, out true/false - true if login is OK
