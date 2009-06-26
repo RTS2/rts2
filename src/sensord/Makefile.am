@@ -10,7 +10,18 @@ EXTRA_DIST =
 
 noinst_LIBRARIES = librts2sensord.a
 
-librts2sensord_a_SOURCES = sensord.cpp
+if GPIBLIB
+
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp
+
+else
+
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp
+
+EXTRA_DIST += sensorgpib.cpp
+
+endif
+
 
 LDADD = librts2sensord.a ../utils/librts2block.a @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
@@ -62,10 +73,10 @@ endif
 
 if GPIBLIB
 
+LDADD += @LIB_GPIB@
+
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485 \
 	rts2-sensor-keithley-487
-
-LDADD += sensorgpib.o @LIB_GPIB@
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
@@ -75,7 +86,7 @@ rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
 else
 
-EXTRA_DIST += sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
+EXTRA_DIST += cryocon.cpp keithley-6485.cpp keithley-487.cpp
 
 endif
 
