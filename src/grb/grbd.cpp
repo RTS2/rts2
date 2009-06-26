@@ -20,6 +20,7 @@
 #include "../utils/rts2command.h"
 #include "grbd.h"
 
+#define OPT_GRB_DISABLE         OPT_LOCAL + 49
 #define OPT_GCN_HOST            OPT_LOCAL + 50
 #define OPT_GCN_PORT            OPT_LOCAL + 51
 #define OPT_GCN_TEST            OPT_LOCAL + 52
@@ -38,6 +39,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 	addExe = NULL;
 	execFollowups = 0;
 
+	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false);
+	grb_enabled->setValueBool (true);
+
 	createValue (last_packet, "last_packet", "time from last packet", false);
 
 	createValue (delta, "delta", "delta time from last packet", false);
@@ -49,6 +53,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 
 	createValue (execConnection, "exec", "exec connection", false);
 
+	addOption (OPT_GRB_DISABLE, "disable-grbs", 0, "disable GRBs TOO execution - only receive GCN packets");
 	addOption (OPT_GCN_HOST, "gcn_host", 1, "GCN host name");
 	addOption (OPT_GCN_PORT, "gcn_port", 1, "GCN port");
 	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
@@ -70,6 +75,9 @@ Rts2DevGrb::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+		case OPT_GRB_DISABLE:
+			grb_enabled->setValueBool (false);
+			break;
 		case OPT_GCN_HOST:
 			gcn_host = new char[strlen (optarg) + 1];
 			strcpy (gcn_host, optarg);
@@ -207,13 +215,23 @@ Rts2DevGrb::help ()
 
 
 int
+Rts2DevGrb::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == grb_enabled)
+		return 0;
+	return Rts2DeviceDb::setValue (oldValue, newValue);
+}
+
+
+int
 Rts2DevGrb::info ()
 {
 	last_packet->setValueDouble (gcncnn->lastPacket ());
 	delta->setValueDouble (gcncnn->delta ());
 	last_target->setValueCharArr (gcncnn->lastTarget ());
 	last_target_time->setValueDouble (gcncnn->lastTargetTime ());
-	execConnection->setValueInteger (getOpenConnection ("EXEC") ? 1 : 0);
+	last_target_radec->setValueRaDec (gcncnn->lastRa (), gcncnn->lastDec ());
+	execConnection->setValueBool (getOpenConnection ("EXEC") != NULL);
 	return Rts2DeviceDb::info ();
 }
 
@@ -235,6 +253,11 @@ Rts2DevGrb::postEvent (Rts2Event * event)
 int
 Rts2DevGrb::newGcnGrb (int tar_id)
 {
+	if (grb_enabled->getValueBool () != true)
+	{
+		logStream (MESSAGE_WARNING) << "GRB was not passed to executor, as this feature is disabled" << sendLog;
+		return -1;
+	}
 	Rts2Conn *exec;
 	exec = getOpenConnection ("EXEC");
 	if (exec)
