@@ -33,6 +33,9 @@ XmlRpcSource(fd, deleteOnClose)
 	_server = server;
 	_connectionState = READ_HEADER;
 	_keepAlive = true;
+
+	_get_response_length = 0;
+	_get_response = NULL;
 }
 
 
@@ -54,6 +57,9 @@ XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 
 	if (_connectionState == READ_REQUEST)
 		if ( ! readRequest()) return 0;
+
+	if (_connectionState == GET_REQUEST)
+		if ( ! handleGet()) return 0;
 
 	if (_connectionState == WRITE_RESPONSE)
 		if ( ! writeResponse()) return 0;
@@ -81,19 +87,22 @@ XmlRpcServerConnection::readHeader()
 	char *hp = (char*)_header.c_str();
 								 // End of string
 	char *ep = hp + _header.length();
+	char *gp = 0;				 // GET/Post method pointer
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 	char *kp = 0;				 // Start of connection value
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
-		if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
+		if ((ep - cp > 4) && (strncasecmp(cp, "GET ", 4) == 0))
+			gp = cp + 4;
+		else if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
 			lp = cp + 16;
 		else if ((ep - cp > 12) && (strncasecmp(cp, "Connection: ", 12) == 0))
 			kp = cp + 12;
-		else if ((ep - cp > 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
+		else if ((ep - cp >= 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
-		else if ((ep - cp > 2) && (strncmp(cp, "\n\n", 2) == 0))
+		else if ((ep - cp >= 2) && (strncmp(cp, "\n\n", 2) == 0))
 			bp = cp + 2;
 	}
 
@@ -110,6 +119,22 @@ XmlRpcServerConnection::readHeader()
 		}
 
 		return true;			 // Keep reading
+	}
+
+	// XML-RPC requests are POST. If we received GET request, then get request string and call it a day..
+	if (gp != 0)
+	{
+		while (isspace(*gp))
+			gp++;
+		char *cp = gp;
+		while (! (cp >= ep || isspace(*cp) || *cp == '\r' || *cp == '\n'))
+			cp++;
+		_get = _header.substr(gp - hp, cp - gp);
+		XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: GET request for %s", _get.c_str());
+
+		_connectionState = GET_REQUEST;
+
+		return true;
 	}
 
 	// Decode content length
@@ -187,6 +212,43 @@ XmlRpcServerConnection::readRequest()
 
 
 bool
+XmlRpcServerConnection::handleGet()
+{
+	if (_get_response_length == 0)
+	{
+		executeGet();
+		_bytesWritten = 0;
+		if (_get_response_length == 0)
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: empty response.");
+			return false;
+		}
+	}
+
+	if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_bytesWritten))
+	{
+		XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+		return false;
+	}
+	XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _bytesWritten, _get_response_length);
+
+	// Prepare to read the next request
+	if (_bytesWritten == int(_get_response_length))
+	{
+		_header = "";
+		_get = "";
+		_request = "";
+		delete[] _get_response;
+		_get_response_length = 0;
+		_get_response = NULL;
+		_response = "";
+		_connectionState = READ_HEADER;
+	}
+
+	return _keepAlive;			 // Continue monitoring this source if true
+}
+
+bool
 XmlRpcServerConnection::writeResponse()
 {
 	if (_response.length() == 0)
@@ -212,7 +274,10 @@ XmlRpcServerConnection::writeResponse()
 	if (_bytesWritten == int(_response.length()))
 	{
 		_header = "";
+		_get = "";
 		_request = "";
+		_get_response_length = 0;
+		_get_response = NULL;
 		_response = "";
 		_connectionState = READ_HEADER;
 	}
@@ -246,6 +311,17 @@ XmlRpcServerConnection::executeRequest()
 			fault.getMessage().c_str());
 		generateFaultResponse(fault.getMessage(), fault.getCode());
 	}
+}
+
+
+// Run the method, generate _get_response buffer, fill _get_response_length
+void
+XmlRpcServerConnection::executeGet()
+{
+	_get_response = new char[500];
+	
+	strcpy(_get_response, "HTTP/1.1 200 OK\r\nServer: XMLRCP\r\nContent-Type: text/html\r\nContent-length: 15\r\n\r\n<html>Hi there!</html>");
+	_get_response_length = strlen(_get_response);
 }
 
 

@@ -235,6 +235,40 @@ XmlRpcSocket::nbWrite(int fd, std::string& s, int *bytesSoFar)
 }
 
 
+// Write text to the specified socket. Returns false on error.
+bool
+XmlRpcSocket::nbWriteBuf(int fd, const char *buf, int buf_len, int *bytesSoFar)
+{
+	int nToWrite = buf_len - *bytesSoFar;
+	bool wouldBlock = false;
+
+	while ( nToWrite > 0 && ! wouldBlock )
+	{
+		#if defined(_WINDOWS)
+		int n = send(fd, buf + *bytesSoFar, nToWrite, 0);
+		#else
+		int n = write(fd, buf + *bytesSoFar, nToWrite);
+		#endif
+		XmlRpcUtil::log(5, "XmlRpcSocket::nbWrite: send/write returned %d.", n);
+
+		if (n > 0)
+		{
+			*bytesSoFar += n;
+			nToWrite -= n;
+		}
+		else if (nonFatalError())
+		{
+		}
+		else
+		{
+			return false;		 // Error
+		}
+	}
+	return true;
+}
+
+
+
 // Returns last errno
 int
 XmlRpcSocket::getError()

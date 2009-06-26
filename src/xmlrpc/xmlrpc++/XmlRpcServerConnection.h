@@ -53,10 +53,14 @@ namespace XmlRpc
 
 			bool readHeader();
 			bool readRequest();
+			bool handleGet();
 			bool writeResponse();
 
 			// Parses the request, runs the method, generates the response xml.
 			virtual void executeRequest();
+
+			// Execute response to GET
+			virtual void executeGet();
 
 			// Parse the methodName and parameters from the request.
 			std::string parseRequest(XmlRpcValue& params);
@@ -76,11 +80,14 @@ namespace XmlRpc
 			XmlRpcServer* _server;
 
 			// Possible IO states for the connection
-			enum ServerConnectionState { READ_HEADER, READ_REQUEST, WRITE_RESPONSE };
+			enum ServerConnectionState { READ_HEADER, READ_REQUEST, GET_REQUEST, WRITE_RESPONSE };
 			ServerConnectionState _connectionState;
 
 			// Request headers
 			std::string _header;
+
+			// Name of date requested with GET
+			std::string _get;
 
 			// Number of bytes expected in the request body (parsed from header)
 			int _contentLength;
@@ -90,6 +97,10 @@ namespace XmlRpc
 
 			// Response
 			std::string _response;
+
+			// Response for GET request - data
+			char *_get_response;
+			int _get_response_length;
 
 			// Number of bytes of the response written so far
 			int _bytesWritten;

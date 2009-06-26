@@ -34,6 +34,9 @@ namespace XmlRpc
 			//! Write text to the specified socket. Returns false on error.
 			static bool nbWrite(int socket, std::string& s, int *bytesSoFar);
 
+			//! Write buffer to the specified socket. Returns false on error.
+			static bool nbWriteBuf(int socket, const char *buf, int buf_len, int *bytesSoFar);
+
 			// The next four methods are appropriate for servers.
 
 			//! Allow the port the specified socket is bound to to be re-bound immediately so
