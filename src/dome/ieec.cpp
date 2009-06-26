@@ -21,6 +21,7 @@
 #include "dome.h"
 
 #include <comedilib.h>
+#include <ostream>
 
 class ComediDOError
 {
@@ -32,16 +33,12 @@ class ComediDOError
 			name = _name;
 		}
 
-		friend std::ostream & operator << (std::ostream & os, ComediDOError & err);
-}
-
-
-std::ostream &
-operator << (std::ostream & os, ComediDOError & err)
-{
-	os << "Cannot read digital input " << err.name;
-	return os;
-}
+		friend std::ostream & operator << (std::ostream & os, ComediDOError & err)
+		{
+			os << "Cannot read digital input " << err.name;
+			return os;
+		}
+};
 
 
 namespace rts2dome
@@ -60,44 +57,8 @@ class IEEC: public Dome
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-		/**
-		 * Returns volts from the device.
-		 *
-		 * @param subdevice Subdevice number.
-		 * @param channel   Channel number.
-		 * @param volts     Returned volts.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int getVolts (int subdevice, int channel, double &volts);
 
-		/**
-		 * Update temperature measurements.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int updateTemperature ();
-
-		/**
-		 * Update humidity.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int updateHumidity ();
-
-		/**
-		 * Update status of end sensors.
-		 *
-		 * @return -1 on failure, 0 on success.
-		 */
-		int updateStatus ();
-
-		/**
-		 * Pull on roof trigger.
-		 *
-		 * @return -1 on failure, 0 on success.
-		 */
-		int roofChange ();
+		void comediReadDIO (int channel, Rts2ValueBool *val, const char *name);
 
 	protected:
 		virtual int processOption (int _opt);
@@ -112,8 +73,6 @@ class IEEC: public Dome
 		virtual long isClosed ();
 		virtual int endClose ();
 
-		virtual bool isGoodWeather ();
-
 	public:
 		IEEC (int argc, char **argv);
 		virtual ~IEEC ();
@@ -123,37 +82,15 @@ class IEEC: public Dome
 
 using namespace rts2dome;
 
-
 void
 IEEC::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
 {
 	int ret;
-	int v;
-	ret = comedi_dio_read (3, channel, &v);
+	unsigned int v;
+	ret = comedi_dio_read (comediDevice, 3, channel, &v);
 	if (ret != 1)
 		throw ComediDOError (name);
 	val->setValueBool (v != 0);
-}
-
-
-int
-IEEC::updateStatus ()
-{
-}
-
-
-int
-IEEC::roofChange ()
-{
-	usleep (ROOF_PULSE);
-	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
-	{
-		logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
-		return 0;
-	}
-
-	usleep (ROOF_TIMEOUT);
-	return 0;
 }
 
 
@@ -201,12 +138,15 @@ IEEC::init ()
 	}
 	/* output port - roof - subdevice 2 */
 	subdev = 2;
-	ret = comedi_dio_config (comediDevice, subdev, 0, COMEDI_OUTPUT);
-	if (ret != 1)
+	for (int i = 0; i < 2; i++)
 	{
-	  	logStream (MESSAGE_ERROR) << "Cannot init comedi roof - subdev " << subdev
-			<< " channel 0, error " << ret << sendLog;
-		return -1;
+		ret = comedi_dio_config (comediDevice, subdev, 0, COMEDI_OUTPUT);
+		if (ret != 1)
+		{
+		  	logStream (MESSAGE_ERROR) << "Cannot init comedi roof - subdev " << subdev
+				<< " channel 0, error " << ret << sendLog;
+			return -1;
+		}
 	}
 
 	return 0;
@@ -278,21 +218,6 @@ int
 IEEC::endClose ()
 {
 	return 0;
-}
-
-
-bool
-IEEC::isGoodWeather ()
-{
-	if (getIgnoreMeteo () == true)
-		return true;
-	int ret = updateStatus ();
-	if (ret)
-		return false;
-	// if it's raining
-	if (raining->getValueBool () == true)
-		return false;
-	return Dome::isGoodWeather ();
 }
 
 
