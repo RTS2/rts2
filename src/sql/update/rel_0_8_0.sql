@@ -57,8 +57,24 @@ CREATE TABLE records (
 	value			float8
 );
 
+CREATE INDEX records_time ON records (rectime);
+CREATE INDEX records_id_time ON records (recval_id, rectime);
+
+CREATE VIEW recvals_statistics AS
+SELECT
+	recval_id,
+	device_name,
+	value_name,
+	(SELECT min(rectime) FROM records WHERE records.recval_id = recvals.recval_id) AS time_from,
+	(SELECT max(rectime) FROM records WHERE records.recval_id = recvals.recval_id) AS time_to,
+	(SELECT count (*) FROM records WHERE records.recval_id = recvals.recval_id) AS nrec
+FROM
+	recvals;
+	
+
 CREATE SEQUENCE recval_ids;
 
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records TO GROUP observers;
 GRANT ALL ON recval_ids TO GROUP observers;
+GRANT ALL ON recvals_statistics TO GROUP observers;
