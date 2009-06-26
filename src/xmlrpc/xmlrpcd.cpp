@@ -22,6 +22,8 @@
 #include <deque>
 
 #ifdef HAVE_PGSQL
+#include "../utilsdb/recvals.h"
+#include "../utilsdb/records.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/observationset.h"
@@ -1296,6 +1298,76 @@ class TicketInfo: public XmlRpcServerMethod
 } ticketInfo (&xmlrpc_server);
 
 
+class RecordsValues: public XmlRpcServerMethod
+{
+	public:
+		RecordsValues (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_VALUES, s) {}
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 0)
+				throw XmlRpcException ("Invalid number of parameters");
+			try
+			{
+				rts2db::RecvalsSet recvals = rts2db::RecvalsSet ();
+				int i = 0;
+				time_t t;
+				recvals.load ();
+				for (rts2db::RecvalsSet::iterator iter = recvals.begin (); iter != recvals.end (); iter++)
+				{
+					rts2db::Recval rv = (*iter);
+					XmlRpcValue res;
+					res["id"] = rv.getId ();
+					res["device"] = rv.getDevice ();
+					res["value_name"] = rv.getValueName ();
+					t = rv.getFrom ();
+					res["from"] = XmlRpcValue (gmtime (&t));
+					t = rv.getTo ();
+					res["to"] = XmlRpcValue (gmtime (&t));
+					res["numrecs"] = rv.getNumRecs ();
+					result[i++] = res;
+				}
+			}
+			catch (rts2db::SqlError err)
+			{
+				throw XmlRpcException (err.getError ());
+			}
+		}
+} recordValues (&xmlrpc_server);
+
+
+class Records: public XmlRpcServerMethod
+{
+	public:
+		Records (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_GET, s) {}
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 1)
+				throw XmlRpcException ("Invalid number of parameters");
+
+			try
+			{
+				rts2db::RecordsSet recset = rts2db::RecordsSet (params[0]);
+				int i = 0;
+				time_t t;
+				recset.load ();
+				for (rts2db::RecordsSet::iterator iter = recset.begin (); iter != recset.end (); iter++)
+				{
+					rts2db::Record rv = (*iter);
+					XmlRpcValue res;
+					t = rv.getRecTime ();
+					res["rectime"] = XmlRpcValue (gmtime (&t));
+					res["value"] = rv.getValue ();
+					result[i++] = res;
+				}
+			}
+			catch (rts2db::SqlError err)
+			{
+				throw XmlRpcException (err.getError ());
+			}
+		}
+} records (&xmlrpc_server);
+
+
 class UserLogin: public XmlRpcServerMethod
 {
 	public:
@@ -1304,9 +1376,8 @@ class UserLogin: public XmlRpcServerMethod
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size() != 2)
-			{
 				throw XmlRpcException ("Invalid number of parameters");
-			}
+
 			result = verifyUser (params[0], params[1]);
 		}
 } userLogin (&xmlrpc_server);

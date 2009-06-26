@@ -141,6 +141,11 @@
 #define R2X_TICKET_INFO               "rts2.tickets.info"
 
 
+#define R2X_RECORDS_VALUES            "rts2.records.values"
+
+#define R2X_RECORDS_GET               "rts2.records.get"
+
+
 /**
  * User login. Provides username and password, out true/false - true if login is OK
  */
