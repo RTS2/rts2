@@ -69,8 +69,6 @@ class Bootes2: public Dome
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-	
-		Rts2ValueInteger *sw_state;
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
 
@@ -441,7 +439,6 @@ Bootes2::Bootes2 (int argc, char **argv): Dome (argc, argv)
 {
 	comediFile = "/dev/comedi0";
 
-	createValue (sw_state, "sw_state", "state of end switches", false, RTS2_DT_HEX);
 	createValue (tempMeas, "TEMP", "outside temperature", true);
 	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
 
