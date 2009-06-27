@@ -60,6 +60,8 @@
 #define ZS_EMERGENCY_B   0x4000
 #define ZS_DEADMAN       0x8000
 
+// emergency button reset
+#define ZI_EMMERGENCY_R  0x2000
 // bit for Q9 - remote switch
 #define ZI_Q9            0x4000
 // bit mask for rain ignore
@@ -119,6 +121,7 @@ class Zelio:public Dome
 		Rts2ValueBool *blockOpenRight;
 		Rts2ValueBool *blockCloseRight;
 
+		Rts2ValueBool *emergencyReset;
 		Rts2ValueBool *Q9;
 
 		Rts2ValueInteger *J1XT1;
@@ -436,9 +439,13 @@ Zelio::Zelio (int argc, char **argv)
 	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
-	createValue (emergencyButton, "emmergency", "state of emergency button", false);
+	createValue (emergencyButton, "emergency", "state of emergency button", false);
+
+	createValue (emergencyReset, "(re)set emergency state -cycle true/false to reset", false);
+	emergencyReset->setValueBool (false);
 
 	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false);
+	Q9->setValueBool (false);
 
 	host = NULL;
 	deadManNum = 0;
@@ -702,6 +709,8 @@ Zelio::createZelioValues ()
 int
 Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
+	if (oldValue == emergencyReset)
+	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ());
 	if (oldValue == Q9)
 	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ());
 	if (oldValue == ignoreRain)
