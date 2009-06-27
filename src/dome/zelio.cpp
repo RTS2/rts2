@@ -441,7 +441,7 @@ Zelio::Zelio (int argc, char **argv)
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
 	createValue (emergencyButton, "emergency", "state of emergency button", false);
 
-	createValue (emergencyReset, "(re)set emergency state -cycle true/false to reset", false);
+	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false);
 	emergencyReset->setValueBool (false);
 
 	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false);
