@@ -16,7 +16,7 @@ librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp
 
 else
 
-librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp
+librts2sensord_a_SOURCES = sensord.cpp
 
 EXTRA_DIST += sensorgpib.cpp
 
