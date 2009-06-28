@@ -341,13 +341,21 @@ Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == unitRa)
 	{
-		return tel_write_ra ('B',
-			new_value->getValueLong ()) == 0 ? 0 : -2;
+		long diff = old_value->getValueLong () - new_value->getValueLong ();
+		if (diff < 0)
+			return tel_write_ra ('F', -1 * diff) == 0 ? 0 : -2;
+		else if (diff > 0)
+		  	return tel_write_ra ('B', diff) == 0 ? 0 : -2;
+		else return 0;
 	}
 	if (old_value == unitDec)
 	{
-		return tel_write_dec ('B',
-			new_value->getValueLong ()) == 0 ? 0 : -2;
+		long diff = old_value->getValueLong () - new_value->getValueLong ();
+		if (diff < 0)
+			return tel_write_dec ('F', -1 * diff) == 0 ? 0 : -2;
+		else if (diff > 0)
+		  	return tel_write_dec ('B', diff) == 0 ? 0 : -2;
+		else return 0;
 	}
 /*	if (old_value == velRa)
 	{
