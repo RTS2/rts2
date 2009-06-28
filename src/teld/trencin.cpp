@@ -100,7 +100,7 @@ Trencin::tel_write_ra (char command)
 {
 	char buf[50];
 	// switch unit
-	int len = snprintf (buf, 2, "%c\r", command);
+	int len = snprintf (buf, 2, "%c\rR\r", command);
 	return trencinConnRa->writePort (buf, len);
 }
 
@@ -110,7 +110,7 @@ Trencin::tel_write_dec (char command)
 {
 	char buf[3];
 	// switch unit
-	int len = snprintf (buf, 2, "%c\r", command);
+	int len = snprintf (buf, 2, "%c\rR\r", command);
 	return trencinConnDec->writePort (buf, len);
 }
 
