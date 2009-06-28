@@ -46,6 +46,9 @@ class Trencin:public Fork
 		int tel_write_ra (char command, int32_t value);
 		int tel_write_dec (char command, int32_t value);
 
+		// read axis - registers 1-3
+		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value);
+
 		Rts2ValueBool *wormRa;
 
 		Rts2ValueInteger *wormRaSpeed;
@@ -98,9 +101,9 @@ using namespace rts2teld;
 int
 Trencin::tel_write_ra (char command)
 {
-	char buf[50];
+	char buf[3];
 	// switch unit
-	int len = snprintf (buf, 2, "%c\rR\r", command);
+	int len = snprintf (buf, 2, "%c\r", command);
 	return trencinConnRa->writePort (buf, len);
 }
 
@@ -110,8 +113,9 @@ Trencin::tel_write_dec (char command)
 {
 	char buf[3];
 	// switch unit
-	int len = snprintf (buf, 2, "%c\rR\r", command);
-	return trencinConnDec->writePort (buf, len);
+	int len = snprintf (buf, 2, "%c\r", command);
+//	return trencinConnDec->writePort (buf, len);
+	return 0;
 }
 
 
@@ -132,7 +136,7 @@ Trencin::tel_write_ra (char command, int32_t value)
 {
 	char buf[51];
 	// switch unit
-	int len = snprintf (buf, 50, "%c%i\r", command, value);
+	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
 	return trencinConnRa->writePort (buf, len);
 }
 
@@ -142,8 +146,40 @@ Trencin::tel_write_dec (char command, int32_t value)
 {
 	char buf[51];
 	// switch unit
-	int len = snprintf (buf, 50, "%c%i\r", command, value);
-	return trencinConnDec->writePort (buf, len);
+	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
+//	return trencinConnDec->writePort (buf, len);
+	return 0;
+}
+
+
+int
+Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
+{
+	int ret;
+	char buf[10];
+	ret = conn->writePort ("U1\r", 3);
+	if (ret < 0)
+		return -1;
+	// read it.
+	ret = conn->readPort (buf, 1);
+	if (ret < 0)
+		return -1;
+	ret = conn->writePort ("U2\r", 3);
+	if (ret < 0)
+		return -1;
+	// read it.
+	ret = conn->readPort (buf + 1, 1);
+	if (ret < 0)
+		return -1;
+	ret = conn->writePort ("U3\r", 3);
+	if (ret < 0)
+		return -1;
+	// read it.
+	ret = conn->readPort (buf + 2, 1);
+	if (ret < 0)
+		return -1;
+	value->setValueInteger (buf[0] + buf[1] * 256 + buf[2] * 256 * 256);
+	return 0;
 }
 
 
@@ -260,7 +296,7 @@ Trencin::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	trencinConnRa = new Rts2ConnSerial (device_nameRa, this, BS9600, C8, NONE, 40);
+	trencinConnRa = new Rts2ConnSerial (device_nameRa, this, BS4800, C8, NONE, 40);
 	ret = trencinConnRa->init ();
 	if (ret)
 		return ret;
@@ -268,13 +304,13 @@ Trencin::init ()
 	trencinConnRa->setDebug ();
 	trencinConnRa->flushPortIO ();
 
-	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS9600, C8, NONE, 40);
+/*	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS9600, C8, NONE, 40);
 	ret = trencinConnDec->init ();
 	if (ret)
 		return ret;
 
 	trencinConnDec->setDebug ();
-	trencinConnDec->flushPortIO ();
+	trencinConnDec->flushPortIO (); */
 
 	snprintf (telType, 64, "Trencin");
 
@@ -346,6 +382,10 @@ Trencin::info ()
 	double t_telDec;
 
 	int u_ra = unitRa->getValueInteger ();
+
+	// update axRa and axDec
+	readAxis (trencinConnRa, unitRa);
+//	readAxis (trencinConnDec, unitDec);
 
 	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
 	setTelRa (t_telRa);
