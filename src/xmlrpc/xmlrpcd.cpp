@@ -1304,8 +1304,8 @@ class RecordsValues: public XmlRpcServerMethod
 		RecordsValues (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_VALUES, s) {}
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			if (params.size () != 0)
-				throw XmlRpcException ("Invalid number of parameters");
+//			if (params.getType () != XmlRpcValue::TypeInvalid)
+//				throw XmlRpcException ("Invalid number of parameters");
 			try
 			{
 				rts2db::RecvalsSet recvals = rts2db::RecvalsSet ();
@@ -1329,7 +1329,7 @@ class RecordsValues: public XmlRpcServerMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException (err.getError ());
+				throw XmlRpcException ("DB error: " + err.getError ());
 			}
 		}
 } recordValues (&xmlrpc_server);
@@ -1355,8 +1355,8 @@ class Records: public XmlRpcServerMethod
 					rts2db::Record rv = (*iter);
 					XmlRpcValue res;
 					t = rv.getRecTime ();
-					res["rectime"] = XmlRpcValue (gmtime (&t));
-					res["value"] = rv.getValue ();
+					res[0] = XmlRpcValue (gmtime (&t));
+					res[1] = rv.getValue ();
 					result[i++] = res;
 				}
 			}

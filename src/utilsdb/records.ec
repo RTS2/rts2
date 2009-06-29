@@ -32,7 +32,7 @@ void RecordsSet::load ()
 
 	EXEC SQL DECLARE records_cur CURSOR FOR
 	SELECT
-		rectime,
+		EXTRACT (EPOCH FROM rectime),
 		value
 	FROM
 		records

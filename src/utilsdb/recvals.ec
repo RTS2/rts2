@@ -53,7 +53,7 @@ void RecvalsSet::load ()
 			:d_device_name,
 			:d_value_name,
 			:d_from,
-			:d_to
+			:d_to,
 			:d_num_rec;
 		if (sqlca.sqlcode)
 			break;
