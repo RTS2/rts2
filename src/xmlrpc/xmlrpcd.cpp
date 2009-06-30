@@ -967,9 +967,11 @@ class GetMessages: public XmlRpcServerMethod
 			{
 				XmlRpcValue val;
 				Rts2Message msg = *iter;
+				time_t t;
 				val["type"] = msg.getTypeString ();
 				val["origin"] = msg.getMessageOName ();
-				val["timestamp"] = msg.getMessageTime ();
+				t = msg.getMessageTime ();
+				val["timestamp"] = XmlRpcValue (gmtime (&t));
 				val["message"] = msg.getMessageString ();
 				result[i] = val;
 			}
