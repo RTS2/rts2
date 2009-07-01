@@ -53,12 +53,13 @@ CREATE TABLE recvals (
 
 CREATE TABLE records (
 	recval_id		integer REFERENCES recvals(recval_id) not NULL,
-	rectime			timestamp,
+	rectime			timestamp not NULL,
 	value			float8
 );
 
 CREATE INDEX records_time ON records (rectime);
-CREATE INDEX records_id_time ON records (recval_id, rectime);
+CREATE INDEX records_recval_id ON records (recval_id);
+CREATE UNIQUE INDEX records_id_time ON records (recval_id, rectime);
 
 CREATE VIEW recvals_statistics AS
 SELECT
@@ -74,7 +75,64 @@ FROM
 
 CREATE SEQUENCE recval_ids;
 
+CREATE VIEW records_day AS
+SELECT
+	recval_id,
+	date_trunc('day',rectime) as day,
+	avg(value) as avg_value,
+	min(value) as min_value,
+	max(value) as max_value,
+	count(*) as nrec
+FROM
+	records
+GROUP BY
+	recval_id,
+	day
+ORDER BY
+	day,
+	recval_id;
+
+
+CREATE VIEW records_hour AS
+SELECT
+	recval_id,
+	date_trunc('hour',rectime) as hour,
+	avg(value) as avg_value,
+	min(value) as min_value,
+	max(value) as max_value,
+	count(*) as nrec
+FROM
+	records
+GROUP BY
+	recval_id,
+	hour
+ORDER BY
+	hour,
+	recval_id;
+
+SELECT * INTO mv_records_day FROM records_day;
+SELECT * INTO mv_records_hour FROM records_hour;
+
+CREATE INDEX mv_records_day_day ON mv_records_day (day);
+CREATE INDEX mv_records_day_recvalid ON mv_records_day (recval_id);
+CREATE UNIQUE INDEX mv_records_day_record ON mv_records_day (recval_id, day);
+
+CREATE INDEX mv_records_hour_hour ON mv_records_hour (hour);
+CREATE INDEX mv_records_hour_recvalid ON mv_records_hour (recval_id);
+CREATE UNIQUE INDEX mv_records_hour_record ON mv_records_hour (recval_id, hour);
+
+CREATE FUNCTION mv_refresh () RETURNS void AS '
+DELETE FROM mv_records_hour;
+DELETE FROM mv_records_day;
+
+INSERT INTO mv_records_day (SELECT * FROM records_day);
+INSERT INTO mv_records_hour (SELECT * FROM records_hour);' LANGUAGE SQL;
+
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records TO GROUP observers;
 GRANT ALL ON recval_ids TO GROUP observers;
+GRANT ALL ON mv_records_day TO GROUP observers;
+GRANT ALL ON mv_records_hour TO GROUP observers;
 GRANT ALL ON recvals_statistics TO GROUP observers;
+
+
