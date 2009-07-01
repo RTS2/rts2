@@ -149,16 +149,23 @@
 #define R2X_RECORDS_VALUES            "rts2.records.values"
 
 /**
- * Retrieve records from database, with a given cadence.
+ * Retrieve records from database.
  *
  * @param id           Value to return
- * @param device       Device name
- * @param value_name   Value name
  * @param from         From this time
  * @param to           To this time
- * @param numrecs      Observation cadence in seconds
  */
 #define R2X_RECORDS_GET               "rts2.records.get"
+
+/**
+ * Returns statistical values.
+ *
+ * @param Id           Value to return
+ * @param From         From this time
+ * @param To           To this time
+ * @return Array of five values - middle time, average, minimal and maximal values, and number of records.
+ */
+#define R2X_RECORDS_AVERAGES          "rts2.records.averages"
 
 /**
  * User login. Provides username and password, out true/false - true if login is OK

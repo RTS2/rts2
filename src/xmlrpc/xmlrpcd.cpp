@@ -24,6 +24,7 @@
 #ifdef HAVE_PGSQL
 #include "../utilsdb/recvals.h"
 #include "../utilsdb/records.h"
+#include "../utilsdb/recordsavg.h"
 #include "../utilsdb/rts2devicedb.h"
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/observationset.h"
@@ -1343,7 +1344,7 @@ class Records: public XmlRpcServerMethod
 		Records (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_GET, s) {}
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			if (params.size () != 1)
+			if (params.size () != 3)
 				throw XmlRpcException ("Invalid number of parameters");
 
 			try
@@ -1351,7 +1352,7 @@ class Records: public XmlRpcServerMethod
 				rts2db::RecordsSet recset = rts2db::RecordsSet (params[0]);
 				int i = 0;
 				time_t t;
-				recset.load ();
+				recset.load (params[1], params[2]);
 				for (rts2db::RecordsSet::iterator iter = recset.begin (); iter != recset.end (); iter++)
 				{
 					rts2db::Record rv = (*iter);
@@ -1368,6 +1369,42 @@ class Records: public XmlRpcServerMethod
 			}
 		}
 } records (&xmlrpc_server);
+
+
+class RecordsAverage: public XmlRpcServerMethod
+{
+	public:
+		RecordsAverage (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_AVERAGES, s) {}
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			if (params.size () != 3)
+				throw XmlRpcException ("Invalid number of parameters");
+
+			try
+			{
+				rts2db::RecordAvgSet recset = rts2db::RecordAvgSet (params[0], rts2db::HOUR);
+				int i = 0;
+				time_t t;
+				recset.load (params[1], params[2]);
+				for (rts2db::RecordAvgSet::iterator iter = recset.begin (); iter != recset.end (); iter++)
+				{
+					rts2db::RecordAvg rv = (*iter);
+					XmlRpcValue res;
+					t = rv.getRecTime ();
+					res[0] = XmlRpcValue (gmtime (&t));
+					res[1] = rv.getAverage ();
+					res[2] = rv.getMinimum ();
+					res[3] = rv.getMaximum ();
+					res[4] = rv.getRecCout ();
+					result[i++] = res;
+				}
+			}
+			catch (rts2db::SqlError err)
+			{
+				throw XmlRpcException (err.getError ());
+			}
+		}
+} recordAverage (&xmlrpc_server);
 
 
 class UserLogin: public XmlRpcServerMethod

@@ -91,6 +91,7 @@ XmlRpcServerConnection::readHeader()
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 	char *kp = 0;				 // Start of connection value
+	char *ap = 0;				 // Start of authorization header
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
@@ -100,6 +101,8 @@ XmlRpcServerConnection::readHeader()
 			lp = cp + 16;
 		else if ((ep - cp > 12) && (strncasecmp(cp, "Connection: ", 12) == 0))
 			kp = cp + 12;
+		else if ((ep - cp > 12) && (strncasecmp (cp, "Authorization: ", 15) == 0))
+			ap = cp + 15;
 		else if ((ep - cp >= 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
 		else if ((ep - cp >= 2) && (strncmp(cp, "\n\n", 2) == 0))
