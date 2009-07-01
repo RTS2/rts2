@@ -24,44 +24,54 @@ namespace rts2db
 {
 
 /**
- * Class representing a record (value).
+ * Class representing an average record (value).
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Record
+class RecordAvg
 {
 	private:
 		double rectime;
-		double val;
+		double avg;
+		double min;
+		double max;
+		int rcount;
 	public:
-		Record (double _rectime, double _val)
+		RecordAvg (double _rectime, double _avg, double _min, double _max, int _rcount)
 		{
 			rectime = _rectime;
-			val = _val;
+			avg = _avg;
+			min = _min;
+			max = _max;
+			rcount = _rcount;
 		}
 
 		double getRecTime () { return rectime; };
-		double getValue () { return val; };
+		double getAverage () { return avg; };
+		double getMinimum () { return min; };
+		double getMaximum () { return max; };
+		int getRecCout ()    { return rcount; };
 };
 
+typedef enum {DAY, HOUR} cadence_t;
+
 /**
- * Class with value records.
+ * Class with value average records.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class RecordsSet: public std::list <Record>
+class RecordAvgSet: public std::list <RecordAvg>
 {
 	private:
 		int recval_id;
+		cadence_t cadence;
 	public:
-		RecordsSet (int _recval_id)
+		RecordAvgSet (int _recval_id, cadence_t _cadence)
 		{
 			recval_id = _recval_id;
+			cadence = _cadence;
 		}
 
-		/**
-		 * @throw SqlError on errror.
-		 */
 		void load (double t_from, double t_to);
 };
 

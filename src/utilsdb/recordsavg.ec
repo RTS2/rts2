@@ -17,32 +17,39 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "records.h"
+#include "recordsavg.h"
 #include "sqlerror.h"
 
 using namespace rts2db;
 
-void RecordsSet::load (double t_from, double t_to)
+void RecordAvgSet::load (double t_from, double t_to)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
-	double d_rectime;
-	double d_value;
 	double d_t_from = t_from;
 	double d_t_to = t_to;
+
+	double d_rectime;
+	double d_avg;
+	double d_min;
+	double d_max;
+	int d_nrec;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL DECLARE records_avg_cur CURSOR FOR
 	SELECT
-		EXTRACT (EPOCH FROM rectime),
-		value
+		EXTRACT (EPOCH FROM hour),
+		avg_value,
+		min_value,
+		max_value,
+		nrec
 	FROM
-		records
+		mv_records_hour
 	WHERE
 		  recval_id = :d_recval_id
-		AND rectime BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
+		AND hour BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
 	ORDER BY
-		rectime;
+		hour;
 
 	EXEC SQL OPEN records_avg_cur;
 
@@ -50,10 +57,13 @@ void RecordsSet::load (double t_from, double t_to)
 	{
 		EXEC SQL FETCH next FROM records_avg_cur INTO
 			:d_rectime,
-			:d_value;
+			:d_avg,
+			:d_min,
+			:d_max,
+			:d_nrec;
 		if (sqlca.sqlcode)
 			break;
-		push_back (Record (d_rectime, d_value));
+		push_back (RecordAvg (d_rectime + 1800, d_avg, d_min, d_max, d_nrec));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
