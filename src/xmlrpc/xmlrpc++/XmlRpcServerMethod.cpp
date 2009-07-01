@@ -17,4 +17,19 @@ namespace XmlRpc
 		if (_server) _server->removeMethod(this);
 	}
 
+	void XmlRpcServerMethod::setAuthentification(std::string authentification)
+	{
+		size_t dp = authentification.find(':');
+		if (dp != std::string::npos)
+		{
+			_username = authentification.substr(0,dp);
+			_password = authentification.substr(dp+1);
+		}
+		else
+		{
+			_username = authentification;
+			_password = "";
+		}
+	}
+
 }								 // namespace XmlRpc

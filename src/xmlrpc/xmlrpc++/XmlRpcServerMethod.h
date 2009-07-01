@@ -33,6 +33,10 @@ namespace XmlRpc
 			//! Returns the name of the method
 			std::string& name() { return _name; }
 
+			//! Set authentification string..
+			void setAuthentification(std::string authentification);
+
+
 			//! Execute the method. Subclasses must provide a definition for this method.
 			virtual void execute(XmlRpcValue& params, XmlRpcValue& result) = 0;
 
@@ -43,6 +47,9 @@ namespace XmlRpc
 		protected:
 			std::string _name;
 			XmlRpcServer* _server;
+		private:
+			std::string _username;
+			std::string _password;
 	};
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERMETHOD_H_

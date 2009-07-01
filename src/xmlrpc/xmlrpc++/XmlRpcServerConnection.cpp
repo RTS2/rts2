@@ -124,6 +124,24 @@ XmlRpcServerConnection::readHeader()
 		return true;			 // Keep reading
 	}
 
+	// authorization..
+	if (ap != 0)
+	{
+		while (isspace(*ap))
+			ap++;
+		// user..
+		if (ep - ap > 4 && strncmp (ap, "user", 4) == 0)
+		{
+			ap += 4;
+			while (isspace (*ap))
+				ap++;
+			char *ape = ap;
+			while (!(isspace (*ape) || (*ape == '\n') || (*ape == '\r')))
+				ape++;
+			_authentification = _header.substr (ap - hp, ape - ap);
+		}
+	}
+
 	// XML-RPC requests are POST. If we received GET request, then get request string and call it a day..
 	if (gp != 0)
 	{
@@ -239,6 +257,7 @@ XmlRpcServerConnection::handleGet()
 	if (_bytesWritten == int(_get_response_length))
 	{
 		_header = "";
+		_authentification = "";
 		_get = "";
 		_request = "";
 		delete[] _get_response;
@@ -277,6 +296,7 @@ XmlRpcServerConnection::writeResponse()
 	if (_bytesWritten == int(_response.length()))
 	{
 		_header = "";
+		_authentification = "";
 		_get = "";
 		_request = "";
 		_get_response_length = 0;
@@ -360,6 +380,9 @@ XmlRpcValue& params, XmlRpcValue& result)
 	XmlRpcServerMethod* method = _server->findMethod(methodName);
 
 	if ( ! method) return false;
+
+	if (_authentification.length () != 0)
+		method->setAuthentification (_authentification);
 
 	method->execute(params, result);
 

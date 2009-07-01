@@ -86,7 +86,10 @@ namespace XmlRpc
 			// Request headers
 			std::string _header;
 
-			// Name of date requested with GET
+			// User authentification..
+			std::string _authentification;
+
+			// Name of data requested with GET
 			std::string _get;
 
 			// Number of bytes expected in the request body (parsed from header)
