@@ -352,6 +352,7 @@ XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 		ValueChangeCommand vc = (*iter);
 		if (vc.isForValue (conn->getName (), new_value->getName ()))
 		{
+#ifdef HAVE_PGSQL
 			try
 			{
 				vc.run (new_value, conn->getInfoTime ());
@@ -360,6 +361,10 @@ XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 			{
 				logStream (MESSAGE_ERROR) << err << sendLog;
 			}
+#else
+			vc.run (new_value, conn->getInfoTime ());
+#endif /* ! HAVE_PGSQL */
+
 		}
 	}
 }
