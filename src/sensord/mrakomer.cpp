@@ -21,6 +21,9 @@
 
 #include "../utils/rts2connserial.h"
 
+#define OPT_HEAT_ON     OPT_LOCAL + 343
+#define OPT_HEAT_DUR    OPT_LOCAL + 344
+
 namespace rts2sensord
 {
 
@@ -123,10 +126,16 @@ Mrakomer::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		case 'b':
-			triggerBad->setValueDouble (atof (optarg));
+			triggerBad->setValueCharArr (optarg);
 			break;
 		case 'g':
-			triggerGood->setValueDouble (atof (optarg));
+			triggerGood->setValueCharArr (optarg);
+			break;
+		case OPT_HEAT_ON:
+			heatInterval->setValueCharArr (optarg);
+			break;
+		case OPT_HEAT_DUR:
+			heatDuration->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
@@ -285,6 +294,9 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
+
+	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
+	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
 
 	setIdleInfoInterval (20);
 }
