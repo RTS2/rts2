@@ -4,11 +4,11 @@ bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 
 EXTRA_DIST = 
 
-noinst_HEADERS = dome.h cupola.h ford.h
+noinst_HEADERS = dome.h cupola.h ford.h fordconn.h
 
 noinst_LIBRARIES = librts2dome.a
 
-librts2dome_a_SOURCES = dome.cpp ford.cpp
+librts2dome_a_SOURCES = dome.cpp ford.cpp fordconn.cpp
 
 LDADD = librts2dome.a ../utils/librts2block.a @LIB_NOVA@
 

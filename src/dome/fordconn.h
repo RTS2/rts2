@@ -1,5 +1,5 @@
 /* 
- * Driver for Ford boards.
+ * Connection to Ford boards.
  * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2004-2008 Martin Nekola
  *
@@ -18,12 +18,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_DOME_FORD__
-#define __RTS2_DOME_FORD__
+#ifndef __RTS2_CONN_FORD__
+#define __RTS2_CONN_FORD__
 
-#include "dome.h"
-
-#include "fordconn.h"
+#include "../utils/rts2connserial.h"
 
 #define PORT_A 0
 #define PORT_B 1
@@ -40,13 +38,15 @@ namespace rts2dome
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Martin Nekola
  */
-class Ford: public Dome
+class FordConn: public Rts2ConnSerial
 {
 	private:
-		FordConn *domeConn;
-		const char *dome_file;
+		unsigned char stav_portu[3];
 
-	protected:
+		int zapni_pin (unsigned char c_port, unsigned char pin);
+		int vypni_pin (unsigned char c_port, unsigned char pin);
+
+	public:
 	 	/**
 		 * Refresh status information on all ports.
 		 *
@@ -106,16 +106,15 @@ class Ford: public Dome
 		 * @return -1 on error, 0 if pin is off, 1 if it's on.
 		 */
 		int isOn (int c_port);
-		virtual int processOption (int in_opt);
-		virtual int init ();
 
 		void flushPort ()
 		{
-			domeConn->flushPortIO ();
+			flushPortIO ();
 		}
-	public:
-		Ford (int argc, char **argv);
-		virtual ~Ford ();
+
+		FordConn (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
+
+		virtual ~FordConn ();
 };
 
 }

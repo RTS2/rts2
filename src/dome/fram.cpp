@@ -71,11 +71,20 @@ class Fram:public Ford
 		Rts2ConnSerial *wdcConn;
 		char *wdc_file;
 
-		Rts2ValueInteger *sw_state;
 		Rts2ValueDouble *wdcTimeOut;
 		Rts2ValueDouble *wdcTemperature;
 
-		int reclosing_num;
+		Rts2ValueBool *swOpenLeft;
+		Rts2ValueBool *swCloseLeft;
+		Rts2ValueBool *swCloseRight;
+		Rts2ValueBool *swOpenRight;
+
+		Rts2ValueBool *valveOpenLeft;
+		Rts2ValueBool *valveCloseLeft;
+		Rts2ValueBool *valveOpenRight;
+		Rts2ValueBool *valveCloseRight;
+
+		Rts2ValueInteger *reclosing_num;
 
 		int zjisti_stav_portu_rep ();
 
@@ -604,7 +613,7 @@ Fram::startClose ()
 		closeLeft ();
 	}
 	closingNum++;
-	reclosing_num = 0;
+	reclosing_num->setValueInteger (0);
 	return 0;
 }
 
@@ -619,7 +628,7 @@ Fram::isClosed ()
 		case MOVE_CLOSE_RIGHT_WAIT:
 			if (checkMotorTimeout ())
 			{
-				if (reclosing_num >= FRAM_RECLOSING_MAX)
+				if (reclosing_num->getValueInteger () >= FRAM_RECLOSING_MAX)
 				{
 					// reclosing number exceeded, move to next door
 					movingState = MOVE_CLOSE_LEFT;
@@ -642,7 +651,7 @@ Fram::isClosed ()
 		case MOVE_CLOSE_LEFT_WAIT:
 			if (checkMotorTimeout ())
 			{
-				if (reclosing_num >= FRAM_RECLOSING_MAX)
+				if (reclosing_num->getValueInteger () >= FRAM_RECLOSING_MAX)
 				{
 					return -2;
 				}
@@ -660,7 +669,7 @@ Fram::isClosed ()
 		case MOVE_RECLOSE_RIGHT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
 				break;
-			reclosing_num++;
+			reclosing_num->inc ();
 			VYP (VENTIL_AKTIVACNI);
 			VYP (VENTIL_OTEVIRANI_PRAVY);
 			closeRight ();
@@ -668,7 +677,7 @@ Fram::isClosed ()
 		case MOVE_RECLOSE_LEFT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 				break;
-			reclosing_num++;
+			reclosing_num->inc ();
 			VYP (VENTIL_AKTIVACNI);
 			VYP (VENTIL_OTEVIRANI_LEVY);
 			closeLeft ();
@@ -778,7 +787,16 @@ Fram::idle ()
 Fram::Fram (int argc, char **argv)
 :Ford (argc, argv)
 {
-	createValue (sw_state, "sw_state", "state of the switches", false, RTS2_DT_HEX);
+	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
+	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
+	createValue (swCloseRight, "sw_close_right", "state of right close switch", false);
+	createValue (swOpenRight, "sw_open_right", "state of right open switch", false);
+
+	createValue (valveOpenLeft, "valve_open_left", "state of left opening valve", false);
+	createValue (valveCloseLeft, "valve_close_left", "state of left closing valve", false);
+	createValue (valveOpenRight, "valve_open_right", "state of right opening valve", false);
+	createValue (valveCloseRight, "valve_close_right", "state of right closing valve", false);
+
 	createValue (wdcTimeOut, "watchdog_timeout", "timeout of the watchdog card (in seconds)", false);
 	wdcTimeOut->setValueDouble (30.0);
 
@@ -814,10 +832,10 @@ Fram::info ()
 	ret = zjisti_stav_portu_rep ();
 	if (ret)
 		return -1;
-	sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_PRAVY));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_OTEVRENI_LEVY) << 1));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_ZAVRENI_PRAVY) << 2));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_ZAVRENI_LEVY) << 3));
+	swOpenRight->setValueBool (getPortState (KONCAK_OTEVRENI_PRAVY));
+	swOpenLeft->setValueBool (getPortState (KONCAK_OTEVRENI_LEVY));
+	swCloseRight->setValueBool(getPortState (KONCAK_ZAVRENI_PRAVY));
+	swCloseLeft->setValueBool(getPortState (KONCAK_ZAVRENI_LEVY));
 	if (wdcConn > 0)
 	{
 	  	wdcTemperature->setValueDouble (getWDCTemp (2));
