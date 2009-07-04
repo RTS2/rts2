@@ -34,7 +34,7 @@ namespace XmlRpc
 			std::string& name() { return _name; }
 
 			//! Set authentification string..
-			void setAuthentification(std::string authentification);
+			void setAuthorization(std::string authorization);
 
 			//! Return username
 			std::string getUsername() { return _username; }

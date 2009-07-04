@@ -144,7 +144,7 @@ XmlRpcServerConnection::readHeader()
 
 			int iostatus = 0;
 			base64<char> decoder;
-			std::back_insert_iterator<std::string> ins = std::back_inserter(_authentification);
+			std::back_insert_iterator<std::string> ins = std::back_inserter(_authorization);
 			decoder.get(t_ap.begin (), t_ap.end (), ins, iostatus);
 
 		}
@@ -265,7 +265,7 @@ XmlRpcServerConnection::handleGet()
 	if (_bytesWritten == int(_get_response_length))
 	{
 		_header = "";
-		_authentification = "";
+		_authorization = "";
 		_get = "";
 		_request = "";
 		delete[] _get_response;
@@ -304,7 +304,7 @@ XmlRpcServerConnection::writeResponse()
 	if (_bytesWritten == int(_response.length()))
 	{
 		_header = "";
-		_authentification = "";
+		_authorization = "";
 		_get = "";
 		_request = "";
 		_get_response_length = 0;
@@ -389,8 +389,8 @@ XmlRpcValue& params, XmlRpcValue& result)
 
 	if ( ! method) return false;
 
-	if (_authentification.length () != 0)
-		method->setAuthentification (_authentification);
+	if (_authorization.length () != 0)
+		method->setAuthorization (_authorization);
 
 	method->execute(params, result);
 

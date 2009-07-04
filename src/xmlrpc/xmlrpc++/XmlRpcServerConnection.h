@@ -86,8 +86,8 @@ namespace XmlRpc
 			// Request headers
 			std::string _header;
 
-			// User authentification..
-			std::string _authentification;
+			// User authorization
+			std::string _authorization;
 
 			// Name of data requested with GET
 			std::string _get;
