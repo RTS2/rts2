@@ -3,6 +3,8 @@
 
 #include "XmlRpcSocket.h"
 #include "XmlRpc.h"
+#include "base64.h"
+
 #ifndef MAKEDEPEND
 # include <stdio.h>
 # include <stdlib.h>
@@ -130,15 +132,21 @@ XmlRpcServerConnection::readHeader()
 		while (isspace(*ap))
 			ap++;
 		// user..
-		if (ep - ap > 4 && strncmp (ap, "user", 4) == 0)
+		if (ep - ap > 5 && strncmp (ap, "Basic", 5) == 0)
 		{
-			ap += 4;
+			ap += 5;
 			while (isspace (*ap))
 				ap++;
 			char *ape = ap;
 			while (!(isspace (*ape) || (*ape == '\n') || (*ape == '\r')))
 				ape++;
-			_authentification = _header.substr (ap - hp, ape - ap);
+			std::string t_ap = _header.substr (ap - hp, ape - ap);
+
+			int iostatus = 0;
+			base64<char> decoder;
+			std::back_insert_iterator<std::string> ins = std::back_inserter(_authentification);
+			decoder.get(t_ap.begin (), t_ap.end (), ins, iostatus);
+
 		}
 	}
 
