@@ -23,61 +23,6 @@ using namespace rts2dome;
 
 #include <iomanip>
 
-int
-Ford::zjisti_stav_portu ()
-{
-	return domeConn->zjisti_stav_portu ();
-}
-
-
-int
-Ford::ZAP (int i)
-{
-	return domeConn->ZAP (i);
-}
-
-
-int
-Ford::VYP (int i)
-{
-	return domeConn->VYP (i);
-}
-
-
-int
-Ford::switchOffPins (int pin1, int pin2)
-{
-	return domeConn->switchOffPins (pin1, pin2);
-}
-
-
-int
-Ford::switchOffPins (int pin1, int pin2, int pin3)
-{
-	return domeConn->switchOffPins (pin1, pin2, pin3);
-}
-
-
-int
-Ford::switchOffPins (int pin1, int pin2, int pin3, int pin4)
-{
-	return domeConn->switchOffPins (pin1, pin2, pin3, pin4);
-}
-
-
-bool
-Ford::getPortState (int c_port)
-{
-	return domeConn->getPortState (c_port);
-}
-
-
-int
-Ford::isOn (int c_port)
-{
-	return domeConn->isOn (c_port);
-}
-
 
 int
 Ford::processOption (int in_opt)
