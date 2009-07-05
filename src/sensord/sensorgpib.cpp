@@ -21,106 +21,20 @@
 
 using namespace rts2sensord;
 
-int
-Gpib::gpibWrite (const char *buf)
-{
-	int ret;
-	ret = ibwrt (gpib_dev, buf, strlen (buf));
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "write " << buf << sendLog;
-	#endif
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error writing " << buf << sendLog;
-		return -1;
-	}
-	return 0;
-}
-
 
 int
-Gpib::gpibRead (void *buf, int blen)
+Gpib::processOption (int _opt)
 {
-	int ret;
-	ret = ibrd (gpib_dev, buf, blen);
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading " << buf << " " << ret <<
-			sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) buf
-		<< "' ret " << ret << sendLog;
-	#endif
-	return 0;
-}
-
-
-int
-Gpib::gpibWriteRead (const char *buf, char *val, int blen)
-{
-	int ret;
-	ret = ibwrt (gpib_dev, buf, strlen (buf));
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
-			sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-		" ret " << ret << sendLog;
-	#endif
-	*val = '\0';
-	ret = ibrd (gpib_dev, val, blen);
-	val[ibcnt] = '\0';
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading reply from " << buf <<
-			", readed " << val << " " << ret << sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
-		" ret " << ret << sendLog;
-	#endif
-	return 0;
-}
-
-
-int
-Gpib::gpibWaitSRQ ()
-{
-	int ret;
-	short res;
-	while (true)
-	{
-		ret = iblines (gpib_dev, &res);
-		if (ret & ERR)
-		{
-			logStream (MESSAGE_ERROR) << "Error while waiting for SRQ " << ret
-				<< sendLog;
-		}
-		if (res & BusSRQ)
-			return 0;
-	}
-}
-
-
-int
-Gpib::processOption (int in_opt)
-{
-	switch (in_opt)
+	switch (_opt)
 	{
 		case 'm':
-			minor = atoi (optarg);
+			connGpib->setMinor (atoi (optarg));
 			break;
 		case 'p':
-			pad = atoi (optarg);
+			connGpib->setPad (atoi (optarg));
 			break;
 		default:
-			return Sensor::processOption (in_opt);
+			return Sensor::processOption (_opt);
 	}
 	return 0;
 }
@@ -134,23 +48,13 @@ Gpib::init ()
 	if (ret)
 		return ret;
 
-	gpib_dev = ibdev (minor, pad, 0, T3s, 1, 0);
-	if (gpib_dev < 0)
-	{
-		logStream (MESSAGE_ERROR) << "cannot init GPIB device on minor " <<
-			minor << ", pad " << pad << sendLog;
-		return -1;
-	}
-	return 0;
+	return connGpib->init ();
 }
 
 
 Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
-	gpib_dev = -1;
-
-	minor = 0;
-	pad = 0;
+	connGpib = new ConnGpib (this);
 
 	addOption ('m', "minor", 1, "board number (default to 0)");
 	addOption ('p', "pad", 1, "device number (counted from 0, not from 1)");
@@ -159,6 +63,5 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 
 Gpib::~Gpib (void)
 {
-	ibclr (gpib_dev);
-	ibonl (gpib_dev, 0);
+	delete connGpib;
 }

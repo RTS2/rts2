@@ -1,6 +1,6 @@
 /* 
- * Class for GPIB sensors.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Connection for GPIB bus.
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,36 +17,38 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_SENSOR_GPIB__
-#define __RTS2_SENSOR_GPIB__
+#ifndef __RTS2_CONN_GPIB__
+#define __RTS2_CONN_GPIB__
 
-#include "sensord.h"
-#include "conngpib.h"
+#include "../utils/rts2connnosend.h"
 
 #include <gpib/ib.h>
 
 namespace rts2sensord
 {
 
-class Gpib:public Sensor
+class ConnGpib:public Rts2ConnNoSend
 {
 	private:
-		ConnGpib *connGpib;
-	protected:
-		int gpibWrite (const char *buf) { return connGpib->gpibWrite (buf); }
-		int gpibRead (void *buf, int blen) { return connGpib->gpibRead (buf, blen); }
-		int gpibWriteRead (const char *buf, char *val, int blen = 50) { return connGpib->gpibWriteRead (buf, val, blen); }
+		int minor;
+		int pad;
 
-		int gpibWaitSRQ () { return connGpib->gpibWaitSRQ (); }
+		int gpib_dev;
+	public:
+		int gpibWrite (const char *_buf);
+		int gpibRead (void *_buf, int blen);
+		int gpibWriteRead (const char *_buf, char *val, int blen = 50);
 
-		virtual int processOption (int in_opt);
+		int gpibWaitSRQ ();
+
 		virtual int init ();
 
-		void setPad (int _pad) { return connGpib->setPad (_pad); }
-	public:
-		Gpib (int argc, char **argv);
-		virtual ~ Gpib (void);
+		void setMinor (int _minor) { minor = _minor; }
+		void setPad (int _pad) { pad = _pad; }
+
+		ConnGpib (Rts2Block *_master);
+		virtual ~ ConnGpib (void);
 };
 
 };
-#endif		 /* !__RTS2_SENSOR_GPIB__ */
+#endif		 /* !__RTS2_CONN_GPIB__ */
