@@ -50,7 +50,7 @@ using namespace rts2dome;
 
 typedef enum
 {
-	SPINAC_1,
+	SWITCH_BATBACK,
 	SPINAC_2,
 	SPINAC_3,
 	SPINAC_4,
@@ -429,7 +429,7 @@ int
 Fram::closeRightMove ()
 {
 	if (extraSwitch)
-		extraSwitch->ZAP (SPINAC_1);
+		extraSwitch->ZAP (SWITCH_BATBACK);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing right door" << sendLog;
@@ -445,7 +445,7 @@ Fram::closeLeftMove ()
 	VYP (VENTIL_AKTIVACNI);
 	VYP (VENTIL_ZAVIRANI_PRAVY);
 	if (extraSwitch)
-		extraSwitch->ZAP (SPINAC_1);
+		extraSwitch->ZAP (SWITCH_BATBACK);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing left door" << sendLog;
@@ -503,7 +503,7 @@ Fram::stopMove ()
 {
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
 	if (extraSwitch)
-		extraSwitch->VYP (SPINAC_1);
+		extraSwitch->VYP (SWITCH_BATBACK);
 	movingState = MOVE_NONE;
 	return 0;
 }
@@ -781,7 +781,7 @@ Fram::init ()
 		if (ret)
 			return ret;
 
-		extraSwitch->VYP (SPINAC_1);
+		extraSwitch->VYP (SWITCH_BATBACK);
 
 		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
 		switchBatBack->setValueBool (false);
@@ -835,11 +835,11 @@ Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	{
 		if (((Rts2ValueBool *) newValue)->getValueBool () == true)
 		{
-			return extraSwitch->ZAP (SPINAC_1) == 0 ? 0 : -2;
+			return extraSwitch->ZAP (SWITCH_BATBACK) == 0 ? 0 : -2;
 		}
 		else
 		{
-			return extraSwitch->VYP (SPINAC_1) == 0 ? 0 : -2;
+			return extraSwitch->VYP (SWITCH_BATBACK) == 0 ? 0 : -2;
 		}
 	}
 	return Ford::setValue (oldValue, newValue);
