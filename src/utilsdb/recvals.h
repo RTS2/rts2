@@ -36,16 +36,14 @@ class Recval
 		std::string value_name;
 		time_t from;
 		time_t to;
-		int numvals;
 	public:
-		Recval (int _recval_id, const char* _device_name, const char* _value_name, time_t _from, time_t _to, int _numvals)
+		Recval (int _recval_id, const char* _device_name, const char* _value_name, time_t _from, time_t _to)
 		{
 			recval_id = _recval_id;
 			device_name = std::string(_device_name);
 			value_name = std::string(_value_name);
 			from = _from;
 			to = _to;
-			numvals = _numvals;
 		}
 
 		int getId () { return recval_id; }
@@ -53,7 +51,6 @@ class Recval
 		std::string getValueName () { return value_name; }
 		time_t getFrom () { return from; };
 		time_t getTo () { return to; };
-		int getNumRecs () { return numvals; }
 };
 
 /**

@@ -67,8 +67,7 @@ SELECT
 	device_name,
 	value_name,
 	(SELECT min(rectime) FROM records WHERE records.recval_id = recvals.recval_id) AS time_from,
-	(SELECT max(rectime) FROM records WHERE records.recval_id = recvals.recval_id) AS time_to,
-	(SELECT count (*) FROM records WHERE records.recval_id = recvals.recval_id) AS nrec
+	(SELECT max(rectime) FROM records WHERE records.recval_id = recvals.recval_id) AS time_to
 FROM
 	recvals;
 	

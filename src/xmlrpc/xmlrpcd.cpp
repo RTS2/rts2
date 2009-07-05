@@ -1331,7 +1331,6 @@ class RecordsValues: public XmlRpcServerMethod
 					res["from"] = XmlRpcValue (gmtime (&t));
 					t = rv.getTo ();
 					res["to"] = XmlRpcValue (gmtime (&t));
-					res["numrecs"] = rv.getNumRecs ();
 					result[i++] = res;
 				}
 			}

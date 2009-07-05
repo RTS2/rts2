@@ -30,7 +30,6 @@ void RecvalsSet::load ()
 	VARCHAR d_value_name[26];
 	double d_from;
 	double d_to;
-	long d_num_rec;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL DECLARE recval_cur CURSOR FOR
@@ -39,8 +38,7 @@ void RecvalsSet::load ()
 		device_name,
 		value_name,
 		EXTRACT (EPOCH FROM time_from),
-		EXTRACT (EPOCH FROM time_to),
-		nrec
+		EXTRACT (EPOCH FROM time_to)
 	FROM
 		recvals_statistics;
 
@@ -53,13 +51,12 @@ void RecvalsSet::load ()
 			:d_device_name,
 			:d_value_name,
 			:d_from,
-			:d_to,
-			:d_num_rec;
+			:d_to;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_from, d_to, d_num_rec));
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
