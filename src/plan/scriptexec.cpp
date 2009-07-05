@@ -1,6 +1,6 @@
 /* 
  * Simple script executor.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,10 +27,12 @@
 #include <fstream>
 #include <vector>
 
-// Rts2ScriptExec class
+using namespace rts2plan;
+
+// ScriptExec class
 
 int
-Rts2ScriptExec::findScript (std::string in_deviceName, std::string & buf)
+ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 {
 	// take script from stdin
 	if (deviceName)
@@ -57,7 +59,7 @@ Rts2ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 
 
 bool
-Rts2ScriptExec::isScriptRunning ()
+ScriptExec::isScriptRunning ()
 {
 	int runningScripts = 0;
 	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
@@ -73,7 +75,7 @@ Rts2ScriptExec::isScriptRunning ()
 
 
 int
-Rts2ScriptExec::processOption (int in_opt)
+ScriptExec::processOption (int in_opt)
 {
 	std::ifstream * is;
 	switch (in_opt)
@@ -113,8 +115,16 @@ Rts2ScriptExec::processOption (int in_opt)
 	return 0;
 }
 
+void ScriptExec::usage ()
+{
+	std::cout << "To get 10 2 second exposures from the camera C0, use:" << std::endl
+	  << "  " << getAppName () << " -d C0 -s 'for 10 { E 2 }'" << std::endl
+	  << "To change scriptexec to produce files in C0 directory, with local time, execute:" << std::endl
+	  << "  " << getAppName () << " -d C0 -s 'for 10 { E 2 }' -e '%c/%L%f'" << std::endl;
+}
 
-Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
+
+ScriptExec::ScriptExec (int in_argc, char **in_argv)
 :Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()
 {
 	waitState = 0;
@@ -129,13 +139,13 @@ Rts2ScriptExec::Rts2ScriptExec (int in_argc, char **in_argv)
 	addOption ('s', NULL, 1, "device script (for device specified with d)");
 	addOption ('f', NULL, 1, "script filename");
 
-	addOption ('e', NULL, 1, "filename expand string");
+	addOption ('e', NULL, 1, "filename expand string, override default in configuration file");
 
 	srandom (time (NULL));
 }
 
 
-Rts2ScriptExec::~Rts2ScriptExec (void)
+ScriptExec::~ScriptExec (void)
 {
 	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
 		iter != scripts.end (); iter++)
@@ -147,7 +157,7 @@ Rts2ScriptExec::~Rts2ScriptExec (void)
 
 
 int
-Rts2ScriptExec::init ()
+ScriptExec::init ()
 {
 	int ret;
 	ret = Rts2Client::init ();
@@ -161,6 +171,15 @@ Rts2ScriptExec::init ()
 	if (ret)
 		return ret;
 
+	// see if we have expand path defined in configuration file..
+	if (expandPath == NULL)
+	{
+		std::string fp;
+		config->getString ("scriptexec", "expand_path", fp, "%f");
+		expandPath = new Rts2ValueString ("expand_path");
+		expandPath->setValueString (fp.c_str ());
+	}
+
 	// create current target
 	currentTarget = new Rts2TargetScr (this);
 
@@ -169,14 +188,14 @@ Rts2ScriptExec::init ()
 
 
 int
-Rts2ScriptExec::doProcessing ()
+ScriptExec::doProcessing ()
 {
 	return 0;
 }
 
 
 Rts2DevClient *
-Rts2ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
+ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2DevClient *cli;
 	switch (other_device_type)
@@ -208,7 +227,7 @@ Rts2ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 
 
 void
-Rts2ScriptExec::postEvent (Rts2Event * event)
+ScriptExec::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -241,7 +260,7 @@ Rts2ScriptExec::postEvent (Rts2Event * event)
 
 
 void
-Rts2ScriptExec::deviceReady (Rts2Conn * conn)
+ScriptExec::deviceReady (Rts2Conn * conn)
 {
 	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
@@ -249,7 +268,7 @@ Rts2ScriptExec::deviceReady (Rts2Conn * conn)
 
 
 int
-Rts2ScriptExec::idle ()
+ScriptExec::idle ()
 {
 	if (nextRunningQ != 0)
 	{
@@ -267,7 +286,7 @@ Rts2ScriptExec::idle ()
 
 
 void
-Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
+ScriptExec::deviceIdle (Rts2Conn * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();
@@ -275,7 +294,7 @@ Rts2ScriptExec::deviceIdle (Rts2Conn * conn)
 
 
 void
-Rts2ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
+ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	pos->ra = 20;
 	pos->dec = 20;
@@ -285,6 +304,6 @@ Rts2ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
 int
 main (int argc, char **argv)
 {
-	Rts2ScriptExec app = Rts2ScriptExec (argc, argv);
+	ScriptExec app = ScriptExec (argc, argv);
 	return app.run ();
 }
