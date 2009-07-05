@@ -339,10 +339,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @param _date  Date of the infotime.
 		 */
-		void setInfoTime (struct tm *_date)
-		{
-			setInfoTime (mktime (_date));
-		}
+		void setInfoTime (struct tm *_date);
 
 		/**
 		 * Set infotime from time_t structure.

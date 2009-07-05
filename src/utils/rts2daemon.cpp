@@ -335,6 +335,27 @@ Rts2Daemon::idle ()
 	return Rts2Block::idle ();
 }
 
+void
+Rts2Daemon::setInfoTime (struct tm *_date)
+{
+	static char p_tz[100];
+	std::string old_tz;
+	if (getenv("TZ"))
+		old_tz = std::string (getenv ("TZ"));
+
+	putenv ((char*) "TZ=UTC");
+
+	setInfoTime (mktime (_date));
+
+	strcpy (p_tz, "TZ=");
+
+	if (old_tz.length () > 0)
+	{
+		strncat (p_tz, old_tz.c_str (), 96);
+	}
+	putenv (p_tz);
+}
+
 
 void
 Rts2Daemon::forkedInstance ()
