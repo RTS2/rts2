@@ -43,6 +43,23 @@ using namespace rts2dome;
 // how many times to try to reclose dome
 #define FRAM_RECLOSING_MAX      3
 
+#define OPT_WDC_DEV		OPT_LOCAL + 130
+#define OPT_WDC_TIMEOUT		OPT_LOCAL + 131
+#define OPT_EXTRA_SWITCH	OPT_LOCAL + 132
+
+
+typedef enum
+{
+	SPINAC_4,
+	SPINAC_3,
+	SPINAC_2,
+	SPINAC_1,
+	SWITCH_4,
+	SWITCH_3,
+	SWITCH_2,
+	SWITCH_1
+} extraOuts;
+
 typedef enum
 {
 	VENTIL_OTEVIRANI_LEVY,      // PORT_B, 1
@@ -71,6 +88,9 @@ class Fram:public Ford
 		Rts2ConnSerial *wdcConn;
 		char *wdc_file;
 
+		FordConn *extraSwitch;
+		char *extraSwitchFile;
+
 		Rts2ValueDouble *wdcTimeOut;
 		Rts2ValueDouble *wdcTemperature;
 
@@ -85,6 +105,8 @@ class Fram:public Ford
 		Rts2ValueBool *valveCloseRight;
 
 		Rts2ValueInteger *reclosing_num;
+
+		Rts2ValueBool *switchBatBack;
 
 		int zjisti_stav_portu_rep ();
 
@@ -154,6 +176,8 @@ class Fram:public Ford
 
 		virtual int init ();
 		virtual int idle ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -721,11 +745,14 @@ Fram::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'w':
+		case OPT_WDC_DEV:
 			wdc_file = optarg;
 			break;
-		case 't':
+		case OPT_WDC_TIMEOUT:
 			wdcTimeOut->setValueDouble (atof (optarg));
+			break;
+		case OPT_EXTRA_SWITCH:
+			extraSwitchFile = optarg;
 			break;
 		default:
 			return Ford::processOption (in_opt);
@@ -741,6 +768,18 @@ Fram::init ()
 	if (ret)
 		return ret;
 
+	if (extraSwitchFile)
+	{
+		extraSwitch = new FordConn (extraSwitchFile, this, BS9600, C8, NONE, 40);
+		ret = extraSwitch->init ();
+		if (ret)
+			return ret;
+
+		extraSwitch->VYP (ZASUVKA_PRAVA);
+
+		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
+		switchBatBack->setValueBool (false);
+	}
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
 
 	movingState = MOVE_NONE;
@@ -783,6 +822,23 @@ Fram::idle ()
 	return Ford::idle ();
 }
 
+int
+Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == switchBatBack)
+	{
+		if (((Rts2ValueBool *) newValue)->getValueBool () == true)
+		{
+			return extraSwitch->ZAP (SPINAC_1) == 0 ? 0 : -2;
+		}
+		else
+		{
+			return extraSwitch->VYP (SPINAC_1) == 0 ? 0 : -2;
+		}
+	}
+	return Ford::setValue (oldValue, newValue);
+}
+
 
 Fram::Fram (int argc, char **argv)
 :Ford (argc, argv)
@@ -797,6 +853,8 @@ Fram::Fram (int argc, char **argv)
 	createValue (valveOpenRight, "valve_open_right", "state of right opening valve", false);
 	createValue (valveCloseRight, "valve_close_right", "state of right closing valve", false);
 
+	createValue (reclosing_num, "reclosing_num", "number of reclosing attempts", false);
+
 	createValue (wdcTimeOut, "watchdog_timeout", "timeout of the watchdog card (in seconds)", false);
 	wdcTimeOut->setValueDouble (30.0);
 
@@ -805,14 +863,18 @@ Fram::Fram (int argc, char **argv)
 	wdc_file = NULL;
 	wdcConn = NULL;
 
+	extraSwitchFile = NULL;
+	extraSwitch = NULL;
+
 	movingState = MOVE_NONE;
 
 	lastClosing = 0;
 	closingNum = 0;
 	lastClosingNum = -1;
 
-	addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
-	addOption ('t', "wdc_timeout", 1, "WDC timeout (default to 30 seconds");
+	addOption (OPT_WDC_DEV, "wdc-dev", 1, "/dev file with watch-dog card");
+	addOption (OPT_WDC_TIMEOUT, "wdc-timeout", 1, "WDC timeout (default to 30 seconds)");
+	addOption (OPT_EXTRA_SWITCH, "extra-switch", 1, "/dev entery for extra switches, handling baterry etc..");
 }
 
 

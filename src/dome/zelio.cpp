@@ -544,7 +544,7 @@ Zelio::init ()
 
 	if (host == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "You must specify zeliho hostname (with -z option)." << sendLog;
+		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
