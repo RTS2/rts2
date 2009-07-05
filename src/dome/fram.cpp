@@ -50,10 +50,10 @@ using namespace rts2dome;
 
 typedef enum
 {
-	SPINAC_4,
-	SPINAC_3,
-	SPINAC_2,
 	SPINAC_1,
+	SPINAC_2,
+	SPINAC_3,
+	SPINAC_4,
 	SWITCH_4,
 	SWITCH_3,
 	SWITCH_2,
@@ -428,6 +428,8 @@ Fram::openRightMove ()
 int
 Fram::closeRightMove ()
 {
+	if (extraSwitch)
+		extraSwitch->ZAP (SPINAC_1);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing right door" << sendLog;
@@ -442,6 +444,8 @@ Fram::closeLeftMove ()
 {
 	VYP (VENTIL_AKTIVACNI);
 	VYP (VENTIL_ZAVIRANI_PRAVY);
+	if (extraSwitch)
+		extraSwitch->ZAP (SPINAC_1);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing left door" << sendLog;
@@ -498,6 +502,8 @@ int
 Fram::stopMove ()
 {
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
+	if (extraSwitch)
+		extraSwitch->VYP (SPINAC_1);
 	movingState = MOVE_NONE;
 	return 0;
 }
@@ -775,7 +781,7 @@ Fram::init ()
 		if (ret)
 			return ret;
 
-		extraSwitch->VYP (ZASUVKA_PRAVA);
+		extraSwitch->VYP (SPINAC_1);
 
 		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
 		switchBatBack->setValueBool (false);
