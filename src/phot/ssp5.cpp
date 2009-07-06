@@ -92,7 +92,9 @@ SSP5::init ()
 	if (ret)
 		return ret;
 	
-	if (photConn->writeRead ("SSMODE", 6, rbuf, 10, '\r') < 0)
+	if (photConn->writeRead ("SSMODE", 8, rbuf, 10, '\r') < 0)
+		return -1;
+	if (photConn->writePort ("SS", 2) < 0)
 		return -1;
 	if (rbuf[0] != '!')
 	  	return -1;
@@ -177,6 +179,8 @@ SSP5::startIntegrate ()
 {
 	// set integration time..
 	char buf[50];
+	if (req_count->getValueInteger () <= 0)
+		return -1;
 	snprintf (buf, 7, "SI%04i", int (req_time / 0.01));
 	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
