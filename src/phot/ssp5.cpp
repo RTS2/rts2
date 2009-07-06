@@ -106,7 +106,7 @@ SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	if (oldValue == gain)
 	{
 		char buf[6];
-		strcpy (buf, "SGAINn");
+		strcpy (buf, "SGAIN");
 		buf[5] = newValue->getValueInteger () + '1';
 		if (photConn->writeRead (buf, 6, buf, 5, '\r') < 0)
 			return -2;
@@ -161,7 +161,7 @@ SSP5::getCount ()
 		return -1;
 	buf[5] = '\0';
 	sendCount (atoi (buf), req_time, false);
-	return (long (req_time * USEC_SEC));
+	return (long ((req_time + 0.01) * USEC_SEC));
 }
 
 
@@ -177,8 +177,8 @@ SSP5::startIntegrate ()
 {
 	// set integration time..
 	char buf[50];
-	snprintf (buf, 6, "SI%04i", int (req_time / 0.01));
-	if (photConn->writeRead (buf, 6, buf, 6, '\r'))
+	snprintf (buf, 7, "SI%04i", int (req_time / 0.01));
+	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
@@ -187,8 +187,8 @@ SSP5::startIntegrate ()
 		req_count->setValueInteger (9999);
 		sendValueAll (req_count);
 	}
-	snprintf (buf, 6, "SM%04i", req_count->getValueInteger ());
-	if (photConn->writeRead (buf, 6, buf, 6, '\r'))
+	snprintf (buf, 7, "SM%04i", req_count->getValueInteger ());
+	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
 	return 0;
 }
