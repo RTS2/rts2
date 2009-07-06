@@ -303,6 +303,25 @@ Keithley::init ()
 	if (ret)
 		return ret;
 
+	// ask for Automatic ZERO
+	ret = getGPIB ("SYSTEM:AZERO?", azero);
+	if (ret)
+		return ret;
+	// start and setup measurements..
+	ret = gpibWrite ("*CLS");
+	if (ret)
+		return ret;
+	//asprintf (&buf, "*RST; TRIG:DEL 0; TRIG:COUNT %i; SENS:CURR:RANG:AUTO OFF; SENS:CURR:NPLC .01; SENS:CURR:RANG .002; SYST:ZCH OFF; SYST:AZER:STAT OFF; DISP:ENAB OFF; *CLS; TRAC:POIN %i; TRAC:CLE; TRAC:FEED:CONT NEXT; STAT:MEAS:ENAB 512; *SRE 1", countNum->getValueInteger (), countNum->getValueInteger ());
+	//ret = gpibWrite (buf);
+	//free (buf);
+	ret = waitOpc ();
+	if (ret)
+		return ret;
+	// scale current
+	current->clearStat ();
+	// start taking data
+
+
 	ret = waitOpc ();
 
 	return ret;
@@ -346,32 +365,6 @@ Keithley::info ()
 {
 	int ret;
 	// disable display
-	//  char *buf;
-	ret = getGPIB ("SYSTEM:AZERO?", azero);
-	if (ret)
-		return ret;
-	// start and setup measurements..
-	ret = gpibWrite ("*CLS");
-	if (ret)
-		return ret;
-	ret = gpibWrite ("TRAC:POIN 100");
-	if (ret)
-		return ret;
-	ret = gpibWrite ("TRAC:CLE");
-	if (ret)
-		return ret;
-	ret = gpibWrite ("TRAC:FEED:CONT NEXT");
-	if (ret)
-		return ret;
-	ret = gpibWrite ("STAT:MEAS:ENAB 512");
-	if (ret)
-		return ret;
-	ret = gpibWrite ("*SRE 0");
-	if (ret)
-		return ret;
-	//asprintf (&buf, "*RST; TRIG:DEL 0; TRIG:COUNT %i; SENS:CURR:RANG:AUTO OFF; SENS:CURR:NPLC .01; SENS:CURR:RANG .002; SYST:ZCH OFF; SYST:AZER:STAT OFF; DISP:ENAB OFF; *CLS; TRAC:POIN %i; TRAC:CLE; TRAC:FEED:CONT NEXT; STAT:MEAS:ENAB 512; *SRE 1", countNum->getValueInteger (), countNum->getValueInteger ());
-	//ret = gpibWrite (buf);
-	//free (buf);
 	ret = waitOpc ();
 	if (ret)
 		return ret;
