@@ -153,6 +153,8 @@ SSP5::getCount ()
 	int ret;
 	char buf[7];
 	ret = photConn->readPort (buf, 7);
+	if (ret < 0)
+		return -1;
 	if (!(buf[5] == '\n' && buf[6] == '\r'))
 		return -1;
 	buf[5] = '\0';
