@@ -154,19 +154,19 @@ long
 SSP5::getCount ()
 {
 	int ret;
-	char buf[7];
+	char buf[10];
 	if (req_count->getValueInteger () <= 0)
 		return -1;
-	ret = photConn->readPort (buf, 7);
+	ret = photConn->writeRead ("SCOUNT", 6, buf, 10, '\r');
 	if (ret < 0)
 		return -1;
-	if (!(buf[5] == '\n' && buf[6] == '\r'))
+	if (!(buf[0] == 'C' && buf[1] == '=' && buf[7] == '\n' && buf[8] == '\r'))
 		return -1;
 	if (buf[0] == '!')
 		return -1;
-	buf[5] = '\0';
-	sendCount (atoi (buf), req_time, false);
-	return (long ((req_time + 0.01) * USEC_SEC));
+	buf[7] = '\0';
+	sendCount (atoi (buf + 2), req_time, false);
+	return 0;
 }
 
 
@@ -188,14 +188,6 @@ SSP5::startIntegrate ()
 	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
 	if (buf[0] != '!')
-		return -1;
-	if (req_count->getValueInteger () > 9999)
-	{
-		req_count->setValueInteger (9999);
-		sendValueAll (req_count);
-	}
-	snprintf (buf, 7, "SM%04i", req_count->getValueInteger ());
-	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
 	return 0;
 }
