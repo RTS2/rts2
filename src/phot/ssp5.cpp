@@ -102,6 +102,13 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 	photType = "SSP5";
 	photFile = "/dev/ttyS0";
 
+	filter->addSelVal ("Dark");
+	filter->addSelVal ("U");
+	filter->addSelVal ("u");
+	filter->addSelVal ("v");
+	filter->addSelVal ("b");
+	filter->addSelVal ("y");
+
 	addOption ('f', NULL, 1, "serial port (default to /dev/ttyS0");
 }
 
@@ -139,7 +146,18 @@ SSP5::startIntegrate ()
 int
 SSP5::startFilterMove (int new_filter)
 {
-	filter->setValueInteger (new_filter);
+	char buf[9];
+	strcpy (buf, "SFILTx\n\r");
+	if (new_filter > 5 || new_filter < 0)
+	{
+		new_filter = 0;
+		filter->setValueInteger (0);
+	}
+	buf[5] = new_filter + '1';
+	if (photConn->writeRead (buf, 8, buf, 9))
+		return -1;
+	if (buf[0] != '!')
+		return -1;
 	return Rts2DevPhot::startFilterMove (new_filter);
 }
 
