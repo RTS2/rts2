@@ -48,7 +48,7 @@ class Rts2DevPhot:public Rts2ScriptDevice
 	protected:
 		Rts2Conn * integrateConn;
 
-		Rts2ValueInteger *filter;
+		Rts2ValueSelection *filter;
 		float req_time;
 		void setReqTime (float in_req_time);
 
