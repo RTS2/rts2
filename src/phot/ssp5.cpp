@@ -154,7 +154,7 @@ SSP5::startFilterMove (int new_filter)
 		filter->setValueInteger (0);
 	}
 	buf[5] = new_filter + '1';
-	if (photConn->writeRead (buf, 8, buf, 9, '\r'))
+	if (photConn->writeRead (buf, 8, buf, 9, '\r') != 1)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
