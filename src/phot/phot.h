@@ -39,8 +39,8 @@
 class Rts2DevPhot:public Rts2ScriptDevice
 {
 	private:
-		int req_count;
 		struct timeval nextCountDue;
+		Rts2ValueInteger *req_count;
 		Rts2ValueInteger *count;
 		Rts2ValueFloat *exp;
 		Rts2ValueBool *is_ov;
@@ -89,7 +89,7 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		virtual int enableMove ();
 		virtual int disableMove ();
 
-		int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
+		int startIntegrate (Rts2Conn * conn, float in_req_time, int _req_count);
 		virtual int stopIntegrate ();
 
 		int homeFilter (Rts2Conn * conn);

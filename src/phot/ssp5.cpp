@@ -37,10 +37,12 @@ class SSP5:public Rts2DevPhot
 		const char *photFile;
 		Rts2ConnSerial *photConn;
 
+		Rts2ValueSelection *gain;
+
 	protected:
 		virtual int processOption (int _opt);
-
 		virtual int init ();
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int startIntegrate ();
 
@@ -97,6 +99,25 @@ SSP5::init ()
 	return 0;
 }
 
+
+int
+SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == gain)
+	{
+		char buf[6];
+		strcpy (buf, "SGAINn");
+		buf[5] = newValue->getValueInteger () + '1';
+		if (photConn->writeRead (buf, 6, buf, 5, '\r') < 0)
+			return -2;
+		if (buf[0] != '!')
+			return -2;
+		return 0;
+	}
+	return Rts2DevPhot::setValue (oldValue, newValue);
+}
+
+
 SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 {
 	photType = "SSP5";
@@ -108,6 +129,11 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 	filter->addSelVal ("v");
 	filter->addSelVal ("b");
 	filter->addSelVal ("y");
+
+	createValue (gain, "gain", "photometer gain", true);
+	gain->addSelVal ("1");
+	gain->addSelVal ("10");
+	gain->addSelVal ("100");
 
 	addOption ('f', NULL, 1, "serial port (default to /dev/ttyS0");
 }
@@ -124,7 +150,13 @@ SSP5::scriptEnds ()
 long
 SSP5::getCount ()
 {
-	sendCount (10, req_time, false);
+	int ret;
+	char buf[7];
+	ret = photConn->readPort (buf, 7);
+	if (!(buf[5] == '\n' && buf[6] == '\r'))
+		return -1;
+	buf[5] = '\0';
+	sendCount (atoi (buf), req_time, false);
 	return (long (req_time * USEC_SEC));
 }
 
@@ -146,15 +178,15 @@ SSP5::startIntegrate ()
 int
 SSP5::startFilterMove (int new_filter)
 {
-	char buf[9];
-	strcpy (buf, "SFILTx\n\r");
+	char buf[6];
+	strcpy (buf, "SFILTn");
 	if (new_filter > 5 || new_filter < 0)
 	{
 		new_filter = 0;
 		filter->setValueInteger (0);
 	}
 	buf[5] = new_filter + '1';
-	if (photConn->writeRead (buf, 8, buf, 9, '\r') != 1)
+	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
