@@ -40,13 +40,13 @@ class Rts2DevPhot:public Rts2ScriptDevice
 {
 	private:
 		struct timeval nextCountDue;
-		Rts2ValueInteger *req_count;
 		Rts2ValueInteger *count;
 		Rts2ValueFloat *exp;
 		Rts2ValueBool *is_ov;
+		Rts2Conn * integrateConn;
 
 	protected:
-		Rts2Conn * integrateConn;
+		Rts2ValueInteger *req_count;
 
 		Rts2ValueSelection *filter;
 		float req_time;

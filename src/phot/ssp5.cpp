@@ -157,6 +157,8 @@ SSP5::getCount ()
 		return -1;
 	if (!(buf[5] == '\n' && buf[6] == '\r'))
 		return -1;
+	if (buf[0] == '!')
+		return -1;
 	buf[5] = '\0';
 	sendCount (atoi (buf), req_time, false);
 	return (long (req_time * USEC_SEC));
@@ -173,6 +175,21 @@ SSP5::homeFilter ()
 int
 SSP5::startIntegrate ()
 {
+	// set integration time..
+	char buf[50];
+	snprintf (buf, 6, "SI%04i", int (req_time / 0.01));
+	if (photConn->writeRead (buf, 6, buf, 6, '\r'))
+		return -1;
+	if (buf[0] != '!')
+		return -1;
+	if (req_count->getValueInteger () > 9999)
+	{
+		req_count->setValueInteger (9999);
+		sendValueAll (req_count);
+	}
+	snprintf (buf, 6, "SM%04i", req_count->getValueInteger ());
+	if (photConn->writeRead (buf, 6, buf, 6, '\r'))
+		return -1;
 	return 0;
 }
 
@@ -181,7 +198,7 @@ int
 SSP5::startFilterMove (int new_filter)
 {
 	char buf[6];
-	strcpy (buf, "SFILTn");
+	strcpy (buf, "SFILT");
 	if (new_filter > 5 || new_filter < 0)
 	{
 		new_filter = 0;

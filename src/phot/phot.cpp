@@ -38,6 +38,8 @@
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
+	integrateConn = NULL;
+
 	createValue (filter, "filter", "used filter", false);
 	createValue (req_count, "required", "number of readings left", false);
 	createValue (count, "count", "count of the photometer", false);
