@@ -91,13 +91,14 @@ SSP5::init ()
 	ret = photConn->init ();
 	if (ret)
 		return ret;
-	
-	if (photConn->writeRead ("SSMODE", 8, rbuf, 10, '\r') < 0)
-		return -1;
 	if (photConn->writePort ("SS", 2) < 0)
+		return -1;
+	if (photConn->writeRead ("SSMODE", 8, rbuf, 10, '\r') < 0)
 		return -1;
 	if (rbuf[0] != '!')
 	  	return -1;
+	if (photConn->writePort ("SS", 2) < 0)
+		return -1;
 	return 0;
 }
 
@@ -154,6 +155,8 @@ SSP5::getCount ()
 {
 	int ret;
 	char buf[7];
+	if (req_count->getValueInteger () <= 0)
+		return -1;
 	ret = photConn->readPort (buf, 7);
 	if (ret < 0)
 		return -1;
