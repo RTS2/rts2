@@ -31,15 +31,18 @@ class Keithley:public Gpib
 		int getGPIB (double &rval);
 
 		int getGPIB (const char *buf, Rts2ValueDouble * val);
-		int getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count, double scale = 1);
+		int getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, int count, double scale = 1);
 
 		int getGPIB (const char *buf, Rts2ValueBool * val);
 		int setGPIB (const char *buf, Rts2ValueBool * val);
+		int setGPIB (const char *buf, Rts2ValueInteger *val);
 
 		int waitOpc ();
 
 		Rts2ValueBool *azero;
-		Rts2ValueDoubleStat *current;
+		// current statistics and value
+		Rts2ValueDoubleStat *scurrent;
+		rts2core::DoubleArray *current;
 		Rts2ValueInteger *countNum;
 	protected:
 		virtual int init ();
@@ -136,7 +139,7 @@ Keithley::getGPIB (const char *buf, Rts2ValueDouble * val)
 
 
 int
-Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count, double scale)
+Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, int count, double scale)
 {
 	int ret;
 	int bsize = 5000;
@@ -165,7 +168,10 @@ Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat * val, int count, double
 			*top = '\0';
 			rval = atof (start);
 			if (uscale == scale)
+			{
+				sval->addValue (rval * uscale);
 				val->addValue (rval * uscale);
+			}
 			top++;
 			start = top;
 			uscale = 1e+12 / scale;
@@ -213,6 +219,15 @@ Keithley::setGPIB (const char *buf, Rts2ValueBool * val)
 
 
 int
+Keithley::setGPIB (const char *buf, Rts2ValueInteger * val)
+{
+	std::ostringstream _os;
+	_os << buf << " " << val->getValueInteger ();
+	return gpibWrite (_os.str ().c_str ());
+}
+
+
+int
 Keithley::waitOpc ()
 {
 	int ret;
@@ -238,7 +253,8 @@ Gpib (in_argc, in_argv)
 	setPad (14);
 
 	createValue (azero, "AZERO", "SYSTEM:AZERO value");
-	createValue (current, "CURRENT", "Measured current", true,
+	createValue (scurrent, "CURRENT", "Measured current statistics", true);
+	createValue (current, "A_CURRENT", "Measured current", true,
 		RTS2_VWHEN_BEFORE_END);
 	createValue (countNum, "COUNT", "Number of measurements averaged", true);
 	countNum->setValueInteger (100);
@@ -318,7 +334,8 @@ Keithley::init ()
 	if (ret)
 		return ret;
 	// scale current
-	current->clearStat ();
+	scurrent->clearStat ();
+	current->clear ();
 	// start taking data
 
 
@@ -354,6 +371,9 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == countNum)
 	{
+		ret = setGPIB ("TRIG:COUNT", (Rts2ValueInteger *) new_value);
+		if (ret)
+			return -2;
 		return 0;
 	}
 	return Gpib::setValue (old_value, new_value);
@@ -369,20 +389,21 @@ Keithley::info ()
 	if (ret)
 		return ret;
 	// scale current
-	current->clearStat ();
+	scurrent->clearStat ();
+	current->clear ();
 	// start taking data
 	ret = gpibWrite ("INIT");
 	if (ret)
 		return -1;
 	// now wait for SQR
-	//  ret = gpibWaitSRQ ();
-	//  if (ret)
-	//    return -1;
-	//  sleep (1);
+	/* ret = gpibWaitSRQ ();
+	 if (ret)
+	    return -1;
+	//  sleep (1); */
 	/*  ret = gpibWrite ("DISP:ENAB ON");
 	  if (ret)
 		return ret; */
-	ret = getGPIB ("TRAC:DATA?", current, countNum->getValueInteger (), 1e+12);
+	ret = getGPIB ("TRAC:DATA?", scurrent, current, countNum->getValueInteger (), 1e+12);
 	if (ret)
 		return ret;
 	return Gpib::info ();
