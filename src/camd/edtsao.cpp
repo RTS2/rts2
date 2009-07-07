@@ -291,6 +291,9 @@ class EdtSao:public Camera
 		// write to controller pattern file
 		int writePattern (const SplitConf *conf);
 
+		// number of collumns
+		Rts2ValueInteger *chipWidth;
+
 		// number of rows
 		Rts2ValueInteger *chipHeight;
 
@@ -568,7 +571,7 @@ EdtSao::initChips ()
 	if (ret)
 		return ret;
 
-	setSize (2024, chipHeight->getValueInteger (), 0, 0);
+	setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 
 	ret = setDAC ();
 	return ret;
@@ -1038,7 +1041,8 @@ Camera (in_argc, in_argv)
 
 	addOption ('p', "devname", 1, "device name");
 	addOption ('n', "devunit", 1, "device unit number");
-	addOption ('H', NULL, 1, "chip height - number of rows");
+	addOption ('W', NULL, 1, "chip width - number of collumns");
+	addOption ('H', NULL, 1, "chip height - number of rows/lines");
 	// add overscan pixel option
 	addOption ('S', "hskip", 1, "number of lines to skip (overscan pixels)");
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
@@ -1065,46 +1069,49 @@ Camera (in_argc, in_argv)
 	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, 0, CAM_WORKING, true);
 	parallelClockSpeed->setValueInteger (6);
 
-	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true);
+	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)");
 	skipLines->setValueInteger (0);
 
-	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING, true);
+	createValue (chipWidth, "width", "chip width - number of collumns", true, 0, CAM_WORKING);
+	chipWidth->setValueInteger (2024);
+
+	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING);
 	chipHeight->setValueInteger (520);
 
-	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING, true);
+	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
-	createValue (plo, "PLO", "P low", true, 0, CAM_WORKING, true);
+	createValue (plo, "PLO", "P low", true, 0, CAM_WORKING);
 	plo->initEdt (0xA0184, A_minus);
 
-	createValue (shi, "SHI", "S high", true, 0, CAM_WORKING, true);
+	createValue (shi, "SHI", "S high", true, 0, CAM_WORKING);
 	shi->initEdt (0xA008C, A_plus);
 
-	createValue (slo, "SLO", "S low", true, 0, CAM_WORKING, true);
+	createValue (slo, "SLO", "S low", true, 0, CAM_WORKING);
 	slo->initEdt (0xA0180, A_minus);
 
-	createValue (rhi, "RHI", "R high", true, 0, CAM_WORKING, true);
+	createValue (rhi, "RHI", "R high", true, 0, CAM_WORKING);
 	rhi->initEdt (0xA0088, A_plus);
 
-	createValue (rlo, "RLO", "R low", true, 0, CAM_WORKING, true);
+	createValue (rlo, "RLO", "R low", true, 0, CAM_WORKING);
 	rlo->initEdt (0xA018C, A_minus);
 
-	createValue (rd, "RD", "RD", true, 0, CAM_WORKING, true);
+	createValue (rd, "RD", "RD", true, 0, CAM_WORKING);
 	rd->initEdt (0xA0384, C);
 
-	createValue (od1r, "OD1_R", "OD 1 right", true, 0, CAM_WORKING, true);
+	createValue (od1r, "OD1_R", "OD 1 right", true, 0, CAM_WORKING);
 	od1r->initEdt (0xA0388, D);
 
-	createValue (od2l, "OD2_L", "OD 2 left", true, 0, CAM_WORKING, true);
+	createValue (od2l, "OD2_L", "OD 2 left", true, 0, CAM_WORKING);
 	od2l->initEdt (0xA038C, D);
 
-	createValue (og1r, "OG1_R", "OG 1 right", true, 0, CAM_WORKING, true);
+	createValue (og1r, "OG1_R", "OG 1 right", true, 0, CAM_WORKING);
 	og1r->initEdt (0xA0288, B);
 
-	createValue (og2l, "OG2_L", "OG 2 left", true, 0, CAM_WORKING, true);
+	createValue (og2l, "OG2_L", "OG 2 left", true, 0, CAM_WORKING);
 	og2l->initEdt (0xA028C, B);
 
-	createValue (dd, "DD", "DD", true, 0, CAM_WORKING, true);
+	createValue (dd, "DD", "DD", true, 0, CAM_WORKING);
 	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
@@ -1132,10 +1139,13 @@ EdtSao::processOption (int in_opt)
 			devunit = atoi (optarg);
 			break;
 	        case 'H':
-			chipHeight->setValueInteger (atoi (optarg));
+			chipHeight->setValueCharArr (optarg);
+			break;
+		case 'W':
+			chipWidth->setValueCharArr (optarg);
 			break;
 	        case 'S':
-	                skipLines -> setValueInteger (atoi (optarg));
+	                skipLines -> setValueCharArr (optarg);
 	                break;
 		case OPT_NOTIMEOUT:
 			notimeout = true;
@@ -1173,8 +1183,19 @@ EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 int
 EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == splitMode)
+	if (old_value == splitMode
+		|| old_value == skipLines)
 	{
+		return 0;
+	}
+	if (old_value == chipHeight)
+	{
+		setSize (chipWidth->getValueInteger (), new_value->getValueInteger (), 0, 0);
+		return 0;
+	}
+	if (old_value == chipWidth)
+	{
+		setSize (new_value->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 		return 0;
 	}
 	if (old_value == phi
