@@ -273,7 +273,7 @@ Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
 
 	// fits_clear_errmsg ();
 
-	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, extname, &fits_status);
+	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
 
         int keys[value->size ()];
 	double vals[value->size ()];
