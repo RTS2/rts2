@@ -99,7 +99,7 @@ SSP5::init ()
 	  	return -1;
 	if (photConn->writePort ("SS", 2) < 0)
 		return -1;
-	return startIntegrate ();
+	return 0;
 }
 
 
@@ -134,9 +134,9 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 	filter->addSelVal ("y");
 
 	createValue (gain, "gain", "photometer gain", true);
-	gain->addSelVal ("1");
-	gain->addSelVal ("10");
 	gain->addSelVal ("100");
+	gain->addSelVal ("10");
+	gain->addSelVal ("1");
 
 	addOption ('f', NULL, 1, "serial port (default to /dev/ttyS0");
 }
