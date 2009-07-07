@@ -99,7 +99,7 @@ SSP5::init ()
 	  	return -1;
 	if (photConn->writePort ("SS", 2) < 0)
 		return -1;
-	return 0;
+	return startIntegrate ();
 }
 
 
@@ -155,9 +155,12 @@ SSP5::getCount ()
 {
 	int ret;
 	char buf[10];
-	if (req_count->getValueInteger () <= 0)
+	int oldVtime = photConn->getVTime ();
+	ret = photConn->setVTime (req_time * 10 + 2);
+	if (ret)
 		return -1;
 	ret = photConn->writeRead ("SCOUNT", 6, buf, 10, '\r');
+	photConn->setVTime (oldVtime);
 	if (ret < 0)
 		return -1;
 	if (!(buf[0] == 'C' && buf[1] == '=' && buf[7] == '\n' && buf[8] == '\r'))
