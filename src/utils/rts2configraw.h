@@ -243,10 +243,11 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 * @param section    Section name.
 		 * @param valueName  Value name.
 		 * @param value      Returned string vector.
+		 * @param verbose    Report missing value
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
-		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & value);
+		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose = true);
 
 		int getInteger (const char *section, const char *valueName, int &value);
 

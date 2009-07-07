@@ -396,11 +396,14 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 
 
 int
-Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value)
+Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
 {
 	std::string valbuf;
 	int ret;
+	bool oldVerbose = verboseEntry;
+	verboseEntry = verbose;
 	ret = getString (section, valueName, valbuf);
+	verboseEntry = oldVerbose;
 	if (ret)
 		return ret;
 	value = SplitStr (valbuf, std::string (" "));
