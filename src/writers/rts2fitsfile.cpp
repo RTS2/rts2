@@ -30,10 +30,12 @@ std::string
 Rts2FitsFile::getFitsErrors ()
 {
 	std::ostringstream os;
-	char
-		buf[30];
+	char buf[30];
+	char errmsg[81];
+
 	fits_get_errstatus (fits_status, buf);
-	os << " file " << getFileName () << " " << buf;
+	fits_read_errmsg (errmsg);
+	os << " file " << getFileName () << " " << buf << " message: " << errmsg;
 	return os.str ();
 }
 
@@ -261,3 +263,42 @@ Rts2FitsFile::writeComment (const char *comment)
 	fits_write_comment (ffile, (char *) comment, &fits_status);
 	return fitsStatusSetValue ("comment", true);
 }
+
+int
+Rts2FitsFile::writeArray (rts2core::DoubleArray *value)
+{
+	const char *cols[] = { "Key", "Value" };
+	const char *types[] = { "I4", "D20.10" };
+	const char *units[] = { "\0", "A" };
+
+	// fits_clear_errmsg ();
+
+	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, value->getName ().c_str (), &fits_status);
+
+        int keys[value->size ()];
+	double vals[value->size ()];
+
+	int i = 0;
+
+	for (std::vector <double>::iterator iter = value->valueBegin (); iter != value->valueEnd (); iter++, i++)
+	{
+		keys[i] = i + 1;
+		vals[i] = *iter;
+	}
+
+	fits_write_col (ffile, TINT, 1, 1, 1, value->size (), keys, &fits_status);
+	fits_write_col (ffile, TDOUBLE, 2, 1, 1, value->size (), vals, &fits_status);
+
+	// move back to primary HDU
+	int hdutype;
+
+	fits_movabs_hdu (ffile, 1, &hdutype, &fits_status);
+
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "Rts2FitsFile::writeArray " << getFitsErrors () << sendLog;
+		return -1;
+	}
+	return 0;
+}
+

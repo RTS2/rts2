@@ -114,13 +114,15 @@ class Rts2Image:public Rts2FitsFile
 
 		void initData ();
 
-		void writeConnBaseValue (const char *name, Rts2Value * val, const char *desc);
+		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
+
+		void writeConnArray (const char *name, Rts2Value *val);
 
 		// writes one value to image
-		void writeConnValue (Rts2Conn * conn, Rts2Value * val);
+		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
 
 		// record value changes
-		void recordChange (Rts2Conn * conn, Rts2Value * val);
+		void recordChange (Rts2Conn *conn, Rts2Value *val);
 	protected:
 		int targetId;
 		int targetIdSel;

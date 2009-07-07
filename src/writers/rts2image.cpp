@@ -2130,6 +2130,21 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 
 
 void
+Rts2Image::writeConnArray (const char *name, Rts2Value *val)
+{
+	switch (val->getValueBaseType ())
+	{
+		case RTS2_VALUE_DOUBLE:
+			writeArray ((rts2core::DoubleArray *) val);
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "Don't know how to write array of type "
+				<< val->getValueType () << sendLog;
+	}
+}
+
+
+void
 Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
@@ -2147,6 +2162,9 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 	{
 		case 0:
 			writeConnBaseValue (name, val, desc);
+			break;
+		case RTS2_VALUE_ARRAY:
+			writeConnArray (name, val);
 			break;
 		case RTS2_VALUE_STAT:
 			writeConnBaseValue (name, val, desc);

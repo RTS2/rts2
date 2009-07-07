@@ -18,6 +18,7 @@
  */
 
 #include "../utils/expander.h"
+#include "../utils/rts2valuearray.h"
 
 #include <fitsio.h>
 
@@ -193,6 +194,11 @@ class Rts2FitsFile: public rts2core::Expander
 		 * @return -1 on error, 0 on success.
 		 */
 		int writeComment (const char *comment);
+
+		/**
+		 * Create table extension from DoubleArray
+		 */
+		int writeArray (rts2core::DoubleArray *value);
 
 		/**
 		 * Return true if image shall be written to disk before it is closed.
