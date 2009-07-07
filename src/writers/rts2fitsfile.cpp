@@ -265,7 +265,7 @@ Rts2FitsFile::writeComment (const char *comment)
 }
 
 int
-Rts2FitsFile::writeArray (rts2core::DoubleArray *value)
+Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
 {
 	const char *cols[] = { "Key", "Value" };
 	const char *types[] = { "I4", "D20.10" };
@@ -273,7 +273,7 @@ Rts2FitsFile::writeArray (rts2core::DoubleArray *value)
 
 	// fits_clear_errmsg ();
 
-	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, value->getName ().c_str (), &fits_status);
+	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, extname, &fits_status);
 
         int keys[value->size ()];
 	double vals[value->size ()];

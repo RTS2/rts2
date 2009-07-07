@@ -198,7 +198,7 @@ class Rts2FitsFile: public rts2core::Expander
 		/**
 		 * Create table extension from DoubleArray
 		 */
-		int writeArray (rts2core::DoubleArray *value);
+		int writeArray (const char *extname, rts2core::DoubleArray *value);
 
 		/**
 		 * Return true if image shall be written to disk before it is closed.

@@ -2135,7 +2135,7 @@ Rts2Image::writeConnArray (const char *name, Rts2Value *val)
 	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_DOUBLE:
-			writeArray ((rts2core::DoubleArray *) val);
+			writeArray (name, (rts2core::DoubleArray *) val);
 			break;
 		default:
 			logStream (MESSAGE_ERROR) << "Don't know how to write array of type "
@@ -2151,7 +2151,7 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 	char *name = (char *) val->getName ().c_str ();
 	char *name_stat;
 	char *n_top;
-	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice ())
+	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
 	{
 		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
 		strcpy (name, conn->getName ());
