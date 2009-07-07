@@ -31,7 +31,8 @@ ConnGpib::gpibWrite (const char *_buf)
 	#endif
 	if (ret & ERR)
 	{
-		logStream (MESSAGE_ERROR) << "error writing " << _buf << sendLog;
+		logStream (MESSAGE_ERROR) << "error writing " << _buf
+			<< gpib_error_string (ret) << " " << ret << sendLog;
 		return -1;
 	}
 	return 0;
@@ -45,8 +46,8 @@ ConnGpib::gpibRead (void *_buf, int blen)
 	ret = ibrd (gpib_dev, _buf, blen);
 	if (ret & ERR)
 	{
-		logStream (MESSAGE_ERROR) << "error reading " << _buf << " " << ret <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "error reading " << _buf << " " 
+			<< gpib_error_string (ret) << " " << ret << sendLog;
 		return -1;
 	}
 	#ifdef DEBUG_EXTRA
