@@ -126,6 +126,13 @@ Rts2DevPhot::homeFilter ()
 
 
 int
+Rts2DevPhot::setExposure (float _exp)
+{
+	setReqTime (_exp);
+	return 0;
+}
+
+int
 Rts2DevPhot::startFilterMove (int new_filter)
 {
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
@@ -273,6 +280,7 @@ void
 Rts2DevPhot::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
+	exp->setValueFloat (req_time);
 	gettimeofday (&nextCountDue, NULL);
 	nextCountDue.tv_sec += (long) floor (in_req_time);
 	nextCountDue.tv_usec +=
@@ -290,6 +298,8 @@ Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == filter)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	if (old_value == exp)
+		return setExposure (new_value->getValueFloat ()) == 0 ? 0 : -2;
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 

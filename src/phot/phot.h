@@ -61,27 +61,11 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		virtual int startIntegrate ();
 		virtual int endIntegrate ();
 
-	public:
-		Rts2DevPhot (int argc, char **argv);
-		// return time till next getCount call in usec, or -1 when failed
-		virtual long getCount ()
-		{
-			return -1;
-		}
-		virtual int initValues ();
-
-		virtual int idle ();
-
-		virtual int deleteConnection (Rts2Conn * conn)
-		{
-			if (integrateConn == conn)
-				integrateConn = NULL;
-			return Rts2ScriptDevice::deleteConnection (conn);
-		}
-
 		virtual int homeFilter ();
 
 		void checkFilterMove ();
+
+		virtual int setExposure (float _exp);
 
 		virtual int startFilterMove (int new_filter);
 		virtual long isFilterMoving ();
@@ -101,5 +85,25 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		virtual int changeMasterState (int new_state);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+		float getExposure () { return exp->getValueFloat (); }
+
+	public:
+		Rts2DevPhot (int argc, char **argv);
+		// return time till next getCount call in usec, or -1 when failed
+		virtual long getCount ()
+		{
+			return -1;
+		}
+		virtual int initValues ();
+
+		virtual int idle ();
+
+		virtual int deleteConnection (Rts2Conn * conn)
+		{
+			if (integrateConn == conn)
+				integrateConn = NULL;
+			return Rts2ScriptDevice::deleteConnection (conn);
+		}
 };
 #endif							 /* !__RTS2_PHOT__ */
