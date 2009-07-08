@@ -149,6 +149,8 @@ class DoubleArray: public Rts2Value
 		{
 			return value.size ();
 		}
+
+		void clear () { value.clear (); }
 };
 
 
