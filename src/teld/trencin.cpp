@@ -304,13 +304,13 @@ Trencin::init ()
 	trencinConnRa->setDebug ();
 	trencinConnRa->flushPortIO ();
 
-/*	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS9600, C8, NONE, 40);
+	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS9600, C8, NONE, 40);
 	ret = trencinConnDec->init ();
 	if (ret)
 		return ret;
 
 	trencinConnDec->setDebug ();
-	trencinConnDec->flushPortIO (); */
+	trencinConnDec->flushPortIO ();
 
 	snprintf (telType, 64, "Trencin");
 
