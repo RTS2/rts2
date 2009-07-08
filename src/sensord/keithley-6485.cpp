@@ -374,6 +374,9 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		ret = setGPIB ("TRIG:COUNT", (Rts2ValueInteger *) new_value);
 		if (ret)
 			return -2;
+		ret = setGPIB ("TRAC:POIN", (Rts2ValueInteger *) new_value);
+		if (ret)
+			return -2;
 		return 0;
 	}
 	return Gpib::setValue (old_value, new_value);
@@ -404,6 +407,12 @@ Keithley::info ()
 	  if (ret)
 		return ret; */
 	ret = getGPIB ("TRAC:DATA?", scurrent, current, countNum->getValueInteger (), 1e+12);
+	if (ret)
+		return ret;
+	ret = gpibWrite ("TRAC:CLE");
+	if (ret)
+		return ret;
+	ret = gpibWrite ("TRAC:FEED:CONT NEXT");
 	if (ret)
 		return ret;
 	return Gpib::info ();
