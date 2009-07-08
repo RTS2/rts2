@@ -515,15 +515,16 @@ class DeviceCount: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class ListDevices: public SessionMethod
+class ListDevices: public XmlRpcServerMethod 
 {
 	public:
-		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s)
+		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_LIST, s)
 		{
 		}
 
-		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
+			std::cout << "ListDevices " << getUsername () << " " << getPassword () << std::endl;
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			connections_t::iterator iter;
 			int i = 0;
@@ -730,7 +731,7 @@ class ListValuesDevice: public ListValues
 							retVar["value"] = bool_val;
 							break;
 						case RTS2_VALUE_LONGINT:
-							int_val = (*variter)->getValueInteger ();
+							int_val = (*variter)->getValueLong ();
 							retVar["value"] = int_val;
 							break;
 						case RTS2_VALUE_TIME:
@@ -795,6 +796,54 @@ class ListValuesDevice: public ListValues
 			return std::string ("Returns name of devices conencted to the system for given device(s)");
 		}
 } listValuesDevice (&xmlrpc_server);
+
+class GetValue: public XmlRpcServerMethod
+{
+	public:
+		GetValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_GET, s) {}
+
+		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			std::string devName = params[0];
+			std::string valueName = params[1];
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			if (!conn)
+			{
+				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+			}
+			Rts2Value *val = conn->getValue (valueName.c_str ());
+			if (!val)
+			{
+				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
+			}
+			switch (val->getValueBaseType ())
+			{
+				case RTS2_VALUE_INTEGER:
+				case RTS2_VALUE_LONGINT:
+					result = val->getValueInteger ();
+					break;
+				case RTS2_VALUE_FLOAT:
+					result = val->getValueFloat ();
+					break;
+				case RTS2_VALUE_DOUBLE:
+					result = val->getValueDouble ();
+					break;
+				case RTS2_VALUE_BOOL:
+					result = ((Rts2ValueBool *)val)->getValueBool ();
+					break;
+				case RTS2_VALUE_TIME:
+					struct tm tm_s;
+					long usec;
+					((Rts2ValueTime*)val)->getStructTm (&tm_s, &usec);
+					result = XmlRpcValue (&tm_s);
+					break;
+				default:
+					result = val->getValue ();
+					break;
+			}
+		}
+} getValue (&xmlrpc_server);
 
 class SetValue: public XmlRpcServerMethod
 {

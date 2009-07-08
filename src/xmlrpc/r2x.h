@@ -57,6 +57,15 @@
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
 /**
+ * Return RTS2 variable. Two  parameters must be specified, with following meaning:
+ *
+ * @param device Name of device for which variable will be set.
+ * @param var    Name of variable which will be set.
+ */
+#define R2X_VALUE_GET                 "rts2.value.get"
+
+
+/**
  * Set RTS2 variable. Three parameters must be specified, with following meaning:
  *
  * @param device Name of device for which variable will be set.
