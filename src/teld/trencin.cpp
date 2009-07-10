@@ -105,7 +105,7 @@ int
 Trencin::tel_write_ra (char command)
 {
 	char buf[3];
-	int len = snprintf (buf, 2, "%c\r", command);
+	int len = snprintf (buf, 3, "%c\r", command);
 	return trencinConnRa->writePort (buf, len);
 }
 
@@ -114,7 +114,7 @@ int
 Trencin::tel_write_dec (char command)
 {
 	char buf[3];
-	int len = snprintf (buf, 2, "%c\r", command);
+	int len = snprintf (buf, 3, "%c\r", command);
 	return trencinConnDec->writePort (buf, len);
 	return 0;
 }
