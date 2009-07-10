@@ -40,6 +40,9 @@ class Trencin:public Fork
 		int tel_write_ra (char command);
 		int tel_write_dec (char command);
 
+		int tel_write_ra (const char *command);
+		int tel_write_dec (const char *command);
+
 		// write to both units
 		int write_both (char command, int32_t value);
 
@@ -118,6 +121,30 @@ Trencin::tel_write_dec (char command)
 
 
 int
+Trencin::tel_write_ra (const char *command)
+{
+	int ret;
+	ret = trencinConnRa->writePort (command, strlen (command));
+	if (ret != 0)
+		return ret;
+	return trencinConnRa->writePort ("\r", 1);
+}
+
+
+int
+Trencin::tel_write_dec (const char *command)
+{
+	int ret;
+	ret = trencinConnDec->writePort (command, strlen (command));
+	if (ret != 0)
+		return ret;
+	return trencinConnDec->writePort ("\r", 1);
+}
+
+
+
+
+int
 Trencin::write_both (char command, int len)
 {
 	int ret;
@@ -187,11 +214,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	haZero = 0;
 	decZero = 0;
 
-	//haCpd = 21333.333;
-	//haCpd = 10000;
 	haCpd = 10666.666667;
-	//decCpd = 17777.778;
-	//decCpd = 8100;
 	decCpd = 8888.888889;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
@@ -205,7 +228,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
-	wormRa->setValueBool (true);
+	wormRa->setValueBool (false);
 
 	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
 
@@ -353,26 +376,28 @@ Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		  	return tel_write_dec ('B', diff) == 0 ? 0 : -2;
 		else return 0;
 	}
-/*	if (old_value == velRa)
+	if (old_value == velRa)
 	{
-		return tel_write_unit (1, 'v',
-			new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return tel_write_ra ('V', new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == velDec)
 	{
-		return tel_write_unit (2, 'v',
-			new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return tel_write_dec ('V', new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == accRa)
 	{
-		return tel_write_unit (1, 'a',
-			new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return tel_write_ra ('A', new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == accDec)
 	{
-		return tel_write_unit (2, 'a',
-			new_value->getValueInteger ()) == 0 ? 0 : -2;
-	} */
+		return tel_write_dec ('A', new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == wormRa)
+	{
+		if (((Rts2ValueBool *)new_value)->getValueBool () == true)
+			return tel_write_ra ("G+") == 0 ? 0 : -2;
+		return tel_write_ra ('K') == 0 ? 0 : -2;
+	}
 
 	return Fork::setValue (old_value, new_value);
 }
