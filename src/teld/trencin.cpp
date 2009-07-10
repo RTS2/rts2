@@ -395,7 +395,7 @@ Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == wormRa)
 	{
 		if (((Rts2ValueBool *)new_value)->getValueBool () == true)
-			return tel_write_ra ("G+") == 0 ? 0 : -2;
+			return tel_write_ra ("g+\rR") == 0 ? 0 : -2;
 		return tel_write_ra ('K') == 0 ? 0 : -2;
 	}
 
