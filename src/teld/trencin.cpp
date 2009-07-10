@@ -102,7 +102,6 @@ int
 Trencin::tel_write_ra (char command)
 {
 	char buf[3];
-	// switch unit
 	int len = snprintf (buf, 2, "%c\r", command);
 	return trencinConnRa->writePort (buf, len);
 }
@@ -112,9 +111,8 @@ int
 Trencin::tel_write_dec (char command)
 {
 	char buf[3];
-	// switch unit
 	int len = snprintf (buf, 2, "%c\r", command);
-//	return trencinConnDec->writePort (buf, len);
+	return trencinConnDec->writePort (buf, len);
 	return 0;
 }
 
@@ -135,7 +133,6 @@ int
 Trencin::tel_write_ra (char command, int32_t value)
 {
 	char buf[51];
-	// switch unit
 	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
 	return trencinConnRa->writePort (buf, len);
 }
@@ -145,9 +142,8 @@ int
 Trencin::tel_write_dec (char command, int32_t value)
 {
 	char buf[51];
-	// switch unit
 	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
-//	return trencinConnDec->writePort (buf, len);
+	return trencinConnDec->writePort (buf, len);
 	return 0;
 }
 
@@ -205,8 +201,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	device_nameRa = "/dev/ttyS0";
 	device_nameDec = "/dev/ttyS1";
-	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0");
-	addOption ('d', NULL, 1, "device file for DEC motor (default /dev/ttyS1");
+	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
+	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (true);
@@ -251,7 +247,7 @@ Trencin::processOption (int in_opt)
 		case 'r':
 			device_nameRa = optarg;
 			break;
-		case 'd':
+		case 'D':
 			device_nameDec = optarg;
 			break;
 		default:
@@ -304,7 +300,7 @@ Trencin::init ()
 	trencinConnRa->setDebug ();
 	trencinConnRa->flushPortIO ();
 
-	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS9600, C8, NONE, 40);
+	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS4800, C8, NONE, 40);
 	ret = trencinConnDec->init ();
 	if (ret)
 		return ret;
@@ -393,7 +389,7 @@ Trencin::info ()
 
 	// update axRa and axDec
 	readAxis (trencinConnRa, unitRa);
-//	readAxis (trencinConnDec, unitDec);
+	readAxis (trencinConnDec, unitDec);
 
 	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
 	setTelRa (t_telRa);
