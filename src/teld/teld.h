@@ -60,12 +60,12 @@ namespace rts2teld
  * <ul>
  *   <li><b>ORIRA, ORIDEC</b> contains original, J2000 coordinates. Those are
  *          usually entered by observing program (rts2-executor).</li>
- *   <li><b>OFFSRA, OFFSDEC</b> contains offsets applied to precessed coordinates.</li>
- *   <li><b>OBJRA,OBHDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.</li>
- *   <li><b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in CORR_RA and CORR_DEC</li>
+ *   <li><b>OFFSRA, OFFSDEC</b> contains offsets applied to ORI coordinates.</li>
+ *   <li><b>OBJRA,OBJDEC</b> contains offseted coordinates. OBJRA = ORIRA + OFFSRA, OBJDEC = ORIDEC + OFFSDEC.</li>
+ *   <li><b>TARRA,TARDEC</b> contains precessed etc. coordinates. Those coordinates do not contain modelling, which is stored in MORA and MODEC</li>
  *   <li><b>CORR_RA, CORR_DEC</b> contains offsets from on-line astrometry which are fed totelescope. Telescope coordinates are then calculated as TARRA-CORR_RA, TAR_DEC - CORR_DEC</li>
- *   <li><b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA, TARDEC - CORR_DEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.<li>
- *   <li><b>MODRA.MODDEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).</li>
+ *   <li><b>TELRA,TELDEC</b> contains coordinates read from telescope driver. In ideal word, they should eaual to TARRA - CORR_RA - MORA, TARDEC - CORR_DEC - MODEC. But they might differ. The two major sources of differences are: telescope do not finish movement as expected and small deviations due to rounding errors in mount or driver.<li>
+ *   <li><b>MORA,MODEC</b> contains offsets comming from ponting model. They are shown only if this information is available from the mount (OpenTpl) or when they are caculated by RTS2 (Paramount).</li>
  * </ul>
  *
  * Following auxiliary values are used to track telescope offsets:
