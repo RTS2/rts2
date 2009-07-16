@@ -27,6 +27,11 @@
 namespace rts2sensord
 {
 
+/**
+ * Connection to a single GPIB device.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ConnGpib:public Rts2ConnNoSend
 {
 	private:
@@ -36,6 +41,14 @@ class ConnGpib:public Rts2ConnNoSend
 		int gpib_dev;
 	public:
 		int gpibWrite (const char *_buf);
+
+		/*
+		 * Read data from GPIB device to a buffer.
+		 *
+		 * @param _buf  Buffer where data will be stored.
+		 * @param blne  Buffer length in bytes.
+		 * @return -1 on error, number of bytes readed on success.
+		 */
 		int gpibRead (void *_buf, int blen);
 		int gpibWriteRead (const char *_buf, char *val, int blen = 50);
 

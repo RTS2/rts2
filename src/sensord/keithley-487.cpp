@@ -77,7 +77,7 @@ Keithley487::info ()
 	if (ret)
 		return ret;
 	ret = gpibRead (&oneShot, 10);
-	if (ret)
+	if (ret < 0)
 		return ret;
 	if (ibcnt != 10)
 	{

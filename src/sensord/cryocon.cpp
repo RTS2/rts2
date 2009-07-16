@@ -429,6 +429,7 @@ int
 Cryocon::info ()
 {
 	int ret;
+	logStream (MESSAGE_DEBUG) << "Cryocon::info started" << sendLog;
 	char buf[50] = "INPUT ";
 	int i;
 	buf[8] = '\0';
@@ -440,6 +441,7 @@ Cryocon::info ()
 		if (ret)
 			return ret;
 	}
+	logStream (MESSAGE_DEBUG) << "Cryocon::info LOOP" << sendLog;
 	strcpy (buf, "LOOP ");
 	buf[7] = '\0';
 	// run info for loops
@@ -451,6 +453,7 @@ Cryocon::info ()
 		if (ret)
 			return ret;
 	}
+	logStream (MESSAGE_DEBUG) << "Cryocon::info TIME" << sendLog;
 	ret = writeRead ("STATS:TIME?", statTime);
 	if (ret)
 		return ret;
@@ -461,6 +464,7 @@ Cryocon::info ()
 	ret = writeRead ("CONTROL?", heaterEnabled);
 	if (ret)
 		return ret;
+	logStream (MESSAGE_DEBUG) << "Cryocon::info ends" << sendLog;
 	return Gpib::info ();
 }
 

@@ -54,7 +54,8 @@ ConnGpib::gpibRead (void *_buf, int blen)
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) _buf
 		<< "' ret " << ret << sendLog;
 	#endif
-	return 0;
+	((char *)_buf)[ibcnt] = '\0';
+	return ibcnt;
 }
 
 
@@ -97,14 +98,18 @@ ConnGpib::gpibWaitSRQ ()
 	short res;
 	while (true)
 	{
-		ret = iblines (gpib_dev, &res);
+		ret = iblines (0, &res);
 		if (ret & ERR)
 		{
-			logStream (MESSAGE_ERROR) << "Error while waiting for SRQ " << ret
-				<< sendLog;
+			// strange error occuring when SRQ already occurred..
+			if (iberr == 0)
+				return 0;
+			logStream (MESSAGE_ERROR) << "Error while waiting for SRQ "
+				<< gpib_error_string (iberr) << " " << iberr << sendLog;
 		}
 		if (res & BusSRQ)
 			return 0;
+		usleep (USEC_SEC / 10);
 	}
 }
 
