@@ -252,7 +252,7 @@ Gpib (in_argc, in_argv)
 	createValue (current, "A_CURRENT", "Measured current", true, RTS2_VWHEN_BEFORE_END);
 	createValue (meas_times, "MEAS_TIMES", "Measurement times (delta)", true, RTS2_VWHEN_BEFORE_END);
 	createValue (countNum, "COUNT", "Number of measurements averaged", true);
-	countNum->setValueInteger (7);
+	countNum->setValueInteger (100);
 }
 
 
