@@ -30,9 +30,18 @@
     <xs:complexContent>
       <xs:extension base="action">
 	<xs:sequence>
-	  <xs:element name="record" minOccurs="0"/>
+	  <xs:element name="record" minOccurs="0">
+	    <xs:annotation>
+	      Record value to the database, to table records.
+	    </xs:annotation>
+	  </xs:element>
 	</xs:sequence>
-        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+	<xs:attribute name="cadence" type="xs:integer" default="-1">
+	  <xs:annotation>
+	    Defines how often will be value changed recorded.
+	  </xs:annotation>
+	</xs:attribute>
       </xs:extension>
     </xs:complexContent>
   </xs:complexType>

@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Example script which reports dome operations.
+
+echo "Hi,
+
+telescope dome was just opened.
+
+Important variables have following values:
+
+Dome switches: $DOME_sw_open_left $DOME_sw_close_left $DOME_sw_close_right $DOME_sw_open_right
+(expected):    true false false true
+
+Cloud sensor value: $cloud_TEMP_DIFF ($cloud_TEMP_IN - $cloud_TEMP_OUT)
+Trip points are at: $cloud_TRIGBAD $cloud_TRIGGOOD
+
+Windspeeds: $METEO_AVGWIND $DAVIS_PEEKWIND
+Davis rain: $METEO_RAIN
+
+For you convenience, last GRB was recorded on $GRBD_last_target_time ($GRBD_last_target)
+Last GCN packet was processed on $GRBD_last_packet." | mail -s 'B3 dome CLOSED' example@example.com

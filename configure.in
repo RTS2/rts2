@@ -564,14 +564,15 @@ AC_OUTPUT([Makefile
 	   man/Makefile
 	   include/Makefile
 	   conf/Makefile
+	   conf/event.d/Makefile
+	   doc/Makefile
+	   doc/doxyfile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
-	   doc/Makefile
-	   doc/doxyfile
 	   src/dome/Makefile
 	   src/indi/Makefile
 	   src/libindi/Makefile
