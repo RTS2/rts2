@@ -50,6 +50,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 
 	createValue (last_target_time, "last_target_time", "time of last target",
 		false);
+	createValue (last_target_radec, "last_target_radec", "coordinates (J2000) of last GRB", false);
 
 	createValue (execConnection, "exec", "exec connection", false);
 
