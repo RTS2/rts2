@@ -89,11 +89,13 @@ ScriptExec::processOption (int in_opt)
 		case 's':
 			if (!deviceName)
 			{
-				std::cerr << "unknow device name" << std::endl;
-				return -1;
+				defaultScript = optarg;
 			}
-			scripts.push_back (new Rts2ScriptForDevice (std::string (deviceName), std::string (optarg)));
-			deviceName = NULL;
+			else
+			{
+				scripts.push_back (new Rts2ScriptForDevice (std::string (deviceName), std::string (optarg)));
+				deviceName = NULL;
+			}
 			break;
 		case 'f':
 			if (!deviceName)
@@ -132,6 +134,8 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv)
 	nextRunningQ = 0;
 	configFile = NULL;
 	expandPath = NULL;
+
+	defaultScript = NULL;
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
@@ -180,9 +184,17 @@ ScriptExec::init ()
 		expandPath->setValueString (fp.c_str ());
 	}
 
-	if (deviceName == NULL)
+	// there is a script without device..
+	if (defaultScript)
 	{
-
+		std::string devName;
+		ret = Rts2Config::instance ()->getString ("scriptexec", "default_device", devName);
+		if (ret)
+		{
+			std::cerr << "neither -d nor default_device configuration option was not provided" << std::endl;
+			return -1;
+		}
+		scripts.push_back (new Rts2ScriptForDevice (devName, std::string (defaultScript)));
 	}
 
 	// create current target

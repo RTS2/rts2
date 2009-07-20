@@ -40,6 +40,7 @@ class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		Rts2ValueString *expandPath;
 		std::vector < Rts2ScriptForDevice* > scripts;
 		char *deviceName;
+		const char *defaultScript;
 
 		int waitState;
 
