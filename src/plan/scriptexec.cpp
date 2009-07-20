@@ -180,6 +180,11 @@ ScriptExec::init ()
 		expandPath->setValueString (fp.c_str ());
 	}
 
+	if (deviceName == NULL)
+	{
+
+	}
+
 	// create current target
 	currentTarget = new Rts2TargetScr (this);
 
