@@ -64,8 +64,7 @@ class Rts2Daemon:public Rts2Block
 
 		Rts2ValueTime *info_time;
 
-		time_t idleInfoInterval;
-		time_t nextIdleInfo;
+		double idleInfoInterval;
 
 		/**
 		 * Adds value to list of values supported by daemon.
@@ -383,10 +382,14 @@ class Rts2Daemon:public Rts2Block
 		 */
 		void initDaemon ();
 
-		void setIdleInfoInterval (time_t interval)
+		void setIdleInfoInterval (double interval)
 		{
+			// activate infoall event
+			if (idleInfoInterval < 0 && interval > 0)
+			{
+				addTimer (interval, new Rts2Event (EVENT_TIMER_INFOALL, this));
+			}
 			idleInfoInterval = interval;
-			setTimeoutMin ((long int) interval * USEC_SEC);
 		}
 
 		/**
@@ -396,6 +399,8 @@ class Rts2Daemon:public Rts2Block
 		{
 			info_time->setValueDouble (getNow ());
 		}
+
+		virtual void postEvent (Rts2Event *event);
 
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType,

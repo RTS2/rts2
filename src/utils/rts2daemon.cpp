@@ -76,7 +76,6 @@ Rts2Block (_argc, _argv)
 	info_time = new Rts2ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
 
 	idleInfoInterval = -1;
-	nextIdleInfo = 0;
 
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
 	addOption (OPT_LOCALPORT, "local-port", 1,
@@ -314,18 +313,6 @@ Rts2Daemon::run ()
 int
 Rts2Daemon::idle ()
 {
-	time_t now = time (NULL);
-	if (idleInfoInterval >= 0)
-	{
-		if (now >= nextIdleInfo)
-		{
-			infoAll ();
-		}
-		else
-		{
-			setTimeoutMin ((nextIdleInfo - now) * USEC_SEC);
-		}
-	}
 	if (doHupIdleLoop)
 	{
 		signaledHUP ();
@@ -356,6 +343,24 @@ Rts2Daemon::setInfoTime (struct tm *_date)
 	putenv (p_tz);
 }
 
+
+void
+Rts2Daemon::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TIMER_INFOALL:
+			infoAll ();
+			// next timer..
+			if (idleInfoInterval > 0)
+			{
+				addTimer (idleInfoInterval, event);
+				return;
+			}
+			break;
+	}
+	Rts2Block::postEvent (event);
+}
 
 void
 Rts2Daemon::forkedInstance ()
@@ -924,7 +929,6 @@ int
 Rts2Daemon::infoAll ()
 {
 	int ret;
-	nextIdleInfo = time (NULL) + idleInfoInterval;
 	ret = info ();
 	if (ret)
 		return -1;

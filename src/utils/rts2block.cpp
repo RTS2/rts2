@@ -253,7 +253,7 @@ Rts2Block::idle ()
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		(*iter)->idle ();
 
-	// add from queue..
+	// add from connection queue..
 	for (iter = connections_added.begin (); iter != connections_added.end (); iter = connections_added.erase (iter))
 	{
 		connections.push_back (*iter);
@@ -262,6 +262,17 @@ Rts2Block::idle ()
 	for (iter = centraldConns_added.begin (); iter != centraldConns_added.end (); iter = centraldConns_added.erase (iter))
 	{
 		centraldConns.push_back (*iter);
+	}
+
+	// test for any pending timers..
+	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
+	if (!timers.empty () && iter_t->first < getNow ())
+	{
+	 	if (iter_t->second->getArg () != NULL)
+		  	((Rts2Object *)iter_t->second->getArg ())->postEvent (iter_t->second);
+		else
+			postEvent (iter_t->second);
+		timers.erase (iter_t);
 	}
 
 	return 0;
@@ -360,9 +371,18 @@ Rts2Block::oneRunLoop ()
 {
 	int ret;
 	struct timeval read_tout;
+	double t_diff;
 
-	read_tout.tv_sec = idle_timeout / USEC_SEC;
-	read_tout.tv_usec = idle_timeout % USEC_SEC;
+	if (timers.begin () != timers.end () && (t_diff = timers.begin ()->first - getNow ()) < idle_timeout)
+	{
+		read_tout.tv_sec = t_diff;
+		read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
+	}
+	else
+	{
+		read_tout.tv_sec = idle_timeout / USEC_SEC;
+		read_tout.tv_usec = idle_timeout % USEC_SEC;
+	}
 
 	FD_ZERO (&read_set);
 	FD_ZERO (&write_set);
@@ -371,9 +391,7 @@ Rts2Block::oneRunLoop ()
 	addSelectSocks ();
 	ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 	if (ret > 0)
-	{
 		selectSuccess ();
-	}
 	ret = idle ();
 	if (ret == -1)
 		endRunLoop ();

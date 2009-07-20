@@ -49,6 +49,9 @@
 /** Number of images which waits for processing. */
 #define EVENT_NUMBER_OF_IMAGES     18
 
+/** Notification to refresh device information..*/
+#define EVENT_TIMER_INFOALL        19
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 

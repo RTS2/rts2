@@ -97,6 +97,9 @@ class Rts2Block: public Rts2App
 		int port;
 		long int idle_timeout;	 // in msec
 
+		// timers - time when they should be executed, event which should be triggered
+		std::map <double, Rts2Event*> timers;
+
 		connections_t connections;
 		
 		// vector which holds connections which were recently added - idle loop will move them to connections
@@ -647,6 +650,20 @@ class Rts2Block: public Rts2App
 		 */
 		virtual void binaryDataArrived (Rts2Conn *conn)
 		{
+		}
+
+		/**
+		 * Add new user timer.
+		 *
+		 * @param timer_time  Timer time in seconds, counted from now.
+		 * @param event       Event which will be posted for triger. Event argument
+		 *
+		 * @see Rts2Event
+		 */
+
+		void addTimer (double timer_time, Rts2Event *event)
+		{
+			timers[getNow () + timer_time] = event;
 		}
 };
 #endif							 // !__RTS2_NETBLOCK__
