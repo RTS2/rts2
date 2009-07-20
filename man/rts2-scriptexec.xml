@@ -166,6 +166,14 @@
 	  </para>
 	</listitem>
       </varlistentry>
+      <varlistentry>
+        <term>default_device</term>
+	<listitem>
+	  <para>
+	    Set default device. This is used if -d option is not set.
+	  </para>
+	</listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
