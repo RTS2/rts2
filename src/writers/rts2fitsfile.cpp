@@ -30,7 +30,7 @@ std::string
 Rts2FitsFile::getFitsErrors ()
 {
 	std::ostringstream os;
-	char buf[30];
+	char buf[200];
 	char errmsg[81];
 
 	fits_get_errstatus (fits_status, buf);
