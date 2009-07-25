@@ -18,6 +18,8 @@
  */
 
 #include "rts2connnosend.h"
+#include "error.h"
+
 #include <ostream>
 
 namespace rts2core
@@ -29,33 +31,22 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnError
+class ConnError: public Error
 {
 	private:
-		const char *msg;
 		int errn;
 	protected:
-		/**
-		 * Returns message associated with the error.
-		 */
-		const char *getMsg ()
-		{
-			return msg;
-		}
-
 		const char *getErrDetails ()
 		{
 			return strerror (errn);
 		}
 	public:
-		ConnError (const char *_msg)
+		ConnError (const char *_msg): Error (_msg)
 		{
-			msg = _msg;
 		}
 
-		ConnError (const char *_msg, int _errn)
+		ConnError (const char *_msg, int _errn): Error (_msg)
 		{
-			msg = _msg;
 			errn = _errn;
 		}
 

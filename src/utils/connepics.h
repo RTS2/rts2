@@ -20,7 +20,8 @@
 #ifndef __RTS2_CONNEPICS__
 #define __RTS2_CONNEPICS__
 
-#include "../utils/rts2connnosend.h"
+#include "rts2connnosend.h"
+#include "error.h"
 
 #include <cadef.h>
 #include <map>
@@ -33,31 +34,24 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnEpicsError
+class ConnEpicsError:public Error
 {
 	private:
-		const char *message;
 		int result;
 	protected:
-		const char *getMessage ()
-		{
-			return message;
-		}
-
 		const char *getError ()
 		{
 			return ca_message (result);
 		}
 	public:
-		ConnEpicsError (const char *_message, int _result)
+		ConnEpicsError (const char *_message, int _result): Error (_message)
 		{
-			message = _message;
 			result = _result;
 		}
 
 		friend std::ostream & operator << (std::ostream &_os, ConnEpicsError &_epics)
 		{
-			_os << _epics.getMessage () << _epics.getError ();
+			_os << _epics.getMsg () << _epics.getError ();
 			return _os;
 		}
 };
