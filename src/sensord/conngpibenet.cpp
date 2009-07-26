@@ -175,9 +175,9 @@ void ConnGpibEnet::initGpib ()
 
 	sendData (gpib_buf, 12, true);
 
-	char **ret_buf;
+	char *ret_buf;
 
-	sresp (ret_buf);
+	sresp (&ret_buf);
 
 	delete[] ret_buf;
 }
