@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
 	rts2-sensor-cloud4 rts2-sensor-brooks-356
 
-noinst_HEADERS = sensord.h sensorgpib.h conngpib.h davisudp.h fram-weather.h framudp.h davis.h
+noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h
 
 EXTRA_DIST = 
 
@@ -12,13 +12,13 @@ noinst_LIBRARIES = librts2sensord.a
 
 if GPIBLIB
 
-librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpib.cpp
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
 else
 
-librts2sensord_a_SOURCES = sensord.cpp
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpibenet.cpp
 
-EXTRA_DIST += sensorgpib.cpp conngpib.cpp
+EXTRA_DIST += conngpiblinux.cpp
 
 endif
 

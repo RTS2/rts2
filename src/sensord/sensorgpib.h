@@ -23,26 +23,28 @@
 #include "sensord.h"
 #include "conngpib.h"
 
-#include <gpib/ib.h>
-
 namespace rts2sensord
 {
 
 class Gpib:public Sensor
 {
 	private:
+		int pad;
+		int minor;
+
+		HostString *enet_addr;
+
 		ConnGpib *connGpib;
 	protected:
-		int gpibWrite (const char *buf) { return connGpib->gpibWrite (buf); }
-		int gpibRead (void *buf, int blen) { return connGpib->gpibRead (buf, blen); }
-		int gpibWriteRead (const char *buf, char *val, int blen = 50) { return connGpib->gpibWriteRead (buf, val, blen); }
+		void gpibWrite (const char *buf) { connGpib->gpibWrite (buf); }
+		void gpibRead (void *buf, int blen) { connGpib->gpibRead (buf, blen); }
+		void gpibWriteRead (const char *buf, char *val, int blen = 50) { connGpib->gpibWriteRead (buf, val, blen); }
 
-		int gpibWaitSRQ () { return connGpib->gpibWaitSRQ (); }
+		void gpibWaitSRQ () { connGpib->gpibWaitSRQ (); }
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
-
-		void setPad (int _pad) { return connGpib->setPad (_pad); }
+	
 	public:
 		Gpib (int argc, char **argv);
 		virtual ~ Gpib (void);

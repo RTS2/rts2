@@ -17,12 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "conngpib.h"
+#include "conngpiblinux.h"
+
+#include "../utils/rts2connnosend.h"
 
 using namespace rts2sensord;
 
-int
-ConnGpib::gpibWrite (const char *_buf)
+void ConnGpibLinux::gpibWrite (const char *_buf)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, _buf, strlen (_buf));
@@ -30,46 +31,32 @@ ConnGpib::gpibWrite (const char *_buf)
 	logStream (MESSAGE_DEBUG) << "write " << _buf << sendLog;
 	#endif
 	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error writing " << _buf
-			<< gpib_error_string (ret) << " " << ret << sendLog;
-		return -1;
-	}
-	return 0;
+		throw GpibLinuxError ("error while writing to GPIB bus", _buf, ret);
 }
 
 
-int
-ConnGpib::gpibRead (void *_buf, int blen)
+void ConnGpibLinux::gpibRead (void *_buf, int &blen)
 {
 	int ret;
 	ret = ibrd (gpib_dev, _buf, blen);
+	((char *)_buf)[ibcnt] = '\0';
 	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading " << _buf << " " 
-			<< gpib_error_string (ret) << " " << ret << sendLog;
-		return -1;
-	}
+		throw GpibLinuxError ("error while reading from GPIB bus", (const char *) _buf, ret);
+	blen = ibcnt;
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) _buf
 		<< "' ret " << ret << sendLog;
 	#endif
-	((char *)_buf)[ibcnt] = '\0';
-	return ibcnt;
 }
 
 
-int
-ConnGpib::gpibWriteRead (const char *_buf, char *val, int blen)
+void ConnGpibLinux::gpibWriteRead (const char *_buf, char *val, int blen)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, _buf, strlen (_buf));
 	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error writing " << _buf << " " << ret <<
-			sendLog;
-		return -1;
-	}
+		throw GpibLinuxError ("error while writing to GPIB bus", _buf, ret);
+
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << _buf <<
 		" ret " << ret << sendLog;
@@ -78,66 +65,51 @@ ConnGpib::gpibWriteRead (const char *_buf, char *val, int blen)
 	ret = ibrd (gpib_dev, val, blen);
 	val[ibcnt] = '\0';
 	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading reply from " << _buf <<
-			", readed " << val << " " << ret << sendLog;
-		return -1;
-	}
+		throw GpibLinuxError ("error while reading from GPIB bus", _buf, ret);
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
 		" ret " << ret << sendLog;
 	#endif
-	return 0;
 }
 
 
-int
-ConnGpib::gpibWaitSRQ ()
+void ConnGpibLinux::gpibWaitSRQ ()
 {
 	int ret;
 	short res;
 	while (true)
 	{
-		ret = iblines (0, &res);
+		ret = iblines (gpib_dev, &res);
 		if (ret & ERR)
-		{
-			// strange error occuring when SRQ already occurred..
-			if (iberr == 0)
-				return 0;
-			logStream (MESSAGE_ERROR) << "Error while waiting for SRQ "
-				<< gpib_error_string (iberr) << " " << iberr << sendLog;
-		}
+			throw rts2core::Error ("Error while waiting for SQR");
 		if (res & BusSRQ)
-			return 0;
-		usleep (USEC_SEC / 10);
+			return;
 	}
 }
 
 
-int
-ConnGpib::init ()
+void ConnGpibLinux::initGpib ()
 {
 	gpib_dev = ibdev (minor, pad, 0, T3s, 1, 0);
 	if (gpib_dev < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot init GPIB device on minor " <<
 			minor << ", pad " << pad << sendLog;
-		return -1;
+		throw rts2core::Error ("cannot init GPIB device");
 	}
-	return 0;
 }
 
 
-ConnGpib::ConnGpib (Rts2Block *_master):Rts2ConnNoSend (_master)
+ConnGpibLinux::ConnGpibLinux (int _minor, int _pad):ConnGpib ()
 {
 	gpib_dev = -1;
 
-	minor = 0;
-	pad = 0;
+	minor = _minor;
+	pad = _pad;
 }
 
 
-ConnGpib::~ConnGpib (void)
+ConnGpibLinux::~ConnGpibLinux (void)
 {
 	ibclr (gpib_dev);
 	ibonl (gpib_dev, 0);

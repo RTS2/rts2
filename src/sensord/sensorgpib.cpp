@@ -19,6 +19,9 @@
 
 #include "sensorgpib.h"
 
+#include "conngpiblinux.h"
+#include "conngpibenet.h"
+
 using namespace rts2sensord;
 
 
@@ -28,10 +31,13 @@ Gpib::processOption (int _opt)
 	switch (_opt)
 	{
 		case 'm':
-			connGpib->setMinor (atoi (optarg));
+			minor = atoi (optarg);
 			break;
 		case 'p':
-			connGpib->setPad (atoi (optarg));
+			pad = atoi (optarg);
+			break;
+		case 'n':
+			enet_addr = new HostString (optarg, "5000");
 			break;
 		default:
 			return Sensor::processOption (_opt);
@@ -48,16 +54,50 @@ Gpib::init ()
 	if (ret)
 		return ret;
 
-	return connGpib->init ();
+	// create connGpin
+	if (enet_addr != NULL)
+	{
+		if (pad < 0)
+		{
+			std::cerr << "unknown pad number" << std::endl;
+			return -1;
+		}
+		connGpib = new ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
+	}
+	else if (pad >= 0)
+	{
+		connGpib = new ConnGpibLinux (minor, pad);
+	}
+	// enet
+	else
+	{
+		std::cerr << "Device connection was not specified, exiting" << std::endl;
+	}
+
+	try
+	{
+		connGpib->initGpib ();
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
+	}
+	return 0;
 }
 
 
 Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
-	connGpib = new ConnGpib (this);
+	minor = 0;
+	pad = -1;
+	enet_addr = NULL;
 
-	addOption ('m', "minor", 1, "board number (default to 0)");
-	addOption ('p', "pad", 1, "device number (counted from 0, not from 1)");
+	connGpib = NULL;
+
+	addOption ('m', NULL, 1, "board number (default to 0)");
+	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
+	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
 }
 
 

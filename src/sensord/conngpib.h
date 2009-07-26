@@ -20,47 +20,47 @@
 #ifndef __RTS2_CONN_GPIB__
 #define __RTS2_CONN_GPIB__
 
-#include "../utils/rts2connnosend.h"
-
 #include <gpib/ib.h>
 
 namespace rts2sensord
 {
 
 /**
- * Connection to a single GPIB device.
+ * Class for connections to GPIB devices.
+ *
+ * This is an abstract class, which provides interface to GPIB. It provides
+ * methods to communicate with IEEE-488 GPIB bus. It is subclassed by
+ * ConnGpibLinux and ConnGpibEnet.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnGpib:public Rts2ConnNoSend
+class ConnGpib
 {
-	private:
-		int minor;
-		int pad;
-
-		int gpib_dev;
 	public:
-		int gpibWrite (const char *_buf);
+		virtual void gpibWrite (const char *_buf) = 0;
 
 		/*
 		 * Read data from GPIB device to a buffer.
 		 *
 		 * @param _buf  Buffer where data will be stored.
 		 * @param blne  Buffer length in bytes.
-		 * @return -1 on error, number of bytes readed on success.
+		 *
+		 * @throw rts2core::Error and its descendants
 		 */
-		int gpibRead (void *_buf, int blen);
-		int gpibWriteRead (const char *_buf, char *val, int blen = 50);
+		virtual void gpibRead (void *_buf, int &blen) = 0;
+		virtual void gpibWriteRead (const char *_buf, char *val, int blen = 50) = 0;
 
-		int gpibWaitSRQ ();
+		virtual void gpibWaitSRQ () = 0;
 
-		virtual int init ();
+		virtual void initGpib () = 0;
 
-		void setMinor (int _minor) { minor = _minor; }
-		void setPad (int _pad) { pad = _pad; }
+		ConnGpib ()
+		{
+		}
 
-		ConnGpib (Rts2Block *_master);
-		virtual ~ ConnGpib (void);
+		virtual ~ ConnGpib (void)
+		{
+		}
 };
 
 };

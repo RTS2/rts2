@@ -70,6 +70,9 @@ class Dummy:public Sensor
 
 				statContent->addValue (aval);
 
+				statTest5->addValue (aval, 5);
+				statTest5->calculate ();
+
 				infoAll ();
 				return 0;
 			}
