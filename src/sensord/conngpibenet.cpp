@@ -27,8 +27,8 @@ void ConnGpibEnet::sread (char **ret_buf)
 	char gpib_buf[4];
 	receiveData (gpib_buf, 4, 10, true);
 
-	flags = ntohs (*((uint16_t *) gpib_buf));
-	len = ntohs (*((uint16_t *) gpib_buf + 2));
+	flags = ntohs (*((uint16_t *) (gpib_buf)));
+	len = ntohs (*((uint16_t *) (gpib_buf + 2)));
 
 	if (flags != 0x0000)
 	{
@@ -47,9 +47,9 @@ void ConnGpibEnet::sresp (char **ret_buf)
 	sread (&sread_ret);
 
 	// parse top of reply..
-	sta = ntohs (*((uint16_t *) sread_ret));
-	err = ntohs (*((uint16_t *) sread_ret + 2));
-	cnt = ntohl (*((uint32_t *) sread_ret + 8));
+	sta = ntohs (*((uint16_t *) (sread_ret)));
+	err = ntohs (*((uint16_t *) (sread_ret + 2)));
+	cnt = ntohl (*((uint32_t *) (sread_ret + 8)));
 
 	if (ret_buf != NULL)
 		*ret_buf = sread_ret;
@@ -84,7 +84,7 @@ void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 		throw rts2core::Error ("invalid lenght in read reply");
 	}
 	
-	data_len = ntohs (*((uint16_t *) sbuf + 14));
+	data_len = ntohs (*((uint16_t *) (sbuf + 14)));
 	delete[] sbuf;
 	if (data_len > blen)
 	{
@@ -140,7 +140,7 @@ void ConnGpibEnet::gpibWaitSRQ ()
 			delete[] sbuf;
 			throw rts2core::Error ("Too short reply from iblines call");
 		}
-		if (ntohs (*((uint16_t *) sbuf + 12)) & 0x2000)
+		if (ntohs (*((uint16_t *) (sbuf + 12))) & 0x2000)
 			return;
 	}
 }
