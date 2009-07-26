@@ -93,7 +93,7 @@ ConnTCP::init ()
 
 
 void
-ConnTCP::sendData (void *data, int len, bool binary)
+ConnTCP::sendData (const void *data, int len, bool binary)
 {
 	int rest = len;
 	while (rest > 0)

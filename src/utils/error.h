@@ -19,6 +19,7 @@
 #ifndef __RTS2_ERROR__
 #define __RTS2_ERROR__
 
+#include <string>
 #include <ostream>
 
 namespace rts2core
@@ -31,30 +32,43 @@ namespace rts2core
  */
 class Error
 {
-	protected:
-
-		/**
-		 * Returns message associated with the error.
-		 */
-		const char *getMsg ()
+	public:
+		Error ()
 		{
-			return msg;
 		}
 
-	public:
 		Error (const char *_msg)
+		{
+			msg = std::string (_msg);
+		}
+
+		Error (std::string _msg)
 		{
 			msg = _msg;
 		}
 
-		friend std::ostream & operator << (std::ostream &_os, Error &_err)
+		/**
+		 * Returns message associated with the error.
+		 */
+		std::string getMsg ()
+		{
+			return msg;
+		}
+
+		friend std::ostream & operator << (std::ostream &_os, Error _err)
 		{
 			_os << "error: " << _err.getMsg ();
 			return _os;
 		}
 
+	protected:
+		void setMsg (std::string _msg)
+		{
+			msg = _msg;
+		}
+
 	private:
-		const char *msg;
+		std::string msg;
 };
 
 };

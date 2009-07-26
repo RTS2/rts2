@@ -33,27 +33,14 @@ namespace rts2core
  */
 class ConnError: public Error
 {
-	private:
-		int errn;
-	protected:
-		const char *getErrDetails ()
-		{
-			return strerror (errn);
-		}
 	public:
 		ConnError (const char *_msg): Error (_msg)
 		{
 		}
 
-		ConnError (const char *_msg, int _errn): Error (_msg)
+		ConnError (const char *_msg, int _errn): Error ()
 		{
-			errn = _errn;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnError &_err)
-		{
-			_os << "connection error: " << _err.getMsg () << " - " << _err.getErrDetails ();
-			return _os;
+			setMsg (std::string ("connection error: ") + strerror (_errn));
 		}
 };
 
@@ -167,7 +154,7 @@ class ConnTCP:public Rts2ConnNoSend
 		 *
 		 * @throw ConnError on error.
 		 */
-		void sendData (void *data, int len, bool binary = true);
+		void sendData (const void *data, int len, bool binary = true);
 
 		void sendData (const char *data);
 

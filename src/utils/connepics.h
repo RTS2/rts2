@@ -36,23 +36,10 @@ namespace rts2core
  */
 class ConnEpicsError:public Error
 {
-	private:
-		int result;
-	protected:
-		const char *getError ()
-		{
-			return ca_message (result);
-		}
 	public:
-		ConnEpicsError (const char *_message, int _result): Error (_message)
+		ConnEpicsError (const char *_message, int _result): Error ()
 		{
-			result = _result;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnEpicsError &_epics)
-		{
-			_os << _epics.getMsg () << _epics.getError ();
-			return _os;
+			setMsg (std::string (_msg) + ca_message (_result));
 		}
 };
 
@@ -64,19 +51,11 @@ class ConnEpicsError:public Error
  */
 class ConnEpicsErrorChannel:public ConnEpicsError
 {
-	private:
-		const char *pvname;
 	public:
 		ConnEpicsErrorChannel (const char *_message, const char *_pvname, int _result)
 		:ConnEpicsError (_message, _result)
 		{
-			pvname = _pvname;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnEpicsErrorChannel &_epics)
-		{
-			_os << _epics.getMessage () << ", channel " << _epics.pvname << " error " << _epics.getError ();
-			return _os;
+		 	setMsg (std::string (_message) + ", channel " + _epics.pv_nan + " error " + ca_message (_result));
 		}
 };
 
