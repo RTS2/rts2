@@ -296,7 +296,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
 	JD = ln_get_julian_from_timet (&ct);
 	mean_sidereal =
-		ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
+		ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) - obs.lng);
 
 	if (!isnan (ra_step))
 	{
