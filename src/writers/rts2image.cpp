@@ -2132,6 +2132,15 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 void
 Rts2Image::writeConnArray (const char *name, Rts2Value *val)
 {
+	int ret;
+	if (!getFitsFile ())
+	{
+		if (flags & IMAGE_NOT_SAVE)
+			return;
+		ret = openImage ();
+		if (ret)
+			return;
+	}
 	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_DOUBLE:
