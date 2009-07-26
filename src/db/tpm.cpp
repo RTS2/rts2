@@ -211,7 +211,7 @@ TPM::headline (Rts2Image * image, std::ostream & _os)
 	obs.lng = Rts2Config::instance ()->getObserver ()->lng;
 	// try to get latitude from image
 	image->getValue ("LATITUDE", obs.lat);
-	image->getValue ("LONGITUDE", obs.lng);
+	image->getValue ("LONGITUD", obs.lng);
 	// standart header
 								 // we are observing on equatorial mount
 	_os << "RTS2 model from astrometry" << std::endl << ":EQUAT" << std::endl;
@@ -296,7 +296,7 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
 	JD = ln_get_julian_from_timet (&ct);
 	mean_sidereal =
-		ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) - obs.lng);
+		ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) + obs.lng);
 
 	if (!isnan (ra_step))
 	{
