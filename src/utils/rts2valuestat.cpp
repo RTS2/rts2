@@ -31,6 +31,7 @@ Rts2ValueDoubleStat::clearStat ()
 	max = rts2_nan ("f");
 	stdev = rts2_nan ("f");
 	valueList.clear ();
+	changed ();
 }
 
 
@@ -65,6 +66,7 @@ Rts2ValueDoubleStat::calculate ()
 		mode = sorted[numMes / 2];
 	else
 		mode = (sorted[numMes / 2 - 1] + sorted[numMes / 2]) / 2.0;
+	changed ();
 }
 
 
