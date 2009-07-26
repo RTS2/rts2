@@ -61,7 +61,7 @@ void ConnGpibEnet::gpibWrite (const char *_buf)
 {
 	// write header
 	char gpib_buf[13] = "\x23\x05\x05\x08IIII\x00\x54\x00\x00";
-	*((int32_t *) gpib_buf + 4) = strlen (buf);
+	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (buf));
 	sendData (gpib_buf, 12, true);
 	sendData ((void *) _buf, strlen (buf));
 
@@ -72,7 +72,7 @@ void ConnGpibEnet::gpibWrite (const char *_buf)
 void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 {
 	char gpib_buf[13] = "\x16\x00\x00\x00IIII\x40\x63\x16\x40";
-	*((int32_t *) gpib_buf + 4) = blen;
+	*((int32_t *) (gpib_buf + 4)) = htonl (blen);
 	sendData (gpib_buf, 12, true);
 
 	char *sbuf;
