@@ -148,6 +148,12 @@ ConnFork::init ()
 		initFailed ();
 		return 1;
 	}
+	// first check if exePath exist and we have run permissions..
+	if (access (exePath, X_OK))
+	{
+		logStream (MESSAGE_ERROR) << "executing " << exePath << ": " << strerror (errno) << sendLog;
+		return -1;
+	}
 	int filedes[2];
 	int filedeserr[2];
 	ret = pipe (filedes);
@@ -238,7 +244,7 @@ ConnFork::init ()
 
 	ret = newProcess ();
 	if (ret)
-		logStream (MESSAGE_ERROR) << "ConnFork::init newProcess return : " <<
+		logStream (MESSAGE_ERROR) << "ConnFork::init " << exePath << " newProcess return : " <<
 			ret << " " << strerror (errno) << sendLog;
 	exit (0);
 }
