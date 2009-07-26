@@ -16,9 +16,9 @@ librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpiblinux.cpp conngpib
 
 else
 
-librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpibenet.cpp
+librts2sensord_a_SOURCES = sensord.cpp
 
-EXTRA_DIST += conngpiblinux.cpp
+EXTRA_DIST += sensorgpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
 endif
 
