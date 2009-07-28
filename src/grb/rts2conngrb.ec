@@ -1008,7 +1008,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		execConn->addArg (grb_ra);
 		execConn->addArg (grb_dec);
 		execConn->addArg (grb_is_grb);
-		execConn->addArg (grb_date);
+		execConn->addArg (*grb_date);
 		execConn->addArg (grb_errorbox);
 		execConn->addArg (grb_isnew);
 
