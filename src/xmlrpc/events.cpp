@@ -64,7 +64,11 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 	}
 	for (; action != NULL; action = action->next)
 	{
-		if (xmlStrEqual (action->name, (xmlChar *) "command"))
+		if (xmlStrEqual (action->name, (xmlChar *) "record"))
+		{
+			stateCommands.push_back (new StateChangeRecord (deviceName, changeMask, newStateValue));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
 			if (action->children == NULL)
 			{
@@ -72,7 +76,7 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 				return;
 			}
 			commandName = std::string ((char *) action->children->content);
-			stateCommands.push_back (StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+			stateCommands.push_back (new StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
 		}
 		else
 		{
@@ -89,12 +93,22 @@ Events::parseValue (xmlNodePtr event, std::string deviceName)
 	if (valueName == NULL)
 		throw XmlMissingAttribute (event, "name");
 
+	xmlAttrPtr cadencyPtr = xmlHasProp (event, (xmlChar *) "cadency");
+	float cadency = -1;
+	if (cadencyPtr != NULL)
+		cadency = atof ((char *) cadencyPtr->children->content);
+
 	xmlNodePtr action = event->children;
 	for (; action != NULL; action = action->next)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
-			valueCommands.push_back (ValueChangeCommand (deviceName, std::string ((char *) valueName->children->content)));
+			valueCommands.push_back (new ValueChangeRecord (deviceName, std::string ((char *) valueName->children->content), cadency));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
+		{
+			valueCommands.push_back (new ValueChangeCommand (deviceName, std::string ((char *) valueName->children->content), cadency,
+				std::string ((char *) action->children->content)));
 		}
 		else
 		{

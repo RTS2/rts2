@@ -22,7 +22,24 @@
 
 using namespace rts2db;
 
-void RecordsSet::load (double t_from, double t_to)
+int RecordsSet::getValueType ()
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_recval_id = recval_id;
+	int d_value_type;
+	EXEC SQL END DECLARE SECTION;
+
+	if (value_type != -1)
+		return value_type;
+
+	EXEC SQL SELECT value_type INTO :d_value_type FROM recvals WHERE recval_id = :d_recval_id;
+	if (sqlca.sqlcode)
+		throw SqlError ();
+	value_type = d_value_type;
+	return value_type;	
+}
+
+void RecordsSet::loadState (double t_from, double t_to)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_recval_id = recval_id;
@@ -32,23 +49,23 @@ void RecordsSet::load (double t_from, double t_to)
 	double d_t_to = t_to;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL DECLARE records_avg_cur CURSOR FOR
+	EXEC SQL DECLARE records_state_cur CURSOR FOR
 	SELECT
 		EXTRACT (EPOCH FROM rectime),
 		value
 	FROM
-		records
+		records_state
 	WHERE
 		  recval_id = :d_recval_id
 		AND rectime BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
 	ORDER BY
 		rectime;
 
-	EXEC SQL OPEN records_avg_cur;
+	EXEC SQL OPEN records_state_cur;
 
 	while (true)
 	{
-		EXEC SQL FETCH next FROM records_avg_cur INTO
+		EXEC SQL FETCH next FROM records_state_cur INTO
 			:d_rectime,
 			:d_value;
 		if (sqlca.sqlcode)
@@ -60,6 +77,65 @@ void RecordsSet::load (double t_from, double t_to)
 	{
 		throw SqlError();
 	}
-	EXEC SQL CLOSE records_avg_cur;
+	EXEC SQL CLOSE records_state_cur;
 	EXEC SQL ROLLBACK;
 }
+
+void RecordsSet::loadDouble (double t_from, double t_to)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_recval_id = recval_id;
+	double d_rectime;
+	double d_value;
+	double d_t_from = t_from;
+	double d_t_to = t_to;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DECLARE records_double_cur CURSOR FOR
+	SELECT
+		EXTRACT (EPOCH FROM rectime),
+		value
+	FROM
+		records_double
+	WHERE
+		  recval_id = :d_recval_id
+		AND rectime BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
+	ORDER BY
+		rectime;
+
+	EXEC SQL OPEN records_double_cur;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM records_double_cur INTO
+			:d_rectime,
+			:d_value;
+		if (sqlca.sqlcode)
+			break;
+		push_back (Record (d_rectime, d_value));
+	}
+
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		throw SqlError();
+	}
+	EXEC SQL CLOSE records_double_cur;
+	EXEC SQL ROLLBACK;
+}
+
+
+void RecordsSet::load (double t_from, double t_to)
+{
+	switch (getValueType ())
+	{
+		case 0:
+			loadState (t_from, t_to);
+			break;
+		case 1:
+			loadDouble (t_from, t_to);
+			break;
+		default:
+			throw rts2core::Error ("unknown value type");
+	}
+}
+

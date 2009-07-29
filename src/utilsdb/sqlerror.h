@@ -21,6 +21,7 @@
 #define __RTS2_SQLERR__
 
 #include <string>
+#include "../utils/error.h"
 
 namespace rts2db {
 
@@ -29,20 +30,10 @@ namespace rts2db {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class SqlError
+class SqlError: public rts2core::Error
 {
 	public:
-		SqlError ()
-		{
-		}
-
-		static std::string getError ();
-
-		friend std::ostream & operator << (std::ostream & _os, SqlError & err)
-		{
-			_os << err.getError ();
-			return _os;
-		}
+		SqlError ();
 };
 
 }

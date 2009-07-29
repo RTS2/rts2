@@ -39,8 +39,8 @@
 #endif /* HAVE_PGSQL */
 
 #include "../utils/libnova_cpp.h"
-#include "../utils/connfork.h"
 #include "../utils/timestamp.h"
+#include "../utils/error.h"
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
 #include "session.h"
@@ -237,7 +237,15 @@ XmlRpcd::init ()
 	// try states..
 	if (stateChangeFile != NULL)
 	{
-		events.load (stateChangeFile);
+		try
+		{
+			events.load (stateChangeFile);
+		}
+		catch (XmlError ex)
+		{
+			logStream (MESSAGE_ERROR) << ex << sendLog;
+			return -1;
+		}
 	}
 
 	setMessageMask (MESSAGE_MASK_ALL);
@@ -320,24 +328,14 @@ XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
 void
 XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 {
+	double now = getNow ();
 	// look if there is some state change command entry, which match us..
 	for (StateCommands::iterator iter = events.stateCommands.begin (); iter != events.stateCommands.end (); iter++)
 	{
-		StateChangeCommand sc = (*iter);
-		if (sc.isForDevice (conn->getName (), conn->getOtherType ()) && sc.executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
+		StateChange *sc = (*iter);
+		if (sc->isForDevice (conn->getName (), conn->getOtherType ()) && sc->executeOnStateChange (new_state->getOldValue (), new_state->getValue ()))
 		{
-			int ret;
-			rts2core::ConnFork *cf = new rts2core::ConnFork (this, sc.getCommand ().c_str (), true, 100);
-			cf->addArg (conn->getName ());
-			cf->addArg (conn->getStateString ());
-			ret = cf->init ();
-			if (ret)
-			{
-				delete cf;
-				return;
-			}
-
-			addConnection (cf);
+			sc->run (this, conn, now);
 		}
 	}
 }
@@ -346,25 +344,23 @@ XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 void
 XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 {
+	double now = getNow ();
 	// look if there is some state change command entry, which match us..
 	for (ValueCommands::iterator iter = events.valueCommands.begin (); iter != events.valueCommands.end (); iter++)
 	{
-		ValueChangeCommand vc = (*iter);
-		if (vc.isForValue (conn->getName (), new_value->getName ()))
+		ValueChange *vc = (*iter);
+		if (vc->isForValue (conn->getName (), new_value->getName (), now))
+		 
 		{
-#ifdef HAVE_PGSQL
 			try
 			{
-				vc.run (new_value, conn->getInfoTime ());
+				vc->run (this, new_value, now);
+				vc->runSuccessfully (now);
 			}
-			catch (rts2db::SqlError err)
+			catch (rts2core::Error err)
 			{
 				logStream (MESSAGE_ERROR) << err << sendLog;
 			}
-#else
-			vc.run (new_value, conn->getInfoTime ());
-#endif /* ! HAVE_PGSQL */
-
 		}
 	}
 }
@@ -1349,7 +1345,7 @@ class TicketInfo: public XmlRpcServerMethod
 			}
 			catch (rts2db::SqlError e)
 			{
-				throw XmlRpcException ("DB error: " + e.getError ());
+				throw XmlRpcException ("DB error: " + e.getMsg ());
 			}
 		}
 } ticketInfo (&xmlrpc_server);
@@ -1376,6 +1372,7 @@ class RecordsValues: public XmlRpcServerMethod
 					res["id"] = rv.getId ();
 					res["device"] = rv.getDevice ();
 					res["value_name"] = rv.getValueName ();
+					res["value_type"] = rv.getType ();
 					t = rv.getFrom ();
 					res["from"] = XmlRpcValue (gmtime (&t));
 					t = rv.getTo ();
@@ -1385,7 +1382,7 @@ class RecordsValues: public XmlRpcServerMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException ("DB error: " + err.getError ());
+				throw XmlRpcException ("DB error: " + err.getMsg ());
 			}
 		}
 } recordValues (&xmlrpc_server);
@@ -1418,7 +1415,7 @@ class Records: public XmlRpcServerMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException (err.getError ());
+				throw XmlRpcException (err.getMsg ());
 			}
 		}
 } records (&xmlrpc_server);
@@ -1454,7 +1451,7 @@ class RecordsAverage: public XmlRpcServerMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException (err.getError ());
+				throw XmlRpcException (err.getMsg ());
 			}
 		}
 } recordAverage (&xmlrpc_server);

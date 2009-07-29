@@ -32,7 +32,7 @@ void RecvalsSet::load ()
 	double d_to;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL DECLARE recval_cur CURSOR FOR
+	EXEC SQL DECLARE recval_state_cur CURSOR FOR
 	SELECT
 		recval_id,
 		device_name,
@@ -40,13 +40,13 @@ void RecvalsSet::load ()
 		EXTRACT (EPOCH FROM time_from),
 		EXTRACT (EPOCH FROM time_to)
 	FROM
-		recvals_statistics;
+		recvals_state_statistics;
 
-	EXEC SQL OPEN recval_cur;
+	EXEC SQL OPEN recval_state_cur;
 
 	while (true)
 	{
-		EXEC SQL FETCH next FROM recval_cur INTO
+		EXEC SQL FETCH next FROM recval_state_cur INTO
 			:d_recval_id,
 			:d_device_name,
 			:d_value_name,
@@ -56,13 +56,47 @@ void RecvalsSet::load ()
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_from, d_to));
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 0, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
 		throw SqlError();
 	}
-	EXEC SQL CLOSE recval_cur;
+	EXEC SQL CLOSE recval_state_cur;
+
+
+	EXEC SQL DECLARE recval_double_cur CURSOR FOR
+	SELECT
+		recval_id,
+		device_name,
+		value_name,
+		EXTRACT (EPOCH FROM time_from),
+		EXTRACT (EPOCH FROM time_to)
+	FROM
+		recvals_double_statistics;
+
+	EXEC SQL OPEN recval_double_cur;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM recval_double_cur INTO
+			:d_recval_id,
+			:d_device_name,
+			:d_value_name,
+			:d_from,
+			:d_to;
+		if (sqlca.sqlcode)
+			break;
+		d_device_name.arr[d_device_name.len] = '\0';
+		d_value_name.arr[d_value_name.len] = '\0';
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 1, d_from, d_to));
+	}
+
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		throw SqlError();
+	}
+	EXEC SQL CLOSE recval_double_cur;
 	EXEC SQL ROLLBACK;
 }

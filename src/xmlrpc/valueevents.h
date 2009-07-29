@@ -21,6 +21,7 @@
 #define __RTS2__VALUEEVENTS__
 
 #include "../utils/rts2value.h"
+#include "../utils/rts2block.h"
 
 #include <string>
 #include <list>
@@ -31,39 +32,92 @@ namespace rts2xmlrpc
 /**
  * Class triggered on value change.
  */
-class ValueChangeCommand
+class ValueChange
 {
 	private:
+		double lastTime;
+		float cadency;
+	
+	protected:
 		std::string deviceName;
 		std::string valueName;
 
-		int dbValueId;
-
 	public:
-		ValueChangeCommand (std::string _deviceName, std::string _valueName)
+		ValueChange (std::string _deviceName, std::string _valueName, float _cadency)
 		{
 			deviceName = _deviceName;
 			valueName = _valueName;
-			dbValueId = -1;
+			
+			lastTime = 0;
+			cadency = _cadency;
 		}
 
-		bool isForValue (std::string _deviceName, std::string _valueName)
+		bool isForValue (std::string _deviceName, std::string _valueName, double infoTime)
 		{
-			return deviceName == _deviceName && valueName == _valueName;
+			return deviceName == _deviceName && valueName == _valueName && (cadency < 0 || lastTime + cadency < infoTime);
 		}
 
 		/**
-		 * Triggered when value is changed.
+		 * Triggered when value is changed. Throws Errors on error.
 		 */
-		void run (Rts2Value *val, double validTime);
+		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime) = 0;
+
+		/**
+		 * Called at the end of run method, when command change was run succesfully.
+		 */
+		void runSuccessfully (double validTime)
+		{
+			lastTime = validTime;
+		}
 };
+
+/**
+ * Record value change, either to database (rts2-xmlrpcd is compiled with database support) or
+ * to standard output (if rts2-xmlrpcd is compiled without database support).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueChangeRecord: public ValueChange
+{
+	private:
+		int dbValueId;
+	public:
+		ValueChangeRecord (std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_deviceName, _valueName, _cadency)
+		{
+			dbValueId = -1;
+		}
+
+		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime);
+};
+
+
+/**
+ * Run command on value change.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueChangeCommand: public ValueChange
+{
+	private:
+		std::string commandName;
+
+	public:
+		ValueChangeCommand (std::string _deviceName, std::string _valueName, float _cadency, std::string _commandName):ValueChange (_deviceName, _valueName, _cadency)
+		{
+			commandName = _commandName;
+		}
+
+		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime);
+};
+
+
 
 /**
  * Holds list of ValueChangeCommands
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueCommands:public std::list <ValueChangeCommand>
+class ValueCommands:public std::list <ValueChange *>
 {
 	public:
 		ValueCommands ()
@@ -72,6 +126,8 @@ class ValueCommands:public std::list <ValueChangeCommand>
 
 		~ValueCommands ()
 		{
+			for (ValueCommands::iterator iter = begin (); iter != end (); iter++)
+				delete (*iter);
 		}
 };
 

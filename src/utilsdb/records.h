@@ -20,6 +20,8 @@
 #include <list>
 #include <string>
 
+#include "../utils/error.h"
+
 namespace rts2db
 {
 
@@ -53,10 +55,18 @@ class RecordsSet: public std::list <Record>
 {
 	private:
 		int recval_id;
+		int value_type;
+
+		// get value type..
+		int getValueType ();
+
+		void loadState (double t_from, double t_to);
+		void loadDouble (double t_from, double t_to);
 	public:
 		RecordsSet (int _recval_id)
 		{
 			recval_id = _recval_id;
+			value_type = -1;
 		}
 
 		/**

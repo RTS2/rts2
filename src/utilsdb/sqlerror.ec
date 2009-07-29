@@ -23,10 +23,10 @@
 
 using namespace rts2db;
 
-std::string
-SqlError::getError ()
+SqlError::SqlError ()
 {
 	std::ostringstream _os;
 	_os << sqlca.sqlerrm.sqlerrmc << " (#" << sqlca.sqlcode << ")";
-	return _os.str ();
+	setMsg (_os.str ());
+	EXEC SQL ROLLBACK;
 }

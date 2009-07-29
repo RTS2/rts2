@@ -36,7 +36,7 @@ void RecordAvgSet::load (double t_from, double t_to)
 	int d_nrec;
 	EXEC SQL END DECLARE SECTION;
 
-	EXEC SQL DECLARE records_avg_cur CURSOR FOR
+	EXEC SQL DECLARE records_double_avg_cur CURSOR FOR
 	SELECT
 		EXTRACT (EPOCH FROM hour),
 		avg_value,
@@ -44,18 +44,18 @@ void RecordAvgSet::load (double t_from, double t_to)
 		max_value,
 		nrec
 	FROM
-		mv_records_hour
+		mv_records_double_hour
 	WHERE
 		  recval_id = :d_recval_id
 		AND hour BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
 	ORDER BY
 		hour;
 
-	EXEC SQL OPEN records_avg_cur;
+	EXEC SQL OPEN records_double_avg_cur;
 
 	while (true)
 	{
-		EXEC SQL FETCH next FROM records_avg_cur INTO
+		EXEC SQL FETCH next FROM records_double_avg_cur INTO
 			:d_rectime,
 			:d_avg,
 			:d_min,
@@ -70,6 +70,6 @@ void RecordAvgSet::load (double t_from, double t_to)
 	{
 		throw SqlError();
 	}
-	EXEC SQL CLOSE records_avg_cur;
+	EXEC SQL CLOSE records_double_avg_cur;
 	EXEC SQL ROLLBACK;
 }

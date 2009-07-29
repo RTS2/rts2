@@ -34,19 +34,22 @@ class Recval
 		int recval_id;
 		std::string device_name;
 		std::string value_name;
+		int value_type;
 		time_t from;
 		time_t to;
 	public:
-		Recval (int _recval_id, const char* _device_name, const char* _value_name, time_t _from, time_t _to)
+		Recval (int _recval_id, const char* _device_name, const char* _value_name, int _value_type, time_t _from, time_t _to)
 		{
 			recval_id = _recval_id;
 			device_name = std::string(_device_name);
 			value_name = std::string(_value_name);
+			value_type = _value_type;
 			from = _from;
 			to = _to;
 		}
 
 		int getId () { return recval_id; }
+		int getType () { return value_type; }
 		std::string getDevice () { return device_name; }
 		std::string getValueName () { return value_name; }
 		time_t getFrom () { return from; };

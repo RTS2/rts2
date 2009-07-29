@@ -20,9 +20,35 @@
 #include "stateevents.h"
 #include "message.h"
 
+#include "../utils/connfork.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2logstream.h"
 
+#include <config.h>
+
 using namespace rts2xmlrpc;
 
+#ifndef HAVE_PGSQL
 
+void StateChangeRecord::run (Rts2Block *_master, Rts2Conn *_conn, double validTime)
+{
+	std::cout << Timestamp (validTime) << " state of device: " << _conn->getName () << " " << _conn->getStateString () << std::endl;
+}
+
+#endif /* HAVE_PGSQL */
+
+void StateChangeCommand::run (Rts2Block *_master, Rts2Conn *_conn, double validTime)
+{
+	int ret;
+	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
+	cf->addArg (_conn->getName ());
+	cf->addArg (_conn->getStateString ());
+	ret = cf->init ();
+	if (ret)
+	{
+		delete cf;
+		return;
+	}
+
+	_master->addConnection (cf);
+}

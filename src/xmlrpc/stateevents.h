@@ -23,38 +23,32 @@
 #include <string>
 #include <list>
 
+#include "../utils/rts2block.h"
+
 namespace rts2xmlrpc
 {
 
 /**
- * Class for mapping between device names, state bit masks and 
- * command to be executed.
+ * Abstract class for state actions, parent of all StateChange* classes.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class StateChangeCommand
+class StateChange
 {
 	private:
 		std::string deviceName;
 		int changeMask;
 		int newStateValue;
-		std::string commandName;
+	
+	protected:
+		int getChangeMask () { return changeMask; };
 
 	public:
-		StateChangeCommand (std::string _deviceName, int _changeMask, int _newStateValue, std::string _commandName)
+		StateChange (std::string _deviceName, int _changeMask, int _newStateValue)
 		{
 			deviceName = _deviceName;
 			changeMask = _changeMask;
 			newStateValue = _newStateValue;
-			commandName = _commandName;
-		}
-
-		/**
-		 * Returns command associated with this state change.
-		 */
-		std::string getCommand ()
-		{
-			return commandName;
 		}
 
 		/**
@@ -80,6 +74,51 @@ class StateChangeCommand
 		{
 			return deviceName == _deviceName;
 		}
+
+		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime) = 0;
+};
+
+
+/**
+ * Class which records state change to database (or standard output).
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class StateChangeRecord: public StateChange
+{
+	private:
+		int dbValueId;
+	public:
+		StateChangeRecord (std::string _deviceName, int _changeMask, int _newStateValue):StateChange (_deviceName, _changeMask, _newStateValue)
+		{
+			dbValueId = -1;
+		}
+
+		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime);
+};
+
+
+/**
+ * Class for mapping between device names, state bit masks and 
+ * command to be executed.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class StateChangeCommand: public StateChange
+{
+	private:
+		std::string deviceName;
+		int changeMask;
+		int newStateValue;
+		std::string commandName;
+
+	public:
+		StateChangeCommand (std::string _deviceName, int _changeMask, int _newStateValue, std::string _commandName):StateChange (_deviceName, _changeMask, _newStateValue)
+		{
+			commandName = _commandName;
+		}
+
+		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime);
 };
 
 
@@ -88,7 +127,7 @@ class StateChangeCommand
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class StateCommands:public std::list <StateChangeCommand>
+class StateCommands:public std::list <StateChange *>
 {
 	public:
 		StateCommands ()
@@ -97,6 +136,8 @@ class StateCommands:public std::list <StateChangeCommand>
 
 		~StateCommands ()
 		{
+			for (StateCommands::iterator iter = begin (); iter != end (); iter++)
+				delete (*iter);
 		}
 };
 

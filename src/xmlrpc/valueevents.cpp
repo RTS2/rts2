@@ -20,6 +20,7 @@
 #include "valueevents.h"
 #include "message.h"
 
+#include "../utils/connfork.h"
 #include "../utils/timestamp.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2logstream.h"
@@ -30,9 +31,25 @@ using namespace rts2xmlrpc;
 
 #ifndef HAVE_PGSQL
 
-void ValueChangeCommand::run (Rts2Value *val, double validTime)
+void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
 {
 	std::cout << Timestamp (validTime) << " value: " << deviceName << " " << valueName << val->getDisplayValue () << std::endl;
 }
 
 #endif /* ! HAVE_PGSQL */
+
+void ValueChangeCommand::run (Rts2Block *_master, Rts2Value *val, double validTime)
+{
+	int ret;
+	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
+	cf->addArg (val->getName ());
+	cf->addArg (validTime);
+	ret = cf->init ();
+	if (ret)
+	{
+		delete cf;
+		return;
+	}
+
+	_master->addConnection (cf);
+}

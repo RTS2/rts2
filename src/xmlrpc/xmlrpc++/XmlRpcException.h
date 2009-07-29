@@ -12,6 +12,8 @@
 # include <string>
 #endif
 
+#include <ostream>
+
 namespace XmlRpc
 {
 
@@ -36,6 +38,12 @@ namespace XmlRpc
 		private:
 			std::string _message;
 			int _code;
+			
+			friend std::ostream & operator << (std::ostream &_os, XmlRpcException &ex)
+			{
+				_os << ex.getMessage () << " " << ex.getCode ();
+				return _os;
+			}
 	};
 
 }
