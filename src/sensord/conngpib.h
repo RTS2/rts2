@@ -20,8 +20,6 @@
 #ifndef __RTS2_CONN_GPIB__
 #define __RTS2_CONN_GPIB__
 
-#include <gpib/ib.h>
-
 namespace rts2sensord
 {
 
