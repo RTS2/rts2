@@ -136,7 +136,7 @@ Rts2DevConn::authorizationOK ()
 	master->baseInfo ();
 	master->sendBaseInfo (this);
 	master->info ();
-	master->sendInfo (this);
+	master->sendInfo (this, true);
 	master->sendFullStateInfo (this);
 	sendCommandEnd (DEVDEM_OK, "OK authorized");
 	return 0;

@@ -416,7 +416,7 @@ class Rts2Daemon:public Rts2Block
 		int info (Rts2Conn * conn);
 		int infoAll ();
 		void constInfoAll ();
-		int sendInfo (Rts2Conn * conn);
+		int sendInfo (Rts2Conn * conn, bool forceSend = false);
 
 		int sendMetaInfo (Rts2Conn * conn);
 
