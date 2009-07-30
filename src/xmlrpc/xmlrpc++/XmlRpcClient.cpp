@@ -4,6 +4,8 @@
 #include "XmlRpcSocket.h"
 #include "XmlRpc.h"
 
+#include "base64.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,16 +25,17 @@ const char XmlRpcClient::REQUEST_END[] = "</methodCall>\r\n";
 const char XmlRpcClient::METHODRESPONSE_TAG[] = "<methodResponse>";
 const char XmlRpcClient::FAULT_TAG[] = "<fault>";
 
-XmlRpcClient::XmlRpcClient(const char* host, int port, const char* uri/*=0*/)
+XmlRpcClient::XmlRpcClient(const char *host, int port, std::string authorization, std::string uri)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
 
 	_host = host;
 	_port = port;
-	if (uri)
+	_authorization = authorization;
+	if (uri.length() > 0)
 		_uri = uri;
 	else
-		_uri = "/RPC2";
+		_uri = std::string ("/RPC2");
 	_connectionState = NO_CONNECTION;
 	_executing = false;
 	_eof = false;
@@ -252,6 +255,17 @@ XmlRpcClient::generateHeader(std::string const& body)
 	sprintf(buff,":%d\r\n", _port);
 
 	header += buff;
+	if (_authorization.length() > 0)
+	{
+		std::string auth;
+
+		int iostatus = 0;
+		base64<char> encoder;
+		std::back_insert_iterator<std::string> ins = std::back_inserter(auth);
+		encoder.put(_authorization.begin(), _authorization.end(), ins, iostatus, base64<>::crlf());
+
+		header += "Authorization: Basic " + auth + "\r\n";
+	}
 	header += "Content-Type: text/xml\r\nContent-length: ";
 
 	sprintf(buff,"%i\r\n\r\n", body.size());
@@ -415,7 +429,7 @@ XmlRpcClient::parseResponse(XmlRpcValue& result)
 	// Expect either <params><param>... or <fault>...
 	if ((XmlRpcUtil::nextTagIs(PARAMS_TAG,_response,&offset) &&
 		XmlRpcUtil::nextTagIs(PARAM_TAG,_response,&offset)) ||
-		XmlRpcUtil::nextTagIs(FAULT_TAG,_response,&offset) && (_isFault = true))
+		(XmlRpcUtil::nextTagIs(FAULT_TAG,_response,&offset) && (_isFault = true)))
 	{
 		if ( ! result.fromXml(_response, &offset))
 		{

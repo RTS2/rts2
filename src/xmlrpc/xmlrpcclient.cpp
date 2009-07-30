@@ -26,12 +26,14 @@
 #include <iomanip>
 
 #include "r2x.h"
+#include "../utils/rts2config.h"
 
 using namespace XmlRpc;
 
 #define OPT_HOST             OPT_LOCAL + 1
-#define OPT_SCHED_TICKET     OPT_LOCAL + 2
-#define OPT_TEST             OPT_LOCAL + 3
+#define OPT_USERNAME         OPT_LOCAL + 2
+#define OPT_SCHED_TICKET     OPT_LOCAL + 3
+#define OPT_TEST             OPT_LOCAL + 4
 
 namespace rts2xmlrpc
 {
@@ -46,6 +48,9 @@ class Client: public Rts2CliApp
 	private:
 		int xmlPort;
 		const char *xmlHost;
+		const char *xmlUsername;
+		std::string xmlAuthorization;
+		char *configFile;
 		int xmlVerbosity;
 
 		int schedTicket;
@@ -429,6 +434,13 @@ Client::processOption (int in_opt)
 		case OPT_HOST:
 			xmlHost = optarg;
 			break;
+		case OPT_USERNAME:
+			xmlUsername = optarg;
+			break;
+		case OPT_CONFIG:
+			configFile = new char[strlen(optarg) + 1];
+			strcpy (configFile, optarg);
+			break;
 		case 'v':
 			xmlVerbosity++;
 			break;
@@ -516,8 +528,39 @@ Client::init ()
 	ret = Rts2CliApp::init ();
 	if (ret)
 		return ret;
+
+	if (configFile == NULL)
+	{
+		char *homeDir = getenv ("HOME");
+		int homeLen = strlen (homeDir);
+		configFile = new char[homeLen + 7];
+		strcpy (configFile, homeDir);
+		strcpy (configFile + homeLen, "/.rts2");
+	}
+
+	Rts2Config *config = Rts2Config::instance ();
+	config->loadFile (configFile);
+	if (xmlUsername == NULL)
+	{
+		ret = config->getString ("xmlrpc", "authorization", xmlAuthorization);
+		if (ret || xmlAuthorization.length() == 0)
+		{
+			std::cerr << "You don't specify authorization string in XML-RPC config file, nor on command line." << std::endl;
+			return -1;
+		}
+	}
+	else // authorization from command line..
+	{
+		std::string passw;
+		ret = askForPassword ("password", passw);
+		if (ret)
+			return -1;
+		xmlAuthorization = std::string (xmlUsername);
+		xmlAuthorization += ":";
+		xmlAuthorization += passw;
+	}
 	XmlRpc::setVerbosity(xmlVerbosity);
-	xmlClient = new XmlRpcClient (xmlHost, xmlPort);
+	xmlClient = new XmlRpcClient (xmlHost, xmlPort, xmlAuthorization);
 	return 0;
 }
 
@@ -526,6 +569,9 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 {
 	xmlPort = 8889;
 	xmlHost = "localhost";
+	xmlUsername = NULL;
+	xmlAuthorization = std::string ("");
+	configFile = NULL;
 	xmlVerbosity = 0;
 
 	xmlOp = TEST;
@@ -534,6 +580,8 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
+	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
+	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
@@ -547,6 +595,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 Client::~Client (void)
 {
+	delete[] configFile;
 	delete xmlClient;
 }
 

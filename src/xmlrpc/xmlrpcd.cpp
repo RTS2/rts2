@@ -448,7 +448,8 @@ class Login: public XmlRpcServerMethod
 } login(&xmlrpc_server);
 
 /**
- * Represents session methods. Those must be executed with session ID passed as the first parameter.
+ * Represents session methods. Those must be executed either with user name and
+ * password, or with "session_id" passed as username and session ID passed in password.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  *
@@ -463,15 +464,24 @@ class SessionMethod: public XmlRpcServerMethod
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			if (params.size() < 1)
+			if (getUsername () == std::string ("session_id"))
 			{
-				throw XmlRpcException ("Session method must have a valid session ID as first parameter");
+				if (((XmlRpcd *) getMasterApp ())->existsSession (params[0]) == false)
+				{
+					throw XmlRpcException ("Invalid session ID");
+				}
 			}
-			if (((XmlRpcd *) getMasterApp ())->existsSession (params[0]) == false)
+
+#ifdef HAVE_PGSQL
+			if (verifyUser (getUsername (), getPassword ()) == false)
 			{
-				throw XmlRpcException ("Invalid session ID");
+				throw XmlRpcException ("Invalid login or password");
 			}
-			params.popFront ();
+#else
+			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
+				throw XmlRpcException ("Login not supported");
+#endif /* HAVE_PGSQL */
+
 			sessionExecute (params, result);
 		}
 
@@ -486,14 +496,14 @@ class SessionMethod: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class DeviceCount: public XmlRpcServerMethod
+class DeviceCount: public SessionMethod
 {
 	public:
-		DeviceCount (XmlRpcServer* s) : XmlRpcServerMethod ("DeviceCount", s)
+		DeviceCount (XmlRpcServer* s) : SessionMethod ("DeviceCount", s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			result = ((XmlRpcd *) getMasterApp ())->connectionSize ();
 		}
@@ -511,14 +521,14 @@ class DeviceCount: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class ListDevices: public XmlRpcServerMethod 
+class ListDevices: public SessionMethod
 {
 	public:
-		ListDevices (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_LIST, s)
+		ListDevices (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_LIST, s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			std::cout << "ListDevices " << getUsername () << " " << getPassword () << std::endl;
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
@@ -548,14 +558,14 @@ class ListDevices: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class DeviceType: public XmlRpcServerMethod
+class DeviceType: public SessionMethod
 {
 	public:
-		DeviceType (XmlRpcServer* s): XmlRpcServerMethod (R2X_DEVICE_TYPE, s)
+		DeviceType (XmlRpcServer* s): SessionMethod (R2X_DEVICE_TYPE, s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue &result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
 		{
 			if (params.size () != 1)
 				throw XmlRpcException ("Single device name expected");
@@ -576,14 +586,14 @@ class DeviceType: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class DevicesStatus: public XmlRpcServerMethod
+class DevicesStatus: public SessionMethod
 {
 	public:
-		DevicesStatus (XmlRpcServer* s) : XmlRpcServerMethod (R2X_DEVICES_STATUS, s)
+		DevicesStatus (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_STATUS, s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 1)
 			{
@@ -621,19 +631,19 @@ class DevicesStatus: public XmlRpcServerMethod
  *
  * @addgroup XMLRPC
  */
-class ListValues: public XmlRpcServerMethod
+class ListValues: public SessionMethod
 {
 	protected:
-		ListValues (const char *in_name, XmlRpcServer* s): XmlRpcServerMethod (in_name, s)
+		ListValues (const char *in_name, XmlRpcServer* s): SessionMethod (in_name, s)
 		{
 		}
 
 	public:
-		ListValues (XmlRpcServer* s): XmlRpcServerMethod (R2X_VALUES_LIST, s)
+		ListValues (XmlRpcServer* s): SessionMethod (R2X_VALUES_LIST, s)
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
@@ -683,7 +693,7 @@ class ListValuesDevice: public ListValues
 		{
 		}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			Rts2Conn *conn;
@@ -793,12 +803,12 @@ class ListValuesDevice: public ListValues
 		}
 } listValuesDevice (&xmlrpc_server);
 
-class GetValue: public XmlRpcServerMethod
+class GetValue: public SessionMethod
 {
 	public:
-		GetValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_GET, s) {}
+		GetValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_GET, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			std::string devName = params[0];
 			std::string valueName = params[1];
@@ -841,12 +851,12 @@ class GetValue: public XmlRpcServerMethod
 		}
 } getValue (&xmlrpc_server);
 
-class SetValue: public XmlRpcServerMethod
+class SetValue: public SessionMethod
 {
 	public:
-		SetValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_SET, s) {}
+		SetValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_SET, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			std::string devName = params[0];
 			std::string valueName = params[1];
@@ -922,12 +932,12 @@ class SetValue: public XmlRpcServerMethod
 
 } setValue (&xmlrpc_server);
 
-class IncValue: public XmlRpcServerMethod
+class IncValue: public SessionMethod
 {
 	public:
-		IncValue (XmlRpcServer* s) : XmlRpcServerMethod (R2X_VALUE_INC, s) {}
+		IncValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_INC, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			std::string devName = params[0];
 			std::string valueName = params[1];
@@ -1004,12 +1014,12 @@ class IncValue: public XmlRpcServerMethod
 } incValue (&xmlrpc_server);
 
 
-class GetMessages: public XmlRpcServerMethod
+class GetMessages: public SessionMethod
 {
 	public:
-		GetMessages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_MESSAGES_GET, s) {}
+		GetMessages (XmlRpcServer* s) : SessionMethod (R2X_MESSAGES_GET, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			int i = 0;
 			XmlRpcValue retVar;
@@ -1035,12 +1045,12 @@ class GetMessages: public XmlRpcServerMethod
 /*
  *
  */
-class ListTargets: public XmlRpcServerMethod
+class ListTargets: public SessionMethod
 {
 	public:
-		ListTargets (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_LIST, s) {}
+		ListTargets (XmlRpcServer* s) : SessionMethod (R2X_TARGETS_LIST, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			Rts2TargetSet *tar_set = new Rts2TargetSet ();
 			double value;
@@ -1080,12 +1090,12 @@ class ListTargets: public XmlRpcServerMethod
 } listTargets (&xmlrpc_server);
 
 
-class ListTargetsByType: public XmlRpcServerMethod
+class ListTargetsByType: public SessionMethod
 {
 	public:
-		ListTargetsByType (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_TYPE_LIST, s) {}
+		ListTargetsByType (XmlRpcServer* s) : SessionMethod (R2X_TARGETS_TYPE_LIST, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			char target_types[params.size ()+1];
 			int j;
@@ -1131,12 +1141,12 @@ class ListTargetsByType: public XmlRpcServerMethod
 } listTargetsByType (&xmlrpc_server);
 
 
-class TargetInfo: public XmlRpcServerMethod
+class TargetInfo: public SessionMethod
 {
 	public:
-		TargetInfo (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGETS_INFO, s) {}
+		TargetInfo (XmlRpcServer* s) : SessionMethod (R2X_TARGETS_INFO, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			std::list < int >targets;
 			XmlRpcValue retVar;
@@ -1178,12 +1188,12 @@ class TargetInfo: public XmlRpcServerMethod
 
 } targetInfo (&xmlrpc_server);
 
-class TargetAltitude: public XmlRpcServerMethod
+class TargetAltitude: public SessionMethod
 {
 	public:
-		TargetAltitude (XmlRpcServer *s) : XmlRpcServerMethod (R2X_TARGET_ALTITUDE, s) {}
+		TargetAltitude (XmlRpcServer *s) : SessionMethod (R2X_TARGET_ALTITUDE, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 4)
 			{
@@ -1221,12 +1231,12 @@ class TargetAltitude: public XmlRpcServerMethod
 		}
 } targetAltitude (&xmlrpc_server);
 
-class ListTargetObservations: public XmlRpcServerMethod
+class ListTargetObservations: public SessionMethod
 {
 	public:
-		ListTargetObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
+		ListTargetObservations (XmlRpcServer* s) : SessionMethod (R2X_TARGET_OBSERVATIONS_LIST, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
 			rts2db::ObservationSet *obs_set;
@@ -1255,12 +1265,12 @@ class ListTargetObservations: public XmlRpcServerMethod
 
 } listTargetObservations (&xmlrpc_server);
 
-class ListMonthObservations: public XmlRpcServerMethod
+class ListMonthObservations: public SessionMethod
 {
 	public:
-		ListMonthObservations (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATIONS_MONTH, s) {}
+		ListMonthObservations (XmlRpcServer* s) : SessionMethod (R2X_OBSERVATIONS_MONTH, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
 			rts2db::ObservationSet *obs_set;
@@ -1290,12 +1300,12 @@ class ListMonthObservations: public XmlRpcServerMethod
 
 } listMonthObservations (&xmlrpc_server);
 
-class ListImages: public XmlRpcServerMethod
+class ListImages: public SessionMethod
 {
 	public:
-		ListImages (XmlRpcServer* s) : XmlRpcServerMethod (R2X_OBSERVATION_IMAGES_LIST, s) {}
+		ListImages (XmlRpcServer* s) : SessionMethod (R2X_OBSERVATION_IMAGES_LIST, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
 			Rts2Obs *obs;
@@ -1323,12 +1333,12 @@ class ListImages: public XmlRpcServerMethod
 } listImages (&xmlrpc_server);
 
 
-class TicketInfo: public XmlRpcServerMethod
+class TicketInfo: public SessionMethod
 {
 	public:
-		TicketInfo (XmlRpcServer *s): XmlRpcServerMethod (R2X_TICKET_INFO, s) {}
+		TicketInfo (XmlRpcServer *s): SessionMethod (R2X_TICKET_INFO, s) {}
 
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 1)
 			{
@@ -1351,11 +1361,11 @@ class TicketInfo: public XmlRpcServerMethod
 } ticketInfo (&xmlrpc_server);
 
 
-class RecordsValues: public XmlRpcServerMethod
+class RecordsValues: public SessionMethod
 {
 	public:
-		RecordsValues (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_VALUES, s) {}
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		RecordsValues (XmlRpcServer* s): SessionMethod (R2X_RECORDS_VALUES, s) {}
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 //			if (params.getType () != XmlRpcValue::TypeInvalid)
 //				throw XmlRpcException ("Invalid number of parameters");
@@ -1388,11 +1398,11 @@ class RecordsValues: public XmlRpcServerMethod
 } recordValues (&xmlrpc_server);
 
 
-class Records: public XmlRpcServerMethod
+class Records: public SessionMethod
 {
 	public:
-		Records (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_GET, s) {}
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		Records (XmlRpcServer* s): SessionMethod (R2X_RECORDS_GET, s) {}
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 3)
 				throw XmlRpcException ("Invalid number of parameters");
@@ -1421,11 +1431,11 @@ class Records: public XmlRpcServerMethod
 } records (&xmlrpc_server);
 
 
-class RecordsAverage: public XmlRpcServerMethod
+class RecordsAverage: public SessionMethod
 {
 	public:
-		RecordsAverage (XmlRpcServer* s): XmlRpcServerMethod (R2X_RECORDS_AVERAGES, s) {}
-		void execute (XmlRpcValue& params, XmlRpcValue& result)
+		RecordsAverage (XmlRpcServer* s): SessionMethod (R2X_RECORDS_AVERAGES, s) {}
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 3)
 				throw XmlRpcException ("Invalid number of parameters");
