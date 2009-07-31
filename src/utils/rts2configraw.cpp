@@ -312,7 +312,7 @@ Rts2ConfigRaw::loadFile (const char *filename)
 	configStream->open (filename);
 	if (configStream->fail ())
 	{
-		logStream (MESSAGE_ERROR) << "Cannot open config file '" << filename <<
+		logStream (MESSAGE_ERROR) << "Cannot open configuration file '" << filename <<
 			"'." << sendLog;
 		delete configStream;
 		return -1;
