@@ -195,14 +195,26 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
     <programlisting>
 <![CDATA[
 <events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
-  <device name="C0" state-mask="2" state="2">
-    <command>/etc/rts2/event.d/c0_reading</command>
+  <device name="C0">
+    <state state-mask="2" state="2">
+      <command>/etc/rts2/event.d/c0_reading</command>
+    </state>
   </device>
-  <device name="DOME" state-mask="7" state="4">
-    <command>/etc/rts2/event.d/dome_opened</command>
+  <device name="DOME">
+    <state state-mask="7" state="4">
+      <command>/etc/rts2/event.d/dome_opened</command>
+    </state>
+    <state state-mask="7" state="1">
+      <command>/etc/rts2/event.d/dome_closed</command>
+    </state>
   </device>
-  <device name="DOME" state-mask="7" state="1">
-    <command>/etc/rts2/event.d/dome_closed</command>
+  <device name="C0">
+    <value name="CCD_TEMP">
+      <record/<
+    </value>
+    <value name="CCD_SET" cadency=60>
+      <record/>
+    </value>
   </device>
 </events>
 ]]>
@@ -225,6 +237,24 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 	  <para>
 	    execute <command>/etc/rts2/event.d/dome_closed</command> when dome
 	    device with name DOME changes first bit (0x01) from 0 to 1, e.g. when it switched to opened state.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    Record any changes to CCD_TEMP value from C0 device. The changes
+	    are recorded as soon as they are transmited to XML-RPCD. Ussully
+	    all RTS2 devices reguarly send updates on their values to all
+	    connected clients, so this should work reasonably well. Please note
+	    that only when value changes, its new value is recorded - if value
+	    stays the same, it is not recorded.
+	  </para>
+	</listitem>
+	<listitem>
+	  <para>
+	    Record any changes of CCD_SET value from C0 device. But the changes
+	    will be recorded only every 60 seconds. This means - if the value
+	    changed within 60 seconds, it will be recorded (with proper time).
+	    If it changes more then once within those 60 seconds,
 	  </para>
 	</listitem>
       </itemizedlist>
