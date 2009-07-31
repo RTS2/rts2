@@ -24,7 +24,7 @@
     </value>
   </device>
   <device name="PRESS">
-    <value name="pressure">
+    <value name="pressure" cadency="60">
       <record/>
     </value>
   </device>

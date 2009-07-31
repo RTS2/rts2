@@ -9,6 +9,11 @@
   <!-- allowed actions -->
   <xs:complexType name="action">
     <xs:choice maxOccurs="unbounded">
+      <xs:element name="record" minOccurs="0">
+        <xs:annotation><xs:documentation>
+          Record value to the database, to table records.
+        </xs:documentation></xs:annotation>
+      </xs:element>
       <xs:element name="command" type="xs:string" minOccurs="0"/>
       <xs:element name="email" type="xs:string" minOccurs="0"/>
       <xs:element name="sql" type="xs:string" minOccurs="0"/>
@@ -29,18 +34,11 @@
   <xs:complexType name="value">
     <xs:complexContent>
       <xs:extension base="action">
-	<xs:sequence>
-	  <xs:element name="record" minOccurs="0">
-	    <xs:annotation>
-	      Record value to the database, to table records.
-	    </xs:annotation>
-	  </xs:element>
-	</xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
-	<xs:attribute name="cadence" type="xs:integer" default="-1">
-	  <xs:annotation>
+	<xs:attribute name="cadency" type="xs:integer" default="-1">
+	  <xs:annotation><xs:documentation>
 	    Defines how often will be value changed recorded.
-	  </xs:annotation>
+	  </xs:documentation></xs:annotation>
 	</xs:attribute>
       </xs:extension>
     </xs:complexContent>
