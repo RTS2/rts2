@@ -63,8 +63,9 @@ void ConnGpibEnet::gpibWrite (const char *_buf)
 	char gpib_buf[13] = "\x23\x05\x05\x08IIII\x00\x54\x00\x00";
 	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (_buf));
 	sendData (gpib_buf, 12, true);
-	sendData ((void *) _buf, strlen (_buf));
+	sresp (NULL);
 
+	sendData ((void *) _buf, strlen (_buf));
 	sresp (NULL);
 }
 
