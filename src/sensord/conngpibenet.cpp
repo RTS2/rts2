@@ -140,7 +140,7 @@ void ConnGpibEnet::gpibWaitSRQ ()
 	{
 		char *sbuf;
 		// iblines..
-		sendData ("\x0f\x63\x16\x40\xc0\x58\x16\x40\x40\x63\x16\x40", 12);
+		sendData ("\x0d\x63\x16\x40\xc0\x58\x16\x40\x40\x63\x16\x40", 12);
 		sresp (&sbuf);
 		if (sta & (1 << 15))
 		{
