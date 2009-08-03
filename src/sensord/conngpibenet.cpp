@@ -117,6 +117,7 @@ void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 		if (data_len > 0)
 		{
 			blen = data_len;
+			sresp (NULL);
 			return;
 		}
 		throw rts2core::Error ("Cannot read data");
