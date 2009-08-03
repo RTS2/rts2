@@ -21,6 +21,21 @@
 
 using namespace rts2sensord;
 
+/**
+ * Internal error, thrown when flags is not equal 0. This can signal error or end of data
+ * in read command.
+ */
+class ErrorGpibEnetFlags:public rts2core::Error
+{
+	public:
+		ErrorGpibEnetFlags (int _flags)
+		{
+			std::ostringstream _os;
+			_os << "Flags are equal to " << _flags;
+			setMsg (_os.str());
+		}
+};
+
 
 void ConnGpibEnet::sread (char **ret_buf)
 {
@@ -33,7 +48,7 @@ void ConnGpibEnet::sread (char **ret_buf)
 	if (flags != 0x0000)
 	{
 		*ret_buf = NULL;
-		throw rts2core::Error ("Flags != 0");
+		throw ErrorGpibEnetFlags (flags);
 	}
 
 	*ret_buf = new char[len];
@@ -72,44 +87,39 @@ void ConnGpibEnet::gpibWrite (const char *_buf)
 
 void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 {
+	uint16_t data_len = 0;
+	char *sbuf;
+
 	char gpib_buf[13] = "\x16\x00\x00\x00IIII\x40\x63\x16\x40";
 	*((int32_t *) (gpib_buf + 4)) = htonl (blen);
 	sendData (gpib_buf, 12, true);
-
-	char *sbuf;
-	
 	sresp (&sbuf);
 
-	if (len != 16)
+	try
 	{
-		throw rts2core::Error ("invalid lenght in read reply");
-	}
-	
-	data_len = ntohs (*((uint16_t *) (sbuf + 14)));
-	delete[] sbuf;
-	if (data_len > blen)
-	{
-		throw rts2core::Error ("too short buffer");
-	}
-	
-	receiveData (_buf, data_len, 10, true);
-	// loop till flags == 0;
-	while (flags == 0)
-	{
-		sread (&sbuf);
-		if (data_len + len > blen)
+		// loop till flags == 0;
+		while (true)
 		{
+			// raises error when flags != 0
+			sread (&sbuf);
+			if (data_len + len > blen)
+			{
+				delete[] sbuf;
+				throw rts2core::Error ("too short buffer");
+			}
+			memcpy (((char *)_buf) + data_len, sbuf, len);
+			data_len += len;
 			delete[] sbuf;
-			throw rts2core::Error ("too short buffer");
 		}
-		if (flags != 0)
+	}
+	catch (ErrorGpibEnetFlags er)
+	{
+		if (data_len > 0)
 		{
 			blen = data_len;
 			return;
 		}
-		memcpy (((char *)_buf) + data_len, sbuf, len);
-		data_len += len;
-		delete[] sbuf;
+		throw rts2core::Error ("Cannot read data");
 	}
 }
 
@@ -119,7 +129,7 @@ void ConnGpibEnet::gpibWriteRead (const char *_buf, char *val, int blen)
 	gpibWrite (_buf);
 	*val = '\0';
 	gpibRead (val, blen);
-	val[data_len] = '\0';
+	val[blen] = '\0';
 }
 
 

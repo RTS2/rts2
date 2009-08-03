@@ -45,8 +45,6 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 		uint16_t flags;
 		uint16_t len;
 
-		uint16_t data_len;
-
 		/**
 		 * Read header and data from socket.
 		 *
