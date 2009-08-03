@@ -412,7 +412,8 @@ Client::getMessages ()
 void
 Client::usage ()
 {
-	std::cout << "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
+	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manula pages for details." << std::endl << std::endl
+		<< "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
 		<< " To set T0.ORI to 10 20, run: " << std::endl
 		<< "  " << getAppName () << " -s T0.ORI \"10 20\"" << std::endl
 		<< " So to run random pointing, run: " << std::endl
@@ -578,15 +579,15 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 	xmlClient = NULL;
 
-	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
+	addOption (OPT_PORT, "port", 1, "port of XML-RPC server");
 	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
-	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2");
+	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
+	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
-	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
 	addOption ('t', NULL, 0, "get device(s) type");
 	addOption ('m', NULL, 0, "retrieve messages from XML-RPCd message buffer");
 	addOption (OPT_TEST, "test", 0, "perform various tests");
