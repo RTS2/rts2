@@ -1021,7 +1021,7 @@ Rts2GenFocClient (in_argc, in_argv)
 	addOption (OPT_SAVE, "save", 0, "save filenames (default don't save");
 	addOption (OPT_CHANGE, "change_val", 1,
 		"change value (in arcseconds; default to 15 arcsec");
-	addOption ('Z', NULL, 1, "Zoom (int 1..16)");
+	addOption ('Z', NULL, 1, "Zoom (float number 0-xx)");
 	addOption ('9', NULL, 0, "Nine sectors from different places of the CCD");
 }
 
