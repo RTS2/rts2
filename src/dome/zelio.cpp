@@ -328,7 +328,6 @@ Zelio::startClose ()
 		zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
 		if (automode->getValueBool () == false)
 		{
-		 	maskState (DOME_DOME_MASK, DOME_CLOSED, "dome is not controlled- it is in manual mode");
 			return 0;
 		}
 	}

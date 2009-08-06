@@ -67,8 +67,11 @@ Dome::domeCloseStart ()
 		logStream (MESSAGE_ERROR) << "cannot start closing of the dome" << sendLog;
 		return -1;
 	}
+	if ((getState () & DOME_DOME_MASK) != DOME_CLOSING)
+	{
+		logStream (MESSAGE_INFO) << "closing dome" << sendLog;
+	}
 	maskState (DOME_DOME_MASK, DOME_CLOSING, "closing dome");
-	logStream (MESSAGE_INFO) << "closing dome" << sendLog;
 	return 0;
 };
 
