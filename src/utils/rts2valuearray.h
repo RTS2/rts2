@@ -56,6 +56,7 @@ class StringArray: public Rts2Value
 		void setValueArray (std::vector <std::string> _arr)
 		{
 			value = _arr;
+			changed ();
 		}
 
 		/**
@@ -122,6 +123,7 @@ class DoubleArray: public Rts2Value
 		void setValueArray (std::vector <double> _arr)
 		{
 			value = _arr;
+			changed ();
 		}
 
 		/**
@@ -184,6 +186,7 @@ class IntegerArray: public Rts2Value
 		void setValueArray (std::vector <int> _arr)
 		{
 			value = _arr;
+			changed ();
 		}
 
 		/**
