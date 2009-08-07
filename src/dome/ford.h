@@ -23,7 +23,7 @@
 
 #include "dome.h"
 
-#include "fordconn.h"
+#include "../utils/connford.h"
 
 #define PORT_A 0
 #define PORT_B 1
@@ -43,7 +43,7 @@ namespace rts2dome
 class Ford: public Dome
 {
 	private:
-		FordConn *domeConn;
+		rts2core::FordConn *domeConn;
 		const char *dome_file;
 
 	protected:

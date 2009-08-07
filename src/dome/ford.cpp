@@ -47,7 +47,7 @@ Ford::init ()
 	if (ret)
 		return ret;
 
-	domeConn = new FordConn (dome_file, this, BS9600, C8, NONE, 40);
+	domeConn = new rts2core::FordConn (dome_file, this, BS9600, C8, NONE, 40);
 	ret = domeConn->init ();
 	if (ret)
 		return ret;

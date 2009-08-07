@@ -17,9 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "fordconn.h"
+#include "connford.h"
 
-using namespace rts2dome;
+using namespace rts2core;
 
 #define CTENI_PORTU 0
 #define ZAPIS_NA_PORT 4

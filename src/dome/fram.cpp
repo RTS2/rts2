@@ -88,7 +88,7 @@ class Fram:public Ford
 		Rts2ConnSerial *wdcConn;
 		char *wdc_file;
 
-		FordConn *extraSwitch;
+		rts2core::FordConn *extraSwitch;
 		
 		char *extraSwitchFile;
 
@@ -783,7 +783,7 @@ Fram::init ()
 
 	if (extraSwitchFile)
 	{
-		extraSwitch = new FordConn (extraSwitchFile, this, BS9600, C8, NONE, 40);
+		extraSwitch = new rts2core::FordConn (extraSwitchFile, this, BS9600, C8, NONE, 40);
 		ret = extraSwitch->init ();
 		if (ret)
 			return ret;

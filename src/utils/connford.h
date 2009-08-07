@@ -21,13 +21,13 @@
 #ifndef __RTS2_CONN_FORD__
 #define __RTS2_CONN_FORD__
 
-#include "../utils/rts2connserial.h"
+#include "rts2connserial.h"
 
 #define PORT_A 0
 #define PORT_B 1
 #define PORT_C 2
 
-namespace rts2dome
+namespace rts2core
 {
 
 /**
