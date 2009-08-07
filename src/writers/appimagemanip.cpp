@@ -26,6 +26,7 @@
 #include "rts2appimage.h"
 #endif							 /* HAVE_PGSQL */
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 
 #include <iostream>
 #include <iomanip>
@@ -49,6 +50,7 @@
 #define IMAGEOP_JPEG      0x0800
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
+#define OPT_EVERY     OPT_LOCAL + 6
 
 namespace rts2image
 {
@@ -257,6 +259,9 @@ AppImage::processOption (int in_opt)
 			break;
 		case 'r':
 			operation |= IMAGEOP_MODEL;
+			break;
+		case 'n':
+			std::cout << pureNumbers;
 			break;
 		case 'c':
 			operation |= IMAGEOP_COPY;
