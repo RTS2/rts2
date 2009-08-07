@@ -74,7 +74,10 @@
             <option>-P <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	  <arg choice="plain">
-      	    <option>-f <replaceable>RTS2 expression</replaceable></option>
+	    <option>-r</option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-n</option>
 	  </arg>
 	  <arg choice="plain">
 	    <option>-c <replaceable>RTS2 expression</replaceable></option>
@@ -101,6 +104,9 @@
             <option>-w
               <arg choice="opt"><option>-o <replaceable>X offset</replaceable>:<replaceable>Y offset</replaceable></option></arg>
   	    </option>
+	  </arg>
+	  <arg choice="plain">
+	    <option>-j <replaceable>RTS2 expression</replaceable></option>
 	  </arg>
 	</group>
       </arg>
@@ -186,6 +192,28 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>-r</option></term>
+	<listitem>
+	  <para>
+	    Print image referencing status. It is equivalent to running:
+	    rts2-image -p '@OBJRA @OBJDEC @TARRA @TARDEC @RA_ERR @DEC_ERR
+	    @POS_ERR @CORR_RA @CORR_DEC'. Please see RTS2 wiki fordescription
+	    of all those fields.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-n</option></term>
+	<listitem>
+	  <para>
+	    Do not pretty print. Print all values as pure numbers. Without this
+	    option, RA DEC will be formated in sexadecimal format, etc.
+	    Currently works only with -r option, as RTS2 does not yet support
+	    pretty print based on FITS values unit strings.
+	   </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>-c <replaceable>RTS2 expression</replaceable></option></term>
         <listitem>
           <para>
@@ -261,6 +289,16 @@
 	    Specify X and Y offsets for RA DEC coordinates taken with -w option.
 	  </para>
         </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-j <replaceable>RTS2 expression</replaceable></option></term>
+	<listitem>
+	  <para>
+	    Write image as JPEG file. JPEG file name is specified as RTS2 expression. Please see
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    for expresion descrition.
+	  </para>
+	</listitem>
       </varlistentry>
       <varlistentry>
         <term><option>-h</option></term>
