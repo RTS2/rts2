@@ -110,7 +110,6 @@ ConnImgProcess::processLine ()
 void
 ConnImgProcess::connectionError (int last_data_size)
 {
-	int ret;
 	const char *telescopeName;
 	int corr_mark, corr_img;
 
@@ -150,34 +149,36 @@ ConnImgProcess::connectionError (int last_data_size)
 			image->toArchive ();
 			// send correction to telescope..
 			telescopeName = image->getMountName ();
-			ret = image->getValue ("MOVE_NUM", corr_mark);
-			if (ret)
-				break;
-			ret = image->getValue ("CORR_IMG", corr_img);
-			if (ret)
-				break;
-			if (telescopeName)
+			try
 			{
-				Rts2Conn *telConn;
-				telConn = master->findName (telescopeName);
-				// correction error should be in degrees
-				if (telConn && Rts2Config::instance ()->isAstrometryDevice (image->getCameraName ()))
+				image->getValue ("MOVE_NUM", corr_mark);
+				image->getValue ("CORR_IMG", corr_img);
+				if (telescopeName)
 				{
-					struct ln_equ_posn pos1, pos2;
-					pos1.ra = ra;
-					pos1.dec = dec;
+					Rts2Conn *telConn;
+					telConn = master->findName (telescopeName);
+					// correction error should be in degrees
+					if (telConn && Rts2Config::instance ()->isAstrometryDevice (image->getCameraName ()))
+					{
+						struct ln_equ_posn pos1, pos2;
+						pos1.ra = ra;
+						pos1.dec = dec;
 
-					pos2.ra = ra - ra_err / 60.0;
-					pos2.dec = dec - dec_err / 60.0;
+						pos2.ra = ra - ra_err / 60.0;
+						pos2.dec = dec - dec_err / 60.0;
 
-					double posErr = ln_get_angular_separation (&pos1, &pos2);
+						double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-					telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,
-						corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
-					);
+						telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,
+							corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
+						);
+					}
 				}
+				sendProcEndMail (image);
 			}
-			sendProcEndMail (image);
+			catch (rts2image::KeyNotFound &er)
+			{
+			}
 			break;
 		case DARK:
 			image->toDark ();

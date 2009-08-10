@@ -11,16 +11,16 @@ class Rts2MoveArchive:public Rts2AppDbImage
 	protected:
 		virtual int processImage (Rts2ImageDb * image)
 		{
-			int ret;
 			double val;
+			int ret;
 			std::cout << "Processing " << image->getFileName () << "..";
-			ret = image->getValue ("CRVAL1", val);
-			if (!ret)
+			try
 			{
+				image->getValue ("CRVAL1", val);
 				ret = image->toArchive ();
-				std::cout << (ret ? "failed (not archive?)" : "archive") << std::endl;
+				std::cout << (ret ? "failed (cannot move?)" : "archive") << std::endl;
 			}
-			else
+			catch (rts2core::Error &er)
 			{
 				ret = image->toTrash ();
 				std::cout << (ret ? "failed (cannot move?)" : "trash") << std::endl;

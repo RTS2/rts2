@@ -15,7 +15,7 @@ noinst_LIBRARIES = libscript.a
 libscript_a_SOURCES = rts2execcli.cpp rts2script.cpp connimgprocess.cpp rts2scriptelement.cpp rts2devscript.cpp rts2spiral.cpp \
 		rts2scriptblock.cpp rts2scriptguiding.cpp rts2targetscr.cpp rts2setarget.cpp rts2sehex.cpp rts2swaitfor.cpp \
 		rts2scriptinterface.cpp
-libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
+libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 
 rts2_scriptexec_SOURCES = scriptexec.cpp 
