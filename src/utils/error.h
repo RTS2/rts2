@@ -31,34 +31,36 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Error
+class Error:public std::exception
 {
 	public:
-		Error ()
+		explicit Error (): std::exception ()
 		{
 		}
 
-		Error (const char *_msg)
+		explicit Error (const char *_msg): std::exception ()
 		{
 			msg = std::string (_msg);
 		}
 
-		Error (std::string _msg)
+		explicit Error (std::string _msg): std::exception ()
 		{
 			msg = _msg;
 		}
 
+		virtual ~Error() throw() {};
+
 		/**
 		 * Returns message associated with the error.
 		 */
-		std::string getMsg ()
+		virtual const char* what () const throw ()
 		{
-			return msg;
+			return msg.c_str ();
 		}
 
 		friend std::ostream & operator << (std::ostream &_os, Error _err)
 		{
-			_os << "error: " << _err.getMsg ();
+			_os << "error: " << _err.what ();
 			return _os;
 		}
 
