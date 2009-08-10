@@ -18,9 +18,12 @@
  */
 
 #include "../utils/expander.h"
+#include "../utils/error.h"
 #include "../utils/rts2valuearray.h"
 
 #include <fitsio.h>
+
+#include <sstream>
 
 /** Defines for FitsFile flags. */
 #define IMAGE_SAVE              0x01
@@ -86,15 +89,8 @@ class Rts2FitsFile: public rts2core::Expander
 
 		int fitsStatusValue (const char *valname, const char *operation, bool required);
 
-		int fitsStatusSetValue (const char *valname, bool required = true)
-		{
-			return fitsStatusValue (valname, "SetValue", required);
-		}
-
-		int fitsStatusGetValue (const char *valname, bool required)
-		{
-			return fitsStatusValue (valname, "GetValue", required);
-		}
+		void fitsStatusSetValue (const char *valname, bool required = true);
+		void fitsStatusGetValue (const char *valname, bool required);
 
 	public:
 		/**
@@ -182,18 +178,18 @@ class Rts2FitsFile: public rts2core::Expander
 		 *
 		 * @param history History keyword which will be appended.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw ErrorSettingKey
 		 */
-		int writeHistory (const char *history);
+		void writeHistory (const char *history);
 
 		/**
 		 * Append comment to FITS file.
 		 *
 		 * @param comment Comment which will be appended to FITS file comments.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw ErrorSettingKey
 		 */
-		int writeComment (const char *comment);
+		void writeComment (const char *comment);
 
 		/**
 		 * Create table extension from DoubleArray
@@ -209,4 +205,50 @@ class Rts2FitsFile: public rts2core::Expander
 		{
 			return (flags & IMAGE_SAVE);
 		}
+};
+
+
+namespace rts2image
+{
+
+/**
+ * Thrown where we cannot find header in the image.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class KeyNotFound:public rts2core::Error
+{
+	public:
+		KeyNotFound (Rts2FitsFile *_image, const char *_header):rts2core::Error ()
+		{
+			std::ostringstream _os;
+			_os << "keyword " << _header <<  " missing in file " << _image->getFileName ();
+			setMsg (_os.str ());
+		}
+};
+
+
+/**
+ * Thrown when file cannot be opened.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ErrorOpeningFitsFile: public rts2core::Error
+{
+	public:
+		ErrorOpeningFitsFile (Rts2FitsFile *_image):rts2core::Error ()
+		{
+			setMsg (std::string ("Cannot open file ") + _image->getFileName ());
+		}
+};
+
+class ErrorSettingKey: public rts2core::Error
+{
+	public:
+		ErrorSettingKey (const char *valname):rts2core::Error ()
+		{
+			setMsg (std::string ("Cannot set key ") + valname);
+		}
+};
+
 };

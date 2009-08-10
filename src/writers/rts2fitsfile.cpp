@@ -26,6 +26,8 @@
 
 #include <string.h>
 
+using namespace rts2image;
+
 std::string
 Rts2FitsFile::getFitsErrors ()
 {
@@ -187,6 +189,21 @@ Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool 
 }
 
 
+void Rts2FitsFile::fitsStatusSetValue (const char *valname, bool required)
+{
+	int ret = fitsStatusValue (valname, "SetValue", required);
+	if (ret && required)
+		throw ErrorSettingKey (valname);
+}
+
+
+void Rts2FitsFile::fitsStatusGetValue (const char *valname, bool required)
+{
+	int ret = fitsStatusValue (valname, "GetValue", required);
+	if (ret && required)
+		throw KeyNotFound (this, valname);
+}
+
 Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 {
 	ffile = NULL;
@@ -249,19 +266,17 @@ Rts2FitsFile::~Rts2FitsFile (void)
 }
 
 
-int
-Rts2FitsFile::writeHistory (const char *history)
+void Rts2FitsFile::writeHistory (const char *history)
 {
 	fits_write_history (ffile, (char *) history, &fits_status);
-	return fitsStatusSetValue ("history", true);
+	fitsStatusSetValue ("history", true);
 }
 
 
-int
-Rts2FitsFile::writeComment (const char *comment)
+void Rts2FitsFile::writeComment (const char *comment)
 {
 	fits_write_comment (ffile, (char *) comment, &fits_status);
-	return fitsStatusSetValue ("comment", true);
+	fitsStatusSetValue ("comment", true);
 }
 
 int

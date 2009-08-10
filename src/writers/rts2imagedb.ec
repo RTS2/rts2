@@ -42,29 +42,31 @@ Rts2ImageDb::reportSqlError (const char *msg)
 }
 
 
-int
-Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
+void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
 {
-	ind = getValue (name, value, comment);
-	if (ind || isnan(value))
+	try
+	{
+		getValue (name, value, comment);
+	}
+	catch (rts2core::Error &er)
 	{
 		value = 100;
 		ind = -1;
 	}
-	return 0;
 }
 
 
-int
-Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
+void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
 {
-	ind = getValue (name, value, comment);
-	if (ind || isnan(value))
+	try
+	{
+		getValue (name, value, comment);
+	}
+	catch (rts2core::Error &er)
 	{
 		value = 100;
 		ind = -1;
 	}
-	return 0;
 }
 
 
@@ -340,32 +342,23 @@ Rts2ImageSkyDb::updateAstrometry ()
 	double crota[2];
 	double equinox;
 
-	int ret;
-
 	ctype[0] = (char *) malloc (9);
 	ctype[1] = (char *) malloc (9);
 
-	ret = getValues ("NAXIS", a_naxis, 2);
-	if (ret)
+	try
+	{
+		getValues ("NAXIS", a_naxis, 2);
+		getValues ("CTYPE", (char **) &ctype, 2);
+		getValues ("CRPIX", crpix, 2);
+		getValues ("CRVAL", crval, 2);
+		getValues ("CDELT", cdelt, 2);
+		getValues ("CROTA", crota, 2);
+		getValue ("EQUINOX", equinox);
+	}
+	catch (rts2core::Error &er)
+	{
 		return -1;
-	ret = getValues ("CTYPE", (char **) &ctype, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CRPIX", crpix, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CRVAL", crval, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CDELT", cdelt, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CROTA", crota, 2);
-	if (ret)
-		return -1;
-	ret = getValue ("EQUINOX", equinox);
-	if (ret)
-		return -1;
+	}
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
@@ -428,14 +421,12 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 
 	double img_alt;
 
-	int ret;
-
 	// we have calibration image processed..update airmass_cal_images table
 	if (isCalibrationImage ())
 	{
-		ret = getValue ("ALT", img_alt);
-		if (!ret)
+		try
 		{
+			getValue ("ALT", img_alt);
 			db_airmass = ln_get_airmass (img_alt, 750.0);
 			db_air_last_image = getExposureSec ();
 			// delete - unset our old references (if any exists..)
@@ -485,6 +476,9 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 					EXEC SQL COMMIT;
 				}
 			}
+		}
+		catch (rts2core::Error &er)
+		{
 		}
 	}
 }

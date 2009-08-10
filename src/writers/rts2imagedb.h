@@ -62,8 +62,8 @@ class Rts2ImageDb:public Rts2Image
 			return -1;
 		}
 
-		int getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
-		int getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
+		void getValueInd (const char *name, double &value, int &ind, char *comment = NULL);
+		void getValueInd (const char *name, float &value, int &ind, char *comment = NULL);
 
 	public:
 		Rts2ImageDb (Rts2Image * in_image);
@@ -172,11 +172,15 @@ template < class img > img * setValueImageType (img * in_image)
 
 template < class img > img * getValueImageType (img * in_image)
 {
-	int ret;
 	char value[20];
-	ret = in_image->getValue ("IMAGETYP", value, 20);
-	if (ret)
+	try
+	{
+		in_image->getValue ("IMAGETYP", value, 20);
+	}
+	catch (rts2image::KeyNotFound &er)
+	{
 		return in_image;
+	}
 	// switch based on IMAGETYPE
 	if (!strcasecmp (value, "dark"))
 	{
