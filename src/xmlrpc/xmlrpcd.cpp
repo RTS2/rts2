@@ -486,7 +486,10 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 			}
 #else
 			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-				throw XmlRpcException ("Login not supported");
+			{
+				authorizePage (http_code, response_type, response, response_length);
+				return;
+			}
 #endif /* HAVE_PGSQL */
 			http_code = HTTP_OK;
 
