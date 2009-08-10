@@ -375,7 +375,7 @@ XmlRpcServerConnection::executeGet()
 {
 	const char* response_type = "text/plain";
 
-	int http_code = HTTP_FAILED;
+	int http_code = HTTP_BAD_REQUEST;
 	const char *http_code_string = "Failed";
 	const char *extra_header = "";
 
@@ -383,7 +383,7 @@ XmlRpcServerConnection::executeGet()
 	if (request == NULL)
 	{
 		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
-		http_code = HTTP_FAILED;
+		http_code = HTTP_BAD_REQUEST;
 	}
 	else
 	{
@@ -400,19 +400,13 @@ XmlRpcServerConnection::executeGet()
 				throw XmlRpcException ("Path contains !");
 			request->execute (path.c_str (), http_code, response_type, _get_response, _get_response_length);
 		}
-		catch (std::exception ex)
+		catch (std::exception &ex)
 		{
 			_get_response = new char[501];
-			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Cannot execute request %s</p></body></html>", ex.what());
+			response_type = "text/html";
+			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Bad request %s</p></body></html>", ex.what());
 
-			http_code = HTTP_FAILED;
-		}
-		catch (XmlRpcException ex)
-		{
-			_get_response = new char[501];
-			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Cannot execute request %s</p></body></html>", ex.getMessage().c_str());
-
-			http_code = HTTP_FAILED;
+			http_code = HTTP_BAD_REQUEST;
 		}
 	}
 
@@ -421,11 +415,11 @@ XmlRpcServerConnection::executeGet()
 		case HTTP_OK:
 			http_code_string = "OK";
 			break;
-		case HTTP_AUTHORIZE:
+		case HTTP_UNAUTHORIZED:
 			http_code_string = "Authorization Required";
 			extra_header = "\r\nWWW-Authenticate: Basic realm=\"Your RTS2 login\"";
 			break;
-		case HTTP_FAILED:
+		case HTTP_BAD_REQUEST:
 		default:
 			http_code_string = "Failed";
 			break;

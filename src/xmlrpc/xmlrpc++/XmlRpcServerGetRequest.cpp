@@ -36,7 +36,7 @@ namespace XmlRpc
 
 	void XmlRpcServerGetRequest::authorizePage(int &http_code, const char* &response_type, char* &response, int &response_length)
 	{
-		http_code = HTTP_AUTHORIZE;
+		http_code = HTTP_UNAUTHORIZED;
 		response_type = "text/html";
 
 		const char *r = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/1999/REC-html401-19991224/loose.dtd\"><HTML><HEAD><TITLE>Error</TITLE><META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=ISO-8859-1\"></HEAD><BODY><H1>401 Unauthorised.</H1></BODY></HTML>";

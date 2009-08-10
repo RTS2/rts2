@@ -511,27 +511,20 @@ class JpegImageRequest: public GetRequestAuthorized
 
 		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
 		{
-			try
-			{
-				response_type = "image/jpeg";
-				Rts2Image image (path, true, true);
-				Blob blob;
-				Magick::Image mimage = image.getMagickImage ();
-				mimage.fillColor (Magick::Color (0, 0, 0));
-				mimage.draw (Magick::DrawableRectangle (5, image.getHeight () - 30, image.getWidth () - 10, image.getHeight () - 5));
+			response_type = "image/jpeg";
+			Rts2Image image (path, true, true);
+			Blob blob;
+			Magick::Image mimage = image.getMagickImage ();
+			mimage.fillColor (Magick::Color (0, 0, 0));
+			mimage.draw (Magick::DrawableRectangle (5, image.getHeight () - 30, image.getWidth () - 10, image.getHeight () - 5));
 
-				mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-				mimage.draw (Magick::DrawableText (10, image.getHeight () - 10, image.expand ("%Y-%m-%d %H:%M:%S @OBJECT")));
+			mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+			mimage.draw (Magick::DrawableText (10, image.getHeight () - 10, image.expand ("%Y-%m-%d %H:%M:%S @OBJECT")));
 
-				mimage.write (&blob, "jpeg");
-				response_length = blob.length();
-				response = new char[response_length];
-				memcpy (response, blob.data(), response_length);
-			}
-			catch (rts2core::Error er)
-			{
-				throw XmlRpcException (er.getMsg ());
-			}
+			mimage.write (&blob, "jpeg");
+			response_length = blob.length();
+			response = new char[response_length];
+			memcpy (response, blob.data(), response_length);
 		}
 } jpegRequest ("/jpeg", &xmlrpc_server);
 
@@ -548,29 +541,23 @@ class JpegPreview:public GetRequestAuthorized
 			if (strstr (path + strlen (path) - 6, ".fits") != NULL)
 			{
 				response_type = "image/jpeg";
-				try
-				{
-					Rts2Image image (path, true, true);
-					Blob blob;
-					Magick::Image mimage = image.getMagickImage ();
-					mimage.zoom (Magick::Geometry (128, 128));
-					mimage.fillColor (Magick::Color (0, 0, 0));
-					mimage.fontPointsize (10);
-					mimage.draw (Magick::DrawableRectangle (0, 116, 128, 128));
 
-					mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-					mimage.draw (Magick::DrawableText (1, 126, image.expand ("%Y-%m-%d %H:%M:%S")));
+				Rts2Image image (path, true, true);
+				Blob blob;
+				Magick::Image mimage = image.getMagickImage ();
+				mimage.zoom (Magick::Geometry (128, 128));
+				mimage.fillColor (Magick::Color (0, 0, 0));
+				mimage.fontPointsize (10);
+				mimage.draw (Magick::DrawableRectangle (0, 116, 128, 128));
 
-					mimage.write (&blob, "jpeg");
-					response_length = blob.length();
-					response = new char[response_length];
-					memcpy (response, blob.data(), response_length);
-					return;
-				}
-				catch (rts2core::Error er)
-				{
-					throw XmlRpcException (er.getMsg ());
-				}
+				mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+				mimage.draw (Magick::DrawableText (1, 126, image.expand ("%Y-%m-%d %H:%M:%S")));
+
+				mimage.write (&blob, "jpeg");
+				response_length = blob.length();
+				response = new char[response_length];
+				memcpy (response, blob.data(), response_length);
+				return;
 			}
 			std::ostringstream _os;
 			_os << "<html><head><title>Preview of " << path << "</title></head><body>";
@@ -1568,7 +1555,7 @@ class TicketInfo: public SessionMethod
 			}
 			catch (rts2db::SqlError e)
 			{
-				throw XmlRpcException ("DB error: " + e.getMsg ());
+				throw XmlRpcException (e.what ());
 			}
 		}
 } ticketInfo (&xmlrpc_server);
@@ -1605,7 +1592,7 @@ class RecordsValues: public SessionMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException ("DB error: " + err.getMsg ());
+				throw XmlRpcException (err.what ());
 			}
 		}
 } recordValues (&xmlrpc_server);
@@ -1638,7 +1625,7 @@ class Records: public SessionMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException (err.getMsg ());
+				throw XmlRpcException (err.what ());
 			}
 		}
 } records (&xmlrpc_server);
@@ -1674,7 +1661,7 @@ class RecordsAverage: public SessionMethod
 			}
 			catch (rts2db::SqlError err)
 			{
-				throw XmlRpcException (err.getMsg ());
+				throw XmlRpcException (err.what ());
 			}
 		}
 } recordAverage (&xmlrpc_server);

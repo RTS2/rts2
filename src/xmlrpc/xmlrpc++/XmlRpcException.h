@@ -12,6 +12,7 @@
 # include <string>
 #endif
 
+#include <exception>
 #include <ostream>
 
 namespace XmlRpc
@@ -20,14 +21,18 @@ namespace XmlRpc
 	//! A class representing an error.
 	//! If server methods throw this exception, a fault response is returned
 	//! to the client.
-	class XmlRpcException
+	class XmlRpcException: public std::exception
 	{
 		public:
 			//! Constructor
 			//!   @param what  A descriptive error message
 			//!   @param code     An integer error code
-			XmlRpcException(const std::string& message, int code=-1) :
-			_message(message), _code(code) {}
+			explicit XmlRpcException(const std::string& message, int code=-1) :
+			std::exception (), _message(message), _code(code) {}
+
+			virtual ~XmlRpcException () throw () {}
+
+			virtual const char* what () const throw () { return _message.c_str (); }
 
 			//! Return the error message.
 			const std::string& getMessage() const { return _message; }
