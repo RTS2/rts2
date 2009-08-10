@@ -1,5 +1,5 @@
-#include "rts2nwindow.h"
 #include "nmonitor.h"
+#include "rts2nwindow.h"
 
 #include <iostream>
 

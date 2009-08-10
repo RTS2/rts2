@@ -1,6 +1,5 @@
-#include "rts2ncomwin.h"
-
 #include "nmonitor.h"
+#include "rts2ncomwin.h"
 
 Rts2NComWin::Rts2NComWin ():Rts2NWindow (11, LINES - 24, COLS - 12, 3, 0)
 {
