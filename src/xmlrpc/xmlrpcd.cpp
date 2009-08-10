@@ -46,6 +46,7 @@ using namespace Magick;
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 #include "../utils/error.h"
+#include "../writers/rts2image.h"
 #include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
 #include "session.h"

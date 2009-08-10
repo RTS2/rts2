@@ -23,6 +23,7 @@
 #include "../utils/connfork.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2logstream.h"
+#include "../utils/timestamp.h"
 
 #include <config.h>
 
