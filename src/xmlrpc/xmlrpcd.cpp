@@ -595,7 +595,7 @@ class JpegPreview:public GetRequestAuthorized
 					continue;
 				if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 				{
-					_os << "<a href='/preview" << path << fname << "'>" << fname << "</a>&nbsp";
+					_os << "<a href='/preview" << path << fname << "/'>" << fname << "</a>&nbsp";
 				}
 			}
 
