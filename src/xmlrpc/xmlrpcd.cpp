@@ -574,11 +574,32 @@ class JpegPreview:public GetRequestAuthorized
 			struct dirent **namelist;
 			int n;
 
-			n = scandir (path, &namelist, 0, alphasort);
+			int ret = chdir (path);
+			if (ret)
+			{
+			  	throw XmlRpcException ("Invalid directory");
+			}
+			n = scandir (".", &namelist, 0, alphasort);
 			if (n < 0)
 			{
 				throw XmlRpcException ("Cannot open directory");
 			}
+
+			// first show directories..
+			for (int i = 0; i < n; i++)
+			{
+				char *fname = namelist[i]->d_name;
+				struct stat sbuf;
+				ret = stat (fname, &sbuf);
+				if (ret)
+					continue;
+				if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
+				{
+					_os << "<a href='/preview" << path << fname << "'>" << fname << "</a>&nbsp";
+				}
+			}
+
+			_os << "<p/>\n";
 
 			for (int i = 0; i < n; i++)
 			{
