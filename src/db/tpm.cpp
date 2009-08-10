@@ -257,41 +257,31 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 	double aux0;
 	double aux1;
 
-	int ret;
-
-	ret = image->getCoordAstrometry (actual);
-	if (ret)
-		return ret;
+	image->getCoordAstrometry (actual);
 	switch (tarCorType)
 	{
 		case TARGET:
-			ret = image->getCoordTarget (target);
+			image->getCoordTarget (target);
 			break;
 		case BEST:
-			ret = image->getCoordBest (target);
+			image->getCoordBest (target);
 			break;
 		case MOUNT:
-			ret = image->getCoordMount (target);
+			image->getCoordMount (target);
 			break;
 	}
-	if (ret)
-		return ret;
 
-	ret = image->getValue ("CTIME", ct);
-	if (ret)
-		return ret;
-
-	ret = image->getValue ("EXPOSURE", expo);
-	if (ret)
-		return ret;
+	image->getValue ("CTIME", ct);
+	image->getValue ("EXPOSURE", expo);
 
 	imageFlip = image->getMountFlip ();
 	// don't process images with invalid flip
 	if (selFlip != -1 && imageFlip != selFlip)
 		return 0;
-	ret = image->getValue ("MNT_AX1", aux1);
-	if (ret)
-		aux1 = -2;
+
+	aux1 = -2;
+	image->getValue ("MNT_AX1", aux1, false);
+
 	ct = (time_t) (ct + expo / 2);
 
 	JD = ln_get_julian_from_timet (&ct);
@@ -300,18 +290,12 @@ TPM::printImage (Rts2Image * image, std::ostream & _os)
 
 	if (!isnan (ra_step))
 	{
-		ret = image->getValue ("MNT_AX0", aux0);
-		if (ret)
-			return ret;
-		actual.
-			setRa (ln_range_degrees
-			(mean_sidereal - ((aux0 - ra_offset) / ra_step)));
+		image->getValue ("MNT_AX0", aux0, true);
+		actual.setRa (ln_range_degrees (mean_sidereal - ((aux0 - ra_offset) / ra_step)));
 	}
 	if (!isnan (dec_step))
 	{
-		ret = image->getValue ("MNT_AX1", aux1);
-		if (ret)
-			return ret;
+		image->getValue ("MNT_AX1", aux1, true);
 		actual.setDec ((aux1 - dec_offset) / dec_step);
 	}
 

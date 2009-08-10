@@ -38,6 +38,11 @@
 #include "../utils/rts2device.h"
 #endif /* HAVE_PGSQL */
 
+#ifdef HAVE_LIBJPEG
+#include <Magick++.h>
+using namespace Magick;
+#endif // HAVE_LIBJPEG
+
 #include "../utils/libnova_cpp.h"
 #include "../utils/timestamp.h"
 #include "../utils/error.h"
@@ -47,6 +52,12 @@
 #include "events.h"
 
 #include "r2x.h"
+
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
 
@@ -447,6 +458,183 @@ class Login: public XmlRpcServerMethod
 		}
 } login(&xmlrpc_server);
 
+class GetRequestAuthorized: public XmlRpcServerGetRequest
+{
+	public:
+		GetRequestAuthorized (const char* prefix, XmlRpcServer* s):XmlRpcServerGetRequest (prefix, s)
+		{
+		}
+
+		virtual void execute (const char* path, int &http_code, const char* &response_type, char* &response, int &response_length)
+		{
+
+			if (getUsername () == std::string ("session_id"))
+			{
+				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
+				{
+					authorizePage (http_code, response_type, response, response_length);
+					return;
+				}
+			}
+
+#ifdef HAVE_PGSQL
+			if (verifyUser (getUsername (), getPassword ()) == false)
+			{
+				authorizePage (http_code, response_type, response, response_length);
+				return;
+			}
+#else
+			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
+				throw XmlRpcException ("Login not supported");
+#endif /* HAVE_PGSQL */
+			http_code = HTTP_OK;
+
+			authorizedExecute (path, response_type, response, response_length);
+		}
+
+		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length) = 0;
+};
+
+
+#ifdef HAVE_LIBJPEG
+
+class JpegImageRequest: public GetRequestAuthorized
+{
+	public:
+		JpegImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s)
+		{
+		}
+
+		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		{
+			try
+			{
+				response_type = "image/jpeg";
+				Rts2Image image (path, true, true);
+				Blob blob;
+				Magick::Image mimage = image.getMagickImage ();
+				mimage.fillColor (Magick::Color (0, 0, 0));
+				mimage.draw (Magick::DrawableRectangle (5, image.getHeight () - 30, image.getWidth () - 10, image.getHeight () - 5));
+
+				mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+				mimage.draw (Magick::DrawableText (10, image.getHeight () - 10, image.expand ("%Y-%m-%d %H:%M:%S @OBJECT")));
+
+				mimage.write (&blob, "jpeg");
+				response_length = blob.length();
+				response = new char[response_length];
+				memcpy (response, blob.data(), response_length);
+			}
+			catch (rts2core::Error er)
+			{
+				throw XmlRpcException (er.getMsg ());
+			}
+		}
+} jpegRequest ("/jpeg", &xmlrpc_server);
+
+class JpegPreview:public GetRequestAuthorized
+{
+	public:
+		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s)
+		{
+		}
+
+		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		{
+			// if it is a fits file..
+			if (strstr (path + strlen (path) - 6, ".fits") != NULL)
+			{
+				response_type = "image/jpeg";
+				try
+				{
+					Rts2Image image (path, true, true);
+					Blob blob;
+					Magick::Image mimage = image.getMagickImage ();
+					mimage.zoom (Magick::Geometry (128, 128));
+					mimage.fillColor (Magick::Color (0, 0, 0));
+					mimage.fontPointsize (10);
+					mimage.draw (Magick::DrawableRectangle (0, 116, 128, 128));
+
+					mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+					mimage.draw (Magick::DrawableText (1, 126, image.expand ("%Y-%m-%d %H:%M:%S")));
+
+					mimage.write (&blob, "jpeg");
+					response_length = blob.length();
+					response = new char[response_length];
+					memcpy (response, blob.data(), response_length);
+					return;
+				}
+				catch (rts2core::Error er)
+				{
+					throw XmlRpcException (er.getMsg ());
+				}
+			}
+			std::ostringstream _os;
+			_os << "<html><head><title>Preview of " << path << "</title></head><body>";
+
+			struct dirent **namelist;
+			int n;
+
+			n = scandir (path, &namelist, 0, alphasort);
+			if (n < 0)
+			{
+				throw XmlRpcException ("Cannot open directory");
+			}
+
+			for (int i = 0; i < n; i++)
+			{
+				char *fname = namelist[i]->d_name;
+				if (strstr (fname + strlen (fname) - 6, ".fits") == NULL)
+					continue;
+				std::string fpath = std::string (path) + '/' + fname;
+				_os << "<a href='/jpeg" << fpath << "'><img src='/preview" << fpath << "'/></a>&nbsp;";
+				//<a href='/fits" << fpath
+				//	<< "'>FITS</a>&nbsp;<a href='/jpeg" << fpath << "'>JPEG</a></li>";
+			}
+
+			_os << "</body></html>";
+
+			response_type = "text/html";
+			response_length = _os.str ().length ();
+			response = new char[response_length];
+			memcpy (response, _os.str ().c_str (), response_length);
+		}
+} jpegPreview ("/preview", &xmlrpc_server);
+
+#endif // HAVE_LIBJPEG
+
+class FitsImageRequest:public GetRequestAuthorized
+{
+	public:
+		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s)
+		{
+		}
+
+		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		{
+			response_type = "image/fits";
+			int f = open (path, O_RDONLY);
+			if (f == -1)
+			{
+				throw XmlRpcException ("Cannot open file");
+			}
+			struct stat st;
+			if (fstat (f, &st) == -1)
+			{
+				throw XmlRpcException ("Cannot get file properties");
+			}
+			response_length = st.st_size;
+			response = new char[response_length];
+			int ret;
+			ret = read (f, response, response_length);
+			if (ret != response_length)
+			{
+				delete[] response;
+				throw XmlRpcException ("Cannot read data");
+			}
+			close (f);
+		}
+} fitsRequest ("/fits", &xmlrpc_server);
+
 /**
  * Represents session methods. Those must be executed either with user name and
  * password, or with "session_id" passed as username and session ID passed in password.
@@ -466,7 +654,7 @@ class SessionMethod: public XmlRpcServerMethod
 		{
 			if (getUsername () == std::string ("session_id"))
 			{
-				if (((XmlRpcd *) getMasterApp ())->existsSession (params[0]) == false)
+				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
 				{
 					throw XmlRpcException ("Invalid session ID");
 				}

@@ -31,7 +31,7 @@ nodist_librts2blockdb_a_SOURCES = sqlerror.cpp rts2devicedb.cpp target.cpp sub_t
 	rts2prop.cpp rts2camlist.cpp target_auger.cpp rts2messagedb.cpp rts2targetplanet.cpp rts2targetgrb.cpp \
 	rts2imgsetstat.cpp rts2targetell.cpp rts2user.cpp rts2userset.cpp account.cpp accountset.cpp recvals.cpp records.cpp recordsavg.cpp
 librts2blockdb_a_SOURCES = rts2imgsetstat.cpp
-librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@
+librts2blockdb_a_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

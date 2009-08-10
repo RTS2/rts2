@@ -36,6 +36,9 @@ XmlRpcSource(fd, deleteOnClose)
 	_connectionState = READ_HEADER;
 	_keepAlive = true;
 
+	_get_response_header_length = 0;
+	_get_response_header = NULL;
+
 	_get_response_length = 0;
 	_get_response = NULL;
 }
@@ -243,32 +246,51 @@ XmlRpcServerConnection::readRequest()
 bool
 XmlRpcServerConnection::handleGet()
 {
-	if (_get_response_length == 0)
+	if (_get_response_header_length == 0 || _get_response_length == 0)
 	{
 		executeGet();
+		_getHeaderWritten = 0;
+		_getWritten = 0;
 		_bytesWritten = 0;
-		if (_get_response_length == 0)
+		if (_get_response_header_length == 0 || _get_response_length == 0)
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: empty response.");
 			return false;
 		}
 	}
 
-	if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_bytesWritten))
+	if (_getHeaderWritten != _get_response_header_length)
 	{
-		XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
-		return false;
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header, _get_response_header_length, &_getHeaderWritten))
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
+		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getHeaderWritten, _get_response_header_length);
 	}
-	XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _bytesWritten, _get_response_length);
+	if (_getHeaderWritten == _get_response_header_length && _getWritten != _get_response_length)
+	{
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten))
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
+		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getWritten, _get_response_length);
+	}
 
 	// Prepare to read the next request
-	if (_bytesWritten == int(_get_response_length))
+	if (_getHeaderWritten == _get_response_header_length && _getWritten == _get_response_length)
 	{
 		_header = "";
 		_authorization = "";
 		_get = "";
 		_request = "";
+		delete[] _get_response_header;
 		delete[] _get_response;
+		
+		_get_response_header_length = 0;
+		_get_response_header = NULL;
+
 		_get_response_length = 0;
 		_get_response = NULL;
 		_response = "";
@@ -307,6 +329,8 @@ XmlRpcServerConnection::writeResponse()
 		_authorization = "";
 		_get = "";
 		_request = "";
+		_get_response_header_length = 0;
+		_get_response_header = NULL;
 		_get_response_length = 0;
 		_get_response = NULL;
 		_response = "";
@@ -349,10 +373,67 @@ XmlRpcServerConnection::executeRequest()
 void
 XmlRpcServerConnection::executeGet()
 {
-	_get_response = new char[500];
+	const char* response_type = "text/plain";
+
+	int http_code = HTTP_FAILED;
+	const char *http_code_string = "Failed";
+	const char *extra_header = "";
+
+	XmlRpcServerGetRequest* request = _server->findGetRequest(_get);
+	if (request == NULL)
+	{
+		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
+		http_code = HTTP_FAILED;
+	}
+	else
+	{
+		if (_authorization.length () != 0)
+			request->setAuthorization (_authorization);
 	
-	strcpy(_get_response, "HTTP/1.1 200 OK\r\nServer: XMLRCP\r\nContent-Type: text/html\r\nContent-length: 15\r\n\r\n<html>Hi there!</html>");
-	_get_response_length = strlen(_get_response);
+		try
+		{
+			std::string path = _get.substr (request->getPrefix ().length ()).c_str ();
+			// check for ..
+			if (path.find ("..") != std::string::npos)
+				throw XmlRpcException ("Path contains ..");
+			if (path.find ("!") != std::string::npos)
+				throw XmlRpcException ("Path contains !");
+			request->execute (path.c_str (), http_code, response_type, _get_response, _get_response_length);
+		}
+		catch (std::exception ex)
+		{
+			_get_response = new char[501];
+			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Cannot execute request %s</p></body></html>", ex.what());
+
+			http_code = HTTP_FAILED;
+		}
+		catch (XmlRpcException ex)
+		{
+			_get_response = new char[501];
+			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Cannot execute request %s</p></body></html>", ex.getMessage().c_str());
+
+			http_code = HTTP_FAILED;
+		}
+	}
+
+	switch (http_code)
+	{
+		case HTTP_OK:
+			http_code_string = "OK";
+			break;
+		case HTTP_AUTHORIZE:
+			http_code_string = "Authorization Required";
+			extra_header = "\r\nWWW-Authenticate: Basic realm=\"Your RTS2 login\"";
+			break;
+		case HTTP_FAILED:
+		default:
+			http_code_string = "Failed";
+			break;
+	}
+
+	_get_response_header = new char[501];
+	_get_response_header_length = snprintf(_get_response_header, 500, "HTTP/1.0 %i %s\r\nServer: XMLRCP%s\r\nContent-Type: %s\r\nContent-length: %i\r\n\r\n", http_code, http_code_string, extra_header, response_type, _get_response_length);
+	printf ("%s", _get_response_header);
 }
 
 

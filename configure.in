@@ -117,15 +117,26 @@ AC_ARG_WITH(ncurses,
 	*) ncurses=${withval} ;;
 esac],[ncurses=yes])
 
-AC_ARG_WITH(jpeg,
-[  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
-[case "${withval}" in
-	yes) libjpeg=yes ;;
-	no)  libjpeg=no ;;
-	*) libjpeg=${withval} ;;
-esac],[libjpeg=yes])
+dnl Check for GraphicsMagic++ library
 
-AM_CONDITIONAL(LIBJPEG, test x$libjpeg != xno)
+AC_ARG_WITH(graphicsmagic,
+[  --with-grahpicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
+[case "${withval}" in
+	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
+	no)  graphicsmagic_config=no ;;
+	*) graphicsmagic_config=${withval} ;;
+esac],[graphicsmagic_config="GraphicsMagick++-config"])
+
+AC_MSG_CHECKING(looking from GraphicsMagick++ library)
+if ${graphicsmagic_config} --libs > /dev/null 2>&1
+then
+	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
+	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
+else
+	GRAPHICSMAGICK_VERS="no"
+	AC_MSG_RESULT(${graphicsmagic_config} not found)
+	graphicsmagic_config="no"
+fi
 
 dnl Check for the XML library
 XML_CONFIG=xml2-config
@@ -432,26 +443,17 @@ fi
 
 AH_TEMPLATE([HAVE_LIBJPEG],[Whenever JPEG is installed])
 
-if test "x${libjpeg}" != "xno"; then
-  if test "x${libjpeg}" != "xyes"; then
-    LDFLAGS="${LDFLAGS} -L${libjpeg}/lib"
-  fi
-  AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg",
-[cat << EOF
-**** You don't have jpeg library installed.
-**** Please try to get it somewhere.
-EOF
-  exit 1])
-  if test "x${libjpeg}" != "xyes"; then
-    LIB_JPEG="-L${libjpeg}/lib ${LIB_JPEG}"
-    JPEG_CFLAGS="-I${libjpeg}/include"
-  else
-    JPEG_CFLAGS=""
-  fi
-  AC_SUBST(LIB_JPEG)
-  AC_SUBST(JPEG_CFLAGS)
+if test "x${graphicsmagic_config}" != "xno"; then
+  LIB_JPEG=`${graphicsmagic_config} --libs`
+  JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
   AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
+else
+  LIB_JPEG=""
+  JPEG_CFLAGS=""
+  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,0,[Whenever JPEG is installed])
 fi
+AC_SUBST(LIB_JPEG)
+AC_SUBST(JPEG_CFLAGS)
 
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
@@ -623,6 +625,8 @@ echo "
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}
+  libxml2       ${XMLVERS}
+  graphicsmagic ${GRAPHICSMAGICK_VERS}
 
 
 CCD's:

@@ -22,6 +22,9 @@ namespace XmlRpc
 	// An abstract class supporting XML RPC methods
 	class XmlRpcServerMethod;
 
+	// An abstract class supporting HTTP GET requests
+	class XmlRpcServerGetRequest;
+
 	// Class representing connections to specific clients
 	class XmlRpcServerConnection;
 
@@ -51,6 +54,15 @@ namespace XmlRpc
 
 			//! Look up a method by name
 			XmlRpcServerMethod* findMethod(const std::string& name) const;
+
+			//! Add a GET request to the HTTP server
+			void addGetRequest(XmlRpcServerGetRequest* getRequest);
+
+			//! Remove a GET request from HTTP server
+			void removeGetRequest(XmlRpcServerGetRequest* getRequest);
+
+			//! Lookup a get request by prefix
+			XmlRpcServerGetRequest* findGetRequest(const std::string& prefix) const;
 
 			//! Create a socket, bind to the specified port, and
 			//! set it in listen mode to make it available for clients.
@@ -99,6 +111,10 @@ namespace XmlRpc
 			// Collection of methods. This could be a set keyed on method name if we wanted...
 			typedef std::map< std::string, XmlRpcServerMethod* > MethodMap;
 			MethodMap _methods;
+
+			// collection of get processors. String is prefix of the request
+			typedef std::map< std::string, XmlRpcServerGetRequest* > RequestMap;
+			RequestMap _requests;
 
 			// system methods
 			XmlRpcServerMethod* _listMethods;

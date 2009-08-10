@@ -101,12 +101,20 @@ namespace XmlRpc
 			// Response
 			std::string _response;
 
+			// Number of bytes of the response written so far
+			int _bytesWritten;
+
+			// Response to GET request - header
+			char *_get_response_header;
+			int _get_response_header_length;
+
 			// Response for GET request - data
 			char *_get_response;
 			int _get_response_length;
 
-			// Number of bytes of the response written so far
-			int _bytesWritten;
+			// Number of bytes written for GET header and response so far
+			int _getHeaderWritten;
+			int _getWritten;
 
 			// Whether to keep the current client connection open for further requests
 			bool _keepAlive;

@@ -19,6 +19,7 @@
 #ifndef __RTS2_ERROR__
 #define __RTS2_ERROR__
 
+#include <exception>
 #include <string>
 #include <ostream>
 

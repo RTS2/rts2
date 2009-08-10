@@ -24,7 +24,7 @@ namespace XmlRpc
 	{
 		public:
 			//! Constructor
-			//!   @param message  A descriptive error message
+			//!   @param what  A descriptive error message
 			//!   @param code     An integer error code
 			XmlRpcException(const std::string& message, int code=-1) :
 			_message(message), _code(code) {}

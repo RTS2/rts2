@@ -1,5 +1,10 @@
 0.7.5
 =====
+
+2009-08-10
+ * XML-RPC server supports access to the images
+ * XML-RPC supports correct authorization
+
 2009-07-25
  * use wasChanged to detect changes inside daemon, to not send values which are the same
  * number of improvements inside XML-RPCD

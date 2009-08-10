@@ -2,6 +2,7 @@
 #include "XmlRpcServer.h"
 #include "XmlRpcServerConnection.h"
 #include "XmlRpcServerMethod.h"
+#include "XmlRpcServerGetRequest.h"
 #include "XmlRpcSocket.h"
 #include "XmlRpcUtil.h"
 #include "XmlRpcException.h"
@@ -20,6 +21,7 @@ XmlRpcServer::~XmlRpcServer()
 {
 	this->shutdown();
 	_methods.clear();
+	_requests.clear();
 	delete _listMethods;
 	delete _methodHelp;
 }
@@ -61,6 +63,37 @@ XmlRpcServer::findMethod(const std::string& name) const
 	if (i == _methods.end())
 		return 0;
 	return i->second;
+}
+
+
+// Add a GET request to the HTTP server
+void
+XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* getRequest)
+{
+	_requests[getRequest->getPrefix()] = getRequest;
+}
+
+
+// Remove a GET request from HTTP server
+void
+XmlRpcServer::removeGetRequest(XmlRpcServerGetRequest* getRequest)
+{
+	RequestMap::iterator i = _requests.find(getRequest->getPrefix());
+	if (i != _requests.end())
+		_requests.erase(i);
+}
+
+
+// Lookup a get request by prefix
+XmlRpcServerGetRequest*
+XmlRpcServer::findGetRequest(const std::string& prefix) const
+{
+	for (RequestMap::const_iterator i = _requests.begin(); i != _requests.end(); i++)
+	{
+		if (prefix.find(i->first) == 0)
+			return i->second;
+	}
+	return 0;
 }
 
 
