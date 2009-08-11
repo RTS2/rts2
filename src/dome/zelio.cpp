@@ -325,7 +325,11 @@ Zelio::startClose ()
 {
 	try
 	{
+		uint16_t reg;
 		zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+		// update automode status..
+		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+		automode->setValueBool (reg & ZS_SW_AUTO);
 		if (automode->getValueBool () == false)
 		{
 			return 0;
