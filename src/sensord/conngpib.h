@@ -35,21 +35,44 @@ namespace rts2sensord
 class ConnGpib
 {
 	public:
-		virtual void gpibWrite (const char *_buf) = 0;
+		/**
+		 * Write command to GPIB bus.
+		 *
+		 * @param cmd Null terminated string, which will be written to bus.
+		 *
+		 * @throw rts2core::Error and its descendats.
+		 */
+		virtual void gpibWrite (const char *cmd) = 0;
 
 		/*
 		 * Read data from GPIB device to a buffer.
 		 *
-		 * @param _buf  Buffer where data will be stored.
-		 * @param blne  Buffer length in bytes.
+		 * @param reply  Buffer where null terminated data will be stored.
+		 * @param blen   Buffer length in bytes.
 		 *
 		 * @throw rts2core::Error and its descendants
 		 */
-		virtual void gpibRead (void *_buf, int &blen) = 0;
-		virtual void gpibWriteRead (const char *_buf, char *val, int blen = 50) = 0;
+		virtual void gpibRead (void *reply, int &blen) = 0;
 
+		/**
+		 * Write to GPIB bus and read back reply.
+		 *
+		 * @cmd    Null terminated buffer (string) which will be written to GPIB
+		 * @reply  Buffer to store null terminated reply.
+		 * @blen   Reply buffer lenght.
+		 *
+		 * @throw rts2core::Error and its descendats
+		 */
+		virtual void gpibWriteRead (const char *cmd, char *reply, int blen) = 0;
+
+		/**
+		 * Wait while line assert serial register.
+		 */
 		virtual void gpibWaitSRQ () = 0;
 
+		/**
+		 * Initialize GPIB connection.
+		 */
 		virtual void initGpib () = 0;
 
 		ConnGpib ()

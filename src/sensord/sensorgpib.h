@@ -1,6 +1,6 @@
 /* 
  * Class for GPIB sensors.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,28 +26,48 @@
 namespace rts2sensord
 {
 
+/**
+ * Provides basic GPIB functionalities. Should be used by all GPIB enabled
+ * devices to facilite communication over GPIB bus.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Gpib:public Sensor
 {
-	private:
-		int pad;
-		int minor;
+	public:
+		Gpib (int argc, char **argv);
+		virtual ~ Gpib (void);
 
-		HostString *enet_addr;
-
-		ConnGpib *connGpib;
 	protected:
-		void gpibWrite (const char *buf) { connGpib->gpibWrite (buf); }
-		void gpibRead (void *buf, int blen) { connGpib->gpibRead (buf, blen); }
-		void gpibWriteRead (const char *buf, char *val, int blen = 50) { connGpib->gpibWriteRead (buf, val, blen); }
+		void gpibWrite (const char *cmd) { connGpib->gpibWrite (cmd); }
+		void gpibRead (void *reply, int &blen) { connGpib->gpibRead (reply, blen); }
+		void gpibWriteRead (const char *cmd, char *reply, int blen) { connGpib->gpibWriteRead (cmd, reply, blen); }
+
+		/**
+		 * Write value to GPIB bus. Except for Boolean values, getDisplayValue function is
+		 * used to write value to the bus. Boolean values are written
+		 * using either ON or OFF as value.
+		 *
+		 * @param name   GPIB value name.
+		 * @param value  Rts2Value class.
+		 *
+		 * @throw rts2core::Error and its descendants.
+		 */
+		void writeValue (const char *name, Rts2Value *value);
 
 		void gpibWaitSRQ () { connGpib->gpibWaitSRQ (); }
 
 		virtual int processOption (int in_opt);
 		virtual int init ();
 	
-	public:
-		Gpib (int argc, char **argv);
-		virtual ~ Gpib (void);
+	private:
+		int pad;
+		int minor;
+
+		// used only for GPIB enet interface
+		HostString *enet_addr;
+
+		ConnGpib *connGpib;
 };
 
 };

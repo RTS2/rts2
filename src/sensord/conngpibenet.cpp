@@ -72,20 +72,20 @@ void ConnGpibEnet::sresp (char **ret_buf)
 		delete[] sread_ret;
 }
 
-void ConnGpibEnet::gpibWrite (const char *_buf)
+void ConnGpibEnet::gpibWrite (const char *cmd)
 {
 	// write header
 	char gpib_buf[13] = "\x23\x05\x05\x08IIII\x00\x54\x00\x00";
-	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (_buf));
+	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (cmd));
 	sendData (gpib_buf, 12, true);
 	sresp (NULL);
 
-	sendData ((void *) _buf, strlen (_buf));
+	sendData ((void *) cmd, strlen (cmd));
 	sresp (NULL);
 }
 
 
-void ConnGpibEnet::gpibRead (void *_buf, int &blen)
+void ConnGpibEnet::gpibRead (void *reply, int &blen)
 {
 	uint16_t data_len = 0;
 	char *sbuf;
@@ -102,12 +102,12 @@ void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 		{
 			// raises error when flags != 0
 			sread (&sbuf);
-			if (data_len + len > blen)
+			if (data_len + len >= blen - 1)
 			{
 				delete[] sbuf;
 				throw rts2core::Error ("too short buffer");
 			}
-			memcpy (((char *)_buf) + data_len, sbuf, len);
+			memcpy (((char *)reply) + data_len, sbuf, len);
 			data_len += len;
 			delete[] sbuf;
 		}
@@ -117,6 +117,7 @@ void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 		if (data_len > 0)
 		{
 			blen = data_len;
+			((char*)reply)[blen] = '\0';
 			sresp (NULL);
 			return;
 		}
@@ -125,12 +126,11 @@ void ConnGpibEnet::gpibRead (void *_buf, int &blen)
 }
 
 
-void ConnGpibEnet::gpibWriteRead (const char *_buf, char *val, int blen)
+void ConnGpibEnet::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
-	gpibWrite (_buf);
-	*val = '\0';
-	gpibRead (val, blen);
-	val[blen] = '\0';
+	gpibWrite (cmd);
+	*reply = '\0';
+	gpibRead (reply, blen);
 }
 
 

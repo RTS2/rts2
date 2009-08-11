@@ -57,8 +57,6 @@ class Rts2ValueLoop
 
 class Cryocon:public Gpib
 {
-	void write (const char *buf, const char *newVal);
-
 	void writeRead (const char *buf, Rts2Value * val);
 	void writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num);
 
@@ -199,17 +197,6 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 }
 
 
-void Cryocon::write (const char *buf, const char *newVal)
-{
-	char *vbuf = new char[strlen (buf) + strlen (newVal) + 2];
-	strcpy (vbuf, buf);
-	strcat (vbuf, " ");
-	strcat (vbuf, newVal);
-	gpibWrite (vbuf);
-	delete[]vbuf;
-}
-
-
 void Cryocon::writeRead (const char *buf, Rts2Value * val)
 {
 	switch (val->getValueType ())
@@ -285,7 +272,7 @@ void Cryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, 
 void Cryocon::writeRead (const char *buf, Rts2ValueDouble * val)
 {
 	char rb[50];
-	gpibWriteRead (buf, rb);
+	gpibWriteRead (buf, rb, 50);
 	val->setValueDouble (atof (rb));
 }
 
@@ -293,7 +280,7 @@ void Cryocon::writeRead (const char *buf, Rts2ValueDouble * val)
 void Cryocon::writeRead (const char *buf, Rts2ValueFloat * val)
 {
 	char rb[50];
-	gpibWriteRead (buf, rb);
+	gpibWriteRead (buf, rb, 50);
 	val->setValueFloat (atof (rb));
 }
 
@@ -301,7 +288,7 @@ void Cryocon::writeRead (const char *buf, Rts2ValueFloat * val)
 void Cryocon::writeRead (const char *buf, Rts2ValueBool * val)
 {
 	char rb[50];
-	gpibWriteRead (buf, rb);
+	gpibWriteRead (buf, rb, 50);
 	val->setValueBool (!strncmp (rb, "ON", 2));
 }
 
@@ -309,7 +296,7 @@ void Cryocon::writeRead (const char *buf, Rts2ValueBool * val)
 void Cryocon::writeRead (const char *buf, Rts2ValueSelection * val)
 {
 	char rb[50];
-	gpibWriteRead (buf, rb);
+	gpibWriteRead (buf, rb, 50);
 	val->setSelIndex (rb);
 }
 
@@ -339,7 +326,7 @@ Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 				Rts2Value *val = *iter;
 				if (oldValue == val)
 				{
-					write (getLoopVal (l, val), newValue->getDisplayValue ());
+					writeValue (getLoopVal (l, val), newValue);
 					return 0;
 				}
 			}

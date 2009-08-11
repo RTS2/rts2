@@ -23,51 +23,51 @@
 
 using namespace rts2sensord;
 
-void ConnGpibLinux::gpibWrite (const char *_buf)
+void ConnGpibLinux::gpibWrite (const char *cmd)
 {
 	int ret;
-	ret = ibwrt (gpib_dev, _buf, strlen (_buf));
+	ret = ibwrt (gpib_dev, cmd, strlen (cmd));
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "write " << _buf << sendLog;
+	logStream (MESSAGE_DEBUG) << "write " << cmd << sendLog;
 	#endif
 	if (ret & ERR)
-		throw GpibLinuxError ("error while writing to GPIB bus", _buf, ret);
+		throw GpibLinuxError ("error while writing to GPIB bus", cmd, ret);
 }
 
 
-void ConnGpibLinux::gpibRead (void *_buf, int &blen)
+void ConnGpibLinux::gpibRead (void *reply, int &blen)
 {
 	int ret;
-	ret = ibrd (gpib_dev, _buf, blen);
-	((char *)_buf)[ibcnt] = '\0';
+	ret = ibrd (gpib_dev, reply, blen - 1);
+	((char *)reply)[ibcnt] = '\0';
 	if (ret & ERR)
-		throw GpibLinuxError ("error while reading from GPIB bus", (const char *) _buf, ret);
+		throw GpibLinuxError ("error while reading from GPIB bus", (const char *) reply, ret);
 	blen = ibcnt;
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) _buf
+	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) reply
 		<< "' ret " << ret << sendLog;
 	#endif
 }
 
 
-void ConnGpibLinux::gpibWriteRead (const char *_buf, char *val, int blen)
+void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
 	int ret;
-	ret = ibwrt (gpib_dev, _buf, strlen (_buf));
+	ret = ibwrt (gpib_dev, cmd, strlen (cmd));
 	if (ret & ERR)
-		throw GpibLinuxError ("error while writing to GPIB bus", _buf, ret);
+		throw GpibLinuxError ("error while writing to GPIB bus", cmd, ret);
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << _buf <<
+	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << cmd <<
 		" ret " << ret << sendLog;
 	#endif
-	*val = '\0';
-	ret = ibrd (gpib_dev, val, blen);
-	val[ibcnt] = '\0';
+	*reply = '\0';
+	ret = ibrd (gpib_dev, reply, blen);
+	reply[ibcnt] = '\0';
 	if (ret & ERR)
-		throw GpibLinuxError ("error while reading from GPIB bus", _buf, ret);
+		throw GpibLinuxError ("error while reading from GPIB bus", cmd, ret);
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
+	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << reply <<
 		" ret " << ret << sendLog;
 	#endif
 }

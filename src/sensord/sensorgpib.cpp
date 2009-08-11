@@ -24,9 +24,22 @@
 
 using namespace rts2sensord;
 
+void Gpib::writeValue (const char *name, Rts2Value *value)
+{
+	std::ostringstream _os;
+	_os << name << " ";
+	switch (value->getValueType ())
+	{
+		case RTS2_VALUE_BOOL:
+			_os << (((Rts2ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+			break;
+		default:
+			_os << value->getDisplayValue ();
+	}
+	gpibWrite (_os.str ().c_str ());
+}
 
-int
-Gpib::processOption (int _opt)
+int Gpib::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -46,8 +59,7 @@ Gpib::processOption (int _opt)
 }
 
 
-int
-Gpib::init ()
+int Gpib::init ()
 {
 	int ret;
 	ret = Sensor::init ();

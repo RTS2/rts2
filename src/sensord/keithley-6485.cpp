@@ -24,20 +24,21 @@
 namespace rts2sensord
 {
 
+/**
+ * Keithley SCPI.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Keithley:public Gpib
 {
 	private:
 		void getGPIB (const char *buf, int &val);
 		void getGPIB (const char *buf, Rts2ValueString * val);
 
-		void getGPIB (double &rval);
-
 		void getGPIB (const char *buf, Rts2ValueDouble * val);
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
 		void getGPIB (const char *buf, Rts2ValueBool * val);
-		void setGPIB (const char *buf, Rts2ValueBool * val);
-		void setGPIB (const char *buf, Rts2ValueInteger *val);
 
 		void waitOpc ();
 
@@ -66,16 +67,10 @@ using namespace rts2sensord;
 void Keithley::getGPIB (const char *buf, int &val)
 {
 	char rb[200];
-	gpibWrite (buf);
-	gpibRead (rb, 200);
-	for (char *rb_top = rb; *rb_top; rb_top++)
-	{
-		if (*rb_top == '\n')
-		{
-			*rb_top = '\0';
-			break;
-		}
-	}
+	gpibWriteRead (buf,rb, 200);
+	char *sep = strchr (rb, '\n');
+	if (sep)
+		*sep = '\0';
 	val = atol (rb);
 }
 
@@ -83,37 +78,22 @@ void Keithley::getGPIB (const char *buf, int &val)
 void Keithley::getGPIB (const char *buf, Rts2ValueString * val)
 {
 	char rb[200];
-	gpibWrite (buf);
-	gpibRead (rb, 200);
-	for (char *rb_top = rb; *rb_top; rb_top++)
-	{
-		if (*rb_top == '\n')
-		{
-			*rb_top = '\0';
-			break;
-		}
-	}
+	gpibWriteRead (buf, rb, 200);
+	char *sep = strchr (rb, '\n');
+	if (sep)
+		*sep = '\0';
 	val->setValueString (rb);
-}
-
-
-void Keithley::getGPIB (double &rval)
-{
-	int ret;
-	char rb[200];
-	gpibRead (rb, 200);
-	ret = sscanf (rb, "%lf", &rval);
-	if (ret != 1)
-		throw rts2core::Error ("cannot parse reply");
 }
 
 
 void Keithley::getGPIB (const char *buf, Rts2ValueDouble * val)
 {
-	double rval;
-	gpibWrite (buf);
-	getGPIB (rval);
-	val->setValueDouble (rval);
+	char rb[200];
+	gpibWriteRead (buf, rb, 200);
+	char *sep = strchr (rb, '\n');
+	if (sep)
+		*sep = '\0';
+	val->setValueString (rb);
 }
 
 
@@ -152,32 +132,11 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 void Keithley::getGPIB (const char *buf, Rts2ValueBool * val)
 {
 	char rb[10];
-	gpibWrite (buf);
-	gpibRead (rb, 10);
+	gpibWriteRead (buf, rb, 10);
 	if (atoi (rb) == 1)
 		val->setValueBool (true);
 	else
 		val->setValueBool (false);
-}
-
-
-void Keithley::setGPIB (const char *buf, Rts2ValueBool * val)
-{
-	char wr[strlen (buf) + 5];
-	strcpy (wr, buf);
-	if (val->getValueBool ())
-		strcat (wr, " ON");
-	else
-		strcat (wr, " OFF");
-	gpibWrite (wr);
-}
-
-
-void Keithley::setGPIB (const char *buf, Rts2ValueInteger * val)
-{
-	std::ostringstream _os;
-	_os << buf << " " << val->getValueInteger ();
-	gpibWrite (_os.str ().c_str ());
 }
 
 
@@ -226,13 +185,13 @@ Keithley::init ()
 		// start and setup measurements..
 		gpibWrite ("*RST");
 		gpibWrite ("TRIG:DEL 0");
-		setGPIB ("TRIG:COUNT", countNum);
+		writeValue ("TRIG:COUNT", countNum);
 		gpibWrite ("SENS:CURR:RANG:AUTO ON");
 		gpibWrite ("SENS:CURR:NPLC 1");
 		// gpibWrite ("SENS:CURR:RANG 2000");
 		gpibWrite ("SYST:ZCH OFF");
 		gpibWrite ("SYST:AZER:STAT OFF");
-		setGPIB ("TRAC:POIN", countNum);
+		writeValue ("TRAC:POIN", countNum);
 		gpibWrite ("TRAC:CLE");
 		gpibWrite ("TRAC:FEED:CONT NEXT");
 		gpibWrite ("STAT:MEAS:ENAB 512");
@@ -280,13 +239,13 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		if (old_value == azero)
 		{
-			setGPIB ("SYSTEM:AZERO", (Rts2ValueBool *) new_value);
+			writeValue ("SYSTEM:AZERO", new_value);
 			return 0;
 		}
 		if (old_value == countNum)
 		{
-			setGPIB ("TRIG:COUNT", (Rts2ValueInteger *) new_value);
-			setGPIB ("TRAC:POIN", (Rts2ValueInteger *) new_value);
+			writeValue ("TRIG:COUNT", new_value);
+			writeValue ("TRAC:POIN", new_value);
 			gpibWrite ("TRAC:CLE");
 			waitOpc ();
 			return 0;

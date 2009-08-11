@@ -61,9 +61,9 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 		 */
 		void sresp (char **ret_buf = NULL);
 	public:
-		virtual void gpibWrite (const char *_buf);
-		virtual void gpibRead (void *_buf, int &blen);
-		virtual void gpibWriteRead (const char *_buf, char *val, int blen = 50);
+		virtual void gpibWrite (const char *cmd);
+		virtual void gpibRead (void *cmd, int &blen);
+		virtual void gpibWriteRead (const char *cmd, char *reply, int blen);
 
 		virtual void gpibWaitSRQ ();
 

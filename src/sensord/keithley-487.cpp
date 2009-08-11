@@ -101,8 +101,9 @@ Keithley487::info ()
 	} oneShot;
 	try
 	{
+		int blen = 10;
 		gpibWrite ("N1T5X");
-		gpibRead (&oneShot, 10);
+		gpibRead (&oneShot, blen);
 	
 		// scale properly..
 		curr->setValueFloat (*((float *) (&(oneShot.value))) * 1e+12);
@@ -117,9 +118,7 @@ Keithley487::info ()
 }
 
 
-int
-Keithley487::setValue (Rts2Value * old_value,
-Rts2Value * new_value)
+int Keithley487::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	char buf[50];
 	try
