@@ -1,0 +1,237 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Petr</firstname>">
+  <!ENTITY dhsurname   "<surname>Kubanek</surname>">
+  <!ENTITY dhdate      "<date>2009-08-11</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
+  <!ENTITY dhusername  "Petr Kubanek">
+  <!ENTITY dhpackage   "rts2-xmlrpcclient">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.0</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib>Wrote most of the RTS2 package.</contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2008-2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Communicate with RTS2 XML-RPC daemon. Provides XML-RPC implementation usefull for tests, as well as some usefull commands..</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>--hostname <replaceable>XML-RPCd host</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--port <replaceable>XML-RPCd port number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--user <replaceable>username</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-v</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-g</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-G</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-s</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--schedticket <replaceable>ticket ID</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-t</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>-m</option></arg>
+      </arg>
+      <arg choice="opt">
+        <arg choice="plain"><option>--test</option></arg>
+      </arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>
+      RTS2-XMLRPCCLIENT is a test implementation of XMl-RPC protocol used by
+      RTS2. It shares libraries with
+      <citerefentry><refentrytitle>rts2-xmlrpcd</refentrytitle><manvolnum>7</manvolnum></citerefentry>,
+      so it should work when rts2-xmlrpcd works.
+    </para>
+    <para>
+      Apart from being test implementation, rts2-xmlrpcclient also provides a
+      few handy commands, which retrieve or set RTS2 values. This feature can
+      be used to interact with RTS2 from the command shell. RTS2 XML-RPC
+      protocol can be used in various high level languages.
+    </para>
+  </refsect1>
+  <refsect1 id="config">
+    <title>Configuration</title>
+
+    <para>
+      Access to rts2-xmlrpcd server is ussually password protected, using
+      either standard HTTP authorization, or custom authorization inside
+      rts2-xmlrpcd. There are two options how to provide username and password
+      for HTTP connections. They can be listed on command line, or specified in
+      a configuration file. If you specify username using --user option,
+      rts2-xmlrpcclient will ask for password. 
+    </para>
+
+    <para>
+      If you specify username and password in a configuration file, the content of the file should look as in an example bellow.
+    </para>
+    <programlisting>
+<![CDATA[
+[xmlrpc]
+
+authorization = "user:password"
+]]>
+    </programlisting>
+    <para>
+       This specify user as username and password as user password.
+    </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>Options</title>
+
+    <para>
+      These programs follow the usual &gnu; command line syntax,
+      with long options starting with two dashes (`-').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>--hostname <replaceable>XML-RPCd host</replaceable></option></term>
+        <listitem>
+          <para>Specify XML-RPCd hostname.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--port <replaceable>XML-RPCd port number</replaceable></option></term>
+        <listitem>
+          <para>
+	    Specify port on which XML-RPCd listen to incoming requests. Default
+	    to 8889.
+	  </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--user</option></term>
+        <listitem>
+          <para>Switch off colors. Usefull for terminals which have problems with colors.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--version</option></term>
+        <listitem>
+          <para>Show version of program.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-g</option></term>
+        <listitem>
+	  <para>Retrieve values passed on command line and prints them,
+	  separated by line feed, on standard output. On input, device and
+	  variable name should be separated by .. They are separated by _ on
+	  output, so they can be used as system variables names. Suppose
+	  that there is device SENSOR, with varibles var1 and var2, and xmlrpcd
+	  is running on your computer. Following is sample execution:</para>
+    <programlisting>
+<![CDATA[
+user@machine:~$ rts2-xmlrcclient -g SENSOR.var1 SENSOR.var2
+SENSOR.var1=12.33
+SENSOR.var2=56.34
+]]>
+    </programlisting>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-G</option></term>
+	<listitem>
+	  <para>Similar to -g, but do not print variables names on standard
+	  output.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2.ini</refentrytitle>
+	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+	<manvolnum>1</manvolnum>
+      </citerefentry>
+    </para>
+
+  </refsect1>
+</refentry>
