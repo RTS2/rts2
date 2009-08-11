@@ -451,7 +451,8 @@ void Rts2Image::openImage (const char *_filename, bool readOnly)
 
 	openFile (getFileName (), readOnly);
 
-	flags |= IMAGE_SAVE;
+	if (readOnly == false)
+		flags |= IMAGE_SAVE;
 }
 
 
