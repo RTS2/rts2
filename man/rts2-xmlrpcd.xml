@@ -186,8 +186,8 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
     <title>Event trigger configuration file</title>
     <para>
       This is description of event triggering file. It is the XML file
-      specified with <emphasis>--event-file</emphasis> option. Configuration
-      file can be validated with provided XML schema file.
+      specified with <emphasis>--event-file</emphasis> option. Event
+      configuration file can be validated with provided XML schema file.
     </para>
     <para>
       To start with, there is a sample configuration file.
@@ -261,6 +261,14 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
     </para>
   </refsect1>
   <refsect1>
+    <title>Configuration file options</title>
+    <para>
+      Please consult
+      <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+      page for details about XML-RPC options available in configuration file.
+    </para>
+  </refsect1>
+  <refsect1>
     <title>SEE ALSO</title>
 
     <para>
@@ -271,6 +279,10 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
       <citerefentry>
         <refentrytitle>rts2.ini</refentrytitle>
 	<manvolnum>5</manvolnum>
+      </citerefentry>
+      <citerefentry>
+        <refentrytitle>rts2-xmlrpcclient</refentrytitle>
+	<manvolnum>1</manvolnum>
       </citerefentry>
     </para>
 

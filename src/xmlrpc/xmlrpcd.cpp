@@ -124,6 +124,12 @@ class XmlRpcd:public Rts2Device
 
 		Events events;
 
+#ifndef HAVE_PGSQL
+		const char *config_file;
+#endif
+
+		std::string page_prefix;
+
 	protected:
 #ifndef HAVE_PGSQL
 		virtual int willConnect (Rts2Address * _addr);
@@ -174,6 +180,15 @@ class XmlRpcd:public Rts2Device
 		{
 			return messages;
 		}
+
+		/**
+		 * Return prefix for generated pages - usefull for pages behind proxy.
+		 */
+		const char* getPagePrefix ()
+		{
+			return page_prefix.c_str ();
+		}
+
 };
 
 };
@@ -217,10 +232,14 @@ XmlRpcd::processOption (int in_opt)
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
 			break;
-		default:
 #ifdef HAVE_PGSQL
+		default:
 			return Rts2DeviceDb::processOption (in_opt);
 #else
+		case OPT_CONFIG:
+			config_file = optarg;
+			break;
+		default:
 			return Rts2Device::processOption (in_opt);
 #endif
 	}
@@ -261,6 +280,14 @@ XmlRpcd::init ()
 	}
 
 	setMessageMask (MESSAGE_MASK_ALL);
+
+#ifndef HAVE_PGSQL
+	ret = Rts2Config::instance ()->loadFile (config_file);
+	if (ret)
+		return ret;
+#endif
+	// get page prefix
+	Rts2Config::instance ()->getString ("xmlrpcd", "page_prefix", page_prefix, "");
 
 	return ret;
 }
@@ -313,7 +340,11 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
+#ifndef HAVE_PGSQL
+	config_file = NULL;
 
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
+#endif
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
 	XmlRpc::setVerbosity (0);
@@ -512,7 +543,7 @@ class JpegImageRequest: public GetRequestAuthorized
 		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
 		{
 			response_type = "image/jpeg";
-			Rts2Image image (path, true, true);
+			Rts2Image image (path, false, true);
 			Blob blob;
 			Magick::Image mimage = image.getMagickImage ();
 			mimage.fillColor (Magick::Color (0, 0, 0));
@@ -542,7 +573,7 @@ class JpegPreview:public GetRequestAuthorized
 			{
 				response_type = "image/jpeg";
 
-				Rts2Image image (path, true, true);
+				Rts2Image image (path, false, true);
 				Blob blob;
 				Magick::Image mimage = image.getMagickImage ();
 				mimage.zoom (Magick::Geometry (128, 128));
@@ -586,7 +617,7 @@ class JpegPreview:public GetRequestAuthorized
 					continue;
 				if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 				{
-					_os << "<a href='/preview" << path << fname << "/'>" << fname << "</a>&nbsp";
+					_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/'>" << fname << "</a>&nbsp";
 				}
 			}
 
@@ -598,7 +629,8 @@ class JpegPreview:public GetRequestAuthorized
 				if (strstr (fname + strlen (fname) - 6, ".fits") == NULL)
 					continue;
 				std::string fpath = std::string (path) + '/' + fname;
-				_os << "<a href='/jpeg" << fpath << "'><img src='/preview" << fpath << "'/></a>&nbsp;";
+				_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fpath 
+				  << "'><img width='128' height='128' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "'/></a>&nbsp;";
 				//<a href='/fits" << fpath
 				//	<< "'>FITS</a>&nbsp;<a href='/jpeg" << fpath << "'>JPEG</a></li>";
 			}
