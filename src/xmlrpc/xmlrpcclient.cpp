@@ -56,6 +56,8 @@ class Client: public Rts2CliApp
 		int schedTicket;
 		enum {SET_VARIABLE, SCHED_TICKET, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TEST, NOOP} xmlOp;
 
+                bool getVariablesPrintNames;
+
 		std::vector <const char *> args;
 
 		XmlRpcClient* xmlClient;
@@ -350,8 +352,9 @@ Client::getVariables ()
 		{
 			if ((*riter).second[j]["name"] == std::string (dot))
 			{
-				std::cout << a << "." << dot
-					<< "=" << (*riter).second[j]["value"] << std::endl;
+                                if (getVariablesPrintNames)
+				        std::cout << a << "_" << dot << "=";
+				std::cout << (*riter).second[j]["value"] << std::endl;
 				break;
 			}
 		}
@@ -457,6 +460,11 @@ Client::processOption (int in_opt)
 			break;
 		case 'g':
 			xmlOp = GET_VARIABLES;
+                        getVariablesPrintNames = true;
+			break;
+		case 'G':
+			xmlOp = GET_VARIABLES;
+                        getVariablesPrintNames = false;
 			break;
 		case 't':
 			xmlOp = GET_TYPES;
@@ -577,6 +585,8 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 
 	xmlOp = TEST;
 
+        getVariablesPrintNames = true;
+
 	xmlClient = NULL;
 
 	addOption (OPT_HOST, "hostname", 1, "hostname of XML-RPC server");
@@ -585,6 +595,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
 	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
+        addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
