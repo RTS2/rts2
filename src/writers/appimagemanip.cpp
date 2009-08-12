@@ -309,7 +309,7 @@ AppImage::processOption (int in_opt)
 				off_y = off_x;
 			}
 			break;
-		#ifdef HAVE_LIBJPEG
+		#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		case 'j':
 			operation |= IMAGEOP_JPEG;
 			jpeg_expr = optarg;
@@ -367,7 +367,7 @@ AppImage::processImage (Rts2Image * image)
 		testEval (image);
 	if (operation & IMAGEOP_CREATEWCS)
 		createWCS (image);
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 	if (operation & IMAGEOP_JPEG)
 	  	image->writeAsJPEG (jpeg_expr, 0);
 #endif /* HAVE_LIBJPEG */
@@ -410,7 +410,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
 #endif /* HAVE_LIBJPEG */
 }

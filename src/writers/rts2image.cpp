@@ -35,7 +35,7 @@
 
 using namespace rts2image;
 
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 using namespace Magick;
 #endif // HAVE_LIBJPEG
 
@@ -1307,7 +1307,8 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 	}
 }
 
-#ifdef HAVE_LIBJPEG
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 
 Image Rts2Image::getMagickImage (float quantiles)
 {

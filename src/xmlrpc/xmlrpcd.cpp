@@ -38,7 +38,7 @@
 #include "../utils/rts2device.h"
 #endif /* HAVE_PGSQL */
 
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 using namespace Magick;
 #endif // HAVE_LIBJPEG
@@ -531,7 +531,7 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 };
 
 
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 
 class JpegImageRequest: public GetRequestAuthorized
 {

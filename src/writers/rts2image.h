@@ -34,7 +34,7 @@
 #include "../utils/expander.h"
 #include "../utils/rts2target.h"
 
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
 
@@ -330,7 +330,7 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		template <typename bt> void getGrayscaleBuffer (bt * &buf, bt black, float quantiles=0.005);
 
-#ifdef HAVE_LIBJPEG
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		/**
 		 * Return image data as Magick::Image class.
 		 *
