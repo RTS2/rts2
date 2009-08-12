@@ -120,7 +120,7 @@ esac],[ncurses=yes])
 dnl Check for GraphicsMagic++ library
 
 AC_ARG_WITH(graphicsmagic,
-[  --with-grahpicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
+[  --with-graphicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
 [case "${withval}" in
 	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
 	no)  graphicsmagic_config=no ;;
