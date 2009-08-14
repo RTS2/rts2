@@ -16,3 +16,7 @@ A       Auger particle shower
 COPY targets (tar_id, type_id, tar_name, tar_ra, tar_dec, tar_comment, tar_enabled, tar_priority, tar_bonus, tar_bonus_time) FROM stdin;
 12	A	Auger particle shower	0	0	Catching hibrid showers	f	100	0	\N
 \.
+
+
+GRANT ALL ON auger TO GROUP observers;
+GRANT ALL ON auger_observation TO GROUP observers;
