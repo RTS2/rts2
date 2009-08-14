@@ -941,7 +941,7 @@ Rts2Daemon::infoAll ()
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
-		val->resetValueChanged ();
+		val->resetNeedSend ();
 	}
 
 	return 0;
@@ -967,12 +967,12 @@ Rts2Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
-		if (val->wasChanged () || forceSend)
+		if (val->needSend () || forceSend)
 		{
 			val->send (conn);
 		}
 	}
-	if (info_time->wasChanged ())
+	if (info_time->needSend ())
 		info_time->send (conn);
 	return 0;
 }
@@ -986,7 +986,7 @@ Rts2Daemon::sendValueAll (Rts2Value * value)
 		value->send (*iter);
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		value->send (*iter);
-	value->resetValueChanged ();
+	value->resetNeedSend ();
 }
 
 
