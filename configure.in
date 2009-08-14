@@ -587,6 +587,7 @@ AC_OUTPUT([Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
+	   src/sql/auger/Makefile
 	   src/sql/create/Makefile
 	   src/sql/drop/Makefile
 	   src/sql/update/Makefile
