@@ -7,12 +7,15 @@
 
 #define AUGER_BUF_SIZE  500
 
-class Rts2DevAugerShooter;
+namespace rts2grbd
+{
 
-class Rts2ConnShooter:public Rts2ConnNoSend
+class DevAugerShooter;
+
+class ConnShooter:public Rts2ConnNoSend
 {
 	private:
-		Rts2DevAugerShooter * master;
+		DevAugerShooter * master;
 		double minEnergy;
 		int maxTime;
 
@@ -32,9 +35,8 @@ class Rts2ConnShooter:public Rts2ConnNoSend
 		int processAuger ();
 
 	public:
-		Rts2ConnShooter (int in_port, Rts2DevAugerShooter * in_master,
-			double in_minEnergy, int in_maxTime);
-		virtual ~ Rts2ConnShooter (void);
+		ConnShooter (int in_port, DevAugerShooter * in_master, double in_minEnergy, int in_maxTime);
+		virtual ~ ConnShooter (void);
 
 		virtual int idle ();
 		virtual int init ();
@@ -45,4 +47,6 @@ class Rts2ConnShooter:public Rts2ConnNoSend
 		int lastPacket ();
 		double lastTargetTime ();
 };
+
+}
 #endif							 /* !__RTS2_SHOOTERCONN__ */

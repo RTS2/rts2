@@ -1,13 +1,28 @@
-/**
- * Receive Auger socket shower info, send now request to executor.
+/* 
+ * Receive and reacts to Auger showers.
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
- * @author petr
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include "augershooter.h"
 #include "../utils/rts2command.h"
 
-Rts2DevAugerShooter::Rts2DevAugerShooter (int in_argc, char **in_argv):
+using namespace rts2grbd;
+
+DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
 	shootercnn = NULL;
@@ -23,13 +38,12 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 }
 
 
-Rts2DevAugerShooter::~Rts2DevAugerShooter (void)
+DevAugerShooter::~DevAugerShooter (void)
 {
 }
 
 
-int
-Rts2DevAugerShooter::processOption (int in_opt)
+int DevAugerShooter::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -43,8 +57,7 @@ Rts2DevAugerShooter::processOption (int in_opt)
 }
 
 
-int
-Rts2DevAugerShooter::init ()
+int DevAugerShooter::init ()
 {
 	int ret;
 	ret = Rts2DeviceDb::init ();
@@ -59,7 +72,7 @@ Rts2DevAugerShooter::init ()
 	int maxTime = 600;
 	config->getInteger ("augershooter", "maxtime", maxTime);
 
-	shootercnn = new Rts2ConnShooter (port, this, minEnergy, maxTime);
+	shootercnn = new ConnShooter (port, this, minEnergy, maxTime);
 
 	ret = shootercnn->init ();
 
@@ -72,8 +85,7 @@ Rts2DevAugerShooter::init ()
 }
 
 
-int
-Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
+int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 {
 	Rts2Conn *exec;
 	lastAugerDate->setValueDouble (lastDate);
@@ -94,8 +106,7 @@ Rts2DevAugerShooter::newShower (double lastDate, double ra, double dec)
 }
 
 
-bool
-Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
+bool DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
 	return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
 		&& ra == lastAugerRa->getValueDouble ()
@@ -103,9 +114,8 @@ Rts2DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 }
 
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2DevAugerShooter device = Rts2DevAugerShooter (argc, argv);
+	DevAugerShooter device = DevAugerShooter (argc, argv);
 	return device.run ();
 }

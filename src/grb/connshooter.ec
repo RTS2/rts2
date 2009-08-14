@@ -1,4 +1,23 @@
-#include "rts2connshooter.h"
+/* 
+ * Receive and reacts to Auger showers.
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "connshooter.h"
 #include "../utils/libnova_cpp.h"
 
 #include <errno.h>
@@ -16,8 +35,9 @@ EXEC SQL include sqlca;
 
 #define GPS_OFFSET  315964800
 
-void
-Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
+using namespace rts2grbd;
+
+void ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
   // we need to handle somehow better leap seconds, but that can wait
   out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
@@ -25,8 +45,7 @@ Rts2ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 
 
 // is called when nbuf contains '\n'
-int
-Rts2ConnShooter::processAuger ()
+int ConnShooter::processAuger ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
     //  int db_auger_t3id;
@@ -39,6 +58,8 @@ Rts2ConnShooter::processAuger ()
 
     double db_auger_ra;
     double db_auger_dec;
+
+
   EXEC SQL END DECLARE SECTION;
 
   int gap_ver;
@@ -200,9 +221,7 @@ Rts2ConnShooter::processAuger ()
 }
 
 
-Rts2ConnShooter::Rts2ConnShooter (int in_port, Rts2DevAugerShooter *
-in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
-(in_master)
+ConnShooter::ConnShooter (int in_port, DevAugerShooter * in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   port = in_port;
@@ -220,13 +239,12 @@ in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend
 }
 
 
-Rts2ConnShooter::~Rts2ConnShooter (void)
+ConnShooter::~ConnShooter (void)
 {
 }
 
 
-int
-Rts2ConnShooter::idle ()
+int ConnShooter::idle ()
 {
   int ret;
   int err;
@@ -265,8 +283,7 @@ Rts2ConnShooter::idle ()
 }
 
 
-int
-Rts2ConnShooter::init_listen ()
+int ConnShooter::init_listen ()
 {
   int ret;
 
@@ -302,15 +319,13 @@ Rts2ConnShooter::init_listen ()
 }
 
 
-int
-Rts2ConnShooter::init ()
+int ConnShooter::init ()
 {
   return init_listen ();
 }
 
 
-void
-Rts2ConnShooter::connectionError (int last_data_size)
+void ConnShooter::connectionError (int last_data_size)
 {
   logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
   if (sock > 0)
@@ -326,8 +341,7 @@ Rts2ConnShooter::connectionError (int last_data_size)
 }
 
 
-int
-Rts2ConnShooter::receive (fd_set * set)
+int ConnShooter::receive (fd_set * set)
 {
   int ret = 0;
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -354,15 +368,13 @@ Rts2ConnShooter::receive (fd_set * set)
 }
 
 
-int
-Rts2ConnShooter::lastPacket ()
+int ConnShooter::lastPacket ()
 {
   return last_packet.tv_sec;
 }
 
 
-double
-Rts2ConnShooter::lastTargetTime ()
+double ConnShooter::lastTargetTime ()
 {
   return last_target_time;
 }
