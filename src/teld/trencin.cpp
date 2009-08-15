@@ -1,6 +1,6 @@
 /* 
- * Driver for Ondrejov, Astrolab Trencin scope.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Driver for Astrolab Trencin scope.
+ * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,19 +17,59 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define DEBUG_EXTRA
-
 #include "fork.h"
 
 #include "../utils/rts2config.h"
 #include "../utils/rts2connserial.h"
 #include "../utils/libnova_cpp.h"
 
+
+/*a ted HODINOVY STROJ:
+programova sekvence:
+M8
+N6
+A100
+S222
+V222
+G+
+R
+
+takto pojede hodStroj zrhuba tak jak ma...*/
+
 namespace rts2teld
 {
 
 class Trencin:public Fork
 {
+	public:
+		Trencin (int _argc, char **_argv);
+		virtual ~ Trencin (void);
+
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int startResync ();
+		virtual int endMove ();
+		virtual int stopMove ();
+
+		virtual int startPark ();
+		virtual int endPark ();
+
+	protected:
+		virtual int processOption (int in_opt);
+
+		virtual int getHomeOffset (int32_t & off);
+
+		virtual int isMoving ();
+		virtual int isParking ();
+
+		virtual int updateLimits ();
+
+		virtual void updateTrack ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		const char *device_nameRa;
 		Rts2ConnSerial *trencinConnRa;
@@ -37,8 +77,12 @@ class Trencin:public Fork
 		const char *device_nameDec;
 		Rts2ConnSerial *trencinConnDec;
 
+		int tel_write (Rts2ConnSerial *conn, char command);
+
 		int tel_write_ra (char command);
 		int tel_write_dec (char command);
+
+		int tel_write (Rts2ConnSerial *conn, const char *command);
 
 		int tel_write_ra (const char *command);
 		int tel_write_dec (const char *command);
@@ -46,8 +90,16 @@ class Trencin:public Fork
 		// write to both units
 		int write_both (char command, int32_t value);
 
+		int tel_write (Rts2ConnSerial *conn, char command, int32_t value);
+
 		int tel_write_ra (char command, int32_t value);
 		int tel_write_dec (char command, int32_t value);
+
+		int tel_write_ra_run (char command, int32_t value);
+		int tel_write_dec_run (char command, int32_t value);
+
+		// start worm drive on given unit
+		int startWorm (Rts2ConnSerial *conn);
 
 		// read axis - registers 1-3
 		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value);
@@ -66,86 +118,54 @@ class Trencin:public Fork
 		Rts2ValueInteger *accDec;
 
 		int32_t ac, dc;
-
-	protected:
-		virtual int processOption (int in_opt);
-
-		virtual int getHomeOffset (int32_t & off);
-
-		virtual int isMoving ();
-		virtual int isParking ();
-
-		virtual int updateLimits ();
-
-		virtual void updateTrack ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Trencin (int _argc, char **_argv);
-		virtual ~ Trencin (void);
-
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int startResync ();
-		virtual int endMove ();
-		virtual int stopMove ();
-
-		virtual int startPark ();
-		virtual int endPark ();
 };
 
-};
+}
 
 using namespace rts2teld;
 
 
-int
-Trencin::tel_write_ra (char command)
+int Trencin::tel_write (Rts2ConnSerial *conn, char command)
 {
 	char buf[3];
 	int len = snprintf (buf, 3, "%c\r", command);
-	return trencinConnRa->writePort (buf, len);
+	return conn->writePort (buf, len);
 }
 
-
-int
-Trencin::tel_write_dec (char command)
+int Trencin::tel_write_ra (char command)
 {
-	char buf[3];
-	int len = snprintf (buf, 3, "%c\r", command);
-	return trencinConnDec->writePort (buf, len);
-	return 0;
+	return tel_write (trencinConnRa, command);
 }
 
+int Trencin::tel_write_dec (char command)
+{
+	return tel_write (trencinConnDec, command);
+}
 
-int
-Trencin::tel_write_ra (const char *command)
+int Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
 {
 	int ret;
-	ret = trencinConnRa->writePort (command, strlen (command));
+	ret = conn->writePort (command, strlen (command));
 	if (ret != 0)
 		return ret;
-	return trencinConnRa->writePort ("\r", 1);
+	return tel_write (conn, '\r');	
 }
 
-
-int
-Trencin::tel_write_dec (const char *command)
+int Trencin::tel_write_ra (const char *command)
 {
-	int ret;
-	ret = trencinConnDec->writePort (command, strlen (command));
-	if (ret != 0)
-		return ret;
-	return trencinConnDec->writePort ("\r", 1);
+	return tel_write (trencinConnRa, command);
+}
+
+
+int Trencin::tel_write_dec (const char *command)
+{
+	return tel_write (trencinConnDec, command);
 }
 
 
 
 
-int
-Trencin::write_both (char command, int len)
+int Trencin::write_both (char command, int len)
 {
 	int ret;
 	ret = tel_write_ra (command, len);
@@ -155,18 +175,31 @@ Trencin::write_both (char command, int len)
 	return ret;
 }
 
+int Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
+{
+	char buf[51];
+	int len = snprintf (buf, 50, "%c%i\r", command, value);
+	return conn->writePort (buf, len);
+}
 
-int
-Trencin::tel_write_ra (char command, int32_t value)
+int Trencin::tel_write_ra (char command, int32_t value)
+{
+	return tel_write (trencinConnRa, command, value);
+}
+
+int Trencin::tel_write_dec (char command, int32_t value)
+{
+	return tel_write (trencinConnDec, command, value);
+}
+
+int Trencin::tel_write_ra_run (char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
 	return trencinConnRa->writePort (buf, len);
 }
 
-
-int
-Trencin::tel_write_dec (char command, int32_t value)
+int Trencin::tel_write_dec_run (char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
@@ -174,9 +207,33 @@ Trencin::tel_write_dec (char command, int32_t value)
 	return 0;
 }
 
+int Trencin::startWorm (Rts2ConnSerial *conn)
+{
+	int ret;
 
-int
-Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
+	ret = tel_write (conn, 'M', 3);
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'N', 6);
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'A', 100);
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'S', 222);
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'V', 222);
+	if (ret)
+		return ret;
+	ret = tel_write (conn, "G+");
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'R');
+	return ret;
+}
+
+int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
 {
 	int ret;
 	char buf[10];
@@ -262,8 +319,7 @@ Trencin::~Trencin (void)
 }
 
 
-int
-Trencin::processOption (int in_opt)
+int Trencin::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -280,16 +336,14 @@ Trencin::processOption (int in_opt)
 }
 
 
-int
-Trencin::getHomeOffset (int32_t & off)
+int Trencin::getHomeOffset (int32_t & off)
 {
 	off = 0;
 	return 0;
 }
 
 
-int
-Trencin::init ()
+int Trencin::init ()
 {
 	int ret;
 
@@ -339,8 +393,7 @@ Trencin::init ()
 }
 
 
-int
-Trencin::updateLimits ()
+int Trencin::updateLimits ()
 {
 	acMin = (int32_t) (haCpd * -180);
 	acMax = (int32_t) (haCpd * 180);
@@ -349,31 +402,29 @@ Trencin::updateLimits ()
 }
 
 
-void
-Trencin::updateTrack ()
+void Trencin::updateTrack ()
 {
 }
 
 
-int
-Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == unitRa)
 	{
 		long diff = old_value->getValueLong () - new_value->getValueLong ();
 		if (diff < 0)
-			return tel_write_ra ('F', -1 * diff) == 0 ? 0 : -2;
+			return tel_write_ra_run ('F', -1 * diff) == 0 ? 0 : -2;
 		else if (diff > 0)
-		  	return tel_write_ra ('B', diff) == 0 ? 0 : -2;
+		  	return tel_write_ra_run ('B', diff) == 0 ? 0 : -2;
 		else return 0;
 	}
 	if (old_value == unitDec)
 	{
 		long diff = old_value->getValueLong () - new_value->getValueLong ();
 		if (diff < 0)
-			return tel_write_dec ('F', -1 * diff) == 0 ? 0 : -2;
+			return tel_write_dec_run ('F', -1 * diff) == 0 ? 0 : -2;
 		else if (diff > 0)
-		  	return tel_write_dec ('B', diff) == 0 ? 0 : -2;
+		  	return tel_write_dec_run ('B', diff) == 0 ? 0 : -2;
 		else return 0;
 	}
 	if (old_value == velRa)
@@ -395,7 +446,7 @@ Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == wormRa)
 	{
 		if (((Rts2ValueBool *)new_value)->getValueBool () == true)
-			return tel_write_ra ("g+\rR") == 0 ? 0 : -2;
+			return startWorm (trencinConnRa) == 0 ? 0 : -2;
 		return tel_write_ra ('K') == 0 ? 0 : -2;
 	}
 
@@ -403,8 +454,7 @@ Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-int
-Trencin::info ()
+int Trencin::info ()
 {
 	int ret;
 	double t_telRa;
@@ -424,29 +474,26 @@ Trencin::info ()
 }
 
 
-int
-Trencin::startResync ()
+int Trencin::startResync ()
 {
 	return 0;
 }
 
 
-int
-Trencin::isMoving ()
+int Trencin::isMoving ()
 {
 	return -2;
 }
 
 
-int
-Trencin::endMove ()
+int Trencin::endMove ()
 {
+	startWorm (trencinConnRa);
 	return Fork::endMove ();
 }
 
 
-int
-Trencin::stopMove ()
+int Trencin::stopMove ()
 {
 	int ret;
 	ret = tel_write_ra ('K');
@@ -460,15 +507,13 @@ Trencin::stopMove ()
 }
 
 
-int
-Trencin::startPark ()
+int Trencin::startPark ()
 {
 	return 0;
 }
 
 
-int
-Trencin::isParking ()
+int Trencin::isParking ()
 {	
 	int ret;
 	ret = info ();
@@ -481,15 +526,13 @@ Trencin::isParking ()
 }
 
 
-int
-Trencin::endPark ()
+int Trencin::endPark ()
 {
 	return 0;
 }
 
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Trencin device = Trencin (argc, argv);
 	return device.run ();
