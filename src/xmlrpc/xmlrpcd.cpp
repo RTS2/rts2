@@ -608,6 +608,7 @@ class JpegPreview:public GetRequestAuthorized
 			}
 
 			// first show directories..
+			_os << "<p>";
 			for (int i = 0; i < n; i++)
 			{
 				char *fname = namelist[i]->d_name;
@@ -617,11 +618,11 @@ class JpegPreview:public GetRequestAuthorized
 					continue;
 				if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 				{
-					_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/'>" << fname << "</a>&nbsp";
+					_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/'>" << fname << "</a> ";
 				}
 			}
 
-			_os << "<p/>\n";
+			_os << "</p><p/>\n";
 
 			for (int i = 0; i < n; i++)
 			{
