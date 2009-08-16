@@ -569,7 +569,7 @@ Client::init ()
 		xmlAuthorization += passw;
 	}
 	XmlRpc::setVerbosity(xmlVerbosity);
-	xmlClient = new XmlRpcClient (xmlHost, xmlPort, xmlAuthorization);
+	xmlClient = new XmlRpcClient (xmlHost, xmlPort, xmlAuthorization.c_str());
 	return 0;
 }
 

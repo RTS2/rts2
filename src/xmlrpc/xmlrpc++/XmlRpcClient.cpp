@@ -25,14 +25,17 @@ const char XmlRpcClient::REQUEST_END[] = "</methodCall>\r\n";
 const char XmlRpcClient::METHODRESPONSE_TAG[] = "<methodResponse>";
 const char XmlRpcClient::FAULT_TAG[] = "<fault>";
 
-XmlRpcClient::XmlRpcClient(const char *host, int port, std::string authorization, std::string uri)
+XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization, const char *uri)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
 
 	_host = host;
 	_port = port;
-	_authorization = authorization;
-	if (uri.length() > 0)
+	if (authorization != NULL)
+		_authorization = authorization;
+	else
+		_authorization = std::string("");
+	if (uri != NULL)
 		_uri = uri;
 	else
 		_uri = std::string ("/RPC2");

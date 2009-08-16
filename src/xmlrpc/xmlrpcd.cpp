@@ -763,7 +763,6 @@ class ListDevices: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			std::cout << "ListDevices " << getUsername () << " " << getPassword () << std::endl;
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 			connections_t::iterator iter;
 			int i = 0;

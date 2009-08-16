@@ -42,7 +42,7 @@ namespace XmlRpc
 			//!  @param port           The port on the remote machine where the server is listening
 			//!  @param authorizationa Authorization string (ussually <username>:<password>)
 			//!  @param uri            An optional string to be sent as the URI in the HTTP GET header
-			XmlRpcClient(const char *host, int port, std::string authorization=std::string (""), std::string uri=std::string(""));
+			XmlRpcClient(const char *host, int port, const char *authorization=NULL, const char *uri=NULL);
 
 			//! Destructor
 			virtual ~XmlRpcClient();
