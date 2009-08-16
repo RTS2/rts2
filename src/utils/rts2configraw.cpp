@@ -106,7 +106,17 @@ Rts2ConfigSection::createBlockedBy (std::string val)
 		}
 	}
 	if (deviceName)
+	{
 		blockedBy->push_back (*deviceName);
+	}
+	else
+	{
+		if (blockedBy->size () == 0)
+		{
+			delete blockedBy;
+			blockedBy = NULL;
+		}
+	}
 }
 
 
