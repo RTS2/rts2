@@ -37,8 +37,8 @@ Operand *OperandsSet::parseOperand (std::string str)
 		double op;
 		std::istringstream _is (str);
 		_is >> op;
-		if (_is.fail ())
-			throw ParsingError ("Not a number");
+		if (_is.fail () || !_is.eof())
+			return new String(str);
 		return new Number (op);
 	}
 	else
