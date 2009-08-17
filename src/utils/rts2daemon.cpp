@@ -938,9 +938,9 @@ Rts2Daemon::infoAll ()
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		sendInfo (*iter);
 
-	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
+	for (Rts2CondValueVector::iterator iter2 = values.begin (); iter2 != values.end (); iter2++)
 	{
-		Rts2Value *val = (*iter)->getValue ();
+		Rts2Value *val = (*iter2)->getValue ();
 		val->resetNeedSend ();
 	}
 
