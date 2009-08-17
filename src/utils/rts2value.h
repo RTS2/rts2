@@ -543,10 +543,12 @@ class Rts2ValueInteger:public Rts2Value
 		}
 		int inc ()
 		{
+		 	changed ();
 			return value++;
 		}
 		int dec ()
 		{
+			changed ();
 			return value--;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
@@ -937,10 +939,12 @@ class Rts2ValueLong:public Rts2Value
 		}
 		long inc ()
 		{
+		 	changed ();	
 			return value++;
 		}
 		long dec ()
 		{
+			changed ();
 			return value--;
 		}
 		int setValueLong (long in_value)
