@@ -482,8 +482,7 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	std::string::iterator iter;
 	for (iter = chng_s.begin (), i = 0; iter != chng_s.end (); iter++, i++)
 	{
-		char
-			ch = *iter;
+		char ch = *iter;
 		if (!op && (ch == '+' || ch == '-' || ch == '='))
 		{
 			valName = chng_s.substr (0, i);
@@ -494,53 +493,13 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 				i++;
 			}
 			op_end = i;
+			break;
 		}
 	}
 	if (op == '\0')
 		return;
-	operand = chng_s.substr (op_end + 1);
-	// substitute random numbers
-	std::string::size_type pos = 0;
-	while ((pos = operand.find ("rand")) != std::string::npos)
-	{
-		std::ostringstream _os;
-		// find range
-		if (operand[pos + 4] != '(')
-		{
-			_os << random_num ();
-			operand.replace (pos, 4, _os.str ());
-		}
-		std::string::size_type endp = operand.find (")", pos + 5);
-		if (endp == std::string::npos)
-		{
-			logStream (MESSAGE_ERROR) << "Cannot parse rand range - missing ) in " << operand.substr (pos) << sendLog;
-			return;
-		}
-		std::string ps = operand.substr (pos + 5, endp - pos - 5);
-		std::istringstream _is (ps);
-		double p1, p2;
-		char ch;
-		_is >> p1 >> ch >> p2;
-		if (_is.fail () || ch != ',')
-		{
-			logStream (MESSAGE_ERROR) << "Cannot parse " << ps << sendLog;
-			return;
-		}
-		_os << p1 + (p2 - p1) * random_num ();
-		operand.replace (pos, ps.size () + 6, _os.str ());
-	}
-	// try to split operand comming in two or more pieces
-	if (operand[0] == '(' && operand[operand.length () - 1] == ')')
-	{
-		// substitute ',' with space..
-		operand = operand.substr (1, operand.length () - 2);
-		for (i = 0; i < (int) operand.length (); i++)
-		{
-			if (operand[i] == ',')
-				operand[i] = ' ';
-		}
-		rawString = true;
-	}
+	operands = rts2operands::OperandsSet();
+	operands.parse (chng_s.substr (op_end + 1));
 }
 
 
@@ -561,17 +520,19 @@ int
 Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
 Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	if (op == '\0' || operand.size () == 0)
+	if (op == '\0' || operands.size () == 0)
 		return -1;
 	// handle while exposing part..
+	std::ostringstream _os;
+	_os << operands;
 	if (valName[0] == '!')
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand, rawString);
+		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName, op, operand, rawString);
+		*new_command = new Rts2CommandChangeValue (client, valName, op, _os.str(), rawString);
 	}
 	getDevice (new_device);
 	return 0;

@@ -20,6 +20,7 @@
 #ifndef __RTS2_SCRIPTELEMENT__
 #define __RTS2_SCRIPTELEMENT__
 
+#include "operands.h"
 #include "rts2script.h"
 #include "rts2spiral.h"
 #include "../writers/rts2image.h"
@@ -193,8 +194,7 @@ class Rts2ScriptElementChange:public Rts2ScriptElement
 		double ra;
 		double dec;
 	public:
-		Rts2ScriptElementChange (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE],
-			double in_ra, double in_dec);
+		Rts2ScriptElementChange (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec);
 		virtual ~Rts2ScriptElementChange (void)
 		{
 			delete [] deviceName;
@@ -312,7 +312,6 @@ class Rts2ScriptElementWaitSignal:public Rts2ScriptElement
 		virtual int waitForSignal (int in_sig);
 };
 
-
 /**
  * Set value.
  */
@@ -322,18 +321,14 @@ class Rts2ScriptElementChangeValue:public Rts2ScriptElement
 		char *deviceName;
 		std::string valName;
 		char op;
-		std::string operand;
+		rts2operands::OperandsSet operands;
 		bool rawString;
 	protected:
 		virtual void getDevice (char new_device[DEVICE_NAME_SIZE]);
 	public:
-		Rts2ScriptElementChangeValue (Rts2Script * in_script,
-			const char *in_device_value,
-			const char *chng_str);
+		Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *in_device_value, const char *chng_str);
 		virtual ~ Rts2ScriptElementChangeValue (void);
-		virtual int defnextCommand (Rts2DevClient * client,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
+		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 };
 
 /**
