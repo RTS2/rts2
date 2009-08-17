@@ -920,6 +920,7 @@ int
 Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
+	woffsRaDec->setValueRaDec (0, 0);
 	return Rts2Device::scriptEnds ();
 }
 
