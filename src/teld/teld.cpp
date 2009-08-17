@@ -991,7 +991,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (woffsRaDec->wasChanged ())
 	{
-		offsRaDec->incValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
+		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
 
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
@@ -1057,7 +1057,6 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (woffsRaDec->wasChanged ())
 	{
-		woffsRaDec->setValueRaDec (0, 0);
 		woffsRaDec->resetValueChanged ();
 	}
 
