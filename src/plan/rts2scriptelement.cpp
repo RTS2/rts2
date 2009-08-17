@@ -457,8 +457,7 @@ new_device[DEVICE_NAME_SIZE])
 }
 
 
-int
-Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
+int Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
 {
 	if (sig == in_sig)
 	{
@@ -509,16 +508,13 @@ Rts2ScriptElementChangeValue::~Rts2ScriptElementChangeValue (void)
 }
 
 
-void
-Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
+void Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
 	strcpy (new_device, deviceName);
 }
 
 
-int
-Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (op == '\0' || operands.size () == 0)
 		return -1;

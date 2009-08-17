@@ -71,6 +71,7 @@ Operand *OperandsSet::parseOperand (std::string str)
 void OperandsSet::parse (std::string str)
 {
 	// find operators separators..
+	bool bracked = false;
 	int simple_braces = 0;
 	int curved_braces = 0;
 	enum {NONE, SIMPLE, DOUBLE} quotes = NONE;
@@ -89,7 +90,10 @@ void OperandsSet::parse (std::string str)
 			if (*iter == '(')
 			{
 				if (iter == str.begin ())
+				{
 					start++;
+					bracked = true;
+				}
 				simple_braces++;
 			}
 			if (*iter == ')')
@@ -113,12 +117,17 @@ void OperandsSet::parse (std::string str)
 			if (*iter == '"')
 				quotes = DOUBLE;
 			if (curved_braces == 0 && quotes == NONE &&
-			  	((*iter == ',' && simple_braces == 1) || simple_braces == 0))
+			  	((*iter == ',' && simple_braces == 1) || (simple_braces == 0 && bracked)))
 			{
 				std::string ops = str.substr (start, iter - str.begin () - start);
 				push_back (parseOperand (ops));
 				start = iter - str.begin () + 1;
 			}
 		}
+	}
+	if (bracked == false)
+	{
+		// push back single operator
+		push_back (parseOperand (str));
 	}
 }
