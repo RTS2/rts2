@@ -66,13 +66,30 @@ class Operand
 class Number:public Operand
 {
 	public:
-		Number(double _val) { val = _val; };
+		Number(double _val) { val = _val; }
 
-		virtual double getDouble () { return val; };
+		virtual double getDouble () { return val; }
 		
 		virtual std::ostream & writeTo (std::ostream &_os) { _os << getDouble(); return _os; }
 	private:
 		double val;
+};
+
+
+/**
+ * String constant.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class String:public Operand
+{
+	public:
+		String(std::string  _str): str(_str) {}
+		
+		virtual std::ostream & writeTo (std::ostream &_os) { _os << str; return _os; }
+	
+	private:
+		std::string str;
 };
 
 /**

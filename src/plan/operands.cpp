@@ -63,7 +63,9 @@ Operand *OperandsSet::parseOperand (std::string str)
 		}
 		else
 		{
-			throw ParsingError ("Cannot find function with name " + name);
+			if (iter != str.end ())
+				throw ParsingError ("Cannot find function with name " + name);
+			return new String (name);
 		}
 	}
 }
