@@ -291,15 +291,11 @@ TargetGRB::getScript (const char *deviceName, std::string &buf)
 
 	if (now - (time_t) grbDate < 1000)
 	{
-		buf = std::string ("E 10 E 20 E 30 E 40");
-	}
-	else if (now - (time_t) grbDate < 10000)
-	{
-		buf = std::string ("E 100 E 200");
+		buf = std::string ("for 4 { E 10 } ");
 	}
 	else
 	{
-		buf = std::string ("E 300");
+		buf = std::string ("for 4 { E 20 } ");
 	}
 	return 0;
 }
