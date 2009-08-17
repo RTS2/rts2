@@ -19,8 +19,6 @@
 
 #include "operands.h"
 
-#include <iostream>
-
 using namespace rts2operands;
 
 
@@ -54,7 +52,6 @@ Operand *OperandsSet::parseOperand (std::string str)
 		{
 			// get two parameters as operands..
 			std::string ops = str.substr (start + 4);
-			std::cout << str << " " << name << " " << start << " " << iter - str.begin () - start - 4 << " " << ops << std::endl;
 			OperandsSet twoOps;
 			twoOps.parse (ops);
 			if (twoOps.size () != 2)
@@ -118,7 +115,8 @@ void OperandsSet::parse (std::string str)
 			if (curved_braces == 0 && quotes == NONE &&
 			  	((*iter == ',' && simple_braces == 1) || simple_braces == 0))
 			{
-				push_back (parseOperand (str.substr (start, iter - str.begin () - start)));
+				std::string ops = str.substr (start, iter - str.begin () - start);
+				push_back (parseOperand (ops));
 				start = iter - str.begin () + 1;
 			}
 		}

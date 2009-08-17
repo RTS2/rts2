@@ -525,6 +525,8 @@ Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 	// handle while exposing part..
 	std::ostringstream _os;
 	_os << operands;
+	if (operands.size () > 1)
+		rawString = true;
 	if (valName[0] == '!')
 	{
 		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
