@@ -34,27 +34,6 @@ namespace rts2camd
  */
 class Alta:public Camera
 {
-	private:
-		CApnCamera * alta;
-		Rts2ValueSelection * bitDepth;
-		Rts2ValueSelection *fanMode;
-
-		Rts2ValueSelection *coolerStatus;
-		Rts2ValueBool *coolerEnabled;
-
-		void setBitDepth (int newBit);
-
-	protected:
-		virtual int initChips ();
-		virtual void initBinnings ();
-		virtual int setBinning (int in_vert, int in_hori);
-		virtual int startExposure ();
-		virtual long isExposing ();
-		virtual int stopExposure ();
-		virtual int doReadout ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 	public:
 		Alta (int argc, char **argv);
 		virtual ~ Alta (void);
@@ -67,6 +46,32 @@ class Alta:public Camera
 
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
+
+	protected:
+		virtual int initChips ();
+		virtual void initBinnings ();
+		virtual int setBinning (int in_vert, int in_hori);
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int stopExposure ();
+		virtual int doReadout ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual long suggestBufferSize ()
+		{
+			return Camera::suggestBufferSize () + 4;
+		}
+
+	private:
+		CApnCamera * alta;
+		Rts2ValueSelection * bitDepth;
+		Rts2ValueSelection *fanMode;
+
+		Rts2ValueSelection *coolerStatus;
+		Rts2ValueBool *coolerEnabled;
+
+		void setBitDepth (int newBit);
 };
 
 };
@@ -104,6 +109,7 @@ Alta::initBinnings ()
 {
 	addBinning2D (1,1);
 	addBinning2D (2,2);
+	addBinning2D (3,3);
 	addBinning2D (4,4);
 	addBinning2D (8,8);
 	addBinning2D (16,16);
@@ -123,7 +129,8 @@ Alta::setBinning (int in_vert, int in_hori)
 {
 	alta->write_RoiBinningH (in_hori);
 	alta->write_RoiBinningV (in_vert);
-	return Camera::setBinning (in_vert, in_hori);
+	int ret = Camera::setBinning (in_vert, in_hori);
+	return ret;
 }
 
 
@@ -131,15 +138,16 @@ int
 Alta::startExposure ()
 {
 	int ret;
-	ret = alta->Expose (getExposure (), getExpType () ? 0 : 1);
-	if (!ret)
-		return -1;
 
 	// set region of intereset..
 	alta->write_RoiStartY (chipUsedReadout->getYInt ());
 	alta->write_RoiStartX (chipUsedReadout->getXInt ());
-	alta->write_RoiPixelsH (chipUsedReadout->getWidthInt ());
-	alta->write_RoiPixelsV (chipUsedReadout->getHeightInt ());
+	alta->write_RoiPixelsH (chipUsedReadout->getWidthInt () / binningHorizontal ());
+	alta->write_RoiPixelsV (chipUsedReadout->getHeightInt () / binningVertical ());
+
+	ret = alta->Expose (getExposure (), getExpType () ? 0 : 1);
+	if (!ret)
+		return -1;
 
 	return 0;
 }
@@ -157,7 +165,10 @@ Alta::isExposing ()
 	status = alta->read_ImagingStatus ();
 
 	if (status < 0)
+	{
+		logStream (MESSAGE_ERROR) << "During check for ImagingStatus, return < 0: " << status << sendLog;
 		return -2;
+	}
 	if (status != Apn_Status_ImageReady)
 		return 200;
 	// exposure has ended..
@@ -180,9 +191,8 @@ Alta::doReadout ()
 	int ret;
 
 	long status;
+	unsigned short width, height;
 	unsigned long count;
-	unsigned short width = getUsedWidth ();
-	unsigned short height = getUsedHeight ();
 	status = alta->GetImageData ((short unsigned int *) dataBuffer, width, height, count);
 	if (status != CAPNCAMERA_SUCCESS)
 		return -1;
