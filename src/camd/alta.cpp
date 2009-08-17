@@ -142,8 +142,8 @@ Alta::startExposure ()
 	// set region of intereset..
 	alta->write_RoiStartY (chipUsedReadout->getYInt ());
 	alta->write_RoiStartX (chipUsedReadout->getXInt ());
-	alta->write_RoiPixelsH (chipUsedReadout->getWidthInt () / binningHorizontal ());
 	alta->write_RoiPixelsV (chipUsedReadout->getHeightInt () / binningVertical ());
+	alta->write_RoiPixelsH (chipUsedReadout->getWidthInt () / binningHorizontal ());
 
 	ret = alta->Expose (getExposure (), getExpType () ? 0 : 1);
 	if (!ret)
