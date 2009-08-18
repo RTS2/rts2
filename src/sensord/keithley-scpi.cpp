@@ -77,10 +77,10 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 		rval *= 10e+12;
 		sval->addValue (rval);
 		val->addValue (rval);
-		logStream (MESSAGE_DEBUG) << "data "
+		/*logStream (MESSAGE_DEBUG) << "data "
 			<< *((float *) (top + 0)) << " "
 			<< *((float *) (top + 4)) << " "
-			<< *((float *) (top + 8)) << sendLog;
+			<< *((float *) (top + 8)) << sendLog; */
 		times->addValue (*((float *) (top + 4)));
 		count--;
 		top += 12;
