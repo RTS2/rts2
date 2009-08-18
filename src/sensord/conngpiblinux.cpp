@@ -75,12 +75,11 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 
 void ConnGpibLinux::gpibWaitSRQ ()
 {
-	int ret;
 	short res;
 	while (true)
 	{
-		ret = iblines (gpib_dev, &res);
-		if (ret & ERR)
+		iblines (0, &res);
+		if (ibsta & ERR)
 			throw rts2core::Error ("Error while waiting for SQR");
 		if (res & BusSRQ)
 			return;
