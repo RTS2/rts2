@@ -144,6 +144,7 @@ int Trencin::tel_write (Rts2ConnSerial *conn, char command)
 {
 	char buf[3];
 	int len = snprintf (buf, 3, "%c\r", command);
+	usleep (USEC_SEC / 10);
 	return conn->writePort (buf, len);
 }
 
@@ -160,6 +161,7 @@ int Trencin::tel_write_dec (char command)
 int Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
 {
 	int ret;
+	usleep (USEC_SEC / 10);
 	ret = conn->writePort (command, strlen (command));
 	if (ret != 0)
 		return ret;
@@ -194,6 +196,7 @@ int Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\r", command, value);
+	usleep (USEC_SEC / 10);
 	return conn->writePort (buf, len);
 }
 
@@ -459,6 +462,7 @@ int Trencin::init ()
 
 	snprintf (telType, 64, "Trencin");
 
+	tel_write_ra ('\\');
 	tel_write_ra ('M', microRa->getValueInteger ());
 	tel_write_ra ('q', qRa->getValueInteger ());
 	tel_write_ra ('N', numberRa->getValueInteger ());
@@ -555,6 +559,7 @@ void Trencin::valueChanged (Rts2Value *changed_value)
 			startWorm (trencinConnRa);
 		}
 	}
+	Fork::valueChanged (changed_value);
 }
 
 
