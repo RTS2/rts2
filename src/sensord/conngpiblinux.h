@@ -42,11 +42,6 @@ class GpibLinuxError: public rts2core::Error
 
 class ConnGpibLinux:public ConnGpib
 {
-	private:
-		int minor;
-		int pad;
-
-		int gpib_dev;
 	public:
 		virtual void gpibWrite (const char *_buf);
 		virtual void gpibRead (void *_buf, int &blen);
@@ -58,6 +53,13 @@ class ConnGpibLinux:public ConnGpib
 
 		ConnGpibLinux (int _minor, int _pad);
 		virtual ~ ConnGpibLinux (void);
+
+	private:
+		int minor;
+		int pad;
+
+		int gpib_dev;
+		int interface_num;
 };
 
 };

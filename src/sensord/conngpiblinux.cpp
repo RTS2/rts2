@@ -78,7 +78,7 @@ void ConnGpibLinux::gpibWaitSRQ ()
 	short res;
 	while (true)
 	{
-		iblines (0, &res);
+		iblines (interface_num, &res);
 		if (ibsta & ERR)
 			throw rts2core::Error ("Error while waiting for SQR");
 		if (res & BusSRQ)
@@ -96,6 +96,9 @@ void ConnGpibLinux::initGpib ()
 			minor << ", pad " << pad << sendLog;
 		throw rts2core::Error ("cannot init GPIB device");
 	}
+	ibask (gpib_dev, IbaBNA, &interface_num);
+	if (ibsta & ERR)
+		throw rts2core::Error ("cannot find interface number");
 }
 
 
