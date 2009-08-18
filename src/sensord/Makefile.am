@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
-	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-lakeshore-325
+	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 
 
 noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h
 
@@ -78,7 +78,7 @@ if GPIBLIB
 LDADD += @LIB_GPIB@
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
-	rts2-sensor-keithley-487
+	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
@@ -90,7 +90,7 @@ rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
 
 else
 
-EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp
 
 endif
 
