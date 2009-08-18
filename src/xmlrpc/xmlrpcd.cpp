@@ -35,6 +35,7 @@
 #include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"
 #else
+#include "../utils/rts2config.h"
 #include "../utils/rts2device.h"
 #endif /* HAVE_PGSQL */
 
