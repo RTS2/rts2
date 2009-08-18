@@ -106,6 +106,9 @@ class Trencin:public Fork
 		// read axis - registers 1-3
 		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value);
 
+		int setRa (long new_ra);
+		int setDec (long new_dec);
+
 		Rts2ValueBool *wormRa;
 
 		Rts2ValueInteger *wormRaSpeed;
@@ -288,6 +291,26 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
 }
 
 
+int Trencin::setRa (long new_ra)
+{
+	long diff = unitRa->getValueLong () - new_ra;
+	if (diff < 0)
+		return tel_write_ra_run ('F', -1 * diff) == 0 ? 0 : -2;
+	else if (diff > 0)
+	  	return tel_write_ra_run ('B', diff) == 0 ? 0 : -2;
+	else return 0;
+}
+
+int Trencin::setDec (long new_dec)
+{
+	long diff = unitDec->getValueLong () - new_dec;
+	if (diff < 0)
+		return tel_write_dec_run ('F', -1 * diff) == 0 ? 0 : -2;
+	else if (diff > 0)
+	  	return tel_write_dec_run ('B', diff) == 0 ? 0 : -2;
+	else return 0;
+}
+
 Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 {
 	trencinConnRa = NULL;
@@ -468,21 +491,11 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == unitRa)
 	{
-		long diff = old_value->getValueLong () - new_value->getValueLong ();
-		if (diff < 0)
-			return tel_write_ra_run ('F', -1 * diff) == 0 ? 0 : -2;
-		else if (diff > 0)
-		  	return tel_write_ra_run ('B', diff) == 0 ? 0 : -2;
-		else return 0;
+		return setRa (new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == unitDec)
 	{
-		long diff = old_value->getValueLong () - new_value->getValueLong ();
-		if (diff < 0)
-			return tel_write_dec_run ('F', -1 * diff) == 0 ? 0 : -2;
-		else if (diff > 0)
-		  	return tel_write_dec_run ('B', diff) == 0 ? 0 : -2;
-		else return 0;
+		return setDec (new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == velRa)
 	{
@@ -567,6 +580,18 @@ int Trencin::info ()
 
 int Trencin::startResync ()
 {
+	// calculate new X and Y..
+	int ret;
+
+	ret = sky2counts (ac, dc);
+	if (ret)
+		return -1;
+	ret = setRa (ac);
+	if (ret)
+		return -1;
+	ret = setDec (dc);
+	if (ret)
+		return -1;
 	return 0;
 }
 
