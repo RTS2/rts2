@@ -70,6 +70,8 @@ class Trencin:public Fork
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
+		virtual void valueChanged (Rts2Value *changed_value);
+
 	private:
 		const char *device_nameRa;
 		Rts2ConnSerial *trencinConnRa;
@@ -116,6 +118,16 @@ class Trencin:public Fork
 
 		Rts2ValueInteger *accRa;
 		Rts2ValueInteger *accDec;
+
+		Rts2ValueInteger *qRa;
+		Rts2ValueInteger *microRa;
+		Rts2ValueInteger *numberRa;
+		Rts2ValueInteger *startRa;
+
+		Rts2ValueInteger *accWormRa;
+		Rts2ValueInteger *velWormRa;
+		Rts2ValueInteger *backWormRa;
+		Rts2ValueInteger *waitWormRa;
 
 		int32_t ac, dc;
 };
@@ -211,25 +223,38 @@ int Trencin::startWorm (Rts2ConnSerial *conn)
 {
 	int ret;
 
-	ret = tel_write (conn, 'M', 3);
+	ret = tel_write (conn, '[');
+
+	ret = tel_write (conn, 'M', microRa->getValueInteger ());
 	if (ret)
 		return ret;
-	ret = tel_write (conn, 'N', 6);
+	ret = tel_write (conn, 'N', numberRa->getValueInteger ());
 	if (ret)
 		return ret;
-	ret = tel_write (conn, 'A', 100);
+	ret = tel_write (conn, 'A', accWormRa->getValueInteger ());
 	if (ret)
 		return ret;
-	ret = tel_write (conn, 'S', 222);
+	ret = tel_write (conn, 's', startRa->getValueInteger ());
 	if (ret)
 		return ret;
-	ret = tel_write (conn, 'V', 222);
+	ret = tel_write (conn, 'V', velWormRa->getValueInteger ());
 	if (ret)
 		return ret;
-	ret = tel_write (conn, "G+");
+	ret = tel_write (conn, "\r\r@1\r");
 	if (ret)
 		return ret;
-	ret = tel_write (conn, 'R');
+	ret = tel_write (conn, 'B', backWormRa->getValueInteger ());
+	if (ret)
+		return ret;
+	ret = tel_write (conn, "r\rK\r");
+	if (ret)
+		return ret;
+	ret = tel_write (conn, 'W', waitWormRa->getValueInteger ());
+	if (ret)
+		return ret;
+	ret = tel_write (conn, "J1\r]\r");
+	if (ret)
+		return ret;
 	return ret;
 }
 
@@ -298,14 +323,38 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (velRa, "vel_ra", "RA velocity", false);
 	createValue (velDec, "vel_dec", "DEC velocity", false);
 
-	velRa->setValueInteger (50);
-	velDec->setValueInteger (50);
+	velRa->setValueInteger (1500);
+	velDec->setValueInteger (1500);
 
 	createValue (accRa, "acc_ra", "RA acceleration", false);
 	createValue (accDec, "acc_dec", "DEC acceleration", false);
 
-	accRa->setValueInteger (15);
-	accDec->setValueInteger (15);
+	accRa->setValueInteger (800);
+	accDec->setValueInteger (800);
+
+	createValue (microRa, "micro_ra", "RA microstepping", false);
+	microRa->setValueInteger (8);
+
+	createValue (numberRa, "number_ra", "current shape in microstepping", false);
+	numberRa->setValueInteger (6);
+
+	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false);
+	qRa->setValueInteger (2);
+
+	createValue (startRa, "start_ra", "start/stop speed");
+	startRa->setValueInteger (200);
+
+	createValue (accWormRa, "acc_worm_ra", "acceleration for worm in RA", false);
+	accWormRa->setValueInteger (100);
+
+	createValue (velWormRa, "vel_worm_ra", "velocity for worm speeds in RA", false);
+	velWormRa->setValueInteger (200);
+
+	createValue (backWormRa, "back_worm_ra", "backward worm trajectory", false);
+	backWormRa->setValueInteger (24);
+
+	createValue (waitWormRa, "wait_worm_ra", "wait during RA worm cycle", false);
+	waitWormRa->setValueInteger (101);
 
 	// apply all correction for paramount
 	setCorrections (true, true, true);
@@ -387,6 +436,14 @@ int Trencin::init ()
 
 	snprintf (telType, 64, "Trencin");
 
+	tel_write_ra ('M', microRa->getValueInteger ());
+	tel_write_ra ('q', qRa->getValueInteger ());
+	tel_write_ra ('N', numberRa->getValueInteger ());
+	tel_write_ra ('A', accRa->getValueInteger ());
+	tel_write_ra ('s', startRa->getValueInteger ());
+	tel_write_ra ('V', velRa->getValueInteger ());
+
+
 	wormRaSpeed->setValueInteger (25000);
 
 	return ret;
@@ -443,14 +500,48 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return tel_write_dec ('A', new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
+	if (old_value == microRa)
+	{
+		return tel_write_ra ('M', new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == numberRa)
+	{
+		return tel_write_ra ('N', new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == qRa)
+	{
+		return tel_write_ra ('q', new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == startRa)
+	{
+		return tel_write_ra ('s', new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
 	if (old_value == wormRa)
 	{
 		if (((Rts2ValueBool *)new_value)->getValueBool () == true)
 			return startWorm (trencinConnRa) == 0 ? 0 : -2;
 		return tel_write_ra ('K') == 0 ? 0 : -2;
 	}
-
+	if (old_value == accWormRa || old_value == velWormRa
+		|| old_value == backWormRa || old_value == waitWormRa)
+	{
+		return 0;
+	}
 	return Fork::setValue (old_value, new_value);
+}
+
+
+void Trencin::valueChanged (Rts2Value *changed_value)
+{
+	if (changed_value == accWormRa || changed_value == velWormRa
+		|| changed_value == backWormRa || changed_value == waitWormRa)
+	{
+		if (wormRa->getValueBool ())
+		{
+			tel_write_ra ('K');
+			startWorm (trencinConnRa);
+		}
+	}
 }
 
 
