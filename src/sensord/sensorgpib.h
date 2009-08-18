@@ -55,6 +55,22 @@ class Gpib:public Sensor
 		 */
 		void writeValue (const char *name, Rts2Value *value);
 
+		void readInt (const char *buf, int &val) { connGpib->readInt (buf, val); }
+
+		void readValue (const char *buf, Rts2Value *val) { connGpib->readValue (buf, val); }
+
+		void readValue (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num) { connGpib->readValue (subsystem, vals, prefix_num); }
+
+		void readValue (const char *buf, Rts2ValueString * val) { connGpib->readValue (buf, val); }
+
+		void readValue (const char *buf, Rts2ValueDouble * val) { connGpib->readValue (buf, val); }
+
+		void readValue (const char *buf, Rts2ValueFloat * val) { connGpib->readValue (buf, val); }
+
+		void readValue (const char *buf, Rts2ValueBool * val) { connGpib->readValue (buf, val); }
+
+		void readValue (const char *buf, Rts2ValueSelection * val) { connGpib->readValue (buf, val); }
+
 		void gpibWaitSRQ () { connGpib->gpibWaitSRQ (); }
 
 		virtual int processOption (int in_opt);

@@ -32,13 +32,7 @@ namespace rts2sensord
 class Keithley:public Gpib
 {
 	private:
-		void getGPIB (const char *buf, int &val);
-		void getGPIB (const char *buf, Rts2ValueString * val);
-
-		void getGPIB (const char *buf, Rts2ValueDouble * val);
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
-
-		void getGPIB (const char *buf, Rts2ValueBool * val);
 
 		void waitOpc ();
 
@@ -63,39 +57,6 @@ class Keithley:public Gpib
 };
 
 using namespace rts2sensord;
-
-void Keithley::getGPIB (const char *buf, int &val)
-{
-	char rb[200];
-	gpibWriteRead (buf,rb, 200);
-	char *sep = strchr (rb, '\n');
-	if (sep)
-		*sep = '\0';
-	val = atol (rb);
-}
-
-
-void Keithley::getGPIB (const char *buf, Rts2ValueString * val)
-{
-	char rb[200];
-	gpibWriteRead (buf, rb, 200);
-	char *sep = strchr (rb, '\n');
-	if (sep)
-		*sep = '\0';
-	val->setValueString (rb);
-}
-
-
-void Keithley::getGPIB (const char *buf, Rts2ValueDouble * val)
-{
-	char rb[200];
-	gpibWriteRead (buf, rb, 200);
-	char *sep = strchr (rb, '\n');
-	if (sep)
-		*sep = '\0';
-	val->setValueString (rb);
-}
-
 
 void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count)
 {
@@ -128,25 +89,13 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 	delete[]rbuf;
 }
 
-
-void Keithley::getGPIB (const char *buf, Rts2ValueBool * val)
-{
-	char rb[10];
-	gpibWriteRead (buf, rb, 10);
-	if (atoi (rb) == 1)
-		val->setValueBool (true);
-	else
-		val->setValueBool (false);
-}
-
-
 void Keithley::waitOpc ()
 {
 	int icount = 0;
 	while (icount < countNum->getValueInteger ())
 	{
 		int opc;
-		getGPIB ("*OPC?", opc);
+		readInt ("*OPC?", opc);
 		if (opc == 1)
 			return;
 		usleep (USEC_SEC / 100);
@@ -198,7 +147,7 @@ Keithley::init ()
 		gpibWrite ("*SRE 1");
 	
 		// ask for Automatic ZERO
-		getGPIB ("SYSTEM:AZERO?", azero);
+		readValue ("SYSTEM:AZERO?", azero);
 	
 		// start and setup measurements..
 		gpibWrite ("*CLS");
@@ -226,7 +175,7 @@ int
 Keithley::initValues ()
 {
 	Rts2ValueString *model = new Rts2ValueString ("model");
-	getGPIB ("*IDN?", model);
+	readValue ("*IDN?", model);
 	addConstValue (model);
 	return Gpib::initValues ();
 }

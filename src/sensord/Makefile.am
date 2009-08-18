@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
-	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1
+	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-lakeshore-325
 
 noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h
 
@@ -12,13 +12,13 @@ noinst_LIBRARIES = librts2sensord.a
 
 if GPIBLIB
 
-librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpiblinux.cpp conngpibenet.cpp
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
 else
 
 librts2sensord_a_SOURCES = sensord.cpp
 
-EXTRA_DIST += sensorgpib.cpp conngpiblinux.cpp conngpibenet.cpp
+EXTRA_DIST += sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
 
 endif
 
@@ -77,18 +77,20 @@ if GPIBLIB
 
 LDADD += @LIB_GPIB@
 
-bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485 \
+bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
 	rts2-sensor-keithley-487
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
-rts2_sensor_keithley_6485_SOURCES = keithley-6485.cpp
+rts2_sensor_keithley_scpi_SOURCES = keithley-scpi.cpp
 
 rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
+rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
+
 else
 
-EXTRA_DIST += cryocon.cpp keithley-6485.cpp keithley-487.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp
 
 endif
 

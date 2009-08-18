@@ -20,6 +20,10 @@
 #ifndef __RTS2_CONN_GPIB__
 #define __RTS2_CONN_GPIB__
 
+#include "../utils/rts2value.h"
+
+#include <list>
+
 namespace rts2sensord
 {
 
@@ -69,6 +73,27 @@ class ConnGpib
 		 * Wait while line assert serial register.
 		 */
 		virtual void gpibWaitSRQ () = 0;
+
+		// function usefull for SCPI style programming
+
+		void readInt (const char *buf, int &val);
+
+		/**
+		 * Read value from GPIB bus.
+		 */
+		void readValue (const char *buf, Rts2Value *val);
+
+		void readValue (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num);
+
+		void readValue (const char *buf, Rts2ValueString * val);
+
+		void readValue (const char *buf, Rts2ValueDouble * val);
+
+		void readValue (const char *buf, Rts2ValueFloat * val);
+
+		void readValue (const char *buf, Rts2ValueBool * val);
+
+		void readValue (const char *buf, Rts2ValueSelection * val);
 
 		/**
 		 * Initialize GPIB connection.

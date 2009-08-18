@@ -57,14 +57,6 @@ class Rts2ValueLoop
 
 class Cryocon:public Gpib
 {
-	void writeRead (const char *buf, Rts2Value * val);
-	void writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num);
-
-	void writeRead (const char *buf, Rts2ValueDouble * val);
-	void writeRead (const char *buf, Rts2ValueFloat * val);
-	void writeRead (const char *buf, Rts2ValueBool * val);
-	void writeRead (const char *buf, Rts2ValueSelection * val);
-
 	const char *getLoopVal (int l, Rts2Value * val);
 
 	Rts2ValueTempInput *chans[4];
@@ -197,110 +189,6 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 }
 
 
-void Cryocon::writeRead (const char *buf, Rts2Value * val)
-{
-	switch (val->getValueType ())
-	{
-		case RTS2_VALUE_DOUBLE:
-			writeRead (buf, (Rts2ValueDouble *) val);
-			return;
-		case RTS2_VALUE_FLOAT:
-			writeRead (buf, (Rts2ValueFloat *) val);
-			return;
-		case RTS2_VALUE_BOOL:
-			writeRead (buf, (Rts2ValueBool *) val);
-			return;
-		case RTS2_VALUE_SELECTION:
-			writeRead (buf, (Rts2ValueSelection *) val);
-			return;
-		default:
-			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
-				getName () << " of type " << val->getValueType () << sendLog;
-			throw rts2core::Error ("unknow value type");
-	}
-}
-
-
-void Cryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
-{
-	char rb[500];
-	char *retTop;
-	char *retEnd;
-	std::list < Rts2Value * >::iterator iter;
-
-	strcpy (rb, subsystem);
-
-	for (iter = vals.begin (); iter != vals.end (); iter++)
-	{
-		if (iter != vals.begin ())
-			strcat (rb, ";");
-		strcat (rb, (*iter)->getName ().c_str () + prefix_num);
-		strcat (rb, "?");
-	}
-	gpibWriteRead (rb, rb, 500);
-	// spit reply and set values..
-	retTop = rb;
-	for (iter = vals.begin (); iter != vals.end (); iter++)
-	{
-		retEnd = retTop;
-		if (*retEnd == '\0')
-		{
-			logStream (MESSAGE_ERROR) << "Cannot find reply for value " <<
-				(*iter)->getName () << sendLog;
-			throw rts2core::Error ("Cannot find reply");
-		}
-		while (*retEnd && *retEnd != ';')
-		{
-			if (*retEnd == ' ')
-				*retEnd = '\0';
-			retEnd++;
-		}
-		*retEnd = '\0';
-
-		int ret = (*iter)->setValueString (retTop);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "Error when setting value " <<
-				(*iter)->getName () << " to " << retTop << sendLog;
-			throw rts2core::Error ("Error when setting value");
-		}
-		retTop = retEnd + 1;
-	}
-}
-
-
-void Cryocon::writeRead (const char *buf, Rts2ValueDouble * val)
-{
-	char rb[50];
-	gpibWriteRead (buf, rb, 50);
-	val->setValueDouble (atof (rb));
-}
-
-
-void Cryocon::writeRead (const char *buf, Rts2ValueFloat * val)
-{
-	char rb[50];
-	gpibWriteRead (buf, rb, 50);
-	val->setValueFloat (atof (rb));
-}
-
-
-void Cryocon::writeRead (const char *buf, Rts2ValueBool * val)
-{
-	char rb[50];
-	gpibWriteRead (buf, rb, 50);
-	val->setValueBool (!strncmp (rb, "ON", 2));
-}
-
-
-void Cryocon::writeRead (const char *buf, Rts2ValueSelection * val)
-{
-	char rb[50];
-	gpibWriteRead (buf, rb, 50);
-	val->setSelIndex (rb);
-}
-
-
 const char *
 Cryocon::getLoopVal (int l, Rts2Value * val)
 {
@@ -413,7 +301,7 @@ Cryocon::info ()
 		{
 			buf[6] = chans[i]->getChannel ();
 			buf[7] = ':';
-			writeRead (buf, chans[i]->values, 2);
+			readValue (buf, chans[i]->values, 2);
 		}
 		strcpy (buf, "LOOP ");
 		buf[7] = '\0';
@@ -422,12 +310,12 @@ Cryocon::info ()
 		{
 			buf[5] = '1' + i;
 			buf[6] = ':';
-			writeRead (buf, loops[i]->values, 2);
+			readValue (buf, loops[i]->values, 2);
 		}
-		writeRead ("STATS:TIME?", statTime);
+		readValue ("STATS:TIME?", statTime);
 		statTime->setValueDouble (statTime->getValueDouble () * 60.0);
-		writeRead ("SYSTEM:", systemList, 0);
-		writeRead ("CONTROL?", heaterEnabled);
+		readValue ("SYSTEM:", systemList, 0);
+		readValue ("CONTROL?", heaterEnabled);
 	}
 	catch (rts2core::Error er)
 	{
