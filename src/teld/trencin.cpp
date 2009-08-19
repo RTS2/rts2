@@ -19,22 +19,12 @@
 
 #include "fork.h"
 
+#include "../utils/error.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2connserial.h"
 #include "../utils/libnova_cpp.h"
 
-
-/*a ted HODINOVY STROJ:
-programova sekvence:
-M8
-N6
-A100
-S222
-V222
-G+
-R
-
-takto pojede hodStroj zrhuba tak jak ma...*/
+#define EVENT_TIMER_RA_WORM    RTS2_LOCAL_EVENT + 1230
 
 namespace rts2teld
 {
@@ -48,6 +38,8 @@ class Trencin:public Fork
 		virtual int init ();
 
 		virtual int info ();
+
+		virtual void postEvent (Rts2Event *event);
 
 		virtual int startResync ();
 		virtual int endMove ();
@@ -72,6 +64,10 @@ class Trencin:public Fork
 
 		virtual void valueChanged (Rts2Value *changed_value);
 
+		// start worm drive on given unit
+		virtual int startWorm ();
+		virtual int stopWorm ();
+
 	private:
 		const char *device_nameRa;
 		Rts2ConnSerial *trencinConnRa;
@@ -79,39 +75,34 @@ class Trencin:public Fork
 		const char *device_nameDec;
 		Rts2ConnSerial *trencinConnDec;
 
-		int tel_write (Rts2ConnSerial *conn, char command);
+		void tel_write (Rts2ConnSerial *conn, char command);
 
-		int tel_write_ra (char command);
-		int tel_write_dec (char command);
+		void tel_write_ra (char command);
+		void tel_write_dec (char command);
 
-		int tel_write (Rts2ConnSerial *conn, const char *command);
+		void tel_write (Rts2ConnSerial *conn, const char *command);
 
-		int tel_write_ra (const char *command);
-		int tel_write_dec (const char *command);
+		void tel_write_ra (const char *command);
+		void tel_write_dec (const char *command);
 
 		// write to both units
-		int write_both (char command, int32_t value);
+		void write_both (char command, int32_t value);
 
-		int tel_write (Rts2ConnSerial *conn, char command, int32_t value);
+		void tel_write (Rts2ConnSerial *conn, char command, int32_t value);
 
-		int tel_write_ra (char command, int32_t value);
-		int tel_write_dec (char command, int32_t value);
+		void tel_write_ra (char command, int32_t value);
+		void tel_write_dec (char command, int32_t value);
 
-		int tel_write_ra_run (char command, int32_t value);
-		int tel_write_dec_run (char command, int32_t value);
-
-		// start worm drive on given unit
-		int startWorm (Rts2ConnSerial *conn);
+		void tel_write_ra_run (char command, int32_t value);
+		void tel_write_dec_run (char command, int32_t value);
 
 		// read axis - registers 1-3
 		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value);
 
-		int setRa (long new_ra);
-		int setDec (long new_dec);
+		void setRa (long new_ra);
+		void setDec (long new_dec);
 
 		Rts2ValueBool *wormRa;
-
-		Rts2ValueInteger *wormRaSpeed;
 
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
@@ -133,6 +124,9 @@ class Trencin:public Fork
 		Rts2ValueInteger *waitWormRa;
 
 		int32_t ac, dc;
+
+		// mode of RA motor
+		enum {MODE_NORMAL, MODE_WORM, MODE_WORM_WAIT} raMode;
 };
 
 }
@@ -140,134 +134,143 @@ class Trencin:public Fork
 using namespace rts2teld;
 
 
-int Trencin::tel_write (Rts2ConnSerial *conn, char command)
+void Trencin::tel_write (Rts2ConnSerial *conn, char command)
 {
 	char buf[3];
 	int len = snprintf (buf, 3, "%c\r", command);
 	usleep (USEC_SEC / 10);
-	return conn->writePort (buf, len);
+	if (conn->writePort (buf, len))
+		throw rts2core::Error ("cannot write to port");
 }
 
-int Trencin::tel_write_ra (char command)
+void Trencin::tel_write_ra (char command)
 {
-	return tel_write (trencinConnRa, command);
+	tel_write (trencinConnRa, command);
 }
 
-int Trencin::tel_write_dec (char command)
+void Trencin::tel_write_dec (char command)
 {
-	return tel_write (trencinConnDec, command);
+	tel_write (trencinConnDec, command);
 }
 
-int Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
+void Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
 {
-	int ret;
 	usleep (USEC_SEC / 10);
-	ret = conn->writePort (command, strlen (command));
-	if (ret != 0)
-		return ret;
-	return tel_write (conn, '\r');	
+	if (conn->writePort (command, strlen (command)))
+		throw rts2core::Error ("cannot write to port");
+	tel_write (conn, '\r');	
 }
 
-int Trencin::tel_write_ra (const char *command)
+void Trencin::tel_write_ra (const char *command)
 {
-	return tel_write (trencinConnRa, command);
+	tel_write (trencinConnRa, command);
 }
 
 
-int Trencin::tel_write_dec (const char *command)
+void Trencin::tel_write_dec (const char *command)
 {
-	return tel_write (trencinConnDec, command);
+	tel_write (trencinConnDec, command);
 }
 
 
-
-
-int Trencin::write_both (char command, int len)
+void Trencin::write_both (char command, int len)
 {
-	int ret;
-	ret = tel_write_ra (command, len);
-	if (ret)
-		return ret;
-	ret = tel_write_dec (command, len);
-	return ret;
+	tel_write_ra (command, len);
+	tel_write_dec (command, len);
 }
 
-int Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
+void Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\r", command, value);
 	usleep (USEC_SEC / 10);
-	return conn->writePort (buf, len);
+	if (conn->writePort (buf, len))
+		throw rts2core::Error ("cannot write to port");
 }
 
-int Trencin::tel_write_ra (char command, int32_t value)
+void Trencin::tel_write_ra (char command, int32_t value)
 {
-	return tel_write (trencinConnRa, command, value);
+	tel_write (trencinConnRa, command, value);
 }
 
-int Trencin::tel_write_dec (char command, int32_t value)
+void Trencin::tel_write_dec (char command, int32_t value)
 {
-	return tel_write (trencinConnDec, command, value);
+	tel_write (trencinConnDec, command, value);
 }
 
-int Trencin::tel_write_ra_run (char command, int32_t value)
-{
-	char buf[51];
-	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
-	return trencinConnRa->writePort (buf, len);
-}
-
-int Trencin::tel_write_dec_run (char command, int32_t value)
+void Trencin::tel_write_ra_run (char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
-	return trencinConnDec->writePort (buf, len);
+	if (trencinConnRa->writePort (buf, len))
+		throw rts2core::Error ("cannot write to RA port");
+}
+
+void Trencin::tel_write_dec_run (char command, int32_t value)
+{
+	char buf[51];
+	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
+	if (trencinConnDec->writePort (buf, len))
+	  	throw rts2core::Error ("cannot write to DEC port");
+}
+
+int Trencin::startWorm ()
+{
+	if (raMode == MODE_WORM_WAIT)
+	{
+		int ret;
+		char buf[2];
+		ret = trencinConnRa->readPort (buf, 1);
+		raMode = MODE_WORM;
+		if (ret < 0)
+			return -1;
+	}
+	if (raMode == MODE_NORMAL)
+	{
+		tel_write_ra ('[');
+		tel_write_ra ('M', microRa->getValueInteger ());
+		tel_write_ra ('N', numberRa->getValueInteger ());
+		tel_write_ra ('A', accWormRa->getValueInteger ());
+		tel_write_ra ('s', startRa->getValueInteger ());
+		tel_write_ra ('V', velWormRa->getValueInteger ());
+		tel_write_ra (']');
+		raMode = MODE_WORM;
+	}
+	tel_write_ra ("[\rU1\r");
+	tel_write_ra ("\r\r@1\r");
+	tel_write_ra ('B', backWormRa->getValueInteger ());
+	tel_write_ra ("r\rK\r");
+	tel_write_ra ('W', waitWormRa->getValueInteger ());
+	tel_write_ra (']');
+	raMode = MODE_WORM_WAIT;
+	addTimer (0.05, new Rts2Event (EVENT_TIMER_RA_WORM, this));
 	return 0;
 }
 
-int Trencin::startWorm (Rts2ConnSerial *conn)
+int Trencin::stopWorm ()
 {
-	int ret;
-
-	ret = tel_write (conn, '[');
-
-	ret = tel_write (conn, 'M', microRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 'N', numberRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 'A', accWormRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 's', startRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 'V', velWormRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, "\r\r@1\r");
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 'B', backWormRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, "r\rK\r");
-	if (ret)
-		return ret;
-	ret = tel_write (conn, 'W', waitWormRa->getValueInteger ());
-	if (ret)
-		return ret;
-	ret = tel_write (conn, "J1\r]\r");
-	if (ret)
-		return ret;
-	return ret;
+	if (raMode != MODE_NORMAL)
+	{
+		tel_write_ra ('K');
+		raMode = MODE_NORMAL;
+	}
+	return 0;
 }
 
 int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
 {
 	int ret;
 	char buf[10];
+
+	// wait for U1 from WORM, if it's needed..
+	if (conn == trencinConnRa && raMode == MODE_WORM_WAIT)
+	{
+		ret = conn->readPort (buf, 1);
+		raMode = MODE_WORM;
+		if (ret < 0)
+			return -1;
+	}
+
 	ret = conn->writePort ("U1\r", 3);
 	if (ret < 0)
 		return -1;
@@ -294,24 +297,22 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
 }
 
 
-int Trencin::setRa (long new_ra)
+void Trencin::setRa (long new_ra)
 {
 	long diff = unitRa->getValueLong () - new_ra;
 	if (diff < 0)
-		return tel_write_ra_run ('F', -1 * diff) == 0 ? 0 : -2;
+		tel_write_ra_run ('F', -1 * diff);
 	else if (diff > 0)
-	  	return tel_write_ra_run ('B', diff) == 0 ? 0 : -2;
-	else return 0;
+	  	tel_write_ra_run ('B', diff);
 }
 
-int Trencin::setDec (long new_dec)
+void Trencin::setDec (long new_dec)
 {
 	long diff = unitDec->getValueLong () - new_dec;
 	if (diff < 0)
-		return tel_write_dec_run ('F', -1 * diff) == 0 ? 0 : -2;
+		tel_write_dec_run ('F', -1 * diff);
 	else if (diff > 0)
-	  	return tel_write_dec_run ('B', diff) == 0 ? 0 : -2;
-	else return 0;
+	  	tel_write_dec_run ('B', diff);
 }
 
 Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
@@ -337,8 +338,6 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (false);
-
-	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
 
 	createValue (unitRa, "AXRA", "RA axis raw counts", true);
 	unitRa->setValueInteger (0);
@@ -382,8 +381,10 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (waitWormRa, "wait_worm_ra", "wait during RA worm cycle", false);
 	waitWormRa->setValueInteger (101);
 
-	// apply all correction for paramount
+	// apply all corrections
 	setCorrections (true, true, true);
+
+	raMode = MODE_NORMAL;
 }
 
 
@@ -470,9 +471,6 @@ int Trencin::init ()
 	tel_write_ra ('s', startRa->getValueInteger ());
 	tel_write_ra ('V', velRa->getValueInteger ());
 
-
-	wormRaSpeed->setValueInteger (25000);
-
 	return ret;
 }
 
@@ -493,56 +491,76 @@ void Trencin::updateTrack ()
 
 int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == unitRa)
+	try
 	{
-		return setRa (new_value->getValueLong ()) == 0 ? 0 : -2;
+		if (old_value == unitRa)
+		{
+			setRa (new_value->getValueLong ());
+			return 0;
+		}
+		else if (old_value == unitDec)
+		{
+			setDec (new_value->getValueLong ());
+			return 0;
+		}
+		else if (old_value == velRa)
+		{
+			tel_write_ra ('V', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == velDec)
+		{
+			tel_write_dec ('V', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == accRa)
+		{
+			tel_write_ra ('A', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == accDec)
+		{
+			tel_write_dec ('A', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == microRa)
+		{
+			tel_write_ra ('M', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == numberRa)
+		{
+			tel_write_ra ('N', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == qRa)
+		{
+			tel_write_ra ('q', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == startRa)
+		{
+			tel_write_ra ('s', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == wormRa)
+		{
+			if (((Rts2ValueBool *)new_value)->getValueBool () == true)
+				startWorm ();
+			else
+				stopWorm ();
+			return 0;
+		}
+		else if (old_value == accWormRa || old_value == velWormRa
+			|| old_value == backWormRa || old_value == waitWormRa)
+		{
+			return 0;
+		}
 	}
-	if (old_value == unitDec)
+	catch (rts2core::Error &er)
 	{
-		return setDec (new_value->getValueLong ()) == 0 ? 0 : -2;
-	}
-	if (old_value == velRa)
-	{
-		return tel_write_ra ('V', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == velDec)
-	{
-		return tel_write_dec ('V', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == accRa)
-	{
-		return tel_write_ra ('A', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == accDec)
-	{
-		return tel_write_dec ('A', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == microRa)
-	{
-		return tel_write_ra ('M', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == numberRa)
-	{
-		return tel_write_ra ('N', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == qRa)
-	{
-		return tel_write_ra ('q', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == startRa)
-	{
-		return tel_write_ra ('s', new_value->getValueInteger ()) == 0 ? 0 : -2;
-	}
-	if (old_value == wormRa)
-	{
-		if (((Rts2ValueBool *)new_value)->getValueBool () == true)
-			return startWorm (trencinConnRa) == 0 ? 0 : -2;
-		return tel_write_ra ('K') == 0 ? 0 : -2;
-	}
-	if (old_value == accWormRa || old_value == velWormRa
-		|| old_value == backWormRa || old_value == waitWormRa)
-	{
-		return 0;
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -2;
 	}
 	return Fork::setValue (old_value, new_value);
 }
@@ -555,8 +573,15 @@ void Trencin::valueChanged (Rts2Value *changed_value)
 	{
 		if (wormRa->getValueBool ())
 		{
-			tel_write_ra ('K');
-			startWorm (trencinConnRa);
+			try
+			{
+				stopWorm ();
+				startWorm ();
+			}
+			catch (rts2core::Error &er)
+			{
+				logStream (MESSAGE_ERROR) << er << sendLog;
+			}
 		}
 	}
 	Fork::valueChanged (changed_value);
@@ -569,17 +594,29 @@ int Trencin::info ()
 	double t_telRa;
 	double t_telDec;
 
-	int u_ra = unitRa->getValueInteger ();
-
 	// update axRa and axDec
 	readAxis (trencinConnRa, unitRa);
 	readAxis (trencinConnDec, unitDec);
+
+	int32_t u_ra = unitRa->getValueInteger ();
 
 	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
 	setTelRa (t_telRa);
 	setTelDec (t_telDec);
 
 	return Fork::info ();
+}
+
+
+void Trencin::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TIMER_RA_WORM:
+			// restart worm..
+			startWorm ();
+			break;
+	}
 }
 
 
@@ -591,12 +628,16 @@ int Trencin::startResync ()
 	ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
-	ret = setRa (ac);
-	if (ret)
+	try
+	{
+		setRa (ac);
+		setDec (dc);
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
-	ret = setDec (dc);
-	if (ret)
-		return -1;
+	}
 	return 0;
 }
 
@@ -609,21 +650,23 @@ int Trencin::isMoving ()
 
 int Trencin::endMove ()
 {
-	startWorm (trencinConnRa);
+	startWorm ();
 	return Fork::endMove ();
 }
 
 
 int Trencin::stopMove ()
 {
-	int ret;
-	ret = tel_write_ra ('K');
-	if (ret)
-		return ret;
-	ret = tel_write_dec ('K');
-	if (ret)
-		return ret;
-
+	try 
+	{
+		tel_write_ra ('K');
+		tel_write_dec ('K');
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "stopMove: " << er << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
