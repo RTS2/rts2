@@ -230,11 +230,11 @@ int Trencin::startWorm ()
 		tel_write_ra ('A', accWormRa->getValueInteger ());
 		tel_write_ra ('s', startRa->getValueInteger ());
 		tel_write_ra ('V', velWormRa->getValueInteger ());
-		tel_write_ra ("@2\rU1\r");
+		tel_write_ra ("@2\rU1\rL10\r");
 		tel_write_ra ('B', backWormRa->getValueInteger ());
 		tel_write_ra ("r\rK\r");
 		tel_write_ra ('W', waitWormRa->getValueInteger ());
-		tel_write_ra ("J2\r]\r");
+		tel_write_ra ("E\rJ2\r]\r");
 		raMode = MODE_WORM;
 	}
 
