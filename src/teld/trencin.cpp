@@ -138,7 +138,6 @@ void Trencin::tel_write (Rts2ConnSerial *conn, char command)
 {
 	char buf[3];
 	int len = snprintf (buf, 3, "%c\r", command);
-	usleep (USEC_SEC / 10);
 	if (conn->writePort (buf, len))
 		throw rts2core::Error ("cannot write to port");
 }
@@ -155,7 +154,6 @@ void Trencin::tel_write_dec (char command)
 
 void Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
 {
-	usleep (USEC_SEC / 10);
 	if (conn->writePort (command, strlen (command)))
 		throw rts2core::Error ("cannot write to port");
 	tel_write (conn, '\r');	
@@ -183,7 +181,6 @@ void Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\r", command, value);
-	usleep (USEC_SEC / 10);
 	if (conn->writePort (buf, len))
 		throw rts2core::Error ("cannot write to port");
 }
@@ -233,17 +230,16 @@ int Trencin::startWorm ()
 		tel_write_ra ('A', accWormRa->getValueInteger ());
 		tel_write_ra ('s', startRa->getValueInteger ());
 		tel_write_ra ('V', velWormRa->getValueInteger ());
-		tel_write_ra (']');
+		tel_write_ra ("@2\rU1\r");
+		tel_write_ra ('B', backWormRa->getValueInteger ());
+		tel_write_ra ("r\rK\r");
+		tel_write_ra ('W', waitWormRa->getValueInteger ());
+		tel_write_ra ("J2\r]\r");
 		raMode = MODE_WORM;
 	}
-	tel_write_ra ("[\rU1\r");
-	tel_write_ra ("\r\r@1\r");
-	tel_write_ra ('B', backWormRa->getValueInteger ());
-	tel_write_ra ("r\rK\r");
-	tel_write_ra ('W', waitWormRa->getValueInteger ());
-	tel_write_ra (']');
+
 	raMode = MODE_WORM_WAIT;
-	addTimer (0.05, new Rts2Event (EVENT_TIMER_RA_WORM, this));
+	addTimer (0.75, new Rts2Event (EVENT_TIMER_RA_WORM, this));
 	return 0;
 }
 
