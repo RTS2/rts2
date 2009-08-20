@@ -278,6 +278,18 @@ AC_SUBST(PARALIB)
 AC_SUBST(LIB_PARA)
 AC_SUBST(INC_PARA)
 
+AC_ARG_WITH(mdm,
+[  --with-mdm              path to MDM (Kitt Peak, Arizona) TCS library, build MDM driver],
+MDMTCS="${withval}";
+LIB_MDMTCS="${MDMTCS}/libtcs.a"
+INC_MDMTCS="-I${MDMTCS}",
+[MDMTCS=no])
+
+AM_CONDITIONAL(MDMTCS, test x$MDMTCS != xno)
+AC_SUBST(MDMTCS)
+AC_SUBST(LIB_MDMTCS)
+AC_SUBST(INC_MDMTCS)
+
 # check for PCI8255
 AC_ARG_WITH(pci8255,
 [  --with-pic8255          path to PCI8255 sources, build Dublin dome],
@@ -640,6 +652,7 @@ CCD's:
 
 MOUNT's:
   paralib       ${PARALIB}
+  mdmtcs        ${MDMTCS}
 
 DOME's:
   PCI8255       ${PCI8255}
