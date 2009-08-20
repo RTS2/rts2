@@ -288,7 +288,7 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
 	ret = conn->readPort (buf + 2, 1);
 	if (ret < 0)
 		return -1;
-	value->setValueInteger (buf[0] + buf[1] * 256 + buf[2] * 256 * 256);
+	value->setValueInteger (((unsigned char) buf[0]) + ((unsigned char) buf[1]) * 256 + ((unsigned char) buf[2]) * 256 * 256);
 	return 0;
 }
 
@@ -611,8 +611,11 @@ void Trencin::postEvent (Rts2Event *event)
 		case EVENT_TIMER_RA_WORM:
 			// restart worm..
 			startWorm ();
-			break;
+			// do not process it through full hierarchy..
+			Rts2Object::postEvent (event);
+			return;
 	}
+	Fork::postEvent (event);
 }
 
 
