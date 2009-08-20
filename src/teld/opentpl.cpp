@@ -865,18 +865,6 @@ OpenTPL::idle ()
 	checkErrors ();
 	if (cover)
 		checkCover ();
-	if (opentplConn->getConnState () == CONN_DELETE)
-	{
-		try
-		{
-			opentplConn->init ();
-		}
-		catch (rts2core::ConnError er)
-		{
-			logStream (MESSAGE_ERROR) << "cannot reinit connection to telescope " << er << sendLog;
-			sleep (5);
-		}
-	}
 	return Telescope::idle ();
 }
 

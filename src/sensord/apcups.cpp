@@ -171,7 +171,7 @@ ConnApcUps::getString (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
-		throw rts2core::ConnError ((std::string ("Value ") + (*iter).second + std::string ("not found")).c_str ());
+		throw rts2core::ConnError (this, (std::string ("Value ") + (*iter).second + std::string ("not found")).c_str ());
 	return (*iter).second.c_str ();
 }
 
@@ -181,7 +181,7 @@ ConnApcUps::getPercents (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
-	 	throw rts2core::ConnError ("Cannot get percents");
+	 	throw rts2core::ConnError (this, "Cannot get percents");
 	return atof ((*iter).second.c_str());
 }
 
@@ -191,7 +191,7 @@ ConnApcUps::getTemp (const char *val)
 {
 	const char *v = getString (val);
 	if (strchr (v, 'C') == NULL)
-	  	throw rts2core::ConnError ("Value is not in deg C");
+	  	throw rts2core::ConnError (this, "Value is not in deg C");
 	return atof (v);
 }
 
@@ -206,7 +206,7 @@ ConnApcUps::getTime (const char *val)
 		return (int) (atof (v) * 60);
 	if (strcasestr (v, "seconds") != NULL)
 	  	return atoi (v);
-	throw rts2core::ConnError ("Cannot convert time");
+	throw rts2core::ConnError (this, "Cannot convert time");
 }
 
 
@@ -221,7 +221,7 @@ ConnApcUps::getDate (const char *val)
 		te = strptime (v, "%a %b %d %X UTC %Y", &_tm);
 		if (te == NULL || *te != '\0')
 		{
-			throw rts2core::ConnError ("Cannot convert date");
+			throw rts2core::ConnError (this, "Cannot convert date");
 		}
 	}
 	return mktime (&_tm);

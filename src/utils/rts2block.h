@@ -95,7 +95,7 @@ class Rts2Block: public Rts2App
 {
 	private:
 		int port;
-		long int idle_timeout;	 // in msec
+		long int idle_timeout;	 // in nsec
 
 		// timers - time when they should be executed, event which should be triggered
 		std::map <double, Rts2Event*> timers;

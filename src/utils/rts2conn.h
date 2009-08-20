@@ -33,6 +33,7 @@
 
 #include <status.h>
 
+#include "error.h"
 #include "rts2data.h"
 #include "rts2object.h"
 #include "rts2serverstate.h"
@@ -84,6 +85,26 @@ class Rts2DevClient;
 class Rts2Event;
 
 class Rts2Value;
+
+class Rts2Conn;
+
+namespace rts2core
+{
+
+/**
+ * Superclass for any connection errors. All errors which occurs on connection
+ * inherit from this class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnError: public Error
+{
+	public:
+		ConnError (Rts2Conn *conn, const char *_msg);
+		ConnError (Rts2Conn *conn, const char *_msg, int _errn);
+};
+
+}
 
 /**
  * Represents one connection. It keeps connection running, check it states, and
@@ -695,6 +716,8 @@ class Rts2Conn:public Rts2Object
 
 		virtual void updateStatusWait (Rts2Conn * conn);
 		virtual void masterStateChanged ();
+
+		friend class rts2core::ConnError;
 
 	protected:
 		virtual int command ();

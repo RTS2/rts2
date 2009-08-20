@@ -13,6 +13,7 @@ noinst_LIBRARIES = librts2dome.a
 librts2dome_a_SOURCES = dome.cpp ford.cpp
 
 LDADD = librts2dome.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_dome_bart_SOURCES = bart.cpp
 

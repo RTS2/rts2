@@ -26,7 +26,6 @@
 
 using namespace rts2core;
 
-
 ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port)
 :Rts2ConnNoSend (_master)
 {
@@ -35,9 +34,7 @@ ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port)
 	debug = false;
 }
 
-
-bool
-ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
+bool ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
 {
 	// look for endchar in received data..
 	for (char *p = buf; p < buf_top; p++)
@@ -57,9 +54,7 @@ ConnTCP::checkBufferForChar (std::istringstream **_is, char end_char)
 	return false;
 }
 
-
-int
-ConnTCP::init ()
+int ConnTCP::init ()
 {
 	int ret;
 	struct sockaddr_in apc_addr;
@@ -68,34 +63,35 @@ ConnTCP::init ()
 	sock = socket (AF_INET, SOCK_STREAM, 0);
         if (sock == -1)
         {
-		throw ConnCreateError ("cannot create socket for TCP/IP connection", errno);
+		throw ConnCreateError (this, "cannot create socket for TCP/IP connection", errno);
         }
 
         apc_addr.sin_family = AF_INET;
         hp = gethostbyname(hostname);
 	if (hp == NULL)
 	{
-		throw ConnCreateError ((std::string ("unknow hostname ") + std::string (hostname)).c_str (), errno);
+		throw ConnCreateError (this, (std::string ("unknow hostname ") + std::string (hostname)).c_str (), errno);
 	}
         bcopy ( hp->h_addr, &(apc_addr.sin_addr.s_addr), hp->h_length);
         apc_addr.sin_port = htons(port);
 
         ret = connect (sock, (struct sockaddr *) &apc_addr, sizeof(apc_addr));
         if (ret == -1)
-	 	throw ConnCreateError ("cannot connect socket", errno);
+	 	throw ConnCreateError (this, "cannot connect socket", errno);
 
         ret = fcntl (sock, F_SETFL, O_NONBLOCK);
         if (ret)
-		throw ConnCreateError ("cannot set socket non-blocking", errno);
+		throw ConnCreateError (this, "cannot set socket non-blocking", errno);
         setConnState (CONN_CONNECTED);
         return 0;
 }
 
-
-void
-ConnTCP::sendData (const void *data, int len, bool binary)
+void ConnTCP::sendData (const void *data, int len, bool binary)
 {
 	int rest = len;
+	if (sock < 0)
+		throw ConnError (this, "socked does not exists");
+
 	while (rest > 0)
 	{
 		int ret;
@@ -114,7 +110,7 @@ ConnTCP::sendData (const void *data, int len, bool binary)
 				  	ls << data;
 				ls << sendLog;
 			}
-			throw ConnSendError ("cannot send data", errno);
+			throw ConnSendError (this, "cannot send data", errno);
 		}
 		rest -= ret;
 	}
@@ -130,23 +126,17 @@ ConnTCP::sendData (const void *data, int len, bool binary)
 	}
 }
 
-
-void
-ConnTCP::sendData (const char *data)
+void ConnTCP::sendData (const char *data)
 {
 	sendData ((void *) data, strlen (data), false);
 }
 
-
-void
-ConnTCP::sendData (std::string data)
+void ConnTCP::sendData (std::string data)
 {
 	sendData ((void *) data.c_str (), data.length (), false);
 }
 
-
-void
-ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
+void ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 {
 	int rest = len;
 
@@ -164,14 +154,14 @@ ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 
 		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
 		if (ret < 0)
-			throw ConnError ("error calling select function", errno);
+			throw ConnError (this, "error calling select function", errno);
 		else if (ret == 0)
-		  	throw ConnTimeoutError ("timeout during receiving data");
+		  	throw ConnTimeoutError (this, "timeout during receiving data");
 
 		// read from descriptor
 		ret = recv (sock, (char *)data + (len - rest), rest, 0);
 		if (ret == -1)
-			throw ConnReceivingError ("cannot read from TCP/IP connection", errno);
+			throw ConnReceivingError (this, "cannot read from TCP/IP connection", errno);
 		rest -= ret;
 	}
 
@@ -188,8 +178,7 @@ ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 }
 
 
-void
-ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
+void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 {
 	// check if buffer contains end character..
 	
@@ -211,14 +200,14 @@ ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 
 		int ret = select (FD_SETSIZE, &read_set, NULL, NULL, &read_tout);
 		if (ret < 0)
-			throw ConnError ("error calling select function", errno);
+			throw ConnError (this, "error calling select function", errno);
 		else if (ret == 0)
-		  	throw ConnTimeoutError ("timeout during receiving data");
+		  	throw ConnTimeoutError (this, "timeout during receiving data");
 
 		// read from descriptor
 		ret = recv (sock, buf_top, buf_size - (buf_top - buf), 0);
 		if (ret == -1)
-			throw ConnReceivingError ("cannot read from TCP/IP connection", errno);
+			throw ConnReceivingError (this, "cannot read from TCP/IP connection", errno);
 		buf_top += ret;
 		if (debug)
 		{
@@ -231,4 +220,32 @@ ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 			return;
 	}
 
+}
+
+void ConnTCP::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TCP_RECONECT_TIMER:
+			if (event->getArg () != this)
+				break;
+			try
+			{
+				init ();
+			}
+			catch (ConnError &er)
+			{
+				logStream (MESSAGE_INFO) << "Error during reconnecting: " << er << sendLog;
+				getMaster()->addTimer (60, new Rts2Event (EVENT_TCP_RECONECT_TIMER, this));
+			}
+			break;
+	}
+	Rts2ConnNoSend::postEvent (event);
+}
+
+void ConnTCP::connectionError (int last_data_size)
+{
+	if (sock > 0)
+		getMaster()->addTimer (60, new Rts2Event (EVENT_TCP_RECONECT_TIMER, this));
+	Rts2ConnNoSend::connectionError (last_data_size);
 }

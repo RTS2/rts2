@@ -39,6 +39,17 @@
 
 using namespace rts2core;
 
+ConnError::ConnError (Rts2Conn *conn, const char *_msg): Error (_msg)
+{
+	conn->connectionError (-1);
+}
+
+ConnError::ConnError (Rts2Conn *conn, const char *_msg, int _errn): Error ()
+{
+	setMsg (std::string ("connection error: ") + strerror (_errn));
+	conn->connectionError (-1);
+}
+
 Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];

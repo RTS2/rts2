@@ -475,7 +475,7 @@ Zelio::info ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;	
+		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;
 	}
 
@@ -713,11 +713,11 @@ int
 Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == emergencyReset)
-	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ());
+	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (oldValue == Q9)
-	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ());
+	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (oldValue == ignoreRain)
-	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ());
+	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	try
 	{
 		if (oldValue == J1XT1)

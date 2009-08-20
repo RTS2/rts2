@@ -25,25 +25,6 @@
 namespace rts2core
 {
 
-/**
- * Superclass for any connection errors. All errors which occurs on connection
- * inherit from this class.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class ConnError: public Error
-{
-	public:
-		ConnError (const char *_msg): Error (_msg)
-		{
-		}
-
-		ConnError (const char *_msg, int _errn): Error ()
-		{
-			setMsg (std::string ("connection error: ") + strerror (_errn));
-		}
-};
-
 
 /**
  * Raised when connection cannot be created.
@@ -53,7 +34,7 @@ class ConnError: public Error
 class ConnCreateError:public ConnError
 {
 	public:
-		ConnCreateError (const char *_msg, int _errn):ConnError (_msg, _errn)
+		ConnCreateError (Rts2Conn *conn, const char *_msg, int _errn):ConnError (conn, _msg, _errn)
 		{
 		}
 };
@@ -67,7 +48,7 @@ class ConnCreateError:public ConnError
 class ConnSendError:public ConnError
 {
 	public:
-		ConnSendError (const char *_msg, int _err):ConnError (_msg, _err)
+		ConnSendError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };
@@ -81,7 +62,7 @@ class ConnSendError:public ConnError
 class ConnTimeoutError:public ConnError
 {
 	public:
-		ConnTimeoutError (const char *_msg):ConnError (_msg)
+		ConnTimeoutError (Rts2Conn *conn, const char *_msg):ConnError (conn, _msg)
 		{
 		}
 };
@@ -94,7 +75,7 @@ class ConnTimeoutError:public ConnError
 class ConnReceivingError:public ConnError
 {
 	public:
-		ConnReceivingError (const char *_msg, int _err):ConnError (_msg, _err)
+		ConnReceivingError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };
@@ -110,13 +91,6 @@ class ConnReceivingError:public ConnError
  */
 class ConnTCP:public Rts2ConnNoSend
 {
-	private:
-		const char *hostname;
-		int port;
-
-		bool debug;
-
-		bool checkBufferForChar (std::istringstream **_is, char end_char);
 	public:
 		/**
 		 * Create new connection to APC UPS daemon.
@@ -181,6 +155,19 @@ class ConnTCP:public Rts2ConnNoSend
 		 * @param end    End character.
 		 */
 		void receiveData (std::istringstream **_is, int wtime, char end_char);
+
+		virtual void postEvent (Rts2Event * event);
+
+	private:
+		const char *hostname;
+		int port;
+
+		bool debug;
+
+		bool checkBufferForChar (std::istringstream **_is, char end_char);
+	
+	protected:
+		virtual void connectionError (int last_data_size);
 };
 
 };

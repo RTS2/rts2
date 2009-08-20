@@ -134,14 +134,14 @@ ConnNUT::getVal (const char *var, t &val)
 	if (var_str != "VAR")
 	{
 		delete _is;
-		throw rts2core::ConnError ((std::string ("Error getting ") + var + " " + var_str).c_str ());
+		throw rts2core::ConnError (this, (std::string ("Error getting ") + var + " " + var_str).c_str ());
 	}
 	
 	*_is >> ups_name >> var_name >> ap >> val >> ap;
 	if (!(_is->good () && ap == '"'))
 	{
 		delete _is;
-		throw rts2core::ConnError ("Failed parsing reply");
+		throw rts2core::ConnError (this, "Failed parsing reply");
 	}
 
 	delete _is;
@@ -182,14 +182,14 @@ ConnNUT::getValue (const char *var, Rts2ValueString *value)
 	if (var_str != "VAR")
 	{
 		delete _is;
-		throw rts2core::ConnError ((std::string ("Error getting ") + var + " " + var_str).c_str ());
+		throw rts2core::ConnError (this, (std::string ("Error getting ") + var + " " + var_str).c_str ());
 	}
 	
 	*_is >> ups_name >> var_name >> ap;
 	if (!(_is->good () && ap == '"'))
 	{
 		delete _is;
-		throw rts2core::ConnError ("Failed parsing reply");
+		throw rts2core::ConnError (this, "Failed parsing reply");
 	}
 
 	std::string val;
@@ -200,7 +200,7 @@ ConnNUT::getValue (const char *var, Rts2ValueString *value)
 		if (_is->fail ())
 		{
 			delete _is;
-			throw rts2core::ConnError ("Failed parsing reply");
+			throw rts2core::ConnError (this, "Failed parsing reply");
 		}
 		if (v[v.length () - 1] == '"')
 		{
