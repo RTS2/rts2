@@ -243,7 +243,7 @@ int ConnShooter::processAuger ()
 	SDPPhi,
 	SDPPhiErr,
 	SDPChi2,
-	SDPNd, 
+	SDPNdf, 
 	Rp,
 	RpErr,
 	Chi0,
