@@ -60,3 +60,12 @@ rts2_teld_paramount_CPPFLAGS = @INC_PARA@
 else
 EXTRA_DIST += paramount.cpp
 endif
+
+if MDMTCS
+bin_PROGRAMS += rts2-teld-mdm
+rts2_teld_mdm_SOURCES = mdm.cpp
+rts2_teld_mdm_LDFLAGS = @LIB_MDMTCS@
+rts2_teld_mdm_CPPFLAGS = @INC_MDMTCS@
+else
+EXTRA_DIST += mdm.cpp
+endif
