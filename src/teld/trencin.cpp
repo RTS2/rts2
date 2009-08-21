@@ -97,7 +97,7 @@ class Trencin:public Fork
 		void tel_write_dec_run (char command, int32_t value);
 
 		// read axis - registers 1-3
-		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value);
+		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
 
 		void setRa (long new_ra);
 		void setDec (long new_dec);
@@ -216,8 +216,7 @@ int Trencin::startWorm ()
 	if (raMode == MODE_WORM_WAIT)
 	{
 		int ret;
-		char buf[2];
-		ret = trencinConnRa->readPort (buf, 1);
+		ret = readAxis (trencinConnRa, unitRa, false);
 		raMode = MODE_WORM;
 		if (ret < 0)
 			return -1;
@@ -230,7 +229,7 @@ int Trencin::startWorm ()
 		tel_write_ra ('A', accWormRa->getValueInteger ());
 		tel_write_ra ('s', startRa->getValueInteger ());
 		tel_write_ra ('V', velWormRa->getValueInteger ());
-		tel_write_ra ("@2\rU1\rL10\r");
+		tel_write_ra ("@2\rU1\rU2\rU3\rL10\r");
 		tel_write_ra ('B', backWormRa->getValueInteger ());
 		tel_write_ra ("r\rK\r");
 		tel_write_ra ('W', waitWormRa->getValueInteger ());
@@ -247,45 +246,25 @@ int Trencin::stopWorm ()
 {
 	if (raMode != MODE_NORMAL)
 	{
-		tel_write_ra ('K');
+		tel_write_ra ('\\');
 		raMode = MODE_NORMAL;
 	}
 	return 0;
 }
 
-int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value)
+int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis)
 {
 	int ret;
 	char buf[10];
 
-	// wait for U1 from WORM, if it's needed..
-	if (conn == trencinConnRa && raMode == MODE_WORM_WAIT)
+	if (write_axis)
 	{
-		ret = conn->readPort (buf, 1);
-		raMode = MODE_WORM;
+		ret = conn->writePort ("U1\rU2\rU3\r", 9);
 		if (ret < 0)
 			return -1;
 	}
-
-	ret = conn->writePort ("U1\r", 3);
-	if (ret < 0)
-		return -1;
 	// read it.
-	ret = conn->readPort (buf, 1);
-	if (ret < 0)
-		return -1;
-	ret = conn->writePort ("U2\r", 3);
-	if (ret < 0)
-		return -1;
-	// read it.
-	ret = conn->readPort (buf + 1, 1);
-	if (ret < 0)
-		return -1;
-	ret = conn->writePort ("U3\r", 3);
-	if (ret < 0)
-		return -1;
-	// read it.
-	ret = conn->readPort (buf + 2, 1);
+	ret = conn->readPort (buf, 3);
 	if (ret < 0)
 		return -1;
 	value->setValueInteger (((unsigned char) buf[0]) + ((unsigned char) buf[1]) * 256 + ((unsigned char) buf[2]) * 256 * 256);
@@ -591,7 +570,9 @@ int Trencin::info ()
 	double t_telDec;
 
 	// update axRa and axDec
-	readAxis (trencinConnRa, unitRa);
+	if (raMode == MODE_NORMAL)
+		readAxis (trencinConnRa, unitRa);
+
 	readAxis (trencinConnDec, unitDec);
 
 	int32_t u_ra = unitRa->getValueInteger ();
