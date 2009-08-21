@@ -25,3 +25,12 @@ rts2_focusd_fli_SOURCES = fli.cpp
 rts2_focusd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_focusd_fli_CPPFLAGS = @INC_FLI@
 endif
+
+if MDMTCS
+bin_PROGRAMS += rts2-focusd-mdm
+rts2_focusd_mdm_SOURCES = mdm.cpp
+rts2_focusd_mdm_LDFLAGS = @LIB_MDMTCS@
+rts2_focusd_mdm_CPPFLAGS = @INC_MDMTCS@
+else
+EXTRA_DIST += mdm.cpp
+endif
