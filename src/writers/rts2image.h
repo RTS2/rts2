@@ -83,13 +83,11 @@ class Rts2Image:public Rts2FitsFile
 		char *filter;
 		float exposureLength;
 		
-		int createImage ();
 		int createImage (std::string in_filename);
 		int createImage (char *in_filename);
 		// if filename is NULL, will take name stored in this->getFileName ()
 		void openImage (const char *_filename = NULL, bool readOnly = false);
 
-		int writeExposureStart ();
 		char *imageData;
 		int imageType;
 		int focPos;
@@ -143,6 +141,10 @@ class Rts2Image:public Rts2FitsFile
 		double ra_err;
 		double dec_err;
 		double img_err;
+
+		int createImage ();
+
+		int writeExposureStart ();
 
 		virtual int isGoodForFwhm (struct stardata *sr);
 		char *getImageBase (void);

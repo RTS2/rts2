@@ -19,6 +19,7 @@
 
 #include "genfoc.h"
 #include "../utils/rts2config.h"
+#include "../writers/memimage.h"
 
 #include <iostream>
 #include <iomanip>
@@ -108,7 +109,7 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
 		return image;
 	}
 	// memory-only image
-	image = new Rts2Image (expStart);
+	image = new rts2image::MemImage (expStart);
 	return image;
 }
 

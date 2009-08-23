@@ -66,7 +66,7 @@ class Rts2FitsFile: public rts2core::Expander
 
 		void setFileName (const char *_filename);
 
-		int createFile ();
+		virtual int createFile ();
 		int createFile (const char *_filename);
 		int createFile (std::string _filename);
 
