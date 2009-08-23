@@ -19,11 +19,15 @@ rts2_focusd_dummy_SOURCES = dummy.cpp
 
 rts2_focusd_opentpl_SOURCES = opentpl.cpp
 
+EXTRA_DIST = ""
+
 if FLI
 bin_PROGRAMS += rts2-focusd-fli
 rts2_focusd_fli_SOURCES = fli.cpp
 rts2_focusd_fli_LDFLAGS = @LIB_FLI@ @LIB_M@
 rts2_focusd_fli_CPPFLAGS = @INC_FLI@
+else
+EXTRA_DIST += fli.cpp
 endif
 
 if MDMTCS

@@ -21,6 +21,7 @@
 
 #include "tcsutils.h"
 
+#define OPT_TCSHOST     OPT_LOCAL + 520
 
 namespace rts2focusd
 {
@@ -47,7 +48,8 @@ class MDM:public Focusd
 		virtual int setTo (int num);
 
 	private:
-
+		int tcssock;
+		const char *tcshost;
 };
 
 };
