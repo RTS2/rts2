@@ -99,10 +99,15 @@ class Trencin:public Fork
 		// read axis - registers 1-3
 		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
 
+		void setGuide (Rts2ConnSerial *conn, int value);
+
 		void setRa (long new_ra);
 		void setDec (long new_dec);
 
 		Rts2ValueBool *wormRa;
+
+		Rts2ValueSelection *raGuide;
+		Rts2ValueSelection *decGuide;
 
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
@@ -272,6 +277,23 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write
 }
 
 
+void Trencin::setGuide (Rts2ConnSerial *conn, int value)
+{
+	switch (value)
+	{
+		case 0:
+			tel_write (conn, 'K');
+			return;
+		case 1:
+			tel_write (conn, "G-\rr\r");
+			return;
+		case 2:
+			tel_write (conn, "G+\rr\r");
+			return;
+	}
+}
+
+
 void Trencin::setRa (long new_ra)
 {
 	long diff = unitRa->getValueLong () - new_ra;
@@ -310,6 +332,16 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	device_nameDec = "/dev/ttyS1";
 	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
 	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
+
+	createValue (raGuide, "ra_guide", "RA guiding status", false);
+	raGuide->addSelVal ("NONE");
+	raGuide->addSelVal ("MINUS");
+	raGuide->addSelVal ("PLUS");
+
+	createValue (decGuide, "dec_guide", "DEC guiding status", false);
+	decGuide->addSelVal ("NONE");
+	decGuide->addSelVal ("MINUS");
+	decGuide->addSelVal ("PLUS");
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (false);
@@ -468,6 +500,16 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	try
 	{
+	  	if (old_value == raGuide)
+		{
+		  	setGuide (trencinConnRa, new_value->getValueInteger ());
+			return 0;
+		}
+		if (old_value == decGuide)
+		{
+			setGuide (trencinConnDec, new_value->getValueInteger ());
+			return 0;
+		}
 		if (old_value == unitRa)
 		{
 			setRa (new_value->getValueLong ());
