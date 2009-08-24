@@ -136,6 +136,39 @@ ConnImgProcess::connectionError (int last_data_size)
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "Processing " << imgPath << ": " << er << sendLog;
+		delete image;
+		// move file to bad directory..
+		char newPath[strlen(imgPath) + 5];
+		char *last_slash = imgPath;
+		char *p;
+		while ((p = strchr (last_slash + 1, '/')) != NULL)
+			last_slash = p + 1;
+		if (last_slash != imgPath)
+			last_slash--;
+		strncpy (newPath, imgPath, last_slash - imgPath);
+		strcpy (newPath + (last_slash - imgPath), "/bad");
+		strcpy (newPath + (last_slash - imgPath) + 4, last_slash);
+
+		int ret = mkpath (newPath, 0777);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot create path fro file: " << newPath << ":" << strerror (errno) << sendLog;
+		}
+		else
+		{
+			ret = rename (imgPath, newPath);
+			if (ret)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot rename " << imgPath << " to " << newPath << ":" << strerror(errno) << sendLog;
+			}
+			else
+			{
+				logStream (MESSAGE_INFO) << "Renamed " << imgPath << " to " << newPath << sendLog;
+			}
+		}
+		astrometryStat = BAD;
+		rts2core::ConnFork::connectionError (last_data_size);
+		return;
 	}
 	if (image->getImageType () == IMGTYPE_FLAT)
 	{

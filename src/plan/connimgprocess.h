@@ -28,7 +28,7 @@ namespace rts2plan
 {
 
 typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT }
+{ NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT }
 astrometry_stat_t;
 
 class ConnProcess:public rts2core::ConnFork

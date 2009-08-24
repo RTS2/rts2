@@ -58,7 +58,7 @@ class ImageProc:public Rts2Device
 		ConnProcess *runningImage;
 		Rts2ValueInteger *goodImages;
 		Rts2ValueInteger *trashImages;
-		Rts2ValueInteger *morningImages;
+		Rts2ValueInteger *badImages;
 
 		Rts2ValueInteger *queSize;
 
@@ -130,8 +130,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (trashImages, "trash_images", "number of images which ended in trash (bad images)", false);
 	trashImages->setValueInteger (0);
 
-	createValue (morningImages, "morning_images", "number of images which will be processed at morning", false);
-	morningImages->setValueInteger (0);
+	createValue (badImages, "bad_images", "number of bad images (in queue under bad directory)", false);
+	badImages->setValueInteger (0);
 
 	createValue (queSize, "que_size", "size of image que", false);
 
@@ -352,10 +352,6 @@ ImageProc::deleteConnection (Rts2Conn * conn)
 			case TRASH:
 				trashImages->inc ();
 				sendValueAll (trashImages);
-				break;
-			case MORNING:
-				morningImages->inc ();
-				sendValueAll (morningImages);
 				break;
 			default:
 				break;
