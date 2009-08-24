@@ -123,11 +123,20 @@ ConnImgProcess::connectionError (int last_data_size)
 
 #ifdef HAVE_PGSQL
 	Rts2ImageDb *image;
-	image = getValueImageType (new Rts2ImageDb (imgPath));
+	try
+	{
+		image = getValueImageType (new Rts2ImageDb (imgPath));
 #else
 	Rts2Image *image;
-	image = new Rts2Image (imgPath);
+	try
+	{
+		image = new Rts2Image (imgPath);
 #endif
+	} 
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "Processing " << imgPath << ": " << er << sendLog;
+	}
 	if (image->getImageType () == IMGTYPE_FLAT)
 	{
 		// just return..
