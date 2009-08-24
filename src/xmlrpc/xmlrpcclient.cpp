@@ -191,20 +191,14 @@ Client::doTests ()
 	runXmlMethod ("system.methodHelp", oneArg, result);
 
 	XmlRpcValue twoArg;
-	twoArg[0] = "petr";
-	twoArg[1] = "test";
 
 	try
 	{
-		runXmlMethod (R2X_LOGIN, twoArg, result);
-		std::string sessionId = result;
-		
-		oneArg[0] = sessionId;
 		runXmlMethod (R2X_DEVICES_LIST, oneArg, result);
 
 	} catch (XmlRpcException e)
 	{
-		std::cerr << "Login throws and error: " << e.getMessage () << std::endl;
+		std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
 	}
 
 	for (int i = 0; i < result.size (); i++)
@@ -257,16 +251,14 @@ Client::doTests ()
 int
 Client::testConnect ()
 {
-	XmlRpcValue twoArg, result;
-	twoArg[0] = "petr";
-	twoArg[1] = "test";
+	XmlRpcValue nullArg, result;
 
 	try
 	{
-		runXmlMethod (R2X_LOGIN, twoArg, result);
+		runXmlMethod (R2X_DEVICES_LIST, nullArg, result);
 	} catch (XmlRpcException e)
 	{
-		std::cerr << "Login throws and error: " << e.getMessage () << std::endl;
+		std::cerr << "Cannot receive list of devices: " << e.getMessage () << std::endl;
 		return -1;
 	}
 
@@ -583,7 +575,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	configFile = NULL;
 	xmlVerbosity = 0;
 
-	xmlOp = TEST;
+	xmlOp = NOOP;
 
         getVariablesPrintNames = true;
 

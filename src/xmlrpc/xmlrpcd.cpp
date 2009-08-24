@@ -771,10 +771,6 @@ class ListDevices: public SessionMethod
 			{
 				result[i] = (*iter)->getName ();
 			}
-			for (iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++, i++)
-			{
-				result[i] = (*iter)->getName ();
-			}
 		}
 
 		std::string help ()
