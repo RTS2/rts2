@@ -400,7 +400,6 @@ EOF
   fi
   AC_SUBST(LIB_NOVA)
   AC_SUBST(NOVA_CFLAGS)
-  AC_SUBST([LIBNOVA_SUBDIRS], ['teld writers monitor focusc serverd'])
 fi  
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
@@ -409,6 +408,14 @@ AC_SUBST(LIB_PTHREAD), [cat << EOF
 **** Please try to get it somewhere.
 EOF
 exit 1])
+
+
+AH_TEMPLATE([HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF],[If Libnova provides ln_get_heliocentric_time_diff function])
+
+AC_CHECK_DECL(ln_get_heliocentric_time_diff, , ,[#include <libnova/libnova.h>])
+if test "x"$ac_cv_have_decl_ln_get_heliocentric_time_diff = "xyes"; then
+	AC_DEFINE_UNQUOTED(HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF, 1, [If Libnova provides ln_get_heliocentric_time_diff function])
+fi
 
 if test "x"$xfocusc = "xyes"; then
 	AC_PATH_XTRA

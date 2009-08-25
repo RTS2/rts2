@@ -36,6 +36,29 @@
 
 using namespace rts2image;
 
+// TODO remove this once Libnova 0.13.0 becomes mainstream
+#if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
+double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
+{
+	struct ln_nutation nutation;
+	struct ln_helio_posn earth;
+
+	ln_get_nutation (JD, &nutation);
+	ln_get_earth_helio_coords (JD, &earth);
+
+	double theta = ln_deg_to_rad (ln_range_degrees (earth.L + 180));
+	double ra = ln_deg_to_rad (object->ra);
+	double dec = ln_deg_to_rad (object->dec);
+	double c_dec = cos (dec);
+	double obliq = ln_deg_to_rad (nutation.ecliptic);
+
+	/* L.Binnendijk Properties of Double Stars, Philadelphia, University of Pennselvania Press, pp. 228-232, 1960 */
+	return -0.0057755 * earth.R * (
+		cos (theta) * cos (ra) * c_dec
+		+ sin (theta) * (sin (obliq) * sin (dec) + cos (obliq) * c_dec * sin (ra)));
+}
+#endif
+
 void
 Rts2Image::initData ()
 {
@@ -2045,6 +2068,16 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 			strcpy (v_desc, desc);
 			strcat (v_desc, " DEC");
 			setValue (v_name, ((Rts2ValueRaDec *) val)->getDec (), v_desc);
+			// if it is mount ra dec - write heliocentric time
+			if (!strcmp ("TEL", name))
+			{
+				double JD = getExposureJD () + getExposureLength () / 2.0 / 86400;
+				struct ln_equ_posn equ;
+				equ.ra = ((Rts2ValueRaDec *) val)->getRa ();
+				equ.dec = ((Rts2ValueRaDec *) val)->getDec ();
+				setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &equ), "helioceentric JD");
+			}
+
 			// free memory
 			delete[] v_name;
 			delete[] v_desc;
