@@ -104,6 +104,9 @@ class Trencin:public Fork
 		void setRa (long new_ra);
 		void setDec (long new_dec);
 
+		Rts2ValueBool *raMoving;
+		Rts2ValueBool *decMoving;
+
 		Rts2ValueBool *wormRa;
 
 		Rts2ValueSelection *raGuide;
@@ -161,7 +164,6 @@ void Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
 {
 	if (conn->writePort (command, strlen (command)))
 		throw rts2core::Error ("cannot write to port");
-	tel_write (conn, '\r');	
 }
 
 void Trencin::tel_write_ra (const char *command)
@@ -288,9 +290,9 @@ void Trencin::setGuide (Rts2ConnSerial *conn, int value)
 	switch (value)
 	{
 		case 1:
-			tel_write (conn, "B2000000\r");
+			tel_write (conn, "B20000\r");
 		case 2:
-			tel_write (conn, "F2000000\r");
+			tel_write (conn, "F20000\r");
 	}
 	tel_write (conn, "r\r]\r");
 }
@@ -303,6 +305,8 @@ void Trencin::setRa (long new_ra)
 		tel_write_ra_run ('F', -1 * diff);
 	else if (diff > 0)
 	  	tel_write_ra_run ('B', diff);
+	raMoving->setValueBool (true);
+	sendValueAll (raMoving);
 }
 
 void Trencin::setDec (long new_dec)
@@ -312,6 +316,8 @@ void Trencin::setDec (long new_dec)
 		tel_write_dec_run ('F', -1 * diff);
 	else if (diff > 0)
 	  	tel_write_dec_run ('B', diff);
+	decMoving->setValueBool (true);
+	sendValueAll (decMoving);
 }
 
 Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
@@ -344,6 +350,12 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	decGuide->addSelVal ("NONE");
 	decGuide->addSelVal ("MINUS");
 	decGuide->addSelVal ("PLUS");
+
+	createValue (raMoving, "ra_moving", "if RA drive is moving", false);
+	raMoving->setValueBool (false);
+
+	createValue (decMoving, "dec_moving", "if DEC drive is moving", false);
+	decMoving->setValueBool (false);
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (false);
@@ -505,11 +517,15 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	  	if (old_value == raGuide)
 		{
 		  	setGuide (trencinConnRa, new_value->getValueInteger ());
+			raMoving->setValueBool (new_value->getValueInteger () == 0 ? false: true);
+			sendValueAll (raMoving);
 			return 0;
 		}
 		if (old_value == decGuide)
 		{
 			setGuide (trencinConnDec, new_value->getValueInteger ());
+			decMoving->setValueBool (new_value->getValueInteger () == 0 ? false: true);
+			sendValueAll (decMoving);
 			return 0;
 		}
 		if (old_value == unitRa)
@@ -614,10 +630,11 @@ int Trencin::info ()
 	double t_telDec;
 
 	// update axRa and axDec
-	if (raMode == MODE_NORMAL)
+	if (raMode == MODE_NORMAL && raMoving->getValueBool () == false)
 		readAxis (trencinConnRa, unitRa);
 
-	readAxis (trencinConnDec, unitDec);
+	if (decMoving->getValueBool () == false)
+		readAxis (trencinConnDec, unitDec);
 
 	int32_t u_ra = unitRa->getValueInteger ();
 
