@@ -264,9 +264,11 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write
 	int ret;
 	char buf[10];
 
+	conn->flushPortIO ();
+
 	if (write_axis)
 	{
-		ret = conn->writePort ("U1\rU2\rU3\r", 9);
+		ret = conn->writePort ("[\rU1\rU2\rU3\r]\r", 13);
 		if (ret < 0)
 			return -1;
 	}
@@ -290,9 +292,9 @@ void Trencin::setGuide (Rts2ConnSerial *conn, int value)
 	switch (value)
 	{
 		case 1:
-			tel_write (conn, "B20000\r");
+			tel_write (conn, "B16000000\r");
 		case 2:
-			tel_write (conn, "F20000\r");
+			tel_write (conn, "F16000000\r");
 	}
 	tel_write (conn, "r\r]\r");
 }
@@ -491,6 +493,8 @@ int Trencin::init ()
 	tel_write_ra ('A', accRa->getValueInteger ());
 	tel_write_ra ('s', startRa->getValueInteger ());
 	tel_write_ra ('V', velRa->getValueInteger ());
+
+	tel_write_dec ('\\');
 
 	return ret;
 }
