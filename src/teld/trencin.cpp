@@ -279,18 +279,20 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write
 
 void Trencin::setGuide (Rts2ConnSerial *conn, int value)
 {
+	if (value == 0)
+	{
+		tel_write (conn, 'K');
+		return;
+	}
+	tel_write (conn, "[\rM8\rq2\rN6\rA800\rs200\rV2000\r");
 	switch (value)
 	{
-		case 0:
-			tel_write (conn, 'K');
-			return;
 		case 1:
-			tel_write (conn, "G-\rr\r");
-			return;
+			tel_write (conn, "B2000000\r");
 		case 2:
-			tel_write (conn, "G+\rr\r");
-			return;
+			tel_write (conn, "F2000000\r");
 	}
+	tel_write (conn, "r\r]\r");
 }
 
 
@@ -320,8 +322,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	haZero = 0;
 	decZero = 0;
 
-	haCpd = 10666.666667;
-	decCpd = 8888.888889;
+	haCpd = 56889;
+	decCpd = 110222;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
