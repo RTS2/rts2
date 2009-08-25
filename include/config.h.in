@@ -18,6 +18,9 @@
 /* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
 
+/* If Libnova provides ln_get_heliocentric_time_diff function */
+#undef HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
+
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
