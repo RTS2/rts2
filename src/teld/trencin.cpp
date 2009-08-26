@@ -756,7 +756,7 @@ int Trencin::info ()
 	if (decMoving->getValueInteger () == 0)
 	{
 		readAxis (trencinConnDec, unitDec);
-		u_dec = unitRa->getValueInteger ();
+		u_dec = unitDec->getValueInteger ();
 	}
 	else
 	{
