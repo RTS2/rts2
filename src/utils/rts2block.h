@@ -158,9 +158,6 @@ class Rts2Block: public Rts2App
 		 * Called when select call suceed.
 		 *
 		 * This method is called when select call on registered sockects succeed.
-		 *
-		 * @param read_set fd_set structure holding selected sockets. Inside this function, developer can use
-		 *   FD_ISSET to query if socket of his/her interests is inside modified socket set.
 		 */
 		virtual void selectSuccess ();
 

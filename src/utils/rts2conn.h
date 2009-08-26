@@ -450,6 +450,16 @@ class Rts2Conn:public Rts2Object
 		virtual void processLine ();
 
 		/**
+		 * Returns true if connection is in read_set, and so can be read.
+		 *
+		 * @param read_set   Set used to read data.
+		 */
+		int receivedData (fd_set *read_set)
+		{
+			return FD_ISSET (sock, read_set);
+		}
+
+		/**
 		 * Called when select call indicates that socket holds new
 		 * data for reading.
 		 *
