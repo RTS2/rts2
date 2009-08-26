@@ -288,6 +288,10 @@ void Trencin::selectSuccess ()
 			}
 			sendValueAll (raMoving);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot read ra " << trencinConnRa->receivedData (&read_set) << sendLog;
+		}
 	}
 
 	if (decMoving->getValueInteger () != 0 && trencinConnDec->receivedData (&read_set))
@@ -305,6 +309,10 @@ void Trencin::selectSuccess ()
 			}
 			sendValueAll (decMoving);
 		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "cannot read dec " << trencinConnDec->receivedData (&read_set) << sendLog;
+		}
 	}
 
 	Telescope::selectSuccess ();
@@ -315,10 +323,9 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write
 	int ret;
 	char buf[10];
 
-	conn->flushPortIO ();
-
 	if (write_axis)
 	{
+		conn->flushPortIO ();
 		ret = conn->writePort ("[\rU1\rU2\rU3\r]\r", 13);
 		if (ret < 0)
 			return -1;
@@ -379,9 +386,9 @@ void Trencin::setRa (long new_ra)
 
 		readAxis (trencinConnRa, unitRa);
 	}
-	long diff = unitRa->getValueLong () - new_ra;
+	long diff = new_ra - unitRa->getValueInteger ();
 	// adjust for siderial move..
-	double v = ((double) velRa->getValueInteger ()) / haCpd;
+	double v = ((double) velRa->getValueInteger ()) * 64;
 	diff *= v / (v + (double) (((diff < 0) ? -1 : 1) * haCpd) / 240.0);
 	tel_run (trencinConnRa, diff);
 }
@@ -397,7 +404,7 @@ void Trencin::setDec (long new_dec)
 		readAxis (trencinConnDec, unitDec);
 	}
 
-	long diff = unitDec->getValueLong () - new_dec;
+	long diff = new_dec - unitDec->getValueLong ();
 
 	tel_run (trencinConnDec, diff);
 }
@@ -582,16 +589,15 @@ int Trencin::init ()
 
 	snprintf (telType, 64, "Trencin");
 
-	tel_write_ra ('\\');
+	// tel_write_ra ('\\');
 	tel_write_ra ('M', microRa->getValueInteger ());
 	tel_write_ra ('q', qRa->getValueInteger ());
 	tel_write_ra ('N', numberRa->getValueInteger ());
 	tel_write_ra ('A', accRa->getValueInteger ());
 	tel_write_ra ('s', startRa->getValueInteger ());
 	tel_write_ra ('V', velRa->getValueInteger ());
-
-	tel_write_dec ('\\');
-
+	
+	//tel_write_dec ('\\');
 	tel_write_dec ('M', microDec->getValueInteger ());
 	tel_write_dec ('q', qDec->getValueInteger ());
 	tel_write_dec ('N', numberDec->getValueInteger ());
@@ -885,14 +891,14 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	else
 	{
 		if (value < -MAX_MOVE)
-			tel_write (conn, 'F', -MAX_MOVE);
+			tel_write (conn, 'B', MAX_MOVE);
 		else
-			tel_write (conn, 'B', value);
+			tel_write (conn, 'B', -1 * value);
 	}
 	tel_write (conn, "r\rU1\rU2\rU3\r]\r");
 	if (conn == trencinConnRa)
 	{
-		raMovingEnd->setValueDouble (getNow () + fabs (value) / velRa->getValueInteger ());
+		raMovingEnd->setValueDouble (getNow () + fabs (value) / (64 * velRa->getValueInteger ()));
 		raMoving->setValueInteger (value);
 
 		sendValueAll (raMovingEnd);
@@ -900,7 +906,7 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	}
 	else if (conn == trencinConnDec)
 	{
-	  	decMovingEnd->setValueDouble (getNow () + fabs (value) / velDec->getValueInteger ());
+	  	decMovingEnd->setValueDouble (getNow () + fabs (value) / (64 * velDec->getValueInteger ()));
 		decMoving->setValueInteger (value);
 
 		sendValueAll (decMovingEnd);
