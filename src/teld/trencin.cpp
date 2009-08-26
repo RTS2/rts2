@@ -26,6 +26,9 @@
 
 #define EVENT_TIMER_RA_WORM    RTS2_LOCAL_EVENT + 1230
 
+// maximal movement lenght
+#define MAX_MOVE               16000000
+
 namespace rts2teld
 {
 
@@ -68,6 +71,9 @@ class Trencin:public Fork
 		virtual int startWorm ();
 		virtual int stopWorm ();
 
+		virtual void addSelectSocks ();
+		virtual void selectSuccess ();
+
 	private:
 		const char *device_nameRa;
 		Rts2ConnSerial *trencinConnRa;
@@ -93,19 +99,20 @@ class Trencin:public Fork
 		void tel_write_ra (char command, int32_t value);
 		void tel_write_dec (char command, int32_t value);
 
-		void tel_write_ra_run (char command, int32_t value);
-		void tel_write_dec_run (char command, int32_t value);
-
 		// read axis - registers 1-3
 		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
 
-		void setGuide (Rts2ConnSerial *conn, int value);
+		void setGuideRa (int value);
+		void setGuideDec (int value);
 
 		void setRa (long new_ra);
 		void setDec (long new_dec);
 
-		Rts2ValueBool *raMoving;
-		Rts2ValueBool *decMoving;
+		Rts2ValueInteger *raMoving;
+		Rts2ValueInteger *decMoving;
+
+		Rts2ValueTime *raMovingEnd;
+		Rts2ValueTime *decMovingEnd;
 
 		Rts2ValueBool *wormRa;
 
@@ -122,9 +129,16 @@ class Trencin:public Fork
 		Rts2ValueInteger *accDec;
 
 		Rts2ValueInteger *qRa;
+		Rts2ValueInteger *qDec;
+
 		Rts2ValueInteger *microRa;
+		Rts2ValueInteger *microDec;
+
 		Rts2ValueInteger *numberRa;
+		Rts2ValueInteger *numberDec;
+
 		Rts2ValueInteger *startRa;
+		Rts2ValueInteger *startDec;
 
 		Rts2ValueInteger *accWormRa;
 		Rts2ValueInteger *velWormRa;
@@ -135,6 +149,11 @@ class Trencin:public Fork
 
 		// mode of RA motor
 		enum {MODE_NORMAL, MODE_WORM, MODE_WORM_WAIT} raMode;
+
+		void tel_run (Rts2ConnSerial *conn, int value);
+
+		void stopMoveRa ();
+		void stopMoveDec ();
 };
 
 }
@@ -202,22 +221,6 @@ void Trencin::tel_write_dec (char command, int32_t value)
 	tel_write (trencinConnDec, command, value);
 }
 
-void Trencin::tel_write_ra_run (char command, int32_t value)
-{
-	char buf[51];
-	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
-	if (trencinConnRa->writePort (buf, len))
-		throw rts2core::Error ("cannot write to RA port");
-}
-
-void Trencin::tel_write_dec_run (char command, int32_t value)
-{
-	char buf[51];
-	int len = snprintf (buf, 50, "%c%i\rR\r", command, value);
-	if (trencinConnDec->writePort (buf, len))
-	  	throw rts2core::Error ("cannot write to DEC port");
-}
-
 int Trencin::startWorm ()
 {
 	if (raMode == MODE_WORM_WAIT)
@@ -259,6 +262,54 @@ int Trencin::stopWorm ()
 	return 0;
 }
 
+void Trencin::addSelectSocks ()
+{
+	if (raMoving->getValueInteger () != 0)
+		trencinConnRa->add (&read_set, &write_set, &exp_set);
+	if (decMoving->getValueInteger () != 0)
+		trencinConnDec->add (&read_set, &write_set, &exp_set);
+	Telescope::addSelectSocks ();
+}
+
+void Trencin::selectSuccess ()
+{
+	if (raMoving->getValueInteger () != 0 && trencinConnRa->receivedData (&read_set))
+	{
+		if (readAxis (trencinConnRa, unitRa, false) == 0)
+		{
+		 	if (fabs (raMoving->getValueInteger ()) > MAX_MOVE)
+			{
+				raMoving->setValueInteger (raMoving->getValueInteger () - raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE);
+				tel_run (trencinConnRa, raMoving->getValueInteger ());
+			}
+			else
+			{
+				raMoving->setValueInteger (0);
+			}
+			sendValueAll (raMoving);
+		}
+	}
+
+	if (decMoving->getValueInteger () != 0 && trencinConnDec->receivedData (&read_set))
+	{
+		if (readAxis (trencinConnDec, unitDec, false) == 0)
+		{
+		 	if (fabs (decMoving->getValueInteger ()) > MAX_MOVE)
+			{
+				decMoving->setValueInteger (decMoving->getValueInteger () - decMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE);
+				tel_run (trencinConnDec, decMoving->getValueInteger ());
+			}
+			else
+			{
+				decMoving->setValueInteger (0);
+			}
+			sendValueAll (decMoving);
+		}
+	}
+
+	Telescope::selectSuccess ();
+}
+
 int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis)
 {
 	int ret;
@@ -280,46 +331,75 @@ int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write
 	return 0;
 }
 
-
-void Trencin::setGuide (Rts2ConnSerial *conn, int value)
+void Trencin::setGuideRa (int value)
 {
+	stopMoveRa ();
 	if (value == 0)
 	{
-		tel_write (conn, 'K');
 		return;
 	}
-	tel_write (conn, "[\rM8\rq2\rN6\rA800\rs200\rV2000\r");
 	switch (value)
 	{
 		case 1:
-			tel_write (conn, "B16000000\r");
+			raMoving->setValueInteger (-MAX_MOVE);
+			break;
 		case 2:
-			tel_write (conn, "F16000000\r");
+			raMoving->setValueInteger (MAX_MOVE);
+			break;
 	}
-	tel_write (conn, "r\r]\r");
+	tel_run (trencinConnRa, raMoving->getValueInteger ());
 }
 
+void Trencin::setGuideDec (int value)
+{
+	stopMoveDec ();
+	if (value == 0)
+	{
+		return;
+	}
+	switch (value)
+	{
+		case 1:
+			decMoving->setValueInteger (-MAX_MOVE);
+			break;
+		case 2:
+			decMoving->setValueInteger (MAX_MOVE);
+			break;
+	}
+	tel_run (trencinConnDec, decMoving->getValueInteger ());
+}
 
 void Trencin::setRa (long new_ra)
 {
+	if (raMoving->getValueInteger () != 0)
+	{
+		tel_write_ra ('K');
+		sleep (2);
+		raMovingEnd->setNow ();
+
+		readAxis (trencinConnRa, unitRa);
+	}
 	long diff = unitRa->getValueLong () - new_ra;
-	if (diff < 0)
-		tel_write_ra_run ('F', -1 * diff);
-	else if (diff > 0)
-	  	tel_write_ra_run ('B', diff);
-	raMoving->setValueBool (true);
-	sendValueAll (raMoving);
+	// adjust for siderial move..
+	double v = ((double) velRa->getValueInteger ()) / haCpd;
+	diff *= v / (v + (double) (((diff < 0) ? -1 : 1) * haCpd) / 240.0);
+	tel_run (trencinConnRa, diff);
 }
 
 void Trencin::setDec (long new_dec)
 {
+	if (decMoving->getValueInteger () != 0)
+	{
+		tel_write_dec ('K');
+		sleep (2);
+		decMovingEnd->setNow ();
+
+		readAxis (trencinConnDec, unitDec);
+	}
+
 	long diff = unitDec->getValueLong () - new_dec;
-	if (diff < 0)
-		tel_write_dec_run ('F', -1 * diff);
-	else if (diff > 0)
-	  	tel_write_dec_run ('B', diff);
-	decMoving->setValueBool (true);
-	sendValueAll (decMoving);
+
+	tel_run (trencinConnDec, diff);
 }
 
 Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
@@ -354,10 +434,13 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	decGuide->addSelVal ("PLUS");
 
 	createValue (raMoving, "ra_moving", "if RA drive is moving", false);
-	raMoving->setValueBool (false);
+	raMoving->setValueInteger (0);
 
 	createValue (decMoving, "dec_moving", "if DEC drive is moving", false);
-	decMoving->setValueBool (false);
+	decMoving->setValueInteger (0);
+
+	createValue (raMovingEnd, "ra_moving_end", "time of end of last RA movement", false);
+	createValue (decMovingEnd, "dec_moving_end", "time of end of last DEC movement", false);
 
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (false);
@@ -380,17 +463,30 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	accRa->setValueInteger (800);
 	accDec->setValueInteger (800);
 
+	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false);
+
+	createValue (qDec, "qualification_dec", "number of microsteps in top speeds", false);
+	
+	qRa->setValueInteger (2);
+	qDec->setValueInteger (2);
+
 	createValue (microRa, "micro_ra", "RA microstepping", false);
+	createValue (microDec, "micro_dec", "DEC microstepping", false);
+
 	microRa->setValueInteger (8);
+	microDec->setValueInteger (8);
 
 	createValue (numberRa, "number_ra", "current shape in microstepping", false);
-	numberRa->setValueInteger (6);
+	createValue (numberDec, "number_dec", "current shape in microstepping", false);
 
-	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false);
-	qRa->setValueInteger (2);
+	numberRa->setValueInteger (6);
+	numberDec->setValueInteger (6);
 
 	createValue (startRa, "start_ra", "start/stop speed");
+	createValue (startDec, "start_dec", "start/stop speed");
+
 	startRa->setValueInteger (200);
+	startDec->setValueInteger (200);
 
 	createValue (accWormRa, "acc_worm_ra", "acceleration for worm in RA", false);
 	accWormRa->setValueInteger (100);
@@ -496,6 +592,13 @@ int Trencin::init ()
 
 	tel_write_dec ('\\');
 
+	tel_write_dec ('M', microDec->getValueInteger ());
+	tel_write_dec ('q', qDec->getValueInteger ());
+	tel_write_dec ('N', numberDec->getValueInteger ());
+	tel_write_dec ('A', accDec->getValueInteger ());
+	tel_write_dec ('s', startDec->getValueInteger ());
+	tel_write_dec ('V', velDec->getValueInteger ());
+
 	return ret;
 }
 
@@ -520,16 +623,12 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 	  	if (old_value == raGuide)
 		{
-		  	setGuide (trencinConnRa, new_value->getValueInteger ());
-			raMoving->setValueBool (new_value->getValueInteger () == 0 ? false: true);
-			sendValueAll (raMoving);
+		  	setGuideRa (new_value->getValueInteger ());
 			return 0;
 		}
 		if (old_value == decGuide)
 		{
-			setGuide (trencinConnDec, new_value->getValueInteger ());
-			decMoving->setValueBool (new_value->getValueInteger () == 0 ? false: true);
-			sendValueAll (decMoving);
+			setGuideDec (new_value->getValueInteger ());
 			return 0;
 		}
 		if (old_value == unitRa)
@@ -562,6 +661,11 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			tel_write_dec ('A', new_value->getValueInteger ());
 			return 0;
 		}
+		else if (old_value == qRa)
+		{
+			tel_write_ra ('q', new_value->getValueInteger ());
+			return 0;
+		}
 		else if (old_value == microRa)
 		{
 			tel_write_ra ('M', new_value->getValueInteger ());
@@ -570,11 +674,6 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		else if (old_value == numberRa)
 		{
 			tel_write_ra ('N', new_value->getValueInteger ());
-			return 0;
-		}
-		else if (old_value == qRa)
-		{
-			tel_write_ra ('q', new_value->getValueInteger ());
 			return 0;
 		}
 		else if (old_value == startRa)
@@ -633,16 +732,34 @@ int Trencin::info ()
 	double t_telRa;
 	double t_telDec;
 
+	int32_t u_ra;
+	int32_t u_dec;
+
 	// update axRa and axDec
-	if (raMode == MODE_NORMAL && raMoving->getValueBool () == false)
-		readAxis (trencinConnRa, unitRa);
+	if (raMode == MODE_NORMAL)
+	{
+		if (raMoving->getValueInteger () == 0)
+		{
+			readAxis (trencinConnRa, unitRa);
+	 		u_ra = unitRa->getValueInteger ();
+		}
+		else
+		{
+			u_ra = unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - velRa->getValueInteger () * (raMovingEnd->getValueDouble () - getNow ()));
+		}
+	}
 
-	if (decMoving->getValueBool () == false)
+	if (decMoving->getValueInteger () == 0)
+	{
 		readAxis (trencinConnDec, unitDec);
+		u_dec = unitRa->getValueInteger ();
+	}
+	else
+	{
+		u_dec = unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - velDec->getValueInteger () * (decMovingEnd->getValueDouble () - getNow ()));
+	}
 
-	int32_t u_ra = unitRa->getValueInteger ();
-
-	ret = counts2sky (u_ra, unitDec->getValueInteger (), t_telRa, t_telDec);
+	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
 	setTelRa (t_telRa);
 	setTelDec (t_telDec);
 
@@ -669,6 +786,8 @@ int Trencin::startResync ()
 {
 	// calculate new X and Y..
 	int ret;
+
+	stopMoveRa ();
 
 	ret = sky2counts (ac, dc);
 	if (ret)
@@ -706,6 +825,17 @@ int Trencin::stopMove ()
 	{
 		tel_write_ra ('K');
 		tel_write_dec ('K');
+
+		raMoving->setValueInteger (0);
+		decMoving->setValueInteger (0);
+
+		sleep (2);
+
+		trencinConnRa->flushPortIO ();
+		trencinConnDec->flushPortIO ();
+
+		stopMoveRa ();
+		stopMoveDec ();
 	}
 	catch (rts2core::Error &er)
 	{
@@ -740,6 +870,77 @@ int Trencin::endPark ()
 	return 0;
 }
 
+void Trencin::tel_run (Rts2ConnSerial *conn, int value)
+{
+	if (value == 0)
+		return;
+	tel_write (conn, '[');
+	if (value > 0)
+	{
+		if (value > MAX_MOVE)
+			tel_write (conn, 'F', MAX_MOVE);
+		else
+			tel_write (conn, 'F', value);
+	}
+	else
+	{
+		if (value < -MAX_MOVE)
+			tel_write (conn, 'F', -MAX_MOVE);
+		else
+			tel_write (conn, 'B', value);
+	}
+	tel_write (conn, "r\rU1\rU2\rU3\r]\r");
+	if (conn == trencinConnRa)
+	{
+		raMovingEnd->setValueDouble (getNow () + fabs (value) / velRa->getValueInteger ());
+		raMoving->setValueInteger (value);
+
+		sendValueAll (raMovingEnd);
+		sendValueAll (raMoving);
+	}
+	else if (conn == trencinConnDec)
+	{
+	  	decMovingEnd->setValueDouble (getNow () + fabs (value) / velDec->getValueInteger ());
+		decMoving->setValueInteger (value);
+
+		sendValueAll (decMovingEnd);
+		sendValueAll (decMoving);
+	}
+}
+
+void Trencin::stopMoveRa ()
+{
+	if (raMoving->getValueInteger () != 0)
+	{
+		tel_write_ra ('K');
+		sleep (2);
+		trencinConnRa->flushPortIO ();
+
+		raMoving->setValueInteger (0);
+	}
+
+	raMovingEnd->setNow ();
+
+	sendValueAll (raMovingEnd);
+	sendValueAll (raMoving);
+}
+
+void Trencin::stopMoveDec ()
+{
+	if (decMoving->getValueInteger () != 0)
+	{
+		tel_write_dec ('K');
+		sleep (2);
+		trencinConnDec->flushPortIO ();
+
+		decMoving->setValueInteger (0);
+	}
+
+	decMovingEnd->setNow ();
+
+	sendValueAll (decMovingEnd);
+	sendValueAll (decMoving);
+}
 
 int main (int argc, char **argv)
 {

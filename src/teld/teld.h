@@ -458,13 +458,6 @@ class Telescope:public Rts2Device
 		double getLocSidTime (double JD);
 
 		/**
-		 * Unconditional move to specified equatorial position.
-		 * Clear all offsets etc. Usefull for emergency situations
-		 * quick move.
-		 */
-		void moveNowTo (struct ln_equ_posn *equ);
-
-		/**
 		 * Returns true if origin was changed from the last movement.
 		 *
 		 * @see targetChangeFromLastResync
