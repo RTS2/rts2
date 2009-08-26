@@ -51,6 +51,8 @@ class Trencin:public Fork
 		virtual int startPark ();
 		virtual int endPark ();
 
+		virtual int commandAuthorized (Rts2Conn * conn);
+
 	protected:
 		virtual int processOption (int in_opt);
 
@@ -154,6 +156,8 @@ class Trencin:public Fork
 
 		void stopMoveRa ();
 		void stopMoveDec ();
+
+		void initMotors ();
 };
 
 }
@@ -589,21 +593,15 @@ int Trencin::init ()
 
 	snprintf (telType, 64, "Trencin");
 
-	// tel_write_ra ('\\');
-	tel_write_ra ('M', microRa->getValueInteger ());
-	tel_write_ra ('q', qRa->getValueInteger ());
-	tel_write_ra ('N', numberRa->getValueInteger ());
-	tel_write_ra ('A', accRa->getValueInteger ());
-	tel_write_ra ('s', startRa->getValueInteger ());
-	tel_write_ra ('V', velRa->getValueInteger ());
-	
-	//tel_write_dec ('\\');
-	tel_write_dec ('M', microDec->getValueInteger ());
-	tel_write_dec ('q', qDec->getValueInteger ());
-	tel_write_dec ('N', numberDec->getValueInteger ());
-	tel_write_dec ('A', accDec->getValueInteger ());
-	tel_write_dec ('s', startDec->getValueInteger ());
-	tel_write_dec ('V', velDec->getValueInteger ());
+	try
+	{
+		initMotors ();
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "cannot init motors" << sendLog;
+		return -1;
+	}
 
 	return ret;
 }
@@ -876,6 +874,26 @@ int Trencin::endPark ()
 	return 0;
 }
 
+int Trencin::commandAuthorized (Rts2Conn *conn)
+{
+	if (conn->isCommand ("reset"))
+	{
+		try
+		{
+			tel_write_ra ('\\');
+			tel_write_dec ('\\');
+			initMotors ();
+		}
+		catch (rts2core::Error &er)
+		{
+		 	conn->sendCommandEnd (DEVDEM_E_HW, er.what());
+			return -1;
+		}
+		return 0;
+	}
+	return Fork::commandAuthorized (conn);
+}
+
 void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 {
 	if (value == 0)
@@ -946,6 +964,23 @@ void Trencin::stopMoveDec ()
 
 	sendValueAll (decMovingEnd);
 	sendValueAll (decMoving);
+}
+
+void Trencin::initMotors ()
+{
+	tel_write_ra ('M', microRa->getValueInteger ());
+	tel_write_ra ('q', qRa->getValueInteger ());
+	tel_write_ra ('N', numberRa->getValueInteger ());
+	tel_write_ra ('A', accRa->getValueInteger ());
+	tel_write_ra ('s', startRa->getValueInteger ());
+	tel_write_ra ('V', velRa->getValueInteger ());
+	
+	tel_write_dec ('M', microDec->getValueInteger ());
+	tel_write_dec ('q', qDec->getValueInteger ());
+	tel_write_dec ('N', numberDec->getValueInteger ());
+	tel_write_dec ('A', accDec->getValueInteger ());
+	tel_write_dec ('s', startDec->getValueInteger ());
+	tel_write_dec ('V', velDec->getValueInteger ());
 }
 
 int main (int argc, char **argv)
