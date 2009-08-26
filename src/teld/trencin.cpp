@@ -27,7 +27,7 @@
 #define EVENT_TIMER_RA_WORM    RTS2_LOCAL_EVENT + 1230
 
 // maximal movement lenght
-#define MAX_MOVE               16000000
+#define MAX_MOVE               ((1<<24)-1)
 
 namespace rts2teld
 {
