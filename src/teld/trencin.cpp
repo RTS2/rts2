@@ -386,14 +386,14 @@ void Trencin::setRa (long new_ra)
 	{
 		tel_write_ra ('K');
 		sleep (2);
-		raMovingEnd->setNow ();
+		raMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnRa, unitRa);
 	}
 	long diff = new_ra - unitRa->getValueInteger ();
 	// adjust for siderial move..
 	double v = ((double) velRa->getValueInteger ()) * 64;
-	diff *= v / (v + (double) (((diff < 0) ? -1 : 1) * haCpd) / 240.0);
+	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / 240.0);
 	tel_run (trencinConnRa, diff);
 }
 
@@ -403,7 +403,7 @@ void Trencin::setDec (long new_dec)
 	{
 		tel_write_dec ('K');
 		sleep (2);
-		decMovingEnd->setNow ();
+		decMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnDec, unitDec);
 	}
@@ -421,7 +421,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	haZero = 0;
 	decZero = 0;
 
-	haCpd = 56889;
+	haCpd = -56889;
 	decCpd = 110222;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
@@ -739,6 +739,8 @@ int Trencin::info ()
 	int32_t u_ra;
 	int32_t u_dec;
 
+	int32_t left_track;
+
 	// update axRa and axDec
 	if (raMode == MODE_NORMAL)
 	{
@@ -749,7 +751,8 @@ int Trencin::info ()
 		}
 		else
 		{
-			u_ra = unitRa->getValueInteger () + raMoving->getValueInteger () / (1 - velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ()) / fabs (raMoving->getValueInteger ()));
+			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
+			u_ra = unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
 		}
 	}
 
@@ -760,7 +763,8 @@ int Trencin::info ()
 	}
 	else
 	{
-		u_dec = unitDec->getValueInteger () + decMoving->getValueInteger () / (1 - velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ()) / fabs (decMoving->getValueInteger ()));
+		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
+		u_dec = unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
 	}
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
@@ -916,7 +920,7 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	tel_write (conn, "r\rU1\rU2\rU3\r]\r");
 	if (conn == trencinConnRa)
 	{
-		raMovingEnd->setValueDouble (getNow () + fabs (value) / (64 * velRa->getValueInteger ()));
+		raMovingEnd->setValueDouble (getNow () + 2 + fabs (value) / (64 * velRa->getValueInteger ()));
 		raMoving->setValueInteger (value);
 
 		sendValueAll (raMovingEnd);
@@ -924,7 +928,7 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	}
 	else if (conn == trencinConnDec)
 	{
-	  	decMovingEnd->setValueDouble (getNow () + fabs (value) / (64 * velDec->getValueInteger ()));
+	  	decMovingEnd->setValueDouble (getNow () + 2 + fabs (value) / (64 * velDec->getValueInteger ()));
 		decMoving->setValueInteger (value);
 
 		sendValueAll (decMovingEnd);
