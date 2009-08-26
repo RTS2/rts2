@@ -749,7 +749,7 @@ int Trencin::info ()
 		}
 		else
 		{
-			u_ra = unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ()));
+			u_ra = unitRa->getValueInteger () + raMoving->getValueInteger () / (1 - velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ()) / fabs (raMoving->getValueInteger ()));
 		}
 	}
 
@@ -760,7 +760,7 @@ int Trencin::info ()
 	}
 	else
 	{
-		u_dec = unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ()));
+		u_dec = unitDec->getValueInteger () + decMoving->getValueInteger () / (1 - velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ()) / fabs (decMoving->getValueInteger ()));
 	}
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
