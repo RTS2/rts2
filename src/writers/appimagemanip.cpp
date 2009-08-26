@@ -46,11 +46,13 @@
 #define IMAGEOP_MOVE      0x0080
 #define IMAGEOP_EVAL      0x0100
 #define IMAGEOP_CREATEWCS 0x0200
-#define IMAGEOP_MODEL     0x0400
+#define IMAGEOP_ADDHELIO  0x0400
+#define IMAGEOP_MODEL     0x0800
 #define IMAGEOP_JPEG      0x0800
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 #define OPT_EVERY     OPT_LOCAL + 6
+#define OPT_ADDHELIO  OPT_LOCAL + 6
 
 namespace rts2image
 {
@@ -271,6 +273,10 @@ AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_ADDDATE;
 			readOnly = false;
 			break;
+		case OPT_ADDHELIO:
+			operation |= IMAGEOP_ADDHELIO;
+			readOnly = false;
+			break;
 		#ifdef HAVE_PGSQL
 		case 'i':
 			operation |= IMAGEOP_INSERT;
@@ -345,6 +351,13 @@ AppImage::processImage (Rts2Image * image)
 		help ();
 	if (operation & IMAGEOP_ADDDATE)
 		addDate (image);
+	if (operation & IMAGEOP_ADDHELIO)
+	{
+		struct ln_equ_posn tel;
+		double JD = image->getExposureJD () + image->getExposureLength () / 2.0 / 86400;
+		image->getCoordMount (tel);
+		image->setValue ("JD_HELIO", JD + ln_get_heliocentric_time_diff (JD, &tel), "heliocentric JD");
+	}
 	#ifdef HAVE_PGSQL
 	if (operation & IMAGEOP_INSERT)
 		insert (image);
@@ -403,6 +416,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
+	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentrict time)");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");
 	addOption ('m', NULL, 1, "move image(s) to path expression given as argument");
 	addOption ('l', NULL, 1, "soft link images(s) to path expression given as argument");

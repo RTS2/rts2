@@ -38,6 +38,11 @@
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
 
+// TODO remove this once Libnova 0.13.0 becomes mainstream
+#if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
+double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
+#endif
+
 /**
  * One pixel at the image, with coordinates and a value.
  */

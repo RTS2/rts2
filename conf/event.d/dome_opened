@@ -18,4 +18,4 @@ Windspeeds: $METEO_AVGWIND $DAVIS_PEEKWIND
 Davis rain: $METEO_RAIN
 
 For you convenience, last GRB was recorded on $GRBD_last_target_time ($GRBD_last_target)
-Last GCN packet was processed on $GRBD_last_packet." | mail -s 'B3 dome CLOSED' example@example.com
+Last GCN packet was processed on $GRBD_last_packet." | mail -s 'dome OPENED' example@example.com

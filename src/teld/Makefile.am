@@ -4,7 +4,7 @@ noinst_HEADERS = teld.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
 
 noinst_LIBRARIES = librts2teld.a
 
-EXTRA_DIST = ""
+EXTRA_DIST = 
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \

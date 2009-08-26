@@ -622,6 +622,12 @@ Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
 		case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
 			// UVOT FOV
 			return 15.0 / 60.0;
+		case TYPE_SuperAGILE_POSITION:
+		case TYPE_SuperAGILE_PROMPT:
+		case TYPE_SuperAGILE_REFINED:
+			return 3;
+		case TYPE_SuperAGILE_POINTDIR:
+			return 60;
 		case TYPE_GLAST_GBM_GRB_ALERT:
 		case TYPE_GLAST_GBM_GRB_POS_ACK:
 		case TYPE_GLAST_GBM_LC:

@@ -781,7 +781,8 @@ void Trencin::postEvent (Rts2Event *event)
 	{
 		case EVENT_TIMER_RA_WORM:
 			// restart worm..
-			startWorm ();
+			if (wormRa->getValueBool () == true)
+				startWorm ();
 			// do not process it through full hierarchy..
 			Rts2Object::postEvent (event);
 			return;
