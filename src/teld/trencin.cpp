@@ -106,6 +106,10 @@ class Trencin:public Fork
 
 		void setGuideRa (int value);
 		void setGuideDec (int value);
+		void setGuidingSpeed (double value);
+
+		void setSpeedRa (int new_speed);
+		void setSpeedDec (int new_speed);
 
 		void setRa (long new_ra);
 		void setDec (long new_dec);
@@ -120,6 +124,8 @@ class Trencin:public Fork
 
 		Rts2ValueSelection *raGuide;
 		Rts2ValueSelection *decGuide;
+
+		Rts2ValueDouble *guidingSpeed;
 
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
@@ -158,6 +164,8 @@ class Trencin:public Fork
 		void stopMoveDec ();
 
 		void initMotors ();
+		void initRa ();
+		void initDec ();
 };
 
 }
@@ -261,6 +269,8 @@ int Trencin::stopWorm ()
 	if (raMode != MODE_NORMAL)
 	{
 		tel_write_ra ('\\');
+		// set proper values for speed after reset
+		initRa ();
 		raMode = MODE_NORMAL;
 	}
 	return 0;
@@ -380,6 +390,54 @@ void Trencin::setGuideDec (int value)
 	tel_run (trencinConnDec, decMoving->getValueInteger ());
 }
 
+void Trencin::setGuidingSpeed (double value)
+{
+	if (raGuide->getValueInteger () != 0 || decGuide->getValueInteger () != 0)
+	{
+		if (raGuide->getValueInteger () != 0)
+			tel_write_ra ('K');
+		if (decGuide->getValueInteger () != 0)
+			tel_write_dec ('K');
+
+		sleep (2);
+
+		if (raGuide->getValueInteger () != 0)
+			trencinConnRa->flushPortIO ();
+		if (decGuide->getValueInteger () != 0);
+			trencinConnDec->flushPortIO ();
+	}
+
+	int vel = (value * haCpd) / 64;
+	setSpeedRa (vel);
+
+	vel = (value * decCpd) / 64;
+	setSpeedDec (vel);
+
+	sendValueAll (velRa);
+	sendValueAll (velDec);
+
+	if (raGuide->getValueInteger () != 0)
+		setGuideRa (raGuide->getValueInteger ());
+	if (decGuide->getValueInteger () != 0)
+		setGuideDec (decGuide->getValueInteger ());
+}
+
+void Trencin::setSpeedRa (int new_speed)
+{
+	if (new_speed < 16)
+		new_speed = 16;
+	tel_write_ra ('V', new_speed);
+	velRa->setValueInteger (new_speed);
+}
+
+void Trencin::setSpeedDec (int new_speed)
+{
+	if (new_speed < 16)
+		new_speed = 16;
+	tel_write_dec ('V', new_speed);
+	velDec->setValueInteger (new_speed);
+}
+
 void Trencin::setRa (long new_ra)
 {
 	if (raMoving->getValueInteger () != 0)
@@ -443,6 +501,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	decGuide->addSelVal ("NONE");
 	decGuide->addSelVal ("MINUS");
 	decGuide->addSelVal ("PLUS");
+
+	createValue (guidingSpeed, "guiding_speed", "guiding speed in deg/sec", false, RTS2_DT_DEGREES);
+	guidingSpeed->setValueDouble (0.5);
 
 	createValue (raMoving, "ra_moving", "if RA drive is moving", false);
 	raMoving->setValueInteger (0);
@@ -633,6 +694,11 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		if (old_value == decGuide)
 		{
 			setGuideDec (new_value->getValueInteger ());
+			return 0;
+		}
+		if (old_value == guidingSpeed)
+		{
+			setGuidingSpeed (new_value->getValueDouble ());
 			return 0;
 		}
 		if (old_value == unitRa)
@@ -973,13 +1039,22 @@ void Trencin::stopMoveDec ()
 
 void Trencin::initMotors ()
 {
+	initRa ();
+	initDec ();
+}
+
+void Trencin::initRa ()
+{
 	tel_write_ra ('M', microRa->getValueInteger ());
 	tel_write_ra ('q', qRa->getValueInteger ());
 	tel_write_ra ('N', numberRa->getValueInteger ());
 	tel_write_ra ('A', accRa->getValueInteger ());
 	tel_write_ra ('s', startRa->getValueInteger ());
 	tel_write_ra ('V', velRa->getValueInteger ());
-	
+}
+
+void Trencin::initDec ()
+{
 	tel_write_dec ('M', microDec->getValueInteger ());
 	tel_write_dec ('q', qDec->getValueInteger ());
 	tel_write_dec ('N', numberDec->getValueInteger ());
