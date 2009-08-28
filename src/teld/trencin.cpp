@@ -28,6 +28,7 @@
 
 // maximal movement lenght
 #define MAX_MOVE               ((1<<24)-1)
+#define MOVE_SLEEP_TIME        5
 
 namespace rts2teld
 {
@@ -401,7 +402,7 @@ void Trencin::setGuidingSpeed (double value)
 		if (decGuide->getValueInteger () != 0)
 			tel_write_dec ('K');
 
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 
 		if (raGuide->getValueInteger () != 0)
 			trencinConnRa->flushPortIO ();
@@ -417,6 +418,9 @@ void Trencin::setGuidingSpeed (double value)
 
 	sendValueAll (velRa);
 	sendValueAll (velDec);
+
+	initRa ();
+	initDec ();
 
 	usleep (USEC_SEC / 20);
 
@@ -444,7 +448,6 @@ void Trencin::setSpeedRa (int new_speed)
 	if (new_speed < 16)
 		new_speed = 16;
 	tel_write_ra ('[');
-	tel_write_ra ('V', new_speed);
 	if (new_speed < 200)
 	{
 		startRa->setValueInteger (new_speed);
@@ -455,6 +458,7 @@ void Trencin::setSpeedRa (int new_speed)
 	}
 	checkAcc (trencinConnRa, accRa, startRa);
 	tel_write_ra ('s', startRa->getValueInteger ());
+	tel_write_ra ('V', new_speed);
 	tel_write_ra (']');
 	velRa->setValueInteger (new_speed);
 	sendValueAll (startRa);
@@ -465,7 +469,6 @@ void Trencin::setSpeedDec (int new_speed)
 	if (new_speed < 16)
 		new_speed = 16;
 	tel_write_dec ('[');
-	tel_write_dec ('V', new_speed);
 	if (new_speed < 200)
 	{
 		startDec->setValueInteger (new_speed);
@@ -476,6 +479,7 @@ void Trencin::setSpeedDec (int new_speed)
 	}
 	checkAcc (trencinConnDec, accDec, startDec);
 	tel_write_ra ('s', startDec->getValueInteger ());
+	tel_write_dec ('V', new_speed);
 	tel_write_ra (']');
 	velDec->setValueInteger (new_speed);
 	sendValueAll (startDec);
@@ -486,7 +490,7 @@ void Trencin::setRa (long new_ra)
 	if (raMoving->getValueInteger () != 0)
 	{
 		tel_write_ra ('K');
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 		raMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnRa, unitRa);
@@ -503,7 +507,7 @@ void Trencin::setDec (long new_dec)
 	if (decMoving->getValueInteger () != 0)
 	{
 		tel_write_dec ('K');
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 		decMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnDec, unitDec);
@@ -971,7 +975,7 @@ int Trencin::stopMove ()
 		raMoving->setValueInteger (0);
 		decMoving->setValueInteger (0);
 
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 
 		trencinConnRa->flushPortIO ();
 		trencinConnDec->flushPortIO ();
@@ -1075,7 +1079,7 @@ void Trencin::stopMoveRa ()
 	if (raMoving->getValueInteger () != 0)
 	{
 		tel_write_ra ('K');
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 		trencinConnRa->flushPortIO ();
 
 		raMoving->setValueInteger (0);
@@ -1092,7 +1096,7 @@ void Trencin::stopMoveDec ()
 	if (decMoving->getValueInteger () != 0)
 	{
 		tel_write_dec ('K');
-		sleep (2);
+		sleep (MOVE_SLEEP_TIME);
 		trencinConnDec->flushPortIO ();
 
 		decMoving->setValueInteger (0);
