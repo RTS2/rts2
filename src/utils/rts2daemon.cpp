@@ -297,6 +297,17 @@ Rts2Daemon::initDaemon ()
 	}
 }
 
+void Rts2Daemon::setIdleInfoInterval (double interval)
+{
+	// activate infoall event
+	if (interval > 0)
+	{
+		if (idleInfoInterval > 0)
+			deleteTimers (EVENT_TIMER_INFOALL);
+		addTimer (interval, new Rts2Event (EVENT_TIMER_INFOALL, this));
+	}
+	idleInfoInterval = interval;
+}
 
 int
 Rts2Daemon::run ()

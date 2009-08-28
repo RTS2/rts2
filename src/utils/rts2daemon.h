@@ -381,16 +381,17 @@ class Rts2Daemon:public Rts2Block
 		 * functions to complete daemon initialization.
 		 */
 		void initDaemon ();
-
-		void setIdleInfoInterval (double interval)
-		{
-			// activate infoall event
-			if (idleInfoInterval < 0 && interval > 0)
-			{
-				addTimer (interval, new Rts2Event (EVENT_TIMER_INFOALL, this));
-			}
-			idleInfoInterval = interval;
-		}
+		
+		/**
+		 * Set timer to send updates every interval seconds. This method is designed to keep user 
+		 * infromed about progress of actions which rapidly changes values read by info call.
+		 *
+		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval 
+		 *   seconds and distribute updates to all connected clients. If <= 0, disables automatic info.
+		 *
+		 * @see info()
+		 */  
+		void setIdleInfoInterval (double interval);
 
 		/**
 		 * Updates info_time to current time.

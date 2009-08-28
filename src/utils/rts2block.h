@@ -657,10 +657,16 @@ class Rts2Block: public Rts2App
 		 *
 		 * @see Rts2Event
 		 */
-
 		void addTimer (double timer_time, Rts2Event *event)
 		{
 			timers[getNow () + timer_time] = event;
 		}
+
+		/**
+		 * Remove timer with a given type from the list of timers.
+		 *
+		 * @param event_type Type of event.
+		 */
+		void deleteTimers (int event_type);
 };
 #endif							 // !__RTS2_NETBLOCK__

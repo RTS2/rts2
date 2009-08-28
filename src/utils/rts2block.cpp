@@ -896,3 +896,14 @@ Rts2Block::commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_con
 	}
 	return false;
 }
+
+void Rts2Block::deleteTimers (int event_type)
+{
+	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
+	{
+		if (iter->second->getType () == event_type)
+			timers.erase (iter++);
+		else
+			iter++;
+	}
+}
