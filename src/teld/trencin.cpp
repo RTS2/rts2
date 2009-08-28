@@ -162,6 +162,11 @@ class Trencin:public Fork
 		enum {MODE_NORMAL, MODE_WORM, MODE_WORM_WAIT} raMode;
 
 		void tel_run (Rts2ConnSerial *conn, int value);
+		/**
+		 * Stop telescope movement. Phases is bit mask indicating which phase should be commited.
+		 * First bit in phase is for sending Kill command, second is for waiting for reply.
+		 */
+		void tel_kill (Rts2ConnSerial *conn, int phases = 0x03);
 
 		void stopMoveRa ();
 		void stopMoveDec ();
@@ -398,16 +403,14 @@ void Trencin::setGuidingSpeed (double value)
 	if (raGuide->getValueInteger () != 0 || decGuide->getValueInteger () != 0)
 	{
 		if (raGuide->getValueInteger () != 0)
-			tel_write_ra ('K');
+			tel_kill (trencinConnRa, 0x01);
 		if (decGuide->getValueInteger () != 0)
-			tel_write_dec ('K');
-
-		sleep (MOVE_SLEEP_TIME);
+		  	tel_kill (trencinConnDec, 0x01);
 
 		if (raGuide->getValueInteger () != 0)
-			trencinConnRa->flushPortIO ();
+		  	tel_kill (trencinConnRa, 0x02);
 		if (decGuide->getValueInteger () != 0);
-			trencinConnDec->flushPortIO ();
+			tel_kill (trencinConnDec, 0x02);
 	}
 
 	int vel = (value * fabs (haCpd)) / 64;
@@ -489,8 +492,7 @@ void Trencin::setRa (long new_ra)
 {
 	if (raMoving->getValueInteger () != 0)
 	{
-		tel_write_ra ('K');
-		sleep (MOVE_SLEEP_TIME);
+		tel_kill (trencinConnRa);
 		raMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnRa, unitRa);
@@ -506,8 +508,7 @@ void Trencin::setDec (long new_dec)
 {
 	if (decMoving->getValueInteger () != 0)
 	{
-		tel_write_dec ('K');
-		sleep (MOVE_SLEEP_TIME);
+		tel_kill (trencinConnDec);
 		decMovingEnd->setValueDouble (getNow ());
 
 		readAxis (trencinConnDec, unitDec);
@@ -969,16 +970,14 @@ int Trencin::stopMove ()
 {
 	try 
 	{
-		tel_write_ra ('K');
-		tel_write_dec ('K');
+		tel_kill (trencinConnRa, 0x01);
+		tel_kill (trencinConnDec, 0x01);
 
 		raMoving->setValueInteger (0);
 		decMoving->setValueInteger (0);
 
-		sleep (MOVE_SLEEP_TIME);
-
-		trencinConnRa->flushPortIO ();
-		trencinConnDec->flushPortIO ();
+		tel_kill (trencinConnRa, 0x02);
+		tel_kill (trencinConnDec, 0x02);
 
 		stopMoveRa ();
 		stopMoveDec ();
@@ -1074,13 +1073,32 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	}
 }
 
+void Trencin::tel_kill (Rts2ConnSerial *conn, int phases)
+{
+	if (phases & 0x01)
+	{
+		tel_write (conn, "K\rU\r");
+	}
+	if (phases & 0x02)
+	{
+		char buf;
+		int ret;
+		conn->setVTime (100);
+		ret = conn->readPort (&buf, 1);
+		if (ret < 0)
+			throw rts2core::Error ("cannot read from port after kill command");
+		if (buf != 'U')
+			logStream (MESSAGE_ERROR) << "received unexpected character, expected U, got " << buf << sendLog;
+		conn->setVTime (40);
+		conn->flushPortIO ();
+	}
+}
+
 void Trencin::stopMoveRa ()
 {
 	if (raMoving->getValueInteger () != 0)
 	{
-		tel_write_ra ('K');
-		sleep (MOVE_SLEEP_TIME);
-		trencinConnRa->flushPortIO ();
+		tel_kill (trencinConnRa);
 
 		raMoving->setValueInteger (0);
 	}
@@ -1095,9 +1113,7 @@ void Trencin::stopMoveDec ()
 {
 	if (decMoving->getValueInteger () != 0)
 	{
-		tel_write_dec ('K');
-		sleep (MOVE_SLEEP_TIME);
-		trencinConnDec->flushPortIO ();
+		tel_kill (trencinConnDec);
 
 		decMoving->setValueInteger (0);
 	}
