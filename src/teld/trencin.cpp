@@ -108,6 +108,8 @@ class Trencin:public Fork
 		void setGuideDec (int value);
 		void setGuidingSpeed (double value);
 
+		void checkAcc (Rts2ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop);
+
 		void setSpeedRa (int new_speed);
 		void setSpeedDec (int new_speed);
 
@@ -416,10 +418,25 @@ void Trencin::setGuidingSpeed (double value)
 	sendValueAll (velRa);
 	sendValueAll (velDec);
 
+	usleep (USEC_SEC / 20);
+
 	if (raGuide->getValueInteger () != 0)
 		setGuideRa (raGuide->getValueInteger ());
 	if (decGuide->getValueInteger () != 0)
 		setGuideDec (decGuide->getValueInteger ());
+}
+
+void Trencin::checkAcc (Rts2ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop)
+{
+	if (startStop->getValueInteger () <= 30)
+		acc->setValueInteger (116);
+	else if (startStop->getValueInteger () <= 61)
+		acc->setValueInteger (464);
+	else 
+		acc->setValueInteger (800);
+
+	tel_write (conn, 'A', acc->getValueInteger ());
+	sendValueAll (acc);
 }
 
 void Trencin::setSpeedRa (int new_speed)
@@ -436,6 +453,7 @@ void Trencin::setSpeedRa (int new_speed)
 	{
 		startRa->setValueInteger (200);
 	}
+	checkAcc (trencinConnRa, accRa, startRa);
 	tel_write_ra ('s', startRa->getValueInteger ());
 	tel_write_ra (']');
 	velRa->setValueInteger (new_speed);
@@ -456,6 +474,7 @@ void Trencin::setSpeedDec (int new_speed)
 	{
 		startDec->setValueInteger (200);
 	}
+	checkAcc (trencinConnDec, accDec, startDec);
 	tel_write_ra ('s', startDec->getValueInteger ());
 	tel_write_ra (']');
 	velDec->setValueInteger (new_speed);
