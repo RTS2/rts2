@@ -365,6 +365,8 @@ void Trencin::setGuideRa (int value)
 	stopMoveRa ();
 	if (value == 0)
 	{
+		if (decGuide->getValueInteger () == 0)
+			setIdleInfoInterval (60);
 		return;
 	}
 	switch (value)
@@ -377,6 +379,7 @@ void Trencin::setGuideRa (int value)
 			break;
 	}
 	tel_run (trencinConnRa, raMoving->getValueInteger ());
+	setIdleInfoInterval (0.5);
 }
 
 void Trencin::setGuideDec (int value)
@@ -384,6 +387,8 @@ void Trencin::setGuideDec (int value)
 	stopMoveDec ();
 	if (value == 0)
 	{
+		if (raGuide->getValueInteger () == 0)
+			setIdleInfoInterval (60);
 		return;
 	}
 	switch (value)
@@ -396,6 +401,7 @@ void Trencin::setGuideDec (int value)
 			break;
 	}
 	tel_run (trencinConnDec, decMoving->getValueInteger ());
+	setIdleInfoInterval (0.5);
 }
 
 void Trencin::setGuidingSpeed (double value)
@@ -1087,8 +1093,6 @@ void Trencin::tel_kill (Rts2ConnSerial *conn, int phases)
 		ret = conn->readPort (&buf, 1);
 		if (ret < 0)
 			throw rts2core::Error ("cannot read from port after kill command");
-		if (buf != 'U')
-			logStream (MESSAGE_ERROR) << "received unexpected character, expected U, got " << buf << sendLog;
 		conn->setVTime (40);
 		conn->flushPortIO ();
 	}
