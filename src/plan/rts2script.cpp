@@ -120,6 +120,7 @@ Rts2Script::Rts2Script (Rts2Block * in_master)
 	master = in_master;
 	executedCount = 0;
 	lineOffset = 0;
+	cmdBuf = NULL;
 }
 
 
@@ -134,6 +135,7 @@ Rts2Script::~Rts2Script (void)
 		delete el;
 	}
 	elements.clear ();
+	delete[] cmdBuf;
 }
 
 
@@ -154,6 +156,8 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 	// offset on scripts over one line
 	do
 	{
+		delete[] cmdBuf;
+
 		ret = target->getScript (cam_name, scriptText);
 		if (ret == -1)
 			return -1;
@@ -213,7 +217,6 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 			offset += 3;
 			elements.push_back (element);
 		}
-		delete[] cmdBuf;
 		lineOffset += offset;
 	} while (ret == 1);
 

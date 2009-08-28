@@ -55,13 +55,10 @@ class Watcher:public Dome
 
 		bool isMoving ();
 
-		void executeSms (smsType_t type);
-
 		void openDomeReal ();
 		void closeDomeReal ();
 
 		const char *isOnString (int mask);
-		int sendDublinMail (const char *subject);
 
 		Rts2ValueInteger *sw_state;
 
@@ -90,8 +87,7 @@ Watcher::Watcher (int argc, char **argv)
 {
 	createValue (sw_state, "sw_state", "dome state", false);
 	smsExec = NULL;
-	addOption ('s', "execute_sms", 1, "execute this commmand to send sms about roof");
-
+	
 	timeOpenClose = 0;
 	domeFailed = false;
 }
@@ -102,31 +98,6 @@ Watcher::~Watcher (void)
 	outb (0, BASE);
 	// SWITCH OFF INTERFACE
 	outb (0, BASE + 1);
-}
-
-
-void
-Watcher::executeSms (smsType_t type)
-{
-	const char *msg;
-	switch (type)
-	{
-		case TYPE_OPENED:
-			msg = "Watcher roof opened as expected";
-			sendDublinMail ("WATCHER dome opened");
-			break;
-		case TYPE_CLOSED:
-			msg = "Watcher roof closed as expected";
-			sendDublinMail ("WATCHER dome closed");
-			break;
-		case TYPE_STUCK:
-			msg = "FAILURE! Watcher roof failed!!";
-			sendDublinMail ("WARNING CANNOT OPEN DOME! ROOF FAILED!");
-			break;
-	}
-	std::string cmd = std::string (smsExec)
-		+ std::string ("'") + std::string (msg) + std::string ("'"); 
-	system (cmd.c_str ());
 }
 
 
@@ -256,7 +227,6 @@ Watcher::isOpened ()
 			sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
-		executeSms (TYPE_STUCK);
 		// stop motor
 		closeDomeReal ();
 		return -2;
@@ -277,7 +247,6 @@ Watcher::endOpen ()
 	if (!domeFailed)
 	{
 		sw_state->setValueInteger (1);
-		executeSms (TYPE_OPENED);
 	}
 	return 0;
 }
@@ -323,7 +292,6 @@ Watcher::isClosed ()
 			<< sendLog;
 		domeFailed = true;
 		sw_state->setValueInteger (0);
-		executeSms (TYPE_STUCK);
 		openDomeReal ();
 		return -2;
 	}
@@ -343,7 +311,6 @@ Watcher::endClose ()
 	if (!domeFailed)
 	{
 		sw_state->setValueInteger (4);
-		executeSms (TYPE_CLOSED);
 	}
 	return 0;
 }
@@ -353,20 +320,6 @@ const char *
 Watcher::isOnString (int mask)
 {
 	return (sw_state->getValueInteger () & mask) ? "on" : "off";
-}
-
-
-int
-Watcher::sendDublinMail (const char *subject)
-{
-	std::ostringstream _os;
-	int ret;
-	_os << subject
-		<< "CLOSE SWITCH: " << isOnString (4) << std::endl
-		<< "OPEN SWITCH: " << isOnString (1) << std::endl
-		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl;
-	ret = sendMail (subject, _os.str ().c_str ());
-	return ret;
 }
 
 

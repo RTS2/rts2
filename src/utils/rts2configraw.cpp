@@ -70,10 +70,12 @@ Rts2ConfigSection::getValue (const char *valueName, bool verbose)
 		if (val->isValue (name))
 			return val;
 	}
-	if (verbose)
+	if (verbose && find (missingValues.begin (), missingValues.end (), name) == missingValues.end ())
 	{
+	  	// check if that wasn't reported..
 		logStream (MESSAGE_WARNING) << "Cannot find value '" << name <<
 			"' in section '" << sectName << "'." << sendLog;
+		missingValues.push_back (name);
 	}
 	return NULL;
 }
@@ -104,7 +106,17 @@ Rts2ConfigSection::createBlockedBy (std::string val)
 		}
 	}
 	if (deviceName)
+	{
 		blockedBy->push_back (*deviceName);
+	}
+	else
+	{
+		if (blockedBy->size () == 0)
+		{
+			delete blockedBy;
+			blockedBy = NULL;
+		}
+	}
 }
 
 
@@ -310,7 +322,7 @@ Rts2ConfigRaw::loadFile (const char *filename)
 	configStream->open (filename);
 	if (configStream->fail ())
 	{
-		logStream (MESSAGE_ERROR) << "Cannot open config file '" << filename <<
+		logStream (MESSAGE_ERROR) << "Cannot open configuration file '" << filename <<
 			"'." << sendLog;
 		delete configStream;
 		return -1;
@@ -394,11 +406,14 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 
 
 int
-Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value)
+Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
 {
 	std::string valbuf;
 	int ret;
+	bool oldVerbose = verboseEntry;
+	verboseEntry = verbose;
 	ret = getString (section, valueName, valbuf);
+	verboseEntry = oldVerbose;
 	if (ret)
 		return ret;
 	value = SplitStr (valbuf, std::string (" "));

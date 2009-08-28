@@ -18,53 +18,12 @@
  */
 
 #include "rts2connnosend.h"
+#include "error.h"
+
 #include <ostream>
 
 namespace rts2core
 {
-
-/**
- * Superclass for any connection errors. All errors which occurs on connection
- * inherit from this class.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class ConnError
-{
-	private:
-		const char *msg;
-		int errn;
-	protected:
-		/**
-		 * Returns message associated with the error.
-		 */
-		const char *getMsg ()
-		{
-			return msg;
-		}
-
-		const char *getErrDetails ()
-		{
-			return strerror (errn);
-		}
-	public:
-		ConnError (const char *_msg)
-		{
-			msg = _msg;
-		}
-
-		ConnError (const char *_msg, int _errn)
-		{
-			msg = _msg;
-			errn = _errn;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnError &_err)
-		{
-			_os << "connection error: " << _err.getMsg () << " - " << _err.getErrDetails ();
-			return _os;
-		}
-};
 
 
 /**
@@ -75,7 +34,7 @@ class ConnError
 class ConnCreateError:public ConnError
 {
 	public:
-		ConnCreateError (const char *_msg, int _errn):ConnError (_msg, _errn)
+		ConnCreateError (Rts2Conn *conn, const char *_msg, int _errn):ConnError (conn, _msg, _errn)
 		{
 		}
 };
@@ -89,7 +48,7 @@ class ConnCreateError:public ConnError
 class ConnSendError:public ConnError
 {
 	public:
-		ConnSendError (const char *_msg, int _err):ConnError (_msg, _err)
+		ConnSendError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };
@@ -103,7 +62,7 @@ class ConnSendError:public ConnError
 class ConnTimeoutError:public ConnError
 {
 	public:
-		ConnTimeoutError (const char *_msg):ConnError (_msg)
+		ConnTimeoutError (Rts2Conn *conn, const char *_msg):ConnError (conn, _msg)
 		{
 		}
 };
@@ -116,7 +75,7 @@ class ConnTimeoutError:public ConnError
 class ConnReceivingError:public ConnError
 {
 	public:
-		ConnReceivingError (const char *_msg, int _err):ConnError (_msg, _err)
+		ConnReceivingError (Rts2Conn *conn, const char *_msg, int _err):ConnError (conn, _msg, _err)
 		{
 		}
 };
@@ -132,13 +91,6 @@ class ConnReceivingError:public ConnError
  */
 class ConnTCP:public Rts2ConnNoSend
 {
-	private:
-		const char *hostname;
-		int port;
-
-		bool debug;
-
-		bool checkBufferForChar (std::istringstream **_is, char end_char);
 	public:
 		/**
 		 * Create new connection to APC UPS daemon.
@@ -176,7 +128,7 @@ class ConnTCP:public Rts2ConnNoSend
 		 *
 		 * @throw ConnError on error.
 		 */
-		void sendData (void *data, int len, bool binary = true);
+		void sendData (const void *data, int len, bool binary = true);
 
 		void sendData (const char *data);
 
@@ -203,6 +155,19 @@ class ConnTCP:public Rts2ConnNoSend
 		 * @param end    End character.
 		 */
 		void receiveData (std::istringstream **_is, int wtime, char end_char);
+
+		virtual void postEvent (Rts2Event * event);
+
+	private:
+		const char *hostname;
+		int port;
+
+		bool debug;
+
+		bool checkBufferForChar (std::istringstream **_is, char end_char);
+	
+	protected:
+		virtual void connectionError (int last_data_size);
 };
 
 };

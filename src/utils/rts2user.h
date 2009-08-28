@@ -31,14 +31,10 @@ class Rts2ConnUser
 {
 	private:
 		int centralId;
-		int priority;
-		char havePriority;
 		char login[DEVICE_NAME_SIZE];
 	public:
-		Rts2ConnUser (int in_centralId, int in_priority, char in_priority_have,
-			const char *in_login);
+		Rts2ConnUser (int in_centralId, const char *in_login);
 		virtual ~ Rts2ConnUser (void);
-		int update (int in_centralId, int new_priority, char new_priority_have,
-			const char *new_login);
+		int update (int in_centralId, const char *new_login);
 };
 #endif							 /* !__RTS2_CONN_USER__ */

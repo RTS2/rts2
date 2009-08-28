@@ -475,21 +475,21 @@ OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (om_radec, "MO", "[arcmin] target pointing correction", true, RTS2_DT_DEGREES);
+		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
 
-		createValue (modelP, "doff", "[arcmin] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "hoff", "[arcmin] model declination encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "hoff", "[deg] model declination encoder offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "me", "[arcmin] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "me", "[deg] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ma", "[arcmin] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ma", "[deg] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "nphd", "[arcmin] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "nphd", "[deg] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ch", "[arcmin] model east-west colimation error", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ch", "[deg] model east-west colimation error", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "[arcmin] model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
 	}
 	else if (config_mount == "AZ-ZD")
@@ -508,19 +508,19 @@ OpenTPL::initValues ()
 
 		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
 
-		createValue (modelP, "aoff", "model azimuth offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "zoff", "model zenith offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "zoff", "[deg] model zenith offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ae", "azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ae", "[deg] azimuth equator? offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "an", "azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "an", "[deg] azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "npae", "not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "npae", "[deg] not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ca", "model ca parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ca", "[deg] model ca parameter", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
 		modelParams.push_back (modelP);
 	}
 	else
@@ -865,18 +865,6 @@ OpenTPL::idle ()
 	checkErrors ();
 	if (cover)
 		checkCover ();
-	if (opentplConn->getConnState () == CONN_DELETE)
-	{
-		try
-		{
-			opentplConn->init ();
-		}
-		catch (rts2core::ConnError er)
-		{
-			logStream (MESSAGE_ERROR) << "cannot reinit connection to telescope " << er << sendLog;
-			sleep (5);
-		}
-	}
 	return Telescope::idle ();
 }
 

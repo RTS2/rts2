@@ -152,6 +152,8 @@ class Paramount:public GEM
 		Rts2ValueInteger *statusRa;
 		Rts2ValueInteger *statusDec;
 
+		Rts2ValueBool *tracking;
+
 		CWORD32 park_axis[2];
 
 		int checkRetAxis (const MKS3Id & axis, int reta);
@@ -184,6 +186,8 @@ class Paramount:public GEM
 		virtual int processOption (int in_opt);
 		virtual int isMoving ();
 		virtual int isParking ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int updateLimits ();
 
@@ -438,6 +442,9 @@ Paramount::updateLimits ()
 Paramount::Paramount (int in_argc, char **in_argv)
 :GEM (in_argc, in_argv)
 {
+	createValue (tracking, "tracking", "if RA worm is enabled", false);
+	tracking->setValueBool (true);
+
 	createValue (axRa, "AXRA", "RA axis count", true);
 	createValue (axDec, "AXDEC", "DEC axis count", true);
 
@@ -1121,6 +1128,21 @@ Paramount::isParking ()
 	return -2;
 }
 
+
+int
+Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == tracking)
+	{
+		if (((Rts2ValueBool * ) newValue)->getValueBool () == true)
+			MKS3MotorOn (axis0);
+		else
+			MKS3MotorOff (axis0);
+		return 0;
+
+	}
+	return Telescope::setValue (oldValue, newValue);
+}
 
 int
 Paramount::endPark ()

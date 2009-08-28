@@ -43,6 +43,23 @@ using namespace rts2dome;
 // how many times to try to reclose dome
 #define FRAM_RECLOSING_MAX      3
 
+#define OPT_WDC_DEV		OPT_LOCAL + 130
+#define OPT_WDC_TIMEOUT		OPT_LOCAL + 131
+#define OPT_EXTRA_SWITCH	OPT_LOCAL + 132
+
+
+typedef enum
+{
+	SWITCH_BATBACK,
+	SPINAC_2,
+	SPINAC_3,
+	SPINAC_4,
+	PLUG_PHOTOMETER,
+	PLUG_2,
+	PLUG_3,
+	PLUG_4
+} extraOuts;
+
 typedef enum
 {
 	VENTIL_OTEVIRANI_LEVY,      // PORT_B, 1
@@ -71,11 +88,30 @@ class Fram:public Ford
 		Rts2ConnSerial *wdcConn;
 		char *wdc_file;
 
-		Rts2ValueInteger *sw_state;
+		rts2core::FordConn *extraSwitch;
+		
+		char *extraSwitchFile;
+
 		Rts2ValueDouble *wdcTimeOut;
 		Rts2ValueDouble *wdcTemperature;
 
-		int reclosing_num;
+		Rts2ValueBool *swOpenLeft;
+		Rts2ValueBool *swCloseLeft;
+		Rts2ValueBool *swCloseRight;
+		Rts2ValueBool *swOpenRight;
+
+		Rts2ValueBool *valveOpenLeft;
+		Rts2ValueBool *valveCloseLeft;
+		Rts2ValueBool *valveOpenRight;
+		Rts2ValueBool *valveCloseRight;
+
+		Rts2ValueInteger *reclosing_num;
+
+		Rts2ValueBool *switchBatBack;
+		Rts2ValueBool *plug_photometer;
+		Rts2ValueBool *plug2;
+		Rts2ValueBool *plug3;
+		Rts2ValueBool *plug4;
 
 		int zjisti_stav_portu_rep ();
 
@@ -123,8 +159,6 @@ class Fram:public Ford
 		int closingNum;
 		int lastClosingNum;
 
-		bool sendContFailMail;
-
 		int openWDC ();
 		void closeWDC ();
 
@@ -142,11 +176,15 @@ class Fram:public Ford
 			MOVE_RECLOSE_RIGHT_WAIT, MOVE_RECLOSE_LEFT_WAIT
 		} movingState;
 
+		int setValueSwitch (int sw, bool new_state);
+
 	protected:
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
 		virtual int idle ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int startOpen ();
 		virtual long isOpened ();
@@ -159,8 +197,6 @@ class Fram:public Ford
 		Fram (int argc, char **argv);
 		virtual ~Fram (void);
 		virtual int info ();
-
-		int sendFramMail (const char *subject);
 };
 
 }
@@ -399,6 +435,8 @@ Fram::openRightMove ()
 int
 Fram::closeRightMove ()
 {
+	if (extraSwitch)
+		extraSwitch->ZAP (SWITCH_BATBACK);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing right door" << sendLog;
@@ -413,6 +451,8 @@ Fram::closeLeftMove ()
 {
 	VYP (VENTIL_AKTIVACNI);
 	VYP (VENTIL_ZAVIRANI_PRAVY);
+	if (extraSwitch)
+		extraSwitch->ZAP (SWITCH_BATBACK);
 	ZAP (KOMPRESOR);
 	sleep (1);
 	logStream (MESSAGE_DEBUG) << "closing left door" << sendLog;
@@ -469,6 +509,8 @@ int
 Fram::stopMove ()
 {
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
+	if (extraSwitch)
+		extraSwitch->VYP (SWITCH_BATBACK);
 	movingState = MOVE_NONE;
 	return 0;
 }
@@ -550,14 +592,9 @@ Fram::endOpen ()
 	ret = zjisti_stav_portu_rep ();	 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
 	if (!ret && isOn (KONCAK_OTEVRENI_PRAVY) && isOn (KONCAK_OTEVRENI_LEVY) &&
 		!isOn (KONCAK_ZAVRENI_PRAVY) && !isOn (KONCAK_ZAVRENI_LEVY))
-	{
-		sendFramMail ("FRAM dome opened");
-	}
-	else
-	{
-		sendFramMail ("WARNING FRAM dome opened with wrong end swithes status");
-	}
-	return 0;
+		return 0;
+	// incorrect state -> error
+	return -1;
 }
 
 
@@ -579,14 +616,8 @@ Fram::startClose ()
 	if (zjisti_stav_portu_rep () == -1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read from port at close!" << sendLog;
-		if (!sendContFailMail)
-		{
-			sendFramMail ("ERROR FRAM DOME CANNOT BE CLOSED DUE TO ROOF CONTROLLER FAILURE!!");
-			sendContFailMail = true;
-		}
 		return -1;
 	}
-	sendContFailMail = false;
 	if (movingState != MOVE_NONE)
 	{
 		stopMove ();
@@ -607,7 +638,6 @@ Fram::startClose ()
 	{
 		logStream (MESSAGE_WARNING) <<
 			"max closing retry reached, do not try closing again" << sendLog;
-		sendFramMail ("FRAM WARNING - !!max closing retry reached!!");
 		return -1;
 	}
 
@@ -620,7 +650,7 @@ Fram::startClose ()
 		closeLeft ();
 	}
 	closingNum++;
-	reclosing_num = 0;
+	reclosing_num->setValueInteger (0);
 	return 0;
 }
 
@@ -635,7 +665,7 @@ Fram::isClosed ()
 		case MOVE_CLOSE_RIGHT_WAIT:
 			if (checkMotorTimeout ())
 			{
-				if (reclosing_num >= FRAM_RECLOSING_MAX)
+				if (reclosing_num->getValueInteger () >= FRAM_RECLOSING_MAX)
 				{
 					// reclosing number exceeded, move to next door
 					movingState = MOVE_CLOSE_LEFT;
@@ -658,7 +688,7 @@ Fram::isClosed ()
 		case MOVE_CLOSE_LEFT_WAIT:
 			if (checkMotorTimeout ())
 			{
-				if (reclosing_num >= FRAM_RECLOSING_MAX)
+				if (reclosing_num->getValueInteger () >= FRAM_RECLOSING_MAX)
 				{
 					return -2;
 				}
@@ -676,7 +706,7 @@ Fram::isClosed ()
 		case MOVE_RECLOSE_RIGHT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_PRAVY) || checkMotorTimeout ()))
 				break;
-			reclosing_num++;
+			reclosing_num->inc ();
 			VYP (VENTIL_AKTIVACNI);
 			VYP (VENTIL_OTEVIRANI_PRAVY);
 			closeRight ();
@@ -684,7 +714,7 @@ Fram::isClosed ()
 		case MOVE_RECLOSE_LEFT_WAIT:
 			if (!(isOn (KONCAK_OTEVRENI_LEVY) || checkMotorTimeout ()))
 				break;
-			reclosing_num++;
+			reclosing_num->inc ();
 			VYP (VENTIL_AKTIVACNI);
 			VYP (VENTIL_OTEVIRANI_LEVY);
 			closeLeft ();
@@ -711,18 +741,13 @@ Fram::endClose ()
 	time (&lastClosing);
 	if (closingNum != lastClosingNum)
 	{
+		lastClosingNum = closingNum;
 		if (!ret && !isOn (KONCAK_OTEVRENI_PRAVY)
 			&& !isOn (KONCAK_OTEVRENI_LEVY)
 			&& isOn (KONCAK_ZAVRENI_PRAVY)
 			&& isOn (KONCAK_ZAVRENI_LEVY))
-		{
-			sendFramMail ("FRAM dome closed");
-		}
-		else
-		{
-			sendFramMail ("WARNING FRAM dome closed with wrong end switches state");
-		}
-		lastClosingNum = closingNum;
+			return 0;
+		return -1;
 	}
 	return 0;
 }
@@ -733,11 +758,14 @@ Fram::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'w':
+		case OPT_WDC_DEV:
 			wdc_file = optarg;
 			break;
-		case 't':
+		case OPT_WDC_TIMEOUT:
 			wdcTimeOut->setValueDouble (atof (optarg));
+			break;
+		case OPT_EXTRA_SWITCH:
+			extraSwitchFile = optarg;
 			break;
 		default:
 			return Ford::processOption (in_opt);
@@ -753,6 +781,26 @@ Fram::init ()
 	if (ret)
 		return ret;
 
+	if (extraSwitchFile)
+	{
+		extraSwitch = new rts2core::FordConn (extraSwitchFile, this, BS9600, C8, NONE, 40);
+		ret = extraSwitch->init ();
+		if (ret)
+			return ret;
+
+		extraSwitch->VYP (SWITCH_BATBACK);
+
+		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
+		switchBatBack->setValueBool (false);
+
+		createValue (plug_photometer, "plug_photometer", "1st plug", false);
+		extraSwitch->ZAP (PLUG_PHOTOMETER);
+		plug_photometer->setValueBool (true);
+
+		createValue (plug2, "plug_2", "2nd plug", false);
+		createValue (plug3, "plug_3", "3rd plug", false);
+		createValue (plug4, "plug_4", "4th plug", false);
+	}
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
 
 	movingState = MOVE_NONE;
@@ -782,8 +830,6 @@ Fram::init ()
 		domeCloseStart ();
 	}
 		
-	sendFramMail ("FRAM DOME restart");
-
 	return 0;
 }
 
@@ -797,11 +843,59 @@ Fram::idle ()
 	return Ford::idle ();
 }
 
+int
+Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == switchBatBack)
+	{
+		return setValueSwitch (SWITCH_BATBACK, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
+	if (oldValue == plug_photometer)
+	{
+		return setValueSwitch (PLUG_PHOTOMETER, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
+	if (oldValue == plug2)
+	{
+		return setValueSwitch (PLUG_2, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
+	if (oldValue == plug3)
+	{
+		return setValueSwitch (PLUG_3, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
+	if (oldValue == plug4)
+	{
+		return setValueSwitch (PLUG_4, ((Rts2ValueBool *) newValue)->getValueBool ());
+	}
+	return Ford::setValue (oldValue, newValue);
+}
+
+
+int
+Fram::setValueSwitch (int sw, bool new_state)
+{
+	if (new_state == true)
+	{
+		return extraSwitch->ZAP (sw) == 0 ? 0 : -2;
+	}
+	return extraSwitch->VYP (sw) == 0 ? 0 : -2;
+}
+
 
 Fram::Fram (int argc, char **argv)
 :Ford (argc, argv)
 {
-	createValue (sw_state, "sw_state", "state of the switches", false, RTS2_DT_HEX);
+	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
+	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
+	createValue (swCloseRight, "sw_close_right", "state of right close switch", false);
+	createValue (swOpenRight, "sw_open_right", "state of right open switch", false);
+
+	createValue (valveOpenLeft, "valve_open_left", "state of left opening valve", false);
+	createValue (valveCloseLeft, "valve_close_left", "state of left closing valve", false);
+	createValue (valveOpenRight, "valve_open_right", "state of right opening valve", false);
+	createValue (valveCloseRight, "valve_close_right", "state of right closing valve", false);
+
+	createValue (reclosing_num, "reclosing_num", "number of reclosing attempts", false);
+
 	createValue (wdcTimeOut, "watchdog_timeout", "timeout of the watchdog card (in seconds)", false);
 	wdcTimeOut->setValueDouble (30.0);
 
@@ -810,16 +904,23 @@ Fram::Fram (int argc, char **argv)
 	wdc_file = NULL;
 	wdcConn = NULL;
 
+	extraSwitchFile = NULL;
+	extraSwitch = NULL;
+
+	plug_photometer = NULL;
+	plug2 = NULL;
+	plug3 = NULL;
+	plug4 = NULL;
+
 	movingState = MOVE_NONE;
 
 	lastClosing = 0;
 	closingNum = 0;
 	lastClosingNum = -1;
 
-	sendContFailMail = false;
-
-	addOption ('w', "wdc_file", 1, "/dev file with watch-dog card");
-	addOption ('t', "wdc_timeout", 1, "WDC timeout (default to 30 seconds");
+	addOption (OPT_WDC_DEV, "wdc-dev", 1, "/dev file with watch-dog card");
+	addOption (OPT_WDC_TIMEOUT, "wdc-timeout", 1, "WDC timeout (default to 30 seconds)");
+	addOption (OPT_EXTRA_SWITCH, "extra-switch", 1, "/dev entery for extra switches, handling baterry etc..");
 }
 
 
@@ -839,36 +940,15 @@ Fram::info ()
 	ret = zjisti_stav_portu_rep ();
 	if (ret)
 		return -1;
-	sw_state->setValueInteger (getPortState (KONCAK_OTEVRENI_PRAVY));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_OTEVRENI_LEVY) << 1));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_ZAVRENI_PRAVY) << 2));
-	sw_state->setValueInteger (sw_state->getValueInteger () | (getPortState (KONCAK_ZAVRENI_LEVY) << 3));
+	swOpenRight->setValueBool (getPortState (KONCAK_OTEVRENI_PRAVY));
+	swOpenLeft->setValueBool (getPortState (KONCAK_OTEVRENI_LEVY));
+	swCloseRight->setValueBool(getPortState (KONCAK_ZAVRENI_PRAVY));
+	swCloseLeft->setValueBool(getPortState (KONCAK_ZAVRENI_LEVY));
 	if (wdcConn > 0)
 	{
 	  	wdcTemperature->setValueDouble (getWDCTemp (2));
 	}
 	return Ford::info ();
-}
-
-
-int
-Fram::sendFramMail (const char *subject)
-{
-	int ret;
-	ret = zjisti_stav_portu_rep ();
-	std::ostringstream _os;
-	_os << subject << std::endl
-		<< "End switch status:" << std::endl
-		<< "CLOSE SWITCH RIGHT: " << isOnString (KONCAK_ZAVRENI_PRAVY)
-		<< "CLOSE SWITCH LEFT: " << isOnString (KONCAK_ZAVRENI_LEVY) << std::endl
-		<< "OPEN SWITCH RIGHT: " << isOnString (KONCAK_OTEVRENI_PRAVY)
-		<< "OPEN SWITCH LEFT: " << isOnString (KONCAK_OTEVRENI_LEVY) << std::endl
-		<< "Weather::isGoodWeather " << isGoodWeather () << std::endl
-		<< "port state: " << ret << std::endl
-		<< "closingNum: " << closingNum
-		<< "lastClosing: " << ctime (&lastClosing);
-	ret = sendMail (subject, _os.str ().c_str ());
-	return ret;
 }
 
 

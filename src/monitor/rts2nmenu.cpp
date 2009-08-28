@@ -1,5 +1,5 @@
-#include "rts2nmenu.h"
 #include "nmonitor.h"
+#include "rts2nmenu.h"
 
 void
 Rts2NAction::draw (WINDOW * master_window, int y)

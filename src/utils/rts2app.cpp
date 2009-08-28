@@ -202,7 +202,7 @@ Rts2App::helpOptions ()
 void
 Rts2App::usage()
 {
-	std::cout << "\tUsage pattern not defined, please add feature request for missing usage pattern to http://www.sf.net/projects/rts-2" << std::endl;
+	std::cout << "\tUsage pattern not defined, please add feature request for missing usage pattern to http://www.rts2.org/featreq" << std::endl;
 }
 
 
@@ -468,44 +468,6 @@ Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
 	Rts2LogStream ls (this, in_messageType);
 	return ls;
-}
-
-
-int
-Rts2App::sendMailTo (const char *subject, const char *text,
-const char *in_mailAddress)
-{
-	int ret;
-	FILE *mailFile;
-
-	// fork so we will not inhibit calling process..
-	ret = fork ();
-	if (ret == -1)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2Block::sendMail fork: " <<
-			strerror (errno) << sendLog;
-		return -1;
-	}
-	if (ret != 0)
-	{
-		return 0;
-	}
-	forkedInstance ();
-	std::string cmd_s = std::string ("/usr/bin/mail -s '")
-		+ std::string (subject)
-		+ std::string ("' '")
-		+ std::string (in_mailAddress)
-		+ std::string ("'");
-	mailFile = popen (cmd_s.c_str (), "w");
-	if (!mailFile)
-	{
-		logStream (MESSAGE_ERROR) << "Rts2Block::sendMail popen: " <<
-			strerror (errno) << sendLog;
-		exit (0);
-	}
-	fprintf (mailFile, "%s", text);
-	pclose (mailFile);
-	exit (0);
 }
 
 

@@ -419,6 +419,22 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		nbeg = get_norm_hour (n_rst.set);
 		nend = get_norm_hour (n_rst.rise);
 
+		if (nbeg < sset || sset > rise)
+		{
+			sset -= 24.0;
+			nbeg -= 24.0;
+		}
+
+		if (nbeg < sset)
+		{
+			nbeg += 24.0;
+		}
+
+		if (rise < nend)
+		{
+			rise += 24.0;
+		}
+
 		if (printGNUplot & GNUPLOT_FULL_DAY)
 		{
 			gbeg = get_norm_hour (t_rst.transit) - 12.0;
@@ -428,12 +444,6 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		{
 			gbeg = sset - 1.0;
 			gend = rise + 1.0;
-		}
-
-		if (nbeg < sset || sset > rise)
-		{
-			sset -= 24.0;
-			nbeg -= 24.0;
 		}
 
 		old_fill = std::cout.fill ('0');
@@ -548,18 +558,17 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 			Rts2TargetSet calibSet = Rts2TargetSet (obs, false);
 			for (iter = set.begin (); iter != set.end (); iter++)
 			{
-				target = *iter;
+				target = (*iter).second;
 				Rts2TargetSet *addS = target->getCalTargets ();
-				calibSet.merge (*addS);
-				addS->clear ();
+				calibSet.addSet (*addS);
 				delete addS;
 			}
-			set.merge (calibSet);
+			set.addSet (calibSet);
 		}
 
 		for (iter = set.begin (); iter != set.end (); iter++)
 		{
-			target = *iter;
+			target = (*iter).second;
 			if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 			{
 				if (iter != set.begin () || addMoon || addHorizon)
@@ -616,7 +625,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 			for (double i = gbeg; i <= gend; i += step)
 			{
 				double jd = jd_start + i / 24.0;
-				(*(set.begin ()))->getAltAz (&hor, jd);
+				((*(set.begin ())).second)->getAltAz (&hor, jd);
 				std::cout
 					<< i << " "
 					<< Rts2Config::instance ()->getObjectChecker ()->
@@ -628,7 +637,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 
 	for (iter = set.begin (); iter != set.end (); iter++)
 	{
-		target = *iter;
+		target = (*iter).second;
 		if (printDS9)
 		{
 			printTargetInfoDS9 ();

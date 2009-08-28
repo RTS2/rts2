@@ -18,8 +18,7 @@
  */
 
 #include "rts2conngrb.h"
-
-#include "rts2grbexecconn.h"
+#include "../utils/connfork.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -1006,9 +1005,18 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	if (addExe)
 	{
 		int execRet;
-		Rts2GrbExecConn *execConn = new Rts2GrbExecConn (master, addExe, d_tar_id,
-			grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, grb_date,
-			grb_errorbox, grb_isnew);
+		rts2core::ConnFork *execConn = new rts2core::ConnFork (master, addExe, false, 100);
+
+		execConn->addArg (d_tar_id);
+		execConn->addArg (grb_id);
+		execConn->addArg (grb_seqn);
+		execConn->addArg (grb_type);
+		execConn->addArg (grb_ra);
+		execConn->addArg (grb_dec);
+		execConn->addArg (grb_is_grb);
+		execConn->addArg (*grb_date);
+		execConn->addArg (grb_errorbox);
+		execConn->addArg (grb_isnew);
 
 		execRet = execConn->init ();
 		if (execRet < 0)
@@ -1021,7 +1029,13 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		}
 	}
 
-	setLastTarget (d_tar_name.arr, d_grb_update);
+	delete[] last_target;
+	last_target = new char[d_tar_name.len + 1];
+	strcpy (last_target, d_tar_name.arr);
+	last_target_time = d_grb_update;
+
+	last_ra = d_grb_ra;
+	last_dec = d_grb_dec;
 
 	return ret;
 }
@@ -1179,6 +1193,9 @@ in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):R
 	deltaValue = 0;
 	last_target = NULL;
 	last_target_time = -1;
+
+	last_ra = nan ("f");
+	last_dec = nan ("f");
 
 	do_hete_test = in_do_hete_test;
 
@@ -1566,21 +1583,4 @@ char*
 Rts2ConnGrb::lastTarget ()
 {
 	return last_target;
-}
-
-
-void
-Rts2ConnGrb::setLastTarget (char *in_last_target, double in_last_target_time)
-{
-	delete[] last_target;
-	last_target = new char[strlen (in_last_target) + 1];
-	strcpy (last_target, in_last_target);
-	last_target_time = in_last_target_time;
-}
-
-
-double
-Rts2ConnGrb::lastTargetTime ()
-{
-	return last_target_time;
 }

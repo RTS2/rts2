@@ -38,10 +38,11 @@ namespace XmlRpc
 			static const char FAULT_TAG[];
 
 			//! Construct a client to connect to the server at the specified host:port address
-			//!  @param host The name of the remote machine hosting the server
-			//!  @param port The port on the remote machine where the server is listening
-			//!  @param uri  An optional string to be sent as the URI in the HTTP GET header
-			XmlRpcClient(const char* host, int port, const char* uri=0);
+			//!  @param host           The name of the remote machine hosting the server
+			//!  @param port           The port on the remote machine where the server is listening
+			//!  @param authorizationa Authorization string (ussually <username>:<password>)
+			//!  @param uri            An optional string to be sent as the URI in the HTTP GET header
+			XmlRpcClient(const char *host, int port, const char *authorization=NULL, const char *uri=NULL);
 
 			//! Destructor
 			virtual ~XmlRpcClient();
@@ -88,6 +89,7 @@ namespace XmlRpc
 
 			// Server location
 			std::string _host;
+			std::string _authorization;
 			std::string _uri;
 			int _port;
 

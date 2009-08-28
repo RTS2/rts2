@@ -2,17 +2,29 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
-	rts2-sensor-cloud4
+	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 
 
-noinst_HEADERS = sensord.h sensorgpib.h davisudp.h fram-weather.h framudp.h davis.h
+noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h
 
 EXTRA_DIST = 
 
 noinst_LIBRARIES = librts2sensord.a
 
+if GPIBLIB
+
+librts2sensord_a_SOURCES = sensord.cpp sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
+
+else
+
 librts2sensord_a_SOURCES = sensord.cpp
 
-LDADD = librts2sensord.a ../utils/librts2block.a
+EXTRA_DIST += sensorgpib.cpp conngpib.cpp conngpiblinux.cpp conngpibenet.cpp
+
+endif
+
+
+LDADD = librts2sensord.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_sensor_dummy_SOURCES = dummy.cpp
 
@@ -33,7 +45,6 @@ rts2_sensor_pixy_SOURCES = pixy.cpp
 rts2_sensor_davis_SOURCES = davis.cpp davisudp.cpp
 
 rts2_sensor_fram_weather_SOURCES = fram-weather.cpp framudp.cpp
-rts2_sensor_fram_weather_LDADD = ${LDADD} @LIB_NOVA@
 
 rts2_sensor_bart_rain_SOURCES = bart-rain.cpp
 
@@ -46,6 +57,10 @@ rts2_sensor_system_SOURCES = system.cpp
 rts2_sensor_apcups_SOURCES = apcups.cpp
 
 rts2_sensor_nut_SOURCES = nut.cpp
+
+rts2_sensor_brooks_356_SOURCES = brooks-356.cpp
+
+rts2_sensor_bootes1_SOURCES = bootes1.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-sensor-bootes2
@@ -60,20 +75,22 @@ endif
 
 if GPIBLIB
 
-bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-6485 \
-	rts2-sensor-keithley-487
+LDADD += @LIB_GPIB@
 
-LDADD += sensorgpib.o @LIB_GPIB@
+bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
+	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
-rts2_sensor_keithley_6485_SOURCES = keithley-6485.cpp
+rts2_sensor_keithley_scpi_SOURCES = keithley-scpi.cpp
 
 rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
+rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
+
 else
 
-EXTRA_DIST += sensorgpib.cpp cryocon.cpp keithley-6485.cpp keithley-487.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp
 
 endif
 

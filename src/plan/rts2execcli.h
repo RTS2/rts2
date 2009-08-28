@@ -52,7 +52,6 @@
 #define EVENT_CORRECTING_OK                RTS2_LOCAL_EVENT+66
 
 #define EVENT_SCRIPT_RUNNING_QUESTION      RTS2_LOCAL_EVENT+67
-#define EVENT_SCRIPT_NUMBER                RTS2_LOCAL_EVENT+68
 
 class GuidingParams
 {

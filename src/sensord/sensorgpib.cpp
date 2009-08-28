@@ -19,99 +19,29 @@
 
 #include "sensorgpib.h"
 
+#include "conngpiblinux.h"
+#include "conngpibenet.h"
+
 using namespace rts2sensord;
 
-int
-Gpib::gpibWrite (const char *buf)
+void Gpib::writeValue (const char *name, Rts2Value *value)
 {
-	int ret;
-	ret = ibwrt (gpib_dev, buf, strlen (buf));
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "write " << buf << sendLog;
-	#endif
-	if (ret & ERR)
+	std::ostringstream _os;
+	_os << name << " ";
+	switch (value->getValueType ())
 	{
-		logStream (MESSAGE_ERROR) << "error writing " << buf << sendLog;
-		return -1;
+		case RTS2_VALUE_BOOL:
+			_os << (((Rts2ValueBool *) value)->getValueBool () ? "ON" : "OFF");
+			break;
+		default:
+			_os << value->getDisplayValue ();
 	}
-	return 0;
+	gpibWrite (_os.str ().c_str ());
 }
 
-
-int
-Gpib::gpibRead (void *buf, int blen)
+int Gpib::processOption (int _opt)
 {
-	int ret;
-	ret = ibrd (gpib_dev, buf, blen);
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading " << buf << " " << ret <<
-			sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) buf
-		<< "' ret " << ret << sendLog;
-	#endif
-	return 0;
-}
-
-
-int
-Gpib::gpibWriteRead (const char *buf, char *val, int blen)
-{
-	int ret;
-	ret = ibwrt (gpib_dev, buf, strlen (buf));
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error writing " << buf << " " << ret <<
-			sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << buf <<
-		" ret " << ret << sendLog;
-	#endif
-	*val = '\0';
-	ret = ibrd (gpib_dev, val, blen);
-	val[ibcnt] = '\0';
-	if (ret & ERR)
-	{
-		logStream (MESSAGE_ERROR) << "error reading reply from " << buf <<
-			", readed " << val << " " << ret << sendLog;
-		return -1;
-	}
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << val <<
-		" ret " << ret << sendLog;
-	#endif
-	return 0;
-}
-
-
-int
-Gpib::gpibWaitSRQ ()
-{
-	int ret;
-	short res;
-	while (true)
-	{
-		ret = iblines (gpib_dev, &res);
-		if (ret & ERR)
-		{
-			logStream (MESSAGE_ERROR) << "Error while waiting for SRQ " << ret
-				<< sendLog;
-		}
-		if (res & BusSRQ)
-			return 0;
-	}
-}
-
-
-int
-Gpib::processOption (int in_opt)
-{
-	switch (in_opt)
+	switch (_opt)
 	{
 		case 'm':
 			minor = atoi (optarg);
@@ -119,46 +49,71 @@ Gpib::processOption (int in_opt)
 		case 'p':
 			pad = atoi (optarg);
 			break;
+		case 'n':
+			enet_addr = new HostString (optarg, "5000");
+			break;
 		default:
-			return Rts2DevSensor::processOption (in_opt);
+			return Sensor::processOption (_opt);
 	}
 	return 0;
 }
 
 
-int
-Gpib::init ()
+int Gpib::init ()
 {
 	int ret;
-	ret = Rts2DevSensor::init ();
+	ret = Sensor::init ();
 	if (ret)
 		return ret;
 
-	gpib_dev = ibdev (minor, pad, 0, T3s, 1, 0);
-	if (gpib_dev < 0)
+	// create connGpin
+	if (enet_addr != NULL)
 	{
-		logStream (MESSAGE_ERROR) << "cannot init GPIB device on minor " <<
-			minor << ", pad " << pad << sendLog;
+		if (pad < 0)
+		{
+			std::cerr << "unknown pad number" << std::endl;
+			return -1;
+		}
+		connGpib = new ConnGpibEnet (this, enet_addr->getHostname (), enet_addr->getPort (), pad);
+	}
+	else if (pad >= 0)
+	{
+		connGpib = new ConnGpibLinux (minor, pad);
+	}
+	// enet
+	else
+	{
+		std::cerr << "Device connection was not specified, exiting" << std::endl;
+	}
+
+	try
+	{
+		connGpib->initGpib ();
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
 
-Gpib::Gpib (int argc, char **argv):Rts2DevSensor (argc, argv)
+Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 {
-	gpib_dev = -1;
-
 	minor = 0;
-	pad = 0;
+	pad = -1;
+	enet_addr = NULL;
 
-	addOption ('m', "minor", 1, "board number (default to 0)");
-	addOption ('p', "pad", 1, "device number (counted from 0, not from 1)");
+	connGpib = NULL;
+
+	addOption ('m', NULL, 1, "board number (default to 0)");
+	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
+	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
 }
 
 
 Gpib::~Gpib (void)
 {
-	ibclr (gpib_dev);
-	ibonl (gpib_dev, 0);
+	delete connGpib;
 }

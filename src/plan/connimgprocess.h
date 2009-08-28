@@ -20,7 +20,7 @@
 #ifndef __RTS2CONNIMGPROCESS__
 #define __RTS2CONNIMGPROCESS__
 
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 #include "../writers/rts2imagedb.h"
 #include "../utilsdb/rts2obs.h"
 
@@ -28,10 +28,10 @@ namespace rts2plan
 {
 
 typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, MORNING, DARK, FLAT }
+{ NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT }
 astrometry_stat_t;
 
-class ConnProcess:public Rts2ConnFork
+class ConnProcess:public rts2core::ConnFork
 {
 	protected:
 		astrometry_stat_t astrometryStat;
@@ -64,7 +64,6 @@ class ConnImgProcess:public ConnProcess
 		double ra, dec, ra_err, dec_err;
 
 #ifdef HAVE_PGSQL
-		void sendOKMail (Rts2ImageDb * image);
 		void sendProcEndMail (Rts2ImageDb * image);
 #else
 		void sendOKMail (Rts2Image * image)

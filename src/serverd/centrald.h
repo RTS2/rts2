@@ -141,6 +141,8 @@ class Rts2Centrald:public Rts2Daemon
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 
+		virtual void signaledHUP ();
+
 	public:
 		Rts2Centrald (int argc, char **argv);
 		virtual ~ Rts2Centrald (void);
@@ -148,16 +150,6 @@ class Rts2Centrald:public Rts2Daemon
 		virtual int idle ();
 
 		virtual void deviceReady (Rts2Conn * conn);
-
-		/**
-		 * Made priority update, distribute messages to devices
-		 * about priority update.
-		 *
-		 * @param timeout	time to wait for priority change..
-		 *
-		 * @return 0 on success, -1 and set errno otherwise
-		 */
-		int changePriority (time_t timeout);
 
 		/**
 		 * Switch centrald state to ON.
@@ -199,11 +191,6 @@ class Rts2Centrald:public Rts2Daemon
 			return changeState (SERVERD_SOFT_OFF, user);
 		}
 
-		inline int getPriorityClient ()
-		{
-			return priority_client;
-		}
-
 		virtual Rts2Conn *createConnection (int in_sock);
 		void connAdded (Rts2ConnCentrald * added);
 
@@ -221,9 +208,6 @@ class Rts2Centrald:public Rts2Daemon
 			const char *in_messageString);
 
 		virtual void message (Rts2Message & msg);
-
-
-		virtual void signaledHUP ();
 
 		/**
 		 * Called when conditions which determines weather state changed.

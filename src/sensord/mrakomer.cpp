@@ -21,6 +21,9 @@
 
 #include "../utils/rts2connserial.h"
 
+#define OPT_HEAT_ON     OPT_LOCAL + 343
+#define OPT_HEAT_DUR    OPT_LOCAL + 344
+
 namespace rts2sensord
 {
 
@@ -123,10 +126,16 @@ Mrakomer::processOption (int in_opt)
 			device_file = optarg;
 			break;
 		case 'b':
-			triggerBad->setValueDouble (atof (optarg));
+			triggerBad->setValueCharArr (optarg);
 			break;
 		case 'g':
-			triggerGood->setValueDouble (atof (optarg));
+			triggerGood->setValueCharArr (optarg);
+			break;
+		case OPT_HEAT_ON:
+			heatInterval->setValueCharArr (optarg);
+			break;
+		case OPT_HEAT_DUR:
+			heatDuration->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
@@ -257,7 +266,7 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference", true);
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
-	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
+	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
 
 	createValue (numVal, "num_stat", "number of measurements for weather statistic", false);
 	numVal->setValueInteger (20);
@@ -286,7 +295,10 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
 
-	setTimeout (20);
+	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
+	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
+
+	setIdleInfoInterval (20);
 }
 
 

@@ -49,6 +49,12 @@
 /** Number of images which waits for processing. */
 #define EVENT_NUMBER_OF_IMAGES     18
 
+/** Notification to refresh device information..*/
+#define EVENT_TIMER_INFOALL        19
+
+/** Reconnect for TCP connections. */
+#define EVENT_TCP_RECONECT_TIMER   20
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 
@@ -66,6 +72,7 @@
 // rts2devclifocuser.h     750-799
 // rts2loggerbase.h        800-849
 // rts2soapclient.h       1000-1200
+// telds                  1200-1250
 
 /**
  * Event class.

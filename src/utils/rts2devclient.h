@@ -42,11 +42,7 @@ class Rts2DevClient:public Rts2Object
 		int failedCount;
 	protected:
 		Rts2Conn * connection;
-		enum
-		{ NOT_PROCESED, PROCESED }
-		processedBaseInfo;
-		virtual void getPriority ();
-		virtual void lostPriority ();
+		enum { NOT_PROCESED, PROCESED } processedBaseInfo;
 		virtual void died ();
 		enum
 		{						 // if we wait for something..
@@ -72,15 +68,6 @@ class Rts2DevClient:public Rts2Object
 			failedCount = 0;
 		}
 
-		/**
-		 * Check if the client have priority on this device.
-		 *
-		 * @return True if the client have priority.
-		 */
-		bool havePriority ()
-		{
-			return connection->havePriority ();
-		}
 	public:
 		Rts2DevClient (Rts2Conn * in_connection);
 		virtual ~ Rts2DevClient (void);
@@ -98,7 +85,6 @@ class Rts2DevClient:public Rts2Object
 		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
 
 		virtual void stateChanged (Rts2ServerState * state);
-		void priorityInfo (bool have);
 
 		Rts2Conn *getConnection ()
 		{

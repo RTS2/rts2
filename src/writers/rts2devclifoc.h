@@ -2,7 +2,7 @@
 #define __RTS2_DEVCLIFOC__
 
 #include "rts2devcliimg.h"
-#include "../utils/rts2connfork.h"
+#include "../utils/connfork.h"
 
 #include <fstream>
 #include <vector>
@@ -41,7 +41,7 @@ class Rts2DevClientFocusFoc:public Rts2DevClientFocusImage
 		virtual void postEvent (Rts2Event * event);
 };
 
-class Rts2ConnFocus:public Rts2ConnFork
+class Rts2ConnFocus:public rts2core::ConnFork
 {
 	private:
 		char *img_path;

@@ -64,8 +64,7 @@ class Rts2Daemon:public Rts2Block
 
 		Rts2ValueTime *info_time;
 
-		time_t idleInfoInterval;
-		time_t nextIdleInfo;
+		double idleInfoInterval;
 
 		/**
 		 * Adds value to list of values supported by daemon.
@@ -339,10 +338,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @param _date  Date of the infotime.
 		 */
-		void setInfoTime (struct tm *_date)
-		{
-			setInfoTime (mktime (_date));
-		}
+		void setInfoTime (struct tm *_date);
 
 		/**
 		 * Set infotime from time_t structure.
@@ -385,12 +381,17 @@ class Rts2Daemon:public Rts2Block
 		 * functions to complete daemon initialization.
 		 */
 		void initDaemon ();
-
-		void setIdleInfoInterval (time_t interval)
-		{
-			idleInfoInterval = interval;
-			setTimeoutMin ((long int) interval * USEC_SEC);
-		}
+		
+		/**
+		 * Set timer to send updates every interval seconds. This method is designed to keep user 
+		 * infromed about progress of actions which rapidly changes values read by info call.
+		 *
+		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval 
+		 *   seconds and distribute updates to all connected clients. If <= 0, disables automatic info.
+		 *
+		 * @see info()
+		 */  
+		void setIdleInfoInterval (double interval);
 
 		/**
 		 * Updates info_time to current time.
@@ -399,6 +400,8 @@ class Rts2Daemon:public Rts2Block
 		{
 			info_time->setValueDouble (getNow ());
 		}
+
+		virtual void postEvent (Rts2Event *event);
 
 		virtual void forkedInstance ();
 		virtual void sendMessage (messageType_t in_messageType,
@@ -414,7 +417,7 @@ class Rts2Daemon:public Rts2Block
 		int info (Rts2Conn * conn);
 		int infoAll ();
 		void constInfoAll ();
-		int sendInfo (Rts2Conn * conn);
+		int sendInfo (Rts2Conn * conn, bool forceSend = false);
 
 		int sendMetaInfo (Rts2Conn * conn);
 
@@ -435,6 +438,16 @@ class Rts2Daemon:public Rts2Block
 		 * @param description Text description of state change.
 		 */
 		virtual void stateChanged (int new_state, int old_state, const char *description);
+
+		/**
+		 * Called from idle loop after HUP signal occured.
+		 *
+		 * This is most probably callback you needed for handling HUP signal.
+		 * Handling HUP signal when it occurs can be rather dangerous, as it might
+		 * reloacte memory location - if you read pointer before HUP signal and use
+		 * it after HUP signal, RTS2 does not guarantee that it will be still valid.
+		 */
+		virtual void signaledHUP ();
 	public:
 		/**
 		 * Called when state is changed.
@@ -462,6 +475,19 @@ class Rts2Daemon:public Rts2Block
 		}
 
 		/**
+		 * Call external script on trigger. External script gets in
+		 * enviroment values current RTS2 values as
+		 * RTS2_{device_name}_{value}, and trigger reason as first
+		 * argument. This call creates new connection. Everything
+		 * outputed to standart error will be logged as WARN message.
+		 * Everything outputed to standart output will be logged as
+		 * DEBUG message.
+		 *
+		 * @param reason Trigger name.
+		 */
+		void execTrigger (const char *reason);
+
+		/**
 		 * Get daemon local weather state. Please use isGoodWeather()
 		 * to test for system weather state.
 		 *
@@ -485,15 +511,6 @@ class Rts2Daemon:public Rts2Block
 				maskState (WEATHER_MASK, BAD_WEATHER, "weather set to bad");
 		}
 
-		/**
-		 * Called from idle loop after HUP signal occured.
-		 *
-		 * This is most probably callback you needed for handling HUP signal.
-		 * Handling HUP signal when it occurs can be rather dangerous, as it might
-		 * reloacte memory location - if you read pointer before HUP signal and use
-		 * it after HUP signal, RTS2 does not guarantee that it will be still valid.
-		 */
-		virtual void signaledHUP ();
 		virtual void sigHUP (int sig);
 };
 #endif							 /* ! __RTS2_DAEMON__ */

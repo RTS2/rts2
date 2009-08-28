@@ -1,5 +1,5 @@
-#include "rts2nmsgbox.h"
 #include "nmonitor.h"
+#include "rts2nmsgbox.h"
 
 Rts2NMsgBox::Rts2NMsgBox (const char *in_query, const char *in_buttons[],
 int in_butnum):

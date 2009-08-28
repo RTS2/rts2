@@ -62,7 +62,7 @@ Target::getTargetSubject (std::string &subj)
 void
 Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *master)
 {
-	std::string mails;
+/*	std::string mails;
 
 	int count;
 	// send mails
@@ -85,7 +85,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
 		}
 		os << (*this) << std::endl << *observation;
 		master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
-	}
+	} */
 }
 
 
@@ -283,8 +283,6 @@ Rts2Target ()
 
 	observer = in_obs;
 
-	setEpoch (config->observatoryEpoch ());
-
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
 	observation = NULL;
@@ -310,8 +308,6 @@ Target::Target ()
 	config = Rts2Config::instance ();
 
 	observer = config->getObserver ();
-
-	setEpoch (config->observatoryEpoch ());
 
 	config->getDouble ("observatory", "min_alt", minObsAlt, 0);
 
@@ -495,6 +491,8 @@ Target::save (bool overwrite, int tar_id)
 		long db_tar_bonus_time = *(getTargetBonusTime ());
 		int db_tar_bonus_time_ind;
 		bool db_tar_enabled = getTargetEnabled ();
+		VARCHAR db_tar_info[2000];
+		int db_tar_info_ind;
 	EXEC SQL END DECLARE SECTION;
 	// fill in name and comment..
 	if (getTargetName ())
@@ -538,6 +536,19 @@ Target::save (bool overwrite, int tar_id)
 			db_tar_bonus_time_ind = -1;
 		}
 	}
+	if (getTargetInfo ())
+	{
+		db_tar_info.len = strlen (getTargetInfo ());
+		if (db_tar_info.len > 2000)
+			db_tar_info.len = 2000;
+		strncpy (db_tar_info.arr, getTargetInfo (), db_tar_info.len);
+		db_tar_info_ind = 0;
+	}
+	else
+	{
+		db_tar_info.len = 0;
+		db_tar_info_ind = -1;
+	}
 
 	// try inserting it..
 	EXEC SQL
@@ -551,7 +562,8 @@ Target::save (bool overwrite, int tar_id)
 			tar_bonus,
 			tar_bonus_time,
 			tar_next_observable,
-			tar_enabled
+			tar_enabled,
+			tar_info
 			)
 		VALUES
 			(
@@ -563,7 +575,8 @@ Target::save (bool overwrite, int tar_id)
 			:db_tar_bonus :db_tar_bonus_ind,
 			to_timestamp (:db_tar_bonus_time :db_tar_bonus_time_ind),
 		null,
-			:db_tar_enabled
+			:db_tar_enabled,
+			:db_tar_info :db_tar_info_ind
 			);
 	// insert failed - try update
 	if (sqlca.sqlcode)
@@ -585,7 +598,8 @@ Target::save (bool overwrite, int tar_id)
 				tar_priority = :db_tar_priority,
 				tar_bonus = :db_tar_bonus :db_tar_bonus_ind,
 				tar_bonus_time = to_timestamp(:db_tar_bonus_time :db_tar_bonus_time_ind),
-				tar_enabled = :db_tar_enabled
+				tar_enabled = :db_tar_enabled,
+				tar_info = :db_tar_info :db_tar_info_ind
 			WHERE
 				tar_id = :db_tar_id;
 
@@ -978,27 +992,78 @@ Target::setScript (const char *device_name, const char *buf)
 }
 
 
-int
+void
 Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
-	int ret;
 	struct ln_equ_posn object;
 
-	ret = getPosition (&object, JD);
-	if (ret)
-		return ret;
+	getPosition (&object, JD);
+
 	ln_get_hrz_from_equ (&object, observer, JD, hrz);
-	return 0;
 }
 
 
-int
+void
+Target::getMinMaxAlt (double _start, double _end, double &_min, double &_max)
+{
+	struct ln_equ_posn mid;
+	double midJD = (_start + _end) / 2.0;
+
+  	getPosition (&mid, midJD);
+
+	double absLat = fabs (observer->lat);
+	// change sign if we are on south hemisphere
+	if (observer->lat < 0)
+		mid.dec *= -1;
+
+	// difference of JD is larger then 1, for sure we will get a max and min alt..
+	if ((_end - _start) >= 1.0)
+	{
+		// use midJD to calculate DEC at maximum / minimum
+		// this is not a correct use
+		_min = absLat - 90 + mid.dec;
+		_max = 90 - absLat + mid.dec;
+		return;
+	}
+
+	struct ln_hrz_posn startHrz, endHrz;
+
+	getAltAz (&startHrz, _start);
+	getAltAz (&endHrz, _end);
+
+	_min = (startHrz.alt < endHrz.alt) ? startHrz.alt : endHrz.alt;
+	_max = (startHrz.alt > endHrz.alt) ? startHrz.alt : endHrz.alt;
+
+	// now compute if object is in low or high transit during given interval
+	double midRa = mid.ra;
+	double startLst = ln_range_degrees (ln_get_mean_sidereal_time (_start) * 15.0 + observer->lng);
+	double endLst = ln_range_degrees (ln_get_mean_sidereal_time (_end) * 15.0 + observer->lng);
+
+	if (startLst > endLst)
+	{
+		// arange times so they are ordered
+		endLst += 360.0;
+		if (startLst > midRa)
+			midRa += 360.0;
+	}
+
+	// it culmitaes during given period
+	if (midRa > startLst && midRa < endLst)
+		_max = 90 - absLat + mid.dec;
+	midRa = ln_range_degrees (midRa + 180);
+	if (midRa > endLst + 360)
+		midRa = endLst - 360;
+	// it pass low point during given period
+	if (midRa > startLst && midRa < endLst)
+		_min = absLat - 90 + mid.dec;
+}
+
+void
 Target::getGalLng (struct ln_gal_posn *gal, double JD)
 {
 	struct ln_equ_posn curr;
 	getPosition (&curr, JD);
 	ln_get_gal_from_equ (&curr, gal);
-	return 0;
 }
 
 
@@ -1036,11 +1101,8 @@ Target::getHourAngle (double JD)
 	double lst;
 	double ha;
 	struct ln_equ_posn pos;
-	int ret;
 	lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
-	ret = getPosition (&pos);
-	if (ret)
-		return nan ("f");
+	getPosition (&pos);
 	ha = ln_range_degrees (lst - pos.ra);
 	return ha;
 }
@@ -1197,11 +1259,6 @@ Target::isAboveHorizon (struct ln_hrz_posn *hrz)
 }
 
 
-/****
- *
- *   Return -1 if target is not suitable for observing,
- *   othrwise return 0.
- */
 int
 Target::considerForObserving (double JD)
 {
@@ -1209,11 +1266,8 @@ Target::considerForObserving (double JD)
 	struct ln_equ_posn curr_position;
 	double lst = ln_get_mean_sidereal_time (JD) + observer->lng / 15.0;
 	int ret;
-	if (getPosition (&curr_position, JD))
-	{
-		setNextObservable (JD + 1);
-		return -1;
-	}
+	getPosition (&curr_position, JD);
+
 	ret = isGood (lst, JD, &curr_position);
 	if (!ret)
 	{
@@ -1632,9 +1686,7 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 	struct ln_equ_posn tar_pos;
 	int ret;
 
-	ret = getPosition (&tar_pos, JD);
-	if (ret)
-		return ret;
+	getPosition (&tar_pos, JD);
 
 	Rts2ImgSetPosition img_set = Rts2ImgSetPosition (&tar_pos);
 	ret = img_set.load ();
@@ -1647,16 +1699,10 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 }
 
 
-Target *createTarget (int in_tar_id)
-{
-	return createTarget (in_tar_id, Rts2Config::instance()->getObserver ());
-}
-
-
-Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
+Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int db_tar_id = in_tar_id;
+		int db_tar_id = _tar_id;
 		char db_type_id;
 	EXEC SQL END DECLARE SECTION;
 
@@ -1684,55 +1730,55 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 	{
 		// calibration targets..
 		case TYPE_DARK:
-			retTarget = new DarkTarget (in_tar_id, in_obs);
+			retTarget = new DarkTarget (_tar_id, _obs);
 			break;
 		case TYPE_FLAT:
-			retTarget = new FlatTarget (in_tar_id, in_obs);
+			retTarget = new FlatTarget (_tar_id, _obs);
 			break;
 		case TYPE_FOCUSING:
-			retTarget = new FocusingTarget (in_tar_id, in_obs);
+			retTarget = new FocusingTarget (_tar_id, _obs);
 			break;
 		case TYPE_CALIBRATION:
-			retTarget = new CalibrationTarget (in_tar_id, in_obs);
+			retTarget = new CalibrationTarget (_tar_id, _obs);
 			break;
 		case TYPE_MODEL:
-			retTarget = new ModelTarget (in_tar_id, in_obs);
+			retTarget = new ModelTarget (_tar_id, _obs);
 			break;
 		case TYPE_OPORTUNITY:
-			retTarget = new OportunityTarget (in_tar_id, in_obs);
+			retTarget = new OportunityTarget (_tar_id, _obs);
 			break;
 		case TYPE_ELLIPTICAL:
-			retTarget = new EllTarget (in_tar_id, in_obs);
+			retTarget = new EllTarget (_tar_id, _obs);
 			break;
 		case TYPE_GRB:
-			retTarget = new TargetGRB (in_tar_id, in_obs, 3600, 86400, 5 * 86400);
+			retTarget = new TargetGRB (_tar_id, _obs, 3600, 86400, 5 * 86400);
 			break;
 		case TYPE_SWIFT_FOV:
-			retTarget = new TargetSwiftFOV (in_tar_id, in_obs);
+			retTarget = new TargetSwiftFOV (_tar_id, _obs);
 			break;
 		case TYPE_INTEGRAL_FOV:
-			retTarget = new TargetIntegralFOV (in_tar_id, in_obs);
+			retTarget = new TargetIntegralFOV (_tar_id, _obs);
 			break;
 		case TYPE_GPS:
-			retTarget = new TargetGps (in_tar_id, in_obs);
+			retTarget = new TargetGps (_tar_id, _obs);
 			break;
 		case TYPE_SKY_SURVEY:
-			retTarget = new TargetSkySurvey (in_tar_id, in_obs);
+			retTarget = new TargetSkySurvey (_tar_id, _obs);
 			break;
 		case TYPE_TERESTIAL:
-			retTarget = new TargetTerestial (in_tar_id, in_obs);
+			retTarget = new TargetTerestial (_tar_id, _obs);
 			break;
 		case TYPE_PLAN:
-			retTarget = new TargetPlan (in_tar_id, in_obs);
+			retTarget = new TargetPlan (_tar_id, _obs);
 			break;
 		case TYPE_AUGER:
-			retTarget = new TargetAuger (in_tar_id, in_obs, 1800);
+			retTarget = new TargetAuger (_tar_id, _obs, 1800);
 			break;
 		case TYPE_PLANET:
-			retTarget = new TargetPlanet (in_tar_id, in_obs);
+			retTarget = new TargetPlanet (_tar_id, _obs);
 			break;
 		default:
-			retTarget = new ConstTarget (in_tar_id, in_obs);
+			retTarget = new ConstTarget (_tar_id, _obs);
 			break;
 	}
 
@@ -1752,9 +1798,9 @@ Target *createTarget (int in_tar_id, struct ln_lnlat_posn *in_obs)
 
 
 void
-sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts,
-struct ln_lnlat_posn *in_obs, Rts2App *master)
+sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts, struct ln_lnlat_posn *in_obs, Rts2App *master)
 {
+/*
 	EXEC SQL BEGIN DECLARE SECTION;
 		long db_from = (long) *t_from;
 		long db_end = (long) *t_to;
@@ -1807,7 +1853,7 @@ struct ln_lnlat_posn *in_obs, Rts2App *master)
 		}
 	}
 	EXEC SQL CLOSE tar_obs_cur;
-	EXEC SQL COMMIT;
+	EXEC SQL COMMIT; */
 }
 
 
@@ -1832,6 +1878,7 @@ Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 		<< InfoVal<LibnovaRa> ("HOUR ANGLE", LibnovaRa (hourangle))
 		<< InfoVal<double> ("AIRMASS", getAirmass (JD))
 		<< std::endl;
+
 	ret = getRST (&rst, JD, LN_STAR_STANDART_HORIZON);
 	switch (ret)
 	{
@@ -1866,12 +1913,26 @@ Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 					<< InfoVal<TimeJDDiff> ("SET", TimeJDDiff (rst.set, now));
 			}
 	}
+
+	// test min-max routines
+	double maxAlt, minAlt;
+	getMinMaxAlt (JD - 1, JD + 1, minAlt, maxAlt);
+	_os << InfoVal<LibnovaDeg90> ("MIN ALT", LibnovaDeg90 (minAlt))
+		<< InfoVal<LibnovaDeg90> ("MAX ALT", LibnovaDeg90 (maxAlt));
+
+	getMinMaxAlt (JD - 0.2, JD + 0.2, minAlt, maxAlt);
+	_os <<  std::endl
+		<< InfoVal<LibnovaDeg90> ("MIN ALT", LibnovaDeg90 (minAlt))
+		<< InfoVal<LibnovaDeg90> ("MAX ALT", LibnovaDeg90 (maxAlt));
+
+
 	_os << std::endl
 		<< InfoVal<double> ("MIN_OBS_ALT", getMinObsAlt ())
 		<< std::endl
 		<< "RISE, SET AND TRANSIT ABOVE MIN_ALT"
 		<< std::endl
 		<< std::endl;
+
 	ret = getRST (&rst, JD, getMinObsAlt ());
 	switch (ret)
 	{

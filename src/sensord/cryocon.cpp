@@ -1,5 +1,7 @@
 #include "sensorgpib.h"
 
+#include "../utils/error.h"
+
 namespace rts2sensord
 {
 
@@ -53,19 +55,8 @@ class Rts2ValueLoop
 		}
 };
 
-class Cryocon:public SensorGpib
+class Cryocon:public Gpib
 {
-	int write (const char *buf, const char *newVal);
-
-	int writeRead (const char *buf, Rts2Value * val);
-	int writeRead (const char *subsystem, std::list < Rts2Value * >&vals,
-		int prefix_num);
-
-	int writeRead (const char *buf, Rts2ValueDouble * val);
-	int writeRead (const char *buf, Rts2ValueFloat * val);
-	int writeRead (const char *buf, Rts2ValueBool * val);
-	int writeRead (const char *buf, Rts2ValueSelection * val);
-
 	const char *getLoopVal (int l, Rts2Value * val);
 
 	Rts2ValueTempInput *chans[4];
@@ -118,20 +109,16 @@ char in_chan)
 	// values are passed to dev, and device deletes them!
 	Rts2ValueDouble *v;
 
-	dev->createTempInputValue (&v, chan, "TEMP",
-		"cryocon temperature from channel ");
+	dev->createTempInputValue (&v, chan, "TEMP", "cryocon temperature from channel ");
 	values.push_back (v);
 
-	dev->createTempInputValue (&v, chan, "MINIMUM",
-		"minimum temperature on channel ");
+	dev->createTempInputValue (&v, chan, "MINIMUM", "minimum temperature on channel ");
 	values.push_back (v);
 
-	dev->createTempInputValue (&v, chan, "MAXIMUM",
-		"maximum temperature on channel ");
+	dev->createTempInputValue (&v, chan, "MAXIMUM", "maximum temperature on channel ");
 	values.push_back (v);
 
-	dev->createTempInputValue (&v, chan, "VARIANCE",
-		"temperature variance of channel ");
+	dev->createTempInputValue (&v, chan, "VARIANCE", "temperature variance of channel ");
 	values.push_back (v);
 
 	dev->createTempInputValue (&v, chan, "SLOPE", "slope of channel ");
@@ -202,141 +189,6 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 }
 
 
-int
-Cryocon::write (const char *buf, const char *newVal)
-{
-	int ret;
-	char *vbuf = new char[strlen (buf) + strlen (newVal) + 2];
-	strcpy (vbuf, buf);
-	strcat (vbuf, " ");
-	strcat (vbuf, newVal);
-	ret = gpibWrite (vbuf);
-	delete[]vbuf;
-	return ret;
-}
-
-
-int
-Cryocon::writeRead (const char *buf, Rts2Value * val)
-{
-	switch (val->getValueType ())
-	{
-		case RTS2_VALUE_DOUBLE:
-			return writeRead (buf, (Rts2ValueDouble *) val);
-		case RTS2_VALUE_FLOAT:
-			return writeRead (buf, (Rts2ValueFloat *) val);
-		case RTS2_VALUE_BOOL:
-			return writeRead (buf, (Rts2ValueBool *) val);
-		case RTS2_VALUE_SELECTION:
-			return writeRead (buf, (Rts2ValueSelection *) val);
-		default:
-			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
-				getName () << " of type " << val->getValueType () << sendLog;
-	}
-	return -1;
-}
-
-
-int
-Cryocon::writeRead (const char *subsystem, std::list < Rts2Value * >&vals, int prefix_num)
-{
-	char rb[500];
-	char *retTop;
-	char *retEnd;
-	std::list < Rts2Value * >::iterator iter;
-	int ret;
-
-	strcpy (rb, subsystem);
-
-	for (iter = vals.begin (); iter != vals.end (); iter++)
-	{
-		if (iter != vals.begin ())
-			strcat (rb, ";");
-		strcat (rb, (*iter)->getName ().c_str () + prefix_num);
-		strcat (rb, "?");
-	}
-	ret = gpibWriteRead (rb, rb, 500);
-	if (ret)
-		return ret;
-	// spit reply and set values..
-	retTop = rb;
-	for (iter = vals.begin (); iter != vals.end (); iter++)
-	{
-		retEnd = retTop;
-		if (*retEnd == '\0')
-		{
-			logStream (MESSAGE_ERROR) << "Cannot find reply for value " <<
-				(*iter)->getName () << sendLog;
-			return -1;
-		}
-		while (*retEnd && *retEnd != ';')
-		{
-			if (*retEnd == ' ')
-				*retEnd = '\0';
-			retEnd++;
-		}
-		*retEnd = '\0';
-
-		ret = (*iter)->setValueString (retTop);
-		if (ret)
-		{
-			logStream (MESSAGE_ERROR) << "Error when setting value " <<
-				(*iter)->getName () << " to " << retTop << sendLog;
-			return ret;
-		}
-		retTop = retEnd + 1;
-	}
-	return 0;
-}
-
-
-int
-Cryocon::writeRead (const char *buf, Rts2ValueDouble * val)
-{
-	char rb[50];
-	int ret = gpibWriteRead (buf, rb);
-	if (ret)
-		return ret;
-	val->setValueDouble (atof (rb));
-	return 0;
-}
-
-
-int
-Cryocon::writeRead (const char *buf, Rts2ValueFloat * val)
-{
-	char rb[50];
-	int ret = gpibWriteRead (buf, rb);
-	if (ret)
-		return ret;
-	val->setValueFloat (atof (rb));
-	return 0;
-}
-
-
-int
-Cryocon::writeRead (const char *buf, Rts2ValueBool * val)
-{
-	char rb[50];
-	int ret = gpibWriteRead (buf, rb);
-	if (ret)
-		return ret;
-	val->setValueBool (!strncmp (rb, "ON", 2));
-	return 0;
-}
-
-
-int
-Cryocon::writeRead (const char *buf, Rts2ValueSelection * val)
-{
-	char rb[50];
-	int ret = gpibWriteRead (buf, rb);
-	if (ret)
-		return ret;
-	return val->setSelIndex (rb);
-}
-
-
 const char *
 Cryocon::getLoopVal (int l, Rts2Value * val)
 {
@@ -353,30 +205,41 @@ Cryocon::getLoopVal (int l, Rts2Value * val)
 int
 Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 {
-	for (int l = 0; l < 2; l++)
-		for (std::list < Rts2Value * >::iterator iter = loops[l]->values.begin ();
-		iter != loops[l]->values.end (); iter++)
+	try
 	{
-		Rts2Value *val = *iter;
-		if (oldValue == val)
-			return write (getLoopVal (l, val), newValue->getDisplayValue ());
+		for (int l = 0; l < 2; l++)
+		{
+			for (std::list < Rts2Value * >::iterator iter = loops[l]->values.begin (); iter != loops[l]->values.end (); iter++)
+			{
+				Rts2Value *val = *iter;
+				if (oldValue == val)
+				{
+					writeValue (getLoopVal (l, val), newValue);
+					return 0;
+				}
+			}
+		}
+		if (oldValue == heaterEnabled)
+		{
+			if (((Rts2ValueBool *) newValue)->getValueBool ())
+				gpibWrite ("CONTROL");
+			else
+				gpibWrite ("STOP");
+			return 0;
+		}
 	}
-	if (oldValue == heaterEnabled)
+	catch (rts2core::Error er)
 	{
-		if (((Rts2ValueBool *) newValue)->getValueBool ())
-			return gpibWrite ("CONTROL");
-		return gpibWrite ("STOP");
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -2;
 	}
-	return SensorGpib::setValue (oldValue, newValue);
+	return Gpib::setValue (oldValue, newValue);
 }
 
 
-Cryocon::Cryocon (int in_argc, char **in_argv):
-SensorGpib (in_argc, in_argv)
+Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	int i;
-
-	setPad (12);
 
 	for (i = 0; i < 4; i++)
 	{
@@ -429,56 +292,63 @@ const char *desc)
 int
 Cryocon::info ()
 {
-	int ret;
-	char buf[50] = "INPUT ";
-	int i;
-	buf[8] = '\0';
-	for (i = 0; i < 4; i++)
+	try
 	{
-		buf[6] = chans[i]->getChannel ();
-		buf[7] = ':';
-		ret = writeRead (buf, chans[i]->values, 2);
-		if (ret)
-			return ret;
+		char buf[50] = "INPUT ";
+		int i;
+		buf[8] = '\0';
+		for (i = 0; i < 4; i++)
+		{
+			buf[6] = chans[i]->getChannel ();
+			buf[7] = ':';
+			readValue (buf, chans[i]->values, 2);
+		}
+		strcpy (buf, "LOOP ");
+		buf[7] = '\0';
+		// run info for loops
+		for (i = 0; i < 2; i++)
+		{
+			buf[5] = '1' + i;
+			buf[6] = ':';
+			readValue (buf, loops[i]->values, 2);
+		}
+		readValue ("STATS:TIME?", statTime);
+		statTime->setValueDouble (statTime->getValueDouble () * 60.0);
+		readValue ("SYSTEM:", systemList, 0);
+		readValue ("CONTROL?", heaterEnabled);
 	}
-	strcpy (buf, "LOOP ");
-	buf[7] = '\0';
-	// run info for loops
-	for (i = 0; i < 2; i++)
+	catch (rts2core::Error er)
 	{
-		buf[5] = '1' + i;
-		buf[6] = ':';
-		ret = writeRead (buf, loops[i]->values, 2);
-		if (ret)
-			return ret;
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
 	}
-	ret = writeRead ("STATS:TIME?", statTime);
-	if (ret)
-		return ret;
-	statTime->setValueDouble (statTime->getValueDouble () * 60.0);
-	ret = writeRead ("SYSTEM:", systemList, 0);
-	if (ret)
-		return ret;
-	ret = writeRead ("CONTROL?", heaterEnabled);
-	if (ret)
-		return ret;
-	return SensorGpib::info ();
+	return Gpib::info ();
 }
 
 
 int
 Cryocon::commandAuthorized (Rts2Conn * conn)
 {
-	if (conn->isCommand ("control"))
+	try
 	{
-		return gpibWrite ("CONTROL");
+		if (conn->isCommand ("control"))
+		{
+			gpibWrite ("CONTROL");
+			return 0;
+		}
+		else if (conn->isCommand ("stop"))
+		{
+			gpibWrite ("STOP");
+			return 0;
+		}
 	}
-	else if (conn->isCommand ("stop"))
+	catch (rts2core::Error er)
 	{
-		return gpibWrite ("STOP");
+		logStream (MESSAGE_DEBUG) << er << sendLog;
+		return -1;
 	}
 
-	return SensorGpib::commandAuthorized (conn);
+	return Gpib::commandAuthorized (conn);
 }
 
 

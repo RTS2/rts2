@@ -82,7 +82,7 @@ ObservationSet::load (std::string in_where)
 		" WHERE "
 		"observations.tar_id = targets.tar_id "
 		"AND " << in_where << 
-		" ORDER BY obs_id DESC;";
+		" ORDER BY obs_id ASC;";
 	stmp_c  = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
 
@@ -217,6 +217,21 @@ ObservationSet::ObservationSet (int year, int month)
 }
 
 
+ObservationSet::ObservationSet (int year, int month, int day)
+{
+	time_t start_t = Rts2Config::instance ()->getNight (year,month,day);
+	time_t end_t = start_t + 86400 - 600;
+	std::ostringstream os;
+	os << "observations.obs_slew >= to_timestamp ("
+		<< start_t
+		<< ") AND ((observations.obs_slew <= to_timestamp ("
+		<< end_t
+		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
+		<< end_t
+		<< "))";
+	load (os.str());
+}
+
 ObservationSet::ObservationSet (char type_id, int state_mask, bool inv)
 {
 	std::ostringstream os;
@@ -337,6 +352,67 @@ ObservationSet::printStatistics (std::ostream & _os)
 			<< " radius: " << LibnovaDegArcMin (errAvgRad) << std::endl;
 	}
 	_os.precision (prec);
+}
+
+
+std::map <int, int>
+ObservationSet::getTargetObservations ()
+{
+	std::map <int, int> ret;
+	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		ret[(*iter).getTargetId ()]++;
+	}
+	return ret;
+}
+
+double
+ObservationSet::altitudeMerit ()
+{
+	double altMerit = 0;
+	int s = 0;
+	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		double am = (*iter).altitudeMerit (getJDStart (), getJDEnd ());
+		if (isnan (am))
+			continue;
+		altMerit += am;
+		s++;
+	}
+	altMerit /= s;
+	return altMerit;
+}
+
+
+double
+ObservationSet::distanceMerit ()
+{
+	double distMerit = 0;
+
+	unsigned int s = 0;
+
+	ObservationSet::iterator iter1 = begin ();
+	ObservationSet::iterator iter2 = begin () + 1;
+
+	for (; iter2 != end (); iter1++, iter2++)
+	{
+		struct ln_equ_posn pos1, pos2;
+		if ((*iter1).getEndPosition (pos1) == 0 && (*iter2).getStartPosition (pos2) == 0)
+		{
+			distMerit += ln_get_angular_separation (&pos1, &pos2);
+			s++;
+		}
+	}
+	if (distMerit == 0)
+	{
+		distMerit = 1;
+	}
+	else
+	{
+		distMerit = distMerit / s;
+	}
+
+	return distMerit;
 }
 
 

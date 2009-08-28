@@ -1,6 +1,6 @@
 /* 
  * Simple script executor.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,16 +27,20 @@
 
 class Rts2TargetScr;
 
+namespace rts2plan
+{
+
 /**
  * This is main client class. It takes care of supliing right
  * devclients and other things.
  */
-class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
+class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 {
 	private:
 		Rts2ValueString *expandPath;
 		std::vector < Rts2ScriptForDevice* > scripts;
 		char *deviceName;
+		const char *defaultScript;
 
 		int waitState;
 
@@ -49,13 +53,14 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 		char *configFile;
 	protected:
 		virtual int processOption (int in_opt);
+		virtual void usage ();
 
 		virtual int init ();
 		virtual int doProcessing ();
 
 	public:
-		Rts2ScriptExec (int in_argc, char **in_argv);
-		virtual ~ Rts2ScriptExec (void);
+		ScriptExec (int in_argc, char **in_argv);
+		virtual ~ ScriptExec (void);
 
 		virtual int findScript (std::string deviceName, std::string & buf);
 
@@ -63,10 +68,15 @@ class Rts2ScriptExec:public Rts2Client, public Rts2ScriptInterface
 			int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
-		virtual void priorityChanged (Rts2Conn * conn, bool have);
+
+		virtual void deviceReady (Rts2Conn * conn);
+
 		virtual int idle ();
 		virtual void deviceIdle (Rts2Conn * conn);
 
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 };
+
+}
+
 #endif							 /* !__SCRIPT_EXEC__ */

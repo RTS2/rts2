@@ -133,11 +133,10 @@ int
 Rts2DevConn::authorizationOK ()
 {
 	setConnState (CONN_AUTH_OK);
-	sendPriorityInfo ();
 	master->baseInfo ();
 	master->sendBaseInfo (this);
 	master->info ();
-	master->sendInfo (this);
+	master->sendInfo (this, true);
 	master->sendFullStateInfo (this);
 	sendCommandEnd (DEVDEM_OK, "OK authorized");
 	return 0;
@@ -154,16 +153,6 @@ Rts2DevConn::authorizationFailed ()
 	setConnState (CONN_DELETE);
 	sendCommandEnd (DEVDEM_E_SYSTEM, "authorization failed");
 	return 0;
-}
-
-
-void
-Rts2DevConn::setHavePriority (int in_have_priority)
-{
-	if (havePriority () != in_have_priority)
-	{
-		Rts2Conn::setHavePriority (in_have_priority);
-	}
 }
 
 
@@ -262,7 +251,6 @@ Rts2DevConn::setConnState (conn_state_t new_conn_state)
 		master->sendMetaInfo (this);
 		master->baseInfo (this);
 		master->info (this);
-		sendPriorityInfo ();
 		master->sendFullStateInfo (this);
 	}
 }
@@ -480,19 +468,6 @@ Rts2DevConnMaster::command ()
 }
 
 
-int
-Rts2DevConnMaster::priorityChange ()
-{
-	// change priority
-	int priority_client;
-	int timeout;
-	if (paramNextInteger (&priority_client) || paramNextInteger (&timeout))
-		return -2;
-	master->setPriorityClient (priority_client, timeout);
-	return -1;
-}
-
-
 void
 Rts2DevConnMaster::setState (int in_value)
 {
@@ -578,8 +553,6 @@ Rts2Daemon (in_argc, in_argv)
 
 	device_host = NULL;
 
-	mailAddress = NULL;
-
 	deviceStatusCommand = NULL;
 
 	// now add options..
@@ -588,7 +561,6 @@ Rts2Daemon (in_argc, in_argv)
 	addOption (OPT_SERVER, "server", 1,
 		"hostname (and possibly port number, separated by :) of central server");
 	addOption (OPT_MODEFILE, "modefile", 1, "file holding device modes");
-	addOption ('M', NULL, 1, "send report mails to this adresses");
 	addOption ('d', NULL, 1, "name of device");
 }
 
@@ -619,7 +591,6 @@ Rts2Device::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("killall"))
 	{
-		CHECK_PRIORITY;
 		return killAll ();
 	}
 	else if (conn->isCommand ("exit"))
@@ -781,9 +752,6 @@ Rts2Device::processOption (int in_opt)
 		case OPT_MODEFILE:
 			modefile = optarg;
 			break;
-		case 'M':
-			mailAddress = optarg;
-			break;
 		case 'd':
 			device_name = optarg;
 			break;
@@ -798,17 +766,7 @@ void
 Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
 {
 	deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, in_owner_conn);
-	for (connections_t::iterator iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-	{
-		(*iter)->queCommand (deviceStatusCommand);
-	}
-}
-
-
-void
-Rts2Device::cancelPriorityOperations ()
-{
-	scriptEnds ();
+	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
 }
 
 
@@ -820,20 +778,6 @@ Rts2Device::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		return setMode (new_value->getValueInteger ())? -2 : 0;
 	}
 	return Rts2Daemon::setValue (old_value, new_value);
-}
-
-
-void
-Rts2Device::clearStatesPriority ()
-{
-	if (getState () & DEVICE_ERROR_KILL)
-	{
-		// turn ERROR_KILL down, so next command will change mask
-		maskState (DEVICE_ERROR_KILL, 0, "reset ERROR_KILL");
-
-	}
-	maskState (DEVICE_STATUS_MASK | DEVICE_ERROR_MASK | BOP_MASK, DEVICE_ERROR_KILL,
-		"all operations canceled by priority");
 }
 
 
@@ -1013,20 +957,8 @@ Rts2Device::sendMessage (messageType_t in_messageType, const char *in_messageStr
 
 
 int
-Rts2Device::sendMail (const char *subject, const char *text)
-{
-	// no mail will be send
-	if (!mailAddress)
-		return 0;
-
-	return sendMailTo (subject, text, mailAddress);
-}
-
-
-int
 Rts2Device::killAll ()
 {
-	cancelPriorityOperations ();
 	return 0;
 }
 

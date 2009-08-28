@@ -85,7 +85,8 @@ void
 SimbadInfo::usage ()
 {
 	std::cout << "\t" << getAppName () << " 'M 31' 'NGC 321' 'IGR J05346-5759' 'TW Pic'" << std::endl
-		<< "\t" << getAppName () << " -v 'M 31'" << std::endl;
+		<< "\t" << getAppName () << " -v 'M 31'" << std::endl
+		<< getAppName () << " support communication through SIMBAD server using HTTP PROXY, specified in http_proxy environment variable." << std::endl;
 ;
 }
 

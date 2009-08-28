@@ -768,6 +768,8 @@ int epochtonum (char ch)
 int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, const char *mpc)
 {
 	double H,G;
+	int nobs, opp;
+
 	std::string epoch_str;
 	struct ln_date epoch;
 
@@ -777,6 +779,22 @@ int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, con
 
 	is >> designation >> H >> G >> epoch_str >> M >> orbit->w >> orbit->omega
 	  >> orbit->i >> orbit->e >> orbit->n >> orbit->a;
+
+	if (is.fail ())
+		return -1;
+	
+	char reference[14];
+	is.read (reference, 13);
+
+	is >> nobs >> opp;
+	if (is.fail ())
+		return -1;
+
+	char arc[11];
+	is.read (arc, 10);
+
+	double rms;
+	is >> rms;
 
 	if (is.fail ())
 		return -1;

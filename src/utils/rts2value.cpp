@@ -21,8 +21,10 @@
 #include <stdio.h>
 #include <sstream>
 
+#include "libnova_cpp.h"
 #include "rts2block.h"
 #include "rts2value.h"
+#include "timestamp.h"
 
 #include "radecparser.h"
 
@@ -374,7 +376,14 @@ Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
 const char *
 Rts2ValueTime::getDisplayValue ()
 {
-	sprintf (buf, "%lf", getValueDouble ());
+	struct timeval infot;
+	gettimeofday (&infot, NULL);
+
+	std::ostringstream _os;
+	_os << LibnovaDateDouble (getValueDouble ())
+		<< " (" << TimeDiff (infot.tv_sec + (double) infot.tv_usec / USEC_SEC, getValueDouble ()) << ")";
+
+	strncpy (buf, _os.str ().c_str (), VALUE_BUF_LEN - 1);
 	return buf;
 }
 

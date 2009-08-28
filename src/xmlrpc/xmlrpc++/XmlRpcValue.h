@@ -107,6 +107,9 @@ namespace XmlRpc
 			//! Return the size for string, base64, array, and struct values.
 			int size() const;
 
+			//! Remove first element from array.
+			void popFront();
+
 			//! Specify the size for array values. Array values will grow beyond this size if needed.
 			void setSize(int in_size)    { assertArray(in_size); }
 

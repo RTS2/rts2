@@ -26,6 +26,7 @@
 #include "rts2appimage.h"
 #endif							 /* HAVE_PGSQL */
 #include "../utils/rts2config.h"
+#include "../utils/rts2format.h"
 
 #include <iostream>
 #include <iomanip>
@@ -47,8 +48,10 @@
 #define IMAGEOP_CREATEWCS 0x0200
 #define IMAGEOP_ADDHELIO  0x0400
 #define IMAGEOP_MODEL     0x0800
+#define IMAGEOP_JPEG      0x0800
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
+#define OPT_EVERY     OPT_LOCAL + 6
 #define OPT_ADDHELIO  OPT_LOCAL + 6
 
 namespace rts2image
@@ -76,10 +79,11 @@ class AppImage:public Rts2AppImage
 
 		double off_x, off_y;
 
-		std::string print_expr;
-		std::string copy_expr;
-		std::string link_expr;
-		std::string move_expr;
+		const char* print_expr;
+		const char* copy_expr;
+		const char* link_expr;
+		const char* move_expr;
+		const char* jpeg_expr;
 	protected:
 		virtual int processOption (int in_opt);
 	#ifdef HAVE_PGSQL
@@ -134,7 +138,7 @@ AppImage::addDate (Rts2Image * image)
 {
 	int ret;
 	time_t t;
-	std::cout << "Adding date " << image->getImageName () << "..";
+	std::cout << "Adding date " << image->getFileName () << "..";
 	t = image->getExposureSec ();
 	image->setValue ("DATE-OBS", &t, image->getExposureUsec (),
 		"date of observation");
@@ -258,6 +262,9 @@ AppImage::processOption (int in_opt)
 		case 'r':
 			operation |= IMAGEOP_MODEL;
 			break;
+		case 'n':
+			std::cout << pureNumbers;
+			break;
 		case 'c':
 			operation |= IMAGEOP_COPY;
 			copy_expr = optarg;
@@ -308,12 +315,19 @@ AppImage::processOption (int in_opt)
 				off_y = off_x;
 			}
 			break;
+		#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+		case 'j':
+			operation |= IMAGEOP_JPEG;
+			jpeg_expr = optarg;
+			break;
 		default:
+		#endif /* HAVE_LIBJPEG */
+
 		#ifdef HAVE_PGSQL
 			return Rts2AppDbImage::processOption (in_opt);
 		#else
 			return Rts2AppImage::processOption (in_opt);
-		#endif
+		#endif /* HAVE_PGSQL */
 	}
 	return 0;
 }
@@ -353,7 +367,7 @@ AppImage::processImage (Rts2Image * image)
 	if (operation & IMAGEOP_PRINT)
 		std::cout << image->expandPath (print_expr) << std::endl;
 	if (operation & IMAGEOP_FPRINT)
-	  	std::cout << image->getImageName () << " " << image->expandPath (print_expr) << std::endl;
+	  	std::cout << image->getFileName () << " " << image->expandPath (print_expr) << std::endl;
 	if (operation & IMAGEOP_MODEL)
 	  	printModel (image);
 	if (operation & IMAGEOP_COPY)
@@ -366,6 +380,10 @@ AppImage::processImage (Rts2Image * image)
 		testEval (image);
 	if (operation & IMAGEOP_CREATEWCS)
 		createWCS (image);
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+	if (operation & IMAGEOP_JPEG)
+	  	image->writeAsJPEG (jpeg_expr, 0);
+#endif /* HAVE_LIBJPEG */
 	return 0;
 }
 
@@ -406,6 +424,9 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('t', NULL, 0, "test various image routines");
 	addOption ('w', NULL, 0, "write WCS to FITS file, based on the RTS2 informations recorded in fits header");
 	addOption ('o', NULL, 1, "X and Y offsets in pixels aplied to WCS information before WCS is written to the file. X and Y offsets must be separated by ':'");
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+	addOption ('j', NULL, 1, "export image(s) to JPEGs, specified by expansion string");
+#endif /* HAVE_LIBJPEG */
 }
 
 

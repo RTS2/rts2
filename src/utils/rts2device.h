@@ -29,8 +29,6 @@
 #include "rts2daemon.h"
 #include "rts2configraw.h"
 
-#define CHECK_PRIORITY if (!conn->havePriority ()) { conn->sendCommandEnd (DEVDEM_E_PRIORITY, "haven't priority"); return -1; }
-
 class Rts2Device;
 
 /**
@@ -60,7 +58,6 @@ class Rts2DevConn:public Rts2Conn
 
 		virtual int authorizationOK ();
 		virtual int authorizationFailed ();
-		void setHavePriority (int in_have_priority);
 
 		virtual void setDeviceAddress (Rts2Address * in_addr);
 		void setDeviceName (int _centrald_num, char *_name);
@@ -89,7 +86,6 @@ class Rts2DevConnMaster:public Rts2Conn
 		time_t nextTime;
 	protected:
 		virtual int command ();
-		virtual int priorityChange ();
 		virtual void setState (int in_value);
 		virtual void setBopState (int in_value);
 		virtual void connConnected ();
@@ -225,8 +221,6 @@ class Rts2Device:public Rts2Daemon
 
 		char *device_host;
 
-		char *mailAddress;
-
 		/**
 		 * Set mode from modefile.
 		 *
@@ -269,8 +263,6 @@ class Rts2Device:public Rts2Daemon
 		}
 
 		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
-
-		void clearStatesPriority ();
 
 		// sends operation block commands to master
 		// this functions should mark critical blocks during device execution
@@ -324,8 +316,6 @@ class Rts2Device:public Rts2Daemon
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
 
-		virtual void cancelPriorityOperations ();
-
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
@@ -375,9 +365,20 @@ class Rts2Device:public Rts2Daemon
 		virtual void sendMessage (messageType_t in_messageType,
 			const char *in_messageString);
 
-		int sendMail (const char *subject, const char *text);
+		/**
+		 * The interrupt call. This is called on every device on
+		 * interruption. The device shall react by switching back to
+		 * initial state and be ready for next commands.
+		 *
+		 * @return -1 on error.
+		 */
+		virtual int killAll ();
 
-		int killAll ();
+		/**
+		 * This is called from sequencer to let device know that scripts
+		 * has ended. Device shall respond by ending all operations and
+		 * reseting to original state.
+		 */
 		virtual int scriptEnds ();
 
 		const char *getDeviceName ()

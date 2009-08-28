@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-06-02</date>">
+  <!ENTITY dhdate      "<date>2009-07-05</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.0</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007, 2008</year>
+      <year>2007-2009</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -60,12 +60,6 @@
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--server <replaceable>server-name</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--port <replaceable>port</replaceable></option></arg>
       </arg>
       <arg choice="opt">
 	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
@@ -117,28 +111,6 @@
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--server <replaceable class="parameter">server-name</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify name of the host, which runs
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    This option is needed only for setups that use multiple computers.
-	    Its default is localhost. Default will work for simple setups.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--port <replaceable class="parameter">port</replaceable></option></term>
-        <listitem>
-          <para>
-	    Specify port of the
-	    <citerefentry><refentrytitle>rts2-centrald</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
-	    It defaults to RTS2 default port, specified during system
-	    configuration. This value is usually 617.
-	  </para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
         <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
@@ -178,6 +150,33 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Configuration file</title>
+    <para>
+      Configuration file can be specified with --config option. If this option is not used, default configuration file (ussually /etc/rts2/rts2.ini) is used. Following options can
+      be specified in configuration file <emphasis role="bold">scriptexec</emphasis> section.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>expand_path</term>
+	<listitem>
+	  <para>
+	    Specify expand path for images produced by <emphasis role="bold">&dhpackage;</emphasis>. This path can be override with
+	    -e parameter. For details about possible path strings, please see
+	    <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>default_device</term>
+	<listitem>
+	  <para>
+	    Set default device. This is used if -d option is not set.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>COMMAND OUTPUT</title>
 
     <para>
@@ -195,6 +194,15 @@
     <screen>
       <command>&dhpackage;</command> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 10 { E 5 E 10 }'</replaceable>
     </screen>
+
+    <para>
+      Following command will save images in local time, prefixed with camera name:
+    </para>
+
+    <screen>
+      <command>&dhpackage;</command> <option>-e</option> <replaceable>'%c_%L%f'</replaceable> <option>-d</option> <replaceable>C0</replaceable> <option>-s</option> <replaceable>'for 10 { E 5 E 10 }'</replaceable>
+    </screen>
+
 
   </refsect1>    
   <refsect1>

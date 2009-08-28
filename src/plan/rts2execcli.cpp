@@ -138,11 +138,11 @@ Rts2DevClientCameraExec::nextCommand ()
 
 	if (nextComd->getBopMask () & BOP_WHILE_STATE)
 	{
-		// if there are qued exposures, do not execute command
+		// if there are queued exposures, do not execute command
 		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
 			return;
-		// if there are commands in que, do not execute command
+		// if there are commands in queue, do not execute command
 		if (!connection->queEmptyForOriginator (this))
 			return;
 	}
@@ -160,7 +160,7 @@ Rts2DevClientCameraExec::nextCommand ()
 
 			nextComd->setBopMask (BOP_TEL_MOVE);
 
-			// do not execute if there are some exposures in que
+			// do not execute if there are some exposures in queue
 			Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 			if (val && val->getValueInteger () > 0)
 			{
@@ -501,9 +501,7 @@ Rts2DevClientTelescopeExec::moveFailed (int status)
 	if (currentTarget && currentTarget->moveWasStarted ())
 		currentTarget->moveFailed ();
 	Rts2DevClientTelescopeImage::moveFailed (status);
-	// move failed, either because of priority change, or because device failure
-	if (havePriority ())
-		getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
+	getMaster ()->postEvent (new Rts2Event (EVENT_MOVE_FAILED, (void *) &status));
 }
 
 

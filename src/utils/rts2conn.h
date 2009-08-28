@@ -33,6 +33,7 @@
 
 #include <status.h>
 
+#include "error.h"
 #include "rts2data.h"
 #include "rts2object.h"
 #include "rts2serverstate.h"
@@ -85,6 +86,26 @@ class Rts2Event;
 
 class Rts2Value;
 
+class Rts2Conn;
+
+namespace rts2core
+{
+
+/**
+ * Superclass for any connection errors. All errors which occurs on connection
+ * inherit from this class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ConnError: public Error
+{
+	public:
+		ConnError (Rts2Conn *conn, const char *_msg);
+		ConnError (Rts2Conn *conn, const char *_msg, int _errn);
+};
+
+}
+
 /**
  * Represents one connection. It keeps connection running, check it states, and
  * handles various TCP/IP issues.  Connection is primary network connection,
@@ -108,8 +129,6 @@ class Rts2Conn:public Rts2Object
 								 // name of device/client this connection goes to
 		char name[DEVICE_NAME_SIZE];
 		int key;
-		int priority;			// priority - number
-		int have_priority;		// priority - flag if we have priority
 		int centrald_num;		// number of centrald connection
 		int centrald_id;		// id of connection on central server
 		in_addr addr;
@@ -208,6 +227,10 @@ class Rts2Conn:public Rts2Object
 		 */
 		Rts2Block *master;
 		char *command_start;
+
+		/**
+		 * Connection file descriptor.
+		 */
 		int sock;
 
 		/**
@@ -427,6 +450,16 @@ class Rts2Conn:public Rts2Object
 		virtual void processLine ();
 
 		/**
+		 * Returns true if connection is in read_set, and so can be read.
+		 *
+		 * @param read_set   Set used to read data.
+		 */
+		int receivedData (fd_set *read_set)
+		{
+			return FD_ISSET (sock, read_set);
+		}
+
+		/**
 		 * Called when select call indicates that socket holds new
 		 * data for reading.
 		 *
@@ -488,20 +521,6 @@ class Rts2Conn:public Rts2Object
 			if (key == 0)
 				key = in_key;
 		}
-		int havePriority ();
-		void setHavePriority (int in_have_priority);
-		int getHavePriority ()
-		{
-			return have_priority;
-		};
-		int getPriority ()
-		{
-			return priority;
-		};
-		void setPriority (int in_priority)
-		{
-			priority = in_priority;
-		}
 
 		int getCentraldNum ()
 		{
@@ -518,7 +537,6 @@ class Rts2Conn:public Rts2Object
 		{
 			centrald_num = _centrald_num;
 		}
-		int sendPriorityInfo ();
 
 		/**
 		 * Que command on connection.
@@ -709,11 +727,10 @@ class Rts2Conn:public Rts2Object
 		virtual void updateStatusWait (Rts2Conn * conn);
 		virtual void masterStateChanged ();
 
+		friend class rts2core::ConnError;
+
 	protected:
 		virtual int command ();
-		virtual void priorityChanged ();
-		virtual int priorityChange ();
-		int priorityInfo ();
 		int sendNextCommand ();
 
 		int commandReturn ();

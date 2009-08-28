@@ -63,7 +63,7 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		virtual void postEvent (Rts2Event * event);
 
 		virtual int findScript (std::string in_deviceName, std::string & buf);
-		virtual int getPosition (struct ln_equ_posn *posn, double JD);
+		virtual void getPosition (struct ln_equ_posn *posn, double JD);
 };
 
 Rts2Scriptor::Rts2Scriptor (int in_argc, char **in_argv)
@@ -95,8 +95,6 @@ Rts2Scriptor::init ()
 	ret = Rts2Device::init ();
 	if (ret)
 		return ret;
-
-	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
 
 	currentTarget = new Rts2TargetScr (this);
 	currentTarget->moveEnded ();
@@ -148,16 +146,14 @@ Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_type)
 void
 Rts2Scriptor::deviceReady (Rts2Conn * conn)
 {
-	if (conn->havePriority () && conn->getOtherType () == DEVICE_TYPE_CCD)
-	{
-		// add variable for this device..
-		Rts2ValueString *stringVal;
-		createValue (stringVal, (std::string (DEV_SCRIPT_PREFIX) + std::string (conn->getName())).c_str (), std::string ("Script value for ") + std::string (conn->getName ()), true);
-		updateMetaInformations (stringVal);
-		scriptVar[std::string (conn->getName ())] = stringVal;
-		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-//		conn->postEvent (new Rts2Event (EVENT_OBSERVE));
-	}
+	// add variable for this device..
+	Rts2ValueString *stringVal;
+	createValue (stringVal, (std::string (DEV_SCRIPT_PREFIX) + std::string (conn->getName())).c_str (), std::string ("Script value for ") + std::string (conn->getName ()), true);
+	updateMetaInformations (stringVal);
+	scriptVar[std::string (conn->getName ())] = stringVal;
+
+	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+//	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 
 
@@ -218,12 +214,11 @@ Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 }
 
 
-int
+void
 Rts2Scriptor::getPosition (struct ln_equ_posn *posn, double JD)
 {
 	posn->ra = 20;
 	posn->dec = 20;
-	return -1;
 }
 
 

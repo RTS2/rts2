@@ -439,8 +439,6 @@ class Camera:public Rts2ScriptDevice
 
 		virtual void checkQueChanges (int fakeState);
 
-		virtual void cancelPriorityOperations ();
-
 		Rts2ValueDouble *rnoise;
 
 		void initCameraChip ();
@@ -753,6 +751,7 @@ class Camera:public Rts2ScriptDevice
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int info ();
 
+		virtual int killAll ();
 		virtual int scriptEnds ();
 
 		virtual long camWaitExpose ();

@@ -30,6 +30,7 @@
 #include "objectcheck.h"
 
 #include <libnova/libnova.h>
+#include <algorithm>
 
 /**
  * Represent full Config class, which includes support for Libnova types and
@@ -65,9 +66,8 @@ class Rts2Config:public Rts2ConfigRaw
 		bool grbd_follow_transients;
 		int grbd_validity;
 
-		int obs_epoch_id;
-
 		std::vector <std::string> obs_requiredDevices;
+		std::vector <std::string> imgproc_astrometryDevices;
 
 		std::string obs_quePath;
 		std::string obs_acqPath;
@@ -301,14 +301,31 @@ class Rts2Config:public Rts2ConfigRaw
 			return obs_requiredDevices;
 		}
 
+
 		/**
-		 * Return observatory epoch.
+		 * Get names of devices which shall be ignored for astrometry
+		 * updates.
+		 *
+		 * @return List of device names, which shall be ignored.
 		 */
-		int observatoryEpoch ()
+		std::vector <std::string> imgprocAstrometryDevices ()
 		{
-			return obs_epoch_id;
+			return imgproc_astrometryDevices;
 		}
 
+
+		/**
+		 * Return true if astrometry from this device should be ignored
+		 * for corrections.
+		 *
+		 * @param name Device name.
+		 *
+		 * @return True if device astromery should be 
+		 */
+		bool isAstrometryDevice (const char *device_name)
+		{
+			return (imgproc_astrometryDevices.size () == 0 || std::find (imgproc_astrometryDevices.begin (), imgproc_astrometryDevices.end (), std::string (device_name)) != imgproc_astrometryDevices.end ());
+		}
 
 		/**
 		 * Return extension pattern for que images.
@@ -387,6 +404,12 @@ class Rts2Config:public Rts2ConfigRaw
 		}
 
 		/**
+		 * Return UT noon of currently running night on the observatory
+		 * site. Timezone shift is estimated from longitude.
+		 */
+		time_t getNight ();
+
+		/**
 		 * Returns time_t with date for night which includes given time.
 		 *
 		 * @param _in Time_t containing date for which night should be calculated.
@@ -405,7 +428,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 * @param month Month for which night will be calculated.
 		 * @param day   Day for which night will be calculated.
 		 *
-		 * @return Time of night start.
+		 * @return Time of night start - UT midi of day on which night starts.
 		 */
 		time_t getNight (int year, int month, int day);
 };

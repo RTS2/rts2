@@ -28,6 +28,7 @@
 #include "XmlRpcClient.h"
 #include "XmlRpcException.h"
 #include "XmlRpcServer.h"
+#include "XmlRpcServerGetRequest.h"
 #include "XmlRpcServerMethod.h"
 #include "XmlRpcValue.h"
 #include "XmlRpcUtil.h"

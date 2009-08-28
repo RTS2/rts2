@@ -172,11 +172,10 @@ class Rts2Target
 		 *
 		 * @param pos  Pointer to returned target position.
 		 *
-		 * @return 0 if target position was sucessfully calculated.
 		 */
-		int getPosition (struct ln_equ_posn *pos)
+		void getPosition (struct ln_equ_posn *pos)
 		{
-			return getPosition (pos, ln_get_julian_from_sys ());
+			getPosition (pos, ln_get_julian_from_sys ());
 		}
 
 		/**
@@ -185,10 +184,8 @@ class Rts2Target
 		 *
 		 * @param pos Pointer to returned target position.
 		 * @param JD  Julian date for which target position is calculated.
-		 *
-		 * @return 0 if target position was sucessfully calculated.
 		 */
-		virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
+		virtual void getPosition (struct ln_equ_posn *pos, double JD) = 0;
 
 		// move functions
 

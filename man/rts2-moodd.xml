@@ -64,9 +64,6 @@
 	<arg choice="plain"><option>--config <replaceable>config file</replaceable></option></arg>
       </arg>
       <arg choice="opt">
-        <arg choice="plain"><option>--logfile <replaceable>log file</replaceable></option></arg>
-      </arg>
-      <arg choice="opt">
         <arg choice="plain"><option>--server <replaceable>hostname[:port]</replaceable></option></arg>
       </arg>
     </cmdsynopsis>
@@ -145,14 +142,6 @@
         <term><option>--config <replaceable class="parameter">config-file</replaceable></option></term>
         <listitem>
           <para>Specify configuration file. defaults to <filename>/etc/rts2/rts2.ini</filename>.</para>
-        </listitem>
-      </varlistentry>
-      <varlistentry>
-        <term><option>--logfile</option></term>
-        <listitem>
-	  <para>Specify logfile name. Defaults to /var/log/rts2-debug. If set
-	  to "-", <command>&dhpackage;</command> will log to standart
-	  output.</para>
         </listitem>
       </varlistentry>
       <varlistentry>

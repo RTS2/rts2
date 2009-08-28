@@ -29,3 +29,5 @@
   -N option (do not pretty print) for rts2-nightreport, rts2-target, rts2-targetlist, rts2-targetinfo and rts2-telmodeltest
 
   rts2-logd check for expansion pattern changes
+
+  Scheduler support - uses new tables "tickets", "accounts", etc..

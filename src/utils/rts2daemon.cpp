@@ -76,7 +76,6 @@ Rts2Block (_argc, _argv)
 	info_time = new Rts2ValueTime (RTS2_VALUE_INFOTIME, "time when this informations were correct", false);
 
 	idleInfoInterval = -1;
-	nextIdleInfo = 0;
 
 	addOption ('i', NULL, 0, "run in interactive mode, don't loose console");
 	addOption (OPT_LOCALPORT, "local-port", 1,
@@ -298,6 +297,17 @@ Rts2Daemon::initDaemon ()
 	}
 }
 
+void Rts2Daemon::setIdleInfoInterval (double interval)
+{
+	// activate infoall event
+	if (interval > 0)
+	{
+		if (idleInfoInterval > 0)
+			deleteTimers (EVENT_TIMER_INFOALL);
+		addTimer (interval, new Rts2Event (EVENT_TIMER_INFOALL, this));
+	}
+	idleInfoInterval = interval;
+}
 
 int
 Rts2Daemon::run ()
@@ -314,18 +324,6 @@ Rts2Daemon::run ()
 int
 Rts2Daemon::idle ()
 {
-	time_t now = time (NULL);
-	if (idleInfoInterval >= 0)
-	{
-		if (now >= nextIdleInfo)
-		{
-			infoAll ();
-		}
-		else
-		{
-			setTimeoutMin ((nextIdleInfo - now) * USEC_SEC);
-		}
-	}
 	if (doHupIdleLoop)
 	{
 		signaledHUP ();
@@ -335,6 +333,45 @@ Rts2Daemon::idle ()
 	return Rts2Block::idle ();
 }
 
+void
+Rts2Daemon::setInfoTime (struct tm *_date)
+{
+	static char p_tz[100];
+	std::string old_tz;
+	if (getenv("TZ"))
+		old_tz = std::string (getenv ("TZ"));
+
+	putenv ((char*) "TZ=UTC");
+
+	setInfoTime (mktime (_date));
+
+	strcpy (p_tz, "TZ=");
+
+	if (old_tz.length () > 0)
+	{
+		strncat (p_tz, old_tz.c_str (), 96);
+	}
+	putenv (p_tz);
+}
+
+
+void
+Rts2Daemon::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_TIMER_INFOALL:
+			infoAll ();
+			// next timer..
+			if (idleInfoInterval > 0)
+			{
+				addTimer (idleInfoInterval, event);
+				return;
+			}
+			break;
+	}
+	Rts2Block::postEvent (event);
+}
 
 void
 Rts2Daemon::forkedInstance ()
@@ -903,7 +940,6 @@ int
 Rts2Daemon::infoAll ()
 {
 	int ret;
-	nextIdleInfo = time (NULL) + idleInfoInterval;
 	ret = info ();
 	if (ret)
 		return -1;
@@ -912,6 +948,13 @@ Rts2Daemon::infoAll ()
 		sendInfo (*iter);
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		sendInfo (*iter);
+
+	for (Rts2CondValueVector::iterator iter2 = values.begin (); iter2 != values.end (); iter2++)
+	{
+		Rts2Value *val = (*iter2)->getValue ();
+		val->resetNeedSend ();
+	}
+
 	return 0;
 }
 
@@ -928,17 +971,20 @@ Rts2Daemon::constInfoAll ()
 
 
 int
-Rts2Daemon::sendInfo (Rts2Conn * conn)
+Rts2Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 {
 	if (!isRunning (conn))
 		return -1;
-	for (Rts2CondValueVector::iterator iter = values.begin ();
-		iter != values.end (); iter++)
+	for (Rts2CondValueVector::iterator iter = values.begin (); iter != values.end (); iter++)
 	{
 		Rts2Value *val = (*iter)->getValue ();
-		val->send (conn);
+		if (val->needSend () || forceSend)
+		{
+			val->send (conn);
+		}
 	}
-	info_time->send (conn);
+	if (info_time->needSend ())
+		info_time->send (conn);
 	return 0;
 }
 
@@ -951,6 +997,7 @@ Rts2Daemon::sendValueAll (Rts2Value * value)
 		value->send (*iter);
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		value->send (*iter);
+	value->resetNeedSend ();
 }
 
 

@@ -27,13 +27,6 @@
 
 using namespace rts2core;
 
-std::ostream &
-operator << (std::ostream & os, OpenTplError & err)
-{
-	os << err.getDesc ();
-	return os;
-}
-
 int
 OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 {
@@ -161,7 +154,7 @@ OpenTpl::waitReply ()
 	}
 	catch (OpenTplError &er)
 	{
-		logStream (MESSAGE_ERROR) << er.getDesc () << sendLog;
+		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
 	return 0;

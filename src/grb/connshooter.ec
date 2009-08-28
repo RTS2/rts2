@@ -1,3 +1,22 @@
+/* 
+ * Receive and reacts to Auger showers.
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "connshooter.h"
 #include "../utils/libnova_cpp.h"
 
@@ -16,10 +35,9 @@ EXEC SQL include sqlca;
 
 #define GPS_OFFSET  315964800
 
-using namespace rts2too;
+using namespace rts2grbd;
 
-void
-ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
+void ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 {
   // we need to handle somehow better leap seconds, but that can wait
   out_time = GPSsec + GPS_OFFSET + GPSusec / USEC_SEC + 14.0;
@@ -27,138 +45,175 @@ ConnShooter::getTimeTfromGPS (long GPSsec, long GPSusec, double &out_time)
 
 
 // is called when nbuf contains '\n'
-int
-ConnShooter::processAuger ()
+int ConnShooter::processAuger ()
 {
   EXEC SQL BEGIN DECLARE SECTION;
     //  int db_auger_t3id;
     double db_auger_date;
-    int db_auger_npixels = 0;
+  
+    int    db_Eye;            /// FD eye Id
+    int    db_Run;            /// FD run number
+    int    db_Event;          /// FD event number
+    VARCHAR db_AugerId[50];   /// Event Auger Id after SD/FD merger
+    int    db_GPSSec;         /// GPS second (SD)
+    int    db_GPSNSec;        /// GPS nano second (SD)
+    int    db_SDId;           /// SD Event Id
 
-    double db_auger_sdpphi;
-    double db_auger_sdptheta;
-    double db_auger_sdpangle = 0;
+    int    db_NPix;           /// Num. pixels with a pulse after FdPulseFinder
 
-    double db_auger_ra;
-    double db_auger_dec;
+    double db_SDPTheta;       /// Zenith angle of SDP normal vector (deg)
+    double db_SDPThetaErr;    /// Uncertainty of SDPtheta
+    double db_SDPPhi;         /// Azimuth angle of SDP normal vector (deg)
+    double db_SDPPhiErr;      /// Uncertainty of SDPphi
+    double db_SDPChi2;        /// Chi^2 of SDP db_it
+    int    db_SDPNdf;         /// Degrees of db_reedom of SDP db_it
+
+    double db_Rp;             /// Shower impact parameter Rp (m)
+    double db_RpErr;          /// Uncertainty of Rp (m)
+    double db_Chi0;           /// Angle of shower in the SDP (deg)
+    double db_Chi0Err;        /// Uncertainty of Chi0 (deg)
+    double db_T0;             /// FD time db_it T_0 (ns)
+    double db_T0Err;          /// Uncertainty of T_0 (ns)
+    double db_TimeChi2;       /// Full Chi^2 of axis db_it
+    double db_TimeChi2FD;     /// Chi^2 of axis db_it (FD only)
+    int    db_TimeNdf;        /// Degrees of db_reedom of axis db_it
+
+    double db_Easting;        /// Core position in easting coordinate (m)
+    double db_Northing;       /// Core position in northing coordinate (m)
+    double db_Altitude;       /// Core position altitude (m)
+    double db_NorthingErr;    /// Uncertainty of northing coordinate (m)
+    double db_EastingErr;     /// Uncertainty of easting coordinate (m)
+    double db_Theta;          /// Shower zenith angle in core coords. (deg)
+    double db_ThetaErr;       /// Uncertainty of zenith angle (deg)
+    double db_Phi;            /// Shower azimuth angle in core coords. (deg)
+    double db_PhiErr;         /// Uncertainty of azimuth angle (deg)
+
+    double db_dEdXmax;        /// Energy deposit at shower max (GeV/(g/cm^2))
+    double db_dEdXmaxErr;     /// Uncertainty of Nmax (GeV/(g/cm^2))
+    double db_X_max;           /// Slant depth of shower maximum (g/cm^2)
+    double db_X_maxErr;        /// Uncertainty of Xmax (g/cm^2)
+    double db_X0;             /// X0 Gaisser-Hillas db_it (g/cm^2)
+    double db_X0Err;          /// Uncertainty of X0 (g/cm^2)
+    double db_Lambda;         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
+    double db_LambdaErr;      /// Uncertainty of Lambda (g/cm^2)
+    double db_GHChi2;         /// Chi^2 of Gaisser-Hillas db_it
+    int    db_GHNdf;          /// Degrees of db_reedom of GH db_it
+    double db_LineFitChi2;    /// Chi^2 of linear db_it to profile
+
+    double db_EmEnergy;       /// Calorimetric energy db_rom GH db_it (EeV)
+    double db_EmEnergyErr;    /// Uncertainty of Eem (EeV)
+    double db_Energy;         /// Total energy db_rom GH db_it (EeV)
+    double db_EnergyErr;      /// Uncertainty of Etot (EeV)
+
+    double db_MinAngle;       /// Minimum viewing angle (deg)
+    double db_MaxAngle;       /// Maximum viewing angle (deg)
+    double db_MeanAngle;      /// Mean viewing angle (deg)
+
+    int    db_NTank;          /// Number of stations in hybrid db_it
+    int    db_HottestTank;    /// Station used in hybrid-geometry reco
+    double db_AxisDist;       /// Shower axis distance to hottest station (m)
+    double db_SDPDist;        /// SDP distance to hottest station (m)
+
+    double db_SDFDdT;         /// SD/FD time offset after the minimization (ns)
+    double db_XmaxEyeDist;    /// Distance to shower maximum (m)
+    double db_XTrackMin;      /// First recorded slant depth of track (g/cm^2)
+    double db_XTrackMax;      /// Last recorded slant depth of track (g/cm^2)
+    double db_XFOVMin;        /// First slant depth inside FOV (g/cm^2)
+    double db_XFOVMax;        /// Last slant depth inside FOV (g/cm^2)
+    double db_XTrackObs;      /// Observed track length depth (g/cm^2)
+    double db_DegTrackObs;    /// Observed track length angle (deg)
+    double db_TTrackObs;      /// Observed track length time (100 ns)
+
   EXEC SQL END DECLARE SECTION;
-
-  int gap_ver;
-  int gap_stations;
-  double gap_theta;
-  double gap_phi;
-  double gap_energy;
-
-  double gap_L;
-  double gap_B;
-  long gap_UTC;
-  long gap_core;
-  double gap_X;
-
-  double gap_Y;
-  double gap_S1000;
-  double gap_dS1000;
-
-  double gap_ctheta;
-  double gap_cphi;
-  double gap_dX;
-
-  double gap_dY;
-  double gap_comp;
-  long gap_isT5;
-  long gap_isT5p;
-  long gap_isT5pp;
-
-  long gap_isICR;
-  long gap_isFd;
-  double gap_geomfit;
-  double gap_LDFfit;
-  double gap_globfitchi2;
-
-  double gap_globfitndof;
-  double gap_LDFBeta;
-  double gap_LDFGamma;
-  double gap_R;
-  long gap_OldId;
-
-  long gps_sec;
-
-  long gps_usec = 0;
 
   time_t now;
 
-  // 1 3 34.6514 -105.751 0.476843
-  // -70.1905 -7.69034 1153170055 10108491 -24303.2
-  // 24092.6 2.66637 0.662263 157.832 -66.922
-  // 34.5033 -106.143 1.90774 1.92494 66.7804
-  // 145.449 1.11 1039 1 1
-  // 1 0 4.23941e-05 0.927834 0.903655
-  // 0 -3.75494 -0.447885 9180.13 2460068
-  // 837205268
+  std::string AugerId;
 
   std::istringstream _is (nbuf);
-  _is
-    >> gap_ver
-    >> gap_stations
-    >> gap_theta
-    >> gap_phi
-    >> gap_energy
-
-    >> gap_L
-    >> gap_B
-    >> gap_UTC
-    >> gap_core
-    >> gap_X
-
-    >> gap_Y
-    >> gap_S1000
-    >> gap_dS1000
-    >> db_auger_ra
-    >> db_auger_dec
-
-    >> gap_ctheta
-    >> gap_cphi
-    >> db_auger_sdptheta
-    >> db_auger_sdpphi
-    >> gap_dX
-
-    >> gap_dY
-    >> gap_comp
-    >> gap_isT5
-    >> gap_isT5p
-    >> gap_isT5pp
-
-    >> gap_isICR
-    >> gap_isFd
-    >> gap_geomfit
-    >> gap_LDFfit
-    >> gap_globfitchi2
-
-    >> gap_globfitndof
-    >> gap_LDFBeta
-    >> gap_LDFGamma
-    >> gap_R
-    >> gap_OldId
-
-    >> gps_sec;
+  _is >> db_Eye
+    >> db_Run
+    >> db_Event
+    >> AugerId
+    >> db_GPSSec
+    >> db_GPSNSec
+    >> db_SDId
+    >> db_NPix
+    >> db_SDPTheta
+    >> db_SDPThetaErr
+    >> db_SDPPhi
+    >> db_SDPPhiErr
+    >> db_SDPChi2
+    >> db_SDPNdf
+    >> db_Rp
+    >> db_RpErr
+    >> db_Chi0
+    >> db_Chi0Err
+    >> db_T0
+    >> db_T0Err
+    >> db_TimeChi2
+    >> db_TimeChi2FD
+    >> db_TimeNdf
+    >> db_Easting
+    >> db_Northing
+    >> db_Altitude
+    >> db_NorthingErr
+    >> db_EastingErr
+    >> db_Theta
+    >> db_ThetaErr
+    >> db_Phi
+    >> db_PhiErr
+    >> db_dEdXmax
+    >> db_dEdXmaxErr
+    >> db_X_max
+    >> db_X_maxErr
+    >> db_X0
+    >> db_X0Err
+    >> db_Lambda
+    >> db_LambdaErr
+    >> db_GHChi2
+    >> db_GHNdf
+    >> db_LineFitChi2
+    >> db_EmEnergy
+    >> db_EmEnergyErr
+    >> db_Energy
+    >> db_EnergyErr
+    >> db_MinAngle
+    >> db_MaxAngle
+    >> db_MeanAngle
+    >> db_NTank
+    >> db_HottestTank
+    >> db_AxisDist
+    >> db_SDPDist
+    >> db_SDFDdT
+    >> db_XmaxEyeDist
+    >> db_XTrackMin
+    >> db_XTrackMax
+    >> db_XFOVMin
+    >> db_XFOVMax
+    >> db_XTrackObs
+    >> db_DegTrackObs
+    >> db_TTrackObs;
 
   if (_is.fail ())
   {
-    logStream (MESSAGE_ERROR) << "ConnShooter::processAuger failed reading stream" << sendLog;
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
     return -1;
   }
 
-  // valid shover and it's hibrid..
-
-  getTimeTfromGPS (gps_sec, gps_usec, db_auger_date);
+  getTimeTfromGPS (db_GPSSec, db_GPSNSec, db_auger_date);
+  strncpy (db_AugerId.arr, AugerId.c_str (), 50);
+  db_AugerId.len = (50 > AugerId.length () ? AugerId.length () : 50);
 
   time (&now);
 
-  if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
+  // validate shover and it's hibrid..
+
+/*  if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
     || now - db_auger_date > maxTime
     || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
   {
-    logStream (MESSAGE_INFO) << "ConnShooter::processAuger ignore (gap_comp "
+    logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
       << gap_comp
       << " date " << LibnovaDateDouble (db_auger_date)
       << " gap_isT5 " << gap_isT5
@@ -168,41 +223,160 @@ ConnShooter::processAuger ()
       << " dec " << db_auger_dec
       << ")" << sendLog;
     return -1;
-  }
+  } */
 
   EXEC SQL INSERT INTO
       auger
-      (auger_t3id,
-      auger_date,
-      auger_npixels,
-      auger_sdpphi,
-      auger_sdptheta,
-      auger_sdpangle,
-      auger_ra,
-      auger_dec)
+      (
+      	auger_t3id,
+	auger_date,
+        eye,
+	run,
+	event,
+	augerid, 
+	GPSSec, 
+	GPSNSec, 
+	SDId, 
+	NPix,
+	SDPTheta,
+	SDPThetaErr,
+	SDPPhi,
+	SDPPhiErr,
+	SDPChi2,
+	SDPNdf, 
+	Rp,
+	RpErr,
+	Chi0,
+	Chi0Err,
+	T0,
+	T0Err,
+	TimeChi2,
+	TimeChi2FD,
+	TimeNdf,	
+	Easting,
+	Northing,
+	Altitude,
+	NorthingErr,
+	EastingErr,
+	Theta,
+	ThetaErr,
+	Phi,
+	PhiErr,
+	dEdXmax,
+	dEdXmaxErr,
+	X_max,
+	X_maxErr,
+	X0,
+	X0Err,
+	Lambda,
+	LambdaErr,
+	GHChi2,
+	GHNdf,
+	LineFitChi2,
+	EmEnergy,
+	EmEnergyErr,
+	Energy,
+	EnergyErr,
+	MinAngle,
+	MaxAngle,
+	MeanAngle,
+	NTank,
+	HottestTank,
+	AxisDist,
+	SDPDist,
+	SDFDdT,
+	XmaxEyeDist,
+	XTrackMin,
+	XTrackMax,
+	XFOVMin,
+	XFOVMax,
+	XTrackObs,
+	DegTrackObs,
+	TTrackObs
+     )	
     VALUES
-      (nextval('auger_t3id'),
-      (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
-      :db_auger_npixels,
-      :db_auger_sdpphi,
-      :db_auger_sdptheta,
-      :db_auger_sdpangle,
-      :db_auger_ra,
-      :db_auger_dec);
+      (
+        nextval('auger_t3id'),
+        (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
+	:db_Eye,
+	:db_Run,
+	:db_Event,
+	:db_AugerId,
+	:db_GPSSec,
+	:db_GPSNSec,
+	:db_SDId,
+	:db_NPix,
+	:db_SDPTheta,
+	:db_SDPThetaErr,
+	:db_SDPPhi,
+	:db_SDPPhiErr,
+	:db_SDPChi2,
+	:db_SDPNdf,
+	:db_Rp,
+	:db_RpErr,
+	:db_Chi0,
+	:db_Chi0Err,
+	:db_T0,
+	:db_T0Err,
+	:db_TimeChi2,
+	:db_TimeChi2FD,
+	:db_TimeNdf,
+	:db_Easting,
+	:db_Northing,
+	:db_Altitude,
+	:db_NorthingErr,
+	:db_EastingErr,
+	:db_Theta,
+	:db_ThetaErr,
+	:db_Phi,
+	:db_PhiErr,
+	:db_dEdXmax,
+	:db_dEdXmaxErr,
+	:db_X_max,
+	:db_X_maxErr,
+	:db_X0,
+	:db_X0Err,
+	:db_Lambda,
+	:db_LambdaErr,
+	:db_GHChi2,
+	:db_GHNdf,
+	:db_LineFitChi2,
+	:db_EmEnergy,
+	:db_EmEnergyErr,
+	:db_Energy,
+	:db_EnergyErr,
+	:db_MinAngle,
+	:db_MaxAngle,
+	:db_MeanAngle,
+	:db_NTank,
+	:db_HottestTank,
+	:db_AxisDist,
+	:db_SDPDist,
+	:db_SDFDdT,
+	:db_XmaxEyeDist,
+	:db_XTrackMin,
+	:db_XTrackMax,
+	:db_XFOVMin,
+	:db_XFOVMax,
+	:db_XTrackObs,
+	:db_DegTrackObs,
+	:db_TTrackObs
+      );
   if (sqlca.sqlcode)
   {
     logStream (MESSAGE_ERROR)
-      << "ConnShooter::processAuger cannot add new value to db: "
+      << "Rts2ConnShooter::processAuger cannot add new value to db: "
       << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
     EXEC SQL ROLLBACK;
     return -1;
   }
   EXEC SQL COMMIT;
-  return master->newShower (db_auger_date, db_auger_ra, db_auger_dec);
+  return 0;
+//  return master->newShower (db_auger_date, db_auger_ra, db_auger_dec);
 }
 
 
-ConnShooter::ConnShooter (int in_port, AugerShooter *in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend (in_master)
+ConnShooter::ConnShooter (int in_port, DevAugerShooter * in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend (in_master)
 {
   master = in_master;
   port = in_port;
@@ -225,8 +399,7 @@ ConnShooter::~ConnShooter (void)
 }
 
 
-int
-ConnShooter::idle ()
+int ConnShooter::idle ()
 {
   int ret;
   int err;
@@ -241,12 +414,12 @@ ConnShooter::idle ()
       ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
       if (ret)
       {
-        logStream (MESSAGE_ERROR) << "ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
+        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (errno) << sendLog;
         connectionError (-1);
       }
       else if (err)
       {
-        logStream (MESSAGE_ERROR) << "ConnShooter::idle getsockopt " << strerror (err) << sendLog;
+        logStream (MESSAGE_ERROR) << "Rts2ConnShooter::idle getsockopt " << strerror (err) << sendLog;
         connectionError (-1);
       }
       else
@@ -265,17 +438,16 @@ ConnShooter::idle ()
 }
 
 
-int
-ConnShooter::init_listen ()
+int ConnShooter::init_listen ()
 {
   int ret;
 
   connectionError (-1);
 
-  sock = socket (AF_INET, SOCK_DGRAM, 0);
+  sock = socket (PF_INET, SOCK_DGRAM, 0);
   if (sock == -1)
   {
-    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen socket " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen socket " << strerror (errno) << sendLog;
     return -1;
   }
   struct sockaddr_in server;
@@ -286,7 +458,7 @@ ConnShooter::init_listen ()
   ret = fcntl (sock, F_SETFL, O_NONBLOCK);
   if (ret)
   {
-    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen fcntl: " << strerror (errno) << sendLog;
     return -1;
   }
 
@@ -294,7 +466,7 @@ ConnShooter::init_listen ()
     bind (sock, (struct sockaddr *) &server, sizeof (server));
   if (ret)
   {
-    logStream (MESSAGE_ERROR) << "ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
+    logStream (MESSAGE_ERROR) << "Rts2ConnShooter::init_listen bind: " << strerror (errno) << sendLog;
     return -1;
   }
   setConnState (CONN_CONNECTED);
@@ -302,17 +474,15 @@ ConnShooter::init_listen ()
 }
 
 
-int
-ConnShooter::init ()
+int ConnShooter::init ()
 {
   return init_listen ();
 }
 
 
-void
-ConnShooter::connectionError (int last_data_size)
+void ConnShooter::connectionError (int last_data_size)
 {
-  logStream (MESSAGE_DEBUG) << "ConnShooter::connectionError" << sendLog;
+  logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::connectionError" << sendLog;
   if (sock > 0)
   {
     close (sock);
@@ -326,8 +496,7 @@ ConnShooter::connectionError (int last_data_size)
 }
 
 
-int
-ConnShooter::receive (fd_set * set)
+int ConnShooter::receive (fd_set * set)
 {
   int ret = 0;
   if (sock >= 0 && FD_ISSET (sock, set))
@@ -344,7 +513,7 @@ ConnShooter::receive (fd_set * set)
     }
     nbuf[ret] = '\0';
     processAuger ();
-    logStream (MESSAGE_DEBUG) << "ConnShooter::receive data: " << nbuf << sendLog;
+    logStream (MESSAGE_DEBUG) << "Rts2ConnShooter::receive data: " << nbuf << sendLog;
     successfullRead ();
     gettimeofday (&last_packet, NULL);
     // enable others to catch-up (FW connections will forward packet to their sockets)
@@ -354,15 +523,13 @@ ConnShooter::receive (fd_set * set)
 }
 
 
-int
-ConnShooter::lastPacket ()
+int ConnShooter::lastPacket ()
 {
   return last_packet.tv_sec;
 }
 
 
-double
-ConnShooter::lastTargetTime ()
+double ConnShooter::lastTargetTime ()
 {
   return last_target_time;
 }

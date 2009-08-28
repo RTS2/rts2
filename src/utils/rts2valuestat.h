@@ -108,6 +108,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		void addValue (double in_val)
 		{
 			valueList.push_back (in_val);
+			changed ();
 		}
 
 		/**
@@ -122,6 +123,7 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 			while (valueList.size () >= maxQueSize)
 				valueList.pop_front ();
 			addValue (in_val);
+			changed ();
 		}
 };
 #endif							 /* !__RTS2_VALUESTAT__ */

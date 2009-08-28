@@ -9,6 +9,7 @@ noinst_HEADERS = \
 	XmlRpcServerConnection.h \
 	XmlRpcServer.h \
 	XmlRpcServerMethod.h \
+	XmlRpcServerGetRequest.h \
 	XmlRpcSocket.h \
 	XmlRpcSource.h \
 	XmlRpcUtil.h \
@@ -20,6 +21,7 @@ libxmlrpc_rts2_a_SOURCES = \
 	XmlRpcServerConnection.cpp \
 	XmlRpcServer.cpp \
 	XmlRpcServerMethod.cpp \
+	XmlRpcServerGetRequest.cpp \
 	XmlRpcSocket.cpp \
 	XmlRpcSource.cpp \
 	XmlRpcUtil.cpp \

@@ -1,5 +1,5 @@
-#include "rts2daemonwindow.h"
 #include "nmonitor.h"
+#include "rts2daemonwindow.h"
 
 #include <iostream>
 
@@ -158,11 +158,8 @@ Rts2NCentraldWindow::printState (Rts2Conn * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
-	else if (conn->havePriority ())
-		wcolor_set (getWriteWindow (), CLR_OK, NULL);
-	wprintw (getWriteWindow (), "%s %s (%x) priority: %s\n", conn->getName (),
-		conn->getStateString ().c_str (), conn->getState (),
-		conn->havePriority ()? "yes" : "no");
+	wprintw (getWriteWindow (), "%s %s (%x)\n", conn->getName (),
+		conn->getStateString ().c_str (), conn->getState ());
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 

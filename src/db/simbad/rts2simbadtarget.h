@@ -41,15 +41,18 @@ class Rts2SimbadTarget:public ConstTarget
 		float simbadBMag;
 
 		std::ostringstream *simbadOut;
+
+		// holds http_proxy string..
+		char *http_proxy;
 	public:
 		Rts2SimbadTarget (const char *in_name);
 		virtual ~Rts2SimbadTarget (void);
 
 		virtual int load ();
 
-		int getPosition (struct ln_equ_posn *pos)
+		void getPosition (struct ln_equ_posn *pos)
 		{
-			return Target::getPosition (pos);
+			Target::getPosition (pos);
 		}
 
 		virtual void printExtra (Rts2InfoValStream & _os);

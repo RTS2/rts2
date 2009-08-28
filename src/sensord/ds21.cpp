@@ -289,7 +289,7 @@ DS21::idle ()
 		{
 			(*iter).updateStatus ();
 		}
-		setTimeout (10);
+		setTimeout (10 * USEC_SEC);
 	}
 	return Sensor::idle ();
 }

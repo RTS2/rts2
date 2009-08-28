@@ -1,7 +1,0 @@
-#RTS2 devices configuration
-#device	type	device_name	options
-#example:
-camd	dummy	C0	-W W0 -F F0 --width 400 --height 500 -f
-teld	dummy	T0
-filterd	dummy	W0	-F "AA:B:C:D:E" -s 10
-sensor	dummy	SD	--modefile /etc/rts2/sd

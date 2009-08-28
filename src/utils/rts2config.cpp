@@ -18,6 +18,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include "rts2config.h"
 
@@ -36,10 +37,8 @@ Rts2Config::getSpecialValues ()
 	// load horizont file..
 	getString ("observatory", "horizon", horizon_file, "");
 
-	obs_epoch_id = 1;
-	getInteger ("observatory", "epoch_id", obs_epoch_id);
-
 	getStringVector ("observatory", "required_devices", obs_requiredDevices);
+	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices);
 
 	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
 	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
@@ -119,25 +118,45 @@ Rts2Config::getDeviceMinFlux (const char *device, double &minFlux)
 	return getDouble (device, "minflux", minFlux);
 }
 
+
+time_t
+Rts2Config::getNight ()
+{
+	time_t now = getNight (time (NULL));
+	struct tm *tm_s = gmtime (&now);
+	return getNight (tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday);
+}
+
 time_t
 Rts2Config::getNight (int year, int month, int day)
 {
 	struct tm _tm;
+	static char p_tz[100];
+
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;
-	_tm.tm_hour = _tm.tm_min = _tm.tm_sec = 0;
+	_tm.tm_hour = 12 - getObservatoryLongitude () / 15;
+	_tm.tm_min = _tm.tm_sec = 0;
+	_tm.tm_gmtoff = 0;
+	_tm.tm_isdst = 0;
+	_tm.tm_zone = "\0";
 
 	std::string old_tz;
 	if (getenv("TZ"))
-	  old_tz = std::string (getenv ("TZ"));
+		old_tz = std::string (getenv ("TZ"));
 
-	setenv ("TZ", "UTC", 1);
+	putenv ((char*) "TZ=UTC");
+
 	time_t n = mktime (&_tm);
-	if (old_tz.length () > 0)
-		setenv ("TZ", old_tz.c_str(), 1);
-	else
-		unsetenv ("TZ");
 
-	return getNight (n);
+	strcpy (p_tz, "TZ=");
+
+	if (old_tz.length () > 0)
+	{
+		strncat (p_tz, old_tz.c_str (), 96);
+	}
+	putenv (p_tz);
+
+	return n;
 }

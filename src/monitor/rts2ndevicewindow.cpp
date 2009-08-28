@@ -46,14 +46,11 @@ Rts2NDeviceWindow::printState ()
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-	else if (connection->havePriority ())
-		wcolor_set (window, CLR_OK, NULL);
-	mvwprintw (window, 0, 2, "%s %s (%x) %x priority: %s",
+	mvwprintw (window, 0, 2, "%s %s (%x) %x",
 		connection->getName (),
 		connection->getStateString ().c_str (),
 		connection->getState (),
-		connection->getFullBopState (),
-		connection->havePriority ()? "yes" : "no"
+		connection->getFullBopState ()
 	);
 
 	wcolor_set (window, CLR_DEFAULT, NULL);
@@ -111,11 +108,6 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	}
 	switch (value->getValueType ())
 	{
-		case RTS2_VALUE_TIME:
-			_os << LibnovaDateDouble (value->getValueDouble ())
-				<< " (" << TimeDiff (now, value->getValueDouble ()) << ")";
-			printValue (value->getName ().c_str (), _os.str ().c_str ());
-			break;
 		case RTS2_VALUE_RADEC:
 			{
 				if (value->getValueDisplayType () == RTS2_DT_DEGREES)

@@ -41,7 +41,6 @@ Rts2Block::Rts2Block (int in_argc, char **in_argv):
 Rts2App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
-	priority_client = -1;
 
 	signal (SIGPIPE, SIG_IGN);
 
@@ -254,7 +253,7 @@ Rts2Block::idle ()
 	for (iter = centraldConns.begin (); iter != centraldConns.end (); iter++)
 		(*iter)->idle ();
 
-	// add from queue..
+	// add from connection queue..
 	for (iter = connections_added.begin (); iter != connections_added.end (); iter = connections_added.erase (iter))
 	{
 		connections.push_back (*iter);
@@ -263,6 +262,17 @@ Rts2Block::idle ()
 	for (iter = centraldConns_added.begin (); iter != centraldConns_added.end (); iter = centraldConns_added.erase (iter))
 	{
 		centraldConns.push_back (*iter);
+	}
+
+	// test for any pending timers..
+	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
+	if (!timers.empty () && iter_t->first < getNow ())
+	{
+	 	if (iter_t->second->getArg () != NULL)
+		  	((Rts2Object *)iter_t->second->getArg ())->postEvent (iter_t->second);
+		else
+			postEvent (iter_t->second);
+		timers.erase (iter_t);
 	}
 
 	return 0;
@@ -361,9 +371,18 @@ Rts2Block::oneRunLoop ()
 {
 	int ret;
 	struct timeval read_tout;
+	double t_diff;
 
-	read_tout.tv_sec = idle_timeout / USEC_SEC;
-	read_tout.tv_usec = idle_timeout % USEC_SEC;
+	if (timers.begin () != timers.end () && (t_diff = timers.begin ()->first - getNow ()) < idle_timeout)
+	{
+		read_tout.tv_sec = t_diff;
+		read_tout.tv_usec = (t_diff - floor (t_diff)) * USEC_SEC;
+	}
+	else
+	{
+		read_tout.tv_sec = idle_timeout / USEC_SEC;
+		read_tout.tv_usec = idle_timeout % USEC_SEC;
+	}
 
 	FD_ZERO (&read_set);
 	FD_ZERO (&write_set);
@@ -372,9 +391,7 @@ Rts2Block::oneRunLoop ()
 	addSelectSocks ();
 	ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 	if (ret > 0)
-	{
 		selectSuccess ();
-	}
 	ret = idle ();
 	if (ret == -1)
 		endRunLoop ();
@@ -384,10 +401,6 @@ Rts2Block::oneRunLoop ()
 int
 Rts2Block::deleteConnection (Rts2Conn * conn)
 {
-	if (conn->havePriority ())
-	{
-		cancelPriorityOperations ();
-	}
 	if (conn->isConnState (CONN_DELETE))
 	{
 		connections_t::iterator iter;
@@ -415,50 +428,8 @@ Rts2Block::connectionRemoved (Rts2Conn * conn)
 }
 
 
-int
-Rts2Block::setPriorityClient (int in_priority_client, int timeout)
-{
-	int discard_priority = 1;
-	Rts2Conn *priConn;
-	priConn = findCentralId (in_priority_client);
-	if (priConn && priConn->getHavePriority ())
-		discard_priority = 0;
-
-	connections_t::iterator iter;
-	for (iter = connections.begin (); iter != connections.end (); iter++)
-	{
-		Rts2Conn *conn = *iter;
-		if (conn->getCentraldId () == in_priority_client)
-		{
-			if (discard_priority)
-			{
-				cancelPriorityOperations ();
-				if (priConn)
-					priConn->setHavePriority (0);
-			}
-			conn->setHavePriority (1);
-			break;
-		}
-	}
-	priority_client = in_priority_client;
-	return 0;
-}
-
-
-void
-Rts2Block::cancelPriorityOperations ()
-{
-}
-
-
 void
 Rts2Block::deviceReady (Rts2Conn * conn)
-{
-}
-
-
-void
-Rts2Block::priorityChanged (Rts2Conn * conn, bool have)
 {
 }
 
@@ -724,17 +695,18 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
 
 
 void
-Rts2Block::addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login)
+Rts2Block::addUser (int p_centraldId, const char *p_login)
 {
 	int ret;
 	std::list < Rts2ConnUser * >::iterator user_iter;
 	for (user_iter = blockUsers.begin (); user_iter != blockUsers.end (); user_iter++)
 	{
-		ret = (*user_iter)->update (p_centraldId, p_priority, p_priority_have, p_login);
+		ret =
+			(*user_iter)->update (p_centraldId, p_login);
 		if (!ret)
 			return;
 	}
-	addUser (new Rts2ConnUser (p_centraldId, p_priority, p_priority_have, p_login));
+	addUser (new Rts2ConnUser (p_centraldId, p_login));
 }
 
 
@@ -923,4 +895,15 @@ Rts2Block::commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_con
 		}
 	}
 	return false;
+}
+
+void Rts2Block::deleteTimers (int event_type)
+{
+	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
+	{
+		if (iter->second->getType () == event_type)
+			timers.erase (iter++);
+		else
+			iter++;
+	}
 }

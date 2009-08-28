@@ -126,216 +126,195 @@ Rts2Image::setYoA (double in_yoa)
 }
 
 
-double
-Rts2Image::getRotang ()
+double Rts2Image::getRotang ()
 {
 	//  return rotang;
-	int ret;
-	double val;
-	ret = getValue ("ROTANG", val, true);
-	if (ret)
+	double val = 0;
+	try
+	{
+		getValue ("ROTANG", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 0;
 	}
 	return ln_deg_to_rad (val);
 }
 
 
-double
-Rts2Image::getCenterRa ()
+double Rts2Image::getCenterRa ()
 {
-	int ret;
-	double val;
-	ret = getValue ("TARRA", val, true);
-	if (ret)
+	double val = 0;
+	try
+	{
+		getValue ("TARRA", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 0;
 	}
 	return val;
 }
 
 
-double
-Rts2Image::getCenterDec ()
+double Rts2Image::getCenterDec ()
 {
-	int ret;
-	double val;
-	ret = getValue ("TARDEC", val, true);
-	if (ret)
+	double val = 0;
+	try
+	{
+		getValue ("TARDEC", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 0;
 	}
 	return val;
 }
 
 
-double
-Rts2Image::getXPlate ()
+double Rts2Image::getXPlate ()
 {
-	int ret;
-	double val;
-	ret = getValue ("XPLATE", val, true);
-	if (ret)
+	double val = 0;
+	try
+	{
+		getValue ("XPLATE", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 0;
 	}
 	return val / 3600.0;
 }
 
 
-double
-Rts2Image::getYPlate ()
+double Rts2Image::getYPlate ()
 {
-	int ret;
-	double val;
-	ret = getValue ("YPLATE", val, true);
-	if (ret)
+	double val = 0;
+	try 
+	{
+		getValue ("YPLATE", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 0;
 	}
 	return val / 3600.0;
 }
 
 
-int
-Rts2Image::getMountFlip ()
+int Rts2Image::getMountFlip ()
 {
 	return mnt_flip;
 }
 
 
-int
-Rts2Image::getFlip ()
+int Rts2Image::getFlip ()
 {
-	int ret;
 	int val;
-	ret = getValue ("FLIP", val, true);
-	if (ret)
+	try
+	{
+		getValue ("FLIP", val, true);
+	}
+	catch (rts2core::Error &er)
 	{
 		getFailed++;
-		return 1;
 	}
 	return val;
 }
 
 
-int
-Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
+void Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
-	int ret;
-	ret = getValue (ra_name, radec.ra, true);
-	if (ret)
-		return ret;
-	ret = getValue (dec_name, radec.dec, true);
-	if (ret)
-		return ret;
-	return 0;
+ 	
+	getValue (ra_name, radec.ra, true);
+	getValue (dec_name, radec.dec, true);
 }
 
 
-LibnovaRaDec
-Rts2Image::getCoord (const char *prefix)
+LibnovaRaDec Rts2Image::getCoord (const char *prefix)
 {
 	struct ln_equ_posn pos;
-	int ret;
 	std::string p = std::string (prefix) + "RA";
-	ret = getValue (p.c_str (), pos.ra, true);
-	if (ret)
-		throw KeyNotFound (this, p.c_str ());
+	getValue (p.c_str (), pos.ra, true);
 	p = std::string (prefix) + "DEC";
-	ret = getValue (p.c_str (), pos.dec, true);
-	if (ret)
-		throw KeyNotFound (this, p.c_str ());
+	getValue (p.c_str (), pos.dec, true);
 	return LibnovaRaDec (pos.ra, pos.dec);
 }
 
 
-int
-Rts2Image::getCoordObject (struct ln_equ_posn &radec)
+void Rts2Image::getCoordObject (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "OBJRA", "OBJDEC");
+	getCoord (radec, "OBJRA", "OBJDEC");
 }
 
 
-int
-Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
+void Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "TARRA", "TARDEC");
+	getCoord (radec, "TARRA", "TARDEC");
 }
 
 
-int
-Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
+void Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "CRVAL1", "CRVAL2");
+	getCoord (radec, "CRVAL1", "CRVAL2");
 }
 
 
-int
-Rts2Image::getCoordMount (struct ln_equ_posn &radec)
+void Rts2Image::getCoordMount (struct ln_equ_posn &radec)
 {
-	return getCoord (radec, "TELRA", "TELDEC");
+	getCoord (radec, "TELRA", "TELDEC");
 }
 
 
-int
-Rts2Image::getCoordBest (struct ln_equ_posn &radec)
+void Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 {
-	int ret;
-	ret = getCoordAstrometry (radec);
-	if (ret)
-		return getCoordTarget (radec);
-	return ret;
+	try
+	{
+		getCoordAstrometry (radec);
+	}
+	catch (rts2core::Error &er)
+	{
+		getCoordTarget (radec);
+	}
 }
 
 
-int
-Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
+void Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
 {
-	int ret;
 	struct ln_equ_posn pos;
-	ret = getCoord (pos, ra_name, dec_name);
-	if (ret)
-		return ret;
+	getCoord (pos, ra_name, dec_name);
 	radec.setPos (&pos);
-	return 0;
 }
 
 
-int
-Rts2Image::getCoordTarget (LibnovaRaDec & radec)
+void Rts2Image::getCoordTarget (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "TARRA", "TARDEC");
+	getCoord (radec, "TARRA", "TARDEC");
 }
 
 
-int
-Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
+void Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "CRVAL1", "CRVAL2");
+	getCoord (radec, "CRVAL1", "CRVAL2");
 }
 
 
-int
-Rts2Image::getCoordMount (LibnovaRaDec & radec)
+void Rts2Image::getCoordMount (LibnovaRaDec & radec)
 {
-	return getCoord (radec, "TELRA", "TELDEC");
+	getCoord (radec, "TELRA", "TELDEC");
 }
 
 
-int
-Rts2Image::getCoordBest (LibnovaRaDec & radec)
+void Rts2Image::getCoordBest (LibnovaRaDec & radec)
 {
-	int ret;
-	ret = getCoordAstrometry (radec);
-	if (ret)
-		return getCoordTarget (radec);
-	return ret;
+	try
+	{
+		getCoordAstrometry (radec);
+	}
+	catch (rts2core::Error &er)
+	{
+		getCoordTarget (radec);
+	}
 }
 
 
@@ -343,13 +322,12 @@ int
 Rts2Image::createWCS (double x_off, double y_off)
 {
 	LibnovaRaDec radec;
-	int ret;
 
 	getFailed = 0;
 
-	ret = getCoordTarget (radec);
-	if (ret)
-		return ret;
+	getCoordTarget (radec);
+	if (getFailed != 0)
+		return -1;
 
 	double rotang = ln_rad_to_deg (getRotang ());
 

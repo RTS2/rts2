@@ -50,15 +50,23 @@
 #define ZS_TIMEOUT       0x0004
 #define ZS_POWER         0x0008
 #define ZS_RAIN          0x0010
+#define ZS_COMP_RUN      0x0020
+// does not have rain signal
+#define ZS_WITHOUT_RAIN  0x0040
+#define ZS_SIMPLE        0x0400
+#define ZS_COMPRESSOR    0x0800
 #define ZS_WEATHER       0x1000
 #define ZS_OPENING_IGNR  0x2000
 #define ZS_EMERGENCY_B   0x4000
 #define ZS_DEADMAN       0x8000
 
+// emergency button reset
+#define ZI_EMMERGENCY_R  0x2000
 // bit for Q9 - remote switch
 #define ZI_Q9            0x4000
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
+
 
 namespace rts2dome
 {
@@ -74,6 +82,13 @@ class Zelio:public Dome
 		HostString *host;
 		int16_t deadManNum;
 		time_t nextDeadCheck;
+
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE } zelioModel;
+
+		// if model have hardware rain signal
+		bool haveRainSignal;
+
+		Rts2ValueString *zelioModelString;
 
 		Rts2ValueInteger *deadTimeout;
 
@@ -106,6 +121,7 @@ class Zelio:public Dome
 		Rts2ValueBool *blockOpenRight;
 		Rts2ValueBool *blockCloseRight;
 
+		Rts2ValueBool *emergencyReset;
 		Rts2ValueBool *Q9;
 
 		Rts2ValueInteger *J1XT1;
@@ -121,6 +137,8 @@ class Zelio:public Dome
 		rts2core::ConnModbus *zelioConn;
 
 	  	int setBitsInput (uint16_t reg, uint16_t mask, bool value);
+
+		void createZelioValues ();
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -197,12 +215,12 @@ Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "timeout occured" << sendLog;
 			return -1;
 		}
-		if (!(reg & ZS_POWER))
+		if (zelioModel == ZELIO_BOOTES3 && !(reg & ZS_POWER))
 		{
 			logStream (MESSAGE_WARNING) << "power failure" << sendLog;
 			return -1;
 		}
-		if (!(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
+		if (haveRainSignal && !(reg & ZS_RAIN) && !(reg_J1 & ZI_IGNORE_RAIN))
 		{
 			logStream (MESSAGE_WARNING) << "it is raining and rain is not ignored" << sendLog;
 			return -1;
@@ -237,14 +255,17 @@ Zelio::isGoodWeather ()
 		logStream (MESSAGE_ERROR) << err << sendLog;
 		return false;
 	}
-	rain->setValueBool (!(reg & ZS_RAIN));
-	sendValueAll (rain);
+	if (haveRainSignal)
+	{
+		rain->setValueBool (!(reg & ZS_RAIN));
+		sendValueAll (rain);
+		openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
+		sendValueAll (openingIgnoreRain);
+	}
 	weather->setValueBool (reg & ZS_WEATHER);
 	sendValueAll (weather);
-	openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
-	sendValueAll (openingIgnoreRain);
 	// now check for rain..
-	if (!(reg & ZS_RAIN) && weather->getValueBool () == false)
+	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
 		setWeatherTimeout (3600);
 		return false;
@@ -273,8 +294,21 @@ Zelio::isOpened ()
 		return -1;
 	}
 	// check states of end switches..
-	if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
-		return -2;
+	switch (zelioModel)
+	{
+		case ZELIO_SIMPLE:
+			if ((regs[0] & ZO_EP_OPEN))
+				return -2;
+			break;
+		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR:
+			if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
+				return -2;
+			break;
+		case ZELIO_UNKNOW:
+			break;
+	}
+
 	return 0;
 }
 
@@ -291,7 +325,15 @@ Zelio::startClose ()
 {
 	try
 	{
+		uint16_t reg;
 		zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+		// update automode status..
+		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+		automode->setValueBool (reg & ZS_SW_AUTO);
+		if (automode->getValueBool () == false)
+		{
+			return 0;
+		}
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -318,8 +360,21 @@ Zelio::isClosed ()
 		return -1;
 	}
 	// check states of end switches..
-	if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
-		return -2;
+	switch (zelioModel)
+	{
+		case ZELIO_SIMPLE:
+			if ((regs[0] & ZO_EP_CLOSE))
+				return -2;
+			break;
+		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR:
+			if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
+				return -2;
+			break;
+		case ZELIO_UNKNOW:
+			break;
+	}
+
 	return 0;
 }
 
@@ -376,49 +431,24 @@ Zelio::idle ()
 Zelio::Zelio (int argc, char **argv)
 :Dome (argc, argv)
 {
+	zelioModel = ZELIO_UNKNOW;
+	haveRainSignal = true;
+
+	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
+
 	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false);
 	deadTimeout->setValueInteger (60);
 
-	createValue (rain, "rain", "state of rain sensor", false);
-	createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
-	createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
 	createValue (automode, "automode", "state of automatic dome mode", false);
 	createValue (timeoutOccured, "timeout_occured", "on if timeout occured", false);
-	createValue (onPower, "on_power", "true if power is connected", false);
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
-	createValue (emergencyButton, "emmergency", "state of emergency button", false);
+	createValue (emergencyButton, "emergency", "state of emergency button", false);
+
+	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false);
+	emergencyReset->setValueBool (false);
 
 	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false);
-
-	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
-	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
-	createValue (swCloseRight, "sw_close_right", "state of right close switch", false);
-	createValue (swOpenRight, "sw_open_right", "state of right open switch", false);
-
-	createValue (motOpenLeft, "motor_open_left", "state of left opening motor", false);
-	createValue (motCloseLeft, "motor_close_left", "state of left closing motor", false);
-	createValue (motOpenRight, "motor_open_right", "state of right opening motor", false);
-	createValue (motCloseRight, "motor_close_right", "state of right closing motor", false);
-
-	createValue (timeoOpenLeft, "timeo_open_left", "left open timeout", false);
-	createValue (timeoCloseLeft, "timeo_close_left", "left close timeout", false);
-	createValue (timeoOpenRight, "timeo_open_right", "right open timeout", false);
-	createValue (timeoCloseRight, "timeo_close_right", "right close timeout", false);
-
-	createValue (blockOpenLeft, "block_open_left", "left open block", false);
-	createValue (blockCloseLeft, "block_close_left", "left close block", false);
-	createValue (blockOpenRight, "block_open_right", "right open block", false);
-	createValue (blockCloseRight, "block_close_left", "left close block", false);
-
-	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
-	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
-	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
-	createValue (J4XT1, "J4XT1", "fourth input", false, RTS2_DT_HEX);
-
-	createValue (O1XT1, "O1XT1", "first output", false, RTS2_DT_HEX);
-	createValue (O2XT1, "O2XT1", "second output", false, RTS2_DT_HEX);
-	createValue (O3XT1, "O3XT1", "third output", false, RTS2_DT_HEX);
-	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
+	Q9->setValueBool (false);
 
 	host = NULL;
 	deadManNum = 0;
@@ -445,38 +475,54 @@ Zelio::info ()
 	}
 	catch (rts2core::ConnError err)
 	{
-		logStream (MESSAGE_ERROR) << err << sendLog;	
+		logStream (MESSAGE_ERROR) << err << sendLog;
 		return -1;
 	}
 
-	rain->setValueBool (!(regs[7] & ZS_RAIN));
-	ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
-	openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
+	if (haveRainSignal)
+	{
+		rain->setValueBool (!(regs[7] & ZS_RAIN));
+		ignoreRain->setValueBool (regs[0] & ZI_IGNORE_RAIN);
+		openingIgnoreRain->setValueBool (regs[7] & ZS_OPENING_IGNR);
+	}
 	automode->setValueBool (regs[7] & ZS_SW_AUTO);
 	timeoutOccured->setValueBool (regs[7] & ZS_TIMEOUT);
-	onPower->setValueBool (regs[7] & ZS_POWER);
 	weather->setValueBool (regs[7] & ZS_WEATHER);
 	emergencyButton->setValueBool (regs[7] & ZS_EMERGENCY_B);
 
-	swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
-	swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
-	swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
-	swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
+	switch (zelioModel)
+	{
+		case ZELIO_BOOTES3:
+			onPower->setValueBool (regs[7] & ZS_POWER);
+		case ZELIO_COMPRESSOR:
+			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
+			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
 
-	motOpenLeft->setValueBool (regs[4] & ZO_MOT_OPEN);
-	motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
-	motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
-	motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
+			motOpenRight->setValueBool (regs[5] & ZO_MOT_OPEN);
+			motCloseRight->setValueBool (regs[5] & ZO_MOT_CLOSE);
 
-	timeoOpenLeft->setValueBool (regs[4] & ZO_TIMEO_OPEN);
-	timeoCloseLeft->setValueBool (regs[4] & ZO_TIMEO_CLOSE);
-	timeoOpenRight->setValueBool (regs[5] & ZO_TIMEO_OPEN);
-	timeoCloseRight->setValueBool (regs[5] & ZO_TIMEO_CLOSE);
+			timeoOpenRight->setValueBool (regs[5] & ZO_TIMEO_OPEN);
+			timeoCloseRight->setValueBool (regs[5] & ZO_TIMEO_CLOSE);
 
-	blockOpenLeft->setValueBool (regs[4] & ZO_BLOCK_OPEN);
-	blockCloseLeft->setValueBool (regs[4] & ZO_BLOCK_CLOSE);
-	blockOpenRight->setValueBool (regs[5] & ZO_BLOCK_OPEN);
-	blockCloseRight->setValueBool (regs[5] & ZO_BLOCK_CLOSE);
+			blockOpenRight->setValueBool (regs[5] & ZO_BLOCK_OPEN);
+			blockCloseRight->setValueBool (regs[5] & ZO_BLOCK_CLOSE);
+
+		case ZELIO_SIMPLE:
+			swOpenLeft->setValueBool (regs[4] & ZO_EP_OPEN);
+			swCloseLeft->setValueBool (regs[4] & ZO_EP_CLOSE);
+
+			motOpenLeft->setValueBool (regs[4] & ZO_MOT_OPEN);
+			motCloseLeft->setValueBool (regs[4] & ZO_MOT_CLOSE);
+
+			timeoOpenLeft->setValueBool (regs[4] & ZO_TIMEO_OPEN);
+			timeoCloseLeft->setValueBool (regs[4] & ZO_TIMEO_CLOSE);
+
+			blockOpenLeft->setValueBool (regs[4] & ZO_BLOCK_OPEN);
+			blockCloseLeft->setValueBool (regs[4] & ZO_BLOCK_CLOSE);
+			break;
+		case ZELIO_UNKNOW:
+			break;
+	}
 
 	J1XT1->setValueInteger (regs[0]);
 	J2XT1->setValueInteger (regs[1]);
@@ -501,51 +547,177 @@ Zelio::init ()
 
 	if (host == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "You must specify zeliho hostname (with -z option)." << sendLog;
+		logStream (MESSAGE_ERROR) << "You must specify zelio hostname (with -z option)." << sendLog;
 		return -1;
 	}
 	zelioConn = new rts2core::ConnModbus (this, host->getHostname (), host->getPort ());
+	
+	uint16_t regs[8];
+
 	try
 	{
 		zelioConn->init ();
+		zelioConn->readHoldingRegisters (16, 8, regs);
 	}
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
+
+	// O4XT1
+	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE);
+	switch (model)
+	{
+		case 0:
+			zelioModel = ZELIO_BOOTES3;
+			zelioModelString->setValueString ("ZELIO_BOOTES3");
+			break;
+		case ZS_COMPRESSOR:
+			zelioModel = ZELIO_COMPRESSOR;
+			zelioModelString->setValueString ("ZELIO_COMPRESSOR");
+			break;
+		case ZS_SIMPLE:
+			zelioModel = ZELIO_SIMPLE;
+			zelioModelString->setValueString ("ZELIO_SIMPLE");
+			break;
+		default:
+			logStream (MESSAGE_ERROR) << "cannot retrieve dome model (" << model << ")" << sendLog;
+			return -1;
+	}
+	// have this model rain signal?
+	haveRainSignal = !(regs[7] & ZS_WITHOUT_RAIN);
+
+	createZelioValues ();
+
 	ret = info ();
 	if (ret)
 		return ret;
+
 	// switch on dome state
-	if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
+	switch (zelioModel)
 	{
-		maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
-	}
-	else if (swCloseLeft->getValueBool () == true && swCloseRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
-	}
-	else if (motOpenLeft->getValueBool () == true || motOpenRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
-	}
-	else if (motCloseLeft->getValueBool () == true || motCloseRight->getValueBool () == true)
-	{
-		maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+		case ZELIO_BOOTES3:
+		case ZELIO_COMPRESSOR:
+			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+			}
+			else if (swCloseLeft->getValueBool () == true && swCloseRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+			}
+			else if (motOpenLeft->getValueBool () == true || motOpenRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
+			}
+			else if (motCloseLeft->getValueBool () == true || motCloseRight->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+			}
+			break;
+		case ZELIO_SIMPLE:
+			if (swOpenLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
+			}
+			else if (swCloseLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "initial dome state is closed");
+			}
+			else if (motOpenLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_OPENING, "initial dome state is opening");
+			}
+			  else if (motCloseLeft->getValueBool () == true)
+			{
+				maskState (DOME_DOME_MASK, DOME_CLOSING, "initial dome state is closing");
+			}
+			break;
+		case ZELIO_UNKNOW:
+			return -1;
 	}
 	setIdleInfoInterval (20);
 	return 0;
 }
 
 
+void
+Zelio::createZelioValues ()
+{
+	switch (zelioModel)
+	{
+		case ZELIO_SIMPLE:
+			createValue (swOpenLeft, "sw_open", "state of open switch", false);
+			createValue (swCloseLeft, "sw_close", "state of close switch", false);
+
+			createValue (motOpenLeft, "motor_open", "state of opening motor", false);
+			createValue (motCloseLeft, "motor_close", "state of closing motor", false);
+
+			createValue (timeoOpenLeft, "timeo_open", "open timeout", false);
+			createValue (timeoCloseLeft, "timeo_close", "close timeout", false);
+
+			createValue (blockOpenLeft, "block_open", "open block", false);
+			createValue (blockCloseLeft, "block_close", "close block", false);
+			break;
+		
+		case ZELIO_BOOTES3:
+			createValue (onPower, "on_power", "true if power is connected", false);
+		case ZELIO_COMPRESSOR:
+			createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
+			createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
+			createValue (swCloseRight, "sw_close_right", "state of right close switch", false);
+			createValue (swOpenRight, "sw_open_right", "state of right open switch", false);
+
+			createValue (motOpenLeft, "motor_open_left", "state of left opening motor", false);
+			createValue (motCloseLeft, "motor_close_left", "state of left closing motor", false);
+			createValue (motOpenRight, "motor_open_right", "state of right opening motor", false);
+			createValue (motCloseRight, "motor_close_right", "state of right closing motor", false);
+
+			createValue (timeoOpenLeft, "timeo_open_left", "left open timeout", false);
+			createValue (timeoCloseLeft, "timeo_close_left", "left close timeout", false);
+			createValue (timeoOpenRight, "timeo_open_right", "right open timeout", false);
+			createValue (timeoCloseRight, "timeo_close_right", "right close timeout", false);
+
+			createValue (blockOpenLeft, "block_open_left", "left open block", false);
+			createValue (blockCloseLeft, "block_close_left", "left close block", false);
+			createValue (blockOpenRight, "block_open_right", "right open block", false);
+			createValue (blockCloseRight, "block_close_left", "left close block", false);
+
+			break;
+		case ZELIO_UNKNOW:
+			break;
+	}
+
+	// create rain values only if rain sensor is present
+	if (haveRainSignal)
+	{
+		createValue (rain, "rain", "state of rain sensor", false);
+		createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
+		createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
+	}
+
+	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
+	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
+	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
+	createValue (J4XT1, "J4XT1", "fourth input", false, RTS2_DT_HEX);
+
+	createValue (O1XT1, "O1XT1", "first output", false, RTS2_DT_HEX);
+	createValue (O2XT1, "O2XT1", "second output", false, RTS2_DT_HEX);
+	createValue (O3XT1, "O3XT1", "third output", false, RTS2_DT_HEX);
+	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
+}
+
+
 int
 Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
+	if (oldValue == emergencyReset)
+	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (oldValue == Q9)
-	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ());
+	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (oldValue == ignoreRain)
-	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ());
+	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	try
 	{
 		if (oldValue == J1XT1)

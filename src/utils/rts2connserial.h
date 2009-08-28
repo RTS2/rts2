@@ -72,21 +72,6 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		bool logTrafficAsHex;
 
 		/**
-		 * Returns baud speed as string.
-		 */
-		const char *getBaudSpeed ();
-
-		int getVMin ()
-		{
-			return vMin;
-		}
-
-		int getVTime ()
-		{
-			return vTime;
-		}
-
-		/**
 		 * Log buffer read from port, honest selection between hex and standard debugging.
 		 *
 		 * @param ls    Log stream used for debugging.
@@ -124,6 +109,21 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * @return -1 on error, 0 on success.
 		 */
 		virtual int init ();
+
+		/**
+		 * Returns baud speed as string.
+		 */
+		const char *getBaudSpeed ();
+
+		int getVMin ()
+		{
+			return vMin;
+		}
+
+		int getVTime ()
+		{
+			return vTime;
+		}
 
 		/**
 		 * Set socket vtime. VTIME is used with a serial port

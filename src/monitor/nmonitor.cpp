@@ -411,8 +411,7 @@ Rts2NMonitor::init ()
 	daemonWindow = new Rts2NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
 
 	// init layout
-	daemonLayout =
-		new Rts2NLayoutBlockFixedB (daemonWindow, comWindow, false, 5);
+	daemonLayout = new Rts2NLayoutBlockFixedB (daemonWindow, comWindow, false, 3);
 	masterLayout = new Rts2NLayoutBlock (deviceList, daemonLayout, true, 10);
 	masterLayout = new Rts2NLayoutBlock (masterLayout, msgwindow, false, 75);
 

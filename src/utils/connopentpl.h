@@ -37,23 +37,12 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class OpenTplError
+class OpenTplError:public Error
 {
-	private:
-		std::string desc;
 	public:
-		OpenTplError (std::string _desc)
+		OpenTplError (std::string _desc): Error (_desc)
 		{
-			desc = _desc;
 		}
-		
-		const std::string& getDesc ()
-		{
-			return desc;
-		}
-
-		friend std::ostream & operator << (std::ostream & os , OpenTplError & err);
-
 };
 
 /**

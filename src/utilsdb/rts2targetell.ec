@@ -36,17 +36,24 @@ EllTarget::load ()
 	if (ret)
 		return ret;
 	// try to parse MPC string..
-	return orbitFromMPC (getTargetInfo ());
+	return LibnovaEllFromMPC (&orbit, designation, getTargetInfo ());
 }
 
 int
 EllTarget::orbitFromMPC (const char *mpc)
 {
-	return LibnovaEllFromMPC (&orbit, designation, mpc);
+	int ret;
+	ret = LibnovaEllFromMPC (&orbit, designation, mpc);
+	if (ret)
+		return ret;
+	setTargetName (designation.c_str ());
+	setTargetInfo (mpc);
+	setTargetType (TYPE_ELLIPTICAL);
+	return ret;
 }
 
 
-int
+void
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
 	if (orbit.e == 1.0)
@@ -79,16 +86,14 @@ EllTarget::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *
 
 	pos->ra += parallax->ra;
 	pos->dec += parallax->dec;
-
-	return 0;
 }
 
 
-int
+void
 EllTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_equ_posn parallax;
-	return getPosition (pos, JD, &parallax);
+	getPosition (pos, JD, &parallax);
 }
 
 

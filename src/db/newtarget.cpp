@@ -116,8 +116,6 @@ Rts2NewTarget::saveTarget ()
 	}
 	target->setTargetName (target_name.c_str ());
 
-	target->setTargetType (TYPE_OPORTUNITY);
-
 	if (!isnan (radius))
 	{
 		Rts2TargetSet tarset = target->getTargets (radius);

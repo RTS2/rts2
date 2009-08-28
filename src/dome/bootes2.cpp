@@ -31,10 +31,27 @@
 #define ROOF_TIMEOUT	5000000
 
 
-#define DOME_O1         0x01
-#define DOME_O2         0x02
-#define DOME_C1         0x04
-#define DOME_C2         0x08
+class ComediDOError
+{
+	private:
+		const char *name;
+	public:
+		ComediDOError (const char *_name)
+		{
+			name = _name;
+		}
+
+		friend std::ostream & operator << (std::ostream & os, ComediDOError & err);
+}
+
+
+std::ostream &
+operator << (std::ostream & os, ComediDOError & err)
+{
+	os << "Cannot read digital input " << err.name;
+	return os;
+}
+
 
 namespace rts2dome
 {
@@ -52,10 +69,13 @@ class Bootes2: public Dome
 		comedi_t *comediDevice;
 		const char *comediFile;
 
-	
-		Rts2ValueInteger *sw_state;
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
+
+		Rts2ValueBool *swOpenLeft;
+		Rts2ValueBool *swCloseLeft;
+		Rts2ValueBool *swOpenRight;
+		Rts2ValueBool *swCloseRight;
 
 		Rts2ValueBool *raining;
 
@@ -186,9 +206,39 @@ Bootes2::updateTemperature ()
 }
 
 
+void
+Bootes2::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
+{
+	int ret;
+	int v;
+	ret = comedi_dio_read (3, channel, &v);
+	if (ret != 1)
+		throw ComediDOError (name);
+	val->setValueBool (v != 0);
+}
+
+
 int
 Bootes2::updateStatus ()
 {
+	swOpenLeft->setValueBool (true);
+	swOpenRight->setValueBool (true);
+	swCloseLeft->setValueBool (false);
+	swCloseRight->setValueBool (false);
+	int v;
+	try
+	{
+		comediReadDIO (2, swCloseLeft, "close left");
+		comediReadDIO (3, swCloseRight, "close right");
+
+		comediReadDIO (0, swOpenLeft, "open left");
+		comediReadDIO (1, swOpenRight, "open right");
+	}
+	catch (ComediDOError)
+	{
+		logStream (MESSAGE_ERROR) << ComediDOError << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
@@ -291,16 +341,14 @@ Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
+	ret = updateStatus ();
+	if (ret)
+		return -1;
 
-	if (sw_state->getValueInteger () == (DOME_C1 | DOME_C2))
+	if (swCloseLeft->getValueBool () && swCloseRight->getValueBool ())
 		setState (DOME_CLOSED, "Dome is closed");
-	else if (sw_state->getValueInteger () == (DOME_O1 | DOME_O2))
+	else if (swOpenLeft->getValueBool () && swOpenRight->getValueBool ())
 	  	setState (DOME_OPENED, "Dome is opened");
-	// dome should be closed, but it is not closed - report error
-	else if (sw_state->getValueInteger () & (DOME_O1 | DOME_O2))
-	{
-		setState (DOME_UNKNOW, "strange dome state");
-	}
 
 	return Dome::info ();
 }
@@ -324,7 +372,7 @@ Bootes2::isOpened ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
-	if (sw_state->getValueInteger () != (DOME_O1 | DOME_O2))
+	if (swOpenLeft->getValueBool () && swOpenRight->getValueBool ())
 		return USEC_SEC;
 	return -2;
 }
@@ -345,7 +393,7 @@ Bootes2::startClose ()
 	if (ret)
 		return -1;
 	
-	if (sw_state->getValueInteger () == (DOME_C1 | DOME_C2))
+	if (swCloseLeft->getValueBool () && swCloseRight->getValueBool ())
 		return -1;
 	
 	return roofChange ();
@@ -359,7 +407,7 @@ Bootes2::isClosed ()
 	ret = updateStatus ();
 	if (ret)
 		return -1;
-	if (sw_state->getValueInteger () != (DOME_C1 | DOME_C2))
+	if (swCloseLeft->getValueBool () && swCloseRight->getValueBool ())
 		return USEC_SEC;
 	return -2;
 }
@@ -391,11 +439,16 @@ Bootes2::Bootes2 (int argc, char **argv): Dome (argc, argv)
 {
 	comediFile = "/dev/comedi0";
 
-	createValue (sw_state, "sw_state", "state of end switches", false, RTS2_DT_HEX);
 	createValue (tempMeas, "TEMP", "outside temperature", true);
 	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
 
+	createValue (swOpenLeft, "sw_open_left", "left open end switch", false);
+	createValue (swCloseLeft, "sw_close_left", "left close end switch", false);
+	createValue (swOpenRight, "sw_open_right", "right open end swith", false);
+	createValue (swCloseRight, "sw_close_right", "right close end switch", false);
+
 	createValue (raining, "RAIN", "if it's raining", true);
+
 	raining->setValueBool (false);
 
 	addOption ('c', NULL, 1, "path to comedi device");

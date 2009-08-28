@@ -30,6 +30,7 @@
 #include "hms.h"
 #include "../utils/rts2connserial.h"
 #include "../utils/rts2config.h"
+#include "../utils/utilsfunc.h"
 
 #define RATE_SLEW                'S'
 #define RATE_FIND                'M'

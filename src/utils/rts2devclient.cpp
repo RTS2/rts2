@@ -88,31 +88,8 @@ Rts2DevClient::stateChanged (Rts2ServerState * state)
 
 
 void
-Rts2DevClient::priorityInfo (bool have)
-{
-	if (have)
-		getPriority ();
-	else
-		lostPriority ();
-}
-
-
-void
-Rts2DevClient::getPriority ()
-{
-}
-
-
-void
-Rts2DevClient::lostPriority ()
-{
-}
-
-
-void
 Rts2DevClient::died ()
 {
-	lostPriority ();
 }
 
 
@@ -273,6 +250,7 @@ bool Rts2DevClientCamera::isExposing ()
 Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
 (in_connection)
 {
+	moveWasCorrecting = false;
 }
 
 

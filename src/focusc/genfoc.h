@@ -24,16 +24,6 @@
 
 #include <vector>
 
-#define PP_NEG
-
-#define GAMMA                      0.995
-
-#define PP_MED                     0.60
-#define PP_HIG                     0.995
-#define PP_LOW                     (1 - PP_HIG)
-
-#define HISTOGRAM_LIMIT            65536
-
 // events types
 #define EVENT_INTEGRATE_START      RTS2_LOCAL_EVENT + 302
 #define EVENT_INTEGRATE_STOP       RTS2_LOCAL_EVENT + 303
@@ -86,8 +76,6 @@ class Rts2GenFocClient:public Rts2Client
 			int other_device_type);
 		virtual int init ();
 
-		virtual void centraldConnRunning (Rts2Conn *conn);
-
 		float defaultExpousure ()
 		{
 			return defExposure;
@@ -131,10 +119,7 @@ class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 	protected:
 		unsigned short low, med, hig, max, min;
 		double average;
-		double stdev;
-		double bg_stdev;
 		int autoSave;
-		int histogram[HISTOGRAM_LIMIT];
 
 		std::list < fwhmData * >fwhmDatas;
 		virtual void printFWHMTable ();

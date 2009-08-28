@@ -81,6 +81,7 @@ class Andor:public Camera
 		Rts2ValueSelection *tempStatus;
 
 		Rts2ValueInteger *gain;
+		Rts2ValueInteger *emccdgain;
 
 		Rts2ValueBool *useFT;
 		Rts2ValueBool *useRunTillAbort;
@@ -95,6 +96,7 @@ class Andor:public Camera
 		Rts2ValueInteger *VSpeed;
 		Rts2ValueFloat *HSpeedHZ;
 		Rts2ValueFloat *VSpeedHZ;
+
 		Rts2ValueInteger *bitDepth;
 		Rts2ValueInteger *acqusitionMode;
 
@@ -114,6 +116,7 @@ class Andor:public Camera
 
 		void getTemp ();
 		int setGain (int in_gain);
+		int setEMCCDGain (int in_gain);
 		int setADChannel (int in_adchan);
 		int setVSAmplitude (int in_vsamp);
 		int setHSSpeed (int in_amp, int in_hsspeed);
@@ -133,7 +136,7 @@ class Andor:public Camera
 	protected:
 		virtual int processOption (int in_opt);
 		virtual void help ();
-		virtual void cancelPriorityOperations ();
+		virtual void usage ();
 
 		virtual void initDataTypes ();
 
@@ -335,32 +338,32 @@ Camera (in_argc, in_argv)
 	tempStatus->addSelVal ("NOT_SUPPORTED");
 	tempStatus->addSelVal ("DRIFT");
 
-	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, 0, CAM_WORKING, true);
+	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, 0, CAM_WORKING);
 	ADChannel->setValueInteger (0);
 
-	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0, CAM_WORKING, true);
+	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0, CAM_WORKING);
 	VSpeed->setValueInteger (1);
 
-	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING, true);
+	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING);
 	EMOn->setValueBool (true);
 	setDefaultFlip (0);
 
-	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING, true);
+	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING);
 	HSpeed->setValueInteger (1);
 
-	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0, CAM_WORKING, true);
+	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0, CAM_WORKING);
 	FTShutter->setValueBool (false);
 
-	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING, true);
+	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING);
 	useFT->setValueBool (true);
 
-	createValue (useRunTillAbort, "USERTA", "Use run till abort mode of the CCD", true, 0, CAM_WORKING, true);
+	createValue (useRunTillAbort, "USERTA", "Use run till abort mode of the CCD", true, 0, CAM_WORKING);
 	// it is disabled, as it produces wrong data
 	useRunTillAbort->setValueBool (false);
 
-	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING, true);
+	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING);
 
-	createValue (outputAmp, "OUTAMP", "output amplifier", true, 0, CAM_WORKING, true);
+	createValue (outputAmp, "OUTAMP", "output amplifier", true, 0, CAM_WORKING);
 	outputAmp->setValueInteger (0);
 
 	outPreAmpGain = NULL;
@@ -370,7 +373,7 @@ Camera (in_argc, in_argv)
 
 	fanMode = NULL;
 
-	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING, true);
+	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING);
 	filterCr->setValueBool (false);
 
 	defaultGain = IXON_DEFAULT_GAIN;
@@ -395,25 +398,55 @@ Andor::~Andor (void)
 void
 Andor::help ()
 {
-	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl;
-	std::
-		cout <<
-		"Optimal values for vertical speed on iXon are: -H 1 -v 1 -C 1, those are default"
+	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl
+		<< std::endl <<
+		"\tOptimal values for speeds on iXon are: HSPEED=0 VSPEED=0. Those can be changed by modefile, specified by --modefile argument. There is an example modefile, which specify two modes:\n"
+		<< std::endl << 
+"[default]\n"
+"EMON=on\n"
+"HSPEED=1\n"
+"VSPEED=1\n"
+"\n"
+"[classic]\n"
+"EMON=off\n"
+"HSPEED=3\n"
+"VSPEED=1\n"
+
 		<< std::endl;
 	Camera::help ();
 }
 
 
+void
+Andor::usage ()
+{
+	std::cout << "\t" << getAppName () << " -c -70 -d C1" << std::endl;
+}
+
 int
 Andor::setGain (int in_gain)
 {
 	int ret;
-	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
+	if ((ret = SetGain (in_gain)) != DRV_SUCCESS)
 	{
 		logStream (MESSAGE_ERROR) << "andor setGain error " << ret << sendLog;
 		return -1;
 	}
 	gain->setValueInteger (in_gain);
+	return 0;
+}
+
+
+int
+Andor::setEMCCDGain (int in_gain)
+{
+	int ret;
+	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
+	{
+		logStream (MESSAGE_ERROR) << "andor setEMCCDGain error " << ret << sendLog;
+		return -1;
+	}
+	emccdgain->setValueInteger (in_gain);
 	return 0;
 }
 
@@ -460,10 +493,10 @@ Andor::setHSSpeed (int in_amp, int in_hsspeed)
 		logStream (MESSAGE_ERROR) << "cannot get number of horizontal shiwft speeds, error " << ret << sendLog;
 		return -1;
 	}
-	if (num <= in_hsspeed)
+	if (in_hsspeed >= num)
 	{
 		logStream (MESSAGE_WARNING) << "cannot set horizontal shift speed to " << in_hsspeed
-			<< ", changing request to " << num << sendLog;
+			<< ", changing request to " << (num - 1) << sendLog;
 		in_hsspeed = num - 1;
 	}
 	if ((ret = SetHSSpeed (in_amp, in_hsspeed)) != DRV_SUCCESS)
@@ -510,15 +543,6 @@ Andor::setAcquisitionMode (int mode)
 		return -1;
 	acqusitionMode->setValueInteger (mode);
 	return 0;
-}
-
-
-void
-Andor::cancelPriorityOperations ()
-{
-	if (!isnan (defaultGain) && gain)
-		setGain (defaultGain);
-	Camera::cancelPriorityOperations ();
 }
 
 
@@ -638,6 +662,8 @@ Andor::startExposure ()
 int
 Andor::scriptEnds ()
 {
+	if (!isnan (defaultGain) && gain)
+		setGain (defaultGain);
 	//	closeShutter ();
 	return Camera::scriptEnds ();
 }
@@ -647,7 +673,9 @@ int
 Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == gain)
-		return setGain (new_value->getValueInteger ());
+		return setGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	if (old_value == emccdgain)
+		return setEMCCDGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == ADChannel)
 		return setADChannel (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSAmp)
@@ -1091,21 +1119,31 @@ Andor::init ()
 		return -1;
 	}
 
-	// This clamps the baseline level of kinetic series frames.  Didn't exist
-	// in older SDK versions, is not a problem for non-KS exposures.
-	ret = SetBaselineClamp(1);
 
 	// iXon+ cameras can do "real gain", indicated by a flag.
 	if (cap.ulEMGainCapability & 0x08)
 	{
 		ret = SetEMGainMode(3);
-		if (ret !=DRV_SUCCESS)
+		if (ret != DRV_SUCCESS)
 		{
-			cerr << "Failed to set real gain mode" << ret << endl;
+			cerr << "Failed to set real gain mode, error " << ret << endl;
 			return -1;
 		}
 	}
 	initAndorValues ();
+
+	if (baselineClamp != NULL)
+	{
+		// This clamps the baseline level of kinetic series frames.  Didn't exist
+		// in older SDK versions, is not a problem for non-KS exposures.
+		ret = SetBaselineClamp(0);
+		if (ret != DRV_SUCCESS)
+		{
+			cerr << "Failed to set baseline clamp, error " << ret << endl;
+			return -1;
+		}
+	}
+
 
 	//Set Read Mode to --Image--
 	ret = SetReadMode (4);
@@ -1138,26 +1176,32 @@ Andor::initAndorValues ()
 {
 	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
 	{
-		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_WORKING, true);
+		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_WORKING);
 		VSAmp->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_PREAMPGAIN)
 	{
-		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING, true);
+		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING);
 		outPreAmpGain->setValueInteger (0);
+	}
+	if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
+	{
+		createValue (gain, "GAIN", "CCD gain", true, 0,
+			CAM_WORKING);
+		setGain (defaultGain);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
 	{
-		createValue (gain, "GAIN", "CCD gain", true, 0,
-			CAM_WORKING, true);
-		setGain (defaultGain);
+		createValue (emccdgain, "EMCCDGAIN", "EM CCD gain", true, 0,
+			CAM_WORKING);
+		setEMCCDGain (defaultGain);
 
 		if (cap.ulEMGainCapability != 0)
 		{
-			createValue (emAdvanced, "EMADV", "advanced EM mode", true, 0, CAM_WORKING, true);
+			createValue (emAdvanced, "EMADV", "advanced EM mode", true, 0, CAM_WORKING);
 			emAdvanced->setValueBool (false);
 
-			createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING, true);
+			createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING);
 			emGainMode->addSelVal ("DAC 8bit");
 			emGainMode->addSelVal ("DAC 12bit");
 			emGainMode->addSelVal ("LINEAR 12bit");
@@ -1166,17 +1210,17 @@ Andor::initAndorValues ()
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINECLAMP)
 	{
-		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING, true);
+		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING);
 		baselineClamp->setValueBool (false);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINEOFFSET)
 	{
-		createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING, true);
+		createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING);
 		baselineOff->setValueInteger (0);
 	}
 	if (cap.ulFeatures & AC_FEATURES_FANCONTROL)
 	{
-		createValue (fanMode, "FANMODE", "FAN mode", true, 0, CAM_WORKING, true);
+		createValue (fanMode, "FANMODE", "FAN mode", true, 0, CAM_WORKING);
 		fanMode->addSelVal ("FULL");
 		fanMode->addSelVal ("LOW");
 		fanMode->addSelVal ("OFF");

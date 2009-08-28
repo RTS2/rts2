@@ -54,11 +54,14 @@ class Rts2DevGrb:public Rts2DeviceDb
 		char *addExe;
 		int execFollowups;
 
+		Rts2ValueBool *grb_enabled;
+
 		Rts2ValueTime *last_packet;
 		Rts2ValueDouble *delta;
 		Rts2ValueString *last_target;
 		Rts2ValueTime *last_target_time;
-		Rts2ValueInteger *execConnection;
+		Rts2ValueRaDec *last_target_radec;
+		Rts2ValueBool *execConnection;
 
 	protected:
 		virtual int processOption (int in_opt);
@@ -66,6 +69,8 @@ class Rts2DevGrb:public Rts2DeviceDb
 
 		virtual int init ();
 		virtual void help ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
 		Rts2DevGrb (int argc, char **argv);
 		virtual ~ Rts2DevGrb ();

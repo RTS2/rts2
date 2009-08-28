@@ -136,7 +136,7 @@ Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
 	if (iter != images.end ())
 	{
 		CameraImage *ci = (*iter).second;
-		ci->image->writeDate (data->getDataBuff (), data->getDataTop ());
+		ci->image->writeData (data->getDataBuff (), data->getDataTop ());
 		ci->setDataWriten ();
 		if (ci->canDelete ())
 		{
@@ -449,11 +449,10 @@ Rts2DevClientWriteImage::infoFailed ()
 }
 
 
-Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command
-(in_owner)
+Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command (in_owner)
 {
   	std::ostringstream _os;
-	_os << "que_image " << image->getImageName ();
+	_os << "que_image " << image->getFileName ();
 	setCommand (_os);
 }
 
@@ -462,7 +461,7 @@ Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image)
 (in_owner)
 {
   	std::ostringstream _os;
-	_os << "que_flat " << image->getImageName ();
+	_os << "que_flat " << image->getFileName ();
 	setCommand (_os);
 }
 

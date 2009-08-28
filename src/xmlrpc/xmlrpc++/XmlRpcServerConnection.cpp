@@ -3,6 +3,8 @@
 
 #include "XmlRpcSocket.h"
 #include "XmlRpc.h"
+#include "base64.h"
+
 #ifndef MAKEDEPEND
 # include <stdio.h>
 # include <stdlib.h>
@@ -33,6 +35,12 @@ XmlRpcSource(fd, deleteOnClose)
 	_server = server;
 	_connectionState = READ_HEADER;
 	_keepAlive = true;
+
+	_get_response_header_length = 0;
+	_get_response_header = NULL;
+
+	_get_response_length = 0;
+	_get_response = NULL;
 }
 
 
@@ -54,6 +62,9 @@ XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 
 	if (_connectionState == READ_REQUEST)
 		if ( ! readRequest()) return 0;
+
+	if (_connectionState == GET_REQUEST)
+		if ( ! handleGet()) return 0;
 
 	if (_connectionState == WRITE_RESPONSE)
 		if ( ! writeResponse()) return 0;
@@ -81,19 +92,25 @@ XmlRpcServerConnection::readHeader()
 	char *hp = (char*)_header.c_str();
 								 // End of string
 	char *ep = hp + _header.length();
+	char *gp = 0;				 // GET/Post method pointer
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 	char *kp = 0;				 // Start of connection value
+	char *ap = 0;				 // Start of authorization header
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
-		if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
+		if ((ep - cp > 4) && (strncasecmp(cp, "GET ", 4) == 0))
+			gp = cp + 4;
+		else if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
 			lp = cp + 16;
 		else if ((ep - cp > 12) && (strncasecmp(cp, "Connection: ", 12) == 0))
 			kp = cp + 12;
-		else if ((ep - cp > 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
+		else if ((ep - cp > 12) && (strncasecmp (cp, "Authorization: ", 15) == 0))
+			ap = cp + 15;
+		else if ((ep - cp >= 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
-		else if ((ep - cp > 2) && (strncmp(cp, "\n\n", 2) == 0))
+		else if ((ep - cp >= 2) && (strncmp(cp, "\n\n", 2) == 0))
 			bp = cp + 2;
 	}
 
@@ -110,6 +127,46 @@ XmlRpcServerConnection::readHeader()
 		}
 
 		return true;			 // Keep reading
+	}
+
+	// authorization..
+	if (ap != 0)
+	{
+		while (isspace(*ap))
+			ap++;
+		// user..
+		if (ep - ap > 5 && strncmp (ap, "Basic", 5) == 0)
+		{
+			ap += 5;
+			while (isspace (*ap))
+				ap++;
+			char *ape = ap;
+			while (!(isspace (*ape) || (*ape == '\n') || (*ape == '\r')))
+				ape++;
+			std::string t_ap = _header.substr (ap - hp, ape - ap);
+
+			int iostatus = 0;
+			base64<char> decoder;
+			std::back_insert_iterator<std::string> ins = std::back_inserter(_authorization);
+			decoder.get(t_ap.begin (), t_ap.end (), ins, iostatus);
+
+		}
+	}
+
+	// XML-RPC requests are POST. If we received GET request, then get request string and call it a day..
+	if (gp != 0)
+	{
+		while (isspace(*gp))
+			gp++;
+		char *cp = gp;
+		while (! (cp >= ep || isspace(*cp) || *cp == '\r' || *cp == '\n'))
+			cp++;
+		_get = _header.substr(gp - hp, cp - gp);
+		XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: GET request for %s", _get.c_str());
+
+		_connectionState = GET_REQUEST;
+
+		return true;
 	}
 
 	// Decode content length
@@ -187,6 +244,63 @@ XmlRpcServerConnection::readRequest()
 
 
 bool
+XmlRpcServerConnection::handleGet()
+{
+	if (_get_response_header_length == 0 || _get_response_length == 0)
+	{
+		executeGet();
+		_getHeaderWritten = 0;
+		_getWritten = 0;
+		_bytesWritten = 0;
+		if (_get_response_header_length == 0 || _get_response_length == 0)
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: empty response.");
+			return false;
+		}
+	}
+
+	if (_getHeaderWritten != _get_response_header_length)
+	{
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header, _get_response_header_length, &_getHeaderWritten))
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
+		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getHeaderWritten, _get_response_header_length);
+	}
+	if (_getHeaderWritten == _get_response_header_length && _getWritten != _get_response_length)
+	{
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten))
+		{
+			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
+		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getWritten, _get_response_length);
+	}
+
+	// Prepare to read the next request
+	if (_getHeaderWritten == _get_response_header_length && _getWritten == _get_response_length)
+	{
+		_header = "";
+		_authorization = "";
+		_get = "";
+		_request = "";
+		delete[] _get_response_header;
+		delete[] _get_response;
+		
+		_get_response_header_length = 0;
+		_get_response_header = NULL;
+
+		_get_response_length = 0;
+		_get_response = NULL;
+		_response = "";
+		_connectionState = READ_HEADER;
+	}
+
+	return _keepAlive;			 // Continue monitoring this source if true
+}
+
+bool
 XmlRpcServerConnection::writeResponse()
 {
 	if (_response.length() == 0)
@@ -212,7 +326,13 @@ XmlRpcServerConnection::writeResponse()
 	if (_bytesWritten == int(_response.length()))
 	{
 		_header = "";
+		_authorization = "";
+		_get = "";
 		_request = "";
+		_get_response_header_length = 0;
+		_get_response_header = NULL;
+		_get_response_length = 0;
+		_get_response = NULL;
 		_response = "";
 		_connectionState = READ_HEADER;
 	}
@@ -249,6 +369,68 @@ XmlRpcServerConnection::executeRequest()
 }
 
 
+// Run the method, generate _get_response buffer, fill _get_response_length
+void
+XmlRpcServerConnection::executeGet()
+{
+	const char* response_type = "text/plain";
+
+	int http_code = HTTP_BAD_REQUEST;
+	const char *http_code_string = "Failed";
+	const char *extra_header = "";
+
+	XmlRpcServerGetRequest* request = _server->findGetRequest(_get);
+	if (request == NULL)
+	{
+		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
+		http_code = HTTP_BAD_REQUEST;
+	}
+	else
+	{
+		if (_authorization.length () != 0)
+			request->setAuthorization (_authorization);
+	
+		try
+		{
+			std::string path = _get.substr (request->getPrefix ().length ()).c_str ();
+			// check for ..
+			if (path.find ("..") != std::string::npos)
+				throw XmlRpcException ("Path contains ..");
+			if (path.find ("!") != std::string::npos)
+				throw XmlRpcException ("Path contains !");
+			request->execute (path.c_str (), http_code, response_type, _get_response, _get_response_length);
+		}
+		catch (std::exception &ex)
+		{
+			_get_response = new char[501];
+			response_type = "text/html";
+			_get_response_length = snprintf (_get_response, 500, "<html><head><title>Error</title></head><body><p>Bad request %s</p></body></html>", ex.what());
+
+			http_code = HTTP_BAD_REQUEST;
+		}
+	}
+
+	switch (http_code)
+	{
+		case HTTP_OK:
+			http_code_string = "OK";
+			break;
+		case HTTP_UNAUTHORIZED:
+			http_code_string = "Authorization Required";
+			extra_header = "\r\nWWW-Authenticate: Basic realm=\"Your RTS2 login\"";
+			break;
+		case HTTP_BAD_REQUEST:
+		default:
+			http_code_string = "Failed";
+			break;
+	}
+
+	_get_response_header = new char[501];
+	_get_response_header_length = snprintf(_get_response_header, 500, "HTTP/1.0 %i %s\r\nServer: XMLRCP%s\r\nContent-Type: %s\r\nContent-length: %i\r\n\r\n", http_code, http_code_string, extra_header, response_type, _get_response_length);
+	printf ("%s", _get_response_header);
+}
+
+
 // Parse the method name and the argument values from the request.
 std::string
 XmlRpcServerConnection::parseRequest(XmlRpcValue& params)
@@ -281,6 +463,9 @@ XmlRpcValue& params, XmlRpcValue& result)
 	XmlRpcServerMethod* method = _server->findMethod(methodName);
 
 	if ( ! method) return false;
+
+	if (_authorization.length () != 0)
+		method->setAuthorization (_authorization);
 
 	method->execute(params, result);
 

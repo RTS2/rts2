@@ -1,6 +1,17 @@
 0.7.5
 =====
 
+2009-08-10
+ * XML-RPC server supports access to the images
+ * XML-RPC supports correct authorization
+
+2009-07-25
+ * use wasChanged to detect changes inside daemon, to not send values which are the same
+ * number of improvements inside XML-RPCD
+
+2009-05-24
+ * Added astrometry_devices to imgproc section from rts2.ini
+
 2009-05-22
  * Changed way how MPC ephemerides are stored in database and handled
 

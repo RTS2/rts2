@@ -1,7 +1,7 @@
 This directory (and its subdirectories) contains all necessary SQL files and
 shell scripts used to create database to hold RTS2 data.
 
-Probelems with older PostgreSQL versions (< 8.0??)
+Problems with older PostgreSQL versions (< 8.0??)
 
 PostgreSQL in version bellow 8.0 declares to_timestamp function only for integers.
 E.g.:
@@ -19,6 +19,8 @@ RTS2 needs sometimes variant with double precision. This can be created with:
 create or replace function to_timestamp (double precision) returns abstime as 'select to_timestamp (int4 ($1)) ' language 'SQL';
 
 Subdirectories:
+
+* auger - contains Auger shoot-the-shower specific tables
 
 * blanks - blank areas, used to populate FLAT targets.
 

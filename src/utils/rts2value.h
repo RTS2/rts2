@@ -117,7 +117,7 @@
  * Value is an array of strings.
  * @ingroup RTS2Value
  */
-#define RTS2_VALUE_ARRAY              0x00000040
+#define RTS2_VALUE_ARRAY              0x00000080
 
 /**
  * Base type mask.
@@ -171,6 +171,11 @@
 #define RTS2_DT_ROTANG                0x00060000
 #define RTS2_DT_HEX                   0x00070000
 #define RTS2_DT_BYTESIZE              0x00080000
+
+/**
+ * Sets when value was modified and needs to be send during infoAll call.
+ */
+#define RTS2_VALUE_NEED_SEND          0x01000000
 
 #define RTS2_VALUE_INFOTIME           "infotime"
 
@@ -446,13 +451,26 @@ class Rts2Value
 		{
 			return rts2Type & RTS2_VALUE_CHANGED;
 		}
+		
+		/**
+		 * Return true if value needs to be send - when it was modified from last send.
+		 */
+		bool needSend ()
+		{
+			return rts2Type & RTS2_VALUE_NEED_SEND;
+		}
+
+		void resetNeedSend ()
+		{
+			rts2Type &= ~RTS2_VALUE_NEED_SEND;
+		}
 
 		/**
 		 * Set value change flag.
 		 */
 		void changed ()
 		{
-			rts2Type |= RTS2_VALUE_CHANGED;
+			rts2Type |= RTS2_VALUE_CHANGED | RTS2_VALUE_NEED_SEND;
 		}
 };
 
@@ -525,10 +543,12 @@ class Rts2ValueInteger:public Rts2Value
 		}
 		int inc ()
 		{
+		 	changed ();
 			return value++;
 		}
 		int dec ()
 		{
+			changed ();
 			return value--;
 		}
 		virtual void setFromValue (Rts2Value * newValue);
@@ -919,10 +939,12 @@ class Rts2ValueLong:public Rts2Value
 		}
 		long inc ()
 		{
+		 	changed ();	
 			return value++;
 		}
 		long dec ()
 		{
+			changed ();
 			return value--;
 		}
 		int setValueLong (long in_value)

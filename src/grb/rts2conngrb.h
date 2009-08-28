@@ -47,6 +47,8 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		double deltaValue;
 		char *last_target;
 		double last_target_time;
+		double last_ra;
+		double last_dec;
 
 		// init listen (listening on given port) and call (try to connect to given
 		// port; there must be GCN packet receiving running on oppoiste side) GCN
@@ -124,7 +126,17 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		int lastPacket ();
 		double delta ();
 		char *lastTarget ();
-		void setLastTarget (char *in_last_target, double in_last_target_time);
-		double lastTargetTime ();
+		double lastTargetTime ()
+		{
+			return last_target_time;
+		}
+		double lastRa ()
+		{
+			return last_ra;
+		}
+		double lastDec ()
+		{
+			return last_dec;
+		}
 };
 #endif							 /* !__RTS2_GRBCONN__ */

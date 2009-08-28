@@ -1,11 +1,5 @@
 CREATE GROUP "observers";
 
-CREATE TABLE epoch (
-	epoch_id	integer PRIMARY KEY,		
-	epoch_start	timestamp,
-	epoch_end	timestamp
-);
-
 CREATE TABLE types (
 	type_id		char PRIMARY KEY,
 	type_description varchar(200)
@@ -31,7 +25,6 @@ CREATE TABLE targets (
 CREATE TABLE phot (
 	tar_id		integer REFERENCES targets (tar_id),
 	phot_type	integer,
-	phot_epoch	integer,
 	phot_mag1	float4,
 	phot_mag2	float4,
 	phot_index1	float4,
@@ -161,27 +154,6 @@ CREATE TABLE observations (
 	obs_end		timestamp
 );
 
-CREATE TABLE darks (
-	obs_id		integer REFERENCES observations(obs_id),
-	img_id		integer NOT NULL,
-	dark_date	timestamp,
-	dark_usec	integer,
-	dark_exposure	float,
-	dark_temperature float,
-	dark_mean	float,
-	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
-	camera_name	varchar(8) REFERENCES cameras(camera_name),
-CONSTRAINT darks_prim_key PRIMARY KEY (obs_id, img_id)
-);
-
-CREATE INDEX darks_all ON darks (dark_exposure, dark_temperature, dark_date);
-
-CREATE INDEX darks_dates ON darks (dark_date);
-
-CREATE INDEX darks_exposures ON darks (dark_date);
-
-CREATE INDEX darks_temperature ON darks (dark_temperature);
-
 CREATE SEQUENCE tar_id START WITH 1000;
 
 CREATE SEQUENCE grb_tar_id START WITH 50000;
@@ -222,7 +194,6 @@ CREATE TABLE images (
 	img_az		float,
 	/* astrometry */
 	astrometry	wcs,
-	epoch_id	integer NOT NULL REFERENCES epoch(epoch_id),
 	med_id		integer NOT NULL REFERENCES medias(med_id),
 	
 	camera_name	varchar(8) REFERENCES cameras(camera_name),

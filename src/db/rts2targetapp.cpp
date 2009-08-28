@@ -61,10 +61,11 @@ Rts2TargetApp::getObject (const char *obj_text)
 		Rts2Config::instance ()->getString ("newtarget", "prefix", new_prefix);
 		os << new_prefix << LibnovaRaComp (raDec.getRa ()) << LibnovaDeg90Comp (raDec.getDec ());
 		constTarget->setTargetName (os.str ().c_str ());
+		constTarget->setTargetType (TYPE_OPORTUNITY);
 		target = constTarget;
 		return 0;
 	}
-	// if it's MPCE..
+	// if it's MPC ephemeris..
 	target = new EllTarget ();
 	ret = ((EllTarget *) target)->orbitFromMPC (obj_text);
 	if (ret == 0)
@@ -73,18 +74,21 @@ Rts2TargetApp::getObject (const char *obj_text)
 	}
 
 	delete target;
+	target = NULL;
 
+#ifdef HAVE_PGSQL_SOAP
 	// try to get target from SIMBAD
 	target = new Rts2SimbadTarget (obj_text);
 	ret = target->load ();
-	if (ret)
+	if (ret == 0)
 	{
-		delete target;
-		target = NULL;
-		return -1;
+		target->setTargetType (TYPE_OPORTUNITY);
+		return 0;
 	}
-
-	return 0;
+	delete target;
+	target = NULL;
+#endif
+	return -1;
 }
 
 

@@ -57,14 +57,14 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 			std::ostringstream _os;
 			_os << "Error executiong function " << func 
 				<< " error code is: 0x" << std::hex << (int) reply_data[8];
-			throw ModbusError (_os.str ().c_str ());
+			throw ModbusError (this, _os.str ().c_str ());
 		}
 		else if (reply_data[7] != func)
 		{
 		  	std::ostringstream _os;
 			_os << "Invalid reply from modbus read, reply function is 0x" << std::hex << (int) reply_data[7]
 				<< ", expected 0x" << std::hex << (int) func;
-			throw ModbusError (_os.str ().c_str ());
+			throw ModbusError (this, _os.str ().c_str ());
 		}
 		bcopy (reply_data + 8, reply, reply_size - 8);
 		transId++;
@@ -72,7 +72,6 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	catch (ConnError err)
 	{
 		logStream (MESSAGE_ERROR) << err << sendLog;
-		connectionError (-1);
 		throw (err);
 	}
 }
@@ -98,7 +97,9 @@ ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_dat
 	callFunction (func, p1, p2, (void *) reply, reply_size);
 
 	if (reply[0] != qty * 2)
-		throw ModbusError ("Invalid quantity in reply packet!");
+	{
+		throw ModbusError (this, "Invalid quantity in reply packet!");
+	}
 
 	char *rtop = reply + 1;
 

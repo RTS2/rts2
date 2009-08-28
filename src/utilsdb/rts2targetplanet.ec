@@ -160,7 +160,7 @@ TargetPlanet::load ()
 }
 
 
-int
+void
 TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax)
 {
 	planet_info->rst_func (JD, pos);
@@ -169,17 +169,15 @@ TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_pos
 
 	pos->ra += parallax->ra;
 	pos->dec += parallax->dec;
-
-	return 0;
 }
 
 
-int
+void
 TargetPlanet::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_equ_posn parallax;
 
-	return getPosition (pos, JD, &parallax);
+	getPosition (pos, JD, &parallax);
 }
 
 

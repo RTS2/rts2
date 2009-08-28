@@ -25,6 +25,7 @@
 #include "rts2devcliphot.h"
 
 #define OPT_IGNORE_DAY    OPT_LOCAL + 100
+#define OPT_DONT_DARK     OPT_LOCAL + 101
 
 namespace rts2plan
 {
@@ -34,7 +35,6 @@ class Executor:public Rts2DeviceDb
 	private:
 		Target * currentTarget;
 		std::list <Target *> nextTargets;
-		Target *priorityTarget;
 
 		void clearNextTargets ();
 
@@ -56,7 +56,6 @@ class Executor:public Rts2DeviceDb
 		std::vector < Target * >targetsQue;
 		struct ln_lnlat_posn *observer;
 
-		int ignoreDay;
 		double grb_sep_limit;
 		double grb_min_sep;
 
@@ -76,7 +75,9 @@ class Executor:public Rts2DeviceDb
 
 		Rts2ValueInteger *next_id;
 		Rts2ValueString *next_name;
-		Rts2ValueInteger *priority_id;
+
+		Rts2ValueBool *doDarks;
+		Rts2ValueBool *ignoreDay;
 
 		rts2core::IntegerArray *next_ids;
 		rts2core::StringArray *next_names;
@@ -86,10 +87,11 @@ class Executor:public Rts2DeviceDb
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
 		Executor (int argc, char **argv);
 		virtual ~ Executor (void);
-		virtual int init ();
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
 			int other_device_type);
 
@@ -121,7 +123,6 @@ Executor::Executor (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
 	currentTarget = NULL;
-	priorityTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts",
 		false);
 	scriptCount->setValueInteger (-1);
@@ -151,13 +152,16 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 	createValue (next_ids, "next_ids", "IDs of next target(s)", false);
 	createValue (next_names, "next_names", "name of next target(s)", false);
 
-	createValue (priority_id, "priority_target",
-		"ID of priority target (should be NULL in most cases)", false);
-
 	createValue (img_id, "img_id", "ID of current image", false);
 
-	ignoreDay = 0;
+	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false);
+	doDarks->setValueBool (true);
+
+	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false);
+	ignoreDay->setValueBool (false);
+
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
+	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 }
 
 
@@ -175,7 +179,10 @@ Executor::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case OPT_IGNORE_DAY:
-			ignoreDay = 1;
+			ignoreDay->setValueBool (true);
+			break;
+		case OPT_DONT_DARK:
+			doDarks->setValueBool (false);
 			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
@@ -201,15 +208,11 @@ Executor::reloadConfig ()
 
 
 int
-Executor::init ()
+Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
-	int ret;
-	ret = Rts2DeviceDb::init ();
-	if (ret)
-		return ret;
-	// set priority..
-	getSingleCentralConn ()->queCommand (new Rts2Command (this, "priority 20"));
-	return 0;
+	if (oldValue == doDarks || oldValue == ignoreDay)
+		return 0;
+	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
 
@@ -344,16 +347,8 @@ Executor::postEvent (Rts2Event * event)
 			}
 			break;
 		case EVENT_MOVE_FAILED:
-			if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL && priorityTarget)
+			if (*((int *) event->getArg ()) == DEVICE_ERROR_KILL)
 			{
-				// we are free to start new high-priority observation
-				if (currentTarget)
-					processTarget (currentTarget);
-				currentTarget = priorityTarget;
-				priorityTarget = NULL;
-				postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-				postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
-				infoAll ();
 				break;
 			}
 			postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
@@ -437,14 +432,6 @@ Executor::info ()
 		next_ids->setValueArray (_id_arr);
 		next_names->setValueArray (_name_arr);
 	}
-	if (priorityTarget)
-	{
-		priority_id->setValueInteger (priorityTarget->getTargetID ());
-	}
-	else
-	{
-		priority_id->setValueInteger (-1);
-	}
 
 	return Rts2DeviceDb::info ();
 }
@@ -453,7 +440,7 @@ Executor::info ()
 int
 Executor::changeMasterState (int new_state)
 {
-	if (ignoreDay)
+	if (ignoreDay->getValueBool () == true)
 		return Rts2DeviceDb::changeMasterState (new_state);
 
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
@@ -464,23 +451,20 @@ Executor::changeMasterState (int new_state)
 		case SERVERD_DUSK:
 			// unblock stop state
 			if ((getState () & EXEC_MASK_END) == EXEC_END)
-			{
 				maskState (EXEC_MASK_END, EXEC_NOT_END);
-			}
 			if (!currentTarget && nextTargets.size () != 0)
-			{
 				switchTarget ();
-			}
 			break;
 		case (SERVERD_DAWN | SERVERD_STANDBY):
 		case (SERVERD_NIGHT | SERVERD_STANDBY):
 		case (SERVERD_DUSK | SERVERD_STANDBY):
 			clearNextTargets ();
 			// next will be dark..
-			nextTargets.push_front (createTarget (1, observer));
-			if (!currentTarget)
+			if (doDarks->getValueBool () == true)
 			{
-				switchTarget ();
+				nextTargets.push_front (createTarget (1, observer));
+				if (!currentTarget)
+					switchTarget ();
 			}
 			break;
 		default:
@@ -515,6 +499,12 @@ Executor::queueTarget (int tarId)
 	{
 		return -2;
 	}
+	if (nt->getTargetType () == TYPE_DARK && doDarks->getValueBool () == false)
+	{
+		stop ();
+		delete nt;
+		return 0;
+	}
 	nextTargets.push_back (nt);
 	if (!currentTarget)
 		switchTarget ();
@@ -529,7 +519,7 @@ Executor::setNow (int nextId)
 {
 	Target *newTarget;
 
-	if (!currentTarget && !priorityTarget)
+	if (!currentTarget)
 		return setNext (nextId);
 
 	newTarget = createTarget (nextId, observer);
@@ -551,12 +541,7 @@ Executor::setNow (Target * newTarget)
 		currentTarget->endObservation (-1);
 		processTarget (currentTarget);
 	}
-	currentTarget = NULL;
-
-	if (priorityTarget)
-		delete priorityTarget;	 // delete old priority target
-
-	priorityTarget = newTarget;
+	currentTarget = newTarget;
 
 	// at this situation, we would like to get rid of nextTarget as
 	// well
@@ -565,6 +550,10 @@ Executor::setNow (Target * newTarget)
 	clearAll ();
 	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	queAll (new Rts2CommandKillAll (this));
+
+	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
+	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+
 	infoAll ();
 
 	return 0;
@@ -594,18 +583,12 @@ Executor::setGrb (int grbId)
 	{
 		return -2;
 	}
-	ret = grbTarget->getAltAz (&grbHrz);
-	// don't care if we don't get altitude from libnova..it's completly weird, but we should not
-	// miss GRB:(
-	if (!ret)
+	grbTarget->getAltAz (&grbHrz);
+	logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb grbHrz alt:" << grbHrz.alt << sendLog;
+	if (grbHrz.alt < 0)
 	{
-		logStream (MESSAGE_DEBUG) << "Executor::setGrb grbHrz alt:" <<
-			grbHrz.alt << sendLog;
-		if (grbHrz.alt < 0)
-		{
-			delete grbTarget;
-			return -2;
-		}
+		delete grbTarget;
+		return -2;
 	}
 	// if we're already disabled, don't execute us
 	if (grbTarget->getTargetEnabled () == false)
@@ -618,25 +601,7 @@ Executor::setGrb (int grbId)
 	}
 	if (!currentTarget)
 	{
-		// if we don't observe anything..bring us to GRB..
-		if (priorityTarget)
-		{
-			// it's not same..
-			ret = grbTarget->compareWithTarget (priorityTarget, grb_sep_limit);
-			if (ret == 0)
-			{
-				return setNow (grbTarget);
-			}
-			else
-			{
-				// wait till it will be properly processed
-				return 0;
-			}
-		}
-		clearNextTargets ();
-		nextTargets.push_back (grbTarget);
-		switchTarget ();
-		return 0;
+		return setNow (grbTarget);
 	}
 	// it's not same..
 	ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit);
@@ -798,7 +763,7 @@ Executor::switchTarget ()
 		currentTarget = NULL;
 		clearNextTargets ();
 	}
-	else if (ignoreDay)
+	else if (ignoreDay->getValueBool () == true)
 	{
 		doSwitch ();
 	}

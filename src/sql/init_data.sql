@@ -15,10 +15,6 @@ o	fOcusing target
 m	Modeling (have optional parameters in target_model)
 \.
 
-COPY epoch FROM stdin;
-1	'1-1-1970'	'1-1-2032'
-\.
-
 COPY medias FROM stdin;
 0	'/images'	t
 \.

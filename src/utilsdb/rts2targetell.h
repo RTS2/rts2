@@ -31,9 +31,9 @@ class EllTarget:public Target
 {
 	private:
 		struct ln_ell_orbit orbit;
+
 		std::string designation;
-		int getPosition (struct ln_equ_posn *pos, double JD,
-			struct ln_equ_posn *parallax);
+		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 	public:
 		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		EllTarget (std::string _tar_info):Target ()
@@ -54,7 +54,7 @@ class EllTarget:public Target
 		 */
 		int orbitFromMPC (const char *mpc);
 
-		virtual int getPosition (struct ln_equ_posn *pos, double JD);
+		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);

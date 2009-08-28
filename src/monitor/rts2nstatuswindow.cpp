@@ -1,5 +1,5 @@
-#include "rts2nstatuswindow.h"
 #include "nmonitor.h"
+#include "rts2nstatuswindow.h"
 
 Rts2NStatusWindow::Rts2NStatusWindow (Rts2NComWin * in_comWin, Rts2Client * in_master):Rts2NWindow (0, LINES - 1, COLS, 1,
 0)

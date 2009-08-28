@@ -52,6 +52,11 @@ class XmlStream: public Rts2InfoValStream
 			(*rpcval)[desc] = val;
 		}
 
+		virtual void printInfoVal (const char *desc, unsigned int val)
+		{
+			(*rpcval)[desc] = (int) val;
+		}
+
 		virtual void printInfoVal (const char *desc, double val)
 		{
 			(*rpcval)[desc] = val;
@@ -70,9 +75,16 @@ class XmlStream: public Rts2InfoValStream
 		virtual void printInfoVal (const char *desc, Timestamp &val)
 		{
 			struct tm tm_s;
-			time_t tt = (time_t) val.getTs ();
-			gmtime_r (&tt, &tm_s);
-			(*rpcval)[desc] = XmlRpcValue (&tm_s);
+			if (isnan (val.getTs ()))
+			{
+				(*rpcval)[desc]="NULL";
+			}
+			else
+			{
+				time_t tt = (time_t) val.getTs ();
+				gmtime_r (&tt, &tm_s);
+				(*rpcval)[desc] = XmlRpcValue (&tm_s);
+			}
 		}
 
 		virtual void printInfoVal (const char *desc, TimeDiff &val)

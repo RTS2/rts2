@@ -1,7 +1,0 @@
-.deps
-.libs
-Makefile
-Makefile.in
-rts2-wcs2db
-rts2-f2cj
-rts2-fits2db

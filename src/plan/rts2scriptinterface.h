@@ -122,9 +122,7 @@ class Rts2ScriptInterface
 		 *
 		 * @param ln_equ_posn  Position of next target.
 		 * @param JD           Julian data for which the position should be calculated.
-		 *
-		 * @return 0 on sucess, -1 on failure.
 		 */
-		virtual int getPosition (struct ln_equ_posn *pos, double JD) = 0;
+		virtual void getPosition (struct ln_equ_posn *pos, double JD) = 0;
 };
 #endif							 // !__RTS2_SCRIPTINTERFACE__

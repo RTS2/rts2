@@ -117,15 +117,41 @@ AC_ARG_WITH(ncurses,
 	*) ncurses=${withval} ;;
 esac],[ncurses=yes])
 
-AC_ARG_WITH(jpeg,
-[  --with-jpeg       path to JPEG lib or "no" if JPEG libs are not installed],
-[case "${withval}" in
-	yes) libjpeg=yes ;;
-	no)  libjpeg=no ;;
-	*) libjpeg=${withval} ;;
-esac],[libjpeg=yes])
+dnl Check for GraphicsMagic++ library
 
-AM_CONDITIONAL(LIBJPEG, test x$libjpeg != xno)
+AC_ARG_WITH(graphicsmagic,
+[  --with-graphicsmagic    path to GraphicsMagic++ config or "no" if it is not installed],
+[case "${withval}" in
+	yes) graphicsmagic_config="GraphicsMagick++-config" ;;
+	no)  graphicsmagic_config=no ;;
+	*) graphicsmagic_config=${withval} ;;
+esac],[graphicsmagic_config="GraphicsMagick++-config"])
+
+AC_MSG_CHECKING(looking from GraphicsMagick++ library)
+if ${graphicsmagic_config} --libs > /dev/null 2>&1
+then
+	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
+	AC_MSG_RESULT(${GRAPHICSMAGICK_VERS} found)
+else
+	GRAPHICSMAGICK_VERS="no"
+	AC_MSG_RESULT(${graphicsmagic_config} not found)
+	graphicsmagic_config="no"
+fi
+
+dnl Check for the XML library
+XML_CONFIG=xml2-config
+AC_MSG_CHECKING(looking for xml2 library)
+if ${XML_CONFIG} --libs print > /dev/null 2>&1
+then
+	XMLVERS=`${XML_CONFIG} --version`
+	LIBXML_LIBS=`${XML_CONFIG} --libs`
+	LIBXML_CFLAGS=`${XML_CONFIG} --cflags`
+	AC_SUBST(LIBXML_LIBS)
+	AC_SUBST(LIBXML_CFLAGS)
+	AC_MSG_RESULT(${XMLVERS} found)
+else
+	AC_MSG_ERROR([Could not find libxml anywhere, apt-get install libxml2-dev or check ftp://xmlsoft.org/])
+fi
 
 AC_ARG_WITH(pgsql,
 [  --without-pgsql         don't build pgsql dependent clients],
@@ -251,6 +277,18 @@ AM_CONDITIONAL(PARALIB, test x$PARALIB != xno)
 AC_SUBST(PARALIB)
 AC_SUBST(LIB_PARA)
 AC_SUBST(INC_PARA)
+
+AC_ARG_WITH(mdm,
+[  --with-mdm              path to MDM (Kitt Peak, Arizona) TCS library, build MDM driver],
+MDMTCS="${withval}";
+LIB_MDMTCS="${MDMTCS}/libtcs.a"
+INC_MDMTCS="-I${MDMTCS}",
+[MDMTCS=no])
+
+AM_CONDITIONAL(MDMTCS, test x$MDMTCS != xno)
+AC_SUBST(MDMTCS)
+AC_SUBST(LIB_MDMTCS)
+AC_SUBST(INC_MDMTCS)
 
 # check for PCI8255
 AC_ARG_WITH(pci8255,
@@ -422,27 +460,19 @@ if test "x"$xfocusc = "xyes"; then
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
+AH_TEMPLATE([HAVE_LIBJPEG],[Whenever JPEG is installed])
 
-if test "x${libjpeg}" != "xno"; then
-  if test "x${libjpeg}" != "xyes"; then
-    LDFLAGS="${LDFLAGS} -L${libjpeg}/lib"
-  fi
-  AC_CHECK_LIB([jpeg], [jpeg_mem_init], LIB_JPEG="-ljpeg",
-[cat << EOF
-**** You don't have jpeg library installed.
-**** Please try to get it somewhere.
-EOF
-  exit 1])
-  if test "x${libjpeg}" != "xyes"; then
-    LIB_JPEG="-L${libjpeg}/lib ${LIB_JPEG}"
-    JPEG_CFLAGS="-I${libjpeg}/include"
-  else
-    JPEG_CFLAGS=""
-  fi
-  AC_SUBST(LIB_JPEG)
-  AC_SUBST(JPEG_CFLAGS)
+if test "x${graphicsmagic_config}" != "xno"; then
+  LIB_JPEG=`${graphicsmagic_config} --libs`
+  JPEG_CFLAGS=`${graphicsmagic_config} --cppflags`
+  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,1,[Whenever JPEG is installed])
+else
+  LIB_JPEG=""
+  JPEG_CFLAGS=""
+  AC_DEFINE_UNQUOTED(HAVE_LIBJPEG,0,[Whenever JPEG is installed])
 fi
-
+AC_SUBST(LIB_JPEG)
+AC_SUBST(JPEG_CFLAGS)
 
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
@@ -554,15 +584,18 @@ AM_CONDITIONAL(NOT_GETOPT_LONG, test x${ac_cv_func_getopt_long} = xno)
 AC_OUTPUT([Makefile
 	   man/Makefile
 	   include/Makefile
+	   conf/Makefile
+	   conf/event.d/Makefile
+	   doc/Makefile
+	   doc/doxyfile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
 	   src/camd/urvc2/Makefile
 	   src/camd/apogee/Makefile
 	   src/camd/edtsao/Makefile
-	   doc/Makefile
-	   doc/doxyfile
 	   src/dome/Makefile
+	   src/dome/zelio/Makefile
 	   src/indi/Makefile
 	   src/libindi/Makefile
 	   src/filterd/Makefile
@@ -573,6 +606,7 @@ AC_OUTPUT([Makefile
 	   src/monitor/Makefile
 	   src/plan/Makefile
 	   src/sql/Makefile
+	   src/sql/auger/Makefile
 	   src/sql/create/Makefile
 	   src/sql/drop/Makefile
 	   src/sql/update/Makefile
@@ -592,7 +626,8 @@ AC_OUTPUT([Makefile
 	   src/sensord/Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
-	   src/xmlrpc/xmlrpc++/Makefile]
+	   src/xmlrpc/xmlrpc++/Makefile
+	   src/scheduler/Makefile]
 )
 
 echo "
@@ -611,6 +646,8 @@ echo "
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}
+  libxml2       ${XMLVERS}
+  graphicsmagic ${GRAPHICSMAGICK_VERS}
 
 
 CCD's:
@@ -622,6 +659,7 @@ CCD's:
 
 MOUNT's:
   paralib       ${PARALIB}
+  mdmtcs        ${MDMTCS}
 
 DOME's:
   PCI8255       ${PCI8255}

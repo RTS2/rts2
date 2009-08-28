@@ -54,10 +54,6 @@
 #define PROTO_SET_VALUE_DEF    "Y"
 /** The command is authorization request. @ingroup RTS2Protocol */
 #define PROTO_AUTH             "A"
-/** The command is priority request. @ingroup RTS2Protocol */
-#define PROTO_PRIORITY         "P"
-/** The command is priority infor request. @ingroup RTS2Protocol */
-#define PROTO_PRIORITY_INFO    "Q"
 /** The command set device status. @ingroup RTS2Protocol */
 #define PROTO_STATUS           "S"
 /** The command set device BOP state. @ingroup RTS2Protocol */
@@ -75,8 +71,6 @@
 #define PROTO_BINARY           "C"
 /** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
-
-#define USEC_SEC    1000000
 
 class Rts2Command;
 
@@ -101,8 +95,10 @@ class Rts2Block: public Rts2App
 {
 	private:
 		int port;
-		long int idle_timeout;	 // in msec
-		int priority_client;
+		long int idle_timeout;	 // in nsec
+
+		// timers - time when they should be executed, event which should be triggered
+		std::map <double, Rts2Event*> timers;
 
 		connections_t connections;
 		
@@ -122,8 +118,6 @@ class Rts2Block: public Rts2App
 	protected:
 
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
-
-		virtual void cancelPriorityOperations ();
 
 		virtual void childReturned (pid_t child_pid);
 
@@ -164,9 +158,6 @@ class Rts2Block: public Rts2App
 		 * Called when select call suceed.
 		 *
 		 * This method is called when select call on registered sockects succeed.
-		 *
-		 * @param read_set fd_set structure holding selected sockets. Inside this function, developer can use
-		 *   FD_ISSET to query if socket of his/her interests is inside modified socket set.
 		 */
 		virtual void selectSuccess ();
 
@@ -418,15 +409,6 @@ class Rts2Block: public Rts2App
 		}
 		void oneRunLoop ();
 
-		int setPriorityClient (int in_priority_client, int timeout);
-		void checkPriority (Rts2Conn * conn)
-		{
-			if (conn->getCentraldId () == priority_client)
-			{
-				conn->setHavePriority (1);
-			}
-		}
-
 		/**
 		 * This function is called when device on given connection is ready
 		 * to accept commands.
@@ -434,16 +416,6 @@ class Rts2Block: public Rts2App
 		 * @param conn connection representing device which became ready
 		 */
 		virtual void deviceReady (Rts2Conn * conn);
-
-		/**
-		 * Called when connection receive/lost priority.
-		 * This method is hook for descendand to hook actions performed
-		 * when device receive priority.
-		 *
-		 * @param conn Connection which reports priority status.
-		 * @param have If connection have (true) or just lost (false) priority.
-		 */
-		virtual void priorityChanged (Rts2Conn * conn, bool have);
 
 		/**
 		 * Called when some device connected to us become idle.
@@ -522,7 +494,7 @@ class Rts2Block: public Rts2App
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
 		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-		void addUser (int p_centraldId, int p_priority, char p_priority_have, const char *p_login);
+		void addUser (int p_centraldId, const char *p_login);
 		int addUser (Rts2ConnUser * in_user);
 
 		/**
@@ -676,5 +648,25 @@ class Rts2Block: public Rts2App
 		virtual void binaryDataArrived (Rts2Conn *conn)
 		{
 		}
+
+		/**
+		 * Add new user timer.
+		 *
+		 * @param timer_time  Timer time in seconds, counted from now.
+		 * @param event       Event which will be posted for triger. Event argument
+		 *
+		 * @see Rts2Event
+		 */
+		void addTimer (double timer_time, Rts2Event *event)
+		{
+			timers[getNow () + timer_time] = event;
+		}
+
+		/**
+		 * Remove timer with a given type from the list of timers.
+		 *
+		 * @param event_type Type of event.
+		 */
+		void deleteTimers (int event_type);
 };
 #endif							 // !__RTS2_NETBLOCK__

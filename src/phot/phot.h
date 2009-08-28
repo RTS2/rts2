@@ -39,16 +39,16 @@
 class Rts2DevPhot:public Rts2ScriptDevice
 {
 	private:
-		int req_count;
 		struct timeval nextCountDue;
 		Rts2ValueInteger *count;
 		Rts2ValueFloat *exp;
 		Rts2ValueBool *is_ov;
-
-	protected:
 		Rts2Conn * integrateConn;
 
-		Rts2ValueInteger *filter;
+	protected:
+		Rts2ValueInteger *req_count;
+
+		Rts2ValueSelection *filter;
 		float req_time;
 		void setReqTime (float in_req_time);
 
@@ -60,6 +60,33 @@ class Rts2DevPhot:public Rts2ScriptDevice
 		void sendCount (int in_count, float in_exp, bool in_is_ov);
 		virtual int startIntegrate ();
 		virtual int endIntegrate ();
+
+		virtual int homeFilter ();
+
+		void checkFilterMove ();
+
+		virtual int setExposure (float _exp);
+
+		virtual int startFilterMove (int new_filter);
+		virtual long isFilterMoving ();
+		virtual int endFilterMove ();
+		virtual int enableMove ();
+		virtual int disableMove ();
+
+		int startIntegrate (Rts2Conn * conn, float in_req_time, int _req_count);
+		virtual int stopIntegrate ();
+
+		int homeFilter (Rts2Conn * conn);
+		int moveFilter (int new_filter);
+		int enableFilter (Rts2Conn * conn);
+
+		virtual int scriptEnds ();
+
+		virtual int changeMasterState (int new_state);
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+		float getExposure () { return exp->getValueFloat (); }
 
 	public:
 		Rts2DevPhot (int argc, char **argv);
@@ -78,28 +105,5 @@ class Rts2DevPhot:public Rts2ScriptDevice
 				integrateConn = NULL;
 			return Rts2ScriptDevice::deleteConnection (conn);
 		}
-
-		virtual int homeFilter ();
-
-		void checkFilterMove ();
-
-		virtual int startFilterMove (int new_filter);
-		virtual long isFilterMoving ();
-		virtual int endFilterMove ();
-		virtual int enableMove ();
-		virtual int disableMove ();
-
-		int startIntegrate (Rts2Conn * conn, float in_req_time, int in_req_count);
-		virtual int stopIntegrate ();
-
-		int homeFilter (Rts2Conn * conn);
-		int moveFilter (int new_filter);
-		int enableFilter (Rts2Conn * conn);
-
-		virtual void cancelPriorityOperations ();
-
-		virtual int changeMasterState (int new_state);
-
-		virtual int commandAuthorized (Rts2Conn * conn);
 };
 #endif							 /* !__RTS2_PHOT__ */

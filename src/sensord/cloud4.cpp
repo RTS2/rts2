@@ -119,7 +119,7 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 
 	createValue (tempDiff, "TEMP_DIFF", "temperature difference");
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
-	createValue (tempOut, "TEMP_OUT", "tempreature outside", true);
+	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
 
 	createValue (numVal, "num_stat", "number of measurements for weather statistic");
 	numVal->setValueInteger (20);
@@ -138,6 +138,8 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
+
+	setIdleInfoInterval (20);
 }
 
 

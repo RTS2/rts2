@@ -63,7 +63,6 @@ Rts2Address::update (int _centrald_num, const char *_name,
 int
 Rts2Address::getSockaddr (struct addrinfo **info)
 {
-	int ret;
 	char s_port[10];
 	struct addrinfo hints;
 	hints.ai_flags = 0;

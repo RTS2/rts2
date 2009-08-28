@@ -19,6 +19,7 @@
 
 #include "genfoc.h"
 #include "../utils/rts2config.h"
+#include "../writers/memimage.h"
 
 #include <iostream>
 #include <iomanip>
@@ -32,8 +33,6 @@ Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 	master = in_master;
 
 	average = 0;
-	stdev = 0;
-	bg_stdev = 0;
 
 	low = med = hig = 0;
 
@@ -110,7 +109,7 @@ Rts2GenFocCamera::createImage (const struct timeval *expStart)
 		return image;
 	}
 	// memory-only image
-	image = new Rts2Image (expStart);
+	image = new rts2image::MemImage (expStart);
 	return image;
 }
 
@@ -420,12 +419,4 @@ Rts2GenFocClient::init ()
 		return ret;
 	}
 	return 0;
-}
-
-
-void
-Rts2GenFocClient::centraldConnRunning (Rts2Conn * conn)
-{
-	Rts2Client::centraldConnRunning (conn);
-	conn->queCommand (new Rts2Command (this, "priority 137"));
 }

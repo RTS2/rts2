@@ -20,25 +20,23 @@
 #ifndef __RTS2_IMAGE__
 #define __RTS2_IMAGE__
 
-#define IMAGE_SAVE              0x01
-#define IMAGE_NOT_SAVE          0x00
-#define IMAGE_KEEP_DATA         0x02
-#define IMAGE_DONT_DELETE_DATA  0x04
-#define IMAGE_CANNOT_LOAD       0x08
-
-#include <sys/time.h>
-#include <time.h>
-#include <fitsio.h>
 #include <list>
 #include <ostream>
 #include <vector>
 #include <config.h>
 
 #include "imghdr.h"
+
+#include "rts2fitsfile.h"
+
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2devclient.h"
 #include "../utils/expander.h"
 #include "../utils/rts2target.h"
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#include <Magick++.h>
+#endif // HAVE_LIBJPEG
 
 // TODO remove this once Libnova 0.13.0 becomes mainstream
 #if !HAVE_DECL_LN_GET_HELIOCENTRIC_TIME_DIFF
@@ -83,24 +81,18 @@ imageWriteWhich_t;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Image:public rts2core::Expander
+class Rts2Image:public Rts2FitsFile
 {
 	private:
-		unsigned short *data;
-		fitsfile *ffile;
-		int fits_status;
-		int flags;
 		int filter_i;
 		char *filter;
 		float exposureLength;
-		void setImageName (const char *in_filename);
-		int createImage ();
+		
 		int createImage (std::string in_filename);
 		int createImage (char *in_filename);
-		// when in_filename == NULL, we take image name stored in this->imageName
-		int openImage ();
-		int openImage (const char *in_filename, bool readOnly = false);
-		int writeExposureStart ();
+		// if filename is NULL, will take name stored in this->getFileName ()
+		void openImage (const char *_filename = NULL, bool readOnly = false);
+
 		char *imageData;
 		int imageType;
 		int focPos;
@@ -114,7 +106,6 @@ class Rts2Image:public rts2core::Expander
 		short int min;
 		short int max;
 		short int mean;
-		int *histogram;
 		int isAcquiring;
 		// that value is nan when rotang was already set;
 		// it is calculated as sum of partial rotangs.
@@ -130,13 +121,15 @@ class Rts2Image:public rts2core::Expander
 
 		void initData ();
 
-		void writeConnBaseValue (const char *name, Rts2Value * val, const char *desc);
+		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
+
+		void writeConnArray (const char *name, Rts2Value *val);
 
 		// writes one value to image
-		void writeConnValue (Rts2Conn * conn, Rts2Value * val);
+		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
 
 		// record value changes
-		void recordChange (Rts2Conn * conn, Rts2Value * val);
+		void recordChange (Rts2Conn *conn, Rts2Value *val);
 	protected:
 		int targetId;
 		int targetIdSel;
@@ -147,7 +140,6 @@ class Rts2Image:public rts2core::Expander
 		char *cameraName;
 		char *mountName;
 		char *focName;
-		char *imageName;
 		shutter_t shutter;
 
 		struct ln_equ_posn pos_astr;
@@ -155,15 +147,12 @@ class Rts2Image:public rts2core::Expander
 		double dec_err;
 		double img_err;
 
+		int createImage ();
+
+		int writeExposureStart ();
+
 		virtual int isGoodForFwhm (struct stardata *sr);
 		char *getImageBase (void);
-
-		void setFitsFile (fitsfile * in_ffile)
-		{
-			ffile = in_ffile;
-		}
-
-		std::string getFitsErrors ();
 
 		// expand expression to image path
 		virtual std::string expandVariable (char expression);
@@ -202,6 +191,8 @@ class Rts2Image:public rts2core::Expander
 		Rts2Image (const char *in_filename, bool verbose = true, bool readOnly = false);
 		virtual ~ Rts2Image (void);
 
+		virtual int closeFile ();
+
 		virtual int toQue ();
 		virtual int toAcquisition ();
 		virtual int toArchive ();
@@ -210,17 +201,17 @@ class Rts2Image:public rts2core::Expander
 		virtual int toMasterFlat ();
 		virtual int toTrash ();
 
-		virtual img_type_t getImageType ()
-		{
-			return IMGTYPE_UNKNOW;
-		}
+		virtual img_type_t getImageType ();
 
 		shutter_t getShutter ()
 		{
 			return shutter;
 		}
 
-		int renameImage (const char *new_filename);
+		/**
+		 * Rename images to new path.
+		 */
+		virtual int renameImage (const char *new_filename);
 		int renameImageExpand (std::string new_ex);
 
 		/**
@@ -280,25 +271,25 @@ class Rts2Image:public rts2core::Expander
 
 		int saveImageData (const char *save_filename, unsigned short *in_data);
 
-		int setValue (const char *name, bool value, const char *comment);
-		int setValue (const char *name, int value, const char *comment);
-		int setValue (const char *name, long value, const char *comment);
-		int setValue (const char *name, float value, const char *comment);
-		int setValue (const char *name, double value, const char *comment);
-		int setValue (const char *name, char value, const char *comment);
-		int setValue (const char *name, const char *value, const char *comment);
-		int setValue (const char *name, time_t * sec, long usec, const char *comment);
+		void setValue (const char *name, bool value, const char *comment);
+		void setValue (const char *name, int value, const char *comment);
+		void setValue (const char *name, long value, const char *comment);
+		void setValue (const char *name, float value, const char *comment);
+		void setValue (const char *name, double value, const char *comment);
+		void setValue (const char *name, char value, const char *comment);
+		void setValue (const char *name, const char *value, const char *comment);
+		void setValue (const char *name, time_t * sec, long usec, const char *comment);
 		// that method is used to update DATE - creation date entry - for other file then ffile
-		int setCreationDate (fitsfile * out_file = NULL);
+		void setCreationDate (fitsfile * out_file = NULL);
 
-		int getValue (const char *name, bool & value, bool required = false, char *comment = NULL);
-		int getValue (const char *name, int &value, bool required = false, char *comment = NULL);
-		int getValue (const char *name, long &value, bool required = false, char *comment = NULL);
-		int getValue (const char *name, float &value, bool required = false, char *comment = NULL);
-		int getValue (const char *name, double &value, bool required = false, char *comment = NULL);
-		int getValue (const char *name, char &value, bool required = false, char *command = NULL);
-		int getValue (const char *name, char *value, int valLen, bool required = false, char *comment = NULL);
-		int getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
+		void getValue (const char *name, bool & value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, int &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, long &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, float &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, double &value, bool required = false, char *comment = NULL);
+		void getValue (const char *name, char &value, bool required = false, char *command = NULL);
+		void getValue (const char *name, char *value, int valLen, const char* defVal = NULL, bool required = false, char *comment = NULL);
+		void getValue (const char *name, char **value, int valLen, bool required = false, char *comment = NULL);
 
 		/**
 		 * Get double value from image.
@@ -309,30 +300,13 @@ class Rts2Image:public rts2core::Expander
 		 */
 		double getValue (const char *name);
 
-		int getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
-		int getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
-		int getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
-		int getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
-
-		/**
-		 * Appends history string.
-		 *
-		 * @param history History keyword which will be appended.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int writeHistory (const char *history);
-
-		/**
-		 * Append comment to FITS file.
-		 *
-		 * @param comment Comment which will be appended to FITS file comments.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int writeComment (const char *comment);
+		void getValues (const char *name, int *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, long *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, double *values, int num, bool required = false, int nstart = 1);
+		void getValues (const char *name, char **values, int num, bool required = false, int nstart = 1);
 
 		int writeImgHeader (struct imghdr *im_h);
+
 		/**
 		 * Record image physical coordinates.
 		 *
@@ -343,34 +317,59 @@ class Rts2Image:public rts2core::Expander
 		 */
 		void writePhysical (int x, int y, int bin_x, int bin_y);
 
-		int writeDate (char *in_data, char *fullTop);
+		int writeData (char *in_data, char *fullTop);
 
-		std::string expandPath (std::string pathEx)
-		{
-			return expand (pathEx);
-		}
+		/**
+		 * Build image histogram.
+		 *
+		 * @param histogram Array of size nbins.
+		 * @param nbins     Number of histogram bins.
+		 */
+		void getHistogram (long *histogram, long nbins);
 
-		int fitsStatusValue (const char *valname, const char *operation,
-			bool required);
-		int fitsStatusSetValue (const char *valname, bool required = true)
-		{
-			return fitsStatusValue (valname, "SetValue", required);
-		}
-		int fitsStatusGetValue (const char *valname, bool required)
-		{
-			return fitsStatusValue (valname, "GetValue", required);
-		}
+		/**
+		 * Returns image grayscaled buffer. Black have value equal to black parameter, white is 0.
+		 *
+		 * @param buf        Buffer (will be allocated by image routine). You must delete it.
+		 * @param black      Black value.
+		 * @param quantiles  Quantiles in 0-1 range for image scaling.
+		 * @param 
+		 */
+		template <typename bt> void getGrayscaleBuffer (bt * &buf, bt black, float quantiles=0.005);
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+		/**
+		 * Return image data as Magick::Image class.
+		 *
+		 * @param quantiles  Quantiles in 0-1 range for image scaling.
+		 *
+		 * @throw Exception
+		 */
+		Magick::Image getMagickImage (float quantiles=0.005);
+
+		/**
+		 * Write image as JPEG to provided data buffer.
+		 * Buffer will be allocated by this call and should
+		 * be free afterwards.
+		 *
+		 * @param expand_str Expand string for image name
+		 * @param quantiles  Quantiles in 0-1 range for image scaling.
+		 *
+		 * @throw Exception
+		 */
+		void writeAsJPEG (std::string expand_str, float quantiles=0.005);
+
+		/**
+		 * Store image to blob, which can be used to get data etc..
+		 */
+		void writeAsBlob (Magick::Blob &blob, float quantiles=0.005);
+#endif
 
 		double getAstrometryErr ();
 
-		int closeFile ();
 		virtual int saveImage ();
 		virtual int deleteImage ();
 
-		virtual const char *getImageName ()
-		{
-			return imageName;
-		}
 
 		void setMountName (const char *in_mountName);
 
@@ -520,18 +519,16 @@ class Rts2Image:public rts2core::Expander
 			flags |= IMAGE_KEEP_DATA;
 		}
 
-		bool shouldSaveImage ()
-		{
-			return (flags & IMAGE_SAVE);
-		}
-
 		void closeData ()
 		{
 			delete imageData;
 			imageData = NULL;
 		}
 
-		int loadData ();
+		/**
+		 * @throw rts2core::Error
+		 */
+		void loadData ();
 
 		void *getData ();
 		unsigned short *getDataUShortInt ();
@@ -554,11 +551,8 @@ class Rts2Image:public rts2core::Expander
 
 		double getPrecision ()
 		{
-			double val;
-			int ret;
-			ret = getValue ("POS_ERR", val);
-			if (ret)
-				return nan ("f");
+			double val = nan("f");
+			getValue ("POS_ERR", val, false);
 			return val;
 		}
 		// assumes, that on image is displayed strong light source,
@@ -580,6 +574,14 @@ class Rts2Image:public rts2core::Expander
 		long getHeight ()
 		{
 			return naxis[1];
+		}
+
+		/**
+		 * Returns number of pixels.
+		 */
+		long getNPixels ()
+		{
+			return getWidth () * getHeight ();
 		}
 
 		/**
@@ -669,9 +671,9 @@ class Rts2Image:public rts2core::Expander
 		 * @param ra_name  Name of the RA coordinate key.
 		 * @param dec_name Name of the DEC coordinate key.
 		 *
-		 * @return -1 on error, 0 on success.
+		 * @throw KeyNotFound
 		 */
-		int getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name);
+		void getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name);
 
 		/**
 		 * Return libnova RA DEC with coordinates.
@@ -689,17 +691,17 @@ class Rts2Image:public rts2core::Expander
 		 * J2000 coordinates of object which observer would like to
 		 * observe.
 		 */
-		int getCoordObject (struct ln_equ_posn &radec);
-		int getCoordTarget (struct ln_equ_posn &radec);
-		int getCoordAstrometry (struct ln_equ_posn &radec);
-		int getCoordMount (struct ln_equ_posn &radec);
+		void getCoordObject (struct ln_equ_posn &radec);
+		void getCoordTarget (struct ln_equ_posn &radec);
+		void getCoordAstrometry (struct ln_equ_posn &radec);
+		void getCoordMount (struct ln_equ_posn &radec);
 
-		int getCoordBest (struct ln_equ_posn &radec);
+		void getCoordBest (struct ln_equ_posn &radec);
 
-		int getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name);
-		int getCoordTarget (LibnovaRaDec & radec);
-		int getCoordAstrometry (LibnovaRaDec & radec);
-		int getCoordMount (LibnovaRaDec & radec);
+		void getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name);
+		void getCoordTarget (LibnovaRaDec & radec);
+		void getCoordAstrometry (LibnovaRaDec & radec);
+		void getCoordMount (LibnovaRaDec & radec);
 
 		/**
 		 * Retrieves from FITS headers best target coordinates.
@@ -709,7 +711,7 @@ class Rts2Image:public rts2core::Expander
 		 * and target values corrected by any know offsets if astrometry is not know
 		 * or invalid.
 		 */
-		int getCoordBest (LibnovaRaDec & radec);
+		void getCoordBest (LibnovaRaDec & radec);
 
 		std::string getOnlyFileName ();
 
@@ -727,37 +729,24 @@ class Rts2Image:public rts2core::Expander
 
 		virtual void print (std::ostream & _os, int in_flags = 0);
 
-		/**
-		 * Get fits file for use by other image.
-		 *
-		 * File pointer will be discarded and will not be closed - usefull for copy
-		 * constructor, but for nothing else.
-		 */
-		fitsfile *getFitsFile ()
+		void setInstrument (const char *instr)
 		{
-			fitsfile *ret = ffile;
-			ffile = NULL;
-			return ret;
+			setValue ("INSTRUME", instr, "instrument used for acqusition");
 		}
 
-		int setInstrument (const char *instr)
+		void setTelescope (const char *tel)
 		{
-			return setValue ("INSTRUME", instr, "instrument used for acqusition");
+			setValue ("TELESCOP", tel, "telescope used for acqusition");
 		}
 
-		int setTelescope (const char *tel)
+		void setObserver ()
 		{
-			return setValue ("TELESCOP", tel, "telescope used for acqusition");
+			setValue ("OBSERVER", "RTS2 " VERSION, "observer");
 		}
 
-		int setObserver ()
+		void setOrigin (const char *orig)
 		{
-			return setValue ("OBSERVER", "RTS2 " VERSION, "observer");
-		}
-
-		int setOrigin (const char *orig)
-		{
-			return setValue ("ORIGIN", orig, "organisation responsible for data");
+			setValue ("ORIGIN", orig, "organisation responsible for data");
 		}
 
 		/**
@@ -809,35 +798,6 @@ class Rts2Image:public rts2core::Expander
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);
-
-namespace rts2image
-{
-
-/**
- * Thrown where we cannot find header in the image.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class KeyNotFound
-{
-	private:
-		const char *fileName;
-		const char *header;
-	public:
-		KeyNotFound (Rts2Image *_image, const char *_header)
-		{
-			header = _header;
-			fileName = _image->getImageName ();
-		}
-		
-		friend std::ostream & operator << (std::ostream &_os, KeyNotFound &_err)
-		{
-			_os << "keyword " << _err.header << " missing in fits file " << _err.fileName;
-			return _os;
-		}
-};
-
-};
 
 //Rts2Image & operator - (Rts2Image & img_1, Rts2Image & img_2);
 //Rts2Image & operator + (Rts2Image & img_, Rts2Image & img_2);

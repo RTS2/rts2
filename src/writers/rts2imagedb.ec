@@ -42,29 +42,31 @@ Rts2ImageDb::reportSqlError (const char *msg)
 }
 
 
-int
-Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
+void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
 {
-	ind = getValue (name, value, comment);
-	if (ind || isnan(value))
+	try
+	{
+		getValue (name, value, comment);
+	}
+	catch (rts2core::Error &er)
 	{
 		value = 100;
 		ind = -1;
 	}
-	return 0;
 }
 
 
-int
-Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
+void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *comment)
 {
-	ind = getValue (name, value, comment);
-	if (ind || isnan(value))
+	try
+	{
+		getValue (name, value, comment);
+	}
+	catch (rts2core::Error &er)
 	{
 		value = 100;
 		ind = -1;
 	}
-	return 0;
 }
 
 
@@ -143,6 +145,39 @@ Rts2ImageDb::saveImage ()
 }
 
 
+int
+Rts2ImageDb::renameImage (const char *new_filename)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	VARCHAR d_img_path[100];
+	int d_img_id = imgId;
+	int d_obs_id = obsId;
+	EXEC SQL END DECLARE SECTION;
+
+	int ret = Rts2Image::renameImage (new_filename);
+	if (ret)
+		return ret;
+
+	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
+	d_img_path.len = strlen (getAbsoluteFileName ()) > 100 ? 100: strlen (getAbsoluteFileName ());
+
+	EXEC SQL UPDATE
+		images
+	SET
+		img_path = :d_img_path
+	WHERE
+		img_id = :d_img_id AND obs_id = :d_obs_id;
+	if (sqlca.sqlcode != 0)
+	{
+		reportSqlError ("renameImage");
+		EXEC SQL ROLLBACK;
+		return -1;
+	}
+	EXEC SQL COMMIT;
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 {
 	img_db.print (_os);
@@ -160,6 +195,7 @@ int
 Rts2ImageSkyDb::updateDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
+		VARCHAR d_img_path[100];
 		int d_img_id = imgId;
 		int d_obs_id = obsId;
 		char d_obs_subtype = 'S';
@@ -170,7 +206,6 @@ Rts2ImageSkyDb::updateDB ()
 		float d_img_exposure = -1;
 		float d_img_alt = -100;
 		float d_img_az = -100;
-		int d_epoch_id = epochId;
 		int d_med_id = 0;
 		int d_proccess_bitfield = processBitfiedl;
 		float d_img_fwhm;
@@ -183,6 +218,9 @@ Rts2ImageSkyDb::updateDB ()
 		VARCHAR d_camera_name[8];
 		VARCHAR d_img_filter[3];
 	EXEC SQL END DECLARE SECTION;
+
+	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
+	d_img_path.len = strlen (getAbsoluteFileName ()) > 100 ? 100: strlen (getAbsoluteFileName ());
 
 	strncpy (d_mount_name.arr, getMountName (), 8);
 	d_mount_name.len = strlen (getMountName ());
@@ -206,6 +244,7 @@ Rts2ImageSkyDb::updateDB ()
 		INSERT INTO
 			images
 			(
+			img_path,
 			img_id,
 			obs_id,
 			obs_subtype,
@@ -218,7 +257,6 @@ Rts2ImageSkyDb::updateDB ()
 			img_az,
 			img_date,
 			img_usec,
-			epoch_id,
 			med_id,
 			process_bitfield,
 			img_fwhm,
@@ -227,6 +265,7 @@ Rts2ImageSkyDb::updateDB ()
 			)
 		VALUES
 			(
+			:d_img_path,
 			:d_img_id,
 			:d_obs_id,
 			:d_obs_subtype,
@@ -239,7 +278,6 @@ Rts2ImageSkyDb::updateDB ()
 			:d_img_az,
 			to_timestamp (:d_img_date),
 			:d_img_usec,
-			:d_epoch_id,
 			:d_med_id,
 			:d_proccess_bitfield,
 			:d_img_fwhm :d_img_fwhm_ind,
@@ -251,7 +289,7 @@ Rts2ImageSkyDb::updateDB ()
 	{
 		if (sqlca.sqlcode != ECPG_PGSQL)
 		{
-			printf ("Cannot insert new image, triing update (error: %li %s)\n",
+			printf ("Cannot insert new image, triyng update (error: %li %s)\n",
 				sqlca.sqlcode, sqlca.sqlerrm.sqlerrmc);
 		}
 		EXEC SQL ROLLBACK;
@@ -259,17 +297,16 @@ Rts2ImageSkyDb::updateDB ()
 			UPDATE
 				images
 			SET
+				img_path = :d_img_path,
 				img_date = to_timestamp (:d_img_date),
 				img_usec = :d_img_usec,
-				epoch_id = :d_epoch_id,
 				med_id   = :d_med_id,
 				process_bitfield = :d_proccess_bitfield,
 				img_fwhm = :d_img_fwhm :d_img_fwhm_ind,
 				img_limmag = :d_img_limmag :d_img_limmag_ind,
 				img_qmagmax = :d_img_qmagmax :d_img_qmagmax_ind
 			WHERE
-				img_id = :d_img_id
-			AND obs_id = :d_obs_id;
+				img_id = :d_img_id AND obs_id = :d_obs_id;
 		// still error.. return -1
 		if (sqlca.sqlcode != 0)
 		{
@@ -304,37 +341,24 @@ Rts2ImageSkyDb::updateAstrometry ()
 	double cdelt[2];
 	double crota[2];
 	double equinox;
-	double epoch;
-
-	int ret;
 
 	ctype[0] = (char *) malloc (9);
 	ctype[1] = (char *) malloc (9);
 
-	ret = getValues ("NAXIS", a_naxis, 2);
-	if (ret)
+	try
+	{
+		getValues ("NAXIS", a_naxis, 2);
+		getValues ("CTYPE", (char **) &ctype, 2);
+		getValues ("CRPIX", crpix, 2);
+		getValues ("CRVAL", crval, 2);
+		getValues ("CDELT", cdelt, 2);
+		getValues ("CROTA", crota, 2);
+		getValue ("EQUINOX", equinox);
+	}
+	catch (rts2core::Error &er)
+	{
 		return -1;
-	ret = getValues ("CTYPE", (char **) &ctype, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CRPIX", crpix, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CRVAL", crval, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CDELT", cdelt, 2);
-	if (ret)
-		return -1;
-	ret = getValues ("CROTA", crota, 2);
-	if (ret)
-		return -1;
-	ret = getValue ("EQUINOX", equinox);
-	if (ret)
-		return -1;
-	ret = getValue ("EPOCH_ID", epoch);
-	if (ret)
-		return -1;
+	}
 
 	d_img_err_ra = ra_err;
 	d_img_err_dec = dec_err;
@@ -342,9 +366,9 @@ Rts2ImageSkyDb::updateAstrometry ()
 
 	snprintf (s_astrometry.arr, 2000,
 		"NAXIS1 %ld NAXIS2 %ld CTYPE1 %s CTYPE2 %s CRPIX1 %f CRPIX2 %f "
-		"CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f EPOCH %f",
+		"CRVAL1 %f CRVAL2 %f CDELT1 %f CDELT2 %f CROTA %f EQUINOX %f",
 		a_naxis[0], a_naxis[1], ctype[0], ctype[1], crpix[0], crpix[1],
-		crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox, epoch);
+		crval[0], crval[1], cdelt[0], cdelt[1], crota[0], equinox);
 	s_astrometry.len = strlen (s_astrometry.arr);
 
 	EXEC SQL UPDATE
@@ -365,61 +389,6 @@ Rts2ImageSkyDb::updateAstrometry ()
 		return -1;
 	}
 	processBitfiedl |= ASTROMETRY_PROC | ASTROMETRY_OK;
-	return 0;
-}
-
-
-int
-Rts2ImageSkyDb::setDarkFromDb ()
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-		VARCHAR d_camera_name[8];
-		int d_date = getExposureSec ();
-		VARCHAR d_dark_name[250];
-		double d_img_temperature = nan("f");
-		double d_img_exposure = nan("f");
-	EXEC SQL END DECLARE SECTION;
-
-	if (!cameraName)
-		return -1;
-
-	if (getShutter () == SHUT_CLOSED)
-		return 0;
-
-	strncpy (d_camera_name.arr, cameraName, 8);
-	d_camera_name.len = strlen (cameraName);
-
-	getValue ("CCD_TEMP", d_img_temperature);
-	d_img_exposure = getExposureLength ();
-
-	EXEC SQL DECLARE dark_cursor CURSOR FOR
-		SELECT
-			dark_name (obs_id, img_id, dark_date, dark_usec, epoch_id, camera_name)
-		FROM
-			darks
-		WHERE
-			camera_name = :d_camera_name
-		AND dark_exposure = :d_img_exposure
-		AND abs (dark_temperature - :d_img_temperature) < 2
-		AND abs (EXTRACT (EPOCH FROM dark_date) - :d_date) < 60000
-			ORDER BY
-			dark_date DESC;
-	EXEC SQL OPEN dark_cursor;
-	EXEC SQL FETCH next FROM dark_cursor INTO
-			:d_dark_name;
-	if (sqlca.sqlcode)
-	{
-		logStream (MESSAGE_DEBUG) << "Rts2ImageSkyDb::setDarkFromDb SQL error: " <<
-			sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")";
-		EXEC SQL CLOSE dark_cursor;
-		EXEC SQL ROLLBACK;
-		return -1;
-	}
-	EXEC SQL CLOSE dark_cursor;
-	EXEC SQL COMMIT;
-	setValue ("DARK", d_dark_name.arr, "dark image full path");
-	processBitfiedl |= DARK_OK;
-
 	return 0;
 }
 
@@ -452,14 +421,12 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 
 	double img_alt;
 
-	int ret;
-
 	// we have calibration image processed..update airmass_cal_images table
 	if (isCalibrationImage ())
 	{
-		ret = getValue ("ALT", img_alt);
-		if (!ret)
+		try
 		{
+			getValue ("ALT", img_alt);
 			db_airmass = ln_get_airmass (img_alt, 750.0);
 			db_air_last_image = getExposureSec ();
 			// delete - unset our old references (if any exists..)
@@ -510,6 +477,9 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 				}
 			}
 		}
+		catch (rts2core::Error &er)
+		{
+		}
 	}
 }
 
@@ -542,7 +512,7 @@ Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_
 Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec,
 float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
 const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
-double in_img_err, int in_epoch_id) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
+double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
 	targetId = in_tar_id;
 	targetIdSel = in_tar_id;
@@ -566,9 +536,8 @@ double in_img_err, int in_epoch_id) : Rts2ImageDb (in_img_date, in_img_usec, in_
 	pos_astr.dec = nan ("f");
 	processBitfiedl = in_process_bitfield;
 
-	epochId = in_epoch_id;
-
 	setFilter (in_img_filter);
+	setFileName (_img_path);
 }
 
 
@@ -621,7 +590,6 @@ Rts2ImageSkyDb::saveImage ()
 	int ret = Rts2ImageDb::saveImage ();
 	if (ret)
 		return ret;
-	setDarkFromDb ();
 	updateCalibrationDb ();
 	setValue ("PROC", processBitfiedl, "procesing status; info in DB");
 	return 0;
@@ -645,15 +613,6 @@ Rts2ImageSkyDb::deleteImage ()
 				img_id = :d_img_id
 			AND obs_id = :d_obs_id;
 	}
-	else if (getImageType () == IMGTYPE_DARK)
-	{
-		EXEC SQL
-			DELETE FROM
-				darks
-			WHERE
-				img_id = :d_img_id
-			AND obs_id = :d_obs_id;
-	}
 	if (sqlca.sqlcode)
 	{
 		reportSqlError ("Rts2ImageSkyDb::deleteImage");
@@ -667,185 +626,10 @@ Rts2ImageSkyDb::deleteImage ()
 }
 
 
-const char *
-Rts2ImageSkyDb::getImageName ()
-{
-	if (imageName)
-		return imageName;
-	std::ostringstream _os;
-	_os << getImageBase ();
-	if (processBitfiedl & ASTROMETRY_PROC)
-	{
-		if (processBitfiedl & ASTROMETRY_OK)
-		{
-			_os << "/archive/" << getTargetString () << "/" << getCameraName () << "/object";
-		}
-		else
-		{
-			_os << "/trash/" << getTargetString () << "/" << getCameraName ();
-		}
-	}
-	else
-	{
-		_os << "/que/" << getCameraName ();
-	}
-	_os << "/" << getOnlyFileName ();
-	return _os.str().c_str();
-}
-
-
 std::string
-Rts2ImageSkyDb::getFileName ()
+Rts2ImageSkyDb::getFileNameString ()
 {
 	std::ostringstream out;
 	printFileName (out);
 	return out.str();
-}
-
-
-/*********************************************************
- *
- * Rts2ImageDarkDb class
- *
- ********************************************************/
-
-int
-Rts2ImageDarkDb::updateDB ()
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-		int d_img_id = imgId;
-		int d_obs_id = obsId;
-		int d_dark_date = getExposureSec ();
-		int d_dark_usec = getExposureUsec ();
-		float d_dark_exposure;
-		float d_dark_temperature = 100;
-		int d_dark_temperature_ind;
-		float d_dark_mean = getAverage ();
-		int d_epoch_id = epochId;
-		VARCHAR d_camera_name[8];
-	EXEC SQL END DECLARE SECTION;
-
-	getValueInd ("CCD_TEMP", d_dark_temperature, d_dark_temperature_ind);
-	d_dark_exposure = getExposureLength ();
-
-	strncpy (d_camera_name.arr, cameraName, 8);
-	d_camera_name.len = strlen (cameraName);
-
-	EXEC SQL
-		INSERT INTO
-			darks
-			(
-			img_id,
-			obs_id,
-			dark_date,
-			dark_usec,
-			dark_exposure,
-			dark_temperature,
-			dark_mean,
-			epoch_id,
-			camera_name
-			) VALUES (
-			:d_img_id,
-			:d_obs_id,
-			to_timestamp (:d_dark_date),
-			:d_dark_usec,
-			:d_dark_exposure,
-			:d_dark_temperature :d_dark_temperature_ind,
-			:d_dark_mean,
-			:d_epoch_id,
-			:d_camera_name
-			);
-	if (sqlca.sqlcode)
-	{
-		reportSqlError ("image DARK update");
-		EXEC SQL ROLLBACK;
-		return -1;
-	}
-	EXEC SQL COMMIT;
-	return 0;
-}
-
-
-Rts2ImageDarkDb::Rts2ImageDarkDb (Rts2Image * in_image): Rts2ImageDb (in_image)
-{
-}
-
-
-void
-Rts2ImageDarkDb::print (std::ostream & _os, int in_flags)
-{
-	return Rts2ImageDb::print (_os, in_flags);
-}
-
-
-/*********************************************************
- *
- * Rts2ImageFlatDb class
- *
- ********************************************************/
-
-int
-Rts2ImageFlatDb::updateDB ()
-{
-	EXEC SQL BEGIN DECLARE SECTION;
-		int d_img_id = imgId;
-		int d_obs_id = obsId;
-		int d_flat_date = getExposureSec ();
-		int d_flat_date_usec = getExposureUsec ();
-		float d_flat_exposure;
-		float d_flat_temperature = 100;
-		int d_flat_temperature_ind;
-		int d_epoch_id = epochId;
-		VARCHAR d_camera_name[8];
-	EXEC SQL END DECLARE SECTION;
-
-	getValueInd ("CCD_TEMP", d_flat_temperature, d_flat_temperature_ind);
-	d_flat_exposure = getExposureLength ();
-
-	strncpy (d_camera_name.arr, cameraName, 8);
-	d_camera_name.len = strlen (cameraName);
-
-	EXEC SQL
-		INSERT INTO
-			flats
-			(
-			obs_id,
-			img_id,
-			flat_date,
-			flat_date_usec,
-			flat_exposure,
-			flat_temperature,
-			epoch_id,
-			camera_name
-			) VALUES (
-			:d_obs_id,
-			:d_img_id,
-			to_timestamp (:d_flat_date),
-			:d_flat_date_usec,
-			:d_flat_exposure,
-			:d_flat_temperature :d_flat_temperature_ind,
-			:d_epoch_id,
-			:d_camera_name
-			);
-	if (sqlca.sqlcode)
-	{
-		reportSqlError ("image FLAT update");
-		EXEC SQL ROLLBACK;
-		return -1;
-	}
-	EXEC SQL COMMIT;
-
-	return 0;
-}
-
-
-Rts2ImageFlatDb::Rts2ImageFlatDb (Rts2Image * in_image): Rts2ImageDb (in_image)
-{
-}
-
-
-void
-Rts2ImageFlatDb::print (std::ostream & _os, int in_flags)
-{
-	return Rts2ImageDb::print (_os, in_flags);
 }

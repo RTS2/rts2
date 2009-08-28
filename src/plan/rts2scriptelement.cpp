@@ -27,6 +27,7 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devclifoc.h"
 
+
 Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 {
 	script = in_script;
@@ -456,8 +457,7 @@ new_device[DEVICE_NAME_SIZE])
 }
 
 
-int
-Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
+int Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
 {
 	if (sig == in_sig)
 	{
@@ -481,8 +481,7 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	std::string::iterator iter;
 	for (iter = chng_s.begin (), i = 0; iter != chng_s.end (); iter++, i++)
 	{
-		char
-			ch = *iter;
+		char ch = *iter;
 		if (!op && (ch == '+' || ch == '-' || ch == '='))
 		{
 			valName = chng_s.substr (0, i);
@@ -493,23 +492,13 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 				i++;
 			}
 			op_end = i;
+			break;
 		}
 	}
 	if (op == '\0')
 		return;
-	operand = chng_s.substr (op_end + 1);
-	// try to split operand comming in two pieces
-	if (operand[0] == '(' && operand[operand.length () - 1] == ')')
-	{
-		// substitute ',' with space..
-		operand = operand.substr (1, operand.length () - 2);
-		for (i = 0; i < (int) operand.length (); i++)
-		{
-			if (operand[i] == ',')
-				operand[i] = ' ';
-		}
-		rawString = true;
-	}
+	operands = rts2operands::OperandsSet();
+	operands.parse (chng_s.substr (op_end + 1));
 }
 
 
@@ -519,28 +508,29 @@ Rts2ScriptElementChangeValue::~Rts2ScriptElementChangeValue (void)
 }
 
 
-void
-Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
+void Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
 	strcpy (new_device, deviceName);
 }
 
 
-int
-Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
-	if (op == '\0' || operand.size () == 0)
+	if (op == '\0' || operands.size () == 0)
 		return -1;
 	// handle while exposing part..
+	std::ostringstream _os;
+	_os << operands;
+	if (operands.size () > 1)
+		rawString = true;
 	if (valName[0] == '!')
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, operand, rawString);
+		*new_command = new Rts2CommandChangeValue (client, valName.substr (1), op, _os.str(), rawString);
 		(*new_command)->setBopMask (BOP_TEL_MOVE | BOP_WHILE_STATE);
 	}
 	else
 	{
-		*new_command = new Rts2CommandChangeValue (client, valName, op, operand, rawString);
+		*new_command = new Rts2CommandChangeValue (client, valName, op, _os.str(), rawString);
 	}
 	getDevice (new_device);
 	return 0;

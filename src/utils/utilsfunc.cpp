@@ -25,6 +25,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+double
+random_num ()
+{
+#ifndef sun
+	return (double) random () / RAND_MAX;
+#else
+	return (double) random () / INT_MAX;
+#endif
+}
+
 int
 mkpath (const char *path, mode_t mode)
 {
@@ -96,5 +106,12 @@ int
 isinf(double x)
 {
 	return !finite(x) && x==x;
+}
+#endif
+
+#ifndef isfinite
+int isfinite(double x)
+{
+	return finite(x) && !isnan(x);
 }
 #endif

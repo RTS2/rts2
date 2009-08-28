@@ -316,7 +316,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	waitingForNotBop->setValueBool (false);
 
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
-	createValue (chipUsedReadout, "READT", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
+	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
 
 	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
@@ -421,27 +421,26 @@ Camera::checkQueChanges (int fakeState)
 	}
 }
 
-
-void
-Camera::cancelPriorityOperations ()
+int
+Camera::killAll ()
 {
-	exposureConn = NULL;
-
-	stopExposure ();
-	endReadout ();
-	nAcc = 1;
-
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT,
-		CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT,
-		BOP_TEL_MOVE, 0, "chip exposure interrupted");
-
-	setTimeout (USEC_SEC);
-	// init states etc..
-	clearStatesPriority ();
-	// cancel any pending exposures
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	Rts2ScriptDevice::cancelPriorityOperations ();
+	
+	if (isExposing ())
+		stopExposure ();
+	
+	return Rts2ScriptDevice::killAll ();
+}
+
+
+int
+Camera::scriptEnds ()
+{
+	quedExpNumber->setValueInteger (0);
+	sendValueAll (quedExpNumber);
+
+	return Rts2ScriptDevice::scriptEnds ();
 }
 
 
@@ -451,16 +450,6 @@ Camera::info ()
 	camFilterVal->setValueInteger (getFilterNum ());
 	camFocVal->setValueInteger (getFocPos ());
 	return Rts2ScriptDevice::info ();
-}
-
-
-int
-Camera::scriptEnds ()
-{
-	box (-1, -1, -1, -1);
-
-	setTimeout (USEC_SEC);
-	return Rts2ScriptDevice::scriptEnds ();
 }
 
 
@@ -868,9 +857,6 @@ Camera::camStartExposureWithoutCheck ()
 	if (ret)
 		return ret;
 
-	logStream (MESSAGE_INFO) << "exposing for '"
-		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
-
 	infoAll ();
 	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING,
 		BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
@@ -899,8 +885,11 @@ Camera::camStartExposureWithoutCheck ()
 	if (sendOkInExposure && exposureConn)
 	{
 		sendOkInExposure = false;
-		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from que");
+		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from queue");
 	}
+
+	logStream (MESSAGE_INFO) << "exposing for '"
+		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
 	return 0;
 }
@@ -940,6 +929,8 @@ Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 		sendValueAll (quedExpNumber);
 	}
 
+	exposureConn = conn;
+
 	ret = camStartExposure ();
 	if (ret)
 	{
@@ -947,7 +938,6 @@ Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	}
 	else
 	{
-		exposureConn = conn;
 	}
 	return ret;
 }
@@ -1185,9 +1175,6 @@ Camera::commandAuthorized (Rts2Conn * conn)
 		conn->sendMsg ("help - print, what you are reading just now");
 		return 0;
 	}
-	// commands which requires priority
-	// priority test must come after command string test,
-	// otherwise we will be unable to answer DEVDEM_E_PRIORITY
 	else if (conn->isCommand ("expose"))
 	{
 		if (!conn->paramEnd ())

@@ -440,7 +440,7 @@
           </citerefentry>
           <citerefentry>
             <refentrytitle>rts2-camd-andor</refentrytitle>
-	    <manvolnum>1</manvolnum>
+	    <manvolnum>7</manvolnum>
           </citerefentry>
 	</para>
       </refsect2>
@@ -452,6 +452,10 @@
     <title>SERVICES</title>
 
     <para>
+      <citerefentry>
+        <refentrytitle>rts2-xmlrpcd</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
       <citerefentry>
         <refentrytitle>rts2-executor</refentrytitle>
 	<manvolnum>1</manvolnum>

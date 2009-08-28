@@ -326,6 +326,46 @@ Rts2Obs::printCountsSummary (std::ostream &_os)
 }
 
 
+double
+Rts2Obs::altitudeMerit (double _start, double _end)
+{
+	double minA, maxA;
+	struct ln_hrz_posn hrz;
+	getTarget ()->getMinMaxAlt (_start, _end, minA, maxA);
+
+	getTarget ()->getAltAz (&hrz, getObsJDMid ());
+
+	if (maxA == minA)
+		return 1;
+
+	if ((hrz.alt - minA) / (maxA - minA) > 1)
+	{
+		std::cout << "hrz.alt: " << hrz.alt
+			<< " minA: " << minA
+			<< " maxA: " << maxA
+			<< " from " << LibnovaDate (_start)
+			<< " to " << LibnovaDate (_end)
+			<< " obs from " << LibnovaDate (getObsJDStart ())
+			<< " to " << LibnovaDate (getObsJDEnd ())
+			<< std::endl;
+	}
+
+	if (isnan (hrz.alt) || isnan (minA) || isnan (maxA))
+	{
+		std::cout << "nan hrz.alt: " << hrz.alt
+			<< " minA: " << minA
+			<< " maxA: " << maxA
+			<< " from " << LibnovaDate (_start)
+			<< " to " << LibnovaDate (_end)
+			<< " obs from " << LibnovaDate (getObsJDStart ())
+			<< " to " << LibnovaDate (getObsJDEnd ())
+			<< std::endl;
+	}
+
+	return (hrz.alt - minA) / (maxA - minA);
+}
+
+
 int
 Rts2Obs::getUnprocessedCount ()
 {
@@ -360,7 +400,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 	// obs_end is not null - observation ends sucessfully
 	// get unprocessed counts..
 	ret = getUnprocessedCount ();
-	if (ret == 0)
+/*	if (ret == 0)
 	{
 		int count;
 		Rts2TarUser tar_user = Rts2TarUser (getTargetId (), getTargetType ());
@@ -374,7 +414,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 		std::ostringstream os;
 		os << *this;
 		master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
-	}
+	} */
 	return ret;
 }
 

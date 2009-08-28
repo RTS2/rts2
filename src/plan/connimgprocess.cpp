@@ -21,6 +21,7 @@
 #include "rts2script.h"
 
 #include "../utils/rts2command.h"
+#include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2taruser.h"
 #include "../utilsdb/rts2obs.h"
@@ -36,7 +37,7 @@
 using namespace rts2plan;
 
 ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):
-Rts2ConnFork (in_master, in_exe, in_timeout)
+rts2core::ConnFork (in_master, in_exe, false, in_timeout)
 {
 }
 
@@ -100,11 +101,8 @@ ConnImgProcess::processLine ()
 		astrometryStat = GET;
 		// inform others..
 	}
-	#ifndef DEBUG_EXTRA
-	else
-	#endif						 /* !DEBUG_EXTRA */
-		logStream (MESSAGE_DEBUG) << "receive: " << getCommand () << " sscanf: "
-			<< ret << sendLog;
+	logStream (MESSAGE_DEBUG) << "received: " << getCommand () << " sscanf: "
+		<< ret << sendLog;
 	return;
 }
 
@@ -112,7 +110,6 @@ ConnImgProcess::processLine ()
 void
 ConnImgProcess::connectionError (int last_data_size)
 {
-	int ret;
 	const char *telescopeName;
 	int corr_mark, corr_img;
 
@@ -126,16 +123,58 @@ ConnImgProcess::connectionError (int last_data_size)
 
 #ifdef HAVE_PGSQL
 	Rts2ImageDb *image;
-	image = getValueImageType (new Rts2ImageDb (imgPath));
+	try
+	{
+		image = getValueImageType (new Rts2ImageDb (imgPath));
 #else
 	Rts2Image *image;
-	image = new Rts2Image (imgPath);
+	try
+	{
+		image = new Rts2Image (imgPath);
 #endif
+	} 
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "Processing " << imgPath << ": " << er << sendLog;
+		delete image;
+		// move file to bad directory..
+		char newPath[strlen(imgPath) + 5];
+		char *last_slash = imgPath;
+		char *p;
+		while ((p = strchr (last_slash + 1, '/')) != NULL)
+			last_slash = p + 1;
+		if (last_slash != imgPath)
+			last_slash--;
+		strncpy (newPath, imgPath, last_slash - imgPath);
+		strcpy (newPath + (last_slash - imgPath), "/bad");
+		strcpy (newPath + (last_slash - imgPath) + 4, last_slash);
+
+		int ret = mkpath (newPath, 0777);
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot create path fro file: " << newPath << ":" << strerror (errno) << sendLog;
+		}
+		else
+		{
+			ret = rename (imgPath, newPath);
+			if (ret)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot rename " << imgPath << " to " << newPath << ":" << strerror(errno) << sendLog;
+			}
+			else
+			{
+				logStream (MESSAGE_INFO) << "Renamed " << imgPath << " to " << newPath << sendLog;
+			}
+		}
+		astrometryStat = BAD;
+		rts2core::ConnFork::connectionError (last_data_size);
+		return;
+	}
 	if (image->getImageType () == IMGTYPE_FLAT)
 	{
 		// just return..
 		delete image;
-		Rts2ConnFork::connectionError (last_data_size);
+		rts2core::ConnFork::connectionError (last_data_size);
 		return;
 	}
 
@@ -152,35 +191,36 @@ ConnImgProcess::connectionError (int last_data_size)
 			image->toArchive ();
 			// send correction to telescope..
 			telescopeName = image->getMountName ();
-			ret = image->getValue ("MOVE_NUM", corr_mark);
-			if (ret)
-				break;
-			ret = image->getValue ("CORR_IMG", corr_img);
-			if (ret)
-				break;
-			if (telescopeName)
+			try
 			{
-				Rts2Conn *telConn;
-				telConn = master->findName (telescopeName);
-				// correction error should be in degrees
-				if (telConn)
+				image->getValue ("MOVE_NUM", corr_mark);
+				image->getValue ("CORR_IMG", corr_img);
+				if (telescopeName)
 				{
-					struct ln_equ_posn pos1, pos2;
-					pos1.ra = ra;
-					pos1.dec = dec;
+					Rts2Conn *telConn;
+					telConn = master->findName (telescopeName);
+					// correction error should be in degrees
+					if (telConn && Rts2Config::instance ()->isAstrometryDevice (image->getCameraName ()))
+					{
+						struct ln_equ_posn pos1, pos2;
+						pos1.ra = ra;
+						pos1.dec = dec;
 
-					pos2.ra = ra - ra_err / 60.0;
-					pos2.dec = dec - dec_err / 60.0;
+						pos2.ra = ra - ra_err / 60.0;
+						pos2.dec = dec - dec_err / 60.0;
 
-					double posErr = ln_get_angular_separation (&pos1, &pos2);
+						double posErr = ln_get_angular_separation (&pos1, &pos2);
 
-					telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,
-						corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
-					);
+						telConn->queCommand (new Rts2CommandCorrect (master, corr_mark,
+							corr_img, image->getImgId (), ra_err / 60.0, dec_err / 60.0, posErr)
+						);
+					}
 				}
+				sendProcEndMail (image);
 			}
-			sendOKMail (image);
-			sendProcEndMail (image);
+			catch (rts2image::KeyNotFound &er)
+			{
+			}
 			break;
 		case DARK:
 			image->toDark ();
@@ -193,35 +233,11 @@ ConnImgProcess::connectionError (int last_data_size)
 	else
 		master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
 	delete image;
-	Rts2ConnFork::connectionError (last_data_size);
+	rts2core::ConnFork::connectionError (last_data_size);
 }
 
 
 #ifdef HAVE_PGSQL
-void
-ConnImgProcess::sendOKMail (Rts2ImageDb * image)
-{
-	// is first such image..
-	if (image->getOKCount () == 1)
-	{
-		int count;
-		Rts2TarUser tar_user =
-			Rts2TarUser (image->getTargetId (), image->getTargetType ());
-		std::string mails = tar_user.getUsers (SEND_ASTRO_OK, count);
-		if (count == 0)
-			return;
-		std::ostringstream subject;
-		subject << "TARGET #"
-			<< image->getTargetIdSel ()
-			<< " (" << image->getTargetId ()
-			<< ") GET ASTROMETRY (IMG_ID #" << image->getImgId () << ")";
-		std::ostringstream os;
-		os << *image;
-		master->sendMailTo (subject.str ().c_str (), os.str ().c_str (), mails.c_str ());
-	}
-}
-
-
 void
 ConnImgProcess::sendProcEndMail (Rts2ImageDb * image)
 {
@@ -245,6 +261,7 @@ const char *in_exe, int in_obsId,
 int in_timeout):
 ConnProcess (in_master, in_exe, in_timeout)
 {
+#ifdef HAVE_PGSQL
 	obsId = in_obsId;
 	obs = new Rts2Obs (obsId);
 	if (obs->load ())
@@ -259,6 +276,7 @@ ConnProcess (in_master, in_exe, in_timeout)
 	fillIn (&obsTarTypeCh, obs->getTargetType ());
 
 	delete obs;
+#endif
 }
 
 

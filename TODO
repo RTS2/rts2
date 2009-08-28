@@ -3,13 +3,8 @@
 * document meteo polludp changes/put them to svn
 
 * camd autoDarking
-* image que processing
-  - finish obs, .. processing
 * logging-messaging
   - jabberd
-* record all values to fits header
-  - target auxiliray values (orbital parameters,..)
 * rts2-web
   - statistics
-  - finish hibernate mapping
   - virtual observatory

@@ -20,7 +20,8 @@
 #ifndef __RTS2_CONNEPICS__
 #define __RTS2_CONNEPICS__
 
-#include "../utils/rts2connnosend.h"
+#include "rts2connnosend.h"
+#include "error.h"
 
 #include <cadef.h>
 #include <map>
@@ -33,32 +34,12 @@ namespace rts2core
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ConnEpicsError
+class ConnEpicsError:public Error
 {
-	private:
-		const char *message;
-		int result;
-	protected:
-		const char *getMessage ()
-		{
-			return message;
-		}
-
-		const char *getError ()
-		{
-			return ca_message (result);
-		}
 	public:
-		ConnEpicsError (const char *_message, int _result)
+		ConnEpicsError (const char *_message, int _result): Error ()
 		{
-			message = _message;
-			result = _result;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnEpicsError &_epics)
-		{
-			_os << _epics.getMessage () << _epics.getError ();
-			return _os;
+			setMsg (std::string (_msg) + ca_message (_result));
 		}
 };
 
@@ -70,19 +51,11 @@ class ConnEpicsError
  */
 class ConnEpicsErrorChannel:public ConnEpicsError
 {
-	private:
-		const char *pvname;
 	public:
 		ConnEpicsErrorChannel (const char *_message, const char *_pvname, int _result)
 		:ConnEpicsError (_message, _result)
 		{
-			pvname = _pvname;
-		}
-
-		friend std::ostream & operator << (std::ostream &_os, ConnEpicsErrorChannel &_epics)
-		{
-			_os << _epics.getMessage () << ", channel " << _epics.pvname << " error " << _epics.getError ();
-			return _os;
+		 	setMsg (std::string (_message) + ", channel " + _epics.pv_nan + " error " + ca_message (_result));
 		}
 };
 

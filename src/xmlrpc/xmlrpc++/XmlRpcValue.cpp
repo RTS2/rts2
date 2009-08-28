@@ -208,6 +208,18 @@ namespace XmlRpc
 		throw XmlRpcException("type error");
 	}
 
+	// Works for arrays.
+	void XmlRpcValue::popFront()
+	{
+		switch (_type)
+		{
+			case TypeArray: _value.asArray->erase(_value.asArray->begin()); return;
+			default: break;
+		}
+
+		throw XmlRpcException("type error");
+	}
+
 	// Checks for existence of struct member
 	bool XmlRpcValue::hasMember(const std::string& name) const
 	{

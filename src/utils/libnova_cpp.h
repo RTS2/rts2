@@ -660,9 +660,20 @@ class Rts2Night
 		{
 			return &from;
 		}
+
+		double getJDFrom ()
+		{
+			return ln_get_julian_from_timet (&from);
+		}
+
 		time_t *getTo ()
 		{
 			return &to;
+		}
+
+		double getJDTo ()
+		{
+			return ln_get_julian_from_timet (&to);
 		}
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2Night night);

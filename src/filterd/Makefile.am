@@ -6,7 +6,8 @@ noinst_LIBRARIES  = librts2filterd.a
 
 librts2filterd_a_SOURCES = filterd.cpp
 
-LDADD = librts2filterd.a ../utils/librts2block.a
+LDADD = librts2filterd.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_filterd_ifw_SOURCES = ifw.cpp
 

@@ -95,6 +95,16 @@ class ObservationSet:public std::vector <Rts2Obs >
 		 * @param month  Observation month
 		 */ 
 		ObservationSet (int year, int month);
+
+		/**
+		 * Load all observations performed during given night.
+		 *
+		 * @param year   Observation year
+		 * @param month  Observation month
+		 * @param day    Observation day
+		 */
+		ObservationSet (int year, int month, int day);
+
 		ObservationSet (char type_id, int state_mask, bool inv = false);
 		ObservationSet (struct ln_equ_posn *position, double radius);
 		virtual ~ ObservationSet (void);
@@ -153,6 +163,56 @@ class ObservationSet:public std::vector <Rts2Obs >
 		}
 
 		void printStatistics (std::ostream & _os);
+
+		/**
+		 * Return JD of start of the first observation in the set.
+		 *
+		 * @return JD of start of the first observation.
+		 */
+		double getJDStart ()
+		{
+			if (size () == 0)
+				return nan("f");
+			return (*(end () - 1)).getObsJDStart ();
+		}
+
+		/**
+		 * Return JD of the end of last observation in the set.
+		 *
+		 * @return JD of the end of last last observation.
+		 */
+		double getJDEnd ()
+		{
+			if (size () == 0)
+				return nan("f");
+			return (*(begin ())).getObsJDEnd ();
+		}
+
+
+		/**
+		 * Return map of targetsId and number of their observations.
+		 * The returning map has as a key targetId, and as value number of observations
+		 * of the target.
+		 *
+		 * @param Map containing target id as a key and number of target observations as value.
+		 */
+		std::map <int, int> getTargetObservations ();
+
+		// Merit functions..
+		
+		/**
+		 * Returns averaged altitude merit function.
+		 *
+		 * @return Averaged altitudu merit function of the observations.
+		 */
+		double altitudeMerit ();
+
+		/**
+		 * Returns merit based on distance between scheduled entries.
+		 *
+		 * @return 1 / sum of distance distance between schedule entries.
+		 */
+		double distanceMerit ();
 
 		std::ostream & print (std::ostream &_os);
 

@@ -38,14 +38,17 @@
 Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
 Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
+	integrateConn = NULL;
+
 	createValue (filter, "filter", "used filter", false);
+	createValue (req_count, "required", "number of readings left", false);
 	createValue (count, "count", "count of the photometer", false);
 	createValue (exp, "exposure", "exposure time in sec", false);
 	createValue (is_ov, "is_ov", "if photometer overflow", false);
 
 	photType = NULL;
 
-	req_count = -1;
+	req_count->setValueInteger (-1);
 	setReqTime (1);
 }
 
@@ -123,6 +126,13 @@ Rts2DevPhot::homeFilter ()
 
 
 int
+Rts2DevPhot::setExposure (float _exp)
+{
+	setReqTime (_exp);
+	return 0;
+}
+
+int
 Rts2DevPhot::startFilterMove (int new_filter)
 {
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
@@ -154,12 +164,12 @@ Rts2DevPhot::startIntegrate ()
 
 
 int
-Rts2DevPhot::startIntegrate (Rts2Conn * conn, float in_req_time,
-int in_req_count)
+Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_count)
 {
 	int ret;
-	req_count = in_req_count;
-	setReqTime (in_req_time);
+	req_count->setValueInteger (_req_count);
+	sendValueAll (req_count);
+	setReqTime (_req_time);
 	ret = startIntegrate ();
 	if (ret)
 	{
@@ -177,7 +187,7 @@ Rts2DevPhot::endIntegrate ()
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
 	// keep us update in old time
 	startIntegrate ();
-	req_count = -1;
+	req_count->setValueInteger (-1);
 	return 0;
 }
 
@@ -242,12 +252,11 @@ Rts2DevPhot::enableFilter (Rts2Conn * conn)
 }
 
 
-void
-Rts2DevPhot::cancelPriorityOperations ()
+int
+Rts2DevPhot::scriptEnds ()
 {
 	stopIntegrate ();
-	clearStatesPriority ();
-	Rts2ScriptDevice::cancelPriorityOperations ();
+	return Rts2ScriptDevice::scriptEnds ();
 }
 
 
@@ -271,6 +280,7 @@ void
 Rts2DevPhot::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
+	exp->setValueFloat (req_time);
 	gettimeofday (&nextCountDue, NULL);
 	nextCountDue.tv_sec += (long) floor (in_req_time);
 	nextCountDue.tv_usec +=
@@ -288,6 +298,8 @@ Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == filter)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
+	if (old_value == exp)
+		return setExposure (new_value->getValueFloat ()) == 0 ? 0 : -2;
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
@@ -302,9 +314,9 @@ Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 	sendValueAll (exp);
 	sendValueAll (is_ov);
 	sendValueAll (count);
-	if (req_count > 0)
-		req_count--;
-	if (req_count == 0)
+	if (req_count->getValueInteger () > 0)
+		req_count->dec();
+	if (req_count->getValueInteger () == 0)
 		endIntegrate ();
 }
 

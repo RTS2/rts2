@@ -24,6 +24,7 @@
 #include <ostream>
 #include <time.h>
 #include <vector>
+#include <stdexcept>
 
 #include "imgdisplay.h"
 
@@ -31,6 +32,7 @@
 
 #include "rts2count.h"
 #include "rts2imgset.h"
+#include "target.h"
 
 /**
  * Observation class.
@@ -109,6 +111,21 @@ class Rts2Obs
 		}
 
 		/**
+		 * Return target structure.
+		 *
+		 * @return Target structure in case of success, NULL in case of error.
+		 */
+		Target *getTarget ()
+		{
+                 	Rts2TargetSet::iterator iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
+			if (iter == rts2db::TargetSetSingleton::instance ()->end ())
+    			{
+                         	return NULL;
+			}
+                        return (*iter).second;
+		}
+
+		/**
 		 * Return real target ID.
 		 *
 		 * @return Target id.
@@ -143,9 +160,77 @@ class Rts2Obs
 			return obs_start;
 		}
 
+		double getObsJDStart ()
+		{
+			if (isnan (getObsStart ()))
+				return getObsStart ();
+			time_t s = (time_t) getObsStart ();
+			return ln_get_julian_from_timet (&s);
+		}
+
+		/**
+		 * Return middle time of observation.
+		 */
+		double getObsJDMid ()
+		{
+			if (isnan (getObsStart ()) || isnan (getObsStart ()))
+				return nan("f");
+			time_t mid = (time_t) ((getObsStart () + getObsEnd ()) / 2.0);
+			return ln_get_julian_from_timet (&mid);
+		}
+
 		double getObsEnd ()
 		{
 			return obs_end;
+		}
+
+		double getObsJDEnd ()
+		{
+			if (isnan (getObsEnd ()))
+				return getObsEnd ();
+			time_t e = (time_t) getObsEnd ();
+			return ln_get_julian_from_timet (&e);
+		}
+
+		/**
+		 * Calculate observation altitude merit withing given interval.
+		 *
+		 * @param _start JD of interval start.
+		 * @param _end   JD of interval end.
+		 *
+		 * @return Merit (=number between 0 and 1, higher means better).
+		 */
+		double altitudeMerit (double _start, double _end);
+
+
+		/**
+		 * Get equatiorial position of the target at the beginning of the observation.
+		 *
+		 * @param _pos Returned position.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getStartPosition (struct ln_equ_posn &_pos)
+		{
+			if (isnan (getObsJDStart ()))
+				return -1;
+			getTarget ()->getPosition (&_pos, getObsJDStart ());
+			return 0;
+		}
+
+		/**
+		 * Get equatiorial position of the target at the end of the observation.
+		 *
+		 * @param _pos Returned position.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getEndPosition (struct ln_equ_posn &_pos)
+		{
+			if (isnan (getObsJDEnd ()))
+				return -1;
+			getTarget ()->getPosition (&_pos, getObsJDEnd ());
+			return 0;
 		}
 
 		double getObsRa ()

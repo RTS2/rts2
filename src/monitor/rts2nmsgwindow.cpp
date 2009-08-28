@@ -1,6 +1,5 @@
-#include "rts2nmsgwindow.h"
-
 #include "nmonitor.h"
+#include "rts2nmsgwindow.h"
 
 Rts2NMsgWindow::Rts2NMsgWindow ():Rts2NSelWindow (0, LINES - 19, COLS,
 18, 1, 300, 500)

@@ -214,14 +214,5 @@ Focusd::commandAuthorized (Rts2Conn * conn)
 
 		return autoFocus (conn);
 	}
-	else if (conn->isCommand ("switch"))
-	{
-		int switch_num;
-		int new_state;
-		if (conn->paramNextInteger (&switch_num)
-			|| conn->paramNextInteger (&new_state) || !conn->paramEnd ())
-			return -2;
-		return setSwitch (switch_num, new_state);
-	}
 	return Rts2Device::commandAuthorized (conn);
 }

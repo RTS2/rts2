@@ -127,16 +127,16 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	// default is to aply model corrections
-	createValue (calAberation, "CAL_ABER", "aberation is calculated by RTS2 driver", false);
+	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false);
 	calAberation->setValueBool (false);
 
-	createValue (calPrecession, "CAL_PREC", "precession is calculated by RTS2 driver", false);
+	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false);
 	calPrecession->setValueBool (false);
 
-	createValue (calRefraction, "CAL_REFR", "refraction is calculated by RTS2 driver", false);
+	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false);
 	calRefraction->setValueBool (false);
 
-	createValue (calModel, "CAL_MODE", "model is calculated by RTS2 driver", false);
+	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false);
 	calModel->setValueBool (false);
 
 	modelFile = NULL;
@@ -179,51 +179,6 @@ Telescope::getLocSidTime (double JD)
 	ret = ln_get_apparent_sidereal_time (JD) * 15.0 + telLongitude->getValueDouble ();
 	return ln_range_degrees (ret) / 15.0;
 }
-
-void
-Telescope::moveNowTo (struct ln_equ_posn *equ)
-{
-	// clear offsets
-	incMoveNum ();
-	// set target
-	oriRaDec->setValueRaDec (equ->ra, equ->dec);
-	sendValueAll (oriRaDec);
-	objRaDec->setValueRaDec (equ->ra, equ->dec);
-	sendValueAll (objRaDec);
-
-	// apply corrections
-	applyCorrections (equ, ln_get_julian_from_sys ());
-
-	// now we have target position, which can be feeded to telescope
-	tarRaDec->setValueRaDec (equ->ra, equ->dec);
-
-	// calculate target after corrections
-	equ->ra = ln_range_degrees (equ->ra - corrRaDec->getRa ());
-	equ->dec = equ->dec - corrRaDec->getDec ();
-	telRaDec->setValueRaDec (equ->ra, equ->dec);
-
-	moveInfoCount = 0;
-
-	if (hardHorizon)
-	{
-		struct ln_hrz_posn hrpos;
-		getTargetAltAz (&hrpos);
-		if (!hardHorizon->is_good (&hrpos))
-		{
-			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope (during moveNowTo)" << sendLog;
-			return;
-		}
-	}
-
-	if (blockMove->getValueBool () == true)
-	{
-		logStream (MESSAGE_ERROR) << "telescope move blocked during moveNowTo" << sendLog;
-		return;
-	}
-
-	startResync ();
-}
-
 
 int
 Telescope::processOption (int in_opt)
@@ -641,6 +596,7 @@ Telescope::checkMoves ()
 				DEVICE_ERROR_HW | TEL_NOT_CORRECTING | TEL_OBSERVING,
 				"move finished with error");
 			move_connection = NULL;
+			setIdleInfoInterval (60);
 		}
 		else if (ret == -2)
 		{
@@ -662,6 +618,7 @@ Telescope::checkMoves ()
 				sendInfo (move_connection);
 			}
 			move_connection = NULL;
+			setIdleInfoInterval (60);
 		}
 	}
 	else if ((getState () & TEL_MASK_MOVING) == TEL_PARKING)
@@ -677,6 +634,7 @@ Telescope::checkMoves ()
 			maskState (DEVICE_ERROR_MASK | TEL_MASK_MOVING | BOP_EXPOSURE,
 				DEVICE_ERROR_HW | TEL_PARKED,
 				"park command finished with error");
+			setIdleInfoInterval (60);
 		}
 		else if (ret == -2)
 		{
@@ -693,6 +651,7 @@ Telescope::checkMoves ()
 			{
 				sendInfo (move_connection);
 			}
+			setIdleInfoInterval (60);
 		}
 	}
 }
@@ -920,6 +879,7 @@ int
 Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
+	woffsRaDec->setValueRaDec (0, 0);
 	return Rts2Device::scriptEnds ();
 }
 
@@ -991,7 +951,7 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (woffsRaDec->wasChanged ())
 	{
-		offsRaDec->incValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
+		offsRaDec->setValueRaDec (woffsRaDec->getRa (), woffsRaDec->getDec ());
 	}
 
 	LibnovaRaDec l_obj (oriRaDec->getRa (), oriRaDec->getDec ());
@@ -1057,7 +1017,6 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	if (woffsRaDec->wasChanged ())
 	{
-		woffsRaDec->setValueRaDec (0, 0);
 		woffsRaDec->resetValueChanged ();
 	}
 
@@ -1090,6 +1049,8 @@ Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 			"move started");
 	}
 	move_connection = conn;
+
+	setIdleInfoInterval (0.5);
 
 	return ret;
 }
@@ -1133,6 +1094,9 @@ Telescope::startPark (Rts2Conn * conn)
 		maskState (TEL_MASK_MOVING | TEL_MASK_NEED_STOP, TEL_PARKING,
 			"parking started");
 	}
+
+	setIdleInfoInterval (0.5);
+
 	return ret;
 }
 
@@ -1193,7 +1157,6 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("move_not_model"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
@@ -1211,7 +1174,6 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("fixed"))
 	{
-		CHECK_PRIORITY;
 		// tar_ra hold HA (Hour Angle)
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
@@ -1222,7 +1184,6 @@ Telescope::commandAuthorized (Rts2Conn * conn)
 	}
 	else if (conn->isCommand ("setto"))
 	{
-		CHECK_PRIORITY;
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
 			|| !conn->paramEnd ())
 			return -2;
