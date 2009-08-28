@@ -426,16 +426,40 @@ void Trencin::setSpeedRa (int new_speed)
 {
 	if (new_speed < 16)
 		new_speed = 16;
+	tel_write_ra ('[');
 	tel_write_ra ('V', new_speed);
+	if (new_speed < 200)
+	{
+		startRa->setValueInteger (new_speed);
+	}
+	else
+	{
+		startRa->setValueInteger (200);
+	}
+	tel_write_ra ('s', startRa->getValueInteger ());
+	tel_write_ra (']');
 	velRa->setValueInteger (new_speed);
+	sendValueAll (startRa);
 }
 
 void Trencin::setSpeedDec (int new_speed)
 {
 	if (new_speed < 16)
 		new_speed = 16;
+	tel_write_dec ('[');
 	tel_write_dec ('V', new_speed);
+	if (new_speed < 200)
+	{
+		startDec->setValueInteger (new_speed);
+	}
+	else
+	{
+		startDec->setValueInteger (200);
+	}
+	tel_write_ra ('s', startDec->getValueInteger ());
+	tel_write_ra (']');
 	velDec->setValueInteger (new_speed);
+	sendValueAll (startDec);
 }
 
 void Trencin::setRa (long new_ra)
@@ -554,8 +578,8 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	numberRa->setValueInteger (6);
 	numberDec->setValueInteger (6);
 
-	createValue (startRa, "start_ra", "start/stop speed");
-	createValue (startDec, "start_dec", "start/stop speed");
+	createValue (startRa, "start_ra", "start/stop speed", false);
+	createValue (startDec, "start_dec", "start/stop speed", false);
 
 	startRa->setValueInteger (200);
 	startDec->setValueInteger (200);
@@ -736,9 +760,19 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			tel_write_ra ('q', new_value->getValueInteger ());
 			return 0;
 		}
+		else if (old_value == qDec)
+		{
+			tel_write_dec ('q', new_value->getValueInteger ());
+			return 0;
+		}
 		else if (old_value == microRa)
 		{
 			tel_write_ra ('M', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == microDec)
+		{
+			tel_write_dec ('M', new_value->getValueInteger ());
 			return 0;
 		}
 		else if (old_value == numberRa)
@@ -746,9 +780,23 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			tel_write_ra ('N', new_value->getValueInteger ());
 			return 0;
 		}
+		else if (old_value == numberDec)
+		{
+			tel_write_dec ('N', new_value->getValueInteger ());
+			return 0;
+		}
 		else if (old_value == startRa)
 		{
+			if (new_value->getValueInteger () > velRa->getValueInteger ())
+				return -2;
 			tel_write_ra ('s', new_value->getValueInteger ());
+			return 0;
+		}
+		else if (old_value == startDec)
+		{
+			if (new_value->getValueInteger () > velDec->getValueInteger ())
+				return -2;
+			tel_write_dec ('s', new_value->getValueInteger ());
 			return 0;
 		}
 		else if (old_value == wormRa)
