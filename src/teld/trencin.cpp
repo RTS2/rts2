@@ -407,10 +407,10 @@ void Trencin::setGuidingSpeed (double value)
 			trencinConnDec->flushPortIO ();
 	}
 
-	int vel = (value * haCpd) / 64;
+	int vel = (value * fabs (haCpd)) / 64;
 	setSpeedRa (vel);
 
-	vel = (value * decCpd) / 64;
+	vel = (value * fabs (decCpd)) / 64;
 	setSpeedDec (vel);
 
 	sendValueAll (velRa);
