@@ -266,7 +266,7 @@ Rts2Block::idle ()
 
 	// test for any pending timers..
 	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
-	while (!timers.empty () && iter_t->first < getNow ())
+	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
 		Rts2Event *sec = iter_t->second;
 		timers.erase (iter_t++);
