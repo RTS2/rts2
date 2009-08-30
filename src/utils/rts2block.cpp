@@ -266,13 +266,14 @@ Rts2Block::idle ()
 
 	// test for any pending timers..
 	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
-	if (!timers.empty () && iter_t->first < getNow ())
+	while (!timers.empty () && iter_t->first < getNow ())
 	{
-	 	if (iter_t->second->getArg () != NULL)
-		  	((Rts2Object *)iter_t->second->getArg ())->postEvent (iter_t->second);
+		Rts2Event *sec = iter_t->second;
+		timers.erase (iter_t++);
+	 	if (sec->getArg () != NULL)
+		  	((Rts2Object *)sec->getArg ())->postEvent (sec);
 		else
-			postEvent (iter_t->second);
-		timers.erase (iter_t);
+			postEvent (sec);
 	}
 
 	return 0;
@@ -902,8 +903,13 @@ void Rts2Block::deleteTimers (int event_type)
 	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
 	{
 		if (iter->second->getType () == event_type)
+		{
+			delete (iter->second);
 			timers.erase (iter++);
+		}
 		else
+		{
 			iter++;
+		}
 	}
 }
