@@ -290,6 +290,7 @@ int Trencin::stopWorm ()
 		initRa ();
 		raWormStart->setValueDouble (nan ("f"));
 		sendValueAll (raWormStart);
+		deleteTimers (EVENT_TIMER_RA_WORM);
 	}
 	return 0;
 }
