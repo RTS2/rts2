@@ -124,6 +124,9 @@ class Trencin:public Fork
 		Rts2ValueTime *decMovingEnd;
 
 		Rts2ValueBool *wormRa;
+		Rts2ValueTime *raWormStart;
+
+		int32_t worm_start_unit_ra;
 
 		Rts2ValueSelection *raGuide;
 		Rts2ValueSelection *decGuide;
@@ -157,9 +160,6 @@ class Trencin:public Fork
 		Rts2ValueInteger *waitWormRa;
 
 		int32_t ac, dc;
-
-		// mode of RA motor
-		enum {MODE_NORMAL, MODE_WORM, MODE_WORM_WAIT} raMode;
 
 		void tel_run (Rts2ConnSerial *conn, int value);
 		/**
@@ -243,15 +243,14 @@ void Trencin::tel_write_dec (char command, int32_t value)
 
 int Trencin::startWorm ()
 {
-	if (raMode == MODE_WORM_WAIT)
+	int ret;
+	if (!isnan (raWormStart->getValueDouble ()))
 	{
-		int ret;
 		ret = readAxis (trencinConnRa, unitRa, false);
-		raMode = MODE_WORM;
 		if (ret < 0)
 			return -1;
 	}
-	if (raMode == MODE_NORMAL)
+	else
 	{
 		tel_write_ra ('[');
 		tel_write_ra ('M', microRa->getValueInteger ());
@@ -264,22 +263,33 @@ int Trencin::startWorm ()
 		tel_write_ra ("r\rK\r");
 		tel_write_ra ('W', waitWormRa->getValueInteger ());
 		tel_write_ra ("E\rJ2\r]\r");
-		raMode = MODE_WORM;
+		ret = readAxis (trencinConnRa, unitRa, false);
+		if (ret < 0)
+			return -1;
+		raWormStart->setNow ();
+		worm_start_unit_ra = unitRa->getValueInteger ();
+		sendValueAll (raWormStart);
 	}
 
-	raMode = MODE_WORM_WAIT;
 	addTimer (0.75, new Rts2Event (EVENT_TIMER_RA_WORM, this));
 	return 0;
 }
 
 int Trencin::stopWorm ()
 {
-	if (raMode != MODE_NORMAL)
+	if (!isnan (raWormStart->getValueDouble ()))
 	{
 		tel_write_ra ('\\');
+		worm_start_unit_ra += (getNow () - raWormStart->getValueDouble ()) * haCpd / (240.0 * LN_SIDEREAL_DAY_SEC / 86400);
+		if (worm_start_unit_ra > MAX_MOVE)
+			worm_start_unit_ra -= MAX_MOVE;
+		if (worm_start_unit_ra < 0)
+			worm_start_unit_ra += MAX_MOVE;
+		tel_write_ra ('=', worm_start_unit_ra);
 		// set proper values for speed after reset
 		initRa ();
-		raMode = MODE_NORMAL;
+		raWormStart->setValueDouble (nan ("f"));
+		sendValueAll (raWormStart);
 	}
 	return 0;
 }
@@ -367,8 +377,11 @@ void Trencin::setGuideRa (int value)
 	{
 		if (decGuide->getValueInteger () == 0)
 			setIdleInfoInterval (60);
+		if (wormRa->getValueBool () == true)
+			startWorm ();
 		return;
 	}
+	stopWorm ();
 	switch (value)
 	{
 		case 1:
@@ -454,6 +467,20 @@ void Trencin::checkAcc (Rts2ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueIn
 
 void Trencin::setSpeedRa (int new_speed)
 {
+	// apply offset for sidereal motion
+	if (wormRa->getValueBool () == true)
+	{
+		switch (raGuide->getValueInteger ())
+		{
+			case 1:
+				// in sidereal direction - we need to be quicker
+				new_speed += 4;
+				break;
+			case 2:
+				new_speed -= 4;
+				break;
+		}
+	}
 	if (new_speed < 16)
 		new_speed = 16;
 	tel_write_ra ('[');
@@ -503,10 +530,14 @@ void Trencin::setRa (long new_ra)
 
 		readAxis (trencinConnRa, unitRa);
 	}
+	else
+	{
+		stopWorm ();
+	}
 	long diff = new_ra - unitRa->getValueInteger ();
 	// adjust for siderial move..
 	double v = ((double) velRa->getValueInteger ()) * 64;
-	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / 240.0);
+	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / (240.0 * LN_SIDEREAL_DAY_SEC / 86400));
 	tel_run (trencinConnRa, diff);
 }
 
@@ -571,6 +602,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (wormRa, "ra_worm", "RA worm drive", false);
 	wormRa->setValueBool (false);
 
+	createValue (raWormStart, "ra_worm_start", "RA worm start time", false);
+	raWormStart->setValueDouble (nan ("f"));
+
 	createValue (unitRa, "AXRA", "RA axis raw counts", true);
 	unitRa->setValueInteger (0);
 
@@ -628,8 +662,6 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	// apply all corrections
 	setCorrections (true, true, true);
-
-	raMode = MODE_NORMAL;
 }
 
 
@@ -832,9 +864,14 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		else if (old_value == wormRa)
 		{
 			if (((Rts2ValueBool *)new_value)->getValueBool () == true)
-				startWorm ();
+			{
+				if (raMoving->getValueInteger () == 0)
+					startWorm ();
+			}
 			else
+			{
 				stopWorm ();
+			}
 			return 0;
 		}
 		else if (old_value == accWormRa || old_value == velWormRa
@@ -886,7 +923,7 @@ int Trencin::info ()
 	int32_t left_track;
 
 	// update axRa and axDec
-	if (raMode == MODE_NORMAL)
+	if (isnan (raWormStart->getValueDouble ()))
 	{
 		if (raMoving->getValueInteger () == 0)
 		{
@@ -967,7 +1004,8 @@ int Trencin::isMoving ()
 
 int Trencin::endMove ()
 {
-	startWorm ();
+	if (wormRa->getValueBool () == true)
+		startWorm ();
 	return Fork::endMove ();
 }
 
