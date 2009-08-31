@@ -571,7 +571,7 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	decZero = 0;
 
 	haCpd = -56889;
-	decCpd = 110222;
+	decCpd = -110222;
 
 	ra_ticks = (int32_t) (fabs (haCpd) * 360);
 	dec_ticks = (int32_t) (fabs (decCpd) * 360);
@@ -994,16 +994,16 @@ int Trencin::info ()
 		else
 		{
 			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
-			u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
+			u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () + raMoving->getValueInteger () * (1 - (double) left_track / fabs (raMoving->getValueInteger ()));
 			if (u_ra < 0)
 			{
-				cycleRa->inc ();
+				cycleRa->dec ();
 				cycleMoveRa++;
 				u_ra += MAX_MOVE;
 			}
 			if (u_ra > MAX_MOVE)
 			{
-				cycleRa->dec ();
+				cycleRa->inc ();
 				cycleMoveRa--;
 				u_ra -= MAX_MOVE;
 			}
@@ -1025,17 +1025,17 @@ int Trencin::info ()
 	else
 	{
 		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
-		u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
+		u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () + decMoving->getValueInteger () * (1 - (double) left_track / fabs (decMoving->getValueInteger ()));
 		if (u_dec < 0)
 		{
-			cycleDec->inc ();
+			cycleDec->dec ();
 			cycleMoveDec++;
 			u_dec += MAX_MOVE;
 		}
 		if (u_dec > MAX_MOVE)
 		{
-			cycleDec->dec ();
-			cycleMoveDec++;
+			cycleDec->inc ();
+			cycleMoveDec--;
 			u_dec -= MAX_MOVE;
 		}
 
