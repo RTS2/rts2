@@ -810,8 +810,8 @@ int Trencin::init ()
 
 int Trencin::updateLimits ()
 {
-	acMin = (int32_t) (haCpd * -180);
-	acMax = (int32_t) (haCpd * 180);
+	acMin = (int32_t) (fabs (haCpd) * -180);
+	acMax = (int32_t) (fabs (haCpd) * 180);
 
 	return 0;
 }
