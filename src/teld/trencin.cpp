@@ -542,7 +542,15 @@ void Trencin::setRa (long new_ra)
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
 	// adjust for siderial move..
 	double v = ((double) velRa->getValueInteger ()) * 64;
-	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / (240.0 * LN_SIDEREAL_DAY_SEC / 86400));
+	// sideric speed in 1/64 steps / sec
+	double sspeed = (haCpd / 240) * (86400 / LN_SIDEREAL_DAY_SEC);
+	if ((sspeed < 0 && diff < 0) || (sspeed > 0 && diff > 0))
+		// we are going in direction of sidereal motion, thus the motion will take shorter time
+		sspeed = -1 * fabs (sspeed);
+	else
+		sspeed = fabs (sspeed);
+	diff *= v / (v + sspeed);
+	diff += 2 * sspeed;
 	cycleMoveRa = 0;
 	tel_run (trencinConnRa, diff);
 }
