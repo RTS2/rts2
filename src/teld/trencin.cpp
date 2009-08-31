@@ -249,6 +249,7 @@ int Trencin::startWorm ()
 		ret = readAxis (trencinConnRa, unitRa, false);
 		if (ret < 0)
 			return -1;
+		trencinConnRa->flushPortIO ();
 	}
 	else
 	{
@@ -271,6 +272,7 @@ int Trencin::startWorm ()
 		sendValueAll (raWormStart);
 	}
 
+	deleteTimers (EVENT_TIMER_RA_WORM);
 	addTimer (0.75, new Rts2Event (EVENT_TIMER_RA_WORM, this));
 	return 0;
 }
@@ -743,6 +745,8 @@ int Trencin::init ()
 
 	try
 	{
+		tel_write_ra ('K');
+		tel_write_dec ('K');
 		initMotors ();
 	}
 	catch (rts2core::Error &er)
