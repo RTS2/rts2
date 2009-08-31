@@ -139,6 +139,9 @@ class Trencin:public Fork
 		Rts2ValueInteger *cycleRa;
 		Rts2ValueInteger *cycleDec;
 
+		int cycleMoveRa;
+		int cycleMoveDec;
+
 		Rts2ValueInteger *velRa;
 		Rts2ValueInteger *velDec;
 
@@ -540,6 +543,7 @@ void Trencin::setRa (long new_ra)
 	// adjust for siderial move..
 	double v = ((double) velRa->getValueInteger ()) * 64;
 	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / (240.0 * LN_SIDEREAL_DAY_SEC / 86400));
+	cycleMoveRa = 0;
 	tel_run (trencinConnRa, diff);
 }
 
@@ -554,7 +558,7 @@ void Trencin::setDec (long new_dec)
 	}
 
 	long diff = new_dec - unitDec->getValueLong () - cycleDec->getValueInteger () * MAX_MOVE;
-
+	cycleMoveDec = 0;
 	tel_run (trencinConnDec, diff);
 }
 
@@ -618,6 +622,9 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 
 	createValue (cycleDec, "cycle_dec", "number of full DEC motor cycles", true);
 	cycleDec->setValueInteger (0);
+
+	cycleMoveRa = 0;
+	cycleMoveDec = 0;
 
 	createValue (velRa, "vel_ra", "RA velocity", false);
 	createValue (velDec, "vel_dec", "DEC velocity", false);
@@ -987,18 +994,21 @@ int Trencin::info ()
 		else
 		{
 			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
-			u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
+			u_ra = MAX_MOVE * cycleMoveRa + unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
 			if (u_ra < 0)
 			{
 				cycleRa->inc ();
+				cycleMoveRa++;
 				u_ra += MAX_MOVE;
 			}
 			if (u_ra > MAX_MOVE)
 			{
 				cycleRa->dec ();
+				cycleMoveRa--;
 				u_ra -= MAX_MOVE;
 			}
-				
+
+			u_ra += MAX_MOVE * cycleRa->getValueInteger ();
 		}
 	}
 	else
@@ -1015,17 +1025,21 @@ int Trencin::info ()
 	else
 	{
 		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
-		u_dec = MAX_MOVE * cycleDec->getValueInteger () + unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
+		u_dec = MAX_MOVE * cycleMoveDec + unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
 		if (u_dec < 0)
 		{
 			cycleDec->inc ();
+			cycleMoveDec++;
 			u_dec += MAX_MOVE;
 		}
 		if (u_dec > MAX_MOVE)
 		{
 			cycleDec->dec ();
+			cycleMoveDec++;
 			u_dec -= MAX_MOVE;
 		}
+
+		u_dec += MAX_MOVE * cycleDec->getValueInteger ();
 	}
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
