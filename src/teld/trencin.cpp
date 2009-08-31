@@ -536,7 +536,7 @@ void Trencin::setRa (long new_ra)
 	{
 		stopWorm ();
 	}
-	long diff = new_ra - unitRa->getValueInteger () + cycleRa->getValueInteger () * MAX_MOVE;
+	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
 	// adjust for siderial move..
 	double v = ((double) velRa->getValueInteger ()) * 64;
 	diff *= v / (v + (double) (((diff < 0) ? 1 : -1) * haCpd) / (240.0 * LN_SIDEREAL_DAY_SEC / 86400));
@@ -553,7 +553,7 @@ void Trencin::setDec (long new_dec)
 		readAxis (trencinConnDec, unitDec);
 	}
 
-	long diff = new_dec - unitDec->getValueLong () + cycleDec->getValueInteger () * MAX_MOVE;
+	long diff = new_dec - unitDec->getValueLong () - cycleDec->getValueInteger () * MAX_MOVE;
 
 	tel_run (trencinConnDec, diff);
 }
