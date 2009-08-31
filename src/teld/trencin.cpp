@@ -43,8 +43,6 @@ class Trencin:public Fork
 
 		virtual int info ();
 
-		virtual void postEvent (Rts2Event *event);
-
 		virtual int startResync ();
 		virtual int endMove ();
 		virtual int stopMove ();
@@ -58,6 +56,8 @@ class Trencin:public Fork
 		virtual int processOption (int in_opt);
 
 		virtual int getHomeOffset (int32_t & off);
+
+		virtual int setTo (double set_ra, double set_dec);
 
 		virtual int isMoving ();
 		virtual int isParking ();
@@ -135,6 +135,9 @@ class Trencin:public Fork
 
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
+
+		Rts2ValueInteger *cycleRa;
+		Rts2ValueInteger *cycleDec;
 
 		Rts2ValueInteger *velRa;
 		Rts2ValueInteger *velDec;
@@ -244,36 +247,23 @@ void Trencin::tel_write_dec (char command, int32_t value)
 int Trencin::startWorm ()
 {
 	int ret;
-	if (!isnan (raWormStart->getValueDouble ()))
-	{
-		ret = readAxis (trencinConnRa, unitRa, false);
-		if (ret < 0)
-			return -1;
-		trencinConnRa->flushPortIO ();
-	}
-	else
-	{
-		tel_write_ra ('[');
-		tel_write_ra ('M', microRa->getValueInteger ());
-		tel_write_ra ('N', numberRa->getValueInteger ());
-		tel_write_ra ('A', accWormRa->getValueInteger ());
-		tel_write_ra ('s', startRa->getValueInteger ());
-		tel_write_ra ('V', velWormRa->getValueInteger ());
-		tel_write_ra ("@2\rU1\rU2\rU3\rL10\r");
-		tel_write_ra ('B', backWormRa->getValueInteger ());
-		tel_write_ra ("r\rK\r");
-		tel_write_ra ('W', waitWormRa->getValueInteger ());
-		tel_write_ra ("E\rJ2\r]\r");
-		ret = readAxis (trencinConnRa, unitRa, false);
-		if (ret < 0)
-			return -1;
-		raWormStart->setNow ();
-		worm_start_unit_ra = unitRa->getValueInteger ();
-		sendValueAll (raWormStart);
-	}
-
-	deleteTimers (EVENT_TIMER_RA_WORM);
-	addTimer (0.75, new Rts2Event (EVENT_TIMER_RA_WORM, this));
+	tel_write_ra ('[');
+	tel_write_ra ('M', microRa->getValueInteger ());
+	tel_write_ra ('N', numberRa->getValueInteger ());
+	tel_write_ra ('A', accWormRa->getValueInteger ());
+	tel_write_ra ('s', startRa->getValueInteger ());
+	tel_write_ra ('V', velWormRa->getValueInteger ());
+	tel_write_ra ("@2\rU1\rU2\rU3\rL10\r");
+	tel_write_ra ('B', backWormRa->getValueInteger ());
+	tel_write_ra ("r\rK\r");
+	tel_write_ra ('W', waitWormRa->getValueInteger ());
+	tel_write_ra ("E\rJ2\r]\r");
+	ret = readAxis (trencinConnRa, unitRa, false);
+	if (ret < 0)
+		return -1;
+	raWormStart->setNow ();
+	worm_start_unit_ra = unitRa->getValueInteger ();
+	sendValueAll (raWormStart);
 	return 0;
 }
 
@@ -299,7 +289,7 @@ int Trencin::stopWorm ()
 
 void Trencin::addSelectSocks ()
 {
-	if (raMoving->getValueInteger () != 0)
+	if (raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ()))
 		trencinConnRa->add (&read_set, &write_set, &exp_set);
 	if (decMoving->getValueInteger () != 0)
 		trencinConnDec->add (&read_set, &write_set, &exp_set);
@@ -308,11 +298,20 @@ void Trencin::addSelectSocks ()
 
 void Trencin::selectSuccess ()
 {
-	if (raMoving->getValueInteger () != 0 && trencinConnRa->receivedData (&read_set))
+	// old axis value
+	if ((raMoving->getValueInteger () != 0 || !isnan (raWormStart->getValueDouble ())) && trencinConnRa->receivedData (&read_set))
 	{
+		int old_axis = unitRa->getValueInteger ();
 		if (readAxis (trencinConnRa, unitRa, false) == 0)
 		{
-		 	if (fabs (raMoving->getValueInteger ()) > MAX_MOVE)
+			if (!isnan (raWormStart->getValueDouble ()))
+			{
+				// moves backward..so if reading becomes higher, we crosed a full cycle..
+				if (unitRa->getValueInteger () > old_axis && unitRa->getValueInteger () > (MAX_MOVE - 100000) && old_axis < 100000)
+					cycleRa->dec ();
+				trencinConnRa->flushPortIO ();
+			}
+			else if (fabs (raMoving->getValueInteger ()) > MAX_MOVE)
 			{
 				raMoving->setValueInteger (raMoving->getValueInteger () - raMoving->getValueInteger () > 0 ? MAX_MOVE : -MAX_MOVE);
 				tel_run (trencinConnRa, raMoving->getValueInteger ());
@@ -614,6 +613,12 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
 	unitDec->setValueInteger (0);
 
+	createValue (cycleRa, "cycle_ra", "number of full RA motor cycles", true);
+	cycleRa->setValueInteger (0);
+
+	createValue (cycleDec, "cycle_dec", "number of full DEC motor cycles", true);
+	cycleDec->setValueInteger (0);
+
 	createValue (velRa, "vel_ra", "RA velocity", false);
 	createValue (velDec, "vel_dec", "DEC velocity", false);
 
@@ -667,13 +672,11 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	setCorrections (true, true, true);
 }
 
-
 Trencin::~Trencin (void)
 {
 	delete trencinConnRa;
 	delete trencinConnDec;
 }
-
 
 int Trencin::processOption (int in_opt)
 {
@@ -691,13 +694,59 @@ int Trencin::processOption (int in_opt)
 	return 0;
 }
 
-
 int Trencin::getHomeOffset (int32_t & off)
 {
 	off = 0;
 	return 0;
 }
 
+int Trencin::setTo (double set_ra, double set_dec)
+{
+	int ret = stopMove ();
+	if (ret)
+		return ret;
+	ret = stopWorm ();
+	if (ret)
+		return ret;
+	// calculate expected RA and DEC ticsk..
+	int32_t u_ra;
+	int32_t u_dec;
+
+	setTarget (set_ra, set_dec);
+	sky2counts (u_ra, u_dec);
+
+	cycleRa->setValueInteger (u_ra / MAX_MOVE);
+	cycleDec->setValueInteger (u_dec / MAX_MOVE);
+
+	u_ra %= MAX_MOVE;
+	if (u_ra < 0)
+	{
+		cycleRa->dec ();
+		u_ra = MAX_MOVE + u_ra;
+	}
+
+	u_dec %= MAX_MOVE;
+	if (u_dec < 0)
+	{
+		cycleDec->dec ();
+		u_dec = MAX_MOVE + u_dec;
+	}
+
+	try
+	{
+		tel_write_ra ('=', u_ra);
+		tel_write_dec ('=', u_dec);
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set position " << er << sendLog;
+		return -1;
+	}
+
+	if (wormRa->getValueBool () == true)
+		return startWorm ();
+	return 0;
+}
 
 int Trencin::init ()
 {
@@ -933,24 +982,50 @@ int Trencin::info ()
 		if (raMoving->getValueInteger () == 0)
 		{
 			readAxis (trencinConnRa, unitRa);
-	 		u_ra = unitRa->getValueInteger ();
+	 		u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
 		}
 		else
 		{
 			left_track = velRa->getValueInteger () * 64 * (raMovingEnd->getValueDouble () - getNow ());
-			u_ra = unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
+			u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger () - raMoving->getValueInteger () * (double) left_track / fabs (raMoving->getValueInteger ());
+			if (u_ra < 0)
+			{
+				cycleRa->inc ();
+				u_ra += MAX_MOVE;
+			}
+			if (u_ra > MAX_MOVE)
+			{
+				cycleRa->dec ();
+				u_ra -= MAX_MOVE;
+			}
+				
 		}
+	}
+	else
+	{
+		// RA worm is runnin, unitRa and cycleRa are set when new position arrives from the axis
+		u_ra = MAX_MOVE * cycleRa->getValueInteger () + unitRa->getValueInteger ();
 	}
 
 	if (decMoving->getValueInteger () == 0)
 	{
 		readAxis (trencinConnDec, unitDec);
-		u_dec = unitDec->getValueInteger ();
+		u_dec = MAX_MOVE * cycleDec->getValueInteger () + unitDec->getValueInteger ();
 	}
 	else
 	{
 		left_track = velDec->getValueInteger () * 64 * (decMovingEnd->getValueDouble () - getNow ());
-		u_dec = unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
+		u_dec = MAX_MOVE * cycleDec->getValueInteger () + unitDec->getValueInteger () - decMoving->getValueInteger () * (double) left_track / fabs (decMoving->getValueInteger ());
+		if (u_dec < 0)
+		{
+			cycleDec->inc ();
+			u_dec += MAX_MOVE;
+		}
+		if (u_dec > MAX_MOVE)
+		{
+			cycleDec->dec ();
+			u_dec -= MAX_MOVE;
+		}
 	}
 
 	ret = counts2sky (u_ra, u_dec, t_telRa, t_telDec);
@@ -960,29 +1035,12 @@ int Trencin::info ()
 	return Fork::info ();
 }
 
-
-void Trencin::postEvent (Rts2Event *event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_TIMER_RA_WORM:
-			// restart worm..
-			if (wormRa->getValueBool () == true)
-				startWorm ();
-			// do not process it through full hierarchy..
-			Rts2Object::postEvent (event);
-			return;
-	}
-	Fork::postEvent (event);
-}
-
-
 int Trencin::startResync ()
 {
 	// calculate new X and Y..
 	int ret;
 
-	stopMoveRa ();
+	stopMove ();
 
 	ret = sky2counts (ac, dc);
 	if (ret)
@@ -1003,6 +1061,8 @@ int Trencin::startResync ()
 
 int Trencin::isMoving ()
 {
+	if (raMoving->getValueInteger () != 0 || decMoving->getValueInteger () != 0)
+		return USEC_SEC;
 	return -2;
 }
 
@@ -1022,11 +1082,11 @@ int Trencin::stopMove ()
 		tel_kill (trencinConnRa, 0x01);
 		tel_kill (trencinConnDec, 0x01);
 
-		raMoving->setValueInteger (0);
-		decMoving->setValueInteger (0);
-
 		tel_kill (trencinConnRa, 0x02);
 		tel_kill (trencinConnDec, 0x02);
+
+		raMoving->setValueInteger (0);
+		decMoving->setValueInteger (0);
 
 		stopMoveRa ();
 		stopMoveDec ();
@@ -1072,6 +1132,8 @@ int Trencin::commandAuthorized (Rts2Conn *conn)
 		{
 			tel_write_ra ('\\');
 			tel_write_dec ('\\');
+			cycleRa->setValueInteger (0);
+			cycleDec->setValueInteger (0);
 			initMotors ();
 		}
 		catch (rts2core::Error &er)
