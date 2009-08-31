@@ -46,6 +46,13 @@
 #define R2X_DEVICE_TYPE               "rts2.device.type"
 
 /**
+ * Execute command on device.
+ * @param device  Name of device which will receive the command.
+ * @param command Command as passed to device, with all parameters.
+ */
+#define R2X_DEVICE_COMMAND            "rts2.device.command"
+
+/**
  * Return device status. If you would like to get state of system (=centrald), specify as device name "centrald".
  *
  * @param Device name.

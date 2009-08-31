@@ -54,7 +54,7 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, SCHED_TICKET, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TEST, NOOP} xmlOp;
 
                 bool getVariablesPrintNames;
 
@@ -91,6 +91,11 @@ class Client: public Rts2CliApp
 		 * Test that XML-RPC daemon is running.
 		 */
 		int testConnect ();
+
+		/**
+		 * Execute command(s) on device(s)
+		 */
+		int executeCommands ();
 
 		/**
 		 * Set XML-RPC variable.
@@ -133,7 +138,7 @@ class Client: public Rts2CliApp
 	protected:
 		virtual void usage ();
 
-		virtual int processOption (int in_opt);
+		virtual int processOption (int opt);
 		virtual int processArgs (const char *arg);
 		virtual int init ();
 
@@ -148,9 +153,7 @@ class Client: public Rts2CliApp
 
 using namespace rts2xmlrpc;
 
-
-int
-Client::splitDeviceVariable (const char *device, std::string &deviceName, std::string &varName)
+int Client::splitDeviceVariable (const char *device, std::string &deviceName, std::string &varName)
 {
 	std::string full(device);
 	std::size_t dot = full.find ('.');
@@ -161,8 +164,7 @@ Client::splitDeviceVariable (const char *device, std::string &deviceName, std::s
 	return 0;
 }
 
-int
-Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
+int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes)
 {
 	int ret;
 
@@ -179,9 +181,7 @@ Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &resu
 	return 0;
 }
 
-
-int
-Client::doTests ()
+int Client::doTests ()
 {
 	XmlRpcValue noArgs, oneArg, result;
 
@@ -247,9 +247,7 @@ Client::doTests ()
 	return runXmlMethod (R2X_USER_LOGIN, oneArg, result);
 }
 
-
-int
-Client::testConnect ()
+int Client::testConnect ()
 {
 	XmlRpcValue nullArg, result;
 
@@ -265,9 +263,36 @@ Client::testConnect ()
 	return 0;
 }
 
+int Client::executeCommands ()
+{
+	XmlRpcValue twoArg, result;
 
-int
-Client::setVariables (const char *varName, const char *value)
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		char c[strlen(*iter) + 1];
+		strcpy (c, *iter);
+		char *sep = strchr (c, '.');
+		if (sep == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot find . separating device name and command in " << (*iter) << "." << sendLog;
+			return -1;
+		}
+		*sep = '\0';
+		sep++;
+
+		twoArg[0] = c;
+		twoArg[1] = sep;
+
+		std::cout << "c " << c << " sep " << sep << std::endl;
+
+		int ret = runXmlMethod (R2X_DEVICE_COMMAND, twoArg, result);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+
+int Client::setVariables (const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
 
@@ -278,9 +303,7 @@ Client::setVariables (const char *varName, const char *value)
 	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
 }
 
-
-int
-Client::incVariable (const char *varName, const char *value)
+int Client::incVariable (const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
 	if (splitDeviceVariable (varName, threeArg[0], threeArg[1]))
@@ -290,9 +313,7 @@ Client::incVariable (const char *varName, const char *value)
 	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
 }
 
-
-int
-Client::schedTicketInfo (int ticketId)
+int Client::schedTicketInfo (int ticketId)
 {
 	XmlRpcValue oneArg, result;
 	oneArg = ticketId;
@@ -300,9 +321,7 @@ Client::schedTicketInfo (int ticketId)
 	return runXmlMethod (R2X_TICKET_INFO, oneArg, result);	
 }
 
-
-int
-Client::getVariables ()
+int Client::getVariables ()
 {
 	int e = 0;
 	// store results per device
@@ -360,9 +379,7 @@ Client::getVariables ()
 	return (e == 0) ? 0 : -1;
 }
 
-
-int
-Client::getTypes ()
+int Client::getTypes ()
 {
 	int e = 0;
 	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
@@ -381,9 +398,7 @@ Client::getTypes ()
 	return (e == 0) ? 0 : -1;
 }
 
-
-int
-Client::getMessages ()
+int Client::getMessages ()
 {
 	XmlRpcValue nullArg, result;
 
@@ -404,8 +419,7 @@ Client::getMessages ()
 	return ret;
 }
 
-void
-Client::usage ()
+void Client::usage ()
 {
 	std::cout << "In most cases you must specify username and password. You can specify them either in configuration file (default to ~/.rts2) or on command line. Please consult manula pages for details." << std::endl << std::endl
 		<< "  " << getAppName () << " -s <device name>.<variable name> <value>" << std::endl
@@ -419,10 +433,10 @@ Client::usage ()
 		<< " Default action, e.g. running " << getAppName () << " without any parameters, will result in printout if the XML-RPC server is accessible" << std::endl;
 }
 
-int
-Client::processOption (int in_opt)
+int Client::processOption (int opt)
 {
-	switch (in_opt)
+	int old_op = xmlOp;
+	switch (opt)
 	{
 		case OPT_PORT:
 			xmlPort = atoi (optarg);
@@ -439,6 +453,9 @@ Client::processOption (int in_opt)
 			break;
 		case 'v':
 			xmlVerbosity++;
+			break;
+		case 'c':
+			xmlOp = COMMANDS;
 			break;
 		case 's':
 			xmlOp = SET_VARIABLE;
@@ -468,27 +485,30 @@ Client::processOption (int in_opt)
 			xmlOp = GET_MESSAGES;
 			break;
 		default:
-			return Rts2CliApp::processOption (in_opt);
+			return Rts2CliApp::processOption (opt);
+	}
+	if (xmlOp != old_op && old_op != NOOP)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot provide more then a single action command, option " << ((char) opt) << " cannot be processed" << sendLog;
+		return -1;
 	}
 	return 0;
 }
 
-
-int
-Client::processArgs (const char *arg)
+int Client::processArgs (const char *arg)
 {
-	if (!(xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES))
 		return -1;
 	args.push_back (arg);
 	return 0;
 }
 
-
-int
-Client::doProcessing ()
+int Client::doProcessing ()
 {
 	switch (xmlOp)
 	{
+		case COMMANDS:
+			return executeCommands ();
 		case SET_VARIABLE:
 			if (args.size () != 2)
 			{
@@ -521,9 +541,7 @@ Client::doProcessing ()
 	return -1;
 }
 
-
-int
-Client::init ()
+int Client::init ()
 {
 	int ret;
 	ret = Rts2CliApp::init ();
@@ -586,6 +604,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption (OPT_USERNAME, "user", 1, "username for XML-RPC server authorization");
 	addOption (OPT_CONFIG, "config", 1, "configuration file (default to ~/.rts2)");
 	addOption ('v', NULL, 0, "verbosity (multiple -v to increase it)");
+	addOption ('c', NULL, 0, "execute given command(s)");
 	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
         addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
@@ -596,13 +615,11 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption (OPT_TEST, "test", 0, "perform various tests");
 }
 
-
 Client::~Client (void)
 {
 	delete[] configFile;
 	delete xmlClient;
 }
-
 
 int main(int argc, char** argv)
 {

@@ -807,6 +807,32 @@ class DeviceType: public SessionMethod
 
 } deviceType (&xmlrpc_server);
 
+/**
+ * Execute command on device.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class DeviceCommand: public SessionMethod
+{
+	public:
+		DeviceCommand (XmlRpcServer* s): SessionMethod (R2X_DEVICE_COMMAND, s)
+		{
+		}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
+		{
+			if (params.size () != 2)
+				throw XmlRpcException ("Device name and command (as single parameter) expected");
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+			if (conn == NULL)
+				throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
+			conn->queCommand (new Rts2Command (serv, ((std::string)params[1]).c_str()));
+		}
+
+} deviceCommand (&xmlrpc_server);
 
 /**
  * List device status.
