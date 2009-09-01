@@ -1363,6 +1363,8 @@ class ListTargetsByType: public SessionMethod
 			int i = 0;
 			XmlRpcValue retVar;
 
+			double JD = ln_get_julian_from_sys ();
+
 			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
 				Target *tar = (*tar_iter).second;
@@ -1381,9 +1383,13 @@ class ListTargetsByType: public SessionMethod
 				value = tar->getLastObs();
 				retVar["last_obs"] = value;
 				struct ln_equ_posn pos;
-				tar->getPosition (&pos, ln_get_julian_from_sys ());
+				tar->getPosition (&pos, JD);
 				retVar["ra"] = pos.ra;
 				retVar["dec"] = pos.dec;
+				struct ln_hrz_posn hrz;
+				tar->getAltAz (&hrz, JD);
+				retVar["alt"] = hrz.alt;
+				retVar["az"] = hrz.az;
 				result[i++] = retVar;
 			}
 		}
