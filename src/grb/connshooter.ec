@@ -50,6 +50,9 @@ int ConnShooter::processAuger ()
   EXEC SQL BEGIN DECLARE SECTION;
     //  int db_auger_t3id;
     double db_auger_date;
+
+    double db_ra;             /// Shower ra
+    double db_dec;            /// Shower dec
   
     int    db_Eye;            /// FD eye Id
     int    db_Run;            /// FD run number
@@ -207,6 +210,21 @@ int ConnShooter::processAuger ()
 
   time (&now);
 
+  struct ln_hrz_posn hrz;
+  hrz.alt = 90 - db_Theta;
+  hrz.az = db_Phi;
+
+  time_t aug_date = db_auger_date;
+
+  double JD = ln_get_julian_from_timet (&aug_date);
+
+  struct ln_equ_posn equ;
+
+  ln_get_equ_from_hrz (&hrz, Rts2Config::instance ()->getObserver (), JD, &equ);
+
+  db_ra = equ.ra;
+  db_dec = equ.dec;
+
   // validate shover and it's hibrid..
 
 /*  if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
@@ -230,6 +248,8 @@ int ConnShooter::processAuger ()
       (
       	auger_t3id,
 	auger_date,
+	ra,
+	dec,
         eye,
 	run,
 	event,
@@ -298,6 +318,8 @@ int ConnShooter::processAuger ()
       (
         nextval('auger_t3id'),
         (TIMESTAMP 'epoch' + :db_auger_date * INTERVAL '1 seconds'),
+	:db_ra,
+	:db_dec,
 	:db_Eye,
 	:db_Run,
 	:db_Event,
