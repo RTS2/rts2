@@ -1599,11 +1599,11 @@ Target::printShortInfo (std::ostream & _os, double JD)
 	_os
 		<< std::setw (5) << getTargetID () << SEP
 		<< getTargetType () << SEP
-		<< std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
 		<< raDec << SEP;
 	writeAirmass (_os, JD);
 	_os
-		<< SEP << hrzP;
+		<< SEP << hrzP << SEP
+		<< std::left << std::setw (40) << (name ? name :  "null") << std::right;
 	_os.precision (old_prec);
 }
 
