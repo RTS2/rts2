@@ -138,9 +138,11 @@ Rts2Config::getNight (int year, int month, int day)
 	_tm.tm_mday = day;
 	_tm.tm_hour = 12 - getObservatoryLongitude () / 15;
 	_tm.tm_min = _tm.tm_sec = 0;
+#ifndef sun
 	_tm.tm_gmtoff = 0;
 	_tm.tm_isdst = 0;
 	_tm.tm_zone = "\0";
+#endif
 
 	std::string old_tz;
 	if (getenv("TZ"))
