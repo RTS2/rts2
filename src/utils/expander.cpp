@@ -69,6 +69,13 @@ std::string Expander::getYearString (int year)
 	return _os.str ();
 }
 
+std::string Expander::getShortYearString (int year)
+{
+	std::ostringstream _os;
+	_os.fill ('0');
+	_os << std::setw (2) << (year % 100);
+	return _os.str ();
+}
 
 std::string Expander::getMonthString (int month)
 {
@@ -155,6 +162,9 @@ std::string Expander::expandVariable (char var)
 		case 'y':
 			ret += getYearString ();
 			break;
+		case 'x':
+			ret += getShortYearString ();
+			break;
 		case 'a':
 			ret += getYDayString ();
 			break;
@@ -193,6 +203,9 @@ std::string Expander::expandVariable (char var)
 			break;
 		case 'Y':
 			ret += getYearString (getNightYear ());
+			break;
+		case 'X':
+			ret += getShortYearString (getNightYear ());
 			break;
 		case 'O':
 			ret += getMonthString (getNightMonth ());

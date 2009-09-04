@@ -347,7 +347,7 @@
 	  <option>Y</option>
         </term>
         <listitem>
-          <para>Night year of the start of exposure.</para>
+          <para>Four digits night year of the start of exposure.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -355,7 +355,23 @@
 	  <option>y</option>
         </term>
         <listitem>
-          <para>Year of the start of exposure.</para>
+          <para>Four digits year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>X</option>
+        </term>
+        <listitem>
+          <para>Two digits night year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>x</option>
+        </term>
+        <listitem>
+          <para>Two digits year of the start of exposure.</para>
         </listitem>
       </varlistentry>
       <varlistentry>

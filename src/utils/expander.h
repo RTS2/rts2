@@ -129,6 +129,11 @@ class Expander
 			return getYearString (getYear ());
 		}
 		std::string getYearString (int year);
+		std::string getShortYearString ()
+		{
+			return getShortYearString (getYear ());
+		}
+		std::string getShortYearString (int year);
 		std::string getMonthString ()
 		{
 			return getMonthString (getMonth ());
