@@ -604,6 +604,8 @@ OpenTPL::checkErrors ()
 					zd << " (" << status << ")" << sendLog;
 			}
 		}
+		if (status == TPL_OK)
+			errorList = "";
 	}
 }
 
