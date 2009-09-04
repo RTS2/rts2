@@ -145,7 +145,7 @@ AC_ARG_WITH(xml2,
 	yes) XML_CONFIG=xml2-config ;;
 	no) AC_MSG_ERROR(You really need to have libxml2-dev) ;;
 	*) XML_CONFIG=${withval} ;;
-esac],[xml2=yes])
+esac],[XML_CONFIG=xml2-config])
 AC_MSG_CHECKING(looking for xml2 library)
 if ${XML_CONFIG} --libs print > /dev/null 2>&1
 then
@@ -156,7 +156,7 @@ then
 	AC_SUBST(LIBXML_CFLAGS)
 	AC_MSG_RESULT(${XMLVERS} found)
 else
-	AC_MSG_ERROR([Could not find libxml anywhere, apt-get install libxml2-dev or check ftp://xmlsoft.org/])
+	AC_MSG_ERROR([Could not find ${XML_CONFIG} anywhere, apt-get install libxml2-dev or check ftp://xmlsoft.org/])
 fi
 
 AC_ARG_WITH(pgsql,
