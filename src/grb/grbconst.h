@@ -371,28 +371,34 @@
 #define TYPE_SWIFT_BAT_TRANS             84
 								 // SWIFT UVOT not source
 #define TYPE_SWIFT_UVOT_NACK_POSITION    89
-								 // SuperAGILE wakeup
-#define TYPE_SuperAGILE_POSITION        100
-								 // SuperAGILE prompt position
-#define TYPE_SuperAGILE_PROMPT          101
-								 // SuperAGILE prompt refined position
-#define TYPE_SuperAGILE_REFINED         102
 
-#define TYPE_SuperAGILE_POINTDIR        107
+#define TYPE_SWIFT_BAT_SUB_THRESHOLD_SRC 98  // SWIFT BAT Sub-Threshold Position message
+#define TYPE_SWIFT_BAT_SLEW_POS_SRC      99  // SWIFT BAT SLEW Burst/Transient Position (the Harvard BATSS thing)
 
-// preliminary GLAST packets
-#define TYPE_GLAST_GBM_GRB_ALERT        110
-#define TYPE_GLAST_GBM_GRB_POS_ACK      111
-#define TYPE_GLAST_GBM_LC               112
-#define TYPE_GLAST_GBM_TRANS            118
-#define TYPE_GLAST_GBM_GRB_POS_TEST     119
-#define TYPE_GLAST_LAT_GRB_POS_INI      120
-#define TYPE_GLAST_LAT_GRB_POS_UPD      121
-#define TYPE_GLAST_LAT_GRB_POS_FIN      122
-#define TYPE_GLAST_LAT_TRANS            123
-#define TYPE_GLAST_OBS_REQUEST          125
-#define TYPE_GLAST_SC_SLEW              126
+#define TYPE_AGILE_GRB_WAKEUP            100  // AGILE GRB Wake-Up Position message
+#define TYPE_AGILE_GRB_PROMPT            101  // AGILE GRB Prompt Position message
+#define TYPE_AGILE_GRB_REFINED           102  // AGILE GRB Refined Position message
+#define TYPE_AGILE_POINTDIR              107  // AGILE Pointing Direction
+#define TYPE_AGILE_TRANS                 108  // AGILE Transient Position message
+#define TYPE_AGILE_GRB_POS_TEST          109  // AGILE GRB Position Test message
+
+#define TYPE_FERMI_GBM_ALERT             110  // FERMI GBM Trigger Alert message
+#define TYPE_FERMI_GBM_FLT_POS           111  // FERMI GBM Flt-cal Position message
+#define TYPE_FERMI_GBM_GND_POS           112  // FERMI GBM Gnd-cal Position message
+#define TYPE_FERMI_GBM_LC                113  // FERMI GBM GRB Lightcurve message
+#define TYPE_FERMI_GBM_TRANS             118  // FERMI GBM Transient Position mesg
+#define TYPE_FERMI_GBM_POS_TEST          119  // FERMI GBM GRB Position Test message
+#define TYPE_FERMI_LAT_POS_INI           120  // FERMI LAT Position Initial message
+#define TYPE_FERMI_LAT_POS_UPD           121  // FERMI LAT Position Update message
+#define TYPE_FERMI_LAT_POS_DIAG          122  // FERMI LAT Position Diagnostic message
+#define TYPE_FERMI_LAT_TRANS             123  // FERMI LAT Transient Position mesg (eg AGN, Solar Flare)
+#define TYPE_FERMI_LAT_POS_TEST          124  // FERMI LAT Position Test message
+#define TYPE_FERMI_OBS_REQ               125  // FERMI Observe_Request message
+#define TYPE_FERMI_SC_SLEW               126  // FERMI SC_Slew message
+#define TYPE_FERMI_LAT_GND_REF           127  // FERMI LAT Ground-analysis Refined Pos message
+#define TYPE_FERMI_LAT_GND_TRIG          128  // FERMI LAT Ground-analysis Trigger Pos message
+#define TYPE_FERMI_POINTDIR              129  // FERMI Pointing Direction
 
 #define FIND_SXC  0				 // Used in hete_same()
 #define FIND_WXM  1				 // Ditto; check the corners of a WXM box
-#endif							 /* !__RTS2_GRBCONST__ */
+#endif /* !__RTS2_GRBCONST__ */

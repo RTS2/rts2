@@ -25,12 +25,15 @@
 #include "grbconst.h"
 #include "grbd.h"
 
-class Rts2DevGrb;
+namespace rts2grbd
+{
 
-class Rts2ConnGrb:public Rts2ConnNoSend
+class Grbd;
+
+class ConnGrb:public Rts2ConnNoSend
 {
 	private:
-		Rts2DevGrb * master;
+		Grbd * master;
 		// path to exec when we get new burst; pass parameters on command line
 		char *addExe;
 		// whenewer to exec script even for follow-ups slew (only Swift can make those)
@@ -71,6 +74,8 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		int pr_imalive ();
 		int pr_swift_point ();	 // swift pointing.
 		int pr_integral_point ();// integral pointing
+		int pr_agile_point ();
+		int pr_fermi_point ();
 		// burst messages
 		int pr_hete ();
 		int pr_integral ();
@@ -78,7 +83,9 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 		int pr_swift_with_radec ();
 		int pr_swift_without_radec ();
 		int pr_agile ();  // AGILE messages (100-102)
-		int pr_glast ();
+		int pr_fermi_gbm ();
+		int pr_fermi_lat ();
+		int pr_fermi_sc ();
 
 		// GRB db stuff
 		int addSwiftPoint (double roll, char *name, float obstime, float merit);
@@ -112,9 +119,8 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 
 		time_t nextTime;
 	public:
-		Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test,
-			char *in_addExe, int in_execFollowups, Rts2DevGrb * in_master);
-		virtual ~ Rts2ConnGrb (void);
+		ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);
+		virtual ~ ConnGrb (void);
 		virtual int idle ();
 		virtual int init ();
 
@@ -139,4 +145,6 @@ class Rts2ConnGrb:public Rts2ConnNoSend
 			return last_dec;
 		}
 };
+
+}
 #endif							 /* !__RTS2_GRBCONN__ */

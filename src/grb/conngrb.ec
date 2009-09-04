@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2conngrb.h"
+#include "conngrb.h"
 #include "../utils/connfork.h"
 
 #include <arpa/inet.h>
@@ -33,15 +33,14 @@
 
 EXEC SQL include sqlca;
 
-double
-Rts2ConnGrb::getPktSod ()
+using namespace rts2grbd;
+
+double ConnGrb::getPktSod ()
 {
 	return lbuf[PKT_SOD]/100.0;
 }
 
-
-void
-Rts2ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long * usec)
+void ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long * usec)
 {
 	double JD = getJDfromTJD (TJD, SOD);
 	ln_get_timet_from_julian (JD, in_time);
@@ -49,9 +48,7 @@ Rts2ConnGrb::getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long * use
 		*usec = (int)((SOD - int (SOD)) * USEC_SEC);
 }
 
-
-int
-Rts2ConnGrb::pr_test ()
+int ConnGrb::pr_test ()
 {
 	logStream (MESSAGE_INFO) << "Test GCN notice Trig#: " << (lbuf[BURST_TRIG])
 		<< " TJD: " << (lbuf[BURST_TJD])
@@ -62,12 +59,10 @@ Rts2ConnGrb::pr_test ()
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::pr_imalive ()
+int ConnGrb::pr_imalive ()
 {
 	deltaValue = here_sod - getPktSod ();
-	logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::pr_imalive last packet SN="
+	logStream (MESSAGE_DEBUG) << "ConnGrb::pr_imalive last packet SN="
 		<< getPktSod ()
 		<< " delta=" << deltaValue
 		<< " last_delta=" << (getPktSod () - last_imalive_sod) << sendLog;
@@ -75,9 +70,7 @@ Rts2ConnGrb::pr_imalive ()
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::pr_swift_point ()
+int ConnGrb::pr_swift_point ()
 {
 	double roll;
 	char *obs_name;
@@ -93,9 +86,7 @@ Rts2ConnGrb::pr_swift_point ()
 	return addSwiftPoint (roll, obs_name, obstime, merit);
 }
 
-
-int
-Rts2ConnGrb::pr_integral_point ()
+int ConnGrb::pr_integral_point ()
 {
 	struct ln_equ_posn pos_int, pos_j2000;
 	time_t t;
@@ -107,9 +98,15 @@ Rts2ConnGrb::pr_integral_point ()
 	return addIntegralPoint (pos_j2000.ra, pos_j2000.dec, &t);
 }
 
+int ConnGrb::pr_agile_point ()
+{
+}
 
-int
-Rts2ConnGrb::pr_hete ()
+int ConnGrb::pr_fermi_point ()
+{
+}
+
+int ConnGrb::pr_hete ()
 {
 	int grb_id;
 	int grb_seqn;
@@ -137,7 +134,7 @@ Rts2ConnGrb::pr_hete ()
 		)
 		)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::pr_hete test packet" << sendLog;
+		logStream (MESSAGE_DEBUG) << "ConnGrb::pr_hete test packet" << sendLog;
 		return 0;
 	}
 
@@ -162,9 +159,7 @@ Rts2ConnGrb::pr_hete ()
 	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
-
-int
-Rts2ConnGrb::pr_integral ()
+int ConnGrb::pr_integral ()
 {
 	int grb_id;
 	int grb_seqn;
@@ -180,7 +175,7 @@ Rts2ConnGrb::pr_integral ()
 		)
 		)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::pr_integral test packet (" << lbuf[12] << ")" << sendLog;
+		logStream (MESSAGE_DEBUG) << "ConnGrb::pr_integral test packet (" << lbuf[12] << ")" << sendLog;
 		return 0;
 	}
 
@@ -206,17 +201,13 @@ Rts2ConnGrb::pr_integral ()
 	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
-
-int
-Rts2ConnGrb::pr_integral_spicas ()
+int ConnGrb::pr_integral_spicas ()
 {
 	logStream (MESSAGE_INFO) << "INTEGRAL SPIACS" << sendLog;
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::pr_swift_with_radec ()
+int ConnGrb::pr_swift_with_radec ()
 {
 	int grb_id;
 	int grb_seqn;
@@ -275,9 +266,7 @@ Rts2ConnGrb::pr_swift_with_radec ()
 	return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
-
-int
-Rts2ConnGrb::pr_swift_without_radec ()
+int ConnGrb::pr_swift_without_radec ()
 {
 	// those messages have only sence, when they set grb_is_grb flag to false
 	EXEC SQL BEGIN DECLARE SECTION;
@@ -330,12 +319,12 @@ Rts2ConnGrb::pr_swift_without_radec ()
 				AND grb_type <= :d_grb_type_end;
 			if (sqlca.sqlcode)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2ConnGrb::pr_swift_without_radec sql errro: " << sqlca.sqlerrm.sqlerrmc << sendLog;
+				logStream (MESSAGE_ERROR) << "ConnGrb::pr_swift_without_radec sql errro: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 				EXEC SQL ROLLBACK;
 			}
 			else
 			{
-				logStream (MESSAGE_INFO) << "Rts2ConnGrb::pr_swift_without_radec grb_is_grb = false grb_id " << d_grb_id << sendLog;
+				logStream (MESSAGE_INFO) << "ConnGrb::pr_swift_without_radec grb_is_grb = false grb_id " << d_grb_id << sendLog;
 				EXEC SQL COMMIT;
 			}
 			break;
@@ -358,9 +347,7 @@ Rts2ConnGrb::pr_swift_without_radec ()
 	return addGcnRaw (d_grb_id, d_grb_seqn, d_grb_type);
 }
 
-
-int
-Rts2ConnGrb::pr_agile ()
+int ConnGrb::pr_agile ()
 {
 	int grb_id;
 	int grb_type;
@@ -386,16 +373,27 @@ Rts2ConnGrb::pr_agile ()
 	return addGcnPoint (grb_id, 1, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
 }
 
-int
-Rts2ConnGrb::pr_glast ()
+int ConnGrb::pr_fermi_gbm ()
 {
-	// TODO implement that
-	return -1;
+	time_t grb_date;
+	long grb_date_usec;
+
+	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
+	return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, lbuf[BURST_ERROR] / 10000.0, false);
 }
 
+int ConnGrb::pr_fermi_lat ()
+{
+	logStream (MESSAGE_INFO) << "LAT messagye, type " << lbuf[PKT_TYPE] << sendLog;
+	return 0;
+}
 
-int
-Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
+int ConnGrb::pr_fermi_sc ()
+{
+
+}
+
+int ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float merit)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_swift_ra = swiftLastRa;
@@ -437,7 +435,7 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 		);
 	if (sqlca.sqlcode != 0)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb cannot insert swift: " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb cannot insert swift: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -445,9 +443,7 @@ Rts2ConnGrb::addSwiftPoint (double roll, char * obs_name, float obstime, float m
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
+int ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_integral_ra = ra;
@@ -474,7 +470,7 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 			);
 	if (sqlca.sqlcode != 0)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb cannot insert integral: " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb cannot insert integral: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -482,21 +478,24 @@ Rts2ConnGrb::addIntegralPoint (double ra, double dec, const time_t *t)
 	return 0;
 }
 
-
-void
-Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
+void ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
 {
-	if (grb_type <= TYPE_GLAST_SC_SLEW)
+	if (grb_type <= TYPE_FERMI_POINTDIR)
 	{
-		if (grb_type >= TYPE_GLAST_GBM_GRB_ALERT)
+		if (grb_type >= TYPE_FERMI_GBM_ALERT)
 		{
-			grb_start = TYPE_GLAST_GBM_GRB_ALERT;
-			grb_end = TYPE_GLAST_SC_SLEW;
+			grb_start = TYPE_FERMI_GBM_ALERT;
+			grb_end = TYPE_FERMI_POINTDIR;
 		}
-		if (grb_type >= TYPE_SWIFT_BAT_GRB_ALERT_SRC)
+		else if (grb_type >= TYPE_AGILE_GRB_WAKEUP)
+		{
+			grb_start = TYPE_AGILE_GRB_WAKEUP;
+			grb_end = TYPE_AGILE_GRB_POS_TEST;
+		}
+		else if (grb_type >= TYPE_SWIFT_BAT_GRB_ALERT_SRC)
 		{
 			grb_start = TYPE_SWIFT_BAT_GRB_ALERT_SRC;
-			grb_end = TYPE_SWIFT_UVOT_NACK_POSITION;
+			grb_end = TYPE_SWIFT_BAT_SLEW_POS_SRC;
 		}
 		else if (grb_type >= TYPE_MILAGRO_POS_SRC)
 		{
@@ -521,7 +520,7 @@ Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
 		else
 		{
 			// all fields counts - unknow type
-			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::getGrbBound cannot get type for grb_type " << grb_type << sendLog;
+			logStream (MESSAGE_ERROR) << "ConnGrb::getGrbBound cannot get type for grb_type " << grb_type << sendLog;
 			grb_start = 0;
 			grb_end = 5000;
 		}
@@ -529,15 +528,13 @@ Rts2ConnGrb::getGrbBound (int grb_type, int &grb_start, int &grb_end)
 	else
 	{
 		// all fields counts - unknow type
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb::getGrbBound cannot get type for grb_type " << grb_type << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb::getGrbBound cannot get type for grb_type " << grb_type << sendLog;
 		grb_start = 0;
 		grb_end = 5000;
 	}
 }
 
-
-bool
-Rts2ConnGrb::gcnContainsGrbPos (int grb_type)
+bool ConnGrb::gcnContainsGrbPos (int grb_type)
 {
 	switch (grb_type)
 	{
@@ -550,16 +547,15 @@ Rts2ConnGrb::gcnContainsGrbPos (int grb_type)
 		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 		case TYPE_SWIFT_POINTDIR_SRC:
 		case TYPE_SWIFT_UVOT_NACK_POSITION:
-		case TYPE_SuperAGILE_POINTDIR:
+		case TYPE_AGILE_POINTDIR:
+		case TYPE_FERMI_POINTDIR:
 			return false;
 		default:
 			return true;
 	}
 }
 
-
-float
-Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
+float ConnGrb::getInstrumentErrorBox (int grb_type)
 {
 	// rules:
 	//  if it's only detection, return FOV of instrument
@@ -622,35 +618,35 @@ Rts2ConnGrb::getInstrumentErrorBox (int grb_type)
 		case TYPE_SWIFT_UVOT_IMAGE_PROC_SRC:
 			// UVOT FOV
 			return 15.0 / 60.0;
-		case TYPE_SuperAGILE_POSITION:
-		case TYPE_SuperAGILE_PROMPT:
-		case TYPE_SuperAGILE_REFINED:
+		case TYPE_AGILE_GRB_WAKEUP:
+		case TYPE_AGILE_GRB_PROMPT:
+		case TYPE_AGILE_GRB_REFINED:
+		case TYPE_AGILE_TRANS:
 			return 3;
-		case TYPE_SuperAGILE_POINTDIR:
+		case TYPE_AGILE_POINTDIR:
 			return 60;
-		case TYPE_GLAST_GBM_GRB_ALERT:
-		case TYPE_GLAST_GBM_GRB_POS_ACK:
-		case TYPE_GLAST_GBM_LC:
-		case TYPE_GLAST_GBM_TRANS:
-		case TYPE_GLAST_GBM_GRB_POS_TEST:
-		case TYPE_GLAST_LAT_GRB_POS_INI:
-		case TYPE_GLAST_LAT_GRB_POS_UPD:
-		case TYPE_GLAST_LAT_GRB_POS_FIN:
-		case TYPE_GLAST_LAT_TRANS:
-		case TYPE_GLAST_OBS_REQUEST:
-		case TYPE_GLAST_SC_SLEW:
+		case TYPE_FERMI_GBM_ALERT:
+		case TYPE_FERMI_GBM_FLT_POS:
+		case TYPE_FERMI_GBM_GND_POS:
+		case TYPE_FERMI_GBM_LC:
+		case TYPE_FERMI_GBM_TRANS:
+		case TYPE_FERMI_GBM_POS_TEST:
+		case TYPE_FERMI_LAT_POS_INI:
+		case TYPE_FERMI_LAT_POS_UPD:
+		case TYPE_FERMI_LAT_POS_DIAG:
+		case TYPE_FERMI_LAT_TRANS:
+		case TYPE_FERMI_OBS_REQ:
+		case TYPE_FERMI_SC_SLEW:
 			// TODO fill that by GLAST S/C specifications, when it will be
 			// on launch pad
 			return 3.0;
 	}
-	logStream (MESSAGE_WARNING) << "Rts2ConnGrb::getInstrumentErrorBox unknow type: " << grb_type
+	logStream (MESSAGE_WARNING) << "ConnGrb::getInstrumentErrorBox unknow type: " << grb_type
 		<< ", returning 180.0" << sendLog;
 	return 180.0;
 }
 
-
-int
-Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly)
+int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id;
@@ -728,7 +724,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		// insert part..we do care about HETE burst without coordinates
 		if (d_grb_ra < -300 && d_grb_dec < -300)
 		{
-			logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::addGcnPoint HETE GRB without coords? ra="
+			logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint HETE GRB without coords? ra="
 				<< d_grb_ra << " dec=" << d_grb_dec << sendLog;
 			EXEC SQL ROLLBACK;
 			return -1;
@@ -783,7 +779,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			);
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint insert target error: "
+			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint insert target error: "
 				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 			EXEC SQL ROLLBACK;
 		}
@@ -819,14 +815,14 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			);
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot insert new GCN : "
+			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot insert new GCN : "
 				<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 			EXEC SQL ROLLBACK;
 			ret = -1;
 		}
 		else
 		{
-			logStream (MESSAGE_INFO) << "Rts2ConnGrb::addGcnPoint grb created: tar_id: "
+			logStream (MESSAGE_INFO) << "ConnGrb::addGcnPoint grb created: tar_id: "
 				<< d_tar_id
 				<< " grb_id: " << d_grb_id
 				<< " grb_seqn: " << d_grb_seqn
@@ -837,7 +833,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	}
 	else if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::addGcnPoint SQL error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_DEBUG) << "ConnGrb::addGcnPoint SQL error: " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -870,7 +866,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 					tar_id = :d_tar_id;
 			if (sqlca.sqlcode)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update targets: "
+				logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update targets: "
 					<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 				EXEC SQL ROLLBACK;
 			}
@@ -897,7 +893,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update GCN : "
+					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update GCN : "
 						<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
 					EXEC SQL ROLLBACK;
 					ret = -1;
@@ -917,14 +913,14 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 						tar_id = :d_tar_id;
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update GCN errorbox: "
+					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update GCN errorbox: "
 						<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 					EXEC SQL ROLLBACK;
 					ret = -1;
 				}
 				else
 				{
-					logStream (MESSAGE_INFO) << "Rts2ConnGrb::addGcnPoint grb updated: tar_id: "
+					logStream (MESSAGE_INFO) << "ConnGrb::addGcnPoint grb updated: tar_id: "
 						<< d_tar_id << " grb_id: " << d_grb_id << " grb_seqn: " << d_grb_seqn << sendLog;
 					EXEC SQL COMMIT;
 				}
@@ -932,7 +928,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		}
 		else
 		{
-			logStream (MESSAGE_INFO) << "Rts2ConnGrb::addGcnPoint grb update ignored: grb_errorbox "
+			logStream (MESSAGE_INFO) << "ConnGrb::addGcnPoint grb update ignored: grb_errorbox "
 				<< grb_errorbox
 				<< " d_grb_errorbox " << d_grb_errorbox
 				<< " d_grb_errorbox_ind " << d_grb_errorbox_ind << sendLog;
@@ -947,7 +943,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 					tar_id = :d_tar_id;
 				if (sqlca.sqlcode)
 				{
-					logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update grb_is_grb : "
+					logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update grb_is_grb : "
 						<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
 					EXEC SQL ROLLBACK;
 					ret = -1;
@@ -977,7 +973,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 			tar_id = :d_tar_id;
 		if (sqlca.sqlcode)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnPoint cannot update tar_enabled : "
+			logStream (MESSAGE_ERROR) << "ConnGrb::addGcnPoint cannot update tar_enabled : "
 				<< sqlca.sqlcode << " " <<  sqlca.sqlerrm.sqlerrmc << sendLog;
 			EXEC SQL ROLLBACK;
 			return -1;
@@ -1040,9 +1036,7 @@ Rts2ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	return ret;
 }
 
-
-int
-Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
+int ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_grb_id = grb_id;
@@ -1163,7 +1157,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 			);
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb::addGcnRaw cannot insert new gcn packet: "
+		logStream (MESSAGE_ERROR) << "ConnGrb::addGcnRaw cannot insert new gcn packet: "
 			<< sqlca.sqlcode << " " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
@@ -1175,9 +1169,7 @@ Rts2ConnGrb::addGcnRaw (int grb_id, int grb_seqn, int grb_type)
 	}
 }
 
-
-Rts2ConnGrb::Rts2ConnGrb (char *in_gcn_hostname, int in_gcn_port, int
-in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):Rts2ConnNoSend (in_master)
+ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd *in_master):Rts2ConnNoSend (in_master)
 {
 	master = in_master;
 	gcn_hostname = new char[strlen (in_gcn_hostname) + 1];
@@ -1213,8 +1205,7 @@ in_do_hete_test, char *in_addExe, int in_execFollowups, Rts2DevGrb *in_master):R
 	gcnReceivedBytes = 0;
 }
 
-
-Rts2ConnGrb::~Rts2ConnGrb (void)
+ConnGrb::~ConnGrb (void)
 {
 	delete[] gcn_hostname;
 	delete[] last_target;
@@ -1222,9 +1213,7 @@ Rts2ConnGrb::~Rts2ConnGrb (void)
 		close (gcn_listen_sock);
 }
 
-
-int
-Rts2ConnGrb::idle ()
+int ConnGrb::idle ()
 {
 	int ret;
 	int err;
@@ -1239,12 +1228,12 @@ Rts2ConnGrb::idle ()
 			ret = getsockopt (sock, SOL_SOCKET, SO_ERROR, &err, &len);
 			if (ret)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2ConnGrb::idle getsockopt " << strerror (errno) << sendLog;
+				logStream (MESSAGE_ERROR) << "ConnGrb::idle getsockopt " << strerror (errno) << sendLog;
 				connectionError (-1);
 			}
 			else if (err)
 			{
-				logStream (MESSAGE_ERROR) << "Rts2ConnGrb::idle getsockopt " << strerror (err) << sendLog;
+				logStream (MESSAGE_ERROR) << "ConnGrb::idle getsockopt " << strerror (err) << sendLog;
 				connectionError (-1);
 			}
 			else
@@ -1276,9 +1265,7 @@ Rts2ConnGrb::idle ()
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::init_call ()
+int ConnGrb::init_call ()
 {
 	struct addrinfo hints;
 	struct addrinfo *info;
@@ -1320,9 +1307,7 @@ Rts2ConnGrb::init_call ()
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::init_listen ()
+int ConnGrb::init_listen ()
 {
 	int ret;
 
@@ -1337,7 +1322,7 @@ Rts2ConnGrb::init_listen ()
 	gcn_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
 	if (gcn_listen_sock == -1)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb::init_listen socket " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb::init_listen socket " << strerror (errno) << sendLog;
 		return -1;
 	}
 	const int so_reuseaddr = 1;
@@ -1349,13 +1334,13 @@ Rts2ConnGrb::init_listen ()
 	ret = bind (gcn_listen_sock, (struct sockaddr *) &server, sizeof (server));
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb::init_listen bind: " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb::init_listen bind: " << strerror (errno) << sendLog;
 		return -1;
 	}
 	ret = listen (gcn_listen_sock, 1);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnGrb::init_listen listen: " << strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnGrb::init_listen listen: " << strerror (errno) << sendLog;
 		return -1;
 	}
 	setConnState (CONN_CONNECTED);
@@ -1364,9 +1349,7 @@ Rts2ConnGrb::init_listen ()
 	return 0;
 }
 
-
-int
-Rts2ConnGrb::init ()
+int ConnGrb::init ()
 {
 	if (!strcmp (gcn_hostname, "-"))
 		return init_listen ();
@@ -1374,9 +1357,7 @@ Rts2ConnGrb::init ()
 		return init_call ();
 }
 
-
-int
-Rts2ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (gcn_listen_sock >= 0)
 	{
@@ -1386,11 +1367,9 @@ Rts2ConnGrb::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 	return Rts2Conn::add (readset, writeset, expset);
 }
 
-
-void
-Rts2ConnGrb::connectionError (int last_data_size)
+void ConnGrb::connectionError (int last_data_size)
 {
-	logStream (MESSAGE_DEBUG) << "Rts2ConnGrb::connectionError" << sendLog;
+	logStream (MESSAGE_DEBUG) << "ConnGrb::connectionError" << sendLog;
 	if (sock > 0)
 	{
 		close (sock);
@@ -1405,9 +1384,7 @@ Rts2ConnGrb::connectionError (int last_data_size)
 	gcnReceivedBytes = 0;
 }
 
-
-int
-Rts2ConnGrb::receive (fd_set *set)
+int ConnGrb::receive (fd_set *set)
 {
 	int ret = 0;
 	struct tm *t;
@@ -1422,14 +1399,14 @@ Rts2ConnGrb::receive (fd_set *set)
 		if (sock == -1)
 		{
 			// bad accept - strange
-			logStream (MESSAGE_ERROR) << "Rts2ConnGrb::receive accept on gcn_listen_sock: " << strerror (errno) << sendLog;
+			logStream (MESSAGE_ERROR) << "ConnGrb::receive accept on gcn_listen_sock: " << strerror (errno) << sendLog;
 			connectionError (-1);
 		}
 		// close listening socket..when we get connection
 		close (gcn_listen_sock);
 		gcn_listen_sock = -1;
 		setConnState (CONN_CONNECTED);
-		logStream (MESSAGE_INFO) << "Rts2ConnGrb::receive accept gcn_listen_sock from "
+		logStream (MESSAGE_INFO) << "ConnGrb::receive accept gcn_listen_sock from "
 			<< inet_ntoa (other_side.sin_addr) << " port " << ntohs (other_side.sin_port) << sendLog;
 	}
 	else if (sock >= 0 && FD_ISSET (sock, set))
@@ -1484,9 +1461,15 @@ Rts2ConnGrb::receive (fd_set *set)
 				break;
 								 // 83  // Swift Pointing Direction
 			case TYPE_SWIFT_POINTDIR_SRC:
-				pr_swift_point();
+				pr_swift_point ();
 				break;
-				// hete, integral & swift GRB observations
+			case TYPE_AGILE_POINTDIR:
+				pr_agile_point ();
+				break;
+			case TYPE_FERMI_POINTDIR:
+				pr_fermi_point ();
+				break;
+			// hete, integral & swift GRB observations
 			case TYPE_HETE_ALERT_SRC:
 			case TYPE_HETE_UPDATE_SRC:
 			case TYPE_HETE_FINAL_SRC:
@@ -1533,29 +1516,36 @@ Rts2ConnGrb::receive (fd_set *set)
 			case TYPE_SWIFT_UVOT_NACK_POSITION:
 				pr_swift_without_radec ();
 				break;
-			case TYPE_SuperAGILE_POSITION:
-			case TYPE_SuperAGILE_PROMPT:
-			case TYPE_SuperAGILE_REFINED:
+			case TYPE_AGILE_GRB_WAKEUP:
+			case TYPE_AGILE_GRB_PROMPT:
+			case TYPE_AGILE_GRB_REFINED:
+			case TYPE_AGILE_TRANS:
+			case TYPE_AGILE_GRB_POS_TEST:
 				pr_agile ();
 				break;
-			case TYPE_GLAST_GBM_GRB_ALERT:
-			case TYPE_GLAST_GBM_GRB_POS_ACK:
-			case TYPE_GLAST_GBM_LC:
-			case TYPE_GLAST_GBM_TRANS:
-			case TYPE_GLAST_GBM_GRB_POS_TEST:
-			case TYPE_GLAST_LAT_GRB_POS_INI:
-			case TYPE_GLAST_LAT_GRB_POS_UPD:
-			case TYPE_GLAST_LAT_GRB_POS_FIN:
-			case TYPE_GLAST_LAT_TRANS:
-			case TYPE_GLAST_OBS_REQUEST:
-			case TYPE_GLAST_SC_SLEW:
-				pr_glast ();
+			case TYPE_FERMI_GBM_ALERT:
+				break;
+			case TYPE_FERMI_GBM_FLT_POS:
+			case TYPE_FERMI_GBM_GND_POS:
+			case TYPE_FERMI_GBM_LC:
+			case TYPE_FERMI_GBM_TRANS:
+				pr_fermi_gbm ();
+				break;
+			case TYPE_FERMI_LAT_POS_INI:
+			case TYPE_FERMI_LAT_POS_UPD:
+			case TYPE_FERMI_LAT_POS_DIAG:
+			case TYPE_FERMI_LAT_TRANS:
+				pr_fermi_lat ();
+				break;
+			case TYPE_FERMI_OBS_REQ:
+			case TYPE_FERMI_SC_SLEW:
+				pr_fermi_sc ();
 				break;
 			case TYPE_KILL_SOCKET:
 				connectionError (-1);
 				break;
 			default:
-				logStream (MESSAGE_ERROR) << "Rts2ConnGrb::receive unknow packet type: " << lbuf[PKT_TYPE] << sendLog;
+				logStream (MESSAGE_ERROR) << "ConnGrb::receive unknow packet type: " << lbuf[PKT_TYPE] << sendLog;
 				break;
 		}
 		// enable others to catch-up (FW connections will forward packet to their sockets)
@@ -1564,23 +1554,17 @@ Rts2ConnGrb::receive (fd_set *set)
 	return ret;
 }
 
-
-int
-Rts2ConnGrb::lastPacket ()
+int ConnGrb::lastPacket ()
 {
 	return last_packet.tv_sec;
 }
 
-
-double
-Rts2ConnGrb::delta ()
+double ConnGrb::delta ()
 {
 	return deltaValue;
 }
 
-
-char*
-Rts2ConnGrb::lastTarget ()
+char* ConnGrb::lastTarget ()
 {
 	return last_target;
 }

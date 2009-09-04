@@ -21,13 +21,16 @@
 #define __RTS2_GRBD__
 
 #include "../utilsdb/rts2devicedb.h"
-#include "rts2conngrb.h"
+#include "conngrb.h"
 #include "rts2grbfw.h"
 
 // when we get GRB packet..
 #define RTS2_EVENT_GRB_PACKET  RTS2_LOCAL_EVENT + 600
 
-class Rts2ConnGrb;
+namespace rts2grbd
+{
+
+class ConnGrb;
 
 /**
  * Receive info from GCN via socket, put them to DB.
@@ -41,10 +44,10 @@ class Rts2ConnGrb;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DevGrb:public Rts2DeviceDb
+class Grbd:public Rts2DeviceDb
 {
 	private:
-		Rts2ConnGrb * gcncnn;
+		ConnGrb * gcncnn;
 		char *gcn_host;
 		int gcn_port;
 		int do_hete_test;
@@ -72,8 +75,8 @@ class Rts2DevGrb:public Rts2DeviceDb
 
 		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
-		Rts2DevGrb (int argc, char **argv);
-		virtual ~ Rts2DevGrb ();
+		Grbd (int argc, char **argv);
+		virtual ~ Grbd ();
 
 		virtual int ready ()
 		{
@@ -86,4 +89,6 @@ class Rts2DevGrb:public Rts2DeviceDb
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 };
+
+}
 #endif							 /* __RTS2_GRBD__ */
