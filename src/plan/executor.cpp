@@ -73,6 +73,8 @@ class Executor:public Rts2DeviceDb
 		Rts2ValueString *current_type;
 		Rts2ValueInteger *current_obsid;
 
+		Rts2ValueBool *autoLoop;
+
 		Rts2ValueInteger *next_id;
 		Rts2ValueString *next_name;
 
@@ -146,6 +148,9 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 	createValue (current_name, "current_name", "name of current target", false);
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
+
+	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false);
+	autoLoop->setValueBool (true);
 
 	createValue (next_id, "next", "ID of next target", false);
 	createValue (next_name, "next_name", "name of next target", false);
@@ -751,7 +756,8 @@ Executor::doSwitch ()
 void
 Executor::switchTarget ()
 {
-	if ((getState () & EXEC_MASK_END) == EXEC_END)
+	if (((getState () & EXEC_MASK_END) == EXEC_END)
+		|| (autoLoop->getValueBool () == false && nextTargets.size () == 0))
 	{
 		maskState (EXEC_MASK_END, EXEC_NOT_END);
 		postEvent (new Rts2Event (EVENT_KILL_ALL));
