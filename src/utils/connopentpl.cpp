@@ -64,7 +64,7 @@ OpenTpl::waitReply ()
 			int ret;
 			struct timeval read_tout;
 
-			read_tout.tv_sec = 5;
+			read_tout.tv_sec = 30;
 			read_tout.tv_usec = 0;
 			
 			fd_set read_set;
@@ -80,7 +80,7 @@ OpenTpl::waitReply ()
 			ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 			if (ret <= 0)
 			{
-				logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 5 seconds, reinitiliazing" << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 30 seconds, reinitiliazing" << sendLog;
 				connectionError (-1);
 				return -1;
 			}
