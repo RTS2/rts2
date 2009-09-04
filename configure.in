@@ -143,7 +143,7 @@ AC_ARG_WITH(xml2,
 [  --with-xml2             specify path for libxml2 config file],
 [case "${withval}" in
 	yes) XML_CONFIG=xml2-config ;;
-	no) AC_MSG_ERROR([You really need to have libxml2-dev]);
+	no) AC_MSG_ERROR(You really need to have libxml2-dev) ;;
 	*) XML_CONFIG=${withval} ;;
 esac],[xml2=yes])
 AC_MSG_CHECKING(looking for xml2 library)
