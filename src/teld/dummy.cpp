@@ -29,11 +29,41 @@ namespace rts2teld
 
 class Dummy:public Telescope
 {
-	private:
-		struct ln_equ_posn dummyPos;
-		long countLong;
-	protected:
+	public:
+		Dummy (int argc, char **argv):Telescope (argc, argv)
+		{
+			dummyPos.ra = 0;
+			dummyPos.dec = 0;
+		}
 
+		virtual int startResync ()
+		{
+			return 0;
+		}
+
+		virtual int startMoveFixed (double tar_az, double tar_alt)
+		{
+			return 0;
+		}
+
+		virtual int stopMove ()
+		{
+			return 0;
+		}
+
+		virtual int startPark ()
+		{
+			dummyPos.ra = 2;
+			dummyPos.dec = 2;
+			return 0;
+		}
+
+		virtual int endPark ()
+		{
+			return 0;
+		}
+
+	protected:
 		virtual int initValues ()
 		{
 			Rts2Config *config;
@@ -54,9 +84,19 @@ class Dummy:public Telescope
 
 		virtual int isMoving ()
 		{
-			if (countLong > 12)
+			if (getNow () > getTargetReached ())
 				return -2;
-			countLong++;
+			struct ln_equ_posn tar;
+			getTelTargetRaDec (&tar);
+			if (dummyPos.ra > tar.ra)
+				dummyPos.ra -= 0.5;
+			else
+				dummyPos.ra += 0.5;
+			if (dummyPos.dec > tar.dec)
+				dummyPos.dec -= 0.5;
+			else
+				dummyPos.dec += 0.5;
+			setTelRaDec (dummyPos.ra, dummyPos.dec);
 			return USEC_SEC;
 		}
 
@@ -69,45 +109,14 @@ class Dummy:public Telescope
 		{
 			return isMoving ();
 		}
-	public:
-		Dummy (int in_argc, char **in_argv):Telescope (in_argc,
-			in_argv)
+
+		virtual double estimateTargetTime ()
 		{
-			dummyPos.ra = 0;
-			dummyPos.dec = 0;
+			return getTargetDistance () * 2.0;
 		}
 
-		virtual int startResync ()
-		{
-			getTarget (&dummyPos);
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int startMoveFixed (double tar_az, double tar_alt)
-		{
-			getTarget (&dummyPos);
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int stopMove ()
-		{
-			return 0;
-		}
-
-		virtual int startPark ()
-		{
-			dummyPos.ra = 2;
-			dummyPos.dec = 2;
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int endPark ()
-		{
-			return 0;
-		}
+	private:
+		struct ln_equ_posn dummyPos;
 };
 
 };

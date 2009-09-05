@@ -87,128 +87,122 @@ namespace rts2teld
  */
 class Telescope:public Rts2Device
 {
-	private:
-		Rts2Conn * move_connection;
-		int moveInfoCount;
-		int moveInfoMax;
+	public:
+		Telescope (int argc, char **argv);
+		virtual ~ Telescope (void);
+
+		virtual void postEvent (Rts2Event * event);
+
+		virtual int changeMasterState (int new_state);
+
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+			int other_device_type);
+
+		double getLatitude ()
+		{
+			return telLatitude->getValueDouble ();
+		}
+
+		virtual int startGuide (char dir, double dir_dist);
+		virtual int stopGuide (char dir);
+		virtual int stopGuideAll ();
+
+		// callback functions from telescope connection
+		virtual int info ();
+
+		virtual int scriptEnds ();
+
+		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
+
+		int startPark (Rts2Conn * conn);
+
+		virtual int getFlip ();
+	
+		/**
+		 * Apply corrections to position.
+		 */
+		void applyCorrections (struct ln_equ_posn *pos, double JD);
 
 		/**
-		 * Last error.
+		 * Set telescope correctios.
+		 *
+		 * @param _aberation     If aberation should be calculated.
+		 * @param _precession    If precession should be calculated.
+		 * @param _refraction    If refraction should be calculated.
 		 */
-		Rts2ValueDouble *posErr;
+		void setCorrections (bool _aberation, bool _precession, bool _refraction)
+		{
+			calAberation->setValueBool (_aberation);
+			calPrecession->setValueBool (_precession);
+			calRefraction->setValueBool (_refraction);
+		}
 
 		/**
-		 * If correction is bellow that value, it is ignored.
+		 * If aberation should be calculated in RTS2.
 		 */
-		Rts2ValueDouble *ignoreCorrection;
+		bool calculateAberation ()
+		{
+			return calAberation->getValueBool ();
+		}
 
 		/**
-		 * If correction is bellow that value, it is considered as small correction.
+		 * If precession should be calculated in RTS2.
 		 */
-		Rts2ValueDouble *smallCorrection;
+		bool calculatePrecession ()
+		{
+			return calPrecession->getValueBool ();
+		}
 
 		/**
-		 * If move is above this limit, correction is rejected.
+		 * If refraction should be calculated in RTS2.
 		 */
-		Rts2ValueDouble *modelLimit;
+		bool calculateRefraction ()
+		{
+			return calRefraction->getValueBool ();
+		}
 
 		/**
-		 * If correction is above that limit, cancel exposures and
-		 * move immediatelly. This is to signal we are out of all cameras
-		 * FOV.
+		 * Switch model off model will not be used to transform coordinates.
 		 */
-		Rts2ValueDouble *telFov;
+		void modelOff ()
+		{
+		  	calModel->setValueBool (false);
+		}
 
-		/**
-		 * Object we are observing original positions.
-		 */
-		Rts2ValueRaDec *oriRaDec;
+		void modelOn ()
+		{
+		  	calModel->setValueBool (true);
+		}
 
-		/**
-		 * User offsets, used to create dithering pattern.
-		 */
-		Rts2ValueRaDec *offsRaDec;
+		bool isModelOn ()
+		{
+			return (calModel->getValueBool ());
+		}
 
-		/**
-		 * Offsets which should be applied from last movement.
-		 */
-		Rts2ValueRaDec *woffsRaDec;
+		virtual int commandAuthorized (Rts2Conn * conn);
 
-		/**
-		 * Real coordinates of the object, after offsets are applied.
-		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
-		 */
-		Rts2ValueRaDec *objRaDec;
-
-		/**
-		 * Target we are pointing to. Coordinates feeded to telescope.
-		 * TAR[RA|DEC] = OBJ[RA|DEC] + modelling, precession, etc.
-		 */
-		Rts2ValueRaDec *tarRaDec;
-
-		/**
-		 * Corrections from astrometry/user.
-		 */
-		Rts2ValueRaDec *corrRaDec;
-
-		/**
-		 * RA DEC correction which waits to be applied.
-		 */
-		Rts2ValueRaDec *wcorrRaDec;
-
-		/**
-		 * If this value is true, any software move of the telescope is blocked.
-		 */
-		Rts2ValueBool *blockMove;
-
-		Rts2ValueBool *blockOnStandby;
-
-		// object + telescope position
-
-		Rts2ValueBool *calAberation;
-		Rts2ValueBool *calPrecession;
-		Rts2ValueBool *calRefraction;
-		Rts2ValueBool *calModel;
-
-
-		/**
-		 * Target HRZ coordinates.
-		 */
-		struct ln_hrz_posn tarAltAz;
-
-		/**
-		 * Target HRZ coordinates with corrections applied.
-		 */
-		struct ln_hrz_posn corrAltAz;
-
-		/**
-		 * Telescope RA and DEC. In perfect world readed from sensors.
-		 * target + model + corrRaDec = requested position -> telRaDec
-		 */
-		Rts2ValueRaDec *telRaDec;
-
-		/**
-		 * Current airmass.
-		 */
-		Rts2ValueDouble *airmass;
-
-		/**
-		 * Hour angle.
-		 */
-		Rts2ValueDouble *hourAngle;
-
-		/**
-		 * Local sidereal time.
-		 */
-		Rts2ValueDouble *lst;
-
-		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
-			bool onlyCorrect);
-
-		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
-
+		virtual void setFullBopState (int new_state);
 
 	protected:
+		/**
+		 * Returns telescope target RA.
+		 */
+		double getTelTargetRa () { return telTargetRaDec->getRa (); }
+
+		/**
+		 * Returns telescope target DEC.
+		 */
+		double getTelTargetDec () { return telTargetRaDec->getDec (); }
+
+		/**
+		 * Return telescope target coordinates.
+		 */
+		void getTelTargetRaDec (struct ln_equ_posn *equ)
+		{
+			equ->ra = getTelTargetRa ();
+			equ->dec = getTelTargetDec ();
+		}
+		  
 		/**
 		 * Set telescope RA.
 		 *
@@ -300,56 +294,6 @@ class Telescope:public Rts2Device
 			return pointingModel->getValueInteger ();
 		}
 
-	private:
-		/**
-		 * Date and time when last park command was issued.
-		 */
-		Rts2ValueTime *mountParkTime;
-
-		Rts2ValueInteger *moveNum;
-		Rts2ValueInteger *corrImgId;
-
-		Rts2ValueInteger *wCorrImgId;
-
-		void checkMoves ();
-		void checkGuiding ();
-
-		struct timeval dir_timeouts[4];
-
-		char *modelFile;
-		rts2telmodel::Model *model;
-
-		bool standbyPark;
-		const char *horizonFile;
-
-		ObjectCheck *hardHorizon;
-
-		/**
-		 * Apply aberation correction.
-		 */
-		void applyAberation (struct ln_equ_posn *pos, double JD);
-
-		/**
-		 * Apply precision correction.
-		 */
-		void applyPrecession (struct ln_equ_posn *pos, double JD);
-
-		/**
-		 * Apply refraction correction.
-		 */
-		void applyRefraction (struct ln_equ_posn *pos, double JD);
-
-		/**
-		 * Zero's all corrections, increment move count. Called before move.
-		 */
-		void incMoveNum ();
-
-		/** 
-		 * Which coordinates are used for pointing (eq, alt-az,..)
-		 */
-		Rts2ValueSelection *pointingModel;
-
-	protected:
 		virtual int processOption (int in_opt);
 
 		virtual int init ();
@@ -736,101 +680,206 @@ class Telescope:public Rts2Device
 		 */
 		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
 
-	public:
-		Telescope (int argc, char **argv);
-		virtual ~ Telescope (void);
+		/**
+		 * Return expected time in seconds it will take to reach
+		 * destination from current position.  This abstract method
+		 * returns getTargetDistance / 2.0, estimate mount slew speed
+		 * to 2 degrees per second. You can provide own estimate by
+		 * overloading this method.
+		 */
+		virtual double estimateTargetTime ();
 
-		virtual void postEvent (Rts2Event * event);
-
-		virtual int changeMasterState (int new_state);
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
-
-		double getLatitude ()
+		double getTargetReached ()
 		{
-			return telLatitude->getValueDouble ();
+			return targetReached->getValueDouble ();
 		}
 
-		virtual int startGuide (char dir, double dir_dist);
-		virtual int stopGuide (char dir);
-		virtual int stopGuideAll ();
-
-		// callback functions from telescope connection
-		virtual int info ();
-
-		virtual int scriptEnds ();
-
-		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
-
-		int startPark (Rts2Conn * conn);
-
-		virtual int getFlip ();
-	
-		/**
-		 * Apply corrections to position.
-		 */
-		void applyCorrections (struct ln_equ_posn *pos, double JD);
+	private:
+		Rts2Conn * move_connection;
+		int moveInfoCount;
+		int moveInfoMax;
 
 		/**
-		 * Set telescope correctios.
-		 *
-		 * @param _aberation     If aberation should be calculated.
-		 * @param _precession    If precession should be calculated.
-		 * @param _refraction    If refraction should be calculated.
+		 * Last error.
 		 */
-		void setCorrections (bool _aberation, bool _precession, bool _refraction)
-		{
-			calAberation->setValueBool (_aberation);
-			calPrecession->setValueBool (_precession);
-			calRefraction->setValueBool (_refraction);
-		}
+		Rts2ValueDouble *posErr;
 
 		/**
-		 * If aberation should be calculated in RTS2.
+		 * If correction is bellow that value, it is ignored.
 		 */
-		bool calculateAberation ()
-		{
-			return calAberation->getValueBool ();
-		}
+		Rts2ValueDouble *ignoreCorrection;
 
 		/**
-		 * If precession should be calculated in RTS2.
+		 * If correction is bellow that value, it is considered as small correction.
 		 */
-		bool calculatePrecession ()
-		{
-			return calPrecession->getValueBool ();
-		}
+		Rts2ValueDouble *smallCorrection;
 
 		/**
-		 * If refraction should be calculated in RTS2.
+		 * If move is above this limit, correction is rejected.
 		 */
-		bool calculateRefraction ()
-		{
-			return calRefraction->getValueBool ();
-		}
+		Rts2ValueDouble *modelLimit;
 
 		/**
-		 * Switch model off model will not be used to transform coordinates.
+		 * If correction is above that limit, cancel exposures and
+		 * move immediatelly. This is to signal we are out of all cameras
+		 * FOV.
 		 */
-		void modelOff ()
-		{
-		  	calModel->setValueBool (false);
-		}
+		Rts2ValueDouble *telFov;
 
-		void modelOn ()
-		{
-		  	calModel->setValueBool (true);
-		}
+		/**
+		 * Object we are observing original positions.
+		 */
+		Rts2ValueRaDec *oriRaDec;
 
-		bool isModelOn ()
-		{
-			return (calModel->getValueBool ());
-		}
+		/**
+		 * User offsets, used to create dithering pattern.
+		 */
+		Rts2ValueRaDec *offsRaDec;
 
-		virtual int commandAuthorized (Rts2Conn * conn);
+		/**
+		 * Offsets which should be applied from last movement.
+		 */
+		Rts2ValueRaDec *woffsRaDec;
 
-		virtual void setFullBopState (int new_state);
+		/**
+		 * Real coordinates of the object, after offsets are applied.
+		 * OBJ[RA|DEC] = ORI[|RA|DEC] + OFFS[|RA|DEC]
+		 */
+		Rts2ValueRaDec *objRaDec;
+
+		/**
+		 * Target we are pointing to. Coordinates feeded to telescope.
+		 * TAR[RA|DEC] = OBJ[RA|DEC] + modelling, precession, etc.
+		 */
+		Rts2ValueRaDec *tarRaDec;
+
+		/**
+		 * Corrections from astrometry/user.
+		 */
+		Rts2ValueRaDec *corrRaDec;
+
+		/**
+		 * RA DEC correction which waits to be applied.
+		 */
+		Rts2ValueRaDec *wcorrRaDec;
+
+		/**
+		 * Corrected, modelled coordinates feeded to telescope.
+		 */
+		Rts2ValueRaDec *telTargetRaDec;
+
+		/**
+		 * If this value is true, any software move of the telescope is blocked.
+		 */
+		Rts2ValueBool *blockMove;
+
+		Rts2ValueBool *blockOnStandby;
+
+		// object + telescope position
+
+		Rts2ValueBool *calAberation;
+		Rts2ValueBool *calPrecession;
+		Rts2ValueBool *calRefraction;
+		Rts2ValueBool *calModel;
+
+
+		/**
+		 * Target HRZ coordinates.
+		 */
+		struct ln_hrz_posn tarAltAz;
+
+		/**
+		 * Target HRZ coordinates with corrections applied.
+		 */
+		struct ln_hrz_posn corrAltAz;
+
+		/**
+		 * Telescope RA and DEC. In perfect world readed from sensors.
+		 * target + model + corrRaDec = requested position -> telRaDec
+		 */
+		Rts2ValueRaDec *telRaDec;
+
+		/**
+		 * Current airmass.
+		 */
+		Rts2ValueDouble *airmass;
+
+		/**
+		 * Hour angle.
+		 */
+		Rts2ValueDouble *hourAngle;
+
+		/**
+		 * Local sidereal time.
+		 */
+		Rts2ValueDouble *lst;
+
+		/**
+		 * Distance to target in degrees.
+		 */
+		Rts2ValueDouble *targetDistance;
+
+		/**
+		 * Time when movement was started.
+		 */
+		Rts2ValueTime *targetStarted;
+
+		/**
+		 * Estimate time when current movement will be finished.
+		 */
+		Rts2ValueTime *targetReached;
+
+		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec, bool onlyCorrect);
+
+		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
+
+		/**
+		 * Date and time when last park command was issued.
+		 */
+		Rts2ValueTime *mountParkTime;
+
+		Rts2ValueInteger *moveNum;
+		Rts2ValueInteger *corrImgId;
+
+		Rts2ValueInteger *wCorrImgId;
+
+		void checkMoves ();
+		void checkGuiding ();
+
+		struct timeval dir_timeouts[4];
+
+		char *modelFile;
+		rts2telmodel::Model *model;
+
+		bool standbyPark;
+		const char *horizonFile;
+
+		ObjectCheck *hardHorizon;
+
+		/**
+		 * Apply aberation correction.
+		 */
+		void applyAberation (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Apply precision correction.
+		 */
+		void applyPrecession (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Apply refraction correction.
+		 */
+		void applyRefraction (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Zero's all corrections, increment move count. Called before move.
+		 */
+		void incMoveNum ();
+
+		/** 
+		 * Which coordinates are used for pointing (eq, alt-az,..)
+		 */
+		Rts2ValueSelection *pointingModel;
 };
 
 };

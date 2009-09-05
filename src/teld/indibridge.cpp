@@ -194,11 +194,11 @@ INDIBridge::startResync ()
 {
 	int ret ;
 
-	ret = tel_slew_to (getTelRa (), getTelDec ());
+	ret = tel_slew_to (getTelTargetRa (), getTelTargetDec ());
 	move_state = MOVE_REAL;
 	set_move_timeout (100);
-	lastMoveRa = getTelRa ();
-	lastMoveDec = getTelDec ();
+	lastMoveRa = getTelTargetRa ();
+	lastMoveDec = getTelTargetDec ();
 
 	return 0;
 }

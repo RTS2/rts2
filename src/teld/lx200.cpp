@@ -755,8 +755,8 @@ LX200::startResync ()
 
 	move_state = MOVE_HOME;
 	set_move_timeout (100);
-	lastMoveRa = getTelRa ();
-	lastMoveDec = getTelDec ();
+	lastMoveRa = getTelTargetRa ();
+	lastMoveDec = getTelTargetDec ();
 	return 0;
 }
 

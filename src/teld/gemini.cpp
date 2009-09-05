@@ -1493,22 +1493,22 @@ Gemini::startResync ()
 
 	tel_normalize (&pos.ra, &pos.dec);
 
-	ra_diff = ln_range_degrees (getTelRa () - pos.ra);
+	ra_diff = ln_range_degrees (getTelTargetRa () - pos.ra);
 	if (ra_diff > 180.0)
 		ra_diff -= 360.0;
 
-	dec_diff = getTelDec () - pos.dec;
+	dec_diff = getTelTargetDec () - pos.dec;
 
 	// get diff when we flip..
 	ra_diff_flip =
-		ln_range_degrees (180 + getTelRa () - pos.ra);
+		ln_range_degrees (180 + getTelTargetRa () - pos.ra);
 	if (ra_diff_flip > 180.0)
 		ra_diff_flip -= 360.0;
 
 	if (telLatitude->getValueDouble () > 0)
-		dec_diff_flip = (90 - getTelDec () + 90 - pos.dec);
+		dec_diff_flip = (90 - getTelTargetDec () + 90 - pos.dec);
 	else
-		dec_diff_flip = (getTelDec () - 90 + pos.dec - 90);
+		dec_diff_flip = (getTelTargetDec () - 90 + pos.dec - 90);
 
 	// decide which path is closer
 
@@ -1564,7 +1564,7 @@ Gemini::startResync ()
 	logStream (MESSAGE_DEBUG) << "Losmandy start move ha " << ha
 		<< " ra_diff " << ra_diff
 		<< " lastMoveRa " << lastMoveRa
-		<< " telRa " << getTelRa ()
+		<< " telRa " << getTelTargetRa ()
 		<< " newFlip  " << newFlip
 		<< " willFlip " << willFlip
 		<< sendLog;
@@ -1601,7 +1601,7 @@ Gemini::startResync ()
 	startWorm ();
 
 	struct ln_equ_posn telPos;
-	getTelRaDec (&telPos);
+	getTelTargetRaDec (&telPos);
 
 	double sep = ln_get_angular_separation (&pos, &telPos);
 	#ifdef DEBUG_EXTRA
