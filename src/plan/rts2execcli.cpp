@@ -23,7 +23,9 @@
 #include "rts2execcli.h"
 #include "../writers/rts2image.h"
 #include "../utilsdb/target.h"
+#include "../utils/connfork.h"
 #include "../utils/rts2command.h"
+#include "../utils/rts2config.h"
 
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString *in_expandPath)
 :Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
@@ -224,6 +226,20 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 			return IMAGE_DO_BASIC_PROCESSING;
 		}
 		// otherwise que image processing
+	}
+	// try immediately processing..
+	std::string after_command;
+	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
+	{
+		int timeout = 60;
+		std::string arg;
+		Rts2Config::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
+		rts2core::ConnFork *afterCommand = new rts2core::ConnFork (getMaster (), after_command.c_str (), true, timeout);
+		afterCommand->addArg (image->getAbsoluteFileName ());
+		Rts2Config::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
+		afterCommand->addArg (image->expand (arg));
+		afterCommand->init ();
+		getMaster ()->addConnection (afterCommand);
 	}
 	queImage (image);
 	return IMAGE_DO_BASIC_PROCESSING;

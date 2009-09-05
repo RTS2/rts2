@@ -1172,6 +1172,36 @@
 	    <para>FITS header comment for the environmental variable with name VARIABLE. You can of course specify any name you like.</para>
 	  </listitem>
 	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd</option>
+	  </term>
+	  <listitem>
+	    <para>Command which will be executed by
+	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    directly after exposure. It willl be passed two parameters - first
+	    absolute path to file produced, and second arbitary parameter
+	    specified with after_exposure_cmd_arg option.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd_timeout</option>
+	  </term>
+	  <listitem>
+	    <para>Timeout for command running after exposure in seconds.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd_arg</option>
+	  </term>
+	  <listitem>
+	    <para>Argument passed to command executed after readout is
+	    finished. Please note that first argument is always absolute image
+	    filename.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
   </refsect1>
