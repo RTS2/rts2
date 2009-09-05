@@ -320,8 +320,8 @@ AppImage::processOption (int in_opt)
 			operation |= IMAGEOP_JPEG;
 			jpeg_expr = optarg;
 			break;
-		default:
 		#endif /* HAVE_LIBJPEG */
+		default:
 
 		#ifdef HAVE_PGSQL
 			return Rts2AppDbImage::processOption (in_opt);
