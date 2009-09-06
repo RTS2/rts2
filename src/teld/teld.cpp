@@ -930,6 +930,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;
+			maskState (TEL_MASK_CORRECTING | TEL_MASK_MOVING | BOP_EXPOSURE, TEL_NOT_CORRECTING | TEL_OBSERVING, "cannot perform move");
 			if (conn)
 				conn->sendCommandEnd (DEVDEM_E_HW, "unaccesible target");
 			return -1;
