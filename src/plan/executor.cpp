@@ -714,7 +714,8 @@ Executor::doSwitch ()
 	if (currentTarget && currentTarget->isContinues () == 2
 		&& (nextTargets.size () == 0 || nextTargets.front ()->getTargetID () == currentTarget->getTargetID ()))
 	{
-		nextTargets.pop_front ();
+		if (nextTargets.size () != 0)
+			nextTargets.pop_front ();
 		// create again our target..since conditions changed, we will get different target id
 		nextTargets.push_front (createTarget (currentTarget->getTargetID (), observer));
 	}
