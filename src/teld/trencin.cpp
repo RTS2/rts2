@@ -1069,6 +1069,9 @@ int Trencin::startResync ()
 		return -1;
 	try
 	{
+		initRa ();
+		initDec ();
+
 		setRa (ac);
 		setDec (dc);
 	}
