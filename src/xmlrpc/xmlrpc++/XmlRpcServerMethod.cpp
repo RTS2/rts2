@@ -19,6 +19,12 @@ namespace XmlRpc
 
 	void XmlRpcServerMethod::setAuthorization(std::string authorization)
 	{
+		if (authorization.length () == 0)
+		{
+			_username = "";
+			_password = "";
+			return;
+		}
 		size_t dp = authorization.find(':');
 		if (dp != std::string::npos)
 		{

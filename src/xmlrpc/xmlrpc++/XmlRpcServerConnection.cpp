@@ -387,8 +387,7 @@ XmlRpcServerConnection::executeGet()
 	}
 	else
 	{
-		if (_authorization.length () != 0)
-			request->setAuthorization (_authorization);
+		request->setAuthorization (_authorization);
 	
 		try
 		{
@@ -464,8 +463,7 @@ XmlRpcValue& params, XmlRpcValue& result)
 
 	if ( ! method) return false;
 
-	if (_authorization.length () != 0)
-		method->setAuthorization (_authorization);
+	method->setAuthorization (_authorization);
 
 	method->execute(params, result);
 
