@@ -47,14 +47,14 @@ Rts2Config::getSpecialValues ()
 	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
 	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
 
-	getDouble ("observatory", "min_flat_heigh", minFlatHeigh, 10);
+	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 
 	checker = new ObjectCheck (horizon_file.c_str ());
-	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout, 3600);
-	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance, 0.1);
-	getDouble ("calibration", "lunar_dist", calibrationLunarDist, 20);
-	getInteger ("calibration", "valid_time", calibrationValidTime, 3600);
-	getInteger ("calibration", "max_delay", calibrationMaxDelay, 7200);
+	astrometryTimeout = getIntegerDefault ("imgproc", "astrometry_timeout", 3600);
+	calibrationAirmassDistance = getDoubleDefault ("calibration", "airmass_distance", 0.1);
+	calibrationLunarDist = getDoubleDefault ("calibration", "lunar_dist", 20);
+	calibrationValidTime = getIntegerDefault ("calibration", "valid_time", 3600);
+	calibrationMaxDelay = getIntegerDefault ("calibration", "max_delay", 7200);
 	getFloat ("calibration", "min_bonus", calibrationMinBonus, 1.0);
 	getFloat ("calibration", "max_bonus", calibrationMaxBonus, 300.0);
 
@@ -64,7 +64,7 @@ Rts2Config::getSpecialValues ()
 
 	// GRD section
 	grbd_follow_transients = getBoolean ("grbd", "know_transients", true);
-	getInteger ("grbd", "validity", grbd_validity, 3600);
+	grbd_validity = getIntegerDefault ("grbd", "validity", 86400);
 
 	if (ret)
 		return -1;

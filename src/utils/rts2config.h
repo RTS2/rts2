@@ -229,15 +229,12 @@ class Rts2Config:public Rts2ConfigRaw
 		 *
 		 * @return Observatory longitude.
 		 */
-		double getObservatoryLongitude ()
-		{
-			return getObserver ()->lng;
-		}
+		const double getObservatoryLongitude ()	{ return getObserver ()->lng; }
 
 		/**
 		 * Return observatory altitude.
 		 */
-		double getObservatoryAltitude ()
+		const double getObservatoryAltitude ()
 		{
 			return observatoryAltitude;
 		}
@@ -251,7 +248,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 *
 		 * @callergraph
 		 */
-		float getSwiftMinHorizon ()
+		const float getSwiftMinHorizon ()
 		{
 			return swift_min_horizon;
 		}
@@ -263,7 +260,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 *
 		 * @callergraph
 		 */
-		float getSwiftSoftHorizon ()
+		const float getSwiftSoftHorizon ()
 		{
 			return swift_soft_horizon;
 		}
@@ -275,7 +272,7 @@ class Rts2Config:public Rts2ConfigRaw
 		 * @return True if know sources and invalid GRBs should be
 		 * followed.
 		 */
-		bool grbdFollowTransients ()
+		const bool grbdFollowTransients ()
 		{
 			return grbd_follow_transients;
 		}
@@ -283,7 +280,7 @@ class Rts2Config:public Rts2ConfigRaw
 		/**
 		 * Duration for which GRB observation will be followed.
 		 */
-		int grbdValidity ()
+		const int grbdValidity ()
 		{
 			return grbd_validity;
 		}
