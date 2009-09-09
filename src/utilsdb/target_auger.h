@@ -22,19 +22,26 @@
 
 #include "target.h"
 
+namespace rts2targetauger
+{
+struct vec
+{
+	double x;
+	double y;
+	double z;
+};	
+
+}
+
 class TargetAuger:public ConstTarget
 {
-	private:
-		int t3id;
-		double auger_date;
-		int npixels;
-		int augerPriorityTimeout;
 	public:
 		TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs,
 			int in_augerPriorityTimeout);
 		virtual ~ TargetAuger (void);
 
 		virtual int load ();
+		virtual int getScript (const char *device_name, std::string & buf);
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();
 		virtual int considerForObserving (double JD);
@@ -51,5 +58,18 @@ class TargetAuger:public ConstTarget
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
 		virtual void writeToImage (Rts2Image * image, double JD);
+
+	private:
+		int t3id;
+		double auger_date;
+		int npixels;
+		int augerPriorityTimeout;
+		// core coordinates
+		struct rts2targetauger::vec cor;
+
+		// valid positions
+		std::vector <struct ln_equ_posn> showerOffsets;
+
+		void updateShowerFields ();
 };
 #endif							 /* !__RTS2_TARGET_AUGER__ */

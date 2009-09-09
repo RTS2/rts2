@@ -22,20 +22,92 @@
 #include "../utils/infoval.h"
 #include "../writers/rts2image.h"
 
+/*****************************************************************/
+//Utility functions
+
+/* vector cross product */
+void crossProduct(struct rts2targetauger::vec * a, struct rts2targetauger::vec * b, struct rts2targetauger::vec * c)
+{
+	c->x = a->y * b->z - a->z * b->y;
+	c->y = a->z * b->x - a->x * b->z;
+	c->z = a->x * b->y - a->y * b->x;
+}
+
+/* horizontal coordinates to vector transformation */
+void hrz_to_vec (struct ln_hrz_posn * dirh, struct rts2targetauger::vec * dirv)
+{
+	dirv->x = cos (dirh->alt) * sin (dirh->az) * (-1);
+	dirv->y = cos (dirh->alt) * cos (dirh->az) * (-1);
+	dirv->z = sin (dirh->alt);
+}
+
+/* vector to horizontal coordinates transformation */
+void vec_to_hrz (struct rts2targetauger::vec * dirv, struct ln_hrz_posn * dirh)
+{
+	dirh->alt = asin (dirv->z);
+	if (dirv->y > 0.)
+		dirh->az = atan (dirv->x / dirv->y) + M_PI;
+	if (dirv->y < 0.)
+	{
+		if (dirv->x < 0.)
+			dirh->az = atan (dirv->x / dirv->y);
+		else
+			dirh->az = atan (dirv->x / dirv->y) + 2 * M_PI;
+	}
+	if (dirv->y == 0.)
+	{
+		if (dirv->x < 0.)
+			dirh->az = 0.5 * M_PI;
+		else
+			dirh->az = 1.5 * M_PI;
+	}
+}
+
+/* transformation to unit length vector */
+void vec_unit (struct rts2targetauger::vec * in, struct rts2targetauger::vec * unit)
+{
+	double length = sqrt (in->x*in->x + in->y*in->y + in->z*in->z);
+	unit->x = in->x / length;
+	unit->y = in->y / length;
+	unit->z = in->z / length;
+}
+
+/* rotation of vector "b" around "axis" by "angle" */
+rts2targetauger::vec rotateVector(struct rts2targetauger::vec * axis, struct rts2targetauger::vec * b, double angle)
+{
+	struct rts2targetauger::vec ret;
+	struct rts2targetauger::vec cross;
+	crossProduct(axis, b, &cross);
+	ret.x = b->x * cos(angle) + cross.x * sin(angle);
+	ret.y = b->y * cos(angle) + cross.y * sin(angle);
+	ret.z = b->z * cos(angle) + cross.z * sin(angle);
+	return ret;
+}
+
+void dirToEqu (rts2targetauger::vec *dir, struct ln_lnlat_posn *observer, double JD, struct ln_equ_posn *pos)
+{
+	struct ln_hrz_posn hrz;
+	vec_to_hrz (dir, &hrz);
+	hrz.alt = ln_rad_to_deg (hrz.alt);
+	hrz.az = ln_rad_to_deg (hrz.az);
+	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
+}
+
+/*****************************************************************/
+
 TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, in_obs)
 {
 	augerPriorityTimeout = in_augerPriorityTimeout;
+	cor.x = nan ("f");
+	cor.y = nan ("f");
+	cor.z = nan ("f");
 }
-
 
 TargetAuger::~TargetAuger (void)
 {
-
 }
 
-
-int
-TargetAuger::load ()
+int TargetAuger::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_auger_t3id;
@@ -43,6 +115,10 @@ TargetAuger::load ()
 		int d_auger_npixels;
 		double d_auger_ra;
 		double d_auger_dec;
+
+		double d_northing;
+		double d_easting;
+		double d_altitude;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_equ_posn pos;
@@ -53,12 +129,15 @@ TargetAuger::load ()
 		SELECT
 			auger_t3id,
 			EXTRACT (EPOCH FROM auger_date),
-			auger_npixels,
-			auger_ra,
-			auger_dec
+			NPix,
+			ra,
+			dec,
+			Northing,
+			Easting,
+			Altitude
 		FROM
 			auger
-			ORDER BY
+		ORDER BY
 			auger_date desc;
 
 	EXEC SQL OPEN cur_auger;
@@ -69,7 +148,10 @@ TargetAuger::load ()
 				:d_auger_date,
 				:d_auger_npixels,
 				:d_auger_ra,
-				:d_auger_dec;
+				:d_auger_dec,
+				:d_northing,
+				:d_easting,
+				:d_altitude;
 		if (sqlca.sqlcode)
 			break;
 		pos.ra = d_auger_ra;
@@ -81,6 +163,9 @@ TargetAuger::load ()
 			auger_date = d_auger_date;
 			npixels = d_auger_npixels;
 			setPosition (d_auger_ra, d_auger_dec);
+			cor.x = d_easting - 459201;
+			cor.y = d_northing - 6071873;
+			cor.z = d_altitude - 1422;
 			EXEC SQL CLOSE cur_auger;
 			EXEC SQL COMMIT;
 			return Target::load ();
@@ -93,9 +178,95 @@ TargetAuger::load ()
 	return -1;
 }
 
+void TargetAuger::updateShowerFields ()
+{
+	time_t aug_date = auger_date;
+	double JD = ln_get_julian_from_timet (&aug_date);
 
-float
-TargetAuger::getBonus (double JD)
+	struct ln_equ_posn pos;
+	struct ln_hrz_posn hrz;
+
+	getPosition (&pos, JD);
+	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+
+	hrz.az = ln_deg_to_rad (hrz.az);
+	hrz.alt = ln_deg_to_rad (hrz.alt);
+
+	struct rts2targetauger::vec cortmp, dir, axis, unit;
+
+	// shower direction vector
+	hrz_to_vec (&hrz, &dir);
+
+	// core position vector
+	vec_unit (&cor, &cortmp);
+	cor = cortmp;
+
+	// vector perpendicular to SDP - axis of rotation
+	crossProduct (&dir, &cor, &axis);
+	vec_unit (&axis, &unit);
+	axis = unit;
+
+	// current and previous equatorial positions
+	struct ln_equ_posn equ,prev_equ;
+
+	dirToEqu (&dir, observer, JD, &equ);
+	equ.ra -= pos.ra;
+	equ.dec -= pos.dec;
+	showerOffsets.push_back (equ);
+
+	rts2targetauger::vec prev_dir = dir;
+	prev_equ = equ;
+
+	double angle = 160 * M_PI / (180 * 60);
+
+	dir = rotateVector (&axis, &dir, angle);
+
+	while (dir.z > 0.)
+	{
+		dirToEqu (&dir, observer, JD, &equ);
+		equ.ra -= pos.ra;
+		equ.dec -= pos.dec;
+
+		if (dir.z <= 0.5 && prev_dir.z > 0.5 && prev_dir.z < 0.520016128)
+			showerOffsets.push_back (prev_equ);
+        	if (dir.z <= 0.5 && dir.z >= 0.034899497)
+			showerOffsets.push_back (equ);
+        	if (prev_dir.z >= 0.034899497 && dir.z > 0.011635266 && dir.z < 0.034899497)
+			showerOffsets.push_back (equ);
+		
+		prev_dir = dir;
+		prev_equ = equ;
+
+		dir = rotateVector (&axis, &dir, angle);
+	}
+}
+
+
+int TargetAuger::getScript (const char *device_name, std::string &buf)
+{
+	if (showerOffsets.size () == 0)
+		updateShowerFields ();
+
+	if (!strcmp (device_name, "NF"))
+	{
+		buf = std::string ("E 5");
+		return 0;
+	}
+	else if (strcmp (device_name, "WF"))
+	{
+		std::ostringstream _os;
+		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
+		{
+			_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") E 10 ";
+		}
+		buf = _os.str ();
+		return 0;
+	}
+	buf = std::string ("NF");
+	return 0;
+}
+
+float TargetAuger::getBonus (double JD)
 {
 	time_t jd_date;
 	ln_get_timet_from_julian (JD, &jd_date);
@@ -106,9 +277,7 @@ TargetAuger::getBonus (double JD)
 	return ConstTarget::getBonus (JD);
 }
 
-
-moveType
-TargetAuger::afterSlewProcessed ()
+moveType TargetAuger::afterSlewProcessed ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
@@ -136,17 +305,13 @@ TargetAuger::afterSlewProcessed ()
 	return OBS_MOVE;
 }
 
-
-int
-TargetAuger::considerForObserving (double JD)
+int TargetAuger::considerForObserving (double JD)
 {
 	load ();
 	return ConstTarget::considerForObserving (JD);
 }
 
-
-void
-TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
+void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	_os
 		<< InfoVal<int> ("T3ID", t3id)
@@ -155,9 +320,7 @@ TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 	ConstTarget::printExtra (_os, JD);
 }
 
-
-void
-TargetAuger::writeToImage (Rts2Image * image, double JD)
+void TargetAuger::writeToImage (Rts2Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("AGR_T3ID", t3id, "Auger target id");
