@@ -637,7 +637,7 @@ float ConnGrb::getInstrumentErrorBox (int grb_type)
 		case TYPE_FERMI_LAT_TRANS:
 		case TYPE_FERMI_OBS_REQ:
 		case TYPE_FERMI_SC_SLEW:
-			// TODO fill that by GLAST S/C specifications, when it will be
+			// TODO fill that with FERMI S/C specifications, when it will be
 			// on launch pad
 			return 3.0;
 	}
