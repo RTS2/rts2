@@ -540,17 +540,22 @@ void Trencin::setRa (long new_ra)
 		stopWorm ();
 	}
 	long diff = new_ra - unitRa->getValueInteger () - cycleRa->getValueInteger () * MAX_MOVE;
-	// adjust for siderial move..
-	double v = ((double) velRa->getValueInteger ()) * 64;
-	// sideric speed in 1/64 steps / sec
-	double sspeed = (haCpd / 240) * (86400 / LN_SIDEREAL_DAY_SEC);
-	if ((sspeed < 0 && diff < 0) || (sspeed > 0 && diff > 0))
-		// we are going in direction of sidereal motion, thus the motion will take shorter time
-		sspeed = -1 * fabs (sspeed);
-	else
-		sspeed = fabs (sspeed);
-	diff *= v / (v + sspeed);
-	diff += 2 * sspeed;
+
+	if (wormRa->getValueBool ())
+	{
+		// adjust for siderial move..
+		double v = ((double) velRa->getValueInteger ()) * 64;
+		// sideric speed in 1/64 steps / sec
+		double sspeed = (haCpd / 240) * (86400 / LN_SIDEREAL_DAY_SEC);
+		if ((sspeed < 0 && diff < 0) || (sspeed > 0 && diff > 0))
+			// we are going in direction of sidereal motion, thus the motion will take shorter time
+			sspeed = -1 * fabs (sspeed);
+		else
+			sspeed = fabs (sspeed);
+		diff *= v / (v + sspeed);
+		diff += 2 * sspeed;
+	}
+
 	cycleMoveRa = 0;
 	tel_run (trencinConnRa, diff);
 }
@@ -1127,20 +1132,31 @@ int Trencin::stopMove ()
 
 int Trencin::startPark ()
 {
+	try
+	{
+		if (wormRa->getValueBool ())
+		{
+			stopWorm ();
+			wormRa->setValueBool (true);
+		}
+		initRa ();
+		initDec ();
+
+		setRa (0);
+		setDec (0);
+	}
+	catch (rts2core::Error &er)
+	{
+		logStream (MESSAGE_ERROR) << "canot start park " << er << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
 
 int Trencin::isParking ()
-{	
-	int ret;
-	ret = info ();
-	if (ret)
-		return ret;
-
-	if (unitRa->getValueInteger () == 0 && unitDec->getValueInteger () == 0)
-		return -2;
-	return USEC_SEC / 10;
+{
+	return isMoving ();
 }
 
 
