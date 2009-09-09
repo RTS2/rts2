@@ -182,7 +182,7 @@ TargetGRB::getPostSec ()
 {
 	time_t now;
 	time (&now);
-	return now - (time_t) grbDate;
+	return now - (time_t) getGrbDate ();
 }
 
 
