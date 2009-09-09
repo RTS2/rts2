@@ -80,6 +80,11 @@ class TargetGRB:public ConstTarget
 		double getPostSec ();
 
 		/**
+		 * Returns GRB date.
+		 */
+		const double getGrbDate () { return grbDate; }
+
+		/**
 		 * Check if target is still valid, e.g. if it does not expires or if it isn't fake.
 		 */
 		void checkValidity ();
