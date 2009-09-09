@@ -173,7 +173,7 @@ class Rts2Target
 		 * @param pos  Pointer to returned target position.
 		 *
 		 */
-		void getPosition (struct ln_equ_posn *pos)
+		virtual void getPosition (struct ln_equ_posn *pos)
 		{
 			getPosition (pos, ln_get_julian_from_sys ());
 		}
