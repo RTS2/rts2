@@ -227,21 +227,18 @@ int ConnShooter::processAuger ()
 
   // validate shover and it's hibrid..
 
-/*  if ((!(gap_comp && gap_isT5 && gap_energy > minEnergy))
-    || now - db_auger_date > maxTime
-    || master->wasSeen (db_auger_date, db_auger_ra, db_auger_dec))
+  if ((!(db_Energy > minEnergy->getValueDouble ()))
+    || now - db_auger_date > maxTime->getValueInteger ()
+    || master->wasSeen (db_auger_date, db_ra, db_dec))
   {
-    logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (gap_comp "
-      << gap_comp
-      << " date " << LibnovaDateDouble (db_auger_date)
-      << " gap_isT5 " << gap_isT5
-      << " gap_energy " << gap_energy
+    logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (date " << LibnovaDateDouble (db_auger_date)
+      << " Energy " << db_Energy
       << " minEnergy " << minEnergy
-      << " ra " << db_auger_ra
-      << " dec " << db_auger_dec
+      << " ra " << db_ra
+      << " dec " << db_dec
       << ")" << sendLog;
     return -1;
-  } */
+  }
 
   EXEC SQL INSERT INTO
       auger
@@ -398,10 +395,10 @@ int ConnShooter::processAuger ()
 }
 
 
-ConnShooter::ConnShooter (int in_port, DevAugerShooter * in_master, double in_minEnergy, int in_maxTime):Rts2ConnNoSend (in_master)
+ConnShooter::ConnShooter (int _port, DevAugerShooter * _master, Rts2ValueDouble *_minEnergy, Rts2ValueInteger *_maxTime):Rts2ConnNoSend (_master)
 {
-  master = in_master;
-  port = in_port;
+  master = _master;
+  port = _port;
 
   time (&last_packet.tv_sec);
   last_packet.tv_sec -= 600;
@@ -411,8 +408,8 @@ ConnShooter::ConnShooter (int in_port, DevAugerShooter * in_master, double in_mi
 
   setConnTimeout (-1);
 
-  minEnergy = in_minEnergy;
-  maxTime = in_maxTime;
+  minEnergy = _minEnergy;
+  maxTime = _maxTime;
 }
 
 

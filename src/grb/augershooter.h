@@ -35,11 +35,17 @@ class DevAugerShooter:public Rts2DeviceDb
 	private:
 		ConnShooter * shootercnn;
 		int port;
+		Rts2ValueDouble *minEnergy;
+		Rts2ValueInteger *maxTime;
+
 		Rts2ValueTime *lastAugerDate;
 		Rts2ValueDouble *lastAugerRa;
 		Rts2ValueDouble *lastAugerDec;
 	protected:
 		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	public:
 		DevAugerShooter (int in_argc, char **in_argv);
 		virtual ~ DevAugerShooter (void);

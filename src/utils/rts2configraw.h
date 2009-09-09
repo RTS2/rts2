@@ -33,6 +33,8 @@
 #include <string>
 #include <vector>
 
+#include "rts2value.h"
+
 #define SEP " "
 
 /**
@@ -249,6 +251,8 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		 */
 		int getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose = true);
 
+		int getIntegerDefault (const char *section, const char *valueName, int defVal);
+
 		int getInteger (const char *section, const char *valueName, int &value);
 
 		int getInteger (const char *section, const char *valueName, int &value, int defVal);
@@ -280,7 +284,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		/**
 		 * Return double configuration value.
 		 */
-		double getDouble (const char *section, const char *valueName);
+		double getDoubleDefault (const char *section, const char *valueName, double val = nan ("f"));
 
 		int getDouble (const char *section, const char *valueName, double &value);
 

@@ -16,8 +16,8 @@ class ConnShooter:public Rts2ConnNoSend
 {
 	private:
 		DevAugerShooter * master;
-		double minEnergy;
-		int maxTime;
+		Rts2ValueDouble *minEnergy;
+		Rts2ValueInteger *maxTime;
 
 		struct timeval last_packet;
 
@@ -35,7 +35,7 @@ class ConnShooter:public Rts2ConnNoSend
 		int processAuger ();
 
 	public:
-		ConnShooter (int in_port, DevAugerShooter * in_master, double in_minEnergy, int in_maxTime);
+		ConnShooter (int _port, DevAugerShooter * _master, Rts2ValueDouble *_minEnergy, Rts2ValueInteger *_maxTime);
 		virtual ~ ConnShooter (void);
 
 		virtual int idle ();

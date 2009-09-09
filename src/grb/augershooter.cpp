@@ -27,14 +27,17 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
 	shootercnn = NULL;
 	port = 1240;
-	addOption ('s', "shooter_port", 1,
-		"port on which to listen for auger connection");
+	addOption ('s', "shooter_port", 1, "port on which to listen for auger connection");
+
+	createValue (minEnergy, "min_energy", "minimal shower energy", false);
+	minEnergy->setValueDouble (10);
+
+	createValue (maxTime, "max_time", "maximal time between shower and its observations", false);
+	maxTime->setValueInteger (600);
 
 	createValue (lastAugerDate, "last_date", "date of last shower", false);
-	createValue (lastAugerRa, "last_ra", "RA of last shower", false,
-		RTS2_DT_RA);
-	createValue (lastAugerDec, "last_dec", "DEC of last shower", false,
-		RTS2_DT_DEC);
+	createValue (lastAugerRa, "last_ra", "RA of last shower", false, RTS2_DT_RA);
+	createValue (lastAugerDec, "last_dec", "DEC of last shower", false, RTS2_DT_DEC);
 }
 
 
@@ -56,6 +59,25 @@ int DevAugerShooter::processOption (int in_opt)
 	return 0;
 }
 
+int DevAugerShooter::reloadConfig ()
+{
+	int ret = Rts2DeviceDb::reloadConfig ();
+	if (ret)
+		return ret;
+
+	Rts2Config *config = Rts2Config::instance ();
+	minEnergy->setValueDouble (config->getDoubleDefault ("augershooter", "minenergy", minEnergy->getValueDouble ()));
+
+	maxTime->setValueInteger (config->getIntegerDefault ("augershooter", "maxtime", maxTime->getValueInteger ()));
+}
+
+int DevAugerShooter::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == minEnergy || old_value == maxTime)
+		return 0;
+	return Rts2DeviceDb::setValue (old_value, new_value);
+}
+
 
 int DevAugerShooter::init ()
 {
@@ -63,14 +85,6 @@ int DevAugerShooter::init ()
 	ret = Rts2DeviceDb::init ();
 	if (ret)
 		return ret;
-
-	Rts2Config *config = Rts2Config::instance ();
-	double minEnergy;
-	minEnergy = 20;
-	config->getDouble ("augershooter", "minenergy", minEnergy);
-
-	int maxTime = 600;
-	config->getInteger ("augershooter", "maxtime", maxTime);
 
 	shootercnn = new ConnShooter (port, this, minEnergy, maxTime);
 

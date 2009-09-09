@@ -499,12 +499,8 @@ Rts2Centrald::reloadConfig ()
 	config->getDouble ("observatory", "day_horizon", t_h, 0);
 	dayHorizon->setValueDouble (t_h);
 
-	int t_t;
-	config->getInteger ("observatory", "evening_time", t_t, 7200);
-	eveningTime->setValueInteger (t_t);
-
-	config->getInteger ("observatory", "morning_time", t_t, 1800);
-	morningTime->setValueInteger (t_t);
+	eveningTime->setValueInteger (config->getIntegerDefault ("observatory", "evening_time", 7200));
+	morningTime->setValueInteger (config->getIntegerDefault ("observatory", "morning_time", 1800));
 
 	next_event_time = 0;
 
