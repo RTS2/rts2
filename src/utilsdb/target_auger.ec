@@ -247,12 +247,7 @@ int TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
 
-	if (!strcmp (device_name, "NF"))
-	{
-		buf = std::string ("E 5");
-		return 0;
-	}
-	else if (strcmp (device_name, "WF"))
+	if (!strcmp (device_name, "WF"))
 	{
 		std::ostringstream _os;
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
@@ -262,7 +257,7 @@ int TargetAuger::getScript (const char *device_name, std::string &buf)
 		buf = _os.str ();
 		return 0;
 	}
-	buf = std::string ("NF");
+	buf = std::string ("E 5");
 	return 0;
 }
 
