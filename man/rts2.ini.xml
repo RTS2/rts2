@@ -898,7 +898,7 @@
 	      Time for which GRB observing request will be valid. After that
 	      time, GRB will not be observed by automatic update. If zero, then
 	      GRB observing request will never expires, but will be observed
-	      governed by GRB merit function.
+	      governed by GRB merit function. Defaults to 86400 seconds = 1 day.
 	    </para>
 	  </listitem>
 	</varlistentry>
