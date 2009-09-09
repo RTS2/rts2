@@ -149,6 +149,8 @@ DELETE FROM mv_records_double_day;
 INSERT INTO mv_records_double_day (SELECT * FROM records_double_day);
 INSERT INTO mv_records_double_hour (SELECT * FROM records_double_hour);' LANGUAGE SQL;
 
+CREATE UNIQUE INDEX plan_tar_id_start ON plan (tar_id, plan_start);
+
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
 GRANT ALL ON records_double TO GROUP observers;
