@@ -390,10 +390,10 @@ void Trencin::setGuideRa (int value)
 	switch (value)
 	{
 		case 1:
-			raMoving->setValueInteger (-MAX_MOVE);
+			raMoving->setValueInteger (MAX_MOVE);
 			break;
 		case 2:
-			raMoving->setValueInteger (MAX_MOVE);
+			raMoving->setValueInteger (-MAX_MOVE);
 			break;
 	}
 	tel_run (trencinConnRa, raMoving->getValueInteger ());
@@ -412,10 +412,10 @@ void Trencin::setGuideDec (int value)
 	switch (value)
 	{
 		case 1:
-			decMoving->setValueInteger (-MAX_MOVE);
+			decMoving->setValueInteger (MAX_MOVE);
 			break;
 		case 2:
-			decMoving->setValueInteger (MAX_MOVE);
+			decMoving->setValueInteger (-MAX_MOVE);
 			break;
 	}
 	tel_run (trencinConnDec, decMoving->getValueInteger ());
