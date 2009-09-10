@@ -396,6 +396,7 @@ void Trencin::setGuideRa (int value)
 			raMoving->setValueInteger (-MAX_MOVE);
 			break;
 	}
+	cycleMoveRa = 0;
 	tel_run (trencinConnRa, raMoving->getValueInteger ());
 	setIdleInfoInterval (0.5);
 }
@@ -418,6 +419,7 @@ void Trencin::setGuideDec (int value)
 			decMoving->setValueInteger (-MAX_MOVE);
 			break;
 	}
+	cycleMoveDec = 0;
 	tel_run (trencinConnDec, decMoving->getValueInteger ());
 	setIdleInfoInterval (0.5);
 }
