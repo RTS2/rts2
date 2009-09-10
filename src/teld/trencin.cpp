@@ -957,7 +957,8 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return 0;
 		}
 		else if (old_value == accWormRa || old_value == velWormRa
-			|| old_value == backWormRa || old_value == waitWormRa)
+			|| old_value == backWormRa || old_value == waitWormRa
+			|| old_value == cycleRa || old_value == cycleDec)
 		{
 			return 0;
 		}
