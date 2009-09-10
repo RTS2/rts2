@@ -34,8 +34,7 @@
 
 using namespace rts2camd;
 
-void
-Camera::initData ()
+void Camera::initData ()
 {
 	pixelX = rts2_nan ("f");
 	pixelY = rts2_nan ("f");
@@ -43,9 +42,7 @@ Camera::initData ()
 	nAcc = 1;
 }
 
-
-int
-Camera::setPlate (const char *arg)
+int Camera::setPlate (const char *arg)
 {
 	double x, y;
 	int ret = sscanf (arg, "%lf:%lf", &x, &y);
@@ -58,9 +55,7 @@ Camera::setPlate (const char *arg)
 	return 0;
 }
 
-
-void
-Camera::setDefaultPlate (double x, double y)
+void Camera::setDefaultPlate (double x, double y)
 {
 	if (xplate == NULL)
 		createValue (xplate, "XPLATE", "[arcsec] X plate scale");
@@ -73,15 +68,12 @@ Camera::setDefaultPlate (double x, double y)
 	defaultYplate = y;
 }
 
-void
-Camera::initCameraChip ()
+void Camera::initCameraChip ()
 {
 	initData ();
 }
 
-
-void
-Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY)
+void Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY)
 {
 	initData ();
 	setSize (in_width, in_height, 0, 0);
@@ -89,9 +81,7 @@ Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in
 	pixelY = in_pixelY;
 }
 
-
-int
-Camera::setBinning (int in_vert, int in_hori)
+int Camera::setBinning (int in_vert, int in_hori)
 {
 	if (xplate)
 	{
@@ -106,9 +96,7 @@ Camera::setBinning (int in_vert, int in_hori)
 	return 0;
 }
 
-
-int
-Camera::box (int in_x, int in_y, int in_width, int in_height)
+int Camera::box (int in_x, int in_y, int in_width, int in_height)
 {
 	// tests for -1 -> full size
 	if (in_x == -1)
@@ -127,9 +115,7 @@ Camera::box (int in_x, int in_y, int in_width, int in_height)
 	return 0;
 }
 
-
-int
-Camera::center (int in_w, int in_h)
+int Camera::center (int in_w, int in_h)
 {
 	int x, y, w, h;
 	if (in_w > 0 && chipSize->getWidthInt () >= in_w)
@@ -155,9 +141,7 @@ Camera::center (int in_w, int in_h)
 	return box (x, y, w, h);
 }
 
-
-long
-Camera::isExposing ()
+long Camera::isExposing ()
 {
 	double n = getNow ();
 	if (n > exposureEnd->getValueDouble ())
@@ -168,9 +152,7 @@ Camera::isExposing ()
 	return ((long int) ((exposureEnd->getValueDouble () - n) * USEC_SEC));
 }
 
-
-int
-Camera::endExposure ()
+int Camera::endExposure ()
 {
 	if (exposureConn)
 	{
@@ -192,23 +174,17 @@ Camera::endExposure ()
 	return 0;
 }
 
-
-int
-Camera::stopExposure ()
+int Camera::stopExposure ()
 {
 	return endExposure ();
 }
 
-
-int
-Camera::processData (char *data, size_t size)
+int Camera::processData (char *data, size_t size)
 {
 	return size;
 }
 
-
-int
-Camera::deleteConnection (Rts2Conn * conn)
+int Camera::deleteConnection (Rts2Conn * conn)
 {
 	if (conn == exposureConn)
 	{
@@ -217,9 +193,7 @@ Camera::deleteConnection (Rts2Conn * conn)
 	return Rts2Device::deleteConnection (conn);
 }
 
-
-int
-Camera::endReadout ()
+int Camera::endReadout ()
 {
 	clearReadout ();
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
@@ -230,15 +204,11 @@ Camera::endReadout ()
 	return 0;
 }
 
-
-void
-Camera::clearReadout ()
+void Camera::clearReadout ()
 {
 }
 
-
-int
-Camera::sendFirstLine ()
+int Camera::sendFirstLine ()
 {
 	int w, h;
 	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
@@ -260,27 +230,30 @@ Camera::sendFirstLine ()
 	focusingHeader.subexp = subExposure->getValueDouble ();
 	focusingHeader.nacc = htons (nAcc);
 
-	return sendReadoutData ((char *) &focusingHeader, sizeof (imghdr));
+	sum->setValueDouble (0);
+	average->setValueDouble (0);
+	max->setValueDouble (-LONG_MAX);
+	min->setValueDouble (LONG_MAX);
+	computedPix->setValueLong (0);
+
+	// send it out - but do not include it in average etc. calculations
+	if (exposureConn && currentImageData >= 0)
+		return exposureConn->sendBinaryData (currentImageData, (char *) &focusingHeader, sizeof (imghdr));
+	return 0;
 }
 
-
-bool
-Camera::supportFrameTransfer ()
+bool Camera::supportFrameTransfer ()
 {
 	return false;
 }
 
-
-int
-Camera::setSubExposure (double in_subexposure)
+int Camera::setSubExposure (double in_subexposure)
 {
 	subExposure->setValueDouble (in_subexposure);
 	return 0;
 }
 
-
-Camera::Camera (int in_argc, char **in_argv):
-Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
+Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 {
 	expType = NULL;
 
@@ -300,6 +273,16 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	defaultYplate = rts2_nan ("f");
 
 	currentImageData = -1;
+
+	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false);
+	calculateStatistics->setValueBool (true);
+
+	createValue (average, "average", "image average", false);
+	createValue (max, "max", "maximum pixel value", false);
+	createValue (min, "min", "minimal pixel value", false);
+	createValue (sum, "sum", "sum of pixels readed out", false);
+
+	createValue (computedPix, "computed", "number of pixels so far computed", false);
 
 	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, 0, 0, true);
 	quedExpNumber->setValueInteger (0);
@@ -358,16 +341,13 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_CCD, "C0")
 	addOption (OPT_PLATE, "plate", 1, "camera plate scale, x:y");
 }
 
-
 Camera::~Camera ()
 {
 	delete[] dataBuffer;
 	delete filter;
 }
 
-
-int
-Camera::willConnect (Rts2Address * in_addr)
+int Camera::willConnect (Rts2Address * in_addr)
 {
 	if (wheelDevice && in_addr->getType () == DEVICE_TYPE_FW
 		&& in_addr->isAddress (wheelDevice))
@@ -378,9 +358,7 @@ Camera::willConnect (Rts2Address * in_addr)
 	return Rts2ScriptDevice::willConnect (in_addr);
 }
 
-
-Rts2DevClient *
-Camera::createOtherType (Rts2Conn * conn, int other_device_type)
+Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -392,9 +370,7 @@ Camera::createOtherType (Rts2Conn * conn, int other_device_type)
 	return Rts2ScriptDevice::createOtherType (conn, other_device_type);
 }
 
-
-void
-Camera::checkQueChanges (int fakeState)
+void Camera::checkQueChanges (int fakeState)
 {
 	// do not check if we have qued exposures
 	if (quedExpNumber->getValueInteger () > 0)
@@ -421,8 +397,7 @@ Camera::checkQueChanges (int fakeState)
 	}
 }
 
-int
-Camera::killAll ()
+int Camera::killAll ()
 {
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
@@ -433,9 +408,7 @@ Camera::killAll ()
 	return Rts2ScriptDevice::killAll ();
 }
 
-
-int
-Camera::scriptEnds ()
+int Camera::scriptEnds ()
 {
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
@@ -443,18 +416,14 @@ Camera::scriptEnds ()
 	return Rts2ScriptDevice::scriptEnds ();
 }
 
-
-int
-Camera::info ()
+int Camera::info ()
 {
 	camFilterVal->setValueInteger (getFilterNum ());
 	camFocVal->setValueInteger (getFocPos ());
 	return Rts2ScriptDevice::info ();
 }
 
-
-int
-Camera::processOption (int in_opt)
+int Camera::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -492,9 +461,7 @@ Camera::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Camera::initChips ()
+int Camera::initChips ()
 {
 	int ret;
 	// init filter
@@ -510,9 +477,7 @@ Camera::initChips ()
 	return 0;
 }
 
-
-int
-Camera::sendImage (char *data, size_t dataSize)
+int Camera::sendImage (char *data, size_t dataSize)
 {
 	if (!exposureConn)
 		return -1;
@@ -523,33 +488,69 @@ Camera::sendImage (char *data, size_t dataSize)
 	return exposureConn->sendBinaryData (currentImageData, data, dataSize);
 }
 
-
-int
-Camera::sendReadoutData (char *data, size_t dataSize)
+int Camera::sendReadoutData (char *data, size_t dataSize)
 {
+	// calculated..
+	if (calculateStatistics->getValueBool () == true)
+	{
+		int totPix;
+		// update sum. min and max
+		switch (getDataType ())
+		{
+			case RTS2_DATA_BYTE:
+				totPix = updateStatistics ((int8_t *) data, dataSize);
+				break;
+			case RTS2_DATA_SHORT:
+				totPix = updateStatistics ((int16_t *) data, dataSize);
+				break;
+			case RTS2_DATA_LONG:
+				totPix = updateStatistics ((int16_t *) data, dataSize);
+				break;
+			case RTS2_DATA_LONGLONG:
+				totPix = updateStatistics ((int64_t *) data, dataSize);
+				break;
+			case RTS2_DATA_FLOAT:
+				totPix = updateStatistics ((float *) data, dataSize);
+				break;
+			case RTS2_DATA_DOUBLE:
+				totPix = updateStatistics ((double *) data, dataSize);
+				break;
+			case RTS2_DATA_SBYTE:
+				totPix = updateStatistics ((uint8_t *) data, dataSize);
+				break;
+			case RTS2_DATA_USHORT:
+				totPix = updateStatistics ((uint16_t *) data, dataSize);
+				break;
+			case RTS2_DATA_ULONG:
+				totPix = updateStatistics ((uint32_t *) data, dataSize);
+				break;
+		}
+		computedPix->setValueLong (computedPix->getValueLong () + totPix);
+		average->setValueDouble (sum->getValueDouble () / computedPix->getValueLong ());
+
+		sendValueAll (average);
+		sendValueAll (max);
+		sendValueAll (min);
+		sendValueAll (sum);
+		sendValueAll (computedPix);
+	}
 	if (exposureConn && currentImageData >= 0)
 		return exposureConn->sendBinaryData (currentImageData, data, dataSize);
 	return 0;
 }
 
-
-void
-Camera::addBinning2D (int bin_v, int bin_h)
+void Camera::addBinning2D (int bin_v, int bin_h)
 {
 	Binning2D *bin = new Binning2D (bin_v, bin_h);
 	binning->addSelVal (bin->getDescription ().c_str (), bin);
 }
 
-
-void
-Camera::initBinnings ()
+void Camera::initBinnings ()
 {
 	addBinning2D (1,1);
 }
 
-
-void
-Camera::addDataType (int in_type)
+void Camera::addDataType (int in_type)
 {
 	const struct
 	{
@@ -580,16 +581,12 @@ Camera::addDataType (int in_type)
 	exit (1);
 }
 
-
-void
-Camera::initDataTypes ()
+void Camera::initDataTypes ()
 {
 	addDataType (RTS2_DATA_USHORT);
 }
 
-
-int
-Camera::initValues ()
+int Camera::initValues ()
 {
 	// TODO init focuser - try to read focuser offsets & initial position from file
 	addConstValue ("focuser", focuserDevice);
@@ -608,9 +605,7 @@ Camera::initValues ()
 	return Rts2ScriptDevice::initValues ();
 }
 
-
-void
-Camera::checkExposures ()
+void Camera::checkExposures ()
 {
 	long ret;
 	if (getStateChip (0) & CAM_EXPOSING)
@@ -665,9 +660,7 @@ Camera::checkExposures ()
 	}
 }
 
-
-void
-Camera::checkReadouts ()
+void Camera::checkReadouts ()
 {
 	int ret;
 	if ((getStateChip (0) & CAM_MASK_READING) != CAM_READING)
@@ -691,23 +684,20 @@ Camera::checkReadouts ()
 	}
 }
 
-
-void
-Camera::afterReadout ()
+void Camera::afterReadout ()
 {
 	setTimeout (USEC_SEC);
 }
 
-
-int
-Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == exposure
 		|| old_value == quedExpNumber
 		|| old_value == expType
 		|| old_value == rotang
 		|| old_value == nightCoolTemp
-		|| old_value == binning)
+		|| old_value == binning
+		|| old_value == calculateStatistics)
 	{
 		return 0;
 	}
@@ -745,9 +735,7 @@ Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
-
-void
-Camera::valueChanged (Rts2Value *changed_value)
+void Camera::valueChanged (Rts2Value *changed_value)
 {
 	if (changed_value == binning)
 	{
@@ -756,9 +744,7 @@ Camera::valueChanged (Rts2Value *changed_value)
 	}
 }
 
-
-void
-Camera::deviceReady (Rts2Conn * conn)
+void Camera::deviceReady (Rts2Conn * conn)
 {
 	// if that's filter wheel
 	if (wheelDevice && !strcmp (conn->getName (), wheelDevice)
@@ -776,9 +762,7 @@ Camera::deviceReady (Rts2Conn * conn)
 	}
 }
 
-
-void
-Camera::postEvent (Rts2Event * event)
+void Camera::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -791,18 +775,14 @@ Camera::postEvent (Rts2Event * event)
 	Rts2ScriptDevice::postEvent (event);
 }
 
-
-int
-Camera::idle ()
+int Camera::idle ()
 {
 	checkExposures ();
 	checkReadouts ();
 	return Rts2ScriptDevice::idle ();
 }
 
-
-int
-Camera::changeMasterState (int new_state)
+int Camera::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -822,9 +802,7 @@ Camera::changeMasterState (int new_state)
 	return Rts2ScriptDevice::changeMasterState (new_state);
 }
 
-
-int
-Camera::camStartExposure ()
+int Camera::camStartExposure ()
 {
 	// check if we aren't blocked
 	if ((!expType || expType->getValueInteger () == 0)
@@ -844,9 +822,7 @@ Camera::camStartExposure ()
 	return camStartExposureWithoutCheck ();
 }
 
-
-int
-Camera::camStartExposureWithoutCheck ()
+int Camera::camStartExposureWithoutCheck ()
 {
 	int ret;
 
@@ -894,9 +870,7 @@ Camera::camStartExposureWithoutCheck ()
 	return 0;
 }
 
-
-int
-Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
+int Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 {
 	int ret;
 
@@ -942,18 +916,14 @@ Camera::camExpose (Rts2Conn * conn, int chipState, bool fromQue)
 	return ret;
 }
 
-
-long
-Camera::camWaitExpose ()
+long Camera::camWaitExpose ()
 {
 	int ret;
 	ret = isExposing ();
 	return (ret == 0 ? -2 : ret);
 }
 
-
-int
-Camera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
+int Camera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
 {
 	int ret;
 	ret = box (x, y, width, height);
@@ -963,9 +933,7 @@ Camera::camBox (Rts2Conn * conn, int x, int y, int width, int height)
 	return ret;
 }
 
-
-int
-Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
+int Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 {
 	int ret;
 	ret = center (in_h, in_w);
@@ -974,16 +942,12 @@ Camera::camCenter (Rts2Conn * conn, int in_h, int in_w)
 	return ret;
 }
 
-
-int
-Camera::readoutStart ()
+int Camera::readoutStart ()
 {
 	return sendFirstLine ();
 }
 
-
-int
-Camera::camReadout (Rts2Conn * conn)
+int Camera::camReadout (Rts2Conn * conn)
 {
 	// if we can do exposure, do it..
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
@@ -1019,9 +983,7 @@ Camera::camReadout (Rts2Conn * conn)
 	return -1;
 }
 
-
-int
-Camera::camStopRead (Rts2Conn * conn)
+int Camera::camStopRead (Rts2Conn * conn)
 {
 	int ret;
 	ret = camStopRead ();
@@ -1030,9 +992,7 @@ Camera::camStopRead (Rts2Conn * conn)
 	return ret;
 }
 
-
-int
-Camera::camFilter (int new_filter)
+int Camera::camFilter (int new_filter)
 {
 	int ret = -1;
 	if (wheelDevice)
@@ -1059,31 +1019,18 @@ Camera::camFilter (int new_filter)
 	return ret;
 }
 
-
-int
-Camera::getStateChip (int chip)
+int Camera::getStateChip (int chip)
 {
 	return (getState () & (CAM_MASK_CHIP << (chip * 4))) >> (0 * 4);
 }
 
-
-void
-Camera::maskStateChip (
-int chip_num,
-int chip_state_mask,
-int chip_new_state,
-int state_mask,
-int new_state,
-const char *description
-)
+void Camera::maskStateChip (int chip_num, int chip_state_mask, int chip_new_state, int state_mask, int new_state, const char *description)
 {
 	maskState (state_mask | (chip_state_mask << (4 * chip_num)),
 		new_state | (chip_new_state << (4 * chip_num)), description);
 }
 
-
-int
-Camera::getFilterNum ()
+int Camera::getFilterNum ()
 {
 	if (wheelDevice)
 	{
@@ -1100,9 +1047,7 @@ Camera::getFilterNum ()
 	return 0;
 }
 
-
-int
-Camera::setFocuser (int new_set)
+int Camera::setFocuser (int new_set)
 {
 	if (!focuserDevice)
 	{
@@ -1117,9 +1062,7 @@ Camera::setFocuser (int new_set)
 	return 0;
 }
 
-
-int
-Camera::stepFocuser (int step_count)
+int Camera::stepFocuser (int step_count)
 {
 	if (!focuserDevice)
 	{
@@ -1134,9 +1077,7 @@ Camera::stepFocuser (int step_count)
 	return 0;
 }
 
-
-int
-Camera::getFocPos ()
+int Camera::getFocPos ()
 {
 	if (!focuserDevice)
 		return -1;
@@ -1148,7 +1089,6 @@ Camera::getFocPos ()
 	return fm.value;
 }
 
-
 bool Camera::isIdle ()
 {
 	return ((getStateChip (0) &
@@ -1156,9 +1096,7 @@ bool Camera::isIdle ()
 		(CAM_NOEXPOSURE | CAM_NOTREADING));
 }
 
-
-int
-Camera::commandAuthorized (Rts2Conn * conn)
+int Camera::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{
@@ -1229,9 +1167,7 @@ Camera::commandAuthorized (Rts2Conn * conn)
 	return Rts2ScriptDevice::commandAuthorized (conn);
 }
 
-
-int
-Camera::maskQueValueBopState (int new_state, int valueQueCondition)
+int Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 {
 	if (valueQueCondition & CAM_EXPOSING)
 		new_state |= BOP_EXPOSURE;
@@ -1240,9 +1176,7 @@ Camera::maskQueValueBopState (int new_state, int valueQueCondition)
 	return new_state;
 }
 
-
-void
-Camera::setFullBopState (int new_state)
+void Camera::setFullBopState (int new_state)
 {
 	Rts2Device::setFullBopState (new_state);
 	if (!(new_state & BOP_EXPOSURE) 

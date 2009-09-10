@@ -143,74 +143,116 @@ digraph "Camera states" {
  */
 class Camera:public Rts2ScriptDevice
 {
-	private:
-		// comes from CameraChip
-		void initData ();
+	public:
+		virtual int deleteConnection (Rts2Conn * conn);
+		/**
+		 * If chip support frame transfer.
+		 *
+		 * @return false (default) if we don't support frame transfer, so
+		 * request for readout will be handled on-site, exposure will be
+		 * handed when readout ends
+		 */
+		virtual bool supportFrameTransfer ();
 
-		time_t readout_started;
+		// end of CameraChip
 
-		// connection which requries data to be send after end of exposure
-		Rts2Conn *exposureConn;
+		Camera (int argc, char **argv);
+		virtual ~ Camera (void);
 
-		// number of exposures camera takes
-		Rts2ValueLong *exposureNumber;
-		Rts2ValueBool *waitingForEmptyQue;
-		Rts2ValueBool *waitingForNotBop;
+		virtual int initChips ();
+		virtual int initValues ();
+		void checkExposures ();
+		void checkReadouts ();
 
-		char *focuserDevice;
-		char *wheelDevice;
+		virtual void deviceReady (Rts2Conn * conn);
 
-		int lastFilterNum;
+		virtual void postEvent (Rts2Event * event);
 
-		int currentImageData;
-								 // DARK of LIGHT frames
-		Rts2ValueFloat *exposure;
-		Rts2ValueInteger *flip;
-		bool defaultFlip;
+		virtual int changeMasterState (int new_state);
 
-		Rts2ValueDouble *xplate;
-		Rts2ValueDouble *yplate;
-		double defaultXplate;
-		double defaultYplate;
+		virtual int idle ();
 
-		int setPlate (const char *arg);
-		void setDefaultPlate (double x, double y);
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual int info ();
 
-		Rts2ValueRectangle *chipSize;
+		virtual int killAll ();
+		virtual int scriptEnds ();
 
-		int camStartExposure ();
-		int camStartExposureWithoutCheck ();
+		virtual long camWaitExpose ();
+		virtual int camStopRead ()
+		{
+			return endReadout ();
+		}
 
-		// when we call that function, we must be sure that either filter or wheelDevice != NULL
-		int camFilter (int new_filter);
+		/**
+		 * Sets camera cooling temperature.
+		 *
+		 * @param new_temp New cooling temperature.
+		 */
+		virtual int setCoolTemp (float new_temp)
+		{
+			return -1;
+		}
 
-		Rts2ValueSelection *camFilterVal;
-		Rts2ValueInteger *camFocVal;
-		Rts2ValueDouble *rotang;
 
-		int getStateChip (int chip);
+		/**
+		 * Called before night stars. Can be used to hook in preparing camera for night.
+		 */
+		virtual void beforeNight ()
+		{
+			if (nightCoolTemp && !isnan (nightCoolTemp->getValueFloat ()))
+				setCoolTemp (nightCoolTemp->getValueFloat ());
+		}
+		
+		/**
+		 * Called when night ends. Can be used to switch off cooling. etc..
+		 */
+		virtual void afterNight ()
+		{
+		}
 
-		// chip binning
-		Rts2ValueSelection *binning;
+		/**
+		 * Called when readout starts, on transition from EXPOSING to READOUT state.
+		 * Need to intiate readout area, setup camera for readout etc..
+		 *
+		 * @return -1 on error.
+		 */
+		virtual int readoutStart ();
 
-		// allowed chip data type
-		Rts2ValueSelection *dataType;
+		int camReadout (Rts2Conn * conn);
+		int camStopRead (Rts2Conn * conn);
 
-		// when chip exposure will end
-		Rts2ValueTime *exposureEnd;
+		virtual int getFilterNum ();
 
-		// set chipUsedSize size
-		int box (int in_x, int in_y, int in_width, int in_height);
+		// focuser functions
+		int setFocuser (int new_set);
+		int stepFocuser (int step_count);
+		int getFocPos ();
 
-		// callback functions from camera connection
-		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);
-		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
-		int camCenter (Rts2Conn * conn, int in_w, int in_h);
+		bool isIdle ();
 
-		int sendFirstLine ();
+		/**
+		 * Returns last filter number.
+		 * This function is used to return last filter number, which will be saved to
+		 * FITS file of the image. Problem is, that filter number can change during exposure.
+		 * So the filter number, on which camera was set at the begging, is saved, and added
+		 * to header of image data.
+		 *
+		 * @return Last filter number.
+		 */
+		int getLastFilterNum ()
+		{
+			return lastFilterNum;
+		}
 
-		// if true, send command OK after exposure is started
-		bool sendOkInExposure;
+		/**
+		 * Handles camera commands.
+		 */
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
+
+		virtual void setFullBopState (int new_state);
 
 	protected:
 		// comes from CameraChip
@@ -719,118 +761,115 @@ class Camera:public Rts2ScriptDevice
 			return expType->getValueInteger ();
 		}
 
-	public:
-		virtual int deleteConnection (Rts2Conn * conn);
-		/**
-		 * If chip support frame transfer.
-		 *
-		 * @return false (default) if we don't support frame transfer, so
-		 * request for readout will be handled on-site, exposure will be
-		 * handed when readout ends
-		 */
-		virtual bool supportFrameTransfer ();
+	private:
+		// comes from CameraChip
+		void initData ();
 
-		// end of CameraChip
+		time_t readout_started;
 
-		Camera (int argc, char **argv);
-		virtual ~ Camera (void);
+		// connection which requries data to be send after end of exposure
+		Rts2Conn *exposureConn;
 
-		virtual int initChips ();
-		virtual int initValues ();
-		void checkExposures ();
-		void checkReadouts ();
+		// number of exposures camera takes
+		Rts2ValueLong *exposureNumber;
+		Rts2ValueBool *waitingForEmptyQue;
+		Rts2ValueBool *waitingForNotBop;
 
-		virtual void deviceReady (Rts2Conn * conn);
+		char *focuserDevice;
+		char *wheelDevice;
 
-		virtual void postEvent (Rts2Event * event);
+		int lastFilterNum;
 
-		virtual int changeMasterState (int new_state);
+		int currentImageData;
 
-		virtual int idle ();
+		// whenewer statistics should be calculated
+		Rts2ValueBool *calculateStatistics;
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-		virtual int info ();
+		// image parameters
+		Rts2ValueDouble *average;
+		Rts2ValueDouble *min;
+		Rts2ValueDouble *max;
+		Rts2ValueDouble *sum;
 
-		virtual int killAll ();
-		virtual int scriptEnds ();
+		Rts2ValueLong *computedPix;
 
-		virtual long camWaitExpose ();
-		virtual int camStopRead ()
+		// update statistics
+		template <typename t> int updateStatistics (t *data, size_t dataSize)
 		{
-			return endReadout ();
+			long double tSum = 0;
+			double tMin = min->getValueDouble ();
+			double tMax = max->getValueDouble ();
+			int pixNum = 0;
+			t *tData = data;
+			while (((char *) tData) < ((char *) data) + dataSize)
+			{
+				t tD = *tData;
+				tSum += tD;
+				if (tD < tMin)
+					tMin = tD;
+				if (tD > tMax)
+				  	tMax = tD;
+				tData++;
+				pixNum++;
+			}
+			sum->setValueDouble (sum->getValueDouble () + tSum);
+			if (tMin < min->getValueDouble ())
+				min->setValueDouble (tMin);
+			if (tMax > max->getValueDouble ())
+				max->setValueDouble (tMax);
+			return pixNum;
 		}
 
-		/**
-		 * Sets camera cooling temperature.
-		 *
-		 * @param new_temp New cooling temperature.
-		 */
-		virtual int setCoolTemp (float new_temp)
-		{
-			return -1;
-		}
+								 // DARK of LIGHT frames
+		Rts2ValueFloat *exposure;
+		Rts2ValueInteger *flip;
+		bool defaultFlip;
 
+		Rts2ValueDouble *xplate;
+		Rts2ValueDouble *yplate;
+		double defaultXplate;
+		double defaultYplate;
 
-		/**
-		 * Called before night stars. Can be used to hook in preparing camera for night.
-		 */
-		virtual void beforeNight ()
-		{
-			if (nightCoolTemp && !isnan (nightCoolTemp->getValueFloat ()))
-				setCoolTemp (nightCoolTemp->getValueFloat ());
-		}
-		
-		/**
-		 * Called when night ends. Can be used to switch off cooling. etc..
-		 */
-		virtual void afterNight ()
-		{
-		}
+		int setPlate (const char *arg);
+		void setDefaultPlate (double x, double y);
 
-		/**
-		 * Called when readout starts, on transition from EXPOSING to READOUT state.
-		 * Need to intiate readout area, setup camera for readout etc..
-		 *
-		 * @return -1 on error.
-		 */
-		virtual int readoutStart ();
+		Rts2ValueRectangle *chipSize;
 
-		int camReadout (Rts2Conn * conn);
-		int camStopRead (Rts2Conn * conn);
+		int camStartExposure ();
+		int camStartExposureWithoutCheck ();
 
-		virtual int getFilterNum ();
+		// when we call that function, we must be sure that either filter or wheelDevice != NULL
+		int camFilter (int new_filter);
 
-		// focuser functions
-		int setFocuser (int new_set);
-		int stepFocuser (int step_count);
-		int getFocPos ();
+		Rts2ValueSelection *camFilterVal;
+		Rts2ValueInteger *camFocVal;
+		Rts2ValueDouble *rotang;
 
-		bool isIdle ();
+		int getStateChip (int chip);
 
-		/**
-		 * Returns last filter number.
-		 * This function is used to return last filter number, which will be saved to
-		 * FITS file of the image. Problem is, that filter number can change during exposure.
-		 * So the filter number, on which camera was set at the begging, is saved, and added
-		 * to header of image data.
-		 *
-		 * @return Last filter number.
-		 */
-		int getLastFilterNum ()
-		{
-			return lastFilterNum;
-		}
+		// chip binning
+		Rts2ValueSelection *binning;
 
-		/**
-		 * Handles camera commands.
-		 */
-		virtual int commandAuthorized (Rts2Conn * conn);
+		// allowed chip data type
+		Rts2ValueSelection *dataType;
 
-		virtual int maskQueValueBopState (int new_state, int valueQueCondition);
+		// when chip exposure will end
+		Rts2ValueTime *exposureEnd;
 
-		virtual void setFullBopState (int new_state);
+		// set chipUsedSize size
+		int box (int in_x, int in_y, int in_width, int in_height);
+
+		// callback functions from camera connection
+		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);
+		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
+		int camCenter (Rts2Conn * conn, int in_w, int in_h);
+
+		int sendFirstLine ();
+
+		// if true, send command OK after exposure is started
+		bool sendOkInExposure;
 };
 
-};
+}
 
 #endif							 /* !__RTS2_CAMERA_CPP__ */
