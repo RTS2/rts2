@@ -734,7 +734,13 @@ int Trencin::setTo (double set_ra, double set_dec)
 	int32_t u_ra;
 	int32_t u_dec;
 
-	setTarget (set_ra, set_dec);
+	struct ln_equ_posn pos;
+	pos.ra = set_ra;
+	pos.dec = set_dec;
+
+	applyCorrections (&pos, ln_get_julian_from_sys ());
+
+	setTarget (pos.ra, pos.dec);
 	sky2counts (u_ra, u_dec);
 
 	cycleRa->setValueInteger (u_ra / MAX_MOVE);
