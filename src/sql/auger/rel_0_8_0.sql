@@ -5,8 +5,8 @@ DROP TABLE auger;
 CREATE TABLE auger (
 	auger_t3id	integer PRIMARY KEY NOT NULL,
 	auger_date	timestamp NOT NULL,
-	ra		double NOT NULL,
-	dec		double NOT NULL,
+	ra		float8 NOT NULL,
+	dec		float8 NOT NULL,
 	-- now all fields from message..
 
 	eye		integer NOT NULL, -- FD eye Id
