@@ -20,7 +20,7 @@
 #ifndef __RTS2_EXECCLI__
 #define __RTS2_EXECCLI__
 
-#include "rts2script.h"
+#include "script.h"
 #include "rts2devscript.h"
 
 #include "../writers/rts2devcliimg.h"
@@ -151,15 +151,4 @@ class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 		virtual void moveFailed (int status);
 };
 
-class Rts2DevClientMirrorExec:public Rts2DevClientMirror
-{
-	protected:
-		virtual void mirrorA ();
-		virtual void mirrorB ();
-	public:
-		Rts2DevClientMirrorExec (Rts2Conn * in_connection);
-		virtual void postEvent (Rts2Event * event);
-
-		virtual void moveFailed (int status);
-};
 #endif							 /*! __RTS2_EXECCLI__ */

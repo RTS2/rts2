@@ -17,16 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2scriptguiding.h"
+#include "elementguiding.h"
 #include "rts2execcli.h"
 #include "../utils/rts2config.h"
 #include "../writers/rts2image.h"
 #include "../writers/rts2devclifoc.h"
 
-Rts2ScriptElementGuiding::Rts2ScriptElementGuiding (Rts2Script * in_script,
-float init_exposure,
-int in_endSignal):
-Rts2ScriptElement (in_script)
+using namespace rts2script;
+
+ElementGuiding::ElementGuiding (Script * in_script, float init_exposure, int in_endSignal):Element (in_script)
 {
 	expTime = init_exposure;
 	endSignal = in_endSignal;
@@ -49,15 +48,11 @@ Rts2ScriptElement (in_script)
 	Rts2Config::instance ()->getDouble ("guiding", "badchange", bad_change);
 }
 
-
-Rts2ScriptElementGuiding::~Rts2ScriptElementGuiding (void)
+ElementGuiding::~ElementGuiding (void)
 {
 }
 
-
-void
-Rts2ScriptElementGuiding::checkGuidingSign (double &last, double &mult,
-double act)
+void ElementGuiding::checkGuidingSign (double &last, double &mult, double act)
 {
 	// we are guiding in right direction, if sign changes
 	if ((last < 0 && act > 0) || (last > 0 && act < 0))
@@ -66,7 +61,7 @@ double act)
 		return;
 	}
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementGuiding::checkGuidingSign last: "
+		<< "ElementGuiding::checkGuidingSign last: "
 		<< last << " mult: " << mult << " act: " << act << " bad_change " <<
 		bad_change << sendLog;
 	// try to detect sign change
@@ -81,13 +76,11 @@ double act)
 		last = act;
 	}
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementGuiding::checkGuidingSign last: "
+		<< "ElementGuiding::checkGuidingSign last: "
 		<< last << " mult: " << mult << " act: " << act << sendLog;
 }
 
-
-void
-Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
+void ElementGuiding::postEvent (Rts2Event * event)
 {
 	Rts2ConnFocus *focConn;
 	Rts2Image *image;
@@ -106,8 +99,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 				if (ret)
 				{
 					logStream (MESSAGE_DEBUG)
-						<<
-						"Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA failed (numStars: "
+						<< "ElementGuiding::postEvent EVENT_GUIDING_DATA failed (numStars: "
 						<< image->sexResultNum << ")" << sendLog;
 					processingState = FAILED;
 				}
@@ -115,7 +107,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 				{
 					// guide..
 					logStream (MESSAGE_DEBUG)
-						<< "Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA "
+						<< "ElementGuiding::postEvent EVENT_GUIDING_DATA "
 						<< star_x << " " << star_y << sendLog;
 					ret =
 						image->getOffset (star_x, star_y, star_ra, star_dec,
@@ -123,8 +115,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 					if (ret)
 					{
 						logStream (MESSAGE_DEBUG)
-							<<
-							"Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA getOffset "
+							<< "ElementGuiding::postEvent EVENT_GUIDING_DATA getOffset "
 							<< ret << sendLog;
 						processingState = NEED_IMAGE;
 					}
@@ -132,8 +123,7 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 					{
 						GuidingParams *pars;
 						logStream (MESSAGE_DEBUG)
-							<<
-							"Rts2ScriptElementGuiding::postEvent EVENT_GUIDING_DATA offsets ra: "
+							<< "ElementGuiding::postEvent EVENT_GUIDING_DATA offsets ra: "
 							<< star_ra << " dec: " << star_dec << sendLog;
 						if (fabs (star_dec) > min_change)
 						{
@@ -165,14 +155,10 @@ Rts2ScriptElementGuiding::postEvent (Rts2Event * event)
 				postEvent (new Rts2Event (EVENT_QUE_IMAGE, (void *) image));
 			break;
 	}
-	Rts2ScriptElement::postEvent (event);
+	Element::postEvent (event);
 }
 
-
-int
-Rts2ScriptElementGuiding::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementGuiding::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret = endSignal;
 	if (endSignal == -1)
@@ -198,24 +184,22 @@ char new_device[DEVICE_NAME_SIZE])
 	}
 	// should not happen!
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementGuiding::nextCommand invalid state: "
+		<< "ElementGuiding::nextCommand invalid state: "
 		<< (int) processingState << sendLog;
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2ScriptElementGuiding::processImage (Rts2Image * image)
+int ElementGuiding::processImage (Rts2Image * image)
 {
 	int ret;
 	Rts2ConnFocus *processor;
 	logStream (MESSAGE_DEBUG) <<
-		"Rts2ScriptElementGuiding::processImage state: " << (int) processingState
+		"ElementGuiding::processImage state: " << (int) processingState
 		<< sendLog;
 	if (processingState != WAITING_IMAGE)
 	{
 		logStream (MESSAGE_ERROR)
-			<< "Rts2ScriptElementGuiding::processImage invalid processingState: "
+			<< "ElementGuiding::processImage invalid processingState: "
 			<< (int) processingState << sendLog;
 		processingState = FAILED;
 		return -1;
@@ -223,7 +207,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
 	obsId = image->getObsId ();
 	imgId = image->getImgId ();
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementGuiding::processImage defaultImgProccess: "
+		<< "ElementGuiding::processImage defaultImgProccess: "
 		<< defaultImgProccess << sendLog;
 	processor =
 		new Rts2ConnFocus (script->getMaster (), image,
@@ -248,9 +232,7 @@ Rts2ScriptElementGuiding::processImage (Rts2Image * image)
 	return 1;
 }
 
-
-int
-Rts2ScriptElementGuiding::waitForSignal (int in_sig)
+int ElementGuiding::waitForSignal (int in_sig)
 {
 	if (in_sig == endSignal)
 	{
@@ -260,9 +242,6 @@ Rts2ScriptElementGuiding::waitForSignal (int in_sig)
 	return 0;
 }
 
-
-void
-Rts2ScriptElementGuiding::cancelCommands ()
+void ElementGuiding::cancelCommands ()
 {
-
 }

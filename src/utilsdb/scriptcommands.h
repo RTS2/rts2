@@ -28,7 +28,6 @@
 
 #define COMMAND_EXPOSURE        "E"
 #define COMMAND_DARK            "D"
-#define COMMAND_FILTER          "F"
 #define COMMAND_FOCUSING        "O"
 #define COMMAND_CHANGE          "C"
 #define COMMAND_BOX             "BOX"
@@ -37,7 +36,6 @@
 #define COMMAND_WAIT            "W"
 #define COMMAND_ACQUIRE         "A"
 #define COMMAND_WAIT_ACQUIRE    "Aw"
-#define COMMAND_MIRROR_MOVE     "M"
 #define COMMAND_PHOTOMETER      "P"
 #define COMMAND_STAR_SEARCH     "star"
 #define COMMAND_BLOCK_WAITSIG   "block_waitsig"
@@ -45,9 +43,11 @@
 #define COMMAND_BLOCK_ACQ       "ifacq"
 #define COMMAND_BLOCK_ELSE      "else"
 #define COMMAND_BLOCK_FOR       "for"
-#define COMMAND_WAIT_SOD    "waitsod"
+#define COMMAND_WAIT_SOD        "waitsod"
 #define COMMAND_WAITFOR         "waitfor"
 #define COMMAND_SLEEP           "sleep"
+#define COMMAND_WHILE           "while"
+#define COMMAND_WAIT_FOR_IDLE   "wait_idle"
 
 // hex pattern
 #define COMMAND_HEX             "hex"

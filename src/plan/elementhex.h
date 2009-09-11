@@ -20,8 +20,11 @@
 #ifndef __RTS2_SEHEX__
 #define __RTS2_SEHEX__
 
-#include "rts2scriptblock.h"
+#include "elementblock.h"
 #include <libnova/libnova.h>
+
+namespace rts2script
+{
 
 /**
  * Represents path of the telescope in pattern movement.
@@ -77,16 +80,13 @@ class Rts2Path:public std::vector < struct ln_equ_posn *>
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2SEHex: public Rts2ScriptElementBlock
+class ElementHex: public ElementBlock
 {
-	private:
-		double ra_size;
-		double dec_size;
-		Rts2ScriptElementChange *changeEl;
-		double getRa ();
-		double getDec ();
+	public:
+		ElementHex (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size);
+		virtual ~ ElementHex (void);
 
-		char *deviceName;
+		virtual void beforeExecuting ();
 	protected:
 		Rts2Path path;
 
@@ -95,23 +95,28 @@ class Rts2SEHex: public Rts2ScriptElementBlock
 
 		virtual void constructPath ();
 		virtual void afterBlockEnd ();
-	public:
-		Rts2SEHex (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size);
-		virtual ~ Rts2SEHex (void);
+	private:
+		double ra_size;
+		double dec_size;
+		ElementChange *changeEl;
+		double getRa ();
+		double getDec ();
 
-		virtual void beforeExecuting ();
+		char *deviceName;
 };
 
 /**
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2SEFF: public Rts2SEHex
+class ElementFxF: public ElementHex
 {
 	protected:
 		virtual void constructPath ();
 	public:
-		Rts2SEFF (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size);
-		virtual ~ Rts2SEFF (void);
+		ElementFxF (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra_size, double in_dec_size);
+		virtual ~ ElementFxF (void);
 };
+
+}
 #endif							 /* !__RTS2_SEHEX__ */

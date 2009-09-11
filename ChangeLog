@@ -1,6 +1,9 @@
 0.7.5
 =====
 
+2009-09-11
+ * removed scripting M (mirror) and F (filter) commands, as they are replaced with value changes
+
 2009-09-05
  * Added after_exposure_cmd, after_exposure_cmd_timoout and after_exposure_cmd_arg parameters
 

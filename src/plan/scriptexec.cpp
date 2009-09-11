@@ -229,9 +229,6 @@ ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 			/*    case DEVICE_TYPE_PHOT:
 				  cli = new Rts2DevClientPhotExec (conn);
 				  break; */
-		case DEVICE_TYPE_MIRROR:
-			cli = new Rts2DevClientMirrorExec (conn);
-			break;
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
 			cli = new Rts2DevClientWriteImage (conn);

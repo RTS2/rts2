@@ -17,19 +17,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2scriptblock.h"
+#include "elementblock.h"
 
-Rts2ScriptElementBlock::Rts2ScriptElementBlock (Rts2Script * in_script):Rts2ScriptElement
-(in_script)
+using namespace rts2script;
+
+ElementBlock::ElementBlock (Script * in_script):Element (in_script)
 {
 	curr_element = blockElements.end ();
 	loopCount = 0;
 }
 
-
-Rts2ScriptElementBlock::~Rts2ScriptElementBlock (void)
+ElementBlock::~ElementBlock (void)
 {
-	std::list < Rts2ScriptElement * >::iterator iter;
+	std::list < Element * >::iterator iter;
 	for (iter = blockElements.begin (); iter != blockElements.end (); iter++)
 	{
 		delete (*iter);
@@ -37,9 +37,7 @@ Rts2ScriptElementBlock::~Rts2ScriptElementBlock (void)
 	blockElements.clear ();
 }
 
-
-int
-Rts2ScriptElementBlock::blockScriptRet (int ret)
+int ElementBlock::blockScriptRet (int ret)
 {
 	switch (ret)
 	{
@@ -61,28 +59,22 @@ Rts2ScriptElementBlock::blockScriptRet (int ret)
 	return ret | NEXT_COMMAND_MASK_BLOCK;
 }
 
-
-void
-Rts2ScriptElementBlock::afterBlockEnd ()
+void ElementBlock::afterBlockEnd ()
 {
 	loopCount = 0;
 	curr_element = blockElements.begin ();
 }
 
-
-void
-Rts2ScriptElementBlock::addElement (Rts2ScriptElement * element)
+void ElementBlock::addElement (Element * element)
 {
 	blockElements.push_back (element);
 	if (curr_element == blockElements.end ())
 		curr_element = blockElements.begin ();
 }
 
-
-void
-Rts2ScriptElementBlock::postEvent (Rts2Event * event)
+void ElementBlock::postEvent (Rts2Event * event)
 {
-	std::list < Rts2ScriptElement * >::iterator el_iter_sig;
+	std::list < Element * >::iterator el_iter_sig;
 	switch (event->getType ())
 	{
 		case EVENT_ACQUIRE_QUERY:
@@ -98,19 +90,15 @@ Rts2ScriptElementBlock::postEvent (Rts2Event * event)
 				(*curr_element)->postEvent (new Rts2Event (event));
 			break;
 	}
-	Rts2ScriptElement::postEvent (event);
+	Element::postEvent (event);
 }
 
-
-int
-Rts2ScriptElementBlock::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	while (1)
 	{
-		Rts2ScriptElement *ce = *curr_element;
+		Element *ce = *curr_element;
 		ret = ce->defnextCommand (client, new_command, new_device);
 		if (ret != NEXT_COMMAND_NEXT)
 			break;
@@ -126,11 +114,7 @@ char new_device[DEVICE_NAME_SIZE])
 	return blockScriptRet (ret);
 }
 
-
-int
-Rts2ScriptElementBlock::nextCommand (Rts2DevClientCamera * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	if (endLoop () || blockElements.empty ())
@@ -138,7 +122,7 @@ char new_device[DEVICE_NAME_SIZE])
 
 	while (1)
 	{
-		Rts2ScriptElement *ce = *curr_element;
+		Element *ce = *curr_element;
 		ret = ce->nextCommand (client, new_command, new_device);
 		if (ret != NEXT_COMMAND_NEXT)
 			break;
@@ -154,11 +138,7 @@ char new_device[DEVICE_NAME_SIZE])
 	return blockScriptRet (ret);
 }
 
-
-int
-Rts2ScriptElementBlock::nextCommand (Rts2DevClientPhot * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementBlock::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 	if (endLoop () || blockElements.empty ())
@@ -166,7 +146,7 @@ char new_device[DEVICE_NAME_SIZE])
 
 	while (1)
 	{
-		Rts2ScriptElement *ce = *curr_element;
+		Element *ce = *curr_element;
 		ret = ce->nextCommand (client, new_command, new_device);
 		if (ret != NEXT_COMMAND_NEXT)
 			break;
@@ -182,65 +162,51 @@ char new_device[DEVICE_NAME_SIZE])
 	return blockScriptRet (ret);
 }
 
-
-int
-Rts2ScriptElementBlock::processImage (Rts2Image * image)
+int ElementBlock::processImage (Rts2Image * image)
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->processImage (image);
 	return -1;
 }
 
-
-int
-Rts2ScriptElementBlock::waitForSignal (int in_sig)
+int ElementBlock::waitForSignal (int in_sig)
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->waitForSignal (in_sig);
 	return 0;
 }
 
-
-void
-Rts2ScriptElementBlock::cancelCommands ()
+void ElementBlock::cancelCommands ()
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->cancelCommands ();
 }
 
-
-void
-Rts2ScriptElementBlock::beforeExecuting ()
+void ElementBlock::beforeExecuting ()
 {
-	Rts2ScriptElement::beforeExecuting ();
-	std::list < Rts2ScriptElement * >::iterator iter;
+	Element::beforeExecuting ();
+	std::list < Element * >::iterator iter;
 	for (iter = blockElements.begin (); iter != blockElements.end (); iter++)
 	{
 		(*iter)->beforeExecuting ();
 	}
 }
 
-
-int
-Rts2ScriptElementBlock::getStartPos ()
+int ElementBlock::getStartPos ()
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->getStartPos ();
-	return Rts2ScriptElement::getStartPos ();
+	return Element::getStartPos ();
 }
 
-
-int
-Rts2ScriptElementBlock::getLen ()
+int ElementBlock::getLen ()
 {
 	if (curr_element != blockElements.end ())
 		return (*curr_element)->getLen ();
-	return Rts2ScriptElement::getLen ();
+	return Element::getLen ();
 }
 
-
-int
-Rts2ScriptElementBlock::idleCall ()
+int ElementBlock::idleCall ()
 {
 	if (curr_element != blockElements.end ())
 	{
@@ -258,24 +224,22 @@ Rts2ScriptElementBlock::idleCall ()
 		// trigger nextCommand call, which will call nextCommand, which will execute command from block
 		return NEXT_COMMAND_NEXT;
 	}
-	return Rts2ScriptElement::idleCall ();
+	return Element::idleCall ();
 }
 
-
-Rts2SEBSignalEnd::Rts2SEBSignalEnd (Rts2Script * in_script, int end_sig_num):
-Rts2ScriptElementBlock (in_script)
+ElementSignalEnd::ElementSignalEnd (Script * in_script, int end_sig_num):ElementBlock (in_script)
 {
 	sig_num = end_sig_num;
 }
 
 
-Rts2SEBSignalEnd::~Rts2SEBSignalEnd (void)
+ElementSignalEnd::~ElementSignalEnd (void)
 {
 }
 
 
 int
-Rts2SEBSignalEnd::waitForSignal (int in_sig)
+ElementSignalEnd::waitForSignal (int in_sig)
 {
 	// we get our signall..
 	if (in_sig == sig_num)
@@ -283,41 +247,33 @@ Rts2SEBSignalEnd::waitForSignal (int in_sig)
 		sig_num = -1;
 		return 1;
 	}
-	return Rts2ScriptElementBlock::waitForSignal (in_sig);
+	return ElementBlock::waitForSignal (in_sig);
 }
 
 
-Rts2SEBAcquired::Rts2SEBAcquired (Rts2Script * in_script, int in_tar_id):Rts2ScriptElementBlock
-(in_script)
+ElementAcquired::ElementAcquired (Script * in_script, int in_tar_id):ElementBlock (in_script)
 {
 	elseBlock = NULL;
 	tar_id = in_tar_id;
 	state = NOT_CALLED;
 }
 
-
-Rts2SEBAcquired::~Rts2SEBAcquired (void)
+ElementAcquired::~ElementAcquired (void)
 {
 	delete elseBlock;
 }
 
-
-bool Rts2SEBAcquired::endLoop ()
+bool ElementAcquired::endLoop ()
 {
 	return (getLoopCount () != 0);
 }
 
-
-void
-Rts2SEBAcquired::checkState ()
+void ElementAcquired::checkState ()
 {
 	if (state == NOT_CALLED)
 	{
 		int acquireState = 0;
-		script->getMaster ()->
-			postEvent (new
-			Rts2Event (EVENT_GET_ACQUIRE_STATE,
-			(void *) &acquireState));
+		script->getMaster ()->postEvent (new Rts2Event (EVENT_GET_ACQUIRE_STATE, (void *) &acquireState));
 		if (acquireState == 1)
 			state = ACQ_OK;
 		else
@@ -325,14 +281,12 @@ Rts2SEBAcquired::checkState ()
 	}
 }
 
-
-void
-Rts2SEBAcquired::postEvent (Rts2Event * event)
+void ElementAcquired::postEvent (Rts2Event * event)
 {
 	switch (state)
 	{
 		case ACQ_OK:
-			Rts2ScriptElementBlock::postEvent (event);
+			ElementBlock::postEvent (event);
 			break;
 		case ACQ_FAILED:
 			if (elseBlock)
@@ -341,96 +295,75 @@ Rts2SEBAcquired::postEvent (Rts2Event * event)
 				break;
 			}
 		case NOT_CALLED:
-			Rts2ScriptElement::postEvent (event);
+			Element::postEvent (event);
 			break;
 	}
 }
 
-
-int
-Rts2SEBAcquired::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
-		return Rts2ScriptElementBlock::defnextCommand (client, new_command,
-			new_device);
+		return ElementBlock::defnextCommand (client, new_command, new_device);
 	if (elseBlock)
 		return elseBlock->defnextCommand (client, new_command, new_device);
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2SEBAcquired::nextCommand (Rts2DevClientCamera * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
-		return Rts2ScriptElementBlock::nextCommand (client, new_command,
-			new_device);
+		return ElementBlock::nextCommand (client, new_command, new_device);
 	if (elseBlock)
 		return elseBlock->defnextCommand (client, new_command, new_device);
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2SEBAcquired::nextCommand (Rts2DevClientPhot * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementAcquired::nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	checkState ();
 	if (state == ACQ_OK)
-		return Rts2ScriptElementBlock::nextCommand (client, new_command,
-			new_device);
+		return ElementBlock::nextCommand (client, new_command, new_device);
 	if (elseBlock)
 		return elseBlock->defnextCommand (client, new_command, new_device);
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2SEBAcquired::processImage (Rts2Image * image)
+int ElementAcquired::processImage (Rts2Image * image)
 {
 	switch (state)
 	{
 		case ACQ_OK:
-			return Rts2ScriptElementBlock::processImage (image);
+			return ElementBlock::processImage (image);
 		case ACQ_FAILED:
 			if (elseBlock)
 				return elseBlock->processImage (image);
 		default:
-			return Rts2ScriptElement::processImage (image);
+			return Element::processImage (image);
 	}
 }
 
-
-int
-Rts2SEBAcquired::waitForSignal (int in_sig)
+int ElementAcquired::waitForSignal (int in_sig)
 {
 	switch (state)
 	{
 		case ACQ_OK:
-			return Rts2ScriptElementBlock::waitForSignal (in_sig);
+			return ElementBlock::waitForSignal (in_sig);
 		case ACQ_FAILED:
 			if (elseBlock)
 				return elseBlock->waitForSignal (in_sig);
 		default:
-			return Rts2ScriptElement::waitForSignal (in_sig);
+			return Element::waitForSignal (in_sig);
 	}
 }
 
-
-void
-Rts2SEBAcquired::cancelCommands ()
+void ElementAcquired::cancelCommands ()
 {
 	switch (state)
 	{
 		case ACQ_OK:
-			Rts2ScriptElementBlock::cancelCommands ();
+			ElementBlock::cancelCommands ();
 			break;
 		case ACQ_FAILED:
 			if (elseBlock)
@@ -439,31 +372,26 @@ Rts2SEBAcquired::cancelCommands ()
 				break;
 			}
 		case NOT_CALLED:
-			Rts2ScriptElement::cancelCommands ();
+			Element::cancelCommands ();
 			break;
 	}
 }
 
-
-void
-Rts2SEBAcquired::addElseElement (Rts2ScriptElement * element)
+void ElementAcquired::addElseElement (Element * element)
 {
 	if (!elseBlock)
 	{
-		elseBlock = new Rts2SEBElse (script);
+		elseBlock = new ElementElse (script);
 	}
 	elseBlock->addElement (element);
 }
 
-
-bool Rts2SEBElse::endLoop ()
+bool ElementElse::endLoop ()
 {
 	return (getLoopCount () != 0);
 }
 
-
-int
-Rts2WhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	Rts2Value *val = client->getConnection ()->getValue ("que_exp_num");
 
@@ -473,7 +401,7 @@ Rts2WhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** new_comm
 
 	while (1)
 	{
-		Rts2ScriptElement *ce = *curr_element;
+		Element *ce = *curr_element;
 		ret = ce->nextCommand (client, new_command, new_device);
 		if (ret == 0 && curr_element == blockElements.begin ())
 		{

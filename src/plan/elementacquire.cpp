@@ -18,19 +18,15 @@
  */
 
 #include "connimgprocess.h"
-#include "rts2scriptelementacquire.h"
+#include "elementacquire.h"
 
 #include "../writers/rts2devclifoc.h"
 #include "../utils/rts2config.h"
 
 using namespace rts2plan;
+using namespace rts2script;
 
-Rts2ScriptElementAcquire::Rts2ScriptElementAcquire (Rts2Script * in_script,
-double in_precision,
-float in_expTime,
-struct ln_equ_posn
-*in_center_pos):
-Rts2ScriptElement (in_script)
+ElementAcquire::ElementAcquire (Script * in_script, double in_precision, float in_expTime, struct ln_equ_posn *in_center_pos):Element (in_script)
 {
 	reqPrecision = in_precision;
 	lastPrecision = nan ("f");
@@ -45,9 +41,7 @@ Rts2ScriptElement (in_script)
 	center_pos.dec = in_center_pos->dec;
 }
 
-
-void
-Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
+void ElementAcquire::postEvent (Rts2Event * event)
 {
 	Rts2Image *image;
 	AcquireQuery *ac;
@@ -69,7 +63,7 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 				#ifdef DEBUG_EXTRA
 					logStream (MESSAGE_DEBUG)
 						<<
-						"Rts2ScriptElementAcquire::postEvent seting PRECISION_OK on "
+						"ElementAcquire::postEvent seting PRECISION_OK on "
 						<< img_prec << " <= " << reqPrecision << " obsId " << obsId <<
 						" imgId " << imgId << sendLog;
 				#endif
@@ -102,14 +96,10 @@ Rts2ScriptElementAcquire::postEvent (Rts2Event * event)
 			ac->count++;
 			break;
 	}
-	Rts2ScriptElement::postEvent (event);
+	Element::postEvent (event);
 }
 
-
-int
-Rts2ScriptElementAcquire::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementAcquire::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	// this code have to coordinate efforts to reach desired target with given precission
 	// based on internal state, it have to take exposure, assure that image will be processed,
@@ -133,7 +123,7 @@ char new_device[DEVICE_NAME_SIZE])
 			getDevice (new_device);
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
-				"Rts2ScriptElementAcquire::nextCommand WAITING_IMAGE this " << this <<
+				"ElementAcquire::nextCommand WAITING_IMAGE this " << this <<
 				sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			processingState = WAITING_IMAGE;
@@ -146,7 +136,7 @@ char new_device[DEVICE_NAME_SIZE])
 		case PRECISION_OK:
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG)
-				<< "Rts2ScriptElementAcquire::nextCommand PRECISION_OK" << sendLog;
+				<< "ElementAcquire::nextCommand PRECISION_OK" << sendLog;
 		#endif
 			return NEXT_COMMAND_PRECISION_OK;
 		case PRECISION_BAD:
@@ -158,14 +148,12 @@ char new_device[DEVICE_NAME_SIZE])
 	}
 	// that should not happen!
 	logStream (MESSAGE_ERROR)
-		<< "Rts2ScriptElementAcquire::nextCommand unexpected processing state "
+		<< "ElementAcquire::nextCommand unexpected processing state "
 		<< (int) processingState << sendLog;
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2ScriptElementAcquire::processImage (Rts2Image * image)
+int ElementAcquire::processImage (Rts2Image * image)
 {
 	int ret;
 	ConnImgProcess *processor;
@@ -173,7 +161,7 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 	if (processingState != WAITING_IMAGE || !image->getIsAcquiring ())
 	{
 		logStream (MESSAGE_ERROR)
-			<< "Rts2ScriptElementAcquire::processImage invalid processingState: "
+			<< "ElementAcquire::processImage invalid processingState: "
 			<< (int) processingState << " isAcquiring: " << image->
 			getIsAcquiring () << " this " << this << sendLog;
 		return -1;
@@ -202,27 +190,12 @@ Rts2ScriptElementAcquire::processImage (Rts2Image * image)
 	return 0;
 }
 
-
-void
-Rts2ScriptElementAcquire::cancelCommands ()
+void ElementAcquire::cancelCommands ()
 {
 	processingState = FAILED;
 }
 
-
-Rts2ScriptElementAcquireStar::Rts2ScriptElementAcquireStar (Rts2Script *
-in_script,
-int in_maxRetries,
-double
-in_precision,
-float in_expTime,
-double
-in_spiral_scale_ra,
-double
-in_spiral_scale_dec,
-struct ln_equ_posn
-*in_center_pos):
-Rts2ScriptElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
+ElementAcquireStar::ElementAcquireStar (Script * in_script, int in_maxRetries, double in_precision, float in_expTime, double in_spiral_scale_ra, double in_spiral_scale_dec, struct ln_equ_posn *in_center_pos):ElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
 {
 	maxRetries = in_maxRetries;
 	retries = 0;
@@ -238,15 +211,12 @@ Rts2ScriptElementAcquire (in_script, in_precision, in_expTime, in_center_pos)
 	spiral = new Rts2Spiral ();
 }
 
-
-Rts2ScriptElementAcquireStar::~Rts2ScriptElementAcquireStar (void)
+ElementAcquireStar::~ElementAcquireStar (void)
 {
 	delete spiral;
 }
 
-
-void
-Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
+void ElementAcquireStar::postEvent (Rts2Event * event)
 {
 	Rts2ConnFocus *focConn;
 	Rts2Image *image;
@@ -267,7 +237,7 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 					case -1:
 						logStream (MESSAGE_DEBUG)
 							<<
-							"Rts2ScriptElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: "
+							"ElementAcquireStar::postEvent EVENT_STAR_DATA failed (numStars: "
 							<< image->sexResultNum << ")" << sendLog;
 						retries++;
 						if (retries >= maxRetries)
@@ -293,13 +263,13 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 						break;
 					case 0:
 						logStream (MESSAGE_DEBUG)
-							<< "Rts2ScriptElementAcquireStar::offsets ra: "
+							<< "ElementAcquireStar::offsets ra: "
 							<< offset.ra << " dec: " << offset.dec << " OK" << sendLog;
 						processingState = PRECISION_OK;
 						break;
 					case 1:
 						logStream (MESSAGE_DEBUG)
-							<< "Rts2ScriptElementAcquireStar::offsets ra: "
+							<< "ElementAcquireStar::offsets ra: "
 							<< offset.ra << " dec: " << offset.
 							dec << " failed" << sendLog;
 						retries++;
@@ -319,12 +289,10 @@ Rts2ScriptElementAcquireStar::postEvent (Rts2Event * event)
 			}
 			break;
 	}
-	Rts2ScriptElementAcquire::postEvent (event);
+	ElementAcquire::postEvent (event);
 }
 
-
-int
-Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
+int ElementAcquireStar::processImage (Rts2Image * image)
 {
 	int ret;
 	Rts2ConnFocus *processor;
@@ -332,7 +300,7 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
 	{
 		logStream (MESSAGE_ERROR)
 			<<
-			"Rts2ScriptElementAcquireStar::processImage invalid processingState: "
+			"ElementAcquireStar::processImage invalid processingState: "
 			<< (int) processingState << sendLog;
 		processingState = FAILED;
 		return -1;
@@ -361,10 +329,7 @@ Rts2ScriptElementAcquireStar::processImage (Rts2Image * image)
 	}
 }
 
-
-int
-Rts2ScriptElementAcquireStar::getSource (Rts2Image * image, double &ra_offset,
-double &dec_offset)
+int ElementAcquireStar::getSource (Rts2Image * image, double &ra_offset, double &dec_offset)
 {
 	int ret;
 	double off_x, off_y;
@@ -387,22 +352,15 @@ double &dec_offset)
 	return 1;
 }
 
-
-Rts2ScriptElementAcquireHam::Rts2ScriptElementAcquireHam (Rts2Script * in_script, int in_maxRetries, float in_expTime, struct ln_equ_posn * in_center_pos):Rts2ScriptElementAcquireStar (in_script, in_maxRetries, 0.05, in_expTime, 0.7,
-0.3,
-in_center_pos)
+ElementAcquireHam::ElementAcquireHam (Script * in_script, int in_maxRetries, float in_expTime, struct ln_equ_posn * in_center_pos):ElementAcquireStar (in_script, in_maxRetries, 0.05, in_expTime, 0.7, 0.3, in_center_pos)
 {
 }
 
-
-Rts2ScriptElementAcquireHam::~Rts2ScriptElementAcquireHam (void)
+ElementAcquireHam::~ElementAcquireHam (void)
 {
 }
 
-
-int
-Rts2ScriptElementAcquireHam::getSource (Rts2Image * image, double &ra_off,
-double &dec_off)
+int ElementAcquireHam::getSource (Rts2Image * image, double &ra_off, double &dec_off)
 {
 	double ham_x, ham_y;
 	double sep;
@@ -412,13 +370,13 @@ double &dec_off)
 		return -1;				 // continue HAM search..
 	// change fixed offset
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementAcquireHam::getSource " << ham_x << " " << ham_y <<
+		<< "ElementAcquireHam::getSource " << ham_x << " " << ham_y <<
 		sendLog;
 	ret = image->getOffset (ham_x, ham_y, ra_off, dec_off, sep);
 	if (ret)
 		return -1;
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementAcquireHam::offsets ra: " << ra_off << " dec: " <<
+		<< "ElementAcquireHam::offsets ra: " << ra_off << " dec: " <<
 		dec_off << sendLog;
 	if (sep < reqPrecision)
 		return 0;

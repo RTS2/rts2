@@ -25,7 +25,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
 #include "../utils/libnova_cpp.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include <iostream>
 #include <iomanip>
@@ -306,7 +306,7 @@ TargetInfo::printTargetInfo ()
 				cout << "Script for camera " << cam_name << ":'" << script_buf <<
 				"' ret (" << ret << ")" << std::endl;
 			// try to parse it..
-			Rts2Script script = Rts2Script (NULL);
+			rts2script::Script script = rts2script::Script (NULL);
 			script.setTarget (cam_name, target);
 			failedCount = script.getFaultLocation ();
 			if (failedCount != -1)

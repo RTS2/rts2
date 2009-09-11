@@ -17,19 +17,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2script.h"
-#include "rts2setarget.h"
-#include "rts2scriptblock.h"
-#include "rts2scriptguiding.h"
-#include "rts2sehex.h"
-#include "rts2swaitfor.h"
+#include "script.h"
+#include "elementtarget.h"
+#include "elementblock.h"
+#include "elementguiding.h"
+#include "elementhex.h"
+#include "elementwaitfor.h"
 #include "../utilsdb/scriptcommands.h"
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
 
+using namespace rts2script;
+
 // test if next element is one that is given
-bool Rts2Script::isNext (const char *element)
+bool Script::isNext (const char *element)
 {
 	// skip spaces..
 	size_t el_len = strlen (element);
@@ -49,9 +51,7 @@ bool Rts2Script::isNext (const char *element)
 	return false;
 }
 
-
-char *
-Rts2Script::nextElement ()
+char *Script::nextElement ()
 {
 	char *elementStart;
 	while (isspace (*cmdBufTop))
@@ -67,9 +67,7 @@ Rts2Script::nextElement ()
 	return elementStart;
 }
 
-
-int
-Rts2Script::getNextParamString (char **val)
+int Script::getNextParamString (char **val)
 {
 	*val = nextElement ();
 	if (!*val)
@@ -77,9 +75,7 @@ Rts2Script::getNextParamString (char **val)
 	return 0;
 }
 
-
-int
-Rts2Script::getNextParamFloat (float *val)
+int Script::getNextParamFloat (float *val)
 {
 	char *el;
 	el = nextElement ();
@@ -89,9 +85,7 @@ Rts2Script::getNextParamFloat (float *val)
 	return 0;
 }
 
-
-int
-Rts2Script::getNextParamDouble (double *val)
+int Script::getNextParamDouble (double *val)
 {
 	char *el;
 	el = nextElement ();
@@ -101,9 +95,7 @@ Rts2Script::getNextParamDouble (double *val)
 	return 0;
 }
 
-
-int
-Rts2Script::getNextParamInteger (int *val)
+int Script::getNextParamInteger (int *val)
 {
 	char *el;
 	el = nextElement ();
@@ -113,8 +105,7 @@ Rts2Script::getNextParamInteger (int *val)
 	return 0;
 }
 
-
-Rts2Script::Rts2Script (Rts2Block * in_master)
+Script::Script (Rts2Block * in_master)
 :Rts2Object ()
 {
 	master = in_master;
@@ -123,14 +114,13 @@ Rts2Script::Rts2Script (Rts2Block * in_master)
 	cmdBuf = NULL;
 }
 
-
-Rts2Script::~Rts2Script (void)
+Script::~Script (void)
 {
 	// all operations with elements list should be ignored
 	executedCount = -1;
 	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
 	{
-		Rts2ScriptElement *el;
+		Element *el;
 		el = *el_iter;
 		delete el;
 	}
@@ -138,11 +128,9 @@ Rts2Script::~Rts2Script (void)
 	delete[] cmdBuf;
 }
 
-
-int
-Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
+int Script::setTarget (const char *cam_name, Rts2Target * target)
 {
-	Rts2ScriptElement *element;
+	Element *element;
 	std::string scriptText;
 	struct ln_equ_posn target_pos;
 
@@ -202,7 +190,7 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 		// add comment if there was one
 		if (comment)
 		{
-			element = new Rts2ScriptElementComment (this, comment, commentNumber);
+			element = new ElementComment (this, comment, commentNumber);
 			std::ostringstream ws;
 			ws << "#" << commentNumber << " ";
 			if (wholeScript.length () > 0)
@@ -221,7 +209,7 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 	} while (ret == 1);
 
 	executedCount = 0;
-	currScriptElement = NULL;
+	currElement = NULL;
 	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
 	{
 		element = *el_iter;
@@ -231,12 +219,10 @@ Rts2Script::setTarget (const char *cam_name, Rts2Target * target)
 	return 0;
 }
 
-
-void
-Rts2Script::postEvent (Rts2Event * event)
+void Script::postEvent (Rts2Event * event)
 {
-	std::list < Rts2ScriptElement * >::iterator el_iter_sig;
-	Rts2ScriptElement *el;
+	std::list < Element * >::iterator el_iter_sig;
+	Element *el;
 	int ret;
 	switch (event->getType ())
 	{
@@ -271,9 +257,7 @@ Rts2Script::postEvent (Rts2Event * event)
 	Rts2Object::postEvent (event);
 }
 
-
-Rts2ScriptElement *
-Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
+Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 {
 	char *devSep;
 	char new_device[DEVICE_NAME_SIZE];
@@ -309,7 +293,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		ret = getNextParamFloat (&exp_time);
 		if (ret)
 			return NULL;
-		return new Rts2ScriptElementExpose (this, exp_time);
+		return new ElementExpose (this, exp_time);
 	}
 	else if (!strcmp (commandStart, COMMAND_DARK))
 	{
@@ -317,15 +301,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		ret = getNextParamFloat (&exp_time);
 		if (ret)
 			return NULL;
-		return new Rts2ScriptElementDark (this, exp_time);
-	}
-	else if (!strcmp (commandStart, COMMAND_FILTER))
-	{
-		int filter;
-		ret = getNextParamInteger (&filter);
-		if (ret)
-			return NULL;
-		return new Rts2ScriptElementFilter (this, filter);
+		return new ElementDark (this, exp_time);
 	}
 	else if (!strcmp (commandStart, COMMAND_BOX))
 	{
@@ -334,14 +310,14 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			|| getNextParamInteger (&y)
 			|| getNextParamInteger (&w) || getNextParamInteger (&h))
 			return NULL;
-		return new Rts2ScriptElementBox (this, x, y, w, h);
+		return new ElementBox (this, x, y, w, h);
 	}
 	else if (!strcmp (commandStart, COMMAND_CENTER))
 	{
 		int w, h;
 		if (getNextParamInteger (&w) || getNextParamInteger (&h))
 			return NULL;
-		return new Rts2ScriptElementCenter (this, w, h);
+		return new ElementCenter (this, w, h);
 	}
 	else if (!strcmp (commandStart, COMMAND_CHANGE))
 	{
@@ -349,23 +325,16 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		double dec;
 		if (getNextParamDouble (&ra) || getNextParamDouble (&dec))
 			return NULL;
-		return new Rts2ScriptElementChange (this, new_device, ra, dec);
+		return new ElementChange (this, new_device, ra, dec);
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT))
 	{
-		return new Rts2ScriptElementWait (this);
+		return new ElementWait (this);
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT_ACQUIRE))
 	{
-		return new Rts2ScriptElementWaitAcquire (this,
+		return new ElementWaitAcquire (this,
 			target->getObsTargetID ());
-	}
-	else if (!strcmp (commandStart, COMMAND_MIRROR_MOVE))
-	{
-		int mirror_pos;
-		if (getNextParamInteger (&mirror_pos))
-			return NULL;
-		return new Rts2ScriptElementMirror (this, new_device, mirror_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_PHOTOMETER))
 	{
@@ -375,14 +344,14 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamInteger (&filter) || getNextParamFloat (&exposure)
 			|| getNextParamInteger (&count))
 			return NULL;
-		return new Rts2ScriptElementPhotometer (this, filter, exposure, count);
+		return new ElementPhotometer (this, filter, exposure, count);
 	}
 	else if (!strcmp (commandStart, COMMAND_SEND_SIGNAL))
 	{
 		int signalNum;
 		if (getNextParamInteger (&signalNum))
 			return NULL;
-		return new Rts2ScriptElementSendSignal (this, signalNum);
+		return new ElementSendSignal (this, signalNum);
 	}
 	else if (!strcmp (commandStart, COMMAND_WAIT_SIGNAL))
 	{
@@ -391,7 +360,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			return NULL;
 		if (signalNum <= 0)
 			return NULL;
-		return new Rts2ScriptElementWaitSignal (this, signalNum);
+		return new ElementWaitSignal (this, signalNum);
 	}
 	#ifdef HAVE_PGSQL
 	else if (!strcmp (commandStart, COMMAND_ACQUIRE))
@@ -402,8 +371,8 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 			return NULL;
 		// target is already acquired
 		if (target->isAcquired ())
-			return new Rts2ScriptElement (this);
-		return new Rts2ScriptElementAcquire (this, precision, expTime,
+			return new Element (this);
+		return new ElementAcquire (this, precision, expTime,
 			target_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_HAM))
@@ -412,7 +381,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		float exposure;
 		if (getNextParamInteger (&repNumber) || getNextParamFloat (&exposure))
 			return NULL;
-		return new Rts2ScriptElementAcquireHam (this, repNumber, exposure,
+		return new ElementAcquireHam (this, repNumber, exposure,
 			target_pos);
 	}
 	else if (!strcmp (commandStart, COMMAND_STAR_SEARCH))
@@ -424,7 +393,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamInteger (&repNumber) || getNextParamDouble (&precision)
 			|| getNextParamFloat (&exposure) || getNextParamDouble (&scale))
 			return NULL;
-		return new Rts2ScriptElementAcquireStar (this, repNumber, precision,
+		return new ElementAcquireStar (this, repNumber, precision,
 			exposure, scale, scale,
 			target_pos);
 	}
@@ -433,8 +402,8 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	{
 		int waitSig;
 		char *el;
-		Rts2ScriptElementBlock *blockEl;
-		Rts2ScriptElement *newElement;
+		ElementBlock *blockEl;
+		Element *newElement;
 		if (getNextParamInteger (&waitSig))
 			return NULL;
 		// test for block start..
@@ -442,7 +411,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		blockEl = new Rts2SEBSignalEnd (this, waitSig);
+		blockEl = new ElementSignalEnd (this, waitSig);
 		// parse block..
 		while (1)
 		{
@@ -459,17 +428,17 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	else if (!strcmp (commandStart, COMMAND_BLOCK_ACQ))
 	{
 		char *el;
-		Rts2ScriptElement *newElement;
-		Rts2SEBAcquired *acqIfEl;
+		Element *newElement;
+		ElementAcquired *acqIfEl;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
 		if (target)
-			acqIfEl = new Rts2SEBAcquired (this, target->getObsTargetID ());
+			acqIfEl = new ElementAcquired (this, target->getObsTargetID ());
 		else
-			acqIfEl = new Rts2SEBAcquired (this, 1);
+			acqIfEl = new ElementAcquired (this, 1);
 		// parse block..
 		while (1)
 		{
@@ -512,14 +481,14 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamFloat (&init_exposure)
 			|| getNextParamInteger (&end_signal))
 			return NULL;
-		return new Rts2ScriptElementGuiding (this, init_exposure, end_signal);
+		return new ElementGuiding (this, init_exposure, end_signal);
 	}
 	else if (!strcmp (commandStart, COMMAND_BLOCK_FOR))
 	{
 		char *el;
 		int max;
-		Rts2ScriptElement *newElement;
-		Rts2SEBFor *forEl;
+		Element *newElement;
+		ElementFor *forEl;
 		// test for block start..
 		if (getNextParamInteger (&max))
 			return NULL;
@@ -527,7 +496,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		forEl = new Rts2SEBFor (this, max);
+		forEl = new ElementFor (this, max);
 		// parse block..
 		while (1)
 		{
@@ -544,8 +513,8 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	{
 		char *el;
 		int endSod;
-		Rts2ScriptElement *newElement;
-		Rts2WhileSod *forEl;
+		Element *newElement;
+		ElementWhileSod *forEl;
 		// test for block start..
 		if (getNextParamInteger (&endSod))
 			return NULL;
@@ -553,7 +522,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		forEl = new Rts2WhileSod (this, endSod);
+		forEl = new ElementWhileSod (this, endSod);
 		// parse block..
 		while (1)
 		{
@@ -573,25 +542,33 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamString (&val) || getNextParamDouble (&tarval)
 			|| getNextParamDouble (&range))
 			return NULL;
-		return new Rts2SWaitFor (this, new_device, val, tarval, range);
+		return new ElementWaitFor (this, new_device, val, tarval, range);
 	}
 	else if (!strcmp (commandStart, COMMAND_SLEEP))
 	{
 		double sec;
 		if (getNextParamDouble (&sec))
 			return NULL;
-		return new Rts2SSleep (this, sec);
+		return new ElementSleep (this, sec);
+	}
+	else if (!strcmp (commandStart, COMMAND_WHILE))
+	{
+		// read operands, operator and 
+	}
+	else if (!strcmp (commandStart, COMMAND_WAIT_FOR_IDLE))
+	{
+
 	}
 	else if (!strcmp (commandStart, COMMAND_TARGET_DISABLE))
 	{
-		return new Rts2SETDisable (this, target);
+		return new ElementDisable (this, target);
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
 		int seconds;
 		if (getNextParamInteger (&seconds))
 			return NULL;
-		return new Rts2SETTempDisable (this, target, seconds);
+		return new ElementTempDisable (this, target, seconds);
 	}
 	else if (!strcmp (commandStart, COMMAND_TAR_TEMP_DISAB))
 	{
@@ -599,7 +576,7 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		int bonus;
 		if (getNextParamInteger (&seconds) || getNextParamInteger (&bonus))
 			return NULL;
-		return new Rts2SETTarBoost (this, target, seconds, bonus);
+		return new ElementTarBoost (this, target, seconds, bonus);
 	}
 	else if (!strcmp (commandStart, COMMAND_HEX))
 	{
@@ -608,14 +585,14 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
 		char *el;
-		Rts2SEHex *hexEl;
-		Rts2ScriptElement *newElement;
+		ElementHex *hexEl;
+		Element *newElement;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		hexEl = new Rts2SEHex (this, new_device, ra_size, dec_size);
+		hexEl = new ElementHex (this, new_device, ra_size, dec_size);
 		// parse block..
 		while (1)
 		{
@@ -636,14 +613,14 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		if (getNextParamDouble (&ra_size) || getNextParamDouble (&dec_size))
 			return NULL;
 		char *el;
-		Rts2SEFF *ffEl;
-		Rts2ScriptElement *newElement;
+		ElementFxF *ffEl;
+		Element *newElement;
 		// test for block start..
 		el = nextElement ();
 		// error, return NULL
 		if (*el != '{')
 			return NULL;
-		ffEl = new Rts2SEFF (this, new_device, ra_size, dec_size);
+		ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
 		// parse block..
 		while (1)
 		{
@@ -661,23 +638,19 @@ Rts2Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 	// setValue fallback
 	else if (strchr (commandStart, '='))
 	{
-		return new Rts2ScriptElementChangeValue (this, new_device, commandStart);
+		return new ElementChangeValue (this, new_device, commandStart);
 	}
 	return NULL;
 }
 
-
-int
-Rts2Script::processImage (Rts2Image * image)
+int Script::processImage (Rts2Image * image)
 {
 	if (executedCount < 0 || el_iter == elements.end ())
 		return -1;
 	return (*el_iter)->processImage (image);
 }
 
-
-int
-Rts2Script::idle ()
+int Script::idle ()
 {
 	if (el_iter != elements.end ())
 		return (*el_iter)->idleCall ();

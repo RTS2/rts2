@@ -17,19 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2swaitfor.h"
+#include "elementwaitfor.h"
 
-void
-Rts2SWaitFor::getDevice (char new_device[DEVICE_NAME_SIZE])
+using namespace rts2script;
+
+void ElementWaitFor::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
 	strncpy (new_device, deviceName.c_str (), DEVICE_NAME_SIZE);
 }
 
-
-Rts2SWaitFor::Rts2SWaitFor (Rts2Script * in_script, const char *new_device,
-char *in_valueName, double in_tarval,
-double in_range):
-Rts2ScriptElement (in_script)
+ElementWaitFor::ElementWaitFor (Script * in_script, const char *new_device, char *in_valueName, double in_tarval, double in_range):Element (in_script)
 {
 	valueName = std::string (in_valueName);
 	deviceName = std::string (new_device);
@@ -39,25 +36,17 @@ Rts2ScriptElement (in_script)
 	setIdleTimeout (1);
 }
 
-
-int
-Rts2SWaitFor::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementWaitFor::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return idle ();
 }
 
-
-int
-Rts2SWaitFor::idle ()
+int ElementWaitFor::idle ()
 {
-	Rts2Value *val =
-		script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
+	Rts2Value *val = script->getMaster ()->getValue (deviceName.c_str (), valueName.c_str ());
 	if (!val)
 	{
-		Rts2Address *add =
-			script->getMaster ()->findAddress (deviceName.c_str ());
+		Rts2Address *add = script->getMaster ()->findAddress (deviceName.c_str ());
 		// we will get device..
 		if (add != NULL)
 			return NEXT_COMMAND_KEEP;
@@ -69,35 +58,27 @@ Rts2SWaitFor::idle ()
 	{
 		return NEXT_COMMAND_NEXT;
 	}
-	return Rts2ScriptElement::idle ();
+	return Element::idle ();
 }
 
-
-Rts2SSleep::Rts2SSleep (Rts2Script * in_script, double in_sec):Rts2ScriptElement
-(in_script)
+ElementSleep::ElementSleep (Script * in_script, double in_sec):Element (in_script)
 {
 	sec = in_sec;
 }
 
-
-int
-Rts2SSleep::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementSleep::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (!isnan (sec))
 	{
 		// this caused idle to be called after sec..
-		// Rts2ScriptElement keep care that it will not be called before sec expires
+		// Element keep care that it will not be called before sec expires
 		setIdleTimeout (sec);
 		return NEXT_COMMAND_KEEP;
 	}
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2SSleep::idle ()
+int ElementSleep::idle ()
 {
 	sec = nan ("f");
 	return NEXT_COMMAND_NEXT;

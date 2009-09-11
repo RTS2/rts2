@@ -18,7 +18,7 @@
  */
 
 #include "connimgprocess.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"

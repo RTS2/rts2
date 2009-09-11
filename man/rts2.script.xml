@@ -108,18 +108,6 @@
 
       <varlistentry>
         <term>
-	  <option>F {filter_number}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Changes filter on camera filter wheel. Filter numbers are
-	    always counted from 0.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
 	  <replaceable>{value name}</replaceable><replaceable>operation</replaceable><replaceable>{new value}</replaceable>
 	</term>
 	<listitem>
@@ -312,19 +300,7 @@
 	</listitem>
       </varlistentry>
 
-      <varlistentry>
-        <term>
-	  <option>M {mirror_position}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Move mirror to new position, specified by
-	    {mirror_position} numeric argument.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
+       <varlistentry>
         <term>
 	  <option>P {filter} {exposure} {count}</option>
 	</term>

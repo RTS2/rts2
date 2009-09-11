@@ -20,7 +20,10 @@
 #ifndef __RTS2_SCRIPT_GUIDING__
 #define __RTS2_SCRIPT_GUIDING__
 
-#include "rts2script.h"
+#include "script.h"
+
+namespace rts2script
+{
 
 /**
  * Class for guiding.
@@ -32,8 +35,21 @@
  *
  * @author petr
  */
-class Rts2ScriptElementGuiding:public Rts2ScriptElement
+class ElementGuiding:public Element
 {
+	public:
+		ElementGuiding (Script * in_script, float init_exposure, int in_endSignal);
+		virtual ~ ElementGuiding (void);
+
+		virtual void postEvent (Rts2Event * event);
+
+		virtual int nextCommand (Rts2DevClientCamera * client,
+			Rts2Command ** new_command,
+			char new_device[DEVICE_NAME_SIZE]);
+
+		virtual int processImage (Rts2Image * image);
+		virtual int waitForSignal (int in_sig);
+		virtual void cancelCommands ();
 	private:
 		float expTime;
 		int endSignal;
@@ -59,19 +75,7 @@ class Rts2ScriptElementGuiding:public Rts2ScriptElement
 
 		// this will check sign..
 		void checkGuidingSign (double &last, double &mult, double act);
-	public:
-		Rts2ScriptElementGuiding (Rts2Script * in_script, float init_exposure,
-			int in_endSignal);
-		virtual ~ Rts2ScriptElementGuiding (void);
-
-		virtual void postEvent (Rts2Event * event);
-
-		virtual int nextCommand (Rts2DevClientCamera * client,
-			Rts2Command ** new_command,
-			char new_device[DEVICE_NAME_SIZE]);
-
-		virtual int processImage (Rts2Image * image);
-		virtual int waitForSignal (int in_sig);
-		virtual void cancelCommands ();
 };
+
+}
 #endif							 /* !__RTS2_SCRIPT_GUIDING__ */

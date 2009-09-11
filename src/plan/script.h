@@ -20,11 +20,11 @@
 #ifndef __RTS2_SCRIPT__
 #define __RTS2_SCRIPT__
 
-#include "rts2scriptelement.h"
+#include "element.h"
 #include <config.h>
 
 #ifdef HAVE_PGSQL
-#include "rts2scriptelementacquire.h"
+#include "elementacquire.h"
 #endif							 /* HAVE_PGSQL */
 
 #include "../utils/rts2block.h"
@@ -60,7 +60,10 @@
 #define EVENT_NOT_ASTROMETRY  RTS2_LOCAL_EVENT + 201
 #define EVENT_ALL_PROCESSED RTS2_LOCAL_EVENT + 202
 
-class Rts2ScriptElement;
+namespace rts2script
+{
+
+class Element;
 class Rts2SEBAcquired;
 
 /**
@@ -74,41 +77,11 @@ class Rts2SEBAcquired;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Script:public Rts2Object
+class Script:public Rts2Object
 {
-	private:
-		char *cmdBuf;
-		std::string wholeScript;
-		char *cmdBufTop;
-		char *commandStart;
-
-		char defaultDevice[DEVICE_NAME_SIZE];
-
-		Rts2ScriptElement *currScriptElement;
-
-		// test whenewer next element is one that is given..
-		bool isNext (const char *element);
-		char *nextElement ();
-		int getNextParamString (char **val);
-		int getNextParamFloat (float *val);
-		int getNextParamDouble (double *val);
-		int getNextParamInteger (int *val);
-		// we should not save reference to target, as it can be changed|deleted without our knowledge
-		Rts2ScriptElement *parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos);
-		std::list < Rts2ScriptElement * >elements;
-		std::list < Rts2ScriptElement * >::iterator el_iter;
-		Rts2Block *master;
-
-		// counts comments
-		int commentNumber;
-		// is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
-		int executedCount;
-
-		// offset for scripts spanning more than one line
-		int lineOffset;
 	public:
-		Rts2Script (Rts2Block * in_master);
-		virtual ~ Rts2Script (void);
+		Script (Rts2Block * in_master);
+		virtual ~ Script (void);
 
 		/**
 		 * Get script from target, create vector of script elements and
@@ -133,52 +106,63 @@ class Rts2Script:public Rts2Object
 				return -1;
 			return (cmdBufTop - cmdBuf);
 		}
-		int isLastCommand (void)
-		{
-			return (el_iter == elements.end ());
-		}
-		void getDefaultDevice (char new_device[DEVICE_NAME_SIZE])
-		{
-			strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE);
-		}
-		char *getDefaultDevice ()
-		{
-			return defaultDevice;
-		}
+		int isLastCommand (void) { return (el_iter == elements.end ()); }
+
+		void getDefaultDevice (char new_device[DEVICE_NAME_SIZE]) { strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE); }
+
+		char *getDefaultDevice () { return defaultDevice; }
+
 		int processImage (Rts2Image * image);
-		Rts2Block *getMaster ()
-		{
-			return master;
-		}
-		int getExecutedCount ()
-		{
-			return executedCount;
-		}
-		const char *getScriptBuf ()
-		{
-			return cmdBuf;
-		}
+
+		Rts2Block *getMaster ()	{ return master; }
+
+		int getExecutedCount () { return executedCount; }
+
+		const char *getScriptBuf () { return cmdBuf; }
 		/**
 		 * Returns script for FITS header.
 		 *
 		 * @return Script text for FITS header file.
 		 */
-		const std::string getWholeScript ()
-		{
-			return wholeScript;
-		}
-		int getParsedStartPos ()
-		{
-			return commandStart - cmdBuf + lineOffset;
-		}
+		const std::string getWholeScript () { return wholeScript; }
+
+		int getParsedStartPos () { return commandStart - cmdBuf + lineOffset; }
 
 		int idle ();
+
+	private:
+		char *cmdBuf;
+		std::string wholeScript;
+		char *cmdBufTop;
+		char *commandStart;
+
+		char defaultDevice[DEVICE_NAME_SIZE];
+
+		Element *currElement;
+
+		// test whenewer next element is one that is given..
+		bool isNext (const char *element);
+		char *nextElement ();
+		int getNextParamString (char **val);
+		int getNextParamFloat (float *val);
+		int getNextParamDouble (double *val);
+		int getNextParamInteger (int *val);
+		// we should not save reference to target, as it can be changed|deleted without our knowledge
+		Element *parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos);
+		std::list < Element * >elements;
+		std::list < Element * >::iterator el_iter;
+		Rts2Block *master;
+
+		// counts comments
+		int commentNumber;
+		// is >= 0 when script runs, will become -1 when script is deleted (in beging of script destructor
+		int executedCount;
+
+		// offset for scripts spanning more than one line
+		int lineOffset;
 };
 
-template < typename T > int
-Rts2Script::nextCommand (T & device,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 
@@ -194,15 +178,13 @@ char new_device[DEVICE_NAME_SIZE])
 		if (el_iter == elements.end ())
 			// command not found, end of script,..
 			return NEXT_COMMAND_END_SCRIPT;
-		currScriptElement = *el_iter;
-		ret = currScriptElement->nextCommand (&device, new_command, new_device);
+		currElement = *el_iter;
+		ret = currElement->nextCommand (&device, new_command, new_device);
 		// send info about currently executed script element..
-		device.queCommand (new
-			Rts2CommandChangeValue (&device, "scriptPosition", '=',
-			currScriptElement->getStartPos ()));
-		device.queCommand (new
-			Rts2CommandChangeValue (&device, "scriptLen", '=',
-			currScriptElement->getLen ()));
+		device.queCommand (new Rts2CommandChangeValue (&device, "scriptPosition", '=', currElement->getStartPos ()));
+		
+		device.queCommand (new Rts2CommandChangeValue (&device, "scriptLen", '=', currElement->getLen ()));
+
 		if (ret != NEXT_COMMAND_NEXT)
 		{
 			break;
@@ -224,7 +206,7 @@ char new_device[DEVICE_NAME_SIZE])
 			case NEXT_COMMAND_PRECISION_OK:
 			case NEXT_COMMAND_WAIT_ACQUSITION:
 				el_iter++;
-				currScriptElement = NULL;
+				currElement = NULL;
 				break;
 			case NEXT_COMMAND_WAITING:
 				*new_command = NULL;
@@ -242,5 +224,7 @@ char new_device[DEVICE_NAME_SIZE])
 	if (ret != NEXT_COMMAND_NEXT)
 		executedCount++;
 	return ret;
+}
+
 }
 #endif							 /* ! __RTS2_SCRIPT__ */

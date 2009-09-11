@@ -20,11 +20,13 @@
 #ifndef __RTS2_DEVSCRIPT__
 #define __RTS2_DEVSCRIPT__
 
-#include "rts2script.h"
+#include "script.h"
 
 #include "../utils/rts2object.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2target.h"
+
+using namespace rts2script;
 
 /**
  * That class provide scripting interface for devices, so they can
@@ -34,7 +36,7 @@ class Rts2DevScript
 {
 	private:
 		Rts2Conn * script_connection;
-		Rts2Script *script;
+		Script *script;
 		Rts2Target *nextTarget;
 		int dont_execute_for;
 		int scriptLoopCount;
@@ -102,13 +104,8 @@ class Rts2DevScript
 		void postEvent (Rts2Event * event);
 		virtual void nextCommand () = 0;
 
-		void setScript (Rts2Script * in_script)
-		{
-			script = in_script;
-		}
-		Rts2Script *getScript ()
-		{
-			return script;
-		}
+		void setScript (Script * in_script) { script = in_script; }
+
+		Script *getScript () { return script; }
 };
 #endif							 /* !__RTS2_DEVSCRIPT__ */

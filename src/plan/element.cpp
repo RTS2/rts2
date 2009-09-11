@@ -20,15 +20,16 @@
 #include <iterator>
 
 #include "rts2devscript.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 #include "../writers/rts2image.h"
 #include "../writers/rts2devclifoc.h"
 
+using namespace rts2script;
 
-Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
+Element::Element (Script * in_script)
 {
 	script = in_script;
 	startPos = script->getParsedStartPos ();
@@ -36,69 +37,46 @@ Rts2ScriptElement::Rts2ScriptElement (Rts2Script * in_script)
 	timerclear (&nextIdle);
 }
 
-
-Rts2ScriptElement::~Rts2ScriptElement ()
+Element::~Element ()
 {
 }
 
-
-void
-Rts2ScriptElement::getDevice (char new_device[DEVICE_NAME_SIZE])
+void Element::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
 	script->getDefaultDevice (new_device);
 }
 
-
-int
-Rts2ScriptElement::processImage (Rts2Image * image)
+int Element::processImage (Rts2Image * image)
 {
 	return -1;
 }
 
-
-int
-Rts2ScriptElement::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int Element::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_NEXT;
 }
 
-
-int
-Rts2ScriptElement::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int Element::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return defnextCommand (camera, new_command, new_device);
 }
 
-
-int
-Rts2ScriptElement::nextCommand (Rts2DevClientPhot * phot,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int Element::nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return defnextCommand (phot, new_command, new_device);
 }
 
-
-int
-Rts2ScriptElement::getStartPos ()
+int Element::getStartPos ()
 {
 	return startPos;
 }
 
-
-int
-Rts2ScriptElement::getLen ()
+int Element::getLen ()
 {
 	return len;
 }
 
-
-int
-Rts2ScriptElement::idleCall ()
+int Element::idleCall ()
 {
 	if (!timerisset (&idleTimeout))
 		return NEXT_COMMAND_KEEP;
@@ -113,9 +91,7 @@ Rts2ScriptElement::idleCall ()
 	return NEXT_COMMAND_KEEP;
 }
 
-
-void
-Rts2ScriptElement::setIdleTimeout (double sec)
+void Element::setIdleTimeout (double sec)
 {
 	idleTimeout.tv_sec = (long int) floor (sec);
 	idleTimeout.tv_usec =
@@ -125,23 +101,17 @@ Rts2ScriptElement::setIdleTimeout (double sec)
 	timeradd (&idleTimeout, &nextIdle, &nextIdle);
 }
 
-
-int
-Rts2ScriptElement::idle ()
+int Element::idle ()
 {
 	return NEXT_COMMAND_KEEP;
 }
 
-
-Rts2ScriptElementExpose::Rts2ScriptElementExpose (Rts2Script * in_script, float in_expTime):
-Rts2ScriptElement (in_script)
+ElementExpose::ElementExpose (Script * in_script, float in_expTime):Element (in_script)
 {
 	expTime = in_expTime;
 }
 
-
-int
-Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 0));
 	// change values of the exposur
@@ -152,16 +122,12 @@ Rts2ScriptElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command 
 	return 0;
 }
 
-
-Rts2ScriptElementDark::Rts2ScriptElementDark (Rts2Script * in_script, float in_expTime):Rts2ScriptElement
-(in_script)
+ElementDark::ElementDark (Script * in_script, float in_expTime):Element (in_script)
 {
 	expTime = in_expTime;
 }
 
-
-int
-Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	camera->getConnection ()->queCommand (new Rts2CommandChangeValue (camera, "SHUTTER", '=', 1));
 	// change values of the exposure
@@ -171,9 +137,7 @@ Rts2ScriptElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command **
 	return 0;
 }
 
-
-Rts2ScriptElementBox::Rts2ScriptElementBox (Rts2Script * in_script, int in_x, int in_y, int in_w, int in_h):Rts2ScriptElement
-(in_script)
+ElementBox::ElementBox (Script * in_script, int in_x, int in_y, int in_w, int in_h):Element (in_script)
 {
 	x = in_x;
 	y = in_y;
@@ -181,111 +145,56 @@ Rts2ScriptElementBox::Rts2ScriptElementBox (Rts2Script * in_script, int in_x, in
 	h = in_h;
 }
 
-
-int
-Rts2ScriptElementBox::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementBox::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new Rts2CommandBox (camera, x, y, w, h);
 	getDevice (new_device);
 	return 0;
 }
 
-
-Rts2ScriptElementCenter::Rts2ScriptElementCenter (Rts2Script * in_script, int in_w, int in_h):Rts2ScriptElement
-(in_script)
+ElementCenter::ElementCenter (Script * in_script, int in_w, int in_h):Element (in_script)
 {
 	w = in_w;
 	h = in_h;
 }
 
-
-int
-Rts2ScriptElementCenter::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementCenter::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new Rts2CommandCenter (camera, w, h);
 	getDevice (new_device);
 	return 0;
 }
 
-
-Rts2ScriptElementChange::Rts2ScriptElementChange (Rts2Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec)
-:Rts2ScriptElement (in_script)
+ElementChange::ElementChange (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec):Element (in_script)
 {
 	deviceName = new char[strlen (new_device) + 1];
 	strcpy (deviceName, new_device);
 	setChangeRaDec (in_ra, in_dec);
 }
 
-
-int
-Rts2ScriptElementChange::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementChange::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new Rts2CommandChange (script->getMaster (), ra, dec);
 	strcpy (new_device, deviceName);
 	return 0;
 }
 
-
-Rts2ScriptElementWait::Rts2ScriptElementWait (Rts2Script * in_script):Rts2ScriptElement
+ElementWait::ElementWait (Script * in_script):Element
 (in_script)
 {
 }
 
-
-int
-Rts2ScriptElementWait::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementWait::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	return NEXT_COMMAND_CHECK_WAIT;
 }
 
-
-Rts2ScriptElementFilter::Rts2ScriptElementFilter (Rts2Script * in_script, int in_filter):Rts2ScriptElement
-(in_script)
-{
-	filter = in_filter;
-}
-
-
-int
-Rts2ScriptElementFilter::nextCommand (Rts2DevClientCamera * camera,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
-{
-	*new_command = new Rts2CommandFilter (camera, filter);
-	getDevice (new_device);
-	return 0;
-}
-
-
-int
-Rts2ScriptElementFilter::nextCommand (Rts2DevClientPhot * phot,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
-{
-	*new_command = new Rts2CommandFilter (phot, filter);
-	getDevice (new_device);
-	return 0;
-}
-
-
-Rts2ScriptElementWaitAcquire::Rts2ScriptElementWaitAcquire (Rts2Script * in_script, int in_tar_id):
-Rts2ScriptElement (in_script)
+ElementWaitAcquire::ElementWaitAcquire (Script * in_script, int in_tar_id):Element (in_script)
 {
 	tar_id = in_tar_id;
 }
 
-
-int
-Rts2ScriptElementWaitAcquire::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char
-new_device[DEVICE_NAME_SIZE])
+int ElementWaitAcquire::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
@@ -293,7 +202,7 @@ new_device[DEVICE_NAME_SIZE])
 		postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
 	//#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementWaitAcquire::defnextCommand " << ac.count
+		<< "ElementWaitAcquire::defnextCommand " << ac.count
 		<< " (" << script->getDefaultDevice () << ") " << tar_id << sendLog;
 	//#endif
 	if (ac.count)
@@ -301,98 +210,34 @@ new_device[DEVICE_NAME_SIZE])
 	return NEXT_COMMAND_NEXT;
 }
 
-
-Rts2ScriptElementMirror::Rts2ScriptElementMirror (Rts2Script * in_script, char *in_mirror_name, int in_mirror_pos):Rts2ScriptElement
-(in_script)
-{
-	mirror_pos = in_mirror_pos;
-	mirror_name = new char[strlen (in_mirror_name) + 1];
-	strcpy (mirror_name, in_mirror_name);
-}
-
-
-Rts2ScriptElementMirror::~Rts2ScriptElementMirror ()
-{
-	delete[]mirror_name;
-}
-
-
-void
-Rts2ScriptElementMirror::postEvent (Rts2Event * event)
-{
-	switch (event->getType ())
-	{
-		case EVENT_MIRROR_FINISH:
-			mirror_pos = -2;
-			break;
-	}
-	Rts2ScriptElement::postEvent (event);
-}
-
-
-int
-Rts2ScriptElementMirror::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
-{
-	if (mirror_pos == -1)
-		return NEXT_COMMAND_WAIT_MIRROR;
-	if (mirror_pos < 0)			 // job finished..
-		return NEXT_COMMAND_NEXT;
-	// send signal..if at least one mirror will get it, wait for it, otherwise end imediately
-	script->getMaster ()->
-		postEvent (new Rts2Event (EVENT_MIRROR_SET, (void *) this));
-	// somebody pick that job..
-	if (mirror_pos == -1)
-	{
-		return NEXT_COMMAND_WAIT_MIRROR;
-	}
-	// nobody cared, find another..
-	logStream (MESSAGE_DEBUG)
-		<< "Rts2ScriptElementMirror::defnextCommand nobody cared about mirror "
-		<< mirror_name << sendLog;
-	return NEXT_COMMAND_NEXT;
-}
-
-
-Rts2ScriptElementPhotometer::Rts2ScriptElementPhotometer (Rts2Script * in_script, int in_filter, float in_exposure, int in_count):Rts2ScriptElement
-(in_script)
+ElementPhotometer::ElementPhotometer (Script * in_script, int in_filter, float in_exposure, int in_count):Element (in_script)
 {
 	filter = in_filter;
 	exposure = in_exposure;
 	count = in_count;
 }
 
-
-int
-Rts2ScriptElementPhotometer::nextCommand (Rts2DevClientPhot * phot,
-Rts2Command ** new_command,
-char new_device[DEVICE_NAME_SIZE])
+int ElementPhotometer::nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	*new_command = new Rts2CommandIntegrate (phot, filter, exposure, count);
 	getDevice (new_device);
 	return 0;
 }
 
-
-Rts2ScriptElementSendSignal::Rts2ScriptElementSendSignal (Rts2Script * in_script, int in_sig):Rts2ScriptElement
-(in_script)
+ElementSendSignal::ElementSendSignal (Script * in_script, int in_sig):Element (in_script)
 {
 	sig = in_sig;
 	askedFor = false;
 }
 
-
-Rts2ScriptElementSendSignal::~Rts2ScriptElementSendSignal ()
+ElementSendSignal::~ElementSendSignal ()
 {
 	if (askedFor)
 		script->getMaster ()->
 			postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
 }
 
-
-void
-Rts2ScriptElementSendSignal::postEvent (Rts2Event * event)
+void ElementSendSignal::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -404,15 +249,10 @@ Rts2ScriptElementSendSignal::postEvent (Rts2Event * event)
 			}
 			break;
 	}
-	Rts2ScriptElement::postEvent (event);
+	Element::postEvent (event);
 }
 
-
-int
-Rts2ScriptElementSendSignal::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char
-new_device[DEVICE_NAME_SIZE])
+int ElementSendSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	// when some else script will wait reach point when it has to wait for
 	// this signal, it will not wait as it will ask before enetring wait
@@ -423,19 +263,12 @@ new_device[DEVICE_NAME_SIZE])
 	return NEXT_COMMAND_NEXT;
 }
 
-
-Rts2ScriptElementWaitSignal::Rts2ScriptElementWaitSignal (Rts2Script * in_script, int in_sig):Rts2ScriptElement
-(in_script)
+ElementWaitSignal::ElementWaitSignal (Script * in_script, int in_sig):Element (in_script)
 {
 	sig = in_sig;
 }
 
-
-int
-Rts2ScriptElementWaitSignal::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command,
-char
-new_device[DEVICE_NAME_SIZE])
+int ElementWaitSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	int ret;
 
@@ -448,7 +281,7 @@ new_device[DEVICE_NAME_SIZE])
 	script->getMaster ()->
 		postEvent (new Rts2Event (EVENT_SIGNAL_QUERY, (void *) &ret));
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2ScriptElementWaitSignal::defnextCommand "
+	logStream (MESSAGE_DEBUG) << "ElementWaitSignal::defnextCommand "
 		<< ret << " (" << script->getDefaultDevice () << ")" << sendLog;
 	#endif
 	if (ret != -1)
@@ -456,8 +289,7 @@ new_device[DEVICE_NAME_SIZE])
 	return NEXT_COMMAND_WAIT_SIGNAL;
 }
 
-
-int Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
+int ElementWaitSignal::waitForSignal (int in_sig)
 {
 	if (sig == in_sig)
 	{
@@ -467,9 +299,7 @@ int Rts2ScriptElementWaitSignal::waitForSignal (int in_sig)
 	return 0;
 }
 
-
-Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_script, const char *new_device, const char *chng_str):Rts2ScriptElement
-(in_script)
+ElementChangeValue::ElementChangeValue (Script * in_script, const char *new_device, const char *chng_str):Element (in_script)
 {
 	deviceName = new char[strlen (new_device) + 1];
 	strcpy (deviceName, new_device);
@@ -501,20 +331,17 @@ Rts2ScriptElementChangeValue::Rts2ScriptElementChangeValue (Rts2Script * in_scri
 	operands.parse (chng_s.substr (op_end + 1));
 }
 
-
-Rts2ScriptElementChangeValue::~Rts2ScriptElementChangeValue (void)
+ElementChangeValue::~ElementChangeValue (void)
 {
 	delete[]deviceName;
 }
 
-
-void Rts2ScriptElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
+void ElementChangeValue::getDevice (char new_device[DEVICE_NAME_SIZE])
 {
 	strcpy (new_device, deviceName);
 }
 
-
-int Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (op == '\0' || operands.size () == 0)
 		return -1;
@@ -536,25 +363,19 @@ int Rts2ScriptElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Co
 	return 0;
 }
 
-
-Rts2ScriptElementComment::Rts2ScriptElementComment (Rts2Script * in_script, const char *in_comment, int in_cnum)
-:Rts2ScriptElement (in_script)
+ElementComment::ElementComment (Script * in_script, const char *in_comment, int in_cnum):Element (in_script)
 {
 	comment = new char[strlen (in_comment) + 1];
 	cnum = in_cnum;
 	strcpy (comment, in_comment);
 }
 
-
-Rts2ScriptElementComment::~Rts2ScriptElementComment (void)
+ElementComment::~ElementComment (void)
 {
 	delete []comment;
 }
 
-
-int
-Rts2ScriptElementComment::defnextCommand (Rts2DevClient * client,
-Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+int ElementComment::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	client->getConnection ()->queCommand (new Rts2CommandChangeValue (client, "COMM_NUM", '=', cnum));
 	// script comment value

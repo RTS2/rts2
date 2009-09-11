@@ -69,7 +69,7 @@ Rts2DevScript::startTarget ()
 	}
 	scriptCount++;
 
-	Rts2Script *sc = new Rts2Script (script_connection->getMaster ());
+	Script *sc = new Script (script_connection->getMaster ());
 	sc->setTarget (script_connection->getName (), currentTarget);
 	setScript (sc);
 
@@ -99,7 +99,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 {
 	int sig;
 	int acqEnd;
-	Rts2Script *tmp_script;
+	Script *tmp_script;
 	AcquireQuery *ac;
 	switch (event->getType ())
 	{
@@ -316,7 +316,7 @@ Rts2DevScript::idle ()
 void
 Rts2DevScript::deleteScript ()
 {
-	Rts2Script *tmp_script;
+	Script *tmp_script;
 	unsetWait ();
 	if (waitScript == WAIT_MASTER)
 	{
@@ -416,7 +416,7 @@ Rts2DevScript::nextPreparedCommand ()
 				postEvent (new Rts2Event (EVENT_ACQUSITION_END, (void *) &ret));
 			if (ret == NEXT_COMMAND_PRECISION_OK)
 			{
-				// there wouldn't be a recursion, as Rts2ScriptElement->nextCommand
+				// there wouldn't be a recursion, as Element->nextCommand
 				// should never return NEXT_COMMAND_PRECISION_OK
 				ret = nextPreparedCommand ();
 			}

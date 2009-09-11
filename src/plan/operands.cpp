@@ -21,7 +21,6 @@
 
 using namespace rts2operands;
 
-
 Operand *OperandsSet::parseOperand (std::string str)
 {
 	// let' see what we have as an operand..
@@ -34,12 +33,27 @@ Operand *OperandsSet::parseOperand (std::string str)
 	if ((*iter >= '0' && *iter <= '9') || *iter == '-' || *iter == '+' || *iter == '.')
 	{
 		// parse as string..
-		double op;
+		double op, mul = nan ("f");
+		// look what is the last string..
+		std::string::iterator it_end = --str.end ();
+		while (isspace (*it_end))
+			it_end--;
+		if (*it_end == 'm')
+		  	mul = 1/60.0;
+		else if (*it_end == 's')
+			mul = 1/3600.0;
+		else if (*it_end == 'h')
+			mul = 15;
+		// eats units specifications
+		if (isnan (mul))
+			mul = 1;
+		else
+			str = str.substr (0, it_end - str.begin ());
 		std::istringstream _is (str);
 		_is >> op;
 		if (_is.fail () || !_is.eof())
 			return new String(str);
-		return new Number (op);
+		return new Number (op * mul);
 	}
 	else
 	{

@@ -234,8 +234,6 @@ Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 			return new Rts2DevClientFocusImage (conn);
 		case DEVICE_TYPE_PHOT:
 			return new Rts2DevClientPhotExec (conn);
-		case DEVICE_TYPE_MIRROR:
-			return new Rts2DevClientMirrorExec (conn);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
 			return new Rts2DevClientWriteImage (conn);
@@ -884,6 +882,7 @@ Executor::commandAuthorized (Rts2Conn * conn)
 	{
 		if (!conn->paramEnd ())
 			return -2;
+		end ();
 		return stop ();
 	}
 	else if (conn->isCommand ("clear"))

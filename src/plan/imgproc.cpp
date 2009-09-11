@@ -19,7 +19,7 @@
 
 #include "status.h"
 #include "connimgprocess.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include <glob.h>
 #include <sys/types.h>
