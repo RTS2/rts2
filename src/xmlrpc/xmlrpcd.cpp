@@ -214,11 +214,11 @@ XmlDevClient::valueChanged (Rts2Value * value)
 int
 XmlRpcd::willConnect (Rts2Address *_addr)
 {
-       if (_addr->getType () < getDeviceType ()
-                || (_addr->getType () == getDeviceType ()
-                && strcmp (_addr->getName (), getDeviceName ()) < 0))
-                return 1;
-        return 0;
+	if (_addr->getType () < getDeviceType ()
+		|| (_addr->getType () == getDeviceType ()
+		&& strcmp (_addr->getName (), getDeviceName ()) < 0))
+		return 1;
+	return 0;
 }
 #endif
 
