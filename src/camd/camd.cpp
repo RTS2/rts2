@@ -275,7 +275,10 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	currentImageData = -1;
 
 	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false);
-	calculateStatistics->setValueBool (true);
+	calculateStatistics->addSelVal ("yes");
+	calculateStatistics->addSelVal ("only statistics");
+	calculateStatistics->addSelVal ("no");
+	calculateStatistics->setValueInteger (STATISTIC_YES);
 
 	createValue (average, "average", "image average", false);
 	createValue (max, "max", "maximum pixel value", false);
@@ -289,6 +292,9 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, 0, false);
 	exposureNumber->setValueLong (0);
+
+	createValue (scriptExposureNum, "script_exp_num", "number of images taken in script", false, 0, 0, false);
+	scriptExposureNum->setValueLong (0);
 
 	createValue (exposureEnd, "exposure_end", "expected end of exposure", false);
 
@@ -413,6 +419,12 @@ int Camera::scriptEnds ()
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
 
+	scriptExposureNum->setValueLong (0);
+	sendValueAll (scriptExposureNum);
+
+	calculateStatistics->setValueInteger (0);
+	sendValueAll (calculateStatistics);
+
 	return Rts2ScriptDevice::scriptEnds ();
 }
 
@@ -481,17 +493,20 @@ int Camera::sendImage (char *data, size_t dataSize)
 {
 	if (!exposureConn)
 		return -1;
-	currentImageData = exposureConn->startBinaryData (dataSize + sizeof (imghdr), dataType->getValueInteger ());
-	if (currentImageData == -1)
-		return -1;
+	if (calculateStatistics->getValueInteger () != STATISTIC_ONLY)
+	{
+		currentImageData = exposureConn->startBinaryData (dataSize + sizeof (imghdr), dataType->getValueInteger ());
+		if (currentImageData == -1)
+			return -1;
+	}
 	sendFirstLine ();
-	return exposureConn->sendBinaryData (currentImageData, data, dataSize);
+	return sendReadoutData (data, dataSize);
 }
 
 int Camera::sendReadoutData (char *data, size_t dataSize)
 {
 	// calculated..
-	if (calculateStatistics->getValueBool () == true)
+	if (calculateStatistics->getValueInteger () != STATISTIC_NO)
 	{
 		int totPix;
 		// update sum. min and max
@@ -534,6 +549,9 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 		sendValueAll (sum);
 		sendValueAll (computedPix);
 	}
+	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+		calculateDataSize -= dataSize;
+
 	if (exposureConn && currentImageData >= 0)
 		return exposureConn->sendBinaryData (currentImageData, data, dataSize);
 	return 0;
@@ -827,7 +845,6 @@ int Camera::camStartExposureWithoutCheck ()
 	int ret;
 
 	incExposureNumber ();
-	sendValueAll (exposureNumber);
 
 	ret = startExposure ();
 	if (ret)
@@ -955,7 +972,10 @@ int Camera::camReadout (Rts2Conn * conn)
 		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
 		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT,
 			0, 0, "starting frame transfer");
-		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+			currentImageData = -1;
+		else
+			currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 		if (queValues.empty ())
 			// remove exposure flag from state
 			camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
@@ -969,10 +989,16 @@ int Camera::camReadout (Rts2Conn * conn)
 			CAM_NOEXPOSURE | CAM_READING,
 			BOP_TEL_MOVE, 0,
 			"chip readout started");
-		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+			currentImageData = -1;
+		else
+			currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
 	}
 
-	if (currentImageData >= 0)
+	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+		calculateDataSize = chipByteSize ();
+
+	if (currentImageData >= 0 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		return readoutStart ();
 	}

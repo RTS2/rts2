@@ -38,6 +38,11 @@
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
+/** calculateStatistics indices */
+#define STATISTIC_YES     0
+#define STATISTIC_ONLY    1
+#define STATISTIC_NO      2
+
 /**
  * Camera and CCD interfaces.
  */
@@ -349,6 +354,8 @@ class Camera:public Rts2ScriptDevice
 		{
 			exposureNumber->inc ();
 			sendValueAll (exposureNumber);
+			scriptExposureNum->inc ();
+			sendValueAll (scriptExposureNum);
 		}
 
 		const int getDataType ()
@@ -370,8 +377,17 @@ class Camera:public Rts2ScriptDevice
 		int sendImage (char *data, size_t dataSize);
 
 		int sendReadoutData (char *data, size_t dataSize);
+		
+		/**
+		 * Return number of bytes which are left from the image.
+		 *
+		 * @return Number of bytes left from the image.
+		 */
 		long getWriteBinaryDataSize ()
 		{
+			if (currentImageData < 0 && calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+				// end bytes
+				return calculateDataSize;
 			if (exposureConn)
 				return exposureConn->getWriteBinaryDataSize (currentImageData);
 			return 0;
@@ -772,6 +788,8 @@ class Camera:public Rts2ScriptDevice
 
 		// number of exposures camera takes
 		Rts2ValueLong *exposureNumber;
+		// exposure number inside script
+		Rts2ValueLong *scriptExposureNum;
 		Rts2ValueBool *waitingForEmptyQue;
 		Rts2ValueBool *waitingForNotBop;
 
@@ -783,7 +801,7 @@ class Camera:public Rts2ScriptDevice
 		int currentImageData;
 
 		// whenewer statistics should be calculated
-		Rts2ValueBool *calculateStatistics;
+		Rts2ValueSelection *calculateStatistics;
 
 		// image parameters
 		Rts2ValueDouble *average;
@@ -868,6 +886,8 @@ class Camera:public Rts2ScriptDevice
 
 		// if true, send command OK after exposure is started
 		bool sendOkInExposure;
+
+		long calculateDataSize;
 };
 
 }
