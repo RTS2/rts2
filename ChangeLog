@@ -1,6 +1,15 @@
 0.7.5
 =====
 
+2009-09-13
+ * do {} while loops
+ * preview paging
+
+2009-09-12
+ * added gbm_record_above_error and gbm_error_limit parameters to rts2.ini configuration file
+ * fixed error in Rts2CameraDevClient - properly call readoutEnd
+ * added while_idle and while scripting elements
+
 2009-09-11
  * removed scripting M (mirror) and F (filter) commands, as they are replaced with value changes
 

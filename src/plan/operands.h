@@ -22,18 +22,13 @@
 
 #include "../utils/error.h"
 #include "../utils/utilsfunc.h"
+#include "../utils/rts2block.h"
 
 #include <vector>
 #include <ostream>
 
 namespace rts2operands
 {
-
-class ParsingError:public rts2core::Error
-{
-	public:
-		ParsingError (std::string _msg):rts2core::Error (_msg) {};
-};
 
 /**
  * Abstract class for an operand.
@@ -48,7 +43,7 @@ class Operand
 		virtual std::ostream & writeTo (std::ostream &_os) = 0;
 
 		// return as number..
-		virtual double getDouble () { throw ParsingError ("Operand does not support conversion to double"); }
+		virtual double getDouble ();
 
 		// return as string..
 
@@ -66,13 +61,29 @@ class Operand
 class Number:public Operand
 {
 	public:
-		Number(double _val) { val = _val; }
-
+		Number (double _val) { val = _val; }
 		virtual double getDouble () { return val; }
-		
-		virtual std::ostream & writeTo (std::ostream &_os) { _os << getDouble(); return _os; }
+		virtual std::ostream & writeTo (std::ostream &_os) { _os << getDouble (); return _os; }
 	private:
 		double val;
+};
+
+
+/**
+ * System value. This can be for example CCD temperature.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class SystemValue:public Operand
+{
+	public:
+		SystemValue (Rts2Block *_master, std::string _device, std::string _value):Operand () { master = _master; device = _device; value = _value; }
+		virtual double getDouble ();
+		virtual std::ostream & writeTo (std::ostream &_os) { _os << getDouble (); return _os; }
+	private:
+		Rts2Block *master;
+		std::string device;
+		std::string value;
 };
 
 
@@ -87,7 +98,6 @@ class String:public Operand
 		String(std::string  _str): str(_str) {}
 		
 		virtual std::ostream & writeTo (std::ostream &_os) { _os << str; return _os; }
-	
 	private:
 		std::string str;
 };
@@ -146,6 +156,34 @@ class OperandsSet:public std::vector <Operand*>
 			}
 			return _os;
 		}
+};
+
+/**
+ * Allowed comparators.
+ */
+enum comparators { CMP_EQUAL, CMP_LESS, CMP_LESS_EQU, CMP_GREAT_EQU, CMP_GREAT };
+
+/**
+ * Equation - either 
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class OperandsLREquation:public Operand
+{
+	public:
+		OperandsLREquation (Operand *_l, comparators _cmp, Operand *_r):Operand () { l = _l; cmp = _cmp; r = _r; }
+		/**
+		 * Evaluate equation. Return 0 if it false, otherwise 1.
+		 */
+		virtual double getDouble ();
+		
+		virtual std::ostream & writeTo (std::ostream &_os) { _os << l->getDouble () << getCmpSymbol () << r->getDouble (); return _os; }
+	private:
+		Operand *l;
+		comparators cmp;
+		Operand *r;
+
+		const char *getCmpSymbol ();
 };
 
 }

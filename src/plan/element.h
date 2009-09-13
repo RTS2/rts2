@@ -21,7 +21,6 @@
 #define __RTS2_SCRIPTELEMENT__
 
 #include "operands.h"
-#include "script.h"
 #include "rts2spiral.h"
 #include "../writers/rts2image.h"
 #include "../utils/rts2object.h"
@@ -82,7 +81,7 @@ class Script;
 class Element:public Rts2Object
 {
 	public:
-		Element (Script * in_script);
+		Element (Script * _script);
 
 		virtual ~ Element (void);
 
@@ -143,7 +142,7 @@ class Element:public Rts2Object
 class ElementExpose:public Element
 {
 	public:
-		ElementExpose (Script * in_script, float in_expTime);
+		ElementExpose (Script * _script, float in_expTime);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		float expTime;
@@ -152,7 +151,7 @@ class ElementExpose:public Element
 class ElementDark:public Element
 {
 	public:
-		ElementDark (Script * in_script, float in_expTime);
+		ElementDark (Script * _script, float in_expTime);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		float expTime;
@@ -161,7 +160,7 @@ class ElementDark:public Element
 class ElementBox:public Element
 {
 	public:
-		ElementBox (Script * in_script, int in_x, int in_y, int in_w, int in_h);
+		ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		int x, y, w, h;
@@ -170,7 +169,7 @@ class ElementBox:public Element
 class ElementCenter:public Element
 {
 	public:
-		ElementCenter (Script * in_script, int in_w, int in_h);
+		ElementCenter (Script * _script, int in_w, int in_h);
 		virtual int nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		int w, h;
@@ -179,7 +178,7 @@ class ElementCenter:public Element
 class ElementChange:public Element
 {
 	public:
-		ElementChange (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec);
+		ElementChange (Script * _script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec);
 		virtual ~ElementChange (void) { delete [] deviceName; }
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		void setChangeRaDec (double in_ra, double in_dec)
@@ -196,14 +195,14 @@ class ElementChange:public Element
 class ElementWait:public Element
 {
 	public:
-		ElementWait (Script * in_script);
+		ElementWait (Script * _script);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 };
 
 class ElementWaitAcquire:public Element
 {
 	public:
-		ElementWaitAcquire (Script * in_script, int in_tar_id);
+		ElementWaitAcquire (Script * _script, int in_tar_id);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		// for which target shall we wait
@@ -214,7 +213,7 @@ class ElementWaitAcquire:public Element
 class ElementPhotometer:public Element
 {
 	public:
-		ElementPhotometer (Script * in_script, int in_filter, float in_exposure, int in_count);
+		ElementPhotometer (Script * _script, int in_filter, float in_exposure, int in_count);
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	private:
 		int filter;
@@ -226,7 +225,7 @@ class ElementPhotometer:public Element
 class ElementSendSignal:public Element
 {
 	public:
-		ElementSendSignal (Script * in_script, int in_sig);
+		ElementSendSignal (Script * _script, int in_sig);
 		virtual ~ ElementSendSignal (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
@@ -239,7 +238,7 @@ class ElementWaitSignal:public Element
 {
 	public:
 		// in_sig must be > 0
-		ElementWaitSignal (Script * in_script, int in_sig);
+		ElementWaitSignal (Script * _script, int in_sig);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int waitForSignal (int in_sig);
 	private:
@@ -252,7 +251,7 @@ class ElementWaitSignal:public Element
 class ElementChangeValue:public Element
 {
 	public:
-		ElementChangeValue (Script * in_script, const char *in_device_value, const char *chng_str);
+		ElementChangeValue (Script * _script, const char *in_device_value, const char *chng_str);
 		virtual ~ ElementChangeValue (void);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 	protected:
@@ -271,7 +270,7 @@ class ElementChangeValue:public Element
 class ElementComment:public Element
 {
 	public:
-		ElementComment (Script * in_script, const char *in_comment, int in_cnum);
+		ElementComment (Script * _script, const char *in_comment, int in_cnum);
 		virtual ~ ElementComment (void);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command,	char new_device[DEVICE_NAME_SIZE]);
 	private:

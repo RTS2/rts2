@@ -17,9 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "script.h"
 #include "operands.h"
 
 using namespace rts2operands;
+
+double Operand::getDouble ()
+{
+	throw rts2script::ParsingError ("Operand does not support conversion to double");
+}
+
+double SystemValue::getDouble ()
+{
+	Rts2Conn *conn = master->getOpenConnection (device.c_str ());
+	if (conn == NULL)
+		throw rts2script::ParsingError ("Cannot find device");
+	return conn->getValueDouble (value.c_str ());
+}
 
 Operand *OperandsSet::parseOperand (std::string str)
 {
@@ -28,7 +42,7 @@ Operand *OperandsSet::parseOperand (std::string str)
 	while (iter != str.end () && isspace (*iter))
 		iter++;
 	if (iter == str.end ())
-	  	throw ParsingError ("Empty string");
+	  	throw rts2script::ParsingError ("Empty string");
 	// start as number..
 	if ((*iter >= '0' && *iter <= '9') || *iter == '-' || *iter == '+' || *iter == '.')
 	{
@@ -69,7 +83,7 @@ Operand *OperandsSet::parseOperand (std::string str)
 			OperandsSet twoOps;
 			twoOps.parse (ops);
 			if (twoOps.size () != 2)
-				throw ParsingError ("Invalid number of parameters - expecting two:" + ops);
+				throw rts2script::ParsingError ("Invalid number of parameters - expecting two:" + ops);
 			Operand *ret = new RandomNumber (twoOps[0], twoOps[1]);
 			// do not delete operands!
 			twoOps.clear ();
@@ -78,7 +92,7 @@ Operand *OperandsSet::parseOperand (std::string str)
 		else
 		{
 			if (iter != str.end ())
-				throw ParsingError ("Cannot find function with name " + name);
+				throw rts2script::ParsingError ("Cannot find function with name " + name);
 			return new String (name);
 		}
 	}
@@ -117,7 +131,7 @@ void OperandsSet::parse (std::string str)
 				if (simple_braces > 0)
 					simple_braces --;
 				else
-					throw ParsingError ("too many closing simple braces - )");
+					throw rts2script::ParsingError ("too many closing simple braces - )");
 			}
 			if (*iter == '{')
 			  	curved_braces++;
@@ -126,7 +140,7 @@ void OperandsSet::parse (std::string str)
 				if (curved_braces > 0)
 					curved_braces --;
 				else
-					throw ParsingError ("too many closing curved braces - }");
+					throw rts2script::ParsingError ("too many closing curved braces - }");
 			}
 			if (*iter == '\'')
 				quotes = SIMPLE;
@@ -146,4 +160,32 @@ void OperandsSet::parse (std::string str)
 		// push back single operator
 		push_back (parseOperand (str));
 	}
+}
+
+double OperandsLREquation::getDouble ()
+{
+	double lv = l->getDouble ();
+	double rv = r->getDouble ();
+	switch (cmp)
+	{
+		case CMP_EQUAL:
+			return lv == rv;
+		case CMP_LESS:
+			return lv < rv;
+		case CMP_LESS_EQU:
+			return lv <= rv;
+		case CMP_GREAT_EQU:
+			return lv >= rv;
+		case CMP_GREAT:
+			return lv > rv;
+	}
+	std::ostringstream _os;
+	_os << "Unknown comparator " << cmp;
+	throw rts2script::ParsingError (_os.str ());
+}
+
+const char* OperandsLREquation::getCmpSymbol ()
+{
+	const char *cmp_sym[] = { "==", "<", "<=", ">=", ">" };
+	return cmp_sym[cmp];
 }

@@ -3,9 +3,36 @@
 #include "XmlRpcServer.h"
 
 #include "string.h"
+#include <stdlib.h>
+#include <algorithm>
 
 namespace XmlRpc
 {
+	int HttpParams::getInteger (const char *_name, int def_val)
+	{
+		for (HttpParams::iterator p = begin (); p != end (); p++)
+		{
+			if (p->haveName (_name))
+			{
+				char *err;
+				const char *v = p->getValue ();
+				int r = strtol (v, &err, 0);
+				if (*v != '\0' && *err == '\0')
+					return r;
+			}
+		}
+		return def_val;
+	}
+
+	void HttpParams::parseParam (const std::string& ps)
+	{
+		// find = to split param and value
+		std::string::size_type pv = ps.find ('=');
+		if (pv != std::string::npos)
+			addParam (ps.substr (0, pv).c_str (), ps.substr (pv + 1).c_str ());
+		else
+			addParam (ps.c_str (), "");
+	}
 
 	XmlRpcServerGetRequest::XmlRpcServerGetRequest(std::string const& in_prefix, XmlRpcServer* server)
 	{

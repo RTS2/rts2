@@ -1,6 +1,6 @@
 /*
  * Wait for some event or for a number of seconds.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,20 +20,23 @@
 #ifndef __RTS2_SCRIPT_BLOCK__
 #define __RTS2_SCRIPT_BLOCK__
 
-#include "script.h"
+#include "operands.h"
+#include "element.h"
 
 namespace rts2script
 {
 
+class Script;
+
 /**
  * Block - text surrounded by {}.
  *
- * @author petr
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementBlock:public Element
 {
 	public:
-		ElementBlock (Script * in_script);
+		ElementBlock (Script * _script);
 		virtual ~ ElementBlock (void);
 
 		virtual void addElement (Element * element);
@@ -47,7 +50,7 @@ class ElementBlock:public Element
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual int processImage (Rts2Image * image);
-		virtual int waitForSignal (int in_sig);
+		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();
 		virtual void beforeExecuting ();
 
@@ -81,14 +84,16 @@ class ElementBlock:public Element
 
 /**
  * Will wait for signal, after signal we will end execution of that block.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementSignalEnd:public ElementBlock
 {
 	public:
-		ElementSignalEnd (Script * in_script, int end_sig_num);
+		ElementSignalEnd (Script * _script, int end_sig_num);
 		virtual ~ ElementSignalEnd (void);
 
-		virtual int waitForSignal (int in_sig);
+		virtual int waitForSignal (int _sig);
 	protected:
 		virtual bool endLoop ()
 		{
@@ -106,7 +111,7 @@ class ElementSignalEnd:public ElementBlock
 class ElementAcquired:public ElementBlock
 {
 	public:
-		ElementAcquired (Script * in_script, int in_tar_id);
+		ElementAcquired (Script * _script, int _tar_id);
 		virtual ~ ElementAcquired (void);
 
 		virtual void postEvent (Rts2Event * event);
@@ -118,7 +123,7 @@ class ElementAcquired:public ElementBlock
 		virtual int nextCommand (Rts2DevClientPhot * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
 		virtual int processImage (Rts2Image * image);
-		virtual int waitForSignal (int in_sig);
+		virtual int waitForSignal (int _sig);
 		virtual void cancelCommands ();
 
 		virtual void addElseElement (Element * element);
@@ -133,19 +138,26 @@ class ElementAcquired:public ElementBlock
 
 /**
  * Else block for storing else path..
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementElse:public ElementBlock
 {
 	public:
-		ElementElse (Script * in_script):ElementBlock (in_script) {}
+		ElementElse (Script * _script):ElementBlock (_script) {}
 	protected:
 		virtual bool endLoop ();
 };
 
+/**
+ * For loop.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ElementFor:public ElementBlock
 {
 	public:
-		ElementFor (Script * in_script, int in_max):ElementBlock (in_script) { max = in_max; }
+		ElementFor (Script * _script, int _max):ElementBlock (_script) { max = _max; }
 	protected:
 		virtual bool endLoop () { return getLoopCount () >= max; }
 	private:
@@ -154,11 +166,13 @@ class ElementFor:public ElementBlock
 
 /**
  * Do while current second of day is lower then requested second of day
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementWhileSod:public ElementBlock
 {
 	public:
-		ElementWhileSod (Script * in_script, int in_endSod):ElementBlock (in_script) { endSod = in_endSod; }
+		ElementWhileSod (Script * _script, int _endSod):ElementBlock (_script) { endSod = _endSod; }
 
 		virtual ~ElementWhileSod (void) {}
 
@@ -175,6 +189,41 @@ class ElementWhileSod:public ElementBlock
 	private:
 		// end second of day (UT)
 		int endSod;
+};
+
+/**
+ * Repeat commands while condition hold true.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ElementWhile:public ElementBlock
+{
+	public:
+		ElementWhile (Script * _script, rts2operands::Operand *_condition, int _max_cycles):ElementBlock (_script) { condition = _condition; max_cycles = _max_cycles; }
+		virtual ~ElementWhile () { delete condition; }
+	protected:
+		virtual bool endLoop ();
+	private:
+		rts2operands::Operand *condition;
+		int max_cycles;
+};
+
+/**
+ * Repeat command while condition hold true. Test condition after first execution.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ElementDo:public ElementBlock
+{
+	public:
+		ElementDo (Script *_script, int _max_cycles):ElementBlock (_script) { max_cycles = _max_cycles; condition = NULL; }
+		virtual ~ElementDo () { delete condition; }
+		void setCondition (rts2operands::Operand *_condition) { condition = _condition; }
+	protected:
+		virtual bool endLoop ();
+	private:
+		rts2operands::Operand *condition;
+		int max_cycles;
 };
 
 }

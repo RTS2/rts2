@@ -25,7 +25,8 @@
 #include "rts2grbfw.h"
 
 // when we get GRB packet..
-#define RTS2_EVENT_GRB_PACKET  RTS2_LOCAL_EVENT + 600
+#define RTS2_EVENT_GRB_PACKET      RTS2_LOCAL_EVENT + 600
+#define EVENT_TIMER_GCNCNN_INIT    RTS2_LOCAL_EVENT + 601
 
 namespace rts2grbd
 {

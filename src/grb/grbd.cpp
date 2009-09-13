@@ -148,22 +148,20 @@ int Grbd::reloadConfig ()
 	}
 	// add connection..
 	gcncnn = new ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups, this);
+	// setup..
 	// wait till grb connection init..
-	while (1)
+	ret = gcncnn->init ();
+	if (ret)
 	{
-		ret = gcncnn->init ();
-		if (!ret)
-			break;
-		logStream (MESSAGE_ERROR)
-			<< "Grbd::init cannot init conngrb, sleeping for 60 sec" <<
-			sendLog;
-		sleep (60);
-		if (getEndLoop ())
-			return -1;
+		logStream (MESSAGE_ERROR) << "Grbd::init cannot init conngrb, waiting for 60 sec" << sendLog;
+		addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
 	}
-	addConnection (gcncnn);
+	else
+	{
+		addConnection (gcncnn);
+	}
 
-	return ret;
+	return 0;
 }
 
 
@@ -230,6 +228,13 @@ void Grbd::postEvent (Rts2Event * event)
 	{
 		case RTS2_EVENT_GRB_PACKET:
 			infoAll ();
+			break;
+		case EVENT_TIMER_GCNCNN_INIT:
+			if (gcncnn->init () != 0)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot init GCN connection, waiting for 60 seconds" << sendLog;
+				addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
+			}
 			break;
 	}
 	Rts2DeviceDb::postEvent (event);

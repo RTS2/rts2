@@ -27,31 +27,25 @@
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"
 
-Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString *in_expandPath)
-:Rts2DevClientCameraImage (in_connection), Rts2DevScript (in_connection)
+Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2ValueString *_expandPath):Rts2DevClientCameraImage (_connection), Rts2DevScript (_connection)
 {
-	expandPath = in_expandPath;
+	expandPath = _expandPath;
 	imgCount = 0;
 }
-
 
 Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 {
 	deleteScript ();
 }
 
-
-Rts2Image *
-Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
+Rts2Image * Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
 	if (expandPath)
 		return new Rts2Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
 	return Rts2DevClientCameraImage::createImage (expStart);
 }
 
-
-void
-Rts2DevClientCameraExec::postEvent (Rts2Event * event)
+void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 {
 	Rts2Image *image;
 	switch (event->getType ())
@@ -73,16 +67,12 @@ Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	Rts2DevClientCameraImage::postEvent (event);
 }
 
-
-void
-Rts2DevClientCameraExec::startTarget ()
+void Rts2DevClientCameraExec::startTarget ()
 {
 	Rts2DevScript::startTarget ();
 }
 
-
-int
-Rts2DevClientCameraExec::getNextCommand ()
+int Rts2DevClientCameraExec::getNextCommand ()
 {
 	// there is only one continue which can bring us on beginning
 	while (true)
@@ -116,9 +106,7 @@ Rts2DevClientCameraExec::getNextCommand ()
 	}
 }
 
-
-void
-Rts2DevClientCameraExec::nextCommand ()
+void Rts2DevClientCameraExec::nextCommand ()
 {
 	int ret;
 	ret = haveNextCommand (this);
@@ -185,9 +173,7 @@ Rts2DevClientCameraExec::nextCommand ()
 	nextComd = NULL;			 // after command execute, it will be deleted
 }
 
-
-void
-Rts2DevClientCameraExec::queImage (Rts2Image * image)
+void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
 	// if unknow type, don't process image..
 	if (image->getShutter () != SHUT_OPENED)
@@ -208,7 +194,6 @@ Rts2DevClientCameraExec::queImage (Rts2Image * image)
 		minConn->queCommand (new Rts2CommandQueImage (getMaster (), image));
 	}
 }
-
 
 imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
@@ -245,9 +230,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 	return IMAGE_DO_BASIC_PROCESSING;
 }
 
-
-void
-Rts2DevClientCameraExec::idle ()
+void Rts2DevClientCameraExec::idle ()
 {
 	Rts2DevScript::idle ();
 	Rts2DevClientCameraImage::idle ();
@@ -256,9 +239,7 @@ Rts2DevClientCameraExec::idle ()
 		nextCommand ();
 }
 
-
-void
-Rts2DevClientCameraExec::exposureStarted ()
+void Rts2DevClientCameraExec::exposureStarted ()
 {
 	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
 		nextCommand ();
@@ -266,9 +247,7 @@ Rts2DevClientCameraExec::exposureStarted ()
 	Rts2DevClientCameraImage::exposureStarted ();
 }
 
-
-void
-Rts2DevClientCameraExec::exposureEnd ()
+void Rts2DevClientCameraExec::exposureEnd ()
 {
 	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 	// if script is running and it does not have anything to do, end it
@@ -296,25 +275,19 @@ Rts2DevClientCameraExec::exposureEnd ()
 	Rts2DevClientCameraImage::exposureEnd ();
 }
 
-
-void
-Rts2DevClientCameraExec::exposureFailed (int status)
+void Rts2DevClientCameraExec::exposureFailed (int status)
 {
 	// in case of an error..
 	Rts2DevClientCameraImage::exposureFailed (status);
 }
 
-
-void
-Rts2DevClientCameraExec::readoutEnd ()
+void Rts2DevClientCameraExec::readoutEnd ()
 {
-	//nextCommand ();
-	// we don't want camera to react to that..
+	Rts2DevClientCameraImage::readoutEnd ();
+	nextCommand ();
 }
 
-
-Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection):Rts2DevClientTelescopeImage
-(in_connection)
+Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * _connection):Rts2DevClientTelescopeImage (_connection)
 {
 	currentTarget = NULL;
 	cmdChng = NULL;
@@ -322,9 +295,7 @@ Rts2DevClientTelescopeExec::Rts2DevClientTelescopeExec (Rts2Conn * in_connection
 	fixedOffset.dec = 0;
 }
 
-
-void
-Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
+void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 {
 	int ret;
 	struct ln_equ_posn *offset;
@@ -408,9 +379,7 @@ Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	Rts2DevClientTelescopeImage::postEvent (event);
 }
 
-
-int
-Rts2DevClientTelescopeExec::syncTarget ()
+int Rts2DevClientTelescopeExec::syncTarget ()
 {
 	struct ln_equ_posn coord;
 	int ret;
@@ -475,9 +444,7 @@ Rts2DevClientTelescopeExec::syncTarget ()
 	return ret;
 }
 
-
-void
-Rts2DevClientTelescopeExec::checkInterChange ()
+void Rts2DevClientTelescopeExec::checkInterChange ()
 {
 	int waitNum = 0;
 	getMaster ()->
@@ -486,9 +453,7 @@ Rts2DevClientTelescopeExec::checkInterChange ()
 		getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
 }
 
-
-void
-Rts2DevClientTelescopeExec::moveEnd ()
+void Rts2DevClientTelescopeExec::moveEnd ()
 {
 	if (moveWasCorrecting)
 	{
@@ -505,9 +470,7 @@ Rts2DevClientTelescopeExec::moveEnd ()
 	Rts2DevClientTelescopeImage::moveEnd ();
 }
 
-
-void
-Rts2DevClientTelescopeExec::moveFailed (int status)
+void Rts2DevClientTelescopeExec::moveFailed (int status)
 {
 	if (status == DEVDEM_E_IGNORE)
 	{

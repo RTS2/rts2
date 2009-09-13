@@ -196,23 +196,20 @@ class XmlRpcd:public Rts2Device
 
 using namespace rts2xmlrpc;
 
-void
-XmlDevClient::stateChanged (Rts2ServerState * state)
+void XmlDevClient::stateChanged (Rts2ServerState * state)
 {
 	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
 	Rts2DevClient::stateChanged (state);
 }
 
-void
-XmlDevClient::valueChanged (Rts2Value * value)
+void XmlDevClient::valueChanged (Rts2Value * value)
 {
 	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
 	Rts2DevClient::valueChanged (value);
 }
 
 #ifndef HAVE_PGSQL
-int
-XmlRpcd::willConnect (Rts2Address *_addr)
+int XmlRpcd::willConnect (Rts2Address *_addr)
 {
 	if (_addr->getType () < getDeviceType ()
 		|| (_addr->getType () == getDeviceType ()
@@ -222,8 +219,7 @@ XmlRpcd::willConnect (Rts2Address *_addr)
 }
 #endif
 
-int
-XmlRpcd::processOption (int in_opt)
+int XmlRpcd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -248,8 +244,7 @@ XmlRpcd::processOption (int in_opt)
 }
 
 
-int
-XmlRpcd::init ()
+int XmlRpcd::init ()
 {
 	int ret;
 #ifdef HAVE_PGSQL
@@ -293,9 +288,7 @@ XmlRpcd::init ()
 	return ret;
 }
 
-
-void
-XmlRpcd::addSelectSocks ()
+void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::addSelectSocks ();
@@ -305,9 +298,7 @@ XmlRpcd::addSelectSocks ()
 	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
 }
 
-
-void
-XmlRpcd::selectSuccess ()
+void XmlRpcd::selectSuccess ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
@@ -317,9 +308,7 @@ XmlRpcd::selectSuccess ()
 	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
 
-
-void
-XmlRpcd::signaledHUP ()
+void XmlRpcd::signaledHUP ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
@@ -361,16 +350,12 @@ XmlRpcd::~XmlRpcd ()
 	sessions.clear ();
 }
 
-
-Rts2DevClient *
-XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
+Rts2DevClient * XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	return new XmlDevClient (conn);
 }
 
-
-void
-XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
+void XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -384,9 +369,7 @@ XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 	}
 }
 
-
-void
-XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
+void XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -409,9 +392,7 @@ XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 	}
 }
 
-
-void
-XmlRpcd::message (Rts2Message & msg)
+void XmlRpcd::message (Rts2Message & msg)
 {
 // log message to DB, if database is present
 #ifdef HAVE_PGSQL
@@ -429,18 +410,14 @@ XmlRpcd::message (Rts2Message & msg)
 	messages.push_back (msg);
 }
 
-
-std::string
-XmlRpcd::addSession (std::string _username, time_t _timeout)
+std::string XmlRpcd::addSession (std::string _username, time_t _timeout)
 {
 	Session *s = new Session (_username, time(NULL) + _timeout);
 	sessions[s->getSessionId()] = s;
 	return s->getSessionId ();
 }
 
-
-bool
-XmlRpcd::existsSession (std::string sessionId)
+bool XmlRpcd::existsSession (std::string sessionId)
 {
 	std::map <std::string, Session*>::iterator iter = sessions.find (sessionId);
 	if (iter == sessions.end ())
@@ -449,7 +426,6 @@ XmlRpcd::existsSession (std::string sessionId)
 	}
 	return true;
 }
-
 
 /**
  * Return session ID for user, if login is allowed.
@@ -498,7 +474,7 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 		{
 		}
 
-		virtual void execute (const char* path, int &http_code, const char* &response_type, char* &response, int &response_length)
+		virtual void execute (const char* path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
 		{
 
 			if (getUsername () == std::string ("session_id"))
@@ -525,10 +501,10 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 #endif /* HAVE_PGSQL */
 			http_code = HTTP_OK;
 
-			authorizedExecute (path, response_type, response, response_length);
+			authorizedExecute (path, params, response_type, response, response_length);
 		}
 
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length) = 0;
+		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
 };
 
 
@@ -541,10 +517,11 @@ class JpegImageRequest: public GetRequestAuthorized
 		{
 		}
 
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			response_type = "image/jpeg";
 			Rts2Image image (path, false, true);
+			image.openImage ();
 			Blob blob;
 			Magick::Image mimage = image.getMagickImage ();
 			mimage.fillColor (Magick::Color (0, 0, 0));
@@ -560,6 +537,14 @@ class JpegImageRequest: public GetRequestAuthorized
 		}
 } jpegRequest ("/jpeg", &xmlrpc_server);
 
+/**
+ * Create page with JPEG previews.
+ *
+ * @param p Page number. Default to 0.
+ * @param s Page size (number of images per page). Defalt to 100.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class JpegPreview:public GetRequestAuthorized
 {
 	public:
@@ -567,7 +552,9 @@ class JpegPreview:public GetRequestAuthorized
 		{
 		}
 
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected);
+
+		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			// if it is a fits file..
 			if (strstr (path + strlen (path) - 6, ".fits") != NULL)
@@ -575,6 +562,7 @@ class JpegPreview:public GetRequestAuthorized
 				response_type = "image/jpeg";
 
 				Rts2Image image (path, false, true);
+				image.openImage ();
 				Blob blob;
 				Magick::Image mimage = image.getMagickImage ();
 				mimage.zoom (Magick::Geometry (128, 128));
@@ -625,10 +613,28 @@ class JpegPreview:public GetRequestAuthorized
 
 			_os << "</p><p/>\n";
 
-			for (int i = 0; i < n; i++)
+			// get page number and size of page
+			int pageno = params->getInteger ("p", 1);
+			int pagesiz = params->getInteger ("s", 40);
+
+			if (pageno <= 0)
+				pageno = 1;
+
+			int is = (pageno - 1) * pagesiz;
+			int ie = is + pagesiz;
+			int in = 0;
+
+			int i;
+
+			for (i = 0; i < n; i++)
 			{
 				char *fname = namelist[i]->d_name;
 				if (strstr (fname + strlen (fname) - 6, ".fits") == NULL)
+					continue;
+				in++;
+				if (in <= is)
+					continue;
+				if (in > ie)
 					continue;
 				std::string fpath = std::string (path) + '/' + fname;
 				_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fpath 
@@ -636,8 +642,14 @@ class JpegPreview:public GetRequestAuthorized
 				//<a href='/fits" << fpath
 				//	<< "'>FITS</a>&nbsp;<a href='/jpeg" << fpath << "'>JPEG</a></li>";
 			}
-
-			_os << "</body></html>";
+			
+			// print pages..
+			_os << "<p>Page ";
+			for (i = 1; i <= in / pagesiz; i++)
+			 	pageLink (_os, path, i, pagesiz, i == pageno);
+			if (in % pagesiz)
+			 	pageLink (_os, path, i, pagesiz, i == pageno);
+			_os << "</p></body></html>";
 
 			response_type = "text/html";
 			response_length = _os.str ().length ();
@@ -645,6 +657,18 @@ class JpegPreview:public GetRequestAuthorized
 			memcpy (response, _os.str ().c_str (), response_length);
 		}
 } jpegPreview ("/preview", &xmlrpc_server);
+
+void JpegPreview::pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected)
+{
+	if (selected)
+	{
+		_os << "<b>" << i << "</b> ";
+	}
+	else
+	{
+		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << "?p=" << i << "&s=" << pagesiz << "'>" << i << "</a> ";
+	}
+}
 
 #endif // HAVE_LIBJPEG
 
@@ -655,7 +679,7 @@ class FitsImageRequest:public GetRequestAuthorized
 		{
 		}
 
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
+		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			response_type = "image/fits";
 			int f = open (path, O_RDONLY);
@@ -1744,8 +1768,7 @@ class UserLogin: public XmlRpcServerMethod
 
 #endif /* HAVE_PGSQL */
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	XmlRpcd device = XmlRpcd (argc, argv);
 	return device.run ();

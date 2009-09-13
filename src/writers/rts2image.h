@@ -83,81 +83,6 @@ imageWriteWhich_t;
  */
 class Rts2Image:public Rts2FitsFile
 {
-	private:
-		int filter_i;
-		char *filter;
-		float exposureLength;
-		
-		int createImage (std::string in_filename);
-		int createImage (char *in_filename);
-		// if filename is NULL, will take name stored in this->getFileName ()
-		void openImage (const char *_filename = NULL, bool readOnly = false);
-
-		char *imageData;
-		int imageType;
-		int focPos;
-		// we assume that image is 2D
-		long naxis[2];
-		float signalNoise;
-		int getFailed;
-		double average;
-		double stdev;
-		double bg_stdev;
-		short int min;
-		short int max;
-		short int mean;
-		int isAcquiring;
-		// that value is nan when rotang was already set;
-		// it is calculated as sum of partial rotangs.
-		// For change of total rotang, addRotang function is provided.
-		double total_rotang;
-
-		double xoa;
-		double yoa;
-
-		int mnt_flip;
-
-		int expNum;
-
-		void initData ();
-
-		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
-
-		void writeConnArray (const char *name, Rts2Value *val);
-
-		// writes one value to image
-		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
-
-		// record value changes
-		void recordChange (Rts2Conn *conn, Rts2Value *val);
-	protected:
-		int targetId;
-		int targetIdSel;
-		char targetType;
-		char *targetName;
-		int obsId;
-		int imgId;
-		char *cameraName;
-		char *mountName;
-		char *focName;
-		shutter_t shutter;
-
-		struct ln_equ_posn pos_astr;
-		double ra_err;
-		double dec_err;
-		double img_err;
-
-		int createImage ();
-
-		int writeExposureStart ();
-
-		virtual int isGoodForFwhm (struct stardata *sr);
-		char *getImageBase (void);
-
-		// expand expression to image path
-		virtual std::string expandVariable (char expression);
-		virtual std::string expandVariable (std::string expression);
-
 	public:
 		// list of sex results..
 		struct stardata *sexResults;
@@ -182,16 +107,17 @@ class Rts2Image:public Rts2FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart,
-			Rts2Conn * in_connection);
+		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
 		// create image in que
-		Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-			const struct timeval *in_exposureStart);
+		Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
 		// open image from disk..
-		Rts2Image (const char *in_filename, bool verbose = true, bool readOnly = false);
+		Rts2Image (const char *_filename, bool _verbose = true, bool readOnly = false);
 		virtual ~ Rts2Image (void);
 
 		virtual int closeFile ();
+
+		void openImage (const char *_filename = NULL, bool readOnly = false);
+		void getHeaders ();
 
 		virtual int toQue ();
 		virtual int toAcquisition ();
@@ -795,6 +721,84 @@ class Rts2Image:public Rts2FitsFile
 
 		std::vector < pixel > list;
 		double median, sigma;
+
+	protected:
+		int targetId;
+		int targetIdSel;
+		char targetType;
+		char *targetName;
+		int obsId;
+		int imgId;
+		char *cameraName;
+		char *mountName;
+		char *focName;
+		shutter_t shutter;
+
+		struct ln_equ_posn pos_astr;
+		double ra_err;
+		double dec_err;
+		double img_err;
+
+		int createImage ();
+
+		int writeExposureStart ();
+
+		virtual int isGoodForFwhm (struct stardata *sr);
+		char *getImageBase (void);
+
+		// expand expression to image path
+		virtual std::string expandVariable (char expression);
+		virtual std::string expandVariable (std::string expression);
+
+	private:
+		int filter_i;
+		char *filter;
+		float exposureLength;
+		
+		int createImage (std::string in_filename);
+		int createImage (char *in_filename);
+		// if filename is NULL, will take name stored in this->getFileName ()
+		// if openImage should load header..
+		bool loadHeader;
+		bool verbose;
+
+		char *imageData;
+		int imageType;
+		int focPos;
+		// we assume that image is 2D
+		long naxis[2];
+		float signalNoise;
+		int getFailed;
+		double average;
+		double stdev;
+		double bg_stdev;
+		short int min;
+		short int max;
+		short int mean;
+		int isAcquiring;
+		// that value is nan when rotang was already set;
+		// it is calculated as sum of partial rotangs.
+		// For change of total rotang, addRotang function is provided.
+		double total_rotang;
+
+		double xoa;
+		double yoa;
+
+		int mnt_flip;
+
+		int expNum;
+
+		void initData ();
+
+		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
+
+		void writeConnArray (const char *name, Rts2Value *val);
+
+		// writes one value to image
+		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
+
+		// record value changes
+		void recordChange (Rts2Conn *conn, Rts2Value *val);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);

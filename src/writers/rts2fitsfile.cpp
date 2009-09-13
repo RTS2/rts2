@@ -28,8 +28,7 @@
 
 using namespace rts2image;
 
-std::string
-Rts2FitsFile::getFitsErrors ()
+std::string Rts2FitsFile::getFitsErrors ()
 {
 	std::ostringstream os;
 	char buf[200];
@@ -41,9 +40,7 @@ Rts2FitsFile::getFitsErrors ()
 	return os.str ();
 }
 
-
-void
-Rts2FitsFile::setFileName (const char *_fileName)
+void Rts2FitsFile::setFileName (const char *_fileName)
 {
 	if (fileName != absoluteFileName)
 		delete[] absoluteFileName;
@@ -79,9 +76,7 @@ Rts2FitsFile::setFileName (const char *_fileName)
 	}
 }
 
-
-int
-Rts2FitsFile::createFile ()
+int Rts2FitsFile::createFile ()
 {
 	fits_status = 0;
 	ffile = NULL;
@@ -103,25 +98,19 @@ Rts2FitsFile::createFile ()
 	return 0;
 }
 
-
-int
-Rts2FitsFile::createFile (const char *_fileName)
+int Rts2FitsFile::createFile (const char *_fileName)
 {
 	setFileName (_fileName);
 	return createFile ();
 }
 
-
-int
-Rts2FitsFile::createFile (std::string _fileName)
+int Rts2FitsFile::createFile (std::string _fileName)
 {
 	setFileName (_fileName.c_str ());
 	return createFile ();
 }
 
-
-int
-Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
+void Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 {
 	closeFile ();
 
@@ -131,7 +120,7 @@ Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 		setFileName (_fileName);
 
 	if (getFileName () == NULL)
-		return -1;
+	 	throw ErrorOpeningFitsFile ("");
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "Opening " << getFileName () << " ffile " << getFitsFile () << sendLog;
@@ -146,15 +135,11 @@ Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 				sendLog;
 			flags |= IMAGE_CANNOT_LOAD;
 		}
-		return -1;
+		throw ErrorOpeningFitsFile (getFileName ());
 	}
-
-	return 0;
 }
 
-
-int
-Rts2FitsFile::closeFile ()
+int Rts2FitsFile::closeFile ()
 {
 	if ((flags & IMAGE_SAVE) && getFitsFile ())
 	{
@@ -170,9 +155,7 @@ Rts2FitsFile::closeFile ()
 	return 0;
 }
 
-
-int
-Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool required)
+int Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool required)
 {
 	int ret = 0;
 	if (fits_status)
@@ -188,14 +171,12 @@ Rts2FitsFile::fitsStatusValue (const char *valname, const char *operation, bool 
 	return ret;
 }
 
-
 void Rts2FitsFile::fitsStatusSetValue (const char *valname, bool required)
 {
 	int ret = fitsStatusValue (valname, "SetValue", required);
 	if (ret && required)
 		throw ErrorSettingKey (valname);
 }
-
 
 void Rts2FitsFile::fitsStatusGetValue (const char *valname, bool required)
 {
@@ -212,7 +193,6 @@ Rts2FitsFile::Rts2FitsFile ():rts2core::Expander ()
 	fits_status = 0;
 }
 
-
 Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsfile)
 {
 	fileName = NULL;
@@ -226,7 +206,6 @@ Rts2FitsFile::Rts2FitsFile (Rts2FitsFile * _fitsfile):rts2core::Expander (_fitsf
 	fits_status = _fitsfile->fits_status;
 }
 
-
 Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 {
 	fileName = NULL;
@@ -236,7 +215,6 @@ Rts2FitsFile::Rts2FitsFile (const char *_fileName):rts2core::Expander ()
 	createFile (_fileName);
 }
 
-
 Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 {
 	ffile = NULL;
@@ -244,7 +222,6 @@ Rts2FitsFile::Rts2FitsFile (const struct timeval *_tv):rts2core::Expander (_tv)
 	absoluteFileName = NULL;
 	fits_status = 0;
 }
-
 
 Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):rts2core::Expander (_tv)
 {
@@ -255,7 +232,6 @@ Rts2FitsFile::Rts2FitsFile (const char *_expression, const struct timeval *_tv):
 	createFile (expandPath (_expression));
 }
 
-
 Rts2FitsFile::~Rts2FitsFile (void)
 {
 	closeFile ();
@@ -265,13 +241,11 @@ Rts2FitsFile::~Rts2FitsFile (void)
 	delete[] fileName;
 }
 
-
 void Rts2FitsFile::writeHistory (const char *history)
 {
 	fits_write_history (ffile, (char *) history, &fits_status);
 	fitsStatusSetValue ("history", true);
 }
-
 
 void Rts2FitsFile::writeComment (const char *comment)
 {
@@ -279,8 +253,7 @@ void Rts2FitsFile::writeComment (const char *comment)
 	fitsStatusSetValue ("comment", true);
 }
 
-int
-Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
+int Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
 {
 	const char *cols[] = { "Key", "Value" };
 	const char *types[] = { "I4", "D20.10" };
@@ -316,4 +289,3 @@ Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
 	}
 	return 0;
 }
-

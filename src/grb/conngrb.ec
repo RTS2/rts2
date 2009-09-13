@@ -379,7 +379,12 @@ int ConnGrb::pr_fermi_gbm ()
 	long grb_date_usec;
 
 	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
-	return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, lbuf[BURST_ERROR] / 10000.0, false);
+
+	double _error = lbuf[BURST_ERROR] / 10000.0;
+	if (gbm_record_above || gbm_error < 0 || _error <= gbm_error)
+		return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, gbm_error, false);
+	logStream (MESSAGE_INFO) << "ignoring GBM above error limit - " << gbm_error << " > " << _error << sendLog;
+	return 0;
 }
 
 int ConnGrb::pr_fermi_lat ()
@@ -982,6 +987,12 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 		return 0;
 	}
 
+	if (d_grb_type_start == TYPE_FERMI_GBM_ALERT && gbm_error > 0 && d_grb_errorbox > gbm_error)
+	{
+		logStream (MESSAGE_INFO) << "only recorded GBM GRB with id " << d_grb_id << ", as it is above gbm_error_limit" << sendLog;
+		return ret;
+	}
+
 	// test if that's only follow-up
 	if (!execFollowups)
 	{
@@ -997,7 +1008,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 
 	ret = master->newGcnGrb (d_tar_id);
 
-	// last think is to call some external exe..
+	// last thing is to call some external exe..
 	if (addExe)
 	{
 		int execRet;

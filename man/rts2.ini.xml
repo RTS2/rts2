@@ -902,6 +902,33 @@
 	    </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_record_above_error</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Whanever FERMI GBM GRBs above error limit will be recorded. If
+	      error indicated in GBM message is above gbm_error_limit,
+	      depending on this setting, either GBM GRB will be completely
+	      ignored (if this is false), or recorded to the database with
+	      tar_enabled set to false - e.g. disabled.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_error_limit</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      FERMI GBM GRBs, with error larger then this limit, will not be
+	      followed. According to gbm_record_above_error setting, they will
+	      be either ignored at all, or only recorded to the database for
+	      reference.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>

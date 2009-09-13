@@ -43,10 +43,11 @@
 #define COMMAND_BLOCK_ACQ       "ifacq"
 #define COMMAND_BLOCK_ELSE      "else"
 #define COMMAND_BLOCK_FOR       "for"
+#define COMMAND_BLOCK_WHILE     "while"
+#define COMMAND_BLOCK_DO        "do"
 #define COMMAND_WAIT_SOD        "waitsod"
 #define COMMAND_WAITFOR         "waitfor"
 #define COMMAND_SLEEP           "sleep"
-#define COMMAND_WHILE           "while"
 #define COMMAND_WAIT_FOR_IDLE   "wait_idle"
 
 // hex pattern

@@ -26,38 +26,30 @@ XmlRpcServer::~XmlRpcServer()
 	delete _methodHelp;
 }
 
-
 // Add a command to the RPC server
-void
-XmlRpcServer::addMethod(XmlRpcServerMethod* method)
+void XmlRpcServer::addMethod(XmlRpcServerMethod* method)
 {
 	_methods[method->name()] = method;
 }
 
-
 // Remove a command from the RPC server
-void
-XmlRpcServer::removeMethod(XmlRpcServerMethod* method)
+void XmlRpcServer::removeMethod(XmlRpcServerMethod* method)
 {
 	MethodMap::iterator i = _methods.find(method->name());
 	if (i != _methods.end())
 		_methods.erase(i);
 }
 
-
 // Remove a command from the RPC server by name
-void
-XmlRpcServer::removeMethod(const std::string& methodName)
+void XmlRpcServer::removeMethod(const std::string& methodName)
 {
 	MethodMap::iterator i = _methods.find(methodName);
 	if (i != _methods.end())
 		_methods.erase(i);
 }
 
-
 // Look up a method by name
-XmlRpcServerMethod*
-XmlRpcServer::findMethod(const std::string& name) const
+XmlRpcServerMethod* XmlRpcServer::findMethod(const std::string& name) const
 {
 	MethodMap::const_iterator i = _methods.find(name);
 	if (i == _methods.end())
@@ -65,28 +57,22 @@ XmlRpcServer::findMethod(const std::string& name) const
 	return i->second;
 }
 
-
 // Add a GET request to the HTTP server
-void
-XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* getRequest)
+void XmlRpcServer::addGetRequest(XmlRpcServerGetRequest* getRequest)
 {
 	_requests[getRequest->getPrefix()] = getRequest;
 }
 
-
 // Remove a GET request from HTTP server
-void
-XmlRpcServer::removeGetRequest(XmlRpcServerGetRequest* getRequest)
+void XmlRpcServer::removeGetRequest(XmlRpcServerGetRequest* getRequest)
 {
 	RequestMap::iterator i = _requests.find(getRequest->getPrefix());
 	if (i != _requests.end())
 		_requests.erase(i);
 }
 
-
 // Lookup a get request by prefix
-XmlRpcServerGetRequest*
-XmlRpcServer::findGetRequest(const std::string& prefix) const
+XmlRpcServerGetRequest*XmlRpcServer::findGetRequest(const std::string& prefix) const
 {
 	for (RequestMap::const_iterator i = _requests.begin(); i != _requests.end(); i++)
 	{
@@ -96,11 +82,9 @@ XmlRpcServer::findGetRequest(const std::string& prefix) const
 	return 0;
 }
 
-
 // Create a socket, bind to the specified port, and
 // set it in listen mode to make it available for clients.
-bool
-XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
+bool XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
 {
 	int fd = XmlRpcSocket::socket();
 	if (fd < 0)
@@ -151,47 +135,37 @@ XmlRpcServer::bindAndListen(int port, int backlog /*= 5*/)
 	return true;
 }
 
-
 // Process client requests for the specified time
-void
-XmlRpcServer::work(double msTime)
+void XmlRpcServer::work(double msTime)
 {
 	XmlRpcUtil::log(2, "XmlRpcServer::work: waiting for a connection");
 	_disp.work(msTime);
 }
 
-
 // Add sockets to file descriptor set
-void
-XmlRpcServer::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcServer::addToFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 {
 	_disp.addToFd(inFd, outFd, excFd);
 }
 
-
 // Check if it should server any of the modified sockets
-void
-XmlRpcServer::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
+void XmlRpcServer::checkFd (fd_set *inFd, fd_set *outFd, fd_set *excFd)
 {
 	_disp.checkFd(inFd, outFd, excFd);
 }
 
-
 // Handle input on the server socket by accepting the connection
 // and reading the rpc request.
-unsigned
-XmlRpcServer::handleEvent(unsigned mask)
+unsigned XmlRpcServer::handleEvent(unsigned mask)
 {
 	acceptConnection();
 								 // Continue to monitor this fd
 	return XmlRpcDispatch::ReadableEvent;
 }
 
-
 // Accept a client connection request and create a connection to
 // handle method calls from the client.
-void
-XmlRpcServer::acceptConnection()
+void XmlRpcServer::acceptConnection()
 {
 	int s = XmlRpcSocket::accept(this->getfd());
 	XmlRpcUtil::log(2, "XmlRpcServer::acceptConnection: socket %d", s);
@@ -212,39 +186,30 @@ XmlRpcServer::acceptConnection()
 	}
 }
 
-
 // Create a new connection object for processing requests from a specific client.
-XmlRpcServerConnection*
-XmlRpcServer::createConnection(int s)
+XmlRpcServerConnection* XmlRpcServer::createConnection(int s)
 {
 	// Specify that the connection object be deleted when it is closed
 	return new XmlRpcServerConnection(s, this, true);
 }
 
-
-void
-XmlRpcServer::removeConnection(XmlRpcServerConnection* sc)
+void XmlRpcServer::removeConnection(XmlRpcServerConnection* sc)
 {
 	_disp.removeSource(sc);
 }
 
-
 // Stop processing client requests
-void
-XmlRpcServer::exit()
+void XmlRpcServer::exit()
 {
 	_disp.exit();
 }
 
-
 // Close the server socket file descriptor and stop monitoring connections
-void
-XmlRpcServer::shutdown()
+void XmlRpcServer::shutdown()
 {
 	// This closes and destroys all connections as well as closing this socket
 	_disp.clear();
 }
-
 
 // Introspection support
 static const std::string LIST_METHODS("system.listMethods");
@@ -287,8 +252,7 @@ class MethodHelp : public XmlRpcServerMethod
 };
 
 // Specify whether introspection is enabled or not. Default is enabled.
-void
-XmlRpcServer::enableIntrospection(bool enabled)
+void XmlRpcServer::enableIntrospection(bool enabled)
 {
 	if (_introspectionEnabled == enabled)
 		return;
@@ -315,9 +279,7 @@ XmlRpcServer::enableIntrospection(bool enabled)
 	}
 }
 
-
-void
-XmlRpcServer::listMethods(XmlRpcValue& result)
+void XmlRpcServer::listMethods(XmlRpcValue& result)
 {
 	int i = 0;
 	result.setSize(_methods.size()+1);

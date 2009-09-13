@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "script.h"
 #include "elementblock.h"
 
 using namespace rts2script;
@@ -425,4 +426,16 @@ int ElementWhileSod::nextCommand (Rts2DevClientCamera * client, Rts2Command ** n
 		}
 	}
 	return blockScriptRet (ret);
+}
+
+bool ElementWhile::endLoop ()
+{
+	return getLoopCount () >= max_cycles || condition->getDouble () == 0;
+}
+
+bool ElementDo::endLoop ()
+{
+	if (getLoopCount () == 0)
+		return false;
+	return getLoopCount () >= max_cycles || condition->getDouble () == 0;
 }

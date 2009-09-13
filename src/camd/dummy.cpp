@@ -18,6 +18,7 @@
  */
 
 #include "camd.h"
+#include "../utils/utilsfunc.h"
 
 #define OPT_WIDTH        OPT_LOCAL + 1
 #define OPT_HEIGHT       OPT_LOCAL + 2
@@ -33,54 +34,6 @@ namespace rts2camd
  */
 class Dummy:public Camera
 {
-	private:
-		bool supportFrameT;
-		int infoSleep;
-		Rts2ValueDouble *readoutSleep;
-		Rts2ValueSelection *genType;
-		int width;
-		int height;
-
-		long dataSize;
-	protected:
-		virtual void initBinnings ()
-		{
-			Camera::initBinnings ();
-
-			addBinning2D (2, 2);
-			addBinning2D (3, 3);
-			addBinning2D (4, 4);
-			addBinning2D (1, 2);
-			addBinning2D (2, 1);
-			addBinning2D (4, 1);
-		}
-
-		virtual void initDataTypes ()
-		{
-			Camera::initDataTypes ();
-			addDataType (RTS2_DATA_BYTE);
-			addDataType (RTS2_DATA_SHORT);
-			addDataType (RTS2_DATA_LONG);
-			addDataType (RTS2_DATA_LONGLONG);
-			addDataType (RTS2_DATA_FLOAT);
-			addDataType (RTS2_DATA_DOUBLE);
-			addDataType (RTS2_DATA_SBYTE);
-			addDataType (RTS2_DATA_ULONG);
-		}
-
-		virtual int setGain (double in_gain)
-		{
-			return 0;
-		}
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
-		{
-			if (old_value == readoutSleep || old_value == genType)
-			{
-				return 0;
-			}
-			return Camera::setValue (old_value, new_value);
-		}
 	public:
 		Dummy (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 		{
@@ -92,10 +45,15 @@ class Dummy:public Camera
 			readoutSleep->setValueDouble (0);
 
 			createValue (genType, "gen_type", "data generation algorithm", true, 0);
-			genType->addSelVal (std::string ("random"));
-			genType->addSelVal (std::string ("linear"));
-			genType->addSelVal (std::string ("linear shifted"));
+			genType->addSelVal ("random");
+			genType->addSelVal ("linear");
+			genType->addSelVal ("linear shifted");
+			genType->addSelVal ("flats dusk");
+			genType->addSelVal ("flats dawn");
 			genType->setValueInteger (0);
+
+			createValue (noiseRange, "noise_range", "readout noise range", false);
+			noiseRange->setValueDouble (300);
 
 			createExpType ();
 
@@ -169,15 +127,9 @@ class Dummy:public Camera
 			tempCCD->setValueDouble (100);
 			return Camera::info ();
 		}
-		virtual int camChipInfo ()
-		{
-			return 0;
-		}
+		virtual int camChipInfo () { return 0; }
 
-		virtual int startExposure ()
-		{
-			return 0;
-		}
+		virtual int startExposure () { return 0; }
 		virtual long suggestBufferSize ()
 		{
 			if (dataSize < 0)
@@ -186,37 +138,99 @@ class Dummy:public Camera
 		}
 		virtual int doReadout ();
 
-		virtual bool supportFrameTransfer ()
+		virtual bool supportFrameTransfer () { return supportFrameT; }
+	protected:
+		virtual void initBinnings ()
 		{
-			return supportFrameT;
+			Camera::initBinnings ();
+
+			addBinning2D (2, 2);
+			addBinning2D (3, 3);
+			addBinning2D (4, 4);
+			addBinning2D (1, 2);
+			addBinning2D (2, 1);
+			addBinning2D (4, 1);
 		}
+
+		virtual void initDataTypes ()
+		{
+			Camera::initDataTypes ();
+			addDataType (RTS2_DATA_BYTE);
+			addDataType (RTS2_DATA_SHORT);
+			addDataType (RTS2_DATA_LONG);
+			addDataType (RTS2_DATA_LONGLONG);
+			addDataType (RTS2_DATA_FLOAT);
+			addDataType (RTS2_DATA_DOUBLE);
+			addDataType (RTS2_DATA_SBYTE);
+			addDataType (RTS2_DATA_ULONG);
+		}
+
+		virtual int setGain (double in_gain) { return 0; }
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
+		{
+			if (old_value == readoutSleep || old_value == genType || old_value == noiseRange)
+			{
+				return 0;
+			}
+			return Camera::setValue (old_value, new_value);
+		}
+	private:
+		bool supportFrameT;
+		int infoSleep;
+		Rts2ValueDouble *readoutSleep;
+		Rts2ValueSelection *genType;
+		Rts2ValueDouble *noiseRange;
+		int width;
+		int height;
+
+		long dataSize;
 };
 
 };
 
 using namespace rts2camd;
 
-int
-Dummy::doReadout ()
+int Dummy::doReadout ()
 {
 	int ret;
 	long usedSize = dataBufferSize;
 	if (usedSize > getWriteBinaryDataSize ())
 		usedSize = getWriteBinaryDataSize ();
 	usleep ((int) (readoutSleep->getValueDouble () * USEC_SEC));
-	for (int i = 0; i < usedSize; i++)
+	for (int i = 0; i < usedSize; i += 2)
 	{
+		uint16_t *d = (uint16_t* ) (dataBuffer + i);
+		double n;
+		if (genType->getValueInteger () != 1 && genType->getValueInteger () != 2)
+			n = noiseRange->getValueDouble ();
 		switch (genType->getValueInteger ())
 		{
 			case 0:  // random
-				dataBuffer[i] = 10 + 10 * ((double) rand ()) / RAND_MAX;
+				*d = 20000 + n * random_num () - n / 2;
 				break;
 			case 1:  // linear
-				dataBuffer[i] = i;
+				*d = i;
 				break;
 			case 2:
 				// linear shifted
-				dataBuffer[i] = i + (int) (getExposureNumber () * 10);
+				*d = i + (int) (getExposureNumber () * 10);
+				break;
+			case 3:
+				// flats dusk
+				*d = n * random_num ();
+				if (getScriptExposureNumber () < 55)
+					*d += (56 - getScriptExposureNumber ()) * 1000;
+				*d -= n / 2;
+				break;
+			case 4:
+				// flats dawn
+				*d = n * random_num ();
+				if (getScriptExposureNumber () < 55)
+					*d += getScriptExposureNumber () * 1000;
+				else
+				  	*d += 55000;
+				*d -= n / 2;
 				break;
 		}
 	}
@@ -229,9 +243,7 @@ Dummy::doReadout ()
 	return 0;					 // imediately send new data
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Dummy device = Dummy (argc, argv);
 	return device.run ();

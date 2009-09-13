@@ -1,6 +1,6 @@
 /*
  * Wait for some event or for a number of seconds.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,13 +26,13 @@ void ElementWaitFor::getDevice (char new_device[DEVICE_NAME_SIZE])
 	strncpy (new_device, deviceName.c_str (), DEVICE_NAME_SIZE);
 }
 
-ElementWaitFor::ElementWaitFor (Script * in_script, const char *new_device, char *in_valueName, double in_tarval, double in_range):Element (in_script)
+ElementWaitFor::ElementWaitFor (Script * _script, const char *new_device, char *_valueName, double _tarval, double _range):Element (_script)
 {
-	valueName = std::string (in_valueName);
+	valueName = std::string (_valueName);
 	deviceName = std::string (new_device);
 	// if value contain device..
-	tarval = in_tarval;
-	range = in_range;
+	tarval = _tarval;
+	range = _range;
 	setIdleTimeout (1);
 }
 
@@ -61,11 +61,6 @@ int ElementWaitFor::idle ()
 	return Element::idle ();
 }
 
-ElementSleep::ElementSleep (Script * in_script, double in_sec):Element (in_script)
-{
-	sec = in_sec;
-}
-
 int ElementSleep::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
 {
 	if (!isnan (sec))
@@ -82,4 +77,13 @@ int ElementSleep::idle ()
 {
 	sec = nan ("f");
 	return NEXT_COMMAND_NEXT;
+}
+
+int ElementWaitForIdle::defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE])
+{
+	if (client->getConnection ()->queEmptyForOriginator (client) == false)
+		return NEXT_COMMAND_KEEP;
+	if ((client->getConnection ()->getState () & DEVICE_STATUS_MASK) == DEVICE_IDLE)
+		return NEXT_COMMAND_NEXT;
+	return NEXT_COMMAND_KEEP;
 }

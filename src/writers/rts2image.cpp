@@ -62,10 +62,12 @@ double ln_get_heliocentric_time_diff (double JD, struct ln_equ_posn *object)
 }
 #endif
 
-void
-Rts2Image::initData ()
+void Rts2Image::initData ()
 {
 	exposureLength = nan ("f");
+
+	loadHeader = false;
+	verbose = true;
 	
 	setFileName (NULL);
 	setFitsFile (NULL);
@@ -117,7 +119,6 @@ Rts2Image::Rts2Image ():Rts2FitsFile ()
 	initData ();
 	flags = IMAGE_KEEP_DATA;
 }
-
 
 Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 {
@@ -179,7 +180,6 @@ Rts2Image::Rts2Image (Rts2Image * in_image):Rts2FitsFile (in_image)
 	mnt_flip = in_image->mnt_flip;
 }
 
-
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
 {
 	initData ();
@@ -187,14 +187,12 @@ Rts2Image::Rts2Image (const struct timeval *in_exposureStart):Rts2FitsFile (in_e
 	writeExposureStart ();
 }
 
-
 Rts2Image::Rts2Image (const struct timeval *in_exposureStart, float in_img_exposure):Rts2FitsFile (in_exposureStart)
 {
 	initData ();
 	writeExposureStart ();
 	exposureLength = in_img_exposure;
 }
-
 
 Rts2Image::Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure):Rts2FitsFile ()
 {
@@ -207,15 +205,13 @@ Rts2Image::Rts2Image (long in_img_date, int in_img_usec, float in_img_exposure):
 	exposureLength = in_img_exposure;
 }
 
-
-Rts2Image::Rts2Image (char *in_filename, const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
+Rts2Image::Rts2Image (char *_filename, const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
 {
 	initData ();
 
-	createImage (in_filename);
+	createImage (_filename);
 	writeExposureStart ();
 }
-
 
 Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection):Rts2FitsFile (in_exposureStart)
 {
@@ -226,7 +222,6 @@ Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct tim
 	createImage (expandPath (in_expression));
 	writeExposureStart ();
 }
-
 
 Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
 {
@@ -287,13 +282,137 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, con
 }
 
 
-Rts2Image::Rts2Image (const char *in_filename, bool verbose, bool readOnly):Rts2FitsFile ()
+Rts2Image::Rts2Image (const char *_filename, bool _verbose, bool readOnly):Rts2FitsFile ()
+{
+	initData ();
+
+	loadHeader = true;
+	verbose = _verbose;
+
+	setFileName (_filename);
+}
+
+Rts2Image::~Rts2Image (void)
+{
+	saveImage ();
+	delete[]targetName;
+	delete[]cameraName;
+	delete[]mountName;
+	delete[]focName;
+	if (!(flags & IMAGE_DONT_DELETE_DATA))
+		delete[]imageData;
+	imageData = NULL;
+	imageType = RTS2_DATA_USHORT;
+	delete[]filter;
+	if (sexResults)
+		free (sexResults);
+}
+
+std::string Rts2Image::expandVariable (char expression)
+{
+	switch (expression)
+	{
+		case 'b':
+			return getImageBase ();
+		case 'c':
+			return getCameraName ();
+		case 'E':
+			return getExposureLengthString ();
+		case 'F':
+			return getFilter ();
+		case 'f':
+			return getOnlyFileName ();
+		case 'i':
+			return getImgIdString ();
+		case 'o':
+			return getObsString ();
+		case 'p':
+			return getProcessingString ();
+		case 'T':
+			return getTargetString ();
+		case 't':
+			return getTargetSelString ();
+		case 'n':
+			return getExposureNumberString ();
+		default:
+			return rts2core::Expander::expandVariable (expression);
+	}
+}
+
+std::string Rts2Image::expandVariable (std::string expression)
+{
+	std::string ret;
+	char valB[200];
+
+	try
+	{
+		getValue (expression.c_str (), valB, 200, NULL, true);
+	}
+	catch (rts2core::Error &er)
+	{
+		return rts2core::Expander::expandVariable (expression);
+	}
+	return std::string (valB);
+}
+
+int Rts2Image::createImage ()
+{
+	if (createFile ())
+		return -1;
+
+	flags = IMAGE_NOT_SAVE;
+	shutter = SHUT_UNKNOW;
+
+	naxis[0] = 1;
+	naxis[1] = 1;
+	fits_create_img (getFitsFile (), USHORT_IMG, 2, naxis, &fits_status);
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "Error while creating image "
+			<< getFitsErrors () << sendLog;
+		return -1;
+	}
+	logStream (MESSAGE_DEBUG) << "Creating image "
+		<< getFileName () << sendLog;
+
+	// add history
+	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
+
+	flags = IMAGE_SAVE;
+	return 0;
+}
+
+int Rts2Image::createImage (std::string in_filename)
+{
+	setFileName (in_filename.c_str ());
+
+	return createImage ();
+}
+
+int Rts2Image::createImage (char *in_filename)
+{
+	setFileName (in_filename);
+
+	return createImage ();
+}
+
+void Rts2Image::openImage (const char *_filename, bool readOnly)
+{
+	if (_filename)
+		setFileName (_filename);
+
+	openFile (getFileName (), readOnly);
+
+	if (readOnly == false)
+		flags |= IMAGE_SAVE;
+	if (loadHeader)
+		getHeaders ();
+}
+
+void Rts2Image::getHeaders ()
 {
 	struct timeval tv;
 
-	initData ();
-
-	openImage (in_filename, readOnly);
 	// get info..
 	getValue ("TARGET", targetId, verbose);
 	getValue ("TARSEL", targetIdSel, verbose);
@@ -354,131 +473,6 @@ Rts2Image::Rts2Image (const char *in_filename, bool verbose, bool readOnly):Rts2
 	getValue ("MNT_FLIP", mnt_flip, false);
 }
 
-
-Rts2Image::~Rts2Image (void)
-{
-	saveImage ();
-	delete[]targetName;
-	delete[]cameraName;
-	delete[]mountName;
-	delete[]focName;
-	if (!(flags & IMAGE_DONT_DELETE_DATA))
-		delete[]imageData;
-	imageData = NULL;
-	imageType = RTS2_DATA_USHORT;
-	delete[]filter;
-	if (sexResults)
-		free (sexResults);
-}
-
-
-std::string Rts2Image::expandVariable (char expression)
-{
-	switch (expression)
-	{
-		case 'b':
-			return getImageBase ();
-		case 'c':
-			return getCameraName ();
-		case 'E':
-			return getExposureLengthString ();
-		case 'F':
-			return getFilter ();
-		case 'f':
-			return getOnlyFileName ();
-		case 'i':
-			return getImgIdString ();
-		case 'o':
-			return getObsString ();
-		case 'p':
-			return getProcessingString ();
-		case 'T':
-			return getTargetString ();
-		case 't':
-			return getTargetSelString ();
-		case 'n':
-			return getExposureNumberString ();
-		default:
-			return rts2core::Expander::expandVariable (expression);
-	}
-}
-
-
-std::string Rts2Image::expandVariable (std::string expression)
-{
-	std::string ret;
-	char valB[200];
-
-	try
-	{
-		getValue (expression.c_str (), valB, 200, NULL, true);
-	}
-	catch (rts2core::Error &er)
-	{
-		return rts2core::Expander::expandVariable (expression);
-	}
-	return std::string (valB);
-}
-
-
-int
-Rts2Image::createImage ()
-{
-	if (createFile ())
-		return -1;
-
-	flags = IMAGE_NOT_SAVE;
-	shutter = SHUT_UNKNOW;
-
-	naxis[0] = 1;
-	naxis[1] = 1;
-	fits_create_img (getFitsFile (), USHORT_IMG, 2, naxis, &fits_status);
-	if (fits_status)
-	{
-		logStream (MESSAGE_ERROR) << "Error while creating image "
-			<< getFitsErrors () << sendLog;
-		return -1;
-	}
-	logStream (MESSAGE_DEBUG) << "Creating image "
-		<< getFileName () << sendLog;
-
-	// add history
-	writeHistory ("Created with RTS2 version " VERSION " build on " __DATE__ " " __TIME__ ".");
-
-	flags = IMAGE_SAVE;
-	return 0;
-}
-
-
-int
-Rts2Image::createImage (std::string in_filename)
-{
-	setFileName (in_filename.c_str ());
-
-	return createImage ();
-}
-
-
-int Rts2Image::createImage (char *in_filename)
-{
-	setFileName (in_filename);
-
-	return createImage ();
-}
-
-
-void Rts2Image::openImage (const char *_filename, bool readOnly)
-{
-	if (_filename)
-		setFileName (_filename);
-
-	openFile (getFileName (), readOnly);
-
-	if (readOnly == false)
-		flags |= IMAGE_SAVE;
-}
-
-
 int Rts2Image::closeFile ()
 {
 	if ((flags & IMAGE_SAVE) && getFitsFile ())
@@ -499,31 +493,23 @@ int Rts2Image::closeFile ()
 	return Rts2FitsFile::closeFile ();
 }
 
-
-int
-Rts2Image::toQue ()
+int Rts2Image::toQue ()
 {
 	return renameImageExpand (Rts2Config::instance ()->observatoryQuePath ());
 }
 
-
-int
-Rts2Image::toAcquisition ()
+int Rts2Image::toAcquisition ()
 {
 	return renameImageExpand (Rts2Config::instance ()->observatoryAcqPath ());
 }
 
-
-int
-Rts2Image::toArchive ()
+int Rts2Image::toArchive ()
 {
 	return renameImageExpand (Rts2Config::instance ()->observatoryArchivePath ());
 }
 
-
 // move to dark images area..
-int
-Rts2Image::toDark ()
+int Rts2Image::toDark ()
 {
 	if (getTargetId () == TARGET_DARK)
 	{
@@ -533,29 +519,22 @@ Rts2Image::toDark ()
 	return renameImageExpand ("%b/archive/%t/%c/darks/%f");
 }
 
-
-int
-Rts2Image::toFlat ()
+int Rts2Image::toFlat ()
 {
 	return renameImageExpand (Rts2Config::instance ()->observatoryFlatPath ());
 }
 
-
-int
-Rts2Image::toMasterFlat ()
+int Rts2Image::toMasterFlat ()
 {
 	return renameImageExpand ("%b/flat/%c/master/%f");
 }
 
-
-int
-Rts2Image::toTrash ()
+int Rts2Image::toTrash ()
 {
 	return renameImageExpand (Rts2Config::instance ()->observatoryTrashPath ());
 }
 
-img_type_t
-Rts2Image::getImageType ()
+img_type_t Rts2Image::getImageType ()
 {
 	char t_type[50];
 	try
@@ -573,9 +552,7 @@ Rts2Image::getImageType ()
 	return IMGTYPE_OBJECT;
 }
 
-
-int
-Rts2Image::renameImage (const char *new_filename)
+int Rts2Image::renameImage (const char *new_filename)
 {
 	int ret = 0;
 	if (strcmp (new_filename, getFileName ()))
@@ -593,9 +570,7 @@ Rts2Image::renameImage (const char *new_filename)
 	return ret;
 }
 
-
-int
-Rts2Image::renameImageExpand (std::string new_ex)
+int Rts2Image::renameImageExpand (std::string new_ex)
 {
 	std::string new_filename;
 
@@ -606,9 +581,7 @@ Rts2Image::renameImageExpand (std::string new_ex)
 	return renameImage (new_filename.c_str ());
 }
 
-
-int
-Rts2Image::copyImage (const char *copy_filename)
+int Rts2Image::copyImage (const char *copy_filename)
 {
 	fitsfile *cp_file;
 	fits_status = 0;
@@ -628,9 +601,7 @@ Rts2Image::copyImage (const char *copy_filename)
 	return ret;
 }
 
-
-int
-Rts2Image::copyImageExpand (std::string copy_ex)
+int Rts2Image::copyImageExpand (std::string copy_ex)
 {
 	std::string copy_filename;
 
@@ -641,9 +612,7 @@ Rts2Image::copyImageExpand (std::string copy_ex)
 	return copyImage (copy_filename.c_str ());
 }
 
-
-int
-Rts2Image::symlinkImage (const char *link_filename)
+int Rts2Image::symlinkImage (const char *link_filename)
 {
 	int ret;
 
@@ -656,9 +625,7 @@ Rts2Image::symlinkImage (const char *link_filename)
 	return symlink (getFileName (), link_filename);
 }
 
-
-int
-Rts2Image::symlinkImageExpand (std::string link_ex)
+int Rts2Image::symlinkImageExpand (std::string link_ex)
 {
 	std::string link_filename;
 
@@ -669,9 +636,7 @@ Rts2Image::symlinkImageExpand (std::string link_ex)
 	return symlinkImage (link_filename.c_str ());
 }
 
-
-int
-Rts2Image::linkImage (const char *link_filename)
+int Rts2Image::linkImage (const char *link_filename)
 {
 	int ret;
 
@@ -684,9 +649,7 @@ Rts2Image::linkImage (const char *link_filename)
 	return link (getFileName (), link_filename);
 }
 
-
-int
-Rts2Image::linkImageExpand (std::string link_ex)
+int Rts2Image::linkImageExpand (std::string link_ex)
 {
 	std::string link_filename;
 
@@ -697,9 +660,7 @@ Rts2Image::linkImageExpand (std::string link_ex)
 	return linkImage (link_filename.c_str ());
 }
 
-
-int
-Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
+int Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
 {
 	fitsfile *fp;
 	fits_status = 0;
@@ -713,9 +674,7 @@ Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data)
 	return 0;
 }
 
-
-int
-Rts2Image::writeExposureStart ()
+int Rts2Image::writeExposureStart ()
 {
 	setValue ("CTIME", getCtimeSec (),
 		"exposure start (seconds since 1.1.1970)");
@@ -726,15 +685,12 @@ Rts2Image::writeExposureStart ()
 	return 0;
 }
 
-
-char *
-Rts2Image::getImageBase ()
+char * Rts2Image::getImageBase ()
 {
 	static char buf[12];
 	strcpy (buf, "/images/");
 	return buf;
 }
-
 
 void Rts2Image::setValue (const char *name, bool value, const char *comment)
 {
@@ -750,7 +706,6 @@ void Rts2Image::setValue (const char *name, bool value, const char *comment)
 	return fitsStatusSetValue (name, true);
 }
 
-
 void Rts2Image::setValue (const char *name, int value, const char *comment)
 {
 	if (!getFitsFile ())
@@ -764,7 +719,6 @@ void Rts2Image::setValue (const char *name, int value, const char *comment)
 	fitsStatusSetValue (name, true);
 }
 
-
 void Rts2Image::setValue (const char *name, long value, const char *comment)
 {
 	if (!getFitsFile ())
@@ -777,7 +731,6 @@ void Rts2Image::setValue (const char *name, long value, const char *comment)
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
-
 
 void Rts2Image::setValue (const char *name, float value, const char *comment)
 {
@@ -795,7 +748,6 @@ void Rts2Image::setValue (const char *name, float value, const char *comment)
 	fitsStatusSetValue (name);
 }
 
-
 void Rts2Image::setValue (const char *name, double value, const char *comment)
 {
 	double val = value;
@@ -812,7 +764,6 @@ void Rts2Image::setValue (const char *name, double value, const char *comment)
 	fitsStatusSetValue (name);
 }
 
-
 void Rts2Image::setValue (const char *name, char value, const char *comment)
 {
 	char val[2];
@@ -828,7 +779,6 @@ void Rts2Image::setValue (const char *name, char value, const char *comment)
 	flags |= IMAGE_SAVE;
 	fitsStatusSetValue (name);
 }
-
 
 void Rts2Image::setValue (const char *name, const char *value, const char *comment)
 {
@@ -847,7 +797,6 @@ void Rts2Image::setValue (const char *name, const char *value, const char *comme
 	fitsStatusSetValue (name);
 }
 
-
 void Rts2Image::setValue (const char *name, time_t * sec, long usec, const char *comment)
 {
 	char buf[25];
@@ -857,7 +806,6 @@ void Rts2Image::setValue (const char *name, time_t * sec, long usec, const char 
 	snprintf (buf + 20, 4, "%03li", usec / 1000);
 	setValue (name, buf, comment);
 }
-
 
 void Rts2Image::setCreationDate (fitsfile * out_file)
 {
@@ -878,7 +826,6 @@ void Rts2Image::setCreationDate (fitsfile * out_file)
 	}
 }
 
-
 void Rts2Image::getValue (const char *name, bool & value, bool required, char *comment)
 {
 	if (!getFitsFile ())
@@ -890,7 +837,6 @@ void Rts2Image::getValue (const char *name, bool & value, bool required, char *c
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValue (const char *name, int &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
@@ -899,7 +845,6 @@ void Rts2Image::getValue (const char *name, int &value, bool required, char *com
 	fits_read_key (getFitsFile (), TINT, (char *) name, (void *) &value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
 }
-
 
 void Rts2Image::getValue (const char *name, long &value, bool required, char *comment)
 {
@@ -911,7 +856,6 @@ void Rts2Image::getValue (const char *name, long &value, bool required, char *co
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValue (const char *name, float &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
@@ -921,7 +865,6 @@ void Rts2Image::getValue (const char *name, float &value, bool required, char *c
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValue (const char *name, double &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
@@ -930,7 +873,6 @@ void Rts2Image::getValue (const char *name, double &value, bool required, char *
 	fits_read_key (getFitsFile (), TDOUBLE, (char *) name, (void *) &value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
 }
-
 
 void Rts2Image::getValue (const char *name, char &value, bool required, char *comment)
 {
@@ -943,7 +885,6 @@ void Rts2Image::getValue (const char *name, char &value, bool required, char *co
 	value = *val;
 	fitsStatusGetValue (name, required);
 }
-
 
 void Rts2Image::getValue (const char *name, char *value, int valLen, const char* defVal, bool required, char *comment)
 {
@@ -971,7 +912,6 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 	}
 }
 
-
 void Rts2Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
 {
 	if (!getFitsFile ())
@@ -980,7 +920,6 @@ void Rts2Image::getValue (const char *name, char **value, int valLen, bool requi
 	fits_read_key_longstr (getFitsFile (), (char *) name, value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
 }
-
 
 double Rts2Image::getValue (const char *name)
 {
@@ -994,11 +933,10 @@ double Rts2Image::getValue (const char *name)
 	return ret;
 }
 
-
 void Rts2Image::getValues (const char *name, int *values, int num, bool required, int nstart)
 {
 	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (this);
+		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
 	fits_read_keys_log (getFitsFile (), (char *) name, nstart, num, values, &nfound,
@@ -1006,11 +944,10 @@ void Rts2Image::getValues (const char *name, int *values, int num, bool required
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValues (const char *name, long *values, int num, bool required, int nstart)
 {
 	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (this);
+		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
 	fits_read_keys_lng (getFitsFile (), (char *) name, nstart, num, values, &nfound,
@@ -1018,11 +955,10 @@ void Rts2Image::getValues (const char *name, long *values, int num, bool require
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValues (const char *name, double *values, int num, bool required, int nstart)
 {
 	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (this);
+		throw ErrorOpeningFitsFile (getFileName ());
 
 	int nfound;
 	fits_read_keys_dbl (getFitsFile (), (char *) name, nstart, num, values, &nfound,
@@ -1030,11 +966,10 @@ void Rts2Image::getValues (const char *name, double *values, int num, bool requi
 	fitsStatusGetValue (name, required);
 }
 
-
 void Rts2Image::getValues (const char *name, char **values, int num, bool required, int nstart)
 {
 	if (!getFitsFile ())
-		throw ErrorOpeningFitsFile (this);
+		throw ErrorOpeningFitsFile (getFileName ());
 	
 	int nfound;
 	fits_read_keys_str (getFitsFile (), (char *) name, nstart, num, values, &nfound,
@@ -1042,9 +977,7 @@ void Rts2Image::getValues (const char *name, char **values, int num, bool requir
 	fitsStatusGetValue (name, required);
 }
 
-
-int
-Rts2Image::writeImgHeader (struct imghdr *im_h)
+int Rts2Image::writeImgHeader (struct imghdr *im_h)
 {
 	if (!getFitsFile ())
 		return 0;
@@ -1070,9 +1003,7 @@ Rts2Image::writeImgHeader (struct imghdr *im_h)
 	return 0;
 }
 
-
-void
-Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
+void Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 {
 	setValue ("LTV1", -1 * (double) x, "image beginning - detector X coordinate");
 	setValue ("LTM1_1", ((double) 1) / bin_x, "delta along X axis");
@@ -1080,9 +1011,7 @@ Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 	setValue ("LTM2_2", ((double) 1) / bin_y, "delta along Y axis");
 }
 
-
-int
-Rts2Image::writeData (char *in_data, char *fullTop)
+int Rts2Image::writeData (char *in_data, char *fullTop)
 {
 	struct imghdr *im_h;
 	unsigned short *pixel;
@@ -1239,7 +1168,6 @@ Rts2Image::writeData (char *in_data, char *fullTop)
 	return ret;
 }
 
-
 void Rts2Image::getHistogram (long *histogram, long nbins)
 {
 	memset (histogram, 0, nbins * sizeof(int));
@@ -1332,7 +1260,6 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-
 Image Rts2Image::getMagickImage (float quantiles)
 {
 	unsigned char *buf = NULL;
@@ -1392,9 +1319,7 @@ void Rts2Image::writeAsBlob (Blob &blob, float quantiles)
 
 #endif /* HAVE_LIBJPEG */
 
-
-double
-Rts2Image::getAstrometryErr ()
+double Rts2Image::getAstrometryErr ()
 {
 	struct ln_equ_posn pos2;
 	pos2.ra = pos_astr.ra + ra_err;
@@ -1402,16 +1327,12 @@ Rts2Image::getAstrometryErr ()
 	return ln_get_angular_separation (&pos_astr, &pos2);
 }
 
-
-int
-Rts2Image::saveImage ()
+int Rts2Image::saveImage ()
 {
 	return closeFile ();
 }
 
-
-int
-Rts2Image::deleteImage ()
+int Rts2Image::deleteImage ()
 {
 	int ret;
 	fits_close_file (getFitsFile (), &fits_status);
@@ -1421,7 +1342,6 @@ Rts2Image::deleteImage ()
 	return ret;
 }
 
-
 void Rts2Image::setMountName (const char *in_mountName)
 {
 	delete[]mountName;
@@ -1430,14 +1350,12 @@ void Rts2Image::setMountName (const char *in_mountName)
 	setValue ("MNT_NAME", mountName, "name of mount");
 }
 
-
 void Rts2Image::setCameraName (const char *new_name)
 {
 	delete[]cameraName;
 	cameraName = new char[strlen (new_name) + 1];
 	strcpy (cameraName, new_name);
 }
-
 
 std::string Rts2Image::getTargetString ()
 {
@@ -1447,7 +1365,6 @@ std::string Rts2Image::getTargetString ()
 	return _os.str ();
 }
 
-
 std::string Rts2Image::getTargetSelString ()
 {
 	std::ostringstream _os;
@@ -1455,7 +1372,6 @@ std::string Rts2Image::getTargetSelString ()
 	_os << std::setw (5) << getTargetIdSel ();
 	return _os.str ();
 }
-
 
 std::string Rts2Image::getExposureNumberString ()
 {
@@ -1465,7 +1381,6 @@ std::string Rts2Image::getExposureNumberString ()
 	return _os.str ();
 }
 
-
 std::string Rts2Image::getObsString ()
 {
 	std::ostringstream _os;
@@ -1473,7 +1388,6 @@ std::string Rts2Image::getObsString ()
 	_os << std::setw (5) << getObsId ();
 	return _os.str ();
 }
-
 
 std::string Rts2Image::getImgIdString ()
 {
@@ -1483,13 +1397,11 @@ std::string Rts2Image::getImgIdString ()
 	return _os.str ();
 }
 
-
 // Rts2Image can be only raw..
 std::string Rts2Image::getProcessingString ()
 {
 	return std::string ("RA");
 }
-
 
 std::string Rts2Image::getExposureLengthString ()
 {
@@ -1498,9 +1410,7 @@ std::string Rts2Image::getExposureLengthString ()
 	return _os.str ();
 }
 
-
-void
-Rts2Image::setFocuserName (const char *in_focuserName)
+void Rts2Image::setFocuserName (const char *in_focuserName)
 {
 	if (focName)
 		delete[]focName;
@@ -1509,22 +1419,17 @@ Rts2Image::setFocuserName (const char *in_focuserName)
 	setValue ("FOC_NAME", focName, "name of focuser");
 }
 
-
-void
-Rts2Image::setFilter (const char *in_filter)
+void Rts2Image::setFilter (const char *in_filter)
 {
 	filter = new char[strlen (in_filter) + 1];
 	strcpy (filter, in_filter);
 	setValue ("FILTER", filter, "camera filter as string");
 }
 
-
-void
-Rts2Image::computeStatistics ()
+void Rts2Image::computeStatistics ()
 {
 
 }
-
 
 void Rts2Image::loadData ()
 {
@@ -1591,18 +1496,17 @@ void Rts2Image::loadData ()
 				sendLog;
 			delete[]imageData;
 			imageData = NULL;
-			throw ErrorOpeningFitsFile (this);
+			throw ErrorOpeningFitsFile (getFileName ());
 	}
 	if (fits_status)
 	{
 		delete[]imageData;
 		imageData = NULL;
 		imageType = RTS2_DATA_USHORT;
-		throw ErrorOpeningFitsFile (this);
+		throw ErrorOpeningFitsFile (getFileName ());
 	}
 	fitsStatusGetValue ("image loadData", true);
 }
-
 
 void* Rts2Image::getData ()
 {
@@ -1621,9 +1525,7 @@ void* Rts2Image::getData ()
 	return (void *) imageData;
 }
 
-
-unsigned short *
-Rts2Image::getDataUShortInt ()
+unsigned short * Rts2Image::getDataUShortInt ()
 {
 	if (getData () == NULL)
 		return NULL;
@@ -1634,9 +1536,7 @@ Rts2Image::getDataUShortInt ()
 	return NULL;
 }
 
-
-void
-Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
+void Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 {
 	delete[]imageData;
 	imageData = (char *) in_data;
@@ -1646,9 +1546,7 @@ Rts2Image::setDataUShortInt (unsigned short *in_data, long in_naxis[2])
 	flags |= IMAGE_DONT_DELETE_DATA;
 }
 
-
-int
-Rts2Image::substractDark (Rts2Image * darkImage)
+int Rts2Image::substractDark (Rts2Image * darkImage)
 {
 	unsigned short *img_data;
 	unsigned short *dark_data;
@@ -1668,10 +1566,7 @@ Rts2Image::substractDark (Rts2Image * darkImage)
 	return 0;
 }
 
-
-int
-Rts2Image::setAstroResults (double in_ra, double in_dec, double in_ra_err,
-double in_dec_err)
+int Rts2Image::setAstroResults (double in_ra, double in_dec, double in_ra_err, double in_dec_err)
 {
 	pos_astr.ra = in_ra;
 	pos_astr.dec = in_dec;
@@ -1681,9 +1576,7 @@ double in_dec_err)
 	return 0;
 }
 
-
-int
-Rts2Image::addStarData (struct stardata *sr)
+int Rts2Image::addStarData (struct stardata *sr)
 {
 	if (sr->F <= 0)				 // flux is not significant..
 		return -1;
@@ -1707,7 +1600,6 @@ Rts2Image::addStarData (struct stardata *sr)
 	return 0;
 }
 
-
 /* static int
 sdcompare (struct stardata *x1, struct stardata *x2)
 {
@@ -1717,16 +1609,12 @@ sdcompare (struct stardata *x1, struct stardata *x2)
 	return -1;
   return 0;
 } */
-
-int
-Rts2Image::isGoodForFwhm (struct stardata *sr)
+int Rts2Image::isGoodForFwhm (struct stardata *sr)
 {
 	return (sr->flags == 0 && sr->F > signalNoise * sr->Fe);
 }
 
-
-double
-Rts2Image::getFWHM ()
+double Rts2Image::getFWHM ()
 {
 	double avg;
 	struct stardata *sr;
@@ -1752,17 +1640,13 @@ Rts2Image::getFWHM ()
 	return avg;
 }
 
-
-static int
-shortcompare (const void *val1, const void *val2)
+static int shortcompare (const void *val1, const void *val2)
 {
 	return (*(unsigned short *) val1 < *(unsigned short *) val2) ? -1 :
 	((*(unsigned short *) val1 == *(unsigned short *) val2) ? 0 : 1);
 }
 
-
-unsigned short
-getShortMean (unsigned short *averageData, int sub)
+unsigned short getShortMean (unsigned short *averageData, int sub)
 {
 	qsort (averageData, sub, sizeof (unsigned short), shortcompare);
 	if (sub % 2)
@@ -1770,9 +1654,7 @@ getShortMean (unsigned short *averageData, int sub)
 	return (averageData[(sub / 2) - 1] + averageData[(sub / 2)]) / 2;
 }
 
-
-int
-Rts2Image::getCenterRow (long row, int row_width, double &x)
+int Rts2Image::getCenterRow (long row, int row_width, double &x)
 {
 	unsigned short *tmp_data;
 	tmp_data = getDataUShortInt ();
@@ -1840,9 +1722,7 @@ Rts2Image::getCenterRow (long row, int row_width, double &x)
 	return 0;
 }
 
-
-int
-Rts2Image::getCenterCol (long col, int col_width, double &y)
+int Rts2Image::getCenterCol (long col, int col_width, double &y)
 {
 	unsigned short *tmp_data;
 	tmp_data = getDataUShortInt ();
@@ -1911,9 +1791,7 @@ Rts2Image::getCenterCol (long col, int col_width, double &y)
 	return 0;
 }
 
-
-int
-Rts2Image::getCenter (double &x, double &y, int bin)
+int Rts2Image::getCenter (double &x, double &y, int bin)
 {
 	int ret;
 	long i;
@@ -1940,9 +1818,7 @@ Rts2Image::getCenter (double &x, double &y, int bin)
 	return 0;
 }
 
-
-int
-Rts2Image::getError (double &eRa, double &eDec, double &eRad)
+int Rts2Image::getError (double &eRa, double &eDec, double &eRad)
 {
 	if (isnan (ra_err) || isnan (dec_err) || isnan (img_err))
 		return -1;
@@ -1952,22 +1828,17 @@ Rts2Image::getError (double &eRa, double &eDec, double &eRad)
 	return 0;
 }
 
-
 std::string Rts2Image::getOnlyFileName ()
 {
 	return expandPath ("%y%m%d%H%M%S-%s-%p.fits");
 }
 
-
-void
-Rts2Image::printFileName (std::ostream & _os)
+void Rts2Image::printFileName (std::ostream & _os)
 {
 	_os << getFileName ();
 }
 
-
-void
-Rts2Image::print (std::ostream & _os, int in_flags)
+void Rts2Image::print (std::ostream & _os, int in_flags)
 {
 	if (in_flags & DISPLAY_FILENAME)
 	{
@@ -2003,9 +1874,7 @@ Rts2Image::print (std::ostream & _os, int in_flags)
 	_os.precision (old_precision);
 }
 
-
-void
-Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *desc)
+void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *desc)
 {
 	switch (val->getValueBaseType ())
 	{
@@ -2095,9 +1964,7 @@ Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const char *de
 	}
 }
 
-
-void
-Rts2Image::writeConnArray (const char *name, Rts2Value *val)
+void Rts2Image::writeConnArray (const char *name, Rts2Value *val)
 {
 	if (!getFitsFile ())
 	{
@@ -2116,9 +1983,7 @@ Rts2Image::writeConnArray (const char *name, Rts2Value *val)
 	}
 }
 
-
-void
-Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
+void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 {
 	const char *desc = val->getDescription ().c_str ();
 	char *name = (char *) val->getName ().c_str ();
@@ -2205,9 +2070,7 @@ Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 	}
 }
 
-
-void
-Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
+void Rts2Image::recordChange (Rts2Conn * conn, Rts2Value * val)
 {
 	char *name;
 	// construct name
@@ -2249,9 +2112,7 @@ Rts2Image::setEnvironmentalValues ()
 	}
 }
 
-
-void
-Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
+void Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 {
 	for (Rts2ValueVector::iterator iter = conn->valueBegin ();
 		iter != conn->valueEnd (); iter++)
@@ -2283,27 +2144,21 @@ Rts2Image::writeConn (Rts2Conn * conn, imageWriteWhich_t which)
 	}
 }
 
-
-double
-Rts2Image::getLongtitude ()
+double Rts2Image::getLongtitude ()
 {
 	double lng = nan ("f");
 	getValue ("LONGITUD", lng, true);
 	return lng;
 }
 
-
-double
-Rts2Image::getExposureJD ()
+double Rts2Image::getExposureJD ()
 {
 	time_t tim = getCtimeSec ();
 	return ln_get_julian_from_timet (&tim) +
 		getCtimeUsec () / USEC_SEC / 86400.0;
 }
 
-
-double
-Rts2Image::getExposureLST ()
+double Rts2Image::getExposureLST ()
 {
 	double ret;
 	ret =
@@ -2311,7 +2166,6 @@ Rts2Image::getExposureLST ()
 		getLongtitude ());
 	return ln_range_degrees (ret) / 15.0;
 }
-
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image)
 {

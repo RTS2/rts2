@@ -10,6 +10,7 @@
 
 #ifndef MAKEDEPEND
 # include <string>
+# include <vector>
 #endif
 
 #define HTTP_OK              200
@@ -20,6 +21,33 @@ namespace XmlRpc
 {
 	// The XmlRpcServer processes client requests to call GET methods.
 	class XmlRpcServer;
+
+	/**
+	 * Parameter passed on GET request.
+	 */
+	class HttpParam
+	{
+		public:
+			HttpParam (const char *_name, const char *_val) { name = std::string (_name); val = std::string (_val); }
+			const char *getName () { return name.c_str (); };
+			const char *getValue () { return val.c_str (); };
+
+			bool haveName (const char *_name) { return std::string (_name) == name; }
+		private:
+			std::string name;
+			std::string val;
+	};
+
+	class HttpParams:public std::vector <HttpParam>
+	{
+		public:
+			HttpParams () {};
+			void addParam (const char *_name, const char *_val) { push_back (HttpParam (_name, _val)); }
+
+			int getInteger (const char *_name, int def_val);
+
+			void parseParam (const std::string& ps);
+	};
 
 	//! Abstract class representing a single GET request
 	class XmlRpcServerGetRequest
@@ -43,8 +71,7 @@ namespace XmlRpc
 			std::string getPassword() { return _password; }
 
 			//! Execute the method. Subclasses must provide a definition for this method.
-			virtual void execute(const char* path, int &http_code, const char* &response_type, char* &respose, int &response_length) = 0;
-
+			virtual void execute(const char* path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, int &response_length) = 0;
 			//! Returns 401 page
 			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, int &response_length);
 

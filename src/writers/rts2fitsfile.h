@@ -70,7 +70,7 @@ class Rts2FitsFile: public rts2core::Expander
 		int createFile (const char *_filename);
 		int createFile (std::string _filename);
 
-		int openFile (const char *_filename = NULL, bool readOnly = false);
+		void openFile (const char *_filename = NULL, bool readOnly = false);
 
 		/**
 		 * Return pointer to fitsfile structure.
@@ -236,9 +236,9 @@ class KeyNotFound:public rts2core::Error
 class ErrorOpeningFitsFile: public rts2core::Error
 {
 	public:
-		ErrorOpeningFitsFile (Rts2FitsFile *_image):rts2core::Error ()
+		ErrorOpeningFitsFile (const char *filename):rts2core::Error ()
 		{
-			setMsg (std::string ("Cannot open file ") + _image->getFileName ());
+			setMsg (std::string ("Cannot open file ") + filename);
 		}
 };
 

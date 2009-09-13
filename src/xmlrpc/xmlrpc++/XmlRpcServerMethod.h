@@ -42,7 +42,9 @@ namespace XmlRpc
 			//! Return user password
 			std::string getPassword() { return _password; }
 
-			//! Execute the method. Subclasses must provide a definition for this method.
+			/**
+			 * Execute the method. Subclasses must provide a definition for this method.
+			 */
 			virtual void execute(XmlRpcValue& params, XmlRpcValue& result) = 0;
 
 			//! Returns a help string for the method.

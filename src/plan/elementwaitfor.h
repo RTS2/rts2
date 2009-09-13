@@ -1,6 +1,6 @@
 /*
  * Wait for some event or for a number of seconds.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,11 +28,13 @@ namespace rts2script
 /**
  * Used for waitfor command. Idle call returns NEXT_COMMAND_KEEP when target
  * value is not reached, and NEXT_COMMAND_NEXT when target value is reached.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementWaitFor:public Element
 {
 	public:
-		ElementWaitFor (Script * in_script, const char *new_device, char *valueName, double value, double range);
+		ElementWaitFor (Script * _script, const char *new_device, char *_valueName, double _value, double _range);
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int idle ();
 	protected:
@@ -47,15 +49,29 @@ class ElementWaitFor:public Element
 /**
  * Used for sleep command. Return NEXT_COMMAND_KEEP in idle call while command
  * should be keeped, and NEXT_COMMAND_NEXT when timeout expires.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ElementSleep:public Element
 {
 	public:
-		ElementSleep (Script * in_script, double in_sec);
+		ElementSleep (Script * _script, double _sec):Element (_script) { sec = _sec; }
 		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		virtual int idle ();
 	private:
 		double sec;
+};
+
+/**
+ * Wait for camera to go into idle state.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ElementWaitForIdle:public Element
+{
+	public:
+		ElementWaitForIdle (Script *_script):Element (_script) {}
+		virtual int defnextCommand (Rts2DevClient * client, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 };
 
 }

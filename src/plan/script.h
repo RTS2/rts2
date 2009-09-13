@@ -1,6 +1,6 @@
 /*
  * Script support.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2007,2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,11 +21,8 @@
 #define __RTS2_SCRIPT__
 
 #include "element.h"
+#include "elementblock.h"
 #include <config.h>
-
-#ifdef HAVE_PGSQL
-#include "elementacquire.h"
-#endif							 /* HAVE_PGSQL */
 
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
@@ -64,7 +61,17 @@ namespace rts2script
 {
 
 class Element;
-class Rts2SEBAcquired;
+
+/**
+ * Thrown by parsing algorithm whenever error during parsing is encountered.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ParsingError:public rts2core::Error
+{
+	public:
+		ParsingError (std::string _msg):rts2core::Error (_msg) {};
+};
 
 /**
  * Holds script to execute on given device.
@@ -80,7 +87,7 @@ class Rts2SEBAcquired;
 class Script:public Rts2Object
 {
 	public:
-		Script (Rts2Block * in_master);
+		Script (Rts2Block * _master);
 		virtual ~ Script (void);
 
 		/**
@@ -149,6 +156,21 @@ class Script:public Rts2Object
 		int getNextParamInteger (int *val);
 		// we should not save reference to target, as it can be changed|deleted without our knowledge
 		Element *parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos);
+
+		/**
+		 * Parse block surrounded with {}
+		 *
+		 * @param el          ElementBlock where elements from block will be stored.
+		 * @param target      Passed from parseBuf. Target for observation.
+		 * @param target_pos  Passed from parseBuf. Target position.
+		 */
+		void parseBlock (ElementBlock *el, Rts2Target * target, struct ln_equ_posn *target_pos);
+
+		/**
+		 * Parse string as operand, returns reference to newly created operand.
+		 */
+		rts2operands::Operand *parseOperand (Rts2Target * target, struct ln_equ_posn *target_pos, rts2operands::Operand *op = NULL);
+
 		std::list < Element * >elements;
 		std::list < Element * >::iterator el_iter;
 		Rts2Block *master;

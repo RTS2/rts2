@@ -395,6 +395,31 @@
 
       <varlistentry>
         <term>
+	  <option>while {condition} {max_repeat} [block]</option>
+	</term>
+	<listitem>
+  	  <para>
+	    Execute block while condition evaluation is non-zero and number of
+	    repeats is smaller then max_repeat.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>do {max_repeat} [block] while {condition}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute block while condition evaluation is non-zero and number of
+	    repeats is smaller then max_repeat. First test of condition occurs
+	    after first loop.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
 	  <option>waitfor {variable} {value} {range}</option>
 	</term>
 	<listitem>
@@ -411,6 +436,17 @@
 	<listitem>
 	  <para>
 	    This command will pause execution of script for given number of seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>wait_idle</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait for device to enter idle state.
 	  </para>
 	</listitem>
       </varlistentry>

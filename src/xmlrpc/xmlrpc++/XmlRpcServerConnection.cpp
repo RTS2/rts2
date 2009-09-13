@@ -28,8 +28,7 @@ const std::string XmlRpcServerConnection::FAULTCODE = "faultCode";
 const std::string XmlRpcServerConnection::FAULTSTRING = "faultString";
 
 // The server delegates handling client requests to a serverConnection object.
-XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose /*= false*/) :
-XmlRpcSource(fd, deleteOnClose)
+XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose /*= false*/) : XmlRpcSource(fd, deleteOnClose)
 {
 	XmlRpcUtil::log(2,"XmlRpcServerConnection: new socket %d.", fd);
 	_server = server;
@@ -43,19 +42,16 @@ XmlRpcSource(fd, deleteOnClose)
 	_get_response = NULL;
 }
 
-
 XmlRpcServerConnection::~XmlRpcServerConnection()
 {
 	XmlRpcUtil::log(4,"XmlRpcServerConnection dtor.");
 	_server->removeConnection(this);
 }
 
-
 // Handle input on the server socket by accepting the connection
 // and reading the rpc request. Return true to continue to monitor
 // the socket for events, false to remove it from the dispatcher.
-unsigned
-XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
+unsigned XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 {
 	if (_connectionState == READ_HEADER)
 		if ( ! readHeader()) return 0;
@@ -73,9 +69,7 @@ XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
-
-bool
-XmlRpcServerConnection::readHeader()
+bool XmlRpcServerConnection::readHeader()
 {
 	// Read available data
 	bool eof;
@@ -207,9 +201,7 @@ XmlRpcServerConnection::readHeader()
 	return true;				 // Continue monitoring this source
 }
 
-
-bool
-XmlRpcServerConnection::readRequest()
+bool XmlRpcServerConnection::readRequest()
 {
 	// If we dont have the entire request yet, read available data
 	if (int(_request.length()) < _contentLength)
@@ -242,9 +234,7 @@ XmlRpcServerConnection::readRequest()
 	return true;				 // Continue monitoring this source
 }
 
-
-bool
-XmlRpcServerConnection::handleGet()
+bool XmlRpcServerConnection::handleGet()
 {
 	if (_get_response_header_length == 0 || _get_response_length == 0)
 	{
@@ -300,8 +290,7 @@ XmlRpcServerConnection::handleGet()
 	return _keepAlive;			 // Continue monitoring this source if true
 }
 
-bool
-XmlRpcServerConnection::writeResponse()
+bool XmlRpcServerConnection::writeResponse()
 {
 	if (_response.length() == 0)
 	{
@@ -340,25 +329,20 @@ XmlRpcServerConnection::writeResponse()
 	return _keepAlive;			 // Continue monitoring this source if true
 }
 
-
 // Run the method, generate _response string
-void
-XmlRpcServerConnection::executeRequest()
+void XmlRpcServerConnection::executeRequest()
 {
 	XmlRpcValue params, resultValue;
 	std::string methodName = parseRequest(params);
-	XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: server calling method '%s'",
-		methodName.c_str());
+	XmlRpcUtil::log(2, "XmlRpcServerConnection::executeRequest: server calling method '%s'", methodName.c_str());
 
 	try
 	{
-
 		if ( ! executeMethod(methodName, params, resultValue) &&
 			! executeMulticall(methodName, params, resultValue))
 			generateFaultResponse(methodName + ": unknown method name");
 		else
 			generateResponse(resultValue.toXml());
-
 	}
 	catch (const XmlRpcException& fault)
 	{
@@ -368,10 +352,8 @@ XmlRpcServerConnection::executeRequest()
 	}
 }
 
-
 // Run the method, generate _get_response buffer, fill _get_response_length
-void
-XmlRpcServerConnection::executeGet()
+void XmlRpcServerConnection::executeGet()
 {
 	const char* response_type = "text/plain";
 
@@ -388,18 +370,38 @@ XmlRpcServerConnection::executeGet()
 	else
 	{
 		request->setAuthorization (_authorization);
+
+		HttpParams params = HttpParams ();
 	
 		try
 		{
 			std::string path = _get.substr (request->getPrefix ().length ()).c_str ();
+			// if there are any parameters..
+			std::string::size_type pi = path.find ('?');
+			if (pi != std::string::npos)
+			{
+				std::string ps = path.substr (pi + 1);
+				path = path.substr (0, pi);
+				// split by &..
+				pi = 0;
+				std::string::size_type pe;
+				while ((pe = ps.find ('&', pi)) != std::string::npos)
+				{
+					params.parseParam (ps.substr (pi, pe - pi));
+					pi = pe + 1;
+				}
+				// last parameter..
+				if (ps[pi] != '&')
+					params.parseParam (ps.substr (pi));
+			}
 			// check for ..
 			if (path.find ("..") != std::string::npos)
 				throw XmlRpcException ("Path contains ..");
 			if (path.find ("!") != std::string::npos)
 				throw XmlRpcException ("Path contains !");
-			request->execute (path.c_str (), http_code, response_type, _get_response, _get_response_length);
+			request->execute (path.c_str (), &params, http_code, response_type, _get_response, _get_response_length);
 		}
-		catch (std::exception &ex)
+		catch (const std::exception& ex)
 		{
 			_get_response = new char[501];
 			response_type = "text/html";
@@ -429,10 +431,8 @@ XmlRpcServerConnection::executeGet()
 	printf ("%s", _get_response_header);
 }
 
-
 // Parse the method name and the argument values from the request.
-std::string
-XmlRpcServerConnection::parseRequest(XmlRpcValue& params)
+std::string XmlRpcServerConnection::parseRequest(XmlRpcValue& params)
 {
 	int offset = 0;				 // Number of chars parsed from the request
 
@@ -453,11 +453,8 @@ XmlRpcServerConnection::parseRequest(XmlRpcValue& params)
 	return methodName;
 }
 
-
 // Execute a named method with the specified params.
-bool
-XmlRpcServerConnection::executeMethod(const std::string& methodName,
-XmlRpcValue& params, XmlRpcValue& result)
+bool XmlRpcServerConnection::executeMethod(const std::string& methodName, XmlRpcValue& params, XmlRpcValue& result)
 {
 	XmlRpcServerMethod* method = _server->findMethod(methodName);
 
@@ -474,11 +471,8 @@ XmlRpcValue& params, XmlRpcValue& result)
 	return true;
 }
 
-
 // Execute multiple calls and return the results in an array.
-bool
-XmlRpcServerConnection::executeMulticall(const std::string& in_methodName,
-XmlRpcValue& params, XmlRpcValue& result)
+bool XmlRpcServerConnection::executeMulticall(const std::string& in_methodName, XmlRpcValue& params, XmlRpcValue& result)
 {
 	if (in_methodName != SYSTEM_MULTICALL) return false;
 
@@ -491,7 +485,6 @@ XmlRpcValue& params, XmlRpcValue& result)
 
 	for (int i=0; i<nc; ++i)
 	{
-
 		if ( ! params[0][i].hasMember(METHODNAME) ||
 			! params[0][i].hasMember(PARAMS))
 		{
@@ -528,10 +521,8 @@ XmlRpcValue& params, XmlRpcValue& result)
 	return true;
 }
 
-
 // Create a response from results xml
-void
-XmlRpcServerConnection::generateResponse(std::string const& resultXml)
+void XmlRpcServerConnection::generateResponse(std::string const& resultXml)
 {
 	const char RESPONSE_1[] =
 		"<?xml version=\"1.0\"?>\r\n"
@@ -546,10 +537,8 @@ XmlRpcServerConnection::generateResponse(std::string const& resultXml)
 	XmlRpcUtil::log(5, "XmlRpcServerConnection::generateResponse:\n%s\n", _response.c_str());
 }
 
-
 // Prepend http headers
-std::string
-XmlRpcServerConnection::generateHeader(std::string const& body)
+std::string XmlRpcServerConnection::generateHeader(std::string const& body)
 {
 	std::string header =
 		"HTTP/1.1 200 OK\r\n"
@@ -565,9 +554,7 @@ XmlRpcServerConnection::generateHeader(std::string const& body)
 	return header + buffLen;
 }
 
-
-void
-XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, int errorCode)
+void XmlRpcServerConnection::generateFaultResponse(std::string const& errorMsg, int errorCode)
 {
 	const char RESPONSE_1[] =
 		"<?xml version=\"1.0\"?>\r\n"

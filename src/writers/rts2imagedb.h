@@ -67,8 +67,7 @@ class Rts2ImageDb:public Rts2Image
 
 	public:
 		Rts2ImageDb (Rts2Image * in_image);
-		Rts2ImageDb (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-			const struct timeval *expStart);
+		Rts2ImageDb (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart);
 		Rts2ImageDb (const char *in_filename, bool verbose = true, bool readOnly = false);
 		Rts2ImageDb (int in_obs_id, int in_img_id);
 		Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposure);
@@ -79,8 +78,7 @@ class Rts2ImageDb:public Rts2Image
 
 		virtual int renameImage (const char *new_filename);
 
-		friend std::ostream & operator << (std::ostream & _os,
-			Rts2ImageDb & img_db);
+		friend std::ostream & operator << (std::ostream & _os, Rts2ImageDb & img_db);
 };
 
 class Rts2ImageSkyDb:public Rts2ImageDb
@@ -97,8 +95,7 @@ class Rts2ImageSkyDb:public Rts2ImageDb
 		virtual int updateDB ();
 
 	public:
-		Rts2ImageSkyDb (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-			const struct timeval *expStartd);
+		Rts2ImageSkyDb (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *expStartd);
 		Rts2ImageSkyDb (const char *in_filename);
 		//! Construct image from already existed Rts2ImageDb instance
 		Rts2ImageSkyDb (Rts2Image * in_image);

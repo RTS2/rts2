@@ -30,8 +30,31 @@ namespace rts2grbd
 
 class Grbd;
 
+/**
+ * GCN sokcet connection.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class ConnGrb:public Rts2ConnNoSend
 {
+	public:
+		ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);
+		virtual ~ ConnGrb (void);
+		virtual int idle ();
+		virtual int init ();
+
+		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
+
+		virtual void connectionError (int last_data_size);
+		virtual int receive (fd_set * set);
+
+		int lastPacket ();
+		double delta ();
+		char *lastTarget ();
+		double lastTargetTime () { return last_target_time; }
+		double lastRa () { return last_ra; }
+		double lastDec () { return last_dec; }
+
 	private:
 		Grbd * master;
 		// path to exec when we get new burst; pass parameters on command line
@@ -53,6 +76,9 @@ class ConnGrb:public Rts2ConnNoSend
 		double last_ra;
 		double last_dec;
 
+		void setGbmError (double _error) { gbm_error = _error; }
+		void setGbmRecordAboveError (bool _record) { gbm_record_above = _record; }
+
 		// init listen (listening on given port) and call (try to connect to given
 		// port; there must be GCN packet receiving running on oppoiste side) GCN
 		// connection
@@ -62,13 +88,9 @@ class ConnGrb:public Rts2ConnNoSend
 		// utility functions..
 		double getPktSod ();
 
-		void getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long *usec =
-			NULL);
+		void getTimeTfromTJD (long TJD, double SOD, time_t * in_time, long *usec = NULL);
 
-		double getJDfromTJD (long TJD, double SOD)
-		{
-			return TJD + 2440000.5 + SOD / 86400.0;
-		}
+		double getJDfromTJD (long TJD, double SOD) { return TJD + 2440000.5 + SOD / 86400.0; }
 		// process various messages..
 		int pr_test ();
 		int pr_imalive ();
@@ -102,9 +124,7 @@ class ConnGrb:public Rts2ConnNoSend
 		// only produce insert when it's new GRB (when packet with detection get lost, as
 		// was cause of GRB060929 and most probably others).
 		// Return -1 on error, 1 when insertOnly flag is true and it's update packet
-		int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
-			double grb_dec, bool grb_is_grb, time_t * grb_date,
-			long grb_date_usec, float grb_errorbox, bool insertOnly);
+		int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t * grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly);
 		int addGcnRaw (int grb_id, int grb_seqn, int grb_type);
 
 		int gcn_port;
@@ -118,32 +138,9 @@ class ConnGrb:public Rts2ConnNoSend
 		double swiftLastDec;
 
 		time_t nextTime;
-	public:
-		ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, char *in_addExe, int in_execFollowups, Grbd * in_master);
-		virtual ~ ConnGrb (void);
-		virtual int idle ();
-		virtual int init ();
 
-		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
-
-		virtual void connectionError (int last_data_size);
-		virtual int receive (fd_set * set);
-
-		int lastPacket ();
-		double delta ();
-		char *lastTarget ();
-		double lastTargetTime ()
-		{
-			return last_target_time;
-		}
-		double lastRa ()
-		{
-			return last_ra;
-		}
-		double lastDec ()
-		{
-			return last_dec;
-		}
+		int gbm_error;
+		bool gbm_record_above;
 };
 
 }

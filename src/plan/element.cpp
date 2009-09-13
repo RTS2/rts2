@@ -29,9 +29,9 @@
 
 using namespace rts2script;
 
-Element::Element (Script * in_script)
+Element::Element (Script * _script)
 {
-	script = in_script;
+	script = _script;
 	startPos = script->getParsedStartPos ();
 	timerclear (&idleTimeout);
 	timerclear (&nextIdle);
@@ -106,7 +106,7 @@ int Element::idle ()
 	return NEXT_COMMAND_KEEP;
 }
 
-ElementExpose::ElementExpose (Script * in_script, float in_expTime):Element (in_script)
+ElementExpose::ElementExpose (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;
 }
@@ -122,7 +122,7 @@ int ElementExpose::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 	return 0;
 }
 
-ElementDark::ElementDark (Script * in_script, float in_expTime):Element (in_script)
+ElementDark::ElementDark (Script * _script, float in_expTime):Element (_script)
 {
 	expTime = in_expTime;
 }
@@ -137,7 +137,7 @@ int ElementDark::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_c
 	return 0;
 }
 
-ElementBox::ElementBox (Script * in_script, int in_x, int in_y, int in_w, int in_h):Element (in_script)
+ElementBox::ElementBox (Script * _script, int in_x, int in_y, int in_w, int in_h):Element (_script)
 {
 	x = in_x;
 	y = in_y;
@@ -152,7 +152,7 @@ int ElementBox::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new_co
 	return 0;
 }
 
-ElementCenter::ElementCenter (Script * in_script, int in_w, int in_h):Element (in_script)
+ElementCenter::ElementCenter (Script * _script, int in_w, int in_h):Element (_script)
 {
 	w = in_w;
 	h = in_h;
@@ -165,7 +165,7 @@ int ElementCenter::nextCommand (Rts2DevClientCamera * camera, Rts2Command ** new
 	return 0;
 }
 
-ElementChange::ElementChange (Script * in_script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec):Element (in_script)
+ElementChange::ElementChange (Script * _script, char new_device[DEVICE_NAME_SIZE], double in_ra, double in_dec):Element (_script)
 {
 	deviceName = new char[strlen (new_device) + 1];
 	strcpy (deviceName, new_device);
@@ -179,8 +179,7 @@ int ElementChange::defnextCommand (Rts2DevClient * client, Rts2Command ** new_co
 	return 0;
 }
 
-ElementWait::ElementWait (Script * in_script):Element
-(in_script)
+ElementWait::ElementWait (Script * _script):Element (_script)
 {
 }
 
@@ -189,7 +188,7 @@ int ElementWait::defnextCommand (Rts2DevClient * client, Rts2Command ** new_comm
 	return NEXT_COMMAND_CHECK_WAIT;
 }
 
-ElementWaitAcquire::ElementWaitAcquire (Script * in_script, int in_tar_id):Element (in_script)
+ElementWaitAcquire::ElementWaitAcquire (Script * _script, int in_tar_id):Element (_script)
 {
 	tar_id = in_tar_id;
 }
@@ -210,7 +209,7 @@ int ElementWaitAcquire::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	return NEXT_COMMAND_NEXT;
 }
 
-ElementPhotometer::ElementPhotometer (Script * in_script, int in_filter, float in_exposure, int in_count):Element (in_script)
+ElementPhotometer::ElementPhotometer (Script * _script, int in_filter, float in_exposure, int in_count):Element (_script)
 {
 	filter = in_filter;
 	exposure = in_exposure;
@@ -224,7 +223,7 @@ int ElementPhotometer::nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new
 	return 0;
 }
 
-ElementSendSignal::ElementSendSignal (Script * in_script, int in_sig):Element (in_script)
+ElementSendSignal::ElementSendSignal (Script * _script, int in_sig):Element (_script)
 {
 	sig = in_sig;
 	askedFor = false;
@@ -263,7 +262,7 @@ int ElementSendSignal::defnextCommand (Rts2DevClient * client, Rts2Command ** ne
 	return NEXT_COMMAND_NEXT;
 }
 
-ElementWaitSignal::ElementWaitSignal (Script * in_script, int in_sig):Element (in_script)
+ElementWaitSignal::ElementWaitSignal (Script * _script, int in_sig):Element (_script)
 {
 	sig = in_sig;
 }
@@ -299,7 +298,7 @@ int ElementWaitSignal::waitForSignal (int in_sig)
 	return 0;
 }
 
-ElementChangeValue::ElementChangeValue (Script * in_script, const char *new_device, const char *chng_str):Element (in_script)
+ElementChangeValue::ElementChangeValue (Script * _script, const char *new_device, const char *chng_str):Element (_script)
 {
 	deviceName = new char[strlen (new_device) + 1];
 	strcpy (deviceName, new_device);
@@ -363,7 +362,7 @@ int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	return 0;
 }
 
-ElementComment::ElementComment (Script * in_script, const char *in_comment, int in_cnum):Element (in_script)
+ElementComment::ElementComment (Script * _script, const char *in_comment, int in_cnum):Element (_script)
 {
 	comment = new char[strlen (in_comment) + 1];
 	cnum = in_cnum;

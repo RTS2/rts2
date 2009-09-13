@@ -37,23 +37,18 @@ static Rts2App *masterApp = NULL;
 
 #define OPT_VERSION 999
 
-Rts2App *
-getMasterApp ()
+Rts2App *getMasterApp ()
 {
 	return masterApp;
 }
 
-
-Rts2LogStream
-logStream (messageType_t in_messageType)
+Rts2LogStream logStream (messageType_t in_messageType)
 {
 	Rts2LogStream ls (masterApp, in_messageType);
 	return ls;
 }
 
-
-Rts2App::Rts2App (int argc, char **argv):
-Rts2Object ()
+Rts2App::Rts2App (int argc, char **argv):Rts2Object ()
 {
 	app_argc = argc;
 	app_argv = argv;
@@ -68,7 +63,6 @@ Rts2Object ()
 	masterApp = this;
 }
 
-
 Rts2App::~Rts2App ()
 {
 	std::vector < Rts2Option * >::iterator opt_iter;
@@ -80,9 +74,7 @@ Rts2App::~Rts2App ()
 	options.clear ();
 }
 
-
-int
-Rts2App::initOptions ()
+int Rts2App::initOptions ()
 {
 	int c;
 	int ret;
@@ -152,16 +144,12 @@ Rts2App::initOptions ()
 	return 0;
 }
 
-
-void
-signalHUP (int sig)
+void signalHUP (int sig)
 {
 	masterApp->sigHUP (sig);
 }
 
-
-void
-killSignal (int sig)
+void killSignal (int sig)
 {
 	signal (SIGHUP, exit);
 	signal (SIGINT, exit);
@@ -176,9 +164,7 @@ killSignal (int sig)
 	}
 }
 
-
-int
-Rts2App::init ()
+int Rts2App::init ()
 {
 	signal (SIGHUP, signalHUP);
 	signal (SIGINT, killSignal);
@@ -187,9 +173,7 @@ Rts2App::init ()
 	return initOptions ();
 }
 
-
-void
-Rts2App::helpOptions ()
+void Rts2App::helpOptions ()
 {
 	std::vector < Rts2Option * >::iterator opt_iter;
 	for (opt_iter = options.begin (); opt_iter != options.end (); opt_iter++)
@@ -198,16 +182,12 @@ Rts2App::helpOptions ()
 	}
 }
 
-
-void
-Rts2App::usage()
+void Rts2App::usage()
 {
 	std::cout << "\tUsage pattern not defined, please add feature request for missing usage pattern to http://www.rts2.org/featreq" << std::endl;
 }
 
-
-void
-Rts2App::help ()
+void Rts2App::help ()
 {
 	std::cout << "Usage:" << std::endl;
 	usage ();
@@ -215,9 +195,7 @@ Rts2App::help ()
 	helpOptions ();
 }
 
-
-int
-Rts2App::processOption (int in_opt)
+int Rts2App::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -257,25 +235,19 @@ This is free software, and you are welcome to redistribute it under certain cond
 	return 0;
 }
 
-
-int
-Rts2App::processArgs (const char *arg)
+int Rts2App::processArgs (const char *arg)
 {
 	return -1;
 }
 
-
-int
-Rts2App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
+int Rts2App::addOption (int in_short_option, const char *in_long_option, int in_has_arg, const char *in_help_msg)
 {
 	Rts2Option *an_option = new Rts2Option (in_short_option, in_long_option, in_has_arg, in_help_msg);
 	options.push_back (an_option);
 	return 0;
 }
 
-
-int
-Rts2App::askForInt (const char *desc, int &val)
+int Rts2App::askForInt (const char *desc, int &val)
 {
 	char temp[200];
 	while (!getEndLoop ())
@@ -307,9 +279,7 @@ Rts2App::askForInt (const char *desc, int &val)
 	return 0;
 }
 
-
-int
-Rts2App::askForDouble (const char *desc, double &val)
+int Rts2App::askForDouble (const char *desc, double &val)
 {
 	char temp[200];
 	while (!getEndLoop ())
@@ -336,9 +306,7 @@ Rts2App::askForDouble (const char *desc, double &val)
 	return 0;
 }
 
-
-int
-Rts2App::askForString (const char *desc, std::string & val)
+int Rts2App::askForString (const char *desc, std::string & val)
 {
 	while (!getEndLoop ())
 	{
@@ -363,7 +331,6 @@ Rts2App::askForString (const char *desc, std::string & val)
 	std::cout << desc << ": " << val << std::endl;
 	return 0;
 }
-
 
 int Rts2App::askForPassword (const char *desc, std::string & val)
 {
@@ -390,7 +357,6 @@ int Rts2App::askForPassword (const char *desc, std::string & val)
 
 	return 0;
 }
-
 
 bool Rts2App::askForBoolean (const char *desc, bool val)
 {
@@ -429,9 +395,7 @@ bool Rts2App::askForBoolean (const char *desc, bool val)
 	return val;
 }
 
-
-int
-Rts2App::askForChr (const char *desc, char &out)
+int Rts2App::askForChr (const char *desc, char &out)
 {
 	char temp[201];
 	std::cout << desc << ":";
@@ -447,22 +411,16 @@ Rts2App::askForChr (const char *desc, char &out)
 	return 0;
 }
 
-
-void
-Rts2App::sendMessage (messageType_t in_messageType,
-const char *in_messageString)
+void Rts2App::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	Rts2Message msg = Rts2Message ("app", in_messageType, in_messageString);
 	std::cerr << msg.toString () << std::endl;
 }
 
-
-void
-Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
+void Rts2App::sendMessage (messageType_t in_messageType, std::ostringstream & _os)
 {
 	sendMessage (in_messageType, _os.str ().c_str ());
 }
-
 
 Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 {
@@ -470,9 +428,7 @@ Rts2LogStream Rts2App::logStream (messageType_t in_messageType)
 	return ls;
 }
 
-
-void
-Rts2App::sigHUP (int sig)
+void Rts2App::sigHUP (int sig)
 {
 	endRunLoop ();
 }

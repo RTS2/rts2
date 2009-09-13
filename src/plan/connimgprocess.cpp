@@ -70,6 +70,7 @@ ConnImgProcess::newProcess ()
 	#endif
 
 	image = new Rts2Image (imgPath);
+	image->openImage ();
 	if (image->getShutter () == SHUT_CLOSED)
 	{
 		astrometryStat = DARK;
