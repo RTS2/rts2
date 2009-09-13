@@ -1,0 +1,302 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Markus</firstname>">
+  <!ENTITY dhsurname   "<surname>Wildi</surname>">
+  <!ENTITY dhdate      "<date>2009-09-12</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>markus.wildi@one-arcsec.org</email>">
+  <!ENTITY dhusername  "Markus Wildi">
+  <!ENTITY dhpackage   "rts2-sensor-aag">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.0</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib></contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Driver for the AAG cloud, rain and brightness device.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>-f <replaceable>serial port</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-g <replaceable>float number</replaceable></option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>-b <replaceable>float number</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+
+  </refsynopsisdiv>
+
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+
+    <para>
+      <command>&dhpackage;</command> monitors the sky IR temperature (clouds),
+      the rain detector and the brightness sensor of the AAG
+      CloudWatcher device. This device was designed by António Alberto  Peres
+      Gomes, see http://www.aagware.eu/aag_cloudwatcher.htm.
+    </para>
+    <para>
+     The cloud sensor has an opening angle of about 70 degrees and hence gives a
+     general idea of the cloud coverage in the field of view. The brightness
+     sensor is used for informational purposes only.
+     The rain detector is a very fast and sensitive device and even a single
+     rain droplet is detected. It is used to decide the state of the weather.
+     If it is dry, defined by the value of the option -g, the weather is
+     considered to be good and if it is below the value of option -b it is bad.  
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Sensor operation</title>
+    <para>
+      The heating algorithm follows looseley the model developed by the
+      original author,
+which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHeaterAlgorithm.pdf.
+   </para>
+    <para>
+    To define sensible thresholds for THRESHOLD_MAX, THRESHOLD_DRY
+    and THRESHOLD_WET put the device into bright sun light and read the
+    parameter RAIN. Set THRESHOLD_DRY about 10 units below the read value,
+    THRESHOLD_MAX to THRESHOLD_DRY + 40 and THRESHOLD_WET to about
+    THRESHOLD_DRY - 200 units.  
+   </para>
+     <para>
+       The recommended values for the options -b and -g are THRESHOLD_DRY.
+    </para>
+
+     <para>
+       The driver has a built in correction model for the measured sky IR
+       temperature. The constants of the model are defined in aag.h. The
+       meaning of the constants are described in the original documentation
+       which can be found here
+       https://azug.minpet.unibas.ch/~wildi/vermes/SkyTemperatureModel.pdf
+     </para>
+    <para>
+    </para>
+  </refsect1>
+  <refsect1 id="values">
+    <title>PARAMETERS, VALUES</title>
+   <para>
+    The following items are displayed with rts2-mon.
+</para>
+     <variablelist>
+        <varlistentry>
+          <term>
+            <option>TEMP_SKY [Deg C]</option>
+          </term>
+          <listitem>
+            <para>Measured temperature of the sky. Temperatures below about
+            -20 deg C indicate a clear sky. 
+           </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TEMP_IRS [Deg C]</option>
+          </term>
+          <listitem>
+            <para>Temperature of the IR sensor. In principle this is the
+            on site ambient temperature. During day time this value can be
+            much higher.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TEMP_SKY_CORR [Deg C]</option>
+          </term>
+          <listitem>
+            <para>The driver includes a correction of TEMP_SKY. The
+            parameters and their values are defined in aag.h</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>INT_VOLT [Volt]</option>
+          </term>
+          <listitem>
+            <para>The device internal power supply voltage.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>LDR_RES [arb. unit]</option>
+          </term>
+          <listitem>
+            <para>The value of the brightness sensor. A value of about 0.05 indicates
+            bright sun light and above 3000 it is dark.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TEMP_RAIN [deg C]</option>
+          </term>
+          <listitem>
+            <para>Temperature of the rain detector.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TEMP_RAIN_TARGET [deg C]</option>
+          </term>
+          <listitem>
+            <para>Target temperature of the rain detector. This quantity is
+            calculated within this driver to determine the amount of heat to
+            be generated during the next polling cycle.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>RAIN [arb. unit]</option>
+          </term>
+          <listitem>
+            <para>In the original documentation this parameter is called rain
+            frequency. The value varies between 600. (wet)  and 2100. (dry) and is a
+            measure for the water coverage of the rain detector surface.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>PWM [%]</option>
+          </term>
+          <listitem>
+            <para>The amount of heat produced within the rain sensor.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TRIGBAD</option>
+          </term>
+          <listitem>
+            <para>See section OPTIONS.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>TRIGGOOD</option>
+          </term>
+          <listitem>
+            <para>See section OPTIONS.</para>
+          </listitem>
+        </varlistentry>
+  </variablelist>
+
+
+    <para>
+   
+  </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+    <para>
+      This program follows the usual &gnu; command line syntax,
+      with long options starting with two dashes (`--').  A summary of
+      options is included below.
+    </para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-g <replaceable class="parameter">float number</replaceable></option></term>
+	<listitem>
+           <para>
+	     Good trip point. If rain frequency (identifier RAIN) is above
+	     this value, the driver switches the bad weather flag to off after
+	     120 seconds (WEATHER_TIMEOUT_BAD).
+	   </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-b <replaceable class="parameter">float number</replaceable></option></term>
+	<listitem>
+           <para>
+	     Bad trip point. If rain frequency (identifier RAIN) is below this
+	     value, the driver switches the bad weather flag to on and remains
+	     in this state for at least 120 seconds (WEATHER_TIMEOUT_BAD). 
+	   </para>
+	</listitem>
+      </varlistentry>
+
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>
+      <citerefentry>
+        <refentrytitle>rts2</refentrytitle>
+	<manvolnum>7</manvolnum>
+      </citerefentry>
+    </para>
+    <para>
+      See aag.h for further comments and settings of the parameters.
+    </para>
+    <para>
+      More about the operation and the communication protocol of the device
+      can be found at https://azug.minpet.unibas.ch/wikiobsvermes/index.php/AAG_cloud_sensor.
+    </para>
+
+  </refsect1>
+  <refsect1>
+    <title>BUGS</title>
+    <para>
+      The bad weather flag will be not cleared despite the driver thinks that
+      it is good weather.
+    </para>
+  </refsect1>
+</refentry>
