@@ -125,6 +125,14 @@ int MDM::info ()
 
 int MDM::setTo (int num)
 {
+	char buf[255];
+	snprintf (buf, 255, "FOCUSABS %d", num);
+	int ret = tcss_nodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set filter number" << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
