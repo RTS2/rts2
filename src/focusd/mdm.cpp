@@ -115,7 +115,10 @@ int MDM::info ()
 	tcsinfo_t tcsi;
 	ret = tcss_reqcoords (tcssock, &tcsi, 0, 1);
 	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "While calling tcss_reqcoords: " << ret << sendLog;
 		return ret;
+	}
 
 	position->setValueInteger (tcsi.focus);
 
