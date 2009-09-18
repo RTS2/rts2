@@ -278,15 +278,39 @@ class Rts2Daemon:public Rts2Block
 		void checkBopStatus ();
 
 		/**
-		 * Set value. That one should be owerwrited in descendants.
+		 * Set value. This is the function that get called when user want to change some value, either interactively through
+		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables 
+		 * beiing overwritten.
+		 *
+		 * Suppose you have variables var1 and var2, which you would like to be settable by user. When user set var1, system will just change
+		 * value and pick it up next time it will use it. If user set integer value var2, method setVar2 should be called to communicate
+		 * the change to the underliing hardware. Then your setValueMethod should looks like:
+		 *
+		 * @code
+		 * class MyClass:public MyParent
+		 * {
+		 *   ....
+		 *   protected:
+		 *       virtual int setValue (Rts2Value * old_value, Rts2Value *new_value)
+		 *       {
+		 *             if (old_value == var1)
+		 *                   return 0;
+		 *             if (old_value == var2)
+		 *                   return setVar2 (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		 *             return MyParent::setValue (old_value, new_value);
+	         *       }
+		 *   ...
+		 * };
+		 *
+		 * @endcode
 		 *
 		 * @param  old_value	Old value (pointer), can be directly
-		 * 	accesed th with pointer stored in object.
-		 * @param  new_value	New value.
+		 *        accesed with the pointer stored in object.
+		 * @param new_value	New value.
 		 *
-		 * @return 1 when value can be set, but it will take longer time to perform,
-		 * 0 when value can be se imedietly, -1 when value set was qued and -2 on an
-		 * error.
+		 * @return 1 when value can be set, but it will take longer
+		 * time to perform, 0 when value can be se immediately, -1 when
+		 * value set was queued and -2 on an error.
 		 */
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
