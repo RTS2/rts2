@@ -49,8 +49,7 @@ const SplitConf splitConf[] =
 	{true, false, 2, true, 0x51000040, 0x51008141}
 };
 
-typedef enum {A_plus, A_minus, B, C, D}
-edtAlgoType;
+typedef enum {A_plus, A_minus, B, C, D} edtAlgoType;
 
 /**
  * Special variable for EDT-SAO registers. It holds information
@@ -60,11 +59,6 @@ edtAlgoType;
  */
 class ValueEdt: public Rts2ValueDoubleMinMax
 {
-	private:
-		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
-		long reg;
-		// algorith used to compute hex suffix value
-		edtAlgoType algo;
 	public:
 		ValueEdt (std::string in_val_name);
 		ValueEdt (std::string in_val_name, std::string in_description,
@@ -78,32 +72,31 @@ class ValueEdt: public Rts2ValueDoubleMinMax
 		 * @return -1 on error, otherwise hex value.
 		 */
 		long getHexValue (float in_v);
+	private:
+		// EDT - SAO register. It will be shifted by 3 bytes left and ored with value calculated by algo
+		long reg;
+		// algorith used to compute hex suffix value
+		edtAlgoType algo;
 };
 
 };
 
 using namespace rts2camd;
 
-ValueEdt::ValueEdt (std::string in_val_name)
-:Rts2ValueDoubleMinMax (in_val_name)
+ValueEdt::ValueEdt (std::string in_val_name):Rts2ValueDoubleMinMax (in_val_name)
 {
 }
 
-
-ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags)
-:Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
+ValueEdt::ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueDoubleMinMax (in_val_name, in_description, writeToFits, flags)
 {
 
 }
-
 
 ValueEdt::~ValueEdt (void)
 {
 }
 
-
-void
-ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
+void ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 {
 	reg = (in_reg << 12);
 	algo = in_algo;
@@ -134,9 +127,7 @@ ValueEdt::initEdt (long in_reg, edtAlgoType in_algo)
 	}
 }
 
-
-long
-ValueEdt::getHexValue (float in_v)
+long ValueEdt::getHexValue (float in_v)
 {
 	long val = 0;
 	// calculate value by algorithm
@@ -160,7 +151,6 @@ ValueEdt::getHexValue (float in_v)
 	}
 	return reg | val;
 }
-
 
 namespace rts2camd
 {
@@ -192,6 +182,25 @@ typedef enum
  */
 class EdtSao:public Camera
 {
+	public:
+		EdtSao (int in_argc, char **in_argv);
+		virtual ~ EdtSao (void);
+
+		virtual int init ();
+		virtual int initValues ();
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual int initChips ();
+		virtual int startExposure ();
+		virtual int stopExposure ();
+		virtual long isExposing ();
+		virtual int readoutStart ();
+		virtual int doReadout ();
+		virtual int endReadout ();
+
 	private:
 		PdvDev * pd;
 		char devname[16];
@@ -303,30 +312,11 @@ class EdtSao:public Camera
 		int lastW;
 		int lastH;
 		int lastSplitMode;
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-		virtual int initChips ();
-		virtual int startExposure ();
-		virtual int stopExposure ();
-		virtual long isExposing ();
-		virtual int readoutStart ();
-		virtual int doReadout ();
-		virtual int endReadout ();
-	public:
-		EdtSao (int in_argc, char **in_argv);
-		virtual ~ EdtSao (void);
-
-		virtual int init ();
-		virtual int initValues ();
 };
 
 };
 
-int
-EdtSao::edtwrite (unsigned long lval)
+int EdtSao::edtwrite (unsigned long lval)
 {
 	unsigned long lsval = lval;
 	if (ft_byteswap ())
@@ -335,9 +325,7 @@ EdtSao::edtwrite (unsigned long lval)
 	return 0;
 }
 
-
-int
-EdtSao::writeBinFile (const char *filename)
+int EdtSao::writeBinFile (const char *filename)
 {
 	// taken from edtwriteblk.c, heavily modified
 	FILE *fp;
@@ -374,9 +362,7 @@ EdtSao::writeBinFile (const char *filename)
 	return 0;
 }
 
-
-void
-EdtSao::reset ()
+void EdtSao::reset ()
 {
 	pdv_flush_fifo (pd);
 	pdv_reset_serial (pd);
@@ -388,9 +374,7 @@ EdtSao::reset ()
 	sleep (1);
 }
 
-
-int
-EdtSao::setDAC ()
+int EdtSao::setDAC ()
 {
 	// values taken from ccdsetup script
 	int ret;
@@ -464,18 +448,14 @@ EdtSao::setDAC ()
 	return 0;
 }
 
-
-void
-EdtSao::probe ()
+void EdtSao::probe ()
 {
 	status = edt_reg_read (pd, PDV_STAT);
 	shutter = status & PDV_CHAN_ID0;
 	overrun = status & PDV_OVERRUN;
 }
 
-
-int
-EdtSao::fclr (int num)
+int EdtSao::fclr (int num)
 {
 	time_t now;
 	time_t end_time;
@@ -523,9 +503,7 @@ EdtSao::fclr (int num)
 	return 0;
 }
 
-
-void
-EdtSao::fclr_r (int num)
+void EdtSao::fclr_r (int num)
 {
 	while (fclr (num) != 0)
 	{
@@ -535,18 +513,14 @@ EdtSao::fclr_r (int num)
 	}
 }
 
-
-int
-EdtSao::setParallelClockSpeed (int new_speed)
+int EdtSao::setParallelClockSpeed (int new_speed)
 {
   	unsigned long ns = 0x46000000;	
 	ns |= (new_speed & 0x00ff);
 	return edtwrite (ns);
 }
 
-
-int
-EdtSao::initChips ()
+int EdtSao::initChips ()
 {
 	int ret;
 
@@ -577,9 +551,7 @@ EdtSao::initChips ()
 	return ret;
 }
 
-
-void
-EdtSao::writeCommand (bool parallel, int addr, command_t command)
+void EdtSao::writeCommand (bool parallel, int addr, command_t command)
 {
 	u_char cmd[4];
 	cmd[0] = 0x42;
@@ -595,17 +567,14 @@ EdtSao::writeCommand (bool parallel, int addr, command_t command)
 	}
 }
 
-void
-EdtSao::writeCommandEnd ()
+void EdtSao::writeCommandEnd ()
 {
 	u_char cmd[4];
 	cmd[0] = cmd[1] = cmd[2] = cmd[3] = 0;
 	ccd_serial_write (pd, cmd, 4);
 }
 
-
-int
-EdtSao::writePattern (const SplitConf *conf)
+int EdtSao::writePattern (const SplitConf *conf)
 {
 	// write parallel commands
 	int addr = 0;
@@ -665,9 +634,7 @@ EdtSao::writePattern (const SplitConf *conf)
 	return 0;
 }
 
-
-int
-EdtSao::startExposure ()
+int EdtSao::startExposure ()
 {
 	int ret;
 	// taken from readout script
@@ -702,17 +669,13 @@ EdtSao::startExposure ()
 	return 0;
 }
 
-
-int
-EdtSao::stopExposure ()
+int EdtSao::stopExposure ()
 {
 	edtwrite (0x50020000);		 /* close shutter */
 	return Camera::stopExposure ();
 }
 
-
-long
-EdtSao::isExposing ()
+long EdtSao::isExposing ()
 {
 	int ret;
 	ret = Camera::isExposing ();
@@ -728,9 +691,7 @@ EdtSao::isExposing ()
 	return 0;
 }
 
-
-int
-EdtSao::readoutStart ()
+int EdtSao::readoutStart ()
 {
 	int ret;
 	int width, height;
@@ -802,9 +763,7 @@ EdtSao::readoutStart ()
 	return 0;
 }
 
-
-int
-EdtSao::doReadout ()
+int EdtSao::doReadout ()
 {
 	int i, j;
 	int ret;
@@ -1013,9 +972,7 @@ EdtSao::doReadout ()
 	return -2;
 }
 
-
-int
-EdtSao::endReadout ()
+int EdtSao::endReadout ()
 {
 	pdv_stop_continuous (pd);
 	pdv_flush_fifo (pd);
@@ -1025,9 +982,7 @@ EdtSao::endReadout ()
 	return Camera::endReadout ();
 }
 
-
-EdtSao::EdtSao (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	devname[0] = '\0';
 	devunit = 0;
@@ -1118,15 +1073,12 @@ Camera (in_argc, in_argv)
 	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = -1;
 }
 
-
 EdtSao::~EdtSao (void)
 {
 	edt_close (pd);
 }
 
-
-int
-EdtSao::processOption (int in_opt)
+int EdtSao::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -1162,9 +1114,7 @@ EdtSao::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
+int EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 {
 	if (old_value->testValue (new_value) == false)
 		return -2;
@@ -1172,16 +1122,12 @@ EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 	return edtwrite (old_value->getHexValue (new_value));
 }
 
-
-int
-EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
+int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 {
 	return edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
 }
 
-
-int
-EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == splitMode
 		|| old_value == skipLines)
@@ -1225,9 +1171,7 @@ EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
-int
-EdtSao::init ()
+int EdtSao::init ()
 {
 	int ret;
 	ret = Camera::init ();
@@ -1253,9 +1197,7 @@ EdtSao::init ()
 	return initChips ();
 }
 
-
-int
-EdtSao::initValues ()
+int EdtSao::initValues ()
 {
 	addConstValue ("DEVNAME", "device name", devname);
 	addConstValue ("DEVNUM", "device unit number", devunit);
@@ -1264,9 +1206,7 @@ EdtSao::initValues ()
 	return Camera::initValues ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	EdtSao device = EdtSao (argc, argv);
 	return device.run ();
