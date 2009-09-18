@@ -38,8 +38,8 @@ class MDM:public Filterd
 		virtual ~ MDM (void);
 
 	protected:
-		virtual int setFilterNum (Rts2Conn * conn, int new_filter);
-		virtual int info ();
+		virtual int setFilterNum (int new_filter);
+		virtual int getFilterNum ();
 
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -88,21 +88,22 @@ int MDM::init ()
 	
 	tcssock = miss_opensock_clnt ((char *) tcshost);
 
-	if (ret)
+	if (tcssock < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot init MISS connection" << sendLog;
-		return ret;
+		return -1;
 	}
 
 	return info ();
 }
 
-int MDM::setFilterNum (Rts2Conn *conn, int new_filter)
+int MDM::setFilterNum (int new_filter)
 {
 	char buf[255];
 	snprintf (buf, 255, "FILTER %d", new_filter + 1);
-	int ret = miss_control (tcssock, buf, MIS_MSG_REQFILTER, MIS_MSG_FILTER);
-	if (ret)
+	std::cout << "tcssock " << tcssock << std::endl;
+	int ret = miss_makereq (tcssock, buf, MIS_MSG_REQFILTER, MIS_MSG_FILTER);
+	if (ret < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot set filter number" << sendLog;
 		return -1;
@@ -110,15 +111,15 @@ int MDM::setFilterNum (Rts2Conn *conn, int new_filter)
 	return 0;
 }
 
-int MDM::info ()
+int MDM::getFilterNum ()
 {
 	int ret;
-	tcsinfo_t tcsi;
-	ret = tcss_reqcoords (tcssock, &tcsi, 0, 1);
+	misinfo_t misi;
+	ret = miss_reqinfo (tcssock, &misi, 0, 1);
 	if (ret < 0)
 		return ret;
 
-	return Filterd::info ();
+	return misi.filt;
 }
 
 int main (int argc, char **argv)
