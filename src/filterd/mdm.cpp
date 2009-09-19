@@ -119,7 +119,7 @@ int MDM::getFilterNum ()
 	if (ret < 0)
 		return ret;
 
-	return misi.filt;
+	return misi.filt - 1;
 }
 
 int main (int argc, char **argv)
