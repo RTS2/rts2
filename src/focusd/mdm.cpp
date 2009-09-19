@@ -38,7 +38,6 @@ class MDM:public Focusd
 		virtual ~ MDM (void);
 
 	protected:
-		virtual int isFocusing ();
 		virtual bool isAtStartPosition ();
 
 		virtual int processOption (int opt);
@@ -130,20 +129,14 @@ int MDM::setTo (int num)
 {
 	char buf[255];
 	snprintf (buf, 255, "FOCUSABS %d", num);
-	int ret = tcss_nodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
-	if (ret)
+	int ret = tcss_reqnodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
+	if (ret < 0)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot set filter number" << sendLog;
+		logStream (MESSAGE_ERROR) << "Cannot set focuser " << ret << " " << tcssock << sendLog;
 		return -1;
 	}
 	return 0;
 }
-
-int MDM::isFocusing ()
-{
-	return 0;
-}
-
 
 bool MDM::isAtStartPosition ()
 {
