@@ -153,7 +153,10 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 
 		ret = target->getScript (cam_name, scriptText);
 		if (ret == -1)
+		{
+			el_iter = elements.begin ();
 			return -1;
+		}
 		char *comment = NULL;
 		int offset = 0;
 		cmdBuf = new char[scriptText.length () + 1];
