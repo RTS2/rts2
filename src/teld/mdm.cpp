@@ -192,7 +192,7 @@ int MDM::info ()
 
 int MDM::isMoving ()
 {
-	return USEC_SEC;
+	return -2;
 }
 
 int MDM::isMovingFixed ()
