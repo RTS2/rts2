@@ -298,7 +298,10 @@ class EdtSao:public Camera
 		void writeCommandEnd ();
 
 		// write to controller pattern file
-		int writePattern (const SplitConf *conf);
+		int writePattern ();
+
+		// read only part of the chip
+		int writePartialPattern ();
 
 		// number of collumns
 		Rts2ValueInteger *chipWidth;
@@ -306,12 +309,16 @@ class EdtSao:public Camera
 		// number of rows
 		Rts2ValueInteger *chipHeight;
 
+		// number of rows to skip
+		Rts2ValueInteger *partialReadout;
+
 		int lastSkipLines;
 		int lastX;
 		int lastY;
 		int lastW;
 		int lastH;
 		int lastSplitMode;
+		int lastPartialReadout;
 };
 
 };
@@ -574,7 +581,7 @@ void EdtSao::writeCommandEnd ()
 	ccd_serial_write (pd, cmd, 4);
 }
 
-int EdtSao::writePattern (const SplitConf *conf)
+int EdtSao::writePattern ()
 {
 	// write parallel commands
 	int addr = 0;
@@ -606,7 +613,7 @@ int EdtSao::writePattern (const SplitConf *conf)
 	for (; i < getHeight (); i++)
 		writeCommand (true, addr++, SKIP);
 	writeCommand (true, addr++, VEND);
-	// write serial commandsa
+	// write serial commands
 	addr = 0;
 	writeCommand (false, addr++, ZERO);
 	for (i = 0; i < skipLines->getValueInteger (); i++)
@@ -634,6 +641,49 @@ int EdtSao::writePattern (const SplitConf *conf)
 	return 0;
 }
 
+int EdtSao::writePartialPattern ()
+{
+ 	if (partialReadout->getValueInteger () == lastPartialReadout
+		&& chipUsedReadout->getXInt () == lastX
+		&& chipUsedReadout->getWidthInt () == lastW
+		&& splitMode->getValueInteger () == lastSplitMode)
+		return 0;
+
+	int addr = 0;
+	lastPartialReadout = partialReadout->getValueInteger ();
+	lastX = chipUsedReadout->getXInt ();
+	lastW = chipUsedReadout->getWidthInt ();
+
+	writeCommand (true, addr++, ZERO);
+	// read..
+	int i;
+	for (i = 0; i < partialReadout->getValueInteger (); i++)
+		writeCommand (true, addr++, READ);
+	writeCommand (true, addr++, VEND);
+	writeCommand (false, addr++, ZERO);
+	int width;
+	if (channels == 1)
+	{
+		// skip in X axis..
+		for (i = 0; i < getUsedX (); i++)
+			writeCommand (false, addr++, SKIP);
+		width = getUsedX () + getUsedWidth ();
+		for (; i < width; i++)
+			writeCommand (false, addr++, READ);
+		for (; i < getWidth (); i++)
+			writeCommand (false, addr++, SKIP);
+	}
+	else
+	{
+		for (i = 0; i < getWidth () / 2; i++)
+			writeCommand (false, addr++, READ);
+	}
+	writeCommand (false, addr++, HEND);
+	writeCommandEnd ();
+	logStream (MESSAGE_DEBUG) << "partial pattern written" << sendLog;
+	return 0;
+}
+
 int EdtSao::startExposure ()
 {
 	int ret;
@@ -651,14 +701,33 @@ int EdtSao::startExposure ()
 	edtwrite (conf->ioPar1);	 //  channel order
 	edtwrite (conf->ioPar2);
 
-	// create and write pattern..
-	ret = writePattern (conf);
+	bool dofcl = true;
+
+	if (partialReadout->getValueInteger () > 0)
+	{
+		ret = writePartialPattern ();
+		chipUsedReadout->setInts (chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), partialReadout->getValueInteger ());
+		dofcl = false;
+	}
+	else
+	{
+		if (lastPartialReadout != partialReadout->getValueInteger ())
+		{
+			lastPartialReadout = partialReadout->getValueInteger ();
+			setSize (chipWidth->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
+			lastW = -1;
+			dofcl = false;
+		}
+		// create and write pattern..
+		ret = writePattern ();
+	}
 	if (ret)
 		return ret;
 	writeBinFile ("e2v_nidlesc.bin");
-	fclr_r (5);
+	if (dofcl == true)
+		fclr_r (5);
 //	if (channels != 1)
-		writeBinFile ("e2v_freezesc.bin");
+	writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
 								 /* set time */
@@ -687,7 +756,7 @@ long EdtSao::isExposing ()
 		return 100;
 	pdv_serial_wait (pd, 100, 4);
 //	if (channels != 1)
-		writeBinFile ("e2v_unfreezesc.bin");
+	writeBinFile ("e2v_unfreezesc.bin");
 	return 0;
 }
 
@@ -716,7 +785,10 @@ int EdtSao::readoutStart ()
 		width = getUsedWidth ();
 	else
 		width = getWidth () / 2;
-	height = getUsedHeight ();
+	if (partialReadout->getValueInteger () > 0)
+		height = partialReadout->getValueInteger ();
+	else
+		height = getUsedHeight ();
 	ret = pdv_setsize (pd, width * channels * dsub, height);
 	if (ret == -1)
 	{
@@ -726,7 +798,7 @@ int EdtSao::readoutStart ()
 	}
 	depth = pdv_get_depth (pd);
 	db = bits2bytes (depth);
-	imagesize = chipUsedReadout->getWidthInt () * chipUsedReadout->getHeightInt () * db;
+	imagesize = chipUsedReadout->getWidthInt () * height * db;
 
 	ret = Camera::readoutStart ();
 	if (ret)
@@ -738,7 +810,7 @@ int EdtSao::readoutStart ()
 	 */
 	if (!set_timeout)
 		timeout_val = (chipUsedReadout->getWidthInt () / channels)
-			* chipUsedReadout->getHeightInt () / 1000
+			* height / 1000
 			* timeout_val * 5 / 2000 + 2000;
 	pdv_set_timeout (pd, timeout_val);
 	logStream (MESSAGE_DEBUG) << "timeout_val: " << timeout_val << " millisecs" << sendLog;
@@ -974,11 +1046,14 @@ int EdtSao::doReadout ()
 
 int EdtSao::endReadout ()
 {
-	pdv_stop_continuous (pd);
-	pdv_flush_fifo (pd);
-	pdv_reset_serial (pd);
-	edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
-	writeBinFile ("e2v_pidlesc.bin");
+	if (partialReadout->getValueInteger () < 0)
+	{
+		pdv_stop_continuous (pd);
+		pdv_flush_fifo (pd);
+		pdv_reset_serial (pd);
+		edt_reg_write (pd, PDV_CMD, PDV_RESET_INTFC);
+		writeBinFile ("e2v_pidlesc.bin");
+	}
 	return Camera::endReadout ();
 }
 
@@ -1033,6 +1108,9 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING);
 	chipHeight->setValueInteger (520);
 
+	createValue (partialReadout, "partial_readout", "partial readout - use for focusing images", true, 0, CAM_WORKING);
+	partialReadout->setValueInteger (-1);
+
 	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
@@ -1070,7 +1148,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
-	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = -1;
+	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = lastPartialReadout = -1;
 }
 
 EdtSao::~EdtSao (void)
@@ -1129,8 +1207,7 @@ int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 
 int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == splitMode
-		|| old_value == skipLines)
+	if (old_value == splitMode || old_value == skipLines || old_value == partialReadout)
 	{
 		return 0;
 	}

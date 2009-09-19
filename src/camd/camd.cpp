@@ -31,6 +31,8 @@
 
 #define OPT_FLIP    OPT_LOCAL + 401
 #define OPT_PLATE   OPT_LOCAL + 402
+#define OPT_FOCUS   OPT_LOCAL + 403
+#define OPT_WHEEL   OPT_LOCAL + 404
 
 using namespace rts2camd;
 
@@ -337,8 +339,8 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	createValue (rnoise, "RNOISE", "CCD readout noise");
 
 	// other options..
-	addOption ('F', NULL, 1, "name of focuser device, which will be granted to do exposures without priority");
-	addOption ('W', NULL, 1, "name of device which is used as filter wheel");
+	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
+	addOption (OPT_WHEEL, "wheeldev", 1, "name of device which is used as filter wheel");
 	addOption ('e', NULL, 1, "default exposure");
 	addOption ('s', "subexposure", 1, "default subexposure");
 	addOption ('t', "type", 1, "specify camera type (in case camera do not store it in FLASH ROM)");
@@ -439,10 +441,10 @@ int Camera::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'F':
+		case OPT_FOCUS:
 			focuserDevice = optarg;
 			break;
-		case 'W':
+		case OPT_WHEEL:
 			wheelDevice = optarg;
 			break;
 		case 'e':
