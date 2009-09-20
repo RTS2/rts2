@@ -58,6 +58,9 @@ class D50:public Fork
 		Rts2ValueInteger *unitRa;
 		Rts2ValueInteger *unitDec;
 
+		Rts2ValueInteger *utarRa;
+		Rts2ValueInteger *utarDec;
+
 		Rts2ValueInteger *procRa;
 		Rts2ValueInteger *procDec;
 
@@ -250,6 +253,9 @@ D50::D50 (int in_argc, char **in_argv)
 
 	createValue (unitRa, "AXRA", "RA axis raw counts", true);
 	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
+
+	createValue (utarRa, "tar_axra", "Target RA axis value", true);
+	createValue (utarDec, "tar_adec", "Target DEC axis value", true);
 
 	createValue (procRa, "proc_ra", "state for RA processor", false, RTS2_DT_HEX);
 	createValue (procDec, "proc_dec", "state for DEC processor", false, RTS2_DT_HEX);
@@ -493,6 +499,12 @@ D50::startResync ()
 	ret = sky2counts (ac, dc);
 	if (ret)
 		return -1;
+
+	utarRa->setValueInteger (ac);
+	utarDec->setValueInteger (dc);
+
+	sendValueAll (utarRa);
+	sendValueAll (utarDec);
 
 	ret = tel_write_unit (1, 't', ac);
 	if (ret)
