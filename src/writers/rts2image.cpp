@@ -413,6 +413,11 @@ void Rts2Image::getHeaders ()
 {
 	struct timeval tv;
 
+	naxis[0] = 0;
+	naxis[1] = 0;
+
+	getValues ("NAXIS", naxis, 2, false);
+
 	// get info..
 	getValue ("TARGET", targetId, verbose);
 	getValue ("TARSEL", targetIdSel, verbose);
@@ -433,11 +438,6 @@ void Rts2Image::getHeaders ()
 	{
 		getValue ("EXPOSURE", exposureLength, verbose);
 	}
-
-	naxis[0] = 0;
-	naxis[1] = 0;
-
-	getValues ("NAXIS", naxis, 2, false);
 
 	cameraName = new char[DEVICE_NAME_SIZE + 1];
 	getValue ("CCD_NAME", cameraName, DEVICE_NAME_SIZE, "UNK");
