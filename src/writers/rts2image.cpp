@@ -829,7 +829,7 @@ void Rts2Image::setCreationDate (fitsfile * out_file)
 void Rts2Image::getValue (const char *name, bool & value, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 
 	int i_val;
 	fits_read_key (getFitsFile (), TLOGICAL, (char *) name, (void *) &i_val, comment, &fits_status);
@@ -840,7 +840,7 @@ void Rts2Image::getValue (const char *name, bool & value, bool required, char *c
 void Rts2Image::getValue (const char *name, int &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 
 	fits_read_key (getFitsFile (), TINT, (char *) name, (void *) &value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
@@ -849,7 +849,7 @@ void Rts2Image::getValue (const char *name, int &value, bool required, char *com
 void Rts2Image::getValue (const char *name, long &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 	
 	fits_read_key (getFitsFile (), TLONG, (char *) name, (void *) &value, comment,
 		&fits_status);
@@ -859,7 +859,7 @@ void Rts2Image::getValue (const char *name, long &value, bool required, char *co
 void Rts2Image::getValue (const char *name, float &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 	
 	fits_read_key (getFitsFile (), TFLOAT, (char *) name, (void *) &value, comment,	&fits_status);
 	fitsStatusGetValue (name, required);
@@ -868,7 +868,7 @@ void Rts2Image::getValue (const char *name, float &value, bool required, char *c
 void Rts2Image::getValue (const char *name, double &value, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 	
 	fits_read_key (getFitsFile (), TDOUBLE, (char *) name, (void *) &value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
@@ -878,7 +878,7 @@ void Rts2Image::getValue (const char *name, char &value, bool required, char *co
 {
 	static char val[FLEN_VALUE];
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 
 	fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment,
 		&fits_status);
@@ -892,7 +892,7 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 	{
 		static char val[FLEN_VALUE];
 		if (!getFitsFile ())
-			openImage ();
+			openImage (NULL, true);
 	
 		fits_read_key (getFitsFile (), TSTRING, (char *) name, (void *) val, comment,
 			&fits_status);
@@ -915,7 +915,7 @@ void Rts2Image::getValue (const char *name, char *value, int valLen, const char*
 void Rts2Image::getValue (const char *name, char **value, int valLen, bool required, char *comment)
 {
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 
 	fits_read_key_longstr (getFitsFile (), (char *) name, value, comment, &fits_status);
 	fitsStatusGetValue (name, required);
@@ -1436,7 +1436,7 @@ void Rts2Image::loadData ()
 	// try to load data..
 	int anyNull = 0;
 	if (!getFitsFile ())
-		openImage ();
+		openImage (NULL, true);
 
 	fits_get_img_equivtype (getFitsFile (), &imageType, &fits_status);
 	fitsStatusGetValue ("image equivType loadData", true);
