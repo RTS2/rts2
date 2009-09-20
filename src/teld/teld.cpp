@@ -73,7 +73,7 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 
 	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - one feeded to TCS", false);
 
-	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true);
+	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true, RTS2_DT_DEGREES, 0);
 	modelRaDec->setValueRaDec (0, 0);
 
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
