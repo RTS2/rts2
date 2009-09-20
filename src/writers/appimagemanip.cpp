@@ -103,8 +103,7 @@ class AppImage:public Rts2AppImage
 
 using namespace rts2image;
 
-void
-AppImage::printOffset (double x, double y, Rts2Image * image)
+void AppImage::printOffset (double x, double y, Rts2Image * image)
 {
 	double sep;
 	double x_out;
@@ -132,9 +131,7 @@ AppImage::printOffset (double x, double y, Rts2Image * image)
 	std::cout.setf (old_settings);
 }
 
-
-int
-AppImage::addDate (Rts2Image * image)
+int AppImage::addDate (Rts2Image * image)
 {
 	int ret;
 	time_t t;
@@ -147,17 +144,14 @@ AppImage::addDate (Rts2Image * image)
 	return ret;
 }
 
-
 #ifdef HAVE_PGSQL
-int
-AppImage::insert (Rts2ImageDb * image)
+int AppImage::insert (Rts2ImageDb * image)
 {
 	return image->saveImage ();
 }
 #endif							 /* HAVE_PGSQL */
 
-void
-AppImage::testImage (Rts2Image * image)
+void AppImage::testImage (Rts2Image * image)
 {
 	double ra, dec, x, y;
 	std::cout
@@ -203,9 +197,7 @@ AppImage::testImage (Rts2Image * image)
 	printOffset (152, 150, image);
 }
 
-
-void
-AppImage::testEval (Rts2Image * image)
+void AppImage::testEval (Rts2Image * image)
 {
 	float value, error;
 
@@ -214,9 +206,7 @@ AppImage::testEval (Rts2Image * image)
 	std::cout << "value: " << value << " error: " << error << std::endl;
 }
 
-
-void
-AppImage::createWCS (Rts2Image * image)
+void AppImage::createWCS (Rts2Image * image)
 {
 	int ret = image->createWCS (off_x, off_y);
 
@@ -224,9 +214,7 @@ AppImage::createWCS (Rts2Image * image)
 		std::cerr << "Create WCS returned with error " << ret << std::endl;
 }
 
-
-void
-AppImage::printModel (Rts2Image *image)
+void AppImage::printModel (Rts2Image *image)
 {
 	try
 	{
@@ -244,9 +232,7 @@ AppImage::printModel (Rts2Image *image)
 	}
 }
 
-
-int
-AppImage::processOption (int in_opt)
+int AppImage::processOption (int in_opt)
 {
 	char *off_sep;
 	switch (in_opt)
@@ -332,7 +318,6 @@ AppImage::processOption (int in_opt)
 	return 0;
 }
 
-
 #ifdef HAVE_PGSQL
 bool AppImage::doInitDB ()
 {
@@ -340,11 +325,10 @@ bool AppImage::doInitDB ()
 }
 #endif
 
-int
 #ifdef HAVE_PGSQL
-AppImage::processImage (Rts2ImageDb * image)
+int AppImage::processImage (Rts2ImageDb * image)
 #else
-AppImage::processImage (Rts2Image * image)
+int AppImage::processImage (Rts2Image * image)
 #endif							 /* HAVE_PGSQL */
 {
 	if (operation == IMAGEOP_NOOP)
@@ -387,16 +371,13 @@ AppImage::processImage (Rts2Image * image)
 	return 0;
 }
 
-
-void
-AppImage::usage ()
+void AppImage::usage ()
 {
 	std::cout 
 		<< "  rts2-image -w 123.fits                     .. write WCS to file 123, based on information stored by RTS2 in the file"	<< std::endl
 		<< "  rts2-image -w -o 20.12:10.56 123.fits      .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS" << std::endl
 		<< "  rts2-image -P @DATE_OBS/@POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl;
 }
-
 
 AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
 #ifdef HAVE_PGSQL
@@ -429,9 +410,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 #endif /* HAVE_LIBJPEG */
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	AppImage app = AppImage (argc, argv, true);
 	return app.run ();

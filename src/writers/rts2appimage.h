@@ -11,10 +11,7 @@ class Rts2AppImage:public Rts2CliApp
 	protected:
 		std::list < const char *>imageNames;
 		bool readOnly;
-		virtual int processImage (Rts2Image * image)
-		{
-			return 0;
-		}
+		virtual int processImage (Rts2Image * image) { return 0; }
 	public:
 		Rts2AppImage (int in_argc, char **in_argv, bool in_readOnly):Rts2CliApp (in_argc, in_argv)
 		{
@@ -34,8 +31,7 @@ class Rts2AppImage:public Rts2CliApp
 		{
 			int ret = 0;
 			std::list < const char *>::iterator img_iter;
-			for (img_iter = imageNames.begin (); img_iter != imageNames.end ();
-				img_iter++)
+			for (img_iter = imageNames.begin (); img_iter != imageNames.end (); img_iter++)
 			{
 				const char *an_name = *img_iter;
 				Rts2Image *image = new Rts2Image (an_name, false, readOnly);
