@@ -24,8 +24,7 @@
 
 using namespace rts2teld;
 
-int
-Fork::sky2counts (int32_t & ac, int32_t & dc)
+int Fork::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
@@ -43,9 +42,7 @@ Fork::sky2counts (int32_t & ac, int32_t & dc)
 	return sky2counts (&pos, ac, dc, JD, homeOff);
 }
 
-
-int
-Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+int Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
 	double ls, ra, dec;
 	struct ln_hrz_posn hrz;
@@ -144,9 +141,7 @@ Fork::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD
 	return 0;
 }
 
-
-int
-Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
+int Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 {
 	double JD, ls;
 	int32_t homeOff;
@@ -199,14 +194,11 @@ Fork::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	return 0;
 }
 
-
-Fork::Fork (int in_argc, char **in_argv):
-Telescope (in_argc, in_argv)
+Fork::Fork (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
 	haZero = decZero = haCpd = decCpd = nan("f");
 	ra_ticks = dec_ticks = 0;
 }
-
 
 Fork::~Fork (void)
 {

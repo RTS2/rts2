@@ -430,6 +430,8 @@ class Telescope:public Rts2Device
 		void setTarget (double ra, double dec)
 		{
 			tarRaDec->setValueRaDec (ra, dec);
+			telTargetRaDec->setValueRaDec (ra, dec);
+			modelRaDec->setValueRaDec (0, 0);
 		}
 
 		/**
@@ -762,6 +764,11 @@ class Telescope:public Rts2Device
 		 * RA DEC correction which waits to be applied.
 		 */
 		Rts2ValueRaDec *wcorrRaDec;
+
+		/**
+		 * Modelling changes.
+		 */
+		Rts2ValueRaDec *modelRaDec;
 
 		/**
 		 * Corrected, modelled coordinates feeded to telescope.

@@ -58,12 +58,10 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
-	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES,
-		0);
+	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES, 0);
 	corrRaDec->setValueRaDec (0, 0);
 
-	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied",
-		false, RTS2_DT_DEGREES, 0);
+	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied", false, RTS2_DT_DEGREES, 0);
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
@@ -74,6 +72,9 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
 
 	createValue (telTargetRaDec, "tel_target", "target RA DEC telescope coordinates - one feeded to TCS", false);
+
+	createValue (modelRaDec, "MO_RTS2", "[deg] RTS2 model offsets", true);
+	modelRaDec->setValueRaDec (0, 0);
 
 	// target + model + corrections = sends to tel ... TEL (read from sensors, if possible)
 	createValue (telRaDec, "TEL", "mount position (read from sensors)", true);
@@ -278,9 +279,7 @@ double Telescope::getCorrAz ()
 double Telescope::getTargetDistance ()
 {
 	struct ln_equ_posn tar,tel;
-	getTarget (&tar);
-	tar.ra += corrRaDec->getRa ();
-	tar.dec += corrRaDec->getDec ();
+	getTelTargetRaDec (&tar);
 	getTelRaDec (&tel);
 
 	if (isnan(tar.ra) || isnan(tar.dec) || isnan(tel.ra) || isnan(tel.dec))
@@ -401,6 +400,9 @@ void Telescope::incMoveNum ()
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
+	modelRaDec->setValueRaDec (0, 0);
+	modelRaDec->resetValueChanged ();
+
 	corrRaDec->setValueRaDec (0, 0);
 	corrRaDec->resetValueChanged ();
 
@@ -423,8 +425,9 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->ra = -1 * corrRaDec->getRa();
 		model_change->dec = -1 * corrRaDec->getDec();
 
-		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
-		pos->dec = pos->dec + corrRaDec->getDec ();
+		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
+		pos->dec = pos->dec - corrRaDec->getDec ();
+		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
 	ls = getLstDeg (JD);
@@ -484,6 +487,10 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 			<< model_change->dec << " sep " << sep << sendLog;
 		model_change->ra = 0;
 		model_change->dec = 0;
+		modelRaDec->setValueRaDec (0, 0);
+		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
+		pos->dec = pos->dec - corrRaDec->getDec ();
+		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
 
@@ -492,11 +499,15 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		<< model_change->ra << " dec: " << model_change->dec
 		<< sendLog;
 
+	modelRaDec->setValueRaDec (model_change->ra, model_change->dec);
+
 	model_change->ra -= corrRaDec->getRa();
 	model_change->dec -= corrRaDec->getDec();
 
 	pos->ra = ln_range_degrees (ra - corrRaDec->getRa ());
 	pos->dec = hadec.dec - corrRaDec->getDec ();
+
+	telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 }
 
 int Telescope::init ()
@@ -529,8 +540,10 @@ int Telescope::initValues ()
 	if (ret)
 		return ret;
 	tarRaDec->setFromValue (telRaDec);
+	telTargetRaDec->setFromValue (telRaDec);
 	oriRaDec->setFromValue (telRaDec);
 	objRaDec->setFromValue (telRaDec);
+	modelRaDec->setValueRaDec (0, 0);
 
 	return Rts2Device::initValues ();
 }
@@ -861,11 +874,13 @@ void Telescope::applyCorrections (double &tar_ra, double &tar_dec)
 int Telescope::endMove ()
 {
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
-	LibnovaRaDec l_req (tarRaDec->getRa (), tarRaDec->getDec ());
+	LibnovaRaDec l_tar (tarRaDec->getRa (), tarRaDec->getDec ());
+	LibnovaRaDec l_telTar (telTargetRaDec->getRa (), telTargetRaDec->getDec ());
 
 	logStream (MESSAGE_INFO)
 		<< "moved to " << l_to
-		<< " requested " << l_req
+		<< " requested " << l_telTar
+		<< " target " << l_tar
 		<< sendLog;
 	return 0;
 }
@@ -920,6 +935,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	pos.ra = ln_range_degrees (pos.ra - corrRaDec->getRa ());
 	pos.dec = pos.dec - corrRaDec->getDec ();
 	telTargetRaDec->setValueRaDec (pos.ra, pos.dec);
+	modelRaDec->setValueRaDec (0, 0);
 
 	moveInfoCount = 0;
 
@@ -959,6 +975,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	infoAll ();
 
 	tarRaDec->resetValueChanged ();
+	telTargetRaDec->resetValueChanged ();
 	oriRaDec->resetValueChanged ();
 	offsRaDec->resetValueChanged ();
 	corrRaDec->resetValueChanged ();
@@ -1029,6 +1046,7 @@ int Telescope::startPark (Rts2Conn * conn)
 	else
 	{
 		tarRaDec->resetValueChanged ();
+		telTargetRaDec->resetValueChanged ();
 		oriRaDec->resetValueChanged ();
 		offsRaDec->resetValueChanged ();
 		corrRaDec->resetValueChanged ();
