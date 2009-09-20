@@ -425,8 +425,8 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->ra = -1 * corrRaDec->getRa();
 		model_change->dec = -1 * corrRaDec->getDec();
 
-		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
-		pos->dec = pos->dec - corrRaDec->getDec ();
+		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
+		pos->dec = pos->dec + corrRaDec->getDec ();
 		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
@@ -488,8 +488,8 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 		model_change->ra = 0;
 		model_change->dec = 0;
 		modelRaDec->setValueRaDec (0, 0);
-		pos->ra = ln_range_degrees (pos->ra - corrRaDec->getRa ());
-		pos->dec = pos->dec - corrRaDec->getDec ();
+		pos->ra = ln_range_degrees (pos->ra + corrRaDec->getRa ());
+		pos->dec = pos->dec + corrRaDec->getDec ();
 		telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 		return;
 	}
@@ -504,8 +504,8 @@ void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_c
 	model_change->ra -= corrRaDec->getRa();
 	model_change->dec -= corrRaDec->getDec();
 
-	pos->ra = ln_range_degrees (ra - corrRaDec->getRa ());
-	pos->dec = hadec.dec - corrRaDec->getDec ();
+	pos->ra = ln_range_degrees (ra + corrRaDec->getRa ());
+	pos->dec = hadec.dec + corrRaDec->getDec ();
 
 	telTargetRaDec->setValueRaDec (pos->ra, pos->dec);
 }
