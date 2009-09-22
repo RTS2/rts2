@@ -533,11 +533,61 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Variables</title>
+    <para>
+      Inside scripting, following syntax is used to access variables values.
+      Please see examples at the end of this man page to gain better
+      understanding of the topic.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>.{variable_name}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Access variable name from the current device - e.g. device on which
+	    script is run. Given that script is run on device C0, the
+	    <emphasis>.average</emphasis> is equal to <emphasis>C0.average</emphasis>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>{device_name}.{variable_name}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Access variable from any device present in the system. If device or
+	    variable cannot be found, script is ended and target execution is
+	    blocked for the device whose script failed.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>EXAMPLES</title>
 
-    <para>focpos-=50 for 10 { E 10 focpos+=10 }</para>
+    <para>
+      Following script can be used for finding focus position. It moves focuser
+      50 steps backwards. Then it starts a sequence of 10 5 seconds exposures,
+      moving focuser position forward by 10 steps after each exposure.
+    </para>
+
+    <para>focpos-=50 for 10 { E 5 focpos+=10 }</para>
+
+    <para>
+      This script test how various SPL_MODE affect resulting image. Sequence
+      of 1, 5 and 10 seconds exposures is taken, then SPL_MODE variable is
+      increased by 1.
+    </para>
 
     <para>for 3 { E 1 E 5 E 10 SPL_MODE+=1 }</para>
+
+    <para>
+      Script bellow tests various gain and SPL_MODE settings.
+    </para>
 
     <para>for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }</para>
 
@@ -546,6 +596,16 @@
     <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
 
     <para>for 10 { E 10 T0.OFFS+=(0,0.01) }</para>
+
+    <para>
+      This is a simple example of the flat fielding script. It changes camera
+      to readout a small window. Then it takes 1 seconds, wait for finish of
+      readout, and check average value of the camera. If the average is bellow
+      or equal to 2000, script carry on - switch back to full frame mode, and
+      do 1 seconds exposures until average value is above 2000.
+    </para>
+
+    <para>WINDOW=(10,10,20,20) do 200 { E 1 wait_idle } while (.average > 2000) WINDOW=(-1,-1,-1,-1) do 200 { E 1 wait_idle } while (.average > 1000)</para>
 
   </refsect1>
   <refsect1>
