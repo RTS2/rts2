@@ -1,5 +1,5 @@
 /* 
- * Sensor daemon for cloudsensor AAG designed by António Alberto Peres Gomes 
+ * sensor daemon for cloudsensor AAG designed by António Alberto Peres Gomes 
  * Copyright (C) 2009, Markus Wildi, Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -39,11 +39,8 @@ class AAG: public SensorWeather
                 Rts2ValueDouble *intVoltage ; 
                 Rts2ValueDouble *ldrResistance ;
                 Rts2ValueDouble *tempRain ;
-                Rts2ValueDouble *tempRainTarget ;
                 Rts2ValueDouble *rainFrequency ;
                 Rts2ValueDouble* pwmValue ;
-		Rts2ValueInteger *numVal;
-		Rts2ValueDouble *triggerBad;
 		Rts2ValueDouble *triggerGood;
 		/*
 		 * Read sensor values and caculate.
@@ -55,9 +52,8 @@ class AAG: public SensorWeather
                 int AAGGetPWMValue() ;
                 int AAGSkyTemperatureCorrection(double sky, double ambient, double *cor) ;
                 int AAGSetPWMValue( double value) ;
-                int AAGTargetTemperature( double ambient, double *threshold, double *delta, double impulse_delta_temperature, double rain_frequency) ;
-                int AAGRainState( double rain, double ambient, double *threshold, double *delta, double *impulse, double rain_frequency, double polling_time) ;
-                float duty_on_time( double ambient, double *threshold, double deltalow, double rain, double target, int heat_state, double polling_time, double min) ;
+                int AAGRainState( double rain, double ambient, double rain_frequency, double polling_time) ;
+                double AAGduty_on_frequency( double rain_frequency, int heat_state, double polling_time) ;
      	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
@@ -83,146 +79,50 @@ AAG::AAGSkyTemperatureCorrection( double sky, double ambient, double *cor)
     tempSkyCorrected->setValueDouble( sky - td) ;
     return 0;
 }
-int
-AAG::AAGTargetTemperature( double ambient, double *threshold, double *delta, double impulse_delta_temperature, double rain_frequency)
-{
-    double target ;
-    double p ; // slope of the straight line
-    double q ; // offset
-    int thr_state= IS_UNDEFINED ;
-
-/* define current state */
-    if( rain_frequency > THRESHOLD_MAX)
-    {
-        thr_state= IS_MAX ;
-    }
-    else if( rain_frequency > THRESHOLD_DRY)
-    {
-        thr_state= IS_DRY ;
-    }
-    else if( rain_frequency > THRESHOLD_WET)
-    {
-        thr_state= IS_WET ;
-    }
-    else
-    {
-        thr_state= IS_RAIN ;
-    }
-
-    if( ambient < threshold[0])
-    {
-        target= delta[0] ;
-    }
-    else
-    {
-        if( thr_state== IS_MAX)
-        {
-	    target= ambient ;
-        }
-        else if( thr_state== IS_DRY)
-        {
-            if( ambient > threshold[1])
-            {
-                if ( THRESHOLD_DRY != THRESHOLD_MAX)
-                {
-		    p= ( TEMPERATURE_DIFFFERENCE_AT_THRESHOLD_DRY)/( THRESHOLD_MAX- THRESHOLD_DRY) ;
-		    target= -p * ( rain_frequency - THRESHOLD_DRY) + ambient + TEMPERATURE_DIFFFERENCE_AT_THRESHOLD_DRY ; // minus sign ok
-                }
-                else
-                {
-
-		    logStream (MESSAGE_ERROR) << "AAGTargetTemperature Thresholds THRESHOLD_DRY, THRESHOLD_MAX must differ " << THRESHOLD_DRY << ", " << THRESHOLD_MAX << sendLog;
-                    return -1 ;
-                }
-            }
-            else
-            {
-                if (threshold[1] != threshold[0])
-                {
-                    p= (delta[1]- delta[0])/(threshold[1]- threshold[0]) ;
-                    q=  delta[0] - p * threshold[0] ;
-
-                    target= ambient + p * ambient + q ;
-                }
-                else
-                {
-		    logStream (MESSAGE_ERROR) << "AAGTargetTemperature Threshold must differ " << threshold[0] << ", " << threshold[1] << sendLog;
-                    return -1 ;
-                }
-            }
-        }
-        else if( thr_state== IS_WET)
-        {
-            target= ambient +  impulse_delta_temperature;
-        }
-        else if( thr_state== IS_RAIN)
-        {
-            target= ambient + impulse_delta_temperature ;
-        }
-    }
-    tempRainTarget->setValueDouble( target) ;
-    return 0 ;
-}
-float 
-AAG::duty_on_time( double ambient, double *threshold, double deltalow, double rain, double target, int heat_state, double polling_time, double min)
+double 
+AAG::AAGduty_on_frequency( double rain_frequency, int heat_state, double polling_time)
 {
     double duty= 0. ;
-    double heat= 0. ;   // reference heat quantity from the manual e.g. 40
-
 /* Heat conservatively,*/
 /* the whole box becomes warmer and hence ambient temperature */
 /* sensor value and depending on it the target temperature increases*/
-    if( heat_state==HEAT_MAX)
-    {
-	duty= HEAT * 1. ;
-    }
-    else if( heat_state==HEAT_NOT)
+
+    if( heat_state==HEAT_NOT)
     {
 	duty= 0. ;
     }
-    else if( heat_state==HEAT_MIN) // 2009-07-30, currently not used
+    else if( heat_state==HEAT_MAX)
     {
-        duty= min ;  /* min=[0,1] */
+	duty= HEAT * 1. ;
+    }
+    else if( heat_state==HEAT_DROP_WHILE_DRY)
+    {
+	duty= HEAT * HEAT_FACTOR_DROP_WHILE_DRY ;
+    }
+    else if( heat_state==HEAT_REGULAR)
+    {
+	if(rain_frequency < THRESHOLD_WET)
+	{
+	    duty= HEAT * 1. ;
+	}
+	else
+	{
+	    if ( THRESHOLD_MAX != THRESHOLD_WET)
+	    {
+		double p= ( HEAT)/( THRESHOLD_MAX- THRESHOLD_WET) ;
+		duty= -p * ( rain_frequency - THRESHOLD_MAX) * 10. / polling_time ;
+	    }
+	    else
+	    {
+		logStream (MESSAGE_ERROR) << "AAGduty_on_frequency Thresholds THRESHOLD_DRY, THRESHOLD_MAX must differ " 
+					  << THRESHOLD_DRY << ", " << THRESHOLD_MAX << sendLog;
+		duty= 0. ;
+	    }
+	}
     }
     else
     {
-        if(( ambient < threshold[0]) && (rain < deltalow))
-        {
-            heat= HEAT * 0.6 ; /* probably ice or snow */
-        }
-        else if((rain -target) < -8.)
-        {
-            heat=  HEAT * 0.4 ;
-        }
-        else if((rain -target) < -4.)
-        {
-            heat=  HEAT * 0.3 ;
-        }
-        else if((rain -target) < -3.)
-        {
-            heat=  HEAT * 0.2 ;
-        }
-        else if((rain -target) < -2.)
-        {
-            heat=  HEAT * 0.1 ;
-        }
-        else if((rain -target) < -1.)
-        {
-            heat=  HEAT * 0.09 ;
-        }
-        else if((rain -target) < -0.5)
-        {
-            heat=  HEAT * 0.07 ;
-        }
-        else if((rain -target) < -0.3)
-        {
-            heat=  HEAT * 0.05 ;
-        }
-        else
-        {
-            heat=  HEAT * 0. ;
-        }
-        duty= heat * 10./ polling_time ; // 10. : from the manual
+	duty= 0. ;
     }
     if( duty > 1.)
     {
@@ -231,183 +131,100 @@ AAG::duty_on_time( double ambient, double *threshold, double deltalow, double ra
     return duty ;
 }
 int 
-AAG::AAGRainState( double rain, double ambient, double *threshold, double *delta, double *impulse, double rain_frequency, double polling_time)
+AAG::AAGRainState( double rain, double ambient, double rain_frequency, double polling_time)
 {
     static double last_rain_frequency= 0. ;
     static int rain_state= IS_UNDEFINED ;
-    static time_t start_wet= 0. ;
-    static time_t start_rain= 0. ;
-    time_t current_time ;
+    static int last_rain_state= IS_UNDEFINED ;
     int ret ;
     double duty=0. ;   // PWM Duty cycle
-    double target=0. ;
-
-    current_time= time( NULL);
-    
-/* The target temperature is defined according to the current rain_state, see  int AAGTargetTemperature */
-    AAGTargetTemperature( ambient, threshold, delta, impulse[IMP_DELTA], rain_frequency) ;
-    target= tempRainTarget->getValueDouble() ;
- 
 /* define the heating strategy here */
 /* If the sun is shining on the box the behaviour rather different, */
 /* don't test under theses circumstances*/
 /* rain_state IS_MAX is the normal target */
 /* rain_state transition IS_DRY to IS_WET is used e.g. to close the dome door */
 /* check first if rain_frequency, ambient (sensor temperature) are above thresholds, stop heating */
-/* then check if a heating cycle is in progress */
-/* else: define the rain_state and the amount of heat according to the rain frequency values*/
-/* ToDo Currently  unused are IMP_CYCLE_WET, IMP_DURATION_RAIN */
+/* define the rain_state and the amount of heat according to the rain frequency value*/
 
     if(( rain_frequency > THRESHOLD_MAX) || (ambient > MAX_OPERATING_TEMPERATURE) ||( rain > MAX_RAIN_SENSOR_TEMPERATURE)) /* to be on the safe side */
     {
         rain_state= IS_MAX ;
-        start_wet= 0. ;
-        start_rain= 0. ;
-        duty=  duty_on_time( ambient, threshold, delta[0], rain, target, HEAT_NOT, polling_time, 0.);
-#ifdef LIB_DEBUG_STATE
-
-	logStream (MESSAGE_DEBUG) << "AAGRainState Rain_State is EXTRA DRY due to  rain_frequency > THRESHOLD_MAX, ambient > MAX_OPERATING_TEMPERATURE, rain > MAX_RAIN_SENSOR_TEMPERATURE " << sendLog;
-#endif
-    }
-    else if( rain > (target + impulse[IMP_DELTA])) /* ToDo: impulse[IMP_DELTA]) to be revisited, target is always positive*/
-    {
-	/* here the new rain_state could be anything beside IS_MAX */
-	if( rain_frequency > THRESHOLD_DRY)
-	{
-	    rain_state= IS_DRY ;
-	}
-	else if( rain_frequency > THRESHOLD_WET)
-	{
-	    rain_state= IS_WET ;
-	}
-	else
-	{
-	    rain_state= IS_RAIN ;
-	}
-	start_wet= 0. ;
-	start_rain= 0. ;
-	duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_NOT, polling_time, impulse[IMP_MIN]);
-#ifdef LIB_DEBUG_STATE
-        logStream (MESSAGE_DEBUG) << "Rain_State is set to DRY due to rain " << rain << " > target " << target << " +" << impulse[IMP_DELTA] << ", but not necessarily " << rain_frequency << "<" <<  THRESHOLD_DRY << ", duty " << duty << sendLog;
-#endif
-    }
-    else if(((current_time- start_wet- impulse[IMP_DURATION_WET]) < 0.) && ( start_wet > 0.))
-    {
-/* Heat for the period  impulse[IMP_DURATION_WET] regardless of possible rain_state transition (to IS_DRY or IS_RAIN)*/
-	duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_MAX, polling_time, impulse[IMP_MIN]);
-#ifdef LIB_DEBUG_STATE
-
-	logStream (MESSAGE_DEBUG) << "Rain_State is WET, from WET, impulse duration " << impulse[IMP_DURATION_WET] << ", " rain_frequency << ">" << THRESHOLD_WET << "," (current_time- start_wet- impulse[IMP_DURATION_WET]) << ", " << (current_time- start_rain- impulse[IMP_CYCLE_RAIN]) << sendLog;
-#endif
-    }
-    else if(((current_time- start_rain- impulse[IMP_CYCLE_RAIN]) < 0.) && ( start_rain > 0.))
-    {
-/* Heat for the period impulse[IMP_CYCLE_RAIN], if rain_state transition to IS_WET occurs, go to regular heating */
-        if(( rain_frequency- last_rain_frequency) > THRESHOLD_DRY_OUT)
-        {
-/* if the heater was successfull this could be the end of the rain, try to dry out */
-#ifdef LIB_DEBUG_STATE
-
-	    logStream (MESSAGE_DEBUG) << "Rain_State is RAIN, from RAIN, impulse cycle duration  +" << impulse[IMP_CYCLE_RAIN] << ", " << rain_frequency << "<" << THRESHOLD_WET << ",  time differneces w " << (current_time- start_wet- impulse[IMP_DURATION_WET]) << ", " << (current_time- start_rain- impulse[IMP_CYCLE_RAIN]) << sendLog;
-#endif
-            duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_MAX, polling_time, impulse[IMP_MIN]);
-        }
-        else if( rain_frequency< THRESHOLD_WET)
-        {
-            /* do not waste energy, the heater can not dry the sensor while it is raining */
-
-            duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_NOT, polling_time, impulse[IMP_MIN]);
-#ifdef LIB_DEBUG_STATE
-	    logStream (MESSAGE_DEBUG) << "Rain NOT Duty  " << duty << ", delta " << rain- target << " target " << target << " rain " << rain << "time differneces w " << " r " << (current_time- start_rain- impulse[IMP_CYCLE_RAIN])  << sendLog;
-#endif
-        }
-        else
-        {
-#ifdef LIB_DEBUG_STATE
-	    logStream (MESSAGE_DEBUG) << "Rain_State is at least WET, from RAIN " << rain_frequency << ">" << THRESHOLD_WET << sendLog;
-#endif
-            rain_state= IS_WET ;
-            start_rain= 0. ;
-            start_wet= current_time ;
-            duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_REGULAR, polling_time, impulse[IMP_MIN]);
-        }
+        duty=  AAGduty_on_frequency( rain_frequency, HEAT_NOT, polling_time);
+//	logStream (MESSAGE_DEBUG) << "AAGRainState Rain_State is EXTRA DRY due to  rain_frequency > THRESHOLD_MAX, ambient > MAX_OPERATING_TEMPERATURE, rain > MAX_RAIN_SENSOR_TEMPERATURE " 
+//				  << sendLog;
     }
     else /* rain_states are IS_DRY, IS_WET, IS_RAIN) */
     {
         if( rain_frequency > THRESHOLD_DRY)
         {
             rain_state= IS_DRY ;
-            start_wet= 0. ;
-            start_rain= 0. ;
             if(( rain_frequency- last_rain_frequency) < THRESHOLD_DROP_WHILE_DRY)
             {
-                duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_MAX, polling_time, impulse[IMP_MIN]);
-#ifdef LIB_DEBUG_STATE
-
-		logStream (MESSAGE_DEBUG) << "Rain_State is DRY " << rain_frequency << ">" << THRESHOLD_DRY << " , but rain frequequency dropped " << ( rain_frequency- last_rain_frequency) << ",  duty " << duty  << sendLog;
-#endif
+		duty=  AAGduty_on_frequency( rain_frequency, HEAT_DROP_WHILE_DRY, polling_time);
+// 		logStream (MESSAGE_DEBUG) << "Rain_State is DRY " 
+// 					  << rain_frequency 
+// 					  << ">" << THRESHOLD_DRY 
+// 					  << " , but rain frequequency dropped " 
+// 					  << ( rain_frequency- last_rain_frequency) 
+// 					  << ",  duty " << duty  << sendLog;
 	    }
 	    else
 	    {
-		duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_REGULAR, polling_time, 0.);
-#ifdef LIB_DEBUG_STATE
-
-		logStream (MESSAGE_DEBUG) <<"Rain_State is DRY " << rain_frequency << ">" << THRESHOLD_DRY << ", HEAT_REGULAR " << ( rain_frequency- last_rain_frequency) << ", duty " << duty << sendLog;
-#endif
+		duty=  AAGduty_on_frequency( rain_frequency, HEAT_REGULAR, polling_time);
+// 		logStream (MESSAGE_DEBUG) <<"Rain_State is DRY " 
+// 					  << rain_frequency << ">" 
+// 					  << THRESHOLD_DRY 
+// 					  << ", HEAT_REGULAR " 
+// 					  << ( rain_frequency- last_rain_frequency) 
+// 					  << ", duty " << duty << sendLog;
 	    }
         }
         else if( rain_frequency > THRESHOLD_WET)
         {
-#ifdef LIB_DEBUG_STATE
-            if(( rain_state== IS_DRY) || (( rain_state== IS_RAIN)))
+            if(( rain_frequency- last_rain_frequency) < THRESHOLD_DROP_WHILE_DRY)
             {
-		logStream (MESSAGE_DEBUG) << "Rain_State is WET, from DRY or RAIN " << rain_frequency << ">" << THRESHOLD_WET << sendLog;
-            }
-            else if ((current_time- start_wet- 2. * impulse[IMP_DURATION_WET])> 0.)
-            {
-		logStream (MESSAGE_DEBUG) << "Rain_State is WET, from WET, restarting timers +" << impulse[IMP_DURATION_WET] << ", " << rain_frequency << ">" << THRESHOLD_WET << sendLog;
-            }
-#endif
+		duty=  AAGduty_on_frequency( rain_frequency, HEAT_DROP_WHILE_DRY, polling_time);
+// 		logStream (MESSAGE_DEBUG) << "Rain_State is WET " 
+// 					  << rain_frequency 
+// 					  << "<" << THRESHOLD_DRY 
+// 					  << " , but rain frequequency dropped " 
+// 					  << ( rain_frequency- last_rain_frequency) 
+// 					  << ",  duty " << duty  << sendLog;
+	    }
+	    else
+	    {
+// 	    logStream (MESSAGE_DEBUG) << "Rain_State is WET, from DRY or RAIN " 
+// 					  << rain_frequency << ">" 
+// 					  << THRESHOLD_WET << sendLog;
+	    }
             rain_state= IS_WET ;
-            start_rain= 0. ;
-            start_wet= current_time ;
-            duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_REGULAR, polling_time, impulse[IMP_MIN]);
+	    duty=  AAGduty_on_frequency( rain_frequency, HEAT_REGULAR, polling_time);
         }
         else /* everything else is rain */
         {
-#ifdef LIB_DEBUG_STATE
-            if(( rain_state== IS_DRY) || (rain_state== IS_WET))
-            {
-		logStream (MESSAGE_DEBUG) << "Rain_State is RAIN, from DRY or WET " << rain_frequency << "<" << THRESHOLD_WET << sendLog;
-            }
-            else
-            {
-		logStream (MESSAGE_DEBUG) << "Rain_State is RAIN starting timers +" << impulse[IMP_DURATION_RAIN] << ", rain " << rain_frequency << "<" <<  THRESHOLD_WET << sendLog;
-            }
-#endif
+// 		logStream (MESSAGE_DEBUG) << "Rain_State is RAIN, from DRY or WET " 
+// 					  << rain_frequency << "<" 
+// 					  << THRESHOLD_WET << sendLog;
             rain_state= IS_RAIN ;
-            start_wet= 0. ;
-            start_rain= current_time ;
-            duty=  duty_on_time( ambient, threshold, delta[0], rain, target,  HEAT_REGULAR, polling_time, impulse[IMP_MIN]);
+	    duty=  AAGduty_on_frequency( rain_frequency, HEAT_REGULAR, polling_time);
         }
-#ifdef LIB_DEBUG_STATE
-	logStream (MESSAGE_DEBUG) << "Normal Duty " << duty << ", delta " << rain- target << ", target " << target << ", rain " << rain << ", time differneces w" << (current_time- start_wet- impulse[IMP_DURATION_WET]) << ", r" << (current_time- start_rain- impulse[IMP_DURATION_RAIN])<< sendLog;  
-#endif
+// 	logStream (MESSAGE_DEBUG) << "Normal Duty " 
+// 				  << duty  << ", rain " 
+// 				  << rain << ", time differneces w" << sendLog;  
     }
     last_rain_frequency= rain_frequency ;
+    last_rain_state= rain_state ;
     if(( ret= AAGSetPWMValue( duty * 100.))== 0)
     {
-#ifdef LIB_DEBUG_STATE
-	logStream (MESSAGE_ERROR) << "Setting duty " << duty *100. << ", imp_min " << impulse[IMP_MIN] << sendLog; 
-#endif
 // ToDo: can used to display the stat        return rain_state ;
          return 0 ;
      }
      else
      {
+	logStream (MESSAGE_ERROR) << "Failed setting duty " << duty *100. << sendLog; 
          return -1 ;
      }
-	return 0 ;
+    return 0 ;
 }
 int
 AAG::AAGGetSkyIRTemperature ()
@@ -607,9 +424,6 @@ AAG::processOption (int in_opt)
 		case 'f':
 			device_file = optarg;
 			break;
-		case 'b':
-			triggerBad->setValueCharArr (optarg);
-			break;
 		case 'g':
 			triggerGood->setValueCharArr (optarg);
 			break;
@@ -645,79 +459,74 @@ AAG::info ()
 // These values should be made available for setting if required
 
     double cor[]= {COR_0, COR_1, COR_2, COR_3, COR_4} ;
-    double threshold[]={THRESHOLD_0, THRESHOLD_1} ;
-    double delta[]={DELTA_0, DELTA_1} ;
-    double impulse[]={IMPULSE_0,IMPULSE_1,IMPULSE_2,IMPULSE_3,IMPULSE_4,IMPULSE_5} ;
-    double polling_time= POLLING_TIME;
+    double polling_time= AAG_POLLING_TIME;
     int ret;
 
-	ret = AAGGetSkyIRTemperature ();
-	if (ret)
+    ret = AAGGetSkyIRTemperature ();
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	return -1 ;
+    }
+    ret = AAGGetIRSensorTemperature ();
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	return -1 ;
+    }
+    ret = AAGGetValues ();
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	return -1 ;
+    }
+
+    ret = AAGGetRainFrequency();
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	return -1 ;
+    }
+    ret = AAGSkyTemperatureCorrection(tempSky->getValueDouble(), tempIRSensor->getValueDouble(), cor);
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	
+	return -1 ;
+    }
+    ret= AAGRainState( tempRain->getValueDouble(), tempIRSensor->getValueDouble(), rainFrequency->getValueDouble(), polling_time) ;
+    if (ret)
+    {
+	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+
+	return -1 ;
+    }
+    if ((rainFrequency->getValueDouble () >= triggerGood->getValueDouble ()) && ((tempSky->getValueDouble() < THRESHOLD_CLOUDY)||(tempSkyCorrected->getValueDouble() < THRESHOLD_CLOUDY)))
+    {
+	if (getWeatherState () == false)
 	{
-		if (getLastInfoTime () > WEATHER_TIMEOUT)
-			setWeatherTimeout (WEATHER_TIMEOUT);
-		return -1 ;
+	    logStream (MESSAGE_INFO) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
+				     << " trigger: " << triggerGood->getValueDouble ()
+				     << sendLog;
 	}
-	ret = AAGGetIRSensorTemperature ();
-	if (ret)
+    }
+    else 
+    {
+	if (getWeatherState () == true)
 	{
-		if (getLastInfoTime () > WEATHER_TIMEOUT)
-			setWeatherTimeout (WEATHER_TIMEOUT);
-		return -1 ;
+	    logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
+				     << " trigger: " << triggerGood->getValueDouble ()
+				     << sendLog;
 	}
-  	ret = AAGGetValues ();
-   	if (ret)
-   	{
-   		if (getLastInfoTime () > WEATHER_TIMEOUT)
-   			setWeatherTimeout (WEATHER_TIMEOUT);
-		return -1 ;
-   	}
-
-	ret = AAGGetRainFrequency();
-        if (ret)
-        {
-	    if (getLastInfoTime () > WEATHER_TIMEOUT)
-		setWeatherTimeout (WEATHER_TIMEOUT);
-	    return -1 ;
-        }
-
-		if (rainFrequency->getValueDouble () <= triggerBad->getValueDouble ())
-		{
-			if (getWeatherState () == true)
-			{
-				logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
-					<< " trigger: " << triggerBad->getValueDouble ()
-					<< sendLog;
-			}
-			setWeatherTimeout (WEATHER_TIMEOUT_BAD);
-		}
-		else if (rainFrequency->getValueDouble () >= triggerGood->getValueDouble ())
-		{
-		    if (getWeatherState () == false && rainFrequency->getValueDouble () > triggerGood->getValueDouble ())
-			{
-				logStream (MESSAGE_INFO) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
-					<< " trigger: " << triggerGood->getValueDouble ()
-					<< sendLog;
-			}
-		}
-
-	ret = AAGSkyTemperatureCorrection(tempSky->getValueDouble(), tempIRSensor->getValueDouble(), cor);
-        if (ret)
-        {
-	    if (getLastInfoTime () > WEATHER_TIMEOUT)
-		setWeatherTimeout (WEATHER_TIMEOUT);
-
-	    return -1 ;
-        }
-	ret= AAGRainState( tempRain->getValueDouble(), tempIRSensor->getValueDouble(), threshold, delta, impulse, rainFrequency->getValueDouble(), polling_time) ;
-	if (ret)
-        {
-            if (getLastInfoTime () > WEATHER_TIMEOUT)
-                setWeatherTimeout (WEATHER_TIMEOUT);
-
-	    return -1 ;
-        }
-	return SensorWeather::info ();
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD);
+    }
+    return SensorWeather::info ();
 }
 int
 AAG::idle ()
@@ -727,7 +536,7 @@ AAG::idle ()
 int
 AAG::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-// 	if (old_value == triggerBad || old_value == triggerGood)
+// 	if (old_value == triggerGood)
 // 	{
 // 		return 0;
 // 	}
@@ -740,23 +549,19 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (tempSky, "TEMP_SKY", "temperature sky", false);
 	createValue (tempIRSensor, "TEMP_IRS", "temperature ir sensor", false);
 	createValue (tempSkyCorrected, "TEMP_SKY_CORR", "temperature sky corrected", false);
-	createValue (intVoltage, "INT_VOLT", "internal voltage", false);
-	createValue (ldrResistance, "LDR_RES", "pullup resistancetrue", false);
 	createValue (tempRain, "TEMP_RAIN", "rain sensor temperature", false);
-	createValue (tempRainTarget, "TEMP_RAIN_TARGET", "target temperature rain", false);
 	createValue (rainFrequency, "RAIN", "rain frequency", false);
 	createValue (pwmValue, "PWM", "pwm value", false);
+	createValue (intVoltage, "INT_VOLT", "internal voltage", false);
+	createValue (ldrResistance, "LDR_RES", "pullup resistancetrue", false);
 
-	createValue (triggerBad, "TRIGBAD", "if rain frequency drops bellow this value, set bad weather", false);
-	triggerBad->setValueDouble (nan ("f"));
 	createValue (triggerGood, "TRIGGOOD", "if rain frequency gets above this value, drop bad weather flag", false);
 	triggerGood->setValueDouble (nan ("f"));
 
 	addOption ('f', NULL, 1, "serial port AAG cloud sensor");
-	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
 
-	setIdleInfoInterval ( POLLING_TIME); // best choice for AAG
+	setIdleInfoInterval ( AAG_POLLING_TIME); // best choice for AAG
 }
 AAG::~AAG (void)
 {

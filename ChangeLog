@@ -1,5 +1,8 @@
 0.7.5
 =====
+2009-09-22
+ * simplified the heating algorith of aag cloud/rain sensor
+ * updated the man page
 
 2009-09-13
  * do {} while loops

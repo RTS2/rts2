@@ -91,27 +91,42 @@
      general idea of the cloud coverage in the field of view. The brightness
      sensor is used for informational purposes only.
      The rain detector is a very fast and sensitive device and even a single
-     rain droplet is detected. It is used to decide the state of the weather.
-     If it is dry, defined by the value of the option -g, the weather is
-     considered to be good and if it is below the value of option -b it is bad.  
+     rain droplet is detected. It is used together with the cloud sensor to decide the state of the weather.
     </para>
   </refsect1>
   <refsect1>
     <title>Sensor operation</title>
     <para>
-      The heating algorithm follows looseley the model developed by the
+     The state changes to good weather if (RAIN &gt; TRIGGOOD) &amp;&amp; (TEMP_SKY &lt;
+     THRESHOLD_CLOUDY) || (TEMP_SKY_CORR &lt;
+     THRESHOLD_CLOUDY) after a period of AAG_WEATHER_TIMEOUT or
+     AAG_WEATHER_TIMEOUT_BAD seconds. 
+    </para>
+    <para>
+      The heating algorithm does not follow the model developed by the
       original author,
 which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHeaterAlgorithm.pdf.
-   </para>
+    </para>
+    <para>
+    If RAIN &lt;  THRESHOLD_WET then the rain sensor is heated
+    unconditionally and PWM is 100%. If THRESHOLD_WET &lt; RAIN &lt; THRESHOLD_MAX  the amount of
+    heat is defined by a linear function which is 100% at THRESHOLD_WET and
+    0% at THRESHOLD_MAX and above. If the last rain state was above
+    THRESHOLD_DRY and the rain frequency dropped more than
+    THRESHOLD_DROP_WHILE_DRY degrees then it is heated by
+    HEAT * HEAT_FACTOR_DROP_WHILE_DRY. If ambient temberature TEMP_IRS &gt;
+    MAX_OPERATING_TEMPERATURE or TEMP_RAIN &gt; MAX_RAIN_SENSOR_TEMPERATURE the amount of
+    heat is set to 0% as well.
+    </para>
     <para>
     To define sensible thresholds for THRESHOLD_MAX, THRESHOLD_DRY
     and THRESHOLD_WET put the device into bright sun light and read the
     parameter RAIN. Set THRESHOLD_DRY about 10 units below the read value,
     THRESHOLD_MAX to THRESHOLD_DRY + 40 and THRESHOLD_WET to about
-    THRESHOLD_DRY - 200 units.  
+    THRESHOLD_DRY - 60 units. PWM should then show about 10% at THRESHOLD_DRY.  
    </para>
      <para>
-       The recommended values for the options -b and -g are THRESHOLD_DRY.
+       The recommended value for option -g is THRESHOLD_DRY.
     </para>
 
      <para>
@@ -161,37 +176,10 @@ which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHe
         </varlistentry>
         <varlistentry>
           <term>
-            <option>INT_VOLT [Volt]</option>
-          </term>
-          <listitem>
-            <para>The device internal power supply voltage.</para>
-          </listitem>
-        </varlistentry>
-        <varlistentry>
-          <term>
-            <option>LDR_RES [arb. unit]</option>
-          </term>
-          <listitem>
-            <para>The value of the brightness sensor. A value of about 0.05 indicates
-            bright sun light and above 3000 it is dark.</para>
-          </listitem>
-        </varlistentry>
-        <varlistentry>
-          <term>
             <option>TEMP_RAIN [deg C]</option>
           </term>
           <listitem>
             <para>Temperature of the rain detector.</para>
-          </listitem>
-        </varlistentry>
-        <varlistentry>
-          <term>
-            <option>TEMP_RAIN_TARGET [deg C]</option>
-          </term>
-          <listitem>
-            <para>Target temperature of the rain detector. This quantity is
-            calculated within this driver to determine the amount of heat to
-            be generated during the next polling cycle.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -210,6 +198,23 @@ which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHe
           </term>
           <listitem>
             <para>The amount of heat produced within the rain sensor.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>INT_VOLT [Volt]</option>
+          </term>
+          <listitem>
+            <para>The device internal power supply voltage.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>
+            <option>LDR_RES [arb. unit]</option>
+          </term>
+          <listitem>
+            <para>The value of the brightness sensor. A value of about 0.05 indicates
+            bright sun light and above 3000 it is dark.</para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -255,23 +260,11 @@ which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHe
         <term><option>-g <replaceable class="parameter">float number</replaceable></option></term>
 	<listitem>
            <para>
-	     Good trip point. If rain frequency (identifier RAIN) is above
-	     this value, the driver switches the bad weather flag to off after
-	     120 seconds (WEATHER_TIMEOUT_BAD).
+	     Good trip point. The driver switches the bad weather flag to off after
+	     WEATHER_TIMEOUT_BAD seconds.
 	   </para>
 	</listitem>
       </varlistentry>
-      <varlistentry>
-        <term><option>-b <replaceable class="parameter">float number</replaceable></option></term>
-	<listitem>
-           <para>
-	     Bad trip point. If rain frequency (identifier RAIN) is below this
-	     value, the driver switches the bad weather flag to on and remains
-	     in this state for at least 120 seconds (WEATHER_TIMEOUT_BAD). 
-	   </para>
-	</listitem>
-      </varlistentry>
-
     </variablelist>
   </refsect1>
   <refsect1>
@@ -295,8 +288,7 @@ which can be found here https://azug.minpet.unibas.ch/~wildi/vermes/RainSensorHe
   <refsect1>
     <title>BUGS</title>
     <para>
-      The bad weather flag will be not cleared despite the driver thinks that
-      it is good weather.
+      No bugs known.
     </para>
   </refsect1>
 </refentry>
