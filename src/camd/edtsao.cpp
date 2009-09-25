@@ -208,6 +208,8 @@ class EdtSao:public Camera
 		bool notimeout;
 		int sdelay;
 
+		enum {CHANNEL_2, CHANNEL_16} controllerType;
+
 		u_int status;
 
 		// 0 - unsplit, 1 - left, 2 - right
@@ -271,6 +273,8 @@ class EdtSao:public Camera
 
 		int setParallelClockSpeed (int new_clockSpeed);
 
+		int setGrayScale (bool _grayScale);
+
 		// registers
 		ValueEdt *phi;
 		ValueEdt *plo;
@@ -311,6 +315,9 @@ class EdtSao:public Camera
 
 		// number of rows to skip
 		Rts2ValueInteger *partialReadout;
+
+		// Grayscale off/on
+		Rts2ValueBool *grayScale;
 
 		int lastSkipLines;
 		int lastX;
@@ -527,6 +534,13 @@ int EdtSao::setParallelClockSpeed (int new_speed)
 	return edtwrite (ns);
 }
 
+
+int EdtSao::setGrayScale (bool _grayScale)
+{
+	edtwrite (_grayScale ? 0x30c00000 : 0x30400000);
+	return 0;
+}
+
 int EdtSao::initChips ()
 {
 	int ret;
@@ -730,10 +744,35 @@ int EdtSao::startExposure ()
 	writeBinFile ("e2v_freezesc.bin");
 
 	// taken from expose.c
-								 /* set time */
-	edtwrite (0x52000000 | (long) (getExposure () * 100));
+	/* set time */
+	switch (controllerType)
+	{
+		case CHANNEL_16:
+			if (getExposure () < 10.0)
+			{
+				edtwrite (0x500000c0);
+				edtwrite (0x52000000 | (long) (getExposure () * 1000));
+				break;
+			}
+			edtwrite (0x50000080);
+		case CHANNEL_2:
+			edtwrite (0x52000000 | (long) (getExposure () * 100));
+			break;
+	}
 
-	edtwrite (0x50030000);		 /* open shutter */
+	switch (controllerType)
+	{
+		case CHANNEL_16:
+			if (getExpType () == 1)
+			{
+				// dark exposure
+				edtwrite (0x50030300);
+				break;
+			}
+		case CHANNEL_2:
+			edtwrite (0x50030000);		 /* open shutter */
+			break;
+	}
 
 	return 0;
 }
@@ -1067,6 +1106,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	notimeout = 0;
 	sdelay = 0;
 
+	controllerType = CHANNEL_2;
+
 	createExpType ();
 
 	addOption ('p', "devname", 1, "device name");
@@ -1078,9 +1119,9 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption (OPT_NOTIMEOUT, "notimeout", 0, "don't timeout");
 	addOption ('s', "sdelay", 1, "serial delay");
 	addOption ('v', "verbose", 0, "verbose report");
+	addOption ('6', NULL, 0, "sixteen channel readout electronics");
 
-	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, 0,
-		CAM_WORKING, true);
+	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, 0, CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
 	// add possible split modes
@@ -1110,6 +1151,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (partialReadout, "partial_readout", "partial readout - use for focusing images", true, 0, CAM_WORKING);
 	partialReadout->setValueInteger (-1);
+
+	grayScale = NULL;
 
 	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
@@ -1186,6 +1229,9 @@ int EdtSao::processOption (int in_opt)
 		case 'v':
 			verbose = true;
 			break;
+		case '6':
+			controllerType = CHANNEL_16;
+			break;
 		default:
 			return Camera::processOption (in_opt);
 	}
@@ -1239,11 +1285,15 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == edtGain)
 	{
-		return (setEDTGain (new_value->getValueInteger () == 0));
+		return (setEDTGain (new_value->getValueInteger () == 0) ? 0 : -2);
 	}
 	if (old_value == parallelClockSpeed)
 	{
 		return (setParallelClockSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2);
+	}
+	if (old_value == grayScale)
+	{
+		return (setGrayScale (((Rts2ValueBool *) grayScale)->getValueBool ())) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }
@@ -1270,6 +1320,16 @@ int EdtSao::init ()
 	ccd_set_serial_delay (pd, sdelay);
 
 	setParallelClockSpeed (parallelClockSpeed->getValueInteger ());
+
+	switch (controllerType)
+	{
+		case CHANNEL_16:
+			createValue (grayScale, "gray_scale", "turns on simulated grayscale");
+			grayScale->setValueBool (false);
+			break;
+		case CHANNEL_2:
+			break;
+	}
 
 	return initChips ();
 }
