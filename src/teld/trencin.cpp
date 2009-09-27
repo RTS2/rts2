@@ -1250,6 +1250,36 @@ void Trencin::tel_kill (Rts2ConnSerial *conn, int phases)
 			throw rts2core::Error ("cannot read from port after kill command");
 		conn->setVTime (40);
 		conn->flushPortIO ();
+
+		Rts2ValueInteger *unit;
+		Rts2ValueInteger *cycle;
+		int cycleMove;
+
+
+		if (conn == trencinConnRa)
+		{
+			unit = unitRa;
+			cycle = cycleRa;
+			cycleMove = cycleMoveRa;
+		}
+		else if (conn == trencinConnDec)
+		{
+			unit = unitDec;
+			cycle = cycleDec;
+			cycleMove = cycleMoveDec;
+		}
+		else
+		{
+			throw rts2core::Error ("unexpected axis connection passed to tel_kill");
+		}
+
+		// read current value and check for expected cycle value - if it does not agree, change it
+		readAxis (conn, unit);
+
+		if (cycleMove > 0 && unit->getValueInteger () < MAX_MOVE / 2)
+			cycle->inc ();
+		else if (cycleMove < 0 && unit->getValueInteger () > MAX_MOVE / 2)
+			cycle->dec ();
 	}
 }
 
