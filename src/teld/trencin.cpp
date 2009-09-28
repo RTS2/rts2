@@ -505,6 +505,7 @@ void Trencin::setSpeedRa (int new_speed)
 	tel_write_ra (']');
 	velRa->setValueInteger (new_speed);
 	sendValueAll (startRa);
+	sendValueAll (velRa);
 }
 
 void Trencin::setSpeedDec (int new_speed)
@@ -526,6 +527,7 @@ void Trencin::setSpeedDec (int new_speed)
 	tel_write_ra (']');
 	velDec->setValueInteger (new_speed);
 	sendValueAll (startDec);
+	sendValueAll (velDec);
 }
 
 void Trencin::setRa (long new_ra)
@@ -1083,6 +1085,9 @@ int Trencin::startResync ()
 		return -1;
 	try
 	{
+	 	setSpeedRa (1500);
+		setSpeedDec (1500);
+
 		initRa ();
 		initDec ();
 
