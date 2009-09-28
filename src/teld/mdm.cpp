@@ -89,17 +89,18 @@ int MDM::startResync ()
 
 	snprintf (buf, 255, "SETCOORDS %lf %lf 2000.0", pos.ra, pos.dec);
 
-	int i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQSENDCOORD, TCS_MSG_SENDCOORD);
-	if (i != 0)
+	int i;
+/*	i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQSENDCOORD, TCS_MSG_SENDCOORD);
+	if (i < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot set telescope coordinates" << sendLog;
 		return -1;
-	}
+	} */
 
 	snprintf (buf, 255, "OFFSET %lf %lf", getCorrRa () / 15.0, getCorrDec ());
 
 	i = tcss_reqnodata (tcssock, buf, TCS_MSG_REQOFFSET, TCS_MSG_OFFSET);
-	if (i != 0)
+	if (i < 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot set telescope offset" << sendLog;
 		return -1;
