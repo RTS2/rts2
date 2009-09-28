@@ -1293,7 +1293,7 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == grayScale)
 	{
-		return (setGrayScale (((Rts2ValueBool *) grayScale)->getValueBool ())) == 0 ? 0 : -2;
+		return (setGrayScale (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }
