@@ -20,6 +20,8 @@
 #ifndef __RTS2_OPTION__
 #define __RTS2_OPTION__
 
+#include "config.h"
+
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #else
