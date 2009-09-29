@@ -73,6 +73,8 @@ class Gpib:public Sensor
 
 		void gpibWaitSRQ () { connGpib->gpibWaitSRQ (); }
 
+		void devClear () { connGpib->devClear (); }
+
 		virtual int processOption (int in_opt);
 		virtual int init ();
 	

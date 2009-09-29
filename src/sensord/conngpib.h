@@ -100,6 +100,11 @@ class ConnGpib
 		 */
 		virtual void initGpib () = 0;
 
+		/**
+		 * Clear GPIB device.
+		 */
+		virtual void devClear () = 0;
+
 		ConnGpib ()
 		{
 		}

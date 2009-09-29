@@ -51,6 +51,8 @@ class ConnGpibLinux:public ConnGpib
 
 		virtual void initGpib ();
 
+		virtual void devClear ();
+
 		ConnGpibLinux (int _minor, int _pad);
 		virtual ~ ConnGpibLinux (void);
 

@@ -36,7 +36,6 @@ class ErrorGpibEnetFlags:public rts2core::Error
 		}
 };
 
-
 void ConnGpibEnet::sread (char **ret_buf)
 {
 	char gpib_buf[4];
@@ -54,7 +53,6 @@ void ConnGpibEnet::sread (char **ret_buf)
 	*ret_buf = new char[len];
 	receiveData (*ret_buf, len, 20, true);
 }
-
 
 void ConnGpibEnet::sresp (char **ret_buf)
 {
@@ -83,7 +81,6 @@ void ConnGpibEnet::gpibWrite (const char *cmd)
 	sendData ((void *) cmd, strlen (cmd));
 	sresp (NULL);
 }
-
 
 void ConnGpibEnet::gpibRead (void *reply, int &blen)
 {
@@ -125,14 +122,12 @@ void ConnGpibEnet::gpibRead (void *reply, int &blen)
 	}
 }
 
-
 void ConnGpibEnet::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
 	gpibWrite (cmd);
 	*reply = '\0';
 	gpibRead (reply, blen);
 }
-
 
 void ConnGpibEnet::gpibWaitSRQ ()
 {
@@ -156,7 +151,6 @@ void ConnGpibEnet::gpibWaitSRQ ()
 			return;
 	}
 }
-
 
 void ConnGpibEnet::initGpib ()
 {
@@ -194,6 +188,10 @@ void ConnGpibEnet::initGpib ()
 	delete[] ret_buf;
 }
 
+void ConnGpibEnet::devClear ()
+{
+	exit (0);
+}
 
 ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
 {
@@ -203,7 +201,6 @@ ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port,
 	eot = 1;
 	eos = 0;
 }
-
 
 ConnGpibEnet::~ConnGpibEnet (void)
 {

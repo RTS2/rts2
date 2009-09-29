@@ -34,7 +34,6 @@ void ConnGpibLinux::gpibWrite (const char *cmd)
 		throw GpibLinuxError ("error while writing to GPIB bus", cmd, ret);
 }
 
-
 void ConnGpibLinux::gpibRead (void *reply, int &blen)
 {
 	int ret;
@@ -48,7 +47,6 @@ void ConnGpibLinux::gpibRead (void *reply, int &blen)
 		<< "' ret " << ret << sendLog;
 	#endif
 }
-
 
 void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
@@ -72,7 +70,6 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 	#endif
 }
 
-
 void ConnGpibLinux::gpibWaitSRQ ()
 {
 	short res;
@@ -85,7 +82,6 @@ void ConnGpibLinux::gpibWaitSRQ ()
 			return;
 	}
 }
-
 
 void ConnGpibLinux::initGpib ()
 {
@@ -101,6 +97,12 @@ void ConnGpibLinux::initGpib ()
 		throw rts2core::Error ("cannot find interface number");
 }
 
+void ConnGpibLinux::devClear ()
+{
+	ibclr (gpib_dev);
+	if (ibsta & ERR)
+		throw rts2core::Error ("Cannot clear device state");
+}
 
 ConnGpibLinux::ConnGpibLinux (int _minor, int _pad):ConnGpib ()
 {
@@ -109,7 +111,6 @@ ConnGpibLinux::ConnGpibLinux (int _minor, int _pad):ConnGpib ()
 	minor = _minor;
 	pad = _pad;
 }
-
 
 ConnGpibLinux::~ConnGpibLinux (void)
 {
