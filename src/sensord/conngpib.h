@@ -105,6 +105,18 @@ class ConnGpib
 		 */
 		virtual void devClear () = 0;
 
+		/**
+		 * Returns current device timeout in seconds.
+		 */
+		virtual float gettmo () = 0;
+
+		/**
+		 * Set device timeout.
+		 *
+		 * @param sec Number of seconds for timeout.
+		 */
+		virtual void settmo (float _sec) = 0;
+
 		ConnGpib ()
 		{
 		}
@@ -112,6 +124,11 @@ class ConnGpib
 		virtual ~ ConnGpib (void)
 		{
 		}
+
+		/**
+		 * Converts seconds timeouts to NI/GPIB timeout value.
+		 */
+		char getTimeoutTmo (float &_sec);
 };
 
 };

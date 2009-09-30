@@ -31,7 +31,7 @@ void ConnGpibLinux::gpibWrite (const char *cmd)
 	logStream (MESSAGE_DEBUG) << "write " << cmd << sendLog;
 	#endif
 	if (ret & ERR)
-		throw GpibLinuxError ("error while writing to GPIB bus", cmd, ret);
+		throw GpibLinuxError ("error while writing to GPIB bus", cmd, iberr);
 }
 
 void ConnGpibLinux::gpibRead (void *reply, int &blen)
@@ -40,7 +40,7 @@ void ConnGpibLinux::gpibRead (void *reply, int &blen)
 	ret = ibrd (gpib_dev, reply, blen - 1);
 	((char *)reply)[ibcnt] = '\0';
 	if (ret & ERR)
-		throw GpibLinuxError ("error while reading from GPIB bus", (const char *) reply, ret);
+		throw GpibLinuxError ("error while pure reading from GPIB bus", (const char *) reply, iberr);
 	blen = ibcnt;
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) reply
@@ -53,7 +53,7 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 	int ret;
 	ret = ibwrt (gpib_dev, cmd, strlen (cmd));
 	if (ret & ERR)
-		throw GpibLinuxError ("error while writing to GPIB bus", cmd, ret);
+		throw GpibLinuxError ("error while writing to GPIB bus", cmd, iberr);
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << cmd <<
@@ -63,7 +63,7 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 	ret = ibrd (gpib_dev, reply, blen);
 	reply[ibcnt] = '\0';
 	if (ret & ERR)
-		throw GpibLinuxError ("error while reading from GPIB bus", cmd, ret);
+		throw GpibLinuxError ("error while reading in write-read cycle from GPIB bus", cmd, iberr);
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << reply <<
 		" ret " << ret << sendLog;
@@ -76,15 +76,16 @@ void ConnGpibLinux::gpibWaitSRQ ()
 	while (true)
 	{
 		iblines (interface_num, &res);
-		if (ibsta & ERR)
-			throw rts2core::Error ("Error while waiting for SQR");
-		if (res & BusSRQ)
+		if ((res & BusSRQ) || (ibsta & SRQI))
 			return;
+		if (ibsta & ERR)
+			throw GpibLinuxError ("Error while waiting for SQR", iberr, ibsta);
 	}
 }
 
 void ConnGpibLinux::initGpib ()
 {
+	timeout = 3;
 	gpib_dev = ibdev (minor, pad, 0, T3s, 1, 0);
 	if (gpib_dev < 0)
 	{
@@ -104,12 +105,22 @@ void ConnGpibLinux::devClear ()
 		throw rts2core::Error ("Cannot clear device state");
 }
 
+void ConnGpibLinux::settmo (float _sec)
+{
+	timeout = _sec;
+	ibtmo (gpib_dev, getTimeoutTmo (_sec));
+	if (ibsta & ERR)
+		throw rts2core::Error ("Cannot set device timeout");
+}
+
 ConnGpibLinux::ConnGpibLinux (int _minor, int _pad):ConnGpib ()
 {
 	gpib_dev = -1;
 
 	minor = _minor;
 	pad = _pad;
+
+	timeout = NAN;
 }
 
 ConnGpibLinux::~ConnGpibLinux (void)

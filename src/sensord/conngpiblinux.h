@@ -32,6 +32,13 @@ namespace rts2sensord
 class GpibLinuxError: public rts2core::Error
 {
 	public:
+		GpibLinuxError (const char *_msg, int _err, int _sta): rts2core::Error ()
+		{
+			std::ostringstream _os;
+			_os << _msg << " GPIB error " << gpib_error_string (_err) << " " << _err << " status " << std::hex << _sta;
+			setMsg (_os.str ());
+		}
+
 		GpibLinuxError (const char *_msg, const char *_buf, int _ret): rts2core::Error ()
 		{
 			std::ostringstream _os;
@@ -53,6 +60,9 @@ class ConnGpibLinux:public ConnGpib
 
 		virtual void devClear ();
 
+		virtual float gettmo () { return timeout; } 
+		virtual void settmo (float _sec);
+
 		ConnGpibLinux (int _minor, int _pad);
 		virtual ~ ConnGpibLinux (void);
 
@@ -62,6 +72,8 @@ class ConnGpibLinux:public ConnGpib
 
 		int gpib_dev;
 		int interface_num;
+
+		float timeout;
 };
 
 };

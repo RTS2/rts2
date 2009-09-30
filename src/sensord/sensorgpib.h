@@ -75,6 +75,8 @@ class Gpib:public Sensor
 
 		void devClear () { connGpib->devClear (); }
 
+		void settmo (float _sec) { connGpib->settmo (_sec); }
+
 		virtual int processOption (int in_opt);
 		virtual int init ();
 	

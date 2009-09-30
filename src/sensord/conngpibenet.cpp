@@ -174,12 +174,14 @@ void ConnGpibEnet::initGpib ()
 	gpib_buf[5] = sad;
 	gpib_buf[6] = eos;
 	gpib_buf[7] = 0x00;
-	gpib_buf[8] = tmo;
+	gpib_buf[8] = 13;
 	gpib_buf[9] = 0x02;
 	gpib_buf[10] = 0x04;
 	gpib_buf[11] = 0x00;
 
 	sendData (gpib_buf, 12, true);
+
+	timeout = 10;
 
 	char *ret_buf;
 
@@ -195,13 +197,22 @@ void ConnGpibEnet::devClear ()
 	sresp (NULL);
 }
 
+void ConnGpibEnet::settmo (float _sec)
+{
+	timeout = _sec;
+	char gpib_buf[13] = "\x1fI\x00\x00\x20\xe1\x05\x08\xae\xe0\x05\x08";
+	gpib_buf[1] = getTimeoutTmo (timeout);
+	sendData (gpib_buf, 12, true);
+	sresp (NULL);
+}
+
 ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
 {
 	sad = 0;
 	pad = _pad;
-	tmo = 13;
 	eot = 1;
 	eos = 0;
+	timeout = NAN;
 }
 
 ConnGpibEnet::~ConnGpibEnet (void)

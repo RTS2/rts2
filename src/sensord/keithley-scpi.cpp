@@ -43,6 +43,7 @@ class Keithley:public Gpib
 		rts2core::DoubleArray *meas_times;
 
 		Rts2ValueInteger *countNum;
+		Rts2ValueFloat *nplc;
 	protected:
 		virtual int init ();
 		virtual int initValues ();
@@ -111,7 +112,10 @@ Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	createValue (current, "A_CURRENT", "Measured current", true, RTS2_VWHEN_BEFORE_END);
 	createValue (meas_times, "MEAS_TIMES", "Measurement times (delta)", true, RTS2_VWHEN_BEFORE_END);
 	createValue (countNum, "COUNT", "Number of measurements averaged", true);
-	countNum->setValueInteger (180);
+	countNum->setValueInteger (100);
+
+	createValue (nplc, "MEAS_NPLC", "Time of each measurment. In Hz multiples (1 = 1/60 sec)", true);
+	nplc->setValueFloat (1.0);
 }
 
 Keithley::~Keithley (void)
@@ -140,11 +144,11 @@ int Keithley::init ()
 		writeValue (":TRIG:COUN", countNum);
 //		sleep (1);
 		writeValue (":TRAC:POIN", countNum);
+		writeValue (":SENS:CURR:NPLC", nplc);
 		gpibWrite (":TRIG:DEL 0");
 		gpibWrite (":TRAC:CLE");
 		gpibWrite (":TRAC:FEED:CONT NEXT");
 		gpibWrite (":SENS:CURR:RANG:AUTO ON");
-		gpibWrite (":SENS:CURR:NPLC 1");
 		// gpibWrite ("SENS:CURR:RANG 2000");
 		gpibWrite (":SYST:ZCH OFF");
 		gpibWrite (":SYST:AZER:STAT OFF");
@@ -202,6 +206,11 @@ int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			gpibWrite (":TRAC:FEED:CONT NEXT");
 			return 0;
 		}
+		if (old_value == nplc)
+		{
+			writeValue (":SENS:CURR:NPLC", new_value);
+			return 0;
+		}
 	}
 	catch (rts2core::Error er)
 	{
@@ -222,16 +231,26 @@ int Keithley::info ()
 		current->clear ();
 		meas_times->clear ();
 		// start taking data
+		// arbitary units!
+		float expTi = countNum->getValueInteger () * nplc->getValueFloat ();
+		if (expTi > 1500)
+			settmo (100);
+		else if (expTi > 700)
+			settmo (30);
+		else if (countNum->getValueInteger () > 200)
+			settmo (10);
 		gpibWrite ("INIT");
 		int ret = Gpib::info ();
 		if (ret)
 			return ret;
 		// now wait for SQR
-		sleep (2);
-		// gpibWaitSRQ ();
+		gpibWaitSRQ ();
+		sleep (1);
 		getGPIB ("TRAC:DATA?", scurrent, current, meas_times, countNum->getValueInteger ());
 		gpibWrite ("TRAC:CLE");
 		gpibWrite ("TRAC:FEED:CONT NEXT");
+		if (countNum->getValueInteger () > 200)
+			setTimeout (3);
 	}
 	catch (rts2core::Error er)
 	{

@@ -42,6 +42,9 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 
 		virtual void devClear ();
 
+		virtual float gettmo () { return timeout; };
+		virtual void settmo (float _sec);
+
 		/**
 		 * Sets EOT flag - whenever end characters are send.
 		 */
@@ -58,7 +61,8 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 		int pad;
 		int eot;
 		int eos;
-		int tmo;
+
+		float timeout;
 
 		uint16_t sta;
 		uint16_t err;

@@ -147,3 +147,44 @@ void ConnGpib::readValue (const char *buf, Rts2ValueSelection * val)
 	gpibWriteRead (buf, rb, 50);
 	val->setSelIndex (rb);
 }
+
+char ConnGpib::getTimeoutTmo (float &_sec)
+{
+	if (_sec <= 1)
+	{
+		_sec = 1;
+		return 11;
+	}
+	else if (_sec <= 3)
+	{
+		_sec = 3;
+		return 12;
+	}
+	else if (_sec <= 10)
+	{
+		_sec = 10;
+		return 13;
+	}
+	else if (_sec <= 30)
+	{
+		_sec = 30;
+		return 14;
+	}
+	else if (_sec <= 100)
+	{
+		_sec = 100;
+		return 15;
+	}
+	else if (_sec <= 300)
+	{
+		_sec = 300;
+		return 16;
+	}
+	else if (_sec <= 1000)
+	{
+		_sec = 1000;
+		return 17;
+	}
+	_sec = NAN;
+	return 0;
+}
