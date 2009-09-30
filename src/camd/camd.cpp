@@ -424,7 +424,7 @@ int Camera::scriptEnds ()
 	scriptExposureNum->setValueLong (0);
 	sendValueAll (scriptExposureNum);
 
-	calculateStatistics->setValueInteger (0);
+	calculateStatistics->setValueInteger (STATISTIC_YES);
 	sendValueAll (calculateStatistics);
 
 	return Rts2ScriptDevice::scriptEnds ();
