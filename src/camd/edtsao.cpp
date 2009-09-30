@@ -32,7 +32,7 @@ namespace rts2camd
 {
 
 // helper struct for splitModes
-typedef struct SplitConf
+struct SplitConf
 {
 	bool splitMode;
 	bool uniMode;
@@ -313,7 +313,7 @@ class EdtSao:public Camera
 		// number of rows
 		Rts2ValueInteger *chipHeight;
 
-		// number of rows to skip
+		// number of rows to skip. If negative, rows will be moved up. Partial readout is not active if this equals to 0.
 		Rts2ValueInteger *partialReadout;
 
 		// Grayscale off/on
@@ -671,8 +671,16 @@ int EdtSao::writePartialPattern ()
 	writeCommand (true, addr++, ZERO);
 	// read..
 	int i;
-	for (i = 0; i < partialReadout->getValueInteger (); i++)
-		writeCommand (true, addr++, READ);
+	if (lastPartialReadout > 0)
+	{
+		for (i = 0; i < lastPartialReadout; i++)
+			writeCommand (true, addr++, READ);
+	}
+	else
+	{
+		for (i = lastPartialReadout; i < 0; i++)
+			writeCommand (true, addr++, FRD);
+	}
 	writeCommand (true, addr++, VEND);
 	writeCommand (false, addr++, ZERO);
 	int width;
@@ -717,7 +725,7 @@ int EdtSao::startExposure ()
 
 	bool dofcl = true;
 
-	if (partialReadout->getValueInteger () > 0)
+	if (partialReadout->getValueInteger () != 0)
 	{
 		ret = writePartialPattern ();
 		chipUsedReadout->setInts (chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), partialReadout->getValueInteger ());
@@ -824,10 +832,16 @@ int EdtSao::readoutStart ()
 		width = getUsedWidth ();
 	else
 		width = getWidth () / 2;
-	if (partialReadout->getValueInteger () > 0)
+	if (partialReadout->getValueInteger () != 0)
+	{
 		height = partialReadout->getValueInteger ();
+		if (height < 0)
+			height *= -1;
+	}
 	else
+	{
 		height = getUsedHeight ();
+	}
 	ret = pdv_setsize (pd, width * channels * dsub, height);
 	if (ret == -1)
 	{
@@ -1085,7 +1099,7 @@ int EdtSao::doReadout ()
 
 int EdtSao::endReadout ()
 {
-	if (partialReadout->getValueInteger () < 0)
+	if (partialReadout->getValueInteger () == 0)
 	{
 		pdv_stop_continuous (pd);
 		pdv_flush_fifo (pd);
@@ -1149,8 +1163,8 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING);
 	chipHeight->setValueInteger (520);
 
-	createValue (partialReadout, "partial_readout", "partial readout - use for focusing images", true, 0, CAM_WORKING);
-	partialReadout->setValueInteger (-1);
+	createValue (partialReadout, "partial_readout", "read only part of image, do not clear the chip", true, 0, CAM_WORKING);
+	partialReadout->setValueInteger (0);
 
 	grayScale = NULL;
 
