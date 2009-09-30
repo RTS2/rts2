@@ -190,7 +190,9 @@ void ConnGpibEnet::initGpib ()
 
 void ConnGpibEnet::devClear ()
 {
-	exit (0);
+	char gpib_buf[13] = "\x04\xf5\xff\xbf\x14\xf5\xff\xbf\xa9\x8f\x04\x08";
+	sendData (gpib_buf, 12, true);
+	sresp (NULL);
 }
 
 ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
