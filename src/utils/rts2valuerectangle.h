@@ -88,40 +88,32 @@ class Rts2ValueRectangle: public Rts2Value
 		 *
 		 * @return Rts2Value class with rectangle width.
 		 */
-		Rts2Value * getWidth ()
-		{
-			return w;
-		}
+		Rts2Value * getWidth () { return w; }
 
 		/**
 		 * Return width integer value.
 		 *
 		 * @return width as integer.
 		 */
-		int getWidthInt ()
-		{
-			return w->getValueInteger ();
-		}
+		int getWidthInt () { return w->getValueInteger (); }
+
+		void setWidth (int _w) { w->setValueInteger (_w); }
 
 		/**
 		 * Get height of the rectangle.
 		 *
 		 * @return Rts2Value class with rectangle height.
 		 */
-		Rts2Value * getHeight ()
-		{
-			return h;
-		}
+		Rts2Value * getHeight () { return h; }
 
 		/**
 		 * Return height integer value.
 		 *
 		 * @return height as integer.
 		 */
-		int getHeightInt ()
-		{
-			return h->getValueInteger ();
-		}
+		int getHeightInt () { return h->getValueInteger (); }
+
+		void setHeight (int _h) { h->setValueInteger (_h); }
 
 		void setInts (int in_x, int in_y, int in_w, int in_h);
 
