@@ -194,6 +194,8 @@ class EdtSao:public Camera
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 		virtual int initChips ();
+		virtual void initBinnings ();
+
 		virtual int startExposure ();
 		virtual int stopExposure ();
 		virtual long isExposing ();
@@ -300,6 +302,13 @@ class EdtSao:public Camera
 		// write single command to controller
 		void writeCommand (bool parallel, int addr, command_t command);
 		void writeCommandEnd ();
+
+		void writeSkip (bool parallel, int size, int &addr);
+		/**
+		 *
+		 * @return Actuall size used.
+		 */
+		int writeReadPattern (bool parallel, int size, int bin, int &addr);
 
 		// write to controller pattern file
 		int writePattern ();
@@ -572,6 +581,24 @@ int EdtSao::initChips ()
 	return ret;
 }
 
+void EdtSao::initBinnings ()
+{
+	addBinning2D (1, 1);
+	addBinning2D (2, 2);
+	addBinning2D (3, 3);
+	addBinning2D (4, 4);
+	addBinning2D (8, 8);
+	addBinning2D (16, 16);
+	addBinning2D (1, 2);
+	addBinning2D (1, 4);
+	addBinning2D (1, 8);
+	addBinning2D (1, 16);
+	addBinning2D (2, 1);
+	addBinning2D (4, 1);
+	addBinning2D (8, 1);
+	addBinning2D (16, 1);
+}
+
 void EdtSao::writeCommand (bool parallel, int addr, command_t command)
 {
 	u_char cmd[4];
@@ -593,6 +620,36 @@ void EdtSao::writeCommandEnd ()
 	u_char cmd[4];
 	cmd[0] = cmd[1] = cmd[2] = cmd[3] = 0;
 	ccd_serial_write (pd, cmd, 4);
+}
+
+void EdtSao::writeSkip (bool parallel, int size, int &addr)
+{
+	for (int i = 0; i < size; i++)
+		writeCommand (parallel, addr++, SKIP);
+}
+
+int EdtSao::writeReadPattern (bool parallel, int size, int bin, int &addr)
+{
+	int i = 0;
+	if (bin == 1)
+	{
+		for (; i < size; i++)
+			writeCommand (parallel, addr++, READ);
+		return size;
+	}
+	else
+	{
+		while (i + bin < size)
+		{
+			for (int j = 0; j < bin; j++, i++)
+				writeCommand (parallel, addr++, ADD);
+			writeCommand (parallel, addr++, READ);
+		}
+		int used_i = i;
+		for (; i < size; i++)
+			writeCommand (parallel, addr++, SKIP);
+		return used_i;
+	}
 }
 
 int EdtSao::writePattern ()
@@ -618,36 +675,25 @@ int EdtSao::writePattern ()
 
 	logStream (MESSAGE_DEBUG) << "starting to write pattern" << sendLog;
 	writeCommand (true, addr++, ZERO);
-	// read..
-	int i;
-	for (i = 0; i < getUsedY (); i++)
-		writeCommand (true, addr++, SKIP);
-	for (; i < getUsedY () + getUsedHeight (); i++)
-		writeCommand (true, addr++, READ);
-	for (; i < getHeight (); i++)
-		writeCommand (true, addr++, SKIP);
+	
+	writeSkip (true, getUsedY (), addr);
+	chipUsedReadout->setHeight (writeReadPattern (true, getUsedHeight (), binningVertical (), addr));
+	writeSkip (true, getHeight () - getUsedHeight () - getUsedY (), addr);
+
 	writeCommand (true, addr++, VEND);
 	// write serial commands
 	addr = 0;
 	writeCommand (false, addr++, ZERO);
-	for (i = 0; i < skipLines->getValueInteger (); i++)
-		writeCommand (false, addr++, SKIP);
-	int width;
+	writeSkip (false, skipLines->getValueInteger (), addr);
 	if (channels == 1)
 	{
-		// skip in X axis..
-		for (i = 0; i < getUsedX (); i++)
-			writeCommand (false, addr++, SKIP);
-		width = getUsedX () + getUsedWidth ();
-		for (; i < width; i++)
-			writeCommand (false, addr++, READ);
-		for (; i < getWidth (); i++)
-			writeCommand (false, addr++, SKIP);
+		writeSkip (false, getUsedX (), addr);
+		chipUsedReadout->setWidth (writeReadPattern (false, getUsedWidth (), binningHorizontal (), addr));
+		writeSkip (false, getWidth () - getUsedWidth () - getUsedX (), addr);
 	}
 	else
 	{
-		for (i = 0; i < getWidth () / 2; i++)
-			writeCommand (false, addr++, READ);
+	 	writeReadPattern (false, getWidth () / 2, 1, addr);
 	}
 	writeCommand (false, addr++, HEND);
 	writeCommandEnd ();
@@ -728,7 +774,7 @@ int EdtSao::startExposure ()
 	if (partialReadout->getValueInteger () != 0)
 	{
 		ret = writePartialPattern ();
-		chipUsedReadout->setInts (chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), partialReadout->getValueInteger ());
+		chipUsedReadout->setInts (chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), chipUsedReadout->getWidthInt (), (int) (fabs (partialReadout->getValueInteger ())));
 		dofcl = false;
 	}
 	else
