@@ -21,6 +21,7 @@
 #define __RTS2_VALUE__
 
 #include <limits.h>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <math.h>

@@ -39,6 +39,7 @@
 #define __RTS_IMGHDR__
 
 #include <time.h>
+#include <stdint.h>
 
 #define SHUTTER_OPEN     0x01
 #define SHUTTER_CLOSED   0x02

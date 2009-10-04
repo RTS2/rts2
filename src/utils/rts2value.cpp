@@ -265,7 +265,7 @@ Rts2ValueInteger::isEqual (Rts2Value * other_value)
 Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
 (in_val_name)
 {
-	value = rts2_nan ("f");
+	value = NAN;
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
