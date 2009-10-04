@@ -553,11 +553,11 @@ int cdatesort(const struct dirent **a, const struct dirent **b)
         return -1;
 }
 #else
-int cdatesort(void *a, void *b)
+int cdatesort(const void *a, const void *b)
 {
 	struct stat s_a, s_b;
-        struct dirent * d_a = *((dirent**)a);
-        struct dirent * d_b = *((dirent**)b);
+        const struct dirent * d_a = *((dirent**)a);
+        const struct dirent * d_b = *((dirent**)b);
         if (stat (d_a->d_name, &s_a))
                 return 1;
         if (stat (d_b->d_name, &s_b))
@@ -626,9 +626,9 @@ class JpegPreview:public GetRequestAuthorized
 
 			const char *pagesort = params->getString ("o", "filename");
 
-			enum {SORT_FILENAME, SORT_DATE} sortby = SORT_DATE;
-			if (!strcmp (pagesort, "fn"))
-				sortby = SORT_FILENAME;
+			enum {SORT_FILENAME, SORT_DATE} sortby = SORT_FILENAME;
+			if (!strcmp (pagesort, "date"))
+				sortby = SORT_DATE;
 
 			switch (sortby)
 			{
