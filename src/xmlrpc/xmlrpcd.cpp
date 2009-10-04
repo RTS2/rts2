@@ -538,19 +538,37 @@ class JpegImageRequest: public GetRequestAuthorized
 /**
  * Sort two file structure entries by cdate.
  */
-int cdatesort(const dirent **a, const dirent **b)
+#if _POSIX_C_SOURCE > 200200L
+int cdatesort(const struct dirent **a, const struct dirent **b)
 {
 	struct stat s_a, s_b;
-	if (stat ((*a)->d_name, &s_a))
-		return 1;
-	if (stat ((*b)->d_name, &s_b))
-		return -1;
-	if (s_a.st_ctime == s_b.st_ctime)
-		return 0;
-	if (s_a.st_ctime > s_b.st_ctime)
-		return 1;
-	return -1;
+        if (stat ((*a)->d_name, &s_a))
+                return 1;
+        if (stat ((*b)->d_name, &s_b))
+                return -1;
+        if (s_a.st_ctime == s_b.st_ctime)
+                return 0;
+        if (s_a.st_ctime > s_b.st_ctime)
+                return 1;
+        return -1;
 }
+#else
+int cdatesort(void *a, void *b)
+{
+	struct stat s_a, s_b;
+        struct dirent * d_a = *((dirent**)a);
+        struct dirent * d_b = *((dirent**)b);
+        if (stat (d_a->d_name, &s_a))
+                return 1;
+        if (stat (d_b->d_name, &s_b))
+                return -1;
+        if (s_a.st_ctime == s_b.st_ctime)
+                return 0;
+        if (s_a.st_ctime > s_b.st_ctime)
+                return 1;
+        return -1;
+}
+#endif
 
 /**
  * Create page with JPEG previews.
