@@ -633,6 +633,10 @@ class JpegPreview:public GetRequestAuthorized
 			switch (sortby)
 			{
 			 	case SORT_DATE:
+ /* if following fails to compile, please have a loog to value of your
+  * _POSIX_C_SOURCE #define, and record it and send it to petr@kubanek.net.
+  * Please contact petr@kubanek.net if you don't know how to get
+  * _POSIX_C_SOURCE. */
 					n = scandir (".", &namelist, 0, cdatesort);	
 					break;
 				case SORT_FILENAME:
