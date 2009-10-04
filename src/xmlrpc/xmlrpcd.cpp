@@ -102,7 +102,6 @@ class XmlDevClient:public Rts2DevClient
 		virtual void valueChanged (Rts2Value * value);
 };
 
-
 /**
  * XML-RPC daemon class.
  *
@@ -242,7 +241,6 @@ int XmlRpcd::processOption (int in_opt)
 	}
 	return 0;
 }
-
 
 int XmlRpcd::init ()
 {
@@ -538,6 +536,23 @@ class JpegImageRequest: public GetRequestAuthorized
 } jpegRequest ("/jpeg", &xmlrpc_server);
 
 /**
+ * Sort two file structure entries by cdate.
+ */
+int cdatesort(const dirent **a, const dirent **b)
+{
+	struct stat s_a, s_b;
+	if (stat ((*a)->d_name, &s_a))
+		return 1;
+	if (stat ((*b)->d_name, &s_b))
+		return -1;
+	if (s_a.st_ctime == s_b.st_ctime)
+		return 0;
+	if (s_a.st_ctime > s_b.st_ctime)
+		return 1;
+	return -1;
+}
+
+/**
  * Create page with JPEG previews.
  *
  * @param p Page number. Default to 0.
@@ -590,7 +605,24 @@ class JpegPreview:public GetRequestAuthorized
 			{
 			  	throw XmlRpcException ("Invalid directory");
 			}
-			n = scandir (".", &namelist, 0, alphasort);
+
+			const char *pagesort = params->getString ("o", "filename");
+
+			enum {SORT_FILENAME, SORT_DATE} sortby = SORT_DATE;
+			if (!strcmp (pagesort, "fn"))
+				sortby = SORT_FILENAME;
+
+			switch (sortby)
+			{
+			 	case SORT_DATE:
+					n = scandir (".", &namelist, 0, cdatesort);	
+					break;
+				case SORT_FILENAME:
+				default:
+				  	n = scandir (".", &namelist, 0, alphasort);
+					break;
+			}
+
 			if (n < 0)
 			{
 				throw XmlRpcException ("Cannot open directory");
@@ -642,6 +674,13 @@ class JpegPreview:public GetRequestAuthorized
 				//<a href='/fits" << fpath
 				//	<< "'>FITS</a>&nbsp;<a href='/jpeg" << fpath << "'>JPEG</a></li>";
 			}
+
+			for (i = 0; i < n; i++)
+			{
+				free (namelist[i]);
+			}
+
+			free (namelist);
 			
 			// print pages..
 			_os << "<p>Page ";

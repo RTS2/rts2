@@ -44,6 +44,7 @@ namespace XmlRpc
 			HttpParams () {};
 			void addParam (const char *_name, const char *_val) { push_back (HttpParam (_name, _val)); }
 
+			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
 
 			void parseParam (const std::string& ps);

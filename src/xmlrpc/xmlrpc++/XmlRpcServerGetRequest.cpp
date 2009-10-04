@@ -8,19 +8,25 @@
 
 namespace XmlRpc
 {
-	int HttpParams::getInteger (const char *_name, int def_val)
+	const char *HttpParams::getString (const char *_name, const char *def_val)
 	{
 		for (HttpParams::iterator p = begin (); p != end (); p++)
 		{
 			if (p->haveName (_name))
-			{
-				char *err;
-				const char *v = p->getValue ();
-				int r = strtol (v, &err, 0);
-				if (*v != '\0' && *err == '\0')
-					return r;
-			}
+				return p->getValue ();
 		}
+		return def_val;
+	}
+
+	int HttpParams::getInteger (const char *_name, int def_val)
+	{
+		const char *v = getString (_name, NULL);
+		char *err;
+		if (v == NULL)
+			return def_val;
+		int r = strtol (v, &err, 0);
+		if (*v != '\0' && *err == '\0')
+			return r;
 		return def_val;
 	}
 
