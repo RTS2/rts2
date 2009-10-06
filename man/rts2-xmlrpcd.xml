@@ -141,7 +141,21 @@
   </refsect1> 
   <refsect1>
     <title>Event actions</title>
-     
+
+    <para>
+      RTS2 currently supports two actions, which can be executed on value
+      change. They are <emphasis>record</emphasis>  and <emphasis>command</emphasis>.
+    </para>
+
+    <refsect2>
+      <title>record</title>
+      <para>
+	Records value change to database. This of course works only if RTS2 was
+	compiled with database support. Values are recorded to various record_
+	tables.
+      </para>
+    </refsect2>
+
     <refsect2>
       <title>command</title>
       <para>
@@ -252,9 +266,12 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 	<listitem>
 	  <para>
 	    Record any changes of CCD_SET value from C0 device. But the changes
-	    will be recorded only every 60 seconds. This means - if the value
-	    changed within 60 seconds, it will be recorded (with proper time).
-	    If it changes more then once within those 60 seconds,
+	    will be recorded only every 60 seconds. This means following: if
+	    the value changed within 60 seconds, it will be recorded (with
+	    proper time).  If it changes more then once within those 60
+	    seconds, only last value will be recorded. Remember that even then,
+	    only changes are recorded - so if there wasn't any change to the
+	    value within 60 seconds, database record wouldn't be created.
 	  </para>
 	</listitem>
       </itemizedlist>
