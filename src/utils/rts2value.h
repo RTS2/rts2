@@ -21,7 +21,11 @@
 #define __RTS2_VALUE__
 
 #include <limits.h>
+
+#ifndef sun
 #include <stdint.h>
+#endif
+
 #include <string.h>
 #include <string>
 #include <math.h>
