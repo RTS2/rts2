@@ -33,7 +33,7 @@ int ValueChangeRecord::getRecvalId (const char *suffix)
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id;
 	VARCHAR db_device_name[25];
-	VARCHAR db_value_name[25];
+	VARCHAR db_value_name[26];
 	EXEC SQL END DECLARE SECTION;
 
 	std::map <const char *, int>::iterator iter = dbValueIds.find (suffix);
@@ -50,6 +50,7 @@ int ValueChangeRecord::getRecvalId (const char *suffix)
 	if (db_value_name.len > 25)
 		db_value_name.len = 25;
 	strncpy (db_value_name.arr, valueName.c_str (), db_value_name.len);
+	db_value_name.arr[db_value_name.len] = '\0';
 	if (suffix != NULL)
 	{
 		strncat (db_value_name.arr, suffix, 25 - db_value_name.len);
