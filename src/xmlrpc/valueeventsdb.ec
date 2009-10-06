@@ -28,57 +28,98 @@ EXEC SQL include sqlca;
 
 using namespace rts2xmlrpc;
 
-void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
+int ValueChangeRecord::getRecvalId (const char *suffix)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-	int db_recval_id = dbValueId;
+	int db_recval_id;
 	VARCHAR db_device_name[25];
 	VARCHAR db_value_name[25];
-	double  db_value;
+	EXEC SQL END DECLARE SECTION;
+
+	std::map <const char *, int>::iterator iter = dbValueIds.find (suffix);
+
+	if (iter != dbValueIds.end ())
+		return iter->second;
+
+	db_device_name.len = deviceName.length ();
+	if (db_device_name.len > 25)
+		db_device_name.len = 25;
+	strncpy (db_device_name.arr, deviceName.c_str (), db_device_name.len);
+
+	db_value_name.len = valueName.length ();
+	if (db_value_name.len > 25)
+		db_value_name.len = 25;
+	strncpy (db_value_name.arr, valueName.c_str (), db_value_name.len);
+	if (suffix != NULL)
+	{
+		strncat (db_value_name.arr, suffix, 25 - db_value_name.len);
+		db_value_name.len += strlen (suffix);
+		if (db_value_name.len > 25)
+			db_value_name.len = 25;
+	}
+	EXEC SQL SELECT recval_id INTO :db_recval_id
+		FROM recvals WHERE device_name = :db_device_name AND value_name = :db_value_name;
+	if (sqlca.sqlcode)
+	{
+		if (sqlca.sqlcode == ECPG_NOT_FOUND)
+		{
+			// insert new record
+			EXEC SQL SELECT nextval ('recval_ids') INTO :db_recval_id;
+			EXEC SQL INSERT INTO recvals VALUES (:db_recval_id, :db_device_name, :db_value_name, 1);
+			if (sqlca.sqlcode)
+				throw rts2db::SqlError ();
+		}
+		else
+		{
+			throw rts2db::SqlError ();
+		}
+	}
+
+	dbValueIds[suffix] = db_recval_id;
+
+	return db_recval_id;
+}
+
+void ValueChangeRecord::recordValueDouble (int recval_id, double val, double validTime)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_recval_id = recval_id;
+	double  db_value = val;
 	double db_rectime = validTime;
 	EXEC SQL END DECLARE SECTION;
 
-	if (db_recval_id < 0)
-	{
-		db_device_name.len = deviceName.length ();
-		if (db_device_name.len > 25)
-			db_device_name.len = 25;
-		strncpy (db_device_name.arr, deviceName.c_str (), db_device_name.len);
-
-		db_value_name.len = valueName.length ();
-		if (db_value_name.len > 25)
-			db_value_name.len = 25;
-		strncpy (db_value_name.arr, valueName.c_str (), db_value_name.len);
-		EXEC SQL SELECT recval_id INTO :db_recval_id
-			FROM recvals WHERE device_name = :db_device_name AND value_name = :db_value_name;
-		if (sqlca.sqlcode)
-		{
-			if (sqlca.sqlcode == ECPG_NOT_FOUND)
-			{
-				// insert new record
-				EXEC SQL SELECT nextval ('recval_ids') INTO :db_recval_id;
-				EXEC SQL INSERT INTO recvals VALUES (:db_recval_id, :db_device_name, :db_value_name, 1);
-				if (sqlca.sqlcode)
-					throw rts2db::SqlError ();
-			}
-			else
-			{
-				throw rts2db::SqlError ();
-			}
-		}
-	}
-	
-	db_value = val->getValueDouble ();
 	EXEC SQL INSERT INTO records_double
 	VALUES
-		(
-			:db_recval_id,
-			to_timestamp (:db_rectime),
-			:db_value
-		);
+	(
+		:db_recval_id,
+		to_timestamp (:db_rectime),
+		:db_value
+	);
+
+	if (sqlca.sqlcode)
+		throw rts2db::SqlError ();
+}
+
+void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
+{
+
+	std::ostringstream _os;
+
+	switch (val->getValueType ())
+	{
+		case RTS2_VALUE_DOUBLE:
+		case RTS2_VALUE_FLOAT:
+			recordValueDouble (getRecvalId (), val->getValueDouble (), validTime);
+			break;
+		case RTS2_VALUE_RADEC:
+			recordValueDouble (getRecvalId ("RA"), ((Rts2ValueRaDec *) val)->getRa (), validTime);
+			recordValueDouble (getRecvalId ("DEC"), ((Rts2ValueRaDec *) val)->getDec (), validTime);
+			break;
+		default:
+			_os << "Cannot record value " << valueName;
+			throw rts2core::Error (_os.str ());
+	}
 	EXEC SQL COMMIT;
 	if (sqlca.sqlcode)
-	{
 		throw rts2db::SqlError ();
-	}
 }

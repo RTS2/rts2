@@ -23,8 +23,9 @@
 #include "../utils/rts2value.h"
 #include "../utils/rts2block.h"
 
-#include <string>
+#include <map>
 #include <list>
+#include <string>
 
 namespace rts2xmlrpc
 {
@@ -79,12 +80,15 @@ class ValueChange
  */
 class ValueChangeRecord: public ValueChange
 {
+#ifdef HAVE_PGSQL
 	private:
-		int dbValueId;
+		std::map <const char *, int> dbValueIds;
+		int getRecvalId (const char *suffix = NULL);
+		void recordValueDouble (int recval_id, double val, double validTime);
+#endif /* HAVE_PGSQL */
 	public:
 		ValueChangeRecord (std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_deviceName, _valueName, _cadency)
 		{
-			dbValueId = -1;
 		}
 
 		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime);
