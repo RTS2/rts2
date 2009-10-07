@@ -75,10 +75,14 @@ FordConn::zjisti_stav_portu ()
 
 	if (stav_portu[PORT_A] != ca || stav_portu[PORT_B] != cb)
 	{
-		logStream (MESSAGE_DEBUG) << "A 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ta 
-			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) ca
-			<< " B 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) tb
-			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) cb << sendLog;
+		int p_ca = ca;
+		int p_cb = cb;
+		int p_ta = ta;
+		int p_tb = tb;
+		logStream (MESSAGE_DEBUG) << "A 0x" << std::hex << std::setw (2) << std::setfill ('0') << p_ta 
+			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) p_ca
+			<< " B 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) p_tb
+			<< " state 0x" << std::hex << std::setw (2) << std::setfill ('0') << (int) p_cb << sendLog;
 	}
 
 	stav_portu[PORT_A] = ca;

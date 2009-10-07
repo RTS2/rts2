@@ -94,17 +94,17 @@ class FordConn: public Rts2ConnSerial
 		/**
 		 * Return A port state as number.
 		 */
-		int getPortA () { return stav_portu[PORT_A]; };
+		unsigned char getPortA () { return stav_portu[PORT_A]; };
 
 		/**
 		 * Return B port state as number.
 		 */
-		int getPortB () { return stav_portu[PORT_B]; };
+		unsigned char getPortB () { return stav_portu[PORT_B]; };
 
 		/**
 		 * Return C port state as number.
 		 */
-		int getPortC () { return stav_portu[PORT_C]; };
+		unsigned char getPortC () { return stav_portu[PORT_C]; };
 
 		bool getPortState (int c_port);
 
