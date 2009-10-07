@@ -34,6 +34,12 @@
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#include <Magick++.h>
+#include "valueplot.h"
+#endif // HAVE_LIBJPEG
+
 #else
 #include "../utils/rts2config.h"
 #include "../utils/rts2device.h"
@@ -581,9 +587,7 @@ int cdatesort(const void *a, const void *b)
 class JpegPreview:public GetRequestAuthorized
 {
 	public:
-		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s)
-		{
-		}
+		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
 
 		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected);
 
@@ -1811,6 +1815,36 @@ class RecordsAverage: public SessionMethod
 			}
 		}
 } recordAverage (&xmlrpc_server);
+
+#ifdef HAVE_LIBJPEG
+
+/**
+ * Draw graph of variables.
+ */
+class Graph: public GetRequestAuthorized
+{
+	public:
+		Graph (const char *prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+
+		virtual void authorizedExecute (const char *path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		{
+			response_type = "image/jpeg";
+
+			ValuePlot vp (1);
+			Magick::Image mimage = vp.getPlot ();
+
+			Blob blob;
+			mimage.write (&blob, "jpeg");
+
+			response_length = blob.length();
+			response = new char[response_length];
+			memcpy (response, blob.data(), response_length);
+		}
+} graph ("/graph", &xmlrpc_server);
+
+#endif /* HAVE_LIBJPEG */
+
+
 
 
 class UserLogin: public XmlRpcServerMethod
