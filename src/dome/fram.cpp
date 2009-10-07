@@ -133,7 +133,6 @@ class Fram:public Ford
 		 * Add state handling for basic operations..
 		 *
 		 */
-
 		int openLeft ();
 		int openRight ();
 
@@ -201,9 +200,7 @@ class Fram:public Ford
 
 }
 
-
-int
-Fram::zjisti_stav_portu_rep ()
+int Fram::zjisti_stav_portu_rep ()
 {
 	int ret;
 	int timeout = 0;
@@ -211,7 +208,8 @@ Fram::zjisti_stav_portu_rep ()
 	{
 		usleep (USEC_SEC / 1000);
 		ret = zjisti_stav_portu ();
-		if (ret == 0)
+		// if first B port state are set, then it is a know error on the board
+		if (ret == 0 && (!(getPortB () & 0xff000000)))
 			break;
 		timeout++;
 		flushPort ();
@@ -221,25 +219,19 @@ Fram::zjisti_stav_portu_rep ()
 	return ret;
 }
 
-
-const char *
-Fram::isOnString (int c_port)
+const char * Fram::isOnString (int c_port)
 {
 	return (getPortState (c_port)) ? "off" : "on ";
 }
 
-
-void
-Fram::setMotorTimeout (time_t timeout)
+void Fram::setMotorTimeout (time_t timeout)
 {
 	time_t now;
 	time (&now);
 	timeoutEnd = now + timeout;
 }
 
-
-int
-Fram::checkMotorTimeout ()
+int Fram::checkMotorTimeout ()
 {
 	time_t now;
 	time (&now);
@@ -251,9 +243,7 @@ Fram::checkMotorTimeout ()
 	return (now >= timeoutEnd);
 }
 
-
-int
-Fram::openWDC ()
+int Fram::openWDC ()
 {
 	int ret;
 	wdcConn = new Rts2ConnSerial (wdc_file, this, BS9600, C8, NONE, 100);
@@ -264,26 +254,20 @@ Fram::openWDC ()
 	return setWDCTimeOut (1, wdcTimeOut->getValueDouble ());
 }
 
-
-void
-Fram::closeWDC ()
+void Fram::closeWDC ()
 {
 	setWDCTimeOut (1, 120.0);
 	delete wdcConn;
 }
 
-
-int
-Fram::resetWDC ()
+int Fram::resetWDC ()
 {
 	wdcConn->writePort ("~**\r", 4);
 	wdcConn->flushPortO ();
 	return 0;
 }
 
-
-int
-Fram::getWDCTimeOut ()
+int Fram::getWDCTimeOut ()
 {
 	int i, r, t;
 	char q;
@@ -316,9 +300,7 @@ Fram::getWDCTimeOut ()
 
 }
 
-
-int
-Fram::setWDCTimeOut (int on, double timeout)
+int Fram::setWDCTimeOut (int on, double timeout)
 {
 	int i, r, t, timeo;
 	char q;
@@ -365,9 +347,7 @@ Fram::setWDCTimeOut (int on, double timeout)
 	return 0;
 }
 
-
-int
-Fram::getWDCTemp (int id)
+int Fram::getWDCTemp (int id)
 {
 	int i, r, t;
 	char q;
@@ -405,9 +385,7 @@ Fram::getWDCTemp (int id)
 	return i;
 }
 
-
-int
-Fram::openLeftMove ()
+int Fram::openLeftMove ()
 {
 	ZAP (KOMPRESOR);
 	sleep (1);
@@ -417,9 +395,7 @@ Fram::openLeftMove ()
 	return 0;
 }
 
-
-int
-Fram::openRightMove ()
+int Fram::openRightMove ()
 {
 	VYP (VENTIL_AKTIVACNI);
 	VYP (VENTIL_OTEVIRANI_LEVY);
@@ -431,9 +407,7 @@ Fram::openRightMove ()
 	return 0;
 }
 
-
-int
-Fram::closeRightMove ()
+int Fram::closeRightMove ()
 {
 	if (extraSwitch)
 		extraSwitch->ZAP (SWITCH_BATBACK);
@@ -445,9 +419,7 @@ Fram::closeRightMove ()
 	return 0;
 }
 
-
-int
-Fram::closeLeftMove ()
+int Fram::closeLeftMove ()
 {
 	VYP (VENTIL_AKTIVACNI);
 	VYP (VENTIL_ZAVIRANI_PRAVY);
@@ -461,9 +433,7 @@ Fram::closeLeftMove ()
 	return 0;
 }
 
-
-int
-Fram::openLeft ()
+int Fram::openLeft ()
 {
 	movingState = MOVE_OPEN_LEFT;
 	openLeftMove ();
@@ -472,9 +442,7 @@ Fram::openLeft ()
 	return 0;
 }
 
-
-int
-Fram::openRight ()
+int Fram::openRight ()
 {
 	// otevri pravou strechu
 	movingState = MOVE_OPEN_RIGHT;
@@ -484,9 +452,7 @@ Fram::openRight ()
 	return 0;
 }
 
-
-int
-Fram::closeRight ()
+int Fram::closeRight ()
 {
 	closeRightMove ();
 	movingState = MOVE_CLOSE_RIGHT_WAIT;
@@ -494,9 +460,7 @@ Fram::closeRight ()
 	return 0;
 }
 
-
-int
-Fram::closeLeft ()
+int Fram::closeLeft ()
 {
 	closeLeftMove ();
 	movingState = MOVE_CLOSE_LEFT_WAIT;
@@ -504,9 +468,7 @@ Fram::closeLeft ()
 	return 0;
 }
 
-
-int
-Fram::stopMove ()
+int Fram::stopMove ()
 {
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
 	if (extraSwitch)
@@ -515,9 +477,7 @@ Fram::stopMove ()
 	return 0;
 }
 
-
-int
-Fram::startOpen ()
+int Fram::startOpen ()
 {
 	if (movingState != MOVE_NONE)
 		return -1;
@@ -549,9 +509,7 @@ Fram::startOpen ()
 	return 0;
 }
 
-
-long
-Fram::isOpened ()
+long Fram::isOpened ()
 {
 	int flag = 0;
 	logStream (MESSAGE_DEBUG) << "isOpened " << (int) movingState << sendLog;
@@ -581,9 +539,7 @@ Fram::isOpened ()
 	return FRAM_CHECK_TIMEOUT;
 }
 
-
-int
-Fram::endOpen ()
+int Fram::endOpen ()
 {
 	int ret;
 	stopMove ();
@@ -597,9 +553,7 @@ Fram::endOpen ()
 	return -1;
 }
 
-
-int
-Fram::startClose ()
+int Fram::startClose ()
 {
 	time_t now;
 	if (movingState == MOVE_CLOSE_RIGHT
@@ -654,9 +608,7 @@ Fram::startClose ()
 	return 0;
 }
 
-
-long
-Fram::isClosed ()
+long Fram::isClosed ()
 {
 	int flag = 0;				 // send infoAll at end
 	logStream (MESSAGE_DEBUG) << "isClosed " << (int) movingState << sendLog;
@@ -729,9 +681,7 @@ Fram::isClosed ()
 	return FRAM_CHECK_TIMEOUT;
 }
 
-
-int
-Fram::endClose ()
+int Fram::endClose ()
 {
 	int ret;
 	stopMove ();
@@ -752,9 +702,7 @@ Fram::endClose ()
 	return 0;
 }
 
-
-int
-Fram::processOption (int in_opt)
+int Fram::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -773,9 +721,7 @@ Fram::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Fram::init ()
+int Fram::init ()
 {
 	int ret = Ford::init ();
 	if (ret)
@@ -833,9 +779,7 @@ Fram::init ()
 	return 0;
 }
 
-
-int
-Fram::idle ()
+int Fram::idle ()
 {
 	// resetWDC
 	if (wdc_file)
@@ -843,8 +787,7 @@ Fram::idle ()
 	return Ford::idle ();
 }
 
-int
-Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == switchBatBack)
 	{
@@ -869,9 +812,7 @@ Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	return Ford::setValue (oldValue, newValue);
 }
 
-
-int
-Fram::setValueSwitch (int sw, bool new_state)
+int Fram::setValueSwitch (int sw, bool new_state)
 {
 	if (new_state == true)
 	{
@@ -880,9 +821,7 @@ Fram::setValueSwitch (int sw, bool new_state)
 	return extraSwitch->VYP (sw) == 0 ? 0 : -2;
 }
 
-
-Fram::Fram (int argc, char **argv)
-:Ford (argc, argv)
+Fram::Fram (int argc, char **argv):Ford (argc, argv)
 {
 	createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
 	createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
@@ -923,7 +862,6 @@ Fram::Fram (int argc, char **argv)
 	addOption (OPT_EXTRA_SWITCH, "extra-switch", 1, "/dev entery for extra switches, handling baterry etc..");
 }
 
-
 Fram::~Fram (void)
 {
 	stopMove ();
@@ -932,9 +870,7 @@ Fram::~Fram (void)
 	stopMove ();
 }
 
-
-int
-Fram::info ()
+int Fram::info ()
 {
 	int ret;
 	ret = zjisti_stav_portu_rep ();
@@ -951,9 +887,7 @@ Fram::info ()
 	return Ford::info ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Fram device = Fram (argc, argv);
 	return device.run ();

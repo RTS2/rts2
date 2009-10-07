@@ -42,9 +42,9 @@ namespace rts2dome
  */
 class Ford: public Dome
 {
-	private:
-		rts2core::FordConn *domeConn;
-		const char *dome_file;
+	public:
+		Ford (int argc, char **argv);
+		virtual ~Ford ();
 
 	protected:
 	 	/**
@@ -99,6 +99,10 @@ class Ford: public Dome
 
 		bool getPortState (int c_port) { return domeConn->getPortState (c_port); }
 
+		int getPortA () { return domeConn->getPortA (); };
+		int getPortB () { return domeConn->getPortB (); };
+		int getPortC () { return domeConn->getPortC (); };
+
 		/**
 		 * Check if given pin is on.
 		 *
@@ -114,9 +118,10 @@ class Ford: public Dome
 		{
 			domeConn->flushPortIO ();
 		}
-	public:
-		Ford (int argc, char **argv);
-		virtual ~Ford ();
+
+	private:
+		rts2core::FordConn *domeConn;
+		const char *dome_file;
 };
 
 }
