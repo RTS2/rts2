@@ -99,9 +99,9 @@ class Ford: public Dome
 
 		bool getPortState (int c_port) { return domeConn->getPortState (c_port); }
 
-		int getPortA () { return domeConn->getPortA (); };
-		int getPortB () { return domeConn->getPortB (); };
-		int getPortC () { return domeConn->getPortC (); };
+		unsigned char getPortA () { return domeConn->getPortA (); };
+		unsigned char getPortB () { return domeConn->getPortB (); };
+		unsigned char getPortC () { return domeConn->getPortC (); };
 
 		/**
 		 * Check if given pin is on.

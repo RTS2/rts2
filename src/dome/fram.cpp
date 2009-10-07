@@ -209,7 +209,7 @@ int Fram::zjisti_stav_portu_rep ()
 		usleep (USEC_SEC / 1000);
 		ret = zjisti_stav_portu ();
 		// if first B port state are set, then it is a know error on the board
-		if (ret == 0 && (!(getPortB () & 0xff000000)))
+		if (ret == 0)
 			break;
 		timeout++;
 		flushPort ();
