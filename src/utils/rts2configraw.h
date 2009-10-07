@@ -284,7 +284,7 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 		/**
 		 * Return double configuration value.
 		 */
-		double getDoubleDefault (const char *section, const char *valueName, double val = nan ("f"));
+		double getDoubleDefault (const char *section, const char *valueName, double val = rts2_nan ("f"));
 
 		int getDouble (const char *section, const char *valueName, double &value);
 
