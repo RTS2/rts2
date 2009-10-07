@@ -21,6 +21,8 @@
 #include <string>
 
 #include "../utils/error.h"
+#include "../utils/rts2value.h"
+#include "../utils/utilsfunc.h"
 
 namespace rts2db
 {
@@ -32,9 +34,6 @@ namespace rts2db
  */
 class Record
 {
-	private:
-		double rectime;
-		double val;
 	public:
 		Record (double _rectime, double _val)
 		{
@@ -44,6 +43,10 @@ class Record
 
 		double getRecTime () { return rectime; };
 		double getValue () { return val; };
+
+	private:
+		double rectime;
+		double val;
 };
 
 /**
@@ -53,6 +56,23 @@ class Record
  */
 class RecordsSet: public std::list <Record>
 {
+	public:
+		RecordsSet (int _recval_id)
+		{
+			recval_id = _recval_id;
+			value_type = -1;
+
+			min = max = rts2_nan ("f");
+		}
+
+		/**
+		 * @throw SqlError on errror.
+		 */
+		void load (double t_from, double t_to);
+
+		double getMin () { return min; };
+		double getMax () { return max; };
+
 	private:
 		int recval_id;
 		int value_type;
@@ -62,18 +82,10 @@ class RecordsSet: public std::list <Record>
 
 		void loadState (double t_from, double t_to);
 		void loadDouble (double t_from, double t_to);
-	public:
-		RecordsSet (int _recval_id)
-		{
-			recval_id = _recval_id;
-			value_type = -1;
-		}
 
-		/**
-		 * @throw SqlError on errror.
-		 */
-		void load (double t_from, double t_to);
+		// minmal and maximal values..
+		double min;
+		double max;
 };
-
 
 }

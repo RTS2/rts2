@@ -105,6 +105,9 @@ void RecordsSet::loadDouble (double t_from, double t_to)
 
 	EXEC SQL OPEN records_double_cur;
 
+	min = INFINITY;
+	max = -INFINITY;
+
 	while (true)
 	{
 		EXEC SQL FETCH next FROM records_double_cur INTO
@@ -112,6 +115,10 @@ void RecordsSet::loadDouble (double t_from, double t_to)
 			:d_value;
 		if (sqlca.sqlcode)
 			break;
+		if (d_value < min)
+			min = d_value;
+		if (d_value > max)
+		  	max = d_value;
 		push_back (Record (d_rectime, d_value));
 	}
 
