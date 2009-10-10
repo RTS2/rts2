@@ -165,9 +165,15 @@ long SSP5::getCount ()
 	ret = photConn->writeRead ("SCOUNT", 6, buf, 10, '\r');
 	photConn->setVTime (oldVtime);
 	if (ret < 0)
+	{
+		photConn->flushPortIO ();
 		return -1;
+	}
 	if (!(buf[0] == 'C' && buf[1] == '=' && buf[7] == '\n' && buf[8] == '\r'))
+	{
+		photConn->flushPortIO ();
 		return -1;
+	}
 	if (buf[0] == '!')
 		return -1;
 	buf[7] = '\0';
