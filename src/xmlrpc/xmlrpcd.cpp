@@ -478,7 +478,7 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 		{
 		}
 
-		virtual void execute (const char* path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
+		virtual void execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
 		{
 
 			if (getUsername () == std::string ("session_id"))
@@ -508,7 +508,7 @@ class GetRequestAuthorized: public XmlRpcServerGetRequest
 			authorizedExecute (path, params, response_type, response, response_length);
 		}
 
-		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
 };
 
 
@@ -521,10 +521,10 @@ class JpegImageRequest: public GetRequestAuthorized
 		{
 		}
 
-		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			response_type = "image/jpeg";
-			Rts2Image image (path, false, true);
+			Rts2Image image (path.c_str (), false, true);
 			image.openImage ();
 			Blob blob;
 			Magick::Image mimage = image.getMagickImage ();
@@ -591,14 +591,14 @@ class JpegPreview:public GetRequestAuthorized
 
 		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected);
 
-		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			// if it is a fits file..
-			if (strstr (path + strlen (path) - 6, ".fits") != NULL)
+			if (path.length () > 6 && (path.substr (path.length () - 6)).length () == 6)
 			{
 				response_type = "image/jpeg";
 
-				Rts2Image image (path, false, true);
+				Rts2Image image (path.c_str (), false, true);
 				image.openImage ();
 				Blob blob;
 				Magick::Image mimage = image.getMagickImage ();
@@ -622,7 +622,7 @@ class JpegPreview:public GetRequestAuthorized
 			struct dirent **namelist;
 			int n;
 
-			int ret = chdir (path);
+			int ret = chdir (path.c_str ());
 			if (ret)
 			{
 			  	throw XmlRpcException ("Invalid directory");
@@ -711,9 +711,9 @@ class JpegPreview:public GetRequestAuthorized
 			// print pages..
 			_os << "<p>Page ";
 			for (i = 1; i <= in / pagesiz; i++)
-			 	pageLink (_os, path, i, pagesiz, i == pageno);
+			 	pageLink (_os, path.c_str (), i, pagesiz, i == pageno);
 			if (in % pagesiz)
-			 	pageLink (_os, path, i, pagesiz, i == pageno);
+			 	pageLink (_os, path.c_str (), i, pagesiz, i == pageno);
 			_os << "</p></body></html>";
 
 			response_type = "text/html";
@@ -744,10 +744,10 @@ class FitsImageRequest:public GetRequestAuthorized
 		{
 		}
 
-		virtual void authorizedExecute (const char* path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			response_type = "image/fits";
-			int f = open (path, O_RDONLY);
+			int f = open (path.c_str (), O_RDONLY);
 			if (f == -1)
 			{
 				throw XmlRpcException ("Cannot open file");
@@ -1826,12 +1826,39 @@ class Graph: public GetRequestAuthorized
 	public:
 		Graph (const char *prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
-		virtual void authorizedExecute (const char *path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		void printDevices (const char* &response_type, char* &response, int &response_length)
 		{
-			response_type = "image/jpeg";
+			rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
+			rs.load ();
+			std::ostringstream _os;
+			_os << "<html><head><title>Record value list</title></head><body><table>";
+			for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++)
+			{
+				_os << "<tr><td>"
+					<< iter->getDevice () << "</td><td><a href='"
+					<< iter->getDevice () << "/" << iter->getValueName () << "'>" << iter->getValueName () << "</a></td><td>"
+					<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
+					<< LibnovaDateDouble (iter->getTo ()) << "</td></tr>";
+			}
+			_os << "</table>";
+			response_type = "text/html";
+			response_length = _os.str ().length ();
+			response = new char[response_length];
+			memcpy (response, _os.str ().c_str (), response_length);
+		}
 
-			ValuePlot vp (1);
-			Magick::Image mimage = vp.getPlot ();
+		void plotValue (const char *device, const char *value, double from, double to, const char* &response_type, char* &response, int &response_length)
+		{
+			rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
+			rs.load ();
+			rts2db::Recval *rv = rs.searchByName (device, value);
+			if (rv == NULL)
+				throw rts2core::Error ("Cannot find device/value pair with given name");
+			int valId = rv->getId ();
+
+			ValuePlot vp (valId);
+
+			Magick::Image mimage = vp.getPlot (from, to);
 
 			Blob blob;
 			mimage.write (&blob, "jpeg");
@@ -1840,11 +1867,41 @@ class Graph: public GetRequestAuthorized
 			response = new char[response_length];
 			memcpy (response, blob.data(), response_length);
 		}
+
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+		{
+			response_type = "image/jpeg";
+
+			// get path and possibly date range
+			std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
+			int valId = 1;
+			time_t to = time (NULL);
+			time_t from = to - 10 * 86400;
+
+			switch (vals.size ())
+			{
+				case 0:
+					// list values;
+					printDevices (response_type, response, response_length);
+					break;
+				case 1:
+					if (isdigit (vals[0][0]))
+						valId = atoi (vals[0].c_str ());
+					else
+						valId = 1;
+					break;
+				case 3:
+					// from - to date
+
+				case 2:
+					plotValue (vals[0].c_str (), vals[1].c_str (), from, to, response_type, response, response_length);
+					break;
+			}
+		}
+
 } graph ("/graph", &xmlrpc_server);
 
 #endif /* HAVE_LIBJPEG */
-
-
 
 
 class UserLogin: public XmlRpcServerMethod

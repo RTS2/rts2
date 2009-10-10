@@ -399,7 +399,7 @@ void XmlRpcServerConnection::executeGet()
 				throw XmlRpcException ("Path contains ..");
 			if (path.find ("!") != std::string::npos)
 				throw XmlRpcException ("Path contains !");
-			request->execute (path.c_str (), &params, http_code, response_type, _get_response, _get_response_length);
+			request->execute (path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
 		catch (const std::exception& ex)
 		{

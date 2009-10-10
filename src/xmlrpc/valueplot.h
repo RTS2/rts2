@@ -35,17 +35,21 @@ class ValuePlot
 		 *
 		 * @param _varId Varible which will be plotted.
 		 */
-		ValuePlot (int _varId);
+		ValuePlot (int _varId, int w = 800, int h = 600);
 
 		/**
 		 * Return Magick::Image plot of the data.
+		 *
+		 * @param from Plot from this time.
+		 * @param to   Plot to this time.
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image getPlot ();
+		Magick::Image getPlot (double from, double to);
 	
 	private:
 		int recvalId;
+		Magick::Geometry size;
 };
 
 }

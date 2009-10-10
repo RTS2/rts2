@@ -24,35 +24,36 @@
 
 using namespace rts2xmlrpc;
 
-ValuePlot::ValuePlot (int _recvalId)
+ValuePlot::ValuePlot (int _recvalId, int w, int h)
 {
 	recvalId = _recvalId;
+	size.width (w);
+	size.height (h);
 }
 
-Magick::Image ValuePlot::getPlot ()
+Magick::Image ValuePlot::getPlot (double from, double to)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
 
-	double to = time (NULL);
-	double from = to - 86400;
-
 	rs.load (from, to);
 
-	Magick::Image image (Magick::Geometry (200, 200), "white");
-	image.strokeColor ("red");
+	Magick::Image image (size, "white");
+	image.strokeColor ("green");
+	image.strokeWidth (1);
 
 	// Y axis scaling
 	double min = rs.getMin ();
 	double max = rs.getMax ();
 
-	double scaleY = (max - min) / 200;
-	double scaleX = 86400 / 200;
+	double scaleY = size.height () / (max - min);
+	double scaleX = size.width () / (to - from); 
 
 	for (rts2db::RecordsSet::iterator iter = rs.begin (); iter != rs.end (); iter++)
 	{
-		
-		image.draw (Magick::DrawableCircle (from + scaleX * (iter->getRecTime () - from)  ,min + scaleY * (iter->getValue () - min), 5, 2));
+		double x = scaleX * (iter->getRecTime () - from);
+		double y = scaleY * (iter->getValue () - min);
+		image.draw (Magick::DrawableCircle (x, y, x - 2, y));
 	}
 
 	return image;
