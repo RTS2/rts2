@@ -73,6 +73,7 @@
 // rts2loggerbase.h        800-849
 // rts2soapclient.h       1000-1200
 // telds                  1200-1250
+// phot                   1250-1300
 
 /**
  * Event class.
