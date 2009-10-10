@@ -17,10 +17,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-
 #include "phot.h"
 #include "../utils/rts2device.h"
 #include "kernel/phot.h"
@@ -35,8 +31,7 @@
 #include <syslog.h>
 #include <time.h>
 
-Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):
-Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
+Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 {
 	integrateConn = NULL;
 
@@ -52,9 +47,7 @@ Rts2ScriptDevice (in_argc, in_argv, DEVICE_TYPE_PHOT, "PHOT")
 	setReqTime (1);
 }
 
-
-void
-Rts2DevPhot::checkFilterMove ()
+void Rts2DevPhot::checkFilterMove ()
 {
 	long ret;
 	if ((getState () & PHOT_MASK_FILTER) == PHOT_FILTER_MOVE)
@@ -79,43 +72,12 @@ int Rts2DevPhot::initValues ()
 
 int Rts2DevPhot::idle ()
 {
-	long ret;
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	if (now.tv_sec > nextCountDue.tv_sec
-		|| (now.tv_sec == nextCountDue.tv_sec
-		&& now.tv_usec > nextCountDue.tv_usec))
-	{
-		ret = getCount ();
-		if (ret >= 0)
-		{
-			setTimeout (ret);
-			nextCountDue.tv_sec = now.tv_sec + ret / USEC_SEC;
-			nextCountDue.tv_usec = now.tv_usec + ret % USEC_SEC;
-			if (nextCountDue.tv_usec >= USEC_SEC)
-			{
-				nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
-				nextCountDue.tv_usec %= USEC_SEC;
-			}
-		}
-		if (ret < 0)
-		{
-			endIntegrate ();
-		}
-	}
-	else
-	{
-		setTimeout ((nextCountDue.tv_sec - now.tv_sec) * USEC_SEC +
-			nextCountDue.tv_usec - now.tv_usec);
-	}
 	// check filter moving..
 	checkFilterMove ();
 	return Rts2ScriptDevice::idle ();
 }
 
-
-int
-Rts2DevPhot::homeFilter ()
+int Rts2DevPhot::homeFilter ()
 {
 	return -1;
 }
@@ -246,15 +208,23 @@ void Rts2DevPhot::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
 	exp->setValueFloat (req_time);
-	gettimeofday (&nextCountDue, NULL);
-	nextCountDue.tv_sec += (long) floor (in_req_time);
-	nextCountDue.tv_usec +=
-		(long) ((in_req_time - floor (in_req_time)) * USEC_SEC);
-	if (nextCountDue.tv_usec >= USEC_SEC)
+	addTimer (in_req_time, new Rts2Event (PHOT_EVENT_CHECK, this));
+}
+
+void Rts2DevPhot::postEvent (Rts2Event *event)
+{
+	int ret;
+	switch (event->getType ())
 	{
-		nextCountDue.tv_sec += nextCountDue.tv_usec / USEC_SEC;
-		nextCountDue.tv_usec %= USEC_SEC;
+		case PHOT_EVENT_CHECK:
+			ret = getCount ();
+			if (ret >= 0)
+				addTimer (ret, new Rts2Event (PHOT_EVENT_CHECK, this));
+			else if (ret < 0)
+				endIntegrate ();
+			break;	
 	}
+	Rts2ScriptDevice::postEvent (event);
 }
 
 int Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
