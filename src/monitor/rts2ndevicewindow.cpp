@@ -137,7 +137,7 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 				getWriteWindow (), "%-20s %5i %24s\n",
 				value->getName ().c_str (),
 				value->getValueInteger (),
-				((Rts2ValueSelection *) value)->getSelName ().c_str ()
+				((Rts2ValueSelection *) value)->getSelName ()
 				);
 			break;
 		default:
@@ -377,8 +377,7 @@ Rts2NDeviceCentralWindow::printValues ()
 			_os << LibnovaDateDouble ((*iter).getEndTime ())
 				<< " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
 
-			printValue (((Rts2ValueSelection *) nextState)->getSelName
-				((*iter).getState ()).c_str (), _os.str ().c_str ()
+			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str ()
 				);
 		}
 	}
