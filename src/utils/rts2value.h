@@ -783,14 +783,6 @@ class SelVal
  */
 class Rts2ValueSelection:public Rts2ValueInteger
 {
-	private:
-		// holds variables bag..
-		std::vector < SelVal > values;
-		void deleteValues ();
-
-	protected:
-		virtual int sendTypeMetaInfo (Rts2Conn * connection);
-
 	public:
 		Rts2ValueSelection (std::string in_val_name);
 		Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits = false, int32_t flags = 0);
@@ -804,7 +796,7 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		virtual const char *getDisplayValue ()
 		{
-			return getSelName ().c_str ();
+			return getSelName ();
 		}
 
 		virtual int setValueInteger (int in_value)
@@ -846,17 +838,17 @@ class Rts2ValueSelection:public Rts2ValueInteger
 
 		void addSelVals (const char **vals);
 
-		std::string getSelName ()
+		const char* getSelName ()
 		{
 			return getSelName (getValueInteger ());
 		}
 
-		std::string getSelName (int index)
+		const char* getSelName (int index)
 		{
 			const SelVal *val = getSelVal (index);
 			if (val == NULL)
-				return std::string ("UNK");
-			return val->name;
+				return "UNK";
+			return val->name.c_str ();
 		}
 
 		Rts2SelData *getData ()
@@ -905,6 +897,14 @@ class Rts2ValueSelection:public Rts2ValueInteger
 		}
 
 		void duplicateSelVals (Rts2ValueSelection * otherValue);
+
+	protected:
+		virtual int sendTypeMetaInfo (Rts2Conn * connection);
+
+	private:
+		// holds variables bag..
+		std::vector < SelVal > values;
+		void deleteValues ();
 };
 
 /**

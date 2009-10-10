@@ -1920,25 +1920,23 @@ Rts2Conn::getValueInteger (const char *value_name)
 }
 
 
-const char *
-Rts2Conn::getValueSelection (const char *value_name)
+const char * Rts2Conn::getValueSelection (const char *value_name)
 {
 	Rts2Value *val;
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelName ().c_str ();
+	return ((Rts2ValueSelection *) val)->getSelName ();
 }
 
 
-const char *
-Rts2Conn::getValueSelection (const char *value_name, int val_num)
+const char * Rts2Conn::getValueSelection (const char *value_name, int val_num)
 {
 	Rts2Value *val;
 	val = getValue (value_name);
 	if (val->getValueType () != RTS2_VALUE_SELECTION)
 		return "UNK";
-	return ((Rts2ValueSelection *) val)->getSelName (val_num).c_str ();
+	return ((Rts2ValueSelection *) val)->getSelName (val_num);
 }
 
 

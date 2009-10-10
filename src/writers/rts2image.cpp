@@ -1897,7 +1897,7 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 			setValue (name, ((Rts2ValueBool *) val)->getValueBool (), desc);
 			break;
 		case RTS2_VALUE_SELECTION:
-			setValue (name, ((Rts2ValueSelection *) val)->getSelName ().c_str (), desc);
+			setValue (name, ((Rts2ValueSelection *) val)->getSelName (), desc);
 			break;
 		case RTS2_VALUE_LONGINT:
 			setValue (name, ((Rts2ValueLong *) val)->getValueLong (), desc);
