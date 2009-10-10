@@ -64,9 +64,7 @@ class SSP5:public Rts2DevPhot
 
 using namespace rts2phot;
 
-
-int
-SSP5::processOption (int _opt)
+int SSP5::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -79,8 +77,7 @@ SSP5::processOption (int _opt)
 	return 0;
 }
 
-int
-SSP5::init ()
+int SSP5::init ()
 {
 	char rbuf[10];
 	int ret;
@@ -104,9 +101,7 @@ SSP5::init ()
 	return 0;
 }
 
-
-int
-SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == gain)
 	{
@@ -122,9 +117,7 @@ SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	return Rts2DevPhot::setValue (oldValue, newValue);
 }
 
-
-int
-SSP5::setExposure (float _exp)
+int SSP5::setExposure (float _exp)
 {
 	char buf[50];
 	snprintf (buf, 7, "SI%04i", int (getExposure () / 0.01));
@@ -134,7 +127,6 @@ SSP5::setExposure (float _exp)
 		return -1;
 	return Rts2DevPhot::setExposure (_exp);
 }
-
 
 SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 {
@@ -156,17 +148,13 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 	addOption ('f', NULL, 1, "serial port (default to /dev/ttyS0");
 }
 
-
-int
-SSP5::scriptEnds ()
+int SSP5::scriptEnds ()
 {
 	startFilterMove (0);
 	return Rts2DevPhot::scriptEnds ();
 }
 
-
-long
-SSP5::getCount ()
+long SSP5::getCount ()
 {
 	int ret;
 	char buf[10];
@@ -187,16 +175,12 @@ SSP5::getCount ()
 	return 0;
 }
 
-
-int
-SSP5::homeFilter ()
+int SSP5::homeFilter ()
 {
 	return photConn->writePort ("SHOMEx", 6);
 }
 
-
-int
-SSP5::startIntegrate ()
+int SSP5::startIntegrate ()
 {
 	// set integration time..
 	char buf[50];
@@ -210,9 +194,7 @@ SSP5::startIntegrate ()
 	return 0;
 }
 
-
-int
-SSP5::startFilterMove (int new_filter)
+int SSP5::startFilterMove (int new_filter)
 {
 	char buf[6];
 	strcpy (buf, "SFILT");
@@ -229,16 +211,12 @@ SSP5::startFilterMove (int new_filter)
 	return Rts2DevPhot::startFilterMove (new_filter);
 }
 
-
-long
-SSP5::isFilterMoving ()
+long SSP5::isFilterMoving ()
 {
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	SSP5 device = SSP5 (argc, argv);
 	return device.run ();

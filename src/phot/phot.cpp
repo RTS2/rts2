@@ -70,18 +70,14 @@ Rts2DevPhot::checkFilterMove ()
 	}
 }
 
-
-int
-Rts2DevPhot::initValues ()
+int Rts2DevPhot::initValues ()
 {
 	addConstValue ("type", photType);
 
 	return Rts2ScriptDevice::initValues ();
 }
 
-
-int
-Rts2DevPhot::idle ()
+int Rts2DevPhot::idle ()
 {
 	long ret;
 	struct timeval now;
@@ -124,47 +120,36 @@ Rts2DevPhot::homeFilter ()
 	return -1;
 }
 
-
-int
-Rts2DevPhot::setExposure (float _exp)
+int Rts2DevPhot::setExposure (float _exp)
 {
 	setReqTime (_exp);
 	return 0;
 }
 
-int
-Rts2DevPhot::startFilterMove (int new_filter)
+int Rts2DevPhot::startFilterMove (int new_filter)
 {
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_MOVE);
 	return 0;
 }
 
-
-long
-Rts2DevPhot::isFilterMoving ()
+long Rts2DevPhot::isFilterMoving ()
 {
 	return -2;
 }
 
-
-int
-Rts2DevPhot::endFilterMove ()
+int Rts2DevPhot::endFilterMove ()
 {
 	infoAll ();
 	maskState (PHOT_MASK_FILTER, PHOT_FILTER_IDLE);
 	return 0;
 }
 
-
-int
-Rts2DevPhot::startIntegrate ()
+int Rts2DevPhot::startIntegrate ()
 {
 	return -1;
 }
 
-
-int
-Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_count)
+int Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_count)
 {
 	int ret;
 	req_count->setValueInteger (_req_count);
@@ -180,9 +165,7 @@ Rts2DevPhot::startIntegrate (Rts2Conn * conn, float _req_time, int _req_count)
 	return 0;
 }
 
-
-int
-Rts2DevPhot::endIntegrate ()
+int Rts2DevPhot::endIntegrate ()
 {
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE, "integration finished");
 	// keep us update in old time
@@ -191,9 +174,7 @@ Rts2DevPhot::endIntegrate ()
 	return 0;
 }
 
-
-int
-Rts2DevPhot::stopIntegrate ()
+int Rts2DevPhot::stopIntegrate ()
 {
 	maskState (PHOT_MASK_INTEGRATE, PHOT_NOINTEGRATE,
 		"Integration interrupted");
@@ -201,9 +182,7 @@ Rts2DevPhot::stopIntegrate ()
 	return 0;
 }
 
-
-int
-Rts2DevPhot::homeFilter (Rts2Conn * conn)
+int Rts2DevPhot::homeFilter (Rts2Conn * conn)
 {
 	int ret;
 	ret = homeFilter ();
@@ -214,23 +193,17 @@ Rts2DevPhot::homeFilter (Rts2Conn * conn)
 	return ret;
 }
 
-
-int
-Rts2DevPhot::enableMove ()
+int Rts2DevPhot::enableMove ()
 {
 	return -1;
 }
 
-
-int
-Rts2DevPhot::disableMove ()
+int Rts2DevPhot::disableMove ()
 {
 	return -1;
 }
 
-
-int
-Rts2DevPhot::moveFilter (int new_filter)
+int Rts2DevPhot::moveFilter (int new_filter)
 {
 	int ret;
 	ret = startFilterMove (new_filter);
@@ -239,9 +212,7 @@ Rts2DevPhot::moveFilter (int new_filter)
 	return 0;
 }
 
-
-int
-Rts2DevPhot::enableFilter (Rts2Conn * conn)
+int Rts2DevPhot::enableFilter (Rts2Conn * conn)
 {
 	int ret;
 	ret = enableMove ();
@@ -251,17 +222,13 @@ Rts2DevPhot::enableFilter (Rts2Conn * conn)
 	return 0;
 }
 
-
-int
-Rts2DevPhot::scriptEnds ()
+int Rts2DevPhot::scriptEnds ()
 {
 	stopIntegrate ();
 	return Rts2ScriptDevice::scriptEnds ();
 }
 
-
-int
-Rts2DevPhot::changeMasterState (int new_state)
+int Rts2DevPhot::changeMasterState (int new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -275,9 +242,7 @@ Rts2DevPhot::changeMasterState (int new_state)
 	return Rts2ScriptDevice::changeMasterState (new_state);
 }
 
-
-void
-Rts2DevPhot::setReqTime (float in_req_time)
+void Rts2DevPhot::setReqTime (float in_req_time)
 {
 	req_time = in_req_time;
 	exp->setValueFloat (req_time);
@@ -292,9 +257,7 @@ Rts2DevPhot::setReqTime (float in_req_time)
 	}
 }
 
-
-int
-Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == filter)
 		return moveFilter (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -303,9 +266,7 @@ Rts2DevPhot::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Rts2ScriptDevice::setValue (old_value, new_value);
 }
 
-
-void
-Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
+void Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 {
 	count->setValueInteger (in_count);
 	exp->setValueFloat (in_exp);
@@ -320,9 +281,7 @@ Rts2DevPhot::sendCount (int in_count, float in_exp, bool in_is_ov)
 		endIntegrate ();
 }
 
-
-int
-Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
+int Rts2DevPhot::commandAuthorized (Rts2Conn * conn)
 {
 	int ret;
 	if (conn->isCommand ("home"))
