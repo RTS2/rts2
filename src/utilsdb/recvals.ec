@@ -100,3 +100,15 @@ void RecvalsSet::load ()
 	EXEC SQL CLOSE recval_double_cur;
 	EXEC SQL ROLLBACK;
 }
+
+Recval * RecvalsSet::searchByName (const char *_device_name, const char *_value_name)
+{
+	std::string _dn (_device_name);
+	std::string _vn (_value_name);
+	for (std::list <Recval>::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->getDevice () == _dn && iter->getValueName () == _vn)
+			return &(*iter);
+	}
+	return NULL;
+}

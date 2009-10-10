@@ -69,6 +69,13 @@ class RecvalsSet: public std::list <Recval>
 		}
 
 		void load ();
+
+		/**
+		 * Find recval with given name.
+		 *
+		 * @return NULL if given name cannot be found, otherwise Recval pointer.
+		 */
+		Recval *searchByName (const char *_device_name, const char *_valuse_name);
 };
 
 
