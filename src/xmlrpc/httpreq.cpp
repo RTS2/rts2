@@ -224,6 +224,7 @@ void Targets::printTargetImages (Target *tar, const char* &response_type, char* 
 	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title></head><body>";
 
 	Rts2ImgSetTarget is = Rts2ImgSetTarget (tar->getTargetID ());
+	is.load ();
 
 	if (is.size () > 0)
 	{
