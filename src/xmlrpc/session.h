@@ -20,7 +20,7 @@
 #include <string>
 #include <time.h>
 
-namespace rts2xml
+namespace rts2xmlrpc
 {
 /**
  * This class represents single session in XML-RPC interface.

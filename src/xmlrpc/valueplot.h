@@ -45,11 +45,15 @@ class ValuePlot
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image getPlot (double from, double to);
+		Magick::Image* getPlot (double from, double to);
 	
 	private:
 		int recvalId;
 		Magick::Geometry size;
+		Magick::Image *image;
+
+		void plotYGrid (int y);
+		void plotXGrid (int x);
 };
 
 }

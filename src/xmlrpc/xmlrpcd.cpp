@@ -18,8 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "config.h"
-#include <deque>
+#include "xmlrpcd.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/recvals.h"
@@ -34,12 +33,6 @@
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"
-
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-#include <Magick++.h>
-#include "valueplot.h"
-#endif // HAVE_LIBJPEG
-
 #else
 #include "../utils/rts2config.h"
 #include "../utils/rts2device.h"
@@ -54,10 +47,8 @@ using namespace Magick;
 #include "../utils/timestamp.h"
 #include "../utils/error.h"
 #include "../writers/rts2image.h"
-#include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
-#include "session.h"
-#include "events.h"
+#include "httpreq.h"
 
 #include "r2x.h"
 
@@ -70,7 +61,6 @@ using namespace Magick;
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
 
 using namespace XmlRpc;
-using namespace rts2xml;
 
 /**
  * @file
@@ -83,121 +73,6 @@ using namespace rts2xml;
  * XML-RPC server.
  */
 XmlRpcServer xmlrpc_server;
-
-namespace rts2xmlrpc
-{
-
-/**
- * XML-RPC client class. Provides functions for XML-RPCd to react on state
- * and value changes.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- *
- * @addgroup XMLRPC
- */
-class XmlDevClient:public Rts2DevClient
-{
-	public:
-		XmlDevClient (Rts2Conn *conn):Rts2DevClient (conn)
-		{
-
-		}
-
-		virtual void stateChanged (Rts2ServerState * state);
-
-		virtual void valueChanged (Rts2Value * value);
-};
-
-/**
- * XML-RPC daemon class.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- *
- * @addgroup XMLRPC
- */
-#ifdef HAVE_PGSQL
-class XmlRpcd:public Rts2DeviceDb
-#else
-class XmlRpcd:public Rts2Device
-#endif
-{
-	private:
-		int rpcPort;
-		const char *stateChangeFile;
-		std::map <std::string, Session*> sessions;
-
-		std::deque <Rts2Message> messages;
-
-		Events events;
-
-#ifndef HAVE_PGSQL
-		const char *config_file;
-#endif
-
-		std::string page_prefix;
-
-	protected:
-#ifndef HAVE_PGSQL
-		virtual int willConnect (Rts2Address * _addr);
-#endif
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
-
-		virtual void signaledHUP ();
-
-	public:
-		XmlRpcd (int argc, char **argv);
-		virtual ~XmlRpcd ();
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-
-		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
-
-		void valueChangedEvent (Rts2Conn *conn, Rts2Value *new_value);
-
-		virtual void message (Rts2Message & msg);
-
-		/**
-		 * Create new session for given user.
-		 *
-		 * @param _username  Name of the user.
-		 * @param _timeout   Timeout in seconds for session validity.
-		 *
-		 * @return String with session ID.
-		 */
-		std::string addSession (std::string _username, time_t _timeout);
-
-
-		/**
-		 * Returns true if session with a given sessionId exists.
-		 *
-		 * @param sessionId  Session ID.
-		 *
-		 * @return True if session with a given session ID exists.
-		 */
-		bool existsSession (std::string sessionId);
-
-		/**
-		 * Returns messages buffer.
-		 */
-		std::deque <Rts2Message> & getMessages ()
-		{
-			return messages;
-		}
-
-		/**
-		 * Return prefix for generated pages - usefull for pages behind proxy.
-		 */
-		const char* getPagePrefix ()
-		{
-			return page_prefix.c_str ();
-		}
-
-};
-
-};
 
 using namespace rts2xmlrpc;
 
@@ -470,47 +345,6 @@ class Login: public XmlRpcServerMethod
 			return std::string ("Return session ID for user if logged properly");
 		}
 } login(&xmlrpc_server);
-
-class GetRequestAuthorized: public XmlRpcServerGetRequest
-{
-	public:
-		GetRequestAuthorized (const char* prefix, XmlRpcServer* s):XmlRpcServerGetRequest (prefix, s)
-		{
-		}
-
-		virtual void execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
-		{
-
-			if (getUsername () == std::string ("session_id"))
-			{
-				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
-				{
-					authorizePage (http_code, response_type, response, response_length);
-					return;
-				}
-			}
-
-#ifdef HAVE_PGSQL
-			if (verifyUser (getUsername (), getPassword ()) == false)
-			{
-				authorizePage (http_code, response_type, response, response_length);
-				return;
-			}
-#else
-			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-			{
-				authorizePage (http_code, response_type, response, response_length);
-				return;
-			}
-#endif /* HAVE_PGSQL */
-			http_code = HTTP_OK;
-
-			authorizedExecute (path, params, response_type, response, response_length);
-		}
-
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
-};
-
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 
@@ -1818,91 +1652,11 @@ class RecordsAverage: public SessionMethod
 
 #ifdef HAVE_LIBJPEG
 
-/**
- * Draw graph of variables.
- */
-class Graph: public GetRequestAuthorized
-{
-	public:
-		Graph (const char *prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
-
-		void printDevices (const char* &response_type, char* &response, int &response_length)
-		{
-			rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
-			rs.load ();
-			std::ostringstream _os;
-			_os << "<html><head><title>Record value list</title></head><body><table>";
-			for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++)
-			{
-				_os << "<tr><td>"
-					<< iter->getDevice () << "</td><td><a href='"
-					<< iter->getDevice () << "/" << iter->getValueName () << "'>" << iter->getValueName () << "</a></td><td>"
-					<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
-					<< LibnovaDateDouble (iter->getTo ()) << "</td></tr>";
-			}
-			_os << "</table>";
-			response_type = "text/html";
-			response_length = _os.str ().length ();
-			response = new char[response_length];
-			memcpy (response, _os.str ().c_str (), response_length);
-		}
-
-		void plotValue (const char *device, const char *value, double from, double to, const char* &response_type, char* &response, int &response_length)
-		{
-			rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
-			rs.load ();
-			rts2db::Recval *rv = rs.searchByName (device, value);
-			if (rv == NULL)
-				throw rts2core::Error ("Cannot find device/value pair with given name");
-			int valId = rv->getId ();
-
-			ValuePlot vp (valId);
-
-			Magick::Image mimage = vp.getPlot (from, to);
-
-			Blob blob;
-			mimage.write (&blob, "jpeg");
-
-			response_length = blob.length();
-			response = new char[response_length];
-			memcpy (response, blob.data(), response_length);
-		}
-
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
-		{
-			response_type = "image/jpeg";
-
-			// get path and possibly date range
-			std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
-			int valId = 1;
-			time_t to = time (NULL);
-			time_t from = to - 10 * 86400;
-
-			switch (vals.size ())
-			{
-				case 0:
-					// list values;
-					printDevices (response_type, response, response_length);
-					break;
-				case 1:
-					if (isdigit (vals[0][0]))
-						valId = atoi (vals[0].c_str ());
-					else
-						valId = 1;
-					break;
-				case 3:
-					// from - to date
-
-				case 2:
-					plotValue (vals[0].c_str (), vals[1].c_str (), from, to, response_type, response, response_length);
-					break;
-			}
-		}
-
-} graph ("/graph", &xmlrpc_server);
+Graph graph ("/graph", &xmlrpc_server);
 
 #endif /* HAVE_LIBJPEG */
 
+Targets targets ("/targets", &xmlrpc_server);
 
 class UserLogin: public XmlRpcServerMethod
 {
