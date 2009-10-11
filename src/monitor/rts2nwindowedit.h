@@ -112,7 +112,7 @@ class Rts2NWindowEditDigits:public Rts2NWindowEdit
 		/**
 		 * Returns integer value of the field. Returns 0 if field is empty.
 		 */
-		int getValueDouble ();
+		double getValueDouble ();
 
 };
 #endif							 /* !__RTS2_NWINDOWEDIT__ */

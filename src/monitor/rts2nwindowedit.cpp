@@ -24,8 +24,7 @@
 
 #define MIN(x,y) ((x < y) ? x : y)
 
-Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
-:Rts2NWindow (_x, _y, w, h, border)
+Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindow (_x, _y, w, h, border)
 {
 	ex = _ex;
 	ey = _ey;
@@ -34,22 +33,17 @@ Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey
 	comwin = newpad (_eh, _ew);
 }
 
-
 Rts2NWindowEdit::~Rts2NWindowEdit (void)
 {
 	delwin (comwin);
 }
 
-
-bool
-Rts2NWindowEdit::passKey (int key)
+bool Rts2NWindowEdit::passKey (int key)
 {
 	return isalnum (key) || isspace (key) || key == '.'  || key == ',';
 }
 
-
-keyRet
-Rts2NWindowEdit::injectKey (int key)
+keyRet Rts2NWindowEdit::injectKey (int key)
 {
 	switch (key)
 	{
@@ -95,9 +89,7 @@ Rts2NWindowEdit::injectKey (int key)
 	return RKEY_HANDLED;
 }
 
-
-void
-Rts2NWindowEdit::refresh ()
+void Rts2NWindowEdit::refresh ()
 {
 	int w, h;
 	Rts2NWindow::refresh ();
@@ -121,9 +113,7 @@ Rts2NWindowEdit::refresh ()
 	}
 }
 
-
-bool
-Rts2NWindowEdit::setCursor ()
+bool Rts2NWindowEdit::setCursor ()
 {
 	getbegyx (getWriteWindow (), y, x);
 	x += getCurX ();
@@ -132,24 +122,18 @@ Rts2NWindowEdit::setCursor ()
 	return true;
 }
 
-
-Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
-:Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 
-
-bool
-Rts2NWindowEditIntegers::passKey (int key)
+bool Rts2NWindowEditIntegers::passKey (int key)
 {
 	if (isdigit (key) || key == '+' || key == '-')
 		return true;
 	return false;
 }
 
-
-int
-Rts2NWindowEditIntegers::getValueInteger ()
+int Rts2NWindowEditIntegers::getValueInteger ()
 {
 	char buf[200];
 	char *endptr;
@@ -163,24 +147,18 @@ Rts2NWindowEditIntegers::getValueInteger ()
 	return tval;
 }
 
-
-Rts2NWindowEditDigits::Rts2NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border)
-:Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+Rts2NWindowEditDigits::Rts2NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 
-
-bool
-Rts2NWindowEditDigits::passKey (int key)
+bool Rts2NWindowEditDigits::passKey (int key)
 {
 	if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
 		return true;
 	return false;
 }
 
-
-int
-Rts2NWindowEditDigits::getValueDouble ()
+double Rts2NWindowEditDigits::getValueDouble ()
 {
 	char buf[200];
 	char *endptr;
