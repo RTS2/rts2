@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_DB_RECVALS__
+#define __RTS2_DB_RECVALS__
+
 #include <list>
 #include <string>
 
@@ -80,3 +83,5 @@ class RecvalsSet: public std::list <Recval>
 
 
 }
+
+#endif /* !__RTS2_DB_RECVALS__ */

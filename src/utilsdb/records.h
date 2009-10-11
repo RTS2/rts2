@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_DB_RECORDS__
+#define __RTS2_DB_RECORDS__
+
 #include <list>
 #include <string>
 
@@ -89,3 +92,5 @@ class RecordsSet: public std::list <Record>
 };
 
 }
+
+#endif /* !__RTS2_DB_RECORDS__ */
