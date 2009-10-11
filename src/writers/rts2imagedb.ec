@@ -342,8 +342,8 @@ Rts2ImageSkyDb::updateAstrometry ()
 	double crota[2];
 	double equinox;
 
-	ctype[0] = (char *) malloc (9);
-	ctype[1] = (char *) malloc (9);
+	ctype[0] = (char *) malloc (10);
+	ctype[1] = (char *) malloc (10);
 
 	try
 	{
