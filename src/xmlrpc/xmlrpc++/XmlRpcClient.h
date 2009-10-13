@@ -93,6 +93,9 @@ namespace XmlRpc
 			std::string _uri;
 			int _port;
 
+			std::string _proxy_host;
+			int _proxy_port;
+
 			// The xml-encoded request, http header of response, and response xml
 			std::string _request;
 			std::string _header;

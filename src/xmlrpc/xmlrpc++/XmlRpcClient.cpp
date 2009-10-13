@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sstream>
 
 using namespace XmlRpc;
 
@@ -29,8 +30,27 @@ XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization
 {
 	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
 
+	char *proxy = getenv ("http_proxy");
+	if (proxy)
+	{
+		char *ph = new char[strlen(proxy) + 1];
+		if (sscanf (proxy, "http://%s:%i", &ph, &_proxy_port) == 2)
+		{
+			_proxy_host = ph;
+		}
+		else
+		{
+			XmlRpcUtil::error("Ignoring proxy specification taken from http_proxy enviromental variable (%s).", proxy);
+		}
+		delete[] ph;
+	}
+	else
+	{
+		_proxy_port = -1;
+	}
 	_host = host;
 	_port = port;
+
 	if (authorization != NULL)
 		_authorization = authorization;
 	else
@@ -39,6 +59,12 @@ XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization
 		_uri = uri;
 	else
 		_uri = std::string ("/RPC2");
+	if (_proxy_port > 0)
+	{
+		std::ostringstream _os;
+		_os << "http://" << _host << ":" << _port;
+		_uri = _os.str () + _uri;
+	}
 	_connectionState = NO_CONNECTION;
 	_executing = false;
 	_eof = false;
@@ -191,11 +217,23 @@ XmlRpcClient::doConnect()
 		return false;
 	}
 
-	if ( ! XmlRpcSocket::connect(fd, _host, _port))
+	if (_proxy_port > 0)
 	{
-		this->close();
-		XmlRpcUtil::error("Error in XmlRpcClient::doConnect: Could not connect to server (%s).", XmlRpcSocket::getErrorMsg().c_str());
-		return false;
+		if (!XmlRpcSocket::connect(fd, _proxy_host, _proxy_port))
+		{
+			this->close();
+			XmlRpcUtil::error("Error in XmlRpcClient::doConnect: Could not connect to proxy server (%s).", XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
+	}
+	else
+	{
+		if (!XmlRpcSocket::connect(fd, _host, _port))
+		{
+			this->close();
+			XmlRpcUtil::error("Error in XmlRpcClient::doConnect: Could not connect to server (%s).", XmlRpcSocket::getErrorMsg().c_str());
+			return false;
+		}
 	}
 
 	return true;

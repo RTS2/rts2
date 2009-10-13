@@ -1,4 +1,5 @@
 
+#include "base64.h"
 #include "XmlRpcServerGetRequest.h"
 #include "XmlRpcServer.h"
 
@@ -34,10 +35,19 @@ namespace XmlRpc
 	{
 		// find = to split param and value
 		std::string::size_type pv = ps.find ('=');
+
+		int iostatus = 0;
 		if (pv != std::string::npos)
-			addParam (ps.substr (0, pv).c_str (), ps.substr (pv + 1).c_str ());
+		{
+			std::string p_n = ps.substr (0, pv);
+			std::string p_v = ps.substr (pv + 1);
+
+			addParam (p_n, p_v);
+		}
 		else
-			addParam (ps.c_str (), "");
+		{
+			addParam (ps, "");
+		}
 	}
 
 	XmlRpcServerGetRequest::XmlRpcServerGetRequest(std::string const& in_prefix, XmlRpcServer* server)

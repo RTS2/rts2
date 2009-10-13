@@ -28,7 +28,7 @@ namespace XmlRpc
 	class HttpParam
 	{
 		public:
-			HttpParam (const char *_name, const char *_val) { name = std::string (_name); val = std::string (_val); }
+			HttpParam (std::string _name, std::string _val) { name = _name; val = _val; }
 			const char *getName () { return name.c_str (); };
 			const char *getValue () { return val.c_str (); };
 
@@ -42,7 +42,7 @@ namespace XmlRpc
 	{
 		public:
 			HttpParams () {};
-			void addParam (const char *_name, const char *_val) { push_back (HttpParam (_name, _val)); }
+			void addParam (std::string _name, std::string _val) { push_back (HttpParam (_name, _val)); }
 
 			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
