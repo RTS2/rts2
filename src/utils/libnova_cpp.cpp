@@ -540,11 +540,14 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	{
 		_os << std::setw (5) << (deg_dms.degrees * 60 + deg_dms.minutes) << "'";
 	}
-	char old_fill = _os.fill ('0');
-	_os << std::setw (5) << deg_dms.seconds;
-	_os.setf (old_settings);
-	_os.precision (old_precison);
-	_os.fill (old_fill);
+	if (deg_dms.seconds >= 0.01)
+	{
+		char old_fill = _os.fill ('0');
+		_os << std::setw (5) << deg_dms.seconds;
+		_os.setf (old_settings);
+		_os.precision (old_precison);
+		_os.fill (old_fill);
+	}
 	return _os;
 }
 

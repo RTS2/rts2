@@ -25,8 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-double
-random_num ()
+double random_num ()
 {
 #ifndef sun
 	return (double) random () / RAND_MAX;
@@ -35,8 +34,7 @@ random_num ()
 #endif
 }
 
-int
-mkpath (const char *path, mode_t mode)
+int mkpath (const char *path, mode_t mode)
 {
 	char *cp_path;
 	char *start, *end;
@@ -65,9 +63,7 @@ mkpath (const char *path, mode_t mode)
 	return ret;
 }
 
-
-std::vector<std::string>
-SplitStr(const std::string& text, const std::string& delimeter)
+std::vector<std::string> SplitStr(const std::string& text, const std::string& delimeter)
 {
 	std::size_t pos = 0;
 	std::size_t oldpos = 0;
@@ -85,13 +81,15 @@ SplitStr(const std::string& text, const std::string& delimeter)
 			continue;
 		result.push_back(text.substr(oldpos, pos - oldpos));
 		oldpos = pos + delimlen;
+		// last character..
+		if (pos == text.length () - 1)
+			break;
 	}
 
 	return result;
 }
 
-std::vector<char>
-Str2CharVector (std::string text)
+std::vector<char> Str2CharVector (std::string text)
 {
 	std::vector<char> res;
 	for (std::string::iterator iter = text.begin(); iter != text.end(); iter++)
@@ -102,8 +100,7 @@ Str2CharVector (std::string text)
 }
 
 #ifndef HAVE_ISINF
-int
-isinf(double x)
+int isinf(double x)
 {
 	return !finite(x) && x==x;
 }

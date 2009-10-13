@@ -33,6 +33,8 @@
 #include <vector>
 #include <iostream>
 
+#include "utilsfunc.h"
+
 /**
  * @file Various value classes.
  *
@@ -201,18 +203,6 @@
 // BOP mask is taken from status.h, and occupied highest byte (0xff000000)
 
 #include <status.h>
-
-#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
-
-/* Not a Number function generator */
-double rts2_nan (const char *code);
-
-#else
-
-#define rts2_nan(f)  nan(f)
-
-#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
-
 
 class Rts2Conn;
 
