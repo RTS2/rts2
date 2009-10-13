@@ -31,7 +31,6 @@ Rts2ImgSet::Rts2ImgSet ()
 {
 }
 
-
 Rts2ImgSet::~Rts2ImgSet (void)
 {
 	std::vector <Rts2Image *>::iterator img_iter;
@@ -42,9 +41,7 @@ Rts2ImgSet::~Rts2ImgSet (void)
 	clear ();
 }
 
-
-int
-Rts2ImgSet::load (std::string in_where)
+int Rts2ImgSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		char *stmp_c;
@@ -107,7 +104,7 @@ Rts2ImgSet::load (std::string in_where)
 		" WHERE "
 		" images.obs_id = observations.obs_id AND " << in_where <<
 		" ORDER BY "
-		"img_id ASC;";
+		"img_date ASC;";
 
 	stmp_c = new char[_os.str ().length () + 1];
 	strcpy (stmp_c, _os.str ().c_str ());
@@ -209,9 +206,7 @@ Rts2ImgSet::load (std::string in_where)
 	return 0;
 }
 
-
-void
-Rts2ImgSet::stat ()
+void Rts2ImgSet::stat ()
 {
 	// compute statistics
 	allStat.stat ();
@@ -222,9 +217,7 @@ Rts2ImgSet::stat ()
 	}
 }
 
-
-void
-Rts2ImgSet::print (std::ostream &_os, int printImages)
+void Rts2ImgSet::print (std::ostream &_os, int printImages)
 {
 	if ((printImages & DISPLAY_ALL) || (printImages & DISPLAY_FILENAME))
 	{
@@ -252,9 +245,7 @@ Rts2ImgSet::print (std::ostream &_os, int printImages)
 	}
 }
 
-
-int
-Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
+int Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 {
 	double tRa;
 	double tDec;
@@ -286,9 +277,7 @@ Rts2ImgSet::getAverageErrors (double &eRa, double &eDec, double &eRad)
 	return aNum;
 }
 
-
-std::vector <Rts2ImgSetStat>::iterator
-Rts2ImgSet::getStat (std::string in_filter)
+std::vector <Rts2ImgSetStat>::iterator Rts2ImgSet::getStat (std::string in_filter)
 {
 	std::vector <Rts2ImgSetStat>::iterator iter;
 	for (iter = filterStat.begin ();
@@ -307,39 +296,31 @@ Rts2ImgSetTarget::Rts2ImgSetTarget (int in_tar_id)
 	tar_id = in_tar_id;
 }
 
-
-int
-Rts2ImgSetTarget::load ()
+int Rts2ImgSetTarget::load ()
 {
 	std::ostringstream os;
 	os << "tar_id = " << tar_id;
 	return Rts2ImgSet::load (os.str());
 }
 
-
 Rts2ImgSetObs::Rts2ImgSetObs (Rts2Obs *in_observation)
 {
 	observation = in_observation;
 }
 
-
-int
-Rts2ImgSetObs::load ()
+int Rts2ImgSetObs::load ()
 {
 	std::ostringstream os;
 	os << "observations.obs_id = " << observation->getObsId ();
 	return Rts2ImgSet::load (os.str());
 }
 
-
 Rts2ImgSetPosition::Rts2ImgSetPosition (struct ln_equ_posn * in_pos)
 {
 	pos = *in_pos;
 }
 
-
-int
-Rts2ImgSetPosition::load ()
+int Rts2ImgSetPosition::load ()
 {
 	std::ostringstream os;
 	os << "isinwcs (" << pos.ra
@@ -347,33 +328,6 @@ Rts2ImgSetPosition::load ()
 		<< ", astrometry)";
 	return Rts2ImgSet::load (os.str ());
 }
-
-
-Rts2ImgSetFlats::Rts2ImgSetFlats (Rts2ObsSet *in_observations)
-{
-	observations = in_observations;
-}
-
-
-int
-Rts2ImgSetFlats::load ()
-{
-	return -1;
-}
-
-
-Rts2ImgSetDarks::Rts2ImgSetDarks (Rts2ObsSet *in_observations)
-{
-	observations = in_observations;
-}
-
-
-int
-Rts2ImgSetDarks::load ()
-{
-	return -1;
-}
-
 
 std::ostream & operator << (std::ostream &_os, Rts2ImgSet &img_set)
 {

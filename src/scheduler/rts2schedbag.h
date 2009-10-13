@@ -46,7 +46,7 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		double JDstart, JDend;
 
 		rts2sched::TicketSet *ticketSet;
-		Rts2TargetSet *tarSet;
+		rts2db::TargetSet *tarSet;
 
 		/**
 		 * The algorithm replace randomly selected observation with randomly picked new

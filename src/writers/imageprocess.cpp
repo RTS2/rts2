@@ -36,8 +36,7 @@ class comparePint
 		}
 };
 
-static int
-cmpdouble (const void *a, const void *b)
+static int cmpdouble (const void *a, const void *b)
 {
 	if (*((double *) a) > *((double *) b))
 		return 1;
@@ -46,9 +45,7 @@ cmpdouble (const void *a, const void *b)
 	return 0;
 }
 
-
-double
-Rts2Image::classicMedian (double *q, int n, double *retsigma)
+double Rts2Image::classicMedian (double *q, int n, double *retsigma)
 {
 	int i;
 	double *f, M, S;
@@ -82,9 +79,7 @@ Rts2Image::classicMedian (double *q, int n, double *retsigma)
 	return M;
 }
 
-
-int
-Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
+int Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 {
 	int x, y, max_x, max_y, pix = 0;
 
@@ -106,16 +101,12 @@ Rts2Image::findMaxIntensity (unsigned short *in_data, struct pixel *ret)
 	return 0;
 }
 
-
-unsigned short
-Rts2Image::getPixel (unsigned short *in_data, int x, int y)
+unsigned short Rts2Image::getPixel (unsigned short *in_data, int x, int y)
 {
 	return in_data[x + (naxis[0] * y)];
 }
 
-
-int
-Rts2Image::findStar (unsigned short *in_data)
+int Rts2Image::findStar (unsigned short *in_data)
 {
 	float cols_sum[APP_SIZE];
 	unsigned short *row_start_ptr, *data_ptr;
@@ -207,10 +198,7 @@ Rts2Image::findStar (unsigned short *in_data)
 	return 0;
 }
 
-
-int
-Rts2Image::aperture (unsigned short *in_data, struct pixel pix,
-struct pixel *ret)
+int Rts2Image::aperture (unsigned short *in_data, struct pixel pix, struct pixel *ret)
 {
 	int i, j;
 	struct pixel tmp;
@@ -244,10 +232,7 @@ struct pixel *ret)
 	return 0;
 }
 
-
-int
-Rts2Image::centroid (unsigned short *in_data, struct pixel pix, float *px,
-float *py)
+int Rts2Image::centroid (unsigned short *in_data, struct pixel pix, float *px, float *py)
 {
 	int i, j;
 	float cmean, total, subtotal;
@@ -279,9 +264,7 @@ float *py)
 	return 0;
 }
 
-
-int
-Rts2Image::radius (unsigned short *in_data, double px, double py, int rmax)
+int Rts2Image::radius (unsigned short *in_data, double px, double py, int rmax)
 {
 	int i, j, r, inrr, outrr, xyrr, yrr, np;
 	double sum, cmean;
@@ -319,10 +302,7 @@ Rts2Image::radius (unsigned short *in_data, double px, double py, int rmax)
 	return (r);
 }
 
-
-int
-Rts2Image::integrate (unsigned short *in_data, double px, double py, int size,
-float *ret)
+int Rts2Image::integrate (unsigned short *in_data, double px, double py, int size, float *ret)
 {
 	int i, j;
 	float rad;
@@ -363,9 +343,7 @@ float *ret)
 	return 0;
 }
 
-
-int
-Rts2Image::evalAF (float *result, float *error)
+int Rts2Image::evalAF (float *result, float *error)
 {
 	int i, r;
 	long npixels = naxis[0] * naxis[1];

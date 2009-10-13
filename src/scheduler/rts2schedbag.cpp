@@ -222,7 +222,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
 
-	tarSet = new Rts2TargetSet (observer, true);
+	tarSet = new rts2db::TargetSet (observer);
+	tarSet->load ();
+
 	ticketSet = new rts2sched::TicketSet ();
 
 	mutationNum = -1;

@@ -93,7 +93,7 @@ class TargetInfo:public Rts2AppDb
 		bool addMoon;
 		bool addHorizon;
 		char *targetType;
-		virtual int printTargets (Rts2TargetSet & set);
+		virtual int printTargets (rts2db::TargetSet & set);
 
 		double JD;
 
@@ -320,7 +320,7 @@ TargetInfo::printTargetInfo ()
 	// print recomended calibrations targets
 	if (printCalTargets)
 	{
-		Rts2TargetSet *cal;
+		rts2db::TargetSet *cal;
 		cal = target->getCalTargets (JD, airmd);
 		std::cout << "==================================" << std::endl <<
 			"Calibration targets" << std::endl;
@@ -384,9 +384,9 @@ TargetInfo::printTargetInfoDS9 ()
 
 
 int
-TargetInfo::printTargets (Rts2TargetSet & set)
+TargetInfo::printTargets (rts2db::TargetSet & set)
 {
-	Rts2TargetSet::iterator iter;
+	rts2db::TargetSet::iterator iter;
 	struct ln_rst_time t_rst;
 	struct ln_rst_time n_rst;
 
@@ -555,11 +555,11 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		// find and print calibration targets..
 		if (printCalTargets)
 		{
-			Rts2TargetSet calibSet = Rts2TargetSet (obs, false);
+			rts2db::TargetSet calibSet = rts2db::TargetSet (obs);
 			for (iter = set.begin (); iter != set.end (); iter++)
 			{
 				target = (*iter).second;
-				Rts2TargetSet *addS = target->getCalTargets ();
+				rts2db::TargetSet *addS = target->getCalTargets ();
 				calibSet.addSet (*addS);
 				delete addS;
 			}
@@ -705,23 +705,26 @@ TargetInfo::doProcessing ()
 	{
 		if (targetType)
 		{
-			Rts2TargetSetSelectable selSet =
-				Rts2TargetSetSelectable (targetType);
+			rts2db::TargetSetSelectable selSet = rts2db::TargetSetSelectable (targetType);
+			selSet.load ();
 			return printTargets (selSet);
 		}
 		else
 		{
-			Rts2TargetSetSelectable selSet = Rts2TargetSetSelectable ();
+			rts2db::TargetSetSelectable selSet = rts2db::TargetSetSelectable ();
+			selSet.load ();
 			return printTargets (selSet);
 		}
 	}
 	if (targetType)
 	{
-		Rts2TargetSet typeSet = Rts2TargetSet (targetType);
+		rts2db::TargetSet typeSet = rts2db::TargetSet (targetType);
+		typeSet.load ();
 		return printTargets (typeSet);
 	}
 
-	Rts2TargetSet tar_set = Rts2TargetSet (targets);
+	rts2db::TargetSet tar_set = rts2db::TargetSet ();
+	tar_set.load (targets);
 	return printTargets (tar_set);
 }
 

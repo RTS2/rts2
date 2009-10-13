@@ -18,7 +18,7 @@
  */
 
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/targetset.h"
 #include "../utils/rts2askchoice.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
@@ -54,7 +54,7 @@ class Rts2TargetApp:public Rts2AppDb
 	private:
 		int op;
 		std::list < int >tar_ids;
-		Rts2TargetSet *target_set;
+		rts2db::TargetSet *target_set;
 
 		float new_priority;
 		float new_bonus;
@@ -242,7 +242,8 @@ Rts2TargetApp::doProcessing ()
 		std::cerr << "No target specified, exiting." << std::endl;
 		return -1;
 	}
-	target_set = new Rts2TargetSet (tar_ids);
+	target_set = new rts2db::TargetSet ();
+	target_set->load (tar_ids);
 	if ((op & OP_MASK_EN) == OP_ENABLE)
 	{
 		target_set->setTargetEnabled (true, true);

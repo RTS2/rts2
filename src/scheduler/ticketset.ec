@@ -37,7 +37,7 @@ TicketSet::~TicketSet ()
 
 
 void
-TicketSet::load (Rts2TargetSet *tarSet)
+TicketSet::load (rts2db::TargetSet *tarSet)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_schedticket_id;
@@ -118,7 +118,7 @@ TicketSet::load (Rts2TargetSet *tarSet)
 
 
 void
-TicketSet::constructFromObsSet (Rts2TargetSet *tarSet, rts2db::ObservationSet &obsSet)
+TicketSet::constructFromObsSet (rts2db::TargetSet *tarSet, rts2db::ObservationSet &obsSet)
 {
 	int ticket_id = 1;
 	std::map <int, int> tarObs = obsSet.getTargetObservations ();

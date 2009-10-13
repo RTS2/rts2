@@ -480,6 +480,8 @@ fi
 AC_SUBST(LIB_JPEG)
 AC_SUBST(JPEG_CFLAGS)
 
+AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
+
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF

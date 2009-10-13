@@ -24,7 +24,7 @@
 #include "rts2targetell.h"
 #include "rts2obs.h"
 #include "observationset.h"
-#include "rts2targetset.h"
+#include "targetset.h"
 
 #include "../utils/infoval.h"
 #include "../utils/rts2app.h"
@@ -1654,18 +1654,19 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
 }
 
 
-Rts2TargetSet Target::getTargets (double radius)
+rts2db::TargetSet Target::getTargets (double radius)
 {
 	return getTargets (radius, ln_get_julian_from_sys ());
 }
 
 
-Rts2TargetSet Target::getTargets (double radius, double JD)
+rts2db::TargetSet Target::getTargets (double radius, double JD)
 {
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	Rts2TargetSet tarset = Rts2TargetSet (&tar_pos, radius);
+	rts2db::TargetSet tarset = rts2db::TargetSet (&tar_pos, radius);
+	tarset.load ();
 	return tarset;
 }
 
@@ -1673,7 +1674,7 @@ Rts2TargetSet Target::getTargets (double radius, double JD)
 int
 Target::printTargets (double radius, double JD, std::ostream &_os)
 {
-	Rts2TargetSet tarset = getTargets (radius, JD);
+	rts2db::TargetSet tarset = getTargets (radius, JD);
 	_os << tarset;
 
 	return tarset.size ();
@@ -2032,11 +2033,11 @@ Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	printExtra (_os, JD);
 }
 
-
-Rts2TargetSet *
-Target::getCalTargets (double JD, double minaird)
+rts2db::TargetSet * Target::getCalTargets (double JD, double minaird)
 {
-	return new Rts2TargetSetCalibration (this, JD, minaird);
+	rts2db::TargetSetCalibration *ret = new rts2db::TargetSetCalibration (this, JD, minaird);
+	ret->load ();
+	return ret;
 }
 
 

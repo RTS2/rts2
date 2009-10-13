@@ -28,7 +28,7 @@
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2messagedb.h"
-#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/targetset.h"
 #include "../utilsdb/rts2user.h"
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
@@ -1230,12 +1230,14 @@ class ListTargets: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2TargetSet *tar_set = new Rts2TargetSet ();
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
+			tar_set->load ();
+
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
 				Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
@@ -1281,14 +1283,16 @@ class ListTargetsByType: public SessionMethod
 				target_types[j] = *(((std::string)params[j]).c_str());
 			target_types[j] = '\0';
 
-			Rts2TargetSet *tar_set = new Rts2TargetSet (target_types);
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet (target_types);
+			tar_set->load ();
+
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
 
 			double JD = ln_get_julian_from_sys ();
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
 				Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
@@ -1340,12 +1344,12 @@ class TargetInfo: public SessionMethod
 			for (i = 0; i < params.size(); i++)
 				targets.push_back (params[i]);
 
-			Rts2TargetSet *tar_set;
-			tar_set = new Rts2TargetSet (targets);
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
+			tar_set->load (targets);
 
 			i = 0;
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
 			{
 				JD = ln_get_julian_from_sys ();
 
@@ -1657,6 +1661,8 @@ Graph graph ("/graph", &xmlrpc_server);
 #endif /* HAVE_LIBJPEG */
 
 Targets targets ("/targets", &xmlrpc_server);
+
+AddTarget addTarget ("/addtarget", &xmlrpc_server);
 
 class UserLogin: public XmlRpcServerMethod
 {

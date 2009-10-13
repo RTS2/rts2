@@ -88,23 +88,5 @@ class Rts2ImgSetPosition:public Rts2ImgSet
 		virtual int load ();
 };
 
-class Rts2ImgSetFlats:public Rts2ImgSet
-{
-	private:
-		Rts2ObsSet *observations;
-	public:
-		Rts2ImgSetFlats (Rts2ObsSet * in_observations);
-		virtual int load ();
-};
-
-class Rts2ImgSetDarks:public Rts2ImgSet
-{
-	private:
-		Rts2ObsSet *observations;
-	public:
-		Rts2ImgSetDarks (Rts2ObsSet * in_observations);
-		virtual int load ();
-};
-
 std::ostream & operator << (std::ostream & _os, Rts2ImgSet & img_set);
 #endif							 /* !__RTS2_IMGSET__ */

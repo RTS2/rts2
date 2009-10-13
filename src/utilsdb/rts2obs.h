@@ -117,7 +117,7 @@ class Rts2Obs
 		 */
 		Target *getTarget ()
 		{
-                 	Rts2TargetSet::iterator iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
+                 	rts2db::TargetSet::iterator iter = rts2db::TargetSetSingleton::instance ()->find (getTargetId ());
 			if (iter == rts2db::TargetSetSingleton::instance ()->end ())
     			{
                          	return NULL;

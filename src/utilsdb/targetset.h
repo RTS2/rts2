@@ -26,7 +26,13 @@
 #include <vector>
 #include <ostream>
 
-#include "target.h"
+#include "../utils/utilsfunc.h"
+
+class Target;
+class TargetGRB;
+
+namespace rts2db
+{
 
 /**
  * Error class for addSet operation.
@@ -78,30 +84,15 @@ class TargetNotFound
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TargetSet:public std::map <int, Target * >
+class TargetSet:public std::map <int, Target * >
 {
-	protected:
-		void load (std::string in_where, std::string order_by);
-		void load (std::list < int >&target_ids);
-
-		void printTypeWhere (std::ostream & _os, const char *target_type);
-
-		struct ln_lnlat_posn *obs;
 	public:
 		/**
 		 * Construct set of all targets.
 		 *
 		 * @param in_obs Observer location.
-		 * @param do_load If true, load all targets details.
 		 */
-		Rts2TargetSet (struct ln_lnlat_posn *in_obs, bool do_load);
-
-		/**
-		 * Construct set of all targets.
-		 *
-		 * @param in_obs Observer location.
-		 */
-		Rts2TargetSet (struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (struct ln_lnlat_posn *in_obs = NULL);
 
 		/**
 		 * Construct set of targets around given position.
@@ -110,15 +101,7 @@ class Rts2TargetSet:public std::map <int, Target * >
 		 * @param radius Radius in arcdeg of the circle in which search will be performed.
 		 * @param in_obs Observer location.
 		 */
-		Rts2TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs = NULL);
-
-		/**
-		 * Construct set of targets from list of targets IDs.
-		 *
-		 * @param tar_ids Id of targets.
-		 * @param in_obs Observer location.
-		 */
-		Rts2TargetSet (std::list < int >&tar_ids, struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (struct ln_equ_posn *pos, double radius, struct ln_lnlat_posn *in_obs = NULL);
 
 		/**
 		 * Construct set of targets with given type.
@@ -126,9 +109,23 @@ class Rts2TargetSet:public std::map <int, Target * >
 		 * @param target_type Type(s) of targets.
 		 * @param in_obs Observer location.
 		 */
-		Rts2TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
+		TargetSet (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
 
-		virtual ~Rts2TargetSet (void);
+		virtual ~TargetSet (void);
+
+		/**
+		 * Load target set from database.
+		 *
+		 * @throw SqlError if target set cannot be loaded.
+		 */
+		virtual void load ();
+
+		/**
+		 * Create set from given target ids.
+		 *
+		 * @throw SqlError when some target cannot be created.
+		 */
+		void load (std::list < int >&target_ids);
 
 		/**
 		 * Add to target set targets from the other set.
@@ -137,7 +134,7 @@ class Rts2TargetSet:public std::map <int, Target * >
 		 *
 		 * @throw NotDisjunct(target_id) if sets have not empty join set. Parameter is id of target which is in both.
 		 */
-		void addSet (Rts2TargetSet &_set);
+		void addSet (TargetSet &_set);
 
 		/**
 		 * Finds in set target with a given id.
@@ -161,49 +158,67 @@ class Rts2TargetSet:public std::map <int, Target * >
 		std::ostream &print (std::ostream & _os, double JD);
 
 		std::ostream &printBonusList (std::ostream & _os, double JD);
+
+	protected:
+		void printTypeWhere (std::ostream & _os, const char *target_type);
+
+		struct ln_lnlat_posn *obs;
+
+		// values for load operation
+		std::string where;
+		std::string order_by;
 };
 
-class Rts2TargetSetSelectable:public Rts2TargetSet
+class TargetSetSelectable:public TargetSet
 {
 	public:
-		Rts2TargetSetSelectable (struct ln_lnlat_posn *in_obs = NULL);
-		Rts2TargetSetSelectable (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
+		TargetSetSelectable (struct ln_lnlat_posn *in_obs = NULL);
+		TargetSetSelectable (const char *target_type, struct ln_lnlat_posn *in_obs = NULL);
+};
+
+/**
+ * Create list of targets with similar name. The search is done by:
+ *  - replacing all spaces in name with %
+ *  - prefix and suffix name with %
+ *  - select from target database every target, which name is like name created.
+ * Like operator works by searching for string which match given string. % represent any character.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class TargetSetByName:public TargetSet
+{
+	public:
+		TargetSetByName (const char *name);
 };
 
 /**
  * Holds calibration targets
  */
-class
-Rts2TargetSetCalibration:public Rts2TargetSet
+class TargetSetCalibration:public TargetSet
 {
 	public:
-		Rts2TargetSetCalibration (Target * in_masterTarget, double JD, double airmdis = rts2_nan ("f"));
+		TargetSetCalibration (Target * in_masterTarget, double JD, double airmdis = rts2_nan ("f"));
 };
-
-class TargetGRB;
 
 /**
  * Holds last GRBs.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class  Rts2TargetSetGrb:public std::vector <TargetGRB *>
+class  TargetSetGrb:public std::vector <TargetGRB *>
 {
-	private:
-		void load ();
-	protected:
-
-		struct ln_lnlat_posn *obs;
 	public:
-		Rts2TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL);
-		virtual ~Rts2TargetSetGrb (void);
+		TargetSetGrb (struct ln_lnlat_posn *in_obs = NULL);
+		virtual ~TargetSetGrb (void);
+
+		virtual void load ();
 
 		void printGrbList (std::ostream & _os);
+
+	protected:
+		struct ln_lnlat_posn *obs;
 };
 
-
-namespace rts2db
-{
 
 /**
  * Singleton which holds list of all targets.
@@ -217,16 +232,20 @@ class TargetSetSingleton
 		{
 		}
 
-		static Rts2TargetSet *instance ()
+		static TargetSet *instance ()
 		{
-			static Rts2TargetSet *pInstance;
+			static TargetSet *pInstance;
 			if (pInstance == NULL)
-				pInstance = new Rts2TargetSet ();
+			{
+				pInstance = new TargetSet ();
+				pInstance->load ();
+			}
 			return pInstance; 
 		}
 };
 
 }
 
-std::ostream & operator << (std::ostream & _os, Rts2TargetSet & tar_set);
+std::ostream & operator << (std::ostream & _os, rts2db::TargetSet & tar_set);
+
 #endif							 /* !__RTS2_TARGETSET__ */

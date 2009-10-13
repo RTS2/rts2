@@ -23,7 +23,7 @@
 #include "../utilsdb/recvals.h"
 #include "../utilsdb/records.h"
 #include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/targetset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #include "valueplot.h"
@@ -84,6 +84,25 @@ class Targets: public GetRequestAuthorized
 		void listTargets (const char* &response_type, char* &response, int &response_length);
 		void printTarget (Target *tar, const char* &response_type, char* &response, int &response_length);
 		void printTargetImages (Target *tar, const char* &response_type, char* &response, int &response_length);
+		void printTargetObservations (Target *tar, const char* &response_type, char* &response, int &response_length);
+};
+
+/**
+ * Add target to the database. Consists of those steps:
+ *
+
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class AddTarget: public GetRequestAuthorized
+{
+	public:
+		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+
+	private:
+		void askForTarget (const char* &response_type, char* &response, int &response_length);
+		void confimTarget (const char *tar, const char* &response_type, char* &response, int &response_length);
 };
 
 #endif /* HAVE_PGSQL */

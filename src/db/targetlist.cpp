@@ -1,5 +1,24 @@
+/* 
+ * Application which display various lists of targets.
+ * Copyright (C) 2006-2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/targetset.h"
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
 
@@ -97,22 +116,25 @@ Rts2TargetList::init ()
 int
 Rts2TargetList::doProcessing ()
 {
-	Rts2TargetSetGrb *tar_set_grb;
-	Rts2TargetSet *tar_set;
+	rts2db::TargetSetGrb *tar_set_grb;
+	rts2db::TargetSet *tar_set;
 	switch (list)
 	{
 		case LIST_GRB:
-			tar_set_grb = new Rts2TargetSetGrb ();
+			tar_set_grb = new rts2db::TargetSetGrb ();
+			tar_set_grb->load ();
 			tar_set_grb->printGrbList (std::cout);
 			delete tar_set_grb;
 			break;
 		case LIST_SELECTABLE:
-			tar_set = new Rts2TargetSetSelectable (targetType);
+			tar_set = new rts2db::TargetSetSelectable (targetType);
+			tar_set->load ();
 			tar_set->printBonusList (std::cout, ln_get_julian_from_sys ());
 			delete tar_set;
 			break;
 		default:
-			tar_set = new Rts2TargetSet (targetType);
+			tar_set = new rts2db::TargetSet (targetType);
+			tar_set->load ();
 			std::cout << (*tar_set);
 			delete tar_set;
 			break;

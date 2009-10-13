@@ -21,9 +21,12 @@
 #include "httpreq.h"
 
 #ifdef HAVE_PGSQL
+#include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/rts2user.h"
 #endif /* HAVE_PGSQL */
+
+#include "../utils/radecparser.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
@@ -173,6 +176,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					printTargetImages (tar, response_type, response, response_length);
 					break;
 				}
+				if (vals[1] == "obs")
+				{
+					printTargetObservations (tar, response_type, response, response_length);
+					break;
+				}
 			default:
 				throw rts2core::Error ("Invalid path!");
 		}
@@ -184,11 +192,13 @@ void Targets::listTargets (const char* &response_type, char* &response, int &res
 	std::ostringstream _os;
 	_os << "<html><head><title>List of targets</title></head><body><table>";
 
-	Rts2TargetSet ts = Rts2TargetSet ();
+	rts2db::TargetSet ts = rts2db::TargetSet ();
+	ts.load ();
 
-	for (Rts2TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
+	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
-		_os << "<tr><td>" << iter->first << "</td><td>" << iter->second->getTargetName () << "</tr></td>";
+		_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first
+			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></tr></td>";
 	}
 
 	_os << "</table></body></html>";
@@ -203,7 +213,11 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Target " << tar->getTargetName () << "</title></head><body><pre>";
+	_os << "<html><head><title>Target " << tar->getTargetName () << "</title></head><body>";
+
+	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
+
+	_os << "<pre>";
 
 	double JD = ln_get_julian_from_sys ();
 	Rts2InfoValOStream ivos (&_os);
@@ -232,7 +246,10 @@ void Targets::printTargetImages (Target *tar, const char* &response_type, char* 
 
 		for (Rts2ImgSetTarget::iterator iter = is.begin (); iter != is.end (); iter++)
 		{
-			_os << "<tr><td>" << (*iter)->getFileName () << "</td><td>" << (*iter)->getExposureLength () << "</td></tr>";
+			std::string fn = (*iter)->getFileName ();
+			_os << "<tr><td><a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
+				<< "'><img src='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
+				<< "'/></a>" << (*iter)->getFileName () << "</td><td>" << (*iter)->getExposureLength () << "</td></tr>";
 		}
 
 		_os << "</table>";
@@ -243,6 +260,146 @@ void Targets::printTargetImages (Target *tar, const char* &response_type, char* 
 	}
 
 	_os << "</body></html>";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Targets::printTargetObservations (Target *tar, const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	_os << "<html><head><title>Observations of target " << tar->getTargetName () << "</title></head><body>";
+
+	rts2db::ObservationSet os = rts2db::ObservationSet (tar->getTargetID ());
+
+	if (os.size () > 0)
+	{
+		_os << "<table>";
+
+		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
+		{
+			_os << "<tr><td>" << iter->getObsId () << "</td><td>" << iter->getTargetName () << "</td></tr>";
+		}
+
+		_os << "</table>";
+	}
+	else
+	{
+		_os << "<p>There isn't any observation for target " << tar->getTargetName ();
+	}
+
+	_os << "</body></html>";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+{
+	// get path and possibly date range
+	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
+
+	switch (vals.size ())
+	{
+		case 0:
+			askForTarget (response_type, response, response_length);
+			return;
+		case 1:
+			if (vals[0] == "confirm")
+			{
+				confimTarget (params->getString ("target", ""), response_type, response, response_length);
+				return;
+			}
+	}
+
+	throw rts2core::Error ("Unknown action for addtarget");
+}
+
+void AddTarget::askForTarget (const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	_os << "<html><head><title>Add new target</title></head><body>";
+
+	_os << "<p>Please provide anything which can be used to identify what you would like to observer. Valid inputs are:<ul>";
+
+	_os << "<li>RA DEC in various formats. DEC must be divided with + or - sign. Those are valid inputs<ul><li>300 +24</li> <li>10:20 +33:12</li> <li>10:20:30 -12:34:59</li></ul></li>";
+
+	_os << "<li>SIMBAD resolvable name</li>";
+
+	_os << "<li>any target from RTS2 target database</li>";
+
+	_os << "<li>any Minor planet name resolvable by MPEC</li>";
+
+	_os << "<li>one line MPEC</li>";
+
+	_os << "</ul></p><form name='add_target' action='confirm' method='get'><input type='text' name='target'/><input type='submit' value='Add'/></form>";
+
+	_os << "</body></html>";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void AddTarget::confimTarget (const char *tar, const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	if (strlen (tar) == 0)
+	{
+		
+		_os << "<html><head><title>Invalid target</title></head></body><p>Please specify valid target name - it must contain at least one character.</p></body></html>";
+	}
+	else
+	{
+		_os << "<html><head><title>Confirm target</title></head><body>";
+
+		struct ln_equ_posn pos;
+
+		// check if its among already known targets
+		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (tar);
+		ts_n.load ();
+		if (ts_n.size () > 0)
+		{
+			_os << "<p>Following targets with name similar to which you provide were found. Please click on link to select one for scheduling, or continue bellow to create a new one.<ul>";
+
+			for (rts2db::TargetSetByName::iterator iter = ts_n.begin (); iter != ts_n.end (); iter++)
+			{
+				// print target together with option to create schedule from this one..
+				iter->second->getPosition (&pos);
+				_os << "<li><a href='schedule?target_id=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
+			}
+			_os << "</ul></p>";
+		}
+
+		// check if when we parse it by ra dec, we will get something..
+		if (parseRaDec (tar, pos.ra, pos.dec) == 0)
+		{
+			// then look for targets close to this one - within 1 deg
+			rts2db::TargetSet ts_r = rts2db::TargetSet (&pos, 1);
+			ts_r.load ();
+			if (ts_r.size () > 0)
+			{
+				_os << "<p>Following targets were found within one degree from given position. Please click on link to select one for scheduling, or continue bellow entering a new target.<ul>";
+				for (rts2db::TargetSetByName::iterator iter = ts_r.begin (); iter != ts_r.end (); iter++)
+				{
+					// print target together with option to create schedule from this one..
+					iter->second->getPosition (&pos);
+					_os << "<li><a href='schedule?target_id=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
+				}
+				_os << "</ul></p>";
+			}
+		}
+
+		_os << "</body></html>";
+	}
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
