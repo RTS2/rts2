@@ -428,7 +428,7 @@ class JpegPreview:public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 		{
 			// if it is a fits file..
-			if (path.length () > 6 && (path.substr (path.length () - 6)).length () == 6)
+			if (path.length () > 6 && (path.substr (path.length () - 6)) == std::string (".fits"))
 			{
 				response_type = "image/jpeg";
 
