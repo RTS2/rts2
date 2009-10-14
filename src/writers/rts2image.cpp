@@ -923,6 +923,9 @@ void Rts2Image::getValue (const char *name, char **value, int valLen, bool requi
 
 double Rts2Image::getValue (const char *name)
 {
+	if (!getFitsFile ())
+		openImage (NULL, true);
+
 	double ret;
 	fits_read_key_dbl (getFitsFile (), (char *) name, &ret, NULL, &fits_status);
 	if (fits_status != 0)
