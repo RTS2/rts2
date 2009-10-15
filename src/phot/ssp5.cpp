@@ -193,7 +193,7 @@ int SSP5::startIntegrate ()
 	if (req_count->getValueInteger () <= 0)
 		return -1;
 	snprintf (buf, 7, "SI%04i", int (getExposure () / 0.01));
-	if (photConn->writeRead (buf, 6, buf, 6, '\r') < 0)
+	if (photConn->writeRead (buf, 6, buf, 10, '\r') < 0)
 		return -1;
 	if (buf[0] != '!')
 		return -1;
