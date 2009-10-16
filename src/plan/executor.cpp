@@ -120,9 +120,7 @@ class Executor:public Rts2DeviceDb
 
 using namespace rts2plan;
 
-
-Executor::Executor (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
+Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
 	currentTarget = NULL;
 	createValue (scriptCount, "script_count", "number of running scripts",
@@ -177,9 +175,7 @@ Executor::~Executor (void)
 	clearNextTargets ();
 }
 
-
-int
-Executor::processOption (int in_opt)
+int Executor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -195,9 +191,7 @@ Executor::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Executor::reloadConfig ()
+int Executor::reloadConfig ()
 {
 	int ret;
 	Rts2Config *config;
@@ -211,18 +205,14 @@ Executor::reloadConfig ()
 	return 0;
 }
 
-
-int
-Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == doDarks || oldValue == ignoreDay)
 		return 0;
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
-
-Rts2DevClient *
-Executor::createOtherType (Rts2Conn * conn, int other_device_type)
+Rts2DevClient * Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -242,9 +232,7 @@ Executor::createOtherType (Rts2Conn * conn, int other_device_type)
 	}
 }
 
-
-void
-Executor::postEvent (Rts2Event * event)
+void Executor::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -385,17 +373,13 @@ Executor::postEvent (Rts2Event * event)
 	Rts2Device::postEvent (event);
 }
 
-
-void
-Executor::deviceReady (Rts2Conn * conn)
+void Executor::deviceReady (Rts2Conn * conn)
 {
 	if (currentTarget)
 		conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 }
 
-
-int
-Executor::info ()
+int Executor::info ()
 {
 	updateScriptCount ();
 	if (currentTarget)
@@ -439,9 +423,7 @@ Executor::info ()
 	return Rts2DeviceDb::info ();
 }
 
-
-int
-Executor::changeMasterState (int new_state)
+int Executor::changeMasterState (int new_state)
 {
 	if (ignoreDay->getValueBool () == true)
 		return Rts2DeviceDb::changeMasterState (new_state);
@@ -462,6 +444,7 @@ Executor::changeMasterState (int new_state)
 		case (SERVERD_NIGHT | SERVERD_STANDBY):
 		case (SERVERD_DUSK | SERVERD_STANDBY):
 			clearNextTargets ();
+			stop ();
 			// next will be dark..
 			if (doDarks->getValueBool () == true)
 			{
@@ -479,9 +462,7 @@ Executor::changeMasterState (int new_state)
 	return Rts2DeviceDb::changeMasterState (new_state);
 }
 
-
-int
-Executor::setNext (int nextId)
+int Executor::setNext (int nextId)
 {
 	if (nextTargets.size() != 0)
 	{
@@ -493,9 +474,7 @@ Executor::setNext (int nextId)
 	return queueTarget (nextId);
 }
 
-
-int
-Executor::queueTarget (int tarId)
+int Executor::queueTarget (int tarId)
 {
 	Target *nt = createTarget (tarId, observer);
 	if (!nt)
@@ -516,9 +495,7 @@ Executor::queueTarget (int tarId)
 	return 0;
 }
 
-
-int
-Executor::setNow (int nextId)
+int Executor::setNow (int nextId)
 {
 	Target *newTarget;
 
@@ -535,9 +512,7 @@ Executor::setNow (int nextId)
 	return setNow (newTarget);
 }
 
-
-int
-Executor::setNow (Target * newTarget)
+int Executor::setNow (Target * newTarget)
 {
 	if (currentTarget)
 	{
@@ -562,9 +537,7 @@ Executor::setNow (Target * newTarget)
 	return 0;
 }
 
-
-int
-Executor::setGrb (int grbId)
+int Executor::setGrb (int grbId)
 {
 	Target *grbTarget;
 	struct ln_hrz_posn grbHrz;
@@ -624,9 +597,7 @@ Executor::setGrb (int grbId)
 	return 0;
 }
 
-
-int
-Executor::setShower ()
+int Executor::setShower ()
 {
 	// is during night and ready?
 	if (!(getMasterState () == SERVERD_NIGHT))
@@ -639,9 +610,7 @@ Executor::setShower ()
 	return setNow (TARGET_SHOWER);
 }
 
-
-int
-Executor::stop ()
+int Executor::stop ()
 {
 	postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
 	updateScriptCount ();
@@ -650,9 +619,7 @@ Executor::stop ()
 	return 0;
 }
 
-
-void
-Executor::clearNextTargets ()
+void Executor::clearNextTargets ()
 {
 	for (std::list <Target *>::iterator iter = nextTargets.begin (); iter != nextTargets.end (); iter++)
 	{
@@ -661,9 +628,7 @@ Executor::clearNextTargets ()
 	nextTargets.clear ();
 }
 
-
-void
-Executor::queDarks ()
+void Executor::queDarks ()
 {
 	Rts2Conn *minConn = getMinConn ("que_size");
 	if (!minConn)
@@ -671,9 +636,7 @@ Executor::queDarks ()
 	minConn->queCommand (new Rts2Command (this, "que_darks"));
 }
 
-
-void
-Executor::queFlats ()
+void Executor::queFlats ()
 {
 	Rts2Conn *minConn = getMinConn ("que_size");
 	if (!minConn)
@@ -681,9 +644,7 @@ Executor::queFlats ()
 	minConn->queCommand (new Rts2Command (this, "que_flats"));
 }
 
-
-void
-Executor::beforeChange ()
+void Executor::beforeChange ()
 {
 	// both currentTarget and nextTarget are defined
 	char currType;
@@ -702,9 +663,7 @@ Executor::beforeChange ()
 		queFlats ();
 }
 
-
-void
-Executor::doSwitch ()
+void Executor::doSwitch ()
 {
 	int ret;
 	int nextId;
@@ -751,9 +710,7 @@ Executor::doSwitch ()
 	}
 }
 
-
-void
-Executor::switchTarget ()
+void Executor::switchTarget ()
 {
 	if (((getState () & EXEC_MASK_END) == EXEC_END)
 		|| (autoLoop->getValueBool () == false && nextTargets.size () == 0))
@@ -804,9 +761,7 @@ Executor::switchTarget ()
 	infoAll ();
 }
 
-
-void
-Executor::processTarget (Target * in_target)
+void Executor::processTarget (Target * in_target)
 {
 	int ret;
 	// test for final acq..
@@ -826,18 +781,14 @@ Executor::processTarget (Target * in_target)
 		delete in_target;
 }
 
-
-void
-Executor::updateScriptCount ()
+void Executor::updateScriptCount ()
 {
 	int scriptRunning = 0;
 	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &scriptRunning));
 	scriptCount->setValueInteger (scriptRunning);
 }
 
-
-int
-Executor::commandAuthorized (Rts2Conn * conn)
+int Executor::commandAuthorized (Rts2Conn * conn)
 {
 	int tar_id;
 	if (conn->isCommand ("grb"))
@@ -895,9 +846,7 @@ Executor::commandAuthorized (Rts2Conn * conn)
 	return Rts2DeviceDb::commandAuthorized (conn);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Executor executor = Executor (argc, argv);
 	return executor.run ();
