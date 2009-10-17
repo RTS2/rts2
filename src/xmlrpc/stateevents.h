@@ -23,7 +23,7 @@
 #include <string>
 #include <list>
 
-#include "../utils/rts2block.h"
+#include "emailaction.h"
 
 namespace rts2xmlrpc
 {
@@ -35,14 +35,6 @@ namespace rts2xmlrpc
  */
 class StateChange
 {
-	private:
-		std::string deviceName;
-		int changeMask;
-		int newStateValue;
-	
-	protected:
-		int getChangeMask () { return changeMask; };
-
 	public:
 		StateChange (std::string _deviceName, int _changeMask, int _newStateValue)
 		{
@@ -75,7 +67,15 @@ class StateChange
 			return deviceName == _deviceName;
 		}
 
-		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime) = 0;
+		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime) = 0;
+
+	protected:
+		int getChangeMask () { return changeMask; };
+
+	private:
+		std::string deviceName;
+		int changeMask;
+		int newStateValue;
 };
 
 
@@ -94,7 +94,7 @@ class StateChangeRecord: public StateChange
 			dbValueId = -1;
 		}
 
-		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime);
+		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime);
 };
 
 
@@ -106,21 +106,36 @@ class StateChangeRecord: public StateChange
  */
 class StateChangeCommand: public StateChange
 {
-	private:
-		std::string deviceName;
-		int changeMask;
-		int newStateValue;
-		std::string commandName;
-
 	public:
 		StateChangeCommand (std::string _deviceName, int _changeMask, int _newStateValue, std::string _commandName):StateChange (_deviceName, _changeMask, _newStateValue)
 		{
 			commandName = _commandName;
 		}
 
-		virtual void run (Rts2Block *_master, Rts2Conn *_conn, double validTime);
+		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime);
+
+	private:
+		std::string deviceName;
+		int changeMask;
+		int newStateValue;
+		std::string commandName;
 };
 
+/**
+ * Send email to given recepient.
+ */
+class StateChangeEmail: public StateChange, public EmailAction
+{
+	public:
+		StateChangeEmail (std::string _deviceName, int _changeMask, int _newStateValue):StateChange (_deviceName, _changeMask, _newStateValue), EmailAction ()
+		{
+		}
+
+		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
+		{
+			EmailAction::run (_master, _conn, validTime);
+		}
+};
 
 /**
  * Holds a list of StateChangeCommands.

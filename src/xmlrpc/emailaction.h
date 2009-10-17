@@ -1,5 +1,5 @@
 /* 
- * State changes triggering infrastructure. 
+ * Action items for sending out emails.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -16,34 +16,38 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+#ifndef __RTS2_EMAILACTION__
+#define __RTS2_EMAILACTION__
 
-#include "xmlrpcd.h"
+#include <list>
+#include <libxml/parser.h>
+#include <string>
 
-#include "../utils/connfork.h"
+#include "../utils/rts2conn.h"
 
-using namespace rts2xmlrpc;
-
-#ifndef HAVE_PGSQL
-
-void StateChangeRecord::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
+namespace rts2xmlrpc
 {
-	std::cout << Timestamp (validTime) << " state of device: " << _conn->getName () << " " << _conn->getStateString () << std::endl;
+
+class XmlRpcd;
+
+class EmailAction
+{
+	public:
+		EmailAction () {}
+
+		void parse (xmlNodePtr emailNode);
+
+		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, int validTime);
+
+	private:
+		std::list <std::string> to;
+		std::list <std::string> cc;
+		std::list <std::string> bcc;
+
+		std::string subject;
+		std::string body;
+};
+
 }
 
-#endif /* HAVE_PGSQL */
-
-void StateChangeCommand::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
-{
-	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
-	cf->addArg (_conn->getName ());
-	cf->addArg (_conn->getStateString ());
-	ret = cf->init ();
-	if (ret)
-	{
-		delete cf;
-		return;
-	}
-
-	_master->addConnection (cf);
-}
+#endif /* !__RTS2_EMAILACTION__ */

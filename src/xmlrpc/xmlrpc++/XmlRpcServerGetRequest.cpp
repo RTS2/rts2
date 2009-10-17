@@ -1,5 +1,6 @@
 
 #include "base64.h"
+#include "urlencoding.h"
 #include "XmlRpcServerGetRequest.h"
 #include "XmlRpcServer.h"
 
@@ -31,22 +32,39 @@ namespace XmlRpc
 		return def_val;
 	}
 
+	double HttpParams::getDouble (const char *_name, double def_val)
+	{
+		const char *v = getString (_name, NULL);
+		char *err;
+		if (v == NULL)
+			return def_val;
+		double r = strtod (v, &err);
+		if (*v != '\0' && *err == '\0')
+			return r;
+		return def_val;
+	}
+
 	void HttpParams::parseParam (const std::string& ps)
 	{
 		// find = to split param and value
 		std::string::size_type pv = ps.find ('=');
 
-		int iostatus = 0;
 		if (pv != std::string::npos)
 		{
 			std::string p_n = ps.substr (0, pv);
 			std::string p_v = ps.substr (pv + 1);
 
+			urldecode (p_n);
+			urldecode (p_v);
+
 			addParam (p_n, p_v);
 		}
 		else
 		{
-			addParam (ps, "");
+			std::string p_s = ps;
+			urldecode (p_s);
+
+			addParam (p_s, "");
 		}
 	}
 

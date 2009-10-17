@@ -42,19 +42,11 @@ class XmlError
 	private:
 		std::string desc;
 	public:
-		XmlError ()
-		{
-		}
+		XmlError () {}
 
-		XmlError (std::string _desc)
-		{
-			desc = _desc;
-		}
+		XmlError (std::string _desc) { desc = _desc; }
 
-		void setDescription (std::ostringstream &_os)
-		{
-			desc = _os.str ();
-		}
+		void setDescription (std::ostringstream &_os) { desc = _os.str (); }
 
 		friend std::ostream & operator << (std::ostream &_os, XmlError & _err)
 		{
@@ -72,11 +64,26 @@ class XmlError
 class XmlMissingAttribute: public XmlError
 {
 	public:
-		XmlMissingAttribute (xmlNodePtr _node, std::string attr_name)
-			:XmlError ()
+		XmlMissingAttribute (xmlNodePtr _node, std::string attr_name):XmlError ()
 		{
 			std::ostringstream _os;
 			_os << "cannot find attribute " << attr_name << " in node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
+
+/**
+ * Error thrown when elemant is missing in sequence.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlMissingElement: public XmlError
+{
+	public:
+		XmlMissingElement (xmlNodePtr _node, std::string _name):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "cannot find element " << _name << " in node " << xmlGetNodePath (_node) << " at line " << xmlGetLineNo (_node);
 			setDescription (_os);
 		}
 };
@@ -89,15 +96,29 @@ class XmlMissingAttribute: public XmlError
 class XmlUnexpectedNode: public XmlError
 {
 	public:
-		XmlUnexpectedNode (xmlNodePtr _node)
-			:XmlError ()
+		XmlUnexpectedNode (xmlNodePtr _node):XmlError ()
 		{
 			std::ostringstream _os;
-			_os << "unexpected node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			_os << "unexpected node " << xmlGetNodePath (_node) << " at line " << xmlGetLineNo (_node);
 			setDescription (_os);
 		}
 };
 
+/**
+ * Error thrown when empty node, which should have content, is encoutered.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlEmptyNode: public XmlError
+{
+	public:
+		XmlEmptyNode (xmlNodePtr _node):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "empty node " << xmlGetNodePath (_node) << " an line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
 
 /**
  * Holder for events which can occur on devices.
@@ -115,9 +136,7 @@ class Events
 		ValueCommands valueCommands;
 
 	public:
-		Events ()
-		{
-		}
+		Events () {}
 
 		/**
 		 * Load a list of StateChangeCommand from file.

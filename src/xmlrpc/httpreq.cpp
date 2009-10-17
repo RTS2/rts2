@@ -315,6 +315,16 @@ void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 				confimTarget (params->getString ("target", ""), response_type, response, response_length);
 				return;
 			}
+			if (vals[0] == "new_target")
+			{
+				newTarget (params->getString ("oriname", ""), params->getString ("name", ""), params->getInteger ("tarid", INT_MAX), params->getDouble ("ra", rts2_nan ("f")), params->getDouble ("dec", rts2_nan ("f")), response_type, response, response_length);
+				return;
+			}
+			if (vals[0] == "schedule")
+			{
+				schedule  (params->getInteger ("tarid", INT_MAX), response_type, response, response_length);
+				return;
+			}
 	}
 
 	throw rts2core::Error ("Unknown action for addtarget");
@@ -338,7 +348,7 @@ void AddTarget::askForTarget (const char* &response_type, char* &response, int &
 
 	_os << "<li>one line MPEC</li>";
 
-	_os << "</ul></p><form name='add_target' action='confirm' method='get'><input type='text' name='target'/><input type='submit' value='Add'/></form>";
+	_os << "</ul></p><form name='add_target' action='confirm' method='get'><input type='text' textwidth='20' name='target'/><input type='submit' value='Add'/></form>";
 
 	_os << "</body></html>";
 
@@ -363,9 +373,13 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 
 		struct ln_equ_posn pos;
 
+		pos.ra = pos.dec = rts2_nan ("f");
+
 		// check if its among already known targets
 		rts2db::TargetSetByName ts_n = rts2db::TargetSetByName (tar);
 		ts_n.load ();
+
+		_os << "<p>You entered " << tar << "</p>";
 		if (ts_n.size () > 0)
 		{
 			_os << "<p>Following targets with name similar to which you provide were found. Please click on link to select one for scheduling, or continue bellow to create a new one.<ul>";
@@ -374,7 +388,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 			{
 				// print target together with option to create schedule from this one..
 				iter->second->getPosition (&pos);
-				_os << "<li><a href='schedule?target_id=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
+				_os << "<li><a href='schedule?tarid=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
 			}
 			_os << "</ul></p>";
 		}
@@ -392,14 +406,74 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 				{
 					// print target together with option to create schedule from this one..
 					iter->second->getPosition (&pos);
-					_os << "<li><a href='schedule?target_id=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
+					_os << "<li><a href='schedule?tarid=" << iter->second->getTargetID () << "'>" << iter->second->getTargetName () << "</a> " << LibnovaRa (pos.ra) << " " << LibnovaDec (pos.dec) << "</li>";
 				}
 				_os << "</ul></p>";
 			}
 		}
+		// check for simbad
+
+		// print new target
+		if (! (isnan (pos.ra) || isnan (pos.dec)))
+		{
+			_os << "If you would like to enter new target with RA DEC " << LibnovaRaDec (pos.ra, pos.dec)
+				<< ", then fill fields bellow and click submit: <form name='new_target' action='new_target' method='get'><input type='hidden' name='ra' value='"
+				<< pos.ra << "'/><input type='hidden' name='dec' value='" << pos.dec 
+				<< "'><input type='hidden' name='oriname' value='" << tar << "'/>Target name:<input type='text' name='name' value='"
+				<< tar << "'/><br/>Optional target ID - left blank for generated<input type='text' name='tarid' value=' '/><br/><input type='submit' value='Create target'/></form>";
+		}
 
 		_os << "</body></html>";
 	}
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void AddTarget::newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	ConstTarget *constTarget = new ConstTarget ();
+	constTarget->setPosition (ra, dec);
+	constTarget->setTargetName (name);
+	constTarget->setTargetType (TYPE_OPORTUNITY);
+
+	int ret;
+
+	if (tarid != INT_MAX)
+		ret = constTarget->save (false, tarid);
+	else
+		ret = ((Target *) constTarget)->save (false);
+	
+	if (ret)
+		throw XmlRpcException ("Target with given ID already exists");
+
+	_os << "<html><head><title>Created new target.</title></head><body><p>Target with name " << name << " and ID " << constTarget->getTargetID ()
+		<< " sucessfully created. Please click <a href='schedule?tarid=" << constTarget->getTargetID ()
+		<< "'>here</a> to continue with scheduling the target.</p></body></html>";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void AddTarget::schedule (int tarid, const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	Target *tar = createTarget (tarid, Rts2Config::instance ()->getObserver ());
+
+	if (tar == NULL)
+		throw XmlRpcException ("Cannot find target with given ID!");
+
+	_os << "<html><head><title>Scheduling target " << tar->getTargetName ()
+		<< "</title></head><body><p>Please choose how your observations should be scheduled and peformed:<form name=''";
+
+	_os << "</p></body></html>";
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();

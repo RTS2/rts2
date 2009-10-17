@@ -103,6 +103,8 @@ class AddTarget: public GetRequestAuthorized
 	private:
 		void askForTarget (const char* &response_type, char* &response, int &response_length);
 		void confimTarget (const char *tar, const char* &response_type, char* &response, int &response_length);
+		void newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, int &response_length);
+		void schedule (int tarid, const char* &response_type, char* &response, int &response_length);
 };
 
 #endif /* HAVE_PGSQL */

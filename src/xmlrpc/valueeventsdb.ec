@@ -17,11 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "valueevents.h"
-#include "message.h"
+#include "xmlrpcd.h"
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2logstream.h"
 #include "../utilsdb/sqlerror.h"
 
 EXEC SQL include sqlca;
@@ -101,7 +98,7 @@ void ValueChangeRecord::recordValueDouble (int recval_id, double val, double val
 		throw rts2db::SqlError ();
 }
 
-void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
+void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 {
 
 	std::ostringstream _os;

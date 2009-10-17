@@ -17,18 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "stateevents.h"
-#include "message.h"
+#include "xmlrpcd.h"
 
-#include "../utils/rts2block.h"
-#include "../utils/rts2logstream.h"
 #include "../utilsdb/sqlerror.h"
 
 EXEC SQL include sqlca;
 
 using namespace rts2xmlrpc;
 
-void StateChangeRecord::run (Rts2Block *_master, Rts2Conn *_conn, double validTime)
+void StateChangeRecord::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id = dbValueId;

@@ -1,5 +1,5 @@
 /* 
- * State changes triggering infrastructure. 
+ * URL encoding and decoding support libraries.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,33 +17,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "xmlrpcd.h"
+#include <string>
 
-#include "../utils/connfork.h"
-
-using namespace rts2xmlrpc;
-
-#ifndef HAVE_PGSQL
-
-void StateChangeRecord::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
+namespace XmlRpc
 {
-	std::cout << Timestamp (validTime) << " state of device: " << _conn->getName () << " " << _conn->getStateString () << std::endl;
-}
 
-#endif /* HAVE_PGSQL */
+	/**
+	 * Encode string to URL percent encoding. Escape all unsafe characters to URL percent encoding.
+	 */
+	void urlencode (std::string &url);
 
-void StateChangeCommand::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
-{
-	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
-	cf->addArg (_conn->getName ());
-	cf->addArg (_conn->getStateString ());
-	ret = cf->init ();
-	if (ret)
-	{
-		delete cf;
-		return;
-	}
-
-	_master->addConnection (cf);
+	/**
+	 * Decode string from URL percent encoding.
+	 */
+	void urldecode (std::string &url);
 }

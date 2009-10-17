@@ -59,6 +59,7 @@ using namespace Magick;
 #include <unistd.h>
 
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
+#define OPT_NO_EMAILS           OPT_LOCAL + 77
 
 using namespace XmlRpc;
 
@@ -108,6 +109,9 @@ int XmlRpcd::processOption (int in_opt)
 			break;
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
+			break;
+		case OPT_NO_EMAILS:
+			send_emails->setValueBool (false);
 			break;
 #ifdef HAVE_PGSQL
 		default:
@@ -167,6 +171,18 @@ int XmlRpcd::init ()
 	return ret;
 }
 
+int XmlRpcd::setValue (Rts2Value *old_value, Rts2Value *new_value)
+{
+	if (old_value == send_emails)
+		return 0;
+
+#ifdef HAVE_PGSQL
+	return Rts2DeviceDb::setValue (old_value, new_value);
+#else
+	return Rts2Device::setValue (old_value, new_value);
+#endif
+}
+
 void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
@@ -209,6 +225,10 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
+
+	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails");
+	send_emails->setValueBool (true);
+
 #ifndef HAVE_PGSQL
 	config_file = NULL;
 
@@ -216,6 +236,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 #endif
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
+	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
 	XmlRpc::setVerbosity (0);
 }
 

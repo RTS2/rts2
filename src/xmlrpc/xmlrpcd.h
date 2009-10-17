@@ -83,32 +83,6 @@ class XmlRpcd:public Rts2DeviceDb
 class XmlRpcd:public Rts2Device
 #endif
 {
-	private:
-		int rpcPort;
-		const char *stateChangeFile;
-		std::map <std::string, Session*> sessions;
-
-		std::deque <Rts2Message> messages;
-
-		Events events;
-
-#ifndef HAVE_PGSQL
-		const char *config_file;
-#endif
-
-		std::string page_prefix;
-
-	protected:
-#ifndef HAVE_PGSQL
-		virtual int willConnect (Rts2Address * _addr);
-#endif
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
-
-		virtual void signaledHUP ();
-
 	public:
 		XmlRpcd (int argc, char **argv);
 		virtual ~XmlRpcd ();
@@ -142,6 +116,11 @@ class XmlRpcd:public Rts2Device
 		bool existsSession (std::string sessionId);
 
 		/**
+		 * If XmlRpcd is allowed to send emails.
+		 */
+		bool sendEmails () { return send_emails->getValueBool (); }
+
+		/**
 		 * Returns messages buffer.
 		 */
 		std::deque <Rts2Message> & getMessages ()
@@ -157,6 +136,34 @@ class XmlRpcd:public Rts2Device
 			return page_prefix.c_str ();
 		}
 
+	protected:
+#ifndef HAVE_PGSQL
+		virtual int willConnect (Rts2Address * _addr);
+#endif
+		virtual int processOption (int in_opt);
+		virtual int init ();
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+		virtual void addSelectSocks ();
+		virtual void selectSuccess ();
+
+		virtual void signaledHUP ();
+
+	private:
+		int rpcPort;
+		const char *stateChangeFile;
+		std::map <std::string, Session*> sessions;
+
+		std::deque <Rts2Message> messages;
+
+		Events events;
+
+		Rts2ValueBool *send_emails;
+
+#ifndef HAVE_PGSQL
+		const char *config_file;
+#endif
+
+		std::string page_prefix;
 };
 
 };

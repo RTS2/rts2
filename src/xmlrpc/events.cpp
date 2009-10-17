@@ -30,9 +30,7 @@
 
 using namespace rts2xmlrpc;
 
-
-void
-Events::parseState (xmlNodePtr event, std::string deviceName)
+void Events::parseState (xmlNodePtr event, std::string deviceName)
 {
 	xmlAttrPtr properties = event->properties;
 	int changeMask = -1;
@@ -58,10 +56,8 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 	
 	xmlNodePtr action = event->children;
 	if (action == NULL)
-	{
-		logStream (MESSAGE_ERROR) << "device on line " << xmlGetLineNo (event) << " does not specify action type" << sendLog;
-		return;
-	}
+		throw XmlEmptyNode (event);
+
 	for (; action != NULL; action = action->next)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
@@ -71,12 +67,17 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
 			if (action->children == NULL)
-			{
-				logStream (MESSAGE_ERROR) << "no action specified on line " << action->line << sendLog;
-				return;
-			}
+				throw XmlEmptyNode (action);
+			
 			commandName = std::string ((char *) action->children->content);
 			stateCommands.push_back (new StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
+		{
+			StateChangeEmail *email = new StateChangeEmail (deviceName, changeMask, newStateValue);
+			email->parse (action);
+			// add to, subject, body,..
+			stateCommands.push_back (email);
 		}
 		else
 		{
@@ -85,9 +86,7 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 	}
 }
 
-
-void
-Events::parseValue (xmlNodePtr event, std::string deviceName)
+void Events::parseValue (xmlNodePtr event, std::string deviceName)
 {
 	xmlAttrPtr valueName = xmlHasProp (event, (xmlChar *) "name");
 	if (valueName == NULL)
@@ -110,6 +109,13 @@ Events::parseValue (xmlNodePtr event, std::string deviceName)
 			valueCommands.push_back (new ValueChangeCommand (deviceName, std::string ((char *) valueName->children->content), cadency,
 				std::string ((char *) action->children->content)));
 		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
+		{
+			ValueChangeEmail *email = new ValueChangeEmail (deviceName, std::string ((char *) valueName->children->content), cadency);
+			email->parse (action);
+			// add to, subject, body,..
+			valueCommands.push_back (email);
+		}
 		else
 		{
 			throw XmlUnexpectedNode (action);
@@ -117,9 +123,7 @@ Events::parseValue (xmlNodePtr event, std::string deviceName)
 	}
 }
 
-
-void
-Events::load (const char *file)
+void Events::load (const char *file)
 {
 	stateCommands.clear ();
 	valueCommands.clear ();

@@ -46,6 +46,7 @@ namespace XmlRpc
 
 			const char *getString (const char *_name, const char *def_val);
 			int getInteger (const char *_name, int def_val);
+			double getDouble (const char *_name, double def_val);
 
 			void parseParam (const std::string& ps);
 	};

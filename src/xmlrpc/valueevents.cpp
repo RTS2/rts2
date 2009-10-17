@@ -17,28 +17,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "valueevents.h"
-#include "message.h"
+#include "xmlrpcd.h"
 
 #include "../utils/connfork.h"
-#include "../utils/timestamp.h"
-#include "../utils/rts2block.h"
-#include "../utils/rts2logstream.h"
-
-#include <config.h>
 
 using namespace rts2xmlrpc;
 
 #ifndef HAVE_PGSQL
 
-void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
+void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 {
 	std::cout << Timestamp (validTime) << " value: " << deviceName << " " << valueName << val->getDisplayValue () << std::endl;
 }
 
 #endif /* ! HAVE_PGSQL */
 
-void ValueChangeCommand::run (Rts2Block *_master, Rts2Value *val, double validTime)
+void ValueChangeCommand::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 {
 	int ret;
 	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
@@ -52,4 +46,9 @@ void ValueChangeCommand::run (Rts2Block *_master, Rts2Value *val, double validTi
 	}
 
 	_master->addConnection (cf);
+}
+
+void ValueChangeEmail::run (XmlRpcd *_master, Rts2Value *val, double validTime)
+{
+	EmailAction::run (_master, NULL, validTime);
 }
