@@ -101,22 +101,6 @@ CREATE TABLE ot (
 	ot_priority	integer
 );
 
---- elliptical target elements; if ell_a < 0, then it's parabollic target
-CREATE TABLE ell (
-        tar_id          integer REFERENCES targets (tar_id),
-        ell_a           float8,
-        ell_e           float8,
-        ell_i           float8,
-        ell_w           float8,
-        ell_omega       float8,
-        ell_n           float8,
-        ell_minpause    interval DEfAULT NULL,
-        ell_priority    integer,
-        ell_JD          float8,
-        ell_mag_1       float8,
-        ell_mag_2       float8
-);
-
 CREATE TABLE terestial (
 	tar_id		integer REFERENCES targets (tar_id),
 	ter_minutes	integer, -- observation every ter_minutes
