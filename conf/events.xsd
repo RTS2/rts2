@@ -6,8 +6,8 @@
   Copyright 2009 Petr Kubanek petr@kubanek.net
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-  <!-- allowed actions -->
   <xs:complexType name="action">
+    <xs:annotation><xs:documentation>Allowed actions.</xs:documentation></xs:annotation>
     <xs:choice maxOccurs="unbounded">
       <xs:element name="record" minOccurs="0">
         <xs:annotation><xs:documentation>
@@ -15,9 +15,27 @@
         </xs:documentation></xs:annotation>
       </xs:element>
       <xs:element name="command" type="xs:string" minOccurs="0"/>
-      <xs:element name="email" type="xs:string" minOccurs="0"/>
-      <xs:element name="sql" type="xs:string" minOccurs="0"/>
+      <xs:element name="email" type="email" minOccurs="0"/>
+<!--      <xs:element name="sql" type="xs:string" minOccurs="0"/> -->
     </xs:choice>
+  </xs:complexType>
+
+  <xs:simpleType name="email_addr">
+    <xs:annotation><xs:documentation>Email address string</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(\w+.*)+@(\w+.*)+.\w+"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="email">
+    <xs:annotation><xs:documentation>Email action. Specifies subject, recepient(s), and text.</xs:documentation></xs:annotation>
+    <xs:sequence>
+      <xs:element name="to" type="email_addr" minOccurs="1" maxOccurs="unbounded"/>
+      <xs:element name="cc" type="email_addr" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="bcc" type="email_addr" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="subject" type="xs:string" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="body" type="xs:string" minOccurs="1" maxOccurs="1"/>
+    </xs:sequence>
   </xs:complexType>
 
   <!-- state changes -->
@@ -56,6 +74,6 @@
 	</xs:complexType>
       </xs:element>
     </xs:sequence>
-  </xs:complexType>
+   </xs:complexType>
   <xs:element name="events" type="events"/>
 </xs:schema>

@@ -10,6 +10,13 @@
     </state>
     <value name="exposure">
       <command>/etc/rts2/event.d/exposure_state</command>
+      <email>
+        <to>example@example.com</to>
+        <cc>name.surname@example.com</cc>
+        <bcc>name_surname@sub_domain.example.com</bcc>
+        <subject>Hey, you are exposing!</subject>
+        <body>It's my pleasure to inform you, that the camera is exposing! Juhuu!</body>
+      </email>
     </value>
   </device>
   <device name="DOME">
