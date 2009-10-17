@@ -87,8 +87,7 @@ std::vector<char> Str2CharVector (std::string text);
  * @param p    Pointer to char which will be filled,
  * @param val  Value which will be copied to character.
  */
-template < typename T >
-void fillIn (char **p, T val)
+template < typename T > void fillIn (char **p, T val)
 {
 	std::ostringstream _os;
 	_os << val;

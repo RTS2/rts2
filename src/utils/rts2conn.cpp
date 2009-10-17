@@ -87,7 +87,6 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 	dataConn = 0;
 }
 
-
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 {
 	buf = new char[MAX_DATA + 1];
@@ -124,7 +123,6 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 	dataConn = 0;
 }
 
-
 Rts2Conn::~Rts2Conn (void)
 {
 	if (sock >= 0)
@@ -136,9 +134,7 @@ Rts2Conn::~Rts2Conn (void)
 	delete[]buf;
 }
 
-
-int
-Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
+int Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 {
 	if (sock >= 0)
 	{
@@ -148,7 +144,6 @@ Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
 	}
 	return 0;
 }
-
 
 std::string Rts2Conn::getCameraChipState (int chipN)
 {
@@ -179,7 +174,6 @@ std::string Rts2Conn::getCameraChipState (int chipN)
 	}
 	return _os.str ();
 }
-
 
 std::string Rts2Conn::getStateString ()
 {
@@ -447,25 +441,19 @@ std::string Rts2Conn::getStateString ()
 	return _os.str ();
 }
 
-
-void
-Rts2Conn::postEvent (Rts2Event * event)
+void Rts2Conn::postEvent (Rts2Event * event)
 {
 	if (otherDevice)
 		otherDevice->postEvent (new Rts2Event (event));
 	Rts2Object::postEvent (event);
 }
 
-
-void
-Rts2Conn::postMaster (Rts2Event * event)
+void Rts2Conn::postMaster (Rts2Event * event)
 {
 	master->postEvent (event);
 }
 
-
-int
-Rts2Conn::idle ()
+int Rts2Conn::idle ()
 {
 	int ret;
 	if (connectionTimeout > 0)
@@ -495,27 +483,21 @@ Rts2Conn::idle ()
 	return 0;
 }
 
-
-int
-Rts2Conn::authorizationOK ()
+int Rts2Conn::authorizationOK ()
 {
 	logStream (MESSAGE_ERROR) << "authorization called on wrong connection" <<
 		sendLog;
 	return -1;
 }
 
-
-int
-Rts2Conn::authorizationFailed ()
+int Rts2Conn::authorizationFailed ()
 {
 	logStream (MESSAGE_ERROR) << "authorization failed on wrong connection" <<
 		sendLog;
 	return -1;
 }
 
-
-void
-Rts2Conn::checkBufferSize ()
+void Rts2Conn::checkBufferSize ()
 {
 	// increase buffer if it's too small
 	if (((int) buf_size) == (buf_top - buf))
@@ -529,9 +511,7 @@ Rts2Conn::checkBufferSize ()
 	}
 }
 
-
-int
-Rts2Conn::acceptConn ()
+int Rts2Conn::acceptConn ()
 {
 	int new_sock;
 	struct sockaddr_in other_side;
@@ -556,9 +536,7 @@ Rts2Conn::acceptConn ()
 	}
 }
 
-
-void
-Rts2Conn::setState (int in_value)
+void Rts2Conn::setState (int in_value)
 {
 	serverState->setValue (in_value);
 	if (otherDevice)
@@ -575,52 +553,40 @@ Rts2Conn::setState (int in_value)
 	}
 }
 
-
-void
-Rts2Conn::setBopState (int in_value)
+void Rts2Conn::setBopState (int in_value)
 {
 	bopState->setValue (in_value);
 	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_RUN)
 		sendCommand ();
 }
 
-
-void
-Rts2Conn::setOtherType (int other_device_type)
+void Rts2Conn::setOtherType (int other_device_type)
 {
 	delete otherDevice;
 	otherDevice = master->createOtherType (this, other_device_type);
 	otherType = other_device_type;
 }
 
-
-int
-Rts2Conn::getOtherType ()
+int Rts2Conn::getOtherType ()
 {
 	if (otherDevice)
 		return otherType;
 	return -1;
 }
 
-
-void
-Rts2Conn::updateStatusWait (Rts2Conn * conn)
+void Rts2Conn::updateStatusWait (Rts2Conn * conn)
 {
 	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_WAIT)
 		sendCommand ();
 }
 
-
-void
-Rts2Conn::masterStateChanged ()
+void Rts2Conn::masterStateChanged ()
 {
 	if (runningCommand && runningCommand->getStatusCallProgress () == CIP_RUN)
 		sendCommand ();
 }
 
-
-void
-Rts2Conn::processLine ()
+void Rts2Conn::processLine ()
 {
 	// starting at command_start, we have complete line, which was
 	// received
@@ -793,9 +759,7 @@ Rts2Conn::processLine ()
 	}
 }
 
-
-void
-Rts2Conn::processBuffer ()
+void Rts2Conn::processBuffer ()
 {
 	if (full_data_end)
 		return;
@@ -852,9 +816,7 @@ Rts2Conn::processBuffer ()
 	full_data_end = NULL;
 }
 
-
-int
-Rts2Conn::receive (fd_set * readset)
+int Rts2Conn::receive (fd_set * readset)
 {
 	int data_size = 0;
 	// connections market for deletion
@@ -914,9 +876,7 @@ Rts2Conn::receive (fd_set * readset)
 	return data_size;
 }
 
-
-int
-Rts2Conn::writable (fd_set * writeset)
+int Rts2Conn::writable (fd_set * writeset)
 {
 	if (sock >=0 && FD_ISSET (sock, writeset) && isConnState (CONN_INPROGRESS))
 	{
@@ -945,9 +905,7 @@ Rts2Conn::writable (fd_set * writeset)
 	return 0;
 }
 
-
-int
-Rts2Conn::getOurAddress (struct sockaddr_in *in_addr)
+int Rts2Conn::getOurAddress (struct sockaddr_in *in_addr)
 {
 	// get our address and pass it to data conn
 	socklen_t size;
@@ -956,16 +914,12 @@ Rts2Conn::getOurAddress (struct sockaddr_in *in_addr)
 	return getsockname (sock, (struct sockaddr *) in_addr, &size);
 }
 
-
-void
-Rts2Conn::setAddress (struct in_addr *in_address)
+void Rts2Conn::setAddress (struct in_addr *in_address)
 {
 	addr = *in_address;
 }
 
-
-void
-Rts2Conn::getAddress (char *addrBuf, int _buf_size)
+void Rts2Conn::getAddress (char *addrBuf, int _buf_size)
 {
 	char *addr_s;
 	addr_s = inet_ntoa (addr);
@@ -973,25 +927,19 @@ Rts2Conn::getAddress (char *addrBuf, int _buf_size)
 	addrBuf[_buf_size - 1] = '0';
 }
 
-
-void
-Rts2Conn::setCentraldId (int in_centrald_id)
+void Rts2Conn::setCentraldId (int in_centrald_id)
 {
 	centrald_id = in_centrald_id;
 }
 
-
-void
-Rts2Conn::queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator)
+void Rts2Conn::queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator)
 {
 	cmd->setBopMask (notBop);
 	cmd->setOriginator (originator);
 	queCommand (cmd);
 }
 
-
-void
-Rts2Conn::queCommand (Rts2Command * cmd)
+void Rts2Conn::queCommand (Rts2Command * cmd)
 {
 	cmd->setConnection (this);
 	if (runningCommand
@@ -1007,9 +955,7 @@ Rts2Conn::queCommand (Rts2Command * cmd)
 	sendCommand ();
 }
 
-
-void
-Rts2Conn::queSend (Rts2Command * cmd)
+void Rts2Conn::queSend (Rts2Command * cmd)
 {
 	cmd->setConnection (this);
 	if (isConnState (CONN_CONNECTING)
@@ -1035,14 +981,11 @@ Rts2Conn::queSend (Rts2Command * cmd)
 	sendCommand ();
 }
 
-
-void
-Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
+void Rts2Conn::commandReturn (Rts2Command * cmd, int in_status)
 {
 	if (otherDevice)
 		otherDevice->commandReturn (cmd, in_status);
 }
-
 
 bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
 {
@@ -1056,9 +999,7 @@ bool Rts2Conn::queEmptyForOriginator (Rts2Object *testOriginator)
 	return true;
 }
 
-
-void
-Rts2Conn::queClear ()
+void Rts2Conn::queClear ()
 {
 	if (runningCommand && runningCommandStatus != SEND)
 	{
@@ -1076,9 +1017,7 @@ Rts2Conn::queClear ()
 	commandQue.clear ();
 }
 
-
-void
-Rts2Conn::deleteConnection (Rts2Conn *conn)
+void Rts2Conn::deleteConnection (Rts2Conn *conn)
 {
 	// look if connection isn't entered among originators or controll connections..
 	if (runningCommand)
@@ -1090,10 +1029,8 @@ Rts2Conn::deleteConnection (Rts2Conn *conn)
 	}
 }
 
-
 // high-level commands, used to pass variables etc..
-int
-Rts2Conn::command ()
+int Rts2Conn::command ()
 {
 	if (isCommand ("device"))
 	{
@@ -1146,9 +1083,7 @@ Rts2Conn::command ()
 	return -4;
 }
 
-
-int
-Rts2Conn::status ()
+int Rts2Conn::status ()
 {
 	int value;
 	if (paramNextInteger (&value) || !paramEnd ())
@@ -1157,9 +1092,7 @@ Rts2Conn::status ()
 	return -1;
 }
 
-
-int
-Rts2Conn::bopStatus ()
+int Rts2Conn::bopStatus ()
 {
 	int value;
 	if (paramNextInteger (&value) || !paramEnd ())
@@ -1168,9 +1101,7 @@ Rts2Conn::bopStatus ()
 	return -1;
 }
 
-
-int
-Rts2Conn::message ()
+int Rts2Conn::message ()
 {
 	struct timeval messageTime;
 	char *messageOName;
@@ -1189,9 +1120,7 @@ Rts2Conn::message ()
 	return -1;
 }
 
-
-void
-Rts2Conn::sendCommand ()
+void Rts2Conn::sendCommand ()
 {
 	Rts2CommandDeviceStatus *statInfoCall;
 	Rts2Conn *conn;
@@ -1270,9 +1199,7 @@ Rts2Conn::sendCommand ()
 	}
 }
 
-
-int
-Rts2Conn::sendNextCommand ()
+int Rts2Conn::sendNextCommand ()
 {
 	// pop next command
 	if (commandQue.size () > 0)
@@ -1286,9 +1213,7 @@ Rts2Conn::sendNextCommand ()
 	return -1;
 }
 
-
-int
-Rts2Conn::commandReturn ()
+int Rts2Conn::commandReturn ()
 {
 	int ret;
 	int stat = atoi (getCommand ());
@@ -1318,9 +1243,7 @@ Rts2Conn::commandReturn ()
 	return -1;
 }
 
-
-int
-Rts2Conn::sendMsg (const char *msg)
+int Rts2Conn::sendMsg (const char *msg)
 {
 	int len;
 	int ret;
@@ -1361,23 +1284,17 @@ Rts2Conn::sendMsg (const char *msg)
 	return 0;
 }
 
-
-int
-Rts2Conn::sendMsg (std::string msg)
+int Rts2Conn::sendMsg (std::string msg)
 {
 	return sendMsg (msg.c_str ());
 }
 
-
-int
-Rts2Conn::sendMsg (std::ostringstream &_os)
+int Rts2Conn::sendMsg (std::ostringstream &_os)
 {
 	return sendMsg (_os.str ().c_str ());
 }
 
-
-int
-Rts2Conn::startBinaryData (long dataSize, int dataType)
+int Rts2Conn::startBinaryData (long dataSize, int dataType)
 {
 	std::ostringstream _os;
 	dataConn++;
@@ -1391,9 +1308,7 @@ Rts2Conn::startBinaryData (long dataSize, int dataType)
 	return dataConn;
 }
 
-
-int
-Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
+int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 {
 	char *binaryWriteTop, *binaryWriteBuff;
 	binaryWriteTop = binaryWriteBuff = data;
@@ -1442,45 +1357,33 @@ Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 	return 0;
 }
 
-
-void
-Rts2Conn::successfullSend ()
+void Rts2Conn::successfullSend ()
 {
 	time (&lastGoodSend);
 }
 
-
-void
-Rts2Conn::getSuccessSend (time_t * in_t)
+void Rts2Conn::getSuccessSend (time_t * in_t)
 {
 	*in_t = lastGoodSend;
 }
 
-
-bool
-Rts2Conn::reachedSendTimeout ()
+bool Rts2Conn::reachedSendTimeout ()
 {
 	time_t now;
 	time (&now);
 	return now > lastGoodSend + getConnTimeout ();
 }
 
-
-void
-Rts2Conn::successfullRead ()
+void Rts2Conn::successfullRead ()
 {
 	time (&lastData);
 }
 
-
-void
-Rts2Conn::connConnected ()
+void Rts2Conn::connConnected ()
 {
 }
 
-
-void
-Rts2Conn::connectionError (int last_data_size)
+void Rts2Conn::connectionError (int last_data_size)
 {
 	activeReadData = -1;
 	setConnState (CONN_DELETE);
@@ -1491,25 +1394,19 @@ Rts2Conn::connectionError (int last_data_size)
 		master->deleteAddress (getCentraldNum (), getName ());
 }
 
-
-int
-Rts2Conn::sendMessage (Rts2Message & msg)
+int Rts2Conn::sendMessage (Rts2Message & msg)
 {
 	return sendMsg (msg.toConn ());
 }
 
-
-int
-Rts2Conn::sendValue (std::string val_name, int value)
+int Rts2Conn::sendValue (std::string val_name, int value)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << value;
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValue (std::string val_name, int val1, double val2)
+int Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << val1
@@ -1517,9 +1414,7 @@ Rts2Conn::sendValue (std::string val_name, int val1, double val2)
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValue (std::string val_name, const char *value)
+int Rts2Conn::sendValue (std::string val_name, const char *value)
 {
 	if (getConnState () == CONN_INPROGRESS)
 	{
@@ -1530,9 +1425,7 @@ Rts2Conn::sendValue (std::string val_name, const char *value)
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValueRaw (std::string val_name, const char *value)
+int Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 {
 	if (getConnState () == CONN_INPROGRESS)
 	{
@@ -1543,28 +1436,21 @@ Rts2Conn::sendValueRaw (std::string val_name, const char *value)
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValue (std::string val_name, double value)
+int Rts2Conn::sendValue (std::string val_name, double value)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << value;
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValue (char *val_name, char *val1, int val2)
+int Rts2Conn::sendValue (char *val_name, char *val1, int val2)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " \"" << val1 << "\" " << val2;
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValue (char *val_name, int val1, int val2,
-double val3, double val4, double val5, double val6)
+int Rts2Conn::sendValue (char *val_name, int val1, int val2, double val3, double val4, double val5, double val6)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " "
@@ -1574,18 +1460,14 @@ double val3, double val4, double val5, double val6)
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendValueTime (std::string val_name, time_t * value)
+int Rts2Conn::sendValueTime (std::string val_name, time_t * value)
 {
 	std::ostringstream _os;
 	_os << PROTO_VALUE " " << val_name << " " << *value;
 	return sendMsg (_os);
 }
 
-
-int
-Rts2Conn::sendCommandEnd (int num, const char *in_msg)
+int Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 {
 	std::ostringstream _os;
 	if (num == 0)
@@ -1605,9 +1487,7 @@ Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 	return 0;
 }
 
-
-void
-Rts2Conn::setConnState (conn_state_t new_conn_state)
+void Rts2Conn::setConnState (conn_state_t new_conn_state)
 {
 	if (new_conn_state == CONN_AUTH_OK || new_conn_state == CONN_CONNECTED)
 	{
@@ -1623,25 +1503,19 @@ Rts2Conn::setConnState (conn_state_t new_conn_state)
 	}
 }
 
-
-int
-Rts2Conn::isConnState (conn_state_t in_conn_state)
+int Rts2Conn::isConnState (conn_state_t in_conn_state)
 {
 	return (conn_state == in_conn_state);
 }
 
-
-bool
-Rts2Conn::paramEnd ()
+bool Rts2Conn::paramEnd ()
 {
 	while (isspace (*command_buf_top))
 		command_buf_top++;
 	return !*command_buf_top;
 }
 
-
-int
-Rts2Conn::paramNextString (char **str, const char *enddelim)
+int Rts2Conn::paramNextString (char **str, const char *enddelim)
 {
 	while (isspace (*command_buf_top))
 		command_buf_top++;
@@ -1672,18 +1546,14 @@ Rts2Conn::paramNextString (char **str, const char *enddelim)
 	return 0;
 }
 
-
-char *
-Rts2Conn::paramNextWholeString ()
+char * Rts2Conn::paramNextWholeString ()
 {
 	while (isspace (*command_buf_top))
 		command_buf_top++;
 	return command_buf_top;
 }
 
-
-int
-Rts2Conn::paramNextStringNull (char **str)
+int Rts2Conn::paramNextStringNull (char **str)
 {
 	int ret;
 	ret = paramNextString (str);
@@ -1692,9 +1562,7 @@ Rts2Conn::paramNextStringNull (char **str)
 	return ret;
 }
 
-
-int
-Rts2Conn::paramNextInteger (int *num)
+int Rts2Conn::paramNextInteger (int *num)
 {
 	char *str_num;
 	char *num_end;
@@ -1706,9 +1574,7 @@ Rts2Conn::paramNextInteger (int *num)
 	return 0;
 }
 
-
-int
-Rts2Conn::paramNextLong (long int *num)
+int Rts2Conn::paramNextLong (long int *num)
 {
 	char *str_num;
 	char *num_end;
@@ -1720,9 +1586,7 @@ Rts2Conn::paramNextLong (long int *num)
 	return 0;
 }
 
-
-int
-Rts2Conn::paramNextSizeT (size_t * num)
+int Rts2Conn::paramNextSizeT (size_t * num)
 {
 	char *str_num;
 	char *num_end;
@@ -1734,9 +1598,7 @@ Rts2Conn::paramNextSizeT (size_t * num)
 	return 0;
 }
 
-
-int
-Rts2Conn::paramNextDouble (double *num)
+int Rts2Conn::paramNextDouble (double *num)
 {
 	char *str_num;
 	int ret;
@@ -1753,9 +1615,7 @@ Rts2Conn::paramNextDouble (double *num)
 	return 0;
 }
 
-
-int
-Rts2Conn::paramNextFloat (float *num)
+int Rts2Conn::paramNextFloat (float *num)
 {
 	char *str_num;
 	int ret;
@@ -1767,9 +1627,7 @@ Rts2Conn::paramNextFloat (float *num)
 	return 0;
 }
 
-
-int
-Rts2Conn::paramNextTimeval (struct timeval *tv)
+int Rts2Conn::paramNextTimeval (struct timeval *tv)
 {
 	int sec;
 	int usec;
@@ -1780,17 +1638,13 @@ Rts2Conn::paramNextTimeval (struct timeval *tv)
 	return 0;
 }
 
-
-void
-Rts2Conn::newDataConn (int data_conn)
+void Rts2Conn::newDataConn (int data_conn)
 {
 	if (otherDevice)
 		otherDevice->newDataConn (data_conn);
 }
 
-
-void
-Rts2Conn::dataReceived ()
+void Rts2Conn::dataReceived ()
 {
 	std::map <int, Rts2DataRead *>::iterator iter = readData.find (activeReadData);
 	// inform device that we read some data
@@ -1811,16 +1665,12 @@ Rts2Conn::dataReceived ()
 	}
 }
 
-
-Rts2Value *
-Rts2Conn::getValue (const char *value_name)
+Rts2Value * Rts2Conn::getValue (const char *value_name)
 {
 	return values.getValue (value_name);
 }
 
-
-void
-Rts2Conn::addValue (Rts2Value * value)
+void Rts2Conn::addValue (Rts2Value * value)
 {
 	if (value->isValue (RTS2_VALUE_INFOTIME))
 		info_time = (Rts2ValueTime *) value;
@@ -1829,9 +1679,7 @@ Rts2Conn::addValue (Rts2Value * value)
 	values.push_back (value);
 }
 
-
-int
-Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
+int Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 {
 	Rts2Value *new_value;
 	switch (rts2Type & RTS2_EXT_TYPE)
@@ -1875,9 +1723,7 @@ Rts2Conn::metaInfo (int rts2Type, std::string m_name, std::string desc)
 	return -1;
 }
 
-
-int
-Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
+int Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
 {
 	Rts2Value *val = getValue (value_name);
 	if (!val || val->getValueType () != RTS2_VALUE_SELECTION)
@@ -1886,9 +1732,7 @@ Rts2Conn::selMetaInfo (const char *value_name, char *sel_name)
 	return -1;
 }
 
-
-const char *
-Rts2Conn::getValueChar (const char *value_name)
+const char * Rts2Conn::getValueChar (const char *value_name)
 {
 	Rts2Value *val;
 	val = getValue (value_name);
@@ -1897,9 +1741,7 @@ Rts2Conn::getValueChar (const char *value_name)
 	return NULL;
 }
 
-
-double
-Rts2Conn::getValueDouble (const char *value_name)
+double Rts2Conn::getValueDouble (const char *value_name)
 {
 	Rts2Value *val;
 	val = getValue (value_name);
@@ -1908,9 +1750,7 @@ Rts2Conn::getValueDouble (const char *value_name)
 	return rts2_nan ("f");
 }
 
-
-int
-Rts2Conn::getValueInteger (const char *value_name)
+int Rts2Conn::getValueInteger (const char *value_name)
 {
 	Rts2Value *val;
 	val = getValue (value_name);
@@ -1918,7 +1758,6 @@ Rts2Conn::getValueInteger (const char *value_name)
 		return val->getValueInteger ();
 	return -1;
 }
-
 
 const char * Rts2Conn::getValueSelection (const char *value_name)
 {
@@ -1929,7 +1768,6 @@ const char * Rts2Conn::getValueSelection (const char *value_name)
 	return ((Rts2ValueSelection *) val)->getSelName ();
 }
 
-
 const char * Rts2Conn::getValueSelection (const char *value_name, int val_num)
 {
 	Rts2Value *val;
@@ -1939,9 +1777,7 @@ const char * Rts2Conn::getValueSelection (const char *value_name, int val_num)
 	return ((Rts2ValueSelection *) val)->getSelName (val_num);
 }
 
-
-int
-Rts2Conn::commandValue (const char *v_name)
+int Rts2Conn::commandValue (const char *v_name)
 {
 	Rts2Value *value = getValue (v_name);
 	if (value)
@@ -1964,7 +1800,6 @@ Rts2Conn::commandValue (const char *v_name)
 	return -2;
 }
 
-
 bool Rts2Conn::existWriteType (int w_type)
 {
 	for (Rts2ValueVector::iterator iter = values.begin ();
@@ -1976,18 +1811,14 @@ bool Rts2Conn::existWriteType (int w_type)
 	return false;
 }
 
-
-double
-Rts2Conn::getInfoTime ()
+double Rts2Conn::getInfoTime ()
 {
 	if (info_time)
 		return info_time->getValueDouble ();
 	return getMaster ()->getNow ();
 }
 
-
-void
-Rts2Conn::getInfoTime (struct timeval &tv)
+void Rts2Conn::getInfoTime (struct timeval &tv)
 {
 	if (info_time)
 	{
@@ -1997,9 +1828,7 @@ Rts2Conn::getInfoTime (struct timeval &tv)
 	gettimeofday (&tv, NULL);
 }
 
-
-bool
-Rts2Conn::infoTimeChanged ()
+bool Rts2Conn::infoTimeChanged ()
 {
 	if (info_time)
 	{
