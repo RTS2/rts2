@@ -52,8 +52,7 @@ class Rts2NewTarget:public Rts2TargetApp
 		virtual int doProcessing ();
 };
 
-Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):
-Rts2TargetApp (in_argc, in_argv)
+Rts2NewTarget::Rts2NewTarget (int in_argc, char **in_argv):Rts2TargetApp (in_argc, in_argv)
 {
 	n_tar_id = INT_MIN;
 	n_tar_name = NULL;
@@ -62,28 +61,21 @@ Rts2TargetApp (in_argc, in_argv)
 	addOption ('r', "radius", 2, "radius for target checks");
 }
 
-
 Rts2NewTarget::~Rts2NewTarget (void)
 {
 }
 
-
-void
-Rts2NewTarget::help ()
+void Rts2NewTarget::help ()
 {
 	Rts2TargetApp::help ();
 	std::cout
-		<<
-		"You can specify target on command line. Arguments must be in following order:"
-		<< std::endl << "  <target_id> <target_name> <target ra + dec>" << std::
-		endl <<
-		"If you specify them, you will be quired only if there exists target within 10' from target which you specified"
+		<< "You can specify target on command line. Arguments must be in following order:"
+		<< std::endl << "  <target_id> <target_name> <target ra + dec>" << std::endl
+		<< "If you specify them, you will be quired only if there exists target within 10' from target which you specified"
 		<< std::endl;
 }
 
-
-int
-Rts2NewTarget::processOption (int in_opt)
+int Rts2NewTarget::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -99,9 +91,7 @@ Rts2NewTarget::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2NewTarget::processArgs (const char *arg)
+int Rts2NewTarget::processArgs (const char *arg)
 {
 	if (n_tar_id == INT_MIN)
 		n_tar_id = atoi (arg);
@@ -114,9 +104,7 @@ Rts2NewTarget::processArgs (const char *arg)
 	return 0;
 }
 
-
-int
-Rts2NewTarget::saveTarget ()
+int Rts2NewTarget::saveTarget ()
 {
 	std::string target_name;
 	int ret;
@@ -167,9 +155,7 @@ Rts2NewTarget::saveTarget ()
 
 	if (ret)
 	{
-		if (askForBoolean
-			("Target with given ID already exists. Do you want to overwrite it?",
-			false))
+		if (askForBoolean ("Target with given ID already exists. Do you want to overwrite it?", false))
 		{
 			if (n_tar_id != INT_MIN)
 				ret = target->save (true, n_tar_id);
@@ -192,9 +178,7 @@ Rts2NewTarget::saveTarget ()
 	return ret;
 }
 
-
-int
-Rts2NewTarget::doProcessing ()
+int Rts2NewTarget::doProcessing ()
 {
 	double t_radius = 10.0 / 60.0;
 	if (!isnan (radius))
@@ -205,21 +189,17 @@ Rts2NewTarget::doProcessing ()
 	{
 		if (n_tar_name == NULL)
 		{
-			std::cout << "Default values are written at [].." << std::endl;
+			std::cout << "Default values are written inside [].." << std::endl;
 			ret = askForObject ("Target name, RA&DEC or anything else");
 		}
 		else
 		{
-			ret =
-				askForObject ("Target name, RA&DEC or anything else",
-				std::string (n_tar_name));
+			ret = askForObject ("Target name, RA&DEC or anything else", std::string (n_tar_name));
 		}
 	}
 	else
 	{
-		ret =
-			askForObject ("Target, RA&DEC or anything else",
-			std::string (n_tar_ra_dec));
+		ret = askForObject ("Target, RA&DEC or anything else", std::string (n_tar_ra_dec));
 	}
 	if (ret)
 		return ret;
@@ -258,9 +238,7 @@ Rts2NewTarget::doProcessing ()
 	}
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2NewTarget app = Rts2NewTarget (argc, argv);
 	return app.run ();
