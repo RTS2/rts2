@@ -39,6 +39,10 @@ ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
 
 DROP TABLE epoch;
 
+-- Drop ell - they are now stored as MPEC one-liners
+
+DROP TABLE ell;
+
 -- Add column with full image path
 
 ALTER TABLE images ADD COLUMN img_path varchar(100);
