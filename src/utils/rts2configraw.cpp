@@ -389,24 +389,32 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 	return 0;
 }
 
-
-int
-Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
+int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
 {
 	int ret;
-	clearVerboseEntry ();
+ 	clearVerboseEntry ();
 	ret = getString (section, valueName, buf);
 	if (ret)
-	{
+ 	{
 		buf = std::string (defVal);
-	}
-	setVerboseEntry ();
+ 	}
+ 	setVerboseEntry ();
 	return ret;
 }
 
+const char * Rts2ConfigRaw::getStringDefault (const char *section, const char *valueName, const char *defVal)
+{
+	clearVerboseEntry ();
+	Rts2ConfigValue *val = getValue (section, valueName);
+	if (!val)
+	{
+		return defVal;
+	}
+	setVerboseEntry ();
+	return val->getValue ().c_str ();
+}
 
-int
-Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
+int Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
 {
 	std::string valbuf;
 	int ret;

@@ -238,6 +238,8 @@ class Rts2ConfigRaw: public std::vector < Rts2ConfigSection * >
 
 		int getString (const char *section, const char *valueName, std::string & buf, const char* defVal);
 
+		const char* getStringDefault (const char *section, const char *valueName, const char* defVal);
+
 		/**
 		 * Return string value as vector of strings. Vector items are separated by space.
 		 * If value cannot be found, -1 is returned and vector remains empty.
