@@ -1679,6 +1679,8 @@ class RecordsAverage: public SessionMethod
 
 Graph graph ("/graph", &xmlrpc_server);
 
+AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
+
 #endif /* HAVE_LIBJPEG */
 
 Targets targets ("/targets", &xmlrpc_server);

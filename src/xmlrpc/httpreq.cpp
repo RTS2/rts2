@@ -19,11 +19,13 @@
 
 #include "xmlrpcd.h"
 #include "httpreq.h"
+#include "altaz.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2imgset.h"
 #include "../utilsdb/rts2user.h"
+#include "../utilsdb/targetset.h"
 #endif /* HAVE_PGSQL */
 
 #include "../utils/radecparser.h"
@@ -136,6 +138,36 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 
 	Magick::Blob blob;
 	mimage->write (&blob, "jpeg");
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+
+	delete mimage;
+}
+
+void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+{
+	AltAz altaz = AltAz ();
+
+	altaz.plotAltAzGrid ();
+
+	struct ln_hrz_posn hrz;
+
+	rts2db::TargetSet ts = rts2db::TargetSet ();
+	ts.load ();
+
+	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
+	{
+		(*iter).second->getAltAz (&hrz);
+		if (hrz.alt > -2)
+			altaz.plotCross (&hrz, (*iter).second->getTargetName ());
+	}
+	
+	Magick::Blob blob;
+	altaz.write (&blob, "jpeg");
+
+	response_type = "image/jpeg";
 
 	response_length = blob.length();
 	response = new char[response_length];

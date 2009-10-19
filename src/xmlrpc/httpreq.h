@@ -71,6 +71,18 @@ class Graph: public GetRequestAuthorized
 		void plotValue (const char *device, const char *value, double from, double to, const char* &response_type, char* &response, int &response_length);
 };
 
+/**
+ * Plot targets on the alt-az graph.
+ */
+
+class AltAzTarget: public GetRequestAuthorized
+{
+	public:
+		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+};
+
 #endif /* HAVE_LIBJPEG */ 
 
 class Targets: public GetRequestAuthorized
