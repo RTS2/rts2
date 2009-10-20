@@ -22,7 +22,7 @@
 #ifdef HAVE_PGSQL
 #include "../utilsdb/augerset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-#include <Magick++.h>
+#include "altaz.h"
 #endif // HAVE_LIBJPEG
 #include "../utils/rts2config.h"
 
@@ -41,6 +41,10 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 
 	switch (vals.size ())
 	{
+		case 4:
+			// assumes that all previous are OK, get just target
+			printTarget (atoi (vals[3].c_str ()), response_type, response, response_length);
+			break;			
 		case 3:
 			day = atoi (vals[2].c_str ());
 		case 2:
@@ -53,6 +57,44 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 		default:
 			throw rts2core::Error ("Invalid path for graph!");
 	}
+}
+
+void Auger::printTarget (int auger_id, const char* &response_type, char* &response, int &response_length)
+{
+	TargetAuger ta = TargetAuger (-1, Rts2Config::instance ()->getObserver (), -1);
+
+	ta.load (auger_id);
+
+	std::vector <struct ln_equ_posn> pos;
+	ta.getEquPositions (pos);
+
+	double JD = ta.getShowerJD ();
+
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+	AltAz aa = AltAz ();
+
+	aa.plotAltAzGrid ();
+
+	for (std::vector <struct ln_equ_posn>::iterator iter = pos.begin (); iter != pos.end (); iter++)
+	{
+		struct ln_hrz_posn hrz;
+		ln_get_hrz_from_equ (&(*iter), Rts2Config::instance ()->getObserver (), JD, &hrz);
+
+		aa.plotCross (&hrz);
+	}
+
+	Magick::Blob blob;
+	aa.write (&blob, "jpeg");
+
+	response_type = "image/jpeg";
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+#else
+	throw XmlRpcException ("Images not supported");
+#endif // HAVE_LIBJPEG
 }
 
 void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
