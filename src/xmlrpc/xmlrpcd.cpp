@@ -49,6 +49,7 @@ using namespace Magick;
 #include "../writers/rts2image.h"
 #include "xmlstream.h"
 #include "httpreq.h"
+#include "augerreq.h"
 
 #include "r2x.h"
 
@@ -1682,6 +1683,8 @@ Graph graph ("/graph", &xmlrpc_server);
 AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 
 #endif /* HAVE_LIBJPEG */
+
+Auger auger ("/auger", &xmlrpc_server);
 
 Targets targets ("/targets", &xmlrpc_server);
 

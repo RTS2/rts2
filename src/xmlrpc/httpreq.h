@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_HTTPREQ__
+#define __RTS2_HTTPREQ__
+
 #include "config.h"
 
 #ifdef HAVE_PGSQL
@@ -122,3 +125,5 @@ class AddTarget: public GetRequestAuthorized
 #endif /* HAVE_PGSQL */
 
 }
+
+#endif /* !__RTS2_HTTPREQ__ */
