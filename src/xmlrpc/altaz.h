@@ -45,7 +45,7 @@ class AltAz
 		 */
 		void plotAltAzGrid ();
 
-		void plotCross (struct ln_hrz_posn *hrz, const char* label = NULL);
+		void plotCross (struct ln_hrz_posn *hrz, const char* label = NULL, const char *color = "black");
 
 		void write (Magick::Blob *blob, const char *type) { image.write (blob, type); }
 

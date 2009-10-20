@@ -76,12 +76,24 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 
 	aa.plotAltAzGrid ();
 
+	int i = 1;
+
+	struct ln_hrz_posn hrz;
+
+	// plot origin
+	ta.getAltAz (&hrz, JD);
+	aa.plotCross (&hrz, "Origin", "green");
+
 	for (std::vector <struct ln_equ_posn>::iterator iter = pos.begin (); iter != pos.end (); iter++)
 	{
 		struct ln_hrz_posn hrz;
 		ln_get_hrz_from_equ (&(*iter), Rts2Config::instance ()->getObserver (), JD, &hrz);
 
-		aa.plotCross (&hrz);
+		std::ostringstream _os;
+		_os << i;
+
+		aa.plotCross (&hrz, _os.str ().c_str ());
+		i++;
 	}
 
 	Magick::Blob blob;

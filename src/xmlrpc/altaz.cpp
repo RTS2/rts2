@@ -69,7 +69,7 @@ void AltAz::plotAltAzGrid ()
 	}
 }
 
-void AltAz::plotCross (struct ln_hrz_posn *hrz, const char* label)
+void AltAz::plotCross (struct ln_hrz_posn *hrz, const char* label, const char* color)
 {
 	// calculate x and y
 	
@@ -79,7 +79,7 @@ void AltAz::plotCross (struct ln_hrz_posn *hrz, const char* label)
 	int x = c + alt * sin (az);
 	int y = c - alt * cos (az);
 
-	image.strokeColor ("black");
+	image.strokeColor (color);
 	image.draw (Magick::DrawableLine (x - 5, y, x + 5, y));
 	image.draw (Magick::DrawableLine (x, y - 5, x, y + 5));
 
