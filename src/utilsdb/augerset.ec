@@ -86,6 +86,16 @@ void AugerSet::load (double _from, double _to)
 	EXEC SQL ROLLBACK;
 }
 
+void AugerSet::printHTMLTable (std::ostringstream &_os)
+{
+	double JD = ln_get_julian_from_sys ();\
+
+	for (AugerSet::iterator iter = begin (); iter != end (); iter++)
+	{
+		iter->second.printHTMLRow (_os, JD);
+	}
+}
+
 void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
 {
 	EXEC SQL BEGIN DECLARE SECTION;

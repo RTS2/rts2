@@ -392,6 +392,27 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 	ConstTarget::printExtra (_os, JD);
 }
 
+void TargetAuger::printHTMLRow (std::ostringstream &_os, double JD)
+{
+	struct ln_equ_posn pos;
+	struct ln_hrz_posn hrz;
+
+	getPosition (&pos, JD);
+	getAltAz (&hrz, JD);
+
+	_os
+		<< "<tr><td>" << t3id << "</td><td>"
+		<< LibnovaRaDec (pos.ra, pos.dec) << "</td><td>"
+		<< LibnovaHrz (hrz.alt, hrz.az) << "</td><td>"
+		<< Timestamp (auger_date) << "</td><td>"
+		<< cor.x << "</td><td>"
+		<< cor.y << "</td><td>"
+		<< cor.z << "</td><td>"
+		<< cor.x + 459201 << "</td><td>"
+		<< cor.y + 6071873 << "</td><td>"
+		<< cor.z + 1422 << "</td></tr>";
+}
+
 void TargetAuger::writeToImage (Rts2Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);

@@ -68,6 +68,8 @@ class TargetAuger:public ConstTarget
 
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
 
+		virtual void printHTMLRow (std::ostringstream &_os, double JD);
+
 		virtual void writeToImage (Rts2Image * image, double JD);
 
 	private:

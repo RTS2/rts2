@@ -30,12 +30,14 @@ namespace rts2db
 class AugerSet:public std::map <int, TargetAuger>
 {
 	public:
-		AugerSet ();
+		AugerSet () {}
 
 		/**
 		 * Load target from given date range.
 		 */
 		void load (double from, double to);
+
+		void printHTMLTable (std::ostringstream &_os);
 };
 
 class AugerSetDate:public std::map <int, int>
