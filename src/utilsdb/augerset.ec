@@ -75,10 +75,15 @@ void AugerSet::load (double _from, double _to)
 			break;
 		(*this)[d_auger_t3id] = TargetAuger (d_auger_t3id, d_auger_date, d_auger_npixels, d_auger_ra, d_auger_dec, d_northing, d_easting, d_altitude, Rts2Config::instance ()->getObserver ());
 	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE cur_augerset;
+		EXEC SQL ROLLBACK;
+		throw SqlError ();
+	}
+
 	EXEC SQL CLOSE cur_augerset;
 	EXEC SQL ROLLBACK;
-	if (sqlca.sqlcode != ECPG_NOT_FOUND)
-		throw SqlError ();
 }
 
 void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
@@ -135,8 +140,12 @@ void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
 		}
 	}
 
-	_os << "SELECT EXTRACT (" << group_by << " FROM auger_date) as value, count (*) as c FROM auger WHERE "
-		<< _where.str () << " GROUP BY value;";
+	_os << "SELECT EXTRACT (" << group_by << " FROM auger_date) as value, count (*) as c FROM auger ";
+	
+	if (_where.str ().length () > 0)
+		_os << "WHERE " << _where.str ();
+
+	_os << " GROUP BY value;";
 
 	stmp_c = new char[_os.str ().length () + 1];
 	memcpy (stmp_c, _os.str().c_str(), _os.str ().length () + 1);
@@ -157,8 +166,14 @@ void AugerSetDate::load (int year, int month, int day, int hour, int minutes)
 			break;
 		(*this)[d_value] = d_c;
 	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE augersetdate_cur;
+		EXEC SQL ROLLBACK;
+
+		throw SqlError ();
+	}
+
 	EXEC SQL CLOSE augersetdate_cur;
 	EXEC SQL ROLLBACK;
-	if (sqlca.sqlcode != ECPG_NOT_FOUND)
-		throw SqlError ();
 }
