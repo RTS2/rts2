@@ -127,8 +127,7 @@ Rts2Config::getNight ()
 	return getNight (tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday);
 }
 
-time_t
-Rts2Config::getNight (int year, int month, int day)
+time_t Rts2Config::getNight (int year, int month, int day)
 {
 	struct tm _tm;
 	static char p_tz[100];

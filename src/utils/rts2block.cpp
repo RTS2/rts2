@@ -710,17 +710,13 @@ Rts2Block::addUser (int p_centraldId, const char *p_login)
 	addUser (new Rts2ConnUser (p_centraldId, p_login));
 }
 
-
-int
-Rts2Block::addUser (Rts2ConnUser * in_user)
+int Rts2Block::addUser (Rts2ConnUser * in_user)
 {
 	blockUsers.push_back (in_user);
 	return 0;
 }
 
-
-Rts2Conn *
-Rts2Block::getOpenConnection (const char *deviceName)
+Rts2Conn * Rts2Block::getOpenConnection (const char *deviceName)
 {
 	connections_t::iterator iter;
 
@@ -734,9 +730,20 @@ Rts2Block::getOpenConnection (const char *deviceName)
 	return NULL;
 }
 
+Rts2Conn * Rts2Block::getOpenConnection (int device_type)
+{
+	connections_t::iterator iter;
 
-Rts2Conn *
-Rts2Block::getConnection (char *deviceName)
+	for (iter = connections.begin (); iter != connections.end (); iter++)
+	{
+		Rts2Conn *conn = *iter;
+		if (conn->getOtherType () == device_type)
+			return conn;
+	}
+	return NULL;
+}
+
+Rts2Conn * Rts2Block::getConnection (char *deviceName)
 {
 	Rts2Conn *conn;
 	Rts2Address *devAddr;

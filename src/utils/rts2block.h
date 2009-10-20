@@ -510,6 +510,16 @@ class Rts2Block: public Rts2App
 		Rts2Conn *getOpenConnection (const char *deviceName);
 
 		/**
+		 * Return connection with given type. Return first connection with given type, if no connection can be found,
+		 * return NULL.
+		 *
+		 * @param device_type  Type of device (see DEVICE_XXX constants).
+		 *
+		 * @return Rts2Conn pointer to opened device connection with given type.
+		 */
+		Rts2Conn *getOpenConnection (int device_type);
+
+		/**
 		 * Return connection to given device.
 		 *
 		 * Create and return new connection if if device name isn't found
