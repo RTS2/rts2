@@ -113,8 +113,29 @@ void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
 {
 	rts2db::AugerSet as = rts2db::AugerSet ();
 
+	int32_t duration;
+	if (year <= 0)
+	{
+		year = 2000;
+		month = day = 1;
+		duration = 1000 * 365 * 86400;
+	}
+	else if (month <= 0)
+	{
+	 	month = day = 1;
+		duration = 365 * 86400;
+	}
+	else if (day <= 0)
+	{
+		day = 1;
+		duration = 31 * 86400;
+	}
+	else
+	{
+		duration = 86400;
+	}
 	time_t from = Rts2Config::instance ()->getNight (year, month, day);
-	as.load (from, from + 86400);
+	as.load (from, from + duration);
 
 	as.printHTMLTable (_os);
 }
@@ -139,6 +160,9 @@ void Auger::printTable (int year, int month, int day, char* &response, int &resp
 			}
 		}
 	}
+
+	if (year == 0 || month == 0 || day == 0)
+		do_list = true;
 
 	_os << "</title></head><body><p><table>";
 
