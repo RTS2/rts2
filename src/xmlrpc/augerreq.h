@@ -37,8 +37,12 @@ class Auger: public GetRequestAuthorized
 		Auger (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+	private:
+
+		void listAuger (int year, int month, int day, std::ostringstream &_os);
 
 		void printTable (int year, int month, int day, char* &response, int &response_length);
+
 };
 
 #endif /* HAVE_PGSQL */

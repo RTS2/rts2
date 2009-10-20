@@ -24,6 +24,7 @@
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
+#include "../utils/rts2config.h"
 
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
@@ -54,8 +55,19 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 }
 
+void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
+{
+	rts2db::AugerSet as = rts2db::AugerSet ();
+
+	time_t from = Rts2Config::instance ()->getNight (year, month, day);
+	as.load (from, from + 86400);
+
+	as.printHTMLTable (_os);
+}
+
 void Auger::printTable (int year, int month, int day, char* &response, int &response_length)
 {
+	bool do_list = false;
 	std::ostringstream _os;
 
 	_os << "<html><head><title>Auger showers";
@@ -69,18 +81,27 @@ void Auger::printTable (int year, int month, int day, char* &response, int &resp
 			if (day > 0)
 			{
 				_os << "-" << day;
+				do_list = true;
 			}
 		}
 	}
 
 	_os << "</title></head><body><p><table>";
 
-	rts2db::AugerSetDate as = rts2db::AugerSetDate ();
-	as.load (year, month, day);
-
-	for (rts2db::AugerSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
+	if (do_list == true)
 	{
-		_os << "<tr><td><a href='" << iter->first << "'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
+		listAuger (year, month, day, _os);
+	}
+	else
+	{
+		rts2db::AugerSetDate as = rts2db::AugerSetDate ();
+		as.load (year, month, day);
+
+		for (rts2db::AugerSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
+		{
+			_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
+		}
+
 	}
 
 	_os << "</table><p></body></html>";
