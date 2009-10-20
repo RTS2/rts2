@@ -1,6 +1,6 @@
 /* 
  * Auger cosmic rays showers follow-up target.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -95,12 +95,25 @@ void dirToEqu (rts2targetauger::vec *dir, struct ln_lnlat_posn *observer, double
 
 /*****************************************************************/
 
-TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * in_obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, in_obs)
+TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_augerPriorityTimeout):ConstTarget (in_tar_id, _obs)
 {
 	augerPriorityTimeout = in_augerPriorityTimeout;
 	cor.x = nan ("f");
 	cor.y = nan ("f");
 	cor.z = nan ("f");
+}
+
+TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, int _auger_npixels, double _auger_ra, double _auger_dec, double _northing, double _easting, double _altitude, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)
+{
+	augerPriorityTimeout = -1;
+
+	t3id = _auger_t3id;
+	auger_date = _auger_date;
+	npixels = _auger_npixels;
+	setPosition (_auger_ra, _auger_dec);
+	cor.x = _easting - 459201;
+	cor.y = _northing - 6071873;
+	cor.z = _altitude - 1422;
 }
 
 TargetAuger::~TargetAuger (void)
@@ -110,15 +123,15 @@ TargetAuger::~TargetAuger (void)
 int TargetAuger::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_auger_t3id;
-		double d_auger_date;
-		int d_auger_npixels;
-		double d_auger_ra;
-		double d_auger_dec;
+	int d_auger_t3id;
+	double d_auger_date;
+	int d_auger_npixels;
+	double d_auger_ra;
+	double d_auger_dec;
 
-		double d_northing;
-		double d_easting;
-		double d_altitude;
+	double d_northing;
+	double d_easting;
+	double d_altitude;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_equ_posn pos;
@@ -126,19 +139,19 @@ int TargetAuger::load ()
 	double JD = ln_get_julian_from_sys ();
 
 	EXEC SQL DECLARE cur_auger CURSOR FOR
-		SELECT
-			auger_t3id,
-			EXTRACT (EPOCH FROM auger_date),
-			NPix,
-			ra,
-			dec,
-			Northing,
-			Easting,
-			Altitude
-		FROM
-			auger
-		ORDER BY
-			auger_date desc;
+	SELECT
+		auger_t3id,
+		EXTRACT (EPOCH FROM auger_date),
+		NPix,
+		ra,
+		dec,
+		Northing,
+		Easting,
+		Altitude
+	FROM
+		auger
+	ORDER BY
+		auger_date desc;
 
 	EXEC SQL OPEN cur_auger;
 	while (1)
@@ -176,6 +189,64 @@ int TargetAuger::load ()
 	EXEC SQL ROLLBACK;
 	auger_date = 0;
 	return -1;
+}
+
+int TargetAuger::load (int auger_id)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_auger_t3id = auger_id;
+	double d_auger_date;
+	int d_auger_npixels;
+	double d_auger_ra;
+	double d_auger_dec;
+
+	double d_northing;
+	double d_easting;
+	double d_altitude;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL SELECT
+		auger_t3id,
+		EXTRACT (EPOCH FROM auger_date),
+		NPix,
+		ra,
+		dec,
+		Northing,
+		Easting,
+		Altitude
+	INTO
+		:d_auger_t3id,
+		:d_auger_date,
+		:d_auger_npixels,
+		:d_auger_ra,
+		:d_auger_dec,
+		:d_northing,
+		:d_easting,
+		:d_altitude
+	FROM
+		auger
+	WHERE
+		auger_t3id = :d_auger_t3id;
+
+	if (sqlca.sqlcode)
+	{
+		logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
+		EXEC SQL CLOSE cur_auger;
+		EXEC SQL ROLLBACK;
+		auger_date = 0;
+		return -1;
+	}
+
+	t3id = d_auger_t3id;
+	auger_date = d_auger_date;
+	npixels = d_auger_npixels;
+	setPosition (d_auger_ra, d_auger_dec);
+	cor.x = d_easting - 459201;
+	cor.y = d_northing - 6071873;
+	cor.z = d_altitude - 1422;
+	EXEC SQL CLOSE cur_auger;
+	EXEC SQL COMMIT;
+	return Target::load ();
 }
 
 void TargetAuger::updateShowerFields ()
@@ -240,7 +311,6 @@ void TargetAuger::updateShowerFields ()
 		dir = rotateVector (&axis, &dir, angle);
 	}
 }
-
 
 int TargetAuger::getScript (const char *device_name, std::string &buf)
 {
@@ -311,7 +381,14 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 	_os
 		<< InfoVal<int> ("T3ID", t3id)
 		<< InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
-		<< InfoVal<int> ("NPIXELS", npixels);
+		<< InfoVal<int> ("NPIXELS", npixels)
+		<< InfoVal<double> ("CORE_X", cor.x)
+		<< InfoVal<double> ("CORE_Y", cor.y)
+		<< InfoVal<double> ("CORE_Z", cor.z)
+		<< InfoVal<double> ("EASTING", cor.x + 459201)
+		<< InfoVal<double> ("NORTHING", cor.y + 6071873)
+		<< InfoVal<double> ("ALTITUDE", cor.z + 1422);
+
 	ConstTarget::printExtra (_os, JD);
 }
 

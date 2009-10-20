@@ -1,6 +1,6 @@
 /* 
  * Auger cosmic rays showers follow-up target.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,11 +36,22 @@ struct vec
 class TargetAuger:public ConstTarget
 {
 	public:
-		TargetAuger (int in_tar_id, struct ln_lnlat_posn *in_obs,
-			int in_augerPriorityTimeout);
+		TargetAuger () {}
+		TargetAuger (int in_tar_id, struct ln_lnlat_posn *_obs, int in_augerPriorityTimeout);
+		/**
+		 * Crate target if targets fields are know. You should not call load ont target
+		 * created with this contructor.
+		 */
+		TargetAuger (int _auger_t3id, double _auger_date, int _auger_npixels, double _auger_ra, double _auger_dec, double _northing, double _easting, double _altitude, struct ln_lnlat_posn *_obs);
 		virtual ~ TargetAuger (void);
 
 		virtual int load ();
+		/**
+		 * Load target from given target_id.
+		 *
+		 * @param auger_id  Auger id.
+		 */
+		int load (int auger_id);
 		virtual int getScript (const char *device_name, std::string & buf);
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();
