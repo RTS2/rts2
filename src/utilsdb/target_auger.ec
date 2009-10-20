@@ -401,7 +401,7 @@ void TargetAuger::printHTMLRow (std::ostringstream &_os, double JD)
 	getAltAz (&hrz, JD);
 
 	_os
-		<< "<tr><td>" << t3id << "</td><td>"
+		<< "<tr><td><a href='" << t3id << "'>" << t3id << "</a></td><td>"
 		<< LibnovaRaDec (pos.ra, pos.dec) << "</td><td>"
 		<< LibnovaHrz (hrz.alt, hrz.az) << "</td><td>"
 		<< Timestamp (auger_date) << "</td><td>"
@@ -417,4 +417,20 @@ void TargetAuger::writeToImage (Rts2Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("AGR_T3ID", t3id, "Auger target id");
+}
+
+void TargetAuger::getEquPositions (std::vector <struct ln_equ_posn> &positions)
+{
+	if (showerOffsets.size () == 0)
+		updateShowerFields ();
+	struct ln_equ_posn pos;
+	getPosition (&pos, ln_get_julian_from_sys ());
+	// calculate offsets
+	for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
+	{
+		struct ln_equ_posn sp;
+		sp.ra = pos.ra + iter->ra;
+		sp.dec = pos.dec + iter->dec;
+		positions.push_back (sp);
+	}
 }

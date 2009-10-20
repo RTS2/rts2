@@ -72,6 +72,13 @@ class TargetAuger:public ConstTarget
 
 		virtual void writeToImage (Rts2Image * image, double JD);
 
+		/**
+		 * Return fiels for observations.
+		 */
+		void getEquPositions (std::vector <struct ln_equ_posn> &positions);
+
+		double getShowerJD () { time_t a = auger_date; return ln_get_julian_from_timet (&a); }
+
 	private:
 		int t3id;
 		double auger_date;
