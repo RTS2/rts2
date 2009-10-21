@@ -18,6 +18,7 @@
  */
 
 #include "imgdisplay.h"
+#include "../utilsdb/target_auger.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
@@ -33,6 +34,7 @@
 #include <stdlib.h>
 
 #define OPT_FULL_DAY   OPT_LOCAL + 200
+#define OPT_AUGER_ID   OPT_LOCAL + 201
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -44,9 +46,7 @@ std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 	return _os;
 }
 
-
-double
-get_norm_hour (double JD)
+double get_norm_hour (double JD)
 {
 	struct ln_date tmp_date;
 
@@ -89,6 +89,7 @@ class TargetInfo:public Rts2AppDb
 		int printImages;
 		int printCounts;
 		int printGNUplot;
+		bool printAuger;
 		bool printDS9;
 		bool addMoon;
 		bool addHorizon;
@@ -114,8 +115,7 @@ class TargetInfo:public Rts2AppDb
 
 using namespace rts2plan;
 
-TargetInfo::TargetInfo (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+TargetInfo::TargetInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	obs = NULL;
 	printSelectable = false;
@@ -125,6 +125,7 @@ Rts2AppDb (in_argc, in_argv)
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
+	printAuger = false;
 	printDS9 = false;
 	addMoon = true;
 	addHorizon = true;
@@ -153,19 +154,17 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
 	addOption ('d', NULL, 1, "give informations for this date");
 	addOption (OPT_FULL_DAY, "full-day", 0, "prints informations for 24 hours");
+	addOption (OPT_AUGER_ID, "auger-id", 0, "specify trigger(s) number for Auger target(s)");
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 }
-
 
 TargetInfo::~TargetInfo ()
 {
 	cameras.clear ();
 }
 
-
-int
-TargetInfo::processOption (int in_opt)
+int TargetInfo::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
@@ -239,6 +238,9 @@ TargetInfo::processOption (int in_opt)
 		case OPT_FULL_DAY:
 			printGNUplot |= GNUPLOT_FULL_DAY;
 			break;
+		case OPT_AUGER_ID:
+			printAuger = true;
+			break;
 		case 'd':
 			ret = parseDate (optarg, JD);
 			if (ret)
@@ -256,9 +258,7 @@ TargetInfo::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-TargetInfo::processArgs (const char *arg)
+int TargetInfo::processArgs (const char *arg)
 {
 	// try to create that target..
 	int tar_id;
@@ -273,9 +273,7 @@ TargetInfo::processArgs (const char *arg)
 	return 0;
 }
 
-
-void
-TargetInfo::printTargetInfo ()
+void TargetInfo::printTargetInfo ()
 {
 	if (!(printImages & DISPLAY_FILENAME))
 	{
@@ -350,10 +348,7 @@ TargetInfo::printTargetInfo ()
 	return;
 }
 
-
-void
-TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
-double pend, double step)
+void TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg, double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
@@ -363,10 +358,7 @@ double pend, double step)
 	}
 }
 
-
-void
-TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg,
-double pend, double step)
+void TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg, double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
@@ -375,16 +367,12 @@ double pend, double step)
 	}
 }
 
-
-void
-TargetInfo::printTargetInfoDS9 ()
+void TargetInfo::printTargetInfoDS9 ()
 {
 	target->printDS9Reg (std::cout, JD);
 }
 
-
-int
-TargetInfo::printTargets (rts2db::TargetSet & set)
+int TargetInfo::printTargets (rts2db::TargetSet & set)
 {
 	rts2db::TargetSet::iterator iter;
 	struct ln_rst_time t_rst;
@@ -409,10 +397,8 @@ TargetInfo::printTargets (rts2db::TargetSet & set)
 
 	if (printGNUplot)
 	{
-		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
-			LN_SOLAR_CIVIL_HORIZON, &t_rst);
-		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
-			LN_SOLAR_NAUTIC_HORIZON, &n_rst);
+		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords, LN_SOLAR_CIVIL_HORIZON, &t_rst);
+		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords, LN_SOLAR_NAUTIC_HORIZON, &n_rst);
 
 		sset = get_norm_hour (t_rst.set);
 		rise = get_norm_hour (t_rst.rise);
@@ -672,9 +658,7 @@ TargetInfo::printTargets (rts2db::TargetSet & set)
 	return (set.size () == 0 ? -1 : 0);
 }
 
-
-int
-TargetInfo::init ()
+int TargetInfo::init ()
 {
 	int ret;
 
@@ -697,9 +681,7 @@ TargetInfo::init ()
 	return 0;
 }
 
-
-int
-TargetInfo::doProcessing ()
+int TargetInfo::doProcessing ()
 {
 	if (printSelectable)
 	{
@@ -724,13 +706,30 @@ TargetInfo::doProcessing ()
 	}
 
 	rts2db::TargetSet tar_set = rts2db::TargetSet ();
-	tar_set.load (targets);
+	if (printAuger)
+	{
+		for (std::list <int>::iterator iter = targets.begin (); iter != targets.end (); iter++)
+		{
+			TargetAuger *ta = new TargetAuger (-1, obs, 10);
+			if (ta->load (*iter))
+			{
+				delete ta;
+			}
+			else
+			{
+				tar_set[*iter] = ta;
+			}
+		}
+	}
+	else
+	{
+		// normal target set load
+		tar_set.load (targets);
+	}
 	return printTargets (tar_set);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	TargetInfo app = TargetInfo (argc, argv);
 	return app.run ();
