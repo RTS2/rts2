@@ -1682,6 +1682,8 @@ Graph graph ("/graph", &xmlrpc_server);
 
 AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 
+CurrentPosition current ("/current", &xmlrpc_server);
+
 #endif /* HAVE_LIBJPEG */
 
 Auger auger ("/auger", &xmlrpc_server);

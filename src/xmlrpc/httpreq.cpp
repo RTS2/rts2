@@ -173,6 +173,80 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
 }
+void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
+{
+	AltAz altaz = AltAz ();
+	altaz.plotAltAzGrid ();
+
+	struct ln_equ_posn pos;
+	struct ln_hrz_posn hrz;
+
+	double JD = ln_get_julian_from_sys ();
+
+	// get current target position..
+	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+	Rts2Conn *conn = serv->getOpenConnection (DEVICE_TYPE_MOUNT);
+	Rts2Value *val;
+	if (conn)
+	{
+		val = conn->getValue ("TEL_");
+		if (val && val->getValueType () == RTS2_VALUE_ALTAZ)
+		{
+			hrz.alt = ((Rts2ValueAltAz *) val)->getAlt ();
+			hrz.az = ((Rts2ValueAltAz *) val)->getAz ();
+
+			altaz.plotCross (&hrz, "Telescope", "green");
+		}
+
+		val = conn->getValue ("TAR");
+		if (val && val->getValueType () == RTS2_VALUE_RADEC)
+		{
+			pos.ra = ((Rts2ValueRaDec *) val)->getRa ();
+			pos.dec  = ((Rts2ValueRaDec *) val)->getDec ();
+
+			ln_get_hrz_from_equ (&pos, Rts2Config::instance ()->getObserver (), JD, &hrz);
+
+			altaz.plotCross (&hrz, NULL, "blue");
+		}
+	}
+
+	conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
+	if (conn)
+	{
+		Target *tar;
+		val = conn->getValue ("current");
+		if (val)
+		{
+			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
+			if (tar)
+			{
+				tar->getAltAz (&hrz, JD);
+				altaz.plotCross (&hrz, tar->getTargetName (), "green");
+				delete tar;
+			}
+		}
+		val = conn->getValue ("next");
+		if (val)
+		{
+			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
+			if (tar)
+			{
+				tar->getAltAz (&hrz, JD);
+				altaz.plotCross (&hrz, tar->getTargetName (), "blue");
+				delete tar;
+			}
+		}
+	}
+
+	Magick::Blob blob;
+	altaz.write (&blob, "jpeg");
+
+	response_type = "image/jpeg";
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+}
 
 #endif /* HAVE_LIBJPEG */
 

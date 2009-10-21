@@ -98,6 +98,26 @@ void ValueChangeRecord::recordValueDouble (int recval_id, double val, double val
 		throw rts2db::SqlError ();
 }
 
+void ValueChangeRecord::recordValueBoolean (int recval_id, bool val, double validTime)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int db_recval_id = recval_id;
+	double db_value = val;
+	double db_rectime = validTime;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL INSERT INTO records_boolean
+	VALUES
+	(
+		:db_recval_id,
+		to_timestamp (:db_rectime),
+		:db_value
+	);
+
+	if (sqlca.sqlcode)
+		throw rts2db::SqlError ();
+}
+
 void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 {
 
@@ -112,6 +132,13 @@ void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 		case RTS2_VALUE_RADEC:
 			recordValueDouble (getRecvalId ("RA"), ((Rts2ValueRaDec *) val)->getRa (), validTime);
 			recordValueDouble (getRecvalId ("DEC"), ((Rts2ValueRaDec *) val)->getDec (), validTime);
+			break;
+		case RTS2_VALUE_ALTAZ:
+			recordValueDouble (getRecvalId ("ALT"), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
+			recordValueDouble (getRecvalId ("AZ"), ((Rts2ValueAltAz *) val)->getAz (), validTime);
+			break;
+		case RTS2_VALUE_BOOL:
+			recordValueBoolean (getRecvalId (), ((Rts2ValueBool *) val)->getValueBool (), validTime);
 			break;
 		default:
 			_os << "Cannot record value " << valueName;

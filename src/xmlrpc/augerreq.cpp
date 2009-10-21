@@ -86,7 +86,6 @@ void Auger::printTarget (int auger_id, const char* &response_type, char* &respon
 
 	for (std::vector <struct ln_equ_posn>::iterator iter = pos.begin (); iter != pos.end (); iter++)
 	{
-		struct ln_hrz_posn hrz;
 		ln_get_hrz_from_equ (&(*iter), Rts2Config::instance ()->getObserver (), JD, &hrz);
 
 		std::ostringstream _os;
@@ -113,12 +112,12 @@ void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
 {
 	rts2db::AugerSet as = rts2db::AugerSet ();
 
-	int32_t duration;
+	int64_t duration;
 	if (year <= 0)
 	{
 		year = 2000;
 		month = day = 1;
-		duration = 1000 * 365 * 86400;
+		duration = 1000L * 365 * 86400;
 	}
 	else if (month <= 0)
 	{

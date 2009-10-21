@@ -86,6 +86,17 @@ class AltAzTarget: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
 };
 
+/**
+ * Plot current position of telescope, target and next target position.
+ */
+class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
+{
+	public:
+		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, s) {};
+
+		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
+};
+
 #endif /* HAVE_LIBJPEG */ 
 
 class Targets: public GetRequestAuthorized
