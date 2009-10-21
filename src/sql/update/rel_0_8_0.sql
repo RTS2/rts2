@@ -39,6 +39,11 @@ ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
 
 DROP TABLE epoch;
 
+DROP FUNCTION imgpath;
+DROP FUNCTION img_fits_name;
+DROP FUNCTION dark_name;
+DROP FUNCTION ell_update;
+
 -- Drop ell - they are now stored as MPEC one-liners
 
 DROP TABLE ell;
@@ -74,6 +79,16 @@ CREATE TABLE records_double (
 CREATE INDEX records_double_time ON records_double (rectime);
 CREATE INDEX records_double_recval_id ON records_double (recval_id);
 CREATE UNIQUE INDEX records_double_id_time ON records_double (recval_id, rectime);
+
+CREATE TABLE records_boolean (
+	recval_id		integer REFERENCES recvals(recval_id) not NULL,
+	rectime			timestamp not NULL,
+	value			boolean
+);
+
+CREATE INDEX records_boolean_time ON records_boolean (rectime);
+CREATE INDEX records_boolean_recval_id ON records_boolean (recval_id);
+CREATE UNIQUE INDEX records_boolean_id_time ON records_boolean (recval_id, rectime);
 
 CREATE VIEW recvals_state_statistics AS
 SELECT
@@ -154,6 +169,10 @@ INSERT INTO mv_records_double_day (SELECT * FROM records_double_day);
 INSERT INTO mv_records_double_hour (SELECT * FROM records_double_hour);' LANGUAGE SQL;
 
 CREATE UNIQUE INDEX plan_tar_id_start ON plan (tar_id, plan_start);
+
+-- second parameter is site longitude
+CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS timestamp with time zone AS
+	'SELECT to_timestamp (EXTRACT(EPOCH FROM $1) - EXTRACT (hour FROM $1) * 3600 - EXTRACT (minute FROM $1) * 60 - 86400 * $2 / 360 - 43200)' LANGUAGE 'SQL';
 
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
