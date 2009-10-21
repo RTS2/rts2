@@ -18,9 +18,12 @@
  */
 
 #include "augershooter.h"
+#include "../utils/libnova_cpp.h"
 #include "../utils/rts2command.h"
 
 using namespace rts2grbd;
+
+#define OPT_TRIGERING     OPT_LOCAL + 707
 
 DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):
 Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
@@ -28,6 +31,10 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 	shootercnn = NULL;
 	port = 1240;
 	addOption ('s', "shooter_port", 1, "port on which to listen for auger connection");
+	addOption (OPT_TRIGERING, "disable-triggering", 0, "only record triggers, do not pass them to executor");
+
+	createValue (triggeringEnabled, "triggering_enabled", "if true, shooter will trigger executor", false);
+	triggeringEnabled->setValueBool (true);
 
 	createValue (minEnergy, "min_energy", "minimal shower energy", false);
 	minEnergy->setValueDouble (10);
@@ -53,6 +60,9 @@ int DevAugerShooter::processOption (int in_opt)
 		case 's':
 			port = atoi (optarg);
 			break;
+		case OPT_TRIGERING:
+			triggeringEnabled->setValueBool (false);
+			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
 	}
@@ -69,11 +79,13 @@ int DevAugerShooter::reloadConfig ()
 	minEnergy->setValueDouble (config->getDoubleDefault ("augershooter", "minenergy", minEnergy->getValueDouble ()));
 
 	maxTime->setValueInteger (config->getIntegerDefault ("augershooter", "maxtime", maxTime->getValueInteger ()));
+
+	return 0;
 }
 
 int DevAugerShooter::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
-	if (old_value == minEnergy || old_value == maxTime)
+	if (old_value == minEnergy || old_value == maxTime || old_value == triggeringEnabled)
 		return 0;
 	return Rts2DeviceDb::setValue (old_value, new_value);
 }
@@ -101,6 +113,10 @@ int DevAugerShooter::init ()
 
 int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 {
+	if (triggeringEnabled->getValueBool () == false)
+	{
+		logStream (MESSAGE_WARNING) << "Triggering is disabled, trigger " << LibnovaDateDouble (lastDate) << "not executed." << sendLog;
+	}
 	Rts2Conn *exec;
 	lastAugerDate->setValueDouble (lastDate);
 	lastAugerRa->setValueDouble (ra);
@@ -112,8 +128,7 @@ int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	}
 	else
 	{
-		logStream (MESSAGE_ERROR) <<
-			"FATAL! No executor running to post shower!" << sendLog;
+		logStream (MESSAGE_ERROR) << "FATAL! No executor running to post shower!" << sendLog;
 		return -1;
 	}
 	return 0;

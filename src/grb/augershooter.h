@@ -30,22 +30,13 @@ namespace rts2grbd
 
 class ConnShooter;
 
+/**
+ * Device class for auger shooter. Opens ShooterConn, waits for shooters and display their statistics.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class DevAugerShooter:public Rts2DeviceDb
 {
-	private:
-		ConnShooter * shootercnn;
-		int port;
-		Rts2ValueDouble *minEnergy;
-		Rts2ValueInteger *maxTime;
-
-		Rts2ValueTime *lastAugerDate;
-		Rts2ValueDouble *lastAugerRa;
-		Rts2ValueDouble *lastAugerDec;
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int reloadConfig ();
-
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	public:
 		DevAugerShooter (int in_argc, char **in_argv);
 		virtual ~ DevAugerShooter (void);
@@ -58,6 +49,22 @@ class DevAugerShooter:public Rts2DeviceDb
 		virtual int init ();
 		int newShower (double lastDate, double ra, double dec);
 		bool wasSeen (double lastDate, double ra, double dec);
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+	private:
+		ConnShooter * shootercnn;
+		int port;
+		Rts2ValueDouble *minEnergy;
+		Rts2ValueInteger *maxTime;
+
+		Rts2ValueTime *lastAugerDate;
+		Rts2ValueDouble *lastAugerRa;
+		Rts2ValueDouble *lastAugerDec;
+
+		Rts2ValueBool *triggeringEnabled;
 };
 
 }
