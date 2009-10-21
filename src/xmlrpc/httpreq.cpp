@@ -175,7 +175,7 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 }
 void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
 {
-	AltAz altaz = AltAz ();
+	AltAz altaz = AltAz (250, 250);
 	altaz.plotAltAzGrid ();
 
 	struct ln_equ_posn pos;

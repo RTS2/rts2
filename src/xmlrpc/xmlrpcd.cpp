@@ -227,7 +227,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 	rpcPort = 8889;
 	stateChangeFile = NULL;
 
-	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails");
+	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false);
 	send_emails->setValueBool (true);
 
 #ifndef HAVE_PGSQL

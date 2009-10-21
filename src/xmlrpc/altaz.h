@@ -37,7 +37,7 @@ namespace rts2xmlrpc
 class AltAz
 {
 	public:
-		AltAz () : image (Magick::Geometry (600, 600), "white") {rotation = 0; setCenter (); }
+		AltAz (int w = 600, int h = 600) : image (Magick::Geometry (w, h), "white") {rotation = 0; setCenter (); }
 		AltAz (Magick::Image &_image): image (_image) {rotation = 0; setCenter (); }
 
 		/**
