@@ -39,10 +39,10 @@ ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
 
 DROP TABLE epoch;
 
-DROP FUNCTION imgpath;
-DROP FUNCTION img_fits_name;
-DROP FUNCTION dark_name;
-DROP FUNCTION ell_update;
+DROP FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime);
+DROP FUNCTION img_fits_name(timestamp, integer);
+DROP FUNCTION dark_name(integer, integer, timestamp, integer,   integer, varchar(8));
+DROP FUNCTION ell_update(varchar (150), float4, float4, float4, float4, float4, float4, float8, float4, float4);
 
 -- Drop ell - they are now stored as MPEC one-liners
 
