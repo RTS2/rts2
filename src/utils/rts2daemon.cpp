@@ -992,12 +992,15 @@ Rts2Daemon::sendInfo (Rts2Conn * conn, bool forceSend)
 void
 Rts2Daemon::sendValueAll (Rts2Value * value)
 {
-	connections_t::iterator iter;
-	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
-		value->send (*iter);
-	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-		value->send (*iter);
-	value->resetNeedSend ();
+	if (value->needSend ())
+	{
+		connections_t::iterator iter;
+		for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+			value->send (*iter);
+		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
+			value->send (*iter);
+		value->resetNeedSend ();
+	}
 }
 
 
