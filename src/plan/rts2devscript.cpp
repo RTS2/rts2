@@ -362,8 +362,7 @@ Rts2DevScript::deleteScript ()
 		// that can result in call to startTarget and
 		// therefore nextCommand, which will set nextComd - so we
 		// don't want to touch it after that
-		script_connection->getMaster ()->
-			postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
+		script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_ENDED));
 	}
 }
 
