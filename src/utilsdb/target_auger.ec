@@ -270,10 +270,9 @@ void TargetAuger::updateShowerFields ()
 
 	// core position vector
 	vec_unit (&cor, &cortmp);
-	cor = cortmp;
 
 	// vector perpendicular to SDP - axis of rotation
-	crossProduct (&dir, &cor, &axis);
+	crossProduct (&dir, &cortmp, &axis);
 	vec_unit (&axis, &unit);
 	axis = unit;
 
