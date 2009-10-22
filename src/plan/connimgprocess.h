@@ -27,22 +27,20 @@
 namespace rts2plan
 {
 
-typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT }
-astrometry_stat_t;
+typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
 
 class ConnProcess:public rts2core::ConnFork
 {
 	protected:
 		astrometry_stat_t astrometryStat;
+		double expDate;
 	public:
-		ConnProcess (Rts2Block * in_master,
-			const char *in_exe, int in_timeout);
+		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
 
-		astrometry_stat_t getAstrometryStat ()
-		{
-			return astrometryStat;
-		}
+		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
+		
+		double getExposureEnd () { return expDate; };
+
 };
 
 /**
@@ -79,9 +77,7 @@ class ConnImgProcess:public ConnProcess
 		virtual void connectionError (int last_data_size);
 
 	public:
-		ConnImgProcess (Rts2Block * in_master,
-			const char *in_exe, const char *in_path,
-			int in_timeout);
+		ConnImgProcess (Rts2Block * in_master, const char *in_exe, const char *in_path, int in_timeout);
 		virtual ~ ConnImgProcess (void);
 
 		virtual int newProcess ();

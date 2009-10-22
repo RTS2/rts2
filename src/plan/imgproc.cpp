@@ -103,7 +103,14 @@ class ImageProc:public Rts2Device
 
 		Rts2ValueInteger *queSize;
 
+		Rts2ValueTime *lastGood;
+
+		Rts2ValueInteger *nightGoodImages;
+		Rts2ValueInteger *nightTrashImages;
+		Rts2ValueInteger *nightBadImages;
+
 		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
+
 		std::string defaultImgProcess;
 		std::string defaultObsProcess;
 		std::string defaultDarkProcess;
@@ -135,7 +142,14 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (badImages, "bad_images", "number of bad images (in queue under bad directory)", false);
 	badImages->setValueInteger (0);
 
-	createValue (queSize, "que_size", "size of image que", false);
+	createValue (queSize, "queue_size", "number of images waiting for processing", false);
+	queSize->setValueInteger (0);
+
+	createValue (lastGood, "last_good", "last good image (with correct astrometry)", false);
+
+	createValue (nightGoodImages, "night_good", "number of good images during night", false);
+	createValue (nightTrashImages, "night_trash", "number of trash images during current night", false);
+	createValue (nightBadImages, "night_bad", "number of bad images during current night", false);
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
@@ -284,6 +298,14 @@ int ImageProc::changeMasterState (int new_state)
 	{
 		case SERVERD_DUSK:
 		case SERVERD_DUSK | SERVERD_STANDBY_MASK:
+			nightGoodImages->setValueInteger (0);
+			nightTrashImages->setValueInteger (0);
+			nightBadImages->setValueInteger (0);
+			
+			sendValueAll (nightGoodImages);
+			sendValueAll (nightTrashImages);
+			sendValueAll (nightBadImages);
+
 		case SERVERD_NIGHT:
 		case SERVERD_NIGHT | SERVERD_STANDBY_MASK:
 		case SERVERD_DAWN:
@@ -333,13 +355,29 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 		{
 			case GET:
 				goodImages->inc ();
+				nightGoodImages->inc ();
 				sendValueAll (goodImages);
+				sendValueAll (nightGoodImages);
+				if (runningImage->getExposureEnd () > lastGood->getValueDouble ())
+				{
+					lastGood->setValueDouble (runningImage->getExposureEnd ());
+					sendValueAll (lastGood);
+				}
 				break;
 			case TRASH:
 				trashImages->inc ();
+				nightTrashImages->inc ();
 				sendValueAll (trashImages);
+				sendValueAll (nightTrashImages);
+				break;
+			case BAD:
+				badImages->inc ();
+				nightBadImages->inc ();
+				sendValueAll (badImages);
+				sendValueAll (nightBadImages);
 				break;
 			default:
+				logStream (MESSAGE_ERROR) << "wrong image state: " << runningImage->getAstrometryStat () << sendLog;
 				break;
 		}
 		runningImage = NULL;

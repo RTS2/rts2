@@ -72,6 +72,8 @@ int ConnImgProcess::newProcess ()
 			return 0;
 		}
 		delete image;
+
+		expDate = image->getExposureStart () + image->getExposureLength ();
 	
 		if (exePath)
 		{
