@@ -85,6 +85,7 @@ class RecordsSet: public std::list <Record>
 
 		void loadState (double t_from, double t_to);
 		void loadDouble (double t_from, double t_to);
+		void loadBoolean (double t_from, double t_to);
 
 		// minmal and maximal values..
 		double min;

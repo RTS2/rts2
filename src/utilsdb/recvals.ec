@@ -90,7 +90,7 @@ void RecvalsSet::load ()
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 1, d_from, d_to));
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_DOUBLE, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)

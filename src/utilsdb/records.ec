@@ -18,6 +18,7 @@
  */
 
 #include "records.h"
+#include "recvals.h"
 #include "sqlerror.h"
 
 using namespace rts2db;
@@ -130,16 +131,67 @@ void RecordsSet::loadDouble (double t_from, double t_to)
 	EXEC SQL ROLLBACK;
 }
 
+void RecordsSet::loadBoolean (double t_from, double t_to)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_recval_id = recval_id;
+	double d_rectime;
+	bool d_value;
+	double d_t_from = t_from;
+	double d_t_to = t_to;
+	EXEC SQL END DECLARE SECTION;
+
+	EXEC SQL DECLARE records_boolean_cur CURSOR FOR
+	SELECT
+		EXTRACT (EPOCH FROM rectime),
+		value
+	FROM
+		records_boolean
+	WHERE
+		  recval_id = :d_recval_id
+		AND rectime BETWEEN to_timestamp (:d_t_from) AND to_timestamp (:d_t_to)
+	ORDER BY
+		rectime;
+
+	EXEC SQL OPEN records_boolean_cur;
+
+	min = 1;
+	max = 0;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM records_boolean_cur INTO
+			:d_rectime,
+			:d_value;
+		if (sqlca.sqlcode)
+			break;
+		if (d_value < min)
+			min = d_value;
+		if (d_value > max)
+		  	max = d_value;
+//		push_back (Record (d_rectime, d_value));
+	}
+
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		throw SqlError();
+	}
+	EXEC SQL CLOSE records_boolean_cur;
+	EXEC SQL ROLLBACK;
+}
 
 void RecordsSet::load (double t_from, double t_to)
 {
 	switch (getValueType ())
 	{
-		case 0:
+		case RECVAL_STATE:
 			loadState (t_from, t_to);
 			break;
-		case 1:
+		case RECVAL_DOUBLE:
 			loadDouble (t_from, t_to);
+			break;
+		case RECVAL_BOOLEAN:
+			loadBoolean (t_from, t_to);
 			break;
 		default:
 			throw rts2core::Error ("unknown value type");

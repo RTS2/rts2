@@ -23,6 +23,10 @@
 #include <list>
 #include <string>
 
+#define RECVAL_STATE    0
+#define RECVAL_DOUBLE   1
+#define RECVAL_BOOLEAN  2
+
 namespace rts2db
 {
 
