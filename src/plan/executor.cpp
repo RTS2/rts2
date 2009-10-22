@@ -630,7 +630,7 @@ void Executor::clearNextTargets ()
 
 void Executor::queDarks ()
 {
-	Rts2Conn *minConn = getMinConn ("que_size");
+	Rts2Conn *minConn = getMinConn ("queue_size");
 	if (!minConn)
 		return;
 	minConn->queCommand (new Rts2Command (this, "que_darks"));
@@ -638,7 +638,7 @@ void Executor::queDarks ()
 
 void Executor::queFlats ()
 {
-	Rts2Conn *minConn = getMinConn ("que_size");
+	Rts2Conn *minConn = getMinConn ("queue_size");
 	if (!minConn)
 		return;
 	minConn->queCommand (new Rts2Command (this, "que_flats"));

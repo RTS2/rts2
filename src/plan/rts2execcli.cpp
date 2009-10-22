@@ -180,7 +180,7 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 		return;
 
 	// find image processor with lowest que number..
-	Rts2Conn *minConn = getMaster ()->getMinConn ("que_size");
+	Rts2Conn *minConn = getMaster ()->getMinConn ("queue_size");
 	if (!minConn)
 		return;
 	image->saveImage ();
