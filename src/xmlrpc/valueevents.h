@@ -90,7 +90,7 @@ class ValueChangeRecord: public ValueChange
 #ifdef HAVE_PGSQL
 	private:
 		std::map <const char *, int> dbValueIds;
-		int getRecvalId (const char *suffix = NULL);
+		int getRecvalId (const char *suffix, int recval_type);
 		void recordValueDouble (int recval_id, double val, double validTime);
 		void recordValueBoolean (int recval_id, bool val, double validTime);
 #endif /* HAVE_PGSQL */

@@ -19,18 +19,20 @@
 
 #include "xmlrpcd.h"
 
+#include "../utilsdb/recvals.h"
 #include "../utilsdb/sqlerror.h"
 
 EXEC SQL include sqlca;
 
 using namespace rts2xmlrpc;
 
-int ValueChangeRecord::getRecvalId (const char *suffix)
+int ValueChangeRecord::getRecvalId (const char *suffix, int recval_type)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_recval_id;
 	VARCHAR db_device_name[25];
 	VARCHAR db_value_name[26];
+	int db_recval_type = recval_type;
 	EXEC SQL END DECLARE SECTION;
 
 	std::map <const char *, int>::iterator iter = dbValueIds.find (suffix);
@@ -63,7 +65,7 @@ int ValueChangeRecord::getRecvalId (const char *suffix)
 		{
 			// insert new record
 			EXEC SQL SELECT nextval ('recval_ids') INTO :db_recval_id;
-			EXEC SQL INSERT INTO recvals VALUES (:db_recval_id, :db_device_name, :db_value_name, 1);
+			EXEC SQL INSERT INTO recvals VALUES (:db_recval_id, :db_device_name, :db_value_name, :db_recval_type);
 			if (sqlca.sqlcode)
 				throw rts2db::SqlError ();
 		}
@@ -123,22 +125,22 @@ void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 
 	std::ostringstream _os;
 
-	switch (val->getValueType ())
+	switch (val->getValueBaseType ())
 	{
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_FLOAT:
-			recordValueDouble (getRecvalId (), val->getValueDouble (), validTime);
+			recordValueDouble (getRecvalId (NULL, RECVAL_DOUBLE), val->getValueDouble (), validTime);
 			break;
 		case RTS2_VALUE_RADEC:
-			recordValueDouble (getRecvalId ("RA"), ((Rts2ValueRaDec *) val)->getRa (), validTime);
-			recordValueDouble (getRecvalId ("DEC"), ((Rts2ValueRaDec *) val)->getDec (), validTime);
+			recordValueDouble (getRecvalId ("RA", RECVAL_DOUBLE), ((Rts2ValueRaDec *) val)->getRa (), validTime);
+			recordValueDouble (getRecvalId ("DEC", RECVAL_DOUBLE), ((Rts2ValueRaDec *) val)->getDec (), validTime);
 			break;
 		case RTS2_VALUE_ALTAZ:
-			recordValueDouble (getRecvalId ("ALT"), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
-			recordValueDouble (getRecvalId ("AZ"), ((Rts2ValueAltAz *) val)->getAz (), validTime);
+			recordValueDouble (getRecvalId ("ALT", RECVAL_DOUBLE), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
+			recordValueDouble (getRecvalId ("AZ", RECVAL_DOUBLE), ((Rts2ValueAltAz *) val)->getAz (), validTime);
 			break;
 		case RTS2_VALUE_BOOL:
-			recordValueBoolean (getRecvalId (), ((Rts2ValueBool *) val)->getValueBool (), validTime);
+			recordValueBoolean (getRecvalId (NULL, RECVAL_BOOLEAN), ((Rts2ValueBool *) val)->getValueBool (), validTime);
 			break;
 		default:
 			_os << "Cannot record value " << valueName;
