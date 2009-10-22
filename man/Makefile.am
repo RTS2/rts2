@@ -13,7 +13,6 @@ EXTRA_DIST = \
     rts2.script.xml \
     rts2.fitskeys.xml \
     rts2-horizon.xml \
-    rts2-mon.xml \
     rts2-scriptexec.xml \
     rts2-logger.xml \
     rts2-logd.xml \
@@ -51,7 +50,6 @@ man_MANS = \
     rts2.script.5 \
     rts2.fitskeys.5 \
     rts2-horizon.1 \
-    rts2-mon.1 \
     rts2-scriptexec.1 \
     rts2-logger.1 \
     rts2-logd.1 \
