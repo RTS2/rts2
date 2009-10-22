@@ -131,8 +131,7 @@ void Rts2FitsFile::openFile (const char *_fileName, bool readOnly)
 	{
 		if (!(flags & IMAGE_CANNOT_LOAD))
 		{
-			logStream (MESSAGE_ERROR) << "openImage: " << getFitsErrors () <<
-				sendLog;
+			logStream (MESSAGE_ERROR) << "while opening fits file: " << getFitsErrors () <<	sendLog;
 			flags |= IMAGE_CANNOT_LOAD;
 		}
 		throw ErrorOpeningFitsFile (getFileName ());
