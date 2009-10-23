@@ -1,0 +1,567 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "<firstname>Markus</firstname>">
+  <!ENTITY dhsurname   "<surname>Wildi</surname>">
+  <!ENTITY dhdate      "<date>2009-10-21</date>">
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>markus.wildi@one-arcsec.org</email>">
+  <!ENTITY dhusername  "Markus Wildi">
+  <!ENTITY dhpackage   "rts2-autofocus">
+
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhpackage;</title>
+    <productname>rts2</productname>
+    <productnumber>0.8.0</productnumber>
+    &dhdate;
+    <authorgroup>
+      <author>
+        &dhfirstname;
+        &dhsurname;
+	<contrib></contrib>
+	<address>
+          &dhemail;
+	</address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2009</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>
+	This manual page was written by &dhusername; &dhemail;.  Permission is
+	granted to copy, distribute and/or modify this document under the terms
+	of the &gnu; General Public License, Version 2 any later version
+	published by the Free Software Foundation.
+      </para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhpackage;</refentrytitle>
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Data tacking and (offline) analysis of focus run images.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+	<arg choice="plain"><option>-x <replaceable>to be written</replaceable></option></arg>
+      </arg>
+    </cmdsynopsis>
+
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt">
+        <arg choice="plain"><option>-h</option></arg>
+	<arg choice="plain"><option>--help</option></arg>
+      </arg>
+      <arg choice="opt">
+	<arg choice="plain"><option>--version</option></arg>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>How to read this document</title>
+    <para>All words typeset with capital letters or beginning with 
+"%", with the exception of fits header elements, are configuration parameter in
+<command>&dhpackage;</command> 
+and are found between  the lines "begin default configuration" and "end default
+configuration". Parameters outside these limits should normally not be changed. 
+    </para>
+  </refsect1>
+  <refsect1>    <title>Status</title>
+    <para>The aim is to have an autofocuser for an autonomous system. It should
+therefore fail only in very small fraction of the cases and the derived focuser
+position should be close to the true position.
+<command>&dhpackage;</command> is built around two components: SExtractor and
+the fit programs foc or foc_x. During offline analysis I saw mainly good but bad
+results too. 
+</para><para>
+Consider <command>&dhpackage;</command> as an efficient testbed. E.g. you can
+take focus runs if the full moon doesn't allow any scientific work. You can analyse the 
+data offline and configure SEXCFG or enhance the script according to your needs.
+    </para>
+    <para>
+You are invited to read the source. There are a lot of comments and I used
+"talking" variable names.
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Operation</title>
+    <para>
+<command>&dhpackage;</command> performs two tasks: online data taking and 
+analysis and offline analysis of previously acquired focus run images.
+
+If <command>&dhpackage;</command> takes data in online mode it steers the 
+CCD_CAMERA and its associated focuser and filter wheel and performs the analysis of the 
+images for each filter right after the run. If only one filter is specified 
+the focuser its set according to the result if SET_FOCUS is true otherwise 
+the results are printed to the terminal.  
+ If <command>&dhpackage;</command> runs in  offline mode it prints the results
+to the terminal. Depending on the fit program the results are plotted using gnuplot.   
+</para>
+    <para>
+      A reference image is taken near the assumed best focus and SExtractor 
+identifies objects according to its configuration. SExtractor rereads the 
+reference ("sky list") and compares the x,y positions, but not the brightness, 
+with those from the current image. An object is considered if it has been 
+identified on all images. The two quantities FWHM_IMAGE and 1./FLUX_MAX are 
+fitted independently. The focus is derived from these two fits and if the 
+two values agree within FOCUSER_RESOLUTION the mean is the focus.
+    </para>
+    <para>
+     The
+focus mean can be made more robust by specifying MAKE_ROBUST as
+true.<command>&dhpackage;</command> calculates then a series of limits which 
+are symmetrical to the minimum of the data. If the standard deviation of the mean
+position is smaller than FOCUSER_RESOLUTION the mean is the focus.
+    </para>
+   <para>
+     During analysis DS9 region of interest (*.reg) files are written for
+each image. These files can be loaded with DS9 and inspected.  The circle is
+centred to SExtractor x,y positions. Yellow circles
+indicate that an object has been identified by comparing it against the
+reference catalogue, while green circles mark
+all objects listed in the reference catalogue. Merging all files together 
+gives a first idea of SExtractor's selection.  
+    </para>
+    <para>
+     The selection of the objects is done in sub raw_analysis(\@){}. The 
+defined selection is based solely on properties of the reference
+catalogue. Feel free to add more criteria as long as you get enough objects.
+    </para>
+    <para> 
+You may choose your own SEXCFG but must use SEXPARAM and SEXREFERENCE_PARAM
+from RTS2 svn repository. Compared with the default SEXCFG (sex -d) the following
+parameters have been changed:</para>
+ <variablelist>   <varlistentry><variablelist> <varlistentry><term>DETECT_THRESH    2.7
+         </term>
+	<listitem><para>#  sigmas or threshold, ZP in mag.arcsec-2</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ANALYSIS_THRESH  2.7
+         </term>
+	<listitem><para># sigmas or threshold, ZP in mag.arcsec-2</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>FILTER           N
+         </term>
+	<listitem><para># apply filter for detection (Y or N)?</para>
+        </listitem></varlistentry>
+      <varlistentry>
+	<term>ASSOC_DATA       0 
+         </term> 
+	<listitem><para># columns of the data to replicate (0=all) # rts2-atofocus DO not touch</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ASSOC_PARAMS     2,3
+         </term>
+	<listitem><para># columns of xpos,ypos[,mag] # rts2-autofocus do not use mag</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ASSOC_RADIUS     10.0
+         </term>
+	<listitem><para># cross-matching radius (pixels) # rts2_autofocus unguided exposures, e.g. Obs Vermes 14 arcsec 1x1 binning</para>
+        </listitem>
+      </varlistentry> 
+ </variablelist> 
+
+      </varlistentry> 
+ </variablelist> 
+  <para> 
+The following parameters of SEXCFG will be overwritten depending on if the
+reference catalogue is created or the images are analysed:  
+  </para>
+<variablelist>
+      <varlistentry>
+<variablelist>
+      <varlistentry>
+	<term>CATALOG_NAME     /tmp/sex-flux.cat
+         </term>
+	<listitem><para># overwritten by rts2-autofocus, name of the output
+catalog (.cat)</para>
+<para>The base name is SEXCATALOGUE (.cat)</para>        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+	<term>PARAMETERS_NAME  /scratch/sex-flux.param 
+         </term>
+	<listitem><para># name of the file containing catalog contents
+</para><para>The base name is SEXPARAM or for the reference catalogue
+SEXREFERENCE_PARAM (.param)</para>
+        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+	<term>ASSOC_NAME       /scratch/sex-flux-sky.list
+         </term>
+	<listitem><para># overwritten by rts2-autofocus, name of the ASCII file
+to ASSOCiate</para><para>The base name is SEXSKY_LIST (.list)</para>
+        </listitem>
+ </varlistentry> 
+</variablelist>
+ </varlistentry> 
+</variablelist>
+
+   <para>The selection of the images is done with the fits header key words FILTER,
+BINNING, NAXIS1, NAXIS2, ORIRA and ORIDEC. FOC_POS is read for the analysis.
+There are no time constraints applied to the selection yet.
+ </para>
+<para>
+    Do not forget to killall rts2-executor before start.
+    </para>
+</refsect1>
+  <refsect1 id="values">
+    <title>PARAMETERS, VALUES</title>
+    <para>
+The following parameters are best accessed in the file
+    <command>&dhpackage;</command>. The command line options possibly do not
+    work (ToDo). The format of the following list is parameter name, "data type", default value.</para>
+
+      <varlistentry>
+	<term>
+            <option>FITS_DIRECTORY, file name, "/scratch/incomming/Focusing-2009-10-15"</option>
+          </term>
+	<listitem>
+	  <para>
+             For all operations the fits files are stored and/or read from
+FITS_DIRECTORY.
+</para>
+	</listitem>
+      </varlistentry>
+    <variablelist>
+      <varlistentry>
+	<term>
+            <option>FILTERS, list of filters separated by colon, "I"</option>
+          </term>
+	<listitem>
+	  <para>
+FILTERS which being used for the focus run, are defined by the names of
+filters in RTS2_DEVICES, or a subset of them. FILTERS must agree with 
+those with CCD_CAMERA  associated filter wheel. If e.g. "U:B:V:R:I:X:Y" 
+is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
+           </para>
+          </listitem>
+        </varlistentry>
+    <varlistentry>
+    <term>
+    <option>RTS2_DEVICES, file name, "/etc/rts2/devices"</option>
+    </term>
+    <listitem>
+    <para><command>&dhpackage;</command> reads RTS2_DEVICES and selects CCD_CAMERA and
+if defined its associated devices focuser and filter wheel. All devices must be present.
+     </para>
+    </listitem>
+    </varlistentry>
+    </variablelist>
+
+    <varlistentry>
+    <term>
+    <option>SELECT_RATIO, float,  0.1</option>
+    </term>
+    <listitem>
+    <para> The ratio is defined as number of objects found in actual image
+divided by the number of objects defined in the reference catalogue.
+SELECT_RATIO is a threshold to avoid matching images from completely
+different focus runs. 
+
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>MINIMUM_OBJECTS, int, 10</option>
+    </term>
+    <listitem>
+    <para> This is the minimal number of objects which must be identified in all images.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>TAKE_DATA, boolean, FALSE</option>
+    </term>
+    <listitem>
+    <para> If TRUE <command>&dhpackage;</command> takes data and if FALSE it
+analyses offline data.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SET_FOCUS, boolean, FALSE</option>
+    </term>
+    <listitem>
+    <para> IF TRUE and <command>&dhpackage;</command> yields a valid focuser
+position it is set if TAKE_DATA==TRUE.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>CCD_CAMERA, string, "CD"</option>
+    </term>
+    <listitem>
+    <para>This device and its associated focuser and filter wheel are chosen if TAKE_DATA==TRUE.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SEXCFG, file name, "/etc/rts2/autofocus/sex-autofocus.cfg"</option>
+    </term>
+    <listitem>
+    <para>The default SExtractor configuration file.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SEXPARAM, file name, "/etc/rts2/autofocus/sex-autofocus.param"</option>
+    </term>
+    <listitem>
+    <para>The default SExtractor parameter file for image analysis. This file
+is identical with SEXREFERENCE_PARAM beside the last two entries VECTOR_ASSOC(14)
+NUMBER_ASSOC.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SEXREFERENCE_PARAM, file name, "/etc/rts2/autofocus/sex-autofocus-reference.param"</option>
+    </term>
+    <listitem>
+    <para>The default SExtractor parameter file for image analysis. 
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SET_LIMITS_ON_SANITY_CHECKS, boolean, TRUE</option>
+    </term>
+    <listitem>
+    <para>If TRUE the resulting fit is performed symmetrical to the data
+minimum and not to the whole range of FOC_POS found in all fits file. Currently
+the fit depends on the limits because the data does "not behave
+well". E.g. the values of FWHM_IMAGE drop for images taken far from data minimum.
+    </para>
+    </listitem>
+    </varlistentry>
+
+     <varlistentry>
+    <term>
+    <option>MAKE_ROBUST, boolean, FALSE</option>
+    </term>
+    <listitem>
+    <para>If TRUE it calculates a series of lower and upper focuser position limits which 
+are symmetrical to the data minimum. Same remark as for
+SET_LIMITS_ON_SANITY_CHECKS.
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+     <varlistentry>
+    <term>
+    <option>MINIMUM_INTERVALL,int, 8 [%filter_focus_properties[FOCUSER_RESOLUTION]]</option>
+    </term>
+    <listitem>
+    <para>If MAKE_ROBUST==TRUE this defines the minimal interval where a fit
+can be done.
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+     <varlistentry>
+    <term>
+    <option>SEXSKY_LIST, base file name, "/tmp/sex-autofocus-assoc-sky.list"</option>
+    </term>
+    <listitem>
+    <para>This is SExtractor's reference catalogue. It is created at or near %filter_focus_properties{filter}[IND_FOC_DEF].
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+     <varlistentry>
+    <term>
+    <option>SEXCATALOGUE, base file name, "/tmp/sex-autofocus.cat"</option>
+    </term>
+    <listitem>
+    <para>These are SExtractor's reference catalogue files.
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+     <varlistentry>
+    <term>
+    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.plt"</option>
+    </term>
+    <listitem>
+    <para>These files are fed into gnuplot
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+     <varlistentry>
+    <term>
+    <option>DS9_REGION_FILE, base file name, "/tmp/ds9-autofocus.reg"</option>
+    </term>
+    <listitem>
+    <para>These files can be loaded into DS9. Merge all region files into one
+to get an idea which objects were identified and how the relative position
+varies. Larger radii indicate a larger focuser position.
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+    <varlistentry>
+    <term>
+    <option>%filter_focus_properties</option>
+    </term>
+    <listitem>
+    <para>The following properties are defined for U, B, V, R, I, X and Y: </para>
+      <varlistentry>
+	<term>IND_FILTER_VALUE, int, 0,1,3,4,5,6
+         </term>
+	<listitem><para>This is the number within rts2-centrald, see output of rts2-xmlrpcclient if doubtful</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>IND_FOC_DEF, int, 5074, 4712,  4678, 4766,  4700, 3270, 3446
+         </term>
+	<listitem>Known best focus for a given filter.<para></para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>IND_LOWER_LIMIT, int -1500 [ticks]
+         </term>
+	<listitem><para>Lower limit 
+relative to %filter_focus_properties{filter}[IND_FOC_DEF] for fit or 
+focuser position if TAKE_DATA == TRUE</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>IND_UPPER_LIMIT, int, 1500 [ticks]
+         </term>
+	<listitem><para>Upper limit relative 
+to %filter_focus_properties{filter}[IND_FOC_DEF]
+for fit or focuser position if TAKE_DATA == TRUE</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>IND_STEP_SIZE, int, 100 [ticks]
+         </term>
+	<listitem><para>Focuser step size if TAKE_DATA == TRUE</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>IND_EXP_TIME, int, 40, 30, 20, 20, 20, 10, 10 [sec]
+         </term>
+	<listitem><para>Exposure time used if TAKE_DATA == TRUE</para>
+        </listitem>
+ </varlistentry> 
+ </listitem> </varlistentry>
+ 
+    <varlistentry>
+    <term>
+    <option>%focuser_properties</option>
+    </term>
+    <listitem>
+    <para>The following properties are defined:</para>
+      <varlistentry>
+	<term>FOCUSER_RESOLUTION, int, 20 [ticks]
+         </term>
+	<listitem><para>This is the number of focuser 
+ticks which makes a difference e.g. in FWHM_IMAGE.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ABSOLUTE_LOWER_LIMIT, int, 0 [ticks]
+         </term>
+	<listitem><para>No focuser position is set below this limit.</para>
+        </listitem>
+ </varlistentry> 
+      <varlistentry>
+	<term>ABSOUTE_UPPER_LIMIT, int, 7000 [ticks]
+         </term>
+	<listitem><para>No focuser position is set above this limit.</para>
+        </listitem>
+ </varlistentry> 
+</listitem> </varlistentry>
+ 
+
+
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+    <para>
+      This program follows the usual &gnu; command line syntax,
+      with long options starting with two dashes (`--').  A summary of
+      options is included below.
+    </para>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-x</option></term>
+        <listitem>
+          <para>to be written.</para>
+        </listitem>
+      </varlistentry>
+  </refsect1>
+  <refsect1>
+
+    <title>SEE ALSO</title>
+    <para>
+     http://rts2.org/wiki,
+https://azug.minpet.unibas.ch/wikiobsvermes/index.php
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>Required software and Perl Modules</title>
+     <varlistentry>
+      <term> SExtractor, foc, foc_x
+      </term>
+     </varlistentry>
+     <varlistentry>
+      <term> Getopt::Long, Statistics::Descriptive::Discrete
+      </term>
+     </varlistentry>
+  </refsect1>
+  <refsect1>
+    <title>BUGS</title>
+    <para>
+      Please contact the author.
+    </para>
+  </refsect1>
+</refentry>
