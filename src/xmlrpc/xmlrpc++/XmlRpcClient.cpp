@@ -66,7 +66,7 @@ XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization
 		_uri = _os.str () + _uri;
 	}
 	_connectionState = NO_CONNECTION;
-	_executing = false;
+	_executing = NOEXEC;
 	_eof = false;
 
 	// Default to keeping the connection open until an explicit close is done
@@ -94,9 +94,9 @@ XmlRpcClient::close()
 // Clear the referenced flag even if exceptions or errors occur.
 struct ClearFlagOnExit
 {
-	ClearFlagOnExit(bool& flag) : _flag(flag) {}
-	~ClearFlagOnExit() { _flag = false; }
-	bool& _flag;
+	ClearFlagOnExit(ExecutingType& flag) : _flag(flag) {}
+	~ClearFlagOnExit() { _flag = NOEXEC; }
+	ExecutingType& _flag;
 };
 
 // Execute the named procedure on the remote server.
@@ -111,10 +111,10 @@ XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue
 	// This is not a thread-safe operation, if you want to do multithreading, use separate
 	// clients for each thread. If you want to protect yourself from multiple threads
 	// accessing the same client, replace this code with a real mutex.
-	if (_executing)
+	if (_executing != NOEXEC)
 		return false;
 
-	_executing = true;
+	_executing = XML_RPC;
 	ClearFlagOnExit cf(_executing);
 
 	_sendAttempts = 0;
@@ -134,6 +134,40 @@ XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue
 		return false;
 
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: method %s completed.", method);
+	_response = "";
+	return true;
+}
+
+
+bool
+XmlRpcClient::executeGet(const char* path, std::string& reply)
+{
+	XmlRpcUtil::log(1, "XmlRpcClient::execute: path %s (_connectionState %d):", path, _connectionState);
+
+	if (_executing != NOEXEC)
+		return false;
+	
+	_executing = HTTP_GET;
+	ClearFlagOnExit cf(_executing);
+
+	_sendAttempts = 0;
+	_isFault = false;
+
+	if ( ! setupConnection())
+		return false;
+
+	if ( ! generateGetRequest(path))
+		return false;
+
+	reply = "";
+	double msTime = -1.0;
+	_disp.work(msTime);
+
+	if (_connectionState != IDLE)
+		return false;
+
+	reply = _response;
+	XmlRpcUtil::log(1, "XmlRpcClient::executeGet: path %s retrieved. Reply size: %i", path, reply.length ());
 	_response = "";
 	return true;
 }
@@ -281,6 +315,15 @@ XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& params)
 }
 
 
+bool
+XmlRpcClient::generateGetRequest(const char* path)
+{
+	_request = generateGetHeader(path);
+	XmlRpcUtil::log(4, "XmlRpcClient::generateGetRequest: header is %d bytes.", _request.length ());
+	return true;
+}
+
+
 // Prepend http headers
 std::string
 XmlRpcClient::generateHeader(std::string const& body)
@@ -312,6 +355,38 @@ XmlRpcClient::generateHeader(std::string const& body)
 	sprintf(buff,"%i\r\n\r\n", body.size());
 
 	return header + buff;
+}
+
+
+// Prepare GET request header
+std::string
+XmlRpcClient::generateGetHeader(std::string const& path)
+{
+	std::string header =
+		"GET " + path + " HTTP/1.1\r\n"
+		"User-Agent: ";
+	header += XMLRPC_VERSION;
+	header += "\r\nHost: ";
+	header += _host;
+
+	char buff[40];
+	sprintf(buff,":%d\r\n", _port);
+
+	header += buff;
+	if (_authorization.length() > 0)
+	{
+		std::string auth;
+
+		int iostatus = 0;
+		base64<char> encoder;
+		std::back_insert_iterator<std::string> ins = std::back_inserter(auth);
+		encoder.put(_authorization.begin(), _authorization.end(), ins, iostatus, base64<>::crlf());
+
+		header += "Authorization: Basic " + auth + "\r\n";
+	}
+	header += "\r\n\r\n";
+
+	return header;
 }
 
 

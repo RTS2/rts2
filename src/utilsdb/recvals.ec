@@ -28,6 +28,7 @@ void RecvalsSet::load ()
 	int d_recval_id;
 	VARCHAR d_device_name[26];
 	VARCHAR d_value_name[26];
+	int d_value_type;
 	double d_from;
 	double d_to;
 	EXEC SQL END DECLARE SECTION;
@@ -56,7 +57,7 @@ void RecvalsSet::load ()
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 0, d_from, d_to));
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -71,6 +72,7 @@ void RecvalsSet::load ()
 		recval_id,
 		device_name,
 		value_name,
+		value_type,
 		EXTRACT (EPOCH FROM time_from),
 		EXTRACT (EPOCH FROM time_to)
 	FROM
@@ -84,13 +86,14 @@ void RecvalsSet::load ()
 			:d_recval_id,
 			:d_device_name,
 			:d_value_name,
+			:d_value_type,
 			:d_from,
 			:d_to;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_DOUBLE, d_from, d_to));
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -98,6 +101,41 @@ void RecvalsSet::load ()
 		throw SqlError();
 	}
 	EXEC SQL CLOSE recval_double_cur;
+
+	EXEC SQL DECLARE recval_boolean_cur CURSOR FOR
+	SELECT
+		recval_id,
+		device_name,
+		value_name,
+		value_type,
+		EXTRACT (EPOCH FROM time_from),
+		EXTRACT (EPOCH FROM time_to)
+	FROM
+		recvals_boolean_statistics;
+
+	EXEC SQL OPEN recval_boolean_cur;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM recval_boolean_cur INTO
+			:d_recval_id,
+			:d_device_name,
+			:d_value_name,
+			:d_value_type,
+			:d_from,
+			:d_to;
+		if (sqlca.sqlcode)
+			break;
+		d_device_name.arr[d_device_name.len] = '\0';
+		d_value_name.arr[d_value_name.len] = '\0';
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
+	}
+
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		throw SqlError();
+	}
+	EXEC SQL CLOSE recval_boolean_cur;
 	EXEC SQL ROLLBACK;
 }
 

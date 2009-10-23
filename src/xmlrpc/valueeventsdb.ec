@@ -129,18 +129,18 @@ void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
 	{
 		case RTS2_VALUE_DOUBLE:
 		case RTS2_VALUE_FLOAT:
-			recordValueDouble (getRecvalId (NULL, RECVAL_DOUBLE), val->getValueDouble (), validTime);
+			recordValueDouble (getRecvalId (NULL, RTS2_VALUE_DOUBLE | val->getValueDisplayType ()), val->getValueDouble (), validTime);
 			break;
 		case RTS2_VALUE_RADEC:
-			recordValueDouble (getRecvalId ("RA", RECVAL_DOUBLE), ((Rts2ValueRaDec *) val)->getRa (), validTime);
-			recordValueDouble (getRecvalId ("DEC", RECVAL_DOUBLE), ((Rts2ValueRaDec *) val)->getDec (), validTime);
+			recordValueDouble (getRecvalId ("RA", RTS2_VALUE_DOUBLE | RTS2_DT_RA), ((Rts2ValueRaDec *) val)->getRa (), validTime);
+			recordValueDouble (getRecvalId ("DEC", RTS2_VALUE_DOUBLE | RTS2_DT_DEC), ((Rts2ValueRaDec *) val)->getDec (), validTime);
 			break;
 		case RTS2_VALUE_ALTAZ:
-			recordValueDouble (getRecvalId ("ALT", RECVAL_DOUBLE), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
-			recordValueDouble (getRecvalId ("AZ", RECVAL_DOUBLE), ((Rts2ValueAltAz *) val)->getAz (), validTime);
+			recordValueDouble (getRecvalId ("ALT", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((Rts2ValueAltAz *) val)->getAlt (), validTime);
+			recordValueDouble (getRecvalId ("AZ", RTS2_VALUE_DOUBLE | RTS2_DT_DEGREES), ((Rts2ValueAltAz *) val)->getAz (), validTime);
 			break;
 		case RTS2_VALUE_BOOL:
-			recordValueBoolean (getRecvalId (NULL, RECVAL_BOOLEAN), ((Rts2ValueBool *) val)->getValueBool (), validTime);
+			recordValueBoolean (getRecvalId (NULL, RTS2_VALUE_BOOL), ((Rts2ValueBool *) val)->getValueBool (), validTime);
 			break;
 		default:
 			_os << "Cannot record value " << valueName;

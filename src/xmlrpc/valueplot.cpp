@@ -21,57 +21,159 @@
 
 #include "valueplot.h"
 #include "../utils/libnova_cpp.h"
-#include "../utilsdb/records.h"
 
 using namespace rts2xmlrpc;
 
-ValuePlot::ValuePlot (int _recvalId, int w, int h)
+ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h)
 {
 	recvalId = _recvalId;
+	valueType = _valType;
 	size.width (w);
 	size.height (h);
 
 	image = NULL;
 }
 
-Magick::Image* ValuePlot::getPlot (double from, double to)
+Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int shadow)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
 
+	from = _from;
+	to = _to;
+	plotType = _plotType;
+
 	rs.load (from, to);
 
-	delete image;
+	if (_image)
+	{
+		image = image;
+	}
+	else
+	{
+		delete image;
 
-	image = new Magick::Image (size, "white");
+		image = new Magick::Image (size, "white");
+	}
 	image->strokeColor ("black");
 	image->strokeWidth (1);
 
 	// Y axis scaling
-	double min = rs.getMin ();
-	double max = rs.getMax ();
+	min = rs.getMin ();
+	max = rs.getMax ();
 
-	double scaleY = size.height () / (max - min);
-	double scaleX = size.width () / (to - from); 
-
-	for (rts2db::RecordsSet::iterator iter = rs.begin (); iter != rs.end (); iter++)
-	{
-		double x = scaleX * (iter->getRecTime () - from);
-		double y = size.height () - scaleY * (iter->getValue () - min);
-		image->draw (Magick::DrawableCircle (x, y, x - 2, y));
-	}
+	scaleY = size.height () / (max - min);
+	scaleX = size.width () / (to - from); 
 
 	image->font("helvetica");
+	image->strokeAntiAlias (true);
 
-	if (max > 0 && min < 0)
+	switch (valueType & RTS2_BASE_TYPE)
 	{
-		// draw 0 line
-		image->fontPointsize (15);
-		image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
-		image->strokeWidth (3);
-		plotYGrid (size.height () - (scaleY * -min));
+		case RTS2_VALUE_BOOL:
+			min = -0.1;
+			max = 1.1;
+			if (plotType == PLOTTYPE_AUTO)
+				plotType = PLOTTYPE_FILL_SHARP;
+			plotYBoolean ();
+			break;
+		case RTS2_VALUE_DOUBLE:
+		default:
+			if (max > 0 && min < 0)
+			{
+				// draw 0 line
+				image->fontPointsize (15);
+				image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
+				image->strokeWidth (3);
+				plotYGrid (size.height () - (scaleY * -min));
+			}
+			if (plotType == PLOTTYPE_AUTO)
+				plotType = PLOTTYPE_LINE;
+			switch (valueType & RTS2_TYPE_MASK)
+			{
+				case RTS2_DT_RA:
+				case RTS2_DT_DEC:
+				case RTS2_DT_DEGREES:
+					plotYDegrees ();
+					break;
+				default:
+					plotYDouble ();
+					break;
+			}
+			break;
 	}
 
+	if (!rs.empty ())
+	{
+		if (shadow)
+			plotData (rs, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), shadow);
+		plotData (rs, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), 0);
+	}
+
+	return image;
+}
+
+void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int shadow)
+{
+	// reset stroke pattern
+	image->strokePattern (Magick::Image (Magick::Geometry (1,1), col));
+	image->strokeColor (col);
+	image->strokeWidth (3);
+	image->fillColor (col);
+
+	rts2db::RecordsSet::iterator iter = rs.begin ();
+
+	double x = scaleX * (iter->getRecTime () - from) + shadow;
+	double y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+
+	for (; iter != rs.end (); )
+	{
+		iter++;
+		double x_end = (iter == rs.end ()) ? size.width (): scaleX * (iter->getRecTime () - from) + shadow;
+		double y_end = (iter == rs.end ()) ? y : size.height () - scaleY * (iter->getValue () - min) + shadow;
+		switch (plotType)
+		{
+			case PLOTTYPE_AUTO:
+			case PLOTTYPE_LINE:
+				image->draw (Magick::DrawableLine (x, y, x_end, y_end));
+				break;
+			case PLOTTYPE_CROSS:
+				image->draw (Magick::DrawableLine (x - 2, y, x + 2, y));
+				image->draw (Magick::DrawableLine (x, y - 2, x, y + 2));
+				break;
+			case PLOTTYPE_CIRCLES:
+				image->draw (Magick::DrawableCircle (x, y, x - 2, y));
+				break;
+			case PLOTTYPE_SQUARES:
+				image->draw (Magick::DrawableRectangle (x - 1, y - 1, y + 1, x + 1));
+				break;
+			case PLOTTYPE_FILL:
+			case PLOTTYPE_FILL_SHARP:
+				std::list <Magick::Coordinate> pol;
+				pol.push_back (Magick::Coordinate (x, size.height ()));
+				pol.push_back (Magick::Coordinate (x, y));
+				pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
+				pol.push_back (Magick::Coordinate (x_end - 1, size.height ()));
+				image->draw (Magick::DrawablePolygon (pol));
+		}
+		x = x_end;
+		y = y_end;
+	}
+}
+
+void ValuePlot::plotYGrid (int y)
+{
+	image->draw (Magick::DrawableLine (0, y, size.width (), y));
+}
+
+void ValuePlot::plotXGrid (int x)
+{
+	image->draw (Magick::DrawableLine (x, 0, x, size.height ()));
+}
+
+
+void ValuePlot::plotYDegrees ()
+{
 	// get difference and plot lines at interesting points
 	double diff = max - min;
 
@@ -115,10 +217,11 @@ Magick::Image* ValuePlot::getPlot (double from, double to)
 		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
 	}
 
-	Magick::Image pat ("10x1", "white");
+	Magick::Image pat (Magick::Geometry (9, 1), Magick::Color (MaxRGB, MaxRGB, MaxRGB, 0));
 	pat.pixelColor (3,0, "red");
 	pat.pixelColor (4,0, "red");
 	pat.pixelColor (5,0, "red");
+	pat.pixelColor (6,0, "red");
 	image->strokePattern (pat);
 
 	crossed0 = false;
@@ -131,21 +234,82 @@ Magick::Image* ValuePlot::getPlot (double from, double to)
 			pat.pixelColor (3,0, "blue");
 			pat.pixelColor (4,0, "blue");
 			pat.pixelColor (5,0, "blue");
+			pat.pixelColor (6,0, "blue");
 			crossed0 = true;
 		}
 		image->strokePattern (pat);
 		plotYGrid (size.height () - scaleY * y);
 	}
-
-	return image;
 }
 
-void ValuePlot::plotYGrid (int y)
+void ValuePlot::plotYDouble ()
 {
-	image->draw (Magick::DrawableLine (0, y, size.width (), y));
+	// get difference and plot lines at interesting points
+	double diff = max - min;
+
+	double grid_y_step;
+
+	// calculate scale in deg/pix - scaleY is in pix/deg
+	double sy = 1 / scaleY;
+	grid_y_step = sy * 20.0;
+	
+	image->strokeWidth (1);
+	image->fontPointsize (12);
+	image->strokeColor ("red");
+
+	bool crossed0 = false;
+
+	// round start and plot grid..
+	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
+	{
+		if (fabs (y + min) < grid_y_step / 2.0)
+			continue;
+	  	std::ostringstream _os;
+		_os << y + min;
+		if (!crossed0 && y + min > 0)
+		{
+			image->strokeColor ("blue");
+			crossed0 = true;
+		}
+		image->draw (Magick::DrawableText (0, size.height () - scaleY * y - 5, _os.str ().c_str ()));
+	}
+
+	Magick::Image pat ("2x1", Magick::Color ());
+	pat.pixelColor (1,0, "red");
+	image->strokePattern (pat);
+
+	crossed0 = false;
+		
+	// round start and plot grid..
+	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
+	{
+		if (!crossed0 && y + min > 0)
+		{
+			pat.pixelColor (1,0, "blue");
+			crossed0 = true;
+		}
+		image->strokePattern (pat);
+		plotYGrid (size.height () - scaleY * y);
+	}
 }
 
-void ValuePlot::plotXGrid (int x)
+void ValuePlot::plotYBoolean ()
 {
-	image->draw (Magick::DrawableLine (x, 0, x, size.height ()));
+	scaleY = size.height () / (max - min);
+
+	Magick::Image pat ("2x1", Magick::Color ());
+
+	// 0 label..
+	pat.pixelColor (1,0, "red");
+	image->strokePattern (pat);
+	image->strokeColor ("red");
+
+	plotYGrid (size.height () + min * scaleY);
+
+	// true label..
+	image->strokeColor ("green");
+	pat.pixelColor (1,0, "green");
+	image->strokePattern (pat);
+
+	plotYGrid (size.height () + min * scaleY - scaleY);
 }

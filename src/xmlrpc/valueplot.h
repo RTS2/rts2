@@ -18,9 +18,12 @@
  */
 
 #include <Magick++.h>
+#include "../utilsdb/records.h"
 
 namespace rts2xmlrpc
 {
+
+typedef enum {PLOTTYPE_AUTO, PLOTTYPE_LINE, PLOTTYPE_CROSS, PLOTTYPE_CIRCLES, PLOTTYPE_SQUARES, PLOTTYPE_FILL, PLOTTYPE_FILL_SHARP} PlotType;
 
 /**
  * Generates graph for variable.
@@ -33,27 +36,48 @@ class ValuePlot
 		/**
 		 * Create plot for a given variable.
 		 *
-		 * @param _varId Varible which will be plotted.
+		 * @param _varId    Varible which will be plotted.
+		 * @param _valType  Display type of variable
 		 */
-		ValuePlot (int _varId, int w = 800, int h = 600);
+		ValuePlot (int _varId, int _valType, int w = 800, int h = 600);
 
 		/**
 		 * Return Magick::Image plot of the data.
 		 *
-		 * @param from Plot from this time.
-		 * @param to   Plot to this time.
+		 * @param from       Plot from this time.
+		 * @param to         Plot to this time.
+		 * @param plotType   Type of value plot.
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double from, double to);
+		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int shadow = 5);
 	
 	private:
 		int recvalId;
+		int valueType;
+
+		double scaleX;
+		double scaleY;
+
+		double min;
+		double max;
+
+		double from;
+		double to;
+
+		PlotType plotType;
+
 		Magick::Geometry size;
 		Magick::Image *image;
 
+		void plotData (rts2db::RecordsSet &rs, Magick::Color col, int shadow);
+
 		void plotYGrid (int y);
 		void plotXGrid (int x);
+
+		void plotYDegrees ();
+		void plotYDouble ();
+		void plotYBoolean ();
 };
 
 }

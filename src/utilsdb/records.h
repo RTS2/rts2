@@ -83,6 +83,9 @@ class RecordsSet: public std::list <Record>
 		// get value type..
 		int getValueType ();
 
+		// get base type
+		int getValueBaseType () { return getValueType () & RTS2_BASE_TYPE; }
+
 		void loadState (double t_from, double t_to);
 		void loadDouble (double t_from, double t_to);
 		void loadBoolean (double t_from, double t_to);

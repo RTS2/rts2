@@ -102,17 +102,33 @@ FROM
 WHERE
 	value_type = 0;
 
+DROP VIEW recvals_double_statistics;
+
 CREATE VIEW recvals_double_statistics AS
 SELECT
 	recval_id,
 	device_name,
 	value_name,
+	value_type,
 	(SELECT min(rectime) FROM records_double WHERE records_double.recval_id = recvals.recval_id) AS time_from,
 	(SELECT max(rectime) FROM records_double WHERE records_double.recval_id = recvals.recval_id) AS time_to
 FROM
 	recvals
 WHERE
-	value_type = 1;
+	value_type & 15 = 4;
+
+CREATE VIEW recvals_boolean_statistics AS
+SELECT
+	recval_id,
+	device_name,
+	value_name,
+	value_type,
+	(SELECT min(rectime) FROM records_boolean WHERE records_boolean.recval_id = recvals.recval_id) AS time_from,
+	(SELECT max(rectime) FROM records_boolean WHERE records_boolean.recval_id = recvals.recval_id) AS time_to
+FROM
+	recvals
+WHERE
+	value_type & 15 = 6;
 	
 
 CREATE VIEW records_double_day AS
@@ -177,8 +193,10 @@ CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS t
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
 GRANT ALL ON records_double TO GROUP observers;
+GRANT ALL ON records_boolean TO GROUP observers;
 GRANT ALL ON recval_ids TO GROUP observers;
 GRANT ALL ON mv_records_double_day TO GROUP observers;
 GRANT ALL ON mv_records_double_hour TO GROUP observers;
 GRANT ALL ON recvals_state_statistics TO GROUP observers;
 GRANT ALL ON recvals_double_statistics TO GROUP observers;
+GRANT ALL ON recvals_boolean_statistics TO GROUP observers;

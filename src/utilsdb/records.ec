@@ -169,7 +169,7 @@ void RecordsSet::loadBoolean (double t_from, double t_to)
 			min = d_value;
 		if (d_value > max)
 		  	max = d_value;
-//		push_back (Record (d_rectime, d_value));
+		push_back (Record (d_rectime, d_value));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -182,15 +182,15 @@ void RecordsSet::loadBoolean (double t_from, double t_to)
 
 void RecordsSet::load (double t_from, double t_to)
 {
-	switch (getValueType ())
+	switch (getValueBaseType ())
 	{
 		case RECVAL_STATE:
 			loadState (t_from, t_to);
 			break;
-		case RECVAL_DOUBLE:
+		case RTS2_VALUE_DOUBLE:
 			loadDouble (t_from, t_to);
 			break;
-		case RECVAL_BOOLEAN:
+		case RTS2_VALUE_BOOL:
 			loadBoolean (t_from, t_to);
 			break;
 		default:

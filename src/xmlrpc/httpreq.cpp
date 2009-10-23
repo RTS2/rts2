@@ -130,9 +130,8 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	rts2db::Recval *rv = rs.searchByName (device, value);
 	if (rv == NULL)
 		throw rts2core::Error ("Cannot find device/value pair with given name");
-	int valId = rv->getId ();
 
-	ValuePlot vp (valId);
+	ValuePlot vp (rv->getId (), rv->getType ());
 
 	Magick::Image* mimage = vp.getPlot (from, to);
 

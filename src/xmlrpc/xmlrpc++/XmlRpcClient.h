@@ -21,6 +21,8 @@ namespace XmlRpc
 	// Arguments and results are represented by XmlRpcValues
 	class XmlRpcValue;
 
+	typedef enum {NOEXEC, XML_RPC, HTTP_GET} ExecutingType;
+
 	//! A class to send XML RPC requests to a server and return the results.
 	class XmlRpcClient : public XmlRpcSource
 	{
@@ -59,6 +61,16 @@ namespace XmlRpc
 			//! to determine whether the result is a fault response.
 			bool execute(const char* method, XmlRpcValue const& params, XmlRpcValue& result);
 
+			//! Send GET request to remote server. You need to call
+			//!   handleEvent from select call to retrieve data.
+			//!  @param path  Server part of the URL.
+			//!  @param reply Allocated reply buffer.
+			//!  @param reply_size Size of reply in bytes.
+			//!  @return true if page exists and some data were retrieved
+			//!
+			//! This is synchronous version of the request.
+			bool executeGet(const char* path, std::string& reply);
+
 			//! Returns true if the result of the last execute() was a fault response.
 			bool isFault() const { return _isFault; }
 
@@ -77,7 +89,9 @@ namespace XmlRpc
 			virtual bool setupConnection();
 
 			virtual bool generateRequest(const char* method, XmlRpcValue const& params);
+			virtual bool generateGetRequest(const char* path);
 			virtual std::string generateHeader(std::string const& body);
+			virtual std::string generateGetHeader(std::string const& path);
 			virtual bool writeRequest();
 			virtual bool readHeader();
 			virtual bool readResponse();
@@ -107,9 +121,9 @@ namespace XmlRpc
 			// Number of bytes of the request that have been written to the socket so far
 			int _bytesWritten;
 
-			// True if we are currently executing a request. If you want to multithread,
+			// Non-zero (no IDLE) if some request (either XML-RPC or HTTP GET) is executed. If you want to multithread,
 			// each thread should have its own client.
-			bool _executing;
+			ExecutingType _executing;
 
 			// True if the server closed the connection
 			bool _eof;

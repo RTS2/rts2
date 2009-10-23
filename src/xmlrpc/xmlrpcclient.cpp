@@ -54,7 +54,7 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
 
                 bool getVariablesPrintNames;
 
@@ -80,12 +80,20 @@ class Client: public Rts2CliApp
 		 */
 		int runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &result, bool printRes = true);
 
+
+		/**
+		 * Run HTTP GET request.
+		 */
+		int runHttpGet (const char* path, bool printRes = true);
+
 		/**
 		 * Run test methods.
 		 *
 		 * @return -1 on error, 0 on success.
 		 */
 		int doTests ();
+
+		int doHttpGet ();
 
 		/**
 		 * Test that XML-RPC daemon is running.
@@ -181,6 +189,25 @@ int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &
 	return 0;
 }
 
+int Client::runHttpGet (const char* path, bool printRes)
+{
+	int ret;
+
+	std::string reply;
+
+	ret = xmlClient->executeGet (path, reply);
+	if (!ret)
+	{
+		logStream (MESSAGE_ERROR) << "Error requesting " << path << sendLog;
+		return -1;
+	}
+	if (printRes)
+	{
+		std::cout << reply << std::endl;
+	}
+	return 0;
+}
+
 int Client::doTests ()
 {
 	XmlRpcValue noArgs, oneArg, result;
@@ -245,6 +272,31 @@ int Client::doTests ()
 	oneArg[0] = "log";
 	oneArg[1] = "pas";
 	return runXmlMethod (R2X_USER_LOGIN, oneArg, result);
+}
+
+int Client::doHttpGet ()
+{
+	if (args.size () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "You must specify at least one path as argument." << sendLog;
+		return -1;
+	}
+
+	for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+	{
+		try
+		{
+			int ret = runHttpGet (*iter);
+			if (ret)
+				return ret;
+		}
+		catch (XmlRpcException e)
+		{
+			std::cerr << "Cannot retrieve document " << *iter << std::endl;
+			return -1;
+		}
+	}
+	return 0;
 }
 
 int Client::testConnect ()
@@ -484,6 +536,9 @@ int Client::processOption (int opt)
 		case 'm':
 			xmlOp = GET_MESSAGES;
 			break;
+		case 'u':
+			xmlOp = HTTP_GET;
+			break;
 		default:
 			return Rts2CliApp::processOption (opt);
 	}
@@ -497,7 +552,7 @@ int Client::processOption (int opt)
 
 int Client::processArgs (const char *arg)
 {
-	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES || xmlOp == HTTP_GET))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -535,6 +590,8 @@ int Client::doProcessing ()
 			return getMessages ();
 		case TEST:
 			return doTests ();
+		case HTTP_GET:
+			return doHttpGet ();
 		case NOOP:
 			return testConnect ();
 	}
@@ -613,6 +670,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption ('t', NULL, 0, "get device(s) type");
 	addOption ('m', NULL, 0, "retrieve messages from XML-RPCd message buffer");
 	addOption (OPT_TEST, "test", 0, "perform various tests");
+	addOption ('u', NULL, 0, "retrieve given path(s) from the server (through HTTP GET request)");
 }
 
 Client::~Client (void)
