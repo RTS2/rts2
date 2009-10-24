@@ -165,25 +165,33 @@ void
 Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 {
 	CameraImage *ci = (*cis).second;
-	// create new image of requsted type
-	beforeProcess (ci->image);
-	if (saveImage)
+	try
 	{
-		writeFilter (ci->image);
-		// set filter..
-		// save us to the disk..
-		ci->image->saveImage ();
+		// create new image of requsted type
+		beforeProcess (ci->image);
+		if (saveImage)
+		{
+			writeFilter (ci->image);
+			// set filter..
+			// save us to the disk..
+			ci->image->saveImage ();
+		}
+		// do basic processing
+		imageProceRes res = processImage (ci->image);
+		if (res == IMAGE_KEEP_COPY)
+		{
+			setImage (ci->image, NULL);
+		}
+		// remove us
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
+		#endif						 /* DEBUG_EXTRA */
 	}
-	// do basic processing
-	imageProceRes res = processImage (ci->image);
-	if (res == IMAGE_KEEP_COPY)
+	catch (rts2core::Error ex)
 	{
-		setImage (ci->image, NULL);
+		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
-	// remove us
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+
 	if (lastImage == ci->image)
 		lastImage = NULL;
 	delete ci;
