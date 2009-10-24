@@ -1,5 +1,8 @@
 0.7.5
 =====
+2009-10-24
+ * Added Markus script for focusing - rts2-autofocus
+
 2009-10-22
  * added night statistic in imgproc - night_good,..
  * added last good image to imgproc

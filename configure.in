@@ -596,6 +596,7 @@ AC_OUTPUT([Makefile
 	   conf/event.d/Makefile
 	   doc/Makefile
 	   doc/doxyfile
+	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
 	   src/camd/Makefile
