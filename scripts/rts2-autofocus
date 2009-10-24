@@ -2,11 +2,9 @@
 #
 # (C) 2009, Markus Wildi, markus.wildi@one-arcsec.org
 #
-#
-# This script allows to communicate via EI BISYNC protocol with a SSD Drives
-# frequency inverter type 650V. It allows to enquire about setting of
-# parameters and set parameters to desired value.
-#
+#   rts2-autofocus, see man rts2-autofocus
+#   
+#   
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
 #   the Free Software Foundation; either version 2, or (at your option)
