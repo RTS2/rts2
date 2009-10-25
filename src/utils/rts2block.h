@@ -510,6 +510,17 @@ class Rts2Block: public Rts2App
 		Rts2Conn *getOpenConnection (const char *deviceName);
 
 		/**
+		 * Return next established connection to device of given type.
+		 *
+		 * Type represents device class. For list of types, please look to RTS2_DEVICE_xxx defines in rts2/include/status.h.
+		 *
+		 * @param  deviceType Type of device to search for.
+		 * @param  current    Current iterator. If called to find all devices of given type, pass this along to keep references.On return.
+		 *     this iterrator holds reference to next device of given type. If such device cannot be found, it is equal to getConnection ()->end ().
+		 */
+		void getOpenConnectionType (int deviceType, connections_t::iterator &current);
+
+		/**
 		 * Return connection with given type. Return first connection with given type, if no connection can be found,
 		 * return NULL.
 		 *

@@ -730,6 +730,15 @@ Rts2Conn * Rts2Block::getOpenConnection (const char *deviceName)
 	return NULL;
 }
 
+void Rts2Block::getOpenConnectionType (int deviceType, connections_t::iterator &current)
+{
+	for (; current != connections.end (); current++)
+	{
+		if ((*current)->getOtherType () == deviceType)
+			return;
+	}
+}
+
 Rts2Conn * Rts2Block::getOpenConnection (int device_type)
 {
 	connections_t::iterator iter;
