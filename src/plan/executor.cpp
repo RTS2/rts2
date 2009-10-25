@@ -215,7 +215,7 @@ int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 		stop ();
 		return 0;
 	}
-	if (oldValue == enabled || oldValue == doDarks || oldValue == ignoreDay)
+	if (oldValue == enabled || oldValue == doDarks || oldValue == ignoreDay || oldValue == autoLoop)
 		return 0;
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
