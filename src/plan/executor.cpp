@@ -32,6 +32,36 @@ namespace rts2plan
 
 class Executor:public Rts2DeviceDb
 {
+	public:
+		Executor (int argc, char **argv);
+		virtual ~ Executor (void);
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
+			int other_device_type);
+
+		virtual void postEvent (Rts2Event * event);
+
+		virtual void deviceReady (Rts2Conn * conn);
+
+		virtual int info ();
+
+		virtual int changeMasterState (int new_state);
+
+		int end ()
+		{
+			maskState (EXEC_MASK_END, EXEC_END);
+			return 0;
+		}
+
+		int stop ();
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+
 	private:
 		Target * currentTarget;
 		std::list <Target *> nextTargets;
@@ -59,6 +89,8 @@ class Executor:public Rts2DeviceDb
 		double grb_sep_limit;
 		double grb_min_sep;
 
+		Rts2ValueBool *enabled;
+
 		Rts2ValueInteger *acqusitionOk;
 		Rts2ValueInteger *acqusitionFailed;
 
@@ -85,35 +117,6 @@ class Executor:public Rts2DeviceDb
 		rts2core::StringArray *next_names;
 
 		Rts2ValueInteger *img_id;
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int reloadConfig ();
-
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
-	public:
-		Executor (int argc, char **argv);
-		virtual ~ Executor (void);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
-
-		virtual void postEvent (Rts2Event * event);
-
-		virtual void deviceReady (Rts2Conn * conn);
-
-		virtual int info ();
-
-		virtual int changeMasterState (int new_state);
-
-		int end ()
-		{
-			maskState (EXEC_MASK_END, EXEC_END);
-			return 0;
-		}
-
-		int stop ();
-
-		virtual int commandAuthorized (Rts2Conn * conn);
 };
 
 };
@@ -132,17 +135,17 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	waitState = 0;
 
-	createValue (acqusitionOk, "acqusition_ok",
-		"number of acqusitions completed sucesfully", false);
+	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual controll", false);
+	enabled->setValueBool (true);
+
+	createValue (acqusitionOk, "acqusition_ok", "number of acqusitions completed sucesfully", false);
 	acqusitionOk->setValueInteger (0);
 
-	createValue (acqusitionFailed, "acqusition_failed",
-		"number of acqusitions which failed", false);
+	createValue (acqusitionFailed, "acqusition_failed", "number of acqusitions which failed", false);
 	acqusitionFailed->setValueInteger (0);
 
 	createValue (current_id, "current", "ID of current target", false);
-	createValue (current_id_sel, "current_sel",
-		"ID of currently selected target", false);
+	createValue (current_id_sel, "current_sel", "ID of currently selected target", false);
 	createValue (current_name, "current_name", "name of current target", false);
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
@@ -207,7 +210,12 @@ int Executor::reloadConfig ()
 
 int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
-	if (oldValue == doDarks || oldValue == ignoreDay)
+	if (oldValue == enabled && ((Rts2ValueBool *) newValue)->getValueBool () == false)
+	{
+		stop ();
+		return 0;
+	}
+	if (oldValue == enabled || oldValue == doDarks || oldValue == ignoreDay)
 		return 0;
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
@@ -712,6 +720,13 @@ void Executor::doSwitch ()
 
 void Executor::switchTarget ()
 {
+	if (enabled->getValueBool () == false)
+	{
+		clearNextTargets ();
+		logStream (MESSAGE_WARNING) << "please switch executor to enabled to allow it carrying observations" << sendLog;
+		return;
+	}
+
 	if (((getState () & EXEC_MASK_END) == EXEC_END)
 		|| (autoLoop->getValueBool () == false && nextTargets.size () == 0))
 	{
