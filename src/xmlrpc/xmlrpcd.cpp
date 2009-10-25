@@ -1051,31 +1051,23 @@ class GetValue: public SessionMethod
 		}
 } getValue (&xmlrpc_server);
 
-class SetValue: public SessionMethod
+class SessionMethodValue:public SessionMethod
 {
-	public:
-		SetValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_SET, s) {}
+	protected:
+		SessionMethodValue (const char *method, XmlRpcServer *s):SessionMethod (method, s) {}
 
-		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		void setXmlValutRts2 (Rts2Conn *conn, std::string valueName, XmlRpcValue &x_val)
 		{
-			std::string devName = params[0];
-			std::string valueName = params[1];
-			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
-			if (!conn)
-			{
-				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
-			}
-			Rts2Value *val = conn->getValue (valueName.c_str ());
-			if (!val)
-			{
-				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
-			}
-
 			int i_val;
 			double d_val;
 			std::string s_val;
-			XmlRpcValue x_val = params[2];
+
+			Rts2Value *val = conn->getValue (valueName.c_str ());
+			if (!val)
+			{
+				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (conn->getName ()) + "'.");
+			}
+
 			switch (val->getValueBaseType ())
 			{
 				case RTS2_VALUE_INTEGER:
@@ -1117,12 +1109,31 @@ class SetValue: public SessionMethod
 					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
 					break;
 				case RTS2_VALUE_STRING:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2])));
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val)));
 					break;
 				default:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2]), true));
+					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val), true));
 					break;
 			}
+		}
+};
+
+class SetValue: public SessionMethodValue
+{
+	public:
+		SetValue (XmlRpcServer* s) : SessionMethodValue (R2X_VALUE_SET, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			std::string devName = params[0];
+			std::string valueName = params[1];
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			if (!conn)
+			{
+				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+			}
+			setXmlValutRts2 (conn, valueName, params[2]);
 		}
 
 		std::string help ()
@@ -1131,6 +1142,35 @@ class SetValue: public SessionMethod
 		}
 
 } setValue (&xmlrpc_server);
+
+class SetValueByType: public SessionMethodValue
+{
+	public:
+		SetValueByType (XmlRpcServer* s) : SessionMethodValue (R2X_VALUE_BY_TYPE_SET, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			int devType = params[0];
+			std::string valueName = params[1];
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			connections_t::iterator iter = serv->getConnections ()->begin ();
+			serv->getOpenConnectionType (devType, iter);
+			if (iter == serv->getConnections ()->end ())
+			{
+				throw XmlRpcException ("Cannot find connection of given type");
+			}
+			for (; iter != serv->getConnections ()->end (); serv->getOpenConnectionType (devType, ++iter))
+			{
+				setXmlValutRts2 (*iter, valueName, params[2]);
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Set RTS2 value for device by type");
+		}
+
+} setValueByType (&xmlrpc_server);
 
 class IncValue: public SessionMethod
 {

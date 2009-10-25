@@ -348,10 +348,20 @@ int Client::setVariables (const char *varName, const char *value)
 {
 	XmlRpcValue threeArg, result;
 
-	if (splitDeviceVariable (varName, threeArg[0], threeArg[1]))
+	std::string dnp;
+	if (splitDeviceVariable (varName, dnp, threeArg[1]))
 		return -1;
 	threeArg[2] = value;
 
+	// device name is number - run R2X_VALUE_BY_TYPE_SET
+	char *endp;
+	int dt = strtol (dnp.c_str (), &endp, 10);
+	if (*endp == '\0' && dnp.length () > 0)
+	{
+		threeArg[0] = dt;
+		return runXmlMethod (R2X_VALUE_BY_TYPE_SET, threeArg, result);
+	}
+	threeArg[0] = dnp;
 	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
 }
 

@@ -82,6 +82,16 @@
 #define R2X_VALUE_SET                 "rts2.value.set"
 
 /**
+ * Set all variables for a given device class. Please see rts2/include/status.h
+ * for list of device types values (DEVICE_TYPE_xxxx defines).
+ *
+ * @param type  Type of the device as number. See rts2/include/status.h for assigned numbers.
+ * @param var   Name of variable which will be set.
+ * @param value New variable value.
+ */
+#define R2X_VALUE_BY_TYPE_SET         "rts2.value_by_type.set"
+
+/**
  * Increment RTS2 variable. Three parameters must be specified, with following meaning:
  * @param device Name of device for which variable will be set.
  * @param var    Name of variable which will be set.
