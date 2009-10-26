@@ -43,6 +43,7 @@ use vars qw(
   $number_of_objects_found_in_all_files
   %focuser_properties
   );
+
 # ##########################################################################################
 # begin default configuration
 # ##########################################################################################
@@ -52,14 +53,16 @@ use vars qw(
 use constant SEXPRG  => "sex  2>/dev/null" ;
 use constant FOCPRG  => "foc" ;   # Martin Jelinek's fit program
 use constant FOCXPRG => "foc_x" ; # Martin Jelinek's fit program X window
-use constant FITPRG  =>  FOCXPRG ; # be carefull
+use constant FOCROOTI => "/home/wildi/svn-vermes/analysis/root/focus/main_fit_focus 1" ; # interactive
+use constant FOCROOTB => "/home/wildi/svn-vermes/analysis/root/focus/main_fit_focus 0" ; # "batch"
+use constant FITPRG => FOCROOTI  ; # 
 # 
 # constants
 #
-#use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
-use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15" ; # directory read from, or written to if TAKE_DATA == TRUE
+use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
+#use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2009-10-04" ; # directory read from, or written to if TAKE_DATA == TRUE
-use constant FILTERS        => "I" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+use constant FILTERS        => "X:V:R:I" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
 use constant SELECT_RATIO   => 0.1 ; # this a threshold to avoid matching images from completely different focus runs. 
 #ToDo: make a parameter
 use constant MINIMUM_OBJECTS=> 10 ; #  is the minimal number of objects identified in all images
@@ -407,8 +410,12 @@ sub get_fitted_focus
     my $ret_fit     = FALSE ;
     my $fit_focus   = FALSE ;
     my %data_points;
-
+    my @fwhm_data_file_names ;
+    my @flux_data_file_names ;
     my @mean_focus=(FALSE,FALSE) ;
+    my $date= "" ;
+
+
 ##    my @stddev_focus=(FALSE,FALSE) ;
     $ret_get_fits= get_fits_files( $fltr, $fits_dir) ;
     if( $ret_get_fits== TRUE)
@@ -419,7 +426,7 @@ sub get_fitted_focus
 
 	if( $ret_create== TRUE)
 	{
-	    my $date= `date --iso-8601=seconds --utc` ;
+	    $date= `date --iso-8601=seconds --utc` ;
 	    chomp $date ;
 
 	    $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, \%data_points) ;
@@ -480,20 +487,38 @@ sub get_fitted_focus
 		    }
 		    print "quantity: $qty, upper limit set to $upper_limit\n" ;
 		}
-		$ret_fit= fit_data( $fltr, $date, $fitprg, $fit_result_file, $lower_limit, $upper_limit, $qty, \%data_points,) ;
-	    
-		if( $ret_fit== TRUE )
+# write the data files and store their names
+		if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
 		{
-		    $fit_focus = get_fitted_focus_and_plot($fltr, $fitprg, $fit_result_file, $date, $qty) ;
-		    
-		    if( $fit_focus != FALSE)
+		    my $data_file_name= $fit_result_file ; # just a reminder
+		    my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $qty, \%data_points)  ;
+# store file name for fitting
+		    if( $qty== 0) # FWHM, FLUX_MAX
 		    {
-			$mean_focus[$qty]= $fit_focus ;
-			print "quantity: $qty, filter: $fltr, fitted focus: $fit_focus\n" ;
-		    } 
+			push (@fwhm_data_file_names, $file_name) ;
+		    }
 		    else
 		    {
-			print "quantity: $qty, filter: $fltr, fitted focus position undefined\n" ;
+			push (@flux_data_file_names, $file_name) ;
+		    }
+		}
+		else
+		{
+		    $ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $lower_limit, $upper_limit, $qty, \%data_points) ;
+	    
+		    if( $ret_fit== TRUE )
+		    {
+			$fit_focus = get_fitted_focus_and_plot_with_foc_x($fltr, $fitprg, $fit_result_file, $date, $qty) ;
+			
+			if( $fit_focus != FALSE)
+			{
+			    $mean_focus[$qty]= $fit_focus ;
+			    print "quantity: $qty, filter: $fltr, fitted focus: $fit_focus\n" ;
+			} 
+			else
+			{
+			    print "quantity: $qty, filter: $fltr, fitted focus position undefined\n" ;
+			}
 		    }
 		}
 		if($make_robust==TRUE)
@@ -543,11 +568,11 @@ sub get_fitted_focus
 	    
 		    foreach my $limit (sort keys %symmetric_pairs)
 		    {
-			$ret_fit= fit_data( $fltr, $date, $fitprg, $fit_result_file, $limit, $symmetric_pairs{$limit}, $qty, \%data_points,) ;
+			$ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $limit, $symmetric_pairs{$limit}, $qty, \%data_points,) ;
 
 			if( $ret_fit== TRUE )
 			{
-			    $fit_focus = get_fitted_focus_and_plot($fltr, $fitprg, $fit_result_file, $date, $qty) ;
+			    $fit_focus = get_fitted_focus_and_plot_with_foc_x($fltr, $fitprg, $fit_result_file, $date, $qty) ;
 			    
 			    if( $fit_focus != FALSE)
 			    {
@@ -591,7 +616,22 @@ sub get_fitted_focus
 	    }
 	}
     }
-    
+ # fit
+    if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
+    {
+	if( $#fwhm_data_file_names !=  $#flux_data_file_names )
+	{
+	    printf( "difference between number of fwhm and flux fits: %d != %d, returning\n", $#fwhm_data_file_names, $#flux_data_file_names) ;
+	    return FALSE ;
+	}
+	else
+	{
+	    for( my $fn=0 ; $fn< $#fwhm_data_file_names+ 1; $fn++)
+	    {
+		@mean_focus= fit_and_read_results_with_root( $fltr, $date, $fitprg, $fit_result_file, $fwhm_data_file_names[$fn], $flux_data_file_names[$fn])
+	    }
+	}
+    }
     if(($mean_focus[0] != FALSE)&&($mean_focus[1] != FALSE))
     {
 	if(abs($mean_focus[0]- $mean_focus[1])  < $focuser_properties{"resolution"})
@@ -602,6 +642,7 @@ sub get_fitted_focus
 	else
 	{
 	    print "NO SUCCESS $mean_focus[0]- $mean_focus[1] > $focuser_properties{\"resolution\"}\n" ;
+	    printf ("NO SUCCESS $mean_focus[0]- $mean_focus[1]= %f > $focuser_properties{\"resolution\"}\n", $mean_focus[0]- $mean_focus[1]) ;
 	}
     }
     else
@@ -609,6 +650,44 @@ sub get_fitted_focus
 	print "NO SUCCESS $mean_focus[0], $mean_focus[1]\n" ;
     }
     return FALSE ;
+}
+sub fit_and_read_results_with_root
+{
+    my $fltr      = shift @_ ;
+    my $date      = shift @_ ; 
+    my $fitprg    = shift @_ ;
+    my $fit_result_file= shift @_ ;
+    my $fwhm_file = shift @_ ;
+    my $flux_file = shift @_ ;
+    my $fwhm_focus= FALSE ;
+    my $flux_focus= FALSE ;
+    my $number_of_results= 0 ;
+# both fits go into a TMultiGraph
+
+    my @fit_items= split(/\./, $fit_result_file) ;
+    my $tmp_fit_result_file=  $fit_items[0]."-".$fltr."-".$date.".png"; # if you don want png, choose something else http://root.cern.ch/root/html/TPad.html#TPad:SaveAs
+# attention fitprg means fit_focus (0|1) !
+    open( ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file|") or die "Can't open pipe to $fitprg: $!" ;
+
+    while( my $line=<ROOT>)
+    {
+	if( $line=~ m/^FWHM_FOCUS ([0-9]+)/)
+	{
+	    print "got fwhm $1\n" ;
+	    $fwhm_focus= $1 ;
+	    $number_of_results++ ;
+	}
+	elsif( $line=~ m/^FLUX_FOCUS ([0-9]+)/)
+	{
+	    print "got flux $1\n" ;
+	    $flux_focus= $1 ;
+	    $number_of_results++ ;
+	}
+	last if($number_of_results==2) ; # continue even if the plots appear
+    }
+
+    close( ROOT) ;
+    return $fwhm_focus, $flux_focus ;
 }
 # selct all fits files in a given directory for a given filter
 sub get_fits_files
@@ -674,7 +753,6 @@ sub get_fits_files
 	    {
 		$oridec_from_file=$items[1] ;
 	    }
-	    
 	}
 	close(IMHEAD) ;
 ##		# not mandatory:
@@ -753,9 +831,6 @@ sub get_fits_files
 	    print "oridec $fits_files{$fits_file_keys[0]}[IND_ORIDEC_FILE] in $fits_file_keys[0] does differ from $fits_files{$fits_file}[IND_ORIDEC_FILE] in $fits_file, exiting\n" ;
 	    exit 1 ;
 	}
-
-
-
     }
     return TRUE ;
 }
@@ -1013,9 +1088,10 @@ sub retrieve_data
     {
 	$number_of_objects_found_in_all_files++ ;
 # ToDo: calculate the center of mass and report location, 
-	printf("object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
-	 # text = {This message has both a " and ' in it}
-
+	if( $verbose==TRUE)
+	{
+	    printf("object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
+	}
 	printf( DS9REGION "circle\(%f,%f,10.1\) # text = {%d}\n", $objects_found_in_all_files{$reference_object_number}[1], 
                                                   $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number) ;
 
@@ -1035,7 +1111,43 @@ sub retrieve_data
     }
     return TRUE ;
 }
-sub fit_data
+sub write_data_files
+{
+    my $fltr           = shift @_ ; 
+    my $date           = shift @_ ;
+    my $fit_prg        = shift @_ ;
+    my $fit_result_file= shift @_ ;
+    my $lower_lmt      = shift @_ ;
+    my $upper_lmt      = shift @_ ;
+    my $qty            = shift @_ ;
+
+    my @fit_items= split(/\./, $fit_result_file) ;
+    my $tmp_fit_file_name ;
+    if( $qty==0)
+    {
+	$tmp_fit_file_name=  $fit_items[0]."-".$fltr."-".$date."-FWHM_IMAGE.".$fit_items[1];
+    }
+    else
+    {
+	$tmp_fit_file_name=  $fit_items[0]."-".$fltr."-".$date."-FLUX_MAX.".$fit_items[1];
+    }
+    open( DATA, ">$tmp_fit_file_name") or die "Can't write to file: $tmp_fit_file_name, $!" ;
+
+    foreach my $foc_pos ( sort keys %{$_[0]})
+    {
+	if(($foc_pos> $lower_lmt) &&($foc_pos< $upper_lmt))
+	{
+	    printf( DATA "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$number_of_objects_found_in_all_files ) ; # ToDo: normalize 
+	    if( $verbose==TRUE)
+	    {
+	#	printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$number_of_objects_found_in_all_files ) ;
+	    }
+	}
+    }
+    close(DATA) ;
+    return  $tmp_fit_file_name;
+}
+sub fit_data_with_foc_x
 {
     my $fltr           = shift @_ ; 
     my $date           = shift @_ ;
@@ -1074,7 +1186,7 @@ sub fit_data
     return TRUE ;
 }
 # read back the fitted result from file
-sub get_fitted_focus_and_plot
+sub get_fitted_focus_and_plot_with_foc_x
 {
     my $fltr           = shift @_ ;
     my $fitprg         = shift @_ ;
@@ -1234,7 +1346,7 @@ if (!GetOptions("help|h"            => \$help,
 		"sexcfg|s=s"        => \$sexcfg,
 		"sexparam|p=s"      => \$sexparam,
 		"sexcat|c=s"        => \$sexcat,
-		"fit_program|x=s"   => \$fitprg,
+		"fit_fwhm_program|x=s"   => \$fitprg,
 		"make_robust|m=i"   => \$make_robust,
                ))
 {
