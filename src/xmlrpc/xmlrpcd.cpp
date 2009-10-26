@@ -219,7 +219,7 @@ void XmlRpcd::signaledHUP ()
 }
 
 #ifdef HAVE_PGSQL
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC"), events (this)
 #else
 XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
 #endif
@@ -282,7 +282,7 @@ void XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 		{
 			try
 			{
-				vc->run (this, new_value, now);
+				vc->run (new_value, now);
 				vc->runSuccessfully (now);
 			}
 			catch (rts2core::Error err)

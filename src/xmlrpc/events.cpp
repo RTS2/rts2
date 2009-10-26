@@ -102,16 +102,16 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
-			valueCommands.push_back (new ValueChangeRecord (deviceName, std::string ((char *) valueName->children->content), cadency));
+			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency));
 		}
 		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
-			valueCommands.push_back (new ValueChangeCommand (deviceName, std::string ((char *) valueName->children->content), cadency,
+			valueCommands.push_back (new ValueChangeCommand (master, deviceName, std::string ((char *) valueName->children->content), cadency,
 				std::string ((char *) action->children->content)));
 		}
 		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
 		{
-			ValueChangeEmail *email = new ValueChangeEmail (deviceName, std::string ((char *) valueName->children->content), cadency);
+			ValueChangeEmail *email = new ValueChangeEmail (master, deviceName, std::string ((char *) valueName->children->content), cadency);
 			email->parse (action);
 			// add to, subject, body,..
 			valueCommands.push_back (email);

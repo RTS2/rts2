@@ -120,7 +120,7 @@ void ValueChangeRecord::recordValueBoolean (int recval_id, bool val, double vali
 		throw rts2db::SqlError ();
 }
 
-void ValueChangeRecord::run (XmlRpcd *_master, Rts2Value *val, double validTime)
+void ValueChangeRecord::run (Rts2Value *val, double validTime)
 {
 
 	std::ostringstream _os;

@@ -35,7 +35,10 @@
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
 
-#define OPT_STATE_CHANGE        OPT_LOCAL + 76
+#define OPT_STATE_CHANGE            OPT_LOCAL + 76
+
+
+#define EVENT_XMLRPC_VALUE_TIMER    RTS2_LOCAL_EVENT + 850
 
 using namespace XmlRpc;
 

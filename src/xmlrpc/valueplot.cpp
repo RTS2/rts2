@@ -247,11 +247,16 @@ void ValuePlot::plotYDouble ()
 	// get difference and plot lines at interesting points
 	double diff = max - min;
 
-	double grid_y_step;
+	// plot roughly every 20 pixels..
+	double grid_y_step = log(scaleY * 20.0) / log(10);
 
-	// calculate scale in deg/pix - scaleY is in pix/deg
-	double sy = 1 / scaleY;
-	grid_y_step = sy * 20.0;
+	if (grid_y_step > 0)
+		grid_y_step = ceil (grid_y_step);
+	else
+		grid_y_step = floor (grid_y_step);
+
+	// round up
+	grid_y_step = pow (10, grid_y_step);
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);

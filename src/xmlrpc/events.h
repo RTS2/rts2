@@ -39,8 +39,6 @@ namespace rts2xmlrpc
  */
 class XmlError
 {
-	private:
-		std::string desc;
 	public:
 		XmlError () {}
 
@@ -53,6 +51,8 @@ class XmlError
 			_os << _err.desc << std::endl;
 			return _os;
 		}
+	private:
+		std::string desc;
 };
 
 
@@ -127,16 +127,11 @@ class XmlEmptyNode: public XmlError
  */
 class Events
 {
-	private:
-		void parseState (xmlNodePtr event, std::string deviceName);
-		void parseValue (xmlNodePtr event, std::string deviceName);
-
 	public:
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
 
-	public:
-		Events () {}
+		Events (XmlRpcd *_master) { master = _master; }
 
 		/**
 		 * Load a list of StateChangeCommand from file.
@@ -146,6 +141,11 @@ class Events
 		 * @throw XmlError
 		 */
 		void load (const char *file);
+	private:
+		XmlRpcd *master;
+
+		void parseState (xmlNodePtr event, std::string deviceName);
+		void parseValue (xmlNodePtr event, std::string deviceName);
 };
 
 }
