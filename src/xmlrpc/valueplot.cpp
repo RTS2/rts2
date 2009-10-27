@@ -252,6 +252,9 @@ void ValuePlot::plotYDouble ()
 
 	// round up
 	grid_y_step = pow (10, floor (grid_y_step));
+
+	while (grid_y_step * scaleY > 100)
+		grid_y_step /= 2.0;
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);
@@ -262,6 +265,7 @@ void ValuePlot::plotYDouble ()
 	// round start and plot grid..
 	for (double y = ceil (min / grid_y_step) * grid_y_step - min; y < diff; y += grid_y_step)
 	{
+		// do not plot around 0
 		if (fabs (y + min) < grid_y_step / 2.0)
 			continue;
 	  	std::ostringstream _os;
