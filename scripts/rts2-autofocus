@@ -23,6 +23,7 @@
 #
 # ToDo: killall rts2-executor before start
 #
+# ToDo:  GLOBAL: if the focus run provides new settings write the results to stdout!
 use strict;
 use Getopt::Long qw(:config no_ignore_case) ;
 use Statistics::Descriptive::Discrete;
@@ -53,27 +54,29 @@ use vars qw(
 use constant SEXPRG  => "sex  2>/dev/null" ;
 use constant FOCPRG  => "foc" ;   # Martin Jelinek's fit program
 use constant FOCXPRG => "foc_x" ; # Martin Jelinek's fit program X window
-use constant FOCROOTI => "/home/wildi/svn-vermes/analysis/root/focus/main_fit_focus 1" ; # interactive
-use constant FOCROOTB => "/home/wildi/svn-vermes/analysis/root/focus/main_fit_focus 0" ; # "batch"
+use constant FOCROOTI => "/home/wildi/svn-vermes/analysis/root/focus/rts2_fit_focus 1" ; # interactive
+use constant FOCROOTB => "/home/wildi/svn-vermes/analysis/root/focus/rts2_fit_focus 0" ; # "batch"
 use constant FITPRG => FOCROOTI  ; # 
 # 
 # constants
 #
-use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
+#use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15" ; # directory read from, or written to if TAKE_DATA == TRUE
+use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2008-12-28/R" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2009-10-04" ; # directory read from, or written to if TAKE_DATA == TRUE
-use constant FILTERS        => "X:V:R:I" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+use constant FILTERS        => "R" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
 use constant SELECT_RATIO   => 0.1 ; # this a threshold to avoid matching images from completely different focus runs. 
 #ToDo: make a parameter
-use constant MINIMUM_OBJECTS=> 10 ; #  is the minimal number of objects identified in all images
+use constant MINIMUM_OBJECTS=> 2 ; #  is the minimal number of objects identified in all images
 #
 # if TAKE_DATA == TRUE then data taking with rts2 devices
 # consitency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
 #
-use constant TAKE_DATA      => FALSE; # TRUE: data taking, FALSE: offline analysis
-use constant SET_FOCUS      => FALSE; # set the focus position if only one filter is defined
-use constant CCD_CAMERA     => "CD" ; # this CCD and its associate devices are used if TAKE_DATA == TRUE
+use constant TAKE_DATA       => FALSE; # TRUE: data taking, FALSE: offline analysis
+use constant SET_FOCUS       => FALSE; # set the focus position if only one filter is defined
+use constant CCD_CAMERA      => "CD" ; # this CCD and its associate devices are used if TAKE_DATA == TRUE
+use constant FIND_ROUGH_FOCUS=> TRUE; # find focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
 #
 # data taking, files
 #
@@ -155,8 +158,8 @@ use constant ISOAREA_IMAGE    =>  9; # 10 Isophotal area above Analysis threshol
 use constant FLAGS            => 10; # 11 Extraction flags
 use constant FWHM_IMAGE       => 11; # 12 FWHM assuming a gaussian core                   [pixel]
 use constant FLUX_RADIUS      => 12; # 13 Fraction-of-light radii                         [pixel]
-####################  VECTOR_ASSOC    ASSOCiated parameter vector
 use constant ELLIPTICITY      => 13; # 14 1 - B_IMAGE/A_IMAGE
+####################  VECTOR_ASSOC    ASSOCiated parameter vector
 use constant NUMBER_REF       => 14; # 15
 use constant X_IMAGE_REF      => 15; # 16
 use constant Y_IMAGE_REF      => 16; # 17
@@ -175,7 +178,7 @@ use constant NUMBER_ASSOC     => 28; # Number of ASSOCiated IDs
 
 use constant SELECTED    =>  -3 ;
 use constant NOT_SELECTED=>  -2 ;
-sub raw_analysis(\@)
+sub raw_analysis(\@) # ToDo: remove \@
 {
     my (@items) = @{(shift)} ;
 
@@ -389,6 +392,61 @@ sub set_rts2_fit_focus_position
 	print "focuser position $fit_focus is not within limits $focuser_properties{\"absolute_lower_limit\"}}. $focuser_properties{\"absolute_upper_limit\"}}\n" ;
     }
 }
+sub get_foc_pos_at_maximum_number_of_objects
+{
+    my $fltr                = shift @_ ;
+    my $fits_dir            = shift @_ ;
+    my $cfg                 = shift @_ ;
+    my $param_reference     = shift @_ ;
+
+    my $fits_file_mx_objects="" ;
+    my $maximum_objects= 0 ;
+
+    my $fits_file_max="" ;
+# ToDo: make a unique file name
+	my $catalogue= "/tmp/catalogue" ;
+    foreach my $fits_file ( sort by_foc_pos keys %fits_files)
+    {
+# define the objects
+	open(SEXANALYSIS, SEXPRG." $fits_file -c $cfg -CATALOG_NAME $catalogue -PARAMETERS_NAME $param_reference|") or die "Can't start SExtractor: $!";
+	while(<SEXANALYSIS>){}
+	close(SEXANALYSIS) ;
+# count them
+# ToDo: make a parameter
+ 
+	my $number_of_objects= 0 ;
+	open(CATALOGUE, "<$catalogue") or die "Can't read $catalogue: $!";
+	NEXT_OBJECT: while( my $line= <CATALOGUE>)
+	{
+	    next if( $line=~ m/^#/) ;
+	    $line=~ s/[ \t\r\n]+/ /g ;
+	    $line=~ s/^[ ]+//g ;
+	    my @items= split(/[ ]+/, $line) ;
+# select the objects in a similar way like raw_analysis() 
+	    if( $items[FLAGS] != 0)    
+	    {
+		goto  NEXT_OBJECT;
+	    }
+	    if( $items[ELLIPTICITY]> .3)
+	    {
+		goto NEXT_OBJECT ;
+	    }
+	    $number_of_objects++ ;
+	}
+	close(CATALOGUE) ;
+	if( $maximum_objects< $number_of_objects)
+	{
+	    $maximum_objects= $number_of_objects ;
+	    $fits_file_max= $fits_file ;	
+	}
+    }
+    if( $maximum_objects> 0)
+    {
+	$filter_focus_properties{$fltr}[IND_FOC_DEF]=$fits_files{$fits_file_max}[IND_FOC_POS_FILE];
+	return $filter_focus_properties{$fltr}[IND_FOC_DEF] ;
+    }
+    return FALSE ;
+}
 sub get_fitted_focus
 {
     my $fltr           = shift @_ ;
@@ -403,6 +461,7 @@ sub get_fitted_focus
     my $ds9_region_file   = shift @_ ;
     my $set_limits_on_sanity_checks = shift @_ ;
     my $make_robust       = shift @_ ;
+    my $find_rough_focus  = shift @_ ;
 
     my $ret_get_fits= FALSE ;
     my $ret_create  = FALSE ;
@@ -415,104 +474,165 @@ sub get_fitted_focus
     my @mean_focus=(FALSE,FALSE) ;
     my $date= "" ;
 
-
+    
 ##    my @stddev_focus=(FALSE,FALSE) ;
-    $ret_get_fits= get_fits_files( $fltr, $fits_dir) ;
-    if( $ret_get_fits== TRUE)
+    my $date_reference= `date --iso-8601=seconds --utc` ;
+    chomp $date_reference ;
+    $ret_create= create_reference_catalogue( $fltr, $cfg, $param, $reference_param, $sky_list, $date_reference) ;
+
+    if( $ret_create== TRUE)
     {
-	my $date_reference= `date --iso-8601=seconds --utc` ;
-	chomp $date_reference ;
-	$ret_create= create_reference_catalogue( $fltr, $cfg, $param, $reference_param, $sky_list, $date_reference) ;
+	$date= `date --iso-8601=seconds --utc` ;
+	chomp $date ;
 
-	if( $ret_create== TRUE)
-	{
-	    $date= `date --iso-8601=seconds --utc` ;
-	    chomp $date ;
-
-	    $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, \%data_points) ;
+	$ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, \%data_points) ;
 
 #ToDo: check the spatial distribution and update the reference DS9 reg file
 #      calculate the center of mass and compare it with the CCD dimensions from fits file (incl. binning)
 #ToDo: make a selection on spatial distribution
 
-	    for( my $qty=0 ; $qty < 2; $qty++)
+	for( my $qty=0 ; $qty < 2; $qty++)
+	{
+	    my $lower_limit          = 0 ;
+	    my $upper_limit          = 1e12 ;
+	    my $foc_pos_minimum      = 1e12 ;
+	    my $foc_pos_minimum_index= 0 ;
+	    my $data_minimum         = 1e12 ;
+	    my @focuser_positions ;
+	    foreach my $foc_pos ( sort keys %data_points)
 	    {
-		my $lower_limit          = 0 ;
-		my $upper_limit          = 1e12 ;
-		my $foc_pos_minimum      = 1e12 ;
-		my $foc_pos_minimum_index= 0 ;
-		my $data_minimum         = 1e12 ;
-		my @focuser_positions ;
-		foreach my $foc_pos ( sort keys %data_points)
-		{
-		    push(@focuser_positions, $foc_pos) ;
+		push(@focuser_positions, $foc_pos) ;
 		    if( $data_points{$foc_pos}[$qty] < $data_minimum)
 		    {
 			$foc_pos_minimum= $foc_pos ;
 			$foc_pos_minimum_index++ ;
 			$data_minimum= $data_points{$foc_pos}[$qty] ;
 		    }
-		}
+	    }
 # check if the location of the minimum is symmetric in respect of foc_pos (ul-ll)/2 + ul from data
 #
-		my $data_minimum_near_best_known_focus= TRUE ;
-		if( abs($foc_pos_minimum- $filter_focus_properties{$fltr}[IND_FOC_DEF])> 3 * $focuser_properties{resolution}) # ToDo: replace constant
-		{
-		    $data_minimum_near_best_known_focus= FALSE ;
-		    print "quantity: $qty, data minimum is at $foc_pos_minimum far away from known best focus at $filter_focus_properties{$fltr}[IND_FOC_DEF], adjust \%filter_focus_properties\n" ;
-		}
-		my $data_minimum_centered_to_data_limits= TRUE; 
-		my $limits_minimum_difference= FALSE ;
-		if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{resolution})
-		{
-		    $data_minimum_centered_to_data_limits= FALSE ;
-		    print "quantity: $qty, data minimum is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n" ;
-		}
+	    my $data_minimum_near_best_known_focus= TRUE ;
+	    if( abs($foc_pos_minimum- $filter_focus_properties{$fltr}[IND_FOC_DEF])> 3 * $focuser_properties{resolution}) # ToDo: replace constant
+	    {
+		$data_minimum_near_best_known_focus= FALSE ;
+		print "quantity: $qty, data minimum is at $foc_pos_minimum far away from known best focus at $filter_focus_properties{$fltr}[IND_FOC_DEF], adjust \%filter_focus_properties\n" ;
+	    }
+	    my $data_minimum_centered_to_data_limits= TRUE; 
+	    my $limits_minimum_difference= FALSE ;
+	    if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{resolution})
+	    {
+		$data_minimum_centered_to_data_limits= FALSE ;
+		print "quantity: $qty, data minimum is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n" ;
+	    }
 #ToDo: abs() might not be a good idea, loosing information
-		if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
+	    if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
+	    {
+		$limits_minimum_difference= LOWER ;
+		if( $set_limits_on_sanity_checks== TRUE)
 		{
-		    $limits_minimum_difference= LOWER ;
-		    if( $set_limits_on_sanity_checks== TRUE)
-		    {
-			$lower_limit= $foc_pos_minimum - abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) ;
-		    }
-		    print "quantity: $qty, lower limit set to $lower_limit\n" ;
+		    $lower_limit= $foc_pos_minimum - abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) ;
+		}
+		print "quantity: $qty, lower limit set to $lower_limit\n" ;
+	    }
+	    else
+	    {
+		$limits_minimum_difference= UPPER ;
+		if( $set_limits_on_sanity_checks== TRUE)
+		{
+		    $upper_limit= $foc_pos_minimum + abs($focuser_positions[0]- $foc_pos_minimum) ;
+		}
+		print "quantity: $qty, upper limit set to $upper_limit\n" ;
+	    }
+# write the data files and store their names
+	    if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
+	    {
+		my $data_file_name= $fit_result_file ; # just a reminder
+		my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $qty, \%data_points)  ;
+# store file name for fitting
+		if( $qty== 0) # FWHM, FLUX_MAX
+		{
+		    push (@fwhm_data_file_names, $file_name) ;
 		}
 		else
 		{
-		    $limits_minimum_difference= UPPER ;
-		    if( $set_limits_on_sanity_checks== TRUE)
-		    {
-			$upper_limit= $foc_pos_minimum + abs($focuser_positions[0]- $foc_pos_minimum) ;
-		    }
-		    print "quantity: $qty, upper limit set to $upper_limit\n" ;
+		    push (@flux_data_file_names, $file_name) ;
 		}
-# write the data files and store their names
-		if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
+	    }
+	    else
+	    {
+		$ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $lower_limit, $upper_limit, $qty, \%data_points) ;
+		
+		if( $ret_fit== TRUE )
 		{
-		    my $data_file_name= $fit_result_file ; # just a reminder
-		    my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $qty, \%data_points)  ;
-# store file name for fitting
-		    if( $qty== 0) # FWHM, FLUX_MAX
+		    $fit_focus = get_fitted_focus_and_plot_with_foc_x($fltr, $fitprg, $fit_result_file, $date, $qty) ;
+		    
+		    if( $fit_focus != FALSE)
 		    {
-			push (@fwhm_data_file_names, $file_name) ;
-		    }
+			$mean_focus[$qty]= $fit_focus ;
+			print "quantity: $qty, filter: $fltr, fitted focus: $fit_focus\n" ;
+		    } 
 		    else
 		    {
-			push (@flux_data_file_names, $file_name) ;
+			print "quantity: $qty, filter: $fltr, fitted focus position undefined\n" ;
+		    }
+		}
+	    }
+	    if($make_robust==TRUE)
+	    {
+#define the most symmetric limits, there might be gaps (no images) at a specific foc_pos
+# ToDo: look at the loops and try to make one out of them
+		my %symmetric_pairs;
+		if( $limits_minimum_difference== UPPER)
+		{
+		    for( my $ll= $focuser_positions[0]; $ll < $foc_pos_minimum; $ll += $filter_focus_properties{$fltr}[IND_STEP_SIZE])
+		    {
+			for( my $ul= $focuser_positions[$#focuser_positions]; $ul > $foc_pos_minimum; $ul -= $filter_focus_properties{$fltr}[IND_STEP_SIZE])
+			{
+# give the fit program a fair chance
+			    if(abs($ul- $ll) > MINIMUM_INTERVALL * $filter_focus_properties{$fltr}[IND_STEP_SIZE]) #ToDo: replace constant
+			    {
+				if( abs( $ul- $foc_pos_minimum) < abs( $ll- $foc_pos_minimum))
+				{
+				    $symmetric_pairs{$ll}= $ul ;
+				    last ;
+				}
+			    }
+			}
 		    }
 		}
 		else
 		{
-		    $ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $lower_limit, $upper_limit, $qty, \%data_points) ;
+		    for( my $ul= $focuser_positions[$#focuser_positions]; $ul > $foc_pos_minimum; $ul -= $filter_focus_properties{$fltr}[IND_STEP_SIZE])
+		    {
+			for( my $ll= $focuser_positions[0]; $ll < $foc_pos_minimum; $ll += $filter_focus_properties{$fltr}[IND_STEP_SIZE])
+			{
+# give the fit program a fair chance
+			    if(abs($ul- $ll) > MINIMUM_INTERVALL * $filter_focus_properties{$fltr}[IND_STEP_SIZE]) #ToDo: replace constant
+			    {
+				if( abs( $ll- $foc_pos_minimum) < abs( $ul- $foc_pos_minimum))
+				{
+				    $symmetric_pairs{$ll}= $ul ;
+				    last ;
+				}
+			    }
+			}
+		    }
+		}
+		my @fitted_foci ;
+		my $mean_fit_focus= 0 ;
+		my $stddev_fit_focus= 0 ;
 	    
+		foreach my $limit (sort keys %symmetric_pairs)
+		{
+		    $ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $limit, $symmetric_pairs{$limit}, $qty, \%data_points,) ;
+		    
 		    if( $ret_fit== TRUE )
 		    {
 			$fit_focus = get_fitted_focus_and_plot_with_foc_x($fltr, $fitprg, $fit_result_file, $date, $qty) ;
 			
 			if( $fit_focus != FALSE)
 			{
-			    $mean_focus[$qty]= $fit_focus ;
+			    push(@fitted_foci, $fit_focus) ; 
 			    print "quantity: $qty, filter: $fltr, fitted focus: $fit_focus\n" ;
 			} 
 			else
@@ -521,101 +641,37 @@ sub get_fitted_focus
 			}
 		    }
 		}
-		if($make_robust==TRUE)
+# calculate mean and standard deviation
+		if( $#fitted_foci > 1 )
 		{
-#define the most symmetric limits, there might be gaps (no images) at a specific foc_pos
-# ToDo: look at the loops and try to make one out of them
-		    my %symmetric_pairs;
-		    if( $limits_minimum_difference== UPPER)
+		    my $stats = new Statistics::Descriptive::Discrete;
+		    $stats->add_data(@fitted_foci);
+		    print "quantity: $qty, count = ",$stats->count(),"\n";
+		    print "quantity: $qty, min = ",$stats->min(),"\n";
+		    print "quantity: $qty, max = ",$stats->max(),"\n";
+		    print "quantity: $qty, mean = ",$stats->mean(),"\n";
+		    print "quantity: $qty, standard_deviation = ",$stats->standard_deviation(),"\n";
+		    print "quantity: $qty, variance = ",$stats->variance(),"\n";
+		    print "quantity: $qty, sample_range = ",$stats->sample_range(),"\n";
+		    print "quantity: $qty, mode = ",$stats->mode(),"\n";
+		    print "quantity: $qty, median = ",$stats->median(),"\n";
+		
+		    if($stats->standard_deviation() < $focuser_properties{"resolution"})
 		    {
-			for( my $ll= $focuser_positions[0]; $ll < $foc_pos_minimum; $ll += $filter_focus_properties{$fltr}[IND_STEP_SIZE])
-			{
-			    for( my $ul= $focuser_positions[$#focuser_positions]; $ul > $foc_pos_minimum; $ul -= $filter_focus_properties{$fltr}[IND_STEP_SIZE])
-			    {
-# give the fit program a fair chance
-				if(abs($ul- $ll) > MINIMUM_INTERVALL * $filter_focus_properties{$fltr}[IND_STEP_SIZE]) #ToDo: replace constant
-				{
-				    if( abs( $ul- $foc_pos_minimum) < abs( $ll- $foc_pos_minimum))
-				    {
-					$symmetric_pairs{$ll}= $ul ;
-					last ;
-				    }
-				}
-			    }
-			}
+			print "quantity: $qty, SUCCESS\n" ;
+			$mean_focus[$qty]= $stats->mean() ;
+			#return $stats->mean() ;
 		    }
 		    else
 		    {
-			for( my $ul= $focuser_positions[$#focuser_positions]; $ul > $foc_pos_minimum; $ul -= $filter_focus_properties{$fltr}[IND_STEP_SIZE])
-			{
-			    for( my $ll= $focuser_positions[0]; $ll < $foc_pos_minimum; $ll += $filter_focus_properties{$fltr}[IND_STEP_SIZE])
-			    {
-# give the fit program a fair chance
-				if(abs($ul- $ll) > MINIMUM_INTERVALL * $filter_focus_properties{$fltr}[IND_STEP_SIZE]) #ToDo: replace constant
-				{
-				    if( abs( $ll- $foc_pos_minimum) < abs( $ul- $foc_pos_minimum))
-				    {
-					$symmetric_pairs{$ll}= $ul ;
-					last ;
-				    }
-				}
-			    }
-			}
-		    }
-		    my @fitted_foci ;
-		    my $mean_fit_focus= 0 ;
-		    my $stddev_fit_focus= 0 ;
-	    
-		    foreach my $limit (sort keys %symmetric_pairs)
-		    {
-			$ret_fit= fit_data_with_foc_x( $fltr, $date, $fitprg, $fit_result_file, $limit, $symmetric_pairs{$limit}, $qty, \%data_points,) ;
-
-			if( $ret_fit== TRUE )
-			{
-			    $fit_focus = get_fitted_focus_and_plot_with_foc_x($fltr, $fitprg, $fit_result_file, $date, $qty) ;
-			    
-			    if( $fit_focus != FALSE)
-			    {
-				push(@fitted_foci, $fit_focus) ; 
-				print "quantity: $qty, filter: $fltr, fitted focus: $fit_focus\n" ;
-			    } 
-			    else
-			    {
-				print "quantity: $qty, filter: $fltr, fitted focus position undefined\n" ;
-			    }
-			}
-		    }
-# calculate mean and standard deviation
-		    if( $#fitted_foci > 1 )
-		    {
-			my $stats = new Statistics::Descriptive::Discrete;
-			$stats->add_data(@fitted_foci);
-			print "quantity: $qty, count = ",$stats->count(),"\n";
-			print "quantity: $qty, min = ",$stats->min(),"\n";
-			print "quantity: $qty, max = ",$stats->max(),"\n";
-			print "quantity: $qty, mean = ",$stats->mean(),"\n";
-			print "quantity: $qty, standard_deviation = ",$stats->standard_deviation(),"\n";
-			print "quantity: $qty, variance = ",$stats->variance(),"\n";
-			print "quantity: $qty, sample_range = ",$stats->sample_range(),"\n";
-			print "quantity: $qty, mode = ",$stats->mode(),"\n";
-			print "quantity: $qty, median = ",$stats->median(),"\n";
-		
-			if($stats->standard_deviation() < $focuser_properties{"resolution"})
-			{
-			    print "quantity: $qty, SUCCESS\n" ;
-			    $mean_focus[$qty]= $stats->mean() ;
-			    #return $stats->mean() ;
-			}
-			else
-			{
-			    print "quantity: $qty, NO SUCCESS\n" ;
-			    #return FALSE ;
-			}    
-		    }
+			print "quantity: $qty, NO SUCCESS\n" ;
+			#return FALSE ;
+		    }    
 		}
 	    }
 	}
     }
+
  # fit
     if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
     {
@@ -914,7 +970,7 @@ sub retrieve_data
 	printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
 	printf( DS9REGION "# Filename: $fits_file\n") ;
 	printf( DS9REGION "global color=yellow font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
-	printf( DS9REGION "physical\n") ;
+	printf( DS9REGION "image\n") ; # not physical
 
 	my $number_of_objects= 0 ;
 	my $number_of_selected_objects= 0 ;
@@ -941,8 +997,9 @@ sub retrieve_data
 		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE]= $items[X_IMAGE];
 		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE]= $items[Y_IMAGE];
 
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]=       $items[FWHM_IMAGE] ; # this are the quantities to be fitted
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]= (10000.)/ $items[FLUX_MAX]   ; # this are the quantities to be fitted
+		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]=           $items[FWHM_IMAGE] ; # this is the quantity to be fitted
+#ToDo: fit $items[FLUX_MAX]!
+		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]= (10000.)/ $items[FLUX_MAX]   ; # this is the quantity to be fitted
 
 		$number_of_selected_objects++ ;
 #	      printf( DS9REGION "cricle\(%f,%f,20.1\) # text = {%d}\n", $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE],$sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE], $reference_object_number) ;
@@ -976,6 +1033,7 @@ sub retrieve_data
 	else
 	{
 	    print "$fits_file: focuser position: $fits_files{$fits_file}[IND_FOC_POS_FILE], number of objects == 0\n" ;  
+	    print "possibly bad reference image chosen, define FIND_ROUGH_FOCUS=> TRUE\n" ;
 	    exit 1 ;
 	}
     } # end loop fits files
@@ -1135,12 +1193,12 @@ sub write_data_files
 
     foreach my $foc_pos ( sort keys %{$_[0]})
     {
-	if(($foc_pos> $lower_lmt) &&($foc_pos< $upper_lmt))
+	if(($foc_pos> $lower_lmt)&&($foc_pos< $upper_lmt))
 	{
 	    printf( DATA "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$number_of_objects_found_in_all_files ) ; # ToDo: normalize 
 	    if( $verbose==TRUE)
 	    {
-	#	printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$number_of_objects_found_in_all_files ) ;
+		printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$number_of_objects_found_in_all_files ) ;
 	    }
 	}
     }
@@ -1318,6 +1376,7 @@ my $fits_directory     = FITS_DIRECTORY;
 my $set_focus          = SET_FOCUS; 
 my $take_data          = TAKE_DATA;
 my $rts2_device_file   = RTS2_DEVICES ;
+my $find_rough_focus   = FIND_ROUGH_FOCUS ;
 my $sexcfg             = SEXCFG ;
 my $sexparam           = SEXPARAM ;
 my $sexreference_param = SEXREFERENCE_PARAM ;
@@ -1338,16 +1397,17 @@ if (!GetOptions("help|h"            => \$help,
                 "version"           => \$version,
                 "verbose|v+"        => \$verbose,
                 "debug|d+"          => \$debug,
-		"fits_directory|t=s"=> \$fits_directory,
-		"set_focus|f=s"     => \$set_focus,
-		"take_data|o=s"     => \$take_data,
-		"rts2-devices|r=s"  => \$rts2_device_file,
-		"ccd|a=s"           => \$rts2_device_camd_default,
-		"sexcfg|s=s"        => \$sexcfg,
-		"sexparam|p=s"      => \$sexparam,
-		"sexcat|c=s"        => \$sexcat,
-		"fit_fwhm_program|x=s"   => \$fitprg,
-		"make_robust|m=i"   => \$make_robust,
+		"fits_directory|a=s"=> \$fits_directory,
+		"set_focus|b=s"     => \$set_focus,
+		"take_data|c=s"     => \$take_data,
+		"rts2-devices|e=s"  => \$rts2_device_file,
+		"ccd|f=s"           => \$rts2_device_camd_default,
+		"sexcfg|g=s"        => \$sexcfg,
+		"sexparam|i=s"      => \$sexparam,
+		"sexcat|j=s"        => \$sexcat,
+		"fit_fwhm_program|k=s"=> \$fitprg,
+		"make_robust|l=i"     => \$make_robust,
+		"find_rough_focus|m=i"=> \$find_rough_focus,
                ))
 {
   print_usage();
@@ -1523,7 +1583,27 @@ if( $take_data== FALSE) # offline analyis
 {
     foreach my $filter (@filters)
     {
-	$fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust) ;
+	my $ret_get_fits= get_fits_files( $filter, $fits_directory) ;
+	if( $ret_get_fits== TRUE)
+	{
+	    my $foc_pos_maximum_objects= FALSE ;
+	    if( $find_rough_focus== TRUE)
+	    {
+		if( $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param) != FALSE ) 
+		{
+		    $fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust, $find_rough_focus) ;
+		}
+		else
+		{
+		    print "no rough focus found, exiting\n" ;
+		    exit 1 ;
+		}
+	    }
+	    else
+	    {
+		$fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust, $find_rough_focus) ;	
+	    }
+	}
 	undef %fits_files ;
     }
 }
@@ -1571,7 +1651,7 @@ elsif( $take_data== TRUE) # online analysis
 	}
 	close( CREATEFITS) ;
 
-	$fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust) ;
+	$fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust, $find_rough_focus) ;
 	undef %fits_files ;
     }
 }
