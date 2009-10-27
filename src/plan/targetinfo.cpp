@@ -328,7 +328,8 @@ void TargetInfo::printTargetInfo ()
 	// print observations..
 	if (printObservations)
 	{
-		rts2db::ObservationSet obsSet = rts2db::ObservationSet (target->getTargetID ());
+		rts2db::ObservationSet obsSet = rts2db::ObservationSet ();
+		obsSet.loadTarget (target->getTargetID ());
 		if (printImages)
 			obsSet.printImages (printImages);
 		if (printCounts)

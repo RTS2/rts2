@@ -31,15 +31,22 @@ typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
 
 class ConnProcess:public rts2core::ConnFork
 {
-	protected:
-		astrometry_stat_t astrometryStat;
-		double expDate;
 	public:
 		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
 
 		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
 		
 		double getExposureEnd () { return expDate; };
+
+		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
+		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
+
+	protected:
+		astrometry_stat_t astrometryStat;
+		double expDate;
+
+		const char *last_good_jpeg;
+		const char *last_trash_jpeg;
 
 };
 
@@ -55,33 +62,23 @@ class ConnProcess:public rts2core::ConnFork
  */
 class ConnImgProcess:public ConnProcess
 {
-	private:
-		char *imgPath;
+	public:
+		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout);
+		virtual ~ ConnImgProcess (void);
 
-		long id;
-		double ra, dec, ra_err, dec_err;
+		virtual int init ();
 
-#ifdef HAVE_PGSQL
-		void sendProcEndMail (Rts2ImageDb * image);
-#else
-		void sendOKMail (Rts2Image * image)
-		{
-		}
-
-		void sendProcEndMail (Rts2Image * image)
-		{
-		}
-#endif
+		virtual int newProcess ();
+		virtual void processLine ();
 
 	protected:
 		virtual void connectionError (int last_data_size);
 
-	public:
-		ConnImgProcess (Rts2Block * in_master, const char *in_exe, const char *in_path, int in_timeout);
-		virtual ~ ConnImgProcess (void);
+	private:
+		std::string imgPath;
 
-		virtual int newProcess ();
-		virtual void processLine ();
+		long id;
+		double ra, dec, ra_err, dec_err;
 };
 
 class ConnObsProcess:public ConnProcess

@@ -1647,7 +1647,8 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	ObservationSet obsset = ObservationSet (&tar_pos, radius);
+	ObservationSet obsset = ObservationSet ();
+	obsset.loadRadius (&tar_pos, radius);
 	_os << obsset;
 
 	return obsset.size ();

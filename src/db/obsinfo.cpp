@@ -116,7 +116,8 @@ Rts2ObsInfo::displayFlats ()
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new rts2db::ObservationSet (TYPE_FLAT, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet ();
+		obsset->loadType (TYPE_FLAT, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }
@@ -128,7 +129,8 @@ Rts2ObsInfo::displayDarks ()
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new rts2db::ObservationSet (TYPE_DARK, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet ();
+		obsset->loadType (TYPE_DARK, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }

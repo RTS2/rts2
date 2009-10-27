@@ -378,7 +378,8 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 
 	_os << "<html><head><title>Observations of target " << tar->getTargetName () << "</title></head><body>";
 
-	rts2db::ObservationSet os = rts2db::ObservationSet (tar->getTargetID ());
+	rts2db::ObservationSet os = rts2db::ObservationSet ();
+	os.loadTarget (tar->getTargetID ());
 
 	if (os.size () > 0)
 	{

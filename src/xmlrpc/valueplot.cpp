@@ -248,15 +248,10 @@ void ValuePlot::plotYDouble ()
 	double diff = max - min;
 
 	// plot roughly every 20 pixels..
-	double grid_y_step = log(scaleY * 20.0) / log(10);
-
-	if (grid_y_step > 0)
-		grid_y_step = ceil (grid_y_step);
-	else
-		grid_y_step = floor (grid_y_step);
+	double grid_y_step = log(20.0 / scaleY) / log(10);
 
 	// round up
-	grid_y_step = pow (10, grid_y_step);
+	grid_y_step = pow (10, floor (grid_y_step));
 	
 	image->strokeWidth (1);
 	image->fontPointsize (12);

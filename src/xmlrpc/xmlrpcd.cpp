@@ -383,12 +383,7 @@ class JpegImageRequest: public GetRequestAuthorized
 			Rts2Image image (path.c_str (), false, true);
 			image.openImage ();
 			Blob blob;
-			Magick::Image mimage = image.getMagickImage ();
-			mimage.fillColor (Magick::Color (0, 0, 0));
-			mimage.draw (Magick::DrawableRectangle (5, image.getHeight () - 30, image.getWidth () - 10, image.getHeight () - 5));
-
-			mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-			mimage.draw (Magick::DrawableText (10, image.getHeight () - 10, image.expand ("%Y-%m-%d %H:%M:%S @OBJECT")));
+			Magick::Image mimage = image.getMagickImage (true);
 
 			mimage.write (&blob, "jpeg");
 			response_length = blob.length();
@@ -459,12 +454,8 @@ class JpegPreview:public GetRequestAuthorized
 				Blob blob;
 				Magick::Image mimage = image.getMagickImage ();
 				mimage.zoom (Magick::Geometry (128, 128));
-				mimage.fillColor (Magick::Color (0, 0, 0));
-				mimage.fontPointsize (10);
-				mimage.draw (Magick::DrawableRectangle (0, 116, 128, 128));
 
-				mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-				mimage.draw (Magick::DrawableText (1, 126, image.expand ("%Y-%m-%d %H:%M:%S")));
+				image.writeLabel (mimage, 1, 126, 10, "%Y-%m-%d %H:%M:%S");
 
 				mimage.write (&blob, "jpeg");
 				response_length = blob.length();
@@ -1421,10 +1412,10 @@ class TargetInfo: public SessionMethod
 				xs << *tar;
 
 				// observations
-				rts2db::ObservationSet *obs_set;
-				obs_set = new rts2db::ObservationSet (tar->getTargetID ());
+				rts2db::ObservationSet obs_set;
+				obs_set.loadTarget (tar->getTargetID ());
 				int j = 0;
-				for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
+				for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, j++)
 				{
 					retVar["observation"][j]["obsid"] =  (*obs_iter).getObsId();
 					retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
@@ -1489,11 +1480,11 @@ class ListTargetObservations: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
-			rts2db::ObservationSet *obs_set;
-			obs_set = new rts2db::ObservationSet ((int)params[0]);
+			rts2db::ObservationSet obs_set;
+			obs_set.loadTarget ((int)params[0]);
 			int i = 0;
 			time_t t;
-			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
 				retVar["obs_ra"] = (*obs_iter).getObsRa();
@@ -1522,12 +1513,19 @@ class ListMonthObservations: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
+			int y = params[0];
+			int m = params[1];
+
 			XmlRpcValue retVar;
-			rts2db::ObservationSet *obs_set;
-			obs_set = new rts2db::ObservationSet ((int)params[0], (int)params[1]);
+			rts2db::ObservationSet obs_set;
+
+			time_t from = Rts2Config::instance ()->getNight (y, m, 1);
+			time_t to = Rts2Config::instance ()->getNight (y, m + 1, 1);
+			obs_set.loadTime (&from, &to);
+
 			int i = 0;
 			time_t t;
-			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
 				retVar["tar_id"] = (*obs_iter).getTargetId ();

@@ -232,7 +232,8 @@ Rts2NightReport::printStatistics ()
 void
 Rts2NightReport::printFromTo (time_t *t_start, time_t * t_end, bool printEmpty)
 {
-	obs_set = new rts2db::ObservationSet (t_start, t_end);
+	obs_set = new rts2db::ObservationSet ();
+	obs_set->loadTime (t_start, t_end);
 
 	if (!printEmpty && obs_set->empty ())
 	{
