@@ -353,7 +353,7 @@ void TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg, double pe
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
-		std::cout << std::setw (10) << i << " ";
+		std::cout << std::setw (10) << LibnovaDate (jd_start + i * step) << " ";
 		target->printAltTableSingleCol (std::cout, jd_start, i, step);
 		std::cout << std::endl;
 	}
@@ -363,7 +363,7 @@ void TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg, double p
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
-		std::cout << std::setw (10) << i << " "
+		std::cout << std::setw (10) << LibnovaDate (jd_start + i * step) << " "
 			<< target->getBonus (jd_start + i / 24.0) << std::endl;
 	}
 }

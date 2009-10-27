@@ -361,7 +361,7 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 				nightGoodImages->inc ();
 				sendValueAll (goodImages);
 				sendValueAll (nightGoodImages);
-				if (runningImage->getExposureEnd () > lastGood->getValueDouble ())
+				if (isnan (lastGood->getValueDouble ()) || runningImage->getExposureEnd () > lastGood->getValueDouble ())
 				{
 					lastGood->setValueDouble (runningImage->getExposureEnd ());
 					sendValueAll (lastGood);
@@ -372,7 +372,7 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 				nightTrashImages->inc ();
 				sendValueAll (trashImages);
 				sendValueAll (nightTrashImages);
-				if (runningImage->getExposureEnd () > lastTrash->getValueDouble ())
+				if (isnan (lastTrash->getValueDouble ()) || runningImage->getExposureEnd () > lastTrash->getValueDouble ())
 				{
 					lastTrash->setValueDouble (runningImage->getExposureEnd ());
 					sendValueAll (lastTrash);
