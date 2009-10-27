@@ -1049,6 +1049,42 @@
             </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_processed_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last processed image, saved as JPEG. Path can contain %
+	      character for expansion. If not defined, the JPEG image will not
+	      be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_good_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last good (=with astrometry) image, saved as JPEG. Path
+	      can contain % character for expansion. If not defined, the JPEG
+	      image will not be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_trash_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last trash (=without astrometry) image, saved as JPEG.
+	      Path can contain % character for expansion. If not defined, the
+	      JPEG image will not be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
