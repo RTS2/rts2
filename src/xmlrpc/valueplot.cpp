@@ -248,7 +248,7 @@ void ValuePlot::plotYDouble ()
 	double diff = max - min;
 
 	// plot roughly every 20 pixels..
-	double grid_y_step = log(20.0 / scaleY) / log(10);
+	double grid_y_step = log(100.0 / scaleY) / log(10);
 
 	// round up
 	grid_y_step = pow (10, floor (grid_y_step));
