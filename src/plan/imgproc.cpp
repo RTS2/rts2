@@ -402,15 +402,18 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
 			if (reprocessingPossible)
 			{
-				if (globC < imageGlob.gl_pathc)
+				if (imageGlob.gl_pathc > 0)
 				{
-					queImage (imageGlob.gl_pathv[globC]);
 					globC++;
-				}
-				else if (imageGlob.gl_pathc > 0)
-				{
-					globfree (&imageGlob);
-					imageGlob.gl_pathc = 0;
+					if (globC < imageGlob.gl_pathc)
+					{
+						queImage (imageGlob.gl_pathv[globC]);
+					}
+					else
+					{
+						globfree (&imageGlob);
+						imageGlob.gl_pathc = 0;
+					}
 				}
 			}
 		}
