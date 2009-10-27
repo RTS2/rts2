@@ -1263,7 +1263,7 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-Image Rts2Image::getMagickImage (float quantiles)
+Image Rts2Image::getMagickImage (bool writeStdLabel, float quantiles)
 {
 	unsigned char *buf = NULL;
 	try
@@ -1273,8 +1273,8 @@ Image Rts2Image::getMagickImage (float quantiles)
 		image.font("helvetica");
 		image.strokeColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
-		image.fontPointsize (20);
-		//image.draw (DrawableText (100, 100, "test image"));
+		if (writeStdLabel)
+			writeLabel (image, 2, image.size ().height () - 2, 20, "%Y-%m-%d %H:%M:%S @OBJECT");
 		delete[] buf;
 		return image;
 	}
@@ -1285,7 +1285,17 @@ Image Rts2Image::getMagickImage (float quantiles)
 	}
 }
 
-void Rts2Image::writeAsJPEG (std::string expand_str, float quantiles)
+void Rts2Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText)
+{
+	mimage.fontPointsize (fs);
+	mimage.fillColor (Magick::Color (0, 0, 0, MaxRGB / 2));
+	mimage.draw (Magick::DrawableRectangle (x, y - fs - 4, mimage.size (). width () - x - 2, y));
+
+	mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
+	mimage.draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
+}
+
+void Rts2Image::writeAsJPEG (std::string expand_str, bool writeStdLabel, float quantiles)
 {
 	std::string new_filename = expandPath (expand_str);
 	
@@ -1297,7 +1307,7 @@ void Rts2Image::writeAsJPEG (std::string expand_str, float quantiles)
 	}
 
 	try {
-		Image image = getMagickImage (quantiles);
+		Image image = getMagickImage (writeStdLabel, quantiles);
 		image.write (new_filename.c_str ());
 	}
 	catch (Exception &ex)
@@ -1307,10 +1317,10 @@ void Rts2Image::writeAsJPEG (std::string expand_str, float quantiles)
 	}
 }
 
-void Rts2Image::writeAsBlob (Blob &blob, float quantiles)
+void Rts2Image::writeAsBlob (Blob &blob, bool writeStdLabel, float quantiles)
 {
 	try {
-		Image image = getMagickImage (quantiles);
+		Image image = getMagickImage (writeStdLabel, quantiles);
 		image.write (&blob, "jpeg");
 	}
 	catch (Exception &ex)

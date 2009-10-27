@@ -271,24 +271,35 @@ class Rts2Image:public Rts2FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (float quantiles=0.005);
+		Magick::Image getMagickImage (bool writeStdLabel = false, float quantiles=0.005);
+
+		/**
+		 * Write lable to given position. Label text will be expanded.
+		 *
+		 * @param mimage    Image to which write label.
+		 * @param x         X coordinate of rectangle with label.
+		 * @param y         Y coordinate of rectangle with label.
+		 * @param labelText Text of label. It will be expanded through expandVariable.
+		 */
+		void writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText);
 
 		/**
 		 * Write image as JPEG to provided data buffer.
 		 * Buffer will be allocated by this call and should
 		 * be free afterwards.
 		 *
-		 * @param expand_str Expand string for image name
-		 * @param quantiles  Quantiles in 0-1 range for image scaling.
+		 * @param expand_str    Expand string for image name
+		 * @param writeStdLabel If true, will add to image box with standartd label (exposure, filter, and exposure date and time).
+		 * @param quantiles     Quantiles in 0-1 range for image scaling.
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, float quantiles=0.005);
+		void writeAsJPEG (std::string expand_str, bool writeStdLabel = false, float quantiles=0.005);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..
 		 */
-		void writeAsBlob (Magick::Blob &blob, float quantiles=0.005);
+		void writeAsBlob (Magick::Blob &blob, bool writeStdLabel = false, float quantiles=0.005);
 #endif
 
 		double getAstrometryErr ();
