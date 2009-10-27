@@ -132,6 +132,12 @@ time_t Rts2Config::getNight (int year, int month, int day)
 	struct tm _tm;
 	static char p_tz[100];
 
+	if (month > 12)
+	{
+		year++;
+		month -= 12;
+	}
+
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;

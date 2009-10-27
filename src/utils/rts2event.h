@@ -71,6 +71,7 @@
 // augershooter.h          700-749
 // rts2devclifocuser.h     750-799
 // rts2loggerbase.h        800-849
+// xmlrpcd                 850-900
 // rts2soapclient.h       1000-1200
 // telds                  1200-1250
 // phot                   1250-1300
