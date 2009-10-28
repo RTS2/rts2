@@ -206,7 +206,7 @@ int Fli::isFocusing ()
 	ret = FLIGetStepsRemaining (dev, &rem);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) "Cannot get FLI steps remaining, return value:" << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "Cannot get FLI steps remaining, return value:" << ret << sendLog;
 		return -1;
 	}
 	if (rem == 0)
