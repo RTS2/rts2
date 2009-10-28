@@ -152,7 +152,7 @@ Bootes2::updateTemperature ()
 		return -1;
 	temp = (temp - 0.4) * 100;
 	tempMeas->addValue (temp, LIFOSIZE);
-	humiMeas->calculate ();
+	tempMeas->calculate ();
 	return 0;
 }
 
