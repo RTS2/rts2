@@ -59,8 +59,7 @@ class Fli:public Focusd
 
 using namespace rts2focusd;
 
-Fli::Fli (int argc, char **argv)
-:Focusd (argc, argv)
+Fli::Fli (int argc, char **argv):Focusd (argc, argv)
 {
 	deviceDomain = FLIDEVICE_FOCUSER | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
@@ -70,15 +69,12 @@ Fli::Fli (int argc, char **argv)
 		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 }
 
-
 Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
-
-int
-Fli::processOption (int in_opt)
+int Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -119,9 +115,7 @@ Fli::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Fli::init ()
+int Fli::init ()
 {
 	LIBFLIAPI ret;
 	int ret_f;
@@ -158,9 +152,7 @@ Fli::init ()
 	return 0;
 }
 
-
-int
-Fli::initValues ()
+int Fli::initValues ()
 {
 	LIBFLIAPI ret;
 
@@ -176,9 +168,7 @@ Fli::initValues ()
 	return Focusd::initValues ();
 }
 
-
-int
-Fli::info ()
+int Fli::info ()
 {
 	LIBFLIAPI ret;
 
@@ -193,9 +183,7 @@ Fli::info ()
 	return Focusd::info ();
 }
 
-
-int
-Fli::setTo (int num)
+int Fli::setTo (int num)
 {
 	LIBFLIAPI ret;
 	ret = info ();
@@ -210,24 +198,23 @@ Fli::setTo (int num)
 	return 0;
 }
 
-
-int
-Fli::isFocusing ()
+int Fli::isFocusing ()
 {
 	LIBFLIAPI ret;
 	long rem;
 
 	ret = FLIGetStepsRemaining (dev, &rem);
 	if (ret)
+	{
+		logStream (MESSAGE_ERROR) "Cannot get FLI steps remaining, return value:" << ret << sendLog;
 		return -1;
+	}
 	if (rem == 0)
 		return -2;
 	return USEC_SEC / 100;
 }
 
-
-bool
-Fli::isAtStartPosition ()
+bool Fli::isAtStartPosition ()
 {
 	int ret;
 	ret = info ();
@@ -236,8 +223,7 @@ Fli::isAtStartPosition ()
 	return getPosition () == 0;
 }
 
-int
-Fli::commandAuthorized (Rts2Conn * conn)
+int Fli::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -253,9 +239,7 @@ Fli::commandAuthorized (Rts2Conn * conn)
 	return Focusd::commandAuthorized (conn);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Fli device = Fli (argc, argv);
 	return device.run ();
