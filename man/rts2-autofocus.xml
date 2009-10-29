@@ -83,7 +83,7 @@ configuration". Parameters outside these limits should normally not be changed.
 therefore fail only in very small fraction of the cases and the derived focuser
 position should be close to the true position.
 <command>&dhpackage;</command> is built around two components: SExtractor and
-the fit programs foc or foc_x. During offline analysis I saw mainly good but bad
+the fit program rts2_fit_focus. During offline analysis I saw mainly good but bad
 results too. 
 </para><para>
 Consider <command>&dhpackage;</command> as an efficient testbed. E.g. you can
@@ -98,40 +98,47 @@ You are invited to read the source. There are a lot of comments and I used
   <refsect1>
     <title>Operation</title>
     <para>
-<command>&dhpackage;</command> performs two tasks: online data taking and 
-analysis and offline analysis of previously acquired focus run images.
-
+<command>&dhpackage;</command> performs two tasks: online data taking followed
+by immediate 
+analysis and offline analysis of previously acquired run of focus images.
+</para> <para>
 If <command>&dhpackage;</command> takes data in online mode it steers the 
 CCD_CAMERA and its associated focuser and filter wheel and performs the analysis of the 
 images for each filter right after the run. If only one filter is specified 
-the focuser its set according to the result if SET_FOCUS is true otherwise 
-the results are printed to the terminal.  
- If <command>&dhpackage;</command> runs in  offline mode it prints the results
-to the terminal. Depending on the fit program the results are plotted using gnuplot.   
+the focuser is set according to the result if SET_FOCUS==TRUE. The results are 
+printed to the terminal in both modes.  Depending on the invocation of the
+fit program the result is plotted on screen and written as a
+PNG image.   
 </para>
     <para>
-      A reference image is taken near the assumed best focus and SExtractor 
-identifies objects according to its configuration. SExtractor rereads the 
-reference ("sky list") and compares the x,y positions, but not the brightness, 
+If FIND_ROUGH_FOCUS==TRUE in both modes the focus is defined roughly based on
+how many objects are identified by SExtractor. In online mode a series of
+images is taken while if offline mode the given images are analysed.
+If it is set to FALSE a
+reference image is taken near the assumed best focus defined in %filter_focus_properties.
+</para>
+    <para>
+SExtractor rereads the 
+reference catalogue ("sky list") and compares the x,y positions, but not the brightness, 
 with those from the current image. An object is considered if it has been 
-identified on all images. The two quantities FWHM_IMAGE and 1./FLUX_MAX are 
+identified on all images. The two quantities FWHM_IMAGE and FLUX_MAX are 
 fitted independently. The focus is derived from these two fits and if the 
 two values agree within FOCUSER_RESOLUTION the mean is the focus.
     </para>
     <para>
-     The
-focus mean can be made more robust by specifying MAKE_ROBUST as
-true.<command>&dhpackage;</command> calculates then a series of limits which 
-are symmetrical to the minimum of the data. If the standard deviation of the mean
+     Currently disabled: The
+focus mean can be made more robust by specifying MAKE_ROBUST==TRUE.<command>rts2_focus_fit</command> calculates then a series of limits which 
+are symmetrical to the data extremum. If the standard deviation of the mean
 position is smaller than FOCUSER_RESOLUTION the mean is the focus.
     </para>
    <para>
      During analysis DS9 region of interest (*.reg) files are written for
 each image. These files can be loaded with DS9 and inspected.  The circle is
-centred to SExtractor x,y positions. Yellow circles
+centred to SExtractor's x,y positions. Yellow circles
 indicate that an object has been identified by comparing it against the
 reference catalogue, while green circles mark
-all objects listed in the reference catalogue. Merging all files together 
+objects present on all images and
+hence chosen for analysis. Merging all files together 
 gives a first idea of SExtractor's selection.  
     </para>
     <para>
@@ -139,7 +146,10 @@ gives a first idea of SExtractor's selection.
 defined selection is based solely on properties of the reference
 catalogue. Feel free to add more criteria as long as you get enough objects.
     </para>
-    <para> 
+ <para>The selection of the images is done with the fits header key words FILTER,
+BINNING, NAXIS1, NAXIS2, ORIRA and ORIDEC. FOC_POS is read for the analysis.
+There are no time constraints applied to the selection yet.
+ </para>    <para> 
 You may choose your own SEXCFG but must use SEXPARAM and SEXREFERENCE_PARAM
 from RTS2 svn repository. Compared with the default SEXCFG (sex -d) the following
 parameters have been changed:</para>
@@ -215,11 +225,6 @@ to ASSOCiate</para><para>The base name is SEXSKY_LIST (.list)</para>
 </variablelist>
  </varlistentry> 
 </variablelist>
-
-   <para>The selection of the images is done with the fits header key words FILTER,
-BINNING, NAXIS1, NAXIS2, ORIRA and ORIDEC. FOC_POS is read for the analysis.
-There are no time constraints applied to the selection yet.
- </para>
 <para>
     Do not forget to killall rts2-executor before start.
     </para>
@@ -238,7 +243,7 @@ The following parameters are best accessed in the file
 	<listitem>
 	  <para>
              For all operations the fits files are stored and/or read from
-FITS_DIRECTORY.
+FITS_DIRECTORY. In online mode make sure that the directory is empty.
 </para>
 	</listitem>
       </varlistentry>
@@ -297,8 +302,9 @@ different focus runs.
     <option>TAKE_DATA, boolean, FALSE</option>
     </term>
     <listitem>
-    <para> If TRUE <command>&dhpackage;</command> takes data and if FALSE it
-analyses offline data.
+    <para> If TRUE <command>&dhpackage;</command> takes data, this is the
+online mode and if FALSE it
+analyses data in offline mode.
     </para>
     </listitem>
     </varlistentry>
@@ -362,9 +368,9 @@ NUMBER_ASSOC.
     </term>
     <listitem>
     <para>If TRUE the resulting fit is performed symmetrical to the data
-minimum and not to the whole range of FOC_POS found in all fits file. Currently
-the fit depends on the limits because the data does "not behave
-well". E.g. the values of FWHM_IMAGE drop for images taken far from data minimum.
+extremum and not on the whole FOC_POS interval found in all fits files. Currently
+the fit depends on the interval limits because the data does "not behave
+well". E.g. the values of FWHM_IMAGE drop for images taken far from data extremum.
     </para>
     </listitem>
     </varlistentry>
@@ -374,7 +380,7 @@ well". E.g. the values of FWHM_IMAGE drop for images taken far from data minimum
     <option>MAKE_ROBUST, boolean, FALSE</option>
     </term>
     <listitem>
-    <para>If TRUE it calculates a series of lower and upper focuser position limits which 
+    <para>Currently disabled: If TRUE it calculates a series of lower and upper focuser position limits which 
 are symmetrical to the data minimum. Same remark as for
 SET_LIMITS_ON_SANITY_CHECKS.
     </para>
@@ -384,7 +390,7 @@ SET_LIMITS_ON_SANITY_CHECKS.
 
      <varlistentry>
     <term>
-    <option>MINIMUM_INTERVALL,int, 8 [%filter_focus_properties[FOCUSER_RESOLUTION]]</option>
+    <option>MINIMUM_INTERVAL,int, 8 [%filter_focus_properties[FOCUSER_RESOLUTION]]</option>
     </term>
     <listitem>
     <para>If MAKE_ROBUST==TRUE this defines the minimal interval where a fit
@@ -399,7 +405,10 @@ can be done.
     <option>SEXSKY_LIST, base file name, "/tmp/sex-autofocus-assoc-sky.list"</option>
     </term>
     <listitem>
-    <para>This is SExtractor's reference catalogue. It is created at or near %filter_focus_properties{filter}[IND_FOC_DEF].
+    <para>This is SExtractor's reference catalogue. Depending on the setting of
+FIND_ROUGH_FOCUS it is either created near
+%filter_focus_properties{filter}[IND_FOC_DEF] or at a position found during
+current analysis based in the maximum of objects detected.
     </para>
     </listitem>
     </varlistentry>
@@ -410,7 +419,7 @@ can be done.
     <option>SEXCATALOGUE, base file name, "/tmp/sex-autofocus.cat"</option>
     </term>
     <listitem>
-    <para>These are SExtractor's reference catalogue files.
+    <para>This is SExtractor's reference catalogue file.
     </para>
     </listitem>
     </varlistentry>
@@ -418,10 +427,10 @@ can be done.
 
      <varlistentry>
     <term>
-    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.plt"</option>
+    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.dat"</option>
     </term>
     <listitem>
-    <para>These files are fed into gnuplot
+    <para>These files are the data files (FWHM, FLUX_MAX) which are fed into rts2_focus_fit.
     </para>
     </listitem>
     </varlistentry>
@@ -462,7 +471,7 @@ varies. Larger radii indicate a larger focuser position.
 	<term>IND_LOWER_LIMIT, int -1500 [ticks]
          </term>
 	<listitem><para>Lower limit 
-relative to %filter_focus_properties{filter}[IND_FOC_DEF] for fit or 
+relative to %filter_focus_properties{filter}[IND_FOC_DEF] for 
 focuser position if TAKE_DATA == TRUE</para>
         </listitem>
  </varlistentry> 
@@ -471,7 +480,7 @@ focuser position if TAKE_DATA == TRUE</para>
          </term>
 	<listitem><para>Upper limit relative 
 to %filter_focus_properties{filter}[IND_FOC_DEF]
-for fit or focuser position if TAKE_DATA == TRUE</para>
+for focuser position if TAKE_DATA == TRUE</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
@@ -498,7 +507,7 @@ for fit or focuser position if TAKE_DATA == TRUE</para>
 	<term>FOCUSER_RESOLUTION, int, 20 [ticks]
          </term>
 	<listitem><para>This is the number of focuser 
-ticks which makes a difference e.g. in FWHM_IMAGE.</para>
+ticks which makes a difference e.g. in FWHM.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
@@ -508,7 +517,7 @@ ticks which makes a difference e.g. in FWHM_IMAGE.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>ABSOUTE_UPPER_LIMIT, int, 7000 [ticks]
+	<term>ABSOLUTE_UPPER_LIMIT, int, 7000 [ticks]
          </term>
 	<listitem><para>No focuser position is set above this limit.</para>
         </listitem>
@@ -550,7 +559,7 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   <refsect1>
     <title>Required software and Perl Modules</title>
      <varlistentry>
-      <term> SExtractor, foc, foc_x
+      <term> SExtractor, rts2_fit_focus, root (http://root.cern.ch)
       </term>
      </varlistentry>
      <varlistentry>
