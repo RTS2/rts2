@@ -46,6 +46,6 @@ class Auger: public GetRequestAuthorized
 
 };
 
-#endif /* HAVE_PGSQL */
-
 }
+
+#endif /* HAVE_PGSQL */
