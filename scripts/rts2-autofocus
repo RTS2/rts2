@@ -58,25 +58,28 @@ use constant FITPRG  => FOCROOTI  ; #
 # 
 # constants
 #
+use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-28/test-run" ;
 #use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15" ; # directory read from, or written to if TAKE_DATA == TRUE
-use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2008-12-28/R" ; # directory read from, or written to if TAKE_DATA == TRUE
+#use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2008-12-28/R" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2009-10-04" ; # directory read from, or written to if TAKE_DATA == TRUE
-use constant FILTERS        => "R" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+use constant FILTERS        => "X" ; # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
 use constant SELECT_RATIO   => 0.05 ; # this a threshold to avoid matching images from completely different focus runs.
 #                                    $number_of_selected_objects/$number_of_reference_objects 
 #ToDo: make a parameter
-use constant MINIMUM_OBJECTS=> 2 ; #  is the minimal number of objects identified in all images
+use constant MINIMUM_OBJECTS=> 5 ; #  is the minimal number of objects identified in all images
 #
 # if TAKE_DATA == TRUE then data taking with rts2 devices
-# consitency checks are performed on the devices defined in /etc/rts2/devices
+# consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
 #
-use constant TAKE_DATA       => TRUE; # TRUE: data taking, FALSE: offline analysis
+use constant TAKE_DATA       => FALSE; # TRUE: data taking, FALSE: offline analysis
 use constant SET_FOCUS       => FALSE; # set the focus position if only one filter is defined
 use constant CCD_CAMERA      => "CD" ; # this CCD and its associate devices are used if TAKE_DATA == TRUE
 use constant FIND_ROUGH_FOCUS=> TRUE;  # find focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
-use constant NUMBER_OF_ROUGH_FOCUS_IMAGES=> 10 ; #  used if TAKE_DATA == (TRUE)
+use constant INCLUDE_ROUGH_FOCUS_RUN     => FALSE; # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == TRUE 
+use constant NUMBER_OF_ROUGH_FOCUS_IMAGES=> 10;   # used if TAKE_DATA == (TRUE)
+use constant FOCAL_RATIO     => 7 ; #telescope's focal ratio
 # data taking, files
 #
 use constant RTS2_DEVICES   => "/etc/rts2/devices" ;
@@ -89,7 +92,7 @@ use constant SEXREFERENCE_PARAM=> "/etc/rts2/autofocus/sex-autofocus-reference.p
 #
 # set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
 #
-use constant SET_LIMITS_ON_SANITY_CHECKS=> FALSE ;
+use constant SET_LIMITS_ON_SANITY_CHECKS=> TRUE ;
 #
 # make the focus mor robust with multiple fits to a narrower interval
 # often the graphs behave oddly at the edges (far off focus)
@@ -101,7 +104,7 @@ use constant MAKE_ROBUST=> FALSE ;
 use constant SEXSKY_LIST      => "/tmp/sex-autofocus-assoc-sky.list" ;
 use constant SEXCATALOGUE     => "/tmp/sex-autofocus.cat" ;
 use constant SEX_TMP_CATALOGUE=> "/tmp/sex-autofocus-tmp.cat" ;
-use constant FIT_RESULT_FILE  => "/tmp/fit-autofocus.plt" ;
+use constant FIT_RESULT_FILE  => "/tmp/fit-autofocus.dat" ;
 use constant DS9_REGION_FILE  => "/tmp/ds9-autofocus.reg" ;
 # ToDo: discuss with Petr default focuser positions per filter (to conig file!)
 # Attention: the value of the filter obtained from rts2-xmlrpcclient are numeric and not characters
@@ -124,12 +127,12 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
  ) ;
 use constant FOCUSER_RESOLUTION     =>  20 ;  # unit ticks
 use constant ABSOLUTE_LOWER_LIMIT   =>  0 ;   # unit ticks 
-use constant ABSOUTE_UPPER_LIMIT    =>  7000 ;# unit ticks
+use constant ABSOLUTE_UPPER_LIMIT   =>  7000 ;# unit ticks
 #
 %focuser_properties=(
 'resolution'           => FOCUSER_RESOLUTION,
 'absolute_lower_limit' => ABSOLUTE_LOWER_LIMIT,
-'absolute_upper_limit' => ABSOUTE_UPPER_LIMIT, 
+'absolute_upper_limit' => ABSOLUTE_UPPER_LIMIT, 
 ) ;
 #
 # sex-autofocus analysis, this format is mandatory
@@ -172,24 +175,27 @@ use constant FWHM_IMAGE_REF   => 25; # 26
 use constant FLUX_RADIUS_REF  => 26; # 27
 use constant ELLIPTICITY_REF  => 27; # 28
 use constant NUMBER_ASSOC     => 28; # Number of ASSOCiated IDs
-
-use constant SELECTED    =>  -3 ;
-use constant NOT_SELECTED=>  -2 ;
-sub raw_analysis(\@) # ToDo: remove \@
+# used in @scaler_reasons
+use constant SELECTED    =>  0 ;
+use constant NOT_NUMBER_ASSOC   =>  1 ;
+use constant NOT_FLAGS_REF      =>  2 ;
+use constant NOT_ELLIPTICITY_REF=>  3 ;
+#
+sub raw_analysis(\@)
 {
     my (@items) = @{(shift)} ;
 
-    if( $items[NUMBER_ASSOC] != 1)  # mandatory, NUMBER_ASSOC        
+    if( $items[NUMBER_ASSOC] != 1)  # mandatory, NUMBER_ASSOC, sex.cfg is configured to write only MATCHED objects        
     {
-	return NOT_SELECTED ;
+	return NOT_NUMBER_ASSOC ;
     }
     if( $items[FLAGS_REF] != 0)     # mandatory, FLAGS
     {
-	return NOT_SELECTED ;
+	return NOT_FLAGS_REF ;
     }
     if( $items[ELLIPTICITY_REF]> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
     {
-	return NOT_SELECTED ;
+	return NOT_ELLIPTICITY_REF ;
     }
     return SELECTED;
 }
@@ -223,6 +229,10 @@ use constant IND_OBJ_NUMBER_OF_OBJECTS=>  4 ;
 # auxiliary constants
 use constant LOWER => 10 ;
 use constant UPPER => 11 ;
+use constant ROUGH_FOCUS_RUN_EXTENSION => "_rough_focus_run" ;
+
+
+
 $scriptname = $0;
 $scriptname =~ s/.*\///g;     # remove directory path from script file path
 #
@@ -233,6 +243,21 @@ END { print "$scriptname not ok\n" unless $loaded; }
 $loaded = 1;
 ######################### End of black magic.
 #
+# calculate exposure time as a function of focal ratio and distance from the focal plane
+sub exposure_time
+{
+    my $exposure_time_at_focus= shift @_ ;
+    my $foc_pos_at_focus = shift @_ ;
+    my $foc_pos = shift @_ ;
+}
+# define the focuser positions
+sub focuser_position
+{
+    my $foc_pos_current = shift @_ ;
+    my $foc_pos_at_focus= shift @_ ;
+    my $foc_pos_next= FALSE ;
+    return $foc_pos_next ;
+}
 sub by_foc_pos{ $fits_files{$a}[1] <=> $fits_files{$b}[1]}
 
 sub get_rts2_filter
@@ -367,7 +392,7 @@ sub set_rts2_fit_focus_position
 #FOC_FOFF Focuser offset found during focusing. This is used to temporary 
 # shift focus. If focuser driver is restarted, it is moved back to FOC_DEF 
 # position.
-#FOC_TOFF Focuser temporar offset used during focusing. You should use this 
+#FOC_TOFF Focuser temporary offset used during focusing. You should use this 
 # variable during focusing script to probe focus at different offsets.
 
     if(($fit_focus> $focuser_properties{"absolute_lower_limit"})&&($fit_focus< $focuser_properties{"absolute_upper_limit"}))
@@ -388,24 +413,40 @@ sub set_rts2_fit_focus_position
 	print "focuser position $fit_focus is not within limits $focuser_properties{\"absolute_lower_limit\"}}. $focuser_properties{\"absolute_upper_limit\"}}\n" ;
     }
 }
-# selct all fits files in a given directory for a given filter
+# select all fits files in a given directory for a given filter
 sub get_fits_files
 {
-    my $fltr           = shift @_ ;
-    my $directory      = shift @_ ;
+    my $fltr                     = shift @_ ;
+    my $directory                = shift @_ ;
+    my $include_rough_focus_run  = shift @_ ;
+    my $rough_focus_run_extension= ROUGH_FOCUS_RUN_EXTENSION ;
+
 #
 # extract DATA and store it, assuming one filter
 #
     opendir(DIR, $directory) || die "can't opendir $directory: $!";
-    my @raw_fits_files = grep { /fits$/ && -f "$directory/$_" } readdir(DIR);
+
+    my @raw_fits_files ;
+
+    if( $include_rough_focus_run== TRUE)
+    {
+	@raw_fits_files = grep { /(fits|$rough_focus_run_extension)$/ && -f "$directory/$_" } readdir(DIR);
+    }
+    else
+    {
+	@raw_fits_files = grep { /fits$/ && -f "$directory/$_" } readdir(DIR);
+    }
+
     closedir DIR;
-#
 # select all files with given $fltr (filter)
 #
     $number_of_fits_files= 0 ;
     foreach my $fits_file ( @raw_fits_files)
     {
-#
+	if(( $fits_file=~ /$rough_focus_run_extension$/) && ($verbose==TRUE))
+	{
+	    print "including $fits_file\n" ;
+	}
 # extract filter and focus position from fits
 # ToDo: use cpan Astro::FITS::CFITSIO, instead imhead
 # 
@@ -567,9 +608,9 @@ sub get_fitted_focus
 
     if( $ret_create== TRUE)
     {
-	$date= `date --iso-8601=seconds --utc` ;
-	chomp $date ;
-
+	#$date= `date --iso-8601=seconds --utc` ;
+	#chomp $date ;
+	$date= $date_reference ;
 	$ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, \%data_points) ;
 
 #ToDo: check the spatial distribution and update the reference DS9 reg file
@@ -737,6 +778,7 @@ sub write_data_files
     my $upper_lmt      = shift @_ ;
     my $cosmetics      = shift @_ ;
     my $qty            = shift @_ ;
+    my $number_of_lines= 0 ;
 
     my @fit_items= split(/\./, $fit_result_file) ;
     my $tmp_fit_file_name ;
@@ -755,6 +797,8 @@ sub write_data_files
  	if(($foc_pos> $lower_lmt)&&($foc_pos< $upper_lmt))
 	{
 	    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalize 
+	    $number_of_lines++ ;
+
 	    if( $verbose==TRUE)
 	    {
 		printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ;
@@ -762,6 +806,12 @@ sub write_data_files
 	}
     }
     close(DATA) ;
+
+    if( $number_of_lines < 10)
+    {
+	print "data for fitting, lines written: $number_of_lines\n" ;
+    }
+
     return  $tmp_fit_file_name;
 }
 sub fit_and_read_results
@@ -802,48 +852,12 @@ sub fit_and_read_results
     close( ROOT) ;
     return $fwhm_focus, $flux_focus ;
 }
-sub get_foc_pos_at_maximum_number_of_objects
-{
-    my $fltr                = shift @_ ;
-    my $fits_dir            = shift @_ ;
-    my $cfg                 = shift @_ ;
-    my $param_reference     = shift @_ ;
-    my $maximum_objects= 0 ;
-
-    my $fits_file_max="" ;
-# ToDo: make a unique file name
-    my $catalogue= SEX_TMP_CATALOGUE ;
-
-    foreach my $fits_file ( sort by_foc_pos keys %fits_files)
-    {
-# define the objects
-	open(SEXANALYSIS, SEXPRG." $fits_file -c $cfg -CATALOG_NAME $catalogue -PARAMETERS_NAME $param_reference|") or die "Can't start SExtractor: $!";
-	while(<SEXANALYSIS>){}
-	close(SEXANALYSIS) ;
-# count them
-# ToDo: make a parameter
-	my $number_of_objects= analyse_catalogue( $catalogue) ;
-	if( $maximum_objects< $number_of_objects)
-	{
-	    $maximum_objects= $number_of_objects ;
-	    $fits_file_max= $fits_file ;	
-	}
-    }
-    if( $maximum_objects> 0)
-    {
-	print "$fits_file_max rough focus found at $fits_files{$fits_file_max}[IND_FOC_POS_FILE], objects $maximum_objects (not associated)\n" ;
-	print "update temporarily %filter_focus_properties\n" ;
-	$filter_focus_properties{$fltr}[IND_FOC_DEF]=$fits_files{$fits_file_max}[IND_FOC_POS_FILE];
-	return $filter_focus_properties{$fltr}[IND_FOC_DEF] ;
-    }
-    return FALSE ;
-}
 sub analyse_catalogue
 {
-    my $catalogue= shift @_ ;
+    my $catalogue_tmp= shift @_ ;
 
     my $number_of_objects= 0 ;
-    open(CATALOGUE, "<$catalogue") or die "Can't read $catalogue: $!";
+    open(CATALOGUE, "<$catalogue_tmp") or die "Can't read $catalogue_tmp: $!";
   NEXT_OBJECT: while( my $line= <CATALOGUE>)
   {
       next if( $line=~ m/^#/) ;
@@ -864,6 +878,67 @@ sub analyse_catalogue
     close(CATALOGUE) ;
     return $number_of_objects ;
 }
+sub get_foc_pos_at_maximum_number_of_objects
+{
+    my $fltr                = shift @_ ;
+    my $fits_dir            = shift @_ ;
+    my $cfg                 = shift @_ ;
+    my $param_reference     = shift @_ ;
+    my $rename              = shift @_ ;
+
+    my $maximum_objects= 0 ;
+
+    my $rough_focus_run_extension= ROUGH_FOCUS_RUN_EXTENSION ;
+    my $fits_file_max="" ;
+    my $catalogue_tmp= SEX_TMP_CATALOGUE ;
+    my $catalogue_tmp_max= $catalogue_tmp.".max" ;
+
+    foreach my $fits_file ( sort by_foc_pos keys %fits_files)
+    {
+# define the objects
+	open(SEXANALYSIS, SEXPRG." $fits_file -c $cfg -CATALOG_NAME $catalogue_tmp -PARAMETERS_NAME $param_reference|") or die "Can't start SExtractor: $!";
+	while(<SEXANALYSIS>){}
+	close(SEXANALYSIS) ;
+# count them
+# ToDo: make a parameter
+	my $number_of_objects= analyse_catalogue( $catalogue_tmp) ;
+	if( $maximum_objects< $number_of_objects)
+	{
+	    $maximum_objects= $number_of_objects ;
+	    $fits_file_max= $fits_file ;	
+	    if( ! defined rename( $catalogue_tmp, $catalogue_tmp_max))
+	    {
+		print "could not rename $catalogue_tmp to $catalogue_tmp_max, exiting\n";
+		exit 1 ;
+	    }
+	}
+	if( $rename== TRUE)
+	{
+	    if( ! defined rename( $fits_file, $fits_file.$rough_focus_run_extension))
+	    {
+		print "could not rename $fits_file to $fits_file.$rough_focus_run_extension, exiting\n";
+		exit 1 ;
+	    }
+	}
+    }
+    if( $maximum_objects> 0)
+    {
+	if( ! defined rename( $catalogue_tmp_max, $catalogue_tmp))
+	{
+	    print "could not rename $catalogue_tmp_max to $catalogue_tmp, exiting\n";
+	    exit 1 ;
+	}
+	else
+	{
+	    print "rename $catalogue_tmp_max to $catalogue_tmp, continuing\n";
+	}
+	print "$fits_file_max, $catalogue_tmp rough focus found at $fits_files{$fits_file_max}[IND_FOC_POS_FILE], objects $maximum_objects (not associated)\n" ;
+	print "update temporarily %filter_focus_properties\n" ;
+	$filter_focus_properties{$fltr}[IND_FOC_DEF]=$fits_files{$fits_file_max}[IND_FOC_POS_FILE];
+	return $filter_focus_properties{$fltr}[IND_FOC_DEF] ;
+    }
+    return FALSE ;
+}
 sub create_reference_catalogue
 {
     my $fltr            = shift @_ ;
@@ -874,13 +949,12 @@ sub create_reference_catalogue
     my $date            = shift @_ ;
     my $find_rough_focus= shift @_ ;
 
+    my $catalogue_tmp= SEX_TMP_CATALOGUE ;
     my @lst_items= split(/\./, $sky_list) ;
     my $tmp_sky_list_file_name=  $lst_items[0]."-".$fltr."-".$date.".".$lst_items[1];
 
-
     if( $find_rough_focus != TRUE)
     {
-#
 # create the reference sky list
 #
 	my $fits_file_reference="" ;
@@ -907,7 +981,15 @@ sub create_reference_catalogue
     }
     else
     {
-	rename( SEX_TMP_CATALOGUE, $tmp_sky_list_file_name) ;
+	if( ! defined rename( $catalogue_tmp, $tmp_sky_list_file_name))
+	{
+	    print "could not rename $catalogue_tmp to $tmp_sky_list_file_name, exiting\n";
+	    exit 1 ;
+	}
+	else
+	{
+	    print "renamed $catalogue_tmp to $tmp_sky_list_file_name\n";
+	}
     }
 #define the number of reference objects
 #
@@ -947,7 +1029,7 @@ sub retrieve_data
 #
 ##	print "extracting from file $fits_file, with configuration -c $cfg -CATALOG_NAME $cat-$fits_files{$fits_file}[IND_FOC_POS_FILE] -PARAMETERS_NAME $param -ASSOC_NAME $tmp_sky_list_file_name\n" ;
 #
-# open the result file, ToDo not good at the momenet
+# open the result file, ToDo not good at the moment
 #
 	open(SEXINPUT, "$tmp_cat_file_name") or die "Can't read $tmp_cat_file_name: $!" ;
 #
@@ -958,7 +1040,7 @@ sub retrieve_data
 	my $number_of_objects= 0 ;
 	my $number_of_selected_objects= 0 ;
 	my $reference_object_number ;
-	
+	my @scaler_reasons=(0, 0, 0, 0) ;
 	while(my $line=<SEXINPUT>)
 	{
 	    next if( $line=~ m/^#/) ; 
@@ -985,12 +1067,22 @@ sub retrieve_data
 
 		$number_of_selected_objects++ ;
 	    }
+# count the reason why they were rejected
+	    $scaler_reasons[ $ret]++ ;
 	    $number_of_objects++ ;
 	}
 	close( SEXINPUT) ;
 	if( $number_of_objects> 0)
 	{
-	    printf("$fits_file: filter: %3s, focuser position: %5d, ratio selected / total reference objects: %6.3f, selected objects: %5d\n", $fltr, $fits_files{$fits_file}[IND_FOC_POS_FILE], $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects) ;
+	    printf("$fits_file: filter: %3s, focuser position: %5d ", $fltr, $fits_files{$fits_file}[IND_FOC_POS_FILE]) ;
+	    print "scaler values: " ;
+# sex.cfg is configured to write only MATCHED objects
+	    for( my $reason=0; $reason < $#scaler_reasons+1; $reason++)
+	    {
+		printf("%5d%s", $scaler_reasons[$reason], ($reason < $#scaler_reasons )? ", ": "") ;
+	    }
+	    print "\n" ;
+    printf("selected/(reference objects): %6.3f, selected objects: %5d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects) ;
 
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < SELECT_RATIO)
 	    {
@@ -1200,7 +1292,7 @@ my $set_focus          = SET_FOCUS;
 my $take_data          = TAKE_DATA;
 my $rts2_device_file   = RTS2_DEVICES ;
 my $find_rough_focus   = FIND_ROUGH_FOCUS ;
-my $number_of_rough_focus_images   = NUMBER_OF_ROUGH_FOCUS_IMAGES ;
+my $number_of_rough_focus_images= NUMBER_OF_ROUGH_FOCUS_IMAGES ;
 my $sexcfg             = SEXCFG ;
 my $sexparam           = SEXPARAM ;
 my $sexreference_param = SEXREFERENCE_PARAM ;
@@ -1212,7 +1304,7 @@ my $ds9_region_file    = DS9_REGION_FILE ;
 my @filters            = split(/:/, FILTERS) ;
 my $set_limits_on_sanity_checks= SET_LIMITS_ON_SANITY_CHECKS ;
 my $make_robust        = MAKE_ROBUST ;
-
+my $include_rough_focus_run= INCLUDE_ROUGH_FOCUS_RUN ;
 #ToDo: initialise!
 my @rts2_filterd_filters ;
 my $fit_focus= FALSE ;
@@ -1233,11 +1325,12 @@ if (!GetOptions("help|h"            => \$help,
 		"make_robust|l=i"     => \$make_robust,
 		"find_rough_focus|m=i"=> \$find_rough_focus,
 		"number_of_rough_focus_images|n=i"=> \$number_of_rough_focus_images,
+		"include_rough_focus_run|o=i"     => \$include_rough_focus_run,
                ))
+# ToDo: what is that?
 {
   print_usage();
   print "No arguments given, taking defaults\n" ;
-  exit 1;
 }
 
 if ($help) {
@@ -1312,7 +1405,6 @@ while(my $line=<DEVICES>)
     }
 }
 close(DEVICES) ;
-#
 # then associated filter and focuser devices
 #
 open( DEVICES, $rts2_device_file) or die "Can't open $rts2_device_file: $!" ;
@@ -1343,17 +1435,17 @@ chdir $fits_directory or die "Can not change to directory $fits_directory: $!" ;
 #
 # offline analysis, data taking
 #
-if( $take_data== FALSE) # offline analyis
+if( $take_data== FALSE) # offline analysis
 {
     foreach my $filter (@filters)
     {
-	my $ret_get_fits= get_fits_files( $filter, $fits_directory) ;
+	my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_rough_focus_run) ;
 	if( $ret_get_fits== TRUE)
 	{
 	    my $foc_pos_maximum_objects= FALSE ;
 	    if( $find_rough_focus== TRUE)
 	    {
-		if(( $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param)) != FALSE ) 
+		if(( $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, FALSE)) != FALSE ) 
 		{
 		    $fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $make_robust, $find_rough_focus) ;
 		}
@@ -1467,34 +1559,35 @@ elsif( $take_data== TRUE) # online analysis
 		exit 1 ;
 	    }
 	    set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
-
-	  
-	    print "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step }" ;
-	exit 1 ;
-	open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } '|") or die "Can't rts2-exec: $!" ;
-	while( my $response= <FIND_ROUGH_FOCUS>)
-	{
-	    print "rough focus:$response" ;
-	}
-	close(FIND_ROUGH_FOCUS) ;
+#ToDo: issue a warning and exit if the FITS_DIRECTORY is not empty
 	    
+	    print "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step }" ;
 
-	    my $ret_get_fits= get_fits_files( $filter, $fits_directory) ;
+	    print "ist the result correct? exiting\n" ;
+	    exit 1 ;
+	    open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } '|") or die "Can't rts2-exec: $!" ;
+	    while( my $response= <FIND_ROUGH_FOCUS>)
+	    {
+		print "rough focus:$response" ;
+	    }
+	    close(FIND_ROUGH_FOCUS) ;
+
+	    my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_rough_focus_run) ;
 	    if( $ret_get_fits== TRUE)
 	    {
-		# get_foc_pos_at_maximum_number_of_objects changes $filter_focus_properties{$fltr}[IND_FOC_DEF]
-		if(( my $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param)) != FALSE ) 
+		if(( my $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, TRUE)) != FALSE ) 
 		{
-		    print "Ok, finished\n" ;
+		    print "reference for rough focus created\n" ;
 		}
 		else
 		{
-		    print "undefined focus position, no maximum of objects found during rough foucs analysis\n" ;
+		    print "undefined focus position, no maximum of objects found during rough focus analysis, exiting\n" ;
+		    exit 1 ;
 		}
 	    }
 	    else
 	    {
-		print "no fits files found during rough foucs analysis\n" ;
+		print "no fits files found during rough focus analysis\n" ;
 	    }
 	    undef %fits_files ;
 	}
@@ -1504,7 +1597,7 @@ elsif( $take_data== TRUE) # online analysis
 ## NO	get_rts2_focus( $rts2_device_focusd, $filter_focus_properties{$filter}[IND_FOC_DEF]) ;
 
 # start main script
-# This is the rts2 scipt
+# This is the rts2 script
 # e.g. rts2-scriptexec -d CD -s ' FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
 # 
 # After rts2-scriptexec returns, all files are in the working directory
