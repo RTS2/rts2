@@ -48,7 +48,7 @@
   </refmeta>
   <refnamediv>
     <refname>&dhpackage;</refname>
-    <refpurpose>Data tacking and (offline) analysis of focus run images.</refpurpose>
+    <refpurpose>Data taking and (offline) analysis of focus run images.</refpurpose>
   </refnamediv>
   <refsynopsisdiv>
     <cmdsynopsis>
@@ -102,20 +102,24 @@ You are invited to read the source. There are a lot of comments and I used
 by immediate 
 analysis and offline analysis of previously acquired run of focus images.
 </para> <para>
+Setting FITPRG to FOCROOTB the result is stored as a PNG file while setting
+it to FOCROOTI it is additionally displayed on screen. If the
+process is accessed remotely the X-Window DISPLAY variable has to be set.
+The essential results are 
+printed to the terminal in both modes.
+ </para> <para>
 If <command>&dhpackage;</command> takes data in online mode it steers the 
 CCD_CAMERA and its associated focuser and filter wheel and performs the analysis of the 
 images for each filter right after the run. If only one filter is specified 
-the focuser is set according to the result if SET_FOCUS==TRUE. The results are 
-printed to the terminal in both modes.  Depending on the invocation of the
-fit program the result is plotted on screen and written as a
-PNG image.   
+the focuser is set according to the result if SET_FOCUS==TRUE. 
 </para>
     <para>
-If FIND_ROUGH_FOCUS==TRUE in both modes the focus is defined roughly based on
+In both modes if FIND_ROUGH_FOCUS==TRUE the focus is defined roughly based on
 how many objects are identified by SExtractor. In online mode a series of
-images is taken while if offline mode the given images are analysed.
+images is taken while if offline mode the given set of images are analysed.
 If it is set to FALSE a
 reference image is taken near the assumed best focus defined in %filter_focus_properties.
+The result is the reference catalogue used to identify objects an all other images. 
 </para>
     <para>
 SExtractor rereads the 
@@ -413,6 +417,17 @@ current analysis based in the maximum of objects detected.
     </listitem>
     </varlistentry>
 
+     <varlistentry>
+    <term>
+    <option>INCLUDE_ROUGH_FOCUS_RUN, boolean, FALSE</option>
+    </term>
+    <listitem>
+    <para> If TRUE images created during the rough focus run, with the extension "fits_rough_focus_run",
+are include in the final analysis too. Be careful, if TRUE and images are taken
+far off the focal plane the number of selected objects may drop rapidly.
+    </para>
+    </listitem>
+    </varlistentry>
 
      <varlistentry>
     <term>
@@ -549,7 +564,69 @@ ticks which makes a difference e.g. in FWHM.</para>
       </varlistentry>
   </refsect1>
   <refsect1>
+    <title>Hints</title>
+    <para>
+The default values of the parameters have been determined with
+a telescope that has a f/7 and the CCD which provided a field
+of view (FOV) of 1.6 deg2. 
+<para>
+</para>
 
+A focus run may fail due to various reasons. The more images
+are taken, specially far off the extrema, the fewer objects
+are present in all images. Although a sensible result can be
+obtained with a single object it is recommended to have a reasonable
+number spread over the whole image.  One can check that loading
+the DS9 region files with the command 
+ </para>
+<para>
+ds9  -scale mode zscale fits1.fits -zoom to fit -region fits1.reg ... fitsX.fits -region fitsX.reg   -single  -blink
+</para>
+<para>
+and inspecting the circled objects.
+<para>
+</para>
+
+If too few objects are present vary SExtractor's DETECT_THRESH
+or choose a field where more stars are present or increase
+exposure time during online data taking. Do not set a ELLIPTICITY value
+above 0.3.
+<para>
+</para>
+
+If the focus images are taken with an unguided telescope the center
+of the image may be shifted in the RA direction due to e.g. the periodic error of
+the worm gear. A shift in DEC may occur due to the
+    atmospheric refraction and/or polar alignment. If images are not considered try to adjust
+ SExtractor's SEXPARAMTER. Be cautious: do not make the value
+too large, since SExtractor will not match better.
+<para>
+</para>
+
+Since no time constraints are applied it may happen that
+images of two focus runs  of the same field are analysed. 
+E.g., if RTS2 does not steer the mount the coordinates of
+the image center are those of the dummy telescope device
+and remain unchanged and it is even possible to analyse
+different fields in offline mode.
+One likely sees that if the ratio
+of selected to reference objects vary from image to image or the number
+of selected objects drops down to only few objects. Under such
+conditions only very few objects are analysed. 
+<para>
+</para>
+
+If uncommon results occur it is recommended to start in an 
+empty FITS_DIRECTORY and, in offline mode copy the files, start again.
+</para>
+<para>
+
+The result may degrade if the atmospheric conditions
+change during data taking. Therefore try to minimise
+the exposure time. 
+</para>
+  </refsect1>
+  <refsect1>
     <title>SEE ALSO</title>
     <para>
      http://rts2.org/wiki,
@@ -558,14 +635,14 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   </refsect1>
   <refsect1>
     <title>Required software and Perl Modules</title>
-     <varlistentry>
-      <term> SExtractor, rts2_fit_focus, root (http://root.cern.ch)
-      </term>
-     </varlistentry>
-     <varlistentry>
-      <term> Getopt::Long, Statistics::Descriptive::Discrete
-      </term>
-     </varlistentry>
+    <varlistentry>
+  <term> SExtractor, rts2_fit_focus, root (http://root.cern.ch)
+  </term>
+  </varlistentry>
+  <varlistentry>
+  <term> Getopt::Long, Statistics::Descriptive::Discrete
+  </term>
+  </varlistentry>
   </refsect1>
   <refsect1>
     <title>BUGS</title>
