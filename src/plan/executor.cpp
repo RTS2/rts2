@@ -676,8 +676,7 @@ void Executor::doSwitch ()
 	int ret;
 	int nextId;
 	// we need to change current target - usefull for planner runs
-	if (currentTarget && currentTarget->isContinues () == 2
-		&& (nextTargets.size () == 0 || nextTargets.front ()->getTargetID () == currentTarget->getTargetID ()))
+	if (currentTarget && currentTarget->isContinues () == 2 && (nextTargets.size () == 0 || nextTargets.front ()->getTargetID () == currentTarget->getTargetID ()))
 	{
 		if (nextTargets.size () != 0)
 			nextTargets.pop_front ();

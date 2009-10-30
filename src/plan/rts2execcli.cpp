@@ -185,6 +185,21 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 		return;
 	image->saveImage ();
 
+	// try immediately processing..
+	std::string after_command;
+	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
+	{
+		int timeout = 60;
+		std::string arg;
+		Rts2Config::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
+		rts2core::ConnFork *afterCommand = new rts2core::ConnFork (getMaster (), after_command.c_str (), true, timeout);
+		afterCommand->addArg (image->getAbsoluteFileName ());
+		Rts2Config::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
+		afterCommand->addArg (image->expand (arg));
+		afterCommand->init ();
+		getMaster ()->addConnection (afterCommand);
+	}
+
 	if (image->getImageType () == IMGTYPE_FLAT)
 	{
 		minConn->queCommand (new Rts2CommandQueFlat (getMaster (), image));	
@@ -211,20 +226,6 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 			return IMAGE_DO_BASIC_PROCESSING;
 		}
 		// otherwise que image processing
-	}
-	// try immediately processing..
-	std::string after_command;
-	if (Rts2Config::instance ()->getString (getName (), "after_exposure_cmd", after_command) == 0)
-	{
-		int timeout = 60;
-		std::string arg;
-		Rts2Config::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
-		rts2core::ConnFork *afterCommand = new rts2core::ConnFork (getMaster (), after_command.c_str (), true, timeout);
-		afterCommand->addArg (image->getAbsoluteFileName ());
-		Rts2Config::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
-		afterCommand->addArg (image->expand (arg));
-		afterCommand->init ();
-		getMaster ()->addConnection (afterCommand);
 	}
 	queImage (image);
 	return IMAGE_DO_BASIC_PROCESSING;
@@ -316,9 +317,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 				switch (ret)
 				{
 					case OBS_DONT_MOVE:
-						getMaster ()->
-							postEvent (new
-							Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
+						getMaster ()->postEvent (new Rts2Event (EVENT_OBSERVE, (void *) currentTarget));
 						break;
 					case OBS_MOVE:
 						fixedOffset.ra = 0;
@@ -335,8 +334,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			checkInterChange ();
 			break;
 		case EVENT_TEL_SCRIPT_CHANGE:
-			cmdChng =
-				new Rts2CommandChange ((Rts2CommandChange *) event->getArg (), this);
+			cmdChng = new Rts2CommandChange ((Rts2CommandChange *) event->getArg (), this);
 			checkInterChange ();
 			break;
 		case EVENT_ENTER_WAIT:
@@ -391,52 +389,31 @@ int Rts2DevClientTelescopeExec::syncTarget ()
 	{
 		case OBS_MOVE:
 			currentTarget->moveStarted ();
-			queCommand (
-				new Rts2CommandMove (getMaster (), this, coord.ra, coord.dec),
-				BOP_TEL_MOVE
-				);
+			queCommand (new Rts2CommandMove (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
 			break;
 		case OBS_MOVE_UNMODELLED:
 			currentTarget->moveStarted ();
-			queCommand (
-				new Rts2CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec),
-				BOP_TEL_MOVE
-				);
+			queCommand (new Rts2CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
 			break;
 		case OBS_MOVE_FIXED:
 			currentTarget->moveStarted ();
-			logStream (MESSAGE_DEBUG)
-				<< "Rts2DevClientTelescopeExec::syncTarget ha "
-				<< coord.ra << " dec " << coord.dec
-				<< " oha " << fixedOffset.ra << " odec " << fixedOffset.
-				dec << sendLog;
+			logStream (MESSAGE_DEBUG) << "Rts2DevClientTelescopeExec::syncTarget ha " << coord.ra << " dec " << coord.dec << " oha " << fixedOffset.ra << " odec " << fixedOffset.dec << sendLog;
 			// we are ofsetting in HA, but offset is in RA - hence -
-			queCommand (new
-				Rts2CommandMoveFixed (getMaster (), this,
-				coord.ra - fixedOffset.ra,
-				coord.dec + fixedOffset.dec));
+			queCommand (new	Rts2CommandMoveFixed (getMaster (), this, coord.ra - fixedOffset.ra, coord.dec + fixedOffset.dec));
 			break;
 		case OBS_ALREADY_STARTED:
 			currentTarget->moveStarted ();
 			if (fixedOffset.ra != 0 || fixedOffset.dec != 0)
 			{
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG)
-					<< "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra "
-					<< fixedOffset.ra << " dec " << fixedOffset.dec << sendLog;
+				logStream (MESSAGE_DEBUG)<< "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra " << fixedOffset.ra << " dec " << fixedOffset.dec << sendLog;
 			#endif
-				queCommand (new
-					Rts2CommandChange (this, fixedOffset.ra,
-					fixedOffset.dec),
-					BOP_TEL_MOVE);
+				queCommand (new Rts2CommandChange (this, fixedOffset.ra, fixedOffset.dec), BOP_TEL_MOVE);
 				fixedOffset.ra = 0;
 				fixedOffset.dec = 0;
 				break;
 			}
-			queCommand (new
-				Rts2CommandResyncMove (getMaster (), this,
-				coord.ra, coord.dec),
-				BOP_TEL_MOVE);
+			queCommand (new Rts2CommandResyncMove (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
 			break;
 		case OBS_DONT_MOVE:
 			break;
@@ -447,8 +424,7 @@ int Rts2DevClientTelescopeExec::syncTarget ()
 void Rts2DevClientTelescopeExec::checkInterChange ()
 {
 	int waitNum = 0;
-	getMaster ()->
-		postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
+	getMaster ()->postEvent (new Rts2Event (EVENT_QUERY_WAIT, (void *) &waitNum));
 	if (waitNum == 0)
 		getMaster ()->postEvent (new Rts2Event (EVENT_ENTER_WAIT));
 }
