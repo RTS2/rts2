@@ -27,7 +27,7 @@
 #define CMD_FOCUS_GOTO        "FG"
 
 #include "focusd.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2focusd
 {
@@ -36,7 +36,7 @@ class Robofocus:public Focusd
 {
 	private:
 		const char *device_file;
-		Rts2ConnSerial *robofocConn;
+		rts2core::ConnSerial *robofocConn;
 		char checksum;
 		int step_num;
 
@@ -131,7 +131,7 @@ Robofocus::init ()
 	if (ret)
 		return ret;
 
-	robofocConn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 40);
+	robofocConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	ret = robofocConn->init ();
 	if (ret)
 		return ret;

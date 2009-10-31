@@ -20,7 +20,7 @@
 #define FOCUSER_PORT "/dev/ttyS0"
 
 #include "focusd.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2focusd
 {
@@ -35,7 +35,7 @@ class Optec:public Focusd
 {
 	private:
 		const char *device_file;
-		Rts2ConnSerial *optecConn;
+		rts2core::ConnSerial *optecConn;
 		
 		int status;
 		bool damagedTempSens;
@@ -116,7 +116,7 @@ Optec::init ()
 		createTemperature ();
 	}
 
-	optecConn = new Rts2ConnSerial (device_file, this, BS19200, C8, NONE, 40);
+	optecConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 40);
 	optecConn->setDebug (true);
 	ret = optecConn->init ();
 	if (ret)
