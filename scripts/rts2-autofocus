@@ -58,7 +58,7 @@ use constant FITPRG  => FOCROOTI  ; #
 # 
 # constants
 #
-use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-28/test-run" ;
+use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-30/test-run-1" ;
 #use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15-II/Focusing-2009-10-15-II" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Focusing-2009-10-15" ; # directory read from, or written to if TAKE_DATA == TRUE
 #use constant FITS_DIRECTORY => "/scratch/incomming/Vermes-2008-12-28/R" ; # directory read from, or written to if TAKE_DATA == TRUE
@@ -76,6 +76,7 @@ use constant MINIMUM_OBJECTS=> 5 ; #  is the minimal number of objects identifie
 use constant TAKE_DATA       => FALSE; # TRUE: data taking, FALSE: offline analysis
 use constant SET_FOCUS       => FALSE; # set the focus position if only one filter is defined
 use constant CCD_CAMERA      => "CD" ; # this CCD and its associate devices are used if TAKE_DATA == TRUE
+use constant CCD_BINNING     => 1    ; # 0: 1x1, 1: 2x2,....
 use constant FIND_ROUGH_FOCUS=> TRUE;  # find focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
 use constant INCLUDE_ROUGH_FOCUS_RUN     => FALSE; # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == TRUE 
 use constant NUMBER_OF_ROUGH_FOCUS_IMAGES=> 10;   # used if TAKE_DATA == (TRUE)
@@ -92,7 +93,7 @@ use constant SEXREFERENCE_PARAM=> "/etc/rts2/autofocus/sex-autofocus-reference.p
 #
 # set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
 #
-use constant SET_LIMITS_ON_SANITY_CHECKS=> TRUE ;
+use constant SET_LIMITS_ON_SANITY_CHECKS=> FALSE ;
 #
 # make the focus mor robust with multiple fits to a narrower interval
 # often the graphs behave oddly at the edges (far off focus)
@@ -628,7 +629,8 @@ sub get_fitted_focus
 	    my $data_maximum         = 0 ;
 # find extrema
 	    my @focuser_positions ;
-	    foreach my $foc_pos ( sort keys %data_points)
+	    sub numeric { $a <=> $b ; } # surprise, that works!
+	    foreach my $foc_pos ( sort numeric keys %data_points) # yes!
 	    {
 		push(@focuser_positions, $foc_pos) ;
 		if( $data_points{$foc_pos}[$qty] < $data_minimum)
@@ -664,11 +666,11 @@ sub get_fitted_focus
 # find out if lower or upper limit is nearer to the minimum
 #ToDo: abs() might not be a good idea, loosing information
 
-	    my $lower_limit= $focuser_positions[0] + 1 ;                 # include the first
-	    my $upper_limit= $focuser_positions[$#focuser_positions] +1; # include the last
+	    my $lower_limit= $focuser_positions[0] ; 
+	    my $upper_limit= $focuser_positions[$#focuser_positions] ;
 
 	    my $cosmetics ; # make a nicer plot (y axis is for FWHM [px] and for FLUX_MAX [a.u.])
-	    if( $qty==0) # ToDo ugly but quick
+	    if( $qty==0) # ToDo ugly but quick, FWHM
 	    {
 		$cosmetics= $number_of_objects_found_in_all_files ; 
 		if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
@@ -690,7 +692,7 @@ sub get_fitted_focus
 		    }
 		}
 	    }
-	    else
+	    else # FLUX_MAX
 	    {
 		$cosmetics= $data_maximum / 10. ; #  
 		if( abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) < abs($focuser_positions[0]- $foc_pos_maximum))
@@ -719,7 +721,7 @@ sub get_fitted_focus
 	    if(( $fitprg eq FOCROOTI) ||($fitprg eq FOCROOTB))
 	    {
 		my $data_file_name= $fit_result_file ; # just a reminder
-		my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $cosmetics, $qty, \%data_points)  ;
+		my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $cosmetics, $qty, $set_limits_on_sanity_checks, \%data_points)  ;
 # store file name for fitting
 		if( $qty== 0) # FWHM, FLUX_MAX
 		{
@@ -778,6 +780,7 @@ sub write_data_files
     my $upper_lmt      = shift @_ ;
     my $cosmetics      = shift @_ ;
     my $qty            = shift @_ ;
+    my $set_limits_on_sanity_checks = shift @_ ;
     my $number_of_lines= 0 ;
 
     my @fit_items= split(/\./, $fit_result_file) ;
@@ -794,7 +797,7 @@ sub write_data_files
 
     foreach my $foc_pos ( sort keys %{$_[0]})
     {
- 	if(($foc_pos> $lower_lmt)&&($foc_pos< $upper_lmt))
+ 	if(($foc_pos>= $lower_lmt)&&($foc_pos<= $upper_lmt))
 	{
 	    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalize 
 	    $number_of_lines++ ;
@@ -802,6 +805,13 @@ sub write_data_files
 	    if( $verbose==TRUE)
 	    {
 		printf(     "%04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ;
+	    }
+	}
+	else
+	{
+	    if( $set_limits_on_sanity_checks== FALSE)
+	    {
+	  	printf(     "wrong limits?: ll=$lower_lmt ul=$upper_lmt, %04d    %7.5f\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ;  
 	    }
 	}
     }
@@ -1079,10 +1089,9 @@ sub retrieve_data
 # sex.cfg is configured to write only MATCHED objects
 	    for( my $reason=0; $reason < $#scaler_reasons+1; $reason++)
 	    {
-		printf("%5d%s", $scaler_reasons[$reason], ($reason < $#scaler_reasons )? ", ": "") ;
+		printf("%5d%s", $scaler_reasons[$reason], ($reason < $#scaler_reasons )? ", ": ", ") ; # lazy
 	    }
-	    print "\n" ;
-    printf("selected/(reference objects): %6.3f, selected objects: %5d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects) ;
+	    printf("selected/(reference objects): %6.3f, selected objects: %5d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects) ;
 
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < SELECT_RATIO)
 	    {
@@ -1305,6 +1314,7 @@ my @filters            = split(/:/, FILTERS) ;
 my $set_limits_on_sanity_checks= SET_LIMITS_ON_SANITY_CHECKS ;
 my $make_robust        = MAKE_ROBUST ;
 my $include_rough_focus_run= INCLUDE_ROUGH_FOCUS_RUN ;
+my $ccd_binning        = CCD_BINNING ;
 #ToDo: initialise!
 my @rts2_filterd_filters ;
 my $fit_focus= FALSE ;
@@ -1326,6 +1336,7 @@ if (!GetOptions("help|h"            => \$help,
 		"find_rough_focus|m=i"=> \$find_rough_focus,
 		"number_of_rough_focus_images|n=i"=> \$number_of_rough_focus_images,
 		"include_rough_focus_run|o=i"     => \$include_rough_focus_run,
+		"ccd_binning|p=i"     => \$ccd_binning,
                ))
 # ToDo: what is that?
 {
@@ -1542,7 +1553,7 @@ elsif( $take_data== TRUE) # online analysis
 # take NUMBER_OF_ROUGH_FOCUS_IMAGES images
 # step_size      = (ABSOUTE_UPPER_LIMIT- ABSOUTE_LOWER_LIMIT)/NUMBER_OF_ROUGH_FOCUS_IMAGES
 #
-# e.g. rts2-scriptexec -d CD -s ' FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
+# e.g. rts2-scriptexec -d CD -s ' CD.binning=1 FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
 #
 	    my $number_steps= 0 ;
 	    $number_steps   = $number_of_rough_focus_images;
@@ -1550,22 +1561,21 @@ elsif( $take_data== TRUE) # online analysis
 	    my $size_step   =  ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / $number_of_rough_focus_images ;
 	    $size_step      =~ s/\.[0-9]+$// ; # truncate
 # set FOC_DEF
+#	    ul + middle = FOC_TOF ? wie muss das genau gemacht werden?
 	    my $middle= ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / 2 ;
 	    $middle=~ s/\.[0-9]+$// ; # truncate
 
 	    if( (NUMBER_OF_ROUGH_FOCUS_IMAGES * $size_step)> $focuser_properties{"absolute_upper_limit"})
 	    {
-		print "the calculation of step size is wrong, exiting" ;
+		print "the calculation of step size is wrong, exiting\n" ;
 		exit 1 ;
 	    }
 	    set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
 #ToDo: issue a warning and exit if the FITS_DIRECTORY is not empty
-	    
-	    print "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step }" ;
+	    print "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=-$middle for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step }\n" ;
+ 
 
-	    print "ist the result correct? exiting\n" ;
-	    exit 1 ;
-	    open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$focuser_properties{absolute_lower_limit} for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } '|") or die "Can't rts2-exec: $!" ;
+	    open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=-$middle for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } '|") or die "Can't rts2-exec: $!" ;
 	    while( my $response= <FIND_ROUGH_FOCUS>)
 	    {
 		print "rough focus:$response" ;
@@ -1598,12 +1608,12 @@ elsif( $take_data== TRUE) # online analysis
 
 # start main script
 # This is the rts2 script
-# e.g. rts2-scriptexec -d CD -s ' FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
+# e.g. rts2-scriptexec -d CD -s ' CD.binning=1 FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
 # 
 # After rts2-scriptexec returns, all files are in the working directory
 #
-	print "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '\n" ;
-	open( CREATEFITS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '|") or die "Can't rts2-exec: $!" ;
+	print "rts2-scriptexec -d $rts2_device_camd -s '  $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '\n" ;
+	open( CREATEFITS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '|") or die "Can't rts2-exec: $!" ;
 	while( my $response= <CREATEFITS>)
 	{
 	    print "fit:$response" ;
