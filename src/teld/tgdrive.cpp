@@ -30,8 +30,7 @@
 
 using namespace rts2teld;
 
-void
-TGDrive::ecWrite (char *msg)
+void TGDrive::ecWrite (char *msg)
 {
 	char ec_buf [4 + msg[2] * 2];
 
@@ -63,9 +62,7 @@ TGDrive::ecWrite (char *msg)
 		throw TGDriveError (1);
 }
 
-
-void
-TGDrive::ecRead (char *msg, int len)
+void TGDrive::ecRead (char *msg, int len)
 {
 	// read header
 	int ret;
@@ -89,8 +86,7 @@ TGDrive::ecRead (char *msg, int len)
 	}
 }
 
-void
-TGDrive::writeMsg (char op, int16_t address)
+void TGDrive::writeMsg (char op, int16_t address)
 {
 	char msg[7];
 
@@ -137,24 +133,19 @@ TGDrive::writeMsg (char op, int16_t address, char *data, int len)
 	ecWrite (msg);
 }
 
-
-void
-TGDrive::readStatus ()
+void TGDrive::readStatus ()
 {
 	char msg[3];
 	ecRead (msg, 3);
 }
 
-
-TGDrive::TGDrive (const char *_devName, Rts2Block *_master)
-:Rts2ConnSerial (_devName, _master, BS9600, C8, NONE, 20)
+TGDrive::TGDrive (const char *_devName, Rts2Block *_master):rts2core::ConnSerial (_devName, _master, rts2core::BS9600, rts2core::C8, rts2core::NONE, 20)
 {
 	setLogAsHex (true);
 }
 
 
-int16_t
-TGDrive::read2b (int16_t address)
+int16_t TGDrive::read2b (int16_t address)
 {
 	writeMsg (0xD1, address);
 	char msg[5];
@@ -162,17 +153,13 @@ TGDrive::read2b (int16_t address)
 	return * (( int16_t *) (msg + 2));
 }
 
-
-void
-TGDrive::write2b (int16_t address, int16_t data)
+void TGDrive::write2b (int16_t address, int16_t data)
 {
 	writeMsg (0x02, address, (char *) &data, 2);
 	readStatus ();
 }
 
-
-int32_t
-TGDrive::read4b (int16_t address)
+int32_t TGDrive::read4b (int16_t address)
 {
 	writeMsg (0xD2, address);
 	char msg[7];
@@ -181,9 +168,7 @@ TGDrive::read4b (int16_t address)
 
 }
 
-
-void
-TGDrive::write4b (int16_t address, int32_t data)
+void TGDrive::write4b (int16_t address, int32_t data)
 {
 	writeMsg (0x02, address, (char *) &data, 4);
 	readStatus ();

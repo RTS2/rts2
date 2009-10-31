@@ -20,26 +20,23 @@
 #include "rts2connnosend.h"
 #include <termios.h>
 
+namespace rts2core
+{
+
 /**
  * Enum for baud speeds.
  */
-typedef enum
-{BS2400, BS4800, BS9600, BS19200, BS57600, BS115200}
-bSpeedT;
+typedef enum {BS2400, BS4800, BS9600, BS19200, BS57600, BS115200} bSpeedT;
 
 /**
  * Enum for data size.
  */
-typedef enum
-{C7, C8}
-cSizeT;
+typedef enum {C7, C8} cSizeT;
 
 /**
  * Enum for parity.
  */
-typedef enum
-{NONE, ODD, EVEN}
-parityT;
+typedef enum {NONE, ODD, EVEN} parityT;
 
 /**
  * Serial connection class.
@@ -52,7 +49,7 @@ parityT;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ConnSerial: public Rts2ConnNoSend
+class ConnSerial: public Rts2ConnNoSend
 {
 	private:
 		struct termios s_termios;
@@ -99,9 +96,7 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 * @param _parity    Device parity.
 		 * @param _vTime     Time to wait for single read before giving up.
 		 */
-		Rts2ConnSerial (const char *_devName, Rts2Block * _master,
-			bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8,
-			parityT _parity = NONE, int _vTime = 40);
+		ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
 
 		/**
 		 * Init serial port.
@@ -115,15 +110,9 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 */
 		const char *getBaudSpeed ();
 
-		int getVMin ()
-		{
-			return vMin;
-		}
+		int getVMin () { return vMin; }
 
-		int getVTime ()
-		{
-			return vTime;
-		}
+		int getVTime () { return vTime; }
 
 		/**
 		 * Set socket vtime. VTIME is used with a serial port
@@ -200,21 +189,14 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 *
 		 * @param printDebug  True if all port communication should be written to log.
 		 */
-		void setDebug (bool printDebug = true)
-		{
-			debugPortComm = printDebug;
-		}
-
+		void setDebug (bool printDebug = true) { debugPortComm = printDebug; }
 		
 		/**
 		 * Log all trafix as hex.
 		 *
 		 * @param logArrAsHex If true, all traffic will be logged in hex values.
 		 */
-		void setLogAsHex (bool logArrAsHex = true)
-		{
-			logTrafficAsHex = logArrAsHex;
-		}
+		void setLogAsHex (bool logArrAsHex = true) { logTrafficAsHex = logArrAsHex; }
 
 		/**
 		 * Exchange packets - write to port and read reply.
@@ -250,3 +232,5 @@ class Rts2ConnSerial: public Rts2ConnNoSend
 		 */
 		int writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar);
 };
+
+}

@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 // interesting addresses
 
@@ -92,7 +92,7 @@ class TGDriveError
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class TGDrive: public Rts2ConnSerial
+class TGDrive: public rts2core::ConnSerial
 {
 	private:
 		// escape, checksum and write..

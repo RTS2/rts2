@@ -21,7 +21,7 @@
 #ifndef __RTS2_CONN_FORD__
 #define __RTS2_CONN_FORD__
 
-#include "rts2connserial.h"
+#include "connserial.h"
 
 #define PORT_A 0
 #define PORT_B 1
@@ -38,7 +38,7 @@ namespace rts2core
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Martin Nekola
  */
-class FordConn: public Rts2ConnSerial
+class FordConn: public ConnSerial
 {
 	public:
 	 	/**

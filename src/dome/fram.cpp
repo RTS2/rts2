@@ -85,7 +85,7 @@ namespace rts2dome
 class Fram:public Ford
 {
 	private:
-		Rts2ConnSerial *wdcConn;
+		rts2core::ConnSerial *wdcConn;
 		char *wdc_file;
 
 		rts2core::FordConn *extraSwitch;
@@ -246,7 +246,7 @@ int Fram::checkMotorTimeout ()
 int Fram::openWDC ()
 {
 	int ret;
-	wdcConn = new Rts2ConnSerial (wdc_file, this, BS9600, C8, NONE, 100);
+	wdcConn = new rts2core::ConnSerial (wdc_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
 	ret = wdcConn->init ();
 	if (ret)
 		return ret;
@@ -729,7 +729,7 @@ int Fram::init ()
 
 	if (extraSwitchFile)
 	{
-		extraSwitch = new rts2core::FordConn (extraSwitchFile, this, BS9600, C8, NONE, 40);
+		extraSwitch = new rts2core::FordConn (extraSwitchFile, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 		ret = extraSwitch->init ();
 		if (ret)
 			return ret;

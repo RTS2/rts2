@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 #include "aag.h"
 
 namespace rts2sensord
@@ -32,7 +32,7 @@ class AAG: public SensorWeather
 {
 	private:
 		char *device_file;
-		Rts2ConnSerial *aagConn;
+		rts2core::ConnSerial *aagConn;
 		Rts2ValueDouble *tempSky;
 		Rts2ValueDouble *tempIRSensor;
 		Rts2ValueDouble *tempSkyCorrected;
@@ -440,7 +440,7 @@ AAG::init ()
 	if (ret)
 		return ret;
 
-	aagConn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 30);
+	aagConn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 30);
 	ret = aagConn->init ();
 	if (ret)
 		return ret;

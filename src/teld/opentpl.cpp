@@ -155,8 +155,7 @@ using namespace rts2teld;
 
 #define DEBUG_EXTRA
 
-int
-OpenTPL::coverClose ()
+int OpenTPL::coverClose ()
 {
 	if (cover == NULL)
 		return 0;
@@ -173,9 +172,7 @@ OpenTPL::coverClose ()
 	return status;
 }
 
-
-int
-OpenTPL::coverOpen ()
+int OpenTPL::coverOpen ()
 {
 	if (cover == NULL)
 		return 0;
@@ -189,9 +186,7 @@ OpenTPL::coverOpen ()
 	return status;
 }
 
-
-int
-OpenTPL::setTelescopeTrack (int new_track)
+int OpenTPL::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
 	int old_track;
@@ -206,9 +201,7 @@ OpenTPL::setTelescopeTrack (int new_track)
 	return status;
 }
 
-
-int
-OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
@@ -302,9 +295,7 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Telescope::setValue (old_value, new_value);
 }
 
-
-OpenTPL::OpenTPL (int in_argc, char **in_argv)
-:Telescope (in_argc, in_argv)
+OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
 	openTPLServer = NULL;
 
@@ -349,15 +340,12 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 	cover_state = CLOSED;
 }
 
-
 OpenTPL::~OpenTPL (void)
 {
 	delete opentplConn;
 }
 
-
-int
-OpenTPL::processOption (int in_opt)
+int OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -396,9 +384,7 @@ OpenTPL::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-OpenTPL::initOpenTplDevice ()
+int OpenTPL::initOpenTplDevice ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -437,9 +423,7 @@ OpenTPL::initOpenTplDevice ()
 	return 0;
 }
 
-
-int
-OpenTPL::init ()
+int OpenTPL::init ()
 {
 	int ret;
 	ret = Telescope::init ();
@@ -453,9 +437,7 @@ OpenTPL::init ()
 	return 0;
 }
 
-
-int
-OpenTPL::initValues ()
+int OpenTPL::initValues ()
 {
 	int status = TPL_OK;
 	std::string serial;
@@ -568,9 +550,7 @@ OpenTPL::initValues ()
 	return Telescope::initValues ();
 }
 
-
-void
-OpenTPL::checkErrors ()
+void OpenTPL::checkErrors ()
 {
 	int status = TPL_OK;
 	std::string list;
@@ -735,9 +715,7 @@ OpenTPL::checkPower ()
 	}
 }
 
-
-void
-OpenTPL::getCover ()
+void OpenTPL::getCover ()
 {
 	double cor_tmp;
 	int status = TPL_OK;
@@ -747,9 +725,7 @@ OpenTPL::getCover ()
 	cover->setValueDouble (cor_tmp);
 }
 
-
-void
-OpenTPL::initCoverState ()
+void OpenTPL::initCoverState ()
 {
 	getCover ();
 	if (cover->getValueDouble () == 0)
@@ -760,9 +736,7 @@ OpenTPL::initCoverState ()
 		cover_state = CLOSING;
 }
 
-
-int
-OpenTPL::infoModel ()
+int OpenTPL::infoModel ()
 {
 	int status = TPL_OK;
 
@@ -791,9 +765,7 @@ OpenTPL::infoModel ()
 	return 0;
 }
 
-
-int
-OpenTPL::startMoveReal (double ra, double dec)
+int OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
 	if (targetChangeFromLastResync ())
@@ -859,9 +831,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 	return status;
 }
 
-
-int
-OpenTPL::idle ()
+int OpenTPL::idle ()
 {
 	// check for errors..
 	checkErrors ();
@@ -870,9 +840,7 @@ OpenTPL::idle ()
 	return Telescope::idle ();
 }
 
-
-void
-OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
+void OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	int status = TPL_OK;
 	switch (getPointingModel ())
@@ -890,9 +858,7 @@ OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 	}
 }
 
-
-int
-OpenTPL::info ()
+int OpenTPL::info ()
 {
 	double zd, az;
 	#ifdef DEBUG_EXTRA
@@ -926,6 +892,10 @@ OpenTPL::info ()
 		switch (getPointingModel ())
 		{
 			case POINTING_ALTAZ:
+				status = opentplConn->get ("AZ.CURRPOS", az, &status);
+				status = opentplConn->get ("ZD.CURRPOS", zd, &status);
+				if (status != TPL_OK)
+					return -1;
 				hrz.az = az;
 				hrz.alt = 90 - fabs (zd);
 				observer.lng = telLongitude->getValueDouble ();
@@ -1038,9 +1008,7 @@ OpenTPL::info ()
 	return Telescope::info ();
 }
 
-
-int
-OpenTPL::saveModel ()
+int OpenTPL::saveModel ()
 {
 	int ret;
 	ret = infoModel ();
@@ -1096,9 +1064,7 @@ OpenTPL::loadModel ()
 	return infoModel ();
 }
 
-
-int
-OpenTPL::resetMount ()
+int OpenTPL::resetMount ()
 {
 	int status = TPL_OK;
 	int power = 0;
@@ -1192,16 +1158,12 @@ OpenTPL::startResync ()
 	return 0;
 }
 
-
-int
-OpenTPL::isMoving ()
+int OpenTPL::isMoving ()
 {
 	return moveCheck (false);
 }
 
-
-int
-OpenTPL::stopMove ()
+int OpenTPL::stopMove ()
 {
 	int status = 0;
 	double zd;
@@ -1230,9 +1192,7 @@ OpenTPL::stopMove ()
 	return 0;
 }
 
-
-int
-OpenTPL::startPark ()
+int OpenTPL::startPark ()
 {
 	int status = TPL_OK;
 	status = TPL_OK;
@@ -1276,9 +1236,7 @@ OpenTPL::startPark ()
 	return 0;
 }
 
-
-int
-OpenTPL::moveCheck (bool park)
+int OpenTPL::moveCheck (bool park)
 {
 	int status = TPL_OK;
 	int track;
@@ -1333,24 +1291,18 @@ OpenTPL::moveCheck (bool park)
 	return USEC_SEC / 100;
 }
 
-
-int
-OpenTPL::isParking ()
+int OpenTPL::isParking ()
 {
 	return moveCheck (true);
 }
 
-
-int
-OpenTPL::endPark ()
+int OpenTPL::endPark ()
 {
 	setTelescopeTrack (0);
 	return 0;
 }
 
-
-int
-OpenTPL::startWorm ()
+int OpenTPL::startWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (irTracking);
@@ -1359,9 +1311,7 @@ OpenTPL::startWorm ()
 	return 0;
 }
 
-
-int
-OpenTPL::stopWorm ()
+int OpenTPL::stopWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (0);
@@ -1370,9 +1320,7 @@ OpenTPL::stopWorm ()
 	return 0;
 }
 
-
-int
-OpenTPL::changeMasterState (int new_state)
+int OpenTPL::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -1388,9 +1336,7 @@ OpenTPL::changeMasterState (int new_state)
 	return Telescope::changeMasterState (new_state);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	OpenTPL device = OpenTPL (argc, argv);
 	return device.run ();

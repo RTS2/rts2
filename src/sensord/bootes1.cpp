@@ -20,7 +20,6 @@
 #include "sensord.h"
 #include "../utils/connford.h"
 
-
 namespace rts2sensord
 {
 
@@ -136,7 +135,7 @@ int Bootes1::init ()
 	if (ret)
 		return ret;
 
-	fordConn = new rts2core::FordConn (ford_file, this, BS9600, C8, NONE, 40);
+	fordConn = new rts2core::FordConn (ford_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	ret = fordConn->init ();
 	if (ret)
 		return ret;

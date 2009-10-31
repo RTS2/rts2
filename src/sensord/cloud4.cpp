@@ -20,7 +20,7 @@
 
 #include "sensord.h"
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2sensord
 {
@@ -34,7 +34,7 @@ class Cloud4: public SensorWeather
 {
 	private:
 		char *device_file;
-		Rts2ConnSerial *mrakConn;
+		rts2core::ConnSerial *mrakConn;
 
 		Rts2ValueDoubleStat *tempDiff;
 		Rts2ValueDoubleStat *tempIn;
@@ -74,8 +74,7 @@ class Cloud4: public SensorWeather
 
 using namespace rts2sensord;
 
-int
-Cloud4::readSensor ()
+int Cloud4::readSensor ()
 {
 	int ret;
 	char buf[128];
@@ -142,15 +141,12 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 	setIdleInfoInterval (20);
 }
 
-
 Cloud4::~Cloud4 (void)
 {
 	delete mrakConn;
 }
 
-
-int
-Cloud4::processOption (int in_opt)
+int Cloud4::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -169,16 +165,14 @@ Cloud4::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Cloud4::init ()
+int Cloud4::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 10);
+	mrakConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 10);
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
@@ -190,9 +184,7 @@ Cloud4::init ()
 	return 0;
 }
 
-
-int
-Cloud4::info ()
+int Cloud4::info ()
 {
 	int ret;
 	ret = readSensor ();
@@ -230,18 +222,14 @@ Cloud4::info ()
 	return SensorWeather::info ();
 }
 
-
-int
-Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
 		return 0;
 	return SensorWeather::setValue (old_value, new_value);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Cloud4 device = Cloud4 (argc, argv);
 	return device.run ();

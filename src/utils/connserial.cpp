@@ -19,13 +19,13 @@
 
 #include <fcntl.h>
 
-#include "rts2connserial.h"
+#include "connserial.h"
 #include "rts2block.h"
 #include <iomanip>
 
+using namespace rts2core;
 
-int
-Rts2ConnSerial::setAttr ()
+int ConnSerial::setAttr ()
 {
 	if (tcsetattr (sock, TCSANOW, &s_termios) < 0)
 	{
@@ -35,8 +35,7 @@ Rts2ConnSerial::setAttr ()
 	return 0;
 }
 
-Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime)
-:Rts2ConnNoSend (_master)
+ConnSerial::ConnSerial (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed, cSizeT _cSize, parityT _parity, int _vTime):Rts2ConnNoSend (_master)
 {
 	sock = open (_devName, O_RDWR | O_NOCTTY | O_NDELAY);
 
@@ -56,9 +55,7 @@ Rts2ConnSerial::Rts2ConnSerial (const char *_devName, Rts2Block * _master, bSpee
 	logTrafficAsHex = false;
 }
 
-
-const char *
-Rts2ConnSerial::getBaudSpeed ()
+const char * ConnSerial::getBaudSpeed ()
 {
 	switch (baudSpeed)
 	{
@@ -78,9 +75,7 @@ Rts2ConnSerial::getBaudSpeed ()
 	return NULL;
 }
 
-
-int
-Rts2ConnSerial::init ()
+int ConnSerial::init ()
 {
 	if (sock < 0)
 		return -1;
@@ -170,7 +165,7 @@ Rts2ConnSerial::init ()
 
 
 int
-Rts2ConnSerial::setVTime (int _vtime)
+ConnSerial::setVTime (int _vtime)
 {
 	s_termios.c_cc[VTIME] = _vtime;
 	if (setAttr ())
@@ -180,9 +175,7 @@ Rts2ConnSerial::setVTime (int _vtime)
 	return 0;
 }
 
-
-int
-Rts2ConnSerial::writePort (char ch)
+int ConnSerial::writePort (char ch)
 {
 	int wlen = 0;
 	if (debugPortComm)
@@ -209,8 +202,7 @@ Rts2ConnSerial::writePort (char ch)
 	return 0;
 }
 
-int
-Rts2ConnSerial::writePort (const char *wbuf, int b_len)
+int ConnSerial::writePort (const char *wbuf, int b_len)
 {
 	int wlen = 0;
 	if (debugPortComm)
@@ -239,9 +231,7 @@ Rts2ConnSerial::writePort (const char *wbuf, int b_len)
 	return 0;
 }
 
-
-int
-Rts2ConnSerial::readPort (char &ch)
+int ConnSerial::readPort (char &ch)
 {
 	int rlen = 0;
 	// it looks max vtime is 100, do not know why..
@@ -274,8 +264,7 @@ Rts2ConnSerial::readPort (char &ch)
 	return 1;
 }
 
-int
-Rts2ConnSerial::readPort (char *rbuf, int b_len)
+int ConnSerial::readPort (char *rbuf, int b_len)
 {
 	int rlen = 0;
 	int ntries = getVTime () / 100;
@@ -325,9 +314,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len)
 	return rlen;
 }
 
-
-int
-Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
+int ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 {
 	int rlen = 0;
 	int ntries = getVTime () / 100;
@@ -379,9 +366,7 @@ Rts2ConnSerial::readPort (char *rbuf, int b_len, char endChar)
 	return -1;
 }
 
-
-int
-Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
+int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
 {
 	int ret;
 	ret = writePort (wbuf, wlen);
@@ -390,9 +375,7 @@ Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen)
 	return readPort (rbuf, rlen);
 }
 
-
-int
-Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar)
+int ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, char endChar)
 {
 	int ret;
 	ret = writePort (wbuf, wlen);
@@ -401,16 +384,12 @@ Rts2ConnSerial::writeRead (const char* wbuf, int wlen, char *rbuf, int rlen, cha
 	return readPort (rbuf, rlen, endChar);
 }
 
-
-int
-Rts2ConnSerial::flushPortIO ()
+int ConnSerial::flushPortIO ()
 {
 	return tcflush (sock, TCIOFLUSH);
 }
 
-
-int
-Rts2ConnSerial::flushPortO ()
+int ConnSerial::flushPortO ()
 {
 	return tcflush (sock, TCOFLUSH);
 }

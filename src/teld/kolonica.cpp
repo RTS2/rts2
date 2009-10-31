@@ -19,7 +19,7 @@
 
 #include "fork.h"
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2teld
 {
@@ -32,9 +32,27 @@ namespace rts2teld
  */
 class Kolonica:public Fork
 {
+	public:
+		Kolonica (int in_argc, char **in_argv);
+		virtual ~Kolonica (void);
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+
+		virtual int startResync ();
+		virtual int stopMove();
+		virtual int startPark();
+		virtual int endPark();
+		virtual int updateLimits();
+		virtual int getHomeOffset(int32_t&);
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+
 	private:
 		const char *telDev;
-		Rts2ConnSerial *telConn;
+		rts2core::ConnSerial *telConn;
 
 		/**
 		 * Convert long integer to binary. Most important byte is at
@@ -101,32 +119,13 @@ class Kolonica:public Fork
 
 		Rts2ValueBool *motorAlt;
 		Rts2ValueBool *motorAz;
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-
-		virtual int startResync ();
-		virtual int stopMove();
-		virtual int startPark();
-		virtual int endPark();
-		virtual int updateLimits();
-		virtual int getHomeOffset(int32_t&);
-
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-
-	public:
-		Kolonica (int in_argc, char **in_argv);
-		virtual ~Kolonica (void);
 };
 
 };
 
 using namespace rts2teld;
 
-void
-Kolonica::intToBin (unsigned long num, char *buf, int len)
+void Kolonica::intToBin (unsigned long num, char *buf, int len)
 {
 	int i;
       
@@ -136,9 +135,7 @@ Kolonica::intToBin (unsigned long num, char *buf, int len)
 	}
 }
 
-
-int
-Kolonica::telWait (long num)
+int Kolonica::telWait (long num)
 {
 	char buf[5];
 	buf[0] = 'W';
@@ -147,9 +144,7 @@ Kolonica::telWait (long num)
 	return telConn->writePort (buf, 3);
 }
 
-
-int
-Kolonica::changeAxis (int axId)
+int Kolonica::changeAxis (int axId)
 {
 	char buf[3];
 	buf[0] = 'X';
@@ -167,9 +162,7 @@ Kolonica::changeAxis (int axId)
 	return telWait (150);	
 }
 
-
-int
-Kolonica::setAltAxis (long value)
+int Kolonica::setAltAxis (long value)
 {
 	char buf[5];
 
@@ -191,9 +184,7 @@ Kolonica::setAltAxis (long value)
 	return telConn->writePort (buf, 5);
 }
 
-
-int
-Kolonica::setAzAxis (long value)
+int Kolonica::setAzAxis (long value)
 {
  	char buf[5];
 
@@ -215,9 +206,7 @@ Kolonica::setAzAxis (long value)
 	return telConn->writePort (buf, 5);
 }
 
-
-int
-Kolonica::setMotor (int axId, bool on)
+int Kolonica::setMotor (int axId, bool on)
 {
 	char buf[3];
 
@@ -230,9 +219,7 @@ Kolonica::setMotor (int axId, bool on)
 	return telConn->writePort (buf, 3);
 }
 
-
-int
-Kolonica::processOption (int in_opt)
+int Kolonica::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -245,16 +232,14 @@ Kolonica::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Kolonica::init ()
+int Kolonica::init ()
 {
 	int ret;
 	ret = Fork::init ();
 	if (ret)
 		return ret;
 	
-	telConn = new Rts2ConnSerial (telDev, this, BS4800, C8, NONE, 50);
+	telConn = new rts2core::ConnSerial (telDev, this, rts2core::BS4800, rts2core::C8, rts2core::NONE, 50);
 	ret = telConn->init ();
 	if (ret)
 		return ret;
@@ -266,51 +251,37 @@ Kolonica::init ()
 	return info ();
 }
 
-
-int
-Kolonica::startResync ()
+int Kolonica::startResync ()
 {
 	return -1;
 }
 
-
-int
-Kolonica::stopMove ()
+int Kolonica::stopMove ()
 {
 	return -1;
 }
 
-
-int
-Kolonica::startPark()
+int Kolonica::startPark()
 {
 	return -1;
 }
 
-
-int
-Kolonica::endPark()
+int Kolonica::endPark()
 {
 	return -1;
 }
 
-
-int
-Kolonica::updateLimits()
+int Kolonica::updateLimits()
 {
 	return -1;
 }
 
-
-int
-Kolonica::getHomeOffset(int32_t&)
+int Kolonica::getHomeOffset(int32_t&)
 {
 	return 0;
 }
 
-
-int
-Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == axAlt)
 	{
@@ -331,9 +302,7 @@ Kolonica::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return Fork::setValue (old_value, new_value);
 }
 
-
-Kolonica::Kolonica (int in_argc, char **in_argv)
-:Fork (in_argc, in_argv)
+Kolonica::Kolonica (int in_argc, char **in_argv):Fork (in_argc, in_argv)
 {
 	telDev = "/dev/ttyS0";
 	telConn = NULL;
@@ -347,14 +316,12 @@ Kolonica::Kolonica (int in_argc, char **in_argv)
 	addOption ('f', NULL, 1, "telescope device (default to /dev/ttyS0)");
 }
 
-
 Kolonica::~Kolonica (void)
 {
 	delete telConn;
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Kolonica device = Kolonica (argc, argv);
 	return device.run ();

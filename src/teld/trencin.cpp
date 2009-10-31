@@ -21,7 +21,7 @@
 
 #include "../utils/error.h"
 #include "../utils/rts2config.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 #include "../utils/libnova_cpp.h"
 
 #define EVENT_TIMER_RA_WORM    RTS2_LOCAL_EVENT + 1230
@@ -79,17 +79,17 @@ class Trencin:public Fork
 
 	private:
 		const char *device_nameRa;
-		Rts2ConnSerial *trencinConnRa;
+		rts2core::ConnSerial *trencinConnRa;
 
 		const char *device_nameDec;
-		Rts2ConnSerial *trencinConnDec;
+		rts2core::ConnSerial *trencinConnDec;
 
-		void tel_write (Rts2ConnSerial *conn, char command);
+		void tel_write (rts2core::ConnSerial *conn, char command);
 
 		void tel_write_ra (char command);
 		void tel_write_dec (char command);
 
-		void tel_write (Rts2ConnSerial *conn, const char *command);
+		void tel_write (rts2core::ConnSerial *conn, const char *command);
 
 		void tel_write_ra (const char *command);
 		void tel_write_dec (const char *command);
@@ -97,19 +97,19 @@ class Trencin:public Fork
 		// write to both units
 		void write_both (char command, int32_t value);
 
-		void tel_write (Rts2ConnSerial *conn, char command, int32_t value);
+		void tel_write (rts2core::ConnSerial *conn, char command, int32_t value);
 
 		void tel_write_ra (char command, int32_t value);
 		void tel_write_dec (char command, int32_t value);
 
 		// read axis - registers 1-3
-		int readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
+		int readAxis (rts2core::ConnSerial *conn, Rts2ValueInteger *value, bool write_axis = true);
 
 		void setGuideRa (int value);
 		void setGuideDec (int value);
 		void setGuidingSpeed (double value);
 
-		void checkAcc (Rts2ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop);
+		void checkAcc (rts2core::ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop);
 
 		void setSpeedRa (int new_speed);
 		void setSpeedDec (int new_speed);
@@ -167,12 +167,12 @@ class Trencin:public Fork
 
 		int32_t ac, dc;
 
-		void tel_run (Rts2ConnSerial *conn, int value);
+		void tel_run (rts2core::ConnSerial *conn, int value);
 		/**
 		 * Stop telescope movement. Phases is bit mask indicating which phase should be commited.
 		 * First bit in phase is for sending Kill command, second is for waiting for reply.
 		 */
-		void tel_kill (Rts2ConnSerial *conn, int phases = 0x03);
+		void tel_kill (rts2core::ConnSerial *conn, int phases = 0x03);
 
 		void stopMoveRa ();
 		void stopMoveDec ();
@@ -187,7 +187,7 @@ class Trencin:public Fork
 using namespace rts2teld;
 
 
-void Trencin::tel_write (Rts2ConnSerial *conn, char command)
+void Trencin::tel_write (rts2core::ConnSerial *conn, char command)
 {
 	char buf[3];
 	int len = snprintf (buf, 3, "%c\r", command);
@@ -205,7 +205,7 @@ void Trencin::tel_write_dec (char command)
 	tel_write (trencinConnDec, command);
 }
 
-void Trencin::tel_write (Rts2ConnSerial *conn, const char *command)
+void Trencin::tel_write (rts2core::ConnSerial *conn, const char *command)
 {
 	if (conn->writePort (command, strlen (command)))
 		throw rts2core::Error ("cannot write to port");
@@ -229,7 +229,7 @@ void Trencin::write_both (char command, int len)
 	tel_write_dec (command, len);
 }
 
-void Trencin::tel_write (Rts2ConnSerial *conn, char command, int32_t value)
+void Trencin::tel_write (rts2core::ConnSerial *conn, char command, int32_t value)
 {
 	char buf[51];
 	int len = snprintf (buf, 50, "%c%i\r", command, value);
@@ -355,7 +355,7 @@ void Trencin::selectSuccess ()
 	Telescope::selectSuccess ();
 }
 
-int Trencin::readAxis (Rts2ConnSerial *conn, Rts2ValueInteger *value, bool write_axis)
+int Trencin::readAxis (rts2core::ConnSerial *conn, Rts2ValueInteger *value, bool write_axis)
 {
 	int ret;
 	char buf[10];
@@ -459,7 +459,7 @@ void Trencin::setGuidingSpeed (double value)
 		setGuideDec (decGuide->getValueInteger ());
 }
 
-void Trencin::checkAcc (Rts2ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop)
+void Trencin::checkAcc (rts2core::ConnSerial *conn, Rts2ValueInteger *acc, Rts2ValueInteger *startStop)
 {
 	if (startStop->getValueInteger () <= 30)
 		acc->setValueInteger (116);
@@ -804,7 +804,7 @@ int Trencin::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	trencinConnRa = new Rts2ConnSerial (device_nameRa, this, BS4800, C8, NONE, 40);
+	trencinConnRa = new rts2core::ConnSerial (device_nameRa, this, rts2core::BS4800, rts2core::C8, rts2core::NONE, 40);
 	ret = trencinConnRa->init ();
 	if (ret)
 		return ret;
@@ -812,7 +812,7 @@ int Trencin::init ()
 	trencinConnRa->setDebug ();
 	trencinConnRa->flushPortIO ();
 
-	trencinConnDec = new Rts2ConnSerial (device_nameDec, this, BS4800, C8, NONE, 40);
+	trencinConnDec = new rts2core::ConnSerial (device_nameDec, this, rts2core::BS4800, rts2core::C8, rts2core::NONE, 40);
 	ret = trencinConnDec->init ();
 	if (ret)
 		return ret;
@@ -1201,7 +1201,7 @@ int Trencin::commandAuthorized (Rts2Conn *conn)
 	return Fork::commandAuthorized (conn);
 }
 
-void Trencin::tel_run (Rts2ConnSerial *conn, int value)
+void Trencin::tel_run (rts2core::ConnSerial *conn, int value)
 {
 	if (value == 0)
 		return;
@@ -1239,7 +1239,7 @@ void Trencin::tel_run (Rts2ConnSerial *conn, int value)
 	}
 }
 
-void Trencin::tel_kill (Rts2ConnSerial *conn, int phases)
+void Trencin::tel_kill (rts2core::ConnSerial *conn, int phases)
 {
 	if (phases & 0x01)
 	{

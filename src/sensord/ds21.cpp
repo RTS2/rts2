@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2sensord
 {
@@ -32,20 +32,6 @@ class DS21;
  */
 class DS21Axis
 {
-	private:
-		DS21 *master;
-		char anum;
-
-		Rts2ValueBool *enabled;
-		Rts2ValueLong *position;
-		Rts2ValueLong *poserr;
-		Rts2ValueInteger *velocity;
-		Rts2ValueInteger *acceleration;
-		Rts2ValueInteger *status;
-
-		Rts2ValueBool *limitSwitch;
-
-		Rts2ValueString *commandSet;
 	public:
 		/**
 		 * @param in_anum Number of the axis being constructed.
@@ -65,6 +51,21 @@ class DS21Axis
 		bool isMoving ();
 
 		void updateStatus ();
+
+	private:
+		DS21 *master;
+		char anum;
+
+		Rts2ValueBool *enabled;
+		Rts2ValueLong *position;
+		Rts2ValueLong *poserr;
+		Rts2ValueInteger *velocity;
+		Rts2ValueInteger *acceleration;
+		Rts2ValueInteger *status;
+
+		Rts2ValueBool *limitSwitch;
+
+		Rts2ValueString *commandSet;
 };
 
 /**
@@ -73,24 +74,6 @@ class DS21Axis
 
 class DS21: public Sensor
 {
-	private:
-		const char *dev;
-		Rts2ConnSerial *ds21;
-
-		std::list <DS21Axis> axes;
-
-		int home ();
-
-		friend class DS21Axis;
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-		virtual int idle ();
-
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-
 	public:
 		DS21 (int argc, char **argv);
 		virtual ~DS21 (void);
@@ -133,6 +116,24 @@ class DS21: public Sensor
 			blockExposure ();
 			setTimeout (1);
 		}
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int idle ();
+
+		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
+
+	private:
+		const char *dev;
+		rts2core::ConnSerial *ds21;
+
+		std::list <DS21Axis> axes;
+
+		int home ();
+
+		friend class DS21Axis;
 };
 
 };
@@ -164,9 +165,7 @@ DS21Axis::DS21Axis (DS21 *in_master, char in_anum)
 	}
 }
 
-
-int
-DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == enabled)
 	{
@@ -197,9 +196,7 @@ DS21Axis::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return -3;
 }
 
-
-int
-DS21Axis::info ()
+int DS21Axis::info ()
 {
 	master->readValue (anum, "TP", position);
 	master->readValue (anum, "TE", poserr);
@@ -209,9 +206,7 @@ DS21Axis::info ()
 	return 0;
 }
 
-
-bool
-DS21Axis::isMoving ()
+bool DS21Axis::isMoving ()
 {
 	if (master->readValueBin (anum, "TS", status))
 		return false;
@@ -225,17 +220,13 @@ DS21Axis::isMoving ()
 	return false;
 }
 
-
-void
-DS21Axis::updateStatus ()
+void DS21Axis::updateStatus ()
 {
 	master->readValueBin (anum, "TS", status);
 	master->sendValueAll (status);
 }
 
-
-int
-DS21::processOption (int in_opt)
+int DS21::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -248,9 +239,7 @@ DS21::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-DS21::init ()
+int DS21::init ()
 {
 	int ret;
 
@@ -258,7 +247,7 @@ DS21::init ()
 	if (ret)
 		return ret;
 
-	ds21 = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 20);
+	ds21 = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 20);
 	ret = ds21->init ();
 	if (ret)
 		return ret;
@@ -273,9 +262,7 @@ DS21::init ()
 	return 0;
 }
 
-
-int
-DS21::idle ()
+int DS21::idle ()
 {
 	if (blockingExposure ())
 	{
@@ -294,9 +281,7 @@ DS21::idle ()
 	return Sensor::idle ();
 }
 
-
-int
-DS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int DS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
 	{
@@ -307,7 +292,6 @@ DS21::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return Sensor::setValue (old_value, new_value);
 }
 
-
 DS21::DS21 (int argc, char **argv):Sensor (argc, argv)
 {
 	dev = "/dev/ttyS0";
@@ -316,15 +300,12 @@ DS21::DS21 (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "device serial port, default to /dev/ttyS0");
 }
 
-
 DS21::~DS21 (void)
 {
 	delete ds21;
 }
 
-
-int
-DS21::info ()
+int DS21::info ()
 {
 	int ret;
 	for (std::list <DS21Axis>::iterator iter = axes.begin (); iter != axes.end (); iter++)
@@ -336,16 +317,12 @@ DS21::info ()
 	return Sensor::info ();
 }
 
-
-int
-DS21::home ()
+int DS21::home ()
 {
 	return writePort (0, "GH");
 }
 
-
-int
-DS21::commandAuthorized (Rts2Conn *conn)
+int DS21::commandAuthorized (Rts2Conn *conn)
 {
 	if (conn->isCommand ("home"))
 	{
@@ -356,9 +333,7 @@ DS21::commandAuthorized (Rts2Conn *conn)
 	return Sensor::commandAuthorized (conn);
 }
 
-
-int
-DS21::writePort (char anum, const char *msg)
+int DS21::writePort (char anum, const char *msg)
 {
 	int blen = strlen (msg);
 	char *buf = new char[blen + 4];
@@ -373,9 +348,7 @@ DS21::writePort (char anum, const char *msg)
 	return ds21->writePort (buf, blen + 3);
 }
 
-
-int
-DS21::readPort (char *buf, int blen)
+int DS21::readPort (char *buf, int blen)
 {
 	int ret = ds21->readPort (buf, blen, '\n');
 	if (ret == -1)
@@ -386,9 +359,7 @@ DS21::readPort (char *buf, int blen)
 	return 0;
 }
 
-
-int
-DS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
+int DS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
 {
 	int ret;
 	ret = writePort (anum, msg);
@@ -398,9 +369,7 @@ DS21::writeReadPort (char anum, const char *msg, char *buf, int blen)
 
 }
 
-
-int
-DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
+int DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 {
 	int ret;
 	const char *sval = val->getValue ();
@@ -414,9 +383,7 @@ DS21::writeValue (char anum, const char cmd[3], Rts2Value *val)
 	return ret;
 }
 
-
-int
-DS21::readValue (char anum, const char *cmd, Rts2Value *val)
+int DS21::readValue (char anum, const char *cmd, Rts2Value *val)
 {
 	int ret;
 	char buf[500];
@@ -429,9 +396,7 @@ DS21::readValue (char anum, const char *cmd, Rts2Value *val)
 	return val->setValueCharArr (buf);
 }
 
-
-int
-DS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
+int DS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
 {
 	int ret;
 	char buf[500];
@@ -458,9 +423,7 @@ DS21::readValueBin (char anum, const char *cmd, Rts2Value *val)
 	return val->setValueInteger (ret);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	DS21 device = DS21 (argc, argv);
 	return device.run ();

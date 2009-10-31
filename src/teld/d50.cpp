@@ -22,7 +22,7 @@
 #include "fork.h"
 
 #include "../utils/rts2config.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 #include "../utils/libnova_cpp.h"
 
 namespace rts2teld
@@ -30,9 +30,36 @@ namespace rts2teld
 
 class D50:public Fork
 {
+	public:
+		D50 (int in_argc, char **in_argv);
+		virtual ~ D50 (void);
+
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int startResync ();
+		virtual int endMove ();
+		virtual int stopMove ();
+
+		virtual int startPark ();
+		virtual int endPark ();
+	protected:
+		virtual int processOption (int in_opt);
+
+		virtual int getHomeOffset (int32_t & off);
+
+		virtual int isMoving ();
+		virtual int isParking ();
+
+		virtual int updateLimits ();
+
+		virtual void updateTrack ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	private:
 		const char *device_name;
-		Rts2ConnSerial *d50Conn;
+		rts2core::ConnSerial *d50Conn;
 
 		// write to both units
 		int write_both (const char *command, int len);
@@ -71,43 +98,13 @@ class D50:public Fork
 		Rts2ValueInteger *accDec;
 
 		int32_t ac, dc;
-
-	protected:
-		virtual int processOption (int in_opt);
-
-		virtual int getHomeOffset (int32_t & off);
-
-		virtual int isMoving ();
-		virtual int isParking ();
-
-		virtual int updateLimits ();
-
-		virtual void updateTrack ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		D50 (int in_argc, char **in_argv);
-		virtual ~ D50 (void);
-
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int startResync ();
-		virtual int endMove ();
-		virtual int stopMove ();
-
-		virtual int startPark ();
-		virtual int endPark ();
 };
 
 };
 
 using namespace rts2teld;
 
-
-int
-D50::write_both (const char *command, int len)
+int D50::write_both (const char *command, int len)
 {
 	int ret;
 	ret = tel_write_unit (1, command, len);
@@ -117,18 +114,14 @@ D50::write_both (const char *command, int len)
 	return ret;
 }
 
-
-int
-D50::tel_write (const char command, int32_t value)
+int D50::tel_write (const char command, int32_t value)
 {
 	static char buf[50];
 	int len = sprintf (buf, "%c%i\x0d", command, value);
 	return d50Conn->writePort (buf, len);
 }
 
-
-int
-D50::tel_write_unit (int unit, const char command)
+int D50::tel_write_unit (int unit, const char command)
 {
 	int ret;
 	// switch unit
@@ -138,9 +131,7 @@ D50::tel_write_unit (int unit, const char command)
 	return d50Conn->writePort (command);
 }
 
-
-int
-D50::tel_write_unit (int unit, const char *command, int len)
+int D50::tel_write_unit (int unit, const char *command, int len)
 {
 	int ret;
 	// switch unit
@@ -150,9 +141,7 @@ D50::tel_write_unit (int unit, const char *command, int len)
 	return d50Conn->writePort (command, len);
 }
 
-
-int
-D50::tel_write_unit (int unit, const char command, int32_t value)
+int D50::tel_write_unit (int unit, const char command, int32_t value)
 {
 	int ret;
 	// switch unit
@@ -162,9 +151,7 @@ D50::tel_write_unit (int unit, const char command, int32_t value)
 	return tel_write (command, value);
 }
 
-
-int
-D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+int D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	static char buf[16];
@@ -199,9 +186,7 @@ D50::tel_read (const char command, Rts2ValueInteger * value, Rts2ValueInteger * 
 	return 0;
 }
 
-
-int
-D50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
+int D50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2ValueInteger * proc)
 {
 	int ret;
 	ret = tel_write ('x', unit);
@@ -210,9 +195,7 @@ D50::tel_read_unit (int unit, const char command, Rts2ValueInteger * value, Rts2
 	return tel_read (command, value, proc);
 }
 
-
-D50::D50 (int in_argc, char **in_argv)
-:Fork (in_argc, in_argv)
+D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv)
 {
 	d50Conn = NULL;
 
@@ -276,15 +259,12 @@ D50::D50 (int in_argc, char **in_argv)
 	setCorrections (true, true, true);
 }
 
-
 D50::~D50 (void)
 {
 	delete d50Conn;
 }
 
-
-int
-D50::processOption (int in_opt)
+int D50::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -297,17 +277,13 @@ D50::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-D50::getHomeOffset (int32_t & off)
+int D50::getHomeOffset (int32_t & off)
 {
 	off = 0;
 	return 0;
 }
 
-
-int
-D50::init ()
+int D50::init ()
 {
 	int ret;
 
@@ -333,7 +309,7 @@ D50::init ()
 		// swap values which are opposite for south hemispehere
 	}
 
-	d50Conn = new Rts2ConnSerial (device_name, this, BS9600, C8, NONE, 40);
+	d50Conn = new rts2core::ConnSerial (device_name, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	ret = d50Conn->init ();
 	if (ret)
 		return ret;
@@ -359,9 +335,7 @@ D50::init ()
 	return ret;
 }
 
-
-int
-D50::updateLimits ()
+int D50::updateLimits ()
 {
 	acMin = (int32_t) (haCpd * -180);
 	acMax = (int32_t) (haCpd * 180);
@@ -369,15 +343,11 @@ D50::updateLimits ()
 	return 0;
 }
 
-
-void
-D50::updateTrack ()
+void D50::updateTrack ()
 {
 }
 
-
-int
-D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == motorRa)
 	{
@@ -440,9 +410,7 @@ D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Fork::setValue (old_value, new_value);
 }
 
-
-int
-D50::info ()
+int D50::info ()
 {
 	int ret;
 	ret = tel_read_unit (1, 'u', unitRa, procRa);
@@ -465,9 +433,7 @@ D50::info ()
 	return Fork::info ();
 }
 
-
-int
-D50::startResync ()
+int D50::startResync ()
 {
 	int ret;
 
@@ -529,9 +495,7 @@ D50::startResync ()
 	return 0;
 }
 
-
-int
-D50::isMoving ()
+int D50::isMoving ()
 {
 	int ret;
 	ret = info ();
@@ -546,16 +510,12 @@ D50::isMoving ()
 	return -2;
 }
 
-
-int
-D50::endMove ()
+int D50::endMove ()
 {
 	return Fork::endMove ();
 }
 
-
-int
-D50::stopMove ()
+int D50::stopMove ()
 {
 	int ret;
 	ret = tel_write_unit (1, 'k');
@@ -568,9 +528,7 @@ D50::stopMove ()
 	return 0;
 }
 
-
-int
-D50::startPark ()
+int D50::startPark ()
 {
 	int ret;
 	// switch off worms..
@@ -597,9 +555,7 @@ D50::startPark ()
 	return 0;
 }
 
-
-int
-D50::isParking ()
+int D50::isParking ()
 {	
 	int ret;
 	ret = info ();
@@ -611,16 +567,12 @@ D50::isParking ()
 	return USEC_SEC / 10;
 }
 
-
-int
-D50::endPark ()
+int D50::endPark ()
 {
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	D50 device = D50 (argc, argv);
 	return device.run ();
