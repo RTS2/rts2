@@ -845,6 +845,7 @@ Rts2Device::stateChanged (int new_state, int old_state, const char *description)
 	Rts2Daemon::stateChanged (new_state, old_state, description);
 	// try to wake-up qued changes..
 	checkQueChanges (new_state);
+	setFullBopState (new_state);
 	sendStatusMessage (getState ());
 }
 
