@@ -19,7 +19,7 @@
 
 
 #include "phot.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 #include <time.h>
 
@@ -35,7 +35,7 @@ class SSP5:public Rts2DevPhot
 {
 	private:
 		const char *photFile;
-		Rts2ConnSerial *photConn;
+		rts2core::ConnSerial *photConn;
 
 		Rts2ValueSelection *gain;
 
@@ -85,7 +85,7 @@ int SSP5::init ()
 	if (ret)
 		return ret;
 
-	photConn = new Rts2ConnSerial (photFile, this, BS19200, C8, NONE, 40);
+	photConn = new rts2core::ConnSerial (photFile, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 40);
 	photConn->setDebug (true);
 	ret = photConn->init ();
 	if (ret)
