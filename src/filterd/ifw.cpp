@@ -18,7 +18,7 @@
  */
 
 #include "filterd.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2filterd
 {
@@ -31,15 +31,6 @@ namespace rts2filterd
  */
 class Ifw:public Filterd
 {
-	private:
-		char *dev_file;
-		Rts2ConnSerial *ifwConn;
-
-		char filter_buff[6];
-		int readPort (size_t len);
-		void shutdown ();
-
-		int homeCount;
 	public:
 		Ifw (int in_argc, char **in_argv);
 		virtual ~ Ifw (void);
@@ -50,14 +41,22 @@ class Ifw:public Filterd
 		virtual int setFilterNum (int new_filter);
 
 		virtual int homeFilter ();
+	private:
+		char *dev_file;
+		rts2core::ConnSerial *ifwConn;
+
+		char filter_buff[6];
+		int readPort (size_t len);
+		void shutdown ();
+
+		int homeCount;
 };
 
 };
 
 using namespace rts2filterd;
 
-int
-Ifw::homeFilter ()
+int Ifw::homeFilter ()
 {
 	int ret;
 	ret = ifwConn->writeRead ("WHOME\r", 6, filter_buff, 6, '\r');
@@ -70,9 +69,7 @@ Ifw::homeFilter ()
 	return 0;
 }
 
-
-void
-Ifw::shutdown (void)
+void Ifw::shutdown (void)
 {
 	int n;
 
@@ -95,9 +92,7 @@ Ifw::shutdown (void)
 	}
 }
 
-
-Ifw::Ifw (int in_argc, char **in_argv):Filterd (in_argc,
-in_argv)
+Ifw::Ifw (int in_argc, char **in_argv):Filterd (in_argc, in_argv)
 {
 	ifwConn = NULL;
 	homeCount = 0;
@@ -105,16 +100,13 @@ in_argv)
 	addOption ('f', "device_name", 1, "device name (/dev..)");
 }
 
-
 Ifw::~Ifw (void)
 {
 	shutdown ();
 	delete ifwConn;
 }
 
-
-int
-Ifw::processOption (int in_opt)
+int Ifw::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -127,9 +119,7 @@ Ifw::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Ifw::init (void)
+int Ifw::init (void)
 {
 	int ret;
 
@@ -137,7 +127,7 @@ Ifw::init (void)
 	if (ret)
 		return ret;
 
-	ifwConn = new Rts2ConnSerial (dev_file, this, BS19200, C8, NONE, 200);
+	ifwConn = new rts2core::ConnSerial (dev_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 200);
 	ret = ifwConn->init ();
 	if (ret)
 	  	return ret;
@@ -162,9 +152,7 @@ Ifw::init (void)
 	return 0;
 }
 
-
-int
-Ifw::changeMasterState (int new_state)
+int Ifw::changeMasterState (int new_state)
 {
 	switch (new_state & SERVERD_STATUS_MASK)
 	{
@@ -181,9 +169,7 @@ Ifw::changeMasterState (int new_state)
 	return Rts2Device::changeMasterState (new_state);
 }
 
-
-int
-Ifw::getFilterNum (void)
+int Ifw::getFilterNum (void)
 {
 	int filter_number;
 	int n;
@@ -209,9 +195,7 @@ Ifw::getFilterNum (void)
 	return filter_number;
 }
 
-
-int
-Ifw::setFilterNum (int new_filter)
+int Ifw::setFilterNum (int new_filter)
 {
 	char set_filter[] = "WGOTOx";
 	int ret;
@@ -255,9 +239,7 @@ Ifw::setFilterNum (int new_filter)
 	return ret;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Ifw device = Ifw (argc, argv);
 	return device.run ();
