@@ -117,7 +117,7 @@ void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
 	{
 		year = 2000;
 		month = day = 1;
-		duration = 1000L * 365 * 86400;
+		duration = 1000LL * 365 * 86400;
 	}
 	else if (month <= 0)
 	{
