@@ -136,15 +136,7 @@ Rts2Daemon::checkLockFile (const char *_lock_fname)
 #ifdef HAVE_FLOCK
 	ret = flock (lock_file, LOCK_EX | LOCK_NB);
 #else
-	struct flock fl;
-
-	fl.l_type   = F_WRLCK;  /* F_RDLCK, F_WRLCK, F_UNLCK    */
-	fl.l_whence = SEEK_SET; /* SEEK_SET, SEEK_CUR, SEEK_END */
-	fl.l_start  = 0;        /* Offset from l_whence         */
-	fl.l_len    = 0;        /* length, 0 = to EOF           */
-	fl.l_pid    = getpid(); /* our PID                      */
-
-	ret = fcntl(lock_file, F_SETLKW, &fl);  /* F_GETLK, F_SETLK, F_SETLKW */
+	ret = lockf (lock_file, F_TLOCK, 0);
 #endif
 	if (ret)
 	{
@@ -208,6 +200,10 @@ Rts2Daemon::lockFile ()
 	_os << getpid () << std::endl;
 	_os.flush ();
 	_os.close ();
+	if (_os.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Failed to write PID to lock file!" << sendLog;
+	}
 	return 0;
 }
 
