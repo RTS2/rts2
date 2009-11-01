@@ -873,7 +873,7 @@ class Camera:public Rts2ScriptDevice
 		Rts2ValueTime *exposureEnd;
 
 		// set chipUsedSize size
-		int box (int in_x, int in_y, int in_width, int in_height);
+		int box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *retv = NULL);
 
 		// callback functions from camera connection
 		int camExpose (Rts2Conn * conn, int chipState, bool fromQue);

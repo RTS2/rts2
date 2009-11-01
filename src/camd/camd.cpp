@@ -98,22 +98,24 @@ int Camera::setBinning (int in_vert, int in_hori)
 	return 0;
 }
 
-int Camera::box (int in_x, int in_y, int in_width, int in_height)
+int Camera::box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *retv)
 {
 	// tests for -1 -> full size
-	if (in_x == -1)
-		in_x = 0;
-	if (in_y == -1)
-		in_y = 0;
-	if (in_width == -1)
-		in_width = chipSize->getWidthInt ();
-	if (in_height == -1)
-		in_height = chipSize->getHeightInt ();
-	if (in_x < chipSize->getXInt () || in_y < chipSize->getYInt ()
-		|| ((in_x - chipSize->getXInt ()) + in_width) > chipSize->getWidthInt ()
-		|| ((in_y - chipSize->getYInt ()) + in_height) > chipSize->getHeightInt ())
+	if (_x == -1)
+		_x = 0;
+	if (_y == -1)
+		_y = 0;
+	if (_width == -1)
+		_width = chipSize->getWidthInt ();
+	if (_height == -1)
+		_height = chipSize->getHeightInt ();
+	if (_x < chipSize->getXInt () || _y < chipSize->getYInt ()
+		|| ((_x - chipSize->getXInt ()) + _width) > chipSize->getWidthInt ()
+		|| ((_y - chipSize->getYInt ()) + _height) > chipSize->getHeightInt ())
 		return -1;
-	chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
+	chipUsedReadout->setInts (_x, _y, _width, _height);
+	if (retv)
+		retv->setInts (_x, _y, _width, _height);
 	return 0;
 }
 
@@ -740,7 +742,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == chipUsedReadout)
 	{
 		Rts2ValueRectangle *rect = (Rts2ValueRectangle *) new_value;
-		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt ()) == 0 ? 0 : -2;
+		return box (rect->getXInt (), rect->getYInt (), rect->getWidthInt (), rect->getHeightInt (), rect) == 0 ? 0 : -2;
 	}
 	if (old_value == xplate)
 	{
