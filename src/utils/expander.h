@@ -36,72 +36,6 @@ namespace rts2core
  */
 class Expander
 {
-	private:
-		struct tm localDate;
-		struct tm utDate;
-		struct tm nightDate;
-		struct tm *expandDate;
-		struct timeval expandTv;
-
-		std::string getEpochString ();
-
-		int getYear ()
-		{
-			return expandDate->tm_year + 1900;
-		}
-
-		int getMonth ()
-		{
-			return expandDate->tm_mon + 1;
-		}
-
-		int getDay ()
-		{
-			return expandDate->tm_mday;
-		}
-
-		int getYDay ()
-		{
-			return expandDate->tm_yday;
-		}
-
-		int getHour ()
-		{
-			return expandDate->tm_hour;
-		}
-
-		int getMin ()
-		{
-			return expandDate->tm_min;
-		}
-
-		int getSec ()
-		{
-			return expandDate->tm_sec;
-		}
-
-		int getNightYear ()
-		{
-			return nightDate.tm_year + 1900;
-		}
-
-		int getNightMonth ()
-		{
-			return nightDate.tm_mon + 1;
-		}
-
-		int getNightDay ()
-		{
-			return nightDate.tm_mday;
-		}
-
-	protected:
-		/**
-		 * ID of current epoch.
-		 */
-		int epochId;
-		virtual std::string expandVariable (char var);
-		virtual std::string expandVariable (std::string expression);
 	public:
 		Expander ();
 		Expander (const struct timeval *tv);
@@ -161,6 +95,73 @@ class Expander
 		long getCtimeUsec ()
 		{
 			return expandTv.tv_usec;
+		}
+
+	protected:
+		/**
+		 * ID of current epoch.
+		 */
+		int epochId;
+		virtual std::string expandVariable (char var);
+		virtual std::string expandVariable (std::string expression);
+
+	private:
+		struct tm localDate;
+		struct tm utDate;
+		struct tm nightDate;
+		struct tm *expandDate;
+		struct timeval expandTv;
+
+		std::string getEpochString ();
+
+		int getYear ()
+		{
+			return expandDate->tm_year + 1900;
+		}
+
+		int getMonth ()
+		{
+			return expandDate->tm_mon + 1;
+		}
+
+		int getDay ()
+		{
+			return expandDate->tm_mday;
+		}
+
+		int getYDay ()
+		{
+			return expandDate->tm_yday;
+		}
+
+		int getHour ()
+		{
+			return expandDate->tm_hour;
+		}
+
+		int getMin ()
+		{
+			return expandDate->tm_min;
+		}
+
+		int getSec ()
+		{
+			return expandDate->tm_sec;
+		}
+
+		int getNightYear ()
+		{
+			return nightDate.tm_year + 1900;
+		}
+
+		int getNightMonth ()
+		{
+			return nightDate.tm_mon + 1;
+		}
+
+		int getNightDay ()
+		{
+			return nightDate.tm_mday;
 		}
 };
 
