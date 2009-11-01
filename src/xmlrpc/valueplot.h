@@ -78,6 +78,8 @@ class ValuePlot
 		void plotYDegrees ();
 		void plotYDouble ();
 		void plotYBoolean ();
+
+		void plotXDate ();
 };
 
 }

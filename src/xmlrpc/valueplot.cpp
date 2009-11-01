@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "valueplot.h"
+#include "../utils/expander.h"
 #include "../utils/libnova_cpp.h"
 
 using namespace rts2xmlrpc;
@@ -102,6 +103,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 			}
 			break;
 	}
+
+	plotXDate ();
 
 	if (!rs.empty ())
 	{
@@ -316,4 +319,83 @@ void ValuePlot::plotYBoolean ()
 	image->strokePattern (pat);
 
 	plotYGrid (size.height () + min * scaleY - scaleY);
+}
+
+void ValuePlot::plotXDate ()
+{
+	// scale per pixel..
+	double p_scale = 1 / fabs (scaleX);
+	double tick_scale;
+	const char *tick_format;
+
+	// seconds..
+	if (p_scale <= 1)
+	{
+		tick_scale = 60;
+		tick_format = "%M:%S";
+	}
+	// 1/2 minute..
+	else if (p_scale <= 30)
+	{
+	  	tick_scale = 1800;
+		tick_format = "%M:%S";
+	}
+	else if (p_scale <= 60)
+	{
+		tick_scale = 3600;
+		tick_format = "%d %H:%M";
+	}
+	else if (p_scale <= 300)
+	{
+		tick_scale = 7200;
+		tick_format = "%d %H:%M";
+	}
+	else if (p_scale <= 600)
+	{
+		tick_scale = 36000;
+		tick_format = "c %d %H:%M";
+	}
+	else if (p_scale <= 1800)
+	{
+		tick_scale = 86400;
+		tick_format = "%d %H:%M";
+	}
+	else if (p_scale <= 3600)
+	{
+		tick_scale = 172800;
+		tick_format = "%d %H:%M";
+	}
+	else
+	{
+		tick_scale = 4320000;
+		tick_format = "%m-%d";
+	}
+
+	struct timeval tv;
+	tv.tv_usec = 0;
+	rts2core::Expander ex = rts2core::Expander ();
+
+	double t_diff = fabs (to - from);
+
+	Magick::Image pat1 ("1x1", "black");
+	image->strokePattern (pat1);
+	image->strokeWidth (1);
+	image->fontPointsize (12);
+	image->strokeColor ("black");
+
+	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
+	{
+		tv.tv_sec = from + x;
+		ex.setExpandDate (&tv);
+		image->draw (Magick::DrawableText (x * scaleX, size.height () - 10, ex.expand (tick_format).c_str ()));
+	}
+
+	Magick::Image pat2 ("1x2", Magick::Color ());
+	pat2.pixelColor (0,0, "white");
+	image->strokePattern (pat2);
+
+	for (double x = ceil (from / tick_scale) * tick_scale - from; x < t_diff; x += tick_scale)
+	{
+		plotXGrid (x * scaleX);
+	}
 }

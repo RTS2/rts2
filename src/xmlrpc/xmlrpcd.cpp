@@ -392,10 +392,45 @@ class JpegImageRequest: public GetRequestAuthorized
 		}
 } jpegRequest ("/jpeg", &xmlrpc_server);
 
+#ifndef HAVE_SCANDIR
+int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const struct dirent *), int (*compar)(const void *, const void *))
+{
+	DIR *d = opendir (dirp);
+
+	int nl_size = 20;
+	*namelist = (struct dirent **) malloc (sizeof (dirent *) * 20);
+	int nmeb = 0;
+
+	while (struct dirent *de = readdir (d))
+	{
+		if (filter (de))
+		{
+			struct dirent *dn = (struct dirent *) malloc (sizeof (dirent));
+			*dn = *de;
+			if (nl_size == 0)
+			{
+				*namelist = (struct dirent **) realloc (namelist, sizeof (dirent *) * (nmeb + 20));
+				nl_size = 20;
+			}
+			(*namelist)[nmeb] = dn;
+			nmeb++;
+			nl_size--;
+		}
+	}
+
+	closedir (d);
+
+	if (*namelist)
+		// sort it..
+		qsort (*namelist, nmeb, sizeof (dirent *), compar);
+	return nmeb;
+}
+#endif // !HAVE_SCANDIR
+
 /**
  * Sort two file structure entries by cdate.
  */
-#if _POSIX_C_SOURCE > 200200L
+#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
 int cdatesort(const struct dirent **a, const struct dirent **b)
 {
 	struct stat s_a, s_b;
@@ -425,7 +460,25 @@ int cdatesort(const void *a, const void *b)
                 return 1;
         return -1;
 }
-#endif
+#endif  // _POSIX_C_SOURCE
+
+#ifndef HAVE_ALPHASORT
+
+#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
+int alphasort(const struct dirent **a, const struct dirent **b)
+{
+	return strcmp ((*a)->d_name, (*b)->d_name);
+}
+#else
+int alphasort(const void *a, const void *b)
+{
+        const struct dirent * d_a = *((dirent**)a);
+        const struct dirent * d_b = *((dirent**)b);
+	return strcmp (d_a->d_name, d_b->d_name);
+}
+#endif // _POSIX_C_SOURCE
+
+#endif // !HAVE_ALPHASORT
 
 /**
  * Create page with JPEG previews.
@@ -484,11 +537,11 @@ class JpegPreview:public GetRequestAuthorized
 			switch (sortby)
 			{
 			 	case SORT_DATE:
- /* if following fails to compile, please have a loog to value of your
-  * _POSIX_C_SOURCE #define, and record it and send it to petr@kubanek.net.
-  * Please contact petr@kubanek.net if you don't know how to get
-  * _POSIX_C_SOURCE. */
-					n = scandir (".", &namelist, 0, cdatesort);	
+					/* if following fails to compile, please have a look to value of your
+					 * _POSIX_C_SOURCE #define, record it and send it to petr@kubanek.net.
+					 * Please contact petr@kubanek.net if you don't know how to get
+					 * _POSIX_C_SOURCE. */
+					n = scandir (".", &namelist, 0, cdatesort);
 					break;
 				case SORT_FILENAME:
 				default:

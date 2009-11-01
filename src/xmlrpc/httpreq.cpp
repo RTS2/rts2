@@ -240,6 +240,8 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 	Magick::Blob blob;
 	altaz.write (&blob, "jpeg");
 
+	http_code = HTTP_OK;
+
 	response_type = "image/jpeg";
 
 	response_length = blob.length();
