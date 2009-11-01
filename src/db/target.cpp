@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "../plan/script.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/targetset.h"
 #include "../utils/rts2askchoice.h"
@@ -147,7 +148,11 @@ Rts2TargetApp::processOption (int in_opt)
 			break;
 		case 's':
 			if (!camera)
+			{
+				std::cerr << "Please provide camera name (with -c parameter) before specifing script!" << std::endl;
 				return -1;
+			}
+			// try to parse it..
 			new_scripts.push_back (CamScript (camera, optarg));
 			camera = NULL;
 			op |= OP_SCRIPT;
@@ -273,6 +278,17 @@ Rts2TargetApp::doProcessing ()
 		for (std::list < CamScript >::iterator iter = new_scripts.begin ();
 			iter != new_scripts.end (); iter++)
 		{
+			rts2script::Script script = rts2script::Script (iter->script);
+			script.setTarget (iter->cameraName, (Rts2Target *) (target_set->begin ()->second));
+			int failedCount = script.getFaultLocation ();
+			if (failedCount != -1)
+			{
+				std::cerr << "PARSING of script '" << iter->script << "' FAILED!!! AT " << failedCount << std::endl
+					<< std::string (iter->script).substr (0, failedCount + 1) << std::endl;
+				for (; failedCount > 0; failedCount--)
+					std::cout << " ";
+				std::cout << "^ here" << std::endl;
+			}
 			target_set->setTargetScript (iter->cameraName, iter->script);
 		}
 	}

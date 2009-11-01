@@ -44,9 +44,11 @@ ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_time
 	last_trash_jpeg = NULL;
 }
 
-ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout):ConnProcess (_master, _exe, _timeout)
+ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnProcess (_master, _exe, _timeout)
 {
+	end_event = _end_event;
 	imgPath = std::string (_path);
+	addArg (imgPath);
 }
 
 ConnImgProcess::~ConnImgProcess (void)
@@ -55,14 +57,6 @@ ConnImgProcess::~ConnImgProcess (void)
 
 int ConnImgProcess::init ()
 {
-	int ret = ConnProcess::init ();
-	if (ret)
-		return ret;
-
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "ConnImgProcess::init exe: " << exePath << " img: " << imgPath << " (" << getpid () << ")" << sendLog;
-	#endif
-
 	try
 	{
 		Rts2Image image = Rts2Image (imgPath.c_str ());
@@ -74,14 +68,12 @@ int ConnImgProcess::init ()
 		}
 
 		expDate = image.getExposureStart () + image.getExposureLength ();
-
-		return 0;
 	}
 	catch (rts2core::Error)
 	{
 		return -2;
 	}
-	return -2;
+	return ConnProcess::init ();
 }
 
 int ConnImgProcess::newProcess ()
@@ -89,16 +81,7 @@ int ConnImgProcess::newProcess ()
 	if (astrometryStat == DARK)
 		return 0;
 	
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "ConnImgProcess::newProcess exe: " << exePath << " img: " << imgPath << " (" << getpid () << ")" << sendLog;
-	#endif
-
-	if (exePath)
-	{
-		execl (exePath, exePath, imgPath.c_str (), (char *) NULL);
-		logStream (MESSAGE_ERROR) << "ConnImgProcess::newProcess: " << exePath << " " << imgPath << " " << strerror (errno) << sendLog;
-	}
-	return -2;
+	return ConnFork::newProcess ();
 }
 
 void ConnImgProcess::processLine ()
@@ -202,10 +185,17 @@ void ConnImgProcess::connectionError (int last_data_size)
 			default:
 				break;
 		}
-		if (astrometryStat == GET)
-			master->postEvent (new Rts2Event (EVENT_OK_ASTROMETRY, (void *) image));
+		if (end_event > 0)
+		{
+			master->postEvent (new Rts2Event (end_event, (void *) image));
+		}
 		else
-			master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
+		{
+			if (astrometryStat == GET)
+				master->postEvent (new Rts2Event (EVENT_OK_ASTROMETRY, (void *) image));
+			else
+				master->postEvent (new Rts2Event (EVENT_NOT_ASTROMETRY, (void *) image));
+		}
 		delete image;
 	}
 	catch (rts2core::Error &er)
@@ -259,8 +249,7 @@ ConnObsProcess::ConnObsProcess (Rts2Block * in_master, const char *in_exe, int i
 	obs = new Rts2Obs (obsId);
 	if (obs->load ())
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;
 		obs = NULL;
 	}
 

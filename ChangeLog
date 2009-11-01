@@ -1,5 +1,9 @@
 0.7.5
 =====
+2009-11-01
+ * Check script before it is added to database
+ * Plot date ticks on graphs
+
 2009-10-24
  * Added Markus script for focusing - rts2-autofocus
 

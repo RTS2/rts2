@@ -19,7 +19,7 @@ rts2_targetlist_SOURCES = targetlist.cpp
 rts2_targetlist_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
 
 rts2_target_SOURCES = target.cpp
-rts2_target_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
+rts2_target_LDFLAGS = ../plan/libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
 
 rts2_tpm_SOURCES = tpm.cpp
 rts2_tpm_LDFLAGS = ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)

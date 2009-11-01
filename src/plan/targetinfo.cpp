@@ -304,14 +304,16 @@ void TargetInfo::printTargetInfo ()
 				cout << "Script for camera " << cam_name << ":'" << script_buf <<
 				"' ret (" << ret << ")" << std::endl;
 			// try to parse it..
-			rts2script::Script script = rts2script::Script (NULL);
+			rts2script::Script script = rts2script::Script ();
 			script.setTarget (cam_name, target);
 			failedCount = script.getFaultLocation ();
 			if (failedCount != -1)
 			{
-				std::
-					cout << "PARSING of script '" << script_buf <<
-					"' FAILED!!! AT " << failedCount << std::endl;
+				std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
+					<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
+				for (; failedCount > 0; failedCount--)
+					std::cout << " ";
+				std::cout << "^ here" << std::endl;
 			}
 		}
 	}

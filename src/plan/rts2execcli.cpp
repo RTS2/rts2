@@ -20,10 +20,10 @@
 #include <limits.h>
 #include <iostream>
 
+#include "connimgprocess.h"
 #include "rts2execcli.h"
 #include "../writers/rts2image.h"
 #include "../utilsdb/target.h"
-#include "../utils/connfork.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"
 
@@ -51,6 +51,7 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_QUE_IMAGE:
+		case EVENT_AFTER_COMMAND_FINISHED:
 			image = (Rts2Image *) event->getArg ();
 			if (!strcmp (image->getCameraName (), getName ()))
 				queImage (image);
@@ -192,12 +193,18 @@ void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 		int timeout = 60;
 		std::string arg;
 		Rts2Config::instance ()->getInteger (getName (), "after_exposure_cmd_timeout", timeout);
-		rts2core::ConnFork *afterCommand = new rts2core::ConnFork (getMaster (), after_command.c_str (), true, timeout);
-		afterCommand->addArg (image->getAbsoluteFileName ());
+		rts2plan::ConnImgProcess *afterCommand = new rts2plan::ConnImgProcess (getMaster (), after_command.c_str (), image->getAbsoluteFileName (), timeout, EVENT_AFTER_COMMAND_FINISHED);
 		Rts2Config::instance ()->getString (getName (), "after_exposure_cmd_arg", arg);
 		afterCommand->addArg (image->expand (arg));
-		afterCommand->init ();
-		getMaster ()->addConnection (afterCommand);
+		int ret = afterCommand->init ();
+		if (ret)
+		{
+			delete afterCommand;
+		}
+		else
+		{
+			getMaster ()->addConnection (afterCommand);
+		}
 	}
 
 	if (image->getImageType () == IMGTYPE_FLAT)

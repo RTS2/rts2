@@ -117,6 +117,19 @@ Script::Script (Rts2Block * _master):Rts2Object ()
 	executedCount = 0;
 	lineOffset = 0;
 	cmdBuf = NULL;
+	cmdBufTop = NULL;
+	wholeScript = std::string ("");
+}
+
+Script::Script (const char *script):Rts2Object ()
+{
+	master = NULL;
+	executedCount = 0;
+	lineOffset = 0;
+	cmdBuf = new char[strlen (script) + 1];
+	strcpy (cmdBuf, script);
+	cmdBufTop = cmdBuf;
+	wholeScript = std::string (script);
 }
 
 Script::~Script (void)
@@ -157,6 +170,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 			el_iter = elements.begin ();
 			return -1;
 		}
+
 		char *comment = NULL;
 		int offset = 0;
 		cmdBuf = new char[scriptText.length () + 1];
@@ -195,6 +209,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 			offset += cmdBufTop - commandStart;
 			elements.push_back (element);
 		}
+
 		// add comment if there was one
 		if (comment)
 		{
@@ -214,6 +229,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 			elements.push_back (element);
 		}
 		lineOffset += offset;
+		// ret == 0 if this was the last (or only) line of the script - see target->getScript call comments.
 	} while (ret == 1);
 
 	executedCount = 0;

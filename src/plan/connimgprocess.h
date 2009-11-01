@@ -63,7 +63,7 @@ class ConnProcess:public rts2core::ConnFork
 class ConnImgProcess:public ConnProcess
 {
 	public:
-		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout);
+		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
 		virtual ~ ConnImgProcess (void);
 
 		virtual int init ();
@@ -79,6 +79,8 @@ class ConnImgProcess:public ConnProcess
 
 		long id;
 		double ra, dec, ra_err, dec_err;
+
+		int end_event;
 };
 
 class ConnObsProcess:public ConnProcess

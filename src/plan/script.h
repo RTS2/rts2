@@ -32,30 +32,31 @@
 
 #include <list>
 
-#define NEXT_COMMAND_NEXT        -2
+#define NEXT_COMMAND_NEXT              -2
 #define NEXT_COMMAND_END_SCRIPT        -1
-#define NEXT_COMMAND_KEEP         1
-#define NEXT_COMMAND_WAITING      2
-#define NEXT_COMMAND_RESYNC   3
-#define NEXT_COMMAND_CHECK_WAIT   4
+#define NEXT_COMMAND_KEEP               1
+#define NEXT_COMMAND_WAITING            2
+#define NEXT_COMMAND_RESYNC             3
+#define NEXT_COMMAND_CHECK_WAIT         4
 #define NEXT_COMMAND_PRECISION_FAILED   5
 // you should not return NEXT_COMMAND_PRECISION_OK on first nextCommand call
-#define NEXT_COMMAND_PRECISION_OK 6
+#define NEXT_COMMAND_PRECISION_OK       6
 #define NEXT_COMMAND_WAIT_ACQUSITION    7
 #define NEXT_COMMAND_ACQUSITION_IMAGE   8
 
-#define NEXT_COMMAND_WAIT_SIGNAL  9
-#define NEXT_COMMAND_WAIT_MIRROR  10
+#define NEXT_COMMAND_WAIT_SIGNAL        9
+#define NEXT_COMMAND_WAIT_MIRROR        10
 
-#define NEXT_COMMAND_WAIT_SEARCH  11
+#define NEXT_COMMAND_WAIT_SEARCH        11
 
 // when return value contains that mask, we will keep command,
 // as we get it from block
-#define NEXT_COMMAND_MASK_BLOCK   0x100000
+#define NEXT_COMMAND_MASK_BLOCK         0x100000
 
-#define EVENT_OK_ASTROMETRY RTS2_LOCAL_EVENT + 200
-#define EVENT_NOT_ASTROMETRY  RTS2_LOCAL_EVENT + 201
-#define EVENT_ALL_PROCESSED RTS2_LOCAL_EVENT + 202
+#define EVENT_OK_ASTROMETRY             RTS2_LOCAL_EVENT + 200
+#define EVENT_NOT_ASTROMETRY            RTS2_LOCAL_EVENT + 201
+#define EVENT_ALL_PROCESSED             RTS2_LOCAL_EVENT + 202
+#define EVENT_AFTER_COMMAND_FINISHED    RTS2_LOCAL_EVENT + 203
 
 namespace rts2script
 {
@@ -87,7 +88,8 @@ class ParsingError:public rts2core::Error
 class Script:public Rts2Object
 {
 	public:
-		Script (Rts2Block * _master);
+		Script (Rts2Block * _master = NULL);
+		Script (const char *script);
 		virtual ~ Script (void);
 
 		/**
@@ -102,10 +104,7 @@ class Script:public Rts2Object
 		int setTarget (const char *cam_name, Rts2Target *target);
 
 		virtual void postEvent (Rts2Event * event);
-		template < typename T > int nextCommand (T & device,
-			Rts2Command ** new_command,
-			char
-			new_device[DEVICE_NAME_SIZE]);
+		template < typename T > int nextCommand (T & device, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 		// returns -1 when there wasn't any error, otherwise index of element that wasn't parsed
 		int getFaultLocation ()
 		{
