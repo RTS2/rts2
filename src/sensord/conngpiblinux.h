@@ -50,7 +50,7 @@ class GpibLinuxError: public rts2core::Error
 class ConnGpibLinux:public ConnGpib
 {
 	public:
-		virtual void gpibWrite (const char *_buf);
+		virtual void gpibWriteBuffer (const char *_buf, int len);
 		virtual void gpibRead (void *_buf, int &blen);
 		virtual void gpibWriteRead (const char *_buf, char *val, int blen = 50);
 

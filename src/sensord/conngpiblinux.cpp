@@ -23,10 +23,10 @@
 
 using namespace rts2sensord;
 
-void ConnGpibLinux::gpibWrite (const char *cmd)
+void ConnGpibLinux::gpibWriteBuffer (const char *cmd, int len)
 {
 	int ret;
-	ret = ibwrt (gpib_dev, cmd, strlen (cmd));
+	ret = ibwrt (gpib_dev, cmd, len);
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "write " << cmd << sendLog;
 	#endif

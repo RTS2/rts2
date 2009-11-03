@@ -32,7 +32,7 @@ namespace rts2sensord
 class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 {
 	public:
-		virtual void gpibWrite (const char *cmd);
+		virtual void gpibWriteBuffer (const char *cmd, int _len);
 		virtual void gpibRead (void *cmd, int &blen);
 		virtual void gpibWriteRead (const char *cmd, char *reply, int blen);
 

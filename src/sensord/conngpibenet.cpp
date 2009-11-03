@@ -70,15 +70,15 @@ void ConnGpibEnet::sresp (char **ret_buf)
 		delete[] sread_ret;
 }
 
-void ConnGpibEnet::gpibWrite (const char *cmd)
+void ConnGpibEnet::gpibWriteBuffer (const char *cmd, int _len)
 {
 	// write header
 	char gpib_buf[13] = "\x23\x05\x05\x08IIII\x00\x54\x00\x00";
-	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (cmd));
+	*((int32_t *) (gpib_buf + 4)) = htonl (_len);
 	sendData (gpib_buf, 12, true);
 	sresp (NULL);
 
-	sendData ((void *) cmd, strlen (cmd));
+	sendData ((void *) cmd, _len);
 	sresp (NULL);
 }
 
