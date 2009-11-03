@@ -156,11 +156,16 @@ Rts2Daemon::checkLockFile (const char *_lock_fname)
 
 
 int
-Rts2Daemon::doDeamonize ()
+Rts2Daemon::doDaemonize ()
 {
 	if (daemonize != DO_DAEMONIZE)
 		return 0;
 	int ret;
+#ifndef HAVE_FLOCK
+	// close and release lock file, as we will lock it again in child - there isn't way how to pass closed file descriptor to child without flock function
+	close (lock_file);
+	lock_file = 0;
+#endif
 	ret = fork ();
 	if (ret < 0)
 	{
@@ -169,7 +174,10 @@ Rts2Daemon::doDeamonize ()
 		exit (2);
 	}
 	if (ret)
+	{
+		lock_file = 0;
 		exit (0);
+	}
 	close (0);
 	close (1);
 	close (2);

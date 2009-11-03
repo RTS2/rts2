@@ -879,7 +879,7 @@ Rts2Device::init ()
 	ret = checkLockFile (s.c_str ());
 	if (ret < 0)
 		return ret;
-	ret = doDeamonize ();
+	ret = doDaemonize ();
 	if (ret)
 		return ret;
 #ifndef HAVE_FLOCK
