@@ -345,8 +345,8 @@ Camera (in_argc, in_argv)
 	VSpeed->setValueInteger (1);
 
 	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING);
-	EMOn->setValueBool (true);
-	setDefaultFlip (0);
+	EMOn->setValueBool (false);
+	setDefaultFlip (1);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING);
 	HSpeed->setValueInteger (1);
@@ -1015,7 +1015,7 @@ Andor::printInfo ()
 			printf ("VIDEO");
 			break;
 		default:
-			printf ("<unknown> (code is %li)", cap.ulCameraType);
+			printf ("<unknown> (code is %i)", cap.ulCameraType);
 			break;
 	}
 
@@ -1166,6 +1166,14 @@ Andor::init ()
 		return -1;
 	}
 	sprintf (serialNumber, "%i", serNum);
+
+	// default to EMON off
+	ret = setHSSpeed (1, HSpeed->getValueInteger ());
+	if (ret != 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set non-EM mode (the default)" << sendLog;
+		return -1;
+	}
 
 	return initChips ();
 }
