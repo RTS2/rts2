@@ -555,9 +555,16 @@ Rts2Centrald::init ()
 	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
-	ret = doDeamonize ();
+	ret = doDaemonize ();
+	if (ret < 0)
+		return ret;
+
+#ifndef HAVE_FLOCK
+	// reopen..
+	ret = checkLockFile (s.c_str ());
 	if (ret)
 		return ret;
+#endif
 	return lockFile ();
 }
 
