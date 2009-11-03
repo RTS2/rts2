@@ -454,10 +454,12 @@ void ImageProc::changeRunning (ConnProcess * newImage)
 	}
 	else if (ret == 0)
 	{
+#ifdef HAVE_LIBJPEG
 		if (isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < runningImage->getExposureEnd ())
 			runningImage->setLastGoodJpeg (last_good_jpeg);
 		if (isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < runningImage->getExposureEnd ())
 			runningImage->setLastTrashJpeg (last_trash_jpeg);
+#endif
 		addConnection (runningImage);
 	}
 	maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_RUN);

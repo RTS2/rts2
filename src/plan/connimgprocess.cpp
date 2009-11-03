@@ -40,8 +40,10 @@ ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_time
 {
 	astrometryStat = NOT_ASTROMETRY;
 
+#ifdef HAVE_LIBJPEG
 	last_good_jpeg = NULL;
 	last_trash_jpeg = NULL;
+#endif
 }
 
 ConnImgProcess::ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event):ConnProcess (_master, _exe, _timeout)
@@ -135,15 +137,18 @@ void ConnImgProcess::connectionError (int last_data_size)
 		{
 			case NOT_ASTROMETRY:
 			case TRASH:
+#ifdef HAVE_LIBJPEG
 				if (last_trash_jpeg)
 					image->writeAsJPEG (last_trash_jpeg, true);
-
+#endif
 				astrometryStat = TRASH;
 				image->toTrash ();
 				break;
 			case GET:
+#ifdef HAVE_LIBJPEG
 				if (last_good_jpeg)
 					image->writeAsJPEG (last_good_jpeg, true);
+#endif
 
 				image->setAstroResults (ra, dec, ra_err / 60.0, dec_err / 60.0);
 				image->toArchive ();
