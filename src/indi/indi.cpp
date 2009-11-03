@@ -72,7 +72,7 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_INDI, "INDI")
 {
 	telescopeName = "T0";
 	setLockPrefix ("/tmp/rts2_");
-	setNotDeamonize ();
+	setNotDaemonize ();
 	IDLog ("Initializing Indi");
 
 	addOption ('t', NULL, 1, "telescope name (default to T0)");
