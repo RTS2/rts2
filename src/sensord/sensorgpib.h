@@ -40,6 +40,7 @@ class Gpib:public Sensor
 
 	protected:
 		void gpibWrite (const char *cmd) { connGpib->gpibWrite (cmd); }
+		void gpibWriteBuffer (const char *cmd, int len) { connGpib->gpibWriteBuffer (cmd, len); }
 		void gpibRead (void *reply, int &blen) { connGpib->gpibRead (reply, blen); }
 		void gpibWriteRead (const char *cmd, char *reply, int blen) { connGpib->gpibWriteRead (cmd, reply, blen); }
 
