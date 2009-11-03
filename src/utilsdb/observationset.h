@@ -151,5 +151,32 @@ class ObservationSet:public std::vector <Rts2Obs >
 		double errAvgRad;
 };
 
+/**
+ * Load data from night observation table, grouped by various depth of grouping time parameter.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ObservationSetDate:public std::map <int, int>
+{
+	public:
+		ObservationSetDate () {}
+
+		/**
+		 * Construct set targets for Auger target. It select targets from auger informations. The parameters
+		 * select which part of the date should be considered. If the date paremeter is -1, the load method
+		 * select all targets, regardless of the date value. If it is > 0, select run on all
+		 * dates which have the component equal to this value.
+		 * This works great for hierarchical browsing. Suppose that we would like to select all targets
+		 * in year 2009 and 2010. We offer user a choice which month are available. If he click on December 2009,
+		 * we select all targets for December 2009, and allow user to select day. For each entry, it then creates entry in the map,
+		 * together with number of targets.
+		 *
+		 * @param year    Year of selection.
+		 * @param month   Month of selection.
+		 * @param day     Selection day.
+		 */
+		void load (int year = -1, int month = -1, int day = -1, int hour = 1, int minutes = -1);
+};
+
 }
 #endif							 /* !__RTS2_OBS_SET__ */

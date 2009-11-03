@@ -465,3 +465,97 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 	}
 	return _os;
 }
+
+void ObservationSetDate::load (int year, int month, int day, int hour, int minutes)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_value;
+	int d_c;
+	char *stmp_c;
+	EXEC SQL END DECLARE SECTION;
+
+	const char *group_by;
+	std::ostringstream _where;
+
+	double lng = Rts2Config::instance ()->getObserver ()->lng;
+
+	std::ostringstream _os;
+	if (year == -1)
+	{
+		group_by = "year";
+	}
+	else
+	{
+		_where << "EXTRACT (year FROM to_night (obs_slew, " << lng << ")) = " << year;
+		if (month == -1)
+		{
+			group_by = "month";
+		}
+		else
+		{
+			_where << " AND EXTRACT (month FROM to_night (obs_slew, " << lng << ")) = " << month;
+			if (day == -1)
+			{
+				group_by = "day";
+			}
+			else
+			{
+				_where << " AND EXTRACT (day FROM to_night (obs_slew, " << lng << ")) = " << day;
+				if (hour == -1)
+				{
+				 	group_by = "hour";
+				}
+				else
+				{
+					_where << " AND EXTRACT (hour FROM obs_slew) = " << hour;
+					if (minutes == -1)
+					{
+					 	group_by = "minute";
+					}
+					else
+					{
+						_where << " AND EXTRACT (minutes FROM obs_slew) = " << minutes;
+						group_by = "second";
+					}
+				}
+			}
+		}
+	}
+
+	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (*) as c FROM observations ";
+	
+	if (_where.str ().length () > 0)
+		_os << "WHERE " << _where.str ();
+
+	_os << " GROUP BY value;";
+
+	stmp_c = new char[_os.str ().length () + 1];
+	memcpy (stmp_c, _os.str().c_str(), _os.str ().length () + 1);
+	EXEC SQL PREPARE obsdate_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
+
+	EXEC SQL DECLARE obsdate_cur CURSOR FOR obsdate_stmp;
+
+	EXEC SQL OPEN obsdate_cur;
+
+	while (1)
+	{
+		EXEC SQL FETCH next FROM obsdate_cur INTO
+			:d_value,
+			:d_c;
+		if (sqlca.sqlcode)
+			break;
+		(*this)[d_value] = d_c;
+	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE obsdate_cur;
+		EXEC SQL ROLLBACK;
+
+		throw SqlError ();
+	}
+
+	EXEC SQL CLOSE obsdate_cur;
+	EXEC SQL ROLLBACK;
+}

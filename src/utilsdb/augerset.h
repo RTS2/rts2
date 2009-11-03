@@ -40,6 +40,11 @@ class AugerSet:public std::map <int, TargetAuger>
 		void printHTMLTable (std::ostringstream &_os);
 };
 
+/**
+ * Load data from auger table, grouped by various depth of grouping time parameter.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class AugerSetDate:public std::map <int, int>
 {
 	public:
