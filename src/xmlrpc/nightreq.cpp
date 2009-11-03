@@ -1,5 +1,5 @@
-/* 
- * Classes for answers to HTTP requests.
+/*
+ * Classes for generating pages with observations by nights.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,11 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "augerreq.h"
+#include "nightreq.h"
 #include "nightdur.h"
 
 #ifdef HAVE_PGSQL
-#include "../utilsdb/augerset.h"
+#include "../utilsdb/observationset.h"
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 #include "altaz.h"
 #endif // HAVE_LIBJPEG
@@ -30,7 +30,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	response_type = "text/html";
 
@@ -44,7 +44,7 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	{
 		case 4:
 			// assumes that all previous are OK, get just target
-			printTarget (atoi (vals[3].c_str ()), response_type, response, response_length);
+			printObs (atoi (vals[3].c_str ()), response_type, response, response_length);
 			break;			
 		case 3:
 			day = atoi (vals[2].c_str ());
@@ -60,75 +60,38 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 }
 
-void Auger::printTarget (int auger_id, const char* &response_type, char* &response, int &response_length)
+void Night::printObs (int obs_id, const char* &response_type, char* &response, int &response_length)
 {
-	TargetAuger ta = TargetAuger (-1, Rts2Config::instance ()->getObserver (), -1);
-
-	ta.load (auger_id);
-
-	std::vector <struct ln_equ_posn> pos;
-	ta.getEquPositions (pos);
-
-	double JD = ta.getShowerJD ();
-
-
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-	AltAz aa = AltAz ();
-
-	aa.plotAltAzGrid ();
-
-	int i = 1;
-
-	struct ln_hrz_posn hrz;
-
-	// plot origin
-	ta.getAltAz (&hrz, JD);
-	aa.plotCross (&hrz, "Origin", "green");
-
-	for (std::vector <struct ln_equ_posn>::iterator iter = pos.begin (); iter != pos.end (); iter++)
-	{
-		ln_get_hrz_from_equ (&(*iter), Rts2Config::instance ()->getObserver (), JD, &hrz);
-
-		std::ostringstream _os;
-		_os << i;
-
-		aa.plotCross (&hrz, _os.str ().c_str ());
-		i++;
-	}
-
-	Magick::Blob blob;
-	aa.write (&blob, "jpeg");
-
-	response_type = "image/jpeg";
-
-	response_length = blob.length();
-	response = new char[response_length];
-	memcpy (response, blob.data(), response_length);
-#else
-	throw XmlRpcException ("Images not supported");
-#endif // HAVE_LIBJPEG
 }
 
-void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
+void Night::listObs (int year, int month, int day, std::ostringstream &_os)
 {
-	rts2db::AugerSet as = rts2db::AugerSet ();
+	rts2db::ObservationSet os = rts2db::ObservationSet ();
 
 	time_t from;
 	int64_t duration;
 
 	getNightDuration (year, month, day, from, duration);
 
-	as.load (from, from + duration);
+	time_t end = from + duration;
 
-	as.printHTMLTable (_os);
+	os.loadTime (&from, &end);
+
+	for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
+	{
+		_os << "<tr><td>" << iter->getTargetName ()
+			<< "</td><td>" << LibnovaDateDouble (iter->getObsStart ())
+			<< "</td><td>" << LibnovaDateDouble (iter->getObsEnd ())
+			<< "</td></tr>";
+	}
 }
 
-void Auger::printTable (int year, int month, int day, char* &response, int &response_length)
+void Night::printTable (int year, int month, int day, char* &response, int &response_length)
 {
 	bool do_list = false;
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Auger showers";
+	_os << "<html><head><title>Observations";
 
 	if (year > 0)
 	{
@@ -151,14 +114,14 @@ void Auger::printTable (int year, int month, int day, char* &response, int &resp
 
 	if (do_list == true)
 	{
-		listAuger (year, month, day, _os);
+		listObs (year, month, day, _os);
 	}
 	else
 	{
-		rts2db::AugerSetDate as = rts2db::AugerSetDate ();
+		rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
 		as.load (year, month, day);
 
-		for (rts2db::AugerSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
+		for (rts2db::ObservationSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
 		{
 			_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
 		}

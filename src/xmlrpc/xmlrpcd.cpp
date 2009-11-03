@@ -50,6 +50,7 @@ using namespace Magick;
 #include "xmlstream.h"
 #include "httpreq.h"
 #include "augerreq.h"
+#include "nightreq.h"
 
 #include "r2x.h"
 
@@ -1778,6 +1779,8 @@ CurrentPosition current ("/current", &xmlrpc_server);
 #endif /* HAVE_LIBJPEG */
 
 Auger auger ("/auger", &xmlrpc_server);
+
+Night night ("/nights", &xmlrpc_server);
 
 Targets targets ("/targets", &xmlrpc_server);
 
