@@ -18,6 +18,7 @@
  */
 
 #include <fcntl.h>
+#include <stdio.h>
 #include <syslog.h>
 #include <sys/fcntl.h>
 #include <sys/types.h>
@@ -196,14 +197,15 @@ Rts2Daemon::lockFile ()
 {
 	if (!lock_file)
 		return -1;
-	std::ofstream _os (lock_fname);
-	_os << getpid () << std::endl;
-	_os.flush ();
-	_os.close ();
-	if (_os.fail ())
+	FILE *fd = fdopen (lock_file, "w");
+	if (fd == NULL)
+		return -1;
+	if (fprintf (fd, "%i\n", getpid ()) <= 0)
 	{
-		logStream (MESSAGE_ERROR) << "Failed to write PID to lock file!" << sendLog;
+	  	logStream (MESSAGE_ERROR) << "Cannot write PID to lock file!" << sendLog;
+		return -1;
 	}
+	fflush (fd);
 	return 0;
 }
 
