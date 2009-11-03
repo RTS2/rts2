@@ -83,6 +83,12 @@ configuration". Parameters outside these limits should normally not be changed.
           and numerous offline analysis. After the next online data tacking I expect
           that <command>&dhpackage;</command> is useable for general use.
     </para>
+    <para>
+The default values of the parameters have been determined with
+a refractor that has a f/7 and the CCD which provided a field
+of view (FOV) of 1.6 deg2. It might be that SExtractor fails if a reflector
+is used at positions far from the extrema.
+</para>
     <para>The aim is to have an autofocuser for an autonomous system. It should
 therefore fail only in very small fraction of the cases and the derived focuser
 position should be close to the true position. The fitting is done with CERN`s
@@ -603,13 +609,7 @@ analyses data in offline mode.
   </refsect1>
   <refsect1>
     <title>Hints</title>
-    <para>
-The default values of the parameters have been determined with
-a telescope that has a f/7 and the CCD which provided a field
-of view (FOV) of 1.6 deg2. 
 <para>
-</para>
-
 A focus run may fail due to various reasons. The more images
 are taken, specially far off the extrema, the fewer objects
 are present in all images. Although a sensible result can be
