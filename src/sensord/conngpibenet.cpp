@@ -39,7 +39,7 @@ class ErrorGpibEnetFlags:public rts2core::Error
 void ConnGpibEnet::sread (char **ret_buf)
 {
 	char gpib_buf[4];
-	receiveData (gpib_buf, 4, 10, true);
+	receiveData (gpib_buf, 4, 30, true);
 
 	flags = ntohs (*((uint16_t *) (gpib_buf)));
 	len = ntohs (*((uint16_t *) (gpib_buf + 2)));
@@ -50,8 +50,14 @@ void ConnGpibEnet::sread (char **ret_buf)
 		throw ErrorGpibEnetFlags (flags);
 	}
 
+	if (len == 0)
+	{
+		*ret_buf = NULL;
+		return;
+	}
+
 	*ret_buf = new char[len];
-	receiveData (*ret_buf, len, 20, true);
+	receiveData (*ret_buf, len, 30, true);
 }
 
 void ConnGpibEnet::sresp (char **ret_buf)
@@ -147,8 +153,9 @@ void ConnGpibEnet::gpibWaitSRQ ()
 			delete[] sbuf;
 			throw rts2core::Error ("Too short reply from iblines call");
 		}
-		if (ntohs (*((uint16_t *) (sbuf + 12))) & 0x2000)
+		if (ntohs (*((uint16_t *) (sbuf + 12))) & (1 << 12))
 			return;
+		usleep (USEC_SEC / 100);
 	}
 }
 

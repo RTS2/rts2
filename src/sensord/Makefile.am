@@ -80,7 +80,7 @@ if GPIBLIB
 LDADD += @LIB_GPIB@
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
-	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325
+	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
@@ -90,9 +90,11 @@ rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
 rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
 
+rts2_sensor_triax_SOURCES = triax.cpp
+
 else
 
-EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp
 
 endif
 
