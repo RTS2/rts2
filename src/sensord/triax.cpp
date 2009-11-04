@@ -46,6 +46,7 @@ class Triax:public Gpib
 		Rts2ValueInteger *motorPosition;
 
 		Rts2ValueSelection *entryMirror;
+		Rts2ValueSelection *exitMirror;
 
 		void initTriax ();
 		// send command, wait for reply - 'o' comming from GPIB
@@ -71,6 +72,10 @@ Triax::Triax (int argc, char **argv):Gpib (argc, argv)
 	createValue (entryMirror, "ENTRY", "position of entry mirror", true);
 	entryMirror->addSelVal ("SIDE");
 	entryMirror->addSelVal ("FRONT");
+
+	createValue (exitMirror, "EXIT", "position of exit mirror", true);
+	exitMirror->addSelVal ("SIDE");
+	exitMirror->addSelVal ("FRONT");
 }
 
 int Triax::info ()
@@ -155,13 +160,29 @@ int Triax::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 		}
 		if (oldValue == entryMirror)
 		{
-			char *cmd = (char *) "c0\r";
+			const char *cmd;
 			switch (newValue->getValueInteger ())
 			{
 				case 0:
+					cmd = "c0\r";
 					break;
 				case 1:
-					(*cmd) ++;
+					cmd = "d0\r";
+					break;
+			}
+			sendCommand (cmd);
+			return 0;
+		}
+		if (oldValue == exitMirror)
+		{
+			const char *cmd;
+			switch (newValue->getValueInteger ())
+			{
+				case 0:
+					cmd = "e0\r";
+					break;
+				case 1:
+					cmd = "f0\r";
 					break;
 			}
 			sendCommand (cmd);
