@@ -105,8 +105,17 @@ You are invited to read the source. There are a lot of comments and I used
     </para>
   </refsect1>
   <refsect1>
-    <title>Operation</title>
+    <title>Limitations</title>
     <para>
+The connection to rts2-centrald are the defaults of rts2-centrald. That means
+that rts2-centrald is reachable on localhost on port 617.
+</para>
+    <para>Make sure that you have a valid ~/.rts2 file.
+    </para>
+ </refsect1>
+  <refsect1>
+    <title>Operation</title>
+ <para>
 <command>&dhpackage;</command> is built around two components: SExtractor
  and the fit program rts2_fit_focus.
 <command>&dhpackage;</command> performs two tasks: online data taking followed
@@ -345,6 +354,27 @@ ticks which makes a difference e.g. in FWHM.</para>
     <varlistentry>
     <term>
     <option>CCD_WINDOW, int,  to be defined</option>
+    </term>
+    <listitem>
+    <para> ToDo: planned feature not yet there.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>CHECK_RTS2_CONFIGURATION, boolean,  FALSE</option>
+    </term>
+    <listitem>
+    <para> Checks presence of RTS2 configuration files, performs consistency
+           checks, queries the devices and exits. 
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>CONFIGURATION_FILE, file name,  to be defined</option>
     </term>
     <listitem>
     <para> ToDo: planned feature not yet there.
@@ -618,6 +648,9 @@ analyses data in offline mode.
   </refsect1>
   <refsect1>
     <title>Hints</title>
+<para> If <command>&dhpackage;</command> can not contact rts2-centrald
+configure ~/.rts2 in your home directory (create a copy of /etc/rts2/rts2.ini).
+</para>
 <para>
 A focus run may fail due to various reasons. The more images
 are taken, specially far off the extrema, the fewer objects
@@ -695,6 +728,8 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
 repository ./conf/autofocus </para>
    <para>sex-autofocus.cfg </para>
   <para> sex-autofocus.param, sex-autofocus-reference.param
+  </para>
+  <para> ~/.rts2
   </para>
   </refsect1>
   <refsect1>
