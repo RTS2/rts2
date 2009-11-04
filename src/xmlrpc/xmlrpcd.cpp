@@ -946,7 +946,10 @@ class ListValuesDevice: public ListValues
 			// print results for single device..
 			if (params.size() == 1)
 			{
-				conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+				if (((std::string) params[0]).length () == 0)
+					conn = serv->getSingleCentralConn ();
+				else
+					conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 				if (!conn)
 				{
 					throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
@@ -1058,7 +1061,15 @@ class GetValue: public SessionMethod
 			std::string devName = params[0];
 			std::string valueName = params[1];
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			Rts2Conn *conn;
+			if (devName.length () == 0)
+			{
+				conn = serv->getSingleCentralConn ();
+			}
+			else
+			{
+				conn = serv->getOpenConnection (devName.c_str ());
+			}
 			if (!conn)
 			{
 				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
