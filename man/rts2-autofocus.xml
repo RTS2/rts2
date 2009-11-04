@@ -445,6 +445,15 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
     </listitem>
     </varlistentry>
 
+      <varlistentry>
+	<term>
+      <option>REMOVE_TEMPORARY_FILES, boolean, to be defined</option>
+          </term>
+	<listitem>
+	  <para> ToDo: planned feature not yet there.
+          </para>
+	</listitem>
+      </varlistentry>
 
     <varlistentry>
     <term>
@@ -682,9 +691,19 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   </varlistentry>
   </refsect1>
   <refsect1>
+    <title>Files</title><para>The mandatory configuration files are found in the RTS2 svn
+repository ./conf/autofocus </para>
+   <para>sex-autofocus.cfg </para>
+  <para> sex-autofocus.param, sex-autofocus-reference.param
+  </para>
+  </refsect1>
+  <refsect1>
     <title>BUGS</title>
     <para>
       Please contact the author.
+    </para>
+    <para>
+      Many temporary files are written. Remove them as necessary.
     </para>
   </refsect1>
 </refentry>
