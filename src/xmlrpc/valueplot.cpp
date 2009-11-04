@@ -335,13 +335,13 @@ void ValuePlot::plotXDate ()
 	if (p_scale <= 1)
 	{
 		tick_scale = 60;
-		tick_format = "%M:%S";
+		tick_format = "%H:%M:%S";
 	}
 	// 1/2 minute..
 	else if (p_scale <= 30)
 	{
 	  	tick_scale = 1800;
-		tick_format = "%M:%S";
+		tick_format = "%H:%M:%S";
 	}
 	else if (p_scale <= 60)
 	{
