@@ -20,6 +20,9 @@
 #include <time.h>
 
 #include "valueplot.h"
+
+#ifdef HAVE_LIBJPEG
+
 #include "../utils/expander.h"
 #include "../utils/libnova_cpp.h"
 
@@ -399,3 +402,5 @@ void ValuePlot::plotXDate ()
 		plotXGrid (x * scaleX);
 	}
 }
+
+#endif /* HAVE_LIBJPEG */
