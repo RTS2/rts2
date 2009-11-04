@@ -45,6 +45,8 @@ class Triax:public Gpib
 		Rts2ValueString *bootVersion;
 		Rts2ValueInteger *motorPosition;
 
+		Rts2ValueSelection *entryMirror;
+
 		void initTriax ();
 		// send command, wait for reply - 'o' comming from GPIB
 		void sendCommand (const char *cmd);
@@ -65,6 +67,10 @@ Triax::Triax (int argc, char **argv):Gpib (argc, argv)
 	createValue (mainVersion, "main_version", "version of main firmware", false);
 	createValue (bootVersion, "boot_version", "version of boot firmware", false);
 	createValue (motorPosition, "MOTOR", "position of the motor", true);
+
+	createValue (entryMirror, "ENTRY", "position of entry mirror", true);
+	entryMirror->addSelVal ("SIDE");
+	entryMirror->addSelVal ("FRONT");
 }
 
 int Triax::info ()
@@ -145,6 +151,20 @@ int Triax::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 		if (oldValue == motorPosition)
 		{
 			setValue ('F', 0, newValue->getValueInteger () - motorPosition->getValueInteger ());
+			return 0;
+		}
+		if (oldValue == entryMirror)
+		{
+			char *cmd = (char *) "c0\r";
+			switch (newValue->getValueInteger ())
+			{
+				case 0:
+					break;
+				case 1:
+					(*cmd) ++;
+					break;
+			}
+			sendCommand (cmd);
 			return 0;
 		}
 	}
