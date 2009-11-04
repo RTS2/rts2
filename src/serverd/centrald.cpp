@@ -561,7 +561,7 @@ Rts2Centrald::init ()
 
 #ifndef HAVE_FLOCK
 	// reopen..
-	ret = checkLockFile (s.c_str ());
+	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
 #endif
