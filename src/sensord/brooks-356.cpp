@@ -35,6 +35,12 @@ class Brooks356: public Sensor
 		
 		Brooks356 (int argc, char **argv);
 
+		virtual int info ();
+
+	protected:
+		virtual int processOption (int _opt);
+		virtual int init ();
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *brookConn;
@@ -42,12 +48,6 @@ class Brooks356: public Sensor
 		Rts2ValueDouble *pressure;
 
 		Rts2ValueInteger *address;
-
-	protected:
-		virtual int processOption (int _opt);
-		virtual int init ();
-
-		virtual int info ();
 };
 
 }

@@ -31,6 +31,18 @@ namespace rts2sensord
  */
 class Keithley:public Gpib
 {
+	public:
+		Keithley (int argc, char **argv);
+		virtual ~ Keithley (void);
+
+		virtual int info ();
+
+	protected:
+		virtual int init ();
+		virtual int initValues ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
@@ -44,15 +56,6 @@ class Keithley:public Gpib
 
 		Rts2ValueInteger *countNum;
 		Rts2ValueFloat *nplc;
-	protected:
-		virtual int init ();
-		virtual int initValues ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Keithley (int argc, char **argv);
-		virtual ~ Keithley (void);
-
-		virtual int info ();
 };
 
 };

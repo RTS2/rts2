@@ -30,10 +30,11 @@ class MS257:public Sensor
 		MS257 (int in_argc, char **in_argv);
 		virtual ~ MS257 (void);
 
-		virtual int init ();
 		virtual int info ();
 
 	protected:
+		virtual int init ();
+
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual int processOption (int in_opt);
 
