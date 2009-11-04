@@ -32,15 +32,28 @@ class Triax:public Gpib
 	public:
 		Triax (int argc, char **argv);
 
+		virtual int info ();
+
 	protected:
 		virtual int init ();
 		virtual int initValues ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	
 	private:
 		Rts2ValueString *mainVersion;
 		Rts2ValueString *bootVersion;
+		Rts2ValueInteger *motorPosition;
 
+		void initTriax ();
+		// send command, wait for reply - 'o' comming from GPIB
+		void sendCommand (const char *cmd);
 		void getValue (Rts2Value *val, const char *cmd);
+
+		void setValue (char cmd, int p1, int p2);
+
+		// test if motor is busy. Return false if motor is idle.
+		bool isBusy ();
 };
 
 }
@@ -51,6 +64,21 @@ Triax::Triax (int argc, char **argv):Gpib (argc, argv)
 {
 	createValue (mainVersion, "main_version", "version of main firmware", false);
 	createValue (bootVersion, "boot_version", "version of boot firmware", false);
+	createValue (motorPosition, "MOTOR", "position of the motor", true);
+}
+
+int Triax::info ()
+{
+	try
+	{
+		getValue (motorPosition, "H0\r");
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -1;
+	}
+	return Gpib::info ();
 }
 
 int Triax::init ()
@@ -61,7 +89,8 @@ int Triax::init ()
 
 	try
 	{
-		gpibWrite ("\222");
+		gpibWriteBuffer ("\222", 1);
+		sleep (1);
 		char buf[11];
 		int l = 10;
 		gpibWriteRead (" ", buf, 9);
@@ -76,6 +105,8 @@ int Triax::init ()
 					logStream (MESSAGE_ERROR) << "Wrong response from 'START MAIN PROGRAM'" << sendLog;
 					return -1;
 				}
+				// init us..
+				initTriax ();
 				break;
 			case 'F':
 				break;
@@ -107,6 +138,40 @@ int Triax::initValues ()
 	return 0;
 }
 
+int Triax::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	try
+	{
+		if (oldValue == motorPosition)
+		{
+			setValue ('F', 0, newValue->getValueInteger () - motorPosition->getValueInteger ());
+			return 0;
+		}
+	}
+	catch (rts2core::Error er)
+	{
+		logStream (MESSAGE_ERROR) << er << sendLog;
+		return -2;
+	}
+
+	return Gpib::setValue (oldValue, newValue);
+}
+
+void Triax::initTriax ()
+{
+	settmo (100);
+	sendCommand ("A");	
+	settmo (10);
+}
+
+void Triax::sendCommand (const char *cmd)
+{
+	char buf[11];
+	gpibWriteRead (cmd, buf, 10);
+	if (*buf != 'o')
+		throw rts2core::Error ("Invalid reply from device!");
+}
+
 void Triax::getValue (Rts2Value *val, const char *cmd)
 {
 	char buf[21];
@@ -122,6 +187,22 @@ void Triax::getValue (Rts2Value *val, const char *cmd)
 		throw rts2core::Error ("cannot find ending \\r (CR) in response!");
 	*p = '\0';
 	val->setValueString (buf + 1);
+}
+
+void Triax::setValue (char cmd, int p1, int p2)
+{
+	std::ostringstream _os;
+	_os << cmd << p1 << "," << p2 << '\r';
+	sendCommand (_os.str ().c_str ());
+}
+
+bool Triax::isBusy ()
+{
+	char buf[11];
+	gpibWriteRead ("E", buf, 10);
+	if (buf[0] != 'o')
+		throw rts2core::Error ("wrong response to is busy command!");
+	return (buf[1] != 'z');
 }
 
 int main (int argc, char **argv)
