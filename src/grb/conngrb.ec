@@ -382,7 +382,7 @@ int ConnGrb::pr_fermi_gbm ()
 
 	double _error = lbuf[BURST_ERROR] / 10000.0;
 	if (gbm_record_above || gbm_error < 0 || _error <= gbm_error)
-		return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, gbm_error, false);
+		return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, _error, false);
 	logStream (MESSAGE_INFO) << "ignoring GBM above error limit - " << gbm_error << " > " << _error << sendLog;
 	return 0;
 }
@@ -1214,6 +1214,9 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, c
 	execFollowups = in_execFollowups;
 
 	gcnReceivedBytes = 0;
+
+	gbm_error = 0.25;
+	gbm_record_above = true;
 }
 
 ConnGrb::~ConnGrb (void)

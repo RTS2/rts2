@@ -912,7 +912,8 @@
 	      error indicated in GBM message is above gbm_error_limit,
 	      depending on this setting, either GBM GRB will be completely
 	      ignored (if this is false), or recorded to the database with
-	      tar_enabled set to false - e.g. disabled.
+	      tar_enabled set to false - e.g. disabled. Default is true, record
+	      this value.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -922,10 +923,11 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      FERMI GBM GRBs, with error larger then this limit, will not be
-	      followed. According to gbm_record_above_error setting, they will
-	      be either ignored at all, or only recorded to the database for
-	      reference.
+	      FERMI GBM GRBs, with error larger then this limit (specified in
+	      degrees), will not be followed. According to
+	      gbm_record_above_error setting, they will be either ignored at
+	      all, or only recorded to the database for reference. Default is
+	      15 arcmin = 0.25 of degree.
 	    </para>
 	  </listitem>
 	</varlistentry>

@@ -55,6 +55,9 @@ class ConnGrb:public Rts2ConnNoSend
 		double lastRa () { return last_ra; }
 		double lastDec () { return last_dec; }
 
+		void setGbmError (double _error) { gbm_error = _error; }
+		void setGbmRecordAboveError (bool _record) { gbm_record_above = _record; }
+
 	private:
 		Grbd * master;
 		// path to exec when we get new burst; pass parameters on command line
@@ -75,9 +78,6 @@ class ConnGrb:public Rts2ConnNoSend
 		double last_target_time;
 		double last_ra;
 		double last_dec;
-
-		void setGbmError (double _error) { gbm_error = _error; }
-		void setGbmRecordAboveError (bool _record) { gbm_record_above = _record; }
 
 		// init listen (listening on given port) and call (try to connect to given
 		// port; there must be GCN packet receiving running on oppoiste side) GCN
@@ -139,7 +139,7 @@ class ConnGrb:public Rts2ConnNoSend
 
 		time_t nextTime;
 
-		int gbm_error;
+		double gbm_error;
 		bool gbm_record_above;
 };
 

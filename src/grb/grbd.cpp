@@ -49,8 +49,7 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 
 	createValue (last_target, "last_target", "id of last GRB target", false);
 
-	createValue (last_target_time, "last_target_time", "time of last target",
-		false);
+	createValue (last_target_time, "last_target_time", "time of last target", false);
 	createValue (last_target_radec, "last_target_radec", "coordinates (J2000) of last GRB", false);
 
 	createValue (execConnection, "exec", "exec connection", false);
@@ -61,8 +60,7 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
 	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
-	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0,
-		"execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
+	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 }
 
 Grbd::~Grbd (void)
@@ -134,7 +132,7 @@ int Grbd::reloadConfig ()
 	if (!addExe)
 	{
 		std::string conf_addExe;
-		ret = config->getString ("grbd", "add-exe", conf_addExe);
+		ret = config->getString ("grbd", "add_exe", conf_addExe);
 		if (!ret)
 		{
 			addExe = new char[conf_addExe.length () + 1];
@@ -148,6 +146,8 @@ int Grbd::reloadConfig ()
 	}
 	// add connection..
 	gcncnn = new ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups, this);
+	gcncnn->setGbmError (config->getDoubleDefault ("grbd", "gbm_error_limit", 0.25));
+	gcncnn->setGbmRecordAboveError (config->getBoolean ("grbd", "gbm_record_above_error", true));
 	// setup..
 	// wait till grb connection init..
 	ret = gcncnn->init ();
