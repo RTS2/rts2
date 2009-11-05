@@ -246,6 +246,57 @@ sub focuser_position
 }
 sub by_foc_pos{ $fits_files{$a}[1] <=> $fits_files{$b}[1]}
 
+# check the connection and look what is really there
+sub get_rts2_centrald
+{
+# rts2-xmlrpcclient -g   .required_devices
+#_required_devices=CD T0 FC FW
+# rts2-xmlrpcclient -g   .failed_devices
+#_failed_devices=CD MET
+# get the list of the required devices from rts2-centrald
+    my @required_devices ;
+    open( READREQUIRED, "rts2-xmlrpcclient -g .required_devices|") or die "Can't open rts2-xmlrpcclient -g .required_devices: $!" ;
+    while( my $response= <READREQUIRED>)
+    {
+	chomp $response ;
+	$response= $response . " T0" ;
+	if( $response=~ m/(.|_)required_devices=(.+)$/)
+	{
+	    my $tmp_devices= $2 ;
+	    @required_devices= split( /[ ]+/, $tmp_devices) ;
+	    last ;
+	}
+    }
+    close( READREQUIRED) ;
+# get the list of failed devices
+    my @failed_devices ;
+    open( READFAILED, "rts2-xmlrpcclient -g .failed_devices|") or die "Can't open rts2-xmlrpcclient -g .failed_devices: $!" ;
+    while( my $response= <READFAILED>)
+    {
+	chomp $response ;
+	if( $response=~ m/(.|_)failed_devices=(.*?)$/)
+	{
+	    my $tmp_devices= $2 ;
+	    @failed_devices= split( /[ ]+/, $tmp_devices) ;
+	    last ;
+	}
+    }
+    close( READFAILED) ;
+# evaluate the status
+    foreach my $failed_device ( @failed_devices)
+    {
+	foreach my $required_device ( @required_devices)
+	{
+	    if( $failed_device eq $required_device)
+	    {
+		print "get_rts2_centrald: required device $required_device has status failed\n" ;
+		return FALSE ;
+	    }
+	}
+    }
+    return TRUE ;
+}
+
 sub get_rts2_ccd_property
 {
     my $camd= shift @_ ;
@@ -1487,8 +1538,14 @@ if(( $take_data== TRUE) || ($check_rts2_configuration== TRUE))
 #
 if( $check_rts2_configuration== TRUE)
 {
-# ToDo: discuss with Petr: test rts2-centrald, required and failed devices
-# Not (yet) available
+# test rts2-centrald, required and failed devices
+# 
+    my $status= get_rts2_centrald() ;
+    if($status== FALSE)
+    {
+	print "$scriptname: exiting\n" ;
+	exit 1 ;
+    }
 # test ccd camera device 
 #
     my $ccd_temperature= CCD_TEMPERATURE ;
