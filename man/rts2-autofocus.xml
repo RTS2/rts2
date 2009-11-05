@@ -3,7 +3,7 @@
 
   <!ENTITY dhfirstname "<firstname>Markus</firstname>">
   <!ENTITY dhsurname   "<surname>Wildi</surname>">
-  <!ENTITY dhdate      "<date>2009-10-21</date>">
+  <!ENTITY dhdate      "<date>2009-11-05</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>markus.wildi@one-arcsec.org</email>">
   <!ENTITY dhusername  "Markus Wildi">
@@ -134,11 +134,12 @@ the focuser is set according to the result if SET_FOCUS==TRUE.
 </para>
     <para>
 In both modes if FIND_ROUGH_FOCUS==TRUE the focus is defined roughly based on
-how many objects are identified by SExtractor. In online mode a series of
-images is taken while in offline mode the given set of images are analysed.
-After the rough focus run in online mode the fits images are renamed and
-get the extension ROUGH_FOCUS_RUN_EXTENSION.
-If no rough focus analysis is done then a
+how many objects are identified by SExtractor. A weighted mean is calculated 
+and the value of $filter_focus_properties{$fltr}[IND_FOC_DEF] is set.
+In online mode a series of images is taken centered around the mean while in 
+offline mode the given set of images are analysed. After the rough focus run 
+in online mode the fits images are renamed and get the extension 
+ROUGH_FOCUS_RUN_EXTENSION. If no rough focus analysis is done then a
 reference image is taken near the assumed best focus defined in %filter_focus_properties.
 The result is in all cases the reference catalogue used to identify objects an all other images. 
 </para>
@@ -719,7 +720,7 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   </term>
   </varlistentry>
   <varlistentry>
-  <term> Getopt::Long
+  <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted 
   </term>
   </varlistentry>
   </refsect1>
@@ -731,6 +732,7 @@ repository ./conf/autofocus </para>
   </para>
   <para> ~/.rts2
   </para>
+    <para>rts2-autofocus.cfg </para>
   </refsect1>
   <refsect1>
     <title>BUGS</title>
