@@ -156,7 +156,7 @@ Rts2DeviceDb::initDB ()
 		EXEC SQL CONNECT TO :c_db;
 		if (sqlca.sqlcode != 0)
 		{
-			logStream (MESSAGE_ERROR) << "Rts2DeviceDb::init Cannot connect to DB '" << c_db << "' : " << sqlca.sqlerrm.sqlerrmc << sendLog;
+			logStream (MESSAGE_ERROR) << "Rts2DeviceDb::init Cannot connect to DB '" << c_db << "'. Please check if the database server is running (on specified port, or on port 5432, which is the default one; please be aware that RTS2 does not parse PostgreSQL configuration, so if the database is running on the non-default port, it will not be accessible unless you specify the port) : " << sqlca.sqlerrm.sqlerrmc << sendLog;
 			return -1;
 		}
 	}
