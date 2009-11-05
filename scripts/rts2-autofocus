@@ -26,11 +26,13 @@
 # ToDo:  GLOBAL: if the focus run provides new settings write the results to stdout!
 use strict;
 use Getopt::Long qw(:config no_ignore_case) ;
+use Statistics::Descriptive::Weighted ;
 #
 use constant TRUE                   =>  1 ;
 use constant FALSE                  => -1 ;
 # global variables defined in this package
 use vars qw(
+  %default_configuration
   $scriptname
   $cvs_revision
   $cvs_date
@@ -46,17 +48,67 @@ use vars qw(
 # ##########################################################################################
 # begin default configuration
 # ##########################################################################################
+use constant  FOCROOTX => "i" ;
+%default_configuration= (
+'C_CONFIGURATION_FILE'=> "/etc/rts2/autofocus/rts2-autofocus.cfg",
+'C_SEXPRG'  => "sex 2>/dev/null" ,
+'C_FOCROOTI'=> "rts2_fit_focus 1" , # interactive
+'C_FOCROOTB'=> "rts2_fit_focus 0" , # "batch"
+'C_FITPRG'  => FOCROOTX  ,  
+# constants
+#
+'C_FITS_DIRECTORY'=> "/tmp" ,# the data directory
+'C_FILTERS'       => "X" ,   # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+'C_SELECT_RATIO'  => 0.05 ,  # this a threshold to avoid matching images from completely different focus runs.
+#                             $number_of_selected_objects/$number_of_reference_objects 
+#ToDo: make a parameter
+'C_MINIMUM_OBJECTS'=> 5 , #  is the minimal number of objects identified in all images
+#
+# if TAKE_DATA == TRUE then data taking with rts2 devices
+# consistency checks are performed on the devices defined in /etc/rts2/devices
+# execution is aborted if any mismatch is detected
+#
+'C_TAKE_DATA'  => TRUE,  # TRUE: data taking, FALSE: offline analysis
+'C_SET_FOCUS'  => FALSE, # set the focus position if only one filter is defined
+'C_CCD_CAMERA' => "CD" , # this CCD and its associate devices are used if TAKE_DATA == TRUE
+'C_CCD_BINNING'=> 1    , # 0: 1x1, 1: 2x2,.... see your drver
+'C_CHECK_RTS2_CONFIGURATION'=> FALSE, # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
+'C_FIND_ROUGH_FOCUS'        => TRUE,  # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
+'C_INCLUDE_ROUGH_FOCUS_RUN' => TRUE,  # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
+#                                       images extension .fits is renamed to .fitsROUGH_FOCUS_RUN_EXTENSION (see below)
+'C_NUMBER_OF_ROUGH_FOCUS_IMAGES'=> 10, # used if TAKE_DATA == (TRUE)
+'C_FOCAL_RATIO' => 7 , # telescope's focal ratio
+# data taking, files
+#
+'C_RTS2_DEVICES' => "/etc/rts2/devices" ,
+# sextractor configuration files, mandatory: SEXPARAM, SEXREFERENCE_PARAM from rts2-autofocus!
+#
+'C_SEXCFG'            => "/etc/rts2/autofocus/sex-autofocus.cfg" ,
+'C_SEXPARAM'          => "/etc/rts2/autofocus/sex-autofocus.param" ,
+'C_SEXREFERENCE_PARAM'=> "/etc/rts2/autofocus/sex-autofocus-reference.param" ,
+# set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
+#
+'C_SET_LIMITS_ON_SANITY_CHECKS'=> TRUE ,
+# temporary files written by rts2-autofocus, these will be modified with filter, date and ev. filename.
+#
+'C_SEXSKY_LIST'      => "/tmp/sex-autofocus-assoc-sky.list" ,
+'C_SEXCATALOGUE'     => "/tmp/sex-autofocus.cat" ,
+'C_SEX_TMP_CATALOGUE'=> "/tmp/sex-autofocus-tmp.cat" ,
+'C_FIT_RESULT_FILE'  => "/tmp/fit-autofocus.dat" ,
+'C_DS9_REGION_FILE'  => "/tmp/ds9-autofocus.reg" ,
+    ) ;
 #
 # programs
 #
 use constant SEXPRG  => "sex  2>/dev/null" ;
 use constant FOCROOTI=> "rts2_fit_focus 1" ; # interactive
 use constant FOCROOTB=> "rts2_fit_focus 0" ; # "batch"
-use constant FITPRG  => FOCROOTI  ; # 
+use constant FITPRG  => FOCROOTB  ; # 
 # 
 # constants
 #
 use constant FITS_DIRECTORY => "/tmp" ; # the data directory
+#use constant FITS_DIRECTORY => "/scratch/T1/Focusing-2009-10-30/test-run-1/" ; # the data directory
 use constant FILTERS        => "X" ;  # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
 use constant SELECT_RATIO   => 0.05 ; # this a threshold to avoid matching images from completely different focus runs.
 #                                       $number_of_selected_objects/$number_of_reference_objects 
@@ -67,16 +119,16 @@ use constant MINIMUM_OBJECTS=> 5 ; #  is the minimal number of objects identifie
 # consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
 #
-use constant TAKE_DATA       => FALSE; # TRUE: data taking, FALSE: offline analysis
+use constant TAKE_DATA       => TRUE; # TRUE: data taking, FALSE: offline analysis
 use constant SET_FOCUS       => FALSE; # set the focus position if only one filter is defined
 use constant CCD_CAMERA      => "CD" ; # this CCD and its associate devices are used if TAKE_DATA == TRUE
 use constant CCD_BINNING     => 1    ; # 0: 1x1, 1: 2x2,.... see your drver
-use constant CHECK_RTS2_CONFIGURATION=> TRUE ; # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
-use constant FIND_ROUGH_FOCUS=> TRUE;  # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
-use constant INCLUDE_ROUGH_FOCUS_RUN     => TRUE; # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
-#                                                   images extension .fits is renamed to .fitsROUGH_FOCUS_RUN_EXTENSION (see below)
-use constant NUMBER_OF_ROUGH_FOCUS_IMAGES=> 10;   # used if TAKE_DATA == (TRUE)
-use constant FOCAL_RATIO     => 7 ;    # telescope's focal ratio
+use constant CHECK_RTS2_CONFIGURATION=> FALSE; # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
+use constant FIND_ROUGH_FOCUS=> TRUE; # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
+use constant INCLUDE_ROUGH_FOCUS_RUN => TRUE; # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
+#                                               images extension .fits is renamed to .fitsROUGH_FOCUS_RUN_EXTENSION (see below)
+use constant NUMBER_OF_ROUGH_FOCUS_IMAGES=> 10; # used if TAKE_DATA == (TRUE)
+use constant FOCAL_RATIO     => 7 ; # telescope's focal ratio
 # data taking, files
 #
 use constant RTS2_DEVICES   => "/etc/rts2/devices" ;
@@ -235,6 +287,9 @@ sub exposure_time
     my $exposure_time_at_focus= shift @_ ;
     my $foc_pos_at_focus = shift @_ ;
     my $foc_pos = shift @_ ;
+    my $exposure_time ;
+
+    return $exposure_time ;
 }
 # define the focuser positions
 sub focuser_position
@@ -283,20 +338,29 @@ sub get_rts2_centrald
     }
     close( READFAILED) ;
 # evaluate the status
+    my $number_failed= 0 ;
     foreach my $failed_device ( @failed_devices)
     {
+	print "get_rts2_centrald: $failed_device has status failed\n" ;
 	foreach my $required_device ( @required_devices)
 	{
 	    if( $failed_device eq $required_device)
 	    {
-		print "get_rts2_centrald: required device $required_device has status failed\n" ;
-		return FALSE ;
+		$number_failed++ ;
+		print "get_rts2_centrald: $required_device is required and has status failed\n" ;
 	    }
 	}
     }
-    return TRUE ;
+    if( $number_failed != 0)
+    {
+	return FALSE ;
+    }
+    else
+    {
+	return TRUE ;
+    }
 }
-
+# ToDo: this just little bit more than a stub
 sub get_rts2_ccd_property
 {
     my $camd= shift @_ ;
@@ -947,6 +1011,8 @@ sub get_foc_pos_at_maximum_number_of_objects
     my $catalogue_tmp= SEX_TMP_CATALOGUE ;
     my $catalogue_tmp_max= $catalogue_tmp.".max" ;
 
+    my $distribution  = Statistics::Descriptive::Weighted::Full->new();
+
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
     {
 # define the objects
@@ -955,25 +1021,27 @@ sub get_foc_pos_at_maximum_number_of_objects
 	close(SEXANALYSIS) ;
 # count them
 # ToDo: make a parameter
+	
 	my $number_of_objects= analyse_catalogue( $catalogue_tmp) ;
-	if( $maximum_objects< $number_of_objects)
+# ToDO: fill data
+#
+	if( $number_of_objects == 0)
 	{
-	    $maximum_objects= $number_of_objects ;
-	    $fits_file_max= $fits_file ;	
-	    if( ! defined rename( $catalogue_tmp, $catalogue_tmp_max))
-	    {
-		print "get_foc_pos_at_maximum_number_of_objects: could not rename $catalogue_tmp to $catalogue_tmp_max, exiting\n";
-		exit 1 ;
-	    }
+	    print "get_foc_pos_at_maximum_number_of_objects: zero objects found in $fits_file, continuing\n" ;
 	}
-	if( $rename== TRUE)
+	else
 	{
-#TODO: check that
-#	    if( ! defined rename( $fits_file, $fits_file.$rough_focus_run_extension))
-#	    {
-#		print "get_foc_pos_at_maximum_number_of_objects: could not rename $fits_file to $fits_file.$rough_focus_run_extension, exiting\n";
-#		exit 1 ;
-#	    }
+	    $distribution->add_data([$fits_files{$fits_file}[IND_FOC_POS_FILE]],[$number_of_objects]);
+	    if( $maximum_objects< $number_of_objects)
+	    {
+		$maximum_objects= $number_of_objects ;
+		$fits_file_max= $fits_file ;	
+		if( ! defined rename( $catalogue_tmp, $catalogue_tmp_max))
+		{
+		    print "get_foc_pos_at_maximum_number_of_objects: could not rename $catalogue_tmp to $catalogue_tmp_max, exiting\n";
+		    exit 1 ;
+		}
+	    }
 	}
     }
     if( $maximum_objects> 0)
@@ -987,9 +1055,24 @@ sub get_foc_pos_at_maximum_number_of_objects
 	{
 	    print "get_foc_pos_at_maximum_number_of_objects: renamed $catalogue_tmp_max to $catalogue_tmp, continuing\n";
 	}
+# calculate the weighted mean and compare it with the objects maximum 
+# 
+	my $mean  = $distribution->mean();
+	print "get_foc_pos_at_maximum_number_of_objects: weighted mean $mean [ticks]\n" ;
+
 	print "get_foc_pos_at_maximum_number_of_objects: $fits_file_max, $catalogue_tmp rough focus found at $fits_files{$fits_file_max}[IND_FOC_POS_FILE], objects $maximum_objects (not associated)\n" ;
 	print "get_foc_pos_at_maximum_number_of_objects: update temporarily %filter_focus_properties\n" ;
-	$filter_focus_properties{$fltr}[IND_FOC_DEF]=$fits_files{$fits_file_max}[IND_FOC_POS_FILE];
+
+	if( abs($mean - $filter_focus_properties{$fltr}[IND_FOC_DEF]) > 100) # ToDo: replace by constant
+	{
+	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, best known focus $filter_focus_properties{$fltr}[IND_FOC_DEF]\n" ;
+	}
+	if( abs($mean - $fits_files{$fits_file_max}[IND_FOC_POS_FILE]) > 100) # ToDo: replace by constant
+	{
+	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, and reference focus position $fits_files{$fits_file_max}[IND_FOC_POS_FILE]\n" ;
+	}
+	$filter_focus_properties{$fltr}[IND_FOC_DEF]=$mean;
+ 
 	return $filter_focus_properties{$fltr}[IND_FOC_DEF] ;
     }
     else
@@ -1325,9 +1408,90 @@ sub print_usage
   print "       --version:   print program version information.\n";
   print "    -v --verbose:   be verbose by printing progressing to stdout.\n";
 }
+sub write_default_configuration
+{
+    print "# default configuration for rts2-autofocus\n" ;
+    print "# generated with rts2-autofous -d\n" ;
+    print "# see man rts2-autofocus for details\n" ;
+    print "# inline comments allowed\n" ;
+    foreach my $identifier ( sort keys %default_configuration)
+    {
+	my $tmp_identifier= $identifier ;
+	$tmp_identifier=~ s/C_// ;
+
+	if( !($identifier=~ m/(BINNING|MINIMUM_OBJECTS|NUMBER_OF_ROUGH_FOCUS_IMAGES)/)) # ToDo ugly
+	{
+	    $default_configuration{ $identifier}=~ s/^-1$/FALSE/ ;
+	    $default_configuration{ $identifier}=~ s/^1$/TRUE/ ;
+	}
+	print "$tmp_identifier = $default_configuration{ $identifier}\n" ;
+    }
+
+}
+sub read_configuration
+{
+    my $configuration_file_name= shift @_ ;
+    my $configuration_file_line_number= 1 ;
+    open(CONFIGURATION, "<$configuration_file_name") or die "read_configuration: can not read $configuration_file_name: $!";
+    
+    while(my $line=<CONFIGURATION>)
+    {
+	next if( $line=~ m/^#/) ;
+	next if( $line=~ m/^$/) ;
+	next if( $line=~ m/^[ \t]*=/) ;
+	next if( !($line=~ m/=/)) ;
+
+	chomp $line ;
+	my $tmp_line= "" ;
+	if( $line=~ m/^(.*?)#(.*)$/)
+	{
+	    $tmp_line= $1 ;
+	}
+	else
+	{
+	    $tmp_line= $line ;
+	}
+	my $c_line= "C_" . $tmp_line ;
+	my ($identifier,$value)= split(/=/, $c_line) ;
+
+	$identifier=~ s/[ \t]+//g ;
+	$value=~ s/^[ \t]+//g ;
+	$value=~ s/[ \t]+$//g ;
+	$value=~ s/[ \t]+/ /g ;
+# NO	$value=~ s/^-1$/FALSE/g ;
+# NO	$value=~ s/^1$/TRUE/g ;
+	$value=~ s/^FALSE/-1/g ;
+	$value=~ s/^TRUE/1/g ;
+
+	if( defined $default_configuration{$identifier})
+	{
+# NO	    if( !($value=~ /$default_configuration{$identifier}/))
+	    if( !($default_configuration{$identifier}=~ /$value/))
+	    {
+		print "$default_configuration{$identifier} superseeded by $value\n" ;
+		$default_configuration{$identifier}= $value ;	
+	    }
+	}
+	else
+	{
+	    print "read_configuration: error no valid identifier: $identifier on line $configuration_file_line_number\n" ;
+	    exit 1
+	}
+	$configuration_file_line_number++ ;
+    }
+    close(CONFIGURATION) ;
+}
 #------------------------------------------------------------------------------
 # main program
 #------------------------------------------------------------------------------
+#ToDo why changes this call read_configuration( $configuration_file) ;
+#write_default_configuration() ;
+my $configuration_file= "./rts2-autofocus.cfg" ;
+
+read_configuration( $configuration_file) ;
+
+print "\n intermediate USE PREVIOUS VERSION\n" ;
+
 
 my $help = 0;
 my $version = 0;
@@ -1496,7 +1660,7 @@ if(( $take_data== TRUE) || ($check_rts2_configuration== TRUE))
 	print "$scriptname: ccd devices $rts2_device_camd_default not present, can not take data\n" ;
 	exit 1 ;
     }
-    if(!(($rts2_device_camd_present== TRUE ) &&($rts2_device_filterd_present== TRUE) &&($rts2_device_focusd_present== TRUE)))
+    if(!(($rts2_device_camd_present== TRUE ) && ($rts2_device_filterd_present== TRUE) && ($rts2_device_focusd_present== TRUE)))
     {
 	print "$scriptname: not all devices present,  can not take data\n" ;
 	exit 1 ;
@@ -1564,7 +1728,7 @@ if( $check_rts2_configuration== TRUE)
     set_rts2_filter($rts2_device_filterd, $filter_names[0]) ;
     get_rts2_filter($rts2_device_filterd, $filter_names[0]) ; 
 # test focuser device
-    my $middle= ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / 2 ;
+    my $middle= $focuser_properties{"absolute_lower_limit"}+ ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / 2 ;
     $middle=~ s/\.[0-9]+$// ; # truncate
 
     set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
@@ -1647,7 +1811,7 @@ elsif( $take_data== TRUE) # online analysis
 	    $size_step      =~ s/\.[0-9]+$// ; # truncate
 # set FOC_DEF
 #	    ul + middle = FOC_TOF ? wie muss das genau gemacht werden?
-	    my $middle= ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / 2 ;
+	    my $middle= $focuser_properties{"absolute_lower_limit"} + ($focuser_properties{"absolute_upper_limit"}- $focuser_properties{"absolute_lower_limit"}) / 2 ;
 	    $middle=~ s/\.[0-9]+$// ; # truncate
 
 	    if( (NUMBER_OF_ROUGH_FOCUS_IMAGES * $size_step)> $focuser_properties{"absolute_upper_limit"})
@@ -1659,17 +1823,18 @@ elsif( $take_data== TRUE) # online analysis
 #ToDo: issue a warning and exit if the FITS_DIRECTORY is not empty
 	    print "$scriptname: rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=-$middle for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step }\n" ;
  
-
-	    open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=-$middle for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } '|") or die "Can't rts2-exec: $!" ;
-	    while( my $response= <FIND_ROUGH_FOCUS>)
-	    {
-		print "$scriptname: rough focus:$response" ;
-	    }
+	    open( FIND_ROUGH_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=-$middle for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+# ToDo: perl says reading fom not open file handle
+#	    while( my $response= <FIND_ROUGH_FOCUS>)
+#	    {
+#		print "$scriptname: rough focus:$response" ;
+#	    }
 	    close(FIND_ROUGH_FOCUS) ;
 
 	    my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_rough_focus_run) ;
 	    if( $ret_get_fits== TRUE)
 	    {
+# the global $filter_focus_properties{$fltr}[IND_FOC_DEF] is updated
 		if(( my $foc_pos_maximum_objects=get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, TRUE)) != FALSE ) 
 		{
 		    print "$scriptname: reference for rough focus created\n" ;
@@ -1690,14 +1855,14 @@ elsif( $take_data== TRUE) # online analysis
 	set_rts2_focus_default_position( $rts2_device_focusd, $filter_focus_properties{$filter}[IND_FOC_DEF]) ;
 ## NO	get_rts2_focus( $rts2_device_focusd, $filter_focus_properties{$filter}[IND_FOC_DEF]) ;
 
-# start main script
+# start rts2 main script
 # This is the rts2 script
 # e.g. rts2-scriptexec -d CD -s ' CD.binning=1 FC.FOC_TOFF=lower_limit for number_steps { E exp_time_filter FC.FOC_TOFF+=step_size } '
 # 
-# After rts2-scriptexec returns, all files are in the working directory
+# after rts2-scriptexec returns, all files are in the working directory
 #
 	print "$scriptname: rts2-scriptexec -d $rts2_device_camd -s '  $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '\n" ;
-	open( CREATEFITS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } '|") or die "Can't rts2-exec: $!" ;
+	open( CREATEFITS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
 	while( my $response= <CREATEFITS>)
 	{
 	    print "$scriptname:$response" ;
