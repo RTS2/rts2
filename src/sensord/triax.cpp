@@ -56,7 +56,7 @@ class Triax:public Gpib
 		void setValue (char cmd, int p1, int p2);
 
 		// test if motor is busy. Return false if motor is idle.
-		bool isBusy ();
+		bool isBusy (const char *cmd);
 };
 
 }
@@ -237,10 +237,10 @@ void Triax::setValue (char cmd, int p1, int p2)
 	sendCommand (_os.str ().c_str ());
 }
 
-bool Triax::isBusy ()
+bool Triax::isBusy (const char *cmd)
 {
 	char buf[11];
-	gpibWriteRead ("E", buf, 10);
+	gpibWriteRead (cmd, buf, 10);
 	if (buf[0] != 'o')
 		throw rts2core::Error ("wrong response to is busy command!");
 	return (buf[1] != 'z');
