@@ -1,5 +1,8 @@
 0.7.5
 =====
+2009-11-06
+ * Support for Astronomical Research Cameras (Leech controllers)
+
 2009-11-03
  * TRIAX monochromator support
 

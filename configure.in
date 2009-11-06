@@ -223,6 +223,19 @@ AC_SUBST(EDTPDV)
 AC_SUBST(LIB_EDTPDV)
 AC_SUBST(INC_EDTPDV)
 
+# Test for ARC/Leech controller headers
+AC_ARG_WITH(arc,
+[  --with-arc              path to Astronomical Research Cameras headers, version 2.0. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
+ARC="${withval}";
+LIB_ARC="-L${ARC}/Release -lCController";
+INC_ARC="-I${ARC}",
+[ARC=no])
+
+AM_CONDITIONAL(ARC, test x$ARC != xno)
+AC_SUBST(ARC)
+AC_SUBST(LIB_ARC)
+AC_SUBST(INC_ARC)
+
 # for Alta we need special library:(
 AC_ARG_WITH(alta,
 [  --with-alta             path to Apogee Alta CCD driver, build Apogee Alta CCD driver],
@@ -659,11 +672,12 @@ echo "
 
 
 CCD's:
-  sbig          ${SBIG}
-  andor         ${ANDOR}
-  edtsao        ${EDTPDV}
   alta          ${ALTA}
+  andor         ${ANDOR}
+  arc           ${ARC}
+  edtsao        ${EDTPDV}
   fli           ${FLI}
+  sbig          ${SBIG}
 
 MOUNT's:
   paralib       ${PARALIB}
