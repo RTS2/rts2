@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Markus</firstname>">
@@ -83,7 +83,7 @@
     <para>
       <command>&dhpackage;</command> monitors the sky IR temperature (clouds),
       the rain detector and the brightness sensor of the AAG
-      CloudWatcher device. This device was designed by António Alberto  Peres
+      CloudWatcher device. This device was designed by AntÃ³nio Alberto  Peres
       Gomes, see http://www.aagware.eu/aag_cloudwatcher.htm.
     </para>
     <para>

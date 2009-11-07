@@ -1,13 +1,13 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
-  <!ENTITY dhsurname   "<surname>Kubánek</surname>">
+  <!ENTITY dhsurname   "<surname>KubÃ¡nek</surname>">
   <!ENTITY dhdate      "<date>2006-10-21</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
-  <!ENTITY dhusername  "Petr Kubánek">
+  <!ENTITY dhusername  "Petr KubÃ¡nek">
   <!ENTITY dhpackage   "rts2-xfocusc">
 
   <!ENTITY gnu         "<acronym>GNU</acronym>">
