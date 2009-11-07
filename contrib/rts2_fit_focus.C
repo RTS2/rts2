@@ -236,11 +236,11 @@ int main(int argc, char* argv[])
   mg-> Draw("ap");
 
   Double_t flux_chi2   = fit_flux-> GetChisquare();
-  Double_t flux_p0     = fit_flux-> GetParameter(0);
+  Double_t flux_p0     = fit_flux-> GetParameter(0); //constant
   Double_t flux_p0_err = fit_flux-> GetParError(0);
-  Double_t flux_p1     = fit_flux-> GetParameter(1);
+  Double_t flux_p1     = fit_flux-> GetParameter(1); //offset"
   Double_t flux_p1_err = fit_flux-> GetParError(1);
-  Double_t flux_p2     = fit_flux-> GetParameter(2);
+  Double_t flux_p2     = fit_flux-> GetParameter(2); //exponent
   Double_t flux_p2_err = fit_flux-> GetParError(2);
   Double_t flux_p3     = fit_flux-> GetParameter(3);
   Double_t flux_p3_err = fit_flux-> GetParError(4);
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
   // Double_t flux_MaximumX = flux-> GetMaximumX( fwhm_MinimumX-1000., fwhm_MinimumX+1000.) ; 
   // printf( "FLUX_FOCUS %f\n", flux_MaximumX ) ; 
   // using instead:
-  printf( "FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p0) ; 
+  printf( "FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p1) ; 
   
   //printf( "FLUX_FOCUS p0...p2 %f %f %f, chi2 %f\n",flux_p0, flux_p1, flux_p2, flux_chi2) ; 
 
