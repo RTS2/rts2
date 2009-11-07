@@ -61,7 +61,12 @@ The programme has the following characteristics:
   * **Q1,Q2,Q3,Q4** open and close motors relays. If one, given motor is
     command open/close.
 
-  Depeniding on model (Q4XT1, bit 10), when this bit is 0:
+  * **Q5** is compressor control on compressor models, and activation valve (E)
+    control on FRAM model
+
+  * **Q6** is compressor control on FRAM model
+
+  Depending on model (Q4XT1, bit 10), when this bit is 0:
 
   * **Q8** is engaged in emergency situation - e.g. when timeout is detected.
     It is reseted by pressing emergency stop or power cycling the unit.
