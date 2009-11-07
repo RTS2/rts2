@@ -84,15 +84,39 @@ Double_t one_over_fwhm(Double_t *v, Double_t *par)
   Double_t fitval = par[0]/TMath::Power((fwhm- par[1]), par[2]);
   return fitval;
 }
+// read the FWHM, FLUX_MAX files 
+int read_file( char *file, Float_t *foc_pos, Float_t *fv)
+{
+  char line[255];
+  FILE *fp ;
+  int   number_of_lines=0 ;
+  Float_t foc_pos_i, f_i ;
+
+  fp  = fopen( file,"r") ;
+ NEXTLINE:    while (fgets( line, 80, fp)) 
+    {
+      int ret=sscanf( line, "%e %e ", &foc_pos_i, &f_i) ;
+      if( ret < 2) 
+	{
+	  printf( "rts2_fit_foc: too few elements on line %d\n", number_of_lines+1) ; 
+	  goto NEXTLINE ;
+	}
+      else
+	{
+	  foc_pos[number_of_lines]= foc_pos_i;
+	  fv[number_of_lines]= f_i ;
+	  number_of_lines++ ;
+	}
+    }
+  fclose( fp) ;
+
+  return number_of_lines ;
+}
 
 int main(int argc, char* argv[])
 {
-  FILE *fp ;
-  char line[255];
   int   number_of_lines_fwhm=0 ;
   int   number_of_lines_flux=0 ;
-  Float_t foc_pos_i ;
-  Float_t fwhm_i, flux_i ;
   Float_t foc_pos_fwhm[1000], foc_pos_flux[1000] ;
   Float_t fwhm[1000], flux[1000] ;
   char *mode            = argv[1] ;
@@ -103,68 +127,23 @@ int main(int argc, char* argv[])
   char *flux_file       = argv[6] ;
   char *output_file_name= argv[7] ;
   TApplication* rootapp ;
-
   // (non-)interactive mode
   // After the call of this costructor: argc=1, argv=NULL 
   if( !strcmp( mode, "1"))
     {
       rootapp = new TApplication("fit_focus",&argc, argv);
     }
-  // read the FWHM, FLUX_MAX files 
-    fp  = fopen( fwhm_file,"r") ;
- NEXTLINE_FWHM:    while (fgets( line, 80, fp)) 
-      {
-      int ret=sscanf( line, "%e %e ", &foc_pos_i, &fwhm_i) ;
-      if( ret < 2) 
-	{
-	  printf( "FWHM Error: too few elements\n") ; 
-	  goto NEXTLINE_FWHM ;
-	}
-      else
-	{
-	  foc_pos_fwhm[number_of_lines_fwhm]= foc_pos_i;
-	  fwhm[number_of_lines_fwhm]= fwhm_i ;
-	  number_of_lines_fwhm++ ;
-	}
-    }
-  fclose( fp) ;
-  
-  if( number_of_lines_fwhm== 0)
+  if(( number_of_lines_fwhm= read_file( fwhm_file, &foc_pos_fwhm[0], &fwhm[0])) == 0)
     {
       printf( "no data found in %s, exiting\n", fwhm_file) ;
       return 1 ;
     }
-
-  fp  = fopen( flux_file,"r") ;
- NEXTLINE_FLUX:    while (fgets( line, 80, fp)) 
-    {
-      int ret=sscanf( line, "%e %e ", &foc_pos_i, &flux_i) ;
-      if( ret < 2) 
-	{
-	  printf( "FLUX Error: too few elements\n") ; 
-	  goto NEXTLINE_FLUX ;
-	}
-      else
-	{
-	  foc_pos_flux[number_of_lines_flux]= foc_pos_i;
-	  flux[number_of_lines_flux]= flux_i ;
-	  number_of_lines_flux++ ;
-	}
-    }
-
-  fclose( fp) ;
-
-  if( number_of_lines_fwhm== 0)
-    {
-      printf( "no data found in %s, exiting\n", fwhm_file) ;
-      return 1 ;
-    }
-  if( number_of_lines_flux== 0)
+  if(( number_of_lines_flux= read_file( flux_file, &foc_pos_flux[0], &flux[0])) == 0)
     {
       printf( "no data found in %s, exiting\n", flux_file) ;
       return 1 ;
     }
-
+  // make fit results visible
   gStyle-> SetOptFit();
 
   TCanvas *result = new TCanvas("rts2_autofocus","rts2_autofocus",200,10,800,640);
@@ -187,7 +166,7 @@ int main(int argc, char* argv[])
   // ToDo: how to deal with: Warning in <Minimize>: TLinearFitter failed in finding the solution
   //                          *** Break *** segmentation violation
   TMultiGraph *mg = new TMultiGraph("rts2_autofocus","");
-  // create first graph
+  // create first graph: FWHM
   TGraph *gr1 = new TGraph(number_of_lines_fwhm,foc_pos_fwhm,fwhm);
   gr1-> SetMarkerColor(kBlue);
   gr1-> SetMarkerStyle(21);
@@ -216,19 +195,20 @@ int main(int argc, char* argv[])
   Double_t fwhm_p3_err = fit_fwhm-> GetParError(4);
   Double_t fwhm_p4     = fit_fwhm-> GetParameter(4);
   Double_t fwhm_p4_err = fit_fwhm-> GetParError(4);
-  printf( "Result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
+  fprintf( stderr, "rts2_fit_focus.C: result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
 
   Double_t fwhm_MinimumX = fit_fwhm-> GetMinimumX() ; 
+  fprintf( stderr, "rts2_fit_focus.C FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
   printf( "FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
-  printf( "FWHM parameters p0...p2 %e %e %e, chi2 %e\n",fwhm_p0, fwhm_p1, fwhm_p2, fwhm_chi2) ; 
+  printf( "FWHM parameters: chi2 %e, p0...p2 %e %e %e\n", fwhm_chi2, fwhm_p0, fwhm_p1, fwhm_p2) ; 
   
-  // create second graph
+  // create second graph: FLUX
   // assuming constant flux, the (absolute) value of the maximum of the gaussian is solely a function of FWHM
   TGraph *gr2 = new TGraph(number_of_lines_flux,foc_pos_flux,flux);
   gr2-> SetMarkerColor(kRed);
   gr2-> SetMarkerStyle(20);
   TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 3);
-  fit_flux-> SetParameters(10., 1., 1.);
+  fit_flux-> SetParameters(100., 0., 5.); // a little bit of magic here
   fit_flux-> SetParNames("constant","offset", "exponent");
   gr2-> Fit(fit_flux,"q");
 
@@ -248,15 +228,16 @@ int main(int argc, char* argv[])
   Double_t flux_p4_err = fit_flux-> GetParError(4);
   Double_t flux_p5     = fit_flux-> GetParameter(5);
   Double_t flux_p5_err = fit_flux-> GetParError(5);
-  printf( "Result flux: chi2 %e,  p(0...5)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", flux_chi2, flux_p0, flux_p0_err, flux_p1, flux_p1_err, flux_p2, flux_p2_err, flux_p3, flux_p3_err, flux_p4, flux_p4_err, flux_p5, flux_p5_err) ;
+  fprintf(stderr,  "rts2_fit_focus.C: result flux: chi2 %e,  p(0...5)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", flux_chi2, flux_p0, flux_p0_err, flux_p1, flux_p1_err, flux_p2, flux_p2_err, flux_p3, flux_p3_err, flux_p4, flux_p4_err, flux_p5, flux_p5_err) ;
 
   // ToDo: this does not provide the correct result (its the minimum of the fwhm function !)
   // Double_t flux_MaximumX = flux-> GetMaximumX( fwhm_MinimumX-1000., fwhm_MinimumX+1000.) ; 
   // printf( "FLUX_FOCUS %f\n", flux_MaximumX ) ; 
   // using instead:
+  fprintf( stderr, "rts2_fit_focus.C: FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p1) ; 
   printf( "FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p1) ; 
   
-  //printf( "FLUX_FOCUS p0...p2 %f %f %f, chi2 %f\n",flux_p0, flux_p1, flux_p2, flux_chi2) ; 
+  printf( "FLUX parameters: chi2 %e, p0...p2 %e %e %e\n", flux_chi2, flux_p0, flux_p1, flux_p2) ; 
 
   // make the plot nicer
   // must follow mg-> Draw
