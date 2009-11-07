@@ -1,5 +1,9 @@
 0.7.5
 =====
+
+2009-11-07
+ * Added ROOT config check, rts2-fit-focus
+
 2009-11-06
  * Support for Astronomical Research Cameras (Leech controllers)
 

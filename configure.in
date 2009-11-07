@@ -127,7 +127,7 @@ AC_ARG_WITH(graphicsmagic,
 	*) graphicsmagic_config=${withval} ;;
 esac],[graphicsmagic_config="GraphicsMagick++-config"])
 
-AC_MSG_CHECKING(looking from GraphicsMagick++ library)
+AC_MSG_CHECKING(looking for GraphicsMagick++ library)
 if ${graphicsmagic_config} --libs > /dev/null 2>&1
 then
 	GRAPHICSMAGICK_VERS=`${graphicsmagic_config} --version`
@@ -136,6 +136,27 @@ else
 	GRAPHICSMAGICK_VERS="no"
 	AC_MSG_RESULT(${graphicsmagic_config} not found)
 	graphicsmagic_config="no"
+fi
+
+dnl Check for ROOT (to build contrib scripts)
+
+AC_ARG_WITH(cern-root,
+[  --with-cern-root        path to CERN ROOT config or "no" if it is not installed],
+[case "${withval}" in
+	yes) root_config="root-config" ;;
+	no)  root_config=no ;;
+	*) root_config=${withval} ;;
+esac],[root_config="root-config"])
+
+AC_MSG_CHECKING(looking for ROOT libraries)
+if ${root_config} --libs > /dev/null 2>&1
+then
+	ROOT_VERS=`${root_config} --version`
+	AC_MSG_RESULT(${ROOT_VERS} found)
+else
+	ROOT_VERS="no"
+	AC_MSG_RESULT(${root_config} not found)
+	root_config="no"
 fi
 
 dnl Check for the XML library
@@ -479,7 +500,7 @@ if test "x"$xfocusc = "xyes"; then
 	AC_SUBST([RTS2_XFOCUSC], ['rts2-xfocusc${EXEEXT}'])
 fi
 
-AH_TEMPLATE([HAVE_LIBJPEG],[Whenever JPEG is installed])
+AH_TEMPLATE([HAVE_LIBJPEG],[If GraphicsMagicsk++ is installed])
 
 if test "x${graphicsmagic_config}" != "xno"; then
   LIB_JPEG=`${graphicsmagic_config} --libs`
@@ -493,6 +514,21 @@ AC_SUBST(LIB_JPEG)
 AC_SUBST(JPEG_CFLAGS)
 
 AM_CONDITIONAL(GRAPHICSMAGICK, test x$graphicsmagic_config != xno)
+
+AH_TEMPLATE([HAVE_CERN_ROOT],[If CERN ROOT package is installed])
+
+if test "x${root_config}" != "xno"; then
+  LIB_ROOT=`${root_config} --libs`
+  ROOT_CXXFLAGS="-I `${root_config} --incdir`"
+  AC_DEFINE_UNQUOTED(HAVE_CERN_ROOT,1,[If CERN ROOT package is installed])
+else
+  LIB_ROOT=""
+  ROOT_CXXFLAGS=""
+fi
+AC_SUBST(LIB_ROOT)
+AC_SUBST(ROOT_CXXFLAGS)
+
+AM_CONDITIONAL(CERN_ROOT, test x$root_config != xno)
 
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
@@ -606,6 +642,7 @@ AC_OUTPUT([Makefile
 	   include/Makefile
 	   conf/Makefile
 	   conf/event.d/Makefile
+	   contrib/Makefile
 	   doc/Makefile
 	   doc/doxyfile
 	   scripts/Makefile
@@ -669,6 +706,7 @@ echo "
   epics         ${epics}
   libxml2       ${XMLVERS}
   graphicsmagic ${GRAPHICSMAGICK_VERS}
+  CERN ROOT     ${ROOT_VERS}
 
 
 CCD's:
