@@ -1118,7 +1118,7 @@ sub retrieve_data
     my $date_reference     = shift @_ ;
     my $ds9_region_file    = shift @_ ;
     my $find_rough_focus   = shift @_ ;
-    my $reference_fits_file= shift @_ ;
+    my $fits_file_reference= shift @_ ;
 
     my @lst_items= split(/\./, $sky_list) ;
     my $tmp_sky_list_file_name=  $lst_items[0]."-".$fltr."-".$date_reference.".".$lst_items[1];
@@ -1134,7 +1134,6 @@ sub retrieve_data
     my $tmp_file_name=  $ds9_items[0]."-".$fltr."-".$date.".".$ds9_items[1];
 
     my %sex_results ;
-    my $region_radius= 10. ; # radius region circles
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
     {
 # receive results from SExtractor
@@ -1220,17 +1219,17 @@ sub retrieve_data
 		open(DS9REGION, ">$tmp_ds9_file_name") or die "retrieve_data: can't write $tmp_ds9_file_name: $!" ;
 		printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
 		printf( DS9REGION "# Filename: $fits_file\n") ;
-		printf( DS9REGION "global color=yellow font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
+		printf( DS9REGION "global color=blue font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
 		printf( DS9REGION "image\n") ; # not physical
 		foreach my $reference_object_number (sort keys %{$sex_results{$fits_file}})
 		{
 		    if($sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS] != FALSE_VAL )
 		    {
+			my $region_radius= 1. * $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0] ;
 			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%d}\n", $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE],$sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE], $region_radius, $sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]) ;
 		    }
 		}
 		close( DS9REGION) ;
-		$region_radius +=1 ;
 ##ToDo:  it is a global   ??unitialized  $fits_directory?? 		$ds9_command= $ds9_command . " " . $fits_directory . "/" . $fits_file . " -region ". $tmp_ds9_file_name  ; 
 		$ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY} . "/" . $fits_file . " -region " . $tmp_ds9_file_name . " -region ". $tmp_file_name; 
 	    }
@@ -1337,7 +1336,6 @@ sub retrieve_data
     }
 # write ds9 region file: reference objects
 #
-    
     open(DS9REGION, ">$tmp_file_name") or die "Can't write $tmp_file_name: $!" ;
     printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
     printf( DS9REGION "# Filter: $fltr, $date\n") ;
@@ -1353,8 +1351,8 @@ sub retrieve_data
 	{
 	    printf("retrieve_data: object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
 	}
-	printf( DS9REGION "circle\(%f,%f,10.1\) # text = {%d}\n", $objects_found_in_all_files{$reference_object_number}[1], 
-                                                  $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number) ;
+	printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
+	printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number) ;
 
 	if( $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files)
 	{
@@ -1364,7 +1362,7 @@ sub retrieve_data
     close(DS9REGION) ;
 #    $default_configuration{C_FITS_DIRECTORY}
 #ToDo:  it is a global  ??unitialized  $fits_directory??   $ds9_command= $ds9_command . " " . $fits_directory . "/"  . $reference_fits_file . " -region ". $tmp_file_name  ; 
-    $ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY}  . "/"  . $reference_fits_file . " -region ". $tmp_file_name  ; 
+    $ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY}  . "/"  . $fits_file_reference . " -region ". $tmp_file_name  ; 
 
     print "retrieve_data: found $number_of_objects_found_in_all_files objects in all files\n" ;
 
