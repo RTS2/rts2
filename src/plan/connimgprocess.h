@@ -62,10 +62,17 @@ class ConnProcess:public rts2core::ConnFork
  *
  * Hence passing full image path will be sufficient for finding
  * it.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ConnImgProcess:public ConnProcess
 {
 	public:
+		/**
+		 *
+		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
+		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
+		 */
 		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
 		virtual ~ ConnImgProcess (void);
 

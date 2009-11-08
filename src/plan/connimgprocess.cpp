@@ -142,7 +142,8 @@ void ConnImgProcess::connectionError (int last_data_size)
 					image->writeAsJPEG (last_trash_jpeg, true);
 #endif
 				astrometryStat = TRASH;
-				image->toTrash ();
+				if (end_event <= 0)
+					image->toTrash ();
 				break;
 			case GET:
 #ifdef HAVE_LIBJPEG
@@ -151,7 +152,8 @@ void ConnImgProcess::connectionError (int last_data_size)
 #endif
 
 				image->setAstroResults (ra, dec, ra_err / 60.0, dec_err / 60.0);
-				image->toArchive ();
+				if (end_event <= 0)
+					image->toArchive ();
 				// send correction to telescope..
 				telescopeName = image->getMountName ();
 				try
@@ -185,7 +187,8 @@ void ConnImgProcess::connectionError (int last_data_size)
 				}
 				break;
 			case DARK:
-				image->toDark ();
+				if (end_event <= 0)
+					image->toDark ();
 				break;
 			default:
 				break;
