@@ -102,15 +102,14 @@ int Camera::box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *re
 {
 	// tests for -1 -> full size
 	if (_x == -1)
-		_x = chipSize->getXInt ();
+		_x = 0;
 	if (_y == -1)
-		_y = chipSize->getYInt ();
+		_y = 0;
 	if (_width == -1)
 		_width = chipSize->getWidthInt ();
 	if (_height == -1)
 		_height = chipSize->getHeightInt ();
-	if (_x < chipSize->getXInt () || _y < chipSize->getYInt ()
-		|| ((_x - chipSize->getXInt ()) + _width) > chipSize->getWidthInt ()
+	if (((_x - chipSize->getXInt ()) + _width) > chipSize->getWidthInt ()
 		|| ((_y - chipSize->getYInt ()) + _height) > chipSize->getHeightInt ())
 		return -1;
 	chipUsedReadout->setInts (_x, _y, _width, _height);
