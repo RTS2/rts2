@@ -123,6 +123,7 @@ int Arc::init ()
 		return ret;
 	try
 	{
+		controller.GetDeviceBindings ();
 		controller.OpenDriver (0, h * w * sizeof (unsigned int16_t));
 	        controller.SetupController( true,          // Reset Controller
 	                                     true,          // Test Data Link ( TDL )
@@ -130,10 +131,16 @@ int Arc::init ()
 	                                     h,      // Image row size
 	                                     w,      // Image col size
 	                                     timFile->getValue ());    // DSP timing file
+		setSize (controller.GetImageCols (), controller.GetImageRows (), 0, 0);
 	}
-	catch (std::exception ex)
+	catch (std::runtime_error &ex)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot initialize camera driver" << sendLog;
+		logStream (MESSAGE_ERROR) << "Failed to initialize camera:" << ex.what () << sendLog;
+		return -1;
+	}
+	catch (...)
+	{
+		logStream (MESSAGE_ERROR) << "Error: unknown exception occurred!!" << sendLog;
 		controller.CloseDriver ();
 		return -1;
 	}
@@ -142,7 +149,14 @@ int Arc::init ()
 
 int Arc::startExposure ()
 {
-	return 0;
+	try
+	{
+
+	}
+	catch (std::runtime_error &er)
+	{
+
+	}
 }
 
 int Arc::doReadout ()
