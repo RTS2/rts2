@@ -319,6 +319,7 @@ int TargetAuger::getScript (const char *device_name, std::string &buf)
 	if (!strcmp (device_name, "WF"))
 	{
 		std::ostringstream _os;
+	 	_os << "filter=B ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
 			_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") E 10 ";
