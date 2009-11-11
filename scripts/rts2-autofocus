@@ -85,6 +85,7 @@ use vars qw(
 'C_SEXCFG'            => "/etc/rts2/autofocus/sex-autofocus.cfg" ,
 'C_SEXPARAM'          => "/etc/rts2/autofocus/sex-autofocus.param" ,
 'C_SEXREFERENCE_PARAM'=> "/etc/rts2/autofocus/sex-autofocus-reference.param" ,
+'C_OBJECT_SEPARATION' => 20. , # [pixel]
 # set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
 #
 'C_SET_LIMITS_ON_SANITY_CHECKS'=> TRUE_STR ,
@@ -161,10 +162,12 @@ use constant FLUX_RADIUS_REF  => 26; # 27
 use constant ELLIPTICITY_REF  => 27; # 28
 use constant NUMBER_ASSOC     => 28; # Number of ASSOCiated IDs
 # used in @event_scalers
-use constant SELECTED    =>  0 ;
+use constant SELECTED           =>  0 ;
 use constant NOT_NUMBER_ASSOC   =>  1 ;
-use constant NOT_FLAGS_REF      =>  2 ;
-use constant NOT_ELLIPTICITY_REF=>  3 ;
+use constant NOT_FLAGS          =>  2 ;
+use constant NOT_ELLIPTICITY    =>  3 ;
+use constant NOT_FLAGS_REF      =>  4 ;
+use constant NOT_ELLIPTICITY_REF=>  5 ;
 # ##########################################################################################
 # begin default configuration
 # ##########################################################################################
@@ -202,17 +205,16 @@ use constant IND_NAXIS1_FILE          =>  3 ;
 use constant IND_NAXIS2_FILE          =>  4 ;
 use constant IND_ORIRA_FILE           =>  5 ;
 use constant IND_ORIDEC_FILE          =>  6 ;
-# indicees %sex_results
-use constant IND_SEX_FOC_POS          =>  0 ;
-use constant IND_SEX_DATA             =>  1 ;
-use constant IND_SEX_X_IMAGE          =>  2 ; 
-use constant IND_SEX_Y_IMAGE          =>  3 ; 
+# indicees %objects_selected
+use constant IND_SEL_FOC_POS          =>  0 ;
+use constant IND_SEL_DATA             =>  1 ;
+use constant IND_SEL_X_IMAGE          =>  2 ; 
+use constant IND_SEL_Y_IMAGE          =>  3 ; 
 # indicees %objects
 use constant IND_OBJ_FOC_POS          =>  0 ;
 use constant IND_OBJ_DATA             =>  1 ;
 use constant IND_OBJ_X_IMAGE          =>  2 ; 
 use constant IND_OBJ_Y_IMAGE          =>  3 ; 
-use constant IND_OBJ_NUMBER_OF_OBJECTS=>  4 ;
 # auxiliary constants
 use constant LOWER => 10 ;
 use constant UPPER => 11 ;
@@ -680,25 +682,9 @@ sub get_fitted_focus
     my @lst_items= split(/\./, $sky_list) ;
     my $tmp_sky_list_file_name=  $lst_items[0]."-".$fltr."-".$date_reference.".".$lst_items[1];
 
+# in order to have a reference list closer to the assumed focus, redo create_reference_catalogue, it is a cleaner approach too
+    $fits_file_reference= create_reference_catalogue( $fltr, $cfg, $param, $reference_param, $sky_list, $date_reference, $tmp_sky_list_file_name) ;
 
-    if( $find_rough_focus ne TRUE_STR) # if not done during rough focus run, we do it here
-    {
-	$fits_file_reference= create_reference_catalogue( $fltr, $cfg, $param, $reference_param, $sky_list, $date_reference, $tmp_sky_list_file_name) ;
-    }
-    else
-    {
-	if( ! defined rename( $catalogue_tmp, $tmp_sky_list_file_name))
-	{
-	    print "get_fitted_focus: could not rename $catalogue_tmp to $tmp_sky_list_file_name, exiting\n";
-	    exit 1 ;
-	}
-	else
-	{
-	    print "get_fitted_focus: renamed $catalogue_tmp to $tmp_sky_list_file_name\n";
-	}
-    }
-# define the number of reference objects
-#
     $number_of_reference_objects= analyse_catalogue( $tmp_sky_list_file_name) ;
 
     if( $fits_file_reference eq FALSE_STR)
@@ -1034,15 +1020,16 @@ sub get_foc_pos_at_maximum_number_of_objects
     }
     if( $maximum_objects> 0)
     {
-	if( ! defined rename( $catalogue_tmp_max, $catalogue_tmp))
-	{
-	    print "get_foc_pos_at_maximum_number_of_objects: could not rename $catalogue_tmp_max to $catalogue_tmp, exiting\n";
-	    exit 1 ;
-	}
-	else
-	{
-	    print "get_foc_pos_at_maximum_number_of_objects: renamed $catalogue_tmp_max to $catalogue_tmp, continuing\n";
-	}
+# redo the same thing use a foc_pos which is closer to the focal plane and modify only the $filter_focus_properties{$fltr}[IND_FOC_DEF] 
+#	if( ! defined rename( $catalogue_tmp_max, $catalogue_tmp))
+#	{
+#	    print "get_foc_pos_at_maximum_number_of_objects: could not rename $catalogue_tmp_max to $catalogue_tmp, exiting\n";
+#	    exit 1 ;
+#	}
+#	else
+#	{
+#	    print "get_foc_pos_at_maximum_number_of_objects: renamed $catalogue_tmp_max to $catalogue_tmp, continuing\n";
+#	}
 # calculate the weighted mean and compare it with the objects maximum 
 # 
 	my $mean  = $distribution->mean();
@@ -1098,13 +1085,131 @@ sub create_reference_catalogue
 	    last ;
 	}
     }
-# write the catalogue
+# create the catalogue (sky_list)
 #
     print "create_reference_catalogue: >>$fits_file_reference<<, if empty error\n" ;
-    open(SEXANALYSIS, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
-    while(<SEXANALYSIS>){}
-    close(SEXANALYSIS) ;
-    return $fits_file_reference;
+  
+    open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
+    while(<CREATELIST>){}
+    close(CREATELIST) ;
+    cleanup_catalogue($tmp_sky_list_file_name) ;
+
+   return $fits_file_reference;
+}
+sub cleanup_catalogue 
+{
+use constant IND_NUMBER      =>  0 ;
+use constant IND_X           =>  1 ;
+use constant IND_Y           =>  2 ;
+use constant IND_FLAGS       =>  3 ;
+use constant IND_ELLIPTICITY =>  4 ;
+
+    my $catalogue_file_name  = shift @_ ;
+# read the reference catalogue and remove objects which 
+# - are close together
+# - do not full fill selection criteria
+# The selection on the second criteria has to be carried out afterwards in order to find all neighbours
+    open(READLIST, "<$catalogue_file_name") or die "Can not open $catalogue_file_name: $!";
+
+    my @list_lines ;
+    my $removed_objects_distance= 0 ;
+    my $removed_objects_formal  = 0 ;
+    my %objects_coordinates ;
+    my $number_of_objects= 0 ;
+    my $number_of_lines= 0 ;
+    while(my $line= <READLIST>)
+    {
+	push( @list_lines, $line); # save it as it is
+	$number_of_lines++ ;
+
+	next if( ($list_lines[$#list_lines])=~ m/^#/) ;
+
+	my $line= $list_lines[$number_of_lines-1] ;
+	$line=~ s/[ \t\r\n]+/ /g ;
+	$line=~ s/^[ ]+//g ;
+	my @items= split(/[ ]+/, $line) ;
+	push( @{$objects_coordinates{$number_of_objects}},  ($items[NUMBER], $items[X_IMAGE], $items[Y_IMAGE], $items[FLAGS], $items[ELLIPTICITY])) ;
+	$number_of_objects++ ;
+    }
+    close(READLIST) ;
+    my $number_of_comment_lines= $number_of_lines- $number_of_objects ;
+
+    for( my $l=  $number_of_objects- 1 ; $l> -1 ; $l--)
+    {
+#	print "create_reference_catalogue: $objects_coordinates{$l}[0] $objects_coordinates{$l}[1] $objects_coordinates{$l}[2]\n" ;
+# compare the distances first to any object in the reference catalogue
+	for( my $ll= $number_of_objects- 1 ; $ll> $l ; $ll--)
+	{
+	    my $distance= sqrt(( $objects_coordinates{$ll}[IND_X]- $objects_coordinates{$l}[IND_X])**2 + ($objects_coordinates{$ll}[IND_Y]- $objects_coordinates{$l}[IND_Y])**2) ;
+	    if( $distance < $default_configuration{C_OBJECT_SEPARATION})
+	    {
+		if( $verbose eq TRUE_STR)
+		{
+		    print "cleanup_catalogue: removing  $#list_lines, (>$l<><$objects_coordinates{$l}[IND_NUMBER]), (>$ll<>$objects_coordinates{$ll}[IND_NUMBER]<), ($objects_coordinates{$ll}[IND_X]-  $objects_coordinates{$l}[IND_X]) ($objects_coordinates{$ll}[IND_Y]-  $objects_coordinates{$l}[IND_Y]), $distance\n" ;
+		}
+# order is important
+		splice(@list_lines, $ll+ ($number_of_comment_lines-$removed_objects_distance), 1) ; # $ll>$l
+		$removed_objects_distance++ ;
+		splice(@list_lines, $l + $number_of_comment_lines, 1) ; # remove both objects
+		$removed_objects_distance++ ; 		
+	    }
+	}
+    }
+# clean up the rest
+# this has to be done afterwards since overlapping of any object has to be avoided
+    for( my $l=  $#list_lines- 1 ; $l>  $number_of_comment_lines-1 ; $l--)
+    {
+	next if( ($list_lines[$#list_lines])=~ m/^#/) ;
+
+	my $line= $list_lines[$l] ;
+	$line=~ s/[ \t\r\n]+/ /g ;
+	$line=~ s/^[ ]+//g ;
+	my @items= split(/[ ]+/, $line) ;#
+
+	if( catalogue_analysis( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
+	{
+	    if( $verbose eq TRUE_STR)
+	    {
+		print "cleanup_catalogue: removing  formal (>$l +1<>==<$objects_coordinates{$l}[IND_NUMBER])>)\n" ;
+	    }
+	    splice(@list_lines, $l, 1) ;
+	    $removed_objects_formal++ ;
+	}
+	else
+	{
+	    if( $verbose eq TRUE_STR)
+	    {
+		print "cleaning_catalogue: included  $list_lines[$l]" ;
+	    }
+	}
+    }
+# over write the list
+    open(WRITELIST, ">$catalogue_file_name") or die "Can not open $catalogue_file_name: $!";
+
+    for( my $l= 0 ; $l< $#list_lines+ 1 ; $l++)
+    {
+	printf( WRITELIST $list_lines[$l]) ;
+    }
+    close(WRITELIST) ;
+
+    print "cleanup_catalogue: removed $removed_objects_distance, $removed_objects_formal of $number_of_objects\n";
+    return ;
+}
+#ToDo: make it uniform with the raw_analysis subroutine
+sub catalogue_analysis
+{
+    my $flags       = shift @_  ;
+    my $ellipticity = shift @_  ;
+    
+    if( $flags != 0)     # mandatory, FLAGS
+    {
+	return NOT_FLAGS ;
+    }
+    if(  $ellipticity> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
+    {
+	return NOT_ELLIPTICITY ;
+    }
+    return SELECTED;
 }
 sub retrieve_data
 {
@@ -1133,7 +1238,8 @@ sub retrieve_data
     my @ds9_items= split(/\./, $ds9_region_file) ;
     my $tmp_file_name=  $ds9_items[0]."-".$fltr."-".$date.".".$ds9_items[1];
 
-    my %sex_results ;
+    my %objects_selected ;
+    my %objects_all ; # used to calculte the distances from the refrences objects
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
     {
 # receive results from SExtractor
@@ -1144,6 +1250,7 @@ sub retrieve_data
 	open(SEXANALYSIS, $default_configuration{C_SEXPRG}." $fits_file -c $cfg -CATALOG_NAME $tmp_cat_file_name -PARAMETERS_NAME $param -ASSOC_NAME $tmp_sky_list_file_name|") or die "retrieve_data: can't start $default_configuration{C_SEXPRG}: $!";
 	while(<SEXANALYSIS>){}
 	close(SEXANALYSIS) ;
+# NO	cleanup_catalogue($tmp_cat_file_name) ;
 ##	print "extracting from file $fits_file, with configuration -c $cfg -CATALOG_NAME $cat-$fits_files{$fits_file}[IND_FOC_POS_FILE] -PARAMETERS_NAME $param -ASSOC_NAME $tmp_sky_list_file_name\n" ;
 # open the result file, ToDo not good at the moment
 #
@@ -1155,8 +1262,9 @@ sub retrieve_data
 
 	my $number_of_objects= 0 ;
 	my $number_of_selected_objects= 0 ;
+	my $object_number ;
 	my $reference_object_number ;
-	my @event_scalers=(0, 0, 0, 0) ;
+	my @event_scalers=(0, 0, 0, 0, 0, 0) ;
 	while(my $line=<SEXINPUT>)
 	{
 	    next if( $line=~ m/^#/) ; 
@@ -1165,21 +1273,28 @@ sub retrieve_data
 	    my @items= split(/[ ]+/, $line) ;
 
 	    $reference_object_number= $items[NUMBER_REF]; 
-	    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]= FALSE_VAL ;
-	    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE]= FALSE_VAL ;
-	    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE]= FALSE_VAL ;
-	    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]= FALSE_VAL ;
-	    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]= FALSE_VAL ;
+	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
+	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
+	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
+	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= FALSE_VAL ;
+	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= FALSE_VAL ;
+
+	    $object_number= $items[NUMBER_REF]; 
+	    $objects_all{$fits_file}{$object_number}[IND_SEL_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ; # currently not used
+	    $objects_all{$fits_file}{$object_number}[IND_SEL_X_IMAGE]= $items[X_IMAGE];
+	    $objects_all{$fits_file}{$object_number}[IND_SEL_Y_IMAGE]= $items[Y_IMAGE];
+	    $objects_all{$fits_file}{$object_number}[IND_SEL_DATA][0]= $items[FWHM_IMAGE] ; # currently not used 
+	    $objects_all{$fits_file}{$object_number}[IND_SEL_DATA][1]= $items[FLUX_MAX]   ; # currently not used
 # select the good objects according to sextractor properties
 #
 	    my $ret= raw_analysis( @items) ; # select good objects
 	    if( $ret== SELECTED)
 	    {
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ;
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE]= $items[X_IMAGE];
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE]= $items[Y_IMAGE];
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]= $items[FWHM_IMAGE] ; # this is the quantity to be fitted
-		$sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]= $items[FLUX_MAX]   ; # this is the quantity to be fitted
+		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= $fits_files{$fits_file}[IND_FOC_POS_FILE] ;
+		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= $items[X_IMAGE];
+		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= $items[Y_IMAGE];
+		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= $items[FWHM_IMAGE] ; # this is the quantity to be fitted
+		$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= $items[FLUX_MAX]   ; # this is the quantity to be fitted
 
 		$number_of_selected_objects++ ;
 	    }
@@ -1191,23 +1306,23 @@ sub retrieve_data
 	if( $number_of_objects> 0)
 	{
 	    printf("retrieve_data: $fits_file: fil: %3s, foc: %5d ", $fltr, $fits_files{$fits_file}[IND_FOC_POS_FILE]) ;
-	    print "scalers: " ;
+	    print "scalers: $#event_scalers" ;
 # sex.cfg is configured to write only MATCHED objects
 	    for( my $reason=0; $reason < $#event_scalers+1; $reason++)
 	    {
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
-	    printf("(sel./ref.) objects: %6.3f\n", $number_of_selected_objects/$number_of_reference_objects) ;
+	    printf("(sel./ref.): %6.3f\n", $number_of_selected_objects/$number_of_reference_objects) ;
 
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < $default_configuration{C_SELECT_RATIO})
 	    {
-		foreach my $reference_object_number( keys %{$sex_results{$fits_file}})
+		foreach my $reference_object_number( keys %{$objects_selected{$fits_file}})
 		{
-		    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]= FALSE_VAL ;
-		    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE]= FALSE_VAL ;
-		    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE]= FALSE_VAL ;
-		    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]= FALSE_VAL ;
-		    $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]= FALSE_VAL ;
+		    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
+		    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
+		    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
+		    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]= FALSE_VAL ;
+		    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]= FALSE_VAL ;
 		}
 		$number_of_images_at_foc_pos{ $fits_files{$fits_file}[IND_FOC_POS_FILE]}-- ;
 		$number_of_fits_files-- ;
@@ -1221,12 +1336,12 @@ sub retrieve_data
 		printf( DS9REGION "# Filename: $fits_file\n") ;
 		printf( DS9REGION "global color=blue font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
 		printf( DS9REGION "image\n") ; # not physical
-		foreach my $reference_object_number (sort keys %{$sex_results{$fits_file}})
+		foreach my $reference_object_number (sort keys %{$objects_selected{$fits_file}})
 		{
-		    if($sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS] != FALSE_VAL )
+		    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
 		    {
-			my $region_radius= 1. * $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0] ;
-			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%d}\n", $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE],$sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE], $region_radius, $sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]) ;
+			my $region_radius= 1. * $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
+			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
 		    }
 		}
 		close( DS9REGION) ;
@@ -1248,76 +1363,72 @@ sub retrieve_data
 # count the objects
 #
     print "retrieve_data: Select objects which appeared in all files!\n" ;
-    my %objects ;
+    my %objects_tmp ;
     my %number_per_object ;
-    foreach my $fits_file ( keys %sex_results)
+    foreach my $fits_file ( keys %objects_selected)
     {
-	foreach my $reference_object_number ( keys %{$sex_results{$fits_file}})
+	foreach my $reference_object_number ( keys %{$objects_selected{$fits_file}})
 	{
-	    if($sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS] != FALSE_VAL)
+	    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL)
 	    {
 		$number_per_object{$reference_object_number}= 0 ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]= FALSE_VAL;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0]= 0;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1]= 0;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE]= FALSE_VAL;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE]= FALSE_VAL;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_NUMBER_OF_OBJECTS]= 0;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]= FALSE_VAL;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0]= 0;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1]= 0;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE]= FALSE_VAL;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE]= FALSE_VAL;
 	    }
 	}
     }
-    my $number_of_data_points= 0 ;
-    foreach my $fits_file ( keys %sex_results)
+    foreach my $fits_file ( keys %objects_selected)
     {
-	foreach my $reference_object_number ( sort keys %{$sex_results{$fits_file}})
+	foreach my $reference_object_number ( sort keys %{$objects_selected{$fits_file}})
 	{
-	    if($sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS] != FALSE_VAL)
+	    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL)
 	    {
 		$number_per_object{$reference_object_number}++ ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_NUMBER_OF_OBJECTS]++ ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] = $sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS] ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0]+= $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0] ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1]+= $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1] ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] = $sex_results{$fits_file}{$reference_object_number}[IND_SEX_X_IMAGE] ;
-		$objects{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] = $sex_results{$fits_file}{$reference_object_number}[IND_SEX_Y_IMAGE] ;
-		$number_of_data_points++ ;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] ;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1] ;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE] ;
+		$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] = $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE] ;
 	    }
 	}
     }
-    print "retrieve_data: number of fits files $number_of_fits_files, data points $number_of_data_points\n" ;
+    print "retrieve_data: number of fits files $number_of_fits_files\n" ;
 # define those objects which appeared in all files
 # fit the obtained DATA values 
 #
     my %objects_found_in_all_files ;
-    foreach my $reference_object_number ( keys %objects)
+    foreach my $reference_object_number ( keys %objects_tmp)
     {
 	if( $verbose eq TRUE_STR)
 	{
 	    printf( "retrieve_data: filter %3s, number per object %5s: %4d\n", $fltr, $reference_object_number, $number_per_object{$reference_object_number}) ;
 	}
-	foreach my $fits_file ( keys %{$objects{$reference_object_number}})
+	foreach my $fits_file ( keys %{$objects_tmp{$reference_object_number}})
 	{
 	    if( $number_per_object{$reference_object_number}== $number_of_fits_files) # object must appear in all files
 	    {
 		# the fits file names appear still in the lists, so they are here neglected
-		if( $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] != FALSE_VAL)
+		if( $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS] != FALSE_VAL)
 		{
-		    if( $number_of_images_at_foc_pos{ $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]} >0)
+		    if( $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]} >0)
 		    {
 # creating the data point,  
 #                       %data_points
-			${$_[0]}{$sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]}[0] += $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][0]/ $number_of_images_at_foc_pos{ $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
-			${$_[0]}{$sex_results{$fits_file}{$reference_object_number}[IND_SEX_FOC_POS]}[1] += $sex_results{$fits_file}{$reference_object_number}[IND_SEX_DATA][1]/ $number_of_images_at_foc_pos{ $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
+			${$_[0]}{$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]}[0] += $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0]/ $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
+			${$_[0]}{$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]}[1] += $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][1]/ $number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}; # sum data
 # book keeping:
 			$objects_found_in_all_files{$reference_object_number}[0]++ ;
-			$objects_found_in_all_files{$reference_object_number}[1]    = $objects{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] ;
-			$objects_found_in_all_files{$reference_object_number}[2]    = $objects{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] ;
-			$objects_found_in_all_files{$reference_object_number}[3][0]+= $objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0] ;
-			$objects_found_in_all_files{$reference_object_number}[4][1]+= $objects{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1] ;
+			$objects_found_in_all_files{$reference_object_number}[1]    = $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_X_IMAGE] ;
+			$objects_found_in_all_files{$reference_object_number}[2]    = $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_Y_IMAGE] ;
+			$objects_found_in_all_files{$reference_object_number}[3][0]+= $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][0] ;
+			$objects_found_in_all_files{$reference_object_number}[4][1]+= $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_DATA][1] ;
 		    }
 		    else
 		    {
-			 printf "retrieve_data: $fits_file, foc_pos=$objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS], object $reference_object_number has number of images >>$number_of_images_at_foc_pos{ $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}<<\n" ;
+			 printf "retrieve_data: attention $fits_file, foc_pos=$objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS], object $reference_object_number has number of images >>$number_of_images_at_foc_pos{ $objects_tmp{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]}<<\n" ;
 		    }
 		}
 		else
@@ -1351,8 +1462,8 @@ sub retrieve_data
 	{
 	    printf("retrieve_data: object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
 	}
-	printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
-	printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number) ;
+	printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_tmp{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
+	printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d %6.1f %6.1f}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number, $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2]) ;
 
 	if( $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files)
 	{
@@ -1486,7 +1597,7 @@ sub read_configuration
 	    {
 #		if($verbose eq TRUE_STR)
 #		{
-		    printf ( "read_configuration: parameter %-29s $default_configuration{\"C_$identifier\"} superseeded by $value\n", $identifier) ;
+		    printf ( "read_configuration: parameter %-29s $default_configuration{\"C_$identifier\"} superseded by $value\n", $identifier) ;
 #		}
 		$default_configuration{"C_".$identifier}= $value ;	
 	    }
@@ -1495,7 +1606,7 @@ sub read_configuration
 	{
 	    if($verbose eq TRUE_STR)
 	    {
-		print "read_configuration: focuser parameter $identifier $focuser_properties{$identifier} superseeded by $value\n" ;
+		print "read_configuration: focuser parameter $identifier $focuser_properties{$identifier} superseded by $value\n" ;
 	    }
 	    $focuser_properties{$identifier}= $value ;	
 	}
@@ -1516,7 +1627,7 @@ sub read_configuration
 	    }
 	    if($verbose eq TRUE_STR)
 	    {
-		print "read_configuration: for filter $identifier values superseeded by " ;
+		print "read_configuration: for filter $identifier values superseded by " ;
 	        foreach my $number ( @{$filter_focus_properties{$identifier}})
 	        {
 		    print "$number, " ;
