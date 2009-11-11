@@ -80,6 +80,8 @@ class Arc:public Camera
 
 		int configWord;
 
+		int lastPixelCount;
+
 		int do_controller_setup ();
 		int shutter_position ();
 #else
@@ -236,6 +238,8 @@ int Arc::startExposure ()
 		return -1;
 	}
 
+	lastPixelCount = 0;
+
 	return 0;
 #else
 	try
@@ -269,14 +273,14 @@ int Arc::doReadout ()
 	int currentPixelCount;
 	ioctl (pci_fd, ASTROPCI_GET_PROGRESS, &currentPixelCount);
 
-	std::cout << currentPixelCount << std::endl;
-
-	if (currentPixelCount == chipUsedSize ())
+	if (currentPixelCount > lastPixelCount)
 	{
-		sendReadoutData ((char *) mem_fd, currentPixelCount * 2);
-		return -2;
+		sendReadoutData ((char *) (mem_fd + lastPixelCount), (currentPixelCount - lastPixelCount) * 2);
+		if (currentPixelCount == chipUsedSize ())
+			return -2;
+		lastPixelCount = currentPixelCount;
 	}
-	return USEC_SEC / 4.0;
+	return USEC_SEC / 8.0;
 #else
 	return -2;
 #endif
