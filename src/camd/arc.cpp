@@ -28,6 +28,8 @@
 #include "Memory.h"
 #include "ErrorString.h"
 
+#include <sys/ioctl.h>
+
 #define HARDWARE_DATA_MAX	1000000
 
 #else
@@ -57,6 +59,7 @@ class Arc:public Camera
 		int init ();
 
 		virtual int startExposure ();
+		virtual long isExposing ();
 		virtual int doReadout ();
 
 	private:
@@ -69,9 +72,6 @@ class Arc:public Camera
 		HANDLE pci_fd;
 		unsigned short *mem_fd;
 
-		int cols;
-		int rows;
-
 		int num_pci_tests;
 		int num_tim_tests;
 		int num_util_tests;
@@ -81,6 +81,7 @@ class Arc:public Camera
 		int configWord;
 
 		int do_controller_setup ();
+		int shutter_position ();
 #else
 		arc::CController controller;
 		long lDeviceNumber;
@@ -94,8 +95,6 @@ using namespace rts2camd;
 Arc::Arc (int argc, char **argv):Camera (argc, argv)
 {
 #ifdef ARC_API_1_7
-	rows = cols = 80;
-
 	num_pci_tests = 1055;
 	num_tim_tests = 1055;
 	num_util_tests = 10;
@@ -103,6 +102,7 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	lDeviceNumber = 0;
 #endif
 
+	createExpType ();
 	createTempCCD ();
 	createValue (timFile, "dsp_timing", "DSP timing file", false);
 
@@ -179,10 +179,12 @@ int Arc::init ()
 	pci_fd = openDriver("/dev/astropci0");
 
 	int bufferSize = w * h * 2;
-	if ((mem_fd = create_memory(pci_fd, rows, cols, bufferSize)) == NULL) {
+	if ((mem_fd = create_memory(pci_fd, w, h, bufferSize)) == NULL) {
 		logStream (MESSAGE_ERROR) << "Unable to create image buffer: 0x" << mem_fd << " (0x" << std::hex << mem_fd << ")%" << sendLog;
 		return -1;
 	}
+
+	setSize (w, h, 0, 0);
 
 	return do_controller_setup ();
 #else
@@ -216,22 +218,68 @@ int Arc::init ()
 int Arc::startExposure ()
 {
 #ifdef ARC_API_1_7
+	if (shutter_position () == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "ERROR: Setting shutter position failed: 0x" << std::hex << getError ();
+		return -1;
+	}
+
+	if (doCommand1 (pci_fd, TIM_ID, SET, getExposure () * 1000.0, DON) == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "ERROR: Setting exposure time failed: 0x" << std::hex << getError ();
+		return -1;
+	}
+
+	if (doCommand (pci_fd, TIM_ID, SEX, DON) == _ERROR)
+	{
+		logStream (MESSAGE_ERROR) << "ERROR: Starting exposure failed -> 0x" << std::hex << getError ();
+		return -1;
+	}
+
 	return 0;
 #else
 	try
 	{
-
+		return 0;
 	}
 	catch (std::runtime_error &er)
 	{
-		return 0;
+		return -1;
 	}
+#endif
+}
+
+long Arc::isExposing ()
+{
+#ifdef ARC_API_1_7
+	int status = (getHstr (pci_fd) & HTF_BITS) >> 3;
+
+	if (status != READOUT)
+		return Camera::isExposing ();
+
+	return 0;
+#else
+	return Camera::isExposing ();
 #endif
 }
 
 int Arc::doReadout ()
 {
+#ifdef ARC_API_1_7
+	int currentPixelCount;
+	ioctl (pci_fd, ASTROPCI_GET_PROGRESS, &currentPixelCount);
+
+	std::cout << currentPixelCount << std::endl;
+
+	if (currentPixelCount == chipUsedSize ())
+	{
+		sendReadoutData ((char *) mem_fd, currentPixelCount * 2);
+		return -2;
+	}
+	return USEC_SEC / 4.0;
+#else
 	return -2;
+#endif
 }
 
 #ifdef ARC_API_1_7
@@ -291,15 +339,15 @@ int Arc::do_controller_setup ()
 	/* -----------------------------------
 	   SET DIMENSIONS
 	   ----------------------------------- */
-	logStream (MESSAGE_DEBUG) << "Setting image columns " << cols;
-	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 1), cols, DON) == _ERROR)
+	logStream (MESSAGE_DEBUG) << "Setting image columns " << getUsedWidth () << sendLog;
+	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 1), getUsedWidth (), DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "Failed setting image collumns -> 0x" << std::hex << getError() << sendLog;
 		return -1;
 	}
 
-	logStream (MESSAGE_DEBUG) << "Setting image rows " << cols;
-	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 2), rows, DON) == _ERROR)
+	logStream (MESSAGE_DEBUG) << "Setting image rows " << getUsedHeight () << sendLog;
+	if (doCommand2(pci_fd, TIM_ID, WRM, (Y | 2), getUsedHeight (), DON) == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "Failed setting image rows -> 0x" << std::hex << getError() << sendLog;
 		return -1;
@@ -311,6 +359,24 @@ int Arc::do_controller_setup ()
 	configWord = doCommand(pci_fd, TIM_ID, RCC, UNDEFINED);
 
 	return 0;
+}
+
+int Arc::shutter_position ()
+{
+	int currentStatus = doCommand1(pci_fd, TIM_ID, RDM, (X | 0), UNDEFINED);
+
+	if (getExpType () == 0)
+	{
+		if (doCommand2(pci_fd, TIM_ID, WRM, (X | 0), (currentStatus | _OPEN_SHUTTER_), DON) == _ERROR)
+			return _ERROR;
+	}			
+	else
+	{
+		if (doCommand2(pci_fd, TIM_ID, WRM, (X | 0), (currentStatus & _CLOSE_SHUTTER_), DON) == _ERROR)
+			return _ERROR;
+	}
+
+	return _NO_ERROR;
 }
 #endif
 
