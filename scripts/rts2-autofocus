@@ -187,6 +187,10 @@ sub raw_analysis(\@)
     {
 	return NOT_ELLIPTICITY_REF ;
     }
+    if( $items[ELLIPTICITY]> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
+    {
+	return NOT_ELLIPTICITY ;
+    }
     return SELECTED;
 }
 # ##########################################################################################
@@ -1020,17 +1024,9 @@ sub get_foc_pos_at_maximum_number_of_objects
     }
     if( $maximum_objects> 0)
     {
-# redo the same thing use a foc_pos which is closer to the focal plane and modify only the $filter_focus_properties{$fltr}[IND_FOC_DEF] 
-#	if( ! defined rename( $catalogue_tmp_max, $catalogue_tmp))
-#	{
-#	    print "get_foc_pos_at_maximum_number_of_objects: could not rename $catalogue_tmp_max to $catalogue_tmp, exiting\n";
-#	    exit 1 ;
-#	}
-#	else
-#	{
-#	    print "get_foc_pos_at_maximum_number_of_objects: renamed $catalogue_tmp_max to $catalogue_tmp, continuing\n";
-#	}
-# calculate the weighted mean and compare it with the objects maximum 
+# create later the reference catalog at the position near mean
+# calculate the weighted mean and compare it with the objects 
+# maximum and set only $filter_focus_properties{$fltr}[IND_FOC_DEF] 
 # 
 	my $mean  = $distribution->mean();
 	print "get_foc_pos_at_maximum_number_of_objects: weighted mean $mean [ticks]\n" ;
@@ -1138,6 +1134,7 @@ use constant IND_ELLIPTICITY =>  4 ;
     {
 #	print "create_reference_catalogue: $objects_coordinates{$l}[0] $objects_coordinates{$l}[1] $objects_coordinates{$l}[2]\n" ;
 # compare the distances first to any object in the reference catalogue
+	my $remove_this= FALSE_VAL ;
 	for( my $ll= $number_of_objects- 1 ; $ll> $l ; $ll--)
 	{
 	    my $distance= sqrt(( $objects_coordinates{$ll}[IND_X]- $objects_coordinates{$l}[IND_X])**2 + ($objects_coordinates{$ll}[IND_Y]- $objects_coordinates{$l}[IND_Y])**2) ;
@@ -1145,16 +1142,24 @@ use constant IND_ELLIPTICITY =>  4 ;
 	    {
 		if( $verbose eq TRUE_STR)
 		{
-		    print "cleanup_catalogue: removing  $#list_lines, (>$l<><$objects_coordinates{$l}[IND_NUMBER]), (>$ll<>$objects_coordinates{$ll}[IND_NUMBER]<), ($objects_coordinates{$ll}[IND_X]-  $objects_coordinates{$l}[IND_X]) ($objects_coordinates{$ll}[IND_Y]-  $objects_coordinates{$l}[IND_Y]), $distance\n" ;
+		print "cleanup_catalogue: $#list_lines $ll $number_of_comment_lines, $removed_objects_distance removing  $#list_lines, (>$l<>$objects_coordinates{$l}[IND_NUMBER]<), (>$ll<>$objects_coordinates{$ll}[IND_NUMBER]<), ($objects_coordinates{$ll}[IND_X]-  $objects_coordinates{$l}[IND_X]) ($objects_coordinates{$ll}[IND_Y]-  $objects_coordinates{$l}[IND_Y]), $distance\n" ;
 		}
-# order is important
-		splice(@list_lines, $ll+ ($number_of_comment_lines-$removed_objects_distance), 1) ; # $ll>$l
-		$removed_objects_distance++ ;
-		splice(@list_lines, $l + $number_of_comment_lines, 1) ; # remove both objects
-		$removed_objects_distance++ ; 		
+# there might be more than just one
+		if( ($ll + $number_of_comment_lines) < $#list_lines) # in %objects_coordinates all objects are always present
+		{
+		    splice(@list_lines, $ll+ $number_of_comment_lines, 1) ; # $ll>$l, order is important
+		    $removed_objects_distance++ ;
+		}
+		$remove_this= TRUE_VAL ; # in case $l is in the vicinity of $ll, then it must go too
 	    }
 	}
+	if( $remove_this== TRUE_VAL)
+	{
+	    splice(@list_lines, $l + $number_of_comment_lines, 1) ; # remove both objects
+	    $removed_objects_distance++ ;
+	} 		
     }
+
 # clean up the rest
 # this has to be done afterwards since overlapping of any object has to be avoided
     for( my $l=  $#list_lines- 1 ; $l>  $number_of_comment_lines-1 ; $l--)
