@@ -1,5 +1,8 @@
 /* include/config.h.in.  Generated from configure.in by autoheader.  */
 
+/* If ARC version 1.7 is used */
+#undef ARC_API_1_7
+
 /* Default centrald port */
 #undef CENTRALD_PORT
 
