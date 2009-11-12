@@ -66,6 +66,9 @@ class Arc:public Camera
 		int w;
 		int h;
 
+		Rts2ValueInteger *biasWidth;
+		Rts2ValueInteger *biasPosition;
+
 		Rts2ValueString *timFile;
 
 #ifdef ARC_API_1_7
@@ -106,6 +109,12 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 
 	createExpType ();
 	createTempCCD ();
+
+	createValue (biasWidth, "bias_width", "Width of bias", true);
+	biasWidth->setValueInteger (0);
+	createValue (biasPosition, "bias_position", "Position of bias", true);
+	biasPosition->setValueInteger (0);
+
 	createValue (timFile, "dsp_timing", "DSP timing file", false);
 
 	addOption ('n', NULL, 1, "Device number (default 0)");
@@ -220,6 +229,38 @@ int Arc::init ()
 int Arc::startExposure ()
 {
 #ifdef ARC_API_1_7
+  	// set readout area..
+	if (chipUsedReadout->wasChanged ())
+	{
+		int biasOffset        = 0; //biasPosition - subImageCenterCol - subImageWidth/2;
+		
+		// Set the new image dimensions
+		logStream (MESSAGE_ERROR) << "Updating image columns " << chipUsedReadout->getWidthInt () << ", rows " << chipUsedReadout->getHeightInt () << sendLog;
+
+		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 1), chipUsedReadout->getWidthInt () + biasWidth, DON ) == _ERROR )
+		{
+			logStream (MESSAGE_ERROR) << "Failed to set image columns -> 0x" << std::hex << getError() << sendLog;
+			return -1;
+		}
+
+		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 2), chipUsedReadout->getHeightInt (), DON ) == _ERROR )
+		{
+			logStream (MESSAGE_ERROR) << "Failed to set image rows -> 0x" << std::hex << getError() << sendLog;
+			return -1;
+		}
+
+		if ( doCommand3( pci_fd, TIM_ID, SSS, biasWidth->getValueInteger (), chipUsedReadout->getWidthInt (), chipUsedReadout->getHeightInt (), DON ) == _ERROR )
+		{
+			logStream (MESSAGE_ERROR) << "Failed to set image bias width etc.. -> 0x" << std::hex << getError() << sendLog;
+			return -1;
+		}
+
+		if ( doCommand3( pci_fd, TIM_ID, SSP, chipUsedReadout->getXInt (), chipUsedReadout->getYInt (), biasOffset, DON ) == _ERROR )
+		{
+			logStream (MESSAGE_ERROR) << "Failed to send sub-array POSITION info -> 0x" << std::hex << getError() << sendLog;
+			return -1;
+		}
+	}
 	if (shutter_position () == _ERROR)
 	{
 		logStream (MESSAGE_ERROR) << "ERROR: Setting shutter position failed: 0x" << std::hex << getError ();
