@@ -65,11 +65,15 @@ rts2_sensor_bootes1_SOURCES = bootes1.cpp
 rts2_sensor_aag_SOURCES = aag.cpp
 
 if COMEDI
-bin_PROGRAMS += rts2-sensor-bootes2
+bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
 
 rts2_sensor_bootes2_SOURCES = bootes2.cpp
 rts2_sensor_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
 rts2_sensor_bootes2_CPPFLAGS = @INC_COMEDI@
+
+rts2_sensor_lpnhe_SOURCES = lpnhe.cpp
+rts2_sensor_lpnhe_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_sensor_lpnhe_CPPFLAGS = @INC_COMEDI@
 
 else
 EXTRA_DIST += bootes2.cpp
