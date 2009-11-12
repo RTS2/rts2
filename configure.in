@@ -252,7 +252,19 @@ LIB_ARC="-L${ARC}/Release -lCController";
 INC_ARC="-I${ARC}",
 [ARC=no])
 
-AM_CONDITIONAL(ARC, test x$ARC != xno)
+AH_TEMPLATE([ARC_API_1_7],[If ARC version 1.7 is used])
+AC_ARG_WITH(arc-1-7,
+[  --with-arc-1-7          path to Astronomical Research Cameras headers, version 1.7. You can download them from http://www.astro-cam.com/arcpage.php?txt=software.php (you will need to get password from ARC).],
+ARC_1_7="${withval}";
+LIB_ARC="-lastropciAPI";
+INC_ARC="-I${ARC_1_7}/src",
+[ARC_1_7=no])
+
+if test x$ARC_1_7 != xno; then
+	AC_DEFINE_UNQUOTED([ARC_API_1_7],1,[If ARC version 1.7 is used])
+fi
+
+AM_CONDITIONAL(ARC, test x$ARC != xno -o x$ARC_1_7 != xno)
 AC_SUBST(ARC)
 AC_SUBST(LIB_ARC)
 AC_SUBST(INC_ARC)
