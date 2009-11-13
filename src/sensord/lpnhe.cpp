@@ -21,6 +21,8 @@
 
 #include <comedilib.h>
 
+#define FILTER_PULSE  USEC_SEC / 2
+
 namespace rts2sensord
 {
 
@@ -37,22 +39,38 @@ class LPNHE: public Sensor
 		LPNHE (int argc, char **argv);
 		virtual ~LPNHE ();
 
+		virtual int info ();
+
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
-		virtual int info ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 	private:
 		comedi_t *comediDevice;
 		const char *comediFile;
 
 		Rts2ValueDouble *humidity;
+		Rts2ValueDouble *vacuum;
 		Rts2ValueSelection *filter;
 
 		Rts2ValueBool *filterHomed;
 		Rts2ValueBool *filterMoving;
+		Rts2ValueBool *shutter;
 	
 		int filterChange (int num);
+
+		/**
+		 * Returns volts from the device.
+		 *
+		 * @param subdevice Subdevice number.
+		 * @param channel   Channel number.
+		 * @param volts     Returned volts.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int getVolts (int subdevice, int channel, double &volts);
 };
 
 }
@@ -67,7 +85,7 @@ int LPNHE::processOption (int _opt)
 			comediFile = optarg;
 			break;
 		default:
-			return SensorWeather::processOption (_opt);
+			return Sensor::processOption (_opt);
 	}
 	return 0;
 }
@@ -86,8 +104,15 @@ int LPNHE::init ()
 		return -1;
 	}
 
+	int subtype = comedi_get_subdevice_type (comediDevice, 2);
+	if (subtype != COMEDI_SUBD_DIO)
+	{
+		logStream (MESSAGE_ERROR) << "Subdevice 2 is not a digital I/O device" << sendLog;
+		return -1;
+	}
+
 	/* input port - sensors - subdevice 3 */
-	int subdev = 3;
+	int subdev = 2;
 	for (int i = 0; i < 8; i++)
 	{
 		ret = comedi_dio_config (comediDevice, subdev, i, COMEDI_INPUT);
@@ -98,6 +123,7 @@ int LPNHE::init ()
 			return -1;
 		}
 	}
+	sleep (2);
 	/* output port - roof - subdevice 2 */
 	subdev = 2;
 	ret = comedi_dio_config (comediDevice, subdev, 0, COMEDI_OUTPUT);
@@ -107,15 +133,38 @@ int LPNHE::init ()
 			<< " channel 0, error " << ret << sendLog;
 		return -1;
 	}
+	ret = comedi_dio_config (comediDevice, subdev, 2, COMEDI_OUTPUT);
+	if (ret != 1)
+	{
+	  	logStream (MESSAGE_ERROR) << "Cannot init comedi roof - subdev " << subdev
+			<< " channel 2, error " << ret << sendLog;
+		return -1;
+	}
 
 	return 0;
+}
+
+int LPNHE::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == filter)
+	{
+		int c = newValue->getValueInteger () - oldValue->getValueInteger ();
+		if (c < 0)
+			c += 6;
+		return filterChange (c) == 0 ? 0 : -2;
+	}
+	if (oldValue == shutter)
+	{
+		return comedi_dio_write (comediDevice, 2, 2, ((Rts2ValueBool *)newValue)->getValueBool ()) == 1 ? 0 : -2;
+	}
+	return Sensor::setValue (oldValue, newValue);
 }
 
 int LPNHE::info ()
 {
 	int ret;
 	uint32_t value;
-	ret = comedi_dio_read (comediDevice, 3, 5, &value);
+	ret = comedi_dio_read (comediDevice, 2, 5, &value);
 	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read filter homed status (subdev 3, channel 5)" << sendLog;
@@ -123,13 +172,22 @@ int LPNHE::info ()
 	}
 	filterHomed->setValueBool (value != 0);
 
-	ret = comedi_dio_read (comediDevice, 3, 6, &value);
+	ret = comedi_dio_read (comediDevice, 2, 6, &value);
 	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read filter moving status (subdev 3, channel 6)" << sendLog;
 		return -1;
 	}
 	filterMoving->setValueBool (value != 0);
+
+	double val;
+	ret = getVolts (0, 4, val);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read out vacuum level" << sendLog;
+		return -1;
+	}
+	vacuum->setValueDouble (val);
 
 	return Sensor::info ();
 }
@@ -139,6 +197,7 @@ LPNHE::LPNHE (int argc, char **argv): Sensor (argc, argv)
 	comediFile = "/dev/comedi0";
 
 	createValue (humidity, "HUMIDITY", "laboratory humidity", true);
+	createValue (vacuum, "VACUUM", "Dewar vacuum level", true);
 	createValue (filter, "FILTER", "selected filter wheel", true);
 	filter->addSelVal ("1");
 	filter->addSelVal ("2");
@@ -149,6 +208,8 @@ LPNHE::LPNHE (int argc, char **argv): Sensor (argc, argv)
 
 	createValue (filterHomed, "homed", "if filter is homed", false);
 	createValue (filterMoving, "moving", "if filter is moving", false);
+	createValue (shutter, "shutter", "shutter opened", true);
+	shutter->setValueBool (false);
 
 	addOption ('c', NULL, 1, "path to comedi device");
 }
@@ -179,13 +240,50 @@ int LPNHE::filterChange (int num)
 			logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
 			return 0;
 		}
-		usleep (ROOF_TIMEOUT);
+		usleep (FILTER_PULSE);
+	}
+	return 0;
+}
+
+int LPNHE::getVolts (int subdevice, int channel, double &volts)
+{
+	int max;
+	comedi_range *rqn;
+	int range = 0;
+	lsampl_t data;
+
+	max = comedi_get_maxdata (comediDevice, subdevice, channel);
+	if (max == 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot get max data from subdevice "
+			<< subdevice << " channel " << channel << sendLog;
+		return -1;
+	}
+	rqn = comedi_get_range (comediDevice, subdevice, channel, range);
+	if (rqn == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot get range from subdevice "
+			<< subdevice << " channel " << channel << sendLog;
+		return -1;
+	}
+	if (comedi_data_read (comediDevice, subdevice, channel, range, AREF_GROUND, &data) != 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read data from subdevice "
+			<< subdevice << " channel " << channel << sendLog;
+		return -1;
+	}
+	volts = comedi_to_phys (data, rqn, max);
+	if (isnan (volts))
+	{
+		logStream (MESSAGE_ERROR) << "Cannot convert data from subdevice "
+			<< subdevice << " channel " << channel << " to physical units" << sendLog;
+		return -1;
 	}
 	return 0;
 }
 
 int main (int argc, char **argv)
 {
-	LPNHE device (argc, argv);
+	LPNHE device = LPNHE (argc, argv);
 	return device.run ();
 }
