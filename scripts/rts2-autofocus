@@ -54,29 +54,30 @@ use vars qw(
 #
 'C_CONFIGURATION_FILE'=> "/etc/rts2/autofocus/rts2-autofocus.cfg",
 'C_SEXPRG'  => "sex 2>/dev/null" ,
-'C_FOCROOTI'=> "rts2-fit-focus 1" , # interactive
-'C_FOCROOTB'=> "rts2-fit-focus 0" , # "batch"  
+'C_FOCROOTI'=> "rts2-fit-focus 1" ,       # interactive
+'C_FOCROOTB'=> "rts2-fit-focus 0" ,       # "batch"  
 # constants
 #
-'C_FITS_DIRECTORY'=> "/tmp" , # the data directory
-'C_FILTERS'       => "U:B:V:R:I:X:Y",  # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
-'C_SELECT_RATIO'  => 0.05 ,   # this a threshold to avoid matching images from completely different focus runs.
-#                               $number_of_selected_objects/$number_of_reference_objects 
-'C_MINIMUM_OBJECTS'=> 5 ,     # is the minimal number of objects identified in all images
+'C_FITS_DIRECTORY'=> "/tmp" ,             # the data directory
+'C_FILTERS'       => "U:B:V:R:I:X:Y",     # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
+'C_SELECT_RATIO'  => 0.05,                # this a threshold to avoid matching images from completely different focus runs.
+#                                           $number_of_selected_objects/$number_of_reference_objects 
+'C_ANALYSIS_LOWER_LIMIT'=> 0,             # lower focuser limit for offline data analysis 
+'C_ANALYSIS_UPPER_LIMIT'=> 1e12,          # upper focuser limit for offline data analysis 
+'C_MINIMUM_OBJECTS'=> 5,                  # is the minimal number of objects identified in all images
 # if TAKE_DATA == TRUE then data taking with rts2 devices
 # consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
-#
-'C_TAKE_DATA'  => TRUE_STR,  # TRUE: data taking, FALSE: offline analysis
-'C_SET_FOCUS'  => FALSE_STR, # set the focus position if only one filter is defined
-'C_CCD_CAMERA' => "CD" ,     # this CCD and its associate devices are used if TAKE_DATA == TRUE
-'C_CCD_BINNING'=> 1    ,     # 0: 1x1, 1: 2x2,.... see your drver
+'C_TAKE_DATA'  => TRUE_STR,               # TRUE: data taking, FALSE: offline analysis
+'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
+'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
+'C_CCD_BINNING'=> 1    ,                  # 0: 1x1, 1: 2x2,.... see your drver
 'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
 'C_FIND_ROUGH_FOCUS'        => TRUE_STR,  # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
 'C_INCLUDE_ROUGH_FOCUS_RUN' => FALSE_STR, # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
 #                                           images extension .fits is renamed to .fitsROUGH_FOCUS_RUN_EXTENSION (see below)
 'C_NUMBER_OF_ROUGH_FOCUS_IMAGES'=> 10,    # used if TAKE_DATA == (TRUE)
-'C_FOCAL_RATIO' => 7 , # telescope's focal ratio
+'C_FOCAL_RATIO' => 7 ,                    # telescope's focal ratio
 # data taking, files
 #
 'C_RTS2_DEVICES' => "/etc/rts2/devices" ,
@@ -90,11 +91,15 @@ use vars qw(
 #
 'C_SET_LIMITS_ON_SANITY_CHECKS'=> TRUE_STR ,
 # temporary files written by rts2-autofocus, these will be modified with filter, date and ev. filename.
-#
+# these are base names
 'C_SEXSKY_LIST'      => "/tmp/sex-autofocus-assoc-sky.list" ,
 'C_SEXCATALOGUE'     => "/tmp/sex-autofocus.cat" ,
 'C_SEX_TMP_CATALOGUE'=> "/tmp/sex-autofocus-tmp.cat" ,
 'C_FIT_RESULT_FILE'  => "/tmp/fit-autofocus.dat" ,
+#
+'C_DS9_REFERENCE'    => TRUE_STR,         # create reference region file (green circles) and the DS9 command file
+'C_DS9_MATCHED'      => TRUE_STR,         # create reference region file including those which matched (blue circles),  and the DS9 command file
+'C_DS9_ALL'          => TRUE_STR,         # create reference region file including those which matched or not (red circles),  and the DS9 command file
 'C_DS9_REGION_FILE'  => "/tmp/ds9-autofocus.reg" ,
     ) ;
 # ToDo: discuss with Petr default focuser positions per filter (to conig file!)
@@ -127,10 +132,6 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
 # reference catalogue 1-14
 # analysis catalogue 1-29
 #
-# /etc/rts2/autofocus/sex-autofocus.cfg
-# /etc/rts2/autofocus/sex-autofocus.param
-# /etc/rts2/autofocus/sex-autofocus-reference.param
-#
 use constant NUMBER           =>  0; #  1 Running object number
 use constant X_IMAGE          =>  1; #  2 Object position along x                         [pixel]
 use constant Y_IMAGE          =>  2; #  3 Object position along y                         [pixel]
@@ -139,7 +140,7 @@ use constant FLUX_APER        =>  4; #  5 Flux vector within fixed circular aper
 use constant FLUXERR_APER     =>  5; #  6 RMS error vector for aperture flux(es)          [count]
 use constant MAG_APER         =>  6; #  7 Fixed aperture magnitude vector                 [mag]
 use constant MAGERR_APER      =>  7; #  8 RMS error vector for fixed aperture mag.        [mag]
-use constant FLUX_MAX         =>  8; #  9 9Peak flux above background                     [count]
+use constant FLUX_MAX         =>  8; #  9 Peak flux above background                      [count]
 use constant ISOAREA_IMAGE    =>  9; # 10 Isophotal area above Analysis threshold         [pixel**2]
 use constant FLAGS            => 10; # 11 Extraction flags
 use constant FWHM_IMAGE       => 11; # 12 FWHM assuming a gaussian core                   [pixel]
@@ -161,7 +162,7 @@ use constant FWHM_IMAGE_REF   => 25; # 26
 use constant FLUX_RADIUS_REF  => 26; # 27
 use constant ELLIPTICITY_REF  => 27; # 28
 use constant NUMBER_ASSOC     => 28; # Number of ASSOCiated IDs
-# used in @event_scalers
+# used in @event_scalers, init scalers accordingly
 use constant SELECTED           =>  0 ;
 use constant NOT_NUMBER_ASSOC   =>  1 ;
 use constant NOT_FLAGS          =>  2 ;
@@ -187,10 +188,11 @@ sub raw_analysis(\@)
     {
 	return NOT_ELLIPTICITY_REF ;
     }
-    if( $items[ELLIPTICITY]> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
-    {
-	return NOT_ELLIPTICITY ;
-    }
+# be carefull with this
+#    if( $items[ELLIPTICITY]> .3)# 0.05 ...0.3, matter of taste, ELLIPTICITY
+#    {
+#	return NOT_ELLIPTICITY ;
+#    }
     return SELECTED;
 }
 # ##########################################################################################
@@ -573,15 +575,14 @@ sub get_fits_files
 	    }
 	}
 	close(IMHEAD) ;
-##		# not mandatory:
-### ATTENTION: check indicees
-##		# select only those with (FOC_POS- FOC_DEF)>=LOWER_LIMIT && (FOC_POS- FOC_DEF)<=UPPER_LIMIT
-##		if(( $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]- $filter_focus_properties{$fltr}[IND_FOC_DEF] >= $filter_focus_properties{$fltr}[IND_LOWER_LIMIT]) && ( $objects{$reference_object_number}{$fits_file}[IND_OBJ_FOC_POS]- $filter_focus_properties{$fltr}[IND_FOC_DEF] <= $filter_focus_properties{$fltr}[IND_UPPER_LIMIT]))
-##
-##
-##		{
-##		}
-##	if(  $foc_pos_from_file ge $filter_focus_properties{$fltr}[IND_FOC_DEF]) && 
+# ToDo: docu me!!
+# during data tacking we know nothing
+	if( $default_configuration{C_TAKE_DATA} ne TRUE_STR )
+	{
+# remove fits files which are out of limits
+	    next if(( $foc_pos_from_file< $default_configuration{C_ANALYSIS_LOWER_LIMIT}) ||  ( $foc_pos_from_file> $default_configuration{C_ANALYSIS_UPPER_LIMIT})) ;
+	}
+
 	if(( $fltr_from_file=~ m/$fltr/)&&( $foc_pos_from_file ne ""))
 	{
 	    $number_of_fits_files++ ;
@@ -1088,7 +1089,7 @@ sub create_reference_catalogue
     open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
     while(<CREATELIST>){}
     close(CREATELIST) ;
-    cleanup_catalogue($tmp_sky_list_file_name) ;
+######### ToDo umcomment    cleanup_catalogue($tmp_sky_list_file_name) ;
 
    return $fits_file_reference;
 }
@@ -1237,12 +1238,17 @@ sub retrieve_data
 # create  DS9 command for image inspection
 # ds9 -scale mode zscale fits1.fits -zoom to fit -region fits1.reg ... fitsX.fits -region fitsX.reg -single -blink
 #
-    my $ds9_command= "ds9 -zoom to fit -scale mode zscale" ;
+    my $ds9_command ;
+    my $ds9_reference_file_name ;
+    if(( $default_configuration{C_DS9_REFERENCE} eq TRUE_STR) || ( $default_configuration{C_DS9_MATCHED} eq TRUE_STR))
+    {
+	my @ds9_items= split(/\./, $ds9_region_file) ;
+	$ds9_reference_file_name=  $ds9_items[0]."-".$fltr."-".$date.".".$ds9_items[1];
+
+	$ds9_command= "ds9 -zoom to fit -scale mode zscale\\\n" ;
+    }
 # write ds9 region file: reference objects
 #
-    my @ds9_items= split(/\./, $ds9_region_file) ;
-    my $tmp_file_name=  $ds9_items[0]."-".$fltr."-".$date.".".$ds9_items[1];
-
     my %objects_selected ;
     my %objects_all ; # used to calculte the distances from the refrences objects
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
@@ -1263,7 +1269,7 @@ sub retrieve_data
 # open the ds9 region file and write the header
 #
 	my @ds9_items= split(/\./, $ds9_region_file) ;
-	my $tmp_ds9_file_name=  $ds9_items[0]."-".$fltr."-".$date."-".$fits_file."-".$fits_files{$fits_file}[IND_FOC_POS_FILE].".".$ds9_items[1];
+	my $ds9_fits_file_name=  $ds9_items[0]."-".$fltr."-".$date."-".$fits_file."-".$fits_files{$fits_file}[IND_FOC_POS_FILE].".".$ds9_items[1];
 
 	my $number_of_objects= 0 ;
 	my $number_of_selected_objects= 0 ;
@@ -1317,7 +1323,7 @@ sub retrieve_data
 	    {
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
-	    printf("(sel./ref.): %6.3f\n", $number_of_selected_objects/$number_of_reference_objects) ;
+	    printf("(sel./ref.): %6.3f, %4d, %4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects) ;
 
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < $default_configuration{C_SELECT_RATIO})
 	    {
@@ -1336,22 +1342,45 @@ sub retrieve_data
 	    else
 	    {
 # write only regions for accepted images
-		open(DS9REGION, ">$tmp_ds9_file_name") or die "retrieve_data: can't write $tmp_ds9_file_name: $!" ;
-		printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
-		printf( DS9REGION "# Filename: $fits_file\n") ;
-		printf( DS9REGION "global color=blue font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
-		printf( DS9REGION "image\n") ; # not physical
-		foreach my $reference_object_number (sort keys %{$objects_selected{$fits_file}})
+		if( $default_configuration{C_DS9_MATCHED} eq TRUE_STR)
 		{
-		    if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
+		    open(DS9REGION, ">$ds9_fits_file_name") or die "retrieve_data: can't write $ds9_fits_file_name: $!" ;
+		    printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
+		    printf( DS9REGION "# Filename: $fits_file\n") ;
+
+		    if( $fits_file=~ m/$fits_file_reference/)
 		    {
-			my $region_radius= 1. * $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
-			printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
+			printf( DS9REGION "global color=yellow font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
 		    }
+		    else
+		    {
+			printf( DS9REGION "global color=blue font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
+		    }
+		    printf( DS9REGION "image\n") ; # not physical
+		    foreach my $reference_object_number (sort keys %{$objects_selected{$fits_file}})
+		    {
+			if($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
+			{
+			    my $region_radius= 1. * $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
+			    printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
+			}
+		    }
+		    if( $default_configuration{C_DS9_ALL} eq TRUE_STR)
+		    {
+			printf( DS9REGION "global color=red font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
+			printf( DS9REGION "image\n") ; # not physical
+			foreach my $reference_object_number (sort keys %{$objects_all{$fits_file}})
+			{
+			    if($objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
+			    {
+				my $region_radius= 2.+ 1. * $objects_all{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
+				printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_all{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_all{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
+			    }
+			}
+		    }
+		    close( DS9REGION) ;
+		    $ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY} . "/" . $fits_file . " -region " . $ds9_fits_file_name . " -region " . $ds9_reference_file_name . "\\\n"; 
 		}
-		close( DS9REGION) ;
-##ToDo:  it is a global   ??unitialized  $fits_directory?? 		$ds9_command= $ds9_command . " " . $fits_directory . "/" . $fits_file . " -region ". $tmp_ds9_file_name  ; 
-		$ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY} . "/" . $fits_file . " -region " . $tmp_ds9_file_name . " -region ". $tmp_file_name; 
 	    }
 	}
 	else
@@ -1452,50 +1481,54 @@ sub retrieve_data
     }
 # write ds9 region file: reference objects
 #
-    open(DS9REGION, ">$tmp_file_name") or die "Can't write $tmp_file_name: $!" ;
-    printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
-    printf( DS9REGION "# Filter: $fltr, $date\n") ;
-    printf( DS9REGION "global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
-    printf( DS9REGION "image\n") ;
-
-    $number_of_objects_found_in_all_files= 0;
-    foreach my $reference_object_number ( sort keys %objects_found_in_all_files)
+    if( $default_configuration{C_DS9_REFERENCE} eq TRUE_STR)
     {
-	$number_of_objects_found_in_all_files++ ;
+
+	open(DS9REGION, ">$ds9_reference_file_name") or die "Can't write $ds9_reference_file_name: $!" ;
+	printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
+	printf( DS9REGION "# Filter: $fltr, $date\n") ;
+	printf( DS9REGION "global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
+	printf( DS9REGION "image\n") ;
+
+	$number_of_objects_found_in_all_files= 0;
+	foreach my $reference_object_number ( sort keys %objects_found_in_all_files)
+	{
+	    $number_of_objects_found_in_all_files++ ;
 # ToDo: calculate the center of mass and report location, 
-	if( $verbose eq TRUE_STR)
-	{
-	    printf("retrieve_data: object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
-	}
-	printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_tmp{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
-	printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d %6.1f %6.1f}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number, $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2]) ;
+	    if( $verbose eq TRUE_STR)
+	    {
+		printf("retrieve_data: object: %5d, found %3d, X=%7.2f,  Y=%7.2f, data: %10.2f\n", $reference_object_number, $objects_found_in_all_files{$reference_object_number}[0], $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_found_in_all_files{$reference_object_number}[3]) ;
+	    }
+	    printf( DS9REGION "circle\(%f,%f,%f\)\n",                 $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $objects_tmp{$reference_object_number}{$fits_file_reference}[IND_OBJ_DATA][0]) ;
+	    printf( DS9REGION "circle\(%f,%f,30.1\) # text = {%d %6.1f %6.1f}\n", $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2], $reference_object_number, $objects_found_in_all_files{$reference_object_number}[1], $objects_found_in_all_files{$reference_object_number}[2]) ;
 
-	if( $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files)
-	{
-	    print "retrieve_data: attention something is severely wrong here counts must be equal $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files\n" ;
+	    if( $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files)
+	    {
+		print "retrieve_data: attention something is severely wrong here counts must be equal $objects_found_in_all_files{$reference_object_number}[0] !=$number_of_fits_files\n" ;
+	    }
 	}
+	close(DS9REGION) ;
+ 	$ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY}  . "/"  . $fits_file_reference . " -region ". $ds9_reference_file_name  ; 
     }
-    close(DS9REGION) ;
-#    $default_configuration{C_FITS_DIRECTORY}
-#ToDo:  it is a global  ??unitialized  $fits_directory??   $ds9_command= $ds9_command . " " . $fits_directory . "/"  . $reference_fits_file . " -region ". $tmp_file_name  ; 
-    $ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY}  . "/"  . $fits_file_reference . " -region ". $tmp_file_name  ; 
+    if(( $default_configuration{C_DS9_REFERENCE} eq TRUE_STR) || ( $default_configuration{C_DS9_MATCHED} eq TRUE_STR))
+    {
+# print DS9 command for image inspection
+# 
+	$ds9_command=  $ds9_command . " -single -blink\n" ;
 
+	open(DS9COMMAND, ">$ds9_reference_file_name.bash") or die "Can't write $ds9_reference_file_name.bash: $!" ;
+	print ( DS9COMMAND "#!/bin/bash\n") ;
+	printf( DS9COMMAND  $ds9_command) ;
+	close( DS9COMMAND) ;
+	print "retrieve_data: DS9 command file: $ds9_reference_file_name.bash created\n" ;
+    }
     print "retrieve_data: found $number_of_objects_found_in_all_files objects in all files\n" ;
-
     if( $number_of_objects_found_in_all_files < $default_configuration{C_MINIMUM_OBJECTS})
     {
+	print "retrieve_data: all DS9 region files written\n" ;
 	print "retrieve_data: to few objects matched in all files, exiting\n" ;
 	exit 1 ;
     }
-# print DS9 command for image inspection
-# 
-    $ds9_command=  $ds9_command . " -single -blink\n" ;
-
-    open(DS9COMMAND, ">$tmp_file_name-command") or die "Can't write $tmp_file_name-command: $!" ;
-    print ( DS9COMMAND "#!/bin/bash\n") ;
-    printf( DS9COMMAND  $ds9_command) ;
-    close( DS9COMMAND) ;
-    print "retrieve_data: DS9 command file: $tmp_file_name-command created\n" ;
  
    return TRUE_VAL ;
 }
@@ -1586,6 +1619,9 @@ sub read_configuration
 	    print "read_configuration: missing identifier, on line $configuration_file_line_number\n" ;
 	    exit 1 ;
 	}
+# obviously too late to be changed
+	next if( $identifier=~ m/CONFIGURATION_FILE/) ;
+
 	$value=~ s/^[ \t]+//g ;
 	$value=~ s/[ \t]+$//g ;
 	$value=~ s/[ \t]+/ /g ;
