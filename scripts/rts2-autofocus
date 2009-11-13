@@ -68,7 +68,7 @@ use vars qw(
 # if TAKE_DATA == TRUE then data taking with rts2 devices
 # consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
-'C_TAKE_DATA'  => TRUE_STR,               # TRUE: data taking, FALSE: offline analysis
+'C_TAKE_DATA'  => FALSE_STR,               # TRUE: data taking, FALSE: offline analysis
 'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
 'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
 'C_CCD_BINNING'=> 1    ,                  # 0: 1x1, 1: 2x2,.... see your drver
@@ -95,6 +95,7 @@ use vars qw(
 'C_SEXSKY_LIST'      => "/tmp/sex-autofocus-assoc-sky.list" ,
 'C_SEXCATALOGUE'     => "/tmp/sex-autofocus.cat" ,
 'C_SEX_TMP_CATALOGUE'=> "/tmp/sex-autofocus-tmp.cat" ,
+'C_CLEANUP_REFERENCE_CATALOGUE' => TRUE_STR, # remove any two stars wich are closer than C_OBJECT_SEPARATION, and check sub cleanup_catalogue
 'C_FIT_RESULT_FILE'  => "/tmp/fit-autofocus.dat" ,
 #
 'C_DS9_REFERENCE'    => TRUE_STR,         # create reference region file (green circles) and the DS9 command file
@@ -501,9 +502,8 @@ sub get_fits_files
     my $fltr                     = shift @_ ;
     my $directory                = shift @_ ;
     my $include_rough_focus_run  = shift @_ ;
-    my $rough_focus_run_extension= ROUGH_FOCUS_RUN_EXTENSION ;
-# extract DATA and store it, assuming one fi$verbose = FALSE_STR;
-#
+    my $rough_focus_run_extension= ROUGH_FOCUS_RUN_EXTENSION ;;
+
     opendir(DIR, $directory) || die "get_fits_files: can't opendir $directory: $!";
 
     my @raw_fits_files ;
@@ -525,7 +525,7 @@ sub get_fits_files
     {
 	if(( $fits_file=~ /$rough_focus_run_extension$/) && ($verbose eq TRUE_STR))
 	{
-	    print "get_fits_files: including $fits_file\n" ;
+	    print "get_fits_files: including raw $fits_file\n" ;
 	}
 # extract filter and focus position from fits
 # ToDo: use cpan Astro::FITS::CFITSIO, instead imhead
@@ -580,9 +580,12 @@ sub get_fits_files
 	if( $default_configuration{C_TAKE_DATA} ne TRUE_STR )
 	{
 # remove fits files which are out of limits
-	    next if(( $foc_pos_from_file< $default_configuration{C_ANALYSIS_LOWER_LIMIT}) ||  ( $foc_pos_from_file> $default_configuration{C_ANALYSIS_UPPER_LIMIT})) ;
+	    if(( $foc_pos_from_file< $default_configuration{C_ANALYSIS_LOWER_LIMIT}) ||  ( $foc_pos_from_file> $default_configuration{C_ANALYSIS_UPPER_LIMIT})) 
+	    {
+		print "get_fits_files: discarding $fits_file due to $default_configuration{C_ANALYSIS_LOWER_LIMIT} <  $foc_pos_from_file < $default_configuration{C_ANALYSIS_UPPER_LIMIT}\n" ;
+		next ;
+	    }
 	}
-
 	if(( $fltr_from_file=~ m/$fltr/)&&( $foc_pos_from_file ne ""))
 	{
 	    $number_of_fits_files++ ;
@@ -600,7 +603,7 @@ sub get_fits_files
     {
 	foreach my $foc_pos( sort keys %number_of_images_at_foc_pos)
 	{
-	    printf( "get_fits_files: filter $fltr, at foc_pos $foc_pos: %4d image%s", $number_of_images_at_foc_pos{ $foc_pos}, ($number_of_images_at_foc_pos{ $foc_pos}==1)? "": "s") ;
+	    printf( "get_fits_files: filter $fltr, at foc_pos $foc_pos: %4d image%s\n", $number_of_images_at_foc_pos{ $foc_pos}, ($number_of_images_at_foc_pos{ $foc_pos}==1)? "": "s") ;
 	}
     }
     my $noff= TOO_FEW_FITS_FILES ;
@@ -741,14 +744,20 @@ sub get_fitted_focus
 	    if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
 	    {
 		$data_minimum_centered_to_data_limits= FALSE_VAL ;
-		printf( "get_fitted_focus: quantity: %s, data minimum ($data_minimum[$qty]) is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
+		if( $verbose eq TRUE_STR)
+		{
+		    printf( "get_fitted_focus: quantity: %s, data minimum ($data_minimum[$qty]) is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
+		}
 	    }
 	    my $data_maximum_centered_to_data_limits= TRUE_VAL; 
 	    my $limits_maximum_difference= FALSE_VAL ;
 	    if ( abs($foc_pos_maximum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
 	    {
 		$data_maximum_centered_to_data_limits= FALSE_VAL ;
-		printf( "get_fitted_focus: quantity: %s, data maximum ($data_maximum[$qty]) is not centered, lower limit $focuser_positions[0], data maximum $foc_pos_maximum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
+		if( $verbose eq TRUE_STR)
+		{
+		    printf( "get_fitted_focus: quantity: %s, data maximum ($data_maximum[$qty]) is not centered, lower limit $focuser_positions[0], data maximum $foc_pos_maximum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
+		}
 	    }
 # find out if lower or upper limit is nearer to the minimum
 #ToDo: abs() might not be a good idea, loosing information
@@ -801,7 +810,10 @@ sub get_fitted_focus
 		    }
 		}
 	    } 
-	    printf( "get_fitted_focus: quantity: %s, lower limit set to $lower_limit upper limit set to $upper_limit\n", ($qty==0)?"FWHM":"FLUX") ;
+	    if( $verbose eq TRUE_STR)
+	    {
+		printf( "get_fitted_focus: quantity: %s, lower limit set to $lower_limit upper limit set to $upper_limit\n", ($qty==0)?"FWHM":"FLUX") ;
+	    }
 # write the data files and store their names
 	    if(( $fitprg eq $default_configuration{C_FOCROOTI}) ||($fitprg eq $default_configuration{C_FOCROOTB}))
 	    {
@@ -920,7 +932,10 @@ sub fit_and_read_results
     my @fit_items= split(/\./, $fit_result_file) ;
     my $tmp_fit_result_file=  $fit_items[0]."-".$fltr."-".$date.".png"; # if you don want png, choose something else http://root.cern.ch/root/html/TPad.html#TPad:SaveAs
 # attention fitprg means fit_focus (0|1) !
-    print "fit_and_read_results: $fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file\n" ;
+    if( $verbose eq TRUE_STR)
+    {
+	print "fit_and_read_results: $fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file\n" ;
+    }
     open( ROOT, "$fitprg $fltr $date $number_of_objects_found_in_all_files $fwhm_file $flux_file $tmp_fit_result_file|") or die "fit_and_read_results: can't open pipe to $fitprg: $!" ;
 
     while( my $line=<ROOT>)
@@ -1030,11 +1045,13 @@ sub get_foc_pos_at_maximum_number_of_objects
 # maximum and set only $filter_focus_properties{$fltr}[IND_FOC_DEF] 
 # 
 	my $mean  = $distribution->mean();
-	print "get_foc_pos_at_maximum_number_of_objects: weighted mean $mean [ticks]\n" ;
 
-	print "get_foc_pos_at_maximum_number_of_objects: $fits_file_reference, $catalogue_tmp rough focus found at $fits_files{$fits_file_reference}[IND_FOC_POS_FILE], objects $maximum_objects (not associated)\n" ;
-	print "get_foc_pos_at_maximum_number_of_objects: update temporarily %filter_focus_properties\n" ;
-
+	if( $verbose eq TRUE_STR)
+	{
+	    print "get_foc_pos_at_maximum_number_of_objects: weighted mean $mean [ticks]\n" ;
+	    print "get_foc_pos_at_maximum_number_of_objects: $fits_file_reference, $catalogue_tmp rough focus found at $fits_files{$fits_file_reference}[IND_FOC_POS_FILE], objects $maximum_objects (not associated)\n" ;
+	    print "get_foc_pos_at_maximum_number_of_objects: update temporarily %filter_focus_properties\n" ;
+	}
 	if( abs($mean - $filter_focus_properties{$fltr}[IND_FOC_DEF]) > 100) # ToDo: replace by constant
 	{
 	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, best known focus $filter_focus_properties{$fltr}[IND_FOC_DEF]\n" ;
@@ -1078,28 +1095,35 @@ sub create_reference_catalogue
 	elsif($fits_files{$fits_file}[IND_FOC_POS_FILE]> $filter_focus_properties{$fltr}[IND_FOC_DEF])
 	{
 	    $fits_file_reference= $fits_file ;
-	    print "create_reference_catalogue: no exact match of default focus position $filter_focus_properties{$fltr}[IND_FOC_DEF], taking file $fits_file_reference as reference at position $fits_files{$fits_file}[IND_FOC_POS_FILE]\n" ;
+	    if( $verbose eq TRUE_STR)
+	    {
+		print "create_reference_catalogue: no exact match of default focus position $filter_focus_properties{$fltr}[IND_FOC_DEF], taking file $fits_file_reference as reference at position $fits_files{$fits_file}[IND_FOC_POS_FILE]\n" ;
+	    }
 	    last ;
 	}
     }
 # create the catalogue (sky_list)
 #
-    print "create_reference_catalogue: >>$fits_file_reference<<, if empty error\n" ;
-  
+    if( $verbose eq TRUE_STR)
+    {
+	print "create_reference_catalogue: >>$fits_file_reference<<, if empty error\n" ;
+    }
     open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
     while(<CREATELIST>){}
     close(CREATELIST) ;
-######### ToDo umcomment    cleanup_catalogue($tmp_sky_list_file_name) ;
-
+    if( $default_configuration{C_CLEANUP_REFERENCE_CATALOGUE} eq TRUE_STR)
+    {
+ 	cleanup_catalogue($tmp_sky_list_file_name) ;
+    }
    return $fits_file_reference;
 }
 sub cleanup_catalogue 
 {
-use constant IND_NUMBER      =>  0 ;
-use constant IND_X           =>  1 ;
-use constant IND_Y           =>  2 ;
-use constant IND_FLAGS       =>  3 ;
-use constant IND_ELLIPTICITY =>  4 ;
+    use constant IND_NUMBER      =>  0 ;
+    use constant IND_X           =>  1 ;
+    use constant IND_Y           =>  2 ;
+    use constant IND_FLAGS       =>  3 ;
+    use constant IND_ELLIPTICITY =>  4 ;
 
     my $catalogue_file_name  = shift @_ ;
 # read the reference catalogue and remove objects which 
@@ -1114,13 +1138,14 @@ use constant IND_ELLIPTICITY =>  4 ;
     my %objects_coordinates ;
     my $number_of_objects= 0 ;
     my $number_of_lines= 0 ;
+
     while(my $line= <READLIST>)
     {
 	push( @list_lines, $line); # save it as it is
 	$number_of_lines++ ;
-
+	
 	next if( ($list_lines[$#list_lines])=~ m/^#/) ;
-
+	
 	my $line= $list_lines[$number_of_lines-1] ;
 	$line=~ s/[ \t\r\n]+/ /g ;
 	$line=~ s/^[ ]+//g ;
@@ -1130,10 +1155,9 @@ use constant IND_ELLIPTICITY =>  4 ;
     }
     close(READLIST) ;
     my $number_of_comment_lines= $number_of_lines- $number_of_objects ;
-
+    
     for( my $l=  $number_of_objects- 1 ; $l> -1 ; $l--)
     {
-#	print "create_reference_catalogue: $objects_coordinates{$l}[0] $objects_coordinates{$l}[1] $objects_coordinates{$l}[2]\n" ;
 # compare the distances first to any object in the reference catalogue
 	my $remove_this= FALSE_VAL ;
 	for( my $ll= $number_of_objects- 1 ; $ll> $l ; $ll--)
@@ -1143,7 +1167,7 @@ use constant IND_ELLIPTICITY =>  4 ;
 	    {
 		if( $verbose eq TRUE_STR)
 		{
-		print "cleanup_catalogue: $#list_lines $ll $number_of_comment_lines, $removed_objects_distance removing  $#list_lines, (>$l<>$objects_coordinates{$l}[IND_NUMBER]<), (>$ll<>$objects_coordinates{$ll}[IND_NUMBER]<), ($objects_coordinates{$ll}[IND_X]-  $objects_coordinates{$l}[IND_X]) ($objects_coordinates{$ll}[IND_Y]-  $objects_coordinates{$l}[IND_Y]), $distance\n" ;
+		    print "cleanup_catalogue: $#list_lines $ll $number_of_comment_lines, $removed_objects_distance removing  $#list_lines, (>$l<>$objects_coordinates{$l}[IND_NUMBER]<), (>$ll<>$objects_coordinates{$ll}[IND_NUMBER]<), ($objects_coordinates{$ll}[IND_X]-  $objects_coordinates{$l}[IND_X]) ($objects_coordinates{$ll}[IND_Y]-  $objects_coordinates{$l}[IND_Y]), $distance\n" ;
 		}
 # there might be more than just one
 		if( ($ll + $number_of_comment_lines) < $#list_lines) # in %objects_coordinates all objects are always present
@@ -1160,18 +1184,18 @@ use constant IND_ELLIPTICITY =>  4 ;
 	    $removed_objects_distance++ ;
 	} 		
     }
-
+    
 # clean up the rest
 # this has to be done afterwards since overlapping of any object has to be avoided
     for( my $l=  $#list_lines- 1 ; $l>  $number_of_comment_lines-1 ; $l--)
     {
 	next if( ($list_lines[$#list_lines])=~ m/^#/) ;
-
+	    
 	my $line= $list_lines[$l] ;
 	$line=~ s/[ \t\r\n]+/ /g ;
 	$line=~ s/^[ ]+//g ;
 	my @items= split(/[ ]+/, $line) ;#
-
+	    
 	if( catalogue_analysis( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
 	{
 	    if( $verbose eq TRUE_STR)
@@ -1197,8 +1221,10 @@ use constant IND_ELLIPTICITY =>  4 ;
 	printf( WRITELIST $list_lines[$l]) ;
     }
     close(WRITELIST) ;
-
-    print "cleanup_catalogue: removed $removed_objects_distance, $removed_objects_formal of $number_of_objects\n";
+    if( $verbose eq TRUE_STR)
+    {
+	print "cleanup_catalogue: removed $removed_objects_distance, $removed_objects_formal of $number_of_objects\n";
+    }
     return ;
 }
 #ToDo: make it uniform with the raw_analysis subroutine
@@ -1318,7 +1344,7 @@ sub retrieve_data
 	{
 	    printf("retrieve_data: $fits_file: fil: %3s, foc: %5d ", $fltr, $fits_files{$fits_file}[IND_FOC_POS_FILE]) ;
 	    print "scalers: $#event_scalers" ;
-# sex.cfg is configured to write only MATCHED objects
+# sex.cfg is configured to write only ALL objects
 	    for( my $reason=0; $reason < $#event_scalers+1; $reason++)
 	    {
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
@@ -1396,7 +1422,6 @@ sub retrieve_data
     print "\n" ;
 # count the objects
 #
-    print "retrieve_data: Select objects which appeared in all files!\n" ;
     my %objects_tmp ;
     my %number_per_object ;
     foreach my $fits_file ( keys %objects_selected)
@@ -1429,7 +1454,10 @@ sub retrieve_data
 	    }
 	}
     }
-    print "retrieve_data: number of fits files $number_of_fits_files\n" ;
+    if( $verbose eq TRUE_STR)
+    {
+	print "retrieve_data: number of fits files $number_of_fits_files\n" ;
+    }
 # define those objects which appeared in all files
 # fit the obtained DATA values 
 #
@@ -1520,7 +1548,10 @@ sub retrieve_data
 	print ( DS9COMMAND "#!/bin/bash\n") ;
 	printf( DS9COMMAND  $ds9_command) ;
 	close( DS9COMMAND) ;
-	print "retrieve_data: DS9 command file: $ds9_reference_file_name.bash created\n" ;
+	if( $verbose eq TRUE_STR)
+	{
+	    print "retrieve_data: DS9 command file: $ds9_reference_file_name.bash created\n" ;
+	}
     }
     print "retrieve_data: found $number_of_objects_found_in_all_files objects in all files\n" ;
     if( $number_of_objects_found_in_all_files < $default_configuration{C_MINIMUM_OBJECTS})
@@ -1636,10 +1667,10 @@ sub read_configuration
 # NO	    if( !($default_configuration{"C_".$identifier}=~ /$value/)) # show only those which differ
 	    if( !($value=~ /$default_configuration{"C_".$identifier}/)) # show only those which differ
 	    {
-#		if($verbose eq TRUE_STR)
-#		{
+		if($verbose eq TRUE_STR)
+		{
 		    printf ( "read_configuration: parameter %-29s $default_configuration{\"C_$identifier\"} superseded by $value\n", $identifier) ;
-#		}
+		}
 		$default_configuration{"C_".$identifier}= $value ;	
 	    }
 	}
@@ -1707,18 +1738,18 @@ sub print_usage
 # main program
 #------------------------------------------------------------------------------
 
-$verbose = 0;
+$verbose = FALSE_STR;
 my $help = 0;
 my $interactive= 0 ;
 my $print_defaults= 0 ;
 my $configuration_file= 0 ;
 my $fitprg= $default_configuration{C_FOCROOTB} ;
 
-if (!GetOptions("help|h"            => \$help, 
-                "verbose|v"         => \$verbose,
+if (!GetOptions("help|h"          => \$help, 
+                "verbose|v"       => \$verbose,
 		"interactive|i"   => \$interactive,
 		"print_defaults|p"=> \$print_defaults,
-		"config_file|c=s"   => \$configuration_file,
+		"config_file|c=s" => \$configuration_file,
     )) 
 {
     print_usage();
@@ -1733,7 +1764,10 @@ elsif( $print_defaults)
     write_default_configuration() ;
     exit 0 ;
 }
-
+if( $verbose ne  FALSE_STR)
+{
+     $verbose = TRUE_STR;
+}
 if( $configuration_file)
 {
     read_configuration( $configuration_file) ;
