@@ -53,21 +53,9 @@
   <refsynopsisdiv>
     <cmdsynopsis>
       <command>&dhpackage;</command>
-      <arg choice="opt">
-	<arg choice="plain"><option>-x <replaceable>to be written</replaceable></option></arg>
-      </arg>
+	<arg choice="plain"><option>-c <replaceable>configuration_file</replaceable></option></arg>
     </cmdsynopsis>
 
-    <cmdsynopsis>
-      <command>&dhpackage;</command>
-      <arg choice="opt">
-        <arg choice="plain"><option>-h</option></arg>
-	<arg choice="plain"><option>--help</option></arg>
-      </arg>
-      <arg choice="opt">
-	<arg choice="plain"><option>--version</option></arg>
-      </arg>
-    </cmdsynopsis>
   </refsynopsisdiv>
   <refsect1>
     <title>How to read this document</title>
@@ -78,12 +66,11 @@ and are found between  the lines "begin default configuration" and "end default
 configuration". Parameters outside these limits should normally not be changed. 
     </para>
   </refsect1>
-  <refsect1>    <title>Status</title>
+  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6530..</para>
     <para> <command>&dhpackage;</command> has been tested in three online data tacking
           and numerous offline analysis. After the next online data tacking I expect
-          that <command>&dhpackage;</command> is useable for general use.
-    </para>
-    <para>
+          that <command>&dhpackage;</command> is usable for general use.    </para>
+<para>
 The default values of the parameters have been determined with
 a refractor that has a f/7 and the CCD which provided a field
 of view (FOV) of 1.6 deg2. It might be that SExtractor fails if a reflector
@@ -93,7 +80,7 @@ is used at positions far from the extrema.
 therefore fail only in very small fraction of the cases and the derived focuser
 position should be close to the true position. The fitting is done with CERN`s
 root data analysis software and is robust but during offline analysis I saw 
-failiures too.
+failures too.
 </para><para>
 Consider <command>&dhpackage;</command> as an efficient testbed. E.g. you can
 carry out focus runs if the sky isn`t suitable for scientific work. You can analyse the 
@@ -117,7 +104,7 @@ that rts2-centrald is reachable on localhost on port 617.
     <title>Operation</title>
  <para>
 <command>&dhpackage;</command> is built around two components: SExtractor
- and the fit program rts2_fit_focus.
+ and the fit program rts2-fit-focus (see svn repository).
 <command>&dhpackage;</command> performs two tasks: online data taking followed
 by immediate 
 analysis and offline analysis of previously acquired run of focus images.
@@ -136,17 +123,17 @@ the focuser is set according to the result if SET_FOCUS==TRUE.
 In both modes if FIND_ROUGH_FOCUS==TRUE the focus is defined roughly based on
 how many objects are identified by SExtractor. A weighted mean is calculated 
 and the value of $filter_focus_properties{$fltr}[IND_FOC_DEF] is set.
-In online mode a series of images is taken centered around the mean while in 
-offline mode the given set of images are analysed. After the rough focus run 
+In online mode a series of images is taken centred around the mean while in 
+offline mode the given set of images is analysed  centred around the mean too . After the rough focus run 
 in online mode the fits images are renamed and get the extension 
 ROUGH_FOCUS_RUN_EXTENSION. If no rough focus analysis is done then a
 reference image is taken near the assumed best focus defined in %filter_focus_properties.
-The result is in all cases the reference catalogue used to identify objects an all other images. 
+The reference catalogue is recreated in both cases based on all images acquired.
 </para>
     <para>
 SExtractor rereads the 
 reference catalogue ("sky list") and compares the x,y positions, but not the brightness, 
-with those from the current image. Only the MATCHED An object is considered if it has been 
+with those from the current image. An object is considered if it has been 
 identified on all images. The two quantities FWHM_IMAGE and FLUX_MAX are 
 fitted independently. The focus is derived from these two fits and if the 
 two values agree within FOCUSER_RESOLUTION the mean is the focus.
@@ -154,9 +141,10 @@ two values agree within FOCUSER_RESOLUTION the mean is the focus.
    <para>
      During analysis DS9 region of interest (*.reg) files are written for
 each image. These files can be loaded with DS9 and inspected.  The circle is
-centred to SExtractor's x,y positions. Yellow circles
+centred to SExtractor's x,y positions. Red circles indicate objects without a
+match, blue circles
 indicate that an object has been identified by comparing it against the
-reference catalogue, while green circles mark
+reference catalogue, yellow circles are present in the reference image, while green circles mark
 objects present on all images and
 hence chosen for analysis. Merging all files together 
 gives a first idea of SExtractor's selection.  
@@ -174,13 +162,13 @@ You must choose SEXCFG, SEXPARAM and SEXREFERENCE_PARAM
 from RTS2 svn repository. Compared with the default SEXCFG (see sex -dd [!]) the following
 parameters have been changed:</para>
 <variablelist>   
-<varlistentry><variablelist> <varlistentry><term>DETECT_THRESH    2.7
+<varlistentry><variablelist> <varlistentry><term>DETECT_THRESH    1.7
          </term>
 	<listitem><para>#  sigmas or threshold, ZP in mag.arcsec-2</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>ANALYSIS_THRESH  2.7
+	<term>ANALYSIS_THRESH  1.7
          </term>
 	<listitem><para># sigmas or threshold, ZP in mag.arcsec-2</para>
         </listitem>
@@ -253,9 +241,9 @@ to ASSOCiate</para><para>The base name is SEXSKY_LIST (.list)</para>
   <refsect1 id="values">
     <title>PARAMETERS, VALUES</title>
     <para>
-The following parameters are best accessed in the file
-    <command>&dhpackage;</command>. The command line options possibly do not
-    work (ToDo). The format of the following list is parameter name, "data type", default value.</para>
+The following parameters are elements of the configuration file.
+If a parameter does not appear in the configuration file, the
+default value is used. The format of the following list is parameter name, "data type", default value.</para>
     <varlistentry>
     <term>
     <option>%filter_focus_properties</option>
@@ -263,19 +251,19 @@ The following parameters are best accessed in the file
     <listitem>
     <para>The following properties are defined for U, B, V, R, I, X and Y: </para>
       <varlistentry>
-	<term>IND_FILTER_VALUE, int, 0,1,3,4,5,6
+	<term>FILTER_VALUE, int, 0,1,3,4,5,6
          </term>
 	<listitem><para>This is the number within rts2-centrald, see output of rts2-xmlrpcclient if doubtful.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>IND_FOC_DEF, int, 5074, 4712,  4678, 4766,  4700, 3270, 3446
+	<term>FOC_DEF, int, 5074, 4712,  4678, 4766,  4700, 3270, 3446
          </term>
 	<listitem>Known best focus for a given filter.<para></para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>IND_LOWER_LIMIT, int -1500 [ticks]
+	<term>LOWER_LIMIT, int -1500 [ticks]
          </term>
 	<listitem><para>Lower limit 
 relative to %filter_focus_properties{filter}[IND_FOC_DEF] for 
@@ -283,7 +271,7 @@ focuser position if TAKE_DATA == TRUE.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>IND_UPPER_LIMIT, int, 1500 [ticks]
+	<term>UPPER_LIMIT, int, 1500 [ticks]
          </term>
 	<listitem><para>Upper limit relative 
 to %filter_focus_properties{filter}[IND_FOC_DEF]
@@ -291,45 +279,55 @@ for focuser position if TAKE_DATA == TRUE.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>IND_STEP_SIZE, int, 100 [ticks]
+	<term>STEP_SIZE, int, 100 [ticks]
          </term>
 	<listitem><para>Focuser step size if TAKE_DATA == TRUE.</para>
         </listitem>
  </varlistentry> 
       <varlistentry>
-	<term>IND_EXP_TIME, int, 40, 30, 20, 20, 20, 10, 10 [sec]
+	<term>EXP_TIME, int, 40, 30, 20, 20, 20, 10, 10 [sec]
          </term>
 	<listitem><para>Exposure time used if TAKE_DATA == TRUE.</para>
         </listitem>
  </varlistentry> 
  </listitem> </varlistentry>
- 
-    <varlistentry>
-    <term>
-    <option>%focuser_properties</option>
-    </term>
-    <listitem>
-    <para>The following properties are defined:</para>
+       <varlistentry>
+	<term><option>ANALYSIS_LOWER_LIMIT, int,  0 [ticks]</option>
+         </term>
+	<listitem><para>During offline analysis images above this focuser limit are considered.</para>
+        </listitem>
+ </varlistentry> 
+
       <varlistentry>
-	<term>FOCUSER_RESOLUTION, int, 20 [ticks]
+	<term><option>ANALYSIS_UPPER_LIMIT, int,  1e12 [ticks]</option>
+         </term>
+	<listitem><para>During offline analysis images below this focuser limit are considered.</para>
+        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+	<term><option>FOCUSER_RESOLUTION, int, 20 [ticks]</option>
          </term>
 	<listitem><para>This is the number of focuser 
 ticks which makes a difference e.g. in FWHM.</para>
         </listitem>
  </varlistentry> 
+
       <varlistentry>
-	<term>ABSOLUTE_LOWER_LIMIT, int, 0 [ticks]
+	<term><option>FOCUSER_ABSOLUTE_LOWER_LIMIT, int, 0 [ticks]</option>
          </term>
 	<listitem><para>No focuser position is set below this limit.</para>
         </listitem>
  </varlistentry> 
+
       <varlistentry>
-	<term>ABSOLUTE_UPPER_LIMIT, int, 7000 [ticks]
-         </term>
+    <term>
+	<option>FOCUSER_ABSOLUTE_UPPER_LIMIT, int, 7000 [ticks]</option>
+    </term>
+         
 	<listitem><para>No focuser position is set above this limit.</para>
         </listitem>
  </varlistentry> 
-</listitem> </varlistentry>
 
     <varlistentry>
     <term>
@@ -373,6 +371,18 @@ ticks which makes a difference e.g. in FWHM.</para>
     </listitem>
     </varlistentry>
 
+   <varlistentry>
+    <term>
+    <option>CLEANUP_REFERENCE_CATALOGUE, boolean,  TRUE</option>
+    </term>
+    <listitem>
+    <para> 
+    </para>
+    </listitem>
+    </varlistentry>
+
+
+
     <varlistentry>
     <term>
     <option>CONFIGURATION_FILE, file name,  to be defined</option>
@@ -383,19 +393,48 @@ ticks which makes a difference e.g. in FWHM.</para>
     </listitem>
     </varlistentry>
 
+      <varlistentry>
+	<term><option>DS9_ALL, boolean, TRUE</option>
+         </term>
+	<listitem><para>If DS9_MATCHED==TRUE all objects SExtractor found are
+displayed as red circles. The text presents the focuser position and the
+reference number in SExtractor`s catalogue file. The diameter is equal to 2 + 2 *  FWHM. To display
+the
+results execute the file with the postfix .bash in the temporary directory.</para>
+        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+	<term><option>DS9_MATCHED, boolean, TRUE</option>
+         </term>
+	<listitem><para>All objects SExtractor matched are 
+displayed as blue circles. If the displayed image is the reference file
+these circles are yellow. The text presents the focuser position and the
+reference number in SExtractor`s catalogue file. The diameter is equal to 2 *  FWHM. To display the
+results execute the file with the postfix .bash in the temporary directory. </para>
+        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+	<term><option>DS9_REFERENCE, boolean, TRUE</option>
+         </term>
+	<listitem><para>All reference objects are displayed on each image as
+green circles. The inner green circle is the FWHM while the outer is a guidance
+presenting the reference number in SExtractor`s catalogue file and the (x,y) coordinates.</para>
+        </listitem>
+ </varlistentry> 
+
      <varlistentry>
     <term>
     <option>DS9_REGION_FILE, base file name, "/tmp/ds9-autofocus.reg"</option>
     </term>
     <listitem>
-    <para>These files can be loaded into DS9. Merge all region files into one
-to get an idea which objects were identified and how the relative position
-varies. Larger radii indicate a larger focuser position.
+    <para>These files can be loaded into DS9. See the options above and and
+execute the file with the postfix .bash, e.g.  /tmp/ds9-autofocus-B-2009-11-13T18:22:07+0000.reg.bash.
     </para>
     </listitem>
     </varlistentry>
 
-    <variablelist>
       <varlistentry>
 	<term>
             <option>FILTERS, list of filters separated by colon, "I"</option>
@@ -488,6 +527,17 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
     <varlistentry>
     <term>
+    <option>OBJECT_SEPARATION, boolean, 20 [pixel]"</option>
+    </term>
+    <listitem>
+    <para>If CLEANUP_REFERENCE_CATALOGUE==TRUE only pairs of stars which have a
+distance larger than OBJECT_SEPARATION are accepted as reference objects.
+     </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
     <option>RTS2_DEVICES, file name, "/etc/rts2/devices"</option>
     </term>
     <listitem>
@@ -496,7 +546,6 @@ if defined its associated devices focuser and filter wheel. All devices must be 
      </para>
     </listitem>
     </varlistentry>
-    </variablelist>
 
     <varlistentry>
     <term>
@@ -578,7 +627,6 @@ NUMBER_ASSOC.
     </listitem>
     </varlistentry>
 
-
      <varlistentry>
     <term>
     <option>SEXSKY_LIST, base file name, "/tmp/sex-autofocus-assoc-sky.list"</option>
@@ -598,8 +646,7 @@ current analysis based in the maximum of objects detected.
     </term>
     <listitem>
     <para> If TRUE <command>&dhpackage;</command> takes data, this is the
-online mode and if FALSE it
-analyses data in offline mode.
+    online mode and if FALSE it analyses data in offline mode.
     </para>
     </listitem>
     </varlistentry>
@@ -623,16 +670,15 @@ analyses data in offline mode.
           </para>
 	</listitem>
       </varlistentry>
-
-
   </refsect1>
+
   <refsect1 id="options">
     <title>OPTIONS</title>
     <para>
       This program follows the usual &gnu; command line syntax,
       with long options starting with two dashes (`--').  A summary of
       options is included below.
-    </para>
+   </para>
       <varlistentry>
         <term><option>-h</option></term>
         <term><option>--help</option></term>
@@ -641,9 +687,31 @@ analyses data in offline mode.
         </listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>-x</option></term>
+        <term><option>-v</option></term>
+        <term><option>--verbose</option></term>
         <listitem>
-          <para>to be written.</para>
+          <para>Print auxiliary information.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-i</option></term>
+        <term><option>--interactive</option></term>
+        <listitem>
+          <para>Display the result of the focus fits in X Window.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-p</option></term>
+        <term><option>--print_defaults</option></term>
+        <listitem>
+          <para>Print the default configuration to STDOUT.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-c</option></term>
+        <term><option>--configuration_file</option></term>
+        <listitem>
+          <para>Path to the configuration file. <command>&dhpackage;</command> does not start without it.</para>
         </listitem>
       </varlistentry>
   </refsect1>
@@ -664,7 +732,7 @@ the DS9 region files with the command:
 ds9  -scale mode zscale fits1.fits -zoom to fit -region fits1.reg ... fitsX.fits -region fitsX.reg   -single  -blink
 </para>
 <para>
-and inspecting the circled objects.
+and inspecting the circled objects. See option DS9_REGION_FILE.
 <para>
 </para>
 
@@ -721,6 +789,10 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   </varlistentry>
   <varlistentry>
   <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted 
+  </term>
+  </varlistentry>
+  <varlistentry>
+  <term> DS9 
   </term>
   </varlistentry>
   </refsect1>
