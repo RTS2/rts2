@@ -53,6 +53,7 @@
 #define ZS_COMP_RUN      0x0020
 // does not have rain signal
 #define ZS_WITHOUT_RAIN  0x0040
+#define ZS_FRAM          0x0200
 #define ZS_SIMPLE        0x0400
 #define ZS_COMPRESSOR    0x0800
 #define ZS_WEATHER       0x1000
@@ -64,6 +65,11 @@
 #define ZI_EMMERGENCY_R  0x2000
 // bit for Q9 - remote switch
 #define ZI_Q9            0x4000
+
+#define ZI_FRAM_Q8       0x0100
+#define ZI_FRAM_Q9       0x0200
+#define ZI_FRAM_QA       0x0400
+
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
 
@@ -83,10 +89,13 @@ class Zelio:public Dome
 		int16_t deadManNum;
 		time_t nextDeadCheck;
 
-		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE } zelioModel;
+		enum { ZELIO_UNKNOW, ZELIO_BOOTES3, ZELIO_COMPRESSOR, ZELIO_SIMPLE, ZELIO_FRAM } zelioModel;
 
 		// if model have hardware rain signal
 		bool haveRainSignal;
+
+		// if model have battery indicator
+		bool haveBatteryLevel;
 
 		Rts2ValueString *zelioModelString;
 
@@ -123,6 +132,12 @@ class Zelio:public Dome
 
 		Rts2ValueBool *emergencyReset;
 		Rts2ValueBool *Q9;
+
+		Rts2ValueBool *Q8;
+		Rts2ValueBool *QA;
+
+		Rts2ValueInteger *battery;
+		Rts2ValueInteger *batteryMin;
 
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
@@ -169,8 +184,7 @@ class Zelio:public Dome
 
 using namespace rts2dome;
 
-int
-Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
+int Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 {
 	uint16_t oldValue;
 	try
@@ -190,8 +204,7 @@ Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 	return 0;
 }
 
-int
-Zelio::startOpen ()
+int Zelio::startOpen ()
 {
 	// check auto state..
 	uint16_t reg;
@@ -226,6 +239,11 @@ Zelio::startOpen ()
 			return -1;
 		}
 
+		if (haveBatteryLevel && battery->getValueInteger () < batteryMin->getValueInteger ())
+		{
+			logStream (MESSAGE_WARNING) << "current battery level (" << battery->getValueInteger () << ") is bellow minimal level (" << batteryMin->getValueInteger () << sendLog;
+		}
+
 		zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
 		zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
 		zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
@@ -239,16 +257,17 @@ Zelio::startOpen ()
 	return 0;
 }
 
-
-bool
-Zelio::isGoodWeather ()
+bool Zelio::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
 		return true;
 	uint16_t reg;
+	uint16_t reg3;
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
+		if (haveBatteryLevel)
+			zelioConn->readHoldingRegisters (ZREG_O3XT1, 1, &reg3);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -262,12 +281,23 @@ Zelio::isGoodWeather ()
 		openingIgnoreRain->setValueBool (reg & ZS_OPENING_IGNR);
 		sendValueAll (openingIgnoreRain);
 	}
+	if (haveBatteryLevel)
+	{
+		battery->setValueInteger (reg3);
+		sendValueAll (battery);
+	}
 	weather->setValueBool (reg & ZS_WEATHER);
 	sendValueAll (weather);
 	// now check for rain..
 	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
 		setWeatherTimeout (3600);
+		return false;
+	}
+	// battery too weak
+	if (haveBatteryLevel && reg3 < batteryMin->getValueInteger ())
+	{
+		setWeatherTimeout (300);
 		return false;
 	}
 	// not in auto mode..
@@ -302,6 +332,7 @@ Zelio::isOpened ()
 			break;
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
+		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_OPEN) && (regs[1] & ZO_EP_OPEN))
 				return -2;
 			break;
@@ -345,9 +376,7 @@ Zelio::startClose ()
 	return 0;
 }
 
-
-long
-Zelio::isClosed ()
+long Zelio::isClosed ()
 {
 	uint16_t regs[2];
 	try
@@ -368,6 +397,7 @@ Zelio::isClosed ()
 			break;
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
+		case ZELIO_FRAM:
 			if ((regs[0] & ZO_EP_CLOSE) && (regs[1] & ZO_EP_CLOSE))
 				return -2;
 			break;
@@ -378,16 +408,12 @@ Zelio::isClosed ()
 	return 0;
 }
 
-
-int
-Zelio::endClose ()
+int Zelio::endClose ()
 {
 	return 0;
 }
 
-
-int
-Zelio::processOption (int in_opt)
+int Zelio::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -427,12 +453,11 @@ Zelio::idle ()
 	return Dome::idle ();
 }
 
-
-Zelio::Zelio (int argc, char **argv)
-:Dome (argc, argv)
+Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 {
 	zelioModel = ZELIO_UNKNOW;
 	haveRainSignal = true;
+	haveBatteryLevel = false;
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
@@ -454,9 +479,13 @@ Zelio::Zelio (int argc, char **argv)
 	deadManNum = 0;
 	nextDeadCheck = 0;
 
+	battery = NULL;
+	batteryMin = NULL;
+	Q8 = NULL;
+	QA = NULL;
+
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
 }
-
 
 Zelio::~Zelio (void)
 {
@@ -464,9 +493,7 @@ Zelio::~Zelio (void)
 	delete host;
 }
 
-
-int
-Zelio::info ()
+int Zelio::info ()
 {
 	uint16_t regs[8];
 	try
@@ -494,6 +521,7 @@ Zelio::info ()
 	{
 		case ZELIO_BOOTES3:
 			onPower->setValueBool (regs[7] & ZS_POWER);
+		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR:
 			swCloseRight->setValueBool (regs[5] & ZO_EP_CLOSE);
 			swOpenRight->setValueBool (regs[5] & ZO_EP_OPEN);
@@ -524,6 +552,11 @@ Zelio::info ()
 			break;
 	}
 
+	if (haveBatteryLevel)
+	{
+		battery->setValueInteger (regs[6]);
+	}
+
 	J1XT1->setValueInteger (regs[0]);
 	J2XT1->setValueInteger (regs[1]);
 	J3XT1->setValueInteger (regs[2]);
@@ -537,9 +570,7 @@ Zelio::info ()
 	return Dome::info ();
 }
 
-
-int
-Zelio::init ()
+int Zelio::init ()
 {
 	int ret = Dome::init ();
 	if (ret)
@@ -566,12 +597,17 @@ Zelio::init ()
 	}
 
 	// O4XT1
-	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE);
+	int model = regs[7] & (ZS_COMPRESSOR | ZS_SIMPLE | ZS_FRAM);
 	switch (model)
 	{
 		case 0:
 			zelioModel = ZELIO_BOOTES3;
 			zelioModelString->setValueString ("ZELIO_BOOTES3");
+			break;
+		case ZS_COMPRESSOR | ZS_FRAM:
+			zelioModel = ZELIO_FRAM;
+			haveBatteryLevel = true;
+			zelioModelString->setValueString ("ZELIO_FRAM");
 			break;
 		case ZS_COMPRESSOR:
 			zelioModel = ZELIO_COMPRESSOR;
@@ -599,6 +635,7 @@ Zelio::init ()
 	{
 		case ZELIO_BOOTES3:
 		case ZELIO_COMPRESSOR:
+		case ZELIO_FRAM:
 			if (swOpenLeft->getValueBool () == true && swOpenRight->getValueBool () == true)
 			{
 				maskState (DOME_DOME_MASK, DOME_OPENED, "initial dome state is opened");
@@ -641,9 +678,7 @@ Zelio::init ()
 	return 0;
 }
 
-
-void
-Zelio::createZelioValues ()
+void Zelio::createZelioValues ()
 {
 	switch (zelioModel)
 	{
@@ -663,6 +698,7 @@ Zelio::createZelioValues ()
 		
 		case ZELIO_BOOTES3:
 			createValue (onPower, "on_power", "true if power is connected", false);
+		case ZELIO_FRAM:
 		case ZELIO_COMPRESSOR:
 			createValue (swOpenLeft, "sw_open_left", "state of left open switch", false);
 			createValue (swCloseLeft, "sw_close_left", "state of left close switch", false);
@@ -689,6 +725,18 @@ Zelio::createZelioValues ()
 			break;
 	}
 
+	if (haveBatteryLevel)
+	{
+		createValue (battery, "battery", "Battery level", false);
+		createValue (batteryMin, "battery_min", "Battery minimal level for good weather", false);
+	}
+
+	if (zelioModel == ZELIO_FRAM)
+	{
+		createValue (Q8, "Q8", "Q8 switch", false);
+		createValue (QA, "QA", "QA switch", false);
+	}
+
 	// create rain values only if rain sensor is present
 	if (haveRainSignal)
 	{
@@ -708,14 +756,26 @@ Zelio::createZelioValues ()
 	createValue (O4XT1, "O4XT1", "fourth output", false, RTS2_DT_HEX);
 }
 
-
-int
-Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
+	if (oldValue == batteryMin)
+		return 0;
 	if (oldValue == emergencyReset)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
-	if (oldValue == Q9)
-	  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	if (zelioModel == ZELIO_FRAM)
+	{
+		if (oldValue == Q8)
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q8, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		if (oldValue == Q9)
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+		if (oldValue == QA)
+		  	return setBitsInput (ZREG_J1XT1, ZI_FRAM_QA, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	}
+	else
+	{
+		if (oldValue == Q9)
+		  	return setBitsInput (ZREG_J1XT1, ZI_Q9, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	}
 	if (oldValue == ignoreRain)
 	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	try
