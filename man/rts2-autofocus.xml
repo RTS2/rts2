@@ -66,7 +66,7 @@ and are found between  the lines "begin default configuration" and "end default
 configuration". Parameters outside these limits should normally not be changed. 
     </para>
   </refsect1>
-  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6530..</para>
+  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6532.</para>
     <para> <command>&dhpackage;</command> has been tested in three online data tacking
           and numerous offline analysis. After the next online data tacking I expect
           that <command>&dhpackage;</command> is usable for general use.    </para>
@@ -108,8 +108,8 @@ that rts2-centrald is reachable on localhost on port 617.
 <command>&dhpackage;</command> performs two tasks: online data taking followed
 by immediate 
 analysis and offline analysis of previously acquired run of focus images.
-The fit is stored as a PNG file and if FITPRG is set
-to FOCROOTI it is additionally displayed on screen. If the
+The fit is stored as a PNG file and if option -i is specified
+it is additionally displayed on screen. If the
 process is accessed remotely the X-Window DISPLAY variable has to be set.
 The essential results are 
 printed to the terminal in both modes.
@@ -120,13 +120,13 @@ images for each filter right after the run. If only one filter is specified
 the focuser is set according to the result if SET_FOCUS==TRUE. 
 </para>
     <para>
-In both modes if FIND_ROUGH_FOCUS==TRUE the focus is defined roughly based on
+In both modes if AUTO_FOCUS==TRUE the focus is defined  based on
 how many objects are identified by SExtractor. A weighted mean is calculated 
 and the value of $filter_focus_properties{$fltr}[IND_FOC_DEF] is set.
 In online mode a series of images is taken centred around the mean while in 
-offline mode the given set of images is analysed  centred around the mean too . After the rough focus run 
+offline mode the given set of images is analysed  centred around the mean too . After the auto focus run 
 in online mode the fits images are renamed and get the extension 
-ROUGH_FOCUS_RUN_EXTENSION. If no rough focus analysis is done then a
+AUTO_FOCUS_RUN_EXTENSION. If no auto focus analysis is done then a
 reference image is taken near the assumed best focus defined in %filter_focus_properties.
 The reference catalogue is recreated in both cases based on all images acquired.
 </para>
@@ -135,9 +135,15 @@ SExtractor rereads the
 reference catalogue ("sky list") and compares the x,y positions, but not the brightness, 
 with those from the current image. An object is considered if it has been 
 identified on all images. The two quantities FWHM_IMAGE and FLUX_MAX are 
-fitted independently. The focus is derived from these two fits and if the 
+fitted semi independently. The focus is derived from these two fits and if the 
 two values agree within FOCUSER_RESOLUTION the mean is the focus.
     </para>
+    <para>
+The reference catalogue can be cleaned up by setting
+CLEANUP_REFERENCE_CATALOGUE==TRUE. Objects which can not used for reference as
+well as close groups of objects are removed.
+</para>
+
    <para>
      During analysis DS9 region of interest (*.reg) files are written for
 each image. These files can be loaded with DS9 and inspected.  The circle is
@@ -306,28 +312,16 @@ for focuser position if TAKE_DATA == TRUE.</para>
  </varlistentry> 
 
       <varlistentry>
-	<term><option>FOCUSER_RESOLUTION, int, 20 [ticks]</option>
+	<term><option>AUTO_FOCUS, boolean, TRUE</option>
          </term>
-	<listitem><para>This is the number of focuser 
-ticks which makes a difference e.g. in FWHM.</para>
+	<listitem><para>If set TRUE <command>&dhpackage;</command> takes images
+over the whole range of FOCUSER_ABSOLUTE_LOWER_LIMIT and
+FOCUSER_ABSOLUTE_UPPER_LIMIT and calculates a weighted mean based on the number
+of objects SExtractor finds in each image. If TAKE_DATA == TRUE the images are
+taken centered around the mean while in offline modus the image with the
+nearest focuser position is taken as the reference image. </para>
         </listitem>
- </varlistentry> 
-
-      <varlistentry>
-	<term><option>FOCUSER_ABSOLUTE_LOWER_LIMIT, int, 0 [ticks]</option>
-         </term>
-	<listitem><para>No focuser position is set below this limit.</para>
-        </listitem>
- </varlistentry> 
-
-      <varlistentry>
-    <term>
-	<option>FOCUSER_ABSOLUTE_UPPER_LIMIT, int, 7000 [ticks]</option>
-    </term>
-         
-	<listitem><para>No focuser position is set above this limit.</para>
-        </listitem>
- </varlistentry> 
+ </varlistentry>
 
     <varlistentry>
     <term>
@@ -376,7 +370,9 @@ ticks which makes a difference e.g. in FWHM.</para>
     <option>CLEANUP_REFERENCE_CATALOGUE, boolean,  TRUE</option>
     </term>
     <listitem>
-    <para> 
+    <para>If set TRUE objects which do not have SExtracgtor`s FLAG equal 0 and
+ELLIPTICITY smaller  than 0.1 are removed from the reference catalogue as well as
+objects which are closer than OBJECT_SEPARATION. 
     </para>
     </listitem>
     </varlistentry>
@@ -385,10 +381,11 @@ ticks which makes a difference e.g. in FWHM.</para>
 
     <varlistentry>
     <term>
-    <option>CONFIGURATION_FILE, file name,  to be defined</option>
+    <option>CONFIGURATION_FILE, file name,  no default</option>
     </term>
     <listitem>
-    <para> ToDo: planned feature not yet there.
+    <para> The name of the file is given on the command line, see option
+-c. This parameter is ignored if it appears in the configuration file.
     </para>
     </listitem>
     </varlistentry>
@@ -449,27 +446,6 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
           </listitem>
         </varlistentry>
 
-     <varlistentry>
-    <term>
-    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.dat"</option>
-    </term>
-    <listitem>
-    <para>These files are the data files (FWHM, FLUX_MAX) which are fed into rts2_focus_fit.
-    </para>
-    </listitem>
-    </varlistentry>
-
-   <varlistentry>
-    <term>
-    <option>FITPRG, path to the fit program,  FOCROOTI</option>
-    </term>
-    <listitem>
-    <para> FOCROOTI is the interactive version displaying a editable plot 
-           of the results. FOCROOTB is the version used in unattended mode.
-    </para>
-    </listitem>
-    </varlistentry>
-
       <varlistentry>
 	<term>
       <option>FITS_DIRECTORY, file name, "/scratch/incomming/Focusing-2009-10-15"</option>
@@ -482,6 +458,16 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 	</listitem>
       </varlistentry>
 
+     <varlistentry>
+    <term>
+    <option>FIT_RESULT_FILE, base file name, "/tmp/fit-autofocus.dat"</option>
+    </term>
+    <listitem>
+    <para>These files are the data files (FWHM, FLUX_MAX) which are fed into rts2_focus_fit.
+    </para>
+    </listitem>
+    </varlistentry>
+
       <varlistentry>
 	<term>
       <option>FOCAL_RATIO, float, 7. to be defined</option>
@@ -492,14 +478,86 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 	</listitem>
       </varlistentry>
 
-     <varlistentry>
+
+   <varlistentry>
     <term>
-    <option>INCLUDE_ROUGH_FOCUS_RUN, boolean, FALSE</option>
+    <option>FOCROOTB, path to the fit program,  "rts2-fit-focus 0"</option>
     </term>
     <listitem>
-    <para> If TRUE images created during the rough focus run, with the additional extension FIND_ROUGH_FOCUS,
+    <para> FOCROOTB is the version used in unattended mode.
+    </para>
+    </listitem>
+    </varlistentry>
+
+   <varlistentry>
+    <term>
+    <option>FOCROOTI, path to the interactive fit program,   "rts2-fit-focus 1"</option>
+    </term>
+    <listitem>
+    <para> FOCROOTI is the interactive version displaying a editable plot 
+           of the results and used if option -i is specified.
+    </para>
+    </listitem>
+    </varlistentry>
+
+      <varlistentry>
+	<term><option>FOCUSER_ABSOLUTE_LOWER_LIMIT, int, 0 [ticks]</option>
+         </term>
+	<listitem><para>No focuser position is set below this limit.</para>
+        </listitem>
+ </varlistentry> 
+
+      <varlistentry>
+    <term>
+	<option>FOCUSER_ABSOLUTE_UPPER_LIMIT, int, 7000 [ticks]</option>
+    </term>
+         
+	<listitem><para>No focuser position is set above this limit.</para>
+        </listitem>
+ </varlistentry> 
+
+
+      <varlistentry>
+	<term><option>FOCUSER_RESOLUTION, int, 20 [ticks]</option>
+         </term>
+	<listitem><para>This is the number of focuser 
+ticks which makes a difference e.g. in FWHM.</para>
+        </listitem>
+ </varlistentry> 
+
+
+
+     <varlistentry>
+    <term>
+    <option>INCLUDE_AUTO_FOCUS_RUN, boolean, FALSE</option>
+    </term>
+    <listitem>
+    <para> If TRUE images created during the auto focus run, with the
+additional extension AUTO_FOCUS_RUN_EXTENSION (not a parameter),
            are include in the final analysis too. Be careful, if TRUE and images are taken
            far off the focal plane the number of selected objects may drop rapidly.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>MINIMUM_OBJECTS, int, 5</option>
+    </term>
+    <listitem>
+    <para> This is the minimal number of objects which must be identified in all images.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>NUMBER_OF_AUTO_FOCUS_IMAGES, int, 10</option>
+    </term>
+    <listitem>
+    <para> The images are taken with a focuser step size of
+(FOCUSER_ABSOLUTE_UPPER_LIMIT-
+FOCUSER_ABSOLUTE_LOWER_LIMIT)/NUMBER_OF_AUTO_FOCUS_IMAGES beginning at FOCUSER_ABSOLUTE_LOWER_LIMIT.
     </para>
     </listitem>
     </varlistentry>
@@ -507,11 +565,12 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
     <varlistentry>
     <term>
-    <option>MINIMUM_OBJECTS, int, 10</option>
+    <option>OBJECT_SEPARATION, boolean, 20 [pixel]"</option>
     </term>
     <listitem>
-    <para> This is the minimal number of objects which must be identified in all images.
-    </para>
+    <para>If CLEANUP_REFERENCE_CATALOGUE==TRUE only pairs of stars which have a
+distance larger than OBJECT_SEPARATION are accepted as reference objects.
+     </para>
     </listitem>
     </varlistentry>
 
@@ -527,17 +586,6 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
     <varlistentry>
     <term>
-    <option>OBJECT_SEPARATION, boolean, 20 [pixel]"</option>
-    </term>
-    <listitem>
-    <para>If CLEANUP_REFERENCE_CATALOGUE==TRUE only pairs of stars which have a
-distance larger than OBJECT_SEPARATION are accepted as reference objects.
-     </para>
-    </listitem>
-    </varlistentry>
-
-    <varlistentry>
-    <term>
     <option>RTS2_DEVICES, file name, "/etc/rts2/devices"</option>
     </term>
     <listitem>
@@ -549,7 +597,7 @@ if defined its associated devices focuser and filter wheel. All devices must be 
 
     <varlistentry>
     <term>
-    <option>SELECT_RATIO, float,  0.1</option>
+    <option>SELECT_RATIO, float,  0.05</option>
     </term>
     <listitem>
     <para> The ratio is defined as number of objects found in actual image
@@ -616,6 +664,16 @@ NUMBER_ASSOC.
     </para>
     </listitem>
     </varlistentry>
+    <varlistentry>
+    <term>
+    <option>SEXPRG, file name, "sex 2>/dev/null"</option>
+    </term>
+    <listitem>
+    <para>The SExtractor path.
+    </para>
+    </listitem>
+    </varlistentry>
+
 
     <varlistentry>
     <term>
@@ -633,9 +691,19 @@ NUMBER_ASSOC.
     </term>
     <listitem>
     <para>This is SExtractor's reference catalogue. Depending on the setting of
-FIND_ROUGH_FOCUS it is either created near
+AUTO_FOCUS it is either created near
 %filter_focus_properties{filter}[IND_FOC_DEF] or at a position found during
 current analysis based in the maximum of objects detected.
+    </para>
+    </listitem>
+    </varlistentry>
+    <varlistentry>
+    <term>
+    <option>SEX_TMP_CATALOGUE, file name"/tmp/sex-autofocus-tmp.cat"</option>
+    </term>
+    <listitem>
+    <para> If TRUE <command>&dhpackage;</command> takes data, this is the
+    online mode and if FALSE it analyses data in offline mode.
     </para>
     </listitem>
     </varlistentry>
@@ -725,33 +793,26 @@ A focus run may fail due to various reasons. The more images
 are taken, specially far off the extrema, the fewer objects
 are present in all images. Although a sensible result can be
 obtained with a single object it is recommended to have a reasonable
-number spread over the whole image.  One can check that loading
-the DS9 region files with the command: 
- </para>
-<para>
-ds9  -scale mode zscale fits1.fits -zoom to fit -region fits1.reg ... fitsX.fits -region fitsX.reg   -single  -blink
+number spread over the whole image.  Limit the chosen images
+with the parameters ANALYSIS_LOWER_LIMIT and ANALYSIS_UPPER_LIMIT to a narrower
+interval centered around the extrema.
+One can define sensible limits visually inspecting the DS9 region files (see option DS9_REGION_FILE).
 </para>
 <para>
-and inspecting the circled objects. See option DS9_REGION_FILE.
-<para>
-</para>
-
 If too few objects are present vary SExtractor's DETECT_THRESH
 or choose a field where more stars are present or increase
 exposure time during online data taking. Do not set a ELLIPTICITY value
 above 0.3.
 <para>
 </para>
-
 If the focus images are taken with an unguided telescope the center
 of the image may be shifted in the RA direction due to e.g. the periodic error of
 the worm gear. A shift in DEC may occur due to the
     atmospheric refraction and/or polar alignment. If images are not considered try to adjust
- SExtractor's SEXPARAMTER. Be cautious: do not make the value
+ SExtractor's ASSOC_RADIUS. Be cautious: do not make the value
 too large, since SExtractor will not match better.
-<para>
 </para>
-
+<para>
 Since no time constraints are applied it may happen that
 images of two focus runs  of the same field are analysed. 
 E.g., if RTS2 does not steer the mount the coordinates of
@@ -761,14 +822,12 @@ different fields in offline mode.
 One likely sees that if the ratio
 of selected to reference objects vary from image to image or the number
 of selected objects drops down to only few objects. 
-<para>
 </para>
-
+<para>
 If uncommon results occur it is recommended to start in an 
 empty FITS_DIRECTORY and, in offline mode copy the files, and start again.
 </para>
 <para>
-
 The result may degrade if the atmospheric conditions
 change during data taking. Therefore try to minimise
 the exposure time. 
@@ -784,8 +843,9 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   <refsect1>
     <title>Required software and Perl Modules</title>
     <varlistentry>
-  <term> SExtractor, rts2_fit_focus, root (http://root.cern.ch)
+  <term> SExtractor, rts2-fit-focus, root (http://root.cern.ch)
   </term>
+  <para>If root is installed rts2-fit-focus will be compiled and installed.</para>
   </varlistentry>
   <varlistentry>
   <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted 
