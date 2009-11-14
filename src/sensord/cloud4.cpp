@@ -22,6 +22,11 @@
 
 #include "../utils/connserial.h"
 
+#define EVENT_CLOUD_HEATER      RTS2_LOCAL_EVENT + 1300
+
+#define OPT_HEAT_ON             OPT_LOCAL + 343
+#define OPT_HEAT_DUR            OPT_LOCAL + 344
+
 namespace rts2sensord
 {
 
@@ -32,6 +37,22 @@ namespace rts2sensord
  */
 class Cloud4: public SensorWeather
 {
+	public:
+		Cloud4 (int in_argc, char **in_argv);
+		virtual ~Cloud4 (void);
+
+		virtual void postEvent (Rts2Event *event);
+
+		virtual int changeMasterState (int new_state);
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		char *device_file;
 		rts2core::ConnSerial *mrakConn;
@@ -53,21 +74,14 @@ class Cloud4: public SensorWeather
 		Rts2ValueInteger *numberMes;
 		Rts2ValueInteger *mrakStatus;
 
+		Rts2ValueTime *heatStateChangeTime;
+		Rts2ValueInteger *heatInterval;
+		Rts2ValueInteger *heatDuration;
+
 		/**
 		 * Read sensor values.
 		 */
 		int readSensor ();
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-	public:
-		Cloud4 (int in_argc, char **in_argv);
-		virtual ~Cloud4 (void);
 };
 
 };
@@ -110,9 +124,7 @@ int Cloud4::readSensor ()
 	return 0;
 }
 
-
-Cloud4::Cloud4 (int in_argc, char **in_argv)
-:SensorWeather (in_argc, in_argv)
+Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 {
 	mrakConn = NULL;
 
@@ -134,9 +146,21 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
 
+	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
+	heatStateChangeTime->setValueDouble (nan("f"));
+
+	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false);
+	heatInterval->setValueInteger (-1);
+
+	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false);
+	heatDuration->setValueInteger (-1);
+
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
 	addOption ('b', NULL, 1, "bad trigger point");
 	addOption ('g', NULL, 1, "good trigger point");
+
+	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
+	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
 
 	setIdleInfoInterval (20);
 }
@@ -144,6 +168,55 @@ Cloud4::Cloud4 (int in_argc, char **in_argv)
 Cloud4::~Cloud4 (void)
 {
 	delete mrakConn;
+}
+
+void Cloud4::postEvent (Rts2Event * event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_CLOUD_HEATER:
+			{
+				int ms = getMasterState () & SERVERD_STATUS_MASK;
+				if (!(ms == SERVERD_DUSK || ms == SERVERD_NIGHT || ms == SERVERD_DAWN))
+				{
+					heater->setValueBool (false);
+				}
+				else
+				{
+					int t_diff;
+					if (heater->getValueBool ())
+						t_diff = heatInterval->getValueInteger ();
+					else
+						t_diff = heatDuration->getValueInteger ();
+					heater->setValueBool (!heater->getValueBool ());
+					addTimer (t_diff, new Rts2Event (EVENT_CLOUD_HEATER, this));
+				}
+				sendValueAll (heater);
+				sendValueAll (heatStateChangeTime);
+			}
+			break;
+	}
+	SensorWeather::postEvent (event);
+}
+
+int Cloud4::changeMasterState (int new_state)
+{
+	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
+	{
+		int ms = new_state & SERVERD_STATUS_MASK;
+		switch (ms)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				addTimer (0, new Rts2Event (EVENT_CLOUD_HEATER, this));
+				break;
+			default:
+				deleteTimers (EVENT_CLOUD_HEATER);
+				break;
+		}
+	}
+	return SensorWeather::changeMasterState (new_state);
 }
 
 int Cloud4::processOption (int in_opt)
@@ -158,6 +231,12 @@ int Cloud4::processOption (int in_opt)
 			break;
 		case 'g':
 			triggerGood->setValueDouble (atof (optarg));
+			break;
+		case OPT_HEAT_ON:
+			heatInterval->setValueCharArr (optarg);
+			break;
+		case OPT_HEAT_DUR:
+			heatDuration->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
@@ -224,7 +303,7 @@ int Cloud4::info ()
 
 int Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
+	if (old_value == heater || old_value == triggerBad || old_value == triggerGood || old_value == heatInterval || old_value == heatDuration)
 		return 0;
 	return SensorWeather::setValue (old_value, new_value);
 }
