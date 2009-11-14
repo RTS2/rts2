@@ -282,7 +282,7 @@ void TargetAuger::updateShowerFields ()
 	dirToEqu (&dir, observer, JD, &equ);
 	equ.ra -= pos.ra;
 	equ.dec -= pos.dec;
-	showerOffsets.push_back (equ);
+	addShowerOffset (equ);
 
 	rts2targetauger::vec prev_dir = dir;
 	prev_equ = equ;
@@ -298,17 +298,26 @@ void TargetAuger::updateShowerFields ()
 		equ.dec -= pos.dec;
 
 		if (dir.z <= 0.5 && prev_dir.z > 0.5 && prev_dir.z < 0.520016128)
-			showerOffsets.push_back (prev_equ);
+			addShowerOffset (prev_equ);
         	if (dir.z <= 0.5 && dir.z >= 0.034899497)
-			showerOffsets.push_back (equ);
+			addShowerOffset (equ);
         	if (prev_dir.z >= 0.034899497 && dir.z > 0.011635266 && dir.z < 0.034899497)
-			showerOffsets.push_back (equ);
+			addShowerOffset (equ);
 		
 		prev_dir = dir;
 		prev_equ = equ;
 
 		dir = rotateVector (&axis, &dir, angle);
 	}
+}
+
+void TargetAuger::addShowerOffset (struct ln_equ_posn &pos)
+{
+	if (fabs (pos.ra) < 1 / 3600.0)
+		pos.ra = 0;
+	if (fabs (pos.dec) < 1 / 3600.0)
+		pos.dec = 0;
+	showerOffsets.push_back (pos);
 }
 
 int TargetAuger::getScript (const char *device_name, std::string &buf)
@@ -322,7 +331,9 @@ int TargetAuger::getScript (const char *device_name, std::string &buf)
 	 	_os << "filter=B ";
 		for (std::vector <struct ln_equ_posn>::iterator iter = showerOffsets.begin (); iter != showerOffsets.end (); iter++)
 		{
-			_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") E 10 ";
+			if (iter->ra != 0 || iter->dec != 0)
+				_os << "PARA.WOFFS=(" << (iter->ra) << "," << (iter->dec) << ") ";
+			_os << "E 10 ";
 		}
 		buf = _os.str ();
 		return 0;

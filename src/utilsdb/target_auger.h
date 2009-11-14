@@ -91,5 +91,6 @@ class TargetAuger:public ConstTarget
 		std::vector <struct ln_equ_posn> showerOffsets;
 
 		void updateShowerFields ();
+		void addShowerOffset (struct ln_equ_posn &pos);
 };
 #endif							 /* !__RTS2_TARGET_AUGER__ */
