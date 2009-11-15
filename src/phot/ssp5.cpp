@@ -114,6 +114,10 @@ int SSP5::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 			return -2;
 		return 0;
 	}
+	if (oldValue == filter)
+	{
+		return startFilterMove (newValue->getValueInteger ()) == 0 ? 0 : -2;
+	}
 	return Rts2DevPhot::setValue (oldValue, newValue);
 }
 
