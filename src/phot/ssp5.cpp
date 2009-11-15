@@ -175,6 +175,12 @@ long SSP5::getCount ()
 	}
 	if (!(buf[0] == 'C' && buf[1] == '=' && buf[7] == '\n' && buf[8] == '\r'))
 	{
+		if (strncmp (buf, "ER=", 3) == 0 && buf[3] == '2')
+		{
+			// overflow
+			sendCount (0, req_time, true);
+			return 0;
+		}
 		photConn->flushPortIO ();
 		return -1;
 	}
