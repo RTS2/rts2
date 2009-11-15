@@ -52,6 +52,7 @@ class Cloud4: public SensorWeather
 		virtual int info ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual void valueChanged (Rts2Value *value);
 
 	private:
 		char *device_file;
@@ -312,6 +313,24 @@ int Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == heater || old_value == triggerBad || old_value == triggerGood || old_value == heatInterval || old_value == heatDuration)
 		return 0;
 	return SensorWeather::setValue (old_value, new_value);
+}
+
+void Cloud4::valueChanged (Rts2Value *value)
+{
+	if (value == heatInterval || value == heatDuration)
+	{
+		deleteTimers (EVENT_CLOUD_HEATER);
+		if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
+		{
+			addTimer (heatDuration->getValueInteger (), new Rts2Event (EVENT_CLOUD_HEATER, this));
+		}
+		else
+		{
+			heater->setValueBool (false);
+			readSensor (false);
+		}
+	}
+	SensorWeather::valueChanged (value);
 }
 
 int main (int argc, char **argv)
