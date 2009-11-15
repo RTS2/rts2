@@ -42,16 +42,13 @@ class ComediDOError
 		}
 
 		friend std::ostream & operator << (std::ostream & os, ComediDOError & err);
-}
+};
 
-
-std::ostream &
-operator << (std::ostream & os, ComediDOError & err)
+std::ostream & operator << (std::ostream & os, ComediDOError & err)
 {
 	os << "Cannot read digital input " << err.name;
 	return os;
 }
-
 
 namespace rts2dome
 {
@@ -78,6 +75,8 @@ class Bootes2: public Dome
 		Rts2ValueBool *swCloseRight;
 
 		Rts2ValueBool *raining;
+
+		void comediReadDIO (int channel, Rts2ValueBool *val, const char *name);
 
 		/**
 		 * Returns volts from the device.
@@ -205,27 +204,22 @@ Bootes2::updateTemperature ()
 	return 0;
 }
 
-
-void
-Bootes2::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
+void Bootes2::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
 {
 	int ret;
-	int v;
-	ret = comedi_dio_read (3, channel, &v);
+	uint32_t v;
+	ret = comedi_dio_read (comediDevice, 3, channel, &v);
 	if (ret != 1)
 		throw ComediDOError (name);
 	val->setValueBool (v != 0);
 }
 
-
-int
-Bootes2::updateStatus ()
+int Bootes2::updateStatus ()
 {
 	swOpenLeft->setValueBool (true);
 	swOpenRight->setValueBool (true);
 	swCloseLeft->setValueBool (false);
 	swCloseRight->setValueBool (false);
-	int v;
 	try
 	{
 		comediReadDIO (2, swCloseLeft, "close left");
@@ -234,9 +228,9 @@ Bootes2::updateStatus ()
 		comediReadDIO (0, swOpenLeft, "open left");
 		comediReadDIO (1, swOpenRight, "open right");
 	}
-	catch (ComediDOError)
+	catch (ComediDOError &er)
 	{
-		logStream (MESSAGE_ERROR) << ComediDOError << sendLog;
+		logStream (MESSAGE_ERROR) << er << sendLog;
 		return -1;
 	}
 	return 0;
@@ -357,7 +351,6 @@ Bootes2::info ()
 int
 Bootes2::startOpen ()
 {
-	int ret;
 	if (!isGoodWeather ())
 		return -1;
 
