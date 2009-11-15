@@ -81,14 +81,14 @@ class Cloud4: public SensorWeather
 		/**
 		 * Read sensor values.
 		 */
-		int readSensor ();
+		int readSensor (bool update);
 };
 
 };
 
 using namespace rts2sensord;
 
-int Cloud4::readSensor ()
+int Cloud4::readSensor (bool update)
 {
 	int ret;
 	char buf[128];
@@ -110,6 +110,9 @@ int Cloud4::readSensor ()
 			<< buf << "', return " << x << sendLog;
 		return -1;
 	}
+	if (update == false)
+		return 0;
+
 	tempDiff->addValue (temp0 - temp1, 20);
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
@@ -191,6 +194,7 @@ void Cloud4::postEvent (Rts2Event * event)
 					heater->setValueBool (!heater->getValueBool ());
 					addTimer (t_diff, new Rts2Event (EVENT_CLOUD_HEATER, this));
 				}
+				readSensor (false);
 				sendValueAll (heater);
 				sendValueAll (heatStateChangeTime);
 			}
@@ -209,10 +213,12 @@ int Cloud4::changeMasterState (int new_state)
 			case SERVERD_DUSK:
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
-				addTimer (0, new Rts2Event (EVENT_CLOUD_HEATER, this));
+				addTimer (heatInterval->getValueInteger (), new Rts2Event (EVENT_CLOUD_HEATER, this));
 				break;
 			default:
+				heater->setValueBool (false);
 				deleteTimers (EVENT_CLOUD_HEATER);
+				readSensor (false);
 				break;
 		}
 	}
@@ -266,7 +272,7 @@ int Cloud4::init ()
 int Cloud4::info ()
 {
 	int ret;
-	ret = readSensor ();
+	ret = readSensor (true);
 	if (ret)
 	{
 		if (getLastInfoTime () > 60)
