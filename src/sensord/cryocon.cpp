@@ -38,10 +38,8 @@ class Rts2ValueTempInput
 
 		Rts2ValueTempInput (Cryocon * dev, char in_chan);
 
-		char getChannel ()
-		{
-			return chan;
-		}
+		char getChannel () { return chan; }
+
 	private:
 		char chan;
 };
@@ -89,13 +87,9 @@ class Cryocon:public Gpib
 		Cryocon (int argc, char **argv);
 		virtual ~ Cryocon (void);
 
-		void createTempInputValue (Rts2ValueDouble ** val, char chan,
-			const char *name, const char *desc);
+		void createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc);
 
-		template < typename T > void createLoopValue (T * &val, int loop,
-			const char *in_val_name,
-			const char *in_desc,
-			bool writeToFits = true)
+		template < typename T > void createLoopValue (T * &val, int loop, const char *in_val_name, const char *in_desc, bool writeToFits = true)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
 			n[0] = '1' + loop;
