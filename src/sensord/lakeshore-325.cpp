@@ -31,7 +31,7 @@ class Lakeshore;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class TempChannel:public std::map < const char*, Rts2Value *>
+class TempChannel:public std::map < const char*, std::list <Rts2Value *> >
 {
 	public:
 		TempChannel () {};
@@ -83,8 +83,10 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 		temps[i] = new TempChannel ();
 		Rts2ValueDouble *vd;
 		Rts2ValueInteger *vi;
-		(*(temps[i]))["CRDG"] = tempValue (vd, "TEMP", chan, "channel temperature", true);
-		(*(temps[i]))["INCRV"] = tempValue (vi, "INCRV", chan, "channel input curve number", true);
+		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true));
+		(*(temps[i]))["INCRV"].push_back (tempValue (vi, "INCRV", chan, "channel input curve number", true));
+		(*(temps[i]))["RDGST"].push_back (tempValue (vi, "STATUS", chan, "channel input reading status", true));
+		(*(temps[i]))["SRDG"].push_back (tempValue (vd, "SENSOR", chan, "channel input sensor value", true));
 	}
 
 	createValue (tunest, "TUNEST", "if either Loop 1 or Loop 2 is actively tuning.", true);
@@ -107,11 +109,21 @@ int Lakeshore::info ()
 		for (int i = 0; i < 2; i++)
 		{
 			char chan = 'A' + i;
-			for (std::map <const char*, Rts2Value*>::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
+			for (std::map <const char*, std::list <Rts2Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
 			{
 				std::ostringstream _os;
 				_os << iter->first << "? " << chan;
-				readValue (_os.str ().c_str (), iter->second);
+
+				char buf[100];
+				gpibWriteRead (_os.str ().c_str (), buf, 100);
+				std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
+
+				std::vector<std::string>::iterator iter_sc = sc.begin ();
+				std::list <Rts2Value*>::iterator iter_v = iter->second.begin ();
+				for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
+				{
+					(*iter_v)->setValueCharArr (iter_sc->c_str ());
+				}
 			}
 		}
 		readValue ("TUNEST?", tunest);
