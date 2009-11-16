@@ -58,6 +58,7 @@ class Lakeshore:public Gpib
 
 	private:
 		TempChannel *temps[2];
+		TempChannel *loops[2];
 
 		Rts2ValueBool *tunest;
 
@@ -77,16 +78,68 @@ using namespace rts2sensord;
 
 Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
-	for (int i = 0; i < 2; i++)
+	int i;
+	Rts2ValueDouble *vd;
+	Rts2ValueInteger *vi;
+	Rts2ValueBool *vb;
+	Rts2ValueSelection *vs;
+
+	for (i = 0; i < 2; i++)
 	{
 		char chan = 'A' + i;
 		temps[i] = new TempChannel ();
-		Rts2ValueDouble *vd;
-		Rts2ValueInteger *vi;
+
 		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true));
 		(*(temps[i]))["INCRV"].push_back (tempValue (vi, "INCRV", chan, "channel input curve number", true));
 		(*(temps[i]))["RDGST"].push_back (tempValue (vi, "STATUS", chan, "channel input reading status", true));
 		(*(temps[i]))["SRDG"].push_back (tempValue (vd, "SENSOR", chan, "channel input sensor value", true));
+
+		(*(temps[i]))["FILTER"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_POINTS", chan, "channel filter number of data points used for the filtering function. Valid range 2-64.", false));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_WINDOW", chan, "channel filtering window. Valid range 1 - 10", false));
+
+		(*(temps[i]))["INTYPE"].push_back (tempValue (vs, "INTYPE_SENSOR", chan, "channel input sensor type", false));
+		vs->addSelVal ("Silicon diode");
+		vs->addSelVal ("GaAlAs diode");
+		vs->addSelVal ("100 Ohm platinum/250");
+		vs->addSelVal ("100 Ohm platinum/500");
+		vs->addSelVal ("1000 Ohm platinum");
+		vs->addSelVal ("NTC RTD");
+		vs->addSelVal ("Thermocouple 25 mV");
+		vs->addSelVal ("Thermocouple 50 mV");
+		vs->addSelVal ("2.5 V,1 mA");
+		vs->addSelVal ("7.5 V,1 mA");
+		(*(temps[i]))["INTYPE"].push_back (tempValue (vb, "INTYPE_COMPENSATION", chan, "channel input sensor compensation", false));
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		char chan = '1' + i;
+		loops[i] = new TempChannel ();
+
+		(*(loops[i]))["SETP"].push_back (tempValue (vd, "SETPOINT", chan, "control loop temperature setpoint", true));
+		(*(loops[i]))["HTR"].push_back (tempValue (vd, "HEATER", chan, "control loop heater output", true));
+
+		(*(loops[i]))["RANGE"].push_back (tempValue (vs, "HEATER_RANGE", chan, "control loop heater range", false));
+		vs->addSelVal ("Off");
+		vs->addSelVal ("Low (2.5 W)");
+		vs->addSelVal ("High (25 W)");
+
+		(*(loops[i]))["HTRRES"].push_back (tempValue (vs, "HEATER_RESISTANCE", chan, "control loop heater output", false));
+		vs->addSelVal ("25 Ohm");
+		vs->addSelVal ("50 Ohm");
+
+		(*(loops[i]))["MOUT"].push_back (tempValue (vd, "MOUT", chan, "control loop manual heater power", false));
+
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_P", chan, "control loop PID Proportional (gain)", false));
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_I", chan, "control loop PID Integral (reset)", false));
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_D", chan, "control loop PID Derivative (rate)", false));
+
+		(*(loops[i]))["RAMP"].push_back (tempValue (vb, "RAMP_ACTIVE", chan, "control loop setpoint ramping", false));
+		(*(loops[i]))["RAMP"].push_back (tempValue (vd, "RAMP_RATE", chan, "control loop ramping rate", false));
+
+		(*(loops[i]))["RAMPST"].push_back (tempValue (vb, "RAMP_STATUS", chan, "control loop ramping status", false));
+
 	}
 
 	createValue (tunest, "TUNEST", "if either Loop 1 or Loop 2 is actively tuning.", true);
@@ -99,6 +152,9 @@ Lakeshore::~Lakeshore (void)
 	{
 		delete temps[i];
 		temps[i] = NULL;
+
+		delete loops[i];
+		loops[i] = NULL;
 	}
 }
 
@@ -106,7 +162,8 @@ int Lakeshore::info ()
 {
 	try
 	{
-		for (int i = 0; i < 2; i++)
+		int i;
+		for (i = 0; i < 2; i++)
 		{
 			char chan = 'A' + i;
 			for (std::map <const char*, std::list <Rts2Value*> >::iterator iter = temps[i]->begin (); iter != temps[i]->end (); iter++)
@@ -126,6 +183,28 @@ int Lakeshore::info ()
 				}
 			}
 		}
+
+		for (i = 0; i < 2; i++)
+		{
+			char chan = '1' + i;
+			for (std::map <const char*, std::list <Rts2Value*> >::iterator iter = loops[i]->begin (); iter != loops[i]->end (); iter++)
+			{
+				std::ostringstream _os;
+				_os << iter->first << "? " << chan;
+
+				char buf[100];
+				gpibWriteRead (_os.str ().c_str (), buf, 100);
+				std::vector <std::string> sc = SplitStr (std::string (buf), std::string (","));
+
+				std::vector<std::string>::iterator iter_sc = sc.begin ();
+				std::list <Rts2Value*>::iterator iter_v = iter->second.begin ();
+				for (; iter_sc != sc.end () && iter_v != iter->second.end (); iter_sc++, iter_v++)
+				{
+					(*iter_v)->setValueCharArr (iter_sc->c_str ());
+				}
+			}
+		}
+
 		readValue ("TUNEST?", tunest);
 	}
 	catch (rts2core::Error er)
