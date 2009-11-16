@@ -47,6 +47,9 @@ void ConnGpib::readValue (const char *buf, Rts2Value * val)
 		case RTS2_VALUE_BOOL:
 			readValue (buf, (Rts2ValueBool *) val);
 			return;
+		case RTS2_VALUE_INTEGER:
+			readValue (buf, (Rts2ValueInteger *) val);
+			return;
 		case RTS2_VALUE_SELECTION:
 			readValue (buf, (Rts2ValueSelection *) val);
 			return;
@@ -135,7 +138,6 @@ void ConnGpib::readValue (const char *buf, Rts2ValueFloat * val)
 	val->setValueFloat (atof (rb));
 }
 
-
 void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
 {
 	char rb[50];
@@ -143,6 +145,12 @@ void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
 	val->setValueBool (!strncmp (rb, "ON", 2));
 }
 
+void ConnGpib::readValue (const char *buf, Rts2ValueInteger * val)
+{
+	char rb[50];
+	gpibWriteRead (buf, rb, 50);
+	val->setValueCharArr (rb);
+}
 
 void ConnGpib::readValue (const char *buf, Rts2ValueSelection * val)
 {

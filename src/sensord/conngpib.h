@@ -103,6 +103,8 @@ class ConnGpib
 
 		void readValue (const char *buf, Rts2ValueBool * val);
 
+		void readValue (const char *buf, Rts2ValueInteger * val);
+
 		void readValue (const char *buf, Rts2ValueSelection * val);
 
 		/**
