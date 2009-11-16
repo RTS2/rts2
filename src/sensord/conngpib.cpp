@@ -127,7 +127,7 @@ void ConnGpib::readValue (const char *buf, Rts2ValueDouble * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueCharArr (buf);
+	val->setValueCharArr (rb);
 }
 
 
@@ -135,7 +135,7 @@ void ConnGpib::readValue (const char *buf, Rts2ValueFloat * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueCharArr (buf);
+	val->setValueCharArr (rb);
 }
 
 void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
