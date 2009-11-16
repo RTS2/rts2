@@ -54,10 +54,10 @@ typedef enum
 	SPINAC_2,
 	SPINAC_3,
 	SPINAC_4,
-	PLUG_PHOTOMETER,
-	PLUG_2,
+	PLUG_4,
 	PLUG_3,
-	PLUG_4
+	PLUG_PHOTOMETER,
+	PLUG_1
 } extraOuts;
 
 typedef enum
@@ -108,8 +108,8 @@ class Fram:public Ford
 		Rts2ValueInteger *reclosing_num;
 
 		Rts2ValueBool *switchBatBack;
+		Rts2ValueBool *plug1;
 		Rts2ValueBool *plug_photometer;
-		Rts2ValueBool *plug2;
 		Rts2ValueBool *plug3;
 		Rts2ValueBool *plug4;
 
@@ -739,11 +739,11 @@ int Fram::init ()
 		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
 		switchBatBack->setValueBool (false);
 
+		createValue (plug1, "plug_1", "1st plug", false);
 		createValue (plug_photometer, "plug_photometer", "1st plug", false);
 		extraSwitch->ZAP (PLUG_PHOTOMETER);
 		plug_photometer->setValueBool (true);
 
-		createValue (plug2, "plug_2", "2nd plug", false);
 		createValue (plug3, "plug_3", "3rd plug", false);
 		createValue (plug4, "plug_4", "4th plug", false);
 	}
@@ -797,9 +797,9 @@ int Fram::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	{
 		return setValueSwitch (PLUG_PHOTOMETER, ((Rts2ValueBool *) newValue)->getValueBool ());
 	}
-	if (oldValue == plug2)
+	if (oldValue == plug1)
 	{
-		return setValueSwitch (PLUG_2, ((Rts2ValueBool *) newValue)->getValueBool ());
+		return setValueSwitch (PLUG_1, ((Rts2ValueBool *) newValue)->getValueBool ());
 	}
 	if (oldValue == plug3)
 	{
@@ -846,8 +846,8 @@ Fram::Fram (int argc, char **argv):Ford (argc, argv)
 	extraSwitchFile = NULL;
 	extraSwitch = NULL;
 
+	plug1 = NULL;
 	plug_photometer = NULL;
-	plug2 = NULL;
 	plug3 = NULL;
 	plug4 = NULL;
 
