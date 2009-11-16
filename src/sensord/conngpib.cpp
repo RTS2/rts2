@@ -113,6 +113,9 @@ void ConnGpib::readValue (const char *buf, Rts2ValueString * val)
 	char *sep = strchr (rb, '\n');
 	if (sep)
 		*sep = '\0';
+	sep = strchr (rb, '\r');
+	if (sep)
+		*sep = '\0';
 	val->setValueString (rb);
 }
 
