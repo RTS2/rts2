@@ -97,7 +97,7 @@ Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 	createValue (ignoreTimeout, "ignore_time", "date and time for which meteo information will be ignored", false);
 	ignoreTimeout->setValueDouble (0);
 
-	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again");
+	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again", false);
 	nextGoodWeather->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT);
 
 	addOption (OPT_WEATHER_OPENS, "weather_can_open", 0, "specified that option if weather signal is allowed to open dome");
