@@ -86,7 +86,7 @@ use vars qw(
 'C_SEXCFG'            => "/etc/rts2/autofocus/sex-autofocus.cfg" ,
 'C_SEXPARAM'          => "/etc/rts2/autofocus/sex-autofocus.param" ,
 'C_SEXREFERENCE_PARAM'=> "/etc/rts2/autofocus/sex-autofocus-reference.param" ,
-'C_OBJECT_SEPARATION' => 20. , # [pixel]
+'C_OBJECT_SEPARATION' => 10. , # [pixel]
 # set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
 #
 'C_SET_LIMITS_ON_SANITY_CHECKS'=> TRUE_STR ,
@@ -582,7 +582,7 @@ sub get_fits_files
 # remove fits files which are out of limits
 	    if(( $foc_pos_from_file< $default_configuration{C_ANALYSIS_LOWER_LIMIT}) ||  ( $foc_pos_from_file> $default_configuration{C_ANALYSIS_UPPER_LIMIT})) 
 	    {
-		print "get_fits_files: discarding $fits_file due to $default_configuration{C_ANALYSIS_LOWER_LIMIT} <  $foc_pos_from_file < $default_configuration{C_ANALYSIS_UPPER_LIMIT}\n" ;
+		print "get_fits_files: discarding $fits_file due to not $default_configuration{C_ANALYSIS_LOWER_LIMIT} <  $foc_pos_from_file < $default_configuration{C_ANALYSIS_UPPER_LIMIT}\n" ;
 		next ;
 	    }
 	}
@@ -692,145 +692,150 @@ sub get_fitted_focus
 
 # in order to have a reference list closer to the assumed focus, redo create_reference_catalogue, it is a cleaner approach too
     $fits_file_reference= create_reference_catalogue( $fltr, $cfg, $param, $reference_param, $sky_list, $date_reference, $tmp_sky_list_file_name) ;
-
-    $number_of_reference_objects= analyse_catalogue( $tmp_sky_list_file_name) ;
-
     if( $fits_file_reference eq FALSE_STR)
     {
 	    print "get_fitted_focus: could not define reference fits file\n" ;
 	    exit 1 ;
     }
-    else
+    $number_of_reference_objects= analyse_catalogue( $tmp_sky_list_file_name) ;
+    if( $number_of_reference_objects== 0)
     {
-	$date= $date_reference ; # ToDo: what's that
-	$ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference, \%data_points) ;
+	print "get_fitted_focus: no reference objects found in $fits_file_reference, see output $tmp_sky_list_file_name\n" ;
+	exit 1 ;
+    }
+
+
+
+
+    $date= $date_reference ; # ToDo: what's that
+    $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference, \%data_points) ;
 
 #ToDo: check the spatial distribution and update the reference DS9 reg file
 #      calculate the center of mass and compare it with the CCD dimensions from fits file (incl. binning)
 #ToDo: make a selection on spatial distribution
 
-	my @data_minimum         = (1e12,1e12) ;
-	my @data_maximum         = (0,0) ;
-	for( my $qty=0 ; $qty < 2; $qty++)
-	{
-	    my $foc_pos_minimum      = 1e12 ;
-	    my $foc_pos_minimum_index= 0 ;
+    my @data_minimum         = (1e12,1e12) ;
+    my @data_maximum         = (0,0) ;
+    for( my $qty=0 ; $qty < 2; $qty++)
+    {
+	my $foc_pos_minimum      = 1e12 ;
+	my $foc_pos_minimum_index= 0 ;
 
-	    my $foc_pos_maximum      = 1e12 ;
-	    my $foc_pos_maximum_index= 0 ;
+	my $foc_pos_maximum      = 1e12 ;
+	my $foc_pos_maximum_index= 0 ;
 # find extrema
-	    my @focuser_positions ;
-	    sub numeric { $a <=> $b ; } # surprise, that works!
-	    foreach my $foc_pos ( sort numeric keys %data_points) # yes!
+	my @focuser_positions ;
+	sub numeric { $a <=> $b ; } # surprise, that works!
+	foreach my $foc_pos ( sort numeric keys %data_points) # yes!
+	{
+	    push(@focuser_positions, $foc_pos) ;
+	    if( $data_points{$foc_pos}[$qty] < $data_minimum[$qty])
 	    {
-		push(@focuser_positions, $foc_pos) ;
-		if( $data_points{$foc_pos}[$qty] < $data_minimum[$qty])
-		{
-		    $foc_pos_minimum= $foc_pos ;
-		    $foc_pos_minimum_index++ ;
-		    $data_minimum[$qty]= $data_points{$foc_pos}[$qty] ;
-		}
-		if( $data_points{$foc_pos}[$qty] > $data_maximum[$qty])
-		{
-		    $foc_pos_maximum= $foc_pos ;
-		    $foc_pos_maximum_index++ ;
-		    $data_maximum[$qty]= $data_points{$foc_pos}[$qty] ;
-		}	
+		$foc_pos_minimum= $foc_pos ;
+		$foc_pos_minimum_index++ ;
+		$data_minimum[$qty]= $data_points{$foc_pos}[$qty] ;
 	    }
+	    if( $data_points{$foc_pos}[$qty] > $data_maximum[$qty])
+	    {
+		$foc_pos_maximum= $foc_pos ;
+		$foc_pos_maximum_index++ ;
+		$data_maximum[$qty]= $data_points{$foc_pos}[$qty] ;
+	    }	
+	}
 # check if the location of the extrema is symmetric in respect of foc_pos (ul-ll)/2 + ul from data
 #
-	    my $data_minimum_centered_to_data_limits= TRUE_VAL; 
-	    my $limits_minimum_difference= FALSE_VAL ;
-	    if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
+	my $data_minimum_centered_to_data_limits= TRUE_VAL; 
+	my $limits_minimum_difference= FALSE_VAL ;
+	if ( abs($foc_pos_minimum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
+	{
+	    $data_minimum_centered_to_data_limits= FALSE_VAL ;
+	    if( $verbose eq TRUE_STR)
 	    {
-		$data_minimum_centered_to_data_limits= FALSE_VAL ;
-		if( $verbose eq TRUE_STR)
-		{
-		    printf( "get_fitted_focus: quantity: %s, data minimum ($data_minimum[$qty]) is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
-		}
+		printf( "get_fitted_focus: quantity: %s, data minimum ($data_minimum[$qty]) is not centered, lower limit $focuser_positions[0], data minimum $foc_pos_minimum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
 	    }
-	    my $data_maximum_centered_to_data_limits= TRUE_VAL; 
-	    my $limits_maximum_difference= FALSE_VAL ;
-	    if ( abs($foc_pos_maximum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
+	}
+	my $data_maximum_centered_to_data_limits= TRUE_VAL; 
+	my $limits_maximum_difference= FALSE_VAL ;
+	if ( abs($foc_pos_maximum- ($focuser_positions[$#focuser_positions]- $focuser_positions[0])/2 + $focuser_positions[0])> 3 * $focuser_properties{FOCUSER_RESOLUTION})
+	{
+	    $data_maximum_centered_to_data_limits= FALSE_VAL ;
+	    if( $verbose eq TRUE_STR)
 	    {
-		$data_maximum_centered_to_data_limits= FALSE_VAL ;
-		if( $verbose eq TRUE_STR)
-		{
-		    printf( "get_fitted_focus: quantity: %s, data maximum ($data_maximum[$qty]) is not centered, lower limit $focuser_positions[0], data maximum $foc_pos_maximum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
-		}
+		printf( "get_fitted_focus: quantity: %s, data maximum ($data_maximum[$qty]) is not centered, lower limit $focuser_positions[0], data maximum $foc_pos_maximum, upper limit $focuser_positions[$#focuser_positions]\n", ($qty==0)?"FWHM":"FLUX") ;
 	    }
+	}
 # find out if lower or upper limit is nearer to the minimum
 #ToDo: abs() might not be a good idea, loosing information
 
-	    my $lower_limit= $focuser_positions[0] ; 
-	    my $upper_limit= $focuser_positions[$#focuser_positions] ;
+	my $lower_limit= $focuser_positions[0] ; 
+	my $upper_limit= $focuser_positions[$#focuser_positions] ;
 
-	    my $cosmetics ; # make a nicer plot (y axis is for FWHM [px] and for FLUX_MAX [a.u.])
-	    if( $qty==0) # ToDo ugly but quick, FWHM
+	my $cosmetics ; # make a nicer plot (y axis is for FWHM [px] and for FLUX_MAX [a.u.])
+	if( $qty==0) # ToDo ugly but quick, FWHM
+	{
+	    $cosmetics= $number_of_objects_found_in_all_files ; 
+	    if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
 	    {
-		$cosmetics= $number_of_objects_found_in_all_files ; 
-		if( abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) < abs($focuser_positions[0]- $foc_pos_minimum))
-		{
 # distance to upper limit is smaller than to lower limit, set symmetric value lower limit
-		    $limits_minimum_difference= LOWER ;
-		    if( $set_limits_on_sanity_checks eq TRUE_STR)
-		    {
-			$lower_limit= $foc_pos_minimum - abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) ;
-		    }
-		}
-		else
+		$limits_minimum_difference= LOWER ;
+		if( $set_limits_on_sanity_checks eq TRUE_STR)
 		{
-# distance to lower limit is smaller than to upper limit, set symmetric value upper limit
-		    $limits_minimum_difference= UPPER ;
-		    if( $set_limits_on_sanity_checks eq TRUE_STR)
-		    {
-			$upper_limit= $foc_pos_minimum + abs($focuser_positions[0]- $foc_pos_minimum) ;
-		    }
+		    $lower_limit= $foc_pos_minimum - abs($focuser_positions[$#focuser_positions]- $foc_pos_minimum) ;
 		}
 	    }
-	    else # FLUX_MAX
+	    else
 	    {
-		$cosmetics= $number_of_objects_found_in_all_files * $data_maximum[1] / $data_maximum[0]    ; #  
-		if( abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) < abs($focuser_positions[0]- $foc_pos_maximum))
-		{
-# distance to upper limit is smaller than to lower limit, set symmetric value lower limit
-		    $limits_minimum_difference= LOWER ;
-		    if( $set_limits_on_sanity_checks eq TRUE_STR)
-		    {
-			$lower_limit= $foc_pos_maximum - abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) ;
-		    }
-		}
-		else
-		{
 # distance to lower limit is smaller than to upper limit, set symmetric value upper limit
-		    $limits_minimum_difference= UPPER ;
-		    if( $set_limits_on_sanity_checks eq TRUE_STR)
-		    {
-			$upper_limit= $foc_pos_maximum + abs($focuser_positions[0]- $foc_pos_maximum) ;
-		    }
-		}
-	    } 
-	    if( $verbose eq TRUE_STR)
-	    {
-		printf( "get_fitted_focus: quantity: %s, lower limit set to $lower_limit upper limit set to $upper_limit\n", ($qty==0)?"FWHM":"FLUX") ;
-	    }
-# write the data files and store their names
-	    if(( $fitprg eq $default_configuration{C_FOCROOTI}) ||($fitprg eq $default_configuration{C_FOCROOTB}))
-	    {
-		my $data_file_name= $fit_result_file ; # just a reminder
-		my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $cosmetics, $qty, $set_limits_on_sanity_checks, \%data_points)  ;
-# store file name for fitting
-		if( $qty== 0) # FWHM, FLUX_MAX
+		$limits_minimum_difference= UPPER ;
+		if( $set_limits_on_sanity_checks eq TRUE_STR)
 		{
-		    push (@fwhm_data_file_names, $file_name) ;
-		}
-		else
-		{
-		    push (@flux_data_file_names, $file_name) ;
+		    $upper_limit= $foc_pos_minimum + abs($focuser_positions[0]- $foc_pos_minimum) ;
 		}
 	    }
 	}
+	else # FLUX_MAX
+	{
+	    $cosmetics= $number_of_objects_found_in_all_files * $data_maximum[1] / $data_maximum[0]    ; #  
+	    if( abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) < abs($focuser_positions[0]- $foc_pos_maximum))
+	    {
+# distance to upper limit is smaller than to lower limit, set symmetric value lower limit
+		$limits_minimum_difference= LOWER ;
+		if( $set_limits_on_sanity_checks eq TRUE_STR)
+		{
+		    $lower_limit= $foc_pos_maximum - abs($focuser_positions[$#focuser_positions]- $foc_pos_maximum) ;
+		}
+	    }
+	    else
+	    {
+# distance to lower limit is smaller than to upper limit, set symmetric value upper limit
+		$limits_minimum_difference= UPPER ;
+		if( $set_limits_on_sanity_checks eq TRUE_STR)
+		{
+		    $upper_limit= $foc_pos_maximum + abs($focuser_positions[0]- $foc_pos_maximum) ;
+		}
+	    }
+	} 
+	if( $verbose eq TRUE_STR)
+	{
+	    printf( "get_fitted_focus: quantity: %s, lower limit set to $lower_limit upper limit set to $upper_limit\n", ($qty==0)?"FWHM":"FLUX") ;
+	}
+# write the data files and store their names
+	if(( $fitprg eq $default_configuration{C_FOCROOTI}) ||($fitprg eq $default_configuration{C_FOCROOTB}))
+	{
+	    my $data_file_name= $fit_result_file ; # just a reminder
+	    my $file_name= write_data_files( $fltr, $date, $fitprg, $data_file_name, $lower_limit, $upper_limit, $cosmetics, $qty, $set_limits_on_sanity_checks, \%data_points)  ;
+# store file name for fitting
+	    if( $qty== 0) # FWHM, FLUX_MAX
+	    {
+		push (@fwhm_data_file_names, $file_name) ;
+	    }
+	    else
+	    {
+		push (@flux_data_file_names, $file_name) ;
+	    }
+	}
     }
+
 # fit
     if( $#fwhm_data_file_names !=  $#flux_data_file_names )
     {
@@ -1054,11 +1059,11 @@ sub get_foc_pos_at_maximum_number_of_objects
 	}
 	if( abs($mean - $filter_focus_properties{$fltr}[IND_FOC_DEF]) > 100) # ToDo: replace by constant
 	{
-	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, best known focus $filter_focus_properties{$fltr}[IND_FOC_DEF]\n" ;
+	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, best known focus $filter_focus_properties{$fltr}[IND_FOC_DEF] from configuration file\n" ;
 	}
 	if( abs($mean - $fits_files{$fits_file_reference}[IND_FOC_POS_FILE]) > 100) # ToDo: replace by constant
 	{
-	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, and reference focus position $fits_files{$fits_file_reference}[IND_FOC_POS_FILE]\n" ;
+	    print "get_foc_pos_at_maximum_number_of_objects: warning large difference between mean $mean, and reference focus position $fits_files{$fits_file_reference}[IND_FOC_POS_FILE] found in $fits_file_reference\n" ;
 	}
 	$filter_focus_properties{$fltr}[IND_FOC_DEF]= $mean; # it's a global
  
@@ -1200,7 +1205,7 @@ sub cleanup_catalogue
 	{
 	    if( $verbose eq TRUE_STR)
 	    {
-		print "cleanup_catalogue: removing  formal (>$l +1<>==<$objects_coordinates{$l}[IND_NUMBER])>)\n" ;
+		print "cleanup_catalogue: removing  formal (>$l +1<>==<$objects_coordinates{$l}[IND_NUMBER])<)\n" ;
 	    }
 	    splice(@list_lines, $l, 1) ;
 	    $removed_objects_formal++ ;
@@ -1350,7 +1355,7 @@ sub retrieve_data
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
 	    printf("(sel./ref.): %6.3f, %4d, %4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects) ;
-
+	    
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < $default_configuration{C_SELECT_RATIO})
 	    {
 		foreach my $reference_object_number( keys %{$objects_selected{$fits_file}})
@@ -1653,6 +1658,7 @@ sub read_configuration
 # obviously too late to be changed
 	next if( $identifier=~ m/CONFIGURATION_FILE/) ;
 
+
 	$value=~ s/^[ \t]+//g ;
 	$value=~ s/[ \t]+$//g ;
 	$value=~ s/[ \t]+/ /g ;
@@ -1665,7 +1671,18 @@ sub read_configuration
 	if( defined $default_configuration{"C_".$identifier})
 	{
 # NO	    if( !($default_configuration{"C_".$identifier}=~ /$value/)) # show only those which differ
-	    if( !($value=~ /$default_configuration{"C_".$identifier}/)) # show only those which differ
+	    if( $value=~ m/^[\-]*[1-9][0-9.]*$/) # it is numeric
+	    {
+		if( $value != $default_configuration{"C_".$identifier})
+		{
+		    if($verbose eq TRUE_STR)
+		    {
+			printf ( "read_configuration: parameter %-29s $default_configuration{\"C_$identifier\"} superseded by $value (numeric)\n", $identifier) ;
+		    }
+		    $default_configuration{"C_".$identifier}= $value ;
+		}
+	    }
+	    elsif( !($value=~ /$default_configuration{"C_".$identifier}/)) # show only those which differ
 	    {
 		if($verbose eq TRUE_STR)
 		{
