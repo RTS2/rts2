@@ -21,7 +21,7 @@
 
 #include <comedilib.h>
 
-#define FILTER_PULSE  USEC_SEC / 2
+#define FILTER_PULSE  USEC_SEC / 5
 
 namespace rts2sensord
 {
@@ -40,6 +40,8 @@ class LPNHE: public Sensor
 		virtual ~LPNHE ();
 
 		virtual int info ();
+
+		virtual int commandAuthorized (Rts2Conn *conn);
 
 	protected:
 		virtual int processOption (int _opt);
@@ -60,6 +62,8 @@ class LPNHE: public Sensor
 		Rts2ValueBool *shutter;
 	
 		int filterChange (int num);
+
+		int homeFilter ();
 
 		/**
 		 * Returns volts from the device.
@@ -141,7 +145,7 @@ int LPNHE::init ()
 		return -1;
 	}
 
-	return 0;
+	return homeFilter ();
 }
 
 int LPNHE::setValue (Rts2Value *oldValue, Rts2Value *newValue)
@@ -170,7 +174,9 @@ int LPNHE::info ()
 		logStream (MESSAGE_ERROR) << "Cannot read filter homed status (subdev 3, channel 5)" << sendLog;
 		return -1;
 	}
-	filterHomed->setValueBool (value != 0);
+	filterHomed->setValueBool (value == 0);
+	if (filterHomed->getValueBool () == true)
+		filter->setValueInteger (0);
 
 	ret = comedi_dio_read (comediDevice, 2, 6, &value);
 	if (ret != 1)
@@ -190,6 +196,20 @@ int LPNHE::info ()
 	vacuum->setValueDouble (val);
 
 	return Sensor::info ();
+}
+
+int LPNHE::commandAuthorized (Rts2Conn *conn)
+{
+	int ret;
+	if (conn->isCommand ("home"))
+	{
+		ret = homeFilter ();
+		if (ret)
+			conn->sendCommandEnd (DEVDEM_E_HW, "cannot home filter");
+		return ret;
+	}
+
+	return Sensor::commandAuthorized (conn);
 }
 
 LPNHE::LPNHE (int argc, char **argv): Sensor (argc, argv)
@@ -238,11 +258,52 @@ int LPNHE::filterChange (int num)
 		if (comedi_dio_write (comediDevice, 2, 0, 1) != 1)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot switch roof pulse to off, ignoring" << sendLog;
-			return 0;
+		} 
+
+		// wait for moving becoming low
+		uint32_t value;
+		double endTime = getNow () + 20;
+		do
+		{
+			if (comedi_dio_read (comediDevice, 2, 6, &value) != 1)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot check for filter moving status (subdevice 2, channel 6) during moving" << sendLog;
+				return -1;
+			}
+			usleep (USEC_SEC / 10);
 		}
-		usleep (FILTER_PULSE);
+		while (value != 0 && getNow () < endTime);
+
+		if (value != 0)
+		{
+			logStream (MESSAGE_ERROR) << "Timeout occured during filter movement" << sendLog;
+			return -1;
+		}
 	}
 	return 0;
+}
+
+int LPNHE::homeFilter ()
+{
+	for (int i = 8; i > 0; i--)
+	{
+		uint32_t value;
+		if (comedi_dio_read (comediDevice, 2, 5, &value) != 1)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot read homed switch value (subdevice 2, channel 5) during filter homing" << sendLog;
+			return -1;
+		}
+		if (value == 0)
+		{
+			filter->setValueInteger (0);
+			sendValueAll (filter);
+			return 0;
+		}
+		if (filterChange (1))
+			return -1;
+	}
+	logStream (MESSAGE_ERROR) << "Cannot find homing position" << sendLog;
+	return -1;
 }
 
 int LPNHE::getVolts (int subdevice, int channel, double &volts)
