@@ -133,7 +133,6 @@ class Sbig:public Camera
 		virtual long camWaitExpose ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
-		virtual int camStopRead ();
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
@@ -516,13 +515,6 @@ Sbig::camStopExpose ()
 
 int
 Sbig::camBox (int x, int y, int width, int height)
-{
-	return -1;
-}
-
-
-int
-Sbig::camStopRead ()
 {
 	return -1;
 }

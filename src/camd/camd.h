@@ -184,10 +184,6 @@ class Camera:public Rts2ScriptDevice
 		virtual int scriptEnds ();
 
 		virtual long camWaitExpose ();
-		virtual int camStopRead ()
-		{
-			return endReadout ();
-		}
 
 		/**
 		 * Sets camera cooling temperature.
@@ -225,7 +221,6 @@ class Camera:public Rts2ScriptDevice
 		virtual int readoutStart ();
 
 		int camReadout (Rts2Conn * conn);
-		int camStopRead (Rts2Conn * conn);
 
 		virtual int getFilterNum ();
 

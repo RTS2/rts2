@@ -1012,15 +1012,6 @@ int Camera::camReadout (Rts2Conn * conn)
 	return -1;
 }
 
-int Camera::camStopRead (Rts2Conn * conn)
-{
-	int ret;
-	ret = camStopRead ();
-	if (ret)
-		conn->sendCommandEnd (DEVDEM_E_HW, "cannot end readout");
-	return ret;
-}
-
 int Camera::camFilter (int new_filter)
 {
 	int ret = -1;
@@ -1186,12 +1177,6 @@ int Camera::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		//TODO send data
 		return -2;
-	}
-	else if (conn->isCommand ("stopread"))
-	{
-		if (!conn->paramEnd ())
-			return -2;
-		return camStopRead (conn);
 	}
 	return Rts2ScriptDevice::commandAuthorized (conn);
 }
