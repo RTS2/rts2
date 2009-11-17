@@ -189,7 +189,7 @@ int Arc::init ()
 	/* Open the device driver */
 	pci_fd = openDriver("/dev/astropci0");
 
-	int bufferSize = w * h * 2;
+	int bufferSize = (w + 20) * (h + 20) * 2;
 	if ((mem_fd = create_memory(pci_fd, w, h, bufferSize)) == NULL) {
 		logStream (MESSAGE_ERROR) << "Unable to create image buffer: 0x" << mem_fd << " (0x" << std::hex << mem_fd << ")%" << sendLog;
 		return -1;
@@ -233,11 +233,29 @@ int Arc::startExposure ()
 	if (chipUsedReadout->wasChanged ())
 	{
 		int biasOffset        = 0; //biasPosition - subImageCenterCol - subImageWidth/2;
+		int data = 1;
 		
+		for (int i = 0; i < 10; i++)
+		{
+			if (doCommand1 (pci_fd, TIM_ID, TDL, data, data) == _ERROR)
+			{
+				if (getError () != TOUT)
+				{
+					logStream (MESSAGE_ERROR) <<  "ERROR doing timing hardware tests: 0x" << std::hex << getError () << sendLog;
+					return -1;
+				}
+				usleep (USEC_SEC / 50);
+			}
+			else
+			{
+				break;
+			}
+		}
+	
 		// Set the new image dimensions
-		logStream (MESSAGE_ERROR) << "Updating image columns " << chipUsedReadout->getWidthInt () << ", rows " << chipUsedReadout->getHeightInt () << sendLog;
+		logStream (MESSAGE_DEBUG) << "Updating image columns " << chipUsedReadout->getWidthInt () << ", rows " << chipUsedReadout->getHeightInt () << ", biasWidth " << biasWidth->getValueInteger () << sendLog;
 
-		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 1), chipUsedReadout->getWidthInt () + biasWidth, DON ) == _ERROR )
+		if ( doCommand2( pci_fd, TIM_ID, WRM, (Y | 1), chipUsedReadout->getWidthInt () + biasWidth->getValueInteger (), DON ) == _ERROR )
 		{
 			logStream (MESSAGE_ERROR) << "Failed to set image columns -> 0x" << std::hex << getError() << sendLog;
 			return -1;
