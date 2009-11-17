@@ -66,7 +66,7 @@ and are found between  the lines "begin default configuration" and "end default
 configuration". Parameters outside these limits should normally not be changed. 
     </para>
   </refsect1>
-  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6532.</para>
+  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6556.</para>
     <para> <command>&dhpackage;</command> has been tested in three online data tacking
           and numerous offline analysis. After the next online data tacking I expect
           that <command>&dhpackage;</command> is usable for general use.    </para>
@@ -797,6 +797,14 @@ number spread over the whole image.  Limit the chosen images
 with the parameters ANALYSIS_LOWER_LIMIT and ANALYSIS_UPPER_LIMIT to a narrower
 interval centered around the extrema.
 One can define sensible limits visually inspecting the DS9 region files (see option DS9_REGION_FILE).
+</para>
+<para>
+If a star field is crowded that means many pairs of stars are within
+OBJECT_SEPARATION it may happen that only one object survices the cleaning
+process. Try to reduce OBJECT_SEPARATION and narrow (ANALYSIS_LOWER_LIMIT,ANALYSIS_UPPER_LIMIT)
+to avoid overlaps of star images. If it still fails use
+CLEANUP_REFERENCE_CATALOGUE = FALSE - but inspect then the images visually to
+gain conficence. 
 </para>
 <para>
 If too few objects are present vary SExtractor's DETECT_THRESH
