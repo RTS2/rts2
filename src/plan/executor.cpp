@@ -701,6 +701,9 @@ void Executor::doSwitch ()
 				currentTarget = nextTargets.front ();
 				nextTargets.pop_front ();
 			}
+			// switch auto loop back to true
+			autoLoop->setValueBool (true);
+			sendValueAll (autoLoop);
 		}
 		else
 		{
