@@ -154,7 +154,7 @@ NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 {
 	lampSerial = NULL;
 
-	createValue (on, "ON", "lamp on", true);
+	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE);
 
 	createValue (status, "status", "power supply status", false, RTS2_DT_HEX);
 	createValue (esr, "esr", "power supply error register", false, RTS2_DT_HEX);
@@ -162,8 +162,8 @@ NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 	createValue (amps, "AMPS", "Amps as displayed on front panel", true);
 	createValue (volts, "VOLTS", "Volts as displayed on front panel", true);
 	createValue (watts, "WATTS", "Watts as displayed on front panel", true);
-	createValue (apreset, "A_PRESET", "Current preset", true);
-	createValue (ppreset, "P_PRESET", "Power preset", true);
+	createValue (apreset, "A_PRESET", "Current preset", true, RTS2_VALUE_WRITABLE);
+	createValue (ppreset, "P_PRESET", "Power preset", true, RTS2_VALUE_WRITABLE);
 	createValue (alim, "A_LIM", "Current limit", true);
 	createValue (plim, "P_LIM", "Power limit", true);
 

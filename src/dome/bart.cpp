@@ -97,22 +97,18 @@ class Bart:public Ford
 
 }
 
-Bart::Bart (int argc, char **argv)
-:Ford (argc, argv)
+Bart::Bart (int argc, char **argv):Ford (argc, argv)
 {
 	domeTimeout = 0;
 
 	createValue (sw_state, "sw_state", "state of dome switches", false, RTS2_DT_HEX);
 }
 
-
 Bart::~Bart ()
 {
 }
 
-
-int
-Bart::startOpen ()
+int Bart::startOpen ()
 {
 	if (!isOn (KONCAK_OTEVRENI_JIH))
 		return endOpen ();
@@ -129,9 +125,7 @@ Bart::startOpen ()
 	return 0;
 }
 
-
-long
-Bart::isOpened ()
+long Bart::isOpened ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -147,9 +141,7 @@ Bart::isOpened ()
 	return -2;
 }
 
-
-int
-Bart::endOpen ()
+int Bart::endOpen ()
 {
 	VYP (MOTOR);
 	zjisti_stav_portu ();		 //kdyz se to vynecha, neposle to posledni prikaz nebo znak
@@ -158,9 +150,7 @@ Bart::endOpen ()
 	return 0;
 }
 
-
-int
-Bart::startClose ()
+int Bart::startClose ()
 {
 	int motor;
 	int smer;
@@ -192,9 +182,7 @@ Bart::startClose ()
 	return 0;
 }
 
-
-long
-Bart::isClosed ()
+long Bart::isClosed ()
 {
 	int ret;
 
@@ -212,9 +200,7 @@ Bart::isClosed ()
 	return -2;
 }
 
-
-int
-Bart::endClose ()
+int Bart::endClose ()
 {
 	int motor;
 	motor = isOn (MOTOR);
@@ -230,9 +216,7 @@ Bart::endClose ()
 	return 0;
 }
 
-
-int
-Bart::init ()
+int Bart::init ()
 {
 	int ret = Ford::init ();
 	if (ret)
@@ -252,9 +236,7 @@ Bart::init ()
 	return 0;
 }
 
-
-int
-Bart::handle_zasuvky (int zas)
+int Bart::handle_zasuvky (int zas)
 {
 	int i;
 	for (i = 0; i < NUM_ZAS; i++)
@@ -273,9 +255,7 @@ Bart::handle_zasuvky (int zas)
 	return 0;
 }
 
-
-int
-Bart::info ()
+int Bart::info ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -288,34 +268,26 @@ Bart::info ()
 	return Ford::info ();
 }
 
-
-int
-Bart::off ()
+int Bart::off ()
 {
 	Ford::off ();
 	return handle_zasuvky (OFF);
 }
 
-
-int
-Bart::standby ()
+int Bart::standby ()
 {
 	Ford::standby ();
 	return handle_zasuvky (STANDBY);
 }
 
-
-int
-Bart::observing ()
+int Bart::observing ()
 {
 	handle_zasuvky (OBSERVING);
 	return Ford::observing ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Bart device = Bart (argc, argv);
+	Bart device (argc, argv);
 	return device.run ();
 }

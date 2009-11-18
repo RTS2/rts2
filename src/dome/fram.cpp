@@ -736,16 +736,16 @@ int Fram::init ()
 
 		extraSwitch->VYP (SWITCH_BATBACK);
 
-		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false);
+		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false, RTS2_VALUE_WRITABLE);
 		switchBatBack->setValueBool (false);
 
-		createValue (plug1, "plug_1", "1st plug", false);
-		createValue (plug_photometer, "plug_photometer", "1st plug", false);
+		createValue (plug1, "plug_1", "1st plug", false, RTS2_VALUE_WRITABLE);
+		createValue (plug_photometer, "plug_photometer", "1st plug", false, RTS2_VALUE_WRITABLE);
 		extraSwitch->ZAP (PLUG_PHOTOMETER);
 		plug_photometer->setValueBool (true);
 
-		createValue (plug3, "plug_3", "3rd plug", false);
-		createValue (plug4, "plug_4", "4th plug", false);
+		createValue (plug3, "plug_3", "3rd plug", false, RTS2_VALUE_WRITABLE);
+		createValue (plug4, "plug_4", "4th plug", false, RTS2_VALUE_WRITABLE);
 	}
 	switchOffPins (VENTIL_AKTIVACNI, KOMPRESOR);
 

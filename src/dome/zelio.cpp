@@ -309,9 +309,7 @@ bool Zelio::isGoodWeather ()
 	return Dome::isGoodWeather ();
 }
 
-
-long
-Zelio::isOpened ()
+long Zelio::isOpened ()
 {
 	uint16_t regs[2];
 	try
@@ -343,16 +341,12 @@ Zelio::isOpened ()
 	return 0;
 }
 
-
-int
-Zelio::endOpen ()
+int Zelio::endOpen ()
 {
 	return 0;
 }
 
-
-int
-Zelio::startClose ()
+int Zelio::startClose ()
 {
 	try
 	{
@@ -426,9 +420,7 @@ int Zelio::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Zelio::idle ()
+int Zelio::idle ()
 {
 	if (isGoodWeather ())
 	{
@@ -469,10 +461,10 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	createValue (weather, "weather", "true if weather is (for some reason) believed to be fine", false);
 	createValue (emergencyButton, "emergency", "state of emergency button", false);
 
-	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false);
+	createValue (emergencyReset, "reset_emergency", "(re)set emergency state -cycle true/false to reset", false, RTS2_VALUE_WRITABLE);
 	emergencyReset->setValueBool (false);
 
-	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false);
+	createValue (Q9, "Q9_switch", "Q9 switch reset - apogee", false, RTS2_VALUE_WRITABLE);
 	Q9->setValueBool (false);
 
 	host = NULL;
@@ -728,13 +720,13 @@ void Zelio::createZelioValues ()
 	if (haveBatteryLevel)
 	{
 		createValue (battery, "battery", "Battery level", false);
-		createValue (batteryMin, "battery_min", "Battery minimal level for good weather", false);
+		createValue (batteryMin, "battery_min", "Battery minimal level for good weather", false, RTS2_VALUE_WRITABLE);
 	}
 
 	if (zelioModel == ZELIO_FRAM)
 	{
-		createValue (Q8, "Q8", "Q8 switch", false);
-		createValue (QA, "QA", "QA switch", false);
+		createValue (Q8, "Q8", "Q8 switch", false, RTS2_VALUE_WRITABLE);
+		createValue (QA, "QA", "QA switch", false, RTS2_VALUE_WRITABLE);
 	}
 
 	// create rain values only if rain sensor is present
@@ -742,13 +734,13 @@ void Zelio::createZelioValues ()
 	{
 		createValue (rain, "rain", "state of rain sensor", false);
 		createValue (openingIgnoreRain, "opening_ignore", "ignore rain during opening", false);
-		createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false);
+		createValue (ignoreRain, "ignore_rain", "whenever rain is ignored (know issue with interference between dome and rain sensor)", false, RTS2_VALUE_WRITABLE);
 	}
 
-	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX);
-	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX);
-	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX);
-	createValue (J4XT1, "J4XT1", "fourth input", false, RTS2_DT_HEX);
+	createValue (J1XT1, "J1XT1", "first input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
+	createValue (J2XT1, "J2XT1", "second input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
+	createValue (J3XT1, "J3XT1", "third input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
+	createValue (J4XT1, "J4XT1", "fourth input", false, RTS2_DT_HEX | RTS2_VALUE_WRITABLE);
 
 	createValue (O1XT1, "O1XT1", "first output", false, RTS2_DT_HEX);
 	createValue (O2XT1, "O2XT1", "second output", false, RTS2_DT_HEX);
@@ -758,8 +750,6 @@ void Zelio::createZelioValues ()
 
 int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
-	if (oldValue == batteryMin)
-		return 0;
 	if (oldValue == emergencyReset)
 	  	return setBitsInput (ZREG_J1XT1, ZI_EMMERGENCY_R, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
 	if (zelioModel == ZELIO_FRAM)
@@ -809,10 +799,8 @@ int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	return Dome::setValue (oldValue, newValue);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Zelio device = Zelio (argc, argv);
+	Zelio device (argc, argv);
 	return device.run ();
 }

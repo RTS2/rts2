@@ -89,13 +89,13 @@ class Cryocon:public Gpib
 
 		void createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc);
 
-		template < typename T > void createLoopValue (T * &val, int loop, const char *in_val_name, const char *in_desc, bool writeToFits = true)
+		template < typename T > void createLoopValue (T * &val, int loop, const char *in_val_name, const char *in_desc, bool writeToFits = true, uint32_t flags = 0)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
 			n[0] = '1' + loop;
 			n[1] = '.';
 			strcpy (n + 2, in_val_name);
-			createValue (val, n, in_desc, writeToFits);
+			createValue (val, n, in_desc, writeToFits, flags);
 			delete[] n;
 		}
 
@@ -155,17 +155,17 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 {
 	loop = in_loop;
 
-	dev->createLoopValue (source, loop, "SOURCE", "Control lopp source input");
+	dev->createLoopValue (source, loop, "SOURCE", "Control loop source input", true, RTS2_VALUE_WRITABLE);
 	values.push_back (source);
 
 	// fill in values
 	const char *sourceVals[] = { "CHA", "CHB", "CHC", "CHD", NULL };
 	source->addSelVals (sourceVals);
 
-	dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point");
+	dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point", true, RTS2_VALUE_WRITABLE);
 	values.push_back (setpt);
 
-	dev->createLoopValue (type, loop, "TYPE", "Control loop control type");
+	dev->createLoopValue (type, loop, "TYPE", "Control loop control type", true, RTS2_VALUE_WRITABLE);
 
 	values.push_back (type);
 
@@ -173,13 +173,12 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 		{ "Off", "PID", "MAN", "Table", "RampP", "RampT", NULL };
 	type->addSelVals (typeVals);
 
-	dev->createLoopValue (range, loop, "RANGE", "Control loop output range");
+	dev->createLoopValue (range, loop, "RANGE", "Control loop output range", true, RTS2_VALUE_WRITABLE);
 	values.push_back (range);
 
 	const char *rangeVals[] =
 	{
-		"50W", "5.0W", "0.5W", "0.05W", "25W", "2.5W", "0.25W", "0.03W", "HTR",
-		NULL
+		"50W", "5.0W", "0.5W", "0.05W", "25W", "2.5W", "0.25W", "0.03W", "HTR", NULL
 	};
 	range->addSelVals (rangeVals);
 
@@ -189,24 +188,19 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 	dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
 	values.push_back (rate);
 
-	dev->createLoopValue (pgain, loop, "PGAIN",
-		"Control loop proportional gain term");
+	dev->createLoopValue (pgain, loop, "PGAIN", "Control loop proportional gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (pgain);
 
-	dev->createLoopValue (igain, loop, "IGAIN",
-		"Control loop integral gain term");
+	dev->createLoopValue (igain, loop, "IGAIN", "Control loop integral gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (igain);
 
-	dev->createLoopValue (dgain, loop, "DGAIN",
-		"Control loop derivative gain term");
+	dev->createLoopValue (dgain, loop, "DGAIN", "Control loop derivative gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (dgain);
 
-	dev->createLoopValue (htrread, loop, "HTRREAD",
-		"Control loop output current");
+	dev->createLoopValue (htrread, loop, "HTRREAD", "Control loop output current");
 	values.push_back (htrread);
 
-	dev->createLoopValue (pmanual, loop, "PMANUAL",
-		"Control loop manual power output setting");
+	dev->createLoopValue (pmanual, loop, "PMANUAL", "Control loop manual power output setting", true, RTS2_VALUE_WRITABLE);
 	values.push_back (pmanual);
 }
 
@@ -268,14 +262,13 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 		loops[i] = new Rts2ValueLoop (this, i);
 	}
 
-	createValue (statTime, "STATTIME", "time for which statistic was collected",
-		true);
+	createValue (statTime, "STATTIME", "time for which statistic was collected", true);
 
 	createValue (amb, "AMBIENT", "cryocon ambient temperature", true);
 	createValue (htrread, "HTRREAD", "Heater read back current", true);
 	createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
 
-	createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true);
+	createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true, RTS2_VALUE_WRITABLE);
 
 	systemList.push_back (amb);
 	systemList.push_back (htrread);

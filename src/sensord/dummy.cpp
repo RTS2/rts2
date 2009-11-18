@@ -34,22 +34,19 @@ class Dummy:public Sensor
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
-			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
-			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);
+			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0, false);
+			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			goodWeather->setValueBool (false);
 			setWeatherState (goodWeather->getValueBool ());
 			createValue (statTest, "test_stat", "test stat value", true);
 
 			createValue (statContent, "test_content", "test content", true);
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
-			createValue (minMaxTest, "test_minmax", "test minmax value", true);
+			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
 		{
-			if (old_value == minMaxTest
-				|| old_value == testInt)
-				return 0;
 			if (old_value == goodWeather)
 			{
 			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool ());

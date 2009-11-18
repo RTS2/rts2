@@ -228,23 +228,22 @@ MS257::MS257 (int in_argc, char **in_argv):Sensor (in_argc, in_argv)
 	dev = "/dev/ttyS0";
 
 	createValue (msVer, "version", "version of MS257", false);
-	createValue (wavelenght, "WAVELENG", "monochromator wavelength", true);
+	createValue (wavelenght, "WAVELENG", "monochromator wavelength", true, RTS2_VALUE_WRITABLE);
 
-	createValue (slitA, "SLIT_A", "Width of the A slit in um", true);
-	createValue (slitB, "SLIT_B", "Width of the B slit in um", true);
-	createValue (slitC, "SLIT_C", "Width of the C slit in um", true);
-	createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true);
+	createValue (slitA, "SLIT_A", "Width of the A slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (slitB, "SLIT_B", "Width of the B slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (slitC, "SLIT_C", "Width of the C slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true, RTS2_VALUE_WRITABLE);
 
-	createValue (shutter, "shutter", "Shutter settings", false);
+	createValue (shutter, "shutter", "Shutter settings", false, RTS2_VALUE_WRITABLE);
 	shutter->addSelVal ("SLOW");
 	shutter->addSelVal ("FAST");
 	shutter->addSelVal ("MANUAL");
 
-	createValue (filter1, "FILT_1", "filter 1 position", true);
-	//  createValue (filter2, "FILT_2", "filter 2 position", true);
-	createValue (msteps, "MSTEPS",
-		"Current grating position in terms of motor steps", true);
-	createValue (grat, "GRATING", "Grating position", true);
+	createValue (filter1, "FILT_1", "filter 1 position", true, RTS2_VALUE_WRITABLE);
+	//  createValue (filter2, "FILT_2", "filter 2 position", true, RTS2_VALUE_WRITABLE);
+	createValue (msteps, "MSTEPS", "Current grating position in terms of motor steps", true, RTS2_VALUE_WRITABLE);
+	createValue (grat, "GRATING", "Grating position", true, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }

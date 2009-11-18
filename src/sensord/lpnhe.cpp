@@ -218,7 +218,7 @@ LPNHE::LPNHE (int argc, char **argv): Sensor (argc, argv)
 
 	createValue (humidity, "HUMIDITY", "laboratory humidity", true);
 	createValue (vacuum, "VACUUM", "Dewar vacuum level", true);
-	createValue (filter, "FILTER", "selected filter wheel", true);
+	createValue (filter, "FILTER", "selected filter wheel", true, RTS2_VALUE_WRITABLE);
 	filter->addSelVal ("1");
 	filter->addSelVal ("2");
 	filter->addSelVal ("3");
@@ -228,7 +228,7 @@ LPNHE::LPNHE (int argc, char **argv): Sensor (argc, argv)
 
 	createValue (filterHomed, "homed", "if filter is homed", false);
 	createValue (filterMoving, "moving", "if filter is moving", false);
-	createValue (shutter, "shutter", "shutter opened", true);
+	createValue (shutter, "shutter", "shutter opened", true, RTS2_VALUE_WRITABLE);
 	shutter->setValueBool (false);
 
 	addOption ('c', NULL, 1, "path to comedi device");

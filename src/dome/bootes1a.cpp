@@ -82,8 +82,7 @@ class Bootes1A:public Ford
 
 }
 
-Bootes1A::Bootes1A (int argc, char **argv)
-:Ford (argc, argv)
+Bootes1A::Bootes1A (int argc, char **argv):Ford (argc, argv)
 {
 	createValue (sw_state, "sw_state", "end switches state", RTS2_DT_HEX);
 	timeOpenClose = 0;

@@ -32,14 +32,13 @@
 
 using namespace rts2sensord;
 
-int
-Davis::processOption (int _opt)
+int Davis::processOption (int _opt)
 {
 	switch (_opt)
 	{
 		case 'b':
 			if (cloud_bad == NULL)
-				createValue (cloud_bad, "cloud_bad", "bad cloud trigger", false);
+				createValue (cloud_bad, "cloud_bad", "bad cloud trigger", false, RTS2_VALUE_WRITABLE);
 			cloud_bad->setValueCharArr (optarg);
 			break;
 		case OPT_UDP:
@@ -73,18 +72,7 @@ Davis::init ()
 	return 0;
 }
 
-
-int
-Davis::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == maxWindSpeed || old_value == maxPeekWindSpeed)
-		return 0;
-	return SensorWeather::setValue (old_value, new_value);
-}
-
-
-int
-Davis::idle ()
+int Davis::idle ()
 {
 	if (getLastInfoTime () > 180)
 	{
@@ -97,9 +85,7 @@ Davis::idle ()
 	return SensorWeather::idle ();
 }
 
-
-Davis::Davis (int argc, char **argv)
-:SensorWeather (argc, argv, 180)
+Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 {
 	createValue (temperature, "DOME_TMP", "temperature in degrees C", true);
 	createValue (humidity, "DOME_HUM", "(outside) humidity", true);
@@ -111,8 +97,8 @@ Davis::Davis (int argc, char **argv)
 
 	createValue (rainRate, "rain_rate", "rain rate from bucket sensor", false);
         
-	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false);
-	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false);
+	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false, RTS2_VALUE_WRITABLE);
+	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false, RTS2_VALUE_WRITABLE);
 
 	maxWindSpeed->setValueFloat (nan ("f"));
 	maxPeekWindSpeed->setValueFloat (nan ("f"));

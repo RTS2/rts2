@@ -78,8 +78,7 @@ class DS21: public Sensor
 		DS21 (int argc, char **argv);
 		virtual ~DS21 (void);
 
-		template < typename T > void createAxisValue( T * &val, char anum,
-			const char *in_val_name, const char *in_desc, bool writeToFits, int flags = 0)
+		template < typename T > void createAxisValue( T * &val, char anum, const char *in_val_name, const char *in_desc, bool writeToFits, int flags = 0)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
 			n[0] = anum + '0';
@@ -145,13 +144,13 @@ DS21Axis::DS21Axis (DS21 *in_master, char in_anum)
 	master = in_master;
 	anum = in_anum;
 
-	master->createAxisValue (enabled, anum, "enabled", "if motor is enabled", false);
-	master->createAxisValue (position, anum, "POSITION", "motor position", true);
+	master->createAxisValue (enabled, anum, "enabled", "if motor is enabled", false, RTS2_VALUE_WRITABLE);
+	master->createAxisValue (position, anum, "POSITION", "motor position", true, RTS2_VALUE_WRITABLE);
 	master->createAxisValue (poserr, anum, "POS_ERROR", "motor position error", true);
-	master->createAxisValue (velocity, anum, "velocity", "programmed velocity", false);
-	master->createAxisValue (acceleration, anum, "acceleration", "programmed acceleration", false);
+	master->createAxisValue (velocity, anum, "velocity", "programmed velocity", false, RTS2_VALUE_WRITABLE);
+	master->createAxisValue (acceleration, anum, "acceleration", "programmed acceleration", false, RTS2_VALUE_WRITABLE);
 	master->createAxisValue (status, anum, "status", "drives status", false, RTS2_DT_HEX);
-	master->createAxisValue (limitSwitch, anum, "limitSwitch", "true if limit switchs are active", false);
+	master->createAxisValue (limitSwitch, anum, "limitSwitch", "true if limit switchs are active", false, RTS2_VALUE_WRITABLE);
 
 	master->createAxisValue (commandSet, anum, "commands", "commands for this motor", false);
 

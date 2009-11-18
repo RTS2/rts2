@@ -90,8 +90,7 @@ class Bootes1B:public Ford
 
 }
 
-Bootes1B::Bootes1B (int argc, char **argv)
-:Ford (argc, argv)
+Bootes1B::Bootes1B (int argc, char **argv):Ford (argc, argv)
 {
 	createValue (sw_state, "sw_state", "switch state", false, RTS2_DT_HEX);
 
@@ -100,10 +99,10 @@ Bootes1B::Bootes1B (int argc, char **argv)
 
 	createValue (rain, "rain", "state of the rain detector", false);
 
-	createValue (telSwitch, "tel_switch", "switch for telescope", false);
+	createValue (telSwitch, "tel_switch", "switch for telescope", false, RTS2_VALUE_WRITABLE);
 	telSwitch->setValueBool (true);
 
-	createValue (asmSwitch, "asm_switch", "switch for ASM", false);
+	createValue (asmSwitch, "asm_switch", "switch for ASM", false, RTS2_VALUE_WRITABLE);
 	asmSwitch->setValueBool (true);
 
 	lastWeatherCheckState = -1;
@@ -112,14 +111,11 @@ Bootes1B::Bootes1B (int argc, char **argv)
 	domeFailed = false;
 }
 
-
 Bootes1B::~Bootes1B (void)
 {
 }
 
-
-int
-Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {
 	if (old_value == telSwitch)
 	{
@@ -146,9 +142,7 @@ Bootes1B::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return Ford::setValue (old_value, new_value);
 }
 
-
-bool
-Bootes1B::isGoodWeather ()
+bool Bootes1B::isGoodWeather ()
 {
 	if (getIgnoreMeteo ())
 		return true;
@@ -197,9 +191,7 @@ Bootes1B::isGoodWeather ()
 	return Ford::isGoodWeather ();
 }
 
-
-int
-Bootes1B::init ()
+int Bootes1B::init ()
 {
 	int ret;
 	ret = Ford::init ();
@@ -229,9 +221,7 @@ Bootes1B::init ()
 	return 0;
 }
 
-
-int
-Bootes1B::info ()
+int Bootes1B::info ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -246,9 +236,7 @@ Bootes1B::info ()
 	return Ford::info ();
 }
 
-
-bool
-Bootes1B::isMoving ()
+bool Bootes1B::isMoving ()
 {
 	int ret;
 	ret = zjisti_stav_portu ();
@@ -259,9 +247,7 @@ Bootes1B::isMoving ()
 	return true;
 }
 
-
-int
-Bootes1B::startOpen ()
+int Bootes1B::startOpen ()
 {
 	if (getState () & DOME_OPENING)
 	{
@@ -288,9 +274,7 @@ Bootes1B::startOpen ()
 	return 0;
 }
 
-
-long
-Bootes1B::isOpened ()
+long Bootes1B::isOpened ()
 {
 	time_t now;
 	time (&now);
@@ -317,17 +301,13 @@ Bootes1B::isOpened ()
 	return USEC_SEC;
 }
 
-
-int
-Bootes1B::endOpen ()
+int Bootes1B::endOpen ()
 {
 	timeOpenClose = 0;
 	return 0;
 }
 
-
-int
-Bootes1B::startClose ()
+int Bootes1B::startClose ()
 {
 	// we cannot close dome when we are still moving
 	if (getState () & DOME_CLOSING)
@@ -350,9 +330,7 @@ Bootes1B::startClose ()
 	return 0;
 }
 
-
-long
-Bootes1B::isClosed ()
+long Bootes1B::isClosed ()
 {
 	time_t now;
 	time (&now);
@@ -379,18 +357,14 @@ Bootes1B::isClosed ()
 	return USEC_SEC;
 }
 
-
-int
-Bootes1B::endClose ()
+int Bootes1B::endClose ()
 {
 	timeOpenClose = 0;
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Bootes1B device = Bootes1B (argc, argv);
+	Bootes1B device (argc, argv);
 	return device.run ();
 }

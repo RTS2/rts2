@@ -244,7 +244,7 @@ MrakomerMove::MrakomerMove (int argc, char **argv)
 	cloud_dev = "/dev/ttyS0";
 	cloudConn = NULL;
 
-	createValue (heating, "HEATING", "cloud sensor heating", true);
+	createValue (heating, "HEATING", "cloud sensor heating", true, RTS2_VALUE_WRITABLE);
 	heating->addSelVal ("0%");
 	heating->addSelVal ("10%");
 	heating->addSelVal ("20%");

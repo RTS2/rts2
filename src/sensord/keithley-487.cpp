@@ -56,14 +56,14 @@ using namespace rts2sensord;
 Keithley487::Keithley487 (int argc,char **argv):Gpib (argc, argv)
 {
 	createValue (curr, "CURRENT", "Measured current", true, RTS2_VWHEN_BEFORE_END, 0, false);
-	createValue (sourceOn, "ON", "If voltage source is switched on", true);
-	createValue (voltage, "VOLTAGE", "Voltage level", true);
+	createValue (sourceOn, "ON", "If voltage source is switched on", true, RTS2_VALUE_WRITABLE);
+	createValue (voltage, "VOLTAGE", "Voltage level", true, RTS2_VALUE_WRITABLE);
 
 	voltage->setValueDouble (0);
 	voltage->setMin (-70);
 	voltage->setMax (0);
 
-	createValue (zeroCheck, "ZERO_CHECK", "Zero check on/off", true);
+	createValue (zeroCheck, "ZERO_CHECK", "Zero check on/off", true, RTS2_VALUE_WRITABLE);
 	zeroCheck->addSelVal ("off");
 	zeroCheck->addSelVal ("on, no correction");
 	zeroCheck->addSelVal ("on, with correction");

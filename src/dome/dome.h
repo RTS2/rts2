@@ -80,8 +80,6 @@ class Dome:public Rts2Device
 		 */
 		virtual bool isGoodWeather ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 		/**
 		 * Open dome. Called either for open command, or when system
 		 * transitioned to on state.

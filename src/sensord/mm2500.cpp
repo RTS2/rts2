@@ -59,10 +59,10 @@ using namespace rts2sensord;
 
 MM2500::MM2500 (int argc, char **argv):Gpib (argc, argv)
 {
-	createValue (ax1, "AX1", "first axis", true);
+	createValue (ax1, "AX1", "first axis", true, RTS2_VALUE_WRITABLE);
 	createValue (dp1, "dp_ax1", "desired position of the first axis", true);
 	
-	createValue (ax2, "AX2", "second axis", true);
+	createValue (ax2, "AX2", "second axis", true, RTS2_VALUE_WRITABLE);
 	createValue (dp2, "dp_ax2", "desired position of the second axis", true);
 
 	createValue (moveCount, "moveCount", "number of axis movements", false);

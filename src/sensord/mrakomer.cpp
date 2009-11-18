@@ -234,10 +234,6 @@ int Mrakomer::idle ()
 
 int Mrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
-	{
-		return 0;
-	}
 	if (old_value == heatInterval || old_value == heatDuration)
 	{
 		if (new_value->getValueInteger () <= 0)
@@ -260,13 +256,13 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (numVal, "num_stat", "number of measurements for weather statistic", false);
 	numVal->setValueInteger (20);
 
-	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", false);
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", false, RTS2_VALUE_WRITABLE);
 	triggerBad->setValueDouble (nan ("f"));
 
-	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", false);
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", false, RTS2_VALUE_WRITABLE);
 	triggerGood->setValueDouble (nan ("f"));
 
-	createValue (heater, "HEATER", "heater state", false);
+	createValue (heater, "HEATER", "heater state", false, RTS2_VALUE_WRITABLE);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", false, RTS2_DT_HEX);
@@ -274,10 +270,10 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
 	heatStateChangeTime->setValueDouble (nan("f"));
 
-	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false);
+	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false, RTS2_VALUE_WRITABLE);
 	heatInterval->setValueInteger (-1);
 
-	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false);
+	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
 	addOption ('f', NULL, 1, "serial port with cloud sensor");

@@ -66,12 +66,12 @@ class Lakeshore:public Gpib
 
 		Rts2ValueBool *tunest;
 
-		template < typename T> Rts2Value *tempValue (T *&val, const char *prefix, char chan, const char *_info, bool writeToFits)
+		template < typename T> Rts2Value *tempValue (T *&val, const char *prefix, char chan, const char *_info, bool writeToFits, uint32_t flags = 0)
 		{
 			std::ostringstream _os_n, _os_i;
 			_os_n << prefix << "_" << chan;
 			_os_i << chan << " " << _info;
-			createValue (val, _os_n.str ().c_str (), _os_i.str ().c_str (), writeToFits);
+			createValue (val, _os_n.str ().c_str (), _os_i.str ().c_str (), writeToFits, flags);
 			return val;
 		}
 
@@ -106,16 +106,16 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	{
 		temps[i] = new TempChannel ();
 
-		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true));
-		(*(temps[i]))["INCRV"].push_back (tempValue (vi, "INCRV", chan, "channel input curve number", true));
+		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true, RTS2_VALUE_WRITABLE));
+		(*(temps[i]))["INCRV"].push_back (tempValue (vi, "INCRV", chan, "channel input curve number", true, RTS2_VALUE_WRITABLE));
 		(*(temps[i]))["RDGST"].push_back (tempValue (vi, "STATUS", chan, "channel input reading status", true));
 		(*(temps[i]))["SRDG"].push_back (tempValue (vd, "SENSOR", chan, "channel input sensor value", true));
 
-		(*(temps[i]))["FILTER"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false));
-		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_POINTS", chan, "channel filter number of data points used for the filtering function. Valid range 2-64.", false));
-		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_WINDOW", chan, "channel filtering window. Valid range 1 - 10", false));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vb, "FILTER_ACTIVE", chan, "channel filter function state", false, RTS2_VALUE_WRITABLE));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_POINTS", chan, "channel filter number of data points used for the filtering function. Valid range 2-64.", false, RTS2_VALUE_WRITABLE));
+		(*(temps[i]))["FILTER"].push_back (tempValue (vi, "FILTER_WINDOW", chan, "channel filtering window. Valid range 1 - 10", false, RTS2_VALUE_WRITABLE));
 
-		(*(temps[i]))["INTYPE"].push_back (tempValue (vs, "INTYPE_SENSOR", chan, "channel input sensor type", false));
+		(*(temps[i]))["INTYPE"].push_back (tempValue (vs, "INTYPE_SENSOR", chan, "channel input sensor type", false, RTS2_VALUE_WRITABLE));
 		vs->addSelVal ("Silicon diode");
 		vs->addSelVal ("GaAlAs diode");
 		vs->addSelVal ("100 Ohm platinum/250");
@@ -126,35 +126,35 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 		vs->addSelVal ("Thermocouple 50 mV");
 		vs->addSelVal ("2.5 V,1 mA");
 		vs->addSelVal ("7.5 V,1 mA");
-		(*(temps[i]))["INTYPE"].push_back (tempValue (vb, "INTYPE_COMPENSATION", chan, "channel input sensor compensation", false));
+		(*(temps[i]))["INTYPE"].push_back (tempValue (vb, "INTYPE_COMPENSATION", chan, "channel input sensor compensation", false, RTS2_VALUE_WRITABLE));
 	}
 
 	for (i = 0, chan = '1'; i < 2; i++, chan++)
 	{
 		loops[i] = new TempChannel ();
 
-		(*(loops[i]))["SETP"].push_back (tempValue (vd, "SETPOINT", chan, "control loop temperature setpoint", true));
+		(*(loops[i]))["SETP"].push_back (tempValue (vd, "SETPOINT", chan, "control loop temperature setpoint", true, RTS2_VALUE_WRITABLE));
 		(*(loops[i]))["HTR"].push_back (tempValue (vd, "HEATER", chan, "control loop heater output", true));
 
-		(*(loops[i]))["RANGE"].push_back (tempValue (vs, "HEATER_RANGE", chan, "control loop heater range", false));
+		(*(loops[i]))["RANGE"].push_back (tempValue (vs, "HEATER_RANGE", chan, "control loop heater range", false, RTS2_VALUE_WRITABLE));
 		vs->addSelVal ("Off");
 		vs->addSelVal ("Low (2.5 W)");
 		vs->addSelVal ("High (25 W)");
 
-		(*(loops[i]))["HTRRES"].push_back (tempValue (vs, "HEATER_RESISTANCE", chan, "control loop heater output", false));
+		(*(loops[i]))["HTRRES"].push_back (tempValue (vs, "HEATER_RESISTANCE", chan, "control loop heater output", false, RTS2_VALUE_WRITABLE));
 		vs->addSelVal ("25 Ohm");
 		vs->addSelVal ("50 Ohm");
 
-		(*(loops[i]))["MOUT"].push_back (tempValue (vd, "MOUT", chan, "control loop manual heater power", false));
+		(*(loops[i]))["MOUT"].push_back (tempValue (vd, "MOUT", chan, "control loop manual heater power", false, RTS2_VALUE_WRITABLE));
 
-		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_P", chan, "control loop PID Proportional (gain)", false));
-		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_I", chan, "control loop PID Integral (reset)", false));
-		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_D", chan, "control loop PID Derivative (rate)", false));
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_P", chan, "control loop PID Proportional (gain)", false, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_I", chan, "control loop PID Integral (reset)", false, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["PID"].push_back (tempValue (vd, "PID_D", chan, "control loop PID Derivative (rate)", false, RTS2_VALUE_WRITABLE));
 
-		(*(loops[i]))["RAMP"].push_back (tempValue (vb, "RAMP_ACTIVE", chan, "control loop setpoint ramping", false));
-		(*(loops[i]))["RAMP"].push_back (tempValue (vd, "RAMP_RATE", chan, "control loop ramping rate", false));
+		(*(loops[i]))["RAMP"].push_back (tempValue (vb, "RAMP_ACTIVE", chan, "control loop setpoint ramping", false, RTS2_VALUE_WRITABLE));
+		(*(loops[i]))["RAMP"].push_back (tempValue (vd, "RAMP_RATE", chan, "control loop ramping rate", false, RTS2_VALUE_WRITABLE));
 
-		(*(loops[i]))["RAMPST"].push_back (tempValue (vb, "RAMP_STATUS", chan, "control loop ramping status", false));
+		(*(loops[i]))["RAMPST"].push_back (tempValue (vb, "RAMP_STATUS", chan, "control loop ramping status", false, RTS2_VALUE_WRITABLE));
 
 	}
 

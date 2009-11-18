@@ -197,9 +197,9 @@ A3200::A3200 (int in_argc, char **in_argv)
 
 	mAxis = AXISMASK_1 | AXISMASK_2 | AXISMASK_3;
 
-	createValue (ax1, "AX1", "first axis", true);
-	createValue (ax2, "AX2", "second axis", true);
-	createValue (ax3, "AX3", "third axis", true);
+	createValue (ax1, "AX1", "first axis", true, RTS2_VALUE_WRITABLE);
+	createValue (ax2, "AX2", "second axis", true, RTS2_VALUE_WRITABLE);
+	createValue (ax3, "AX3", "third axis", true, RTS2_VALUE_WRITABLE);
 
 	createValue (moveCount, "moveCount", "number of axis movements", false);
 	moveCount->setValueInteger (0);

@@ -34,8 +34,7 @@ FramWeather::processOption (int _opt)
 	return SensorWeather::processOption (_opt);
 }
 
-int
-FramWeather::init ()
+int FramWeather::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
@@ -49,22 +48,7 @@ FramWeather::init ()
 	return 0;
 }
 
-
-int
-FramWeather::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == maxWindSpeed
-		|| old_value == timeoutConn
-		|| old_value == timeoutRain
-		|| old_value == timeoutWindspeed
-		|| old_value == connUpdateSep)
-		return 0;
-	return SensorWeather::setValue (old_value, new_value);
-}
-
-
-FramWeather::FramWeather (int argc, char **argv)
-:SensorWeather (argc, argv)
+FramWeather::FramWeather (int argc, char **argv):SensorWeather (argc, argv)
 {
 	createValue (windSpeed, "windspeed", "current measured windspeed", false);
 	createValue (rain, "rain", "true it it is raining", false);
@@ -72,19 +56,19 @@ FramWeather::FramWeather (int argc, char **argv)
 	watch->addSelVal ("WATCH");
 	watch->addSelVal ("UNKNOW");
 
-	createValue (maxWindSpeed, "max_windspeed", "maximal allowed windspeed", false);
+	createValue (maxWindSpeed, "max_windspeed", "maximal allowed windspeed", false, RTS2_VALUE_WRITABLE);
 	maxWindSpeed->setValueFloat (50);
 
-	createValue (connUpdateSep, "update_time", "maximal time in seconds when connection is still considered as live", false);
+	createValue (connUpdateSep, "update_time", "maximal time in seconds when connection is still considered as live", false, RTS2_VALUE_WRITABLE);
 	connUpdateSep->setValueInteger (40);
 
-	createValue (timeoutConn, "timeout_conn", "connection timeout in seconds", false);
+	createValue (timeoutConn, "timeout_conn", "connection timeout in seconds", false, RTS2_VALUE_WRITABLE);
 	timeoutConn->setValueInteger (600);
 
-	createValue (timeoutRain, "timeout_rain", "rain timeout", false);
+	createValue (timeoutRain, "timeout_rain", "rain timeout", false, RTS2_VALUE_WRITABLE);
 	timeoutRain->setValueInteger (7200);
 
-	createValue (timeoutWindspeed, "timeout_windspeed", "windspeed timeout", false);
+	createValue (timeoutWindspeed, "timeout_windspeed", "windspeed timeout", false, RTS2_VALUE_WRITABLE);
 	timeoutWindspeed->setValueInteger (600);
 
 	addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");

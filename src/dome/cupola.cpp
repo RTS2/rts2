@@ -3,8 +3,7 @@
 
 #include <math.h>
 
-Cupola::Cupola (int in_argc, char **in_argv):
-Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
+Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 {
 	targetPos.ra = nan ("f");
 	targetPos.dec = nan ("f");
@@ -25,9 +24,7 @@ Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 	addOption ('c', "config", 1, "configuration file");
 }
 
-
-int
-Cupola::processOption (int in_opt)
+int Cupola::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -40,9 +37,7 @@ Cupola::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Cupola::init ()
+int Cupola::init ()
 {
 	int ret;
 	ret = Dome::init ();
@@ -57,9 +52,7 @@ Cupola::init ()
 	return 0;
 }
 
-
-int
-Cupola::info ()
+int Cupola::info ()
 {
 	struct ln_hrz_posn hrz;
 	// target ra+dec
@@ -72,9 +65,7 @@ Cupola::info ()
 	return Dome::info ();
 }
 
-
-int
-Cupola::idle ()
+int Cupola::idle ()
 {
 	long ret;
 	if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
@@ -103,9 +94,7 @@ Cupola::idle ()
 	return Dome::idle ();
 }
 
-
-int
-Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
+int Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 {
 	int ret;
 	targetPos.ra = ra;
@@ -119,17 +108,13 @@ Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 	return 0;
 }
 
-
-int
-Cupola::moveStart ()
+int Cupola::moveStart ()
 {
 	maskState (DOME_COP_MASK_MOVE, DOME_COP_MOVE);
 	return 0;
 }
 
-
-int
-Cupola::moveStop ()
+int Cupola::moveStop ()
 {
 	maskState (DOME_COP_MASK | BOP_EXPOSURE,
 		DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
@@ -137,35 +122,27 @@ Cupola::moveStop ()
 	return 0;
 }
 
-
-void
-Cupola::synced ()
+void Cupola::synced ()
 {
 	infoAll ();
 	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE, DOME_COP_SYNC);
 }
 
-
-int
-Cupola::moveEnd ()
+int Cupola::moveEnd ()
 {
 	maskState (DOME_COP_MASK | BOP_EXPOSURE, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
 	infoAll ();
 	return 0;
 }
 
-
-void
-Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
+void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
 	JD = ln_get_julian_from_sys ();
 	ln_get_hrz_from_equ (&targetPos, observer, JD, hrz);
 }
 
-
-int
-Cupola::needSplitChange ()
+int Cupola::needSplitChange ()
 {
 	int ret;
 	struct ln_hrz_posn targetHrz;
@@ -195,9 +172,7 @@ Cupola::needSplitChange ()
 	return 1;
 }
 
-
-int
-Cupola::commandAuthorized (Rts2Conn * conn)
+int Cupola::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("move"))
 	{

@@ -54,14 +54,6 @@ class Dummy:public Cupola
 			mcount->inc ();
 			return USEC_SEC;
 		}
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
-		{
-			if (old_value == moveCountTop)
-			{
-				return 0;
-			}
-			return Cupola::setValue (old_value, new_value);
-		}
 
 		virtual int startOpen ()
 		{
@@ -105,7 +97,7 @@ class Dummy:public Cupola
 		Dummy (int argc, char **argv):Cupola (argc, argv)
 		{
 			createValue (mcount, "mcount", "moving count", false);
-			createValue (moveCountTop, "moveCountTop", "move count top", false);
+			createValue (moveCountTop, "moveCountTop", "move count top", false, RTS2_VALUE_WRITABLE);
 			moveCountTop->setValueInteger (100);
 		}
 
@@ -123,9 +115,8 @@ class Dummy:public Cupola
 
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }

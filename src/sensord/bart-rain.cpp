@@ -142,7 +142,7 @@ BartRain::BartRain (int argc, char **argv)
 	createValue (rain, "rain", "true if sensor detects rain", false);
 	rain->setValueBool (true);
 
-	createValue (timeoutRain, "timeout_rain", "rain timeout in seconds", false);
+	createValue (timeoutRain, "timeout_rain", "rain timeout in seconds", false, RTS2_VALUE_WRITABLE);
 	timeoutRain->setValueInteger (3600);
 
 	addOption ('f', NULL, 1, "/dev/file for rain detector, default to /dev/ttyS0");

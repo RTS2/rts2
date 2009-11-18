@@ -35,9 +35,6 @@ namespace rts2sensord
 	 */
 	class ConnApcUps: public rts2core::ConnTCP
 	{
-		private:
-			std::map <std::string, std::string> values;
-
 		public:
 			/**
 			 * Create new connection to APC UPS daemon.
@@ -63,6 +60,9 @@ namespace rts2sensord
 			float getTemp (const char *val);
 			int getTime (const char *val);
 			time_t getDate (const char *val);
+
+		private:
+			std::map <std::string, std::string> values;
 	};
 
 	/**
@@ -72,6 +72,17 @@ namespace rts2sensord
 	 */
 	class ApcUps:public SensorWeather
 	{
+		public:
+			ApcUps (int argc, char **argv);
+			virtual ~ApcUps (void);
+
+			virtual int info ();
+
+		protected:
+			virtual int processOption (int opt);
+
+			virtual int init ();
+
 		private:
 			HostString *host;
 
@@ -91,32 +102,17 @@ namespace rts2sensord
 
 			Rts2ValueTime *xOnBatt;
 			Rts2ValueTime *xOffBatt;
-
-		protected:
-			virtual int processOption (int opt);
-			virtual int info ();
-
-			virtual int init ();
-
-		public:
-			ApcUps (int argc, char **argv);
-			virtual ~ApcUps (void);
 	};
 
 }
 
-
 using namespace rts2sensord;
 
-
-ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)
-:rts2core::ConnTCP (_master, _hostname, _port)
+ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port):rts2core::ConnTCP (_master, _hostname, _port)
 {
 }
 
-
-int
-ConnApcUps::command (const char *cmd)
+int ConnApcUps::command (const char *cmd)
 {
 	uint16_t len = htons (strlen (cmd));
 	while (true)
@@ -165,9 +161,7 @@ ConnApcUps::command (const char *cmd)
 	}
 }
 
-
-const char*
-ConnApcUps::getString (const char *val)
+const char* ConnApcUps::getString (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -175,9 +169,7 @@ ConnApcUps::getString (const char *val)
 	return (*iter).second.c_str ();
 }
 
-
-float
-ConnApcUps::getPercents (const char *val)
+float ConnApcUps::getPercents (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -185,9 +177,7 @@ ConnApcUps::getPercents (const char *val)
 	return atof ((*iter).second.c_str());
 }
 
-
-float
-ConnApcUps::getTemp (const char *val)
+float ConnApcUps::getTemp (const char *val)
 {
 	const char *v = getString (val);
 	if (strchr (v, 'C') == NULL)
@@ -195,9 +185,7 @@ ConnApcUps::getTemp (const char *val)
 	return atof (v);
 }
 
-
-int
-ConnApcUps::getTime (const char *val)
+int ConnApcUps::getTime (const char *val)
 {
 	const char *v = getString (val);
 	if (strcasestr (v, "hours") != NULL)
@@ -209,9 +197,7 @@ ConnApcUps::getTime (const char *val)
 	throw rts2core::ConnError (this, "Cannot convert time");
 }
 
-
-time_t
-ConnApcUps::getDate (const char *val)
+time_t ConnApcUps::getDate (const char *val)
 {
 	const char *v = getString (val);
 	struct tm _tm;
@@ -227,9 +213,7 @@ ConnApcUps::getDate (const char *val)
 	return mktime (&_tm);
 }
 
-
-int
-ApcUps::processOption (int opt)
+int ApcUps::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -245,9 +229,7 @@ ApcUps::processOption (int opt)
 	return 0;
 }
 
-
-int
-ApcUps::init ()
+int ApcUps::init ()
 {
   	int ret;
 	ret = SensorWeather::init ();
@@ -261,9 +243,7 @@ ApcUps::init ()
 	return 0;
 }
 
-
-int
-ApcUps::info ()
+int ApcUps::info ()
 {
 	int ret;
 	ConnApcUps *connApc = new ConnApcUps (this, host->getHostname (), host->getPort ());
@@ -328,7 +308,6 @@ ApcUps::info ()
 	return 0;
 }
 
-
 ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 {
   	createValue (model, "model", "UPS mode", false);
@@ -342,26 +321,23 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (xOnBatt, "xonbatt", "time of last on battery event", false);
 	createValue (xOffBatt, "xoffbatt", "time of last off battery event", false);
 
-	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
+	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false, RTS2_VALUE_WRITABLE);
 	battimeout->setValueInteger (60);
 
-	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
+	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false, RTS2_VALUE_WRITABLE);
 	minbcharge->setValueFloat (50);
-	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
+	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false, RTS2_VALUE_WRITABLE);
 	mintimeleft->setValueInteger (1200);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 	addOption (OPT_MINB_TIME, "min-btime", 1, "minimal battery run time");
 }
 
-
 ApcUps::~ApcUps (void)
 {
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	ApcUps device = ApcUps (argc, argv);
 	return device.run ();

@@ -83,8 +83,7 @@ class OpenTpl:public Dome
 
 using namespace rts2dome;
 
-int
-OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
+int OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
 {	
 	int status = TPL_OK;
 	if (old_value == domeAutotrack)
@@ -131,9 +130,7 @@ OpenTpl::setValue (Rts2Value *old_value, Rts2Value *new_value)
 	return Dome::setValue (old_value, new_value);
 }
 
-
-int
-OpenTpl::startOpen ()
+int OpenTpl::startOpen ()
 {
 	int status = TPL_OK;
 	status = opentplConn->set ("DOME[1].TARGETPOS", 1, &status);
@@ -144,9 +141,7 @@ OpenTpl::startOpen ()
 	return 0;
 }
 
-
-long
-OpenTpl::isOpened ()
+long OpenTpl::isOpened ()
 {
 	int status = TPL_OK;
 	double pos1, pos2;
@@ -162,16 +157,12 @@ OpenTpl::isOpened ()
 	return USEC_SEC;
 }
 
-
-int
-OpenTpl::endOpen ()
+int OpenTpl::endOpen ()
 {
 	return 0;
 }
 
-
-int
-OpenTpl::startClose ()
+int OpenTpl::startClose ()
 {
 	int status = TPL_OK;
 	status = opentplConn->set ("DOME[1].TARGETPOS", 0, &status);
@@ -182,9 +173,7 @@ OpenTpl::startClose ()
 	return 0;
 }
 
-
-long
-OpenTpl::isClosed ()
+long OpenTpl::isClosed ()
 {
 	int status = TPL_OK;
 	double pos1, pos2;
@@ -200,16 +189,12 @@ OpenTpl::isClosed ()
 	return USEC_SEC;
 }
 
-
-int
-OpenTpl::endClose ()
+int OpenTpl::endClose ()
 {
 	return 0;
 }
 
-
-int
-OpenTpl::processOption (int in_opt)
+int OpenTpl::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -222,22 +207,20 @@ OpenTpl::processOption (int in_opt)
 	return 0;
 }
 
-
-OpenTpl::OpenTpl (int argc, char **argv)
-:Dome (argc, argv)
+OpenTpl::OpenTpl (int argc, char **argv):Dome (argc, argv)
 {
 	openTPLServer = NULL;
 	opentplConn = NULL;
 
-	createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false);
+	createValue (domeAutotrack, "dome_auto_track", "dome auto tracking", false, RTS2_VALUE_WRITABLE);
 	domeAutotrack->setValueBool (true);
 
-	createValue (domeUp, "dome_up", "upper dome cover", false);
-	createValue (domeDown, "dome_down", "dome down cover", false);
+	createValue (domeUp, "dome_up", "upper dome cover", false, RTS2_VALUE_WRITABLE);
+	createValue (domeDown, "dome_down", "dome down cover", false, RTS2_VALUE_WRITABLE);
 
 	createValue (domeCurrAz, "dome_curr_az", "dome current azimunt", false, RTS2_DT_DEGREES);
-	createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false, RTS2_DT_DEGREES);
-	createValue (domePower, "dome_power", "if dome have power", false);
+	createValue (domeTargetAz, "dome_target_az", "dome targer azimut", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue (domePower, "dome_power", "if dome have power", false, RTS2_VALUE_WRITABLE);
 	createValue (domeTarDist, "dome_tar_dist", "dome target distance", false, RTS2_DT_DEG_DIST);
 
 	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
@@ -249,9 +232,7 @@ OpenTpl::~OpenTpl (void)
 
 }
 
-
-int
-OpenTpl::setDomeTrack (bool new_auto)
+int OpenTpl::setDomeTrack (bool new_auto)
 {
 	int status = TPL_OK;
 	int old_track;
@@ -308,9 +289,7 @@ OpenTpl::initOpenTplDevice ()
 	return 0;
 }
 
-
-int
-OpenTpl::info ()
+int OpenTpl::info ()
 {
 	double dome_curr_az, dome_target_az, dome_tar_dist, dome_power, dome_up, dome_down;
 	int status = TPL_OK;
@@ -333,9 +312,7 @@ OpenTpl::info ()
 	return Dome::info ();
 }
 
-
-int
-OpenTpl::init ()
+int OpenTpl::init ()
 {
 	int ret = Dome::init ();
 	if (ret)
@@ -343,10 +320,8 @@ OpenTpl::init ()
 	return initOpenTplDevice ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	OpenTpl device = OpenTpl (argc, argv);
+	OpenTpl device (argc, argv);
 	return device.run ();
 }

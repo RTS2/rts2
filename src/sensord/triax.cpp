@@ -67,13 +67,13 @@ Triax::Triax (int argc, char **argv):Gpib (argc, argv)
 {
 	createValue (mainVersion, "main_version", "version of main firmware", false);
 	createValue (bootVersion, "boot_version", "version of boot firmware", false);
-	createValue (motorPosition, "MOTOR", "position of the motor", true);
+	createValue (motorPosition, "MOTOR", "position of the motor", true, RTS2_VALUE_WRITABLE);
 
-	createValue (entryMirror, "ENTRY", "position of entry mirror", true);
+	createValue (entryMirror, "ENTRY", "position of entry mirror", true, RTS2_VALUE_WRITABLE);
 	entryMirror->addSelVal ("SIDE");
 	entryMirror->addSelVal ("FRONT");
 
-	createValue (exitMirror, "EXIT", "position of exit mirror", true);
+	createValue (exitMirror, "EXIT", "position of exit mirror", true, RTS2_VALUE_WRITABLE);
 	exitMirror->addSelVal ("SIDE");
 	exitMirror->addSelVal ("FRONT");
 }

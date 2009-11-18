@@ -79,10 +79,10 @@ Bootes1::Bootes1 (int argc, char **argv):Sensor (argc, argv)
 	fordConn = NULL;
 	addOption ('f', NULL, 1, "/dev file for board serial port (default to /dev/ttyS0)");
 
-	createValue (telSwitch, "tel_switch", "switch for telescope", false);
+	createValue (telSwitch, "tel_switch", "switch for telescope", false, RTS2_VALUE_WRITABLE);
 	telSwitch->setValueBool (true);
 
-	createValue (asmSwitch, "asm_switch", "switch for ASM", false);
+	createValue (asmSwitch, "asm_switch", "switch for ASM", false, RTS2_VALUE_WRITABLE);
 	asmSwitch->setValueBool (true);
 }
 

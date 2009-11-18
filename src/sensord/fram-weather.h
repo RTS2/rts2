@@ -53,7 +53,6 @@ class FramWeather: public SensorWeather
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
 		FramWeather (int args, char **argv);

@@ -51,7 +51,6 @@ class Cloud4: public SensorWeather
 
 		virtual int info ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual void valueChanged (Rts2Value *value);
 
 	private:
@@ -139,13 +138,13 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (numVal, "num_stat", "number of measurements for weather statistic");
 	numVal->setValueInteger (20);
 
-	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true);
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true, RTS2_VALUE_WRITABLE);
 	triggerBad->setValueDouble (nan ("f"));
 
-	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true);
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true, RTS2_VALUE_WRITABLE);
 	triggerGood->setValueDouble (nan ("f"));
 
-	createValue (heater, "HEATER", "heater state", true);
+	createValue (heater, "HEATER", "heater state", true, RTS2_VALUE_WRITABLE);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
@@ -153,10 +152,10 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
 	heatStateChangeTime->setValueDouble (nan("f"));
 
-	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false);
+	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false, RTS2_VALUE_WRITABLE);
 	heatInterval->setValueInteger (-1);
 
-	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false);
+	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
@@ -307,13 +306,6 @@ int Cloud4::info ()
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
 	return SensorWeather::info ();
-}
-
-int Cloud4::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == heater || old_value == triggerBad || old_value == triggerGood || old_value == heatInterval || old_value == heatDuration)
-		return 0;
-	return SensorWeather::setValue (old_value, new_value);
 }
 
 void Cloud4::valueChanged (Rts2Value *value)
