@@ -144,7 +144,7 @@ SSP5::SSP5 (int argc, char **argv):Rts2DevPhot (argc, argv)
 	filter->addSelVal ("U");
 	filter->addSelVal ("Dark");
 
-	createValue (gain, "gain", "photometer gain", true);
+	createValue (gain, "gain", "photometer gain", true, RTS2_VALUE_WRITABLE);
 	gain->addSelVal ("100");
 	gain->addSelVal ("10");
 	gain->addSelVal ("1");

@@ -35,10 +35,10 @@ Rts2DevPhot::Rts2DevPhot (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc
 {
 	integrateConn = NULL;
 
-	createValue (filter, "filter", "used filter", false);
+	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 	createValue (req_count, "required", "number of readings left", false);
 	createValue (count, "count", "count of the photometer", false);
-	createValue (exp, "exposure", "exposure time in sec", false);
+	createValue (exp, "exposure", "exposure time in sec", false, RTS2_VALUE_WRITABLE);
 	createValue (is_ov, "is_ov", "if photometer overflow", false);
 
 	photType = NULL;
