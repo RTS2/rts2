@@ -145,7 +145,6 @@ class XmlRpcd:public Rts2Device
 #endif
 		virtual int processOption (int in_opt);
 		virtual int init ();
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
 
