@@ -23,7 +23,7 @@ using namespace rts2filterd;
 
 Filterd::Filterd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_FW, "W0")
 {
-	createValue (filter, "filter", "used filter", false);
+	createValue (filter, "filter", "used filter", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('F', NULL, 1, "filter names, separated by space(s)");
 }
