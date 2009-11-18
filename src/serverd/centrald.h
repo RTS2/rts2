@@ -135,8 +135,6 @@ class Rts2Centrald:public Rts2Daemon
 			return conn->isConnState (CONN_CONNECTED);
 		}
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-
 		virtual void connectionRemoved (Rts2Conn * conn);
 
 		virtual void stateChanged (int new_state, int old_state, const char *description);
