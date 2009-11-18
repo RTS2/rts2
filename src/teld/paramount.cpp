@@ -73,8 +73,7 @@ class ParaVal
 		int readAxis (std::istream & _is, const MKS3Id & axis);
 };
 
-int
-ParaVal::writeAxis (std::ostream & _os, const MKS3Id & axis)
+int ParaVal::writeAxis (std::ostream & _os, const MKS3Id & axis)
 {
 	CWORD16 val16;
 	CWORD32 val32;
@@ -104,9 +103,7 @@ ParaVal::writeAxis (std::ostream & _os, const MKS3Id & axis)
 	return ret;
 }
 
-
-int
-ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
+int ParaVal::readAxis (std::istream & _is, const MKS3Id & axis)
 {
 	CWORD16 val16;
 	CWORD32 val32;
@@ -345,9 +342,7 @@ Paramount::checkRetAxis (const MKS3Id & axis, int reta)
 	return reta;
 }
 
-
-int
-Paramount::checkRet ()
+int Paramount::checkRet ()
 {
 	int reta0, reta1;
 	reta0 = checkRetAxis (axis0, ret0);
@@ -357,9 +352,7 @@ Paramount::checkRet ()
 	return 0;
 }
 
-
-int
-Paramount::updateStatus ()
+int Paramount::updateStatus ()
 {
 	CWORD16 old_status = status0;
 	ret0 = MKS3StatusGet (axis0, &status0);
@@ -374,9 +367,7 @@ Paramount::updateStatus ()
 	return checkRet ();
 }
 
-
-int
-Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
+int Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
 {
 	int ret;
 	CWORD16 pMajor, pMinor, pBuild;
@@ -400,9 +391,7 @@ Paramount::saveAxis (std::ostream & os, const MKS3Id & axis)
 	return 0;
 }
 
-
-int
-Paramount::getHomeOffset (int32_t & off)
+int Paramount::getHomeOffset (int32_t & off)
 {
 	int ret;
 	CWORD32 en0, pos0;
@@ -417,9 +406,7 @@ Paramount::getHomeOffset (int32_t & off)
 	return 0;
 }
 
-
-int
-Paramount::updateLimits ()
+int Paramount::updateLimits ()
 {
 	int ret;
 	ret = MKS3ConstsLimMinGet (axis0, &acMin);
@@ -438,11 +425,9 @@ Paramount::updateLimits ()
 	return 0;
 }
 
-
-Paramount::Paramount (int in_argc, char **in_argv)
-:GEM (in_argc, in_argv)
+Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv)
 {
-	createValue (tracking, "tracking", "if RA worm is enabled", false);
+	createValue (tracking, "tracking", "if RA worm is enabled", false, RTS2_VALUE_WRITABLE);
 	tracking->setValueBool (true);
 
 	createValue (axRa, "AXRA", "RA axis count", true);
@@ -504,59 +489,33 @@ Paramount::Paramount (int in_argc, char **in_argv)
 	setCorrections (true, true, true);
 
 	// int paramout values
-	paramountValues.
-		push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));
+	paramountValues.push_back (ParaVal ("Index angle", T16, CMD_VAL16_INDEX_ANGLE));
 	paramountValues.push_back (ParaVal ("Base rate", T32, CMD_VAL32_BASERATE));
-	paramountValues.
-		push_back (ParaVal ("Maximum speed", T32, CMD_VAL32_SLEW_VEL));
-	paramountValues.
-		push_back (ParaVal ("Acceleration", T32, CMD_VAL32_SQRT_ACCEL));
+	paramountValues.push_back (ParaVal ("Maximum speed", T32, CMD_VAL32_SLEW_VEL));
+	paramountValues.push_back (ParaVal ("Acceleration", T32, CMD_VAL32_SQRT_ACCEL));
 	//  paramountValues.push_back (ParaVal ("Non-sidereal tracking rate" ));
-	paramountValues.
-		push_back (ParaVal
-		("Minimum position limit", T32, CMD_VAL32_MIN_POS_LIM));
-	paramountValues.
-		push_back (ParaVal
-		("Maximum position limit", T32, CMD_VAL32_MAX_POS_LIM));
-	paramountValues.
-		push_back (ParaVal ("Sensor (from sync)", T16, CMD_VAL16_HOME_SENSORS));
-	paramountValues.
-		push_back (ParaVal ("Guide", T32, CMD_VAL32_CONSTS_VEL_GUIDE));
+	paramountValues.push_back (ParaVal ("Minimum position limit", T32, CMD_VAL32_MIN_POS_LIM));
+	paramountValues.push_back (ParaVal ("Maximum position limit", T32, CMD_VAL32_MAX_POS_LIM));
+	paramountValues.push_back (ParaVal ("Sensor (from sync)", T16, CMD_VAL16_HOME_SENSORS));
+	paramountValues.push_back (ParaVal ("Guide", T32, CMD_VAL32_CONSTS_VEL_GUIDE));
 	//  paramountValues.push_back (ParaVal ("Tics per revolution",
 	paramountValues.push_back (ParaVal ("PEC ratio", T16, CMD_VAL16_PEC_RATIO));
-	paramountValues.
-		push_back (ParaVal
-		("Maximum position error", T16, CMD_VAL16_ERROR_LIMIT));
+	paramountValues.push_back (ParaVal ("Maximum position error", T16, CMD_VAL16_ERROR_LIMIT));
 	//  paramountValues.push_back (ParaVal ("Unit Id.",
-	paramountValues.
-		push_back (ParaVal ("EMF constants", T16, CMD_VAL16_EMF_FACTOR));
-	paramountValues.
-		push_back (ParaVal ("Home velocity high", T32, CMD_VAL32_HOMEVEL_HI));
-	paramountValues.
-		push_back (ParaVal ("Home velocity medium", T32, CMD_VAL32_HOMEVEL_MED));
-	paramountValues.
-		push_back (ParaVal ("Home velocity low", T32, CMD_VAL32_HOMEVEL_LO));
-	paramountValues.
-		push_back (ParaVal ("Home direction, sense", T16, CMD_VAL16_HOMEDIR));
-	paramountValues.
-		push_back (ParaVal
-		("Home mode, required, Joystick, In-out-in", T16,
-		CMD_VAL16_HOME_MODE));
-	paramountValues.
-		push_back (ParaVal ("Home index offset", T16, CMD_VAL16_HOME2INDEX));
-	paramountValues.
-		push_back (ParaVal ("PEC cutoff speed", T32, CMD_VAL32_PEC_CUT_SPEED));
-	paramountValues.
-		push_back (ParaVal ("Maximum voltage", T16, CMD_VAL16_MOTOR_VOLT_MAX));
-	paramountValues.
-		push_back (ParaVal ("Maximum gain", T16, CMD_VAL16_MOTOR_PROPORT_MAX));
-	paramountValues.
-		push_back (ParaVal ("Home sense 1", T16, CMD_VAL16_HOMESENSE1));
-	paramountValues.
-		push_back (ParaVal ("Home sense 2", T16, CMD_VAL16_HOMESENSE2));
+	paramountValues.push_back (ParaVal ("EMF constants", T16, CMD_VAL16_EMF_FACTOR));
+	paramountValues.push_back (ParaVal ("Home velocity high", T32, CMD_VAL32_HOMEVEL_HI));
+	paramountValues.push_back (ParaVal ("Home velocity medium", T32, CMD_VAL32_HOMEVEL_MED));
+	paramountValues.push_back (ParaVal ("Home velocity low", T32, CMD_VAL32_HOMEVEL_LO));
+	paramountValues.push_back (ParaVal ("Home direction, sense", T16, CMD_VAL16_HOMEDIR));
+	paramountValues.push_back (ParaVal ("Home mode, required, Joystick, In-out-in", T16, CMD_VAL16_HOME_MODE));
+	paramountValues.push_back (ParaVal ("Home index offset", T16, CMD_VAL16_HOME2INDEX));
+	paramountValues.push_back (ParaVal ("PEC cutoff speed", T32, CMD_VAL32_PEC_CUT_SPEED));
+	paramountValues.push_back (ParaVal ("Maximum voltage", T16, CMD_VAL16_MOTOR_VOLT_MAX));
+	paramountValues.push_back (ParaVal ("Maximum gain", T16, CMD_VAL16_MOTOR_PROPORT_MAX));
+	paramountValues.push_back (ParaVal ("Home sense 1", T16, CMD_VAL16_HOMESENSE1));
+	paramountValues.push_back (ParaVal ("Home sense 2", T16, CMD_VAL16_HOMESENSE2));
 	paramountValues.push_back (ParaVal ("Cur pos", T32, CMD_VAL32_CURPOS));
 }
-
 
 Paramount::~Paramount (void)
 {
@@ -564,9 +523,7 @@ Paramount::~Paramount (void)
 	delete track1;
 }
 
-
-int
-Paramount::processOption (int in_opt)
+int Paramount::processOption (int in_opt)
 {
 	double rec_sec;
 	switch (in_opt)
@@ -595,9 +552,7 @@ Paramount::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Paramount::init ()
+int Paramount::init ()
 {
 	CWORD16 motorState0, motorState1;
 	CWORD32 pos0, pos1;
@@ -705,18 +660,14 @@ Paramount::init ()
 	return ret;
 }
 
-
-int
-Paramount::initValues ()
+int Paramount::initValues ()
 {
 	// ignore corrections bellow 5 arcsec
 	setIgnoreCorrection (5/3600);
 	return Telescope::initValues ();
 }
 
-
-void
-Paramount::updateTrack ()
+void Paramount::updateTrack ()
 {
 	double JD;
 	struct ln_equ_posn corr_pos;
@@ -767,9 +718,7 @@ Paramount::updateTrack ()
 	checkRet ();
 }
 
-
-int
-Paramount::idle ()
+int Paramount::idle ()
 {
 //	struct timeval now;
 	int32_t homeOff, ac = 0;
@@ -834,9 +783,7 @@ Paramount::idle ()
 	return GEM::idle ();
 }
 
-
-int
-Paramount::info ()
+int Paramount::info ()
 {
 	int32_t ac = 0, dc = 0;
 	int ret;
@@ -857,9 +804,7 @@ Paramount::info ()
 	return GEM::info ();
 }
 
-
-int
-Paramount::startResync ()
+int Paramount::startResync ()
 {
 	int ret;
 	CWORD32 ac = 0;
@@ -967,9 +912,7 @@ Paramount::startResync ()
 	return checkRet ();
 }
 
-
-int
-Paramount::isMoving ()
+int Paramount::isMoving ()
 {
 	int ret;
 	// we were called from idle loop
@@ -1012,9 +955,7 @@ Paramount::isMoving ()
 	return -2;
 }
 
-
-int
-Paramount::endMove ()
+int Paramount::endMove ()
 {
 	int ret;
 	//  int ret_track;
@@ -1043,9 +984,7 @@ Paramount::endMove ()
 	return ret;
 }
 
-
-int
-Paramount::stopMove ()
+int Paramount::stopMove ()
 {
 	int ret;
 	// if we issue startMove after abort, we will get to position after homing is performed
@@ -1062,9 +1001,7 @@ Paramount::stopMove ()
 	return checkRet ();
 }
 
-
-int
-Paramount::startPark ()
+int Paramount::startPark ()
 {
 	int ret;
 
@@ -1104,9 +1041,7 @@ Paramount::startPark ()
 	return checkRet ();
 }
 
-
-int
-Paramount::isParking ()
+int Paramount::isParking ()
 {
 	int ret;
 	if (moveState & (TEL_FORCED_HOMING0 | TEL_FORCED_HOMING1))
@@ -1128,9 +1063,7 @@ Paramount::isParking ()
 	return -2;
 }
 
-
-int
-Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == tracking)
 	{
@@ -1144,8 +1077,7 @@ Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	return Telescope::setValue (oldValue, newValue);
 }
 
-int
-Paramount::endPark ()
+int Paramount::endPark ()
 {
 	int ret;
 	ret = updateStatus ();
@@ -1158,9 +1090,7 @@ Paramount::endPark ()
 	return checkRet ();
 }
 
-
-int
-Paramount::saveFlash ()
+int Paramount::saveFlash ()
 {
 	CWORD16 data[4000];
 	int file = open ("/etc/rts2/flash", O_CREAT | O_TRUNC);
@@ -1170,9 +1100,7 @@ Paramount::saveFlash ()
 	return 0;
 }
 
-
-int
-Paramount::saveModel ()
+int Paramount::saveModel ()
 {
 	// dump Paramount stuff
 	int ret;
@@ -1189,9 +1117,7 @@ Paramount::saveModel ()
 	return 0;
 }
 
-
-int
-Paramount::loadModelFromFile ()
+int Paramount::loadModelFromFile ()
 {
 	std::string name;
 	std::ifstream is (paramount_cfg);
@@ -1262,9 +1188,7 @@ Paramount::loadModelFromFile ()
 	return 0;
 }
 
-
-int
-Paramount::loadModel ()
+int Paramount::loadModel ()
 {
 	int ret;
 
@@ -1286,10 +1210,8 @@ Paramount::loadModel ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Paramount device = Paramount (argc, argv);
+	Paramount device (argc, argv);
 	return device.run ();
 }

@@ -1181,7 +1181,7 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('v', "verbose", 0, "verbose report");
 	addOption ('6', NULL, 0, "sixteen channel readout electronics");
 
-	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, 0, CAM_WORKING, true);
+	createValue (splitMode, "SPL_MODE", "split mode of the readout", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 	splitMode->setValueInteger (0);
 
 	// add possible split modes
@@ -1189,65 +1189,64 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	splitMode->addSelVal ("RIGHT");
 	splitMode->addSelVal ("BOTH");
 
-	createValue (edtGain, "GAIN", "gain (high or low)", true, 0,
-		CAM_WORKING, true);
+	createValue (edtGain, "GAIN", "gain (high or low)", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 
 	edtGain->addSelVal ("HIGH");
 	edtGain->addSelVal ("LOW");
 
 	edtGain->setValueInteger (0);
 
-	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, 0, CAM_WORKING, true);
+	createValue (parallelClockSpeed, "PCLOCK", "parallel clock speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 	parallelClockSpeed->setValueInteger (6);
 
-	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)");
+	createValue (skipLines, "hskip", "number of lines to skip (as those contains bias values)", true, RTS2_VALUE_WRITABLE);
 	skipLines->setValueInteger (0);
 
-	createValue (chipWidth, "width", "chip width - number of collumns", true, 0, CAM_WORKING);
+	createValue (chipWidth, "width", "chip width - number of collumns", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	chipWidth->setValueInteger (2024);
 
-	createValue (chipHeight, "height", "chip height - number of rows", true, 0, CAM_WORKING);
+	createValue (chipHeight, "height", "chip height - number of rows", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	chipHeight->setValueInteger (520);
 
-	createValue (partialReadout, "partial_readout", "read only part of image, do not clear the chip", true, 0, CAM_WORKING);
+	createValue (partialReadout, "partial_readout", "read only part of image, do not clear the chip", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	partialReadout->setValueInteger (0);
 
 	grayScale = NULL;
 
-	createValue (phi, "PHI", "P high", true, 0, CAM_WORKING);
+	createValue (phi, "PHI", "P high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
-	createValue (plo, "PLO", "P low", true, 0, CAM_WORKING);
+	createValue (plo, "PLO", "P low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	plo->initEdt (0xA0184, A_minus);
 
-	createValue (shi, "SHI", "S high", true, 0, CAM_WORKING);
+	createValue (shi, "SHI", "S high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	shi->initEdt (0xA008C, A_plus);
 
-	createValue (slo, "SLO", "S low", true, 0, CAM_WORKING);
+	createValue (slo, "SLO", "S low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	slo->initEdt (0xA0180, A_minus);
 
-	createValue (rhi, "RHI", "R high", true, 0, CAM_WORKING);
+	createValue (rhi, "RHI", "R high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rhi->initEdt (0xA0088, A_plus);
 
-	createValue (rlo, "RLO", "R low", true, 0, CAM_WORKING);
+	createValue (rlo, "RLO", "R low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rlo->initEdt (0xA018C, A_minus);
 
-	createValue (rd, "RD", "RD", true, 0, CAM_WORKING);
+	createValue (rd, "RD", "RD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rd->initEdt (0xA0384, C);
 
-	createValue (od1r, "OD1_R", "OD 1 right", true, 0, CAM_WORKING);
+	createValue (od1r, "OD1_R", "OD 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	od1r->initEdt (0xA0388, D);
 
-	createValue (od2l, "OD2_L", "OD 2 left", true, 0, CAM_WORKING);
+	createValue (od2l, "OD2_L", "OD 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	od2l->initEdt (0xA038C, D);
 
-	createValue (og1r, "OG1_R", "OG 1 right", true, 0, CAM_WORKING);
+	createValue (og1r, "OG1_R", "OG 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	og1r->initEdt (0xA0288, B);
 
-	createValue (og2l, "OG2_L", "OG 2 left", true, 0, CAM_WORKING);
+	createValue (og2l, "OG2_L", "OG 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	og2l->initEdt (0xA028C, B);
 
-	createValue (dd, "DD", "DD", true, 0, CAM_WORKING);
+	createValue (dd, "DD", "DD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	dd->initEdt (0xA0380, C);
 
 	// init last used modes - for writePattern
@@ -1313,10 +1312,6 @@ int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 
 int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == splitMode || old_value == skipLines || old_value == partialReadout)
-	{
-		return 0;
-	}
 	if (old_value == chipHeight)
 	{
 		setSize (chipWidth->getValueInteger (), new_value->getValueInteger (), 0, 0);
@@ -1384,7 +1379,7 @@ int EdtSao::init ()
 	switch (controllerType)
 	{
 		case CHANNEL_16:
-			createValue (grayScale, "gray_scale", "turns on simulated grayscale");
+			createValue (grayScale, "gray_scale", "turns on simulated grayscale", true, RTS2_VALUE_WRITABLE);
 			grayScale->setValueBool (false);
 			break;
 		case CHANNEL_2:

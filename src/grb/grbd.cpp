@@ -40,7 +40,7 @@ Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_
 	addExe = NULL;
 	execFollowups = 0;
 
-	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false);
+	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false, RTS2_VALUE_WRITABLE);
 	grb_enabled->setValueBool (true);
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
@@ -202,13 +202,6 @@ void Grbd::help ()
 	std::cout << std::endl << " Execution script, specified with --add-exec option, receives following parameters as arguments:"
 		" target-id grb-id grb-seqn grb-type grb-ra grb-dec grb-is-grb grb-date grb-errorbox." << std::endl
 		<< " Please see man page for meaning of that arguments." << std::endl;
-}
-
-int Grbd::setValue (Rts2Value *oldValue, Rts2Value *newValue)
-{
-	if (oldValue == grb_enabled)
-		return 0;
-	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
 int Grbd::info ()

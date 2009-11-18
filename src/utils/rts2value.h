@@ -196,7 +196,7 @@
 /**
  * If set. value is read-write. When not set, value is read only.
  */
-#define RTS2_VALUE_WRITABLE           0x01000000
+#define RTS2_VALUE_WRITABLE           0x02000000
 
 #define VALUE_BUF_LEN                 200
 
@@ -228,7 +228,7 @@ class Rts2Value
 
 		void setValueFlags (int32_t flags)
 		{
-			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX) & flags;
+			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE) & flags;
 		}
 
 		/**
@@ -379,6 +379,11 @@ class Rts2Value
 		const int getValueExtType ()
 		{
 			return rts2Type & RTS2_EXT_TYPE;
+		}
+
+		bool isWritable ()
+		{
+			return rts2Type & RTS2_VALUE_WRITABLE;
 		}
 
 		/**

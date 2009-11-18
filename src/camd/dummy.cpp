@@ -41,10 +41,10 @@ class Dummy:public Camera
 
 			supportFrameT = false;
 			infoSleep = 0;
-			createValue (readoutSleep, "readout", "readout sleep in sec", true, 0, CAM_WORKING, true);
+			createValue (readoutSleep, "readout", "readout sleep in sec", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 			readoutSleep->setValueDouble (0);
 
-			createValue (genType, "gen_type", "data generation algorithm", true, 0);
+			createValue (genType, "gen_type", "data generation algorithm", true, RTS2_VALUE_WRITABLE);
 			genType->addSelVal ("random");
 			genType->addSelVal ("linear");
 			genType->addSelVal ("linear shifted");
@@ -52,7 +52,7 @@ class Dummy:public Camera
 			genType->addSelVal ("flats dawn");
 			genType->setValueInteger (0);
 
-			createValue (noiseRange, "noise_range", "readout noise range", false);
+			createValue (noiseRange, "noise_range", "readout noise range", false, RTS2_VALUE_WRITABLE);
 			noiseRange->setValueDouble (300);
 
 			createExpType ();
@@ -167,14 +167,6 @@ class Dummy:public Camera
 
 		virtual int setGain (double in_gain) { return 0; }
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
-		{
-			if (old_value == readoutSleep || old_value == genType || old_value == noiseRange)
-			{
-				return 0;
-			}
-			return Camera::setValue (old_value, new_value);
-		}
 	private:
 		bool supportFrameT;
 		int infoSleep;

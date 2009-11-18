@@ -568,8 +568,6 @@ class Telescope:public Rts2Device
 			maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
 		}
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 		virtual void valueChanged (Rts2Value * changed_value);
 
 		virtual int deleteConnection (Rts2Conn * in_conn)

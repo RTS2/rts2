@@ -219,23 +219,23 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv)
 	device_name = "/dev/ttyS0";
 	addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
 
-	createValue (motorRa, "ra_motor", "power of RA motor", false);
+	createValue (motorRa, "ra_motor", "power of RA motor", false, RTS2_VALUE_WRITABLE);
 	motorRa->setValueBool (false);
-	createValue (motorDec, "dec_motor", "power of DEC motor", false);
+	createValue (motorDec, "dec_motor", "power of DEC motor", false, RTS2_VALUE_WRITABLE);
 	motorDec->setValueBool (false);
 
-	createValue (wormRa, "ra_worm", "RA worm drive", false);
+	createValue (wormRa, "ra_worm", "RA worm drive", false, RTS2_VALUE_WRITABLE);
 	wormRa->setValueBool (true);
-	createValue (wormDec, "dec_worm", "DEC worm drive", false);
+	createValue (wormDec, "dec_worm", "DEC worm drive", false, RTS2_VALUE_WRITABLE);
 	wormDec->setValueBool (false);
 
-	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false);
+	createValue (wormRaSpeed, "worm_ra_speed", "speed in 25000/x steps per second", false, RTS2_VALUE_WRITABLE);
 
-	createValue (moveSleep, "move_sleep", "sleep this number of seconds after finishing", false);
+	createValue (moveSleep, "move_sleep", "sleep this number of seconds after finishing", false, RTS2_VALUE_WRITABLE);
 	moveSleep->setValueInteger (7);
 
-	createValue (unitRa, "AXRA", "RA axis raw counts", true);
-	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
+	createValue (unitRa, "AXRA", "RA axis raw counts", true, RTS2_VALUE_WRITABLE);
+	createValue (unitDec, "AXDEC", "DEC axis raw counts", true, RTS2_VALUE_WRITABLE);
 
 	createValue (utarRa, "tar_axra", "Target RA axis value", true);
 	createValue (utarDec, "tar_adec", "Target DEC axis value", true);
@@ -243,14 +243,14 @@ D50::D50 (int in_argc, char **in_argv):Fork (in_argc, in_argv)
 	createValue (procRa, "proc_ra", "state for RA processor", false, RTS2_DT_HEX);
 	createValue (procDec, "proc_dec", "state for DEC processor", false, RTS2_DT_HEX);
 
-	createValue (velRa, "vel_ra", "RA velocity", false);
-	createValue (velDec, "vel_dec", "DEC velocity", false);
+	createValue (velRa, "vel_ra", "RA velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (velDec, "vel_dec", "DEC velocity", false, RTS2_VALUE_WRITABLE);
 
 	velRa->setValueInteger (50);
 	velDec->setValueInteger (50);
 
-	createValue (accRa, "acc_ra", "RA acceleration", false);
-	createValue (accDec, "acc_dec", "DEC acceleration", false);
+	createValue (accRa, "acc_ra", "RA acceleration", false, RTS2_VALUE_WRITABLE);
+	createValue (accDec, "acc_dec", "DEC acceleration", false, RTS2_VALUE_WRITABLE);
 
 	accRa->setValueInteger (15);
 	accDec->setValueInteger (15);
@@ -373,18 +373,15 @@ int D50::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == wormRaSpeed)
 	{
-		return tel_write_unit (1, 'h',
-			new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return tel_write_unit (1, 'h', new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == unitRa)
 	{
-		return tel_write_unit (1, 's',
-			new_value->getValueLong ()) == 0 ? 0 : -2;
+		return tel_write_unit (1, 's', new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == unitDec)
 	{
-		return tel_write_unit (2, 's',
-			new_value->getValueLong ()) == 0 ? 0 : -2;
+		return tel_write_unit (2, 's', new_value->getValueLong ()) == 0 ? 0 : -2;
 	}
 	if (old_value == velRa)
 	{

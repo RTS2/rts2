@@ -74,7 +74,6 @@ class Grbd:public Rts2DeviceDb
 		virtual int init ();
 		virtual void help ();
 
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 	public:
 		Grbd (int argc, char **argv);
 		virtual ~ Grbd ();

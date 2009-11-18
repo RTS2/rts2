@@ -71,7 +71,7 @@ class Robofocus:public Focusd
 		virtual int setTo (int num);
 };
 
-};
+}
 
 using namespace rts2focusd;
 
@@ -85,7 +85,7 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 		std::ostringstream _desc;
 		_name << "switch_" << i+1;
 		_desc << "plug number " << i+1;
-		createValue (switches[i], _name.str().c_str(), _desc.str().c_str(), false);
+		createValue (switches[i], _name.str().c_str(), _desc.str().c_str(), false, RTS2_VALUE_WRITABLE);
 	}
 
 	createTemperature ();
@@ -94,15 +94,12 @@ Robofocus::Robofocus (int argc, char **argv):Focusd (argc, argv)
 
 }
 
-
 Robofocus::~Robofocus ()
 {
   	delete robofocConn;
 }
 
-
-int
-Robofocus::processOption (int in_opt)
+int Robofocus::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -115,14 +112,12 @@ Robofocus::processOption (int in_opt)
 	return 0;
 }
 
-
 /*!
  * Init focuser, connect on given port port, set manual regime
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
-int
-Robofocus::init ()
+int Robofocus::init ()
 {
 	int ret;
 
@@ -150,17 +145,13 @@ Robofocus::init ()
 	return 0;
 }
 
-
-int
-Robofocus::initValues ()
+int Robofocus::initValues ()
 {
 	focType = std::string ("ROBOFOCUS");
 	return Focusd::initValues ();
 }
 
-
-int
-Robofocus::info ()
+int Robofocus::info ()
 {
 	getPos ();
 	getTemp ();
@@ -176,9 +167,7 @@ Robofocus::info ()
 	return Focusd::info ();
 }
 
-
-int
-Robofocus::getPos ()
+int Robofocus::getPos ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -195,9 +184,7 @@ Robofocus::getPos ()
 	return 0;
 }
 
-
-int
-Robofocus::getTemp ()
+int Robofocus::getTemp ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -215,9 +202,7 @@ Robofocus::getTemp ()
 	return 0;
 }
 
-
-int
-Robofocus::getSwitchState ()
+int Robofocus::getSwitchState ()
 {
 	char command[10], rbuf[10];
 	char command_buffer[9];
@@ -238,9 +223,7 @@ Robofocus::getSwitchState ()
 	return ret;
 }
 
-
-int
-Robofocus::setTo (int num)
+int Robofocus::setTo (int num)
 {
 	char command[9], command_buf[10];
 	sprintf (command, "FG%06i", num);
@@ -251,9 +234,7 @@ Robofocus::setTo (int num)
 	return 0;
 }
 
-
-int
-Robofocus::setSwitch (int switch_num, bool new_state)
+int Robofocus::setSwitch (int switch_num, bool new_state)
 {
 	char command[10], rbuf[10];
 	char command_buffer[9] = "FP001111";
@@ -280,9 +261,7 @@ Robofocus::setSwitch (int switch_num, bool new_state)
 	return 0;
 }
 
-
-int
-Robofocus::focus_move (const char *cmd, int steps)
+int Robofocus::focus_move (const char *cmd, int steps)
 {
 	char command[10];
 	char command_buffer[9];
@@ -311,9 +290,7 @@ Robofocus::focus_move (const char *cmd, int steps)
 	return 0;
 }
 
-
-int
-Robofocus::isFocusing ()
+int Robofocus::isFocusing ()
 {
 	char rbuf[10];
 	int ret;
@@ -332,9 +309,7 @@ Robofocus::isFocusing ()
 	return 0;
 }
 
-
-int
-Robofocus::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+int Robofocus::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -346,10 +321,8 @@ Robofocus::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	return Focusd::setValue (oldValue, newValue);
 }
 
-
 // Calculate checksum (according to RoboFocus spec.)
-void
-Robofocus::compute_checksum (char *cmd)
+void Robofocus::compute_checksum (char *cmd)
 {
 	int bytesum = 0;
 	unsigned int size, i;
@@ -362,10 +335,8 @@ Robofocus::compute_checksum (char *cmd)
 	checksum = toascii ((bytesum % 340));
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Robofocus device = Robofocus (argc, argv);
+	Robofocus device (argc, argv);
 	return device.run ();
 }

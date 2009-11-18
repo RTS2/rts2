@@ -668,9 +668,7 @@ Andor::scriptEnds ()
 	return Camera::scriptEnds ();
 }
 
-
-int
-Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == gain)
 		return setGain (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -1184,32 +1182,30 @@ Andor::initAndorValues ()
 {
 	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
 	{
-		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, 0, CAM_WORKING);
+		createValue (VSAmp, "SAMPLI", "Used andor shift amplitude", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		VSAmp->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_PREAMPGAIN)
 	{
-		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, 0, CAM_WORKING);
+		createValue (outPreAmpGain, "PREAMP", "output preamp gain", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		outPreAmpGain->setValueInteger (0);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_GAIN)
 	{
-		createValue (gain, "GAIN", "CCD gain", true, 0,
-			CAM_WORKING);
+		createValue (gain, "GAIN", "CCD gain", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		setGain (defaultGain);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_EMCCDGAIN)
 	{
-		createValue (emccdgain, "EMCCDGAIN", "EM CCD gain", true, 0,
-			CAM_WORKING);
+		createValue (emccdgain, "EMCCDGAIN", "EM CCD gain", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		setEMCCDGain (defaultGain);
 
 		if (cap.ulEMGainCapability != 0)
 		{
-			createValue (emAdvanced, "EMADV", "advanced EM mode", true, 0, CAM_WORKING);
+			createValue (emAdvanced, "EMADV", "advanced EM mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			emAdvanced->setValueBool (false);
 
-			createValue (emGainMode, "GAINMODE", "EM gain mode", true, 0, CAM_WORKING);
+			createValue (emGainMode, "GAINMODE", "EM gain mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 			emGainMode->addSelVal ("DAC 8bit");
 			emGainMode->addSelVal ("DAC 12bit");
 			emGainMode->addSelVal ("LINEAR 12bit");
@@ -1218,17 +1214,17 @@ Andor::initAndorValues ()
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINECLAMP)
 	{
-		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, 0, CAM_WORKING);
+		createValue (baselineClamp, "BASECLAM", "if baseline clamp is activer", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		baselineClamp->setValueBool (false);
 	}
 	if (cap.ulSetFunctions & AC_SETFUNCTION_BASELINEOFFSET)
 	{
-		createValue (baselineOff, "BASEOFF", "baseline offset value", true, 0, CAM_WORKING);
+		createValue (baselineOff, "BASEOFF", "baseline offset value", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		baselineOff->setValueInteger (0);
 	}
 	if (cap.ulFeatures & AC_FEATURES_FANCONTROL)
 	{
-		createValue (fanMode, "FANMODE", "FAN mode", true, 0, CAM_WORKING);
+		createValue (fanMode, "FANMODE", "FAN mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 		fanMode->addSelVal ("FULL");
 		fanMode->addSelVal ("LOW");
 		fanMode->addSelVal ("OFF");

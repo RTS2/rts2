@@ -600,17 +600,17 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	addOption ('r', NULL, 1, "device file for RA motor (default /dev/ttyS0)");
 	addOption ('D', NULL, 1, "device file for DEC motor (default /dev/ttyS1)");
 
-	createValue (raGuide, "ra_guide", "RA guiding status", false);
+	createValue (raGuide, "ra_guide", "RA guiding status", false, RTS2_VALUE_WRITABLE);
 	raGuide->addSelVal ("NONE");
 	raGuide->addSelVal ("MINUS");
 	raGuide->addSelVal ("PLUS");
 
-	createValue (decGuide, "dec_guide", "DEC guiding status", false);
+	createValue (decGuide, "dec_guide", "DEC guiding status", false, RTS2_VALUE_WRITABLE);
 	decGuide->addSelVal ("NONE");
 	decGuide->addSelVal ("MINUS");
 	decGuide->addSelVal ("PLUS");
 
-	createValue (guidingSpeed, "guiding_speed", "guiding speed in deg/sec", false, RTS2_DT_DEGREES);
+	createValue (guidingSpeed, "guiding_speed", "guiding speed in deg/sec", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 	guidingSpeed->setValueDouble (0.5);
 
 	createValue (raMoving, "ra_moving", "if RA drive is moving", false);
@@ -622,74 +622,74 @@ Trencin::Trencin (int _argc, char **_argv):Fork (_argc, _argv)
 	createValue (raMovingEnd, "ra_moving_end", "time of end of last RA movement", false);
 	createValue (decMovingEnd, "dec_moving_end", "time of end of last DEC movement", false);
 
-	createValue (wormRa, "ra_worm", "RA worm drive", false);
+	createValue (wormRa, "ra_worm", "RA worm drive", false, RTS2_VALUE_WRITABLE);
 	wormRa->setValueBool (false);
 
 	createValue (raWormStart, "ra_worm_start", "RA worm start time", false);
 	raWormStart->setValueDouble (nan ("f"));
 
-	createValue (unitRa, "AXRA", "RA axis raw counts", true);
+	createValue (unitRa, "AXRA", "RA axis raw counts", true, RTS2_VALUE_WRITABLE);
 	unitRa->setValueInteger (0);
 
-	createValue (unitDec, "AXDEC", "DEC axis raw counts", true);
+	createValue (unitDec, "AXDEC", "DEC axis raw counts", true, RTS2_VALUE_WRITABLE);
 	unitDec->setValueInteger (0);
 
-	createValue (cycleRa, "cycle_ra", "number of full RA motor cycles", true);
+	createValue (cycleRa, "cycle_ra", "number of full RA motor cycles", true, RTS2_VALUE_WRITABLE);
 	cycleRa->setValueInteger (0);
 
-	createValue (cycleDec, "cycle_dec", "number of full DEC motor cycles", true);
+	createValue (cycleDec, "cycle_dec", "number of full DEC motor cycles", true, RTS2_VALUE_WRITABLE);
 	cycleDec->setValueInteger (0);
 
 	cycleMoveRa = 0;
 	cycleMoveDec = 0;
 
-	createValue (velRa, "vel_ra", "RA velocity", false);
-	createValue (velDec, "vel_dec", "DEC velocity", false);
+	createValue (velRa, "vel_ra", "RA velocity", false, RTS2_VALUE_WRITABLE);
+	createValue (velDec, "vel_dec", "DEC velocity", false, RTS2_VALUE_WRITABLE);
 
 	velRa->setValueInteger (1500);
 	velDec->setValueInteger (1500);
 
-	createValue (accRa, "acc_ra", "RA acceleration", false);
-	createValue (accDec, "acc_dec", "DEC acceleration", false);
+	createValue (accRa, "acc_ra", "RA acceleration", false, RTS2_VALUE_WRITABLE);
+	createValue (accDec, "acc_dec", "DEC acceleration", false, RTS2_VALUE_WRITABLE);
 
 	accRa->setValueInteger (800);
 	accDec->setValueInteger (800);
 
-	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false);
+	createValue (qRa, "qualification_ra", "number of microsteps in top speeds", false, RTS2_VALUE_WRITABLE);
 
-	createValue (qDec, "qualification_dec", "number of microsteps in top speeds", false);
+	createValue (qDec, "qualification_dec", "number of microsteps in top speeds", false, RTS2_VALUE_WRITABLE);
 	
 	qRa->setValueInteger (2);
 	qDec->setValueInteger (2);
 
-	createValue (microRa, "micro_ra", "RA microstepping", false);
-	createValue (microDec, "micro_dec", "DEC microstepping", false);
+	createValue (microRa, "micro_ra", "RA microstepping", false, RTS2_VALUE_WRITABLE);
+	createValue (microDec, "micro_dec", "DEC microstepping", false, RTS2_VALUE_WRITABLE);
 
 	microRa->setValueInteger (8);
 	microDec->setValueInteger (8);
 
-	createValue (numberRa, "number_ra", "current shape in microstepping", false);
-	createValue (numberDec, "number_dec", "current shape in microstepping", false);
+	createValue (numberRa, "number_ra", "current shape in microstepping", false, RTS2_VALUE_WRITABLE);
+	createValue (numberDec, "number_dec", "current shape in microstepping", false, RTS2_VALUE_WRITABLE);
 
 	numberRa->setValueInteger (6);
 	numberDec->setValueInteger (6);
 
-	createValue (startRa, "start_ra", "start/stop speed", false);
-	createValue (startDec, "start_dec", "start/stop speed", false);
+	createValue (startRa, "start_ra", "start/stop speed", false, RTS2_VALUE_WRITABLE);
+	createValue (startDec, "start_dec", "start/stop speed", false, RTS2_VALUE_WRITABLE);
 
 	startRa->setValueInteger (200);
 	startDec->setValueInteger (200);
 
-	createValue (accWormRa, "acc_worm_ra", "acceleration for worm in RA", false);
+	createValue (accWormRa, "acc_worm_ra", "acceleration for worm in RA", false, RTS2_VALUE_WRITABLE);
 	accWormRa->setValueInteger (100);
 
-	createValue (velWormRa, "vel_worm_ra", "velocity for worm speeds in RA", false);
+	createValue (velWormRa, "vel_worm_ra", "velocity for worm speeds in RA", false, RTS2_VALUE_WRITABLE);
 	velWormRa->setValueInteger (200);
 
-	createValue (backWormRa, "back_worm_ra", "backward worm trajectory", false);
+	createValue (backWormRa, "back_worm_ra", "backward worm trajectory", false, RTS2_VALUE_WRITABLE);
 	backWormRa->setValueInteger (24);
 
-	createValue (waitWormRa, "wait_worm_ra", "wait during RA worm cycle", false);
+	createValue (waitWormRa, "wait_worm_ra", "wait during RA worm cycle", false, RTS2_VALUE_WRITABLE);
 	waitWormRa->setValueInteger (101);
 
 	// apply all corrections
@@ -956,12 +956,6 @@ int Trencin::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			{
 				stopWorm ();
 			}
-			return 0;
-		}
-		else if (old_value == accWormRa || old_value == velWormRa
-			|| old_value == backWormRa || old_value == waitWormRa
-			|| old_value == cycleRa || old_value == cycleDec)
-		{
 			return 0;
 		}
 	}

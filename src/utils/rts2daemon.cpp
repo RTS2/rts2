@@ -600,17 +600,14 @@ Rts2Daemon::getCondValue (const Rts2Value *val)
 }
 
 
-Rts2Value *
-Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
+Rts2Value * Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 {
 	// create new value, which will be passed to hook
 	Rts2Value *dup_val;
 	switch (old_value->getValueExtType ())
 	{
 		case 0:
-			dup_val = newValue (old_value->getFlags (),
-				old_value->getName (),
-				old_value->getDescription ());
+			dup_val = newValue (old_value->getFlags (), old_value->getName (), old_value->getDescription ());
 			// do some extra settings
 			switch (old_value->getValueType ())
 			{
@@ -619,47 +616,29 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 					break;
 			}
 			if (withVal)
-				((Rts2ValueString *) dup_val)->setValueCharArr (old_value->
-					getValue ());
+				((Rts2ValueString *) dup_val)->setValueCharArr (old_value->getValue ());
 			break;
 		case RTS2_VALUE_STAT:
-			dup_val = new Rts2ValueDoubleStat (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
+			dup_val = new Rts2ValueDoubleStat (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
 			break;
 		case RTS2_VALUE_MMAX:
-			dup_val = new Rts2ValueDoubleMinMax (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits ());
-			((Rts2ValueDoubleMinMax *) dup_val)->
-				copyMinMax ((Rts2ValueDoubleMinMax *) old_value);
+			dup_val = new Rts2ValueDoubleMinMax (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits ());
+			((Rts2ValueDoubleMinMax *) dup_val)->copyMinMax ((Rts2ValueDoubleMinMax *) old_value);
 			break;
 		case RTS2_VALUE_RECTANGLE:
-			dup_val = new Rts2ValueRectangle (old_value->getName (),
-				old_value->getDescription (),
-				old_value->getWriteToFits (),
-				old_value->getFlags ());
+			dup_val = new Rts2ValueRectangle (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 			break;
 		case RTS2_VALUE_ARRAY:
 			switch (old_value->getValueBaseType ())
 			{
 				case RTS2_VALUE_STRING:
-					dup_val = new StringArray (old_value->getName (),
-						old_value->getDescription (),
-						old_value->getWriteToFits (),
-						old_value->getFlags ());
+					dup_val = new StringArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;
 				case RTS2_VALUE_DOUBLE:
-					dup_val = new DoubleArray (old_value->getName (),
-						old_value->getDescription (),
-						old_value->getWriteToFits (),
-						old_value->getFlags ());
+					dup_val = new DoubleArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;
 				case RTS2_VALUE_INTEGER:
-					dup_val = new IntegerArray (old_value->getName (),
-						old_value->getDescription (),
-						old_value->getWriteToFits (),
-						old_value->getFlags ());
+					dup_val = new IntegerArray (old_value->getName (), old_value->getDescription (), old_value->getWriteToFits (), old_value->getFlags ());
 					break;
 				default:
 					logStream (MESSAGE_ERROR) << "unknow array type: " << old_value->getValueBaseType () << sendLog;
@@ -667,8 +646,7 @@ Rts2Daemon::duplicateValue (Rts2Value * old_value, bool withVal)
 			}
 
 		default:
-			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->
-				getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "unknow value type: " << old_value->getValueType () << sendLog;
 			return NULL;
 	}
 	if (withVal)
@@ -785,17 +763,16 @@ Rts2Daemon::addConstValue (const char *in_name, int in_value)
 	addConstValue (val);
 }
 
-
-int
-Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
+int Rts2Daemon::setValue (Rts2Value * old_value, Rts2Value * newValue)
 {
+	// if for some reason writable value makes it there, it means that it was not caught downstream, and it can be set
+	if (old_value->isWritable ())
+		return 0;
 	// we don't know how to set values, so return -2
 	return -2;
 }
 
-
-int
-Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
+int Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * new_value)
 {
 	// que change if that's necessary
 	if ((op != '=' || !old_value_cond->getValue ()->isEqual (new_value) || queValues.contains (old_value_cond->getValue ()))
@@ -809,9 +786,7 @@ Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value * n
 	return doSetValue (old_value_cond, op, new_value);
 }
 
-
-int
-Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
+int Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new_value)
 {
 	int ret;
 
@@ -866,32 +841,23 @@ Rts2Daemon::doSetValue (Rts2CondValue * old_cond_value, char op, Rts2Value * new
 	sendValueAll (old_value);
 
 	return 0;
-	err:
-	logStream (MESSAGE_ERROR)
-		<< "Rts2Daemon::loadValues cannot set value "
-		<< new_value->getName ()
-		<< sendLog;
+err:
+	logStream (MESSAGE_ERROR) << "Rts2Daemon::loadValues cannot set value " << new_value->getName () << sendLog;
 
 	delete new_value;
 	return ret;
 }
 
-
-void
-Rts2Daemon::valueChanged (Rts2Value *changed_value)
+void Rts2Daemon::valueChanged (Rts2Value *changed_value)
 {
 }
 
-
-int
-Rts2Daemon::baseInfo ()
+int Rts2Daemon::baseInfo ()
 {
 	return 0;
 }
 
-
-int
-Rts2Daemon::baseInfo (Rts2Conn * conn)
+int Rts2Daemon::baseInfo (Rts2Conn * conn)
 {
 	int ret;
 	ret = baseInfo ();
@@ -1058,6 +1024,11 @@ Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 	Rts2Value *old_value = old_value_cond->getValue ();
 	if (!old_value)
 		return -2;
+	if (!old_value->isWritable ())
+	{
+	  	conn->sendCommandEnd (DEVDEM_E_SYSTEM, "cannot set read-only value");
+		return -1;
+	}
 	Rts2Value *newValue;
 
 	newValue = duplicateValue (old_value);
@@ -1083,7 +1054,7 @@ Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 	}
 	return ret;
 
-	err:
+err:
 	delete newValue;
 	return ret;
 }

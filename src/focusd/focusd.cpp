@@ -28,20 +28,18 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	temperature = NULL;
 
-	createValue (position, "FOC_POS", "focuser position", true);
-	createValue (target, "FOC_TAR", "focuser target position", true);
+	createValue (position, "FOC_POS", "focuser position", true, RTS2_VALUE_WRITABLE);
+	createValue (target, "FOC_TAR", "focuser target position", true, RTS2_VALUE_WRITABLE);
 
-	createValue (defaultPosition, "FOC_DEF", "default target value", true);
-	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true);
-	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true);
+	createValue (defaultPosition, "FOC_DEF", "default target value", true, RTS2_VALUE_WRITABLE);
+	createValue (focusingOffset, "FOC_FOFF", "offset from focusing routine", true, RTS2_VALUE_WRITABLE);
+	createValue (tempOffset, "FOC_TOFF", "temporary offset for focusing", true, RTS2_VALUE_WRITABLE);
 
 	addOption (OPT_START, "start-position", 1,
 		"focuser start position (focuser will be set to this one, if initial position is detected");
 }
 
-
-int
-Focusd::processOption (int in_opt)
+int Focusd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -54,9 +52,7 @@ Focusd::processOption (int in_opt)
 	return 0;
 }
 
-
-void
-Focusd::checkState ()
+void Focusd::checkState ()
 {
 	if ((getState () & FOC_MASK_FOCUSING) == FOC_FOCUSING)
 	{
@@ -84,9 +80,7 @@ Focusd::checkState ()
 	}
 }
 
-
-int
-Focusd::initValues ()
+int Focusd::initValues ()
 {
 	addConstValue ("FOC_TYPE", "focuser type", focType);
 
@@ -102,17 +96,13 @@ Focusd::initValues ()
 	return Rts2Device::initValues ();
 }
 
-
-int
-Focusd::idle ()
+int Focusd::idle ()
 {
 	checkState ();
 	return Rts2Device::idle ();
 }
 
-
-int
-Focusd::setPosition (int num)
+int Focusd::setPosition (int num)
 {
 	int ret;
 	target->setValueInteger (num);
@@ -127,9 +117,7 @@ Focusd::setPosition (int num)
 	return ret;
 }
 
-
-int
-Focusd::autoFocus (Rts2Conn * conn)
+int Focusd::autoFocus (Rts2Conn * conn)
 {
 	/* ask for priority */
 
@@ -140,9 +128,7 @@ Focusd::autoFocus (Rts2Conn * conn)
 	return 0;
 }
 
-
-int
-Focusd::isFocusing ()
+int Focusd::isFocusing ()
 {
 	int ret;
 	time_t now;
@@ -157,16 +143,12 @@ Focusd::isFocusing ()
 	return -2;
 }
 
-
-int
-Focusd::endFocusing ()
+int Focusd::endFocusing ()
 {
 	return 0;
 }
 
-
-int
-Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == position || old_value == target)
 	{
@@ -187,9 +169,7 @@ Focusd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Rts2Device::setValue (old_value, new_value);
 }
 
-
-int
-Focusd::scriptEnds ()
+int Focusd::scriptEnds ()
 {
 	tempOffset->setValueInteger (0);
 	setPosition (defaultPosition->getValueInteger () + focusingOffset->getValueInteger () + tempOffset->getValueInteger ());
@@ -197,8 +177,7 @@ Focusd::scriptEnds ()
 	return Rts2Device::scriptEnds ();
 }
 
-int
-Focusd::commandAuthorized (Rts2Conn * conn)
+int Focusd::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("help"))
 	{

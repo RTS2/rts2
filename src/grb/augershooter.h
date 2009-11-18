@@ -53,16 +53,29 @@ class DevAugerShooter:public Rts2DeviceDb
 		virtual int processOption (int in_opt);
 		virtual int reloadConfig ();
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
 	private:
 		ConnShooter * shootercnn;
+		friend class ConnShooter;
+
 		int port;
-		Rts2ValueDouble *minEnergy;
-		Rts2ValueInteger *maxTime;
 
 		Rts2ValueTime *lastAugerDate;
 		Rts2ValueDouble *lastAugerRa;
 		Rts2ValueDouble *lastAugerDec;
+
+		Rts2ValueDouble *minEnergy;
+		Rts2ValueDouble *maxXmaxErr;
+		Rts2ValueDouble *maxEnergyDiv;
+		Rts2ValueDouble *maxGHChiDiv;
+		Rts2ValueDouble *minLineFitDiff;
+		Rts2ValueDouble *maxAxisDist;
+		Rts2ValueDouble *minRp;
+		Rts2ValueDouble *minChi0;
+		Rts2ValueDouble *maxSPDDiv;
+		Rts2ValueDouble *maxTimeDiv;
+		Rts2ValueDouble *maxTheta;
+
+		Rts2ValueInteger *maxTime;
 
 		Rts2ValueBool *triggeringEnabled;
 };

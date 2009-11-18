@@ -213,7 +213,7 @@ Hlohovec::Hlohovec (int argc, char **argv):Telescope (argc, argv)
 	devRA = NULL;
 	devDEC = NULL;
 
-	createValue (ra_dPos, "AX_RA_T", "Target RA position", true);
+	createValue (ra_dPos, "AX_RA_T", "Target RA position", true, RTS2_VALUE_WRITABLE);
 	createValue (ra_rPos, "AX_RA_C", "Current RA position", true);
 	createValue (dec_rPos, "AX_DEC_T", "Target DEC position", true);
 	createValue (dec_dPos, "AX_DEC_C", "Current DEC position", true);

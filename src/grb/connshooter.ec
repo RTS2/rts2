@@ -93,8 +93,8 @@ int ConnShooter::processAuger ()
 
 	double db_dEdXmax;        /// Energy deposit at shower max (GeV/(g/cm^2))
 	double db_dEdXmaxErr;     /// Uncertainty of Nmax (GeV/(g/cm^2))
-	double db_X_max;           /// Slant depth of shower maximum (g/cm^2)
-	double db_X_maxErr;        /// Uncertainty of Xmax (g/cm^2)
+	double db_Xmax;           /// Slant depth of shower maximum (g/cm^2)
+	double db_XmaxErr;        /// Uncertainty of Xmax (g/cm^2)
 	double db_X0;             /// X0 Gaisser-Hillas db_it (g/cm^2)
 	double db_X0Err;          /// Uncertainty of X0 (g/cm^2)
 	double db_Lambda;         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
@@ -168,8 +168,8 @@ int ConnShooter::processAuger ()
 		>> db_PhiErr
 		>> db_dEdXmax
 		>> db_dEdXmaxErr
-		>> db_X_max
-		>> db_X_maxErr
+		>> db_Xmax
+		>> db_XmaxErr
 		>> db_X0
 		>> db_X0Err
 		>> db_Lambda
@@ -227,13 +227,51 @@ int ConnShooter::processAuger ()
 
 	// validate shover and it's hibrid..
 
-	if ((!(db_Energy > minEnergy->getValueDouble ()))
-		|| now - db_auger_date > maxTime->getValueInteger ()
-		|| ((DevAugerShooter *)master)->wasSeen (db_auger_date, db_ra, db_dec))
+	if (db_Energy < master->minEnergy->getValueDouble ()
+		|| now - db_auger_date > master->maxTime->getValueInteger ()
+		|| ((DevAugerShooter *)master)->wasSeen (db_auger_date, db_ra, db_dec)
+		|| db_Xmax < db_XFOVMin || db_Xmax > db_XFOVMax
+		|| db_XmaxErr > master->maxXmaxErr->getValueDouble ()
+		|| db_EnergyErr / db_Energy > master->maxEnergyDiv->getValueDouble ()
+		|| db_GHChi2 / db_GHNdf > master->maxGHChiDiv->getValueDouble ()
+		|| (db_LineFitChi2 - db_GHChi2) < master->minLineFitDiff->getValueDouble ()
+		|| db_AxisDist > master->maxAxisDist->getValueDouble ()
+		|| db_Rp < master->minRp->getValueDouble ()
+		|| db_Chi0 < master->minChi0->getValueDouble ()
+		|| (db_SDPChi2 / db_SDPNdf) > master->maxSPDDiv->getValueDouble ()
+		|| (db_TimeChi2 / db_TimeNdf) > master->maxTimeDiv->getValueDouble ()
+		|| db_Theta > master->maxTheta->getValueDouble ()
+	)
 	{
 		logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (date " << LibnovaDateDouble (db_auger_date)
 			<< " Energy " << db_Energy
-			<< " minEnergy " << minEnergy
+			<< " minEnergy " << master->minEnergy->getValueDouble ()
+			<< " Xmax " << db_Xmax
+			<< " XFOVMin " << db_XFOVMin
+			<< " XFOVMax " << db_XFOVMax
+			<< " XmaxErr " << db_XmaxErr
+			<< " maxXmaxErr " << master->maxXmaxErr->getValueDouble ()
+			<< " EnergyErr " << db_EnergyErr
+			<< " maxEnergyDiv " << master->maxEnergyDiv->getValueDouble ()
+			<< " GHChi2 " << db_GHChi2
+			<< " GHNdf " << db_GHNdf
+			<< " maxGHChiDiv " << master->maxGHChiDiv->getValueDouble ()
+			<< " (LineFitChi2 " << db_LineFitChi2 << " - GHChi2 " << db_GHChi2 << ")"
+			<< " minLineFitDiff " << master->minLineFitDiff->getValueDouble ()
+			<< " AxisDist " << db_AxisDist
+			<< " maxAxisDist " << master->maxAxisDist->getValueDouble ()
+			<< " Rp " << db_Rp
+			<< " minRp " << master->minRp->getValueDouble ()
+			<< " Chi0 " << db_Chi0
+			<< " minChi0 " << master->minChi0->getValueDouble ()
+			<< " SDPChi2 " << db_SDPChi2
+			<< " SDPNdf " << db_SDPNdf
+			<< " maxSPDDiv " << master->maxSPDDiv->getValueDouble ()
+			<< " TimeChi2 " << db_TimeChi2
+			<< " TimeNdf " << db_TimeNdf
+			<< " maxTimeDiv " << master->maxTimeDiv->getValueDouble ()
+			<< " Theta " << db_Theta
+			<< " maxTheta " << master->maxTheta->getValueDouble ()
 			<< " ra " << db_ra
 			<< " dec " << db_dec
 			<< ")" << sendLog;
@@ -350,8 +388,8 @@ int ConnShooter::processAuger ()
 		:db_PhiErr,
 		:db_dEdXmax,
 		:db_dEdXmaxErr,
-		:db_X_max,
-		:db_X_maxErr,
+		:db_Xmax,
+		:db_XmaxErr,
 		:db_X0,
 		:db_X0Err,
 		:db_Lambda,
@@ -396,10 +434,12 @@ int ConnShooter::processAuger ()
 }
 
 
-ConnShooter::ConnShooter (int _port, DevAugerShooter * _master, Rts2ValueDouble *_minEnergy, Rts2ValueInteger *_maxTime):Rts2ConnNoSend (_master)
+ConnShooter::ConnShooter (int _port, DevAugerShooter * _master):Rts2ConnNoSend (_master)
 {
 	nbuf_pos = 0;
 	port = _port;
+
+	master = _master;
 
 	time (&last_packet.tv_sec);
 	last_packet.tv_sec -= 600;
@@ -408,9 +448,6 @@ ConnShooter::ConnShooter (int _port, DevAugerShooter * _master, Rts2ValueDouble 
 	last_target_time = -1;
 
 	setConnTimeout (-1);
-
-	minEnergy = _minEnergy;
-	maxTime = _maxTime;
 }
 
 

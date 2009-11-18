@@ -173,18 +173,6 @@ int XmlRpcd::init ()
 	return ret;
 }
 
-int XmlRpcd::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == send_emails)
-		return 0;
-
-#ifdef HAVE_PGSQL
-	return Rts2DeviceDb::setValue (old_value, new_value);
-#else
-	return Rts2Device::setValue (old_value, new_value);
-#endif
-}
-
 void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
@@ -228,7 +216,7 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 	rpcPort = 8889;
 	stateChangeFile = NULL;
 
-	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false);
+	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
 
 #ifndef HAVE_PGSQL
@@ -1483,7 +1471,7 @@ JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
 
 JpegPreview jpegPreview ("/preview", &xmlrpc_server);
 
-Graph graph ("/graph", &xmlrpc_server);
+Graph graph ("/graph/", &xmlrpc_server);
 
 AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 

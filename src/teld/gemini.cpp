@@ -94,8 +94,6 @@ class Gemini:public Telescope
 		virtual int initValues ();
 		virtual int idle ();
 
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 	private:
 		const char *device_file;
 
@@ -820,7 +818,7 @@ Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	createValue (telLocalTime, "localtime", "telescope local time", false);
 	createValue (telGuidingSpeed, "guiding_speed", "telescope guiding speed", false);
 
-	createValue (resetState, "next_reset", "next reset state", false);
+	createValue (resetState, "next_reset", "next reset state", false, RTS2_VALUE_WRITABLE);
 	resetState->addSelVal ("RESTART");
 	resetState->addSelVal ("WARM_START");
 	resetState->addSelVal ("COLD_START");
@@ -1267,13 +1265,6 @@ int Gemini::idle ()
 		}
 	}
 	return Telescope::idle ();
-}
-
-int Gemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == resetState)
-		return 0;
-	return Telescope::setValue (old_value, new_value);
 }
 
 int Gemini::changeMasterState (int new_state)

@@ -41,8 +41,6 @@ class Dummy:public Focusd
 		{
 			return false;
 		}
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
 		Dummy (int argc, char **argv);
 		~Dummy (void);
@@ -54,35 +52,22 @@ class Dummy:public Focusd
 
 using namespace rts2focusd;
 
-
-int
-Dummy::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == focSteps)
-		return 0;
-	return Focusd::setValue (old_value, new_value);
-}
-
-
 Dummy::Dummy (int argc, char **argv):Focusd (argc, argv)
 {
 	focType = std::string ("Dummy");
 	createTemperature ();
 
-	createValue (focSteps, "focstep", "focuser steps (step size per second)", false);
+	createValue (focSteps, "focstep", "focuser steps (step size per second)", false, RTS2_VALUE_WRITABLE);
 	focSteps->setValueInteger (1);
 
 	addOption (OPT_FOC_STEPS, "focstep", 1, "initial value of focuser steps");
 }
 
-
 Dummy::~Dummy ()
 {
 }
 
-
-int
-Dummy::processOption (int opt)
+int Dummy::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -95,17 +80,13 @@ Dummy::processOption (int opt)
 	return 0;
 }
 
-
-int
-Dummy::initValues ()
+int Dummy::initValues ()
 {
 	temperature->setValueFloat (100);
 	return Focusd::initValues ();
 }
 
-
-int
-Dummy::setTo (int num)
+int Dummy::setTo (int num)
 {
 	if (position->getValueInteger () > num)
 		focSteps->setValueInteger (-1 * fabs (focSteps->getValueInteger ()));
@@ -115,9 +96,7 @@ Dummy::setTo (int num)
 	return 0;
 }
 
-
-int
-Dummy::isFocusing ()
+int Dummy::isFocusing ()
 {
 	if (fabs (getPosition () - getTarget ()) < fabs (focSteps->getValueInteger ()))
 		position->setValueInteger (getTarget ());
@@ -126,10 +105,8 @@ Dummy::isFocusing ()
 	return Focusd::isFocusing ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }

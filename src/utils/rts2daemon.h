@@ -299,7 +299,9 @@ class Rts2Daemon:public Rts2Block
 		/**
 		 * Set value. This is the function that get called when user want to change some value, either interactively through
 		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables 
-		 * beiing overwritten.
+		 * beiing overwritten. If variable has flag RTS2_VALUE_WRITABLE, default implemetation returns sucess. If setting variable
+		 * involves some special commands being send to the device, you most probably want to overwrite setValue, and provides
+		 * set action for your values in it.
 		 *
 		 * Suppose you have variables var1 and var2, which you would like to be settable by user. When user set var1, system will just change
 		 * value and pick it up next time it will use it. If user set integer value var2, method setVar2 should be called to communicate

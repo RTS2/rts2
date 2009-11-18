@@ -60,9 +60,9 @@ int Camera::setPlate (const char *arg)
 void Camera::setDefaultPlate (double x, double y)
 {
 	if (xplate == NULL)
-		createValue (xplate, "XPLATE", "[arcsec] X plate scale");
+		createValue (xplate, "XPLATE", "[arcsec] X plate scale", true, RTS2_VALUE_WRITABLE);
 	if (yplate == NULL)
-	  	createValue (yplate, "YPLATE", "[arcsec] Y plate scale");
+	  	createValue (yplate, "YPLATE", "[arcsec] Y plate scale", true, RTS2_VALUE_WRITABLE);
 	xplate->setValueDouble (x);
 	yplate->setValueDouble (y);
 
@@ -159,21 +159,15 @@ int Camera::endExposure ()
 {
 	if (exposureConn)
 	{
-		logStream (MESSAGE_INFO)
-			<< "end exposure for " << exposureConn->getName ()
-			<< sendLog;
-
+		logStream (MESSAGE_INFO) << "end exposure for " << exposureConn->getName () << sendLog;
 		return camReadout (exposureConn);
 	}
 	if (getStateChip (0) & CAM_EXPOSING)
-		logStream (MESSAGE_WARNING)
-			<< "end exposure without exposure connection"
-			<< sendLog;
+		logStream (MESSAGE_WARNING) << "end exposure without exposure connection" << sendLog;
+
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
-	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT,
-		CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT,
-		BOP_TEL_MOVE, 0, "chip exposure interrupted");
+	maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING | CAM_MASK_FT, CAM_NOEXPOSURE | CAM_NOTREADING | CAM_NOFT, BOP_TEL_MOVE, 0, "chip exposure interrupted");
 	return 0;
 }
 
@@ -277,7 +271,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	currentImageData = -1;
 
-	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false);
+	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
 	calculateStatistics->addSelVal ("yes");
 	calculateStatistics->addSelVal ("only statistics");
 	calculateStatistics->addSelVal ("no");
@@ -290,7 +284,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	createValue (computedPix, "computed", "number of pixels so far computed", false);
 
-	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, 0, 0, true);
+	createValue (quedExpNumber, "que_exp_num", "number of exposures in que", false, RTS2_VALUE_WRITABLE, 0, true);
 	quedExpNumber->setValueInteger (0);
 
 	createValue (exposureNumber, "exposure_num", "number of exposures camera takes", false, 0, 0, false);
@@ -308,12 +302,12 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	waitingForNotBop->setValueBool (false);
 
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
-	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER, CAM_WORKING, true);
+	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 
-	createValue (binning, "binning", "chip binning", true, 0, CAM_WORKING, true);
+	createValue (binning, "binning", "chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
 
-	createValue (exposure, "exposure", "current exposure time", false, 0, CAM_WORKING);
+	createValue (exposure, "exposure", "current exposure time", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	exposure->setValueDouble (1);
 
 	createValue (flip, "FLIP", "camera flip (since most astrometry devices works as mirrors", true);
@@ -321,12 +315,12 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	sendOkInExposure = false;
 
-	createValue (subExposure, "subexposure", "current subexposure", false, 0, CAM_WORKING, true);
-	createValue (camFilterVal, "filter", "used filter number", false, 0, CAM_EXPOSING);
+	createValue (subExposure, "subexposure", "current subexposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
+	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
-	createValue (camFocVal, "focpos", "position of focuser", false, 0, CAM_EXPOSING);
+	createValue (camFocVal, "focpos", "position of focuser", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
 
-	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG);
+	createValue (rotang, "CCD_ROTA", "CCD rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
 	rotang->setValueDouble (0);
 
 	focuserDevice = NULL;
@@ -712,16 +706,6 @@ void Camera::afterReadout ()
 
 int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == exposure
-		|| old_value == quedExpNumber
-		|| old_value == expType
-		|| old_value == rotang
-		|| old_value == nightCoolTemp
-		|| old_value == binning
-		|| old_value == calculateStatistics)
-	{
-		return 0;
-	}
 	if (old_value == camFocVal)
 	{
 		return setFocuser (new_value->getValueInteger ()) == 0 ? 0 : -2;
@@ -854,8 +838,7 @@ int Camera::camStartExposureWithoutCheck ()
 		return ret;
 
 	infoAll ();
-	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING,
-		BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
+	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
 
 	exposureEnd->setValueDouble (getNow () + exposure->getValueDouble ());
 	sendValueAll (exposureEnd);

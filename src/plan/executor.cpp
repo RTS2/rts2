@@ -35,8 +35,7 @@ class Executor:public Rts2DeviceDb
 	public:
 		Executor (int argc, char **argv);
 		virtual ~ Executor (void);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
 
@@ -135,7 +134,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	waitState = 0;
 
-	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual controll", false);
+	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual controll", false, RTS2_VALUE_WRITABLE);
 	enabled->setValueBool (true);
 
 	createValue (acqusitionOk, "acqusition_ok", "number of acqusitions completed sucesfully", false);
@@ -150,7 +149,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (current_type, "current_type", "type of current target", false);
 	createValue (current_obsid, "obsid", "ID of observation", false);
 
-	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false);
+	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false, RTS2_VALUE_WRITABLE);
 	autoLoop->setValueBool (true);
 
 	createValue (next_id, "next", "ID of next target", false);
@@ -160,10 +159,10 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 
 	createValue (img_id, "img_id", "ID of current image", false);
 
-	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false);
+	createValue (doDarks, "do_darks", "if darks target should be picked by executor", false, RTS2_VALUE_WRITABLE);
 	doDarks->setValueBool (true);
 
-	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false);
+	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false, RTS2_VALUE_WRITABLE);
 	ignoreDay->setValueBool (false);
 
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
@@ -215,8 +214,6 @@ int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 		stop ();
 		return 0;
 	}
-	if (oldValue == enabled || oldValue == doDarks || oldValue == ignoreDay || oldValue == autoLoop)
-		return 0;
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
 
@@ -865,6 +862,6 @@ int Executor::commandAuthorized (Rts2Conn * conn)
 
 int main (int argc, char **argv)
 {
-	Executor executor = Executor (argc, argv);
+	Executor executor (argc, argv);
 	return executor.run ();
 }

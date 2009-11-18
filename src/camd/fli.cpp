@@ -238,14 +238,13 @@ Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-Fli::Fli (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
 	createExpType ();
 
-	createValue (fliShutter, "FLISHUT", "FLI shutter state");
+	createValue (fliShutter, "FLISHUT", "FLI shutter state", true, RTS2_VALUE_WRITABLE);
 	fliShutter->addSelVal ("CLOSED");
 	fliShutter->addSelVal ("OPENED");
 	fliShutter->addSelVal ("EXTERNAL TRIGGER");
@@ -257,11 +256,9 @@ Camera (in_argc, in_argv)
 	hwRev = -1;
 	camNum = -1;
 	nflush = -1;
-	addOption ('D', "domain", 1,
-		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('R', "HW revision", 1, "find camera by HW revision");
-	addOption ('b', "fli_debug", 1,
-		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('n', "number", 1, "Camera number (in FLI list)");
 	addOption ('l', "flush", 1, "Number of CCD flushes");
 }

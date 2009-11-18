@@ -45,12 +45,12 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	}
 
 	// object
-	createValue (oriRaDec, "ORI", "original position (J2000)", true);
+	createValue (oriRaDec, "ORI", "original position (J2000)", true, RTS2_VALUE_WRITABLE);
 	// users offset
-	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES, 0);
+	createValue (offsRaDec, "OFFS", "object offset", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 	offsRaDec->setValueRaDec (0, 0);
 
-	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES, 0);
+	createValue (woffsRaDec, "woffs", "offsets waiting to be applied", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
@@ -58,15 +58,14 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
 
-	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES, 0);
+	createValue (corrRaDec, "CORR_", "correction from closed loop", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 	corrRaDec->setValueRaDec (0, 0);
 
-	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied", false, RTS2_DT_DEGREES, 0);
+	createValue (wcorrRaDec, "wcorr", "corrections which waits for being applied", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 	wcorrRaDec->setValueRaDec (0, 0);
 	wcorrRaDec->resetValueChanged ();
 
-	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction",
-		false, 0, 0, true);
+	createValue (wCorrImgId, "wcorr_img", "Image id waiting for correction", false, RTS2_VALUE_WRITABLE, 0, true);
 
 	// position error
 	createValue (posErr, "pos_err", "error in degrees", false, RTS2_DT_DEG_DIST);
@@ -93,10 +92,10 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
-	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked", false);
+	createValue (blockMove, "block_move", "if true, any software movement of the telescope is blocked", false, RTS2_VALUE_WRITABLE);
 	blockMove->setValueBool (false);
 
-	createValue (blockOnStandby, "block_on_standby", "Block telescope movement if switched to standby/off mode. Enable it if switched back to on.", false);
+	createValue (blockOnStandby, "block_on_standby", "Block telescope movement if switched to standby/off mode. Enable it if switched back to on.", false, RTS2_VALUE_WRITABLE);
 	blockOnStandby->setValueBool (false);
 
 	createValue (airmass, "AIRMASS", "Airmass of target location");
@@ -114,40 +113,39 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (moveNum, "MOVE_NUM", "number of movements performed by the driver; used in corrections for synchronization", true);
 	moveNum->setValueInteger (0);
 
-	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true);
+	createValue (corrImgId, "CORR_IMG", "ID of last image used for correction", true, RTS2_VALUE_WRITABLE);
 	corrImgId->setValueInteger (0);
 
 	defaultRotang = 0;
-	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG);
+	createValue (rotang, "MNT_ROTA", "mount rotang", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE);
 
 	move_connection = NULL;
 
-	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST, 0, true);
+	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE, 0, true);
 	ignoreCorrection->setValueDouble (0);
 
-	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small",
-		false, RTS2_DT_DEG_DIST);
+	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	smallCorrection->setValueDouble (0);
 
-	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST);
+	createValue (modelLimit, "model_limit", "model separation limit", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	modelLimit->setValueDouble (5.0);
 
-	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST);
+	createValue (telFov, "telescope_fov", "telescope field of view", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	telFov->setValueDouble (180.0);
 
 	createValue (telFlip, "MNT_FLIP", "telescope flip");
 
 	// default is to aply model corrections
-	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false);
+	createValue (calAberation, "CAL_ABER", "if aberation is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calAberation->setValueBool (false);
 
-	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false);
+	createValue (calPrecession, "CAL_PREC", "if precession is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calPrecession->setValueBool (false);
 
-	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false);
+	createValue (calRefraction, "CAL_REFR", "if refraction is included in target calculations", false, RTS2_VALUE_WRITABLE);
 	calRefraction->setValueBool (false);
 
-	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false);
+	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false, RTS2_VALUE_WRITABLE);
 	calModel->setValueBool (false);
 
 	modelFile = NULL;
@@ -317,38 +315,6 @@ double Telescope::getLstDeg (double JD)
 {
 	return ln_range_degrees (15 * ln_get_apparent_sidereal_time (JD) +
 		telLongitude->getValueDouble ());
-}
-
-int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == modelLimit
-		|| old_value == telFov
-		|| old_value == rotang
-		|| old_value == smallCorrection
-		|| old_value == ignoreCorrection
-		|| old_value == calAberation
-		|| old_value == calPrecession
-		|| old_value == calRefraction
-		|| old_value == calModel
-		|| old_value == blockMove
-		|| old_value == blockOnStandby)
-	{
-		return 0;
-	}
-	if (old_value == oriRaDec
-		|| old_value == offsRaDec
-		|| old_value == corrRaDec
-		|| old_value == wcorrRaDec
-		|| old_value == corrImgId
-		|| old_value == wCorrImgId)
-	{
-		return 0;
-	}
-	if (old_value == woffsRaDec)
-	{
-		return 0;
-	}
-	return Rts2Device::setValue (old_value, new_value);
 }
 
 void Telescope::valueChanged (Rts2Value * changed_value)
@@ -904,7 +870,6 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	else if (wcorrRaDec->wasChanged ())
 	{
 		corrRaDec->incValueRaDec (wcorrRaDec->getRa (), wcorrRaDec->getDec ());
-
 		corrImgId->setValueInteger (wCorrImgId->getValueInteger ());
 	}
 
@@ -1010,8 +975,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 			maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING, 0, "correcting interrupted by move");
 		}
 		logStream (MESSAGE_INFO) << "moving to " << syncTo << " from " << syncFrom << sendLog;
-		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE,
-			"move started");
+		maskState (TEL_MASK_MOVING | TEL_MASK_CORRECTING | TEL_MASK_NEED_STOP | BOP_EXPOSURE, TEL_MOVING | BOP_EXPOSURE, "move started");
 	}
 	move_connection = conn;
 

@@ -339,8 +339,7 @@ Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-Urvc2::Urvc2 (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Urvc2::Urvc2 (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -348,17 +347,17 @@ Camera (in_argc, in_argv)
 
 	createExpType ();
 
-	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true);
+	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true, RTS2_VALUE_WRITABLE);
 	tempRegulation->addSelVal ("OFF");
 	tempRegulation->addSelVal ("TEMP");
 	tempRegulation->addSelVal ("POWER");
 
 	tempRegulation->setValueInteger (0);
 
-	createValue (coolingPower, "COOL_PWR", "cooling power", true);
+	createValue (coolingPower, "COOL_PWR", "cooling power", true, RTS2_VALUE_WRITABLE);
 	coolingPower->setValueInteger (0);
 
-	createValue (fan, "FAN", "camera fan state", true);
+	createValue (fan, "FAN", "camera fan state", true, RTS2_VALUE_WRITABLE);
 
 	cameraID = DEFAULT_CAMERA;
 }

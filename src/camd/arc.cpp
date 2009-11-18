@@ -110,9 +110,9 @@ Arc::Arc (int argc, char **argv):Camera (argc, argv)
 	createExpType ();
 	createTempCCD ();
 
-	createValue (biasWidth, "bias_width", "Width of bias", true);
+	createValue (biasWidth, "bias_width", "Width of bias", true, RTS2_VALUE_WRITABLE);
 	biasWidth->setValueInteger (0);
-	createValue (biasPosition, "bias_position", "Position of bias", true);
+	createValue (biasPosition, "bias_position", "Position of bias", true, RTS2_VALUE_WRITABLE);
 	biasPosition->setValueInteger (0);
 
 	createValue (timFile, "dsp_timing", "DSP timing file", false);

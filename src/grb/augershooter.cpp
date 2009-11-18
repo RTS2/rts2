@@ -25,33 +25,61 @@ using namespace rts2grbd;
 
 #define OPT_TRIGERING     OPT_LOCAL + 707
 
-DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
+DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_AUGERSH, "AUGRSH")
 {
 	shootercnn = NULL;
 	port = 1240;
 	addOption ('s', "shooter_port", 1, "port on which to listen for auger connection");
 	addOption (OPT_TRIGERING, "disable-triggering", 0, "only record triggers, do not pass them to executor");
 
-	createValue (triggeringEnabled, "triggering_enabled", "if true, shooter will trigger executor", false);
+	createValue (triggeringEnabled, "triggering_enabled", "if true, shooter will trigger executor", false, RTS2_VALUE_WRITABLE);
 	triggeringEnabled->setValueBool (true);
-
-	createValue (minEnergy, "min_energy", "minimal shower energy", false);
-	minEnergy->setValueDouble (10);
-
-	createValue (maxTime, "max_time", "maximal time between shower and its observations", false);
-	maxTime->setValueInteger (600);
 
 	createValue (lastAugerDate, "last_date", "date of last shower", false);
 	createValue (lastAugerRa, "last_ra", "RA of last shower", false, RTS2_DT_RA);
 	createValue (lastAugerDec, "last_dec", "DEC of last shower", false, RTS2_DT_DEC);
-}
 
+	createValue (minEnergy, "min_energy", "minimal shower energy", false, RTS2_VALUE_WRITABLE);
+	minEnergy->setValueDouble (10);
+
+	createValue (maxXmaxErr, "max_xmax_err", "Maximal XmaxErr value", false, RTS2_VALUE_WRITABLE);
+	maxXmaxErr->setValueDouble (40);
+
+	createValue (maxEnergyDiv, "max_energy_div", "Maximal energy div (EnergyErr / Energy)", false, RTS2_VALUE_WRITABLE);
+	maxEnergyDiv->setValueDouble (0.2);
+
+	createValue (maxGHChiDiv, "max_GHChi_div", "Maximal GHChi div (GHChi2 / GHNdf)", false, RTS2_VALUE_WRITABLE);
+	maxGHChiDiv->setValueDouble (2.5);
+
+	createValue (minLineFitDiff, "min_LineFit_diff", "Minimal line fit difference (LineFitChi2 - GHChi2)", false, RTS2_VALUE_WRITABLE);
+	minLineFitDiff->setValueDouble (4);
+
+	createValue (maxAxisDist, "min_Axis_dist", "Maximal axis distance", false, RTS2_VALUE_WRITABLE);
+	maxAxisDist->setValueDouble (2000.0);
+
+	createValue (minRp, "min_Rp", "Minimal Rp Value", false, RTS2_VALUE_WRITABLE);
+	minRp->setValueDouble (0);
+
+	createValue (minChi0, "min_Chi0", "Minimal Chi0 value", false, RTS2_VALUE_WRITABLE);
+	minChi0->setValueDouble (0);
+
+	createValue (maxSPDDiv, "max_SPDDiv", "Maximal SPD Div", false, RTS2_VALUE_WRITABLE);
+	maxSPDDiv->setValueDouble (7);
+	
+	createValue (maxTimeDiv, "max_TimeDiv", "Maximal time difference", false, RTS2_VALUE_WRITABLE);
+	maxTimeDiv->setValueDouble (8);
+
+	createValue (maxTheta, "max_Theta", "Maximal Theta value", false, RTS2_VALUE_WRITABLE);
+	maxTheta->setValueDouble (70);
+
+	createValue (maxTime, "max_time", "maximal time between shower and its observations", false, RTS2_VALUE_WRITABLE);
+	maxTime->setValueInteger (600);
+
+}
 
 DevAugerShooter::~DevAugerShooter (void)
 {
 }
-
 
 int DevAugerShooter::processOption (int in_opt)
 {
@@ -83,14 +111,6 @@ int DevAugerShooter::reloadConfig ()
 	return 0;
 }
 
-int DevAugerShooter::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == minEnergy || old_value == maxTime || old_value == triggeringEnabled)
-		return 0;
-	return Rts2DeviceDb::setValue (old_value, new_value);
-}
-
-
 int DevAugerShooter::init ()
 {
 	int ret;
@@ -98,7 +118,7 @@ int DevAugerShooter::init ()
 	if (ret)
 		return ret;
 
-	shootercnn = new ConnShooter (port, this, minEnergy, maxTime);
+	shootercnn = new ConnShooter (port, this);
 
 	ret = shootercnn->init ();
 
@@ -109,7 +129,6 @@ int DevAugerShooter::init ()
 
 	return ret;
 }
-
 
 int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 {
@@ -134,7 +153,6 @@ int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	return 0;
 }
 
-
 bool DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 {
 	return (fabs (lastDate - lastAugerDate->getValueDouble ()) < 5
@@ -142,9 +160,8 @@ bool DevAugerShooter::wasSeen (double lastDate, double ra, double dec)
 		&& dec == lastAugerDec->getValueDouble ());
 }
 
-
 int main (int argc, char **argv)
 {
-	DevAugerShooter device = DevAugerShooter (argc, argv);
+	DevAugerShooter device (argc, argv);
 	return device.run ();
 }

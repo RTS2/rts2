@@ -307,11 +307,11 @@ Kolonica::Kolonica (int in_argc, char **in_argv):Fork (in_argc, in_argv)
 	telDev = "/dev/ttyS0";
 	telConn = NULL;
 
-	createValue (axAlt, "AXALT", "altitude axis", true);
-	createValue (axAz, "AXAZ", "azimuth axis", true);
+	createValue (axAlt, "AXALT", "altitude axis", true, RTS2_VALUE_WRITABLE);
+	createValue (axAz, "AXAZ", "azimuth axis", true, RTS2_VALUE_WRITABLE);
 
-	createValue (motorAlt, "motor_alt", "altitude motor", false);
-	createValue (motorAz, "motor_az", "azimuth motor", false);
+	createValue (motorAlt, "motor_alt", "altitude motor", false, RTS2_VALUE_WRITABLE);
+	createValue (motorAz, "motor_az", "azimuth motor", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "telescope device (default to /dev/ttyS0)");
 }

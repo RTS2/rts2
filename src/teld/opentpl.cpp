@@ -289,8 +289,6 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
-	if (old_value == goodSep)
-		return 0;
 
 	return Telescope::setValue (old_value, new_value);
 }
@@ -312,18 +310,18 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 
 	cover = NULL;
 
-	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
+	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
 
 	createValue (targetDist, "target_dist", "distance in degrees to target", false, RTS2_DT_DEG_DIST);
 	createValue (targetTime, "target_time", "reach target time in seconds", false);
 
-	createValue (mountTrack, "TRACK", "mount track");
+	createValue (mountTrack, "TRACK", "mount track", true, RTS2_VALUE_WRITABLE);
 
 	strcpy (telType, "BOOTES_IR");
 
 	createValue (modelQuality, "model_quality", "quality of model data", false);
-	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
@@ -457,21 +455,21 @@ int OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
+		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
-		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "hoff", "[deg] model declination encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "hoff", "[deg] model declination encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "me", "[deg] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "me", "[deg] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ma", "[deg] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ma", "[deg] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "nphd", "[deg] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "nphd", "[deg] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ch", "[deg] model east-west colimation error", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ch", "[deg] model east-west colimation error", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
 	}
 	else if (config_mount == "AZ-ZD")
@@ -488,21 +486,21 @@ int OpenTPL::initValues ()
  */
 		setPointingModel (POINTING_ALTAZ);
 
-		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
+		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
-		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "zoff", "[deg] model zenith offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "zoff", "[deg] model zenith offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ae", "[deg] azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ae", "[deg] azimuth equator? offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "an", "[deg] azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "an", "[deg] azimuth nadir? offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "npae", "[deg] not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "npae", "[deg] not polar adjusted equator?", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ca", "[deg] model ca parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ca", "[deg] model ca parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
 	}
 	else
@@ -511,7 +509,7 @@ int OpenTPL::initValues ()
 		return -1;
 	}
 
-	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true);
+	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true, RTS2_VALUE_WRITABLE);
 
 	status = opentplConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
 	status = opentplConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
@@ -527,16 +525,16 @@ int OpenTPL::initValues ()
 
 	if (opentplConn->haveModule ("COVER"))
 	{
-		createValue (cover, "cover", "cover state (1 = opened)", false);
+		createValue (cover, "cover", "cover state (1 = opened)", false, RTS2_VALUE_WRITABLE);
 		initCoverState ();
 	}
 
 	// nasmith derotator
 	if (opentplConn->haveModule ("DEROTATOR[3]"))
 	{
-		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG, 0, true);
-		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES);
-		createValue (derotatorPower, "derotatorPower", "derotator power setting", false);
+		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE, 0, true);
+		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+		createValue (derotatorPower, "derotatorPower", "derotator power setting", false, RTS2_VALUE_WRITABLE);
 	}
 
 	// infoModel
