@@ -581,19 +581,6 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
-	    <option>model_step_type</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Stepping type for model target. Default value is 2, which will
-	      take 2 steps on the net defined in model table. -1 is for linear
-	      model, where step is increased by factor of 1, and -2 is for
-	      completly random model, which will not make points on the net.
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
 	    <option>flat_sun_min</option>
 	  </term>
 	  <listitem>
