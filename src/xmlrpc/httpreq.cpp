@@ -72,7 +72,8 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	response_type = "image/jpeg";
 
 	// get path and possibly date range
-	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
+	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
+
 	int valId = 1;
 	time_t to = time (NULL);
 	time_t from = to - 3600;
@@ -255,7 +256,7 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	// get path and possibly date range
-	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
+	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
 
 	if (vals.size () == 0)
 	{
@@ -411,7 +412,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	// get path and possibly date range
-	std::vector <std::string> vals = SplitStr (path.substr (1), std::string ("/"));
+	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
 
 	switch (vals.size ())
 	{
