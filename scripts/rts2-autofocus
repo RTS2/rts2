@@ -1297,6 +1297,24 @@ sub retrieve_data
 # open the result file, ToDo not good at the moment
 #
 	open(SEXINPUT, "$tmp_cat_file_name") or die "retrieve_data: can't read $tmp_cat_file_name: $!" ;
+
+#define the multiplicity...
+	my $reference_object_number ;
+	my %mutiplicity_of_reference_objects ;
+	while(my $line=<SEXINPUT>)
+	{
+	    next if( $line=~ m/^#/) ; 
+	    $line=~ s/[ \t\r\n]+/ /g ;
+	    $line=~ s/^[ ]+//g ;
+	    my @items= split(/[ ]+/, $line) ;
+
+	    $reference_object_number= $items[NUMBER_REF];
+	    $mutiplicity_of_reference_objects{$reference_object_number}++ ;
+	}
+	close SEXINPUT ;
+# ...and read it again.
+	open(SEXINPUT, "$tmp_cat_file_name") or die "retrieve_data: can't read $tmp_cat_file_name: $!" ;
+
 # open the ds9 region file and write the header
 #
 	my @ds9_items= split(/\./, $ds9_region_file) ;
@@ -1305,7 +1323,6 @@ sub retrieve_data
 	my $number_of_objects= 0 ;
 	my $number_of_selected_objects= 0 ;
 	my $object_number ;
-	my $reference_object_number ;
 	my @event_scalers=(0, 0, 0, 0, 0, 0) ;
 	while(my $line=<SEXINPUT>)
 	{
@@ -1314,7 +1331,9 @@ sub retrieve_data
 	    $line=~ s/^[ ]+//g ;
 	    my @items= split(/[ ]+/, $line) ;
 
-	    $reference_object_number= $items[NUMBER_REF]; 
+	    $reference_object_number= $items[NUMBER_REF];
+# do not analyse objects which belong to the same reference object
+	    next if( $mutiplicity_of_reference_objects{$reference_object_number} > 1) ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
@@ -1349,13 +1368,22 @@ sub retrieve_data
 	{
 	    printf("retrieve_data: $fits_file: fil: %3s, foc: %5d ", $fltr, $fits_files{$fits_file}[IND_FOC_POS_FILE]) ;
 	    print "scalers: $#event_scalers" ;
+
 # sex.cfg is configured to write only ALL objects
 	    for( my $reason=0; $reason < $#event_scalers+1; $reason++)
 	    {
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
 	    printf("(sel./ref.): %6.3f, %4d, %4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects) ;
-	    
+# check mutiplicity	    
+#	    foreach my $object ( sort keys  %mutiplicity_of_reference_objects)
+#	    {
+#		if( $mutiplicity_of_reference_objects{$object} > 1)
+#		{
+#		    print "retrieve_data: reference_object $object counted $mutiplicity_of_reference_objects{$object} times\n" ;
+#		}
+#	    }
+
 	    if(( $number_of_selected_objects/$number_of_reference_objects) < $default_configuration{C_SELECT_RATIO})
 	    {
 		foreach my $reference_object_number( keys %{$objects_selected{$fits_file}})
