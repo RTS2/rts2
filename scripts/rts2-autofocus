@@ -434,17 +434,17 @@ sub set_rts2_focus_default_position
     my $focusd= shift @_ ;
     my $foc   = shift @_ ;
 
-    if(( $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT} < $foc) && ( $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT} > $foc))
-       {
-	   open( SETFOC, "rts2-xmlrpcclient -s $focusd.FOC_DEF $foc|") or die "set_rts2_focus_default_position: can't open rts2-xmlrpcclient -s $focusd.FOC_DEF $foc: $!" ;
-	   while( <SETFOC>){}
-	   close( SETFOC) ;
-	   return TRUE_VAL ;
-       }
-       else
-       {
-	   print "set_rts2_focus_default_position: do not set out of bounds focuser position: $foc, $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}, $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}\n" ;
-       }
+    if(( $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT} < $foc) && ( $foc < $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}))
+    {
+	open( SETFOC, "rts2-xmlrpcclient -s $focusd.FOC_DEF $foc|") or die "set_rts2_focus_default_position: can't open rts2-xmlrpcclient -s $focusd.FOC_DEF $foc: $!" ;
+	while( <SETFOC>){}
+	close( SETFOC) ;
+	return TRUE_VAL ;
+    }
+    else
+    {
+	print "set_rts2_focus_default_position: do not set out of bounds focuser position: $foc, $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}, $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}\n" ;
+    }
 }
 sub set_rts2_focus_target_position
 {
@@ -2114,7 +2114,7 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	    if( $ret_get_fits== TRUE_VAL)
 	    {
 # the global $filter_focus_properties{$fltr}[IND_FOC_DEF] is updated
-		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, TRUE_STR)) != FALSE_STR ) 
+		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, TRUE_STR)) ne FALSE_STR ) 
 		{
 		    print "$scriptname: reference for rough focus created\n" ;
 		}
