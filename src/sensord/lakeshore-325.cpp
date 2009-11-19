@@ -106,7 +106,7 @@ Lakeshore::Lakeshore (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 	{
 		temps[i] = new TempChannel ();
 
-		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true, RTS2_VALUE_WRITABLE));
+		(*(temps[i]))["CRDG"].push_back (tempValue (vd, "TEMP", chan, "channel temperature", true));
 		(*(temps[i]))["INCRV"].push_back (tempValue (vi, "INCRV", chan, "channel input curve number", true, RTS2_VALUE_WRITABLE));
 		(*(temps[i]))["RDGST"].push_back (tempValue (vi, "STATUS", chan, "channel input reading status", true));
 		(*(temps[i]))["SRDG"].push_back (tempValue (vd, "SENSOR", chan, "channel input sensor value", true));
