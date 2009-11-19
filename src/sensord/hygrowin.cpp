@@ -89,7 +89,7 @@ int Hygrowin::init ()
 	if (ret)
 		return ret;
 
-	hygroConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C7, rts2core::EVEN, 20);
+	hygroConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C7, rts2core::EVEN, 40);
 	ret = hygroConn->init ();
 	if (ret)
 		return ret;
