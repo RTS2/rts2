@@ -84,8 +84,17 @@
       the specified devices. It is dedicated for users who wish to run scripts on devices without 
       supporting infrastructure of the 
     <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+      Please note that as synchronization is handled on RTS2 system level, by
+      running rts2-scriptexec you will still benefit from same synchronizations
+      locks which rts2-executor uses. Running script under rts2-scriptexec is
+      equvivalent to running script from target send to rts2-executor.
     </para>
-
+    <para>
+      The default behaviour is to write list of created files to standard
+      output. Standard error output receives debugging messages. Files are
+      written to standard output after they are saved to disk and so its save
+      to use them.
+    </para>
   </refsect1>
   <refsect1 id="options">
     <title>OPTIONS</title>
