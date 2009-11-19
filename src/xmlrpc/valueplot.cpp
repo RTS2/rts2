@@ -66,6 +66,12 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 	min = rs.getMin ();
 	max = rs.getMax ();
 
+	if (min == max)
+	{
+		min -= 0.1;
+		max += 0.1;
+	}
+
 	scaleY = size.height () / (max - min);
 	scaleX = size.width () / (to - from); 
 
@@ -252,7 +258,7 @@ void ValuePlot::plotYDouble ()
 {
 	// get difference and plot lines at interesting points
 	double diff = max - min;
-
+	
 	// plot roughly every 20 pixels..
 	double grid_y_step = log(100.0 / scaleY) / log(10);
 
