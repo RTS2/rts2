@@ -19,6 +19,7 @@
 
 #include "recvals.h"
 #include "sqlerror.h"
+#include "../utils/utilsfunc.h"
 
 using namespace rts2db;
 
@@ -31,6 +32,8 @@ void RecvalsSet::load ()
 	int d_value_type;
 	double d_from;
 	double d_to;
+	int d_from_null;
+	int d_to_null;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL DECLARE recval_state_cur CURSOR FOR
@@ -51,12 +54,16 @@ void RecvalsSet::load ()
 			:d_recval_id,
 			:d_device_name,
 			:d_value_name,
-			:d_from,
-			:d_to;
+			:d_from :d_from_null,
+			:d_to :d_to_null;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
+		if (d_from_null)
+			d_from = rts2_nan ("f");
+		if (d_to_null)
+			d_to = rts2_nan ("f");
 		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to));
 	}
 
@@ -87,12 +94,16 @@ void RecvalsSet::load ()
 			:d_device_name,
 			:d_value_name,
 			:d_value_type,
-			:d_from,
-			:d_to;
+			:d_from :d_from_null,
+			:d_to :d_to_null;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
+		if (d_from_null)
+			d_from = rts2_nan ("f");
+		if (d_to_null)
+			d_to = rts2_nan ("f");
 		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
 	}
 
