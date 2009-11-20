@@ -165,21 +165,18 @@ class Andor:public Camera
 		virtual void afterNight ();
 };
 
-};
+}
 
 using namespace rts2camd;
 
-int
-Andor::stopExposure ()
+int Andor::stopExposure ()
 {
 	AbortAcquisition ();
 	FreeInternalMemory ();
 	return Camera::stopExposure ();
 }
 
-
-long
-Andor::isExposing ()
+long Andor::isExposing ()
 {
 	int status;
 	int ret;
@@ -258,12 +255,10 @@ Andor::isExposing ()
 	return 0;
 }
 
-
 // For each exposure, the first time this function is called, it reads out
 // the entire image from the camera (into dest).  Subsequent calls return
 // lines from dest.
-int
-Andor::doReadout ()
+int Andor::doReadout ()
 {
 	int ret;
 	switch (getDataType ())
@@ -298,13 +293,10 @@ Andor::doReadout ()
 	return 0;
 }
 
-
-bool
-Andor::supportFrameTransfer ()
+bool Andor::supportFrameTransfer ()
 {
 	return useFT->getValueBool () && (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER) && useRunTillAbort->getValueBool ();
 }
-
 
 void
 Andor::closeShutter ()
@@ -313,9 +305,7 @@ Andor::closeShutter ()
 	andor_shutter_state = ANDOR_SHUTTER_CLOSED;
 }
 
-
-Andor::Andor (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempCCD ();
 	createTempSet ();
@@ -338,32 +328,32 @@ Camera (in_argc, in_argv)
 	tempStatus->addSelVal ("NOT_SUPPORTED");
 	tempStatus->addSelVal ("DRIFT");
 
-	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, 0, CAM_WORKING);
+	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	ADChannel->setValueInteger (0);
 
-	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, 0, CAM_WORKING);
+	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	VSpeed->setValueInteger (1);
 
-	createValue (EMOn, "EMON", "If EM is enabled", true, 0, CAM_WORKING);
+	createValue (EMOn, "EMON", "If EM is enabled", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	EMOn->setValueBool (false);
 	setDefaultFlip (1);
 
-	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, 0, CAM_WORKING);
+	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	HSpeed->setValueInteger (1);
 
-	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, 0, CAM_WORKING);
+	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	FTShutter->setValueBool (false);
 
-	createValue (useFT, "USEFT", "Use FT", true, 0, CAM_WORKING);
+	createValue (useFT, "USEFT", "Use FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	useFT->setValueBool (true);
 
-	createValue (useRunTillAbort, "USERTA", "Use run till abort mode of the CCD", true, 0, CAM_WORKING);
+	createValue (useRunTillAbort, "USERTA", "Use run till abort mode of the CCD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	// it is disabled, as it produces wrong data
 	useRunTillAbort->setValueBool (false);
 
 	createValue (acqusitionMode, "ACQMODE", "acqusition mode", true, 0, CAM_WORKING);
 
-	createValue (outputAmp, "OUTAMP", "output amplifier", true, 0, CAM_WORKING);
+	createValue (outputAmp, "OUTAMP", "output amplifier", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	outputAmp->setValueInteger (0);
 
 	outPreAmpGain = NULL;
@@ -373,7 +363,7 @@ Camera (in_argc, in_argv)
 
 	fanMode = NULL;
 
-	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, 0, CAM_WORKING);
+	createValue (filterCr, "FILTCR", "filter cosmic ray events", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	filterCr->setValueBool (false);
 
 	defaultGain = IXON_DEFAULT_GAIN;
@@ -394,9 +384,7 @@ Andor::~Andor (void)
 	ShutDown ();
 }
 
-
-void
-Andor::help ()
+void Andor::help ()
 {
 	std::cout << "Driver for Andor CCDs (iXon & others)" << std::endl
 		<< std::endl <<
@@ -416,15 +404,12 @@ Andor::help ()
 	Camera::help ();
 }
 
-
-void
-Andor::usage ()
+void Andor::usage ()
 {
 	std::cout << "\t" << getAppName () << " -c -70 -d C1" << std::endl;
 }
 
-int
-Andor::setGain (int in_gain)
+int Andor::setGain (int in_gain)
 {
 	int ret;
 	if ((ret = SetGain (in_gain)) != DRV_SUCCESS)
@@ -436,9 +421,7 @@ Andor::setGain (int in_gain)
 	return 0;
 }
 
-
-int
-Andor::setEMCCDGain (int in_gain)
+int Andor::setEMCCDGain (int in_gain)
 {
 	int ret;
 	if ((ret = SetEMCCDGain (in_gain)) != DRV_SUCCESS)
@@ -450,9 +433,7 @@ Andor::setEMCCDGain (int in_gain)
 	return 0;
 }
 
-
-int
-Andor::setADChannel (int in_adchan)
+int Andor::setADChannel (int in_adchan)
 {
 	int ret;
 	if ((ret = SetADChannel (in_adchan)) != DRV_SUCCESS)
@@ -465,9 +446,7 @@ Andor::setADChannel (int in_adchan)
 	return 0;
 }
 
-
-int
-Andor::setVSAmplitude (int in_vsamp)
+int Andor::setVSAmplitude (int in_vsamp)
 {
 	int ret;
 	if ((ret = SetVSAmplitude (in_vsamp)) != DRV_SUCCESS)
@@ -480,9 +459,7 @@ Andor::setVSAmplitude (int in_vsamp)
 	return 0;
 }
 
-
-int
-Andor::setHSSpeed (int in_amp, int in_hsspeed)
+int Andor::setHSSpeed (int in_amp, int in_hsspeed)
 {
 	int ret;
 	// check if channel is correct
@@ -512,9 +489,7 @@ Andor::setHSSpeed (int in_amp, int in_hsspeed)
 
 }
 
-
-int
-Andor::setVSSpeed (int in_vsspeed)
+int Andor::setVSSpeed (int in_vsspeed)
 {
 	int ret;
 	if ((ret = SetVSSpeed (in_vsspeed)) != DRV_SUCCESS)
@@ -527,17 +502,13 @@ Andor::setVSSpeed (int in_vsspeed)
 	return 0;
 }
 
-
-int
-Andor::setFTShutter (bool force)
+int Andor::setFTShutter (bool force)
 {
 	FTShutter->setValueBool (force);
 	return 0;
 }
 
-
-int
-Andor::setAcquisitionMode (int mode)
+int Andor::setAcquisitionMode (int mode)
 {
 	if (SetAcquisitionMode (mode) != DRV_SUCCESS)
 		return -1;
@@ -545,18 +516,14 @@ Andor::setAcquisitionMode (int mode)
 	return 0;
 }
 
-
-void
-Andor::initDataTypes ()
+void Andor::initDataTypes ()
 {
 	Camera::initDataTypes ();
 	addDataType (RTS2_DATA_LONG);
 	addDataType (RTS2_DATA_FLOAT);
 }
 
-
-int
-Andor::startExposure ()
+int Andor::startExposure ()
 {
 	int ret;
 
@@ -656,11 +623,9 @@ Andor::startExposure ()
 	return 0;
 }
 
-
 // scriptEnds
 // Ensure that we definitely leave the shutter closed.
-int
-Andor::scriptEnds ()
+int Andor::scriptEnds ()
 {
 	if (!isnan (defaultGain) && gain)
 		setGain (defaultGain);
@@ -686,8 +651,7 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == VSpeed)
 		return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == FTShutter)
-		return setFTShutter (((Rts2ValueBool *) new_value)->getValueBool ()) ==
-			0 ? 0 : -2;
+		return setFTShutter (((Rts2ValueBool *) new_value)->getValueBool ()) ==	0 ? 0 : -2;
 	if (old_value == useFT)
 	{
 		int status;
@@ -736,9 +700,7 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
-int
-Andor::processOption (int in_opt)
+int Andor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -776,9 +738,7 @@ Andor::processOption (int in_opt)
  * so if/when that gets merged, some info may aready be available.
  *
  */
-
-void
-Andor::printCapabilities ()
+void Andor::printCapabilities ()
 {
 	printf ("Acquisition modes: ");
 	if (cap.ulAcqModes == 0)
@@ -849,16 +809,13 @@ Andor::printCapabilities ()
 	printf ("\n");
 }
 
-
 /****************************************************************
  * printNumberADCs
  *
  * Prints out number and bit-depth of available AD channels, and returns
  * the number of AD channels found, 0 on error.
  */
-
-int
-Andor::printNumberADCs ()
+int Andor::printNumberADCs ()
 {
 	int ret, n_ad;
 	if ((ret = GetNumberADChannels (&n_ad)) != DRV_SUCCESS)
@@ -889,9 +846,7 @@ Andor::printNumberADCs ()
 	return n_ad;
 }
 
-
-int
-Andor::printHSSpeeds (int camera_type, int ad, int amp)
+int Andor::printHSSpeeds (int camera_type, int ad, int amp)
 {
 	int ret;
 	int nhs, npreamps;
@@ -955,9 +910,7 @@ Andor::printHSSpeeds (int camera_type, int ad, int amp)
 	return 0;
 }
 
-
-int
-Andor::printVSSpeeds ()
+int Andor::printVSSpeeds ()
 {
 	int ret, vspeeds;
 	if ((ret = GetNumberVSSpeeds (&vspeeds)) != DRV_SUCCESS)
@@ -980,9 +933,7 @@ Andor::printVSSpeeds ()
 	return 0;
 }
 
-
-int
-Andor::printInfo ()
+int Andor::printInfo ()
 {
 	int ret;
 	int n_ad, n_amp;
@@ -1039,9 +990,7 @@ Andor::printInfo ()
 	return 0;
 }
 
-
-int
-Andor::initChips ()
+int Andor::initChips ()
 {
 	int ret;
 	float x_um, y_um;
@@ -1081,16 +1030,13 @@ Andor::initChips ()
 		&& (cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER)
 		&& ((ret = SetFrameTransferMode (1)) != DRV_SUCCESS))
 	{
-		logStream (MESSAGE_ERROR) <<
-			"andor init attempt to set frame transfer failed " << ret << sendLog;
+		logStream (MESSAGE_ERROR) << "andor init attempt to set frame transfer failed " << ret << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
-
-int
-Andor::init ()
+int Andor::init ()
 {
 	unsigned long err;
 	int ret;
@@ -1176,9 +1122,7 @@ Andor::init ()
 	return initChips ();
 }
 
-
-void
-Andor::initAndorValues ()
+void Andor::initAndorValues ()
 {
 	if (cap.ulSetFunctions == AC_SETFUNCTION_VSAMPLITUDE)
 	{
@@ -1231,9 +1175,7 @@ Andor::initAndorValues ()
 	}
 }
 
-
-void
-Andor::getTemp ()
+void Andor::getTemp ()
 {
 	int c_status;
 	float tmpTemp;
@@ -1275,9 +1217,7 @@ Andor::getTemp ()
 	}
 }
 
-
-int
-Andor::info ()
+int Andor::info ()
 {
 	if (isIdle ())
 	{
@@ -1286,16 +1226,12 @@ Andor::info ()
 	return Camera::info ();
 }
 
-
-int
-Andor::camChipInfo (int chip)
+int Andor::camChipInfo (int chip)
 {
 	return 0;
 }
 
-
-int
-Andor::setCoolTemp (float new_temp)
+int Andor::setCoolTemp (float new_temp)
 {
 	int status;
 	status = CoolerON ();
@@ -1314,9 +1250,7 @@ Andor::setCoolTemp (float new_temp)
 	return 0;
 }
 
-
-void
-Andor::afterNight ()
+void Andor::afterNight ()
 {
 	CoolerOFF ();
 	SetTemperature (20);
@@ -1324,10 +1258,8 @@ Andor::afterNight ()
 	closeShutter ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Andor device = Andor (argc, argv);
+	Andor device (argc, argv);
 	return device.run ();
 }
