@@ -32,8 +32,7 @@
 char *XCursesProgramName = "rts2-mon";
 #endif
 
-void
-Rts2NMonitor::sendCommand ()
+void Rts2NMonitor::sendCommand ()
 {
 	int curX = comWindow->getCurX ();
 	char command[curX + 1];
@@ -69,9 +68,7 @@ Rts2NMonitor::sendCommand ()
 	}
 }
 
-
-int
-Rts2NMonitor::processOption (int in_opt)
+int Rts2NMonitor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -84,10 +81,8 @@ Rts2NMonitor::processOption (int in_opt)
 	return 0;
 }
 
-
 #ifdef HAVE_PGSQL_SOAP
-int
-Rts2NMonitor::processArgs (const char *arg)
+int Rts2NMonitor::processArgs (const char *arg)
 {
 	tarArg = new Rts2SimbadTarget (arg);
 	int ret = tarArg->load ();
@@ -106,26 +101,21 @@ Rts2NMonitor::processArgs (const char *arg)
 }
 #endif							 /* HAVE_PGSQL_SOAP */
 
-void
-Rts2NMonitor::addSelectSocks ()
+void Rts2NMonitor::addSelectSocks ()
 {
 	// add stdin for ncurses input
 	FD_SET (1, &read_set);
 	Rts2Client::addSelectSocks ();
 }
 
-
-Rts2ConnCentraldClient *
-Rts2NMonitor::createCentralConn ()
+Rts2ConnCentraldClient * Rts2NMonitor::createCentralConn ()
 {
 	return new Rts2NMonCentralConn (this, getCentralLogin (),
 		getCentralPassword (), getCentralHost (),
 		getCentralPort ());
 }
 
-
-void
-Rts2NMonitor::selectSuccess ()
+void Rts2NMonitor::selectSuccess ()
 {
 	Rts2Client::selectSuccess ();
 	while (1)
@@ -137,9 +127,7 @@ Rts2NMonitor::selectSuccess ()
 	}
 }
 
-
-void
-Rts2NMonitor::messageBox (const char *query, messageAction action)
+void Rts2NMonitor::messageBox (const char *query, messageAction action)
 {
 	const static char *buts[] = { "Yes", "No" };
 	if (msgBox)
@@ -150,9 +138,7 @@ Rts2NMonitor::messageBox (const char *query, messageAction action)
 	windowStack.push_back (msgBox);
 }
 
-
-void
-Rts2NMonitor::messageBoxEnd ()
+void Rts2NMonitor::messageBoxEnd ()
 {
 	if (msgBox->exitState == 0)
 	{
@@ -180,9 +166,7 @@ Rts2NMonitor::messageBoxEnd ()
 	windowStack.pop_back ();
 }
 
-
-void
-Rts2NMonitor::menuPerform (int code)
+void Rts2NMonitor::menuPerform (int code)
 {
 	switch (code)
 	{
@@ -214,17 +198,13 @@ Rts2NMonitor::menuPerform (int code)
 	}
 }
 
-
-void
-Rts2NMonitor::leaveMenu ()
+void Rts2NMonitor::leaveMenu ()
 {
 	menu->leave ();
 	windowStack.pop_back ();
 }
 
-
-void
-Rts2NMonitor::changeActive (Rts2NWindow * new_active)
+void Rts2NMonitor::changeActive (Rts2NWindow * new_active)
 {
 	Rts2NWindow *activeWindow = *(--windowStack.end ());
 	windowStack.pop_back ();
@@ -233,9 +213,7 @@ Rts2NMonitor::changeActive (Rts2NWindow * new_active)
 	new_active->enter ();
 }
 
-
-void
-Rts2NMonitor::changeListConnection ()
+void Rts2NMonitor::changeListConnection ()
 {
 	Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
 	if (conn)
@@ -260,9 +238,7 @@ Rts2NMonitor::changeListConnection ()
 	resize ();
 }
 
-
-Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):
-Rts2Client (in_argc, in_argv)
+Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 {
 	masterLayout = NULL;
 	daemonLayout = NULL;
@@ -287,6 +263,15 @@ Rts2Client (in_argc, in_argv)
 	#endif						 /* HAVE_PGSQL_SOAP */
 
 	addOption ('c', NULL, 0, "don't use colors");
+
+	char buf[HOST_NAME_MAX];
+
+	gethostname (buf, HOST_NAME_MAX);
+
+	std::ostringstream _os;
+	_os << "rts2-mon@" << buf;
+
+	setXtermTitle (_os.str ());
 }
 
 
@@ -309,9 +294,7 @@ Rts2NMonitor::~Rts2NMonitor (void)
 	#endif						 /* HAVE_PGSQL_SOAP */
 }
 
-
-int
-Rts2NMonitor::repaint ()
+int Rts2NMonitor::repaint ()
 {
 	curs_set (0);
 	if (LINES != old_lines || COLS != old_cols)
@@ -337,9 +320,7 @@ Rts2NMonitor::repaint ()
 	return 0;
 }
 
-
-int
-Rts2NMonitor::init ()
+int Rts2NMonitor::init ()
 {
 	int ret;
 	ret = Rts2Client::init ();
@@ -426,9 +407,7 @@ Rts2NMonitor::init ()
 	return repaint ();
 }
 
-
-int
-Rts2NMonitor::idle ()
+int Rts2NMonitor::idle ()
 {
 	int ret = Rts2Client::idle ();
 	repaint ();
@@ -436,16 +415,12 @@ Rts2NMonitor::idle ()
 	return ret;
 }
 
-
-Rts2ConnClient *
-Rts2NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
+Rts2ConnClient * Rts2NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
 {
 	return new Rts2NMonConn (this, _centrald_num, _deviceName);
 }
 
-
-Rts2DevClient *
-Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
 	#ifdef HAVE_PGSQL_SOAP
@@ -462,9 +437,7 @@ Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 	return retC;
 }
 
-
-int
-Rts2NMonitor::deleteConnection (Rts2Conn * conn)
+int Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 {
 	if (conn == connectionAt (deviceList->getSelRow ()))
 	{
@@ -474,16 +447,12 @@ Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 	return Rts2Client::deleteConnection (conn);
 }
 
-
-void
-Rts2NMonitor::message (Rts2Message & msg)
+void Rts2NMonitor::message (Rts2Message & msg)
 {
 	*msgwindow << msg;
 }
 
-
-void
-Rts2NMonitor::resize ()
+void Rts2NMonitor::resize ()
 {
 	menu->resize (0, 0, COLS, 1);
 	statusWindow->resize (0, LINES - 1, COLS, 1);
@@ -493,9 +462,7 @@ Rts2NMonitor::resize ()
 	old_cols = COLS;
 }
 
-
-void
-Rts2NMonitor::processKey (int key)
+void Rts2NMonitor::processKey (int key)
 {
 	Rts2NWindow *activeWindow = getActiveWindow ();
 	keyRet ret = RKEY_HANDLED;
@@ -621,17 +588,13 @@ Rts2NMonitor::processKey (int key)
 	}
 }
 
-
-void
-Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
+void Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
 {
 	if (oldCommand == cmd)
 		comWindow->commandReturn (cmd, cmd_status);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2NMonitor monitor = Rts2NMonitor (argc, argv);
 	return monitor.run ();
