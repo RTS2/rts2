@@ -538,43 +538,24 @@ sub get_fits_files
 	my $orira_from_file  ="" ;
 	my $oridec_from_file ="" ;
 
-	open(IMHEAD, "imhead $fits_file|") or die "get_fits_files: can't start imhead: $!";
-	while(<IMHEAD>){
-	    my @items= split(/[=\/]/, $_) ;
-	    if( $#items> 0)
-	    {
-		$items[1]=~ s/[ ]+//g ;
-	    }
-	    if( $items[0]=~ m/FILTER/)
-	    {
-		$fltr_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/FOC_POS/)
-	    {
-		$foc_pos_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/BINNING/)
-	    {
-		$binning_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/NAXIS1/)
-	    {
-		$naxis1_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/NAXIS2/)
-	    {
-		$naxis2_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/ORIRA/)
-	    {
-		$orira_from_file=$items[1] ;
-	    }
-	    elsif( $items[0]=~ m/ORIDEC/)
-	    {
-		$oridec_from_file=$items[1] ;
-	    }
+	open(RTS2IMAGE, "rts2-image -p \'\@FILTER \@FOC_POS \@BINNING \@NAXIS1 \@NAXIS2 \@ORIRA \@ORIDEC\' $fits_file 2>/dev/null|") or die "get_fits_files: can't start rts2-image: $!";
+	while(<RTS2IMAGE>){
+# parse output
+# U 6121 2x2 2048 2048 0. 0.
+#
+	    my @items= split(/[ ]+/, $_) ;
+
+	    $fltr_from_file   =$items[0] ;
+	    $foc_pos_from_file=$items[1] ;
+	    $binning_from_file=$items[2] ;
+	    $naxis1_from_file =$items[3] ;
+	    $naxis2_from_file =$items[4] ;
+	    $orira_from_file  =$items[5] ;
+	    $oridec_from_file =$items[6] ;
 	}
-	close(IMHEAD) ;
+	close(RTS2IMAGE) ;
+
+
 # ToDo: docu me!!
 # during data tacking we know nothing
 	if( $default_configuration{C_TAKE_DATA} ne TRUE_STR )
