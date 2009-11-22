@@ -96,7 +96,7 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				from = to + strtod (vals[2].c_str (), NULL);
 
 		case 2:
-			plotValue (vals[0].c_str (), vals[1].c_str (), from, to, response_type, response, response_length);
+			plotValue (vals[0].c_str (), vals[1].c_str (), from, to, params, response_type, response, response_length);
 			break;
 		default:
 			throw rts2core::Error ("Invalid path for graph!");
@@ -124,7 +124,7 @@ void Graph::printDevices (const char* &response_type, char* &response, int &resp
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Graph::plotValue (const char *device, const char *value, double from, double to, const char* &response_type, char* &response, int &response_length)
+void Graph::plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
@@ -134,7 +134,39 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 
 	ValuePlot vp (rv->getId (), rv->getType ());
 
-	Magick::Image* mimage = vp.getPlot (from, to);
+	const char *type = params->getString ("t", "A");
+
+	PlotType pt;
+
+	switch (*type)
+	{
+		case 'l':
+			pt = PLOTTYPE_LINE;
+			break;
+		case 'L':
+			pt = PLOTTYPE_LINE_SHARP;
+			break;
+		case 'c':
+			pt = PLOTTYPE_CROSS;
+			break;
+		case 'C':
+			pt = PLOTTYPE_CIRCLES;
+			break;
+		case 's':
+			pt = PLOTTYPE_SQUARES;
+			break;
+		case 'f':
+			pt = PLOTTYPE_FILL;
+			break;
+		case 'F':
+			pt = PLOTTYPE_FILL_SHARP;
+			break;
+		case 'A':
+		default:
+			pt = PLOTTYPE_AUTO;
+	}
+
+	Magick::Image* mimage = vp.getPlot (from, to, NULL, pt);
 
 	Magick::Blob blob;
 	mimage->write (&blob, "jpeg");

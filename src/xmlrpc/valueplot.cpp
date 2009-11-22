@@ -149,6 +149,10 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int shadow)
 			case PLOTTYPE_LINE:
 				image->draw (Magick::DrawableLine (x, y, x_end, y_end));
 				break;
+			case PLOTTYPE_LINE_SHARP:
+				image->draw (Magick::DrawableLine (x, y, x_end, y));
+				image->draw (Magick::DrawableLine (x_end, y, x_end, y_end));
+				break;
 			case PLOTTYPE_CROSS:
 				image->draw (Magick::DrawableLine (x - 2, y, x + 2, y));
 				image->draw (Magick::DrawableLine (x, y - 2, x, y + 2));

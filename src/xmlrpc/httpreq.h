@@ -71,7 +71,7 @@ class Graph: public GetRequestAuthorized
 	private:
 		void printDevices (const char* &response_type, char* &response, int &response_length);
 
-		void plotValue (const char *device, const char *value, double from, double to, const char* &response_type, char* &response, int &response_length);
+		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
 };
 
 /**
