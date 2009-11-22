@@ -51,7 +51,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 
 	if (_image)
 	{
-		image = image;
+		image = _image;
+		size = image->size ();
 	}
 	else
 	{

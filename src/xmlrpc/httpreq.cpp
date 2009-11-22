@@ -165,17 +165,18 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 		default:
 			pt = PLOTTYPE_AUTO;
 	}
+	
+	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
-	Magick::Image* mimage = vp.getPlot (from, to, NULL, pt);
+	Magick::Image mimage (size, "white");
+	vp.getPlot (from, to, &mimage, pt);
 
 	Magick::Blob blob;
-	mimage->write (&blob, "jpeg");
+	mimage.write (&blob, "jpeg");
 
 	response_length = blob.length();
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
-
-	delete mimage;
 }
 
 void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
