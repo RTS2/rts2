@@ -24,6 +24,9 @@
 // top read all informations from temperature sensor
 #define LIFOSIZE          60
 
+#define OPT_HUMI_BAD      OPT_LOCAL + 318
+#define OPT_HUMI_GOOD     OPT_LOCAL + 319
+
 namespace rts2sensord
 {
 
@@ -44,6 +47,9 @@ class Bootes2: public SensorWeather
 	
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
+		
+		Rts2ValueDouble *humBad;
+		Rts2ValueDouble *humGood;
 
 		/**
 		 * Returns volts from the device.
@@ -172,6 +178,12 @@ Bootes2::processOption (int _opt)
 		case 'c':
 			comediFile = optarg;
 			break;
+		case OPT_HUMI_BAD:
+			humGood->setValueCharArr (optarg);
+			break;
+		case OPT_HUMI_GOOD:
+			humGood->setValueCharArr (optarg);
+			break;
 		default:
 			return SensorWeather::processOption (_opt);
 	}
@@ -257,6 +269,14 @@ Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
+	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
+	{
+		setWeatherTimeout (600);
+	}
+	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
+	{
+		setWeatherTimeout (600);
+	}
 
 	return SensorWeather::info ();
 }
@@ -269,7 +289,10 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 	createValue (raining, "raining", "if it is raining (from rain detector)", false);
 
 	createValue (tempMeas, "TEMP", "outside temperature", true);
-	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
+	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
+
+	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad");
+	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good");
 
 	addOption ('c', NULL, 1, "path to comedi device");
 }
