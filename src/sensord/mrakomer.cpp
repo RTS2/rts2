@@ -193,6 +193,10 @@ int Mrakomer::info ()
 					<< sendLog;
 			}
 		}
+		else if (getWeatherState () == false)
+		{
+			setWeatherTimeout (300);
+		}
 	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();

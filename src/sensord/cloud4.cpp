@@ -302,6 +302,11 @@ int Cloud4::info ()
 					<< sendLog;
 			}
 		}
+		// gray zone - if it's bad weather, keep it bad
+		else if (getWeatherState () == false)
+		{
+			setWeatherTimeout (300);
+		}
 	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
