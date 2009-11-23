@@ -97,9 +97,7 @@ class Bootes2: public SensorWeather
 
 using namespace rts2sensord;
 
-
-int
-Bootes2::getVolts (int subdevice, int channel, double &volts)
+int Bootes2::getVolts (int subdevice, int channel, double &volts)
 {
 	int max;
 	comedi_range *rqn;
@@ -136,9 +134,7 @@ Bootes2::getVolts (int subdevice, int channel, double &volts)
 	return 0;
 }
 
-
-int
-Bootes2::updateHumidity ()
+int Bootes2::updateHumidity ()
 {
 	double hum;
 	if (getVolts (0, 0, hum))
@@ -149,9 +145,7 @@ Bootes2::updateHumidity ()
 	return 0;
 }
 
-
-int
-Bootes2::updateTemperature ()
+int Bootes2::updateTemperature ()
 {
 	double temp;
 	if (getVolts (0, 2, temp))
@@ -162,16 +156,12 @@ Bootes2::updateTemperature ()
 	return 0;
 }
 
-
-int
-Bootes2::updateStatus ()
+int Bootes2::updateStatus ()
 {
 	return 0;
 }
 
-
-int
-Bootes2::processOption (int _opt)
+int Bootes2::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -190,9 +180,7 @@ Bootes2::processOption (int _opt)
 	return 0;
 }
 
-
-int
-Bootes2::init ()
+int Bootes2::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
@@ -231,9 +219,7 @@ Bootes2::init ()
 	return 0;
 }
 
-
-int
-Bootes2::info ()
+int Bootes2::info ()
 {
 	int ret;
 	uint32_t value;
@@ -281,7 +267,6 @@ Bootes2::info ()
 	return SensorWeather::info ();
 }
 
-
 Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 {
 	comediFile = "/dev/comedi0";
@@ -291,21 +276,20 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 	createValue (tempMeas, "TEMP", "outside temperature", true);
 	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
 
-	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad");
-	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good");
+	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false);
+	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false);
 
 	addOption ('c', NULL, 1, "path to comedi device");
+	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
+	addOption (OPT_HUMI_GOOD, "humidity_good", 1, "[%] when humidity is bellow this value, weather is good");
 }
-
 
 Bootes2::~Bootes2 ()
 {
 
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Bootes2 device = Bootes2 (argc, argv);
 	return device.run ();
