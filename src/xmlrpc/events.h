@@ -131,6 +131,8 @@ class Events
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
 
+		std::vector <std::string> publicPaths;
+
 		Events (XmlRpcd *_master) { master = _master; }
 
 		/**
@@ -141,8 +143,17 @@ class Events
 		 * @throw XmlError
 		 */
 		void load (const char *file);
+
+		/**
+		 * Return true if given path is public.
+		 */
+		bool isPublic (std::string path);
+
 	private:
 		XmlRpcd *master;
+
+		void parseHttp (xmlNodePtr ev);
+		void parseEvents (xmlNodePtr ev);
 
 		void parseState (xmlNodePtr event, std::string deviceName);
 		void parseValue (xmlNodePtr event, std::string deviceName);

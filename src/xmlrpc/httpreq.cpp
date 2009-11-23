@@ -35,6 +35,13 @@ using namespace rts2xmlrpc;
 
 void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
 {
+	// if it is public page..
+	if (((XmlRpcd *) getMasterApp ())->isPublic (getPrefix () + path))
+	{
+		http_code = HTTP_OK;
+		authorizedExecute (path, params, response_type, response, response_length);
+		return;
+	}
 
 	if (getUsername () == std::string ("session_id"))
 	{

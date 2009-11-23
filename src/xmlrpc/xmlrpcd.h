@@ -126,18 +126,17 @@ class XmlRpcd:public Rts2Device
 		/**
 		 * Returns messages buffer.
 		 */
-		std::deque <Rts2Message> & getMessages ()
-		{
-			return messages;
-		}
+		std::deque <Rts2Message> & getMessages () { return messages; }
 
 		/**
 		 * Return prefix for generated pages - usefull for pages behind proxy.
 		 */
-		const char* getPagePrefix ()
-		{
-			return page_prefix.c_str ();
-		}
+		const char* getPagePrefix () { return page_prefix.c_str (); }
+
+		/**
+		 * Returns true, if given path is marked as being public - accessible to all.
+		 */
+		bool isPublic (const std::string &path) { return events.isPublic (path); }
 
 	protected:
 #ifndef HAVE_PGSQL

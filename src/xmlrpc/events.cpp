@@ -123,57 +123,42 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 	}
 }
 
-void Events::load (const char *file)
+void Events::parseHttp (xmlNodePtr ev)
 {
-	stateCommands.clear ();
-	valueCommands.clear ();
-
-	xmlDoc *doc = NULL;
-	xmlNodePtr root_element = NULL;
-
-	LIBXML_TEST_VERSION
-
-	xmlLineNumbersDefault (1);
-
-	doc = xmlReadFile (file, NULL, XML_PARSE_NOBLANKS);
-	if (doc == NULL)
+	for (; ev; ev = ev->next)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse XML file " << file << sendLog;
-		return;
+		if (xmlStrEqual (ev->name, (xmlChar *) "public"))
+		{
+			if (ev->children == NULL || ev->children->content == NULL)
+				throw XmlMissingElement (ev, "content of public path");
+			publicPaths.push_back (std::string ((char *) ev->children->content));
+		}
+		else
+		{
+			throw XmlUnexpectedNode (ev);
+		}
 	}
+}
 
-	root_element = xmlDocGetRootElement (doc);
-
-	if (strcmp ((const char *) root_element->name, "events"))
+void Events::parseEvents (xmlNodePtr ev)
+{
+	for (; ev; ev = ev->next)
 	{
-		logStream (MESSAGE_ERROR) << "invalid root element name, expected events, is " << root_element->name << sendLog;
-		return;
-	}
-
-	// traverse triggers..
-	xmlNodePtr device = root_element->children;
-	if (device == NULL)
-	{
-		logStream (MESSAGE_WARNING) << "no device specified" << sendLog;
-		return;
-	}
-	for (; device; device=device->next)
-	{
-		if (xmlStrEqual (device->name, (xmlChar *) "device"))
+		if (xmlStrEqual (ev->name, (xmlChar *) "device"))
 		{
 			// parse it...
 			std::string deviceName;
 			std::string commandName;
 
 			// does not have name..
-			xmlAttrPtr attrname = xmlHasProp (device, (xmlChar *) "name");
+			xmlAttrPtr attrname = xmlHasProp (ev, (xmlChar *) "name");
 			if (attrname == NULL)
 			{
-				throw XmlMissingAttribute (device, "name");
+				throw XmlMissingAttribute (ev, "name");
 			}
 			deviceName = std::string ((char *) attrname->children->content);
 
-			for (xmlNodePtr event = device->children; event != NULL; event = event->next)
+			for (xmlNodePtr event = ev->children; event != NULL; event = event->next)
 			{
 				// switch on action
 				if (xmlStrEqual (event->name, (xmlChar *) "state"))
@@ -192,10 +177,79 @@ void Events::load (const char *file)
 		}
 		else
 		{
-			throw XmlUnexpectedNode (device);
+			throw XmlUnexpectedNode (ev);
+		}
+	}
+}
+
+void Events::load (const char *file)
+{
+	stateCommands.clear ();
+	valueCommands.clear ();
+	publicPaths.clear ();
+
+	xmlDoc *doc = NULL;
+	xmlNodePtr root_element = NULL;
+
+	LIBXML_TEST_VERSION
+
+	xmlLineNumbersDefault (1);
+
+	doc = xmlReadFile (file, NULL, XML_PARSE_NOBLANKS);
+	if (doc == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse XML file " << file << sendLog;
+		return;
+	}
+
+	root_element = xmlDocGetRootElement (doc);
+
+	if (strcmp ((const char *) root_element->name, "config"))
+		throw XmlUnexpectedNode (root_element);
+
+	// traverse triggers..
+	xmlNodePtr ev = root_element->children;
+	if (ev == NULL)
+	{
+		logStream (MESSAGE_WARNING) << "no device specified" << sendLog;
+		return;
+	}
+	for (; ev; ev = ev->next)
+	{
+		if (xmlStrEqual (ev->name, (xmlChar *) "http"))
+		{
+			parseHttp (ev->children);
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "events"))
+		{
+			parseEvents (ev->children);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (ev);
 		}
 	}
 
 	xmlFreeDoc (doc);
 	xmlCleanupParser ();
+}
+
+bool Events::isPublic (std::string path)
+{
+	for (std::vector <std::string>::iterator iter = publicPaths.begin (); iter != publicPaths.end (); iter++)
+	{
+		// ends with *
+		int l = iter->length () - 1;
+		if ((*iter)[l] == '*')
+		{
+			if (path.substr (0, l - 1) == iter->substr (0, l - 1))
+				return true;
+		}
+		else
+		{
+			if (path == *iter)
+				return true;
+		}
+	}
+	return false;
 }
