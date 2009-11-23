@@ -1022,6 +1022,17 @@ class GetMessages: public SessionMethod
 		}
 } getMessages (&xmlrpc_server);
 
+#ifdef HAVE_LIBJPEG
+
+JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
+
+JpegPreview jpegPreview ("/preview", &xmlrpc_server);
+
+CurrentPosition current ("/current", &xmlrpc_server);
+
+#endif /* HAVE_LIBJPEG */
+
+FitsImageRequest fitsRequest ("/fits", &xmlrpc_server);
 
 #ifdef HAVE_PGSQL
 /*
@@ -1467,19 +1478,11 @@ class RecordsAverage: public SessionMethod
 
 #ifdef HAVE_LIBJPEG
 
-JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
-
-JpegPreview jpegPreview ("/preview", &xmlrpc_server);
-
 Graph graph ("/graph/", &xmlrpc_server);
 
 AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 
-CurrentPosition current ("/current", &xmlrpc_server);
-
 #endif /* HAVE_LIBJPEG */
-
-FitsImageRequest fitsRequest ("/fits", &xmlrpc_server);
 
 Auger auger ("/auger", &xmlrpc_server);
 

@@ -54,6 +54,21 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
 };
 
+#ifdef HAVE_LIBJPEG
+
+/**
+ * Plot current position of telescope, target and next target position.
+ */
+class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
+{
+	public:
+		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, s) {};
+
+		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
+};
+
+#endif /* HAVE_LIBJPEG */
+
 #ifdef HAVE_PGSQL
 
 #ifdef HAVE_LIBJPEG
@@ -84,17 +99,6 @@ class AltAzTarget: public GetRequestAuthorized
 		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
-};
-
-/**
- * Plot current position of telescope, target and next target position.
- */
-class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
-{
-	public:
-		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, s) {};
-
-		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
 };
 
 #endif /* HAVE_LIBJPEG */ 
