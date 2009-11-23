@@ -3,36 +3,41 @@
   Please read man rts2-xmlrpcd to learn more.
   Petr Kubanek <petr@kubanek.net>
 -->
-<events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
-  <device name="C0">
-    <state state-mask="1" state="2">
-      <command>/etc/rts2/event.d/c0_reading</command>
-    </state>
-    <value name="exposure">
-      <command>/etc/rts2/event.d/exposure_state</command>
-      <email>
-        <to>example@example.com</to>
-        <cc>name.surname@example.com</cc>
-        <bcc>name_surname@sub_domain.example.com</bcc>
-        <subject>Hey, you are exposing!</subject>
-        <body>It's my pleasure to inform you, that the camera is exposing! Juhuu!</body>
-      </email>
-    </value>
-  </device>
-  <device name="DOME">
-    <state state="4">
-      <command>/etc/rts2/event.d/dome_opened</command>
-    </state>
-    <state state="1">
-      <command>/etc/rts2/event.d/dome_closed</command>
-    </state>
-    <value name="sw_open_left|sw_close_left|sw_open_right|sw_close_right">
-      <record/>
-    </value>
-  </device>
-  <device name="PRESS">
-    <value name="pressure" cadency="60">
-      <record/>
-    </value>
-  </device>
-</events>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
+  <http>
+    <public>/graph/SD/*</public>
+  </http>
+  <events>
+    <device name="C0">
+      <state state-mask="1" state="2">
+        <command>/etc/rts2/event.d/c0_reading</command>
+      </state>
+      <value name="exposure">
+        <command>/etc/rts2/event.d/exposure_state</command>
+        <email>
+          <to>example@example.com</to>
+          <cc>name.surname@example.com</cc>
+          <bcc>name_surname@sub_domain.example.com</bcc>
+          <subject>Hey, you are exposing!</subject>
+          <body>It's my pleasure to inform <device>D1</device> you, <device>D2</device> that the camera is exposing! Juhuu! Exposure is <value device="D1">V1</value></body>
+        </email>
+      </value>
+    </device>
+    <device name="DOME">
+      <state state="4">
+        <command>/etc/rts2/event.d/dome_opened</command>
+      </state>
+      <state state="1">
+        <command>/etc/rts2/event.d/dome_closed</command>
+      </state>
+      <value name="sw_open_left|sw_close_left|sw_open_right|sw_close_right">
+        <record/>
+      </value>
+    </device>
+    <device name="PRESS">
+      <value name="pressure" cadency="60">
+        <record/>
+      </value>
+    </device>
+  </events>
+</config>

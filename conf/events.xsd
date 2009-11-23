@@ -27,14 +27,32 @@
     </xs:restriction>
   </xs:simpleType>
 
+  <xs:complexType name="expand_string" mixed="true">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="device" type="xs:string">
+        <xs:annotation><xs:documentation>Print all values from given device, separated by new line</xs:documentation></xs:annotation>
+      </xs:element>
+      <xs:element name="value">
+        <xs:annotation><xs:documentation>Print variable value. Value name is specified inside value, device name is a required argument.</xs:documentation></xs:annotation>
+	<xs:complexType>
+	  <xs:simpleContent>
+     	    <xs:extension base="xs:string">
+              <xs:attribute name="device" type="xs:string" use="required"/>
+	    </xs:extension>
+	  </xs:simpleContent>
+	</xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+
   <xs:complexType name="email">
     <xs:annotation><xs:documentation>Email action. Specifies subject, recepient(s), and text.</xs:documentation></xs:annotation>
     <xs:sequence>
       <xs:element name="to" type="email_addr" minOccurs="1" maxOccurs="unbounded"/>
       <xs:element name="cc" type="email_addr" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="bcc" type="email_addr" minOccurs="0" maxOccurs="unbounded"/>
-      <xs:element name="subject" type="xs:string" minOccurs="1" maxOccurs="1"/>
-      <xs:element name="body" type="xs:string" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="subject" type="expand_string" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="body" type="expand_string" minOccurs="1" maxOccurs="1"/>
     </xs:sequence>
   </xs:complexType>
 
@@ -62,6 +80,14 @@
     </xs:complexContent>
   </xs:complexType>
 
+  <xs:complexType name="http">
+    <xs:sequence>
+      <xs:element name="public" minOccurs="0" maxOccurs="unbounded" type="xs:string">
+        <xs:annotation><xs:documentation>Public HTTP paths. * in string will match any string character in URL.</xs:documentation></xs:annotation>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="events">
     <xs:sequence>
       <xs:element name="device" minOccurs="0" maxOccurs="unbounded">
@@ -74,6 +100,15 @@
 	</xs:complexType>
       </xs:element>
     </xs:sequence>
-   </xs:complexType>
-  <xs:element name="events" type="events"/>
+  </xs:complexType>
+
+  <xs:complexType name="config">
+    <xs:sequence>
+      <xs:element name="http" type="http" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="events" type="events" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="config" type="config"/>
+
 </xs:schema>
