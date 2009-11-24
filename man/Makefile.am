@@ -83,7 +83,7 @@ doc_PDF = \
     rts2-man.pdf \
     rts2-book.pdf
 
-XP=xsltproc -''-nonet
+XP=xsltproc --nonet
 
 DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
 
