@@ -169,7 +169,7 @@ int Bootes2::processOption (int _opt)
 			comediFile = optarg;
 			break;
 		case OPT_HUMI_BAD:
-			humGood->setValueCharArr (optarg);
+			humBad->setValueCharArr (optarg);
 			break;
 		case OPT_HUMI_GOOD:
 			humGood->setValueCharArr (optarg);
