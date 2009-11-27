@@ -54,7 +54,7 @@ class ValuePlot
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int shadow = 5);
+		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5);
 	
 	private:
 		int recvalId;
@@ -74,7 +74,7 @@ class ValuePlot
 		Magick::Geometry size;
 		Magick::Image *image;
 
-		void plotData (rts2db::RecordsSet &rs, Magick::Color col, int shadow);
+		void plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewidth, int shadow);
 
 		void plotYGrid (int y);
 		void plotXGrid (int x);

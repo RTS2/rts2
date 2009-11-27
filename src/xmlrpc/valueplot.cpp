@@ -38,7 +38,7 @@ ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h)
 	image = NULL;
 }
 
-Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int shadow)
+Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
 {
 	// first load values..
 	rts2db::RecordsSet rs (recvalId);
@@ -119,19 +119,19 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 	if (!rs.empty ())
 	{
 		if (shadow)
-			plotData (rs, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), shadow);
-		plotData (rs, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), 0);
+			plotData (rs, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
+		plotData (rs, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
 	}
 
 	return image;
 }
 
-void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int shadow)
+void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewidth, int shadow)
 {
 	// reset stroke pattern
 	image->strokePattern (Magick::Image (Magick::Geometry (1,1), col));
 	image->strokeColor (col);
-	image->strokeWidth (3);
+	image->strokeWidth (linewidth);
 	image->fillColor (col);
 
 	rts2db::RecordsSet::iterator iter = rs.begin ();
