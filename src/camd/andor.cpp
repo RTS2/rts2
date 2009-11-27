@@ -90,7 +90,7 @@ class Andor:public Camera
 		Rts2ValueBool *FTShutter;
 
 		// informational values
-		Rts2ValueInteger *ADChannel;
+		Rts2ValueSelection *ADChannel;
 		Rts2ValueBool *EMOn;
 		Rts2ValueInteger *HSpeed;
 		Rts2ValueInteger *VSpeed;
@@ -328,7 +328,9 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	tempStatus->addSelVal ("NOT_SUPPORTED");
 	tempStatus->addSelVal ("DRIFT");
 
-	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel, on ixon 0 for 14 bit, 1 for 16 bit", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (ADChannel, "ADCHANEL", "Used andor AD Channel", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	ADChannel->addSelVal ("14bit");
+	ADChannel->addSelVal ("16bit");
 	ADChannel->setValueInteger (0);
 
 	createValue (VSpeed, "VSPEED", "Vertical shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -964,7 +966,7 @@ int Andor::printInfo ()
 			printf ("VIDEO");
 			break;
 		default:
-			printf ("<unknown> (code is %i)", cap.ulCameraType);
+			printf ("<unknown> (code is %li)", cap.ulCameraType);
 			break;
 	}
 
@@ -1116,6 +1118,13 @@ int Andor::init ()
 	if (ret != 0)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot set non-EM mode (the default)" << sendLog;
+		return -1;
+	}
+
+	ret = setADChannel (1);
+	if (ret != 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set default AD Channel to 1" << sendLog;
 		return -1;
 	}
 
