@@ -30,6 +30,44 @@ namespace rts2xmlrpc
 
 class XmlRpcd;
 
+class ExpandString
+{
+	public:
+		ExpandString () {}
+		virtual const char *getString () = 0;
+};
+
+class ExpandStringString:public ExpandString
+{
+	public:
+		ExpandStringString (const char * chrt) { str = new char[strlen (chrt) + 1]; strcpy (str, chrt); }
+		~ExpandStringString () { delete []str; }
+		const char *getString () { return str; }
+	private:
+		char *str;
+};
+
+class ExpandStringValue:public ExpandString
+{
+	public:
+		ExpandStringValue (const char *_deviceName, const char *_valueName);
+		~ExpandStringValue () { delete []deviceName; delete []valueName; }
+		const char *getString ();
+
+	private:
+		char *deviceName;
+		char *valueName;
+};
+
+class ExpandStrings:public std::list <ExpandString *>
+{
+	public:
+		ExpandStrings () {};
+		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
+		void expandXML (xmlNodePtr ptr);
+		std::string getString ();
+};
+
 class EmailAction
 {
 	public:
@@ -44,8 +82,8 @@ class EmailAction
 		std::list <std::string> cc;
 		std::list <std::string> bcc;
 
-		std::string subject;
-		std::string body;
+		ExpandStrings subject;
+		ExpandStrings body;
 };
 
 }
