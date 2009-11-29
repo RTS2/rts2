@@ -1161,7 +1161,7 @@
 	</varlistentry>
         <varlistentry>
 	  <term>
-	    <option>filer</option>
+	    <option>filter</option>
 	  </term>
 	  <listitem>
 	    <para>Default filter name.</para>
