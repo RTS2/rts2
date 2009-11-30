@@ -47,7 +47,7 @@ using namespace std;
 
 // need the pointer in function one_over_fwhm
 TF1 *fit_fwhm_global ;
-
+Double_t fwhm_at_minimum ;
 // the following comment is for historical purpose
 // v[0] : variable
 // par[]: parameters to be fitted
@@ -75,13 +75,27 @@ TF1 *fit_fwhm_global ;
 //  Double_t fitval= par[0]+ par[1]*v[0]*v[0]+ par[2]* v[0]*v[0]*v[0]*v[0] ;
 //  return fitval;
 //}
-
+// provides reasonable results
+// Double_t one_over_fwhm(Double_t *v, Double_t *par)
+// {
+//   //get the fwhm at foc_pos from the first fit
+//   Double_t fwhm= fit_fwhm_global-> Eval( v[0], 0.,0.,0.) ;
+//   // 0: norm, 1: shift against fit of fwhm, 2: exponent, meaning not yet understood
+//   Double_t fitval = par[0]/TMath::Power((fwhm- par[1]), par[2]);
+//   return fitval;
+// }
+// tan(alpha)=  D/2  / focal length 
+// y_foc_pos= y_foc_pos_at_minimum * FWHM_at_minimum / ( FWHM_at_minimum + tan(alpha) * (foc_pos - offset)**par[3])
+// par[3] : tan(alpha)
+// par[2] : no physical explanation
 Double_t one_over_fwhm(Double_t *v, Double_t *par)
 {
-  //get the fwhm at foc_pos from the first fit
-  Double_t fwhm= fit_fwhm_global-> Eval( v[0], 0.,0.,0.) ;
-  // 0: norm, 1: shift against fit of fwhm, 2: exponent, meaning not yet understood
-  Double_t fitval = par[0]/TMath::Power((fwhm- par[1]), par[2]);
+  Double_t fitval = par[0] * par[4] / ( par[4] + par[3] * TMath::Power(  TMath::Abs((v[0]- par[1])), par[2]) ) ;
+  return fitval;
+}
+Double_t one_over_fwhm_temp(Double_t *v, Double_t *par)
+{
+  Double_t fitval = par[0] * fwhm_at_minimum / ( fwhm_at_minimum + par[3] * TMath::Power(  TMath::Abs((v[0]- par[1])), par[2]) ) ;
   return fitval;
 }
 // read the FWHM, FLUX_MAX files 
@@ -175,13 +189,13 @@ int main(int argc, char* argv[])
   //fit_fwhm-> SetParameters(0., 1., 1.);
   //fit_fwhm-> SetParNames("p0","p1", "p2");
   //gr1-> Fit(fit_fwhm,"q") ;
-  gr1-> Fit("pol4","q");
+  gr1-> Fit("pol2","q");
 
   mg-> Add(gr1);
 
   // read the results
   // ToDo: integrate at least chi2 into rts2-autofocus
-  TF1 *fit_fwhm = gr1-> GetFunction("pol4");
+  TF1 *fit_fwhm = gr1-> GetFunction("pol2");
   fit_fwhm_global = fit_fwhm ; // in root there is no method accepting a function pointer
  
   Double_t fwhm_chi2   = fit_fwhm-> GetChisquare();
@@ -197,8 +211,12 @@ int main(int argc, char* argv[])
   Double_t fwhm_p4_err = fit_fwhm-> GetParError(4);
   fprintf( stderr, "rts2_fit_focus.C: result fwhm: chi2 %e,  p(0...4)=(%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e), (%e +/- %e)\n", fwhm_chi2, fwhm_p0, fwhm_p0_err, fwhm_p1, fwhm_p1_err, fwhm_p2, fwhm_p2_err, fwhm_p3, fwhm_p3_err, fwhm_p4, fwhm_p4_err) ;
 
-  Double_t fwhm_MinimumX = fit_fwhm-> GetMinimumX() ; 
-  fprintf( stderr, "rts2_fit_focus.C FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
+  Double_t fwhm_MinimumX = fit_fwhm-> GetMinimumX() ;
+
+  
+  fwhm_at_minimum= fit_fwhm-> GetMinimum() ; 
+
+  fprintf( stderr, "rts2_fit_focus.C FWHM_FOCUS %f, FWHM at Minimum %f\n",fwhm_MinimumX, fwhm_at_minimum) ; 
   printf( "FWHM_FOCUS %f\n",fwhm_MinimumX) ; 
   printf( "FWHM parameters: chi2 %e, p0...p2 %e %e %e\n", fwhm_chi2, fwhm_p0, fwhm_p1, fwhm_p2) ; 
   
@@ -207,9 +225,9 @@ int main(int argc, char* argv[])
   TGraph *gr2 = new TGraph(number_of_lines_flux,foc_pos_flux,flux);
   gr2-> SetMarkerColor(kRed);
   gr2-> SetMarkerStyle(20);
-  TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 3);
-  fit_flux-> SetParameters(100., 0., 5.); // a little bit of magic here
-  fit_flux-> SetParNames("constant","offset", "exponent");
+  TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 5);
+  fit_flux-> SetParameters(100., fwhm_MinimumX, 0.5, 0.072, 1., 100. *fwhm_at_minimum); // a little bit of magic here
+  fit_flux-> SetParNames("constant","offset", "exponent", "tan(alpha)", "fwhm_at_minimum");
   gr2-> Fit(fit_flux,"q");
 
   mg-> Add(gr2);
@@ -234,8 +252,8 @@ int main(int argc, char* argv[])
   // Double_t flux_MaximumX = flux-> GetMaximumX( fwhm_MinimumX-1000., fwhm_MinimumX+1000.) ; 
   // printf( "FLUX_FOCUS %f\n", flux_MaximumX ) ; 
   // using instead:
-  fprintf( stderr, "rts2_fit_focus.C: FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p1) ; 
-  printf( "FLUX_FOCUS %f\n", fwhm_MinimumX + flux_p1) ; 
+  fprintf( stderr, "rts2_fit_focus.C: FLUX_FOCUS %f\n", flux_p1) ; 
+  printf( "FLUX_FOCUS %f\n", flux_p1) ; 
   
   printf( "FLUX parameters: chi2 %e, p0...p2 %e %e %e\n", flux_chi2, flux_p0, flux_p1, flux_p2) ; 
 
