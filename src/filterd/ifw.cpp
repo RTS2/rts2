@@ -200,7 +200,7 @@ int Ifw::setFilterNum (int new_filter)
 	char set_filter[] = "WGOTOx";
 	int ret;
 
-	if (new_filter > 4 || new_filter < 0)
+	if (new_filter > 7 || new_filter < 0)
 	{
 		logStream (MESSAGE_ERROR) <<
 			"filter ifw setFilterNum bad filter number: " << new_filter <<
