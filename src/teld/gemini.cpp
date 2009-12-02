@@ -84,9 +84,6 @@ class Gemini:public Telescope
 		virtual int stopWorm ();
 		virtual int startWorm ();
 		virtual int resetMount ();
-		virtual int startGuide (char dir, double dir_dist);
-		virtual int stopGuide (char dir);
-		virtual int stopGuideAll ();
 		virtual int getFlip ();
 
 	protected:
@@ -2336,50 +2333,6 @@ int Gemini::resetMount ()
 	if (ret)
 		return ret;
 	return Telescope::resetMount ();
-}
-
-int Gemini::startGuide (char dir, double dir_dist)
-{
-	int ret;
-	switch (dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			tel_set_rate (RATE_GUIDE);
-			// set smallest rate..
-			tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.2);
-			telGuidingSpeed->setValueDouble (0.2);
-			ret = telescope_start_move (dir);
-			if (ret)
-				return ret;
-			return Telescope::startGuide (dir, dir_dist);
-	}
-	return -2;
-}
-
-int Gemini::stopGuide (char dir)
-{
-	int ret;
-	switch (dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			ret = telescope_stop_move (dir);
-			if (ret)
-				return ret;
-			return Telescope::stopGuide (dir);
-	}
-	return -2;
-}
-
-int Gemini::stopGuideAll ()
-{
-	telescope_stop_goto ();
-	return Telescope::stopGuideAll ();
 }
 
 int Gemini::getFlip ()

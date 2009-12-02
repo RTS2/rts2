@@ -286,15 +286,10 @@ double Telescope::getTargetDistance ()
 	return ln_get_angular_separation (&tel, &tar);
 }
 
-void Telescope::getTargetAltAz (struct ln_hrz_posn *hrz)
-{
-	getTargetAltAz (hrz, ln_get_julian_from_sys ());
-}
-
-void Telescope::getTargetAltAz (struct ln_hrz_posn *hrz, double jd)
+void Telescope::getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd)
 {
 	struct ln_equ_posn tar;
-	getTarget (&tar);
+	getTelTargetRaDec (&tar);
 	struct ln_lnlat_posn observer;
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
@@ -321,7 +316,7 @@ void Telescope::valueChanged (Rts2Value * changed_value)
 {
 	if (changed_value == woffsRaDec)
 	{
-		maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
+		maskStateNotPropagated (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
 	}
 	if (changed_value == oriRaDec
 		|| changed_value == offsRaDec
@@ -604,24 +599,9 @@ void Telescope::checkMoves ()
 	}
 }
 
-void Telescope::checkGuiding ()
-{
-	struct timeval now;
-	gettimeofday (&now, NULL);
-	if (dir_timeouts[0].tv_sec > 0 && timercmp (&now, dir_timeouts + 0, >))
-		stopGuide (DIR_NORTH);
-	if (dir_timeouts[1].tv_sec > 0 && timercmp (&now, dir_timeouts + 1, >))
-		stopGuide (DIR_EAST);
-	if (dir_timeouts[2].tv_sec > 0 && timercmp (&now, dir_timeouts + 2, >))
-		stopGuide (DIR_SOUTH);
-	if (dir_timeouts[3].tv_sec > 0 && timercmp (&now, dir_timeouts + 3, >))
-		stopGuide (DIR_WEST);
-}
-
 int Telescope::idle ()
 {
 	checkMoves ();
-	checkGuiding ();
 	return Rts2Device::idle ();
 }
 
@@ -678,80 +658,6 @@ int Telescope::changeMasterState (int new_state)
 	return Rts2Device::changeMasterState (new_state);
 }
 
-int Telescope::startGuide (char dir, double dir_dist)
-{
-	/*	struct timeval *tv;
-		struct timeval tv_add;
-		int state_dir;
-		switch (dir)
-		{
-			case DIR_NORTH:
-				tv = dir_timeouts + 0;
-				state_dir = TEL_GUIDE_NORTH;
-				break;
-			case DIR_EAST:
-				tv = dir_timeouts + 1;
-				state_dir = TEL_GUIDE_EAST;
-				break;
-			case DIR_SOUTH:
-				tv = dir_timeouts + 2;
-				state_dir = TEL_GUIDE_SOUTH;
-				break;
-			case DIR_WEST:
-				tv = dir_timeouts + 3;
-				state_dir = TEL_GUIDE_WEST;
-				break;
-			default:
-				return -1;
-		}
-		double dir_timeout = (dir_dist / 15.0) * telGuidingSpeed->getValueDouble ();
-		logStream (MESSAGE_INFO)
-			<< "telescope startGuide dir "
-			<< dir_dist << " timeout " << dir_timeout << sendLog;
-		gettimeofday (&tv_add, NULL);
-		tv_add.tv_sec = (int) (floor (dir_timeout));
-		tv_add.tv_usec = (int) ((dir_timeout - tv_add.tv_sec) * USEC_SEC);
-		timeradd (tv, &tv_add, tv);
-		maskState (state_dir, state_dir, "started guiding"); */
-	return -1;
-}
-
-int Telescope::stopGuide (char dir)
-{
-	/*	int state_dir;
-		switch (dir)
-		{
-			case DIR_NORTH:
-				dir_timeouts[0].tv_sec = 0;
-				state_dir = TEL_GUIDE_NORTH;
-				break;
-			case DIR_EAST:
-				dir_timeouts[1].tv_sec = 0;
-				state_dir = TEL_GUIDE_EAST;
-				break;
-			case DIR_SOUTH:
-				dir_timeouts[2].tv_sec = 0;
-				state_dir = TEL_GUIDE_SOUTH;
-				break;
-			case DIR_WEST:
-				dir_timeouts[3].tv_sec = 0;
-				state_dir = TEL_GUIDE_WEST;
-				break;
-			default:
-				return -1;
-		}
-		logStream (MESSAGE_INFO) << "telescope stopGuide dir " << dir << sendLog;
-		maskState (state_dir, TEL_NOGUIDE, "guiding ended"); */
-	return -1;
-}
-
-int Telescope::stopGuideAll ()
-{
-	logStream (MESSAGE_INFO) << "telescope stopGuideAll" << sendLog;
-	maskState (TEL_GUIDE_MASK, TEL_NOGUIDE, "guiding stoped");
-	return 0;
-}
-
 void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	struct ln_equ_posn telpos;
@@ -763,9 +669,7 @@ void Telescope::getTelAltAz (struct ln_hrz_posn *hrz)
 	observer.lng = telLongitude->getValueDouble ();
 	observer.lat = telLatitude->getValueDouble ();
 
-	ln_get_hrz_from_equ_sidereal_time (&telpos, &observer,
-		ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()),
-		hrz);
+	ln_get_hrz_from_equ_sidereal_time (&telpos, &observer, ln_get_apparent_sidereal_time (ln_get_julian_from_sys ()), hrz);
 }
 
 double Telescope::estimateTargetTime ()
@@ -888,7 +792,9 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	sendValueAll (objRaDec);
 
 	// apply corrections
-	applyCorrections (&pos, ln_get_julian_from_sys ());
+	double JD = ln_get_julian_from_sys ();
+
+	applyCorrections (&pos, JD);
 
 	LibnovaRaDec syncTo (&pos);
 	LibnovaRaDec syncFrom (telRaDec->getRa (), telRaDec->getDec ());
@@ -907,7 +813,7 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 	if (hardHorizon)
 	{
 		struct ln_hrz_posn hrpos;
-		getTargetAltAz (&hrpos);
+		getTelTargetAltAz (&hrpos, JD);
 		if (!hardHorizon->is_good (&hrpos))
 		{
 			logStream (MESSAGE_ERROR) << "target is not accesible from this telescope" << sendLog;

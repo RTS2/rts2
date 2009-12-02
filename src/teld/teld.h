@@ -103,10 +103,6 @@ class Telescope:public Rts2Device
 			return telLatitude->getValueDouble ();
 		}
 
-		virtual int startGuide (char dir, double dir_dist);
-		virtual int stopGuide (char dir);
-		virtual int stopGuideAll ();
-
 		// callback functions from telescope connection
 		virtual int info ();
 
@@ -549,9 +545,9 @@ class Telescope:public Rts2Device
 		 * Returns ALT AZ coordinates of target.
 		 *
 		 * @param hrz ALT AZ coordinates of target.
+		 * @param jd  Julian date for which position will be calculated.
 		 */
-		void getTargetAltAz (struct ln_hrz_posn *hrz);
-		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+		void getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd);
 
 		double getTargetHa ();
 		double getTargetHa (double jd);
@@ -849,7 +845,6 @@ class Telescope:public Rts2Device
 		Rts2ValueInteger *wCorrImgId;
 
 		void checkMoves ();
-		void checkGuiding ();
 
 		struct timeval dir_timeouts[4];
 
