@@ -330,9 +330,11 @@ int Rts2ConnCentrald::command ()
 				|| !paramEnd ())
 				return -2;
 
-			if (master->findName (reg_device))
+			if (Rts2Conn *c = master->findName (reg_device))
 			{
-				sendCommandEnd (DEVDEM_E_SYSTEM, "name already registered");
+				std::ostringstream _os;
+				_os << "name " << reg_device << " already registered with id " << c->getCentraldId ();
+				sendCommandEnd (DEVDEM_E_SYSTEM, _os.str ().c_str ());
 				return -1;
 			}
 
