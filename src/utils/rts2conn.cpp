@@ -207,14 +207,6 @@ std::string Rts2Conn::getStateString ()
 				_os << " | CORRECTING";
 			if (real_state & TEL_WAIT_COP)
 				_os << " | WAIT_FOR_CUPOLA";
-			if (real_state & TEL_GUIDE_NORTH)
-				_os << " | GUIDE_NORTH";
-			if (real_state & TEL_GUIDE_EAST)
-				_os << " | GUIDE_EAST";
-			if (real_state & TEL_GUIDE_SOUTH)
-				_os << " | GUIDE_SOUTH";
-			if (real_state & TEL_GUIDE_WEST)
-				_os << " | GUIDE_WEST";
 			if (real_state & TEL_NEED_STOP)
 				_os << " | NEED_FLIP";
 			break;
