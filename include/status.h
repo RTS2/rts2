@@ -180,15 +180,6 @@
 #define TEL_MASK_NEED_STOP  0x0080
 #define TEL_NEED_STOP       0x0080
 
-#define TEL_GUIDE_MASK      0x0f00
-
-#define TEL_NOGUIDE         0x0000
-
-#define TEL_GUIDE_NORTH     0x0100
-#define TEL_GUIDE_EAST      0x0200
-#define TEL_GUIDE_SOUTH     0x0400
-#define TEL_GUIDE_WEST      0x0800
-
 // telescope movement dirs
 
 #define DIR_NORTH           'n'
