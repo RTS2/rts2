@@ -895,12 +895,25 @@
 	  </term>
 	  <listitem>
 	    <para>
-	      Whanever FERMI GBM GRBs above error limit will be recorded. If
+	      Whenever FERMI GBM GRBs above error limit will be recorded. If
 	      error indicated in GBM message is above gbm_error_limit,
 	      depending on this setting, either GBM GRB will be completely
 	      ignored (if this is false), or recorded to the database with
 	      tar_enabled set to false - e.g. disabled. Default is true, record
 	      this value.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_enabled_above_error</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      If true, FERMI GRBs with error above gbm_error_limit will be
+	      recorded as enabled targets. This means that FERMI GRBs will be
+	      followed from selector. You most probably do not want this to
+	      happen. Default to false.
 	    </para>
 	  </listitem>
 	</varlistentry>

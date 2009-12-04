@@ -196,8 +196,12 @@
 	<listitem>
 	  <para>
 	    Print image referencing status. It is equivalent to running:
-	    rts2-image -p '@OBJRA @OBJDEC @TARRA @TARDEC @RA_ERR @DEC_ERR
-	    @POS_ERR @CORR_RA @CORR_DEC'. Please see RTS2 wiki fordescription
+
+            <screen>
+             <command>&dhpackage;</command> <option>-p</option> <replaceable class="parameter">"@OBJRA @OBJDEC @TARRA @TARDEC @RA_ERR @DEC_ERR @POS_ERR @CORR_RA @CORR_DEC"</replaceable> <replaceable>&lt;filename&gt;</replaceable>
+            </screen>
+
+	    Please see RTS2 wiki for description
 	    of all those fields.
 	  </para>
 	</listitem>
@@ -325,7 +329,7 @@
     </para>
 
     <screen>
-      <command>&dhpackage;</command> <option>-p</option> <replaceable class="parameter">'$JD$ $EXPOSURE$ $CCD_NAME$'</replaceable> <replaceable>*.fits</replaceable>
+      <command>&dhpackage;</command> <option>-p</option> <replaceable class="parameter">"@JD @EXPOSURE @CCD_NAME"</replaceable> <replaceable>*.fits</replaceable>
     </screen>
 
     <para>
@@ -334,7 +338,7 @@
     </para>
 
     <screen>
-      <command>&dhpackage;</command> <option>-c</option> <replaceable class="parameter">'$CCD_NAME$/$DATE-OBS$.fits'</replaceable> <replaceable>*.fits</replaceable>
+      <command>&dhpackage;</command> <option>-c</option> <replaceable class="parameter">"@CCD_NAME/@DATE-OBS.fits"</replaceable> <replaceable>*.fits</replaceable>
     </screen>
 
   </refsect1>
