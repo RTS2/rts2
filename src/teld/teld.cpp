@@ -316,7 +316,7 @@ void Telescope::valueChanged (Rts2Value * changed_value)
 {
 	if (changed_value == woffsRaDec)
 	{
-		maskStateNotPropagated (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
+		maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
 	}
 	if (changed_value == oriRaDec
 		|| changed_value == offsRaDec
