@@ -277,11 +277,13 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
 
 	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false, RTS2_VALUE_WRITABLE);
-	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false. RTS2_VALUE_WRITABLE);
+	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('c', NULL, 1, "path to comedi device");
 	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
 	addOption (OPT_HUMI_GOOD, "humidity_good", 1, "[%] when humidity is bellow this value, weather is good");
+
+	setIdleInfoInterval (5);
 }
 
 Bootes2::~Bootes2 ()
