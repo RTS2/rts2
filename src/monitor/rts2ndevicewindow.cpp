@@ -24,8 +24,7 @@
 #include "../utils/rts2displayvalue.h"
 #include "../utils/riseset.h"
 
-Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):
-Rts2NSelWindow (10, 1, COLS - 10, LINES - 25)
+Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow (10, 1, COLS - 10, LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
@@ -34,39 +33,26 @@ Rts2NSelWindow (10, 1, COLS - 10, LINES - 25)
 	draw ();
 }
 
-
 Rts2NDeviceWindow::~Rts2NDeviceWindow ()
 {
 }
 
-
-void
-Rts2NDeviceWindow::printState ()
+void Rts2NDeviceWindow::printState ()
 {
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
 		wcolor_set (window, CLR_FAILURE, NULL);
-	mvwprintw (window, 0, 2, "%s %s (%x) %x",
-		connection->getName (),
-		connection->getStateString ().c_str (),
-		connection->getState (),
-		connection->getFullBopState ()
-	);
-
+	mvwprintw (window, 0, 2, "%s %s (%x) %x", connection->getName (), connection->getStateString ().c_str (), connection->getState (), connection->getFullBopState ());
 	wcolor_set (window, CLR_DEFAULT, NULL);
 	wattroff (window, A_REVERSE);
 }
 
-
-void
-Rts2NDeviceWindow::printValue (const char *name, const char *value)
+void Rts2NDeviceWindow::printValue (const char *name, const char *value, bool writeable)
 {
-	wprintw (getWriteWindow (), "%-20s %30s\n", name, value);
+	wprintw (getWriteWindow (), "%c %-20s %30s\n", (writeable ? 'W' : ' '), name, value);
 }
 
-
-void
-Rts2NDeviceWindow::printValue (Rts2Value * value)
+void Rts2NDeviceWindow::printValue (Rts2Value * value)
 {
 	// customize value display
 	std::ostringstream _os;
@@ -77,7 +63,7 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 	// ultra special handling of SCRIPT value
 	if (value->getValueDisplayType () == RTS2_DT_SCRIPT)
 	{
-		wprintw (getWriteWindow (), "%-20s ", value->getName ().c_str ());
+		wprintw (getWriteWindow (), "  %-20s ", value->getName ().c_str ());
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		const char *valStart = value->getValue ();
 		if (!valStart)
@@ -121,52 +107,39 @@ Rts2NDeviceWindow::printValue (Rts2Value * value)
 					LibnovaRaDec v_radec (((Rts2ValueRaDec *) value)->getRa (), ((Rts2ValueRaDec *) value)->getDec ());
 					_os << v_radec;
 				}
-				printValue (value->getName ().c_str (), _os.str().c_str ());
+				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
 			}
 			break;
 		case RTS2_VALUE_ALTAZ:
 			{
 				LibnovaHrz hrz (((Rts2ValueAltAz *) value)->getAlt (), ((Rts2ValueAltAz *) value)->getAz ());
 				_os << hrz;
-				printValue (value->getName ().c_str (), _os.str().c_str ());
+				printValue (value->getName ().c_str (), _os.str().c_str (), value->isWritable ());
 			}
 			break;
 		case RTS2_VALUE_SELECTION:
-			wprintw
-				(
-				getWriteWindow (), "%-20s %5i %24s\n",
-				value->getName ().c_str (),
-				value->getValueInteger (),
-				((Rts2ValueSelection *) value)->getSelName ()
-				);
+			wprintw (getWriteWindow (), "%c %-20s %5i %24s\n", value->isWritable () ? 'W' : ' ', value->getName ().c_str (), value->getValueInteger (), ((Rts2ValueSelection *) value)->getSelName ());
 			break;
 		default:
-			printValue (value->getName ().c_str (),
-				getDisplayValue (value).c_str ());
+			printValue (value->getName ().c_str (), getDisplayValue (value).c_str (), value->isWritable ());
 	}
 }
 
-
-void
-Rts2NDeviceWindow::drawValuesList ()
+void Rts2NDeviceWindow::drawValuesList ()
 {
 	gettimeofday (&tvNow, NULL);
 	now = tvNow.tv_sec + tvNow.tv_usec / USEC_SEC;
 
 	maxrow = 0;
 
-	for (Rts2ValueVector::iterator iter = connection->valueBegin ();
-		iter != connection->valueEnd (); iter++)
+	for (Rts2ValueVector::iterator iter = connection->valueBegin (); iter != connection->valueEnd (); iter++)
 	{
 		maxrow++;
-
 		printValue (*iter);
 	}
 }
 
-
-Rts2Value *
-Rts2NDeviceWindow::getSelValue ()
+Rts2Value * Rts2NDeviceWindow::getSelValue ()
 {
 	int s = getSelRow ();
 	if (s >= 0)
@@ -174,9 +147,7 @@ Rts2NDeviceWindow::getSelValue ()
 	return NULL;
 }
 
-
-void
-Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
+void Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
 {
 	wattron (window, A_REVERSE);
 	mvwprintw (window, getHeight () - 1, 2, "D: \"%s\"",
@@ -184,23 +155,19 @@ Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
 	wattroff (window, A_REVERSE);
 }
 
-
-void
-Rts2NDeviceWindow::endValueBox ()
+void Rts2NDeviceWindow::endValueBox ()
 {
 	delete valueBox;
 	valueBox = NULL;
 }
 
-
-void
-Rts2NDeviceWindow::createValueBox ()
+void Rts2NDeviceWindow::createValueBox ()
 {
 	int s = getSelRow ();
 	if (s < 0)
 		return;
 	Rts2Value *val = connection->valueAt (s);
-	if (!val)
+	if (!val || val->isWritable () == false)
 		return;
 	s -= getPadoffY ();
 	switch (val->getValueType ())
@@ -237,10 +204,7 @@ Rts2NDeviceWindow::createValueBox ()
 					valueBox = new ValueBoxRectangle (this, (Rts2ValueRectangle *) val, 21, s - 1);
 					break;
 				default:
-					logStream (MESSAGE_WARNING) << "Cannot find box for value '"
-						<<  val->getName ()
-						<< " type " << val->getValueType ()
-						<< sendLog;
+					logStream (MESSAGE_WARNING) << "Cannot find box for value '" <<  val->getName () << " type " << val->getValueType () << sendLog;
 					valueBox = new ValueBoxString (this, val, 21, s - 1);
 					break;
 
@@ -248,7 +212,6 @@ Rts2NDeviceWindow::createValueBox ()
 			break;
 	}
 }
-
 
 keyRet Rts2NDeviceWindow::injectKey (int key)
 {
@@ -282,9 +245,7 @@ keyRet Rts2NDeviceWindow::injectKey (int key)
 	return Rts2NSelWindow::injectKey (key);
 }
 
-
-void
-Rts2NDeviceWindow::draw ()
+void Rts2NDeviceWindow::draw ()
 {
 	Rts2NSelWindow::draw ();
 	werase (getWriteWindow ());
@@ -303,27 +264,21 @@ Rts2NDeviceWindow::draw ()
 	refresh ();
 }
 
-
-void
-Rts2NDeviceWindow::refresh ()
+void Rts2NDeviceWindow::refresh ()
 {
 	Rts2NSelWindow::refresh ();
 	if (valueBox)
 		valueBox->draw ();
 }
 
-
-bool
-Rts2NDeviceWindow::setCursor ()
+bool Rts2NDeviceWindow::setCursor ()
 {
 	if (valueBox)
 		return valueBox->setCursor ();
 	return Rts2NSelWindow::setCursor ();
 }
 
-
-Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rts2NDeviceWindow
-(in_connection)
+Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rts2NDeviceWindow (in_connection)
 {
 	nightStart = new Rts2ValueTime ("Night start", "Beginnign of current or next night", false);
 	nightStop = new Rts2ValueTime ("Night stop", "End of current or next night", false);
@@ -343,7 +298,6 @@ Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rt
 	moonSet = new Rts2ValueTime ("Moon set", "Moon set", false);
 }
 
-
 Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
 {
 	delete sunAlt;
@@ -361,24 +315,19 @@ Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
 	delete moonSet;
 }
 
-
-void
-Rts2NDeviceCentralWindow::printValues ()
+void Rts2NDeviceCentralWindow::printValues ()
 {
 	// print statusChanges
 
 	Rts2Value *nextState = getConnection ()->getValue ("next_state");
 	if (nextState && nextState->getValueType () == RTS2_VALUE_SELECTION)
 	{
-		for (std::vector < FutureStateChange >::iterator iter =
-			stateChanges.begin (); iter != stateChanges.end (); iter++)
+		for (std::vector < FutureStateChange >::iterator iter = stateChanges.begin (); iter != stateChanges.end (); iter++)
 		{
 			std::ostringstream _os;
-			_os << LibnovaDateDouble ((*iter).getEndTime ())
-				<< " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
+			_os << LibnovaDateDouble ((*iter).getEndTime ()) << " (" << TimeDiff (now, (*iter).getEndTime ()) << ")";
 
-			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str ()
-				);
+			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
 		}
 	}
 
@@ -399,9 +348,7 @@ Rts2NDeviceCentralWindow::printValues ()
 	printValue (moonSet);
 }
 
-
-void
-Rts2NDeviceCentralWindow::drawValuesList ()
+void Rts2NDeviceCentralWindow::drawValuesList ()
 {
 	Rts2NDeviceWindow::drawValuesList ();
 

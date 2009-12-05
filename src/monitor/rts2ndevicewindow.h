@@ -52,10 +52,11 @@ class Rts2NDeviceWindow:public Rts2NSelWindow
 		 * Prints value name and value. Adds newline, so next value will be printed
 		 * on next line.
 		 *
-		 * @param name Name of variable.
-		 * @param value Value of variable.
+		 * @param name       Name of variable.
+		 * @param value      Value of variable.
+		 * @param writeable  If value can be changed.
 		 */
-		void printValue (const char *name, const char *value);
+		void printValue (const char *name, const char *value, bool writeable);
 
 		/**
 		 * Prints out one value. Adds newline, so next value will be
