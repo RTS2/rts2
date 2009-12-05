@@ -783,6 +783,10 @@ int Rts2Daemon::setCondValue (Rts2CondValue * old_value_cond, char op, Rts2Value
 		return -1;
 	}
 
+	// do not set values already set to new value
+	if (op == '=' && old_value_cond->getValue ()->isEqual (new_value))
+		return 0;
+
 	return doSetValue (old_value_cond, op, new_value);
 }
 
