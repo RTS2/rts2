@@ -1,6 +1,12 @@
 0.7.5
 =====
 
+2009-12-05
+ * add W for writeable values, edit only writable values
+
+2009-11-29
+ * added gbm_enabled_above_error grbd parameter
+
 2009-11-07
  * Added ROOT config check, rts2-fit-focus
 
