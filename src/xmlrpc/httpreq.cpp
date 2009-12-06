@@ -166,8 +166,8 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
 
 	int valId = 1;
-	time_t to = time (NULL);
-	time_t from = to - 3600;
+	time_t to = 0;
+	time_t from = 0;
 
 	switch (vals.size ())
 	{
@@ -184,7 +184,10 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 		case 3:
 			// from - to date
 			if (vals[2][0] == '-')
+			{
+				to = time (NULL);
 				from = to + strtod (vals[2].c_str (), NULL);
+			}
 
 		case 2:
 			plotValue (vals[0].c_str (), vals[1].c_str (), from, to, params, response_type, response, response_length);
@@ -202,11 +205,11 @@ void Graph::printDevices (const char* &response_type, char* &response, int &resp
 	_os << "<html><head><title>Record value list</title></head><body><table>";
 	for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++)
 	{
-		_os << "<tr><td>"
-			<< iter->getDevice () << "</td><td><a href='"
-			<< iter->getDevice () << "/" << iter->getValueName () << "'>" << iter->getValueName () << "</a></td><td>"
+		_os << "<tr><form action='"
+			<< iter->getDevice () << "/" << iter->getValueName () << "'><td>" << iter->getDevice () << "</td><td>"
+			<< iter->getValueName () << "</td><td><select name='t'><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='submit' value='Plot'/></td><td>"
 			<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
-			<< LibnovaDateDouble (iter->getTo ()) << "</td></tr>";
+			<< LibnovaDateDouble (iter->getTo ()) << "</td></form></tr>";
 	}
 	_os << "</table>";
 	response_type = "text/html";
@@ -220,6 +223,7 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
 	rts2db::Recval *rv = rs.searchByName (device, value);
+
 	if (rv == NULL)
 		throw rts2core::Error ("Cannot find device/value pair with given name");
 
@@ -258,6 +262,22 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	}
 	
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
+
+	from = params->getDouble ("from", from);
+	to = params->getDouble ("to", to);
+
+	if (from < 0 && to == 0)
+	{
+		// just fr specified - from
+		to = time (NULL);
+		from += to;
+	}
+	else if (from == 0 && to == 0)
+	{
+		// default - one hour
+		to = time (NULL);
+		from = to - 3600;
+	}
 
 	Magick::Image mimage (size, "white");
 	vp.getPlot (from, to, &mimage, pt, params->getInteger ("lw", 3), params->getInteger ("sh", 3));

@@ -1028,6 +1028,8 @@ JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
 
 JpegPreview jpegPreview ("/preview", &xmlrpc_server);
 
+DownloadRequest downloadRequest ("/download", &xmlrpc_server);
+
 CurrentPosition current ("/current", &xmlrpc_server);
 
 #endif /* HAVE_LIBJPEG */

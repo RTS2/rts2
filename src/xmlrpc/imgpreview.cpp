@@ -19,6 +19,7 @@
 
 #include "imgpreview.h"
 #include "../writers/rts2image.h"
+#include "bsc.h"
 
 #include <fcntl.h>
 #include <dirent.h>
@@ -137,6 +138,10 @@ int alphasort(const void *a, const void *b)
 
 void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
+	// size of previews
+	int prevsize = params->getInteger ("ps", 128);
+	// image type
+	const char *t = params->getString ("t", "p");
 	// if it is a fits file..
 	if (path.length () > 6 && (path.substr (path.length () - 5)) == std::string (".fits"))
 	{
@@ -146,9 +151,9 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		image.openImage ();
 		Blob blob;
 		Magick::Image mimage = image.getMagickImage ();
-		mimage.zoom (Magick::Geometry (128, 128));
+		mimage.zoom (Magick::Geometry (prevsize, prevsize));
 
-		image.writeLabel (mimage, 1, 126, 10, "%Y-%m-%d %H:%M:%S");
+		image.writeLabel (mimage, 1, prevsize - 2, 10, "%Y-%m-%d %H:%M:%S");
 
 		mimage.write (&blob, "jpeg");
 		response_length = blob.length();
@@ -157,7 +162,11 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		return;
 	}
 	std::ostringstream _os;
-	_os << "<html><head><title>Preview of " << path << "</title></head><body>";
+	_os << "<html><head><title>Preview of " << path << "</title>"
+	  << "<style type='text/css'>.normal { border: 5px solid white; } .hig { border: 5px solid navy; }</style></head><body>"
+	  << "<script language='javascript'>\n function highlight (name, path) {\n if (document.forms['download'].elements['act'][1].checked)\n { var files = document.getElementById('files'); nc='hig';\n if (document.images[name].className == 'hig')\n { nc='normal'; var i; for (i = files.length - 1; i >=0; i--) { if (files.options[i].value == path) { files.remove(i); i = -1; } } }\nelse\n{\nvar o = document.createElement('option');\no.selected=1;\no.text=path;\no.value=path;\ntry { files.add(o,files.options[0]);\n} catch (ex) { files.add(o,0); }\n }\ndocument.images[name].className=nc;\n }\n else\n { w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + path, 'Preview'); w2.focus (); }\n }</script>" << std::endl
+	  << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input><br/>" << std::endl
+	  << "<select id='files' name='files' size='10' multiple='multiple'></select><input type='submit' value='Download'/></form>";
 
 	struct dirent **namelist;
 	int n;
@@ -205,7 +214,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/'>" << fname << "</a> ";
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/?ps=" << prevsize << "'>" << fname << "</a> ";
 		}
 	}
 
@@ -235,8 +244,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		if (in > ie)
 			continue;
 		std::string fpath = std::string (path) + '/' + fname;
-		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fpath 
-		  << "'><img width='128' height='128' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "'/></a>";
+		_os
+		  << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
 	}
 
 	for (i = 0; i < n; i++)
@@ -249,9 +258,9 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	// print pages..
 	_os << "</p><p>Page ";
 	for (i = 1; i <= in / pagesiz; i++)
-	 	pageLink (_os, path.c_str (), i, pagesiz, i == pageno);
+	 	pageLink (_os, path.c_str (), i, pagesiz, prevsize, i == pageno);
 	if (in % pagesiz)
-	 	pageLink (_os, path.c_str (), i, pagesiz, i == pageno);
+	 	pageLink (_os, path.c_str (), i, pagesiz, prevsize, i == pageno);
 	_os << "</p></body></html>";
 
 	response_type = "text/html";
@@ -260,7 +269,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void JpegPreview::pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected)
+void JpegPreview::pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, int prevsize, bool selected)
 {
 	if (selected)
 	{
@@ -268,7 +277,7 @@ void JpegPreview::pageLink (std::ostringstream& _os, const char* path, int i, in
 	}
 	else
 	{
-		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << "?p=" << i << "&s=" << pagesiz << "'>" << i << "</a> ";
+		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << "?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
 	}
 }
 
@@ -297,4 +306,24 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 		throw XmlRpcException ("Cannot read data");
 	}
 	close (f);
+}
+
+void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+{
+	response_type = "text/html";
+	
+	std::ostringstream _os;
+	_os << "<html><head><title>Download</title></head><body>";
+
+	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+	{
+		_os << iter->getName () << '=' << iter->getValue () << "<br/>\n";
+	}
+
+	_os << "</body>";
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
 }

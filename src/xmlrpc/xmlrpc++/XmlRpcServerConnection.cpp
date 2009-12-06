@@ -62,6 +62,9 @@ unsigned XmlRpcServerConnection::handleEvent(unsigned /*eventType*/)
 	if (_connectionState == GET_REQUEST)
 		if ( ! handleGet()) return 0;
 
+	if (_connectionState == POST_REQUEST)
+	  	if ( ! handlePost()) return 0;
+
 	if (_connectionState == WRITE_RESPONSE)
 		if ( ! writeResponse()) return 0;
 
@@ -86,7 +89,8 @@ bool XmlRpcServerConnection::readHeader()
 	char *hp = (char*)_header.c_str();
 								 // End of string
 	char *ep = hp + _header.length();
-	char *gp = 0;				 // GET/Post method pointer
+	char *gp = 0;				 // GET method pointer
+	char *pp = 0;				 // POST method pointer
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 	char *kp = 0;				 // Start of connection value
@@ -96,6 +100,8 @@ bool XmlRpcServerConnection::readHeader()
 	{
 		if ((ep - cp > 4) && (strncasecmp(cp, "GET ", 4) == 0))
 			gp = cp + 4;
+		if ((ep - cp > 5) && (strncasecmp(cp, "POST ", 5) == 0))
+		  	pp = cp + 5;
 		else if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
 			lp = cp + 16;
 		else if ((ep - cp > 12) && (strncasecmp(cp, "Connection: ", 12) == 0))
@@ -163,6 +169,18 @@ bool XmlRpcServerConnection::readHeader()
 		return true;
 	}
 
+	// decode post request
+	if (pp != 0)
+	{
+		while (isspace(*pp))
+			pp++;
+		char *cp = pp;
+		while (! (cp >= ep || isspace(*cp) || *cp == '\r' || *cp == '\n'))
+			cp++;
+		_post = _header.substr(pp - hp, cp - pp);
+		XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: POST request for %s", _post.c_str());
+	}
+
 	// Decode content length
 	if (lp == 0)
 	{
@@ -182,6 +200,8 @@ bool XmlRpcServerConnection::readHeader()
 	// Otherwise copy non-header data to request buffer and set state to read request.
 	_request = bp;
 
+	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: request %s", _request.c_str ());
+
 	// Parse out any interesting bits from the header (HTTP version, connection)
 	_keepAlive = true;
 	if (_header.find("HTTP/1.0") != std::string::npos)
@@ -197,7 +217,10 @@ bool XmlRpcServerConnection::readHeader()
 	XmlRpcUtil::log(3, "KeepAlive: %d", _keepAlive);
 
 	_header = "";
-	_connectionState = READ_REQUEST;
+	if (_post == std::string("/RPC2"))
+		_connectionState = READ_REQUEST;
+	else
+		_connectionState = POST_REQUEST;
 	return true;				 // Continue monitoring this source
 }
 
@@ -274,6 +297,7 @@ bool XmlRpcServerConnection::handleGet()
 		_header = "";
 		_authorization = "";
 		_get = "";
+		_post = "";
 		_request = "";
 		delete[] _get_response_header;
 		delete[] _get_response;
@@ -288,6 +312,12 @@ bool XmlRpcServerConnection::handleGet()
 	}
 
 	return _keepAlive;			 // Continue monitoring this source if true
+}
+
+bool XmlRpcServerConnection::handlePost()
+{
+	_get = _post;
+	return handleGet();
 }
 
 bool XmlRpcServerConnection::writeResponse()
@@ -317,6 +347,7 @@ bool XmlRpcServerConnection::writeResponse()
 		_header = "";
 		_authorization = "";
 		_get = "";
+		_post = "";
 		_request = "";
 		_get_response_header_length = 0;
 		_get_response_header = NULL;
@@ -380,25 +411,21 @@ void XmlRpcServerConnection::executeGet()
 			std::string::size_type pi = path.find ('?');
 			if (pi != std::string::npos)
 			{
-				std::string ps = path.substr (pi + 1);
+				params.parse (path.substr (pi + 1));
 				path = path.substr (0, pi);
-				// split by &..
-				pi = 0;
-				std::string::size_type pe;
-				while ((pe = ps.find ('&', pi)) != std::string::npos)
-				{
-					params.parseParam (ps.substr (pi, pe - pi));
-					pi = pe + 1;
-				}
-				// last parameter..
-				if (ps[pi] != '&')
-					params.parseParam (ps.substr (pi));
 			}
 			// check for ..
 			if (path.find ("..") != std::string::npos)
 				throw XmlRpcException ("Path contains ..");
 			if (path.find ("!") != std::string::npos)
 				throw XmlRpcException ("Path contains !");
+			
+			// add params from _request for POST requests
+			if (_connectionState == POST_REQUEST)
+			{
+				params.parse (_request);
+			}
+
 			request->execute (path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
 		catch (const std::exception& ex)

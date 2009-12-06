@@ -133,6 +133,12 @@ void Events::parseHttp (xmlNodePtr ev)
 				throw XmlMissingElement (ev, "content of public path");
 			publicPaths.push_back (std::string ((char *) ev->children->content));
 		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "allsky"))
+		{
+			if (ev->children == NULL || ev->children->content == NULL)
+				throw XmlMissingElement (ev, "content of allsky path");
+			allskyPaths.push_back (std::string ((char *) ev->children->content));
+		}
 		else
 		{
 			throw XmlUnexpectedNode (ev);
@@ -187,6 +193,7 @@ void Events::load (const char *file)
 	stateCommands.clear ();
 	valueCommands.clear ();
 	publicPaths.clear ();
+	allskyPaths.clear ();
 
 	xmlDoc *doc = NULL;
 	xmlNodePtr root_element = NULL;

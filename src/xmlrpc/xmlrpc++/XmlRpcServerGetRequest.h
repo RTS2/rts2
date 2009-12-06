@@ -49,6 +49,7 @@ namespace XmlRpc
 			double getDouble (const char *_name, double def_val);
 
 			void parseParam (const std::string& ps);
+			void parse (const std::string &ps);
 	};
 
 	//! Abstract class representing a single GET request

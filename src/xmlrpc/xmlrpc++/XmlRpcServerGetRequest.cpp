@@ -68,6 +68,21 @@ namespace XmlRpc
 		}
 	}
 
+	void HttpParams::parse (const std::string &ps)
+	{
+		// split by &..
+		std::string::size_type pi = 0;
+		std::string::size_type pe;
+		while ((pe = ps.find ('&', pi)) != std::string::npos)
+		{
+			parseParam (ps.substr (pi, pe - pi));
+			pi = pe + 1;
+		}
+		// last parameter..
+		if (ps[pi] != '&')
+			parseParam (ps.substr (pi));
+	}
+
 	XmlRpcServerGetRequest::XmlRpcServerGetRequest(std::string const& in_prefix, XmlRpcServer* server)
 	{
 		_prefix = in_prefix;

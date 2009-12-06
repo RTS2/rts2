@@ -132,6 +132,7 @@ class Events
 		ValueCommands valueCommands;
 
 		std::vector <std::string> publicPaths;
+		std::vector <std::string> allskyPaths;
 
 		Events (XmlRpcd *_master) { master = _master; }
 

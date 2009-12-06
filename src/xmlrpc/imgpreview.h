@@ -47,7 +47,7 @@ class JpegPreview:public GetRequestAuthorized
 	public:
 		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
 
-		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, bool selected);
+		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, int prevsize, bool selected);
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
 };
@@ -58,6 +58,14 @@ class FitsImageRequest:public GetRequestAuthorized
 {
 	public:
 		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+};
+
+class DownloadRequest:public GetRequestAuthorized
+{
+	public:
+		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
 };
