@@ -63,9 +63,41 @@ namespace rts2camd
  * an iXon can't do.  If used with a different Andor camera, it should
  * respond reasonably well to the absence of iXon features
  *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Andor:public Camera
 {
+	public:
+		Andor (int argc, char **argv);
+		virtual ~Andor (void);
+
+		virtual int initChips ();
+		virtual int init ();
+
+		virtual bool supportFrameTransfer ();
+
+		// callback functions for Camera alone
+		virtual int info ();
+		virtual int scriptEnds ();
+		virtual int camChipInfo (int chip);
+		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual void help ();
+		virtual void usage ();
+
+		virtual void initDataTypes ();
+
+		virtual int startExposure ();
+		virtual int stopExposure ();
+		virtual long isExposing ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual int doReadout ();
+
 	private:
 		char *andorRoot;
 		bool printSpeedInfo;
@@ -114,6 +146,8 @@ class Andor:public Camera
 
 		int defaultGain;
 
+		void updateFlip ();
+
 		void getTemp ();
 		int setGain (int in_gain);
 		int setEMCCDGain (int in_gain);
@@ -132,37 +166,6 @@ class Andor:public Camera
 
 		void initAndorValues ();
 		void closeShutter ();
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual void help ();
-		virtual void usage ();
-
-		virtual void initDataTypes ();
-
-		virtual int startExposure ();
-		virtual int stopExposure ();
-		virtual long isExposing ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-		virtual int doReadout ();
-
-	public:
-		Andor (int argc, char **argv);
-		virtual ~Andor (void);
-
-		virtual int initChips ();
-		virtual int init ();
-
-		virtual bool supportFrameTransfer ();
-
-		// callback functions for Camera alone
-		virtual int info ();
-		virtual int scriptEnds ();
-		virtual int camChipInfo (int chip);
-		virtual int setCoolTemp (float new_temp);
-		virtual void afterNight ();
 };
 
 }
@@ -338,7 +341,7 @@ Andor::Andor (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	createValue (EMOn, "EMON", "If EM is enabled", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	EMOn->setValueBool (false);
-	setDefaultFlip (1);
+	setDefaultFlip (0);
 
 	createValue (HSpeed, "HSPEED", "Horizontal shift speed", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	HSpeed->setValueInteger (1);
@@ -445,6 +448,7 @@ int Andor::setADChannel (int in_adchan)
 		return -1;
 	}
 	ADChannel->setValueInteger (in_adchan);
+	updateFlip ();
 	return 0;
 }
 
@@ -485,7 +489,7 @@ int Andor::setHSSpeed (int in_amp, int in_hsspeed)
 		return -1;
 	}
 	EMOn->setValueBool (in_amp == 0 ? true : false);
-	changeFlip (!EMOn->getValueBool ());
+	updateFlip ();
 	HSpeed->setValueInteger (in_hsspeed);
 	return 0;
 
@@ -648,8 +652,7 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == EMOn)
 		return setHSSpeed (((Rts2ValueBool *) new_value)->getValueBool ()? 0 : 1, HSpeed->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == HSpeed)
-		return setHSSpeed (EMOn->getValueBool ()? 0 : 1,
-		new_value->getValueInteger ()) == 0 ? 0 : -2;
+		return setHSSpeed (EMOn->getValueBool ()? 0 : 1, new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == VSpeed)
 		return setVSSpeed (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	if (old_value == FTShutter)
@@ -1181,6 +1184,34 @@ void Andor::initAndorValues ()
 		fanMode->addSelVal ("FULL");
 		fanMode->addSelVal ("LOW");
 		fanMode->addSelVal ("OFF");
+	}
+}
+
+void Andor::updateFlip ()
+{
+	if (EMOn->getValueBool () == false)
+	{
+		switch (ADChannel->getValueInteger ())
+		{
+			case 0:
+				changeFlip (false);
+				break;
+			case 1:
+				changeFlip (true);
+				break;
+		}
+	}
+	else
+	{
+		switch (ADChannel->getValueInteger ())
+		{
+			case 0:
+				changeFlip (true);
+				break;
+			case 1:
+				changeFlip (false);
+				break;
+		}
 	}
 }
 

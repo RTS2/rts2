@@ -615,8 +615,6 @@ int Camera::initValues ()
 	initBinnings ();
 	initDataTypes ();
 
-	defaultFlip = flip->getValueInteger ();
-
 	return Rts2ScriptDevice::initValues ();
 }
 
