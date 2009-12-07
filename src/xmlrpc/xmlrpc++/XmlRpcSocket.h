@@ -29,7 +29,7 @@ namespace XmlRpc
 			static bool setNonBlocking(int socket);
 
 			//! Read text from the specified socket. Returns false on error.
-			static bool nbRead(int socket, std::string& s, bool *eof);
+			static bool nbRead(int socket, char* &s, int &l, bool *eof);
 
 			//! Write text to the specified socket. Returns false on error.
 			static bool nbWrite(int socket, std::string& s, int *bytesSoFar);

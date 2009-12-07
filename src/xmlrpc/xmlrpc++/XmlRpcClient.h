@@ -69,7 +69,7 @@ namespace XmlRpc
 			//!  @return true if page exists and some data were retrieved
 			//!
 			//! This is synchronous version of the request.
-			bool executeGet(const char* path, std::string& reply);
+			bool executeGet(const char* path, char* &reply, int &reply_length);
 
 			//! Returns true if the result of the last execute() was a fault response.
 			bool isFault() const { return _isFault; }
@@ -110,10 +110,15 @@ namespace XmlRpc
 			std::string _proxy_host;
 			int _proxy_port;
 
+			char* _header;
+			int _header_length;
+
 			// The xml-encoded request, http header of response, and response xml
 			std::string _request;
-			std::string _header;
+
 			std::string _response;
+			char *_response_buf;
+			int _response_length;
 
 			// Number of times the client has attempted to send the request
 			int _sendAttempts;

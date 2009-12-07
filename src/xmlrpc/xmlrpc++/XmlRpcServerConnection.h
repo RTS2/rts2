@@ -87,6 +87,9 @@ namespace XmlRpc
 			// Request headers
 			std::string _header;
 
+			char* _header_buf;
+			int _header_length;
+
 			// User authorization
 			std::string _authorization;
 
@@ -101,6 +104,8 @@ namespace XmlRpc
 
 			// Request body
 			std::string _request;
+			char* _request_buf;
+			int _request_length;
 
 			// Response
 			std::string _response;

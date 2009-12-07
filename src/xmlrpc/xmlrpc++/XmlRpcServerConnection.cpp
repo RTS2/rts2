@@ -31,6 +31,13 @@ const std::string XmlRpcServerConnection::FAULTSTRING = "faultString";
 XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, bool deleteOnClose /*= false*/) : XmlRpcSource(fd, deleteOnClose)
 {
 	XmlRpcUtil::log(2,"XmlRpcServerConnection: new socket %d.", fd);
+
+	_header_buf = NULL;
+	_header_length = 0;
+
+	_request_buf = NULL;
+	_request_length = 0;
+
 	_server = server;
 	_connectionState = READ_HEADER;
 	_keepAlive = true;
@@ -76,19 +83,23 @@ bool XmlRpcServerConnection::readHeader()
 {
 	// Read available data
 	bool eof;
-	if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, &eof))
+	if ( ! XmlRpcSocket::nbRead(this->getfd(), _header_buf, _header_length, &eof))
 	{
 		// Its only an error if we already have read some data
-		if (_header.length() > 0)
+		if (_header_length > 0)
 			XmlRpcUtil::error("XmlRpcServerConnection::readHeader: error while reading header (%s).",XmlRpcSocket::getErrorMsg().c_str());
 		return false;
 	}
 
+	if (_header_length == 0)
+		_header = std::string ("");
+	else
+		_header = std::string (_header_buf);
 	XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: read %d bytes.", _header.length());
 								 // Start of header
-	char *hp = (char*)_header.c_str();
+	char *hp = _header_buf;
 								 // End of string
-	char *ep = hp + _header.length();
+	char *ep = hp + _header_length;
 	char *gp = 0;				 // GET method pointer
 	char *pp = 0;				 // POST method pointer
 	char *bp = 0;				 // Start of body
@@ -121,7 +132,7 @@ bool XmlRpcServerConnection::readHeader()
 		if (eof)
 		{
 			XmlRpcUtil::log(4, "XmlRpcServerConnection::readHeader: EOF");
-			if (_header.length() > 0)
+			if (_header_length > 0)
 				XmlRpcUtil::error("XmlRpcServerConnection::readHeader: EOF while reading header");
 			return false;		 // Either way we close the connection
 		}
@@ -198,9 +209,12 @@ bool XmlRpcServerConnection::readHeader()
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: specified content length is %d.", _contentLength);
 
 	// Otherwise copy non-header data to request buffer and set state to read request.
-	_request = bp;
+	_request_length = ep - bp;
+	_request_buf = (char*) malloc(_request_length);
+	memcpy(_request_buf, bp, _request_length);
+	_request = _request_buf;
 
-	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: request %s", _request.c_str ());
+	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: request %s", _request_buf);
 
 	// Parse out any interesting bits from the header (HTTP version, connection)
 	_keepAlive = true;
@@ -217,6 +231,9 @@ bool XmlRpcServerConnection::readHeader()
 	XmlRpcUtil::log(3, "KeepAlive: %d", _keepAlive);
 
 	_header = "";
+	free(_header_buf);
+	_header_buf = NULL;
+	_header_length = 0;
 	if (_post == std::string("/RPC2"))
 		_connectionState = READ_REQUEST;
 	else
@@ -227,17 +244,17 @@ bool XmlRpcServerConnection::readHeader()
 bool XmlRpcServerConnection::readRequest()
 {
 	// If we dont have the entire request yet, read available data
-	if (int(_request.length()) < _contentLength)
+	if (_request_length < _contentLength)
 	{
 		bool eof;
-		if ( ! XmlRpcSocket::nbRead(this->getfd(), _request, &eof))
+		if ( ! XmlRpcSocket::nbRead(this->getfd(), _request_buf, _request_length, &eof))
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::readRequest: read error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
 		}
 
 		// If we haven't gotten the entire request yet, return (keep reading)
-		if (int(_request.length()) < _contentLength)
+		if (_request_length < _contentLength)
 		{
 			if (eof)
 			{
@@ -249,10 +266,12 @@ bool XmlRpcServerConnection::readRequest()
 	}
 
 	// Otherwise, parse and dispatch the request
-	XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %d bytes.", _request.length());
+	XmlRpcUtil::log(3, "XmlRpcServerConnection::readRequest read %d bytes.", _request_length);
 	//XmlRpcUtil::log(5, "XmlRpcServerConnection::readRequest:\n%s\n", _request.c_str());
 
 	_connectionState = WRITE_RESPONSE;
+
+	_request = _request_buf;
 
 	return true;				 // Continue monitoring this source
 }
@@ -294,11 +313,19 @@ bool XmlRpcServerConnection::handleGet()
 	// Prepare to read the next request
 	if (_getHeaderWritten == _get_response_header_length && _getWritten == _get_response_length)
 	{
-		_header = "";
 		_authorization = "";
 		_get = "";
 		_post = "";
+		_header = "";
+		if (_header_buf)
+			free(_header_buf);
+		_header_buf  = NULL;
+		_header_length = 0;
 		_request = "";
+		if (_request_buf)
+			free(_request_buf);
+		_request_buf = NULL;
+		_request_length = 0;
 		delete[] _get_response_header;
 		delete[] _get_response;
 		
@@ -344,11 +371,19 @@ bool XmlRpcServerConnection::writeResponse()
 	// Prepare to read the next request
 	if (_bytesWritten == int(_response.length()))
 	{
-		_header = "";
 		_authorization = "";
 		_get = "";
 		_post = "";
+		_header = "";
+		if (_header_buf)
+			free(_header_buf);
+		_header_buf = NULL;
+		_header_length = 0;
 		_request = "";
+		if (_request_buf)
+			free(_request_buf);
+		_request_buf = NULL;
+		_request_length = 0;
 		_get_response_header_length = 0;
 		_get_response_header = NULL;
 		_get_response_length = 0;

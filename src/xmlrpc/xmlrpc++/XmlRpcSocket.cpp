@@ -3,6 +3,7 @@
 #include "XmlRpcUtil.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #ifndef MAKEDEPEND
 
@@ -161,7 +162,7 @@ XmlRpcSocket::connect(int fd, std::string& host, int port)
 
 // Read available text from the specified socket. Returns false on error.
 bool
-XmlRpcSocket::nbRead(int fd, std::string& s, bool *eof)
+XmlRpcSocket::nbRead(int fd, char* &s, int &l, bool *eof)
 {
 	const int READ_SIZE = 4096;	 // Number of bytes to attempt to read at a time
 	char readBuf[READ_SIZE];
@@ -181,7 +182,9 @@ XmlRpcSocket::nbRead(int fd, std::string& s, bool *eof)
 		if (n > 0)
 		{
 			readBuf[n] = 0;
-			s.append(readBuf, n);
+			s = (char*) realloc(s, l + n + 1);
+			memcpy(s + l, readBuf, n + 1);
+			l += n;
 		}
 		else if (n == 0)
 		{
@@ -293,7 +296,11 @@ XmlRpcSocket::getErrorMsg()
 std::string
 XmlRpcSocket::getErrorMsg(int error)
 {
-	char err[60];
+	char err[120];
+        #if defined(_WINDOWS)
 	snprintf(err,sizeof(err),"error %d", error);
+	#else
+	snprintf(err,sizeof(err),"error %d(%s)", error, strerror(error));
+	#endif
 	return std::string(err);
 }

@@ -292,28 +292,39 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 
 void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
+	// get new AltAz graph
 	AltAz altaz = AltAz ();
 
+	// plot its AltAz grid
 	altaz.plotAltAzGrid ();
 
 	struct ln_hrz_posn hrz;
 
+	// retrieve from database set of all targets..
 	rts2db::TargetSet ts = rts2db::TargetSet ();
 	ts.load ();
 
+	// iterate through the set, plot location of each target
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
+	  	// retrieve target AltAz coordinates
 		(*iter).second->getAltAz (&hrz);
+
+		// and plot them with proper caption
 		if (hrz.alt > -2)
 			altaz.plotCross (&hrz, (*iter).second->getTargetName ());
 	}
 	
+	// write image to blob as JEPEG
 	Magick::Blob blob;
 	altaz.write (&blob, "jpeg");
 
+	// set MIME response type
 	response_type = "image/jpeg";
 
+	// lenght of response
 	response_length = blob.length();
+	// create and fill response buffer
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
 }

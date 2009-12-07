@@ -75,6 +75,8 @@ class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
 
 /**
  * Draw graph of variables.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Graph: public GetRequestAuthorized
 {
@@ -91,13 +93,26 @@ class Graph: public GetRequestAuthorized
 
 /**
  * Plot targets on the alt-az graph.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-
 class AltAzTarget: public GetRequestAuthorized
 {
 	public:
 		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
+		/**
+		 * Received exact path and HTTP params. Returns response - MIME
+		 * type, its data and length. This request is password
+		 * protected - pasword protection can be removed by listing
+		 * path in public section of XML-RPC config file.
+		 *
+		 * @param path            Exact path of the request, excluding prefix part.
+		 * @param params          HTTP parameters. Please see xmlrpc++/XmlRpcServerGetRequest.h for allowed methods.
+		 * @param response_type   MIME type of response. Ussually you will put there something like "text/html" or "image/jpeg".
+		 * @param response        Response data. Must be allocated, preferably by new char[]. They will be deleted by calling code.
+		 * @param response_length Response lenght in bytes. 
+		 */
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
 };
 

@@ -193,9 +193,10 @@ int Client::runHttpGet (const char* path, bool printRes)
 {
 	int ret;
 
-	std::string reply;
+	char* reply = NULL;
+	int reply_length = 0;
 
-	ret = xmlClient->executeGet (path, reply);
+	ret = xmlClient->executeGet (path, reply, reply_length);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error requesting " << path << sendLog;
@@ -205,6 +206,7 @@ int Client::runHttpGet (const char* path, bool printRes)
 	{
 		std::cout << reply << std::endl;
 	}
+	free(reply);
 	return 0;
 }
 

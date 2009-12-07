@@ -30,11 +30,17 @@ XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization
 {
 	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
 
+	_header = NULL;
+	_header_length = 0;
+
+	_response_buf = NULL;
+	_response_length = 0;
+
 	char *proxy = getenv ("http_proxy");
 	if (proxy)
 	{
 		char *ph = new char[strlen(proxy) + 1];
-		if (sscanf (proxy, "http://%s:%i", &ph, &_proxy_port) == 2)
+		if (sscanf (proxy, "http://%s:%i", ph, &_proxy_port) == 2)
 		{
 			_proxy_host = ph;
 		}
@@ -134,13 +140,19 @@ XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue
 		return false;
 
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: method %s completed.", method);
+
 	_response = "";
+	if (_response_buf)
+		free(_response_buf);
+	_response_buf = NULL;
+	_response_length = 0;
+
 	return true;
 }
 
 
 bool
-XmlRpcClient::executeGet(const char* path, std::string& reply)
+XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: path %s (_connectionState %d):", path, _connectionState);
 
@@ -159,16 +171,17 @@ XmlRpcClient::executeGet(const char* path, std::string& reply)
 	if ( ! generateGetRequest(path))
 		return false;
 
-	reply = "";
 	double msTime = -1.0;
 	_disp.work(msTime);
 
 	if (_connectionState != IDLE)
 		return false;
 
-	reply = _response;
-	XmlRpcUtil::log(1, "XmlRpcClient::executeGet: path %s retrieved. Reply size: %i", path, reply.length ());
-	_response = "";
+	reply_length = _response_length;
+	reply = new char[reply_length + 1];
+	memcpy (reply, _response_buf, reply_length);
+	reply[reply_length] = '\0';
+	XmlRpcUtil::log(1, "XmlRpcClient::executeGet: path %s retrieved. Reply size: %i", path, reply_length);
 	return true;
 }
 
@@ -352,7 +365,7 @@ XmlRpcClient::generateHeader(std::string const& body)
 	}
 	header += "Content-Type: text/xml\r\nContent-length: ";
 
-	sprintf(buff,"%i\r\n\r\n", body.size());
+	sprintf(buff,"%i\r\n\r\n", (int) body.size());
 
 	return header + buff;
 }
@@ -408,8 +421,15 @@ XmlRpcClient::writeRequest()
 	// Wait for the result
 	if (_bytesWritten == int(_request.length()))
 	{
-		_header = "";
+		if (_header)
+			free(_header);
+		_header = NULL;
+		_header_length = 0;
 		_response = "";
+		if (_response_buf)
+			free(_response_buf);
+		_response_buf = NULL;
+		_response_length = 0;
 		_connectionState = READ_HEADER;
 	}
 	return true;
@@ -421,13 +441,13 @@ bool
 XmlRpcClient::readHeader()
 {
 	// Read available data
-	if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, &_eof) ||
-		(_eof && _header.length() == 0))
+	if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, _header_length, &_eof) ||
+		(_eof && _header_length == 0))
 	{
 
 		// If we haven't read any data yet and this is a keep-alive connection, the server may
 		// have timed out, so we try one more time.
-		if (getKeepOpen() && _header.length() == 0 && _sendAttempts++ == 0)
+		if (getKeepOpen() && _header_length == 0 && _sendAttempts++ == 0)
 		{
 			XmlRpcUtil::log(4, "XmlRpcClient::readHeader: re-trying connection");
 			XmlRpcSource::close();
@@ -441,12 +461,12 @@ XmlRpcClient::readHeader()
 		return false;
 	}
 
-	XmlRpcUtil::log(4, "XmlRpcClient::readHeader: client has read %d bytes", _header.length());
+	XmlRpcUtil::log(4, "XmlRpcClient::readHeader: client has read %d bytes", _header_length);
 
 								 // Start of header
-	char *hp = (char*)_header.c_str();
+	char *hp = _header;
 								 // End of string
-	char *ep = hp + _header.length();
+	char *ep = hp + _header_length;
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
 
@@ -489,8 +509,18 @@ XmlRpcClient::readHeader()
 	XmlRpcUtil::log(4, "client read content length: %d", _contentLength);
 
 	// Otherwise copy non-header data to response buffer and set state to read response.
-	_response = bp;
-	_header = "";				 // should parse out any interesting bits from the header (connection, etc)...
+	_response_length = ep - bp;
+	if (_response_buf)
+		free (_response_buf);
+
+	_response_buf = (char *) malloc (_response_length);
+	memcpy (_response_buf, bp, _response_length);
+	_response = _response_buf;
+
+	if (_header)
+		free(_header);
+	_header = NULL;				 // should parse out any interesting bits from the header (connection, etc)...
+	_header_length = 0;
 	_connectionState = READ_RESPONSE;
 	return true;				 // Continue monitoring this source
 }
@@ -500,16 +530,16 @@ bool
 XmlRpcClient::readResponse()
 {
 	// If we dont have the entire response yet, read available data
-	if (int(_response.length()) < _contentLength)
+	if (int(_response_length) < _contentLength)
 	{
-		if ( ! XmlRpcSocket::nbRead(this->getfd(), _response, &_eof))
+		if ( ! XmlRpcSocket::nbRead(this->getfd(), _response_buf, _response_length, &_eof))
 		{
 			XmlRpcUtil::error("Error in XmlRpcClient::readResponse: read error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
 		}
 
 		// If we haven't gotten the entire _response yet, return (keep reading)
-		if (int(_response.length()) < _contentLength)
+		if (_response_length < _contentLength)
 		{
 			if (_eof)
 			{
@@ -521,7 +551,8 @@ XmlRpcClient::readResponse()
 	}
 
 	// Otherwise, parse and return the result
-	XmlRpcUtil::log(3, "XmlRpcClient::readResponse (read %d bytes)", _response.length());
+	XmlRpcUtil::log(3, "XmlRpcClient::readResponse (read %d bytes)", _response_length);
+	_response = _response_buf;
 	XmlRpcUtil::log(5, "response:\n%s", _response.c_str());
 
 	_connectionState = IDLE;

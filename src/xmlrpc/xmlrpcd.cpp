@@ -1482,6 +1482,9 @@ class RecordsAverage: public SessionMethod
 
 Graph graph ("/graph/", &xmlrpc_server);
 
+// Bind to URL /altaz class AltAzTarget to plot all ALT-AZ targets
+// Please see httpreq.[h|cpp] for its implementation
+//
 AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 
 #endif /* HAVE_LIBJPEG */
