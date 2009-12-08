@@ -621,7 +621,15 @@ int Rts2Image::copyImage (const char *copy_filename)
 		return -1;
 	}
 
-	int fd_to = open (copy_filename, O_WRONLY | O_CREAT | O_TRUNC);
+	struct stat stb;
+	ret = fstat (fd_from, &stb);
+	if (ret)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot get file mode " << getAbsoluteFileName () << ": " << strerror (errno) << sendLog;
+		return -1;
+	}
+
+	int fd_to = open (copy_filename, O_WRONLY | O_CREAT | O_TRUNC, stb.st_mode);
 	if (fd_to == -1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot create " << copy_filename << ": " << strerror (errno) << sendLog;
