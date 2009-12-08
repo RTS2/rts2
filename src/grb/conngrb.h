@@ -57,6 +57,7 @@ class ConnGrb:public Rts2ConnNoSend
 
 		void setGbmError (double _error) { gbm_error = _error; }
 		void setGbmRecordAboveError (bool _record) { gbm_record_above = _record; }
+		void setGbmEnabledAboveError (bool _enabled) { gbm_enable_above = _enabled; }
 
 	private:
 		Grbd * master;
@@ -124,7 +125,7 @@ class ConnGrb:public Rts2ConnNoSend
 		// only produce insert when it's new GRB (when packet with detection get lost, as
 		// was cause of GRB060929 and most probably others).
 		// Return -1 on error, 1 when insertOnly flag is true and it's update packet
-		int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t * grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly);
+		int addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t * grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly, bool enabled);
 		int addGcnRaw (int grb_id, int grb_seqn, int grb_type);
 
 		int gcn_port;
@@ -141,6 +142,7 @@ class ConnGrb:public Rts2ConnNoSend
 
 		double gbm_error;
 		bool gbm_record_above;
+		bool gbm_enable_above;
 };
 
 }

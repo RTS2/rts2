@@ -148,6 +148,7 @@ int Grbd::reloadConfig ()
 	gcncnn = new ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups, this);
 	gcncnn->setGbmError (config->getDoubleDefault ("grbd", "gbm_error_limit", 0.25));
 	gcncnn->setGbmRecordAboveError (config->getBoolean ("grbd", "gbm_record_above_error", true));
+	gcncnn->setGbmEnabledAboveError (config->getBoolean ("grbd", "gbm_enabled_above_error", false));
 	// setup..
 	// wait till grb connection init..
 	ret = gcncnn->init ();

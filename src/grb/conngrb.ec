@@ -156,7 +156,7 @@ int ConnGrb::pr_hete ()
 		|| (lbuf[H_TRIG_FLAGS] & H_DEF_XRB))
 		grb_is_grb = 0;
 
-	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
+	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false, true);
 }
 
 int ConnGrb::pr_integral ()
@@ -198,7 +198,7 @@ int ConnGrb::pr_integral ()
 		grb_errorbox *= -1;
 	}
 
-	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
+	return addGcnPoint (grb_id, grb_seqn, grb_type, pos_j2000.ra, pos_j2000.dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false, true);
 }
 
 int ConnGrb::pr_integral_spicas ()
@@ -263,7 +263,7 @@ int ConnGrb::pr_swift_with_radec ()
 		default:
 			grb_errorbox = getInstrumentErrorBox (grb_type);
 	}
-	return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
+	return addGcnPoint (grb_id, grb_seqn, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false, true);
 }
 
 int ConnGrb::pr_swift_without_radec ()
@@ -301,7 +301,7 @@ int ConnGrb::pr_swift_without_radec ()
 			// as burst can happen during slew, we have to put in fabs - otherwise we will not respond to burst
 			// catched during/before slew, but after pointdir notice was send
 			if (fabs (grb_date - swiftLastPoint) < 3 * 3600)
-				addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox (d_grb_type), false);
+				addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, swiftLastRa, swiftLastDec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox (d_grb_type), false, true);
 			break;
 		case TYPE_SWIFT_BAT_GRB_POS_NACK_SRC:
 			// update if not grb..
@@ -336,7 +336,7 @@ int ConnGrb::pr_swift_without_radec ()
 		case TYPE_SWIFT_UVOT_SLIST_PROC_SRC:
 			grb_ra = lbuf[BURST_RA] / 10000.0;
 			grb_dec = lbuf[BURST_DEC] / 10000.0;
-			ret = addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, grb_ra, grb_dec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox(d_grb_type), true);
+			ret = addGcnPoint (d_grb_id, d_grb_seqn, d_grb_type, grb_ra, grb_dec, 1, &grb_date, grb_date_usec, getInstrumentErrorBox(d_grb_type), true, true);
 			// when it was sucessfullt added
 			// we don't have to add raw, as it was added in GcnPoint
 			if (!ret)
@@ -370,7 +370,7 @@ int ConnGrb::pr_agile ()
 
 	grb_is_grb = lbuf[TRIGGER_ID] & 0x0022;
 
-	return addGcnPoint (grb_id, 1, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false);
+	return addGcnPoint (grb_id, 1, grb_type, grb_ra, grb_dec, grb_is_grb, &grb_date, grb_date_usec, grb_errorbox, false, true);
 }
 
 int ConnGrb::pr_fermi_gbm ()
@@ -381,8 +381,13 @@ int ConnGrb::pr_fermi_gbm ()
 	getTimeTfromTJD (lbuf[BURST_TJD], lbuf[BURST_SOD]/100.0, &grb_date, &grb_date_usec);
 
 	double _error = lbuf[BURST_ERROR] / 10000.0;
+
+	bool enabled = false;
+	if (gbm_error < 0 || _error <= gbm_error || gbm_enable_above)
+		enabled = true;
+
 	if (gbm_record_above || gbm_error < 0 || _error <= gbm_error)
-		return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, _error, false);
+		return addGcnPoint (lbuf[BURST_TRIG], lbuf[PKT_SERNUM], (int) lbuf[PKT_TYPE], lbuf[BURST_RA] / 10000.0, lbuf[BURST_DEC] / 10000.0, true, &grb_date, grb_date_usec, _error, false, enabled);
 	logStream (MESSAGE_INFO) << "ignoring GBM above error limit - " << gbm_error << " > " << _error << sendLog;
 	return 0;
 }
@@ -651,7 +656,7 @@ float ConnGrb::getInstrumentErrorBox (int grb_type)
 	return 180.0;
 }
 
-int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly)
+int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra, double grb_dec, bool grb_is_grb, time_t *grb_date, long grb_date_usec, float grb_errorbox, bool insertOnly, bool enabled)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_tar_id;
@@ -673,6 +678,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	// target stuff
 	VARCHAR d_tar_name[150];
 	VARCHAR d_tar_comment[2000];
+	bool d_tar_enabled = enabled;
 	EXEC SQL END DECLARE SECTION;
 
 	int grb_isnew = 0;
@@ -767,7 +773,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				tar_comment,
 				tar_priority,
 				tar_bonus,
-				tar_bonus_time
+				tar_bonus_time,
+				tar_enabled
 			)
 			VALUES
 			(
@@ -780,7 +787,8 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				:d_tar_comment,
 				100,
 				100,
-				NULL
+				NULL,
+				:d_tar_enabled
 			);
 		if (sqlca.sqlcode)
 		{
@@ -1217,6 +1225,7 @@ ConnGrb::ConnGrb (char *in_gcn_hostname, int in_gcn_port, int in_do_hete_test, c
 
 	gbm_error = 0.25;
 	gbm_record_above = true;
+	gbm_enable_above = false;
 }
 
 ConnGrb::~ConnGrb (void)
