@@ -566,6 +566,27 @@ int Rts2Image::renameImage (const char *new_filename)
 		{
 			openImage (new_filename);
 		}
+		else
+		{
+			// it is "problem" with external device..
+			if (errno == EXDEV)
+			{
+				ret = copyImage (new_filename);
+				if (ret)
+				{
+					logStream (MESSAGE_ERROR) << "Cannot copy image to external directory: " << ret << sendLog;
+				}
+				else
+				{
+					unlink (getFileName ());
+					openImage (new_filename);
+				}
+			}
+			else
+			{
+				logStream (MESSAGE_ERROR) << "Cannot move " << getFileName () << " to " << new_filename << ": " << strerror (errno) << sendLog;
+			}
+		}
 	}
 	return ret;
 }
