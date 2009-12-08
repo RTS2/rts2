@@ -66,9 +66,21 @@ void Rts2FitsFile::setFileName (const char *_fileName)
 			logStream (MESSAGE_ERROR) << "too long cwd" << sendLog;
 			return;
 		}
-		absoluteFileName = new char[strlen (path) + strlen(_fileName) + 1];
+		absoluteFileName = new char[strlen (path) + strlen(_fileName) + 2];
 		strcpy (absoluteFileName, path);
-		strcpy (absoluteFileName + strlen (path), fileName);
+		int l = strlen (path);
+		if (l == 0)
+		{
+			absoluteFileName[0] = '/';
+			l++;
+		}
+		// last char isn't /
+		else if (absoluteFileName[l - 1] != '/')
+		{
+			absoluteFileName[l] = '/';
+			l++;
+		}
+		strcpy (absoluteFileName + l, fileName);
 	}
 	else
 	{

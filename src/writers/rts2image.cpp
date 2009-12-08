@@ -32,6 +32,9 @@
 
 #include <iomanip>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 using namespace rts2image;
 
@@ -604,22 +607,62 @@ int Rts2Image::renameImageExpand (std::string new_ex)
 
 int Rts2Image::copyImage (const char *copy_filename)
 {
-	fitsfile *cp_file;
-	fits_status = 0;
-
-	int ret;
+	int ret = saveImage ();
+	if (ret)
+		return ret;
 	ret = mkpath (copy_filename, 0777);
 	if (ret)
 		return ret;
 
-	fits_create_file (&cp_file, copy_filename, &fits_status);
-	fits_copy_file (getFitsFile (), cp_file, true, true, true, &fits_status);
-	setCreationDate (cp_file);
+	int fd_from = open (getAbsoluteFileName (), O_RDONLY);
+	if (fd_from == -1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot open " << getAbsoluteFileName () << ": " << strerror (errno) << sendLog;
+		return -1;
+	}
 
-	fits_close_file (cp_file, &fits_status);
-	if (fits_status)
-		ret = fits_status;
-	return ret;
+	int fd_to = open (copy_filename, O_WRONLY | O_CREAT | O_TRUNC);
+	if (fd_to == -1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot create " << copy_filename << ": " << strerror (errno) << sendLog;
+		close (fd_from);
+		return -1;
+	}
+
+	char buf[4086];
+	while (true)
+	{
+		ret = read (fd_from, buf, 4086);
+		if (ret < 0)
+		{
+			if (errno == EINTR)
+				continue;
+			logStream (MESSAGE_ERROR) << "Cannot read from file: " << strerror (errno) << sendLog;
+			break;
+		}
+		if (ret == 0)
+		{
+			close (fd_to);
+			close (fd_from);
+			return 0;
+		}
+		int wl;
+		while (ret > 0)
+		{
+			wl = write (fd_to, buf, ret);
+			if (wl < 0)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot write to target file: " << strerror (errno) << sendLog;
+				break;
+			}
+			ret -= wl;
+		}
+		if (wl < 0)
+			break;
+	}
+	close (fd_to);
+	close (fd_from);
+	return -1;
 }
 
 int Rts2Image::copyImageExpand (std::string copy_ex)
@@ -1010,8 +1053,6 @@ int Rts2Image::writeImgHeader (struct imghdr *im_h)
 	setValue ("CAM_FILT", ntohs (filter_i), "filter used for image");
 	setValue ("SHUTTER", ntohs (im_h->shutter),
 		"shutter state (1 - open, 2 - closed, 3 - synchro)");
-	setValue ("SUBEXP", im_h->subexp, "subexposure length");
-	setValue ("NACC", ntohs (im_h->nacc), "number of accumulations");
 	// dark images don't need to wait till imgprocess will pick them up for reprocessing
 	switch (ntohs (im_h->shutter))
 	{
