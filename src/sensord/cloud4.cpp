@@ -26,6 +26,7 @@
 
 #define OPT_HEAT_ON             OPT_LOCAL + 343
 #define OPT_HEAT_DUR            OPT_LOCAL + 344
+#define OPT_TEMP_IN_COEFF       OPT_LOCAL + 345
 
 namespace rts2sensord
 {
@@ -60,6 +61,8 @@ class Cloud4: public SensorWeather
 		Rts2ValueDoubleStat *tempDiff;
 		Rts2ValueDoubleStat *tempIn;
 		Rts2ValueDoubleStat *tempOut;
+
+		Rts2ValueDouble *tempInCoeff;
 
 		// use this value only for logging to detect if we reported trips
 		double lastTempDiff;
@@ -113,7 +116,7 @@ int Cloud4::readSensor (bool update)
 	if (update == false)
 		return 0;
 
-	tempDiff->addValue (temp0 - temp1, 20);
+	tempDiff->addValue (tempInCoeff->getValueDouble () * temp0 - temp1, 20);
 	tempIn->addValue (temp0, 20);
 	tempOut->addValue (temp1, 20);
 
@@ -131,12 +134,15 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 {
 	mrakConn = NULL;
 
-	createValue (tempDiff, "TEMP_DIFF", "temperature difference");
+	createValue (tempDiff, "TEMP_DIFF", "temperature difference", true);
 	createValue (tempIn, "TEMP_IN", "temperature inside", true);
 	createValue (tempOut, "TEMP_OUT", "temperature outside", true);
 
-	createValue (numVal, "num_stat", "number of measurements for weather statistic");
+	createValue (numVal, "num_stat", "number of measurements for weather statistic", false, RTS2_VALUE_WRITABLE);
 	numVal->setValueInteger (20);
+
+	createValue (tempInCoeff, "temp_in_coeff", "temperature in coefficient (multiplicator) - TEMP_DIFF = temp_in_coeff * TEMP_IN - TEMP_OUT", false, RTS2_VALUE_WRITABLE);
+	tempInCoeff->setValueDouble (1.0);
 
 	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true, RTS2_VALUE_WRITABLE);
 	triggerBad->setValueDouble (nan ("f"));
@@ -164,6 +170,7 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 
 	addOption (OPT_HEAT_ON, "heat-interval", 1, "interval between successive turing of the heater");
 	addOption (OPT_HEAT_DUR, "heat-duration", 1, "heat duration in seconds");
+	addOption (OPT_TEMP_IN_COEFF, "temp-in-coeff", 1, "temperature coefficient");
 
 	setIdleInfoInterval (20);
 }
@@ -244,6 +251,9 @@ int Cloud4::processOption (int in_opt)
 			break;
 		case OPT_HEAT_DUR:
 			heatDuration->setValueCharArr (optarg);
+			break;
+		case OPT_TEMP_IN_COEFF:
+			tempInCoeff->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
