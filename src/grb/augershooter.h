@@ -76,8 +76,35 @@ class DevAugerShooter:public Rts2DeviceDb
 		Rts2ValueDouble *maxTheta;
 
 		Rts2ValueInteger *maxTime;
+		Rts2ValueInteger *EyeId1;
 
 		Rts2ValueBool *triggeringEnabled;
+
+   /*       second set of cuts         */
+		Rts2ValueInteger *EyeId2;
+		Rts2ValueDouble *minEnergy2;
+		Rts2ValueInteger *minPix2;
+		Rts2ValueDouble *maxAxisDist2;
+		Rts2ValueDouble *maxTimeDiff2;
+		Rts2ValueDouble *maxGHChiDiv2;
+		Rts2ValueDouble *maxLineFitDiv2;
+		Rts2ValueDouble *minViewAngle2;
+ /*       second set of cuts - end   */
+
+ /*       third set of cuts          */
+		Rts2ValueInteger *EyeId3;
+		Rts2ValueDouble *minEnergy3;
+		Rts2ValueDouble *maxXmaxErr3;
+		Rts2ValueDouble *maxEnergyDiv3;
+		Rts2ValueDouble *maxGHChiDiv3;
+		Rts2ValueDouble *maxLineFitDiv3;
+		Rts2ValueInteger *minPix3;
+		Rts2ValueDouble *maxAxisDist3;
+		Rts2ValueDouble *minRp3;
+		Rts2ValueDouble *minChi03;
+		Rts2ValueDouble *maxSPDDiv3;
+		Rts2ValueDouble *maxTimeDiv3;
+ /*       third set of cuts - end    */
 };
 
 }

@@ -127,6 +127,8 @@ int ConnShooter::processAuger ()
 	double db_DegTrackObs;    /// Observed track length angle (deg)
 	double db_TTrackObs;      /// Observed track length time (100 ns)
 
+	int db_cut = 0;
+
 	EXEC SQL END DECLARE SECTION;
 
 	time_t now;
@@ -227,21 +229,64 @@ int ConnShooter::processAuger ()
 
 	// validate shover and it's hibrid..
 
-	if (db_Energy < master->minEnergy->getValueDouble ()
-		|| now - db_auger_date > master->maxTime->getValueInteger ()
-		|| ((DevAugerShooter *)master)->wasSeen (db_auger_date, db_ra, db_dec)
-		|| db_Xmax < db_XFOVMin || db_Xmax > db_XFOVMax
-		|| db_XmaxErr > master->maxXmaxErr->getValueDouble ()
-		|| db_EnergyErr / db_Energy > master->maxEnergyDiv->getValueDouble ()
-		|| db_GHChi2 / db_GHNdf > master->maxGHChiDiv->getValueDouble ()
-		|| (db_LineFitChi2 - db_GHChi2) < master->minLineFitDiff->getValueDouble ()
-		|| db_AxisDist > master->maxAxisDist->getValueDouble ()
-		|| db_Rp < master->minRp->getValueDouble ()
-		|| db_Chi0 < master->minChi0->getValueDouble ()
-		|| (db_SDPChi2 / db_SDPNdf) > master->maxSPDDiv->getValueDouble ()
-		|| (db_TimeChi2 / db_TimeNdf) > master->maxTimeDiv->getValueDouble ()
-		|| db_Theta > master->maxTheta->getValueDouble ()
+	if (db_Energy > master->minEnergy->getValueDouble ()
+		&& db_Eye == master->EyeId1->getValueInteger ()
+		&& now - db_auger_date < master->maxTime->getValueInteger ()
+		&& !((DevAugerShooter *)master)->wasSeen (db_auger_date, db_ra, db_dec)
+		&& db_Xmax > db_XFOVMin && db_Xmax < db_XFOVMax
+		&& db_XmaxErr < master->maxXmaxErr->getValueDouble ()
+		&& db_EnergyErr / db_Energy < master->maxEnergyDiv->getValueDouble ()
+		&& db_GHChi2 / db_GHNdf < master->maxGHChiDiv->getValueDouble ()
+		&& (db_LineFitChi2 - db_GHChi2) > master->minLineFitDiff->getValueDouble ()
+		&& db_AxisDist < master->maxAxisDist->getValueDouble ()
+		&& db_Rp > master->minRp->getValueDouble ()
+		&& db_Chi0 > master->minChi0->getValueDouble ()
+		&& (db_SDPChi2 / db_SDPNdf) < master->maxSPDDiv->getValueDouble ()
+		&& (db_TimeChi2 / db_TimeNdf) < master->maxTimeDiv->getValueDouble ()
+		&& db_Theta < master->maxTheta->getValueDouble ()
 	)
+		db_cut |= 1;
+
+	/*       second cuts set        */
+
+	double CoreDist = 0.001 * db_Rp / sin (db_Chi0 / 57.295779513);
+
+	if (db_Energy > master->minEnergy2->getValueDouble ()
+	        && db_Eye == master->EyeId2->getValueInteger ()
+		&& db_NPix > master->minPix2->getValueInteger ()
+		&& db_AxisDist < master->maxAxisDist2->getValueDouble ()
+		&& fabs(db_SDFDdT) < master->maxTimeDiff2->getValueDouble ()
+		&& db_GHChi2 / db_GHNdf < master->maxGHChiDiv2->getValueDouble ()
+		&& (db_GHChi2 / db_LineFitChi2) < master->maxLineFitDiv2->getValueDouble ()
+		&& db_Xmax > db_XFOVMin || db_Xmax < db_XFOVMax
+		&& db_MinAngle > master->minViewAngle2->getValueDouble ()
+		&& (((db_Theta >= 35. + 10.*(log10(db_Energy)-1.)) || (log10(db_Energy) > 1.7)) &&
+			((db_Theta <= 42.) || (log10(db_Energy) < 1.7)))
+		&& (((CoreDist >= 24. + 12.*(log10(db_Energy)-1.)) || (log10(db_Energy) < 1.)) &&
+          ((CoreDist > 24. + 6.*(log10(db_Energy)-1.)) || (log10(db_Energy) > 1.)))
+	)
+		db_cut |= 2;
+	 /*       second set of cuts - end   */
+
+	 /*       third set of cuts          */
+
+	if (db_Energy > master->minEnergy3->getValueDouble ()
+		&& db_Eye == master->EyeId3->getValueInteger ()
+		&& db_XmaxErr < master->maxXmaxErr3->getValueDouble ()
+		&& db_EnergyErr / db_Energy < master->maxEnergyDiv3->getValueDouble ()
+		&& db_GHChi2 / db_GHNdf < master->maxGHChiDiv3->getValueDouble ()
+		&& (db_GHChi2 / db_LineFitChi2) < master->maxLineFitDiv3->getValueDouble ()
+		&& db_NPix > master->minPix3->getValueInteger ()
+		&& db_AxisDist < master->maxAxisDist3->getValueDouble ()
+		&& db_Rp > master->minRp3->getValueDouble ()
+		&& db_Chi0 > master->minChi03->getValueDouble ()
+		&& (db_SDPChi2 / db_SDPNdf) < master->maxSPDDiv3->getValueDouble ()
+		&& (db_TimeChi2 / db_TimeNdf) < master->maxTimeDiv3->getValueDouble ()
+	)
+              db_cut |= 4;
+ 	/*       third set of cuts - end    */
+
+	if (db_cut == 0)
 	{
 		logStream (MESSAGE_INFO) << "Rts2ConnShooter::processAuger ignore (date " << LibnovaDateDouble (db_auger_date)
 			<< " Energy " << db_Energy
@@ -284,6 +329,7 @@ int ConnShooter::processAuger ()
 		auger_date,
 		ra,
 		dec,
+		cut,
 		eye,
 		run,
 		event,
@@ -354,6 +400,7 @@ int ConnShooter::processAuger ()
 		to_timestamp (:db_auger_date),
 		:db_ra,
 		:db_dec,
+		:db_cut,
 		:db_Eye,
 		:db_Run,
 		:db_Event,
