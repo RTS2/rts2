@@ -85,6 +85,9 @@
       <xs:element name="public" minOccurs="0" maxOccurs="unbounded" type="xs:string">
         <xs:annotation><xs:documentation>Public HTTP paths. * in string will match any string character in URL.</xs:documentation></xs:annotation>
       </xs:element>
+      <xs:element name="allsky" minOccurs="0" maxOccurs="unbounded" type="xs:string">
+        <xs:annotation><xs:documentation>Path to all sky images. The images are overplotted with BSC.</xs:documentation></xs:annotation>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 
