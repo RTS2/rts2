@@ -258,12 +258,12 @@ int ConnShooter::processAuger ()
 		&& fabs(db_SDFDdT) < master->maxTimeDiff2->getValueDouble ()
 		&& db_GHChi2 / db_GHNdf < master->maxGHChiDiv2->getValueDouble ()
 		&& (db_GHChi2 / db_LineFitChi2) < master->maxLineFitDiv2->getValueDouble ()
-		&& db_Xmax > db_XFOVMin || db_Xmax < db_XFOVMax
+		&& db_Xmax > db_XFOVMin && db_Xmax < db_XFOVMax
 		&& db_MinAngle > master->minViewAngle2->getValueDouble ()
 		&& (((db_Theta >= 35. + 10.*(log10(db_Energy)-1.)) || (log10(db_Energy) > 1.7)) &&
-			((db_Theta <= 42.) || (log10(db_Energy) < 1.7)))
+			((db_Theta <= 42.) || (log10(db_Energy) <= 1.7)))
 		&& (((CoreDist >= 24. + 12.*(log10(db_Energy)-1.)) || (log10(db_Energy) < 1.)) &&
-          ((CoreDist > 24. + 6.*(log10(db_Energy)-1.)) || (log10(db_Energy) > 1.)))
+          ((CoreDist > 24. + 6.*(log10(db_Energy)-1.)) || (log10(db_Energy) >= 1.)))
 	)
 		db_cut |= 2;
 	 /*       second set of cuts - end   */
