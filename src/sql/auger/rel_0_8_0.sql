@@ -7,6 +7,7 @@ CREATE TABLE auger (
 	auger_date	timestamp NOT NULL,
 	ra		float8 NOT NULL,
 	dec		float8 NOT NULL,
+	cut		integer NOT NULL,
 	-- now all fields from message..
 
 	eye		integer NOT NULL, -- FD eye Id
