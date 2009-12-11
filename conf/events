@@ -6,6 +6,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
   <http>
     <public>/graph/SD/*</public>
+    <dir path="/images/luthien" to="/luthien"/>
   </http>
   <events>
     <device name="C0">

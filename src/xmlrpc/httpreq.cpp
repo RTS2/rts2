@@ -20,6 +20,7 @@
 #include "xmlrpcd.h"
 #include "httpreq.h"
 #include "altaz.h"
+#include "dirsupport.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -68,6 +69,73 @@ void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &h
 	http_code = HTTP_OK;
 
 	authorizedExecute (path, params, response_type, response, response_length);
+}
+
+void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+{
+	std::ostringstream _os;
+
+	_os << "<html><head><title>" << path << "</title></head><body>";
+
+	struct dirent **namelist;
+	int n;
+	int i;
+	int ret;
+
+	const char *pagesort = params->getString ("o", "filename");
+
+	enum {SORT_FILENAME, SORT_DATE} sortby = SORT_FILENAME;
+	if (!strcmp (pagesort, "date"))
+		sortby = SORT_DATE;
+
+	switch (sortby)
+	{
+	 	case SORT_DATE:
+			/* if following fails to compile, please have a look to value of your
+			 * _POSIX_C_SOURCE #define, record it and send it to petr@kubanek.net.
+			 * Please contact petr@kubanek.net if you don't know how to get
+			 * _POSIX_C_SOURCE. */
+			n = scandir ((dirPath + path).c_str (), &namelist, 0, cdatesort);
+			break;
+		case SORT_FILENAME:
+		default:
+		  	n = scandir ((dirPath + path).c_str (), &namelist, 0, alphasort);
+			break;
+	}
+
+	if (n < 0)
+	{
+		throw XmlRpcException ("Cannot open directory");
+	}
+
+	// first show directories..
+	_os << "<p>";
+	for (i = 0; i < n; i++)
+	{
+		char *fname = namelist[i]->d_name;
+		struct stat sbuf;
+		ret = stat ((dirPath + path + fname).c_str (), &sbuf);
+		if (ret)
+			continue;
+		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
+		{
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/'>" << fname << "</a> ";
+		}
+	}
+
+	_os << "</p></body></html>";
+
+	for (i = 0; i < n; i++)
+	{
+		free (namelist[i]);
+	}
+
+	free (namelist);
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
 }
 
 #ifdef HAVE_LIBJPEG

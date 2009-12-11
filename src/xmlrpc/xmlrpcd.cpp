@@ -48,7 +48,6 @@ using namespace Magick;
 #include "../utils/error.h"
 #include "../writers/rts2image.h"
 #include "xmlstream.h"
-#include "httpreq.h"
 #include "augerreq.h"
 #include "nightreq.h"
 #include "imgpreview.h"
@@ -160,6 +159,9 @@ int XmlRpcd::init ()
 		}
 	}
 
+	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
+		directories.push_back (new Directory (iter->getTo (), iter->getPath (), &xmlrpc_server));
+
 	setMessageMask (MESSAGE_MASK_ALL);
 
 #ifndef HAVE_PGSQL
@@ -233,6 +235,9 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 
 XmlRpcd::~XmlRpcd ()
 {
+	for (std::vector <Directory *>::iterator id = directories.begin (); id != directories.end (); id++)
+		delete *id;
+
 	for (std::map <std::string, Session *>::iterator iter = sessions.begin (); iter != sessions.end (); iter++)
 	{
 		delete (*iter).second;

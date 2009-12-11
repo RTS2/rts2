@@ -121,6 +121,24 @@ class XmlEmptyNode: public XmlError
 };
 
 /**
+ * Directory mapping.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DirectoryMapping
+{
+	public:
+		DirectoryMapping (const char *_path, const char *_to) { path = std::string (_path); to = std::string (_to); }
+
+		const char *getPath () { return path.c_str (); }
+		const char *getTo () { return to.c_str (); }
+
+	private:
+		std::string path;
+		std::string to;
+};
+
+/**
  * Holder for events which can occur on devices.
  *
  * @author Petr Kubanek <petr@kubanek.net>
@@ -133,6 +151,9 @@ class Events
 
 		std::vector <std::string> publicPaths;
 		std::vector <std::string> allskyPaths;
+
+		// directories mapping
+		std::vector <DirectoryMapping> dirs;
 
 		Events (XmlRpcd *_master) { master = _master; }
 

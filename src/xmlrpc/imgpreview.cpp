@@ -20,12 +20,7 @@
 #include "imgpreview.h"
 #include "../writers/rts2image.h"
 #include "bsc.h"
-
-#include <fcntl.h>
-#include <dirent.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "dirsupport.h"
 
 using namespace rts2xmlrpc;
 
@@ -47,94 +42,6 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
 }
-
-#ifndef HAVE_SCANDIR
-int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const struct dirent *), int (*compar)(const void *, const void *))
-{
-	DIR *d = opendir (dirp);
-
-	int nl_size = 20;
-	*namelist = (struct dirent **) malloc (sizeof (dirent *) * 20);
-	int nmeb = 0;
-
-	while (struct dirent *de = readdir (d))
-	{
-		if (filter (de))
-		{
-			struct dirent *dn = (struct dirent *) malloc (sizeof (dirent));
-			*dn = *de;
-			if (nl_size == 0)
-			{
-				*namelist = (struct dirent **) realloc (namelist, sizeof (dirent *) * (nmeb + 20));
-				nl_size = 20;
-			}
-			(*namelist)[nmeb] = dn;
-			nmeb++;
-			nl_size--;
-		}
-	}
-
-	closedir (d);
-
-	if (*namelist)
-		// sort it..
-		qsort (*namelist, nmeb, sizeof (dirent *), compar);
-	return nmeb;
-}
-#endif // !HAVE_SCANDIR
-
-/**
- * Sort two file structure entries by cdate.
- */
-#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
-int cdatesort(const struct dirent **a, const struct dirent **b)
-{
-	struct stat s_a, s_b;
-        if (stat ((*a)->d_name, &s_a))
-                return 1;
-        if (stat ((*b)->d_name, &s_b))
-                return -1;
-        if (s_a.st_ctime == s_b.st_ctime)
-                return 0;
-        if (s_a.st_ctime > s_b.st_ctime)
-                return 1;
-        return -1;
-}
-#else
-int cdatesort(const void *a, const void *b)
-{
-	struct stat s_a, s_b;
-        const struct dirent * d_a = *((dirent**)a);
-        const struct dirent * d_b = *((dirent**)b);
-        if (stat (d_a->d_name, &s_a))
-                return 1;
-        if (stat (d_b->d_name, &s_b))
-                return -1;
-        if (s_a.st_ctime == s_b.st_ctime)
-                return 0;
-        if (s_a.st_ctime > s_b.st_ctime)
-                return 1;
-        return -1;
-}
-#endif  // _POSIX_C_SOURCE
-
-#ifndef HAVE_ALPHASORT
-
-#if _POSIX_C_SOURCE > 200200L && defined(HAVE_SCANDIR)
-int alphasort(const struct dirent **a, const struct dirent **b)
-{
-	return strcmp ((*a)->d_name, (*b)->d_name);
-}
-#else
-int alphasort(const void *a, const void *b)
-{
-        const struct dirent * d_a = *((dirent**)a);
-        const struct dirent * d_b = *((dirent**)b);
-	return strcmp (d_a->d_name, d_b->d_name);
-}
-#endif // _POSIX_C_SOURCE
-
-#endif // !HAVE_ALPHASORT
 
 void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
@@ -170,12 +77,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	struct dirent **namelist;
 	int n;
-
-	int ret = chdir (path.c_str ());
-	if (ret)
-	{
-	  	throw XmlRpcException ("Invalid directory");
-	}
+	int ret;
 
 	const char *pagesort = params->getString ("o", "filename");
 
@@ -190,11 +92,11 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			 * _POSIX_C_SOURCE #define, record it and send it to petr@kubanek.net.
 			 * Please contact petr@kubanek.net if you don't know how to get
 			 * _POSIX_C_SOURCE. */
-			n = scandir (".", &namelist, 0, cdatesort);
+			n = scandir (path.c_str (), &namelist, 0, cdatesort);
 			break;
 		case SORT_FILENAME:
 		default:
-		  	n = scandir (".", &namelist, 0, alphasort);
+		  	n = scandir (path.c_str (), &namelist, 0, alphasort);
 			break;
 	}
 
@@ -209,7 +111,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	{
 		char *fname = namelist[i]->d_name;
 		struct stat sbuf;
-		ret = stat (fname, &sbuf);
+		ret = stat ((path + fname).c_str (), &sbuf);
 		if (ret)
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)

@@ -32,6 +32,7 @@
 #endif /* HAVE_PGSQL */
 
 #include "events.h"
+#include "httpreq.h"
 #include "session.h"
 #include "xmlrpc++/XmlRpc.h"
 
@@ -155,6 +156,8 @@ class XmlRpcd:public Rts2Device
 		std::map <std::string, Session*> sessions;
 
 		std::deque <Rts2Message> messages;
+
+		std::vector <Directory *> directories;
 
 		Events events;
 

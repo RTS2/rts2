@@ -133,6 +133,21 @@ void Events::parseHttp (xmlNodePtr ev)
 				throw XmlMissingElement (ev, "content of public path");
 			publicPaths.push_back (std::string ((char *) ev->children->content));
 		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "dir"))
+		{
+			if (ev->children != NULL)
+				throw XmlError ("dir node must be empty");
+
+			xmlAttrPtr path = xmlHasProp (ev, (xmlChar *) "path");
+			if (path == NULL)
+				throw XmlMissingAttribute (ev, "path");
+
+			xmlAttrPtr to = xmlHasProp (ev, (xmlChar *) "to");
+			if (to == NULL)
+				throw XmlMissingAttribute (ev, "to");
+
+			dirs.push_back (DirectoryMapping ((const char *) path->children->content, (const char *) to->children->content));
+		}
 		else if (xmlStrEqual (ev->name, (xmlChar *) "allsky"))
 		{
 			if (ev->children == NULL || ev->children->content == NULL)

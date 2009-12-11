@@ -44,6 +44,11 @@
 namespace rts2xmlrpc
 {
 
+/**
+ * Abstract class for authorized requests.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
@@ -52,6 +57,22 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
+};
+
+/**
+ * Maps directory to request space.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class Directory: public GetRequestAuthorized
+{
+	public:
+		Directory (const char* prefix, const char *_dirPath, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
+
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+
+	private:
+		const char *dirPath;
 };
 
 #ifdef HAVE_LIBJPEG
