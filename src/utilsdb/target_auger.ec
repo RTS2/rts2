@@ -622,6 +622,28 @@ int TargetAuger::considerForObserving (double JD)
 
 void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 {
+	std::vector <struct ln_equ_posn> positions;
+	getEquPositions (positions);
+
+	int i = 1;
+
+	for (std::vector <struct ln_equ_posn>::iterator iter = positions.begin (); iter != positions.end (); iter++)
+	{
+		std::ostringstream _osra;
+		_osra << "RA " << i;
+
+		std::ostringstream _osdec;
+		_osdec << "RA " << i;
+
+		_os
+			<< std::endl
+			<< InfoVal<LibnovaRaJ2000> (_osra.str ().c_str (), LibnovaRaJ2000 (iter->ra))
+			<< InfoVal<LibnovaRaJ2000> (_osdec.str ().c_str (), LibnovaRaJ2000 (iter->dec))
+			<< std::endl;
+
+		i++;
+	}
+
 	_os
 		<< InfoVal<int> ("T3ID", t3id)
 		<< InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
