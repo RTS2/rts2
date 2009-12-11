@@ -638,13 +638,13 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 		_os
 			<< std::endl
 			<< InfoVal<LibnovaRaJ2000> (_osra.str ().c_str (), LibnovaRaJ2000 (iter->ra))
-			<< InfoVal<LibnovaRaJ2000> (_osdec.str ().c_str (), LibnovaRaJ2000 (iter->dec))
-			<< std::endl;
+			<< InfoVal<LibnovaRaJ2000> (_osdec.str ().c_str (), LibnovaRaJ2000 (iter->dec));
 
 		i++;
 	}
 
 	_os
+		<< std::endl
 		<< InfoVal<int> ("T3ID", t3id)
 		<< InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
 		<< InfoVal<int> ("NPIXELS", NPix)
