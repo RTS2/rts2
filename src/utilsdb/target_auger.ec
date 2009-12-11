@@ -103,17 +103,13 @@ TargetAuger::TargetAuger (int in_tar_id, struct ln_lnlat_posn * _obs, int in_aug
 	cor.z = nan ("f");
 }
 
-TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, int _auger_npixels, double _auger_ra, double _auger_dec, double _northing, double _easting, double _altitude, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)
+TargetAuger::TargetAuger (int _auger_t3id, double _auger_date, double _auger_ra, double _auger_dec, struct ln_lnlat_posn *_obs):ConstTarget (-1, _obs)
 {
 	augerPriorityTimeout = -1;
 
 	t3id = _auger_t3id;
 	auger_date = _auger_date;
-	npixels = _auger_npixels;
 	setPosition (_auger_ra, _auger_dec);
-	cor.x = _easting - 459201;
-	cor.y = _northing - 6071873;
-	cor.z = _altitude - 1422;
 }
 
 TargetAuger::~TargetAuger (void)
@@ -125,13 +121,9 @@ int TargetAuger::load ()
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id;
 	double d_auger_date;
-	int d_auger_npixels;
 	double d_auger_ra;
 	double d_auger_dec;
 
-	double d_northing;
-	double d_easting;
-	double d_altitude;
 	EXEC SQL END DECLARE SECTION;
 
 	struct ln_equ_posn pos;
@@ -142,12 +134,8 @@ int TargetAuger::load ()
 	SELECT
 		auger_t3id,
 		EXTRACT (EPOCH FROM auger_date),
-		NPix,
 		ra,
-		dec,
-		Northing,
-		Easting,
-		Altitude
+		dec
 	FROM
 		auger
 	ORDER BY
@@ -159,12 +147,8 @@ int TargetAuger::load ()
 		EXEC SQL FETCH next FROM cur_auger INTO
 				:d_auger_t3id,
 				:d_auger_date,
-				:d_auger_npixels,
 				:d_auger_ra,
-				:d_auger_dec,
-				:d_northing,
-				:d_easting,
-				:d_altitude;
+				:d_auger_dec;
 		if (sqlca.sqlcode)
 			break;
 		pos.ra = d_auger_ra;
@@ -172,16 +156,9 @@ int TargetAuger::load ()
 		ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
 		if (hrz.alt > 10)
 		{
-			t3id = d_auger_t3id;
-			auger_date = d_auger_date;
-			npixels = d_auger_npixels;
-			setPosition (d_auger_ra, d_auger_dec);
-			cor.x = d_easting - 459201;
-			cor.y = d_northing - 6071873;
-			cor.z = d_altitude - 1422;
 			EXEC SQL CLOSE cur_auger;
 			EXEC SQL COMMIT;
-			return Target::load ();
+			return load (d_auger_t3id);
 		}
 	}
 	logMsgDb ("TargetAuger::load", MESSAGE_ERROR);
@@ -196,33 +173,223 @@ int TargetAuger::load (int auger_id)
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_auger_t3id = auger_id;
 	double d_auger_date;
-	int d_auger_npixels;
 	double d_auger_ra;
 	double d_auger_dec;
 
-	double d_northing;
-	double d_easting;
-	double d_altitude;
+	int    db_Eye;            /// FD eye Id
+	int    db_Run;            /// FD run number
+	int    db_Event;          /// FD event number
+	VARCHAR db_AugerId[50];   /// Event Auger Id after SD/FD merger
+	int    db_GPSSec;         /// GPS second (SD)
+	int    db_GPSNSec;        /// GPS nano second (SD)
+	int    db_SDId;           /// SD Event Id
+
+	int    db_NPix;           /// Num. pixels with a pulse after FdPulseFinder
+
+	double db_SDPTheta;       /// Zenith angle of SDP normal vector (deg)
+	double db_SDPThetaErr;    /// Uncertainty of SDPtheta
+	double db_SDPPhi;         /// Azimuth angle of SDP normal vector (deg)
+	double db_SDPPhiErr;      /// Uncertainty of SDPphi
+	double db_SDPChi2;        /// Chi^2 of SDP db_it
+	int    db_SDPNdf;         /// Degrees of db_reedom of SDP db_it
+
+	double db_Rp;             /// Shower impact parameter Rp (m)
+	double db_RpErr;          /// Uncertainty of Rp (m)
+	double db_Chi0;           /// Angle of shower in the SDP (deg)
+	double db_Chi0Err;        /// Uncertainty of Chi0 (deg)
+	double db_T0;             /// FD time db_it T_0 (ns)
+	double db_T0Err;          /// Uncertainty of T_0 (ns)
+	double db_TimeChi2;       /// Full Chi^2 of axis db_it
+	double db_TimeChi2FD;     /// Chi^2 of axis db_it (FD only)
+	int    db_TimeNdf;        /// Degrees of db_reedom of axis db_it
+
+	double db_Easting;        /// Core position in easting coordinate (m)
+	double db_Northing;       /// Core position in northing coordinate (m)
+	double db_Altitude;       /// Core position altitude (m)
+	double db_NorthingErr;    /// Uncertainty of northing coordinate (m)
+	double db_EastingErr;     /// Uncertainty of easting coordinate (m)
+	double db_Theta;          /// Shower zenith angle in core coords. (deg)
+	double db_ThetaErr;       /// Uncertainty of zenith angle (deg)
+	double db_Phi;            /// Shower azimuth angle in core coords. (deg)
+	double db_PhiErr;         /// Uncertainty of azimuth angle (deg)
+
+	double db_dEdXmax;        /// Energy deposit at shower max (GeV/(g/cm^2))
+	double db_dEdXmaxErr;     /// Uncertainty of Nmax (GeV/(g/cm^2))
+	double db_Xmax;           /// Slant depth of shower maximum (g/cm^2)
+	double db_XmaxErr;        /// Uncertainty of Xmax (g/cm^2)
+	double db_X0;             /// X0 Gaisser-Hillas db_it (g/cm^2)
+	double db_X0Err;          /// Uncertainty of X0 (g/cm^2)
+	double db_Lambda;         /// Lambda of Gaisser-Hillas db_it (g/cm^2)
+	double db_LambdaErr;      /// Uncertainty of Lambda (g/cm^2)
+	double db_GHChi2;         /// Chi^2 of Gaisser-Hillas db_it
+	int    db_GHNdf;          /// Degrees of db_reedom of GH db_it
+	double db_LineFitChi2;    /// Chi^2 of linear db_it to profile
+
+	double db_EmEnergy;       /// Calorimetric energy db_rom GH db_it (EeV)
+	double db_EmEnergyErr;    /// Uncertainty of Eem (EeV)
+	double db_Energy;         /// Total energy db_rom GH db_it (EeV)
+	double db_EnergyErr;      /// Uncertainty of Etot (EeV)
+
+	double db_MinAngle;       /// Minimum viewing angle (deg)
+	double db_MaxAngle;       /// Maximum viewing angle (deg)
+	double db_MeanAngle;      /// Mean viewing angle (deg)
+
+	int    db_NTank;          /// Number of stations in hybrid db_it
+	int    db_HottestTank;    /// Station used in hybrid-geometry reco
+	double db_AxisDist;       /// Shower axis distance to hottest station (m)
+	double db_SDPDist;        /// SDP distance to hottest station (m)
+
+	double db_SDFDdT;         /// SD/FD time offset after the minimization (ns)
+	double db_XmaxEyeDist;    /// Distance to shower maximum (m)
+	double db_XTrackMin;      /// First recorded slant depth of track (g/cm^2)
+	double db_XTrackMax;      /// Last recorded slant depth of track (g/cm^2)
+	double db_XFOVMin;        /// First slant depth inside FOV (g/cm^2)
+	double db_XFOVMax;        /// Last slant depth inside FOV (g/cm^2)
+	double db_XTrackObs;      /// Observed track length depth (g/cm^2)
+	double db_DegTrackObs;    /// Observed track length angle (deg)
+	double db_TTrackObs;      /// Observed track length time (100 ns)
+
+	int db_cut = 0;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL SELECT
 		auger_t3id,
 		EXTRACT (EPOCH FROM auger_date),
-		NPix,
 		ra,
 		dec,
-		Northing,
+		cut,
+		eye,
+		run,
+		event,
+		augerid, 
+		GPSSec, 
+		GPSNSec, 
+		SDId, 
+		NPix,
+		SDPTheta,
+		SDPThetaErr,
+		SDPPhi,
+		SDPPhiErr,
+		SDPChi2,
+		SDPNdf, 
+		Rp,
+		RpErr,
+		Chi0,
+		Chi0Err,
+		T0,
+		T0Err,
+		TimeChi2,
+		TimeChi2FD,
+		TimeNdf,	
 		Easting,
-		Altitude
+		Northing,
+		Altitude,
+		NorthingErr,
+		EastingErr,
+		Theta,
+		ThetaErr,
+		Phi,
+		PhiErr,
+		dEdXmax,
+		dEdXmaxErr,
+		X_max,
+		X_maxErr,
+		X0,
+		X0Err,
+		Lambda,
+		LambdaErr,
+		GHChi2,
+		GHNdf,
+		LineFitChi2,
+		EmEnergy,
+		EmEnergyErr,
+		Energy,
+		EnergyErr,
+		MinAngle,
+		MaxAngle,
+		MeanAngle,
+		NTank,
+		HottestTank,
+		AxisDist,
+		SDPDist,
+		SDFDdT,
+		XmaxEyeDist,
+		XTrackMin,
+		XTrackMax,
+		XFOVMin,
+		XFOVMax,
+		XTrackObs,
+		DegTrackObs,
+		TTrackObs
 	INTO
 		:d_auger_t3id,
 		:d_auger_date,
-		:d_auger_npixels,
 		:d_auger_ra,
 		:d_auger_dec,
-		:d_northing,
-		:d_easting,
-		:d_altitude
+		:db_cut,
+		:db_Eye,
+		:db_Run,
+		:db_Event,
+		:db_AugerId,
+		:db_GPSSec,
+		:db_GPSNSec,
+		:db_SDId,
+		:db_NPix,
+		:db_SDPTheta,
+		:db_SDPThetaErr,
+		:db_SDPPhi,
+		:db_SDPPhiErr,
+		:db_SDPChi2,
+		:db_SDPNdf,
+		:db_Rp,
+		:db_RpErr,
+		:db_Chi0,
+		:db_Chi0Err,
+		:db_T0,
+		:db_T0Err,
+		:db_TimeChi2,
+		:db_TimeChi2FD,
+		:db_TimeNdf,
+		:db_Easting,
+		:db_Northing,
+		:db_Altitude,
+		:db_NorthingErr,
+		:db_EastingErr,
+		:db_Theta,
+		:db_ThetaErr,
+		:db_Phi,
+		:db_PhiErr,
+		:db_dEdXmax,
+		:db_dEdXmaxErr,
+		:db_Xmax,
+		:db_XmaxErr,
+		:db_X0,
+		:db_X0Err,
+		:db_Lambda,
+		:db_LambdaErr,
+		:db_GHChi2,
+		:db_GHNdf,
+		:db_LineFitChi2,
+		:db_EmEnergy,
+		:db_EmEnergyErr,
+		:db_Energy,
+		:db_EnergyErr,
+		:db_MinAngle,
+		:db_MaxAngle,
+		:db_MeanAngle,
+		:db_NTank,
+		:db_HottestTank,
+		:db_AxisDist,
+		:db_SDPDist,
+		:db_SDFDdT,
+		:db_XmaxEyeDist,
+		:db_XTrackMin,
+		:db_XTrackMax,
+		:db_XFOVMin,
+		:db_XFOVMax,
+		:db_XTrackObs,
+		:db_DegTrackObs,
+		:db_TTrackObs
 	FROM
 		auger
 	WHERE
@@ -239,11 +406,73 @@ int TargetAuger::load (int auger_id)
 
 	t3id = d_auger_t3id;
 	auger_date = d_auger_date;
-	npixels = d_auger_npixels;
 	setPosition (d_auger_ra, d_auger_dec);
-	cor.x = d_easting - 459201;
-	cor.y = d_northing - 6071873;
-	cor.z = d_altitude - 1422;
+
+	cut = db_cut;
+	Eye = db_Eye;
+	Run = db_Run;
+	Event = db_Event;
+	AugerId = db_AugerId.arr; 
+	GPSSec = db_GPSSec; 
+	GPSNSec = db_GPSNSec; 
+	SDId = db_SDId; 
+	NPix = db_NPix;
+	SDPTheta = db_SDPTheta;
+	SDPThetaErr = db_SDPThetaErr;
+	SDPPhi = db_SDPPhi;
+	SDPPhiErr = db_SDPPhiErr;
+	SDPChi2 = db_SDPChi2;
+	SDPNdf = db_SDPNdf; 
+	Rp = db_Rp;
+	RpErr = db_RpErr;
+	Chi0 = db_Chi0;
+	Chi0Err = db_Chi0Err;
+	T0 = db_T0;
+	T0Err = db_T0Err;
+	TimeChi2 = db_TimeChi2;
+	TimeChi2FD = db_TimeChi2FD;
+	TimeNdf = db_TimeNdf;	
+	Easting = db_Easting;
+	Northing = db_Northing;
+	Altitude = db_Altitude;
+	NorthingErr = db_NorthingErr;
+	EastingErr = db_EastingErr;
+	Theta = db_Theta;
+	ThetaErr = db_ThetaErr;
+	Phi = db_Phi;
+	PhiErr = db_PhiErr;
+	dEdXmax = db_dEdXmax;
+	dEdXmaxErr = db_dEdXmaxErr;
+	Xmax = db_Xmax;
+	XmaxErr = db_XmaxErr;
+	X0 = db_X0;
+	X0Err = db_X0Err;
+	Lambda = db_Lambda;
+	LambdaErr = db_LambdaErr;
+	GHChi2 = db_GHChi2;
+	GHNdf = db_GHNdf;
+	LineFitChi2 = db_LineFitChi2;
+	EmEnergy = db_EmEnergy;
+	EmEnergyErr = db_EmEnergyErr;
+	Energy = db_Energy;
+	EnergyErr = db_EnergyErr;
+	MinAngle = db_MinAngle;
+	MaxAngle = db_MaxAngle;
+	MeanAngle = db_MeanAngle;
+	NTank = db_NTank;
+	HottestTank = db_HottestTank;
+	AxisDist = db_AxisDist;
+	SDPDist = db_SDPDist;
+	SDFDdT = db_SDFDdT;
+	XmaxEyeDist = db_XmaxEyeDist;
+	XTrackMin = db_XTrackMin;
+	XTrackMax = db_XTrackMax;
+	XFOVMin = db_XFOVMin;
+	XFOVMax = db_XFOVMax;
+	XTrackObs = db_XTrackObs;
+	DegTrackObs = db_DegTrackObs;
+	TTrackObs = db_TTrackObs;
+
 	EXEC SQL CLOSE cur_auger;
 	EXEC SQL COMMIT;
 	return Target::load ();
@@ -256,6 +485,10 @@ void TargetAuger::updateShowerFields ()
 
 	struct ln_equ_posn pos;
 	struct ln_hrz_posn hrz;
+
+	cor.x = Easting - 459201;
+	cor.y = Northing - 6071873;
+	cor.z = Altitude - 1422;
 
 	getPosition (&pos, JD);
 	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
@@ -392,13 +625,85 @@ void TargetAuger::printExtra (Rts2InfoValStream & _os, double JD)
 	_os
 		<< InfoVal<int> ("T3ID", t3id)
 		<< InfoVal<Timestamp> ("DATE", Timestamp(auger_date))
-		<< InfoVal<int> ("NPIXELS", npixels)
+		<< InfoVal<int> ("NPIXELS", NPix)
 		<< InfoVal<double> ("CORE_X", cor.x)
 		<< InfoVal<double> ("CORE_Y", cor.y)
 		<< InfoVal<double> ("CORE_Z", cor.z)
-		<< InfoVal<double> ("EASTING", cor.x + 459201)
-		<< InfoVal<double> ("NORTHING", cor.y + 6071873)
-		<< InfoVal<double> ("ALTITUDE", cor.z + 1422);
+
+		<< InfoVal<int> ("Eye", Eye)
+		<< InfoVal<int> ("Run", Run)
+		<< InfoVal<int> ("Event", Event)
+		<< InfoVal<const char*> ("AugerId", AugerId.c_str ())
+		<< InfoVal<int> ("GPSSec", GPSSec)
+		<< InfoVal<int> ("GPSNSec", GPSNSec)
+		<< InfoVal<int> ("SDId", SDId)
+	
+		<< InfoVal<int> ("NPix", NPix)
+	
+		<< InfoVal<double> ("SDPTheta", SDPTheta)
+		<< InfoVal<double> ("SDPThetaErr", SDPThetaErr)
+		<< InfoVal<double> ("SDPPhi", SDPPhi)
+		<< InfoVal<double> ("SDPPhiErr", SDPPhiErr)
+		<< InfoVal<double> ("SDPChi2", SDPChi2)
+		<< InfoVal<int> ("SDPNdf", SDPNdf)
+	
+		<< InfoVal<double> ("Rp", Rp)
+		<< InfoVal<double> ("RpErr", RpErr)
+		<< InfoVal<double> ("Chi0", Chi0)
+		<< InfoVal<double> ("Chi0Err", Chi0Err)
+		<< InfoVal<double> ("T0", T0)
+		<< InfoVal<double> ("T0Err", T0Err)
+		<< InfoVal<double> ("TimeChi2", TimeChi2)
+		<< InfoVal<double> ("TimeChi2FD", TimeChi2FD)
+		<< InfoVal<int> ("TimeNdf", TimeNdf)
+	
+		<< InfoVal<double> ("Easting", Easting)
+		<< InfoVal<double> ("Northing", Northing)
+		<< InfoVal<double> ("Altitude", Altitude)
+		<< InfoVal<double> ("NorthingErr", NorthingErr)
+		<< InfoVal<double> ("EastingErr", EastingErr)
+		<< InfoVal<double> ("Theta", Theta)
+		<< InfoVal<double> ("ThetaErr", ThetaErr)
+		<< InfoVal<double> ("Phi", Phi)
+		<< InfoVal<double> ("PhiErr", PhiErr)
+	
+		<< InfoVal<double> ("dEdXmax", dEdXmax)
+		<< InfoVal<double> ("dEdXmaxErr", dEdXmaxErr)
+		<< InfoVal<double> ("Xmax", Xmax)
+		<< InfoVal<double> ("XmaxErr", XmaxErr)
+		<< InfoVal<double> ("X0", X0)
+		<< InfoVal<double> ("X0Err", X0Err)
+		<< InfoVal<double> ("Lambda", Lambda)
+		<< InfoVal<double> ("LambdaErr", LambdaErr)
+		<< InfoVal<double> ("GHChi2", GHChi2)
+		<< InfoVal<int> ("GHNdf", GHNdf)
+		<< InfoVal<double> ("LineFitChi2", LineFitChi2)
+	
+		<< InfoVal<double> ("EmEnergy", EmEnergy)
+		<< InfoVal<double> ("EmEnergyErr", EmEnergyErr)
+		<< InfoVal<double> ("Energy", Energy)
+		<< InfoVal<double> ("EnergyErr", EnergyErr)
+	
+		<< InfoVal<double> ("MinAngle", MinAngle)
+		<< InfoVal<double> ("MaxAngle", MaxAngle)
+		<< InfoVal<double> ("MeanAngle", MeanAngle)
+	
+		<< InfoVal<int> ("NTank", NTank)
+		<< InfoVal<int> ("HottestTank", HottestTank)
+		<< InfoVal<double> ("AxisDist", AxisDist)
+		<< InfoVal<double> ("SDPDist", SDPDist)
+	
+		<< InfoVal<double> ("SDFDdT", SDFDdT)
+		<< InfoVal<double> ("XmaxEyeDist", XmaxEyeDist)
+		<< InfoVal<double> ("XTrackMin", XTrackMin)
+		<< InfoVal<double> ("XTrackMax", XTrackMax)
+		<< InfoVal<double> ("XFOVMin", XFOVMin)
+		<< InfoVal<double> ("XFOVMax", XFOVMax)
+		<< InfoVal<double> ("XTrackObs", XTrackObs)
+		<< InfoVal<double> ("DegTrackObs", DegTrackObs)
+		<< InfoVal<double> ("TTrackObs", TTrackObs)
+
+		<< InfoVal<int> ("cut", cut);
 
 	ConstTarget::printExtra (_os, JD);
 }
@@ -428,6 +733,81 @@ void TargetAuger::writeToImage (Rts2Image * image, double JD)
 {
 	ConstTarget::writeToImage (image, JD);
 	image->setValue ("AGR_T3ID", t3id, "Auger target id");
+
+	image->setValue ("AGR_Eye", Eye, "FD eye Id");
+	image->setValue ("AGR_Run", Run, "FD run number");
+	image->setValue ("AGR_Event", Event, "FD event number");
+	image->setValue ("AGR_AugerId", AugerId.c_str (), "Event Auger Id after SD/FD merger");
+	image->setValue ("AGR_GPSSec", GPSSec, "GPS second (SD)");
+	image->setValue ("AGR_GPSNSec", GPSNSec, "GPS nano second (SD)");
+	image->setValue ("AGR_SDId", SDId, "SD Event Id");
+	
+	image->setValue ("AGR_NPix", NPix, "Num. pixels with a pulse after FdPulseFinder");
+	
+	image->setValue ("AGR_SDPTheta", SDPTheta, "Zenith angle of SDP normal vector (deg)");
+	image->setValue ("AGR_SDPThetaErr", SDPThetaErr, "Uncertainty of SDPtheta");
+	image->setValue ("AGR_SDPPhi", SDPPhi, "Azimuth angle of SDP normal vector (deg)");
+	image->setValue ("AGR_SDPPhiErr", SDPPhiErr, "Uncertainty of SDPphi");
+	image->setValue ("AGR_SDPChi2", SDPChi2, "Chi^2 of SDP db_it");
+	image->setValue ("AGR_SDPNdf", SDPNdf, "Degrees of db_reedom of SDP db_it");
+	
+	image->setValue ("AGR_Rp", Rp, "Shower impact parameter Rp (m)");
+	image->setValue ("AGR_RpErr", RpErr, "Uncertainty of Rp (m)");
+	image->setValue ("AGR_Chi0", Chi0, "Angle of shower in the SDP (deg)");
+	image->setValue ("AGR_Chi0Err", Chi0Err, "Uncertainty of Chi0 (deg)");
+	image->setValue ("AGR_T0", T0, "FD time db_it T_0 (ns)");
+	image->setValue ("AGR_T0Err", T0Err, "Uncertainty of T_0 (ns)");
+	image->setValue ("AGR_TimeChi2", TimeChi2, "Full Chi^2 of axis db_it");
+	image->setValue ("AGR_TimeChi2FD", TimeChi2FD, "Chi^2 of axis db_it (FD only)");
+	image->setValue ("AGR_TimeNdf", TimeNdf, "Degrees of db_reedom of axis db_it");
+	
+	image->setValue ("AGR_Easting", Easting, "Core position in easting coordinate (m)");
+	image->setValue ("AGR_Northing", Northing, "Core position in northing coordinate (m)");
+	image->setValue ("AGR_Altitude", Altitude, "Core position altitude (m)");
+	image->setValue ("AGR_NorthingErr", NorthingErr, "Uncertainty of northing coordinate (m)");
+	image->setValue ("AGR_EastingErr", EastingErr, "Uncertainty of easting coordinate (m)");
+	image->setValue ("AGR_Theta", Theta, "Shower zenith angle in core coords. (deg)");
+	image->setValue ("AGR_ThetaErr", ThetaErr, "Uncertainty of zenith angle (deg)");
+	image->setValue ("AGR_Phi", Phi, "Shower azimuth angle in core coords. (deg)");
+	image->setValue ("AGR_PhiErr", PhiErr, "Uncertainty of azimuth angle (deg)");
+	
+	image->setValue ("AGR_dEdXmax", dEdXmax, "Energy deposit at shower max (GeV/(g/cm^2))");
+	image->setValue ("AGR_dEdXmaxErr", dEdXmaxErr, "Uncertainty of Nmax (GeV/(g/cm^2))");
+	image->setValue ("AGR_Xmax", Xmax, "Slant depth of shower maximum (g/cm^2)");
+	image->setValue ("AGR_XmaxErr", XmaxErr, "Uncertainty of Xmax (g/cm^2)");
+	image->setValue ("AGR_X0", X0, "X0 Gaisser-Hillas db_it (g/cm^2)");
+	image->setValue ("AGR_X0Err", X0Err, "Uncertainty of X0 (g/cm^2)");
+	image->setValue ("AGR_Lambda", Lambda, "Lambda of Gaisser-Hillas db_it (g/cm^2)");
+	image->setValue ("AGR_LambdaErr", LambdaErr, "Uncertainty of Lambda (g/cm^2)");
+	image->setValue ("AGR_GHChi2", GHChi2, "Chi^2 of Gaisser-Hillas db_it");
+	image->setValue ("AGR_GHNdf", GHNdf, "Degrees of db_reedom of GH db_it");
+	image->setValue ("AGR_LineFitChi2", LineFitChi2, "Chi^2 of linear db_it to profile");
+	
+	image->setValue ("AGR_EmEnergy", EmEnergy, "Calorimetric energy db_rom GH db_it (EeV)");
+	image->setValue ("AGR_EmEnergyErr", EmEnergyErr, "Uncertainty of Eem (EeV)");
+	image->setValue ("AGR_Energy", Energy, "Total energy db_rom GH db_it (EeV)");
+	image->setValue ("AGR_EnergyErr", EnergyErr, "Uncertainty of Etot (EeV)");
+	
+	image->setValue ("AGR_MinAngle", MinAngle, "Minimum viewing angle (deg)");
+	image->setValue ("AGR_MaxAngle", MaxAngle, "Maximum viewing angle (deg)");
+	image->setValue ("AGR_MeanAngle", MeanAngle, "Mean viewing angle (deg)");
+	
+	image->setValue ("AGR_NTank", NTank, "Number of stations in hybrid db_it");
+	image->setValue ("AGR_HottestTank", HottestTank, "Station used in hybrid-geometry reco");
+	image->setValue ("AGR_AxisDist", AxisDist, "Shower axis distance to hottest station (m)");
+	image->setValue ("AGR_SDPDist", SDPDist, "SDP distance to hottest station (m)");
+	
+	image->setValue ("AGR_SDFDdT", SDFDdT, "SD/FD time offset after the minimization (ns)");
+	image->setValue ("AGR_XmaxEyeDist", XmaxEyeDist, "Distance to shower maximum (m)");
+	image->setValue ("AGR_XTrackMin", XTrackMin, "First recorded slant depth of track (g/cm^2)");
+	image->setValue ("AGR_XTrackMax", XTrackMax, "Last recorded slant depth of track (g/cm^2)");
+	image->setValue ("AGR_XFOVMin", XFOVMin, "First slant depth inside FOV (g/cm^2)");
+	image->setValue ("AGR_XFOVMax", XFOVMax, "Last slant depth inside FOV (g/cm^2)");
+	image->setValue ("AGR_XTrackObs", XTrackObs, "Observed track length depth (g/cm^2)");
+	image->setValue ("AGR_DegTrackObs", DegTrackObs, "Observed track length angle (deg)");
+	image->setValue ("AGR_TTrackObs", TTrackObs, "Observed track length time (100 ns)");
+
+	image->setValue ("AGR_cut", cut, "Cuts pased by shower");
 }
 
 void TargetAuger::getEquPositions (std::vector <struct ln_equ_posn> &positions)
