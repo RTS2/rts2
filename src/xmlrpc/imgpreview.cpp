@@ -77,6 +77,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	struct dirent **namelist;
 	int n;
+	int i;
 	int ret;
 
 	const char *pagesort = params->getString ("o", "filename");
@@ -107,7 +108,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	// first show directories..
 	_os << "<p>";
-	for (int i = 0; i < n; i++)
+	for (i = 0; i < n; i++)
 	{
 		char *fname = namelist[i]->d_name;
 		struct stat sbuf;
@@ -132,8 +133,6 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	int is = (pageno - 1) * pagesiz;
 	int ie = is + pagesiz;
 	int in = 0;
-
-	int i;
 
 	for (i = 0; i < n; i++)
 	{
