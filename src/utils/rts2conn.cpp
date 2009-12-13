@@ -858,12 +858,6 @@ int Rts2Conn::receive (fd_set * readset)
 		#endif
 		// move buf_top to end of readed data
 		buf_top += data_size;
-		// don't do anything else if command is in progress
-		//if (commandInProgress)
-		//{
-		//	return data_size;
-		//}
-		// put old data size into account..
 		data_size += buf_top - buf;
 		processBuffer ();
 	}
