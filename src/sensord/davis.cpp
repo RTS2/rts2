@@ -80,7 +80,7 @@ int Davis::idle ()
 		{
 			logStream (MESSAGE_ERROR) << "Weather station did not send any data for 180 seconds, switching to bad weather" << sendLog;
 		}
-		setWeatherTimeout (300);
+		setWeatherTimeout (300, "cannot retrieve information from Davis sensor within last 3 minutes");
 	}
 	return SensorWeather::idle ();
 }
@@ -159,7 +159,7 @@ Davis::setCloud (double _cloud, double _top, double _bottom)
       cloudBottom->setValueDouble (_bottom);
       if (cloud_bad != NULL && cloud->getValueFloat () <= cloud_bad->getValueFloat ())
       {
-	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+	      setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "cloud sensor reports cloudy");
       }
 }
 

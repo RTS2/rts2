@@ -57,9 +57,7 @@ class BartRain: public SensorWeather
 
 using namespace rts2sensord;
 
-
-int
-BartRain::processOption (int _opt)
+int BartRain::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -75,8 +73,7 @@ BartRain::processOption (int _opt)
 	return 0;
 }
 
-int
-BartRain::init ()
+int BartRain::init ()
 {
  	int ret;
 	ret = SensorWeather::init ();
@@ -110,9 +107,7 @@ BartRain::init ()
 	return 0;
 }
 
-
-int
-BartRain::info ()
+int BartRain::info ()
 {
 	int flags;
 	int ret;
@@ -123,7 +118,7 @@ BartRain::info ()
 	if (ret || !(flags & TIOCM_RI))
 	{
 		rain->setValueBool (true);
-		setWeatherTimeout (timeoutRain->getValueInteger ());
+		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
 	}
 	else
 	{
@@ -132,9 +127,7 @@ BartRain::info ()
 	return SensorWeather::info ();
 }
 
-
-BartRain::BartRain (int argc, char **argv)
-:SensorWeather (argc, argv)
+BartRain::BartRain (int argc, char **argv):SensorWeather (argc, argv)
 {
 	rain_detector = "/dev/ttyS0";
 	rain_port = -1;
@@ -149,16 +142,13 @@ BartRain::BartRain (int argc, char **argv)
 	addOption ('r', NULL, 1, "rain timeout in seconds. Default to 3600 seconds (= 60 minutes = 1 hour)");
 }
 
-
 BartRain::~BartRain ()
 {
 	if (rain_port >= 0)
 		close (rain_port);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	BartRain device = BartRain (argc, argv);
 	return device.run ();

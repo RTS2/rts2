@@ -253,8 +253,8 @@ int ApcUps::info ()
 		ret = connApc->command ("status");
 		if (ret)
 		{
-			logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
-			setWeatherTimeout (120);
+			logStream (MESSAGE_WARNING) << "cannot retrieve data from apcups, putting UPS to bad weather state" << sendLog;
+			setWeatherTimeout (120, "cannot retrieve data from UPS");
 			return ret;
 		}
 		model->setValueString (connApc->getString ("MODEL"));
@@ -271,7 +271,7 @@ int ApcUps::info ()
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
-		setWeatherTimeout (120);
+		setWeatherTimeout (120, er.what ());
 		return -1;
 	}
 
@@ -279,28 +279,28 @@ int ApcUps::info ()
 
 	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
 	{
-		logStream (MESSAGE_WARNING) <<  "too long on batteries: " << tonbatt->getValueInteger () << sendLog;
-		setWeatherTimeout (battimeout->getValueInteger () + 60);
+		logStream (MESSAGE_WARNING) <<  "running for too long on batteries: " << tonbatt->getValueInteger () << sendLog;
+		setWeatherTimeout (battimeout->getValueInteger () + 60, "running for too long on batteries");
 	}
 
 	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low battery charge");
 	}
 
 	if (timeleft->getValueInteger () < mintimeleft->getValueInteger ())
 	{
 	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << timeleft->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low minimal baterry time");
 
 	}
 
 	// if there is any UPS error, set big timeout..
 	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
 	{
-		logStream (MESSAGE_WARNING) <<  "unknow status " << status->getValue () << sendLog;
-		setWeatherTimeout (1200);
+		logStream (MESSAGE_WARNING) <<  "unknown status " << status->getValue () << sendLog;
+		setWeatherTimeout (1200, "unknown status");
 	}
 
 	delete connApc;

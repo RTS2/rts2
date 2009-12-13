@@ -227,12 +227,12 @@ int Bootes2::info ()
 	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
-		setWeatherTimeout (3600);
+		setWeatherTimeout (3600, "cannot read rain status");
 		return -1;
 	}
 	if (value == 0)
 	{
-		setWeatherTimeout (3600);
+		setWeatherTimeout (3600, "raining");
 		if (raining->getValueBool () == false)
 			logStream (MESSAGE_INFO) << "raining, switching to bad weather" << sendLog;
 		raining->setValueBool (true);
@@ -257,11 +257,11 @@ int Bootes2::info ()
 	}
 	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
 	{
-		setWeatherTimeout (600);
+		setWeatherTimeout (600, "humidity rised above humidity_bad");
 	}
 	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
 	{
-		setWeatherTimeout (600);
+		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
 	}
 
 	return SensorWeather::info ();

@@ -75,7 +75,7 @@ class SensorWeather:public Sensor
 			return nextGoodWeather->getValueDouble ();
 		}
 
-		void setWeatherTimeout (time_t wait_time);
+		void setWeatherTimeout (time_t wait_time, const char *msg);
 };
 
 };

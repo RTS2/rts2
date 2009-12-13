@@ -37,7 +37,7 @@ class Dummy:public Sensor
 			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0, false);
 			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			goodWeather->setValueBool (false);
-			setWeatherState (goodWeather->getValueBool ());
+			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
 			createValue (statTest, "test_stat", "test stat value", true);
 
 			createValue (statContent, "test_content", "test content", true);
@@ -49,7 +49,7 @@ class Dummy:public Sensor
 		{
 			if (old_value == goodWeather)
 			{
-			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool ());
+			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
 				return 0;
 			}
 			return Sensor::setValue (old_value, newValue);

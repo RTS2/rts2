@@ -34,15 +34,12 @@ WeatherBuf::WeatherBuf ()
 
 }
 
-
 WeatherBuf::~WeatherBuf ()
 {
 	values.clear ();
 }
 
-
-int
-WeatherBuf::parse (char *buf)
+int WeatherBuf::parse (char *buf)
 {
 	char *name;
 	char *value;
@@ -92,9 +89,7 @@ WeatherBuf::parse (char *buf)
 	return 0;
 }
 
-
-void
-WeatherBuf::getValue (const char *name, float &val, int &status)
+void WeatherBuf::getValue (const char *name, float &val, int &status)
 {
 	if (status)
 		return;
@@ -110,16 +105,12 @@ WeatherBuf::getValue (const char *name, float &val, int &status)
 	status = -1;
 }
 
-
-void
-DavisUdp::setWeatherTimeout (time_t wait_time)
+void DavisUdp::setWeatherTimeout (time_t wait_time, const char *msg)
 {
-	master->setWeatherTimeout (wait_time);
+	master->setWeatherTimeout (wait_time, msg);
 }
 
-
-DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master)
-:Rts2ConnNoSend (_master)
+DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, int _bad_weather_timeout, Davis * _master):Rts2ConnNoSend (_master)
 {
 	weather_port = _weather_port;
 	weather_timeout = _weather_timeout;
@@ -128,9 +119,7 @@ DavisUdp::DavisUdp (int _weather_port, int _weather_timeout, int _conn_timeout, 
 	master = _master;
 }
 
-
-int
-DavisUdp::init ()
+int DavisUdp::init ()
 {
 	struct sockaddr_in bind_addr;
 	int ret;
@@ -162,9 +151,7 @@ DavisUdp::init ()
 	return ret;
 }
 
-
-int
-DavisUdp::receive (fd_set * set)
+int DavisUdp::receive (fd_set * set)
 {
 	#define BUF_SIZE 1000
 	int ret, ret_c;
@@ -220,7 +207,7 @@ DavisUdp::receive (fd_set * set)
 		if (ret)
 		{
 			rain = 1;
-			setWeatherTimeout (conn_timeout);
+			setWeatherTimeout (conn_timeout, "cannot parse rain, wind, humidity or temperature data - check the logs");
 			return data_size;
 		}
 		// get information about cloud cover
@@ -296,7 +283,7 @@ DavisUdp::receive (fd_set * set)
 		if (rain != 0)
 		{
 			time (&lastBadWeather);
-			setWeatherTimeout (bad_weather_timeout);
+			setWeatherTimeout (bad_weather_timeout, "raining");
 		}
 		// ack message
 		sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));

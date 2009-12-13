@@ -21,9 +21,7 @@
 
 using namespace rts2sensord;
 
-
-int
-FramWeather::processOption (int _opt)
+int FramWeather::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -74,25 +72,21 @@ FramWeather::FramWeather (int argc, char **argv):SensorWeather (argc, argv)
 	addOption ('W', "max_windspeed", 1, "maximal allowed windspeed (in km/h)");
 }
 
-
-int
-FramWeather::info ()
+int FramWeather::info ()
 {
 	return (getLastInfoTime () < connUpdateSep->getValueInteger ()) ? 0 : -1;
 }
 
-
-void
-FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date)
+void FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, struct ln_date *_date)
 {
 	struct tm _tm;
 	windSpeed->setValueFloat (_windSpeed);
 	if (_windSpeed >= maxWindSpeed->getValueFloat ())
-		setWeatherTimeout (timeoutWindspeed->getValueInteger ());
+		setWeatherTimeout (timeoutWindspeed->getValueInteger (), "wind speed above max wind speed");
 	
 	rain->setValueBool (_rain);
 	if (_rain == true)
-		setWeatherTimeout (timeoutRain->getValueInteger ());
+		setWeatherTimeout (timeoutRain->getValueInteger (), "raining");
 
 	if (strcmp (_status, "watch") == 0)
 	{
@@ -101,7 +95,7 @@ FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, stru
 	else
 	{
 	  	watch->setValueInteger (1);
-		setWeatherTimeout (timeoutConn->getValueInteger ());
+		setWeatherTimeout (timeoutConn->getValueInteger (), "meteo station not in 'watch' mode");
 	}
 	// change from date to tm
 	bzero (&_tm, sizeof(struct tm));
@@ -114,14 +108,12 @@ FramWeather::setWeather (float _windSpeed, bool _rain, const char *_status, stru
 	setInfoTime (&_tm);
 	if (getLastInfoTime () > connUpdateSep->getValueInteger ())
 	{
-		setWeatherTimeout (timeoutConn->getValueInteger ());
+		setWeatherTimeout (timeoutConn->getValueInteger (), "last weather updated received too late");
 	}
 	infoAll ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	FramWeather device = FramWeather (argc, argv);
 	return device.run ();

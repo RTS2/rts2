@@ -156,7 +156,7 @@ int Mrakomer::init ()
 	mrakConn->flushPortIO ();
 
 	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false);
+		setWeatherState (false, "TRIGGOOD value unspecified");
 
 	return 0;
 }
@@ -168,7 +168,7 @@ int Mrakomer::info ()
 	if (ret)
 	{
 		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60);
+			setWeatherTimeout (60, "cannot get values for last 60 seconds");
 		return -1;
 	}
 	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
@@ -182,7 +182,7 @@ int Mrakomer::info ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
 			}
-			setWeatherTimeout (300);
+			setWeatherTimeout (300, "gets bellow bad trigger point");
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
@@ -195,7 +195,7 @@ int Mrakomer::info ()
 		}
 		else if (getWeatherState () == false)
 		{
-			setWeatherTimeout (300);
+			setWeatherTimeout (300, "in gray period - between TRIGBAD and TRIGGOOD");
 		}
 	}
 	// record last value

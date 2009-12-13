@@ -276,7 +276,7 @@ int Cloud4::init ()
 	mrakConn->flushPortIO ();
 
 	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false);
+		setWeatherState (false, "TRIGGOOD unspecified");
 	return 0;
 }
 
@@ -287,7 +287,7 @@ int Cloud4::info ()
 	if (ret)
 	{
 		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60);
+			setWeatherTimeout (60, "cannot read data from device");
 		return -1;
 	}
 	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
@@ -301,7 +301,7 @@ int Cloud4::info ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
 			}
-			setWeatherTimeout (300);
+			setWeatherTimeout (300, "crossed TRIGBAD");
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
@@ -315,7 +315,7 @@ int Cloud4::info ()
 		// gray zone - if it's bad weather, keep it bad
 		else if (getWeatherState () == false)
 		{
-			setWeatherTimeout (300);
+			setWeatherTimeout (300, "do not rised above TRIGGOOD");
 		}
 	}
 	// record last value

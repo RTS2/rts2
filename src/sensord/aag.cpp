@@ -449,7 +449,7 @@ AAG::init ()
         //aagConn->setDebug() ;
 	//aagConn->setLogAsHex(true) ; //ToDo ?it works after a restart of centrald?
 	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false);
+		setWeatherState (false, "TRIGGOOD unspecified");
 
 	return 0;
 }
@@ -466,21 +466,21 @@ AAG::info ()
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 	return -1 ;
     }
     ret = AAGGetIRSensorTemperature ();
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 	return -1 ;
     }
     ret = AAGGetValues ();
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 	return -1 ;
     }
 
@@ -488,14 +488,14 @@ AAG::info ()
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 	return -1 ;
     }
     ret = AAGSkyTemperatureCorrection(tempSky->getValueDouble(), tempIRSensor->getValueDouble(), cor);
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 	
 	return -1 ;
     }
@@ -503,7 +503,7 @@ AAG::info ()
     if (ret)
     {
 	if (getLastInfoTime () > AAG_WEATHER_TIMEOUT)
-	    setWeatherTimeout (AAG_WEATHER_TIMEOUT);
+	    setWeatherTimeout (AAG_WEATHER_TIMEOUT, "cannot read from device");
 
 	return -1 ;
     }
@@ -524,7 +524,7 @@ AAG::info ()
 				     << " trigger: " << triggerGood->getValueDouble ()
 				     << sendLog;
 	}
-	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD);
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
     }
     return SensorWeather::info ();
 }
