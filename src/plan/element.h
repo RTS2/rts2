@@ -76,7 +76,7 @@ class Script;
 /**
  * This class defines one element in script, which is equal to one command in script.
  *
- * @author Petr Kubanek <pkubanek@asu.cas.cz>
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Element:public Rts2Object
 {
@@ -91,7 +91,13 @@ class Element:public Rts2Object
 
 		virtual int nextCommand (Rts2DevClientPhot * phot, Rts2Command ** new_command, char new_device[DEVICE_NAME_SIZE]);
 
+		/**
+		 * Query image processing.
+		 *
+		 * @return -1 if not handled, 0 if basic image processing should be performed, > 0 if image should not be deleted (deletion must be handled Element).
+		 */
 		virtual int processImage (Rts2Image * image);
+
 		/**
 		 * Returns 1 if we are waiting for that signal.
 		 * Signal is > 0

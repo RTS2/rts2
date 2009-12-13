@@ -18,6 +18,7 @@
  */
 
 #include "script.h"
+#include "elementexe.h"
 #include "elementtarget.h"
 #include "elementblock.h"
 #include "elementguiding.h"
@@ -613,6 +614,13 @@ Element *Script::parseBuf (Rts2Target * target, struct ln_equ_posn *target_pos)
 		ffEl = new ElementFxF (this, new_device, ra_size, dec_size);
 		parseBlock (ffEl, target, target_pos);
 		return ffEl;
+	}
+	else if (!strcmp (commandStart, COMMAND_EXE))
+	{
+		char *exe;
+		if (getNextParamString (&exe))
+			return NULL;
+		return new Execute (this, getMaster (), exe);
 	}
 
 	// setValue fallback

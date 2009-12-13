@@ -461,7 +461,7 @@ int Executor::changeMasterState (int new_state)
 		default:
 			// we need to stop observation that is continuus
 			// that will guarantie that in isContinues call, we will not que our target again
-			end ();
+			stop ();
 			break;
 	}
 	return Rts2DeviceDb::changeMasterState (new_state);

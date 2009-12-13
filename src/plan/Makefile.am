@@ -4,7 +4,7 @@ bin_PROGRAMS = rts2-scriptexec rts2-scriptor rts2-imgproc
 noinst_HEADERS = rts2execcli.h script.h connimgprocess.h rts2selector.h element.h \
 		 rts2devscript.h rts2devcliphot.h rts2spiral.h elementblock.h elementguiding.h \
 		 rts2execclidb.h elementacquire.h scriptexec.h rts2targetscr.h \
-		 elementtarget.h elementhex.h elementwaitfor.h rts2scriptinterface.h operands.h
+		 elementtarget.h elementhex.h elementwaitfor.h rts2scriptinterface.h operands.h elementexe.h
 
 EXTRA_DIST = rts2selector.ec rts2devcliphot.ec
 
@@ -14,7 +14,7 @@ noinst_LIBRARIES = libscript.a
 
 libscript_a_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp rts2devscript.cpp rts2spiral.cpp \
 		elementblock.cpp elementguiding.cpp rts2targetscr.cpp elementtarget.cpp elementhex.cpp elementwaitfor.cpp \
-		rts2scriptinterface.cpp operands.cpp
+		rts2scriptinterface.cpp operands.cpp elementexe.cpp
 libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
 
@@ -37,7 +37,7 @@ rts2_scriptor_CXXFLAGS += @LIBPG_CFLAGS@
 rts2_scriptor_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 bin_PROGRAMS += rts2-executor rts2-selector rts2-seltest rts2-targetinfo rts2-marchive \
-	       rts2-plan
+	       rts2-plan rts2-queue-selector
 
 nodist_rts2_executor_SOURCES = rts2devcliphot.cpp
 rts2_executor_SOURCES = executor.cpp
@@ -69,6 +69,10 @@ rts2_marchive_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a 
 rts2_plan_SOURCES = planapp.cpp
 rts2_plan_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 rts2_plan_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_CFLAGS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
+
+rts2_queue_selector_SOURCES = queue-selector.cpp
+rts2_queue_selector_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+rts2_queue_selector_LDFLAGS = libscript.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_M@ @LIB_JPEG@
 
 %.cpp: %.ec
 	@ECPG@ -o $@ $^

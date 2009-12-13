@@ -43,7 +43,7 @@ imageProceRes ClientCameraScript::processImage (Rts2Image * image)
 	image->saveImage ();
 	std::cout << image->getFileName () << std::endl;
 
-	return IMAGE_DO_BASIC_PROCESSING;
+	return Rts2DevClientCameraExec::processImage (image);
 }
 
 int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
