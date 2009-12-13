@@ -86,7 +86,7 @@ class Rts2DevConnMaster:public Rts2Conn
 		time_t nextTime;
 	protected:
 		virtual int command ();
-		virtual void setState (int in_value);
+		virtual void setState (int in_value, char * msg);
 		virtual void setBopState (int in_value);
 		virtual void connConnected ();
 		virtual void connectionError (int last_data_size);

@@ -556,12 +556,15 @@ class Rts2Conn:public Rts2Object
 
 		virtual int acceptConn ();
 
+		// if we can delete connection..
+		virtual bool canDelete () { return true; };
+
 		/**
 		 * Set connection state.
 		 *
 		 * @param in_value New state value.
 		 */
-		virtual void setState (int in_value);
+		virtual void setState (int in_value, char * msg);
 
 		/**
 		 * Set device full BOP state.

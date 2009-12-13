@@ -41,7 +41,7 @@ class ConnFork:public Rts2ConnNoSend
 {
 	public:
 		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
-		virtual ~ ConnFork (void);
+		virtual ~ConnFork ();
 
 
 		/**
@@ -55,6 +55,8 @@ class ConnFork:public Rts2ConnNoSend
 			_os << arg;
 			argv.push_back (_os.str ());
 		}
+
+		virtual int sendMsg (const char *msg);
 
 		void setInput (std::string _input) { input = _input; }
 
@@ -83,15 +85,23 @@ class ConnFork:public Rts2ConnNoSend
 
 		virtual void childReturned (pid_t in_child_pid);
 
-		virtual void childEnd ()
-		{
-			// insert here some post-processing
-		}
+		/**
+		 * Called after script execution ends.
+		 */
+		virtual void childEnd () {}
+
+		const char *getExePath () { return exePath; }
 
 	protected:
 		char *exePath;
 		virtual void connectionError (int last_data_size);
+
+		/**
+		 * Called before fork command, This is the spot to possibly check
+		 * and fill in execution filename.
+		 */
 		virtual void beforeFork ();
+
 		/**
 		 * Called when initialization of the connection fails at some point.
 		 */

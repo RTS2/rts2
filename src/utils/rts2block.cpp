@@ -127,6 +127,26 @@ Rts2Block::addConnection (Rts2Conn *_conn)
 	connections_added.push_back (_conn);
 }
 
+void Rts2Block::removeConnection (Rts2Conn *_conn)
+{
+	connections_t::iterator iter;
+	for (iter = connections.begin (); iter != connections.end ();)
+	{
+		if (*iter == _conn)
+			iter = connections.erase (iter);
+		else
+			iter++;
+	}
+
+	for (iter = connections_added.begin (); iter != connections_added.end ();)
+	{
+		if (*iter == _conn)
+			iter = connections_added.erase (iter);
+		else
+			iter++;
+	}
+}
+
 
 void
 Rts2Block::addCentraldConnection (Rts2Conn *_conn, bool added)
@@ -203,10 +223,12 @@ Rts2Block::sendMessageAll (Rts2Message & msg)
 
 
 void
-Rts2Block::sendStatusMessage (int state)
+Rts2Block::sendStatusMessage (int state, const char * msg)
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
+	if (msg != NULL)
+		_os << " \"" << msg << "\"";
 	sendAll (_os);
 }
 
@@ -304,11 +326,6 @@ Rts2Block::selectSuccess ()
 		conn = *iter;
 		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
 		{
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) <<
-				"Will delete connection " << " name: " << conn->
-				getName () << sendLog;
-			#endif
 			ret = deleteConnection (conn);
 			// delete connection only when it really requested to be deleted..
 			if (!ret)

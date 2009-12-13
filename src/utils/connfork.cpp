@@ -45,7 +45,7 @@ ConnFork::ConnFork (Rts2Block *_master, const char *_exe, bool _fillConnEnvVars,
 	fillConnEnvVars = _fillConnEnvVars;
 }
 
-ConnFork::~ConnFork (void)
+ConnFork::~ConnFork ()
 {
 	if (childPid > 0)
 		kill (-childPid, SIGINT);
@@ -54,6 +54,23 @@ ConnFork::~ConnFork (void)
 	if (sockwrite > 0)
 		close (sockwrite);
 	delete[]exePath;
+}
+
+int ConnFork::sendMsg (const char *msg)
+{
+	std::string completeMessage = input + msg + "\n";
+
+	int l = completeMessage.length ();
+	int ret = write (sockwrite, completeMessage.c_str (), l);
+
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot write to process " << getExePath () << ": " << strerror (errno) << sendLog;
+		connectionError (-1);
+		return -1;
+	}
+	setInput (completeMessage.substr (ret));
+	return 0;	
 }
 
 int ConnFork::add (fd_set * readset, fd_set * writeset, fd_set * expset)
@@ -204,18 +221,17 @@ int ConnFork::init ()
 		initFailed ();
 		return -1;
 	}
-	if (input.length () > 0)
+
+	ret = pipe (filedeswrite);
+	if (ret)
 	{
-		ret = pipe (filedeswrite);
-		if (ret)
-		{
-		  	logStream (MESSAGE_ERROR) << 
-				"ConnFork::init cannot create write pipe for process: " << 
-				strerror (errno) << sendLog;
-			initFailed ();
-			return -1;
-		}
+	  	logStream (MESSAGE_ERROR) << 
+			"ConnFork::init cannot create write pipe for process: " << 
+			strerror (errno) << sendLog;
+		initFailed ();
+		return -1;
 	}
+
 	// do everything that will be needed to done before forking
 	beforeFork ();
 	childPid = fork ();
@@ -232,12 +248,11 @@ int ConnFork::init ()
 		close (filedes[1]);
 		sockerr = filedeserr[0];
 		close (filedeserr[1]);
-		if (input.length () > 0)
-		{
-			sockwrite = filedeswrite[1];
-			close (filedeswrite[0]);
-			fcntl (sockwrite, F_SETFL, O_NONBLOCK);
-		}
+
+		sockwrite = filedeswrite[1];
+		close (filedeswrite[0]);
+		fcntl (sockwrite, F_SETFL, O_NONBLOCK);
+
 		fcntl (sock, F_SETFL, O_NONBLOCK);
 		fcntl (sockerr, F_SETFL, O_NONBLOCK);
 		return 0;
@@ -247,11 +262,9 @@ int ConnFork::init ()
 	close (1);
 	close (2);
 
-	if (input.length () > 0)
-	{
-		close (filedeswrite[1]);
-		dup2 (filedeswrite[0], 0);
-	}
+	close (filedeswrite[1]);
+	dup2 (filedeswrite[0], 0);
+
 	close (filedes[0]);
 	dup2 (filedes[1], 1);
 	close (filedeserr[0]);

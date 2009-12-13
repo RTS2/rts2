@@ -258,6 +258,13 @@ class Rts2Block: public Rts2App
 		void addConnection (Rts2Conn *_conn);
 
 		/**
+		 * Remove connection from list of connections. The programme is then
+		 * responsible to call destructor for the connection. This is handy
+		 * when destructor is called for some other reason.
+		 */
+		void removeConnection (Rts2Conn *_conn);
+
+		/**
 		 * Add connection as connection to central server,
 		 *
 		 * @param _conn Connection which will be added.
@@ -328,7 +335,7 @@ class Rts2Block: public Rts2App
 		 *
 		 * @see PROTO_STATUS
 		 */
-		void sendStatusMessage (int state);
+		void sendStatusMessage (int state, const char * msg = NULL);
 
 		/**
 		 * Send status message to one connection.

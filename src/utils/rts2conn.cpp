@@ -528,7 +528,7 @@ int Rts2Conn::acceptConn ()
 	}
 }
 
-void Rts2Conn::setState (int in_value)
+void Rts2Conn::setState (int in_value, char * msg)
 {
 	serverState->setValue (in_value);
 	if (otherDevice)
@@ -585,7 +585,6 @@ void Rts2Conn::processLine ()
 	int ret;
 
 	// find command parameters end
-	command_buf_top = command_start;
 
 	while (*command_buf_top && !isspace (*command_buf_top))
 		command_buf_top++;
@@ -785,6 +784,9 @@ void Rts2Conn::processBuffer ()
 			// mark end of line..
 			*buf_top = '\0';
 			buf_top++;
+
+			command_buf_top = command_start;
+
 			processLine ();
 			// binary read just started
 			if (activeReadData >= 0)
@@ -1078,9 +1080,10 @@ int Rts2Conn::command ()
 int Rts2Conn::status ()
 {
 	int value;
-	if (paramNextInteger (&value) || !paramEnd ())
+	char *msg = NULL;
+	if (paramNextInteger (&value) || !(paramEnd () || (paramNextString (&msg) == 0 && paramEnd ())))
 		return -2;
-	setState (value);
+	setState (value, msg);
 	return -1;
 }
 
@@ -1378,7 +1381,10 @@ void Rts2Conn::connConnected ()
 void Rts2Conn::connectionError (int last_data_size)
 {
 	activeReadData = -1;
-	setConnState (CONN_DELETE);
+	if (canDelete ())
+		setConnState (CONN_DELETE);
+	else
+		setConnState (CONN_BROKEN);
 	if (sock >= 0)
 		close (sock);
 	sock = -1;

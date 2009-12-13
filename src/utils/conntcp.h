@@ -158,6 +158,11 @@ class ConnTCP:public Rts2ConnNoSend
 
 		virtual void postEvent (Rts2Event * event);
 
+	protected:
+		virtual bool canDelete () { return false; }
+
+		virtual void connectionError (int last_data_size);
+
 	private:
 		const char *hostname;
 		int port;
@@ -165,9 +170,6 @@ class ConnTCP:public Rts2ConnNoSend
 		bool debug;
 
 		bool checkBufferForChar (std::istringstream **_is, char end_char);
-	
-	protected:
-		virtual void connectionError (int last_data_size);
 };
 
 };

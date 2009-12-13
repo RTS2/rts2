@@ -469,9 +469,9 @@ Rts2DevConnMaster::command ()
 
 
 void
-Rts2DevConnMaster::setState (int in_value)
+Rts2DevConnMaster::setState (int in_value, char * msg)
 {
-	Rts2Conn::setState (in_value);
+	Rts2Conn::setState (in_value, msg);
 	master->setMasterState (in_value);
 }
 
@@ -846,7 +846,7 @@ Rts2Device::stateChanged (int new_state, int old_state, const char *description)
 	// try to wake-up qued changes..
 	checkQueChanges (new_state);
 	setFullBopState (new_state);
-	sendStatusMessage (getState ());
+	sendStatusMessage (getState (), description);
 }
 
 
