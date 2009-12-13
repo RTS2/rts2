@@ -57,9 +57,12 @@ void ConnExecute::processLine ()
 	char *value;
 	char *operat;
 	char *operand;
+	char *comm;
+
 
 	if (paramNextString (&cmd))
 		return;
+
 	if (!strcmp (cmd, "exposure"))
 	{
 		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), 0));
@@ -134,28 +137,55 @@ void ConnExecute::processLine ()
 			images.erase (iter);
 		}
 	}
+	else if (!strcmp (cmd, "C"))
+	{
+		if (paramNextString (&device) || (comm = paramNextWholeString ()) == NULL)
+			return;
+		Rts2Conn *conn = getConnectionForScript (device);
+		if (conn)
+		{
+			conn->queCommand (new Rts2Command (getMaster (), comm));
+		}
+	}
+	else if (!strcmp (cmd, "command"))
+	{
+		if ((comm = paramNextWholeString ()) == NULL)
+			return;
+		masterElement->getConnection ()->queCommand (new Rts2Command (getMaster (), comm));
+	}
 	else if (!strcmp (cmd, "V"))
 	{
-		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || paramNextString (&operand))
+		if (paramNextString (&device) || paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
-		Rts2Conn *conn = getMaster ()->getOpenConnection (device);
+		Rts2Conn *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), std::string (value), *operat, std::string (operand), true));
 		}
 	}
-
 	else if (!strcmp (cmd, "value"))
 	{
-		if (paramNextString (&value) || paramNextString (&operat) || paramNextString (&operand))
+		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
 	else if (!strcmp (cmd, "?"))
 	{
+		if (paramNextString (&value))
+			return;
+		Rts2Value *val = masterElement->getConnection()->getValue (value);
+		if (val)
+		{
+			sendMsg (val->getValue ());
+			return;
+		}
+		sendMsg ("ERR");
+	}
+	else if (!strcmp (cmd, "G"))
+	{
 		if (paramNextString (&device) || paramNextString (&value))
 			return;
-		Rts2Conn *conn = getMaster ()->getOpenConnection (device);
+		Rts2Conn *conn = getConnectionForScript (device);
 		if (conn)
 		{
 			Rts2Value *val = conn->getValue (value);
@@ -167,7 +197,6 @@ void ConnExecute::processLine ()
 		}
 		sendMsg ("ERR");
 	}
-		
 }
 
 int ConnExecute::processImage (Rts2Image *image)
@@ -192,6 +221,13 @@ std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
 			return iter;
 	}
 	return iter;
+}
+
+Rts2Conn *ConnExecute::getConnectionForScript (const char *_name)
+{
+	if (!strcmp (_name, ".") || !strcmp (_name, "centrald"))
+		return getMaster ()->getSingleCentralConn ();
+	return getMaster ()->getOpenConnection (_name);
 }
 
 Execute::Execute (Script * _script, Rts2Block * _master, const char *_exec): Element (_script)
