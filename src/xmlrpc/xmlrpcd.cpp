@@ -1031,7 +1031,7 @@ class GetMessages: public SessionMethod
 
 JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
 
-JpegPreview jpegPreview ("/preview", &xmlrpc_server);
+JpegPreview jpegPreview ("/preview", "/", &xmlrpc_server);
 
 DownloadRequest downloadRequest ("/download", &xmlrpc_server);
 

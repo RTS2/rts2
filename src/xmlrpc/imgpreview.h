@@ -45,11 +45,13 @@ class JpegImageRequest: public GetRequestAuthorized
 class JpegPreview:public GetRequestAuthorized
 {
 	public:
-		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
+		JpegPreview (const char* prefix, const char *_dirPath, XmlRpcServer *s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
 
 		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, int prevsize, bool selected);
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+	private:
+		const char *dirPath;
 };
 
 #endif // HAVE_LIBJPEG

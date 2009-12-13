@@ -49,12 +49,16 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	int prevsize = params->getInteger ("ps", 128);
 	// image type
 	const char *t = params->getString ("t", "p");
+
+	std::string absPathStr = dirPath + path;
+	const char *absPath = absPathStr.c_str ();
+
 	// if it is a fits file..
 	if (path.length () > 6 && (path.substr (path.length () - 5)) == std::string (".fits"))
 	{
 		response_type = "image/jpeg";
 
-		Rts2Image image (path.c_str (), false, true);
+		Rts2Image image (absPath, false, true);
 		image.openImage ();
 		Blob blob;
 		Magick::Image mimage = image.getMagickImage ();
@@ -93,11 +97,11 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			 * _POSIX_C_SOURCE #define, record it and send it to petr@kubanek.net.
 			 * Please contact petr@kubanek.net if you don't know how to get
 			 * _POSIX_C_SOURCE. */
-			n = scandir (path.c_str (), &namelist, 0, cdatesort);
+			n = scandir (absPath, &namelist, 0, cdatesort);
 			break;
 		case SORT_FILENAME:
 		default:
-		  	n = scandir (path.c_str (), &namelist, 0, alphasort);
+		  	n = scandir (absPath, &namelist, 0, alphasort);
 			break;
 	}
 
@@ -112,12 +116,12 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	{
 		char *fname = namelist[i]->d_name;
 		struct stat sbuf;
-		ret = stat ((path + fname).c_str (), &sbuf);
+		ret = stat ((absPathStr + fname).c_str (), &sbuf);
 		if (ret)
 			continue;
 		if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
 		{
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/?ps=" << prevsize << "'>" << fname << "</a> ";
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << getPrefix () << path << fname << "/?ps=" << prevsize << "'>" << fname << "</a> ";
 		}
 	}
 
@@ -144,7 +148,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			continue;
 		if (in > ie)
 			continue;
-		std::string fpath = std::string (path) + '/' + fname;
+		std::string fpath = absPathStr + '/' + fname;
 		_os
 		  << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
 	}
