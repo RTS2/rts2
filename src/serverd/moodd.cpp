@@ -49,7 +49,7 @@ MoodD::checkCentarlds ()
 	connections_t::iterator iter;
 	if (getCentraldConns ()->size () == 0)
 	{
-		setWeatherState (false);
+		setWeatherState (false, "cannot connect to centrald");
 		return;
 	}
 
@@ -57,17 +57,17 @@ MoodD::checkCentarlds ()
 	{
 		if (!((*iter)->isConnState (CONN_CONNECTED) || (*iter)->isConnState (CONN_AUTH_OK)))
 		{
-			setWeatherState (false);
+			setWeatherState (false, "some centrald connection is not running");
 			return;
 		}
 		if (((*iter)->getState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 		{
-			setWeatherState (false);
+			setWeatherState (false, "some centrald is in off state");
 			return;
 		}
 	}
 	// all connections are up, running, and none is in hard off..
-	setWeatherState (true);
+	setWeatherState (true, "all OK");
 }
 
 

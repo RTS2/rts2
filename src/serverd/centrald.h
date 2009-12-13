@@ -75,6 +75,8 @@ class Rts2Centrald:public Rts2Daemon
 		StringArray *requiredDevices;
 		StringArray *failedDevices;
 
+		Rts2ValueString *badWeatherReason;
+
 		char *configFile;
 		std::string logFile;
 		// which sets logfile
@@ -222,9 +224,12 @@ class Rts2Centrald:public Rts2Daemon
 		 * will not be broken, but will not transwer any usable data to
 		 * centrald.
 		 *
+		 * @param deviceName  Name of device triggering weather change.
+		 * @param msg         Message associated with weather change.
+		 *
 		 * @callgraph
 		 */
-		void weatherChanged ();
+		void weatherChanged (const char * device, const char * msg);
 
 		/**
 		 * Called when block of operation device mask changed. It checks
@@ -292,7 +297,7 @@ class Rts2ConnCentrald:public Rts2Conn
 		int messageMask;
 
 	protected:
-		virtual void setState (int in_value);
+		virtual void setState (int in_value, char * msg);
 	public:
 		Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
 			int in_centrald_id);

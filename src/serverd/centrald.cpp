@@ -22,13 +22,13 @@
 #include "../utils/rts2centralstate.h"
 #include "../utils/timestamp.h"
 
-void Rts2ConnCentrald::setState (int in_value)
+void Rts2ConnCentrald::setState (int in_value, char *msg)
 {
-	Rts2Conn::setState (in_value);
+	Rts2Conn::setState (in_value, msg);
 	// distribute weather updates..
 	if (serverState->maskValueChanged (WEATHER_MASK))
 	{
-		master->weatherChanged ();
+		master->weatherChanged (getName (), msg);
 	}
 	if (serverState->maskValueChanged (BOP_MASK))
 	{
@@ -386,6 +386,8 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVE
 	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
 	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
 
+	createValue (badWeatherReason, "weather_reason", "why system was switched to bad weather", false);
+
 	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
 	nextState->addSelVal ("day");
@@ -567,7 +569,7 @@ int Rts2Centrald::initValues ()
 void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
 	// update weather
-	weatherChanged ();
+	weatherChanged (conn->getName (), "connection removed");
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
 	connections_t::iterator iter;
@@ -587,7 +589,7 @@ void Rts2Centrald::stateChanged (int new_state, int old_state, const char *descr
 			<< " to " << Rts2CentralState::getString (getState ())
 			<< " description " << description
 			<< sendLog;
-		sendStatusMessage (getState ());
+		sendStatusMessage (getState (), description);
 	}
 }
 
@@ -680,7 +682,7 @@ void Rts2Centrald::deviceReady (Rts2Conn * conn)
 {
 	Rts2Daemon::deviceReady (conn);
 	// check again for weather state..
-	weatherChanged ();
+	weatherChanged (conn->getName (), "device ready");
 }
 
 void Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
@@ -717,7 +719,7 @@ void Rts2Centrald::signaledHUP ()
 	Rts2Daemon::signaledHUP ();
 }
 
-void Rts2Centrald::weatherChanged ()
+void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 {
 	// state of the required devices
 	std::vector <std::string> failedArr;
@@ -749,7 +751,7 @@ void Rts2Centrald::weatherChanged ()
 	failedDevices->setValueArray (failedArr);
 	sendValueAll (failedDevices);
 
-	setWeatherState (failedArr.size () > 0 ? false : true);
+	setWeatherState (failedArr.size () > 0 ? false : true, "weather state update from weatherChanged");
 	if (failedArr.size () > 0)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
