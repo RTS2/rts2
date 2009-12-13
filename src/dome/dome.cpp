@@ -224,11 +224,11 @@ int Dome::idle ()
 	// update our own weather state..
 	if (allCentraldRunning () && getNextOpen () < getNow ())
 	{
-		setWeatherState (true);
+		setWeatherState (true, "can open dome");
 	}
 	else
 	{
-		setWeatherState (false);
+		setWeatherState (false, "waiting for next_open");
 	}
 
 	return Rts2Device::idle ();

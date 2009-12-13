@@ -82,8 +82,7 @@ class IEEC: public Dome
 
 using namespace rts2dome;
 
-void
-IEEC::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
+void IEEC::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
 {
 	int ret;
 	unsigned int v;
@@ -93,9 +92,7 @@ IEEC::comediReadDIO (int channel, Rts2ValueBool *val, const char *name)
 	val->setValueBool (v != 0);
 }
 
-
-int
-IEEC::processOption (int _opt)
+int IEEC::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -108,9 +105,7 @@ IEEC::processOption (int _opt)
 	return 0;
 }
 
-
-int
-IEEC::init ()
+int IEEC::init ()
 {
 	int ret;
 	ret = Dome::init ();
@@ -152,16 +147,12 @@ IEEC::init ()
 	return 0;
 }
 
-
-int
-IEEC::info ()
+int IEEC::info ()
 {
 	return Dome::info ();
 }
 
-
-int
-IEEC::startOpen ()
+int IEEC::startOpen ()
 {
 	if (comedi_dio_write (comediDevice, 2, 0, 0) != 1)
 	{
@@ -177,22 +168,17 @@ IEEC::startOpen ()
 	return 0;
 }
 
-
-long
-IEEC::isOpened ()
+long IEEC::isOpened ()
 {
+	return -2;
 }
 
-
-int
-IEEC::endOpen ()
+int IEEC::endOpen ()
 {
 	return 0;
 }
 
-
-int
-IEEC::startClose ()
+int IEEC::startClose ()
 {
 	if (comedi_dio_write (comediDevice, 2, 1, 0) != 1)
 	{
@@ -207,19 +193,14 @@ IEEC::startClose ()
 	return 0;
 }
 
-
-long
-IEEC::isClosed ()
+long IEEC::isClosed ()
 {
 }
 
-
-int
-IEEC::endClose ()
+int IEEC::endClose ()
 {
 	return 0;
 }
-
 
 IEEC::IEEC (int argc, char **argv): Dome (argc, argv)
 {
@@ -228,15 +209,12 @@ IEEC::IEEC (int argc, char **argv): Dome (argc, argv)
 	addOption ('c', NULL, 1, "path to comedi device");
 }
 
-
 IEEC::~IEEC ()
 {
 
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	IEEC device = IEEC (argc, argv);
 	return device.run ();
