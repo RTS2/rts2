@@ -280,39 +280,10 @@ bool Rts2NDeviceWindow::setCursor ()
 
 Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rts2NDeviceWindow (in_connection)
 {
-	nightStart = new Rts2ValueTime ("Night start", "Beginnign of current or next night", false);
-	nightStop = new Rts2ValueTime ("Night stop", "End of current or next night", false);
-
-	sunAlt = new Rts2ValueDouble ("Sun alt", "Sun altitude", false, RTS2_DT_DEC);
-	sunAz = new Rts2ValueDouble ("Sun az", "Sun azimuth", false, RTS2_DT_DEGREES);
-
-	sunRise = new Rts2ValueTime ("Sun rise", "Sun rise", false);
-	sunSet = new Rts2ValueTime ("Sun set", "Sun set", false);
-
-	moonAlt = new Rts2ValueDouble ("Moon alt", "Moon altitude", false, RTS2_DT_DEC);
-	moonAz = new Rts2ValueDouble ("Moon az", "Moon azimuth", false, RTS2_DT_DEGREES);
-
-	moonPhase = new Rts2ValueDouble ("Moon phase", "Moon phase", false, RTS2_DT_PERCENTS);
-
-	moonRise = new Rts2ValueTime ("Moon rise", "Moon rise", false);
-	moonSet = new Rts2ValueTime ("Moon set", "Moon set", false);
 }
 
 Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
 {
-	delete sunAlt;
-	delete sunAz;
-
-	delete sunRise;
-	delete sunSet;
-
-	delete moonAlt;
-	delete moonAz;
-
-	delete moonPhase;
-
-	delete moonRise;
-	delete moonSet;
 }
 
 void Rts2NDeviceCentralWindow::printValues ()
@@ -330,22 +301,6 @@ void Rts2NDeviceCentralWindow::printValues ()
 			printValue (((Rts2ValueSelection *) nextState)->getSelName ((*iter).getState ()), _os.str ().c_str (), false);
 		}
 	}
-
-	printValue (nightStart);
-	printValue (nightStop);
-
-	printValue (sunAlt);
-	printValue (sunAz);
-
-	printValue (sunRise);
-	printValue (sunSet);
-
-	printValue (moonAlt);
-	printValue (moonAz);
-	printValue (moonPhase);
-
-	printValue (moonRise);
-	printValue (moonSet);
 }
 
 void Rts2NDeviceCentralWindow::drawValuesList ()
@@ -361,14 +316,9 @@ void Rts2NDeviceCentralWindow::drawValuesList ()
 	Rts2Value *valLng = getConnection ()->getValue ("longitude");
 	Rts2Value *valLat = getConnection ()->getValue ("latitude");
 
-	if (valLng && valLat && !isnan (valLng->getValueDouble ())
-		&& !isnan (valLat->getValueDouble ()))
+	if (valLng && valLat && !isnan (valLng->getValueDouble ()) && !isnan (valLat->getValueDouble ()))
 	{
-		struct ln_equ_posn pos, parallax;
 		struct ln_lnlat_posn observer;
-		struct ln_hrz_posn hrz;
-		struct ln_rst_time rst;
-		double JD = ln_get_julian_from_sys ();
 
 		observer.lng = valLng->getValueDouble ();
 		observer.lat = valLat->getValueDouble ();
@@ -404,6 +354,7 @@ void Rts2NDeviceCentralWindow::drawValuesList ()
 					valDayHorizon->getValueDouble (),
 					valEveningTime->getValueInteger (),
 					valMorningTime->getValueInteger ());
+				/**
 				if (curr_type == SERVERD_DUSK)
 				{
 					nightStart->setValueTime (ev_time);
@@ -411,42 +362,10 @@ void Rts2NDeviceCentralWindow::drawValuesList ()
 				if (curr_type == SERVERD_NIGHT)
 				{
 					nightStop->setValueTime (ev_time);
-				}
+				} **/
 				stateChanges.push_back (FutureStateChange (curr_type, t_start));
 			}
 		}
-
-		ln_get_solar_equ_coords (JD, &pos);
-		ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), &observer, 1700,
-			JD, &parallax);
-		pos.ra += parallax.ra;
-		pos.dec += parallax.dec;
-		ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
-
-		sunAlt->setValueDouble (hrz.alt);
-		sunAz->setValueDouble (hrz.az);
-
-		ln_get_solar_rst (JD, &observer, &rst);
-
-		sunRise->setValueDouble (timetFromJD (rst.rise));
-		sunSet->setValueDouble (timetFromJD (rst.set));
-
-		ln_get_lunar_equ_coords (JD, &pos);
-		ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), &observer, 1700,
-			JD, &parallax);
-		pos.ra += parallax.ra;
-		pos.dec += parallax.dec;
-		ln_get_hrz_from_equ (&pos, &observer, JD, &hrz);
-
-		moonAlt->setValueDouble (hrz.alt);
-		moonAz->setValueDouble (hrz.az);
-
-		moonPhase->setValueDouble (ln_get_lunar_phase (JD) / 1.8);
-
-		ln_get_lunar_rst (JD, &observer, &rst);
-
-		moonRise->setValueDouble (timetFromJD (rst.rise));
-		moonSet->setValueDouble (timetFromJD (rst.set));
 
 	}
 	printValues ();

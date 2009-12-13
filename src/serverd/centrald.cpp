@@ -18,6 +18,7 @@
  */
 
 #include "centrald.h"
+#include "../utils/libnova_cpp.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2centralstate.h"
 #include "../utils/timestamp.h"
@@ -397,21 +398,36 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVE
 	nextState->addSelVal ("dawn");
 	nextState->addSelVal ("morning");
 
-	createConstValue (observerLng, "longitude", "observatory longitude", false,
-		RTS2_DT_DEGREES);
-	createConstValue (observerLat, "latitude", "observatory latitude", false,
-		RTS2_DT_DEC);
+	createConstValue (observerLng, "longitude", "observatory longitude", false, RTS2_DT_DEGREES);
+	createConstValue (observerLat, "latitude", "observatory latitude", false, RTS2_DT_DEC);
 
-	createConstValue (nightHorizon, "night_horizon",
-		"observatory night horizon", false, RTS2_DT_DEC);
-	createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
-		false, RTS2_DT_DEC);
+	createConstValue (nightHorizon, "night_horizon", "observatory night horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
+	createConstValue (dayHorizon, "day_horizon", "observatory day horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
 
-	createConstValue (eveningTime, "evening_time", "time needed to cool down cameras", false);
-	createConstValue (morningTime, "morning_time", "time needed to heat up cameras", false);
+	createValue (eveningTime, "evening_time", "time needed to cool down cameras", false, RTS2_VALUE_WRITABLE);
+	createValue (morningTime, "morning_time", "time needed to heat up cameras", false, RTS2_VALUE_WRITABLE);
+
+	createValue (nightStart, "night_start", "Beginnign of current or next night", false);
+	createValue (nightStop, "night_stop", "End of current or next night", false);
+
+	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
+	createValue (sunAz, "sun_az", "Sun azimuth", false, RTS2_DT_DEGREES);
+
+	createValue (sunRise, "sun_rise", "Sun rise", false);
+	createValue (sunSet, "sun_set", "Sun set", false);
+
+	createValue (moonAlt, "moon_alt", "Moon altitude", false, RTS2_DT_DEC);
+	createValue (moonAz, "moon_az", "Moon azimuth", false, RTS2_DT_DEGREES);
+
+	createValue (moonPhase, "moon_phase", "Moon phase", false, RTS2_DT_PERCENTS);
+
+	createValue (moonRise, "moon_rise", "Moon rise", false);
+	createValue (moonSet, "moon_set", "Moon set", false);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
+
+	setIdleInfoInterval (300);
 }
 
 Rts2Centrald::~Rts2Centrald (void)
@@ -627,6 +643,46 @@ int Rts2Centrald::changeState (int new_state, const char *user)
 		user << sendLog;
 	maskState (SERVERD_STANDBY_MASK | SERVERD_STATUS_MASK, new_state, user);
 	return 0;
+}
+
+int Rts2Centrald::info ()
+{
+	struct ln_equ_posn pos, parallax;
+	struct ln_hrz_posn hrz;
+	struct ln_rst_time rst;
+	double JD = ln_get_julian_from_sys ();
+
+	ln_get_solar_equ_coords (JD, &pos);
+	ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), observer, 1700, JD, &parallax);
+	pos.ra += parallax.ra;
+	pos.dec += parallax.dec;
+	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+
+	sunAlt->setValueDouble (hrz.alt);
+	sunAz->setValueDouble (hrz.az);
+
+	ln_get_solar_rst (JD, observer, &rst);
+
+	sunRise->setValueDouble (timetFromJD (rst.rise));
+	sunSet->setValueDouble (timetFromJD (rst.set));
+
+	ln_get_lunar_equ_coords (JD, &pos);
+	ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), observer, 1700, JD, &parallax);
+	pos.ra += parallax.ra;
+	pos.dec += parallax.dec;
+	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+
+	moonAlt->setValueDouble (hrz.alt);
+	moonAz->setValueDouble (hrz.az);
+
+	moonPhase->setValueDouble (ln_get_lunar_phase (JD) / 1.8);
+
+	ln_get_lunar_rst (JD, observer, &rst);
+
+	moonRise->setValueDouble (timetFromJD (rst.rise));
+	moonSet->setValueDouble (timetFromJD (rst.set));
+
+	return Rts2Daemon::info ();
 }
 
 int Rts2Centrald::idle ()
