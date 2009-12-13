@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-06-02</date>">
+  <!ENTITY dhdate      "<date>2009-12-13</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -38,6 +38,7 @@
     <copyright>
       <year>2006</year>
       <year>2007</year>
+      <year>2009</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -82,6 +83,19 @@
     </para>
 
     <variablelist>
+      <varlistentry>
+        <term>
+	  <option>exe {executable filename}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute external script. The script communicates with executor through
+	    standard input and outputs - both normal and error output. For documentation of the
+	    protocol, as well as available Python class for handling of this communication, please
+	    see bellow.
+	  </para>
+	</listitem>
+      </varlistentry>
       <varlistentry>
         <term>
 	  <option>E {exposure_time}</option>
@@ -533,6 +547,70 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Communication with executable</title>
+    <para>
+      If you use <emphasis>exe</emphasis> command in scripting, the script
+      should communicate with RTS2 through standart input and outputs. The
+      protocol is simple, text oriented, with lines ending with line feed.
+      It is possible to write observing script using shell echo and read
+      commands, as is demonstrated in example bellow. But for higher
+      interaction, some higher language is prefered - based on preferences,
+      any of Python, PHP, Perl, TCL or any other language capable to read and
+      write to file descriptor will work.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><option>exposure</option></term>
+	<listitem><para>
+	  Start exposure on the camera. Current exposure length setting and
+	  others current settings will be used.
+	</para><para>
+	  When exposure is finished and the image is written to disk,
+	  controlling script receives image name on standard input, preceeded
+	  by <emphasis>image</emphasis> string. Script is responsible to specify treatment
+	  of the image - it might be copied, renamed or moved to some system
+	  locations. Please see bellow for an example.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>rename {image name} {expression}</option></term>
+	<listitem><para>
+	  Renames image to given expression. Please see
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for details of the expression. Bellow is an example, which start
+	  exposure, waits for image and rename image to given location.
+	</para><literallayout>
+echo exposure
+read image imagename  # $image will hold "image" string
+echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>V {device} {value name} {operator} {operand1 [operand2..]}</option></term>
+	<listitem><para>
+	  Set variable of given device. Operand can be any of =, += or -=. If
+	  value have multiple components (e.g. telescope RA DEC offsets, or
+	  camera readout area), you must separated components with space.
+	  Examples:
+	</para><literallayout>
+echo V W0 filter += 1 # increases filter of device W0 by one
+echo V T0 WOFFS = 0.01 0.01 # set WOFFS of device T0 to 0.01 in RA and DEC
+echo V C1 WINDOW = 0 0 10 10 # set C1 WINDOW (readout area). C1 will read only upper left square with size of 10 pixels
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>value {value name} {operator} {operand1 [operand2..]}</option></term>
+	<listitem><para>
+	  Set variable of script device. This is shortcut to easily interact
+	  with device on which the script is run. It is otherwise similar to V command.
+	</para><literallayout>
+echo value exposure += 1
+echo value WINDOW = 0 0 10 10 
+	</literallayout></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>Variables</title>
     <para>
       Inside scripting, following syntax is used to access variables values.
@@ -568,6 +646,33 @@
   </refsect1>
   <refsect1>
     <title>EXAMPLES</title>
+
+    <para>
+      This script will call external script, which will hadle all communication. It will start exposure
+      on camera, change filter and telescope offsets, and move image to given expand path.
+    </para>
+
+    <para>exe /home/user/bin/test.sh</para>
+
+    <para>
+      And this is the executable.
+    </para>
+
+    <literallayout>
+#!/bin/bash
+
+for x in 1 2; do
+	echo $x
+	echo "exposure"
+	read x y
+	echo "rename $y %b/test/%f"
+	echo "? C0 infotime"
+	read x
+	echo "V W0 filter += 1"
+	echo "V T0 WOFFS += 0.01 0.01"
+	sleep 5
+done
+    </literallayout>
 
     <para>
       Following script can be used for finding focus position. It moves focuser
