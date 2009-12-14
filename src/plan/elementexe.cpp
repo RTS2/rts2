@@ -18,6 +18,7 @@
  */
 
 #include "elementexe.h"
+#include "rts2execcli.h"
 #include "script.h"
 
 using namespace rts2script;
@@ -91,6 +92,18 @@ void ConnExecute::processLine ()
 			images.erase (iter);
 		}
 	}
+	else if (!strcmp (cmd, "archive"))
+	{
+		if (paramNextString (&imagename))
+			return;
+		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		if (iter != images.end ())
+		{
+			(*iter)->toArchive ();
+			delete *iter;
+			images.erase (iter);
+		}
+	}
 	else if (!strcmp (cmd, "trash"))
 	{
 		if (paramNextString (&imagename))
@@ -134,6 +147,17 @@ void ConnExecute::processLine ()
 		{
 			(*iter)->deleteImage ();
 			delete *iter;
+			images.erase (iter);
+		}
+	}
+	else if (!strcmp (cmd, "process"))
+	{
+		if (paramNextString (&imagename))
+			return;
+		std::list <Rts2Image *>::iterator iter = findImage (imagename);
+		if (iter != images.end ())
+		{
+			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
 			images.erase (iter);
 		}
 	}
