@@ -575,7 +575,7 @@
       <varlistentry>
         <term><option>rename {image name} {expression}</option></term>
 	<listitem><para>
-	  Renames image to given expression. Please see
+	  Renames image to given by an expression. Please see
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	  for details of the expression. Bellow is an example, which start
 	  exposure, waits for image and rename image to given location.
@@ -586,12 +586,55 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
+        <term><option>copy {image name} {expression}</option></term>
+	<listitem><para>
+	  Copy image to path given by an expression. Please see
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for details of the expression. See rename command for an example.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>process {image name}</option></term>
+	<listitem><para>
+	  Queue image to standard processing in
+	  <citerefentry><refentrytitle>rts2-imgproc</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>flat {image name}</option></term>
+	<listitem><para>
+	  Move given image to sky flat destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>dark {image name}</option></term>
+	<listitem><para>
+	  Move given image to raw dark destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>archive {image name}</option></term>
+	<listitem><para>
+	  Move given image to raw dark destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>trash {image name}</option></term>
+	<listitem><para>
+	  Move given image to trash destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
         <term><option>V {device} {value name} {operator} {operand1 [operand2..]}</option></term>
 	<listitem><para>
-	  Set variable of given device. Operand can be any of =, += or -=. If
-	  value have multiple components (e.g. telescope RA DEC offsets, or
-	  camera readout area), you must separated components with space.
-	  Examples:
+	  Change value of variable of given device. Operand can be any of =, +=
+	  or -=. If value have multiple components (e.g. telescope RA DEC
+	  offsets, or camera readout area), you must separated components with
+	  space.  Examples:
 	</para><literallayout>
 echo V W0 filter += 1 # increases filter of device W0 by one
 echo V T0 WOFFS = 0.01 0.01 # set WOFFS of device T0 to 0.01 in RA and DEC
@@ -601,12 +644,50 @@ echo V C1 WINDOW = 0 0 10 10 # set C1 WINDOW (readout area). C1 will read only u
       <varlistentry>
         <term><option>value {value name} {operator} {operand1 [operand2..]}</option></term>
 	<listitem><para>
-	  Set variable of script device. This is shortcut to easily interact
-	  with device on which the script is run. It is otherwise similar to V command.
+	  Change value of variable of script device. This is shortcut to easily
+	  interact with device on which the script is run. It is otherwise
+	  similar to V command.
 	</para><literallayout>
 echo value exposure += 1
 echo value WINDOW = 0 0 10 10 
 	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>? {value name}</option></term>
+	<listitem><para>
+	  Retrieves value of variable from scripting device. The value of
+	  variable is printed on standard output. If an erorr occured, string
+	  ERR is printed. See <emphasis>G</emphasis> command for an example - the only
+	  diference is that you should not specify device name.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>G {device name} {value name}</option></term>
+	<listitem><para>
+	  Retrieves value of given variable from given device. The value of
+	  variable is printed on standard output. If an error occured, string
+	  ERR is printed. See bellow for an example:
+	</para><literallayout>
+G W0 filter
+	</literallayout><para>
+	  If filter is set to number 5, 5 will be printed (followed by line
+	  feed) on standard output.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>C {device name} {command..}</option></term>
+	<listitem><para>
+	  Allows execution of arbitary command on device. Please see device
+	  drivers source code for allowed commands - they are called from
+	  commandAuthorize call.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>command {command..}</option></term>
+	<listitem><para>
+	  This call is similar to C (see above), except that the command is called on
+	  current scripting device.
+	</para></listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
@@ -666,8 +747,10 @@ for x in 1 2; do
 	echo "exposure"
 	read x y
 	echo "rename $y %b/test/%f"
-	echo "? C0 infotime"
+	echo "? infotime"
 	read x
+	echo "G centrald sun_az"
+	read y
 	echo "V W0 filter += 1"
 	echo "V T0 WOFFS += 0.01 0.01"
 	sleep 5
