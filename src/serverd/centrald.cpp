@@ -802,7 +802,14 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 		{
 			failedArr.push_back ((*iter)->getName ());
 		}
-
+		if (!strcmp ((*iter)->getName (), device))
+		{
+			// device which causes bad weather..
+			if ((*iter)->isGoodWeather () == false && strlen (badWeatherReason->getValue ()) == 0)
+			{
+				badWeatherReason->setValueCharArr ((std::string (device) + ": " + msg).c_str ());
+			}
+		}
 	}
 	failedDevices->setValueArray (failedArr);
 	sendValueAll (failedDevices);
@@ -816,6 +823,11 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 			ls << " " << (*namIter);
 		ls << sendLog;
 	}
+	else
+	{
+		badWeatherReason->setValueCharArr ("");
+	}
+	sendValueAll (badWeatherReason);
 }
 
 void Rts2Centrald::bopMaskChanged ()
