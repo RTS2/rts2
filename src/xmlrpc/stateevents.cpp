@@ -36,7 +36,7 @@ void StateChangeRecord::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime
 void StateChangeCommand::run (XmlRpcd *_master, Rts2Conn *_conn, double validTime)
 {
 	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
+	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, false, 100);
 	cf->addArg (_conn->getName ());
 	cf->addArg (_conn->getStateString ());
 	ret = cf->init ();

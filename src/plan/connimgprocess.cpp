@@ -36,7 +36,7 @@
 
 using namespace rts2plan;
 
-ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):rts2core::ConnFork (in_master, in_exe, false, in_timeout)
+ConnProcess::ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout):rts2core::ConnFork (in_master, in_exe, false, false, in_timeout)
 {
 	astrometryStat = NOT_ASTROMETRY;
 

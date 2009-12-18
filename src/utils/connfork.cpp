@@ -26,11 +26,15 @@
 
 using namespace rts2core;
 
-ConnFork::ConnFork (Rts2Block *_master, const char *_exe, bool _fillConnEnvVars, int _timeout):Rts2ConnNoSend (_master)
+ConnFork::ConnFork (Rts2Block *_master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout):Rts2ConnNoSend (_master)
 {
 	childPid = -1;
 	sockerr = -1;
-	sockwrite = -1;
+	if (_openin)
+		sockwrite = -2;
+	else
+		sockwrite = -1;
+
 	exePath = new char[strlen (_exe) + 1];
 	strcpy (exePath, _exe);
 	if (_timeout > 0)
@@ -58,6 +62,9 @@ ConnFork::~ConnFork ()
 
 int ConnFork::sendMsg (const char *msg)
 {
+	if (sockwrite == -1)
+		return 0;
+
 	std::string completeMessage = input + msg + "\n";
 
 	int l = completeMessage.length ();
@@ -206,30 +213,27 @@ int ConnFork::init ()
 	ret = pipe (filedes);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ConnFork::init cannot create pipe for process: " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create pipe for process: " << strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
 	}
 	ret = pipe (filedeserr);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ConnFork::init cannot create error pipe for process: " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnFork::init cannot create error pipe for process: " << strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
 	}
 
-	ret = pipe (filedeswrite);
-	if (ret)
+	if (sockwrite == -2)
 	{
-	  	logStream (MESSAGE_ERROR) << 
-			"ConnFork::init cannot create write pipe for process: " << 
-			strerror (errno) << sendLog;
-		initFailed ();
-		return -1;
+		ret = pipe (filedeswrite);
+		if (ret)
+		{
+		  	logStream (MESSAGE_ERROR) << "ConnFork::init cannot create write pipe for process: " << strerror (errno) << sendLog;
+			initFailed ();
+			return -1;
+		}
 	}
 
 	// do everything that will be needed to done before forking
@@ -237,8 +241,7 @@ int ConnFork::init ()
 	childPid = fork ();
 	if (childPid == -1)
 	{
-		logStream (MESSAGE_ERROR) << "ConnFork::init cannot fork: " <<
-			strerror (errno) << sendLog;
+		logStream (MESSAGE_ERROR) << "ConnFork::init cannot fork: " << strerror (errno) << sendLog;
 		initFailed ();
 		return -1;
 	}
@@ -249,9 +252,12 @@ int ConnFork::init ()
 		sockerr = filedeserr[0];
 		close (filedeserr[1]);
 
-		sockwrite = filedeswrite[1];
-		close (filedeswrite[0]);
-		fcntl (sockwrite, F_SETFL, O_NONBLOCK);
+		if (sockwrite == -2)
+		{
+			sockwrite = filedeswrite[1];
+			close (filedeswrite[0]);
+			fcntl (sockwrite, F_SETFL, O_NONBLOCK);
+		}
 
 		fcntl (sock, F_SETFL, O_NONBLOCK);
 		fcntl (sockerr, F_SETFL, O_NONBLOCK);
@@ -262,8 +268,11 @@ int ConnFork::init ()
 	close (1);
 	close (2);
 
-	close (filedeswrite[1]);
-	dup2 (filedeswrite[0], 0);
+	if (sockwrite == -2)
+	{
+		close (filedeswrite[1]);
+		dup2 (filedeswrite[0], 0);
+	}
 
 	close (filedes[0]);
 	dup2 (filedes[1], 1);

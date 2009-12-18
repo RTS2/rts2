@@ -1020,7 +1020,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 	if (addExe)
 	{
 		int execRet;
-		rts2core::ConnFork *execConn = new rts2core::ConnFork (master, addExe, false, 100);
+		rts2core::ConnFork *execConn = new rts2core::ConnFork (master, addExe, false, false, 100);
 
 		execConn->addArg (d_tar_id);
 		execConn->addArg (grb_id);

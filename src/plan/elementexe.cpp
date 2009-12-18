@@ -23,7 +23,7 @@
 
 using namespace rts2script;
 
-ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const char *_exec):rts2core::ConnFork (_master, _exec, true)
+ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const char *_exec):rts2core::ConnFork (_master, _exec, true, true)
 {
 	masterElement = _masterElement;
 }

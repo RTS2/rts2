@@ -67,7 +67,7 @@ void ValueChangeRecord::run (Rts2Value *val, double validTime)
 void ValueChangeCommand::run (Rts2Value *val, double validTime)
 {
 	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, 100);
+	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
 	cf->addArg (val->getName ());
 	cf->addArg (validTime);
 	ret = cf->init ();
