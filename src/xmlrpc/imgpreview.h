@@ -67,9 +67,24 @@ class FitsImageRequest:public GetRequestAuthorized
 class DownloadRequest:public GetRequestAuthorized
 {
 	public:
+#ifdef HAVE_LIBARCHIVE
+		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) { buf = NULL; buf_size = 0; }
+		virtual ~DownloadRequest () { if (buf) free (buf); }
+#else
 		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
-
+#endif
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+
+#ifdef HAVE_LIBARCHIVE
+		char *buf;
+		ssize_t buf_size;
+#endif
 };
 
 }
+
+#ifdef HAVE_LIBARCHIVE
+int open_callback (struct archive *a, void *client_data);
+ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length);
+int close_callback (struct archive *a, void *client_data);
+#endif // HAVE_LIBARCHIVE

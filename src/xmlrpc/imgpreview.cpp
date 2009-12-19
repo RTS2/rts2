@@ -21,6 +21,10 @@
 #include "../writers/rts2image.h"
 #include "bsc.h"
 #include "dirsupport.h"
+#ifdef HAVE_LIBARCHIVE
+#include <archive.h>
+#include <archive_entry.h>
+#endif
 
 using namespace rts2xmlrpc;
 
@@ -48,7 +52,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	// size of previews
 	int prevsize = params->getInteger ("ps", 128);
 	// image type
-	const char *t = params->getString ("t", "p");
+	// const char *t = params->getString ("t", "p");
 
 	std::string absPathStr = dirPath + path;
 	const char *absPath = absPathStr.c_str ();
@@ -215,20 +219,87 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 
 void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
-	response_type = "text/html";
-	
-	std::ostringstream _os;
-	_os << "<html><head><title>Download</title></head><body>";
+
+#ifndef HAVE_LIBARCHIVE
+	throw XmlRpcException ("missing libArchive - cannot download data");
+}
+
+#else
+	response_type = "application/x-gtar";
+
+	struct ::archive *a;
+	struct ::archive_entry *entry;
+
+	a = archive_write_new ();
+	archive_write_set_compression_bzip2 (a);
+	archive_write_set_format_ustar (a);
+
+	archive_write_open (a, this, &open_callback, &write_callback, &close_callback);
 
 	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 	{
-		_os << iter->getName () << '=' << iter->getValue () << "<br/>\n";
+		if (!strcmp (iter->getName (), "files"))
+		{
+			entry = archive_entry_new ();
+			struct stat st;
+
+			char fn[strlen (iter->getValue ()) + 1];
+			strcpy (fn, iter->getValue ());
+
+			int fd = open (fn, O_RDONLY);
+			if (fd < 0)
+				throw XmlRpcException ("Cannot open file for packing");
+			fstat (fd, &st);
+			archive_entry_copy_stat (entry, &st);
+			archive_entry_set_pathname (entry, basename (fn));
+			archive_write_header (a, entry);
+
+			int len;
+			char buff[8196];
+
+			while ((len = read (fd, buff, sizeof (buff))) > 0)
+				archive_write_data (a, buff, len);
+
+			close (fd);
+			archive_entry_free (entry);
+		}
+//		_os << iter->getName () << '=' << iter->getValue () << "<br/>\n";
 	}
 
-	_os << "</body>";
+	archive_write_finish (a);
 
-	response_type = "text/html";
-	response_length = _os.str ().length ();
-	response = new char[response_length];
-	memcpy (response, _os.str ().c_str (), response_length);
+	response_length = buf_size;
+	response = buf;
+
+	buf = NULL;
 }
+
+int open_callback (struct archive *a, void *client_data)
+{
+	rts2xmlrpc::DownloadRequest *dr = (rts2xmlrpc::DownloadRequest *) client_data;
+
+	if (dr->buf)
+		free (dr->buf);
+	dr->buf = NULL;
+	dr->buf_size = 0;
+
+	return ARCHIVE_OK;
+}
+
+ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length)
+{
+	rts2xmlrpc::DownloadRequest * dr = (rts2xmlrpc::DownloadRequest *) client_data;
+	dr->buf = (char *) realloc (dr->buf, dr->buf_size + length);
+	memcpy (dr->buf + dr->buf_size, buffer, length);
+	std::cout << "length " << length << " buf " << dr->buf_size << std::endl;
+	dr->buf_size += length;
+
+	return length;
+}
+
+int close_callback (struct archive *a, void *client_data)
+{
+	return ARCHIVE_OK;
+}
+
+#endif // HAVE_LIBARCHIVE
