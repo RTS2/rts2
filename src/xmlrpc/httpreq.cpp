@@ -184,7 +184,7 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 	{
 		Target *tar;
 		val = conn->getValue ("current");
-		if (val)
+		if (val && val->getValueInteger () >= 0)
 		{
 			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
 			if (tar)
@@ -195,7 +195,7 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 			}
 		}
 		val = conn->getValue ("next");
-		if (val)
+		if (val && val->getValueInteger () >= 0)
 		{
 			tar = createTarget (val->getValueInteger (), Rts2Config::instance ()->getObserver ());
 			if (tar)
@@ -415,6 +415,8 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
 		if (*endptr != '\0')
 			throw rts2core::Error ("Expected target number!");
+		if (tar_id < 0)
+			throw rts2core::Error ("Target id < 0");
 
 		Target *tar = createTarget (tar_id, Rts2Config::instance ()->getObserver ());
 		if (tar == NULL)

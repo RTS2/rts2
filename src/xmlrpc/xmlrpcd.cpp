@@ -1206,9 +1206,9 @@ class TargetAltitude: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 4)
-			{
 				throw XmlRpcException ("Invalid number of parameters");
-			}
+			if (((int) params[0]) < 0)
+				throw XmlRpcException ("Target id < 0");
 			Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
 			if (tar == NULL)
 			{
