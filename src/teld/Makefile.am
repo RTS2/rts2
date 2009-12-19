@@ -9,7 +9,7 @@ EXTRA_DIST =
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
-	rts2-teld-trencin
+	rts2-teld-trencin rts2-teld-apgto
 
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp rts2devclicop.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
@@ -25,6 +25,8 @@ rts2_teld_dummy_SOURCES = dummy.cpp
 rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
+
+rts2_teld_apgto_SOURCES = apgto.cpp hms.c
 
 rts2_teld_d50_SOURCES = d50.cpp
 
