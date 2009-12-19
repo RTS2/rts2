@@ -78,6 +78,9 @@
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
+/* If libarchive is present */
+#undef HAVE_LIBARCHIVE
+
 /* Whenever JPEG is installed */
 #undef HAVE_LIBJPEG
 
