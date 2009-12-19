@@ -233,6 +233,7 @@ void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, c
 	a = archive_write_new ();
 	archive_write_set_compression_bzip2 (a);
 	archive_write_set_format_ustar (a);
+	archive_write_set_bytes_in_last_block (a, 1);
 
 	archive_write_open (a, this, &open_callback, &write_callback, &close_callback);
 
