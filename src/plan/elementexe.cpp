@@ -221,6 +221,32 @@ void ConnExecute::processLine ()
 		}
 		writeToProcess ("ERR");
 	}
+	else if (!strcmp (cmd, "log"))
+	{
+		if (paramNextString (&device) || (value = paramNextWholeString ()) == NULL)
+			return;
+		messageType_t logLevel;
+		switch (toupper (*device))
+		{
+			case 'E':
+				logLevel = MESSAGE_ERROR;
+				break;
+			case 'W':
+				logLevel = MESSAGE_WARNING;
+				break;
+			case 'I':
+				logLevel = MESSAGE_INFO;
+				break;
+			case 'D':
+				logLevel = MESSAGE_DEBUG;
+				break;
+			default:
+				logStream (MESSAGE_ERROR) << "Unknow log level: " << *device << sendLog;
+				logLevel = MESSAGE_ERROR;
+				break;
+		}
+		logStream (logLevel) << value << sendLog;
+	}
 }
 
 int ConnExecute::processImage (Rts2Image *image)

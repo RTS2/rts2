@@ -689,6 +689,14 @@ G W0 filter
 	  current scripting device.
 	</para></listitem>
       </varlistentry>
+      <varlistentry>
+        <term><option>log {level} {message}</option></term>
+	<listitem><para>
+	  Log something through RTS2 logging system. First letter of loglevel
+	  is significant, and its case does not matter. Log level can be E for errors,
+	  W for warnings, I for info, and D for debug messages.
+	</para></listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
   <refsect1>
@@ -747,6 +755,7 @@ for x in 1 2; do
 	echo "exposure"
 	read x y
 	echo "rename $y %b/test/%f"
+	echo "log E renaming $y"
 	echo "? infotime"
 	read x
 	echo "G centrald sun_az"
