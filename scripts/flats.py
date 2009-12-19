@@ -16,6 +16,7 @@ class Rts2Comm:
 		self.BiasLevel = 390 # although this could be set to 0 and should not make much difference
 		self.NumberFlats = 10 # Number of flats that we want to obtain
 		self.sleepTime = 30 # number of seconds to wait for optimal flat conditions
+		self.startExpTime = 1 # starting exposure time
 
 	def getValue(self,value,device = None):
 		"""Returns given value."""
@@ -53,9 +54,9 @@ class Rts2Comm:
 		print "delete",imagename
 		sys.stdin.flush()
 
-	def log(self,text):
-		print >> sys.stderr, text
-		sys.stderr.flush()
+	def log(self,level,text):
+		print "log",level,text
+		sys.stdin.flush()
 	
 	def isEvening(self):
 		"""Returns true if is evening - sun is on west"""
@@ -63,7 +64,7 @@ class Rts2Comm:
 		return sun_az < 180.0
 	
 	def runEvening(self):
-		self.exptime = 1
+		self.exptime = self.startExpTime
 
 		for filter in self.filters: # starting from the bluest and ending with the redest
 			self.Ngood = 0 # Number of good images
@@ -86,9 +87,11 @@ class Rts2Comm:
 					self.delete(img) #otherwise it is not useful and we delete it
 				self.exptime = self.exptime * self.OptimalFlat / (avrg - self.BiasLevel) # We adjust the exposure time for the next exposure, so that it is close to the optimal value
 
+				self.log('I',"runEvening avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
+
 	def runMorning(self):
 		self.filters.reverse() # oposite order of filters then at evening
-		self.exptime = 1
+		self.exptime = self.startExpTime
 
 		for filter in self.filters: # starting from the redest and ending with the bluest
 			self.Ngood = 0 # Number of good images
@@ -110,6 +113,7 @@ class Rts2Comm:
 					self.delete(img) #otherwise it is not useful and we delete it
 
 				self.exptime = self.exptime * self.OptimalFlat / (avrg - self.BiasLevel) # We adjust the exposure time for the next exposure, so that it is close to the optimal value
+				self.log('I',"runMorning avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
 
 	def run(self):
 		# choose filter sequence..
