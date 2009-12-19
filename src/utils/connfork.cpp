@@ -60,7 +60,7 @@ ConnFork::~ConnFork ()
 	delete[]exePath;
 }
 
-int ConnFork::sendMsg (const char *msg)
+int ConnFork::writeToProcess (const char *msg)
 {
 	if (sockwrite == -1)
 		return 0;

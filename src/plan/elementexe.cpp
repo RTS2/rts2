@@ -200,10 +200,10 @@ void ConnExecute::processLine ()
 		Rts2Value *val = masterElement->getConnection()->getValue (value);
 		if (val)
 		{
-			sendMsg (val->getValue ());
+			writeToProcess (val->getValue ());
 			return;
 		}
-		sendMsg ("ERR");
+		writeToProcess ("ERR");
 	}
 	else if (!strcmp (cmd, "G"))
 	{
@@ -215,11 +215,11 @@ void ConnExecute::processLine ()
 			Rts2Value *val = conn->getValue (value);
 			if (val)
 			{
-				sendMsg (val->getValue ());
+				writeToProcess (val->getValue ());
 				return;
 			}
 		}
-		sendMsg ("ERR");
+		writeToProcess ("ERR");
 	}
 }
 
@@ -227,7 +227,7 @@ int ConnExecute::processImage (Rts2Image *image)
 {
 	images.push_back (image);
 	image->saveImage ();
-	sendMsg ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
+	writeToProcess ((std::string ("image ") + image->getAbsoluteFileName ()).c_str ());
 	return 1;
 }
 

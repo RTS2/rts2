@@ -56,7 +56,7 @@ class ConnFork:public Rts2ConnNoSend
 			argv.push_back (_os.str ());
 		}
 
-		virtual int sendMsg (const char *msg);
+		int writeToProcess (const char *msg);
 
 		void setInput (std::string _input) { input = _input; }
 
