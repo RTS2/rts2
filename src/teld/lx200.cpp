@@ -29,6 +29,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
+#include "../utils/rts2config.h"
 
 #include <termios.h>
 // uncomment following line, if you want all tel_desc read logging (will
@@ -585,6 +586,17 @@ LX200::init ()
 int
 LX200::initValues ()
 {
+	int ret = -1 ;
+
+        Rts2Config *config = Rts2Config::instance ();
+        ret = config->loadFile ();
+        if (ret)
+	  return -1;
+
+        telLongitude->setValueDouble (config->getObserver ()->lng);
+        telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+
 	if (tel_read_longtitude () || tel_read_latitude ())
 		return -1;
 
