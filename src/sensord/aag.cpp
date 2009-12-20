@@ -507,7 +507,7 @@ AAG::info ()
 
 	return -1 ;
     }
-    if ((rainFrequency->getValueDouble () >= triggerGood->getValueDouble ()) && ((tempSky->getValueDouble() < THRESHOLD_CLOUDY)||(tempSkyCorrected->getValueDouble() < THRESHOLD_CLOUDY)))
+    if ((rainFrequency->getValueDouble () >= triggerGood->getValueDouble ()) &&( abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())> THRESHOLD_NO_SNOW )&& ((tempSky->getValueDouble() < THRESHOLD_CLOUDY)||(tempSkyCorrected->getValueDouble() < THRESHOLD_CLOUDY)))
     {
 	if (getWeatherState () == false)
 	{
