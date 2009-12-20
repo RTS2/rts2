@@ -224,8 +224,9 @@ int Camera::sendFirstLine ()
 		focusingHeader.shutter = htons (expType->getValueInteger ());
 	else
 		focusingHeader.shutter = 0;
-	focusingHeader.subexp = subExposure->getValueDouble ();
-	focusingHeader.nacc = htons (nAcc);
+
+	focusingHeader.channel = 0;
+	focusingHeader.totalChannel = 1;
 
 	sum->setValueDouble (0);
 	average->setValueDouble (0);
@@ -404,6 +405,9 @@ int Camera::killAll ()
 {
 	quedExpNumber->setValueInteger (0);
 	sendValueAll (quedExpNumber);
+
+	waitingForNotBop->setValueBool (false);
+	sendValueAll (waitingForNotBop);
 	
 	if (isExposing ())
 		stopExposure ();
@@ -811,10 +815,11 @@ int Camera::camStartExposure ()
 	if ((!expType || expType->getValueInteger () == 0)
 		&& (getDeviceBopState () & BOP_EXPOSURE))
 	{
+		quedExpNumber->inc ();
+		sendValueAll (quedExpNumber);
+
 		if (waitingForNotBop->getValueBool () == false)
 		{
-			quedExpNumber->inc ();
-			sendValueAll (quedExpNumber);
 			waitingForNotBop->setValueBool (true);
 			sendValueAll (waitingForNotBop);
 		}

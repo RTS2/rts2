@@ -74,7 +74,7 @@ struct imghdr
 	int16_t filter;					 //! Camera filter
 	int16_t shutter;
 	int16_t x, y;					 //! image beginning (detector coordinates)
-	double subexp;				 //! image subexposure
-	int16_t nacc;					 //! number of accumulations used to take image
+	uint16_t channel;				 //! which channel is those data
+	uint16_t totalChannel;				 //! total number of channels of this image
 };
 #endif							 // __RTS_IMGHDR__
