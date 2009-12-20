@@ -1245,6 +1245,7 @@ APGTO::tel_write_dec (double dec)
 }
 APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 {
+
 	device_file = "/dev/apmount";
 
 	addOption ('f', "device_file", 1, "device file");
@@ -1253,6 +1254,7 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 	// get values from config file
 	//	status = opentplConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
  
+
 	// object
 	createValue (APAltAz, "APAltAz", "AP mount Alt/Az[deg]", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
 
@@ -1357,6 +1359,15 @@ APGTO::initValues ()
 {
 	int ret = -1 ;
 
+        Rts2Config *config = Rts2Config::instance ();
+        ret = config->loadFile ();
+        if (ret)
+	  return -1;
+
+        telLongitude->setValueDouble (config->getObserver ()->lng);
+        telLatitude->setValueDouble (config->getObserver ()->lat);
+	telAltitude->setValueDouble (config->getObservatoryAltitude ());
+
 	if(( ret= setBasicData()) != 0)
 	  {
 	    return -1 ;
@@ -1406,14 +1417,14 @@ int
 APGTO::info ()
 {
   int ret ;
-	if (tel_read_ra () || tel_read_dec ())
-		return -1;
-	if(( ret= tel_read_sidereal_time()) != 0)
-	  return -1 ;
-	if(( ret= tel_read_declination_axis()) != 0)
-	  return -1 ;
+  if (tel_read_ra () || tel_read_dec ())
+    return -1;
+  if(( ret= tel_read_sidereal_time()) != 0)
+    return -1 ;
+  if(( ret= tel_read_declination_axis()) != 0)
+    return -1 ;
 
-	return Telescope::info ();
+  return Telescope::info ();
 }
 /*!
  * Set slew rate. For completness?
