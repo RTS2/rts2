@@ -773,8 +773,7 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				tar_comment,
 				tar_priority,
 				tar_bonus,
-				tar_bonus_time,
-				tar_enabled
+				tar_bonus_time
 			)
 			VALUES
 			(
@@ -783,12 +782,11 @@ int ConnGrb::addGcnPoint (int grb_id, int grb_seqn, int grb_type, double grb_ra,
 				:d_tar_name,
 				:d_grb_ra,
 				:d_grb_dec,
-				true,
+				:d_tar_enabled,
 				:d_tar_comment,
 				100,
 				100,
-				NULL,
-				:d_tar_enabled
+				NULL
 			);
 		if (sqlca.sqlcode)
 		{
