@@ -643,7 +643,7 @@ Rts2Device::loadModefile ()
 	if (ret)
 		return ret;
 
-	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX, 0, true);
+	createValue (modesel, "MODE", "mode name", true, RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE, 0, true);
 
 	for (Rts2ConfigRaw::iterator iter = modeconf->begin ();
 		iter != modeconf->end (); iter++)
