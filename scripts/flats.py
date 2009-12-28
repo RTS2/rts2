@@ -82,6 +82,8 @@ class Rts2Comm:
 		for e in self.expTimes:
 			if (self.exptime < e):
 				return lastE
+			lastE = e
+
 		return self.expTimes[-1]
 	
 	def runEvening(self):
@@ -90,7 +92,7 @@ class Rts2Comm:
 		for filter in self.eveningFilters: # starting from the bluest and ending with the redest
 			self.Ngood = 0 # Number of good images
 			self.setValue('filter',filter)
-			if (self.exptime > self.MaxExpT):
+			if (self.exptime >= self.MaxExpT):
 			  	self.exptime = self.MinExpT # Used in the case where we have changed filter due to a too dim sky
 
 			while (self.Ngood < self.NumberFlats and self.exptime < self.MaxExpT): # We continue when we have enough flats or when the sky is too dim
@@ -116,7 +118,7 @@ class Rts2Comm:
 		for filter in self.morningFilters: # starting from the redest and ending with the bluest
 			self.Ngood = 0 # Number of good images
 			self.setValue('filter',filter)
-			if (self.exptime < self.MinExpT):
+			if (self.exptime <= self.MinExpT):
 				self.exptime = self.MinExpT # Used in the case where we have changed filter due to a too bright sky
 
 			while (self.Ngood < self.NumberFlats and self.exptime > self.MinExpT): # We continue when we have enough flats or when the sky is too bright
