@@ -10,7 +10,7 @@ class Rts2Comm:
 	def __init__(self):
 		self.eveningFilters = ['B','b','g','r','i','z','Y'] # filters for evening, we will use reverse for morning
 
-		self.morningFilters = self.eveningFilters # filters for morning - reverse of evening filters
+		self.morningFilters = self.eveningFilters[:] # filters for morning - reverse of evening filters - deep copy them first
 		self.morningFilters.reverse ()
 
 		self.MaxExpT = 10   # Maximum exposure time that we allow
