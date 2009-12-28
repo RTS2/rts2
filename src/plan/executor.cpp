@@ -448,7 +448,6 @@ int Executor::changeMasterState (int new_state)
 		case (SERVERD_DAWN | SERVERD_STANDBY):
 		case (SERVERD_NIGHT | SERVERD_STANDBY):
 		case (SERVERD_DUSK | SERVERD_STANDBY):
-			clearNextTargets ();
 			stop ();
 			// next will be dark..
 			if (doDarks->getValueBool () == true)
@@ -617,6 +616,8 @@ int Executor::setShower ()
 
 int Executor::stop ()
 {
+	clearNextTargets ();
+	postEvent (new Rts2Event (EVENT_KILL_ALL));
 	postEvent (new Rts2Event (EVENT_STOP_OBSERVATION));
 	updateScriptCount ();
 	if (scriptCount->getValueInteger () == 0)
