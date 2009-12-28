@@ -17,41 +17,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2devcliwheel.h"
+#include "cliwheel.h"
 #include "../utils/rts2command.h"
 
 using namespace rts2camd;
 
-ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):Rts2DevClientFilter
-(conn)
+ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):Rts2DevClientFilter (conn)
 {
 }
-
 
 ClientFilterCamera::~ClientFilterCamera (void)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 }
 
-
-void
-ClientFilterCamera::filterMoveEnd ()
+void ClientFilterCamera::filterMoveEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 	Rts2DevClientFilter::filterMoveEnd ();
 }
 
-
-void
-ClientFilterCamera::filterMoveFailed (int status)
+void ClientFilterCamera::filterMoveFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
 	Rts2DevClientFilter::filterMoveFailed (status);
 }
 
-
-void
-ClientFilterCamera::postEvent (Rts2Event * event)
+void ClientFilterCamera::postEvent (Rts2Event * event)
 {
 	struct filterStart *fs;
 	switch (event->getType ())
@@ -71,4 +63,11 @@ ClientFilterCamera::postEvent (Rts2Event * event)
 			break;
 	}
 	Rts2DevClientFilter::postEvent (event);
+}
+
+void  ClientFilterCamera::valueChanged (Rts2Value * value)
+{
+	if (value->getName () == "filter")
+		getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
+	Rts2DevClientFilter::valueChanged (value);
 }

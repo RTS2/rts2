@@ -26,8 +26,8 @@
 #include <errno.h>
 
 #include "camd.h"
-#include "rts2devcliwheel.h"
-#include "rts2devclifocuser.h"
+#include "cliwheel.h"
+#include "clifocuser.h"
 
 #define OPT_FLIP    OPT_LOCAL + 401
 #define OPT_PLATE   OPT_LOCAL + 402

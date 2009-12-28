@@ -4,11 +4,11 @@ SUBDIRS = urvc2 apogee edtsao
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
-noinst_HEADERS = camd.h ccd_msg.h rts2devcliwheel.h filter.h rts2devclifocuser.h
+noinst_HEADERS = camd.h ccd_msg.h cliwheel.h filter.h clifocuser.h
 
 noinst_LIBRARIES = librts2camd.a
 
-librts2camd_a_SOURCES = camd.cpp rts2devcliwheel.cpp rts2devclifocuser.cpp
+librts2camd_a_SOURCES = camd.cpp cliwheel.cpp clifocuser.cpp
 
 LDADD = librts2camd.a ../utils/librts2block.a @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
