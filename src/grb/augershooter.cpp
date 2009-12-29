@@ -35,7 +35,8 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):Rts2DeviceDb (in_
 	createValue (triggeringEnabled, "triggering_enabled", "if true, shooter will trigger executor", false, RTS2_VALUE_WRITABLE);
 	triggeringEnabled->setValueBool (true);
 
-	createValue (lastAugerDate, "last_date", "date of last shower", false);
+	createValue (lastAugerSeen, "last_rejected", "date of last rejected shower", false);	
+	createValue (lastAugerDate, "last_date", "date of last accepted shower", false);
 	createValue (lastAugerRa, "last_ra", "RA of last shower", false, RTS2_DT_RA);
 	createValue (lastAugerDec, "last_dec", "DEC of last shower", false, RTS2_DT_DEC);
 
@@ -197,7 +198,13 @@ int DevAugerShooter::init ()
 	return ret;
 }
 
-int DevAugerShooter::newShower (double lastDate, double ra, double dec)
+void DevAugerShooter::rejectedShower (double lastDate, double ra, double dec)
+{
+	lastAugerSeen->setValueDouble (lastDate);
+	sendValueAll (lastAugerSeen);
+}
+
+void DevAugerShooter::newShower (double lastDate, double ra, double dec)
 {
 	if (triggeringEnabled->getValueBool () == false)
 	{
@@ -207,6 +214,11 @@ int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	lastAugerDate->setValueDouble (lastDate);
 	lastAugerRa->setValueDouble (ra);
 	lastAugerDec->setValueDouble (dec);
+
+	sendValueAll (lastAugerDate);
+	sendValueAll (lastAugerRa);
+	sendValueAll (lastAugerDec);
+
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
@@ -215,9 +227,7 @@ int DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	else
 	{
 		logStream (MESSAGE_ERROR) << "FATAL! No executor running to post shower!" << sendLog;
-		return -1;
 	}
-	return 0;
 }
 
 bool DevAugerShooter::wasSeen (double lastDate, double ra, double dec)

@@ -320,6 +320,7 @@ int ConnShooter::processAuger ()
 			<< " ra " << db_ra
 			<< " dec " << db_dec
 			<< ")" << sendLog;
+		((DevAugerShooter*) master)->rejectedShower (db_auger_date, db_ra, db_dec);
 		return -1;
 	}
 

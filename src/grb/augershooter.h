@@ -47,7 +47,8 @@ class DevAugerShooter:public Rts2DeviceDb
 		}
 
 		virtual int init ();
-		int newShower (double lastDate, double ra, double dec);
+		void rejectedShower (double lastDate, double ra, double dec);
+		void newShower (double lastDate, double ra, double dec);
 		bool wasSeen (double lastDate, double ra, double dec);
 	protected:
 		virtual int processOption (int in_opt);
@@ -59,6 +60,7 @@ class DevAugerShooter:public Rts2DeviceDb
 
 		int port;
 
+		Rts2ValueTime *lastAugerSeen;
 		Rts2ValueTime *lastAugerDate;
 		Rts2ValueDouble *lastAugerRa;
 		Rts2ValueDouble *lastAugerDec;
