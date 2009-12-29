@@ -66,6 +66,8 @@ void ConnExecute::processLine ()
 
 	if (!strcmp (cmd, "exposure"))
 	{
+		if (masterElement == NULL)
+			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 	}
 	else if (!strcmp (cmd, "dark"))
@@ -152,7 +154,7 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "process"))
 	{
-		if (paramNextString (&imagename))
+		if (paramNextString (&imagename) || masterElement == NULL)
 			return;
 		std::list <Rts2Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
@@ -173,7 +175,7 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "command"))
 	{
-		if ((comm = paramNextWholeString ()) == NULL)
+		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2Command (getMaster (), comm));
 	}
@@ -189,13 +191,13 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "value"))
 	{
-		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL)
+		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
 	else if (!strcmp (cmd, "?"))
 	{
-		if (paramNextString (&value))
+		if (paramNextString (&value) || masterElement == NULL)
 			return;
 		Rts2Value *val = masterElement->getConnection()->getValue (value);
 		if (val)
