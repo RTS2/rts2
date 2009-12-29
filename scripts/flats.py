@@ -119,7 +119,7 @@ class Rts2Comm:
 			self.Ngood = 0 # Number of good images
 			self.setValue('filter',filter)
 			if (self.exptime <= self.MinExpT):
-				self.exptime = self.MinExpT # Used in the case where we have changed filter due to a too bright sky
+				self.exptime = self.startExpTime # Used in the case where we have changed filter due to a too bright sky
 
 			while (self.Ngood < self.NumberFlats and self.exptime > self.MinExpT): # We continue when we have enough flats or when the sky is too bright
 				if (self.exptime > self.MaxExpT):
