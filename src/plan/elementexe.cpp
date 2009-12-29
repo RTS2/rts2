@@ -66,7 +66,7 @@ void ConnExecute::processLine ()
 
 	if (!strcmp (cmd, "exposure"))
 	{
-		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), 0));
+		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 	}
 	else if (!strcmp (cmd, "dark"))
 	{
