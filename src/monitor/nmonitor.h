@@ -20,6 +20,10 @@
 #ifndef __RTS2_NMONITOR__
 #define __RTS2_NMONITOR__
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 255
+#endif
+
 #include "../utils/rts2block.h"
 #include "../utils/rts2client.h"
 #include "../utils/rts2command.h"
