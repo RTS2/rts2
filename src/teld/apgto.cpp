@@ -1454,19 +1454,19 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       if ( selectAPTrackingMode(2) < 0 ) /* tracking mode 2 = sidereal */
 	{
 	  logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect setting tracking mode ZERO." << sendLog;
-	  return;
+	  return -1;
 	}
       return 0 ;
     }
   else if (conn->isCommand ("budge")) // move is used for a slew to a position
     {
-      char *direction
-      if (conn->paramNextString (direction) || !conn->paramEnd ())
-	{ 
-	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized direction failed" << sendLog;
-	  return -2;
-	}
-      return 0 ;
+      // char *direction ;
+      // if (conn->paramNextString (direction) || !conn->paramEnd ())
+      // 	{ 
+      // 	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized direction failed" << sendLog;
+      // 	  return -2;
+      // 	}
+      // return 0 ;
     }
   else if (conn->isCommand ("sync"))
     {
