@@ -323,6 +323,7 @@ AppOpenTPLError::doProcessing ()
 			break;
 		case CAL:
 			fparam = 2;
+			status = opentplConn->set ("POINTING.POINTINGPARAMS.SAVE", 1, &status);
 			status = opentplConn->set ("POINTING.POINTINGPARAMS.CALCULATE", fparam, &status);
 			break;
 		case RESET:
