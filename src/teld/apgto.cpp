@@ -56,6 +56,13 @@
 #define SLEW_RATE_0900 '1'
 #define SLEW_RATE_0600 '0'
 
+#define MOVE_RATE_120000 '0'
+#define MOVE_RATE_060000 '1'
+#define MOVE_RATE_006400 '2'
+#define MOVE_RATE_001200 '3'
+#define MOVE_RATE_000100 '4'
+#define MOVE_RATE_000050 '5'
+#define MOVE_RATE_000025 '6'
 
 #define DIR_NORTH 'n'
 #define DIR_EAST  'e'
@@ -74,7 +81,7 @@ namespace rts2teld
   {
   private:
     const char *device_file;
-    char initialisation[256];
+    char initialization[256];
     int apgto_fd;
     
     double lastMoveRa, lastMoveDec;  
@@ -102,6 +109,7 @@ namespace rts2teld
     int selectAPSlewRate( int slewRate) ;
     int selectAPTrackingMode( int trackMode) ;
     int tel_read_declination_axis() ;
+    int tel_check_declination_axis() ;
     int setAPSiteLongitude( double Long) ;
     int setAPSiteLatitude( double Lat) ;
     int setAPLocalTime(int x, int y, int z) ;
@@ -130,7 +138,8 @@ namespace rts2teld
     int tel_stop_move (char direction);
     int tel_slew_to (double ra, double dec);
     void set_move_timeout (time_t plus_time);
-
+    // further discussion with Petr required
+    //int changeMasterState (int new_state);
     // Astro-Physics properties
     Rts2ValueAltAz   *APAltAz ;
     Rts2ValueInteger *APslew_rate;
@@ -406,7 +415,6 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms error tel_write_read_hash >"<< command << "<END "<< ", length "<< strlen (command)<< " failed" << sendLog;
       return -1;
     }
-
   *hmsptr = hmstod (wbuf);
   if (errno)
     {
@@ -440,7 +448,7 @@ APGTO::getAPUTCOffset()
 
     if (( ret= tel_write_read_hash ( "#:GG#", 5, temp_string, 11))<1) // HH:MM:SS.S# if long format
       {
-	logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset error " << nbytes_read << " bytes read " << sendLog;
+	logStream (MESSAGE_ERROR) <<"APGTO::getAPUTCOffset error " << nbytes_read << " bytes read" << sendLog;
 	return -1 ;
       }
     // Negative offsets, see AP keypad manual p. 77
@@ -877,7 +885,7 @@ APGTO::tel_read_ra ()
   double new_ra;
   if (tel_read_hms (&new_ra, "#:GR#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_ra failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_ra failed"<< sendLog;
       return -1;
     }
   setTelRa (new_ra * 15.0);
@@ -894,7 +902,7 @@ APGTO::tel_read_dec ()
   double t_telDec;
   if (tel_read_hms (&t_telDec, "#:GD#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_dec failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_dec failed"<< sendLog;
       return -1;
     }
   setTelDec (t_telDec);
@@ -911,7 +919,7 @@ APGTO::tel_read_altitude ()
   double new_altitude;
   if (tel_read_hms (&new_altitude, "#:GA#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_altitude failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_altitude failed"<< sendLog;
       return -1;
     }
   APAltAz->setAlt(new_altitude);
@@ -928,7 +936,7 @@ APGTO::tel_read_azimuth ()
   double new_azimuth;
   if (tel_read_hms (&new_azimuth, "#:GZ#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_azimuth failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_azimuth failed"<< sendLog;
       return -1;
     }
   APAltAz->setAz(new_azimuth);
@@ -945,7 +953,7 @@ APGTO::tel_read_local_time ()
   double new_local_time;
   if (tel_read_hms (&new_local_time, "#:GL#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_local_time failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_local_time failed"<< sendLog;
       return -1;
     }
   APlocal_time->setValueDouble(new_local_time * 15.) ;
@@ -962,7 +970,7 @@ APGTO::tel_read_sidereal_time ()
   double new_sidereal_time;
   if (tel_read_hms (&new_sidereal_time, "#:GS#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_sidereal_time failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_sidereal_time failed"<< sendLog;
       return -1;
     }
   APlocal_sidereal_time->setValueDouble(new_sidereal_time *15.) ;
@@ -984,7 +992,7 @@ APGTO::tel_read_latitude ()
   double new_latitude;
   if (tel_read_hms (&new_latitude, "#:Gt#"))
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_latitude failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_read_latitude failed"<< sendLog;
       return -1;
     }
   APlatitude->setValueDouble(new_latitude) ;
@@ -1033,6 +1041,76 @@ APGTO::tel_read_declination_axis ()
   APangle_dechour->setValueString(new_declination_axis) ;
   return 0;
 }
+/*!
+ * Checks APGTO relative position of the declination axis to the observed hour angle.
+ *
+ * @return -1 on error, otherwise 0
+ *
+ * MY EDIT APGTO relative position of the declination axis
+ */
+int
+APGTO::tel_check_declination_axis ()
+{
+// make sure that the (declination - optical axis) have the correct sign
+// if not you'll buy a new tube.
+  if (tel_read_ra () || tel_read_dec ())
+    return -1;
+  
+  double HA, HA_h ;
+  double RA, RA_h ;
+  char RA_str[32] ;
+  char HA_str[32] ;
+  int h, m, s ;
+
+  double JD  = ln_get_julian_from_sys ();
+  double lng = telLongitude->getValueDouble ();
+  double local_sidereal_time= ln_get_mean_sidereal_time( JD) * 15. + lng;  // longitude positive to the East
+
+  RA  = getTelRa() ;
+  RA_h= RA/15. ;
+
+  getSexComponents( RA_h, &h, &m, &s) ;
+  snprintf(RA_str, 9, "%02d:%02d:%02d", h, m, s);
+
+  HA  = fmod( local_sidereal_time- RA+ 360., 360.) ;
+  HA_h= HA / 15. ;
+
+  getSexComponents( HA_h, &h, &m, &s) ;
+  snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
+	
+  logStream (MESSAGE_DEBUG) << "APGTO::initValues RA:"<< RA_str << ", HA "<< HA_str << " optical:"<< APangle_dechour->getValue()<< sendLog;
+
+  if( tel_read_declination_axis())
+    {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
+      exit(1); // yes, this is the end 
+    }
+  if (!strcmp("West", APangle_dechour->getValue()))
+    {
+      if(( HA > 180.) && ( HA <= 360.))
+	{
+	}
+      else
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::initValues sign of declination and optical axis is wrong (HA="<< HA_str<<", West), severe error, exiting." << sendLog;
+	  exit(1); // yes, this is the end 
+	}
+    }
+  else if (!strcmp("East", APangle_dechour->getValue()))
+    {
+      if(( HA >= 0.0) && ( HA <= 180.))
+	{
+	}
+      else
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::initValues sign of declination and optical axis is wrong(HA="<< HA_str<<", East), severe error, exiting." << sendLog;
+	  exit(1); // yes, this is the end 
+	}
+    }
+
+  return 0 ;
+}
+
 /*!
  * Normalize ra and dec,
  *
@@ -1135,12 +1213,51 @@ APGTO::tel_set_slew_rate (char new_rate)
  * @return -1 on failure & set errno, 5 (>=0) otherwise
  */
 int
-APGTO::tel_set_move_rate (char new_rate)
+APGTO::tel_set_move_rate (char moveToRate)
 {
   char command[6];
-  sprintf (command, "#:RS%c#", new_rate); // slew
-  logStream (MESSAGE_DEBUG) << "APGTO::tel_set_MOVE_rate >" << command << "<END" << sendLog;
-
+  switch (moveToRate)
+    {
+      /* 0.25x*/
+    case MOVE_RATE_000025:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 0.25x." << sendLog;
+      strcpy( command, "#:RG0#"); 
+      /* 0.5x*/
+      break;
+    case MOVE_RATE_000050:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 0.5x." << sendLog;
+      strcpy( command, "#:RG1#"); 
+      break;
+      /* 1x*/
+    case MOVE_RATE_000100:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 1x." << sendLog;
+      strcpy( command, "#:RG2#"); 
+      break;
+      /* 12x*/
+    case MOVE_RATE_001200:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 12x." << sendLog;
+      strcpy( command, "#:RC0#"); 
+      break;
+      /* 64x */
+    case MOVE_RATE_006400:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 64x." << sendLog;
+      strcpy( command, "#:RC1#"); 
+      break;
+      /* 600x */
+    case MOVE_RATE_060000: 
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 600x." << sendLog;
+      strcpy( command, "#:RC2#"); 
+      break;
+      /* 1200x */
+    case MOVE_RATE_120000:
+      logStream (MESSAGE_DEBUG) <<"APGTO::tel_set_move_rate setting move to rate to 1200x." << sendLog;
+      strcpy( command, "#:RC3#"); 
+      break;
+    default:
+      return -1;
+      break;
+    }
+  logStream (MESSAGE_DEBUG) << "APGTO::tel_set_move_rate >" << command << "<END" << sendLog;
   return tel_write (command, 5);
 }
 
@@ -1155,7 +1272,7 @@ APGTO::tel_start_move (char direction)
 int
 APGTO::tel_stop_move (char direction)
 {
-  // wildi: ToDo
+
 	char command[6];
 	sprintf (command, "#:Q%c#", direction);
 	return tel_write (command, 5) < 0 ? -1 : 0;
@@ -1179,6 +1296,8 @@ APGTO::tel_slew_to (double ra, double dec)
 
   tel_normalize (&ra, &dec);
 
+  object.ra= ra ;
+  object.dec= dec ;
   observer.lng = telLongitude->getValueDouble ();
   observer.lat = telLatitude->getValueDouble ();
 
@@ -1188,16 +1307,17 @@ APGTO::tel_slew_to (double ra, double dec)
 
   if( hrz.alt < 0.)
     {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to object ra " << ra << " dec " <<  dec << "is below horizon"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to object ra " << ra << " dec " <<  dec << " is below horizon"<< sendLog;
       return -1 ;
     }
 
   if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
     return -1;
+  logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
 
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to tel_write_read #:MS# failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to tel_write_read #:MS# failed"<< sendLog;
       return -1;
     }
 
@@ -1269,9 +1389,11 @@ APGTO::setTo (double ra, double dec)
   //          (there are 5 spaces between “Coordinates” and “matched”, and 8 trailing spaces before the “#”, 
   //          the total response length is 32 character plus the “#”.	  
 
+  logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SetTo (SYNC)-----------------------------------------"<< sendLog;
+
   if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0)
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# failed "<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# failed"<< sendLog;
       return -1;
     }
   return 0 ;
@@ -1300,6 +1422,7 @@ APGTO::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
 int
 APGTO::startPark ()
 {
+  return 0 ; // wildi ToDo: testing
   // the equatorial position is derived from the azimuth coordinates (45, 0).  
   // later it will be done using the AP GTO controller's native commands.
   struct ln_equ_posn park;
@@ -1330,6 +1453,7 @@ APGTO::isParking ()
 int
 APGTO::endPark ()
 {
+  return 0 ; // wildi ToDo: testing
   logStream (MESSAGE_DEBUG) << "APGTO::endPark" << sendLog;
   ParkDisconnect() ;
   return 0;
@@ -1394,6 +1518,7 @@ APGTO::valueChanged (Rts2Value * changed_value)
 {
   int ret= -1 ;
   int slew_rate= -1 ;
+  int move_rate= -1 ;
   char command ;
 
   if (changed_value ==APslew_rate)
@@ -1423,6 +1548,40 @@ APGTO::valueChanged (Rts2Value * changed_value)
 	  // wildi ToDo: thinking about what to do in this case
 	  APslew_rate->setValueInteger(-1); 
 	  logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_slew_rate failed" << sendLog;
+	  // return -1 ;
+	  return ;
+	}
+    }
+  else if (changed_value ==APmove_rate)
+    {
+      if(( move_rate= APmove_rate->getValueInteger())== 600)
+      	{
+      	  command= MOVE_RATE_060000 ;
+     	}
+      else if( APmove_rate->getValueInteger()== 64)
+       	{
+      	  command= MOVE_RATE_006400 ;
+     	}
+      else if( APmove_rate->getValueInteger()== 12)
+      	{
+      	  command= MOVE_RATE_001200 ;
+      	}
+      else if( APmove_rate->getValueInteger()== 1)
+      	{
+      	  command= MOVE_RATE_000100 ;
+      	}
+      else
+      	{
+	  APmove_rate->setValueInteger(-1);  
+      	  logStream (MESSAGE_ERROR) << "APGTO::valueChanged wrong move rate " << APmove_rate->getValue() << ", valid: 600, 64, 12, 1"<< sendLog;
+	  return ;
+      	}
+
+      if(( ret= tel_set_move_rate (command)) !=5)
+	{
+	  // wildi ToDo: thinking about what to do in this case
+	  APmove_rate->setValueInteger(-1); 
+	  logStream (MESSAGE_ERROR) << "APGTO::valueChanged tel_set_move_rate failed" << sendLog;
 	  // return -1 ;
 	  return ;
 	}
@@ -1460,13 +1619,18 @@ APGTO::commandAuthorized (Rts2Conn *conn)
     }
   else if (conn->isCommand ("budge")) // move is used for a slew to a position
     {
-      // char *direction ;
-      // if (conn->paramNextString (direction) || !conn->paramEnd ())
-      // 	{ 
-      // 	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized direction failed" << sendLog;
-      // 	  return -2;
-      // 	}
-      // return 0 ;
+      char *direction ;
+      if (conn->paramNextStringNull (&direction) || !conn->paramEnd ())
+      	{ 
+       	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized direction failed" << sendLog;
+	  return -1;
+	}
+      if( startDir( direction))
+	{
+	  logStream (MESSAGE_ERROR) <<"APGTO:::commandAuthorized startDir( direction) failed"<< sendLog;
+	  return -1;
+	}
+      return 0 ;
     }
   else if (conn->isCommand ("sync"))
     {
@@ -1481,6 +1645,14 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
 	  return -1 ;
 	}
+      if( tel_check_declination_axis())
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed, this message will never appear." << sendLog;
+	  return -1;
+	}
+
+
+
       logStream (MESSAGE_DEBUG) << " APGTO::commandgAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
       return 0 ;
     }
@@ -1497,55 +1669,57 @@ APGTO::info ()
     return -1 ;
   if(( ret= tel_read_declination_axis()) != 0)
     return -1 ;
-  
+  if (tel_read_azimuth () || tel_read_altitude ())
+    return -1;
+
   return Telescope::info ();
 }
 int 
 APGTO::setBasicData()
 {
-    int err ;
+    int ret ;
     struct ln_date utm;
     struct ln_zonedate ltm;
 
     if(setAPClearBuffer() < 0)
     {
-      logStream (MESSAGE_ERROR) << "clearing the buffer failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
       return -1;
     }
     if(setAPLongFormat() < 0)
     {
-      logStream (MESSAGE_ERROR) << "setting long format failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting long format failed" << sendLog;
       return -1;
     }
     
     if(setAPBackLashCompensation(0,0,0) < 0)
     {
-      logStream (MESSAGE_ERROR) << "setting back lash compensation failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting back lash compensation failed" << sendLog;
       return -1;
     }
     ln_get_date_from_sys( &utm) ;
     ln_date_to_zonedate(&utm, &ltm, 3600); // Adds "only" offset to JD and converts back (see DST below)
 
-    if(( err= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0))
+    if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0))
     {
-      logStream (MESSAGE_ERROR) << "setting local time failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
       return -1;
     }
-    if (( err = setCalenderDate(ltm.days, ltm.months, ltm.years) < 0) )
+    if (( ret= setCalenderDate(ltm.days, ltm.months, ltm.years) < 0) )
     {
-      logStream (MESSAGE_ERROR) << "setting local date failed"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed"<< sendLog;
       return -1;
     }
     // RTS2 counts positive to the East, AP positive to the West
     double APlng= 360. - telLongitude->getValueDouble() ;
-    if (( err = setAPSiteLongitude( APlng) < 0) ) // AP mount: positive and only to the to west
+    if (( ret= setAPSiteLongitude( APlng) < 0) ) // AP mount: positive and only to the to west
     {
-      logStream (MESSAGE_ERROR) << "setting site coordinates failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed" << sendLog;
       return -1;
     }
-    if (( err = setAPSiteLatitude( telLatitude->getValueDouble()) < 0) )
+    if (( ret= setAPSiteLatitude( telLatitude->getValueDouble()) < 0) )
     {
-      logStream (MESSAGE_ERROR) << "setting site coordinates failed"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting site coordinates failed"<< sendLog;
       return -1;
     }
     // ToDo: No DST (CEST) is given to the AP mount, so local time is off by 1 hour during DST
@@ -1576,26 +1750,74 @@ APGTO::setBasicData()
     //Howard Hedlund
     //Astro-Physics, Inc.
 
-    if((err = setAPUTCOffset( -1.065)) < 0)
+    if(( ret = setAPUTCOffset( -1.065)) < 0)
     {
-      logStream (MESSAGE_ERROR) << "setting AP UTC offset failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting AP UTC offset failed" << sendLog;
       return -1;
     }
-    if((err = setAPUnPark()) < 0)
+    if(( ret= selectAPSlewRate(2)) < 0 ) /* slew rate 2 = 600x, this the slowest */
+      {
+	logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
+	return -1;
+      }
+    APslew_rate->setValueInteger(600);
+
+    if(( ret= tel_set_move_rate(MOVE_RATE_000100)) < 0 ) /* move rate MOVE_RATE_000100 = 1x */
+      {
+	logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting tracking mode sidereal failed." << sendLog;
+	return -1;
+      }
+    APmove_rate->setValueInteger(1);
+
+
+    if(! ( strcmp(initialization, "cold")))
+      {
+	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
+	if(( ret= setAPUnPark()) < 0)
+	  {
+	    logStream (MESSAGE_ERROR) << "APGTO::setBasicData unparking failed"<< sendLog;
+	    return -1;
+	  }
+      }
+    else
+      {
+	logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a warm start" << sendLog;
+      }
+    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData unparking successful" << sendLog;
+    if(( ret= setAPMotionStop()) < 0)
     {
-      logStream (MESSAGE_ERROR) << "unparking failed"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData stop motion #:Q# failed, check the mount"<< sendLog;
       return -1;
     }
-    logStream (MESSAGE_DEBUG) << "unparking successful" << sendLog;
-    if((err = setAPMotionStop()) < 0)
-    {
-      logStream (MESSAGE_ERROR) << "stop motion #:Q# failed, check the mount"<< sendLog;
-      return -1;
-    }
-    logStream (MESSAGE_DEBUG) << "Stopped any motion #:Q#" << sendLog;
+    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData stopped any motion #:Q#" << sendLog;
 
     return 0 ;
 }
+// further discussion with Petr required:
+// int APGTO::changeMasterState (int new_state)
+// {
+// 	// do NOT park us during day..
+// 	if (
+// 		   ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
+// 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
+// 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
+// 	{
+// 		if ((getState () & TEL_MASK_MOVING) == 0)
+// 		  startPark ();
+// 	}
+
+// 	if (blockOnStandby->getValueBool () == true)
+// 	{
+// 		if ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF
+// 		  || (new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF
+// 		  || (new_state & SERVERD_STANDBY_MASK))
+// 			blockMove->setValueBool (true);
+// 		else
+// 			blockMove->setValueBool (false);
+// 	}
+// 	// do not call Telescope::changeMasterState()
+// 	return Rts2Device::changeMasterState (new_state);
+// }
 /*!
  * Init telescope, connect on given apgto_fd.
  *
@@ -1684,10 +1906,11 @@ APGTO::initValues ()
 	  return -1 ;
 	if(( ret= tel_read_sidereal_time()) != 0)
 	  return -1 ;
+
 	// Check if the sidereal time read from the telescope is correct 
 	double JD  = ln_get_julian_from_sys ();
 	double lng = telLongitude->getValueDouble ();
-	double local_sidereal_time= ln_get_mean_sidereal_time( JD) * 15. + lng;  // longitude positive to the East
+	double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng), 360.);  // longitude positive to the East
 
 	logStream (MESSAGE_DEBUG) << "APGTO::initValues  local sidereal time, calculated time " 
 				  << local_sidereal_time << " mount: "
@@ -1696,7 +1919,7 @@ APGTO::initValues ()
 	
 	if( abs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./240. )
 	  {
-	    logStream (MESSAGE_ERROR) << "APGTO::initValues ap sidereal time off by "<< local_sidereal_time- APlocal_sidereal_time->getValueDouble() << " exiting" << sendLog;
+	    logStream (MESSAGE_ERROR) << "APGTO::initValues ap sidereal time off by "<< local_sidereal_time- APlocal_sidereal_time->getValueDouble() << "exiting" << sendLog;
 	    exit (1) ; // do not go beyond
 	  } 
 
@@ -1722,34 +1945,10 @@ APGTO::initValues ()
 	  }
  	telFlip->setValueInteger (flip);
 
-	// make sure that the (declination - optical axis) have the correct sign
-	// if not you'll buy a new tube.
-	if (tel_read_ra () || tel_read_dec ())
-	  return -1;
-
-	double ha=  fmod( local_sidereal_time- getTelRa()+ 360., 360.) ;
-	logStream (MESSAGE_DEBUG) << "APGTO::initValues RA:"<< getTelRa() << ", ha "<< ha << " optical:"<< APangle_dechour->getValue()<< sendLog;
-	if (!strcmp("West", APangle_dechour->getValue()))
+	if( tel_check_declination_axis())
 	  {
-	    if(( ha > 180.) && ( ha <= 360.))
-	      {
-	      }
-	    else
-	      {
-		logStream (MESSAGE_ERROR) << "APGTO::initValues sign of declination and optical axis is wrong, severe error, exiting." << sendLog;
-		exit(1); // yes, this is the end 
-	      }
-	  }
-	else if (!strcmp("East", APangle_dechour->getValue()))
-	  {
-	    if(( ha >= 0.0) && ( ha <= 180.))
-	      {
-	      }
-	    else
-	      {
-		logStream (MESSAGE_ERROR) << "APGTO::initValues sign of declination and optical axis is wrong, severe error, exiting." << sendLog;
-		exit(1); // yes, this is the end 
-	      }
+	    logStream (MESSAGE_ERROR) << "APGTO::initValues check of the declination axis failed, this message will never appear." << sendLog;
+	    return -1;
 	  }
 
 	if(( ret= selectAPTrackingMode(2)) < 0 ) /* tracking mode 2 = sidereal */
@@ -1757,12 +1956,6 @@ APGTO::initValues ()
 	    logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode sidereal failed." << sendLog;
 	    return -1;
 	  }
-	if(( ret= selectAPSlewRate(2)) < 0 ) /* slew rate 2 = 600x, this the slowest */
-	  {
-	    logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode sidereal failed." << sendLog;
-	    return -1;
-	  }
-	exit( 1) ;
 	return Telescope::initValues ();
 }
 APGTO::~APGTO (void)
@@ -1777,8 +1970,8 @@ APGTO::processOption (int in_opt)
 		case 'f':
 			device_file = optarg;
 			break;
-		case OPT_APGTO_INIT:
-			strcpy( initialisation, optarg) ;
+		case 'b':
+			strcpy( initialization, optarg) ;
 			break;
 		default:
 			return Telescope::processOption (in_opt);
@@ -1788,8 +1981,9 @@ APGTO::processOption (int in_opt)
 APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 {
 	device_file = "/dev/apmount";
-
+	
 	addOption ('f', "device_file", 1, "device file");
+	addOption ('b', "init", 1, "initialization cold (after power cycle), warm");
 
 
 	createValue (APAltAz,               "APALTAZ",    "AP mount Alt/Az[deg]", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
