@@ -32,13 +32,13 @@ int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const st
 
 	while (struct dirent *de = readdir (d))
 	{
-		if (filter (de))
+		if (!filter || filter (de))
 		{
 			struct dirent *dn = (struct dirent *) malloc (sizeof (dirent));
 			*dn = *de;
 			if (nl_size == 0)
 			{
-				*namelist = (struct dirent **) realloc (namelist, sizeof (dirent *) * (nmeb + 20));
+				*namelist = (struct dirent **) realloc (*namelist, sizeof (dirent *) * (nmeb + 20));
 				nl_size = 20;
 			}
 			(*namelist)[nmeb] = dn;

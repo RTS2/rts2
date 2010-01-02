@@ -101,11 +101,11 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 			 * _POSIX_C_SOURCE #define, record it and send it to petr@kubanek.net.
 			 * Please contact petr@kubanek.net if you don't know how to get
 			 * _POSIX_C_SOURCE. */
-			n = scandir (absPath, &namelist, 0, cdatesort);
+			n = scandir (absPath, &namelist, NULL, cdatesort);
 			break;
 		case SORT_FILENAME:
 		default:
-		  	n = scandir (absPath, &namelist, 0, alphasort);
+		  	n = scandir (absPath, &namelist, NULL, alphasort);
 			break;
 	}
 
