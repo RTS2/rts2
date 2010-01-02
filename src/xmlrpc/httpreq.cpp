@@ -344,7 +344,7 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	{
 		// default - one hour
 		to = time (NULL);
-		from = to - 3600;
+		from = to - 86400;
 	}
 
 	Magick::Image mimage (size, "white");
@@ -533,9 +533,9 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 			if (in > ie)
 				break;
 			std::string fn = (*iter)->getFileName ();
-			_os << "<tr><td><a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
+			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
 				<< "'><img src='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
-				<< "/?ps=" << prevsize << "'></a>" << (*iter)->getFileName () << "</td><td>" << (*iter)->getExposureLength () << "</td></tr>";
+				<< "?ps=" << prevsize << "'></a>";
 		}
 
 		_os << "</table>";
