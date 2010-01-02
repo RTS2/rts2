@@ -30,12 +30,15 @@ int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const st
 	*namelist = (struct dirent **) malloc (sizeof (dirent *) * 20);
 	int nmeb = 0;
 
-	while (struct dirent *de = readdir (d))
+	int len = offsetof (struct dirent, d_name) + pathconf (dirp, _PC_NAME_MAX) + 1;
+
+	struct dirent *dn = (struct dirent *) malloc (len);
+	struct dirent *res = NULL;
+
+	while (!readdir_r (d, dn, &res) && res != NULL)
 	{
-		if (!filter || filter (de))
+		if (!filter || filter (dn))
 		{
-			struct dirent *dn = (struct dirent *) malloc (sizeof (dirent));
-			*dn = *de;
 			if (nl_size == 0)
 			{
 				*namelist = (struct dirent **) realloc (*namelist, sizeof (dirent *) * (nmeb + 20));
@@ -44,6 +47,8 @@ int scandir (const char *dirp, struct dirent ***namelist, int (*filter)(const st
 			(*namelist)[nmeb] = dn;
 			nmeb++;
 			nl_size--;
+
+			dn = (struct dirent *) malloc (len);
 		}
 	}
 
