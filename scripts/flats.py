@@ -23,6 +23,10 @@ class Rts2Comm:
 		self.sleepTime = 30 # number of seconds to wait for optimal flat conditions
 		self.startExpTime = 1 # starting exposure time
 
+		# self.waitingSubWindow = '100 100 200 200' # x y w h of subwindow while waiting for good flat level
+		self.waitingSubWindow = None # do not use subwidnow to wait for flats
+		self.isSubWindow = False
+
 		self.expTimes = range(1,20) # allowed exposure times
 		self.expTimes = map(lambda x: x/2.0, self.expTimes)
 
@@ -86,57 +90,71 @@ class Rts2Comm:
 
 		return self.expTimes[-1]
 	
+	def acquireImage(self):
+		self.setValue('exposure',self.exptime)
+		img = self.exposure()
+		avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
+		if (abs(1.0 - (avrg - self.BiasLevel) / self.OptimalFlat) <= self.optimalRange): # Images within optimalRange of the optimal flux value
+		  	if (self.isSubWindow):
+				# acquire full image
+				self.setValue('WINDOW','-1 -1 -1 -1')
+				self.isSubWindow = False
+				self.delete(img)
+			else:
+				self.toFlat(img)
+				self.Ngood += 1
+		else:
+			self.delete(img) #otherwise it is not useful and we delete it
+		self.exptime = self.optimalExpTime(avrg)
+
+		self.log('I',"run avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
+
+	
+	def executeEvening(self):
+		self.Ngood = 0 # Number of good images
+		if (self.exptime >= self.MaxExpT):
+		  	self.exptime = self.MinExpT # Used in the case where we have changed filter due to a too dim sky
+
+		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
+			self.isSubWindow = True
+			self.setValue('WINDOW',self.waitingSubWindow)
+
+		while (self.Ngood < self.NumberFlats and self.exptime < self.MaxExpT): # We continue when we have enough flats or when the sky is too dim
+			if (self.exptime < self.MinExpT):
+				self.exptime = self.MinExpT
+				time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit dimer
+
+			self.acquireImage()
+	
 	def runEvening(self):
 		self.exptime = self.startExpTime
 
 		for filter in self.eveningFilters: # starting from the bluest and ending with the redest
-			self.Ngood = 0 # Number of good images
 			self.setValue('filter',filter)
-			if (self.exptime >= self.MaxExpT):
-			  	self.exptime = self.MinExpT # Used in the case where we have changed filter due to a too dim sky
+			self.executeEvening()
 
-			while (self.Ngood < self.NumberFlats and self.exptime < self.MaxExpT): # We continue when we have enough flats or when the sky is too dim
-				if (self.exptime < self.MinExpT):
-					self.exptime = self.MinExpT
-					time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit dimer
+	def executeMorning(self):
+		self.Ngood = 0 # Number of good images
+		if (self.exptime <= self.MinExpT):
+			self.exptime = self.startExpTime # Used in the case where we have changed filter due to a too bright sky
 
-				self.setValue('exposure',self.exptime)
-				img = self.exposure()
-				avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
-				if (abs(1.0 - (avrg - self.BiasLevel) / self.OptimalFlat) <= self.optimalRange): # Images within optimalRange of the optimal flux value
-					self.toFlat(img)
-					self.Ngood += 1
-				else:
-					self.delete(img) #otherwise it is not useful and we delete it
-				self.exptime = self.optimalExpTime(avrg)
+		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
+			self.isSubWindow = True
+			self.setValue('WINDOW',self.waitingSubWindow)
 
-				self.log('I',"runEvening avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
+		while (self.Ngood < self.NumberFlats and self.exptime > self.MinExpT): # We continue when we have enough flats or when the sky is too bright
+			if (self.exptime > self.MaxExpT):
+				self.exptime = MaxExpT
+				time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
+
+			self.acquireImage()
 
 	def runMorning(self):
 		self.exptime = self.startExpTime
 
 		for filter in self.morningFilters: # starting from the redest and ending with the bluest
-			self.Ngood = 0 # Number of good images
 			self.setValue('filter',filter)
-			if (self.exptime <= self.MinExpT):
-				self.exptime = self.startExpTime # Used in the case where we have changed filter due to a too bright sky
-
-			while (self.Ngood < self.NumberFlats and self.exptime > self.MinExpT): # We continue when we have enough flats or when the sky is too bright
-				if (self.exptime > self.MaxExpT):
-					self.exptime = MaxExpT
-					time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
-
-				self.setValue('exposure',self.exptime)
-				img = self.exposure()
-				avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
-				if (abs(1.0 - (avrg - self.BiasLevel) / self.OptimalFlat) <= self.optimalRange): # Images within optimalRange of the optimal flux value
-					self.toFlat(img)
-					self.Ngood += 1
-				else:
-					self.delete(img) #otherwise it is not useful and we delete it
-				self.exptime = self.optimalExpTime(avrg)
-
-				self.log('I',"runMorning avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
+			self.executeMorning()
 
 	def run(self):
 		# choose filter sequence..
