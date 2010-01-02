@@ -470,9 +470,9 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Target " << tar->getTargetName () << "</title></head><body>";
+	_os << "<html><head><base href='/targets/" << tar->getTargetID () << "/'/><title>Target " << tar->getTargetName () << "</title></head><body>";
 
-	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
+	_os << "<p><a href='images" << "'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
 
 	_os << "<pre>";
 
@@ -488,7 +488,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::pageLink (std::ostringstream& _os, int tar_id, int i, int pagesiz, int prevsize, bool selected)
+void Targets::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected)
 {
 	if (selected)
 	{
@@ -496,7 +496,7 @@ void Targets::pageLink (std::ostringstream& _os, int tar_id, int i, int pagesiz,
 	}
 	else
 	{
-		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets" << tar_id << "/images" << "?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
+		_os << "<a href='images" << "?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
 	}
 }
 
@@ -533,8 +533,8 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 			if (in > ie)
 				break;
 			std::string fn = (*iter)->getFileName ();
-			_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
-				<< "'><img src='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
+			_os << "<a href='/" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
+				<< "'><img width='" << prevsize << "' height='" << prevsize << "' src='/" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
 				<< "?ps=" << prevsize << "'></a>";
 		}
 
@@ -547,10 +547,10 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 
 	_os << "</p><p>Page ";
 	int i;
-	for (i = 1; i <= in / pagesiz; i++)
-	 	pageLink (_os, tar->getTargetID (), i, pagesiz, prevsize, i == pageno);
+	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
+	 	pageLink (_os, i, pagesiz, prevsize, i == pageno);
 	if (in % pagesiz)
-	 	pageLink (_os, tar->getTargetID (), i, pagesiz, prevsize, i == pageno);
+	 	pageLink (_os, i, pagesiz, prevsize, i == pageno);
 	_os << "</p></body></html>";
 
 	response_type = "text/html";
