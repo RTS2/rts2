@@ -82,6 +82,7 @@ std::vector<std::string> SplitStr(const std::string& text, const std::string& de
 			// / is the only character..
 			if (text.length () == 1)
 				break;
+			oldpos += delimlen;
 			continue;
 		}
 		result.push_back(text.substr(oldpos, pos - oldpos));
