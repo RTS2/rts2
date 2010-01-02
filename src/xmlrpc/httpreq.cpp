@@ -430,7 +430,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 			case 2:
 				if (vals[1] == "images")
 				{
-					printTargetImages (tar, response_type, response, response_length);
+					printTargetImages (tar, params, response_type, response, response_length);
 					break;
 				}
 				if (vals[1] == "obs")
@@ -488,9 +488,33 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetImages (Target *tar, const char* &response_type, char* &response, int &response_length)
+void Targets::pageLink (std::ostringstream& _os, int tar_id, int i, int pagesiz, int prevsize, bool selected)
+{
+	if (selected)
+	{
+		_os << "<b>" << i << "</b> ";
+	}
+	else
+	{
+		_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets" << tar_id << "/images" << "?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
+	}
+}
+
+void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	std::ostringstream _os;
+
+	int pageno = params->getInteger ("p", 1);
+	int pagesiz = params->getInteger ("s", 40);
+
+	if (pageno <= 0)
+		pageno = 1;
+
+	int istart = (pageno - 1) * pagesiz;
+	int ie = istart + pagesiz;
+	int in = 0;
+
+	int prevsize = params->getInteger ("ps", 128);
 
 	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title></head><body>";
 
@@ -503,10 +527,15 @@ void Targets::printTargetImages (Target *tar, const char* &response_type, char* 
 
 		for (Rts2ImgSetTarget::iterator iter = is.begin (); iter != is.end (); iter++)
 		{
+			in++;
+			if (in <= istart)
+				continue;
+			if (in > ie)
+				break;
 			std::string fn = (*iter)->getFileName ();
 			_os << "<tr><td><a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
 				<< "'><img src='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
-				<< "'/></a>" << (*iter)->getFileName () << "</td><td>" << (*iter)->getExposureLength () << "</td></tr>";
+				<< "/?ps=" << prevsize << "'></a>" << (*iter)->getFileName () << "</td><td>" << (*iter)->getExposureLength () << "</td></tr>";
 		}
 
 		_os << "</table>";
@@ -516,7 +545,13 @@ void Targets::printTargetImages (Target *tar, const char* &response_type, char* 
 		_os << "<p>There isn't any image for target " << tar->getTargetName ();
 	}
 
-	_os << "</body></html>";
+	_os << "</p><p>Page ";
+	int i;
+	for (i = 1; i <= in / pagesiz; i++)
+	 	pageLink (_os, tar->getTargetID (), i, pagesiz, prevsize, i == pageno);
+	if (in % pagesiz)
+	 	pageLink (_os, tar->getTargetID (), i, pagesiz, prevsize, i == pageno);
+	_os << "</p></body></html>";
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();

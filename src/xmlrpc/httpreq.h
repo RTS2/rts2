@@ -149,7 +149,8 @@ class Targets: public GetRequestAuthorized
 	private:
 		void listTargets (const char* &response_type, char* &response, int &response_length);
 		void printTarget (Target *tar, const char* &response_type, char* &response, int &response_length);
-		void printTargetImages (Target *tar, const char* &response_type, char* &response, int &response_length);
+		void pageLink (std::ostringstream& _os, int tar_id, int i, int pagesiz, int prevsize, bool selected);
+		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
 		void printTargetObservations (Target *tar, const char* &response_type, char* &response, int &response_length);
 };
 

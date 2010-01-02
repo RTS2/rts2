@@ -151,7 +151,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		if (in <= is)
 			continue;
 		if (in > ie)
-			continue;
+		  	break;
 		std::string fpath = absPathStr + '/' + fname;
 		_os
 		  << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
