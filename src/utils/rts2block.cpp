@@ -691,7 +691,7 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
 			return new Rts2DevClientCamera (conn);
 		case DEVICE_TYPE_DOME:
 			return new Rts2DevClientDome (conn);
-		case DEVICE_TYPE_COPULA:
+		case DEVICE_TYPE_CUPOLA:
 			return new Rts2DevClientCupola (conn);
 		case DEVICE_TYPE_PHOT:
 			return new Rts2DevClientPhot (conn);

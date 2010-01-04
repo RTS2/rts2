@@ -3,16 +3,16 @@
 
 #include <math.h>
 
-Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
+Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA)
 {
 	targetPos.ra = nan ("f");
 	targetPos.dec = nan ("f");
 
-	createValue (tarRa, "tar_ra", "copula target ra", false, RTS2_DT_RA);
-	createValue (tarDec, "tar_dec", "copula target dec", false, RTS2_DT_DEC);
-	createValue (tarAlt, "tar_alt", "copula target altitude", false,
+	createValue (tarRa, "tar_ra", "cupola target ra", false, RTS2_DT_RA);
+	createValue (tarDec, "tar_dec", "cupola target dec", false, RTS2_DT_DEC);
+	createValue (tarAlt, "tar_alt", "cupola target altitude", false,
 		RTS2_DT_DEC);
-	createValue (tarAz, "tar_az", "copula target azimut", false,
+	createValue (tarAz, "tar_az", "cupola target azimut", false,
 		RTS2_DT_DEGREES);
 
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
@@ -68,7 +68,7 @@ int Cupola::info ()
 int Cupola::idle ()
 {
 	long ret;
-	if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
+	if ((getState () & DOME_CUP_MASK_MOVE) == DOME_CUP_MOVE)
 	{
 		ret = isMoving ();
 		if (ret >= 0)
@@ -103,21 +103,21 @@ int Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 	ret = moveStart ();
 	if (ret)
 		return ret;
-	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE,
-		DOME_COP_NOT_SYNC | BOP_EXPOSURE);
+	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE,
+		DOME_CUP_NOT_SYNC | BOP_EXPOSURE);
 	return 0;
 }
 
 int Cupola::moveStart ()
 {
-	maskState (DOME_COP_MASK_MOVE, DOME_COP_MOVE);
+	maskState (DOME_CUP_MASK_MOVE, DOME_CUP_MOVE);
 	return 0;
 }
 
 int Cupola::moveStop ()
 {
-	maskState (DOME_COP_MASK | BOP_EXPOSURE,
-		DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
+	maskState (DOME_CUP_MASK | BOP_EXPOSURE,
+		DOME_CUP_NOT_MOVE | DOME_CUP_NOT_SYNC);
 	infoAll ();
 	return 0;
 }
@@ -125,12 +125,12 @@ int Cupola::moveStop ()
 void Cupola::synced ()
 {
 	infoAll ();
-	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE, DOME_COP_SYNC);
+	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE, DOME_CUP_SYNC);
 }
 
 int Cupola::moveEnd ()
 {
-	maskState (DOME_COP_MASK | BOP_EXPOSURE, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
+	maskState (DOME_CUP_MASK | BOP_EXPOSURE, DOME_CUP_NOT_MOVE | DOME_CUP_SYNC);
 	infoAll ();
 	return 0;
 }
@@ -165,7 +165,7 @@ int Cupola::needSplitChange ()
 		targetDistance = (targetDistance + 360);
 	if (fabs (targetDistance) < splitWidth)
 	{
-		if ((getState () & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
+		if ((getState () & DOME_CUP_MASK_SYNC) == DOME_CUP_NOT_SYNC)
 			synced ();
 		return info ();
 	}

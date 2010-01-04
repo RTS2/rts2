@@ -205,7 +205,7 @@ std::string Rts2Conn::getStateString ()
 			}
 			if (real_state & TEL_CORRECTING)
 				_os << " | CORRECTING";
-			if (real_state & TEL_WAIT_COP)
+			if (real_state & TEL_WAIT_CUP)
 				_os << " | WAIT_FOR_CUPOLA";
 			if (real_state & TEL_NEED_STOP)
 				_os << " | NEED_FLIP";
@@ -247,7 +247,7 @@ std::string Rts2Conn::getStateString ()
 			}
 			break;
 		case DEVICE_TYPE_DOME:
-		case DEVICE_TYPE_COPULA:
+		case DEVICE_TYPE_CUPOLA:
 			switch (real_state & DOME_DOME_MASK)
 			{
 				case DOME_CLOSED:
@@ -265,13 +265,13 @@ std::string Rts2Conn::getStateString ()
 				default:
 					_os << "UNKNOW";
 			}
-			if (getOtherType () == DEVICE_TYPE_COPULA)
+			if (getOtherType () == DEVICE_TYPE_CUPOLA)
 			{
-				if (real_state & DOME_COP_MOVE)
+				if (real_state & DOME_CUP_MOVE)
 					_os << " | CUPOLA_MOVING";
 				else
 					_os << " | cupola_idle";
-				if (real_state & DOME_COP_SYNC)
+				if (real_state & DOME_CUP_SYNC)
 					_os << " | cupola_synced";
 				else
 					_os << " | CUPOLA_NOT_SYNCED";

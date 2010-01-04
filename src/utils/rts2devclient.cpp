@@ -219,12 +219,12 @@ Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
 
 void Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
-	if (state->maskValueChanged (TEL_MASK_COP_MOVING))
+	if (state->maskValueChanged (TEL_MASK_CUP_MOVING))
 	{
-		switch (state->getValue () & TEL_MASK_COP_MOVING)
+		switch (state->getValue () & TEL_MASK_CUP_MOVING)
 		{
 			case TEL_MOVING:
-			case TEL_MOVING | TEL_WAIT_COP:
+			case TEL_MOVING | TEL_WAIT_CUP:
 			case TEL_PARKING:
 				moveStart (state->getValue () & TEL_CORRECTING);
 				break;
@@ -296,15 +296,15 @@ void Rts2DevClientCupola::syncFailed (int status)
 
 void Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
 {
-	switch (state->getValue () & DOME_COP_MASK_SYNC)
+	switch (state->getValue () & DOME_CUP_MASK_SYNC)
 	{
-		case DOME_COP_NOT_SYNC:
+		case DOME_CUP_NOT_SYNC:
 			if (connection->getErrorState ())
 				syncFailed (state->getValue ());
 			else
 				syncStarted ();
 			break;
-		case DOME_COP_SYNC:
+		case DOME_CUP_SYNC:
 			if (connection->getErrorState ())
 				syncFailed (state->getValue ());
 			else

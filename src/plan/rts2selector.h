@@ -65,23 +65,11 @@ class Rts2Selector
 		int selectNext (int masterState);
 		int selectNextNight (int in_bonusLimit = 0);
 
-		double getFlatSunMin ()
-		{
-			return flat_sun_min;
-		}
-		double getFlatSunMax ()
-		{
-			return flat_sun_max;
-		}
+		double getFlatSunMin () { return flat_sun_min; }
+		double getFlatSunMax () { return flat_sun_max; }
 
-		void setFlatSunMin (double in_m)
-		{
-			flat_sun_min = in_m;
-		}
-		void setFlatSunMax (double in_m)
-		{
-			flat_sun_max = in_m;
-		}
+		void setFlatSunMin (double in_m) { flat_sun_min = in_m; }
+		void setFlatSunMax (double in_m) { flat_sun_max = in_m; }
 
 		/**
 		 * Returns night disabled types.

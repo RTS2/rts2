@@ -34,7 +34,7 @@
 
 #define REG_STATE   0x01
 #define REG_POSITION    0x02
-#define REG_COP_CONTROL   0x03
+#define REG_CUP_CONTROL   0x03
 #define REG_SPLIT_CONTROL 0x04
 
 // average az size of one step (in arcdeg)
@@ -228,7 +228,7 @@ Mark::writeReg (int reg, uint16_t reg_val)
 	char rbuf[8];
 	// we must either be initialized or
 	// or we must issue initialization request
-	if (!(initialized == DONE || (reg == REG_COP_CONTROL && reg_val == 0x08)))
+	if (!(initialized == DONE || (reg == REG_CUP_CONTROL && reg_val == 0x08)))
 		return -1;
 	wbuf[0] = SLAVE;
 	wbuf[1] = REG_WRITE;
@@ -333,7 +333,7 @@ Mark::idle ()
 			if (initialized != IN_PROGRESS && initialized != DONE)
 			{
 				// not initialized, initialize
-				writeReg (REG_COP_CONTROL, 0x08);
+				writeReg (REG_CUP_CONTROL, 0x08);
 				initialized = IN_PROGRESS;
 			}
 		}
@@ -430,22 +430,22 @@ int
 Mark::slew ()
 {
 	int ret;
-	uint16_t copControl;
+	uint16_t cupControl;
 
 	if (initialized != DONE)
 		return -1;
 
-	ret = readReg (REG_COP_CONTROL, &copControl);
+	ret = readReg (REG_CUP_CONTROL, &cupControl);
 	// we need to move in oposite direction..do slow change
-	if (((copControl & 0x01) && getTargetDistance () < 0)
-		|| ((copControl & 0x02) && getTargetDistance () > 0))
+	if (((cupControl & 0x01) && getTargetDistance () < 0)
+		|| ((cupControl & 0x02) && getTargetDistance () > 0))
 	{
 		// stop faster movement..
-		if (copControl & 0x04)
+		if (cupControl & 0x04)
 		{
-			copControl &= ~(0x04);
+			cupControl &= ~(0x04);
 			lastFast = getCurrentAz ();
-			return writeReg (REG_COP_CONTROL, copControl);
+			return writeReg (REG_CUP_CONTROL, cupControl);
 		}
 		// wait for copula to reach some distance in slow mode..
 		if (fabs (lastFast - getCurrentAz ()) < FAST_TIMEOUT
@@ -454,21 +454,21 @@ Mark::slew ()
 			return 0;
 		}
 		// can finaly stop movement..
-		copControl &= ~(0x03);
-		writeReg (REG_COP_CONTROL, copControl);
+		cupControl &= ~(0x03);
+		writeReg (REG_CUP_CONTROL, cupControl);
 		lastFast = rts2_nan ("f");
 	}
 	// going our direction..
-	if ((copControl & 0x01) || (copControl & 0x02))
+	if ((cupControl & 0x01) || (cupControl & 0x02))
 	{
 		// already in fast mode..
-		if (copControl & 0x04)
+		if (cupControl & 0x04)
 		{
 			// try to slow down when needed
 			if (fabs (getTargetDistance ()) < FAST_TIMEOUT)
 			{
-				copControl &= ~(0x04);
-				ret = writeReg (REG_COP_CONTROL, copControl);
+				cupControl &= ~(0x04);
+				ret = writeReg (REG_CUP_CONTROL, cupControl);
 				if (ret)
 					return -1;
 			}
@@ -478,18 +478,18 @@ Mark::slew ()
 		// test if we hit target destination
 		if (fabs (getTargetDistance ()) < MIN_ERR)
 		{
-			copControl &= ~(0x03);
-			ret = writeReg (REG_COP_CONTROL, copControl);
+			cupControl &= ~(0x03);
+			ret = writeReg (REG_CUP_CONTROL, cupControl);
 			if (ret)
 				return -1;
 			return -2;
 		}
 	}
 	// not move at all
-	if ((copControl & 0x03) == 0x00)
+	if ((cupControl & 0x03) == 0x00)
 	{
-		copControl = (getTargetDistance () < 0) ? 0x02 : 0x01;
-		ret = writeReg (REG_COP_CONTROL, copControl);
+		cupControl = (getTargetDistance () < 0) ? 0x02 : 0x01;
+		ret = writeReg (REG_CUP_CONTROL, cupControl);
 		if (ret)
 			return -1;
 		return 0;
@@ -527,7 +527,7 @@ Mark::isMoving ()
 int
 Mark::moveEnd ()
 {
-	writeReg (REG_COP_CONTROL, 0x00);
+	writeReg (REG_CUP_CONTROL, 0x00);
 	return Cupola::moveEnd ();
 }
 
@@ -535,7 +535,7 @@ Mark::moveEnd ()
 int
 Mark::moveStop ()
 {
-	writeReg (REG_COP_CONTROL, 0x00);
+	writeReg (REG_CUP_CONTROL, 0x00);
 	return Cupola::moveStop ();
 }
 
@@ -546,7 +546,7 @@ Mark::parkCupola ()
 	if (initialized != IN_PROGRESS)
 	{
 		// reinitialize copula
-		writeReg (REG_COP_CONTROL, 0x08);
+		writeReg (REG_CUP_CONTROL, 0x08);
 		initialized = IN_PROGRESS;
 	}
 }

@@ -1,6 +1,6 @@
 SUBDIRS = model
 
-noinst_HEADERS = teld.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = teld.h clicupola.h hms.h gem.h fork.h tgdrive.h
 
 noinst_LIBRARIES = librts2teld.a
 
@@ -11,7 +11,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
 	rts2-teld-trencin rts2-teld-apgto
 
-librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp rts2devclicop.cpp tgdrive.cpp
+librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
 
 LDADD = librts2teld.a ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@

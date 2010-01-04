@@ -28,7 +28,7 @@
 #include "../utils/libnova_cpp.h"
 
 #include "teld.h"
-#include "rts2devclicop.h"
+#include "clicupola.h"
 
 #include "model/telmodel.h"
 
@@ -121,7 +121,7 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 
 	move_connection = NULL;
 
-	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE, 0, true);
+	createValue (ignoreCorrection, "ignore_correction", "corrections below this value will be ignored", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	ignoreCorrection->setValueDouble (0);
 
 	createValue (smallCorrection, "small_correction", "correction bellow this value will be considered as small", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
@@ -609,8 +609,8 @@ void Telescope::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
-		case EVENT_COP_SYNCED:
-			maskState (TEL_MASK_COP, TEL_NO_WAIT_COP);
+		case EVENT_CUP_SYNCED:
+			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
 			break;
 	}
 	Rts2Device::postEvent (event);
@@ -618,7 +618,7 @@ void Telescope::postEvent (Rts2Event * event)
 
 int Telescope::willConnect (Rts2Address * in_addr)
 {
-	if (in_addr->getType () == DEVICE_TYPE_COPULA)
+	if (in_addr->getType () == DEVICE_TYPE_CUPOLA)
 		return 1;
 	return Rts2Device::willConnect (in_addr);
 }
@@ -627,8 +627,8 @@ Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_typ
 {
 	switch (other_device_type)
 	{
-		case DEVICE_TYPE_COPULA:
-			return new Rts2DevClientCupolaTeld (conn);
+		case DEVICE_TYPE_CUPOLA:
+			return new ClientCupola (conn);
 	}
 	return Rts2Device::createOtherType (conn, other_device_type);
 }
@@ -1038,7 +1038,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		{
 			if (pos_err < ignoreCorrection->getValueDouble ())
 			{
-				conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as is too smallk");
+				conn->sendCommandEnd (DEVDEM_E_IGNORE, "ignoring correction as it is too small");
 				return -1;
 			}
 
