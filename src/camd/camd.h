@@ -284,6 +284,13 @@ class Camera:public Rts2ScriptDevice
 			exposureEnd->setValueDouble (exposureEnd->getValueDouble () + off);
 		}
 
+		/**
+		 * Remove exposure connection. This should be used for cameras
+		 * with long readout times before calling Camera::killAll to
+		 * remove reference for connection..
+		 */
+		void nullExposureConn () { exposureConn = NULL; }
+
 		Rts2ValueDouble *subExposure;
 
 		//! number of connection waiting to be executed

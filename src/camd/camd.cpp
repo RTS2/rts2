@@ -408,7 +408,7 @@ int Camera::killAll ()
 
 	waitingForNotBop->setValueBool (false);
 	sendValueAll (waitingForNotBop);
-	
+
 	if (isExposing ())
 		stopExposure ();
 	
