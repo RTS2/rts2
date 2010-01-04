@@ -1,6 +1,7 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
-	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl
+	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
+	rts2-cupola-vermes
 
 SUBDIRS = zelio
 
@@ -33,6 +34,8 @@ rts2_dome_bootes1b_SOURCES = bootes1b.cpp
 rts2_dome_zelio_SOURCES = zelio.cpp
 
 rts2_dome_opentpl_SOURCES = opentpl.cpp
+
+rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
 
 if COMEDI
 bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec
