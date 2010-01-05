@@ -807,6 +807,8 @@ void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 			// device which causes bad weather..
 			if ((*iter)->isGoodWeather () == false && strlen (badWeatherReason->getValue ()) == 0)
 			{
+				if (msg == NULL)
+					msg = "NULL";
 				badWeatherReason->setValueCharArr ((std::string (device) + ": " + msg).c_str ());
 			}
 		}
