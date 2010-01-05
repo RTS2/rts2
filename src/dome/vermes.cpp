@@ -21,7 +21,18 @@
 
 #include "cupola.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+// wildi: go to dome-target-az.h
+double dome_target_az( struct ln_equ_posn tel_eq) ;
+#ifdef __cplusplus
+}
+#endif
+
 using namespace rts2dome;
+
 
 namespace rts2dome
 {
@@ -39,18 +50,43 @@ class Vermes:public Cupola
 	protected:
 		virtual int moveStart ()
 		{
+		  struct ln_lnlat_posn obs ;
+		  obs.lng= 7.5;
+		  obs.lat= 47.5;
+
+	                struct ln_equ_posn tel_eq ;
+			struct ln_hrz_posn hrz;
+
+			getTargetAltAz (&hrz);
+
+			logStream (MESSAGE_ERROR) << "Vermes::moveStart Alt "<< hrz.alt << " Az " << hrz.az << sendLog ;
+	
+			double JD  = ln_get_julian_from_sys ();
+			ln_get_equ_from_hrz ( &hrz, &obs, JD, &tel_eq) ;
+			logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
+
+	                double target_az= -1. ;
+			target_az= dome_target_az( tel_eq) ;
+
+			logStream (MESSAGE_ERROR) << "Vermes::moveStart target " << target_az << sendLog ;
+			setCurrentAz (target_az);
+
 			mcount->setValueInteger (0);
 			return Cupola::moveStart ();
 		}
 		virtual int moveEnd ()
 		{
-			struct ln_hrz_posn hrz;
-			getTargetAltAz (&hrz);
-			setCurrentAz (hrz.az);
+		  //struct ln_hrz_posn hrz;
+			// getTargetAltAz (&hrz);
+			//hrz.az= -1 ;
+			//setCurrentAz (hrz.az);
+			
+			logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
 			return Cupola::moveEnd ();
 		}
 		virtual long isMoving ()
 		{
+			logStream (MESSAGE_DEBUG) << "Vermes::isMoving"<< sendLog ;
 			if (mcount->getValueInteger () >= moveCountTop->getValueInteger ())
 				return -2;
 			mcount->inc ();
@@ -98,9 +134,11 @@ class Vermes:public Cupola
 	public:
 		Vermes (int argc, char **argv):Cupola (argc, argv)
 		{
+
+
 			createValue (mcount, "mcount", "moving count", false);
 			createValue (moveCountTop, "moveCountTop", "move count top", false, RTS2_VALUE_WRITABLE);
-			moveCountTop->setValueInteger (100);
+			moveCountTop->setValueInteger (20);
 		}
 
 		virtual int initValues ()
@@ -116,6 +154,8 @@ class Vermes:public Cupola
 };
 
 }
+
+
 
 int main (int argc, char **argv)
 {
