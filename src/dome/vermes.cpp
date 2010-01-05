@@ -63,6 +63,11 @@ class Vermes:public Cupola
 	
 			double JD  = ln_get_julian_from_sys ();
 			ln_get_equ_from_hrz ( &hrz, &obs, JD, &tel_eq) ;
+
+
+			tel_eq.ra= getTargetRa() ;
+			tel_eq.dec= getTargetDec() ;
+
 			logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
 
 	                double target_az= -1. ;
@@ -81,7 +86,8 @@ class Vermes:public Cupola
 			//hrz.az= -1 ;
 			//setCurrentAz (hrz.az);
 			
-			logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
+		  //	logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
+			logStream (MESSAGE_ERROR) << "Vermes::moveEnd did nothing "<< sendLog ;
 			return Cupola::moveEnd ();
 		}
 		virtual long isMoving ()
@@ -143,7 +149,7 @@ class Vermes:public Cupola
 
 		virtual int initValues ()
 		{
-			setCurrentAz (0);
+		  setCurrentAz (13.333); // wildi ToDo, just to watch
 			return Cupola::initValues ();
 		}
 
