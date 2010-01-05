@@ -72,7 +72,14 @@ class Cupola:public Dome
 		{
 			return currentAz->getValueDouble ();
 		}
-
+		double getTargetRa ()
+		{
+			return tarRa->getValueDouble ();
+		}
+		double getTargetDec ()
+		{
+			return tarDec->getValueDouble ();
+		}
 	public:
 		Cupola (int argc, char **argv);
 
