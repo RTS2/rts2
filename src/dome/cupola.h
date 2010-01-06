@@ -80,6 +80,10 @@ class Cupola:public Dome
 		{
 			return tarDec->getValueDouble ();
 		}
+		struct ln_lnlat_posn *getObserver ()
+		{
+			return observer;
+		}
 	public:
 		Cupola (int argc, char **argv);
 
