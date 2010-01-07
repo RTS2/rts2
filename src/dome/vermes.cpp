@@ -1,8 +1,7 @@
 /* 
- * 2010-01-04: This is a copy of dummy_cup.cpp
  * Obs. Vermes cupola driver.
  * Copyright (C) 2010 Markus Wildi <markus.wildi@one-arcsec.org>
- * based on  Petr Kubanek <petr@kubanek.net> dummy_cup.cpp
+ * based on Petr Kubanek's dummy_cup.cpp
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,148 +19,107 @@
  */
 
 #include "cupola.h"
+#include "../utils/rts2config.h" 
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-// wildi: go to dome-target-az.h
-double dome_target_az( struct ln_equ_posn tel_eq) ;
+// wildi ToDo: go to dome-target-az.h
+double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs) ;
 #ifdef __cplusplus
 }
 #endif
 
 using namespace rts2dome;
 
-
 namespace rts2dome
 {
-
 /**
  * Obs. Vermes cupola driver.
  *
  * @author Markus Wildi <markus.wildi@one-arcsec.org>
  */
-class Vermes:public Cupola
-{
-	private:
-		Rts2ValueInteger * mcount;
-		Rts2ValueInteger *moveCountTop;
-	protected:
-		virtual int moveStart ()
-		{
-		  struct ln_lnlat_posn obs ;
-		  obs.lng= 7.5;
-		  obs.lat= 47.5;
+  class Vermes:public Cupola
+  {
+  private:
+    const char *device_ssd650v;
+    const char *device_bcr_lft; 
+    const char *device_bcr_rgt; 
+    struct ln_lnlat_posn *obs ;
+    struct ln_equ_posn tel_eq ;
+    Rts2Config *config ;
 
-	                struct ln_equ_posn tel_eq ;
-			struct ln_hrz_posn hrz;
+  protected:
+    virtual int moveStart () ;
+    virtual int moveEnd () ;
+    virtual long isMoving () ;
+    // there is no dome door to open 
+    virtual int startOpen (){return 0;}
+    virtual long isOpened (){return -2;}
+    virtual int endOpen (){return 0;}
+    virtual int startClose (){return 0;}
+    virtual long isClosed (){return -2;}
+    virtual int endClose (){return 0;}
 
-			getTargetAltAz (&hrz);
-
-			logStream (MESSAGE_ERROR) << "Vermes::moveStart Alt "<< hrz.alt << " Az " << hrz.az << sendLog ;
-	
-			double JD  = ln_get_julian_from_sys ();
-			ln_get_equ_from_hrz ( &hrz, &obs, JD, &tel_eq) ;
-
-
-			tel_eq.ra= getTargetRa() ;
-			tel_eq.dec= getTargetDec() ;
-
-			logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
-
-	                double target_az= -1. ;
-			target_az= dome_target_az( tel_eq) ;
-
-			logStream (MESSAGE_ERROR) << "Vermes::moveStart target " << target_az << sendLog ;
-			setCurrentAz (target_az);
-
-			mcount->setValueInteger (0);
-			return Cupola::moveStart ();
-		}
-		virtual int moveEnd ()
-		{
-		  //struct ln_hrz_posn hrz;
-			// getTargetAltAz (&hrz);
-			//hrz.az= -1 ;
-			//setCurrentAz (hrz.az);
-			
-		  //	logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
-			logStream (MESSAGE_ERROR) << "Vermes::moveEnd did nothing "<< sendLog ;
-			return Cupola::moveEnd ();
-		}
-		virtual long isMoving ()
-		{
-			logStream (MESSAGE_DEBUG) << "Vermes::isMoving"<< sendLog ;
-			if (mcount->getValueInteger () >= moveCountTop->getValueInteger ())
-				return -2;
-			mcount->inc ();
-			return USEC_SEC;
-		}
-
-		virtual int startOpen ()
-		{
-			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
-				return 0;
-			mcount->setValueInteger (0);
-			return 0;
-		}
-
-		virtual long isOpened ()
-		{
-			return isMoving ();
-		}
-
-		virtual int endOpen ()
-		{
-			return 0;
-		}
-
-		virtual int startClose ()
-		{
-			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
-				return 0;
-			mcount->setValueInteger (0);
-			return 0;
-		}
-
-		virtual long isClosed ()
-		{
-		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
-				return -2;
-			return isMoving ();
-		}
-
-		virtual int endClose ()
-		{
-			return 0;
-		}
-
-	public:
-		Vermes (int argc, char **argv):Cupola (argc, argv)
-		{
-
-
-			createValue (mcount, "mcount", "moving count", false);
-			createValue (moveCountTop, "moveCountTop", "move count top", false, RTS2_VALUE_WRITABLE);
-			moveCountTop->setValueInteger (20);
-		}
-
-		virtual int initValues ()
-		{
-		  setCurrentAz (13.333); // wildi ToDo, just to watch
-			return Cupola::initValues ();
-		}
-
-		virtual double getSplitWidth (double alt)
-		{
-			return 1;
-		}
-};
-
+  public:
+    Vermes (int argc, char **argv) ;
+    virtual int initValues () ;
+    virtual double getSplitWidth (double alt) ;
+  };
 }
 
+int Vermes::moveEnd ()
+{
+  //	logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
+  logStream (MESSAGE_ERROR) << "Vermes::moveEnd did nothing "<< sendLog ;
+  return Cupola::moveEnd ();
+}
+long Vermes::isMoving ()
+{
+  logStream (MESSAGE_DEBUG) << "Vermes::isMoving"<< sendLog ;
+  if ( 1) // if there, return -2
+    return -2;
+  return USEC_SEC;
+}
+int Vermes::moveStart ()
+{
+  tel_eq.ra= getTargetRa() ;
+  tel_eq.dec= getTargetDec() ;
 
+  logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
+
+  double target_az= -1. ;
+  target_az= dome_target_az( tel_eq, -1,  obs) ;
+  
+  logStream (MESSAGE_ERROR) << "Vermes::moveStart idome target az" << target_az << sendLog ;
+  setCurrentAz (target_az);
+
+  return Cupola::moveStart ();
+}
+int Vermes::initValues ()
+{
+  int ret ;
+  config = Rts2Config::instance ();
+
+  ret = config->loadFile ();
+  if (ret)
+    return -1;
+  obs= Cupola::getObserver() ;
+
+  return Cupola::initValues ();
+}
+Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
+{
+  // since this driver is Obs. Vermes specific no options are really required
+  device_ssd650v = "/dev/ssd650v";
+  device_bcr_lft = "/dev/bcreader_lft"; 
+  device_bcr_rgt = "/dev/bcreader_rgt"; 
+}
+double Vermes::getSplitWidth (double alt)
+{
+  return 1;
+}
 
 int main (int argc, char **argv)
 {
