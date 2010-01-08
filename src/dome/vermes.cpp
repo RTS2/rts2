@@ -31,6 +31,24 @@ double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_pos
 }
 #endif
 
+#include "barcodereader_vermes.h"
+int barcodereader_state ;
+double barcodereader_az ;
+double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+int set_setpoint( float setpoint, int direction) ;
+float get_setpoint() ;
+void motor_run_switch_state() ;
+void connectDevice( int power_state) ;
+#ifdef __cplusplus
+}
+#endif
+
+
+
 using namespace rts2dome;
 
 namespace rts2dome
@@ -43,12 +61,14 @@ namespace rts2dome
   class Vermes:public Cupola
   {
   private:
-    const char *device_ssd650v;
-    const char *device_bcr_lft; 
-    const char *device_bcr_rgt; 
     struct ln_lnlat_posn *obs ;
     struct ln_equ_posn tel_eq ;
     Rts2Config *config ;
+    Rts2ValueInteger *barcode_reader_state ;
+    Rts2ValueDouble  *azimut_difference ;
+    Rts2ValueString  *ssd650v_state ;
+    Rts2ValueBool    *ssd650v_on_off ;
+    Rts2ValueDouble  *ssd650v_set_point ;
 
   protected:
     virtual int moveStart () ;
@@ -66,6 +86,8 @@ namespace rts2dome
     Vermes (int argc, char **argv) ;
     virtual int initValues () ;
     virtual double getSplitWidth (double alt) ;
+    virtual int info () ;
+    virtual void valueChanged (Rts2Value * changed_value) ;
   };
 }
 
@@ -78,6 +100,9 @@ int Vermes::moveEnd ()
 long Vermes::isMoving ()
 {
   logStream (MESSAGE_DEBUG) << "Vermes::isMoving"<< sendLog ;
+
+
+
   if ( 1) // if there, return -2
     return -2;
   return USEC_SEC;
@@ -93,10 +118,60 @@ int Vermes::moveStart ()
   target_az= dome_target_az( tel_eq, -1,  obs) ;
   
   logStream (MESSAGE_ERROR) << "Vermes::moveStart idome target az" << target_az << sendLog ;
-  setCurrentAz (target_az);
-
+  setTargetAz(target_az) ;
   return Cupola::moveStart ();
 }
+
+void Vermes::valueChanged (Rts2Value * changed_value)
+{
+  if (changed_value == ssd650v_on_off)
+    {
+    }
+  else if (changed_value == ssd650v_set_point)
+    {
+      float setpoint= (float) ssd650v_set_point->getValueDouble() ;
+
+      if( abs( setpoint) < 100. )
+	{
+	  int direction= 1 ;
+	  if( setpoint < 0.)
+	    {
+	      direction= -1 ;
+	    }
+	  else if(setpoint== 0)
+	    {
+	      direction= 0 ;
+	    }
+	  motor_run_switch_state() ;
+	  //set_setpoint( setpoint, direction) ;
+	  return ; // ask Petr what to do in general if something fails within ::valueChanged
+	}
+      else
+	{
+	  ssd650v_set_point->setValueDouble(-1) ; // ask Petr what to do in general if something fails within ::valueChanged
+	  return ;
+	}
+    }
+  Cupola::valueChanged (changed_value);
+
+}
+int Vermes::info ()
+{
+  barcode_reader_state->setValueInteger( barcodereader_state) ; 
+  setCurrentAz (barcodereader_az);
+  azimut_difference->setValueDouble(-399.1111) ;
+  ssd650v_state->setValueString("running FAKE") ;
+  ssd650v_on_off->setValueBool( 0) ;
+
+
+  
+  // ssd650v_set_point->setValueDouble( (double) get_setpoint()) ;
+
+  // not Cupola::info() !
+  return Dome::info ();
+}
+
+
 int Vermes::initValues ()
 {
   int ret ;
@@ -105,6 +180,22 @@ int Vermes::initValues ()
   ret = config->loadFile ();
   if (ret)
     return -1;
+
+
+  if(!( ret= start_bcr_comm()))
+    {
+      register_pos_change_callback(position_update_callback);
+    }
+  else
+    {
+      logStream (MESSAGE_ERROR) << "Vermes::initValues could connect to barcode devices, exiting "<< sendLog ;
+      exit(1) ;
+    }
+
+
+  connectDevice(1) ;
+
+
   obs= Cupola::getObserver() ;
 
   return Cupola::initValues ();
@@ -112,9 +203,14 @@ int Vermes::initValues ()
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
 {
   // since this driver is Obs. Vermes specific no options are really required
-  device_ssd650v = "/dev/ssd650v";
-  device_bcr_lft = "/dev/bcreader_lft"; 
-  device_bcr_rgt = "/dev/bcreader_rgt"; 
+  createValue (azimut_difference,   "AZdiff",     "target - actual azimuth reading", false, RTS2_DT_DEGREES  );
+  createValue (barcode_reader_state,"BCRstate",   "state of the barcodereader value CUP_AZ (0=valid, 1=invalid)", false);
+  createValue (ssd650v_state,       "SSDstate",   "status of the ssd650v inverter ", false);
+  createValue (ssd650v_on_off,      "SSDswitch",  "(true=running, false=not running)", false, RTS2_VALUE_WRITABLE);
+  createValue (ssd650v_set_point,   "SSDsetpoint","ssd650v setpoint", false, RTS2_VALUE_WRITABLE);
+
+  barcode_reader_state->setValueInteger( -1) ; 
+
 }
 double Vermes::getSplitWidth (double alt)
 {
