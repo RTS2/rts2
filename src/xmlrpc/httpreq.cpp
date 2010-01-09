@@ -21,6 +21,7 @@
 #include "httpreq.h"
 #include "altaz.h"
 #include "dirsupport.h"
+#include "imgpreview.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -275,7 +276,7 @@ void Graph::printDevices (const char* &response_type, char* &response, int &resp
 	{
 		_os << "<tr><form action='"
 			<< iter->getDevice () << "/" << iter->getValueName () << "'><td>" << iter->getDevice () << "</td><td>"
-			<< iter->getValueName () << "</td><td><select name='t'><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='submit' value='Plot'/></td><td>"
+			<< iter->getValueName () << "</td><td><select name='t'><option value='A'>Auto</option><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='submit' value='Plot'/></td><td>"
 			<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
 			<< LibnovaDateDouble (iter->getTo ()) << "</td></form></tr>";
 	}
@@ -516,14 +517,19 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 
 	int prevsize = params->getInteger ("ps", 128);
 
-	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title></head><body>";
+	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title>";
+	
+	Previewer preview = Previewer ();
+	preview.script (_os);
+		
+	_os << "</head><body>";
 
 	Rts2ImgSetTarget is = Rts2ImgSetTarget (tar->getTargetID ());
 	is.load ();
 
 	if (is.size () > 0)
 	{
-		_os << "<table>";
+		_os << "<p>";
 
 		for (Rts2ImgSetTarget::iterator iter = is.begin (); iter != is.end (); iter++)
 		{
@@ -532,13 +538,10 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 				continue;
 			if (in > ie)
 				break;
-			std::string fn = (*iter)->getFileName ();
-			_os << "<a href='/" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fn
-				<< "'><img width='" << prevsize << "' height='" << prevsize << "' src='/" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << fn
-				<< "?ps=" << prevsize << "'></a>";
+			preview.imageHref (_os, in, (*iter)->getFileName (), prevsize);
 		}
 
-		_os << "</table>";
+		_os << "</p>";
 	}
 	else
 	{

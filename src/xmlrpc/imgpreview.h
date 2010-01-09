@@ -43,6 +43,20 @@ class Previewer
 {
 	public:
 		Previewer () {};
+		/**
+		 * Add script entry for image manipulation. This should be
+		 * included in head section.
+		 */
+		void script (std::ostringstream& _os);
+
+		/**
+		 * Create image href entry.
+		 *
+		 * @param _os image output stream
+		 * @param i image number
+		 * @param fpath path to preview image
+		 * @param prevsize size of preview in pixels
+		 */
 		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize);
 };
 
