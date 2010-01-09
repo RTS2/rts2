@@ -35,13 +35,17 @@ class JpegImageRequest: public GetRequestAuthorized
 };
 
 /**
- * Create page with JPEG previews.
- *
- * @param p Page number. Default to 0.
- * @param s Page size (number of images per page). Defalt to 100.
- *
+ * Create page with JPEG previews. This is an abstract class - all classes
+ * which need preview functionality shoudl inherit from this page.
  * @author Petr Kubanek <petr@kubanek.net>
  */
+class Previewer
+{
+	public:
+		Previewer () {};
+		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize);
+};
+
 class JpegPreview:public GetRequestAuthorized
 {
 	public:

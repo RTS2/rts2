@@ -47,6 +47,11 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	memcpy (response, blob.data(), response_length);
 }
 
+void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize)
+{
+	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
+}
+
 void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
 {
 	// size of previews
@@ -142,6 +147,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	int ie = is + pagesiz;
 	int in = 0;
 
+	Previewer preview = Previewer ();
+
 	for (i = 0; i < n; i++)
 	{
 		char *fname = namelist[i]->d_name;
@@ -151,8 +158,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		if (in <= is || in > ie)
 			continue;
 		std::string fpath = absPathStr + '/' + fname;
-		_os
-		  << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
+		preview.imageHref (_os, i, fpath.c_str (), prevsize);
 	}
 
 	for (i = 0; i < n; i++)
