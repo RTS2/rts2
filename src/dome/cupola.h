@@ -58,36 +58,17 @@ class Cupola:public Dome
 		}
 		virtual int moveEnd ();
 
-		void setTargetAz (double in_az)
-		{
-			tarAz->setValueDouble (in_az);
-		}
-		double getTargetAz ()
-		{
-			return tarAz->getValueDouble ();
-		}
-		void setCurrentAz (double in_az)
-		{
-			currentAz->setValueDouble (in_az);
-		}
+		void setTargetAz (double in_az) { tarAz->setValueDouble (in_az); }
 
-		double getTargetDistance ()
-		{
-			return targetDistance;
-		}
+		double getTargetAz () { return tarAz->getValueDouble (); }
 
-		double getCurrentAz ()
-		{
-			return currentAz->getValueDouble ();
-		}
-		double getTargetRa ()
-		{
-			return tarRa->getValueDouble ();
-		}
-		double getTargetDec ()
-		{
-			return tarDec->getValueDouble ();
-		}
+		void setCurrentAz (double in_az) { currentAz->setValueDouble (in_az); }
+
+		double getTargetDistance () { return targetDistance; }
+
+		double getCurrentAz () { return currentAz->getValueDouble (); }
+		double getTargetRa () { return tarRa->getValueDouble (); }
+		double getTargetDec () { return tarDec->getValueDouble (); }
 		struct ln_lnlat_posn *getObserver ()
 		{
 			return observer;
