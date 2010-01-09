@@ -62,6 +62,10 @@ class Cupola:public Dome
 		{
 			tarAz->setValueDouble (in_az);
 		}
+		double getTargetAz ()
+		{
+			return tarAz->getValueDouble ();
+		}
 		void setCurrentAz (double in_az)
 		{
 			currentAz->setValueDouble (in_az);

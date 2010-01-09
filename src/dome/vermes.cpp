@@ -20,6 +20,7 @@
 
 #include "cupola.h"
 #include "../utils/rts2config.h" 
+#include "vermes.h" 
 
 #ifdef __cplusplus
 extern "C"
@@ -70,6 +71,7 @@ namespace rts2dome
     Rts2ValueBool    *ssd650v_on_off ;
     Rts2ValueDouble  *ssd650v_set_point ;
 
+    void parkCupola ();
   protected:
     virtual int moveStart () ;
     virtual int moveEnd () ;
@@ -87,7 +89,11 @@ namespace rts2dome
     virtual int initValues () ;
     virtual double getSplitWidth (double alt) ;
     virtual int info () ;
+    virtual int idle ();
     virtual void valueChanged (Rts2Value * changed_value) ;
+    // park copula
+    virtual int standby ();
+    virtual int off ();
   };
 }
 
@@ -115,17 +121,45 @@ int Vermes::moveStart ()
   logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
 
   double target_az= -1. ;
-  target_az= dome_target_az( tel_eq, -1,  obs) ;
+  target_az= dome_target_az( tel_eq, -1,  obs) ; // wildi ToDo: DecAxis!
   
-  logStream (MESSAGE_ERROR) << "Vermes::moveStart idome target az" << target_az << sendLog ;
+  logStream (MESSAGE_ERROR) << "Vermes::moveStart dome target az" << target_az << sendLog ;
   setTargetAz(target_az) ;
   return Cupola::moveStart ();
+}
+
+double Vermes::getSplitWidth (double alt)
+{
+  logStream (MESSAGE_ERROR) << "Vermes::getSplitWidth returning 1" << sendLog ;
+  return 1;
+}
+
+void Vermes::parkCupola ()
+{
+  logStream (MESSAGE_ERROR) << "Vermes::parkCupola doing nothing" << sendLog ;
+}
+
+int Vermes::standby ()
+{
+  logStream (MESSAGE_ERROR) << "Vermes::standby doing nothing" << sendLog ;
+  parkCupola ();
+  return Cupola::standby ();
+}
+
+int Vermes::off ()
+{
+  connectDevice(SSD650V_DISCONNECT) ;
+
+  logStream (MESSAGE_ERROR) << "Vermes::off disconnecting from frequency inverter" << sendLog ;
+  parkCupola ();
+  return Cupola::off ();
 }
 
 void Vermes::valueChanged (Rts2Value * changed_value)
 {
   if (changed_value == ssd650v_on_off)
     {
+      
     }
   else if (changed_value == ssd650v_set_point)
     {
@@ -137,13 +171,16 @@ void Vermes::valueChanged (Rts2Value * changed_value)
 	  if( setpoint < 0.)
 	    {
 	      direction= -1 ;
+	      setpoint *= -1 ;
 	    }
 	  else if(setpoint== 0)
 	    {
 	      direction= 0 ;
 	    }
-	  motor_run_switch_state() ;
-	  //set_setpoint( setpoint, direction) ;
+	  if( set_setpoint( setpoint, direction)) 
+	  {
+	    logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << " direction"<< direction<< sendLog ;
+	  }
 	  return ; // ask Petr what to do in general if something fails within ::valueChanged
 	}
       else
@@ -155,23 +192,26 @@ void Vermes::valueChanged (Rts2Value * changed_value)
   Cupola::valueChanged (changed_value);
 
 }
+int Vermes::idle ()
+{
+	return Cupola::idle ();
+}
 int Vermes::info ()
 {
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
   setCurrentAz (barcodereader_az);
-  azimut_difference->setValueDouble(-399.1111) ;
+
+  azimut_difference->setValueDouble( ( getTargetAz()-barcodereader_az)) ;
   ssd650v_state->setValueString("running FAKE") ;
   ssd650v_on_off->setValueBool( 0) ;
 
 
   
-  // ssd650v_set_point->setValueDouble( (double) get_setpoint()) ;
+  ssd650v_set_point->setValueDouble( (double) get_setpoint()) ;
 
-  // not Cupola::info() !
-  return Dome::info ();
+  // not Cupola::info() ?!?
+  return Cupola::info ();
 }
-
-
 int Vermes::initValues ()
 {
   int ret ;
@@ -192,9 +232,7 @@ int Vermes::initValues ()
       exit(1) ;
     }
 
-
-  connectDevice(1) ;
-
+  connectDevice(SSD650V_CONNECT) ;
 
   obs= Cupola::getObserver() ;
 
@@ -210,13 +248,7 @@ Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
   createValue (ssd650v_set_point,   "SSDsetpoint","ssd650v setpoint", false, RTS2_VALUE_WRITABLE);
 
   barcode_reader_state->setValueInteger( -1) ; 
-
 }
-double Vermes::getSplitWidth (double alt)
-{
-  return 1;
-}
-
 int main (int argc, char **argv)
 {
 	Vermes device (argc, argv);
