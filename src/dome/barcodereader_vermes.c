@@ -57,7 +57,7 @@ extern int barcodereader_state ;
 extern double barcodereader_az ;
 extern double barcodereader_dome_azimut_offset ;
 
-// wildi extern int debug;
+//extern int debug;
 int debug ; // check that 
 #define ASCII_ACK         '\x06'
 #define ASCII_NAK         '\x15'

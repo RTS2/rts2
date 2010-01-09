@@ -63,14 +63,16 @@ int set ;
 int reset ;
 } ;
 static struct ssd650v_fast_stop_state fast_stop_state ;
-
+// originally was:
 // MotorStartSP.sp[0].s "START_CW" "Start CW" (clockwise)
 // MotorStartSP.sp[1].s "STOP" "Stop"
 // MotorStartSP.sp[2].s "START_CCW" "Start CCW" (counter clockwise)
+// ssd650v allows negative and positive values:
+// setpoint=[-100.,100]
+
 struct ssd650v_motor_state {
-int start_cw ;
+int start ;
 int stop ;
-int start_ccw ;
 } ;
 static struct ssd650v_motor_state motor_state ;
 
@@ -127,6 +129,8 @@ int SSD_qry_hexword(int sd, int tag);
 float SSD_qry_real(int sd, int tag);
 
 int SSD_set_tag(int sd, int tag, char * data);
+
+int motor_run_switch_state() ;
 
 #endif   // #ifndef __ssd650v_comm_h__
 

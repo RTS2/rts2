@@ -33,21 +33,34 @@ double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_pos
 #endif
 
 #include "barcodereader_vermes.h"
+#define MOTOR_RUNNING      0
+#define MOTOR_NOT_RUNNING  1
+#define MOTOR_UNDEFINED    2
+
+int motor_on_off_state ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
+double target_az ;
+struct ln_lnlat_posn *obs ;
+struct ln_equ_posn tel_eq ;
+
+
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-int set_setpoint( float setpoint, int direction) ;
+int set_setpoint( float setpoint) ;
 float get_setpoint() ;
-void motor_run_switch_state() ;
-void connectDevice( int power_state) ;
+int motor_on() ;
+int motor_off() ;
+int connectDevice( int power_state) ;
 #ifdef __cplusplus
 }
 #endif
 
+void *compare_azimuth( void *value) ;
 
 
 using namespace rts2dome;
@@ -62,14 +75,12 @@ namespace rts2dome
   class Vermes:public Cupola
   {
   private:
-    struct ln_lnlat_posn *obs ;
-    struct ln_equ_posn tel_eq ;
     Rts2Config *config ;
     Rts2ValueInteger *barcode_reader_state ;
     Rts2ValueDouble  *azimut_difference ;
     Rts2ValueString  *ssd650v_state ;
     Rts2ValueBool    *ssd650v_on_off ;
-    Rts2ValueDouble  *ssd650v_set_point ;
+    Rts2ValueDouble  *ssd650v_setpoint ;
 
     void parkCupola ();
   protected:
@@ -120,9 +131,7 @@ int Vermes::moveStart ()
 
   logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
 
-  double target_az= -1. ;
-  target_az= dome_target_az( tel_eq, -1,  obs) ; // wildi ToDo: DecAxis!
-  
+  target_az= dome_target_az( tel_eq, -1,  obs) ; // this value is only informational wildi ToDo: DecAxis!
   logStream (MESSAGE_ERROR) << "Vermes::moveStart dome target az" << target_az << sendLog ;
   setTargetAz(target_az) ;
   return Cupola::moveStart ();
@@ -148,49 +157,63 @@ int Vermes::standby ()
 
 int Vermes::off ()
 {
-  connectDevice(SSD650V_DISCONNECT) ;
+//   if(connectDevice(SSD650V_DISCONNECT))
+//     {
+//       logStream (MESSAGE_ERROR) << "Vermes::off a general failure occured" << sendLog ;
+//     }
 
-  logStream (MESSAGE_ERROR) << "Vermes::off disconnecting from frequency inverter" << sendLog ;
+  logStream (MESSAGE_ERROR) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
   parkCupola ();
   return Cupola::off ();
 }
 
 void Vermes::valueChanged (Rts2Value * changed_value)
 {
+  int res ;
   if (changed_value == ssd650v_on_off)
     {
-      
-    }
-  else if (changed_value == ssd650v_set_point)
-    {
-      float setpoint= (float) ssd650v_set_point->getValueDouble() ;
-
-      if( abs( setpoint) < 100. )
+      if( ssd650v_on_off->getValueBool())
 	{
-	  int direction= 1 ;
-	  if( setpoint < 0.)
+	  logStream (MESSAGE_DEBUG) << "Vermes::valueChanged starting azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	  if(( res=motor_on()) != SSD650V_RUNNING )
 	    {
-	      direction= -1 ;
-	      setpoint *= -1 ;
+	      logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	      motor_on_off_state= MOTOR_UNDEFINED ;
 	    }
-	  else if(setpoint== 0)
+	  else
 	    {
-	      direction= 0 ;
+	      fprintf( stderr, "compare_azimuth: 30\n") ;
+	      ssd650v_state->setValueString("motor running") ;
+	      motor_on_off_state= MOTOR_RUNNING ;
 	    }
-	  if( set_setpoint( setpoint, direction)) 
-	  {
-	    logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << " direction"<< direction<< sendLog ;
-	  }
-	  return ; // ask Petr what to do in general if something fails within ::valueChanged
 	}
       else
 	{
-	  ssd650v_set_point->setValueDouble(-1) ; // ask Petr what to do in general if something fails within ::valueChanged
-	  return ;
+	  logStream (MESSAGE_DEBUG) << "Vermes::valueChanged stopping azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	  if(( res=motor_off()) !=  SSD650V_STOPPED)
+	    {
+	      logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	      motor_on_off_state= MOTOR_UNDEFINED ;
+	    }
+	  else
+	    {
+	      ssd650v_state->setValueString("motor stopped") ;
+	      motor_on_off_state= MOTOR_NOT_RUNNING ;
+	    }
 	}
+      return ;
+    }
+  else if (changed_value == ssd650v_setpoint)
+    {
+      float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
+
+      if( set_setpoint( setpoint)) 
+	{
+	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << sendLog ;
+	}
+      return ; // ask Petr what to do in general if something fails within ::valueChanged
     }
   Cupola::valueChanged (changed_value);
-
 }
 int Vermes::idle ()
 {
@@ -200,14 +223,25 @@ int Vermes::info ()
 {
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
   setCurrentAz (barcodereader_az);
+  setTargetAz(target_az) ;
 
-  azimut_difference->setValueDouble( ( getTargetAz()-barcodereader_az)) ;
-  ssd650v_state->setValueString("running FAKE") ;
-  ssd650v_on_off->setValueBool( 0) ;
-
-
+  azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   
-  ssd650v_set_point->setValueDouble( (double) get_setpoint()) ;
+  if( motor_on_off_state== MOTOR_RUNNING)
+    {
+      ssd650v_on_off->setValueBool(true) ;
+      ssd650v_state->setValueString("motor running") ;
+    }
+  else if( motor_on_off_state== MOTOR_NOT_RUNNING)
+    {
+      ssd650v_on_off->setValueBool(false) ;
+      ssd650v_state->setValueString("motor stopped") ;
+    }
+  else 
+    {
+      ssd650v_state->setValueString("motor undefined state") ;
+    }
+  ssd650v_setpoint->setValueDouble( (double) get_setpoint()) ;
 
   // not Cupola::info() ?!?
   return Cupola::info ();
@@ -215,13 +249,18 @@ int Vermes::info ()
 int Vermes::initValues ()
 {
   int ret ;
+  pthread_t  thread_0;
+
+
   config = Rts2Config::instance ();
 
   ret = config->loadFile ();
   if (ret)
     return -1;
 
+  obs= Cupola::getObserver() ;
 
+  // barcode azimuth reader
   if(!( ret= start_bcr_comm()))
     {
       register_pos_change_callback(position_update_callback);
@@ -231,11 +270,23 @@ int Vermes::initValues ()
       logStream (MESSAGE_ERROR) << "Vermes::initValues could connect to barcode devices, exiting "<< sendLog ;
       exit(1) ;
     }
-
-  connectDevice(SSD650V_CONNECT) ;
-
-  obs= Cupola::getObserver() ;
-
+  // ssd650v frequency inverter
+  if(connectDevice(SSD650V_CONNECT))
+    {
+      logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
+    }
+  if(( ret=motor_off()) != SSD650V_STOPPED )
+    {
+      fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
+      motor_on_off_state= MOTOR_UNDEFINED ;
+    }
+  else
+    {
+      motor_on_off_state= MOTOR_NOT_RUNNING ;
+    }
+  // thread to compare (target - current) azimuth and rotate the dome
+  int *value ;
+  ret = pthread_create( &thread_0, NULL, compare_azimuth, value) ;
   return Cupola::initValues ();
 }
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
@@ -245,7 +296,7 @@ Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
   createValue (barcode_reader_state,"BCRstate",   "state of the barcodereader value CUP_AZ (0=valid, 1=invalid)", false);
   createValue (ssd650v_state,       "SSDstate",   "status of the ssd650v inverter ", false);
   createValue (ssd650v_on_off,      "SSDswitch",  "(true=running, false=not running)", false, RTS2_VALUE_WRITABLE);
-  createValue (ssd650v_set_point,   "SSDsetpoint","ssd650v setpoint", false, RTS2_VALUE_WRITABLE);
+  createValue (ssd650v_setpoint,    "SSDsetpoint","ssd650v setpoint", false, RTS2_VALUE_WRITABLE);
 
   barcode_reader_state->setValueInteger( -1) ; 
 }
@@ -254,3 +305,170 @@ int main (int argc, char **argv)
 	Vermes device (argc, argv);
 	return device.run ();
 }
+
+//It is not the fastest dome, one revolution in 5 minutes
+#define AngularSpeed 2. * M_PI/ 98. 
+#define POLLMICROS 1000. * 1000. 
+#define DIFFMAX 60 /* Difference where curMaxSetPoint is reached */
+#define DIFFMIN  5 /* Difference where curMinSetPoint is reached*/
+
+void *compare_azimuth( void *value)
+{
+  double ret = -1 ;
+  double curAzimutDifference ;
+  double curMaxSetPoint= 80 ;
+  double curMinSetPoint= 40 ;
+  static double lastSetPoint=0, curSetPoint=0 ;
+  static double lastSetPointSign=0, curSetPointSign=0 ;
+  double tmpSetPoint= 0. ;
+
+/* Driver ac sends positive values for a positive rotation*/
+/* Azimut is counted positive from North to east point */
+  static double sign_snoop= -1. ; 
+
+  while( 1==1)
+    {
+
+      target_az= dome_target_az( tel_eq, -1,  obs) ; // wildi ToDo: DecAxis!
+      curAzimutDifference=  barcodereader_az- target_az;
+
+      // fmod is here just in case if there is something out of bounds
+      curAzimutDifference= fmod( curAzimutDifference, 360.) ;
+
+      // Shortest path
+      if(( curAzimutDifference) >= 180.)
+ 	{
+	  curAzimutDifference -=360. ;
+ 	}
+      else if(( curAzimutDifference) < -180.)
+ 	{
+	  curAzimutDifference += 360. ;
+ 	}
+
+      if(( motor_on_off_state= MOTOR_RUNNING)&&( ret= fabs( curAzimutDifference/180. * M_PI)) < ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))))
+	{
+	  fprintf( stderr, "compare_azimuth: absolute difference smaller than %3.1f [deg]\n", ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))) * 180./M_PI) ;
+	  curAzimutDifference=  0. ;
+ 	}
+      else if (( ret= fabs( curAzimutDifference/180. * M_PI)) < ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))))
+	{
+	  fprintf( stderr, "compare_azimuth: NOT RUNNING absolute difference smaller than %3.1f [deg]\n", ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))) * 180./M_PI) ;
+	}
+      //  Difference at ac,  curMaxSetPoint, curMinSetPoint are always > 0, setpoint is [-100.,100.] 
+      tmpSetPoint= (( curMaxSetPoint- curMinSetPoint) / (DIFFMAX- DIFFMIN) * fabs( curAzimutDifference)  + curMinSetPoint ) ;
+      curSetPointSign= sign_snoop * curAzimutDifference/fabs(curAzimutDifference) ;
+
+      if( tmpSetPoint > curMaxSetPoint)
+	{
+	  tmpSetPoint= curMaxSetPoint;
+	}
+      else if( tmpSetPoint < curMinSetPoint)
+	{
+	  tmpSetPoint= curMinSetPoint ;
+	}
+      curSetPoint= curSetPointSign * tmpSetPoint ;
+      
+      if( curAzimutDifference == 0.)
+	{
+	  // not stopped
+	  if( motor_on_off_state== MOTOR_RUNNING)
+	  {
+	    fprintf( stderr, "compare_azimuth: detected a zero value %f, stopping", curAzimutDifference);
+	    // LDMotorOFF() ;
+	    if(( ret=motor_off()) != SSD650V_STOPPED )
+	      {
+		fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
+		motor_on_off_state= MOTOR_UNDEFINED ;
+	      }
+	    else
+	      {
+		fprintf( stderr, "compare_azimuth: 20\n") ;
+		motor_on_off_state= MOTOR_NOT_RUNNING ;
+	      }
+	    curSetPoint= 0. ;
+	    set_setpoint( curSetPoint) ;
+	  }
+	  lastSetPoint= 0. ;
+	  lastSetPointSign= 0. ;
+	}
+      else
+	{
+	  if( lastSetPoint != 0) /* Motor is possibly ON */
+	    {
+	      if( curSetPointSign ==  lastSetPointSign) /* movement same direction */
+		{
+		  set_setpoint( curSetPoint) ;
+
+		  // motor is not running
+		  if( motor_on_off_state== MOTOR_NOT_RUNNING)
+		    {
+		      //  LDMotorON() ;
+		      if(( ret=motor_on()) != SSD650V_RUNNING )
+			{
+			  fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
+			  motor_on_off_state= MOTOR_UNDEFINED ;
+			}
+		      else
+			{
+			  fprintf( stderr, "compare_azimuth: 1\n") ;
+			  motor_on_off_state= MOTOR_RUNNING ;
+			}
+		    }    
+		}
+	      else /* wanted movement opposite direction */
+	      	{
+		  // LDMotorOFF() ;
+		  if(( ret=motor_off()) != SSD650V_STOPPED )
+		    {
+		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
+		    }
+		  else
+		    {
+			  fprintf( stderr, "compare_azimuth: 21\n") ;
+		    }
+		  set_setpoint( curSetPoint) ;
+		  fprintf( stderr, "Detected a sign change of Setpoint = %f, turning motor off and on\n", curSetPoint);
+
+		  // LDMotorON() ;
+		  if(( ret=motor_on()) != SSD650V_RUNNING )
+		    {
+		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
+		      motor_on_off_state= MOTOR_UNDEFINED ;
+		    }
+		  else
+		    {
+		      fprintf( stderr, "compare_azimuth: 2\n") ;
+		      motor_on_off_state= MOTOR_RUNNING ;
+		    }
+
+		}
+	    }
+	  else /* currently no movement */
+	    {
+	      set_setpoint( curSetPoint) ;
+
+	      // motor not running
+	      if( motor_on_off_state== MOTOR_NOT_RUNNING)
+		{
+		  // LDMotorON() ;
+		  if(( ret=motor_on()) != SSD650V_RUNNING )
+		    {
+		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
+		      motor_on_off_state= MOTOR_UNDEFINED ;
+		    }
+		  else
+		    {
+		      fprintf( stderr, "compare_azimuth: 3\n") ;
+		      motor_on_off_state= MOTOR_RUNNING ;
+		    }
+		}
+	    }
+	  lastSetPoint= curSetPoint ;
+	  lastSetPointSign= curSetPointSign ;
+	}
+      fprintf(stderr, "Sleeping---a-d:%5.4f----------------------------- s%3.1f, b:%5.3f, t:%5.6f, b-t:%6.4f\n", 180./M_PI*( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))), curSetPoint, barcodereader_az, target_az, barcodereader_az- target_az) ;
+      usleep(POLLMICROS) ;
+    }
+  return NULL ;
+}
+
