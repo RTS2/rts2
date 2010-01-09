@@ -58,6 +58,10 @@ class Cupola:public Dome
 		}
 		virtual int moveEnd ();
 
+		void setTargetAz (double in_az)
+		{
+			tarAz->setValueDouble (in_az);
+		}
 		void setCurrentAz (double in_az)
 		{
 			currentAz->setValueDouble (in_az);
