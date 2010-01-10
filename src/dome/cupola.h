@@ -57,7 +57,7 @@ class Cupola:public Dome
 		 * 
 		 * @return false when we are satisfied with curent position, true when split position change is needed.
 		 */
-		virtual bool needSplitChange ();
+		virtual bool needSlitChange ();
 		// calculate split width in arcdeg for given altititude; when copula don't have split at given altitude, returns -1
 		virtual double getSplitWidth (double alt) = 0;
 

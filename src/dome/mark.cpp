@@ -502,7 +502,7 @@ int
 Mark::moveStart ()
 {
 	int ret;
-	ret = needSplitChange ();
+	ret = needSlitChange ();
 	if (ret == 0 || ret == -1)
 		return ret;				 // pretend we change..so other devices can sync on our command
 	slew ();
@@ -514,7 +514,7 @@ long
 Mark::isMoving ()
 {
 	int ret;
-	ret = needSplitChange ();
+	ret = needSlitChange ();
 	if (ret == -1)
 		return ret;
 	ret = slew ();

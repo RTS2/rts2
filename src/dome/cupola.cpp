@@ -82,7 +82,7 @@ int Cupola::idle ()
 				moveStop ();
 		}
 	}
-	else if (needSplitChange () > 0)
+	else if (needSlitChange () > 0)
 	{
 		moveStart ();
 		setTimeout (USEC_SEC);
@@ -142,7 +142,7 @@ void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 	ln_get_hrz_from_equ (&targetPos, observer, JD, hrz);
 }
 
-bool Cupola::needSplitChange ()
+bool Cupola::needSlitChange ()
 {
 	int ret;
 	struct ln_hrz_posn targetHrz;
