@@ -219,7 +219,7 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	response = new char[response_length];
 	int ret;
 	ret = read (f, response, response_length);
-	if (ret != response_length)
+	if (ret != int (response_length))
 	{
 		delete[] response;
 		throw XmlRpcException ("Cannot read data");
@@ -236,6 +236,8 @@ void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, c
 
 #else
 	response_type = "application/x-gtar";
+
+	addExtraHeader ("Content-disposition","attachment; filename=images.tar.bz2");
 
 	struct ::archive *a;
 	struct ::archive_entry *entry;
@@ -274,7 +276,6 @@ void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, c
 			close (fd);
 			archive_entry_free (entry);
 		}
-//		_os << iter->getName () << '=' << iter->getValue () << "<br/>\n";
 	}
 
 	archive_write_finish (a);

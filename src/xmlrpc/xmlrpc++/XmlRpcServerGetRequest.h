@@ -13,6 +13,8 @@
 # include <vector>
 #endif
 
+#include "XmlRpcServerConnection.h"
+
 #define HTTP_OK              200
 #define HTTP_BAD_REQUEST     400
 #define HTTP_UNAUTHORIZED    401
@@ -78,12 +80,18 @@ namespace XmlRpc
 			//! Returns 401 page
 			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
+			void setConnection (XmlRpcServerConnection *_connection) { connection = _connection; }
+
 		protected:
 			std::string _prefix;
 			XmlRpcServer* _server;
+
+			void addExtraHeader (const char *name, const char *value) { connection->addExtraHeader (name, value); }
 		private:
 			std::string _username;
 			std::string _password;
+
+			XmlRpcServerConnection *connection;
 	};
 }								 // namespace XmlRpc
 #endif							 // _XMLRPCSERVERGETREQUEST_H_

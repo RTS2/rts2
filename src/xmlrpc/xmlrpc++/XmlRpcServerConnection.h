@@ -11,6 +11,9 @@
 # include <string>
 #endif
 
+#include <list>
+#include <utility>
+
 #include "XmlRpcValue.h"
 #include "XmlRpcSource.h"
 
@@ -48,6 +51,13 @@ namespace XmlRpc
 			//! Handle IO on the client connection socket.
 			//!   @param eventType Type of IO event that occurred. @see XmlRpcDispatch::EventType.
 			virtual unsigned handleEvent(unsigned eventType);
+
+			/**
+			 * Add extra header among HTTP headers sent to client.
+			 * @param name  Name of extra header
+			 * @param value Extra header value
+			 */
+			void addExtraHeader (const char *name, const char *value) { _extra_headers.push_back (std::pair <const char *, const char *> (name, value)); }
 
 		protected:
 
@@ -115,6 +125,7 @@ namespace XmlRpc
 
 			// Response to GET request - header
 			std::string _get_response_header;
+			std::list <std::pair <const char*, const char*> > _extra_headers;
 
 			// Response for GET request - data
 			char *_get_response;

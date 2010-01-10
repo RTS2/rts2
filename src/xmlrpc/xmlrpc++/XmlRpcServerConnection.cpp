@@ -44,6 +44,7 @@ XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, boo
 	_keepAlive = true;
 
 	_get_response_header = std::string ("");
+	_extra_headers.clear ();
 
 	_get_response_length = 0;
 	_get_response = NULL;
@@ -327,6 +328,7 @@ bool XmlRpcServerConnection::handleGet()
 		_request_buf = NULL;
 		_request_length = 0;
 		_get_response_header = std::string ();
+		_extra_headers.clear ();
 		delete[] _get_response;
 		
 		_get_response_length = 0;
@@ -382,6 +384,7 @@ bool XmlRpcServerConnection::writeResponse()
 		_request_buf = NULL;
 		_request_length = 0;
 		_get_response_header = std::string ("");
+		_extra_headers.clear ();
 		_get_response_length = 0;
 		_get_response = NULL;
 		_response = "";
@@ -421,7 +424,6 @@ void XmlRpcServerConnection::executeGet()
 
 	int http_code = HTTP_BAD_REQUEST;
 	const char *http_code_string = "Failed";
-	const char *extra_header = "";
 
 	XmlRpcServerGetRequest* request = _server->findGetRequest(_get);
 	if (request == NULL)
@@ -457,6 +459,8 @@ void XmlRpcServerConnection::executeGet()
 				params.parse (_request);
 			}
 
+			request->setConnection (this);
+
 			request->execute (path, &params, http_code, response_type, _get_response, _get_response_length);
 		}
 		catch (const std::exception& ex)
@@ -476,7 +480,7 @@ void XmlRpcServerConnection::executeGet()
 			break;
 		case HTTP_UNAUTHORIZED:
 			http_code_string = "Authorization Required";
-			extra_header = "\r\nWWW-Authenticate: Basic realm=\"Your RTS2 login\"";
+			addExtraHeader ("WWW-Authenticate", "Basic realm=\"Your RTS2 login\"");
 			break;
 		case HTTP_BAD_REQUEST:
 		default:
@@ -487,9 +491,11 @@ void XmlRpcServerConnection::executeGet()
 	std::ostringstream _os;
 
 	_os << "HTTP/1.0 " << http_code << " " << http_code_string
-		<< "\r\nServer: XMLRCP" << extra_header
-		<< "\r\nContent-Type: " << response_type
+		<< "\r\nServer: XMLRCP\r\nContent-Type: " << response_type
 		<< "\r\nContent-length: " << _get_response_length;
+
+	for (std::list <std::pair <const char*, const char*> >::iterator iter = _extra_headers.begin (); iter != _extra_headers.end (); iter++)
+	  	_os << "\r\n" << iter->first << ": " << iter->second;
 	
 	_os << "\r\n\r\n";
 
@@ -528,11 +534,11 @@ bool XmlRpcServerConnection::executeMethod(const std::string& methodName, XmlRpc
 
 	method->setAuthorization (_authorization);
 
-	method->execute(params, result);
+	method->execute (params, result);
 
 	// Ensure a valid result value
-	if ( ! result.valid())
-		result = std::string();
+	if ( ! result.valid ())
+		result = std::string ();
 
 	return true;
 }
