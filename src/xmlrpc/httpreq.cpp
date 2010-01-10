@@ -538,7 +538,7 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 				continue;
 			if (in > ie)
 				break;
-			preview.imageHref (_os, in, (*iter)->getFileName (), prevsize);
+			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize);
 		}
 
 		_os << "</p>";
