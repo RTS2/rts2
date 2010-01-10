@@ -142,21 +142,21 @@ void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 	ln_get_hrz_from_equ (&targetPos, observer, JD, hrz);
 }
 
-int Cupola::needSplitChange ()
+bool Cupola::needSplitChange ()
 {
 	int ret;
 	struct ln_hrz_posn targetHrz;
 	double splitWidth;
 	if (isnan (targetPos.ra) || isnan (targetPos.dec))
-		return 0;
+		return false;
 	getTargetAltAz (&targetHrz);
 	splitWidth = getSplitWidth (targetHrz.alt);
 	if (splitWidth < 0)
-		return -1;
+		return false;
 	// get current az
 	ret = info ();
 	if (ret)
-		return -1;
+		return false;
 	// simple check; can be repleaced by some more complicated for more complicated setups
 	targetDistance = getCurrentAz () - targetHrz.az;
 	if (targetDistance > 180)
@@ -167,9 +167,9 @@ int Cupola::needSplitChange ()
 	{
 		if ((getState () & DOME_CUP_MASK_SYNC) == DOME_CUP_NOT_SYNC)
 			synced ();
-		return info ();
+		return false;
 	}
-	return 1;
+	return true;
 }
 
 int Cupola::commandAuthorized (Rts2Conn * conn)
