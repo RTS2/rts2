@@ -327,20 +327,3 @@ int main (int argc, char **argv)
 	return device.run ();
 }
 
-//It is not the fastest dome, one revolution in 5 minutes
-#define AngularSpeed 2. * M_PI/ 98. 
-#define POLLMICROS 1. * 1000. * 1000. 
-#define DIFFMAX 60 /* Difference where curMaxSetPoint is reached */
-#define DIFFMIN  5 /* Difference where curMinSetPoint is reached*/
-void getSexComponents(double value, int *d, int *m, int *s) ;
-void getSexComponents(double value, int *d, int *m, int *s)
-{
-
-  *d = (int) fabs(value);
-  *m = (int) ((fabs(value) - *d) * 60.0);
-  *s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
-
-  if (value < 0)
-    *d *= -1;
-}
-
