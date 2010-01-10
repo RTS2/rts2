@@ -29,9 +29,8 @@
 #include <string.h>
 #include <malloc.h>
 #include <sys/time.h>
-
-#endif
 #include <math.h>
+#endif
 
 #include "vermes.h"
 #include "ssd650v_comm_vermes.h"
@@ -200,19 +199,22 @@ set_setpoint(float setpoint)
 
   if (isnan(setpoint)) {
     indi_log(ILOG_WARNING, "Don't set setpoint to NaN!");
+    fprintf( stderr, "Don't set setpoint to NaN!\n");
     return BISYNC_ERR;
   }
 
   if ( fabs( 100) > 100.) {
     indi_log(ILOG_WARNING, "Don't set setpoint to larger than 100.%");
+    fprintf( stderr, "Don't set setpoint to larger than 100.\n");
     return BISYNC_ERR;
   }
-
-  float ssd_setp = SSD_qry_real(ser_dev, 247);;
-  if (isnan(ssd_setp)) {
-    indi_log(ILOG_WARNING, "Failure querying setpoint");
-    return BISYNC_ERR;
-  }
+  // wildi ToDo: fails at the beginning
+/*   float ssd_setp = SSD_qry_real(ser_dev, 247);; */
+/*   if (isnan(ssd_setp)) { */
+/*     indi_log(ILOG_WARNING, "Failure querying setpoint"); */
+/*     fprintf( stderr, "Failure querying setpoint\n"); */
+/*     return BISYNC_ERR; */
+/*   } */
   snprintf(data, 8, "%3.1f", snd_setpoint);
   return SSD_set_tag(ser_dev, 247, data);
 }
@@ -420,6 +422,7 @@ int motor_run_switch_state()
   } else {
 /*     motorOperationNP.s = IPS_ALERT; */
     indi_log(ILOG_WARNING, "Failure querying setpoint - aborting motor command");
+    fprintf( stderr, "motor_run_switch_state: SSD650V_GETTING_SET_POINT_FAILED\n") ;
     return SSD650V_GETTING_SET_POINT_FAILED;
   }
 
@@ -434,6 +437,7 @@ int motor_run_switch_state()
 /*       MotorStartSP.sp[1].s = ISS_ON; */
       motor_state.start= SSD650V_OFF ;
       motor_state.stop = SSD650V_ON ;
+      fprintf( stderr, "motor_run_switch_state: SSD650V_SETTING_SET_POINT_FAILED %3.1f, error %d\n", setpoint, res) ;
 
       return SSD650V_SETTING_SET_POINT_FAILED;
     }
@@ -445,6 +449,7 @@ int motor_run_switch_state()
 
     qry_mot_cmd();
     qry_mot_status();
+    fprintf( stderr, "motor_run_switch_state: SSD650V_RUNNING\n") ;
 
     return SSD650V_RUNNING ;
 
@@ -460,6 +465,8 @@ int motor_run_switch_state()
 
     qry_mot_cmd();
     qry_mot_status();
+    fprintf( stderr, "motor_run_switch_state: SSD650V_STOPPED\n") ;
+
     return SSD650V_STOPPED ;
   }
   else
@@ -529,6 +536,7 @@ int connectDevice( int power_state)
 /*           IUSaveText(&SSD_device_infoTP.tp[0], id_str); */
           free(id_str);
         } else {
+	  fprintf( stderr, "connectDevice: SSD650V_CONNECTION_FAILED\n") ;
 	  return SSD650V_CONNECTION_FAILED ;
         }
         /* query major state from SSD650V indicating powering up and
@@ -537,6 +545,7 @@ int connectDevice( int power_state)
         if (id_str) {
 /*           IUSaveText(&SSD_device_infoTP.tp[1], id_str); */
         } else {
+	  fprintf( stderr, "connectDevice: SSD650V_MAJOR_STATE_FAILED\n") ;
 	  return SSD650V_MAJOR_STATE_FAILED ;
         }
         /* query the motor sequencing status from SSD650V */
@@ -550,8 +559,10 @@ int connectDevice( int power_state)
 /*           IUSaveText(&SSD_device_infoTP.tp[4], id_str); */
           free(id_str);
         } else {
+	  fprintf( stderr, "connectDevice: SSD650V_LAST_ERROR_FAILED\n") ;
 	  return SSD650V_LAST_ERROR_FAILED ;
         }
+
         /* get current setpoint, accel and decel times */
         float setpoint = SSD_qry_real(ser_dev, 247);
 
@@ -559,6 +570,7 @@ int connectDevice( int power_state)
 /*           IDSetNumber(&motorOperationNP, "setpoint currently is %3.1f", abs_setpoint); */
         } else {
           indi_log(ILOG_WARNING, "Failure querying setpoint");
+	  fprintf( stderr, "connectDevice: SSD650V_GETTING_SET_POINT_FAILED\n") ;
 	  return SSD650V_GETTING_SET_POINT_FAILED ;
         }
 
@@ -571,14 +583,17 @@ int connectDevice( int power_state)
 	  fprintf( stderr, "Failure querying accel_tm-----------------------------\n");
 	  return SSD650V_GETTING_ACCELERATION_TIME_FAILED ;
         }
+	char data[8];
+	float decel_tm= 0.5 ; 
+        snprintf(data, 8, "%3.1f", decel_tm);
+        res = SSD_set_tag(ser_dev, 259, data);
 
-        float decel_tm = SSD_qry_real(ser_dev, 259);
+        decel_tm = SSD_qry_real(ser_dev, 259);
         if (!isnan(decel_tm)) {
 	  fprintf( stderr, "connectDevice: decel time currently is %3.1f-----------------------------\n", decel_tm);
         } else {
           indi_log(ILOG_WARNING, "Failure querying decel_tm");
 	  fprintf( stderr, "Failure querying decel_tm-----------------------------\n");
-	  fprintf( stderr, "-----------------------------\n");
 	  return SSD650V_GETTING_DECELERATION_TIME_FAILED ;
         }
         /* query the motor control command status from SSD650V */
@@ -628,11 +643,13 @@ int connectDevice( int power_state)
 	    fast_stop_state.reset= SSD650V_OFF ;
           }
         } else {
+	  fprintf( stderr, "connectDevice: SSD650V_GETTING_MOTOR_COMMAND_FAILED\n") ;
 	  return SSD650V_GETTING_MOTOR_COMMAND_FAILED ;
         }
 	// wildi ToDo gettimeofday(&time_last_stat, NULL);
         // wildi ToDo workproc_id = addWorkProc(&query_all_ssd650_status, NULL);
       } else {
+	fprintf( stderr, "connectDevice: SSD650V_CONNECTION_NOK\n") ;  
 	return SSD650V_CONNECTION_NOK ;
       }
       // set the initial values
@@ -642,8 +659,11 @@ int connectDevice( int power_state)
 
       coast_state.set  = SSD650V_OFF ;
       coast_state.reset= SSD650V_ON ;
-
       motor_coast_switch_state() ;
+
+      fprintf( stderr, "connectDevice: connection OK\n") ;
+      return SSD650V_CONNECTION_OK ;
+      
       break;
 
     case SSD650V_DISCONNECT:
@@ -652,8 +672,10 @@ int connectDevice( int power_state)
       res = ssd_stop_comm();
       if (!res) {
 	// wildi ToDo  IDSetSwitch(&PowerSP, "disconnected from %s.", SerDeviceTP.tp[0].text);
+      return SSD650V_CONNECTION_OK ;
       } else {
         // wildi ToDo IDSetSwitch(&PowerSP, "disconnect from %s failed.", SerDeviceTP.tp[0].text);
+      return SSD650V_CONNECTION_NOK ;
       }
       break;
 

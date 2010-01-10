@@ -87,7 +87,7 @@ struct telescope {
 } tel ;
 
 /* the main entry function */
-double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs)
+double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs)
 {
   double ret ;
   double target_az ;
@@ -125,8 +125,7 @@ double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_pos
   tel.radius= 0.123;
   tel.rear_length= 0.8;
   
-
-  ret= LDRAtoDomeAZ( longitude, latitude, tel_eq.ra, tel_eq.dec, &target_az, &target_ZD) ;
+  ret= LDRAtoDomeAZ( longitude/180.*M_PI, latitude/180.*M_PI, tel_eq->ra/180.*M_PI, tel_eq->dec/180.*M_PI, &target_az, &target_ZD) ;
 
   return target_az ;
 }
@@ -373,11 +372,11 @@ int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD
 }
 int LDCheckHorizon( double HA, double dec, double latitude)
 {
-  double sinh ;
+  double sinh_value ;
 
-  sinh= cos(latitude) * cos(HA) * cos(dec) + sin(latitude) * sin(dec) ;
+  sinh_value= cos(latitude) * cos(HA) * cos(dec) + sin(latitude) * sin(dec) ;
 
-  if( sinh >= 0.)
+  if( sinh_value >= 0.)
     {
       return 0 ;
     }

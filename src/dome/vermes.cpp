@@ -27,7 +27,8 @@ extern "C"
 {
 #endif
 // wildi ToDo: go to dome-target-az.h
-double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs) ;
+double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
+  void *move_to_target_azimuth( void *value) ;
 #ifdef __cplusplus
 }
 #endif
@@ -37,22 +38,25 @@ double dome_target_az( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_pos
 #define MOTOR_NOT_RUNNING  1
 #define MOTOR_UNDEFINED    2
 
-int motor_on_off_state ;
+#define NOT_SYNCED 0 
+#define SYNCED     1
+
+int is_synced= NOT_SYNCED ; // ==SYNCED if target_az reched
+int motor_on_off_state= MOTOR_RUNNING ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
 double target_az ;
 struct ln_lnlat_posn *obs ;
-struct ln_equ_posn tel_eq ;
-
-
+struct ln_equ_posn    tel_eq_m ;
+struct ln_equ_posn   *tel_eq= &tel_eq_m ;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-int set_setpoint( float setpoint) ;
 float get_setpoint() ;
+int set_setpoint( float setpoint) ;
 int motor_on() ;
 int motor_off() ;
 int connectDevice( int power_state) ;
@@ -60,8 +64,7 @@ int connectDevice( int power_state) ;
 }
 #endif
 
-void *compare_azimuth( void *value) ;
-
+void *XXX_move_to_target_azimuth( void *value) ; // thread: moves cupola to target az
 
 using namespace rts2dome;
 
@@ -110,47 +113,62 @@ namespace rts2dome
 
 int Vermes::moveEnd ()
 {
-  //	logStream (MESSAGE_ERROR) << "Vermes::moveEnd set Az "<< hrz.az << sendLog ;
-  logStream (MESSAGE_ERROR) << "Vermes::moveEnd did nothing "<< sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::moveEnd did nothing "<< sendLog ;
   return Cupola::moveEnd ();
 }
 long Vermes::isMoving ()
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::isMoving"<< sendLog ;
-
-
-
-  if ( 1) // if there, return -2
-    return -2;
+  if ( is_synced== SYNCED)
+    {
+      logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
+      return -2;
+    }
+  else
+    {
+      logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
+    }
   return USEC_SEC;
 }
 int Vermes::moveStart ()
 {
-  tel_eq.ra= getTargetRa() ;
-  tel_eq.dec= getTargetDec() ;
+  int target_coordinate_changed= 0 ;
+  static double lastRa=-9999., lastDec=-9999. ;
 
-  logStream (MESSAGE_ERROR) << "Vermes::moveStart RA " << tel_eq.ra  << " Dec " << tel_eq.dec << sendLog ;
+  tel_eq->ra= getTargetRa() ;
+  tel_eq->dec= getTargetDec() ;
+  // thread compare_az take care of the calculations
 
-  target_az= dome_target_az( tel_eq, -1,  obs) ; // this value is only informational wildi ToDo: DecAxis!
-  logStream (MESSAGE_ERROR) << "Vermes::moveStart dome target az" << target_az << sendLog ;
-  setTargetAz(target_az) ;
+  if( lastRa != tel_eq->ra)
+    {
+      lastRa = tel_eq->ra ;
+      target_coordinate_changed++ ;
+    }
+  if( lastDec != tel_eq->dec)
+    {
+      lastDec = tel_eq->dec ;
+      target_coordinate_changed++ ;
+    }
+  if(target_coordinate_changed)
+    {
+      logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_eq->ra  << " Dec " << tel_eq->dec << sendLog ;
+    }
   return Cupola::moveStart ();
 }
 
 double Vermes::getSplitWidth (double alt)
 {
-  logStream (MESSAGE_ERROR) << "Vermes::getSplitWidth returning 1" << sendLog ;
-  return 1;
+  logStream (MESSAGE_DEBUG) << "Vermes::getSplitWidth returning 1" << sendLog ;
+  return -1;
 }
 
 void Vermes::parkCupola ()
 {
-  logStream (MESSAGE_ERROR) << "Vermes::parkCupola doing nothing" << sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::parkCupola doing nothing" << sendLog ;
 }
 
 int Vermes::standby ()
 {
-  logStream (MESSAGE_ERROR) << "Vermes::standby doing nothing" << sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::standby doing nothing" << sendLog ;
   parkCupola ();
   return Cupola::standby ();
 }
@@ -162,7 +180,7 @@ int Vermes::off ()
 //       logStream (MESSAGE_ERROR) << "Vermes::off a general failure occured" << sendLog ;
 //     }
 
-  logStream (MESSAGE_ERROR) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
+  logStream (MESSAGE_DEBUG) << "Vermes::off NOT disconnecting from frequency inverter" << sendLog ;
   parkCupola ();
   return Cupola::off ();
 }
@@ -182,7 +200,6 @@ void Vermes::valueChanged (Rts2Value * changed_value)
 	    }
 	  else
 	    {
-	      fprintf( stderr, "compare_azimuth: 30\n") ;
 	      ssd650v_state->setValueString("motor running") ;
 	      motor_on_off_state= MOTOR_RUNNING ;
 	    }
@@ -226,21 +243,21 @@ int Vermes::info ()
   setTargetAz(target_az) ;
 
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
-  
-  if( motor_on_off_state== MOTOR_RUNNING)
-    {
-      ssd650v_on_off->setValueBool(true) ;
-      ssd650v_state->setValueString("motor running") ;
-    }
-  else if( motor_on_off_state== MOTOR_NOT_RUNNING)
-    {
-      ssd650v_on_off->setValueBool(false) ;
-      ssd650v_state->setValueString("motor stopped") ;
-    }
-  else 
-    {
-      ssd650v_state->setValueString("motor undefined state") ;
-    }
+
+   if( motor_on_off_state== MOTOR_RUNNING)
+     {
+       ssd650v_on_off->setValueBool(true) ;
+       ssd650v_state->setValueString("motor running") ;
+     }
+   else if( motor_on_off_state== MOTOR_NOT_RUNNING)
+     {
+       ssd650v_on_off->setValueBool(false) ;
+       ssd650v_state->setValueString("motor stopped") ;
+     }
+   else 
+     {
+       ssd650v_state->setValueString("motor undefined state") ;
+     }
   ssd650v_setpoint->setValueDouble( (double) get_setpoint()) ;
 
   // not Cupola::info() ?!?
@@ -250,7 +267,6 @@ int Vermes::initValues ()
 {
   int ret ;
   pthread_t  thread_0;
-
 
   config = Rts2Config::instance ();
 
@@ -284,9 +300,14 @@ int Vermes::initValues ()
     {
       motor_on_off_state= MOTOR_NOT_RUNNING ;
     }
+
+  // set initial tel_eq to HA=0
+  double JD= ln_get_julian_from_sys ();
+  tel_eq->ra= ln_get_mean_sidereal_time( JD) * 15. + obs->lng;
+  tel_eq->dec= 0. ;
   // thread to compare (target - current) azimuth and rotate the dome
   int *value ;
-  ret = pthread_create( &thread_0, NULL, compare_azimuth, value) ;
+  ret = pthread_create( &thread_0, NULL, move_to_target_azimuth, value) ;
   return Cupola::initValues ();
 }
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
@@ -308,167 +329,18 @@ int main (int argc, char **argv)
 
 //It is not the fastest dome, one revolution in 5 minutes
 #define AngularSpeed 2. * M_PI/ 98. 
-#define POLLMICROS 1000. * 1000. 
+#define POLLMICROS 1. * 1000. * 1000. 
 #define DIFFMAX 60 /* Difference where curMaxSetPoint is reached */
 #define DIFFMIN  5 /* Difference where curMinSetPoint is reached*/
-
-void *compare_azimuth( void *value)
+void getSexComponents(double value, int *d, int *m, int *s) ;
+void getSexComponents(double value, int *d, int *m, int *s)
 {
-  double ret = -1 ;
-  double curAzimutDifference ;
-  double curMaxSetPoint= 80 ;
-  double curMinSetPoint= 40 ;
-  static double lastSetPoint=0, curSetPoint=0 ;
-  static double lastSetPointSign=0, curSetPointSign=0 ;
-  double tmpSetPoint= 0. ;
 
-/* Driver ac sends positive values for a positive rotation*/
-/* Azimut is counted positive from North to east point */
-  static double sign_snoop= -1. ; 
+  *d = (int) fabs(value);
+  *m = (int) ((fabs(value) - *d) * 60.0);
+  *s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
 
-  while( 1==1)
-    {
-
-      target_az= dome_target_az( tel_eq, -1,  obs) ; // wildi ToDo: DecAxis!
-      curAzimutDifference=  barcodereader_az- target_az;
-
-      // fmod is here just in case if there is something out of bounds
-      curAzimutDifference= fmod( curAzimutDifference, 360.) ;
-
-      // Shortest path
-      if(( curAzimutDifference) >= 180.)
- 	{
-	  curAzimutDifference -=360. ;
- 	}
-      else if(( curAzimutDifference) < -180.)
- 	{
-	  curAzimutDifference += 360. ;
- 	}
-
-      if(( motor_on_off_state= MOTOR_RUNNING)&&( ret= fabs( curAzimutDifference/180. * M_PI)) < ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))))
-	{
-	  fprintf( stderr, "compare_azimuth: absolute difference smaller than %3.1f [deg]\n", ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))) * 180./M_PI) ;
-	  curAzimutDifference=  0. ;
- 	}
-      else if (( ret= fabs( curAzimutDifference/180. * M_PI)) < ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))))
-	{
-	  fprintf( stderr, "compare_azimuth: NOT RUNNING absolute difference smaller than %3.1f [deg]\n", ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))) * 180./M_PI) ;
-	}
-      //  Difference at ac,  curMaxSetPoint, curMinSetPoint are always > 0, setpoint is [-100.,100.] 
-      tmpSetPoint= (( curMaxSetPoint- curMinSetPoint) / (DIFFMAX- DIFFMIN) * fabs( curAzimutDifference)  + curMinSetPoint ) ;
-      curSetPointSign= sign_snoop * curAzimutDifference/fabs(curAzimutDifference) ;
-
-      if( tmpSetPoint > curMaxSetPoint)
-	{
-	  tmpSetPoint= curMaxSetPoint;
-	}
-      else if( tmpSetPoint < curMinSetPoint)
-	{
-	  tmpSetPoint= curMinSetPoint ;
-	}
-      curSetPoint= curSetPointSign * tmpSetPoint ;
-      
-      if( curAzimutDifference == 0.)
-	{
-	  // not stopped
-	  if( motor_on_off_state== MOTOR_RUNNING)
-	  {
-	    fprintf( stderr, "compare_azimuth: detected a zero value %f, stopping", curAzimutDifference);
-	    // LDMotorOFF() ;
-	    if(( ret=motor_off()) != SSD650V_STOPPED )
-	      {
-		fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-		motor_on_off_state= MOTOR_UNDEFINED ;
-	      }
-	    else
-	      {
-		fprintf( stderr, "compare_azimuth: 20\n") ;
-		motor_on_off_state= MOTOR_NOT_RUNNING ;
-	      }
-	    curSetPoint= 0. ;
-	    set_setpoint( curSetPoint) ;
-	  }
-	  lastSetPoint= 0. ;
-	  lastSetPointSign= 0. ;
-	}
-      else
-	{
-	  if( lastSetPoint != 0) /* Motor is possibly ON */
-	    {
-	      if( curSetPointSign ==  lastSetPointSign) /* movement same direction */
-		{
-		  set_setpoint( curSetPoint) ;
-
-		  // motor is not running
-		  if( motor_on_off_state== MOTOR_NOT_RUNNING)
-		    {
-		      //  LDMotorON() ;
-		      if(( ret=motor_on()) != SSD650V_RUNNING )
-			{
-			  fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
-			  motor_on_off_state= MOTOR_UNDEFINED ;
-			}
-		      else
-			{
-			  fprintf( stderr, "compare_azimuth: 1\n") ;
-			  motor_on_off_state= MOTOR_RUNNING ;
-			}
-		    }    
-		}
-	      else /* wanted movement opposite direction */
-	      	{
-		  // LDMotorOFF() ;
-		  if(( ret=motor_off()) != SSD650V_STOPPED )
-		    {
-		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-		    }
-		  else
-		    {
-			  fprintf( stderr, "compare_azimuth: 21\n") ;
-		    }
-		  set_setpoint( curSetPoint) ;
-		  fprintf( stderr, "Detected a sign change of Setpoint = %f, turning motor off and on\n", curSetPoint);
-
-		  // LDMotorON() ;
-		  if(( ret=motor_on()) != SSD650V_RUNNING )
-		    {
-		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
-		      motor_on_off_state= MOTOR_UNDEFINED ;
-		    }
-		  else
-		    {
-		      fprintf( stderr, "compare_azimuth: 2\n") ;
-		      motor_on_off_state= MOTOR_RUNNING ;
-		    }
-
-		}
-	    }
-	  else /* currently no movement */
-	    {
-	      set_setpoint( curSetPoint) ;
-
-	      // motor not running
-	      if( motor_on_off_state== MOTOR_NOT_RUNNING)
-		{
-		  // LDMotorON() ;
-		  if(( ret=motor_on()) != SSD650V_RUNNING )
-		    {
-		      fprintf( stderr, "compare_azimuth: something went wrong with  azimuth motor (ON)\n") ;
-		      motor_on_off_state= MOTOR_UNDEFINED ;
-		    }
-		  else
-		    {
-		      fprintf( stderr, "compare_azimuth: 3\n") ;
-		      motor_on_off_state= MOTOR_RUNNING ;
-		    }
-		}
-	    }
-	  lastSetPoint= curSetPoint ;
-	  lastSetPointSign= curSetPointSign ;
-	}
-      fprintf(stderr, "Sleeping---a-d:%5.4f----------------------------- s%3.1f, b:%5.3f, t:%5.6f, b-t:%6.4f\n", 180./M_PI*( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.))), curSetPoint, barcodereader_az, target_az, barcodereader_az- target_az) ;
-      usleep(POLLMICROS) ;
-    }
-  return NULL ;
+  if (value < 0)
+    *d *= -1;
 }
 
