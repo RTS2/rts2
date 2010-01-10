@@ -4,6 +4,7 @@
 #include "XmlRpcSocket.h"
 #include "XmlRpc.h"
 #include "base64.h"
+#include <sstream>
 
 #ifndef MAKEDEPEND
 # include <stdio.h>
@@ -42,8 +43,7 @@ XmlRpcServerConnection::XmlRpcServerConnection(int fd, XmlRpcServer* server, boo
 	_connectionState = READ_HEADER;
 	_keepAlive = true;
 
-	_get_response_header_length = 0;
-	_get_response_header = NULL;
+	_get_response_header = std::string ("");
 
 	_get_response_length = 0;
 	_get_response = NULL;
@@ -278,29 +278,29 @@ bool XmlRpcServerConnection::readRequest()
 
 bool XmlRpcServerConnection::handleGet()
 {
-	if (_get_response_header_length == 0 || _get_response_length == 0)
+	if (_get_response_header.length () == 0 || _get_response_length == 0)
 	{
 		executeGet();
 		_getHeaderWritten = 0;
 		_getWritten = 0;
 		_bytesWritten = 0;
-		if (_get_response_header_length == 0 || _get_response_length == 0)
+		if (_get_response_header.length () == 0 || _get_response_length == 0)
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: empty response.");
 			return false;
 		}
 	}
 
-	if (_getHeaderWritten != _get_response_header_length)
+	if (_getHeaderWritten != _get_response_header.length ())
 	{
-		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header, _get_response_header_length, &_getHeaderWritten))
+		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response_header.c_str () + _getHeaderWritten, _get_response_header.length (), &_getHeaderWritten))
 		{
 			XmlRpcUtil::error("XmlRpcServerConnection::handleGet: write error (%s).",XmlRpcSocket::getErrorMsg().c_str());
 			return false;
 		}
-		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getHeaderWritten, _get_response_header_length);
+		XmlRpcUtil::log(3, "XmlRpcServerConnection::handleGet: wrote %d of %d bytes.", _getHeaderWritten, _get_response_header.length ());
 	}
-	if (_getHeaderWritten == _get_response_header_length && _getWritten != _get_response_length)
+	if (_getHeaderWritten == _get_response_header.length () && _getWritten != _get_response_length)
 	{
 		if ( ! XmlRpcSocket::nbWriteBuf(this->getfd(), _get_response, _get_response_length, &_getWritten))
 		{
@@ -311,7 +311,7 @@ bool XmlRpcServerConnection::handleGet()
 	}
 
 	// Prepare to read the next request
-	if (_getHeaderWritten == _get_response_header_length && _getWritten == _get_response_length)
+	if (_getHeaderWritten == _get_response_header.length () && _getWritten == _get_response_length)
 	{
 		_authorization = "";
 		_get = "";
@@ -326,12 +326,9 @@ bool XmlRpcServerConnection::handleGet()
 			free(_request_buf);
 		_request_buf = NULL;
 		_request_length = 0;
-		delete[] _get_response_header;
+		_get_response_header = std::string ();
 		delete[] _get_response;
 		
-		_get_response_header_length = 0;
-		_get_response_header = NULL;
-
 		_get_response_length = 0;
 		_get_response = NULL;
 		_response = "";
@@ -384,8 +381,7 @@ bool XmlRpcServerConnection::writeResponse()
 			free(_request_buf);
 		_request_buf = NULL;
 		_request_length = 0;
-		_get_response_header_length = 0;
-		_get_response_header = NULL;
+		_get_response_header = std::string ("");
 		_get_response_length = 0;
 		_get_response = NULL;
 		_response = "";
@@ -488,9 +484,17 @@ void XmlRpcServerConnection::executeGet()
 			break;
 	}
 
-	_get_response_header = new char[501];
-	_get_response_header_length = snprintf(_get_response_header, 500, "HTTP/1.0 %i %s\r\nServer: XMLRCP%s\r\nContent-Type: %s\r\nContent-length: %i\r\n\r\n", http_code, http_code_string, extra_header, response_type, _get_response_length);
-	printf ("%s", _get_response_header);
+	std::ostringstream _os;
+
+	_os << "HTTP/1.0 " << http_code << " " << http_code_string
+		<< "\r\nServer: XMLRCP" << extra_header
+		<< "\r\nContent-Type: " << response_type
+		<< "\r\nContent-length: " << _get_response_length;
+	
+	_os << "\r\n\r\n";
+
+	_get_response_header = _os.str ();
+	printf ("%s", _get_response_header.c_str ());
 }
 
 // Parse the method name and the argument values from the request.
@@ -611,7 +615,7 @@ std::string XmlRpcServerConnection::generateHeader(std::string const& body)
 		"Content-length: ";
 
 	char buffLen[40];
-	sprintf(buffLen,"%i\r\n\r\n", body.size());
+	sprintf(buffLen,"%i\r\n\r\n", (int) body.size());
 
 	return header + buffLen;
 }

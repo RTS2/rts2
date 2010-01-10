@@ -116,7 +116,7 @@ namespace XmlRpc
 		}
 	}
 
-	void XmlRpcServerGetRequest::authorizePage(int &http_code, const char* &response_type, char* &response, int &response_length)
+	void XmlRpcServerGetRequest::authorizePage(int &http_code, const char* &response_type, char* &response, size_t &response_length)
 	{
 		http_code = HTTP_UNAUTHORIZED;
 		response_type = "text/html";

@@ -54,9 +54,9 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 	public:
 		GetRequestAuthorized (const char* prefix, XmlRpc::XmlRpcServer* s):XmlRpcServerGetRequest (prefix, s) {}
 
-		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
+		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length) = 0;
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 };
 
 /**
@@ -69,7 +69,7 @@ class Directory: public GetRequestAuthorized
 	public:
 		Directory (const char* prefix, const char *_dirPath, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
 		const char *dirPath;
@@ -85,7 +85,7 @@ class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
 	public:
 		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, s) {};
 
-		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length);
+		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* HAVE_LIBJPEG */
@@ -104,12 +104,12 @@ class Graph: public GetRequestAuthorized
 	public:
 		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
-		void printDevices (const char* &response_type, char* &response, int &response_length);
+		void printDevices (const char* &response_type, char* &response, size_t &response_length);
 
-		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 /**
@@ -134,7 +134,7 @@ class AltAzTarget: public GetRequestAuthorized
 		 * @param response        Response data. Must be allocated, preferably by new char[]. They will be deleted by calling code.
 		 * @param response_length Response lenght in bytes. 
 		 */
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* HAVE_LIBJPEG */ 
@@ -144,14 +144,14 @@ class Targets: public GetRequestAuthorized
 	public:
 		Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
-		void listTargets (const char* &response_type, char* &response, int &response_length);
-		void printTarget (Target *tar, const char* &response_type, char* &response, int &response_length);
+		void listTargets (const char* &response_type, char* &response, size_t &response_length);
+		void printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length);
 		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected);
-		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
-		void printTargetObservations (Target *tar, const char* &response_type, char* &response, int &response_length);
+		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+		void printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length);
 };
 
 /**
@@ -165,13 +165,13 @@ class AddTarget: public GetRequestAuthorized
 	public:
 		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 	private:
-		void askForTarget (const char* &response_type, char* &response, int &response_length);
-		void confimTarget (const char *tar, const char* &response_type, char* &response, int &response_length);
-		void newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, int &response_length);
-		void schedule (int tarid, const char* &response_type, char* &response, int &response_length);
+		void askForTarget (const char* &response_type, char* &response, size_t &response_length);
+		void confimTarget (const char *tar, const char* &response_type, char* &response, size_t &response_length);
+		void newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, size_t &response_length);
+		void schedule (int tarid, const char* &response_type, char* &response, size_t &response_length);
 };
 
 #endif /* HAVE_PGSQL */

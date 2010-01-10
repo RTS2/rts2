@@ -31,7 +31,7 @@ class JpegImageRequest: public GetRequestAuthorized
 	public:
 		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 /**
@@ -67,7 +67,7 @@ class JpegPreview:public GetRequestAuthorized
 
 		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, int prevsize, bool selected);
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		const char *dirPath;
 };
@@ -79,7 +79,7 @@ class FitsImageRequest:public GetRequestAuthorized
 	public:
 		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
 
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 class DownloadRequest:public GetRequestAuthorized
@@ -91,7 +91,7 @@ class DownloadRequest:public GetRequestAuthorized
 #else
 		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
 #endif
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
 #ifdef HAVE_LIBARCHIVE
 		char *buf;

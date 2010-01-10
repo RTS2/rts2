@@ -36,13 +36,13 @@ class Auger: public GetRequestAuthorized
 	public:
 		Auger (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
 
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length);
+		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
-		void printTarget (int auger_id, const char* &response_type, char* &response, int &response_length);
+		void printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length);
 
 		void listAuger (int year, int month, int day, std::ostringstream &_os);
 
-		void printTable (int year, int month, int day, char* &response, int &response_length);
+		void printTable (int year, int month, int day, char* &response, size_t &response_length);
 
 };
 

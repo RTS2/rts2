@@ -74,9 +74,9 @@ namespace XmlRpc
 			std::string getPassword() { return _password; }
 
 			//! Execute the method. Subclasses must provide a definition for this method.
-			virtual void execute(std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, int &response_length) = 0;
+			virtual void execute(std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &respose, size_t &response_length) = 0;
 			//! Returns 401 page
-			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, int &response_length);
+			virtual void authorizePage(int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
 		protected:
 			std::string _prefix;

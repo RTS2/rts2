@@ -35,7 +35,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
+void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	// if it is public page..
 	if (((XmlRpcd *) getMasterApp ())->isPublic (getPrefix () + path))
@@ -72,7 +72,7 @@ void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &h
 	authorizedExecute (path, params, response_type, response, response_length);
 }
 
-void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -141,7 +141,7 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 
 #ifdef HAVE_LIBJPEG
 
-void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, int &response_length)
+void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length)
 {
 	int s = params->getInteger ("s", 250);
 	AltAz altaz = AltAz (s, s);
@@ -227,7 +227,7 @@ void CurrentPosition::execute (std::string path, XmlRpc::HttpParams *params, int
 
 #ifdef HAVE_LIBJPEG
 
-void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 
@@ -266,7 +266,7 @@ void Graph::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 }
 
-void Graph::printDevices (const char* &response_type, char* &response, int &response_length)
+void Graph::printDevices (const char* &response_type, char* &response, size_t &response_length)
 {
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
@@ -287,7 +287,7 @@ void Graph::printDevices (const char* &response_type, char* &response, int &resp
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Graph::plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Graph::plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
@@ -359,7 +359,7 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	memcpy (response, blob.data(), response_length);
 }
 
-void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get new AltAz graph
 	AltAz altaz = AltAz ();
@@ -400,7 +400,7 @@ void AltAzTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 
 #endif /* HAVE_LIBJPEG */
 
-void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -445,7 +445,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 	}
 }
 
-void Targets::listTargets (const char* &response_type, char* &response, int &response_length)
+void Targets::listTargets (const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	_os << "<html><head><title>List of targets</title></head><body><table>";
@@ -467,7 +467,7 @@ void Targets::listTargets (const char* &response_type, char* &response, int &res
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTarget (Target *tar, const char* &response_type, char* &response, int &response_length)
+void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -501,7 +501,7 @@ void Targets::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsiz
 	}
 }
 
-void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -562,7 +562,7 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void Targets::printTargetObservations (Target *tar, const char* &response_type, char* &response, int &response_length)
+void Targets::printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -595,7 +595,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
 	std::vector <std::string> vals = SplitStr (path, std::string ("/"));
@@ -626,7 +626,7 @@ void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 	throw rts2core::Error ("Unknown action for addtarget");
 }
 
-void AddTarget::askForTarget (const char* &response_type, char* &response, int &response_length)
+void AddTarget::askForTarget (const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -654,7 +654,7 @@ void AddTarget::askForTarget (const char* &response_type, char* &response, int &
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void AddTarget::confimTarget (const char *tar, const char* &response_type, char* &response, int &response_length)
+void AddTarget::confimTarget (const char *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -728,7 +728,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void AddTarget::newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, int &response_length)
+void AddTarget::newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -757,7 +757,7 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
-void AddTarget::schedule (int tarid, const char* &response_type, char* &response, int &response_length)
+void AddTarget::schedule (int tarid, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 

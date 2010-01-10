@@ -30,7 +30,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 
@@ -60,7 +60,7 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 }
 
-void Night::printObs (int obs_id, const char* &response_type, char* &response, int &response_length)
+void Night::printObs (int obs_id, const char* &response_type, char* &response, size_t &response_length)
 {
 }
 
@@ -86,7 +86,7 @@ void Night::listObs (int year, int month, int day, std::ostringstream &_os)
 	}
 }
 
-void Night::printTable (int year, int month, int day, char* &response, int &response_length)
+void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
 {
 	bool do_list = false;
 	std::ostringstream _os;

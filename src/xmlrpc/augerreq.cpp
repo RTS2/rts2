@@ -30,7 +30,7 @@
 using namespace XmlRpc;
 using namespace rts2xmlrpc;
 
-void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "text/html";
 
@@ -60,7 +60,7 @@ void Auger::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	}
 }
 
-void Auger::printTarget (int auger_id, const char* &response_type, char* &response, int &response_length)
+void Auger::printTarget (int auger_id, const char* &response_type, char* &response, size_t &response_length)
 {
 	TargetAuger ta = TargetAuger (-1, Rts2Config::instance ()->getObserver (), -1);
 
@@ -123,7 +123,7 @@ void Auger::listAuger (int year, int month, int day, std::ostringstream &_os)
 	as.printHTMLTable (_os);
 }
 
-void Auger::printTable (int year, int month, int day, char* &response, int &response_length)
+void Auger::printTable (int year, int month, int day, char* &response, size_t &response_length)
 {
 	bool do_list = false;
 	std::ostringstream _os;

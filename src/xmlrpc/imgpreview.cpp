@@ -33,7 +33,7 @@ using namespace rts2xmlrpc;
 #include <Magick++.h>
 using namespace Magick;
 
-void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
 	Rts2Image image (path.c_str (), false, true);
@@ -60,7 +60,7 @@ void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, in
 	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
 }
 
-void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// size of previews
 	int prevsize = params->getInteger ("ps", 128);
@@ -202,7 +202,7 @@ void JpegPreview::pageLink (std::ostringstream& _os, const char* path, int i, in
 
 #endif /* HAVE_LIBJPEG */
 
-void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/fits";
 	int f = open (path.c_str (), O_RDONLY);
@@ -227,7 +227,7 @@ void FitsImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 	close (f);
 }
 
-void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, int &response_length)
+void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 
 #ifndef HAVE_LIBARCHIVE
