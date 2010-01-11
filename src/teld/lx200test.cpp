@@ -61,10 +61,16 @@ extern "C"
 {
 #endif
 // wildi: go to dome-target-az.h
-  int pier_collision( struct ln_equ_posn tel_eq, int angle) ;
+  int pier_collision( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs) ;
 #ifdef __cplusplus
 }
 #endif
+
+struct canonical_eq_coordinates {
+  struct ln_equ_posn eq ;
+  int DECaxis ;
+} ;
+
 
 namespace rts2teld
 {
@@ -705,29 +711,32 @@ LX200TEST::tel_slew_to (double ra, double dec)
 {
   int ret ;
   char retstr;
-  //  int DECaxisAngle= -1; // see pier_collision.c for a definition
-
-  struct ln_equ_posn telescope_equ;
+  struct ln_lnlat_posn observer ;		  
+  //struct ln_equ_posn telescope_equ;
+  struct ln_equ_posn tel_equ;
   struct ln_equ_posn target_equ;
 
   tel_normalize (&ra, &dec);
   // check if target position is one of NO_COLLISION, WITHIN_DANGER_ZONE_ABOVE WITHIN_DANGER_ZONE_BELOW, COLLINDING
   target_equ.ra= ra;
   target_equ.dec= dec ;
-  
-  if(( ret= pier_collision( target_equ, DECaxis_HAcoordinate->getValueInteger()) != 0))
+
+  observer.lng = telLongitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
+
+  if(( ret= pier_collision( target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
     {
       if( ret < 3)
 	{
 	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
 	}
-      else if( ret== 3) //COLIDING
+      else if( ret== 3) //COLLIDING
 	{
 	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " COLLIDING, NOT syncing cupola"  << sendLog;
 	}
       else if( ret== 4) // UNDEFINED_DEC_AXIS_POSITION
 	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " no valid DEC axis angle, NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " no valid DEC axis angle "<< DECaxis_HAcoordinate->getValueInteger()<<", NOT syncing cupola"  << sendLog;
 	}
       else
 	{
@@ -735,22 +744,18 @@ LX200TEST::tel_slew_to (double ra, double dec)
 	}
       return -1;
     }
-  else
-    {
-      logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT colliding slewing ra "<< ra << " dec " << dec  << sendLog;
-    }
-
 
   if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
+  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to not colliding slewing ra "<< ra << " dec " << dec  << sendLog;
   if (retstr == '0')
     {
-      telescope_equ.ra= getTelTargetRa() ;
-      telescope_equ.dec= getTelTargetDec() ;
-      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &telescope_equ));
-      logStream (MESSAGE_DEBUG) << "LX200TEST::tel_slew_to ra "<< ra << " dec " << dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
+      tel_equ.ra= getTelTargetRa() ;
+      tel_equ.dec= getTelTargetDec() ;
+      logStream (MESSAGE_DEBUG) << "LX200TEST::tel_slew_to syncing cupola on telescope ra "<< tel_equ.ra << " dec " << tel_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
+      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tel_equ));
     return 0;
     }
   
