@@ -43,7 +43,7 @@
 #include "teld.h"
 #include "hms.h"
 #include "status.h"
-#include "../utils/rts2config.h" // wildi ToDo: necessary ?
+#include "../utils/rts2config.h" 
 
 #include <termios.h>
 // uncomment following line, if you want all apgto_fd read logging (will
