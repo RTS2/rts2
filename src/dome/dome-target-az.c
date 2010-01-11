@@ -43,8 +43,8 @@
 
 
 double LDRAtoHA( double RA, double longitude) ;
-int    LDRAtoDomeAZ( double longitude, double latitude, double RA, double dec, double *Az, double *ZD) ;
-int    LDRAtoStarAZ( double longitude, double latitude, double RA, double dec, double *Az, double *ZD) ;
+int    LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) ;
+int    LDRAtoStarAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) ;
 int    LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
 int    LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
 double LDStarOnDomeTEX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
@@ -54,7 +54,6 @@ double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 int    LDCheckHorizon( double HA, double dec, double phi) ;
 
-
 struct Decaxis_plus_minus {
   int east ;
   int west ;
@@ -63,7 +62,6 @@ struct Decaxis_plus_minus {
 
 double DomeRadius ;
 
-
 struct pier {
   double radius ;
   double wedge ;
@@ -71,7 +69,6 @@ struct pier {
   double danger_zone_above ;
   double danger_zone_below ;
 }  pr;
-
 
 struct mount {
   double xd ;
@@ -87,13 +84,12 @@ struct telescope {
 } tel ;
 
 /* the main entry function */
-double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs)
+/* longitude positive to the West */
+double dome_target_az( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_posn *obs)
 {
   double ret ;
   double target_az ;
   double target_ZD ;
-  double longitude=  obs->lng ; // positive to the East
-  double latitude =  obs->lat; 
   
   if( angle== IS_WEST)
     {
@@ -125,7 +121,7 @@ double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_po
   tel.radius= 0.123;
   tel.rear_length= 0.8;
   
-  ret= LDRAtoDomeAZ( longitude/180.*M_PI, latitude/180.*M_PI, tel_eq->ra/180.*M_PI, tel_eq->dec/180.*M_PI, &target_az, &target_ZD) ;
+  ret= LDRAtoDomeAZ( tel_equ->ra/180.*M_PI, tel_equ->dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &target_az, &target_ZD) ;
 
   return target_az ;
 }
@@ -257,7 +253,7 @@ double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double R
     return -1. ;
 }
 
-int LDRAtoDomeAZ( double longitude, double latitude, double RA, double dec, double *Az, double *ZD) 
+int LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
 {
     int res ;
 
@@ -269,7 +265,7 @@ int LDRAtoDomeAZ( double longitude, double latitude, double RA, double dec, doub
     
     return 0 ;
 }
-int LDRAtoStarAZ( double longitude, double latitude, double RA, double dec, double *Az, double *ZD) 
+int LDRAtoStarAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
 {
     int res ;
     double HA ;
