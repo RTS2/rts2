@@ -44,6 +44,7 @@
 #include "hms.h"
 #include "status.h"
 #include "../utils/rts2config.h" 
+#include "clicupola.cpp"
 
 #include <termios.h>
 // uncomment following line, if you want all apgto_fd read logging (will
@@ -75,6 +76,16 @@
 #define setAPClearBuffer()      write(apgto_fd, "#", 1)   // clear buffer
 #define setAPMotionStop()       write(apgto_fd, "#:Q#", 4) // ok, no response
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+// wildi: go to dome-target-az.h
+  int pier_collision( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
+#ifdef __cplusplus
+}
+#endif
+
 namespace rts2teld
 {
   class APGTO:public Telescope
@@ -85,6 +96,9 @@ namespace rts2teld
     int apgto_fd;
     
     double lastMoveRa, lastMoveDec;  
+    enum
+      { NOTMOVE, MOVE_REAL }
+      move_state;
     time_t move_timeout;
 
     int f_scansexa (const char *str0, double *dp);
@@ -152,6 +166,8 @@ namespace rts2teld
     Rts2ValueString  *APfirmware ;
     Rts2ValueString  *APangle_dechour ;
 
+    Rts2ValueInteger  *DECaxis_HAcoordinate ; // see pier_collision.c 
+
   public:
     APGTO (int argc, char **argv);
     virtual ~APGTO (void);
@@ -164,6 +180,7 @@ namespace rts2teld
     virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
     virtual int startResync ();
+    virtual int isMoving ();
     virtual int stopMove ();
   
     virtual int startPark ();
@@ -1288,30 +1305,53 @@ APGTO::tel_stop_move (char direction)
 int
 APGTO::tel_slew_to (double ra, double dec)
 {
+  int ret ;
   char retstr;
-  struct ln_equ_posn object;
   struct ln_lnlat_posn observer;
+  struct ln_equ_posn tel_equ;
+  struct ln_equ_posn target_equ;
   struct ln_hrz_posn hrz;
   double JD;
 
   tel_normalize (&ra, &dec);
 
-  object.ra= ra ;
-  object.dec= dec ;
+  target_equ.ra= ra ;
+  target_equ.dec= dec ;
   observer.lng = telLongitude->getValueDouble ();
   observer.lat = telLatitude->getValueDouble ();
 
   JD = ln_get_julian_from_sys ();
 
-  ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
+  ln_get_hrz_from_equ (&target_equ, &observer, JD, &hrz);
 
   if( hrz.alt < 0.)
     {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to object ra " << ra << " dec " <<  dec << " is below horizon"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to target_equ ra " << ra << " dec " <<  dec << " is below horizon"<< sendLog;
       return -1 ;
     }
 
-  if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
+  if(( ret= pier_collision( &target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
+    {
+      if( ret < 3)
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
+	}
+      else if( ret== 3) //COLLIDING
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " COLLIDING, NOT syncing cupola"  << sendLog;
+	}
+      else if( ret== 4) // UNDEFINED_DEC_AXIS_POSITION
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " no valid DEC axis angle "<< DECaxis_HAcoordinate->getValueInteger()<<", NOT syncing cupola"  << sendLog;
+	}
+      else
+	{
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< ra << " target_equ.dec " << target_equ.dec << " invalid condition, NOT syncing cupola"  << sendLog;
+	}
+      return -1;
+    }
+
+  if (tel_write_ra (target_equ.ra) < 0 || tel_write_dec (target_equ.dec) < 0)
     return -1;
   logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
 
@@ -1321,15 +1361,18 @@ APGTO::tel_slew_to (double ra, double dec)
       return -1;
     }
 
+  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to not colliding slewing ra "<< ra << " dec " << dec  << sendLog;
   if (retstr == '0')
     {
+      tel_equ.ra= getTelTargetRa() ;
+      tel_equ.dec= getTelTargetDec() ;
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to syncing cupola on telescope ra "<< tel_equ.ra << " dec " << tel_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
+      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tel_equ));
+
       return 0;
     }
-  else
-    {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to error:" << "retstring:"<< retstr << "should be '0'" << sendLog;
-      return -1;
-    }
+  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
+  return -1;
 }
 void
 APGTO::set_move_timeout (time_t plus_time)
@@ -1342,15 +1385,45 @@ APGTO::set_move_timeout (time_t plus_time)
 int
 APGTO::startResync ()
 {
- 	lastMoveRa = getTelTargetRa ();
- 	lastMoveDec = getTelTargetDec ();
-
- 	if( tel_slew_to (lastMoveRa, lastMoveDec))
-	  return -1;
-
- 	set_move_timeout (100);
- 	return 0;
+  int ret;
+  
+  lastMoveRa = getTelTargetRa ();
+  lastMoveDec = getTelTargetDec ();
+  
+  ret = tel_slew_to (lastMoveRa, lastMoveDec);
+  if (ret)
+    return -1;
+  move_state = MOVE_REAL;
+  set_move_timeout (100);
+  return 0 ; 
 }
+int
+APGTO::isMoving ()
+{
+  int ret;
+  
+  switch (move_state)
+    {
+    case MOVE_REAL:
+      switch (ret)
+	{
+	case -1:
+	  return -1;
+	case 0:
+	  return USEC_SEC / 10;
+	case 1:
+	case 2:
+	  move_state = NOTMOVE;
+	  return -2;
+	}
+      break;
+    default:
+      logStream (MESSAGE_ERROR) << "APGTO::isMoving NO case >" << sendLog ; // << move_state << "<END" << sendLog;
+      break;
+    }
+  return -1;
+}
+
 int
 APGTO::stopMove ()
 {
@@ -1423,6 +1496,12 @@ int
 APGTO::startPark ()
 {
   return 0 ; // wildi ToDo: testing
+//   double JD= ln_get_julian_from_sys ();
+//   double local_sidereal_time= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble ();  // longitude positive to the East
+  
+//   return tel_slew_to (local_sidereal_time, -(90. -telLatitude->getValueDouble()));
+ 
+
   // the equatorial position is derived from the azimuth coordinates (45, 0).  
   // later it will be done using the AP GTO controller's native commands.
   struct ln_equ_posn park;
@@ -1432,6 +1511,7 @@ APGTO::startPark ()
 
   // wildi: ToDo make an option
   // APGTO 0= N, 90=E
+  // wildi ToDo: check that again
   hrz.az= 45. + 180. ;
   hrz.alt= 10. ;
 
@@ -1523,7 +1603,6 @@ APGTO::valueChanged (Rts2Value * changed_value)
 
   if (changed_value ==APslew_rate)
     {
-
       if(( slew_rate= APslew_rate->getValueInteger())== 1200)
       	{
       	  command= SLEW_RATE_1200 ;

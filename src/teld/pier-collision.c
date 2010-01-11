@@ -83,13 +83,10 @@ struct telescope {
 /* int angle (IS_WEST|IS_EAST) IS_WEST: DEC axis points to HA +M_PI/2, IS_EAST: DEC axis points to HA - M_PI/2*/
 /* DEC axis is the vector which points from the intersection of the HA axis with DEC axis tp the intersection*/
 /* of the DEC axis with the optical axis, the optical axis points to HA, DEC) */
-int  pier_collision( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs)
+/* longitude positive to the East*/
+int  pier_collision( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_posn *obs)
 {
-  
-  double longitude=  obs->lng ; // positive to the East
-  double latitude =  obs->lat; 
- 
-  if( angle== IS_WEST)
+   if( angle== IS_WEST)
     {
       dapm.east= IS_NOT_EAST ;
       dapm.west= IS_WEST ;
@@ -116,7 +113,7 @@ int  pier_collision( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn 
 
   tel.radius= 0.123;
   tel.rear_length= 0.8; 
-  return LDCollision( longitude/180.*M_PI, latitude/180.*M_PI, tel_eq.ra/180. * M_PI, tel_eq.dec/180. * M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius, dapm.east, dapm.west) ;
+  return LDCollision( tel_equ->ra/180. * M_PI, tel_equ->dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius, dapm.east, dapm.west) ;
 }
 
 /* The equation 5.6.1-1 os = ted . (pqe + k  qse ) + opd */
@@ -155,7 +152,7 @@ double LDRAtoHA( double RA, double longitude)
     return HA ;
 } 
 
-int LDCollision( double lambda, double phi, double RA, double dec, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+int LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
 {
     double tpp1 ;
     double tpm1 ;

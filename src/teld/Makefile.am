@@ -33,7 +33,7 @@ rts2_teld_lx200test_SOURCES = lx200test.cpp hms.c
 rts2_teld_lx200test_LDADD = librts2pier-collision.a ${LDADD}
 
 rts2_teld_apgto_SOURCES = apgto.cpp hms.c
-rts2_teld_apgto__LDADD = librts2pier-collision.a ${LDADD}
+rts2_teld_apgto_LDADD = librts2pier-collision.a ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 

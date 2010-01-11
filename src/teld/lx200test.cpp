@@ -61,15 +61,10 @@ extern "C"
 {
 #endif
 // wildi: go to dome-target-az.h
-  int pier_collision( struct ln_equ_posn tel_eq, int angle, struct ln_lnlat_posn *obs) ;
+  int pier_collision( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
 #ifdef __cplusplus
 }
 #endif
-
-struct canonical_eq_coordinates {
-  struct ln_equ_posn eq ;
-  int DECaxis ;
-} ;
 
 
 namespace rts2teld
@@ -712,7 +707,6 @@ LX200TEST::tel_slew_to (double ra, double dec)
   int ret ;
   char retstr;
   struct ln_lnlat_posn observer ;		  
-  //struct ln_equ_posn telescope_equ;
   struct ln_equ_posn tel_equ;
   struct ln_equ_posn target_equ;
 
@@ -724,32 +718,32 @@ LX200TEST::tel_slew_to (double ra, double dec)
   observer.lng = telLongitude->getValueDouble ();
   observer.lat = telLatitude->getValueDouble ();
 
-  if(( ret= pier_collision( target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
+  if(( ret= pier_collision( &target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
     {
       if( ret < 3)
 	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
 	}
       else if( ret== 3) //COLLIDING
 	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " COLLIDING, NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " COLLIDING, NOT syncing cupola"  << sendLog;
 	}
       else if( ret== 4) // UNDEFINED_DEC_AXIS_POSITION
 	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " no valid DEC axis angle "<< DECaxis_HAcoordinate->getValueInteger()<<", NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " no valid DEC axis angle "<< DECaxis_HAcoordinate->getValueInteger()<<", NOT syncing cupola"  << sendLog;
 	}
       else
 	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " invalid condition, NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " target_equ.dec " << target_equ.dec << " invalid condition, NOT syncing cupola"  << sendLog;
 	}
       return -1;
     }
 
-  if (tel_write_ra (ra) < 0 || tel_write_dec (dec) < 0)
+  if (tel_write_ra (target_equ.ra) < 0 || tel_write_dec (target_equ.dec) < 0)
     return -1;
   if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
     return -1;
-  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to not colliding slewing ra "<< ra << " dec " << dec  << sendLog;
+  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to not colliding slewing ra "<< target_equ.ra << " dec " << target_equ.dec  << sendLog;
   if (retstr == '0')
     {
       tel_equ.ra= getTelTargetRa() ;
@@ -759,7 +753,7 @@ LX200TEST::tel_slew_to (double ra, double dec)
     return 0;
     }
   
-  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
+  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
   return -1;
 }
 
@@ -867,7 +861,7 @@ LX200TEST::isMoving ()
 	}
       break;
     default:
-      logStream (MESSAGE_ERROR) << "LX200TEST isMoving NO case >" << sendLog ; // << move_state << "<END" << sendLog;
+      logStream (MESSAGE_ERROR) << "LX200TEST::isMoving NO case >" << sendLog ; // << move_state << "<END" << sendLog;
       break;
     }
   return -1;
