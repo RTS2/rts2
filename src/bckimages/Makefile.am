@@ -7,6 +7,7 @@ EXTRA_DIST = bckimages.ec deleteimage.ec
 CLEANFILES = bckimages.cpp deleteimage.cpp
 
 AM_CFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@
+AM_CXXFLAGS = @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@
 
 rts2_flatprocess_SOURCES = flatprocess.cpp
 rts2_flatprocess_LDFLAGS = ../utils/librts2block.a @LIB_CFITSIO@ @LIB_NOVA@ @LIB_M@
