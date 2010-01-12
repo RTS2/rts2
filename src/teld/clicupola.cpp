@@ -31,7 +31,7 @@ ClientCupola::ClientCupola (Rts2Conn * conn):Rts2DevClientCupola (conn)
 
 ClientCupola::~ClientCupola (void)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
+	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_ENDED, this));
 }
 
 void ClientCupola::syncEnded ()

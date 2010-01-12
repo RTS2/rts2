@@ -22,21 +22,22 @@
 
 #include "../utils/rts2devclient.h"
 
-#define EVENT_CUP_START_SYNC  RTS2_LOCAL_EVENT + 550
-#define EVENT_CUP_SYNCED  RTS2_LOCAL_EVENT + 551
+#define EVENT_CUP_START_SYNC    RTS2_LOCAL_EVENT + 550
+#define EVENT_CUP_SYNCED        RTS2_LOCAL_EVENT + 551
+#define EVENT_CUP_ENDED         RTS2_LOCAL_EVENT + 552
 
 namespace rts2teld
 {
 
 class ClientCupola:public Rts2DevClientCupola
 {
-	protected:
-		virtual void syncEnded ();
 	public:
 		ClientCupola (Rts2Conn * conn);
 		virtual ~ ClientCupola ();
 		virtual void syncFailed (int status);
 		virtual void postEvent (Rts2Event * event);
+	protected:
+		virtual void syncEnded ();
 };
 
 }

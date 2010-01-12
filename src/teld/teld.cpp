@@ -614,6 +614,9 @@ void Telescope::postEvent (Rts2Event * event)
 		case EVENT_CUP_SYNCED:
 			maskState (TEL_MASK_CUP, TEL_NO_WAIT_CUP);
 			break;
+		case EVENT_CUP_ENDED:
+			logStream (MESSAGE_INFO) << "removed " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
+			break;
 	}
 	Rts2Device::postEvent (event);
 }
