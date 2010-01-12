@@ -81,7 +81,7 @@ extern "C"
 {
 #endif
 // wildi: go to dome-target-az.h
-  int pier_collision( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
+int pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs) ;
 #ifdef __cplusplus
 }
 #endif
@@ -164,9 +164,7 @@ namespace rts2teld
     Rts2ValueDouble  *APlongitude;
     Rts2ValueDouble  *APlatitude;
     Rts2ValueString  *APfirmware ;
-    Rts2ValueString  *APangle_dechour ;
-
-    Rts2ValueInteger  *DECaxis_HAcoordinate ; // see pier_collision.c 
+    Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
 
   public:
     APGTO (int argc, char **argv);
@@ -438,7 +436,7 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
       logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error :"<< errno << "END"<<sendLog;
       return -1;
     }
-  logStream (MESSAGE_DEBUG) << "APGTO::tel_read_hms " << command << " SUCCESS wbuf>"<< wbuf << "<END"<< sendLog;
+  //  logStream (MESSAGE_DEBUG) << "APGTO::tel_read_hms " << command << " SUCCESS wbuf>"<< wbuf << "<END"<< sendLog;
   return 0;
 }
 int
@@ -1034,7 +1032,7 @@ APGTO::tel_read_longitude ()
       return -1;
     }
   APlongitude->setValueDouble(new_longitude) ;
-  logStream (MESSAGE_DEBUG) << "APGTO::tel_read_longitude " << new_longitude << sendLog;
+  //logStream (MESSAGE_DEBUG) << "APGTO::tel_read_longitude " << new_longitude << sendLog;
   return 0;
 }
 /*!
@@ -1055,7 +1053,7 @@ APGTO::tel_read_declination_axis ()
       logStream (MESSAGE_DEBUG) << "APGTO::tel_read_declination_axis failed" << sendLog;
       return -1;
     }
-  APangle_dechour->setValueString(new_declination_axis) ;
+  DECaxis_HAcoordinate->setValueString(new_declination_axis) ;
   return 0;
 }
 /*!
@@ -1095,14 +1093,14 @@ APGTO::tel_check_declination_axis ()
   getSexComponents( HA_h, &h, &m, &s) ;
   snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
 	
-  logStream (MESSAGE_DEBUG) << "APGTO::initValues RA:"<< RA_str << ", HA "<< HA_str << " optical:"<< APangle_dechour->getValue()<< sendLog;
+  logStream (MESSAGE_DEBUG) << "APGTO::initValues RA:"<< RA_str << ", HA "<< HA_str << " optical:"<< DECaxis_HAcoordinate->getValue()<< sendLog;
 
   if( tel_read_declination_axis())
     {
       logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis could not retrieve sign of declination axis, severe error, exiting." << sendLog;
       exit(1); // yes, this is the end 
     }
-  if (!strcmp("West", APangle_dechour->getValue()))
+  if (!strcmp("West", DECaxis_HAcoordinate->getValue()))
     {
       if(( HA > 180.) && ( HA <= 360.))
 	{
@@ -1113,7 +1111,7 @@ APGTO::tel_check_declination_axis ()
 	  exit(1); // yes, this is the end 
 	}
     }
-  else if (!strcmp("East", APangle_dechour->getValue()))
+  else if (!strcmp("East", DECaxis_HAcoordinate->getValue()))
     {
       if(( HA >= 0.0) && ( HA <= 180.))
 	{
@@ -1330,7 +1328,15 @@ APGTO::tel_slew_to (double ra, double dec)
       return -1 ;
     }
 
-  if(( ret= pier_collision( &target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
+  if( !( strcmp( "West", DECaxis_HAcoordinate->getValue())))
+    {
+    }
+  else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue())))
+    {
+      target_equ.dec += 180. ;
+    }
+
+  if(( ret= pier_collision( &target_equ, &observer)) != 0)
     {
       if( ret < 3)
 	{
@@ -1350,7 +1356,6 @@ APGTO::tel_slew_to (double ra, double dec)
 	}
       return -1;
     }
-
   if (tel_write_ra (target_equ.ra) < 0 || tel_write_dec (target_equ.dec) < 0)
     return -1;
   logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
@@ -1366,12 +1371,21 @@ APGTO::tel_slew_to (double ra, double dec)
     {
       tel_equ.ra= getTelTargetRa() ;
       tel_equ.dec= getTelTargetDec() ;
+
       logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to syncing cupola on telescope ra "<< tel_equ.ra << " dec " << tel_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
+
+      if( !( strcmp( "West", DECaxis_HAcoordinate->getValue())))
+	{
+	}
+      else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue())))
+	{
+	  tel_equ.dec += 180. ;
+	}
       postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tel_equ));
 
       return 0;
     }
-  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< ra << " dec " << dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
+  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
   return -1;
 }
 void
@@ -2009,11 +2023,11 @@ APGTO::initValues ()
 	// West: HA + Pi/2 = direction where the declination axis points
 	// East: HA - Pi/2
 	// wildi: ToDo check if the direction of the declination axis has the "correct" sign
-	if( !( strcmp( "West", APangle_dechour->getValue())))
+	if( !( strcmp( "West", DECaxis_HAcoordinate->getValue())))
 	  {
 	    flip = 1 ;
 	  }
-	else if( !( strcmp( "East", APangle_dechour->getValue())))
+	else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue())))
 	  {
 	    flip= 0 ;
 	  }
@@ -2065,16 +2079,16 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 	addOption ('b', "init", 1, "initialization cold (after power cycle), warm");
 
 
-	createValue (APAltAz,               "APALTAZ",    "AP mount Alt/Az[deg]", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (APAltAz,               "APALTAZ",    "AP mount Alt/Az[deg]",          true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
+	createValue (DECaxis_HAcoordinate,  "DECXHA",     "DEC axis HA coordinate, West (==-1), East (==1)", false, RTS2_VALUE_WRITABLE);
 	createValue (APslew_rate,           "APSLEWRATE", "AP slew rate (1200, 900, 600)", false, RTS2_VALUE_WRITABLE);
 	createValue (APmove_rate,           "APMOVERATE", "AP move rate (600, 64, 12, 1)", false, RTS2_VALUE_WRITABLE);
-	createValue (APlocal_sidereal_time, "APLST",      "AP mount local sidereal time", true, RTS2_DT_RA);
-	createValue (APlocal_time,          "APLOT",      "AP mount local time", true, RTS2_DT_RA);
-	createValue (APutc_offset,          "APUTCO",     "AP mount UTC offset", true, RTS2_DT_RA);
-	createValue (APlatitude,            "APLATITUDE", "AP mount latitude", true, RTS2_DT_DEGREES);
-	createValue (APlongitude,           "APLONGITUDE","AP mount longitude", true, RTS2_DT_DEGREES);
-	createValue (APfirmware,            "APVERSION",  "AP mount firmware revision", true);
-	createValue (APangle_dechour,       "APDECHOUR",  "AP mount (declination - hourangle) angle", true);
+	createValue (APlocal_sidereal_time, "APLST",      "AP mount local sidereal time",  true, RTS2_DT_RA);
+	createValue (APlocal_time,          "APLOT",      "AP mount local time",           true, RTS2_DT_RA);
+	createValue (APutc_offset,          "APUTCO",     "AP mount UTC offset",           true, RTS2_DT_RA);
+	createValue (APfirmware,            "APVERSION",  "AP mount firmware revision",    true);
+	createValue (APlongitude,           "APLONGITUDE","AP mount longitude",            true, RTS2_DT_DEGREES);
+	createValue (APlatitude,            "APLATITUDE", "AP mount latitude",             true, RTS2_DT_DEGREES);
 
 	apgto_fd = -1;
 }

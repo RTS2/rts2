@@ -84,22 +84,8 @@ struct telescope {
 /* DEC axis is the vector which points from the intersection of the HA axis with DEC axis tp the intersection*/
 /* of the DEC axis with the optical axis, the optical axis points to HA, DEC) */
 /* longitude positive to the East*/
-int  pier_collision( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_posn *obs)
+int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 {
-   if( angle== IS_WEST)
-    {
-      dapm.east= IS_NOT_EAST ;
-      dapm.west= IS_WEST ;
-    }
-  else if( angle== IS_EAST)
-    {
-      dapm.east= IS_EAST ;
-      dapm.west= IS_NOT_WEST ;
-    }
-  else
-    {
-      return UNDEFINED_DEC_AXIS_POSITION ;
-    }
 
   pr.radius= 0.135;
   pr.wedge= -0.6684;
@@ -113,6 +99,8 @@ int  pier_collision( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_pos
 
   tel.radius= 0.123;
   tel.rear_length= 0.8; 
+
+
   return LDCollision( tel_equ->ra/180. * M_PI, tel_equ->dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius, dapm.east, dapm.west) ;
 }
 
@@ -275,49 +263,20 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
 }
 double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier)
 {
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-	return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
+  return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi)) ;
-    }
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-	return zd + sqrt(pow(Rdec,2))*cos(phi)*sin(HA) - (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
-	(Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
-    } 
-    else 
-    {
-	// LDTangentPlaneLineP neither WEST nor EAST
-    }
-    return 1./0.;
 }
 
 double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier)
 {
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-	return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
+  return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
-    }
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-	return zd + sqrt(pow(Rdec,2))*cos(phi)*sin(HA) - (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
-    (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
-    }
-    else
-    {
-	// LDTangentPlaneLineM neither WEST nor EAST
-    }
-    return 1./0. ;
 }
 
 
 double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
 {
-
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-	return (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
+  return (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -345,51 +304,10 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
                 pow(Rdec,2)*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
-    }
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-
-    return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) + 
-     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) - 
-     Rpier*cos(HA)*(-(sqrt(pow(Rdec,2))*Rtel*pow(cos(dec),2)*cos(phi)*sin(phi)) + 
-        sqrt(pow(Rdec,2))*Rtel*cos(phi)*pow(sin(dec),2)*sin(phi) + 
-        cos(dec)*(-(sqrt(pow(Rdec,2))*(Rdec - Rtel)*pow(cos(phi),2)*sin(HA)) + Rdec*xd*sin(phi))) - 
-     Csc(HA)*Sec(dec)*sqrt(pow(Rpier,2)*pow(cos(dec),2)*pow(sin(HA),2)*
-        (-(pow(Rdec,2)*pow(Rtel,2)*pow(cos(dec),4)*pow(cos(phi),2)*pow(sin(HA),2)) + 
-          pow(Rdec,2)*pow(cos(phi),2)*pow(sin(dec),2)*
-           (pow(Rpier,2) - pow(Rdec - Rtel,2)*pow(cos(HA),2) - 2*Rdec*Rtel*cos(HA)*sin(HA)*sin(dec) + 
-             pow(Rtel,2)*sin(2*HA)*sin(dec) - pow(Rtel,2)*pow(sin(HA),2)*pow(sin(dec),2)) + 
-          2*Rdec*Rtel*pow(cos(dec),3)*cos(phi)*sin(HA)*(sqrt(pow(Rdec,2))*xd*sin(HA) + Rdec*(Rdec - Rtel)*sin(phi)) - 
-          Rdec*pow(cos(dec),2)*(2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(cos(HA),2)*sin(HA)*sin(phi) + 
-             2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(sin(HA),3)*sin(phi) + 
-             Rdec*pow(Rdec - Rtel,2)*pow(sin(HA),4)*pow(sin(phi),2) + 
-             Rdec*pow(sin(HA),2)*(-pow(Rpier,2) + pow(xd,2) + 2*pow(Rtel,2)*pow(cos(phi),2)*pow(sin(dec),2) + 
-                2*pow(Rdec - Rtel,2)*pow(cos(HA),2)*pow(sin(phi),2)) + 
-             Rdec*((Rdec - Rtel)*Rtel*pow(cos(phi),2)*sin(2*HA)*sin(dec) + 
-                pow(cos(HA),2)*(-pow(Rpier,2) + pow(Rdec - Rtel,2)*pow(cos(HA),2))*pow(sin(phi),2))) + 
-          cos(dec)*sin(dec)*(-(Rdec*sqrt(pow(Rdec,2))*Rtel*xd*pow(cos(HA),2)*cos(phi)*sin(dec)) - 
-             2*Rdec*cos(HA)*cos(phi)*(sqrt(pow(Rdec,2))*Rtel*xd*sin(HA) - 
-                Rdec*(pow(Rdec,2) - pow(Rpier,2) - 2*Rdec*Rtel + pow(Rtel,2))*sin(phi)) + 
-             cos(phi)*(pow(pow(Rdec,2),1.5)*xd*sin(2*HA) + 
-                Rdec*Rtel*sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) - 2*Rdec*Rtel*sin(HA)*sin(phi)))\
-              + pow(Rdec,3)*Rtel*sin(HA)*sin(dec)*sin(2*phi)))))/
-   (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-       pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
-    }
-    else
-    {
-    }
-    return 1./0. ;
 }
 double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
 {
-
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-
-	return 
+  return 
 	    (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
 	     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
@@ -419,51 +337,10 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 	    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
 			 pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2)))) ;
 
-    } 
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-
-    return -((-(Rdec*Rpier*xd*cos(phi)*sin(dec)) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
-       sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
-       Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
-       sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
-       sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
-       Rpier*cos(HA)*(sqrt(pow(Rdec,2))*Rtel*pow(cos(dec),2)*cos(phi)*sin(phi) - 
-          sqrt(pow(Rdec,2))*Rtel*cos(phi)*pow(sin(dec),2)*sin(phi) + 
-          cos(dec)*(-(sqrt(pow(Rdec,2))*(Rdec - Rtel)*pow(cos(phi),2)*sin(HA)) + Rdec*xd*sin(phi))) + 
-       Csc(HA)*Sec(dec)*sqrt(pow(Rpier,2)*pow(cos(dec),2)*pow(sin(HA),2)*
-          (-(pow(Rdec,2)*pow(Rtel,2)*pow(cos(dec),4)*pow(cos(phi),2)*pow(sin(HA),2)) + 
-            pow(Rdec,2)*pow(cos(phi),2)*pow(sin(dec),2)*
-             (pow(Rpier,2) - pow(Rdec - Rtel,2)*pow(cos(HA),2) - 2*pow(Rtel,2)*cos(HA)*sin(HA)*sin(dec) + 
-               Rdec*Rtel*sin(2*HA)*sin(dec) - pow(Rtel,2)*pow(sin(HA),2)*pow(sin(dec),2)) - 
-            2*Rdec*Rtel*pow(cos(dec),3)*cos(phi)*sin(HA)*(sqrt(pow(Rdec,2))*xd*sin(HA) + Rdec*(Rdec - Rtel)*sin(phi)) - 
-            Rdec*pow(cos(dec),2)*(2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(cos(HA),2)*sin(HA)*sin(phi) + 
-               2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(sin(HA),3)*sin(phi) + 
-               Rdec*pow(Rdec - Rtel,2)*pow(sin(HA),4)*pow(sin(phi),2) + 
-               Rdec*pow(sin(HA),2)*(-pow(Rpier,2) + pow(xd,2) + 2*pow(Rtel,2)*pow(cos(phi),2)*pow(sin(dec),2) + 
-                  2*pow(Rdec - Rtel,2)*pow(cos(HA),2)*pow(sin(phi),2)) + 
-               Rdec*(-((Rdec - Rtel)*Rtel*pow(cos(phi),2)*sin(2*HA)*sin(dec)) + 
-                  pow(cos(HA),2)*(-pow(Rpier,2) + pow(Rdec - Rtel,2)*pow(cos(HA),2))*pow(sin(phi),2))) + 
-            cos(dec)*sin(dec)*(Rdec*sqrt(pow(Rdec,2))*Rtel*xd*pow(cos(HA),2)*cos(phi)*sin(dec) - 
-               2*Rdec*cos(HA)*cos(phi)*(sqrt(pow(Rdec,2))*Rtel*xd*sin(HA) - 
-                  Rdec*(pow(Rdec,2) - pow(Rpier,2) - 2*Rdec*Rtel + pow(Rtel,2))*sin(phi)) + 
-               cos(phi)*(pow(pow(Rdec,2),1.5)*xd*sin(2*HA) - 
-                  Rdec*Rtel*sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) + 
-                     2*pow(Rdec,2)*sin(HA)*sin(phi))) + pow(Rdec,2)*pow(Rtel,2)*sin(HA)*sin(dec)*sin(2*phi)))))/
-     (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-         pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2)))));
-
-
-    } else {
-	//return nan ;
-    }
-    return 1./0. ;
 }
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
 {
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-        return  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
+  return  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -491,48 +368,10 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
                 pow(Rdec,2)*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
-    }
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-	return  (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) + 
-     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) - 
-     Rpier*cos(HA)*(-(sqrt(pow(Rdec,2))*Rtel*pow(cos(dec),2)*cos(phi)*sin(phi)) + 
-        sqrt(pow(Rdec,2))*Rtel*cos(phi)*pow(sin(dec),2)*sin(phi) + 
-        cos(dec)*(-(sqrt(pow(Rdec,2))*(Rdec - Rtel)*pow(cos(phi),2)*sin(HA)) + Rdec*xd*sin(phi))) + 
-     Csc(HA)*Sec(dec)*sqrt(pow(Rpier,2)*pow(cos(dec),2)*pow(sin(HA),2)*
-        (-(pow(Rdec,2)*pow(Rtel,2)*pow(cos(dec),4)*pow(cos(phi),2)*pow(sin(HA),2)) + 
-          pow(Rdec,2)*pow(cos(phi),2)*pow(sin(dec),2)*
-           (pow(Rpier,2) - pow(Rdec - Rtel,2)*pow(cos(HA),2) - 2*Rdec*Rtel*cos(HA)*sin(HA)*sin(dec) + 
-             pow(Rtel,2)*sin(2*HA)*sin(dec) - pow(Rtel,2)*pow(sin(HA),2)*pow(sin(dec),2)) + 
-          2*Rdec*Rtel*pow(cos(dec),3)*cos(phi)*sin(HA)*(sqrt(pow(Rdec,2))*xd*sin(HA) + Rdec*(Rdec - Rtel)*sin(phi)) - 
-          Rdec*pow(cos(dec),2)*(2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(cos(HA),2)*sin(HA)*sin(phi) + 
-             2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(sin(HA),3)*sin(phi) + 
-             Rdec*pow(Rdec - Rtel,2)*pow(sin(HA),4)*pow(sin(phi),2) + 
-             Rdec*pow(sin(HA),2)*(-pow(Rpier,2) + pow(xd,2) + 2*pow(Rtel,2)*pow(cos(phi),2)*pow(sin(dec),2) + 
-                2*pow(Rdec - Rtel,2)*pow(cos(HA),2)*pow(sin(phi),2)) + 
-             Rdec*((Rdec - Rtel)*Rtel*pow(cos(phi),2)*sin(2*HA)*sin(dec) + 
-                pow(cos(HA),2)*(-pow(Rpier,2) + pow(Rdec - Rtel,2)*pow(cos(HA),2))*pow(sin(phi),2))) + 
-          cos(dec)*sin(dec)*(-(Rdec*sqrt(pow(Rdec,2))*Rtel*xd*pow(cos(HA),2)*cos(phi)*sin(dec)) - 
-             2*Rdec*cos(HA)*cos(phi)*(sqrt(pow(Rdec,2))*Rtel*xd*sin(HA) - 
-                Rdec*(pow(Rdec,2) - pow(Rpier,2) - 2*Rdec*Rtel + pow(Rtel,2))*sin(phi)) + 
-             cos(phi)*(pow(pow(Rdec,2),1.5)*xd*sin(2*HA) + 
-                Rdec*Rtel*sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) - 2*Rdec*Rtel*sin(HA)*sin(phi)))\
-              + pow(Rdec,3)*Rtel*sin(HA)*sin(dec)*sin(2*phi)))))/
-   (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-       pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
-    } else {
-        //return nan ;
-    }
-    return 1./0. ;
-
 }
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
 {
-    if(( WestOfPier == IS_WEST) &&( EastOfPier == IS_NOT_EAST))
-    {
-        return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
+  return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -560,40 +399,4 @@ double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, 
                 Rdec*Rtel*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
-    }
-    else if(( EastOfPier == IS_EAST)  &&( WestOfPier == IS_NOT_WEST))
-    {
-        return (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) + 
-     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
-     sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) - 
-     Rpier*cos(HA)*(sqrt(pow(Rdec,2))*Rtel*pow(cos(dec),2)*cos(phi)*sin(phi) - 
-        sqrt(pow(Rdec,2))*Rtel*cos(phi)*pow(sin(dec),2)*sin(phi) + 
-        cos(dec)*(-(sqrt(pow(Rdec,2))*(Rdec - Rtel)*pow(cos(phi),2)*sin(HA)) + Rdec*xd*sin(phi))) + 
-     Csc(HA)*Sec(dec)*sqrt(pow(Rpier,2)*pow(cos(dec),2)*pow(sin(HA),2)*
-        (-(pow(Rdec,2)*pow(Rtel,2)*pow(cos(dec),4)*pow(cos(phi),2)*pow(sin(HA),2)) + 
-          pow(Rdec,2)*pow(cos(phi),2)*pow(sin(dec),2)*
-           (pow(Rpier,2) - pow(Rdec - Rtel,2)*pow(cos(HA),2) - 2*pow(Rtel,2)*cos(HA)*sin(HA)*sin(dec) + 
-             Rdec*Rtel*sin(2*HA)*sin(dec) - pow(Rtel,2)*pow(sin(HA),2)*pow(sin(dec),2)) - 
-          2*Rdec*Rtel*pow(cos(dec),3)*cos(phi)*sin(HA)*(sqrt(pow(Rdec,2))*xd*sin(HA) + Rdec*(Rdec - Rtel)*sin(phi)) - 
-          Rdec*pow(cos(dec),2)*(2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(cos(HA),2)*sin(HA)*sin(phi) + 
-             2*sqrt(pow(Rdec,2))*(Rdec - Rtel)*xd*pow(sin(HA),3)*sin(phi) + 
-             Rdec*pow(Rdec - Rtel,2)*pow(sin(HA),4)*pow(sin(phi),2) + 
-             Rdec*pow(sin(HA),2)*(-pow(Rpier,2) + pow(xd,2) + 2*pow(Rtel,2)*pow(cos(phi),2)*pow(sin(dec),2) + 
-                2*pow(Rdec - Rtel,2)*pow(cos(HA),2)*pow(sin(phi),2)) + 
-             Rdec*(-((Rdec - Rtel)*Rtel*pow(cos(phi),2)*sin(2*HA)*sin(dec)) + 
-                pow(cos(HA),2)*(-pow(Rpier,2) + pow(Rdec - Rtel,2)*pow(cos(HA),2))*pow(sin(phi),2))) + 
-          cos(dec)*sin(dec)*(Rdec*sqrt(pow(Rdec,2))*Rtel*xd*pow(cos(HA),2)*cos(phi)*sin(dec) - 
-             2*Rdec*cos(HA)*cos(phi)*(sqrt(pow(Rdec,2))*Rtel*xd*sin(HA) - 
-                Rdec*(pow(Rdec,2) - pow(Rpier,2) - 2*Rdec*Rtel + pow(Rtel,2))*sin(phi)) + 
-             cos(phi)*(pow(pow(Rdec,2),1.5)*xd*sin(2*HA) - 
-                Rdec*Rtel*sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) + 
-                   2*pow(Rdec,2)*sin(HA)*sin(phi))) + pow(Rdec,2)*pow(Rtel,2)*sin(HA)*sin(dec)*sin(2*phi)))))/
-   (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-       pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))))
- ;
-    } else {
-	//return nan ;
-    }
-    return 1./0. ;
 }

@@ -490,7 +490,7 @@ LX200TEST::LX200TEST (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
 	device_file = "/dev/ttyS0";
 
 	addOption ('f', "device_file", 1, "device file (ussualy /dev/ttySx");
-	addOption ('x', "DECaxis_HA", 1, "DEC axis HA coordinate, valid: East, West");
+	addOption ('x', "DECaxis_HA",  1, "DEC axis HA coordinate, valid: East, West");
 
 	createValue (DECaxis_HAcoordinate,  "DECXHA",  "DEC axis HA coordinate, West (==-1), East (==1)", false, RTS2_VALUE_WRITABLE);
 
