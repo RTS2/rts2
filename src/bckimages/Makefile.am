@@ -21,7 +21,7 @@ rts2_bckimages_CXXFLAGS = @LIBPG_CFLAGS@ @JPEG_CFLAGS@
 rts2_bckimages_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 
 nodist_rts2_deleteimage_SOURCES = deleteimage.cpp
-rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@ @JPEG_CFLAGS@
+rts2_deleteimage_CXXFLAGS = @LIBPG_CFLAGS@ @JPEG_CFLAGS@ @CFITSIO_CFLAGS@
 rts2_deleteimage_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LDFLAGS@ @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 
 %.cpp: %.ec
