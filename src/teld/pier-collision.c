@@ -33,10 +33,6 @@
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
-#define IS_NOT_EAST 2 
-#define IS_EAST 1
-#define IS_WEST -1
-#define IS_NOT_WEST -2
 #define NO_COLLISION 0
 #define WITHIN_DANGER_ZONE_ABOVE 1
 #define WITHIN_DANGER_ZONE_BELOW 2
@@ -44,19 +40,13 @@
 #define UNDEFINED_DEC_AXIS_POSITION 4
 
 double LDRAtoHA( double RA, double longitude) ;
-int    LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier) ;
-double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier) ;
-double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier) ;
-double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier) ;
-double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier) ;
-double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier) ;
-double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier) ;
-
-struct Decaxis_plus_minus {
-  int east ;
-  int west ;
-  
-} dapm ;
+int    LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
+double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp) ;
+double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp) ;
+double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
+double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
+double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
+double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 
 struct pier {
   double radius ;
@@ -80,7 +70,8 @@ struct telescope {
 } tel ;
 /* the main entry function */
 /* struct ln_equ_posn tel_eq telescope target coordinates */
-/* int angle (IS_WEST|IS_EAST) IS_WEST: DEC axis points to HA +M_PI/2, IS_EAST: DEC axis points to HA - M_PI/2*/
+/* WEST: DEC axis points to HA +M_PI/2, EAST: DEC axis points to HA - M_PI/2*/
+/* In case EAST must be set to DEC += M_PI */ 
 /* DEC axis is the vector which points from the intersection of the HA axis with DEC axis tp the intersection*/
 /* of the DEC axis with the optical axis, the optical axis points to HA, DEC) */
 /* longitude positive to the East*/
@@ -100,8 +91,7 @@ int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
   tel.radius= 0.123;
   tel.rear_length= 0.8; 
 
-
-  return LDCollision( tel_equ->ra/180. * M_PI, tel_equ->dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius, dapm.east, dapm.west) ;
+  return LDCollision( tel_equ->ra/180. * M_PI, tel_equ->dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius) ;
 }
 
 /* The equation 5.6.1-1 os = ted . (pqe + k  qse ) + opd */
@@ -140,7 +130,7 @@ double LDRAtoHA( double RA, double longitude)
     return HA ;
 } 
 
-int LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+int LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
     double tpp1 ;
     double tpm1 ;
@@ -158,25 +148,19 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
 
 /* Parameter of the straight line */
 
-    tpp1= LDCutPierLineP1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier, EastOfPier, WestOfPier);
-    tpm1= LDCutPierLineM1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier, EastOfPier, WestOfPier);
+    tpp1= LDCutPierLineP1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+    tpm1= LDCutPierLineM1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
 
-    tpp3= LDCutPierLineP3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier, EastOfPier, WestOfPier);
-    tpm3= LDCutPierLineM3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier, EastOfPier, WestOfPier);
+    tpp3= LDCutPierLineP3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+    tpm3= LDCutPierLineM3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
 
 /* z componet of the intersection */
 
-    czp1= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp1, EastOfPier, WestOfPier) ;
-    czm1= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm1, EastOfPier, WestOfPier) ;
+    czp1= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp1) ;
+    czm1= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm1) ;
 
-    czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3, EastOfPier, WestOfPier) ;
-    czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3, EastOfPier, WestOfPier) ;
-
-
-    /* fprintf( stderr, "HA %f, lambda %f\n", HA/M_PI * 180., lambda /M_PI * 180.) ; */
-    /* fprintf( stderr, "HA %f, dec %f, phi %f, zd %f, xd %f, Rdec %f, Rtel %f, Rpier %f, EastOfPier %d, WestOfPier %d\n", HA * 180/M_PI, dec* 180/M_PI, phi* 180/M_PI, zd, xd, Rdec, Rtel, Rpier, EastOfPier, WestOfPier) ; */
-    /* fprintf( stderr,  "tpp1 %f\ntpm1 %f\ntpp3 %f\ntpm3 %f\nczp1 %f\nczm1 %f\nczp3 %f\nczm3 %f\n", tpp1, tpm1, tpp3, tpm3, czp1, czm1, czp3, czm3) ; */
-    /* fprintf( stderr, "\n") ; */
+    czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
+    czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
 
     if((czp1 > pr.floor) && ( czp1 < pr.wedge))
     {
@@ -261,20 +245,20 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
     }
     return NO_COLLISION ;
 }
-double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier)
+double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
   return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi)) ;
 }
 
-double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp, int EastOfPier, int WestOfPier)
+double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
   return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
 }
 
 
-double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   return (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -305,10 +289,9 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
 }
-double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  return 
-	    (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
+  return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
 	     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -338,7 +321,7 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 			 pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2)))) ;
 
 }
-double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   return  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -369,7 +352,7 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
 }
-double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier, int EastOfPier, int WestOfPier)
+double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
   return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
