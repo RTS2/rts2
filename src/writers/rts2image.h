@@ -24,6 +24,7 @@
 #include <ostream>
 #include <vector>
 #include <config.h>
+#include <fitsio.h>
 
 #include "imghdr.h"
 
