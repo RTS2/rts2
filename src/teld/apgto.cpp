@@ -344,7 +344,7 @@ APGTO::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
 		memcpy (buf, rbuf, rcount);
 		buf[rcount] = 0;
 		logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read " <<
-		  tmp_rcount << "  buffer >" << buf << "<END" << sendLog;
+		  tmp_rcount << " byte(s),  buffer >" << buf << "<END" << sendLog;
 		free (buf);
 	}
 	else
@@ -1306,7 +1306,6 @@ APGTO::tel_slew_to (double ra, double dec)
   int ret ;
   char retstr;
   struct ln_lnlat_posn observer;
-  struct ln_equ_posn tel_equ;
   struct ln_equ_posn target_equ;
   struct ln_hrz_posn hrz;
   double JD;
@@ -1324,19 +1323,23 @@ APGTO::tel_slew_to (double ra, double dec)
 
   if( hrz.alt < 0.)
     {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to target_equ ra " << ra << " dec " <<  dec << " is below horizon"<< sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to target_equ ra " << target_equ.ra << " dec " <<  target_equ.dec << " is below horizon"<< sendLog;
       return -1 ;
     }
 
   if( !( strcmp( "West", DECaxis_HAcoordinate->getValue())))
     {
+      ret= pier_collision( &target_equ, &observer) ;
     }
   else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue())))
     {
-      target_equ.dec += 180. ;
+      //really target_equ.dec += 180. ;
+      struct ln_equ_posn t_equ;
+      t_equ.ra = target_equ.ra ;
+      t_equ.dec= target_equ.dec + 180. ;
+      ret= pier_collision( &t_equ, &observer) ;
     }
-
-  if(( ret= pier_collision( &target_equ, &observer)) != 0)
+  if(ret != 0)
     {
       if( ret < 3)
 	{
@@ -1352,36 +1355,46 @@ APGTO::tel_slew_to (double ra, double dec)
 	}
       else
 	{
-	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< ra << " target_equ.dec " << target_equ.dec << " invalid condition, NOT syncing cupola"  << sendLog;
+	  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " target_equ.dec " << target_equ.dec << " invalid condition, NOT syncing cupola"  << sendLog;
 	}
       return -1;
     }
-  if (tel_write_ra (target_equ.ra) < 0 || tel_write_dec (target_equ.dec) < 0)
-    return -1;
+  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to not colliding slewing ra "<< target_equ.ra << " target_equ.dec " << dec  << sendLog;
+  if (( ret=tel_write_ra (target_equ.ra)) < 0)
+    {
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, tel_write_ra return value was " << ret << sendLog ;
+      return -1;
+    }
+  if (( ret=tel_write_dec (target_equ.dec)) < 0)
+    {
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, tel_write_dec return value was " << ret << sendLog ;
+      return -1;
+    }
+
   logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to #:MS# on ra " << ra << ", dec " << dec << sendLog ;
 
-  if (tel_write_read ("#:MS#", 5, &retstr, 1) < 0)
+  if (( ret=tel_write_read ("#:MS#", 5, &retstr, 1)) < 0)
     {
       logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to tel_write_read #:MS# failed"<< sendLog;
       return -1;
     }
 
-  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to not colliding slewing ra "<< ra << " dec " << dec  << sendLog;
   if (retstr == '0')
     {
-      tel_equ.ra= getTelTargetRa() ;
-      tel_equ.dec= getTelTargetDec() ;
-
-      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to syncing cupola on telescope ra "<< tel_equ.ra << " dec " << tel_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to syncing cupola on target ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
 
       if( !( strcmp( "West", DECaxis_HAcoordinate->getValue())))
 	{
+	  postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
 	}
       else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue())))
 	{
-	  tel_equ.dec += 180. ;
+	  //tel_equ.dec += 180. ;
+	  struct ln_equ_posn t_equ;
+	  t_equ.ra = target_equ.ra ;
+	  t_equ.dec= target_equ.dec + 180. ;
+	  postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
 	}
-      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tel_equ));
 
       return 0;
     }
