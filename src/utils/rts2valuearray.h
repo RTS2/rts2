@@ -1,6 +1,6 @@
 /* 
  * Array values.
- * Copyright (C) 2008,2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,17 +35,11 @@ namespace rts2core
  */
 class StringArray: public Rts2Value
 {
-	private:
-		std::vector <std::string> value;
-		std::string _os;
-
 	public:
 		StringArray (std::string _val_name);
 		StringArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);	
 
-		virtual ~StringArray ()
-		{
-		}
+		virtual ~StringArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *_value);
@@ -77,20 +71,15 @@ class StringArray: public Rts2Value
 		 *
 		 * @return True if string is present in the value array.
 		 */
-		bool isPresent (std::string _str)
-		{
-			return std::find (value.begin (), value.end (), _str) != value.end ();
-		}
+		bool isPresent (std::string _str) { return std::find (value.begin (), value.end (), _str) != value.end (); }
 
-		std::vector <std::string>::iterator valueBegin ()
-		{
-			return value.begin ();
-		}
+		std::vector <std::string>::iterator valueBegin () { return value.begin (); }
 
-		std::vector <std::string>::iterator valueEnd ()
-		{
-			return value.end ();
-		}
+		std::vector <std::string>::iterator valueEnd () { return value.end (); }
+
+	private:
+		std::vector <std::string> value;
+		std::string _os;
 };
 
 /**
@@ -102,17 +91,11 @@ class StringArray: public Rts2Value
  */
 class DoubleArray: public Rts2Value
 {
-	private:
-		std::vector <double> value;
-		std::string _os;
-	
 	public:
 		DoubleArray (std::string _val_name);
 		DoubleArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
 		
-		virtual ~DoubleArray ()
-		{
-		}
+		virtual ~DoubleArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *_value);
@@ -137,22 +120,17 @@ class DoubleArray: public Rts2Value
 			changed ();
 		}
 
-		std::vector <double>::iterator valueBegin ()
-		{
-			return value.begin ();
-		}
+		std::vector <double>::iterator valueBegin () { return value.begin (); }
 
-		std::vector <double>::iterator valueEnd ()
-		{
-			return value.end ();
-		}
+		std::vector <double>::iterator valueEnd () { return value.end (); }
 
-		size_t size ()
-		{
-			return value.size ();
-		}
+		size_t size () { return value.size (); }
 
 		void clear () { value.clear (); }
+
+	private:
+		std::vector <double> value;
+		std::string _os;
 };
 
 
@@ -165,17 +143,11 @@ class DoubleArray: public Rts2Value
  */
 class IntegerArray: public Rts2Value
 {
-	private:
-		std::vector <int> value;
-		std::string _os;
-	
 	public:
 		IntegerArray (std::string _val_name);
 		IntegerArray (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
 		
-		virtual ~IntegerArray ()
-		{
-		}
+		virtual ~IntegerArray () {}
 
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *_value);
@@ -200,20 +172,15 @@ class IntegerArray: public Rts2Value
 			changed ();
 		}
 
-		std::vector <int>::iterator valueBegin ()
-		{
-			return value.begin ();
-		}
+		std::vector <int>::iterator valueBegin () { return value.begin (); }
 
-		std::vector <int>::iterator valueEnd ()
-		{
-			return value.end ();
-		}
+		std::vector <int>::iterator valueEnd () { return value.end (); }
 
-		size_t size ()
-		{
-			return value.size ();
-		}
+		size_t size () { return value.size (); }
+
+	private:
+		std::vector <int> value;
+		std::string _os;
 };
 
 
