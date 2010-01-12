@@ -24,16 +24,6 @@
 namespace rts2xmlrpc
 {
 
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-
-class JpegImageRequest: public GetRequestAuthorized
-{
-	public:
-		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
-
-		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-};
-
 /**
  * Create page with JPEG previews. This is an abstract class - all classes
  * which need preview functionality shoudl inherit from this page.
@@ -58,6 +48,16 @@ class Previewer
 		 * @param prevsize size of preview in pixels
 		 */
 		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize);
+};
+
+#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+
+class JpegImageRequest: public GetRequestAuthorized
+{
+	public:
+		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+
+		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 class JpegPreview:public GetRequestAuthorized
