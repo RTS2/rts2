@@ -27,8 +27,7 @@ extern "C"
 {
 #endif
 // wildi ToDo: go to dome-target-az.h
-double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
-  void *move_to_target_azimuth( void *value) ;
+void *move_to_target_azimuth( void *value) ;
 #ifdef __cplusplus
 }
 #endif

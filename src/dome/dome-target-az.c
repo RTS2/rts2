@@ -1,4 +1,3 @@
-
 /* Library to calculate dome target AZ and ZD  */
 /* Copyright (C) 2006-2010, Markus Wildi */
 
@@ -54,12 +53,6 @@ double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 int    LDCheckHorizon( double HA, double dec, double phi) ;
 
-struct Decaxis_plus_minus {
-  int east ;
-  int west ;
-  
-} dapm ;
-
 double DomeRadius ;
 
 struct pier {
@@ -85,27 +78,12 @@ struct telescope {
 
 /* the main entry function */
 /* longitude positive to the West */
-double dome_target_az( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_posn *obs)
+double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 {
   double ret ;
   double target_az ;
   double target_ZD ;
-  
-  if( angle== IS_WEST)
-    {
-      dapm.east= IS_NOT_EAST ;
-      dapm.west= IS_WEST ;
-    }
-  else if( angle== IS_EAST)
-    {
-      dapm.east= IS_EAST ;
-      dapm.west= IS_NOT_WEST ;
-    }
-  else
-    {
-      return UNDEFINED_DEC_AXIS_POSITION ;
-    }
-  
+    
   DomeRadius= 1.3 ;
   
   pr.radius= 0.135;
@@ -150,7 +128,7 @@ double dome_target_az( struct ln_equ_posn *tel_equ, int angle, struct ln_lnlat_p
 
 double LDStarOnDomeTEX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-    double correct ;
+  double correct ;
 
     correct=  xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
    zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) + Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) - 
@@ -176,8 +154,7 @@ double LDStarOnDomeTEX( double HA, double dec, double phi, double Rdome,  double
 
 double LDStarOnDomeTWX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-
-    double correct ;
+  double correct ;
 
    correct= xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
    zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) - Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) + 
@@ -204,8 +181,7 @@ double LDStarOnDomeTWX( double HA, double dec, double phi, double Rdome,  double
 
 double LDStarOnDomeTEY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-    double correct ;
-
+  double correct ;
 
   correct= -(Rdec*pow(cos(HA),3)*pow(cos(dec),2)) + 
    cos(HA)*(-(Rdec*pow(sin(dec),2)) + pow(cos(dec),2)*sin(HA)*
@@ -223,7 +199,7 @@ double LDStarOnDomeTEY( double HA, double dec, double phi, double Rdome,  double
 
 double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-    double correct ;
+  double correct ;
 
   correct= Rdec*pow(cos(HA),3)*pow(cos(dec),2) + 
    cos(HA)*(Rdec*pow(sin(dec),2) + pow(cos(dec),2)*sin(HA)*
@@ -242,15 +218,8 @@ double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double
 // OPEN ISSUE EAST and WEST see LDHAtoDomeAZ!!!!!!!!!
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-    if(( dapm.west == IS_WEST) &&( dapm.east == IS_NOT_EAST))
-    {
-	return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTEX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTEY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
-    }
-    else if(( dapm.east == IS_EAST)  &&( dapm.west == IS_NOT_WEST))
-    {
-	return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTWX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTWY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
-    }
-    return -1. ;
+ 
+  return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTEX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTEY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
 }
 
 int LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
@@ -293,44 +262,27 @@ double LDRAtoHA( double RA, double longitude)
 int LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD)
 {
 
-// OPEN ISSUE EAST and WEST see LDStarOnDomeZ!!!!!!!!! 
+  *Az= -atan2( LDStarOnDomeTEY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTEX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
 
-    if(( dapm.west == IS_WEST) &&( dapm.east == IS_NOT_EAST))
+  *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)/DomeRadius) ;
+
+  /* Define the offset */
+  
+  *Az += M_PI ;
+
+  if( *Az < 0.)
     {
-	*Az= -atan2( LDStarOnDomeTEY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTEX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
+      *Az += 2. * M_PI ;
     }
-    else if(( dapm.east == IS_EAST)  &&( dapm.west == IS_NOT_WEST))
-    {
-	*Az= -atan2( LDStarOnDomeTWY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTWX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
-    }
-    else
-    {
-	//IDMessage( mydev, "LDHAtoDomeAZ: neither EAST nor WEST");
-        return -1 ;
-    }
-
-    *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)/DomeRadius) ;
-
-
-/*     IDMessage( mydev, "X %f Y %f Z %f Rdome %f", LDStarOnDomeX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeZ( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), DomeRadius) ; */
-
-    /* Define the offset */
-
-    *Az += M_PI ;
-
-    if( *Az < 0.)
-    {
-	*Az += 2. * M_PI ;
-    }
-    else if( *Az >= 2. * M_PI)
+  else if( *Az >= 2. * M_PI)
     {
 	*Az -= 2. * M_PI ;
     }
 
-    *Az= *Az * 180./ M_PI;
-    *ZD= *ZD * 180./ M_PI;
+  *Az= *Az * 180./ M_PI;
+  *ZD= *ZD * 180./ M_PI;
 
-    return 0 ;
+  return 0 ;
 }
 int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD)
 {
