@@ -783,6 +783,7 @@ class Telescope:public Rts2Device
 		Rts2ValueBool *calRefraction;
 		Rts2ValueBool *calModel;
 
+		rts2core::StringArray *cupolas;
 
 		/**
 		 * Target HRZ coordinates.

@@ -148,6 +148,8 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (calModel, "CAL_MODE", "if model calculations are included in target calcuations", false, RTS2_VALUE_WRITABLE);
 	calModel->setValueBool (false);
 
+	createValue (cupolas, "cupolas", "Cupola(s) connected to telescope. They should sync as telescope moves.", false);
+
 	modelFile = NULL;
 	model = NULL;
 
@@ -628,6 +630,8 @@ Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_typ
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_CUPOLA:
+			logStream (MESSAGE_INFO) << "connecting to cupula " << conn->getName () << sendLog;
+			cupolas->addValue (std::string (conn->getName ()));
 			return new ClientCupola (conn);
 	}
 	return Rts2Device::createOtherType (conn, other_device_type);
