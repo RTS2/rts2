@@ -1318,7 +1318,6 @@ APGTO::tel_slew_to (double ra, double dec)
   observer.lat = telLatitude->getValueDouble ();
 
   JD = ln_get_julian_from_sys ();
-
   ln_get_hrz_from_equ (&target_equ, &observer, JD, &hrz);
 
   if( hrz.alt < 0.)
@@ -1362,12 +1361,12 @@ APGTO::tel_slew_to (double ra, double dec)
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to not colliding slewing ra "<< target_equ.ra << " target_equ.dec " << dec  << sendLog;
   if (( ret=tel_write_ra (target_equ.ra)) < 0)
     {
-      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, tel_write_ra return value was " << ret << sendLog ;
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, not slewing, tel_write_ra return value was " << ret << sendLog ;
       return -1;
     }
   if (( ret=tel_write_dec (target_equ.dec)) < 0)
     {
-      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, tel_write_dec return value was " << ret << sendLog ;
+      logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, not slewing, tel_write_dec return value was " << ret << sendLog ;
       return -1;
     }
 
@@ -1375,7 +1374,7 @@ APGTO::tel_slew_to (double ra, double dec)
 
   if (( ret=tel_write_read ("#:MS#", 5, &retstr, 1)) < 0)
     {
-      logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to tel_write_read #:MS# failed"<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::tel_slew_to, not slewing, tel_write_read #:MS# failed"<< sendLog;
       return -1;
     }
 
@@ -1395,7 +1394,6 @@ APGTO::tel_slew_to (double ra, double dec)
 	  t_equ.dec= target_equ.dec + 180. ;
 	  postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
 	}
-
       return 0;
     }
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
@@ -1723,7 +1721,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	}
       return 0 ;
     }
-  else if (conn->isCommand ("budge")) // move is used for a slew to a position
+  else if (conn->isCommand ("rot")) // move is used for a slew to a position
     {
       char *direction ;
       if (conn->paramNextStringNull (&direction) || !conn->paramEnd ())
@@ -1756,8 +1754,6 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	  logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized check of the declination axis failed, this message will never appear." << sendLog;
 	  return -1;
 	}
-
-
 
       logStream (MESSAGE_DEBUG) << " APGTO::commandgAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
       return 0 ;

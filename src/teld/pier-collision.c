@@ -21,8 +21,9 @@
 /* You should have received a copy of the GNU Lesser General Public */
 /* License along with this library; if not, write to the Free Software */
 /* Foundation, Inc., 51 Franklin Steet, Fifth Floor, Boston, MA  02110-1301  USA */
-
-/* Standard headers */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -33,11 +34,12 @@
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
-#define NO_COLLISION 0
-#define WITHIN_DANGER_ZONE_ABOVE 1
-#define WITHIN_DANGER_ZONE_BELOW 2
-#define COLLIDING 3
-#define UNDEFINED_DEC_AXIS_POSITION 4
+#define NO_COLLISION             0
+#define NO_DANGER                1
+#define COLLIDING                2
+#define WITHIN_DANGER_ZONE       3
+#define WITHIN_DANGER_ZONE_ABOVE 4
+#define WITHIN_DANGER_ZONE_BELOW 5
 
 double LDRAtoHA( double RA, double longitude) ;
 int    LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
@@ -48,12 +50,18 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 
+struct Decaxis_plus_minus {
+  int east ;
+  int west ;
+  
+} dapm ;
+
 struct pier {
   double radius ;
   double wedge ;
   double floor ;
-  double danger_zone_above ;
   double danger_zone_below ;
+  double danger_zone_above ;
 }  pr;
 
 struct mount {
@@ -70,19 +78,19 @@ struct telescope {
 } tel ;
 /* the main entry function */
 /* struct ln_equ_posn tel_eq telescope target coordinates */
-/* WEST: DEC axis points to HA +M_PI/2, EAST: DEC axis points to HA - M_PI/2*/
-/* In case EAST must be set to DEC += M_PI */ 
+/* WEST: DEC axis points to HA +M_PI/2, IS_EAST: DEC axis points to HA - M_PI/2*/
 /* DEC axis is the vector which points from the intersection of the HA axis with DEC axis tp the intersection*/
 /* of the DEC axis with the optical axis, the optical axis points to HA, DEC) */
 /* longitude positive to the East*/
 int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 {
+  struct ln_equ_posn tmp_equ ;
 
   pr.radius= 0.135;
   pr.wedge= -0.6684;
   pr.floor= -1.9534;
-  pr.danger_zone_above= -0.1;
   pr.danger_zone_below= -2.9534;
+  pr.danger_zone_above= -0.1;
   
   mt.xd= -0.0684;
   mt.zd= -0.1934;
@@ -91,7 +99,17 @@ int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
   tel.radius= 0.123;
   tel.rear_length= 0.8; 
 
-  return LDCollision( tel_equ->ra/180. * M_PI, tel_equ->dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius) ;
+  if(( tel_equ->dec > 90.) && (  tel_equ->dec <= 270.)) // EAST: DECaxis==HA - M_PI/2
+    {
+      tmp_equ.ra =  tel_equ->ra - 180. ;
+      tmp_equ.dec= -tel_equ->dec  ; 
+    }
+  else // WEST: DECaxis==HA + M_PI/2
+    {
+      tmp_equ.ra =  tel_equ->ra ;
+      tmp_equ.dec=  tel_equ->dec  ; 
+    }
+  return LDCollision( tmp_equ.ra/180. * M_PI, tmp_equ.dec/180. * M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, mt.zd, mt.xd, mt.rdec, tel.radius, pr.radius) ;
 }
 
 /* The equation 5.6.1-1 os = ted . (pqe + k  qse ) + opd */
@@ -103,18 +121,7 @@ int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 /* to the star in the same system and opd is the offset of the dome */
 /* center to the intersection point of the polar and the declination */
 /* axis.       */
-/* The eq. 5.6.5-1 might be wrong, because the vectors */
-/* PS and PQ are not colinear. */
-/* The parameter k has a value which is similar to Rdome. */
-/* Therefore the dome Az might acceptable */
-/* I solved the equations with Mathematica and hope that the telescope hits always the middle*/
-
-
-/* There are expressions like sqrt(pow(Rdec,2)). I know that that I should */
-/* replace them with Rdec or better +/- Rdec. But for the sake of simplicity I */
-/* copied the whole expressions from the Mathematica notebook to the place here */
-/* and made only the minimum of replacements.*/
-/* I will change that, when the code seems to be correct */
+/* I copied the whole expressions from the Mathematica notebook. */
 
 double LDRAtoHA( double RA, double longitude)
 {
@@ -132,135 +139,192 @@ double LDRAtoHA( double RA, double longitude)
 
 int LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-    double tpp1 ;
-    double tpm1 ;
-    double czp1 ;
-    double czm1 ;
+  int state_collision= NO_COLLISION ;
+  int state_danger   = NO_DANGER ;
 
-    double tpp3 ;
-    double tpm3 ;
-    double czp3 ;
-    double czm3 ;
+  double tpp1= FP_NAN ;
+  double tpm1= FP_NAN ;
+  double czp1= FP_NAN ;
+  double czm1= FP_NAN ;
+  
+  double tpp3= FP_NAN ;
+  double tpm3= FP_NAN ;
+  double czp3= FP_NAN ;
+  double czm3= FP_NAN ;
     
-    double HA ;
-
-    HA= LDRAtoHA( RA, lambda) ;
+  double HA ;
+  
+  HA= LDRAtoHA( RA, lambda) ;
 
 /* Parameter of the straight line */
 
-    tpp1= LDCutPierLineP1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
-    tpm1= LDCutPierLineM1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+  tpp1= LDCutPierLineP1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+  tpm1= LDCutPierLineM1(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
 
-    tpp3= LDCutPierLineP3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
-    tpm3= LDCutPierLineM3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+  tpp3= LDCutPierLineP3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
+  tpm3= LDCutPierLineM3(HA, dec, phi, zd, xd, Rdec, Rtel, Rpier);
 
 /* z componet of the intersection */
 
+  if( isnormal(tpp1)){
     czp1= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp1) ;
+  } else {
+    fprintf( stderr, "LDCollision tpp1==nan\n") ;
+  }
+  if( isnormal(tpm1)){ 
     czm1= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm1) ;
-
+  } else {
+    fprintf( stderr, "LDCollision tpm1==nan\n") ;
+  }
+  if( isnormal(tpp3)) {
     czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
+  } else {
+    fprintf( stderr, "LDCollision tpp3==nan\n") ;
+  }
+  if( isnormal(tpm3)) {
     czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
+  }  else {
+    fprintf( stderr, "LDCollision tpm3==nan\n") ;
+  }
 
-    if((czp1 > pr.floor) && ( czp1 < pr.wedge))
-    {
-	if( fabs(tpp1) > tel.rear_length)
-	{
-	  return NO_COLLISION ;
+  if(  isnormal(czp1)) {
+    //if((czp1 > PierN[2].value) && ( czp1 < PierN[1].value))
+    if((czp1 > pr.floor) && ( czp1 < pr.wedge)) {
+      if( isnormal(tpp1)){
+	if( fabs(tpp1) > tel.rear_length){
+	  fprintf( stderr, "LDCollision NO_COLLISION czp1, tpp1 %f> %f\n", fabs(tpp1), tel.rear_length) ;
+	  if( state_collision != COLLIDING) {
+	    state_collision= NO_COLLISION ;
+	  }
+	} else {
+	  fprintf(stderr, "Collision 1 on the positive side\n" ) ;
+	  state_collision= COLLIDING ;
 	}
-
-	fprintf(stderr, "Collision 1 on the positive side\n" ) ;
-	return COLLIDING ;
-    } 
-    else  if((czp1 > pr.danger_zone_above) && ( czp1 <= pr.floor))
-      {
-	fprintf(stderr, "Within danger zone below 1 on the positive side\n") ;
-	return WITHIN_DANGER_ZONE_BELOW ;
       }
-    else  if((czp1 < pr.danger_zone_below) && ( czp1 >= pr.wedge))
-    {
-	fprintf(stderr, "Within danger zone above 1 on the positive side\n") ;
-	return WITHIN_DANGER_ZONE_ABOVE ;
-    }
-
-    if((czm1 > pr.floor) && ( czm1 < pr.wedge))
-    {
-	if( fabs(tpm1) > tel.rear_length)
-	{
-	  return NO_COLLISION ;
+      //else  if((czp1 > PierN[3].value) && ( czp1 <= PierN[2].value))
+    } else  if((czp1 > pr.danger_zone_below) && ( czp1 <= pr.floor)){
+      fprintf(stderr, "Within danger zone below 1 on the positive side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_BELOW ;
+      //else  if((czp1 < PierN[4].value) && ( czp1 >= PierN[1].value))
+    } else  if((czp1 < pr.danger_zone_above) && ( czp1 >= pr.wedge)){
+      fprintf(stderr, "Within danger zone above 1 on the positive side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_ABOVE ;
+    } 
+  } else {
+    fprintf( stderr, "LDCollision czp1==nan\n") ;
+  }
+  if(  isnormal(czm1)){
+    //if((czm1 > PierN[2].value) && ( czm1 < PierN[1].value))
+    if((czm1 > pr.floor) && ( czm1 < pr.wedge)){
+      if( isnormal(tpm1)){
+	if( fabs(tpm1) > tel.rear_length){
+	  fprintf( stderr, "LDCollision NO_COLLISION czm1, tpm1 %f> %f\n", fabs(tpm1), tel.rear_length) ;
+	  if( state_collision != COLLIDING) {
+	    state_collision= NO_COLLISION ;
+	  }
+	} else {
+	  fprintf(stderr, "Collision 1 on the negative side\n" ) ;
+	  state_collision= COLLIDING ;
 	}
-	fprintf(stderr, "Collision 1 on the negative side\n" ) ;
-	return COLLIDING ;
+      }
+      //else  if((czm1 > PierN[3].value) && ( czm1 <= PierN[2].value))
+    } else  if((czm1 > pr.danger_zone_below) && ( czm1 <= pr.floor)){
+      fprintf(stderr, "Within danger zone below 1 on the negative side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_BELOW ;
+      //else  if((czm1 < PierN[4].value) && ( czm1 >= PierN[1].value))
+    } else  if((czm1 < pr.danger_zone_above) && ( czm1 >= pr.wedge)){
+      fprintf(stderr, "Within danger zone above 1 on the negative side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
-    else  if((czm1 > pr.danger_zone_above) && ( czm1 <= pr.floor))
-    {
-	fprintf(stderr, "Within danger zone below 1 on the negative side\n") ;
-	return WITHIN_DANGER_ZONE_BELOW ;
-    }
-    else  if((czm1 < pr.danger_zone_below) && ( czm1 >= pr.wedge))
-    {
-	fprintf(stderr, "Within danger zone above 1 on the negative side\n") ;
-	return WITHIN_DANGER_ZONE_ABOVE ;
-    }
-
-    if((czp3 > pr.floor) && ( czp3 < pr.wedge))
-    {
-	if( fabs(tpp3) > tel.rear_length)
-	{
-	  return NO_COLLISION ;
+  } else {
+    fprintf( stderr, "LDCollision czm1==nan\n") ;
+  }
+  if(  isnormal(czp3)) {
+    //if((czp3 > PierN[2].value) && ( czp3 < PierN[1].value))
+    if((czp3 > pr.floor) && ( czp3 < pr.wedge)){
+      if( isnormal(tpp3)){
+	if( fabs(tpp3) > tel.rear_length){
+	  fprintf( stderr, "LDCollision NO_COLLISION czp3, tpp3 %f> %f\n", fabs(tpp3), tel.rear_length) ;
+	  if( state_collision != COLLIDING) {
+	    state_collision= NO_COLLISION ;
+	  }
+	} else {
+	  fprintf(stderr, "Collision 3 on the positive side\n" ) ;
+	  state_collision= COLLIDING ;
 	}
-	fprintf(stderr, "Collision 3 on the positive side\n" ) ;
-	return COLLIDING ;
+      }
+      //else  if((czp3 > PierN[3].value) && ( czp3 <= PierN[2].value))
+    } else  if((czp3 > pr.danger_zone_below) && ( czp3 <= pr.floor)) {
+      fprintf(stderr, "Within danger zone below 3 on the positive side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_BELOW ;
+      //else  if((czp3 < PierN[4].value) && ( czp3 >= PierN[1].value))
+    } else  if((czp3 < pr.danger_zone_above) && ( czp3 >= pr.wedge)){
+      fprintf(stderr, "Within danger zone above 3 on the positive side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
-    else  if((czp3 > pr.danger_zone_above) && ( czp3 <= pr.floor))
-    {
-	fprintf(stderr, "Within danger zone below 3 on the positive side\n") ;
-	return WITHIN_DANGER_ZONE_BELOW ;
-    }
-    else  if((czp3 < pr.danger_zone_below) && ( czp3 >= pr.wedge))
-    {
-	fprintf(stderr, "Within danger zone above 3 on the positive side\n") ;
-	return WITHIN_DANGER_ZONE_ABOVE ;
-    }
-
-    if((czm3 > pr.floor) && ( czm3 < pr.wedge))
-    {
-	if( fabs(tpm3) > tel.rear_length)
-	{
-	  return NO_COLLISION ;
+  } else {
+    fprintf( stderr, "LDCollision czp3==nan\n") ;
+  }
+  if(  isnormal(czm3)) {
+    //if((czm3 > PierN[2].value) && ( czm3 < PierN[1].value))
+    if((czm3 > pr.floor) && ( czm3 < pr.wedge)){
+      if( isnormal(tpm3)){
+	if( fabs(tpm3) > tel.rear_length){
+	  fprintf( stderr, "LDCollision NO_COLLISION czm3, tpm3 %f> %f\n", fabs(tpm3), tel.rear_length) ;
+	  if( state_collision != COLLIDING) {
+	    state_collision= NO_COLLISION ;
+	  }
+	} else {
+	  fprintf(stderr, "Collision 3 on the negative side\n" ) ;
+	  state_collision= COLLIDING ;
 	}
-	fprintf(stderr, "Collision 3 on the negative side\n" ) ;
-	return COLLIDING ;
+      }
+      //!!if((czm3 > PierN[3].value) && ( czm3 <= PierN[2].value))
+    } else if((czm3 > pr.danger_zone_below) && ( czm3 <= pr.floor)){
+      fprintf(stderr, "Within danger zone below 3 on the negative side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_BELOW ;
+      //else  if((czm3 < PierN[4].value) && ( czm3 >= PierN[1].value))
+    } else  if((czm3 < pr.danger_zone_above) && ( czm3 >= pr.wedge)){
+      fprintf(stderr, "Within danger zone above 3 on the negative side\n") ;
+      state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
-
-    if((czm3 > pr.danger_zone_above) && ( czm3 <= pr.floor))
-    {
-	fprintf(stderr, "Within danger zone below 3 on the negative side\n") ;
-	return WITHIN_DANGER_ZONE_BELOW ;
-    }
-    else  if((czm3 < pr.danger_zone_below) && ( czm3 >= pr.wedge))
-    {
-	fprintf(stderr, "Within danger zone above 3 on the negative side\n") ;
-	return WITHIN_DANGER_ZONE_ABOVE ;
-    }
-    return NO_COLLISION ;
+  } else {
+    fprintf( stderr, "LDCollision czm3==nan\n") ;
+  }
+  if( state_collision != NO_COLLISION) {
+    return COLLIDING ;
+  } else if (state_danger != NO_DANGER) {
+    return WITHIN_DANGER_ZONE ;
+  }  
+  return NO_COLLISION ;
 }
 double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
+  double val= FP_NAN ;
+  val = zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi)) ;
+
+  //  fprintf( stderr, "====LDTangentPlaneLineP: WEST %+010.5f\n", val) ;
+  
+  return val ;
 }
 
 double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  return zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
-    (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
+  double val= FP_NAN ;
+  val=   zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
+	   (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
+
+  //  fprintf( stderr, "----LDTangentPlaneLineM: WEST %+010.5f\n\n", val ) ;
+    return val ;
 }
 
 
 double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  return (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
+  double val= FP_NAN ;
+
+  val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -288,10 +352,15 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
                 pow(Rdec,2)*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
        pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
+
+  //  fprintf( stderr, "____LDCutPierLineP1: WEST %+010.5f\n", val) ;
+  return val ;
 }
 double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
+  double val= FP_NAN ;
+    
+  val= (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
 	     Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -320,10 +389,14 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 	    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
 			 pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2)))) ;
 
+
+  //  fprintf( stderr, "xxxxLDCutPierLineM1: WEST %+010.5f\n", val) ;
+  return val ;
 }
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  return  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
+  double val= FP_NAN ;
+  val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -350,11 +423,15 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
                    sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) + 2*Rdec*Rtel*sin(HA)*sin(phi))) + 
                 pow(Rdec,2)*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-       pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
+		pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
+
+  //  fprintf( stderr, "-x-xLDCutPierLineP3: WEST %+010.5f\n", val ) ;
+  return val ;
 }
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  return (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
+  double val= FP_NAN ;
+  val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*pow(cos(HA),2)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
@@ -381,5 +458,8 @@ double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, 
                    sin(dec)*(sqrt(pow(Rdec,2))*xd + sqrt(pow(Rdec,2))*xd*pow(sin(HA),2) - 2*pow(Rdec,2)*sin(HA)*sin(phi))) + 
                 Rdec*Rtel*sin(HA)*sin(dec)*sin(2*phi))))))/
    (Rdec*Rpier*(pow(cos(phi),2)*pow(sin(dec),2) - 2*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-       pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
+		pow(cos(dec),2)*(pow(sin(HA),2) + pow(cos(HA),2)*pow(sin(phi),2))));
+
+  //  fprintf( stderr, "X-X-LDCutPierLineM3: WEST %+010.5f\n", val ) ;
+    return val ;
 }
