@@ -22,8 +22,6 @@
 /* License along with this library; if not, write to the Free Software */
 /* Foundation, Inc., 51 Franklin Steet, Fifth Floor, Boston, MA  02110-1301  USA */
 
-
-/* Standard headers */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -33,11 +31,6 @@
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
-#define IS_NOT_EAST 2 
-#define IS_EAST 1
-#define IS_WEST -1
-#define IS_NOT_WEST -2
-#define UNDEFINED_DEC_AXIS_POSITION 4
 #define BELOW -1
 
 
@@ -46,22 +39,13 @@ int    LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, d
 int    LDRAtoStarAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) ;
 int    LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
 int    LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
-double LDStarOnDomeTEX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
-double LDStarOnDomeTWX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
-double LDStarOnDomeTEY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
-double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
+double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
+double LDStarOnDomeTY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 int    LDCheckHorizon( double HA, double dec, double phi) ;
 
-double DomeRadius ;
 
-struct pier {
-  double radius ;
-  double wedge ;
-  double floor ;
-  double danger_zone_above ;
-  double danger_zone_below ;
-}  pr;
+double DomeRadius ;
 
 struct mount {
   double xd ;
@@ -78,19 +62,16 @@ struct telescope {
 
 /* the main entry function */
 /* longitude positive to the West */
+/* West: DECaxis== HA + M_PI/2  RA=RA, DEC=DEC  */
+/* East: DECaxis== HA - M_PI/2, RA=RA, DEC= DEC + M_PI */
 double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 {
   double ret ;
   double target_az ;
   double target_ZD ;
-    
-  DomeRadius= 1.3 ;
-  
-  pr.radius= 0.135;
-  pr.wedge= -0.6684;
-  pr.floor= -1.9534;
-  pr.danger_zone_above= -2.9534;
-  pr.danger_zone_below= -0.1;
+  struct ln_equ_posn tmp_equ ;
+
+  DomeRadius= 1.265 ; // Obs. Vermes specific
   
   mt.xd= -0.0684;
   mt.zd= -0.1934;
@@ -99,7 +80,21 @@ double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
   tel.radius= 0.123;
   tel.rear_length= 0.8;
   
-  ret= LDRAtoDomeAZ( tel_equ->ra/180.*M_PI, tel_equ->dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &target_az, &target_ZD) ;
+  if(( tel_equ->dec > 90.) && (  tel_equ->dec <= 270.)) { // EAST: DECaxis==HA - M_PI/2
+
+    tmp_equ.ra =  tel_equ->ra - 180. ;
+    tmp_equ.dec= -tel_equ->dec  ;
+  } else {// WEST: DECaxis==HA + M_PI/2
+    
+    tmp_equ.ra =  tel_equ->ra ;
+    tmp_equ.dec=  tel_equ->dec  ;
+  }
+  ret= LDRAtoDomeAZ( tmp_equ.ra/180.*M_PI, tmp_equ.dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &target_az, &target_ZD) ;
+
+  // This call is for a quick check
+  //  double star_az ;
+  //  double star_ZD ;
+  //  ret= LDRAtoStarAZ( tmp_equ.ra/180.*M_PI, tmp_equ.dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &star_az, &star_ZD) ;
 
   return target_az ;
 }
@@ -113,50 +108,12 @@ double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
 /* to the star in the same system and opd is the offset of the dome */
 /* center to the intersection point of the polar and the declination */
 /* axis.       */
-/* The eq. 5.6.5-1 might be wrong, because the vectors */
-/* PS and PQ are not colinear. */
-/* The parameter k has a value which is similar to Rdome. */
-/* Therefore the dome Az might acceptable */
-/* I solved the equations with Mathematica and hope that the telescope hits always the middle*/
+/* I copied the whole expressions from the Mathematica notebook */
 
-
-/* There are expressions like sqrt(pow(Rdec,2)). I know that that I should */
-/* replace them with Rdec or better +/- Rdec. But for the sake of simplicity I */
-/* copied the whole expressions from the Mathematica notebook to the place here */
-/* and made only the minimum of replacements.*/
-/* I will change that, when the code seems to be correct */
-
-double LDStarOnDomeTEX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
+double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-  double correct ;
 
-    correct=  xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
-   zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) + Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) - 
-   Rdec*cos(HA)*cos(dec)*pow(cos(phi),3)*sin(HA)*sin(dec) - 
-   zd*pow(cos(HA),2)*pow(cos(dec),2)*cos(phi)*sin(phi) - 
-   Rdec*pow(cos(HA),2)*pow(cos(dec),2)*sin(HA)*sin(phi) - 
-   Rdec*pow(cos(dec),2)*pow(sin(HA),3)*sin(phi) + 2*xd*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-   zd*cos(phi)*pow(sin(dec),2)*sin(phi) - Rdec*pow(cos(phi),2)*sin(HA)*pow(sin(dec),2)*sin(phi) - 
-   zd*cos(HA)*cos(dec)*sin(dec)*pow(sin(phi),2) - 
-   Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec)*pow(sin(phi),2) + 
-   xd*pow(sin(dec),2)*pow(sin(phi),2) - Rdec*sin(HA)*pow(sin(dec),2)*pow(sin(phi),3) - 
-   (cos(phi)*sin(dec)*sqrt(-4*(pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) - 
-           2*Rdec*zd*cos(phi)*sin(HA) - 2*Rdec*xd*sin(HA)*sin(phi)) + 
-        4*pow(cos(HA)*cos(dec)*(zd*cos(phi) + xd*sin(phi)) + sin(dec)*(-(xd*cos(phi)) + zd*sin(phi)),2)))/
-    2. + (cos(HA)*cos(dec)*sin(phi)*sqrt(-4*
-         (pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) - 
-           2*Rdec*zd*cos(phi)*sin(HA) - 2*Rdec*xd*sin(HA)*sin(phi)) + 
-        4*pow(cos(HA)*cos(dec)*(zd*cos(phi) + xd*sin(phi)) + sin(dec)*(-(xd*cos(phi)) + zd*sin(phi)),2)))/
-    2.;
-
-    return correct ;
-}
-
-double LDStarOnDomeTWX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
-{
-  double correct ;
-
-   correct= xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
+  return  xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
    zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) - Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) + 
    Rdec*cos(HA)*cos(dec)*pow(cos(phi),3)*sin(HA)*sin(dec) - 
    zd*pow(cos(HA),2)*pow(cos(dec),2)*cos(phi)*sin(phi) + 
@@ -173,35 +130,12 @@ double LDStarOnDomeTWX( double HA, double dec, double phi, double Rdome,  double
          (pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) + 
            2*Rdec*zd*cos(phi)*sin(HA) + 2*Rdec*xd*sin(HA)*sin(phi)) + 
         4*pow(cos(HA)*cos(dec)*(zd*cos(phi) + xd*sin(phi)) + sin(dec)*(-(xd*cos(phi)) + zd*sin(phi)),2)))/
-    2.
-;
- 
-   return correct ;
+    2.;
 }
 
-double LDStarOnDomeTEY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
+double LDStarOnDomeTY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-  double correct ;
-
-  correct= -(Rdec*pow(cos(HA),3)*pow(cos(dec),2)) + 
-   cos(HA)*(-(Rdec*pow(sin(dec),2)) + pow(cos(dec),2)*sin(HA)*
-       (zd*cos(phi) - Rdec*sin(HA) + xd*sin(phi))) - 
-   cos(dec)*sin(HA)*(xd*cos(phi)*sin(dec) - zd*sin(dec)*sin(phi) + 
-      sqrt(-pow(Rdec,2) + pow(Rdome,2) - pow(xd,2) - pow(zd,2) + 
-        pow(xd,2)*pow(cos(phi),2)*pow(sin(dec),2) + 2*Rdec*xd*sin(HA)*sin(phi) + 
-        pow(zd,2)*pow(sin(dec),2)*pow(sin(phi),2) + 
-        pow(cos(HA),2)*pow(cos(dec),2)*pow(zd*cos(phi) + xd*sin(phi),2) + 
-        2*zd*cos(phi)*(Rdec*sin(HA) - xd*pow(sin(dec),2)*sin(phi)) - 
-        (cos(HA)*sin(2*dec)*(2*xd*zd*cos(2*phi) + (pow(xd,2) - pow(zd,2))*sin(2*phi)))/2.));
-
-  return correct ; 
-}
-
-double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
-{
-  double correct ;
-
-  correct= Rdec*pow(cos(HA),3)*pow(cos(dec),2) + 
+  return  Rdec*pow(cos(HA),3)*pow(cos(dec),2) + 
    cos(HA)*(Rdec*pow(sin(dec),2) + pow(cos(dec),2)*sin(HA)*
        (zd*cos(phi) + Rdec*sin(HA) + xd*sin(phi))) - 
    cos(dec)*sin(HA)*(xd*cos(phi)*sin(dec) - zd*sin(dec)*sin(phi) + 
@@ -211,15 +145,11 @@ double LDStarOnDomeTWY( double HA, double dec, double phi, double Rdome,  double
         pow(cos(HA),2)*pow(cos(dec),2)*pow(zd*cos(phi) + xd*sin(phi),2) - 
         2*zd*cos(phi)*(Rdec*sin(HA) + xd*pow(sin(dec),2)*sin(phi)) - 
         (cos(HA)*sin(2*dec)*(2*xd*zd*cos(2*phi) + (pow(xd,2) - pow(zd,2))*sin(2*phi)))/2.)) ;
-
-  return correct ;
 }
 
-// OPEN ISSUE EAST and WEST see LDHAtoDomeAZ!!!!!!!!!
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
- 
-  return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTEX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTEY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
+  return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
 }
 
 int LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
@@ -261,62 +191,38 @@ double LDRAtoHA( double RA, double longitude)
 } 
 int LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD)
 {
+  *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
 
-  *Az= -atan2( LDStarOnDomeTEY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTEX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
+  *Az= fmodl( *Az + M_PI , 2 *M_PI) ;
+  *Az= *Az * 180./ M_PI;
 
   *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)/DomeRadius) ;
-
-  /* Define the offset */
-  
-  *Az += M_PI ;
-
-  if( *Az < 0.)
-    {
-      *Az += 2. * M_PI ;
-    }
-  else if( *Az >= 2. * M_PI)
-    {
-	*Az -= 2. * M_PI ;
-    }
-
-  *Az= *Az * 180./ M_PI;
   *ZD= *ZD * 180./ M_PI;
+  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, DomeRadius) ;
 
   return 0 ;
 }
 int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD)
 {
-    int res ;
-
-
-    *Az= -atan2( LDStarOnDomeTEY( HA, dec, latitude, 1.,  0., 0., 0.), LDStarOnDomeTEX( HA, dec, latitude, 1.,  0., 0., 0.)) ;
-    *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, 1.,  0., 0., 0.)) ;
-
-    /* Define the offset */
-
-    *Az += M_PI ;
-
-    if( *Az < 0.)
-    {
-        *Az += 2. * M_PI ;
-    }
-    else if( *Az >= 2. * M_PI)
-    {
-        *Az -= 2. * M_PI ;
-    }
-
+  int res ;
   
-    *Az= *Az * 180./ M_PI;
+  *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, 1.,  0., 0., 0.), LDStarOnDomeTX( HA, dec, latitude, 1.,  0., 0., 0.)) ;
 
-    if(( res=LDCheckHorizon( HA, dec, latitude))==BELOW)
+  *Az= fmodl( *Az + M_PI , 2 *M_PI) ;
+  *Az= *Az * 180./ M_PI;
+
+  *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, 1.,  0., 0., 0.)) ;
+  if(( res=LDCheckHorizon( HA, dec, latitude))==BELOW)
     {
-	*ZD= 180. - *ZD * 180./ M_PI;
+      *ZD= 180. - *ZD * 180./ M_PI;
     } 
-    else
+  else
     {
-	*ZD= *ZD * 180./ M_PI;
+      *ZD= *ZD * 180./ M_PI;
     }
-    return 0 ;
+  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, 1.) ;
+
+  return 0 ;
 }
 int LDCheckHorizon( double HA, double dec, double latitude)
 {
