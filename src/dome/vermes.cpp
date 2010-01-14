@@ -20,40 +20,34 @@
 
 #include "cupola.h"
 #include "../utils/rts2config.h" 
+
+
+// Obs. Vermes specific 
 #include "vermes.h" 
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-// wildi ToDo: go to dome-target-az.h
-void *move_to_target_azimuth( void *value) ;
-#ifdef __cplusplus
-}
-#endif
-
+#include "dome-target-az.h"
 #include "barcodereader_vermes.h"
 #define MOTOR_RUNNING      0
 #define MOTOR_NOT_RUNNING  1
 #define MOTOR_UNDEFINED    2
 
-#define NOT_SYNCED 0 
-#define SYNCED     1
+#define NOT_SYNCED         0 
+#define SYNCED             1
 
-int is_synced= NOT_SYNCED ; // ==SYNCED if target_az reched
+int is_synced         = NOT_SYNCED ;   // ==SYNCED if target_az reached
 int motor_on_off_state= MOTOR_RUNNING ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
 double target_az ;
+
 struct ln_lnlat_posn *obs ;
 struct ln_equ_posn    tel_eq_m ;
 struct ln_equ_posn   *tel_eq= &tel_eq_m ;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+void *move_to_target_azimuth( void *value) ;
 float get_setpoint() ;
 int set_setpoint( float setpoint) ;
 int motor_on() ;
@@ -63,7 +57,6 @@ int connectDevice( int power_state) ;
 }
 #endif
 
-void *XXX_move_to_target_azimuth( void *value) ; // thread: moves cupola to target az
 
 using namespace rts2dome;
 
@@ -117,15 +110,12 @@ int Vermes::moveEnd ()
 }
 long Vermes::isMoving ()
 {
-  if ( is_synced== SYNCED)
-    {
-      logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
-      return -2;
-    }
-  else
-    {
-      logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
-    }
+  if ( is_synced== SYNCED) {
+    logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
+    return -2;
+  } else {
+    logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
+  }
   return USEC_SEC;
 }
 int Vermes::moveStart ()
@@ -137,20 +127,17 @@ int Vermes::moveStart ()
   tel_eq->dec= getTargetDec() ;
   // thread compare_az take care of the calculations
 
-  if( lastRa != tel_eq->ra)
-    {
-      lastRa = tel_eq->ra ;
-      target_coordinate_changed++ ;
-    }
-  if( lastDec != tel_eq->dec)
-    {
-      lastDec = tel_eq->dec ;
-      target_coordinate_changed++ ;
-    }
-  if(target_coordinate_changed)
-    {
-      logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_eq->ra  << " Dec " << tel_eq->dec << sendLog ;
-    }
+  if( lastRa != tel_eq->ra) {
+    lastRa = tel_eq->ra ;
+    target_coordinate_changed++ ;
+  }
+  if( lastDec != tel_eq->dec) {
+    lastDec = tel_eq->dec ;
+    target_coordinate_changed++ ;
+  }
+  if(target_coordinate_changed) {
+    logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_eq->ra  << " Dec " << tel_eq->dec << sendLog ;
+  }
   return Cupola::moveStart ();
 }
 
@@ -187,53 +174,40 @@ int Vermes::off ()
 void Vermes::valueChanged (Rts2Value * changed_value)
 {
   int res ;
-  if (changed_value == ssd650v_on_off)
-    {
-      if( ssd650v_on_off->getValueBool())
-	{
-	  logStream (MESSAGE_DEBUG) << "Vermes::valueChanged starting azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	  if(( res=motor_on()) != SSD650V_RUNNING )
-	    {
-	      logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	      motor_on_off_state= MOTOR_UNDEFINED ;
-	    }
-	  else
-	    {
-	      ssd650v_state->setValueString("motor running") ;
-	      motor_on_off_state= MOTOR_RUNNING ;
-	    }
-	}
-      else
-	{
-	  logStream (MESSAGE_DEBUG) << "Vermes::valueChanged stopping azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	  if(( res=motor_off()) !=  SSD650V_STOPPED)
-	    {
-	      logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	      motor_on_off_state= MOTOR_UNDEFINED ;
-	    }
-	  else
-	    {
-	      ssd650v_state->setValueString("motor stopped") ;
-	      motor_on_off_state= MOTOR_NOT_RUNNING ;
-	    }
-	}
-      return ;
+  if (changed_value == ssd650v_on_off) {
+    if( ssd650v_on_off->getValueBool()) {
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged starting azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+      if(( res=motor_on()) != SSD650V_RUNNING ) {
+	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	motor_on_off_state= MOTOR_UNDEFINED ;
+      } else {
+	ssd650v_state->setValueString("motor running") ;
+	motor_on_off_state= MOTOR_RUNNING ;
+      }
+    } else {
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged stopping azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+      if(( res=motor_off()) !=  SSD650V_STOPPED) {
+	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
+	motor_on_off_state= MOTOR_UNDEFINED ;
+      } else {
+	ssd650v_state->setValueString("motor stopped") ;
+	motor_on_off_state= MOTOR_NOT_RUNNING ;
+      }
     }
-  else if (changed_value == ssd650v_setpoint)
-    {
-      float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
+    return ;
+  } else if (changed_value == ssd650v_setpoint) {
+    float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
 
-      if( set_setpoint( setpoint)) 
-	{
-	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << sendLog ;
-	}
-      return ; // ask Petr what to do in general if something fails within ::valueChanged
+    if( set_setpoint( setpoint))  {
+      logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << sendLog ;
     }
+    return ; // ask Petr what to do in general if something fails within ::valueChanged
+  }
   Cupola::valueChanged (changed_value);
 }
 int Vermes::idle ()
 {
-	return Cupola::idle ();
+  return Cupola::idle ();
 }
 int Vermes::info ()
 {
@@ -243,23 +217,17 @@ int Vermes::info ()
 
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
 
-   if( motor_on_off_state== MOTOR_RUNNING)
-     {
-       ssd650v_on_off->setValueBool(true) ;
-       ssd650v_state->setValueString("motor running") ;
-     }
-   else if( motor_on_off_state== MOTOR_NOT_RUNNING)
-     {
-       ssd650v_on_off->setValueBool(false) ;
-       ssd650v_state->setValueString("motor stopped") ;
-     }
-   else 
-     {
-       ssd650v_state->setValueString("motor undefined state") ;
-     }
+  if( motor_on_off_state== MOTOR_RUNNING) {
+    ssd650v_on_off->setValueBool(true) ;
+    ssd650v_state->setValueString("motor running") ;
+  } else if( motor_on_off_state== MOTOR_NOT_RUNNING) {
+    ssd650v_on_off->setValueBool(false) ;
+    ssd650v_state->setValueString("motor stopped") ;
+  } else  {
+    ssd650v_state->setValueString("motor undefined state") ;
+  }
   ssd650v_setpoint->setValueDouble( (double) get_setpoint()) ;
 
-  // not Cupola::info() ?!?
   return Cupola::info ();
 }
 int Vermes::initValues ()
@@ -276,29 +244,22 @@ int Vermes::initValues ()
   obs= Cupola::getObserver() ;
 
   // barcode azimuth reader
-  if(!( ret= start_bcr_comm()))
-    {
-      register_pos_change_callback(position_update_callback);
-    }
-  else
-    {
-      logStream (MESSAGE_ERROR) << "Vermes::initValues could connect to barcode devices, exiting "<< sendLog ;
-      exit(1) ;
-    }
+  if(!( ret= start_bcr_comm())) {
+    register_pos_change_callback(position_update_callback);
+  } else {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues could connect to barcode devices, exiting "<< sendLog ;
+    exit(1) ;
+  }
   // ssd650v frequency inverter
-  if(connectDevice(SSD650V_CONNECT))
-    {
-      logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
-    }
-  if(( ret=motor_off()) != SSD650V_STOPPED )
-    {
-      fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
-      motor_on_off_state= MOTOR_UNDEFINED ;
-    }
-  else
-    {
-      motor_on_off_state= MOTOR_NOT_RUNNING ;
-    }
+  if(connectDevice(SSD650V_CONNECT)) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
+  }
+  if(( ret=motor_off()) != SSD650V_STOPPED ) {
+    fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
+    motor_on_off_state= MOTOR_UNDEFINED ;
+  } else {
+    motor_on_off_state= MOTOR_NOT_RUNNING ;
+  }
 
   // set initial tel_eq to HA=0
   double JD= ln_get_julian_from_sys ();

@@ -7,7 +7,7 @@ SUBDIRS = zelio
 
 EXTRA_DIST = 
 
-noinst_HEADERS = dome.h cupola.h ford.h vermes.h
+noinst_HEADERS = dome.h cupola.h ford.h vermes.h dome-target-az.h
 
 noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a librts2vermes.a
 
