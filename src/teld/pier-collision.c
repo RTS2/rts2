@@ -31,15 +31,11 @@
 #include <unistd.h>
 #include <libnova/libnova.h>
 
+#include "pier-collision.h"
+
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
-#define NO_COLLISION             0
-#define NO_DANGER                1
-#define COLLIDING                2
-#define WITHIN_DANGER_ZONE       3
-#define WITHIN_DANGER_ZONE_ABOVE 4
-#define WITHIN_DANGER_ZONE_BELOW 5
 
 double LDRAtoHA( double RA, double longitude) ;
 int    LDCollision( double RA, double dec, double lambda, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;

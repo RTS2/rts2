@@ -35,7 +35,8 @@
 #include "hms.h"
 #include "status.h"
 #include "../utils/rts2config.h"
-#include "clicupola.cpp"
+#include "clicupola.h"
+#include "pier-collision.h"
 
 #include <termios.h>
 // uncomment following line, if you want all tel_desc read logging (will
@@ -53,19 +54,8 @@
 #define DIR_WEST  'w'
 #define PORT_TIMEOUT  5
 
-#define MOTORS_ON 1
-#define MOTORS_OFF  -1
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-// wildi: go to dome-target-az.h
-  int pier_collision( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
-#ifdef __cplusplus
-}
-#endif
-
+#define IS_WEST 0
+#define IS_EAST 1
 
 namespace rts2teld
 {
@@ -518,11 +508,11 @@ LX200TEST::processOption (int in_opt)
 		case 'x':
 		  if( !( strcmp(optarg, "East")))
 		    {
-		      DECaxis_HAcoordinate->setValueInteger(1) ;// IS_EAST
+		      DECaxis_HAcoordinate->setValueInteger(IS_EAST) ;
 		    }
 		  else if( !( strcmp(optarg, "West")))
 		    {
-		       DECaxis_HAcoordinate->setValueInteger(-1) ;// IS_WEST
+		       DECaxis_HAcoordinate->setValueInteger(IS_WEST) ;
 		    }
 		  else
 		    {
@@ -711,33 +701,37 @@ LX200TEST::tel_slew_to (double ra, double dec)
   struct ln_equ_posn target_equ;
 
   tel_normalize (&ra, &dec);
-  // check if target position is one of NO_COLLISION, WITHIN_DANGER_ZONE_ABOVE WITHIN_DANGER_ZONE_BELOW, COLLINDING
   target_equ.ra= ra;
   target_equ.dec= dec ;
 
   observer.lng = telLongitude->getValueDouble ();
   observer.lat = telLatitude->getValueDouble ();
 
-  if(( ret= pier_collision( &target_equ, DECaxis_HAcoordinate->getValueInteger(), &observer)) != 0)
-    {
-      if( ret < 3)
-	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
-	}
-      else if( ret== 3) //COLLIDING
-	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " COLLIDING, NOT syncing cupola"  << sendLog;
-	}
-      else if( ret== 4) // UNDEFINED_DEC_AXIS_POSITION
-	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " no valid DEC axis angle "<< DECaxis_HAcoordinate->getValueInteger()<<", NOT syncing cupola"  << sendLog;
-	}
-      else
-	{
-	  logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to NOT slewing ra "<< ra << " target_equ.dec " << target_equ.dec << " invalid condition, NOT syncing cupola"  << sendLog;
-	}
+  if(( ret= DECaxis_HAcoordinate->getValueInteger()) == IS_WEST) {
+    ret= pier_collision( &target_equ, &observer) ;
+  } else if(( ret=DECaxis_HAcoordinate->getValueInteger()) == IS_EAST) {
+    //really target_equ.dec += 180. ;
+    struct ln_equ_posn t_equ;
+    t_equ.ra = target_equ.ra ;
+    t_equ.dec= target_equ.dec + 180. ;
+    ret= pier_collision( &t_equ, &observer) ;
+  } else {
+    logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to neither IS_WEST nor IS_EAST "<< dec  << sendLog;
+    return -1;
+  }
+  if(ret != NO_COLLISION) {
+    if( ret== COLLIDING) {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " COLLIDING, NOT syncing cupola"  << sendLog;
+    } else if( ret== WITHIN_DANGER_ZONE){
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " within DANGER zone, NOT syncing cupola"  << sendLog;
+    } else {
+      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " target_equ.dec " << target_equ.dec << " invalid condition, exiting"  << sendLog;
+      exit(1) ;
+    }
       return -1;
     }
+  logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to cleared geometry  slewing ra "<< target_equ.ra << " target_equ.dec " << dec  << sendLog;
+
 
   if (tel_write_ra (target_equ.ra) < 0 || tel_write_dec (target_equ.dec) < 0)
     return -1;
