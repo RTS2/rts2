@@ -31,6 +31,7 @@
 
 #include <libnova/libnova.h>
 #include "vermes.h"
+#include "dome-target-az.h"
 
 #define MOTOR_RUNNING      0
 #define MOTOR_NOT_RUNNING  1
@@ -43,7 +44,6 @@ int motor_on() ;
 int motor_off() ;
 int set_setpoint(float setpoint) ;
 void getSexComponents(double value, int *d, int *m, int *s) ;
-double dome_target_az( struct ln_equ_posn *tel_eq, int angle, struct ln_lnlat_posn *obs) ;
 
 extern int is_synced ; // ==SYNCED if target_az reched
 extern int motor_on_off_state ;
@@ -51,8 +51,16 @@ extern int barcodereader_state ;
 extern double barcodereader_az ;
 extern double barcodereader_dome_azimut_offset ; 
 extern double target_az ;
-extern struct ln_lnlat_posn *obs ;
-extern struct ln_equ_posn   *tel_eq ;
+extern struct ln_lnlat_posn obs_location ;
+extern struct ln_equ_posn   tel_equ ;
+
+const struct geometry obsvermes = {
+  -0.0684, // xd [m]
+  -0.1934, // zd [m]
+   0.338,  // rdec [m]
+   1.265   // rdome [m]
+} ;
+
 
 //It is not the fastest dome, one revolution in 5 minutes
 #define AngularSpeed 2. * M_PI/ 98. 
@@ -86,19 +94,19 @@ void *move_to_target_azimuth( void *value)
   while( 1==1)
     {
       target_coordinate_changed= 0 ;
-      if( lastRa != tel_eq->ra)
+      if( lastRa != tel_equ.ra)
 	{
-	  lastRa = tel_eq->ra ;
+	  lastRa = tel_equ.ra ;
 	  target_coordinate_changed++ ;
 	}
-      if( lastDec != tel_eq->dec)
+      if( lastDec != tel_equ.dec)
 	{
-	  lastDec = tel_eq->dec ;
+	  lastDec = tel_equ.dec ;
 	  target_coordinate_changed++ ;
 	}
       if(target_coordinate_changed)
 	{
-	  fprintf( stderr, "move_to_target_azimuth: target_coordinate_changed, now %8.5f, %8.5f\n", tel_eq->ra, tel_eq->dec) ;
+	  fprintf( stderr, "move_to_target_azimuth: target_coordinate_changed, now %8.5f, %8.5f\n", tel_equ.ra, tel_equ.dec) ;
 	  double HA, HA_h ;
 	  double RA, RA_h ;
 	  char RA_str[32] ;
@@ -106,10 +114,10 @@ void *move_to_target_azimuth( void *value)
 	  int h, m, s ;
 
 	  double JD  = ln_get_julian_from_sys ();
-	  double lng = obs->lng;
+	  double lng = obs_location.lng;
 	  double local_sidereal_time= ln_get_mean_sidereal_time( JD) * 15. + lng;  // longitude positive to the East
 
-	  RA  = tel_eq->ra ;
+	  RA  = tel_equ.ra ;
 	  RA_h= RA/15. ;
 
 	  getSexComponents( RA_h, &h, &m, &s) ;
@@ -123,7 +131,7 @@ void *move_to_target_azimuth( void *value)
 	  fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
 	}
       //if( motor_on_off_state= MOTOR_RUNNING)
-      target_az= dome_target_az( tel_eq, -1,  obs) ; // wildi ToDo: DecAxis!
+      target_az= dome_target_az( tel_equ, obs_location,  obsvermes) ;
       curAzimutDifference=  barcodereader_az- target_az;
       // fmod is here just in case if there is something out of bounds
       curAzimutDifference= fmod( curAzimutDifference, 360.) ;

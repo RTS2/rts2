@@ -27,17 +27,19 @@
 #include <math.h>
 #include <unistd.h>
 #include <libnova/libnova.h>
+#include "dome-target-az.h"
 
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
 
-#define BELOW -1
+#define ABOVE_HORIZON  0
+#define BELOW_HORIZON -1
 
 
 double LDRAtoHA( double RA, double longitude) ;
-int    LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) ;
-int    LDRAtoStarAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) ;
-int    LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
+int    LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) ;
+int    LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) ;
+int    LDHAtoDomeAZ( double latitude, double HA, double dec, struct geometry obs, double *Az, double *ZD) ;
 int    LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD) ;
 double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
 double LDStarOnDomeTY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd) ;
@@ -45,56 +47,39 @@ double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double R
 int    LDCheckHorizon( double HA, double dec, double phi) ;
 
 
-double DomeRadius ;
-
-struct mount {
-  double xd ;
-  double zd ;
-  double rdec ;
-  
-} mt ;
-
-struct telescope {
-  double radius ;
-  double rear_length ;
-  
-} tel ;
-
 /* the main entry function */
-/* longitude positive to the West */
+/* longitude positive to the East */
 /* West: DECaxis== HA + M_PI/2  RA=RA, DEC=DEC  */
 /* East: DECaxis== HA - M_PI/2, RA=RA, DEC= DEC + M_PI */
-double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
+double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_location, struct geometry obs)
 {
   double ret ;
   double target_az ;
   double target_ZD ;
   struct ln_equ_posn tmp_equ ;
+  
+  if(( tel_equ.dec > 90.) && (  tel_equ.dec <= 270.)) { // EAST: DECaxis==HA - M_PI/2
 
-  DomeRadius= 1.265 ; // Obs. Vermes specific
-  
-  mt.xd= -0.0684;
-  mt.zd= -0.1934;
-  mt.rdec= 0.338;
-  
-  tel.radius= 0.123;
-  tel.rear_length= 0.8;
-  
-  if(( tel_equ->dec > 90.) && (  tel_equ->dec <= 270.)) { // EAST: DECaxis==HA - M_PI/2
-
-    tmp_equ.ra =  tel_equ->ra - 180. ;
-    tmp_equ.dec= -tel_equ->dec  ;
+    tmp_equ.ra =  tel_equ.ra - 180. ;
+    tmp_equ.dec= -tel_equ.dec  ;
   } else {// WEST: DECaxis==HA + M_PI/2
     
-    tmp_equ.ra =  tel_equ->ra ;
-    tmp_equ.dec=  tel_equ->dec  ;
+    tmp_equ.ra =  tel_equ.ra ;
+    tmp_equ.dec=  tel_equ.dec  ;
   }
-  ret= LDRAtoDomeAZ( tmp_equ.ra/180.*M_PI, tmp_equ.dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &target_az, &target_ZD) ;
+  tmp_equ.ra  *= M_PI/180. ;
+  tmp_equ.dec *= M_PI/180. ;
+
+  obs_location.lng *= M_PI/180. ;
+  obs_location.lat *= M_PI/180. ;
+
+
+  ret= LDRAtoDomeAZ( tmp_equ, obs_location, obs, &target_az, &target_ZD) ;
 
   // This call is for a quick check
-  //  double star_az ;
-  //  double star_ZD ;
-  //  ret= LDRAtoStarAZ( tmp_equ.ra/180.*M_PI, tmp_equ.dec/180.*M_PI, obs->lng/180.*M_PI, obs->lat/180.*M_PI, &star_az, &star_ZD) ;
+  // double star_az ;
+  // double star_ZD ;
+  // ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
 
   return target_az ;
 }
@@ -152,26 +137,26 @@ double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double R
   return sqrt( pow(Rdome,2.)- (pow(LDStarOnDomeTX(HA, dec, phi, Rdome, Rdec, xd , zd),2.) + pow(LDStarOnDomeTY(HA, dec, phi, Rdome, Rdec, xd , zd), 2.))) ;
 }
 
-int LDRAtoDomeAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
+int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
 {
     int res ;
 
     double HA ;
 
-    HA= LDRAtoHA( RA, longitude) ;
+    HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
 
-    res= LDHAtoDomeAZ( latitude, HA, dec, Az, ZD) ;
+    res= LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
     
     return 0 ;
 }
-int LDRAtoStarAZ( double RA, double dec, double longitude, double latitude, double *Az, double *ZD) 
+int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
 {
     int res ;
     double HA ;
 
-    HA= LDRAtoHA( RA, longitude) ;
+    HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
 
-    res= LDHAtoStarAZ( latitude, HA, dec, Az, ZD) ;
+    res= LDHAtoStarAZ( obs_location.lat, HA, tmp_equ.dec, Az, ZD) ;
     
     return 0 ;
 }
@@ -189,16 +174,16 @@ double LDRAtoHA( double RA, double longitude)
 
     return HA ;
 } 
-int LDHAtoDomeAZ( double latitude, double HA, double dec, double *Az, double *ZD)
+int LDHAtoDomeAZ( double latitude, double HA, double dec, struct geometry obs, double *Az, double *ZD)
 {
-  *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd), LDStarOnDomeTX( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)) ;
+  *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd), LDStarOnDomeTX( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd)) ;
 
   *Az= fmodl( *Az + M_PI , 2 *M_PI) ;
   *Az= *Az * 180./ M_PI;
 
-  *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, DomeRadius,  mt.rdec, mt.xd, mt.zd)/DomeRadius) ;
+  *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd)/obs.rdome) ;
   *ZD= *ZD * 180./ M_PI;
-  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, DomeRadius) ;
+  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, obs.rdome) ;
 
   return 0 ;
 }
@@ -212,7 +197,7 @@ int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD
   *Az= *Az * 180./ M_PI;
 
   *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, 1.,  0., 0., 0.)) ;
-  if(( res=LDCheckHorizon( HA, dec, latitude))==BELOW)
+  if(( res=LDCheckHorizon( HA, dec, latitude))==BELOW_HORIZON)
     {
       *ZD= 180. - *ZD * 180./ M_PI;
     } 
@@ -232,10 +217,10 @@ int LDCheckHorizon( double HA, double dec, double latitude)
 
   if( sinh_value >= 0.)
     {
-      return 0 ;
+      return ABOVE_HORIZON ;
     }
   else
     {      
-      return BELOW ;
+      return BELOW_HORIZON ;
     }
 }

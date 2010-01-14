@@ -24,16 +24,20 @@
 
 #ifndef  __RTS_DOME_TARGET_AZIMUTH__
 #define __RTS_DOME_TARGET_AZIMUTH__
+
+struct geometry {
+  double xd ;
+  double zd ;
+  double rdec ;
+  double rdome ;
+}  ;
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-double dome_target_az( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs) ;
+double dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct geometry obs) ;
 #ifdef __cplusplus
 }
 #endif
-
-
 #endif //  __RTS_DOME_TARGET_AZIMUTH__
-
-

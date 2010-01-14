@@ -40,9 +40,9 @@ double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
 double target_az ;
 
-struct ln_lnlat_posn *obs ;
-struct ln_equ_posn    tel_eq_m ;
-struct ln_equ_posn   *tel_eq= &tel_eq_m ;
+struct ln_lnlat_posn obs_location ;
+struct ln_equ_posn   tel_equ ;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -123,20 +123,20 @@ int Vermes::moveStart ()
   int target_coordinate_changed= 0 ;
   static double lastRa=-9999., lastDec=-9999. ;
 
-  tel_eq->ra= getTargetRa() ;
-  tel_eq->dec= getTargetDec() ;
+  tel_equ.ra= getTargetRa() ;
+  tel_equ.dec= getTargetDec() ;
   // thread compare_az take care of the calculations
 
-  if( lastRa != tel_eq->ra) {
-    lastRa = tel_eq->ra ;
+  if( lastRa != tel_equ.ra) {
+    lastRa = tel_equ.ra ;
     target_coordinate_changed++ ;
   }
-  if( lastDec != tel_eq->dec) {
-    lastDec = tel_eq->dec ;
+  if( lastDec != tel_equ.dec) {
+    lastDec = tel_equ.dec ;
     target_coordinate_changed++ ;
   }
   if(target_coordinate_changed) {
-    logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_eq->ra  << " Dec " << tel_eq->dec << sendLog ;
+    logStream (MESSAGE_DEBUG) << "Vermes::moveStart new RA " << tel_equ.ra  << " Dec " << tel_equ.dec << sendLog ;
   }
   return Cupola::moveStart ();
 }
@@ -241,7 +241,9 @@ int Vermes::initValues ()
   if (ret)
     return -1;
 
-  obs= Cupola::getObserver() ;
+  struct ln_lnlat_posn   *obs_loc_tmp= Cupola::getObserver() ;
+  obs_location.lat= obs_loc_tmp->lat;
+  obs_location.lng= obs_loc_tmp->lng;
 
   // barcode azimuth reader
   if(!( ret= start_bcr_comm())) {
@@ -263,8 +265,8 @@ int Vermes::initValues ()
 
   // set initial tel_eq to HA=0
   double JD= ln_get_julian_from_sys ();
-  tel_eq->ra= ln_get_mean_sidereal_time( JD) * 15. + obs->lng;
-  tel_eq->dec= 0. ;
+  tel_equ.ra= ln_get_mean_sidereal_time( JD) * 15. + obs_location.lng;
+  tel_equ.dec= 0. ;
   // thread to compare (target - current) azimuth and rotate the dome
   int *value ;
   ret = pthread_create( &thread_0, NULL, move_to_target_azimuth, value) ;
