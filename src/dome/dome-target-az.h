@@ -1,4 +1,4 @@
-/* Header file pier telescope collision.  */
+/* Header file idome target azimuth calculation.  */
 /* Copyright (C) 2010, Markus Wildi */
 
 /* The transformations are based on the paper Matrix Method for  */
