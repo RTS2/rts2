@@ -19,7 +19,7 @@ librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
 
 LDADD = librts2teld.a ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
-AM_CXXFLAGS=@NOVA_CFLAGS@/
+AM_CXXFLAGS=@NOVA_CFLAGS@
 
 rts2_teld_gemini_SOURCES = gemini.cpp hms.c
 
