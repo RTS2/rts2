@@ -46,12 +46,6 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier) ;
 
-struct Decaxis_plus_minus {
-  int east ;
-  int west ;
-  
-} dapm ;
-
 struct pier {
   double radius ;
   double wedge ;

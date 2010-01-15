@@ -109,7 +109,6 @@ namespace rts2teld
     int setAPUTCOffset( double hours) ;
     int APSyncCMR( char *matchedObject) ;
     int selectAPMoveToRate( int moveToRate) ;
-    int selectAPSlewRate( int slewRate) ;
     int selectAPTrackingMode( int trackMode) ;
     int tel_read_declination_axis() ;
     int tel_check_declination_axis() ;
@@ -407,7 +406,6 @@ APGTO::tel_read_hms (double *hmsptr, const char *command)
     logStream (MESSAGE_ERROR) << "APGTO::tel_read_hms  hmstod Error :"<< errno << "END"<<sendLog;
     return -1;
   }
-  //  logStream (MESSAGE_DEBUG) << "APGTO::tel_read_hms " << command << " SUCCESS wbuf>"<< wbuf << "<END"<< sendLog;
   return 0;
 }
 /*!
@@ -539,7 +537,6 @@ APGTO::getAPUTCOffset()
   logStream (MESSAGE_DEBUG) <<"APGTO::getAPUTCOffset received string >" << temp_string << "<END offset is " <<  APutc_offset->getValueDouble() <<sendLog;
   return 0;
 }
-// wildi: not yet in in use
 /*!
  * Writes to APGTO Az
  *
@@ -548,6 +545,7 @@ APGTO::getAPUTCOffset()
  *
  * @return -1 on failure, count otherwise
  */
+// wildi: not yet in in use
 int 
 APGTO::setAPObjectAZ(double az)
 {
@@ -611,11 +609,11 @@ APGTO::setAPUTCOffset(double hours)
   logStream (MESSAGE_DEBUG) <<"APGTO::setAPUTCOffset >" << temp_string << "<END"<< sendLog ;
 
   if(( ret= tel_write( temp_string, sizeof( temp_string ))) < 0) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLongitude writing failed." << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset writing failed." << sendLog;
     return -1 ;
   }
   if(( ret= tel_read( retstr, 1)) != 1) {
-    logStream (MESSAGE_ERROR) << "APGTO::setAPSiteLongitude reading failed." << sendLog;
+    logStream (MESSAGE_ERROR) << "APGTO::setAPUTCOffset reading failed." << sendLog;
     return -1 ;
   }
   return 0;
@@ -817,7 +815,6 @@ APGTO::setAPLocalTime(int x, int y, int z)
  *
  * @return -1 on failure, 0 otherwise
  */
-
 int 
 APGTO::setCalenderDate(int dd, int mm, int yy)
 {
@@ -1567,37 +1564,54 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 
   if (conn->isCommand ("abort")) {
     if((ret = setAPMotionStop()) < 0) {
-      logStream (MESSAGE_ERROR) << "stop motion #:Q# failed, SWITCH the mount"<< sendLog;
+      logStream (MESSAGE_ERROR) << "stop motion #:Q# failed, SWITCH the mount OFF"<< sendLog;
       return -1;
     }
     logStream (MESSAGE_DEBUG) << "APGTO::commandAuthorized stopped any motion #:Q#" << sendLog;
     if ( selectAPTrackingMode(3) < 0 ) /* tracking mode 3 = zero */ {
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setting tracking mode ZERO." << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setting tracking mode ZERO failed." << sendLog;
       return -1;
     }
     return 0;
   } else if (conn->isCommand ("track")) {
     if ( selectAPTrackingMode(2) < 0 ) { /* tracking mode 2 = sidereal */
-      logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect setting tracking mode ZERO." << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized set track mode sidereal failed." << sendLog;
       return -1;
     }
     return 0 ;
   } else if (conn->isCommand ("rot")) { // move is used for a slew to a position
     char *direction ;
     if (conn->paramNextStringNull (&direction) || !conn->paramEnd ()) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized direction failed" << sendLog;
-      return -1;
+      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized rot failed" << sendLog;
+      return -2;
     }
     if( startDir( direction)){
-      logStream (MESSAGE_ERROR) <<"APGTO:::commandAuthorized startDir( direction) failed"<< sendLog;
+      logStream (MESSAGE_ERROR) <<"APGTO::commandAuthorized startDir( direction) failed"<< sendLog;
       return -1;
     }
     return 0 ;
-  } else if (conn->isCommand ("sync")) {
+  } else if ((conn->isCommand ("sync"))||(conn->isCommand ("sync_sg"))) {
     double sync_ra, sync_dec ;
-    if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
-      logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
-      return -2;
+    if(conn->isCommand ("sync")){
+      if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
+	return -2;
+      }
+    } else if (conn->isCommand ("sync_sg")) {
+      char *sync_ra_str;
+      char *sync_dec_str;
+      if (conn->paramNextStringNull (&sync_ra_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg paramNextString ra or dec failed" << sendLog;
+	return -2;
+      }
+      if(( ret= f_scansexa ( sync_ra_str, &sync_ra))== -1) {
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing ra failed" << sendLog;
+	return -1;
+      }
+      if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
+	return -1;
+      }
     }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;
@@ -1608,7 +1622,7 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       return -1;
     }
 
-    logStream (MESSAGE_DEBUG) << " APGTO::commandgAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
+    logStream (MESSAGE_DEBUG) << "APGTO::commandAuthorized sync on ra " << sync_ra << " dec " << sync_dec << sendLog;
     return 0 ;
   }
   return Telescope::commandAuthorized (conn);
@@ -1713,7 +1727,6 @@ APGTO::setBasicData()
     return -1;
   }
   APmove_rate->setValueInteger(1);
-
 
   if(! ( strcmp(initialization, "cold"))) {
     logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing a cold start" << sendLog;
@@ -1863,7 +1876,7 @@ APGTO::initValues ()
   if(( ret= tel_read_declination_axis()) != 0)
     return -1 ;
 
-  // wildi: ToDo this definition has to be confirmed by petr!
+  // This definition has to been confirmed by petr
   // West: HA + Pi/2 = direction where the declination axis points
   // East: HA - Pi/2
   if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
