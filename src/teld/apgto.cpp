@@ -323,12 +323,12 @@ APGTO::tel_write_read (const char *wbuf, int wcount, char *rbuf, int rcount)
     buf = (char *) malloc (rcount + 1);
     memcpy (buf, rbuf, rcount);
     buf[rcount] = 0;
-    logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read " <<
-      tmp_rcount << " byte(s),  buffer >" << buf << "<END" << sendLog;
+    //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read " <<
+    //      tmp_rcount << " byte(s),  buffer >" << buf << "<END" << sendLog;
     free (buf);
   } else {
-    logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read returns " <<
-      tmp_rcount << sendLog;
+    //logStream (MESSAGE_DEBUG) << "APGTO::tel_write_read read returns " <<
+    //  tmp_rcount << sendLog;
   }
   return tmp_rcount;
 }
@@ -1381,7 +1381,7 @@ APGTO::setTo (double ra, double dec)
   //          (there are 5 spaces between “Coordinates” and “matched”, and 8 trailing spaces before the “#”, 
   //          the total response length is 32 character plus the “#”.	  
 
-  logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SetTo (SYNC)-----------------------------------------"<< sendLog;
+  logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# doing SYNC"<< sendLog;
 
   if (tel_write_read_hash ("#:CM#", 5, readback, 100) < 0) {
     logStream (MESSAGE_ERROR) <<"APGTO::setTo #:CM# failed"<< sendLog;
@@ -1590,13 +1590,22 @@ APGTO::commandAuthorized (Rts2Conn *conn)
       return -1;
     }
     return 0 ;
-  } else if ((conn->isCommand ("sync"))||(conn->isCommand ("sync_sg"))) {
+  } else if ((conn->isCommand ("sync"))||(conn->isCommand ("sync_sg"))||(conn->isCommand ("sync_ha"))||(conn->isCommand ("sync_ha_sg"))) {
     double sync_ra, sync_dec ;
+    double sync_ha ;
     if(conn->isCommand ("sync")){
       if (conn->paramNextDouble (&sync_ra) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
 	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync paramNextDouble ra or dec failed" << sendLog;
 	return -2;
       }
+    } else if(conn->isCommand ("sync_ha")){
+      if (conn->paramNextDouble (&sync_ha) || conn->paramNextDouble (&sync_dec) || !conn->paramEnd ()) { 
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha paramNextDouble ra or dec failed" << sendLog;
+	return -2;
+      }
+      double JD= ln_get_julian_from_sys ();
+      sync_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - sync_ha; // RA is a right, HA left system
+
     } else if (conn->isCommand ("sync_sg")) {
       char *sync_ra_str;
       char *sync_dec_str;
@@ -1608,10 +1617,29 @@ APGTO::commandAuthorized (Rts2Conn *conn)
 	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing ra failed" << sendLog;
 	return -1;
       }
+      sync_ra *= 15. ;
       if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
 	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_sg parsing dec failed" << sendLog;
 	return -1;
       }
+    } else if (conn->isCommand ("sync_ha_sg")) {
+      char *sync_ha_str;
+      char *sync_dec_str;
+      if (conn->paramNextStringNull (&sync_ha_str) || conn->paramNextStringNull (&sync_dec_str) || !conn->paramEnd ()) { 
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg paramNextString ra or dec failed" << sendLog;
+	return -2;
+      }
+      if(( ret= f_scansexa ( sync_ha_str, &sync_ha))== -1) {
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing ra failed" << sendLog;
+	return -1;
+      }
+      sync_ha *= 15. ;
+      if(( ret= f_scansexa ( sync_dec_str, &sync_dec))== -1) {
+	logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized sync_ha_sg parsing dec failed" << sendLog;
+	return -1;
+      }
+      double JD= ln_get_julian_from_sys ();
+      sync_ra= ln_get_mean_sidereal_time( JD) * 15. + telLongitude->getValueDouble () - sync_ha; // RA is a right, HA left system
     }
     if(( ret= setTo(sync_ra, sync_dec)) !=0) {
       logStream (MESSAGE_ERROR) << "APGTO::commandAuthorized setTo failed" << sendLog;

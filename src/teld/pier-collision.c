@@ -159,22 +159,22 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   if( isnormal(tpp1)){
     czp1= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp1) ;
   } else {
-    fprintf( stderr, "LDCollision tpp1==nan\n") ;
+    //fprintf( stderr, "LDCollision tpp1==nan\n") ;
   }
   if( isnormal(tpm1)){ 
     czm1= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm1) ;
   } else {
-    fprintf( stderr, "LDCollision tpm1==nan\n") ;
+    //fprintf( stderr, "LDCollision tpm1==nan\n") ;
   }
   if( isnormal(tpp3)) {
-    czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
+    //czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
   } else {
     fprintf( stderr, "LDCollision tpp3==nan\n") ;
   }
   if( isnormal(tpm3)) {
-    czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
+    //czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
   }  else {
-    fprintf( stderr, "LDCollision tpm3==nan\n") ;
+    //fprintf( stderr, "LDCollision tpm3==nan\n") ;
   }
 
   if(  isnormal(czp1)) {
