@@ -57,7 +57,7 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   double target_az ;
   double target_ZD ;
   struct ln_equ_posn tmp_equ ;
-  
+
   if(( tel_equ.dec > 90.) && (  tel_equ.dec <= 270.)) { // EAST: DECaxis==HA - M_PI/2
 
     tmp_equ.ra =  tel_equ.ra - 180. ;
@@ -73,13 +73,12 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
   obs_location.lng *= M_PI/180. ;
   obs_location.lat *= M_PI/180. ;
 
-
   ret= LDRAtoDomeAZ( tmp_equ, obs_location, obs, &target_az, &target_ZD) ;
 
   // This call is for a quick check
-  // double star_az ;
-  // double star_ZD ;
-  // ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
+  //double star_az ;
+  //double star_ZD ;
+  //ret= LDRAtoStarAZ( tmp_equ, obs_location, obs, &star_az, &star_ZD) ;
 
   return target_az ;
 }
@@ -97,39 +96,38 @@ double dome_target_az( struct ln_equ_posn tel_equ, struct ln_lnlat_posn obs_loca
 
 double LDStarOnDomeTX( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-
-  return  xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
-   zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) - Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) + 
+    return  xd*pow(cos(HA),2)*pow(cos(dec),2)*pow(cos(phi),2) + xd*pow(cos(dec),2)*pow(sin(HA),2) + 
+   zd*cos(HA)*cos(dec)*pow(cos(phi),2)*sin(dec) + Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec) - 
    Rdec*cos(HA)*cos(dec)*pow(cos(phi),3)*sin(HA)*sin(dec) - 
-   zd*pow(cos(HA),2)*pow(cos(dec),2)*cos(phi)*sin(phi) + 
-   Rdec*pow(cos(HA),2)*pow(cos(dec),2)*sin(HA)*sin(phi) + 
+   zd*pow(cos(HA),2)*pow(cos(dec),2)*cos(phi)*sin(phi) - 
+   Rdec*pow(cos(HA),2)*pow(cos(dec),2)*sin(HA)*sin(phi) - 
    Rdec*pow(cos(dec),2)*pow(sin(HA),3)*sin(phi) + 2*xd*cos(HA)*cos(dec)*cos(phi)*sin(dec)*sin(phi) + 
-   zd*cos(phi)*pow(sin(dec),2)*sin(phi) + Rdec*pow(cos(phi),2)*sin(HA)*pow(sin(dec),2)*sin(phi) - 
-   zd*cos(HA)*cos(dec)*sin(dec)*pow(sin(phi),2) + 
+   zd*cos(phi)*pow(sin(dec),2)*sin(phi) - Rdec*pow(cos(phi),2)*sin(HA)*pow(sin(dec),2)*sin(phi) - 
+   zd*cos(HA)*cos(dec)*sin(dec)*pow(sin(phi),2) - 
    Rdec*cos(HA)*cos(dec)*cos(phi)*sin(HA)*sin(dec)*pow(sin(phi),2) + 
-   xd*pow(sin(dec),2)*pow(sin(phi),2) + Rdec*sin(HA)*pow(sin(dec),2)*pow(sin(phi),3) - 
-   (cos(phi)*sin(dec)*sqrt(-4*(pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) + 
-           2*Rdec*zd*cos(phi)*sin(HA) + 2*Rdec*xd*sin(HA)*sin(phi)) + 
+   xd*pow(sin(dec),2)*pow(sin(phi),2) - Rdec*sin(HA)*pow(sin(dec),2)*pow(sin(phi),3) - 
+   (cos(phi)*sin(dec)*sqrt(-4*(pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) - 
+           2*Rdec*zd*cos(phi)*sin(HA) - 2*Rdec*xd*sin(HA)*sin(phi)) + 
         4*pow(cos(HA)*cos(dec)*(zd*cos(phi) + xd*sin(phi)) + sin(dec)*(-(xd*cos(phi)) + zd*sin(phi)),2)))/
     2. + (cos(HA)*cos(dec)*sin(phi)*sqrt(-4*
-         (pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) + 
-           2*Rdec*zd*cos(phi)*sin(HA) + 2*Rdec*xd*sin(HA)*sin(phi)) + 
+         (pow(Rdec,2) - pow(Rdome,2) + pow(xd,2) + pow(zd,2) - 
+           2*Rdec*zd*cos(phi)*sin(HA) - 2*Rdec*xd*sin(HA)*sin(phi)) + 
         4*pow(cos(HA)*cos(dec)*(zd*cos(phi) + xd*sin(phi)) + sin(dec)*(-(xd*cos(phi)) + zd*sin(phi)),2)))/
     2.;
 }
 
 double LDStarOnDomeTY( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
 {
-  return  Rdec*pow(cos(HA),3)*pow(cos(dec),2) + 
-   cos(HA)*(Rdec*pow(sin(dec),2) + pow(cos(dec),2)*sin(HA)*
-       (zd*cos(phi) + Rdec*sin(HA) + xd*sin(phi))) - 
+  return -(Rdec*pow(cos(HA),3)*pow(cos(dec),2)) + 
+   cos(HA)*(-(Rdec*pow(sin(dec),2)) + pow(cos(dec),2)*sin(HA)*
+       (zd*cos(phi) - Rdec*sin(HA) + xd*sin(phi))) - 
    cos(dec)*sin(HA)*(xd*cos(phi)*sin(dec) - zd*sin(dec)*sin(phi) + 
       sqrt(-pow(Rdec,2) + pow(Rdome,2) - pow(xd,2) - pow(zd,2) + 
-        pow(xd,2)*pow(cos(phi),2)*pow(sin(dec),2) - 2*Rdec*xd*sin(HA)*sin(phi) + 
+        pow(xd,2)*pow(cos(phi),2)*pow(sin(dec),2) + 2*Rdec*xd*sin(HA)*sin(phi) + 
         pow(zd,2)*pow(sin(dec),2)*pow(sin(phi),2) + 
-        pow(cos(HA),2)*pow(cos(dec),2)*pow(zd*cos(phi) + xd*sin(phi),2) - 
-        2*zd*cos(phi)*(Rdec*sin(HA) + xd*pow(sin(dec),2)*sin(phi)) - 
-        (cos(HA)*sin(2*dec)*(2*xd*zd*cos(2*phi) + (pow(xd,2) - pow(zd,2))*sin(2*phi)))/2.)) ;
+        pow(cos(HA),2)*pow(cos(dec),2)*pow(zd*cos(phi) + xd*sin(phi),2) + 
+        2*zd*cos(phi)*(Rdec*sin(HA) - xd*pow(sin(dec),2)*sin(phi)) - 
+        (cos(HA)*sin(2*dec)*(2*xd*zd*cos(2*phi) + (pow(xd,2) - pow(zd,2))*sin(2*phi)))/2.));
 }
 
 double LDStarOnDomeZ( double HA, double dec, double phi, double Rdome,  double Rdec, double xd , double zd)
@@ -146,7 +144,6 @@ int LDRAtoDomeAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location,
     HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
 
     res= LDHAtoDomeAZ( obs_location.lat, HA, tmp_equ.dec, obs, Az, ZD) ;
-    
     return 0 ;
 }
 int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location, struct geometry obs, double *Az, double *ZD) 
@@ -155,7 +152,7 @@ int LDRAtoStarAZ( struct ln_equ_posn tmp_equ, struct ln_lnlat_posn obs_location,
     double HA ;
 
     HA= LDRAtoHA( tmp_equ.ra, obs_location.lng) ;
-
+    
     res= LDHAtoStarAZ( obs_location.lat, HA, tmp_equ.dec, Az, ZD) ;
     
     return 0 ;
@@ -183,14 +180,14 @@ int LDHAtoDomeAZ( double latitude, double HA, double dec, struct geometry obs, d
 
   *ZD= acos( LDStarOnDomeZ( HA, dec, latitude, obs.rdome,  obs.rdec, obs.xd, obs.zd)/obs.rdome) ;
   *ZD= *ZD * 180./ M_PI;
-  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, obs.rdome) ;
+  //fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, obs.rdome) ;
 
   return 0 ;
 }
 int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD)
 {
   int res ;
-  
+
   *Az= -atan2( LDStarOnDomeTY( HA, dec, latitude, 1.,  0., 0., 0.), LDStarOnDomeTX( HA, dec, latitude, 1.,  0., 0., 0.)) ;
 
   *Az= fmodl( *Az + M_PI , 2 *M_PI) ;
@@ -205,7 +202,7 @@ int LDHAtoStarAZ( double latitude, double HA, double dec, double *Az, double *ZD
     {
       *ZD= *ZD * 180./ M_PI;
     }
-  fprintf( stderr, "LDHAtoDomeAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, 1.) ;
+  //fprintf( stderr, "LDHAtoStarAZ  Az, ZD, radius %+010.5f, %+010.5f, %+010.5f\n", *Az, *ZD, 1.) ;
 
   return 0 ;
 }

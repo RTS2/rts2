@@ -224,10 +224,12 @@ void *move_to_target_azimuth( void *value)
 	{
 	  is_synced= NOT_SYNCED ;
 	}
-      fprintf(stderr, "Sleeping---a-d:%5.4f-- s:%6.3f, b:%5.3f, t:%5.6f, b-t:%6.4f, curd:%6.4f\n", \
+      if( motor_on_off_state== MOTOR_RUNNING) {
+	fprintf(stderr, "Sleeping---a-d:%5.4f-- s:%6.3f, b:%5.3f, t:%5.6f, b-t:%6.4f, curd:%6.4f\n", \
 	      180./M_PI*limit,						\
 	      curSetPoint,						\
 	      barcodereader_az, target_az, (barcodereader_az- target_az), curAzimutDifference) ;
+      }
       usleep(POLLMICROS) ;
     }
   return NULL ;

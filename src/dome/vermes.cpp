@@ -143,7 +143,7 @@ int Vermes::moveStart ()
 
 double Vermes::getSplitWidth (double alt)
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::getSplitWidth returning 1" << sendLog ;
+  //  logStream (MESSAGE_DEBUG) << "Vermes::getSplitWidth returning -1" << sendLog ;
   return -1;
 }
 
