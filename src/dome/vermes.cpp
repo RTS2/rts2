@@ -26,15 +26,10 @@
 #include "vermes.h" 
 #include "dome-target-az.h"
 #include "barcodereader_vermes.h"
-#define MOTOR_RUNNING      0
-#define MOTOR_NOT_RUNNING  1
-#define MOTOR_UNDEFINED    2
 
-#define NOT_SYNCED         0 
-#define SYNCED             1
-
-int is_synced         = NOT_SYNCED ;   // ==SYNCED if target_az reached
-int motor_on_off_state= MOTOR_RUNNING ;
+int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
+int cupola_tracking_state= TRACKING_DISABLED ; 
+int motor_on_off_state   = MOTOR_RUNNING ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
@@ -76,6 +71,7 @@ namespace rts2dome
     Rts2ValueString  *ssd650v_state ;
     Rts2ValueBool    *ssd650v_on_off ;
     Rts2ValueDouble  *ssd650v_setpoint ;
+    Rts2ValueBool    *cupola_tracking ;
 
     void parkCupola ();
   protected:
@@ -196,12 +192,21 @@ void Vermes::valueChanged (Rts2Value * changed_value)
     }
     return ;
   } else if (changed_value == ssd650v_setpoint) {
-    float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
 
+    float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
     if( set_setpoint( setpoint))  {
       logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << sendLog ;
     }
     return ; // ask Petr what to do in general if something fails within ::valueChanged
+  } else   if (changed_value == cupola_tracking) {
+    if( cupola_tracking->getValueBool()) {
+      cupola_tracking_state= TRACKING_ENABLED ;
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts tracking the telescope"<< sendLog ;
+    } else {
+      cupola_tracking_state= TRACKING_DISABLED ;
+      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola tracking stoped"<< sendLog ;
+    }
+    return ;
   }
   Cupola::valueChanged (changed_value);
 }
@@ -214,8 +219,13 @@ int Vermes::info ()
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
   setCurrentAz (barcodereader_az);
   setTargetAz(target_az) ;
-
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
+
+  if( cupola_tracking_state == TRACKING_ENABLED) {
+    cupola_tracking->setValueBool(true) ;
+  } else if( motor_on_off_state== MOTOR_NOT_RUNNING) {
+    cupola_tracking->setValueBool(false) ;
+  }
 
   if( motor_on_off_state== MOTOR_RUNNING) {
     ssd650v_on_off->setValueBool(true) ;
@@ -275,11 +285,12 @@ int Vermes::initValues ()
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
 {
   // since this driver is Obs. Vermes specific no options are really required
-  createValue (azimut_difference,   "AZdiff",     "target - actual azimuth reading", false, RTS2_DT_DEGREES  );
-  createValue (barcode_reader_state,"BCRstate",   "state of the barcodereader value CUP_AZ (0=valid, 1=invalid)", false);
-  createValue (ssd650v_state,       "SSDstate",   "status of the ssd650v inverter ", false);
-  createValue (ssd650v_on_off,      "SSDswitch",  "(true=running, false=not running)", false, RTS2_VALUE_WRITABLE);
-  createValue (ssd650v_setpoint,    "SSDsetpoint","ssd650v setpoint", false, RTS2_VALUE_WRITABLE);
+  createValue (azimut_difference,   "AZdiff",          "target - actual azimuth reading",    false, RTS2_DT_DEGREES  );
+  createValue (barcode_reader_state,"BCRstate",        "state of the barcodereader value CUP_AZ (0=valid, 1=invalid)", false);
+  createValue (ssd650v_state,       "SSDstate",        "status of the ssd650v inverter ",    false);
+  createValue (ssd650v_on_off,      "SSDmotor_switch", "(true=on, false=off running)",       false, RTS2_VALUE_WRITABLE);
+  createValue (ssd650v_setpoint,    "SSDsetpoint",     "ssd650v setpoint",                   false, RTS2_VALUE_WRITABLE);
+  createValue (cupola_tracking,     "Tracking",        "true=tracking, false=not tracking ", false, RTS2_VALUE_WRITABLE);
 
   barcode_reader_state->setValueInteger( -1) ; 
 }

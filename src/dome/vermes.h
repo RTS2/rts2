@@ -18,7 +18,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#define SSD650V_CONNECT 0
+#define TRACKING_ENABLED   0
+#define TRACKING_DISABLED  1
+
+#define MOTOR_RUNNING      0
+#define MOTOR_NOT_RUNNING  1
+#define MOTOR_UNDEFINED    2
+
+#define NOT_SYNCED         0 
+#define SYNCED             1
+
+#define SSD650V_CONNECT    0
 #define SSD650V_DISCONNECT 1
 
 
@@ -34,6 +44,5 @@
 #define SSD650V_GETTING_MOTOR_COMMAND_FAILED     9
 #define SSD650V_RUNNING                         10
 #define SSD650V_STOPPED                         11
-
 
 #define SSD650V_GENERAL_FAILURE                200

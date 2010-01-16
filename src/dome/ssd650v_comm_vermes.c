@@ -428,8 +428,8 @@ int motor_run_switch_state()
 
 // wildi ToDo  if (MotorStartSP.sp[0].s == ISS_ON) {
   if (motor_state.start== SSD650V_ON) {
-    msg = "Motor is started";
-    fprintf( stderr, "%s\n", msg) ;
+    /* msg = "Motor is started"; */
+    /* fprintf( stderr, "%s\n", msg) ; */
     res = set_setpoint(setpoint);
     if (res != BISYNC_OK) {
       indi_log(ILOG_WARNING, "Failure setting setpoint (%d) - motor not started", res);
@@ -455,8 +455,8 @@ int motor_run_switch_state()
 
 // wildi ToDo  } else if (MotorStartSP.sp[1].s == ISS_ON) {
   } else if (motor_state.stop  == SSD650V_ON) {
-    msg = "Motor is stopped";
-    fprintf( stderr, "%s\n", msg) ;
+    /* msg = "Motor is stopped"; */
+    /* fprintf( stderr, "%s\n", msg) ; */
     res = SSD_set_tag(ser_dev, 271, ">047E");
 /*     MotorCoastSP.sp[0].s = ISS_OFF; */
 /*     MotorCoastSP.sp[1].s = ISS_ON; */
