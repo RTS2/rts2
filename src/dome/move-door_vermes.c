@@ -1,12 +1,5 @@
-/* Header file dome target azimuth calculation.  */
+/* Thread to move the door of cupola Obs. Vermes*/
 /* Copyright (C) 2010, Markus Wildi */
-
-/* The transformations are based on the paper Matrix Method for  */
-/* Coodinates Transformation written by Toshimi Taki  */
-/* (http://www.asahi-net.or.jp/~zs3t-tk).  */
-
-/* Documentation: */
-/* https://azug.minpet.unibas.ch/wikiobsvermes/index.php/Robotic_ObsVermes#Telescope */
 
 /* This library is free software; you can redistribute it and/or */
 /* modify it under the terms of the GNU Lesser General Public */
@@ -22,22 +15,34 @@
 /* License along with this library; if not, write to the Free Software */
 /* Foundation, Inc., 51 Franklin Steet, Fifth Floor, Boston, MA  02110-1301  USA */
 
-#ifndef  __RTS_DOME_TARGET_AZIMUTH__
-#define __RTS_DOME_TARGET_AZIMUTH__
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <unistd.h>
+#include <math.h>
+#endif
 
-struct geometry {
-  double xd ;
-  double zd ;
-  double rdec ;
-  double rdome ;
-}  ;
+#include "vermes.h"
+#include "move-door_vermes.h"
 
-#ifdef __cplusplus
-extern "C"
+
+//It is not the fastest dome, one revolution in 5 minutes
+#define AngularSpeed 2. * M_PI/ 98. 
+#define POLLMICROS 0.1 * 1000. * 1000. // make it variable
+
+void *move_door( void *value)
 {
-#endif
-double dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct geometry obs) ;
-#ifdef __cplusplus
+  double ret = -1 ;
+  double curMaxSetPoint= 80. ;
+  double curMinSetPoint= 40. ;
+  static double lastSetPoint=0., curSetPoint=0. ;
+  static double lastSetPointSign=0., curSetPointSign=0. ;
+  double tmpSetPoint= 0. ;
+
+  while( 1==1) {
+    
+   
+    usleep(POLLMICROS) ;
+  }
+  return NULL ;
 }
-#endif
-#endif //  __RTS_DOME_TARGET_AZIMUTH__

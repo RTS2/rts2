@@ -22,22 +22,15 @@
 /* License along with this library; if not, write to the Free Software */
 /* Foundation, Inc., 51 Franklin Steet, Fifth Floor, Boston, MA  02110-1301  USA */
 
-#ifndef  __RTS_DOME_TARGET_AZIMUTH__
-#define __RTS_DOME_TARGET_AZIMUTH__
-
-struct geometry {
-  double xd ;
-  double zd ;
-  double rdec ;
-  double rdome ;
-}  ;
+#ifndef  __RTS_MOVE_TO_TARGET_AZ_VERMES__
+#define __RTS_MOVE_TO_TARGET_AZ_VERMES__
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-double dome_target_az( struct ln_equ_posn tel_eq, struct ln_lnlat_posn obs_location, struct geometry obs) ;
+void *move_to_target_azimuth( void *value) ;
 #ifdef __cplusplus
 }
 #endif
-#endif //  __RTS_DOME_TARGET_AZIMUTH__
+#endif //  __RTS_MOVE_TO_TARGET_AZ_VERMES__

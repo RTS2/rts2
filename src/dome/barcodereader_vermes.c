@@ -991,15 +991,15 @@ void * bcr_sending_thread(void* args)
  *****************************************************************************/
 int start_bcr_comm()
 {
-  char *SerialDev1 = DEFAULT_SERPORT_DEV1;
-  char *SerialDev2 = DEFAULT_SERPORT_DEV2;
+  char *SerialDev1 = DEFAULT_BCR_SERPORT_DEV1;
+  char *SerialDev2 = DEFAULT_BCR_SERPORT_DEV2;
   int sd1;         // file descriptor for 1st serial device
   int sd2;         // file descriptor for 2nd serial device
 
-  int bitrate  = DEFAULT_BITRATE;
-  int databits = DEFAULT_DATABITS;
-  int parity   = DEFAULT_PARITY;
-  int stopbits = DEFAULT_STOPBITS;
+  int bitrate  = DEFAULT_BCR_BITRATE;
+  int databits = DEFAULT_BCR_DATABITS;
+  int parity   = DEFAULT_BCR_PARITY;
+  int stopbits = DEFAULT_BCR_STOPBITS;
 
   int res = 0;
 

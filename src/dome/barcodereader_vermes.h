@@ -26,12 +26,12 @@
 #define __barcodereader_h__
 
 // default serial port devices and their default settings
-#define DEFAULT_SERPORT_DEV1     "/dev/bcreader_lft"
-#define DEFAULT_SERPORT_DEV2     "/dev/bcreader_rgt"
-#define DEFAULT_BITRATE          38400
-#define DEFAULT_DATABITS         8
-#define DEFAULT_PARITY           PARITY_NONE
-#define DEFAULT_STOPBITS         1
+#define DEFAULT_BCR_SERPORT_DEV1     "/dev/bcreader_lft"
+#define DEFAULT_BCR_SERPORT_DEV2     "/dev/bcreader_rgt"
+#define DEFAULT_BCR_BITRATE          38400
+#define DEFAULT_BCR_DATABITS         8
+#define DEFAULT_BCR_PARITY           PARITY_NONE
+#define DEFAULT_BCR_STOPBITS         1
 
 /* The number of the highest barcode used */
 #define HIGHEST_BARCODE  104 

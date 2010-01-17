@@ -40,6 +40,92 @@
 
 extern int debug;
 
+// default serial port device and it's default settings
+#define DEFAULT_SSD650V_SERPORT_DEV      "/dev/ssd650v"
+#define DEFAULT_SSD650V_BITRATE          19200
+#define DEFAULT_SSD650V_DATABITS         7
+#define DEFAULT_SSD650V_PARITY           PARITY_EVEN
+#define DEFAULT_SSD650V_STOPBITS         1
+
+static int ser_dev;
+static int ser_open = 0;
+static int inverter_seq_status = -1;
+static int mot_cmd_status = -1;
+static struct timeval time_last_stat;   /* time of last status enquiry sent to
+                                         * SSD650V */
+// wildi ToDo INDI replacements
+#define ISS_ON 0
+#define ISS_OFF 1 
+#define IPS_IDLE 1 
+
+// SSD650v frequency inverter states
+//
+//MotorFastStopSP.sp[0].s "MOTOR_FASTSTOP_SET" "Motor Fast Stop"
+//MotorFastStopSP.sp[1].s "MOTOR_FASTSTOP_RESET" "Reset Motor Fast Stop"
+struct ssd650v_fast_stop_state {
+int set ;
+int reset ;
+} ;
+static struct ssd650v_fast_stop_state fast_stop_state ;
+// originally was:
+// MotorStartSP.sp[0].s "START_CW" "Start CW" (clockwise)
+// MotorStartSP.sp[1].s "STOP" "Stop"
+// MotorStartSP.sp[2].s "START_CCW" "Start CCW" (counter clockwise)
+// ssd650v allows negative and positive values:
+// setpoint=[-100.,100]
+
+struct ssd650v_motor_state {
+int start ;
+int stop ;
+} ;
+static struct ssd650v_motor_state motor_state ;
+
+// MotorCoastSP.sp[0].s "MOTOR_COAST_SET" "Motor Coast"
+// MotorCoastSP.sp[1].s "MOTOR_COAST_RESET" "Reset Motor Coast"
+struct ssd650v_coast_state {
+int set ;
+int reset ;
+} ;
+static struct ssd650v_coast_state coast_state ;
+
+//SSD_MotorSeqLP.lp[0].s "SEQ_READY" "Inverter ready"
+//SSD_MotorSeqLP.lp[1].s "SEQ_ON" "Inverter on
+//SSD_MotorSeqLP.lp[2].s "SEQ_RUNNING" "Motor running"
+//SSD_MotorSeqLP.lp[3].s "SEQ_TRIPPED" "Motor tripped"
+//SSD_MotorSeqLP.lp[4].s "SEQ_COAST" "Motor coasting"
+//SSD_MotorSeqLP.lp[5].s "SEQ_FAST_STOP" "Motor fast stoping"
+//SSD_MotorSeqLP.lp[6].s "SEQ_ON_DISABLE" "Inverter on inhibited"
+//SSD_MotorSeqLP.lp[7].s "SEQ_REMOTE" "Inverter remotely controlled"
+//SSD_MotorSeqLP.lp[8].s "SEQ_SP_REACHED" "Motor setpoint reached" 
+//SSD_MotorSeqLP.lp[9].s "SEQ_INTERN_LIMIT" "Motor current limit"
+struct ssd650v_seq_state {
+int ssd_motor_seq ; // SSD650V_IDLE, SSD650V_OK
+int ready;
+int on;
+int running;
+int tripped;
+int coast;
+int fast_stop;
+int on_disable;
+int remote;
+int sp_reached;
+int intern_limit;
+} ;
+static struct ssd650v_seq_state seq_state ;
+
+
+int ssd_start_comm( char *device_ssd650v);
+int ssd_stop_comm() ;
+char * SSD_qry_identity(int sd);
+char * SSD_qry_major_state(int sd);
+int SSD_qry_comms_status(int sd);
+int SSD_qry_last_error(int sd);
+float SSD_qry_setpoint(int sd);
+int SSD_qry_hexword(int sd, int tag);
+float SSD_qry_real(int sd, int tag);
+int SSD_set_tag(int sd, int tag, char * data);
+int motor_run_switch_state() ;
+
 typedef enum TAG_TYPES {
   TAGT_BOOL,
   TAGT_REAL,
@@ -690,10 +776,10 @@ int
 ssd_start_comm(char * ser_dev_name)
 {
   int sd;  /* serial device file descriptor */
-  int bitrate  = DEFAULT_BITRATE;
-  int databits = DEFAULT_DATABITS;
-  int parity   = DEFAULT_PARITY;
-  int stopbits = DEFAULT_STOPBITS;
+  int bitrate  = DEFAULT_SSD650V_BITRATE;
+  int databits = DEFAULT_SSD650V_DATABITS;
+  int parity   = DEFAULT_SSD650V_PARITY;
+  int stopbits = DEFAULT_SSD650V_STOPBITS;
 
   // open serial ports
   if ((sd = serial_init(ser_dev_name, bitrate, databits,

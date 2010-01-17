@@ -25,7 +25,9 @@
 // Obs. Vermes specific 
 #include "vermes.h" 
 #include "dome-target-az.h"
+#include "move-to-target-az_vermes.h"
 #include "barcodereader_vermes.h"
+#include "ssd650v_comm_vermes.h"
 
 int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
 int cupola_tracking_state= TRACKING_DISABLED ; 
@@ -38,19 +40,6 @@ double target_az ;
 struct ln_lnlat_posn obs_location ;
 struct ln_equ_posn   tel_equ ;
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-void *move_to_target_azimuth( void *value) ;
-float get_setpoint() ;
-int set_setpoint( float setpoint) ;
-int motor_on() ;
-int motor_off() ;
-int connectDevice( int power_state) ;
-#ifdef __cplusplus
-}
-#endif
 
 
 using namespace rts2dome;

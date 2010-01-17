@@ -32,11 +32,9 @@
 #include <libnova/libnova.h>
 #include "vermes.h"
 #include "dome-target-az.h"
+#include "move-to-target-az_vermes.h"
+#include "ssd650v_comm_vermes.h"
 
-
-int motor_on() ;
-int motor_off() ;
-int set_setpoint(float setpoint) ;
 void getSexComponents(double value, int *d, int *m, int *s) ;
 
 extern int is_synced ; // ==SYNCED if target_az reched

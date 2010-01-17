@@ -1,13 +1,15 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio rts2-dome-opentpl \
-	rts2-cupola-vermes
+	rts2-cupola-vermes rts2-dome-door-vermes
 
 SUBDIRS = zelio
 
 EXTRA_DIST = 
 
-noinst_HEADERS = dome.h cupola.h ford.h vermes.h dome-target-az.h
+noinst_HEADERS = dome.h cupola.h ford.h vermes.h door_vermes.h \
+	dome-target-az.h  barcodereader_vermes.h \
+	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h
 
 noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a librts2vermes.a
 
@@ -41,6 +43,9 @@ rts2_dome_opentpl_SOURCES = opentpl.cpp
 
 rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
 rts2_cupola_vermes_LDADD = librts2vermes.a librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
+
+rts2_dome_door_vermes_SOURCES = door_vermes.cpp
+rts2_dome_door_vermes_LDADD = librts2vermes.a @LIB_PTHREAD@  ${LDADD} 
 
 if COMEDI
 bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec
