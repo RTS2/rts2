@@ -31,7 +31,7 @@
 #include <vector>
 #include <fcntl.h>
 
-#define TEL_SLEW        0x00
+#define TEL_SLEW            0x00
 #define TEL_FORCED_HOMING0  0x01
 #define TEL_FORCED_HOMING1  0x02
 
@@ -364,6 +364,13 @@ int Paramount::updateStatus ()
 	if (status1 != old_status)
 		logStream (MESSAGE_DEBUG) << "changed axis 1 state from " << std::hex << old_status << " to " << status1 << sendLog;
 	statusDec->setValueInteger (status1);
+
+	// set / unset HW error
+	if ((status0 & 0x02) || (status1 & 0x02) || status0 == 0x500 || status1 == 0x500 || status0 == 0xd00 || status1 == 0xd00 || status0 == 0xc00 || status1 == 0xc00)
+		maskState (DEVICE_ERROR_HW, DEVICE_ERROR_HW, "set error - axis failed");
+	else
+		maskState (DEVICE_ERROR_HW, 0, "cleared error conditions");
+
 	return checkRet ();
 }
 
