@@ -49,6 +49,7 @@
 #define IMAGEOP_ADDHELIO  0x0400
 #define IMAGEOP_MODEL     0x0800
 #define IMAGEOP_JPEG      0x0800
+#define IMAGEOP_STAT      0x1000
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 #define OPT_EVERY     OPT_LOCAL + 6
@@ -76,6 +77,7 @@ class AppImage:public Rts2AppImage
 		void testEval (Rts2Image * image);
 		void createWCS (Rts2Image * image);
 		void printModel (Rts2Image * image);
+		void printStat (Rts2Image * image);
 
 		double off_x, off_y;
 
@@ -232,6 +234,14 @@ void AppImage::printModel (Rts2Image *image)
 	}
 }
 
+void AppImage::printStat (Rts2Image *image)
+{
+	image->computeStatistics ();
+	std::cout << image->getFileName ()
+		<< " " << image->getAverage ()
+		<< " " << image->getStdDev () << std::endl;
+}
+
 int AppImage::processOption (int in_opt)
 {
 	char *off_sep;
@@ -247,6 +257,9 @@ int AppImage::processOption (int in_opt)
 			break;
 		case 'r':
 			operation |= IMAGEOP_MODEL;
+			break;
+		case 's':
+			operation |= IMAGEOP_STAT;
 			break;
 		case 'n':
 			std::cout << pureNumbers;
@@ -354,6 +367,8 @@ int AppImage::processImage (Rts2Image * image)
 	  	std::cout << image->getFileName () << " " << image->expandPath (print_expr) << std::endl;
 	if (operation & IMAGEOP_MODEL)
 	  	printModel (image);
+	if (operation & IMAGEOP_STAT)
+	  	printStat (image);
 	if (operation & IMAGEOP_COPY)
 		image->copyImageExpand (copy_expr);
 	if (operation & IMAGEOP_MOVE)
@@ -394,6 +409,7 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
+	addOption ('s', NULL, 0, "print image statistics - average, median, min & max values,...");
 	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");

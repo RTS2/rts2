@@ -336,25 +336,13 @@ class Rts2Image:public Rts2FitsFile
 			return "(null)";
 		}
 
-		void setExposureStart (const struct timeval *tv)
-		{
-			setExpandDate (tv);
-		}
+		void setExposureStart (const struct timeval *tv) { setExpandDate (tv); }
 
-		double getExposureStart ()
-		{
-			return getExpandDateCtime ();
-		}
+		double getExposureStart () { return getExpandDateCtime (); }
 
-		long getExposureSec ()
-		{
-			return getCtimeSec ();
-		}
+		long getExposureSec () { return getCtimeSec ();	}
 
-		long getExposureUsec ()
-		{
-			return getCtimeUsec ();
-		}
+		long getExposureUsec () { return getCtimeUsec (); }
 
 		void setExposureLength (float in_exposureLength)
 		{
@@ -363,15 +351,9 @@ class Rts2Image:public Rts2FitsFile
 			setValue ("EXPTIME", exposureLength, "exposure length in seconds");
 		}
 
-		float getExposureLength ()
-		{
-			return exposureLength;
-		}
+		float getExposureLength () { return exposureLength; }
 
-		int getTargetId ()
-		{
-			return targetId;
-		}
+		int getTargetId () { return targetId; }
 
 		std::string getTargetString ();
 		std::string getTargetSelString ();
@@ -385,77 +367,38 @@ class Rts2Image:public Rts2FitsFile
 		// image parameter functions
 		std::string getExposureLengthString ();
 
-		int getTargetIdSel ()
-		{
-			return targetIdSel;
-		}
+		int getTargetIdSel () { return targetIdSel; }
 
-		char getTargetType ()
-		{
-			return targetType;
-		}
+		char getTargetType () { return targetType; }
 
-		int getObsId ()
-		{
-			return obsId;
-		}
+		int getObsId () { return obsId; }
 
-		int getImgId ()
-		{
-			return imgId;
-		}
+		int getImgId () { return imgId; }
 
-		const char *getFilter ()
-		{
-			return filter;
-		}
+		const char *getFilter () { return filter; }
 
 		void setFilter (const char *in_filter);
 
-		int getFilterNum ()
-		{
-			return filter_i;
-		}
+		int getFilterNum () { return filter_i; }
 
 		void computeStatistics ();
 
-		double getAverage ()
-		{
-			return average;
-		}
+		double getAverage () { return average; }
 
-		double getStdDev ()
-		{
-			return stdev;
-		}
+		double getStdDev () { return stdev; }
 
 		/**
 		 * Return
 		 */
-		double getBgStdDev ()
-		{
-			return bg_stdev;
-		}
+		double getBgStdDev () { return bg_stdev; }
 
-		int getFocPos ()
-		{
-			return focPos;
-		}
+		int getFocPos () { return focPos; }
 
-		void setFocPos (int new_pos)
-		{
-			focPos = new_pos;
-		}
+		void setFocPos (int new_pos) { focPos = new_pos; }
 
-		int getIsAcquiring ()
-		{
-			return isAcquiring;
-		}
+		int getIsAcquiring () { return isAcquiring; }
 
-		void keepImage ()
-		{
-			flags |= IMAGE_KEEP_DATA;
-		}
+		void keepImage () { flags |= IMAGE_KEEP_DATA; }
 
 		void closeData ()
 		{
@@ -504,23 +447,14 @@ class Rts2Image:public Rts2FitsFile
 
 		int getCenter (double &x, double &y, int bin);
 
-		long getWidth ()
-		{
-			return naxis[0];
-		}
+		long getWidth () { return naxis[0]; }
 
-		long getHeight ()
-		{
-			return naxis[1];
-		}
+		long getHeight () { return naxis[1]; }
 
 		/**
 		 * Returns number of pixels.
 		 */
-		long getNPixels ()
-		{
-			return getWidth () * getHeight ();
-		}
+		long getNPixels () { return getWidth () * getHeight (); }
 
 		/**
 		 * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)

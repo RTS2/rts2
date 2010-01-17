@@ -1087,7 +1087,6 @@ void Rts2Image::writePhysical (int x, int y, int bin_x, int bin_y)
 int Rts2Image::writeData (char *in_data, char *fullTop)
 {
 	struct imghdr *im_h;
-	unsigned short *pixel;
 	int ret;
 
 	average = 0;
@@ -1119,44 +1118,13 @@ int Rts2Image::writeData (char *in_data, char *fullTop)
 	}
 	else
 	{
+		imageData = pixelData;
+	}
+
+	computeStatistics ();
+
+	if (!(flags & IMAGE_KEEP_DATA))
 		imageData = NULL;
-	}
-
-	// calculate average..
-	pixel = (unsigned short *) pixelData;
-	while (pixel < (unsigned short *) fullTop)
-	{
-		average += *pixel;
-		pixel++;
-	}
-
-	int bg_size = 0;
-
-	if ((dataSize / getPixelByteSize ()) > 0)
-	{
-		average /= dataSize / getPixelByteSize ();
-		// calculate stdev
-		pixel = (unsigned short *) pixelData;
-		while (pixel < (unsigned short *) fullTop)
-		{
-			long double tmp_s = *pixel - average;
-			long double tmp_ss = tmp_s * tmp_s;
-			if (fabs (tmp_s) < average / 10)
-			{
-				bg_stdev += tmp_ss;
-				bg_size++;
-			}
-			stdev += tmp_ss;
-			pixel++;
-		}
-		stdev = sqrt (stdev / (dataSize / getPixelByteSize ()));
-		bg_stdev = sqrt (bg_stdev / bg_size);
-	}
-	else
-	{
-		average = 0;
-		stdev = 0;
-	}
 
 	ret = writeImgHeader (im_h);
 
@@ -1245,7 +1213,8 @@ void Rts2Image::getHistogram (long *histogram, long nbins)
 {
 	memset (histogram, 0, nbins * sizeof(int));
 	int bins;
-	loadData ();
+	if (imageData == NULL)
+		loadData ();
 	switch (imageType)
 	{
 		case RTS2_DATA_USHORT:
@@ -1511,7 +1480,45 @@ void Rts2Image::setFilter (const char *in_filter)
 
 void Rts2Image::computeStatistics ()
 {
+	if (imageData == NULL)
+		loadData ();
 
+	// calculate average..
+	unsigned short *pixel = (unsigned short *) imageData;
+	unsigned short *fullTop = pixel + getNPixels ();
+	while (pixel < (unsigned short *) fullTop)
+	{
+		average += *pixel;
+		pixel++;
+	}
+
+	int bg_size = 0;
+
+	if (getNPixels () > 0)
+	{
+		average /= getNPixels ();
+		// calculate stdev
+		pixel = (unsigned short *) imageData;
+		while (pixel < fullTop)
+		{
+			long double tmp_s = *pixel - average;
+			long double tmp_ss = tmp_s * tmp_s;
+			if (fabs (tmp_s) < average / 10)
+			{
+				bg_stdev += tmp_ss;
+				bg_size++;
+			}
+			stdev += tmp_ss;
+			pixel++;
+		}
+		stdev = sqrt (stdev / getNPixels ());
+		bg_stdev = sqrt (bg_stdev / bg_size);
+	}
+	else
+	{
+		average = 0;
+		stdev = 0;
+	}
 }
 
 void Rts2Image::loadData ()
