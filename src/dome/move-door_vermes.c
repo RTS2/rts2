@@ -25,9 +25,8 @@
 #include "vermes.h"
 #include "move-door_vermes.h"
 
-
-//It is not the fastest dome, one revolution in 5 minutes
-#define AngularSpeed 2. * M_PI/ 98. 
+// 
+#define AngularSpeed 90./180. *M_PI / 120. 
 #define POLLMICROS 0.1 * 1000. * 1000. // make it variable
 
 void *move_door( void *value)
