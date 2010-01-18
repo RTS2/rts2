@@ -85,7 +85,11 @@ doc_PDF = \
 
 XP=xsltproc --nonet
 
+<<<<<<< .mine
+DB2MAN=@DB2MAN@/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
+=======
 DB2MAN=@DB2MAN@
+>>>>>>> .r6781
 
 DB2FOP=@DB2FOP@
 FOP=fop

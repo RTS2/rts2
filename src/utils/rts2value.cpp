@@ -118,16 +118,12 @@ Rts2Value (in_val_name, in_description, writeToFits, flags)
 	rts2Type |= RTS2_VALUE_STRING;
 }
 
-
-const char *
-Rts2ValueString::getValue ()
+const char * Rts2ValueString::getValue ()
 {
 	return value.c_str ();
 }
 
-
-int
-Rts2ValueString::setValue (Rts2Conn * connection)
+int Rts2ValueString::setValue (Rts2Conn * connection)
 {
 	char *new_value;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())

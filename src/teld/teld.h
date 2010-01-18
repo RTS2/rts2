@@ -564,6 +564,8 @@ class Telescope:public Rts2Device
 			maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
 		}
 
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 		virtual void valueChanged (Rts2Value * changed_value);
 
 		virtual int deleteConnection (Rts2Conn * in_conn)
@@ -881,6 +883,14 @@ class Telescope:public Rts2Device
 		 * Which coordinates are used for pointing (eq, alt-az,..)
 		 */
 		Rts2ValueSelection *pointingModel;
+
+		struct ln_ell_orbit mpec_orbit;
+
+		/**
+		 * Minor Planets Ephemerids one-line element. If set, target position and differential
+		 * tracking are calculated from this string.
+		 */
+		Rts2ValueString *mpec;
 };
 
 };

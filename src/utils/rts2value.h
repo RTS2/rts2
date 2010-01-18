@@ -481,8 +481,6 @@ class Rts2Value
  */
 class Rts2ValueString:public Rts2Value
 {
-	private:
-		std::string value;
 	public:
 		Rts2ValueString (std::string in_val_name);
 		Rts2ValueString (std::string in_val_name, std::string in_description,
@@ -494,9 +492,12 @@ class Rts2ValueString:public Rts2Value
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual const char *getValue ();
+		std::string getValueString () { return value; }
 		virtual void send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+	private:
+		std::string value;
 };
 
 /**

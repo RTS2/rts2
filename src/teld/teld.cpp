@@ -85,6 +85,8 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	pointingModel->addSelVal ("ALT-AZ");
 	pointingModel->addSelVal ("ALT-ALT");
 
+	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set", false, RTS2_VALUE_WRITABLE);
+
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
@@ -314,15 +316,31 @@ double Telescope::getLstDeg (double JD)
 		telLongitude->getValueDouble ());
 }
 
+int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	if (old_value == mpec)
+	{
+		std::string desc;
+		if (LibnovaEllFromMPC (&mpec_orbit, desc, new_value->getValue ()))
+			return -1;
+	}
+	return Rts2Device::setValue (old_value, new_value);
+}
+
 void Telescope::valueChanged (Rts2Value * changed_value)
 {
 	if (changed_value == woffsRaDec)
 	{
 		maskState (BOP_EXPOSURE, BOP_EXPOSURE, "blocking exposure for offsets");
 	}
-	if (changed_value == oriRaDec
-		|| changed_value == offsRaDec
-		|| changed_value == corrRaDec)
+	if (changed_value == oriRaDec)
+	{
+		mpec->setValueString ("");
+		startResyncMove (NULL, false);
+	}
+	if (changed_value == offsRaDec
+		|| changed_value == corrRaDec
+		|| changed_value == mpec)
 	{
 		startResyncMove (NULL, false);
 	}
@@ -768,6 +786,18 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 
 	struct ln_equ_posn pos;
 
+	// calculate from MPEC..
+	if (mpec->getValueString ().length () > 0)
+	{
+		struct ln_lnlat_posn observer;
+		struct ln_equ_posn parallax;
+		observer.lat = telLatitude->getValueDouble ();
+		observer.lng = telLongitude->getValueDouble ();
+		LibnovaCurrentFromOrbit (&pos, &mpec_orbit, &observer, telAltitude->getValueDouble (), ln_get_julian_from_sys (), &parallax);
+
+		oriRaDec->setValueRaDec (pos.ra, pos.dec);
+	}
+
 	// if object was not specified, do not move
 	if (isnan (oriRaDec->getRa ()) || isnan (oriRaDec->getDec ()))
 		return -1;
@@ -986,6 +1016,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		modelOn ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		mpec->setValueString ("");
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("move_not_model"))
@@ -995,6 +1026,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			return -2;
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		mpec->setValueString ("");
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("resync"))
@@ -1003,6 +1035,7 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 			|| !conn->paramEnd ())
 			return -2;
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
+		mpec->setValueString ("");
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("fixed"))

@@ -1,6 +1,9 @@
 0.7.5
 =====
 
+2009-01-18
+ * MPEC target field for telescope - telescope is able to calculate solar system bodies orbits
+
 2009-12-05
  * add W for writeable values, edit only writable values
 
