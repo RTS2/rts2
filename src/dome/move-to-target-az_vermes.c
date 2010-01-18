@@ -35,17 +35,20 @@
 #include "move-to-target-az_vermes.h"
 #include "ssd650v_comm_vermes.h"
 
+int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
+int cupola_tracking_state= TRACKING_DISABLED ; 
+int motor_on_off_state   = MOTOR_RUNNING ;
+int barcodereader_state ;
+double barcodereader_az ;
+double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
+double target_az ;
+
+struct ln_lnlat_posn obs_location ;
+struct ln_equ_posn   tel_equ ;
+
+
 void getSexComponents(double value, int *d, int *m, int *s) ;
 
-extern int is_synced ; // ==SYNCED if target_az reched
-extern int cupola_tracking_state ; 
-extern int motor_on_off_state ;
-extern int barcodereader_state ;
-extern double barcodereader_az ;
-extern double barcodereader_dome_azimut_offset ; 
-extern double target_az ;
-extern struct ln_lnlat_posn obs_location ;
-extern struct ln_equ_posn   tel_equ ;
 
 const struct geometry obsvermes = {
   -0.0684, // xd [m]
