@@ -85,9 +85,9 @@ doc_PDF = \
 
 XP=xsltproc --nonet
 
-DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
+DB2MAN=@DB2MAN@
 
-DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl
+DB2FOP=@DB2FOP@
 FOP=fop
 
 %.1: %.xml
