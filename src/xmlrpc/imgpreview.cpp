@@ -41,6 +41,18 @@ void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, in
 	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
 }
 
+void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected)
+{
+	if (selected)
+	{
+		_os << "<b>" << i << "</b> ";
+	}
+	else
+	{
+		_os << "<a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
+	}
+}
+
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>

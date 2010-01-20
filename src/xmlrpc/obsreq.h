@@ -39,7 +39,7 @@ class Observation: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printQuery (const char* &response_type, char* &response, size_t &response_length);
-		void printObs (int obs_id, const char* &response_type, char* &response, size_t &response_length);
+		void printObs (int obs_id, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }

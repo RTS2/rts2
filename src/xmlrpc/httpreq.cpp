@@ -473,7 +473,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	_os << "<html><head><base href='/targets/" << tar->getTargetID () << "/'/><title>Target " << tar->getTargetName () << "</title></head><body>";
 
-	_os << "<p><a href='images" << "'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
+	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
 
 	_os << "<pre>";
 
@@ -487,18 +487,6 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
-}
-
-void Targets::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected)
-{
-	if (selected)
-	{
-		_os << "<b>" << i << "</b> ";
-	}
-	else
-	{
-		_os << "<a href='images" << "?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
-	}
 }
 
 void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
@@ -550,10 +538,11 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 
 	_os << "</p><p>Page ";
 	int i;
+	
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
 	if (in % pagesiz)
-	 	pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
 	_os << "</p></body></html>";
 
 	response_type = "text/html";

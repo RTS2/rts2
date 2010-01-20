@@ -50,6 +50,7 @@ using namespace Magick;
 #include "xmlstream.h"
 #include "augerreq.h"
 #include "nightreq.h"
+#include "obsreq.h"
 #include "imgpreview.h"
 
 #include "r2x.h"
@@ -1485,7 +1486,7 @@ class RecordsAverage: public SessionMethod
 
 #ifdef HAVE_LIBJPEG
 
-Graph graph ("/graph/", &xmlrpc_server);
+Graph graph ("/graph", &xmlrpc_server);
 
 // Bind to URL /altaz class AltAzTarget to plot all ALT-AZ targets
 // Please see httpreq.[h|cpp] for its implementation
@@ -1497,6 +1498,8 @@ AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
 Auger auger ("/auger", &xmlrpc_server);
 
 Night night ("/nights", &xmlrpc_server);
+
+Observation observation ("/observations", &xmlrpc_server);
 
 Targets targets ("/targets", &xmlrpc_server);
 

@@ -48,6 +48,8 @@ class Previewer
 		 * @param prevsize size of preview in pixels
 		 */
 		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize);
+
+		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected);
 };
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
