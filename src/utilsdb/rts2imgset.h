@@ -26,8 +26,10 @@
 #include <vector>
 #include "rts2imgsetstat.h"
 
-class Rts2Obs;
-class Rts2ObsSet;
+namespace rts2db {
+class Observation;
+}
+
 class Rts2ImageDb;
 
 /**
@@ -73,9 +75,9 @@ class Rts2ImgSetTarget:public Rts2ImgSet
 class Rts2ImgSetObs:public Rts2ImgSet
 {
 	private:
-		Rts2Obs *observation;
+		rts2db::Observation *observation;
 	public:
-		Rts2ImgSetObs (Rts2Obs * in_observation);
+		Rts2ImgSetObs (rts2db::Observation * in_observation);
 		virtual int load ();
 };
 

@@ -24,7 +24,6 @@
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 #include "../utilsdb/rts2taruser.h"
-#include "../utilsdb/rts2obs.h"
 
 #include <errno.h>
 #include <sys/types.h>
@@ -254,7 +253,7 @@ ConnObsProcess::ConnObsProcess (Rts2Block * in_master, const char *in_exe, int i
 {
 #ifdef HAVE_PGSQL
 	obsId = in_obsId;
-	obs = new Rts2Obs (obsId);
+	obs = new rts2db::Observation (obsId);
 	if (obs->load ())
 	{
 		logStream (MESSAGE_ERROR) << "ConnObsProcess::newProcess cannot load obs " << obsId << sendLog;

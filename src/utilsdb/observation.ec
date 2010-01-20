@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2obs.h"
+#include "observation.h"
 #include "target.h"
 #include "rts2taruser.h"
 #include "../utils/libnova_cpp.h"
@@ -30,7 +30,9 @@
 
 EXEC SQL INCLUDE sqlca;
 
-Rts2Obs::Rts2Obs (int in_obs_id)
+using namespace rts2db;
+
+Observation::Observation (int in_obs_id)
 {
 	obs_id = in_obs_id;
 	tar_id = -1;
@@ -43,7 +45,7 @@ Rts2Obs::Rts2Obs (int in_obs_id)
 }
 
 
-Rts2Obs::Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra,
+Observation::Observation (int in_tar_id, const char *in_tar_name, char in_tar_type, int in_obs_id, double in_obs_ra,
 double in_obs_dec, double in_obs_alt, double in_obs_az, double in_obs_slew, double in_obs_start,
 int in_obs_state, double in_obs_end)
 {
@@ -66,7 +68,7 @@ int in_obs_state, double in_obs_end)
 }
 
 
-Rts2Obs::~Rts2Obs (void)
+Observation::~Observation (void)
 {
 	std::vector <Rts2Image *>::iterator img_iter;
 	if (imgset)
@@ -80,7 +82,7 @@ Rts2Obs::~Rts2Obs (void)
 
 
 int
-Rts2Obs::load ()
+Observation::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
@@ -151,7 +153,7 @@ Rts2Obs::load ()
 		AND observations.tar_id = targets.tar_id;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Obs::load DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "Observation::load DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -179,7 +181,7 @@ Rts2Obs::load ()
 
 
 int
-Rts2Obs::loadImages ()
+Observation::loadImages ()
 {
 	int ret;
 	if (imgset)
@@ -195,7 +197,7 @@ Rts2Obs::loadImages ()
 
 
 int
-Rts2Obs::loadCounts ()
+Observation::loadCounts ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
@@ -234,7 +236,7 @@ Rts2Obs::loadCounts ()
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		logStream (MESSAGE_DEBUG) << "Rts2Obs::loadCounts DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << sendLog;
+		logStream (MESSAGE_DEBUG) << "Observation::loadCounts DB error: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << sendLog;
 		EXEC SQL CLOSE cur_counts;
 		EXEC SQL ROLLBACK;
 		return -1;
@@ -246,7 +248,7 @@ Rts2Obs::loadCounts ()
 
 
 void
-Rts2Obs::printObsHeader (std::ostream & _os)
+Observation::printObsHeader (std::ostream & _os)
 {
 	if (!printHeader)
 		return;
@@ -277,7 +279,7 @@ Rts2Obs::printObsHeader (std::ostream & _os)
 
 	_os << SEP
 		<< std::setw (7) << getSlewSpeed() << SEP
-		<< Rts2ObsState (obs_state)
+		<< ObservationState (obs_state)
 		<< std::endl;
 
 	_os.flags (old_settings);
@@ -286,7 +288,7 @@ Rts2Obs::printObsHeader (std::ostream & _os)
 
 
 void
-Rts2Obs::printCountsShort (std::ostream &_os)
+Observation::printCountsShort (std::ostream &_os)
 {
 	std::vector <Rts2Count>::iterator count_iter;
 	if (counts.empty ())
@@ -304,7 +306,7 @@ Rts2Obs::printCountsShort (std::ostream &_os)
 
 
 void
-Rts2Obs::printCounts (std::ostream &_os)
+Observation::printCounts (std::ostream &_os)
 {
 	std::vector <Rts2Count>::iterator count_iter;
 	if (counts.empty ())
@@ -320,14 +322,14 @@ Rts2Obs::printCounts (std::ostream &_os)
 
 
 void
-Rts2Obs::printCountsSummary (std::ostream &_os)
+Observation::printCountsSummary (std::ostream &_os)
 {
 	_os << "       Number of counts:" << counts.size () << std::endl;
 }
 
 
 double
-Rts2Obs::altitudeMerit (double _start, double _end)
+Observation::altitudeMerit (double _start, double _end)
 {
 	double minA, maxA;
 	struct ln_hrz_posn hrz;
@@ -367,7 +369,7 @@ Rts2Obs::altitudeMerit (double _start, double _end)
 
 
 int
-Rts2Obs::getUnprocessedCount ()
+Observation::getUnprocessedCount ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = getObsId ();
@@ -391,7 +393,7 @@ Rts2Obs::getUnprocessedCount ()
 
 
 int
-Rts2Obs::checkUnprocessedImages (Rts2Block *master)
+Observation::checkUnprocessedImages (Rts2Block *master)
 {
 	int ret;
 	load ();
@@ -420,7 +422,7 @@ Rts2Obs::checkUnprocessedImages (Rts2Block *master)
 
 
 int
-Rts2Obs::getNumberOfImages ()
+Observation::getNumberOfImages ()
 {
 	loadImages ();
 	if (imgset)
@@ -430,7 +432,7 @@ Rts2Obs::getNumberOfImages ()
 
 
 int
-Rts2Obs::getNumberOfGoodImages ()
+Observation::getNumberOfGoodImages ()
 {
 	loadImages ();
 	if (!imgset)
@@ -447,7 +449,7 @@ Rts2Obs::getNumberOfGoodImages ()
 
 
 int
-Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
+Observation::getFirstErrors (double &eRa, double &eDec, double &eRad)
 {
 	loadImages ();
 	if (!imgset)
@@ -466,7 +468,7 @@ Rts2Obs::getFirstErrors (double &eRa, double &eDec, double &eRad)
 
 
 int
-Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
+Observation::getAverageErrors (double &eRa, double &eDec, double &eRad)
 {
 	loadImages ();
 	if (!imgset)
@@ -476,10 +478,10 @@ Rts2Obs::getAverageErrors (double &eRa, double &eDec, double &eRad)
 
 
 int
-Rts2Obs::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
+Observation::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevHrz)
 {
 	int ret;
-	Rts2Obs prevObs = Rts2Obs (getObsId () - 1);
+	Observation prevObs = Observation (getObsId () - 1);
 	ret = prevObs.load();
 	if (ret)
 		return ret;
@@ -490,7 +492,7 @@ Rts2Obs::getPrevPosition (struct ln_equ_posn &prevEqu, struct ln_hrz_posn &prevH
 
 
 double
-Rts2Obs::getPrevSeparation ()
+Observation::getPrevSeparation ()
 {
 	struct ln_equ_posn prevEqu, currEqu;
 	struct ln_hrz_posn prevHrz;
@@ -506,7 +508,7 @@ Rts2Obs::getPrevSeparation ()
 
 
 double
-Rts2Obs::getSlewSpeed ()
+Observation::getSlewSpeed ()
 {
 	double prevSep = getPrevSeparation ();
 	if (isnan (prevSep)
@@ -519,7 +521,7 @@ Rts2Obs::getSlewSpeed ()
 
 
 double
-Rts2Obs::getSlewTime ()
+Observation::getSlewTime ()
 {
 	if (isnan (obs_slew) || isnan (obs_start))
 		return nan ("f");
@@ -528,7 +530,7 @@ Rts2Obs::getSlewTime ()
 
 
 double
-Rts2Obs::getObsTime ()
+Observation::getObsTime ()
 {
 	if (isnan (obs_start) || isnan (obs_end))
 		return nan ("f");
@@ -537,7 +539,7 @@ Rts2Obs::getObsTime ()
 
 
 void
-Rts2Obs::maskState (int newBits)
+Observation::maskState (int newBits)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
@@ -552,7 +554,7 @@ Rts2Obs::maskState (int newBits)
 			obs_id = :db_obs_id;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Obs::maskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "Observation::maskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 		EXEC SQL ROLLBACK;
 		return;
 	}
@@ -562,7 +564,7 @@ Rts2Obs::maskState (int newBits)
 
 
 void
-Rts2Obs::unmaskState (int newBits)
+Observation::unmaskState (int newBits)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = obs_id;
@@ -577,7 +579,7 @@ Rts2Obs::unmaskState (int newBits)
 			obs_id = :db_obs_id;
 	if (sqlca.sqlcode)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2Obs::unmaskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
+		logStream (MESSAGE_ERROR) << "Observation::unmaskState: " << sqlca.sqlerrm.sqlerrmc << " (" << sqlca.sqlcode << ")" << sendLog;
 		EXEC SQL ROLLBACK;
 		return;
 	}
@@ -585,52 +587,3 @@ Rts2Obs::unmaskState (int newBits)
 	obs_state |= newBits;
 }
 
-
-std::ostream & operator << (std::ostream &_os, Rts2Obs &obs)
-{
-	obs.printObsHeader (_os);
-	if (obs.displayImages)
-	{
-		obs.loadImages ();
-		_os << std::endl;
-		obs.imgset->print (_os, obs.displayImages);
-	}
-	if (obs.displayCounts)
-	{
-		obs.loadCounts ();
-		if (obs.displayCounts != DISPLAY_SHORT)
-			_os << std::endl;
-		if (obs.displayCounts & DISPLAY_SHORT)
-			obs.printCountsShort (_os);
-		if (obs.displayCounts & DISPLAY_ALL)
-			obs.printCounts (_os);
-		if (obs.displayCounts & DISPLAY_SUMMARY)
-			obs.printCountsSummary (_os);
-	}
-	return _os;
-}
-
-
-std::ostream & operator << (std::ostream &_os, Rts2ObsState obs_state)
-{
-	if (obs_state.state & OBS_BIT_STARTED)
-		_os << 'S';
-	else if (obs_state.state & OBS_BIT_MOVED)
-		_os << 'M';
-	else
-		_os << ' ';
-
-	if (obs_state.state & OBS_BIT_ACQUSITION_FAI)
-		_os << 'F';
-	else if (obs_state.state & OBS_BIT_ACQUSITION)
-		_os << 'A';
-	else
-		_os << ' ';
-
-	if (obs_state.state & OBS_BIT_INTERUPED)
-		_os << 'I';
-	else
-		_os << ' ';
-
-	return _os;
-}

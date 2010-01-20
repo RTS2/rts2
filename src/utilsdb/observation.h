@@ -34,6 +34,9 @@
 #include "rts2imgset.h"
 #include "target.h"
 
+namespace rts2db
+{
+
 /**
  * Observation class.
  *
@@ -42,47 +45,23 @@
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Obs
+class Observation
 {
-	private:
-		//! list of images for that observation
-		Rts2ImgSet * imgset;
-		std::vector < Rts2Count > counts;
-
-		int displayImages;
-		int displayCounts;
-
-		bool printHeader;
-
-		int tar_id;
-		std::string tar_name;
-		char tar_type;
-		int obs_id;
-		double obs_ra;
-		double obs_dec;
-		double obs_alt;
-		double obs_az;
-		double obs_slew;
-		double obs_start;
-		int obs_state;
-		// nan when observations wasn't ended
-		double obs_end;
-
 	public:
 		/**
 		 * Create class from DB
 		 */
-		Rts2Obs (int in_obs_id);
+		Observation (int in_obs_id);
 		/**
 		 * Create class from informations provided.
 		 *
 		 * Handy when creating class from cursor.
 		 */
-		Rts2Obs (int in_tar_id, const char *in_tar_name, char in_tar_type,
+		Observation (int in_tar_id, const char *in_tar_name, char in_tar_type,
 			int in_obs_id, double in_obs_ra, double in_obs_dec,
 			double in_obs_alt, double in_obs_az, double in_obs_slew,
 			double in_obs_start, int in_obs_state, double in_obs_end);
-		virtual ~ Rts2Obs (void);
+		virtual ~ Observation (void);
 		int load ();
 		int loadImages ();
 		int loadCounts ();
@@ -315,23 +294,90 @@ class Rts2Obs
 		void maskState (int newBits);
 		void unmaskState (int newBits);
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
+		friend std::ostream & operator << (std::ostream & _os, Observation & obs)
+		{
+			obs.printObsHeader (_os);
+			if (obs.displayImages)
+			{
+				obs.loadImages ();
+				_os << std::endl;
+				obs.imgset->print (_os, obs.displayImages);
+			}
+			if (obs.displayCounts)
+			{
+				obs.loadCounts ();
+				if (obs.displayCounts != DISPLAY_SHORT)
+					_os << std::endl;
+				if (obs.displayCounts & DISPLAY_SHORT)
+					obs.printCountsShort (_os);
+				if (obs.displayCounts & DISPLAY_ALL)
+					obs.printCounts (_os);
+				if (obs.displayCounts & DISPLAY_SUMMARY)
+					obs.printCountsSummary (_os);
+			}
+			return _os;
+		}
+
+	private:
+		//! list of images for that observation
+		Rts2ImgSet * imgset;
+		std::vector < Rts2Count > counts;
+
+		int displayImages;
+		int displayCounts;
+
+		bool printHeader;
+
+		int tar_id;
+		std::string tar_name;
+		char tar_type;
+		int obs_id;
+		double obs_ra;
+		double obs_dec;
+		double obs_alt;
+		double obs_az;
+		double obs_slew;
+		double obs_start;
+		int obs_state;
+		// nan when observations wasn't ended
+		double obs_end;
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2Obs & obs);
-
-class Rts2ObsState
+class ObservationState
 {
 	private:
 		int state;
 	public:
-		Rts2ObsState (int in_state)
+		ObservationState (int in_state)
 		{
 			state = in_state;
 		}
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2ObsState obs_state);
+		friend std::ostream & operator << (std::ostream & _os, ObservationState obs_state)
+		{
+			if (obs_state.state & OBS_BIT_STARTED)
+				_os << 'S';
+			else if (obs_state.state & OBS_BIT_MOVED)
+				_os << 'M';
+			else
+				_os << ' ';
+		
+			if (obs_state.state & OBS_BIT_ACQUSITION_FAI)
+				_os << 'F';
+			else if (obs_state.state & OBS_BIT_ACQUSITION)
+				_os << 'A';
+			else
+				_os << ' ';
+		
+			if (obs_state.state & OBS_BIT_INTERUPED)
+				_os << 'I';
+			else
+				_os << ' ';
+		
+			return _os;
+		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2ObsState obs_state);
+}
+
 #endif							 /* !__RTS2_OBS_DB__ */

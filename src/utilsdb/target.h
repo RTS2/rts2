@@ -59,7 +59,10 @@
 #define TARGET_INTEGRAL_FOV  11
 #define TARGET_SHOWER        12
 
-class Rts2Obs;
+namespace rts2db {
+class Observation;
+}
+
 class Rts2Image;
 
 /**
@@ -85,7 +88,7 @@ class Target:public Rts2Target
 {
 	private:
 		// holds current target observation
-		Rts2Obs * observation;
+		rts2db::Observation * observation;
 
 		int type;				 // light, dark, flat, flat_dark
 		std::string tar_info;

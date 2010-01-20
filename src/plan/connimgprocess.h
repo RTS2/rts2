@@ -22,7 +22,7 @@
 
 #include "../utils/connfork.h"
 #include "../writers/rts2imagedb.h"
-#include "../utilsdb/rts2obs.h"
+#include "../utilsdb/observation.h"
 
 namespace rts2plan
 {
@@ -97,7 +97,7 @@ class ConnObsProcess:public ConnProcess
 {
 	private:
 		int obsId;
-		Rts2Obs *obs;
+		rts2db::Observation *obs;
 
 		char *obsIdCh;
 		char *obsTarIdCh;

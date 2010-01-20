@@ -20,7 +20,7 @@
 #ifndef __RTS2_OBS_SET__
 #define __RTS2_OBS_SET__
 
-#include "rts2obs.h"
+#include "observation.h"
 
 #include <string>
 #include <vector>
@@ -38,7 +38,7 @@ namespace rts2db {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ObservationSet:public std::vector <Rts2Obs >
+class ObservationSet:public std::vector <Observation >
 {
 	public:
 		ObservationSet (void);

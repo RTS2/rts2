@@ -21,11 +21,14 @@
 #define __RTS2_PLAN__
 
 #include "target.h"
-#include "rts2obs.h"
+#include "observation.h"
 
 #include <ostream>
 
-class Rts2Obs;
+namespace rts2db
+{
+class Observation;
+}
 
 /**
  * Plan target class.
@@ -47,7 +50,7 @@ class Rts2Plan
 		int plan_status;
 
 		Target *target;
-		Rts2Obs *observation;
+		rts2db::Observation *observation;
 	public:
 		Rts2Plan ();
 		Rts2Plan (int in_plan_id);
@@ -64,7 +67,7 @@ class Rts2Plan
 			target = NULL;
 		}
 
-		Rts2Obs *getObservation ();
+		rts2db::Observation *getObservation ();
 
 		int getPlanId ()
 		{

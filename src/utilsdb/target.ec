@@ -22,7 +22,7 @@
 #include "rts2targetplanet.h"
 #include "rts2targetgrb.h"
 #include "rts2targetell.h"
-#include "rts2obs.h"
+#include "observation.h"
 #include "observationset.h"
 #include "targetset.h"
 
@@ -78,7 +78,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
 		// lazy observation init
 		if (observation == NULL)
 		{
-			observation = new Rts2Obs (getObsId ());
+			observation = new Observation (getObsId ());
 			observation->load ();
 			observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
 			observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
@@ -740,7 +740,7 @@ Target::endObservation (int in_next_id, Rts2Block *master)
 	sendTargetMail (SEND_END_OBS, "END OF OBSERVATION", master);
 
 	// check if that was the last observation..
-	Rts2Obs out_observation = Rts2Obs (old_obs_id);
+	Observation out_observation = Observation (old_obs_id);
 	out_observation.checkUnprocessedImages (master);
 
 	return ret;

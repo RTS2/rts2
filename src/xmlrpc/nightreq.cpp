@@ -19,6 +19,7 @@
 
 #include "nightreq.h"
 #include "nightdur.h"
+#include "xmlrpcd.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -79,7 +80,8 @@ void Night::listObs (int year, int month, int day, std::ostringstream &_os)
 
 	for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
 	{
-		_os << "<tr><td>" << iter->getTargetName ()
+		_os << "<tr><td><a href='/" <<  ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/observations/" << iter->getObsId () << "'>"
+			<< iter->getObsId () << " " << iter->getTargetName () << "</a>"
 			<< "</td><td>" << LibnovaDateDouble (iter->getObsStart ())
 			<< "</td><td>" << LibnovaDateDouble (iter->getObsEnd ())
 			<< "</td></tr>";

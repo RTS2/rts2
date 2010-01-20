@@ -19,13 +19,15 @@
 
 #include "imgdisplay.h"
 #include "rts2imgset.h"
-#include "rts2obs.h"
+#include "observation.h"
 
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
 #include "../writers/rts2imagedb.h"
+
+using namespace rts2db;
 
 Rts2ImgSet::Rts2ImgSet ()
 {
@@ -303,7 +305,7 @@ int Rts2ImgSetTarget::load ()
 	return Rts2ImgSet::load (os.str());
 }
 
-Rts2ImgSetObs::Rts2ImgSetObs (Rts2Obs *in_observation)
+Rts2ImgSetObs::Rts2ImgSetObs (Observation *in_observation)
 {
 	observation = in_observation;
 }

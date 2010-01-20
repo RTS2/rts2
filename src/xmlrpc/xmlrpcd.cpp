@@ -1325,8 +1325,8 @@ class ListImages: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
-			Rts2Obs *obs;
-			obs = new Rts2Obs ((int)params[0]);
+			rts2db::Observation *obs;
+			obs = new rts2db::Observation ((int)params[0]);
 			if (obs->loadImages ())
 				return;
 			Rts2ImgSet *img_set = obs->getImageSet();

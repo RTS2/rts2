@@ -220,7 +220,7 @@ void ObservationSet::load (std::string in_where)
 			db_obs_end = nan("f");
 
 		// add new observations to vector
-		Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
+		Observation obs = Observation (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
 			db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
 		push_back (obs);
 		if (db_obs_state & OBS_BIT_STARTED)
@@ -245,7 +245,7 @@ int ObservationSet::computeStatistics ()
 {
 	int anum = 0;
 
-	std::vector <Rts2Obs>::iterator obs_iter;
+	std::vector <Observation>::iterator obs_iter;
 	allNum = 0;
 	goodNum = 0;
 	firstNum = 0;
@@ -387,7 +387,7 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 	// list of target ids we already printed
 	std::vector <int> processedTargets;
 
-	std::vector <Rts2Obs>::iterator obs_iter;
+	std::vector <Observation>::iterator obs_iter;
 
 	if (!isCollocated ())
 		_os << "Observations list follow:" << std::endl;
@@ -406,7 +406,7 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 				double totalSlewTime = 0;
 				int obsNum = 0;
 				// compute target image statitics..
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
+				for (std::vector <Observation>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
@@ -432,7 +432,7 @@ std::ostream & ObservationSet::print (std::ostream &_os)
 
 				// print record that we found the observation
 				// find all observations of target
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
+				for (std::vector <Observation>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
