@@ -16,8 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-#define DOOR_CLOSED    0
-#define DOOR_OPEN      1
-#define DOOR_CLOSING   2
-#define DOOR_OPENING   3
-#define DOOR_UNDEFINED 4
+#ifndef  __RTS_DOOR_VERMES__
+#define __RTS_DOOR_VERMES__
+
+#endif // __RTS_DOOR_VERMES__

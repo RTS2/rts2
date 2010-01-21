@@ -34,18 +34,39 @@ float get_setpoint() ;
 int set_setpoint( float setpoint) ;
 int motor_on() ;
 int motor_off() ;
-int connectDevice( int power_state) ;
+int connectSSD650vDevice( int power_state) ;
 #ifdef __cplusplus
 }
 #endif
 
+// SSD650V commands
+#define SSD650V_CMD_ON         1  // starts motor
+#define SSD650V_CMD_OFF        2  // stopps motor
+#define SSD650V_CMD_CONNECT    3  // RS232
+#define SSD650V_CMD_DISCONNECT 4
 // SSD650V states
-#define SSD650V_ON    0 // active
-#define SSD650V_OFF   1 // inactive
-#define SSD650V_IDLE  2 
-#define SSD650V_OK    3 
-#define SSD650V_BUSY  4 
-#define SSD650V_ALERT 5 
+#define SSD650V_MS_UNDEFINED                        100
+#define SSD650V_MS_RUNNING                          111
+#define SSD650V_MS_STOPPED                          112
+#define SSD650V_MS_CONNECTION_OK                    100
+#define SSD650V_MS_CONNECTION_FAILED                102
+#define SSD650V_MS_IDENTITY_FAILED                  103
+#define SSD650V_MS_MAJOR_STATE_FAILED               104
+#define SSD650V_MS_LAST_ERROR_FAILED                105
+#define SSD650V_MS_GETTING_SET_POINT_FAILED         106
+#define SSD650V_MS_SETTING_SET_POINT_FAILED         107
+#define SSD650V_MS_GETTING_ACCELERATION_TIME_FAILED 108
+#define SSD650V_MS_GETTING_DECELERATION_TIME_FAILED 109
+#define SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED     110
+#define SSD650V_MS_GENERAL_FAILURE                  200
+
+// wildi ToDo
+#define SSD650V_IS_ON       0 
+#define SSD650V_IS_OFF      1 
+#define SSD650V_IS_IDLE     2 
+#define SSD650V_IS_OK       3 
+#define SSD650V_IS_BUSY     4
+#define SSD650V_IS_ALERT    5 
 
 
 #endif   // #ifndef __ssd650v_comm_h__

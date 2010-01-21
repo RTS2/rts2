@@ -37,7 +37,7 @@
 
 int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
 int cupola_tracking_state= TRACKING_DISABLED ; 
-int motor_on_off_state   = MOTOR_RUNNING ;
+int motor_on_off_state   = SSD650V_MS_UNDEFINED ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
@@ -121,7 +121,7 @@ void *move_to_target_azimuth( void *value)
       fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
     }
     if( cupola_tracking_state== TRACKING_ENABLED) {
-      //if( motor_on_off_state= MOTOR_RUNNING)
+      //if( motor_on_off_state= SSD650V_MS_RUNNING)
       target_az= dome_target_az( tel_equ, obs_location,  obsvermes) ;
       curAzimutDifference=  barcodereader_az- target_az;
       // fmod is here just in case if there is something out of bounds
@@ -146,51 +146,51 @@ void *move_to_target_azimuth( void *value)
       }
       curSetPoint= curSetPointSign * tmpSetPoint ;
     
-      if(( motor_on_off_state== MOTOR_RUNNING)&&( ret= fabs( curAzimutDifference/180. * M_PI)) < limit) {
+      if(( motor_on_off_state== SSD650V_MS_RUNNING)&&( ret= fabs( curAzimutDifference/180. * M_PI)) < limit) {
 	//fprintf( stderr, "move_to_target_azimuth: absolute difference smaller than %5.2f [deg]\n", limit * 180./M_PI) ;
 	// MotorOFF
-	if(( ret=motor_off()) != SSD650V_STOPPED ) {
+	if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
 	  fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-	  motor_on_off_state= MOTOR_UNDEFINED ;
+	  motor_on_off_state= SSD650V_MS_UNDEFINED ;
 	} else {
-	  motor_on_off_state= MOTOR_NOT_RUNNING ;
+	  motor_on_off_state= SSD650V_MS_RUNNING ;
 	}
 	curSetPoint= 0. ;
 	set_setpoint( curSetPoint) ;
 	lastSetPoint= 0. ;
 	lastSetPointSign= 0. ;
-	if( motor_on_off_state== MOTOR_NOT_RUNNING) {
+	if( motor_on_off_state== SSD650V_MS_STOPPED) {
 	  is_synced= SYNCED ;
 	}
       } else if (( ret= fabs( curAzimutDifference/180. * M_PI)) >= limit) {
 	if( curSetPointSign !=  lastSetPointSign) {
 	  fprintf( stderr, "Detected a sign change of curSetPoint = %5.2f, lastSetPoint= %5.2f, turning motor off and on\n", curSetPoint, lastSetPoint);
 	  // MotorOFF
-	  if(( ret=motor_off()) != SSD650V_STOPPED ) {
+	  if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
 	    fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-	    motor_on_off_state= MOTOR_UNDEFINED ;
+	    motor_on_off_state= SSD650V_MS_UNDEFINED ;
 	  } else {
-	    motor_on_off_state= MOTOR_NOT_RUNNING ;
+	    motor_on_off_state= SSD650V_MS_RUNNING ;
 	  }
 	}
 	//  MotorON
 	set_setpoint( curSetPoint) ;
-	if( motor_on_off_state != MOTOR_RUNNING) {
-	  if(( ret=motor_on()) != SSD650V_RUNNING ) {
+	if( motor_on_off_state != SSD650V_MS_RUNNING) {
+	  if(( ret=motor_on()) != SSD650V_MS_RUNNING ) {
 	    fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (ON)\n") ;
-	    motor_on_off_state= MOTOR_UNDEFINED ;
+	    motor_on_off_state= SSD650V_MS_UNDEFINED ;
 	  } else {
-	    motor_on_off_state= MOTOR_RUNNING ;
+	    motor_on_off_state= SSD650V_MS_RUNNING ;
 	  }
 	}
 	lastSetPoint    =  curSetPoint ;
 	lastSetPointSign=  curSetPointSign ;
       }
     
-      if(( motor_on_off_state== MOTOR_RUNNING) || (( ret= fabs( curAzimutDifference/180. * M_PI)) >= limit)) {
-      is_synced= NOT_SYNCED ;
+      if(( motor_on_off_state== SSD650V_MS_RUNNING) || (( ret= fabs( curAzimutDifference/180. * M_PI)) >= limit)) {
+	  is_synced= NOT_SYNCED ;
       }
-/*       if( motor_on_off_state== MOTOR_RUNNING) { */
+/*       if( motor_on_off_state== SSD650V_MS_RUNNING) { */
 /* 	fprintf(stderr, "Sleeping---a-d:%5.4f-- s:%6.3f, b:%5.3f, t:%5.6f, b-t:%6.4f, curd:%6.4f\n", \ */
 /* 		180./M_PI*limit,					\ */
 /* 		curSetPoint,						\ */

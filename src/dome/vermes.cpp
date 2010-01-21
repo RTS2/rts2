@@ -40,8 +40,6 @@ extern struct ln_lnlat_posn obs_location ;
 extern struct ln_equ_posn   tel_equ ;
 
 
-
-
 using namespace rts2dome;
 
 namespace rts2dome
@@ -146,7 +144,7 @@ int Vermes::standby ()
 
 int Vermes::off ()
 {
-//   if(connectDevice(SSD650V_DISCONNECT))
+//   if(connectSSD650vDevice(SSD650V_CMD_DISCONNECT))
 //     {
 //       logStream (MESSAGE_ERROR) << "Vermes::off a general failure occured" << sendLog ;
 //     }
@@ -162,21 +160,21 @@ void Vermes::valueChanged (Rts2Value * changed_value)
   if (changed_value == ssd650v_on_off) {
     if( ssd650v_on_off->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged starting azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-      if(( res=motor_on()) != SSD650V_RUNNING ) {
+      if(( res=motor_on()) != SSD650V_MS_RUNNING ) {
 	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	motor_on_off_state= MOTOR_UNDEFINED ;
+	motor_on_off_state= SSD650V_MS_UNDEFINED ;
       } else {
 	ssd650v_state->setValueString("motor running") ;
-	motor_on_off_state= MOTOR_RUNNING ;
+	motor_on_off_state= SSD650V_MS_RUNNING ;
       }
     } else {
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged stopping azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-      if(( res=motor_off()) !=  SSD650V_STOPPED) {
+      if(( res=motor_off()) !=  SSD650V_MS_STOPPED) {
 	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	motor_on_off_state= MOTOR_UNDEFINED ;
+	motor_on_off_state= SSD650V_MS_UNDEFINED ;
       } else {
 	ssd650v_state->setValueString("motor stopped") ;
-	motor_on_off_state= MOTOR_NOT_RUNNING ;
+	motor_on_off_state= SSD650V_MS_STOPPED ;
       }
     }
     return ;
@@ -212,14 +210,14 @@ int Vermes::info ()
 
   if( cupola_tracking_state == TRACKING_ENABLED) {
     cupola_tracking->setValueBool(true) ;
-  } else if( motor_on_off_state== MOTOR_NOT_RUNNING) {
+  } else if( motor_on_off_state== SSD650V_MS_STOPPED) {
     cupola_tracking->setValueBool(false) ;
   }
 
-  if( motor_on_off_state== MOTOR_RUNNING) {
+  if( motor_on_off_state== SSD650V_MS_RUNNING) {
     ssd650v_on_off->setValueBool(true) ;
     ssd650v_state->setValueString("motor running") ;
-  } else if( motor_on_off_state== MOTOR_NOT_RUNNING) {
+  } else if( motor_on_off_state== SSD650V_MS_STOPPED) {
     ssd650v_on_off->setValueBool(false) ;
     ssd650v_state->setValueString("motor stopped") ;
   } else  {
@@ -232,7 +230,7 @@ int Vermes::info ()
 int Vermes::initValues ()
 {
   int ret ;
-  pthread_t  thread_0;
+  pthread_t  move_to_target_azimuth_id;
 
   config = Rts2Config::instance ();
 
@@ -252,14 +250,14 @@ int Vermes::initValues ()
     exit(1) ;
   }
   // ssd650v frequency inverter
-  if(connectDevice(SSD650V_CONNECT)) {
+  if(connectSSD650vDevice(SSD650V_CMD_CONNECT)) {
     logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
   }
-  if(( ret=motor_off()) != SSD650V_STOPPED ) {
+  if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
     fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
-    motor_on_off_state= MOTOR_UNDEFINED ;
+    motor_on_off_state= SSD650V_MS_UNDEFINED ;
   } else {
-    motor_on_off_state= MOTOR_NOT_RUNNING ;
+    motor_on_off_state= SSD650V_MS_STOPPED ;
   }
 
   // set initial tel_eq to HA=0
@@ -268,7 +266,7 @@ int Vermes::initValues ()
   tel_equ.dec= 0. ;
   // thread to compare (target - current) azimuth and rotate the dome
   int *value ;
-  ret = pthread_create( &thread_0, NULL, move_to_target_azimuth, value) ;
+  ret = pthread_create( &move_to_target_azimuth_id, NULL, move_to_target_azimuth, value) ;
   return Cupola::initValues ();
 }
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 

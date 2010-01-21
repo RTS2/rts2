@@ -54,9 +54,9 @@ static int mot_cmd_status = -1;
 static struct timeval time_last_stat;   /* time of last status enquiry sent to
                                          * SSD650V */
 // wildi ToDo INDI replacements
-#define ISS_ON 0
-#define ISS_OFF 1 
-#define IPS_IDLE 1 
+//#define ISS_ON 0
+//#define ISS_OFF 1 
+//#define IPS_IDLE 1 
 
 // SSD650v frequency inverter states
 //
@@ -67,12 +67,6 @@ int set ;
 int reset ;
 } ;
 static struct ssd650v_fast_stop_state fast_stop_state ;
-// originally was:
-// MotorStartSP.sp[0].s "START_CW" "Start CW" (clockwise)
-// MotorStartSP.sp[1].s "STOP" "Stop"
-// MotorStartSP.sp[2].s "START_CCW" "Start CCW" (counter clockwise)
-// ssd650v allows negative and positive values:
-// setpoint=[-100.,100]
 
 struct ssd650v_motor_state {
 int start ;
@@ -99,7 +93,7 @@ static struct ssd650v_coast_state coast_state ;
 //SSD_MotorSeqLP.lp[8].s "SEQ_SP_REACHED" "Motor setpoint reached" 
 //SSD_MotorSeqLP.lp[9].s "SEQ_INTERN_LIMIT" "Motor current limit"
 struct ssd650v_seq_state {
-int ssd_motor_seq ; // SSD650V_IDLE, SSD650V_OK
+int ssd_motor_seq ; // SSD650V_IS_IDLE, SSD650V_IS_OK
 int ready;
 int on;
 int running;
@@ -124,7 +118,7 @@ float SSD_qry_setpoint(int sd);
 int SSD_qry_hexword(int sd, int tag);
 float SSD_qry_real(int sd, int tag);
 int SSD_set_tag(int sd, int tag, char * data);
-int motor_run_switch_state() ;
+int motor_run_switch_state( int on_off) ;
 
 typedef enum TAG_TYPES {
   TAGT_BOOL,
@@ -233,9 +227,12 @@ tagdata_t load_settings_tseq[] = {
  *****************************************************************************/
 int motor_on()
 {
-  motor_state.start= SSD650V_ON ;
-  motor_state.stop = SSD650V_OFF ;
-  return motor_run_switch_state() ;
+    int ret ;
+    if(( ret= motor_run_switch_state( SSD650V_CMD_ON)) != BISYNC_OK) {
+
+	return SSD650V_MS_UNDEFINED ;
+    }
+    return SSD650V_MS_RUNNING;
 }
 /******************************************************************************
  * motor_off(...)
@@ -247,9 +244,12 @@ int motor_on()
  *****************************************************************************/
 int motor_off()
 {
-  motor_state.start= SSD650V_OFF ;
-  motor_state.stop = SSD650V_ON ;
-  return motor_run_switch_state() ;
+    int ret ;
+    if(( ret= motor_run_switch_state(SSD650V_CMD_OFF)) != BISYNC_OK) {
+
+	return SSD650V_MS_UNDEFINED ;
+    }
+    return SSD650V_MS_STOPPED ;
 }
 
 /******************************************************************************
@@ -355,17 +355,17 @@ qry_mot_status()
 /*       SSD_MotorSeqLP.lp[7].s = cmd_stat & 0x0200 ? IPS_OK : IPS_IDLE; */
 /*       SSD_MotorSeqLP.lp[8].s = cmd_stat & 0x0400 ? IPS_OK : IPS_IDLE; */
 /*       SSD_MotorSeqLP.lp[9].s = cmd_stat & 0x0800 ? IPS_OK : IPS_IDLE; */
-      seq_state.ssd_motor_seq= SSD650V_OK ;
-      seq_state.ready       = cmd_stat & 0x0001 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.on          = cmd_stat & 0x0002 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.running     = cmd_stat & 0x0004 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.tripped     = cmd_stat & 0x0008 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.coast       = cmd_stat & 0x0010 ? SSD650V_IDLE : SSD650V_OK;
-      seq_state.fast_stop   = cmd_stat & 0x0020 ? SSD650V_IDLE : SSD650V_OK;
-      seq_state.on_disable  = cmd_stat & 0x0040 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.remote      = cmd_stat & 0x0200 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.sp_reached  = cmd_stat & 0x0400 ? SSD650V_OK : SSD650V_IDLE;
-      seq_state.intern_limit= cmd_stat & 0x0800 ? SSD650V_OK : SSD650V_IDLE;
+      seq_state.ssd_motor_seq= SSD650V_IS_OK ;
+      seq_state.ready       = cmd_stat & 0x0001 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.on          = cmd_stat & 0x0002 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.running     = cmd_stat & 0x0004 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.tripped     = cmd_stat & 0x0008 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.coast       = cmd_stat & 0x0010 ? SSD650V_IS_IDLE : SSD650V_IS_OK;
+      seq_state.fast_stop   = cmd_stat & 0x0020 ? SSD650V_IS_IDLE : SSD650V_IS_OK;
+      seq_state.on_disable  = cmd_stat & 0x0040 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.remote      = cmd_stat & 0x0200 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.sp_reached  = cmd_stat & 0x0400 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
+      seq_state.intern_limit= cmd_stat & 0x0800 ? SSD650V_IS_OK : SSD650V_IS_IDLE;
 
       inverter_seq_status = cmd_stat;
     }
@@ -376,17 +376,17 @@ qry_mot_status()
 /*     for (i = 0; i < 10; i++) { */
 /*       SSD_MotorSeqLP.lp[i].s = IPS_BUSY; */
 /*     } */
-    seq_state.ssd_motor_seq= SSD650V_ALERT ;
-    seq_state.ready       = SSD650V_BUSY ;
-    seq_state.on          = SSD650V_BUSY ;
-    seq_state.running     = SSD650V_BUSY ;
-    seq_state.tripped     = SSD650V_BUSY ;
-    seq_state.coast       = SSD650V_BUSY ;
-    seq_state.fast_stop   = SSD650V_BUSY ;
-    seq_state.on_disable  = SSD650V_BUSY ;
-    seq_state.remote      = SSD650V_BUSY ;
-    seq_state.sp_reached  = SSD650V_BUSY ;
-    seq_state.intern_limit= SSD650V_BUSY ;
+    seq_state.ssd_motor_seq= SSD650V_IS_ALERT ;
+    seq_state.ready       = SSD650V_IS_BUSY ;
+    seq_state.on          = SSD650V_IS_BUSY ;
+    seq_state.running     = SSD650V_IS_BUSY ;
+    seq_state.tripped     = SSD650V_IS_BUSY ;
+    seq_state.coast       = SSD650V_IS_BUSY ;
+    seq_state.fast_stop   = SSD650V_IS_BUSY ;
+    seq_state.on_disable  = SSD650V_IS_BUSY ;
+    seq_state.remote      = SSD650V_IS_BUSY ;
+    seq_state.sp_reached  = SSD650V_IS_BUSY ;
+    seq_state.intern_limit= SSD650V_IS_BUSY ;
   }
   return cmd_stat;
 }
@@ -411,14 +411,14 @@ motor_faststop_switch_state()
 
   } else {
     // wildi ToDo:   if( MotorFastStopSP.sp[0].s == ISS_ON) {
-    if (fast_stop_state.set == SSD650V_ON) {
+    if (fast_stop_state.set == SSD650V_IS_ON) {
       mot_stat &= 0xfffa;
       sprintf(cmd_word, ">%.4X", mot_stat);
       res = SSD_set_tag(ser_dev, 271, cmd_word);
       msg = "Motor is fast stoping";
 
       //    } wildi ToDo: else if (MotorFastStopSP.sp[1].s == ISS_ON) {
-    } else if (fast_stop_state.reset == SSD650V_ON) {
+    } else if (fast_stop_state.reset == SSD650V_IS_ON) {
       mot_stat |= 0x0004;
       sprintf(cmd_word, ">%.4X", mot_stat);
       res = SSD_set_tag(ser_dev, 271, cmd_word);
@@ -455,31 +455,31 @@ motor_coast_switch_state()
 
   } else {
     // wildi ToDo if (MotorCoastSP.sp[0].s == ISS_ON) {
-    if (coast_state.set == SSD650V_ON) {
+    if (coast_state.set == SSD650V_IS_ON) {
       mot_stat &= 0xfffc;
       sprintf(cmd_word, ">%.4X", mot_stat);
       res = SSD_set_tag(ser_dev, 271, cmd_word);
       msg = "Motor is coasting";
 /*       MotorCoastSP.sp[0].s = ISS_ON; */
 /*       MotorCoastSP.sp[1].s = ISS_OFF; */
-      coast_state.set  = SSD650V_ON ;
-      coast_state.reset= SSD650V_OFF ;
+      coast_state.set  = SSD650V_IS_ON ;
+      coast_state.reset= SSD650V_IS_OFF ;
 
 /*       MotorStartSP.sp[0].s = ISS_OFF; */
 /*       MotorStartSP.sp[1].s = ISS_ON; */
-      motor_state.start= SSD650V_OFF ;
-      motor_state.stop = SSD650V_ON ;
+      //motor_state.start= SSD650V_IS_OFF ;
+      //motor_state.stop = SSD650V_IS_ON ;
   
       // wildi ToDo } else if (MotorCoastSP.sp[1].s == ISS_ON) {
-    } else if (coast_state.reset == SSD650V_ON) {
+    } else if (coast_state.reset == SSD650V_IS_ON) {
       mot_stat |= 0x0002;
       sprintf(cmd_word, ">%.4X", mot_stat);
       res = SSD_set_tag(ser_dev, 271, cmd_word);
       msg = "Motor is not coasting";
 /*       MotorCoastSP.sp[0].s = ISS_OFF; */
 /*       MotorCoastSP.sp[1].s = ISS_ON; */
-      coast_state.set  = SSD650V_OFF ;
-      coast_state.reset= SSD650V_ON ;
+      coast_state.set  = SSD650V_IS_OFF ;
+      coast_state.reset= SSD650V_IS_ON ;
 
     } else {
 /*       MotorCoastSP.s = IPS_ALERT; */
@@ -497,63 +497,55 @@ motor_coast_switch_state()
  * motor_run_switch_state()
  * Switches the motor from stopped to running or  to stopped.
  *****************************************************************************/
-int motor_run_switch_state()
+int motor_run_switch_state( int cmd)
 {
-  int res;
-  char * msg;
+    int res;
+    char * msg;
 
-  float setpoint = SSD_qry_setpoint(ser_dev);
-  if (!isnan(setpoint)) {
-    // OK
-  } else {
-/*     motorOperationNP.s = IPS_ALERT; */
-    indi_log(ILOG_WARNING, "Failure querying setpoint - aborting motor command");
-    fprintf( stderr, "motor_run_switch_state: SSD650V_GETTING_SET_POINT_FAILED\n") ;
-    return SSD650V_GETTING_SET_POINT_FAILED;
-  }
-
-// wildi ToDo  if (MotorStartSP.sp[0].s == ISS_ON) {
-  if (motor_state.start== SSD650V_ON) {
-    /* msg = "Motor is started"; */
-    /* fprintf( stderr, "%s\n", msg) ; */
-    res = set_setpoint(setpoint);
-    if (res != BISYNC_OK) {
-      indi_log(ILOG_WARNING, "Failure setting setpoint (%d) - motor not started", res);
-/*       MotorStartSP.sp[0].s = ISS_OFF; */
-/*       MotorStartSP.sp[1].s = ISS_ON; */
-      motor_state.start= SSD650V_OFF ;
-      motor_state.stop = SSD650V_ON ;
-      fprintf( stderr, "motor_run_switch_state: SSD650V_SETTING_SET_POINT_FAILED %3.1f, error %d\n", setpoint, res) ;
-
-      return SSD650V_SETTING_SET_POINT_FAILED;
+    float setpoint = SSD_qry_setpoint(ser_dev);
+    if (!isnan(setpoint)) {
+	// OK
+    } else {
+	indi_log(ILOG_WARNING, "Failure querying setpoint - aborting motor command");
+	fprintf( stderr, "motor_run_switch_state: SSD650V_MS_GETTING_SET_POINT_FAILED\n") ;
+	return SSD650V_MS_GETTING_SET_POINT_FAILED;
     }
-    res = SSD_set_tag(ser_dev, 271, ">047F");
-/*     MotorCoastSP.sp[0].s = ISS_OFF; */
-/*     MotorCoastSP.sp[1].s = ISS_ON; */
-    coast_state.set  = SSD650V_OFF ;
-    coast_state.reset= SSD650V_ON ;
+
+    if ( cmd== SSD650V_CMD_ON) {
+	/* msg = "Motor is started"; */
+	/* fprintf( stderr, "%s\n", msg) ; */
+	res = set_setpoint(setpoint);
+	if (res != BISYNC_OK) {
+	    indi_log(ILOG_WARNING, "Failure setting setpoint (%d) - motor not started", res);
+	    fprintf( stderr, "motor_run_switch_state: SSD650V_MS_SETTING_SET_POINT_FAILED %3.1f, error %d\n", setpoint, res) ;
+
+	    return SSD650V_MS_SETTING_SET_POINT_FAILED;
+	}
+	/* start the motor */
+	res = SSD_set_tag(ser_dev, 271, ">047F");
+
+    coast_state.set  = SSD650V_IS_OFF ;
+    coast_state.reset= SSD650V_IS_ON ;
 
     qry_mot_cmd();
     qry_mot_status();
-    fprintf( stderr, "motor_run_switch_state: SSD650V_RUNNING\n") ;
+    fprintf( stderr, "motor_run_switch_state: SSD650V_MS_RUNNING\n") ;
 
-    return SSD650V_RUNNING ;
+    return SSD650V_MS_RUNNING ;
 
-// wildi ToDo  } else if (MotorStartSP.sp[1].s == ISS_ON) {
-  } else if (motor_state.stop  == SSD650V_ON) {
+  } else if ( cmd  == SSD650V_CMD_OFF) {
     /* msg = "Motor is stopped"; */
     /* fprintf( stderr, "%s\n", msg) ; */
     res = SSD_set_tag(ser_dev, 271, ">047E");
-/*     MotorCoastSP.sp[0].s = ISS_OFF; */
-/*     MotorCoastSP.sp[1].s = ISS_ON; */
-    coast_state.set  = SSD650V_OFF ;
-    coast_state.reset= SSD650V_ON ;
+
+    coast_state.set  = SSD650V_IS_OFF ;
+    coast_state.reset= SSD650V_IS_ON ;
 
     qry_mot_cmd();
     qry_mot_status();
-    fprintf( stderr, "motor_run_switch_state: SSD650V_STOPPED\n") ;
+    fprintf( stderr, "motor_run_switch_state: SSD650V_MS_STOPPED\n") ;
 
-    return SSD650V_STOPPED ;
+    return SSD650V_MS_STOPPED ;
   }
   else
     {
@@ -561,7 +553,7 @@ int motor_run_switch_state()
     fprintf( stderr, "%s\n", msg) ;
     
     }
-  return SSD650V_CONNECTION_NOK ;
+  return SSD650V_MS_GENERAL_FAILURE ;
 }
 
 /******************************************************************************
@@ -596,24 +588,24 @@ query_all_ssd650_status(void * user_p)
   if (difftimeval(&time_enq, &time_last_stat) > 500) {
     time_last_stat = time_enq;
     // wildi ToDo if (SSD_MotorSeqLP.s == IPS_IDLE) {
-    if (seq_state.ssd_motor_seq == SSD650V_IDLE) {
-      seq_state.ssd_motor_seq= SSD650V_OK; 
+    if (seq_state.ssd_motor_seq == SSD650V_IS_IDLE) {
+      seq_state.ssd_motor_seq= SSD650V_IS_OK; 
     } else {
-      seq_state.ssd_motor_seq= SSD650V_IDLE; 
+      seq_state.ssd_motor_seq= SSD650V_IS_IDLE; 
     }
   }
 }
 /******************************************************************************
- * connectDevice()
+ * connectSSD650vDevice()
  *****************************************************************************/
-int connectDevice( int power_state)
+int connectSSD650vDevice( int power_state)
 {
   int res = 0;
   int mot_stat;
-  char device_ssd650v[]="/dev/ssd650v" ;
+  char device_ssd650v[]="/dev/ssd650v" ; // azimuth and door devices are the same
 
   switch (power_state) {
-    case SSD650V_CONNECT:
+    case SSD650V_CMD_CONNECT:
       ser_dev = ssd_start_comm(device_ssd650v);
       if (ser_dev >= 0) {
 	/*connected: query identity from SSD650V */
@@ -622,8 +614,9 @@ int connectDevice( int power_state)
 /*           IUSaveText(&SSD_device_infoTP.tp[0], id_str); */
           free(id_str);
         } else {
-	  fprintf( stderr, "connectDevice: SSD650V_CONNECTION_FAILED\n") ;
-	  return SSD650V_CONNECTION_FAILED ;
+	  fprintf( stderr, "connectDevice: SSD651V_IDENTITY_FAILED\n") ;
+	  fprintf( stderr, "connectDevice: ---------------------IGNORING return SSD650V_MS_IDENTITY_FAILED\n") ;
+	 // return SSD650V_MS_IDENTITY_FAILED ;
         }
         /* query major state from SSD650V indicating powering up and
          * initialisation */
@@ -631,8 +624,8 @@ int connectDevice( int power_state)
         if (id_str) {
 /*           IUSaveText(&SSD_device_infoTP.tp[1], id_str); */
         } else {
-	  fprintf( stderr, "connectDevice: SSD650V_MAJOR_STATE_FAILED\n") ;
-	  return SSD650V_MAJOR_STATE_FAILED ;
+	  fprintf( stderr, "connectDevice: SSD650V_MS_MAJOR_STATE_FAILED\n") ;
+	  return SSD650V_MS_MAJOR_STATE_FAILED ;
         }
         /* query the motor sequencing status from SSD650V */
         qry_mot_status();
@@ -645,8 +638,8 @@ int connectDevice( int power_state)
 /*           IUSaveText(&SSD_device_infoTP.tp[4], id_str); */
           free(id_str);
         } else {
-	  fprintf( stderr, "connectDevice: SSD650V_LAST_ERROR_FAILED\n") ;
-	  return SSD650V_LAST_ERROR_FAILED ;
+	  fprintf( stderr, "connectDevice: SSD650V_MS_LAST_ERROR_FAILED\n") ;
+	  return SSD650V_MS_LAST_ERROR_FAILED ;
         }
 
         /* get current setpoint, accel and decel times */
@@ -656,8 +649,8 @@ int connectDevice( int power_state)
 /*           IDSetNumber(&motorOperationNP, "setpoint currently is %3.1f", abs_setpoint); */
         } else {
           indi_log(ILOG_WARNING, "Failure querying setpoint");
-	  fprintf( stderr, "connectDevice: SSD650V_GETTING_SET_POINT_FAILED\n") ;
-	  return SSD650V_GETTING_SET_POINT_FAILED ;
+	  fprintf( stderr, "connectDevice: SSD650V_MS_GETTING_SET_POINT_FAILED\n") ;
+	  return SSD650V_MS_GETTING_SET_POINT_FAILED ;
         }
 
         float accel_tm = SSD_qry_real(ser_dev, 258);
@@ -667,7 +660,7 @@ int connectDevice( int power_state)
         } else {
           indi_log(ILOG_WARNING, "Failure querying accel_tm");
 	  fprintf( stderr, "Failure querying accel_tm-----------------------------\n");
-	  return SSD650V_GETTING_ACCELERATION_TIME_FAILED ;
+	  return SSD650V_MS_GETTING_ACCELERATION_TIME_FAILED ;
         }
 	char data[8];
 	float decel_tm= 0.5 ; 
@@ -680,94 +673,93 @@ int connectDevice( int power_state)
         } else {
           indi_log(ILOG_WARNING, "Failure querying decel_tm");
 	  fprintf( stderr, "Failure querying decel_tm-----------------------------\n");
-	  return SSD650V_GETTING_DECELERATION_TIME_FAILED ;
+	  return SSD650V_MS_GETTING_DECELERATION_TIME_FAILED ;
         }
         /* query the motor control command status from SSD650V */
         mot_stat = qry_mot_cmd();
         if (mot_stat >= 0) {
           if ((mot_stat & 0x0001) != 0) {
 /*             MotorStartSP.sp[1].s = ISS_OFF; */
-	    motor_state.stop= SSD650V_OFF ;
+	      motor_state.stop= SSD650V_IS_OFF ;
             if (setpoint >= 0) {
 /*               MotorStartSP.sp[0].s = ISS_ON; */
 /*               MotorStartSP.sp[2].s = ISS_OFF; */
-	      motor_state.start= SSD650V_ON ;
+	      motor_state.start= SSD650V_IS_ON ;
 
             } else {
 /*               MotorStartSP.sp[0].s = ISS_OFF; */
 /*               MotorStartSP.sp[2].s = ISS_ON; */
-	      motor_state.start= SSD650V_OFF ;
+	      motor_state.start= SSD650V_IS_OFF ;
             }
           } else {
 /*             MotorStartSP.sp[0].s = ISS_OFF; */
 /*             MotorStartSP.sp[1].s = ISS_ON; */
-	      motor_state.start= SSD650V_OFF ;
-	      motor_state.stop = SSD650V_ON ;
+	      motor_state.start= SSD650V_IS_OFF ;
+	      motor_state.stop = SSD650V_IS_ON ;
           }
           if ((mot_stat & 0x0002) != 0) {
 /*             MotorCoastSP.sp[0].s = ISS_OFF; */
 /*             MotorCoastSP.sp[1].s = ISS_ON; */
-	    coast_state.set  = SSD650V_OFF ;
-	    coast_state.reset= SSD650V_ON ;
+	    coast_state.set  = SSD650V_IS_OFF ;
+	    coast_state.reset= SSD650V_IS_ON ;
 	    
           } else {
 /*             MotorCoastSP.sp[0].s = ISS_ON; */
 /*             MotorCoastSP.sp[1].s = ISS_OFF; */
-	    coast_state.set  = SSD650V_ON ;
-	    coast_state.reset= SSD650V_OFF ;
+	    coast_state.set  = SSD650V_IS_ON ;
+	    coast_state.reset= SSD650V_IS_OFF ;
           }
 
           if ((mot_stat & 0x0004) != 0) {
 /*             MotorFastStopSP.sp[0].s = ISS_OFF; */
 /*             MotorFastStopSP.sp[1].s = ISS_ON; */
-	    fast_stop_state.set  = SSD650V_OFF ;
-	    fast_stop_state.reset= SSD650V_ON ;
+	    fast_stop_state.set  = SSD650V_IS_OFF ;
+	    fast_stop_state.reset= SSD650V_IS_ON ;
           } else {
 /*             MotorFastStopSP.sp[0].s = ISS_ON; */
 /*             MotorFastStopSP.sp[1].s = ISS_OFF; */
-	    fast_stop_state.set  = SSD650V_ON ;
-	    fast_stop_state.reset= SSD650V_OFF ;
+	    fast_stop_state.set  = SSD650V_IS_ON ;
+	    fast_stop_state.reset= SSD650V_IS_OFF ;
           }
         } else {
-	  fprintf( stderr, "connectDevice: SSD650V_GETTING_MOTOR_COMMAND_FAILED\n") ;
-	  return SSD650V_GETTING_MOTOR_COMMAND_FAILED ;
+	  fprintf( stderr, "connectDevice: SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED\n") ;
+	  return SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED ;
         }
 	// wildi ToDo gettimeofday(&time_last_stat, NULL);
         // wildi ToDo workproc_id = addWorkProc(&query_all_ssd650_status, NULL);
       } else {
-	fprintf( stderr, "connectDevice: SSD650V_CONNECTION_NOK\n") ;  
-	return SSD650V_CONNECTION_NOK ;
+	fprintf( stderr, "connectDevice: SSD650V_MS_CONNECTION_FAILED\n") ;  
+	return SSD650V_MS_CONNECTION_FAILED ;
       }
       // set the initial values
-      fast_stop_state.set = SSD650V_OFF ;
-      fast_stop_state.reset = SSD650V_ON ;
+      fast_stop_state.set = SSD650V_IS_OFF ;
+      fast_stop_state.reset = SSD650V_IS_ON ;
       motor_faststop_switch_state() ;
 
-      coast_state.set  = SSD650V_OFF ;
-      coast_state.reset= SSD650V_ON ;
+      coast_state.set  = SSD650V_IS_OFF ;
+      coast_state.reset= SSD650V_IS_ON ;
       motor_coast_switch_state() ;
 
       fprintf( stderr, "connectDevice: connection OK\n") ;
-      return SSD650V_CONNECTION_OK ;
+      return SSD650V_MS_CONNECTION_OK ;
       
       break;
 
-    case SSD650V_DISCONNECT:
-      // wildi ToDo rmWorkProc(workproc_id);
+      case SSD650V_CMD_DISCONNECT:
 
       res = ssd_stop_comm();
       if (!res) {
 	// wildi ToDo  IDSetSwitch(&PowerSP, "disconnected from %s.", SerDeviceTP.tp[0].text);
-      return SSD650V_CONNECTION_OK ;
+      return SSD650V_MS_CONNECTION_OK ;
       } else {
         // wildi ToDo IDSetSwitch(&PowerSP, "disconnect from %s failed.", SerDeviceTP.tp[0].text);
-      return SSD650V_CONNECTION_NOK ;
+      return SSD650V_MS_CONNECTION_FAILED ;
       }
       break;
 
     default: ;
   }
-  return SSD650V_GENERAL_FAILURE;
+  return SSD650V_MS_GENERAL_FAILURE;
 }
 /******************************************************************************
  * ssd_start_comm()

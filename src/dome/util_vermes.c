@@ -299,7 +299,7 @@ sprintfv(char* str, char* format, va_list ap)
   /* check out whether the current string buffer size is sufficent */
   new_len = vsnprintf(str, s_len, format, ap);
   if (debug > 4) {
-    fprintf(stderr, "str: %p, cur len: %ld, new len: %ld.\n", str, s_len, new_len);
+    fprintf(stderr, "str: %p, cur len: %ld, new len: %ld.\n", str, (long int)s_len, (long int)new_len);
   }
   if (new_len < 0) {
     indi_debug_log(0, "sprintfv(): could not determine formatted length.");
@@ -315,7 +315,7 @@ sprintfv(char* str, char* format, va_list ap)
       /* print again. */
       vsnprintf(str, new_len, format, cp_ap);
       if (debug > 4) {
-        fprintf(stderr, "str: %p (\"%s\"), new len: %ld.\n", str, str, new_len);
+        fprintf(stderr, "str: %p (\"%s\"), new len: %ld.\n", str, str, (long int)new_len);
       }
     } else {
       indi_log(ILOG_ERR, "sprintfv(): realloc failed.");
@@ -356,7 +356,7 @@ catfv(char* str, char* format, va_list ap)
   str = xrealloc(str, new_size);
   if (debug > 4) {
     fprintf(stderr, "str: %p, addlen: %d, new_size: %ld\n",
-                     str, add_len, new_size);
+                     str, add_len, (long int)new_size);
   }
   if (str != NULL) {
     /* print again. */

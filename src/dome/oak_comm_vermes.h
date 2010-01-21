@@ -35,12 +35,13 @@ void connectOakDiginDevice(int connecting);
 }
 #endif
 
+
+// action in connectOakDiginDevice 
 #define OAKDIGIN_CONNECT    0 
 #define OAKDIGIN_DISCONNECT 1 
 
-
-// OAK states
-
+// OAK states bit patterns
+//
 
 #endif   // #ifndef __OAK_COMM_VERMES_H__
 
