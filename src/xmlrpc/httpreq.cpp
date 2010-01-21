@@ -597,12 +597,18 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 
 #ifdef HAVE_LIBJPEG
 
-void Target::printTargetPlot (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+void Targets::printTargetPlot (Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
-	response_length = _os.str ().length ();
+
+	Magick::Image mimage (size, "white");
+
+	Magick::Blob blob;
+	mimage.write (&blob, "jpeg");
+
+	response_length = blob.length();
 	response = new char[response_length];
-	memcpy (response, _os.str ().c_str (), response_length);
+	memcpy (response, blob.data(), response_length);
 }
 
 #endif /* HAVE_LIBJPEG */
