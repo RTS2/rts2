@@ -25,7 +25,7 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
-#include "../utilsdb/rts2imgset.h"
+#include "../utilsdb/imageset.h"
 #include "../utilsdb/rts2user.h"
 #include "../utilsdb/targetset.h"
 #endif /* HAVE_PGSQL */
@@ -439,6 +439,13 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					printTargetObservations (tar, response_type, response, response_length);
 					break;
 				}
+#ifdef HAVE_LIBJPEG
+				if (vals[1] == "plot")
+				{
+					printTargetPlot (tar, response_type, response, response_length);
+					break;
+				}
+#endif /* HAVE_LIBJPEG */
 			default:
 				throw rts2core::Error ("Invalid path!");
 		}
@@ -510,16 +517,20 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	Previewer preview = Previewer ();
 	preview.script (_os);
 		
-	_os << "</head><body>";
+	_os << "</head><body><p>";
 
-	Rts2ImgSetTarget is = Rts2ImgSetTarget (tar->getTargetID ());
+	preview.form (_os);
+	
+	_os << "</p><p>";
+
+	rts2db::ImageSetTarget is = rts2db::ImageSetTarget (tar->getTargetID ());
 	is.load ();
 
 	if (is.size () > 0)
 	{
 		_os << "<p>";
 
-		for (Rts2ImgSetTarget::iterator iter = is.begin (); iter != is.end (); iter++)
+		for (rts2db::ImageSetTarget::iterator iter = is.begin (); iter != is.end (); iter++)
 		{
 			in++;
 			if (in <= istart)
@@ -583,6 +594,18 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
 }
+
+#ifdef HAVE_LIBJPEG
+
+void Target::printTargetPlot (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+{
+	response_type = "image/jpeg";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+#endif /* HAVE_LIBJPEG */
 
 void AddTarget::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {

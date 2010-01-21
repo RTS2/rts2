@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "imgpreview.h"
 #include "nightreq.h"
 #include "nightdur.h"
 #include "xmlrpcd.h"
@@ -40,13 +41,21 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	int year = -1;
 	int month = -1;
 	int day = -1;
+	
+	bool printAll = false;
 
 	switch (vals.size ())
 	{
 		case 4:
 			// assumes that all previous are OK, get just target
 			printObs (atoi (vals[3].c_str ()), response_type, response, response_length);
-			break;			
+			break;
+		case 5:
+			// print all images..
+			if (vals[4] == "all")
+				printAll = true;
+			else
+				throw rts2core::Error ("Invalid path for all observations");
 		case 3:
 			day = atoi (vals[2].c_str ());
 		case 2:
@@ -54,10 +63,13 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 		case 1:
 			year = atoi (vals[0].c_str ());
 		case 0:
-			printTable (year, month, day, response, response_length);
+			if (printAll)
+				printAllImages (year, month, day, response, response_length);
+			else
+				printTable (year, month, day, response, response_length);
 			break;
 		default:
-			throw rts2core::Error ("Invalid path for graph!");
+			throw rts2core::Error ("Invalid path for observations!");
 	}
 }
 
@@ -88,6 +100,46 @@ void Night::listObs (int year, int month, int day, std::ostringstream &_os)
 	}
 }
 
+void Night::printAllImages (int year, int month, int day, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+
+	_os << "<html><head><title>Observations";
+
+	if (year > 0)
+	{
+		_os << " for " << year;
+		if (month > 0)
+		{
+			_os << "-" << month;
+			if (day > 0)
+			{
+				_os << "-" << day;
+				do_list = true;
+			}
+		}
+	}
+
+	if (year == 0 || month == 0 || day == 0)
+		do_list = true;
+
+	_os << "</title></head><body><p><a href='all'>All images</a></p><p><table>";
+
+	rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
+	as.load (year, month, day);
+
+	for (rts2db::ObservationSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
+	{
+		_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
+	}
+
+	_os << "</table><p></body></html>";
+
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
 void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
 {
 	bool do_list = false;
@@ -112,7 +164,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	if (year == 0 || month == 0 || day == 0)
 		do_list = true;
 
-	_os << "</title></head><body><p><table>";
+	_os << "</title></head><body><p><a href='all'>All images</a></p><p><table>";
 
 	if (do_list == true)
 	{

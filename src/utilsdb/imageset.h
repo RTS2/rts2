@@ -23,14 +23,15 @@
 #include "../writers/rts2image.h"
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
-#include "rts2imgsetstat.h"
-
-namespace rts2db {
-class Observation;
-}
+#include "imagesetstat.h"
 
 class Rts2ImageDb;
+
+namespace rts2db {
+
+class Observation;
 
 /**
  * Class for accesing images.
@@ -39,56 +40,66 @@ class Rts2ImageDb;
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2ImgSet:public std::vector <Rts2Image * >
+class ImageSet:public std::vector <Rts2Image * >
 {
 	private:
-		Rts2ImgSetStat allStat;
+		ImageSetStat allStat;
 
 		// which images filters are in set..
-		std::vector <Rts2ImgSetStat> filterStat;
+		std::vector <ImageSetStat> filterStat;
 
 	protected:
 		int load (std::string in_where);
 		void stat ();
 	public:
-		Rts2ImgSet ();
+		ImageSet ();
 		// abstract. subclasses needs to define that
 		virtual int load () = 0;
-		virtual ~Rts2ImgSet (void);
+		virtual ~ImageSet (void);
 		void print (std::ostream & _os, int printImages);
 		int getAverageErrors (double &eRa, double &eDec, double &eRad);
 
-		std::vector < Rts2ImgSetStat >::iterator   getStat (std::string in_filter);
+		std::vector < ImageSetStat >::iterator   getStat (std::string in_filter);
 
-		friend std::ostream & operator << (std::ostream & _os, Rts2ImgSet & img_set);
+		friend std::ostream & operator << (std::ostream & _os, ImageSet & img_set)
+		{
+			_os << "Filter  all#             exposure good# ( %%%)    avg. err     avg. alt      avg. az" << std::endl;
+			for (std::vector <ImageSetStat>::iterator iter = img_set.filterStat.begin (); iter != img_set.filterStat.end (); iter++)
+			{
+				ImageSetStat stat = *iter;
+				_os << std::setw (5) << stat.filter << " " << stat  << std::endl;
+			}
+			_os << "Total " << img_set.allStat;
+			return _os;
+		}
 };
 
-class Rts2ImgSetTarget:public Rts2ImgSet
+class ImageSetTarget:public ImageSet
 {
 	private:
 		int tar_id;
 	public:
-		Rts2ImgSetTarget (int in_tar_id);
+		ImageSetTarget (int in_tar_id);
 		virtual int load ();
 };
 
-class Rts2ImgSetObs:public Rts2ImgSet
+class ImageSetObs:public ImageSet
 {
 	private:
 		rts2db::Observation *observation;
 	public:
-		Rts2ImgSetObs (rts2db::Observation * in_observation);
+		ImageSetObs (rts2db::Observation * in_observation);
 		virtual int load ();
 };
 
-class Rts2ImgSetPosition:public Rts2ImgSet
+class ImageSetPosition:public ImageSet
 {
 	private:
 		struct ln_equ_posn pos;
 	public:
-		Rts2ImgSetPosition (struct ln_equ_posn *in_pos);
+		ImageSetPosition (struct ln_equ_posn *in_pos);
 		virtual int load ();
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2ImgSet & img_set);
+}
 #endif							 /* !__RTS2_IMGSET__ */

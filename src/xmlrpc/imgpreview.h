@@ -1,4 +1,4 @@
-/* 
+	/* 
  * Image preview and download classes.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
@@ -39,6 +39,8 @@ class Previewer
 		 */
 		void script (std::ostringstream& _os);
 
+		void form (std::ostringstream& _os);
+
 		/**
 		 * Create image href entry.
 		 *
@@ -66,8 +68,6 @@ class JpegPreview:public GetRequestAuthorized
 {
 	public:
 		JpegPreview (const char* prefix, const char *_dirPath, XmlRpcServer *s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
-
-		void pageLink (std::ostringstream& _os, const char* path, int i, int pagesiz, int prevsize, bool selected);
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

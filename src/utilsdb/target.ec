@@ -1690,7 +1690,7 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 
 	getPosition (&tar_pos, JD);
 
-	Rts2ImgSetPosition img_set = Rts2ImgSetPosition (&tar_pos);
+	ImageSetPosition img_set = ImageSetPosition (&tar_pos);
 	ret = img_set.load ();
 	if (ret)
 		return ret;

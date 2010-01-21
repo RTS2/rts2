@@ -1,6 +1,6 @@
 /* 
- * Variable plotting library.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Plotting library.
+ * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,41 +23,45 @@
 
 #include <Magick++.h>
 #include "../utilsdb/records.h"
-#include "plot.h"
 
 namespace rts2xmlrpc
 {
 
+typedef enum {PLOTTYPE_AUTO, PLOTTYPE_LINE, PLOTTYPE_LINE_SHARP, PLOTTYPE_CROSS, PLOTTYPE_CIRCLES, PLOTTYPE_SQUARES, PLOTTYPE_FILL, PLOTTYPE_FILL_SHARP} PlotType;
+
 /**
- * Value graph class.
+ * General graph class.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValuePlot:public Plot
+class Plot
 {
 	public:
-		/**
-		 * Create plot for a given variable.
-		 *
-		 * @param _varId    Varible which will be plotted.
-		 * @param _valType  Display type of variable
-		 */
-		ValuePlot (int _varId, int _valType, int w = 800, int h = 600);
+		Plot (int w = 800, int h = 600);
 
-		/**
-		 * Return Magick::Image plot of the data.
-		 *
-		 * @param from       Plot from this time.
-		 * @param to         Plot to this time.
-		 * @param plotType   Type of value plot.
-		 * 
-		 * @throw rts2core::Error or its descendandts on error.
-		 */
-		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5);
-	
-	private:
-		int recvalId;
-		int valueType;
+	protected:
+		double scaleX;
+		double scaleY;
+
+		double min;
+		double max;
+
+		double from;
+		double to;
+
+		PlotType plotType;
+
+		Magick::Geometry size;
+		Magick::Image *image;
+
+		void plotYGrid (int y);
+		void plotXGrid (int x);
+
+		void plotYDegrees ();
+		void plotYDouble ();
+		void plotYBoolean ();
+
+		void plotXDate ();
 };
 
 }

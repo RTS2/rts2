@@ -40,8 +40,8 @@ class Night: public GetRequestAuthorized
 	private:
 		void printObs (int obs_id, const char* &response_type, char* &response, size_t &response_length);
 		void listObs (int year, int month, int day, std::ostringstream &_os);
+		void printAllImages (int year, int month, int day, char* &response, size_t &response_length);
 		void printTable (int year, int month, int day, char* &response, size_t &response_length);
-
 };
 
 }

@@ -71,11 +71,13 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	Previewer preview = Previewer ();
 	preview.script (_os);
 
-	_os << "</head><body>";
+	_os << "</head><body><p>";
 
-	_os << "<p>";
+	preview.form (_os);
 
-	for (Rts2ImgSet::iterator iter = obs.getImageSet ()->begin (); iter != obs.getImageSet ()->end (); iter++)
+	_os << "</p><p>";
+
+	for (rts2db::ImageSet::iterator iter = obs.getImageSet ()->begin (); iter != obs.getImageSet ()->end (); iter++)
 	{
 		in++;
 		if (in <= istart)

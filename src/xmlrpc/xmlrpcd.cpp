@@ -25,7 +25,7 @@
 #include "../utilsdb/records.h"
 #include "../utilsdb/recordsavg.h"
 #include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/rts2imgset.h"
+#include "../utilsdb/imageset.h"
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2messagedb.h"
 #include "../utilsdb/targetset.h"
@@ -1330,9 +1330,9 @@ class ListImages: public SessionMethod
 			obs = new rts2db::Observation ((int)params[0]);
 			if (obs->loadImages ())
 				return;
-			Rts2ImgSet *img_set = obs->getImageSet();
+			rts2db::ImageSet *img_set = obs->getImageSet();
 			int i = 0;
-			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
+			for (rts2db::ImageSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
 				double eRa, eDec, eRad;
 				eRa = eDec = eRad = nan ("f");

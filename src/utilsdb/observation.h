@@ -31,7 +31,7 @@
 #include "../utils/timestamp.h"
 
 #include "rts2count.h"
-#include "rts2imgset.h"
+#include "imageset.h"
 #include "target.h"
 
 namespace rts2db
@@ -222,7 +222,7 @@ class Observation
 			return obs_dec;
 		}
 
-		Rts2ImgSet *getImageSet ()
+		ImageSet *getImageSet ()
 		{
 			return imgset;
 		}
@@ -320,7 +320,7 @@ class Observation
 
 	private:
 		//! list of images for that observation
-		Rts2ImgSet * imgset;
+		ImageSet * imgset;
 		std::vector < Rts2Count > counts;
 
 		int displayImages;

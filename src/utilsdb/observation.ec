@@ -191,7 +191,7 @@ Observation::loadImages ()
 	if (ret)
 		return ret;
 
-	imgset = new Rts2ImgSetObs (this);
+	imgset = new ImageSetObs (this);
 	return imgset->load ();
 }
 
