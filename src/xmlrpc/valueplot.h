@@ -58,6 +58,8 @@ class ValuePlot:public Plot
 	private:
 		int recvalId;
 		int valueType;
+
+		void plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewidth, int shadow);
 };
 
 }

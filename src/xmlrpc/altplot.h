@@ -22,42 +22,39 @@
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>
-#include "../utilsdb/records.h"
+#include "../utilsdb/targetset.h"
 #include "plot.h"
 
 namespace rts2xmlrpc
 {
 
 /**
- * Value graph class.
+ * Altitude graph class.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValuePlot:public Plot
+class AltPlot:public Plot
 {
 	public:
 		/**
-		 * Create plot for a given variable.
-		 *
-		 * @param _varId    Varible which will be plotted.
-		 * @param _valType  Display type of variable
+		 * Create plot with altitude
 		 */
-		ValuePlot (int _varId, int _valType, int w = 800, int h = 600);
+		AltPlot (int w = 800, int h = 600);
 
 		/**
 		 * Return Magick::Image plot of the data.
 		 *
 		 * @param from       Plot from this time.
 		 * @param to         Plot to this time.
+		 * @param tarset     Set of targets to plot.
 		 * @param plotType   Type of value plot.
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double _from, double _to, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5);
-	
-	private:
-		int recvalId;
-		int valueType;
+		Magick::Image* getPlot (double _from, double _to, rts2db::TargetSet *tarset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5);
+
+	private:	
+		void plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow);
 };
 
 }

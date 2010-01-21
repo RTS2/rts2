@@ -115,13 +115,9 @@ void Night::printAllImages (int year, int month, int day, char* &response, size_
 			if (day > 0)
 			{
 				_os << "-" << day;
-				do_list = true;
 			}
 		}
 	}
-
-	if (year == 0 || month == 0 || day == 0)
-		do_list = true;
 
 	_os << "</title></head><body><p><a href='all'>All images</a></p><p><table>";
 

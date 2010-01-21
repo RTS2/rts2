@@ -1,6 +1,6 @@
 /* 
- * Variable plotting library.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Altitude plotting library.
+ * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,31 +19,26 @@
 
 #include <time.h>
 
-#include "valueplot.h"
+#include "altplot.h"
 
 #ifdef HAVE_LIBJPEG
 
 #include "../utils/expander.h"
 #include "../utils/libnova_cpp.h"
 
+#include "../utilsdb/target.h"
+
 using namespace rts2xmlrpc;
 
-ValuePlot::ValuePlot (int _recvalId, int _valType, int w, int h):Plot (w, h)
+AltPlot::AltPlot (int w, int h):Plot (w, h)
 {
-	recvalId = _recvalId;
-	valueType = _valType;
 }
 
-Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
+Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::TargetSet *tarset, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
 {
-	// first load values..
-	rts2db::RecordsSet rs (recvalId);
-
 	from = _from;
 	to = _to;
 	plotType = _plotType;
-
-	rs.load (from, to);
 
 	if (_image)
 	{
@@ -60,14 +55,8 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 	image->strokeWidth (1);
 
 	// Y axis scaling
-	min = rs.getMin ();
-	max = rs.getMax ();
-
-	if (min == max)
-	{
-		min -= 0.1;
-		max += 0.1;
-	}
+	min = 0;
+	max = 90;
 
 	scaleY = size.height () / (max - min);
 	scaleX = size.width () / (to - from); 
@@ -75,54 +64,29 @@ Magick::Image* ValuePlot::getPlot (double _from, double _to, Magick::Image* _ima
 	image->font("helvetica");
 	image->strokeAntiAlias (true);
 
-	switch (valueType & RTS2_BASE_TYPE)
-	{
-		case RTS2_VALUE_BOOL:
-			min = -0.1;
-			max = 1.1;
-			if (plotType == PLOTTYPE_AUTO)
-				plotType = PLOTTYPE_FILL_SHARP;
-			plotYBoolean ();
-			break;
-		case RTS2_VALUE_DOUBLE:
-		default:
-			if (max > 0 && min < 0)
-			{
-				// draw 0 line
-				image->fontPointsize (15);
-				image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
-				image->strokeWidth (3);
-				plotYGrid (size.height () - (scaleY * -min));
-			}
-			if (plotType == PLOTTYPE_AUTO)
-				plotType = PLOTTYPE_LINE;
-			switch (valueType & RTS2_TYPE_MASK)
-			{
-				case RTS2_DT_RA:
-				case RTS2_DT_DEC:
-				case RTS2_DT_DEGREES:
-					plotYDegrees ();
-					break;
-				default:
-					plotYDouble ();
-					break;
-			}
-			break;
-	}
+	// draw 0 line
+	image->fontPointsize (15);
+	image->draw (Magick::DrawableText (0, size.height () - (scaleY * -min) - 4, "0"));
+	image->strokeWidth (3);
+	plotYGrid (size.height () - (scaleY * -min));
+			
+	if (plotType == PLOTTYPE_AUTO)
+		plotType = PLOTTYPE_LINE;
 
+	plotYDegrees ();
 	plotXDate ();
 
-	if (!rs.empty ())
+	for (rts2db::TargetSet::iterator iter = tarset->begin (); iter != tarset->end (); iter++)
 	{
 		if (shadow)
-			plotData (rs, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
-		plotData (rs, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
+			plotTarget (iter->second, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
+		plotTarget (iter->second, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
 	}
 
 	return image;
 }
 
-void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewidth, int shadow)
+void AltPlot::plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow)
 {
 	// reset stroke pattern
 	image->strokePattern (Magick::Image (Magick::Geometry (1,1), col));
@@ -130,16 +94,25 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 	image->strokeWidth (linewidth);
 	image->fillColor (col);
 
-	rts2db::RecordsSet::iterator iter = rs.begin ();
+	struct ln_hrz_posn hrz;
 
-	double x = scaleX * (iter->getRecTime () - from) + shadow;
-	double y = size.height () - scaleY * (iter->getValue () - min) + shadow;
+	time_t t_from = (time_t) from;
 
-	for (; iter != rs.end (); )
+	double JD = ln_get_julian_from_timet (&t_from);
+
+	tar->getAltAz (&hrz, JD);
+
+	double stepX = (to - from) / size.width () / 86400.0;
+
+	double x = shadow;
+	double x_end = x + 1;
+	double y = size.height () - scaleY * (hrz.alt - min) + shadow;
+
+	while (x < size.width ())
 	{
-		iter++;
-		double x_end = (iter == rs.end ()) ? size.width (): scaleX * (iter->getRecTime () - from) + shadow;
-		double y_end = (iter == rs.end ()) ? y : size.height () - scaleY * (iter->getValue () - min) + shadow;
+		JD += stepX;
+		tar->getAltAz (&hrz, JD);
+		double y_end = size.height () - scaleY * (hrz.alt - min) + shadow;
 		switch (plotType)
 		{
 			case PLOTTYPE_AUTO:
@@ -170,6 +143,7 @@ void ValuePlot::plotData (rts2db::RecordsSet &rs, Magick::Color col, int linewid
 				image->draw (Magick::DrawablePolygon (pol));
 		}
 		x = x_end;
+		x_end++;
 		y = y_end;
 	}
 }
