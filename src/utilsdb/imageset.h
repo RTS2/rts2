@@ -1,6 +1,6 @@
 /* 
  * Set of images.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,15 +42,6 @@ class Observation;
  */
 class ImageSet:public std::vector <Rts2Image * >
 {
-	private:
-		ImageSetStat allStat;
-
-		// which images filters are in set..
-		std::vector <ImageSetStat> filterStat;
-
-	protected:
-		int load (std::string in_where);
-		void stat ();
 	public:
 		ImageSet ();
 		// abstract. subclasses needs to define that
@@ -72,33 +63,51 @@ class ImageSet:public std::vector <Rts2Image * >
 			_os << "Total " << img_set.allStat;
 			return _os;
 		}
+	protected:
+		int load (std::string in_where);
+		void stat ();
+	private:
+		ImageSetStat allStat;
+
+		// which images filters are in set..
+		std::vector <ImageSetStat> filterStat;
 };
 
 class ImageSetTarget:public ImageSet
 {
-	private:
-		int tar_id;
 	public:
 		ImageSetTarget (int in_tar_id);
 		virtual int load ();
+	private:
+		int tar_id;
 };
 
 class ImageSetObs:public ImageSet
 {
-	private:
-		rts2db::Observation *observation;
 	public:
 		ImageSetObs (rts2db::Observation * in_observation);
 		virtual int load ();
+	private:
+		rts2db::Observation *observation;
 };
 
 class ImageSetPosition:public ImageSet
 {
-	private:
-		struct ln_equ_posn pos;
 	public:
 		ImageSetPosition (struct ln_equ_posn *in_pos);
 		virtual int load ();
+	private:
+		struct ln_equ_posn pos;
+};
+
+class ImageSetDate:public ImageSet
+{
+	public:
+		ImageSetDate (time_t _from, time_t _to) { from = _from; to = _to; }
+		virtual int load ();
+	private:
+		time_t from;
+		time_t to;
 };
 
 }

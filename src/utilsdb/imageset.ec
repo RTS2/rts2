@@ -1,6 +1,6 @@
 /* 
  * Set of images.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -327,4 +327,16 @@ int ImageSetPosition::load ()
 		<< ", " << pos.dec
 		<< ", astrometry)";
 	return ImageSet::load (os.str ());
+}
+
+int ImageSetDate::load ()
+{
+	std::ostringstream _os;
+	_os << " observations.obs_slew >= to_timestamp (" << from << ")"
+	 	<< " AND observations.obs_slew <= to_timestamp ("
+		<< to
+		<< ") AND (observations.obs_end is NULL OR observations.obs_end < to_timestamp ("
+		<< to
+			<< "))";
+	return ImageSet::load (_os.str ());
 }
