@@ -47,12 +47,8 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	switch (vals.size ())
 	{
 		case 4:
-			// assumes that all previous are OK, get just target
-			printObs (atoi (vals[3].c_str ()), response_type, response, response_length);
-			break;
-		case 5:
 			// print all images..
-			if (vals[4] == "all")
+			if (vals[3] == "all")
 				printAll = true;
 			else
 				throw rts2core::Error ("Invalid path for all observations");
@@ -64,17 +60,13 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 			year = atoi (vals[0].c_str ());
 		case 0:
 			if (printAll)
-				printAllImages (year, month, day, response, response_length);
+				printAllImages (year, month, day, params, response, response_length);
 			else
 				printTable (year, month, day, response, response_length);
 			break;
 		default:
 			throw rts2core::Error ("Invalid path for observations!");
 	}
-}
-
-void Night::printObs (int obs_id, const char* &response_type, char* &response, size_t &response_length)
-{
 }
 
 void Night::listObs (int year, int month, int day, std::ostringstream &_os)
@@ -100,7 +92,7 @@ void Night::listObs (int year, int month, int day, std::ostringstream &_os)
 	}
 }
 
-void Night::printAllImages (int year, int month, int day, char* &response, size_t &response_length)
+void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *params, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
@@ -119,17 +111,56 @@ void Night::printAllImages (int year, int month, int day, char* &response, size_
 		}
 	}
 
-	_os << "</title></head><body><p><a href='all'>All images</a></p><p><table>";
+	int pageno = params->getInteger ("p", 1);
+	int pagesiz = params->getInteger ("s", 40);
 
-	rts2db::ObservationSetDate as = rts2db::ObservationSetDate ();
-	as.load (year, month, day);
+	if (pageno <= 0)
+		pageno = 1;
 
-	for (rts2db::ObservationSetDate::iterator iter = as.begin (); iter != as.end (); iter++)
+	int istart = (pageno - 1) * pagesiz;
+	int ie = istart + pagesiz;
+	int in = 0;
+
+	int prevsize = params->getInteger ("ps", 128);
+
+	time_t from;
+	int64_t duration;
+
+	getNightDuration (year, month, day, from, duration);
+
+	time_t end = from + duration;
+
+	_os << "</title>";
+	
+	Previewer preview = Previewer ();
+	preview.script (_os);
+
+	_os << "</head><body><p>";
+
+	preview.form (_os);
+
+	_os << "</p><p>";
+
+	rts2db::ImageSetDate is = rts2db::ImageSetDate (from, end);
+	is.load ();
+
+	for (rts2db::ImageSetDate::iterator iter = is.begin (); iter != is.end (); iter++)
 	{
-		_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first << "</a></td><td>" << iter->second << "</td></tr>";
+		in++;
+		if (in <= istart)
+			continue;
+		if (in > ie)
+			break;
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize);
 	}
 
-	_os << "</table><p></body></html>";
+	_os << "</p><p>Page ";
+	int i;
+	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
+	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	if (in % pagesiz)
+	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	_os << "</p></body></html>";
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];
