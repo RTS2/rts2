@@ -2,9 +2,6 @@
 
 #include <math.h>
 
-#include "../utils/libnova_cpp.h"
-#include "../utils/timestamp.h"
-
 using namespace rts2db;
 
 void ImageSetStat::stat ()

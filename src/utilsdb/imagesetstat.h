@@ -5,6 +5,9 @@
 #include <ostream>
 #include <iomanip>
 
+#include "../utils/libnova_cpp.h"
+#include "../utils/timestamp.h"
+
 namespace rts2db {
 
 /**
