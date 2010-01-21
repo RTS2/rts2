@@ -442,7 +442,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 #ifdef HAVE_LIBJPEG
 				if (vals[1] == "plot")
 				{
-					printTargetPlot (tar, response_type, response, response_length);
+					plotTarget (tar, params, response_type, response, response_length);
 					break;
 				}
 #endif /* HAVE_LIBJPEG */
@@ -597,9 +597,11 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 
 #ifdef HAVE_LIBJPEG
 
-void Targets::printTargetPlot (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+void Targets::plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	response_type = "image/jpeg";
+
+	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
 	Magick::Image mimage (size, "white");
 

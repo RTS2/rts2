@@ -152,7 +152,7 @@ class Targets: public GetRequestAuthorized
 		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length);
 #ifdef HAVE_LIBJPEG
-		void printTargetPlot (Target *tar, const char* &response_type, char* &response, size_t &response_length);
+		void plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 #endif /* HAVE_LIBJPEG */
 };
 
