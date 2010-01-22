@@ -140,6 +140,7 @@ namespace rts2teld
     int tel_stop_move (char direction);
     int tel_slew_to (double ra, double dec);
     void set_move_timeout (time_t plus_time);
+    int tel_check_coords (double ra, double dec);
     // further discussion with Petr required
     //int changeMasterState (int new_state);
     // Astro-Physics properties
@@ -1296,6 +1297,59 @@ APGTO::tel_slew_to (double ra, double dec)
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
   return -1;
 }
+/*!
+ * Check, if telescope match given coordinates.
+ *
+ * @param ra		target right ascenation
+ * @param dec		target declination
+ *
+ * @return -1 on error, 0 if not matched, 1 if matched, 2 if timeouted
+ */
+int
+APGTO::tel_check_coords (double ra, double dec)
+{
+  // ADDED BY JF
+  double JD;
+
+  double sep;
+  time_t now;
+
+  struct ln_equ_posn object, target;
+  struct ln_lnlat_posn observer;
+  struct ln_hrz_posn hrz;
+
+  time (&now);
+  if (now > move_timeout)
+    return 2;
+
+  if ((tel_read_ra () < 0) || (tel_read_dec () < 0))
+    return -1;
+
+  // ADDED BY JF
+  // CALCULATE & PRINT ALT/AZ & HOUR ANGLE TO LOG
+  object.ra = getTelRa ();
+  object.dec = getTelDec ();
+
+  observer.lng = telLongitude->getValueDouble ();
+  observer.lat = telLatitude->getValueDouble ();
+
+  JD = ln_get_julian_from_sys ();
+
+  ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
+  
+  logStream (MESSAGE_DEBUG) << "LX200 tel_check_coords TELESCOPE ALT " << hrz.
+    alt << " AZ " << hrz.az << sendLog;
+
+  target.ra = ra;
+  target.dec = dec;
+  
+  sep = ln_get_angular_separation (&object, &target);
+  
+  if (sep > 0.1)
+    return 0;
+  
+  return 1;
+}
 void
 APGTO::set_move_timeout (time_t plus_time)
 {
@@ -1326,6 +1380,7 @@ APGTO::isMoving ()
   
   switch (move_state) {
   case MOVE_REAL:
+    ret = tel_check_coords (lastMoveRa, lastMoveDec);
     switch (ret) {
     case -1:
       return -1;
