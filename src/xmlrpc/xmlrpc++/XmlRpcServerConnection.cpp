@@ -211,8 +211,10 @@ bool XmlRpcServerConnection::readHeader()
 
 	// Otherwise copy non-header data to request buffer and set state to read request.
 	_request_length = ep - bp;
-	_request_buf = (char*) malloc(_request_length);
+	_request_buf = (char*) malloc(_request_length + 1);
 	memcpy(_request_buf, bp, _request_length);
+	// NULL terminate it..
+	_request_buf[_request_length] = '\0';
 	_request = _request_buf;
 
 	XmlRpcUtil::log(3, "XmlRpcServerConnection::readHeader: request %s", _request_buf);
