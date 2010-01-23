@@ -85,7 +85,7 @@ xrealloc(void *ptr, size_t size)
     value = realloc(ptr, size);
   }
   if (value == NULL) {
-    fprintf(stderr, "virtual memory exhausted.\n");
+      fprintf(stderr, "virtual memory exhausted: %d============================================================================\n", (int) size);
     exit(EXIT_FAILURE);
   }
   return value;

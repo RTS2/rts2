@@ -45,20 +45,21 @@ int connectSSD650vDevice( int power_state) ;
 #define SSD650V_CMD_CONNECT    3  // RS232
 #define SSD650V_CMD_DISCONNECT 4
 // SSD650V states
+#define SSD650V_MS_OK                                99
 #define SSD650V_MS_UNDEFINED                        100
-#define SSD650V_MS_RUNNING                          111
-#define SSD650V_MS_STOPPED                          112
-#define SSD650V_MS_CONNECTION_OK                    100
-#define SSD650V_MS_CONNECTION_FAILED                102
-#define SSD650V_MS_IDENTITY_FAILED                  103
-#define SSD650V_MS_MAJOR_STATE_FAILED               104
-#define SSD650V_MS_LAST_ERROR_FAILED                105
-#define SSD650V_MS_GETTING_SET_POINT_FAILED         106
-#define SSD650V_MS_SETTING_SET_POINT_FAILED         107
-#define SSD650V_MS_GETTING_ACCELERATION_TIME_FAILED 108
-#define SSD650V_MS_GETTING_DECELERATION_TIME_FAILED 109
-#define SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED     110
-#define SSD650V_MS_GENERAL_FAILURE                  200
+#define SSD650V_MS_RUNNING                          101
+#define SSD650V_MS_STOPPED                          102
+#define SSD650V_MS_CONNECTION_OK                    103
+#define SSD650V_MS_CONNECTION_FAILED                104
+#define SSD650V_MS_IDENTITY_FAILED                  105
+#define SSD650V_MS_MAJOR_STATE_FAILED               106
+#define SSD650V_MS_LAST_ERROR_FAILED                107
+#define SSD650V_MS_GETTING_SET_POINT_FAILED         108
+#define SSD650V_MS_SETTING_SET_POINT_FAILED         110
+#define SSD650V_MS_GETTING_ACCELERATION_TIME_FAILED 111
+#define SSD650V_MS_GETTING_DECELERATION_TIME_FAILED 112
+#define SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED     113
+#define SSD650V_MS_GENERAL_FAILURE                  114
 
 // wildi ToDo
 #define SSD650V_IS_ON       0 

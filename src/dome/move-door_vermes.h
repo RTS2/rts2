@@ -29,36 +29,39 @@ void *move_door( void *value);
 }
 #endif
 // set point used here and in oak_digin_thread 
-#define SETPOINT_ZERO  0.
-#define SETPOINT_OPEN_DOOR   50.
-#define SETPOINT_CLOSE_DOOR -40.
+#define SETPOINT_ZERO          0.
+#define SETPOINT_OPEN_DOOR   100.
+#define SETPOINT_CLOSE_DOOR  -90. // later 100.
 #define SETPOINT_UNDEFINED_POSITION -10. // manual intervention: reach a defined state by closing the door until the end switch is reached 
 
 
 // door state
-#define DS_UNDEF                    0
-#define DS_STOPPED_CLOSED           1
-#define DS_STOPPED_FULLY_OPEN       2
-#define DS_STOPPED_PARTIALLY_OPEN   3
-#define DS_START_OPEN               4
-#define DS_START_CLOSE              5
-#define DS_RUNNING_OPEN             6
-#define DS_RUNNING_CLOSE            7
-#define DS_STOPPING_OPENING         8
-#define DS_STOPPING_CLOSING         9
-#define DS_EMERGENCY_ENDSWITCH     10
+#define DS_UNDEF                       0
+#define DS_STOPPED_OPENED              1
+#define DS_STOPPED_CLOSED              2
+#define DS_STOPPED_UNDEF               3
+#define DS_START_OPEN                  4
+#define DS_START_CLOSE                 5
+#define DS_START_UNDEF                 6
+#define DS_RUNNING_OPEN                7
+#define DS_RUNNING_CLOSE               8
+#define DS_RUNNING_UNDEF               9
+#define DS_STOPPING_OPENING           10
+#define DS_STOPPING_CLOSING           11
+#define DS_EMERGENCY_ENDSWITCH_OPENED 12
+#define DS_EMERGENCY_ENDSWITCH_CLOSED 13
 
 // Oak sensor state
-#define EVNT_DS_OPEN_SENSOR         20
-#define EVNT_DS_CLOSE_SENSOR        21
-#define EVNT_DS_NO_SENSOR           22
-#define EVNT_DS_EMERGENCY_ENDSWITCH 23
+#define EVNT_DS_OPEN_SENSOR           20
+#define EVNT_DS_CLOSE_SENSOR          21
+#define EVNT_DS_NO_SENSOR             22
+#define EVNT_DS_EMERGENCY_ENDSWITCH   23
 
 // door commands
-#define EVNT_DS_CMD_OPEN            30
-#define EVNT_DS_CMD_CLOSE           31
+#define EVNT_DS_CMD_OPEN              30
+#define EVNT_DS_CMD_CLOSE             31
 #define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 32
-#define EVNT_DS_CMD_DO_NOTHING      33
+#define EVNT_DS_CMD_DO_NOTHING        33
 
 // comment to be defined
 #define ERR_DS_BAD_STATE            40

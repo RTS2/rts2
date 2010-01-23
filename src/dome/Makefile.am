@@ -1,8 +1,8 @@
 bin_PROGRAMS = rts2-dome-bart rts2-dome-fram rts2-dome-watcher \
 	rts2-cupola-mark rts2-cupola-dummy rts2-dome-bootes1a \
 	rts2-dome-bootes1b rts2-dome-zelio\
-	rts2-dome-opentpl
-#	rts2-cupola-vermes rts2-dome-door-vermes
+	rts2-dome-opentpl \
+	rts2-cupola-vermes rts2-dome-door-vermes
 
 SUBDIRS = zelio
 
@@ -13,14 +13,13 @@ noinst_HEADERS = dome.h cupola.h ford.h vermes.h door_vermes.h \
 	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h \
 	oak_comm_vermes.h
 
-#noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a librts2vermes.a
-noinst_LIBRARIES = librts2dome.a
+noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a librts2vermes.a
 
 librts2dome_a_SOURCES = dome.cpp ford.cpp
 
-#librts2dome_target_az_a_SOURCES =  dome-target-az.c
+librts2dome_target_az_a_SOURCES =  dome-target-az.c
 
-#librts2vermes_a_SOURCES = move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c
+librts2vermes_a_SOURCES = move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c
 
 LDADD = librts2dome.a ../utils/librts2block.a @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@
@@ -44,11 +43,11 @@ rts2_dome_zelio_SOURCES = zelio.cpp
 
 rts2_dome_opentpl_SOURCES = opentpl.cpp
 
-#rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
-#rts2_cupola_vermes_LDADD =  librts2vermes.a librts2dome-target-az.a @LIB_PTHREAD@  ${LDADD} 
+rts2_cupola_vermes_SOURCES = cupola.cpp vermes.cpp
+rts2_cupola_vermes_LDADD =  librts2vermes.a librts2dome-target-az.a @LIB_PTHREAD@  ${LDADD} 
 
-#rts2_dome_door_vermes_SOURCES = OakFeatureReports.c OakHidBase.c  door_vermes.cpp
-#rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
+rts2_dome_door_vermes_SOURCES = OakFeatureReports.c OakHidBase.c  door_vermes.cpp
+rts2_dome_door_vermes_LDADD = librts2vermes.a  librts2dome-target-az.a  @LIB_PTHREAD@  ${LDADD} 
 
 if COMEDI
 bin_PROGRAMS += rts2-dome-bootes2 rts2-dome-ieec

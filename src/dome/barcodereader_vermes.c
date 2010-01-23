@@ -119,8 +119,8 @@ void *
 xmalloc(size_t size)
 {
   register void *value = malloc(size);
-  if (value == 0) {
-    fprintf(stderr, "virtual memory exhausted");
+  if (value == NULL) {
+    fprintf(stderr, "virtual memory exhausted=============================================================\n");
     exit(EXIT_FAILURE);
   }
   return value;

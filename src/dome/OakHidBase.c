@@ -426,7 +426,7 @@ EOakStatus readInterruptReport(int deviceHandle, int* outReadValues)
 //   if (kCount > sizeof outReadValues) 
 //      return eOakStatusReadError;
    // make shure that enough memory is allocated for the received data.
-   xrealloc(outReadValues, sizeof(int) * kCount);
+   //wildi 2010-01-23, xrealloc(outReadValues, sizeof(int) * kCount);
 
    int i;
    for (i = 0; i < kCount; i++)

@@ -36,9 +36,9 @@ void connectOakDiginDevice(int connecting);
 #endif
 
 
-// action in connectOakDiginDevice 
-#define OAKDIGIN_CONNECT    0 
-#define OAKDIGIN_DISCONNECT 1 
+// commands in connectOakDiginDevice 
+#define OAKDIGIN_CMD_CONNECT    0 
+#define OAKDIGIN_CMD_DISCONNECT 1 // everything else 
 
 // OAK states bit patterns
 //
