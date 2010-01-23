@@ -59,7 +59,7 @@
  *
  * @return two arguments - first is device state as string, second as its numeric representation.
  */
-#define R2X_DEVICES_STATUS            "rts2.devices.status"
+#define R2X_DEVICE_STATE              "rts2.device.state"
 
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 

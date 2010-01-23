@@ -1,6 +1,6 @@
 /* 
  * XML-RPC client.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  * Copyright (C) 2007 Stanislav Vitek <standa@iaa.es>
  *
  * This program is free software; you can redistribute it and/or
@@ -54,7 +54,7 @@ class Client: public Rts2CliApp
 		int xmlVerbosity;
 
 		int schedTicket;
-		enum {SET_VARIABLE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
+		enum {SET_VARIABLE, GET_STATE, SCHED_TICKET, COMMANDS, GET_VARIABLES, INC_VARIABLE, GET_TYPES, GET_MESSAGES, HTTP_GET, TEST, NOOP} xmlOp;
 
                 bool getVariablesPrintNames;
 
@@ -111,6 +111,11 @@ class Client: public Rts2CliApp
 		 * @return -1 on error, 0 on success.
 		 */
 		int setVariables (const char *varName, const char *value);
+
+		/**
+		 * Return device state.
+		 */
+		int getState (const char *devName);
 
 		/**
 		 * Increase XML-RPC variable.
@@ -377,6 +382,18 @@ int Client::incVariable (const char *varName, const char *value)
 	return runXmlMethod (R2X_VALUE_SET, threeArg, result);
 }
 
+int Client::getState (const char *devName)
+{
+	XmlRpcValue oneArg, result;
+	oneArg[0] = devName;
+
+	int ret = runXmlMethod (R2X_DEVICE_STATE, oneArg, result);
+	if (ret)
+		return ret;
+	std::cout << devName << " " << result[1] << " " << result[0] << std::endl;
+	return ret;
+}
+
 int Client::schedTicketInfo (int ticketId)
 {
 	XmlRpcValue oneArg, result;
@@ -527,6 +544,9 @@ int Client::processOption (int opt)
 		case 'i':
 			xmlOp = INC_VARIABLE;
 			break;
+		case 'S':
+			xmlOp = GET_STATE;
+			break;
 		case OPT_SCHED_TICKET:
 			schedTicket = atoi (optarg);
 			xmlOp = SCHED_TICKET;
@@ -564,7 +584,7 @@ int Client::processOption (int opt)
 
 int Client::processArgs (const char *arg)
 {
-	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_TYPES || xmlOp == HTTP_GET))
+	if (!(xmlOp == COMMANDS || xmlOp == SET_VARIABLE || xmlOp == GET_VARIABLES || xmlOp == INC_VARIABLE || xmlOp == GET_STATE || xmlOp == GET_TYPES || xmlOp == HTTP_GET))
 		return -1;
 	args.push_back (arg);
 	return 0;
@@ -592,6 +612,15 @@ int Client::doProcessing ()
 				return -1;
 			}
 			return incVariable (args[0], args[1]);
+		case GET_STATE:
+			if (args.size () == 0)
+			{
+				logStream (MESSAGE_ERROR) << "Missing argument (device names)." << sendLog;
+				return -1;
+			}
+			for (std::vector <const char *>::iterator iter = args.begin (); iter != args.end (); iter++)
+				getState (*iter);
+			return 0;
 		case SCHED_TICKET:
 			return schedTicketInfo (schedTicket);
 		case GET_VARIABLES:
@@ -677,6 +706,7 @@ Client::Client (int in_argc, char **in_argv): Rts2CliApp (in_argc, in_argv)
 	addOption ('g', NULL, 0, "get variable(s) specified as arguments");
         addOption ('G', NULL, 0, "get variable(s) specified as arguments, print them separated with new line");
 	addOption ('s', NULL, 0, "set variables specified by variable list");
+	addOption ('S', NULL, 0, "get state of device(s) specified as argument");
 	addOption ('i', NULL, 0, "increment to variables specified by variable list");
 	addOption (OPT_SCHED_TICKET, "schedticket", 1, "print informations about scheduling ticket with given id");
 	addOption ('t', NULL, 0, "get device(s) type");

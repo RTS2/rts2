@@ -523,10 +523,10 @@ class DeviceCommand: public SessionMethod
  *
  * @addgroup XMLRPC
  */
-class DevicesStatus: public SessionMethod
+class DeviceState: public SessionMethod
 {
 	public:
-		DevicesStatus (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_STATUS, s)
+		DeviceState (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_STATE, s)
 		{
 		}
 
