@@ -17,6 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifdef __linux__
+#define	_FILE_OFFSET_BITS 64
+#endif
+
 #include "imgpreview.h"
 #include "../writers/rts2image.h"
 #include "bsc.h"
@@ -313,7 +317,6 @@ ssize_t write_callback (struct archive *a, void *client_data, const void *buffer
 	rts2xmlrpc::DownloadRequest * dr = (rts2xmlrpc::DownloadRequest *) client_data;
 	dr->buf = (char *) realloc (dr->buf, dr->buf_size + length);
 	memcpy (dr->buf + dr->buf_size, buffer, length);
-	std::cout << "length " << length << " buf " << dr->buf_size << std::endl;
 	dr->buf_size += length;
 
 	return length;
