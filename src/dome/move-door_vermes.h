@@ -29,10 +29,12 @@ void *move_door( void *value);
 }
 #endif
 // set point used here and in oak_digin_thread 
-#define SETPOINT_ZERO          0.
-#define SETPOINT_OPEN_DOOR   100.
-#define SETPOINT_CLOSE_DOOR  -90. // later 100.
-#define SETPOINT_UNDEFINED_POSITION -10. // manual intervention: reach a defined state by closing the door until the end switch is reached 
+#define SETPOINT_ZERO                 0.
+#define SETPOINT_OPEN_DOOR           50.
+#define SETPOINT_CLOSE_DOOR         -50. // later 100.
+#define SETPOINT_OPEN_DOOR_SLOW      30.
+#define SETPOINT_CLOSE_DOOR_SLOW    -30.
+#define SETPOINT_UNDEFINED_POSITION -30. // manual intervention: reach a defined state by closing the door until the end switch is reached 
 
 
 // door state

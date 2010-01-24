@@ -1,5 +1,5 @@
 /*
- * OAK digital input communication
+ * oak digital input communication
  * Copyright (C) 2010 Markus Wildi, version for RTS2
  * Copyright (C) 2009 Lukas Zimmermann, Basel, Switzerland
  *
@@ -45,7 +45,9 @@
 
 // wildi ToDo: must go aay
 #define TEST_OAK 1
-int test_oak= TEST_OAK ;
+#define NO_TEST_OAK 0
+int test_oak= NO_TEST_OAK ;
+#define SLEEP_TEST_OAK_MILLISECONDS 10500 // !milli seconds!
 // wildi ToDo TEMP, must go away
 time_t
 difftimeval(struct timeval *t1, struct timeval *t0) ;
@@ -257,6 +259,7 @@ oak_digin_thread(void * args)
   int *values = xmalloc(200 * sizeof(int));
   int rd_stat;
   int bits = 0xff;
+  int print_bits = 0xff;
   int bit;
   int i ;
   int lastDoorState= DS_UNDEF ;
@@ -268,11 +271,16 @@ oak_digin_thread(void * args)
   static struct timeval time_last_stat;
   static struct timeval time_enq;
   gettimeofday(&time_last_stat, NULL);
-
+  // debug
+  int print =0 ;
   sl.tv_sec= 0. ;
   sl.tv_nsec= (long ) 200 * 1000 * 1000 ;
 
-  fprintf( stderr,  "oak_digin_thread\n");
+  if( test_oak== TEST_OAK) {
+    fprintf( stderr,  "oak_digin_thread: test_oak== TEST_OK, sleep %d milliseconds\n", SLEEP_TEST_OAK_MILLISECONDS);
+  } else {
+    fprintf( stderr,  "oak_digin_thread: not in TEST modus\n");
+  }
   while (1) {
 
     rd_stat = readInterruptReport(oakDiginHandle, values);
@@ -280,25 +288,48 @@ oak_digin_thread(void * args)
       // wildi ToDo something sensible here values[1]=
       fprintf( stderr, "oak_digin_thread:  problems reading from oak device\n") ;
     }
-    bits = values[1] & 0xff ;
+    bits      = values[1] & 0xff ;
+    print_bits= values[1] & 0xff ;
+   
+    print= 0 ;
+    for (i = 0; i < 8; i++) {
+      bit = (print_bits & 0x1) ;
+      if( bit) {
+	bits_str[7-i]= '1' ;
+	print++ ;
+      } else {
+	bits_str[7-i]= '0' ;
+      }
+      print_bits = print_bits >> 1;
+    }
+    bits_str[8]= '\0' ;
+    //fprintf( stderr, "oak_digin_thread: doorState=%d, bits %s\n",  doorState, bits_str) ;
     // turn off the motor first
-    if(( (bits & OAK_MASK_CLOSED) > 0) && (( doorState== DS_START_OPEN) || ( doorState== DS_RUNNING_OPEN)))  {
+    if((( bits & OAK_MASK_CLOSED) > 0) && (( doorState== DS_STOPPED_CLOSED) || ( doorState== DS_START_OPEN) || ( doorState== DS_RUNNING_OPEN)))  {
       // let the motor open the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
-    } else if(( (bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_START_CLOSE) || ( doorState== DS_RUNNING_CLOSE)))  {
+
+    } else if((( bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_STOPPED_OPENED) ||( doorState== DS_START_CLOSE) || ( doorState== DS_RUNNING_CLOSE)))  {
       // let the motor close the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
+
+    } else if((( bits & OAK_MASK_CLOSED) > 0) && ( motorState== SSD650V_MS_RUNNING)) {
+      stop_motor= STOP_MOTOR ;
+      fprintf( stderr, "oak_digin_thread: found ( bits & OAK_MASK_CLOSED) > 0), bits %s\n",  bits_str) ;
+
+    } else if((( bits & OAK_MASK_OPENED) > 0) && ( motorState== SSD650V_MS_RUNNING)){
+      stop_motor= STOP_MOTOR ;
+      fprintf( stderr, "oak_digin_thread: found (bits & OAK_MASK_OPENED) > 0), bits %s\n",  bits_str) ;
+
     } else if ( (bits & OAK_MASK_END_SWITCHES) > 0) {  
       // the motor is turned off and eventually OAK devices too (no cummunication possible)
       stop_motor= STOP_MOTOR ;
     } else if ( (bits & OAK_MASK_END_SWITCHES) == 0) { // both end switches are zero 
       // the door is inbetween, (or beyond the software end switches :-(( = very close to the end switches)
       //fprintf( stderr, "oak_digin_thread:  might be a bad reading from oak device\n") ; // see above ToDo
-
       // wildi ToDo: not yet defined what to do
-    } else if((( bits & OAK_MASK_CLOSED) > 0) || ((bits & OAK_MASK_OPENED) > 0)) {
-      stop_motor= STOP_MOTOR ;
     } 
+
     // test
     if( test_oak== TEST_OAK) {
       if( lastDoorState != doorState) {
@@ -308,11 +339,16 @@ oak_digin_thread(void * args)
       }
       if( motorState== SSD650V_MS_RUNNING) {
 	gettimeofday(&time_enq, NULL);
-	if (difftimeval(&time_enq, &time_last_stat) > 3000) { // milliseconds
+	if (difftimeval(&time_enq, &time_last_stat) > (SLEEP_TEST_OAK_MILLISECONDS * 1000)) { // milliseconds
 	  stop_motor= STOP_MOTOR ;
 	  fprintf( stderr, "oak_digin_thread: motorState== (DS_RUNNING_OPEN|DS_RUNNING_CLOSE), stopping now, diff %d[msec]\n", (int)difftimeval(&time_enq, &time_last_stat)) ;
 	  gettimeofday(&time_last_stat, NULL);
+	  fprintf( stderr, "oak_digin_thread: stopping motor  after time ellapsed\n") ;
 	}
+      }
+      if(( print > 0) &&  ( stop_motor != STOP_MOTOR)) {
+	stop_motor= STOP_MOTOR ;
+	fprintf( stderr, "oak_digin_thread: print stop_motor= STOP_MOTOR \n") ;
       }
     }
     // end test
@@ -326,6 +362,7 @@ oak_digin_thread(void * args)
 	  fprintf( stderr, "Error in nanosleep\n") ;
 	}
       }
+      fprintf( stderr, "oak_digin_thread: motor stopped\n") ;
       stop_motor= STOP_MOTOR_UNDEFINED ;
     }
     // set the door status
@@ -334,30 +371,23 @@ oak_digin_thread(void * args)
       if (intr_cnt % 100 == 0) {
 	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_CLOSED\n") ;
       } 
-    } if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
+    } else if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
       doorState= DS_STOPPED_OPENED ;
       //fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
     } else {
       doorState= DS_UNDEF ;
       if (intr_cnt % 100 == 0) {
-	fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is off\n") ;
-      }       
+	if( motorState== SSD650V_MS_RUNNING) {
+	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is ON\n") ;
+	} else {
+	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is OFF\n") ;
+	}
+      }     
     }
     CHECK_OAK_CALL(rd_stat); // wildi ToDo: what's that?
     // Set the LED Mode to ON
     CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOn, false));
 
-    for (i = 0; i < 8; i++) {
-      bit = (bits & 0x1) ;
-      if( bit) {
-	bits_str[7-i]= '1' ;
-      } else {
-	bits_str[7-i]= '0' ;
-      }
-      bits = bits >> 1;
-    }
-    bits_str[8]= '\0' ;
-    //fprintf( stderr, "oak_digin_thread: bits %s\n", bits_str) ;
     // Set the LED Mode to OFF
     CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
 	
