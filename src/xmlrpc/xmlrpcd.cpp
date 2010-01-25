@@ -51,6 +51,7 @@ using namespace Magick;
 #include "augerreq.h"
 #include "nightreq.h"
 #include "obsreq.h"
+#include "targetreq.h"
 #include "imgpreview.h"
 
 #include "r2x.h"

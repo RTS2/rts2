@@ -139,43 +139,6 @@ class AltAzTarget: public GetRequestAuthorized
 
 #endif /* HAVE_LIBJPEG */ 
 
-class Targets: public GetRequestAuthorized
-{
-	public:
-		Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-	
-	private:
-		void listTargets (const char* &response_type, char* &response, size_t &response_length);
-		void printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-		void printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length);
-#ifdef HAVE_LIBJPEG
-		void plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-#endif /* HAVE_LIBJPEG */
-};
-
-/**
- * Add target to the database. Consists of those steps:
- *
-
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class AddTarget: public GetRequestAuthorized
-{
-	public:
-		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-	private:
-		void askForTarget (const char* &response_type, char* &response, size_t &response_length);
-		void confimTarget (const char *tar, const char* &response_type, char* &response, size_t &response_length);
-		void newTarget (const char *oriname, const char *name, int tarid, double ra, double dec, const char* &response_type, char* &response, size_t &response_length);
-		void schedule (int tarid, const char* &response_type, char* &response, size_t &response_length);
-};
-
 #endif /* HAVE_PGSQL */
 
 }
