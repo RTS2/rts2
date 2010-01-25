@@ -62,8 +62,9 @@ void *move_door( void *value);
 // door commands
 #define EVNT_DS_CMD_OPEN              30
 #define EVNT_DS_CMD_CLOSE             31
-#define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 32
-#define EVNT_DS_CMD_DO_NOTHING        33
+#define EVNT_DS_CMD_STOP              32
+#define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 33
+#define EVNT_DS_CMD_DO_NOTHING        34
 
 // comment to be defined
 #define ERR_DS_BAD_STATE            40

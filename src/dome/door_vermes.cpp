@@ -49,6 +49,7 @@ namespace rts2dome {
 	Rts2ValueString  *doorStateMessage;
 	Rts2ValueBool *raining;
 	Rts2ValueBool *open_door;
+	Rts2ValueBool *stop_door;
 	Rts2ValueBool *close_door;
 	Rts2ValueBool *close_door_undefined;
 	/**
@@ -153,7 +154,16 @@ DoorVermes::processOption (int _opt)
 }
 void DoorVermes::valueChanged (Rts2Value * changed_value)
 {
-  if (changed_value == open_door) {
+
+
+  if(changed_value == stop_door) {
+    if( stop_door->getValueBool()) {
+      logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged stopping door" << sendLog ;
+      doorEvent= EVNT_DS_CMD_STOP ;
+    } else {
+      logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
+    }
+  } else if (changed_value == open_door) {
     if( open_door->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged opening door" << sendLog ;
       doorEvent= EVNT_DS_CMD_OPEN ;
@@ -304,6 +314,7 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
     createValue (raining, "RAIN", "if it's raining", true);
     raining->setValueBool (false);
 
+    createValue (stop_door,            "STOP_DOOR",  "true stops door",  false, RTS2_VALUE_WRITABLE);
     createValue (open_door,            "OPEN_DOOR",  "true opens door",  false, RTS2_VALUE_WRITABLE);
     createValue (close_door,           "CLOSE_DOOR", "true closes door", false, RTS2_VALUE_WRITABLE);
     createValue (close_door_undefined, "CLOSE_UDFD", "true closes door", false, RTS2_VALUE_WRITABLE);

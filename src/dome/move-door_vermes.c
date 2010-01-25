@@ -45,21 +45,9 @@ int test_ssd= NO_TEST_SSD ;
 #define SLEEP_CLOSE_DOOR (time_t) 100 // 
 #define REPEAT_RATE_NANO_SEC (long) (200. * 1000. * 1000.) // [1^-9 sec] frequency while getting incorrect answer
 
-void sleep_while_moving()
+void off_zero()
 {
-  int    ret ;
-  struct timespec slv ;
-  struct timespec rsl ;
-
-  fprintf( stderr, "move_door: testRun == TEST_SSD\n") ;
-  // sleep
-  slv.tv_sec= SLEEP_TEST_SSD ;
-  slv.tv_nsec= 0 ;
-  ret= nanosleep( &slv, &rsl) ;
-  if((ret== EFAULT) || ( ret== EINTR)|| ( ret== EINVAL ))  {
-    fprintf( stderr, "Error in nanosleep %d\n", ret) ;
-  }
-
+  int ret ;
   struct timespec rep_slv ;
   struct timespec rep_rsl ;
   rep_slv.tv_sec= 0 ;
@@ -80,6 +68,24 @@ void sleep_while_moving()
       fprintf( stderr, "Error in nanosleep %d\n", ret) ;
     }
   }
+  fprintf(stderr, "off_zero: motor_off == SSD650V_MS_STOPPED\n") ;
+}
+
+void sleep_while_moving()
+{
+  int    ret ;
+  struct timespec slv ;
+  struct timespec rsl ;
+
+  fprintf( stderr, "move_door: testRun == TEST_SSD\n") ;
+  // sleep
+  slv.tv_sec= SLEEP_TEST_SSD ;
+  slv.tv_nsec= 0 ;
+  ret= nanosleep( &slv, &rsl) ;
+  if((ret== EFAULT) || ( ret== EINTR)|| ( ret== EINVAL ))  {
+    fprintf( stderr, "Error in nanosleep %d\n", ret) ;
+  }
+  off_zero() ;
 }
 void open_close( float setpoint, float setpoint_slow, int interimState, int targetState, int testRun, time_t seconds)
 {
@@ -117,7 +123,7 @@ void open_close( float setpoint, float setpoint_slow, int interimState, int targ
 	rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
 
 	// set setpoint is now low door moves slowly until the end switch is reached (oak_digin_thread)
-	while(( ret= set_setpoint(SLEEP_OPEN_DOOR)) != SSD650V_MS_OK) {
+	while(( ret= set_setpoint(setpoint_slow)) != SSD650V_MS_OK) {
 	  fprintf(stderr, "move_door: set_setpoint != SSD650V_MS_OK\n") ;
 	  ret= nanosleep( &rep_slv, &rep_rsl) ;
 	  if((ret== EFAULT) || ( ret== EINTR)|| ( ret== EINVAL ))  {
@@ -174,7 +180,12 @@ void *move_door( void *value)
   }
 
   while( 1==1) {
-    if(doorEvent== EVNT_DS_CMD_OPEN) {
+
+    if(doorEvent== EVNT_DS_CMD_STOP) {
+      fprintf(stderr, "move_door: stopping door\n") ;
+      off_zero() ;
+
+    } else if(doorEvent== EVNT_DS_CMD_OPEN) {
       fprintf(stderr, "move_door: opening door\n") ;
       // check the state
       if( doorState != DS_STOPPED_CLOSED) {
