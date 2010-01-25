@@ -121,5 +121,5 @@ class Rts2Message
 		}
 };
 
-std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg);
+std::ostream & operator << (std::ostream & _of, Rts2Message & msg);
 #endif							 /* ! __RTS2_MESSAGE__ */
