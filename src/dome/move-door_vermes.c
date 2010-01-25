@@ -175,16 +175,15 @@ void *move_door( void *value)
 
   if( test_ssd == TEST_SSD) {
     fprintf(stderr, "move_door: test_ssd == TEST_SSD, %ld\n", SLEEP_TEST_SSD) ;
-  } else {
-    fprintf(stderr, "move_door: not in TEST modus\n") ;
-  }
+  } 
 
   while( 1==1) {
 
     if(doorEvent== EVNT_DS_CMD_STOP) {
+      doorState= DS_STOPPING ;
       fprintf(stderr, "move_door: stopping door\n") ;
       off_zero() ;
-
+      doorState= DS_STOPPED_UNDEF ;
     } else if(doorEvent== EVNT_DS_CMD_OPEN) {
       fprintf(stderr, "move_door: opening door\n") ;
       // check the state

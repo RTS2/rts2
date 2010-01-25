@@ -106,7 +106,7 @@ connectOakDiginDevice(int connecting)
 #ifdef CHECK_MALLOC
     print_mem_usage("connectDevice(true)");
 #endif
-    fprintf( stderr, "connectOakDiginDevice------------\n") ;
+
     oak_stat = oak_digin_setup(&oakDiginHandle, oakDiginDevice);
     
     if (oak_stat == 0) {
@@ -196,12 +196,12 @@ int oak_digin_setup(int* deviceHandle, char* oakDiginDevice)
   oak_stat = CHECK_OAK_CALL(getDeviceInfo(oakDiginHandle, &devInfo));
   if (oak_stat != 0) return oak_stat;
 
-  fprintf( stderr, "oak_digin_setup: Oak device: %s\n", devInfo.deviceName);
-  fprintf( stderr, "oak_digin_setup: Volatile user device name: %s\n", devInfo.volatileUserDeviceName);
-  fprintf( stderr, "oak_digin_setup: Persistent user device name: %s\n", devInfo.persistentUserDeviceName);
-  fprintf( stderr, "oak_digin_setup: Serial number: %s\n", devInfo.serialNumber);
-  fprintf( stderr, "oak_digin_setup: VendorID: 0x%.4x :: ProductID: 0x%.4x :: Version 0x%.4x\n", devInfo.vendorID, devInfo.productID, devInfo.version);
-  fprintf( stderr, "oak_digin_setup: Number of channels: %d\n", devInfo.numberOfChannels);
+/*   fprintf( stderr, "oak_digin_setup: Oak device: %s\n", devInfo.deviceName); */
+/*   fprintf( stderr, "oak_digin_setup: Volatile user device name: %s\n", devInfo.volatileUserDeviceName); */
+/*   fprintf( stderr, "oak_digin_setup: Persistent user device name: %s\n", devInfo.persistentUserDeviceName); */
+/*   fprintf( stderr, "oak_digin_setup: Serial number: %s\n", devInfo.serialNumber); */
+/*   fprintf( stderr, "oak_digin_setup: VendorID: 0x%.4x :: ProductID: 0x%.4x :: Version 0x%.4x\n", devInfo.vendorID, devInfo.productID, devInfo.version); */
+/*   fprintf( stderr, "oak_digin_setup: Number of channels: %d\n", devInfo.numberOfChannels); */
 
   if (strcmp(devInfo.deviceName, "Toradex Optical Isolated Input")) {
     return -1;
@@ -262,6 +262,7 @@ oak_digin_thread(void * args)
   int print_bits = 0xff;
   int bit;
   int i ;
+  int lastDoorStateTest= DS_UNDEF ;
   int lastDoorState= DS_UNDEF ;
   int stop_motor= STOP_MOTOR_UNDEFINED ;
   char bits_str[32] ;
@@ -278,9 +279,7 @@ oak_digin_thread(void * args)
 
   if( test_oak== TEST_OAK) {
     fprintf( stderr,  "oak_digin_thread: test_oak== TEST_OK, sleep %d milliseconds\n", SLEEP_TEST_OAK_MILLISECONDS);
-  } else {
-    fprintf( stderr,  "oak_digin_thread: not in TEST modus\n");
-  }
+  } 
   while (1) {
 
     rd_stat = readInterruptReport(oakDiginHandle, values);
@@ -313,7 +312,7 @@ oak_digin_thread(void * args)
       // let the motor close the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
 
-    } else if((( bits & OAK_MASK_CLOSED) > 0) && ( motorState== SSD650V_MS_RUNNING)) {
+    } else if((( bits & OAK_MASK_CLOSED) > 0) && ( motorState== SSD650V_MS_RUNNING)) { // 2nd expr. necessary not to overload SSD650v on RS 232
       stop_motor= STOP_MOTOR ;
       fprintf( stderr, "oak_digin_thread: found ( bits & OAK_MASK_CLOSED) > 0), bits %s\n",  bits_str) ;
 
@@ -332,8 +331,8 @@ oak_digin_thread(void * args)
 
     // test
     if( test_oak== TEST_OAK) {
-      if( lastDoorState != doorState) {
-	lastDoorState= doorState ;
+      if( lastDoorStateTest != doorState) {
+	lastDoorStateTest= doorState ;
 	gettimeofday(&time_last_stat, NULL);
 	fprintf( stderr, "oak_digin_thread:  status change resetting timer\n") ;
       }
@@ -368,15 +367,20 @@ oak_digin_thread(void * args)
     // set the door status
     if( bits & OAK_MASK_CLOSED) { // true if OAK sees the door
       doorState= DS_STOPPED_CLOSED ;
-      if (intr_cnt % 100 == 0) {
+      if( lastDoorState != doorState) {
+	lastDoorState= doorState ;
 	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_CLOSED\n") ;
       } 
     } else if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
       doorState= DS_STOPPED_OPENED ;
-      //fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
+      if( lastDoorState != doorState) {
+	lastDoorState= doorState ;
+	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
+      }
     } else {
       doorState= DS_UNDEF ;
-      if (intr_cnt % 100 == 0) {
+      if( lastDoorState != doorState) {
+	lastDoorState= doorState ;
 	if( motorState== SSD650V_MS_RUNNING) {
 	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is ON\n") ;
 	} else {

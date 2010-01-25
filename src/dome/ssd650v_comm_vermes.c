@@ -25,6 +25,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -318,10 +319,8 @@ set_setpoint(float setpoint)
   /*   } */
   snprintf(data, 8, "%3.1f", setpoint);
   int ret= SSD_set_tag(ser_dev, 247, data) ;
-
-  fprintf( stderr, "-----------set_setpoint: data %s, tmp_set= %d\n", data, ret) ;
-
   if( ret == BISYNC_OK) {
+    fprintf( stderr, "set_setpoint: %s\n", data) ; 
     return SSD650V_MS_OK ;
   } else {
     return SSD650V_MS_SETTING_SET_POINT_FAILED ;
@@ -644,6 +643,8 @@ int connectSSD650vDevice( int power_state)
   char device_ssd650v[]="/dev/ssd650v" ; // azimuth and door devices are the same
   struct timespec sl ;
   struct timespec rsl ;
+  pthread_t  move_door_id;
+  int thread_stat_ssd;
   
   switch (power_state) {
   case SSD650V_CMD_CONNECT:
@@ -713,8 +714,7 @@ int connectSSD650vDevice( int power_state)
 
       float accel_tm = SSD_qry_real(ser_dev, 258);
       if (!isnan(accel_tm)) {
-	/*           IDSetNumber(&motorOperationNP, "accel time currently is %3.1f", accel_tm); */
-	fprintf( stderr, "connectSSD650vDevice: accel time currently is %3.1f-----------------------------\n", accel_tm);
+	//fprintf( stderr, "connectSSD650vDevice: accel time currently is %3.1f-----------------------------\n", accel_tm);
       } else {
 	indi_log(ILOG_WARNING, "Failure querying accel_tm");
 	fprintf( stderr, "Failure querying accel_tm-----------------------------\n");
@@ -727,7 +727,7 @@ int connectSSD650vDevice( int power_state)
 
       decel_tm = SSD_qry_real(ser_dev, 259);
       if (!isnan(decel_tm)) {
-	fprintf( stderr, "connectSSD650vDevice: decel time currently is %3.1f-----------------------------\n", decel_tm);
+	  //fprintf( stderr, "connectSSD650vDevice: decel time currently is %3.1f-----------------------------\n", decel_tm);
       } else {
 	indi_log(ILOG_WARNING, "Failure querying decel_tm");
 	fprintf( stderr, "Failure querying decel_tm-----------------------------\n");
@@ -781,8 +781,6 @@ int connectSSD650vDevice( int power_state)
 	fprintf( stderr, "connectSSD650vDevice: SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED\n") ;
 	return SSD650V_MS_GETTING_MOTOR_COMMAND_FAILED ;
       }
-      // wildi ToDo gettimeofday(&time_last_stat, NULL);
-      // wildi ToDo workproc_id = addWorkProc(&query_all_ssd650_status, NULL);
     } else {
       fprintf( stderr, "connectSSD650vDevice: SSD650V_MS_CONNECTION_FAILED\n") ;  
       return SSD650V_MS_CONNECTION_FAILED ;
@@ -796,7 +794,12 @@ int connectSSD650vDevice( int power_state)
     coast_state.reset= SSD650V_IS_ON ;
     motor_coast_switch_state() ;
 
-    fprintf( stderr, "connectSSD650vDevice: connection OK\n") ;
+    thread_stat_ssd = pthread_create( &move_door_id, NULL, move_door, NULL) ;
+    if (thread_stat_ssd != 0) {
+      fprintf( stderr,  "connectSSD650vDevice: failure starting thread: error %d:\n", thread_stat_ssd);
+    } 
+
+    fprintf( stderr, "connectSSD650vDevice: connection OK, thread started\n") ;
     return SSD650V_MS_CONNECTION_OK ;
     break;
 
