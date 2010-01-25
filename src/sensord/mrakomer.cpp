@@ -261,10 +261,10 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	numVal->setValueInteger (20);
 
 	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", false, RTS2_VALUE_WRITABLE);
-	triggerBad->setValueDouble (nan ("f"));
+	triggerBad->setValueDouble (rts2_nan ("f"));
 
 	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", false, RTS2_VALUE_WRITABLE);
-	triggerGood->setValueDouble (nan ("f"));
+	triggerGood->setValueDouble (rts2_nan ("f"));
 
 	createValue (heater, "HEATER", "heater state", false, RTS2_VALUE_WRITABLE);
 
@@ -272,7 +272,7 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (mrakStatus, "status", "device status", false, RTS2_DT_HEX);
 
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
-	heatStateChangeTime->setValueDouble (nan("f"));
+	heatStateChangeTime->setValueDouble (rts2_nan("f"));
 
 	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false, RTS2_VALUE_WRITABLE);
 	heatInterval->setValueInteger (-1);
