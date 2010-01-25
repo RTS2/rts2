@@ -538,7 +538,12 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	}
 	else
 	{
-		_os << std::setw (5) << (deg_dms.degrees * 60 + deg_dms.minutes) << "'";
+		if (deg_dms.degrees > 0)
+			_os << std::setw (3) << deg_dms.degrees << "d";
+		else
+			_os << "    ";
+                if (deg_dms.minutes > 0 || deg_dms.seconds > 0)
+			_os << std::setw (2) << deg_dms.minutes << "'";
 	}
 	if (deg_dms.seconds >= 0.01)
 	{
