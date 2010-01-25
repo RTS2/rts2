@@ -19,7 +19,8 @@
 
 #include "sensord.h"
 
-#include <sys/vfs.h>
+#include <sys/types.h>
+#include <sys/statvfs.h>
 
 namespace rts2sensord
 {
@@ -66,8 +67,8 @@ System::info ()
 {
 	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
 	{
-		struct statfs sf;
-		if (statfs ((*iter).c_str (), &sf))
+		struct statvfs sf;
+		if (statvfs ((*iter).c_str (), &sf))
 		{
 			logStream (MESSAGE_ERROR) << "Cannot get status for " << (*iter) << ". Error " << strerror (errno) << sendLog;
 		}
