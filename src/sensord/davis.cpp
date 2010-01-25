@@ -100,8 +100,8 @@ Davis::Davis (int argc, char **argv):SensorWeather (argc, argv, 180)
 	createValue (maxWindSpeed, "max_windspeed", "maximal average windspeed", false, RTS2_VALUE_WRITABLE);
 	createValue (maxPeekWindSpeed, "max_peek_windspeed", "maximal peek windspeed", false, RTS2_VALUE_WRITABLE);
 
-	maxWindSpeed->setValueFloat (nan ("f"));
-	maxPeekWindSpeed->setValueFloat (nan ("f"));
+	maxWindSpeed->setValueFloat (rts2_nan ("f"));
+	maxPeekWindSpeed->setValueFloat (rts2_nan ("f"));
 
 	weatherConn = NULL;
 
