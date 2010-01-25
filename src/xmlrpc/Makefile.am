@@ -14,7 +14,7 @@ rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevent
 	nightreq.cpp imgpreview.cpp obsreq.cpp targetreq.cpp dirsupport.cpp
 rts2_xmlrpcd_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
 rts2_xmlrpcd_LDFLAGS = ../scheduler/librts2scheduler.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a \
-	../utils/librts2block.a xmlrpc++/libxmlrpc_rts2.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ \
+	../utils/librts2block.a xmlrpc++/librts2xmlrpc.a @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ \
 	@LIB_JPEG@ @LIBXML_LIBS@ @LIB_ARCHIVE@ $(AM_LDFLAGS)
 
 CLEANFILES = stateeventsdb.cpp valueeventsdb.cpp
@@ -27,7 +27,7 @@ else
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
 	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp dirsupport.cpp
 rts2_xmlrpcd_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@
-rts2_xmlrpcd_LDFLAGS = ../writers/librts2image.a ../utils/librts2block.a xmlrpc++/libxmlrpc_rts2.a \
+rts2_xmlrpcd_LDFLAGS = ../writers/librts2image.a ../utils/librts2block.a xmlrpc++/librts2xmlrpc.a \
 	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIB_ARCHIVE@ $(AM_LDFLAGS)
 
 endif
@@ -36,4 +36,4 @@ EXTRA_DIST = stateeventsdb.ec valueeventsdb.ec
 
 rts2_xmlrpcclient_SOURCES = xmlrpcclient.cpp
 rts2_xmlrpcclient_CXXFLAGS = @NOVA_CFLAGS@
-rts2_xmlrpcclient_LDFLAGS = ../utils/librts2block.a xmlrpc++/libxmlrpc_rts2.a @LIB_NOVA@ $(AM_LDFLAGS)
+rts2_xmlrpcclient_LDFLAGS = ../utils/librts2block.a xmlrpc++/librts2xmlrpc.a @LIB_NOVA@ $(AM_LDFLAGS)

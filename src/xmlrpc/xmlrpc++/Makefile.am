@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libxmlrpc_rts2.a
+noinst_LIBRARIES = librts2xmlrpc.a
 
 noinst_HEADERS = \
 	base64.h \
@@ -16,7 +16,7 @@ noinst_HEADERS = \
 	XmlRpcUtil.h \
 	XmlRpcValue.h
 
-libxmlrpc_rts2_a_SOURCES = \
+librts2xmlrpc_a_SOURCES = \
 	urlencoding.cpp \
 	XmlRpcClient.cpp \
 	XmlRpcDispatch.cpp \

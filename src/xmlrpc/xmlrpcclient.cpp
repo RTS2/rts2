@@ -660,7 +660,7 @@ int Client::init ()
 	if (xmlUsername == NULL)
 	{
 		ret = config->getString ("xmlrpc", "authorization", xmlAuthorization);
-		if (ret || xmlAuthorization.length() == 0)
+		if ((ret || xmlAuthorization.length()) == 0 && xmlOp != HTTP_GET)
 		{
 			std::cerr << "You don't specify authorization string in XML-RPC config file, nor on command line." << std::endl;
 			return -1;
