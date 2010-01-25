@@ -51,9 +51,12 @@ class AltPlot:public Plot
 		 * 
 		 * @throw rts2core::Error or its descendandts on error.
 		 */
-		Magick::Image* getPlot (double _from, double _to, rts2db::TargetSet *tarset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 5);
+		Magick::Image* getPlot (double _from, double _to, rts2db::TargetSet *tarset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 0);
 
-	private:	
+		Magick::Image* getPlot (double _from, double _to, Target *tarset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 0);
+
+	private:
+		void preparePlot (double _from, double _to, Magick::Image* _image, PlotType _plotType);	
 		void plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow);
 };
 

@@ -20,6 +20,7 @@
 #include "xmlrpcd.h"
 #include "httpreq.h"
 #include "altaz.h"
+#include "altplot.h"
 #include "dirsupport.h"
 #include "imgpreview.h"
 
@@ -440,7 +441,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					break;
 				}
 #ifdef HAVE_LIBJPEG
-				if (vals[1] == "plot")
+				if (vals[1] == "altplot")
 				{
 					plotTarget (tar, params, response_type, response, response_length);
 					break;
@@ -480,7 +481,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	_os << "<html><head><base href='/targets/" << tar->getTargetID () << "/'/><title>Target " << tar->getTargetName () << "</title></head><body>";
 
-	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a></p>";
+	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a>&nbsp;<a href='altplot/'>altitude plot</a></p>";
 
 	_os << "<pre>";
 
@@ -601,9 +602,27 @@ void Targets::plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &
 {
 	response_type = "image/jpeg";
 
+	AltPlot ap (params->getInteger ("w", 800), params->getInteger ("h", 600));
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
+	double from = params->getDouble ("from", 0);
+	double to = params->getDouble ("to", 0);
+
+	if (from < 0 && to == 0)
+	{
+		// just fr specified - from
+		to = time (NULL);
+		from += to;
+	}
+	else if (from == 0 && to == 0)
+	{
+		// default - one hour
+		to = time (NULL);
+		from = to - 86400;
+	}
+
 	Magick::Image mimage (size, "white");
+	ap.getPlot (from, to, tar, &mimage);
 
 	Magick::Blob blob;
 	mimage.write (&blob, "jpeg");

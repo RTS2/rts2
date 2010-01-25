@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_PLOT__
+#define __RTS2_PLOT__
+
 #include <config.h>
 
 #ifdef HAVE_LIBJPEG
@@ -67,3 +70,5 @@ class Plot
 }
 
 #endif /* HAVE_LIBJPEG */
+
+#endif /* !__RTS2_PLOT__ */

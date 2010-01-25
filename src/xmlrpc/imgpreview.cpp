@@ -46,19 +46,15 @@ void Previewer::form (std::ostringstream &_os)
 
 void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize)
 {
-	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>";
+	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected)
 {
 	if (selected)
-	{
-		_os << "<b>" << i << "</b> ";
-	}
+		_os << "  <b>" << i << "</b>" << std::endl;
 	else
-	{
-		_os << "<a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a> ";
-	}
+		_os << "  <a href='?p=" << i << "&s=" << pagesiz << "&ps=" << prevsize << "'>" << i << "</a>" << std::endl;
 }
 
 #ifdef HAVE_LIBJPEG
@@ -265,8 +261,10 @@ void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, c
 
 	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 	{
+		std::cout << iter->getName () << " " << iter->getValue () << std::endl;
 		if (!strcmp (iter->getName (), "files"))
 		{
+			std::cout << "write " << iter->getName () << " " << iter->getValue () << std::endl;
 			entry = archive_entry_new ();
 			struct stat st;
 
@@ -308,6 +306,8 @@ int open_callback (struct archive *a, void *client_data)
 		free (dr->buf);
 	dr->buf = NULL;
 	dr->buf_size = 0;
+
+	std::cout << "open" << std::endl;
 
 	return ARCHIVE_OK;
 }

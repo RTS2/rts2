@@ -36,6 +36,29 @@ AltPlot::AltPlot (int w, int h):Plot (w, h)
 
 Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::TargetSet *tarset, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
 {
+	preparePlot (_from, _to, _image, _plotType);
+	for (rts2db::TargetSet::iterator iter = tarset->begin (); iter != tarset->end (); iter++)
+	{
+		if (shadow)
+			plotTarget (iter->second, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
+		plotTarget (iter->second, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
+	}
+
+	return image;
+}
+
+Magick::Image* AltPlot::getPlot (double _from, double _to, Target *target, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
+{
+	preparePlot (_from, _to, _image, _plotType);
+	if (shadow)
+		plotTarget (target, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
+	plotTarget (target, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
+
+	return image;
+}
+
+void AltPlot::preparePlot (double _from, double _to, Magick::Image* _image, PlotType _plotType)
+{
 	from = _from;
 	to = _to;
 	plotType = _plotType;
@@ -76,14 +99,7 @@ Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::TargetSet *ta
 	plotYDegrees ();
 	plotXDate ();
 
-	for (rts2db::TargetSet::iterator iter = tarset->begin (); iter != tarset->end (); iter++)
-	{
-		if (shadow)
-			plotTarget (iter->second, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
-		plotTarget (iter->second, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
-	}
 
-	return image;
 }
 
 void AltPlot::plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow)
