@@ -191,4 +191,8 @@ int isfinite(double x);
   } while (0)
 #endif
 
+#ifndef HAVE_ISBLANK
+#define isblank(x)   (isspace(x) || x == '\t')
+#endif
+
 #endif							 /* !__RTS_UTILSFUNC__ */
