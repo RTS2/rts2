@@ -75,6 +75,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `isblank' function. */
+#undef HAVE_ISBLANK
+
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
