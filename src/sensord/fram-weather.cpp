@@ -19,6 +19,8 @@
 
 #include "fram-weather.h"
 
+#include <strings.h>
+
 using namespace rts2sensord;
 
 int FramWeather::processOption (int _opt)
