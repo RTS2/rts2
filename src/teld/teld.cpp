@@ -1186,6 +1186,12 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		modelOn ();
 		return startPark (conn);
 	}
+	else if (conn->isCommand ("stop"))
+	{
+		if (!conn->paramEnd ())
+			return -2;
+		return stopMove ();
+	}
 	else if (conn->isCommand ("change"))
 	{
 		if (conn->paramNextDouble (&obj_ra) || conn->paramNextDouble (&obj_dec)
