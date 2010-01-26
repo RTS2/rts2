@@ -8,6 +8,10 @@ SUBDIRS = zelio
 
 EXTRA_DIST = 
 
+LDADD = librts2dome.a ../utils/librts2block.a @LIB_NOVA@
+AM_CXXFLAGS = @NOVA_CFLAGS@
+AM_CFLAGS = @NOVA_CFLAGS@
+
 noinst_HEADERS = dome.h cupola.h ford.h vermes.h door_vermes.h \
 	dome-target-az.h  barcodereader_vermes.h \
 	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h \
@@ -22,9 +26,6 @@ librts2dome_target_az_a_SOURCES =  dome-target-az.c
 librts2oak_a_SOURCES =  OakFeatureReports.c OakHidBase.c
 
 librts2vermes_a_SOURCES = move-door_vermes.c move-to-target-az_vermes.c barcodereader_vermes.c ssd650v_comm_vermes.c bisync_vermes.c util_vermes.c serial_vermes.c oak_comm_vermes.c
-
-LDADD = librts2dome.a ../utils/librts2block.a @LIB_NOVA@
-AM_CXXFLAGS = @NOVA_CFLAGS@
 
 rts2_dome_bart_SOURCES = bart.cpp
 
