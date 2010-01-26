@@ -556,7 +556,7 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (ldrResistance, "LDR_RES", "pullup resistancetrue", false);
 
 	createValue (triggerGood, "TRIGGOOD", "if rain frequency gets above this value, drop bad weather flag", false);
-	triggerGood->setValueDouble (nan ("f"));
+	triggerGood->setValueDouble (rts2_nan ("f"));
 
 	addOption ('f', NULL, 1, "serial port AAG cloud sensor");
 	addOption ('g', NULL, 1, "good trigger point");
