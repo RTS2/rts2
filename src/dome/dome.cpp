@@ -115,10 +115,6 @@ int Dome::processOption (int in_opt)
 	return 0;
 }
 
-void Dome::domeWeatherGood ()
-{
-}
-
 bool Dome::isGoodWeather ()
 {
 	if (getIgnoreMeteo () == true)

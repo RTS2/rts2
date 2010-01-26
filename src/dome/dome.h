@@ -68,12 +68,6 @@ class Dome:public Rts2Device
 		int domeCloseEnd ();
 
 		/**
-		 * Called when weather becomes favourable for observing.
-		 * If weatherOpensDome is true, it will set system to on.
-		 */
-		void domeWeatherGood ();
-
-		/**
 		 * Checks if weather is acceptable for observing.
 		 *
 		 * @return True if weather is acceptable, otherwise false.
