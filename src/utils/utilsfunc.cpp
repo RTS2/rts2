@@ -118,3 +118,18 @@ int isfinite(double x)
 	return finite(x) && !isnan(x);
 }
 #endif
+
+#ifndef HAVE_STRCASESTR
+char * strcasestr(const char * haystack, const char * needle)
+{
+	const char *p = haystack;
+	int len = strlen (needle);
+	while (*p)
+	{
+		if (strncasecmp (haystack, needle, len))
+			return (char *) p;
+		p++;
+	}
+	return NULL;
+}
+#endif // HAVE_STRCASESTR

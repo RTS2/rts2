@@ -195,4 +195,8 @@ int isfinite(double x);
 #define isblank(x)   (isspace(x) || x == '\t')
 #endif
 
+#ifndef HAVE_STRCASESTR
+char * strcasestr(const char * haystack, const char * needle);
+#endif
+
 #endif							 /* !__RTS_UTILSFUNC__ */
