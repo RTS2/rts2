@@ -261,10 +261,8 @@ void DownloadRequest::authorizedExecute (std::string path, HttpParams *params, c
 
 	for (HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
 	{
-		std::cout << iter->getName () << " " << iter->getValue () << std::endl;
 		if (!strcmp (iter->getName (), "files"))
 		{
-			std::cout << "write " << iter->getName () << " " << iter->getValue () << std::endl;
 			entry = archive_entry_new ();
 			struct stat st;
 
@@ -306,8 +304,6 @@ int open_callback (struct archive *a, void *client_data)
 		free (dr->buf);
 	dr->buf = NULL;
 	dr->buf_size = 0;
-
-	std::cout << "open" << std::endl;
 
 	return ARCHIVE_OK;
 }

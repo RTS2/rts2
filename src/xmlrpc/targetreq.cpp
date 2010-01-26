@@ -48,6 +48,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 	}
 	else
 	{
+		if (vals[0] == "form")
+		{
+			processForm (params, response_type, response, response_length);
+			return;
+		}
 		// get target id..
 		char *endptr;
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
@@ -92,23 +97,73 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 void Targets::listTargets (const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	_os << "<html><head><title>List of targets</title></head><body><table>";
+	_os << "<html><head><title>List of targets</title></head><body><form action='form' method='post'><table>\n";
 
 	rts2db::TargetSet ts = rts2db::TargetSet ();
 	ts.load ();
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
-		_os << "<tr><td><a href='" << iter->first << "/'>" << iter->first
-			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></tr></td>";
+		_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/'>" << iter->first
+			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
 	}
 
-	_os << "</table></body></html>";
+	_os << "</table><input type='submit' value='Plot' name='plot'/></form></body></html>";
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
+}
+
+void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	if (!strcmp (params->getString ("plot", "xxx"), "Plot"))
+	{
+		response_type = "image/jpeg";
+
+		AltPlot ap (params->getInteger ("w", 800), params->getInteger ("h", 600));
+		Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
+	
+		double from = params->getDouble ("from", 0);
+		double to = params->getDouble ("to", 0);
+	
+		if (from < 0 && to == 0)
+		{
+			// just fr specified - from
+			to = time (NULL);
+			from += to;
+		}
+		else if (from == 0 && to == 0)
+		{
+			// default - one hour
+			to = time (NULL);
+			from = to - 86400;
+		}
+
+
+		std::list < int > ti;
+
+		for (XmlRpc::HttpParams::iterator iter = params->begin (); iter != params->end (); iter++)
+		{
+			if (!strcmp (iter->getName (), "tarid"))
+				ti.push_back (atoi (iter->getValue ()));
+		}
+
+		rts2db::TargetSet ts = rts2db::TargetSet ();
+		ts.load (ti);
+	
+		Magick::Image mimage (size, "white");
+		ap.getPlot (from, to, &ts, &mimage);
+	
+		Magick::Blob blob;
+		mimage.write (&blob, "jpeg");
+	
+		response_length = blob.length();
+		response = new char[response_length];
+		memcpy (response, blob.data(), response_length);
+		return;
+	}
 }
 
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
