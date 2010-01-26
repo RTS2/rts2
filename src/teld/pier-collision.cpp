@@ -21,9 +21,6 @@
 /* You should have received a copy of the GNU Lesser General Public */
 /* License along with this library; if not, write to the Free Software */
 /* Foundation, Inc., 51 Franklin Steet, Fifth Floor, Boston, MA  02110-1301  USA */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +29,8 @@
 #include <libnova/libnova.h>
 
 #include "pier-collision.h"
+
+#include "../utils/utilsfunc.h"
 
 #define Csc(x) (1./sin(x))
 #define Sec(x) (1./cos(x))
@@ -132,15 +131,15 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   int state_collision= NO_COLLISION ;
   int state_danger   = NO_DANGER ;
 
-  double tpp1= FP_NAN ;
-  double tpm1= FP_NAN ;
-  double czp1= FP_NAN ;
-  double czm1= FP_NAN ;
+  double tpp1= rts2_nan("f");
+  double tpm1= rts2_nan("f");
+  double czp1= rts2_nan("f");
+  double czm1= rts2_nan("f");
   
-  double tpp3= FP_NAN ;
-  double tpm3= FP_NAN ;
-  double czp3= FP_NAN ;
-  double czm3= FP_NAN ;
+  double tpp3= rts2_nan("f");
+  double tpm3= rts2_nan("f");
+  double czp3= rts2_nan("f");
+  double czm3= rts2_nan("f");
     
   double HA ;
   
@@ -290,7 +289,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
 }
 double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
   val = zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
     (Rdec*Rtel*(cos(HA)*cos(phi)*sin(dec) - cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi)) ;
 
@@ -301,7 +300,7 @@ double LDTangentPlaneLineP(double HA, double dec, double phi, double zd, double 
 
 double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double tp)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
   val=   zd - sqrt(pow(Rdec,2))*cos(phi)*sin(HA) + (Rdec*Rtel*cos(phi)*sin(HA))/sqrt(pow(Rdec,2)) + 
 	   (Rdec*Rtel*(-(cos(HA)*cos(phi)*sin(dec)) + cos(dec)*sin(phi)))/sqrt(pow(Rdec,2)) + tp*(cos(HA)*cos(dec)*cos(phi) + sin(dec)*sin(phi));
 
@@ -312,7 +311,7 @@ double LDTangentPlaneLineM(double HA, double dec, double phi, double zd, double 
 
 double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
 
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -348,7 +347,7 @@ double LDCutPierLineP1(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
     
   val= (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
 	     sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
@@ -385,7 +384,7 @@ double LDCutPierLineM1(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) - 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) - 
@@ -420,7 +419,7 @@ double LDCutPierLineP3(double HA, double dec, double phi, double zd, double xd, 
 }
 double LDCutPierLineM3(double HA, double dec, double phi, double zd, double xd, double Rdec, double Rtel, double Rpier)
 {
-  double val= FP_NAN ;
+  double val= rts2_nan("f");
   val=  (Rdec*Rpier*xd*cos(phi)*sin(dec) - sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(cos(phi),2)*sin(dec) + 
      sqrt(pow(Rdec,2))*Rpier*Rtel*cos(dec)*pow(sin(HA),2)*sin(dec) - 
      Rdec*sqrt(pow(Rdec,2))*Rpier*cos(phi)*sin(HA)*sin(dec)*sin(phi) + sqrt(pow(Rdec,2))*Rpier*Rtel*cos(phi)*sin(HA)*sin(dec)*sin(phi) + 

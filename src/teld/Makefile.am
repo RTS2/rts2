@@ -14,7 +14,7 @@ bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
 
-librts2pier_collision_a_SOURCES = pier-collision.c
+librts2pier_collision_a_SOURCES = pier-collision.cpp
 librts2pier_collision_a_CXXFLAGS = @NOVA_CFLAGS@
 
 LDADD = librts2teld.a ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
