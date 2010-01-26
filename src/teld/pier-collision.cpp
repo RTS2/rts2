@@ -155,31 +155,31 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
 
 /* z componet of the intersection */
 
-  if( isnormal(tpp1)){
+  if( !isnan(tpp1)){
     czp1= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp1) ;
   } else {
     //fprintf( stderr, "LDCollision tpp1==nan\n") ;
   }
-  if( isnormal(tpm1)){ 
+  if( !isnan(tpm1)){ 
     czm1= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm1) ;
   } else {
     //fprintf( stderr, "LDCollision tpm1==nan\n") ;
   }
-  if( isnormal(tpp3)) {
+  if( !isnan(tpp3)) {
     //czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
   } else {
     fprintf( stderr, "LDCollision tpp3==nan\n") ;
   }
-  if( isnormal(tpm3)) {
+  if( !isnan(tpm3)) {
     //czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
   }  else {
     //fprintf( stderr, "LDCollision tpm3==nan\n") ;
   }
 
-  if(  isnormal(czp1)) {
+  if( !isnan(czp1)) {
     //if((czp1 > PierN[2].value) && ( czp1 < PierN[1].value))
     if((czp1 > pr.floor) && ( czp1 < pr.wedge)) {
-      if( isnormal(tpp1)){
+      if( !isnan(tpp1)){
 	if( fabs(tpp1) > tel.rear_length){
 	  fprintf( stderr, "LDCollision NO_COLLISION czp1, tpp1 %f> %f\n", fabs(tpp1), tel.rear_length) ;
 	  if( state_collision != COLLIDING) {
@@ -202,10 +202,10 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   } else {
     fprintf( stderr, "LDCollision czp1==nan\n") ;
   }
-  if(  isnormal(czm1)){
+  if(  !isnan(czm1)){
     //if((czm1 > PierN[2].value) && ( czm1 < PierN[1].value))
     if((czm1 > pr.floor) && ( czm1 < pr.wedge)){
-      if( isnormal(tpm1)){
+      if( !isnan(tpm1)){
 	if( fabs(tpm1) > tel.rear_length){
 	  fprintf( stderr, "LDCollision NO_COLLISION czm1, tpm1 %f> %f\n", fabs(tpm1), tel.rear_length) ;
 	  if( state_collision != COLLIDING) {
@@ -228,10 +228,10 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   } else {
     fprintf( stderr, "LDCollision czm1==nan\n") ;
   }
-  if(  isnormal(czp3)) {
+  if(  !isnan(czp3)) {
     //if((czp3 > PierN[2].value) && ( czp3 < PierN[1].value))
     if((czp3 > pr.floor) && ( czp3 < pr.wedge)){
-      if( isnormal(tpp3)){
+      if( !isnan(tpp3)){
 	if( fabs(tpp3) > tel.rear_length){
 	  fprintf( stderr, "LDCollision NO_COLLISION czp3, tpp3 %f> %f\n", fabs(tpp3), tel.rear_length) ;
 	  if( state_collision != COLLIDING) {
@@ -254,10 +254,10 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
   } else {
     fprintf( stderr, "LDCollision czp3==nan\n") ;
   }
-  if(  isnormal(czm3)) {
+  if(  !isnan(czm3)) {
     //if((czm3 > PierN[2].value) && ( czm3 < PierN[1].value))
     if((czm3 > pr.floor) && ( czm3 < pr.wedge)){
-      if( isnormal(tpm3)){
+      if( !isnan(tpm3)){
 	if( fabs(tpm3) > tel.rear_length){
 	  fprintf( stderr, "LDCollision NO_COLLISION czm3, tpm3 %f> %f\n", fabs(tpm3), tel.rear_length) ;
 	  if( state_collision != COLLIDING) {
