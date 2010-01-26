@@ -1,6 +1,8 @@
 # Process this file with autoconf to produce a configure script.C
 AC_INIT(rts2, 0.7.5, petr@kubanek.net)
 
+AC_CANONICAL_BUILD
+
 AM_INIT_AUTOMAKE([gnu dist-bzip2])
 
 AC_PREREQ(2.50)
@@ -39,7 +41,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr])
 
-AC_CHECK_HEADERS([limits.h]) 
+AC_CHECK_HEADERS([limits.h sys/ioccom.h]) 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES 
@@ -722,7 +724,7 @@ AC_OUTPUT([Makefile
 
 echo "
 ***************************************
- RTS2 build configuration 
+ RTS2 build configuration for ${build_os}
 
   focusing      ${focusing}
   mirror        ${mirror}
