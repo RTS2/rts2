@@ -22,6 +22,7 @@
 #include "../utils/conntcp.h"
 
 #include <map>
+#include <string.h>
 
 #define OPT_MINB_TIME      OPT_LOCAL + 122
 

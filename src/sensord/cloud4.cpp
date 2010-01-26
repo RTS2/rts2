@@ -145,10 +145,10 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	tempInCoeff->setValueDouble (1.0);
 
 	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", true, RTS2_VALUE_WRITABLE);
-	triggerBad->setValueDouble (nan ("f"));
+	triggerBad->setValueDouble (rts2_nan ("f"));
 
 	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", true, RTS2_VALUE_WRITABLE);
-	triggerGood->setValueDouble (nan ("f"));
+	triggerGood->setValueDouble (rts2_nan ("f"));
 
 	createValue (heater, "HEATER", "heater state", true, RTS2_VALUE_WRITABLE);
 
@@ -156,7 +156,7 @@ Cloud4::Cloud4 (int in_argc, char **in_argv):SensorWeather (in_argc, in_argv)
 	createValue (mrakStatus, "status", "device status", true, RTS2_DT_HEX);
 
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
-	heatStateChangeTime->setValueDouble (nan("f"));
+	heatStateChangeTime->setValueDouble (rts2_nan ("f"));
 
 	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false, RTS2_VALUE_WRITABLE);
 	heatInterval->setValueInteger (-1);
