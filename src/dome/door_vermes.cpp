@@ -20,10 +20,10 @@
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include <stdlib.h>
 #endif
 
-#include <stdlib.h>
-
+#include "../utils/rts2conn.h"
 #include "dome.h"
 #include "vermes.h" 
 #include "door_vermes.h" 
@@ -42,101 +42,122 @@ namespace rts2dome {
  *
  * @author Markus Wildi <markus.wildi@one-arcsec.org>
  */
-    class DoorVermes: public Dome 
-    {
-    private:
-	Rts2ValueString  *doorStateMessage;
-	Rts2ValueBool *raining;
-	Rts2ValueBool *open_door;
-	Rts2ValueBool *stop_door;
-	Rts2ValueBool *close_door;
-	Rts2ValueBool *close_door_undefined;
-	/**
-	 * Update status messages.
-	 *
-	 * @return 0 on success.
-	 */
-	int updateDoorStatusMessage ();
+  class DoorVermes: public Dome 
+  {
+  private:
+    Rts2ValueString  *doorStateMessage;
+    Rts2ValueBool *door_block;
+    Rts2ValueBool *open_door;
+    Rts2ValueBool *stop_door;
+    Rts2ValueBool *close_door;
+    Rts2ValueBool *close_door_undefined;
+    time_t nextDeadCheck;
 
-    protected:
-	virtual int processOption (int _opt);
-	virtual int init ();
-	virtual int info ();
+    /**
+     * Update status messages.
+     *
+     * @return 0 on success.
+     */
+    void updateDoorStatus ();
+    void updateDoorStatusMessage ();
 
-	virtual int startOpen ();
-	virtual long isOpened ();
-	virtual int endOpen ();
-
-	virtual int startClose ();
-	virtual long isClosed ();
-	virtual int endClose ();
-
-	virtual bool isGoodWeather ();
-
-    public:
-	DoorVermes (int argc, char **argv);
-	virtual ~DoorVermes ();
-	virtual void valueChanged (Rts2Value * changed_value) ;
-    };
+  protected:
+    virtual int processOption (int _opt);
+    virtual int init ();
+    virtual int info ();
+    virtual int idle ();
+    
+    virtual int startOpen ();
+    virtual long isOpened ();
+    virtual int endOpen ();
+    
+    virtual int startClose ();
+    virtual long isClosed ();
+    virtual int endClose ();
+    
+  public:
+    DoorVermes (int argc, char **argv);
+    virtual ~DoorVermes ();
+    virtual void valueChanged (Rts2Value * changed_value) ;
+  };
 }
 
 using namespace rts2dome;
 
-int DoorVermes::updateDoorStatusMessage ()
-{
-    switch (doorState){
-	case DS_UNDEF:
-	    doorStateMessage->setValueString("undefined") ;
-	    break;
-	case DS_STOPPED_CLOSED:
-	    doorStateMessage->setValueString("stopped, closed") ;
-	    break;
-	case DS_STOPPED_OPENED:
-	    doorStateMessage->setValueString("stopped, open") ;
-	    break;
-	case DS_STOPPED_UNDEF:
-	    doorStateMessage->setValueString("stopped, undefined") ;
-	    break;
-	case DS_START_OPEN:
-	    doorStateMessage->setValueString("start opening") ;
-	    break;
-	case DS_START_CLOSE:
-	    doorStateMessage->setValueString("start closing") ;
-	    break;
-	case DS_RUNNING_OPEN:
-	    doorStateMessage->setValueString("opening") ;
-	    break;
-	case DS_RUNNING_CLOSE:
-	    doorStateMessage->setValueString("closing") ;
-	    break;
-	case DS_STOPPING:
-	    doorStateMessage->setValueString("stopping motor") ;
-	    break;
-	case DS_EMERGENCY_ENDSWITCH_OPENED:
-	    doorStateMessage->setValueString("emergency end switch opened ON") ;
-	    break;
-	case DS_EMERGENCY_ENDSWITCH_CLOSED:
-	    doorStateMessage->setValueString("emergency end switch closed ON") ;
-	    break;
-	default:
-	    doorStateMessage->setValueString("door state is undefined") ;
-    }
-    return 0 ;
-}
+// only those door_vermes internal conditions are listed below
+// which can be detected by the sensors (ssd650v, oak digital inputs).
+// DOME_DOME_MASK is set by dome::methods and it relies on it.
 
-int
-DoorVermes::processOption (int _opt)
+void
+DoorVermes::updateDoorStatus ()
 {
-    switch (_opt) {
-// 		case 'c':
-// 			comediFile = optarg;
-// 			break;
-	default:
-	    return Dome::processOption (_opt);
-    }
-    return 0;
+  switch (doorState){
+  case DS_UNDEF:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is undefined") ;
+    break;
+  case DS_STOPPED_CLOSED:
+    maskState (DOME_DOME_MASK, DOME_CLOSED, "dome state is stopped, closed") ;
+    break;
+  case DS_STOPPED_OPENED:
+    maskState (DOME_DOME_MASK, DOME_OPENED, "dome state is stopped, open") ;
+    break;
+  case DS_STOPPED_UNDEF:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopped, undefined") ;
+    break;
+  case DS_STOPPING:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopping motor") ;
+    break;
+  case DS_EMERGENCY_ENDSWITCH_OPENED:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch opened is ON") ;
+    break;
+  case DS_EMERGENCY_ENDSWITCH_CLOSED:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch closed is ON") ;
+    break;
+  }
 }
-void DoorVermes::valueChanged (Rts2Value * changed_value)
+void
+DoorVermes::updateDoorStatusMessage ()
+{
+  switch (doorState){
+  case DS_UNDEF:
+    doorStateMessage->setValueString("undefined") ;
+    break;
+  case DS_STOPPED_CLOSED:
+    doorStateMessage->setValueString("stopped, closed") ;
+    break;
+  case DS_STOPPED_OPENED:
+    doorStateMessage->setValueString("stopped, open") ;
+    break;
+  case DS_STOPPED_UNDEF:
+    doorStateMessage->setValueString("stopped, undefined") ;
+    break;
+  case DS_START_OPEN:
+    doorStateMessage->setValueString("start opening") ;
+    break;
+  case DS_START_CLOSE:
+    doorStateMessage->setValueString("start closing") ;
+    break;
+  case DS_RUNNING_OPEN:
+    doorStateMessage->setValueString("opening") ;
+    break;
+  case DS_RUNNING_CLOSE:
+    doorStateMessage->setValueString("closing") ;
+    break;
+  case DS_STOPPING:
+    doorStateMessage->setValueString("stopping motor") ;
+    break;
+  case DS_EMERGENCY_ENDSWITCH_OPENED:
+    doorStateMessage->setValueString("emergency end switch opened ON") ;
+    break;
+  case DS_EMERGENCY_ENDSWITCH_CLOSED:
+    doorStateMessage->setValueString("emergency end switch closed ON") ;
+    break;
+  default:
+    doorStateMessage->setValueString("door state is undefined") ;
+  }
+}
+void 
+DoorVermes::valueChanged (Rts2Value * changed_value)
 {
   if(changed_value == stop_door) {
     if( stop_door->getValueBool()) {
@@ -177,38 +198,40 @@ void DoorVermes::valueChanged (Rts2Value * changed_value)
 int
 DoorVermes::init ()
 {
-    int ret;
+  int ret;
 
-    ret = Dome::init ();
-    if (ret)
-	return ret;
+  ret = Dome::init ();
+  if (ret)
+    return ret;
 
-    // Toradex Oak digitial inputs, connect and start thread which can only stop motor
-    connectOakDiginDevice(OAKDIGIN_CMD_CONNECT) ;
+  // Toradex Oak digitial inputs, connect and start thread which can only stop motor
+  connectOakDiginDevice(OAKDIGIN_CMD_CONNECT) ;
 
-    // ssd650v frequency inverter, connect and start thread which only can start motor
-    logStream (MESSAGE_DEBUG) << "Connect to SSD650v" << sendLog;
+  // ssd650v frequency inverter, connect and start thread which only can start motor
+  logStream (MESSAGE_DEBUG) << "Connect to SSD650v" << sendLog;
 
-    if(connectSSD650vDevice(SSD650V_CMD_CONNECT) != SSD650V_MS_CONNECTION_OK) {
-	logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
-    }
-    // 
-    updateDoorStatusMessage() ;
+  if(connectSSD650vDevice(SSD650V_CMD_CONNECT) != SSD650V_MS_CONNECTION_OK) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
+  }
 
-    if(( doorState == DS_STOPPED_CLOSED) || (doorState == DS_STOPPED_OPENED)) {
-    } else {
-      logStream (MESSAGE_ERROR) << "DoorVermes::init Attention door is not closed nor open" << sendLog ;
-    }
-    return 0;  
+  if(( doorState == DS_STOPPED_CLOSED) || (doorState == DS_STOPPED_OPENED)) {
+  } else {
+    logStream (MESSAGE_ERROR) << "DoorVermes::init Attention door is not closed nor open" << sendLog ;
+  }
+
+  ret = info ();
+  if (ret)
+    return ret;
+  nextDeadCheck = 0;
+  setIdleInfoInterval (20);
+  return 0;  
 }
 
 int
 DoorVermes::info ()
 {
+    updateDoorStatus() ;
     updateDoorStatusMessage() ;
-//  if bad    int ret;
-//     if (ret)
-// 	return -1;
 
     return Dome::info ();
 }
@@ -222,6 +245,8 @@ DoorVermes::info ()
 int
 DoorVermes::startOpen ()
 {
+  updateDoorStatusMessage() ;
+
   if (!isGoodWeather ())
     return -1;
   
@@ -230,12 +255,16 @@ DoorVermes::startOpen ()
   close_door_undefined->setValueBool(false) ;
 
   if( doorState== DS_STOPPED_CLOSED) {
-
-    logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen opening door" << sendLog ;
-    open_door->setValueBool(true) ;
-    // not yet    doorEvent= EVNT_DS_CMD_OPEN ;
-    return 0;
-
+    if( door_block->getValueBool()) {
+      logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen blocked door opening (see DOOR_BLOCK)" << sendLog ;
+      open_door->setValueBool(false) ;
+      return -1;
+    } else {
+      logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen opening door" << sendLog ;
+      open_door->setValueBool(true) ;
+      doorEvent= EVNT_DS_CMD_OPEN ;
+      return 0;
+    }
   } else if ( doorState== DS_STOPPED_OPENED) {
     logStream (MESSAGE_ERROR) << "DoorVermes::startOpen can not open door doorState== DS_STOPPED_OPENED" << sendLog ;
     return -1 ;
@@ -257,9 +286,11 @@ DoorVermes::startOpen ()
 long
 DoorVermes::isOpened ()
 {
-    if ( doorState != DS_STOPPED_OPENED)
-	return USEC_SEC;
-    return -2;
+  updateDoorStatusMessage() ;
+
+  if ( doorState != DS_STOPPED_OPENED)
+    return USEC_SEC;
+  return -2;
 }
 /**
  * Called when dome is fully opened. Can be used to turn off compressors used
@@ -270,6 +301,8 @@ DoorVermes::isOpened ()
 int
 DoorVermes::endOpen ()
 {
+  updateDoorStatusMessage() ;
+
   open_door->setValueBool(false) ;
   open_door->setValueBool(false) ;
   stop_door->setValueBool(false) ;
@@ -302,7 +335,7 @@ DoorVermes::endOpen ()
 int
 DoorVermes::startClose ()
 {
-  logStream (MESSAGE_DEBUG) << "DoorVermes::startClose"<< sendLog ;
+  updateDoorStatusMessage() ;
   
   open_door->setValueBool(false) ;
   stop_door->setValueBool(false) ;
@@ -315,7 +348,7 @@ DoorVermes::startClose ()
     logStream (MESSAGE_DEBUG) << "DoorVermes::startClose closing door"<< sendLog ;
     close_door->setValueBool(true) ;
     close_door_undefined->setValueBool(false) ;
-    // not yet doorEvent= EVNT_DS_CMD_CLOSE ;
+    doorEvent= EVNT_DS_CMD_CLOSE ;
     return 0;
 
   } else if ( doorState== DS_UNDEF){
@@ -323,7 +356,7 @@ DoorVermes::startClose ()
     logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door  doorState== DS_UNDEF" << sendLog ;
     close_door->setValueBool(false) ;
     close_door_undefined->setValueBool(true) ;
-    // not yet doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE;
+    doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE;
     return 0 ;
 
   } else {
@@ -344,6 +377,8 @@ DoorVermes::startClose ()
 long
 DoorVermes::isClosed ()
 {   
+  updateDoorStatusMessage() ;
+
   if ( doorState != DS_STOPPED_CLOSED) {
     logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed  doorState != DS_STOPPED_CLOSED returning USEC_SEC "<< sendLog ;
     return USEC_SEC;
@@ -361,6 +396,8 @@ DoorVermes::isClosed ()
 int
 DoorVermes::endClose ()
 {
+  updateDoorStatusMessage() ;
+
   open_door->setValueBool(false) ;
   stop_door->setValueBool(false) ;
   close_door->setValueBool(false) ;
@@ -383,36 +420,54 @@ DoorVermes::endClose ()
   }
   return -1;
 }
-
-bool
-DoorVermes::isGoodWeather ()
+int
+DoorVermes::processOption (int _opt)
 {
-    if (getIgnoreMeteo () == true)
-	return true;
-    // if it's raining
-    if (raining->getValueBool () == true)
-	return false;
-    return Dome::isGoodWeather ();
+  switch (_opt) {
+  default:
+    return Dome::processOption (_opt);
+  }
+  return 0;
+}
+
+// wildi ToDo: check the threads
+int
+DoorVermes::idle ()
+{
+  //logStream (MESSAGE_ERROR) << "DoorVermes::idle" << sendLog ;
+  if (isGoodWeather ()) {
+    if ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING) {
+      time_t now = time (NULL);
+      if (now > nextDeadCheck) {
+	try {
+	} catch (rts2core::ConnError err) {
+	  logStream (MESSAGE_ERROR) << err << sendLog;
+	}
+	nextDeadCheck = now + 60;
+      }
+    }
+  }
+  return Dome::idle ();
 }
 
 DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
 {
-    createValue (doorStateMessage, "DOORSTATE", "door state as clear text", false);
-    createValue (stop_door,            "STOP_DOOR",  "true stops door",  false, RTS2_VALUE_WRITABLE);
-    stop_door->setValueBool  (false);
-    createValue (open_door,            "OPEN_DOOR",  "true opens door",  false, RTS2_VALUE_WRITABLE);
-    open_door->setValueBool  (false);
-    createValue (close_door,           "CLOSE_DOOR", "true closes door", false, RTS2_VALUE_WRITABLE);
-    close_door->setValueBool (false);
-    createValue (close_door_undefined, "CLOSE_UDFD", "true closes door", false, RTS2_VALUE_WRITABLE);
-    close_door_undefined->setValueBool (false);
-    createValue (raining, "RAIN", "if it's raining", true);
-    raining->setValueBool (false);
+  createValue (doorStateMessage,     "DOORSTATE", "door state as clear text", false);
+  createValue (door_block,           "DOOR_BLOCK", "true inhibits rts2-centrald initiated door opening", false, RTS2_VALUE_WRITABLE);
+  door_block->setValueBool (true); // wildi ToDo for now
+  createValue (stop_door,            "STOP_DOOR",  "true stops door",  false, RTS2_VALUE_WRITABLE);
+  stop_door->setValueBool  (false);
+  createValue (open_door,            "OPEN_DOOR",  "true opens door",  false, RTS2_VALUE_WRITABLE);
+  open_door->setValueBool  (false);
+  createValue (close_door,           "CLOSE_DOOR", "true closes door", false, RTS2_VALUE_WRITABLE);
+  close_door->setValueBool (false);
+  createValue (close_door_undefined, "CLOSE_UDFD", "true closes door", false, RTS2_VALUE_WRITABLE);
+  close_door_undefined->setValueBool (false);
 }
 
 DoorVermes::~DoorVermes ()
 {
-
+  // wildi ToDo disconnect/switch off devices
 }
 
 int
