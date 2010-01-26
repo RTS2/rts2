@@ -35,6 +35,8 @@
 #define OPT_BLOCK_ON_STANDBY  OPT_LOCAL + 117
 #define OPT_HORIZON           OPT_LOCAL + 118
 
+#define EVENT_TELD_MPEC_REFRESH  RTS2_LOCAL_EVENT + 560
+
 using namespace rts2teld;
 
 Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
@@ -86,11 +88,18 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	pointingModel->addSelVal ("ALT-ALT");
 
 	createValue (mpec, "mpec_target", "MPEC string (used for target calculation, if set", false, RTS2_VALUE_WRITABLE);
+	createValue (mpec_refresh, "mpec_refresh", "refresh MPEC ra_diff and dec_diff every mpec_refresh seconds", false, RTS2_VALUE_WRITABLE);
+	mpec_refresh->setValueDouble (3600);
+
+	createValue (mpec_angle, "mpec_angle", "timespan from which MPEC ra_diff and dec_diff will be computed", false, RTS2_VALUE_WRITABLE);
+	mpec_angle->setValueDouble (3600);
+
+	createValue (diffRaDec, "different", "[degrees/hour] differential tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
+	diffRaDec->setValueRaDec (0, 0);
 
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
 	createConstValue (telAltitude, "ALTITUDE", "observatory altitude", true);
-
 
 	createValue (mountParkTime, "PARKTIME", "Time of last mount park");
 
@@ -338,9 +347,13 @@ void Telescope::valueChanged (Rts2Value * changed_value)
 		mpec->setValueString ("");
 		startResyncMove (NULL, false);
 	}
+	if (changed_value == mpec)
+	{
+		recalculateMpecDIffs ();
+		startResyncMove (NULL, false);
+	}
 	if (changed_value == offsRaDec
-		|| changed_value == corrRaDec
-		|| changed_value == mpec)
+		|| changed_value == corrRaDec)
 	{
 		startResyncMove (NULL, false);
 	}
@@ -394,6 +407,42 @@ void Telescope::incMoveNum ()
 
 	corrImgId->setValueInteger (0);
 	wCorrImgId->setValueInteger (0);
+}
+
+void Telescope::recalculateMpecDIffs ()
+{
+	if (mpec->getValueString ().length () <= 0)
+		return;
+
+	double mp_diff = mpec_angle->getValueDouble () / 86400.0;
+
+	double JD = ln_get_julian_from_sys () - 1.5 * mp_diff;
+
+	// get MPEC positions..
+	struct ln_equ_posn pos[4];
+
+	struct ln_lnlat_posn observer;
+	struct ln_equ_posn parallax;
+	observer.lat = telLatitude->getValueDouble ();
+	observer.lng = telLongitude->getValueDouble ();
+
+	int i;
+
+	for (i = 0; i < 4; i++)
+	{
+		LibnovaCurrentFromOrbit (pos + i, &mpec_orbit, &observer, telAltitude->getValueDouble (), JD, &parallax);
+		JD += mp_diff;
+	}
+
+	struct ln_equ_posn pos_diffs[3];
+
+	for (i = 0; i < 3; i++)
+	{
+		pos_diffs[i].ra = pos[i].ra - pos[i+1].ra;
+		pos_diffs[i].dec = pos[i].dec - pos[i+1].dec;
+	}
+
+	diffRaDec->setValueRaDec (pos_diffs[1].ra, pos_diffs[1].dec);
 }
 
 void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
@@ -869,6 +918,17 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 		return -1;
 	}
 
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
+	{
+		ret = stopMove ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting actual movement" << sendLog;
+			return ret;
+		}
+	}
+
+
 	ret = startResync ();
 	if (ret)
 	{
@@ -944,6 +1004,15 @@ int Telescope::startPark (Rts2Conn * conn)
 		return -1;
 	}
 	int ret;
+	if ((getState () & TEL_MASK_MOVING) == TEL_MOVING)
+	{
+		ret = stopMove ();
+		if (ret)
+		{
+			logStream (MESSAGE_ERROR) << "failure calling stopMove before starting parking" << sendLog;
+			return ret;
+		}
+	}
 	ret = startPark ();
 	if (ret)
 	{
@@ -1027,6 +1096,15 @@ int Telescope::commandAuthorized (Rts2Conn * conn)
 		modelOff ();
 		oriRaDec->setValueRaDec (obj_ra, obj_dec);
 		mpec->setValueString ("");
+		return startResyncMove (conn, false);
+	}
+	else if (conn->isCommand ("move_mpec"))
+	{
+		char *str;
+		if (conn->paramNextString (&str) || !conn->paramEnd ())
+			return -2;
+		modelOn ();
+		mpec->setValueString (str);
 		return startResyncMove (conn, false);
 	}
 	else if (conn->isCommand ("resync"))

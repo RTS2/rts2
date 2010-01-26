@@ -891,6 +891,14 @@ class Telescope:public Rts2Device
 		 * tracking are calculated from this string.
 		 */
 		Rts2ValueString *mpec;
+
+		Rts2ValueDouble *mpec_refresh;
+		Rts2ValueDouble *mpec_angle;
+
+		// Value for RA DEC differential tracking
+		Rts2ValueRaDec *diffRaDec;
+
+		void recalculateMpecDIffs ();
 };
 
 };
