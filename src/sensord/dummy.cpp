@@ -31,6 +31,7 @@ class Dummy:public Sensor
 		rts2core::DoubleArray *statContent;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
+		Rts2ValueBool *hwError;
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
@@ -43,10 +44,16 @@ class Dummy:public Sensor
 			createValue (statContent, "test_content", "test content", true);
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
+			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
 		{
+		  	if (old_value == hwError)
+			{
+				maskState (DEVICE_ERROR_MASK, ((Rts2ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
+				return 0;
+			}
 			if (old_value == goodWeather)
 			{
 			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
