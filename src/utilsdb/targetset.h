@@ -80,7 +80,8 @@ class TargetNotFound
  * Set of targets.
  *
  * This class holds set of targets. Constructors for filling set from the DB
- * using various criterias are provided.
+ * using various criterias are provided. The load () method must be called to
+ * actually load targets.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
