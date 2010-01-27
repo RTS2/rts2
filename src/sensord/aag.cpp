@@ -546,16 +546,15 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 {
 	aagConn = NULL;
 
-	createValue (tempSky, "TEMP_SKY", "temperature sky", false);
-	createValue (tempIRSensor, "TEMP_IRS", "temperature ir sensor", false);
-	createValue (tempSkyCorrected, "TEMP_SKY_CORR", "temperature sky corrected", false);
-	createValue (tempRain, "TEMP_RAIN", "rain sensor temperature", false);
-	createValue (rainFrequency, "RAIN", "rain frequency", false);
-	createValue (pwmValue, "PWM", "pwm value", false);
-	createValue (intVoltage, "INT_VOLT", "internal voltage", false);
-	createValue (ldrResistance, "LDR_RES", "pullup resistancetrue", false);
-
-	createValue (triggerGood, "TRIGGOOD", "if rain frequency gets above this value, drop bad weather flag", false);
+	createValue (tempSky,          "TEMP_SKY",     "temperature sky", true); // go to FITS
+	createValue (tempSkyCorrected, "TEMP_SKY_CORR","temperature sky corrected", false);
+	createValue (tempIRSensor,     "TEMP_IRS",     "temperature ir sensor", false);
+	createValue (tempRain,         "TEMP_RAIN",    "rain sensor temperature", false);
+	createValue (rainFrequency,    "RAIN",         "rain frequency", false);
+	createValue (pwmValue,         "PWM",          "pwm value", false);
+	createValue (ldrResistance,    "LDR_RES",      "pullup resistancetrue", false);
+	createValue (intVoltage,       "INT_VOLT",     "internal voltage", false);
+	createValue (triggerGood,      "TRIGGOOD", "if rain frequency gets above this value, drop bad weather flag", false);
 	triggerGood->setValueDouble (rts2_nan ("f"));
 
 	addOption ('f', NULL, 1, "serial port AAG cloud sensor");
