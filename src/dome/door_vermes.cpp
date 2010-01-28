@@ -31,8 +31,8 @@
 #include "ssd650v_comm_vermes.h"
 #include "oak_comm_vermes.h"
 
+extern int oak_thread_state ;
 extern int doorState;
-extern int motor_on_off_state_door ;
 extern int doorEvent ;
 extern useconds_t sleep_max ;
 
@@ -74,7 +74,6 @@ namespace rts2dome {
     virtual int startClose ();
     virtual long isClosed ();
     virtual int endClose ();
-    
   public:
     DoorVermes (int argc, char **argv);
     virtual ~DoorVermes ();
@@ -162,7 +161,21 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
   if(changed_value == stop_door) {
     if( stop_door->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged stopping door" << sendLog ;
-      doorEvent= EVNT_DS_CMD_STOP ;
+      // turning off the motor has to be done here since move_door opens,closes it during a sleep
+      int ret ;
+      struct timespec sl ;
+      struct timespec rsl ;
+      sl.tv_sec= 0. ;
+      sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+
+      while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
+	fprintf( stderr, "DoorVermes::valueChanged: can not turn motor off\n") ;
+	ret= nanosleep( &sl, &rsl) ;
+	if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	  fprintf( stderr, "Error in nanosleep\n") ;
+	}
+      }
+      stop_door->setValueBool(false) ; // in order that it can be repeated faster
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
     }
@@ -170,7 +183,11 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
   } else if (changed_value == open_door) {
     if( open_door->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged opening door" << sendLog ;
-      doorEvent= EVNT_DS_CMD_OPEN ;
+      if( oak_thread_state== THREAD_STATE_RUNNING) {
+	doorEvent= EVNT_DS_CMD_OPEN ;
+      } else {
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
+      }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use CLOSE_DOOR to close the door" << sendLog ;
     }
@@ -178,7 +195,11 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
   } else if (changed_value == close_door) {
     if( close_door->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged closing door" << sendLog ;
-      doorEvent= EVNT_DS_CMD_CLOSE ;
+      if( oak_thread_state== THREAD_STATE_RUNNING) {
+	doorEvent= EVNT_DS_CMD_CLOSE ;
+      } else {
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
+      }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use OPEN_DOOR to open the door" << sendLog ;
     }
@@ -186,7 +207,11 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
   } else if (changed_value == close_door_undefined) {
     if( close_door_undefined->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged door state undefined, closing door slowly" << sendLog ;
-      doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE;
+      if( oak_thread_state== THREAD_STATE_RUNNING) {
+	doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE ;
+      } else {
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
+      }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use CLOSE_UDFD=true to close the door" << sendLog ;
     }
@@ -205,7 +230,10 @@ DoorVermes::init ()
     return ret;
 
   // Toradex Oak digitial inputs, connect and start thread which can only stop motor
-  connectOakDiginDevice(OAKDIGIN_CMD_CONNECT) ;
+  if( connectOakDiginDevice(OAKDIGIN_CMD_CONNECT)) {
+    logStream (MESSAGE_ERROR) << "Vermes::initValues Oak thread did not start, exiting" << sendLog ;
+    exit(1) ;
+  }
 
   // ssd650v frequency inverter, connect and start thread which only can start motor
   logStream (MESSAGE_DEBUG) << "Connect to SSD650v" << sendLog;
@@ -262,7 +290,11 @@ DoorVermes::startOpen ()
     } else {
       logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen opening door" << sendLog ;
       open_door->setValueBool(true) ;
-      doorEvent= EVNT_DS_CMD_OPEN ;
+      if( oak_thread_state== THREAD_STATE_RUNNING) {
+	doorEvent= EVNT_DS_CMD_OPEN ;
+      } else {
+	logStream (MESSAGE_ERROR) << "DoorVermes::startOpen oak_digin_thread died" << sendLog ;
+      }
       return 0;
     }
   } else if ( doorState== DS_STOPPED_OPENED) {
@@ -348,7 +380,14 @@ DoorVermes::startClose ()
     logStream (MESSAGE_DEBUG) << "DoorVermes::startClose closing door"<< sendLog ;
     close_door->setValueBool(true) ;
     close_door_undefined->setValueBool(false) ;
-    doorEvent= EVNT_DS_CMD_CLOSE ;
+    if( oak_thread_state== THREAD_STATE_RUNNING) {
+      doorEvent= EVNT_DS_CMD_CLOSE ;
+    } else {
+      logStream (MESSAGE_ERROR) << "DoorVermes::startClose oak_digin_thread died" << sendLog ;
+    }
+    // wildi ToDo eventually:
+    // 2 minutes timeout..
+    setWeatherTimeout (120);
     return 0;
 
   } else if ( doorState== DS_UNDEF){
@@ -356,7 +395,11 @@ DoorVermes::startClose ()
     logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door  doorState== DS_UNDEF" << sendLog ;
     close_door->setValueBool(false) ;
     close_door_undefined->setValueBool(true) ;
-    doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE;
+    if( oak_thread_state== THREAD_STATE_RUNNING) {
+      doorEvent= EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE ;
+    } else {
+      logStream (MESSAGE_ERROR) << "DoorVermes::startClose oak_digin_thread died" << sendLog ;
+    }
     return 0 ;
 
   } else {
@@ -378,6 +421,8 @@ long
 DoorVermes::isClosed ()
 {   
   updateDoorStatusMessage() ;
+  // wildi ToDo test
+  return -2 ;
 
   if ( doorState != DS_STOPPED_CLOSED) {
     logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed  doorState != DS_STOPPED_CLOSED returning USEC_SEC "<< sendLog ;
@@ -454,7 +499,7 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
 {
   createValue (doorStateMessage,     "DOORSTATE", "door state as clear text", false);
   createValue (door_block,           "DOOR_BLOCK", "true inhibits rts2-centrald initiated door opening", false, RTS2_VALUE_WRITABLE);
-  door_block->setValueBool (true); // wildi ToDo for now
+  door_block->setValueBool (false); // wildi ToDo for now
   createValue (stop_door,            "STOP_DOOR",  "true stops door",  false, RTS2_VALUE_WRITABLE);
   stop_door->setValueBool  (false);
   createValue (open_door,            "OPEN_DOOR",  "true opens door",  false, RTS2_VALUE_WRITABLE);

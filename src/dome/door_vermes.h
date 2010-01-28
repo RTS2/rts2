@@ -18,5 +18,6 @@
  */
 #ifndef  __RTS_DOOR_VERMES__
 #define __RTS_DOOR_VERMES__
+#define REPEAT_RATE_NANO_SEC (long) (200. * 1000. * 1000.) // [1^-9 sec] frequency while getting incorrect answer
 
 #endif // __RTS_DOOR_VERMES__

@@ -37,7 +37,7 @@
 
 #endif
 
-#include "vermes.h"
+#include "door_vermes.h"
 #include "ssd650v_comm_vermes.h"
 #include "bisync_vermes.h"
 #include "serial_vermes.h"
@@ -567,7 +567,7 @@ int motor_run_switch_state( int cmd)
     struct timespec rsl ;
 
     sl.tv_sec= 0 ;
-    sl.tv_nsec= (long) 200 * 1000 * 1000 ;
+    sl.tv_nsec= REPEAT_RATE_NANO_SEC ;
     ret= nanosleep( &sl, &rsl) ;
     if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
       fprintf( stderr, "Error in nanosleep\n") ;
@@ -658,7 +658,7 @@ int connectSSD650vDevice( int power_state)
       }
       /*connected: query identity from SSD650V */
       sl.tv_sec= 0 ;
-      sl.tv_nsec= (long) 200 * 1000 * 1000 ;
+      sl.tv_nsec= REPEAT_RATE_NANO_SEC ;
       ret= nanosleep( &sl, &rsl) ;
       if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
 	fprintf( stderr, "Error in nanosleep\n") ;

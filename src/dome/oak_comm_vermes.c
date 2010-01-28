@@ -75,13 +75,13 @@ int checkOakCall(EOakStatus status, const char *file, int line, const char* func
 #include "ssd650v_comm_vermes.h"
 
 
+int oak_thread_state= THREAD_STATE_UNDEFINED ;
 int oakDiginHandle;
 DeviceInfo devInfo;      // structure holding oak digital input device informations
 pthread_t oak_digin_th_id;
 pthread_mutex_t oak_th_mutex;
 
 
-char *oak_bits ;
 int intr_cnt = 0;
 void *oak_digin_thread(void * args);
 int oak_digin_setup(int* deviceHandle, char* oakDiginDevice) ;
@@ -95,11 +95,11 @@ int oak_digin_setup(int* deviceHandle, char* oakDiginDevice) ;
 /******************************************************************************
  * connectOakDevice(int connecting)
  *****************************************************************************/
-void
+int
 connectOakDiginDevice(int connecting)
 {
   int oak_stat;
-  int thread_stat;
+  int thread_stat= -1; // if not set to 0 main program dies
   char oakDiginDevice[]="/dev/door_switch" ;
 
   if (connecting== OAKDIGIN_CMD_CONNECT) {
@@ -115,21 +115,17 @@ connectOakDiginDevice(int connecting)
       // Set the LED Mode to OFF
       CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
 
-      // create receive communication thread
-      thread_stat = pthread_create(&oak_digin_th_id, NULL,
-					 &oak_digin_thread, NULL);
-      if (thread_stat != 0) {
-	fprintf( stderr,  "connectOakDiginDevice: failure starting thread: error %d:\n", thread_stat);
-      } 
       int* values = xmalloc(devInfo.numberOfChannels * sizeof(int));
       int rd_stat;
 
       rd_stat = readInterruptReport(oakDiginHandle, values);
       if ((rd_stat < 0) && (errno == EINTR)) {
 	fprintf( stderr, "connectOakDiginDevice: no connection to OAK device") ;
+	oak_thread_state= THREAD_STATE_UNDEFINED ;
+      } else {
+	oak_thread_state= THREAD_STATE_RUNNING ;
       }
       int bits = values[1] & 0xff;
-      int ret ;
       // it is the duty of connectSSD650vDevice() call to set the state first
       // setting the initial DS_ state
       if( motorState== SSD650V_MS_STOPPED) { // 
@@ -158,8 +154,14 @@ connectOakDiginDevice(int connecting)
 	fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, door is closed, motor is undefined\n") ;
       } else {
 	doorState= DS_UNDEF ;
-	fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, door is undefined, motor is undefined %d\n", ret) ;
+	fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, door is undefined, motor is undefined\n") ;
       }
+      // create receive communication thread
+      thread_stat = pthread_create(&oak_digin_th_id, NULL, &oak_digin_thread, NULL);
+
+      if (thread_stat != 0) {
+	fprintf( stderr,  "connectOakDiginDevice: failure starting thread: error %d:\n", thread_stat);
+      } 
     } else {
       doorState= DS_UNDEF ;
       fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, no connection to oak device\n") ;
@@ -181,6 +183,7 @@ connectOakDiginDevice(int connecting)
     print_mem_usage("connectDevice(false)");
 #endif
   }
+  return thread_stat ;
 }
 /*****************************************************************************
  * oak_digin_setup(..)
@@ -266,7 +269,6 @@ oak_digin_thread(void * args)
   int lastDoorState= DS_UNDEF ;
   int stop_motor= STOP_MOTOR_UNDEFINED ;
   char bits_str[32] ;
-  oak_bits= &bits_str[0] ;
   struct timespec sl ;
   struct timespec rsl ;
   static struct timeval time_last_stat;
@@ -378,12 +380,13 @@ oak_digin_thread(void * args)
 	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
       }
     } else {
-      doorState= DS_UNDEF ;
       if( lastDoorState != doorState) {
 	lastDoorState= doorState ;
 	if( motorState== SSD650V_MS_RUNNING) {
+	  doorState= DS_UNDEF ;
 	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is ON\n") ;
 	} else {
+	  doorState= DS_STOPPED_UNDEF ;
 	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is OFF\n") ;
 	}
       }     

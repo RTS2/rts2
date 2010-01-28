@@ -30,7 +30,7 @@
 extern "C"
 {
 #endif
-void connectOakDiginDevice(int connecting);
+int connectOakDiginDevice(int connecting);
 #ifdef __cplusplus
 }
 #endif
@@ -40,7 +40,9 @@ void connectOakDiginDevice(int connecting);
 #define OAKDIGIN_CMD_CONNECT    0 
 #define OAKDIGIN_CMD_DISCONNECT 1 // everything else 
 
-// OAK states bit patterns
+// OAK thread state
+#define THREAD_STATE_UNDEFINED  0
+#define THREAD_STATE_RUNNING    1
 //
 
 #endif   // #ifndef __OAK_COMM_VERMES_H__

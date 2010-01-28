@@ -25,11 +25,10 @@
 #include <string.h>
 #endif
 
-#include "vermes.h"
+#include "door_vermes.h"
 #include "move-door_vermes.h"
 #include "ssd650v_comm_vermes.h"
 
-extern char *oak_bits ;
 int doorEvent= EVNT_DS_CMD_DO_NOTHING ;
 int doorState= DS_UNDEF ; 
 
@@ -43,7 +42,6 @@ int test_ssd= NO_TEST_SSD ;
 #define SLEEP_TEST_SSD   (time_t)   1 // seconds!
 #define SLEEP_OPEN_DOOR  (time_t) 100 // 
 #define SLEEP_CLOSE_DOOR (time_t) 100 // 
-#define REPEAT_RATE_NANO_SEC (long) (200. * 1000. * 1000.) // [1^-9 sec] frequency while getting incorrect answer
 
 void off_zero()
 {
@@ -169,26 +167,38 @@ void *move_door( void *value)
   struct timespec slv ;
   struct timespec rsl ;
 
-  static int lastDoorState= -1 ;
-  static char last_oak_bits[32] ;
-  strcpy(  last_oak_bits, "01234567" ) ; // make the first oak state visible
-
   if( test_ssd == TEST_SSD) {
     fprintf(stderr, "move_door: test_ssd == TEST_SSD, %ld\n", SLEEP_TEST_SSD) ;
   } 
 
   while( 1==1) {
 
-    if(doorEvent== EVNT_DS_CMD_STOP) {
-      doorState= DS_STOPPING ;
-      fprintf(stderr, "move_door: stopping door\n") ;
-      off_zero() ;
-      doorState= DS_STOPPED_UNDEF ;
-    } else if(doorEvent== EVNT_DS_CMD_OPEN) {
+    // wildi ToDo MUTEX
+    while( doorEvent== EVNT_DS_CMD_DO_NOTHING) {
+      slv.tv_sec= POLLSEC ;
+      slv.tv_nsec= 0 ;
+      ret= nanosleep( &slv, &rsl) ;
+      if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	switch( ret) {
+	case EFAULT:
+	  fprintf( stderr, "move_door: error in nanosleep EFAULT=%d\n", ret) ;
+	  break ;
+	case EINTR:
+	  fprintf( stderr, "move_door: error in nanosleep EINTR=%d\n",ret) ;
+	  break ;
+	case EINVAL:
+	  fprintf( stderr, "move_door: error in nanosleep EINVAL=%d\n",ret) ;
+	  break ;
+	default:
+	  fprintf( stderr, "move_door: error in nanosleep NONE of these\n") ;
+	}
+      }      
+    }
+    if(doorEvent== EVNT_DS_CMD_OPEN) {
       fprintf(stderr, "move_door: opening door\n") ;
       // check the state
       if( doorState != DS_STOPPED_CLOSED) {
-	fprintf(stderr, "move_door: doorState != DS_STOPPED_CLOSED\n") ;
+	fprintf(stderr, "move_door: close door first see CLOSE_UDFD, doorState != DS_STOPPED_CLOSED\n") ;
       } else {
 	open_close( SETPOINT_OPEN_DOOR, SETPOINT_OPEN_DOOR_SLOW, DS_START_OPEN, DS_RUNNING_OPEN, test_ssd, SLEEP_OPEN_DOOR) ;
       }
@@ -209,8 +219,6 @@ void *move_door( void *value)
       // check the state
       if( doorState == DS_STOPPED_CLOSED) {
 	fprintf(stderr, "move_door: doorState == DS_STOPPED_CLOSED, doing nothing\n") ;
-	lastDoorState= doorState ;
-	strcpy( last_oak_bits, oak_bits) ;
       } else {
 	close_undefined(SETPOINT_UNDEFINED_POSITION, DS_START_UNDEF, DS_RUNNING_UNDEF, test_ssd) ;
       }
@@ -218,35 +226,12 @@ void *move_door( void *value)
       // Now, it is up to oak_digin_thread to say DS_STOPPED_CLOSED or what is approprate
     } else if(doorEvent== EVNT_DS_CMD_DO_NOTHING){
 
-      if(( doorState != lastDoorState) || ( strcmp(oak_bits, last_oak_bits))) {
-	fprintf(stderr, "move_door: doing nothing doorState=%d, setpoint=%4.1f, bits= %s\n", doorState, get_setpoint(), oak_bits) ;
-	lastDoorState= doorState ;
-	strcpy( last_oak_bits, oak_bits) ;
-      }
+      fprintf(stderr, "move_door: doing nothing doorState=%d, setpoint=%4.1f\n", doorState, get_setpoint()) ;
     } else {
       fprintf(stderr, "move_door: undefined command %d\n", doorEvent) ;
     }
-    // wildi ToDo MUTEX
     // reset doorEvent
-    doorEvent       = EVNT_DS_CMD_DO_NOTHING ;
-    slv.tv_sec= POLLSEC ;
-    slv.tv_nsec= 0 ;
-    ret= nanosleep( &slv, &rsl) ;
-    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
-      switch( ret) {
-      case EFAULT:
-	fprintf( stderr, "move_door: error in nanosleep EFAULT=%d\n", ret) ;
-	break ;
-      case EINTR:
-	fprintf( stderr, "move_door: error in nanosleep EINTR=%d\n",ret) ;
-	break ;
-      case EINVAL:
-	fprintf( stderr, "move_door: error in nanosleep EINVAL=%d\n",ret) ;
-	break ;
-      default:
-	fprintf( stderr, "move_door: error in nanosleep NONE of these\n") ;
-      }
-    } 
+    doorEvent= EVNT_DS_CMD_DO_NOTHING ;
   }
   return NULL ;
 }

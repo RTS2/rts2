@@ -30,11 +30,11 @@ void *move_door( void *value);
 #endif
 // set point used here and in oak_digin_thread 
 #define SETPOINT_ZERO                 0.
-#define SETPOINT_OPEN_DOOR           50.
-#define SETPOINT_CLOSE_DOOR         -50. // later 100.
-#define SETPOINT_OPEN_DOOR_SLOW      30.
-#define SETPOINT_CLOSE_DOOR_SLOW    -30.
-#define SETPOINT_UNDEFINED_POSITION -30. // manual intervention: reach a defined state by closing the door until the end switch is reached 
+#define SETPOINT_OPEN_DOOR          100.
+#define SETPOINT_CLOSE_DOOR        -100.
+#define SETPOINT_OPEN_DOOR_SLOW      40.
+#define SETPOINT_CLOSE_DOOR_SLOW    -40.
+#define SETPOINT_UNDEFINED_POSITION -40. // manual intervention: reach a defined state by closing the door until the end switch is reached 
 
 
 // door state
@@ -61,9 +61,8 @@ void *move_door( void *value);
 // door commands
 #define EVNT_DS_CMD_OPEN              30
 #define EVNT_DS_CMD_CLOSE             31
-#define EVNT_DS_CMD_STOP              32
-#define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 33
-#define EVNT_DS_CMD_DO_NOTHING        34
+#define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 32
+#define EVNT_DS_CMD_DO_NOTHING        33
 
 // comment to be defined
 #define ERR_DS_BAD_STATE            40
