@@ -524,7 +524,7 @@ AAG::info ()
 				     << " trigger: " << triggerGood->getValueDouble ()
 				     << sendLog;
 	}
-	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining, temp.>(THR.|THR.NO.SNOW)");
     }
     return SensorWeather::info ();
 }
