@@ -707,11 +707,27 @@ ModelTarget::load ()
 		logMsgDb ("ModelTarget::ModelTarget", MESSAGE_ERROR);
 		return -1;
 	}
-	alt_start = d_alt_start;
-	alt_stop = d_alt_stop;
+	if (d_alt_start < d_alt_stop)
+	{
+		alt_start = d_alt_start;
+		alt_stop = d_alt_stop;
+	}
+	else
+	{
+		alt_start = d_alt_stop;
+		alt_stop = d_alt_start;
+	}
 	alt_step = d_alt_step;
-	az_start = d_az_start;
-	az_stop = d_az_stop;
+	if (d_az_start < d_az_stop)
+	{
+		az_start = d_az_start;
+		az_stop = d_az_stop;
+	}
+	else
+	{
+		az_start = d_az_stop;
+		az_stop = d_az_start;
+	}
 	az_step = d_az_step;
 	noise = d_noise;
 	step = d_step;
@@ -786,11 +802,14 @@ ModelTarget::calPosition ()
 	switch (modelStepType)
 	{
 		case -2:
-			hrz_poz.az = 360 * random_num ();
+			hrz_poz.az = (az_stop - az_start) * random_num ();
 			hrz_poz.alt = 0;
-			m_alt = (88 - Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0));
-			hrz_poz.alt = m_alt * random_num ();
-			hrz_poz.alt = ln_rad_to_deg (asin (hrz_poz.alt / m_alt));
+			m_alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0);
+			if (m_alt < alt_start)
+				m_alt = alt_start;
+			if (m_alt < getMinObsAlt ())
+				m_alt = getMinObsAlt ();
+ 			hrz_poz.alt = m_alt + (alt_stop - m_alt) * asin (random_num ()) / (M_PI / 2.0);
 			if (!isAboveHorizon (&hrz_poz))
 				hrz_poz.alt = Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hrz_poz, 0) + 2;
 			ra_noise = 0;
