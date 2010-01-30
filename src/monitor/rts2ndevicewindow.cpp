@@ -194,6 +194,9 @@ void Rts2NDeviceWindow::createValueBox ()
 		case RTS2_VALUE_SELECTION:
 			valueBox = new ValueBoxSelection (this, (Rts2ValueSelection *) val, 21, s);
 			break;
+		case RTS2_VALUE_TIME:
+			valueBox = new ValueBoxTimeDiff (this, (Rts2ValueTime *) val, 21, s);
+			break;
 		case RTS2_VALUE_RADEC:
 			valueBox = new ValueBoxRaDec (this, (Rts2ValueRaDec *) val, 21, s);
 			break;

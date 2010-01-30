@@ -257,14 +257,13 @@ bool ValueBoxDouble::setCursor ()
 	return Rts2NWindowEditDigits::setCursor ();
 }
 
-ValueBoxSelection::ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y):ValueBox (top, _val),Rts2NSelWindow (top->getX () + _x, top->getY () + _y, 15, 5)
+AbstractBoxSelection::AbstractBoxSelection (Rts2NWindow * top, Rts2Value * _val, int _x, int _y):ValueBox (top, _val),Rts2NSelWindow (top->getX () + _x, top->getY () + _y, 15, 5)
 {
 	maxrow = 0;
 	setLineOffset (0);
-	setSelRow (_val->getValueInteger ());
 }
 
-keyRet ValueBoxSelection::injectKey (int key)
+keyRet AbstractBoxSelection::injectKey (int key)
 {
 	switch (key)
 	{
@@ -278,15 +277,30 @@ keyRet ValueBoxSelection::injectKey (int key)
 	return Rts2NSelWindow::injectKey (key);
 }
 
+bool AbstractBoxSelection::setCursor ()
+{
+	return false;
+}
+
+void AbstractBoxSelection::drawRow (const char *_text)
+{
+	mvwprintw (getWriteWindow (), maxrow++, 1, _text);
+}
+
+ValueBoxSelection::ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
+{
+	setSelRow (_val->getValueInteger ());
+}
+
 void ValueBoxSelection::draw ()
 {
 	Rts2NSelWindow::draw ();
 	werase (getWriteWindow ());
 	Rts2ValueSelection *vals = (Rts2ValueSelection *) getValue ();
 	maxrow = 0;
-	for (std::vector < SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++, maxrow++)
+	for (std::vector < SelVal >::iterator iter = vals->selBegin (); iter != vals->selEnd (); iter++)
 	{
-		mvwprintw (getWriteWindow (), maxrow, 1, (*iter).name.c_str ());
+		drawRow ((*iter).name.c_str ());
 	}
 	refresh ();
 }
@@ -299,9 +313,28 @@ void ValueBoxSelection::sendValue (Rts2Conn * connection)
 		getValue ()->getName (), '=', getSelRow ()));
 }
 
-bool ValueBoxSelection::setCursor ()
+ValueBoxTimeDiff::ValueBoxTimeDiff (Rts2NWindow * top, Rts2ValueTime *_val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
 {
-	return false;
+}
+
+void ValueBoxTimeDiff::draw ()
+{
+	Rts2NSelWindow::draw ();
+	werase (getWriteWindow ());
+	for (maxrow = 0; maxrow < 5;)
+	{
+		std::ostringstream _os;
+		_os << "+" << ((maxrow + 1) * 2) << " min";
+		drawRow (_os.str ().c_str ());
+	}
+	refresh ();
+}
+
+void ValueBoxTimeDiff::sendValue (Rts2Conn * connection)
+{
+	if (!connection->getOtherDevClient ())
+		return;
+	connection->queCommand (new Rts2CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', time (NULL) + (getSelRow () + 1) * 120));
 }
 
 ValueBoxRectangle::ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
