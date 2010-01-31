@@ -1,7 +1,13 @@
 0.7.5
 =====
 
-2009-01-18
+2010-01-31
+ * Flats are set with now - mitigate waiting for script ends
+
+2010-01-30
+ * Time diff is editable in rts2-mon with selection box (for selecting for how long in future should new time be)
+
+2010-01-18
  * MPEC target field for telescope - telescope is able to calculate solar system bodies orbits
 
 2009-12-05
