@@ -491,6 +491,12 @@ int Executor::queueTarget (int tarId)
 		delete nt;
 		return 0;
 	}
+	if (nt->getTargetType () == TYPE_FLAT && (currentTarget == NULL || currentTarget->getTargetType () != TYPE_FLAT))
+	{
+		delete nt;
+		setNow (tarId);
+		return 0;
+	}
 	nextTargets.push_back (nt);
 	if (!currentTarget)
 		switchTarget ();
