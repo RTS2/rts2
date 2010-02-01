@@ -2012,7 +2012,7 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 			// if it is mount ra dec - write heliocentric time
 			if (!strcmp ("TEL", name))
 			{
-				double JD = getExposureJD () + getExposureLength () / 2.0 / 86400;
+				double JD = getMidExposureJD ();
 				struct ln_equ_posn equ;
 				equ.ra = ((Rts2ValueRaDec *) val)->getRa ();
 				equ.dec = ((Rts2ValueRaDec *) val)->getDec ();
@@ -2251,9 +2251,7 @@ double Rts2Image::getExposureJD ()
 double Rts2Image::getExposureLST ()
 {
 	double ret;
-	ret =
-		ln_get_apparent_sidereal_time (getExposureJD () * 15.0 +
-		getLongtitude ());
+	ret = ln_get_apparent_sidereal_time (getExposureJD () * 15.0 + getLongtitude ());
 	return ln_range_degrees (ret) / 15.0;
 }
 

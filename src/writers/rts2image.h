@@ -569,6 +569,7 @@ class Rts2Image:public Rts2FitsFile
 		void getCoordMount (struct ln_equ_posn &radec);
 
 		void getCoordBest (struct ln_equ_posn &radec);
+		void getCoordBestAltAz (struct ln_hrz_posn &hrz, struct ln_lnlat_posn *observer);
 
 		void getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name);
 		void getCoordTarget (LibnovaRaDec & radec);
@@ -647,6 +648,8 @@ class Rts2Image:public Rts2FitsFile
 		 * Gets julian data of exposure start
 		 */
 		double getExposureJD ();
+
+		double getMidExposureJD () { return getExposureJD () + getExposureLength () / 2.0 / 86400; }
 
 		/**
 		 * Get image LST (local sidereal time).

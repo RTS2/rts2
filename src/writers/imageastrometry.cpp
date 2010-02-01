@@ -278,6 +278,12 @@ void Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 	}
 }
 
+void Rts2Image::getCoordBestAltAz (struct ln_hrz_posn &hrz, struct ln_lnlat_posn *observer)
+{
+	struct ln_equ_posn equ;
+	getCoordBest (equ);
+	ln_get_hrz_from_equ (&equ, observer, getMidExposureJD (), &hrz);
+}
 
 void Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name)
 {
