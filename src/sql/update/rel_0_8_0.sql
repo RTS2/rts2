@@ -187,8 +187,8 @@ INSERT INTO mv_records_double_hour (SELECT * FROM records_double_hour);' LANGUAG
 CREATE UNIQUE INDEX plan_tar_id_start ON plan (tar_id, plan_start);
 
 -- second parameter is site longitude
-CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS timestamp with time zone AS
-	'SELECT to_timestamp (EXTRACT(EPOCH FROM $1) - EXTRACT (hour FROM $1) * 3600 - EXTRACT (minute FROM $1) * 60 - 86400 * $2 / 360 - 43200)' LANGUAGE 'SQL';
+CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS timestamp without time zone AS
+	'SELECT (to_timestamp (EXTRACT(EPOCH FROM $1) + 86400 * $2 / 360 - 43200) AT TIME ZONE ''UTC'' )' LANGUAGE 'SQL';
 
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
