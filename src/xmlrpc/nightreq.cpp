@@ -198,8 +198,16 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 	for (rts2db::ImageSetDate::iterator iter = is.begin (); iter != is.end (); iter++)
 	{
 		struct ln_hrz_posn hrz;
-		(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
-		altaz.plotCross (&hrz, NULL, "green");
+		try
+		{
+			(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
+			(*iter)->closeFile ();
+			altaz.plotCross (&hrz, NULL, "green");
+		}
+		catch (rts2core::Error &er)
+		{
+			(*iter)->closeFile ();
+		}
 	}
 
 	Magick::Blob blob;
@@ -237,7 +245,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	if (year == 0 || month == 0 || day == 0)
 		do_list = true;
 
-	_os << "</title></head><body><p><a href='all'>All images</a>&nbsp;<a href='altaz'>Night images alt-az plor</a></p><p><table>";
+	_os << "</title></head><body><p><a href='all'>All images</a>&nbsp;<a href='altaz'>Night images alt-az plot</a></p><p><table>";
 
 	if (do_list == true)
 	{
