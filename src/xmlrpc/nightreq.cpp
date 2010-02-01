@@ -24,7 +24,7 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#ifdef HAVE_LIBJPEG
 #include "altaz.h"
 #endif // HAVE_LIBJPEG
 #include "../utils/rts2config.h"
@@ -42,14 +42,16 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	int month = -1;
 	int day = -1;
 	
-	bool printAll = false;
+	enum {NONE, IMAGES, ALTAZ} action = NONE;
 
 	switch (vals.size ())
 	{
 		case 4:
 			// print all images..
 			if (vals[3] == "all")
-				printAll = true;
+				action = IMAGES;
+			else if (vals[3] == "altaz")
+			  	action = ALTAZ;
 			else
 				throw rts2core::Error ("Invalid path for all observations");
 		case 3:
@@ -59,10 +61,17 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 		case 1:
 			year = atoi (vals[0].c_str ());
 		case 0:
-			if (printAll)
-				printAllImages (year, month, day, params, response, response_length);
-			else
-				printTable (year, month, day, response, response_length);
+			switch (action)
+			{
+				case IMAGES:
+					printAllImages (year, month, day, params, response, response_length);
+					break;
+				case ALTAZ:
+					printAltAz (year, month, day, params, response_type, response, response_length);
+					break;
+				default:
+					printTable (year, month, day, response, response_length);
+			}
 			break;
 		default:
 			throw rts2core::Error ("Invalid path for observations!");
@@ -167,6 +176,43 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
+void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+#ifdef HAVE_LIBJPEG
+	response_type = "image/jpeg";
+
+	time_t from;
+	int64_t duration;
+
+	getNightDuration (year, month, day, from, duration);
+
+	time_t end = from + duration;
+
+	rts2db::ImageSetDate is = rts2db::ImageSetDate (from, end);
+	is.load ();
+
+	int s = params->getInteger ("s", 250);
+	AltAz altaz = AltAz (s, s);
+	altaz.plotAltAzGrid ();
+
+	for (rts2db::ImageSetDate::iterator iter = is.begin (); iter != is.end (); iter++)
+	{
+		struct ln_hrz_posn hrz;
+		(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
+		altaz.plotCross (&hrz, NULL, "green");
+	}
+
+	Magick::Blob blob;
+	altaz.write (&blob, "jpeg");
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+#else
+	throw rts2core::Error ("missing libjpeg support");
+#endif
+}
+
 void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
 {
 	bool do_list = false;
@@ -191,7 +237,7 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	if (year == 0 || month == 0 || day == 0)
 		do_list = true;
 
-	_os << "</title></head><body><p><a href='all'>All images</a></p><p><table>";
+	_os << "</title></head><body><p><a href='all'>All images</a>&nbsp;<a href='altaz'>Night images alt-az plor</a></p><p><table>";
 
 	if (do_list == true)
 	{
