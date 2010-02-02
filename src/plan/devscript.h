@@ -26,13 +26,14 @@
 #include "../utils/rts2block.h"
 #include "../utils/rts2target.h"
 
-using namespace rts2script;
+namespace rts2script
+{
 
 /**
  * That class provide scripting interface for devices, so they can
  * run scrips..
  */
-class Rts2DevScript
+class DevScript
 {
 	private:
 		Rts2Conn * script_connection;
@@ -99,8 +100,8 @@ class Rts2DevScript
 		virtual void deleteScript ();
 
 	public:
-		Rts2DevScript (Rts2Conn * in_script_connection);
-		virtual ~ Rts2DevScript (void);
+		DevScript (Rts2Conn * in_script_connection);
+		virtual ~ DevScript (void);
 		void postEvent (Rts2Event * event);
 		virtual void nextCommand () = 0;
 
@@ -108,4 +109,6 @@ class Rts2DevScript
 
 		Script *getScript () { return script; }
 };
+
+}
 #endif							 /* !__RTS2_DEVSCRIPT__ */

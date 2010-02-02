@@ -19,7 +19,6 @@
 
 #include <iterator>
 
-#include "rts2devscript.h"
 #include "script.h"
 
 #include "../utils/rts2config.h"

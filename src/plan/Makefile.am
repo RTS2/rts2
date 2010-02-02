@@ -2,7 +2,7 @@
 
 bin_PROGRAMS = rts2-scriptexec rts2-scriptor rts2-imgproc
 noinst_HEADERS = rts2execcli.h script.h connimgprocess.h rts2selector.h element.h \
-		 rts2devscript.h rts2devcliphot.h rts2spiral.h elementblock.h elementguiding.h \
+		 devscript.h rts2devcliphot.h rts2spiral.h elementblock.h elementguiding.h \
 		 rts2execclidb.h elementacquire.h scriptexec.h rts2targetscr.h \
 		 elementtarget.h elementhex.h elementwaitfor.h rts2scriptinterface.h operands.h elementexe.h
 
@@ -12,7 +12,7 @@ CLEANFILES = rts2selector.cpp rts2devcliphot.cpp
 
 noinst_LIBRARIES = libscript.a
 
-libscript_a_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp rts2devscript.cpp rts2spiral.cpp \
+libscript_a_SOURCES = rts2execcli.cpp script.cpp connimgprocess.cpp element.cpp devscript.cpp rts2spiral.cpp \
 		elementblock.cpp elementguiding.cpp rts2targetscr.cpp elementtarget.cpp elementhex.cpp elementwaitfor.cpp \
 		rts2scriptinterface.cpp operands.cpp elementexe.cpp
 libscript_a_CXXFLAGS = @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@

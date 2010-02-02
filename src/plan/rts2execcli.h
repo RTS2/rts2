@@ -21,7 +21,7 @@
 #define __RTS2_EXECCLI__
 
 #include "script.h"
-#include "rts2devscript.h"
+#include "devscript.h"
 
 #include "../writers/rts2devcliimg.h"
 #include "../utils/rts2event.h"
@@ -65,8 +65,9 @@ class GuidingParams
 		}
 };
 
-class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
-public Rts2DevScript
+using namespace rts2script;
+
+class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 {
 	private:
 		Rts2ValueString *expandPath;

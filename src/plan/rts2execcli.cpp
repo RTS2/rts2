@@ -27,7 +27,7 @@
 #include "../utils/rts2command.h"
 #include "../utils/rts2config.h"
 
-Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2ValueString *_expandPath):Rts2DevClientCameraImage (_connection), Rts2DevScript (_connection)
+Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2ValueString *_expandPath):Rts2DevClientCameraImage (_connection), DevScript (_connection)
 {
 	expandPath = _expandPath;
 	imgCount = 0;
@@ -64,13 +64,13 @@ void Rts2DevClientCameraExec::postEvent (Rts2Event * event)
 			//deleteScript ();
 			break;
 	}
-	Rts2DevScript::postEvent (event);
+	DevScript::postEvent (event);
 	Rts2DevClientCameraImage::postEvent (event);
 }
 
 void Rts2DevClientCameraExec::startTarget ()
 {
-	Rts2DevScript::startTarget ();
+	DevScript::startTarget ();
 }
 
 int Rts2DevClientCameraExec::getNextCommand ()
@@ -240,7 +240,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 
 void Rts2DevClientCameraExec::idle ()
 {
-	Rts2DevScript::idle ();
+	DevScript::idle ();
 	Rts2DevClientCameraImage::idle ();
 	// when it is the first command in the script..
 	if (getScript () && getScript ()->getExecutedCount () == 0)

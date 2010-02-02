@@ -17,10 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2devscript.h"
+#include "devscript.h"
 #include "rts2execcli.h"
 
-Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
+using namespace rts2script;
+
+DevScript::DevScript (Rts2Conn * in_script_connection)
 {
 	currentTarget = NULL;
 	nextComd = NULL;
@@ -34,20 +36,17 @@ Rts2DevScript::Rts2DevScript (Rts2Conn * in_script_connection)
 	script_connection = in_script_connection;
 }
 
-
-Rts2DevScript::~Rts2DevScript (void)
+DevScript::~DevScript (void)
 {
 	// cannot call deleteScript there, as unsetWait is pure virtual
 }
 
-
-void
-Rts2DevScript::startTarget ()
+void DevScript::startTarget ()
 {
 	// currentTarget should be nulled when script ends in
 	// deleteScript
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget this " << this
+	logStream (MESSAGE_DEBUG) << "DevScript::startTarget this " << this
 		<< " currentTarget " << (currentTarget ? currentTarget->getTargetID () : 0)
 		<< " nextTarget " << (nextTarget ? nextTarget->getTargetID () : 0)
 		<< sendLog;
@@ -84,7 +83,7 @@ Rts2DevScript::startTarget ()
 	nextComd = NULL;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Rts2DevScript::startTarget currentTarget " <<
+	logStream (MESSAGE_DEBUG) << "DevScript::startTarget currentTarget " <<
 		currentTarget->getTargetID () << " OBS ID " << currentTarget->
 		getObsTargetID () << sendLog;
 	#endif
@@ -93,9 +92,7 @@ Rts2DevScript::startTarget ()
 		postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
 
-
-void
-Rts2DevScript::postEvent (Rts2Event * event)
+void DevScript::postEvent (Rts2Event * event)
 {
 	int sig;
 	int acqEnd;
@@ -145,7 +142,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			break;
 		case EVENT_SCRIPT_ENDED:
 		#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED Rts2DevScript currentTarget " << currentTarget << " nextTarget " << nextTarget << sendLog;
+			logStream (MESSAGE_DEBUG) << "EVENT_SCRIPT_ENDED DevScript currentTarget " << currentTarget << " nextTarget " << nextTarget << sendLog;
 		#endif					 /* DEBUG_EXTRA */
 			if (event->getArg ())
 				// we get new target..handle that same way as EVENT_OBSERVE command,
@@ -206,7 +203,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 			waitScript = NO_WAIT;
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG) <<
-				"Rts2DevScript::postEvent EVENT_ACQUSITION_END " <<
+				"DevScript::postEvent EVENT_ACQUSITION_END " <<
 				script_connection->getName () << sendLog;
 		#endif
 			acqEnd = *(int *) event->getArg ();
@@ -217,7 +214,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 					break;
 				case -5:		 // failed with script deletion..
 					logStream (MESSAGE_DEBUG)
-						<< "Rts2DevScript::postEvent EVENT_ACQUSITION_END -5 "
+						<< "DevScript::postEvent EVENT_ACQUSITION_END -5 "
 						<< script_connection->getName () << sendLog;
 					break;
 				case NEXT_COMMAND_PRECISION_FAILED:
@@ -264,9 +261,7 @@ Rts2DevScript::postEvent (Rts2Event * event)
 	}
 }
 
-
-void
-Rts2DevScript::scriptBegin ()
+void DevScript::scriptBegin ()
 {
 	Rts2DevClient *cli = script_connection->getOtherDevClient ();
 	if (cli == NULL)
@@ -298,9 +293,7 @@ Rts2DevScript::scriptBegin ()
 	}
 }
 
-
-void
-Rts2DevScript::idle ()
+void DevScript::idle ()
 {
 	if (getScript ())
 	{
@@ -312,9 +305,7 @@ Rts2DevScript::idle ()
 	}
 }
 
-
-void
-Rts2DevScript::deleteScript ()
+void DevScript::deleteScript ()
 {
 	Script *tmp_script;
 	unsetWait ();
@@ -325,7 +316,7 @@ Rts2DevScript::deleteScript ()
 		acqRet = -5;
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG)
-			<< "Rts2DevScript::deleteScript sending EVENT_ACQUSITION_END" <<
+			<< "DevScript::deleteScript sending EVENT_ACQUSITION_END" <<
 			sendLog;
 		#endif
 		script_connection->getMaster ()->
@@ -366,9 +357,7 @@ Rts2DevScript::deleteScript ()
 	}
 }
 
-
-void
-Rts2DevScript::setNextTarget (Rts2Target * in_target)
+void DevScript::setNextTarget (Rts2Target * in_target)
 {
 	nextTarget = in_target;
 	if (nextTarget->getTargetID () == dont_execute_for)
@@ -380,9 +369,7 @@ Rts2DevScript::setNextTarget (Rts2Target * in_target)
 	#endif						 /* DEBUG_EXTRA */
 }
 
-
-int
-Rts2DevScript::nextPreparedCommand ()
+int DevScript::nextPreparedCommand ()
 {
 	int ret;
 	if (nextComd)
@@ -408,7 +395,7 @@ Rts2DevScript::nextPreparedCommand ()
 			waitScript = NO_WAIT;
 		#ifdef DEBUG_EXTRA
 			logStream (MESSAGE_DEBUG)
-				<< "Rts2DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END "
+				<< "DevScript::nextPreparedCommand sending EVENT_ACQUSITION_END "
 				<< script_connection->getName () << " " << ret << sendLog;
 		#endif
 			script_connection->getMaster ()->
@@ -447,9 +434,7 @@ Rts2DevScript::nextPreparedCommand ()
 	return ret;
 }
 
-
-int
-Rts2DevScript::haveNextCommand (Rts2DevClient *devClient)
+int DevScript::haveNextCommand (Rts2DevClient *devClient)
 {
 	int ret;
 	// waiting for script or acqusition
