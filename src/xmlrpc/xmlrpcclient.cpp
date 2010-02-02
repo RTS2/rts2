@@ -61,6 +61,7 @@ class Client: public Rts2CliApp
 		std::vector <const char *> args;
 
 		XmlRpcClient* xmlClient;
+		XmlRpcClient* httpClient;
 
 		/**
                  * Split variable name to 
@@ -84,7 +85,7 @@ class Client: public Rts2CliApp
 		/**
 		 * Run HTTP GET request.
 		 */
-		int runHttpGet (const char* path, bool printRes = true);
+		int runHttpGet (char* path, bool printRes = true);
 
 		/**
 		 * Run test methods.
@@ -194,17 +195,22 @@ int Client::runXmlMethod (const char* methodName, XmlRpcValue &in, XmlRpcValue &
 	return 0;
 }
 
-int Client::runHttpGet (const char* path, bool printRes)
+int Client::runHttpGet (char* path, bool printRes)
 {
 	int ret;
 
 	char* reply = NULL;
 	int reply_length = 0;
 
-	ret = xmlClient->executeGet (path, reply, reply_length);
+	const char *_uri;
+
+	httpClient = new XmlRpcClient (path, &_uri);
+
+	ret = httpClient->executeGet (_uri, reply, reply_length);
 	if (!ret)
 	{
 		logStream (MESSAGE_ERROR) << "Error requesting " << path << sendLog;
+		delete httpClient;
 		return -1;
 	}
 	if (printRes)
@@ -212,6 +218,7 @@ int Client::runHttpGet (const char* path, bool printRes)
 		std::cout << reply << std::endl;
 	}
 	free(reply);
+	delete httpClient;
 	return 0;
 }
 
@@ -293,7 +300,7 @@ int Client::doHttpGet ()
 	{
 		try
 		{
-			int ret = runHttpGet (*iter);
+			int ret = runHttpGet ((char *) *iter);
 			if (ret)
 				return ret;
 		}

@@ -40,6 +40,11 @@ namespace XmlRpc
 			static const char FAULT_TAG[];
 
 			//! Construct a client to connect to the server at the specified host:port address
+			//!  @param path           The complete URI of requested resource
+			//!  @param uri            String which will hold URI part of the resource
+			XmlRpcClient(char *path, const char **uri);
+
+			//! Construct a client to connect to the server at the specified host:port address
 			//!  @param host           The name of the remote machine hosting the server
 			//!  @param port           The port on the remote machine where the server is listening
 			//!  @param authorizationa Authorization string (ussually <username>:<password>)
@@ -91,7 +96,7 @@ namespace XmlRpc
 			virtual bool generateRequest(const char* method, XmlRpcValue const& params);
 			virtual bool generateGetRequest(const char* path);
 			virtual std::string generateHeader(std::string const& body);
-			virtual std::string generateGetHeader(std::string const& path);
+			virtual std::string generateGetHeader(std::string const& path, std::string const& body = std::string(""));
 			virtual bool writeRequest();
 			virtual bool readHeader();
 			virtual bool readResponse();
@@ -141,6 +146,9 @@ namespace XmlRpc
 
 			// Event dispatcher
 			XmlRpcDispatch _disp;
+		private:
+			void setupProxy ();
+			void setupHost (const char *host, int port, const char *authorization, const char *uri);
 
 	};							 // class XmlRpcClient
 

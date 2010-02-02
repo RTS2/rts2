@@ -26,57 +26,43 @@ const char XmlRpcClient::REQUEST_END[] = "</methodCall>\r\n";
 const char XmlRpcClient::METHODRESPONSE_TAG[] = "<methodResponse>";
 const char XmlRpcClient::FAULT_TAG[] = "<fault>";
 
+XmlRpcClient::XmlRpcClient(char *path, const char **uri)
+{
+	char *host;
+	int port = 80;
+	char *authorization = NULL;
+	*uri = NULL;
+
+	// try to parse path..
+
+	if (strstr(path,"http://") == path)
+		host = path + 7;
+	else
+		host = path;
+	
+	// find authorization - look for @
+	char *str = strchr(host,'@');
+	if (str)
+	{
+		authorization = host;
+		*str = '\0';
+		host = str + 1;
+	}
+
+	// separate host and uri
+	str = strchr (host, '/');
+	if (str)
+	{
+		*str = '\0';
+		*uri = str + 1;
+	}
+
+	setupHost(host,port,authorization,*uri);
+}
+
 XmlRpcClient::XmlRpcClient(const char *host, int port, const char *authorization, const char *uri)
 {
-	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
-
-	_header = NULL;
-	_header_length = 0;
-
-	_response_buf = NULL;
-	_response_length = 0;
-
-	char *proxy = getenv ("http_proxy");
-	if (proxy)
-	{
-		char *ph = new char[strlen(proxy) + 1];
-		if (sscanf (proxy, "http://%s:%i", ph, &_proxy_port) == 2)
-		{
-			_proxy_host = ph;
-		}
-		else
-		{
-			XmlRpcUtil::error("Ignoring proxy specification taken from http_proxy enviromental variable (%s).", proxy);
-		}
-		delete[] ph;
-	}
-	else
-	{
-		_proxy_port = -1;
-	}
-	_host = host;
-	_port = port;
-
-	if (authorization != NULL)
-		_authorization = authorization;
-	else
-		_authorization = std::string("");
-	if (uri != NULL)
-		_uri = uri;
-	else
-		_uri = std::string ("/RPC2");
-	if (_proxy_port > 0)
-	{
-		std::ostringstream _os;
-		_os << "http://" << _host << ":" << _port;
-		_uri = _os.str () + _uri;
-	}
-	_connectionState = NO_CONNECTION;
-	_executing = NOEXEC;
-	_eof = false;
-
-	// Default to keeping the connection open until an explicit close is done
-	setKeepOpen();
+	setupHost(host,port,authorization,uri);
 }
 
 
@@ -86,8 +72,7 @@ XmlRpcClient::~XmlRpcClient()
 
 
 // Close the owned fd
-void
-XmlRpcClient::close()
+void XmlRpcClient::close()
 {
 	XmlRpcUtil::log(4, "XmlRpcClient::close: fd %d.", getfd());
 	_connectionState = NO_CONNECTION;
@@ -109,8 +94,7 @@ struct ClearFlagOnExit
 // Params should be an array of the arguments for the method.
 // Returns true if the request was sent and a result received (although the result
 // might be a fault).
-bool
-XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue& result)
+bool XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue& result)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: method %s (_connectionState %d).", method, _connectionState);
 
@@ -150,9 +134,7 @@ XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpcValue
 	return true;
 }
 
-
-bool
-XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
+bool XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 {
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: path %s (_connectionState %d):", path, _connectionState);
 
@@ -185,11 +167,9 @@ XmlRpcClient::executeGet(const char* path, char* &reply, int &reply_length)
 	return true;
 }
 
-
 // XmlRpcSource interface implementation
 // Handle server responses. Called by the event dispatcher during execute.
-unsigned
-XmlRpcClient::handleEvent(unsigned eventType)
+unsigned XmlRpcClient::handleEvent(unsigned eventType)
 {
 	if (eventType == XmlRpcDispatch::Exception)
 	{
@@ -216,10 +196,8 @@ XmlRpcClient::handleEvent(unsigned eventType)
 		? XmlRpcDispatch::WritableEvent : XmlRpcDispatch::ReadableEvent;
 }
 
-
 // Create the socket connection to the server if necessary
-bool
-XmlRpcClient::setupConnection()
+bool XmlRpcClient::setupConnection()
 {
 	// If an error occurred last time through, or if the server closed the connection, close our end
 	if ((_connectionState != NO_CONNECTION && _connectionState != IDLE) || _eof)
@@ -241,10 +219,8 @@ XmlRpcClient::setupConnection()
 	return true;
 }
 
-
 // Connect to the xmlrpc server
-bool
-XmlRpcClient::doConnect()
+bool XmlRpcClient::doConnect()
 {
 	int fd = XmlRpcSocket::socket();
 	if (fd < 0)
@@ -286,10 +262,8 @@ XmlRpcClient::doConnect()
 	return true;
 }
 
-
 // Encode the request to call the specified method with the specified parameters into xml
-bool
-XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& params)
+bool XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& params)
 {
 	std::string body = REQUEST_BEGIN;
 	body += methodName;
@@ -327,23 +301,20 @@ XmlRpcClient::generateRequest(const char* methodName, XmlRpcValue const& params)
 	return true;
 }
 
-
-bool
-XmlRpcClient::generateGetRequest(const char* path)
+bool XmlRpcClient::generateGetRequest(const char* path)
 {
-	_request = generateGetHeader(path);
+	if (path)
+		_request = generateGetHeader(path);
+	else
+		_request = generateGetHeader(std::string(""));
 	XmlRpcUtil::log(4, "XmlRpcClient::generateGetRequest: header is %d bytes.", _request.length ());
 	return true;
 }
 
-
 // Prepend http headers
-std::string
-XmlRpcClient::generateHeader(std::string const& body)
+std::string XmlRpcClient::generateHeader(std::string const& body)
 {
-	std::string header =
-		"POST " + _uri + " HTTP/1.1\r\n"
-		"User-Agent: ";
+	std::string header = "POST " + _uri + " HTTP/1.1\r\nUser-Agent: ";
 	header += XMLRPC_VERSION;
 	header += "\r\nHost: ";
 	header += _host;
@@ -370,14 +341,13 @@ XmlRpcClient::generateHeader(std::string const& body)
 	return header + buff;
 }
 
-
 // Prepare GET request header
-std::string
-XmlRpcClient::generateGetHeader(std::string const& path)
+std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string const& body)
 {
-	std::string header =
-		"GET " + path + " HTTP/1.1\r\n"
-		"User-Agent: ";
+	std::string header = "GET ";
+	if (path[0] != '/')
+		header += '/';
+	header += path + " HTTP/1.1\r\nUser-Agent: ";
 	header += XMLRPC_VERSION;
 	header += "\r\nHost: ";
 	header += _host;
@@ -397,14 +367,16 @@ XmlRpcClient::generateGetHeader(std::string const& path)
 
 		header += "Authorization: Basic " + auth + "\r\n";
 	}
-	header += "\r\n\r\n";
+	header += "Content-Type: text/xml\r\nContent-length: ";
+
+	sprintf(buff,"%i\r\n\r\n", (int) body.size());
+
+	header += buff;
 
 	return header;
 }
 
-
-bool
-XmlRpcClient::writeRequest()
+bool XmlRpcClient::writeRequest()
 {
 	if (_bytesWritten == 0)
 		XmlRpcUtil::log(5, "XmlRpcClient::writeRequest (attempt %d):\n%s\n", _sendAttempts+1, _request.c_str());
@@ -435,10 +407,8 @@ XmlRpcClient::writeRequest()
 	return true;
 }
 
-
 // Read the header from the response
-bool
-XmlRpcClient::readHeader()
+bool XmlRpcClient::readHeader()
 {
 	// Read available data
 	if ( ! XmlRpcSocket::nbRead(this->getfd(), _header, _header_length, &_eof) ||
@@ -525,9 +495,7 @@ XmlRpcClient::readHeader()
 	return true;				 // Continue monitoring this source
 }
 
-
-bool
-XmlRpcClient::readResponse()
+bool XmlRpcClient::readResponse()
 {
 	// If we dont have the entire response yet, read available data
 	if (int(_response_length) < _contentLength)
@@ -560,10 +528,8 @@ XmlRpcClient::readResponse()
 	return false;				 // Stop monitoring this source (causes return from work)
 }
 
-
 // Convert the response xml into a result value
-bool
-XmlRpcClient::parseResponse(XmlRpcValue& result)
+bool XmlRpcClient::parseResponse(XmlRpcValue& result)
 {
 	// Parse response xml into result
 	int offset = 0;
@@ -594,4 +560,63 @@ XmlRpcClient::parseResponse(XmlRpcValue& result)
 
 	_response = "";
 	return result.valid();
+}
+
+void XmlRpcClient::setupProxy()
+{
+	char *proxy = getenv ("http_proxy");
+	if (proxy)
+	{
+		char *ph = new char[strlen(proxy) + 1];
+		if (sscanf (proxy, "http://%s:%i", ph, &_proxy_port) == 2)
+		{
+			_proxy_host = ph;
+		}
+		else
+		{
+			XmlRpcUtil::error("Ignoring proxy specification taken from http_proxy enviromental variable (%s).", proxy);
+		}
+		delete[] ph;
+	}
+	else
+	{
+		_proxy_port = -1;
+	}
+}
+
+void XmlRpcClient::setupHost(const char *host, int port, const char *authorization, const char *uri)
+{
+		XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
+
+	_header = NULL;
+	_header_length = 0;
+
+	_response_buf = NULL;
+	_response_length = 0;
+
+	setupProxy ();
+
+	_host = host;
+	_port = port;
+
+	if (authorization != NULL)
+		_authorization = authorization;
+	else
+		_authorization = std::string("");
+	if (uri != NULL)
+		_uri = uri;
+	else
+		_uri = std::string ("/RPC2");
+	if (_proxy_port > 0)
+	{
+		std::ostringstream _os;
+		_os << "http://" << _host << ":" << _port;
+		_uri = _os.str () + _uri;
+	}
+	_connectionState = NO_CONNECTION;
+	_executing = NOEXEC;
+	_eof = false;
+
+	// Default to keeping the connection open until an explicit close is done
+	setKeepOpen();
 }
