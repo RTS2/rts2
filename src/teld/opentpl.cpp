@@ -29,6 +29,7 @@
 #define OPT_CHECK_POWER       OPT_LOCAL + 1
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
 #define OPT_PARK_POS          OPT_LOCAL + 4
+#define OPT_POWEOFF_STANDBY   OPT_LOCAL + 5
 
 namespace rts2teld
 {
@@ -88,6 +89,8 @@ class OpenTPL:public Telescope
 		Rts2ValueRaDec *om_radec;
 		Rts2ValueAltAz *om_altaz;
 
+		Rts2ValueBool *standbyPoweroff;
+
 		double derOff;
 
 		int initOpenTplDevice ();
@@ -108,6 +111,9 @@ class OpenTPL:public Telescope
 		virtual int idle ();
 
 		Rts2ValueDouble *derotatorOffset;
+
+		void powerOn ();
+		void powerOff ();
 
 		int coverClose ();
 		int coverOpen ();
@@ -154,6 +160,17 @@ class OpenTPL:public Telescope
 using namespace rts2teld;
 
 #define DEBUG_EXTRA
+
+void OpenTPL::powerOn ()
+{
+	checkPower ();
+}
+
+void OpenTPL::powerOff ()
+{
+	int status = TPL_OK;
+	opentplConn->set ("CABINET.POWER", 0, &status);
+}
 
 int OpenTPL::coverClose ()
 {
@@ -206,38 +223,28 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
 	{
-		status =
-			opentplConn->set ("CABINET.POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-			&status);
+		status = opentplConn->set ("CABINET.POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorOffset)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (),
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorCurrpos)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (),
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorPower)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -334,6 +341,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
+	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
 
 	cover_state = CLOSED;
 }
@@ -375,6 +383,9 @@ int OpenTPL::processOption (int in_opt)
 				delete is;
 				parkPos->setValueAltAz (palt, paz);
 			}
+			break;
+		case OPT_POWEOFF_STANDBY:
+			standbyPoweroff->setValueBool (true);
 			break;
 		default:
 			return Telescope::processOption (in_opt);
@@ -447,6 +458,9 @@ int OpenTPL::initValues ()
 		return -1;
 
 	createValue (model_dumpFile, "dump_file", "model dump file", false);
+
+	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false);
+	standbyPoweroff->setValueBool (false);
 
 	Rts2ValueDouble *modelP;
 
@@ -600,8 +614,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "checkCover opened " << status <<
-					sendLog;
+				logStream (MESSAGE_DEBUG) << "checkCover opened " << status << sendLog;
 			#endif
 				cover_state = OPENED;
 				break;
@@ -614,8 +627,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "checkCover closed " << status <<
-					sendLog;
+				logStream (MESSAGE_DEBUG) << "checkCover closed " << status << sendLog;
 			#endif
 				cover_state = CLOSED;
 				break;
@@ -652,20 +664,17 @@ OpenTPL::checkPower ()
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " <<
-				status << sendLog;
+			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " << status << sendLog;
 			return;
 		}
 		while (power_state == 0.5)
 		{
-			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" <<
-				sendLog;
+			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
 			sleep (5);
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower power_state ret " <<
-					status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
 				return;
 			}
 		}
@@ -675,21 +684,18 @@ OpenTPL::checkPower ()
 		status = opentplConn->get ("CABINET.REFERENCED", referenced, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower get referenced " <<
-				status << sendLog;
+			logStream (MESSAGE_ERROR) << "checkPower get referenced " << status << sendLog;
 			return;
 		}
 		if (referenced == 1)
 			break;
-		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
 		if (referenced == 0)
 		{
 			status = opentplConn->set ("CABINET.REINIT", 1, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower reinit " <<
-					status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower reinit " << status << sendLog;
 				return;
 			}
 		}
@@ -704,10 +710,13 @@ OpenTPL::checkPower ()
 			case SERVERD_DUSK:
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
+				powerOn ();
 				coverOpen ();
 				break;
 			default:
 				coverClose ();
+				if (standbyPoweroff->getValueBool () == true)
+					powerOff ();
 				break;
 		}
 	}
@@ -1102,6 +1111,9 @@ OpenTPL::startResync ()
 {
 	int status = 0;
 	double sep;
+
+	if (standbyPoweroff->getValueBool () == true)
+		checkPower ();
 
 	getTarget (&target);
 
