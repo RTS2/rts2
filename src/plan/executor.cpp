@@ -491,7 +491,7 @@ int Executor::queueTarget (int tarId)
 		delete nt;
 		return 0;
 	}
-	if (nt->getTargetType () == TYPE_FLAT && (currentTarget == NULL || currentTarget->getTargetType () != TYPE_FLAT))
+	if (nt->getTargetType () == TYPE_FLAT && currentTarget != NULL && currentTarget->getTargetType () != TYPE_FLAT)
 	{
 		delete nt;
 		setNow (tarId);
