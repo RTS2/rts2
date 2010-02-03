@@ -83,6 +83,8 @@ int Rts2TargetApp::getObject (const char *obj_text)
 	}
 	delete target;
 	target = NULL;
+#else
+	logStream (MESSAGE_ERROR) << "You don't have gsoap library configured, so Simbad name resolving will not work" << sendLog;
 #endif
 	return -1;
 }
