@@ -44,7 +44,7 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 	rts2message.h conntcp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h expander.h \
 	riseset.h rts2valuerectangle.h rts2data.h radecparser.h connserial.h connmodbus.h rts2format.h \
-	rts2valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h
+	rts2valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h counted_ptr.h
 
 if EPICS
 noinst_LIBRARIES += librts2epics.a
