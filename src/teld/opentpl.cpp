@@ -710,13 +710,10 @@ OpenTPL::checkPower ()
 			case SERVERD_DUSK:
 			case SERVERD_NIGHT:
 			case SERVERD_DAWN:
-				powerOn ();
 				coverOpen ();
 				break;
 			default:
 				coverClose ();
-				if (standbyPoweroff->getValueBool () == true)
-					powerOff ();
 				break;
 		}
 	}
@@ -1337,10 +1334,13 @@ int OpenTPL::changeMasterState (int new_state)
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
+			powerOn ();
 			coverOpen ();
 			break;
 		default:
 			coverClose ();
+			if (standbyPoweroff->getValueBool () == true)
+				powerOff ();
 			break;
 	}
 	return Telescope::changeMasterState (new_state);
