@@ -40,6 +40,7 @@ Rts2DevClientCameraExec::~Rts2DevClientCameraExec ()
 
 Rts2Image * Rts2DevClientCameraExec::createImage (const struct timeval *expStart)
 {
+	exposureScript = getScript ();
 	if (expandPath)
 		return new Rts2Image (expandPath->getValue (), getExposureNumber (), expStart, connection);
 	return Rts2DevClientCameraImage::createImage (expStart);
@@ -221,9 +222,9 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 {
 	int ret;
 	// try processing in script..
-	if (getScript ())
+	if (exposureScript.get ())
 	{
-		ret = getScript ()->processImage (image);
+		ret = exposureScript->processImage (image);
 		if (ret > 0)
 		{
 			return IMAGE_KEEP_COPY;
@@ -243,7 +244,7 @@ void Rts2DevClientCameraExec::idle ()
 	DevScript::idle ();
 	Rts2DevClientCameraImage::idle ();
 	// when it is the first command in the script..
-	if (getScript () && getScript ()->getExecutedCount () == 0)
+	if (getScript ().get () && getScript ()->getExecutedCount () == 0)
 		nextCommand ();
 }
 
@@ -259,7 +260,7 @@ void Rts2DevClientCameraExec::exposureEnd ()
 {
 	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
 	// if script is running and it does not have anything to do, end it
-	if (getScript ()
+	if (getScript ().get ()
 		&& !nextComd
 		&& getScript ()->isLastCommand ()
 		&& (!val || val->getValueInteger () == 0)

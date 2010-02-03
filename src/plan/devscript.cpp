@@ -22,12 +22,11 @@
 
 using namespace rts2script;
 
-DevScript::DevScript (Rts2Conn * in_script_connection)
+DevScript::DevScript (Rts2Conn * in_script_connection) : script ()
 {
 	currentTarget = NULL;
 	nextComd = NULL;
 	nextTarget = NULL;
-	script = NULL;
 	waitScript = NO_WAIT;
 	dont_execute_for = -1;
 	scriptLoopCount = 0;
@@ -68,7 +67,7 @@ void DevScript::startTarget ()
 	}
 	scriptCount++;
 
-	Script *sc = new Script (script_connection->getMaster ());
+	counted_ptr <Script> sc (new Script (script_connection->getMaster ()));
 	sc->setTarget (script_connection->getName (), currentTarget);
 	setScript (sc);
 
@@ -96,7 +95,6 @@ void DevScript::postEvent (Rts2Event * event)
 {
 	int sig;
 	int acqEnd;
-	Script *tmp_script;
 	AcquireQuery *ac;
 	switch (event->getType ())
 	{
@@ -109,12 +107,7 @@ void DevScript::postEvent (Rts2Event * event)
 			// stop actual observation..
 			unsetWait ();
 			waitScript = NO_WAIT;
-			if (script)
-			{
-				tmp_script = script;
-				setScript (NULL);
-				delete tmp_script;
-			}
+			script.null ();
 			delete nextComd;
 			nextComd = NULL;
 			// null dont_execute_for
@@ -175,13 +168,13 @@ void DevScript::postEvent (Rts2Event * event)
 			// if we are still exposing, exposureEnd/readoutEnd will query new command
 			break;
 		case EVENT_SCRIPT_RUNNING_QUESTION:
-			if (getScript () != NULL)
+			if (script.get ())
 				(*((int *) event->getArg ()))++;
 			break;
 		case EVENT_OK_ASTROMETRY:
 		case EVENT_NOT_ASTROMETRY:
 		case EVENT_STAR_DATA:
-			if (script)
+			if (script.get ())
 			{
 				script->postEvent (new Rts2Event (event));
 				if (isWaitMove ())
@@ -190,7 +183,7 @@ void DevScript::postEvent (Rts2Event * event)
 			}
 			break;
 		case EVENT_MIRROR_FINISH:
-			if (script && waitScript == WAIT_MIRROR)
+			if (script.get () && waitScript == WAIT_MIRROR)
 			{
 				script->postEvent (new Rts2Event (event));
 				waitScript = NO_WAIT;
@@ -244,11 +237,11 @@ void DevScript::postEvent (Rts2Event * event)
 			// that's intentional, as acqueryQuery should be send to all
 			// scripts for processing
 		case EVENT_SIGNAL_QUERY:
-			if (script)
+			if (script.get ())
 				script->postEvent (new Rts2Event (event));
 			break;
 		case EVENT_SIGNAL:
-			if (!script)
+			if (script.get () == 0)
 				break;
 			sig = *(int *) event->getArg ();
 			script->postEvent (new Rts2Event (EVENT_SIGNAL, (void *) &sig));
@@ -268,36 +261,23 @@ void DevScript::scriptBegin ()
 	{
 		return;
 	}
-	if (script == NULL)
+	if (script.get () == NULL)
 	{
-		queCommandFromScript (new
-			Rts2CommandChangeValue (cli,
-			std::string ("SCRIPREP"),
-			'=', 0));
-		queCommandFromScript (new
-			Rts2CommandChangeValue (cli,
-			std::string ("SCRIPT"),
-			'=', std::string ("")));
+		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPREP"), '=', 0));
+		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPT"), '=', std::string ("")));
 	}
 	else
 	{
-		queCommandFromScript (new
-			Rts2CommandChangeValue (cli,
-			std::string ("SCRIPREP"),
-			'=', scriptLoopCount));
-		queCommandFromScript (new
-			Rts2CommandChangeValue (cli,
-			std::string ("SCRIPT"),
-			'=',
-			script->getWholeScript ()));
+		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPREP"), '=', scriptLoopCount));
+		queCommandFromScript (new Rts2CommandChangeValue (cli, std::string ("SCRIPT"), '=', script->getWholeScript ()));
 	}
 }
 
 void DevScript::idle ()
 {
-	if (getScript ())
+	if (script.get ())
 	{
-		int ret = getScript ()->idle ();
+		int ret = script->idle ();
 		if (ret == NEXT_COMMAND_NEXT)
 		{
 			nextCommand ();
@@ -307,7 +287,6 @@ void DevScript::idle ()
 
 void DevScript::deleteScript ()
 {
-	Script *tmp_script;
 	unsetWait ();
 	if (waitScript == WAIT_MASTER)
 	{
@@ -326,7 +305,7 @@ void DevScript::deleteScript ()
 	waitScript = NO_WAIT;
 	delete nextComd;
 	nextComd = NULL;
-	if (script)
+	if (script.get ())
 	{
 		if (currentTarget)
 		{
@@ -346,9 +325,7 @@ void DevScript::deleteScript ()
 			// don't execute us for current target..
 			dont_execute_for = currentTarget->getTargetID ();
 		}
-		tmp_script = script;
-		setScript (NULL);
-		delete tmp_script;
+		script.null ();
 		currentTarget = NULL;
 		// that can result in call to startTarget and
 		// therefore nextCommand, which will set nextComd - so we
@@ -438,7 +415,7 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 {
 	int ret;
 	// waiting for script or acqusition
-	if (!script || waitScript == WAIT_SLAVE)
+	if (script.get () == 0 || waitScript == WAIT_SLAVE)
 	{
 		return 0;
 	}
@@ -455,7 +432,7 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 			<< sendLog;
 		#endif					 /* DEBUG_EXTRA */
 		startTarget ();
-		if (!script)
+		if (script.get () == 0)
 		{
 			return 0;
 		}

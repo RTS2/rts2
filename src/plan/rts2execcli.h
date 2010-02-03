@@ -71,6 +71,7 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 {
 	private:
 		Rts2ValueString *expandPath;
+		ScriptPtr exposureScript;
 	protected:
 		virtual void unblockWait ()
 		{

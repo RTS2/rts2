@@ -24,6 +24,7 @@
 #include "elementblock.h"
 #include <config.h>
 
+#include "../utils/counted_ptr.h"
 #include "../utils/rts2block.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2devclient.h"
@@ -245,7 +246,9 @@ template < typename T > int Script::nextCommand (T & device, Rts2Command ** new_
 	if (ret != NEXT_COMMAND_NEXT)
 		executedCount++;
 	return ret;
-}
+};
+
+typedef counted_ptr <Script> ScriptPtr;
 
 }
 #endif							 /* ! __RTS2_SCRIPT__ */

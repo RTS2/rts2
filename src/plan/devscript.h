@@ -37,7 +37,7 @@ class DevScript
 {
 	private:
 		Rts2Conn * script_connection;
-		Script *script;
+		ScriptPtr script;
 		Rts2Target *nextTarget;
 		int dont_execute_for;
 		int scriptLoopCount;
@@ -105,9 +105,9 @@ class DevScript
 		void postEvent (Rts2Event * event);
 		virtual void nextCommand () = 0;
 
-		void setScript (Script * in_script) { script = in_script; }
+		void setScript (ScriptPtr _script) { script = _script; }
 
-		Script *getScript () { return script; }
+		ScriptPtr& getScript () { return script; }
 };
 
 }
