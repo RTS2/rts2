@@ -330,7 +330,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	createValue (parkPos, "park_position", "mount park position", false);
 	parkPos->setValueAltAz (70, 0);
 
-	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false);
+	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false, RTS2_VALUE_WRITABLE);
 	standbyPoweroff->setValueBool (false);
 
 	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
