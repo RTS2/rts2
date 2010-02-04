@@ -26,7 +26,6 @@
 #include "../utils/connopentpl.h"
 
 #define BLIND_SIZE            1.0
-#define OPT_CHECK_POWER       OPT_LOCAL + 1
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
 #define OPT_PARK_POS          OPT_LOCAL + 4
 #define OPT_POWEOFF_STANDBY   OPT_LOCAL + 5
@@ -49,8 +48,6 @@ class OpenTPL:public Telescope
 		void checkErrors ();
 		void checkCover ();
 		void checkPower ();
-
-		bool doCheckPower;
 
 		void getCover ();
 		void initCoverState ();
@@ -306,8 +303,6 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 
 	opentplConn = NULL;
 
-	doCheckPower = false;
-
 	irTracking = 4;
 
 	derOff = 0;
@@ -339,7 +334,6 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	standbyPoweroff->setValueBool (false);
 
 	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
-	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
@@ -360,9 +354,6 @@ int OpenTPL::processOption (int in_opt)
 	{
 		case OPT_OPENTPL_SERVER:
 			openTPLServer = new HostString (optarg, "65432");
-			break;
-		case OPT_CHECK_POWER:
-			doCheckPower = true;
 			break;
 		case OPT_ROTATOR_OFFSET:
 			derOff = atof (optarg);
@@ -654,9 +645,6 @@ OpenTPL::checkPower ()
 			sendLog;
 		return;
 	}
-
-	if (!doCheckPower)
-		return;
 
 	if (power_state == 0)
 	{
