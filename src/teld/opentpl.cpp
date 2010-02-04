@@ -1294,6 +1294,8 @@ int OpenTPL::isParking ()
 int OpenTPL::endPark ()
 {
 	setTelescopeTrack (0);
+	if (standbyPoweroff->getValueBool () == true)
+		powerOff ();
 	return 0;
 }
 
@@ -1327,8 +1329,6 @@ int OpenTPL::changeMasterState (int new_state)
 			break;
 		default:
 			coverClose ();
-			if (standbyPoweroff->getValueBool () == true)
-				powerOff ();
 			break;
 	}
 	return Telescope::changeMasterState (new_state);
