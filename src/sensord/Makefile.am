@@ -116,7 +116,7 @@ bin_PROGRAMS += rts2-sensor-a3200
 
 rts2_sensor_a3200_SOURCES = a3200.cpp
 rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
-rts2_sensor_a3200_LDFLAGS = @LIB_A3200@ ../utils/librts2block.a
+rts2_sensor_a3200_LDADD = @LIB_A3200@ ${LDADD}
 
 else
 

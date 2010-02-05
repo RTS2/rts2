@@ -7,7 +7,7 @@ bin_PROGRAMS=rts2-horizon
 AM_CXXFLAGS=@NOVA_CFLAGS@
 
 test_SOURCES = test.cpp utilsfunc.cpp
-test_LDFLAGS = @LIB_NOVA@ librts2block.a
+test_LDFLAGS = librts2block.a @LIB_NOVA@
 
 noinst_LIBRARIES = librts2block.a
 
@@ -55,4 +55,4 @@ EXTRA_DIST += connepics.cpp
 endif
 
 rts2_horizon_SOURCES = horizonapp.cpp
-rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a
+rts2_horizon_LDFLAGS = librts2block.a @LIB_NOVA@
