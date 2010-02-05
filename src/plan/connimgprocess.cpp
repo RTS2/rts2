@@ -70,8 +70,9 @@ int ConnImgProcess::init ()
 
 		expDate = image.getExposureStart () + image.getExposureLength ();
 	}
-	catch (rts2core::Error)
+	catch (rts2core::Error &e)
 	{
+		logStream (MESSAGE_ERROR) << "error processing " << imgPath.c_str () << " :" << e << sendLog;
 		return -2;
 	}
 	return ConnProcess::init ();
