@@ -119,6 +119,14 @@ class Rts2Image:public Rts2FitsFile
 
 		void openImage (const char *_filename = NULL, bool readOnly = false);
 		void getHeaders ();
+		/**
+		 * Retrieve from image target related headers.
+		 *
+		 * @throw rts2image::KeyNotFound
+		 */
+		void getTargetHeaders ();
+
+		void setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype);
 
 		virtual int toQue ();
 		virtual int toAcquisition ();
@@ -353,7 +361,7 @@ class Rts2Image:public Rts2FitsFile
 
 		float getExposureLength () { return exposureLength; }
 
-		int getTargetId () { return targetId; }
+		int getTargetId () { if (targetId < 0) getTargetHeaders (); return targetId; }
 
 		std::string getTargetString ();
 		std::string getTargetSelString ();
@@ -367,13 +375,13 @@ class Rts2Image:public Rts2FitsFile
 		// image parameter functions
 		std::string getExposureLengthString ();
 
-		int getTargetIdSel () { return targetIdSel; }
+		int getTargetIdSel () { if (targetIdSel < 0) getTargetHeaders (); return targetIdSel; }
 
-		char getTargetType () { return targetType; }
+		char getTargetType () { if (targetType == TYPE_UNKNOW) getTargetHeaders (); return targetType; }
 
-		int getObsId () { return obsId; }
+		int getObsId () { if (obsId < 0) getTargetHeaders (); return obsId; }
 
-		int getImgId () { return imgId; }
+		int getImgId () { if(imgId < 0) getTargetHeaders (); return imgId; }
 
 		const char *getFilter () { return filter; }
 
@@ -672,15 +680,10 @@ class Rts2Image:public Rts2FitsFile
 		double median, sigma;
 
 	protected:
-		int targetId;
-		int targetIdSel;
-		char targetType;
-		char *targetName;
-		int obsId;
-		int imgId;
 		char *cameraName;
 		char *mountName;
 		char *focName;
+
 		shutter_t shutter;
 
 		struct ln_equ_posn pos_astr;
@@ -700,6 +703,13 @@ class Rts2Image:public Rts2FitsFile
 		virtual std::string expandVariable (std::string expression);
 
 	private:
+		int targetId;
+		int targetIdSel;
+		char targetType;
+		char *targetName;
+		int obsId;
+		int imgId;
+
 		int filter_i;
 		char *filter;
 		float exposureLength;

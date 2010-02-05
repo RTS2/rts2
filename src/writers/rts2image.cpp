@@ -78,6 +78,8 @@ void Rts2Image::initData ()
 	targetIdSel = -1;
 	targetType = TYPE_UNKNOW;
 	targetName = NULL;
+	imgId = -1;
+	obsId = -1;
 	cameraName = NULL;
 	mountName = NULL;
 	focName = NULL;
@@ -259,8 +261,8 @@ Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, con
 
 	writeExposureStart ();
 
-	setValue ("TARGET", getTargetId (), "target id");
-	setValue ("TARSEL", getTargetIdSel (), "selector target id");
+	setValue ("TARGET", targetId, "target id");
+	setValue ("TARSEL", targetIdSel, "selector target id");
 	setValue ("TARTYPE", targetType, "target type");
 	setValue ("OBSID", obsId, "observation id");
 	setValue ("IMGID", imgId, "image id");
@@ -421,14 +423,6 @@ void Rts2Image::getHeaders ()
 
 	getValues ("NAXIS", naxis, 2, false);
 
-	// get info..
-	getValue ("TARGET", targetId, verbose);
-	getValue ("TARSEL", targetIdSel, verbose);
-	getValue ("TARTYPE", targetType, verbose);
-	targetName = new char[FLEN_VALUE];
-	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
-	getValue ("OBSID", obsId, verbose);
-	getValue ("IMGID", imgId, verbose);
 	getValue ("CTIME", tv.tv_sec, verbose);
 	getValue ("USEC", tv.tv_usec, verbose);
 	setExposureStart (&tv);
@@ -474,6 +468,28 @@ void Rts2Image::getHeaders ()
 
 	mnt_flip = 0;
 	getValue ("MNT_FLIP", mnt_flip, false);
+}
+
+void Rts2Image::getTargetHeaders ()
+{
+	// get info..
+	getValue ("TARGET", targetId, verbose);
+	getValue ("TARSEL", targetIdSel, verbose);
+	getValue ("TARTYPE", targetType, verbose);
+	targetName = new char[FLEN_VALUE];
+	getValue ("OBJECT", targetName, FLEN_VALUE, NULL, verbose);
+	getValue ("OBSID", obsId, verbose);
+	getValue ("IMGID", imgId, verbose);
+}
+
+void Rts2Image::setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype)
+{
+	targetId = _tar_id;
+	targetIdSel = _tar_id;
+	targetType = _obs_subtype;
+	targetName = NULL;
+	obsId = _obs_id;
+	imgId = _img_id;
 }
 
 int Rts2Image::closeFile ()
