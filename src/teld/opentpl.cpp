@@ -1196,6 +1196,9 @@ int OpenTPL::startPark ()
 	struct ln_equ_posn equPark;
 	struct ln_lnlat_posn observer;
 
+	if (standbyPoweroff->getValueBool () == true)
+		checkPower ();
+
 	switch (getPointingModel ())
 	{
 		case POINTING_RADEC:
