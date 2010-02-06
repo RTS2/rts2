@@ -59,6 +59,7 @@ static int mot_cmd_status = -1;
 static struct timeval time_last_stat;   /* time of last status enquiry sent to
                                          * SSD650V */
 
+pthread_t  move_door_id;
 // 
 int motorState= SSD650V_MS_UNDEFINED ;
 
@@ -320,7 +321,7 @@ set_setpoint(float setpoint)
   snprintf(data, 8, "%3.1f", setpoint);
   int ret= SSD_set_tag(ser_dev, 247, data) ;
   if( ret == BISYNC_OK) {
-    fprintf( stderr, "set_setpoint: %s\n", data) ; 
+    fprintf( stderr, "set_setpoint: value %s\n", data) ; 
     return SSD650V_MS_OK ;
   } else {
     return SSD650V_MS_SETTING_SET_POINT_FAILED ;
@@ -643,7 +644,6 @@ int connectSSD650vDevice( int power_state)
   char device_ssd650v[]="/dev/ssd650v" ; // azimuth and door devices are the same
   struct timespec sl ;
   struct timespec rsl ;
-  pthread_t  move_door_id;
   int thread_stat_ssd;
   
   switch (power_state) {
@@ -805,16 +805,21 @@ int connectSSD650vDevice( int power_state)
 
   case SSD650V_CMD_DISCONNECT:
 
-    res = ssd_stop_comm();
-    if (!res) {
-      // wildi ToDo  IDSetSwitch(&PowerSP, "disconnected from %s.", SerDeviceTP.tp[0].text);
-      return SSD650V_MS_CONNECTION_OK ;
-    } else {
-      // wildi ToDo IDSetSwitch(&PowerSP, "disconnect from %s failed.", SerDeviceTP.tp[0].text);
+    thread_stat_ssd = pthread_cancel(move_door_id); // 0 = success
+    if( thread_stat_ssd != 0 ) {
       return SSD650V_MS_CONNECTION_FAILED ;
     }
-    break;
-    
+    fprintf( stderr, "connectSSD650vDevice: SSD650v thread stopped\n") ;
+    res = ssd_stop_comm();
+    if (!res) {
+      fprintf( stderr, "connectSSD650vDevice: closed connection\n") ;
+      return SSD650V_MS_CONNECTION_OK ;
+    } else {
+      fprintf( stderr, "connectSSD650vDevice: closing connection failed\n") ;
+      return SSD650V_MS_CONNECTION_FAILED ;
+    }
+
+    break ;
   default: ;
   }
   return SSD650V_MS_GENERAL_FAILURE;

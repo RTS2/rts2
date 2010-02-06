@@ -44,6 +44,6 @@ int connectOakDiginDevice(int connecting);
 #define THREAD_STATE_UNDEFINED  0
 #define THREAD_STATE_RUNNING    1
 //
-
+#define  HEART_BEAT_UPPER_LIMIT 10000000
 #endif   // #ifndef __OAK_COMM_VERMES_H__
 

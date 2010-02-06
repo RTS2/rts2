@@ -59,14 +59,14 @@ void *move_door( void *value);
 #define EVNT_DS_EMERGENCY_ENDSWITCH   23
 
 // door commands
-#define EVNT_DS_CMD_OPEN              30
-#define EVNT_DS_CMD_CLOSE             31
-#define EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE 32
-#define EVNT_DS_CMD_DO_NOTHING        33
+#define EVNT_DOOR_CMD_OPEN              30
+#define EVNT_DOOR_CMD_CLOSE             31
+#define EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE 32
+#define EVNT_DOOR_CMD_DO_NOTHING        33
 
 // comment to be defined
-#define ERR_DS_BAD_STATE            40
-#define ERR_DS_EMERGENCY_ENDSWITCH  41
-#define ERR_DS_UNEXP_EVENT          42
+#define ERR_DOOR_BAD_STATE            40
+#define ERR_DOOR_EMERGENCY_ENDSWITCH  41
+#define ERR_DOOR_UNEXP_EVENT          42
 
 #endif //  __RTS_MOVE_DOOR_VERMES__

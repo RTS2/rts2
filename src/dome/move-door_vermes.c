@@ -29,7 +29,7 @@
 #include "move-door_vermes.h"
 #include "ssd650v_comm_vermes.h"
 
-int doorEvent= EVNT_DS_CMD_DO_NOTHING ;
+int doorEvent= EVNT_DOOR_CMD_DO_NOTHING ;
 int doorState= DS_UNDEF ; 
 
 // wildi must not necessarily go aay
@@ -174,7 +174,7 @@ void *move_door( void *value)
   while( 1==1) {
 
     // wildi ToDo MUTEX
-    while( doorEvent== EVNT_DS_CMD_DO_NOTHING) {
+    while( doorEvent== EVNT_DOOR_CMD_DO_NOTHING) {
       slv.tv_sec= POLLSEC ;
       slv.tv_nsec= 0 ;
       ret= nanosleep( &slv, &rsl) ;
@@ -194,7 +194,7 @@ void *move_door( void *value)
 	}
       }      
     }
-    if(doorEvent== EVNT_DS_CMD_OPEN) {
+    if(doorEvent== EVNT_DOOR_CMD_OPEN) {
       fprintf(stderr, "move_door: opening door\n") ;
       // check the state
       if( doorState != DS_STOPPED_CLOSED) {
@@ -204,7 +204,7 @@ void *move_door( void *value)
       }
 
       // Now, it is up to oak_digin_thread to say DS_STOPPED_OPEN or what is approprate
-    } else if(doorEvent== EVNT_DS_CMD_CLOSE){
+    } else if(doorEvent== EVNT_DOOR_CMD_CLOSE){
       fprintf(stderr, "move_door: closing door\n") ;
       // check the state
       if( doorState != DS_STOPPED_OPENED) {
@@ -214,7 +214,7 @@ void *move_door( void *value)
       }
 
       // Now, it is up to oak_digin_thread to say DS_STOPPED_CLOSED  or what is approprate
-    } else if(doorEvent== EVNT_DS_CMD_CLOSE_IF_UNDEFINED_STATE){
+    } else if(doorEvent== EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE){
       fprintf(stderr, "move_door: closing door after door state is UNDEFINED resp. != DS_STOPPED_CLOSED\n") ;
       // check the state
       if( doorState == DS_STOPPED_CLOSED) {
@@ -224,14 +224,14 @@ void *move_door( void *value)
       }
 
       // Now, it is up to oak_digin_thread to say DS_STOPPED_CLOSED or what is approprate
-    } else if(doorEvent== EVNT_DS_CMD_DO_NOTHING){
+    } else if(doorEvent== EVNT_DOOR_CMD_DO_NOTHING){
 
       fprintf(stderr, "move_door: doing nothing doorState=%d, setpoint=%4.1f\n", doorState, get_setpoint()) ;
     } else {
       fprintf(stderr, "move_door: undefined command %d\n", doorEvent) ;
     }
     // reset doorEvent
-    doorEvent= EVNT_DS_CMD_DO_NOTHING ;
+    doorEvent= EVNT_DOOR_CMD_DO_NOTHING ;
   }
   return NULL ;
 }

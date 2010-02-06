@@ -36,21 +36,13 @@
 #include <time.h>
 #include <errno.h>
 
-// wildi ToDo: clarify with Lukas
-//#define CHECK_MALLOC
-#ifdef CHECK_MALLOC
-#include <malloc.h>
-#include <mcheck.h>
-#endif
-
 // wildi ToDo: must go aay
 #define TEST_OAK 1
 #define NO_TEST_OAK 0
 int test_oak= NO_TEST_OAK ;
 #define SLEEP_TEST_OAK_MILLISECONDS 10500 // !milli seconds!
 // wildi ToDo TEMP, must go away
-time_t
-difftimeval(struct timeval *t1, struct timeval *t0) ;
+time_t difftimeval(struct timeval *t1, struct timeval *t0) ;
 
 extern int doorState ; 
 extern int motorState ; 
@@ -80,9 +72,8 @@ int oakDiginHandle;
 DeviceInfo devInfo;      // structure holding oak digital input device informations
 pthread_t oak_digin_th_id;
 pthread_mutex_t oak_th_mutex;
+int oak_digin_thread_heart_beat ;
 
-
-int intr_cnt = 0;
 void *oak_digin_thread(void * args);
 int oak_digin_setup(int* deviceHandle, char* oakDiginDevice) ;
 
@@ -103,10 +94,6 @@ connectOakDiginDevice(int connecting)
   char oakDiginDevice[]="/dev/door_switch" ;
 
   if (connecting== OAKDIGIN_CMD_CONNECT) {
-#ifdef CHECK_MALLOC
-    print_mem_usage("connectDevice(true)");
-#endif
-
     oak_stat = oak_digin_setup(&oakDiginHandle, oakDiginDevice);
     
     if (oak_stat == 0) {
@@ -115,9 +102,11 @@ connectOakDiginDevice(int connecting)
       // Set the LED Mode to OFF
       CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
 
-      int* values = xmalloc(devInfo.numberOfChannels * sizeof(int));
+      // wildi ToDo int* values = xmalloc(devInfo.numberOfChannels * sizeof(int));
+      int* values = xmalloc( 64 * sizeof(int));
       int rd_stat;
 
+      oak_digin_thread_heart_beat= 0 ;
       rd_stat = readInterruptReport(oakDiginHandle, values);
       if ((rd_stat < 0) && (errno == EINTR)) {
 	fprintf( stderr, "connectOakDiginDevice: no connection to OAK device") ;
@@ -157,9 +146,10 @@ connectOakDiginDevice(int connecting)
 	fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, door is undefined, motor is undefined\n") ;
       }
       // create receive communication thread
-      thread_stat = pthread_create(&oak_digin_th_id, NULL, &oak_digin_thread, NULL);
+      thread_stat = pthread_create(&oak_digin_th_id, NULL, &oak_digin_thread, NULL); // 0 success
 
       if (thread_stat != 0) {
+	oak_thread_state= THREAD_STATE_UNDEFINED ;
 	fprintf( stderr,  "connectOakDiginDevice: failure starting thread: error %d:\n", thread_stat);
       } 
     } else {
@@ -170,18 +160,21 @@ connectOakDiginDevice(int connecting)
     /* Disconnect: prepare for reconnect. */
     // Set the LED Mode to OFF
     if (oakDiginHandle >= 0) {
+      thread_stat = pthread_cancel(oak_digin_th_id); // 0 = success
+
+      if( thread_stat != 0 ) {
+	fprintf( stderr,  "connectOakDiginDevice: Oak thread NOT stopped\n");
+	return thread_stat ;
+      }
       CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
       CHECK_OAK_CALL(closeDevice(oakDiginHandle));
-      pthread_cancel(oak_digin_th_id);
     }
     if (oakDiginHandle >= 0) {
       fprintf( stderr,  "connectOakDiginDevice: closed %s.\n", oakDiginDevice);
     } else {
       fprintf( stderr,  "connectOakDiginDevice: reset for device %s.\n", oakDiginDevice);
     }
-#ifdef CHECK_MALLOC
-    print_mem_usage("connectDevice(false)");
-#endif
+    fprintf( stderr,  "connectOakDiginDevice: Oak thread stopped\n");
   }
   return thread_stat ;
 }
@@ -276,16 +269,27 @@ oak_digin_thread(void * args)
   gettimeofday(&time_last_stat, NULL);
   // debug
   int print =0 ;
+  int intr_cnt = 0;
+  oak_thread_state= THREAD_STATE_UNDEFINED ; // make it "reentrant"
+
   sl.tv_sec= 0. ;
   sl.tv_nsec= (long ) 200 * 1000 * 1000 ;
 
   if( test_oak== TEST_OAK) {
     fprintf( stderr,  "oak_digin_thread: test_oak== TEST_OK, sleep %d milliseconds\n", SLEEP_TEST_OAK_MILLISECONDS);
   } 
+  fprintf( stderr,  "oak_digin_thread: thread started\n");
+
   while (1) {
 
+    oak_digin_thread_heart_beat++ ;
+
+    if( oak_digin_thread_heart_beat > HEART_BEAT_UPPER_LIMIT) {
+      oak_digin_thread_heart_beat= 0 ;
+    }
     rd_stat = readInterruptReport(oakDiginHandle, values);
     if ((rd_stat < 0) && (errno == EINTR)) {
+      oak_thread_state= THREAD_STATE_UNDEFINED ;
       // wildi ToDo something sensible here values[1]=
       fprintf( stderr, "oak_digin_thread:  problems reading from oak device\n") ;
     }
@@ -398,7 +402,7 @@ oak_digin_thread(void * args)
     // Set the LED Mode to OFF
     CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
 	
-    // every 10th interrupt report as a heart beat indicator.
+    // every 10th interrupt report.
     intr_cnt++;
     if (intr_cnt % 10 == 0) {
       //fprintf( stderr, "oak_digin_thread: oak_digin_thread: intr_cnt %% 10 == 0\n") ;
