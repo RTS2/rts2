@@ -40,6 +40,20 @@ namespace rts2camd
  */
 class Fli:public Camera
 {
+	public:
+		Fli (int in_argc, char **in_argv);
+		virtual ~ Fli (void);
+
+		virtual int processOption (int in_opt);
+
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int camChipInfo (int chip);
+
+		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
 	private:
 		Rts2ValueSelection *fliShutter;
 
@@ -80,20 +94,6 @@ class Fli:public Camera
 		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Fli (int in_argc, char **in_argv);
-		virtual ~ Fli (void);
-
-		virtual int processOption (int in_opt);
-
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int camChipInfo (int chip);
-
-		virtual int setCoolTemp (float new_temp);
-		virtual void afterNight ();
 };
 
 };

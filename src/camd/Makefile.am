@@ -61,6 +61,15 @@ else
 EXTRA_DIST += fli.cpp
 endif
 
+if MICCD
+bin_PROGRAMS += rts2-camd-miccd
+rts2_camd_miccd_SOURCES = miccd.cpp
+rts2_camd_miccd_LDFLAGS = @LIB_MICCD@
+rts2_camd_miccd_CXXFLAGS = @INC_MICCD@
+else
+EXTRA_DIST += miccd.cpp
+endif
+
 if EDTPDV
 bin_PROGRAMS += rts2-camd-edtsao
 rts2_camd_edtsao_SOURCES = edtsao.cpp

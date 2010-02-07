@@ -41,7 +41,6 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([dup2 floor gethostbyname gettimeofday inet_ntoa memmove memset select socket strchr strdup strerror strtol bzero mkdir sqrt strcasecmp strncasecmp pow getaddrinfo getopt_long flock strtod isinf scandir alphasort isblank strcasestr])
 
-AC_CHECK_HEADERS([limits.h sys/ioccom.h]) 
 AC_FUNC_CHOWN 
 AC_FUNC_MEMCMP
 AC_FUNC_SELECT_ARGTYPES 
@@ -53,7 +52,7 @@ AC_TYPE_MODE_T
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
-AC_CHECK_HEADERS([argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
+AC_CHECK_HEADERS([limits.h sys/ioccom.h argz.h arpa/inet.h dirent.h fcntl.h malloc.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h syslog.h termios.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -305,6 +304,18 @@ AM_CONDITIONAL(FLI, test x$FLI != xno)
 AC_SUBST(FLI)
 AC_SUBST(LIB_FLI)
 AC_SUBST(INC_FLI)
+
+AC_ARG_WITH(miccd,
+[  --with-miccd           path to MI CCD driver, build MI CCD driver],
+MICCD="${withval}";
+LIB_MICCD="${MICCD}/lib/libmiccd.a";
+INC_MICCD="-I${MICCD}/include",
+[MICCD=no])
+
+AM_CONDITIONAL(MICCD, test x$MICCD != xno)
+AC_SUBST(MICCD)
+AC_SUBST(LIB_MICCD)
+AC_SUBST(INC_MICCD)
 
 # check for COMEDI
 AC_ARG_WITH(comedi,
@@ -750,6 +761,7 @@ CCD's:
   arc           ${ARC}
   edtsao        ${EDTPDV}
   fli           ${FLI}
+  miccd         ${MICCD}
   sbig          ${SBIG}
 
 MOUNT's:
