@@ -641,13 +641,22 @@ OpenTPL::checkPower ()
 	status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
 		return;
 	}
 
-	if (power_state == 0)
+	if (power_state != 1)
 	{
+	  	while (power_state != 0)
+		{
+			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+			if (status)
+			{
+				logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+				return;
+			}
+			sleep (5);
+		}
 		status = opentplConn->set ("CABINET.POWER", 1, &status);
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
@@ -655,7 +664,7 @@ OpenTPL::checkPower ()
 			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " << status << sendLog;
 			return;
 		}
-		while (power_state == 0.5)
+		while (power_state <= 0.5)
 		{
 			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
 			sleep (5);
@@ -678,7 +687,7 @@ OpenTPL::checkPower ()
 		if (referenced == 1)
 			break;
 		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
-		if (referenced == 0)
+/*		if (referenced == 0)
 		{
 			status = opentplConn->set ("CABINET.REINIT", 1, &status);
 			if (status)
@@ -686,7 +695,7 @@ OpenTPL::checkPower ()
 				logStream (MESSAGE_ERROR) << "checkPower reinit " << status << sendLog;
 				return;
 			}
-		}
+		} */
 		sleep (1);
 	}
 	if (cover)
