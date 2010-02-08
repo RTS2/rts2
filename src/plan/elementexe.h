@@ -1,6 +1,6 @@
 /*
  * Script element for command execution.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,7 +43,9 @@ class ConnExecute:public rts2core::ConnFork
 
 		void nullMasterElement () { masterElement = NULL; }
 
-		int processImage (Rts2Image *image);
+		virtual void exposureEnd ();
+
+		virtual int processImage (Rts2Image *image);
 
 	protected:
 		virtual void processErrorLine (char *errbuf);

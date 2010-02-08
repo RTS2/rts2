@@ -779,6 +779,13 @@ rts2operands::Operand * Script::parseOperand (Rts2Target *target, struct ln_equ_
 	return op;
 }
 
+void Script::exposureEnd ()
+{
+	if (executedCount < 0 || el_iter == elements.end ())
+		return;
+	return (*el_iter)->exposureEnd ();
+}
+
 int Script::processImage (Rts2Image * image)
 {
 	if (executedCount < 0 || el_iter == elements.end ())

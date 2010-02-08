@@ -259,6 +259,9 @@ void Rts2DevClientCameraExec::exposureStarted ()
 void Rts2DevClientCameraExec::exposureEnd ()
 {
 	Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+	// if script is running, inform it about end of exposure..
+	if (exposureScript.get ())
+		exposureScript->exposureEnd ();
 	// if script is running and it does not have anything to do, end it
 	if (getScript ().get ()
 		&& !nextComd
@@ -272,8 +275,7 @@ void Rts2DevClientCameraExec::exposureEnd ()
 	}
 	// execute value change, if we do not execute that during exposure
 	if (strcmp (getName (), cmd_device) && nextComd && (!(nextComd->getBopMask () & BOP_WHILE_STATE)) &&
-		!isExposing () && val && val->getValueInteger () == 0
-		)
+		!isExposing () && val && val->getValueInteger () == 0)
 		nextCommand ();
 
 	// execute next command if it's null

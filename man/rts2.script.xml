@@ -565,11 +565,14 @@
 	  Start exposure on the camera. Current exposure length setting and
 	  others current settings will be used.
 	</para><para>
-	  When exposure is finished and the image is written to disk,
-	  controlling script receives image name on standard input, preceeded
-	  by <emphasis>image</emphasis> string. Script is responsible to specify treatment
-	  of the image - it might be copied, renamed or moved to some system
-	  locations. Please see bellow for an example.
+	  When exposure is finished, controlling script receives notification
+	  on standard input with <emphasis>exposure_end</emphasis> string. 
+	</para><para>
+	  When the image is written to disk, controlling script receives image
+	  name on standard input, preceeded by <emphasis>image</emphasis>
+	  string. Script is responsible to specify treatment of the image - it
+	  might be copied, renamed or moved to some system locations. Please
+	  see bellow for an example.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -581,6 +584,7 @@
 	  exposure, waits for image and rename image to given location.
 	</para><literallayout>
 echo exposure
+read exposure_end # is notified of exposure end
 read image imagename  # $image will hold "image" string
 echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
 	</literallayout></listitem>
@@ -753,6 +757,9 @@ G W0 filter
 for x in 1 2; do
 	echo $x
 	echo "exposure"
+        read exp_end
+	echo "V W0 filter += 1"
+	echo "V T0 WOFFS += 0.01 0.01"
 	read x y
 	echo "rename $y %b/test/%f"
 	echo "log E renaming $y"
@@ -760,8 +767,6 @@ for x in 1 2; do
 	read x
 	echo "G centrald sun_az"
 	read y
-	echo "V W0 filter += 1"
-	echo "V T0 WOFFS += 0.01 0.01"
 	sleep 5
 done
     </literallayout>

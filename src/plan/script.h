@@ -118,6 +118,8 @@ class Script:public Rts2Object
 		void getDefaultDevice (char new_device[DEVICE_NAME_SIZE]) { strncpy (new_device, defaultDevice, DEVICE_NAME_SIZE); }
 
 		char *getDefaultDevice () { return defaultDevice; }
+		
+		void exposureEnd ();
 
 		int processImage (Rts2Image * image);
 
