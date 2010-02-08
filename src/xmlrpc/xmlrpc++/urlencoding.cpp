@@ -21,6 +21,7 @@
 
 #include <ctype.h>
 #include <exception>
+#include <stdint.h>
 
 char hex[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -39,7 +40,9 @@ void XmlRpc::urlencode (std::string &url)
 		}
 		else
 		{
-			ret += '%' + hex[0xff & (((char) *iter) >> 4)] + hex[0xff & ((char) *iter)];
+			ret += '%';
+			ret += hex[(((uint8_t) *iter)) >> 4];
+			ret += hex[0x0f & ((uint8_t) *iter)];
 		}
 	}
 	url = ret;

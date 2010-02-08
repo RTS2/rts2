@@ -37,9 +37,9 @@ class Previewer
 		 * Add script entry for image manipulation. This should be
 		 * included in head section.
 		 */
-		void script (std::ostringstream& _os);
+		void script (std::ostringstream& _os, const char *label);
 
-		void form (std::ostringstream& _os);
+		void form (std::ostringstream& _os, const char *label);
 
 		/**
 		 * Create image href entry.
@@ -49,9 +49,9 @@ class Previewer
 		 * @param fpath path to preview image
 		 * @param prevsize size of preview in pixels
 		 */
-		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize);
+		void imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char * label);
 
-		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, bool selected);
+		void pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char * label, bool selected);
 };
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1

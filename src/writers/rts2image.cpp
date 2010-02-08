@@ -1318,7 +1318,7 @@ template <typename bt> void Rts2Image::getGrayscaleBuffer (bt * &buf, bt black, 
 
 
 #if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-Image Rts2Image::getMagickImage (bool writeStdLabel, float quantiles)
+Image Rts2Image::getMagickImage (const char *label, float quantiles)
 {
 	unsigned char *buf = NULL;
 	try
@@ -1328,8 +1328,8 @@ Image Rts2Image::getMagickImage (bool writeStdLabel, float quantiles)
 		image.font("helvetica");
 		image.strokeColor (Color (MaxRGB, MaxRGB, MaxRGB));
 		image.fillColor (Color (MaxRGB, MaxRGB, MaxRGB));
-		if (writeStdLabel)
-			writeLabel (image, 2, image.size ().height () - 2, 20, "%Y-%m-%d %H:%M:%S @OBJECT");
+		if (label)
+			writeLabel (image, 2, image.size ().height () - 2, 20, label);
 		delete[] buf;
 		return image;
 	}
@@ -1350,7 +1350,7 @@ void Rts2Image::writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs
 	mimage.draw (Magick::DrawableText (x + 2, y - 3, expand (labelText)));
 }
 
-void Rts2Image::writeAsJPEG (std::string expand_str, bool writeStdLabel, float quantiles)
+void Rts2Image::writeAsJPEG (std::string expand_str, const char *label, float quantiles)
 {
 	std::string new_filename = expandPath (expand_str);
 	
@@ -1362,7 +1362,7 @@ void Rts2Image::writeAsJPEG (std::string expand_str, bool writeStdLabel, float q
 	}
 
 	try {
-		Image image = getMagickImage (writeStdLabel, quantiles);
+		Image image = getMagickImage (label, quantiles);
 		image.write (new_filename.c_str ());
 	}
 	catch (Exception &ex)
@@ -1372,10 +1372,10 @@ void Rts2Image::writeAsJPEG (std::string expand_str, bool writeStdLabel, float q
 	}
 }
 
-void Rts2Image::writeAsBlob (Blob &blob, bool writeStdLabel, float quantiles)
+void Rts2Image::writeAsBlob (Blob &blob, const char * label, float quantiles)
 {
 	try {
-		Image image = getMagickImage (writeStdLabel, quantiles);
+		Image image = getMagickImage (label, quantiles);
 		image.write (&blob, "jpeg");
 	}
 	catch (Exception &ex)
