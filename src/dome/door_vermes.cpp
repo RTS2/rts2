@@ -20,8 +20,9 @@
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
-#include <stdlib.h>
 #endif
+#include <signal.h>
+#include <pthread.h>
 
 #include "../utils/rts2conn.h"
 #include "dome.h"
@@ -37,6 +38,8 @@ extern int doorEvent ;
 extern useconds_t sleep_max ;
 extern int oak_digin_thread_heart_beat ;
 int last_oak_digin_thread_heart_beat ;
+extern pthread_t  move_door_id;
+
 #define DOOR_MOVING_TIME_SIMULATION 30  //[sec]
 
 namespace rts2dome {
@@ -57,7 +60,7 @@ namespace rts2dome {
     Rts2ValueBool *simulate_door;
     bool simulate_door_last_state;
     time_t nextDeadCheck;
-    time_t doorMovingSimulationEnd;
+    time_t doorMovingSimulationEnd ;
 
     /**
      * Update status messages.
@@ -109,9 +112,6 @@ DoorVermes::updateDoorStatus ()
   case DS_STOPPED_UNDEF:
     maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopped, undefined") ;
     break;
-  case DS_STOPPING:
-    maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopping motor") ;
-    break;
   case DS_EMERGENCY_ENDSWITCH_OPENED:
     maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch opened is ON") ;
     break;
@@ -136,20 +136,14 @@ DoorVermes::updateDoorStatusMessage ()
   case DS_STOPPED_UNDEF:
     doorStateMessage->setValueString("stopped, undefined") ;
     break;
-  case DS_START_OPEN:
-    doorStateMessage->setValueString("start opening") ;
-    break;
-  case DS_START_CLOSE:
-    doorStateMessage->setValueString("start closing") ;
-    break;
   case DS_RUNNING_OPEN:
     doorStateMessage->setValueString("opening") ;
     break;
   case DS_RUNNING_CLOSE:
     doorStateMessage->setValueString("closing") ;
     break;
-  case DS_STOPPING:
-    doorStateMessage->setValueString("stopping motor") ;
+  case DS_RUNNING_UNDEF:
+    doorStateMessage->setValueString("closing, undefined") ;
     break;
   case DS_EMERGENCY_ENDSWITCH_OPENED:
     doorStateMessage->setValueString("emergency end switch opened ON") ;
@@ -193,6 +187,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       close_door_undefined->setValueBool(false) ;
       stop_door->setValueBool(false) ; // in order that it can be repeated faster
       doorState= DS_UNDEF ;
+      updateDoorStatus () ;
 
       if( simulate_door->getValueBool()){
       } else {
@@ -210,6 +205,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	    fprintf( stderr, "Error in nanosleep\n") ;
 	  }
 	}
+	pthread_kill( move_door_id, SIGUSR2);
+
       }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
@@ -228,6 +225,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if( oak_thread_state== THREAD_STATE_RUNNING) {
 	if( simulate_door->getValueBool()){
 	  doorState= DS_STOPPED_OPENED ;
+	  updateDoorStatus () ;
+
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_OPEN ;
 	}
@@ -252,6 +251,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if( oak_thread_state== THREAD_STATE_RUNNING) {
 	if( simulate_door->getValueBool()){
 	  doorState= DS_STOPPED_CLOSED ;
+	  updateDoorStatus () ;
+
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE ;
 	}
@@ -276,6 +277,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if( oak_thread_state== THREAD_STATE_RUNNING) {
 	if( simulate_door->getValueBool()){
 	  doorState= DS_STOPPED_CLOSED ;
+	  updateDoorStatus () ;
+
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE ;
 	}
@@ -293,17 +296,34 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
     if( simulate_door->getValueBool()) {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged simulate door movements, stopping thread, entering simulation mode" << sendLog ;
 
-      if( connectOakDiginDevice(OAKDIGIN_CMD_DISCONNECT)) {
-	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged Oak thread did not stop, exiting" << sendLog ;
-	exit(1) ;
+      // turning off the motor has to be done here since move_door opens,closes it during a sleep
+      int ret ;
+      struct timespec sl ;
+      struct timespec rsl ;
+      sl.tv_sec= 0. ;
+      sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+	
+      while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
+	fprintf( stderr, "DoorVermes::valueChanged: can not turn motor off\n") ;
+	ret= nanosleep( &sl, &rsl) ;
+	if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	  fprintf( stderr, "Error in nanosleep\n") ;
+	}
       }
       if(connectSSD650vDevice(SSD650V_CMD_DISCONNECT) != SSD650V_MS_CONNECTION_OK) {
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged a general failure on SSD650V connection occured" << sendLog ;
+      }
+
+      if( connectOakDiginDevice(OAKDIGIN_CMD_DISCONNECT)) {
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged Oak thread did not stop, exiting" << sendLog ;
+	exit(1) ;
       }
       // we are now in simulation mode
       simulate_door_last_state= true ;
       oak_thread_state= THREAD_STATE_RUNNING ;
       doorState = DS_STOPPED_CLOSED ;
+      updateDoorStatus () ;
+
     } else {
       logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged simulate door movements, starting thread, entering real mode" << sendLog ;
 
@@ -312,6 +332,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	exit(1) ;
       }
       doorState= DS_UNDEF ;
+      updateDoorStatus () ;
+
       last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
       int ret ;
       struct timespec sl ;
@@ -343,14 +365,13 @@ int
 DoorVermes::init ()
 {
   int ret;
-
+  doorMovingSimulationEnd= -1 ;
   ret = Dome::init ();
   if (ret)
     return ret;
 
   if( simulate_door->getValueBool()){
     oak_thread_state= THREAD_STATE_RUNNING ;
-    doorState = DS_STOPPED_CLOSED ;
   } else {
     // Toradex Oak digitial inputs, connect and start thread which can only stop motor
     if( connectOakDiginDevice(OAKDIGIN_CMD_CONNECT)) {
@@ -360,6 +381,8 @@ DoorVermes::init ()
   }
   if( simulate_door->getValueBool()){
     doorState = DS_STOPPED_CLOSED ;
+    updateDoorStatus () ;
+
     simulate_door_last_state= true ; // a little bit unmotivated initialising here
   } else {
     // ssd650v frequency inverter, connect and start thread which only can start motor
@@ -400,39 +423,42 @@ DoorVermes::info ()
 int
 DoorVermes::startOpen ()
 {
+  logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen" << sendLog ;
   updateDoorStatusMessage() ;
 
   if (!isGoodWeather ())
     return -1;
-  
+
+  if( block_door->getValueBool()) {
+    logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen blocked door opening (see BLOCK_DOOR)" << sendLog ;
+    return -1;
+  }  
   stop_door->setValueBool(false) ;
   open_door->setValueBool(false) ;
   close_door->setValueBool(false) ;
   close_door_undefined->setValueBool(false) ;
   
   if( doorState== DS_STOPPED_CLOSED) {
-    if( block_door->getValueBool()) {
-      logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen blocked door opening (see BLOCK_DOOR)" << sendLog ;
-      return -1;
-    } else {
-      logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen opening door" << sendLog ;
+    logStream (MESSAGE_DEBUG) << "DoorVermes::startOpen opening door" << sendLog ;
 
-      if( oak_thread_state== THREAD_STATE_RUNNING) {
-	if( simulate_door->getValueBool()){
-	  doorState= DS_START_OPEN ;
-	  doorMovingSimulationEnd= time( NULL) + DOOR_MOVING_TIME_SIMULATION ;
-	} else { // the real thing
-	  doorEvent= EVNT_DOOR_CMD_OPEN ;
-	}
-	open_door->setValueBool(true) ;
-	return 0 ;
-      } else {
-	block_door->setValueBool(true) ;
-	logStream (MESSAGE_ERROR) << "DoorVermes::startOpen oak_digin_thread died" << sendLog ;
-	return -1 ;
+    if( oak_thread_state== THREAD_STATE_RUNNING) {
+      if( simulate_door->getValueBool()){
+	doorState= DS_RUNNING_OPEN ;
+	updateDoorStatus() ;
+
+	doorMovingSimulationEnd= time( NULL) + DOOR_MOVING_TIME_SIMULATION ;
+      } else { // the real thing
+	doorEvent= EVNT_DOOR_CMD_OPEN ;
       }
-      return 0;
+      open_door->setValueBool(true) ;
+      return 0 ;
+    } else {
+      block_door->setValueBool(true) ;
+      logStream (MESSAGE_ERROR) << "DoorVermes::startOpen oak_digin_thread died" << sendLog ;
+      return -1 ;
     }
+    return 0;
+
   } else if ( doorState== DS_STOPPED_OPENED) {
     logStream (MESSAGE_ERROR) << "DoorVermes::startOpen can not open door doorState== DS_STOPPED_OPENED" << sendLog ;
     return -1 ;
@@ -440,7 +466,7 @@ DoorVermes::startOpen ()
     logStream (MESSAGE_ERROR) << "DoorVermes::startOpen can not open door doorState== DS_UNDEF" << sendLog ;
     return -1 ;
   } else {
-    logStream (MESSAGE_ERROR) << "DoorVermes::startOpen can not open door doorState is compeltely undefined" << sendLog ;
+    logStream (MESSAGE_ERROR) << "DoorVermes::startOpen can not open door doorState is completely undefined" << sendLog ;
     return -1 ;
   }
   return -1;
@@ -465,13 +491,17 @@ DoorVermes::isOpened ()
 
   if ( doorState != DS_STOPPED_OPENED) {
     if( simulate_door->getValueBool()) {
-      if(( now= time(NULL)) > DOOR_MOVING_TIME_SIMULATION) {
-	logStream (MESSAGE_DEBUG) << "-----------DoorVermes::isOpened simulated door is opening"<< sendLog ;
+      if((( now= time(NULL)) > doorMovingSimulationEnd) &&(doorMovingSimulationEnd != -1)) {
+	logStream (MESSAGE_DEBUG) << "DoorVermes::isOpened simulated door is opened"<< sendLog ;
 	doorState= DS_STOPPED_OPENED ;
+	updateDoorStatus() ;
+
+	doorMovingSimulationEnd= -1 ;
 	return -2;
       } else {
 	logStream (MESSAGE_DEBUG) << "DoorVermes::isOpened simulated door is opening"<< sendLog ;
 	doorState= DS_RUNNING_OPEN ;
+	updateDoorStatus() ;
       }
     }
     open_door->setValueBool(true) ;
@@ -510,7 +540,7 @@ DoorVermes::endOpen ()
     logStream (MESSAGE_DEBUG) << "DoorVermes::endOpen door is not open doorState== DS_UNDEF" << sendLog ;
     return -1 ;
   } else {
-    logStream (MESSAGE_DEBUG) << "DoorVermes::endOpen door is not open doorState is compeltely undefined" << sendLog ;
+    logStream (MESSAGE_DEBUG) << "DoorVermes::endOpen door is not open doorState is completely undefined" << sendLog ;
     return -1 ;
   }
   return -1;
@@ -524,6 +554,7 @@ DoorVermes::endOpen ()
 int
 DoorVermes::startClose ()
 {
+  logStream (MESSAGE_DEBUG) << "DoorVermes::startClose" << sendLog ;
   updateDoorStatusMessage() ;
   
   stop_door->setValueBool(false) ;
@@ -539,6 +570,9 @@ DoorVermes::startClose ()
     logStream (MESSAGE_DEBUG) << "DoorVermes::startClose closing door"<< sendLog ;
     if( oak_thread_state== THREAD_STATE_RUNNING) {
       if( simulate_door->getValueBool()){
+	doorState= DS_RUNNING_CLOSE ;
+	updateDoorStatus() ;
+
 	doorMovingSimulationEnd= time( NULL) + DOOR_MOVING_TIME_SIMULATION ;
       } else { // the real thing
 	doorEvent= EVNT_DOOR_CMD_CLOSE ;
@@ -555,7 +589,7 @@ DoorVermes::startClose ()
     setWeatherTimeout (120);
     return 0;
 
-  } else if ( doorState== DS_UNDEF){
+  } else {
 
     logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door  doorState== DS_UNDEF" << sendLog ;
     if( oak_thread_state== THREAD_STATE_RUNNING) {
@@ -570,10 +604,6 @@ DoorVermes::startClose ()
       return -1 ;
     }
     return 0 ;
-
-  } else {
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClose door does not close doorState compeltely undefined" << sendLog ;
-    return -1 ;
   }
   return -1;
 }
@@ -593,9 +623,9 @@ DoorVermes::isClosed ()
 
   updateDoorStatusMessage() ;
 
-  logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
+  //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
 
-  return -2 ;
+  //return -2 ;
   stop_door->setValueBool(false) ;
   open_door->setValueBool(false) ;
   close_door->setValueBool(false) ;
@@ -603,11 +633,17 @@ DoorVermes::isClosed ()
 
   if ( doorState != DS_STOPPED_CLOSED) {
     if( simulate_door->getValueBool()) {
-      if(( now= time(NULL)) > DOOR_MOVING_TIME_SIMULATION) {
+      if((( now= time(NULL)) > doorMovingSimulationEnd) &&(doorMovingSimulationEnd != -1)) {
 	doorState= DS_STOPPED_CLOSED ;
+	updateDoorStatus() ;
+
+	logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed doorState= DS_STOPPED_CLOSED"<< sendLog ;
+	doorMovingSimulationEnd= -1 ;
 	return -2 ;
       } else {
+	//logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed return USEC_SEC"<< sendLog ;
 	doorState= DS_RUNNING_CLOSE ;
+	updateDoorStatus() ;
       }
     }
     // logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed  doorState != DS_STOPPED_CLOSED returning USEC_SEC" << sendLog ;
@@ -648,7 +684,7 @@ DoorVermes::endClose ()
     logStream (MESSAGE_ERROR) << "DoorVermes::endClose door is not closed doorState== DS_UNDEF" << sendLog ;
     return -1 ;
   } else {
-    logStream (MESSAGE_ERROR) << "DoorVermes::endClose door is not closed doorState is compeltely undefined" << sendLog ;
+    logStream (MESSAGE_ERROR) << "DoorVermes::endClose door is not closed doorState is completely undefined" << sendLog ;
     return -1 ;
   }
   return -1;
@@ -697,7 +733,7 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
   createValue (close_door_undefined, "CLOSE_UDFD", "true closes door", false, RTS2_VALUE_WRITABLE);
   close_door_undefined->setValueBool (false);
   createValue (simulate_door, "SIMULATION", "true simulation door movements", false, RTS2_VALUE_WRITABLE);
-  simulate_door->setValueBool (false);
+  simulate_door->setValueBool (true);
 
 
 

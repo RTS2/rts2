@@ -100,7 +100,7 @@ connectOakDiginDevice(int connecting)
       fprintf( stderr,  "connectOakDiginDevice: opened %s:\n", oakDiginDevice);
       
       // Set the LED Mode to OFF
-      CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
+      CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOn, false));
 
       // wildi ToDo int* values = xmalloc(devInfo.numberOfChannels * sizeof(int));
       int* values = xmalloc( 64 * sizeof(int));
@@ -269,7 +269,6 @@ oak_digin_thread(void * args)
   gettimeofday(&time_last_stat, NULL);
   // debug
   int print =0 ;
-  int intr_cnt = 0;
   oak_thread_state= THREAD_STATE_UNDEFINED ; // make it "reentrant"
 
   sl.tv_sec= 0. ;
@@ -310,11 +309,11 @@ oak_digin_thread(void * args)
     bits_str[8]= '\0' ;
     //fprintf( stderr, "oak_digin_thread: doorState=%d, bits %s\n",  doorState, bits_str) ;
     // turn off the motor first
-    if((( bits & OAK_MASK_CLOSED) > 0) && (( doorState== DS_STOPPED_CLOSED) || ( doorState== DS_START_OPEN) || ( doorState== DS_RUNNING_OPEN)))  {
+    if((( bits & OAK_MASK_CLOSED) > 0) && (( doorState== DS_STOPPED_CLOSED) || ( doorState== DS_RUNNING_OPEN)))  {
       // let the motor open the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
 
-    } else if((( bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_STOPPED_OPENED) ||( doorState== DS_START_CLOSE) || ( doorState== DS_RUNNING_CLOSE)))  {
+    } else if((( bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_STOPPED_OPENED) || ( doorState== DS_RUNNING_CLOSE)))  {
       // let the motor close the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
 
@@ -363,54 +362,58 @@ oak_digin_thread(void * args)
       while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
 	fprintf( stderr, "oak_digin_thread: can not turn motor off\n") ;
 	ret= nanosleep( &sl, &rsl) ;
-	if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	if((errno== EFAULT) || ( errno== EINTR)||( errno== EINVAL ))  {
 	  fprintf( stderr, "Error in nanosleep\n") ;
+	  errno= 0 ;
 	}
       }
       fprintf( stderr, "oak_digin_thread: motor stopped\n") ;
       stop_motor= STOP_MOTOR_UNDEFINED ;
     }
-    // set the door status
-    if( bits & OAK_MASK_CLOSED) { // true if OAK sees the door
-      doorState= DS_STOPPED_CLOSED ;
-      if( lastDoorState != doorState) {
-	lastDoorState= doorState ;
-	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_CLOSED\n") ;
-      } 
-    } else if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
-      doorState= DS_STOPPED_OPENED ;
-      if( lastDoorState != doorState) {
-	lastDoorState= doorState ;
-	fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
-      }
-    } else {
-      if( lastDoorState != doorState) {
-	lastDoorState= doorState ;
-	if( motorState== SSD650V_MS_RUNNING) {
-	  doorState= DS_UNDEF ;
-	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is ON\n") ;
-	} else {
-	  doorState= DS_STOPPED_UNDEF ;
-	  fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door not closed, motor is OFF\n") ;
-	}
-      }     
-    }
-    CHECK_OAK_CALL(rd_stat); // wildi ToDo: what's that?
-    // Set the LED Mode to ON
-    CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOn, false));
 
-    // Set the LED Mode to OFF
-    CHECK_OAK_CALL(setLedMode(oakDiginHandle, eLedModeOff, false));
-	
-    // every 10th interrupt report.
-    intr_cnt++;
-    if (intr_cnt % 10 == 0) {
-      //fprintf( stderr, "oak_digin_thread: oak_digin_thread: intr_cnt %% 10 == 0\n") ;
-      //fprintf( stderr, "bits %s\n", bits_str) ;
-    } else if (intr_cnt % 20 == 10) {
-      //fprintf( stderr, "oak_digin_thread: intr_cnt %% 20 == 10\n") ;
-      //fprintf( stderr, "oak_digin_thread: bits %s\n", bits_str) ;
+    // door status
+    if( motorState== SSD650V_MS_STOPPED) {
+      // change status here
+      if( bits & OAK_MASK_CLOSED) { // true if OAK sees the door
+	doorState= DS_STOPPED_CLOSED ;
+	if( lastDoorState != doorState) {
+	  lastDoorState= doorState ;
+	  fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_CLOSED\n") ;
+	} 
+      } else if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
+	doorState= DS_STOPPED_OPENED ;
+	if( lastDoorState != doorState) {
+	  lastDoorState= doorState ;
+	  fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_OPENED\n") ;
+	}
+      } else {
+	doorState= DS_STOPPED_UNDEF ;
+	lastDoorState= doorState ;
+	//fprintf( stderr, "oak_digin_thread: state is DS_STOPPED_UNDEFINED\n") ;
+      }
+    } else if( motorState== SSD650V_MS_RUNNING) {
+      // keep status here 
+      if( doorState == DS_RUNNING_OPEN) {
+      } else if( doorState == DS_RUNNING_CLOSE) {
+      } else if( doorState == DS_RUNNING_CLOSE_UNDEFINED) {
+      } else {
+	// should occasianally occur if the door is stopped manually 
+	doorState= DS_RUNNING_UNDEF ;
+	lastDoorState= doorState ;
+	//fprintf( stderr, "oak_digin_thread: motorState== SSD650V_MS_RUNNING, state is DS_RUNNING_UNDEF\n") ;
+      }
+    } else if( motorState== SSD650V_MS_UNDEFINED) {
+      doorState= DS_UNDEF ;
+      lastDoorState= doorState ;
+      fprintf( stderr, "oak_digin_thread: state is DS_UNDEF\n") ;
+    } else {
+      // should never occur
+      doorState= DS_UNDEF ;
+      lastDoorState= doorState ;
+      fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, should never never occur\n") ;
     }
+
+    CHECK_OAK_CALL(rd_stat); // wildi ToDo: what's that?
   } /* while (1) */
   
   return NULL;
