@@ -76,7 +76,6 @@ class OpenTPL:public Telescope
 
 		int infoModel ();
 
-		struct ln_equ_posn target;
 		int irTracking;
 
 		Rts2ValueDouble *modelQuality;
@@ -1105,6 +1104,8 @@ OpenTPL::startResync ()
 {
 	int status = 0;
 	double sep;
+
+	struct ln_equ_posn target;
 
 	if (standbyPoweroff->getValueBool () == true)
 		checkPower ();
