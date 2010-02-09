@@ -439,11 +439,14 @@ bool XmlRpcClient::readHeader()
 	char *ep = hp + _header_length;
 	char *bp = 0;				 // Start of body
 	char *lp = 0;				 // Start of content-length value
+	char *te = 0;				 // Transfer-encoding
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
 		if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
 			lp = cp + 16;
+		else if ((ep - cp > 19 ) && (strncasecmp(cp, "Transfer-Encoding: ", 19) == 0))
+			te = cp + 19;
 		else if ((ep - cp > 4) && (strncmp(cp, "\r\n\r\n", 4) == 0))
 			bp = cp + 4;
 		else if ((ep - cp > 2) && (strncmp(cp, "\n\n", 2) == 0))
@@ -465,18 +468,29 @@ bool XmlRpcClient::readHeader()
 	// Decode content length
 	if (lp == 0)
 	{
-		XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-length specified");
-		return false;			 // We could try to figure it out by parsing as we read, but for now...
+		if (te == 0)
+		{
+			XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-length specified");
+			return false;			 // We could try to figure it out by parsing as we read, but for now...
+		}
+		if (strcasecmp(te, "chunked") != 0)
+		{
+			XmlRpcUtil::error("Unknow transfer encoding: %s", te);
+			return false;
+		}
+		_contentLength = -1;
+		_chunkLength = 0;
 	}
-
-	_contentLength = atoi(lp);
-	if (_contentLength <= 0)
+	else
 	{
-		XmlRpcUtil::error("Error in XmlRpcClient::readHeader: Invalid Content-length specified (%d).", _contentLength);
-		return false;
+		_contentLength = atoi(lp);
+		if (_contentLength <= 0)
+		{
+			XmlRpcUtil::error("Error in XmlRpcClient::readHeader: Invalid Content-length specified (%d).", _contentLength);
+			return false;
+		}
+		XmlRpcUtil::log(4, "client read content length: %d", _contentLength);
 	}
-
-	XmlRpcUtil::log(4, "client read content length: %d", _contentLength);
 
 	// Otherwise copy non-header data to response buffer and set state to read response.
 	_response_length = ep - bp;
@@ -497,8 +511,13 @@ bool XmlRpcClient::readHeader()
 
 bool XmlRpcClient::readResponse()
 {
+	if (_contentLength == -1)
+	{
+		// not full chunk..
+//		if (_chunkLength < 
+	}
 	// If we dont have the entire response yet, read available data
-	if (int(_response_length) < _contentLength)
+	else if (int(_response_length) < _contentLength)
 	{
 		if ( ! XmlRpcSocket::nbRead(this->getfd(), _response_buf, _response_length, &_eof))
 		{

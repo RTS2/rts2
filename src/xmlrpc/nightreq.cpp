@@ -21,6 +21,7 @@
 #include "nightreq.h"
 #include "nightdur.h"
 #include "xmlrpcd.h"
+#include "xmlrpc++/urlencoding.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -131,6 +132,10 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
+	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	std::string lb (label);
+	XmlRpc::urlencode (lb);
+	const char * label_encoded = lb.c_str ();
 
 	time_t from;
 	int64_t duration;
@@ -142,11 +147,11 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	_os << "</title>";
 	
 	Previewer preview = Previewer ();
-	preview.script (_os);
+	preview.script (_os, label_encoded);
 
 	_os << "</head><body><p>";
 
-	preview.form (_os);
+	preview.form (_os, label_encoded);
 
 	_os << "</p><p>";
 
@@ -160,15 +165,15 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	_os << "</p></body></html>";
 
 	response_length = _os.str ().length ();

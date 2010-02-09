@@ -22,6 +22,7 @@
 #include "altplot.h"
 #include "dirsupport.h"
 #include "imgpreview.h"
+#include "xmlrpc++/urlencoding.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -203,15 +204,19 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
+	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	std::string lb (label);
+	XmlRpc::urlencode (lb);
+	const char * label_encoded = lb.c_str ();
 
 	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title>";
 	
 	Previewer preview = Previewer ();
-	preview.script (_os);
+	preview.script (_os, label_encoded);
 		
 	_os << "</head><body><p>";
 
-	preview.form (_os);
+	preview.form (_os, label_encoded);
 	
 	_os << "</p><p>";
 
@@ -229,7 +234,7 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 				continue;
 			if (in > ie)
 				break;
-			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize);
+			preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
 		}
 
 		_os << "</p>";
@@ -243,9 +248,9 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	int i;
 	
 	for (i = 1; i <= ((int) is.size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	_os << "</p></body></html>";
 
 	response_type = "text/html";

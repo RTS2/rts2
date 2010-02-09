@@ -20,6 +20,7 @@
 #include "obsreq.h"
 #include "imgpreview.h"
 #include "xmlrpc++/XmlRpcException.h"
+#include "xmlrpc++/urlencoding.h"
 #include "../utilsdb/observation.h"
 
 #ifdef HAVE_PGSQL
@@ -64,16 +65,20 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	int in = 0;
 
 	int prevsize = params->getInteger ("ps", 128);
+	const char * label = params->getString ("lb", "%Y-%m-%d %H:%M:%S @OBJECT");
+	std::string lb (label);
+	XmlRpc::urlencode (lb);
+	const char * label_encoded = lb.c_str ();
 
 	std::ostringstream _os;
 	_os << "<html><head><title>Images for observation " << obs.getObsId () << " of " << obs.getTargetName () << "</title>";
 
 	Previewer preview = Previewer ();
-	preview.script (_os);
+	preview.script (_os, label_encoded);
 
 	_os << "</head><body><p>";
 
-	preview.form (_os);
+	preview.form (_os, label_encoded);
 
 	_os << "</p><p>";
 
@@ -84,15 +89,15 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 			continue;
 		if (in > ie)
 			break;
-		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize);
+		preview.imageHref (_os, in, (*iter)->getAbsoluteFileName (), prevsize, label_encoded);
 	}
 
 	_os << "</p><p>Page ";
 	int i;
 	for (i = 1; i <= ((int) obs.getImageSet ()->size ()) / pagesiz; i++)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
-	 	preview.pageLink (_os, i, pagesiz, prevsize, i == pageno);
+	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	_os << "</p></body></html>";
 
 	response_type = "text/html";

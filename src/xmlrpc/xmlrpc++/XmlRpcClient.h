@@ -143,6 +143,8 @@ namespace XmlRpc
 
 			// Number of bytes expected in the response body (parsed from response header)
 			int _contentLength;
+			// Number of bytes in next chunk
+			int _chunkLength;
 
 			// Event dispatcher
 			XmlRpcDispatch _disp;
