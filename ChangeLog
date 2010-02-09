@@ -1,6 +1,10 @@
 0.7.5
 =====
 
+2010-02-06
+ * Support for MI CCD devices
+ * Added exposure_end notification to script being executed
+
 2010-01-31
  * Flats are set with now - mitigate waiting for script ends
 
