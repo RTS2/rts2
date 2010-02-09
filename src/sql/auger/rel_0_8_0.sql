@@ -76,7 +76,8 @@ CREATE TABLE auger (
 	XFOVMax		float8 NOT NULL,  -- Last slant depth inside FOV (g/cm^2)
 	XTrackObs	float8 NOT NULL,  -- Observed track length depth (g/cm^2)
 	DegTrackObs	float8 NOT NULL,  -- Observed track length angle (deg)
-	TTrackObs	float8 NOT NULL   -- Observed track length time (100 ns)
+	TTrackObs	float8 NOT NULL,  -- Observed track length time (100 ns)
+	ShowerParams    varchar(2000)     -- Shower parameters
 );
 
 -- relation between observations and auger targets is kept in this table
