@@ -230,7 +230,7 @@ Rts2DevClientCameraImage::exposureStarted ()
 
 	image->setEnvironmentalValues ();
 
-	if (image->getTargetType () == TYPE_TERESTIAL
+	if (image->getTargetType (false) == TYPE_TERESTIAL
 		&& !isnan (ter_xoa) && !isnan (ter_yoa))
 	{
 		image->setXoA (ter_xoa);

@@ -377,7 +377,7 @@ class Rts2Image:public Rts2FitsFile
 
 		int getTargetIdSel () { if (targetIdSel < 0) getTargetHeaders (); return targetIdSel; }
 
-		char getTargetType () { if (targetType == TYPE_UNKNOW) getTargetHeaders (); return targetType; }
+		char getTargetType (bool do_load = true) { if (do_load && targetType == TYPE_UNKNOW) getTargetHeaders (); return targetType; }
 
 		int getObsId () { if (obsId < 0) getTargetHeaders (); return obsId; }
 
