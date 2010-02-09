@@ -126,6 +126,7 @@ int ConnShooter::processAuger ()
 	double db_XTrackObs;      /// Observed track length depth (g/cm^2)
 	double db_DegTrackObs;    /// Observed track length angle (deg)
 	double db_TTrackObs;      /// Observed track length time (100 ns)
+	VARCHAR db_ShowerParams[2000];
 
 	int db_cut = 0;
 
@@ -134,6 +135,8 @@ int ConnShooter::processAuger ()
 	time_t now;
 
 	std::string AugerId;
+
+	char rest[2000];
 
 	std::istringstream _is (nbuf);
 	_is >> db_Eye
@@ -200,6 +203,8 @@ int ConnShooter::processAuger ()
 		>> db_DegTrackObs
 		>> db_TTrackObs;
 
+	_is.getline (rest, 2000);
+
 	if (_is.fail ())
 	{
 		logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
@@ -209,6 +214,9 @@ int ConnShooter::processAuger ()
 	getTimeTfromGPS (db_GPSSec, db_GPSNSec, db_auger_date);
 	strncpy (db_AugerId.arr, AugerId.c_str (), 50);
 	db_AugerId.len = (50 > AugerId.length () ? AugerId.length () : 50);
+
+	strncpy (db_ShowerParams.arr, rest, 2000);
+	db_ShowerParams.len = (2000 > strlen (rest) ? strlen (rest) : 2000);
 
 	time (&now);
 
@@ -319,6 +327,7 @@ int ConnShooter::processAuger ()
 			<< " maxTheta " << master->maxTheta->getValueDouble ()
 			<< " ra " << db_ra
 			<< " dec " << db_dec
+			<< " params " << rest
 			<< ")" << sendLog;
 		((DevAugerShooter*) master)->rejectedShower (db_auger_date, db_ra, db_dec);
 		return -1;
@@ -393,7 +402,8 @@ int ConnShooter::processAuger ()
 		XFOVMax,
 		XTrackObs,
 		DegTrackObs,
-		TTrackObs
+		TTrackObs,
+		ShowerParams
 	)	
 	VALUES
 	(
@@ -464,7 +474,8 @@ int ConnShooter::processAuger ()
 		:db_XFOVMax,
 		:db_XTrackObs,
 		:db_DegTrackObs,
-		:db_TTrackObs
+		:db_TTrackObs,
+		:db_ShowerParams
 	);
 	if (sqlca.sqlcode)
 	{
