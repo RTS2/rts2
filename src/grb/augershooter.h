@@ -59,6 +59,7 @@ class DevAugerShooter:public Rts2DeviceDb
 		friend class ConnShooter;
 
 		int port;
+		const char *testParsing;
 
 		Rts2ValueTime *lastAugerSeen;
 		Rts2ValueTime *lastAugerDate;

@@ -53,6 +53,8 @@ class ConnShooter:public Rts2ConnNoSend
 		int lastPacket ();
 		double lastTargetTime ();
 
+		void processBuffer (const char *_buf);
+
 	private:
 		DevAugerShooter *master;
 

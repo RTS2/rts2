@@ -29,8 +29,11 @@ DevAugerShooter::DevAugerShooter (int in_argc, char **in_argv):Rts2DeviceDb (in_
 {
 	shootercnn = NULL;
 	port = 1240;
+	testParsing = NULL;
+
 	addOption ('s', "shooter_port", 1, "port on which to listen for auger connection");
 	addOption (OPT_TRIGERING, "disable-triggering", 0, "only record triggers, do not pass them to executor");
+	addOption ('t', NULL, 1, "test parsing of auger data");
 
 	createValue (triggeringEnabled, "triggering_enabled", "if true, shooter will trigger executor", false, RTS2_VALUE_WRITABLE);
 	triggeringEnabled->setValueBool (true);
@@ -153,6 +156,10 @@ int DevAugerShooter::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
+	  	case 't':
+			testParsing = optarg;
+			setNotDaemonize ();
+			break;
 		case 's':
 			port = atoi (optarg);
 			break;
@@ -187,6 +194,12 @@ int DevAugerShooter::init ()
 		return ret;
 
 	shootercnn = new ConnShooter (port, this);
+
+	if (testParsing)
+	{
+		shootercnn->processBuffer (testParsing);
+		return -1;
+	}
 
 	ret = shootercnn->init ();
 

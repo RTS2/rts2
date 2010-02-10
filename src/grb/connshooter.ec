@@ -203,13 +203,13 @@ int ConnShooter::processAuger ()
 		>> db_DegTrackObs
 		>> db_TTrackObs;
 
-	_is.getline (rest, 2000);
-
 	if (_is.fail ())
 	{
-		logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream" << sendLog;
+		logStream (MESSAGE_ERROR) << "Rts2ConnShooter::processAuger failed reading stream at " << _is.tellg () << " " << _is.str () << sendLog;
 		return -1;
 	}
+
+	_is.getline (rest, 2000);
 
 	getTimeTfromGPS (db_GPSSec, db_GPSNSec, db_auger_date);
 	strncpy (db_AugerId.arr, AugerId.c_str (), 50);
@@ -674,4 +674,10 @@ int ConnShooter::lastPacket ()
 double ConnShooter::lastTargetTime ()
 {
 	return last_target_time;
+}
+
+void ConnShooter::processBuffer (const char *_buf)
+{
+	strncpy (nbuf, _buf, AUGER_BUF_SIZE);
+	processAuger ();
 }
