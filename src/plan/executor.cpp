@@ -125,8 +125,7 @@ using namespace rts2plan;
 Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_EXECUTOR, "EXEC")
 {
 	currentTarget = NULL;
-	createValue (scriptCount, "script_count", "number of running scripts",
-		false);
+	createValue (scriptCount, "script_count", "number of running scripts", false);
 	scriptCount->setValueInteger (-1);
 
 	grb_sep_limit = -1;
@@ -390,8 +389,9 @@ int Executor::info ()
 	if (currentTarget)
 	{
 		current_id->setValueInteger (currentTarget->getObsTargetID ());
-		current_name->setValueCharArr (currentTarget->getTargetName ());
 		current_id_sel->setValueInteger (currentTarget->getTargetID ());
+		current_type->setValueCharArr (currentTarget->getTargetType ());
+		current_name->setValueCharArr (currentTarget->getTargetName ());
 		current_obsid->setValueInteger (currentTarget->getObsId ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
 	}
