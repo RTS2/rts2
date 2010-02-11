@@ -20,6 +20,9 @@
 #include "camd.h"
 #include "miccd.h"
 
+#include <sys/types.h>
+#include <fcntl.h>
+
 namespace rts2camd
 {
 /**
@@ -80,7 +83,6 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 	createValue (id, "product_id", "camera product identification", false);
 
-
 	addOption ('p', NULL, 1, "MI CCD product ID");
 }
 
@@ -109,7 +111,7 @@ int MICCD::init ()
 	ret = Camera::init ();
 	if (ret)
 		return ret;
-	fd = miccd_open (id->getValueLong ());
+	fd = open ("/dev/bus/usb/001/047", O_RDWR | O_NONBLOCK);
 	if (fd < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueLong () << sendLog;
@@ -191,13 +193,15 @@ int MICCD::doReadout ()
 	int ret;
 
 	ret = miccd_read_frame (fd, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
-	if (ret)
+	if (ret < 0)
 		return -1;
 
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 	if (ret < 0)
 		return ret;
-	return -2;
+	if (getWriteBinaryDataSize () == 0)
+		return -2;
+	return 0;
 }
 
 int main (int argc, char **argv)
