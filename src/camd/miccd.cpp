@@ -54,7 +54,6 @@ class MICCD:public Camera
 
 		virtual int info ();
 
-		virtual int setBinning (int in_vert, int in_hori);
 		virtual int setCoolTemp (float new_temp);
 
 		virtual int startExposure ();
@@ -150,15 +149,6 @@ int MICCD::info ()
 	return Camera::info ();
 }
 
-int MICCD::setBinning (int in_vert, int in_hori)
-{
-	int ret;
-	ret = miccd_binning (fd, in_hori, in_vert);
-	if (ret)
-		return -1;
-	return Camera::setBinning (in_vert, in_hori);
-}
-
 int MICCD::setCoolTemp (float new_temp)
 {
 	int ret;
@@ -199,17 +189,10 @@ int MICCD::endExposure ()
 int MICCD::doReadout ()
 {
 	int ret;
-	char *bufferTop = dataBuffer;
-	size_t s = 0xffff;
 
-	while (bufferTop < dataBuffer + dataBufferSize)
-	{
-		if (bufferTop + s > dataBuffer + dataBufferSize)
-			s = dataBuffer + dataBufferSize - bufferTop;
-		ret = miccd_data (fd, bufferTop, s);
-		if (ret)
-			return -1;
-	}
+	ret = miccd_read_frame (fd, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
+	if (ret)
+		return -1;
 
 	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 	if (ret < 0)
