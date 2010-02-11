@@ -23,6 +23,9 @@ class Rts2Comm:
 		self.sleepTime = 30 # number of seconds to wait for optimal flat conditions
 		self.startExpTime = 1 # starting exposure time
 
+		self.shiftRa = 10.0 / 3600  # shift after every flat in RA [degrees]
+		self.shiftDec = 10.0 / 3600 # shift after every flat in DEC [degrees]
+
 		# self.waitingSubWindow = '100 100 200 200' # x y w h of subwindow while waiting for good flat level
 		self.waitingSubWindow = None # do not use subwidnow to wait for flats
 		self.isSubWindow = False
@@ -43,13 +46,29 @@ class Rts2Comm:
 		"""Return value as float number."""
 		return float(self.getValue(value,device))
 
-	def setValue(self,name,new_value):
-		print "value",name,'=',new_value
+	def incrementValue(self,name,new_value,device = None):
+		if (device is None):
+			print "value",name,'+=',new_value
+		else:
+			print "V",device,name,'+=',new_value
+		sys.stdout.flush()
+
+	def setValue(self,name,new_value,device = None):
+		if (device is None):
+			print "value",name,'=',new_value
+		else:
+			print "V",device,name,'=',new_value
 		sys.stdout.flush()
 	
-	def exposure(self):
+	def exposure(self, before_readout_callback = None):
 		print "exposure"
 		sys.stdout.flush()
+		a = sys.stdin.readline()
+		if (a != "exposure_end\n"):
+			self.log ('E', "invalid return from exposure - expected exposure_end, received " + a)
+		if (not (before_readout_callback is None)):
+			print "calling before readout"
+			before_readout_callback()
 		a = sys.stdin.readline()
 		image,fn = a.split()
 		return fn
@@ -90,9 +109,15 @@ class Rts2Comm:
 
 		return self.expTimes[-1]
 	
+	def beforeReadout(self):
+		if (self.isSubWindow == True):
+			return
+		if (self.shiftRa != 0 or self.shiftDec != 0):
+			self.incrementValue("OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__(),"T0")
+	
 	def acquireImage(self):
 		self.setValue('exposure',self.exptime)
-		img = self.exposure()
+		img = self.exposure(self.beforeReadout)
 		avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
 		if (abs(1.0 - (avrg - self.BiasLevel) / self.OptimalFlat) <= self.optimalRange): # Images within optimalRange of the optimal flux value
 		  	if (self.isSubWindow):
