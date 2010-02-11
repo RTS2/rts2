@@ -306,6 +306,16 @@ Execute::~Execute ()
 	client = NULL;
 }
 
+void Execute::exposureEnd ()
+{
+	if (connExecute)
+	{
+		connExecute->exposureEnd ();
+		return;
+	}
+	Element::exposureEnd ();
+}
+
 int Execute::processImage (Rts2Image *image)
 {
 	if (connExecute)

@@ -81,6 +81,7 @@ class Execute:public Element
 		Rts2Conn *getConnection () { return client->getConnection (); }
 		Rts2DevClient *getClient () { return client; }
 
+		virtual void exposureEnd ();
 
 		virtual int processImage (Rts2Image *image);
 
