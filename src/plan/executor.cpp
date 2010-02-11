@@ -385,12 +385,15 @@ void Executor::deviceReady (Rts2Conn * conn)
 
 int Executor::info ()
 {
+  	char buf[2];
 	updateScriptCount ();
 	if (currentTarget)
 	{
 		current_id->setValueInteger (currentTarget->getObsTargetID ());
 		current_id_sel->setValueInteger (currentTarget->getTargetID ());
-		current_type->setValueCharArr (currentTarget->getTargetType ());
+		buf[0] = currentTarget->getTargetType ();
+		buf[1] = '\0';
+		current_type->setValueCharArr (buf);
 		current_name->setValueCharArr (currentTarget->getTargetName ());
 		current_obsid->setValueInteger (currentTarget->getObsId ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
