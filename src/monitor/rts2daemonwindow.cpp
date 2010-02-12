@@ -3,8 +3,7 @@
 
 #include <iostream>
 
-Rts2NSelWindow::Rts2NSelWindow (int x, int y, int w, int h, int border, int sw, int sh):
-Rts2NWindow (x, y, w, h, border)
+Rts2NSelWindow::Rts2NSelWindow (int x, int y, int w, int h, int border, int sw, int sh):Rts2NWindow (x, y, w, h, border)
 {
 	selrow = 0;
 	maxrow = 0;
@@ -14,12 +13,10 @@ Rts2NWindow (x, y, w, h, border)
 	lineOffset = 1;
 }
 
-
 Rts2NSelWindow::~Rts2NSelWindow (void)
 {
 	delwin (scrolpad);
 }
-
 
 keyRet Rts2NSelWindow::injectKey (int key)
 {
@@ -75,9 +72,7 @@ keyRet Rts2NSelWindow::injectKey (int key)
 	return RKEY_HANDLED;
 }
 
-
-void
-Rts2NSelWindow::refresh ()
+void Rts2NSelWindow::refresh ()
 {
 	int x, y;
 	int w, h;
@@ -109,28 +104,21 @@ Rts2NSelWindow::refresh ()
 	else if ((selrow - padoff_y) < 0)
 		padoff_y = selrow;
 	if (haveBox ())
-		pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2,
-			x + w - 2);
+		pnoutrefresh (scrolpad, padoff_y, padoff_x, y + 1, x + 1, y + h - 2, x + w - 2);
 	else
 		pnoutrefresh (scrolpad, padoff_y, padoff_x, y, x, y + h - 1, x + w - 1);
 }
 
-
-Rts2NDevListWindow::Rts2NDevListWindow (Rts2Block * in_block):Rts2NSelWindow (0, 1, 10,
-LINES -
-20)
+Rts2NDevListWindow::Rts2NDevListWindow (Rts2Block * in_block):Rts2NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
 {
 	block = in_block;
 }
-
 
 Rts2NDevListWindow::~Rts2NDevListWindow (void)
 {
 }
 
-
-void
-Rts2NDevListWindow::draw ()
+void Rts2NDevListWindow::draw ()
 {
 	Rts2NWindow::draw ();
 	werase (scrolpad);
@@ -152,9 +140,7 @@ Rts2NDevListWindow::draw ()
 	refresh ();
 }
 
-
-void
-Rts2NCentraldWindow::printState (Rts2Conn * conn)
+void Rts2NCentraldWindow::printState (Rts2Conn * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
@@ -163,31 +149,23 @@ Rts2NCentraldWindow::printState (Rts2Conn * conn)
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
-
-void
-Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
+void Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
 {
 	printState (conn);
 	maxrow++;
 }
 
-
-Rts2NCentraldWindow::Rts2NCentraldWindow (Rts2Client * in_client):Rts2NSelWindow
-(10, 1, COLS - 10,
-LINES - 25)
+Rts2NCentraldWindow::Rts2NCentraldWindow (Rts2Client * in_client):Rts2NSelWindow (10, 1, COLS - 10, LINES - 25, 1, 300, 300)
 {
 	client = in_client;
 	draw ();
 }
 
-
 Rts2NCentraldWindow::~Rts2NCentraldWindow (void)
 {
 }
 
-
-void
-Rts2NCentraldWindow::draw ()
+void Rts2NCentraldWindow::draw ()
 {
 	Rts2NSelWindow::draw ();
 	werase (getWriteWindow ());
