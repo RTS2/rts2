@@ -14,6 +14,7 @@ class Rts2Comm:
 		self.morningFilters.reverse ()
 
 		self.MaxExpT = 10   # Maximum exposure time that we allow
+		# if self.MaxExpT is changed, adjust self.expTimes = range(1,20) below
 		self.MinExpT = 0.5  # Minimum exposure time that we allow)
 		self.SaturationLevel = 65536 # should be 16bit for the nonEM and 14bit for EM)
 		self.OptimalFlat = self.SaturationLevel / 3
@@ -169,7 +170,7 @@ class Rts2Comm:
 
 		while (self.Ngood < self.NumberFlats and self.exptime > self.MinExpT): # We continue when we have enough flats or when the sky is too bright
 			if (self.exptime > self.MaxExpT):
-				self.exptime = MaxExpT
+				self.exptime = self.MaxExpT
 				time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
 
 			self.acquireImage()
