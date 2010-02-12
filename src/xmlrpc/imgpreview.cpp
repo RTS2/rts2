@@ -44,7 +44,7 @@ void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const ch
 {
 	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
 	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'/></form><br/>\n"
-	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "/><input type='hidden' name='ps' value='" << ps << "/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/></form>\n";
+	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "'/><input type='hidden' name='ps' value='" << ps << "'/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/></form>\n";
 }
 
 void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label)
