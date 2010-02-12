@@ -78,7 +78,7 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 
 	_os << "</head><body><p>";
 
-	preview.form (_os, label_encoded);
+	preview.form (_os, pageno, prevsize, pagesiz, label);
 
 	_os << "</p><p>";
 

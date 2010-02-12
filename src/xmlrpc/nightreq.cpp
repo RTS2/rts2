@@ -151,7 +151,7 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 
 	_os << "</head><body><p>";
 
-	preview.form (_os, label_encoded);
+	preview.form (_os, pageno, prevsize, pagesiz, label);
 
 	_os << "</p><p>";
 

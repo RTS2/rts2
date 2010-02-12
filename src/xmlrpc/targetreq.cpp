@@ -216,7 +216,7 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 		
 	_os << "</head><body><p>";
 
-	preview.form (_os, label_encoded);
+	preview.form (_os, pageno, prevsize, pagesiz, label);
 	
 	_os << "</p><p>";
 

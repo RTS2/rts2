@@ -34,17 +34,17 @@
 
 using namespace rts2xmlrpc;
 
-void Previewer::script (std::ostringstream& _os, const char *label)
+void Previewer::script (std::ostringstream& _os, const char *label_encoded)
 {
 	_os  << "<style type='text/css'>.normal { border: 5px solid white; } .hig { border: 5px solid navy; }</style></head><body>"
-	<< "<script language='javascript'>\n function highlight (name, path) {\n if (document.forms['download'].elements['act'][1].checked)\n { var files = document.getElementById('files'); nc='hig';\n if (document.images[name].className == 'hig')\n { nc='normal'; var i; for (i = files.length - 1; i >=0; i--) { if (files.options[i].value == path) { files.remove(i); i = -1; } } }\nelse\n{\nvar o = document.createElement('option');\no.selected=1;\no.text=path;\no.value=path;\ntry { files.add(o,files.options[0]);\n} catch (ex) { files.add(o,0); }\n }\ndocument.images[name].className=nc;\n }\n else\n { w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + path + '?lb=" << label << "', 'Preview'); w2.focus (); }\n }</script>" << std::endl;
+	<< "<script language='javascript'>\n function highlight (name, path) {\n if (document.forms['download'].elements['act'][1].checked)\n { var files = document.getElementById('files'); nc='hig';\n if (document.images[name].className == 'hig')\n { nc='normal'; var i; for (i = files.length - 1; i >=0; i--) { if (files.options[i].value == path) { files.remove(i); i = -1; } } }\nelse\n{\nvar o = document.createElement('option');\no.selected=1;\no.text=path;\no.value=path;\ntry { files.add(o,files.options[0]);\n} catch (ex) { files.add(o,0); }\n }\ndocument.images[name].className=nc;\n }\n else\n { w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + path + '?lb=" << label_encoded << "', 'Preview'); w2.focus (); }\n }</script>" << std::endl;
 }
 
-void Previewer::form (std::ostringstream &_os, const char *label)
+void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const char *label)
 {
 	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
 	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'/></form><br/>\n"
-	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='submit' value='Label'/></form>\n";
+	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "/><input type='hidden' name='ps' value='" << ps << "/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/></form>\n";
 }
 
 void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label)
@@ -117,6 +117,14 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		memcpy (response, blob.data(), response_length);
 		return;
 	}
+
+	// get page number and size of page
+	int pageno = params->getInteger ("p", 1);
+	int pagesiz = params->getInteger ("s", 40);
+
+	if (pageno <= 0)
+		pageno = 1;
+
 	std::ostringstream _os;
 	_os << "<html><head><title>Preview of " << path << "</title>";
 
@@ -125,7 +133,7 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 
 	_os << "</head><body><p>";
 
-	preview.form (_os, label);
+	preview.form (_os, pageno, prevsize, pagesiz, label);
 	
 	_os << "</p><p>";
 
@@ -176,13 +184,6 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	}
 
 	_os << "</p><p>";
-
-	// get page number and size of page
-	int pageno = params->getInteger ("p", 1);
-	int pagesiz = params->getInteger ("s", 40);
-
-	if (pageno <= 0)
-		pageno = 1;
 
 	int is = (pageno - 1) * pagesiz;
 	int ie = is + pagesiz;

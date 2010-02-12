@@ -37,9 +37,9 @@ class Previewer
 		 * Add script entry for image manipulation. This should be
 		 * included in head section.
 		 */
-		void script (std::ostringstream& _os, const char *label);
+		void script (std::ostringstream& _os, const char *label_encoded);
 
-		void form (std::ostringstream& _os, const char *label);
+		void form (std::ostringstream& _os, int page, int ps, int s, const char *label);
 
 		/**
 		 * Create image href entry.
