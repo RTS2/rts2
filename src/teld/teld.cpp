@@ -814,6 +814,13 @@ void Telescope::applyCorrections (double &tar_ra, double &tar_dec)
 	tar_dec = pos.dec;
 }
 
+void Telescope::startCupolaSync ()
+{
+	struct ln_equ_posn tar;
+	getTarget (&tar);
+	postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tar));
+}
+
 int Telescope::endMove ()
 {
 	LibnovaRaDec l_to (telRaDec->getRa (), telRaDec->getDec ());
@@ -935,6 +942,9 @@ int Telescope::startResyncMove (Rts2Conn * conn, bool onlyCorrect)
 			conn->sendCommandEnd (DEVDEM_E_HW, "cannot move to location");
 		return ret;
 	}
+
+	// synchronize cupola
+	startCupolaSync ();
 
 	targetStarted->setNow ();
 	targetReached->setValueDouble (targetStarted->getValueDouble () + estimateTargetTime ());

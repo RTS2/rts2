@@ -697,7 +697,6 @@ LX200TEST::tel_slew_to (double ra, double dec)
   int ret ;
   char retstr;
   struct ln_lnlat_posn observer ;		  
-  struct ln_equ_posn tel_equ;
   struct ln_equ_posn target_equ;
 
   tel_normalize (&ra, &dec);
@@ -740,10 +739,6 @@ LX200TEST::tel_slew_to (double ra, double dec)
   logStream (MESSAGE_ERROR) << "LX200TEST::tel_slew_to not colliding slewing ra "<< target_equ.ra << " dec " << target_equ.dec  << sendLog;
   if (retstr == '0')
     {
-      tel_equ.ra= getTelTargetRa() ;
-      tel_equ.dec= getTelTargetDec() ;
-      logStream (MESSAGE_DEBUG) << "LX200TEST::tel_slew_to syncing cupola on telescope ra "<< tel_equ.ra << " dec " << tel_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
-      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &tel_equ));
     return 0;
     }
   

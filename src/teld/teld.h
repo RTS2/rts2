@@ -594,6 +594,15 @@ class Telescope:public Rts2Device
 		virtual int startResync () = 0;
 
 		/**
+		 * Issue cupola synchronization event.
+		 * Should use getTarget to obtain telescope target coordinates. Please note that
+		 * if you modify telescope coordinates in startResync, and do not update telTarget (
+		 * with setTarget call), you are responsible to overwrite this method and modify
+		 * coordinates accordingly.
+		 */
+		virtual void startCupolaSync ();
+
+		/**
 		 * Called at the end of telescope movement, after isMoving return
 		 * -2.
 		 *

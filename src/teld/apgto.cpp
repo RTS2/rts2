@@ -155,6 +155,9 @@ namespace rts2teld
     Rts2ValueString  *APfirmware ;
     Rts2ValueString  *DECaxis_HAcoordinate ; // see pier_collision.c 
 
+  protected:
+    virtual void startCupolaSync ();
+
   public:
     APGTO (int argc, char **argv);
     virtual ~APGTO (void);
@@ -1283,15 +1286,6 @@ APGTO::tel_slew_to (double ra, double dec)
   if (retstr == '0') {
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to syncing cupola on target ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'=>"<< retstr<<"<, syncing cupola"  << sendLog;
 
-    if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
-      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
-    } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
-      //tel_equ.dec += 180. ;
-      struct ln_equ_posn t_equ;
-      t_equ.ra = target_equ.ra ;
-      t_equ.dec= target_equ.dec + 180. ;
-      postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
-    }
     return 0;
   }
   logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to NOT slewing ra "<< target_equ.ra << " dec " << target_equ.dec << " got '0'!= >"<< retstr<<"<END, NOT syncing cupola"  << sendLog;
@@ -1373,6 +1367,23 @@ APGTO::startResync ()
   set_move_timeout (100);
   return 0 ; 
 }
+
+void APGTO::startCupolaSync ()
+{
+  struct ln_equ_posn target_equ;
+  getTarget (&target_equ);
+
+  if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
+    postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &target_equ));
+  } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
+    //tel_equ.dec += 180. ;
+    struct ln_equ_posn t_equ;
+    t_equ.ra = target_equ.ra ;
+    t_equ.dec= target_equ.dec + 180. ;
+    postEvent (new Rts2Event (EVENT_CUP_START_SYNC, (void*) &t_equ));
+  }
+}
+
 int
 APGTO::isMoving ()
 {
