@@ -139,15 +139,15 @@ int MICCD::initValues ()
 int MICCD::info ()
 {
 	int ret;
-	uint16_t val;
+	float val;
 	ret = miccd_chip_temperature (fd, &val);
 	if (ret)
 		return -1;
-	tempCCD->setValueDouble (val / 10.0);
+	tempCCD->setValueFloat (val);
 	ret = miccd_environment_temperature (fd, &val);
 	if (ret)
 		return -1;
-	tempAir->setValueDouble (val / 10.0);
+	tempAir->setValueFloat (val);
 	return Camera::info ();
 }
 
