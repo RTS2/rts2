@@ -761,9 +761,21 @@ Rts2Device::processOption (int in_opt)
 	return 0;
 }
 
+Rts2Conn *Rts2Device::getCentraldConn (const char *server)
+{
+	std::list <HostString>::iterator iter_h;
+	connections_t::iterator iter_c;
+	for (iter_h = centraldHosts.begin (), iter_c = getCentraldConns ()->begin ();
+		iter_h != centraldHosts.end () && iter_c != getCentraldConns ()->begin ();
+		iter_h++, iter_c++)
+	{
+		if (strcasecmp (iter_h->getHostname (), server) == 0)
+			return *iter_c;
+	}
+	return NULL;
+}
 
-void
-Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
+void Rts2Device::queDeviceStatusCommand (Rts2Conn *in_owner_conn)
 {
 	deviceStatusCommand = new Rts2CommandDeviceStatusInfo (this, in_owner_conn);
 	(*getCentraldConns ()->begin ())->queCommand (deviceStatusCommand);
@@ -900,8 +912,7 @@ Rts2Device::init ()
 	std::list <HostString>::iterator iter = centraldHosts.begin ();
 	for (int i = 0; iter != centraldHosts.end (); iter++, i++)
 	{
-		Rts2Conn * conn_master = new Rts2DevConnMaster (this, device_host, getPort (),
-			device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
+		Rts2Conn * conn_master = new Rts2DevConnMaster (this, device_host, getPort (), device_name, device_type, (*iter).getHostname (), (*iter).getPort (), i);
 		conn_master->init ();
 		addCentraldConnection (conn_master, true);
 	}

@@ -247,62 +247,41 @@ class Rts2Device:public Rts2Daemon
 		virtual int init ();
 		virtual int initValues ();
 
-		virtual bool isRunning (Rts2Conn *conn)
-		{
-			return conn->isConnState (CONN_AUTH_OK);
-		}
+		virtual bool isRunning (Rts2Conn *conn) { return conn->isConnState (CONN_AUTH_OK); }
 
 		/**
 		 * Return device BOP state.
 		 * This state is specific for device, and contains BOP values
 		 * only from devices which can block us.
 		 */
-		int getDeviceBopState ()
-		{
-			return fullBopState;
-		}
+		int getDeviceBopState () { return fullBopState;	}
+
+		/**
+		 * Return central connection for given central server name.
+		 */
+		Rts2Conn *getCentraldConn (const char *server);
 
 		void queDeviceStatusCommand (Rts2Conn *in_owner_conn);
 
 		// sends operation block commands to master
 		// this functions should mark critical blocks during device execution
-		void blockExposure ()
-		{
-			maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible");
-		}
+		void blockExposure () { maskState (BOP_EXPOSURE, BOP_EXPOSURE, "exposure not possible"); }
 
 		/**
 		 * Get blocking exposure status.
 		 *
 		 * @return true if device is blocking exposure.
 		 */
-		bool blockingExposure ()
-		{
-			return getState () & BOP_EXPOSURE;
-		}
+		bool blockingExposure () { return getState () & BOP_EXPOSURE; }
 
-		void clearExposure ()
-		{
-			maskState (BOP_EXPOSURE, 0, "exposure possible");
-		}
+		void clearExposure () { maskState (BOP_EXPOSURE, 0, "exposure possible"); }
 
-		void blockReadout ()
-		{
-			maskState (BOP_READOUT, BOP_READOUT, "readout not possible");
-		}
-		void clearReadout ()
-		{
-			maskState (BOP_READOUT, 0, "readout possible");
-		}
+		void blockReadout () { maskState (BOP_READOUT, BOP_READOUT, "readout not possible"); }
 
-		void blockTelMove ()
-		{
-			maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible");
-		}
-		void clearTelMove ()
-		{
-			maskState (BOP_TEL_MOVE, 0, "telescope move possible");
-		}
+		void clearReadout () { maskState (BOP_READOUT, 0, "readout possible"); }
+
+		void blockTelMove () { maskState (BOP_TEL_MOVE, BOP_TEL_MOVE, "telescope move not possible"); }
+		void clearTelMove () { maskState (BOP_TEL_MOVE, 0, "telescope move possible"); }
 
 		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr);
 
@@ -319,8 +298,7 @@ class Rts2Device:public Rts2Daemon
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
 	public:
-		Rts2Device (int in_argc, char **in_argv, int in_device_type,
-			const char *default_name);
+		Rts2Device (int in_argc, char **in_argv, int in_device_type, const char *default_name);
 		virtual ~Rts2Device (void);
 		virtual Rts2DevConn *createConnection (int in_sock);
 
@@ -362,8 +340,7 @@ class Rts2Device:public Rts2Daemon
 		void sendFullStateInfo (Rts2Conn * conn);
 
 		// only devices can send messages
-		virtual void sendMessage (messageType_t in_messageType,
-			const char *in_messageString);
+		virtual void sendMessage (messageType_t in_messageType, const char *in_messageString);
 
 		/**
 		 * The interrupt call. This is called on every device on
@@ -381,14 +358,8 @@ class Rts2Device:public Rts2Daemon
 		 */
 		virtual int scriptEnds ();
 
-		const char *getDeviceName ()
-		{
-			return device_name;
-		};
-		int getDeviceType ()
-		{
-			return device_type;
-		};
+		const char *getDeviceName () { return device_name; }
+		int getDeviceType () { return device_type; }
 
 		virtual int statusInfo (Rts2Conn * conn);
 
