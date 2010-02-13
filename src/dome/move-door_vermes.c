@@ -45,7 +45,7 @@ int test_ssd= NO_TEST_SSD ;
 #define SLEEP_CLOSE_DOOR (time_t) 100 // 
 
 void sigHandler( int signum ) {
-  fprintf( stderr, "received signal %d\n", signum) ;
+/*  fprintf( stderr, "received signal %d\n", signum) ; */
 }
 
 void off_zero()
@@ -226,14 +226,14 @@ void *move_door( void *value)
       fprintf(stderr, "move_door: closing door\n") ;
       // check the state
       if( doorState != DS_STOPPED_OPENED) {
-      	fprintf(stderr, "move_door: doorState != DS_STOPPED_OPENED\n") ;
+      	fprintf(stderr, "move_door: doorState != DS_STOPPED_OPENED, doing nothing\n") ;
       } else {
 	open_close( SETPOINT_CLOSE_DOOR, SETPOINT_CLOSE_DOOR_SLOW, DS_RUNNING_CLOSE, test_ssd, SLEEP_CLOSE_DOOR) ;
       }
 
       // Now, it is up to oak_digin_thread to say DS_STOPPED_CLOSED  or what is approprate
     } else if(doorEvent== EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE){
-      fprintf(stderr, "move_door: closing door after door state is UNDEFINED resp. != DS_STOPPED_CLOSED\n") ;
+      fprintf(stderr, "move_door: closing door after door state is DS_UNDEF resp. != DS_STOPPED_CLOSED\n") ;
       // check the state
       if( doorState == DS_STOPPED_CLOSED) {
 	fprintf(stderr, "move_door: doorState == DS_STOPPED_CLOSED, doing nothing\n") ;

@@ -309,6 +309,7 @@ oak_digin_thread(void * args)
     bits_str[8]= '\0' ;
     //fprintf( stderr, "oak_digin_thread: doorState=%d, bits %s\n",  doorState, bits_str) ;
     // turn off the motor first
+
     if((( bits & OAK_MASK_CLOSED) > 0) && (( doorState== DS_STOPPED_CLOSED) || ( doorState== DS_RUNNING_OPEN)))  {
       // let the motor open the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
@@ -405,7 +406,14 @@ oak_digin_thread(void * args)
     } else if( motorState== SSD650V_MS_UNDEFINED) {
       doorState= DS_UNDEF ;
       lastDoorState= doorState ;
-      fprintf( stderr, "oak_digin_thread: state is DS_UNDEF\n") ;
+
+      if( bits & OAK_MASK_OPENED) { // true if OAK sees the door
+	fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door is opened, motor is undefined\n") ;
+      } else if( bits & OAK_MASK_CLOSED) { // true if OAK sees the door
+	fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door is closed, motor is undefined\n") ;
+      } else {
+	fprintf( stderr, "oak_digin_thread: state is DS_UNDEF, door is undefined, motor is undefined\n") ;
+      }
     } else {
       // should never occur
       doorState= DS_UNDEF ;
