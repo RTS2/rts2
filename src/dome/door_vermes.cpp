@@ -142,6 +142,7 @@ DoorVermes::updateDoorStatusMessage ()
     doorStateMessage->setValueString("closing") ;
     break;
   case DS_RUNNING_UNDEF:
+  case DS_RUNNING_CLOSE_UNDEFINED:
     doorStateMessage->setValueString("closing, undefined") ;
     break;
   case DS_EMERGENCY_ENDSWITCH_OPENED:
@@ -151,7 +152,9 @@ DoorVermes::updateDoorStatusMessage ()
     doorStateMessage->setValueString("emergency end switch closed ON") ;
     break;
   default:
-    doorStateMessage->setValueString("door state is undefined") ;
+    char msg[256] ;
+    sprintf( msg, "door state is undefined, state %3d", doorState) ;
+    doorStateMessage->setValueString( msg) ;
   }
 }
 void 
@@ -596,7 +599,7 @@ DoorVermes::startClose ()
 
   } else {
 
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door doorState== DS_UNDEF" << sendLog ;
+    logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door, doorState" << doorState << sendLog ;
     if( oak_thread_state== THREAD_STATE_RUNNING) {
       if( simulate_door->getValueBool()){
       
@@ -629,7 +632,7 @@ DoorVermes::isClosed ()
   logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
 
   if( block_door->getValueBool()) {
-    logStream (MESSAGE_ERROR) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
+    logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
     return -2;
   }  
 
