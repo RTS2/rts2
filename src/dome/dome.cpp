@@ -22,6 +22,7 @@
 using namespace rts2dome;
 
 #define OPT_WEATHER_OPENS     OPT_LOCAL + 200
+#define OPT_STATE_MASTER      OPT_LOCAL + 201
 
 int Dome::domeOpenStart ()
 {
@@ -81,6 +82,9 @@ int Dome::domeCloseEnd ()
 
 Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
+	stateMaster = NULL;
+	stateMasterConn = NULL;
+
 	createValue (weatherOpensDome, "weather_open", "if weather information is enought to open dome", false, RTS2_VALUE_WRITABLE);
 	weatherOpensDome->setValueBool (false);
 
@@ -90,7 +94,8 @@ Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc
 	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again", false);
 	nextGoodWeather->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT);
 
-	addOption (OPT_WEATHER_OPENS, "weather_can_open", 0, "specified that option if weather signal is allowed to open dome");
+	addOption (OPT_WEATHER_OPENS, "weather-can-open", 0, "specified that option if weather signal is allowed to open dome");
+	addOption (OPT_STATE_MASTER, "state-master", 1, "state master - server which guverns opening and closing of dome for evening and morning");
 	addOption ('I', NULL, 0, "whenever to ignore meteo station. Ignore time will be set to 610 seconds.");
 }
 
@@ -106,11 +111,41 @@ int Dome::processOption (int in_opt)
 		case OPT_WEATHER_OPENS:
 			weatherOpensDome->setValueBool (true);
 			break;
+		case OPT_STATE_MASTER:
+			createValue (stateMaster, "state_master", "server governing dome evening and morning states", false);
+			updateMetaInformations (stateMaster);
+			stateMaster->setValueCharArr (optarg);
+			break;
 		case 'I':
 			ignoreTimeout->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT + 10);
 			break;
 		default:
 			return Rts2Device::processOption (in_opt);
+	}
+	return 0;
+}
+
+int Dome::init ()
+{
+	int ret;
+	ret = Rts2Device::init ();
+	if (ret)
+		return ret;
+
+	// check for presense of state-master
+	if (getCentraldConns ()->size () > 1)
+	{
+ 		if (stateMaster->getValueString ().length () == 0)
+		{
+			logStream (MESSAGE_ERROR) << "multiple central server specified, but none identified as master - please add state-master option" << sendLog;
+			return -1;
+		}
+		stateMasterConn = getCentraldConn (stateMaster->getValue ());
+		if (stateMasterConn == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "cannot find state-master " << stateMaster->getValue () << " in list of central connections" << sendLog;
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -202,8 +237,7 @@ int Dome::idle ()
 	checkOpening ();
 	if (isGoodWeather ())
 	{
-		if (weatherOpensDome->getValueBool () == true
-			&& (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+		if (weatherOpensDome->getValueBool () == true && (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 		{
 			setMasterOn ();
 		}
@@ -244,11 +278,35 @@ int Dome::closeDomeWeather ()
 
 int Dome::observing ()
 {
+	if (stateMasterConn != NULL)
+	{
+		if (stateMasterConn->getState () & SERVERD_STANDBY_MASK)
+			return 0;
+		switch (stateMasterConn->getState() & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				return domeOpenStart ();
+			default:
+				return 0;
+		}
+	}
 	return domeOpenStart ();
 }
 
 int Dome::standby ()
 {
+	if (stateMasterConn != NULL && ! (stateMasterConn->getState () & SERVERD_STANDBY_MASK))
+	{
+		switch (stateMasterConn->getState () & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				return 0;
+		}
+	}
 	ignoreTimeout->setValueDouble (getNow () - 1);
 	return domeCloseStart ();
 }
@@ -262,8 +320,7 @@ int Dome::off ()
 int Dome::setMasterStandby ()
 {
 	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
-	  	&& getMasterState () != SERVERD_UNKNOW
-		&& (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		&& getMasterState () != SERVERD_UNKNOW && (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
 	{
 		return sendMasters ("standby");
 	}

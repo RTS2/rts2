@@ -38,6 +38,7 @@ class Dummy:public Cupola
 		virtual int moveStart ()
 		{
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return Cupola::moveStart ();
 		}
 		virtual int moveEnd ()
@@ -52,6 +53,7 @@ class Dummy:public Cupola
 			if (mcount->getValueInteger () >= moveCountTop->getValueInteger ())
 				return -2;
 			mcount->inc ();
+			sendValueAll (mcount);
 			return USEC_SEC;
 		}
 
@@ -60,11 +62,14 @@ class Dummy:public Cupola
 			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
 				return 0;
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return 0;
 		}
 
 		virtual long isOpened ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
+				return 0;
 			return isMoving ();
 		}
 
@@ -78,11 +83,14 @@ class Dummy:public Cupola
 			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
 				return 0;
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return 0;
 		}
 
 		virtual long isClosed ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_OPENED)
+				return 0;
 		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
 				return -2;
 			return isMoving ();

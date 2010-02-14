@@ -38,21 +38,33 @@ namespace rts2dome {
  */
 class Dome:public Rts2Device
 {
-	private:
-		// time for which weather will be ignored - usefull for manual override of
-		// dome operations
-		Rts2ValueTime *ignoreTimeout;
+	public:
+		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
+		virtual ~Dome ();
 
-		Rts2ValueBool *weatherOpensDome;
-		Rts2ValueTime *nextGoodWeather;
+		virtual int changeMasterState (int new_state);
 
-		// call isOpened and isClosed and decide what to do..
-		int checkOpening ();
+		/**
+		 * Increases ignore timeout by given amount of seconds.
+		 *
+		 * @param _ignore_time  Seconds by which a timeout will be increased.
+		 */ 
+		void setIgnoreTimeout (time_t _ignore_time);
 
-		int closeDomeWeather ();
+		bool getIgnoreMeteo ();
+
+		void setWeatherTimeout (time_t wait_time);
+
+		double getNextOpen () { return nextGoodWeather->getValueDouble (); }
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual int ready () { return 0; }
 
 	protected:
 		virtual int processOption (int in_opt);
+
+		virtual int init ();
 
 		virtual void cancelPriorityOperations ()
 		{
@@ -135,34 +147,21 @@ class Dome:public Rts2Device
 
 		virtual int idle ();
 
-	public:
-		Dome (int argc, char **argv, int in_device_type = DEVICE_TYPE_DOME);
-		virtual ~Dome ();
+	private:
+		// time for which weather will be ignored - usefull for manual override of
+		// dome operations
+		Rts2ValueTime *ignoreTimeout;
 
-		virtual int changeMasterState (int new_state);
+		Rts2ValueBool *weatherOpensDome;
+		Rts2ValueTime *nextGoodWeather;
 
-		/**
-		 * Increases ignore timeout by given amount of seconds.
-		 *
-		 * @param _ignore_time  Seconds by which a timeout will be increased.
-		 */ 
-		void setIgnoreTimeout (time_t _ignore_time);
+		// call isOpened and isClosed and decide what to do..
+		int checkOpening ();
 
-		bool getIgnoreMeteo ();
+		int closeDomeWeather ();
 
-		void setWeatherTimeout (time_t wait_time);
-
-		double getNextOpen ()
-		{
-			return nextGoodWeather->getValueDouble ();
-		}
-
-		virtual int commandAuthorized (Rts2Conn * conn);
-
-		virtual int ready ()
-		{
-			return 0;
-		}
+		Rts2ValueString *stateMaster;
+		Rts2Conn *stateMasterConn;
 };
 
 }
