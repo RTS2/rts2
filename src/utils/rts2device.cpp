@@ -766,7 +766,7 @@ Rts2Conn *Rts2Device::getCentraldConn (const char *server)
 	std::list <HostString>::iterator iter_h;
 	connections_t::iterator iter_c;
 	for (iter_h = centraldHosts.begin (), iter_c = getCentraldConns ()->begin ();
-		iter_h != centraldHosts.end () && iter_c != getCentraldConns ()->begin ();
+		iter_h != centraldHosts.end () && iter_c != getCentraldConns ()->end ();
 		iter_h++, iter_c++)
 	{
 		if (strcasecmp (iter_h->getHostname (), server) == 0)
