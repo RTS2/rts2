@@ -29,13 +29,13 @@ namespace rts2teld
 
 class Dummy:public Telescope
 {
-	public:
-		Dummy (int argc, char **argv):Telescope (argc, argv)
-		{
-			dummyPos.ra = 0;
-			dummyPos.dec = 0;
-		}
+	private:
 
+                struct ln_equ_posn dummyPos;
+                Rts2ValueBool *move_fast;
+	public:
+	        Dummy (int argc, char **argv);
+        	virtual int processOption (int in_opt);
 		virtual int startResync ()
 		{
 			return 0;
@@ -84,6 +84,15 @@ class Dummy:public Telescope
 
 		virtual int isMoving ()
 		{
+		    if( move_fast->getValueBool ()) {
+ 			struct ln_equ_posn tar;
+			getTelTargetRaDec (&tar);
+			dummyPos.ra= tar.ra ;
+			dummyPos.dec= tar.dec ;
+			return -2;
+
+		    } else {
+
 			if (getNow () > getTargetReached ())
 				return -2;
 			struct ln_equ_posn tar;
@@ -98,6 +107,7 @@ class Dummy:public Telescope
 				dummyPos.dec += 0.5;
 			setTelRaDec (dummyPos.ra, dummyPos.dec);
 			return USEC_SEC;
+		    }
 		}
 
 		virtual int isMovingFixed ()
@@ -115,13 +125,39 @@ class Dummy:public Telescope
 			return getTargetDistance () * 2.0;
 		}
 
-	private:
-		struct ln_equ_posn dummyPos;
 };
 
 };
 
 using namespace rts2teld;
+
+Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
+{
+	addOption ('f', "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
+	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false);
+	move_fast->setValueBool (false);
+
+	dummyPos.ra = 0;
+	dummyPos.dec = 0;
+}
+int
+Dummy::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case 'f':
+		    if( !strcmp( "fast", optarg)) {
+			move_fast->setValueBool ( true );
+		    } else {
+		      move_fast->setValueBool ( false );
+		    }
+		    break;
+		default:
+			return Telescope::processOption (in_opt);
+	}
+	return 0;
+}
+
 
 int
 main (int argc, char **argv)
