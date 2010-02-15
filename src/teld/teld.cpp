@@ -683,6 +683,7 @@ void Telescope::postEvent (Rts2Event * event)
 			break;
 		case EVENT_CUP_ENDED:
 			logStream (MESSAGE_INFO) << "removed " << ((ClientCupola *)(event->getArg ()))->getName () << sendLog;
+			cupolas->remove (((ClientCupola *)(event->getArg ()))->getName ());
 			break;
 	}
 	Rts2Device::postEvent (event);
