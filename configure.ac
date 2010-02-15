@@ -70,17 +70,6 @@ AC_ARG_ENABLE(focusing,
 esac],[focusing=yes])
 
 AM_CONDITIONAL(FOCUSING, test x$focusing = xyes)
-B_A
-AC_ARG_ENABLE(mirror,
-[  --disable-mirror        disables mirror code in camd (=>camd is a bit smaller)],
-[case "${enableval}" in
-	yes) mirror=yes ;;
-	no)  mirror=no ;;
-	*) AC_MSG_ERROR(bad value ${enableval} for --enable-mirror) ;;
-esac],[mirror=yes])
-
-AM_CONDITIONAL(MIRROR, test x$mirror = xyes)
-
 AC_ARG_WITH(x-focusc,
 [  --without-x-focusc      disables xfocusc],
 [case "${withval}" in
@@ -555,19 +544,18 @@ AC_SUBST(ROOT_CXXFLAGS)
 
 AM_CONDITIONAL(CERN_ROOT, test x$root_config != xno)
 
-AC_CHECK_LIB([archive],[archive_write_data], LIB_ARCHIVE="-larchive", LIB_ARCHIVE="")
-AC_SUBST(LIB_ARCHIVE)
+PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 2.0], [_PKG_CONFIG([LIBARCHIVE_VERSION],[modversion],[libarchive >= 2.0])],[pkg_cv_LIBARCHIVE_VERSION="no"])
 
 AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
 
-if test "x$LIB_ARCHIVE" != "x"; then
-	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
+if test "x$pkg_cv_LIBARCHIVE_VERSION" != "xno"; then
+ 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
 fi
 
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF
-**** You don't have comedi library installed.
+#**** You don't have comedi library installed.
 **** Please download it from http://www.comedi.org
 EOF
 	exit 1])
@@ -738,7 +726,6 @@ echo "
  RTS2 build configuration for ${build_os}
 
   focusing      ${focusing}
-  mirror        ${mirror}
   xfocusc       ${xfocusc}
   psql          ${psql}
   libnova       ${libnova}
@@ -752,7 +739,7 @@ echo "
   libxml2       ${XMLVERS}
   graphicsmagic ${GRAPHICSMAGICK_VERS}
   CERN ROOT     ${ROOT_VERS}
-  libarchive    ${LIB_ARCHIVE}
+  libarchive    ${pkg_cv_LIBARCHIVE_VERSION}
 
 
 CCD's:
