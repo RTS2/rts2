@@ -73,6 +73,13 @@ class StringArray: public Rts2Value
 		 */
 		bool isPresent (std::string _str) { return std::find (value.begin (), value.end (), _str) != value.end (); }
 
+		/**
+		 * Remove value from list.
+		 *
+		 * @param _str String which will be removed (if it exists in array)
+		 */
+		void remove (std::string _str) { std::vector <std::string>::iterator iter = std::find (value.begin (), value.end (), _str); if (iter != value.end ()) value.erase (iter); }
+
 		std::vector <std::string>::iterator valueBegin () { return value.begin (); }
 
 		std::vector <std::string>::iterator valueEnd () { return value.end (); }
