@@ -53,6 +53,7 @@ using namespace Magick;
 #include "obsreq.h"
 #include "targetreq.h"
 #include "imgpreview.h"
+#include "devicesreq.h"
 
 #include "r2x.h"
 
@@ -1521,6 +1522,8 @@ class UserLogin: public XmlRpcServerMethod
 } userLogin (&xmlrpc_server);
 
 #endif /* HAVE_PGSQL */
+
+Devices devices ("/devices", &xmlrpc_server);
 
 int main (int argc, char **argv)
 {

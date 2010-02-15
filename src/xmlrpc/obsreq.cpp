@@ -41,6 +41,7 @@ void Observation::authorizedExecute (std::string path, XmlRpc::HttpParams *param
 			printObs (atoi (vals[0].c_str ()), params, response_type, response, response_length);
 			return;
 	}
+	throw rts2core::Error ("Invalid path");
 }
 
 void Observation::printQuery (const char* &response_type, char* &response, size_t &response_length)

@@ -1,4 +1,4 @@
-	/* 
+/* 
  * Image preview and download classes.
  * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
  *
