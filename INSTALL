@@ -13,7 +13,7 @@ Instalation from SVN
 
    subversion postgresql postgresql-server-dev libecpg-dev automake libtool
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
-   libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev
+   libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev pkg-config
 
    Package gsoap is needed if you want SIMBAD name resolving and other nice
    stuff.
