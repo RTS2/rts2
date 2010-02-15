@@ -629,7 +629,7 @@ DoorVermes::isClosed ()
 {   
   updateDoorStatusMessage() ;
 
-  logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
+  //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
 
   if( block_door->getValueBool()) {
     logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
