@@ -120,7 +120,7 @@ void ConnTCP::sendData (const void *data, int len, bool binary)
 		if (binary)
 			ls.logArrAsHex ((char *) data, len);
 		else
-		  	ls << data;
+		  	ls << (char *) data;
 		ls << sendLog;
 	}
 }
