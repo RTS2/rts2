@@ -30,6 +30,8 @@
 extern "C"
 {
 #endif
+double get_current() ;
+double get_current_percentage() ;
 float get_setpoint() ;
 int set_setpoint( float setpoint) ;
 int motor_on() ;
@@ -38,7 +40,8 @@ int connectSSD650vDevice( int power_state) ;
 #ifdef __cplusplus
 }
 #endif
-
+#define REPEAT_RATE_NANO_SEC (long) (200. * 1000. * 1000.) // [1^-9 sec] frequency while getting incorrect answer
+#define CURRENT_MAX_PERCENT 80. // do not exceed this percentage of the maximum current (ssd650v dome 0.8 A)
 // SSD650V commands
 #define SSD650V_CMD_ON         1  // starts motor
 #define SSD650V_CMD_OFF        2  // stopps motor

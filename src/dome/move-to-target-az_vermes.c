@@ -27,6 +27,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
+#include <sys/time.h>
+#include <time.h>
+#include <errno.h>
 #endif
 
 #include <libnova/libnova.h>
@@ -36,19 +39,22 @@
 #include "ssd650v_comm_vermes.h"
 
 int is_synced            = NOT_SYNCED ;   // ==SYNCED if target_az reached
-int cupola_tracking_state= TRACKING_DISABLED ; 
-int motor_on_off_state   = SSD650V_MS_UNDEFINED ;
 int barcodereader_state ;
 double barcodereader_az ;
 double barcodereader_dome_azimut_offset= -253.6 ; // wildi ToDo: make an option
 double target_az ;
+double curMaxSetPoint= 80. ;
+double curMinSetPoint= 40. ;
+double readSetPoint ;
+int movementState= TRACKING_DISABLED ; 
+double current_percentage ;
+
+extern int motorState ;
 
 struct ln_lnlat_posn obs_location ;
 struct ln_equ_posn   tel_equ ;
 
-
 void getSexComponents(double value, int *d, int *m, int *s) ;
-
 
 const struct geometry obsvermes = {
   -0.0684, // xd [m]
@@ -67,17 +73,16 @@ void getSexComponents(double value, int *d, int *m, int *s)
   *d = (int) fabs(value);
   *m = (int) ((fabs(value) - *d) * 60.0);
   *s = (int) rint(((fabs(value) - *d) * 60.0 - *m) *60.0);
-
+  
   if (value < 0)
     *d *= -1;
 }
 
 void *move_to_target_azimuth( void *value)
 {
-  double ret = -1 ;
+  int ret ;
+  double abs_az_diff = -1 ;
   double curAzimutDifference ;
-  double curMaxSetPoint= 80. ;
-  double curMinSetPoint= 40. ;
   static double lastSetPoint=0., curSetPoint=0. ;
   static double lastSetPointSign=0., curSetPointSign=0. ;
   double tmpSetPoint= 0. ;
@@ -86,6 +91,9 @@ void *move_to_target_azimuth( void *value)
   const double limit= ( .25 * AngularSpeed * (POLLMICROS/(1000. * 1000.)));
 
   while( 1==1) {
+
+    current_percentage= get_current_percentage() ;
+
     target_coordinate_changed= 0 ;
     if( lastRa != tel_equ.ra)	{
       lastRa = tel_equ.ra ;
@@ -120,9 +128,23 @@ void *move_to_target_azimuth( void *value)
       snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
       fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
     }
-    if( cupola_tracking_state== TRACKING_ENABLED) {
-      //if( motor_on_off_state= SSD650V_MS_RUNNING)
-      target_az= dome_target_az( tel_equ, obs_location,  obsvermes) ;
+    if( movementState == TRACKING_DISABLED) {
+
+      struct timespec rep_slv ;
+      struct timespec rep_rsl ;
+      rep_slv.tv_sec= 0 ;
+      rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
+
+      while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
+	fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+	errno= 0;
+	ret= nanosleep( &rep_slv, &rep_rsl) ;
+	if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
+	  fprintf( stderr, "move_to_target_az: signal, or error in nanosleep %d\n", ret) ;
+	}
+      }
+    } else if ( movementState == TRACKING_ENABLED) {
+      target_az= dome_target_az( tel_equ, obs_location, obsvermes) ;
       curAzimutDifference=  barcodereader_az- target_az;
       // fmod is here just in case if there is something out of bounds
       curAzimutDifference= fmod( curAzimutDifference, 360.) ;
@@ -132,71 +154,99 @@ void *move_to_target_azimuth( void *value)
       } else if(( curAzimutDifference) <= -180.) {
 	curAzimutDifference += 360. ;
       }
-      //  Difference at ac,  curMaxSetPoint, curMinSetPoint are always > 0, setpoint is [-100.,100.] 
+      // curMaxSetPoint, curMinSetPoint are always > 0, curSetPoint is [-100.,100.] 
       tmpSetPoint= (( curMaxSetPoint- curMinSetPoint) / (DIFFMAX- DIFFMIN) * fabs( curAzimutDifference)  + curMinSetPoint ) ;
-      if( curAzimutDifference != 0) {
-	curSetPointSign= -curAzimutDifference/fabs(curAzimutDifference) ;
-      } else {
-	curSetPointSign= 0 ;
-      }
       if( tmpSetPoint > curMaxSetPoint) {
 	tmpSetPoint= curMaxSetPoint;
       } else if( tmpSetPoint < curMinSetPoint) {
 	tmpSetPoint= curMinSetPoint ;
       }
-      curSetPoint= curSetPointSign * tmpSetPoint ;
-    
-      if(( motor_on_off_state== SSD650V_MS_RUNNING)&&( ret= fabs( curAzimutDifference/180. * M_PI)) < limit) {
-	//fprintf( stderr, "move_to_target_azimuth: absolute difference smaller than %5.2f [deg]\n", limit * 180./M_PI) ;
-	// MotorOFF
-	if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-	  fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-	  motor_on_off_state= SSD650V_MS_UNDEFINED ;
-	} else {
-	  motor_on_off_state= SSD650V_MS_RUNNING ;
+      if( curAzimutDifference != 0) {
+	curSetPointSign= -curAzimutDifference/fabs(curAzimutDifference) ;
+      } else {
+	curSetPointSign= 0 ;
+      }
+      // limit the maximum current
+      current_percentage= get_current_percentage() ;
+      if( isnan(current_percentage)) {
+
+	current_percentage= CURRENT_MAX_PERCENT ;
+      }
+      if( current_percentage >= 100.) { // hard limit
+	struct timespec rep_slv ;
+	struct timespec rep_rsl ;
+	rep_slv.tv_sec= 0 ;
+	rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
+
+	while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
+	  fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+	  errno= 0;
+	  ret= nanosleep( &rep_slv, &rep_rsl) ;
+	  if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
+	    fprintf( stderr, "off_zero: signal, or error in nanosleep %d\n", ret) ;
+	  }
 	}
+      } else if( current_percentage >= CURRENT_MAX_PERCENT) {
+	tmpSetPoint *= CURRENT_MAX_PERCENT/ (current_percentage); 
+      } 
+      curSetPoint= curSetPointSign * tmpSetPoint ;
+      if(( motorState== SSD650V_MS_RUNNING)&&( abs_az_diff= fabs( curAzimutDifference/180. * M_PI)) < limit) {
+	// MotorOFF
+	struct timespec rep_slv ;
+	struct timespec rep_rsl ;
+	rep_slv.tv_sec= 0 ;
+	rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
+
+	while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
+	  fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+	  errno= 0;
+	  ret= nanosleep( &rep_slv, &rep_rsl) ;
+	  if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
+	    fprintf( stderr, "off_zero: signal, or error in nanosleep %d\n", ret) ;
+	  }
+	}
+
 	curSetPoint= 0. ;
 	set_setpoint( curSetPoint) ;
 	lastSetPoint= 0. ;
 	lastSetPointSign= 0. ;
-	if( motor_on_off_state== SSD650V_MS_STOPPED) {
+	if( motorState== SSD650V_MS_STOPPED) {
 	  is_synced= SYNCED ;
+	} else {
+	  is_synced= NOT_SYNCED ;
 	}
-      } else if (( ret= fabs( curAzimutDifference/180. * M_PI)) >= limit) {
+      } else if (( abs_az_diff= fabs( curAzimutDifference/180. * M_PI)) >= limit) {
 	if( curSetPointSign !=  lastSetPointSign) {
-	  fprintf( stderr, "Detected a sign change of curSetPoint = %5.2f, lastSetPoint= %5.2f, turning motor off and on\n", curSetPoint, lastSetPoint);
 	  // MotorOFF
-	  if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
-	    fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (OFF)\n") ;
-	    motor_on_off_state= SSD650V_MS_UNDEFINED ;
-	  } else {
-	    motor_on_off_state= SSD650V_MS_RUNNING ;
+	  struct timespec rep_slv ;
+	  struct timespec rep_rsl ;
+	  rep_slv.tv_sec= 0 ;
+	  rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
+
+	  while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
+	    fprintf(stderr, "move_to_target_azimuth: motor_off != SSD650V_MS_STOPPED\n") ;
+	    errno= 0;
+	    ret= nanosleep( &rep_slv, &rep_rsl) ;
+	    if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {
+	      fprintf( stderr, "off_zero: signal, or error in nanosleep %d\n", ret) ;
+	    }
 	  }
 	}
 	//  MotorON
 	set_setpoint( curSetPoint) ;
-	if( motor_on_off_state != SSD650V_MS_RUNNING) {
+	if( motorState != SSD650V_MS_RUNNING) {
 	  if(( ret=motor_on()) != SSD650V_MS_RUNNING ) {
 	    fprintf( stderr, "move_to_target_azimuth: something went wrong with  azimuth motor (ON)\n") ;
-	    motor_on_off_state= SSD650V_MS_UNDEFINED ;
-	  } else {
-	    motor_on_off_state= SSD650V_MS_RUNNING ;
-	  }
+	  } 
 	}
 	lastSetPoint    =  curSetPoint ;
 	lastSetPointSign=  curSetPointSign ;
       }
-    
-      if(( motor_on_off_state== SSD650V_MS_RUNNING) || (( ret= fabs( curAzimutDifference/180. * M_PI)) >= limit)) {
-	  is_synced= NOT_SYNCED ;
+      if(( motorState== SSD650V_MS_RUNNING) || (( abs_az_diff= fabs( curAzimutDifference/180. * M_PI)) >= limit)) {
+	is_synced= NOT_SYNCED ;
       }
-/*       if( motor_on_off_state== SSD650V_MS_RUNNING) { */
-/* 	fprintf(stderr, "Sleeping---a-d:%5.4f-- s:%6.3f, b:%5.3f, t:%5.6f, b-t:%6.4f, curd:%6.4f\n", \ */
-/* 		180./M_PI*limit,					\ */
-/* 		curSetPoint,						\ */
-/* 		barcodereader_az, target_az, (barcodereader_az- target_az), curAzimutDifference) ; */
-/*       } */
     }
+    readSetPoint= (double) get_setpoint() ;
     usleep(POLLMICROS) ;
   }
   return NULL ;

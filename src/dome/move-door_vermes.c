@@ -57,7 +57,7 @@ void off_zero()
   rep_slv.tv_nsec= REPEAT_RATE_NANO_SEC ;
 
   while(( ret= motor_off()) != SSD650V_MS_STOPPED) {
-    fprintf(stderr, "move_door: motor_on != SSD650V_MS_STOPPED\n") ;
+    fprintf(stderr, "move_door: motor_off != SSD650V_MS_STOPPED\n") ;
     errno= 0;
     ret= nanosleep( &rep_slv, &rep_rsl) ;
     if((errno== EFAULT) || ( errno== EINTR)|| ( errno== EINVAL ))  {

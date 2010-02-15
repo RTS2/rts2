@@ -260,10 +260,43 @@ int motor_off()
   motorState= SSD650V_MS_STOPPED ;
   return SSD650V_MS_STOPPED ;
 }
-
+/******************************************************************************
+ * get_current()
+ * get current [A]
+ * 
+ * Args:
+ * Return:
+ * state
+ *****************************************************************************/
+double
+get_current()
+{
+  double current = (double) SSD_qry_real(ser_dev, 67);
+  if (isnan(current)) {
+    fprintf( stderr, "Failure querying current-----------------------------\n");
+  }
+  return current ;
+}
+/******************************************************************************
+ * get_current_percentage()
+ * get current as percentage of maximum
+ * 
+ * Args:
+ * Return:
+ * state
+ *****************************************************************************/
+double
+get_current_percentage()
+{
+  double percent = (double) SSD_qry_real(ser_dev, 66);
+  if (isnan(percent)) {
+    fprintf( stderr, "Failure querying current percentage-----------------------------\n");
+  }
+  return percent ;
+}
 /******************************************************************************
  * get_setpoint(...)
- * Reyrieves the motor speed setpoint to the SSD650V.
+ * Retrieves the motor speed setpoint from the SSD650V.
  * 
  * Args:
  * Return:
@@ -273,9 +306,9 @@ int motor_off()
 float
 get_setpoint()
 {
-  float tmp_set ; 
-  if((tmp_set= SSD_qry_setpoint(ser_dev)) != 0) {
-      fprintf( stderr, "get_setpoint: failed\n") ;
+  float tmp_set= -199 ; 
+  if(isnan(tmp_set= SSD_qry_setpoint(ser_dev))) {
+    fprintf( stderr, "ssd650v_comm_vermes: get_setpoint: failed %f \n", tmp_set) ;
   }
 // wildi ToDo: make a real message
 //  if(isnan( tmp_set)) {
@@ -321,7 +354,7 @@ set_setpoint(float setpoint)
   snprintf(data, 8, "%3.1f", setpoint);
   int ret= SSD_set_tag(ser_dev, 247, data) ;
   if( ret == BISYNC_OK) {
-    fprintf( stderr, "set_setpoint: value %s\n", data) ; 
+    //fprintf( stderr, "set_setpoint: value %s\n", data) ; 
     return SSD650V_MS_OK ;
   } else {
     return SSD650V_MS_SETTING_SET_POINT_FAILED ;

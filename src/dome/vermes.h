@@ -20,6 +20,7 @@
 
 #define TRACKING_ENABLED   0
 #define TRACKING_DISABLED  1
+#define MANUAL             2
 
 
 #define NOT_SYNCED         0 

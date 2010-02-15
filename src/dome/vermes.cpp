@@ -30,14 +30,19 @@
 #include "ssd650v_comm_vermes.h"
 // wildi ev. ToDo: pthread_mutex_t mutex1
 extern int is_synced ; // ==SYNCED if target_az reched
-extern int cupola_tracking_state ; 
-extern int motor_on_off_state ;
+extern int motorState ;
 extern int barcodereader_state ;
 extern double barcodereader_az ;
 extern double barcodereader_dome_azimut_offset ; 
 extern double target_az ;
 extern struct ln_lnlat_posn obs_location ;
 extern struct ln_equ_posn   tel_equ ;
+extern double curMaxSetPoint ;
+extern double curMinSetPoint ;
+extern int movementState ; 
+extern double current_percentage ;
+extern double readSetPoint ;
+
 
 
 using namespace rts2dome;
@@ -53,13 +58,16 @@ namespace rts2dome
   {
   private:
     Rts2Config *config ;
+    Rts2ValueDouble  *traget_azimut_cupola ;
     Rts2ValueInteger *barcode_reader_state ;
     Rts2ValueDouble  *azimut_difference ;
     Rts2ValueString  *ssd650v_state ;
-    Rts2ValueBool    *ssd650v_on_off ;
+    Rts2ValueDouble  *ssd650v_read_setpoint ;
     Rts2ValueDouble  *ssd650v_setpoint ;
     Rts2ValueBool    *cupola_tracking ;
-
+    Rts2ValueDouble  *ssd650v_min_setpoint ;
+    Rts2ValueDouble  *ssd650v_max_setpoint ;
+    Rts2ValueDouble  *ssd650v_current ;
     void parkCupola ();
   protected:
     virtual int moveStart () ;
@@ -88,7 +96,6 @@ namespace rts2dome
 
 int Vermes::moveEnd ()
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::moveEnd did nothing "<< sendLog ;
   return Cupola::moveEnd ();
 }
 long Vermes::isMoving ()
@@ -108,7 +115,6 @@ int Vermes::moveStart ()
 
   tel_equ.ra= getTargetRa() ;
   tel_equ.dec= getTargetDec() ;
-  // thread compare_az take care of the calculations
 
   if( lastRa != tel_equ.ra) {
     lastRa = tel_equ.ra ;
@@ -126,7 +132,6 @@ int Vermes::moveStart ()
 
 double Vermes::getSplitWidth (double alt)
 {
-  //  logStream (MESSAGE_DEBUG) << "Vermes::getSplitWidth returning -1" << sendLog ;
   return -1;
 }
 
@@ -156,44 +161,43 @@ int Vermes::off ()
 
 void Vermes::valueChanged (Rts2Value * changed_value)
 {
-  int res ;
-  if (changed_value == ssd650v_on_off) {
-    if( ssd650v_on_off->getValueBool()) {
-      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged starting azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-      if(( res=motor_on()) != SSD650V_MS_RUNNING ) {
-	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	motor_on_off_state= SSD650V_MS_UNDEFINED ;
-      } else {
-	ssd650v_state->setValueString("motor running") ;
-	motor_on_off_state= SSD650V_MS_RUNNING ;
-      }
-    } else {
-      logStream (MESSAGE_DEBUG) << "Vermes::valueChanged stopping azimuth motor, setpoint: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-      if(( res=motor_off()) !=  SSD650V_MS_STOPPED) {
-	logStream (MESSAGE_ERROR) << "Vermes::valueChanged something went wrong with  azimuth motor, error: "<< ssd650v_setpoint->getValueDouble() << sendLog ;
-	motor_on_off_state= SSD650V_MS_UNDEFINED ;
-      } else {
-	ssd650v_state->setValueString("motor stopped") ;
-	motor_on_off_state= SSD650V_MS_STOPPED ;
-      }
-    }
-    return ;
-  } else if (changed_value == ssd650v_setpoint) {
+  int ret ;
 
+  if (changed_value == ssd650v_setpoint) {
+    movementState= MANUAL ;
+    if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
+      logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor off " << sendLog ;
+      ssd650v_state->setValueString("motor undefined") ;
+    } 
     float setpoint= (float) ssd650v_setpoint->getValueDouble() ;
-    if( set_setpoint( setpoint))  {
-      logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< setpoint << sendLog ;
+    float getpoint ;
+    if(isnan( getpoint= set_setpoint( setpoint)))  {
+      logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not set setpoint "<< getpoint << sendLog ;
+    } else {
+      if( setpoint != 0.) {
+	if(( ret=motor_on()) != SSD650V_MS_RUNNING ) {
+	  ssd650v_state->setValueString("motor undefined") ;
+	  logStream (MESSAGE_ERROR) << "Vermes::valueChanged could not turn motor on :" << setpoint << sendLog ;
+	} 
+      }
     }
     return ; // ask Petr what to do in general if something fails within ::valueChanged
   } else   if (changed_value == cupola_tracking) {
     if( cupola_tracking->getValueBool()) {
-      cupola_tracking_state= TRACKING_ENABLED ; 
+      movementState= TRACKING_ENABLED ; 
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola starts tracking the telescope"<< sendLog ;
     } else {
-      cupola_tracking_state= TRACKING_DISABLED ;
+      // motor is turned off in thread
+      movementState= TRACKING_DISABLED ;
       logStream (MESSAGE_DEBUG) << "Vermes::valueChanged cupola tracking stoped"<< sendLog ;
     }
     return ;
+  } else if (changed_value == ssd650v_min_setpoint) {
+    curMinSetPoint= ssd650v_min_setpoint->getValueDouble() ;
+
+  } else if (changed_value == ssd650v_max_setpoint) {
+
+    curMaxSetPoint= ssd650v_max_setpoint->getValueDouble() ;
   }
   Cupola::valueChanged (changed_value);
 }
@@ -206,24 +210,28 @@ int Vermes::info ()
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
   setCurrentAz (barcodereader_az);
   setTargetAz(target_az) ;
+  traget_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
+  ssd650v_current->setValueDouble(current_percentage) ;
+  if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
 
-  if( cupola_tracking_state == TRACKING_ENABLED) {
+    logStream (MESSAGE_ERROR) << "Vermes::info current exceeding limit: "<<  ssd650v_current->getValueDouble() << sendLog ;
+
+  }
+  if( movementState == TRACKING_ENABLED) {
     cupola_tracking->setValueBool(true) ;
-  } else if( motor_on_off_state== SSD650V_MS_STOPPED) {
+  } else  {
     cupola_tracking->setValueBool(false) ;
   }
 
-  if( motor_on_off_state== SSD650V_MS_RUNNING) {
-    ssd650v_on_off->setValueBool(true) ;
+  if( motorState== SSD650V_MS_RUNNING) {
     ssd650v_state->setValueString("motor running") ;
-  } else if( motor_on_off_state== SSD650V_MS_STOPPED) {
-    ssd650v_on_off->setValueBool(false) ;
+  } else if( motorState== SSD650V_MS_STOPPED) {
     ssd650v_state->setValueString("motor stopped") ;
   } else  {
     ssd650v_state->setValueString("motor undefined state") ;
   }
-  ssd650v_setpoint->setValueDouble( (double) get_setpoint()) ;
+  ssd650v_read_setpoint->setValueDouble( readSetPoint) ;
 
   return Cupola::info ();
 }
@@ -250,15 +258,13 @@ int Vermes::initValues ()
     exit(1) ;
   }
   // ssd650v frequency inverter
-  if(connectSSD650vDevice(SSD650V_CMD_CONNECT)) {
+  if((ret= connectSSD650vDevice(SSD650V_CMD_CONNECT)) != SSD650V_MS_CONNECTION_OK) {
     logStream (MESSAGE_ERROR) << "Vermes::initValues a general failure on SSD650V connection occured" << sendLog ;
   }
   if(( ret=motor_off()) != SSD650V_MS_STOPPED ) {
     fprintf( stderr, "Vermes::initValues something went wrong with SSD650V (OFF)\n") ;
-    motor_on_off_state= SSD650V_MS_UNDEFINED ;
-  } else {
-    motor_on_off_state= SSD650V_MS_STOPPED ;
-  }
+    ssd650v_state->setValueString("motor undefined") ;
+  } 
 
   // set initial tel_eq to HA=0
   double JD= ln_get_julian_from_sys ();
@@ -272,14 +278,25 @@ int Vermes::initValues ()
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
 {
   // since this driver is Obs. Vermes specific no options are really required
-  createValue (azimut_difference,   "AZdiff",          "target - actual azimuth reading",    false, RTS2_DT_DEGREES  );
-  createValue (barcode_reader_state,"BCRstate",        "state of the barcodereader value CUP_AZ (0=valid, 1=invalid)", false);
-  createValue (ssd650v_state,       "SSDstate",        "status of the ssd650v inverter ",    false);
-  createValue (ssd650v_on_off,      "SSDmotor_switch", "(true=on, false=off running)",       false, RTS2_VALUE_WRITABLE);
-  createValue (ssd650v_setpoint,    "SSDsetpoint",     "ssd650v setpoint",                   false, RTS2_VALUE_WRITABLE);
-  createValue (cupola_tracking,     "Tracking",        "true=tracking, false=not tracking ", false, RTS2_VALUE_WRITABLE);
+  createValue (traget_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES  );
+  createValue (azimut_difference,    "AZdiff",          "(cupola - target) AZ reading",       false, RTS2_DT_DEGREES  );
+  createValue (cupola_tracking,      "Tracking",        "telescope tracking (true: enabled, false:motor off)", false, RTS2_VALUE_WRITABLE);
+  createValue (barcode_reader_state, "BCRstate",        "barcodereader status (0: CUP_AZ valid, 1:invalid)", false);
+  createValue (ssd650v_state,        "SSDstate",        "ssd650v inverter status",            false);
+  createValue (ssd650v_current,      "SSDcurrent",      "ssd650v current as percentage of maximum", false);
+  createValue (ssd650v_read_setpoint,"SSDread_setpoint","ssd650v read setpoint [-100.,100]",  false);
+  createValue (ssd650v_setpoint,     "SSDsetpoint",     "ssd650v setpoint [-100.,100], !=0 motor on", false, RTS2_VALUE_WRITABLE);
+  createValue (ssd650v_min_setpoint, "SSDmin_setpoint", "ssd650v minimum setpoint",           false, RTS2_VALUE_WRITABLE);
+  createValue (ssd650v_max_setpoint, "SSDmax_setpoint", "ssd650v maximum setpoint",           false, RTS2_VALUE_WRITABLE);
+
+  ssd650v_setpoint->setValueDouble( 0.) ;
+  ssd650v_min_setpoint->setValueDouble( 40.) ;
+  ssd650v_max_setpoint->setValueDouble( 80.) ;
+  curMinSetPoint= ssd650v_min_setpoint->getValueDouble();
+  curMaxSetPoint= ssd650v_max_setpoint->getValueDouble();
 
   barcode_reader_state->setValueInteger( -1) ; 
+
 }
 int main (int argc, char **argv)
 {
