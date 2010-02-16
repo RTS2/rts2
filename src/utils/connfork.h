@@ -125,6 +125,8 @@ class ConnFork:public Rts2ConnNoSend
 		bool fillConnEnvVars;
 
 		std::string input;
+
+		void fillConnectionEnv (Rts2Conn *conn, const char *name);
 };
 
 };

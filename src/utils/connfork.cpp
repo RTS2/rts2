@@ -191,6 +191,33 @@ int ConnFork::newProcess ()
 	return execv (exePath, args);
 }
 
+void ConnFork::fillConnectionEnv (Rts2Conn *conn, const char *prefix)
+{
+	std::ostringstream _os;
+	_os << conn->getState ();
+
+	// put to environment device state
+	char *envV = new char [strlen (prefix) + _os.str ().length () + 8];
+	sprintf (envV, "%s_state=%s", prefix, _os.str ().c_str ());
+	putenv (envV);
+
+	for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
+	{
+		Rts2Value *val = (*viter);
+		// replace non-alpha characters
+		std::string valn = val->getName ();
+		for (std::string::iterator siter = valn.begin (); siter != valn.end (); siter++)
+		{
+			if (!isalnum (*siter))
+				(*siter) = '_';
+		}
+
+		envV = new char [strlen (prefix) + valn.length () + strlen (val->getDisplayValue ()) + 3];
+		sprintf (envV, "%s_%s=%s", prefix, valn.c_str (), val->getDisplayValue ());
+		putenv (envV);
+	}
+}
+
 int ConnFork::init ()
 {
 	int ret;
@@ -282,34 +309,21 @@ int ConnFork::init ()
 	// if required, pass environemnt values about connections..
 	if (fillConnEnvVars)
 	{
-		connections_t *conns = getMaster () ->getConnections ();
-		for (connections_t::iterator citer = conns->begin (); citer != conns->end (); citer++)
+		connections_t *conns;
+		connections_t::iterator citer;
+		// fill centrald variables..
+		conns = getMaster ()->getCentraldConns ();
+		int i = 1;
+		for (citer = conns->begin (); citer != conns->end (); citer++, i++)
 		{
-			Rts2Conn *conn = *citer;
-			std::ostringstream _os;
-			_os << conn->getState ();
-
-			// put to environment device state
-			char *envV = new char [strlen (conn->getName ()) + _os.str ().length () + 8];
-			sprintf (envV, "%s_state=%s", conn->getName (), _os.str ().c_str ());
-			putenv (envV);
-
-			for (Rts2ValueVector::iterator viter = conn->valueBegin (); viter != conn->valueEnd (); viter++)
-			{
-				Rts2Value *val = (*viter);
-				// replace non-alpha characters
-				std::string valn = val->getName ();
-				for (std::string::iterator siter = valn.begin (); siter != valn.end (); siter++)
-				{
-					if (!isalnum (*siter))
-						(*siter) = '_';
-				}
-
-				envV = new char [strlen (conn->getName ()) + valn.length () + strlen (val->getDisplayValue ()) + 3];
-				sprintf (envV, "%s_%s=%s", conn->getName (), valn.c_str (), val->getDisplayValue ());
-				putenv (envV);
-			}
+	  		std::ostringstream _os;
+			_os << "centarld" << i;
+			fillConnectionEnv (*citer, _os.str ().c_str ());
 		}
+
+		conns = getMaster () ->getConnections ();
+		for (citer = conns->begin (); citer != conns->end (); citer++)
+			fillConnectionEnv (*citer, (*citer)->getName ());
 	}
 
 	// close all sockets so when we crash, we don't get any dailing
