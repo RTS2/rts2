@@ -252,13 +252,17 @@ int Dome::idle ()
 		}
 	}
 	// update our own weather state..
-	if (allCentraldRunning () && getNextOpen () < getNow ())
+	bool allCen = allCentraldRunning ();
+	if (allCen && getNextOpen () < getNow ())
 	{
 		setWeatherState (true, "can open dome");
 	}
 	else
 	{
-		setWeatherState (false, "waiting for next_open");
+		if (allCen)
+			setWeatherState (false, "waiting for next_open");
+		else
+		  	setWeatherState (false, "some centrald are not connected");
 	}
 
 	return Rts2Device::idle ();
