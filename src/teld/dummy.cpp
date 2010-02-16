@@ -20,6 +20,8 @@
 #include "teld.h"
 #include "../utils/rts2config.h"
 
+#define OPT_MOVE_FAST    OPT_LOCAL + 510
+
 /*!
  * Dummy teld for testing purposes.
  */
@@ -133,7 +135,7 @@ using namespace rts2teld;
 
 Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 {
-	addOption ('f', "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
+	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
 	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false);
 	move_fast->setValueBool (false);
 
@@ -145,7 +147,7 @@ Dummy::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'f':
+		case OPT_MOVE_FAST:
 		    if( !strcmp( "fast", optarg)) {
 			move_fast->setValueBool ( true );
 		    } else {
