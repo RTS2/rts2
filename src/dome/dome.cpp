@@ -83,7 +83,6 @@ int Dome::domeCloseEnd ()
 Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
 	stateMaster = NULL;
-	stateMasterConn = NULL;
 
 	createValue (weatherOpensDome, "weather_open", "if weather information is enought to open dome", false, RTS2_VALUE_WRITABLE);
 	weatherOpensDome->setValueBool (false);
@@ -140,12 +139,13 @@ int Dome::init ()
 			logStream (MESSAGE_ERROR) << "multiple central server specified, but none identified as master - please add state-master option" << sendLog;
 			return -1;
 		}
-		stateMasterConn = getCentraldConn (stateMaster->getValue ());
-		if (stateMasterConn == NULL)
+		Rts2Conn *conn = getCentraldConn (stateMaster->getValue ());
+		if (conn == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "cannot find state-master " << stateMaster->getValue () << " in list of central connections" << sendLog;
 			return -1;
 		}
+		setMasterConn (conn);
 	}
 	return 0;
 }
@@ -282,35 +282,11 @@ int Dome::closeDomeWeather ()
 
 int Dome::observing ()
 {
-	if (stateMasterConn != NULL)
-	{
-		if (stateMasterConn->getState () & SERVERD_STANDBY_MASK)
-			return 0;
-		switch (stateMasterConn->getState() & SERVERD_STATUS_MASK)
-		{
-			case SERVERD_DUSK:
-			case SERVERD_NIGHT:
-			case SERVERD_DAWN:
-				return domeOpenStart ();
-			default:
-				return 0;
-		}
-	}
 	return domeOpenStart ();
 }
 
 int Dome::standby ()
 {
-	if (stateMasterConn != NULL && ! (stateMasterConn->getState () & SERVERD_STANDBY_MASK))
-	{
-		switch (stateMasterConn->getState () & SERVERD_STATUS_MASK)
-		{
-			case SERVERD_DUSK:
-			case SERVERD_NIGHT:
-			case SERVERD_DAWN:
-				return 0;
-		}
-	}
 	ignoreTimeout->setValueDouble (getNow () - 1);
 	return domeCloseStart ();
 }

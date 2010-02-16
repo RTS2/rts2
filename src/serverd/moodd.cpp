@@ -34,7 +34,7 @@ class MoodD: public Rts2Device
 		virtual void centraldConnRunning (Rts2Conn *conn);
 		virtual void centraldConnBroken (Rts2Conn *conn);
 
-		virtual int setMasterState (int new_state);
+		virtual int setMasterState (Rts2Conn *_conn, int new_state);
 };
 
 
@@ -93,9 +93,9 @@ MoodD::MoodD (int argc, char **argv)
 }
 
 int
-MoodD::setMasterState (int new_state)
+MoodD::setMasterState (Rts2Conn *_conn, int new_state)
 {
-	Rts2Device::setMasterState (new_state);
+	Rts2Device::setMasterState (_conn, new_state);
 	checkCentarlds ();
 	return 0;
 }

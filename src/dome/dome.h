@@ -161,7 +161,6 @@ class Dome:public Rts2Device
 		int closeDomeWeather ();
 
 		Rts2ValueString *stateMaster;
-		Rts2Conn *stateMasterConn;
 };
 
 }

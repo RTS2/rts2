@@ -37,14 +37,14 @@
 
 #include "imghdr.h"
 
-Rts2Block::Rts2Block (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+Rts2Block::Rts2Block (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
 
 	signal (SIGPIPE, SIG_IGN);
 
 	masterState = SERVERD_HARD_OFF;
+	stateMasterConn = NULL;
 	// allocate ports dynamically
 	port = 0;
 }
@@ -494,12 +494,20 @@ Rts2Block::updateMetaInformations (Rts2Value *value)
 }
 
 
-int
-Rts2Block::setMasterState (int new_state)
+int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 {
 	int old_state = masterState;
 	// change state NOW, before it will mess in processing routines
 	masterState = new_state;
+	// ignore connections from wrong master..
+	if (stateMasterConn != NULL && _conn != stateMasterConn)
+	{
+		if ((new_state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (new_state & WEATHER_MASK) != BAD_WEATHER && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		{
+			logStream (MESSAGE_DEBUG) << "ignoring state change, as it does not arrive from master connection" << sendLog;
+			return 0;
+		}
+	}
 	if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
 	{
 		// call changeMasterState only if something except BOP_MASK changed

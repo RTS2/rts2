@@ -331,7 +331,7 @@ void
 Rts2ConnCentraldClient::setState (int in_value, char * msg)
 {
 	Rts2Conn::setState (in_value, msg);
-	master->setMasterState (in_value);
+	master->setMasterState (this, in_value);
 }
 
 

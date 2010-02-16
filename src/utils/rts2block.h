@@ -93,129 +93,6 @@ typedef std::vector < Rts2Conn * > connections_t;
  */
 class Rts2Block: public Rts2App
 {
-	private:
-		int port;
-		long int idle_timeout;	 // in nsec
-
-		// timers - time when they should be executed, event which should be triggered
-		std::map <double, Rts2Event*> timers;
-
-		connections_t connections;
-		
-		// vector which holds connections which were recently added - idle loop will move them to connections
-		connections_t connections_added;
-
-		connections_t centraldConns;
-
-		// vector which holds connections which were recently added - idle loop will move them to connections
-		connections_t centraldConns_added;
-
-		std::list <Rts2Address *> blockAddress;
-		std::list <Rts2ConnUser * > blockUsers;
-
-		int masterState;
-
-	protected:
-
-		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
-
-		virtual void childReturned (pid_t child_pid);
-
-		/**
-		 * Determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
-		 */
-		virtual int willConnect (Rts2Address * in_addr);
-
-		/***
-		 * Address list related functions.
-		 **/
-		virtual int addAddress (Rts2Address * in_addr);
-
-		/**
-		 * Socket set containing descriptors which can be read.
-		 */
-		fd_set read_set;
-
-		/**
-		 * Socket set containing descriptors which can be write.
-		 */
-		fd_set write_set;
-
-		/**
-		 * Socket set containing descriptors which can produce exception.
-		 */
-		fd_set exp_set;
-
-		/**
-		 * Enable application to add arbitary sockets.
-		 *
-		 * This hook is usefull for various applications that gets input from other then connection sockets,
-		 * and for which creating extra Rts2Conn instance will be too heavy solution.
-		 */
-		virtual void addSelectSocks ();
-
-		/**
-		 * Called when select call suceed.
-		 *
-		 * This method is called when select call on registered sockects succeed.
-		 */
-		virtual void selectSuccess ();
-
-		/**
-		 * Set which messages will be accepted by connection.
-		 *
-		 * @see Rts2Centrald
-		 */
-		void setMessageMask (int new_mask);
-
-		/**
-		 * Called when block does not have anything to do. This is
-		 * right place to put in various hooks, which will react to
-		 * timer handlers or do any other maintanence work. Should be
-		 * fast and quick, longer IO operations should be split to
-		 * reduce time spend in idle call.
-		 *
-		 * When idle call is called, block does not react to any
-		 * incoming requests.
-		 */
-		virtual int idle ();
-
-		/**
-		 * Called before connection is deleted from connection list.
-		 * This hook method can cause connection to not be deleted by returning
-		 * non-zero value.
-		 *
-		 * @param conn This connection is marked for deletion.
-		 * @return 0 when connection can be deleted, non-zero when some error is
-		 *    detected and connection should be keeped in list of active connections.
-		 *
-		 * @post conn is removed from the list, @see Rts2Block::connectionRemoved is
-		 * called, and conn is deleted.
-		 */
-		virtual int deleteConnection (Rts2Conn * conn);
-
-		/**
-		 * Called when connection is removed from connection list, but before connection object is deleted.
-		 *
-		 * @param conn Connection which is removed from connection list, and will be deleted after this command returns.
-		 *
-		 * @pre conn is removed from connection list.
-		 * @post conn instance is deleted.
-		 */
-		virtual void connectionRemoved (Rts2Conn * conn);
-
-		/**
-		 * Called when BOP state is changed.
-		 */
-		void bopStateChanged ();
-
-		/**
-		 * Updates metainformation about given value.
-		 *
-		 * @param value Value whose metainformation will be send out.
-		 */
-		void updateMetaInformations (Rts2Value *value);
-
 	public:
 
 		/**
@@ -436,7 +313,7 @@ class Rts2Block: public Rts2App
 		/**
 		 * Called when new state information arrives.
 		 */
-		virtual int setMasterState (int new_state);
+		virtual int setMasterState (Rts2Conn *_conn, int new_state);
 
 		/**
 		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
@@ -696,5 +573,140 @@ class Rts2Block: public Rts2App
 		 * @param event_type Type of event.
 		 */
 		void deleteTimers (int event_type);
+
+	protected:
+
+		virtual Rts2Conn *createClientConnection (Rts2Address * in_addr) = 0;
+
+		virtual void childReturned (pid_t child_pid);
+
+		/**
+		 * Determine if the device wants to connect to recently added device; returns 0 if we won't connect, 1 if we will connect
+		 */
+		virtual int willConnect (Rts2Address * in_addr);
+
+		/***
+		 * Address list related functions.
+		 **/
+		virtual int addAddress (Rts2Address * in_addr);
+
+		/**
+		 * Socket set containing descriptors which can be read.
+		 */
+		fd_set read_set;
+
+		/**
+		 * Socket set containing descriptors which can be write.
+		 */
+		fd_set write_set;
+
+		/**
+		 * Socket set containing descriptors which can produce exception.
+		 */
+		fd_set exp_set;
+
+		/**
+		 * Enable application to add arbitary sockets.
+		 *
+		 * This hook is usefull for various applications that gets input from other then connection sockets,
+		 * and for which creating extra Rts2Conn instance will be too heavy solution.
+		 */
+		virtual void addSelectSocks ();
+
+		/**
+		 * Called when select call suceed.
+		 *
+		 * This method is called when select call on registered sockects succeed.
+		 */
+		virtual void selectSuccess ();
+
+		/**
+		 * Set which messages will be accepted by connection.
+		 *
+		 * @see Rts2Centrald
+		 */
+		void setMessageMask (int new_mask);
+
+		/**
+		 * Called when block does not have anything to do. This is
+		 * right place to put in various hooks, which will react to
+		 * timer handlers or do any other maintanence work. Should be
+		 * fast and quick, longer IO operations should be split to
+		 * reduce time spend in idle call.
+		 *
+		 * When idle call is called, block does not react to any
+		 * incoming requests.
+		 */
+		virtual int idle ();
+
+		/**
+		 * Called before connection is deleted from connection list.
+		 * This hook method can cause connection to not be deleted by returning
+		 * non-zero value.
+		 *
+		 * @param conn This connection is marked for deletion.
+		 * @return 0 when connection can be deleted, non-zero when some error is
+		 *    detected and connection should be keeped in list of active connections.
+		 *
+		 * @post conn is removed from the list, @see Rts2Block::connectionRemoved is
+		 * called, and conn is deleted.
+		 */
+		virtual int deleteConnection (Rts2Conn * conn);
+
+		/**
+		 * Called when connection is removed from connection list, but before connection object is deleted.
+		 *
+		 * @param conn Connection which is removed from connection list, and will be deleted after this command returns.
+		 *
+		 * @pre conn is removed from connection list.
+		 * @post conn instance is deleted.
+		 */
+		virtual void connectionRemoved (Rts2Conn * conn);
+
+		/**
+		 * Called when BOP state is changed.
+		 */
+		void bopStateChanged ();
+
+		/**
+		 * Updates metainformation about given value.
+		 *
+		 * @param value Value whose metainformation will be send out.
+		 */
+		void updateMetaInformations (Rts2Value *value);
+
+		/**
+		 * Set good state master connection.
+		 *
+		 * This connection is the only centrald connection, which is
+		 * allowed to set good weather state. If good weather / ready
+		 * state arrives on other connection, it will be ignored.
+		 *
+		 * @param _conn New master state connection.
+		 */
+		void setMasterConn (Rts2Conn *_conn) { stateMasterConn = _conn; }
+
+	private:
+		int port;
+		long int idle_timeout;	 // in nsec
+
+		// timers - time when they should be executed, event which should be triggered
+		std::map <double, Rts2Event*> timers;
+
+		connections_t connections;
+		
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t connections_added;
+
+		connections_t centraldConns;
+
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t centraldConns_added;
+
+		std::list <Rts2Address *> blockAddress;
+		std::list <Rts2ConnUser * > blockUsers;
+
+		int masterState;
+		Rts2Conn *stateMasterConn;
 };
 #endif							 // !__RTS2_NETBLOCK__

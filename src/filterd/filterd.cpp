@@ -100,8 +100,7 @@ Filterd::setFilters (char *filters)
 	while (*filters)
 	{
 		// skip leading spaces
-		while (*filters
-			&& (*filters == ':' || *filters == '"' || *filters == '\''))
+		while (*filters	&& (*filters == ':' || *filters == '"' || *filters == '\''))
 			filters++;
 		if (!*filters)
 			break;
