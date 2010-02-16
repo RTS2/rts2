@@ -54,18 +54,6 @@ class Fli:public Camera
 
 		virtual int setCoolTemp (float new_temp);
 		virtual void afterNight ();
-	private:
-		Rts2ValueSelection *fliShutter;
-
-		flidomain_t deviceDomain;
-
-		flidev_t dev;
-
-		long hwRev;
-		int camNum;
-
-		int fliDebug;
-		int nflush;
 	protected:
 		virtual int initChips ();
 
@@ -94,6 +82,18 @@ class Fli:public Camera
 		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+	private:
+		Rts2ValueSelection *fliShutter;
+
+		flidomain_t deviceDomain;
+
+		flidev_t dev;
+
+		long hwRev;
+		int camNum;
+
+		int fliDebug;
+		Rts2ValueInteger *nflush;
 };
 
 };
@@ -234,6 +234,10 @@ Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		ret = FLIControlShutter (dev, ret);
 		return ret ? -2 : 0;
 	}
+	if (old_value == nflush)
+	{
+		return FLISetNFlushes (dev, new_value->getValueInteger ()) ? -2 : 0;
+	}
 	return Camera::setValue (old_value, new_value);
 }
 
@@ -255,7 +259,9 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	fliDebug = FLIDEBUG_NONE;
 	hwRev = -1;
 	camNum = -1;
-	nflush = -1;
+	createValue (nflush, "nflush", "number of flushes before exposure", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nflush->setValueInteger (-1);
+
 	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('R', "HW revision", 1, "find camera by HW revision");
 	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
@@ -311,7 +317,7 @@ Fli::processOption (int in_opt)
 			camNum = atoi (optarg);
 			break;
 		case 'l':
-			nflush = atoi (optarg);
+			nflush->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -406,17 +412,15 @@ Fli::init ()
 	if (ret)
 		return -1;
 
-	if (nflush >= 0)
+	if (nflush->getValueInteger () >= 0)
 	{
-		ret = FLISetNFlushes (dev, nflush);
+		ret = FLISetNFlushes (dev, nflush->getValueInteger ());
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "fli init FLISetNFlushes ret " << ret
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "fli init FLISetNFlushes ret " << ret << sendLog;
 			return -1;
 		}
-		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush <<
-			sendLog;
+		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
 	// FLIGetSerialNum (dev, &serno);
