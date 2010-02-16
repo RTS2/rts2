@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2008</year>
+      <year>2008-2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -166,7 +166,12 @@
 	what can be printed out (booleans as true/false string, double numbers
 	in readable form, RA and DEC in sexadecimal notation,..).
       </para>
-
+      <para>
+	Centrald state and variables are added as
+	<emphasis>centraldN_name</emphasis>, where N is number from 1. This is
+	to distinguish between posibly different centrald XMLRPC can be
+	connected. You will usually use N = 1.
+      </para>
       <para>
 	Moreover, device state is also present in environment, as device name
 	joined with _state. Let's suppose we have a device S1, with variable
@@ -190,6 +195,7 @@ S1_state=1
 #!/bin/bash
 
 echo "Hi, dome end switches values: $DOME_end_switch_open $DOME_end_switch_close
+centrald1 sun_alt: $centrald1_sun_alt
 
 Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 ]]>
