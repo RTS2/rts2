@@ -395,16 +395,16 @@ int Executor::info ()
 		buf[1] = '\0';
 		current_type->setValueCharArr (buf);
 		current_name->setValueCharArr (currentTarget->getTargetName ());
-		current_obsid->setValueInteger (currentTarget->getObsId ());
 		img_id->setValueInteger (currentTarget->getCurrImgId ());
+		current_obsid->setValueInteger (currentTarget->getObsId ());
 	}
 	else
 	{
 		current_id->setValueInteger (-1);
 		current_id_sel->setValueInteger (-1);
 		current_name->setValueCharArr (NULL);
-		current_obsid->setValueInteger (-1);
 		img_id->setValueInteger (-1);
+		current_obsid->setValueInteger (-1);
 	}
 	std::vector <int> _id_arr;
 	std::vector <std::string> _name_arr;
