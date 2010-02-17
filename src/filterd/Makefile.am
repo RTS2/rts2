@@ -4,7 +4,7 @@ noinst_HEADERS = filterd.h
 
 noinst_LIBRARIES  = librts2filterd.a
 
-EXTRA_DIST = ""
+EXTRA_DIST = 
 
 librts2filterd_a_SOURCES = filterd.cpp
 
