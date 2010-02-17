@@ -1,6 +1,9 @@
 0.7.5
 =====
 
+2010-02-17
+ * HTTP client support, -u option for rts2-xmlrclient
+
 2010-02-16
  * added centraldN_ variables to commands excuted from XMLRPCD
 
