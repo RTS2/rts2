@@ -121,7 +121,6 @@ namespace XmlRpc
 			// The xml-encoded request, http header of response, and response xml
 			std::string _request;
 
-			std::string _response;
 			char *_response_buf;
 			int _response_length;
 
@@ -145,6 +144,10 @@ namespace XmlRpc
 			int _contentLength;
 			// Number of bytes in next chunk
 			int _chunkLength;
+			int _chunkReceivedLength;
+
+			char *_chunkStart;
+			char *_chunkEnd;
 
 			// Event dispatcher
 			XmlRpcDispatch _disp;

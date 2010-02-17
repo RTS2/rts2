@@ -125,7 +125,6 @@ bool XmlRpcClient::execute(const char* method, XmlRpcValue const& params, XmlRpc
 
 	XmlRpcUtil::log(1, "XmlRpcClient::execute: method %s completed.", method);
 
-	_response = "";
 	if (_response_buf)
 		free(_response_buf);
 	_response_buf = NULL;
@@ -320,9 +319,12 @@ std::string XmlRpcClient::generateHeader(std::string const& body)
 	header += _host;
 
 	char buff[40];
-	sprintf(buff,":%d\r\n", _port);
-
+	if (_port != 80)
+		sprintf(buff,":%d\r\n", _port);
+	else
+		sprintf(buff,"\r\n");
 	header += buff;
+
 	if (_authorization.length() > 0)
 	{
 		std::string auth;
@@ -353,9 +355,12 @@ std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string
 	header += _host;
 
 	char buff[40];
-	sprintf(buff,":%d\r\n", _port);
-
+	if (_port != 80)
+		sprintf(buff,":%d\r\n", _port);
+	else
+		sprintf(buff,"\r\n");
 	header += buff;
+
 	if (_authorization.length() > 0)
 	{
 		std::string auth;
@@ -397,7 +402,6 @@ bool XmlRpcClient::writeRequest()
 			free(_header);
 		_header = NULL;
 		_header_length = 0;
-		_response = "";
 		if (_response_buf)
 			free(_response_buf);
 		_response_buf = NULL;
@@ -473,13 +477,14 @@ bool XmlRpcClient::readHeader()
 			XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-length specified");
 			return false;			 // We could try to figure it out by parsing as we read, but for now...
 		}
-		if (strcasecmp(te, "chunked") != 0)
+		if (strncasecmp(te, "chunked", 7) != 0)
 		{
 			XmlRpcUtil::error("Unknow transfer encoding: %s", te);
 			return false;
 		}
 		_contentLength = -1;
-		_chunkLength = 0;
+		_chunkLength = -1;
+		_chunkReceivedLength = 0;
 	}
 	else
 	{
@@ -499,7 +504,8 @@ bool XmlRpcClient::readHeader()
 
 	_response_buf = (char *) malloc (_response_length);
 	memcpy (_response_buf, bp, _response_length);
-	_response = _response_buf;
+
+	_chunkStart = _response_buf;
 
 	if (_header)
 		free(_header);
@@ -514,7 +520,51 @@ bool XmlRpcClient::readResponse()
 	if (_contentLength == -1)
 	{
 		// not full chunk..
-//		if (_chunkLength < 
+		XmlRpcSocket::nbRead(this->getfd(), _response_buf, _response_length, &_eof);
+		if (_response_length == 0 && _eof)
+		{
+			XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: do not received any data");
+			return false;
+		}
+		_chunkStart = _response_buf + _chunkReceivedLength;
+		while (true)
+		{
+			for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
+			// chunk end not yet found..
+			if (_chunkEnd == _response_buf + _response_length)
+				return true;
+			// get chunkLenght
+			*_chunkEnd = '\0';
+			char *baseEnd;
+			_chunkLength = strtol (_chunkStart, &baseEnd, 16);
+			if (baseEnd == NULL || !(*baseEnd == '\0' || *baseEnd == '\r'))
+			{
+				XmlRpcUtil::error ("Cannot decode chunk length: %s", _chunkStart);
+				return false;
+			}
+			// end of chunk transfer
+			if (_chunkLength == 0)
+			{
+				*_chunkStart = '\0';
+				break;
+			}
+			if (_chunkLength < 0)
+			{
+				XmlRpcUtil::error ("Error in XmlRpcClient::readResponse: negative chunk length specified (%d)", _chunkLength);
+				return false;
+			}
+			if (_chunkEnd + 1 + _chunkLength > _response_buf + _response_length)
+			{
+				return true;
+			}
+			// delete chunk..
+			memmove (_chunkStart, _chunkEnd + 1, _response_buf + _response_length - _chunkEnd - 1);
+			_response_length -= _chunkEnd + 1 - _chunkStart;
+			_chunkStart += _chunkLength;
+			_chunkReceivedLength += _chunkLength;
+			memmove (_chunkStart, _chunkStart + 2, _response_buf + _response_length - _chunkStart - 2);
+			_response_length -= 2;
+		}
 	}
 	// If we dont have the entire response yet, read available data
 	else if (int(_response_length) < _contentLength)
@@ -539,8 +589,7 @@ bool XmlRpcClient::readResponse()
 
 	// Otherwise, parse and return the result
 	XmlRpcUtil::log(3, "XmlRpcClient::readResponse (read %d bytes)", _response_length);
-	_response = _response_buf;
-	XmlRpcUtil::log(5, "response:\n%s", _response.c_str());
+	XmlRpcUtil::log(5, "response:\n%s", _response_buf);
 
 	_connectionState = IDLE;
 
@@ -550,6 +599,7 @@ bool XmlRpcClient::readResponse()
 // Convert the response xml into a result value
 bool XmlRpcClient::parseResponse(XmlRpcValue& result)
 {
+	std::string _response = _response_buf;
 	// Parse response xml into result
 	int offset = 0;
 	if ( ! XmlRpcUtil::findTag(METHODRESPONSE_TAG,_response,&offset))
@@ -566,18 +616,15 @@ bool XmlRpcClient::parseResponse(XmlRpcValue& result)
 		if ( ! result.fromXml(_response, &offset))
 		{
 			XmlRpcUtil::error("Error in XmlRpcClient::parseResponse: Invalid response value. Response:\n%s", _response.c_str());
-			_response = "";
 			return false;
 		}
 	}
 	else
 	{
 		XmlRpcUtil::error("Error in XmlRpcClient::parseResponse: Invalid response - no param or fault tag. Response:\n%s", _response.c_str());
-		_response = "";
 		return false;
 	}
 
-	_response = "";
 	return result.valid();
 }
 
@@ -605,7 +652,7 @@ void XmlRpcClient::setupProxy()
 
 void XmlRpcClient::setupHost(const char *host, int port, const char *authorization, const char *uri)
 {
-		XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
+	XmlRpcUtil::log(1, "XmlRpcClient new client: host %s, port %d.", host, port);
 
 	_header = NULL;
 	_header_length = 0;
