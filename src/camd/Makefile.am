@@ -24,7 +24,7 @@ rts2_camd_apogee_SOURCES = apogee.cpp apogee/CameraIO_LinuxPCI.cpp
 
 rts2_camd_dummy_SOURCES = dummy.cpp
 
-EXTRA_DIST = ""
+EXTRA_DIST = 
 
 if SBIG
 bin_PROGRAMS += rts2-camd-sbigusb
@@ -85,5 +85,5 @@ rts2_camd_arc_SOURCES = arc.cpp
 rts2_camd_arc_LDFLAGS = @LIB_ARC@
 rts2_camd_arc_CXXFLAGS = @INC_ARC@
 else
-EXTRA_DIST += arc.pp
+EXTRA_DIST += arc.cpp
 endif
