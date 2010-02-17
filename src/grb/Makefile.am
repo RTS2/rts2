@@ -2,9 +2,9 @@ bin_PROGRAMS = rts2-grbforward
 
 noinst_HEADERS = grbd.h grbconst.h conngrb.h rts2grbfw.h connshooter.h augershooter.h
 
-EXTRA_DIST = conngrb.ec rts2connshooter.ec
+EXTRA_DIST = conngrb.ec connshooter.ec
 
-CLEANFILES = conngrb.cpp rts2connshooter.cpp
+CLEANFILES = conngrb.cpp connshooter.cpp
 
 rts2_grbforward_SOURCES = forward.cpp rts2grbfw.cpp
 rts2_grbforward_LDFLAGS = @LIB_M@ ../utils/librts2block.a @LIB_NOVA@
