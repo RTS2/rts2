@@ -1,6 +1,6 @@
 /* 
- * Driver for IR (OpenTPL) dome.
- * Copyright (C) 2008 Petr Kubanek <petr@kubanek.net>
+ * Driver for Zelio dome controll.
+ * Copyright (C) 2008-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -53,6 +53,7 @@
 #define ZS_COMP_RUN      0x0020
 // does not have rain signal
 #define ZS_WITHOUT_RAIN  0x0040
+#define ZS_HUMIDITY      0x0100
 #define ZS_FRAM          0x0200
 #define ZS_SIMPLE        0x0400
 #define ZS_COMPRESSOR    0x0800
@@ -84,6 +85,30 @@ namespace rts2dome
  */
 class Zelio:public Dome
 {
+	public:
+		Zelio (int argc, char **argv);
+		virtual ~Zelio (void);
+
+		virtual int info ();
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int idle ();
+
+		virtual int init ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+
+		virtual bool isGoodWeather ();
+
+		virtual int startOpen ();
+		virtual long isOpened ();
+		virtual int endOpen ();
+
+		virtual int startClose ();
+		virtual long isClosed ();
+		virtual int endClose ();
+
 	private:
 		HostString *host;
 		int16_t deadManNum;
@@ -96,6 +121,9 @@ class Zelio:public Dome
 
 		// if model have battery indicator
 		bool haveBatteryLevel;
+
+		// if model have humidity level indicator
+		bool haveHumidityOutput;
 
 		Rts2ValueString *zelioModelString;
 
@@ -139,6 +167,8 @@ class Zelio:public Dome
 		Rts2ValueInteger *battery;
 		Rts2ValueInteger *batteryMin;
 
+		Rts2ValueInteger *humidity;
+
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
 		Rts2ValueInteger *J3XT1;
@@ -155,29 +185,7 @@ class Zelio:public Dome
 
 		void createZelioValues ();
 
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int idle ();
-
-		virtual int init ();
-
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
-
-		virtual bool isGoodWeather ();
-
-		virtual int startOpen ();
-		virtual long isOpened ();
-		virtual int endOpen ();
-
-		virtual int startClose ();
-		virtual long isClosed ();
-		virtual int endClose ();
-
-	public:
-		Zelio (int argc, char **argv);
-		virtual ~Zelio (void);
-
-		virtual int info ();
+		int getHumidity (int vout) { return (int) round ((((float) vout) / 5.0 - 0.16) / 0.0062); }
 };
 
 }
@@ -285,6 +293,11 @@ bool Zelio::isGoodWeather ()
 	{
 		battery->setValueInteger (reg3);
 		sendValueAll (battery);
+	}
+	if (haveHumidityOutput)
+	{
+		humidity->setValueInteger (getHumidity (reg3));
+		sendValueAll (humidity);
 	}
 	weather->setValueBool (reg & ZS_WEATHER);
 	sendValueAll (weather);
@@ -450,6 +463,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	zelioModel = ZELIO_UNKNOW;
 	haveRainSignal = true;
 	haveBatteryLevel = false;
+	haveHumidityOutput = false;
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
@@ -473,6 +487,9 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	battery = NULL;
 	batteryMin = NULL;
+
+	humidity = NULL;
+
 	Q8 = NULL;
 	QA = NULL;
 
@@ -549,6 +566,11 @@ int Zelio::info ()
 		battery->setValueInteger (regs[6]);
 	}
 
+	if (haveHumidityOutput)
+	{
+		humidity->setValueInteger (getHumidity (regs[6]));
+	}
+
 	J1XT1->setValueInteger (regs[0]);
 	J2XT1->setValueInteger (regs[1]);
 	J3XT1->setValueInteger (regs[2]);
@@ -615,6 +637,8 @@ int Zelio::init ()
 	}
 	// have this model rain signal?
 	haveRainSignal = !(regs[7] & ZS_WITHOUT_RAIN);
+
+	haveHumidityOutput = regs[7] & ZS_HUMIDITY;
 
 	createZelioValues ();
 
@@ -721,6 +745,11 @@ void Zelio::createZelioValues ()
 	{
 		createValue (battery, "battery", "Battery level", false);
 		createValue (batteryMin, "battery_min", "Battery minimal level for good weather", false, RTS2_VALUE_WRITABLE);
+	}
+
+	if (haveHumidityOutput)
+	{
+		createValue (humidity, "humidity", "Humidity sensor raw output", false);
 	}
 
 	if (zelioModel == ZELIO_FRAM)

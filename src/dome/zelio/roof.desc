@@ -110,7 +110,7 @@ The programme has the following characteristics:
 
   * **Q2XT1** State of left half of the roof, or not used for models with single roof
 
-  * **Q3XT1** Number of seconds remaining for dead man button engagement.
+  * **Q3XT1** Number of seconds remaining for dead man button engagement or humidity sensor output ++
 
   * **Q4XT1** State of various emergency and other signals
 
@@ -163,7 +163,7 @@ The device state (Q4XT1):
   
   - 0080 not used
 
-  - 0100 not used
+  - 0100 Q3XT1 is humidity output ++
 
   - 0200 FRAM model (compressor, two extra switches for plug control) +
 
