@@ -164,7 +164,9 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	modelFile = NULL;
 	model = NULL;
 
-	standbyPark = false;
+	createValue (standbyPark, "standby_park", "Park telescope when switching to standby", false, RTS2_VALUE_WRITABLE);
+	standbyPark->setValueBool (false);
+
 	horizonFile = NULL;
 	hardHorizon = NULL;
 
@@ -221,7 +223,7 @@ int Telescope::processOption (int in_opt)
 			blockOnStandby->setValueBool (true);
 			break;
 		case 's':
-			standbyPark = true;
+			standbyPark->setValueBool (true);
 			break;
 		case 'r':
 			defaultRotang = atof (optarg);
@@ -714,7 +716,7 @@ int Telescope::changeMasterState (int new_state)
 	if (((new_state & SERVERD_STATUS_MASK) == SERVERD_DAY)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_SOFT_OFF)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
-		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark))
+		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark->getValueBool () == true))
 	{
 		startPark (NULL);
 	}

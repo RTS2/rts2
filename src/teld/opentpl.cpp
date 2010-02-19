@@ -167,10 +167,10 @@ void OpenTPL::powerOff ()
 	int status = TPL_OK;
 	opentplConn->set ("CABINET.POWER", 0, &status);
 	// check that it powered off..
+	double power_state;
 	logStream (MESSAGE_DEBUG) << "powerOff: waiting for power state off";
 	for (int i = 0; i < 60; i++)
 	{
-		double power_state;
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
@@ -181,9 +181,15 @@ void OpenTPL::powerOff ()
 		if (power_state == 0)
 		{
 			logStream (MESSAGE_DEBUG) << "powerOff: power_state is 0" << sendLog;
+			cabinetPower->setValueBool (false);
+			cabinetPowerState->setValueFloat (power_state);
+			sendValueAll (cabinetPower);
+			sendValueAll (cabinetPowerState);
 			return;
 		}
 	}
+	cabinetPowerState->setValueFloat (power_state);
+	sendValueAll (cabinetPowerState);
 	logStream (MESSAGE_ERROR) << "powerOff: timeouted waiting for sucessfull poweroff" << sendLog;
 }
 

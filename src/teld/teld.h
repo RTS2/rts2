@@ -863,7 +863,7 @@ class Telescope:public Rts2Device
 		char *modelFile;
 		rts2telmodel::Model *model;
 
-		bool standbyPark;
+		Rts2ValueBool *standbyPark;
 		const char *horizonFile;
 
 		ObjectCheck *hardHorizon;
