@@ -166,6 +166,24 @@ void OpenTPL::powerOff ()
 {
 	int status = TPL_OK;
 	opentplConn->set ("CABINET.POWER", 0, &status);
+	// check that it powered off..
+	logStream (MESSAGE_DEBUG) << "waiting for power state off";
+	for (int i = 0; i < 60; i++)
+	{
+		double power_state;
+		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+		if (status)
+		{
+			logStream (MESSAGE_ERROR) << "powerOff power_state " << status << sendLog;
+			return;
+		}
+		sleep (3);
+		if (power_state == 0)
+		{
+			logStream (MESSAGE_DEBUG) << "powerOff power_state is 0" << sendLog;
+			return;
+		}
+	}
 }
 
 int OpenTPL::coverClose ()
@@ -660,7 +678,7 @@ OpenTPL::checkPower ()
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " << status << sendLog;
+			logStream (MESSAGE_ERROR) << "checkPower set power to 1 ret " << status << sendLog;
 			return;
 		}
 		while (power_state <= 0.5)
