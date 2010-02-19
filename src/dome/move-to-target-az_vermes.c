@@ -126,7 +126,7 @@ void *move_to_target_azimuth( void *value)
       
       getSexComponents( HA_h, &h, &m, &s) ;
       snprintf(HA_str, 9, "%02d:%02d:%02d", h, m, s);
-      fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
+      //fprintf( stderr, "move_to_target_azimuth: HA: %s\n", HA_str) ;
     }
     if( movementState == TRACKING_DISABLED) {
 
