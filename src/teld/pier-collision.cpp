@@ -86,7 +86,7 @@ int  pier_collision( struct ln_equ_posn *tel_equ, struct ln_lnlat_posn *obs)
   mt.rdec= 0.338;
 
   tel.radius= 0.123;
-  tel.rear_length= 0.8; 
+  tel.rear_length= 1.1; // 0.8 + 0.3 for FLI equipment 
 
   if(( tel_equ->dec > 90.) && (  tel_equ->dec <= 270.)) // EAST: DECaxis==HA - M_PI/2
     {
@@ -166,12 +166,12 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
     //fprintf( stderr, "LDCollision tpm1==nan\n") ;
   }
   if( !isnan(tpp3)) {
-    //czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
+    czp3= LDTangentPlaneLineP(HA, dec, phi, zd, xd, Rdec, Rtel, tpp3) ;
   } else {
-    fprintf( stderr, "LDCollision tpp3==nan\n") ;
+    //fprintf( stderr, "LDCollision tpp3==nan\n") ;
   }
   if( !isnan(tpm3)) {
-    //czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
+    czm3= LDTangentPlaneLineM(HA, dec, phi, zd, xd, Rdec, Rtel, tpm3) ;
   }  else {
     //fprintf( stderr, "LDCollision tpm3==nan\n") ;
   }
@@ -200,7 +200,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
       state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     } 
   } else {
-    fprintf( stderr, "LDCollision czp1==nan\n") ;
+    //fprintf( stderr, "LDCollision czp1==nan\n") ;
   }
   if(  !isnan(czm1)){
     //if((czm1 > PierN[2].value) && ( czm1 < PierN[1].value))
@@ -226,7 +226,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
       state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
   } else {
-    fprintf( stderr, "LDCollision czm1==nan\n") ;
+    //fprintf( stderr, "LDCollision czm1==nan\n") ;
   }
   if(  !isnan(czp3)) {
     //if((czp3 > PierN[2].value) && ( czp3 < PierN[1].value))
@@ -252,7 +252,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
       state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
   } else {
-    fprintf( stderr, "LDCollision czp3==nan\n") ;
+    //fprintf( stderr, "LDCollision czp3==nan\n") ;
   }
   if(  !isnan(czm3)) {
     //if((czm3 > PierN[2].value) && ( czm3 < PierN[1].value))
@@ -278,7 +278,7 @@ int LDCollision( double RA, double dec, double lambda, double phi, double zd, do
       state_danger= WITHIN_DANGER_ZONE_ABOVE ;
     }
   } else {
-    fprintf( stderr, "LDCollision czm3==nan\n") ;
+    //fprintf( stderr, "LDCollision czm3==nan\n") ;
   }
   if( state_collision != NO_COLLISION) {
     return COLLIDING ;
