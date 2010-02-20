@@ -53,7 +53,7 @@ class Dome:public Rts2Device
 
 		bool getIgnoreMeteo ();
 
-		void setWeatherTimeout (time_t wait_time);
+		void setWeatherTimeout (time_t wait_time, const char *msg);
 
 		double getNextOpen () { return nextGoodWeather->getValueDouble (); }
 

@@ -304,19 +304,19 @@ bool Zelio::isGoodWeather ()
 	// now check for rain..
 	if (haveRainSignal && !(reg & ZS_RAIN) && weather->getValueBool () == false)
 	{
-		setWeatherTimeout (3600);
+		setWeatherTimeout (3600, "raining");
 		return false;
 	}
 	// battery too weak
 	if (haveBatteryLevel && reg3 < batteryMin->getValueInteger ())
 	{
-		setWeatherTimeout (300);
+		setWeatherTimeout (300, "battery level too low");
 		return false;
 	}
 	// not in auto mode..
 	if (!(reg & ZS_SW_AUTO))
 	{
-	  	setWeatherTimeout (30);
+	  	setWeatherTimeout (30, "not in auto mode");
 		return false;
 	}
 	return Dome::isGoodWeather ();
@@ -379,7 +379,7 @@ int Zelio::startClose ()
 	 	return -1;
 	}
 	// 20 minutes timeout..
-	setWeatherTimeout (1200);
+	setWeatherTimeout (1200, "closed, timeout for opening (motor speed)");
 	return 0;
 }
 

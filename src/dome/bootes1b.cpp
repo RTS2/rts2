@@ -173,7 +173,7 @@ bool Bootes1B::isGoodWeather ()
 			if (isnan (ignoreRainSensorTime->getValueDouble ()) || getNow () > ignoreRainSensorTime->getValueDouble ())
 			{
 				lastWeatherCheckState = weatherCheckState;
-				setWeatherTimeout (3600);
+				setWeatherTimeout (3600, "raining");
 	  			return false;
 			}
 		}

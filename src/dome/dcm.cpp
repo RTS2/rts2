@@ -119,7 +119,7 @@ Rts2ConnDcm::receive (fd_set * set)
 			logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
 				<< " ( " << Wbuf << " )" << sendLog;
 			rain = 1;
-			setWeatherTimeout (FRAM_CONN_TIMEOUT);
+			setWeatherTimeout (FRAM_CONN_TIMEOUT, "cannot parse weather data");
 			return data_size;
 		}
 		statDate.tm_isdst = 0;

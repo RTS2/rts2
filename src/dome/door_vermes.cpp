@@ -594,7 +594,7 @@ DoorVermes::startClose ()
     }
     // wildi ToDo eventually:
     // 2 minutes timeout..
-    setWeatherTimeout (120);
+    setWeatherTimeout (120, "closing dome");
     return 0;
 
   } else {

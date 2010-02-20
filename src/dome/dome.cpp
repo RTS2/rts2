@@ -365,13 +365,14 @@ bool Dome::getIgnoreMeteo ()
 	return ignoreTimeout->getValueDouble () > getNow ();
 }
 
-void Dome::setWeatherTimeout (time_t wait_time)
+void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 {
 	time_t next;
 	time (&next);
 	next += wait_time;
 	if (next > nextGoodWeather->getValueInteger ())
 	{
+		setWeatherState (false, msg);
 		nextGoodWeather->setValueInteger (next);
 		sendValueAll (nextGoodWeather);
 	}
