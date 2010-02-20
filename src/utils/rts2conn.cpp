@@ -388,6 +388,12 @@ std::string Rts2Conn::getStateString ()
 		case DEVICE_TYPE_SELECTOR:
 			_os << "selector " << real_state;
 			break;
+		case DEVICE_TYPE_XMLRPC:
+			_os << "xmlrpc " << real_state;
+			break;
+		case DEVICE_TYPE_INDI:
+			_os << "indi " << real_state;
+			break;
 		case DEVICE_TYPE_SENSOR:
 			_os << "sensor " << real_state;
 			break;

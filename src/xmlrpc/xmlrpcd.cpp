@@ -214,9 +214,9 @@ void XmlRpcd::signaledHUP ()
 }
 
 #ifdef HAVE_PGSQL
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC"), events (this)
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #else
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC"), events (this)
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #endif
 {
 	rpcPort = 8889;
