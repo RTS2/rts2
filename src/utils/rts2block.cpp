@@ -493,12 +493,9 @@ Rts2Block::updateMetaInformations (Rts2Value *value)
 		value->sendMetaInfo (*iter);
 }
 
-
 int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 {
 	int old_state = masterState;
-	// change state NOW, before it will mess in processing routines
-	masterState = new_state;
 	// ignore connections from wrong master..
 	if (stateMasterConn != NULL && _conn != stateMasterConn)
 	{
@@ -508,6 +505,9 @@ int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 			return 0;
 		}
 	}
+	// change state NOW, before it will mess in processing routines
+	masterState = new_state;
+
 	if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
 	{
 		// call changeMasterState only if something except BOP_MASK changed
