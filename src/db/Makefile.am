@@ -1,4 +1,4 @@
-# $Id$
+SUBDIRS = simbad
 
 if PGSQL
 
@@ -29,8 +29,6 @@ rts2_obsinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a .
 
 rts2_user_SOURCES = user.cpp
 rts2_user_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
-
-SUBDIRS = simbad
 
 rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
 rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../xmlrpc/xmlrpc++/librts2xmlrpc.a $(AM_LDFLAGS)
