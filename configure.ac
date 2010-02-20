@@ -544,6 +544,16 @@ AC_SUBST(ROOT_CXXFLAGS)
 
 AM_CONDITIONAL(CERN_ROOT, test x$root_config != xno)
 
+AC_CHECK_LIB([archive],[archive_write_data], LIBARCHIVE_LIBS="-larchive", LIBARCHIVE_CFLAGS="")
+AC_SUBST(LIBARCHIVE_LIBS)
+AC_SUBST(LIBARCHIVE_CFLAGS)
+
+AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
+ 
+if test "x$LIBARCHIVE_LIBS" != "x"; then
+	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
+fi
+
 PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 2.0], [_PKG_CONFIG([LIBARCHIVE_VERSION],[modversion],[libarchive >= 2.0])],[pkg_cv_LIBARCHIVE_VERSION="no"])
 
 AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
@@ -739,7 +749,7 @@ echo "
   libxml2       ${XMLVERS}
   graphicsmagic ${GRAPHICSMAGICK_VERS}
   CERN ROOT     ${ROOT_VERS}
-  libarchive    ${pkg_cv_LIBARCHIVE_VERSION}
+  libarchive    ${LIBARCHIVE_LIBS}
 
 
 CCD's:
