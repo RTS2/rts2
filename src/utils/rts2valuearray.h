@@ -190,7 +190,6 @@ class IntegerArray: public Rts2Value
 		std::string _os;
 };
 
-
 }
 
 #endif // ! __RTS2_VALUEARRAY__

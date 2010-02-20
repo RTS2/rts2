@@ -21,8 +21,7 @@
 #include <sstream>
 #include <iomanip>
 
-std::string
-getDisplayValue (Rts2Value * value)
+std::string getDisplayValue (Rts2Value * value)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
