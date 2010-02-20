@@ -652,17 +652,6 @@ fi
 
 AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 
-# Check for gsoap
-AC_GSOAP
-
-AH_TEMPLATE([HAVE_PGSQL_SOAP],[Whenever PGSQL and SOAP libraries are installed])
-
-AM_CONDITIONAL(PGSQL_SOAP, test x$psql = xyes -a x$gsoap = xyes )
-
-if test x$psql = xyes -a x$gsoap = xyes ; then 
-  AC_DEFINE_UNQUOTED(HAVE_PGSQL_SOAP, 1, [Whenever PGSQL and SOAP libraries are installed])
-fi
-
 # Ubuntu docbook localization
 AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl,[])
 AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl,[])
@@ -723,7 +712,6 @@ AC_OUTPUT([Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile
 	   src/db/simbad/Makefile
-	   src/soap/Makefile
 	   src/sensord/Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
@@ -742,7 +730,6 @@ echo "
   cfitsio       ${cfitsio}
   libwcs        ${libwcs}
   pgsql		${psql}
-  gsoap         ${gsoap}
   gpib          ${GPIBLIB}
   comedilib     ${COMEDI}
   epics         ${epics}

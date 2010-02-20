@@ -72,7 +72,6 @@
 // rts2devclifocuser.h     750-799
 // rts2loggerbase.h        800-849
 // xmlrpcd                 850-900
-// rts2soapclient.h       1000-1099
 // telds                  1200-1249
 // phot                   1250-1299
 // clouds                 1300-1349

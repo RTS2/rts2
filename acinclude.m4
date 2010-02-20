@@ -50,24 +50,3 @@ AC_CHECK_LIB([ecpg], [ECPGconnect], LIB_ECPG="-lecpg"; AC_SUBST(LIB_ECPG),
 AC_SUBST(ECPG)
 ])
 
-# test for GSOAP
-AC_DEFUN([AC_GSOAP],
-[
-AC_CHECK_PROG([gsoap], [soapcpp2], "yes", "no")
-
-LIB_GSOAP=""
-LIB_GSOAP_CFLAGS=""
-
-if test x$gsoap = xyes ; then
-  LIB_GSOAP="-lgsoap"
-  SOAP=soapcpp2
-  SOAP_FLAGS=""
-fi
-
-AC_SUBST(LIB_GSOAP_CFLAGS)
-AC_SUBST(LIB_GSOAP)
-AC_SUBST(SOAP)
-AC_SUBST(SOAP_FLAGS)
-
-AM_CONDITIONAL(GSOAP, test x$gsoap = xyes)
-])

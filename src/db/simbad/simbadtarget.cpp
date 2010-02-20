@@ -1,6 +1,6 @@
 /*
  * Target from SIMBAD database.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,94 +17,95 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "SesameSoapBinding.nsmap"
-#include "soapSesameSoapBindingProxy.h"
+#include "../../xmlrpc/xmlrpc++/XmlRpc.h"
+#include "../../xmlrpc/xmlrpc++/urlencoding.h"
+#include "simbadtarget.h"
 
 #include <sstream>
-
-#include "rts2simbadtarget.h"
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xpath.h>
 
 using namespace std;
+using namespace rts2db;
+using namespace XmlRpc;
 
-Rts2SimbadTarget::Rts2SimbadTarget (const char *in_name):
-ConstTarget ()
+SimbadTarget::SimbadTarget (const char *in_name):ConstTarget ()
 {
 	setTargetName (in_name);
 	simbadBMag = nan ("f");
 	propMotions.ra = nan ("f");
 	propMotions.dec = nan ("f");
 
-	simbadOut = NULL;
-
-	http_proxy = NULL;
+	xmlInitParser ();
 }
 
-
-Rts2SimbadTarget::~Rts2SimbadTarget (void)
+SimbadTarget::~SimbadTarget (void)
 {
-	delete []http_proxy;
-	delete simbadOut;
+	xmlCleanupParser ();
 }
 
-
-int
-Rts2SimbadTarget::load ()
+int SimbadTarget::load ()
 {
 	#define LINEBUF  200
 	char buf[LINEBUF];
 
-	SesameSoapBinding *bind = new SesameSoapBinding();
+	const char *_uri;
+	char* reply = NULL;
+	int reply_length = 0;
 
-	char *proxy_s = getenv ("http_proxy");
-	if (proxy_s != NULL)
+	std::ostringstream os;
+	std::string name (getTargetName ());
+	urlencode (name);
+
+	os << "http://cdsws.u-strasbg.fr/axis/services/Sesame?method=sesame&name="
+		<< name << "&resultType=ui&all=true&service=NS";
+
+	char url[os.str ().length () + 1];
+	strcpy (url, os.str ().c_str ());
+
+	XmlRpcClient httpClient (url, &_uri);
+
+	int ret = httpClient.executeGet (_uri, reply, reply_length);
+	if (!ret)
 	{
-	 	char *p;
-		if (strncmp ("http://", proxy_s, 7))
-		{
-			logStream (MESSAGE_ERROR) << "cannot find http:// in http_proxy variable " << proxy_s << sendLog;
-			return -1;
-		}
-		// copy to new value..
-		http_proxy = new char[strlen (proxy_s) - 6];
-		strcpy (http_proxy, proxy_s + 7);
-		p = strchr (http_proxy, ':');
-		if (p == NULL)
-		{
-			logStream (MESSAGE_ERROR) << "cannot find port number in http_proxy variable " << proxy_s << sendLog;
-			return -1;
-		}
-		*p = '\0';
-
-		bind->soap->proxy_host = http_proxy; // IP or domain
-		bind->soap->proxy_port = atoi (p+1);
-	}
-
-	#ifdef WITH_FAST
-	std::string sesame_r;
-	#else
-	sesame__sesameResponse sesame_r;
-	#endif
-
-	bind->sesame__sesame (std::string (getTargetName ()), std::string ("ui"), sesame_r);
-
-	if (bind->soap->error != SOAP_OK)
-	{
-		cerr << "Cannot get coordinates for " << getTargetName () << endl;
-		soap_print_fault (bind->soap, stderr);
-		delete bind;
+		logStream (MESSAGE_ERROR) << "Error requesting " << url << sendLog;
 		return -1;
 	}
+
+	xmlDocPtr xml = xmlReadMemory (reply, reply_length, NULL, NULL, XML_PARSE_NOBLANKS);
+	free (reply);
+
+	if (xml == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse reply from Simbad server" << sendLog;
+		return -1;
+
+	}
+
+	xmlXPathContextPtr xpathCtx = xmlXPathNewContext (xml);
+	if (xpathCtx == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot create XPath context for Simbad reply" << sendLog;
+		xmlFreeDoc (xml);
+		return -1;
+	}
+
+	xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression (BAD_CAST "//return", xpathCtx);
+	if (xpathObj == NULL || xpathObj->nodesetval->nodeNr < 1)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot find return value" << sendLog;
+		xmlXPathFreeContext (xpathCtx);
+		xmlFreeDoc (xml);
+		return -1;
+	}
+
 	istringstream *iss = new istringstream ();
+	iss->str ((char *) xpathObj->nodesetval->nodeTab[0]->children->content);
 
-	simbadOut = new ostringstream ();
-
-	#ifdef WITH_FAST
-	*simbadOut << sesame_r;
-	iss->str (sesame_r);
-	#else
-	*simbadOut << sesame_r._return_;
-	iss->str (sesame_r._return_);
-	#endif
+	xmlXPathFreeObject (xpathObj);
+	xmlXPathFreeContext (xpathCtx);
+	xmlFreeDoc (xml);
 
 	string str_type;
 	while (*iss >> str_type)
@@ -123,7 +124,6 @@ Rts2SimbadTarget::load ()
 			if (nobj != 1)
 			{
 				cerr << "More then 1 object found!" << endl;
-				delete bind;
 				return -1;
 			}
 		}
@@ -142,10 +142,9 @@ Rts2SimbadTarget::load ()
 			iss->getline (buf, LINEBUF);
 			aliases.push_back (string (buf));
 		}
-		else if (str_type.substr (0, 2) == "#!")
+		else if (str_type.substr (0, 3) == "#!E")
 		{
 			cerr << "Not found" << endl;
-			delete bind;
 			return -1;
 		}
 		else if (str_type == "%J.E")
@@ -185,14 +184,11 @@ Rts2SimbadTarget::load ()
 			iss->getline (buf, LINEBUF);
 		}
 	}
-	delete bind;
 	#undef LINEBUF
 	return 0;
 }
 
-
-void
-Rts2SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
+void SimbadTarget::printExtra (Rts2InfoValStream & _ivs)
 {
 	ConstTarget::printExtra (_ivs, ln_get_julian_from_sys ());
 

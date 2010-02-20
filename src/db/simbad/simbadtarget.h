@@ -1,6 +1,6 @@
 /*
  * Target from SIMBAD database.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,12 +26,27 @@
 
 #include "../../utilsdb/target.h"
 
+namespace rts2db
+{
+
 /**
  * Holds information gathered from Simbad about target with given name
  * or around given location.
  */
-class Rts2SimbadTarget:public ConstTarget
+class SimbadTarget:public ConstTarget
 {
+	public:
+		SimbadTarget (const char *in_name);
+		virtual ~SimbadTarget (void);
+
+		virtual int load ();
+
+		void getPosition (struct ln_equ_posn *pos) { Target::getPosition (pos); }
+
+		virtual void printExtra (Rts2InfoValStream & _os);
+
+		std::list < std::string > getAliases () { return aliases; }
+
 	private:
 		// target name
 		std::list < std::string > aliases;
@@ -39,27 +54,7 @@ class Rts2SimbadTarget:public ConstTarget
 		std::string simbadType;
 		struct ln_equ_posn propMotions;
 		float simbadBMag;
-
-		std::ostringstream *simbadOut;
-
-		// holds http_proxy string..
-		char *http_proxy;
-	public:
-		Rts2SimbadTarget (const char *in_name);
-		virtual ~Rts2SimbadTarget (void);
-
-		virtual int load ();
-
-		void getPosition (struct ln_equ_posn *pos)
-		{
-			Target::getPosition (pos);
-		}
-
-		virtual void printExtra (Rts2InfoValStream & _os);
-
-		std::list < std::string > getAliases ()
-		{
-			return aliases;
-		}
 };
+
+}
 #endif							 /* !__RTS2__SIMBADTARGET__ */

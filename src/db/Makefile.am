@@ -32,26 +32,10 @@ rts2_user_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../u
 
 SUBDIRS = simbad
 
-if GSOAP
-
 rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
-rts2_newtarget_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
-rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a @LIB_GSOAP@ $(AM_LDFLAGS)
+rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../xmlrpc/xmlrpc++/librts2xmlrpc.a $(AM_LDFLAGS)
 
 rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
-rts2_simbadinfo_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
-rts2_simbadinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a @LIB_GSOAP@ $(AM_LDFLAGS)
-
-else
-
-rts2_newtarget_SOURCES = newtarget.cpp rts2targetapp.cpp
-rts2_newtarget_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
-rts2_newtarget_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
-
-rts2_simbadinfo_SOURCES = simbadinfo.cpp rts2targetapp.cpp
-rts2_simbadinfo_CXXFLAGS = @LIB_GSOAP_CFLAGS@ $(AM_CXXFLAGS)
-rts2_simbadinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
-
-endif
+rts2_simbadinfo_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a simbad/libsimbad.a ../xmlrpc/xmlrpc++/librts2xmlrpc.a $(AM_LDFLAGS)
 
 endif

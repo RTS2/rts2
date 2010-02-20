@@ -18,7 +18,7 @@
  */
 
 #include "rts2targetapp.h"
-#include "simbad/rts2simbadtarget.h"
+#include "simbad/simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utilsdb/rts2targetell.h"
@@ -72,9 +72,9 @@ int Rts2TargetApp::getObject (const char *obj_text)
 	delete target;
 	target = NULL;
 
-#ifdef HAVE_PGSQL_SOAP
+//#ifdef HAVE_PGSQL
 	// try to get target from SIMBAD
-	target = new Rts2SimbadTarget (obj_text);
+	target = new rts2db::SimbadTarget (obj_text);
 	ret = target->load ();
 	if (ret == 0)
 	{
@@ -83,9 +83,9 @@ int Rts2TargetApp::getObject (const char *obj_text)
 	}
 	delete target;
 	target = NULL;
-#else
-	logStream (MESSAGE_ERROR) << "You don't have gsoap library configured, so Simbad name resolving will not work" << sendLog;
-#endif
+//#else
+//	logStream (MESSAGE_ERROR) << "You don't have postgresql library configured, so Simbad name resolving will not work" << sendLog;
+//#endif
 	return -1;
 }
 

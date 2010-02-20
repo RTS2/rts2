@@ -19,10 +19,10 @@ SUBDIRS = \
 	pgsql \
 	bckimages \
 	sql \
-	db \
 	monitor \
 	sensord \
 	indi \
 	logger \
 	scheduler \
-	xmlrpc
+	xmlrpc \
+	db
