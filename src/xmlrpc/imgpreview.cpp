@@ -321,7 +321,7 @@ int open_callback (struct archive *a, void *client_data)
 	return ARCHIVE_OK;
 }
 
-ssize_t write_callback (struct archive *a, void *client_data, void *buffer, size_t length)
+ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length)
 {
 	rts2xmlrpc::DownloadRequest * dr = (rts2xmlrpc::DownloadRequest *) client_data;
 	dr->buf = (char *) realloc (dr->buf, dr->buf_size + length);
