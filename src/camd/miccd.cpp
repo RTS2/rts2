@@ -59,10 +59,14 @@ class MICCD:public Camera
 
 		virtual int setCoolTemp (float new_temp);
 
+		virtual int setFilterNum (int new_filter);
+		virtual int getFilterNum () { return getCamFilterNum (); }
+
 		virtual int startExposure ();
 		virtual int endExposure ();
 
 		virtual int doReadout ();
+
 	private:
 		Rts2ValueLong *id;
 		int fd;
@@ -82,6 +86,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createTempSet ();
 
 	createValue (id, "product_id", "camera product identification", false);
+	id->setValueInteger (0);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 }
@@ -111,7 +116,7 @@ int MICCD::init ()
 	ret = Camera::init ();
 	if (ret)
 		return ret;
-	fd = open ("/dev/bus/usb/001/047", O_RDWR | O_NONBLOCK);
+	fd = miccd_open (id->getValueInteger ());
 	if (fd < 0)
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueLong () << sendLog;
@@ -130,6 +135,8 @@ int MICCD::initValues ()
 	addConstValue ("DESCRIPTION", "camera descriptio", cami.description);
 	addConstValue ("SERIAL", "camera serial number", cami.serial);
 	addConstValue ("CHIP", "camera chip", cami.chip);
+
+	id->setValueInteger (cami.id);
 
 	initCameraChip (cami.w, cami.h, cami.pw, cami.ph);
 
@@ -153,11 +160,12 @@ int MICCD::info ()
 
 int MICCD::setCoolTemp (float new_temp)
 {
-	int ret;
-	ret = miccd_set_cooltemp (fd, new_temp * 10);
-	if (ret)
-		return -1;
-	return 0;
+	return miccd_set_cooltemp (fd, new_temp) ? -1 : 0;
+}
+
+int MICCD::setFilterNum (int new_filter)
+{
+	return miccd_filter (fd, new_filter) ? -1 : 0;
 }
 
 int MICCD::startExposure ()

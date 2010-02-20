@@ -33,8 +33,6 @@
 #include "../utils/rts2scriptdevice.h"
 #include "imghdr.h"
 
-#include "filter.h"
-
 #define MAX_CHIPS  3
 #define MAX_DATA_RETRY 100
 
@@ -221,8 +219,6 @@ class Camera:public Rts2ScriptDevice
 		virtual int readoutStart ();
 
 		int camReadout (Rts2Conn * conn);
-
-		virtual int getFilterNum ();
 
 		// focuser functions
 		int setFocuser (int new_set);
@@ -492,8 +488,6 @@ class Camera:public Rts2ScriptDevice
 		char ccdType[64];
 		char *ccdRealType;
 		char serialNumber[64];
-
-		Filter *filter;
 
 		virtual void checkQueChanges (int fakeState);
 
@@ -777,6 +771,11 @@ class Camera:public Rts2ScriptDevice
 			return expType->getValueInteger ();
 		}
 
+		virtual int setFilterNum (int new_filter);
+		virtual int getFilterNum ();
+
+		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
+
 	private:
 		// comes from CameraChip
 		void initData ();
@@ -855,9 +854,6 @@ class Camera:public Rts2ScriptDevice
 
 		int camStartExposure ();
 		int camStartExposureWithoutCheck ();
-
-		// when we call that function, we must be sure that either filter or wheelDevice != NULL
-		int camFilter (int new_filter);
 
 		Rts2ValueSelection *camFilterVal;
 		Rts2ValueInteger *camFocVal;

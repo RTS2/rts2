@@ -259,7 +259,6 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	tempCCD = NULL;
 	tempSet = NULL;
 	nightCoolTemp = NULL;
-	filter = NULL;
 	ccdType[0] = '\0';
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
@@ -348,7 +347,6 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 Camera::~Camera ()
 {
 	delete[] dataBuffer;
-	delete filter;
 }
 
 int Camera::willConnect (Rts2Address * in_addr)
@@ -482,17 +480,7 @@ int Camera::processOption (int in_opt)
 
 int Camera::initChips ()
 {
-	int ret;
 	// init filter
-	if (filter)
-	{
-		ret = filter->init ();
-		if (ret)
-		{
-			return ret;
-		}
-	}
-
 	return 0;
 }
 
@@ -526,7 +514,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 				totPix = updateStatistics ((int16_t *) data, dataSize);
 				break;
 			case RTS2_DATA_LONG:
-				totPix = updateStatistics ((int16_t *) data, dataSize);
+				totPix = updateStatistics ((int32_t *) data, dataSize);
 				break;
 			case RTS2_DATA_LONGLONG:
 				totPix = updateStatistics ((int64_t *) data, dataSize);
@@ -724,7 +712,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		return camFilter (new_value->getValueInteger ()) == 0 ? 1 : -2;
+		return setFilterNum (new_value->getValueInteger ()) == 0 ? 1 : -2;
 	}
 	if (old_value == tempSet)
 	{
@@ -766,7 +754,7 @@ void Camera::deviceReady (Rts2Conn * conn)
 		// copy content of device filter variable to our list..
 		Rts2Value *val = conn->getValue ("filter");
 		// it's filter and it's correct type
-		if (val->getValueType () == RTS2_VALUE_SELECTION)
+		if (val != NULL && val->getValueType () == RTS2_VALUE_SELECTION)
 		{
 			camFilterVal->duplicateSelVals ((Rts2ValueSelection *) val);
 			// sends filter metainformations to all connected devices
@@ -1004,7 +992,7 @@ int Camera::camReadout (Rts2Conn * conn)
 	return -1;
 }
 
-int Camera::camFilter (int new_filter)
+int Camera::setFilterNum (int new_filter)
 {
 	int ret = -1;
 	if (wheelDevice)
@@ -1022,11 +1010,6 @@ int Camera::camFilter (int new_filter)
 		{
 			ret = -1;
 		}
-	}
-	else
-	{
-		ret = filter->setFilterNum (new_filter);
-		Rts2ScriptDevice::infoAll ();
 	}
 	return ret;
 }
@@ -1051,10 +1034,6 @@ int Camera::getFilterNum ()
 		fs.filter = -1;
 		postEvent (new Rts2Event (EVENT_FILTER_GET, (void *) &fs));
 		return fs.filter;
-	}
-	else if (filter)
-	{
-		return filter->getFilterNum ();
 	}
 	return 0;
 }

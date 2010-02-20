@@ -4,7 +4,7 @@ SUBDIRS = urvc2 apogee edtsao
 
 bin_PROGRAMS = rts2-camd-miniccd rts2-camd-miniccd-il rts2-camd-urvc2 rts2-camd-apogee rts2-camd-dummy
 
-noinst_HEADERS = camd.h ccd_msg.h cliwheel.h filter.h clifocuser.h
+noinst_HEADERS = camd.h ccd_msg.h cliwheel.h clifocuser.h
 
 noinst_LIBRARIES = librts2camd.a
 
