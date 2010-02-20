@@ -388,9 +388,6 @@ std::string Rts2Conn::getStateString ()
 		case DEVICE_TYPE_SELECTOR:
 			_os << "selector " << real_state;
 			break;
-		case DEVICE_TYPE_SOAP:
-			_os << "soapd " << real_state;
-			break;
 		case DEVICE_TYPE_SENSOR:
 			_os << "sensor " << real_state;
 			break;
