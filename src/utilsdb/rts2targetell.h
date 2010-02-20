@@ -36,13 +36,8 @@ class EllTarget:public Target
 		void getPosition (struct ln_equ_posn *pos, double JD, struct ln_equ_posn *parallax);
 	public:
 		EllTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		EllTarget (std::string _tar_info):Target ()
-		{
-			setTargetInfo (_tar_info);
-		}
-		EllTarget ():Target ()
-		{
-		};
+		EllTarget (std::string _tar_info):Target () { setTargetInfo (_tar_info); }
+		EllTarget ():Target () { }
 		virtual int load ();
 
 		/**
