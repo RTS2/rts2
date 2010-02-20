@@ -1,4 +1,4 @@
-/* include/config.h.in.  Generated from configure.in by autoheader.  */
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* If ARC version 1.7 is used */
 #undef ARC_API_1_7
@@ -129,9 +129,6 @@
 
 /* If PGSQL provides SET_VARSIZE function */
 #undef HAVE_PGSQL_SET_VARSIZE
-
-/* Whenever PGSQL and SOAP libraries are installed */
-#undef HAVE_PGSQL_SOAP
 
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
