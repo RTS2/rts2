@@ -25,8 +25,10 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
+#include "../utilsdb/imageset.h"
 #ifdef HAVE_LIBJPEG
 #include "altaz.h"
+#include "altplot.h"
 #endif // HAVE_LIBJPEG
 #include "../utils/rts2config.h"
 
@@ -43,7 +45,7 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 	int month = -1;
 	int day = -1;
 	
-	enum {NONE, IMAGES, ALTAZ} action = NONE;
+	enum {NONE, IMAGES, ALT, ALTAZ} action = NONE;
 
 	switch (vals.size ())
 	{
@@ -51,8 +53,12 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 			// print all images..
 			if (vals[3] == "all")
 				action = IMAGES;
+#ifdef HAVE_LIBJPEG
+			else if (vals[3] == "alt")
+				action = ALT;
 			else if (vals[3] == "altaz")
 			  	action = ALTAZ;
+#endif // HAVE_LIBJPEG
 			else
 				throw rts2core::Error ("Invalid path for all observations");
 		case 3:
@@ -67,9 +73,14 @@ void Night::authorizedExecute (std::string path, XmlRpc::HttpParams *params, con
 				case IMAGES:
 					printAllImages (year, month, day, params, response, response_length);
 					break;
+#ifdef HAVE_LIBJPEG
+				case ALT:
+					printAlt (year, month, day, params, response_type, response, response_length);
+					break;
 				case ALTAZ:
 					printAltAz (year, month, day, params, response_type, response, response_length);
 					break;
+#endif // HAVE_LIBJPEG
 				default:
 					printTable (year, month, day, response, response_length);
 			}
@@ -181,9 +192,37 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 	memcpy (response, _os.str ().c_str (), response_length);
 }
 
+#ifdef HAVE_LIBJPEG
+void Night::printAlt (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	response_type = "image/jpeg";
+
+	AltPlot ap (params->getInteger ("w", 800), params->getInteger ("h", 600));
+	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
+
+	time_t from;
+	int64_t duration;
+
+	getNightDuration (year, month, day, from, duration);
+
+	time_t end = from + duration;
+
+	rts2db::ImageSetDate is = rts2db::ImageSetDate (from, end);
+	is.load ();
+
+	Magick::Image mimage (size, "white");
+	ap.getPlot (from, end, &is, &mimage);
+
+	Magick::Blob blob;
+	mimage.write (&blob, "jpeg");
+
+	response_length = blob.length();
+	response = new char[response_length];
+	memcpy (response, blob.data(), response_length);
+}
+
 void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
-#ifdef HAVE_LIBJPEG
 	response_type = "image/jpeg";
 
 	time_t from;
@@ -221,10 +260,8 @@ void Night::printAltAz (int year, int month, int day, XmlRpc::HttpParams *params
 	response_length = blob.length();
 	response = new char[response_length];
 	memcpy (response, blob.data(), response_length);
-#else
-	throw rts2core::Error ("missing libjpeg support");
-#endif
 }
+#endif // HAVE_LIBJPEG
 
 void Night::printTable (int year, int month, int day, char* &response, size_t &response_length)
 {
@@ -250,7 +287,13 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 	if (year == 0 || month == 0 || day == 0)
 		do_list = true;
 
-	_os << "</title></head><body><p><a href='all'>All images</a>&nbsp;<a href='altaz'>Night images alt-az plot</a></p><p><table>";
+	_os << "</title></head><body><p><a href='all'>All images</a>";
+
+#ifdef HAVE_LIBJPEG
+	_os << "&nbsp;<a href='altaz'>Night images alt-az plot</a>&nbsp;<a href='alt'>Night images alt</a>";
+#endif // HAVE_LIBJPEG
+
+	_os << "</p><p><table>";
 
 	if (do_list == true)
 	{

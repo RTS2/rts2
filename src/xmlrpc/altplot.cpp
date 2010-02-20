@@ -23,6 +23,7 @@
 
 #ifdef HAVE_LIBJPEG
 
+#include "../utils/rts2config.h"
 #include "../utils/expander.h"
 #include "../utils/libnova_cpp.h"
 
@@ -54,6 +55,29 @@ Magick::Image* AltPlot::getPlot (double _from, double _to, Target *target, Magic
 		plotTarget (target, Magick::Color (MaxRGB / 5, MaxRGB / 5, MaxRGB / 5, 3 * MaxRGB / 5), linewidth, shadow);
 	plotTarget (target, Magick::Color (0, MaxRGB, 0, MaxRGB / 5), linewidth, 0);
 
+	return image;
+}
+
+Magick::Image* AltPlot::getPlot (double _from, double _to, rts2db::ImageSet *imgset, Magick::Image* _image, PlotType _plotType, int linewidth, int shadow)
+{
+	if (plotType == PLOTTYPE_AUTO)
+		plotType = PLOTTYPE_CROSS;
+	preparePlot (_from, to, _image, plotType);
+
+	for (rts2db::ImageSetDate::iterator iter = imgset->begin (); iter != imgset->end (); iter++)
+	{
+		struct ln_hrz_posn hrz;
+		try
+		{
+			(*iter)->getCoordBestAltAz (hrz, Rts2Config::instance ()->getObserver ());
+			(*iter)->closeFile ();
+			plotRange ((*iter)->getMidExposureJD (), hrz.alt, (*iter)->getMidExposureJD (), hrz.alt);
+		}
+		catch (rts2core::Error &er)
+		{
+			(*iter)->closeFile ();
+		}
+	}
 	return image;
 }
 
@@ -129,38 +153,43 @@ void AltPlot::plotTarget (Target *tar, Magick::Color col, int linewidth, int sha
 		JD += stepX;
 		tar->getAltAz (&hrz, JD);
 		double y_end = size.height () - scaleY * (hrz.alt - min) + shadow;
-		switch (plotType)
-		{
-			case PLOTTYPE_AUTO:
-			case PLOTTYPE_LINE:
-				image->draw (Magick::DrawableLine (x, y, x_end, y_end));
-				break;
-			case PLOTTYPE_LINE_SHARP:
-				image->draw (Magick::DrawableLine (x, y, x_end, y));
-				image->draw (Magick::DrawableLine (x_end, y, x_end, y_end));
-				break;
-			case PLOTTYPE_CROSS:
-				image->draw (Magick::DrawableLine (x - 2, y, x + 2, y));
-				image->draw (Magick::DrawableLine (x, y - 2, x, y + 2));
-				break;
-			case PLOTTYPE_CIRCLES:
-				image->draw (Magick::DrawableCircle (x, y, x - 2, y));
-				break;
-			case PLOTTYPE_SQUARES:
-				image->draw (Magick::DrawableRectangle (x - 1, y - 1, y + 1, x + 1));
-				break;
-			case PLOTTYPE_FILL:
-			case PLOTTYPE_FILL_SHARP:
-				std::list <Magick::Coordinate> pol;
-				pol.push_back (Magick::Coordinate (x, size.height ()));
-				pol.push_back (Magick::Coordinate (x, y));
-				pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
-				pol.push_back (Magick::Coordinate (x_end - 1, size.height ()));
-				image->draw (Magick::DrawablePolygon (pol));
-		}
+		plotRange (x, y, x_end, y_end);
 		x = x_end;
 		x_end++;
 		y = y_end;
+	}
+}
+
+void AltPlot::plotRange (double x, double y, double x_end, double y_end)
+{
+	switch (plotType)
+	{
+		case PLOTTYPE_AUTO:
+		case PLOTTYPE_LINE:
+			image->draw (Magick::DrawableLine (x, y, x_end, y_end));
+			break;
+		case PLOTTYPE_LINE_SHARP:
+			image->draw (Magick::DrawableLine (x, y, x_end, y));
+			image->draw (Magick::DrawableLine (x_end, y, x_end, y_end));
+			break;
+		case PLOTTYPE_CROSS:
+			image->draw (Magick::DrawableLine (x - 2, y, x + 2, y));
+			image->draw (Magick::DrawableLine (x, y - 2, x, y + 2));
+			break;
+		case PLOTTYPE_CIRCLES:
+			image->draw (Magick::DrawableCircle (x, y, x - 2, y));
+			break;
+		case PLOTTYPE_SQUARES:
+			image->draw (Magick::DrawableRectangle (x - 1, y - 1, y + 1, x + 1));
+			break;
+		case PLOTTYPE_FILL:
+		case PLOTTYPE_FILL_SHARP:
+			std::list <Magick::Coordinate> pol;
+			pol.push_back (Magick::Coordinate (x, size.height ()));
+			pol.push_back (Magick::Coordinate (x, y));
+			pol.push_back (Magick::Coordinate (x_end - 1, (plotType == PLOTTYPE_FILL_SHARP ? y : y_end)));
+			pol.push_back (Magick::Coordinate (x_end - 1, size.height ()));
+			image->draw (Magick::DrawablePolygon (pol));
 	}
 }
 

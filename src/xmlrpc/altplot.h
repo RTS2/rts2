@@ -22,6 +22,7 @@
 #ifdef HAVE_LIBJPEG
 
 #include <Magick++.h>
+#include "../utilsdb/imageset.h"
 #include "../utilsdb/targetset.h"
 #include "plot.h"
 
@@ -55,9 +56,13 @@ class AltPlot:public Plot
 
 		Magick::Image* getPlot (double _from, double _to, Target *tarset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 0);
 
+		Magick::Image* getPlot (double _from, double _to, rts2db::ImageSet *imgset, Magick::Image* _image = NULL, PlotType _plotType = PLOTTYPE_AUTO, int linewidth = 3, int shadow = 0);
+
 	private:
 		void preparePlot (double _from, double _to, Magick::Image* _image, PlotType _plotType);	
 		void plotTarget (Target *tar, Magick::Color col, int linewidth, int shadow);
+
+		void plotRange (double x, double y, double x_end, double y_end);
 };
 
 }

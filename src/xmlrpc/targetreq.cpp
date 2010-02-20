@@ -109,7 +109,12 @@ void Targets::listTargets (const char* &response_type, char* &response, size_t &
 			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
 	}
 
-	_os << "</table><input type='submit' value='Plot' name='plot'/></form></body></html>";
+	_os << "</table>";
+
+#ifdef HAVE_LIBJPEG
+	_os << "<input type='submit' value='Plot' name='plot'/>";
+#endif // HAVE_LIBJPEG
+	_os << "</form></body></html>";
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -119,6 +124,7 @@ void Targets::listTargets (const char* &response_type, char* &response, size_t &
 
 void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
+#ifdef HAVE_LIBJPEG
 	if (!strcmp (params->getString ("plot", "xxx"), "Plot"))
 	{
 		response_type = "image/jpeg";
@@ -165,6 +171,7 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 		memcpy (response, blob.data(), response_length);
 		return;
 	}
+#endif // HAVE_LIBJPEG
 }
 
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
