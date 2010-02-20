@@ -467,7 +467,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 
 	createValue (zelioModelString, "zelio_model", "String with Zelio model", false);
 
-	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false);
+	createValue (deadTimeout, "dead_timeout", "timeout for dead man button", false, RTS2_VALUE_WRITABLE);
 	deadTimeout->setValueInteger (60);
 
 	createValue (automode, "automode", "state of automatic dome mode", false);
@@ -797,6 +797,8 @@ int Zelio::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	}
 	if (oldValue == ignoreRain)
 	  	return setBitsInput (ZREG_J1XT1, ZI_IGNORE_RAIN, ((Rts2ValueBool*) newValue)->getValueBool ()) == 0 ? 0 : -2;
+	if (oldValue == deadTimeout)
+		return 0;
 	try
 	{
 		if (oldValue == J1XT1)
