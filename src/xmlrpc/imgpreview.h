@@ -105,6 +105,6 @@ class DownloadRequest:public GetRequestAuthorized
 
 #ifdef HAVE_LIBARCHIVE
 int open_callback (struct archive *a, void *client_data);
-ssize_t write_callback (struct archive *a, void *client_data, const void *buffer, size_t length);
+ssize_t write_callback (struct archive *a, void *client_data, void *buffer, size_t length);
 int close_callback (struct archive *a, void *client_data);
 #endif // HAVE_LIBARCHIVE
