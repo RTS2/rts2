@@ -73,6 +73,22 @@ class XmlMissingAttribute: public XmlError
 };
 
 /**
+ * Error thrown when on unknow attribute.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlUnexpectedAttribute: public XmlError
+{
+	public:
+		XmlUnexpectedAttribute (xmlNodePtr _node, std::string attr_name):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "unexpacted attribute " << attr_name << " in node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
+
+/**
  * Error thrown when elemant is missing in sequence.
  *
  * @author Petr Kubanek <petr@kubanek.net>

@@ -531,7 +531,7 @@ bool XmlRpcClient::readResponse()
 		{
 			for (_chunkEnd = _chunkStart; (_chunkEnd < _response_buf + _response_length) && *_chunkEnd != '\n' && *_chunkEnd != '\0'; _chunkEnd++) {}
 			// chunk end not yet found..
-			if (_chunkEnd == _response_buf + _response_length)
+			if (_chunkEnd == _response_buf + _response_length + 2)
 				return true;
 			// get chunkLenght
 			*_chunkEnd = '\0';
@@ -599,7 +599,7 @@ bool XmlRpcClient::readResponse()
 // Convert the response xml into a result value
 bool XmlRpcClient::parseResponse(XmlRpcValue& result)
 {
-	std::string _response = _response_buf;
+	std::string _response = std::string (_response_buf);
 	// Parse response xml into result
 	int offset = 0;
 	if ( ! XmlRpcUtil::findTag(METHODRESPONSE_TAG,_response,&offset))

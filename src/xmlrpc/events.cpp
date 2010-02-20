@@ -36,6 +36,7 @@ void Events::parseState (xmlNodePtr event, std::string deviceName)
 	int changeMask = -1;
 	int newStateValue = -1;
 	std::string commandName;
+	std::string condition;
 
 	for (; properties; properties = properties->next)
 	{
@@ -47,9 +48,18 @@ void Events::parseState (xmlNodePtr event, std::string deviceName)
 		{
 			newStateValue = atoi ((char *) properties->children->content);
 		}
+		else if (xmlStrEqual (properties->name, (xmlChar *) "if"))
+		{
+			condition = std::string ((char *) properties->children->content);
+			std::cout << "if " << condition << std::endl;
+		}
+		else
+		{
+			throw XmlUnexpectedAttribute (event, (char *) properties->name);
+		}
 	}
 	if (newStateValue < 0)
-		throw XmlMissingAttribute (event, "state");
+		throw XmlUnexpectedAttribute (event, "state");
 
 	if (changeMask < 0)
 		changeMask = newStateValue;
@@ -88,6 +98,8 @@ void Events::parseState (xmlNodePtr event, std::string deviceName)
 
 void Events::parseValue (xmlNodePtr event, std::string deviceName)
 {
+	std::string condition;
+
 	xmlAttrPtr valueName = xmlHasProp (event, (xmlChar *) "name");
 	if (valueName == NULL)
 		throw XmlMissingAttribute (event, "name");

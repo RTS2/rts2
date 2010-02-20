@@ -54,6 +54,7 @@ using namespace Magick;
 #include "targetreq.h"
 #include "imgpreview.h"
 #include "devicesreq.h"
+#include "planreq.h"
 
 #include "r2x.h"
 
@@ -1506,6 +1507,8 @@ Observation observation ("/observations", &xmlrpc_server);
 Targets targets ("/targets", &xmlrpc_server);
 
 AddTarget addTarget ("/addtarget", &xmlrpc_server);
+
+Plan plan ("/plan", &xmlrpc_server);
 
 class UserLogin: public XmlRpcServerMethod
 {
