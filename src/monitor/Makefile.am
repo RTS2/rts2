@@ -13,6 +13,11 @@ if PGSQL
 rts2_mon_LDFLAGS = @LIBNCURSES_LDFLAGS@ @LIB_M@ @LIB_NOVA@ @LIB_ECPG@ ../db/simbad/libsimbad.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIB_CFITSIO@ @LIB_JPEG@
 rts2_mon_CXXFLAGS = @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @LIBPG_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 
+else
+
+rts2_mon_LDFLAGS = @LIBNCURSES_LDFLAGS@ @LIB_M@ @LIB_NOVA@ ../db/simbad/libsimbad.a ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a @LIB_CFITSIO@ @LIB_JPEG@
+rts2_mon_CXXFLAGS = @LIBNCURSES_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
+
 endif
 
 rts2_cmon_SOURCES = cmonitor.cpp
