@@ -671,32 +671,36 @@ OpenTPL::checkPower ()
 
 	if (power_state != 1)
 	{
-	  	while (power_state != 0)
+	  	while (!(power_state == 0 || power_state == 1))
 		{
+			sleep (5);
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
 				return;
 			}
-			sleep (5);
 		}
-		status = opentplConn->set ("CABINET.POWER", 1, &status);
-		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
-		if (status)
+		// sometime we can reach 1..
+		if (power_state == 0)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower set power to 1 ret " << status << sendLog;
-			return;
-		}
-		while (power_state <= 0.5)
-		{
-			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
-			sleep (5);
+			status = opentplConn->set ("CABINET.POWER", 1, &status);
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower set power to 1 ret " << status << sendLog;
 				return;
+			}
+			while (power_state < 1)
+			{
+				logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
+				sleep (5);
+				status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+				if (status)
+				{
+					logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
+					return;
+				}
 			}
 		}
 	}
