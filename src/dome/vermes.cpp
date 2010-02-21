@@ -101,10 +101,10 @@ int Vermes::moveEnd ()
 long Vermes::isMoving ()
 {
   if ( is_synced== SYNCED) {
-    logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
+    //  logStream (MESSAGE_DEBUG) << "Vermes::isMoving SYNCED"<< sendLog ;
     return -2;
   } else {
-    logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
+    //  logStream (MESSAGE_DEBUG) << "Vermes::isMoving NOT_SYNCED"<< sendLog ;
   }
   return USEC_SEC;
 }
@@ -137,12 +137,12 @@ double Vermes::getSplitWidth (double alt)
 
 void Vermes::parkCupola ()
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::parkCupola doing nothing" << sendLog ;
+  logStream (MESSAGE_INFO) << "Vermes::parkCupola doing nothing" << sendLog ;
 }
 
 int Vermes::standby ()
 {
-  logStream (MESSAGE_DEBUG) << "Vermes::standby doing nothing" << sendLog ;
+  logStream (MESSAGE_INFO) << "Vermes::standby doing nothing" << sendLog ;
   parkCupola ();
   return Cupola::standby ();
 }
