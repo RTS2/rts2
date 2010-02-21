@@ -1,5 +1,5 @@
-/// $Id: OakHidBase.c 521 2009-02-01 18:10:40Z lukas $
-///
+// $Id: OakHidBase.c 521 2009-02-01 18:10:40Z lukas $
+//
 /// \file  
 /// \date 2008-10-14
 /// \author Xavier Michelon, Toradex SA
