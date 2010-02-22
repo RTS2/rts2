@@ -44,7 +44,8 @@ void ConnExecute::connectionError (int last_data_size)
 {
 	rts2core::ConnFork::connectionError (last_data_size);
 	// inform master to delete us..
-	masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
+	if (masterElement && masterElement->getClient ())
+		masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
 	masterElement = NULL;
 }
 
