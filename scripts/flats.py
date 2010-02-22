@@ -73,6 +73,10 @@ class Rts2Comm:
 		a = sys.stdin.readline()
 		image,fn = a.split()
 		return fn
+
+	def rename(self,imagename,pattern):
+		print "rename",imagename,pattern
+		sys.stdin.flush()
 	
 	def toFlat(self,imagename):
 		print "flat",imagename
