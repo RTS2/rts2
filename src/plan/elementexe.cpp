@@ -30,7 +30,7 @@ ConnExecute::ConnExecute (Execute *_masterElement, Rts2Block *_master, const cha
 
 ConnExecute::~ConnExecute ()
 {
-	if (masterElement)
+	if (masterElement != NULL && masterElement->getClient () != NULL)
 		masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
 
 	for (std::list <Rts2Image *>::iterator iter = images.begin (); iter != images.end (); iter++)
@@ -44,7 +44,7 @@ void ConnExecute::connectionError (int last_data_size)
 {
 	rts2core::ConnFork::connectionError (last_data_size);
 	// inform master to delete us..
-	if (masterElement && masterElement->getClient ())
+	if (masterElement != NULL && masterElement->getClient () != NULL)
 		masterElement->getClient ()->postEvent (new Rts2Event (EVENT_COMMAND_OK));
 	masterElement = NULL;
 }
@@ -67,7 +67,7 @@ void ConnExecute::processLine ()
 
 	if (!strcmp (cmd, "exposure"))
 	{
-		if (masterElement == NULL)
+		if (masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandExposure (getMaster (), (Rts2DevClientCamera *) masterElement->getClient (), BOP_EXPOSURE));
 	}
@@ -155,7 +155,7 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "process"))
 	{
-		if (paramNextString (&imagename) || masterElement == NULL)
+		if (paramNextString (&imagename) || masterElement == NULL || masterElement->getClient () == NULL)
 			return;
 		std::list <Rts2Image *>::iterator iter = findImage (imagename);
 		if (iter != images.end ())
@@ -176,7 +176,7 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "command"))
 	{
-		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL)
+		if ((comm = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2Command (getMaster (), comm));
 	}
@@ -192,13 +192,13 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "value"))
 	{
-		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL)
+		if (paramNextString (&value) || paramNextString (&operat) || (operand = paramNextWholeString ()) == NULL || masterElement == NULL || masterElement->getConnection () == NULL || masterElement->getClient () == NULL)
 			return;
 		masterElement->getConnection ()->queCommand (new Rts2CommandChangeValue (masterElement->getClient (), std::string (value), *operat, std::string (operand), true));
 	}
 	else if (!strcmp (cmd, "?"))
 	{
-		if (paramNextString (&value) || masterElement == NULL)
+		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection ())
 			return;
 		Rts2Value *val = masterElement->getConnection()->getValue (value);
 		if (val)
