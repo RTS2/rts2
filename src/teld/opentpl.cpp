@@ -165,6 +165,7 @@ void OpenTPL::powerOn ()
 void OpenTPL::powerOff ()
 {
 	int status = TPL_OK;
+	opentplConn->setDebug ();
 	opentplConn->set ("CABINET.POWER", 0, &status);
 	// check that it powered off..
 	double power_state;
@@ -175,6 +176,7 @@ void OpenTPL::powerOff ()
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "powerOff: power_state " << status << sendLog;
+			opentplConn->setDebug (false);
 			return;
 		}
 		sleep (3);
@@ -185,9 +187,11 @@ void OpenTPL::powerOff ()
 			cabinetPowerState->setValueFloat (power_state);
 			sendValueAll (cabinetPower);
 			sendValueAll (cabinetPowerState);
+			opentplConn->setDebug (false);
 			return;
 		}
 	}
+	opentplConn->setDebug (false);
 	cabinetPowerState->setValueFloat (power_state);
 	sendValueAll (cabinetPowerState);
 	logStream (MESSAGE_ERROR) << "powerOff: timeouted waiting for sucessfull poweroff" << sendLog;
@@ -244,7 +248,9 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
 	{
+	  	opentplConn->setDebug ();
 		status = opentplConn->set ("CABINET.POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
+	  	opentplConn->setDebug (false);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -809,7 +815,7 @@ int OpenTPL::startMoveReal (double ra, double dec)
 	if (derotatorOffset && !getDerotatorPower ())
 	{
 		status = opentplConn->set ("DEROTATOR[3].POWER", 1, &status);
-		status = opentplConn->set ("CABINET.POWER", 1, &status);
+		// status = opentplConn->set ("CABINET.POWER", 1, &status);
 	}
 
 	double offset;
@@ -903,8 +909,10 @@ int OpenTPL::info ()
 	int cab_power;
 	double cab_power_state;
 
+	opentplConn->setDebug ();
 	status = opentplConn->get ("CABINET.POWER", cab_power, &status);
 	status = opentplConn->get ("CABINET.POWER_STATE", cab_power_state, &status);
+	opentplConn->setDebug (false);
 	if (status != TPL_OK)
 		return -1;
 	cabinetPower->setValueBool (cab_power == 1);
