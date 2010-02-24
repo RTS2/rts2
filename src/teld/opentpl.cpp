@@ -662,10 +662,12 @@ OpenTPL::checkPower ()
 	int status = TPL_OK;
 	double power_state;
 	double referenced;
+	opentplConn->setDebug ();
 	status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 	if (status)
 	{
 		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+		opentplConn->setDebug (false);
 		return;
 	}
 
@@ -678,6 +680,7 @@ OpenTPL::checkPower ()
 			if (status)
 			{
 				logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+				opentplConn->setDebug (false);
 				return;
 			}
 		}
@@ -685,23 +688,20 @@ OpenTPL::checkPower ()
 		if (power_state == 0)
 		{
 			status = opentplConn->set ("CABINET.POWER", 1, &status);
-			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
-			if (status)
+			sleep (5);
+			do
 			{
-				logStream (MESSAGE_ERROR) << "checkPower set power to 1 ret " << status << sendLog;
-				return;
-			}
-			while (power_state < 1)
-			{
+				status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 				logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
 				sleep (5);
-				status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 				if (status)
 				{
 					logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
+					opentplConn->setDebug (false);
 					return;
 				}
 			}
+			while (power_state < 1);
 		}
 	}
 	while (true)
@@ -710,11 +710,13 @@ OpenTPL::checkPower ()
 		if (status)
 		{
 			logStream (MESSAGE_ERROR) << "checkPower get referenced " << status << sendLog;
+			opentplConn->setDebug (false);
 			return;
 		}
+		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
+		sleep (5);
 		if (referenced == 1)
 			break;
-		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
 /*		if (referenced == 0)
 		{
 			status = opentplConn->set ("CABINET.REINIT", 1, &status);
@@ -724,8 +726,8 @@ OpenTPL::checkPower ()
 				return;
 			}
 		} */
-		sleep (1);
 	}
+	opentplConn->setDebug (false);
 	if (cover)
 	{
 		// force close of cover..
