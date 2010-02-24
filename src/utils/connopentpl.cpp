@@ -32,7 +32,9 @@ int OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	std::ostringstream _os;
 	_os << tpl_command_no << " " << cmd << " " << p1 << '\n';
 	int ret = send (sock, _os.str().c_str (), _os.str().length (), 0);
-//	logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+	if (getDebug ())
+		logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+
 	if (ret > 0)
 	{
 		used_command_ids.push_back (tpl_command_no);
@@ -89,7 +91,8 @@ int OpenTpl::waitReply ()
 			}
 			// print which new data were received..
 			*(tpl_buf_top + data_size) = '\0';
-			//logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
+			if (getDebug ())
+				logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
 			// now parse reply, look for '\n'
 			char *bt = tpl_buf_top;
 			while (bt < tpl_buf_top + data_size)
@@ -112,7 +115,8 @@ int OpenTpl::waitReply ()
 				long int cmd_num = strtol (tpl_buf, &ce, 10);
 				if (lp != ce)
 				{
-					// logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
+				  	if (getDebug ())
+						logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
 				}
 				else 
 				{
@@ -145,7 +149,6 @@ int OpenTpl::waitReply ()
 				tpl_buf_top = tpl_buf + data_size - 1;
 				data_size = 0;
 				bt = tpl_buf;
-				// std::cout << "data_size " << data_size << " tpl_buf " << tpl_buf << std::endl;
 			}
 		}
 	}

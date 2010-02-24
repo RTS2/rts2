@@ -160,6 +160,8 @@ class ConnTCP:public Rts2ConnNoSend
 
 		virtual void connectionError (int last_data_size);
 
+		bool getDebug () { return debug; }
+
 	private:
 		const char *hostname;
 		int port;
