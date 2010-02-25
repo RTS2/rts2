@@ -37,6 +37,7 @@ class DataAbstractRead
 {
 	public:
 		DataAbstractRead () {}
+		virtual ~DataAbstractRead () {}
 		
 		virtual char *getDataBuff () = 0;
 		virtual char *getDataTop () = 0;
