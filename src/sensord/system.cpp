@@ -195,7 +195,7 @@ void System::scheduleStore ()
 {
 	Rts2Config *config = Rts2Config::instance ();
 	time_t t = config->getNight () - time (NULL);
-	if (t < 0)
+	if (t < 20)
 		t += 86400;
 	addTimer (t, new Rts2Event (EVENT_STORE_PATHS));
 }
