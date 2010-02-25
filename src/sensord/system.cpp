@@ -22,8 +22,11 @@
 #include <sys/types.h>
 #include <sys/statvfs.h>
 #include <iostream>
+#include "../utils/rts2config.h"
 
-#define OPT_STORAGE    OPT_LOCAL + 601
+#define OPT_STORAGE         OPT_LOCAL + 601
+
+#define EVENT_STORE_PATHS   RTS2_LOCAL_EVENT + 1320
 
 namespace rts2sensord
 {
@@ -38,6 +41,8 @@ class System:public Sensor
 {
 	public:
 		System (int in_argc, char **in_argv);
+
+		virtual void postEvent (Rts2Event *event);
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -51,6 +56,7 @@ class System:public Sensor
 		const char *storageFile;
 		void storePaths ();
 		void loadPaths ();
+		void scheduleStore ();
 };
 
 };
@@ -78,7 +84,11 @@ int System::init ()
 	if (ret)
 		return ret;
 	if (storageFile)
+	{
 		loadPaths ();
+		// calculate next local midday
+		scheduleStore ();
+	}
 	return 0;
 }
 
@@ -97,11 +107,6 @@ int System::info ()
 			if (val)
 				((Rts2ValueDouble *) val)->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
 		}
-	}
-	// try to save..
-	if (storageFile && (isnan (lastWrite->getValueDouble ()) || lastWrite->getValueDouble () < getNow () - 86400))
-	{
-		storePaths ();
 	}
 	return Sensor::info ();
 }
@@ -173,14 +178,26 @@ void System::loadPaths ()
 			is.ignore (2000, '\n');
 			continue;
 		}
-		while (!is.fail ())
+		std::string line;
+		getline (is, line);
+		std::istringstream iss (line);
+		while (!iss.fail ())
 		{
-			is >> dv;
+			iss >> dv;
 			std::cout << dv << std::endl;
 			ds->addValue (dv);
 		}
 	}
 	is.close ();	
+}
+
+void System::scheduleStore ()
+{
+	Rts2Config *config = Rts2Config::instance ();
+	time_t t = config->getNight () - time (NULL);
+	if (t < 0)
+		t += 86400;
+	addTimer (t, new Rts2Event (EVENT_STORE_PATHS));
 }
 
 System::System (int argc, char **argv):Sensor (argc, argv)
@@ -193,6 +210,17 @@ System::System (int argc, char **argv):Sensor (argc, argv)
 	addOption (OPT_STORAGE, "save", 1, "save data to given file");
 
 	setIdleInfoInterval (300);
+}
+
+void System::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_STORE_PATHS:
+			storePaths ();
+			scheduleStore ();
+			break;
+	}
 }
 
 int main (int argc, char **argv)
