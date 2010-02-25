@@ -1,6 +1,6 @@
 /* 
  * Basic camera daemon
- * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2001-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <sys/time.h>
 #include <fcntl.h>
 #include <time.h>
@@ -29,20 +31,13 @@
 #include "cliwheel.h"
 #include "clifocuser.h"
 
-#define OPT_FLIP    OPT_LOCAL + 401
-#define OPT_PLATE   OPT_LOCAL + 402
-#define OPT_FOCUS   OPT_LOCAL + 403
-#define OPT_WHEEL   OPT_LOCAL + 404
+#define OPT_FLIP     OPT_LOCAL + 401
+#define OPT_PLATE    OPT_LOCAL + 402
+#define OPT_FOCUS    OPT_LOCAL + 403
+#define OPT_WHEEL    OPT_LOCAL + 404
+#define OPT_WITHSHM  OPT_LOCAL + 405
 
 using namespace rts2camd;
-
-void Camera::initData ()
-{
-	pixelX = rts2_nan ("f");
-	pixelY = rts2_nan ("f");
-
-	nAcc = 1;
-}
 
 int Camera::setPlate (const char *arg)
 {
@@ -70,14 +65,8 @@ void Camera::setDefaultPlate (double x, double y)
 	defaultYplate = y;
 }
 
-void Camera::initCameraChip ()
-{
-	initData ();
-}
-
 void Camera::initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY)
 {
-	initData ();
 	setSize (in_width, in_height, 0, 0);
 	pixelX = in_pixelX;
 	pixelY = in_pixelY;
@@ -193,6 +182,10 @@ int Camera::deleteConnection (Rts2Conn * conn)
 int Camera::endReadout ()
 {
 	clearReadout ();
+	if (currentImageData == -2 && exposureConn)
+	{
+		exposureConn->endSharedData (sharedMemId);
+	}
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn)
 	{
 		// do not report that we start exposure
@@ -205,28 +198,43 @@ void Camera::clearReadout ()
 {
 }
 
+void Camera::startImageData (Rts2Conn * conn)
+{
+	if (sharedMemId >= 0)
+	{
+		currentImageData = -2;
+		conn->startSharedData (sharedMemId);
+		exposureConn = conn;
+	}
+	else
+	{
+		currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+		exposureConn = conn;
+	}
+}
+
 int Camera::sendFirstLine ()
 {
 	int w, h;
 	w = chipUsedReadout->getWidthInt () / binningHorizontal ();
 	h = chipUsedReadout->getHeightInt () / binningVertical ();
-	focusingHeader.data_type = htons (getDataType ());
-	focusingHeader.naxes = htons (2);
-	focusingHeader.sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
-	focusingHeader.sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
-	focusingHeader.binnings[0] = htons (binningVertical ());
-	focusingHeader.binnings[1] = htons (binningHorizontal ());
-	focusingHeader.x = htons (chipUsedReadout->getXInt ());
-	focusingHeader.y = htons (chipUsedReadout->getYInt ());
-	focusingHeader.filter = htons (getLastFilterNum ());
+	focusingHeader->data_type = htons (getDataType ());
+	focusingHeader->naxes = htons (2);
+	focusingHeader->sizes[0] = htonl (chipUsedReadout->getWidthInt () / binningHorizontal ());
+	focusingHeader->sizes[1] = htonl (chipUsedReadout->getHeightInt () / binningVertical ());
+	focusingHeader->binnings[0] = htons (binningVertical ());
+	focusingHeader->binnings[1] = htons (binningHorizontal ());
+	focusingHeader->x = htons (chipUsedReadout->getXInt ());
+	focusingHeader->y = htons (chipUsedReadout->getYInt ());
+	focusingHeader->filter = htons (getLastFilterNum ());
 	// light - dark images
 	if (expType)
-		focusingHeader.shutter = htons (expType->getValueInteger ());
+		focusingHeader->shutter = htons (expType->getValueInteger ());
 	else
-		focusingHeader.shutter = 0;
+		focusingHeader->shutter = 0;
 
-	focusingHeader.channel = 0;
-	focusingHeader.totalChannel = 1;
+	focusingHeader->channel = 0;
+	focusingHeader->totalChannel = 1;
 
 	sum->setValueDouble (0);
 	average->setValueDouble (0);
@@ -234,9 +242,11 @@ int Camera::sendFirstLine ()
 	min->setValueDouble (LONG_MAX);
 	computedPix->setValueLong (0);
 
+	if (shmBuffer != NULL)
+		*((unsigned long *) shmBuffer) = 0;
 	// send it out - but do not include it in average etc. calculations
 	if (exposureConn && currentImageData >= 0)
-		return exposureConn->sendBinaryData (currentImageData, (char *) &focusingHeader, sizeof (imghdr));
+		return exposureConn->sendBinaryData (currentImageData, (char *) focusingHeader, sizeof (imghdr));
 	return 0;
 }
 
@@ -262,6 +272,14 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	ccdType[0] = '\0';
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
+
+	pixelX = rts2_nan ("f");
+	pixelY = rts2_nan ("f");
+
+	nAcc = 1;
+
+	shmBuffer = NULL;
+	sharedMemId = -2;
 
 	xplate = NULL;
 	yplate = NULL;
@@ -342,11 +360,20 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	addOption ('r', NULL, 1, "camera rotang");
 	addOption (OPT_FLIP, "flip", 1, "camera flip (default to 1)");
 	addOption (OPT_PLATE, "plate", 1, "camera plate scale, x:y");
+	addOption (OPT_WITHSHM, "with-shm", 0, "use shared memory to speed up communication (experimental)");
 }
 
 Camera::~Camera ()
 {
-	delete[] dataBuffer;
+	if (sharedMemId >= 0)
+	{
+		shmdt (dataBuffer);
+	}
+	else
+	{
+		delete[] dataBuffer;
+		free (focusingHeader);
+	}
 }
 
 int Camera::willConnect (Rts2Address * in_addr)
@@ -360,7 +387,7 @@ int Camera::willConnect (Rts2Address * in_addr)
 	return Rts2ScriptDevice::willConnect (in_addr);
 }
 
-Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -392,7 +419,7 @@ void Camera::checkQueChanges (int fakeState)
 				// ask all centralds for possible blocking devices
 				for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 				{
-					(*iter)->queCommand (new Rts2CommandDeviceStatusInfo (this, exposureConn));
+					(*iter)->queCommand (new rts2core::Rts2CommandDeviceStatusInfo (this, exposureConn));
 				}
 			}
 		}
@@ -472,6 +499,9 @@ int Camera::processOption (int in_opt)
 			break;
 		case OPT_PLATE:
 			return setPlate (optarg);
+		case OPT_WITHSHM:
+			sharedMemId = -1;
+			break;
 		default:
 			return Rts2ScriptDevice::processOption (in_opt);
 	}
@@ -480,7 +510,6 @@ int Camera::processOption (int in_opt)
 
 int Camera::initChips ()
 {
-	// init filter
 	return 0;
 }
 
@@ -490,7 +519,7 @@ int Camera::sendImage (char *data, size_t dataSize)
 		return -1;
 	if (calculateStatistics->getValueInteger () != STATISTIC_ONLY)
 	{
-		currentImageData = exposureConn->startBinaryData (dataSize + sizeof (imghdr), dataType->getValueInteger ());
+		startImageData (exposureConn);
 		if (currentImageData == -1)
 			return -1;
 	}
@@ -546,6 +575,9 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 	}
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize -= dataSize;
+
+	if (shmBuffer != NULL)
+		*((unsigned long *) shmBuffer) += dataSize;
 
 	if (exposureConn && currentImageData >= 0)
 		return exposureConn->sendBinaryData (currentImageData, data, dataSize);
@@ -612,6 +644,36 @@ int Camera::initValues ()
 
 	initBinnings ();
 	initDataTypes ();
+
+	// init shared memory segment
+	if (sharedMemId == -1)
+	{
+		struct shmid_ds ds;
+		sharedMemId = shmget (IPC_PRIVATE, sizeof (unsigned long) + sizeof (imghdr) + chipByteSize (), 0666);
+		if (sharedMemId == -1)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot create shared memory segment: " << strerror (errno) << sendLog;
+			return -1;
+		}
+		dataBufferSize = chipByteSize ();
+		shmBuffer = (char *) shmat (sharedMemId, NULL, 0);
+		if (shmBuffer == (void *) -1)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot attach to shared memory with key " << sharedMemId << ": " << strerror (errno) << sendLog;
+			return -1;
+		}
+		if (shmctl (sharedMemId, IPC_STAT, &ds) < 0 || shmctl (sharedMemId, IPC_RMID, &ds) < 0)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot perform shmctl call: " << strerror (errno) << sendLog;
+			return -1;
+		}
+		focusingHeader = (struct imghdr*) (shmBuffer + sizeof (unsigned long));
+		dataBuffer = shmBuffer + sizeof (unsigned long) + sizeof (struct imghdr);
+	}
+	else
+	{
+		focusingHeader = (struct imghdr *) malloc (sizeof (struct imghdr));
+	}
 
 	return Rts2ScriptDevice::initValues ();
 }
@@ -953,12 +1015,11 @@ int Camera::camReadout (Rts2Conn * conn)
 	if (quedExpNumber->getValueInteger () > 0 && exposureConn && supportFrameTransfer ())
 	{
 		checkQueChanges (getStateChip (0) & ~CAM_EXPOSING);
-		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT,
-			0, 0, "starting frame transfer");
+		maskStateChip (0, CAM_MASK_READING | CAM_MASK_FT, CAM_READING | CAM_FT, 0, 0, "starting frame transfer");
 		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 			currentImageData = -1;
 		else
-			currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+			startImageData (conn);
 		if (queValues.empty ())
 			// remove exposure flag from state
 			camExpose (exposureConn, getStateChip (0) & ~CAM_MASK_EXPOSE, true);
@@ -968,26 +1029,21 @@ int Camera::camReadout (Rts2Conn * conn)
 		// open data connection - wait socket
 		// end exposure as well..
 		// do not signal BOP_TEL_MOVE down if there are exposures in que
-		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING,
-			CAM_NOEXPOSURE | CAM_READING,
-			BOP_TEL_MOVE, 0,
-			"chip readout started");
-		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+		maskStateChip (0, CAM_MASK_EXPOSE | CAM_MASK_READING, CAM_NOEXPOSURE | CAM_READING, BOP_TEL_MOVE, 0, "chip readout started");
+		if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)	
 			currentImageData = -1;
 		else
-			currentImageData = conn->startBinaryData (chipByteSize () + sizeof (imghdr), dataType->getValueInteger ());
+			startImageData (conn);
 	}
 
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize = chipByteSize ();
 
-	if (currentImageData >= 0 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
+	if (currentImageData != -1 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
 		return readoutStart ();
 	}
-	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING,
-		DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0,
-		"chip readout failed");
+	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0, "chip readout failed");
 	conn->sendCommandEnd (DEVDEM_E_HW, "cannot read chip");
 	return -1;
 }

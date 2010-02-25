@@ -32,8 +32,33 @@
  *
  * @ingroup RTS2Logger
  */
-class Rts2DevClientLogger:public Rts2DevClient
+class Rts2DevClientLogger:public rts2core::Rts2DevClient
 {
+	public:
+		/**
+		 * Construct client for logging device.
+		 *
+		 * @param in_conn                  Connection.
+		 * @param in_numberSec             Number of seconds when the info command will be send.
+		 * @param in_fileCreationInterval  Interval between file creation.
+		 * @param in_logNames              String with space separated names of values which will be logged.
+		 */
+		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
+
+		virtual ~ Rts2DevClientLogger (void);
+		virtual void infoOK ();
+		virtual void infoFailed ();
+
+		virtual void idle ();
+
+		virtual void postEvent (Rts2Event * event);
+	protected:
+		/**
+		 * Change expansion pattern to new filename.
+		 *
+		 * @param pattern Expanding pattern.
+		 */
+		void setOutputFile (const char *pattern);
 	private:
 		std::list < Rts2Value * >logValues;
 		std::list < std::string > logNames;
@@ -73,31 +98,6 @@ class Rts2DevClientLogger:public Rts2DevClient
 		 * Change output stream according to new expansion.
 		 */
 		void changeOutputStream ();
-	protected:
-		/**
-		 * Change expansion pattern to new filename.
-		 *
-		 * @param pattern Expanding pattern.
-		 */
-		void setOutputFile (const char *pattern);
-	public:
-		/**
-		 * Construct client for logging device.
-		 *
-		 * @param in_conn                  Connection.
-		 * @param in_numberSec             Number of seconds when the info command will be send.
-		 * @param in_fileCreationInterval  Interval between file creation.
-		 * @param in_logNames              String with space separated names of values which will be logged.
-		 */
-		Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames);
-
-		virtual ~ Rts2DevClientLogger (void);
-		virtual void infoOK ();
-		virtual void infoFailed ();
-
-		virtual void idle ();
-
-		virtual void postEvent (Rts2Event * event);
 };
 
 /**
@@ -130,16 +130,14 @@ class Rts2LogValName
  */
 class Rts2LoggerBase
 {
-	private:
-		std::list < Rts2LogValName > devicesNames;
-
+	public:
+		Rts2LoggerBase ();
+		rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 	protected:
 		int readDevices (std::istream & is);
 
 		Rts2LogValName *getLogVal (const char *name);
 		int willConnect (Rts2Address * in_addr);
-
-	public:
-		Rts2LoggerBase ();
-		Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+	private:
+		std::list < Rts2LogValName > devicesNames;
 };

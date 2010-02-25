@@ -71,12 +71,20 @@
 #define PROTO_BINARY           "C"
 /** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
+/** Shared memory segment key, which holds data */
+#define PROTO_SHARED           "H"
+/** Full shared data received */
+#define PROTO_SHARED_FULL      "I"
 
-class Rts2Command;
 
 class Rts2ClientTCPDataConn;
 
+namespace rts2core
+{
+class Rts2Command;
+
 class Rts2DevClient;
+}
 
 class Rts2LogStream;
 
@@ -377,7 +385,7 @@ class Rts2Block: public Rts2App
 
 		void deleteAddress (int p_centrald_num, const char *p_name);
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		void addUser (int p_centraldId, const char *p_login);
 		int addUser (Rts2ConnUser * in_user);
 
@@ -486,7 +494,7 @@ class Rts2Block: public Rts2App
 		 */
 		void clearAll ();
 
-		int queAll (Rts2Command * cmd);
+		int queAll (rts2core::Rts2Command * cmd);
 		int queAll (const char *text);
 
 		/**

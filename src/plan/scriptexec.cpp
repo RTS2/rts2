@@ -213,7 +213,7 @@ int ScriptExec::doProcessing ()
 	return 0;
 }
 
-Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2DevClient *cli;
 	switch (other_device_type)

@@ -25,7 +25,7 @@
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 
-class Rts2DevClientTelescopeSel:public Rts2DevClientTelescope
+class Rts2DevClientTelescopeSel:public rts2core::Rts2DevClientTelescope
 {
 	protected:
 		virtual void moveEnd ();
@@ -33,7 +33,7 @@ class Rts2DevClientTelescopeSel:public Rts2DevClientTelescope
 		Rts2DevClientTelescopeSel (Rts2Conn * in_connection);
 };
 
-Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):Rts2DevClientTelescope (in_connection)
+Rts2DevClientTelescopeSel::Rts2DevClientTelescopeSel (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
 {
 }
 
@@ -41,11 +41,11 @@ void Rts2DevClientTelescopeSel::moveEnd ()
 {
 	if (!moveWasCorrecting)
 		connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-	Rts2DevClientTelescope::moveEnd ();
+	rts2core::Rts2DevClientTelescope::moveEnd ();
 }
 
 
-class Rts2DevClientExecutorSel:public Rts2DevClientExecutor
+class Rts2DevClientExecutorSel:public rts2core::Rts2DevClientExecutor
 {
 	protected:
 		virtual void lastReadout ();
@@ -53,14 +53,14 @@ class Rts2DevClientExecutorSel:public Rts2DevClientExecutor
 		Rts2DevClientExecutorSel (Rts2Conn * in_connection);
 };
 
-Rts2DevClientExecutorSel::Rts2DevClientExecutorSel (Rts2Conn * in_connection):Rts2DevClientExecutor (in_connection)
+Rts2DevClientExecutorSel::Rts2DevClientExecutorSel (Rts2Conn * in_connection):rts2core::Rts2DevClientExecutor (in_connection)
 {
 }
 
 void Rts2DevClientExecutorSel::lastReadout ()
 {
 	connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
-	Rts2DevClientExecutor::lastReadout ();
+	rts2core::Rts2DevClientExecutor::lastReadout ();
 }
 
 
@@ -89,8 +89,7 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		virtual ~ Rts2SelectorDev (void);
 		virtual int idle ();
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual void postEvent (Rts2Event * event);
 		virtual int changeMasterState (int new_state);
 
@@ -177,9 +176,9 @@ int Rts2SelectorDev::idle ()
 	return Rts2DeviceDb::idle ();
 }
 
-Rts2DevClient *Rts2SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Rts2SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	Rts2DevClient *ret;
+	rts2core::Rts2DevClient *ret;
 	switch (other_device_type)
 	{
 		case DEVICE_TYPE_MOUNT:
@@ -188,7 +187,7 @@ Rts2DevClient *Rts2SelectorDev::createOtherType (Rts2Conn * conn, int other_devi
 			ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
 			updateNext ();
 			if (next_id > 0 && selEnabled->getValueBool ())
-				conn->queCommand (new Rts2CommandExecNext (this, next_id));
+				conn->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
 			return ret;
 		default:
 			return Rts2DeviceDb::createOtherType (conn, other_device_type);
@@ -220,7 +219,7 @@ int Rts2SelectorDev::updateNext ()
 		exec = getOpenConnection ("EXEC");
 		if (exec && selEnabled->getValueBool ())
 		{
-			exec->queCommand (new Rts2CommandExecNext (this, next_id));
+			exec->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
 		}
 		return 0;
 	}

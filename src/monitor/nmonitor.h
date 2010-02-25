@@ -31,9 +31,7 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
 
-#ifdef HAVE_PGSQL_SOAP
-#include "../db/simbad/rts2simbadtarget.h"
-#endif							 /* HAVE_PGSQL_SOAP */
+#include "../db/simbad/simbadtarget.h"
 
 #include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
@@ -90,8 +88,7 @@ class Rts2NMonitor:public Rts2Client
 		virtual int idle ();
 
 		virtual Rts2ConnClient *createClientConnection (int _centrald_num, char *_deviceName);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
 		virtual int deleteConnection (Rts2Conn * conn);
 
@@ -101,13 +98,11 @@ class Rts2NMonitor:public Rts2Client
 
 		void processKey (int key);
 
-		void commandReturn (Rts2Command * cmd, int cmd_status);
+		void commandReturn (rts2core::Rts2Command * cmd, int cmd_status);
 
 	protected:
 		virtual int processOption (int in_opt);
-	#ifdef HAVE_PGSQL_SOAP
 		virtual int processArgs (const char *arg);
-	#endif						 /* HAVE_PGSQL_SOAP */
 
 		virtual void addSelectSocks ();
 		virtual void selectSuccess ();
@@ -128,7 +123,7 @@ class Rts2NMonitor:public Rts2Client
 
 		Rts2NStatusWindow *statusWindow;
 
-		Rts2Command *oldCommand;
+		rts2core::Rts2Command *oldCommand;
 
 		std::list < Rts2NWindow * >windowStack;
 
@@ -157,9 +152,7 @@ class Rts2NMonitor:public Rts2Client
 
 		void sendCommand ();
 
-	#ifdef HAVE_PGSQL_SOAP
-		Rts2SimbadTarget *tarArg;
-	#endif						 /* HAVE_PGSQL_SOAP */
+		rts2db::SimbadTarget *tarArg;
 
 		/**
 		 * Return connection at given number.
@@ -185,13 +178,12 @@ class Rts2NMonitor:public Rts2Client
 class Rts2NMonConn:public Rts2ConnClient
 {
 	public:
-		Rts2NMonConn (Rts2NMonitor * _master, int _centrald_num, char *_name)
-		:Rts2ConnClient (_master, _centrald_num, _name)
+		Rts2NMonConn (Rts2NMonitor * _master, int _centrald_num, char *_name):Rts2ConnClient (_master, _centrald_num, _name)
 		{
 			master = _master;
 		}
 
-		virtual void commandReturn (Rts2Command * cmd, int in_status)
+		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status)
 		{
 			master->commandReturn (cmd, in_status);
 			return Rts2ConnClient::commandReturn (cmd, in_status);
@@ -220,7 +212,7 @@ class Rts2NMonCentralConn:public Rts2ConnCentraldClient
 			master = in_master;
 		}
 
-		virtual void commandReturn (Rts2Command * cmd, int in_status)
+		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status)
 		{
 			master->commandReturn (cmd, in_status);
 			Rts2ConnCentraldClient::commandReturn (cmd, in_status);

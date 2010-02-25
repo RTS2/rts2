@@ -61,13 +61,10 @@ namespace rts2xmlrpc
  *
  * @addgroup XMLRPC
  */
-class XmlDevClient:public Rts2DevClient
+class XmlDevClient:public rts2core::Rts2DevClient
 {
 	public:
-		XmlDevClient (Rts2Conn *conn):Rts2DevClient (conn)
-		{
-
-		}
+		XmlDevClient (Rts2Conn *conn):rts2core::Rts2DevClient (conn) {}
 
 		virtual void stateChanged (Rts2ServerState * state);
 
@@ -91,7 +88,7 @@ class XmlRpcd:public Rts2Device
 		XmlRpcd (int argc, char **argv);
 		virtual ~XmlRpcd ();
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
 		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
 

@@ -6,6 +6,7 @@
   Copyright 2009 Petr Kubanek petr@kubanek.net
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
   <xs:complexType name="action">
     <xs:annotation><xs:documentation>Allowed actions.</xs:documentation></xs:annotation>
     <xs:choice maxOccurs="unbounded">
@@ -16,11 +17,16 @@
       </xs:element>
       <xs:element name="command" type="xs:string" minOccurs="0"/>
       <xs:element name="email" type="email" minOccurs="0"/>
-<!--      <xs:element name="sql" type="xs:string" minOccurs="0"/> -->
+<!--    <xs:element name="sql" type="xs:string" minOccurs="0"/> -->
     </xs:choice>
+    <xs:attribute name="if" type="xs:string" default="">
+      <xs:annotation><xs:documentation>
+        Executes only if this test evaluates to true.
+      </xs:documentation></xs:annotation>
+    </xs:attribute>
   </xs:complexType>
 
-  <xs:simpleType name="email_addr">
+ <xs:simpleType name="email_addr">
     <xs:annotation><xs:documentation>Email address string</xs:documentation></xs:annotation>
     <xs:restriction base="xs:string">
       <xs:pattern value="(\w+.*)+@(\w+.*)+.\w+"/>
@@ -68,15 +74,16 @@
   
   <!-- value changes -->
   <xs:complexType name="value">
+    <xs:annotation><xs:documentation>Actions bound to value change.</xs:documentation></xs:annotation>
     <xs:complexContent>
       <xs:extension base="action">
         <xs:attribute name="name" type="xs:string" use="required"/>
-	<xs:attribute name="cadency" type="xs:integer" default="-1">
-	  <xs:annotation><xs:documentation>
-	    Defines how often will be value changed recorded.
-	  </xs:documentation></xs:annotation>
-	</xs:attribute>
-      </xs:extension>
+        <xs:attribute name="cadency" type="xs:integer" default="-1">
+          <xs:annotation><xs:documentation>
+             Defines how often will be value changed recorded.
+          </xs:documentation></xs:annotation>
+        </xs:attribute>
+     </xs:extension>
     </xs:complexContent>
   </xs:complexType>
 

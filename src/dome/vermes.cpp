@@ -271,8 +271,7 @@ int Vermes::initValues ()
   tel_equ.ra= ln_get_mean_sidereal_time( JD) * 15. + obs_location.lng;
   tel_equ.dec= 0. ;
   // thread to compare (target - current) azimuth and rotate the dome
-  int *value ;
-  ret = pthread_create( &move_to_target_azimuth_id, NULL, move_to_target_azimuth, value) ;
+  ret = pthread_create( &move_to_target_azimuth_id, NULL, move_to_target_azimuth, NULL) ;
   return Cupola::initValues ();
 }
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 

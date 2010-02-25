@@ -40,5 +40,10 @@
         <record/>
       </value>
     </device>
+    <device name="SD">
+      <value name="test_int" cadency="600" if="$test_int &lt; 20">
+        <record/>
+      </value>
+    </device>
   </events>
 </config>

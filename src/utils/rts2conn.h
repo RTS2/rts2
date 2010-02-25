@@ -77,11 +77,6 @@ class Rts2Address;
 
 class Rts2Block;
 
-class Rts2Command;
-class Rts2CommandStatusInfo;
-
-class Rts2DevClient;
-
 class Rts2Event;
 
 class Rts2Value;
@@ -90,6 +85,12 @@ class Rts2Conn;
 
 namespace rts2core
 {
+
+class Rts2Command;
+
+class Rts2CommandStatusInfo;
+
+class Rts2DevClient;
 
 /**
  * Superclass for any connection errors. All errors which occurs on connection
@@ -211,6 +212,13 @@ class Rts2Conn:public Rts2Object
 		 */
 		int sendBinaryData (int data_conn, char *data, long dataSize);
 
+		/**
+		 * Image data will be transfered in shared memory, attachable by key.
+		 */
+		int startSharedData (int key);
+
+		int endSharedData (int key);
+
 		virtual int sendMessage (Rts2Message & msg);
 		int sendValue (std::string val_name, int value);
 		int sendValue (std::string val_name, int val1, double val2);
@@ -308,7 +316,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @callergraph
 		 */
-		void queCommand (Rts2Command * cmd, int notBop, Rts2Object * originator = NULL);
+		void queCommand (rts2core::Rts2Command * cmd, int notBop, Rts2Object * originator = NULL);
 
 		/**
 		 * Que command on connection.
@@ -319,7 +327,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queCommand (Rts2Command * cmd);
+		void queCommand (rts2core::Rts2Command * cmd);
 
 		/**
 		 * Send immediatelly command to connection.
@@ -331,7 +339,7 @@ class Rts2Conn:public Rts2Object
 		 *
 		 * @return 0 when sucessfull, -1 on error.
 		 */
-		void queSend (Rts2Command * cmd);
+		void queSend (rts2core::Rts2Command * cmd);
 
 		/**
 		 * Hook for command return.
@@ -344,7 +352,7 @@ class Rts2Conn:public Rts2Object
 		 * @param cmd Finished command.
 		 * @param in_status Command return status.
 		 */
-		virtual void commandReturn (Rts2Command * cmd, int in_status);
+		virtual void commandReturn (rts2core::Rts2Command * cmd, int in_status);
 
 		/**
 		 * Determines if que is empty and there is not any running command.
@@ -448,7 +456,7 @@ class Rts2Conn:public Rts2Object
 
 		Rts2ServerState *getStateObject () { return serverState; }
 
-		Rts2DevClient *getOtherDevClient () { return otherDevice; }
+		rts2core::Rts2DevClient *getOtherDevClient () { return otherDevice; }
 
 		virtual void updateStatusWait (Rts2Conn * conn);
 		virtual void masterStateChanged ();
@@ -517,7 +525,7 @@ class Rts2Conn:public Rts2Object
 		long getWriteBinaryDataSize (int data_conn)
 		{
 			// if it exists..
-			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
+			std::map <int, rts2core::DataWrite *>::iterator iter = writeData.find (data_conn);
 			if (iter == writeData.end ())
 				return 0;
 			return ((*iter).second)->getDataSize ();
@@ -579,7 +587,7 @@ class Rts2Conn:public Rts2Object
 		/**
 		 * Reference to other device client.
 		 */
-		Rts2DevClient *otherDevice;
+		rts2core::Rts2DevClient *otherDevice;
 
 		/**
 		 * Type of device.
@@ -645,8 +653,8 @@ class Rts2Conn:public Rts2Object
 		in_addr addr;
 		int port;				 // local port & connection
 
-		std::list < Rts2Command * >commandQue;
-		Rts2Command *runningCommand;
+		std::list < rts2core::Rts2Command * >commandQue;
+		rts2core::Rts2Command *runningCommand;
 		enum {WAITING, SEND, RETURNING}
 		runningCommandStatus;
 
@@ -655,10 +663,13 @@ class Rts2Conn:public Rts2Object
 		time_t lastData;
 		time_t lastSendReady;
 
-		std::map <int, Rts2DataRead *> readData;
+		std::map <int, rts2core::DataRead *> readData;
 		int activeReadData;
 
-		std::map <int, Rts2DataWrite *> writeData;
+		int activeSharedId;
+		char *activeSharedMem;
+
+		std::map <int, rts2core::DataWrite *> writeData;
 		// ID of outgoing data connection
 		int dataConn;
 

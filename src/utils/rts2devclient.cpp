@@ -23,6 +23,8 @@
 #include "rts2command.h"
 #include "rts2devclient.h"
 
+using namespace rts2core;
+
 Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
 {
 	connection = in_connection;
@@ -60,11 +62,11 @@ void Rts2DevClient::newDataConn (int data_conn)
 {
 }
 
-void Rts2DevClient::dataReceived (Rts2DataRead *data)
+void Rts2DevClient::dataReceived (DataRead *data)
 {
 }
 
-void Rts2DevClient::fullDataReceived (int data_conn, Rts2DataRead *data)
+void Rts2DevClient::fullDataReceived (int data_conn, DataAbstractRead *data)
 {
 	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }

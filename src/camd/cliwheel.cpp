@@ -22,7 +22,7 @@
 
 using namespace rts2camd;
 
-ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):Rts2DevClientFilter (conn)
+ClientFilterCamera::ClientFilterCamera (Rts2Conn * conn):rts2core::Rts2DevClientFilter (conn)
 {
 }
 
@@ -34,13 +34,13 @@ ClientFilterCamera::~ClientFilterCamera (void)
 void ClientFilterCamera::filterMoveEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
-	Rts2DevClientFilter::filterMoveEnd ();
+	rts2core::Rts2DevClientFilter::filterMoveEnd ();
 }
 
 void ClientFilterCamera::filterMoveFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
-	Rts2DevClientFilter::filterMoveFailed (status);
+	rts2core::Rts2DevClientFilter::filterMoveFailed (status);
 }
 
 void ClientFilterCamera::postEvent (Rts2Event * event)
@@ -52,7 +52,7 @@ void ClientFilterCamera::postEvent (Rts2Event * event)
 			fs = (filterStart *) event->getArg ();
 			if (!strcmp (getName (), fs->filterName) && fs->filter >= 0)
 			{
-				connection->queCommand (new Rts2CommandFilter (this, fs->filter));
+				connection->queCommand (new rts2core::Rts2CommandFilter (this, fs->filter));
 				fs->filter = -1;
 			}
 			break;
@@ -62,12 +62,12 @@ void ClientFilterCamera::postEvent (Rts2Event * event)
 				fs->filter = getConnection ()->getValueInteger ("filter");
 			break;
 	}
-	Rts2DevClientFilter::postEvent (event);
+	rts2core::Rts2DevClientFilter::postEvent (event);
 }
 
 void  ClientFilterCamera::valueChanged (Rts2Value * value)
 {
 	if (value->getName () == "filter")
 		getMaster ()->postEvent (new Rts2Event (EVENT_FILTER_MOVE_END));
-	Rts2DevClientFilter::valueChanged (value);
+	rts2core::Rts2DevClientFilter::valueChanged (value);
 }

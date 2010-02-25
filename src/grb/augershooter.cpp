@@ -235,7 +235,7 @@ void DevAugerShooter::newShower (double lastDate, double ra, double dec)
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new Rts2CommandExecShower (this));
+		exec->queCommand (new rts2core::Rts2CommandExecShower (this));
 	}
 	else
 	{

@@ -33,6 +33,8 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include <sys/ipc.h>
+#include <sys/shm.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -85,6 +87,9 @@ Rts2Conn::Rts2Conn (Rts2Block * in_master):Rts2Object ()
 
 	activeReadData = -1;
 	dataConn = 0;
+
+	activeSharedId = -1;
+	activeSharedMem = NULL;
 }
 
 Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
@@ -121,6 +126,9 @@ Rts2Conn::Rts2Conn (int in_sock, Rts2Block * in_master):Rts2Object ()
 
 	activeReadData = -1;
 	dataConn = 0;
+
+	activeSharedId = -1;
+	activeSharedMem = NULL;
 }
 
 Rts2Conn::~Rts2Conn (void)
@@ -132,6 +140,8 @@ Rts2Conn::~Rts2Conn (void)
 	delete otherDevice;
 	queClear ();
 	delete[]buf;
+	if (activeSharedMem != NULL)
+		shmdt (activeSharedMem);
 }
 
 int Rts2Conn::add (fd_set * readset, fd_set * writeset, fd_set * expset)
@@ -708,7 +718,7 @@ void Rts2Conn::processLine ()
 		}
 		else
 		{
-			readData[data_conn] = new Rts2DataRead (data_size, data_type);
+			readData[data_conn] = new DataRead (data_size, data_type);
 			newDataConn (data_conn);
 			ret = -1;
 		}
@@ -726,6 +736,61 @@ void Rts2Conn::processLine ()
 		}
 		else
 		{
+			ret = -1;
+		}
+	}
+	else if (isCommand (PROTO_SHARED))
+	{
+		int sharedMem;
+		if (paramNextInteger (&sharedMem)
+			|| !paramEnd ())
+		{
+			connectionError (-2);
+			ret = -2;
+		}
+		else
+		{
+			ret = -1;
+			if (sharedMem != activeSharedId)
+			{
+				shmdt (activeSharedMem);
+				activeSharedMem = (char *) shmat (sharedMem, NULL, 0);
+				if (activeSharedMem == (void *) -1)
+				{
+					logStream (MESSAGE_ERROR) << "cannot attach memory with ID " << sharedMem << sendLog;
+					ret = -2;
+				}
+				else
+				{
+					activeSharedId = sharedMem;
+				}
+				newDataConn (-1);
+			}
+		}
+		std::cout << "PROTO_SHARED" << std::endl;
+	}
+	else if (isCommand (PROTO_SHARED_FULL))
+	{
+		int sharedMem;
+		if (paramNextInteger (&sharedMem)
+			|| !paramEnd ())
+		{
+			connectionError (-2);
+			ret = -2;
+		}
+		if (sharedMem != activeSharedId)
+		{
+			logStream (MESSAGE_ERROR) << "invalid shmid passed in PROTO_SHARED_FULL :" << sharedMem << " " << activeSharedId << sendLog;
+			ret = -2;
+		}
+		else
+		{
+			std::cout << "PROTO_SHARED_FULL" << std::endl;
+			if (otherDevice)
+			{
+				DataShared _data (activeSharedMem);
+				otherDevice->fullDataReceived (-1, &_data);
+			}
 			ret = -1;
 		}
 	}
@@ -1290,13 +1355,12 @@ int Rts2Conn::startBinaryData (long dataSize, int dataType)
 {
 	std::ostringstream _os;
 	dataConn++;
-	_os << PROTO_BINARY " " << dataConn << " " << dataSize
-		<< " " << dataType;
+	_os << PROTO_BINARY " " << dataConn << " " << dataSize << " " << dataType;
 	int ret;
 	ret = sendMsg (_os);
 	if (ret == -1)
 		return -1;
-	writeData[dataConn] = new Rts2DataWrite (dataSize);
+	writeData[dataConn] = new DataWrite (dataSize);
 	return dataConn;
 }
 
@@ -1334,7 +1398,7 @@ int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 		{
 			binaryWriteTop += ret;
 			dataSize -= ret;
-			std::map <int, Rts2DataWrite *>::iterator iter = writeData.find (data_conn);
+			std::map <int, DataWrite *>::iterator iter = writeData.find (data_conn);
 			if (iter != writeData.end ())
 			{
 				((*iter).second)->dataWritten (ret);
@@ -1346,6 +1410,29 @@ int Rts2Conn::sendBinaryData (int data_conn, char *data, long dataSize)
 			}
 		}
 	}
+	return 0;
+}
+
+int Rts2Conn::startSharedData (int shId)
+{
+	std::ostringstream _os;
+	dataConn++;
+	_os << PROTO_SHARED " " << shId << " " << dataConn;
+	int ret;
+	ret = sendMsg (_os);
+	if (ret == -1)
+		return -1;
+	return dataConn;
+}
+
+int Rts2Conn::endSharedData (int shId)
+{
+	std::ostringstream _os;
+	_os << PROTO_SHARED_FULL " " << shId;
+	int ret;
+	ret = sendMsg (_os);
+	if (ret == -1)
+		return -1;
 	return 0;
 }
 
@@ -1641,7 +1728,7 @@ void Rts2Conn::newDataConn (int data_conn)
 
 void Rts2Conn::dataReceived ()
 {
-	std::map <int, Rts2DataRead *>::iterator iter = readData.find (activeReadData);
+	std::map <int, DataRead *>::iterator iter = readData.find (activeReadData);
 	// inform device that we read some data
 	if (otherDevice)
 		otherDevice->dataReceived ((*iter).second);

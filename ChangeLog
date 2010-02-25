@@ -1,6 +1,10 @@
 0.7.5
 =====
 
+2010-02-25
+ * added lib directory
+ * camera experimetal shared memory transport
+
 2010-02-20
  * Replaced SOAP library with own simple Simbad support
 

@@ -19,9 +19,7 @@
 
 #include "rts2loggerbase.h"
 
-Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, 
-time_t in_fileCreationInterval, std::list < std::string > &in_logNames)
-:Rts2DevClient (in_conn)
+Rts2DevClientLogger::Rts2DevClientLogger (Rts2Conn * in_conn, double in_numberSec, time_t in_fileCreationInterval, std::list < std::string > &in_logNames):rts2core::Rts2DevClient (in_conn)
 {
 	exp = NULL;
 
@@ -121,30 +119,24 @@ Rts2DevClientLogger::infoOK ()
 	*outputStream << std::endl;
 }
 
-
-void
-Rts2DevClientLogger::infoFailed ()
+void Rts2DevClientLogger::infoFailed ()
 {
  	changeOutputStream ();
 	*outputStream << "info failed" << std::endl;
 }
 
-
-void
-Rts2DevClientLogger::idle ()
+void Rts2DevClientLogger::idle ()
 {
 	struct timeval now;
 	gettimeofday (&now, NULL);
 	if (timercmp (&nextInfoCall, &now, <))
 	{
-		queCommand (new Rts2CommandInfo (getMaster ()));
+		queCommand (new rts2core::Rts2CommandInfo (getMaster ()));
 		timeradd (&now, &numberSec, &nextInfoCall);
 	}
 }
 
-
-void
-Rts2DevClientLogger::postEvent (Rts2Event * event)
+void Rts2DevClientLogger::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -155,14 +147,11 @@ Rts2DevClientLogger::postEvent (Rts2Event * event)
 	Rts2DevClient::postEvent (event);
 }
 
-
 Rts2LoggerBase::Rts2LoggerBase ()
 {
 }
 
-
-int
-Rts2LoggerBase::readDevices (std::istream & is)
+int Rts2LoggerBase::readDevices (std::istream & is)
 {
 	while (!is.eof () && !is.fail ())
 	{
@@ -207,9 +196,7 @@ Rts2LoggerBase::readDevices (std::istream & is)
 	return 0;
 }
 
-
-Rts2LogValName *
-Rts2LoggerBase::getLogVal (const char *name)
+Rts2LogValName * Rts2LoggerBase::getLogVal (const char *name)
 {
 	for (std::list < Rts2LogValName >::iterator iter = devicesNames.begin ();
 		iter != devicesNames.end (); iter++)
@@ -220,18 +207,14 @@ Rts2LoggerBase::getLogVal (const char *name)
 	return NULL;
 }
 
-
-int
-Rts2LoggerBase::willConnect (Rts2Address * in_addr)
+int Rts2LoggerBase::willConnect (Rts2Address * in_addr)
 {
 	if (getLogVal (in_addr->getName ()))
 		return 1;
 	return 0;
 }
 
-
-Rts2DevClient *
-Rts2LoggerBase::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient * Rts2LoggerBase::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2LogValName *val = getLogVal (conn->getName ());
 	if (val)

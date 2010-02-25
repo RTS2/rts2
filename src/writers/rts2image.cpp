@@ -228,7 +228,7 @@ Rts2Image::Rts2Image (const char *in_expression, int in_expNum, const struct tim
 	writeExposureStart ();
 }
 
-Rts2Image::Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera, const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
+Rts2Image::Rts2Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart):Rts2FitsFile (in_exposureStart)
 {
 	std::string in_filename;
 

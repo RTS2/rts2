@@ -115,6 +115,9 @@ class Rts2DevConnMaster:public Rts2Conn
 		virtual void setConnState (conn_state_t new_conn_state);
 };
 
+namespace rts2core
+{
+
 /**
  * Register device to central server.
  *
@@ -191,6 +194,7 @@ class Rts2CommandDeviceStatusInfo:public Rts2Command
 		virtual void deleteConnection (Rts2Conn * conn);
 };
 
+}
 
 /**
  * Represents RTS2 device. From this class, different devices are
@@ -234,7 +238,7 @@ class Rts2Device:public Rts2Daemon
 		int setMode (int new_mode, bool defaultValues = false);
 
 		int blockState;
-		Rts2CommandDeviceStatusInfo *deviceStatusCommand;
+		rts2core::Rts2CommandDeviceStatusInfo *deviceStatusCommand;
 
 	protected:
 		/**

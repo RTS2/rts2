@@ -22,18 +22,15 @@
 
 using namespace rts2camd;
 
-ClientFocusCamera::ClientFocusCamera (Rts2Conn * in_connection):Rts2DevClientFocus (in_connection)
+ClientFocusCamera::ClientFocusCamera (Rts2Conn * in_connection):rts2core::Rts2DevClientFocus (in_connection)
 {
 }
-
 
 ClientFocusCamera::~ClientFocusCamera (void)
 {
 }
 
-
-void
-ClientFocusCamera::postEvent (Rts2Event * event)
+void ClientFocusCamera::postEvent (Rts2Event * event)
 {
 	struct focuserMove *fm;
 	fm = (focuserMove *) event->getArg ();
@@ -44,11 +41,9 @@ ClientFocusCamera::postEvent (Rts2Event * event)
 			if (!strcmp (getName (), fm->focuserName))
 			{
 				if (event->getType () == EVENT_FOCUSER_SET)
-					connection->
-						queCommand (new Rts2CommandSetFocus (this, fm->value));
+					connection->queCommand (new rts2core::Rts2CommandSetFocus (this, fm->value));
 				else
-					connection->
-						queCommand (new Rts2CommandChangeFocus (this, fm->value));
+					connection->queCommand (new rts2core::Rts2CommandChangeFocus (this, fm->value));
 				// we process message
 				fm->focuserName = NULL;
 			}
@@ -61,21 +56,17 @@ ClientFocusCamera::postEvent (Rts2Event * event)
 			}
 			break;
 	}
-	Rts2DevClientFocus::postEvent (event);
+	rts2core::Rts2DevClientFocus::postEvent (event);
 }
 
-
-void
-ClientFocusCamera::focusingEnd ()
+void ClientFocusCamera::focusingEnd ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
-	Rts2DevClientFocus::focusingEnd ();
+	rts2core::Rts2DevClientFocus::focusingEnd ();
 }
 
-
-void
-ClientFocusCamera::focusingFailed (int status)
+void ClientFocusCamera::focusingFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
-	Rts2DevClientFocus::focusingFailed (status);
+	rts2core::Rts2DevClientFocus::focusingFailed (status);
 }

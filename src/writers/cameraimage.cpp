@@ -23,8 +23,7 @@
 
 CameraImage::~CameraImage (void)
 {
-	for (std::vector < ImageDeviceWait * >::iterator iter =
-		deviceWaits.begin (); iter != deviceWaits.end (); iter++)
+	for (std::vector < ImageDeviceWait * >::iterator iter =	deviceWaits.begin (); iter != deviceWaits.end (); iter++)
 	{
 		delete *iter;
 	}
@@ -32,16 +31,12 @@ CameraImage::~CameraImage (void)
 	delete image;
 }
 
-
-void
-CameraImage::waitForDevice (Rts2DevClient * devClient, double after)
+void CameraImage::waitForDevice (rts2core::Rts2DevClient * devClient, double after)
 {
 	deviceWaits.push_back (new ImageDeviceWait (devClient, after));
 }
 
-
-bool
-CameraImage::waitingFor (Rts2DevClient * devClient)
+bool CameraImage::waitingFor (rts2core::Rts2DevClient * devClient)
 {
 	bool ret = false;
 	for (std::vector < ImageDeviceWait * >::iterator iter =
@@ -112,9 +107,7 @@ CameraImages::deleteOld ()
 	}
 }
 
-
-void
-CameraImages::infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client)
+void CameraImages::infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{
@@ -137,10 +130,7 @@ CameraImages::infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client)
 	}
 }
 
-
-void
-CameraImages::infoFailed (Rts2DevClientCameraImage * master,
-Rts2DevClient * client)
+void CameraImages::infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client)
 {
 	for (CameraImages::iterator iter = begin (); iter != end ();)
 	{

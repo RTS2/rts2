@@ -57,29 +57,14 @@ class Rts2ConnFocus:public rts2core::ConnFork
 		virtual ~ Rts2ConnFocus (void);
 		virtual int newProcess ();
 		virtual void processLine ();
-		int getChange ()
-		{
-			return change;
-		}
-		void setChange (int new_change)
-		{
-			change = new_change;
-		}
-		const char *getCameraName ()
-		{
-			return image->getCameraName ();
-		}
-		Rts2Image *getImage ()
-		{
-			return image;
-		}
-		void nullCamera ()
-		{
-			image = NULL;
-		}
+		int getChange () { return change; }
+		void setChange (int new_change) { change = new_change; }
+		const char *getCameraName () { return image->getCameraName (); }
+		Rts2Image *getImage () { return image; }
+		void nullCamera () { image = NULL; }
 };
 
-class Rts2DevClientPhotFoc:public Rts2DevClientPhot
+class Rts2DevClientPhotFoc:public rts2core::Rts2DevClientPhot
 {
 	private:
 		std::ofstream os;

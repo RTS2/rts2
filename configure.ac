@@ -617,7 +617,7 @@ else
 	AC_MSG_RESULT($DATE)
 fi
 
-LDADD = ""
+LDADD=""
 AC_SUBST(LDADD)
 AC_SUBST(LDFLAGS)
 
@@ -677,6 +677,8 @@ AC_OUTPUT([Makefile
 	   contrib/Makefile
 	   doc/Makefile
 	   doc/doxyfile
+	   lib/Makefile
+	   lib/xmlrpc++/Makefile
 	   scripts/Makefile
 	   src/Makefile
 	   src/bckimages/Makefile
@@ -715,7 +717,6 @@ AC_OUTPUT([Makefile
 	   src/sensord/Makefile
 	   src/logger/Makefile
 	   src/xmlrpc/Makefile
-	   src/xmlrpc/xmlrpc++/Makefile
 	   src/scheduler/Makefile]
 )
 

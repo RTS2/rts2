@@ -22,21 +22,19 @@
 
 class Rts2Logger:public Rts2Client, public Rts2LoggerBase
 {
-	private:
-		std::istream * inputStream;
+	public:
+		Rts2Logger (int in_argc, char **in_argv);
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int willConnect (Rts2Address * in_addr);
-	public:
-		Rts2Logger (int in_argc, char **in_argv);
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+	private:
+		std::istream * inputStream;
 };
 
-Rts2Logger::Rts2Logger (int in_argc, char **in_argv):
-Rts2Client (in_argc, in_argv)
+Rts2Logger::Rts2Logger (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 {
 	setTimeout (USEC_SEC);
 	inputStream = NULL;
@@ -45,9 +43,7 @@ Rts2Client (in_argc, in_argv)
 		"specify config file with logged device, timeouts and values");
 }
 
-
-int
-Rts2Logger::processOption (int in_opt)
+int Rts2Logger::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
@@ -63,9 +59,7 @@ Rts2Logger::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2Logger::init ()
+int Rts2Logger::init ()
 {
 	int ret;
 	ret = Rts2Client::init ();
@@ -76,26 +70,20 @@ Rts2Logger::init ()
 	return ret;
 }
 
-
-int
-Rts2Logger::willConnect (Rts2Address * in_addr)
+int Rts2Logger::willConnect (Rts2Address * in_addr)
 {
 	return Rts2LoggerBase::willConnect (in_addr);
 }
 
-
-Rts2DevClient *
-Rts2Logger::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient * Rts2Logger::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
+	rts2core::Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)
 		return cli;
 	return Rts2Client::createOtherType (conn, other_device_type);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Rts2Logger app = Rts2Logger (argc, argv);
 	return app.run ();

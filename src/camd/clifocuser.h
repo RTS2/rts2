@@ -36,7 +36,7 @@ struct focuserMove
 	int value;
 };
 
-class ClientFocusCamera:public Rts2DevClientFocus
+class ClientFocusCamera:public rts2core::Rts2DevClientFocus
 {
 	protected:
 		virtual void focusingEnd ();

@@ -25,7 +25,7 @@
 
 using namespace rts2teld;
 
-ClientCupola::ClientCupola (Rts2Conn * conn):Rts2DevClientCupola (conn)
+ClientCupola::ClientCupola (Rts2Conn * conn):rts2core::Rts2DevClientCupola (conn)
 {
 }
 
@@ -37,13 +37,13 @@ ClientCupola::~ClientCupola (void)
 void ClientCupola::syncEnded ()
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
-	Rts2DevClientCupola::syncEnded ();
+	rts2core::Rts2DevClientCupola::syncEnded ();
 }
 
 void ClientCupola::syncFailed (int status)
 {
 	getMaster ()->postEvent (new Rts2Event (EVENT_CUP_SYNCED));
-	Rts2DevClientCupola::syncFailed (status);
+	rts2core::Rts2DevClientCupola::syncFailed (status);
 }
 
 void ClientCupola::postEvent (Rts2Event * event)
@@ -53,9 +53,9 @@ void ClientCupola::postEvent (Rts2Event * event)
 	{
 		case EVENT_CUP_START_SYNC:
 			dome_position = (struct ln_equ_posn *) event->getArg ();
-			connection->queCommand (new Rts2CommandCupolaMove (this, dome_position->ra, dome_position->dec));
+			connection->queCommand (new rts2core::Rts2CommandCupolaMove (this, dome_position->ra, dome_position->dec));
 			dome_position->ra = nan ("f");
 			break;
 	}
-	Rts2DevClientCupola::postEvent (event);
+	rts2core::Rts2DevClientCupola::postEvent (event);
 }

@@ -220,7 +220,7 @@ Indi::setObjRaDec (double ra, double dec)
 	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
-		tel->queCommand (new Rts2CommandResyncMove (this, (Rts2DevClientTelescope *)tel->getOtherDevClient (), ra, dec));
+		tel->queCommand (new rts2core::Rts2CommandResyncMove (this, (rts2core::Rts2DevClientTelescope *)tel->getOtherDevClient (), ra, dec));
 	}
 }
 
@@ -231,7 +231,7 @@ Indi::setCorrRaDec (double ra, double dec)
 	Rts2Conn *tel = getOpenConnection (telescopeName);
 	if (tel)
 	{
-		tel->queCommand (new Rts2CommandChangeValue ((Rts2DevClientTelescope *)tel->getOtherDevClient (), "CORR_", '=', ra, dec));
+		tel->queCommand (new rts2core::Rts2CommandChangeValue ((rts2core::Rts2DevClientTelescope *)tel->getOtherDevClient (), "CORR_", '=', ra, dec));
 	}
 }
 

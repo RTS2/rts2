@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Validation file for scheduler files.
+  Validate with xmllint -schema schedule.xsd schedule
+
+  Copyright 2010 Petr Kubanek petr@kubanek.net
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:complexType name="J2000">
+    <xs:sequence>
+      <xs:element name="RA" type="xs:double" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="DEC" type="xs:double" minOccurs="1" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="MPEC">
+    <xs:sequence>
+      <xs:element name="P" type="xs:double" minOccurs="1" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="coordinates">
+    <xs:choice minOccurs="1" maxOccurs="1">
+      <xs:element name="J2000" type="J2000"/>
+      <xs:element name="MP" type="MPEC"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="timeInterval">
+   <xs:sequence minOccurs="1" maxOccurs="unbounded">
+     <xs:element name="from" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+     <xs:element name="to" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+   </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="doubleIterval">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="lower" type="xs:double" minOccurs="0"/>
+      <xs:element name="upper" type="xs:double" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="constraints">
+    <xs:choice minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="time" type="timeInterval"/>
+      <xs:element name="airmass" type="doubleIterval"/>
+      <xs:element name="HA" type="doubleIterval"/>
+      <xs:element name="measuredSeeing" type="doubleIterval"/>
+      <xs:element name="expectedSeeing" type="doubleIterval"/>
+      <xs:element name="lunarDistance" type="doubleIterval"/>
+      <xs:element name="lunarPhase" type="doubleIterval"/>
+      <xs:element name="solarDistance" type="doubleIterval"/>
+      <xs:element name="sunAltitude" type="doubleIterval"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:simpleType name="filter-set">
+    <xs:restriction base="xs:string">
+    <!--  <xs:enumeration>
+        <xs:element value="Johnson"/>
+        <xs:element value="SDSS"/>
+      </xs:enumeration> -->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="exposure">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="filter" type="xs:string"/>
+      <xs:element name="length" type="xs:double"/>
+    </xs:sequence>
+    <xs:attribute name="repeat" type="xs:integer" default="1"/>
+  </xs:complexType>
+
+  <xs:complexType name="multicolor">
+    <xs:sequence minOccurs="1" maxOccurs="unbounded">
+      <xs:element name="exposure" type="exposure"/>
+    </xs:sequence>
+    <xs:attribute name="filter-set" type="filter-set"/>
+  </xs:complexType>
+
+  <xs:complexType name="instrument">
+    <xs:annotation><xs:documentation>Requested observations - instrument</xs:documentation></xs:annotation>
+    <xs:choice minOccurs="1" maxOccurs="1">
+      <xs:element name="multicolor" type="multicolor"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:complexType name="schedule">
+    <xs:sequence>
+      <xs:element name="object" type="xs:string"/>
+      <xs:element name="coordinates" type="coordinates"/>
+      <xs:element name="constraints" type="constraints" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="instrument" type="instrument"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="schedule" type="schedule"/>
+</xs:schema>

@@ -698,7 +698,7 @@ int Telescope::willConnect (Rts2Address * in_addr)
 	return Rts2Device::willConnect (in_addr);
 }
 
-Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Telescope::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{

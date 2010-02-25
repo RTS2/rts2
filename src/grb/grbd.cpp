@@ -246,12 +246,11 @@ int Grbd::newGcnGrb (int tar_id)
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new Rts2CommandExecGrb (this, tar_id));
+		exec->queCommand (new rts2core::Rts2CommandExecGrb (this, tar_id));
 	}
 	else
 	{
-		logStream (MESSAGE_ERROR) <<
-			"FATAL! No executor running to post grb ID " << tar_id << sendLog;
+		logStream (MESSAGE_ERROR) << "FATAL! No executor running to post grb ID " << tar_id << sendLog;
 		return -1;
 	}
 	return 0;

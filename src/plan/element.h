@@ -28,6 +28,8 @@
 
 #include "status.h"
 
+using namespace rts2core;
+
 #define EVENT_PRECISION_REACHED   RTS2_LOCAL_EVENT + 250
 
 #define EVENT_MIRROR_SET          RTS2_LOCAL_EVENT + 251

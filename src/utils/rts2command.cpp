@@ -23,6 +23,7 @@
 #include "rts2command.h"
 
 using namespace std;
+using namespace rts2core;
 
 Rts2Command::Rts2Command (Rts2Block * _owner)
 {

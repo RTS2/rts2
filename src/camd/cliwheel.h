@@ -35,7 +35,7 @@ struct filterStart
 	int filter;
 };
 
-class ClientFilterCamera:public Rts2DevClientFilter
+class ClientFilterCamera:public rts2core::Rts2DevClientFilter
 {
 	protected:
 		virtual void filterMoveEnd ();

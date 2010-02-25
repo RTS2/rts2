@@ -27,8 +27,7 @@
 
 #define OPT_CHANGE_FILTER   OPT_LOCAL + 50
 
-Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):
-Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
+Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
 	master = in_master;
 
@@ -53,34 +52,16 @@ Rts2GenFocCamera::~Rts2GenFocCamera (void)
 	fwhmDatas.clear ();
 }
 
-
-void
-Rts2GenFocCamera::getPriority ()
-{
-	std::cout << "Get priority " << getName () << std::endl;
-}
-
-
-void
-Rts2GenFocCamera::lostPriority ()
-{
-	std::cout << "Priority lost " << getName () << std::endl;
-}
-
-
-void
-Rts2GenFocCamera::exposureStarted ()
+void Rts2GenFocCamera::exposureStarted ()
 {
 	if (exe == NULL)
 	{
-		queCommand (new Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+		queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
 	}
 	Rts2DevClientCameraFoc::exposureStarted ();
 }
 
-
-void
-Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
+void Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 {
 	std::cout << "State changed (" << getName () << "): "
 		<< " value:" << getConnection()->getStateString ()
@@ -89,9 +70,7 @@ Rts2GenFocCamera::stateChanged (Rts2ServerState * state)
 	Rts2DevClientCameraFoc::stateChanged (state);
 }
 
-
-Rts2Image *
-Rts2GenFocCamera::createImage (const struct timeval *expStart)
+Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 {
 	Rts2Image *image;
 	if (autoSave)
@@ -204,19 +183,15 @@ Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 		}
 	}
 	Rts2DevClientCameraFoc::focusChange (focus);
-	queCommand (new Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
+	queCommand (new rts2core::Rts2CommandExposure (getMaster (), this, BOP_EXPOSURE));
 }
 
-
-void
-Rts2GenFocCamera::center (int centerWidth, int centerHeight)
+void Rts2GenFocCamera::center (int centerWidth, int centerHeight)
 {
-	connection->queCommand (new Rts2CommandCenter (this, centerWidth, centerHeight));
+	connection->queCommand (new rts2core::Rts2CommandCenter (this, centerWidth, centerHeight));
 }
 
-
-Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):
-Rts2Client (in_argc, in_argv)
+Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 {
 	defExposure = nan("f");
 	defCenter = 0;
@@ -349,16 +324,16 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	}
 	if (!isnan (defExposure))
 	{
-		cam->queCommand (new Rts2CommandChangeValue (cam, "exposure", '=', defExposure));
+		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "exposure", '=', defExposure));
 
 	}
 	if (darks)
 	{
-		cam->queCommand (new Rts2CommandChangeValue (cam, "SHUTTER", '=', 1));
+		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "SHUTTER", '=', 1));
 	}
 	if (defBin >= 0)
 	{
-		cam->queCommand (new Rts2CommandChangeValue (cam, "binning", '=', defBin));
+		cam->queCommand (new rts2core::Rts2CommandChangeValue (cam, "binning", '=', defBin));
 	}
 	// post exposure event..if name agree
 	for (cam_iter = cameraNames.begin (); cam_iter != cameraNames.end (); cam_iter++)
@@ -366,15 +341,13 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 		if (!strcmp (*cam_iter, cam->getName ()))
 		{
 			printf ("Get conn: %s\n", cam->getName ());
-			cam->queCommand (new Rts2CommandExposure (this, cam, BOP_EXPOSURE));
+			cam->queCommand (new rts2core::Rts2CommandExposure (this, cam, BOP_EXPOSURE));
 		}
 	}
 	return cam;
 }
 
-
-Rts2DevClient *
-Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -387,8 +360,7 @@ Rts2GenFocClient::createOtherType (Rts2Conn * conn, int other_device_type)
 		case DEVICE_TYPE_FOCUS:
 			return new Rts2DevClientFocusFoc (conn);
 		case DEVICE_TYPE_PHOT:
-			return new Rts2DevClientPhotFoc (conn, photometerFile, photometerTime,
-				photometerFilterChange, skipFilters);
+			return new Rts2DevClientPhotFoc (conn, photometerFile, photometerTime, photometerFilterChange, skipFilters);
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_MIRROR:
 		case DEVICE_TYPE_SENSOR:

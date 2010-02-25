@@ -1,6 +1,6 @@
 /* 
  * Basic camera daemon
- * Copyright (C) 2001-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2001-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,12 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
-
-/**
- * @file Abstract camera class.
- *
- * @defgroup RTS2Camera Camera driver
  */
 
 #ifndef __RTS2_CAMERA_CPP__
@@ -175,7 +169,7 @@ class Camera:public Rts2ScriptDevice
 
 		virtual int idle ();
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int info ();
 
 		virtual int killAll ();
@@ -251,7 +245,6 @@ class Camera:public Rts2ScriptDevice
 		virtual void setFullBopState (int new_state);
 
 	protected:
-		// comes from CameraChip
 		double pixelX;
 		double pixelY;
 
@@ -360,7 +353,7 @@ class Camera:public Rts2ScriptDevice
 		}
 
 		int nAcc;
-		struct imghdr focusingHeader;
+		struct imghdr *focusingHeader;
 
 		/**
 		 * Send whole image, including header.
@@ -381,6 +374,8 @@ class Camera:public Rts2ScriptDevice
 		 */
 		long getWriteBinaryDataSize ()
 		{
+			if (currentImageData == -2)
+				return dataBufferSize - *((unsigned long*) shmBuffer);
 			if (currentImageData < 0 && calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 				// end bytes
 				return calculateDataSize;
@@ -406,18 +401,12 @@ class Camera:public Rts2ScriptDevice
 		/**
 		 * Return vertical binning.
 		 */
-		int binningHorizontal ()
-		{
-			return ((Binning2D *)(binning->getData ()))->horizontal;
-		}
+		int binningHorizontal () { return ((Binning2D *)(binning->getData ()))->horizontal; }
 
 		/**
 		 * Return vertical binning.
 		 */
-		int binningVertical ()
-		{
-			return ((Binning2D *)(binning->getData ()))->vertical;
-		}
+		int binningVertical () { return ((Binning2D *)(binning->getData ()))->vertical; }
 
 		/**
 		 * Get size of pixel in bytes.
@@ -438,28 +427,19 @@ class Camera:public Rts2ScriptDevice
 		 *
 		 * @return Chip size in pixels.
 		 */
-		virtual long chipUsedSize ()
-		{
-			return getUsedWidthBinned () * getUsedHeightBinned ();
-		}
+		virtual long chipUsedSize () { return getUsedWidthBinned () * getUsedHeightBinned (); }
 
 		/**
 		 * Retuns size of chip in bytes.
 		 *
 		 * @return Size of pixel data from current configured CCD in bytes.
 		 */
-		virtual long chipByteSize ()
-		{
-			return chipUsedSize () * usedPixelByteSize ();
-		}
+		virtual long chipByteSize () { return chipUsedSize () * usedPixelByteSize (); }
 
 		/**
 		 * Returns size of one line in bytes.
 		 */
-		int lineByteSize ()
-		{
-			return usedPixelByteSize () * (chipUsedReadout->getWidthInt ());
-		}
+		int lineByteSize () { return usedPixelByteSize () * (chipUsedReadout->getWidthInt ()); }
 
 		virtual int processData (char *data, size_t size);
 
@@ -541,118 +521,82 @@ class Camera:public Rts2ScriptDevice
 		 *
 		 * @return Size of data buffer in bytes.
 		 */
-		virtual long suggestBufferSize ()
-		{
-			return chipByteSize ();
-		}
+		virtual long suggestBufferSize () { return chipByteSize (); }
 
 		/**
 		 * Get chip width (in pixels).
 		 *
 		 * @return Chip width in pixels.
 		 */
-		const int getWidth ()
-		{
-			return chipSize->getWidthInt ();
-		}
+		const int getWidth () { return chipSize->getWidthInt (); }
 
 		/**
 		 * Get used area width (in pixels).
 		 *
 		 * @return Used area width in pixels.
 		 */
-		const int getUsedWidth ()
-		{
-			return chipUsedReadout->getWidthInt ();
-		}
+		const int getUsedWidth () { return chipUsedReadout->getWidthInt (); }
 
 		/**
 		 * Get width of used area divided by binning factor.
 		 *
 		 * @return getUsedWidth() / binningHorizontal()
 		 */
-		const int getUsedWidthBinned ()
-		{
-			return (int) (ceil (getUsedWidth () / binningHorizontal ()));
-		}
+		const int getUsedWidthBinned () { return (int) (ceil (getUsedWidth () / binningHorizontal ())); }
 
 		/**
 		 * Returns size of single row in bytes.
 		 *
 		 * @return getUsedWidthBinned() * usedPixelByteSize()
 		 */
-		const int getUsedRowBytes ()
-		{
-			return getUsedWidthBinned () * usedPixelByteSize ();
-		}
+		const int getUsedRowBytes () { return getUsedWidthBinned () * usedPixelByteSize (); }
 
 		/**
 		 * Get chip width (in pixels).
 		 *
 		 * @return Chip width in pixels.
 		 */
-		const int getHeight ()
-		{
-			return chipSize->getHeightInt ();
-		}
+		const int getHeight () { return chipSize->getHeightInt (); }
 
 		/**
 		 * Get X offset of used aread (in pixels)
 		 *
 		 */
-		const int getUsedY ()
-		{
-			return chipUsedReadout->getYInt ();
-		}
+		const int getUsedY () { return chipUsedReadout->getYInt (); }
 
 		/**
 		 * Get X offset of used aread (in pixels)
 		 *
 		 */
-		const int getUsedX ()
-		{
-			return chipUsedReadout->getXInt ();
-		}
+		const int getUsedX () { return chipUsedReadout->getXInt (); }
 
 		/**
 		 * Get width of used area (in pixels).
 		 *
 		 * @return Used area width in pixels.
 		 */
-		const int getUsedHeight ()
-		{
-			return chipUsedReadout->getHeightInt ();
-		}
+		const int getUsedHeight () { return chipUsedReadout->getHeightInt (); }
 
 		/**
 		 * Get height of used area divided by binning factor.
 		 *
 		 * @return getUsedHeight() / binningVertical()
 		 */
-		const int getUsedHeightBinned ()
-		{
-			return (int) (ceil (getUsedHeight () / binningVertical ()));
-		}
+		const int getUsedHeightBinned () { return (int) (ceil (getUsedHeight () / binningVertical ())); }
 
 		/**
 		 * Get X of top corner in chip coordinates.
 		 *
 		 * @return Chip top X corner chip coordinate.
 		 */
-		const int chipTopX ()
-		{
-			return chipSize->getXInt () + chipUsedReadout->getXInt ();
-		}
+		const int chipTopX () { return chipSize->getXInt () + chipUsedReadout->getXInt (); }
 
 		/**
 		 * Get Y of top corner in chip coordinates.
 		 *
 		 * @return Chip top Y corner chip coordinate.
 		 */
-		const int chipTopY ()
-		{
-			return chipSize->getYInt () + chipUsedReadout->getYInt ();
-		}
+		const int chipTopY () { return chipSize->getYInt () + chipUsedReadout->getYInt (); }
 
 		virtual int setBinning (int in_vert, int in_hori);
 
@@ -700,27 +644,18 @@ class Camera:public Rts2ScriptDevice
 		 * @param enumName  Value which will be used for enumeration.
 		 * @param @data     Optional data associated with enumeration.
 		 */
-		void addShutterType (const char *enumName, Rts2SelData *data = NULL)
-		{
-			expType->addSelVal (enumName, data);
-		}
+		void addShutterType (const char *enumName, Rts2SelData *data = NULL) { expType->addSelVal (enumName, data); }
 
 		/**
 		 * Create value for air temperature camera sensor. Use on CCDs which
 		 * can sense air temperature.
 		 */
-		void createTempAir ()
-		{
-			createValue (tempAir, "CCD_AIR", "detector air temperature");
-		}
+		void createTempAir () { createValue (tempAir, "CCD_AIR", "detector air temperature"); }
 
 		/**
 		 * Create value for CCD temperature sensor.
 		 */
-		void createTempCCD ()
-		{
-			createValue (tempCCD, "CCD_TEMP", "CCD temperature");
-		}
+		void createTempCCD () { createValue (tempCCD, "CCD_TEMP", "CCD temperature"); }
 
 		/**
 		 * Create CCD target temperature. Used for devices which can
@@ -740,10 +675,7 @@ class Camera:public Rts2ScriptDevice
 		 *
 		 * @return Exposure time in seconds and fractions of seconds.
 		 */
-		float getExposure ()
-		{
-			return exposure->getValueFloat ();
-		}
+		float getExposure () { return exposure->getValueFloat (); }
 
 		/**
 		 * Set exposure time.
@@ -756,20 +688,14 @@ class Camera:public Rts2ScriptDevice
 
 		int setSubExposure (double in_subexposure);
 
-		double getSubExposure (void)
-		{
-			return subExposure->getValueDouble ();
-		}
+		double getSubExposure (void) { return subExposure->getValueDouble (); }
 
 		/**
 		 * Returns exposure type.
 		 *
 		 * @return 0 for light exposures, 1 for dark exposure.
 		 */
-		int getExpType ()
-		{
-			return expType->getValueInteger ();
-		}
+		int getExpType () { return expType->getValueInteger ();	}
 
 		virtual int setFilterNum (int new_filter);
 		virtual int getFilterNum ();
@@ -777,13 +703,15 @@ class Camera:public Rts2ScriptDevice
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
 	private:
-		// comes from CameraChip
-		void initData ();
-
 		time_t readout_started;
 
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
+
+		// shared memory identifier
+		int sharedMemId;
+		// shared memory buffer - this include size (unsigned long) and image header structure
+		char* shmBuffer;
 
 		// number of exposures camera takes
 		Rts2ValueLong *exposureNumber;
@@ -878,6 +806,7 @@ class Camera:public Rts2ScriptDevice
 		int camBox (Rts2Conn * conn, int x, int y, int width, int height);
 		int camCenter (Rts2Conn * conn, int in_w, int in_h);
 
+		void startImageData (Rts2Conn * conn);
 		int sendFirstLine ();
 
 		// if true, send command OK after exposure is started

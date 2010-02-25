@@ -1,0 +1,30 @@
+<!--
+  Scheduler request.
+  Petr Kubanek <petr@kubanek.net>
+-->
+<schedule id="201030-001" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:schedule.xsd">
+  <object>NGC457</object>
+  <coordinates>
+    <J2000>
+      <RA>20.340</RA><DEC>-30.234</DEC>
+    </J2000>
+  </coordinates>
+  <constraints>
+    <time><from>2010-01-20T12:00:00</from><to>2010-01-25T23:45:00</to></time>
+    <time><from>2010-02-23T12:34:00</from></time>
+    <airmass><upper>2.0</upper></airmass>
+    <HA><lower>-4</lower><upper>4</upper></HA>
+  </constraints>
+  <instrument>
+    <multicolor filter-set="Johnson">
+      <exposure repeat="2">
+        <filter>R</filter>
+        <length>20</length>
+      </exposure>
+      <exposure>
+        <filter>B</filter>
+        <length>40</length>
+      </exposure>
+    </multicolor>
+  </instrument>
+</schedule>

@@ -100,8 +100,7 @@ class Fli:public Camera
 
 using namespace rts2camd;
 
-int
-Fli::initChips ()
+int Fli::initChips ()
 {
 	LIBFLIAPI ret;
 	long x, y, w, h;
@@ -121,9 +120,7 @@ Fli::initChips ()
 	return 0;
 }
 
-
-int
-Fli::startExposure ()
+int Fli::startExposure ()
 {
 	LIBFLIAPI ret;
 
@@ -154,9 +151,7 @@ Fli::startExposure ()
 	return 0;
 }
 
-
-long
-Fli::isExposing ()
+long Fli::isExposing ()
 {
 	LIBFLIAPI ret;
 	long tl;
@@ -167,9 +162,7 @@ Fli::isExposing ()
 	return tl * 1000;			 // we get tl in msec, needs to return usec
 }
 
-
-int
-Fli::stopExposure ()
+int Fli::stopExposure ()
 {
 	LIBFLIAPI ret;
 	long timer;
@@ -186,9 +179,7 @@ Fli::stopExposure ()
 	return Camera::stopExposure ();
 }
 
-
-int
-Fli::doReadout ()
+int Fli::doReadout ()
 {
 	LIBFLIAPI ret;
 	char *bufferTop = dataBuffer;
@@ -206,9 +197,7 @@ Fli::doReadout ()
 	return -2;
 }
 
-
-int
-Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == fliShutter)
 	{
@@ -241,7 +230,6 @@ Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
 Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempSet ();
@@ -269,15 +257,12 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('l', "flush", 1, "Number of CCD flushes");
 }
 
-
 Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
-
-int
-Fli::processOption (int in_opt)
+int Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -325,9 +310,7 @@ Fli::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Fli::init ()
+int Fli::init ()
 {
 	LIBFLIAPI ret;
 
@@ -351,8 +334,7 @@ Fli::init ()
 
 	if (names[0] == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
 		return -1;
 	}
 
@@ -443,9 +425,7 @@ Fli::init ()
 	return initChips ();
 }
 
-
-int
-Fli::info ()
+int Fli::info ()
 {
 	LIBFLIAPI ret;
 	double fliTemp;
@@ -456,16 +436,12 @@ Fli::info ()
 	return Camera::info ();
 }
 
-
-int
-Fli::camChipInfo (int chip)
+int Fli::camChipInfo (int chip)
 {
 	return 0;
 }
 
-
-int
-Fli::setCoolTemp (float new_temp)
+int Fli::setCoolTemp (float new_temp)
 {
 	LIBFLIAPI ret;
 	ret = FLISetTemperature (dev, new_temp);
@@ -475,17 +451,13 @@ Fli::setCoolTemp (float new_temp)
 	return 0;
 }
 
-
-void
-Fli::afterNight ()
+void Fli::afterNight ()
 {
 	setCoolTemp (40);
 	Camera::afterNight ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Fli device = Fli (argc, argv);
 	return device.run ();

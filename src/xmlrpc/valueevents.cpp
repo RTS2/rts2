@@ -46,7 +46,7 @@ void ValueChange::postEvent (Rts2Event *event)
 			{
 				Rts2Conn *conn = master->getOpenConnection (deviceName.c_str ());
 				if (conn)
-					conn->queCommand (new Rts2CommandInfo (master));
+					conn->queCommand (new rts2core::Rts2CommandInfo (master));
 			}
 			if (cadency > 0)
 				master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));

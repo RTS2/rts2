@@ -95,13 +95,9 @@ class Telescope:public Rts2Device
 
 		virtual int changeMasterState (int new_state);
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
-		double getLatitude ()
-		{
-			return telLatitude->getValueDouble ();
-		}
+		double getLatitude () { return telLatitude->getValueDouble (); }
 
 		// callback functions from telescope connection
 		virtual int info ();
@@ -136,44 +132,26 @@ class Telescope:public Rts2Device
 		/**
 		 * If aberation should be calculated in RTS2.
 		 */
-		bool calculateAberation ()
-		{
-			return calAberation->getValueBool ();
-		}
+		bool calculateAberation () { return calAberation->getValueBool (); }
 
 		/**
 		 * If precession should be calculated in RTS2.
 		 */
-		bool calculatePrecession ()
-		{
-			return calPrecession->getValueBool ();
-		}
+		bool calculatePrecession () { return calPrecession->getValueBool (); }
 
 		/**
 		 * If refraction should be calculated in RTS2.
 		 */
-		bool calculateRefraction ()
-		{
-			return calRefraction->getValueBool ();
-		}
+		bool calculateRefraction () { return calRefraction->getValueBool (); }
 
 		/**
 		 * Switch model off model will not be used to transform coordinates.
 		 */
-		void modelOff ()
-		{
-		  	calModel->setValueBool (false);
-		}
+		void modelOff () { calModel->setValueBool (false); }
 
-		void modelOn ()
-		{
-		  	calModel->setValueBool (true);
-		}
+		void modelOn () { calModel->setValueBool (true); }
 
-		bool isModelOn ()
-		{
-			return (calModel->getValueBool ());
-		}
+		bool isModelOn () { return (calModel->getValueBool ()); }
 
 		virtual int commandAuthorized (Rts2Conn * conn);
 
@@ -204,25 +182,19 @@ class Telescope:public Rts2Device
 		 *
 		 * @param ra Telescope right ascenation in degrees.
 		 */
-		void setTelRa (double new_ra)
-		{
-			telRaDec->setRa (new_ra);
-		}
+		void setTelRa (double new_ra) { telRaDec->setRa (new_ra); }
 
 		/**
 		 * Set telescope DEC.
 		 *
 		 * @param new_dec Telescope declination in degrees.
 		 */
-		void setTelDec (double new_dec)
-		{
-			telRaDec->setDec (new_dec);
-		}
+		void setTelDec (double new_dec) { telRaDec->setDec (new_dec); }
 
 		/**
 		 * Set telescope RA and DEC.
 		 */
-		void setTelRaDec (double new_ra, double new_dec)
+		void setTelRaDec (double new_ra, double new_dec) 
 		{
 			setTelRa (new_ra);
 			setTelDec (new_dec);
@@ -233,20 +205,14 @@ class Telescope:public Rts2Device
 		 *
 		 * @return Current telescope RA.
 		 */
-		double getTelRa ()
-		{
-			return telRaDec->getRa ();
-		}
+		double getTelRa () { return telRaDec->getRa (); }
 
 		/**
 		 * Returns current telescope DEC.
 		 *
 		 * @return Current telescope DEC.
 		 */
-		double getTelDec ()
-		{
-			return telRaDec->getDec ();
-		}
+		double getTelDec () { return telRaDec->getDec (); }
 
 		/**
 		 * Returns telescope RA and DEC.
@@ -263,10 +229,7 @@ class Telescope:public Rts2Device
 		 * Set ignore correction - size bellow which correction commands will
 		 * be ignored.
 		 */
-		void setIgnoreCorrection (double new_ign)
-		{
-			ignoreCorrection->setValueDouble (new_ign);
-		}
+		void setIgnoreCorrection (double new_ign) { ignoreCorrection->setValueDouble (new_ign); }
 
 
 		/**
@@ -274,10 +237,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @param pModel 0 for EQU, 1 for ALT-AZ.
 		 */
-		void setPointingModel (int pModel)
-		{
-			pointingModel->setValueInteger (pModel);
-		}
+		void setPointingModel (int pModel) { pointingModel->setValueInteger (pModel); }
 
 
 		/**
@@ -285,10 +245,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @return 0 if pointing model is EQU, 1 if it is ALT-AZ
 		 */
-		int getPointingModel ()
-		{
-			return pointingModel->getValueInteger ();
-		}
+		int getPointingModel () { return pointingModel->getValueInteger (); }
 
 		virtual int processOption (int in_opt);
 
@@ -304,10 +261,7 @@ class Telescope:public Rts2Device
 		 * taken in interval with same park numbers, e.g. with sensors 
 		 * homed at same location.
 		 */
-		void setParkTimeNow ()
-		{
-			mountParkTime->setNow ();
-		}
+		void setParkTimeNow () { mountParkTime->setNow (); }
 
 		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
 
@@ -345,10 +299,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @see isMoving()
 		 */
-		virtual int isMovingFixed ()
-		{
-			return isMoving ();
-		}
+		virtual int isMovingFixed () { return isMoving (); }
 
 		/**
 		 * Check if telescope is moving. Called during telescope
@@ -358,10 +309,7 @@ class Telescope:public Rts2Device
 		 * return value is number of milliseconds for next isMoving
 		 * call.
 		 */
-		virtual int isMoving ()
-		{
-			return -2;
-		}
+		virtual int isMoving () { return -2; }
 
 		/**
 		 * Check if telescope is parking. Called during telescope
@@ -371,10 +319,7 @@ class Telescope:public Rts2Device
 		 * return value is number of milliseconds for next isParking
 		 * call.
 		 */
-		virtual int isParking ()
-		{
-			return -2;
-		}
+		virtual int isParking () { return -2; }
 
 		/**
 		 * Returns local sidereal time in hours (0-24 range).
@@ -382,10 +327,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @return Local sidereal time in hours (0-24 range).
 		 */
-		double getLocSidTime ()
-		{
-			return getLocSidTime (ln_get_julian_from_sys ());
-		}
+		double getLocSidTime () { return getLocSidTime (ln_get_julian_from_sys ()); }
 
 		/**
 		 * Returns local sidereal time in hours (0-24 range).
@@ -402,10 +344,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @see targetChangeFromLastResync
 		 */
-		bool originChangedFromLastResync ()
-		{
-			return oriRaDec->wasChanged ();
-		}
+		bool originChangedFromLastResync () { return oriRaDec->wasChanged (); }
 
 		/**
 		 * Returns original, J2000 coordinates, used as observational
@@ -455,50 +394,35 @@ class Telescope:public Rts2Device
 		 * originChangedFromLastResync() and apply offsets retrieved by
 		 * getUnappliedRaOffsetRa() and getUnappliedDecOffsetDec().
 		 */
-		bool targetChangeFromLastResync ()
-		{
-			return tarRaDec->wasChanged ();
-		}
+		bool targetChangeFromLastResync () { return tarRaDec->wasChanged (); }
 
 		/**
 		 * Return corrections in RA/HA.
 		 *
 		 * @return RA correction (in degrees).
 		 */
-		double getCorrRa ()
-		{
-			return corrRaDec->getRa ();
-		}
+		double getCorrRa () { return corrRaDec->getRa (); }
 
 		/**
 		 * Return corrections in DEC.
 		 *
 		 * @return DEC correction.
 		 */
-		double getCorrDec ()
-		{
-		  	return corrRaDec->getDec ();
-		}
+		double getCorrDec () { return corrRaDec->getDec (); }
 
 		/**
 		 * Return offset from last applied correction.
 		 *
 		 * @return RA offset - corrections which arrives from last applied correction.
 		 */
-		double getWaitCorrRa ()
-		{
-			return wcorrRaDec->getRa ();
-		}
+		double getWaitCorrRa () { return wcorrRaDec->getRa (); }
 
 		/**
 		 * Return offset from last applied correction.
 		 *
 		 * @return DEC offset - corrections which arrives from last applied correction.
 		 */
-		double getWaitCorrDec ()
-		{
-			return wcorrRaDec->getDec ();
-		}
+		double getWaitCorrDec () { return wcorrRaDec->getDec (); }
 
 		/**
 		 * Update target and corrected ALT AZ coordinates.
@@ -520,10 +444,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @return Correction in altitude.
 		 */
-		double getCorrAlt ()
-		{
-			return -getCorrZd ();
-		}
+		double getCorrAlt () { return -getCorrZd (); }
 
 		/**
 		 * Return corrections in azimuth.
@@ -554,15 +475,9 @@ class Telescope:public Rts2Device
 
 		double getLstDeg (double JD);
 
-		virtual bool isBellowResolution (double ra_off, double dec_off)
-		{
-			return (ra_off == 0 && dec_off == 0);
-		}
+		virtual bool isBellowResolution (double ra_off, double dec_off) { return (ra_off == 0 && dec_off == 0); }
 
-		void needStop ()
-		{
-			maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
-		}
+		void needStop () { maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP); }
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -631,10 +546,7 @@ class Telescope:public Rts2Device
 		 *
 		 * @return -1 on error, otherwise 0
 		 */
-		virtual int setTo (double set_ra, double set_dec)
-		{
-			return -1;
-		}
+		virtual int setTo (double set_ra, double set_dec) { return -1; }
 
 		/**
 		 * Called when park command is issued. Moves telescope to park position.
@@ -655,30 +567,17 @@ class Telescope:public Rts2Device
 		/**
 		 * Save model from telescope to file.
 		 */
-		virtual int saveModel ()
-		{
-			return -1;
-		}
+		virtual int saveModel () { return -1; }
 
 		/**
 		 * Load model from telescope.
 		 */
-		virtual int loadModel ()
-		{
-			return -1;
-		}
-		virtual int stopWorm ()
-		{
-			return -1;
-		}
-		virtual int startWorm ()
-		{
-			return -1;
-		}
-		virtual int resetMount ()
-		{
-			return 0;
-		}
+		virtual int loadModel () { return -1; }
+
+		virtual int stopWorm () { return -1; }
+
+		virtual int startWorm () { return -1; }
+		virtual int resetMount () { return 0; }
 
 		/**
 		 * Get current telescope altitude and azimuth. This
@@ -696,10 +595,7 @@ class Telescope:public Rts2Device
 		 */
 		virtual double estimateTargetTime ();
 
-		double getTargetReached ()
-		{
-			return targetReached->getValueDouble ();
-		}
+		double getTargetReached () { return targetReached->getValueDouble (); }
 
 	private:
 		Rts2Conn * move_connection;

@@ -72,8 +72,7 @@ class Rts2GenFocClient:public Rts2Client
 		Rts2GenFocClient (int argc, char **argv);
 		virtual ~ Rts2GenFocClient (void);
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual int init ();
 
 		float defaultExpousure ()
@@ -123,9 +122,6 @@ class Rts2GenFocCamera:public Rts2DevClientCameraFoc
 
 		std::list < fwhmData * >fwhmDatas;
 		virtual void printFWHMTable ();
-
-		virtual void getPriority ();
-		virtual void lostPriority ();
 
 		virtual void exposureStarted ();
 	public:

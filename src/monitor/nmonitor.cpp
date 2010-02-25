@@ -60,7 +60,7 @@ void Rts2NMonitor::sendCommand ()
 	}
 	if (*cmd_top)
 	{
-		oldCommand = new Rts2Command (this, cmd_top);
+		oldCommand = new rts2core::Rts2Command (this, cmd_top);
 		conn->queCommand (oldCommand);
 		comWindow->clear ();
 		comWindow->printCommand (command);
@@ -81,10 +81,9 @@ int Rts2NMonitor::processOption (int in_opt)
 	return 0;
 }
 
-#ifdef HAVE_PGSQL_SOAP
 int Rts2NMonitor::processArgs (const char *arg)
 {
-	tarArg = new Rts2SimbadTarget (arg);
+	tarArg = new rts2db::SimbadTarget (arg);
 	int ret = tarArg->load ();
 	if (ret)
 	{
@@ -99,7 +98,6 @@ int Rts2NMonitor::processArgs (const char *arg)
 
 	return 0;
 }
-#endif							 /* HAVE_PGSQL_SOAP */
 
 void Rts2NMonitor::addSelectSocks ()
 {
@@ -158,7 +156,7 @@ void Rts2NMonitor::messageBoxEnd ()
 		connections_t::iterator iter;
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 		{
-			(*iter)->queCommand (new Rts2Command (this, cmd));
+			(*iter)->queCommand (new rts2core::Rts2Command (this, cmd));
 		}
 	}
 	delete msgBox;
@@ -258,9 +256,7 @@ Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in
 	old_lines = 0;
 	old_cols = 0;
 
-	#ifdef HAVE_PGSQL_SOAP
 	tarArg = NULL;
-	#endif						 /* HAVE_PGSQL_SOAP */
 
 	addOption ('c', NULL, 0, "don't use colors");
 
@@ -289,9 +285,7 @@ Rts2NMonitor::~Rts2NMonitor (void)
 
 	delete masterLayout;
 
-	#ifdef HAVE_PGSQL_SOAP
 	delete tarArg;
-	#endif						 /* HAVE_PGSQL_SOAP */
 }
 
 int Rts2NMonitor::repaint ()
@@ -398,7 +392,7 @@ int Rts2NMonitor::init ()
 
 	connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
-		(*iter)->queCommand (new Rts2Command (this, "info"));
+		(*iter)->queCommand (new rts2core::Rts2Command (this, "info"));
 
 	setMessageMask (MESSAGE_MASK_ALL);
 
@@ -420,20 +414,15 @@ Rts2ConnClient * Rts2NMonitor::createClientConnection (int _centrald_num, char *
 	return new Rts2NMonConn (this, _centrald_num, _deviceName);
 }
 
-Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
-	#ifdef HAVE_PGSQL_SOAP
+	rts2core::Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
 	{
 		struct ln_equ_posn tarPos;
 		tarArg->getPosition (&tarPos);
-		conn->
-			queCommand (new
-			Rts2CommandMove (this, (Rts2DevClientTelescope *) retC,
-			tarPos.ra, tarPos.dec));
+		conn->queCommand (new rts2core::Rts2CommandMove (this, (rts2core::Rts2DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
 	}
-	#endif						 /* HAVE_PGSQL_SOAP */
 	return retC;
 }
 
@@ -588,7 +577,7 @@ void Rts2NMonitor::processKey (int key)
 	}
 }
 
-void Rts2NMonitor::commandReturn (Rts2Command * cmd, int cmd_status)
+void Rts2NMonitor::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 {
 	if (oldCommand == cmd)
 		comWindow->commandReturn (cmd, cmd_status);

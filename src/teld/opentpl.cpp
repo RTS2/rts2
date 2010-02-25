@@ -1346,6 +1346,7 @@ int OpenTPL::isParking ()
 int OpenTPL::endPark ()
 {
 	setTelescopeTrack (0);
+	sleep (5);
 	if (standbyPoweroff->getValueBool () == true)
 		powerOff ();
 	return 0;

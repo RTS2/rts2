@@ -29,7 +29,7 @@
 namespace rts2teld
 {
 
-class ClientCupola:public Rts2DevClientCupola
+class ClientCupola:public rts2core::Rts2DevClientCupola
 {
 	public:
 		ClientCupola (Rts2Conn * conn);

@@ -22,21 +22,20 @@
 
 class Rts2Logd:public Rts2Device, public Rts2LoggerBase
 {
-	private:
-		Rts2ValueString * logConfig;
-		Rts2ValueString *logFile;
-		int setLogConfig (const char *new_config);
-		int setLogFile (const char *new_file);
+	public:
+		Rts2Logd (int in_argc, char **in_argv);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual int processArgs (const char *arg);
 		virtual int willConnect (Rts2Address * in_addr);
-	public:
-		Rts2Logd (int in_argc, char **in_argv);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+	private:
+		Rts2ValueString * logConfig;
+		Rts2ValueString *logFile;
+		int setLogConfig (const char *new_config);
+		int setLogFile (const char *new_file);
 };
 
 Rts2Logd::Rts2Logd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
@@ -122,9 +121,9 @@ int Rts2Logd::willConnect (Rts2Address * in_addr)
 	return Rts2LoggerBase::willConnect (in_addr);
 }
 
-Rts2DevClient *Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
+	rts2core::Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)
 	{
 		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));

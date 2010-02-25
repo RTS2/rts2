@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "../../xmlrpc/xmlrpc++/XmlRpc.h"
-#include "../../xmlrpc/xmlrpc++/urlencoding.h"
+#include "xmlrpc++/XmlRpc.h"
+#include "xmlrpc++/urlencoding.h"
 #include "simbadtarget.h"
 
 #include <sstream>

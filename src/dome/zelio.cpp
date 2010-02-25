@@ -185,7 +185,7 @@ class Zelio:public Dome
 
 		void createZelioValues ();
 
-		int getHumidity (int vout) { return (int) round ((((float) vout) / 5.0 - 0.16) / 0.0062); }
+		int getHumidity (int vout) { return vout; } // return (int) round ((((float) vout) / 5.0 - 0.16) / 0.0062); }
 };
 
 }
@@ -274,7 +274,7 @@ bool Zelio::isGoodWeather ()
 	try
 	{
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
-		if (haveBatteryLevel)
+		if (haveBatteryLevel || haveHumidityOutput)
 			zelioConn->readHoldingRegisters (ZREG_O3XT1, 1, &reg3);
 	}
 	catch (rts2core::ConnError err)

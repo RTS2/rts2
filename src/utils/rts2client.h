@@ -93,10 +93,8 @@ class Rts2ConnCentraldClient:public Rts2Conn
 		virtual int command ();
 };
 
-/*class Rts2Thread:public Rts2Conn
+namespace rts2core
 {
-
-};*/
 
 class Rts2CommandLogin:public Rts2Command
 {
@@ -112,6 +110,8 @@ class Rts2CommandLogin:public Rts2Command
 			const char *in_password);
 		virtual int commandReturnOK (Rts2Conn * conn);
 };
+
+}
 
 /**
  * Common class for client aplication.

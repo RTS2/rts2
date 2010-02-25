@@ -1,20 +1,22 @@
 
 SUBDIRS = \
 	utils	\
-	libindi \
+	serverd \
 	phot	\
 	dome	\
 	focusd  \
 	mirror  \
-	filterd \
 	wcs \
 	utilsdb \
 	writers \
-	camd	\
+	plan \
+	db \
+	monitor \
+	libindi \
+	camd \
 	teld \
 	focusc \
-	serverd \
-	plan \
+	filterd \
 	grb \
 	pgsql \
 	bckimages \
@@ -23,6 +25,4 @@ SUBDIRS = \
 	indi \
 	logger \
 	scheduler \
-	xmlrpc \
-	db \
-	monitor
+	xmlrpc
