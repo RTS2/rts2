@@ -633,16 +633,20 @@ void XmlRpcClient::setupProxy()
 	char *proxy = getenv ("http_proxy");
 	if (proxy)
 	{
-		char *ph = new char[strlen(proxy) + 1];
-		if (sscanf (proxy, "http://%s:%i", ph, &_proxy_port) == 2)
+		if (strncmp (proxy, "http://", 7))
+			XmlRpcUtil::error("Ignoring HTTP proxy string as it does not start with http://");
+		_proxy_host = std::string (proxy + 7);
+		size_t dp = _proxy_host.find (':');
+		if (dp != std::string::npos)
 		{
-			_proxy_host = ph;
+			_proxy_port = atoi (_proxy_host.substr (dp + 1).c_str ());
+			_proxy_host = _proxy_host.substr (0, dp);
+
 		}
 		else
 		{
-			XmlRpcUtil::error("Ignoring proxy specification taken from http_proxy enviromental variable (%s).", proxy);
+			_proxy_port = 80;
 		}
-		delete[] ph;
 	}
 	else
 	{
