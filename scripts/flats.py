@@ -68,7 +68,6 @@ class Rts2Comm:
 		if (a != "exposure_end\n"):
 			self.log ('E', "invalid return from exposure - expected exposure_end, received " + a)
 		if (not (before_readout_callback is None)):
-			print "calling before readout"
 			before_readout_callback()
 		a = sys.stdin.readline()
 		image,fn = a.split()
