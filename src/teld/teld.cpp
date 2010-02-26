@@ -718,7 +718,8 @@ int Telescope::changeMasterState (int new_state)
 		|| ((new_state & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 		|| ((new_state & SERVERD_STANDBY_MASK) && standbyPark->getValueBool () == true))
 	{
-		startPark (NULL);
+	  	if ((getState () & TEL_MASK_MOVING) != TEL_PARKED && (getState () & TEL_MASK_MOVING) != TEL_PARKING)
+			startPark (NULL);
 	}
 
 	if (blockOnStandby->getValueBool () == true)
