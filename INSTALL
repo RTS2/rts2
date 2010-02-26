@@ -13,7 +13,7 @@ Instalation from SVN
 
    subversion postgresql postgresql-server-dev libecpg-dev automake libtool
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
-   libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev pkg-config
+   libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
 
    WCS libraries are needed for database and for rts2-f2j binary. If you wish
    to use them, you must manually install WCS using folowing steps:
