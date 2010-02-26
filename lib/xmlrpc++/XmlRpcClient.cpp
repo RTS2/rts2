@@ -336,7 +336,7 @@ std::string XmlRpcClient::generateHeader(std::string const& body)
 
 		header += "Authorization: Basic " + auth + "\r\n";
 	}
-	header += "Content-Type: text/xml\r\nContent-length: ";
+	header += "Content-Type: text/xml\r\nContent-Length: ";
 
 	sprintf(buff,"%i\r\n\r\n", (int) body.size());
 
@@ -347,19 +347,27 @@ std::string XmlRpcClient::generateHeader(std::string const& body)
 std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string const& body)
 {
 	std::string header = "GET ";
+
+	char buff[40];
+	if (_port != 80)
+		sprintf(buff,":%d", _port);
+	else
+		buff[0] = '\0';
+
+	if (_proxy_port > 0)
+	{
+		header += "http://";
+	  	header += _host;
+		header += buff;
+	}
 	if (path[0] != '/')
 		header += '/';
 	header += path + " HTTP/1.1\r\nUser-Agent: ";
 	header += XMLRPC_VERSION;
 	header += "\r\nHost: ";
 	header += _host;
-
-	char buff[40];
-	if (_port != 80)
-		sprintf(buff,":%d\r\n", _port);
-	else
-		sprintf(buff,"\r\n");
 	header += buff;
+	header += "\r\n";
 
 	if (_authorization.length() > 0)
 	{
@@ -372,7 +380,7 @@ std::string XmlRpcClient::generateGetHeader(std::string const& path, std::string
 
 		header += "Authorization: Basic " + auth + "\r\n";
 	}
-	header += "Content-Type: text/xml\r\nContent-length: ";
+	header += "Content-Type: text/xml\r\nContent-Length: ";
 
 	sprintf(buff,"%i\r\n\r\n", (int) body.size());
 
@@ -447,7 +455,7 @@ bool XmlRpcClient::readHeader()
 
 	for (char *cp = hp; (bp == 0) && (cp < ep); ++cp)
 	{
-		if ((ep - cp > 16) && (strncasecmp(cp, "Content-length: ", 16) == 0))
+		if ((ep - cp > 16) && (strncasecmp(cp, "Content-Length: ", 16) == 0))
 			lp = cp + 16;
 		else if ((ep - cp > 19 ) && (strncasecmp(cp, "Transfer-Encoding: ", 19) == 0))
 			te = cp + 19;
@@ -474,7 +482,7 @@ bool XmlRpcClient::readHeader()
 	{
 		if (te == 0)
 		{
-			XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-length specified");
+			XmlRpcUtil::error("Error XmlRpcClient::readHeader: No Content-Length specified");
 			return false;			 // We could try to figure it out by parsing as we read, but for now...
 		}
 		if (strncasecmp(te, "chunked", 7) != 0)
@@ -491,7 +499,7 @@ bool XmlRpcClient::readHeader()
 		_contentLength = atoi(lp);
 		if (_contentLength <= 0)
 		{
-			XmlRpcUtil::error("Error in XmlRpcClient::readHeader: Invalid Content-length specified (%d).", _contentLength);
+			XmlRpcUtil::error("Error in XmlRpcClient::readHeader: Invalid Content-Length specified (%d).", _contentLength);
 			return false;
 		}
 		XmlRpcUtil::log(4, "client read content length: %d", _contentLength);
