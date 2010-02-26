@@ -554,14 +554,6 @@ if test "x$LIBARCHIVE_LIBS" != "x"; then
 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
 fi
 
-PKG_CHECK_MODULES([LIBARCHIVE], [libarchive >= 2.0], [_PKG_CONFIG([LIBARCHIVE_VERSION],[modversion],[libarchive >= 2.0])],[pkg_cv_LIBARCHIVE_VERSION="no"])
-
-AH_TEMPLATE([HAVE_LIBARCHIVE],[If libarchive is present])
-
-if test "x$pkg_cv_LIBARCHIVE_VERSION" != "xno"; then
- 	AC_DEFINE_UNQUOTED([HAVE_LIBARCHIVE],1,[If libarchive is present])
-fi
-
 if test "x$COMEDI" != "xno"; then
 	AC_CHECK_LIB([comedi], [comedi_open], LIB_COMEDI="-lcomedi";
 	AC_SUBST(LIB_COMEDI), [cat << EOF
