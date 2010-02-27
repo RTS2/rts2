@@ -474,25 +474,23 @@ fi
 AC_SUBST(LIBNCURSES_CFLAGS)
 AC_SUBST(LIBNCURSES_LDFLAGS)
 
-if test "x${libnova}" != "xno"; then
-  if test "x${libnova}" != "xyes"; then
-    LDFLAGS="${LDFLAGS} -L${libnova}/lib"
-  fi
-  AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
+if test "x${libnova}" != "xyes"; then
+  LDFLAGS="${LDFLAGS} -L${libnova}/lib"
+fi
+AC_CHECK_LIB([nova], [ln_get_version], LIB_NOVA="-lnova", 
 [cat << EOF
 **** You don't have libnova library version >= 0.10.
 **** Please get one from http://libnova.sourceforge.net.
 EOF
-  exit 1])
-  if test "x${libnova}" != "xyes"; then
-    LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
-    NOVA_CFLAGS="-I${libnova}/include"
-  else
-    NOVA_CFLAGS=""
-  fi
-  AC_SUBST(LIB_NOVA)
-  AC_SUBST(NOVA_CFLAGS)
-fi  
+exit 1])
+if test "x${libnova}" != "xyes"; then
+  LIB_NOVA="-L${libnova}/lib ${LIB_NOVA}"
+  NOVA_CFLAGS="-I${libnova}/include"
+else
+  NOVA_CFLAGS=""
+fi
+AC_SUBST(LIB_NOVA)
+AC_SUBST(NOVA_CFLAGS)
 
 AC_CHECK_LIB([pthread], [pthread_exit], LIB_PTHREAD="-lpthread";
 AC_SUBST(LIB_PTHREAD), [cat << EOF
