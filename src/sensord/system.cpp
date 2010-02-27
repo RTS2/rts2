@@ -181,10 +181,11 @@ void System::loadPaths ()
 		std::string line;
 		getline (is, line);
 		std::istringstream iss (line);
-		while (!iss.fail ())
+		while (true)
 		{
 			iss >> dv;
-			std::cout << dv << std::endl;
+			if (iss.fail ())
+				break;
 			ds->addValue (dv);
 		}
 	}
