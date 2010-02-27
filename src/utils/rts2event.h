@@ -55,6 +55,9 @@
 /** Reconnect for TCP connections. */
 #define EVENT_TCP_RECONECT_TIMER   20
 
+/** Recconect for UDP connections. */
+#define EVENT_UDP_RECONECT_TIMER   21
+
 // events number below that number shoudl be considered RTS2-reserved
 #define RTS2_LOCAL_EVENT         1000
 
