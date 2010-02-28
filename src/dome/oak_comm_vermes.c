@@ -78,10 +78,9 @@ void *oak_digin_thread(void * args);
 int oak_digin_setup(int* deviceHandle, char* oakDiginDevice) ;
 
 #define OAK_MASK_CLOSED            0x01
-#define OAK_MASK_OPENED            0x02 // wildi ToDo: to be verified
-#define OAK_MASK_END_SWITCH_CLOSED 0x04 // wildi ToDo: to be verified
-#define OAK_MASK_END_SWITCH_OPENED 0x08 // wildi ToDo: to be verified
-#define OAK_MASK_END_SWITCHES      0x0c // wildi ToDo: to be verified
+#define OAK_MASK_OPENED            0x02 
+#define OAK_MASK_PRE_CLOSED        0x04  // wildi  ToDo: not yet used here
+#define OAK_MASK_END_SWITCHES      0x08 
 
 /******************************************************************************
  * connectOakDevice(int connecting)
@@ -125,12 +124,6 @@ connectOakDiginDevice(int connecting)
 	} else if( bits & OAK_MASK_OPENED) { 
 	  doorState= DS_STOPPED_OPENED ;
 	  fprintf( stderr, "connectOakDiginDevice: state is DS_STOPPED_OPEN\n") ;
-	} else if( bits & OAK_MASK_END_SWITCH_CLOSED) { 
-	  doorState= DS_EMERGENCY_ENDSWITCH_CLOSED ;
-	  fprintf( stderr, "connectOakDiginDevice: state is DS_EMERGENCY_ENDSWITCH_CLOSED\n") ;
-	} else if( bits & OAK_MASK_END_SWITCH_OPENED) {
-	  doorState= DS_EMERGENCY_ENDSWITCH_OPENED ;
-	  fprintf( stderr, "connectOakDiginDevice: state is DS_EMERGENCY_ENDSWITCH_OPENED\n") ;
 	} else {
 	  doorState= DS_UNDEF ;
 	  fprintf( stderr, "connectOakDiginDevice: state is DS_UNDEF, door not closed, motor is off\n") ;

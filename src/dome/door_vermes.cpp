@@ -632,7 +632,7 @@ DoorVermes::isClosed ()
   //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed"<< sendLog ;
 
   if( block_door->getValueBool()) {
-    logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
+      //logStream (MESSAGE_DEBUG) << "DoorVermes::isClosed blocked door closing (see BLOCK_DOOR), returning -2 (is closed)" << sendLog ;
     return -2;
   }  
 
