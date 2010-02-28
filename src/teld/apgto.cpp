@@ -21,7 +21,7 @@
  */
 
 /*!
- * @file Driver for Astro-Physics GTO protocol based telescope. Some functions are borrowed from INDI to make the transition smoother
+ * @file Driver for Astro-Physics GTO protocol based mount. Some functions are borrowed from INDI to make the transition smoother
  * 
  * @author john,petr, Markus Wildi
  */
@@ -55,6 +55,7 @@
 #define OPT_APGTO_DEVICE         OPT_LOCAL + 53
 #define OPT_APGTO_INIT           OPT_LOCAL + 54
 #define OPT_APGTO_ASSUME_PARKED  OPT_LOCAL + 55
+#define OPT_APGTO_FORCE_START    OPT_LOCAL + 56
 
 #define SLEW_RATE_1200 '2'
 #define SLEW_RATE_0900 '1'
@@ -97,7 +98,7 @@ namespace rts2teld
     const char *device_file;
     char initialization[256];
     int apgto_fd;
-
+    int force_start ;
     double on_set_HA ;
     double on_zero_HA ;
     double lastMoveRa, lastMoveDec;  
@@ -173,6 +174,7 @@ namespace rts2teld
     Rts2ValueBool    *transition_while_tracking ; 
     Rts2ValueBool    *block_sync_move;
     Rts2ValueBool    *assume_parked;
+    Rts2ValueBool    *slew_state; // (move_state)
 
   protected:
     virtual void startCupolaSync ();
@@ -303,7 +305,7 @@ APGTO::tel_read_hash (char *buf, int count)
   return read;
 }
 /*!
- * Will write on telescope apgto_fd string.
+ * Will write on mount apgto_fd string.
  *
  * @exception EIO, .. common write exceptions
  *
@@ -1100,7 +1102,7 @@ APGTO::tel_check_declination_axis ()
     if(( HA > 180.) && ( HA <= 360.)) {
     } else {
       if( transition_while_tracking->getValueBool()) {
-	// the telescope is allowed to transit the meridian while tracking
+	// the mount is allowed to transit the meridian while tracking
       } else {
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", West), severe error, blocking any sync and moves" << sendLog;
 	block_sync_move->setValueBool(true) ;
@@ -1110,8 +1112,14 @@ APGTO::tel_check_declination_axis ()
   } else if (!strcmp("East", DECaxis_HAcoordinate->getValue())) {
     if(( HA >= 0.0) && ( HA <= 180.)) {
     } else {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong(HA=" << HA_str<<", East), severe error, exiting." << sendLog;
-      exit(1); // yes, this is the end 
+      if( force_start != true) {
+	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, exiting." << sendLog;
+	exit(1); // yes, this is the end
+      } else {
+
+	block_sync_move->setValueBool(true) ;
+	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, sync manually, blocking any sync and moves" << sendLog;
+      }
     }
   }
   return 0 ;
@@ -1367,7 +1375,7 @@ APGTO::tel_slew_to (double ra, double dec)
   return -1;
 }
 /*!
- * Check, if telescope match given coordinates.
+ * Check, if mount match given coordinates.
  *
  * @param ra		target right ascenation
  * @param dec		target declination
@@ -1406,7 +1414,7 @@ APGTO::tel_check_coords (double ra, double dec)
 
   ln_get_hrz_from_equ (&object, &observer, JD, &hrz);
   
-  //logStream (MESSAGE_DEBUG) << "APGTO::tel_check_coords TELESCOPE ALT " << hrz.alt << " AZ " << hrz.az << sendLog;
+  //logStream (MESSAGE_DEBUG) << "APGTO::tel_check_coords MOUNT ALT " << hrz.alt << " AZ " << hrz.az << sendLog;
 
   target.ra = fmod( ra+ 360., 360.);
   target.dec= fmod( dec , 90.) ;
@@ -1438,6 +1446,7 @@ APGTO::startResync ()
   if (ret)
     return -1;
   move_state = MOVE_REAL;
+  slew_state->setValueBool(true) ;
   set_move_timeout (100);
   return 0 ; 
 }
@@ -1476,10 +1485,12 @@ APGTO::isMoving ()
     case 1:
     case 2:
       move_state = NOTMOVE;
+      slew_state->setValueBool(false) ;
       return -2;
     }
     break;
   case NOTMOVE:
+    slew_state->setValueBool(false) ;
     return -2;
     break ;
   default:
@@ -1502,7 +1513,7 @@ APGTO::stopMove ()
   return 0;
 }
 /*!
- * Set telescope to match given coordinates (sync)
+ * Set mount to match given coordinates (sync)
  *
  * AP GTO remembers the last position only occasionally it looses it.
  *
@@ -1544,7 +1555,7 @@ APGTO::setTo (double ra, double dec)
   return 0 ;
 }
 /*!
- * Correct telescope coordinates.
+ * Correct mount coordinates.
  * Used for closed loop coordinates correction based on astronometry
  * of obtained images.
  * @param ra		ra correction
@@ -1560,7 +1571,7 @@ APGTO::correct (double cor_ra, double cor_dec, double real_ra, double real_dec)
   return 0;
 }
 /*!
- * Park telescope to neutral location.
+ * Park mount to neutral location.
  *
  * @return -1 and errno on error, 0 otherwise
  */
@@ -1629,7 +1640,7 @@ APGTO::ParkDisconnect()
   //  logStream (MESSAGE_ERROR) << "APGTO::ParkDisconnect parking failed #:KA#" << sendLog;
   //  return;
   //}
-  logStream (MESSAGE_INFO) << "APGTO::ParkDisconnect motion stopped, the telescope is parked but still connected (no #:KA#)." << sendLog; 
+  logStream (MESSAGE_INFO) << "APGTO::ParkDisconnect motion stopped, the mount is parked but still connected (no #:KA#)." << sendLog; 
   return;
 }
 int
@@ -1887,8 +1898,8 @@ APGTO::info ()
   // while the telecope is tracking Astro-Phycis controller does not
   // carry out any checks, meaning that it turns for ever
   // 
-  // 0 <= HA <=180.: check if the telescope approaches horizon
-  // 180 < HA < 360: check if the telescope crosses the meridian
+  // 0 <= HA <=180.: check if the mount approaches horizon
+  // 180 < HA < 360: check if the mount crosses the meridian
   // Astro-Phycis controller has the ability to delay the meridian flip.
   // Here I assume that the flip takes place on HA=0 on slew.
   // If the telescope does not collide, it may track as long as:
@@ -1913,7 +1924,7 @@ APGTO::info ()
   // move_ha_sg 00:00:00  0:
   // move_ha_sg 24:00:00  0:
   // with the Astro-Physics mount
-  if(( HA < on_set_HA) &&( mount_tracking->getValueBool())){
+  if(( HA < on_set_HA) &&( mount_tracking->getValueBool()) &&( move_state== NOTMOVE)){
     transition_while_tracking->setValueBool(true) ;
     logStream (MESSAGE_INFO) << "APGTO::info transition while tracking occured" << sendLog;
   } else {
@@ -1983,6 +1994,7 @@ APGTO::info ()
       switch (ret) {
       case -2 :
 	move_state= NOTMOVE ;
+	slew_state->setValueBool(false) ;
 	break ;
       case -1: // read error 
 	logStream (MESSAGE_ERROR) << "APGTO::info coordinates read error" << sendLog;
@@ -1995,16 +2007,39 @@ APGTO::info ()
   }
   // There is a bug in the revision D Astro-Physics controller
   // find out, when the local sidereal time gets wrong, difference is 237 sec
-  // Check if the sidereal time read from the telescope is correct 
+  // Check if the sidereal time read from the mount is correct 
   JD  = ln_get_julian_from_sys ();
   double lng = telLongitude->getValueDouble ();
   local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
   
-  if( abs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 200. ) {
+  double diff_loc_time = local_sidereal_time- APlocal_sidereal_time->getValueDouble() ;
+  if( diff_loc_time >= 180.) {
+    diff_loc_time -=360. ;
+  } else if(( diff_loc_time) <= -180.) {
+    diff_loc_time += 360. ;
+  }
+  if( fabs( diff_loc_time) > (1./8.) ) { // 30 time seconds
     logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
 			      << local_sidereal_time << " mount: "
 			      << APlocal_sidereal_time->getValueDouble() 
-			      << " difference " << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
+			      << " difference " << diff_loc_time <<sendLog;
+
+    char date_time[256] ;
+    struct ln_date utm;
+    struct ln_zonedate ltm;
+    ln_get_date_from_sys( &utm) ;
+    ln_date_to_zonedate(&utm, &ltm, 3600); // Adds "only" offset to JD and converts back (see DST below)
+
+    if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
+      return -1;
+    }
+    if (( ret= setCalenderDate(ltm.days, ltm.months, ltm.years) < 0) ) {
+      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
+      return -1;
+    }
+    sprintf( date_time, "%4d:%02d%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
+    logStream (MESSAGE_DEBUG) << "APGTO::info local date and time set :" << date_time << sendLog ;
   } 
   // The mount unexpectedly starts to track, stop that
   if( ! mount_tracking->getValueBool()) {
@@ -2160,10 +2195,8 @@ APGTO::setBasicData()
 // 	return Rts2Device::changeMasterState (new_state);
 // }
 /*!
- * Init telescope, connect on given apgto_fd.
+ * Init mount, connect on given apgto_fd.
  *
- * @param device_name		pointer to device name
- * @param telescope_id		id of telescope, for APGTO ignored
  *
  * @return 0 on succes, -1 & set errno otherwise
  */
@@ -2173,8 +2206,10 @@ APGTO::init ()
   struct termios tel_termios;
 
   int status;
-
+  on_set_HA= 0. ;
+  force_start= false ;
   status = Telescope::init ();
+
   if (status)
     return status;
 
@@ -2246,7 +2281,7 @@ APGTO::initValues ()
   if(( ret= tel_read_sidereal_time()) != 0)
     return -1 ;
 
-  // Check if the sidereal time read from the telescope is correct 
+  // Check if the sidereal time read from the mount is correct 
   double JD  = ln_get_julian_from_sys ();
   double lng = telLongitude->getValueDouble ();
   double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
@@ -2256,9 +2291,9 @@ APGTO::initValues ()
 			    << APlocal_sidereal_time->getValueDouble() 
 			    << " difference " << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
 	
-  if( abs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./240. ) {
-    logStream (MESSAGE_INFO) << "APGTO::initValues ap sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << "exiting" << sendLog;
-    exit (1) ; // do not go beyond
+  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./8. ) { // 30 time seconds
+    logStream (MESSAGE_INFO) << "APGTO::initValues AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << ", exiting" << sendLog;
+    exit (1) ; // do not go beyond, at least for the moment
   } 
 
   if(( ret= tel_read_declination_axis()) != 0)
@@ -2280,7 +2315,12 @@ APGTO::initValues ()
     return -1;
 
   // check if the assumption "mount correctly parked" holds true
-  // if not true block any sync and slew operations
+  // if not true block any sync and slew operations.
+  //
+  // This is only a formal test based on the idea that the
+  // mount has a park position and was parked by RTS2. If the
+  // mount is not at this position assume that position is
+  // undefined or incorrect. A visual check is required.
   int tracking_mode= TRACK_MODE_SIDEREAL ;  
   if( assume_parked->getValueBool()) {
 
@@ -2310,12 +2350,21 @@ APGTO::initValues ()
       logStream (MESSAGE_ERROR) << "APGTO::initValues block any sync and slew opertion due to wrong initial position, RA:"<< object.ra << "dec: "<< object.dec << " diff ra: "<< diff_ra << "diff dec: " << diff_dec << sendLog;
     } 
   }
+  // force_start knocks out APGTO::tel_check_declination_axis ()
+  // this is necessary in case the mount shows a wrong
+  // angle of HA relative to DEC axis. Before any operation occurs 
+  // the mount must be synced **manually**.
+  if( force_start== true ) {
+    tracking_mode= TRACK_MODE_ZERO ; 
+    block_sync_move->setValueBool(true) ; // don't get me twice!
+    logStream (MESSAGE_ERROR) << "APGTO::initValues set  BLOCK_SYNC_MOVE to false due to force_start== true, sync manually" << sendLog;
+  }
   if(( ret= selectAPTrackingMode(tracking_mode)) < 0 ) { 
     logStream (MESSAGE_ERROR) << "APGTO::initValues setting tracking mode:"<< tracking_mode << " failed." << sendLog;
     return -1;
   }
   move_state = NOTMOVE;
- 
+  slew_state->setValueBool(false) ;
   return Telescope::initValues ();
 }
 APGTO::~APGTO (void)
@@ -2335,6 +2384,9 @@ APGTO::processOption (int in_opt)
   case OPT_APGTO_ASSUME_PARKED:
     assume_parked->setValueBool(true);
     break;
+  case OPT_APGTO_FORCE_START:
+    force_start= true;
+    break;
   default:
     return Telescope::processOption (in_opt);
   }
@@ -2348,11 +2400,12 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   addOption (OPT_APGTO_DEVICE,        "device_file", 1, "device file");
   addOption (OPT_APGTO_INIT,          "init",        1, "initialization cold (after power cycle), warm");
   addOption (OPT_APGTO_ASSUME_PARKED, "parked",      0, "assume a regularly parked mount");
+  addOption (OPT_APGTO_FORCE_START,   "force_start", 0, "start with wrong declination axis orientation");
 
   createValue (APAltAz,                  "APALTAZ",    "AP mount Alt/Az[deg]",              true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE, 0);
   createValue (block_sync_move,          "BLOCK_SYNC_MOVE", "true inhibits any sync, slew", false, RTS2_VALUE_WRITABLE);
-  createValue (assume_parked,            "ASSUME_PARKED", "true check initial psoition",    false);
-  createValue (mount_tracking,           "TRACKING",   "telescope tracking (true: enabled)",false);
+  createValue (slew_state,               "SLEW",       "true: mount slews",                 false);
+  createValue (mount_tracking,           "TRACKING",   "mount tracking (true: enabled)",    false);
   createValue (transition_while_tracking,"TRANSITION", "transition while tracking",         false);
   createValue (DECaxis_HAcoordinate,     "DECXHA",     "DEC axis HA coordinate, West/East", false);
   createValue (APslew_rate,              "APSLEWRATE", "AP slew rate (1200, 900, 600)",     false, RTS2_VALUE_WRITABLE);
@@ -2363,7 +2416,9 @@ APGTO::APGTO (int in_argc, char **in_argv):Telescope (in_argc,in_argv)
   createValue (APfirmware,               "APVERSION",  "AP mount firmware revision",        true);
   createValue (APlongitude,              "APLONGITUDE","AP mount longitude",                true, RTS2_DT_DEGREES);
   createValue (APlatitude,               "APLATITUDE", "AP mount latitude",                 true, RTS2_DT_DEGREES);
+  createValue (assume_parked,            "ASSUME_PARKED", "true check initial psoition",    false);
 
+  slew_state->setValueBool(false) ;
   block_sync_move->setValueBool(false) ;
   transition_while_tracking->setValueBool(false) ;
   assume_parked->setValueBool(false);
