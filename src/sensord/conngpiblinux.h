@@ -52,7 +52,7 @@ class ConnGpibLinux:public ConnGpib
 	public:
 		virtual void gpibWriteBuffer (const char *_buf, int len);
 		virtual void gpibRead (void *_buf, int &blen);
-		virtual void gpibWriteRead (const char *_buf, char *val, int blen = 50);
+		virtual void gpibWriteRead (const char *_buf, char *val, int blen);
 
 		virtual void gpibWaitSRQ ();
 
@@ -66,6 +66,8 @@ class ConnGpibLinux:public ConnGpib
 		ConnGpibLinux (int _minor, int _pad);
 		virtual ~ ConnGpibLinux (void);
 
+		virtual void setDebug (bool _debug = true) { debug = _debug; }
+
 	private:
 		int minor;
 		int pad;
@@ -74,6 +76,9 @@ class ConnGpibLinux:public ConnGpib
 		int interface_num;
 
 		float timeout;
+	
+		bool debug;
+
 };
 
 };

@@ -52,6 +52,9 @@ int Gpib::processOption (int _opt)
 		case 'n':
 			enet_addr = new HostString (optarg, "5000");
 			break;
+		case 'v':
+			debug = true;
+			break;
 		default:
 			return Sensor::processOption (_opt);
 	}
@@ -89,6 +92,7 @@ int Gpib::init ()
 	try
 	{
 		connGpib->initGpib ();
+		connGpib->setDebug (debug);
 	}
 	catch (rts2core::Error er)
 	{
@@ -106,10 +110,12 @@ Gpib::Gpib (int argc, char **argv):Sensor (argc, argv)
 	enet_addr = NULL;
 
 	connGpib = NULL;
+	debug = false;
 
 	addOption ('m', NULL, 1, "board number (default to 0)");
 	addOption ('p', NULL, 1, "device number (counted from 0, not from 1)");
 	addOption ('n', NULL, 1, "network adress (and port) of NI GPIB-ENET interface");
+	addOption ('v', NULL, 0, "verbose debugging");
 }
 
 

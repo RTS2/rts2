@@ -27,9 +27,13 @@ void ConnGpibLinux::gpibWriteBuffer (const char *cmd, int len)
 {
 	int ret;
 	ret = ibwrt (gpib_dev, cmd, len);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "write " << cmd << sendLog;
-	#endif
+	if (debug)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << ":;gpibWriteBuffer write ";
+		ls.logArr (cmd, len);
+		ls << sendLog;
+	}
 	if (ret & ERR)
 		throw GpibLinuxError ("error while writing to GPIB bus", cmd, iberr);
 }
@@ -37,15 +41,17 @@ void ConnGpibLinux::gpibWriteBuffer (const char *cmd, int len)
 void ConnGpibLinux::gpibRead (void *reply, int &blen)
 {
 	int ret;
-	ret = ibrd (gpib_dev, reply, blen - 1);
-	((char *)reply)[ibcnt] = '\0';
+	ret = ibrd (gpib_dev, reply, blen);
 	if (ret & ERR)
 		throw GpibLinuxError ("error while pure reading from GPIB bus", (const char *) reply, iberr);
 	blen = ibcnt;
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read '" << (char *) reply
-		<< "' ret " << ret << sendLog;
-	#endif
+	if (debug)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "::gpibRead dev " << gpib_dev << " read ";
+		ls.logArr ((char *) reply, blen);
+		ls << sendLog;
+	}
 }
 
 void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
@@ -55,19 +61,21 @@ void ConnGpibLinux::gpibWriteRead (const char *cmd, char *reply, int blen)
 	if (ret & ERR)
 		throw GpibLinuxError ("error while writing to GPIB bus", cmd, iberr);
 
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << cmd <<
-		" ret " << ret << sendLog;
-	#endif
+	if (debug)
+		logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " write " << cmd <<
+			" ret " << ret << sendLog;
 	*reply = '\0';
 	ret = ibrd (gpib_dev, reply, blen);
 	reply[ibcnt] = '\0';
 	if (ret & ERR)
 		throw GpibLinuxError ("error while reading in write-read cycle from GPIB bus", cmd, iberr);
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "dev " << gpib_dev << " read " << reply <<
-		" ret " << ret << sendLog;
-	#endif
+	if (debug)
+	{
+		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
+		ls << "::gpibWriteRead dev " << gpib_dev << " read ";
+		ls.logArr (reply, ret);
+		ls << sendLog;
+	}
 }
 
 void ConnGpibLinux::gpibWaitSRQ ()

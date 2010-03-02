@@ -54,8 +54,7 @@ void ConnGpib::readValue (const char *buf, Rts2Value * val)
 			readValue (buf, (Rts2ValueSelection *) val);
 			return;
 		default:
-			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
-				getName () << " of type " << val->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
 			throw rts2core::Error ("unknow value type");
 	}
 }

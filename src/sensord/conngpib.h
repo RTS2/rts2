@@ -1,6 +1,6 @@
 /* 
  * Connection for GPIB bus.
- * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -141,6 +141,8 @@ class ConnGpib
 		 * Converts seconds timeouts to NI/GPIB timeout value.
 		 */
 		char getTimeoutTmo (float &_sec);
+
+		virtual void setDebug (bool _debug = true) = 0; 
 };
 
 };
