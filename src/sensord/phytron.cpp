@@ -108,7 +108,10 @@ int Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 
 	ret = readPort ();
 	if (ret)
+	{
+		phytronDev->flushPortIO ();
 		return ret;
+	}
 
 	if (cmdbuf[0] != '\002' || cmdbuf[1] != '\006')
 	{
