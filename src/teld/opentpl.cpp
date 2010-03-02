@@ -622,9 +622,7 @@ void OpenTPL::checkErrors ()
 	}
 }
 
-
-void
-OpenTPL::checkCover ()
+void OpenTPL::checkCover ()
 {
 	int status = TPL_OK;
 	switch (cover_state)
@@ -661,9 +659,7 @@ OpenTPL::checkCover ()
 	}
 }
 
-
-void
-OpenTPL::checkPower ()
+void OpenTPL::checkPower ()
 {
 	int status = TPL_OK;
 	double power_state;
@@ -677,39 +673,40 @@ OpenTPL::checkPower ()
 		return;
 	}
 
-	if (power_state != 1)
+	if (power_state == 1)
+		return;
+
+ 	while (!(power_state == 0 || power_state == 1))
 	{
-	  	while (!(power_state == 0 || power_state == 1))
+		sleep (5);
+		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+		if (status)
 		{
-			sleep (5);
+			logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+			opentplConn->setDebug (false);
+			return;
+		}
+	}
+	// sometime we can reach 1..
+	if (power_state == 0)
+	{
+		status = opentplConn->set ("CABINET.POWER", 1, &status);
+		sleep (5);
+		do
+		{
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
+			sleep (5);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
 				opentplConn->setDebug (false);
 				return;
 			}
 		}
-		// sometime we can reach 1..
-		if (power_state == 0)
-		{
-			status = opentplConn->set ("CABINET.POWER", 1, &status);
-			sleep (5);
-			do
-			{
-				status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
-				logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
-				sleep (5);
-				if (status)
-				{
-					logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
-					opentplConn->setDebug (false);
-					return;
-				}
-			}
-			while (power_state < 1);
-		}
+		while (power_state < 1);
 	}
+
 	while (true)
 	{
 		status = opentplConn->get ("CABINET.REFERENCED", referenced, &status);
@@ -1265,7 +1262,7 @@ int OpenTPL::startPark ()
 
 			setTarget (equPark.ra, equPark.dec);
 
-			sleep (4);
+			sleep (15);
 			break;
 		case POINTING_ALTAZ:
 			status = opentplConn->set ("AZ.TARGETPOS", parkPos->getAz (), &status);
