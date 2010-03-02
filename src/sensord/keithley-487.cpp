@@ -27,10 +27,10 @@ namespace rts2sensord
 struct keithG4Header
 {
 	// header
-	char type1;
-	char type2;
-	char reserved;
-	char instrset;
+	uint8_t type1;
+	uint8_t type2;
+	uint8_t reserved;
+	uint8_t instrset;
 	int16_t bytecount;
 };
 
@@ -69,9 +69,7 @@ Keithley487::Keithley487 (int argc,char **argv):Gpib (argc, argv)
 	zeroCheck->addSelVal ("on, with correction");
 }
 
-
-int
-Keithley487::init ()
+int Keithley487::init ()
 {
 	int ret;
 	ret = Gpib::init ();
@@ -80,7 +78,7 @@ Keithley487::init ()
 	// binary for Intel
 	try
 	{
-		gpibWrite ("G4C0X");
+		gpibWrite ("C0N1T5");
 	}
 	catch (rts2core::Error er)
 	{
@@ -90,23 +88,29 @@ Keithley487::init ()
 	return 0;
 }
 
-
-int
-Keithley487::info ()
+int Keithley487::info ()
 {
-	struct
-	{
-		struct keithG4Header header;
-		char value[4];
-	} oneShot;
+	struct keithG4Header header;
+
+	char buf[10];
+
 	try
 	{
 		int blen = 10;
-		gpibWrite ("N1T5X");
-		gpibRead (&oneShot, blen);
-	
-		// scale properly..
-		curr->setValueFloat (*((float *) (&(oneShot.value))) * 1e+12);
+		gpibWrite ("G4X");
+		gpibRead (buf, blen);
+
+		memcpy (&(header), buf, 6);
+
+		if (header.type1 == header.type2 && header.type1 == 0x81)
+		{
+			curr->setValueFloat (*((float *) (buf + 6)));
+		}
+		else
+		{
+			logStream (MESSAGE_ERROR) << "invalid reply header - expected 0x81, got " << header.type1 << " " << header.type2 << sendLog;
+			return -1;
+		}
 	}
 	catch (rts2core::Error er)
 	{
@@ -116,7 +120,6 @@ Keithley487::info ()
 
 	return Gpib::info ();
 }
-
 
 int Keithley487::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
@@ -153,9 +156,7 @@ int Keithley487::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Gpib::setValue (old_value, new_value);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Keithley487 device = Keithley487 (argc, argv);
 	return device.run ();

@@ -89,6 +89,7 @@ class Gpib:public Sensor
 		HostString *enet_addr;
 
 		ConnGpib *connGpib;
+		bool debug;
 };
 
 };
