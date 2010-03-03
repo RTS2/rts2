@@ -58,8 +58,7 @@ namespace rts2dome {
     Rts2ValueBool *close_door;
     Rts2ValueBool *close_door_undefined;
     Rts2ValueBool *simulate_door;
-    bool simulate_door_last_state;
-    time_t nextDeadCheck;
+    time_t nextDeadCheck; // wildi ToDo: clarify what happens!
 
     /**
      * Update status messages.
@@ -160,8 +159,8 @@ DoorVermes::updateDoorStatusMessage ()
 void 
 DoorVermes::valueChanged (Rts2Value * changed_value)
 {
-  if( simulate_door_last_state) {
-    oak_thread_state= THREAD_STATE_RUNNING ;
+  if( simulate_door->getValueBool()) { 
+    // do not set status here
   } else {
     last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
     int ret ;
@@ -173,9 +172,10 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 
     if( oak_digin_thread_heart_beat != last_oak_digin_thread_heart_beat) {
       //logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged heart beat present" << sendLog ;
+      oak_thread_state= THREAD_STATE_RUNNING ;
     } else {
+      logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged no heart beat from Oak thread" << sendLog ;
       oak_thread_state= THREAD_STATE_UNDEFINED ;
-      logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged no heart beat from Oak thread, exiting" << sendLog ;
       // do not exit here 
     }
   }
@@ -194,7 +194,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if( simulate_door->getValueBool()){
       } else {
 	// turning off the motor has to be done here since move_door opens,closes it during a sleep
-	// stop the motor first, the kill the thread
+	// stop the motor first, then kill the thread
 	int ret ;
 	struct timespec sl ;
 	struct timespec rsl ;
@@ -294,11 +294,17 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
     return ;
     // toggle simulation, real mode
   } else if (changed_value == simulate_door) {
-    oak_thread_state= THREAD_STATE_UNDEFINED ;
 
     if( simulate_door->getValueBool()) {
-      logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged simulate door movements, stopping thread, entering simulation mode" << sendLog ;
 
+      // do not switch to simulation mode while the door is not stopped, closed
+      if( doorState != DS_STOPPED_CLOSED) {
+	simulate_door->setValueBool (false);
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged do not switch to simulation mode while doorState != DS_STOPPED_CLOSED" << sendLog ;
+	return ; 
+      }
+      logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged simulate door movements, stopping thread, entering simulation mode" << sendLog ;
+      // strictly spoken: the motor has been already stopped, repeated here to make it sure
       // turning off the motor has to be done here since move_door opens,closes it during a sleep
       int ret ;
       struct timespec sl ;
@@ -322,16 +328,15 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	exit(1) ;
       }
       // we are now in simulation mode
-      simulate_door_last_state= true ;
       oak_thread_state= THREAD_STATE_RUNNING ;
       doorState = DS_STOPPED_CLOSED ;
       updateDoorStatus () ;
 
     } else {
-      logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged simulate door movements, starting thread, entering real mode" << sendLog ;
+      logStream (MESSAGE_DEBUG) << "DoorVermes::valueChanged stopping simulation, starting threads, entering real mode" << sendLog ;
 
       if( connectOakDiginDevice(OAKDIGIN_CMD_CONNECT)) {
-	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged Oak thread did not start, exiting" << sendLog ;
+	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak thread did not start, exiting" << sendLog ;
 	exit(1) ;
       }
       doorState= DS_UNDEF ;
@@ -358,8 +363,8 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       if(connectSSD650vDevice(SSD650V_CMD_CONNECT) != SSD650V_MS_CONNECTION_OK) {
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged a general failure on SSD650V connection occured" << sendLog ;
       }
-      simulate_door_last_state= false ;
     }
+    return ;
   }
   Dome::valueChanged (changed_value);
 }
@@ -385,7 +390,6 @@ DoorVermes::init ()
     doorState = DS_STOPPED_CLOSED ;
     updateDoorStatus () ;
 
-    simulate_door_last_state= true ; // a little bit unmotivated initialising here
   } else {
     // ssd650v frequency inverter, connect and start thread which only can start motor
     logStream (MESSAGE_DEBUG) << "DoorVermes::initValues to SSD650v" << sendLog;
@@ -410,10 +414,30 @@ DoorVermes::init ()
 int
 DoorVermes::info ()
 {
-    updateDoorStatus() ;
-    updateDoorStatusMessage() ;
+  if( simulate_door->getValueBool()) { 
+    oak_thread_state= THREAD_STATE_RUNNING ;
+  } else {
+    last_oak_digin_thread_heart_beat= oak_digin_thread_heart_beat ;
+    int ret ;
+    struct timespec sl ;
+    struct timespec rsl ;
+    sl.tv_sec= 0. ;
+    sl.tv_nsec= WAITING_FOR_HEART_BEAT_NANO_SEC; 
+    ret= nanosleep( &sl, &rsl) ;
 
-    return Dome::info ();
+    if( oak_digin_thread_heart_beat != last_oak_digin_thread_heart_beat) {
+      //logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged heart beat present" << sendLog ;
+	oak_thread_state= THREAD_STATE_RUNNING ;
+    } else {
+      oak_thread_state= THREAD_STATE_UNDEFINED ;
+      logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged no heart beat from Oak thread" << sendLog ;
+      // do not exit here 
+    }
+  }
+  updateDoorStatus() ;
+  updateDoorStatusMessage() ;
+
+  return Dome::info ();
 }
 
 /**
@@ -599,7 +623,7 @@ DoorVermes::startClose ()
 
   } else {
 
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door, doorState" << doorState << sendLog ;
+    logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door, doorState " << doorState << sendLog ;
     if( oak_thread_state== THREAD_STATE_RUNNING) {
       if( simulate_door->getValueBool()){
       
@@ -712,14 +736,7 @@ DoorVermes::idle ()
   //logStream (MESSAGE_ERROR) << "DoorVermes::idle" << sendLog ;
   if (isGoodWeather ()) {
     if ((getState () & DOME_DOME_MASK) == DOME_OPENED || (getState () & DOME_DOME_MASK) == DOME_OPENING) {
-      time_t now = time (NULL);
-      if (now > nextDeadCheck) {
-	try {
-	} catch (rts2core::ConnError err) {
-	  logStream (MESSAGE_ERROR) << err << sendLog;
-	}
-	nextDeadCheck = now + 60;
-      }
+      info() ;
     }
   }
   return Dome::idle ();
