@@ -198,7 +198,7 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "?"))
 	{
-		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection ())
+		if (paramNextString (&value) || masterElement == NULL || masterElement->getConnection () == NULL)
 			return;
 		Rts2Value *val = masterElement->getConnection()->getValue (value);
 		if (val)
@@ -254,6 +254,7 @@ void ConnExecute::processLine ()
 
 void ConnExecute::exposureEnd ()
 {
+	std::cout << "exposure_end" << std::endl;
 	writeToProcess ("exposure_end");
 }
 
