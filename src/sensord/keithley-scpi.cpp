@@ -78,7 +78,7 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 	{
 		float rval = *((float *) (top + 0));
 		// fields are specified with FORMAT:ELEM, and are in READ,TIME,STAT order..
-		rval *= 10e+12;
+		rval *= 1e+12;
 		sval->addValue (rval);
 		val->addValue (rval);
 		/*logStream (MESSAGE_DEBUG) << "data "
@@ -140,6 +140,7 @@ int Keithley::init ()
 
 		gpibWrite (":FORM:ELEM READ,TIME,STAT");
 		gpibWrite (":TRAC:CLE");
+		gpibWrite (":TRAC:FEED SENS");
 		gpibWrite (":TRAC:FEED:CONT NEV");
 		gpibWrite (":STAT:PRES");
 		devClear ();
