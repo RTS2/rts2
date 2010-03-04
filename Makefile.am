@@ -5,6 +5,8 @@ SUBDIRS =	include \
 		src	\
 		doc	\
 		man	\
+		contrib \
+		scripts \
 		conf
 
 EXTRA_DIST = autogen.sh RUN rts2.initd \
