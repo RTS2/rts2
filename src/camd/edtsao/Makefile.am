@@ -1,4 +1,4 @@
-noinst_HEADERS = edtswap.h sdvlib.h sdv_libpdv.h xos.h
+noinst_HEADERS = edtswap.h sdvlib.h sdv_libpdv.h xos.h interface.h
 
 if EDTPDV
 noinst_LIBRARIES = libedtsao.a
