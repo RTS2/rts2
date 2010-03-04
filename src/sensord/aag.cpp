@@ -511,7 +511,7 @@ AAG::info ()
     {
 	if (getWeatherState () == false)
 	{
-	    logStream (MESSAGE_INFO) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
+	    logStream (MESSAGE_DEBUG) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
 				     << " trigger: " << triggerGood->getValueDouble ()
 				     << sendLog;
 	}
