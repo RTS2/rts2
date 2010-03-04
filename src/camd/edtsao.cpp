@@ -149,6 +149,10 @@ long ValueEdt::getHexValue (float in_v)
 			val = (long) (in_v * 158.0);
 			break;
 	}
+	if (val > 0xfff)
+		val = 0xfff;
+	if (val < 0)
+		val = 0;
 	return reg | val;
 }
 
