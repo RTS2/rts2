@@ -69,7 +69,7 @@ class MICCD:public Camera
 
 	private:
 		Rts2ValueLong *id;
-		int fd;
+		struct camera_t camera;
 		camera_info_t cami;
 };
 
@@ -79,8 +79,6 @@ using namespace rts2camd;
 
 MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 {
-	fd = -1;
-
 	createTempAir ();
 	createTempCCD ();
 	createTempSet ();
@@ -93,8 +91,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 
 MICCD::~MICCD ()
 {
-	if (fd >= 0)
-		miccd_close (fd);
+	miccd_close (&camera);
 }
 
 int MICCD::processOption (int opt)
@@ -116,8 +113,7 @@ int MICCD::init ()
 	ret = Camera::init ();
 	if (ret)
 		return ret;
-	fd = miccd_open (id->getValueInteger ());
-	if (fd < 0)
+	if (miccd_open (id->getValueInteger (), &camera))
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueLong () << sendLog;
 		return -1;
@@ -128,7 +124,7 @@ int MICCD::init ()
 int MICCD::initValues ()
 {
 	int ret;
-	ret = miccd_info (fd, &cami);
+	ret = miccd_info (&camera, &cami);
 	if (ret)
 		return -1;
 
@@ -147,11 +143,11 @@ int MICCD::info ()
 {
 	int ret;
 	float val;
-	ret = miccd_chip_temperature (fd, &val);
+	ret = miccd_chip_temperature (&camera, &val);
 	if (ret)
 		return -1;
 	tempCCD->setValueFloat (val);
-	ret = miccd_environment_temperature (fd, &val);
+	ret = miccd_environment_temperature (&camera, &val);
 	if (ret)
 		return -1;
 	tempAir->setValueFloat (val);
@@ -160,25 +156,25 @@ int MICCD::info ()
 
 int MICCD::setCoolTemp (float new_temp)
 {
-	return miccd_set_cooltemp (fd, new_temp) ? -1 : 0;
+	return miccd_set_cooltemp (&camera, new_temp) ? -1 : 0;
 }
 
 int MICCD::setFilterNum (int new_filter)
 {
-	return miccd_filter (fd, new_filter) ? -1 : 0;
+	return miccd_filter (&camera, new_filter) ? -1 : 0;
 }
 
 int MICCD::startExposure ()
 {
 	int ret;
 	
-	ret = miccd_clear (fd);
+	ret = miccd_clear (&camera);
 	if (ret)
 		return -1;
-	ret = miccd_hclear (fd);
+	ret = miccd_hclear (&camera);
 	if (ret)
 		return -1;
-	ret = miccd_open_shutter (fd);
+	ret = miccd_open_shutter (&camera);
 	if (ret)
 		return -1;
 	return 0;
@@ -187,10 +183,10 @@ int MICCD::startExposure ()
 int MICCD::endExposure ()
 {
 	int ret;
-	ret = miccd_close_shutter (fd);
+	ret = miccd_close_shutter (&camera);
 	if (ret)
 		return ret;
-	ret = miccd_shift_to0 (fd);
+	ret = miccd_shift_to0 (&camera);
 	if (ret)
 		return ret;
 	return Camera::endExposure ();
@@ -200,7 +196,7 @@ int MICCD::doReadout ()
 {
 	int ret;
 
-	ret = miccd_read_frame (fd, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
+	ret = miccd_read_frame (&camera, binningHorizontal (), binningVertical (), getUsedX (), getUsedY (), getUsedWidth (), getUsedHeight (), dataBuffer);
 	if (ret < 0)
 		return -1;
 
