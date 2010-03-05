@@ -69,7 +69,7 @@ class MICCD:public Camera
 
 	private:
 		Rts2ValueLong *id;
-		struct camera_t camera;
+		camera_t camera;
 		camera_info_t cami;
 };
 
