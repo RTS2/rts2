@@ -71,7 +71,7 @@ use vars qw(
 'C_TAKE_DATA'  => FALSE_STR,               # TRUE: data taking, FALSE: offline analysis
 'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
 'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
-'C_CCD_BINNING'=> 1    ,                  # 0: 1x1, 1: 2x2,.... see your drver
+'C_CCD_BINNING'=> 0    ,                  # 0: 1x1, 1: 2x2,.... see your drver
 'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
 'C_AUTO_FOCUS'             => TRUE_STR,  # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
 'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR, # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
@@ -356,7 +356,6 @@ sub get_rts2_filter
 		if( $number_filterd== $filter_focus_properties{$fltr}[IND_FILTER_VALUE])
 		{
 		    $positive_response_filterd++ ;
-		    #print "Got response filter $number, $filter\n";
 		    last ;
 		}
 		else
@@ -1691,7 +1690,7 @@ sub read_configuration
 		    $default_configuration{"C_".$identifier}= $value ;
 		}
 	    }
-	    elsif( !($value=~ /$default_configuration{"C_".$identifier}/)) # show only those which differ
+	    elsif( $value ne $default_configuration{"C_".$identifier}) # show only those which differ
 	    {
 		if($verbose eq TRUE_STR)
 		{
@@ -1702,9 +1701,12 @@ sub read_configuration
 	}
 	elsif( defined $focuser_properties{$identifier})
 	{
-	    if($verbose eq TRUE_STR)
+	    if( $value != $focuser_properties{$identifier}) # it is numeric
 	    {
-		print "read_configuration: focuser parameter $identifier $focuser_properties{$identifier} superseded by $value\n" ;
+		if($verbose eq TRUE_STR)
+		{
+		    print "read_configuration: focuser parameter $identifier $focuser_properties{$identifier} superseded by $value\n" ;
+		}
 	    }
 	    $focuser_properties{$identifier}= $value ;	
 	}
@@ -1819,11 +1821,11 @@ my $fit_result_file    = $default_configuration{C_FIT_RESULT_FILE} ;
 my $ds9_region_file    = $default_configuration{C_DS9_REGION_FILE} ;
 my @filters            = split(/:/, $default_configuration{C_FILTERS}) ;
 my $number_of_auto_focus_images= $default_configuration{C_NUMBER_OF_AUTO_FOCUS_IMAGES} ;
-my $set_limits_on_sanity_checks = $default_configuration{C_SET_LIMITS_ON_SANITY_CHECKS} ;
-my $check_rts2_configuration    = $default_configuration{C_CHECK_RTS2_CONFIGURATION} ;
+my $set_limits_on_sanity_checks= $default_configuration{C_SET_LIMITS_ON_SANITY_CHECKS} ;
+my $check_rts2_configuration   = $default_configuration{C_CHECK_RTS2_CONFIGURATION} ;
 my $include_auto_focus_run     = $default_configuration{C_INCLUDE_AUTO_FOCUS_RUN} ;
-my $ccd_binning                 = $default_configuration{C_CCD_BINNING} ;
-my $rts2_device_camd_default    = $default_configuration{C_CCD_CAMERA} ;
+my $ccd_binning                = $default_configuration{C_CCD_BINNING} ;
+my $rts2_device_camd           = $default_configuration{C_CCD_CAMERA} ;
 
 if( $interactive)
 {
@@ -1841,8 +1843,7 @@ else
 	print "$scriptname: do not plot, using $fitprg\n" ;
     }
 }
-
-my $rts2_device_camd= "" ;
+my $rts2_device_camd_from_centrald= "" ; 
 my $rts2_device_filterd= "" ;
 my $rts2_device_focusd= "" ;
 my $rts2_device_camd_present= FALSE_VAL ;
@@ -1905,9 +1906,9 @@ if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
     {
 	if( $line=~ m/^[ \t]*camd[ \t]+(\w+)[ \t]+(\w+)[ \t]+(.*)/)
 	{
-	    if( $2 eq $rts2_device_camd_default)
+	    if( $2 eq $rts2_device_camd)
 	    {
-		$rts2_device_camd= $2 ;
+		$rts2_device_camd_from_centrald= $2 ;
 		$rts2_device_camd_present= TRUE_VAL ;
 
 		my $arguments= $3 ;
@@ -1949,14 +1950,14 @@ if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
     close(DEVICES) ;
 # Perform consistency checks
 #
-    if( $rts2_device_camd ne $rts2_device_camd_default)
+    if( $rts2_device_camd_from_centrald ne $rts2_device_camd)
     {
-	print "$scriptname: ccd devices $rts2_device_camd_default not present, can not take data\n" ;
+	print "$scriptname: ccd devices $rts2_device_camd not present, can not take data\n" ;
 	exit 1 ;
     }
     if(!(($rts2_device_camd_present== TRUE_VAL ) && ($rts2_device_filterd_present== TRUE_VAL) && ($rts2_device_focusd_present== TRUE_VAL)))
     {
-	print "$scriptname: not all devices present,  can not take data\n" ;
+	print "$scriptname: not all devices present, can not take data\n" ;
 	exit 1 ;
     }
 # Compare the to camd related devices with the arguments
@@ -2007,15 +2008,15 @@ if( $check_rts2_configuration eq TRUE_STR)
 # test ccd camera device 
 #
     my $ccd_temperature= CCD_TEMPERATURE ;
-    $ccd_temperature=get_rts2_ccd_property( $rts2_device_camd, "CCD_TEMP") ;
+    $ccd_temperature=get_rts2_ccd_property( $rts2_device_camd_from_centrald, "CCD_TEMP") ;
     if( $ccd_temperature  == CCD_TEMPERATURE) # ToDo: I do not know why I can not put it into if() 
     {
-	print "$scriptname: no response from ccd camera $rts2_device_camd\n" ;
+	print "$scriptname: no response from ccd camera $rts2_device_camd_from_centrald\n" ;
 	exit 1 ;
     }
     else
     {
-	print "$scriptname: ccd  $rts2_device_camd, temperature $ccd_temperature\n" ;
+	print "$scriptname: ccd  $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
     }
 # test filter device    
     my @filter_names= keys %filter_focus_properties ;
@@ -2058,7 +2059,7 @@ if( $take_data eq FALSE_STR) # offline analysis
 }
 elsif( $take_data eq TRUE_STR) # online analysis
 {
-    printf( "$scriptname: data taking with devices: %s, %s, %s and filter(s): ", $rts2_device_focusd, $rts2_device_filterd, $rts2_device_camd) ;
+    printf( "$scriptname: data taking with devices: %s, %s, %s and filter(s): ", $rts2_device_focusd, $rts2_device_filterd, $rts2_device_camd_from_centrald) ;
     foreach my $filter (  @filters)
     {
 	printf( "$filter ") ;
@@ -2109,9 +2110,9 @@ elsif( $take_data eq TRUE_STR) # online analysis
 #ToDo: issue a warning and exit if the FITS_DIRECTORY is not empty
 	    my $FOC_TOFF= -($middle-$focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}) ;
 	    print "$scriptname: FOC_TOFF: $FOC_TOFF\n" ;
-	    print "$scriptname: rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null\n" ;
+	    print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null\n" ;
  
-	    open( FIND_FOCUS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+	    open( FIND_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
 # ToDo: perl says reading fom not open file handle
 #	    while( my $response= <FIND_FOCUS>)
 #	    {
@@ -2150,8 +2151,8 @@ elsif( $take_data eq TRUE_STR) # online analysis
 # 
 # after rts2-scriptexec returns, all files are in the working directory
 #
-	print "$scriptname: rts2-scriptexec -d $rts2_device_camd -s '  $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null\n" ;
-	open( CREATEFITS, "rts2-scriptexec -d $rts2_device_camd -s ' $rts2_device_camd.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+	print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s '  $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null\n" ;
+	open( CREATEFITS, "rts2-scriptexec -d$rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
 	while( my $response= <CREATEFITS>)
 	{
 	    print "$scriptname:$response" ;
