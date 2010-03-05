@@ -1584,8 +1584,9 @@ APGTO::startPark ()
 
   double JD= ln_get_julian_from_sys ();
   double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + observer.lng + 360.), 360.);  // longitude positive to the East
+  double park_ra= fmod( (PARK_POSITION_RA + local_sidereal_time) + 360., 360.);
 
-  setTarget ( (PARK_POSITION_RA + local_sidereal_time), PARK_POSITION_DEC);
+  setTarget ( park_ra, PARK_POSITION_DEC);
   startCupolaSync() ;
   logStream (MESSAGE_DEBUG) << "APGTO::startParking " << getTelTargetRa () << " dec " <<getTelTargetDec ()  << sendLog;
   return startResync ();
@@ -2024,6 +2025,9 @@ APGTO::info ()
 			      << APlocal_sidereal_time->getValueDouble() 
 			      << " difference " << diff_loc_time <<sendLog;
 
+
+    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
+
     char date_time[256] ;
     struct ln_date utm;
     struct ln_zonedate ltm;
@@ -2038,8 +2042,26 @@ APGTO::info ()
       logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
       return -1;
     }
-    sprintf( date_time, "%4d:%02d%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
+    sprintf( date_time, "%4d-%02d-%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
     logStream (MESSAGE_DEBUG) << "APGTO::info local date and time set :" << date_time << sendLog ;
+
+    // read the coordinates times again
+    if (tel_read_ra () || tel_read_dec ())
+      return -1;
+    if (tel_read_azimuth () || tel_read_altitude ())
+      return -1;
+    if(( ret= tel_read_local_time()) != 0)
+      return -1 ;
+    if(( ret= tel_read_sidereal_time()) != 0)
+      return -1 ;
+    diff_loc_time = local_sidereal_time- APlocal_sidereal_time->getValueDouble() ;
+
+    logStream (MESSAGE_DEBUG) << "APGTO::info ra " << getTelRa() << " dec " << getTelDec() << " alt " <<   APAltAz->getAlt() << " az " << APAltAz->getAz()  <<sendLog;
+
+    logStream (MESSAGE_DEBUG) << "APGTO::info  local sidereal time, calculated time " 
+			      << local_sidereal_time << " mount: "
+			      << APlocal_sidereal_time->getValueDouble() 
+			      << " difference " << diff_loc_time <<sendLog;
   } 
   // The mount unexpectedly starts to track, stop that
   if( ! mount_tracking->getValueBool()) {
@@ -2052,10 +2074,11 @@ APGTO::info ()
     // Shortest path
     if( diff >= 180.) {
       diff -=360. ;
-    } else if(( diff) <= -180.) {
+    } else if( diff <= -180.) {
       diff += 360. ;
     }
     if( fabs( diff) > DIFFERENCE_MAX_WHILE_NOT_TRACKING) {
+      logStream (MESSAGE_INFO) << "APGTO::info HA changed while mount is not tracking." << sendLog;
       if ( selectAPTrackingMode(TRACK_MODE_ZERO) < 0 ) {
 	logStream (MESSAGE_ERROR) << "APGTO::info setting tracking mode ZERO failed." << sendLog;
 	return -1;
@@ -2333,6 +2356,13 @@ APGTO::initValues ()
     park_position.dec= PARK_POSITION_DEC  ;
 
     double diff_ra = fabs(fmod(( park_position.ra - object.ra) + 360., 360.));
+    
+    if( diff_ra >= 180.) {
+      diff_ra -=360. ;
+    } else if( diff_ra <= -180.) {
+      diff_ra += 360. ;
+    }
+
     double diff_dec= fabs(( park_position.dec- object.dec));
     int block= 0 ;
     if(( diff_ra < PARK_POSITION_DIFFERENCE_MAX) && ( diff_dec < PARK_POSITION_DIFFERENCE_MAX)) {
