@@ -56,6 +56,7 @@ class MICCD:public Camera
 		}
 
 		virtual int info ();
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
 
 		virtual int setCoolTemp (float new_temp);
 
@@ -69,6 +70,7 @@ class MICCD:public Camera
 
 	private:
 		Rts2ValueLong *id;
+		Rts2ValueSelection *mode;
 		camera_t camera;
 		camera_info_t cami;
 };
@@ -83,8 +85,15 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createTempCCD ();
 	createTempSet ();
 
-	createValue (id, "product_id", "camera product identification", false);
+	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
+
+	createValue (mode, "mode", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	mode->addSelVal ("NORMAL");
+	mode->addSelVal ("LOW NOISE");
+	mode->addSelVal ("ULTRA LOW NOISE");
+
+	mode->setValueInteger (1);
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 }
@@ -116,6 +125,12 @@ int MICCD::init ()
 	if (miccd_open (id->getValueInteger (), &camera))
 	{
 		logStream (MESSAGE_ERROR) << "cannot find device with id " << id->getValueLong () << sendLog;
+		return -1;
+	}
+
+	if (miccd_mode (&camera, mode->getValueInteger ()))
+	{
+		logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
 		return -1;
 	}
 	return 0;
@@ -152,6 +167,12 @@ int MICCD::info ()
 		return -1;
 	tempAir->setValueFloat (val);
 	return Camera::info ();
+}
+
+int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
+{
+	if (oldValue == mode)
+		return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
 }
 
 int MICCD::setCoolTemp (float new_temp)
