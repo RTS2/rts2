@@ -26,6 +26,7 @@ else
 
 rts2_xmlrpcd_SOURCES = xmlrpcd.cpp httpreq.cpp session.cpp events.cpp stateevents.cpp valueevents.cpp emailaction.cpp \
 	plot.cpp altaz.cpp nightdur.cpp imgpreview.cpp targetreq.cpp dirsupport.cpp devicesreq.cpp
+rts2_xmlrpcd_CXXFLAGS = @CFITSIO_CFLAGS@ ${AM_CXXFLAGS}
 rts2_xmlrpcd_LDFLAGS = ../db/simbad/libsimbad.a ../writers/librts2image.a ../utils/librts2block.a xmlrpc++/librts2xmlrpc.a \
 	@LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@ @LIBXML_LIBS@ @LIBARCHIVE_LIBS@ $(AM_LDFLAGS)
 
