@@ -83,6 +83,7 @@ int Rts2NMonitor::processOption (int in_opt)
 
 int Rts2NMonitor::processArgs (const char *arg)
 {
+#ifdef HAVE_PGSQL
 	tarArg = new rts2db::SimbadTarget (arg);
 	int ret = tarArg->load ();
 	if (ret)
@@ -95,8 +96,10 @@ int Rts2NMonitor::processArgs (const char *arg)
 
 	char c;
 	std::cin >> c;
-
 	return 0;
+#else
+	return -1;
+#endif
 }
 
 void Rts2NMonitor::addSelectSocks ()
