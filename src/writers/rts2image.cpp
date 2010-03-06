@@ -2126,12 +2126,12 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 			if (ai == arrayGroups.end ())
 			{
 				std::list <ColumnData *> vl;
-				vl.push_back (new ColumnData (val->getName (), ((rts2core::DoubleArray *) val)->getValueVector ()));
+				vl.push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
 				arrayGroups[val->getWriteGroup ()] = std::pair <std::string, std::list <ColumnData *> > (std::string (name), vl);
 			}
 			else
 			{
-				ai->second.second.push_back (new ColumnData (val->getName (), ((rts2core::DoubleArray *) val)->getValueVector ()));
+				ai->second.second.push_back (new ColumnData (name, ((rts2core::DoubleArray *) val)->getValueVector ()));
 			}
 
 			break;

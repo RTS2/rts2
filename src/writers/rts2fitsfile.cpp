@@ -302,6 +302,12 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 
 	fits_create_tbl (ffile, BINARY_TBL, values.size (), maxsize, (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
 
+	if (fits_status)
+	{
+		logStream (MESSAGE_ERROR) << "Rts2FitsFile::writeArray creating table " << getFitsErrors () << sendLog;
+		return -1;
+	}
+
 	i = 1;
 
 	for (iter = values.begin (); iter != values.end (); iter++, i++)
