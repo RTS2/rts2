@@ -111,8 +111,8 @@ void Keithley::waitOpc ()
 Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	createValue (azero, "AZERO", "SYSTEM:AZERO value", true, RTS2_VALUE_WRITABLE);
-	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_BEFORE_END);
-	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_BEFORE_END);
+	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_BEFORE_END | RTS2_WR_GROUP_NUMBER(0));
+	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_BEFORE_END | RTS2_WR_GROUP_NUMBER(0));
 	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_BEFORE_END);
 	createValue (countNum, "COUNT", "[counts] number of measurements averaged", true, RTS2_VALUE_WRITABLE);
 	countNum->setValueInteger (100);
