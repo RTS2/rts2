@@ -135,6 +135,8 @@ class DoubleArray: public Rts2Value
 
 		void clear () { value.clear (); }
 
+		const std::vector <double> & getValueVector () { return value; }
+
 	private:
 		std::vector <double> value;
 		std::string _os;

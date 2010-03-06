@@ -24,6 +24,7 @@
 #include <fitsio.h>
 
 #include <sstream>
+#include <list>
 
 /** Defines for FitsFile flags. */
 #define IMAGE_SAVE              0x01
@@ -31,6 +32,23 @@
 #define IMAGE_KEEP_DATA         0x04
 #define IMAGE_DONT_DELETE_DATA  0x08
 #define IMAGE_CANNOT_LOAD       0x10
+
+/**
+ * Class with table column informations. Used to temorary store
+ * table data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ColumnData
+{
+	public:
+		ColumnData (std::string _name, std::vector <double> _data);
+		~ColumnData () { if (data) free (data); }
+
+		std::string name;
+		size_t len;
+		void *data;
+};
 
 /**
  * Class representing FITS file. This class represents FITS file. Usually you
@@ -194,7 +212,7 @@ class Rts2FitsFile: public rts2core::Expander
 		/**
 		 * Create table extension from DoubleArray
 		 */
-		int writeArray (const char *extname, rts2core::DoubleArray *value);
+		int writeArray (const char *extname, std::list <ColumnData *> & values);
 
 		/**
 		 * Return true if image shall be written to disk before it is closed.

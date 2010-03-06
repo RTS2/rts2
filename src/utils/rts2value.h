@@ -192,6 +192,13 @@
  */
 #define RTS2_DT_SCRIPT                0x00100000
 
+/**
+ * Group mask - if & with value type, value can be grouped in FITS table. Usefull primary for arrays.
+ */
+#define RTS2_WR_GROUP_MASK            0x00600000
+#define RTS2_WR_GROUP_NR_MASK         0x006f0000
+
+#define RTS2_WR_GROUP_NUMBER(x)       (((0x20 + x) << 4) & 0x006f0000)
 
 /**
  * If set. value is read-write. When not set, value is read only.
@@ -219,22 +226,6 @@ class Rts2Conn;
  */
 class Rts2Value
 {
-	private:
-		std::string valueName;
-		std::string description;
-	protected:
-		char buf[VALUE_BUF_LEN];
-		int32_t rts2Type;
-
-		void setValueFlags (int32_t flags)
-		{
-			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE) & flags;
-		}
-
-		/**
-		 * Send values meta infomration. @see sendMetaInfo adds to it actual value.
-		 */
-		virtual int sendTypeMetaInfo (Rts2Conn * connection);
 	public:
 		/**
 		 * Create value. RA and DEC names will be composed by suffixing
@@ -247,19 +238,11 @@ class Rts2Value
 		 * in_val_name with RA and DEC strings.
 		 */
 		Rts2Value (std::string _val_name, std::string _description, bool writeToFits = true, int32_t flags = 0);
-		virtual ~ Rts2Value (void)
-		{
-		}
+		virtual ~ Rts2Value (void) {}
 
-		int isValue (const char *in_val_name)
-		{
-			return !strcasecmp (in_val_name, valueName.c_str ());
-		}
+		int isValue (const char *in_val_name) { return !strcasecmp (in_val_name, valueName.c_str ()); }
 
-		std::string getName ()
-		{
-			return valueName;
-		}
+		std::string getName () { return valueName; }
 
 		/**
 		 * Sets value from connection.
@@ -300,15 +283,9 @@ class Rts2Value
 		 */
 		virtual bool isEqual (Rts2Value *other_value) = 0;
 
-		int setValueString (std::string in_value)
-		{
-			return setValueCharArr (in_value.c_str ());
-		}
+		int setValueString (std::string in_value) { return setValueCharArr (in_value.c_str ()); }
 
-		virtual int setValueInteger (int in_value)
-		{
-			return -1;
-		}
+		virtual int setValueInteger (int in_value) { return -1; }
 
 		/**
 		 * Performs operation on value.
@@ -326,65 +303,26 @@ class Rts2Value
 		 *
 		 * @return String with human-readable value.
 		 */
-		virtual const char *getDisplayValue ()
-		{
-			return getValue ();
-		}
+		virtual const char *getDisplayValue () { return getValue (); }
 
-		int32_t getValueWriteFlags ()
-		{
-			return rts2Type & RTS2_VWHEN_MASK;
-		}
+		int32_t getValueWriteFlags () { return rts2Type & RTS2_VWHEN_MASK; }
 
-		bool writeWhenChanged ()
-		{
-			return rts2Type & RTS2_VWHEN_RECORD_CHANGE;
-		}
+		bool writeWhenChanged () { return rts2Type & RTS2_VWHEN_RECORD_CHANGE; }
 
-		int32_t getValueDisplayType ()
-		{
-			return rts2Type & RTS2_TYPE_MASK;
-		}
-		int32_t getBopMask ()
-		{
-			return rts2Type & BOP_MASK;
-		}
-		virtual double getValueDouble ()
-		{
-			return rts2_nan ("f");
-		}
-		virtual float getValueFloat ()
-		{
-			return rts2_nan ("f");
-		}
-		virtual int getValueInteger ()
-		{
-			return -1;
-		}
-		virtual long int getValueLong ()
-		{
-			return getValueInteger ();
-		}
+		int32_t getValueDisplayType () { return rts2Type & RTS2_TYPE_MASK; }
+		int32_t getBopMask () { return rts2Type & BOP_MASK; }
+		virtual double getValueDouble () { return rts2_nan ("f"); }
+		virtual float getValueFloat () { return rts2_nan ("f"); }
+		virtual int getValueInteger () { return -1; }
+		virtual long int getValueLong () { return getValueInteger (); }
 
-		std::string getDescription ()
-		{
-			return description;
-		}
+		std::string getDescription () { return description; }
 
-		const int getValueType ()
-		{
-			return rts2Type & RTS2_VALUE_MASK;
-		}
+		const int getValueType () { return rts2Type & RTS2_VALUE_MASK; }
 
-		const int getValueExtType ()
-		{
-			return rts2Type & RTS2_EXT_TYPE;
-		}
+		const int getValueExtType () { return rts2Type & RTS2_EXT_TYPE; }
 
-		bool isWritable ()
-		{
-			return rts2Type & RTS2_VALUE_WRITABLE;
-		}
+		bool isWritable () { return rts2Type & RTS2_VALUE_WRITABLE; }
 
 		/**
 		 * Return value base type. This will be different from
@@ -392,30 +330,15 @@ class Rts2Value
 		 *
 		 * @return Value base type.
 		 */
-		const int getValueBaseType ()
-		{
-			return rts2Type & RTS2_BASE_TYPE;
-		}
+		const int getValueBaseType () { return rts2Type & RTS2_BASE_TYPE; }
 
-		void setWriteToFits ()
-		{
-			rts2Type |= RTS2_VALUE_FITS;
-		}
+		void setWriteToFits () { rts2Type |= RTS2_VALUE_FITS; }
 
-		bool getWriteToFits ()
-		{
-			return (rts2Type & RTS2_VALUE_FITS);
-		}
+		bool getWriteToFits () { return (rts2Type & RTS2_VALUE_FITS); }
 
-		bool prefixWithDevice ()
-		{
-			return (rts2Type & RTS2_VALUE_DEVPREFIX);
-		}
+		bool prefixWithDevice () { return (rts2Type & RTS2_VALUE_DEVPREFIX); }
 
-		int32_t getFlags ()
-		{
-			return rts2Type;
-		}
+		int32_t getFlags () { return rts2Type; }
 
 		/**
 		 * Sends value metainformations, including description.
@@ -437,41 +360,48 @@ class Rts2Value
 		 *
 		 * @see wasChanged()
 		 */
-		virtual void resetValueChanged ()
-		{
-			rts2Type &= ~RTS2_VALUE_CHANGED;
-		}
+		virtual void resetValueChanged () { rts2Type &= ~RTS2_VALUE_CHANGED; }
 
 		/**
 		 * Return true if value was changed from last call of resetValueChanged().
 		 *
 		 * @see resetValueChanged()
 		 */
-		bool wasChanged ()
-		{
-			return rts2Type & RTS2_VALUE_CHANGED;
-		}
+		bool wasChanged () { return rts2Type & RTS2_VALUE_CHANGED; }
 		
 		/**
 		 * Return true if value needs to be send - when it was modified from last send.
 		 */
-		bool needSend ()
-		{
-			return rts2Type & RTS2_VALUE_NEED_SEND;
-		}
+		bool needSend () { return rts2Type & RTS2_VALUE_NEED_SEND; }
 
-		void resetNeedSend ()
-		{
-			rts2Type &= ~RTS2_VALUE_NEED_SEND;
-		}
+		void resetNeedSend () { rts2Type &= ~RTS2_VALUE_NEED_SEND; }
 
 		/**
 		 * Set value change flag.
 		 */
-		void changed ()
+		void changed () { rts2Type |= RTS2_VALUE_CHANGED | RTS2_VALUE_NEED_SEND; }
+
+		bool haveWriteGroup () { return rts2Type & RTS2_WR_GROUP_MASK; }
+
+		int getWriteGroup () { return ((rts2Type & RTS2_WR_GROUP_NR_MASK) >> 4) - 0x20; }
+
+	protected:
+		char buf[VALUE_BUF_LEN];
+		int32_t rts2Type;
+
+		void setValueFlags (int32_t flags)
 		{
-			rts2Type |= RTS2_VALUE_CHANGED | RTS2_VALUE_NEED_SEND;
+			rts2Type |= (RTS2_TYPE_MASK | RTS2_VWHEN_MASK | RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_DEVPREFIX | RTS2_VALUE_WRITABLE) & flags;
 		}
+
+		/**
+		 * Send values meta infomration. @see sendMetaInfo adds to it actual value.
+		 */
+		virtual int sendTypeMetaInfo (Rts2Conn * connection);
+
+	private:
+		std::string valueName;
+		std::string description;
 };
 
 /**
@@ -910,34 +840,19 @@ class Rts2ValueSelection:public Rts2ValueInteger
  */
 class Rts2ValueLong:public Rts2Value
 {
-	private:
-		long int value;
 	public:
 		Rts2ValueLong (std::string in_val_name);
-		Rts2ValueLong (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueLong (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
 		virtual int doOpValue (char op, Rts2Value * old_value);
 
 		virtual const char *getValue ();
-		virtual double getValueDouble ()
-		{
-			return value;
-		}
-		virtual float getValueFloat ()
-		{
-			return value;
-		}
-		virtual int getValueInteger ()
-		{
-			return (int) value;
-		}
-		virtual long int getValueLong ()
-		{
-			return value;
-		}
+		virtual double getValueDouble () { return value; }
+		virtual float getValueFloat () { return value; }
+		virtual int getValueInteger () { return (int) value; }
+		virtual long int getValueLong () { return value; }
 		long inc ()
 		{
 		 	changed ();	
@@ -959,6 +874,8 @@ class Rts2ValueLong:public Rts2Value
 		}
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+	private:
+		long int value;
 };
 
 /**
@@ -968,14 +885,9 @@ class Rts2ValueLong:public Rts2Value
  */
 class Rts2ValueRaDec: public Rts2Value
 {
-	private:
-		double ra;
-		double decl;
-
 	public:
 		Rts2ValueRaDec (std::string in_val_name);
-		Rts2ValueRaDec (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 
 		/**
@@ -1044,55 +956,34 @@ class Rts2ValueRaDec: public Rts2Value
 		virtual int doOpValue (char op, Rts2Value * old_value);
 
 		virtual const char *getValue ();
-		virtual double getValueDouble ()
-		{
-			return rts2_nan("f");
-		}
-		virtual float getValueFloat ()
-		{
-			return rts2_nan("f");
-		}
-		virtual int getValueInteger ()
-		{
-			return INT_MAX;
-		}
-		virtual long int getValueLong ()
-		{
-			return INT_MAX;
-		}
-		long inc ()
-		{
-			return INT_MAX;
-		}
-		long dec ()
-		{
-			return INT_MAX;
-		}
+		virtual double getValueDouble () { return rts2_nan("f"); }
+		virtual float getValueFloat () { return rts2_nan("f"); }
+		virtual int getValueInteger () { return INT_MAX; }
+		virtual long int getValueLong () { return INT_MAX; }
+		long inc () { return INT_MAX; }
+		long dec () { return INT_MAX; }
 
 		/**
 		 * Return RA in degrees.
 		 *
 		 * @return RA value in degrees.
 		 */
-		double getRa ()
-		{
-			return ra;
-		}
+		double getRa () { return ra; }
 
 		/**
 		 * Return DEC in degrees.
 		 *
 		 * @return DEC value in degrees.
 		 */
-		double getDec ()
-		{
-			return decl;
-		}
+		double getDec () { return decl; }
 
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
-};
 
+	private:
+		double ra;
+		double decl;
+};
 
 /**
  * Class for Alt-Az informations.
@@ -1101,14 +992,9 @@ class Rts2ValueRaDec: public Rts2Value
  */
 class Rts2ValueAltAz: public Rts2Value
 {
-	private:
-		double alt;
-		double az;
-
 	public:
 		Rts2ValueAltAz (std::string in_val_name);
-		Rts2ValueAltAz (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 
 		/**
@@ -1161,53 +1047,33 @@ class Rts2ValueAltAz: public Rts2Value
 		virtual int doOpValue (char op, Rts2Value * old_value);
 
 		virtual const char *getValue ();
-		virtual double getValueDouble ()
-		{
-			return rts2_nan("f");
-		}
-		virtual float getValueFloat ()
-		{
-			return rts2_nan("f");
-		}
-		virtual int getValueInteger ()
-		{
-			return INT_MAX;
-		}
-		virtual long int getValueLong ()
-		{
-			return INT_MAX;
-		}
-		long inc ()
-		{
-			return INT_MAX;
-		}
-		long dec ()
-		{
-			return INT_MAX;
-		}
+		virtual double getValueDouble () { return rts2_nan("f"); }
+		virtual float getValueFloat () { return rts2_nan("f"); }
+		virtual int getValueInteger () { return INT_MAX; }
+		virtual long int getValueLong () { return INT_MAX; }
+		long inc () { return INT_MAX; }
+		long dec () { return INT_MAX; }
 
 		/**
 		 * Return altitude in degrees.
 		 *
 		 * @return Altitude value in degrees.
 		 */
-		double getAlt ()
-		{
-			return alt;
-		}
+		double getAlt () { return alt; }
 
 		/**
 		 * Return azimuth in degrees.
 		 *
 		 * @return Azimuth value in degrees.
 		 */
-		double getAz ()
-		{
-			return az;
-		}
+		double getAz () { return az; }
 
 		virtual void setFromValue (Rts2Value * newValue);
 		virtual bool isEqual (Rts2Value *other_value);
+
+	private:
+		double alt;
+		double az;
 };
 
 

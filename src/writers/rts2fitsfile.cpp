@@ -28,6 +28,21 @@
 
 using namespace rts2image;
 
+ColumnData::ColumnData (std::string _name, std::vector <double> _data)
+{
+	name = _name;
+	len = _data.size ();
+	if (len == 0)
+	{
+		data = NULL;
+		return;
+	}
+	data = malloc (sizeof (double) * len);
+	double *tp = (double *) data;
+	for (std::vector <double>::iterator iter = _data.begin (); iter != _data.end (); tp++, iter++)
+		*tp = *iter;
+}
+
 std::string Rts2FitsFile::getFitsErrors ()
 {
 	std::ostringstream os;
@@ -264,29 +279,36 @@ void Rts2FitsFile::writeComment (const char *comment)
 	fitsStatusSetValue ("comment", true);
 }
 
-int Rts2FitsFile::writeArray (const char *extname, rts2core::DoubleArray *value)
+int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & values)
 {
-	const char *cols[] = { "Key", "Value" };
-	const char *types[] = { "I4", "D20.10" };
-	const char *units[] = { "\0", "A" };
+	char *cols[values.size ()];
+	const char *types[values.size ()];
+	const char *units[values.size ()];
 
-	// fits_clear_errmsg ();
-
-	fits_create_tbl (ffile, ASCII_TBL, value->size (), 2, (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
-
-        int keys[value->size ()];
-	double vals[value->size ()];
-
+	size_t maxsize = 0;
+	
 	int i = 0;
+	std::list <ColumnData *>::iterator iter;
 
-	for (std::vector <double>::iterator iter = value->valueBegin (); iter != value->valueEnd (); iter++, i++)
+	for (iter = values.begin (); iter != values.end (); iter++, i++)
 	{
-		keys[i] = i + 1;
-		vals[i] = *iter;
+		cols[i] = new char[(*iter)->name.length () + 1];
+		strcpy (cols[i], (*iter)->name.c_str ());
+		types[i] = "D20.10";
+		units[i] = "A";
+		if ((*iter)->len > maxsize)
+			maxsize = (*iter)->len;
 	}
 
-	fits_write_col (ffile, TINT, 1, 1, 1, value->size (), keys, &fits_status);
-	fits_write_col (ffile, TDOUBLE, 2, 1, 1, value->size (), vals, &fits_status);
+	fits_create_tbl (ffile, BINARY_TBL, values.size (), maxsize, (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
+
+	i = 1;
+
+	for (iter = values.begin (); iter != values.end (); iter++, i++)
+	{
+		if ((*iter)->data)
+			fits_write_col (ffile, TDOUBLE, i, 1, 1, (*iter)->len, (*iter)->data, &fits_status);
+	}
 
 	// move back to primary HDU
 	int hdutype;

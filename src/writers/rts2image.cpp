@@ -300,6 +300,14 @@ Rts2Image::Rts2Image (const char *_filename, bool _verbose, bool readOnly):Rts2F
 Rts2Image::~Rts2Image (void)
 {
 	saveImage ();
+
+	for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
+	{
+		for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
+			delete *ci;
+		arrayGroups.erase (iter++);
+	}
+
 	delete[]targetName;
 	delete[]cameraName;
 	delete[]mountName;
@@ -506,6 +514,14 @@ int Rts2Image::closeFile ()
 		if (!isnan (total_rotang))
 		{
 			setValue ("ROTANG", total_rotang, "Image rotang over X axis");
+		}
+		// save array data
+		for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
+		{
+			writeConnArray (iter->second.first.c_str (), iter->second.second);
+			for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
+				delete *ci;
+			arrayGroups.erase (iter++);
 		}
 		setCreationDate ();
 	}
@@ -755,8 +771,7 @@ int Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data
 	long fpixel = 1;
 
 	fits_open_file (&fp, save_filename, READWRITE, &fits_status);
-	fits_write_img (fp, TUSHORT, fpixel, naxis[0] * naxis[1], in_data,
-		&fits_status);
+	fits_write_img (fp, TUSHORT, fpixel, naxis[0] * naxis[1], in_data, &fits_status);
 	fits_close_file (fp, &fits_status);
 
 	return 0;
@@ -2070,7 +2085,7 @@ void Rts2Image::writeConnBaseValue (const char* name, Rts2Value * val, const cha
 	}
 }
 
-void Rts2Image::writeConnArray (const char *name, Rts2Value *val)
+void Rts2Image::writeConnArray (const char *name, std::list <ColumnData *> &values)
 {
 	if (!getFitsFile ())
 	{
@@ -2078,15 +2093,7 @@ void Rts2Image::writeConnArray (const char *name, Rts2Value *val)
 			return;
 		openImage ();
 	}
-	switch (val->getValueBaseType ())
-	{
-		case RTS2_VALUE_DOUBLE:
-			writeArray (name, (rts2core::DoubleArray *) val);
-			break;
-		default:
-			logStream (MESSAGE_ERROR) << "Don't know how to write array of type "
-				<< val->getValueType () << sendLog;
-	}
+	writeArray (name,  values);
 }
 
 void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
@@ -2095,6 +2102,9 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 	char *name = (char *) val->getName ().c_str ();
 	char *name_stat;
 	char *n_top;
+
+	// array groups to write. First they are created, then they are written at the end
+
 	if (conn->getOtherType () == DEVICE_TYPE_SENSOR || val->prefixWithDevice () || val->getValueExtType () == RTS2_VALUE_ARRAY)
 	{
 		name = new char[strlen (name) + strlen (conn->getName ()) + 2];
@@ -2102,13 +2112,28 @@ void Rts2Image::writeConnValue (Rts2Conn * conn, Rts2Value * val)
 		strcat (name, ".");
 		strcat (name, val->getName ().c_str ());
 	}
+
+	std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator ai;
+
 	switch (val->getValueExtType ())
 	{
 		case 0:
 			writeConnBaseValue (name, val, desc);
 			break;
 		case RTS2_VALUE_ARRAY:
-			writeConnArray (name, val);
+			ai = arrayGroups.find (val->getWriteGroup ());
+
+			if (ai == arrayGroups.end ())
+			{
+				std::list <ColumnData *> vl;
+				vl.push_back (new ColumnData (val->getName (), ((rts2core::DoubleArray *) val)->getValueVector ()));
+				arrayGroups[val->getWriteGroup ()] = std::pair <std::string, std::list <ColumnData *> > (std::string (name), vl);
+			}
+			else
+			{
+				ai->second.second.push_back (new ColumnData (val->getName (), ((rts2core::DoubleArray *) val)->getValueVector ()));
+			}
+
 			break;
 		case RTS2_VALUE_STAT:
 			writeConnBaseValue (name, val, desc);

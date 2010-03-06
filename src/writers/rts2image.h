@@ -747,11 +747,13 @@ class Rts2Image:public Rts2FitsFile
 
 		int expNum;
 
+		std::map <int, std::pair <std::string, std::list <ColumnData *> > > arrayGroups;
+
 		void initData ();
 
 		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
 
-		void writeConnArray (const char *name, Rts2Value *val);
+		void writeConnArray (const char *name, std::list <ColumnData *> &values);
 
 		// writes one value to image
 		void writeConnValue (Rts2Conn *conn, Rts2Value *val);

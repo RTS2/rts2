@@ -272,8 +272,7 @@ void Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			getObs (&obs);
 			image->writeConn (getConnection (), EXPOSURE_START);
 			infotime = getConnection ()->getValueDouble ("infotime");
-			image->setValue ("MNT_INFO", infotime,
-				"time when mount informations were collected");
+			image->setValue ("MNT_INFO", infotime, "time when mount informations were collected");
 
 			image->setMountFlip (getMountFlip ());
 			ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
