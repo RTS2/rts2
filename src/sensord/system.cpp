@@ -52,7 +52,7 @@ class System:public Sensor
 		Rts2ValueTime *lastWrite;
 
 		int addPath (const char *path);
-		void addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueLong *expected, double val);
+		void addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val);
 
 		const char *storageFile;
 		void storePaths ();
@@ -128,7 +128,7 @@ int System::addPath (const char *path)
 	return 0;
 }
 
-void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueLong *expected, double val)
+void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val)
 {
 	ds->addValue (val);
 	ds->calculate ();
@@ -145,6 +145,8 @@ void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueLong *expected, 
 				expected->setValueLong (hist - *iter);
 		}
 	}
+	nfree->setValueFloat (val / expected->getValueLong ());
+	sendValueAll (nfree);
 	sendValueAll (expected);
 }
 
@@ -165,8 +167,9 @@ void System::storePaths ()
 		os << *iter;
 		Rts2ValueDouble *dv = (Rts2ValueDouble*) getValue (iter->c_str ());
 		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((*iter + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((*iter + "_night").c_str ());
 		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((*iter + "_expected").c_str ());
-		addHistoryValue (ds, bytesNight, dv->getValueDouble ());
+		addHistoryValue (ds, nfree, bytesNight, dv->getValueDouble ());
 		for (std::deque <double>::iterator miter = ds->valueBegin (); miter != ds->valueEnd (); miter++)
 		{
 			os << " " << *miter;
@@ -196,8 +199,9 @@ void System::loadPaths ()
 		if (is.fail ())
 			return;
 		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((ipath + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((ipath + "_night").c_str ());
 		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((ipath + "_expected").c_str ());
-		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL)
+		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL || nfree == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot get variable for path " << ipath << sendLog;
 			is.ignore (2000, '\n');
@@ -211,7 +215,7 @@ void System::loadPaths ()
 			iss >> dv;
 			if (iss.fail ())
 				break;
-			addHistoryValue (ds, bytesNight, dv);
+			addHistoryValue (ds, nfree, bytesNight, dv);
 		}
 	}
 	is.close ();	
