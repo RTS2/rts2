@@ -294,6 +294,10 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 	{
 		cols[i] = new char[(*iter)->name.length () + 1];
 		strcpy (cols[i], (*iter)->name.c_str ());
+		// replace .
+		for (char *c = cols[i]; *c; c++)
+			if (*c == '.')
+				*c = '_';
 		types[i] = "D20.10";
 		units[i] = "A";
 		if ((*iter)->len > maxsize)
