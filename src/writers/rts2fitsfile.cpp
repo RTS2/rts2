@@ -304,7 +304,7 @@ int Rts2FitsFile::writeArray (const char *extname, std::list <ColumnData *> & va
 			maxsize = (*iter)->len;
 	}
 
-	fits_create_tbl (ffile, BINARY_TBL, values.size (), maxsize, (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
+	fits_create_tbl (ffile, BINARY_TBL, maxsize, values.size (), (char **) cols, (char **) types, (char **) units, (char *) extname, &fits_status);
 
 	if (fits_status)
 	{
