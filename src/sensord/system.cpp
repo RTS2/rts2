@@ -52,6 +52,7 @@ class System:public Sensor
 		Rts2ValueTime *lastWrite;
 
 		int addPath (const char *path);
+		void addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueLong *expected, double val);
 
 		const char *storageFile;
 		void storePaths ();
@@ -116,12 +117,35 @@ int System::addPath (const char *path)
 	Rts2ValueDouble *val;
 	Rts2ValueDoubleStat *da;
 	Rts2ValueFloat *nfree;
+	Rts2ValueLong *bytesNight;
+
 	createValue (val, path, (std::string ("free disk space on ") + std::string (path)).c_str (), false, RTS2_DT_BYTESIZE);
 	createValue (da, (std::string (path) + "_history").c_str (), "history of free bytes (every 24h)", false); // , RTS2_DT_BYTESIZE);
-	createValue (nfree, (std::string (path) + "_expected").c_str (), "number of expected nights till disk will get full", false);
+	createValue (nfree, (std::string (path) + "_night").c_str (), "number of expected nights till disk will get full", false);
+	createValue (bytesNight, (std::string (path) + "_expected").c_str (), "expected number of bytes per night (maximum from night diferences from last 10 nights)", false, RTS2_DT_BYTESIZE);
 	paths.push_back (path);
 
 	return 0;
+}
+
+void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueLong *expected, double val)
+{
+	ds->addValue (val);
+	ds->calculate ();
+	// recalculate _expected
+	expected->setValueLong (-1);
+	std::deque <double>::iterator iter = ds->valueBegin ();
+	if (iter != ds->valueEnd ())
+	{
+		double hist = *iter;
+		iter++;
+		for (; iter != ds->valueEnd (); iter++)
+		{
+			if (hist - *iter > expected->getValueDouble ())
+				expected->setValueLong (hist - *iter);
+		}
+	}
+	sendValueAll (expected);
 }
 
 void System::storePaths ()
@@ -141,8 +165,8 @@ void System::storePaths ()
 		os << *iter;
 		Rts2ValueDouble *dv = (Rts2ValueDouble*) getValue (iter->c_str ());
 		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((*iter + "_history").c_str ());
-		ds->addValue (dv->getValueDouble ());
-		ds->calculate ();
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((*iter + "_expected").c_str ());
+		addHistoryValue (ds, bytesNight, dv->getValueDouble ());
 		for (std::deque <double>::iterator miter = ds->valueBegin (); miter != ds->valueEnd (); miter++)
 		{
 			os << " " << *miter;
@@ -172,7 +196,8 @@ void System::loadPaths ()
 		if (is.fail ())
 			return;
 		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((ipath + "_history").c_str ());
-		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)))
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((ipath + "_expected").c_str ());
+		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot get variable for path " << ipath << sendLog;
 			is.ignore (2000, '\n');
@@ -186,7 +211,7 @@ void System::loadPaths ()
 			iss >> dv;
 			if (iss.fail ())
 				break;
-			ds->addValue (dv);
+			addHistoryValue (ds, bytesNight, dv);
 		}
 	}
 	is.close ();	
