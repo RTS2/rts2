@@ -86,7 +86,7 @@ class Dummy:public Telescope
 
 		virtual int isMoving ()
 		{
-		    if( move_fast->getValueBool ()) {
+		    if (move_fast->getValueBool ()) {
  			struct ln_equ_posn tar;
 			getTelTargetRaDec (&tar);
 			dummyPos.ra= tar.ra ;
@@ -94,7 +94,6 @@ class Dummy:public Telescope
 			return -2;
 
 		    } else {
-
 			if (getNow () > getTargetReached ())
 				return -2;
 			struct ln_equ_posn tar;
@@ -136,7 +135,7 @@ using namespace rts2teld;
 Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 {
 	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
-	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false);
+	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false, RTS2_VALUE_WRITABLE);
 	move_fast->setValueBool (false);
 
 	dummyPos.ra = 0;
