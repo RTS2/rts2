@@ -66,7 +66,7 @@ class Rts2Comm:
 		sys.stdout.flush()
 		a = sys.stdin.readline()
 		if (a != "exposure_end\n"):
-			self.log ('E', "invalid return from exposure - expected exposure_end, received " + a)
+			self.log('E', "invalid return from exposure - expected exposure_end, received " + a)
 		if (not (before_readout_callback is None)):
 			before_readout_callback()
 		a = sys.stdin.readline()
@@ -75,23 +75,23 @@ class Rts2Comm:
 
 	def rename(self,imagename,pattern):
 		print "rename",imagename,pattern
-		sys.stdin.flush()
+		sys.stdout.flush()
 	
 	def toFlat(self,imagename):
 		print "flat",imagename
-		sys.stdin.flush()
+		sys.stdout.flush()
 	
 	def toTrash(self,imagename):
 		print "trash",imagename
-		sys.stdin.flush()
+		sys.stdout.flush()
 
 	def delete(self,imagename):
 		print "delete",imagename
-		sys.stdin.flush()
+		sys.stdout.flush()
 
 	def log(self,level,text):
 		print "log",level,text
-		sys.stdin.flush()
+		sys.stdout.flush()
 	
 	def isEvening(self):
 		"""Returns true if is evening - sun is on west"""
