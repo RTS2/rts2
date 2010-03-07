@@ -185,31 +185,31 @@ ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 	Target::printExtra (_os, JD);
 }
 
-
-//	ret = config->getString (deviceName, "darks", dark_exps);
-
-
 DarkTarget::DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): Target (in_tar_id, in_obs)
 {
 	currPos.ra = 0;
 	currPos.dec = 0;
 }
 
-
 DarkTarget::~DarkTarget ()
 {
 }
 
+int DarkTarget::getScript (const char *deviceName, std::string &buf)
+{
+	if (getDBScript (deviceName, buf) == 0)
+		return 0;
+	// otherwise, take bias frames
+	buf = std::string ("D 0");
+	return 0;
+}
 
-void
-DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = currPos;
 }
 
-
-moveType
-DarkTarget::startSlew (struct ln_equ_posn *position)
+moveType DarkTarget::startSlew (struct ln_equ_posn *position)
 {
 	currPos.ra = position->ra;
 	currPos.dec = position->dec;

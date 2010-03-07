@@ -907,17 +907,7 @@ Target::getDBScript (const char *camera_name, std::string &script)
 	return -1;
 }
 
-
-/**
- * Return script for camera exposure.
- *
- * @param device_name	camera device for script
- * @param buf		buffer for script
- *
- * @return 0 on success, < 0 on error
- */
-int
-Target::getScript (const char *device_name, std::string &buf)
+int Target::getScript (const char *device_name, std::string &buf)
 {
 	int ret;
 	Rts2Config *config;

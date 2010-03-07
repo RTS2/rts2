@@ -136,6 +136,18 @@ class Target:public Rts2Target
 		int loadTarget (int in_tar_id);
 		virtual int save (bool overwrite);
 		virtual int save (bool overwrite, int tar_id);
+
+		/** 
+		 * Return script for target action.
+		 *
+		 * @brief Returns script for device action. Scripts are used to perform actions
+		 * on device during target execution.
+		 * 
+		 * @param device_name script device
+		 * @param buf buffer script
+		 * 
+		 * @return 0 on success, < 0 on error
+		 */
 		virtual int getScript (const char *device_name, std::string & buf);
 		int setScript (const char *device_name, const char *buf);
 		struct ln_lnlat_posn *getObserver ()
@@ -661,6 +673,7 @@ class DarkTarget:public Target
 	public:
 		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ DarkTarget (void);
+		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
 		{

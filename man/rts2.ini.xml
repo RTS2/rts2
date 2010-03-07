@@ -1166,14 +1166,6 @@
 	</varlistentry>
         <varlistentry>
 	  <term>
-	    <option>darks</option>
-	  </term>
-	  <listitem>
-	    <para>Exposures (in seconds) for dark images.</para>
-	  </listitem>
-	</varlistentry>
-        <varlistentry>
-	  <term>
 	    <option>filter</option>
 	  </term>
 	  <listitem>
