@@ -1,4 +1,4 @@
-noinst_HEADERS = rts2schedbag.h rts2schedule.h rts2schedobs.h ticket.h utils.h
+noinst_HEADERS = rts2schedbag.h rts2schedule.h rts2schedobs.h ticket.h ticketset.h utils.h
 
 if PGSQL
 

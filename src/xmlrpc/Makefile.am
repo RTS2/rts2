@@ -2,7 +2,7 @@ bin_PROGRAMS = rts2-xmlrpcd rts2-xmlrpcclient
 
 noinst_HEADERS = xmlstream.h xmlrpcd.h httpreq.h r2x.h session.h stateevents.h valueevents.h events.h plot.h altplot.h \
 	valueplot.h emailaction.h altaz.h augerreq.h nightdur.h nightreq.h imgpreview.h obsreq.h targetreq.h dirsupport.h \
-	devicesreq.h planreq.h
+	devicesreq.h planreq.h bsc.h
 
 AM_LDFLAGS = @LIB_M@ @LIB_NOVA@
 AM_CXXFLAGS = @NOVA_CFLAGS@ @JPEG_CFLAGS@ @LIBXML_CFLAGS@ @LIBARCHIVE_CFLAGS@ -I../../lib/

@@ -16,7 +16,7 @@ noinst_HEADERS = dome.h cupola.h ford.h vermes.h door_vermes.h \
 	dome-target-az.h  barcodereader_vermes.h \
 	ssd650v_comm_vermes.h  bisync_vermes.h move-to-target-az_vermes.h \
 	oak_comm_vermes.h move-door_vermes.h OakFeatureReports.h OakHidBase.h \
-	util_vermes.h
+	util_vermes.h serial_vermes.h
 
 noinst_LIBRARIES = librts2dome.a librts2dome-target-az.a librts2vermes.a librts2oak.a
 
