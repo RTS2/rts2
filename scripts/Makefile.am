@@ -1,3 +1,3 @@
 bin_SCRIPTS = rts2-autofocus
 
-EXTRA_nodist = flats.py
+EXTRA_DIST = flats.py rts2-autofocus
