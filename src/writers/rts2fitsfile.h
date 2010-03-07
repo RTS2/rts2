@@ -24,6 +24,7 @@
 #include <fitsio.h>
 
 #include <sstream>
+#include <list>
 
 /** Defines for FitsFile flags. */
 #define IMAGE_SAVE              0x01
@@ -31,6 +32,23 @@
 #define IMAGE_KEEP_DATA         0x04
 #define IMAGE_DONT_DELETE_DATA  0x08
 #define IMAGE_CANNOT_LOAD       0x10
+
+/**
+ * Class with table column informations. Used to temorary store
+ * table data.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ColumnData
+{
+	public:
+		ColumnData (std::string _name, std::vector <double> _data);
+		~ColumnData () { if (data) free (data); }
+
+		std::string name;
+		size_t len;
+		void *data;
+};
 
 /**
  * Class representing FITS file. This class represents FITS file. Usually you
@@ -70,7 +88,7 @@ class Rts2FitsFile: public rts2core::Expander
 		int createFile (const char *_filename);
 		int createFile (std::string _filename);
 
-		int openFile (const char *_filename = NULL, bool readOnly = false);
+		void openFile (const char *_filename = NULL, bool readOnly = false);
 
 		/**
 		 * Return pointer to fitsfile structure.
@@ -194,7 +212,7 @@ class Rts2FitsFile: public rts2core::Expander
 		/**
 		 * Create table extension from DoubleArray
 		 */
-		int writeArray (const char *extname, rts2core::DoubleArray *value);
+		int writeArray (const char *extname, std::list <ColumnData *> & values);
 
 		/**
 		 * Return true if image shall be written to disk before it is closed.
@@ -236,9 +254,9 @@ class KeyNotFound:public rts2core::Error
 class ErrorOpeningFitsFile: public rts2core::Error
 {
 	public:
-		ErrorOpeningFitsFile (Rts2FitsFile *_image):rts2core::Error ()
+		ErrorOpeningFitsFile (const char *filename):rts2core::Error ()
 		{
-			setMsg (std::string ("Cannot open file ") + _image->getFileName ());
+			setMsg (std::string ("Cannot open file ") + filename);
 		}
 };
 

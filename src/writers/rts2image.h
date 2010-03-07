@@ -24,6 +24,7 @@
 #include <ostream>
 #include <vector>
 #include <config.h>
+#include <fitsio.h>
 
 #include "imghdr.h"
 
@@ -83,81 +84,6 @@ imageWriteWhich_t;
  */
 class Rts2Image:public Rts2FitsFile
 {
-	private:
-		int filter_i;
-		char *filter;
-		float exposureLength;
-		
-		int createImage (std::string in_filename);
-		int createImage (char *in_filename);
-		// if filename is NULL, will take name stored in this->getFileName ()
-		void openImage (const char *_filename = NULL, bool readOnly = false);
-
-		char *imageData;
-		int imageType;
-		int focPos;
-		// we assume that image is 2D
-		long naxis[2];
-		float signalNoise;
-		int getFailed;
-		double average;
-		double stdev;
-		double bg_stdev;
-		short int min;
-		short int max;
-		short int mean;
-		int isAcquiring;
-		// that value is nan when rotang was already set;
-		// it is calculated as sum of partial rotangs.
-		// For change of total rotang, addRotang function is provided.
-		double total_rotang;
-
-		double xoa;
-		double yoa;
-
-		int mnt_flip;
-
-		int expNum;
-
-		void initData ();
-
-		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
-
-		void writeConnArray (const char *name, Rts2Value *val);
-
-		// writes one value to image
-		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
-
-		// record value changes
-		void recordChange (Rts2Conn *conn, Rts2Value *val);
-	protected:
-		int targetId;
-		int targetIdSel;
-		char targetType;
-		char *targetName;
-		int obsId;
-		int imgId;
-		char *cameraName;
-		char *mountName;
-		char *focName;
-		shutter_t shutter;
-
-		struct ln_equ_posn pos_astr;
-		double ra_err;
-		double dec_err;
-		double img_err;
-
-		int createImage ();
-
-		int writeExposureStart ();
-
-		virtual int isGoodForFwhm (struct stardata *sr);
-		char *getImageBase (void);
-
-		// expand expression to image path
-		virtual std::string expandVariable (char expression);
-		virtual std::string expandVariable (std::string expression);
-
 	public:
 		// list of sex results..
 		struct stardata *sexResults;
@@ -182,16 +108,25 @@ class Rts2Image:public Rts2FitsFile
 		 * @param in_exposureStart  Starting time of the exposure.
 		 * @param in_connection     Connection of camera requesting exposure.
 		 */
-		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart,
-			Rts2Conn * in_connection);
+		Rts2Image (const char *in_expression, int in_expNum, const struct timeval *in_exposureStart, Rts2Conn * in_connection);
 		// create image in que
-		Rts2Image (Rts2Target * currTarget, Rts2DevClientCamera * camera,
-			const struct timeval *in_exposureStart);
+		Rts2Image (Rts2Target * currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *in_exposureStart);
 		// open image from disk..
-		Rts2Image (const char *in_filename, bool verbose = true, bool readOnly = false);
+		Rts2Image (const char *_filename, bool _verbose = true, bool readOnly = false);
 		virtual ~ Rts2Image (void);
 
 		virtual int closeFile ();
+
+		void openImage (const char *_filename = NULL, bool readOnly = false);
+		void getHeaders ();
+		/**
+		 * Retrieve from image target related headers.
+		 *
+		 * @throw rts2image::KeyNotFound
+		 */
+		void getTargetHeaders ();
+
+		void setTargetHeaders (int _tar_id, int _obs_id, int _img_id, char _obs_subtype);
 
 		virtual int toQue ();
 		virtual int toAcquisition ();
@@ -345,24 +280,35 @@ class Rts2Image:public Rts2FitsFile
 		 *
 		 * @throw Exception
 		 */
-		Magick::Image getMagickImage (float quantiles=0.005);
+		Magick::Image getMagickImage (const char *label = NULL, float quantiles=0.005);
+
+		/**
+		 * Write lable to given position. Label text will be expanded.
+		 *
+		 * @param mimage    Image to which write label.
+		 * @param x         X coordinate of rectangle with label.
+		 * @param y         Y coordinate of rectangle with label.
+		 * @param labelText Text of label. It will be expanded through expandVariable.
+		 */
+		void writeLabel (Magick::Image &mimage, int x, int y, unsigned int fs, const char *labelText);
 
 		/**
 		 * Write image as JPEG to provided data buffer.
 		 * Buffer will be allocated by this call and should
 		 * be free afterwards.
 		 *
-		 * @param expand_str Expand string for image name
-		 * @param quantiles  Quantiles in 0-1 range for image scaling.
+		 * @param expand_str    Expand string for image name
+		 * @param label         label added to image box (expand character).
+		 * @param quantiles     Quantiles in 0-1 range for image scaling.
 		 *
 		 * @throw Exception
 		 */
-		void writeAsJPEG (std::string expand_str, float quantiles=0.005);
+		void writeAsJPEG (std::string expand_str, const char * label = NULL, float quantiles=0.005);
 
 		/**
 		 * Store image to blob, which can be used to get data etc..
 		 */
-		void writeAsBlob (Magick::Blob &blob, float quantiles=0.005);
+		void writeAsBlob (Magick::Blob &blob, const char * label = NULL, float quantiles=0.005);
 #endif
 
 		double getAstrometryErr ();
@@ -398,25 +344,13 @@ class Rts2Image:public Rts2FitsFile
 			return "(null)";
 		}
 
-		void setExposureStart (const struct timeval *tv)
-		{
-			setExpandDate (tv);
-		}
+		void setExposureStart (const struct timeval *tv) { setExpandDate (tv); }
 
-		double getExposureStart ()
-		{
-			return getExpandDateCtime ();
-		}
+		double getExposureStart () { return getExpandDateCtime (); }
 
-		long getExposureSec ()
-		{
-			return getCtimeSec ();
-		}
+		long getExposureSec () { return getCtimeSec ();	}
 
-		long getExposureUsec ()
-		{
-			return getCtimeUsec ();
-		}
+		long getExposureUsec () { return getCtimeUsec (); }
 
 		void setExposureLength (float in_exposureLength)
 		{
@@ -425,15 +359,9 @@ class Rts2Image:public Rts2FitsFile
 			setValue ("EXPTIME", exposureLength, "exposure length in seconds");
 		}
 
-		float getExposureLength ()
-		{
-			return exposureLength;
-		}
+		float getExposureLength () { return exposureLength; }
 
-		int getTargetId ()
-		{
-			return targetId;
-		}
+		int getTargetId () { if (targetId < 0) getTargetHeaders (); return targetId; }
 
 		std::string getTargetString ();
 		std::string getTargetSelString ();
@@ -447,77 +375,38 @@ class Rts2Image:public Rts2FitsFile
 		// image parameter functions
 		std::string getExposureLengthString ();
 
-		int getTargetIdSel ()
-		{
-			return targetIdSel;
-		}
+		int getTargetIdSel () { if (targetIdSel < 0) getTargetHeaders (); return targetIdSel; }
 
-		char getTargetType ()
-		{
-			return targetType;
-		}
+		char getTargetType (bool do_load = true) { if (do_load && targetType == TYPE_UNKNOW) getTargetHeaders (); return targetType; }
 
-		int getObsId ()
-		{
-			return obsId;
-		}
+		int getObsId () { if (obsId < 0) getTargetHeaders (); return obsId; }
 
-		int getImgId ()
-		{
-			return imgId;
-		}
+		int getImgId () { if(imgId < 0) getTargetHeaders (); return imgId; }
 
-		const char *getFilter ()
-		{
-			return filter;
-		}
+		const char *getFilter () { return filter; }
 
 		void setFilter (const char *in_filter);
 
-		int getFilterNum ()
-		{
-			return filter_i;
-		}
+		int getFilterNum () { return filter_i; }
 
 		void computeStatistics ();
 
-		double getAverage ()
-		{
-			return average;
-		}
+		double getAverage () { return average; }
 
-		double getStdDev ()
-		{
-			return stdev;
-		}
+		double getStdDev () { return stdev; }
 
 		/**
 		 * Return
 		 */
-		double getBgStdDev ()
-		{
-			return bg_stdev;
-		}
+		double getBgStdDev () { return bg_stdev; }
 
-		int getFocPos ()
-		{
-			return focPos;
-		}
+		int getFocPos () { return focPos; }
 
-		void setFocPos (int new_pos)
-		{
-			focPos = new_pos;
-		}
+		void setFocPos (int new_pos) { focPos = new_pos; }
 
-		int getIsAcquiring ()
-		{
-			return isAcquiring;
-		}
+		int getIsAcquiring () { return isAcquiring; }
 
-		void keepImage ()
-		{
-			flags |= IMAGE_KEEP_DATA;
-		}
+		void keepImage () { flags |= IMAGE_KEEP_DATA; }
 
 		void closeData ()
 		{
@@ -566,23 +455,14 @@ class Rts2Image:public Rts2FitsFile
 
 		int getCenter (double &x, double &y, int bin);
 
-		long getWidth ()
-		{
-			return naxis[0];
-		}
+		long getWidth () { return naxis[0]; }
 
-		long getHeight ()
-		{
-			return naxis[1];
-		}
+		long getHeight () { return naxis[1]; }
 
 		/**
 		 * Returns number of pixels.
 		 */
-		long getNPixels ()
-		{
-			return getWidth () * getHeight ();
-		}
+		long getNPixels () { return getWidth () * getHeight (); }
 
 		/**
 		 * Returns ra & dec distance in degrees of pixel [x,y] from device axis (XOA and YOA coordinates)
@@ -697,6 +577,7 @@ class Rts2Image:public Rts2FitsFile
 		void getCoordMount (struct ln_equ_posn &radec);
 
 		void getCoordBest (struct ln_equ_posn &radec);
+		void getCoordBestAltAz (struct ln_hrz_posn &hrz, struct ln_lnlat_posn *observer);
 
 		void getCoord (LibnovaRaDec & radec, const char *ra_name, const char *dec_name);
 		void getCoordTarget (LibnovaRaDec & radec);
@@ -776,6 +657,8 @@ class Rts2Image:public Rts2FitsFile
 		 */
 		double getExposureJD ();
 
+		double getMidExposureJD () { return getExposureJD () + getExposureLength () / 2.0 / 86400; }
+
 		/**
 		 * Get image LST (local sidereal time).
 		 */
@@ -795,6 +678,88 @@ class Rts2Image:public Rts2FitsFile
 
 		std::vector < pixel > list;
 		double median, sigma;
+
+	protected:
+		char *cameraName;
+		char *mountName;
+		char *focName;
+
+		shutter_t shutter;
+
+		struct ln_equ_posn pos_astr;
+		double ra_err;
+		double dec_err;
+		double img_err;
+
+		int createImage ();
+
+		int writeExposureStart ();
+
+		virtual int isGoodForFwhm (struct stardata *sr);
+		char *getImageBase (void);
+
+		// expand expression to image path
+		virtual std::string expandVariable (char expression);
+		virtual std::string expandVariable (std::string expression);
+
+	private:
+		int targetId;
+		int targetIdSel;
+		char targetType;
+		char *targetName;
+		int obsId;
+		int imgId;
+
+		int filter_i;
+		char *filter;
+		float exposureLength;
+		
+		int createImage (std::string in_filename);
+		int createImage (char *in_filename);
+		// if filename is NULL, will take name stored in this->getFileName ()
+		// if openImage should load header..
+		bool loadHeader;
+		bool verbose;
+
+		char *imageData;
+		int imageType;
+		int focPos;
+		// we assume that image is 2D
+		long naxis[2];
+		float signalNoise;
+		int getFailed;
+		double average;
+		double stdev;
+		double bg_stdev;
+		short int min;
+		short int max;
+		short int mean;
+		int isAcquiring;
+		// that value is nan when rotang was already set;
+		// it is calculated as sum of partial rotangs.
+		// For change of total rotang, addRotang function is provided.
+		double total_rotang;
+
+		double xoa;
+		double yoa;
+
+		int mnt_flip;
+
+		int expNum;
+
+		std::map <int, std::pair <std::string, std::list <ColumnData *> > > arrayGroups;
+
+		void initData ();
+
+		void writeConnBaseValue (const char *name, Rts2Value *val, const char *desc);
+
+		void writeConnArray (const char *name, std::list <ColumnData *> &values);
+
+		// writes one value to image
+		void writeConnValue (Rts2Conn *conn, Rts2Value *val);
+
+		// record value changes
+		void recordChange (Rts2Conn *conn, Rts2Value *val);
 };
 
 std::ostream & operator << (std::ostream & _os, Rts2Image & image);

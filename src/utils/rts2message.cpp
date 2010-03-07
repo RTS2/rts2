@@ -116,7 +116,7 @@ std::string Rts2Message::toString ()
 }
 
 
-std::ofstream & operator << (std::ofstream & _of, Rts2Message & msg)
+std::ostream & operator << (std::ostream & _of, Rts2Message & msg)
 {
 	_of << msg.toString () << std::endl;
 	return _of;

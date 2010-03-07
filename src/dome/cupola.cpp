@@ -3,17 +3,16 @@
 
 #include <math.h>
 
-Cupola::Cupola (int in_argc, char **in_argv):
-Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
+Cupola::Cupola (int in_argc, char **in_argv):Dome (in_argc, in_argv, DEVICE_TYPE_CUPOLA)
 {
 	targetPos.ra = nan ("f");
 	targetPos.dec = nan ("f");
 
-	createValue (tarRa, "tar_ra", "copula target ra", false, RTS2_DT_RA);
-	createValue (tarDec, "tar_dec", "copula target dec", false, RTS2_DT_DEC);
-	createValue (tarAlt, "tar_alt", "copula target altitude", false,
+	createValue (tarRa, "tar_ra", "cupola target ra", false, RTS2_DT_RA);
+	createValue (tarDec, "tar_dec", "cupola target dec", false, RTS2_DT_DEC);
+	createValue (tarAlt, "tar_alt", "cupola target altitude", false,
 		RTS2_DT_DEC);
-	createValue (tarAz, "tar_az", "copula target azimut", false,
+	createValue (tarAz, "tar_az", "cupola target azimut", false,
 		RTS2_DT_DEGREES);
 
 	createValue (currentAz, "CUP_AZ", "cupola azimut", true, RTS2_DT_DEGREES);
@@ -25,9 +24,7 @@ Dome (in_argc, in_argv, DEVICE_TYPE_COPULA)
 	addOption ('c', "config", 1, "configuration file");
 }
 
-
-int
-Cupola::processOption (int in_opt)
+int Cupola::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -40,9 +37,7 @@ Cupola::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Cupola::init ()
+int Cupola::init ()
 {
 	int ret;
 	ret = Dome::init ();
@@ -57,9 +52,7 @@ Cupola::init ()
 	return 0;
 }
 
-
-int
-Cupola::info ()
+int Cupola::info ()
 {
 	struct ln_hrz_posn hrz;
 	// target ra+dec
@@ -72,12 +65,10 @@ Cupola::info ()
 	return Dome::info ();
 }
 
-
-int
-Cupola::idle ()
+int Cupola::idle ()
 {
 	long ret;
-	if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_MOVE)
+	if ((getState () & DOME_CUP_MASK_MOVE) == DOME_CUP_MOVE)
 	{
 		ret = isMoving ();
 		if (ret >= 0)
@@ -91,7 +82,7 @@ Cupola::idle ()
 				moveStop ();
 		}
 	}
-	else if (needSplitChange () > 0)
+	else if (needSlitChange () > 0)
 	{
 		moveStart ();
 		setTimeout (USEC_SEC);
@@ -103,9 +94,7 @@ Cupola::idle ()
 	return Dome::idle ();
 }
 
-
-int
-Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
+int Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 {
 	int ret;
 	targetPos.ra = ra;
@@ -114,72 +103,60 @@ Cupola::moveTo (Rts2Conn * conn, double ra, double dec)
 	ret = moveStart ();
 	if (ret)
 		return ret;
-	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE,
-		DOME_COP_NOT_SYNC | BOP_EXPOSURE);
+	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE,
+		DOME_CUP_NOT_SYNC | BOP_EXPOSURE);
 	return 0;
 }
 
-
-int
-Cupola::moveStart ()
+int Cupola::moveStart ()
 {
-	maskState (DOME_COP_MASK_MOVE, DOME_COP_MOVE);
+	maskState (DOME_CUP_MASK_MOVE, DOME_CUP_MOVE);
 	return 0;
 }
 
-
-int
-Cupola::moveStop ()
+int Cupola::moveStop ()
 {
-	maskState (DOME_COP_MASK | BOP_EXPOSURE,
-		DOME_COP_NOT_MOVE | DOME_COP_NOT_SYNC);
+	maskState (DOME_CUP_MASK | BOP_EXPOSURE,
+		DOME_CUP_NOT_MOVE | DOME_CUP_NOT_SYNC);
 	infoAll ();
 	return 0;
 }
 
-
-void
-Cupola::synced ()
+void Cupola::synced ()
 {
 	infoAll ();
-	maskState (DOME_COP_MASK_SYNC | BOP_EXPOSURE, DOME_COP_SYNC);
+	maskState (DOME_CUP_MASK_SYNC | BOP_EXPOSURE, DOME_CUP_SYNC);
 }
 
-
-int
-Cupola::moveEnd ()
+int Cupola::moveEnd ()
 {
-	maskState (DOME_COP_MASK | BOP_EXPOSURE, DOME_COP_NOT_MOVE | DOME_COP_SYNC);
+	maskState (DOME_CUP_MASK | BOP_EXPOSURE, DOME_CUP_NOT_MOVE | DOME_CUP_SYNC);
 	infoAll ();
 	return 0;
 }
 
-
-void
-Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
+void Cupola::getTargetAltAz (struct ln_hrz_posn *hrz)
 {
 	double JD;
 	JD = ln_get_julian_from_sys ();
 	ln_get_hrz_from_equ (&targetPos, observer, JD, hrz);
 }
 
-
-int
-Cupola::needSplitChange ()
+bool Cupola::needSlitChange ()
 {
 	int ret;
 	struct ln_hrz_posn targetHrz;
 	double splitWidth;
 	if (isnan (targetPos.ra) || isnan (targetPos.dec))
-		return 0;
+		return false;
 	getTargetAltAz (&targetHrz);
 	splitWidth = getSplitWidth (targetHrz.alt);
 	if (splitWidth < 0)
-		return -1;
+		return false;
 	// get current az
 	ret = info ();
 	if (ret)
-		return -1;
+		return false;
 	// simple check; can be repleaced by some more complicated for more complicated setups
 	targetDistance = getCurrentAz () - targetHrz.az;
 	if (targetDistance > 180)
@@ -188,16 +165,14 @@ Cupola::needSplitChange ()
 		targetDistance = (targetDistance + 360);
 	if (fabs (targetDistance) < splitWidth)
 	{
-		if ((getState () & DOME_COP_MASK_SYNC) == DOME_COP_NOT_SYNC)
+		if ((getState () & DOME_CUP_MASK_SYNC) == DOME_CUP_NOT_SYNC)
 			synced ();
-		return info ();
+		return false;
 	}
-	return 1;
+	return true;
 }
 
-
-int
-Cupola::commandAuthorized (Rts2Conn * conn)
+int Cupola::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("move"))
 	{

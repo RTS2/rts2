@@ -20,6 +20,8 @@
 #include "teld.h"
 #include "../utils/rts2config.h"
 
+#define OPT_MOVE_FAST    OPT_LOCAL + 510
+
 /*!
  * Dummy teld for testing purposes.
  */
@@ -30,10 +32,40 @@ namespace rts2teld
 class Dummy:public Telescope
 {
 	private:
-		struct ln_equ_posn dummyPos;
-		long countLong;
-	protected:
 
+                struct ln_equ_posn dummyPos;
+                Rts2ValueBool *move_fast;
+	public:
+	        Dummy (int argc, char **argv);
+        	virtual int processOption (int in_opt);
+		virtual int startResync ()
+		{
+			return 0;
+		}
+
+		virtual int startMoveFixed (double tar_az, double tar_alt)
+		{
+			return 0;
+		}
+
+		virtual int stopMove ()
+		{
+			return 0;
+		}
+
+		virtual int startPark ()
+		{
+			dummyPos.ra = 2;
+			dummyPos.dec = 2;
+			return 0;
+		}
+
+		virtual int endPark ()
+		{
+			return 0;
+		}
+
+	protected:
 		virtual int initValues ()
 		{
 			Rts2Config *config;
@@ -54,10 +86,29 @@ class Dummy:public Telescope
 
 		virtual int isMoving ()
 		{
-			if (countLong > 12)
+		    if (move_fast->getValueBool ()) {
+ 			struct ln_equ_posn tar;
+			getTelTargetRaDec (&tar);
+			dummyPos.ra= tar.ra ;
+			dummyPos.dec= tar.dec ;
+			return -2;
+
+		    } else {
+			if (getNow () > getTargetReached ())
 				return -2;
-			countLong++;
+			struct ln_equ_posn tar;
+			getTelTargetRaDec (&tar);
+			if (dummyPos.ra > tar.ra)
+				dummyPos.ra -= 0.5;
+			else
+				dummyPos.ra += 0.5;
+			if (dummyPos.dec > tar.dec)
+				dummyPos.dec -= 0.5;
+			else
+				dummyPos.dec += 0.5;
+			setTelRaDec (dummyPos.ra, dummyPos.dec);
 			return USEC_SEC;
+		    }
 		}
 
 		virtual int isMovingFixed ()
@@ -69,50 +120,45 @@ class Dummy:public Telescope
 		{
 			return isMoving ();
 		}
-	public:
-		Dummy (int in_argc, char **in_argv):Telescope (in_argc,
-			in_argv)
+
+		virtual double estimateTargetTime ()
 		{
-			dummyPos.ra = 0;
-			dummyPos.dec = 0;
+			return getTargetDistance () * 2.0;
 		}
 
-		virtual int startResync ()
-		{
-			getTarget (&dummyPos);
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int startMoveFixed (double tar_az, double tar_alt)
-		{
-			getTarget (&dummyPos);
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int stopMove ()
-		{
-			return 0;
-		}
-
-		virtual int startPark ()
-		{
-			dummyPos.ra = 2;
-			dummyPos.dec = 2;
-			countLong = 0;
-			return 0;
-		}
-
-		virtual int endPark ()
-		{
-			return 0;
-		}
 };
 
 };
 
 using namespace rts2teld;
+
+Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
+{
+	addOption (OPT_MOVE_FAST, "move", 1, "fast: reach target position fast, else: slow (default: 2 deg/sec)");
+	createValue (move_fast, "MOVE_FAST", "fast: reach target position fast, else: slow", false, RTS2_VALUE_WRITABLE);
+	move_fast->setValueBool (false);
+
+	dummyPos.ra = 0;
+	dummyPos.dec = 0;
+}
+int
+Dummy::processOption (int in_opt)
+{
+	switch (in_opt)
+	{
+		case OPT_MOVE_FAST:
+		    if( !strcmp( "fast", optarg)) {
+			move_fast->setValueBool ( true );
+		    } else {
+		      move_fast->setValueBool ( false );
+		    }
+		    break;
+		default:
+			return Telescope::processOption (in_opt);
+	}
+	return 0;
+}
+
 
 int
 main (int argc, char **argv)

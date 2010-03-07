@@ -26,14 +26,11 @@ Sensor::Sensor (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SENSO
 	setIdleInfoInterval (60);
 }
 
-
 Sensor::~Sensor (void)
 {
 }
 
-
-int
-SensorWeather::idle ()
+int SensorWeather::idle ()
 {
 	// switch weather state back to good..
 	if (isGoodWeather () == true && getWeatherState () == false)
@@ -47,34 +44,28 @@ SensorWeather::idle ()
 		if (isGoodWeather () == true)
 		{
 			logStream (MESSAGE_DEBUG) << "switching to GOOD_WEATHER after next_good_weather timeout expires" << sendLog;
-			setWeatherState (true);
+			setWeatherState (true, "switching to GOOD_WEATHER after next_good_weather timout expires");
 		}
 	}
 	return Sensor::idle ();
 }
 
-
-bool
-SensorWeather::isGoodWeather ()
+bool SensorWeather::isGoodWeather ()
 {
 	if (getNextGoodWeather () >= getNow ())
 		return false;
 	return true;
 }
 
-
-SensorWeather::SensorWeather (int argc, char **argv, int _timeout)
-:Sensor (argc, argv)
+SensorWeather::SensorWeather (int argc, char **argv, int _timeout):Sensor (argc, argv)
 {
 	createValue (nextGoodWeather, "next_good_weather", "date and time of next good weather");
-	setWeatherTimeout (_timeout);
+	setWeatherTimeout (_timeout, "initial bad weather state");
 }
 
-
-void
-SensorWeather::setWeatherTimeout (time_t wait_time)
+void SensorWeather::setWeatherTimeout (time_t wait_time, const char *msg)
 {
-	setWeatherState (false);
+	setWeatherState (false, msg);
 
 	time_t next;
 	time (&next);

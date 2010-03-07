@@ -32,17 +32,9 @@
  */
 class Rts2ValueDoubleStat:public Rts2ValueDouble
 {
-	private:
-		int numMes;
-		double mode;
-		double min;
-		double max;
-		double stdev;
-		std::deque < double >valueList;
 	public:
 		Rts2ValueDoubleStat (std::string in_val_name);
-		Rts2ValueDoubleStat (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueDoubleStat (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 
 		/**
 		 * Clear values in value list.
@@ -60,45 +52,27 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 		virtual void send (Rts2Conn * connection);
 		virtual void setFromValue (Rts2Value * newValue);
 
-		int getNumMes ()
-		{
-			return numMes;
-		}
+		int getNumMes () { return numMes; }
 
-		double getMode ()
-		{
-			return mode;
-		}
+		double getMode () { return mode; }
 
 		/**
 		 * Return minimal value.
 		 *
 		 * @return Minimal value.
 		 */
-		double getMin ()
-		{
-			return min;
-		}
+		double getMin () { return min; }
 
 		/**
 		 * Return maximal value.
 		 *
 		 * @return Maximal value.
 		 */
-		double getMax ()
-		{
-			return max;
-		}
+		double getMax () { return max; }
 
-		double getStdev ()
-		{
-			return stdev;
-		}
+		double getStdev () { return stdev; }
 
-		std::deque < double >&getMesList ()
-		{
-			return valueList;
-		}
+		std::deque < double >&getMesList () { return valueList; }
 
 		/**
 		 * Add value to the measurement values.
@@ -125,5 +99,14 @@ class Rts2ValueDoubleStat:public Rts2ValueDouble
 			addValue (in_val);
 			changed ();
 		}
+		std::deque <double>::iterator valueBegin () { return valueList.begin (); }
+		std::deque <double>::iterator valueEnd () { return valueList.end (); }
+	private:
+		int numMes;
+		double mode;
+		double min;
+		double max;
+		double stdev;
+		std::deque < double >valueList;
 };
 #endif							 /* !__RTS2_VALUESTAT__ */

@@ -1,0 +1,249 @@
+/*
+ * Queue selector body.
+ * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "../utils/rts2devclient.h"
+#include "../utilsdb/rts2devicedb.h"
+#include "../utils/rts2event.h"
+#include "../utils/rts2command.h"
+
+#define OPT_IDLE_SELECT         OPT_LOCAL + 5
+
+namespace rts2plan
+{
+
+class ClientTelescopeSel:public rts2core::Rts2DevClientTelescope
+{
+	protected:
+		virtual void moveEnd ();
+	public:
+		ClientTelescopeSel (Rts2Conn * in_connection);
+};
+
+class ClientExecutorSel:public rts2core::Rts2DevClientExecutor
+{
+	protected:
+		virtual void lastReadout ();
+	public:
+		ClientExecutorSel (Rts2Conn * in_connection);
+};
+
+class QueueSelector:public Rts2DeviceDb
+{
+	private:
+		time_t last_selected;
+
+		int next_id;
+
+		Rts2ValueInteger *idle_select;
+		Rts2ValueBool *selEnabled;
+
+		Rts2ValueDouble *flatSunMin;
+		Rts2ValueDouble *flatSunMax;
+
+		Rts2ValueString *nightDisabledTypes;
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+	public:
+		QueueSelector (int argc, char **argv);
+		virtual ~ QueueSelector (void);
+		virtual int idle ();
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual void postEvent (Rts2Event * event);
+		virtual int changeMasterState (int new_state);
+
+		int selectNext ();		 // return next observation..
+		int updateNext ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+};
+
+}
+
+using namespace rts2plan;
+
+ClientTelescopeSel::ClientTelescopeSel (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
+{
+}
+
+void ClientTelescopeSel::moveEnd ()
+{
+	if (!moveWasCorrecting)
+		connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+	rts2core::Rts2DevClientTelescope::moveEnd ();
+}
+
+ClientExecutorSel::ClientExecutorSel (Rts2Conn * in_connection):rts2core::Rts2DevClientExecutor (in_connection)
+{
+}
+
+void ClientExecutorSel::lastReadout ()
+{
+	connection->getMaster ()->postEvent (new Rts2Event (EVENT_IMAGE_OK));
+	rts2core::Rts2DevClientExecutor::lastReadout ();
+}
+
+QueueSelector::QueueSelector (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
+{
+	next_id = -1;
+	time (&last_selected);
+
+	createValue (idle_select, "idle_select", "time in seconds in which at least one selection will be performed", false, RTS2_VALUE_WRITABLE);
+	idle_select->setValueInteger (300);
+
+	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false, RTS2_VALUE_WRITABLE);
+	selEnabled->setValueBool (true);
+
+	createValue (flatSunMin, "flat_sun_min", "minimal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+	createValue (flatSunMax, "flat_sun_max", "maximal Solar height for flat selection", false, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+
+	createValue (nightDisabledTypes, "night_disabled_types", "list of target types which will not be selected during night", false, RTS2_VALUE_WRITABLE);
+
+	addOption (OPT_IDLE_SELECT, "idle_select", 1, "selection timeout (reselect every I seconds)");
+}
+
+QueueSelector::~QueueSelector (void)
+{
+}
+
+int QueueSelector::processOption (int in_opt)
+{
+	int t_idle;
+	switch (in_opt)
+	{
+		case OPT_IDLE_SELECT:
+			t_idle = atoi (optarg);
+			idle_select->setValueInteger (t_idle);
+			break;
+		default:
+			return Rts2DeviceDb::processOption (in_opt);
+	}
+	return 0;
+}
+
+int QueueSelector::reloadConfig ()
+{
+	int ret;
+	struct ln_lnlat_posn *observer;
+
+	ret = Rts2DeviceDb::reloadConfig ();
+	if (ret)
+		return ret;
+
+	Rts2Config *config;
+	config = Rts2Config::instance ();
+	observer = config->getObserver ();
+
+	/*flatSunMin->setValueDouble (sel->getFlatSunMin ());
+	flatSunMax->setValueDouble (sel->getFlatSunMax ());
+
+	nightDisabledTypes->setValueCharArr (sel->getNightDisabledTypes ().c_str ()); */
+
+	return 0;
+}
+
+int QueueSelector::idle ()
+{
+	time_t now;
+	time (&now);
+	if (now > last_selected + idle_select->getValueInteger ())
+	{
+		updateNext ();
+		time (&last_selected);
+	}
+	return Rts2DeviceDb::idle ();
+}
+
+rts2core::Rts2DevClient *QueueSelector::createOtherType (Rts2Conn * conn, int other_device_type)
+{
+	rts2core::Rts2DevClient *ret;
+	switch (other_device_type)
+	{
+		case DEVICE_TYPE_MOUNT:
+			return new ClientTelescopeSel (conn);
+		case DEVICE_TYPE_EXECUTOR:
+			ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
+			updateNext ();
+			if (next_id > 0 && selEnabled->getValueBool ())
+				conn->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
+			return ret;
+		default:
+			return Rts2DeviceDb::createOtherType (conn, other_device_type);
+	}
+}
+
+void QueueSelector::postEvent (Rts2Event * event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_IMAGE_OK:
+			updateNext ();
+			break;
+	}
+	Rts2DeviceDb::postEvent (event);
+}
+
+int QueueSelector::selectNext ()
+{
+	return 1000;
+}
+
+int QueueSelector::updateNext ()
+{
+	Rts2Conn *exec;
+	next_id = selectNext ();
+	if (next_id > 0)
+	{
+		exec = getOpenConnection ("EXEC");
+		if (exec && selEnabled->getValueBool ())
+		{
+			exec->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
+		}
+		return 0;
+	}
+	return -1;
+}
+
+int QueueSelector::setValue (Rts2Value * old_value, Rts2Value * new_value)
+{
+	return Rts2DeviceDb::setValue (old_value, new_value);
+}
+
+int QueueSelector::changeMasterState (int new_master_state)
+{
+	switch (new_master_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
+	{
+		case SERVERD_MORNING:
+		case SERVERD_MORNING | SERVERD_STANDBY:
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
+			selEnabled->setValueBool (true);
+			break;
+	}
+	updateNext ();
+	return Rts2DeviceDb::changeMasterState (new_master_state);
+}
+
+int main (int argc, char **argv)
+{
+	QueueSelector selector (argc, argv);
+	return selector.run ();
+}

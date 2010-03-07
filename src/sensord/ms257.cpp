@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 #include <errno.h>
 
 namespace rts2sensord
@@ -26,6 +26,18 @@ namespace rts2sensord
 
 class MS257:public Sensor
 {
+	public:
+		MS257 (int in_argc, char **in_argv);
+		virtual ~ MS257 (void);
+
+		virtual int info ();
+
+	protected:
+		virtual int init ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int processOption (int in_opt);
+
 	private:
 		Rts2ValueDouble * msVer;
 		Rts2ValueDouble *wavelenght;
@@ -39,7 +51,7 @@ class MS257:public Sensor
 		Rts2ValueInteger *msteps;
 		Rts2ValueInteger *grat;
 
-		Rts2ConnSerial *ms257Dev;		
+		rts2core::ConnSerial *ms257Dev;		
 
 		void resetDevice ();
 		int writePort (const char *str);
@@ -57,33 +69,20 @@ class MS257:public Sensor
 		int readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val);
 
 		const char *dev;
-	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-		virtual int processOption (int in_opt);
-
-	public:
-		MS257 (int in_argc, char **in_argv);
-		virtual ~ MS257 (void);
-
-		virtual int init ();
-		virtual int info ();
 };
 
 };
 
 using namespace rts2sensord;
 
-void
-MS257::resetDevice ()
+void MS257::resetDevice ()
 {
 	sleep (5);
 	ms257Dev->flushPortIO ();
 	logStream (MESSAGE_DEBUG) << "Device " << dev << " reseted." << sendLog;
 }
 
-
-int
-MS257::writePort (const char *str)
+int MS257::writePort (const char *str)
 {
 	int ret;
 	ret = ms257Dev->writePort (str, strlen (str));
@@ -101,9 +100,7 @@ MS257::writePort (const char *str)
 	return 0;
 }
 
-
-int
-MS257::readPort (char **rstr, const char *cmd)
+int MS257::readPort (char **rstr, const char *cmd)
 {
 	static char buf[20];
 	int i = 0;
@@ -132,9 +129,7 @@ MS257::readPort (char **rstr, const char *cmd)
 	return 0;
 }
 
-
-int
-MS257::readPort (int &ret, const char *cmd)
+int MS257::readPort (int &ret, const char *cmd)
 {
 	int r;
 	char *rstr;
@@ -145,9 +140,7 @@ MS257::readPort (int &ret, const char *cmd)
 	return 0;
 }
 
-
-int
-MS257::readPort (double &ret, const char *cmd)
+int MS257::readPort (double &ret, const char *cmd)
 {
 	int r;
 	char *rstr;
@@ -158,9 +151,7 @@ MS257::readPort (double &ret, const char *cmd)
 	return 0;
 }
 
-
-template < typename T > int
-MS257::writeValue (const char *valueName, T val, char qStr)
+template < typename T > int MS257::writeValue (const char *valueName, T val, char qStr)
 {
 	int ret;
 	char *rstr;
@@ -178,9 +169,7 @@ MS257::writeValue (const char *valueName, T val, char qStr)
 	return ret;
 }
 
-
-template < typename T > int
-MS257::readValue (const char *valueName, T & val)
+template < typename T > int MS257::readValue (const char *valueName, T & val)
 {
 	int ret;
 	char buf[strlen (valueName + 1)];
@@ -193,9 +182,7 @@ MS257::readValue (const char *valueName, T & val)
 	return ret;
 }
 
-
-int
-MS257::readRts2Value (const char *valueName, Rts2Value * val)
+int MS257::readRts2Value (const char *valueName, Rts2Value * val)
 {
 	int ret;
 	int iret;
@@ -216,10 +203,7 @@ MS257::readRts2Value (const char *valueName, Rts2Value * val)
 	return -1;
 }
 
-
-int
-MS257::readRts2ValueFilter (const char *valueName,
-Rts2ValueInteger * val)
+int MS257::readRts2ValueFilter (const char *valueName, Rts2ValueInteger * val)
 {
 	int ret;
 	char *cval;
@@ -238,44 +222,38 @@ Rts2ValueInteger * val)
 	return 0;
 }
 
-
-MS257::MS257 (int in_argc, char **in_argv):
-Sensor (in_argc, in_argv)
+MS257::MS257 (int in_argc, char **in_argv):Sensor (in_argc, in_argv)
 {
 	ms257Dev = NULL;
 	dev = "/dev/ttyS0";
 
 	createValue (msVer, "version", "version of MS257", false);
-	createValue (wavelenght, "WAVELENG", "monochromator wavelength", true);
+	createValue (wavelenght, "WAVELENG", "monochromator wavelength", true, RTS2_VALUE_WRITABLE);
 
-	createValue (slitA, "SLIT_A", "Width of the A slit in um", true);
-	createValue (slitB, "SLIT_B", "Width of the B slit in um", true);
-	createValue (slitC, "SLIT_C", "Width of the C slit in um", true);
-	createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true);
+	createValue (slitA, "SLIT_A", "Width of the A slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (slitB, "SLIT_B", "Width of the B slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (slitC, "SLIT_C", "Width of the C slit in um", true, RTS2_VALUE_WRITABLE);
+	createValue (bandPass, "BANDPASS", "Automatic slit width in nm", true, RTS2_VALUE_WRITABLE);
 
-	createValue (shutter, "shutter", "Shutter settings", false);
+	createValue (shutter, "shutter", "Shutter settings", false, RTS2_VALUE_WRITABLE);
 	shutter->addSelVal ("SLOW");
 	shutter->addSelVal ("FAST");
 	shutter->addSelVal ("MANUAL");
 
-	createValue (filter1, "FILT_1", "filter 1 position", true);
-	//  createValue (filter2, "FILT_2", "filter 2 position", true);
-	createValue (msteps, "MSTEPS",
-		"Current grating position in terms of motor steps", true);
-	createValue (grat, "GRATING", "Grating position", true);
+	createValue (filter1, "FILT_1", "filter 1 position", true, RTS2_VALUE_WRITABLE);
+	//  createValue (filter2, "FILT_2", "filter 2 position", true, RTS2_VALUE_WRITABLE);
+	createValue (msteps, "MSTEPS", "Current grating position in terms of motor steps", true, RTS2_VALUE_WRITABLE);
+	createValue (grat, "GRATING", "Grating position", true, RTS2_VALUE_WRITABLE);
 
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
-
 
 MS257::~MS257 ()
 {
 	delete ms257Dev;
 }
 
-
-int
-MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == wavelenght)
 	{
@@ -325,9 +303,7 @@ MS257::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Sensor::setValue (old_value, new_value);
 }
 
-
-int
-MS257::processOption (int in_opt)
+int MS257::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -340,9 +316,7 @@ MS257::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-MS257::init ()
+int MS257::init ()
 {
 	int ret;
 
@@ -350,7 +324,7 @@ MS257::init ()
 	if (ret)
 		return ret;
 
-	ms257Dev = new Rts2ConnSerial (dev, this, BS9600, C8, NONE, 200);
+	ms257Dev = new rts2core::ConnSerial (dev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 200);
 	ret = ms257Dev->init ();
 	if (ret)
 		return ret;
@@ -379,9 +353,7 @@ MS257::init ()
 	return 0;
 }
 
-
-int
-MS257::info ()
+int MS257::info ()
 {
 	int ret;
 	ret = readRts2Value ("PW", wavelenght);
@@ -435,9 +407,7 @@ MS257::info ()
 	return Sensor::info ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	MS257 device = MS257 (argc, argv);
 	return device.run ();

@@ -20,6 +20,8 @@
 #include "../utils/rts2command.h"
 #include "grbd.h"
 
+using namespace rts2grbd;
+
 #define OPT_GRB_DISABLE         OPT_LOCAL + 49
 #define OPT_GCN_HOST            OPT_LOCAL + 50
 #define OPT_GCN_PORT            OPT_LOCAL + 51
@@ -28,8 +30,7 @@
 #define OPT_GCN_EXE             OPT_LOCAL + 54
 #define OPT_GCN_FOLLOUPS        OPT_LOCAL + 55
 
-Rts2DevGrb::Rts2DevGrb (int in_argc, char **in_argv):
-Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
+Grbd::Grbd (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 {
 	gcncnn = NULL;
 	gcn_host = NULL;
@@ -39,7 +40,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 	addExe = NULL;
 	execFollowups = 0;
 
-	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false);
+	createValue (grb_enabled, "enabled", "if true, GRB reception is enabled", false, RTS2_VALUE_WRITABLE);
 	grb_enabled->setValueBool (true);
 
 	createValue (last_packet, "last_packet", "time from last packet", false);
@@ -48,8 +49,7 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 
 	createValue (last_target, "last_target", "id of last GRB target", false);
 
-	createValue (last_target_time, "last_target_time", "time of last target",
-		false);
+	createValue (last_target_time, "last_target_time", "time of last target", false);
 	createValue (last_target_radec, "last_target_radec", "coordinates (J2000) of last GRB", false);
 
 	createValue (execConnection, "exec", "exec connection", false);
@@ -60,19 +60,15 @@ Rts2DeviceDb (in_argc, in_argv, DEVICE_TYPE_GRB, "GRB")
 	addOption (OPT_GCN_TEST, "test", 0, "process test notices (default to off - don't process them)");
 	addOption (OPT_GCN_FORWARD, "forward", 1, "forward incoming notices to that port");
 	addOption (OPT_GCN_EXE, "add-exec", 1, "execute that command when new GCN packet arrives");
-	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0,
-		"execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
+	addOption (OPT_GCN_FOLLOUPS, "exec_followups", 0, "execute observation and add-exec script even for follow-ups without error box (currently Swift follow-ups of INTEGRAL and HETE GRBs)");
 }
 
-
-Rts2DevGrb::~Rts2DevGrb (void)
+Grbd::~Grbd (void)
 {
 	delete[]gcn_host;
 }
 
-
-int
-Rts2DevGrb::processOption (int in_opt)
+int Grbd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -104,9 +100,7 @@ Rts2DevGrb::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2DevGrb::reloadConfig ()
+int Grbd::reloadConfig ()
 {
 	int ret;
 	Rts2Config *config;
@@ -138,7 +132,7 @@ Rts2DevGrb::reloadConfig ()
 	if (!addExe)
 	{
 		std::string conf_addExe;
-		ret = config->getString ("grbd", "add-exe", conf_addExe);
+		ret = config->getString ("grbd", "add_exe", conf_addExe);
 		if (!ret)
 		{
 			addExe = new char[conf_addExe.length () + 1];
@@ -151,30 +145,29 @@ Rts2DevGrb::reloadConfig ()
 		delete gcncnn;
 	}
 	// add connection..
-	gcncnn =
-		new Rts2ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups,
-		this);
+	gcncnn = new ConnGrb (gcn_host, gcn_port, do_hete_test, addExe, execFollowups, this);
+	gcncnn->setGbmError (config->getDoubleDefault ("grbd", "gbm_error_limit", 0.25));
+	gcncnn->setGbmRecordAboveError (config->getBoolean ("grbd", "gbm_record_above_error", true));
+	gcncnn->setGbmEnabledAboveError (config->getBoolean ("grbd", "gbm_enabled_above_error", false));
+	// setup..
 	// wait till grb connection init..
-	while (1)
+	ret = gcncnn->init ();
+	if (ret)
 	{
-		ret = gcncnn->init ();
-		if (!ret)
-			break;
-		logStream (MESSAGE_ERROR)
-			<< "Rts2DevGrb::init cannot init conngrb, sleeping for 60 sec" <<
-			sendLog;
-		sleep (60);
-		if (getEndLoop ())
-			return -1;
+		logStream (MESSAGE_ERROR) << "Grbd::init cannot init conngrb, waiting for 60 sec" << sendLog;
+		addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
 	}
-	addConnection (gcncnn);
+	else
+	{
+		addConnection (gcncnn);
+	}
 
-	return ret;
+	return 0;
 }
 
 
 int
-Rts2DevGrb::init ()
+Grbd::init ()
 {
 	int ret;
 	ret = Rts2DeviceDb::init ();
@@ -191,7 +184,7 @@ Rts2DevGrb::init ()
 		if (ret2)
 		{
 			logStream (MESSAGE_ERROR)
-				<< "Rts2DevGrb::init cannot create forward connection, ignoring ("
+				<< "Grbd::init cannot create forward connection, ignoring ("
 				<< ret2 << ")" << sendLog;
 			delete forwardConnection;
 			forwardConnection = NULL;
@@ -204,9 +197,7 @@ Rts2DevGrb::init ()
 	return ret;
 }
 
-
-void
-Rts2DevGrb::help ()
+void Grbd::help ()
 {
 	Rts2DeviceDb::help ();
 	std::cout << std::endl << " Execution script, specified with --add-exec option, receives following parameters as arguments:"
@@ -214,18 +205,7 @@ Rts2DevGrb::help ()
 		<< " Please see man page for meaning of that arguments." << std::endl;
 }
 
-
-int
-Rts2DevGrb::setValue (Rts2Value *oldValue, Rts2Value *newValue)
-{
-	if (oldValue == grb_enabled)
-		return 0;
-	return Rts2DeviceDb::setValue (oldValue, newValue);
-}
-
-
-int
-Rts2DevGrb::info ()
+int Grbd::info ()
 {
 	last_packet->setValueDouble (gcncnn->lastPacket ());
 	delta->setValueDouble (gcncnn->delta ());
@@ -236,23 +216,26 @@ Rts2DevGrb::info ()
 	return Rts2DeviceDb::info ();
 }
 
-
-void
-Rts2DevGrb::postEvent (Rts2Event * event)
+void Grbd::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
 		case RTS2_EVENT_GRB_PACKET:
 			infoAll ();
 			break;
+		case EVENT_TIMER_GCNCNN_INIT:
+			if (gcncnn->init () != 0)
+			{
+				logStream (MESSAGE_ERROR) << "Cannot init GCN connection, waiting for 60 seconds" << sendLog;
+				addTimer (60, new Rts2Event (EVENT_TIMER_GCNCNN_INIT, this));
+			}
+			break;
 	}
 	Rts2DeviceDb::postEvent (event);
 }
 
-
 // that method is called when somebody want to immediatelly observe GRB
-int
-Rts2DevGrb::newGcnGrb (int tar_id)
+int Grbd::newGcnGrb (int tar_id)
 {
 	if (grb_enabled->getValueBool () != true)
 	{
@@ -263,20 +246,17 @@ Rts2DevGrb::newGcnGrb (int tar_id)
 	exec = getOpenConnection ("EXEC");
 	if (exec)
 	{
-		exec->queCommand (new Rts2CommandExecGrb (this, tar_id));
+		exec->queCommand (new rts2core::Rts2CommandExecGrb (this, tar_id));
 	}
 	else
 	{
-		logStream (MESSAGE_ERROR) <<
-			"FATAL! No executor running to post grb ID " << tar_id << sendLog;
+		logStream (MESSAGE_ERROR) << "FATAL! No executor running to post grb ID " << tar_id << sendLog;
 		return -1;
 	}
 	return 0;
 }
 
-
-int
-Rts2DevGrb::commandAuthorized (Rts2Conn * conn)
+int Grbd::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("test"))
 	{
@@ -288,10 +268,8 @@ Rts2DevGrb::commandAuthorized (Rts2Conn * conn)
 	return Rts2DeviceDb::commandAuthorized (conn);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2DevGrb grb = Rts2DevGrb (argc, argv);
+	Grbd grb = Grbd (argc, argv);
 	return grb.run ();
 }

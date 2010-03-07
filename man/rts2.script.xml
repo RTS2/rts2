@@ -1,10 +1,10 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-06-02</date>">
+  <!ENTITY dhdate      "<date>2009-12-13</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.4</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -38,6 +38,7 @@
     <copyright>
       <year>2006</year>
       <year>2007</year>
+      <year>2009</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -84,6 +85,19 @@
     <variablelist>
       <varlistentry>
         <term>
+	  <option>exe {executable filename}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute external script. The script communicates with executor through
+	    standard input and outputs - both normal and error output. For documentation of the
+	    protocol, as well as available Python class for handling of this communication, please
+	    see bellow.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
 	  <option>E {exposure_time}</option>
 	</term>
 	<listitem>
@@ -102,18 +116,6 @@
 	  <para>
 	    Takes dark frame, useful for calibration. Exposure time is specified
 	    in seconds.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
-        <term>
-	  <option>F {filter_number}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Changes filter on camera filter wheel. Filter numbers are
-	    always counted from 0.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -312,19 +314,7 @@
 	</listitem>
       </varlistentry>
 
-      <varlistentry>
-        <term>
-	  <option>M {mirror_position}</option>
-	</term>
-	<listitem>
-	  <para>
-	    Move mirror to new position, specified by
-	    {mirror_position} numeric argument.
-	  </para>
-	</listitem>
-      </varlistentry>
-
-      <varlistentry>
+       <varlistentry>
         <term>
 	  <option>P {filter} {exposure} {count}</option>
 	</term>
@@ -419,6 +409,31 @@
 
       <varlistentry>
         <term>
+	  <option>while {condition} {max_repeat} [block]</option>
+	</term>
+	<listitem>
+  	  <para>
+	    Execute block while condition evaluation is non-zero and number of
+	    repeats is smaller then max_repeat.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>do {max_repeat} [block] while {condition}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Execute block while condition evaluation is non-zero and number of
+	    repeats is smaller then max_repeat. First test of condition occurs
+	    after first loop.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
 	  <option>waitfor {variable} {value} {range}</option>
 	</term>
 	<listitem>
@@ -435,6 +450,17 @@
 	<listitem>
 	  <para>
 	    This command will pause execution of script for given number of seconds.
+	  </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+	  <option>wait_idle</option>
+	</term>
+	<listitem>
+	  <para>
+	    Wait for device to enter idle state.
 	  </para>
 	</listitem>
       </varlistentry>
@@ -521,11 +547,249 @@
     </variablelist>
   </refsect1>
   <refsect1>
+    <title>Communication with executable</title>
+    <para>
+      If you use <emphasis>exe</emphasis> command in scripting, the script
+      should communicate with RTS2 through standart input and outputs. The
+      protocol is simple, text oriented, with lines ending with line feed.
+      It is possible to write observing script using shell echo and read
+      commands, as is demonstrated in example bellow. But for higher
+      interaction, some higher language is prefered - based on preferences,
+      any of Python, PHP, Perl, TCL or any other language capable to read and
+      write to file descriptor will work.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term><option>exposure</option></term>
+	<listitem><para>
+	  Start exposure on the camera. Current exposure length setting and
+	  others current settings will be used.
+	</para><para>
+	  When exposure is finished, controlling script receives notification
+	  on standard input with <emphasis>exposure_end</emphasis> string. 
+	</para><para>
+	  When the image is written to disk, controlling script receives image
+	  name on standard input, preceeded by <emphasis>image</emphasis>
+	  string. Script is responsible to specify treatment of the image - it
+	  might be copied, renamed or moved to some system locations. Please
+	  see bellow for an example.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>rename {image name} {expression}</option></term>
+	<listitem><para>
+	  Renames image to given by an expression. Please see
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for details of the expression. Bellow is an example, which start
+	  exposure, waits for image and rename image to given location.
+	</para><literallayout>
+echo exposure
+read exposure_end # is notified of exposure end
+read image imagename  # $image will hold "image" string
+echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>copy {image name} {expression}</option></term>
+	<listitem><para>
+	  Copy image to path given by an expression. Please see
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	  for details of the expression. See rename command for an example.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>process {image name}</option></term>
+	<listitem><para>
+	  Queue image to standard processing in
+	  <citerefentry><refentrytitle>rts2-imgproc</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>flat {image name}</option></term>
+	<listitem><para>
+	  Move given image to sky flat destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>dark {image name}</option></term>
+	<listitem><para>
+	  Move given image to raw dark destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>archive {image name}</option></term>
+	<listitem><para>
+	  Move given image to raw dark destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>trash {image name}</option></term>
+	<listitem><para>
+	  Move given image to trash destination, configured in
+	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>V {device} {value name} {operator} {operand1 [operand2..]}</option></term>
+	<listitem><para>
+	  Change value of variable of given device. Operand can be any of =, +=
+	  or -=. If value have multiple components (e.g. telescope RA DEC
+	  offsets, or camera readout area), you must separated components with
+	  space.  Examples:
+	</para><literallayout>
+echo V W0 filter += 1 # increases filter of device W0 by one
+echo V T0 WOFFS = 0.01 0.01 # set WOFFS of device T0 to 0.01 in RA and DEC
+echo V C1 WINDOW = 0 0 10 10 # set C1 WINDOW (readout area). C1 will read only upper left square with size of 10 pixels
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>value {value name} {operator} {operand1 [operand2..]}</option></term>
+	<listitem><para>
+	  Change value of variable of script device. This is shortcut to easily
+	  interact with device on which the script is run. It is otherwise
+	  similar to V command.
+	</para><literallayout>
+echo value exposure += 1
+echo value WINDOW = 0 0 10 10 
+	</literallayout></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>? {value name}</option></term>
+	<listitem><para>
+	  Retrieves value of variable from scripting device. The value of
+	  variable is printed on standard output. If an erorr occured, string
+	  ERR is printed. See <emphasis>G</emphasis> command for an example - the only
+	  diference is that you should not specify device name.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>G {device name} {value name}</option></term>
+	<listitem><para>
+	  Retrieves value of given variable from given device. The value of
+	  variable is printed on standard output. If an error occured, string
+	  ERR is printed. See bellow for an example:
+	</para><literallayout>
+G W0 filter
+	</literallayout><para>
+	  If filter is set to number 5, 5 will be printed (followed by line
+	  feed) on standard output.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>C {device name} {command..}</option></term>
+	<listitem><para>
+	  Allows execution of arbitary command on device. Please see device
+	  drivers source code for allowed commands - they are called from
+	  commandAuthorize call.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>command {command..}</option></term>
+	<listitem><para>
+	  This call is similar to C (see above), except that the command is called on
+	  current scripting device.
+	</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>log {level} {message}</option></term>
+	<listitem><para>
+	  Log something through RTS2 logging system. First letter of loglevel
+	  is significant, and its case does not matter. Log level can be E for errors,
+	  W for warnings, I for info, and D for debug messages.
+	</para></listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>Variables</title>
+    <para>
+      Inside scripting, following syntax is used to access variables values.
+      Please see examples at the end of this man page to gain better
+      understanding of the topic.
+    </para>
+    <variablelist>
+      <varlistentry>
+        <term>
+	  <option>.{variable_name}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Access variable name from the current device - e.g. device on which
+	    script is run. Given that script is run on device C0, the
+	    <emphasis>.average</emphasis> is equal to <emphasis>C0.average</emphasis>.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>{device_name}.{variable_name}</option>
+	</term>
+	<listitem>
+	  <para>
+	    Access variable from any device present in the system. If device or
+	    variable cannot be found, script is ended and target execution is
+	    blocked for the device whose script failed.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
     <title>EXAMPLES</title>
 
-    <para>focpos-=50 for 10 { E 10 focpos+=10 }</para>
+    <para>
+      This script will call external script, which will hadle all communication. It will start exposure
+      on camera, change filter and telescope offsets, and move image to given expand path.
+    </para>
+
+    <para>exe /home/user/bin/test.sh</para>
+
+    <para>
+      And this is the executable.
+    </para>
+
+    <literallayout>
+#!/bin/bash
+
+for x in 1 2; do
+	echo $x
+	echo "exposure"
+        read exp_end
+	echo "V W0 filter += 1"
+	echo "V T0 WOFFS += 0.01 0.01"
+	read x y
+	echo "rename $y %b/test/%f"
+	echo "log E renaming $y"
+	echo "? infotime"
+	read x
+	echo "G centrald sun_az"
+	read y
+	sleep 5
+done
+    </literallayout>
+
+    <para>
+      Following script can be used for finding focus position. It moves focuser
+      50 steps backwards. Then it starts a sequence of 10 5 seconds exposures,
+      moving focuser position forward by 10 steps after each exposure.
+    </para>
+
+    <para>focpos-=50 for 10 { E 5 focpos+=10 }</para>
+
+    <para>
+      This script test how various SPL_MODE affect resulting image. Sequence
+      of 1, 5 and 10 seconds exposures is taken, then SPL_MODE variable is
+      increased by 1.
+    </para>
 
     <para>for 3 { E 1 E 5 E 10 SPL_MODE+=1 }</para>
+
+    <para>
+      Script bellow tests various gain and SPL_MODE settings.
+    </para>
 
     <para>for 3 { GAIN=0 for 10 { E 1 GAIN+=1 } SPL_MODE+=1 }</para>
 
@@ -534,6 +798,16 @@
     <para>SD.waitfor MODE 2 0 sleep 10 E 1</para>
 
     <para>for 10 { E 10 T0.OFFS+=(0,0.01) }</para>
+
+    <para>
+      This is a simple example of the flat fielding script. It changes camera
+      to readout a small window. Then it takes 1 seconds, wait for finish of
+      readout, and check average value of the camera. If the average is bellow
+      or equal to 2000, script carry on - switch back to full frame mode, and
+      do 1 seconds exposures until average value is above 2000.
+    </para>
+
+    <para>WINDOW=(10,10,20,20) do 200 { E 1 wait_idle } while (.average > 2000) WINDOW=(-1,-1,-1,-1) do 200 { E 1 wait_idle } while (.average > 1000)</para>
 
   </refsect1>
   <refsect1>

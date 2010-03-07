@@ -22,9 +22,9 @@
 #include "rts2targetplanet.h"
 #include "rts2targetgrb.h"
 #include "rts2targetell.h"
-#include "rts2obs.h"
+#include "observation.h"
 #include "observationset.h"
-#include "rts2targetset.h"
+#include "targetset.h"
 
 #include "../utils/infoval.h"
 #include "../utils/rts2app.h"
@@ -78,7 +78,7 @@ Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *mast
 		// lazy observation init
 		if (observation == NULL)
 		{
-			observation = new Rts2Obs (getObsId ());
+			observation = new Observation (getObsId ());
 			observation->load ();
 			observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
 			observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
@@ -740,7 +740,7 @@ Target::endObservation (int in_next_id, Rts2Block *master)
 	sendTargetMail (SEND_END_OBS, "END OF OBSERVATION", master);
 
 	// check if that was the last observation..
-	Rts2Obs out_observation = Rts2Obs (old_obs_id);
+	Observation out_observation = Observation (old_obs_id);
 	out_observation.checkUnprocessedImages (master);
 
 	return ret;
@@ -1647,25 +1647,27 @@ Target::printObservations (double radius, double JD, std::ostream &_os)
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	ObservationSet obsset = ObservationSet (&tar_pos, radius);
+	ObservationSet obsset = ObservationSet ();
+	obsset.loadRadius (&tar_pos, radius);
 	_os << obsset;
 
 	return obsset.size ();
 }
 
 
-Rts2TargetSet Target::getTargets (double radius)
+rts2db::TargetSet Target::getTargets (double radius)
 {
 	return getTargets (radius, ln_get_julian_from_sys ());
 }
 
 
-Rts2TargetSet Target::getTargets (double radius, double JD)
+rts2db::TargetSet Target::getTargets (double radius, double JD)
 {
 	struct ln_equ_posn tar_pos;
 	getPosition (&tar_pos, JD);
 
-	Rts2TargetSet tarset = Rts2TargetSet (&tar_pos, radius);
+	rts2db::TargetSet tarset = rts2db::TargetSet (&tar_pos, radius);
+	tarset.load ();
 	return tarset;
 }
 
@@ -1673,7 +1675,7 @@ Rts2TargetSet Target::getTargets (double radius, double JD)
 int
 Target::printTargets (double radius, double JD, std::ostream &_os)
 {
-	Rts2TargetSet tarset = getTargets (radius, JD);
+	rts2db::TargetSet tarset = getTargets (radius, JD);
 	_os << tarset;
 
 	return tarset.size ();
@@ -1688,7 +1690,7 @@ Target::printImages (double JD, std::ostream &_os, int flags)
 
 	getPosition (&tar_pos, JD);
 
-	Rts2ImgSetPosition img_set = Rts2ImgSetPosition (&tar_pos);
+	ImageSetPosition img_set = ImageSetPosition (&tar_pos);
 	ret = img_set.load ();
 	if (ret)
 		return ret;
@@ -2032,11 +2034,11 @@ Target::sendInfo (Rts2InfoValStream & _os, double JD)
 	printExtra (_os, JD);
 }
 
-
-Rts2TargetSet *
-Target::getCalTargets (double JD, double minaird)
+rts2db::TargetSet * Target::getCalTargets (double JD, double minaird)
 {
-	return new Rts2TargetSetCalibration (this, JD, minaird);
+	rts2db::TargetSetCalibration *ret = new rts2db::TargetSetCalibration (this, JD, minaird);
+	ret->load ();
+	return ret;
 }
 
 

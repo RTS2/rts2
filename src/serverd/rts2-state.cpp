@@ -28,6 +28,9 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2centralstate.h"
 
+namespace rts2centrald
+{
+
 /*!
  * Prints current state on STDERR
  * States are (as described in ../../include/state.h):
@@ -41,8 +44,16 @@
  *
  * Configuration file CONFIG_FILE is used
  */
-class Rts2StateApp:public Rts2App
+class StateApp:public Rts2App
 {
+	public:
+		StateApp (int in_argc, char **in_argv);
+
+		virtual int init ();
+		virtual int run ();
+	protected:
+		virtual void help ();
+		virtual int processOption (int in_opt);
 	private:
 		int verbose;			 // verbosity level
 		double lng;
@@ -53,25 +64,20 @@ class Rts2StateApp:public Rts2App
 		int eve_time;
 		int mor_time;
 
+		const char *conff;
+
 		time_t currTime;
 		double JD;
-		void printAltTable (std::ostream & _os, double jd_start, double h_start,
-			double h_end, double h_step = 1.0);
+		void printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step = 1.0);
 		void printAltTable (std::ostream & _os);
 		void printDayStates (std::ostream & _os);
-	protected:
-		virtual void help ();
-		virtual int processOption (int in_opt);
-	public:
-		Rts2StateApp (int in_argc, char **in_argv);
-
-		virtual int init ();
-		virtual int run ();
 };
 
-void
-Rts2StateApp::printAltTable (std::ostream & _os, double jd_start,
-double h_start, double h_end, double h_step)
+}
+
+using namespace rts2centrald;
+
+void StateApp::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step)
 {
 	double i;
 	struct ln_hrz_posn hrz;
@@ -119,9 +125,7 @@ double h_start, double h_end, double h_step)
 	_os.precision (old_precison);
 }
 
-
-void
-Rts2StateApp::printAltTable (std::ostream & _os)
+void StateApp::printAltTable (std::ostream & _os)
 {
 	double jd_start = ((int) JD) - 0.5;
 
@@ -135,9 +139,7 @@ Rts2StateApp::printAltTable (std::ostream & _os)
 	printAltTable (_os, jd_start, 12, 24);
 }
 
-
-void
-Rts2StateApp::printDayStates (std::ostream & _os)
+void StateApp::printDayStates (std::ostream & _os)
 {
 	time_t ev_time, curr_time;
 	int curr_type, next_type;
@@ -169,17 +171,13 @@ Rts2StateApp::printDayStates (std::ostream & _os)
 	}
 }
 
-
-void
-Rts2StateApp::help ()
+void StateApp::help ()
 {
 	std::cout << "Observing state display tool." << std::endl;
 	Rts2App::help ();
 }
 
-
-int
-Rts2StateApp::processOption (int in_opt)
+int StateApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -203,6 +201,9 @@ Rts2StateApp::processOption (int in_opt)
 		case 'v':
 			verbose++;
 			break;
+		case OPT_CONFIG:
+			conff = optarg;
+			break;
 		default:
 			return Rts2App::processOption (in_opt);
 	}
@@ -210,26 +211,24 @@ Rts2StateApp::processOption (int in_opt)
 }
 
 
-Rts2StateApp::Rts2StateApp (int in_argc, char **in_argv):Rts2App (in_argc,
-in_argv)
+StateApp::StateApp (int argc, char **argv):Rts2App (argc, argv)
 {
 	lng = lat = -1000;
 	verbose = 0;
 
+	conff = NULL;
+
 	time (&currTime);
 
+	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption ('a', "latitude", 1, "set latitude (overwrites config file)");
-	addOption ('l', "longtitude", 1,
-		"set longtitude (overwrites config file). Negative for west from Greenwich)");
-	addOption ('c', "clear", 0,
-		"just print current state (one number) and exists");
+	addOption ('l', "longtitude", 1, "set longtitude (overwrites config file). Negative for west from Greenwich)");
+	addOption ('c', "clear", 0,  "just print current state (one number) and exists");
 	addOption ('t', "time", 1, "set time (int unix time)");
 	addOption ('v', "verbose", 0, "be verbose");
 }
 
-
-int
-Rts2StateApp::init ()
+int StateApp::init ()
 {
 	Rts2Config *config;
 	int ret;
@@ -242,7 +241,7 @@ Rts2StateApp::init ()
 
 	config = Rts2Config::instance ();
 
-	if (config->loadFile () == -1)
+	if (config->loadFile (conff) == -1)
 	{
 		std::cerr << "Cannot read configuration file, exiting." << std::endl;
 		return -1;
@@ -254,25 +253,19 @@ Rts2StateApp::init ()
 		config->getObserver ()->lat = lat;
 
 	night_horizon = -10;
-	Rts2Config::instance ()->getDouble ("observatory", "night_horizon",
-		night_horizon);
+	Rts2Config::instance ()->getDouble ("observatory", "night_horizon", night_horizon);
 	day_horizon = 0;
-	Rts2Config::instance ()->getDouble ("observatory", "day_horizon",
-		day_horizon);
+	Rts2Config::instance ()->getDouble ("observatory", "day_horizon", day_horizon);
 
 	eve_time = 7200;
-	Rts2Config::instance ()->getInteger ("observatory", "evening_time",
-		eve_time);
+	Rts2Config::instance ()->getInteger ("observatory", "evening_time", eve_time);
 	mor_time = 1800;
-	Rts2Config::instance ()->getInteger ("observatory", "morning_time",
-		mor_time);
+	Rts2Config::instance ()->getInteger ("observatory", "morning_time", mor_time);
 
 	return 0;
 }
 
-
-int
-Rts2StateApp::run ()
+int StateApp::run ()
 {
 	int ret;
 	time_t ev_time;
@@ -313,10 +306,8 @@ Rts2StateApp::run ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2StateApp app (argc, argv);
+	StateApp app (argc, argv);
 	return app.run ();
 }

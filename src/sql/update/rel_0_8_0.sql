@@ -39,6 +39,15 @@ ALTER TABLE phot DROP COLUMN phot_epoch CASCADE;
 
 DROP TABLE epoch;
 
+DROP FUNCTION imgpath(integer, integer, varchar(8), varchar(8), integer, integer, abstime);
+DROP FUNCTION img_fits_name(timestamp, integer);
+DROP FUNCTION dark_name(integer, integer, timestamp, integer,   integer, varchar(8));
+DROP FUNCTION ell_update(varchar (150), float4, float4, float4, float4, float4, float4, float8, float4, float4);
+
+-- Drop ell - they are now stored as MPEC one-liners
+
+DROP TABLE ell;
+
 -- Add column with full image path
 
 ALTER TABLE images ADD COLUMN img_path varchar(100);
@@ -71,6 +80,16 @@ CREATE INDEX records_double_time ON records_double (rectime);
 CREATE INDEX records_double_recval_id ON records_double (recval_id);
 CREATE UNIQUE INDEX records_double_id_time ON records_double (recval_id, rectime);
 
+CREATE TABLE records_boolean (
+	recval_id		integer REFERENCES recvals(recval_id) not NULL,
+	rectime			timestamp not NULL,
+	value			boolean
+);
+
+CREATE INDEX records_boolean_time ON records_boolean (rectime);
+CREATE INDEX records_boolean_recval_id ON records_boolean (recval_id);
+CREATE UNIQUE INDEX records_boolean_id_time ON records_boolean (recval_id, rectime);
+
 CREATE VIEW recvals_state_statistics AS
 SELECT
 	recval_id,
@@ -83,17 +102,33 @@ FROM
 WHERE
 	value_type = 0;
 
+DROP VIEW recvals_double_statistics;
+
 CREATE VIEW recvals_double_statistics AS
 SELECT
 	recval_id,
 	device_name,
 	value_name,
+	value_type,
 	(SELECT min(rectime) FROM records_double WHERE records_double.recval_id = recvals.recval_id) AS time_from,
 	(SELECT max(rectime) FROM records_double WHERE records_double.recval_id = recvals.recval_id) AS time_to
 FROM
 	recvals
 WHERE
-	value_type = 1;
+	value_type & 15 = 4;
+
+CREATE VIEW recvals_boolean_statistics AS
+SELECT
+	recval_id,
+	device_name,
+	value_name,
+	value_type,
+	(SELECT min(rectime) FROM records_boolean WHERE records_boolean.recval_id = recvals.recval_id) AS time_from,
+	(SELECT max(rectime) FROM records_boolean WHERE records_boolean.recval_id = recvals.recval_id) AS time_to
+FROM
+	recvals
+WHERE
+	value_type & 15 = 6;
 	
 
 CREATE VIEW records_double_day AS
@@ -149,11 +184,19 @@ DELETE FROM mv_records_double_day;
 INSERT INTO mv_records_double_day (SELECT * FROM records_double_day);
 INSERT INTO mv_records_double_hour (SELECT * FROM records_double_hour);' LANGUAGE SQL;
 
+CREATE UNIQUE INDEX plan_tar_id_start ON plan (tar_id, plan_start);
+
+-- second parameter is site longitude
+CREATE OR REPLACE FUNCTION to_night(timestamp with time zone, numeric) RETURNS timestamp without time zone AS
+	'SELECT (to_timestamp (EXTRACT(EPOCH FROM $1) + 86400 * $2 / 360 - 43200) AT TIME ZONE ''UTC'' )' LANGUAGE 'SQL';
+
 GRANT ALL ON recvals TO GROUP observers;
 GRANT ALL ON records_state TO GROUP observers;
 GRANT ALL ON records_double TO GROUP observers;
+GRANT ALL ON records_boolean TO GROUP observers;
 GRANT ALL ON recval_ids TO GROUP observers;
 GRANT ALL ON mv_records_double_day TO GROUP observers;
 GRANT ALL ON mv_records_double_hour TO GROUP observers;
 GRANT ALL ON recvals_state_statistics TO GROUP observers;
 GRANT ALL ON recvals_double_statistics TO GROUP observers;
+GRANT ALL ON recvals_boolean_statistics TO GROUP observers;

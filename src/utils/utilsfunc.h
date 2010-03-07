@@ -36,6 +36,18 @@
 #include <ieeefp.h>
 #endif
 
+#if defined(__WIN32__) || defined(sun) || defined(__C89_SUB__)
+
+/* Not a Number function generator */
+double rts2_nan (const char *code);
+
+#else
+
+#define rts2_nan(f)  nan(f)
+
+#endif /* defined(__WIN32__) || defined(sun) || defined(__C89_SUB__) */
+
+
 /**
  * Return random number in 0-1 range.
  */
@@ -75,8 +87,7 @@ std::vector<char> Str2CharVector (std::string text);
  * @param p    Pointer to char which will be filled,
  * @param val  Value which will be copied to character.
  */
-template < typename T >
-void fillIn (char **p, T val)
+template < typename T > void fillIn (char **p, T val)
 {
 	std::ostringstream _os;
 	_os << val;
@@ -92,47 +103,45 @@ int isinf(double x);
 #endif
 
 #ifndef HUGE_VALF
+	#ifdef sun
+		#define HUGE_VALF	(__extension__ 0x1.0p255f)
+	#elif __GNUC_PREREQ(3,3)
+		#define HUGE_VALF	(__builtin_huge_valf())
+	#elif __GNUC_PREREQ(2,96)
+		#define HUGE_VALF	(__extension__ 0x1.0p255f)
+	#elif defined __GNUC__
 
-#if __GNUC_PREREQ(3,3)
-# define HUGE_VALF	(__builtin_huge_valf())
-#elif __GNUC_PREREQ(2,96)
-# define HUGE_VALF	(__extension__ 0x1.0p255f)
-#elif defined __GNUC__
-
-#   define HUGE_VALF \
+		#define HUGE_VALF \
   (__extension__							      \
    ((union { unsigned __l __attribute__((__mode__(__SI__))); float __d; })    \
     { __l: 0x7f800000UL }).__d)
+	#else /* not GCC */
+		typedef union { unsigned char __c[4]; float __f; } __huge_valf_t;
 
-#else /* not GCC */
+		#if __BYTE_ORDER == __BIG_ENDIAN
+			#define __HUGE_VALF_bytes	{ 0x7f, 0x80, 0, 0 }
+		#endif
+		#if __BYTE_ORDER == __LITTLE_ENDIAN
+			#define __HUGE_VALF_bytes	{ 0, 0, 0x80, 0x7f }
+		#endif
 
-typedef union { unsigned char __c[4]; float __f; } __huge_valf_t;
+		static __huge_valf_t __huge_valf = { __HUGE_VALF_bytes };
+		#define HUGE_VALF	(__huge_valf.__f)
 
-# if __BYTE_ORDER == __BIG_ENDIAN
-#  define __HUGE_VALF_bytes	{ 0x7f, 0x80, 0, 0 }
-# endif
-# if __BYTE_ORDER == __LITTLE_ENDIAN
-#  define __HUGE_VALF_bytes	{ 0, 0, 0x80, 0x7f }
-# endif
-
-static __huge_valf_t __huge_valf = { __HUGE_VALF_bytes };
-# define HUGE_VALF	(__huge_valf.__f)
-
-#endif	/* GCC.  */
-
+	#endif	/* GCC.  */
 #endif
 
 /**
  * Define INIFINITY
  */
 #ifndef INFINITY
-
-#if __GNUC_PREREQ(3,3)
-# define INFINITY	(__builtin_inff())
-#else
-# define INFINITY	HUGE_VALF
-#endif
-
+ 	#ifdef sun
+		#define INFINITY	HUGE_VALF
+	#elif __GNUC_PREREQ(3,3)
+		#define INFINITY	(__builtin_inff())
+	#else
+		#define INFINITY	HUGE_VALF
+	#endif
 #endif
 
 /**
@@ -180,6 +189,14 @@ int isfinite(double x);
       (result)->tv_usec += 1000000;					      \
     }									      \
   } while (0)
+#endif
+
+#ifndef HAVE_ISBLANK
+#define isblank(x)   (isspace(x) || x == '\t')
+#endif
+
+#ifndef HAVE_STRCASESTR
+char * strcasestr(const char * haystack, const char * needle);
 #endif
 
 #endif							 /* !__RTS_UTILSFUNC__ */

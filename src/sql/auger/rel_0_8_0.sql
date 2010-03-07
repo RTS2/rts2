@@ -5,6 +5,9 @@ DROP TABLE auger;
 CREATE TABLE auger (
 	auger_t3id	integer PRIMARY KEY NOT NULL,
 	auger_date	timestamp NOT NULL,
+	ra		float8 NOT NULL,
+	dec		float8 NOT NULL,
+	cut		integer NOT NULL,
 	-- now all fields from message..
 
 	eye		integer NOT NULL, -- FD eye Id
@@ -73,7 +76,16 @@ CREATE TABLE auger (
 	XFOVMax		float8 NOT NULL,  -- Last slant depth inside FOV (g/cm^2)
 	XTrackObs	float8 NOT NULL,  -- Observed track length depth (g/cm^2)
 	DegTrackObs	float8 NOT NULL,  -- Observed track length angle (deg)
-	TTrackObs	float8 NOT NULL   -- Observed track length time (100 ns)
+	TTrackObs	float8 NOT NULL,  -- Observed track length time (100 ns)
+	ShowerParams    varchar(2000)     -- Shower parameters
+);
+
+-- relation between observations and auger targets is kept in this table
+CREATE TABLE auger_observation (
+	auger_t3id	integer NOT NULL REFERENCES auger (auger_t3id),
+	obs_id		integer NOT NULL REFERENCES observations (obs_id),
+CONSTRAINT auger_obs_prim_key PRIMARY KEY (auger_t3id, obs_id)
 );
 
 GRANT ALL ON auger TO GROUP observers;
+GRANT ALL ON auger_observation TO GROUP observers;

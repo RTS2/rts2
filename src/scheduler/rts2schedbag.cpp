@@ -222,7 +222,9 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
 
-	tarSet = new Rts2TargetSet (observer, true);
+	tarSet = new rts2db::TargetSet (observer);
+	tarSet->load ();
+
 	ticketSet = new rts2sched::TicketSet ();
 
 	mutationNum = -1;
@@ -297,7 +299,8 @@ Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
 {
   	Rts2Night night = Rts2Night (obsNight, Rts2Config::instance ()->getObserver ());
 
-	rts2db::ObservationSet obsSet = rts2db::ObservationSet (night.getFrom (), night.getTo ());
+	rts2db::ObservationSet obsSet = rts2db::ObservationSet ();
+	obsSet.loadTime (night.getFrom (), night.getTo ());
 
 	if (obsSet.size () == 0)
 	{

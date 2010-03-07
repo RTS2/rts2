@@ -17,31 +17,57 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "valueevents.h"
-#include "message.h"
+#include "xmlrpcd.h"
 
 #include "../utils/connfork.h"
 #include "../utils/timestamp.h"
-#include "../utils/rts2block.h"
-#include "../utils/rts2logstream.h"
-
-#include <config.h>
 
 using namespace rts2xmlrpc;
 
+ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):Rts2Object ()
+{
+	master = _master;
+	deviceName = _deviceName;
+	valueName = _valueName;
+			
+	lastTime = 0;
+	cadency = _cadency;
+
+	if (cadency > 0)
+		master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));
+}
+
+void ValueChange::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_XMLRPC_VALUE_TIMER:
+			if (lastTime + cadency <= time(NULL))
+			{
+				Rts2Conn *conn = master->getOpenConnection (deviceName.c_str ());
+				if (conn)
+					conn->queCommand (new rts2core::Rts2CommandInfo (master));
+			}
+			if (cadency > 0)
+				master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));
+			break;
+	}
+	Rts2Object::postEvent (event);
+}
+
 #ifndef HAVE_PGSQL
 
-void ValueChangeRecord::run (Rts2Block *_master, Rts2Value *val, double validTime)
+void ValueChangeRecord::run (Rts2Value *val, double validTime)
 {
 	std::cout << Timestamp (validTime) << " value: " << deviceName << " " << valueName << val->getDisplayValue () << std::endl;
 }
 
 #endif /* ! HAVE_PGSQL */
 
-void ValueChangeCommand::run (Rts2Block *_master, Rts2Value *val, double validTime)
+void ValueChangeCommand::run (Rts2Value *val, double validTime)
 {
 	int ret;
-	rts2core::ConnFork *cf = new rts2core::ConnFork (_master, commandName.c_str (), true, 100);
+	rts2core::ConnFork *cf = new rts2core::ConnFork (master, commandName.c_str (), true, false, 100);
 	cf->addArg (val->getName ());
 	cf->addArg (validTime);
 	ret = cf->init ();
@@ -51,5 +77,10 @@ void ValueChangeCommand::run (Rts2Block *_master, Rts2Value *val, double validTi
 		return;
 	}
 
-	_master->addConnection (cf);
+	master->addConnection (cf);
+}
+
+void ValueChangeEmail::run (Rts2Value *val, double validTime)
+{
+	EmailAction::run (master, NULL, validTime);
 }

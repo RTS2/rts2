@@ -47,12 +47,14 @@ void ConnGpib::readValue (const char *buf, Rts2Value * val)
 		case RTS2_VALUE_BOOL:
 			readValue (buf, (Rts2ValueBool *) val);
 			return;
+		case RTS2_VALUE_INTEGER:
+			readValue (buf, (Rts2ValueInteger *) val);
+			return;
 		case RTS2_VALUE_SELECTION:
 			readValue (buf, (Rts2ValueSelection *) val);
 			return;
 		default:
-			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->
-				getName () << " of type " << val->getValueType () << sendLog;
+			logStream (MESSAGE_ERROR) << "Do not know how to read value " << val->getName () << " of type " << val->getValueType () << sendLog;
 			throw rts2core::Error ("unknow value type");
 	}
 }
@@ -113,6 +115,9 @@ void ConnGpib::readValue (const char *buf, Rts2ValueString * val)
 	char *sep = strchr (rb, '\n');
 	if (sep)
 		*sep = '\0';
+	sep = strchr (rb, '\r');
+	if (sep)
+		*sep = '\0';
 	val->setValueString (rb);
 }
 
@@ -121,7 +126,7 @@ void ConnGpib::readValue (const char *buf, Rts2ValueDouble * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueDouble (atof (rb));
+	val->setValueCharArr (rb);
 }
 
 
@@ -129,9 +134,8 @@ void ConnGpib::readValue (const char *buf, Rts2ValueFloat * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
-	val->setValueFloat (atof (rb));
+	val->setValueCharArr (rb);
 }
-
 
 void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
 {
@@ -140,10 +144,57 @@ void ConnGpib::readValue (const char *buf, Rts2ValueBool * val)
 	val->setValueBool (!strncmp (rb, "ON", 2));
 }
 
+void ConnGpib::readValue (const char *buf, Rts2ValueInteger * val)
+{
+	char rb[50];
+	gpibWriteRead (buf, rb, 50);
+	val->setValueCharArr (rb);
+}
 
 void ConnGpib::readValue (const char *buf, Rts2ValueSelection * val)
 {
 	char rb[50];
 	gpibWriteRead (buf, rb, 50);
 	val->setSelIndex (rb);
+}
+
+char ConnGpib::getTimeoutTmo (float &_sec)
+{
+	if (_sec <= 1)
+	{
+		_sec = 1;
+		return 11;
+	}
+	else if (_sec <= 3)
+	{
+		_sec = 3;
+		return 12;
+	}
+	else if (_sec <= 10)
+	{
+		_sec = 10;
+		return 13;
+	}
+	else if (_sec <= 30)
+	{
+		_sec = 30;
+		return 14;
+	}
+	else if (_sec <= 100)
+	{
+		_sec = 100;
+		return 15;
+	}
+	else if (_sec <= 300)
+	{
+		_sec = 300;
+		return 16;
+	}
+	else if (_sec <= 1000)
+	{
+		_sec = 1000;
+		return 17;
+	}
+	_sec = NAN;
+	return 0;
 }

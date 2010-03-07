@@ -538,13 +538,21 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 	}
 	else
 	{
-		_os << std::setw (5) << (deg_dms.degrees * 60 + deg_dms.minutes) << "'";
+		if (deg_dms.degrees > 0)
+			_os << std::setw (3) << deg_dms.degrees << "d";
+		else
+			_os << "    ";
+                if (deg_dms.minutes > 0 || deg_dms.seconds > 0)
+			_os << std::setw (2) << deg_dms.minutes << "'";
 	}
-	char old_fill = _os.fill ('0');
-	_os << std::setw (5) << deg_dms.seconds;
-	_os.setf (old_settings);
-	_os.precision (old_precison);
-	_os.fill (old_fill);
+	if (deg_dms.seconds >= 0.01)
+	{
+		char old_fill = _os.fill ('0');
+		_os << std::setw (5) << deg_dms.seconds;
+		_os.setf (old_settings);
+		_os.precision (old_precison);
+		_os.fill (old_fill);
+	}
 	return _os;
 }
 
@@ -809,4 +817,64 @@ int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &designation, con
 	orbit->JD = ln_get_julian_day (&epoch) - M / orbit->n;
 
 	return 0;
+}
+
+double LibnovaEarthDistanceFromMpec (struct ln_ell_orbit *orbit, double JD)
+{
+	if (orbit->e == 1.0)
+	{
+		struct ln_par_orbit par_orbit;
+		par_orbit.q = orbit->a;
+		par_orbit.i = orbit->i;
+		par_orbit.w = orbit->w;
+		par_orbit.omega = orbit->omega;
+		par_orbit.JD = orbit->JD;
+		return ln_get_par_body_earth_dist (JD, &par_orbit);
+	}
+	else if (orbit->e > 1.0)
+	{
+		struct ln_hyp_orbit hyp_orbit;
+		hyp_orbit.q = orbit->a;
+		hyp_orbit.e = orbit->e;
+		hyp_orbit.i = orbit->i;
+		hyp_orbit.w = orbit->w;
+		hyp_orbit.omega = orbit->omega;
+		hyp_orbit.JD = orbit->JD;
+		return ln_get_hyp_body_earth_dist (JD, &hyp_orbit);
+	}
+	return ln_get_ell_body_earth_dist (JD, orbit);
+}
+
+void LibnovaCurrentFromOrbit (struct ln_equ_posn *pos, struct ln_ell_orbit *orbit, struct ln_lnlat_posn *observer, double altitude, double JD, struct ln_equ_posn *parallax)
+{
+	if (orbit->e == 1.0)
+	{
+		struct ln_par_orbit par_orbit;
+		par_orbit.q = orbit->a;
+		par_orbit.i = orbit->i;
+		par_orbit.w = orbit->w;
+		par_orbit.omega = orbit->omega;
+		par_orbit.JD = orbit->JD;
+		ln_get_par_body_equ_coords (JD, &par_orbit, pos);
+	}
+	else if (orbit->e > 1.0)
+	{
+		struct ln_hyp_orbit hyp_orbit;
+		hyp_orbit.q = orbit->a;
+		hyp_orbit.e = orbit->e;
+		hyp_orbit.i = orbit->i;
+		hyp_orbit.w = orbit->w;
+		hyp_orbit.omega = orbit->omega;
+		hyp_orbit.JD = orbit->JD;
+		ln_get_hyp_body_equ_coords (JD, &hyp_orbit, pos);
+	}
+	else
+	{
+		ln_get_ell_body_equ_coords (JD, orbit, pos);
+	}
+
+	ln_get_parallax (pos, LibnovaEarthDistanceFromMpec (orbit, JD), observer, altitude, JD, parallax);
+
+	pos->ra += parallax->ra;
+	pos->dec += parallax->dec;
 }

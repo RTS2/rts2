@@ -1,6 +1,6 @@
 /* 
  * Connection for GPIB bus.
- * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,13 +40,23 @@ class ConnGpib
 {
 	public:
 		/**
-		 * Write command to GPIB bus.
+		 * Write command buffer to GPIB bus.
 		 *
-		 * @param cmd Null terminated string, which will be written to bus.
+		 * @param cmd Command buffer of length len which will be written to bus.
+		 * @param len Length of data to write.
 		 *
 		 * @throw rts2core::Error and its descendats.
 		 */
-		virtual void gpibWrite (const char *cmd) = 0;
+		virtual void gpibWriteBuffer (const char *cmd, int len) = 0;
+
+		/**
+		 * Write null-terminated command string to GPIB bus.
+		 *
+		 * @param cmd  Null-terminated command buffer.
+		 *
+		 * @throw rts2core::Error on error.
+		 */
+		void gpibWrite (const char *cmd) { gpibWriteBuffer (cmd, strlen (cmd)); }
 
 		/*
 		 * Read data from GPIB device to a buffer.
@@ -93,12 +103,31 @@ class ConnGpib
 
 		void readValue (const char *buf, Rts2ValueBool * val);
 
+		void readValue (const char *buf, Rts2ValueInteger * val);
+
 		void readValue (const char *buf, Rts2ValueSelection * val);
 
 		/**
 		 * Initialize GPIB connection.
 		 */
 		virtual void initGpib () = 0;
+
+		/**
+		 * Clear GPIB device.
+		 */
+		virtual void devClear () = 0;
+
+		/**
+		 * Returns current device timeout in seconds.
+		 */
+		virtual float gettmo () = 0;
+
+		/**
+		 * Set device timeout.
+		 *
+		 * @param sec Number of seconds for timeout.
+		 */
+		virtual void settmo (float _sec) = 0;
 
 		ConnGpib ()
 		{
@@ -107,6 +136,13 @@ class ConnGpib
 		virtual ~ ConnGpib (void)
 		{
 		}
+
+		/**
+		 * Converts seconds timeouts to NI/GPIB timeout value.
+		 */
+		char getTimeoutTmo (float &_sec);
+
+		virtual void setDebug (bool _debug = true) = 0; 
 };
 
 };

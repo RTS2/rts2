@@ -23,6 +23,8 @@
 #include "rts2command.h"
 #include "rts2devclient.h"
 
+using namespace rts2core;
+
 Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
 {
 	connection = in_connection;
@@ -33,15 +35,12 @@ Rts2DevClient::Rts2DevClient (Rts2Conn * in_connection):Rts2Object ()
 	failedCount = 0;
 }
 
-
 Rts2DevClient::~Rts2DevClient ()
 {
 	unblockWait ();
 }
 
-
-void
-Rts2DevClient::postEvent (Rts2Event * event)
+void Rts2DevClient::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -59,49 +58,35 @@ Rts2DevClient::postEvent (Rts2Event * event)
 	Rts2Object::postEvent (event);
 }
 
-
-void
-Rts2DevClient::newDataConn (int data_conn)
+void Rts2DevClient::newDataConn (int data_conn)
 {
 }
 
-
-void
-Rts2DevClient::dataReceived (Rts2DataRead *data)
+void Rts2DevClient::dataReceived (DataRead *data)
 {
 }
 
-
-void
-Rts2DevClient::fullDataReceived (int data_conn, Rts2DataRead *data)
+void Rts2DevClient::fullDataReceived (int data_conn, DataAbstractRead *data)
 {
 	logStream (MESSAGE_WARNING) << "Data not handled " << getName () << " " << data_conn << sendLog;
 }
 
-
-void
-Rts2DevClient::stateChanged (Rts2ServerState * state)
+void Rts2DevClient::stateChanged (Rts2ServerState * state)
 {
 	if (connection->getErrorState () == DEVICE_ERROR_HW)
 		incFailedCount ();
 }
 
-
-void
-Rts2DevClient::died ()
+void Rts2DevClient::died ()
 {
 }
 
-
-void
-Rts2DevClient::blockWait ()
+void Rts2DevClient::blockWait ()
 {
 	waiting = WAIT_NOT_POSSIBLE;
 }
 
-
-void
-Rts2DevClient::unblockWait ()
+void Rts2DevClient::unblockWait ()
 {
 	if (waiting == WAIT_NOT_POSSIBLE)
 	{
@@ -115,82 +100,58 @@ Rts2DevClient::unblockWait ()
 	}
 }
 
-
-void
-Rts2DevClient::unsetWait ()
+void Rts2DevClient::unsetWait ()
 {
 	unblockWait ();
 	clearWait ();
 }
 
-
-int
-Rts2DevClient::isWaitMove ()
+int Rts2DevClient::isWaitMove ()
 {
 	return (waiting == WAIT_MOVE);
 }
 
-
-void
-Rts2DevClient::clearWait ()
+void Rts2DevClient::clearWait ()
 {
 	waiting = NOT_WAITING;
 }
 
-
-void
-Rts2DevClient::setWaitMove ()
+void Rts2DevClient::setWaitMove ()
 {
 	if (waiting == NOT_WAITING)
 		waiting = WAIT_MOVE;
 }
 
-
-int
-Rts2DevClient::getStatus ()
+int Rts2DevClient::getStatus ()
 {
 	return connection->getState ();
 }
 
-
-void
-Rts2DevClient::idle ()
+void Rts2DevClient::idle ()
 {
 }
 
-
-Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientCamera::Rts2DevClientCamera (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-void
-Rts2DevClientCamera::exposureStarted ()
+void Rts2DevClientCamera::exposureStarted ()
 {
 }
 
-
-void
-Rts2DevClientCamera::exposureEnd ()
+void Rts2DevClientCamera::exposureEnd ()
 {
 }
 
-
-void
-Rts2DevClientCamera::exposureFailed (int status)
+void Rts2DevClientCamera::exposureFailed (int status)
 {
 }
 
-
-void
-Rts2DevClientCamera::readoutEnd ()
+void Rts2DevClientCamera::readoutEnd ()
 {
 }
 
-
-void
-Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
+void Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 {
 	if (state->maskValueChanged (CAM_MASK_EXPOSE))
 	{
@@ -223,7 +184,7 @@ Rts2DevClientCamera::stateChanged (Rts2ServerState * state)
 				break;
 		}
 	}
-	if (state->maskValueChanged (CAM_MASK_READING) && (state->getValue () & CAM_NOTREADING))
+	if (state->maskValueChanged (CAM_MASK_READING) && (state->getValue () & CAM_MASK_READING) == CAM_NOTREADING)
 	{
 		if (connection->getErrorState () == DEVICE_NO_ERROR)
 			readoutEnd ();
@@ -247,8 +208,7 @@ bool Rts2DevClientCamera::isExposing ()
 }
 
 
-Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientTelescope::Rts2DevClientTelescope (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 	moveWasCorrecting = false;
 }
@@ -259,16 +219,14 @@ Rts2DevClientTelescope::~Rts2DevClientTelescope (void)
 	moveFailed (DEVICE_ERROR_HW);
 }
 
-
-void
-Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
+void Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 {
-	if (state->maskValueChanged (TEL_MASK_COP_MOVING))
+	if (state->maskValueChanged (TEL_MASK_CUP_MOVING))
 	{
-		switch (state->getValue () & TEL_MASK_COP_MOVING)
+		switch (state->getValue () & TEL_MASK_CUP_MOVING)
 		{
 			case TEL_MOVING:
-			case TEL_MOVING | TEL_WAIT_COP:
+			case TEL_MOVING | TEL_WAIT_CUP:
 			case TEL_PARKING:
 				moveStart (state->getValue () & TEL_CORRECTING);
 				break;
@@ -288,23 +246,17 @@ Rts2DevClientTelescope::stateChanged (Rts2ServerState * state)
 	Rts2DevClient::stateChanged (state);
 }
 
-
-void
-Rts2DevClientTelescope::moveStart (bool correcting)
+void Rts2DevClientTelescope::moveStart (bool correcting)
 {
 	moveWasCorrecting = correcting;
 }
 
-
-void
-Rts2DevClientTelescope::moveEnd ()
+void Rts2DevClientTelescope::moveEnd ()
 {
 	moveWasCorrecting = false;
 }
 
-
-void
-Rts2DevClientTelescope::postEvent (Rts2Event * event)
+void Rts2DevClientTelescope::postEvent (Rts2Event * event)
 {
 	bool qe;
 	switch (event->getType ())
@@ -323,49 +275,38 @@ Rts2DevClientTelescope::postEvent (Rts2Event * event)
 	Rts2DevClient::postEvent (event);
 }
 
-
-Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientDome::Rts2DevClientDome (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-Rts2DevClientCupola::Rts2DevClientCupola (Rts2Conn * in_connection):Rts2DevClientDome
-(in_connection)
+Rts2DevClientCupola::Rts2DevClientCupola (Rts2Conn * _connection):Rts2DevClientDome (_connection)
 {
 }
-
 
 void
 Rts2DevClientCupola::syncStarted ()
 {
 }
 
-
-void
-Rts2DevClientCupola::syncEnded ()
+void Rts2DevClientCupola::syncEnded ()
 {
 }
 
-
-void
-Rts2DevClientCupola::syncFailed (int status)
+void Rts2DevClientCupola::syncFailed (int status)
 {
 }
 
-
-void
-Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
+void Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
 {
-	switch (state->getValue () & DOME_COP_MASK_SYNC)
+	switch (state->getValue () & DOME_CUP_MASK_SYNC)
 	{
-		case DOME_COP_NOT_SYNC:
+		case DOME_CUP_NOT_SYNC:
 			if (connection->getErrorState ())
 				syncFailed (state->getValue ());
 			else
 				syncStarted ();
 			break;
-		case DOME_COP_SYNC:
+		case DOME_CUP_SYNC:
 			if (connection->getErrorState ())
 				syncFailed (state->getValue ());
 			else
@@ -376,20 +317,16 @@ Rts2DevClientCupola::stateChanged (Rts2ServerState * state)
 }
 
 
-Rts2DevClientMirror::Rts2DevClientMirror (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientMirror::Rts2DevClientMirror (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
-
 
 Rts2DevClientMirror::~Rts2DevClientMirror (void)
 {
 	moveFailed (DEVICE_ERROR_HW);
 }
 
-
-void
-Rts2DevClientMirror::stateChanged (Rts2ServerState * state)
+void Rts2DevClientMirror::stateChanged (Rts2ServerState * state)
 {
 	if (connection->getErrorState ())
 	{
@@ -414,42 +351,31 @@ Rts2DevClientMirror::stateChanged (Rts2ServerState * state)
 	Rts2DevClient::stateChanged (state);
 }
 
-
-void
-Rts2DevClientMirror::mirrorA ()
+void Rts2DevClientMirror::mirrorA ()
 {
 }
 
-
-void
-Rts2DevClientMirror::mirrorB ()
+void Rts2DevClientMirror::mirrorB ()
 {
 }
 
-
-void
-Rts2DevClientMirror::moveFailed (int status)
+void Rts2DevClientMirror::moveFailed (int status)
 {
 }
 
-
-Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientPhot::Rts2DevClientPhot (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 	lastCount = -1;
 	lastExp = -1.0;
 	integrating = false;
 }
 
-
 Rts2DevClientPhot::~Rts2DevClientPhot ()
 {
 	integrationFailed (DEVICE_ERROR_HW);
 }
 
-
-void
-Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
+void Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
 {
 	if (state->maskValueChanged (PHOT_MASK_INTEGRATE))
 	{
@@ -484,48 +410,34 @@ Rts2DevClientPhot::stateChanged (Rts2ServerState * state)
 	Rts2DevClient::stateChanged (state);
 }
 
-
-void
-Rts2DevClientPhot::filterMoveStart ()
+void Rts2DevClientPhot::filterMoveStart ()
 {
 }
 
-
-void
-Rts2DevClientPhot::filterMoveEnd ()
+void Rts2DevClientPhot::filterMoveEnd ()
 {
 }
 
-
-void
-Rts2DevClientPhot::filterMoveFailed (int status)
+void Rts2DevClientPhot::filterMoveFailed (int status)
 {
 }
 
-
-void
-Rts2DevClientPhot::integrationStart ()
+void Rts2DevClientPhot::integrationStart ()
 {
 	integrating = true;
 }
 
-
-void
-Rts2DevClientPhot::integrationEnd ()
+void Rts2DevClientPhot::integrationEnd ()
 {
 	integrating = false;
 }
 
-
-void
-Rts2DevClientPhot::integrationFailed (int status)
+void Rts2DevClientPhot::integrationFailed (int status)
 {
 	integrating = false;
 }
 
-
-void
-Rts2DevClientPhot::addCount (int count, float exp, bool is_ov)
+void Rts2DevClientPhot::addCount (int count, float exp, bool is_ov)
 {
 	lastCount = count;
 	lastExp = exp;
@@ -537,9 +449,7 @@ bool Rts2DevClientPhot::isIntegrating ()
 	return integrating;
 }
 
-
-void
-Rts2DevClientPhot::valueChanged (Rts2Value * value)
+void Rts2DevClientPhot::valueChanged (Rts2Value * value)
 {
 	if (value->isValue ("count"))
 	{
@@ -556,38 +466,27 @@ Rts2DevClientPhot::valueChanged (Rts2Value * value)
 	Rts2DevClient::valueChanged (value);
 }
 
-
-Rts2DevClientFilter::Rts2DevClientFilter (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientFilter::Rts2DevClientFilter (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
-
 
 Rts2DevClientFilter::~Rts2DevClientFilter ()
 {
 }
 
-
-void
-Rts2DevClientFilter::filterMoveStart ()
+void Rts2DevClientFilter::filterMoveStart ()
 {
 }
 
-
-void
-Rts2DevClientFilter::filterMoveEnd ()
+void Rts2DevClientFilter::filterMoveEnd ()
 {
 }
 
-
-void
-Rts2DevClientFilter::filterMoveFailed (int status)
+void Rts2DevClientFilter::filterMoveFailed (int status)
 {
 }
 
-
-void
-Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
+void Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
 {
 	if (state->maskValueChanged (FILTERD_MASK))
 	{
@@ -606,46 +505,33 @@ Rts2DevClientFilter::stateChanged (Rts2ServerState * state)
 	}
 }
 
-
-Rts2DevClientAugerShooter::Rts2DevClientAugerShooter (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientAugerShooter::Rts2DevClientAugerShooter (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientFocus::Rts2DevClientFocus (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
-
 
 Rts2DevClientFocus::~Rts2DevClientFocus (void)
 {
 	focusingFailed (DEVICE_ERROR_HW);
 }
 
-
-void
-Rts2DevClientFocus::focusingStart ()
+void Rts2DevClientFocus::focusingStart ()
 {
 }
 
-
-void
-Rts2DevClientFocus::focusingEnd ()
+void Rts2DevClientFocus::focusingEnd ()
 {
 }
 
-
-void
-Rts2DevClientFocus::focusingFailed (int status)
+void Rts2DevClientFocus::focusingFailed (int status)
 {
 	focusingEnd ();
 }
 
-
-void
-Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
+void Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
 {
 	switch (state->getValue () & FOC_MASK_FOCUSING)
 	{
@@ -662,21 +548,15 @@ Rts2DevClientFocus::stateChanged (Rts2ServerState * state)
 	Rts2DevClient::stateChanged (state);
 }
 
-
-Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientExecutor::Rts2DevClientExecutor (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-void
-Rts2DevClientExecutor::lastReadout ()
+void Rts2DevClientExecutor::lastReadout ()
 {
 }
 
-
-void
-Rts2DevClientExecutor::stateChanged (Rts2ServerState * state)
+void Rts2DevClientExecutor::stateChanged (Rts2ServerState * state)
 {
 	switch (state->getValue () & EXEC_STATE_MASK)
 	{
@@ -687,20 +567,14 @@ Rts2DevClientExecutor::stateChanged (Rts2ServerState * state)
 	Rts2DevClient::stateChanged (state);
 }
 
-
-Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientSelector::Rts2DevClientSelector (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientImgproc::Rts2DevClientImgproc (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }
 
-
-Rts2DevClientGrb::Rts2DevClientGrb (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientGrb::Rts2DevClientGrb (Rts2Conn * _connection):Rts2DevClient (_connection)
 {
 }

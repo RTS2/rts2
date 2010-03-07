@@ -389,24 +389,32 @@ Rts2ConfigRaw::getString (const char *section, const char *valueName, std::strin
 	return 0;
 }
 
-
-int
-Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
+int Rts2ConfigRaw::getString (const char *section, const char *valueName, std::string & buf, const char *defVal)
 {
 	int ret;
-	clearVerboseEntry ();
+ 	clearVerboseEntry ();
 	ret = getString (section, valueName, buf);
 	if (ret)
-	{
+ 	{
 		buf = std::string (defVal);
-	}
-	setVerboseEntry ();
+ 	}
+ 	setVerboseEntry ();
 	return ret;
 }
 
+const char * Rts2ConfigRaw::getStringDefault (const char *section, const char *valueName, const char *defVal)
+{
+	clearVerboseEntry ();
+	Rts2ConfigValue *val = getValue (section, valueName);
+	if (!val)
+	{
+		return defVal;
+	}
+	setVerboseEntry ();
+	return val->getValue ().c_str ();
+}
 
-int
-Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
+int Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, std::vector<std::string> & value, bool verbose)
 {
 	std::string valbuf;
 	int ret;
@@ -443,18 +451,16 @@ Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &valu
 }
 
 
-int
-Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value, int defVal)
+int Rts2ConfigRaw::getIntegerDefault (const char *section, const char *valueName, int defVal)
 {
 	int ret;
+	int value;
 	clearVerboseEntry ();
 	ret = getInteger (section, valueName, value);
 	if (ret)
-	{
-		value = defVal;
-	}
+		return defVal;
 	setVerboseEntry ();
-	return ret;
+	return value;
 }
 
 
@@ -499,21 +505,19 @@ Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &valu
 }
 
 
-double
-Rts2ConfigRaw::getDouble (const char *section, const char *valueName)
+double Rts2ConfigRaw::getDoubleDefault (const char *section, const char *valueName, double val)
 {
 	std::string valbuf;
 	char *retv;
 	int ret;
 	ret = getString (section, valueName, valbuf);
 	if (ret)
-		return nan ("f");
+		return val;
 	return strtod (valbuf.c_str (), &retv);
 }
 
 
-int
-Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value)
+int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value)
 {
 	std::string valbuf;
 	char *retv;

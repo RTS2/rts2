@@ -24,10 +24,13 @@
 #include "rts2block.h"
 #include "rts2value.h"
 
-class Rts2Command;
 class Rts2ServerState;
 
 class Rts2Block;
+
+namespace rts2core
+{
+class Rts2Command;
 
 /**
  * Defines default classes for handling device information.
@@ -81,8 +84,20 @@ class Rts2DevClient:public Rts2Object
 		 */
 		virtual void newDataConn (int data_conn);
 
-		virtual void dataReceived (Rts2DataRead *data);
-		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
+		/**
+		 * Called when some data were received.
+		 *
+		 * @param data  pointer to Rts2DataRead object which received data.
+		 */
+		virtual void dataReceived (DataRead *data);
+
+		/**
+		 * Called when full image is received.
+		 *
+		 * @param data_conn data connection ID. Can be < 0 for shared memory data.
+		 * @param data      pointer to Rts2DataRead object holding full data.
+		 */
+		virtual void fullDataReceived (int data_conn, DataAbstractRead *data);
 
 		virtual void stateChanged (Rts2ServerState * state);
 
@@ -313,4 +328,6 @@ class Rts2DevClientGrb:public Rts2DevClient
 	public:
 		Rts2DevClientGrb (Rts2Conn * in_connection);
 };
+
+}
 #endif							 /* !__RTS2_DEVCLIENT__ */

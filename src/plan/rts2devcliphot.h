@@ -1,9 +1,11 @@
 #ifndef __RTS2_DEVCLIPHOT__
 #define __RTS2_DEVCLIPHOT__
 
-#include "rts2devscript.h"
+#include "devscript.h"
 
-class Rts2DevClientPhotExec:public Rts2DevClientPhot, public Rts2DevScript
+using namespace rts2script;
+
+class Rts2DevClientPhotExec:public Rts2DevClientPhot, public DevScript
 {
 	private:
 		// minFlux to be considered as success
@@ -51,7 +53,7 @@ class Rts2DevClientPhotExec:public Rts2DevClientPhot, public Rts2DevScript
 
 		virtual void idle ()
 		{
-			Rts2DevScript::idle ();
+			DevScript::idle ();
 			Rts2DevClientPhot::idle ();
 		}
 

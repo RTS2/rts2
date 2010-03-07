@@ -22,27 +22,35 @@
 
 #include "../utils/connfork.h"
 #include "../writers/rts2imagedb.h"
-#include "../utilsdb/rts2obs.h"
+#include "../utilsdb/observation.h"
 
 namespace rts2plan
 {
 
-typedef enum
-{ NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT }
-astrometry_stat_t;
+typedef enum { NOT_ASTROMETRY, TRASH, GET, DARK, BAD, FLAT } astrometry_stat_t;
 
 class ConnProcess:public rts2core::ConnFork
 {
+	public:
+		ConnProcess (Rts2Block * in_master, const char *in_exe, int in_timeout);
+
+		astrometry_stat_t getAstrometryStat () { return astrometryStat; }
+		
+		double getExposureEnd () { return expDate; };
+
+#ifdef HAVE_LIBJPEG
+		void setLastGoodJpeg (const char *_last_good_jpeg) { last_good_jpeg = _last_good_jpeg; }
+		void setLastTrashJpeg (const char *_last_trash_jpeg) { last_trash_jpeg = _last_trash_jpeg; }
+#endif
+
 	protected:
 		astrometry_stat_t astrometryStat;
-	public:
-		ConnProcess (Rts2Block * in_master,
-			const char *in_exe, int in_timeout);
+		double expDate;
 
-		astrometry_stat_t getAstrometryStat ()
-		{
-			return astrometryStat;
-		}
+#ifdef HAVE_LIBJPEG
+		const char *last_good_jpeg;
+		const char *last_trash_jpeg;
+#endif
 };
 
 /**
@@ -54,45 +62,42 @@ class ConnProcess:public rts2core::ConnFork
  *
  * Hence passing full image path will be sufficient for finding
  * it.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ConnImgProcess:public ConnProcess
 {
-	private:
-		char *imgPath;
+	public:
+		/**
+		 *
+		 * @param _end_event  If set to value > 0, this event will be emmited at the end of image processing, with image passed
+		 *	as argument. Then the standard image processing - bad to trash, with astrometry to archive - will not be run.
+		 */
+		ConnImgProcess (Rts2Block *_master, const char *_exe, const char *_path, int _timeout, int _end_event = -1);
+		virtual ~ ConnImgProcess (void);
 
-		long id;
-		double ra, dec, ra_err, dec_err;
+		virtual int init ();
 
-#ifdef HAVE_PGSQL
-		void sendProcEndMail (Rts2ImageDb * image);
-#else
-		void sendOKMail (Rts2Image * image)
-		{
-		}
-
-		void sendProcEndMail (Rts2Image * image)
-		{
-		}
-#endif
+		virtual int newProcess ();
+		virtual void processLine ();
 
 	protected:
 		virtual void connectionError (int last_data_size);
 
-	public:
-		ConnImgProcess (Rts2Block * in_master,
-			const char *in_exe, const char *in_path,
-			int in_timeout);
-		virtual ~ ConnImgProcess (void);
+	private:
+		std::string imgPath;
 
-		virtual int newProcess ();
-		virtual void processLine ();
+		long id;
+		double ra, dec, ra_err, dec_err;
+
+		int end_event;
 };
 
 class ConnObsProcess:public ConnProcess
 {
 	private:
 		int obsId;
-		Rts2Obs *obs;
+		rts2db::Observation *obs;
 
 		char *obsIdCh;
 		char *obsTarIdCh;

@@ -38,7 +38,7 @@ imageProceRes;
  * to an Rts2Image.
  *
  */
-class Rts2DevClientCameraImage:public Rts2DevClientCamera
+class Rts2DevClientCameraImage:public rts2core::Rts2DevClientCamera
 {
 	private:
 		void writeFilter (Rts2Image *img);
@@ -102,7 +102,7 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		virtual void postEvent (Rts2Event * event);
 
 		virtual void newDataConn (int data_conn);
-		virtual void fullDataReceived (int data_conn, Rts2DataRead *data);
+		virtual void fullDataReceived (int data_conn, rts2core::DataAbstractRead *data);
 		virtual Rts2Image *createImage (const struct timeval *expStart);
 		virtual void beforeProcess (Rts2Image * image);
 
@@ -124,7 +124,7 @@ class Rts2DevClientCameraImage:public Rts2DevClientCamera
 		}
 };
 
-class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
+class Rts2DevClientTelescopeImage:public rts2core::Rts2DevClientTelescope
 {
 	public:
 		Rts2DevClientTelescopeImage (Rts2Conn * in_connection);
@@ -137,14 +137,14 @@ class Rts2DevClientTelescopeImage:public Rts2DevClientTelescope
 		double getDistance (struct ln_equ_posn *in_pos);
 };
 
-class Rts2DevClientFocusImage:public Rts2DevClientFocus
+class Rts2DevClientFocusImage:public rts2core::Rts2DevClientFocus
 {
 	public:
 		Rts2DevClientFocusImage (Rts2Conn * in_connection);
 		virtual void postEvent (Rts2Event * event);
 };
 
-class Rts2DevClientWriteImage:public Rts2DevClient
+class Rts2DevClientWriteImage:public rts2core::Rts2DevClient
 {
 	public:
 		Rts2DevClientWriteImage (Rts2Conn * in_connection);
@@ -154,19 +154,19 @@ class Rts2DevClientWriteImage:public Rts2DevClient
 		virtual void infoFailed ();
 };
 
-class Rts2CommandQueImage:public Rts2Command
+class Rts2CommandQueImage:public rts2core::Rts2Command
 {
 	public:
 		Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image);
 };
 
-class Rts2CommandQueFlat:public Rts2Command
+class Rts2CommandQueFlat:public rts2core::Rts2Command
 {
 	public:
 		Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image);
 };
 
-class Rts2CommandQueObs:public Rts2Command
+class Rts2CommandQueObs:public rts2core::Rts2Command
 {
 	public:
 		Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId);

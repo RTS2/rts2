@@ -25,6 +25,8 @@
 #include <sstream>
 #include <iomanip>
 
+using namespace rts2db;
+
 Rts2Plan::Rts2Plan ()
 {
 	plan_id = -1;
@@ -283,16 +285,14 @@ Rts2Plan::getTarget ()
 	return target;
 }
 
-
-Rts2Obs *
-Rts2Plan::getObservation ()
+Observation * Rts2Plan::getObservation ()
 {
 	int ret;
 	if (observation)
 		return observation;
 	if (obs_id <= 0)
 		return NULL;
-	observation = new Rts2Obs (obs_id);
+	observation = new Observation (obs_id);
 	ret = observation->load ();
 	if (ret)
 	{

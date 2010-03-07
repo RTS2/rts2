@@ -22,8 +22,10 @@
 #include <arpa/inet.h>
 
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <strings.h>
 
 namespace rts2sensord
 {

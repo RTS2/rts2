@@ -19,7 +19,7 @@ rts2_focusd_dummy_SOURCES = dummy.cpp
 
 rts2_focusd_opentpl_SOURCES = opentpl.cpp
 
-EXTRA_DIST = ""
+EXTRA_DIST = 
 
 if FLI
 bin_PROGRAMS += rts2-focusd-fli

@@ -40,61 +40,80 @@
  */
 class Rts2Daemon:public Rts2Block
 {
-	private:
-		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
-		enum
-		{ DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK }
-		daemonize;
-		int listen_sock;
-		void addConnectionSock (int in_sock);
-		const char * lock_fname;
-		int lock_file;
-
-		// daemon state
-		int state;
-
-		Rts2CondValueVector values;
-		// values which do not change, they are send only once at connection
-		// initialization
-		Rts2ValueVector constValues;
-
-		// This vector holds list of values which are currenlty beeing changed
-		// It is used to manage BOP mask
-		Rts2ValueVector bopValues;
-
-		Rts2ValueTime *info_time;
-
-		double idleInfoInterval;
-
+	public:
 		/**
-		 * Adds value to list of values supported by daemon.
+		 * Construct daemon.
 		 *
-		 * @param value Rts2Value which will be added.
+		 * @param _argc         Number of arguments.
+		 * @param _argv         Arguments values.
+		 * @param _init_state   Initial state.
 		 */
-		void addValue (Rts2Value * value, int queCondition = 0, bool save_value = false);
+		Rts2Daemon (int in_argc, char **in_argv, int _init_state = 0);
+
+		virtual ~ Rts2Daemon (void);
+		virtual int run ();
 
 		/**
-		 * Holds vector of values which are indendet to be saved. There
-		 * are two methods, saveValues and loadValues.  saveValues is
-		 * called from setValue(Rts2Value,char,Rts2ValueVector) before
-		 * first value value is changed. Once values are saved,
-		 * values_were_saved turns to true and we don't call saveValues
-		 * before loadValues is called.  loadValues reset
-		 * values_were_saved flag, load all values from savedValues
+		 * Init daemon.
+		 * This is call to init daemon. It calls @see Rts2Daemon::init and @see Rts2Daemon::initValues
+		 * functions to complete daemon initialization.
 		 */
-		Rts2ValueVector savedValues;
-
-		void saveValue (Rts2CondValue * val);
-
-		bool doHupIdleLoop;
+		void initDaemon ();
+		
+		/**
+		 * Set timer to send updates every interval seconds. This method is designed to keep user 
+		 * infromed about progress of actions which rapidly changes values read by info call.
+		 *
+		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval 
+		 *   seconds and distribute updates to all connected clients. If <= 0, disables automatic info.
+		 *
+		 * @see info()
+		 */  
+		void setIdleInfoInterval (double interval);
 
 		/**
-		 * Prefix (directory) for lock file.
+		 * Updates info_time to current time.
 		 */
-		const char *lockPrefix;
+		void updateInfoTime ()
+		{
+			info_time->setValueDouble (getNow ());
+		}
+
+		virtual void postEvent (Rts2Event *event);
+
+		virtual void forkedInstance ();
+		virtual void sendMessage (messageType_t in_messageType,
+			const char *in_messageString);
+		virtual void centraldConnRunning (Rts2Conn *conn);
+		virtual void centraldConnBroken (Rts2Conn *conn);
+
+		virtual int baseInfo ();
+		int baseInfo (Rts2Conn * conn);
+		int sendBaseInfo (Rts2Conn * conn);
+
+		virtual int info ();
+		int info (Rts2Conn * conn);
+		int infoAll ();
+		void constInfoAll ();
+		int sendInfo (Rts2Conn * conn, bool forceSend = false);
+
+		int sendMetaInfo (Rts2Conn * conn);
+
+		virtual int setValue (Rts2Conn * conn, bool overwriteSaved);
+
+		/**
+		 * Return full device state. You are then responsible
+		 * to use approproate mask defined in status.h to extract
+		 * from state information that you want.
+		 *
+		 * @return Block state.
+		 */
+		int getState ()
+		{
+			return state;
+		}
 
 	protected:
-		
 		/**
 		 * Delete all saved reference of given value.
 		 *
@@ -117,7 +136,7 @@ class Rts2Daemon:public Rts2Block
 		void checkValueSave (Rts2Value *val);
 
 		int checkLockFile (const char *_lock_fname);
-		void setNotDeamonize ()
+		void setNotDaemonize ()
 		{
 			daemonize = DONT_DAEMONIZE;
 		}
@@ -136,7 +155,7 @@ class Rts2Daemon:public Rts2Block
 		 */
 		virtual bool isRunning (Rts2Conn *conn) = 0;
 
-		int doDeamonize ();
+		int doDaemonize ();
 
 		/**
 		 * Set lock prefix.
@@ -278,15 +297,41 @@ class Rts2Daemon:public Rts2Block
 		void checkBopStatus ();
 
 		/**
-		 * Set value. That one should be owerwrited in descendants.
+		 * Set value. This is the function that get called when user want to change some value, either interactively through
+		 * rts2-mon, XML-RPC or from the script. You can overwrite this function in descendants to allow additional variables 
+		 * beiing overwritten. If variable has flag RTS2_VALUE_WRITABLE, default implemetation returns sucess. If setting variable
+		 * involves some special commands being send to the device, you most probably want to overwrite setValue, and provides
+		 * set action for your values in it.
+		 *
+		 * Suppose you have variables var1 and var2, which you would like to be settable by user. When user set var1, system will just change
+		 * value and pick it up next time it will use it. If user set integer value var2, method setVar2 should be called to communicate
+		 * the change to the underliing hardware. Then your setValueMethod should looks like:
+		 *
+		 * @code
+		 * class MyClass:public MyParent
+		 * {
+		 *   ....
+		 *   protected:
+		 *       virtual int setValue (Rts2Value * old_value, Rts2Value *new_value)
+		 *       {
+		 *             if (old_value == var1)
+		 *                   return 0;
+		 *             if (old_value == var2)
+		 *                   return setVar2 (new_value->getValueInteger ()) == 0 ? 0 : -2;
+		 *             return MyParent::setValue (old_value, new_value);
+	         *       }
+		 *   ...
+		 * };
+		 *
+		 * @endcode
 		 *
 		 * @param  old_value	Old value (pointer), can be directly
-		 * 	accesed th with pointer stored in object.
-		 * @param  new_value	New value.
+		 *        accesed with the pointer stored in object.
+		 * @param new_value	New value.
 		 *
-		 * @return 1 when value can be set, but it will take longer time to perform,
-		 * 0 when value can be se imedietly, -1 when value set was qued and -2 on an
-		 * error.
+		 * @return 1 when value can be set, but it will take longer
+		 * time to perform, 0 when value can be se immediately, -1 when
+		 * value set was queued and -2 on an error.
 		 */
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 
@@ -362,69 +407,7 @@ class Rts2Daemon:public Rts2Block
 			return getNow () - info_time->getValueDouble ();	
 		}
 
-	public:
-		/**
-		 * Construct daemon.
-		 *
-		 * @param _argc         Number of arguments.
-		 * @param _argv         Arguments values.
-		 * @param _init_state   Initial state.
-		 */
-		Rts2Daemon (int in_argc, char **in_argv, int _init_state = 0);
 
-		virtual ~ Rts2Daemon (void);
-		virtual int run ();
-
-		/**
-		 * Init daemon.
-		 * This is call to init daemon. It calls @see Rts2Daemon::init and @see Rts2Daemon::initValues
-		 * functions to complete daemon initialization.
-		 */
-		void initDaemon ();
-		
-		/**
-		 * Set timer to send updates every interval seconds. This method is designed to keep user 
-		 * infromed about progress of actions which rapidly changes values read by info call.
-		 *
-		 * @param interval If > 0, set idle info interval to this value. Daemon will then call info method every interval 
-		 *   seconds and distribute updates to all connected clients. If <= 0, disables automatic info.
-		 *
-		 * @see info()
-		 */  
-		void setIdleInfoInterval (double interval);
-
-		/**
-		 * Updates info_time to current time.
-		 */
-		void updateInfoTime ()
-		{
-			info_time->setValueDouble (getNow ());
-		}
-
-		virtual void postEvent (Rts2Event *event);
-
-		virtual void forkedInstance ();
-		virtual void sendMessage (messageType_t in_messageType,
-			const char *in_messageString);
-		virtual void centraldConnRunning (Rts2Conn *conn);
-		virtual void centraldConnBroken (Rts2Conn *conn);
-
-		virtual int baseInfo ();
-		int baseInfo (Rts2Conn * conn);
-		int sendBaseInfo (Rts2Conn * conn);
-
-		virtual int info ();
-		int info (Rts2Conn * conn);
-		int infoAll ();
-		void constInfoAll ();
-		int sendInfo (Rts2Conn * conn, bool forceSend = false);
-
-		int sendMetaInfo (Rts2Conn * conn);
-
-		virtual int setValue (Rts2Conn * conn, bool overwriteSaved);
-
-		// state management functions
-	protected:
 		/**
 		 * Called to set new state value
 		 */
@@ -448,23 +431,11 @@ class Rts2Daemon:public Rts2Block
 		 * it after HUP signal, RTS2 does not guarantee that it will be still valid.
 		 */
 		virtual void signaledHUP ();
-	public:
+
 		/**
 		 * Called when state is changed.
 		 */
 		void maskState (int state_mask, int new_state, const char *description = NULL);
-
-		/**
-		 * Return full device state. You are then responsible
-		 * to use approproate mask defined in status.h to extract
-		 * from state information that you want.
-		 *
-		 * @return Block state.
-		 */
-		int getState ()
-		{
-			return state;
-		}
 
 		/**
 		 * Return daemon state without ERROR information.
@@ -502,15 +473,67 @@ class Rts2Daemon:public Rts2Block
 		 * Set weather state.
 		 *
 		 * @param good_weather If true, weather is good.
+		 * @param msg Text message for state transition - in case of bad weather, it will be recorded in centrald
 		 */
-		void setWeatherState (bool good_weather)
+		void setWeatherState (bool good_weather, const char *msg)
 		{
 			if (good_weather)
-				maskState (WEATHER_MASK, GOOD_WEATHER, "weather set to good");
+				maskState (WEATHER_MASK, GOOD_WEATHER, msg);
 			else
-				maskState (WEATHER_MASK, BAD_WEATHER, "weather set to bad");
+				maskState (WEATHER_MASK, BAD_WEATHER, msg);
 		}
 
 		virtual void sigHUP (int sig);
+
+	private:
+		// 0 - don't daemonize, 1 - do daemonize, 2 - is already daemonized, 3 - daemonized & centrald is running, don't print to stdout
+		enum { DONT_DAEMONIZE, DO_DAEMONIZE, IS_DAEMONIZED, CENTRALD_OK } daemonize;
+		int listen_sock;
+		void addConnectionSock (int in_sock);
+		const char * lock_fname;
+		int lock_file;
+
+		// daemon state
+		int state;
+
+		Rts2CondValueVector values;
+		// values which do not change, they are send only once at connection
+		// initialization
+		Rts2ValueVector constValues;
+
+		// This vector holds list of values which are currenlty beeing changed
+		// It is used to manage BOP mask
+		Rts2ValueVector bopValues;
+
+		Rts2ValueTime *info_time;
+
+		double idleInfoInterval;
+
+		/**
+		 * Adds value to list of values supported by daemon.
+		 *
+		 * @param value Rts2Value which will be added.
+		 */
+		void addValue (Rts2Value * value, int queCondition = 0, bool save_value = false);
+
+		/**
+		 * Holds vector of values which are indendet to be saved. There
+		 * are two methods, saveValues and loadValues.  saveValues is
+		 * called from setValue(Rts2Value,char,Rts2ValueVector) before
+		 * first value value is changed. Once values are saved,
+		 * values_were_saved turns to true and we don't call saveValues
+		 * before loadValues is called.  loadValues reset
+		 * values_were_saved flag, load all values from savedValues
+		 */
+		Rts2ValueVector savedValues;
+
+		void saveValue (Rts2CondValue * val);
+
+		bool doHupIdleLoop;
+
+		/**
+		 * Prefix (directory) for lock file.
+		 */
+		const char *lockPrefix;
 };
 #endif							 /* ! __RTS2_DAEMON__ */

@@ -133,18 +133,45 @@ class ValueBoxDouble:public ValueBox, Rts2NWindowEditDigits
 };
 
 /**
- * Holds edit box for selection value.
+ * Common ancestor for selection boxes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueBoxSelection:public ValueBox, Rts2NSelWindow
+class AbstractBoxSelection:public ValueBox, public Rts2NSelWindow
+{
+	public:
+		AbstractBoxSelection (Rts2NWindow * top, Rts2Value * _val, int _x, int _y);
+		virtual keyRet injectKey (int key);
+		virtual bool setCursor ();
+	protected:
+		void drawRow (const char *_text);
+};
+
+/**
+ * Holds edit box for selection value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueBoxSelection:public AbstractBoxSelection
 {
 	public:
 		ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y);
-		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
-		virtual bool setCursor ();
 };
 
+/**
+ * Selection box for time increase.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueBoxTimeDiff:public AbstractBoxSelection
+{
+	public:
+		ValueBoxTimeDiff (Rts2NWindow * top, Rts2ValueTime *_val, int _x, int _y);
+		virtual void draw ();
+		virtual void sendValue (Rts2Conn * connection);
+};
 
 /**
  * Provides edit box for editting rectangle (4 numbers)
@@ -165,6 +192,8 @@ class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
 
 /**
  * Provides edit box for editting  RA DeC
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxRaDec:public ValueBox, Rts2NWindowEdit
 {
@@ -179,7 +208,6 @@ class ValueBoxRaDec:public ValueBox, Rts2NWindowEdit
 		virtual void sendValue (Rts2Conn * connection);
 		virtual bool setCursor ();
 };
-
 
 }
 

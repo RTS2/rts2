@@ -30,14 +30,13 @@
 
 using namespace rts2xmlrpc;
 
-
-void
-Events::parseState (xmlNodePtr event, std::string deviceName)
+void Events::parseState (xmlNodePtr event, std::string deviceName)
 {
 	xmlAttrPtr properties = event->properties;
 	int changeMask = -1;
 	int newStateValue = -1;
 	std::string commandName;
+	std::string condition;
 
 	for (; properties; properties = properties->next)
 	{
@@ -49,19 +48,26 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 		{
 			newStateValue = atoi ((char *) properties->children->content);
 		}
+		else if (xmlStrEqual (properties->name, (xmlChar *) "if"))
+		{
+			condition = std::string ((char *) properties->children->content);
+			std::cout << "if " << condition << std::endl;
+		}
+		else
+		{
+			throw XmlUnexpectedAttribute (event, (char *) properties->name);
+		}
 	}
 	if (newStateValue < 0)
-		throw XmlMissingAttribute (event, "state");
+		throw XmlUnexpectedAttribute (event, "state");
 
 	if (changeMask < 0)
 		changeMask = newStateValue;
 	
 	xmlNodePtr action = event->children;
 	if (action == NULL)
-	{
-		logStream (MESSAGE_ERROR) << "device on line " << xmlGetLineNo (event) << " does not specify action type" << sendLog;
-		return;
-	}
+		throw XmlEmptyNode (event);
+
 	for (; action != NULL; action = action->next)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
@@ -71,12 +77,17 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
 			if (action->children == NULL)
-			{
-				logStream (MESSAGE_ERROR) << "no action specified on line " << action->line << sendLog;
-				return;
-			}
+				throw XmlEmptyNode (action);
+			
 			commandName = std::string ((char *) action->children->content);
 			stateCommands.push_back (new StateChangeCommand (deviceName, changeMask, newStateValue, commandName));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
+		{
+			StateChangeEmail *email = new StateChangeEmail (deviceName, changeMask, newStateValue);
+			email->parse (action);
+			// add to, subject, body,..
+			stateCommands.push_back (email);
 		}
 		else
 		{
@@ -85,10 +96,10 @@ Events::parseState (xmlNodePtr event, std::string deviceName)
 	}
 }
 
-
-void
-Events::parseValue (xmlNodePtr event, std::string deviceName)
+void Events::parseValue (xmlNodePtr event, std::string deviceName)
 {
+	std::string condition;
+
 	xmlAttrPtr valueName = xmlHasProp (event, (xmlChar *) "name");
 	if (valueName == NULL)
 		throw XmlMissingAttribute (event, "name");
@@ -103,12 +114,19 @@ Events::parseValue (xmlNodePtr event, std::string deviceName)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
-			valueCommands.push_back (new ValueChangeRecord (deviceName, std::string ((char *) valueName->children->content), cadency));
+			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency));
 		}
 		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
-			valueCommands.push_back (new ValueChangeCommand (deviceName, std::string ((char *) valueName->children->content), cadency,
+			valueCommands.push_back (new ValueChangeCommand (master, deviceName, std::string ((char *) valueName->children->content), cadency,
 				std::string ((char *) action->children->content)));
+		}
+		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
+		{
+			ValueChangeEmail *email = new ValueChangeEmail (master, deviceName, std::string ((char *) valueName->children->content), cadency);
+			email->parse (action);
+			// add to, subject, body,..
+			valueCommands.push_back (email);
 		}
 		else
 		{
@@ -117,59 +135,63 @@ Events::parseValue (xmlNodePtr event, std::string deviceName)
 	}
 }
 
-
-void
-Events::load (const char *file)
+void Events::parseHttp (xmlNodePtr ev)
 {
-	stateCommands.clear ();
-	valueCommands.clear ();
-
-	xmlDoc *doc = NULL;
-	xmlNodePtr root_element = NULL;
-
-	LIBXML_TEST_VERSION
-
-	xmlLineNumbersDefault (1);
-
-	doc = xmlReadFile (file, NULL, XML_PARSE_NOBLANKS);
-	if (doc == NULL)
+	for (; ev; ev = ev->next)
 	{
-		logStream (MESSAGE_ERROR) << "cannot parse XML file " << file << sendLog;
-		return;
+		if (xmlStrEqual (ev->name, (xmlChar *) "public"))
+		{
+			if (ev->children == NULL || ev->children->content == NULL)
+				throw XmlMissingElement (ev, "content of public path");
+			publicPaths.push_back (std::string ((char *) ev->children->content));
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "dir"))
+		{
+			if (ev->children != NULL)
+				throw XmlError ("dir node must be empty");
+
+			xmlAttrPtr path = xmlHasProp (ev, (xmlChar *) "path");
+			if (path == NULL)
+				throw XmlMissingAttribute (ev, "path");
+
+			xmlAttrPtr to = xmlHasProp (ev, (xmlChar *) "to");
+			if (to == NULL)
+				throw XmlMissingAttribute (ev, "to");
+
+			dirs.push_back (DirectoryMapping ((const char *) path->children->content, (const char *) to->children->content));
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "allsky"))
+		{
+			if (ev->children == NULL || ev->children->content == NULL)
+				throw XmlMissingElement (ev, "content of allsky path");
+			allskyPaths.push_back (std::string ((char *) ev->children->content));
+		}
+		else
+		{
+			throw XmlUnexpectedNode (ev);
+		}
 	}
+}
 
-	root_element = xmlDocGetRootElement (doc);
-
-	if (strcmp ((const char *) root_element->name, "events"))
+void Events::parseEvents (xmlNodePtr ev)
+{
+	for (; ev; ev = ev->next)
 	{
-		logStream (MESSAGE_ERROR) << "invalid root element name, expected events, is " << root_element->name << sendLog;
-		return;
-	}
-
-	// traverse triggers..
-	xmlNodePtr device = root_element->children;
-	if (device == NULL)
-	{
-		logStream (MESSAGE_WARNING) << "no device specified" << sendLog;
-		return;
-	}
-	for (; device; device=device->next)
-	{
-		if (xmlStrEqual (device->name, (xmlChar *) "device"))
+		if (xmlStrEqual (ev->name, (xmlChar *) "device"))
 		{
 			// parse it...
 			std::string deviceName;
 			std::string commandName;
 
 			// does not have name..
-			xmlAttrPtr attrname = xmlHasProp (device, (xmlChar *) "name");
+			xmlAttrPtr attrname = xmlHasProp (ev, (xmlChar *) "name");
 			if (attrname == NULL)
 			{
-				throw XmlMissingAttribute (device, "name");
+				throw XmlMissingAttribute (ev, "name");
 			}
 			deviceName = std::string ((char *) attrname->children->content);
 
-			for (xmlNodePtr event = device->children; event != NULL; event = event->next)
+			for (xmlNodePtr event = ev->children; event != NULL; event = event->next)
 			{
 				// switch on action
 				if (xmlStrEqual (event->name, (xmlChar *) "state"))
@@ -188,10 +210,80 @@ Events::load (const char *file)
 		}
 		else
 		{
-			throw XmlUnexpectedNode (device);
+			throw XmlUnexpectedNode (ev);
+		}
+	}
+}
+
+void Events::load (const char *file)
+{
+	stateCommands.clear ();
+	valueCommands.clear ();
+	publicPaths.clear ();
+	allskyPaths.clear ();
+
+	xmlDoc *doc = NULL;
+	xmlNodePtr root_element = NULL;
+
+	LIBXML_TEST_VERSION
+
+	xmlLineNumbersDefault (1);
+
+	doc = xmlReadFile (file, NULL, XML_PARSE_NOBLANKS);
+	if (doc == NULL)
+	{
+		logStream (MESSAGE_ERROR) << "cannot parse XML file " << file << sendLog;
+		return;
+	}
+
+	root_element = xmlDocGetRootElement (doc);
+
+	if (strcmp ((const char *) root_element->name, "config"))
+		throw XmlUnexpectedNode (root_element);
+
+	// traverse triggers..
+	xmlNodePtr ev = root_element->children;
+	if (ev == NULL)
+	{
+		logStream (MESSAGE_WARNING) << "no device specified" << sendLog;
+		return;
+	}
+	for (; ev; ev = ev->next)
+	{
+		if (xmlStrEqual (ev->name, (xmlChar *) "http"))
+		{
+			parseHttp (ev->children);
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "events"))
+		{
+			parseEvents (ev->children);
+		}
+		else
+		{
+			throw XmlUnexpectedNode (ev);
 		}
 	}
 
 	xmlFreeDoc (doc);
 	xmlCleanupParser ();
+}
+
+bool Events::isPublic (std::string path)
+{
+	for (std::vector <std::string>::iterator iter = publicPaths.begin (); iter != publicPaths.end (); iter++)
+	{
+		// ends with *
+		int l = iter->length () - 1;
+		if ((*iter)[l] == '*')
+		{
+			if (path.substr (0, l - 1) == iter->substr (0, l - 1))
+				return true;
+		}
+		else
+		{
+			if (path == *iter)
+				return true;
+		}
+	}
+	return false;
 }

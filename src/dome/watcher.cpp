@@ -82,8 +82,7 @@ class Watcher:public Dome
 
 }
 
-Watcher::Watcher (int argc, char **argv)
-:Dome (argc, argv)
+Watcher::Watcher (int argc, char **argv):Dome (argc, argv)
 {
 	createValue (sw_state, "sw_state", "dome state", false);
 	smsExec = NULL;
@@ -92,7 +91,6 @@ Watcher::Watcher (int argc, char **argv)
 	domeFailed = false;
 }
 
-
 Watcher::~Watcher (void)
 {
 	outb (0, BASE);
@@ -100,9 +98,7 @@ Watcher::~Watcher (void)
 	outb (0, BASE + 1);
 }
 
-
-int
-Watcher::processOption (int in_opt)
+int Watcher::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -115,9 +111,7 @@ Watcher::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Watcher::init ()
+int Watcher::init ()
 {
 	int ret, i;
 	ret = Dome::init ();
@@ -152,9 +146,7 @@ Watcher::init ()
 	return 0;
 }
 
-
-int
-Watcher::info ()
+int Watcher::info ()
 {
 	// switches are both off either when we move enclosure or when dome failed
 	if (domeFailed || timeOpenClose > 0)
@@ -163,9 +155,7 @@ Watcher::info ()
 	return Dome::info ();
 }
 
-
-bool
-Watcher::isMoving ()
+bool Watcher::isMoving ()
 {
 	int result;
 	int moving = 0;
@@ -186,9 +176,7 @@ Watcher::isMoving ()
 	return false;
 }
 
-
-void
-Watcher::openDomeReal ()
+void Watcher::openDomeReal ()
 {
 	outb (OPEN, BASE);
 
@@ -199,9 +187,7 @@ Watcher::openDomeReal ()
 	sleep (5);
 }
 
-
-int
-Watcher::startOpen ()
+int Watcher::startOpen ()
 {
 	if (isMoving () || dome_state == WATCHER_DOME_OPEN)
 		return 0;
@@ -238,9 +224,7 @@ Watcher::isOpened ()
 	return (getState () & DOME_DOME_MASK) == DOME_CLOSED ? 0 : -2;
 }
 
-
-int
-Watcher::endOpen ()
+int Watcher::endOpen ()
 {
 	timeOpenClose = 0;
 	dome_state = WATCHER_DOME_OPEN;
@@ -251,9 +235,7 @@ Watcher::endOpen ()
 	return 0;
 }
 
-
-void
-Watcher::closeDomeReal ()
+void Watcher::closeDomeReal ()
 {
 	outb (CLOSE, BASE);
 
@@ -264,9 +246,7 @@ Watcher::closeDomeReal ()
 	sleep (5);
 }
 
-
-int
-Watcher::startClose ()
+int Watcher::startClose ()
 {
 	// we cannot close dome when we are still moving
 	if (isMoving () || dome_state == WATCHER_DOME_CLOSED)
@@ -280,9 +260,7 @@ Watcher::startClose ()
 	return 0;
 }
 
-
-long
-Watcher::isClosed ()
+long Watcher::isClosed ()
 {
 	time_t now;
 	time (&now);
@@ -302,9 +280,7 @@ Watcher::isClosed ()
 	return (getState () & DOME_DOME_MASK) == DOME_OPENED ? 0 : -2;
 }
 
-
-int
-Watcher::endClose ()
+int Watcher::endClose ()
 {
 	timeOpenClose = 0;
 	dome_state = WATCHER_DOME_CLOSED;
@@ -315,17 +291,13 @@ Watcher::endClose ()
 	return 0;
 }
 
-
-const char *
-Watcher::isOnString (int mask)
+const char *Watcher::isOnString (int mask)
 {
 	return (sw_state->getValueInteger () & mask) ? "on" : "off";
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Watcher device = Watcher (argc, argv);
+	Watcher device (argc, argv);
 	return device.run ();
 }

@@ -55,7 +55,6 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		virtual int willConnect (Rts2Address * in_addr);
 		virtual Rts2DevClient *createOtherType (Rts2Conn *conn, int other_device_type);
 		virtual void deviceReady (Rts2Conn * conn);
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
 		Rts2Scriptor (int argc, char **argv);
 		virtual ~Rts2Scriptor (void);
@@ -66,11 +65,10 @@ class Rts2Scriptor:public Rts2Device, public Rts2ScriptInterface
 		virtual void getPosition (struct ln_equ_posn *posn, double JD);
 };
 
-Rts2Scriptor::Rts2Scriptor (int in_argc, char **in_argv)
-:Rts2Device (in_argc, in_argv, DEVICE_TYPE_SCRIPTOR, "SCRIPTOR"), Rts2ScriptInterface ()
+Rts2Scriptor::Rts2Scriptor (int argc, char **argv):Rts2Device (argc, argv, DEVICE_TYPE_SCRIPTOR, "SCRIPTOR"), Rts2ScriptInterface ()
 {
 	createValue (scriptCount, "script_count", "number of scripts execuced", false);
-	createValue (expandPath, "expand_path", "expand path for new images", false);
+	createValue (expandPath, "expand_path", "expand path for new images", false, RTS2_VALUE_WRITABLE);
 	expandPath->setValueCharArr ("%f");
 
 	createValue (scriptGen, "script_generator", "command which gets state and generates next script", false);
@@ -87,9 +85,7 @@ Rts2Scriptor::~Rts2Scriptor (void)
 {
 }
 
-
-int
-Rts2Scriptor::init ()
+int Rts2Scriptor::init ()
 {
 	int ret;
 	ret = Rts2Device::init ();
@@ -102,9 +98,7 @@ Rts2Scriptor::init ()
 	return 0;
 }
 
-
-int
-Rts2Scriptor::processOption (int in_opt)
+int Rts2Scriptor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -120,18 +114,14 @@ Rts2Scriptor::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2Scriptor::willConnect (Rts2Address * in_addr)
+int Rts2Scriptor::willConnect (Rts2Address * in_addr)
 {
 	if (in_addr->getType () < getDeviceType ())
 		return 1;
 	return 0;
 }
 
-
-Rts2DevClient *
-Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_type)
+Rts2DevClient * Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_type)
 {
 	switch (other_device_type)
 	{
@@ -142,9 +132,7 @@ Rts2Scriptor::createOtherType (Rts2Conn *conn, int other_device_type)
 	}
 }
 
-
-void
-Rts2Scriptor::deviceReady (Rts2Conn * conn)
+void Rts2Scriptor::deviceReady (Rts2Conn * conn)
 {
 	// add variable for this device..
 	Rts2ValueString *stringVal;
@@ -156,18 +144,7 @@ Rts2Scriptor::deviceReady (Rts2Conn * conn)
 //	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 
-
-int
-Rts2Scriptor::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == expandPath)
-		return 0;
-	return Rts2Device::setValue (old_value, new_value);
-}
-
-
-void
-Rts2Scriptor::postEvent (Rts2Event * event)
+void Rts2Scriptor::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -181,9 +158,7 @@ Rts2Scriptor::postEvent (Rts2Event * event)
 	Rts2Device::postEvent (event);
 }
 
-
-int
-Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
+int Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 {
 	std::ostringstream cmd;
 	cmd << scriptGen->getSelName () << " " << getMasterState () << " " << in_deviceName;
@@ -213,18 +188,14 @@ Rts2Scriptor::findScript (std::string in_deviceName, std::string & buf)
 	return 0;
 }
 
-
-void
-Rts2Scriptor::getPosition (struct ln_equ_posn *posn, double JD)
+void Rts2Scriptor::getPosition (struct ln_equ_posn *posn, double JD)
 {
 	posn->ra = 20;
 	posn->dec = 20;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2Scriptor scriptor = Rts2Scriptor (argc, argv);
+	Rts2Scriptor scriptor (argc, argv);
 	return scriptor.run ();
 }

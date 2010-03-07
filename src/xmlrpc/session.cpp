@@ -21,7 +21,7 @@
 
 #include "session.h"
 
-using namespace rts2xml;
+using namespace rts2xmlrpc;
 
 Session::Session (std::string _username, time_t _expires)
 {

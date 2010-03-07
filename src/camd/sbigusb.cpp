@@ -133,19 +133,17 @@ class Sbig:public Camera
 		virtual long camWaitExpose ();
 		virtual int camStopExpose ();
 		virtual int camBox (int x, int y, int width, int height);
-		virtual int camStopRead ();
 		virtual int camCoolMax ();
 		virtual int camCoolHold ();
 		virtual int setCoolTemp (float new_temp);
 		virtual int afterNight ();
 };
 
-};
+}
 
 using namespace rts2camd;
 
-int
-Sbig::initChips ()
+int Sbig::initChips ()
 {
 	GetCCDInfoParams req;
 	req.request = CCD_INFO_IMAGING;
@@ -154,8 +152,7 @@ Sbig::initChips ()
 	return Camera::initChips ();
 };
 
-int
-Sbig::startExposure ()
+int Sbig::startExposure ()
 {
 	PAR_ERROR ret;
 	if (!pcam->CheckLink ())
@@ -173,9 +170,7 @@ Sbig::startExposure ()
 	return checkSbigHw (ret);
 }
 
-
-long
-Sbig::isExposing ()
+long Sbig::isExposing ()
 {
 	long ret;
 	ret = Camera::isExposing ();
@@ -192,9 +187,7 @@ Sbig::isExposing ()
 	return 1;
 }
 
-
-int
-Sbig::readoutStart ()
+int Sbig::readoutStart ()
 {
 	StartReadoutParams srp;
 	srp.ccd = 0;
@@ -210,9 +203,7 @@ Sbig::readoutStart ()
 	return Camera::readoutStart ();
 }
 
-
-int
-Sbig::endReadout ()
+int Sbig::endReadout ()
 {
 	EndReadoutParams erp;
 	erp.ccd = 0;
@@ -220,9 +211,7 @@ Sbig::endReadout ()
 	return Camera::endReadout ();
 }
 
-
-int
-Sbig::doReadout ()
+int Sbig::doReadout ()
 {
 	int ret;
 
@@ -245,9 +234,7 @@ Sbig::doReadout ()
 	return -2;
 }
 
-
-int
-Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == tempRegulation)
 	{
@@ -274,9 +261,7 @@ Sbig::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
-Sbig::Sbig (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Sbig::Sbig (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempSet ();
@@ -284,35 +269,31 @@ Camera (in_argc, in_argv)
 
 	createExpType ();
 
-	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true);
+	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true, RTS2_VALUE_WRITABLE);
 	tempRegulation->addSelVal ("OFF");
 	tempRegulation->addSelVal ("TEMP");
 	tempRegulation->addSelVal ("POWER");
 
 	tempRegulation->setValueInteger (0);
 
-	createValue (coolingPower, "COOL_PWR", "cooling power", true);
+	createValue (coolingPower, "COOL_PWR", "cooling power", true, RTS2_VALUE_WRITABLE);
 	coolingPower->setValueInteger (0);
 
-	createValue (fan, "FAN", "camera fan state", true);
+	createValue (fan, "FAN", "camera fan state", true, RTS2_VALUE_WRITABLE);
 
 	pcam = NULL;
 	usb_port = 0;
 	reqSerialNumber = NULL;
 	addOption ('u', "usb_port", 1, "USB port number - defaults to 0");
-	addOption ('n', "serial_number", 1,
-		"SBIG serial number to accept for that camera");
+	addOption ('n', "serial_number", 1, "SBIG serial number to accept for that camera");
 }
-
 
 Sbig::~Sbig ()
 {
 	delete pcam;
 }
 
-
-int
-Sbig::processOption (int in_opt)
+int Sbig::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -335,9 +316,7 @@ Sbig::processOption (int in_opt)
 	return 0;
 }
 
-
-SBIG_DEVICE_TYPE
-Sbig::getDevType ()
+SBIG_DEVICE_TYPE Sbig::getDevType ()
 {
 	switch (usb_port)
 	{
@@ -357,9 +336,7 @@ Sbig::getDevType ()
 	}
 }
 
-
-int
-Sbig::init ()
+int Sbig::init ()
 {
 	int ret_c_init;
 	OpenDeviceParams odp;
@@ -455,9 +432,7 @@ Sbig::init ()
 	return initChips ();
 }
 
-
-int
-Sbig::info ()
+int Sbig::info ()
 {
 	QueryTemperatureStatusResults qtsr;
 	QueryCommandStatusParams qcsp;
@@ -475,16 +450,12 @@ Sbig::info ()
 	return Camera::info ();
 }
 
-
-int
-Sbig::camChipInfo ()
+int Sbig::camChipInfo ()
 {
 	return 0;
 }
 
-
-long
-Sbig::camWaitExpose ()
+long Sbig::camWaitExpose ()
 {
 	long ret;
 	ret = Camera::camWaitExpose ();
@@ -496,9 +467,7 @@ Sbig::camWaitExpose ()
 	return ret;
 }
 
-
-int
-Sbig::camStopExpose ()
+int Sbig::camStopExpose ()
 {
 	PAR_ERROR ret;
 	if (!pcam->CheckLink ())
@@ -513,23 +482,12 @@ Sbig::camStopExpose ()
 	return checkSbigHw (ret);
 }
 
-
-int
-Sbig::camBox (int x, int y, int width, int height)
+int Sbig::camBox (int x, int y, int width, int height)
 {
 	return -1;
 }
 
-
-int
-Sbig::camStopRead ()
-{
-	return -1;
-}
-
-
-int
-Sbig::fanState (int newFanState)
+int Sbig::fanState (int newFanState)
 {
 	PAR_ERROR ret;
 	MiscellaneousControlParams mcp;
@@ -540,9 +498,7 @@ Sbig::fanState (int newFanState)
 	return checkSbigHw (ret);
 }
 
-
-int
-Sbig::camCoolMax ()
+int Sbig::camCoolMax ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -554,9 +510,7 @@ Sbig::camCoolMax ()
 	return checkSbigHw (ret);
 }
 
-
-int
-Sbig::camCoolHold ()
+int Sbig::camCoolHold ()
 {
 	int ret;
 	ret = fanState (TRUE);
@@ -571,9 +525,7 @@ Sbig::camCoolHold ()
 	return fanState (TRUE);
 }
 
-
-int
-Sbig::setCoolTemp (float new_temp)
+int Sbig::setCoolTemp (float new_temp)
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -587,9 +539,7 @@ Sbig::setCoolTemp (float new_temp)
 	return checkSbigHw (ret);
 }
 
-
-int
-Sbig::afterNight ()
+int Sbig::afterNight ()
 {
 	SetTemperatureRegulationParams temp;
 	PAR_ERROR ret;
@@ -601,9 +551,7 @@ Sbig::afterNight ()
 	return checkSbigHw (ret);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Sbig device = Sbig (argc, argv);
 	return device.run ();

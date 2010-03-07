@@ -143,15 +143,14 @@ class MM2:public Telescope
 		virtual int initValues ();
 
 	public:
-		MM2 (int in_argc, char **in_argv);
+		MM2 (int argc, char **argv);
 		virtual ~ MM2 (void);
 
 		virtual int idle ();
 		virtual int info ();
 
 		virtual int setTo (double set_ra, double set_dec);
-		virtual int correct (double cor_ra, double cor_dec, double real_ra,
-			double real_dec);
+		virtual int correct (double cor_ra, double cor_dec, double real_ra, double real_dec);
 
 		virtual int startResync ();
 		virtual int isMoving ();
@@ -513,8 +512,7 @@ MM2::tel_write_dec (double dec)
 }
 
 
-MM2::MM2 (int in_argc, char **in_argv):Telescope (in_argc,
-in_argv)
+MM2::MM2 (int argc, char **argv):Telescope (argc, argv)
 {
 	createValue (axRa, "CNT_RA", "RA counts", true);
 	createValue (axDec, "CNT_DEC", "DEC counts", true);
@@ -936,11 +934,11 @@ MM2::startResync ()
 	getTarget (&target);
 
 	// help variable - current pole distance and target pole distance
-	double pole_dist_act = getTelDec ();
+	double pole_dist_act = getTelTargetDec ();
 	double pole_dist_tar = target.dec;
 	if (TEL_LAT < 0)
 	{
-		pole_dist_act = -1 * getTelDec ();
+		pole_dist_act = -1 * getTelTargetDec ();
 		pole_dist_tar = -1 * target.dec;
 	}
 
@@ -955,7 +953,7 @@ MM2::startResync ()
 	double step_diff_flip, step_diff;
 
 	// we assume tar_ra = telRa + ra_diff
-	double ra_diff = ln_range_degrees (target.ra - getTelRa ());
+	double ra_diff = ln_range_degrees (target.ra - getTelTargetRa ());
 
 	step_diff_flip = MAX (pole_dist_act + pole_dist_tar, fabs (ra_diff - 180));
 
@@ -985,7 +983,7 @@ MM2::startResync ()
 	{
 		// go throught parking..
 		homeHA = getLocSidTime () * 15.0 + 90;
-		double ha_diff = ln_range_degrees (homeHA - getTelRa ());
+		double ha_diff = ln_range_degrees (homeHA - getTelTargetRa ());
 		// keep on same side as current telRa
 		if (ha_diff < 90 || ha_diff > 270)
 			homeHA = getLocSidTime () * 15.0 - 90;
@@ -996,7 +994,7 @@ MM2::startResync ()
 			homeHA += (NOT_SAFE_POS - 90);
 		homeHA = ln_range_degrees (homeHA);
 		// recalculate homeHA to correct half
-		ret = tel_slew_to (homeHA, getTelDec ());
+		ret = tel_slew_to (homeHA, getTelTargetDec ());
 		if (ret)
 		{
 			move_state = NOT_MOVE;

@@ -2,9 +2,10 @@ bin_PROGRAMS = rts2-sensor-dummy rts2-sensor-ms257 rts2-sensor-newport-lamp rts2
 	rts2-sensor-ds21 rts2-sensor-mrakomer rts2-sensor-pixy rts2-sensor-davis \
 	rts2-sensor-fram-weather rts2-sensor-bart-rain \
 	rts2-sensor-osn rts2-sensor-system rts2-sensor-apcups rts2-sensor-nut \
-	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 
+	rts2-sensor-cloud4 rts2-sensor-brooks-356 rts2-sensor-bootes1 rts2-sensor-aag rts2-sensor-pwc \
+	rts2-sensor-hygrowin
 
-noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h
+noinst_HEADERS = sensord.h sensorgpib.h conngpib.h conngpiblinux.h conngpibenet.h davisudp.h fram-weather.h framudp.h davis.h aag.h pwc-ioctl.h
 
 EXTRA_DIST = 
 
@@ -62,12 +63,22 @@ rts2_sensor_brooks_356_SOURCES = brooks-356.cpp
 
 rts2_sensor_bootes1_SOURCES = bootes1.cpp
 
+rts2_sensor_aag_SOURCES = aag.cpp
+
+rts2_sensor_pwc_SOURCES = pwc.cpp
+
+rts2_sensor_hygrowin_SOURCES = hygrowin.cpp
+
 if COMEDI
-bin_PROGRAMS += rts2-sensor-bootes2
+bin_PROGRAMS += rts2-sensor-bootes2 rts2-sensor-lpnhe
 
 rts2_sensor_bootes2_SOURCES = bootes2.cpp
 rts2_sensor_bootes2_LDFLAGS = @LIB_COMEDI@ @LIB_M@
 rts2_sensor_bootes2_CPPFLAGS = @INC_COMEDI@
+
+rts2_sensor_lpnhe_SOURCES = lpnhe.cpp
+rts2_sensor_lpnhe_LDFLAGS = @LIB_COMEDI@ @LIB_M@
+rts2_sensor_lpnhe_CPPFLAGS = @INC_COMEDI@
 
 else
 EXTRA_DIST += bootes2.cpp
@@ -78,7 +89,8 @@ if GPIBLIB
 LDADD += @LIB_GPIB@
 
 bin_PROGRAMS += rts2-sensor-cryocon rts2-sensor-keithley-scpi \
-	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325
+	rts2-sensor-keithley-487 rts2-sensor-lakeshore-325 rts2-sensor-triax \
+	rts2-sensor-mm2500
 
 rts2_sensor_cryocon_SOURCES = cryocon.cpp
 
@@ -88,9 +100,13 @@ rts2_sensor_keithley_487_SOURCES = keithley-487.cpp
 
 rts2_sensor_lakeshore_325_SOURCES = lakeshore-325.cpp
 
+rts2_sensor_triax_SOURCES = triax.cpp
+
+rts2_sensor_mm2500_SOURCES = mm2500.cpp
+
 else
 
-EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp
+EXTRA_DIST += cryocon.cpp keithley-scpi.cpp keithley-487.cpp lakeshore-325.cpp triax.cpp mm2500.cpp
 
 endif
 
@@ -100,7 +116,7 @@ bin_PROGRAMS += rts2-sensor-a3200
 
 rts2_sensor_a3200_SOURCES = a3200.cpp
 rts2_sensor_a3200_CXXFLAGS = @INC_A3200@
-rts2_sensor_a3200_LDFLAGS = @LIB_A3200@ ../utils/librts2block.a
+rts2_sensor_a3200_LDADD = @LIB_A3200@ ${LDADD}
 
 else
 

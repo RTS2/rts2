@@ -13,7 +13,6 @@ EXTRA_DIST = \
     rts2.script.xml \
     rts2.fitskeys.xml \
     rts2-horizon.xml \
-    rts2-mon.xml \
     rts2-scriptexec.xml \
     rts2-logger.xml \
     rts2-logd.xml \
@@ -35,7 +34,10 @@ EXTRA_DIST = \
     rts2-teld.xml \
     rts2-simbadinfo.xml \
     rts2-xmlrpcd.xml \
-    rts2-xmlrpcclient.xml
+    rts2-xmlrpcclient.xml \
+    rts2-sensor-aag.xml \
+    rts2-autofocus.xml \
+    rts2-talker.xml
 
 man_MANS = \
     rts2.7 \
@@ -50,7 +52,6 @@ man_MANS = \
     rts2.script.5 \
     rts2.fitskeys.5 \
     rts2-horizon.1 \
-    rts2-mon.1 \
     rts2-scriptexec.1 \
     rts2-logger.1 \
     rts2-logd.1 \
@@ -72,7 +73,10 @@ man_MANS = \
     rts2-teld.7 \
     rts2-simbadinfo.1 \
     rts2-xmlrpcd.7 \
-    rts2-xmlrpcclient.1
+    rts2-xmlrpcclient.1 \
+    rts2-sensor-aag.1 \
+    rts2-autofocus.1 \
+    rts2-talker.1
 
 doc_FOP = \
     rts2-man.fop \
@@ -82,11 +86,11 @@ doc_PDF = \
     rts2-man.pdf \
     rts2-book.pdf
 
-XP=xsltproc -''-nonet
+XP=xsltproc --nonet
 
-DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl
+DB2MAN=@DB2MAN@
 
-DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl
+DB2FOP=@DB2FOP@
 FOP=fop
 
 %.1: %.xml

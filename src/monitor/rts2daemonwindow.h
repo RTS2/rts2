@@ -18,8 +18,7 @@ class Rts2NSelWindow:public Rts2NWindow
 		int lineOffset;
 		WINDOW *scrolpad;
 	public:
-		Rts2NSelWindow (int x, int y, int w, int h, int border = 1, int sw =
-			300, int sh = 100);
+		Rts2NSelWindow (int x, int y, int w, int h, int border = 1, int sw = 300, int sh = 100);
 		virtual ~ Rts2NSelWindow (void);
 		virtual keyRet injectKey (int key);
 		virtual void refresh ();

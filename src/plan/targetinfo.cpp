@@ -18,6 +18,7 @@
  */
 
 #include "imgdisplay.h"
+#include "../utilsdb/target_auger.h"
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/rts2camlist.h"
 #include "../utilsdb/target.h"
@@ -25,7 +26,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/rts2format.h"
 #include "../utils/libnova_cpp.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include <iostream>
 #include <iomanip>
@@ -33,6 +34,7 @@
 #include <stdlib.h>
 
 #define OPT_FULL_DAY   OPT_LOCAL + 200
+#define OPT_AUGER_ID   OPT_LOCAL + 201
 
 std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 {
@@ -44,9 +46,7 @@ std::ostream & operator << (std::ostream & _os, struct ln_lnlat_posn *_pos)
 	return _os;
 }
 
-
-double
-get_norm_hour (double JD)
+double get_norm_hour (double JD)
 {
 	struct ln_date tmp_date;
 
@@ -77,10 +77,8 @@ class TargetInfo:public Rts2AppDb
 		Target *target;
 		struct ln_lnlat_posn *obs;
 		void printTargetInfo ();
-		void printTargetInfoGNUplot (double jd_start, double pbeg, double pend,
-			double step);
-		void printTargetInfoGNUBonus (double jd_start, double pbeg, double pend,
-			double step);
+		void printTargetInfoGNUplot (double jd_start, double pbeg, double pend, double step);
+		void printTargetInfoGNUBonus (double jd_start, double pbeg, double pend, double step);
 		void printTargetInfoDS9 ();
 		bool printSelectable;
 		bool printExtendet;
@@ -89,11 +87,12 @@ class TargetInfo:public Rts2AppDb
 		int printImages;
 		int printCounts;
 		int printGNUplot;
+		bool printAuger;
 		bool printDS9;
 		bool addMoon;
 		bool addHorizon;
 		char *targetType;
-		virtual int printTargets (Rts2TargetSet & set);
+		virtual int printTargets (rts2db::TargetSet & set);
 
 		double JD;
 
@@ -114,8 +113,7 @@ class TargetInfo:public Rts2AppDb
 
 using namespace rts2plan;
 
-TargetInfo::TargetInfo (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+TargetInfo::TargetInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	obs = NULL;
 	printSelectable = false;
@@ -125,6 +123,7 @@ Rts2AppDb (in_argc, in_argv)
 	printImages = 0;
 	printCounts = 0;
 	printGNUplot = 0;
+	printAuger = false;
 	printDS9 = false;
 	addMoon = true;
 	addHorizon = true;
@@ -135,10 +134,8 @@ Rts2AppDb (in_argc, in_argv)
 	airmd = rts2_nan ("f");
 
 	addOption ('s', NULL, 0, "print only selectable targets");
-	addOption ('e', NULL, 1,
-		"print extended informations (visibility prediction,..)");
-	addOption ('g', NULL, 2,
-		"print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
+	addOption ('e', NULL, 1, "print extended informations (visibility prediction,..)");
+	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
 	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
 	addOption ('m', NULL, 0, "do not plot moon");
@@ -153,19 +150,17 @@ Rts2AppDb (in_argc, in_argv)
 	addOption ('t', NULL, 1, "search for target types, not for targets IDs");
 	addOption ('d', NULL, 1, "give informations for this date");
 	addOption (OPT_FULL_DAY, "full-day", 0, "prints informations for 24 hours");
+	addOption (OPT_AUGER_ID, "auger-id", 0, "specify trigger(s) number for Auger target(s)");
 	addOption ('9', NULL, 0, "print DS9 .reg file for target");
 	addOption ('N', NULL, 0, "do not pretty print");
 }
-
 
 TargetInfo::~TargetInfo ()
 {
 	cameras.clear ();
 }
 
-
-int
-TargetInfo::processOption (int in_opt)
+int TargetInfo::processOption (int in_opt)
 {
 	int ret;
 	switch (in_opt)
@@ -239,6 +234,9 @@ TargetInfo::processOption (int in_opt)
 		case OPT_FULL_DAY:
 			printGNUplot |= GNUPLOT_FULL_DAY;
 			break;
+		case OPT_AUGER_ID:
+			printAuger = true;
+			break;
 		case 'd':
 			ret = parseDate (optarg, JD);
 			if (ret)
@@ -256,9 +254,7 @@ TargetInfo::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-TargetInfo::processArgs (const char *arg)
+int TargetInfo::processArgs (const char *arg)
 {
 	// try to create that target..
 	int tar_id;
@@ -273,9 +269,7 @@ TargetInfo::processArgs (const char *arg)
 	return 0;
 }
 
-
-void
-TargetInfo::printTargetInfo ()
+void TargetInfo::printTargetInfo ()
 {
 	if (!(printImages & DISPLAY_FILENAME))
 	{
@@ -306,21 +300,23 @@ TargetInfo::printTargetInfo ()
 				cout << "Script for camera " << cam_name << ":'" << script_buf <<
 				"' ret (" << ret << ")" << std::endl;
 			// try to parse it..
-			Rts2Script script = Rts2Script (NULL);
+			rts2script::Script script = rts2script::Script ();
 			script.setTarget (cam_name, target);
 			failedCount = script.getFaultLocation ();
 			if (failedCount != -1)
 			{
-				std::
-					cout << "PARSING of script '" << script_buf <<
-					"' FAILED!!! AT " << failedCount << std::endl;
+				std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
+					<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
+				for (; failedCount > 0; failedCount--)
+					std::cout << " ";
+				std::cout << "^ here" << std::endl;
 			}
 		}
 	}
 	// print recomended calibrations targets
 	if (printCalTargets)
 	{
-		Rts2TargetSet *cal;
+		rts2db::TargetSet *cal;
 		cal = target->getCalTargets (JD, airmd);
 		std::cout << "==================================" << std::endl <<
 			"Calibration targets" << std::endl;
@@ -330,7 +326,8 @@ TargetInfo::printTargetInfo ()
 	// print observations..
 	if (printObservations)
 	{
-		rts2db::ObservationSet obsSet = rts2db::ObservationSet (target->getTargetID ());
+		rts2db::ObservationSet obsSet = rts2db::ObservationSet ();
+		obsSet.loadTarget (target->getTargetID ());
 		if (printImages)
 			obsSet.printImages (printImages);
 		if (printCounts)
@@ -341,7 +338,7 @@ TargetInfo::printTargetInfo ()
 	{
 		if (printImages)
 		{
-			Rts2ImgSetTarget imgset = Rts2ImgSetTarget (target->getTargetID ());
+			rts2db::ImageSetTarget imgset = rts2db::ImageSetTarget (target->getTargetID ());
 			imgset.load ();
 			imgset.print (std::cout, printImages);
 			imgset.clear ();
@@ -350,43 +347,32 @@ TargetInfo::printTargetInfo ()
 	return;
 }
 
-
-void
-TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg,
-double pend, double step)
+void TargetInfo::printTargetInfoGNUplot (double jd_start, double pbeg, double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
-		std::cout << std::setw (10) << i << " ";
+		std::cout << i << " ";
 		target->printAltTableSingleCol (std::cout, jd_start, i, step);
 		std::cout << std::endl;
 	}
 }
 
-
-void
-TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg,
-double pend, double step)
+void TargetInfo::printTargetInfoGNUBonus (double jd_start, double pbeg, double pend, double step)
 {
 	for (double i = pbeg; i <= pend; i += step)
 	{
-		std::cout << std::setw (10) << i << " "
-			<< target->getBonus (jd_start + i / 24.0) << std::endl;
+		std::cout << i << " " << target->getBonus (jd_start + i / 24.0) << std::endl;
 	}
 }
 
-
-void
-TargetInfo::printTargetInfoDS9 ()
+void TargetInfo::printTargetInfoDS9 ()
 {
 	target->printDS9Reg (std::cout, JD);
 }
 
-
-int
-TargetInfo::printTargets (Rts2TargetSet & set)
+int TargetInfo::printTargets (rts2db::TargetSet & set)
 {
-	Rts2TargetSet::iterator iter;
+	rts2db::TargetSet::iterator iter;
 	struct ln_rst_time t_rst;
 	struct ln_rst_time n_rst;
 
@@ -409,10 +395,8 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 
 	if (printGNUplot)
 	{
-		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
-			LN_SOLAR_CIVIL_HORIZON, &t_rst);
-		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords,
-			LN_SOLAR_NAUTIC_HORIZON, &n_rst);
+		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords, LN_SOLAR_CIVIL_HORIZON, &t_rst);
+		ln_get_body_next_rst_horizon (JD, obs, ln_get_solar_equ_coords, LN_SOLAR_NAUTIC_HORIZON, &n_rst);
 
 		sset = get_norm_hour (t_rst.set);
 		rise = get_norm_hour (t_rst.rise);
@@ -481,38 +465,28 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		{
 			std::cout
 				<< "set y2label \"airmass\"" << std::endl
-				<<
-				"set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)"
-				<< std::endl;
+				<< "set y2tics ( \"1.00\" 90, \"1.05\" 72.25, \"1.10\" 65.38, \"1.20\" 56.44, \"1.30\" 50.28 , \"1.50\" 41.81, \"2.00\" 30, \"3.00\" 20, \"6.00\" 10)" << std::endl;
 		}
 
 		if (!(printGNUplot & GNUPLOT_BONUS_ONLY))
 		{
 			std::cout
-				<< "set arrow from sset,10 to rise,10 nohead lt 0" << std::
-				endl << "set arrow from sset,20 to rise,20 nohead lt 0" << std::
-				endl << "set arrow from sset,30 to rise,30 nohead lt 0" << std::
-				endl << "set arrow from sset,41.81 to rise,41.81 nohead lt 0" <<
-				std::
-				endl << "set arrow from sset,50.28 to rise,50.28 nohead lt 0" <<
-				std::
-				endl << "set arrow from sset,56.44 to rise,56.44 nohead lt 0" <<
-				std::
-				endl << "set arrow from sset,65.38 to rise,65.38 nohead lt 0" <<
-				std::
-				endl << "set arrow from sset,72.25 to rise,72.25 nohead lt 0" <<
-				std::
-				endl << "set arrow from sset,81.93 to rise,81.93 nohead lt 0" <<
-				std::endl;
+				<< "set arrow from sset,10 to rise,10 nohead lt 0" << std::endl
+				<< "set arrow from sset,20 to rise,20 nohead lt 0" << std::endl
+				<< "set arrow from sset,30 to rise,30 nohead lt 0" << std::endl
+				<< "set arrow from sset,41.81 to rise,41.81 nohead lt 0" << std::endl
+				<< "set arrow from sset,50.28 to rise,50.28 nohead lt 0" << std::endl
+				<< "set arrow from sset,56.44 to rise,56.44 nohead lt 0" << std::endl
+				<< "set arrow from sset,65.38 to rise,65.38 nohead lt 0" << std::endl
+				<< "set arrow from sset,72.25 to rise,72.25 nohead lt 0" << std::endl
+				<< "set arrow from sset,81.93 to rise,81.93 nohead lt 0" << std::endl;
 		}
 
 		std::cout
-			<< "set arrow from nbeg,graph 0 to nbeg,graph 1 nohead lt 0" << std::
-			endl << "set arrow from nend,graph 0 to nend,graph 1 nohead lt 0" <<
-			std::
-			endl <<
-			"set arrow from (nend/2+nbeg/2),graph 0 to (nend/2+nbeg/2),graph 1 nohead lt 0"
-			<< std::endl << "set xtics ( ";
+			<< "set arrow from nbeg,graph 0 to nbeg,graph 1 nohead lt 0" << std::endl
+			<< "set arrow from nend,graph 0 to nend,graph 1 nohead lt 0" << std::endl
+			<< "set arrow from (nend/2+nbeg/2),graph 0 to (nend/2+nbeg/2),graph 1 nohead lt 0" << std::endl
+			<< "set xtics ( ";
 
 		for (int i = (int)floor (gbeg); i < (int) ceil (gend); i++)
 		{
@@ -555,11 +529,11 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 		// find and print calibration targets..
 		if (printCalTargets)
 		{
-			Rts2TargetSet calibSet = Rts2TargetSet (obs, false);
+			rts2db::TargetSet calibSet = rts2db::TargetSet (obs);
 			for (iter = set.begin (); iter != set.end (); iter++)
 			{
 				target = (*iter).second;
-				Rts2TargetSet *addS = target->getCalTargets ();
+				rts2db::TargetSet *addS = target->getCalTargets ();
 				calibSet.addSet (*addS);
 				delete addS;
 			}
@@ -579,8 +553,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 					<< target->getTargetName ()
 					<< " (" << target->getTargetID () << ")\"";
 			}
-			if ((printGNUplot & GNUPLOT_BONUS)
-				|| (printGNUplot & GNUPLOT_BONUS_ONLY))
+			if ((printGNUplot & GNUPLOT_BONUS) || (printGNUplot & GNUPLOT_BONUS_ONLY))
 			{
 				if (iter != set.begin () || addMoon || addHorizon
 					|| !(printGNUplot & GNUPLOT_BONUS_ONLY))
@@ -614,8 +587,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 				double jd = jd_start + i / 24.0;
 				ln_get_lunar_equ_coords (jd, &moonEqu);
 				ln_get_hrz_from_equ (&moonEqu, obs, jd, &moonHrz);
-				std::cout
-					<< i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
+				std::cout << i << " " << moonHrz.alt << " " << moonHrz.az << std::endl;
 			}
 			std::cout << "e" << std::endl;
 		}
@@ -626,10 +598,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 			{
 				double jd = jd_start + i / 24.0;
 				((*(set.begin ())).second)->getAltAz (&hor, jd);
-				std::cout
-					<< i << " "
-					<< Rts2Config::instance ()->getObjectChecker ()->
-					getHorizonHeight (&hor, 0) << " " << hor.az << std::endl;
+				std::cout << i << " " << Rts2Config::instance ()->getObjectChecker ()->getHorizonHeight (&hor, 0) << " " << hor.az << std::endl;
 			}
 			std::cout << "e" << std::endl;
 		}
@@ -672,9 +641,7 @@ TargetInfo::printTargets (Rts2TargetSet & set)
 	return (set.size () == 0 ? -1 : 0);
 }
 
-
-int
-TargetInfo::init ()
+int TargetInfo::init ()
 {
 	int ret;
 
@@ -697,37 +664,55 @@ TargetInfo::init ()
 	return 0;
 }
 
-
-int
-TargetInfo::doProcessing ()
+int TargetInfo::doProcessing ()
 {
 	if (printSelectable)
 	{
 		if (targetType)
 		{
-			Rts2TargetSetSelectable selSet =
-				Rts2TargetSetSelectable (targetType);
+			rts2db::TargetSetSelectable selSet = rts2db::TargetSetSelectable (targetType);
+			selSet.load ();
 			return printTargets (selSet);
 		}
 		else
 		{
-			Rts2TargetSetSelectable selSet = Rts2TargetSetSelectable ();
+			rts2db::TargetSetSelectable selSet = rts2db::TargetSetSelectable ();
+			selSet.load ();
 			return printTargets (selSet);
 		}
 	}
 	if (targetType)
 	{
-		Rts2TargetSet typeSet = Rts2TargetSet (targetType);
+		rts2db::TargetSet typeSet = rts2db::TargetSet (targetType);
+		typeSet.load ();
 		return printTargets (typeSet);
 	}
 
-	Rts2TargetSet tar_set = Rts2TargetSet (targets);
+	rts2db::TargetSet tar_set = rts2db::TargetSet ();
+	if (printAuger)
+	{
+		for (std::list <int>::iterator iter = targets.begin (); iter != targets.end (); iter++)
+		{
+			TargetAuger *ta = new TargetAuger (-1, obs, 10);
+			if (ta->load (*iter))
+			{
+				delete ta;
+			}
+			else
+			{
+				tar_set[*iter] = ta;
+			}
+		}
+	}
+	else
+	{
+		// normal target set load
+		tar_set.load (targets);
+	}
 	return printTargets (tar_set);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	TargetInfo app = TargetInfo (argc, argv);
 	return app.run ();

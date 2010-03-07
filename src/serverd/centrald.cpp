@@ -18,18 +18,18 @@
  */
 
 #include "centrald.h"
+#include "../utils/libnova_cpp.h"
 #include "../utils/rts2command.h"
 #include "../utils/rts2centralstate.h"
 #include "../utils/timestamp.h"
 
-void
-Rts2ConnCentrald::setState (int in_value)
+void Rts2ConnCentrald::setState (int in_value, char *msg)
 {
-	Rts2Conn::setState (in_value);
+	Rts2Conn::setState (in_value, msg);
 	// distribute weather updates..
 	if (serverState->maskValueChanged (WEATHER_MASK))
 	{
-		master->weatherChanged ();
+		master->weatherChanged (getName (), msg);
 	}
 	if (serverState->maskValueChanged (BOP_MASK))
 	{
@@ -37,10 +37,7 @@ Rts2ConnCentrald::setState (int in_value)
 	}
 }
 
-
-Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master,
-int in_centrald_id):
-Rts2Conn (in_sock, in_master)
+Rts2ConnCentrald::Rts2ConnCentrald (int in_sock, Rts2Centrald * in_master, int in_centrald_id):Rts2Conn (in_sock, in_master)
 {
 	master = in_master;
 	setCentraldId (in_centrald_id);
@@ -49,14 +46,11 @@ Rts2Conn (in_sock, in_master)
 	statusCommandRunning = 0;
 }
 
-
 Rts2ConnCentrald::~Rts2ConnCentrald (void)
 {
 }
 
-
-int
-Rts2ConnCentrald::sendDeviceKey ()
+int Rts2ConnCentrald::sendDeviceKey ()
 {
 	int dev_key;
 	dev_key = random ();
@@ -81,18 +75,14 @@ Rts2ConnCentrald::sendDeviceKey ()
 	return 0;
 }
 
-
-int
-Rts2ConnCentrald::sendMessage (Rts2Message & msg)
+int Rts2ConnCentrald::sendMessage (Rts2Message & msg)
 {
 	if (msg.passMask (messageMask))
 		return Rts2Conn::sendMessage (msg);
 	return -1;
 }
 
-
-int
-Rts2ConnCentrald::sendInfo ()
+int Rts2ConnCentrald::sendInfo ()
 {
 	if (!paramEnd ())
 		return -2;
@@ -107,9 +97,7 @@ Rts2ConnCentrald::sendInfo ()
 	return 0;
 }
 
-
-int
-Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
+int Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 {
 	std::ostringstream _os;
 	int ret = -1;
@@ -138,9 +126,7 @@ Rts2ConnCentrald::sendConnectedInfo (Rts2Conn * conn)
 	return ret;
 }
 
-
-void
-Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
+void Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 {
 	if (conn)
 	{
@@ -161,9 +147,7 @@ Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 	statusCommandRunning--;
 }
 
-
-int
-Rts2ConnCentrald::commandDevice ()
+int Rts2ConnCentrald::commandDevice ()
 {
 	if (isCommand ("authorize"))
 	{
@@ -236,27 +220,21 @@ Rts2ConnCentrald::commandDevice ()
 	return Rts2Conn::command ();
 }
 
-
-int
-Rts2ConnCentrald::sendStatusInfo ()
+int Rts2ConnCentrald::sendStatusInfo ()
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS " " << master->getState ();
 	return sendMsg (_os);
 }
 
-
-int
-Rts2ConnCentrald::sendAValue (const char *val_name, int value)
+int Rts2ConnCentrald::sendAValue (const char *val_name, int value)
 {
 	std::ostringstream _os;
 	_os << PROTO_AUTH " " << val_name << " " << value;
 	return sendMsg (_os);
 }
 
-
-int
-Rts2ConnCentrald::commandClient ()
+int Rts2ConnCentrald::commandClient ()
 {
 	if (isCommand ("password"))
 	{
@@ -311,9 +289,7 @@ Rts2ConnCentrald::commandClient ()
 	return Rts2Conn::command ();
 }
 
-
-int
-Rts2ConnCentrald::command ()
+int Rts2ConnCentrald::command ()
 {
 	if (isCommand ("login"))
 	{
@@ -355,9 +331,11 @@ Rts2ConnCentrald::command ()
 				|| !paramEnd ())
 				return -2;
 
-			if (master->findName (reg_device))
+			if (Rts2Conn *c = master->findName (reg_device))
 			{
-				sendCommandEnd (DEVDEM_E_SYSTEM, "name already registered");
+				std::ostringstream _os;
+				_os << "name " << reg_device << " already registered with id " << c->getCentraldId ();
+				sendCommandEnd (DEVDEM_E_SYSTEM, _os.str ().c_str ());
 				return -1;
 			}
 
@@ -395,9 +373,7 @@ Rts2ConnCentrald::command ()
 	return Rts2Conn::command ();
 }
 
-
-Rts2Centrald::Rts2Centrald (int argc, char **argv)
-:Rts2Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
+Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVERD_HARD_OFF | BAD_WEATHER)
 {
 	connNum = 0;
 
@@ -405,11 +381,13 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 	logFileSource = LOGFILE_DEF;
 	fileLog = NULL;
 
-	createValue (morning_off, "morning_off", "switch to off at the morning", false);
-	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false);
+	createValue (morning_off, "morning_off", "switch to off at the morning", false, RTS2_VALUE_WRITABLE);
+	createValue (morning_standby, "morning_standby", "switch to standby at the morning", false, RTS2_VALUE_WRITABLE);
 
-	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false);
+	createValue (requiredDevices, "required_devices", "devices necessary to automatically switch system to on state", false, RTS2_VALUE_WRITABLE);
 	createValue (failedDevices, "failed_devices", "devices which are required but not present in the system", false);
+
+	createValue (badWeatherReason, "weather_reason", "why system was switched to bad weather", false);
 
 	createValue (nextStateChange, "next_state_change", "time of next state change", false);
 	createValue (nextState, "next_state", "next server state", false);
@@ -420,23 +398,37 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv)
 	nextState->addSelVal ("dawn");
 	nextState->addSelVal ("morning");
 
-	createConstValue (observerLng, "longitude", "observatory longitude", false,
-		RTS2_DT_DEGREES);
-	createConstValue (observerLat, "latitude", "observatory latitude", false,
-		RTS2_DT_DEC);
+	createConstValue (observerLng, "longitude", "observatory longitude", false, RTS2_DT_DEGREES);
+	createConstValue (observerLat, "latitude", "observatory latitude", false, RTS2_DT_DEC);
 
-	createConstValue (nightHorizon, "night_horizon",
-		"observatory night horizon", false, RTS2_DT_DEC);
-	createConstValue (dayHorizon, "day_horizon", "observatory day horizon",
-		false, RTS2_DT_DEC);
+	createConstValue (nightHorizon, "night_horizon", "observatory night horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
+	createConstValue (dayHorizon, "day_horizon", "observatory day horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
 
-	createConstValue (eveningTime, "evening_time", "time needed to cool down cameras", false);
-	createConstValue (morningTime, "morning_time", "time needed to heat up cameras", false);
+	createValue (eveningTime, "evening_time", "time needed to cool down cameras", false, RTS2_VALUE_WRITABLE);
+	createValue (morningTime, "morning_time", "time needed to heat up cameras", false, RTS2_VALUE_WRITABLE);
+
+	createValue (nightStart, "night_start", "Beginnign of current or next night", false);
+	createValue (nightStop, "night_stop", "End of current or next night", false);
+
+	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
+	createValue (sunAz, "sun_az", "Sun azimuth", false, RTS2_DT_DEGREES);
+
+	createValue (sunRise, "sun_rise", "Sun rise", false);
+	createValue (sunSet, "sun_set", "Sun set", false);
+
+	createValue (moonAlt, "moon_alt", "Moon altitude", false, RTS2_DT_DEC);
+	createValue (moonAz, "moon_az", "Moon azimuth", false, RTS2_DT_DEGREES);
+
+	createValue (moonPhase, "moon_phase", "Moon phase", false, RTS2_DT_PERCENTS);
+
+	createValue (moonRise, "moon_rise", "Moon rise", false);
+	createValue (moonSet, "moon_set", "Moon set", false);
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 	addOption (OPT_LOGFILE, "logfile", 1, "log file (put '-' to log to stderr");
-}
 
+	setIdleInfoInterval (300);
+}
 
 Rts2Centrald::~Rts2Centrald (void)
 {
@@ -449,9 +441,7 @@ Rts2Centrald::~Rts2Centrald (void)
 	priority_client = -2;
 }
 
-
-void
-Rts2Centrald::openLog ()
+void Rts2Centrald::openLog ()
 {
 	if (fileLog)
 	{
@@ -467,9 +457,7 @@ Rts2Centrald::openLog ()
 	fileLog->open (logFile.c_str (), std::ios_base::out | std::ios_base::app);
 }
 
-
-int
-Rts2Centrald::reloadConfig ()
+int Rts2Centrald::reloadConfig ()
 {
 	int ret;
 	Rts2Config *config = Rts2Config::instance ();
@@ -499,12 +487,8 @@ Rts2Centrald::reloadConfig ()
 	config->getDouble ("observatory", "day_horizon", t_h, 0);
 	dayHorizon->setValueDouble (t_h);
 
-	int t_t;
-	config->getInteger ("observatory", "evening_time", t_t, 7200);
-	eveningTime->setValueInteger (t_t);
-
-	config->getInteger ("observatory", "morning_time", t_t, 1800);
-	morningTime->setValueInteger (t_t);
+	eveningTime->setValueInteger (config->getIntegerDefault ("observatory", "evening_time", 7200));
+	morningTime->setValueInteger (config->getIntegerDefault ("observatory", "morning_time", 1800));
 
 	next_event_time = 0;
 
@@ -513,9 +497,7 @@ Rts2Centrald::reloadConfig ()
 	return 0;
 }
 
-
-int
-Rts2Centrald::processOption (int in_opt)
+int Rts2Centrald::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -532,9 +514,7 @@ Rts2Centrald::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2Centrald::init ()
+int Rts2Centrald::init ()
 {
 	int ret;
 	setPort (atoi (CENTRALD_PORT));
@@ -559,15 +539,20 @@ Rts2Centrald::init ()
 	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
-	ret = doDeamonize ();
+	ret = doDaemonize ();
+	if (ret < 0)
+		return ret;
+
+#ifndef HAVE_FLOCK
+	// reopen..
+	ret = checkLockFile (_os.str ().c_str ());
 	if (ret)
 		return ret;
+#endif
 	return lockFile ();
 }
 
-
-int
-Rts2Centrald::initValues ()
+int Rts2Centrald::initValues ()
 {
 	time_t curr_time;
 
@@ -597,21 +582,10 @@ Rts2Centrald::initValues ()
 	return Rts2Daemon::initValues ();
 }
 
-
-int
-Rts2Centrald::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == morning_off || old_value == morning_standby)
-		return 0;
-	return Rts2Daemon::setValue (old_value, new_value);
-}
-
-
-void
-Rts2Centrald::connectionRemoved (Rts2Conn * conn)
+void Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 {
 	// update weather
-	weatherChanged ();
+	weatherChanged (conn->getName (), "connection removed");
 	// make sure we will change BOP mask..
 	bopMaskChanged ();
 	connections_t::iterator iter;
@@ -622,9 +596,7 @@ Rts2Centrald::connectionRemoved (Rts2Conn * conn)
 	}
 }
 
-
-void
-Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
+void Rts2Centrald::stateChanged (int new_state, int old_state, const char *description)
 {
 	Rts2Daemon::stateChanged (new_state, old_state, description);
 	if ((getState () & ~BOP_MASK) != (old_state & ~BOP_MASK))
@@ -633,21 +605,17 @@ Rts2Centrald::stateChanged (int new_state, int old_state, const char *descriptio
 			<< " to " << Rts2CentralState::getString (getState ())
 			<< " description " << description
 			<< sendLog;
-		sendStatusMessage (getState ());
+		sendStatusMessage (getState (), description);
 	}
 }
 
-
-Rts2Conn *
-Rts2Centrald::createConnection (int in_sock)
+Rts2Conn * Rts2Centrald::createConnection (int in_sock)
 {
 	connNum++;
 	return new Rts2ConnCentrald (in_sock, this, connNum);
 }
 
-
-void
-Rts2Centrald::connAdded (Rts2ConnCentrald * added)
+void Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -657,9 +625,7 @@ Rts2Centrald::connAdded (Rts2ConnCentrald * added)
 	}
 }
 
-
-Rts2Conn *
-Rts2Centrald::getConnection (int conn_num)
+Rts2Conn * Rts2Centrald::getConnection (int conn_num)
 {
 	connections_t::iterator iter;
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
@@ -671,9 +637,7 @@ Rts2Centrald::getConnection (int conn_num)
 	return NULL;
 }
 
-
-int
-Rts2Centrald::changeState (int new_state, const char *user)
+int Rts2Centrald::changeState (int new_state, const char *user)
 {
 	logStream (MESSAGE_INFO) << "State switched to " << Rts2CentralState::getString (new_state) << " by " <<
 		user << sendLog;
@@ -681,9 +645,47 @@ Rts2Centrald::changeState (int new_state, const char *user)
 	return 0;
 }
 
+int Rts2Centrald::info ()
+{
+	struct ln_equ_posn pos, parallax;
+	struct ln_hrz_posn hrz;
+	struct ln_rst_time rst;
+	double JD = ln_get_julian_from_sys ();
 
-int
-Rts2Centrald::idle ()
+	ln_get_solar_equ_coords (JD, &pos);
+	ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), observer, 1700, JD, &parallax);
+	pos.ra += parallax.ra;
+	pos.dec += parallax.dec;
+	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+
+	sunAlt->setValueDouble (hrz.alt);
+	sunAz->setValueDouble (hrz.az);
+
+	ln_get_solar_rst (JD, observer, &rst);
+
+	sunRise->setValueDouble (timetFromJD (rst.rise));
+	sunSet->setValueDouble (timetFromJD (rst.set));
+
+	ln_get_lunar_equ_coords (JD, &pos);
+	ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), observer, 1700, JD, &parallax);
+	pos.ra += parallax.ra;
+	pos.dec += parallax.dec;
+	ln_get_hrz_from_equ (&pos, observer, JD, &hrz);
+
+	moonAlt->setValueDouble (hrz.alt);
+	moonAz->setValueDouble (hrz.az);
+
+	moonPhase->setValueDouble (ln_get_lunar_phase (JD) / 1.8);
+
+	ln_get_lunar_rst (JD, observer, &rst);
+
+	moonRise->setValueDouble (timetFromJD (rst.rise));
+	moonSet->setValueDouble (timetFromJD (rst.set));
+
+	return Rts2Daemon::info ();
+}
+
+int Rts2Centrald::idle ()
 {
 	time_t curr_time;
 
@@ -732,34 +734,26 @@ Rts2Centrald::idle ()
 	return Rts2Daemon::idle ();
 }
 
-
-void
-Rts2Centrald::deviceReady (Rts2Conn * conn)
+void Rts2Centrald::deviceReady (Rts2Conn * conn)
 {
 	Rts2Daemon::deviceReady (conn);
 	// check again for weather state..
-	weatherChanged ();
+	weatherChanged (conn->getName (), "device ready");
 }
 
-
-void
-Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
+void Rts2Centrald::sendMessage (messageType_t in_messageType, const char *in_messageString)
 {
 	Rts2Message msg = Rts2Message ("centrald", in_messageType, in_messageString);
 	Rts2Daemon::sendMessage (in_messageType, in_messageString);
 	processMessage (msg);
 }
 
-
-void
-Rts2Centrald::message (Rts2Message & msg)
+void Rts2Centrald::message (Rts2Message & msg)
 {
 	processMessage (msg);
 }
 
-
-void
-Rts2Centrald::processMessage (Rts2Message & msg)
+void Rts2Centrald::processMessage (Rts2Message & msg)
 {
 	// log it
 	if (fileLog)
@@ -775,17 +769,13 @@ Rts2Centrald::processMessage (Rts2Message & msg)
 	sendMessageAll (msg);
 }
 
-
-void
-Rts2Centrald::signaledHUP ()
+void Rts2Centrald::signaledHUP ()
 {
 	reloadConfig ();
 	Rts2Daemon::signaledHUP ();
 }
 
-
-void
-Rts2Centrald::weatherChanged ()
+void Rts2Centrald::weatherChanged (const char * device, const char * msg)
 {
 	// state of the required devices
 	std::vector <std::string> failedArr;
@@ -812,12 +802,21 @@ Rts2Centrald::weatherChanged ()
 		{
 			failedArr.push_back ((*iter)->getName ());
 		}
-
+		if (!strcmp ((*iter)->getName (), device))
+		{
+			// device which causes bad weather..
+			if ((*iter)->isGoodWeather () == false && strlen (badWeatherReason->getValue ()) == 0)
+			{
+				if (msg == NULL)
+					msg = "NULL";
+				badWeatherReason->setValueCharArr ((std::string (device) + ": " + msg).c_str ());
+			}
+		}
 	}
 	failedDevices->setValueArray (failedArr);
 	sendValueAll (failedDevices);
 
-	setWeatherState (failedArr.size () > 0 ? false : true);
+	setWeatherState (failedArr.size () > 0 ? false : true, "weather state update from weatherChanged");
 	if (failedArr.size () > 0)
 	{
 		Rts2LogStream ls = logStream (MESSAGE_DEBUG);
@@ -826,11 +825,14 @@ Rts2Centrald::weatherChanged ()
 			ls << " " << (*namIter);
 		ls << sendLog;
 	}
+	else
+	{
+		badWeatherReason->setValueCharArr ("");
+	}
+	sendValueAll (badWeatherReason);
 }
 
-
-void
-Rts2Centrald::bopMaskChanged ()
+void Rts2Centrald::bopMaskChanged ()
 {
 	int bopState = 0;
 	connections_t::iterator iter;
@@ -844,9 +846,7 @@ Rts2Centrald::bopMaskChanged ()
 	sendStatusMessage (getState ());
 }
 
-
-int
-Rts2Centrald::statusInfo (Rts2Conn * conn)
+int Rts2Centrald::statusInfo (Rts2Conn * conn)
 {
 	Rts2ConnCentrald *c_conn = (Rts2ConnCentrald *) conn;
 	int s_count = 0;
@@ -881,9 +881,7 @@ Rts2Centrald::statusInfo (Rts2Conn * conn)
 	return -1;
 }
 
-
-int
-Rts2Centrald::getStateForConnection (Rts2Conn * conn)
+int Rts2Centrald::getStateForConnection (Rts2Conn * conn)
 {
 	if (conn->getType () != DEVICE_SERVER)
 		return getState ();
@@ -902,10 +900,8 @@ Rts2Centrald::getStateForConnection (Rts2Conn * conn)
 	return sta;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2Centrald centrald = Rts2Centrald (argc, argv);
+	Rts2Centrald centrald (argc, argv);
 	return centrald.run ();
 }

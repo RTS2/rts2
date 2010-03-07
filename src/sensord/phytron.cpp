@@ -18,7 +18,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 #define CMDBUF_LEN  20
 
@@ -32,8 +32,19 @@ namespace rts2sensord
  */
 class Phytron:public Sensor
 {
+	public:
+		Phytron (int in_argc, char **in_argv);
+		virtual ~ Phytron (void);
+
+		virtual int init ();
+		virtual int info ();
+
+	protected:
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int processOption (int in_opt);
+
 	private:
-		Rts2ConnSerial *phytronDev;
+		rts2core::ConnSerial *phytronDev;
 
 		int writePort (const char *str);
 		int readPort ();
@@ -49,25 +60,13 @@ class Phytron:public Sensor
 		int setValue (int ax, int reg, Rts2ValueInteger *val);
 		int setAxis (int new_val);
 		const char *dev;
-
-	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-		virtual int processOption (int in_opt);
-
-	public:
-		Phytron (int in_argc, char **in_argv);
-		virtual ~ Phytron (void);
-
-		virtual int init ();
-		virtual int info ();
 };
 
 };
 
 using namespace rts2sensord;
 
-int
-Phytron::writePort (const char *str)
+int Phytron::writePort (const char *str)
 {
 	int ret;
 	// send prefix
@@ -94,16 +93,12 @@ Phytron::writePort (const char *str)
 	return 0;
 }
 
-
-int
-Phytron::readPort ()
+int Phytron::readPort ()
 {
 	return phytronDev->readPort (cmdbuf, CMDBUF_LEN, '\003') > 0 ? 0 : -1;
 }
 
-
-int
-Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
+int Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iR", ax, reg);
@@ -113,7 +108,10 @@ Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 
 	ret = readPort ();
 	if (ret)
+	{
+		phytronDev->flushPortIO ();
 		return ret;
+	}
 
 	if (cmdbuf[0] != '\002' || cmdbuf[1] != '\006')
 	{
@@ -125,9 +123,7 @@ Phytron::readValue (int ax, int reg, Rts2ValueInteger *val)
 	return 0;
 }
 
-
-int
-Phytron::readAxis ()
+int Phytron::readAxis ()
 {
 	int ret;
 	ret = readValue (1, 21, axis0);
@@ -139,9 +135,7 @@ Phytron::readAxis ()
 	return ret;
 }
 
-
-int
-Phytron::setValue (int ax, int reg, Rts2ValueInteger *val)
+int Phytron::setValue (int ax, int reg, Rts2ValueInteger *val)
 {
 	char buf[50];
 	snprintf (buf, 50, "%02iP%2iS%i", ax, reg, val->getValueInteger ());
@@ -152,9 +146,7 @@ Phytron::setValue (int ax, int reg, Rts2ValueInteger *val)
 	return ret;
 }
 
-
-int
-Phytron::setAxis (int new_val)
+int Phytron::setAxis (int new_val)
 {
 	int ret;
 	sprintf (cmdbuf, "01A%i", new_val);
@@ -173,14 +165,13 @@ Phytron::setAxis (int new_val)
 	return 0;
 }
 
-
 Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 {
 	phytronDev = NULL;
 	dev = "/dev/ttyS0";
 
-	createValue (runFreq, "RUNFREQ", "current run frequency", true);
-	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
+	createValue (runFreq, "RUNFREQ", "current run frequency", true, RTS2_VALUE_WRITABLE);
+	createValue (axis0, "CURPOS", "current arm position", true, RTS2_VWHEN_RECORD_CHANGE | RTS2_VALUE_WRITABLE, 0, false);
 
 	// create phytron params
 	/*	createValue (phytronParams[0], "P01", "Type of movement", false);
@@ -196,15 +187,12 @@ Phytron::Phytron (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "/dev/ttySx entry (defaults to /dev/ttyS0");
 }
 
-
 Phytron::~Phytron (void)
 {
 	delete phytronDev;
 }
 
-
-int
-Phytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Phytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == axis0)
 		return setAxis (new_value->getValueInteger ());
@@ -213,9 +201,7 @@ Phytron::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Sensor::setValue (old_value, new_value);
 }
 
-
-int
-Phytron::processOption (int in_opt)
+int Phytron::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -228,9 +214,7 @@ Phytron::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Phytron::init ()
+int Phytron::init ()
 {
 	int ret;
 
@@ -238,7 +222,7 @@ Phytron::init ()
 	if (ret)
 		return ret;
 
-	phytronDev = new Rts2ConnSerial (dev, this, BS57600, C8, NONE, 200);
+	phytronDev = new rts2core::ConnSerial (dev, this, rts2core::BS57600, rts2core::C8, rts2core::NONE, 200);
 	ret = phytronDev->init ();
 	if (ret)
 		return ret;
@@ -253,9 +237,7 @@ Phytron::init ()
 	return 0;
 }
 
-
-int
-Phytron::info ()
+int Phytron::info ()
 {
 	int ret;
 	ret = readAxis ();
@@ -264,9 +246,7 @@ Phytron::info ()
 	return Sensor::info ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Phytron device (argc, argv);
 	return device.run ();

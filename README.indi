@@ -6,8 +6,11 @@ rts2-indi -h
 
 will get you list of supported command line options.
 
-For INDI driver to work, you will need to follow this instructions:
+For INDI driver to work you have two choices. you will need to follow this instructions:
 
+
+1) Local setup
+   -----------
 For kstars 3 and bellow, you will need to add following to
 devGroup="Telescopes" in /usr/share/apps/kstars/drivers.xml:
 
@@ -45,3 +48,15 @@ You should replace T0 with name of your telescope device (see
 
 and select RTS2 driver in in INDI Device Manager, and you shall be able to move
 your scope, see its status in INDI Control pannel, and so on.
+
+2) Network setup
+   -------------
+
+Create the file indi_rts2 as described above. On the host
+where the RTS2 telescope driver is running issue 
+
+ indiserver /usr/local/bin/indi_rts2
+
+Use an INDI client, e.g. kstars or xephem, and connect to this indiserver
+as usual.
+ 

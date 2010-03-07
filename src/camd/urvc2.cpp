@@ -47,29 +47,6 @@ namespace rts2camd
  */
 class Urvc2:public Camera
 {
-	private:
-		EEPROMContents eePtr;	 // global to prevent multiple EEPROM calls
-		CAMERA_TYPE cameraID;
-		CAMERA *C;
-
-		void get_eeprom ();
-		void init_shutter ();
-		int set_fan (bool fan_state);
-		int setcool (int reg, int setpt, int prel);
-		int setTempRegulation (int tempReg);
-
-		Rts2ValueInteger *coolingPower;
-		Rts2ValueSelection *tempRegulation;
-		Rts2ValueBool *fan;
-
-	protected:
-		virtual int initChips ();
-		virtual int startExposure ();
-		virtual long isExposing ();
-		virtual int stopExposure ();
-		virtual int doReadout ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 	public:
 		Urvc2 (int argc, char **argv);
 		virtual ~Urvc2 (void);
@@ -88,6 +65,35 @@ class Urvc2:public Camera
 		{
 			return cameraID;
 		}
+
+	protected:
+		virtual int initChips ();
+		virtual int startExposure ();
+		virtual long isExposing ();
+		virtual int stopExposure ();
+		virtual int doReadout ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual int setFilterNum (int new_filter);
+		virtual int getFilterNum ();
+
+	private:
+		EEPROMContents eePtr;	 // global to prevent multiple EEPROM calls
+		CAMERA_TYPE cameraID;
+		CAMERA *C;
+
+		void get_eeprom ();
+		void init_shutter ();
+		int set_fan (bool fan_state);
+		int setcool (int reg, int setpt, int prel);
+		int setTempRegulation (int tempReg);
+
+		Rts2ValueInteger *coolingPower;
+		Rts2ValueSelection *tempRegulation;
+		Rts2ValueBool *fan;
+
+
 };
 
 /*!
@@ -95,51 +101,11 @@ class Urvc2:public Camera
  * It needs it as there is now filter is an extra object.
  */
 
-class FilterUrvc2:public Filter
-{
-	Urvc2 *camera;
-	int filter;
-	public:
-		FilterUrvc2 (Urvc2 * in_camera);
-		virtual ~ FilterUrvc2 (void);
-		virtual int init (void);
-		virtual int getFilterNum (void);
-		virtual int setFilterNum (int new_filter);
-};
-
 };
 
 using namespace rts2camd;
 
-FilterUrvc2::FilterUrvc2 (Urvc2 * in_camera):Filter ()
-{
-	camera = in_camera;
-}
-
-
-FilterUrvc2::~FilterUrvc2 (void)
-{
-	setFilterNum (0);
-}
-
-
-int
-FilterUrvc2::init ()
-{
-	setFilterNum (0);
-	return 0;
-}
-
-
-int
-FilterUrvc2::getFilterNum (void)
-{
-	return filter;
-}
-
-
-int
-FilterUrvc2::setFilterNum (int new_filter)
+int Urvc2::setFilterNum (int new_filter)
 {
 	PulseOutParams pop;
 
@@ -152,13 +118,15 @@ FilterUrvc2::setFilterNum (int new_filter)
 	pop.pulseWidth = 500 + 300 * new_filter;
 	pop.numberPulses = 60;
 
-	if (MicroCommand (MC_PULSE, camera->getCameraID (), &pop, NULL))
+	if (MicroCommand (MC_PULSE, getCameraID (), &pop, NULL))
 		return -1;
-	filter = new_filter;
-
 	return 0;
 }
 
+int Urvc2::getFilterNum ()
+{
+	return getCamFilterNum ();
+}
 
 void
 Urvc2::get_eeprom ()
@@ -339,8 +307,7 @@ Urvc2::setValue (Rts2Value * old_value, Rts2Value * new_value)
 }
 
 
-Urvc2::Urvc2 (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Urvc2::Urvc2 (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -348,17 +315,17 @@ Camera (in_argc, in_argv)
 
 	createExpType ();
 
-	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true);
+	createValue (tempRegulation, "TEMP_REG", "temperature regulation", true, RTS2_VALUE_WRITABLE);
 	tempRegulation->addSelVal ("OFF");
 	tempRegulation->addSelVal ("TEMP");
 	tempRegulation->addSelVal ("POWER");
 
 	tempRegulation->setValueInteger (0);
 
-	createValue (coolingPower, "COOL_PWR", "cooling power", true);
+	createValue (coolingPower, "COOL_PWR", "cooling power", true, RTS2_VALUE_WRITABLE);
 	coolingPower->setValueInteger (0);
 
-	createValue (fan, "FAN", "camera fan state", true);
+	createValue (fan, "FAN", "camera fan state", true, RTS2_VALUE_WRITABLE);
 
 	cameraID = DEFAULT_CAMERA;
 }
@@ -429,8 +396,6 @@ Urvc2::init ()
 
 	logStream (MESSAGE_DEBUG) << "urvc2 init return " << Cams[eePtr.model].
 		horzImage << sendLog;
-
-	filter = new FilterUrvc2 (this);
 
 	strcpy (ccdType, (char *) Cams[eePtr.model].fullName);
 	strcpy (serialNumber, (char *) eePtr.serialNumber);

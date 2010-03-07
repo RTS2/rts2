@@ -38,7 +38,6 @@ class MDM:public Focusd
 		virtual ~ MDM (void);
 
 	protected:
-		virtual int isFocusing ();
 		virtual bool isAtStartPosition ();
 
 		virtual int processOption (int opt);
@@ -115,7 +114,10 @@ int MDM::info ()
 	tcsinfo_t tcsi;
 	ret = tcss_reqcoords (tcssock, &tcsi, 0, 1);
 	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "While calling tcss_reqcoords: " << ret << sendLog;
 		return ret;
+	}
 
 	position->setValueInteger (tcsi.focus);
 
@@ -125,14 +127,16 @@ int MDM::info ()
 
 int MDM::setTo (int num)
 {
+	char buf[255];
+	snprintf (buf, 255, "FOCUSABS %d", num);
+	int ret = tcss_reqnodata (tcssock, buf, TCS_MSG_REQFOCABS, TCS_MSG_FOCABS);
+	if (ret < 0)
+	{
+		logStream (MESSAGE_ERROR) << "Cannot set focuser " << ret << " " << tcssock << sendLog;
+		return -1;
+	}
 	return 0;
 }
-
-int MDM::isFocusing ()
-{
-	return 0;
-}
-
 
 bool MDM::isAtStartPosition ()
 {

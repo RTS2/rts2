@@ -31,8 +31,22 @@ using namespace rts2plan;
 
 // ScriptExec class
 
-int
-ScriptExec::findScript (std::string in_deviceName, std::string & buf)
+class ClientCameraScript:public Rts2DevClientCameraExec
+{
+	public:
+		ClientCameraScript (Rts2Conn *conn, Rts2ValueString *_expandPath):Rts2DevClientCameraExec (conn, _expandPath) {};
+		virtual imageProceRes processImage (Rts2Image * image);
+};
+
+imageProceRes ClientCameraScript::processImage (Rts2Image * image)
+{
+	image->saveImage ();
+	std::cout << image->getFileName () << std::endl;
+
+	return Rts2DevClientCameraExec::processImage (image);
+}
+
+int ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 {
 	// take script from stdin
 	if (deviceName)
@@ -57,9 +71,7 @@ ScriptExec::findScript (std::string in_deviceName, std::string & buf)
 	return -1;
 }
 
-
-bool
-ScriptExec::isScriptRunning ()
+bool ScriptExec::isScriptRunning ()
 {
 	int runningScripts = 0;
 	postEvent (new Rts2Event (EVENT_SCRIPT_RUNNING_QUESTION, (void *) &runningScripts));
@@ -73,9 +85,7 @@ ScriptExec::isScriptRunning ()
 	return (!commandQueEmpty ());
 }
 
-
-int
-ScriptExec::processOption (int in_opt)
+int ScriptExec::processOption (int in_opt)
 {
 	std::ifstream * is;
 	switch (in_opt)
@@ -125,9 +135,7 @@ void ScriptExec::usage ()
 	  << "  " << getAppName () << " -d C0 -s 'for 10 { E 2 }' -e '%c/%L%f'" << std::endl;
 }
 
-
-ScriptExec::ScriptExec (int in_argc, char **in_argv)
-:Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()
+ScriptExec::ScriptExec (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv), Rts2ScriptInterface ()
 {
 	waitState = 0;
 	currentTarget = NULL;
@@ -148,7 +156,6 @@ ScriptExec::ScriptExec (int in_argc, char **in_argv)
 	srandom (time (NULL));
 }
 
-
 ScriptExec::~ScriptExec (void)
 {
 	for (std::vector < Rts2ScriptForDevice * >::iterator iter = scripts.begin ();
@@ -159,9 +166,7 @@ ScriptExec::~ScriptExec (void)
 	scripts.clear ();
 }
 
-
-int
-ScriptExec::init ()
+int ScriptExec::init ()
 {
 	int ret;
 	ret = Rts2Client::init ();
@@ -203,16 +208,12 @@ ScriptExec::init ()
 	return 0;
 }
 
-
-int
-ScriptExec::doProcessing ()
+int ScriptExec::doProcessing ()
 {
 	return 0;
 }
 
-
-Rts2DevClient *
-ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	Rts2DevClient *cli;
 	switch (other_device_type)
@@ -221,7 +222,7 @@ ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 			cli = new Rts2DevClientTelescopeExec (conn);
 			break;
 		case DEVICE_TYPE_CCD:
-			cli = new Rts2DevClientCameraExec (conn, expandPath);
+			cli = new ClientCameraScript (conn, expandPath);
 			break;
 		case DEVICE_TYPE_FOCUS:
 			cli = new Rts2DevClientFocusImage (conn);
@@ -229,9 +230,6 @@ ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 			/*    case DEVICE_TYPE_PHOT:
 				  cli = new Rts2DevClientPhotExec (conn);
 				  break; */
-		case DEVICE_TYPE_MIRROR:
-			cli = new Rts2DevClientMirrorExec (conn);
-			break;
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_SENSOR:
 			cli = new Rts2DevClientWriteImage (conn);
@@ -242,9 +240,7 @@ ScriptExec::createOtherType (Rts2Conn * conn, int other_device_type)
 	return cli;
 }
 
-
-void
-ScriptExec::postEvent (Rts2Event * event)
+void ScriptExec::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -275,17 +271,13 @@ ScriptExec::postEvent (Rts2Event * event)
 	Rts2Client::postEvent (event);
 }
 
-
-void
-ScriptExec::deviceReady (Rts2Conn * conn)
+void ScriptExec::deviceReady (Rts2Conn * conn)
 {
 	conn->postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
 	conn->postEvent (new Rts2Event (EVENT_OBSERVE));
 }
 
-
-int
-ScriptExec::idle ()
+int ScriptExec::idle ()
 {
 	if (nextRunningQ != 0)
 	{
@@ -301,25 +293,19 @@ ScriptExec::idle ()
 	return Rts2Client::idle ();
 }
 
-
-void
-ScriptExec::deviceIdle (Rts2Conn * conn)
+void ScriptExec::deviceIdle (Rts2Conn * conn)
 {
 	if (!isScriptRunning ())
 		endRunLoop ();
 }
 
-
-void
-ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
+void ScriptExec::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	pos->ra = 20;
 	pos->dec = 20;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	ScriptExec app = ScriptExec (argc, argv);
 	return app.run ();

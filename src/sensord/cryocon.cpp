@@ -1,3 +1,22 @@
+/* 
+ * Driver for Cryocon temperature controller.
+ * Copyright (C) 2007-2009 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "sensorgpib.h"
 
 #include "../utils/error.h"
@@ -8,30 +27,30 @@ namespace rts2sensord
 class Cryocon;
 
 /**
- * Structure which holds information about input channel
+ * Structure which holds information about input channel.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ValueTempInput
 {
-	private:
-		char chan;
 	public:
 		std::list < Rts2Value * >values;
 
 		Rts2ValueTempInput (Cryocon * dev, char in_chan);
 
-		char getChannel ()
-		{
-			return chan;
-		}
+		char getChannel () { return chan; }
+
+	private:
+		char chan;
 };
 
 /**
- * Structure which holds loop inforamtions
+ * Structure which holds loop inforamtions.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class Rts2ValueLoop
 {
-	private:
-		int loop;
 	public:
 		Rts2ValueSelection * source;
 		Rts2ValueDouble *setpt;
@@ -53,57 +72,61 @@ class Rts2ValueLoop
 		{
 			return loop;
 		}
+	private:
+		int loop;
 };
 
+/**
+ * Driver class for Cryocon temperature controller.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Cryocon:public Gpib
 {
-	const char *getLoopVal (int l, Rts2Value * val);
-
-	Rts2ValueTempInput *chans[4];
-	Rts2ValueLoop *loops[2];
-
-	std::list < Rts2Value * >systemList;
-
-	Rts2ValueDouble *statTime;
-
-	Rts2ValueDouble *amb;
-	Rts2ValueFloat *htrread;
-	Rts2ValueFloat *htrhst;
-	Rts2ValueBool *heaterEnabled;
-	protected:
-		virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
-
 	public:
 		Cryocon (int argc, char **argv);
 		virtual ~ Cryocon (void);
 
-		void createTempInputValue (Rts2ValueDouble ** val, char chan,
-			const char *name, const char *desc);
+		void createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc);
 
-		template < typename T > void createLoopValue (T * &val, int loop,
-			const char *in_val_name,
-			const char *in_desc,
-			bool writeToFits = true)
+		template < typename T > void createLoopValue (T * &val, int loop, const char *in_val_name, const char *in_desc, bool writeToFits = true, uint32_t flags = 0)
 		{
 			char *n = new char[strlen (in_val_name) + 3];
 			n[0] = '1' + loop;
 			n[1] = '.';
 			strcpy (n + 2, in_val_name);
-			createValue (val, n, in_desc, writeToFits);
+			createValue (val, n, in_desc, writeToFits, flags);
 			delete[] n;
 		}
 
 		virtual int info ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+	protected:
+		virtual int setValue (Rts2Value * oldValue, Rts2Value * newValue);
+
+	private:
+		const char *getLoopVal (int l, Rts2Value * val);
+
+		Rts2ValueTempInput *chans[4];
+		Rts2ValueLoop *loops[2];
+
+		std::list < Rts2Value * >systemList;
+
+		Rts2ValueDouble *statTime;
+
+		Rts2ValueDouble *amb;
+		Rts2ValueFloat *htrread;
+		Rts2ValueFloat *htrhst;
+		Rts2ValueBool *heaterEnabled;
 };
 
 };
 
 using namespace rts2sensord;
 
-Rts2ValueTempInput::Rts2ValueTempInput (Cryocon * dev,
-char in_chan)
+Rts2ValueTempInput::Rts2ValueTempInput (Cryocon * dev, char in_chan)
 {
 	chan = in_chan;
 	// values are passed to dev, and device deletes them!
@@ -128,22 +151,21 @@ char in_chan)
 	values.push_back (v);
 }
 
-
 Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 {
 	loop = in_loop;
 
-	dev->createLoopValue (source, loop, "SOURCE", "Control lopp source input");
+	dev->createLoopValue (source, loop, "SOURCE", "Control loop source input", true, RTS2_VALUE_WRITABLE);
 	values.push_back (source);
 
 	// fill in values
 	const char *sourceVals[] = { "CHA", "CHB", "CHC", "CHD", NULL };
 	source->addSelVals (sourceVals);
 
-	dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point");
+	dev->createLoopValue (setpt, loop, "SETPT", "Control loop set point", true, RTS2_VALUE_WRITABLE);
 	values.push_back (setpt);
 
-	dev->createLoopValue (type, loop, "TYPE", "Control loop control type");
+	dev->createLoopValue (type, loop, "TYPE", "Control loop control type", true, RTS2_VALUE_WRITABLE);
 
 	values.push_back (type);
 
@@ -151,13 +173,12 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 		{ "Off", "PID", "MAN", "Table", "RampP", "RampT", NULL };
 	type->addSelVals (typeVals);
 
-	dev->createLoopValue (range, loop, "RANGE", "Control loop output range");
+	dev->createLoopValue (range, loop, "RANGE", "Control loop output range", true, RTS2_VALUE_WRITABLE);
 	values.push_back (range);
 
 	const char *rangeVals[] =
 	{
-		"50W", "5.0W", "0.5W", "0.05W", "25W", "2.5W", "0.25W", "0.03W", "HTR",
-		NULL
+		"50W", "5.0W", "0.5W", "0.05W", "25W", "2.5W", "0.25W", "0.03W", "HTR", NULL
 	};
 	range->addSelVals (rangeVals);
 
@@ -167,30 +188,23 @@ Rts2ValueLoop::Rts2ValueLoop (Cryocon * dev, int in_loop)
 	dev->createLoopValue (rate, loop, "RATE", "Control loop ramp rate");
 	values.push_back (rate);
 
-	dev->createLoopValue (pgain, loop, "PGAIN",
-		"Control loop proportional gain term");
+	dev->createLoopValue (pgain, loop, "PGAIN", "Control loop proportional gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (pgain);
 
-	dev->createLoopValue (igain, loop, "IGAIN",
-		"Control loop integral gain term");
+	dev->createLoopValue (igain, loop, "IGAIN", "Control loop integral gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (igain);
 
-	dev->createLoopValue (dgain, loop, "DGAIN",
-		"Control loop derivative gain term");
+	dev->createLoopValue (dgain, loop, "DGAIN", "Control loop derivative gain term", true, RTS2_VALUE_WRITABLE);
 	values.push_back (dgain);
 
-	dev->createLoopValue (htrread, loop, "HTRREAD",
-		"Control loop output current");
+	dev->createLoopValue (htrread, loop, "HTRREAD", "Control loop output current");
 	values.push_back (htrread);
 
-	dev->createLoopValue (pmanual, loop, "PMANUAL",
-		"Control loop manual power output setting");
+	dev->createLoopValue (pmanual, loop, "PMANUAL", "Control loop manual power output setting", true, RTS2_VALUE_WRITABLE);
 	values.push_back (pmanual);
 }
 
-
-const char *
-Cryocon::getLoopVal (int l, Rts2Value * val)
+const char * Cryocon::getLoopVal (int l, Rts2Value * val)
 {
 	static char buf[100];
 	strcpy (buf, "LOOP ");
@@ -201,9 +215,7 @@ Cryocon::getLoopVal (int l, Rts2Value * val)
 	return buf;
 }
 
-
-int
-Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
+int Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 {
 	try
 	{
@@ -236,7 +248,6 @@ Cryocon::setValue (Rts2Value * oldValue, Rts2Value * newValue)
 	return Gpib::setValue (oldValue, newValue);
 }
 
-
 Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
 	int i;
@@ -251,30 +262,24 @@ Cryocon::Cryocon (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 		loops[i] = new Rts2ValueLoop (this, i);
 	}
 
-	createValue (statTime, "STATTIME", "time for which statistic was collected",
-		true);
+	createValue (statTime, "STATTIME", "time for which statistic was collected", true);
 
 	createValue (amb, "AMBIENT", "cryocon ambient temperature", true);
 	createValue (htrread, "HTRREAD", "Heater read back current", true);
 	createValue (htrhst, "HTRHST", "Heater heat sink temperature", true);
 
-	createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true);
+	createValue (heaterEnabled, "HEATER", "Heater enabled/disabled", true, RTS2_VALUE_WRITABLE);
 
 	systemList.push_back (amb);
 	systemList.push_back (htrread);
 	systemList.push_back (htrhst);
 }
 
-
 Cryocon::~Cryocon (void)
 {
 }
 
-
-void
-Cryocon::createTempInputValue (Rts2ValueDouble ** val, char chan,
-const char *name,
-const char *desc)
+void Cryocon::createTempInputValue (Rts2ValueDouble ** val, char chan, const char *name, const char *desc)
 {
 	char *n = new char[strlen (name) + 3];
 	n[0] = chan;
@@ -288,9 +293,7 @@ const char *desc)
 	delete[]d;
 }
 
-
-int
-Cryocon::info ()
+int Cryocon::info ()
 {
 	try
 	{
@@ -325,9 +328,7 @@ Cryocon::info ()
 	return Gpib::info ();
 }
 
-
-int
-Cryocon::commandAuthorized (Rts2Conn * conn)
+int Cryocon::commandAuthorized (Rts2Conn * conn)
 {
 	try
 	{
@@ -351,9 +352,7 @@ Cryocon::commandAuthorized (Rts2Conn * conn)
 	return Gpib::commandAuthorized (conn);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Cryocon device = Cryocon (argc, argv);
 	return device.run ();

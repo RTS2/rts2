@@ -182,7 +182,7 @@ TargetGRB::getPostSec ()
 {
 	time_t now;
 	time (&now);
-	return now - (time_t) grbDate;
+	return now - (time_t) getGrbDate ();
 }
 
 
@@ -193,15 +193,15 @@ TargetGRB::checkValidity ()
 	{
 		if (getTargetEnabled () == true)
 		{
- 			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB" << sendLog;
+ 			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") as it is fake GRB." << sendLog;
 			setTargetEnabled (false);
 		}
 	}
 	if (Rts2Config::instance()->grbdValidity () > 0 && getPostSec () > Rts2Config::instance()->grbdValidity ())
 	{
-		if (getTargetEnabled () == false)
+		if (getTargetEnabled () == true)
 		{
-			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is not valid GRB" << sendLog;
+			logStream (MESSAGE_INFO) << "Disabling GRB target " << getTargetName () << " (#" << getObsTargetID () << ") because it is too late after GRB." << sendLog;
 			setTargetEnabled (false);
 		}
 	}
@@ -465,7 +465,9 @@ TargetGRB::getSatelite ()
 	}
 	else if (gcnPacketMin == 110)
 	{
-		return "GLAST";
+		if (gcnPacketType >= 120)
+			return "FERMI (LAT)";
+		return "FERMI (GBM)";
 	}
 	return "Unknow type";
 }

@@ -59,9 +59,7 @@ Rts2NComWin::refresh ()
 		errorMove ("pnoutrefresh statuspad", y + 1, x, y + h - 1, x + w - 1);
 }
 
-
-bool
-Rts2NComWin::setCursor ()
+bool Rts2NComWin::setCursor ()
 {
 	int x, y;
 	getyx (comwin, y, x);
@@ -71,9 +69,7 @@ Rts2NComWin::setCursor ()
 	return true;
 }
 
-
-void
-Rts2NComWin::commandReturn (Rts2Command * cmd, int cmd_status)
+void Rts2NComWin::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 {
 	if (cmd_status == 0)
 		wcolor_set (statuspad, CLR_OK, NULL);

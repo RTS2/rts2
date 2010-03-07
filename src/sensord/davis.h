@@ -68,8 +68,6 @@ class Davis: public SensorWeather
 		virtual int processOption (int _opt);
 		virtual int init ();
 
-		virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-
 		virtual int idle ();
 
 	public:
@@ -97,7 +95,7 @@ class Davis: public SensorWeather
 		{
 			rain->setValueBool (_rain);
 			if (_rain)
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining");
 		}
 		bool getRain ()
 		{
@@ -108,21 +106,21 @@ class Davis: public SensorWeather
 		{
 			avgWindSpeed->setValueFloat (_avgWindSpeed);
 			if (!isnan (avgWindSpeed->getValueFloat ()) && _avgWindSpeed >= maxWindSpeed->getValueFloat ())
-				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
+				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high average wind");
 		}
 
 		void setPeekWindSpeed (float _peekWindSpeed)
 		{
 			peekWindSpeed->setValueFloat (_peekWindSpeed);
 			if (!isnan (maxPeekWindSpeed->getValueFloat ()) && _peekWindSpeed >= maxPeekWindSpeed->getValueFloat ())
-				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT);
+				setWeatherTimeout (BART_BAD_WINDSPEED_TIMEOUT, "high peek wind");
 		}
 
 		void setRainRate (float _rainRate)
 		{
 			rainRate->setValueFloat (_rainRate);
 			if (_rainRate > 0)
-				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT);	
+				setWeatherTimeout (BART_BAD_WEATHER_TIMEOUT, "raining (rainrate)");	
 		}
 
 		void setWetness (double _wetness);

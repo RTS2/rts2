@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
@@ -347,7 +347,7 @@
 	  <option>Y</option>
         </term>
         <listitem>
-          <para>Night year of the start of exposure.</para>
+          <para>Four digits night year of the start of exposure.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -355,7 +355,23 @@
 	  <option>y</option>
         </term>
         <listitem>
-          <para>Year of the start of exposure.</para>
+          <para>Four digits year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>X</option>
+        </term>
+        <listitem>
+          <para>Two digits night year of the start of exposure.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>
+	  <option>x</option>
+        </term>
+        <listitem>
+          <para>Two digits year of the start of exposure.</para>
         </listitem>
       </varlistentry>
       <varlistentry>
@@ -547,19 +563,6 @@
 	  <listitem>
 	    <para>
 	      Bad images are stored at this location. Default value is "%b/darks/%c/%f".
-	    </para>
-	  </listitem>
-	</varlistentry>
-	<varlistentry>
-	  <term>
-	    <option>model_step_type</option>
-	  </term>
-	  <listitem>
-	    <para>
-	      Stepping type for model target. Default value is 2, which will
-	      take 2 steps on the net defined in model table. -1 is for linear
-	      model, where step is increased by factor of 1, and -2 is for
-	      completly random model, which will not make points on the net.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -882,7 +885,49 @@
 	      Time for which GRB observing request will be valid. After that
 	      time, GRB will not be observed by automatic update. If zero, then
 	      GRB observing request will never expires, but will be observed
-	      governed by GRB merit function.
+	      governed by GRB merit function. Defaults to 86400 seconds = 1 day.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_record_above_error</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Whenever FERMI GBM GRBs above error limit will be recorded. If
+	      error indicated in GBM message is above gbm_error_limit,
+	      depending on this setting, either GBM GRB will be completely
+	      ignored (if this is false), or recorded to the database with
+	      tar_enabled set to false - e.g. disabled. Default is true, record
+	      this value.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_enabled_above_error</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      If true, FERMI GRBs with error above gbm_error_limit will be
+	      recorded as enabled targets. This means that FERMI GRBs will be
+	      followed from selector. You most probably do not want this to
+	      happen. Default to false.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>gbm_error_limit</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      FERMI GBM GRBs, with error larger then this limit (specified in
+	      degrees), will not be followed. According to
+	      gbm_record_above_error setting, they will be either ignored at
+	      all, or only recorded to the database for reference. Default is
+	      15 arcmin = 0.25 of degree.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -1006,6 +1051,42 @@
             </para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_processed_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last processed image, saved as JPEG. Path can contain %
+	      character for expansion. If not defined, the JPEG image will not
+	      be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_good_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last good (=with astrometry) image, saved as JPEG. Path
+	      can contain % character for expansion. If not defined, the JPEG
+	      image will not be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>last_trash_jpeg</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Path for last trash (=without astrometry) image, saved as JPEG.
+	      Path can contain % character for expansion. If not defined, the
+	      JPEG image will not be created.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
     <refsect2>
@@ -1093,7 +1174,7 @@
 	</varlistentry>
         <varlistentry>
 	  <term>
-	    <option>filer</option>
+	    <option>filter</option>
 	  </term>
 	  <listitem>
 	    <para>Default filter name.</para>
@@ -1154,6 +1235,36 @@
 	  </term>
 	  <listitem>
 	    <para>FITS header comment for the environmental variable with name VARIABLE. You can of course specify any name you like.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd</option>
+	  </term>
+	  <listitem>
+	    <para>Command which will be executed by
+	    <citerefentry><refentrytitle>rts2-executor</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	    directly after exposure. It willl be passed two parameters - first
+	    absolute path to file produced, and second arbitary parameter
+	    specified with after_exposure_cmd_arg option.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd_timeout</option>
+	  </term>
+	  <listitem>
+	    <para>Timeout for command running after exposure in seconds.</para>
+	  </listitem>
+	</varlistentry>
+        <varlistentry>
+	  <term>
+	    <option>after_exposure_cmd_arg</option>
+	  </term>
+	  <listitem>
+	    <para>Argument passed to command executed after readout is
+	    finished. Please note that first argument is always absolute image
+	    filename.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>

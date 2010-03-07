@@ -46,13 +46,20 @@
 #define R2X_DEVICE_TYPE               "rts2.device.type"
 
 /**
+ * Execute command on device.
+ * @param device  Name of device which will receive the command.
+ * @param command Command as passed to device, with all parameters.
+ */
+#define R2X_DEVICE_COMMAND            "rts2.device.command"
+
+/**
  * Return device status. If you would like to get state of system (=centrald), specify as device name "centrald".
  *
  * @param Device name.
  *
  * @return two arguments - first is device state as string, second as its numeric representation.
  */
-#define R2X_DEVICES_STATUS            "rts2.devices.status"
+#define R2X_DEVICE_STATE              "rts2.device.state"
 
 #define R2X_DEVICES_VALUES_LIST       "rts2.devices.values.list"
 
@@ -73,6 +80,16 @@
  * @param value  Value as string.
  */
 #define R2X_VALUE_SET                 "rts2.value.set"
+
+/**
+ * Set all variables for a given device class. Please see rts2/include/status.h
+ * for list of device types values (DEVICE_TYPE_xxxx defines).
+ *
+ * @param type  Type of the device as number. See rts2/include/status.h for assigned numbers.
+ * @param var   Name of variable which will be set.
+ * @param value New variable value.
+ */
+#define R2X_VALUE_BY_TYPE_SET         "rts2.value_by_type.set"
 
 /**
  * Increment RTS2 variable. Three parameters must be specified, with following meaning:

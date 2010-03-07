@@ -3,7 +3,7 @@
 EXEC SQL include sqlca;
 
 Rts2DevClientPhotExec::Rts2DevClientPhotExec (Rts2Conn * in_connection):Rts2DevClientPhot (in_connection),
-Rts2DevScript
+DevScript
 (in_connection)
 {
   minFlux = 20;
@@ -144,7 +144,7 @@ Rts2DevClientPhotExec::getNextCommand ()
 void
 Rts2DevClientPhotExec::postEvent (Rts2Event * event)
 {
-  Rts2DevScript::postEvent (new Rts2Event (event));
+  DevScript::postEvent (new Rts2Event (event));
   Rts2DevClientPhot::postEvent (event);
 }
 

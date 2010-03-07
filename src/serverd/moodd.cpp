@@ -34,7 +34,7 @@ class MoodD: public Rts2Device
 		virtual void centraldConnRunning (Rts2Conn *conn);
 		virtual void centraldConnBroken (Rts2Conn *conn);
 
-		virtual int setMasterState (int new_state);
+		virtual int setMasterState (Rts2Conn *_conn, int new_state);
 };
 
 
@@ -49,7 +49,7 @@ MoodD::checkCentarlds ()
 	connections_t::iterator iter;
 	if (getCentraldConns ()->size () == 0)
 	{
-		setWeatherState (false);
+		setWeatherState (false, "cannot connect to centrald");
 		return;
 	}
 
@@ -57,17 +57,17 @@ MoodD::checkCentarlds ()
 	{
 		if (!((*iter)->isConnState (CONN_CONNECTED) || (*iter)->isConnState (CONN_AUTH_OK)))
 		{
-			setWeatherState (false);
+			setWeatherState (false, "some centrald connection is not running");
 			return;
 		}
 		if (((*iter)->getState () & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF)
 		{
-			setWeatherState (false);
+			setWeatherState (false, "some centrald is in off state");
 			return;
 		}
 	}
 	// all connections are up, running, and none is in hard off..
-	setWeatherState (true);
+	setWeatherState (true, "all OK");
 }
 
 
@@ -93,9 +93,9 @@ MoodD::MoodD (int argc, char **argv)
 }
 
 int
-MoodD::setMasterState (int new_state)
+MoodD::setMasterState (Rts2Conn *_conn, int new_state)
 {
-	Rts2Device::setMasterState (new_state);
+	Rts2Device::setMasterState (_conn, new_state);
 	checkCentarlds ();
 	return 0;
 }

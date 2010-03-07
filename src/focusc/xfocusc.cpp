@@ -39,6 +39,13 @@
 #define OPT_SAVE         OPT_LOCAL + 22
 #define OPT_CHANGE       OPT_LOCAL + 23
 
+using namespace rts2core;
+
+/**
+ * X-focusing client class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
 class Rts2xfocus:public Rts2GenFocClient
 {
 	private:

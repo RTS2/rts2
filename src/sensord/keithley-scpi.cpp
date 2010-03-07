@@ -31,6 +31,18 @@ namespace rts2sensord
  */
 class Keithley:public Gpib
 {
+	public:
+		Keithley (int argc, char **argv);
+		virtual ~ Keithley (void);
+
+		virtual int info ();
+
+	protected:
+		virtual int init ();
+		virtual int initValues ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		void getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::DoubleArray * val, rts2core::DoubleArray *times, int count);
 
@@ -43,15 +55,7 @@ class Keithley:public Gpib
 		rts2core::DoubleArray *meas_times;
 
 		Rts2ValueInteger *countNum;
-	protected:
-		virtual int init ();
-		virtual int initValues ();
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Keithley (int argc, char **argv);
-		virtual ~ Keithley (void);
-
-		virtual int info ();
+		Rts2ValueFloat *nplc;
 };
 
 };
@@ -74,7 +78,7 @@ void Keithley::getGPIB (const char *buf, Rts2ValueDoubleStat *sval, rts2core::Do
 	{
 		float rval = *((float *) (top + 0));
 		// fields are specified with FORMAT:ELEM, and are in READ,TIME,STAT order..
-		rval *= 10e+12;
+		rval *= 1e+12;
 		sval->addValue (rval);
 		val->addValue (rval);
 		/*logStream (MESSAGE_DEBUG) << "data "
@@ -104,54 +108,63 @@ void Keithley::waitOpc ()
 	throw rts2core::Error ("waitOpc timeout");
 }
 
-
-Keithley::Keithley (int in_argc, char **in_argv):
-Gpib (in_argc, in_argv)
+Keithley::Keithley (int in_argc, char **in_argv):Gpib (in_argc, in_argv)
 {
-	createValue (azero, "AZERO", "SYSTEM:AZERO value");
-	createValue (scurrent, "CURRENT", "Measured current statistics", true, RTS2_VWHEN_BEFORE_END);
-	createValue (current, "A_CURRENT", "Measured current", true, RTS2_VWHEN_BEFORE_END);
-	createValue (meas_times, "MEAS_TIMES", "Measurement times (delta)", true, RTS2_VWHEN_BEFORE_END);
-	createValue (countNum, "COUNT", "Number of measurements averaged", true);
+	createValue (azero, "AZERO", "SYSTEM:AZERO value", true, RTS2_VALUE_WRITABLE);
+	createValue (scurrent, "CURRENT", "[pA] measured current statistics", true, RTS2_VWHEN_BEFORE_END | RTS2_WR_GROUP_NUMBER(0));
+	createValue (current, "A_CURRENT", "[pA] measured current", true, RTS2_VWHEN_BEFORE_END | RTS2_WR_GROUP_NUMBER(0));
+	createValue (meas_times, "MEAS_TIMES", "measurement times (delta)", true, RTS2_VWHEN_BEFORE_END);
+	createValue (countNum, "COUNT", "[counts] number of measurements averaged", true, RTS2_VALUE_WRITABLE);
 	countNum->setValueInteger (100);
-}
 
+	createValue (nplc, "MEAS_NPLC", "Time of each measurment. In Hz multiples (1 = 1/60 sec)", true, RTS2_VALUE_WRITABLE);
+	nplc->setValueFloat (1.0);
+}
 
 Keithley::~Keithley (void)
 {
 }
 
-
-int
-Keithley::init ()
+int Keithley::init ()
 {
 	int ret = Gpib::init ();
 	if (ret)
 		return ret;
 	try
 	{
-		gpibWrite ("TRIG:DEL 0");
 		// start and setup measurements..
 		gpibWrite ("*RST");
-		gpibWrite ("TRIG:DEL 0");
-		writeValue ("TRIG:COUNT", countNum);
-		gpibWrite ("SENS:CURR:RANG:AUTO ON");
-		gpibWrite ("SENS:CURR:NPLC 1");
+		// start and setup measurements..
+		gpibWrite ("*CLS");
+		gpibWrite ("*SRE 0");
+
+		gpibWrite (":FORM:ELEM READ,TIME,STAT");
+		gpibWrite (":TRAC:CLE");
+		gpibWrite (":TRAC:FEED SENS");
+		gpibWrite (":TRAC:FEED:CONT NEV");
+		gpibWrite (":STAT:PRES");
+		devClear ();
+		waitOpc ();
+		writeValue (":TRIG:COUN", countNum);
+//		sleep (1);
+		writeValue (":TRAC:POIN", countNum);
+		writeValue (":SENS:CURR:NPLC", nplc);
+		gpibWrite (":TRIG:DEL 0");
+		gpibWrite (":TRAC:CLE");
+		gpibWrite (":TRAC:FEED:CONT NEXT");
+		gpibWrite (":SENS:CURR:RANG:AUTO ON");
 		// gpibWrite ("SENS:CURR:RANG 2000");
-		gpibWrite ("SYST:ZCH OFF");
-		gpibWrite ("SYST:AZER:STAT OFF");
-		writeValue ("TRAC:POIN", countNum);
-		gpibWrite ("TRAC:CLE");
-		gpibWrite ("TRAC:FEED:CONT NEXT");
-		gpibWrite ("STAT:MEAS:ENAB 512");
+		gpibWrite (":SYST:ZCH OFF");
+		gpibWrite (":SYST:AZER:STAT OFF");
+//		writeValue (":TRAC:POIN", countNum);
+		gpibWrite (":TRAC:CLE");
+		gpibWrite (":TRAC:FEED:CONT NEXT");
+		gpibWrite (":STAT:MEAS:ENAB 512");
 		gpibWrite ("*SRE 1");
 	
 		// ask for Automatic ZERO
-		readValue ("SYSTEM:AZERO?", azero);
+		readValue (":SYSTEM:AZERO?", azero);
 	
-		// start and setup measurements..
-		gpibWrite ("*CLS");
-
 		// set format..
 		gpibWrite (":FORM:DATA SRE; ELEM READ,TIME,STAT ; BORD SWAP ; :TRAC:TST:FORM ABS");
 		
@@ -170,9 +183,7 @@ Keithley::init ()
 	return 0;
 }
 
-
-int
-Keithley::initValues ()
+int Keithley::initValues ()
 {
 	Rts2ValueString *model = new Rts2ValueString ("model");
 	readValue ("*IDN?", model);
@@ -180,9 +191,7 @@ Keithley::initValues ()
 	return Gpib::initValues ();
 }
 
-
-int
-Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	try
 	{
@@ -193,10 +202,17 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		}
 		if (old_value == countNum)
 		{
-			writeValue ("TRIG:COUNT", new_value);
-			writeValue ("TRAC:POIN", new_value);
-			gpibWrite ("TRAC:CLE");
-			waitOpc ();
+			devClear ();
+			gpibWrite (":TRAC:FEED:CONT NEV");
+			writeValue (":TRIG:COUN", new_value);
+			writeValue (":TRAC:POIN", new_value);
+			gpibWrite (":TRAC:CLE");
+			gpibWrite (":TRAC:FEED:CONT NEXT");
+			return 0;
+		}
+		if (old_value == nplc)
+		{
+			writeValue (":SENS:CURR:NPLC", new_value);
 			return 0;
 		}
 	}
@@ -208,9 +224,7 @@ Keithley::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Gpib::setValue (old_value, new_value);
 }
 
-
-int
-Keithley::info ()
+int Keithley::info ()
 {
 	try
 	{
@@ -221,16 +235,26 @@ Keithley::info ()
 		current->clear ();
 		meas_times->clear ();
 		// start taking data
+		// arbitary units!
+		float expTi = countNum->getValueInteger () * nplc->getValueFloat ();
+		if (expTi > 1500)
+			settmo (100);
+		else if (expTi > 700)
+			settmo (30);
+		else if (countNum->getValueInteger () > 200)
+			settmo (10);
 		gpibWrite ("INIT");
 		int ret = Gpib::info ();
 		if (ret)
 			return ret;
 		// now wait for SQR
-		sleep (2);
 		gpibWaitSRQ ();
+		sleep (1);
 		getGPIB ("TRAC:DATA?", scurrent, current, meas_times, countNum->getValueInteger ());
 		gpibWrite ("TRAC:CLE");
 		gpibWrite ("TRAC:FEED:CONT NEXT");
+		if (countNum->getValueInteger () > 200)
+			setTimeout (3);
 	}
 	catch (rts2core::Error er)
 	{
@@ -240,9 +264,7 @@ Keithley::info ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Keithley device = Keithley (argc, argv);
 	return device.run ();

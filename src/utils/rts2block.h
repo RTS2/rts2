@@ -71,12 +71,20 @@
 #define PROTO_BINARY           "C"
 /** The command is followed by data which goes to binary channel. @ingroup RTS2Protocol */
 #define PROTO_DATA             "D"
+/** Shared memory segment key, which holds data */
+#define PROTO_SHARED           "H"
+/** Full shared data received */
+#define PROTO_SHARED_FULL      "I"
 
-class Rts2Command;
 
 class Rts2ClientTCPDataConn;
 
+namespace rts2core
+{
+class Rts2Command;
+
 class Rts2DevClient;
+}
 
 class Rts2LogStream;
 
@@ -93,27 +101,486 @@ typedef std::vector < Rts2Conn * > connections_t;
  */
 class Rts2Block: public Rts2App
 {
-	private:
-		int port;
-		long int idle_timeout;	 // in nsec
+	public:
 
-		// timers - time when they should be executed, event which should be triggered
-		std::map <double, Rts2Event*> timers;
+		/**
+		 * Basic constructor. Fill argc and argv values.
+		 *
+		 * @param in_argc Number of agruments, ussually argc passed from main call.
+		 * @param in_argv Block arguments, ussually passed from main call.
+		 */
+		Rts2Block (int in_argc, char **in_argv);
 
-		connections_t connections;
-		
-		// vector which holds connections which were recently added - idle loop will move them to connections
-		connections_t connections_added;
+		/**
+		 * Delete list of conncection, clear Rts2Block structure.
+		 */
+		virtual ~Rts2Block (void);
 
-		connections_t centraldConns;
+		/**
+		 * Set port number of listening socket.
+		 *
+		 * Rts2Block ussually create listening socket, so other RTS2 programs can connect to the component.
+		 *
+		 * @param in_port Port number. Usually RTS2 blocks will use ports above 1020.
+		 */
+		void setPort (int in_port);
 
-		// vector which holds connections which were recently added - idle loop will move them to connections
-		connections_t centraldConns_added;
+		/**
+		 * Return listening port number.
+		 *
+		 * @return Listening port number, -1 when listening port is not opened.
+		 */
+		int getPort (void);
 
-		std::list <Rts2Address *> blockAddress;
-		std::list <Rts2ConnUser * > blockUsers;
+		/**
+		 * Add connection to block. Block select call then take into
+		 * account connections file descriptor and call hooks either
+		 * when data arrives or writing on connection is possible.
+		 *
+		 * @param conn Connection which will be added to connections of
+		 * the block.
+		 */
+		void addConnection (Rts2Conn *_conn);
 
-		int masterState;
+		/**
+		 * Remove connection from list of connections. The programme is then
+		 * responsible to call destructor for the connection. This is handy
+		 * when destructor is called for some other reason.
+		 */
+		void removeConnection (Rts2Conn *_conn);
+
+		/**
+		 * Add connection as connection to central server,
+		 *
+		 * @param _conn Connection which will be added.
+		 * @param added True if connection can be added directly
+		 */
+		void addCentraldConnection (Rts2Conn *_conn, bool added);
+
+		/**
+		 * Return number of connections in connections structure.
+		 *
+		 * @return Number of connections in block.
+		 */
+		int connectionSize ()
+		{
+			return connections.size ();
+		}
+
+		/**
+		 * Ask if command que is empty.
+		 *
+		 * If command is running (e.g. was send to the conection, but Rts2Block does
+		 * not received reply), it will return True.
+		 *
+		 * @return True if command que is empty and new command will be executed
+		 * immediately (after running command returns), otherwise returns false.
+		 */
+		bool commandQueEmpty ();
+
+		/**
+		 * Event handling mechanism.
+		 *
+		 * Send Event to all connections which are members of Rts2Block structure.
+		 *
+		 * @see Rts2Event
+		 * @see Rts2Object::postEvent
+		 *
+		 * @param event Event which is passed to postEvent method.
+		 */
+		virtual void postEvent (Rts2Event * event);
+
+		/**
+		 * Create new connection.
+		 * This function is used in descenadants to override class of connections being created.
+		 *
+		 * @param in_sock Socket file descriptor which holds connection.
+		 *
+		 * @return Rts2Conn or descenand object.
+		 */
+		virtual Rts2Conn *createConnection (int in_sock);
+
+		/**
+		 * Finds connection with given name.
+		 *
+		 * @param in_name Name of connection which will be looked for.
+		 *
+		 * @return NULL if connection cannot be found, otherwise reference to connection object.
+		 */
+		Rts2Conn *findName (const char *in_name);
+
+		Rts2Conn *findCentralId (int in_id);
+
+		/**
+		 * Send status message to all connected clients.
+		 *
+		 * @param state State value which will be send.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_STATUS
+		 */
+		void sendStatusMessage (int state, const char * msg = NULL);
+
+		/**
+		 * Send status message to one connection.
+		 *
+		 * @param state State value which will be send.
+		 * @param conn Connection to which the state will be send.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_STATUS
+		 */
+		void sendStatusMessage (int state, Rts2Conn *conn);
+
+		/**
+		 * Send BOP state to all connections.
+		 *
+		 * @param bop_state New BOP state.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_BOP_STATE
+		 */
+		void sendBopMessage (int bop_state);
+
+		/**
+		 * Send BOP message to a single connection.
+		 *
+		 * @param bop_state
+		 * @param conn Connection which will receive BOP state.
+		 *
+		 * @callergraph
+		 *
+		 * @see PROTO_BOP_STATE
+		 */
+		void sendBopMessage (int bop_state, Rts2Conn *conn);
+
+		/**
+		 * Send message to all connections.
+		 *
+		 * @param msg Message which will be send.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int sendAll (const char *msg);
+
+		/**
+		 * Send message to all connections.
+		 *
+		 * @param _os Output stream holding the message.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int sendAll (std::ostringstream &_os)
+		{
+			return sendAll (_os.str ().c_str ());
+		}
+
+		/**
+		 * Send variable value to all connections.
+		 *
+		 * @param val_name Name of the variable.
+		 * @param value Variable value.
+		 */
+		void sendValueAll (char *val_name, char *value);
+
+		// only used in centrald!
+		void sendMessageAll (Rts2Message & msg);
+
+		void setTimeout (long int new_timeout)
+		{
+			idle_timeout = new_timeout;
+		}
+
+		void setTimeoutMin (long int new_timeout)
+		{
+			if (new_timeout < idle_timeout)
+				idle_timeout = new_timeout;
+		}
+		void oneRunLoop ();
+
+		/**
+		 * This function is called when device on given connection is ready
+		 * to accept commands.
+		 *
+		 * @param conn connection representing device which became ready
+		 */
+		virtual void deviceReady (Rts2Conn * conn);
+
+		/**
+		 * Called when some device connected to us become idle.
+		 *
+		 * @param conn connection representing device which became idle
+		 */
+		virtual void deviceIdle (Rts2Conn * conn);
+
+		virtual int changeMasterState (int new_state);
+
+		/**
+		 * Called when new state information arrives.
+		 */
+		virtual int setMasterState (Rts2Conn *_conn, int new_state);
+
+		/**
+		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
+		 * will need this call to check if master is in day etc..
+		 *
+		 * @see Rts2Block::getMasterStateFull()
+		 *
+		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
+		 */
+		const int getMasterState ()
+		{
+			return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK);
+		}
+
+		/**
+		 * Returns full master state, including BOP mask and weather. For checking server state. see Rts2Block::getMasterState()
+		 *
+		 * @return Master state.
+		 */
+		const int getMasterStateFull ()
+		{
+			return masterState;
+		}
+
+		/**
+		 * Returns true if all masters thinks it is safe weather to
+		 * operate observatory.  Masters can have multiple weather
+		 * sensors connected which can block weather.
+		 * 
+		 * Master is responsible for handling those devices bad weather
+		 * state and set its state accordingly. It can also hold a list 
+		 * of devices which are necessary for observatory operation, and
+		 * if any of this devices is missing, it will set weather to bad
+		 * signal.
+		 *
+		 * Also all central daemons which were specified on command
+		 * line using the --server argument must be running.
+		 */
+		virtual bool isGoodWeather ();
+
+		/**
+		 * Returns true if all connections to central servers are up and running.
+		 *
+		 * @return True if all connections to central servers are up and running.
+		 */
+		bool allCentraldRunning ();
+
+		/**
+		 * Returns true if at least one connection to centrald is up and running. 
+		 * When that is the case, it is possible to log through RTS2 logging.
+		 * Otherwise, logging shall be diverted to syslog.
+		 *
+		 * @return True if at least one centrald is running.
+		 */
+		bool someCentraldRunning ();
+
+		Rts2Address *findAddress (const char *blockName);
+		Rts2Address *findAddress (int centraldNum, const char *blockName);
+
+		void addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
+
+		void deleteAddress (int p_centrald_num, const char *p_name);
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		void addUser (int p_centraldId, const char *p_login);
+		int addUser (Rts2ConnUser * in_user);
+
+		/**
+		 * Return established connection to device with given name.
+		 *
+		 * Returns connection to device with deviceName. Device must be know to
+		 * system and connection to it must be opened.
+		 *
+		 * @param deviceName Device which will be looked on.
+		 *
+		 * @return Rts2Conn pointer to opened device connection.
+		 */
+		Rts2Conn *getOpenConnection (const char *deviceName);
+
+		/**
+		 * Return next established connection to device of given type.
+		 *
+		 * Type represents device class. For list of types, please look to RTS2_DEVICE_xxx defines in rts2/include/status.h.
+		 *
+		 * @param  deviceType Type of device to search for.
+		 * @param  current    Current iterator. If called to find all devices of given type, pass this along to keep references.On return.
+		 *     this iterrator holds reference to next device of given type. If such device cannot be found, it is equal to getConnection ()->end ().
+		 */
+		void getOpenConnectionType (int deviceType, connections_t::iterator &current);
+
+		/**
+		 * Return connection with given type. Return first connection with given type, if no connection can be found,
+		 * return NULL.
+		 *
+		 * @param device_type  Type of device (see DEVICE_XXX constants).
+		 *
+		 * @return Rts2Conn pointer to opened device connection with given type.
+		 */
+		Rts2Conn *getOpenConnection (int device_type);
+
+		/**
+		 * Return connection to given device.
+		 *
+		 * Create and return new connection if if device name isn't found
+		 * among connections, but is in address list.
+		 *
+		 * This function can return 'fake' client connection, which will not resolve
+		 * to device name (even after 'info' call on master device).  For every
+		 * command enqued to fake devices error handler will be runned.
+		 *
+		 * @param deviceName Device which will be looked on.
+		 *
+		 * @return Rts2Conn pointer to device connection.
+		 *
+		 * @callgraph
+		 */
+		Rts2Conn *getConnection (char *deviceName);
+
+		/**
+		 * Return centrald id of device at given centrald
+		 * num server.
+		 *
+		 * @param centrald_num  Number at centrald.
+		 * 
+		 * @return -1 on error, otherwise centrald id of
+		 * device which holds this connection on centrald
+		 * server with number centrald_num.
+		 */
+		int getCentraldIdAtNum (int centrald_num);
+
+		/**
+		 * Return vector of active connections to devices and clients.
+		 *
+		 */
+		connections_t* getConnections ()
+		{
+			return &connections;
+		}
+
+		/**
+		 * Returns vector of connections to central server.
+		 *
+		 * @return Vector of connections.
+		 */
+		connections_t* getCentraldConns ()
+		{
+			return &centraldConns;
+		}
+
+		Rts2Conn *getSingleCentralConn ()
+		{
+			if (centraldConns.size () != 1)
+			{
+				std::cerr << "getSingleCentralConn does not have 1 conn: " << centraldConns.size () << std::endl;
+				exit (0);
+			}
+			return *(centraldConns.begin ());
+		}
+
+
+		/**
+		 * Called when new message is received.
+		 *
+		 * @param msg Message which is received.
+		 */
+		virtual void message (Rts2Message & msg);
+
+		/**
+		 * Clear all connections from pending commands.
+		 */
+		void clearAll ();
+
+		int queAll (rts2core::Rts2Command * cmd);
+		int queAll (const char *text);
+
+		/**
+		 * Return connection with minimum (integer) value.
+		 */
+		Rts2Conn *getMinConn (const char *valueName);
+
+		virtual void centraldConnRunning (Rts2Conn *conn)
+		{
+		}
+
+		virtual void centraldConnBroken (Rts2Conn *conn)
+		{
+		}
+
+		virtual int setValue (Rts2Conn * conn, bool overwriteSaved)
+		{
+			return -2;
+		}
+
+		/**
+		 * Search for value from device.
+		 *
+		 * @param device_name Name of the device.
+		 * @param value_name  Name of the value.
+		 *
+		 * @return Pointer to Rts2Value object holding the value, or NULL if device or value with given name
+		 * does not exists.
+		 */
+		Rts2Value *getValue (const char *device_name, const char *value_name);
+
+		virtual void endRunLoop ()
+		{
+			setEndLoop (true);
+		}
+
+		double getNow ()
+		{
+			struct timeval infot;
+			gettimeofday (&infot, NULL);
+			return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
+		}
+
+		virtual int statusInfo (Rts2Conn * conn);
+
+		/**
+		 * Check if command was not replied.
+		 *
+		 * @param object Object which orignated command.
+		 * @param exclude_conn Connection which should be excluded from check.
+		 *
+		 * @return True if command was not send or command reply was not received, false otherwise.
+		 *
+		 * @callergraph
+		 */
+		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
+
+		/**
+		 * Called when we have new binary data on connection. Childs
+		 * should overwite this method.
+		 *
+		 * @param conn Connection which received binary data
+		 */
+		virtual void binaryDataArrived (Rts2Conn *conn)
+		{
+		}
+
+		/**
+		 * Add new user timer.
+		 *
+		 * @param timer_time  Timer time in seconds, counted from now.
+		 * @param event       Event which will be posted for triger. Event argument
+		 *
+		 * @see Rts2Event
+		 */
+		void addTimer (double timer_time, Rts2Event *event)
+		{
+			timers[getNow () + timer_time] = event;
+		}
+
+		/**
+		 * Remove timer with a given type from the list of timers.
+		 *
+		 * @param event_type Type of event.
+		 */
+		void deleteTimers (int event_type);
 
 	protected:
 
@@ -216,457 +683,38 @@ class Rts2Block: public Rts2App
 		 */
 		void updateMetaInformations (Rts2Value *value);
 
-	public:
-
 		/**
-		 * Basic constructor. Fill argc and argv values.
+		 * Set good state master connection.
 		 *
-		 * @param in_argc Number of agruments, ussually argc passed from main call.
-		 * @param in_argv Block arguments, ussually passed from main call.
+		 * This connection is the only centrald connection, which is
+		 * allowed to set good weather state. If good weather / ready
+		 * state arrives on other connection, it will be ignored.
+		 *
+		 * @param _conn New master state connection.
 		 */
-		Rts2Block (int in_argc, char **in_argv);
+		void setMasterConn (Rts2Conn *_conn) { stateMasterConn = _conn; }
 
-		/**
-		 * Delete list of conncection, clear Rts2Block structure.
-		 */
-		virtual ~Rts2Block (void);
+	private:
+		int port;
+		long int idle_timeout;	 // in nsec
 
-		/**
-		 * Set port number of listening socket.
-		 *
-		 * Rts2Block ussually create listening socket, so other RTS2 programs can connect to the component.
-		 *
-		 * @param in_port Port number. Usually RTS2 blocks will use ports above 1020.
-		 */
-		void setPort (int in_port);
+		// timers - time when they should be executed, event which should be triggered
+		std::map <double, Rts2Event*> timers;
 
-		/**
-		 * Return listening port number.
-		 *
-		 * @return Listening port number, -1 when listening port is not opened.
-		 */
-		int getPort (void);
+		connections_t connections;
+		
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t connections_added;
 
-		/**
-		 * Add connection to block. Block select call then take into
-		 * account connections file descriptor and call hooks either
-		 * when data arrives or writing on connection is possible.
-		 *
-		 * @param conn Connection which will be added to connections of
-		 * the block.
-		 */
-		void addConnection (Rts2Conn *_conn);
+		connections_t centraldConns;
 
-		/**
-		 * Add connection as connection to central server,
-		 *
-		 * @param _conn Connection which will be added.
-		 * @param added True if connection can be added directly
-		 */
-		void addCentraldConnection (Rts2Conn *_conn, bool added);
+		// vector which holds connections which were recently added - idle loop will move them to connections
+		connections_t centraldConns_added;
 
-		/**
-		 * Return number of connections in connections structure.
-		 *
-		 * @return Number of connections in block.
-		 */
-		int connectionSize ()
-		{
-			return connections.size ();
-		}
+		std::list <Rts2Address *> blockAddress;
+		std::list <Rts2ConnUser * > blockUsers;
 
-		/**
-		 * Ask if command que is empty.
-		 *
-		 * If command is running (e.g. was send to the conection, but Rts2Block does
-		 * not received reply), it will return True.
-		 *
-		 * @return True if command que is empty and new command will be executed
-		 * immediately (after running command returns), otherwise returns false.
-		 */
-		bool commandQueEmpty ();
-
-		/**
-		 * Event handling mechanism.
-		 *
-		 * Send Event to all connections which are members of Rts2Block structure.
-		 *
-		 * @see Rts2Event
-		 * @see Rts2Object::postEvent
-		 *
-		 * @param event Event which is passed to postEvent method.
-		 */
-		virtual void postEvent (Rts2Event * event);
-
-		/**
-		 * Create new connection.
-		 * This function is used in descenadants to override class of connections being created.
-		 *
-		 * @param in_sock Socket file descriptor which holds connection.
-		 *
-		 * @return Rts2Conn or descenand object.
-		 */
-		virtual Rts2Conn *createConnection (int in_sock);
-
-		/**
-		 * Finds connection with given name.
-		 *
-		 * @param in_name Name of connection which will be looked for.
-		 *
-		 * @return NULL if connection cannot be found, otherwise reference to connection object.
-		 */
-		Rts2Conn *findName (const char *in_name);
-
-		Rts2Conn *findCentralId (int in_id);
-
-		/**
-		 * Send status message to all connected clients.
-		 *
-		 * @param state State value which will be send.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_STATUS
-		 */
-		void sendStatusMessage (int state);
-
-		/**
-		 * Send status message to one connection.
-		 *
-		 * @param state State value which will be send.
-		 * @param conn Connection to which the state will be send.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_STATUS
-		 */
-		void sendStatusMessage (int state, Rts2Conn *conn);
-
-		/**
-		 * Send BOP state to all connections.
-		 *
-		 * @param bop_state New BOP state.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_BOP_STATE
-		 */
-		void sendBopMessage (int bop_state);
-
-		/**
-		 * Send BOP message to a single connection.
-		 *
-		 * @param bop_state
-		 * @param conn Connection which will receive BOP state.
-		 *
-		 * @callergraph
-		 *
-		 * @see PROTO_BOP_STATE
-		 */
-		void sendBopMessage (int bop_state, Rts2Conn *conn);
-
-		/**
-		 * Send message to all connections.
-		 *
-		 * @param msg Message which will be send.
-		 *
-		 * @return -1 on error, otherwise 0.
-		 */
-		int sendAll (const char *msg);
-
-		/**
-		 * Send message to all connections.
-		 *
-		 * @param _os Output stream holding the message.
-		 *
-		 * @return -1 on error, otherwise 0.
-		 */
-		int sendAll (std::ostringstream &_os)
-		{
-			return sendAll (_os.str ().c_str ());
-		}
-
-		/**
-		 * Send variable value to all connections.
-		 *
-		 * @param val_name Name of the variable.
-		 * @param value Variable value.
-		 */
-		void sendValueAll (char *val_name, char *value);
-
-		// only used in centrald!
-		void sendMessageAll (Rts2Message & msg);
-
-		void setTimeout (long int new_timeout)
-		{
-			idle_timeout = new_timeout;
-		}
-
-		void setTimeoutMin (long int new_timeout)
-		{
-			if (new_timeout < idle_timeout)
-				idle_timeout = new_timeout;
-		}
-		void oneRunLoop ();
-
-		/**
-		 * This function is called when device on given connection is ready
-		 * to accept commands.
-		 *
-		 * @param conn connection representing device which became ready
-		 */
-		virtual void deviceReady (Rts2Conn * conn);
-
-		/**
-		 * Called when some device connected to us become idle.
-		 *
-		 * @param conn connection representing device which became idle
-		 */
-		virtual void deviceIdle (Rts2Conn * conn);
-
-		virtual int changeMasterState (int new_state);
-
-		/**
-		 * Called when new state information arrives.
-		 */
-		virtual int setMasterState (int new_state);
-
-		/**
-		 * Returns master state. This does not returns master BOP mask or weather state. Usually you
-		 * will need this call to check if master is in day etc..
-		 *
-		 * @see Rts2Block::getMasterStateFull()
-		 *
-		 * @return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)
-		 */
-		const int getMasterState ()
-		{
-			return masterState & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK);
-		}
-
-		/**
-		 * Returns full master state, including BOP mask and weather. For checking server state. see Rts2Block::getMasterState()
-		 *
-		 * @return Master state.
-		 */
-		const int getMasterStateFull ()
-		{
-			return masterState;
-		}
-
-		/**
-		 * Returns true if all masters thinks it is safe weather to
-		 * operate observatory.  Masters can have multiple weather
-		 * sensors connected which can block weather.
-		 * 
-		 * Master is responsible for handling those devices bad weather
-		 * state and set its state accordingly. It can also hold a list 
-		 * of devices which are necessary for observatory operation, and
-		 * if any of this devices is missing, it will set weather to bad
-		 * signal.
-		 *
-		 * Also all central daemons which were specified on command
-		 * line using the --server argument must be running.
-		 */
-		virtual bool isGoodWeather ();
-
-		/**
-		 * Returns true if all connections to central servers are up and running.
-		 *
-		 * @return True if all connections to central servers are up and running.
-		 */
-		bool allCentraldRunning ();
-
-		/**
-		 * Returns true if at least one connection to centrald is up and running. 
-		 * When that is the case, it is possible to log through RTS2 logging.
-		 * Otherwise, logging shall be diverted to syslog.
-		 *
-		 * @return True if at least one centrald is running.
-		 */
-		bool someCentraldRunning ();
-
-		Rts2Address *findAddress (const char *blockName);
-		Rts2Address *findAddress (int centraldNum, const char *blockName);
-
-		void addAddress (int p_host_num, int p_centrald_num, int p_centrald_id, const char *p_name, const char *p_host, int p_port, int p_device_type);
-
-		void deleteAddress (int p_centrald_num, const char *p_name);
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-		void addUser (int p_centraldId, const char *p_login);
-		int addUser (Rts2ConnUser * in_user);
-
-		/**
-		 * Return established connection to device with given name.
-		 *
-		 * Returns connection to device with deviceName. Device must be know to
-		 * system and connection to it must be opened.
-		 *
-		 * @param deviceName Device which will be looked on.
-		 *
-		 * @return Rts2Conn pointer to opened device connection.
-		 */
-		Rts2Conn *getOpenConnection (const char *deviceName);
-
-		/**
-		 * Return connection to given device.
-		 *
-		 * Create and return new connection if if device name isn't found
-		 * among connections, but is in address list.
-		 *
-		 * This function can return 'fake' client connection, which will not resolve
-		 * to device name (even after 'info' call on master device).  For every
-		 * command enqued to fake devices error handler will be runned.
-		 *
-		 * @param deviceName Device which will be looked on.
-		 *
-		 * @return Rts2Conn pointer to device connection.
-		 *
-		 * @callgraph
-		 */
-		Rts2Conn *getConnection (char *deviceName);
-
-		/**
-		 * Return centrald id of device at given centrald
-		 * num server.
-		 *
-		 * @param centrald_num  Number at centrald.
-		 * 
-		 * @return -1 on error, otherwise centrald id of
-		 * device which holds this connection on centrald
-		 * server with number centrald_num.
-		 */
-		int getCentraldIdAtNum (int centrald_num);
-
-		/**
-		 * Return vector of active connections to devices and clients.
-		 *
-		 */
-		connections_t* getConnections ()
-		{
-			return &connections;
-		}
-
-		/**
-		 * Returns vector of connections to central server.
-		 *
-		 * @return Vector of connections.
-		 */
-		connections_t* getCentraldConns ()
-		{
-			return &centraldConns;
-		}
-
-		Rts2Conn *getSingleCentralConn ()
-		{
-			if (centraldConns.size () != 1)
-			{
-				std::cerr << "getSingleCentralConn does not have 1 conn: " << centraldConns.size () << std::endl;
-				exit (0);
-			}
-			return *(centraldConns.begin ());
-		}
-
-
-		/**
-		 * Called when new message is received.
-		 *
-		 * @param msg Message which is received.
-		 */
-		virtual void message (Rts2Message & msg);
-
-		/**
-		 * Clear all connections from pending commands.
-		 */
-		void clearAll ();
-
-		int queAll (Rts2Command * cmd);
-		int queAll (const char *text);
-
-		/**
-		 * Return connection with minimum (integer) value.
-		 */
-		Rts2Conn *getMinConn (const char *valueName);
-
-		virtual void centraldConnRunning (Rts2Conn *conn)
-		{
-		}
-
-		virtual void centraldConnBroken (Rts2Conn *conn)
-		{
-		}
-
-		virtual int setValue (Rts2Conn * conn, bool overwriteSaved)
-		{
-			return -2;
-		}
-
-		/**
-		 * Search for value from device.
-		 *
-		 * @param device_name Name of the device.
-		 * @param value_name  Name of the value.
-		 *
-		 * @return Pointer to Rts2Value object holding the value, or NULL if device or value with given name
-		 * does not exists.
-		 */
-		Rts2Value *getValue (const char *device_name, const char *value_name);
-
-		virtual void endRunLoop ()
-		{
-			setEndLoop (true);
-		}
-
-		double getNow ()
-		{
-			struct timeval infot;
-			gettimeofday (&infot, NULL);
-			return infot.tv_sec + (double) infot.tv_usec / USEC_SEC;
-		}
-
-		virtual int statusInfo (Rts2Conn * conn);
-
-		/**
-		 * Check if command was not replied.
-		 *
-		 * @param object Object which orignated command.
-		 * @param exclude_conn Connection which should be excluded from check.
-		 *
-		 * @return True if command was not send or command reply was not received, false otherwise.
-		 *
-		 * @callergraph
-		 */
-		bool commandOriginatorPending (Rts2Object * object, Rts2Conn * exclude_conn);
-
-		/**
-		 * Called when we have new binary data on connection. Childs
-		 * should overwite this method.
-		 *
-		 * @param conn Connection which received binary data
-		 */
-		virtual void binaryDataArrived (Rts2Conn *conn)
-		{
-		}
-
-		/**
-		 * Add new user timer.
-		 *
-		 * @param timer_time  Timer time in seconds, counted from now.
-		 * @param event       Event which will be posted for triger. Event argument
-		 *
-		 * @see Rts2Event
-		 */
-		void addTimer (double timer_time, Rts2Event *event)
-		{
-			timers[getNow () + timer_time] = event;
-		}
-
-		/**
-		 * Remove timer with a given type from the list of timers.
-		 *
-		 * @param event_type Type of event.
-		 */
-		void deleteTimers (int event_type);
+		int masterState;
+		Rts2Conn *stateMasterConn;
 };
 #endif							 // !__RTS2_NETBLOCK__

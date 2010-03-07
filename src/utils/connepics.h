@@ -39,7 +39,7 @@ class ConnEpicsError:public Error
 	public:
 		ConnEpicsError (const char *_message, int _result): Error ()
 		{
-			setMsg (std::string (_msg) + ca_message (_result));
+			setMsg (std::string (_message) + ca_message (_result));
 		}
 };
 
@@ -55,7 +55,7 @@ class ConnEpicsErrorChannel:public ConnEpicsError
 		ConnEpicsErrorChannel (const char *_message, const char *_pvname, int _result)
 		:ConnEpicsError (_message, _result)
 		{
-		 	setMsg (std::string (_message) + ", channel " + _epics.pv_nan + " error " + ca_message (_result));
+		 	setMsg (std::string (_message) + ", channel " + _pvname + " error " + ca_message (_result));
 		}
 };
 

@@ -19,6 +19,7 @@
 
 #include "imgdisplay.h"
 #include "observationset.h"
+#include "sqlerror.h"
 #include "target.h"
 
 #include <algorithm>
@@ -29,38 +30,127 @@
 
 using namespace rts2db;
 
-void
-ObservationSet::load (std::string in_where)
+ObservationSet::ObservationSet (void)
+{
+	images = 0;
+	counts = 0;
+	collocated = false;
+	successNum = 0;
+	failedNum = 0;
+
+	allNum = 0;
+	goodNum = 0;
+
+	firstNum = 0;
+
+	errFirstRa = 0;
+	errFirstDec = 0;
+	errFirstRad = 0;
+
+	errAvgRa = 0;
+	errAvgDec = 0;
+	errAvgRad = 0;
+}
+
+ObservationSet::~ObservationSet (void)
+{
+	clear ();
+}
+
+void ObservationSet::loadTarget (int _tar_id, const time_t * start_t, const time_t * end_t)
+{
+	std::ostringstream os;
+	os << "observations.tar_id = " << _tar_id;
+	if (start_t)
+	{
+		os << " AND observations.obs_slew >= to_timestamp (" << *start_t<< ")";
+	}
+	if (end_t)
+	{
+	 	os << " AND ((observations.obs_slew <= to_timestamp ("
+		<< *end_t
+		<< ") AND (observations.obs_end is NULL OR observations.obs_end < to_timestamp ("
+		<< *end_t
+		<< "))";
+	}
+	load (os.str());
+}
+
+void ObservationSet::loadTime (const time_t * start_t, const time_t * end_t)
+{
+	std::ostringstream os;
+	if (start_t)
+	{
+		os << "observations.obs_slew >= to_timestamp (" << *start_t << ")";
+	}
+	if (end_t)
+	{
+		if (start_t)
+			os << " AND ";
+		os << "((observations.obs_slew <= to_timestamp ("
+			<< *end_t
+			<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
+			<< *end_t
+			<< "))";
+	}
+	load (os.str());
+}
+
+void ObservationSet::loadType (char type_id, int state_mask, bool inv)
+{
+	std::ostringstream os;
+	os << "(targets.type_id = "
+		<< type_id
+		<< ") and ((observations.obs_state & "
+		<< state_mask
+		<< ") ";
+	if (inv)
+		os << "!";
+	os << "= "
+		<< state_mask
+		<< ")";
+	load (os.str());
+}
+
+void ObservationSet::loadRadius (struct ln_equ_posn * position, double radius)
+{
+	std::ostringstream os;
+	os << "ln_angular_separation (observations.obs_ra, observations.obs_dec, "
+		<< position->ra << ", "
+		<< position->dec << ") < "
+		<< radius;
+	load (os.str());
+}
+
+void ObservationSet::load (std::string in_where)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		char *stmp_c;
+	char *stmp_c;
 
-		// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
-		VARCHAR db_tar_name[150];
-		int db_tar_id;
-		int db_obs_id;
-		double db_obs_ra;
-		double db_obs_dec;
-		double db_obs_alt;
-		double db_obs_az;
-		double db_obs_slew;
-		double db_obs_start;
-		int db_obs_state;
-		double db_obs_end;
+	// cannot use TARGET_NAME_LEN, as it does not work with some ecpg veriosn
+	VARCHAR db_tar_name[150];
+	int db_tar_id;
+	int db_obs_id;
+	double db_obs_ra;
+	double db_obs_dec;
+	double db_obs_alt;
+	double db_obs_az;
+	double db_obs_slew;
+	double db_obs_start;
+	int db_obs_state;
+	double db_obs_end;
 
-		int db_tar_ind;
-		char db_tar_type;
-		int db_obs_ra_ind;
-		int db_obs_dec_ind;
-		int db_obs_alt_ind;
-		int db_obs_az_ind;
-		int db_obs_slew_ind;
-		int db_obs_start_ind;
-		int db_obs_state_ind;
-		int db_obs_end_ind;
+	int db_tar_ind;
+	char db_tar_type;
+	int db_obs_ra_ind;
+	int db_obs_dec_ind;
+	int db_obs_alt_ind;
+	int db_obs_az_ind;
+	int db_obs_slew_ind;
+	int db_obs_start_ind;
+	int db_obs_state_ind;
+	int db_obs_end_ind;
 	EXEC SQL END DECLARE SECTION;
-
-	initObservationSet ();
 
 	std::ostringstream _os;
 	_os << 
@@ -130,7 +220,7 @@ ObservationSet::load (std::string in_where)
 			db_obs_end = nan("f");
 
 		// add new observations to vector
-		Rts2Obs obs = Rts2Obs (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
+		Observation obs = Observation (db_tar_id, db_tar_name.arr, db_tar_type, db_obs_id, db_obs_ra, db_obs_dec, db_obs_alt,
 			db_obs_az, db_obs_slew, db_obs_start, db_obs_state, db_obs_end);
 		push_back (obs);
 		if (db_obs_state & OBS_BIT_STARTED)
@@ -143,135 +233,19 @@ ObservationSet::load (std::string in_where)
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		logStream (MESSAGE_ERROR) << "ObservationSet::ObservationSet cannot load observation set:"
-			<< sqlca.sqlerrm.sqlerrmc << sendLog;
+		EXEC SQL CLOSE obs_cur_timestamps;
+		EXEC SQL ROLLBACK;
+		throw SqlError ();
 	}
 	EXEC SQL CLOSE obs_cur_timestamps;
 	EXEC SQL ROLLBACK;
 }
 
-
-ObservationSet::ObservationSet (void)
-{
-}
-
-
-ObservationSet::ObservationSet (int in_tar_id, const time_t * start_t, const time_t * end_t)
-{
-	std::ostringstream os;
-	os << "observations.tar_id = "
-		<< in_tar_id
-		<< " AND observations.obs_slew >= to_timestamp ("
-		<< *start_t
-		<< ") AND ((observations.obs_slew <= to_timestamp ("
-		<< *end_t
-		<< ") AND (observations.obs_end is NULL OR observations.obs_end < to_timestamp ("
-		<< *end_t
-		<< "))";
-	load (os.str());
-}
-
-
-ObservationSet::ObservationSet (const time_t * start_t, const time_t * end_t)
-{
-	std::ostringstream os;
-	os << "observations.obs_slew >= to_timestamp ("
-		<< *start_t
-		<< ") AND ((observations.obs_slew <= to_timestamp ("
-		<< *end_t
-		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
-		<< *end_t
-		<< "))";
-	load (os.str());
-}
-
-
-ObservationSet::ObservationSet (int in_tar_id)
-{
-	std::ostringstream os;
-	os << "observations.tar_id = "
-		<< in_tar_id;
-	load (os.str());
-}
-
-
-ObservationSet::ObservationSet (int year, int month)
-{
-	time_t start_t = Rts2Config::instance ()->getNight (year,month,1);
-	month++;
-	if (month > 12)
-	{
-		year++;
-		month -= 12;
-	}
-	time_t end_t = Rts2Config::instance ()->getNight (year,month, 1);
-	std::ostringstream os;
-	os << "observations.obs_slew >= to_timestamp ("
-		<< start_t
-		<< ") AND ((observations.obs_slew <= to_timestamp ("
-		<< end_t
-		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
-		<< end_t
-		<< "))";
-	load (os.str());
-}
-
-
-ObservationSet::ObservationSet (int year, int month, int day)
-{
-	time_t start_t = Rts2Config::instance ()->getNight (year,month,day);
-	time_t end_t = start_t + 86400 - 600;
-	std::ostringstream os;
-	os << "observations.obs_slew >= to_timestamp ("
-		<< start_t
-		<< ") AND ((observations.obs_slew <= to_timestamp ("
-		<< end_t
-		<< ") AND observations.obs_end is NULL) OR observations.obs_end < to_timestamp ("
-		<< end_t
-		<< "))";
-	load (os.str());
-}
-
-ObservationSet::ObservationSet (char type_id, int state_mask, bool inv)
-{
-	std::ostringstream os;
-	os << "(targets.type_id = "
-		<< type_id
-		<< ") and ((observations.obs_state & "
-		<< state_mask
-		<< ") ";
-	if (inv)
-		os << "!";
-	os << "= "
-		<< state_mask
-		<< ")";
-	load (os.str());
-}
-
-
-ObservationSet::ObservationSet (struct ln_equ_posn * position, double radius)
-{
-	std::ostringstream os;
-	os << "ln_angular_separation (observations.obs_ra, observations.obs_dec, "
-		<< position->ra << ", "
-		<< position->dec << ") < "
-		<< radius;
-	load (os.str());
-}
-
-
-ObservationSet::~ObservationSet (void)
-{
-	clear ();
-}
-
-
-int
-ObservationSet::computeStatistics ()
+int ObservationSet::computeStatistics ()
 {
 	int anum = 0;
 
-	std::vector <Rts2Obs>::iterator obs_iter;
+	std::vector <Observation>::iterator obs_iter;
 	allNum = 0;
 	goodNum = 0;
 	firstNum = 0;
@@ -320,9 +294,7 @@ ObservationSet::computeStatistics ()
 	return 0;
 }
 
-
-void
-ObservationSet::printStatistics (std::ostream & _os)
+void ObservationSet::printStatistics (std::ostream & _os)
 {
 	computeStatistics ();
 	int success = getSuccess ();
@@ -354,9 +326,7 @@ ObservationSet::printStatistics (std::ostream & _os)
 	_os.precision (prec);
 }
 
-
-std::map <int, int>
-ObservationSet::getTargetObservations ()
+std::map <int, int> ObservationSet::getTargetObservations ()
 {
 	std::map <int, int> ret;
 	for (ObservationSet::iterator iter = begin (); iter != end (); iter++)
@@ -366,8 +336,7 @@ ObservationSet::getTargetObservations ()
 	return ret;
 }
 
-double
-ObservationSet::altitudeMerit ()
+double ObservationSet::altitudeMerit ()
 {
 	double altMerit = 0;
 	int s = 0;
@@ -383,9 +352,7 @@ ObservationSet::altitudeMerit ()
 	return altMerit;
 }
 
-
-double
-ObservationSet::distanceMerit ()
+double ObservationSet::distanceMerit ()
 {
 	double distMerit = 0;
 
@@ -415,14 +382,12 @@ ObservationSet::distanceMerit ()
 	return distMerit;
 }
 
-
-std::ostream &
-ObservationSet::print (std::ostream &_os)
+std::ostream & ObservationSet::print (std::ostream &_os)
 {
 	// list of target ids we already printed
 	std::vector <int> processedTargets;
 
-	std::vector <Rts2Obs>::iterator obs_iter;
+	std::vector <Observation>::iterator obs_iter;
 
 	if (!isCollocated ())
 		_os << "Observations list follow:" << std::endl;
@@ -441,7 +406,7 @@ ObservationSet::print (std::ostream &_os)
 				double totalSlewTime = 0;
 				int obsNum = 0;
 				// compute target image statitics..
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
+				for (std::vector <Observation>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
@@ -467,7 +432,7 @@ ObservationSet::print (std::ostream &_os)
 
 				// print record that we found the observation
 				// find all observations of target
-				for (std::vector <Rts2Obs>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
+				for (std::vector <Observation>::iterator obs_iter2 = obs_iter; obs_iter2 != end (); obs_iter2 ++)
 				{
 					if ((*obs_iter2).getTargetId () == tar_id)
 					{
@@ -499,4 +464,98 @@ ObservationSet::print (std::ostream &_os)
 		}
 	}
 	return _os;
+}
+
+void ObservationSetDate::load (int year, int month, int day, int hour, int minutes)
+{
+	EXEC SQL BEGIN DECLARE SECTION;
+	int d_value;
+	int d_c;
+	char *stmp_c;
+	EXEC SQL END DECLARE SECTION;
+
+	const char *group_by;
+	std::ostringstream _where;
+
+	double lng = Rts2Config::instance ()->getObserver ()->lng;
+
+	std::ostringstream _os;
+	if (year == -1)
+	{
+		group_by = "year";
+	}
+	else
+	{
+		_where << "EXTRACT (year FROM to_night (obs_slew, " << lng << ")) = " << year;
+		if (month == -1)
+		{
+			group_by = "month";
+		}
+		else
+		{
+			_where << " AND EXTRACT (month FROM to_night (obs_slew, " << lng << ")) = " << month;
+			if (day == -1)
+			{
+				group_by = "day";
+			}
+			else
+			{
+				_where << " AND EXTRACT (day FROM to_night (obs_slew, " << lng << ")) = " << day;
+				if (hour == -1)
+				{
+				 	group_by = "hour";
+				}
+				else
+				{
+					_where << " AND EXTRACT (hour FROM obs_slew) = " << hour;
+					if (minutes == -1)
+					{
+					 	group_by = "minute";
+					}
+					else
+					{
+						_where << " AND EXTRACT (minutes FROM obs_slew) = " << minutes;
+						group_by = "second";
+					}
+				}
+			}
+		}
+	}
+
+	_os << "SELECT EXTRACT (" << group_by << " FROM to_night (obs_slew, " << lng << ")) as value, count (*) as c FROM observations ";
+	
+	if (_where.str ().length () > 0)
+		_os << "WHERE " << _where.str ();
+
+	_os << " GROUP BY value;";
+
+	stmp_c = new char[_os.str ().length () + 1];
+	memcpy (stmp_c, _os.str().c_str(), _os.str ().length () + 1);
+	EXEC SQL PREPARE obsdate_stmp FROM :stmp_c;
+
+	delete[] stmp_c;
+
+	EXEC SQL DECLARE obsdate_cur CURSOR FOR obsdate_stmp;
+
+	EXEC SQL OPEN obsdate_cur;
+
+	while (1)
+	{
+		EXEC SQL FETCH next FROM obsdate_cur INTO
+			:d_value,
+			:d_c;
+		if (sqlca.sqlcode)
+			break;
+		(*this)[d_value] = d_c;
+	}
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		EXEC SQL CLOSE obsdate_cur;
+		EXEC SQL ROLLBACK;
+
+		throw SqlError ();
+	}
+
+	EXEC SQL CLOSE obsdate_cur;
+	EXEC SQL ROLLBACK;
 }

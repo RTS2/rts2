@@ -7,7 +7,7 @@ bin_PROGRAMS=rts2-horizon
 AM_CXXFLAGS=@NOVA_CFLAGS@
 
 test_SOURCES = test.cpp utilsfunc.cpp
-test_LDFLAGS = @LIB_NOVA@ librts2block.a
+test_LDFLAGS = librts2block.a @LIB_NOVA@
 
 noinst_LIBRARIES = librts2block.a
 
@@ -19,7 +19,7 @@ librts2block_a_SOURCES = hoststring.cpp rts2app.cpp rts2block.cpp rts2daemon.cpp
 	rts2displayvalue.cpp rts2scriptdevice.cpp \
 	rts2cliapp.cpp rts2valueminmax.cpp expander.cpp \
 	riseset.cpp rts2valuerectangle.cpp rts2data.cpp radecparser.cpp \
-	rts2connserial.cpp connmodbus.cpp rts2format.cpp rts2valuearray.cpp \
+	connserial.cpp connmodbus.cpp rts2format.cpp rts2valuearray.cpp \
 	connopentpl.cpp connford.cpp
 
 EXTRA_DIST =
@@ -43,8 +43,8 @@ noinst_HEADERS = hoststring.h utilsfunc.h rts2app.h rts2block.h rts2daemon.h rts
 	connfork.h objectcheck.h rts2serverstate.h libnova_cpp.h timestamp.h rts2askchoice.h infoval.h \
 	rts2message.h conntcp.h rts2conn.h rts2logstream.h rts2centralstate.h rts2target.h rts2valuelist.h \
 	rts2displayvalue.h rts2scriptdevice.h rts2cliapp.h getaddrinfo.h rts2valueminmax.h expander.h \
-	riseset.h rts2valuerectangle.h rts2data.h radecparser.h rts2connserial.h connmodbus.h rts2format.h \
-	rts2valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h
+	riseset.h rts2valuerectangle.h rts2data.h radecparser.h connserial.h connmodbus.h rts2format.h \
+	rts2valuearray.h getopt_own.h connopentpl.h connepics.h error.h connford.h counted_ptr.h
 
 if EPICS
 noinst_LIBRARIES += librts2epics.a
@@ -55,4 +55,4 @@ EXTRA_DIST += connepics.cpp
 endif
 
 rts2_horizon_SOURCES = horizonapp.cpp
-rts2_horizon_LDFLAGS = @LIB_NOVA@ librts2block.a
+rts2_horizon_LDFLAGS = librts2block.a @LIB_NOVA@

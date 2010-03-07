@@ -97,8 +97,6 @@ namespace rts2sensord
 
 			virtual int init ();
 
-			virtual int setValue (Rts2Value *old_value, Rts2Value *new_value);
-
 		public:
 			NUT (int argc, char **argv);
 			virtual ~NUT (void);
@@ -110,15 +108,12 @@ namespace rts2sensord
 using namespace rts2sensord;
 
 
-ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName)
-:rts2core::ConnTCP (_master, _hostname, _port)
+ConnNUT::ConnNUT (Rts2Block *_master, const char *_hostname, int _port, const char *_upsName):rts2core::ConnTCP (_master, _hostname, _port)
 {
 	upsName = std::string (_upsName);
 }
 
-
-template <typename t> void
-ConnNUT::getVal (const char *var, t &val)
+template <typename t> void ConnNUT::getVal (const char *var, t &val)
 {
 	std::istringstream *_is = NULL;
 
@@ -147,26 +142,21 @@ ConnNUT::getVal (const char *var, t &val)
 	delete _is;
 }
 
-void
-ConnNUT::getValue (const char *var, Rts2ValueFloat *value)
+void ConnNUT::getValue (const char *var, Rts2ValueFloat *value)
 {
 	float val;
 	getVal (var, val);
 	value->setValueFloat (val);
 }
 
-
-void
-ConnNUT::getValue (const char *var, Rts2ValueInteger *value)
+void ConnNUT::getValue (const char *var, Rts2ValueInteger *value)
 {
 	int val;
 	getVal (var, val);
 	value->setValueInteger (val);
 }
 
-
-void
-ConnNUT::getValue (const char *var, Rts2ValueString *value)
+void ConnNUT::getValue (const char *var, Rts2ValueString *value)
 {
 	std::istringstream *_is = NULL;
 
@@ -213,9 +203,7 @@ ConnNUT::getValue (const char *var, Rts2ValueString *value)
 	}
 }
 
-
-int
-NUT::processOption (int opt)
+int NUT::processOption (int opt)
 {
 	char *p;
 	switch (opt)
@@ -269,18 +257,7 @@ NUT::init ()
 	return 0;
 }
 
-
-int
-NUT::setValue (Rts2Value *old_value, Rts2Value *new_value)
-{
-	if (old_value == minbcharge || old_value == mintimeleft)
-		return 0;
-	return SensorWeather::setValue (old_value, new_value);
-}
-
-
-int
-NUT::info ()
+int NUT::info ()
 {
 	try
 	{
@@ -300,13 +277,13 @@ NUT::info ()
 	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low battery charge");
 	}
 
 	if (bruntime->getValueInteger () < mintimeleft->getValueInteger ())
 	{
 	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low minimal battery time");
 
 	}
 
@@ -315,7 +292,7 @@ NUT::info ()
 	  	|| upsstatus->getValue () == std::string ("OL") || upsstatus->getValue () == std::string ("OB")))
 	{
 		logStream (MESSAGE_WARNING) <<  "unknow status " << upsstatus->getValue () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "unknow status");
 	}
 
 	// we are online - increase onbatterytimeout
@@ -328,12 +305,11 @@ NUT::info ()
 	if (onbatterytimeout->getValueInteger () <= getNow ())
 	{
 		logStream (MESSAGE_WARNING) << "running for too long on battery" << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "running for too long on battery");
 	}
 	
 	return SensorWeather::info ();
 }
-
 
 NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -350,12 +326,12 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 
 	createValue (upsstatus, "ups.status", "UPS status", false);
 
-	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
+	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false, RTS2_VALUE_WRITABLE);
 	minbcharge->setValueFloat (50);
-	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
+	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false, RTS2_VALUE_WRITABLE);
 	mintimeleft->setValueInteger (1200);
 
-	createValue (maxonbattery, "max_onbattery", "maximal time we are allowed to run on battery", false);
+	createValue (maxonbattery, "max_onbattery", "maximal time we are allowed to run on battery", false, RTS2_VALUE_WRITABLE);
 	maxonbattery->setValueInteger (60);
 
 	addOption ('n', NULL, 1, "upsname@hostname[:port] of NUT");
@@ -365,15 +341,12 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	addOption (OPT_MAXONBAT, "max-onbattery", 1, "maximal time on battery before declaring bad weather. Default to 60 seconds.");
 }
 
-
 NUT::~NUT (void)
 {
 	delete connNUT;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	NUT device = NUT (argc, argv);
 	return device.run ();

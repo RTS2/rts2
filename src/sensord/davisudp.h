@@ -74,7 +74,7 @@ class DavisUdp:public Rts2ConnNoSend
 		time_t lastBadWeather;
 
 	protected:
-		void setWeatherTimeout (time_t wait_time);
+		void setWeatherTimeout (time_t wait_time, const char *msg);
 
 		virtual void connectionError (int last_data_size)
 		{

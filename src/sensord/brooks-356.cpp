@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2sensord
 {
@@ -31,31 +31,30 @@ namespace rts2sensord
  */
 class Brooks356: public Sensor
 {
-	private:
-		char *device_file;
-		Rts2ConnSerial *brookConn;
+	public:
+		
+		Brooks356 (int argc, char **argv);
 
-		Rts2ValueDouble *pressure;
-
-		Rts2ValueInteger *address;
+		virtual int info ();
 
 	protected:
 		virtual int processOption (int _opt);
 		virtual int init ();
 
-		virtual int info ();
-	public:
-		
-		Brooks356 (int argc, char **argv);
-		
+	private:
+		char *device_file;
+		rts2core::ConnSerial *brookConn;
+
+		Rts2ValueDouble *pressure;
+
+		Rts2ValueInteger *address;
 };
 
 }
 
 using namespace rts2sensord;
 
-int
-Brooks356::processOption (int _opt)
+int Brooks356::processOption (int _opt)
 {
 	switch (_opt)
 	{
@@ -67,9 +66,7 @@ Brooks356::processOption (int _opt)
 	return Sensor::processOption (_opt);
 }
 
-
-int
-Brooks356::init ()
+int Brooks356::init ()
 {
 	int ret;
 	ret = Sensor::init ();
@@ -82,7 +79,7 @@ Brooks356::init ()
 		return -1;
 	}
 
-	brookConn = new Rts2ConnSerial (device_file, this, BS19200, C8, NONE, 10);
+	brookConn = new rts2core::ConnSerial (device_file, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 10);
 	ret = brookConn->init ();
 	if (ret)
 		return ret;
@@ -93,9 +90,7 @@ Brooks356::init ()
 	return 0;
 }
 
-
-int
-Brooks356::info ()
+int Brooks356::info ()
 {
 	int ret;
 	char buf[50];
@@ -142,9 +137,7 @@ Brooks356::Brooks356 (int argc, char **argv): Sensor (argc, argv)
 	addOption ('f', NULL, 1, "serial port with the module (ussually /dev/ttyUSB for USB RS-456 conventor)");
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Brooks356 device = Brooks356 (argc, argv);
 	return device.run ();

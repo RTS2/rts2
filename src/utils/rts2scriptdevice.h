@@ -33,6 +33,9 @@
  */
 class Rts2ScriptDevice:public Rts2Device
 {
+	public:
+		Rts2ScriptDevice (int in_argc, char **in_argv, int in_device_type, const char *default_name);
+
 	private:
 		Rts2ValueInteger * scriptRepCount;
 		Rts2ValueString *runningScript;
@@ -40,10 +43,5 @@ class Rts2ScriptDevice:public Rts2Device
 		Rts2ValueInteger *commentNumber;
 		Rts2ValueInteger *scriptPosition;
 		Rts2ValueInteger *scriptLen;
-	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Rts2ScriptDevice (int in_argc, char **in_argv, int in_device_type,
-			const char *default_name);
 };
 #endif							 /* !__RTS2_SCRIPTDEVICE__ */

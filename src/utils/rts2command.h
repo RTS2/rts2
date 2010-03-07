@@ -51,6 +51,9 @@ enum cip_state_t
 	CIP_RETURN     = 0x00006000	 //! Command is waiting for return from device status wait.
 };
 
+namespace rts2core
+{
+
 /**
  * Base class which represents commands send over network to other component.
  * This object is usually send through Rts2Conn::queCommand to connection,
@@ -668,4 +671,6 @@ class Rts2CommandDeviceStatus:public Rts2CommandStatusInfo
 	public:
 		Rts2CommandDeviceStatus (Rts2Block * master, Rts2Conn * _control_conn);
 };
+
+}
 #endif							 /* !__RTS2_COMMAND__ */

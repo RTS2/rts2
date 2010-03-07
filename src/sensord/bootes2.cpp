@@ -24,6 +24,9 @@
 // top read all informations from temperature sensor
 #define LIFOSIZE          60
 
+#define OPT_HUMI_BAD      OPT_LOCAL + 318
+#define OPT_HUMI_GOOD     OPT_LOCAL + 319
+
 namespace rts2sensord
 {
 
@@ -44,6 +47,9 @@ class Bootes2: public SensorWeather
 	
 		Rts2ValueDoubleStat *tempMeas;
 		Rts2ValueDoubleStat *humiMeas;
+		
+		Rts2ValueDouble *humBad;
+		Rts2ValueDouble *humGood;
 
 		/**
 		 * Returns volts from the device.
@@ -91,9 +97,7 @@ class Bootes2: public SensorWeather
 
 using namespace rts2sensord;
 
-
-int
-Bootes2::getVolts (int subdevice, int channel, double &volts)
+int Bootes2::getVolts (int subdevice, int channel, double &volts)
 {
 	int max;
 	comedi_range *rqn;
@@ -130,45 +134,45 @@ Bootes2::getVolts (int subdevice, int channel, double &volts)
 	return 0;
 }
 
-
-int
-Bootes2::updateHumidity ()
+int Bootes2::updateHumidity ()
 {
 	double hum;
 	if (getVolts (0, 0, hum))
 		return -1;
 	hum *= 100;
 	humiMeas->addValue (hum, LIFOSIZE);
+	humiMeas->calculate ();
 	return 0;
 }
 
-
-int
-Bootes2::updateTemperature ()
+int Bootes2::updateTemperature ()
 {
 	double temp;
 	if (getVolts (0, 2, temp))
 		return -1;
 	temp = (temp - 0.4) * 100;
 	tempMeas->addValue (temp, LIFOSIZE);
+	tempMeas->calculate ();
 	return 0;
 }
 
-
-int
-Bootes2::updateStatus ()
+int Bootes2::updateStatus ()
 {
 	return 0;
 }
 
-
-int
-Bootes2::processOption (int _opt)
+int Bootes2::processOption (int _opt)
 {
 	switch (_opt)
 	{
 		case 'c':
 			comediFile = optarg;
+			break;
+		case OPT_HUMI_BAD:
+			humBad->setValueCharArr (optarg);
+			break;
+		case OPT_HUMI_GOOD:
+			humGood->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (_opt);
@@ -176,9 +180,7 @@ Bootes2::processOption (int _opt)
 	return 0;
 }
 
-
-int
-Bootes2::init ()
+int Bootes2::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
@@ -217,9 +219,7 @@ Bootes2::init ()
 	return 0;
 }
 
-
-int
-Bootes2::info ()
+int Bootes2::info ()
 {
 	int ret;
 	uint32_t value;
@@ -227,12 +227,12 @@ Bootes2::info ()
 	if (ret != 1)
 	{
 		logStream (MESSAGE_ERROR) << "Cannot read rain status (subdev 3, channel 5)" << sendLog;
-		setWeatherTimeout (3600);
+		setWeatherTimeout (3600, "cannot read rain status");
 		return -1;
 	}
 	if (value == 0)
 	{
-		setWeatherTimeout (3600);
+		setWeatherTimeout (3600, "raining");
 		if (raining->getValueBool () == false)
 			logStream (MESSAGE_INFO) << "raining, switching to bad weather" << sendLog;
 		raining->setValueBool (true);
@@ -255,10 +255,17 @@ Bootes2::info ()
 	 	logStream (MESSAGE_ERROR) << "Humidity measurement failed" << sendLog;
 		return -1;
 	}
+	if (!isnan (humBad->getValueDouble ()) && humiMeas->getValueDouble () > humBad->getValueDouble ())
+	{
+		setWeatherTimeout (600, "humidity rised above humidity_bad");
+	}
+	if (!isnan (humGood->getValueDouble ()) && humiMeas->getValueDouble () > humGood->getValueDouble () && getWeatherState () == false)
+	{
+		setWeatherTimeout (600, "humidity does not drop bellow humidity_good");
+	}
 
 	return SensorWeather::info ();
 }
-
 
 Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 {
@@ -267,20 +274,24 @@ Bootes2::Bootes2 (int argc, char **argv): SensorWeather (argc, argv)
 	createValue (raining, "raining", "if it is raining (from rain detector)", false);
 
 	createValue (tempMeas, "TEMP", "outside temperature", true);
-	createValue (humiMeas, "HUMIDITY", "outside humidity", true);
+	createValue (humiMeas, "HUMIDITY", "[%] outside humidity", true);
+
+	createValue (humBad, "humidity_bad", "[%] when humidity is above this value, weather is bad", false, RTS2_VALUE_WRITABLE);
+	createValue (humGood, "humidity_good", "[%] when humidity is bellow this value, weather is good", false, RTS2_VALUE_WRITABLE);
 
 	addOption ('c', NULL, 1, "path to comedi device");
-}
+	addOption (OPT_HUMI_BAD, "humidity_bad", 1, "[%] when humidity is above this value, weather is bad");
+	addOption (OPT_HUMI_GOOD, "humidity_good", 1, "[%] when humidity is bellow this value, weather is good");
 
+	setIdleInfoInterval (5);
+}
 
 Bootes2::~Bootes2 ()
 {
 
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Bootes2 device = Bootes2 (argc, argv);
 	return device.run ();

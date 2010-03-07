@@ -35,7 +35,7 @@
 #include "../utils/rts2target.h"
 
 #include "rts2taruser.h"
-#include "rts2targetset.h"
+#include "targetset.h"
 
 #include "scriptcommands.h"
 
@@ -59,8 +59,10 @@
 #define TARGET_INTEGRAL_FOV  11
 #define TARGET_SHOWER        12
 
-class Rts2Obs;
-class Rts2TargetSet;
+namespace rts2db {
+class Observation;
+}
+
 class Rts2Image;
 
 /**
@@ -86,7 +88,7 @@ class Target:public Rts2Target
 {
 	private:
 		// holds current target observation
-		Rts2Obs * observation;
+		rts2db::Observation * observation;
 
 		int type;				 // light, dark, flat, flat_dark
 		std::string tar_info;
@@ -589,8 +591,8 @@ class Target:public Rts2Target
 
 		int printObservations (double radius, double JD, std::ostream & _os);
 
-		Rts2TargetSet getTargets (double radius);
-		Rts2TargetSet getTargets (double radius, double JD);
+		rts2db::TargetSet getTargets (double radius);
+		rts2db::TargetSet getTargets (double radius, double JD);
 
 		int printTargets (double radius, std::ostream & _os)
 		{
@@ -609,12 +611,12 @@ class Target:public Rts2Target
 		/**
 		 * Return calibration targets for given target
 		 */
-		Rts2TargetSet *getCalTargets ()
+		rts2db::TargetSet *getCalTargets ()
 		{
 			return getCalTargets (ln_get_julian_from_sys ());
 		}
 
-		virtual Rts2TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
+		virtual rts2db::TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
 
 		/**
 		 * Write target metadata to image.

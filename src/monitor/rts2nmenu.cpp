@@ -1,48 +1,38 @@
 #include "nmonitor.h"
 #include "rts2nmenu.h"
 
-void
-Rts2NAction::draw (WINDOW * master_window, int y)
+void Rts2NAction::draw (WINDOW * master_window, int y)
 {
 	mvwprintw (master_window, y, 0, "%s", text);
 }
 
-
-Rts2NSubmenu::Rts2NSubmenu (const char *in_text):
-Rts2NSelWindow (0, 0, 2, 2)
+Rts2NSubmenu::Rts2NSubmenu (const char *in_text): Rts2NSelWindow (0, 0, 2, 2)
 {
 	text = in_text;
 	grow (strlen (text) + 2, 0);
 	setLineOffset (0);
 }
 
-
 Rts2NSubmenu::~Rts2NSubmenu (void)
 {
 }
 
-
-void
-Rts2NSubmenu::draw (WINDOW * master_window)
+void Rts2NSubmenu::draw (WINDOW * master_window)
 {
 	mvwprintw (master_window, 0, getX () + 1, "%s", text);
 }
 
-
-void
-Rts2NSubmenu::drawSubmenu ()
+void Rts2NSubmenu::drawSubmenu ()
 {
 	Rts2NSelWindow::draw ();
 	werase (scrolpad);
 	maxrow = 0;
-	for (std::vector < Rts2NAction * >::iterator iter = actions.begin ();
-		iter != actions.end (); iter++, maxrow++)
+	for (std::vector < Rts2NAction * >::iterator iter = actions.begin (); iter != actions.end (); iter++, maxrow++)
 	{
 		Rts2NAction *action = *iter;
 		action->draw (scrolpad, maxrow);
 	}
 }
-
 
 Rts2NMenu::Rts2NMenu ():Rts2NWindow (0, 0, COLS, 1, 0)
 {
@@ -51,11 +41,9 @@ Rts2NMenu::Rts2NMenu ():Rts2NWindow (0, 0, COLS, 1, 0)
 	top_x = 0;
 }
 
-
 Rts2NMenu::~Rts2NMenu (void)
 {
-	for (selSubmenuIter = submenus.begin (); selSubmenuIter != submenus.end ();
-		selSubmenuIter++)
+	for (selSubmenuIter = submenus.begin (); selSubmenuIter != submenus.end (); selSubmenuIter++)
 	{
 		selSubmenu = *selSubmenuIter;
 		delete selSubmenu;
@@ -63,10 +51,9 @@ Rts2NMenu::~Rts2NMenu (void)
 	submenus.clear ();
 }
 
-
-keyRet
-Rts2NMenu::injectKey (int key)
+keyRet Rts2NMenu::injectKey (int key)
 {
+
 	switch (key)
 	{
 		case KEY_UP:
@@ -104,16 +91,14 @@ Rts2NMenu::injectKey (int key)
 	return RKEY_HANDLED;
 }
 
-
-void
-Rts2NMenu::draw ()
+void Rts2NMenu::draw ()
 {
 	Rts2NWindow::draw ();
 	werase (window);
 	wcolor_set (window, CLR_MENU, NULL);
 	mvwhline (window, 0, 0, ' ', getWidth ());
-	for (std::vector < Rts2NSubmenu * >::iterator iter = submenus.begin ();
-		iter != submenus.end (); iter++)
+	
+	for (std::vector < Rts2NSubmenu * >::iterator iter = submenus.begin (); iter != submenus.end (); iter++)
 	{
 		Rts2NSubmenu *submenu = *iter;
 		if (submenu == selSubmenu)
@@ -123,26 +108,27 @@ Rts2NMenu::draw ()
 		}
 		submenu->draw (window);
 	}
+
+	// end with hostname..
+	char buf[HOST_NAME_MAX];
+	gethostname (buf, HOST_NAME_MAX);
+	wcolor_set (window, CLR_TEXT, NULL);
+	mvwprintw (window, 0, getWidth () - strlen (buf) - 1, "%s", buf);
+
 	refresh ();
 }
 
-
-void
-Rts2NMenu::enter ()
+void Rts2NMenu::enter ()
 {
 	selSubmenu = *selSubmenuIter;
 }
 
-
-void
-Rts2NMenu::leave ()
+void Rts2NMenu::leave ()
 {
 	selSubmenu = NULL;
 }
 
-
-void
-Rts2NMenu::addSubmenu (Rts2NSubmenu * in_submenu)
+void Rts2NMenu::addSubmenu (Rts2NSubmenu * in_submenu)
 {
 	submenus.push_back (in_submenu);
 	selSubmenuIter = submenus.begin ();

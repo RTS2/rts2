@@ -28,31 +28,38 @@ class Dummy:public Sensor
 		Rts2ValueInteger *testInt;
 		Rts2ValueBool *goodWeather;
 		Rts2ValueDoubleStat *statTest;
-		rts2core::DoubleArray *statContent;
+		rts2core::DoubleArray *statContent1;
+		rts2core::DoubleArray *statContent2;
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
+		Rts2ValueBool *hwError;
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
-			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VWHEN_RECORD_CHANGE, 0, false);
-			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true);
+			createValue (testInt, "TEST_INT", "test integer value", true, RTS2_VALUE_WRITABLE | RTS2_VWHEN_RECORD_CHANGE, 0, false);
+			createValue (goodWeather, "good_weather", "if dummy sensor is reporting good weather", true, RTS2_VALUE_WRITABLE);
 			goodWeather->setValueBool (false);
-			setWeatherState (goodWeather->getValueBool ());
+			setWeatherState (goodWeather->getValueBool (), "weather state set from goodWeather value");
 			createValue (statTest, "test_stat", "test stat value", true);
 
-			createValue (statContent, "test_content", "test content", true);
+			createValue (statContent1, "test_content1", "test content 1", true, RTS2_WR_GROUP_NUMBER(0));
+			createValue (statContent2, "test_content2", "test content 2", true, RTS2_WR_GROUP_NUMBER(0));
+
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
-			createValue (minMaxTest, "test_minmax", "test minmax value", true);
+			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
+			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
 		{
-			if (old_value == minMaxTest
-				|| old_value == testInt)
+		  	if (old_value == hwError)
+			{
+				maskState (DEVICE_ERROR_MASK, ((Rts2ValueBool *) newValue)->getValueBool () ? DEVICE_ERROR_HW : 0);
 				return 0;
+			}
 			if (old_value == goodWeather)
 			{
-			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool ());
+			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
 				return 0;
 			}
 			return Sensor::setValue (old_value, newValue);
@@ -68,7 +75,8 @@ class Dummy:public Sensor
 				statTest->addValue (aval);
 				statTest->calculate ();
 
-				statContent->addValue (aval);
+				statContent1->addValue (aval);
+				statContent2->addValue (aval / 2.0);
 
 				statTest5->addValue (aval, 5);
 				statTest5->calculate ();

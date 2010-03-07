@@ -27,13 +27,14 @@
 
 using namespace rts2core;
 
-int
-OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
+int OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 {
 	std::ostringstream _os;
 	_os << tpl_command_no << " " << cmd << " " << p1 << '\n';
 	int ret = send (sock, _os.str().c_str (), _os.str().length (), 0);
-//	logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+	if (getDebug ())
+		logStream (MESSAGE_DEBUG) << "send " << _os.str () << " ret " << ret << sendLog;
+
 	if (ret > 0)
 	{
 		used_command_ids.push_back (tpl_command_no);
@@ -50,9 +51,7 @@ OpenTpl::sendCommand (const char *cmd, const char *p1, bool wait)
 	return waitReply ();
 }
 
-
-int
-OpenTpl::waitReply ()
+int OpenTpl::waitReply ()
 {
 	try
 	{
@@ -64,7 +63,7 @@ OpenTpl::waitReply ()
 			int ret;
 			struct timeval read_tout;
 
-			read_tout.tv_sec = 5;
+			read_tout.tv_sec = 30;
 			read_tout.tv_usec = 0;
 			
 			fd_set read_set;
@@ -80,7 +79,7 @@ OpenTpl::waitReply ()
 			ret = select (FD_SETSIZE, &read_set, &write_set, &exp_set, &read_tout);
 			if (ret <= 0)
 			{
-				logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 5 seconds, reinitiliazing" << sendLog;
+				logStream (MESSAGE_ERROR) << "cannot receive reply from socket within 30 seconds, reinitiliazing" << sendLog;
 				connectionError (-1);
 				return -1;
 			}
@@ -92,7 +91,8 @@ OpenTpl::waitReply ()
 			}
 			// print which new data were received..
 			*(tpl_buf_top + data_size) = '\0';
-			//logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
+			if (getDebug ())
+				logStream (MESSAGE_DEBUG) << "new data: '" << tpl_buf_top << "'" << sendLog;
 			// now parse reply, look for '\n'
 			char *bt = tpl_buf_top;
 			while (bt < tpl_buf_top + data_size)
@@ -115,7 +115,8 @@ OpenTpl::waitReply ()
 				long int cmd_num = strtol (tpl_buf, &ce, 10);
 				if (lp != ce)
 				{
-					// logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
+				  	if (getDebug ())
+						logStream (MESSAGE_DEBUG) << "received info message " << tpl_buf << sendLog;
 				}
 				else 
 				{
@@ -148,7 +149,6 @@ OpenTpl::waitReply ()
 				tpl_buf_top = tpl_buf + data_size - 1;
 				data_size = 0;
 				bt = tpl_buf;
-				// std::cout << "data_size " << data_size << " tpl_buf " << tpl_buf << std::endl;
 			}
 		}
 	}
@@ -160,34 +160,26 @@ OpenTpl::waitReply ()
 	return 0;
 }
 
-OpenTpl::OpenTpl (Rts2Block *_master, std::string _hostname, int _port)
-:ConnTCP (_master, _hostname.c_str(), _port)
+OpenTpl::OpenTpl (Rts2Block *_master, std::string _hostname, int _port):ConnTCP (_master, _hostname.c_str(), _port)
 {
 	tpl_command_no = 1;
 }
-
 
 OpenTpl::~OpenTpl ()
 {
 }
 
-
-int
-OpenTpl::idle ()
+int OpenTpl::idle ()
 {
 	return 0;
 }
 
-
-int
-OpenTpl::receive (fd_set *fset)
+int OpenTpl::receive (fd_set *fset)
 {
 	return -1;
 }
 
-
-int
-OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
+int OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << std::setprecision(10) << value;
@@ -195,61 +187,47 @@ OpenTpl::set (const char *_name, double value, int *tpl_status, bool wait)
 	return 0;
 }
 
-
-int
-OpenTpl::get (const char *_name, double &value, int *tpl_status)
+int OpenTpl::get (const char *_name, double &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atof (valReply);
 	return 0;
 }
 
-
-int
-OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
+int OpenTpl::set (const char *_name, int value, int *tpl_status, bool wait)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str(), wait);
 }
 
-
-int
-OpenTpl::get (const char *_name, int &value, int *tpl_status)
+int OpenTpl::get (const char *_name, int &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = atoi (valReply);
 	return 0;
 }
 
-
-int
-OpenTpl::set (const char *_name, std::string value, int *tpl_status)
+int OpenTpl::set (const char *_name, std::string value, int *tpl_status)
 {
 	std::ostringstream _os;
 	_os << _name << '=' << value;
 	return sendCommand ("SET", _os.str().c_str());
 }
 
-
-int
-OpenTpl::get (const char *_name, std::string &value, int *tpl_status)
+int OpenTpl::get (const char *_name, std::string &value, int *tpl_status)
 {
 	sendCommand ("GET", _name);
 	value = valReply;
 	return 0;
 }
 
-
-void
-OpenTpl::handleEvent (const char *buffer)
+void OpenTpl::handleEvent (const char *buffer)
 {
 	logStream (MESSAGE_DEBUG) << "EVENT: " << buffer << sendLog;
 }
 
-
-int
-OpenTpl::handleCommand (char *buffer, bool isActual)
+int OpenTpl::handleCommand (char *buffer, bool isActual)
 {
 	// get command
 	char *ce = buffer;

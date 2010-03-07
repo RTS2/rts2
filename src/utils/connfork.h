@@ -39,32 +39,9 @@ namespace rts2core
  */
 class ConnFork:public Rts2ConnNoSend
 {
-	private:
-		pid_t childPid;
-		std::vector <std::string> argv;
-		time_t forkedTimeout;
-		// holds pipe with stderr. Stdout is stored in sock
-		int sockerr;
-		bool fillConnEnvVars;
-
-	protected:
-		char *exePath;
-		virtual void connectionError (int last_data_size);
-		virtual void beforeFork ();
-		/**
-		 * Called when initialization of the connection fails at some point.
-		 */
-		virtual void initFailed ();
-
-		/**
-		 * Called with error line input. Default processing is to log it as MESSAGE_ERROR.
-		 *
-		 * @param errbuf  Buffer containing null terminated error line string.
-		 */
-		virtual void processErrorLine (char *errbuf);
 	public:
-		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, int _timeout = 0);
-		virtual ~ ConnFork (void);
+		ConnFork (Rts2Block * _master, const char *_exe, bool _fillConnEnvVars, bool _openin, int _timeout = 0);
+		virtual ~ConnFork ();
 
 
 		/**
@@ -79,9 +56,15 @@ class ConnFork:public Rts2ConnNoSend
 			argv.push_back (_os.str ());
 		}
 
+		int writeToProcess (const char *msg);
+
+		void setInput (std::string _input) { input = _input; }
+
 		virtual int add (fd_set * readset, fd_set * writeset, fd_set * expset);
 
 		virtual int receive (fd_set * readset);
+
+		virtual int writable (fd_set * writeset);
 
 		/**
 		 * Create and execute processing.
@@ -102,10 +85,48 @@ class ConnFork:public Rts2ConnNoSend
 
 		virtual void childReturned (pid_t in_child_pid);
 
-		virtual void childEnd ()
-		{
-			// insert here some post-processing
-		}
+		/**
+		 * Called after script execution ends.
+		 */
+		virtual void childEnd () {}
+
+		const char *getExePath () { return exePath; }
+
+	protected:
+		char *exePath;
+		virtual void connectionError (int last_data_size);
+
+		/**
+		 * Called before fork command, This is the spot to possibly check
+		 * and fill in execution filename.
+		 */
+		virtual void beforeFork ();
+
+		/**
+		 * Called when initialization of the connection fails at some point.
+		 */
+		virtual void initFailed ();
+
+		/**
+		 * Called with error line input. Default processing is to log it as MESSAGE_ERROR.
+		 *
+		 * @param errbuf  Buffer containing null terminated error line string.
+		 */
+		virtual void processErrorLine (char *errbuf);
+
+	private:
+		pid_t childPid;
+		std::vector <std::string> argv;
+		time_t forkedTimeout;
+		// holds pipe with stderr. Stdout is stored in sock
+		int sockerr;
+		// holds write end - we can send input to this socket
+		int sockwrite;
+		bool fillConnEnvVars;
+
+		std::string input;
+
+		void fillConnectionEnv (Rts2Conn *conn, const char *name);
 };
 
 };

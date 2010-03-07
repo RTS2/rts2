@@ -24,7 +24,11 @@
 #include <map>
 #include <vector>
 
+namespace rts2core
+{
 class Rts2DevClient;
+}
+
 class Rts2DevClientCameraImage;
 
 /**
@@ -33,16 +37,16 @@ class Rts2DevClientCameraImage;
 class ImageDeviceWait
 {
 	private:
-		Rts2DevClient * devclient;
+		rts2core::Rts2DevClient * devclient;
 		double after;
 	public:
-		ImageDeviceWait (Rts2DevClient * in_devclient, double in_after)
+		ImageDeviceWait (rts2core::Rts2DevClient * in_devclient, double in_after)
 		{
 			devclient = in_devclient;
 			after = in_after;
 		}
 
-		Rts2DevClient *getClient ()
+		rts2core::Rts2DevClient *getClient ()
 		{
 			return devclient;
 		}
@@ -75,8 +79,8 @@ class CameraImage
 		}
 		virtual ~ CameraImage (void);
 
-		void waitForDevice (Rts2DevClient * devClient, double after);
-		bool waitingFor (Rts2DevClient * devClient);
+		void waitForDevice (rts2core::Rts2DevClient * devClient, double after);
+		bool waitingFor (rts2core::Rts2DevClient * devClient);
 
 		void setExEnd (double in_exEnd)
 		{
@@ -105,7 +109,7 @@ class CameraImages:public std::map <int, CameraImage * >
 
 		void deleteOld ();
 
-		void infoOK (Rts2DevClientCameraImage * master, Rts2DevClient * client);
-		void infoFailed (Rts2DevClientCameraImage * master, Rts2DevClient * client);
+		void infoOK (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
+		void infoFailed (Rts2DevClientCameraImage * master, rts2core::Rts2DevClient * client);
 };
 #endif							 /* !__RTS2_CAMERA_IMAGE__ */

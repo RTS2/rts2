@@ -727,6 +727,21 @@ class LibnovaPos
  */
 int LibnovaEllFromMPC (struct ln_ell_orbit *orbit, std::string &description, const char *mpc);
 
+
+double LibnovaEarthDistanceFromMpec (struct ln_ell_orbit *orbit, double JD);
+
+/**
+ * Calculate apparent position of a body on ellitical orbit.
+ *
+ * @param pos        Calculated position
+ * @param orbit      Body orbit
+ * @param observer   Observer Earth coordinates
+ * @param altitude   Observer Earth altitude
+ * @param JD         Julian date for calculation
+ * @param parallax   Calculated parallax
+ */
+void LibnovaCurrentFromOrbit (struct ln_equ_posn *pos, struct ln_ell_orbit *orbit, struct ln_lnlat_posn *observer, double altitude, double JD, struct ln_equ_posn *parallax);
+
 std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra);
 std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);

@@ -37,14 +37,16 @@
 
 #include "imghdr.h"
 
-Rts2Block::Rts2Block (int in_argc, char **in_argv):
-Rts2App (in_argc, in_argv)
+using namespace rts2core;
+
+Rts2Block::Rts2Block (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)
 {
 	idle_timeout = USEC_SEC * 10;
 
 	signal (SIGPIPE, SIG_IGN);
 
 	masterState = SERVERD_HARD_OFF;
+	stateMasterConn = NULL;
 	// allocate ports dynamically
 	port = 0;
 }
@@ -127,6 +129,26 @@ Rts2Block::addConnection (Rts2Conn *_conn)
 	connections_added.push_back (_conn);
 }
 
+void Rts2Block::removeConnection (Rts2Conn *_conn)
+{
+	connections_t::iterator iter;
+	for (iter = connections.begin (); iter != connections.end ();)
+	{
+		if (*iter == _conn)
+			iter = connections.erase (iter);
+		else
+			iter++;
+	}
+
+	for (iter = connections_added.begin (); iter != connections_added.end ();)
+	{
+		if (*iter == _conn)
+			iter = connections_added.erase (iter);
+		else
+			iter++;
+	}
+}
+
 
 void
 Rts2Block::addCentraldConnection (Rts2Conn *_conn, bool added)
@@ -203,10 +225,12 @@ Rts2Block::sendMessageAll (Rts2Message & msg)
 
 
 void
-Rts2Block::sendStatusMessage (int state)
+Rts2Block::sendStatusMessage (int state, const char * msg)
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
+	if (msg != NULL)
+		_os << " \"" << msg << "\"";
 	sendAll (_os);
 }
 
@@ -266,13 +290,14 @@ Rts2Block::idle ()
 
 	// test for any pending timers..
 	std::map <double, Rts2Event *>::iterator iter_t = timers.begin ();
-	if (!timers.empty () && iter_t->first < getNow ())
+	while (iter_t != timers.end () && iter_t->first < getNow ())
 	{
-	 	if (iter_t->second->getArg () != NULL)
-		  	((Rts2Object *)iter_t->second->getArg ())->postEvent (iter_t->second);
+		Rts2Event *sec = iter_t->second;
+		timers.erase (iter_t++);
+	 	if (sec->getArg () != NULL)
+		  	((Rts2Object *)sec->getArg ())->postEvent (sec);
 		else
-			postEvent (iter_t->second);
-		timers.erase (iter_t);
+			postEvent (sec);
 	}
 
 	return 0;
@@ -303,11 +328,6 @@ Rts2Block::selectSuccess ()
 		conn = *iter;
 		if (conn->receive (&read_set) == -1 || conn->writable (&write_set) == -1)
 		{
-			#ifdef DEBUG_EXTRA
-			logStream (MESSAGE_DEBUG) <<
-				"Will delete connection " << " name: " << conn->
-				getName () << sendLog;
-			#endif
 			ret = deleteConnection (conn);
 			// delete connection only when it really requested to be deleted..
 			if (!ret)
@@ -475,13 +495,24 @@ Rts2Block::updateMetaInformations (Rts2Value *value)
 		value->sendMetaInfo (*iter);
 }
 
-
-int
-Rts2Block::setMasterState (int new_state)
+int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 {
 	int old_state = masterState;
+	// ignore connections from wrong master..
+	if (stateMasterConn != NULL && _conn != stateMasterConn)
+	{
+		if ((new_state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (new_state & WEATHER_MASK) != BAD_WEATHER && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		{
+			logStream (MESSAGE_DEBUG) << "ignoring state change, as it does not arrive from master connection" << sendLog;
+			return 0;
+		}
+		// ignore request from non-master server asking us to switch to standby, when we are in hard off
+		if ((masterState & SERVERD_STATUS_MASK) == SERVERD_HARD_OFF && (new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+			return 0;
+	}
 	// change state NOW, before it will mess in processing routines
 	masterState = new_state;
+
 	if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
 	{
 		// call changeMasterState only if something except BOP_MASK changed
@@ -673,7 +704,7 @@ Rts2Block::createOtherType (Rts2Conn * conn, int other_device_type)
 			return new Rts2DevClientCamera (conn);
 		case DEVICE_TYPE_DOME:
 			return new Rts2DevClientDome (conn);
-		case DEVICE_TYPE_COPULA:
+		case DEVICE_TYPE_CUPOLA:
 			return new Rts2DevClientCupola (conn);
 		case DEVICE_TYPE_PHOT:
 			return new Rts2DevClientPhot (conn);
@@ -709,17 +740,13 @@ Rts2Block::addUser (int p_centraldId, const char *p_login)
 	addUser (new Rts2ConnUser (p_centraldId, p_login));
 }
 
-
-int
-Rts2Block::addUser (Rts2ConnUser * in_user)
+int Rts2Block::addUser (Rts2ConnUser * in_user)
 {
 	blockUsers.push_back (in_user);
 	return 0;
 }
 
-
-Rts2Conn *
-Rts2Block::getOpenConnection (const char *deviceName)
+Rts2Conn * Rts2Block::getOpenConnection (const char *deviceName)
 {
 	connections_t::iterator iter;
 
@@ -733,9 +760,29 @@ Rts2Block::getOpenConnection (const char *deviceName)
 	return NULL;
 }
 
+void Rts2Block::getOpenConnectionType (int deviceType, connections_t::iterator &current)
+{
+	for (; current != connections.end (); current++)
+	{
+		if ((*current)->getOtherType () == deviceType)
+			return;
+	}
+}
 
-Rts2Conn *
-Rts2Block::getConnection (char *deviceName)
+Rts2Conn * Rts2Block::getOpenConnection (int device_type)
+{
+	connections_t::iterator iter;
+
+	for (iter = connections.begin (); iter != connections.end (); iter++)
+	{
+		Rts2Conn *conn = *iter;
+		if (conn->getOtherType () == device_type)
+			return conn;
+	}
+	return NULL;
+}
+
+Rts2Conn * Rts2Block::getConnection (char *deviceName)
 {
 	Rts2Conn *conn;
 	Rts2Address *devAddr;
@@ -902,8 +949,13 @@ void Rts2Block::deleteTimers (int event_type)
 	for (std::map <double, Rts2Event *>::iterator iter = timers.begin (); iter != timers.end (); )
 	{
 		if (iter->second->getType () == event_type)
+		{
+			delete (iter->second);
 			timers.erase (iter++);
+		}
 		else
+		{
 			iter++;
+		}
 	}
 }

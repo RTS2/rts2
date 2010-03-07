@@ -36,11 +36,10 @@ class ErrorGpibEnetFlags:public rts2core::Error
 		}
 };
 
-
 void ConnGpibEnet::sread (char **ret_buf)
 {
 	char gpib_buf[4];
-	receiveData (gpib_buf, 4, 10, true);
+	receiveData (gpib_buf, 4, 30, true);
 
 	flags = ntohs (*((uint16_t *) (gpib_buf)));
 	len = ntohs (*((uint16_t *) (gpib_buf + 2)));
@@ -51,10 +50,15 @@ void ConnGpibEnet::sread (char **ret_buf)
 		throw ErrorGpibEnetFlags (flags);
 	}
 
-	*ret_buf = new char[len];
-	receiveData (*ret_buf, len, 20, true);
-}
+	if (len == 0)
+	{
+		*ret_buf = NULL;
+		return;
+	}
 
+	*ret_buf = new char[len];
+	receiveData (*ret_buf, len, 30, true);
+}
 
 void ConnGpibEnet::sresp (char **ret_buf)
 {
@@ -72,18 +76,17 @@ void ConnGpibEnet::sresp (char **ret_buf)
 		delete[] sread_ret;
 }
 
-void ConnGpibEnet::gpibWrite (const char *cmd)
+void ConnGpibEnet::gpibWriteBuffer (const char *cmd, int _len)
 {
 	// write header
 	char gpib_buf[13] = "\x23\x05\x05\x08IIII\x00\x54\x00\x00";
-	*((int32_t *) (gpib_buf + 4)) = htonl (strlen (cmd));
+	*((int32_t *) (gpib_buf + 4)) = htonl (_len);
 	sendData (gpib_buf, 12, true);
 	sresp (NULL);
 
-	sendData ((void *) cmd, strlen (cmd));
+	sendData ((void *) cmd, _len);
 	sresp (NULL);
 }
-
 
 void ConnGpibEnet::gpibRead (void *reply, int &blen)
 {
@@ -125,14 +128,12 @@ void ConnGpibEnet::gpibRead (void *reply, int &blen)
 	}
 }
 
-
 void ConnGpibEnet::gpibWriteRead (const char *cmd, char *reply, int blen)
 {
 	gpibWrite (cmd);
 	*reply = '\0';
 	gpibRead (reply, blen);
 }
-
 
 void ConnGpibEnet::gpibWaitSRQ ()
 {
@@ -152,11 +153,11 @@ void ConnGpibEnet::gpibWaitSRQ ()
 			delete[] sbuf;
 			throw rts2core::Error ("Too short reply from iblines call");
 		}
-		if (ntohs (*((uint16_t *) (sbuf + 12))) & 0x2000)
+		if (ntohs (*((uint16_t *) (sbuf + 12))) & (1 << 12))
 			return;
+		usleep (USEC_SEC / 100);
 	}
 }
-
 
 void ConnGpibEnet::initGpib ()
 {
@@ -180,12 +181,14 @@ void ConnGpibEnet::initGpib ()
 	gpib_buf[5] = sad;
 	gpib_buf[6] = eos;
 	gpib_buf[7] = 0x00;
-	gpib_buf[8] = tmo;
+	gpib_buf[8] = 13;
 	gpib_buf[9] = 0x02;
 	gpib_buf[10] = 0x04;
 	gpib_buf[11] = 0x00;
 
 	sendData (gpib_buf, 12, true);
+
+	timeout = 10;
 
 	char *ret_buf;
 
@@ -194,16 +197,30 @@ void ConnGpibEnet::initGpib ()
 	delete[] ret_buf;
 }
 
+void ConnGpibEnet::devClear ()
+{
+	char gpib_buf[13] = "\x04\xf5\xff\xbf\x14\xf5\xff\xbf\xa9\x8f\x04\x08";
+	sendData (gpib_buf, 12, true);
+	sresp (NULL);
+}
+
+void ConnGpibEnet::settmo (float _sec)
+{
+	timeout = _sec;
+	char gpib_buf[13] = "\x1fI\x00\x00\x20\xe1\x05\x08\xae\xe0\x05\x08";
+	gpib_buf[1] = getTimeoutTmo (timeout);
+	sendData (gpib_buf, 12, true);
+	sresp (NULL);
+}
 
 ConnGpibEnet::ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad):ConnGpib (), rts2core::ConnTCP (_master, _address, _port)
 {
 	sad = 0;
 	pad = _pad;
-	tmo = 13;
 	eot = 1;
 	eos = 0;
+	timeout = NAN;
 }
-
 
 ConnGpibEnet::~ConnGpibEnet (void)
 {

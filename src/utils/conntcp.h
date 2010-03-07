@@ -114,10 +114,7 @@ class ConnTCP:public Rts2ConnNoSend
 		 * to and from the socket will be logged using standard RTS2
 		 * logging with MESSAGE_DEBUG type.
 		 */
-		void setDebug (bool _debug = true)
-		{
-			debug = _debug;
-		}
+		void setDebug (bool _debug = true) { debug = _debug; }
 
 		/**
 		 * Send data to TCP/IP socket.
@@ -158,6 +155,13 @@ class ConnTCP:public Rts2ConnNoSend
 
 		virtual void postEvent (Rts2Event * event);
 
+	protected:
+		virtual bool canDelete () { return false; }
+
+		virtual void connectionError (int last_data_size);
+
+		bool getDebug () { return debug; }
+
 	private:
 		const char *hostname;
 		int port;
@@ -165,9 +169,6 @@ class ConnTCP:public Rts2ConnNoSend
 		bool debug;
 
 		bool checkBufferForChar (std::istringstream **_is, char end_char);
-	
-	protected:
-		virtual void connectionError (int last_data_size);
 };
 
 };

@@ -1,6 +1,6 @@
 /* 
  * Utilities for data connection.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,12 +25,30 @@
 
 class Rts2Conn;
 
+namespace rts2core
+{
+
+/**
+ * Interface for varius DataRead classes.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataAbstractRead
+{
+	public:
+		DataAbstractRead () {}
+		virtual ~DataAbstractRead () {}
+		
+		virtual char *getDataBuff () = 0;
+		virtual char *getDataTop () = 0;
+};
+
 /**
  * Represents data readed from connection.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DataRead
+class DataRead:public DataAbstractRead
 {
 	private:
 		// binary data
@@ -48,7 +66,7 @@ class Rts2DataRead
 		// remaining size of binary data chunk which needed to be read
 		long binaryReadChunkSize;
 	public:
-		Rts2DataRead (int in_binaryReadDataSize, int in_type)
+		DataRead (int in_binaryReadDataSize, int in_type)
 		{
 			binaryReadDataSize = in_binaryReadDataSize;
 			binaryReadBuff = new char[binaryReadDataSize];
@@ -57,7 +75,7 @@ class Rts2DataRead
 			binaryReadChunkSize = -1;
 		}
 
-		~Rts2DataRead (void)
+		~DataRead (void)
 		{
 			delete[] binaryReadBuff;
 		}
@@ -109,33 +127,36 @@ class Rts2DataRead
 			return data_size;
 		}
 
-		char *getDataBuff ()
-		{
-			return binaryReadBuff;
-		}
+		virtual char *getDataBuff () { return binaryReadBuff; }
 
-		char *getDataTop ()
-		{
-			return binaryReadTop;
-		}
+		virtual char *getDataTop () { return binaryReadTop; }
 
 		/**
 		 * Return size of data to read.
 		 *
 		 * @return Size of data which remains to be read.
 		 */
-		long getRestSize ()
-		{
-			return binaryReadDataSize;
-		}
+		long getRestSize () { return binaryReadDataSize; }
 
 		/**
 		 * Return remaining size of chunk, which has to be read from actual data chunk.
 		 */
-		long getChunkSize ()
-		{
-			return binaryReadChunkSize;
-		}
+		long getChunkSize () { return binaryReadChunkSize; }
+};
+
+/**
+ * Shared memory data - returns buffer specified in constructor.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DataShared: public DataAbstractRead
+{
+	public:
+		DataShared (char *_data) { data = _data; }
+		virtual char *getDataBuff () { return data + sizeof (unsigned long); }
+		virtual char *getDataTop () { return data + *((unsigned long *) data) + sizeof (unsigned long); }
+	private:
+		char *data;
 };
 
 /**
@@ -143,13 +164,13 @@ class Rts2DataRead
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2DataWrite
+class DataWrite
 {
 	private:
 		// number of data to write on conection
 		long binaryWriteDataSize;
 	public:
-		Rts2DataWrite (int in_dataSize)
+		DataWrite (int in_dataSize)
 		{
 			binaryWriteDataSize = in_dataSize;
 		}
@@ -164,4 +185,6 @@ class Rts2DataWrite
 			binaryWriteDataSize -= size;
 		}
 };
+
+}
 #endif							 // ! __RTS2_DATA__

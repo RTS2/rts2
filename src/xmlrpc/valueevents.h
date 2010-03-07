@@ -21,10 +21,12 @@
 #define __RTS2__VALUEEVENTS__
 
 #include "../utils/rts2value.h"
-#include "../utils/rts2block.h"
 
-#include <string>
+#include "emailaction.h"
+
+#include <map>
 #include <list>
+#include <string>
 
 namespace rts2xmlrpc
 {
@@ -32,25 +34,17 @@ namespace rts2xmlrpc
 /**
  * Class triggered on value change.
  */
-class ValueChange
+class ValueChange:public Rts2Object
 {
-	private:
-		double lastTime;
-		float cadency;
-	
-	protected:
-		std::string deviceName;
-		std::string valueName;
-
 	public:
-		ValueChange (std::string _deviceName, std::string _valueName, float _cadency)
-		{
-			deviceName = _deviceName;
-			valueName = _valueName;
-			
-			lastTime = 0;
-			cadency = _cadency;
-		}
+		ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency);
+
+		/**
+		 * Catch EVENT_XMLRPC_VALUE_TIMER events.
+		 *
+		 * @see Rts2Object::postEvent(Rts2Event*)
+		 */
+		virtual void postEvent (Rts2Event * event);
 
 		bool isForValue (std::string _deviceName, std::string _valueName, double infoTime)
 		{
@@ -60,7 +54,7 @@ class ValueChange
 		/**
 		 * Triggered when value is changed. Throws Errors on error.
 		 */
-		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime) = 0;
+		virtual void run (Rts2Value *val, double validTime) = 0;
 
 		/**
 		 * Called at the end of run method, when command change was run succesfully.
@@ -69,6 +63,16 @@ class ValueChange
 		{
 			lastTime = validTime;
 		}
+
+	protected:
+		XmlRpcd *master;
+
+		std::string deviceName;
+		std::string valueName;
+
+	private:
+		double lastTime;
+		float cadency;
 };
 
 /**
@@ -79,15 +83,19 @@ class ValueChange
  */
 class ValueChangeRecord: public ValueChange
 {
-	private:
-		int dbValueId;
 	public:
-		ValueChangeRecord (std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_deviceName, _valueName, _cadency)
+		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_master, _deviceName, _valueName, _cadency)
 		{
-			dbValueId = -1;
 		}
 
-		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime);
+		virtual void run (Rts2Value *val, double validTime);
+#ifdef HAVE_PGSQL
+	private:
+		std::map <const char *, int> dbValueIds;
+		int getRecvalId (const char *suffix, int recval_type);
+		void recordValueDouble (int recval_id, double val, double validTime);
+		void recordValueBoolean (int recval_id, bool val, double validTime);
+#endif /* HAVE_PGSQL */
 };
 
 
@@ -98,19 +106,31 @@ class ValueChangeRecord: public ValueChange
  */
 class ValueChangeCommand: public ValueChange
 {
-	private:
-		std::string commandName;
-
 	public:
-		ValueChangeCommand (std::string _deviceName, std::string _valueName, float _cadency, std::string _commandName):ValueChange (_deviceName, _valueName, _cadency)
+		ValueChangeCommand (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, std::string _commandName):ValueChange (_master, _deviceName, _valueName, _cadency)
 		{
 			commandName = _commandName;
 		}
 
-		virtual void run (Rts2Block *_master, Rts2Value *val, double validTime);
+		virtual void run (Rts2Value *val, double validTime);
+	private:
+		std::string commandName;
 };
 
+/**
+ * Send email on value change.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ValueChangeEmail: public ValueChange, public EmailAction
+{
+	public:
+		ValueChangeEmail (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_master, _deviceName, _valueName, _cadency), EmailAction ()
+		{
+		}
 
+		virtual void run (Rts2Value *val, double validTime);
+};
 
 /**
  * Holds list of ValueChangeCommands

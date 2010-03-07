@@ -20,7 +20,6 @@
 #include "sensord.h"
 #include "../utils/connford.h"
 
-
 namespace rts2sensord
 {
 
@@ -80,10 +79,10 @@ Bootes1::Bootes1 (int argc, char **argv):Sensor (argc, argv)
 	fordConn = NULL;
 	addOption ('f', NULL, 1, "/dev file for board serial port (default to /dev/ttyS0)");
 
-	createValue (telSwitch, "tel_switch", "switch for telescope", false);
+	createValue (telSwitch, "tel_switch", "switch for telescope", false, RTS2_VALUE_WRITABLE);
 	telSwitch->setValueBool (true);
 
-	createValue (asmSwitch, "asm_switch", "switch for ASM", false);
+	createValue (asmSwitch, "asm_switch", "switch for ASM", false, RTS2_VALUE_WRITABLE);
 	asmSwitch->setValueBool (true);
 }
 
@@ -136,7 +135,7 @@ int Bootes1::init ()
 	if (ret)
 		return ret;
 
-	fordConn = new rts2core::FordConn (ford_file, this, BS9600, C8, NONE, 40);
+	fordConn = new rts2core::FordConn (ford_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 40);
 	ret = fordConn->init ();
 	if (ret)
 		return ret;

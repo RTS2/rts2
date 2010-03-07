@@ -31,6 +31,8 @@
 
 #include <sys/time.h>
 
+#define PHOT_EVENT_CHECK    RTS2_LOCAL_EVENT + 1250
+
 /**
  * Abstract photometer class.
  *
@@ -54,6 +56,8 @@ class Rts2DevPhot:public Rts2ScriptDevice
 
 		const char *photType;
 		char *serial;
+
+		virtual void postEvent (Rts2Event *event);
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 

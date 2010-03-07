@@ -40,18 +40,20 @@ namespace rts2camd
  */
 class Fli:public Camera
 {
-	private:
-		Rts2ValueSelection *fliShutter;
+	public:
+		Fli (int in_argc, char **in_argv);
+		virtual ~ Fli (void);
 
-		flidomain_t deviceDomain;
+		virtual int processOption (int in_opt);
 
-		flidev_t dev;
+		virtual int init ();
 
-		long hwRev;
-		int camNum;
+		virtual int info ();
 
-		int fliDebug;
-		int nflush;
+		virtual int camChipInfo (int chip);
+
+		virtual int setCoolTemp (float new_temp);
+		virtual void afterNight ();
 	protected:
 		virtual int initChips ();
 
@@ -80,28 +82,25 @@ class Fli:public Camera
 		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-	public:
-		Fli (int in_argc, char **in_argv);
-		virtual ~ Fli (void);
+	private:
+		Rts2ValueSelection *fliShutter;
 
-		virtual int processOption (int in_opt);
+		flidomain_t deviceDomain;
 
-		virtual int init ();
+		flidev_t dev;
 
-		virtual int info ();
+		long hwRev;
+		int camNum;
 
-		virtual int camChipInfo (int chip);
-
-		virtual int setCoolTemp (float new_temp);
-		virtual void afterNight ();
+		int fliDebug;
+		Rts2ValueInteger *nflush;
 };
 
 };
 
 using namespace rts2camd;
 
-int
-Fli::initChips ()
+int Fli::initChips ()
 {
 	LIBFLIAPI ret;
 	long x, y, w, h;
@@ -121,9 +120,7 @@ Fli::initChips ()
 	return 0;
 }
 
-
-int
-Fli::startExposure ()
+int Fli::startExposure ()
 {
 	LIBFLIAPI ret;
 
@@ -154,9 +151,7 @@ Fli::startExposure ()
 	return 0;
 }
 
-
-long
-Fli::isExposing ()
+long Fli::isExposing ()
 {
 	LIBFLIAPI ret;
 	long tl;
@@ -167,9 +162,7 @@ Fli::isExposing ()
 	return tl * 1000;			 // we get tl in msec, needs to return usec
 }
 
-
-int
-Fli::stopExposure ()
+int Fli::stopExposure ()
 {
 	LIBFLIAPI ret;
 	long timer;
@@ -186,9 +179,7 @@ Fli::stopExposure ()
 	return Camera::stopExposure ();
 }
 
-
-int
-Fli::doReadout ()
+int Fli::doReadout ()
 {
 	LIBFLIAPI ret;
 	char *bufferTop = dataBuffer;
@@ -206,9 +197,7 @@ Fli::doReadout ()
 	return -2;
 }
 
-
-int
-Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == fliShutter)
 	{
@@ -234,18 +223,20 @@ Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		ret = FLIControlShutter (dev, ret);
 		return ret ? -2 : 0;
 	}
+	if (old_value == nflush)
+	{
+		return FLISetNFlushes (dev, new_value->getValueInteger ()) ? -2 : 0;
+	}
 	return Camera::setValue (old_value, new_value);
 }
 
-
-Fli::Fli (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
 	createExpType ();
 
-	createValue (fliShutter, "FLISHUT", "FLI shutter state");
+	createValue (fliShutter, "FLISHUT", "FLI shutter state", true, RTS2_VALUE_WRITABLE);
 	fliShutter->addSelVal ("CLOSED");
 	fliShutter->addSelVal ("OPENED");
 	fliShutter->addSelVal ("EXTERNAL TRIGGER");
@@ -256,25 +247,22 @@ Camera (in_argc, in_argv)
 	fliDebug = FLIDEBUG_NONE;
 	hwRev = -1;
 	camNum = -1;
-	nflush = -1;
-	addOption ('D', "domain", 1,
-		"CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	createValue (nflush, "nflush", "number of flushes before exposure", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	nflush->setValueInteger (-1);
+
+	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
 	addOption ('R', "HW revision", 1, "find camera by HW revision");
-	addOption ('b', "fli_debug", 1,
-		"FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('n', "number", 1, "Camera number (in FLI list)");
 	addOption ('l', "flush", 1, "Number of CCD flushes");
 }
-
 
 Fli::~Fli (void)
 {
 	FLIClose (dev);
 }
 
-
-int
-Fli::processOption (int in_opt)
+int Fli::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -314,7 +302,7 @@ Fli::processOption (int in_opt)
 			camNum = atoi (optarg);
 			break;
 		case 'l':
-			nflush = atoi (optarg);
+			nflush->setValueCharArr (optarg);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -322,9 +310,7 @@ Fli::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Fli::init ()
+int Fli::init ()
 {
 	LIBFLIAPI ret;
 
@@ -348,8 +334,7 @@ Fli::init ()
 
 	if (names[0] == NULL)
 	{
-		logStream (MESSAGE_ERROR) << "Fli::init No device found!"
-			<< sendLog;
+		logStream (MESSAGE_ERROR) << "Fli::init No device found!" << sendLog;
 		return -1;
 	}
 
@@ -409,17 +394,15 @@ Fli::init ()
 	if (ret)
 		return -1;
 
-	if (nflush >= 0)
+	if (nflush->getValueInteger () >= 0)
 	{
-		ret = FLISetNFlushes (dev, nflush);
+		ret = FLISetNFlushes (dev, nflush->getValueInteger ());
 		if (ret)
 		{
-			logStream (MESSAGE_ERROR) << "fli init FLISetNFlushes ret " << ret
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "fli init FLISetNFlushes ret " << ret << sendLog;
 			return -1;
 		}
-		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush <<
-			sendLog;
+		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
 	// FLIGetSerialNum (dev, &serno);
@@ -442,9 +425,7 @@ Fli::init ()
 	return initChips ();
 }
 
-
-int
-Fli::info ()
+int Fli::info ()
 {
 	LIBFLIAPI ret;
 	double fliTemp;
@@ -455,16 +436,12 @@ Fli::info ()
 	return Camera::info ();
 }
 
-
-int
-Fli::camChipInfo (int chip)
+int Fli::camChipInfo (int chip)
 {
 	return 0;
 }
 
-
-int
-Fli::setCoolTemp (float new_temp)
+int Fli::setCoolTemp (float new_temp)
 {
 	LIBFLIAPI ret;
 	ret = FLISetTemperature (dev, new_temp);
@@ -474,17 +451,13 @@ Fli::setCoolTemp (float new_temp)
 	return 0;
 }
 
-
-void
-Fli::afterNight ()
+void Fli::afterNight ()
 {
 	setCoolTemp (40);
 	Camera::afterNight ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Fli device = Fli (argc, argv);
 	return device.run ();

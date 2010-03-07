@@ -19,6 +19,7 @@
 
 #include "recvals.h"
 #include "sqlerror.h"
+#include "../utils/utilsfunc.h"
 
 using namespace rts2db;
 
@@ -28,8 +29,11 @@ void RecvalsSet::load ()
 	int d_recval_id;
 	VARCHAR d_device_name[26];
 	VARCHAR d_value_name[26];
+	int d_value_type;
 	double d_from;
 	double d_to;
+	int d_from_null;
+	int d_to_null;
 	EXEC SQL END DECLARE SECTION;
 
 	EXEC SQL DECLARE recval_state_cur CURSOR FOR
@@ -50,13 +54,17 @@ void RecvalsSet::load ()
 			:d_recval_id,
 			:d_device_name,
 			:d_value_name,
-			:d_from,
-			:d_to;
+			:d_from :d_from_null,
+			:d_to :d_to_null;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 0, d_from, d_to));
+		if (d_from_null)
+			d_from = rts2_nan ("f");
+		if (d_to_null)
+			d_to = rts2_nan ("f");
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, RECVAL_STATE, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -71,6 +79,7 @@ void RecvalsSet::load ()
 		recval_id,
 		device_name,
 		value_name,
+		value_type,
 		EXTRACT (EPOCH FROM time_from),
 		EXTRACT (EPOCH FROM time_to)
 	FROM
@@ -84,13 +93,18 @@ void RecvalsSet::load ()
 			:d_recval_id,
 			:d_device_name,
 			:d_value_name,
-			:d_from,
-			:d_to;
+			:d_value_type,
+			:d_from :d_from_null,
+			:d_to :d_to_null;
 		if (sqlca.sqlcode)
 			break;
 		d_device_name.arr[d_device_name.len] = '\0';
 		d_value_name.arr[d_value_name.len] = '\0';
-		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, 1, d_from, d_to));
+		if (d_from_null)
+			d_from = rts2_nan ("f");
+		if (d_to_null)
+			d_to = rts2_nan ("f");
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
 	}
 
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
@@ -98,5 +112,52 @@ void RecvalsSet::load ()
 		throw SqlError();
 	}
 	EXEC SQL CLOSE recval_double_cur;
+
+	EXEC SQL DECLARE recval_boolean_cur CURSOR FOR
+	SELECT
+		recval_id,
+		device_name,
+		value_name,
+		value_type,
+		EXTRACT (EPOCH FROM time_from),
+		EXTRACT (EPOCH FROM time_to)
+	FROM
+		recvals_boolean_statistics;
+
+	EXEC SQL OPEN recval_boolean_cur;
+
+	while (true)
+	{
+		EXEC SQL FETCH next FROM recval_boolean_cur INTO
+			:d_recval_id,
+			:d_device_name,
+			:d_value_name,
+			:d_value_type,
+			:d_from,
+			:d_to;
+		if (sqlca.sqlcode)
+			break;
+		d_device_name.arr[d_device_name.len] = '\0';
+		d_value_name.arr[d_value_name.len] = '\0';
+		push_back (Recval (d_recval_id, d_device_name.arr, d_value_name.arr, d_value_type, d_from, d_to));
+	}
+
+	if (sqlca.sqlcode != ECPG_NOT_FOUND)
+	{
+		throw SqlError();
+	}
+	EXEC SQL CLOSE recval_boolean_cur;
 	EXEC SQL ROLLBACK;
+}
+
+Recval * RecvalsSet::searchByName (const char *_device_name, const char *_value_name)
+{
+	std::string _dn (_device_name);
+	std::string _vn (_value_name);
+	for (std::list <Recval>::iterator iter = begin (); iter != end (); iter++)
+	{
+		if (iter->getDevice () == _dn && iter->getValueName () == _vn)
+			return &(*iter);
+	}
+	return NULL;
 }

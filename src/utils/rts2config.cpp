@@ -47,14 +47,14 @@ Rts2Config::getSpecialValues ()
 	getString ("observatory", "flat_path", obs_flats, "%b/flat/%c/raw/%f");
 	getString ("observatory", "dark_path", obs_darks, "%b/darks/%c/%f");
 
-	getDouble ("observatory", "min_flat_heigh", minFlatHeigh, 10);
+	minFlatHeigh = getDoubleDefault ("observatory", "min_flat_heigh", 10);
 
 	checker = new ObjectCheck (horizon_file.c_str ());
-	getInteger ("imgproc", "astrometry_timeout", astrometryTimeout, 3600);
-	getDouble ("calibration", "airmass_distance", calibrationAirmassDistance, 0.1);
-	getDouble ("calibration", "lunar_dist", calibrationLunarDist, 20);
-	getInteger ("calibration", "valid_time", calibrationValidTime, 3600);
-	getInteger ("calibration", "max_delay", calibrationMaxDelay, 7200);
+	astrometryTimeout = getIntegerDefault ("imgproc", "astrometry_timeout", 3600);
+	calibrationAirmassDistance = getDoubleDefault ("calibration", "airmass_distance", 0.1);
+	calibrationLunarDist = getDoubleDefault ("calibration", "lunar_dist", 20);
+	calibrationValidTime = getIntegerDefault ("calibration", "valid_time", 3600);
+	calibrationMaxDelay = getIntegerDefault ("calibration", "max_delay", 7200);
 	getFloat ("calibration", "min_bonus", calibrationMinBonus, 1.0);
 	getFloat ("calibration", "max_bonus", calibrationMaxBonus, 300.0);
 
@@ -64,7 +64,7 @@ Rts2Config::getSpecialValues ()
 
 	// GRD section
 	grbd_follow_transients = getBoolean ("grbd", "know_transients", true);
-	getInteger ("grbd", "validity", grbd_validity, 3600);
+	grbd_validity = getIntegerDefault ("grbd", "validity", 86400);
 
 	if (ret)
 		return -1;
@@ -127,20 +127,27 @@ Rts2Config::getNight ()
 	return getNight (tm_s->tm_year + 1900, tm_s->tm_mon + 1, tm_s->tm_mday);
 }
 
-time_t
-Rts2Config::getNight (int year, int month, int day)
+time_t Rts2Config::getNight (int year, int month, int day)
 {
 	struct tm _tm;
 	static char p_tz[100];
+
+	if (month > 12)
+	{
+		year++;
+		month -= 12;
+	}
 
 	_tm.tm_year = year - 1900;
 	_tm.tm_mon = month - 1;
 	_tm.tm_mday = day;
 	_tm.tm_hour = 12 - getObservatoryLongitude () / 15;
 	_tm.tm_min = _tm.tm_sec = 0;
+#if !(defined (sun) || defined(__CYGWIN__))
 	_tm.tm_gmtoff = 0;
 	_tm.tm_isdst = 0;
 	_tm.tm_zone = "\0";
+#endif
 
 	std::string old_tz;
 	if (getenv("TZ"))

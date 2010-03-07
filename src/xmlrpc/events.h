@@ -39,28 +39,20 @@ namespace rts2xmlrpc
  */
 class XmlError
 {
-	private:
-		std::string desc;
 	public:
-		XmlError ()
-		{
-		}
+		XmlError () {}
 
-		XmlError (std::string _desc)
-		{
-			desc = _desc;
-		}
+		XmlError (std::string _desc) { desc = _desc; }
 
-		void setDescription (std::ostringstream &_os)
-		{
-			desc = _os.str ();
-		}
+		void setDescription (std::ostringstream &_os) { desc = _os.str (); }
 
 		friend std::ostream & operator << (std::ostream &_os, XmlError & _err)
 		{
 			_os << _err.desc << std::endl;
 			return _os;
 		}
+	private:
+		std::string desc;
 };
 
 
@@ -72,11 +64,42 @@ class XmlError
 class XmlMissingAttribute: public XmlError
 {
 	public:
-		XmlMissingAttribute (xmlNodePtr _node, std::string attr_name)
-			:XmlError ()
+		XmlMissingAttribute (xmlNodePtr _node, std::string attr_name):XmlError ()
 		{
 			std::ostringstream _os;
 			_os << "cannot find attribute " << attr_name << " in node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
+
+/**
+ * Error thrown when on unknow attribute.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlUnexpectedAttribute: public XmlError
+{
+	public:
+		XmlUnexpectedAttribute (xmlNodePtr _node, std::string attr_name):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "unexpacted attribute " << attr_name << " in node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
+
+/**
+ * Error thrown when elemant is missing in sequence.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlMissingElement: public XmlError
+{
+	public:
+		XmlMissingElement (xmlNodePtr _node, std::string _name):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "cannot find element " << _name << " in node " << xmlGetNodePath (_node) << " at line " << xmlGetLineNo (_node);
 			setDescription (_os);
 		}
 };
@@ -89,15 +112,47 @@ class XmlMissingAttribute: public XmlError
 class XmlUnexpectedNode: public XmlError
 {
 	public:
-		XmlUnexpectedNode (xmlNodePtr _node)
-			:XmlError ()
+		XmlUnexpectedNode (xmlNodePtr _node):XmlError ()
 		{
 			std::ostringstream _os;
-			_os << "unexpected node " << xmlGetNodePath (_node) << " on line " << xmlGetLineNo (_node);
+			_os << "unexpected node " << xmlGetNodePath (_node) << " at line " << xmlGetLineNo (_node);
 			setDescription (_os);
 		}
 };
 
+/**
+ * Error thrown when empty node, which should have content, is encoutered.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class XmlEmptyNode: public XmlError
+{
+	public:
+		XmlEmptyNode (xmlNodePtr _node):XmlError ()
+		{
+			std::ostringstream _os;
+			_os << "empty node " << xmlGetNodePath (_node) << " an line " << xmlGetLineNo (_node);
+			setDescription (_os);
+		}
+};
+
+/**
+ * Directory mapping.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class DirectoryMapping
+{
+	public:
+		DirectoryMapping (const char *_path, const char *_to) { path = std::string (_path); to = std::string (_to); }
+
+		const char *getPath () { return path.c_str (); }
+		const char *getTo () { return to.c_str (); }
+
+	private:
+		std::string path;
+		std::string to;
+};
 
 /**
  * Holder for events which can occur on devices.
@@ -106,18 +161,17 @@ class XmlUnexpectedNode: public XmlError
  */
 class Events
 {
-	private:
-		void parseState (xmlNodePtr event, std::string deviceName);
-		void parseValue (xmlNodePtr event, std::string deviceName);
-
 	public:
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
 
-	public:
-		Events ()
-		{
-		}
+		std::vector <std::string> publicPaths;
+		std::vector <std::string> allskyPaths;
+
+		// directories mapping
+		std::vector <DirectoryMapping> dirs;
+
+		Events (XmlRpcd *_master) { master = _master; }
 
 		/**
 		 * Load a list of StateChangeCommand from file.
@@ -127,6 +181,20 @@ class Events
 		 * @throw XmlError
 		 */
 		void load (const char *file);
+
+		/**
+		 * Return true if given path is public.
+		 */
+		bool isPublic (std::string path);
+
+	private:
+		XmlRpcd *master;
+
+		void parseHttp (xmlNodePtr ev);
+		void parseEvents (xmlNodePtr ev);
+
+		void parseState (xmlNodePtr event, std::string deviceName);
+		void parseValue (xmlNodePtr event, std::string deviceName);
 };
 
 }

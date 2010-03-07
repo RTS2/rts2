@@ -21,7 +21,7 @@
 #ifndef __RTS2_CONN_FORD__
 #define __RTS2_CONN_FORD__
 
-#include "rts2connserial.h"
+#include "connserial.h"
 
 #define PORT_A 0
 #define PORT_B 1
@@ -38,14 +38,8 @@ namespace rts2core
  * @author Petr Kubanek <petr@kubanek.net>
  * @author Martin Nekola
  */
-class FordConn: public Rts2ConnSerial
+class FordConn: public ConnSerial
 {
-	private:
-		unsigned char stav_portu[3];
-
-		int zapni_pin (unsigned char c_port, unsigned char pin);
-		int vypni_pin (unsigned char c_port, unsigned char pin);
-
 	public:
 	 	/**
 		 * Refresh status information on all ports.
@@ -97,6 +91,21 @@ class FordConn: public Rts2ConnSerial
 		 */
 		int switchOffPins (int pin1, int pin2, int pin3, int pin4);
 
+		/**
+		 * Return A port state as number.
+		 */
+		unsigned char getPortA () { return stav_portu[PORT_A]; };
+
+		/**
+		 * Return B port state as number.
+		 */
+		unsigned char getPortB () { return stav_portu[PORT_B]; };
+
+		/**
+		 * Return C port state as number.
+		 */
+		unsigned char getPortC () { return stav_portu[PORT_C]; };
+
 		bool getPortState (int c_port);
 
 		/**
@@ -115,6 +124,12 @@ class FordConn: public Rts2ConnSerial
 		FordConn (const char *_devName, Rts2Block * _master, bSpeedT _baudSpeed = BS9600, cSizeT _cSize = C8, parityT _parity = NONE, int _vTime = 40);
 
 		virtual ~FordConn ();
+
+	private:
+		unsigned char stav_portu[3];
+
+		int zapni_pin (unsigned char c_port, unsigned char pin);
+		int vypni_pin (unsigned char c_port, unsigned char pin);
 };
 
 }

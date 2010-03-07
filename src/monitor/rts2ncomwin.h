@@ -41,6 +41,6 @@ class Rts2NComWin:public Rts2NWindow
 				mvwaddch (statuspad, y, x, ' ');
 		}
 
-		void commandReturn (Rts2Command * cmd, int cmd_status);
+		void commandReturn (rts2core::Rts2Command * cmd, int cmd_status);
 };
 #endif							 /* !__RTS2_NCOMWIN__ */

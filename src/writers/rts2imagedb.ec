@@ -75,14 +75,14 @@ Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
 }
 
 
-Rts2ImageDb::Rts2ImageDb (Rts2Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) :
+Rts2ImageDb::Rts2ImageDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
 Rts2Image (currTarget, camera, expStart)
 {
 	initDbImage ();
 }
 
 
-Rts2ImageDb::Rts2ImageDb (const char *in_filename, bool verbose, bool readOnly) : Rts2Image (in_filename, verbose, readOnly)
+Rts2ImageDb::Rts2ImageDb (const char *_filename, bool _verbose, bool readOnly) : Rts2Image (_filename, _verbose, readOnly)
 {
 	initDbImage ();
 }
@@ -150,8 +150,8 @@ Rts2ImageDb::renameImage (const char *new_filename)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
-	int d_img_id = imgId;
-	int d_obs_id = obsId;
+	int d_img_id = getImgId ();
+	int d_obs_id = getObsId ();
 	EXEC SQL END DECLARE SECTION;
 
 	int ret = Rts2Image::renameImage (new_filename);
@@ -195,28 +195,28 @@ int
 Rts2ImageSkyDb::updateDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		VARCHAR d_img_path[100];
-		int d_img_id = imgId;
-		int d_obs_id = obsId;
-		char d_obs_subtype = 'S';
-		int d_img_date = getExposureSec ();
-		int d_img_usec = getExposureUsec ();
-		float d_img_temperature = -500;
-		int d_img_temperature_ind;
-		float d_img_exposure = -1;
-		float d_img_alt = -100;
-		float d_img_az = -100;
-		int d_med_id = 0;
-		int d_proccess_bitfield = processBitfiedl;
-		float d_img_fwhm;
-		int d_img_fwhm_ind;
-		float d_img_limmag;
-		int d_img_limmag_ind;
-		float d_img_qmagmax;
-		int d_img_qmagmax_ind;
-		VARCHAR d_mount_name[8];
-		VARCHAR d_camera_name[8];
-		VARCHAR d_img_filter[3];
+	VARCHAR d_img_path[100];
+	int d_img_id = getImgId ();
+	int d_obs_id = getObsId ();
+	char d_obs_subtype = 'S';
+	int d_img_date = getExposureSec ();
+	int d_img_usec = getExposureUsec ();
+	float d_img_temperature = -500;
+	int d_img_temperature_ind;
+	float d_img_exposure = -1;
+	float d_img_alt = -100;
+	float d_img_az = -100;
+	int d_med_id = 0;
+	int d_proccess_bitfield = processBitfiedl;
+	float d_img_fwhm;
+	int d_img_fwhm_ind;
+	float d_img_limmag;
+	int d_img_limmag_ind;
+	float d_img_qmagmax;
+	int d_img_qmagmax_ind;
+	VARCHAR d_mount_name[8];
+	VARCHAR d_camera_name[8];
+	VARCHAR d_img_filter[3];
 	EXEC SQL END DECLARE SECTION;
 
 	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
@@ -324,14 +324,14 @@ int
 Rts2ImageSkyDb::updateAstrometry ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_obs_id = obsId;
-		int d_img_id = imgId;
+	int d_obs_id = getObsId ();
+	int d_img_id = getImgId ();
 
-		double d_img_err_ra;
-		double d_img_err_dec;
-		double d_img_err;
+	double d_img_err_ra;
+	double d_img_err_dec;
+	double d_img_err;
 
-		VARCHAR s_astrometry[2000];
+	VARCHAR s_astrometry[2000];
 	EXEC SQL END DECLARE SECTION;
 
 	long a_naxis[2];
@@ -342,8 +342,8 @@ Rts2ImageSkyDb::updateAstrometry ()
 	double crota[2];
 	double equinox;
 
-	ctype[0] = (char *) malloc (9);
-	ctype[1] = (char *) malloc (9);
+	ctype[0] = (char *) malloc (10);
+	ctype[1] = (char *) malloc (10);
 
 	try
 	{
@@ -484,7 +484,7 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 }
 
 
-Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, Rts2DevClientCamera * camera, const struct timeval *expStart) :
+Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
 Rts2ImageDb (currTarget, camera, expStart)
 {
 	initDbImage ();
@@ -514,12 +514,7 @@ float in_img_exposure, float in_img_temperature, const char *in_img_filter, floa
 const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
 double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
-	targetId = in_tar_id;
-	targetIdSel = in_tar_id;
-	targetType = in_obs_subtype;
-	targetName = NULL;
-	obsId = in_obs_id;
-	imgId = in_img_id;
+	setTargetHeaders (in_tar_id, in_obs_id, in_img_id, in_obs_subtype);
 	cameraName = new char[strlen (in_camera_name) + 1];
 	strcpy (cameraName, in_camera_name);
 	mountName = new char[strlen (in_mount_name) + 1];
@@ -600,8 +595,8 @@ int
 Rts2ImageSkyDb::deleteImage ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_img_id = imgId;
-		int d_obs_id = obsId;
+	int d_img_id = getImgId ();
+	int d_obs_id = getObsId ();
 	EXEC SQL END DECLARE SECTION;
 
 	if (getImageType () == IMGTYPE_OBJECT)

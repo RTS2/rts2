@@ -87,6 +87,516 @@ namespace rts2teld
  */
 class Telescope:public Rts2Device
 {
+	public:
+		Telescope (int argc, char **argv);
+		virtual ~ Telescope (void);
+
+		virtual void postEvent (Rts2Event * event);
+
+		virtual int changeMasterState (int new_state);
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+
+		double getLatitude () { return telLatitude->getValueDouble (); }
+
+		// callback functions from telescope connection
+		virtual int info ();
+
+		virtual int scriptEnds ();
+
+		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
+
+		int startPark (Rts2Conn * conn);
+
+		virtual int getFlip ();
+	
+		/**
+		 * Apply corrections to position.
+		 */
+		void applyCorrections (struct ln_equ_posn *pos, double JD);
+
+		/**
+		 * Set telescope correctios.
+		 *
+		 * @param _aberation     If aberation should be calculated.
+		 * @param _precession    If precession should be calculated.
+		 * @param _refraction    If refraction should be calculated.
+		 */
+		void setCorrections (bool _aberation, bool _precession, bool _refraction)
+		{
+			calAberation->setValueBool (_aberation);
+			calPrecession->setValueBool (_precession);
+			calRefraction->setValueBool (_refraction);
+		}
+
+		/**
+		 * If aberation should be calculated in RTS2.
+		 */
+		bool calculateAberation () { return calAberation->getValueBool (); }
+
+		/**
+		 * If precession should be calculated in RTS2.
+		 */
+		bool calculatePrecession () { return calPrecession->getValueBool (); }
+
+		/**
+		 * If refraction should be calculated in RTS2.
+		 */
+		bool calculateRefraction () { return calRefraction->getValueBool (); }
+
+		/**
+		 * Switch model off model will not be used to transform coordinates.
+		 */
+		void modelOff () { calModel->setValueBool (false); }
+
+		void modelOn () { calModel->setValueBool (true); }
+
+		bool isModelOn () { return (calModel->getValueBool ()); }
+
+		virtual int commandAuthorized (Rts2Conn * conn);
+
+		virtual void setFullBopState (int new_state);
+
+	protected:
+		/**
+		 * Returns telescope target RA.
+		 */
+		double getTelTargetRa () { return telTargetRaDec->getRa (); }
+
+		/**
+		 * Returns telescope target DEC.
+		 */
+		double getTelTargetDec () { return telTargetRaDec->getDec (); }
+
+		/**
+		 * Return telescope target coordinates.
+		 */
+		void getTelTargetRaDec (struct ln_equ_posn *equ)
+		{
+			equ->ra = getTelTargetRa ();
+			equ->dec = getTelTargetDec ();
+		}
+		  
+		/**
+		 * Set telescope RA.
+		 *
+		 * @param ra Telescope right ascenation in degrees.
+		 */
+		void setTelRa (double new_ra) { telRaDec->setRa (new_ra); }
+
+		/**
+		 * Set telescope DEC.
+		 *
+		 * @param new_dec Telescope declination in degrees.
+		 */
+		void setTelDec (double new_dec) { telRaDec->setDec (new_dec); }
+
+		/**
+		 * Set telescope RA and DEC.
+		 */
+		void setTelRaDec (double new_ra, double new_dec) 
+		{
+			setTelRa (new_ra);
+			setTelDec (new_dec);
+		}
+
+		/**
+		 * Returns current telescope RA.
+		 *
+		 * @return Current telescope RA.
+		 */
+		double getTelRa () { return telRaDec->getRa (); }
+
+		/**
+		 * Returns current telescope DEC.
+		 *
+		 * @return Current telescope DEC.
+		 */
+		double getTelDec () { return telRaDec->getDec (); }
+
+		/**
+		 * Returns telescope RA and DEC.
+		 *
+		 * @param tel ln_equ_posn which will be filled with telescope RA and DEC.
+		 */
+		void getTelRaDec (struct ln_equ_posn *tel)
+		{
+			tel->ra = getTelRa ();
+			tel->dec = getTelDec ();
+		}
+
+		/**
+		 * Set ignore correction - size bellow which correction commands will
+		 * be ignored.
+		 */
+		void setIgnoreCorrection (double new_ign) { ignoreCorrection->setValueDouble (new_ign); }
+
+
+		/**
+		 * Set ponting model. 0 is EQU, 1 is ALT-AZ
+		 *
+		 * @param pModel 0 for EQU, 1 for ALT-AZ.
+		 */
+		void setPointingModel (int pModel) { pointingModel->setValueInteger (pModel); }
+
+
+		/**
+		 * Return telescope pointing model.
+		 *
+		 * @return 0 if pointing model is EQU, 1 if it is ALT-AZ
+		 */
+		int getPointingModel () { return pointingModel->getValueInteger (); }
+
+		virtual int processOption (int in_opt);
+
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+
+		/**
+		 * Increment number of parks. Shall be called
+		 * every time mount homing commands is issued.
+		 *
+		 * ParkNum is used in the modelling to find observations
+		 * taken in interval with same park numbers, e.g. with sensors 
+		 * homed at same location.
+		 */
+		void setParkTimeNow () { mountParkTime->setNow (); }
+
+		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
+
+		/**
+		 * Apply corrections (at system time).
+		 * Will apply corrections (precession, refraction,..) at system time.
+		 * 
+		 * @param tar_ra  Target RA, returns its value.
+		 * @param tar_dec Target DEC, returns its value.
+		 */
+		void applyCorrections (double &tar_ra, double &tar_dec);
+
+		virtual int willConnect (Rts2Address * in_addr);
+		char telType[64];
+		Rts2ValueAltAz *telAltAz;
+
+		Rts2ValueInteger *telFlip;
+
+		double defaultRotang;
+
+		Rts2ValueDouble *rotang;
+
+		Rts2ValueDouble *telLongitude;
+		Rts2ValueDouble *telLatitude;
+		Rts2ValueDouble *telAltitude;
+		Rts2ValueString *telescope;
+
+		/**
+		 * Check if telescope is moving to fixed position. Called during telescope
+		 * movement to detect if the target destination was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isMovingFixed
+		 * call.
+		 *
+		 * @see isMoving()
+		 */
+		virtual int isMovingFixed () { return isMoving (); }
+
+		/**
+		 * Check if telescope is moving. Called during telescope
+		 * movement to detect if the target destination was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isMoving
+		 * call.
+		 */
+		virtual int isMoving () { return -2; }
+
+		/**
+		 * Check if telescope is parking. Called during telescope
+		 * park to detect if parking position was reached.
+		 *
+		 * @return -2 when destination was reached, -1 on failure, >= 0
+		 * return value is number of milliseconds for next isParking
+		 * call.
+		 */
+		virtual int isParking () { return -2; }
+
+		/**
+		 * Returns local sidereal time in hours (0-24 range).
+		 * Multiply return by 15 to get degrees.
+		 *
+		 * @return Local sidereal time in hours (0-24 range).
+		 */
+		double getLocSidTime () { return getLocSidTime (ln_get_julian_from_sys ()); }
+
+		/**
+		 * Returns local sidereal time in hours (0-24 range).
+		 * Multiply return by 15 to get degrees.
+		 *
+		 * @param JD Julian date for which sideral time will be returned.
+		 *
+		 * @return Local sidereal time in hours (0-24 range).
+		 */
+		double getLocSidTime (double JD);
+
+		/**
+		 * Returns true if origin was changed from the last movement.
+		 *
+		 * @see targetChangeFromLastResync
+		 */
+		bool originChangedFromLastResync () { return oriRaDec->wasChanged (); }
+
+		/**
+		 * Returns original, J2000 coordinates, used as observational
+		 * target.
+		 */
+		void getOrigin (struct ln_equ_posn _ori)
+		{
+			_ori.ra = oriRaDec->getRa ();
+			_ori.dec = oriRaDec->getDec ();
+		}
+
+		/**
+		 * Sets new movement target.
+		 *
+		 * @param ra New object right ascenation.
+		 * @param dec New object declination.
+		 */
+		void setTarget (double ra, double dec)
+		{
+			tarRaDec->setValueRaDec (ra, dec);
+			telTargetRaDec->setValueRaDec (ra, dec);
+			modelRaDec->setValueRaDec (0, 0);
+		}
+
+		/**
+		 * Return target position. This is equal to ORI[RA|DEC] +
+		 * OFFS[RA|DEC] + any transformations required for mount
+		 * operation.
+		 *
+		 * @param out_tar Target position
+		 */
+		void getTarget (struct ln_equ_posn *out_tar)
+		{
+			out_tar->ra = tarRaDec->getRa ();
+			out_tar->dec = tarRaDec->getDec ();
+		}
+
+
+		/**
+		 * Returns true if target was changed from the last
+		 * sucessfull move command. Target position is position which includes
+		 * telescope transformations (precession, modelling) and offsets specified by
+		 * OFFS.
+		 *
+		 * If telescope has different strategy for setting offsets,
+		 * e.g. offsets can be send by separate command, please use
+		 * originChangedFromLastResync() and apply offsets retrieved by
+		 * getUnappliedRaOffsetRa() and getUnappliedDecOffsetDec().
+		 */
+		bool targetChangeFromLastResync () { return tarRaDec->wasChanged (); }
+
+		/**
+		 * Return corrections in RA/HA.
+		 *
+		 * @return RA correction (in degrees).
+		 */
+		double getCorrRa () { return corrRaDec->getRa (); }
+
+		/**
+		 * Return corrections in DEC.
+		 *
+		 * @return DEC correction.
+		 */
+		double getCorrDec () { return corrRaDec->getDec (); }
+
+		/**
+		 * Return offset from last applied correction.
+		 *
+		 * @return RA offset - corrections which arrives from last applied correction.
+		 */
+		double getWaitCorrRa () { return wcorrRaDec->getRa (); }
+
+		/**
+		 * Return offset from last applied correction.
+		 *
+		 * @return DEC offset - corrections which arrives from last applied correction.
+		 */
+		double getWaitCorrDec () { return wcorrRaDec->getDec (); }
+
+		/**
+		 * Update target and corrected ALT AZ coordinates.
+		 *
+		 * This call will update tarAltAz and corrAltAz coordinates, based on actuall
+		 * tarRaDec and corrRaDec values.
+		 */
+		void calculateCorrAltAz ();
+
+		/**
+		 * Return corrections in zenit distance.
+		 *
+		 * @return Correction in zenit distance.
+		 */
+		double getCorrZd ();
+
+		/**
+		 * Return corrections in altitude.
+		 *
+		 * @return Correction in altitude.
+		 */
+		double getCorrAlt () { return -getCorrZd (); }
+
+		/**
+		 * Return corrections in azimuth.
+		 *
+		 * @return Correction in azimuth.
+		 */
+		double getCorrAz ();
+
+		/**
+		 * Return distance in degrees to target position.
+		 * You are responsible to call info() before this call to
+		 * update telescope coordinates.
+		 * 
+		 * @return Sky distance in degrees to target, 0 - 180. -1 on error.
+		 */
+		double getTargetDistance ();
+
+		/**
+		 * Returns ALT AZ coordinates of target.
+		 *
+		 * @param hrz ALT AZ coordinates of target.
+		 * @param jd  Julian date for which position will be calculated.
+		 */
+		void getTelTargetAltAz (struct ln_hrz_posn *hrz, double jd);
+
+		double getTargetHa ();
+		double getTargetHa (double jd);
+
+		double getLstDeg (double JD);
+
+		virtual bool isBellowResolution (double ra_off, double dec_off) { return (ra_off == 0 && dec_off == 0); }
+
+		void needStop () { maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP); }
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		virtual void valueChanged (Rts2Value * changed_value);
+
+		virtual int deleteConnection (Rts2Conn * in_conn)
+		{
+			if (in_conn == move_connection)
+				move_connection = NULL;
+			return Rts2Device::deleteConnection (in_conn);
+		}
+
+		// reload model
+		virtual void signaledHUP ();
+
+		/**
+		 * Send telescope to requested coordinates. This function does not
+		 * have any parameters, as they are various ways how to obtain
+		 * telescope coordinates.
+		 *
+		 * If you want to get raw, J2000 target coordinates, without any offsets, check with
+		 *
+		 *
+		 * @return 0 on success, -1 on error.
+		 *
+		 * @see originChangedFromLastResync
+		 * @see getOrigin()
+		 */
+		virtual int startResync () = 0;
+
+		/**
+		 * Issue cupola synchronization event.
+		 * Should use getTarget to obtain telescope target coordinates. Please note that
+		 * if you modify telescope coordinates in startResync, and do not update telTarget (
+		 * with setTarget call), you are responsible to overwrite this method and modify
+		 * coordinates accordingly.
+		 */
+		virtual void startCupolaSync ();
+
+		/**
+		 * Called at the end of telescope movement, after isMoving return
+		 * -2.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
+		virtual int endMove ();
+
+		/**
+		 * Stop telescope movement. It is called in two cases. Either when new
+		 * target is entered and telescope should stop movement to current target,
+		 * or when some failure of telescope is detected and telescope should stop 
+		 * current movement in order to prevent futher damage to the hardware.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
+		virtual int stopMove () = 0;
+
+		/**
+		 * Set telescope to match given coordinates
+		 *
+		 * This function is mainly used to tell the telescope, where it
+		 * actually is at the beggining of observation
+		 *
+		 * @param ra		setting right ascennation
+		 * @param dec		setting declination
+		 *
+		 * @return -1 on error, otherwise 0
+		 */
+		virtual int setTo (double set_ra, double set_dec) { return -1; }
+
+		/**
+		 * Called when park command is issued. Moves telescope to park position.
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
+		virtual int startPark () = 0;
+
+		/**
+		 * Called when parking of the telescope is finished. Can do various
+		 * important thinks - ussually switch of mount tracking, but can
+		 * also switch of some power supply etc..
+		 *
+		 * @return 0 on success, -1 on failure
+		 */
+		virtual int endPark () = 0;
+
+		/**
+		 * Save model from telescope to file.
+		 */
+		virtual int saveModel () { return -1; }
+
+		/**
+		 * Load model from telescope.
+		 */
+		virtual int loadModel () { return -1; }
+
+		virtual int stopWorm () { return -1; }
+
+		virtual int startWorm () { return -1; }
+		virtual int resetMount () { return 0; }
+
+		/**
+		 * Get current telescope altitude and azimuth. This
+		 * function updates telAltAz value. If you want to get target
+		 * altitude and azimuth, please use getTargetAltAz().
+		 */
+		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
+
+		/**
+		 * Return expected time in seconds it will take to reach
+		 * destination from current position.  This abstract method
+		 * returns getTargetDistance / 2.0, estimate mount slew speed
+		 * to 2 degrees per second. You can provide own estimate by
+		 * overloading this method.
+		 */
+		virtual double estimateTargetTime ();
+
+		double getTargetReached () { return targetReached->getValueDouble (); }
+
 	private:
 		Rts2Conn * move_connection;
 		int moveInfoCount;
@@ -157,6 +667,16 @@ class Telescope:public Rts2Device
 		Rts2ValueRaDec *wcorrRaDec;
 
 		/**
+		 * Modelling changes.
+		 */
+		Rts2ValueRaDec *modelRaDec;
+
+		/**
+		 * Corrected, modelled coordinates feeded to telescope.
+		 */
+		Rts2ValueRaDec *telTargetRaDec;
+
+		/**
 		 * If this value is true, any software move of the telescope is blocked.
 		 */
 		Rts2ValueBool *blockMove;
@@ -170,6 +690,7 @@ class Telescope:public Rts2Device
 		Rts2ValueBool *calRefraction;
 		Rts2ValueBool *calModel;
 
+		rts2core::StringArray *cupolas;
 
 		/**
 		 * Target HRZ coordinates.
@@ -202,105 +723,25 @@ class Telescope:public Rts2Device
 		 */
 		Rts2ValueDouble *lst;
 
-		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec,
-			bool onlyCorrect);
+		/**
+		 * Distance to target in degrees.
+		 */
+		Rts2ValueDouble *targetDistance;
+
+		/**
+		 * Time when movement was started.
+		 */
+		Rts2ValueTime *targetStarted;
+
+		/**
+		 * Estimate time when current movement will be finished.
+		 */
+		Rts2ValueTime *targetReached;
+
+		int startMove (Rts2Conn * conn, double tar_ra, double tar_dec, bool onlyCorrect);
 
 		int startResyncMove (Rts2Conn * conn, bool onlyCorrect);
 
-
-	protected:
-		/**
-		 * Set telescope RA.
-		 *
-		 * @param ra Telescope right ascenation in degrees.
-		 */
-		void setTelRa (double new_ra)
-		{
-			telRaDec->setRa (new_ra);
-		}
-
-		/**
-		 * Set telescope DEC.
-		 *
-		 * @param new_dec Telescope declination in degrees.
-		 */
-		void setTelDec (double new_dec)
-		{
-			telRaDec->setDec (new_dec);
-		}
-
-		/**
-		 * Set telescope RA and DEC.
-		 */
-		void setTelRaDec (double new_ra, double new_dec)
-		{
-			setTelRa (new_ra);
-			setTelDec (new_dec);
-		}
-
-		/**
-		 * Returns current telescope RA.
-		 *
-		 * @return Current telescope RA.
-		 */
-		double getTelRa ()
-		{
-			return telRaDec->getRa ();
-		}
-
-		/**
-		 * Returns current telescope DEC.
-		 *
-		 * @return Current telescope DEC.
-		 */
-		double getTelDec ()
-		{
-			return telRaDec->getDec ();
-		}
-
-		/**
-		 * Returns telescope RA and DEC.
-		 *
-		 * @param tel ln_equ_posn which will be filled with telescope RA and DEC.
-		 */
-		void getTelRaDec (struct ln_equ_posn *tel)
-		{
-			tel->ra = getTelRa ();
-			tel->dec = getTelDec ();
-		}
-
-		/**
-		 * Set ignore correction - size bellow which correction commands will
-		 * be ignored.
-		 */
-		void setIgnoreCorrection (double new_ign)
-		{
-			ignoreCorrection->setValueDouble (new_ign);
-		}
-
-
-		/**
-		 * Set ponting model. 0 is EQU, 1 is ALT-AZ
-		 *
-		 * @param pModel 0 for EQU, 1 for ALT-AZ.
-		 */
-		void setPointingModel (int pModel)
-		{
-			pointingModel->setValueInteger (pModel);
-		}
-
-
-		/**
-		 * Return telescope pointing model.
-		 *
-		 * @return 0 if pointing model is EQU, 1 if it is ALT-AZ
-		 */
-		int getPointingModel ()
-		{
-			return pointingModel->getValueInteger ();
-		}
-
-	private:
 		/**
 		 * Date and time when last park command was issued.
 		 */
@@ -312,14 +753,13 @@ class Telescope:public Rts2Device
 		Rts2ValueInteger *wCorrImgId;
 
 		void checkMoves ();
-		void checkGuiding ();
 
 		struct timeval dir_timeouts[4];
 
 		char *modelFile;
 		rts2telmodel::Model *model;
 
-		bool standbyPark;
+		Rts2ValueBool *standbyPark;
 		const char *horizonFile;
 
 		ObjectCheck *hardHorizon;
@@ -349,488 +789,21 @@ class Telescope:public Rts2Device
 		 */
 		Rts2ValueSelection *pointingModel;
 
-	protected:
-		virtual int processOption (int in_opt);
-
-		virtual int init ();
-		virtual int initValues ();
-		virtual int idle ();
+		struct ln_ell_orbit mpec_orbit;
 
 		/**
-		 * Increment number of parks. Shall be called
-		 * every time mount homing commands is issued.
-		 *
-		 * ParkNum is used in the modelling to find observations
-		 * taken in interval with same park numbers, e.g. with sensors 
-		 * homed at same location.
+		 * Minor Planets Ephemerids one-line element. If set, target position and differential
+		 * tracking are calculated from this string.
 		 */
-		void setParkTimeNow ()
-		{
-			mountParkTime->setNow ();
-		}
+		Rts2ValueString *mpec;
 
-		void applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD);
+		Rts2ValueDouble *mpec_refresh;
+		Rts2ValueDouble *mpec_angle;
 
-		/**
-		 * Apply corrections (at system time).
-		 * Will apply corrections (precession, refraction,..) at system time.
-		 * 
-		 * @param tar_ra  Target RA, returns its value.
-		 * @param tar_dec Target DEC, returns its value.
-		 */
-		void applyCorrections (double &tar_ra, double &tar_dec);
+		// Value for RA DEC differential tracking
+		Rts2ValueRaDec *diffRaDec;
 
-		virtual int willConnect (Rts2Address * in_addr);
-		char telType[64];
-		Rts2ValueAltAz *telAltAz;
-
-		Rts2ValueInteger *telFlip;
-
-		double defaultRotang;
-
-		Rts2ValueDouble *rotang;
-
-		Rts2ValueDouble *telLongitude;
-		Rts2ValueDouble *telLatitude;
-		Rts2ValueDouble *telAltitude;
-		Rts2ValueString *telescope;
-
-		/**
-		 * Check if telescope is moving to fixed position. Called during telescope
-		 * movement to detect if the target destination was reached.
-		 *
-		 * @return -2 when destination was reached, -1 on failure, >= 0
-		 * return value is number of milliseconds for next isMovingFixed
-		 * call.
-		 *
-		 * @see isMoving()
-		 */
-		virtual int isMovingFixed ()
-		{
-			return isMoving ();
-		}
-
-		/**
-		 * Check if telescope is moving. Called during telescope
-		 * movement to detect if the target destination was reached.
-		 *
-		 * @return -2 when destination was reached, -1 on failure, >= 0
-		 * return value is number of milliseconds for next isMoving
-		 * call.
-		 */
-		virtual int isMoving ()
-		{
-			return -2;
-		}
-
-		/**
-		 * Check if telescope is parking. Called during telescope
-		 * park to detect if parking position was reached.
-		 *
-		 * @return -2 when destination was reached, -1 on failure, >= 0
-		 * return value is number of milliseconds for next isParking
-		 * call.
-		 */
-		virtual int isParking ()
-		{
-			return -2;
-		}
-
-		/**
-		 * Returns local sidereal time in hours (0-24 range).
-		 * Multiply return by 15 to get degrees.
-		 *
-		 * @return Local sidereal time in hours (0-24 range).
-		 */
-		double getLocSidTime ()
-		{
-			return getLocSidTime (ln_get_julian_from_sys ());
-		}
-
-		/**
-		 * Returns local sidereal time in hours (0-24 range).
-		 * Multiply return by 15 to get degrees.
-		 *
-		 * @param JD Julian date for which sideral time will be returned.
-		 *
-		 * @return Local sidereal time in hours (0-24 range).
-		 */
-		double getLocSidTime (double JD);
-
-		/**
-		 * Returns true if origin was changed from the last movement.
-		 *
-		 * @see targetChangeFromLastResync
-		 */
-		bool originChangedFromLastResync ()
-		{
-			return oriRaDec->wasChanged ();
-		}
-
-		/**
-		 * Returns original, J2000 coordinates, used as observational
-		 * target.
-		 */
-		void getOrigin (struct ln_equ_posn _ori)
-		{
-			_ori.ra = oriRaDec->getRa ();
-			_ori.dec = oriRaDec->getDec ();
-		}
-
-		/**
-		 * Sets new movement target.
-		 *
-		 * @param ra New object right ascenation.
-		 * @param dec New object declination.
-		 */
-		void setTarget (double ra, double dec)
-		{
-			tarRaDec->setValueRaDec (ra, dec);
-		}
-
-		/**
-		 * Return target position. This is equal to ORI[RA|DEC] +
-		 * OFFS[RA|DEC] + any transformations required for mount
-		 * operation.
-		 *
-		 * @param out_tar Target position
-		 */
-		void getTarget (struct ln_equ_posn *out_tar)
-		{
-			out_tar->ra = tarRaDec->getRa ();
-			out_tar->dec = tarRaDec->getDec ();
-		}
-
-
-		/**
-		 * Returns true if target was changed from the last
-		 * sucessfull move command. Target position is position which includes
-		 * telescope transformations (precession, modelling) and offsets specified by
-		 * OFFS.
-		 *
-		 * If telescope has different strategy for setting offsets,
-		 * e.g. offsets can be send by separate command, please use
-		 * originChangedFromLastResync() and apply offsets retrieved by
-		 * getUnappliedRaOffsetRa() and getUnappliedDecOffsetDec().
-		 */
-		bool targetChangeFromLastResync ()
-		{
-			return tarRaDec->wasChanged ();
-		}
-
-		/**
-		 * Return corrections in RA/HA.
-		 *
-		 * @return RA correction (in degrees).
-		 */
-		double getCorrRa ()
-		{
-			return corrRaDec->getRa ();
-		}
-
-		/**
-		 * Return corrections in DEC.
-		 *
-		 * @return DEC correction.
-		 */
-		double getCorrDec ()
-		{
-		  	return corrRaDec->getDec ();
-		}
-
-		/**
-		 * Return offset from last applied correction.
-		 *
-		 * @return RA offset - corrections which arrives from last applied correction.
-		 */
-		double getWaitCorrRa ()
-		{
-			return wcorrRaDec->getRa ();
-		}
-
-		/**
-		 * Return offset from last applied correction.
-		 *
-		 * @return DEC offset - corrections which arrives from last applied correction.
-		 */
-		double getWaitCorrDec ()
-		{
-			return wcorrRaDec->getDec ();
-		}
-
-		/**
-		 * Update target and corrected ALT AZ coordinates.
-		 *
-		 * This call will update tarAltAz and corrAltAz coordinates, based on actuall
-		 * tarRaDec and corrRaDec values.
-		 */
-		void calculateCorrAltAz ();
-
-		/**
-		 * Return corrections in zenit distance.
-		 *
-		 * @return Correction in zenit distance.
-		 */
-		double getCorrZd ();
-
-		/**
-		 * Return corrections in altitude.
-		 *
-		 * @return Correction in altitude.
-		 */
-		double getCorrAlt ()
-		{
-			return -getCorrZd ();
-		}
-
-		/**
-		 * Return corrections in azimuth.
-		 *
-		 * @return Correction in azimuth.
-		 */
-		double getCorrAz ();
-
-		/**
-		 * Return distance in degrees to target position.
-		 * You are responsible to call info() before this call to
-		 * update telescope coordinates.
-		 * 
-		 * @return Sky distance in degrees to target, 0 - 180. -1 on error.
-		 */
-		double getTargetDistance ();
-
-		/**
-		 * Returns ALT AZ coordinates of target.
-		 *
-		 * @param hrz ALT AZ coordinates of target.
-		 */
-		void getTargetAltAz (struct ln_hrz_posn *hrz);
-		void getTargetAltAz (struct ln_hrz_posn *hrz, double jd);
-
-		double getTargetHa ();
-		double getTargetHa (double jd);
-
-		double getLstDeg (double JD);
-
-		virtual bool isBellowResolution (double ra_off, double dec_off)
-		{
-			return (ra_off == 0 && dec_off == 0);
-		}
-
-		void needStop ()
-		{
-			maskState (TEL_MASK_NEED_STOP, TEL_NEED_STOP);
-		}
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-		virtual void valueChanged (Rts2Value * changed_value);
-
-		virtual int deleteConnection (Rts2Conn * in_conn)
-		{
-			if (in_conn == move_connection)
-				move_connection = NULL;
-			return Rts2Device::deleteConnection (in_conn);
-		}
-
-		// reload model
-		virtual void signaledHUP ();
-
-		/**
-		 * Send telescope to requested coordinates. This function does not
-		 * have any parameters, as they are various ways how to obtain
-		 * telescope coordinates.
-		 *
-		 * If you want to get raw, J2000 target coordinates, without any offsets, check with
-		 *
-		 *
-		 * @return 0 on success, -1 on error.
-		 *
-		 * @see originChangedFromLastResync
-		 * @see getOrigin()
-		 */
-		virtual int startResync () = 0;
-
-		/**
-		 * Called at the end of telescope movement, after isMoving return
-		 * -2.
-		 *
-		 * @return 0 on success, -1 on failure
-		 */
-		virtual int endMove ();
-
-		/**
-		 * Stop telescope movement. It is called in two cases. Either when new
-		 * target is entered and telescope should stop movement to current target,
-		 * or when some failure of telescope is detected and telescope should stop 
-		 * current movement in order to prevent futher damage to the hardware.
-		 *
-		 * @return 0 on success, -1 on failure
-		 */
-		virtual int stopMove () = 0;
-
-		/**
-		 * Set telescope to match given coordinates
-		 *
-		 * This function is mainly used to tell the telescope, where it
-		 * actually is at the beggining of observation
-		 *
-		 * @param ra		setting right ascennation
-		 * @param dec		setting declination
-		 *
-		 * @return -1 on error, otherwise 0
-		 */
-		virtual int setTo (double set_ra, double set_dec)
-		{
-			return -1;
-		}
-
-		/**
-		 * Called when park command is issued. Moves telescope to park position.
-		 *
-		 * @return 0 on success, -1 on failure
-		 */
-		virtual int startPark () = 0;
-
-		/**
-		 * Called when parking of the telescope is finished. Can do various
-		 * important thinks - ussually switch of mount tracking, but can
-		 * also switch of some power supply etc..
-		 *
-		 * @return 0 on success, -1 on failure
-		 */
-		virtual int endPark () = 0;
-
-		/**
-		 * Save model from telescope to file.
-		 */
-		virtual int saveModel ()
-		{
-			return -1;
-		}
-
-		/**
-		 * Load model from telescope.
-		 */
-		virtual int loadModel ()
-		{
-			return -1;
-		}
-		virtual int stopWorm ()
-		{
-			return -1;
-		}
-		virtual int startWorm ()
-		{
-			return -1;
-		}
-		virtual int resetMount ()
-		{
-			return 0;
-		}
-
-		/**
-		 * Get current telescope altitude and azimuth. This
-		 * function updates telAltAz value. If you want to get target
-		 * altitude and azimuth, please use getTargetAltAz().
-		 */
-		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
-
-	public:
-		Telescope (int argc, char **argv);
-		virtual ~ Telescope (void);
-
-		virtual void postEvent (Rts2Event * event);
-
-		virtual int changeMasterState (int new_state);
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
-
-		double getLatitude ()
-		{
-			return telLatitude->getValueDouble ();
-		}
-
-		virtual int startGuide (char dir, double dir_dist);
-		virtual int stopGuide (char dir);
-		virtual int stopGuideAll ();
-
-		// callback functions from telescope connection
-		virtual int info ();
-
-		virtual int scriptEnds ();
-
-		int setTo (Rts2Conn * conn, double set_ra, double set_dec);
-
-		int startPark (Rts2Conn * conn);
-
-		virtual int getFlip ();
-	
-		/**
-		 * Apply corrections to position.
-		 */
-		void applyCorrections (struct ln_equ_posn *pos, double JD);
-
-		/**
-		 * Set telescope correctios.
-		 *
-		 * @param _aberation     If aberation should be calculated.
-		 * @param _precession    If precession should be calculated.
-		 * @param _refraction    If refraction should be calculated.
-		 */
-		void setCorrections (bool _aberation, bool _precession, bool _refraction)
-		{
-			calAberation->setValueBool (_aberation);
-			calPrecession->setValueBool (_precession);
-			calRefraction->setValueBool (_refraction);
-		}
-
-		/**
-		 * If aberation should be calculated in RTS2.
-		 */
-		bool calculateAberation ()
-		{
-			return calAberation->getValueBool ();
-		}
-
-		/**
-		 * If precession should be calculated in RTS2.
-		 */
-		bool calculatePrecession ()
-		{
-			return calPrecession->getValueBool ();
-		}
-
-		/**
-		 * If refraction should be calculated in RTS2.
-		 */
-		bool calculateRefraction ()
-		{
-			return calRefraction->getValueBool ();
-		}
-
-		/**
-		 * Switch model off model will not be used to transform coordinates.
-		 */
-		void modelOff ()
-		{
-		  	calModel->setValueBool (false);
-		}
-
-		void modelOn ()
-		{
-		  	calModel->setValueBool (true);
-		}
-
-		bool isModelOn ()
-		{
-			return (calModel->getValueBool ());
-		}
-
-		virtual int commandAuthorized (Rts2Conn * conn);
-
-		virtual void setFullBopState (int new_state);
+		void recalculateMpecDIffs ();
 };
 
 };

@@ -36,6 +36,75 @@ namespace rts2core
  */
 class Expander
 {
+	public:
+		Expander ();
+		Expander (const struct timeval *tv);
+		Expander (Expander * in_expander);
+		virtual ~ Expander (void);
+		std::string expand (std::string expression);
+		/**
+		 * Sets expanding date to current sysdate.
+		 */
+		void setExpandDate ();
+		
+		/**
+		 * Sets expanding date. This date is used in construction of
+		 * the filename (for %y%d.. expansions).
+		 *
+		 * @param tv Timeval holding date to set.
+		 */
+		void setExpandDate (const struct timeval *tv);
+		double getExpandDateCtime ();
+		const struct timeval *getExpandDate ();
+
+		// date related functions
+		std::string getYearString ()
+		{
+			return getYearString (getYear ());
+		}
+		std::string getYearString (int year);
+		std::string getShortYearString ()
+		{
+			return getShortYearString (getYear ());
+		}
+		std::string getShortYearString (int year);
+		std::string getMonthString ()
+		{
+			return getMonthString (getMonth ());
+		}
+		std::string getMonthString (int month);
+		std::string getDayString ()
+		{
+			return getDayString (getDay ());
+		}
+		std::string getDayString (int day);
+		std::string getYDayString ();
+
+		std::string getHourString ();
+		std::string getMinString ();
+		std::string getSecString ();
+		std::string getMSecString ();
+
+		std::string getNightString ();
+
+		long getCtimeSec ()
+		{
+			return expandTv.tv_sec;
+		}
+
+		long getCtimeUsec ()
+		{
+			return expandTv.tv_usec;
+		}
+
+	protected:
+		/**
+		 * ID of current epoch.
+		 */
+		int epochId;
+		virtual std::string expandVariable (char var);
+		virtual std::string expandVariable (std::string expression);
+
 	private:
 		struct tm localDate;
 		struct tm utDate;
@@ -93,69 +162,6 @@ class Expander
 		int getNightDay ()
 		{
 			return nightDate.tm_mday;
-		}
-
-	protected:
-		/**
-		 * ID of current epoch.
-		 */
-		int epochId;
-		virtual std::string expandVariable (char var);
-		virtual std::string expandVariable (std::string expression);
-	public:
-		Expander ();
-		Expander (const struct timeval *tv);
-		Expander (Expander * in_expander);
-		virtual ~ Expander (void);
-		std::string expand (std::string expression);
-		/**
-		 * Sets expanding date to current sysdate.
-		 */
-		void setExpandDate ();
-		
-		/**
-		 * Sets expanding date. This date is used in construction of
-		 * the filename (for %y%d.. expansions).
-		 *
-		 * @param tv Timeval holding date to set.
-		 */
-		void setExpandDate (const struct timeval *tv);
-		double getExpandDateCtime ();
-		const struct timeval *getExpandDate ();
-
-		// date related functions
-		std::string getYearString ()
-		{
-			return getYearString (getYear ());
-		}
-		std::string getYearString (int year);
-		std::string getMonthString ()
-		{
-			return getMonthString (getMonth ());
-		}
-		std::string getMonthString (int month);
-		std::string getDayString ()
-		{
-			return getDayString (getDay ());
-		}
-		std::string getDayString (int day);
-		std::string getYDayString ();
-
-		std::string getHourString ();
-		std::string getMinString ();
-		std::string getSecString ();
-		std::string getMSecString ();
-
-		std::string getNightString ();
-
-		long getCtimeSec ()
-		{
-			return expandTv.tv_sec;
-		}
-
-		long getCtimeUsec ()
-		{
-			return expandTv.tv_usec;
 		}
 };
 

@@ -18,7 +18,7 @@
  */
 
 #include "rts2targetapp.h"
-#include "simbad/rts2simbadtarget.h"
+#include "simbad/simbadtarget.h"
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utilsdb/rts2targetell.h"
@@ -26,22 +26,18 @@
 #include <sstream>
 #include <iostream>
 
-Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+Rts2TargetApp::Rts2TargetApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	target = NULL;
 	obs = NULL;
 }
-
 
 Rts2TargetApp::~Rts2TargetApp (void)
 {
 	delete target;
 }
 
-
-int
-Rts2TargetApp::getObject (const char *obj_text)
+int Rts2TargetApp::getObject (const char *obj_text)
 {
 	LibnovaRaDec raDec;
 
@@ -76,9 +72,9 @@ Rts2TargetApp::getObject (const char *obj_text)
 	delete target;
 	target = NULL;
 
-#ifdef HAVE_PGSQL_SOAP
+//#ifdef HAVE_PGSQL
 	// try to get target from SIMBAD
-	target = new Rts2SimbadTarget (obj_text);
+	target = new rts2db::SimbadTarget (obj_text);
 	ret = target->load ();
 	if (ret == 0)
 	{
@@ -87,13 +83,13 @@ Rts2TargetApp::getObject (const char *obj_text)
 	}
 	delete target;
 	target = NULL;
-#endif
+//#else
+//	logStream (MESSAGE_ERROR) << "You don't have postgresql library configured, so Simbad name resolving will not work" << sendLog;
+//#endif
 	return -1;
 }
 
-
-int
-Rts2TargetApp::askForDegrees (const char *desc, double &val)
+int Rts2TargetApp::askForDegrees (const char *desc, double &val)
 {
 	LibnovaDegDist degDist = LibnovaDegDist (val);
 	while (1)
@@ -111,9 +107,7 @@ Rts2TargetApp::askForDegrees (const char *desc, double &val)
 	return 0;
 }
 
-
-int
-Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
+int Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 {
 	int ret;
 	if (obj_text.length () == 0)
@@ -126,9 +120,7 @@ Rts2TargetApp::askForObject (const char *desc, std::string obj_text)
 	return getObject (obj_text.c_str ());
 }
 
-
-int
-Rts2TargetApp::init ()
+int Rts2TargetApp::init ()
 {
 	int ret;
 

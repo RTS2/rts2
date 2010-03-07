@@ -19,7 +19,14 @@
 
 #include "sensord.h"
 
-#include <sys/vfs.h>
+#include <sys/types.h>
+#include <sys/statvfs.h>
+#include <iostream>
+#include "../utils/rts2config.h"
+
+#define OPT_STORAGE         OPT_LOCAL + 601
+
+#define EVENT_STORE_PATHS   RTS2_LOCAL_EVENT + 1320
 
 namespace rts2sensord
 {
@@ -32,42 +39,66 @@ namespace rts2sensord
  */
 class System:public Sensor
 {
-	private:
-		std::vector <std::string> paths;
-
-		int addPath (const char *path);
-	protected:
-		virtual int processOption (int opt);
-		virtual int info ();
 	public:
 		System (int in_argc, char **in_argv);
 
+		virtual void postEvent (Rts2Event *event);
+	protected:
+		virtual int processOption (int opt);
+		virtual int init ();
+		virtual int info ();
+	private:
+		std::vector <std::string> paths;
+		Rts2ValueTime *lastWrite;
+
+		int addPath (const char *path);
+		void addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val);
+
+		const char *storageFile;
+		void storePaths ();
+		void loadPaths ();
+		void scheduleStore ();
 };
 
 };
 
 using namespace rts2sensord;
 
-int
-System::processOption (int opt)
+int System::processOption (int opt)
 {
 	switch (opt)
 	{
 		case 'p':
 			return addPath (optarg);
+		case OPT_STORAGE:
+			storageFile = optarg;
+			return 0;
 		default:
 			return Sensor::processOption (opt);
 	}
 	return 0;
 }
 
-int
-System::info ()
+int System::init ()
+{
+	int ret = Sensor::init ();
+	if (ret)
+		return ret;
+	if (storageFile)
+	{
+		loadPaths ();
+		// calculate next local midday
+		scheduleStore ();
+	}
+	return 0;
+}
+
+int System::info ()
 {
 	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
 	{
-		struct statfs sf;
-		if (statfs ((*iter).c_str (), &sf))
+		struct statvfs sf;
+		if (statvfs ((*iter).c_str (), &sf))
 		{
 			logStream (MESSAGE_ERROR) << "Cannot get status for " << (*iter) << ". Error " << strerror (errno) << sendLog;
 		}
@@ -81,25 +112,149 @@ System::info ()
 	return Sensor::info ();
 }
 
-int
-System::addPath (const char *path)
+int System::addPath (const char *path)
 {
 	Rts2ValueDouble *val;
+	Rts2ValueDoubleStat *da;
+	Rts2ValueFloat *nfree;
+	Rts2ValueLong *bytesNight;
+
 	createValue (val, path, (std::string ("free disk space on ") + std::string (path)).c_str (), false, RTS2_DT_BYTESIZE);
+	createValue (da, (std::string (path) + "_history").c_str (), "history of free bytes (every 24h)", false); // , RTS2_DT_BYTESIZE);
+	createValue (nfree, (std::string (path) + "_night").c_str (), "number of expected nights till disk will get full", false);
+	createValue (bytesNight, (std::string (path) + "_expected").c_str (), "expected number of bytes per night (maximum from night diferences from last 10 nights)", false, RTS2_DT_BYTESIZE);
 	paths.push_back (path);
 
 	return 0;
 }
 
+void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val)
+{
+	ds->addValue (val);
+	ds->calculate ();
+	// recalculate _expected
+	expected->setValueLong (-1);
+	std::deque <double>::iterator iter = ds->valueBegin ();
+	if (iter != ds->valueEnd ())
+	{
+		double hist = *iter;
+		iter++;
+		for (; iter != ds->valueEnd (); iter++)
+		{
+			if (hist - *iter > expected->getValueDouble ())
+				expected->setValueLong (hist - *iter);
+		}
+	}
+	nfree->setValueFloat (val / expected->getValueLong ());
+	sendValueAll (nfree);
+	sendValueAll (expected);
+}
+
+void System::storePaths ()
+{
+	lastWrite->setValueDouble (getNow ());
+	// open stream..
+	std::ofstream os (storageFile);
+	if (os.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "failed to write to storage file " << storageFile << sendLog;
+		return;
+	}
+	os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+	os << lastWrite->getValueDouble () << std::endl;
+	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
+	{
+		os << *iter;
+		Rts2ValueDouble *dv = (Rts2ValueDouble*) getValue (iter->c_str ());
+		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((*iter + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((*iter + "_night").c_str ());
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((*iter + "_expected").c_str ());
+		addHistoryValue (ds, nfree, bytesNight, dv->getValueDouble ());
+		for (std::deque <double>::iterator miter = ds->valueBegin (); miter != ds->valueEnd (); miter++)
+		{
+			os << " " << *miter;
+		}
+		os << std::endl;
+	}
+	os.close ();
+	sendValueAll (lastWrite);
+}
+
+void System::loadPaths ()
+{
+	std::ifstream is (storageFile);
+	double dv;
+	is >> dv;
+	if (is.fail ())
+	{
+		logStream (MESSAGE_ERROR) << "Cannot read last storage date from " << storageFile << sendLog;
+		return;
+	}
+	lastWrite->setValueDouble (dv);
+	is.ignore (2000, '\n');
+	while (!is.fail ())
+	{
+		std::string ipath;
+		is >> ipath;
+		if (is.fail ())
+			return;
+		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((ipath + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((ipath + "_night").c_str ());
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((ipath + "_expected").c_str ());
+		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL || nfree == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "Cannot get variable for path " << ipath << sendLog;
+			is.ignore (2000, '\n');
+			continue;
+		}
+		std::string line;
+		getline (is, line);
+		std::istringstream iss (line);
+		while (true)
+		{
+			iss >> dv;
+			if (iss.fail ())
+				break;
+			addHistoryValue (ds, nfree, bytesNight, dv);
+		}
+	}
+	is.close ();	
+}
+
+void System::scheduleStore ()
+{
+	Rts2Config *config = Rts2Config::instance ();
+	time_t t = config->getNight () - time (NULL);
+	if (t < 20)
+		t += 86400;
+	addTimer (t, new Rts2Event (EVENT_STORE_PATHS));
+}
 
 System::System (int argc, char **argv):Sensor (argc, argv)
 {
+	storageFile = NULL;
+
+	createValue (lastWrite, "last_write", "time of last write of system usage statistics", false);
+
 	addOption ('p', NULL, 1, "add this path to paths being monitored");
+	addOption (OPT_STORAGE, "save", 1, "save data to given file");
+
+	setIdleInfoInterval (300);
 }
 
-int
-main (int argc, char **argv)
+void System::postEvent (Rts2Event *event)
 {
-	System device = System (argc, argv);
+	switch (event->getType ())
+	{
+		case EVENT_STORE_PATHS:
+			storePaths ();
+			scheduleStore ();
+			break;
+	}
+}
+
+int main (int argc, char **argv)
+{
+	System device (argc, argv);
 	return device.run ();
 }

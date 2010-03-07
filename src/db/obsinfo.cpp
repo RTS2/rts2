@@ -1,12 +1,11 @@
 #include "imgdisplay.h"
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2obs.h"
 #include "../utilsdb/observationset.h"
 
 #include <list>
 #include <iostream>
 
-class Rts2ObsInfo:public Rts2AppDb
+class ObservationInfo:public Rts2AppDb
 {
 	private:
 		rts2db::ObservationSet * obsset;
@@ -18,18 +17,17 @@ class Rts2ObsInfo:public Rts2AppDb
 		int imageFlag;
 		int displayFlats ();
 		int displayDarks ();
-		void printObsImages (Rts2Obs & obs);
+		void printObsImages (rts2db::Observation & obs);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int processArgs (const char *arg);
 	public:
-		Rts2ObsInfo (int in_argc, char **in_argv);
-		virtual ~ Rts2ObsInfo (void);
+		ObservationInfo (int in_argc, char **in_argv);
+		virtual ~ ObservationInfo (void);
 		virtual int doProcessing ();
 };
 
-Rts2ObsInfo::Rts2ObsInfo (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+ObservationInfo::ObservationInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 	obsset = new rts2db::ObservationSet ();
 	imageFlag = 0;
@@ -40,15 +38,12 @@ Rts2AppDb (in_argc, in_argv)
 	action = BASIC_INFO;
 }
 
-
-Rts2ObsInfo::~Rts2ObsInfo (void)
+ObservationInfo::~ObservationInfo (void)
 {
 	delete obsset;
 }
 
-
-int
-Rts2ObsInfo::processOption (int in_opt)
+int ObservationInfo::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -98,59 +93,51 @@ Rts2ObsInfo::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Rts2ObsInfo::processArgs (const char *arg)
+int ObservationInfo::processArgs (const char *arg)
 {
 	int obs_id;
 	obs_id = atoi (arg);
-	Rts2Obs obs = Rts2Obs (obs_id);
+	rts2db::Observation obs (obs_id);
 	obsset->push_back (obs);
 	return 0;
 }
 
-
-int
-Rts2ObsInfo::displayFlats ()
+int ObservationInfo::displayFlats ()
 {
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new rts2db::ObservationSet (TYPE_FLAT, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet ();
+		obsset->loadType (TYPE_FLAT, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }
 
-
-int
-Rts2ObsInfo::displayDarks ()
+int ObservationInfo::displayDarks ()
 {
 	if (obsset->empty ())
 	{
 		delete obsset;
-		obsset = new rts2db::ObservationSet (TYPE_DARK, OBS_BIT_PROCESSED, true);
+		obsset = new rts2db::ObservationSet ();
+		obsset->loadType (TYPE_DARK, OBS_BIT_PROCESSED, true);
 	}
 	return 0;
 }
 
-
-void
-Rts2ObsInfo::printObsImages (Rts2Obs & obs)
+void ObservationInfo::printObsImages (rts2db::Observation & obs)
 {
 	if (!imageFlag || obs.loadImages ())
 		return;
 	obs.getImageSet ()->print (std::cout, imageFlag);
 }
 
-
-int
-Rts2ObsInfo::doProcessing ()
+int ObservationInfo::doProcessing ()
 {
 	int ret;
 	rts2db::ObservationSet::iterator iter;
 	for (iter = obsset->begin (); iter != obsset->end (); iter++)
 	{
-		Rts2Obs obs = (Rts2Obs) * iter;
+		rts2db::Observation obs = (rts2db::Observation) * iter;
 		ret = obs.load ();
 		if (ret)
 			return ret;
@@ -178,10 +165,8 @@ Rts2ObsInfo::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2ObsInfo app = Rts2ObsInfo (argc, argv);
+	ObservationInfo app = ObservationInfo (argc, argv);
 	return app.run ();
 }

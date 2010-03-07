@@ -19,7 +19,7 @@
 
 #include "status.h"
 #include "connimgprocess.h"
-#include "rts2script.h"
+#include "script.h"
 
 #include <glob.h>
 #include <sys/types.h>
@@ -50,36 +50,6 @@ class ImageProc:public Rts2DeviceDb
 class ImageProc:public Rts2Device
 #endif
 {
-	private:
-#ifndef HAVE_PGSQL
-		const char *configFile;
-#endif
-		std::list < ConnProcess * >imagesQue;
-		ConnProcess *runningImage;
-		Rts2ValueInteger *goodImages;
-		Rts2ValueInteger *trashImages;
-		Rts2ValueInteger *badImages;
-
-		Rts2ValueInteger *queSize;
-
-		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
-		std::string defaultImgProcess;
-		std::string defaultObsProcess;
-		std::string defaultDarkProcess;
-		std::string defaultFlatProcess;
-		glob_t imageGlob;
-		unsigned int globC;
-		int reprocessingPossible;
-	protected:
-		virtual int reloadConfig ();
-#ifndef HAVE_PGSQL
-		virtual int processOption (int opt);
-		virtual int init ();
-#endif
-		virtual void signaledHUP ()
-		{
-			reloadConfig ();
-		}
 	public:
 		ImageProc (int argc, char **argv);
 		virtual ~ ImageProc (void);
@@ -95,10 +65,10 @@ class ImageProc:public Rts2Device
 
 		int que (ConnProcess * newProc);
 
-		int queImage (const char *in_path);
-		int doImage (const char *in_path);
+		int queImage (const char *_path);
+		int doImage (const char *_path);
 
-		int queFlat (const char *in_path);
+		int queFlat (const char *_path);
 
 		int queObs (int obsId);
 
@@ -109,6 +79,50 @@ class ImageProc:public Rts2Device
 		void changeRunning (ConnProcess * newImage);
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+	protected:
+		virtual int reloadConfig ();
+#ifndef HAVE_PGSQL
+		virtual int processOption (int opt);
+		virtual int init ();
+#endif
+		virtual void signaledHUP ()
+		{
+			reloadConfig ();
+		}
+
+	private:
+#ifndef HAVE_PGSQL
+		const char *configFile;
+#endif
+		std::list < ConnProcess * >imagesQue;
+		ConnProcess *runningImage;
+		Rts2ValueInteger *goodImages;
+		Rts2ValueInteger *trashImages;
+		Rts2ValueInteger *badImages;
+
+		Rts2ValueInteger *queSize;
+
+		Rts2ValueTime *lastGood;
+		Rts2ValueTime *lastTrash;
+
+		Rts2ValueInteger *nightGoodImages;
+		Rts2ValueInteger *nightTrashImages;
+		Rts2ValueInteger *nightBadImages;
+
+		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
+
+		std::string defaultImgProcess;
+		std::string defaultObsProcess;
+		std::string defaultDarkProcess;
+		std::string defaultFlatProcess;
+		glob_t imageGlob;
+		unsigned int globC;
+		int reprocessingPossible;
+
+		const char *last_processed_jpeg;
+		const char *last_good_jpeg;
+		const char *last_trash_jpeg;
 };
 
 };
@@ -124,6 +138,8 @@ ImageProc::ImageProc (int _argc, char **_argv)
 {
 	runningImage = NULL;
 
+	last_processed_jpeg = last_good_jpeg = last_trash_jpeg = NULL;
+
 	createValue (goodImages, "good_images", "number of good images", false);
 	goodImages->setValueInteger (0);
 
@@ -133,7 +149,15 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (badImages, "bad_images", "number of bad images (in queue under bad directory)", false);
 	badImages->setValueInteger (0);
 
-	createValue (queSize, "que_size", "size of image que", false);
+	createValue (queSize, "queue_size", "number of images waiting for processing", false);
+	queSize->setValueInteger (0);
+
+	createValue (lastGood, "last_good", "last good image (with correct astrometry)", false);
+	createValue (lastTrash, "last_trash", "last trash image (processed, but without correct astrometry)", false);
+
+	createValue (nightGoodImages, "night_good", "number of good images during night", false);
+	createValue (nightTrashImages, "night_trash", "number of trash images during current night", false);
+	createValue (nightBadImages, "night_bad", "number of bad images during current night", false);
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
@@ -148,18 +172,14 @@ ImageProc::ImageProc (int _argc, char **_argv)
 #endif
 }
 
-
 ImageProc::~ImageProc (void)
 {
-	if (runningImage)
-		delete runningImage;
+	delete runningImage;
 	if (imageGlob.gl_pathc)
 		globfree (&imageGlob);
 }
 
-
-int
-ImageProc::reloadConfig ()
+int ImageProc::reloadConfig ()
 {
 	int ret;
 	
@@ -178,42 +198,36 @@ ImageProc::reloadConfig ()
 	ret = config->getString ("imgproc", "astrometry", defaultImgProcess);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ImageProc::reloadConfig cannot get astrometry string, exiting!" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get astrometry string, exiting!" << sendLog;
 		return ret;
 	}
 
 	ret = config->getString ("imgproc", "obsprocess", defaultObsProcess);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ImageProc::reloadConfig cannot get obs process script, exiting" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get obs process script, exiting" << sendLog;
 	}
 
 	ret = config->getString ("imgproc", "darkprocess", defaultDarkProcess);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ImageProc::reloadConfig cannot get dark process script, exiting" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "ImageProc::reloadConfig cannot get dark process script, exiting" << sendLog;
 	}
 
 	ret = config->getString ("imgproc", "flatprocess", defaultFlatProcess);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) <<
-			"ImageProc::init cannot get flat process script, exiting" <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "ImageProc::init cannot get flat process script, exiting" << sendLog;
 	}
+
+	last_processed_jpeg = config->getStringDefault ("imgproc", "last_processed_jpeg", NULL);
+	last_good_jpeg = config->getStringDefault ("imgproc", "last_good_jpeg", NULL);
+	last_trash_jpeg = config->getStringDefault ("imgproc", "last_trash_jpeg", NULL);
 	return ret;
 }
 
-
 #ifndef HAVE_PGSQL
-int
-ImageProc::processOption (int opt)
+int ImageProc::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -226,8 +240,7 @@ ImageProc::processOption (int opt)
 	return 0;
 }
 
-int
-ImageProc::init ()
+int ImageProc::init ()
 {
 	int ret;
 	ret = Rts2Device::init ();
@@ -237,9 +250,7 @@ ImageProc::init ()
 }
 #endif
 
-
-void
-ImageProc::postEvent (Rts2Event * event)
+void ImageProc::postEvent (Rts2Event * event)
 {
 	int obsId;
 	switch (event->getType ())
@@ -256,9 +267,7 @@ ImageProc::postEvent (Rts2Event * event)
 #endif
 }
 
-
-int
-ImageProc::idle ()
+int ImageProc::idle ()
 {
 	std::list < ConnProcess * >::iterator img_iter;
 	if (!runningImage && imagesQue.size () != 0)
@@ -275,9 +284,7 @@ ImageProc::idle ()
 #endif
 }
 
-
-int
-ImageProc::info ()
+int ImageProc::info ()
 {
 	queSize->setValueInteger ((int) imagesQue.size () + (runningImage ? 1 : 0));
 	sendValueAll (queSize);
@@ -288,14 +295,20 @@ ImageProc::info ()
 #endif
 }
 
-
-int
-ImageProc::changeMasterState (int new_state)
+int ImageProc::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_DUSK:
 		case SERVERD_DUSK | SERVERD_STANDBY_MASK:
+			nightGoodImages->setValueInteger (0);
+			nightTrashImages->setValueInteger (0);
+			nightBadImages->setValueInteger (0);
+			
+			sendValueAll (nightGoodImages);
+			sendValueAll (nightTrashImages);
+			sendValueAll (nightBadImages);
+
 		case SERVERD_NIGHT:
 		case SERVERD_NIGHT | SERVERD_STANDBY_MASK:
 		case SERVERD_DAWN:
@@ -321,9 +334,7 @@ ImageProc::changeMasterState (int new_state)
 #endif
 }
 
-
-int
-ImageProc::deleteConnection (Rts2Conn * conn)
+int ImageProc::deleteConnection (Rts2Conn * conn)
 {
 	std::list < ConnProcess * >::iterator img_iter;
 	for (img_iter = imagesQue.begin (); img_iter != imagesQue.end ();
@@ -347,36 +358,62 @@ ImageProc::deleteConnection (Rts2Conn * conn)
 		{
 			case GET:
 				goodImages->inc ();
+				nightGoodImages->inc ();
 				sendValueAll (goodImages);
+				sendValueAll (nightGoodImages);
+				if (isnan (lastGood->getValueDouble ()) || runningImage->getExposureEnd () > lastGood->getValueDouble ())
+				{
+					lastGood->setValueDouble (runningImage->getExposureEnd ());
+					sendValueAll (lastGood);
+				}
 				break;
 			case TRASH:
 				trashImages->inc ();
+				nightTrashImages->inc ();
 				sendValueAll (trashImages);
+				sendValueAll (nightTrashImages);
+				if (isnan (lastTrash->getValueDouble ()) || runningImage->getExposureEnd () > lastTrash->getValueDouble ())
+				{
+					lastTrash->setValueDouble (runningImage->getExposureEnd ());
+					sendValueAll (lastTrash);
+				}
+				break;
+			case BAD:
+				badImages->inc ();
+				nightBadImages->inc ();
+				sendValueAll (badImages);
+				sendValueAll (nightBadImages);
 				break;
 			default:
+				logStream (MESSAGE_ERROR) << "wrong image state: " << runningImage->getAstrometryStat () << sendLog;
 				break;
 		}
 		runningImage = NULL;
 		img_iter = imagesQue.begin ();
 		if (img_iter != imagesQue.end ())
 		{
+			ConnProcess *cp = *img_iter;
 			imagesQue.erase (img_iter);
-			changeRunning (*img_iter);
+			changeRunning (cp);
 		}
-		else
+		// still not image process running..
+		if (runningImage == NULL)
 		{
 			maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_IDLE);
 			if (reprocessingPossible)
 			{
-				if (globC < imageGlob.gl_pathc)
+				if (imageGlob.gl_pathc > 0)
 				{
-					queImage (imageGlob.gl_pathv[globC]);
 					globC++;
-				}
-				else if (imageGlob.gl_pathc > 0)
-				{
-					globfree (&imageGlob);
-					imageGlob.gl_pathc = 0;
+					if (globC < imageGlob.gl_pathc)
+					{
+						queImage (imageGlob.gl_pathv[globC]);
+					}
+					else
+					{
+						globfree (&imageGlob);
+						imageGlob.gl_pathc = 0;
+					}
 				}
 			}
 		}
@@ -388,9 +425,7 @@ ImageProc::deleteConnection (Rts2Conn * conn)
 #endif
 }
 
-
-void
-ImageProc::changeRunning (ConnProcess * newImage)
+void ImageProc::changeRunning (ConnProcess * newImage)
 {
 	int ret;
 	if (runningImage)
@@ -413,22 +448,25 @@ ImageProc::changeRunning (ConnProcess * newImage)
 	{
 		delete runningImage;
 		runningImage = NULL;
-		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN,
-			DEVICE_ERROR_HW | IMGPROC_IDLE);
+		maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, DEVICE_ERROR_HW | IMGPROC_IDLE);
 		infoAll ();
 		return;
 	}
 	else if (ret == 0)
 	{
+#ifdef HAVE_LIBJPEG
+		if (isnan (lastGood->getValueDouble ()) || lastGood->getValueDouble () < runningImage->getExposureEnd ())
+			runningImage->setLastGoodJpeg (last_good_jpeg);
+		if (isnan (lastGood->getValueDouble ()) || lastTrash->getValueDouble() < runningImage->getExposureEnd ())
+			runningImage->setLastTrashJpeg (last_trash_jpeg);
+#endif
 		addConnection (runningImage);
 	}
 	maskState (DEVICE_ERROR_MASK | IMGPROC_MASK_RUN, IMGPROC_RUN);
 	infoAll ();
 }
 
-
-int
-ImageProc::que (ConnProcess * newProc)
+int ImageProc::que (ConnProcess * newProc)
 {
 	if (runningImage)
 		imagesQue.push_front (newProc);
@@ -438,41 +476,30 @@ ImageProc::que (ConnProcess * newProc)
 	return 0;
 }
 
-
-int
-ImageProc::queImage (const char *in_path)
+int ImageProc::queImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (),
-		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
 	return que (newImageConn);
 }
 
-
-int
-ImageProc::doImage (const char *in_path)
+int ImageProc::doImage (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (),
-		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultImgProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
 	changeRunning (newImageConn);
 	infoAll ();
 	return 0;
 }
 
-
-int
-ImageProc::queFlat (const char *in_path)
+int ImageProc::queFlat (const char *_path)
 {
 	ConnImgProcess *newImageConn;
-	newImageConn = new ConnImgProcess (this, defaultFlatProcess.c_str (),
-		in_path, Rts2Config::instance ()->getAstrometryTimeout ());
+	newImageConn = new ConnImgProcess (this, defaultFlatProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
 	return que (newImageConn);
 }
 
-
-int
-ImageProc::queObs (int obsId)
+int ImageProc::queObs (int obsId)
 {
 	ConnObsProcess *newObsConn;
 	newObsConn = new ConnObsProcess (this, defaultObsProcess.c_str (),
@@ -480,9 +507,7 @@ ImageProc::queObs (int obsId)
 	return que (newObsConn);
 }
 
-
-int
-ImageProc::queDarks ()
+int ImageProc::queDarks ()
 {
 	ConnDarkProcess *newDarkConn;
 	newDarkConn = new ConnDarkProcess (this, defaultDarkProcess.c_str (),
@@ -490,9 +515,7 @@ ImageProc::queDarks ()
 	return que (newDarkConn);
 }
 
-
-int
-ImageProc::queFlats ()
+int ImageProc::queFlats ()
 {
 	ConnFlatProcess *newFlatConn;
 	newFlatConn = new ConnFlatProcess (this, defaultFlatProcess.c_str (),
@@ -500,9 +523,7 @@ ImageProc::queFlats ()
 	return que (newFlatConn);
 }
 
-
-int
-ImageProc::checkNotProcessed ()
+int ImageProc::checkNotProcessed ()
 {
 	std::string image_glob;
 	int ret;
@@ -530,9 +551,7 @@ ImageProc::checkNotProcessed ()
 	return 0;
 }
 
-
-int
-ImageProc::commandAuthorized (Rts2Conn * conn)
+int ImageProc::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("que_image"))
 	{
@@ -581,9 +600,7 @@ ImageProc::commandAuthorized (Rts2Conn * conn)
 #endif
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	ImageProc imgproc = ImageProc (argc, argv);
 	return imgproc.run ();

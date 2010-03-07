@@ -1,18 +1,21 @@
 SUBDIRS = model
 
-noinst_HEADERS = teld.h rts2devclicop.h hms.h gem.h fork.h tgdrive.h
+noinst_HEADERS = pier-collision.h teld.h clicupola.h hms.h gem.h fork.h tgdrive.h
 
-noinst_LIBRARIES = librts2teld.a
+noinst_LIBRARIES = librts2teld.a librts2pier-collision.a
 
 EXTRA_DIST = 
 
 bin_PROGRAMS = rts2-teld-gemini rts2-teld-dummy rts2-teld-mm2 rts2-teld-lx200 \
 	rts2-teld-d50 rts2-teld-kolonica rts2-teld-hlohovec \
 	rts2-teld-opentpl rts2-opentpl-errors rts2-teld-indi-bridge \
-	rts2-teld-trencin
+	rts2-teld-trencin rts2-teld-apgto rts2-teld-lx200test
 
-librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp rts2devclicop.cpp tgdrive.cpp
+librts2teld_a_SOURCES = teld.cpp gem.cpp fork.cpp clicupola.cpp tgdrive.cpp
 librts2teld_a_CXXFLAGS = @NOVA_CFLAGS@
+
+librts2pier_collision_a_SOURCES = pier-collision.cpp
+librts2pier_collision_a_CXXFLAGS = @NOVA_CFLAGS@
 
 LDADD = librts2teld.a ../utils/librts2block.a model/librts2model.a @LIB_M@ @LIB_NOVA@
 
@@ -25,6 +28,12 @@ rts2_teld_dummy_SOURCES = dummy.cpp
 rts2_teld_mm2_SOURCES = mm2.cpp hms.c
 
 rts2_teld_lx200_SOURCES = lx200.cpp hms.c
+
+rts2_teld_lx200test_SOURCES = lx200test.cpp hms.c
+rts2_teld_lx200test_LDADD = librts2pier-collision.a ${LDADD}
+
+rts2_teld_apgto_SOURCES = apgto.cpp hms.c
+rts2_teld_apgto_LDADD = librts2pier-collision.a ${LDADD}
 
 rts2_teld_d50_SOURCES = d50.cpp
 
@@ -45,8 +54,8 @@ if PGSQL
 bin_PROGRAMS += rts2-telmodeltest
 
 rts2_telmodeltest_SOURCES = telmodeltest.cpp
-rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_CFITSIO@ @LIB_JPEG@
-rts2_telmodeltest_CPPFLAGS = @JPEG_CFLAGS@
+rts2_telmodeltest_LDADD = ../writers/librts2imagedb.a ../utilsdb/librts2blockdb.a ${LDADD} @LIBPG_LIBS@ @LIB_ECPG@ @LIB_JPEG@ @LIB_CFITSIO@
+rts2_telmodeltest_CPPFLAGS = @JPEG_CFLAGS@ @CFITSIO_CFLAGS@
 
 else
 EXTRA_DIST += telmodeltest.cpp

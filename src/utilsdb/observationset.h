@@ -20,7 +20,7 @@
 #ifndef __RTS2_OBS_SET__
 #define __RTS2_OBS_SET__
 
-#include "rts2obs.h"
+#include "observation.h"
 
 #include <string>
 #include <vector>
@@ -38,129 +38,38 @@ namespace rts2db {
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ObservationSet:public std::vector <Rts2Obs >
+class ObservationSet:public std::vector <Observation >
 {
-	private:
-		int images;
-		int counts;
-		bool collocated;
-		int successNum;
-		int failedNum;
-		void initObservationSet ()
-		{
-			images = 0;
-			counts = 0;
-			collocated = false;
-			successNum = 0;
-			failedNum = 0;
-
-			allNum = 0;
-			goodNum = 0;
-
-			firstNum = 0;
-
-			errFirstRa = 0;
-			errFirstDec = 0;
-			errFirstRad = 0;
-
-			errAvgRa = 0;
-			errAvgDec = 0;
-			errAvgRad = 0;
-		}
-		void load (std::string in_where);
-
-		// numbers
-		int allNum;
-		int goodNum;
-		int firstNum;
-
-		// errors..
-		double errFirstRa;
-		double errFirstDec;
-		double errFirstRad;
-
-		double errAvgRa;
-		double errAvgDec;
-		double errAvgRad;
 	public:
 		ObservationSet (void);
-		ObservationSet (int in_tar_id, const time_t * start_t, const time_t * end_t);
-		ObservationSet (const time_t * start_t, const time_t * end_t);
-		ObservationSet (int in_tar_id);
-
-		/**
-		 * Load all observations during given month in a given year.
-		 *
-		 * @param year   Observation year
-		 * @param month  Observation month
-		 */ 
-		ObservationSet (int year, int month);
-
-		/**
-		 * Load all observations performed during given night.
-		 *
-		 * @param year   Observation year
-		 * @param month  Observation month
-		 * @param day    Observation day
-		 */
-		ObservationSet (int year, int month, int day);
-
-		ObservationSet (char type_id, int state_mask, bool inv = false);
-		ObservationSet (struct ln_equ_posn *position, double radius);
 		virtual ~ ObservationSet (void);
 
-		void  printImages (int in_images)
-		{
-			images = in_images;
-		}
+		void loadTarget (int _tar_id, const time_t * start_t = NULL, const time_t * end_t = NULL);
+		void loadTime (const time_t * start_t, const time_t * end_t);
 
-		int getPrintImages ()
-		{
-			return images;
-		}
+		void loadType (char type_id, int state_mask, bool inv = false);
+		void loadRadius (struct ln_equ_posn *position, double radius);
 
-		int getPrintCounts ()
-		{
-			return counts;
-		}
+		void  printImages (int _images) { images = _images; }
+		int getPrintImages () { return images; }
 
-		void printCounts (int in_counts)
-		{
-			counts = in_counts;
-		}
+		int getPrintCounts () { return counts; }
+		void printCounts (int _counts) { counts = _counts; }
 
 		/**
 		 * Collocate observations by target ids.
 		 */
-		void collocate ()
-		{
-			collocated = true;
-		}
+		void collocate () { collocated = true; }
+		bool isCollocated () { return collocated; }
 
-		bool isCollocated ()
-		{
-			return collocated;
-		}
+		int getSuccess () { return successNum; }
+		int getFailed () { return failedNum; }
 
-		int getSuccess ()
-		{
-			return successNum;
-		}
-		int getFailed ()
-		{
-			return failedNum;
-		}
 		int computeStatistics ();
 
-		int getNumberOfImages ()
-		{
-			return allNum;
-		}
+		int getNumberOfImages () { return allNum; }
 
-		int getNumberOfGoodImages ()
-		{
-			return goodNum;
-		}
+		int getNumberOfGoodImages () { return goodNum; }
 
 		void printStatistics (std::ostream & _os);
 
@@ -216,10 +125,57 @@ class ObservationSet:public std::vector <Rts2Obs >
 
 		std::ostream & print (std::ostream &_os);
 
-		friend std::ostream & operator << (std::ostream & _os, ObservationSet & obs_set)
-		{
-			return obs_set.print (_os);
-		}
+		friend std::ostream & operator << (std::ostream & _os, ObservationSet & obs_set) { return obs_set.print (_os); }
+
+	private:
+		int images;
+		int counts;
+		bool collocated;
+		int successNum;
+		int failedNum;
+
+		void load (std::string in_where);
+
+		// numbers
+		int allNum;
+		int goodNum;
+		int firstNum;
+
+		// errors..
+		double errFirstRa;
+		double errFirstDec;
+		double errFirstRad;
+
+		double errAvgRa;
+		double errAvgDec;
+		double errAvgRad;
+};
+
+/**
+ * Load data from night observation table, grouped by various depth of grouping time parameter.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class ObservationSetDate:public std::map <int, int>
+{
+	public:
+		ObservationSetDate () {}
+
+		/**
+		 * Construct set targets for Auger target. It select targets from auger informations. The parameters
+		 * select which part of the date should be considered. If the date paremeter is -1, the load method
+		 * select all targets, regardless of the date value. If it is > 0, select run on all
+		 * dates which have the component equal to this value.
+		 * This works great for hierarchical browsing. Suppose that we would like to select all targets
+		 * in year 2009 and 2010. We offer user a choice which month are available. If he click on December 2009,
+		 * we select all targets for December 2009, and allow user to select day. For each entry, it then creates entry in the map,
+		 * together with number of targets.
+		 *
+		 * @param year    Year of selection.
+		 * @param month   Month of selection.
+		 * @param day     Selection day.
+		 */
+		void load (int year = -1, int month = -1, int day = -1, int hour = 1, int minutes = -1);
 };
 
 }

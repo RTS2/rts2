@@ -84,22 +84,17 @@ class Rts2ConnCentraldClient:public Rts2Conn
 		const char *login;
 		const char *password;
 	protected:
-		virtual void setState (int in_value);
+		virtual void setState (int in_value, char * msg);
 
 	public:
-		Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login,
-			const char *in_password,
-			const char *in_master_host,
-			const char *in_master_port);
+		Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port);
 		virtual int init ();
 
 		virtual int command ();
 };
 
-/*class Rts2Thread:public Rts2Conn
+namespace rts2core
 {
-
-};*/
 
 class Rts2CommandLogin:public Rts2Command
 {
@@ -115,6 +110,8 @@ class Rts2CommandLogin:public Rts2Command
 			const char *in_password);
 		virtual int commandReturnOK (Rts2Conn * conn);
 };
+
+}
 
 /**
  * Common class for client aplication.

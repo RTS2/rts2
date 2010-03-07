@@ -17,8 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_DB_RECVALS__
+#define __RTS2_DB_RECVALS__
+
 #include <list>
 #include <string>
+
+#define RECVAL_STATE    0
 
 namespace rts2db
 {
@@ -69,7 +74,16 @@ class RecvalsSet: public std::list <Recval>
 		}
 
 		void load ();
+
+		/**
+		 * Find recval with given name.
+		 *
+		 * @return NULL if given name cannot be found, otherwise Recval pointer.
+		 */
+		Recval *searchByName (const char *_device_name, const char *_valuse_name);
 };
 
 
 }
+
+#endif /* !__RTS2_DB_RECVALS__ */

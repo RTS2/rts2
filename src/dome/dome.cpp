@@ -22,10 +22,9 @@
 using namespace rts2dome;
 
 #define OPT_WEATHER_OPENS     OPT_LOCAL + 200
+#define OPT_STATE_MASTER      OPT_LOCAL + 201
 
-
-int
-Dome::domeOpenStart ()
+int Dome::domeOpenStart ()
 {
 	if (isOpened () == -2)
 		return 0;
@@ -43,9 +42,7 @@ Dome::domeOpenStart ()
 	return 0;
 }
 
-
-int
-Dome::domeOpenEnd ()
+int Dome::domeOpenEnd ()
 {
 	if (endOpen ())
 	{
@@ -55,9 +52,7 @@ Dome::domeOpenEnd ()
 	return 0;
 };
 
-
-int
-Dome::domeCloseStart ()
+int Dome::domeCloseStart ()
 {
 	if (isClosed () == -2)
 		return 0;
@@ -75,9 +70,7 @@ Dome::domeCloseStart ()
 	return 0;
 };
 
-
-int
-Dome::domeCloseEnd ()
+int Dome::domeCloseEnd ()
 {
  	if (endClose ())
 	{
@@ -87,20 +80,21 @@ Dome::domeCloseEnd ()
 	return 0;
 };
 
-
-Dome::Dome (int in_argc, char **in_argv, int in_device_type):
-Rts2Device (in_argc, in_argv, in_device_type, "DOME")
+Dome::Dome (int in_argc, char **in_argv, int in_device_type):Rts2Device (in_argc, in_argv, in_device_type, "DOME")
 {
-	createValue (weatherOpensDome, "weather_open", "if weather information is enought to open dome", false);
+	stateMaster = NULL;
+
+	createValue (weatherOpensDome, "weather_open", "if weather information is enought to open dome", false, RTS2_VALUE_WRITABLE);
 	weatherOpensDome->setValueBool (false);
 
-	createValue (ignoreTimeout, "ignore_time", "date and time for which meteo information will be ignored", false);
+	createValue (ignoreTimeout, "ignore_time", "date and time for which meteo information will be ignored", false, RTS2_VALUE_WRITABLE);
 	ignoreTimeout->setValueDouble (0);
 
-	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again");
+	createValue (nextGoodWeather, "next_open", "date and time when dome can be opened again", false);
 	nextGoodWeather->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT);
 
-	addOption (OPT_WEATHER_OPENS, "weather_can_open", 0, "specified that option if weather signal is allowed to open dome");
+	addOption (OPT_WEATHER_OPENS, "weather-can-open", 0, "specified that option if weather signal is allowed to open dome");
+	addOption (OPT_STATE_MASTER, "state-master", 1, "state master - server which guverns opening and closing of dome for evening and morning");
 	addOption ('I', NULL, 0, "whenever to ignore meteo station. Ignore time will be set to 610 seconds.");
 }
 
@@ -109,14 +103,17 @@ Dome::~Dome ()
 {
 }
 
-
-int
-Dome::processOption (int in_opt)
+int Dome::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case OPT_WEATHER_OPENS:
 			weatherOpensDome->setValueBool (true);
+			break;
+		case OPT_STATE_MASTER:
+			createValue (stateMaster, "state_master", "server governing dome evening and morning states", false);
+			updateMetaInformations (stateMaster);
+			stateMaster->setValueCharArr (optarg);
 			break;
 		case 'I':
 			ignoreTimeout->setValueDouble (getNow () + DEF_WEATHER_TIMEOUT + 10);
@@ -127,15 +124,33 @@ Dome::processOption (int in_opt)
 	return 0;
 }
 
-
-void
-Dome::domeWeatherGood ()
+int Dome::init ()
 {
+	int ret;
+	ret = Rts2Device::init ();
+	if (ret)
+		return ret;
+
+	// check for presense of state-master
+	if (getCentraldConns ()->size () > 1)
+	{
+ 		if (stateMaster->getValueString ().length () == 0)
+		{
+			logStream (MESSAGE_ERROR) << "multiple central server specified, but none identified as master - please add state-master option" << sendLog;
+			return -1;
+		}
+		Rts2Conn *conn = getCentraldConn (stateMaster->getValue ());
+		if (conn == NULL)
+		{
+			logStream (MESSAGE_ERROR) << "cannot find state-master " << stateMaster->getValue () << " in list of central connections" << sendLog;
+			return -1;
+		}
+		setMasterConn (conn);
+	}
+	return 0;
 }
 
-
-bool
-Dome::isGoodWeather ()
+bool Dome::isGoodWeather ()
 {
 	if (getIgnoreMeteo () == true)
 		return true;
@@ -146,18 +161,7 @@ Dome::isGoodWeather ()
 	return true;
 }
 
-
-int
-Dome::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == ignoreTimeout || old_value == weatherOpensDome)
-		return 0;
-	return Rts2Device::setValue (old_value, new_value);
-}
-
-
-int
-Dome::checkOpening ()
+int Dome::checkOpening ()
 {
 	if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
 	{
@@ -223,20 +227,17 @@ Dome::checkOpening ()
 	}
 	// if we are back in idle state..beware of copula state (bit non-structural, but I
 	// cannot find better solution)
-	if ((getState () & DOME_COP_MASK_MOVE) == DOME_COP_NOT_MOVE)
+	if ((getState () & DOME_CUP_MASK_MOVE) == DOME_CUP_NOT_MOVE)
 		setTimeout (10 * USEC_SEC);
 	return 0;
 }
 
-
-int
-Dome::idle ()
+int Dome::idle ()
 {
 	checkOpening ();
 	if (isGoodWeather ())
 	{
-		if (weatherOpensDome->getValueBool () == true
-			&& (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
+		if (weatherOpensDome->getValueBool () == true && (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 		{
 			setMasterOn ();
 		}
@@ -251,21 +252,23 @@ Dome::idle ()
 		}
 	}
 	// update our own weather state..
-	if (allCentraldRunning () && getNextOpen () < getNow ())
+	bool allCen = allCentraldRunning ();
+	if (allCen && getNextOpen () < getNow ())
 	{
-		setWeatherState (true);
+		setWeatherState (true, "can open dome");
 	}
 	else
 	{
-		setWeatherState (false);
+		if (allCen)
+			setWeatherState (false, "waiting for next_open");
+		else
+		  	setWeatherState (false, "some centrald are not connected");
 	}
 
 	return Rts2Device::idle ();
 }
 
-
-int
-Dome::closeDomeWeather ()
+int Dome::closeDomeWeather ()
 {
 	int ret;
 	if (getIgnoreMeteo () == false)
@@ -277,45 +280,34 @@ Dome::closeDomeWeather ()
 	return 0;
 }
 
-
-int
-Dome::observing ()
+int Dome::observing ()
 {
 	return domeOpenStart ();
 }
 
-
-int
-Dome::standby ()
+int Dome::standby ()
 {
 	ignoreTimeout->setValueDouble (getNow () - 1);
 	return domeCloseStart ();
 }
 
-
-int
-Dome::off ()
+int Dome::off ()
 {
 	ignoreTimeout->setValueDouble (getNow () - 1);
 	return domeCloseStart ();
 }
 
-
-int
-Dome::setMasterStandby ()
+int Dome::setMasterStandby ()
 {
 	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
-	  	&& getMasterState () != SERVERD_UNKNOW
-		&& (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
+		&& getMasterState () != SERVERD_UNKNOW && (getMasterState () & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
 	{
 		return sendMasters ("standby");
 	}
 	return 0;
 }
 
-
-int
-Dome::setMasterOn ()
+int Dome::setMasterOn ()
 {
 	if (getMasterState () != SERVERD_SOFT_OFF && getMasterState () != SERVERD_HARD_OFF
 		&& (getMasterState () & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
@@ -325,9 +317,7 @@ Dome::setMasterOn ()
 	return 0;
 }
 
-
-int
-Dome::changeMasterState (int new_state)
+int Dome::changeMasterState (int new_state)
 {
 	if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY)
 	{
@@ -363,39 +353,32 @@ Dome::changeMasterState (int new_state)
 	return Rts2Device::changeMasterState (new_state);
 }
 
-
-void
-Dome::setIgnoreTimeout (time_t _ignore_time)
+void Dome::setIgnoreTimeout (time_t _ignore_time)
 {
 	time_t now;
 	time (&now);
 	now += _ignore_time;
 }
 
-
-bool
-Dome::getIgnoreMeteo ()
+bool Dome::getIgnoreMeteo ()
 {
 	return ignoreTimeout->getValueDouble () > getNow ();
 }
 
-
-void
-Dome::setWeatherTimeout (time_t wait_time)
+void Dome::setWeatherTimeout (time_t wait_time, const char *msg)
 {
 	time_t next;
 	time (&next);
 	next += wait_time;
 	if (next > nextGoodWeather->getValueInteger ())
 	{
+		setWeatherState (false, msg);
 		nextGoodWeather->setValueInteger (next);
 		sendValueAll (nextGoodWeather);
 	}
 }
 
-
-int
-Dome::commandAuthorized (Rts2Conn * conn)
+int Dome::commandAuthorized (Rts2Conn * conn)
 {
 	if (conn->isCommand ("open"))
 	{

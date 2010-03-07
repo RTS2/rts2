@@ -1,10 +1,16 @@
-/* include/config.h.in.  Generated from configure.in by autoheader.  */
+/* include/config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* If ARC version 1.7 is used */
+#undef ARC_API_1_7
 
 /* Default centrald port */
 #undef CENTRALD_PORT
 
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
+
+/* Define to 1 if you have the `alphasort' function. */
+#undef HAVE_ALPHASORT
 
 /* Define to 1 if you have the <argz.h> header file. */
 #undef HAVE_ARGZ_H
@@ -14,6 +20,9 @@
 
 /* Define to 1 if you have the `bzero' function. */
 #undef HAVE_BZERO
+
+/* If CERN ROOT package is installed */
+#undef HAVE_CERN_ROOT
 
 /* Define to 1 if your system has a working `chown' function. */
 #undef HAVE_CHOWN
@@ -66,8 +75,14 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `isblank' function. */
+#undef HAVE_ISBLANK
+
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
+
+/* If libarchive is present */
+#undef HAVE_LIBARCHIVE
 
 /* Whenever JPEG is installed */
 #undef HAVE_LIBJPEG
@@ -115,11 +130,11 @@
 /* If PGSQL provides SET_VARSIZE function */
 #undef HAVE_PGSQL_SET_VARSIZE
 
-/* Whenever PGSQL and SOAP libraries are installed */
-#undef HAVE_PGSQL_SOAP
-
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
+
+/* Define to 1 if you have the `scandir' function. */
+#undef HAVE_SCANDIR
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
@@ -142,6 +157,9 @@
 
 /* Define to 1 if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
+
+/* Define to 1 if you have the `strcasestr' function. */
+#undef HAVE_STRCASESTR
 
 /* Define to 1 if you have the `strchr' function. */
 #undef HAVE_STRCHR
@@ -172,6 +190,9 @@
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/ioccom.h> header file. */
+#undef HAVE_SYS_IOCCOM_H
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
@@ -240,6 +261,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

@@ -36,22 +36,20 @@
 
 #include <config.h>
 
-Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, int _centrald_num, char *_name):
-Rts2Conn (in_master)
+using namespace rts2core;
+
+Rts2ConnClient::Rts2ConnClient (Rts2Block * in_master, int _centrald_num, char *_name):Rts2Conn (in_master)
 {
 	setName (_centrald_num, _name);
 	setConnState (CONN_RESOLVING_DEVICE);
 	address = NULL;
 }
 
-
 Rts2ConnClient::~Rts2ConnClient (void)
 {
 }
 
-
-int
-Rts2ConnClient::init ()
+int Rts2ConnClient::init ()
 {
 	int ret;
 	struct addrinfo *device_addr;
@@ -91,9 +89,7 @@ Rts2ConnClient::init ()
 	return 0;
 }
 
-
-void
-Rts2ConnClient::setAddress (Rts2Address * in_addr)
+void Rts2ConnClient::setAddress (Rts2Address * in_addr)
 {
 	setConnState (CONN_CONNECTING);
 	address = in_addr;
@@ -101,18 +97,14 @@ Rts2ConnClient::setAddress (Rts2Address * in_addr)
 	init ();
 }
 
-
-void
-Rts2ConnClient::connConnected ()
+void Rts2ConnClient::connConnected ()
 {
  	Rts2Conn::connConnected ();
 	master->getSingleCentralConn ()->queCommand (new Rts2CommandKey (master, getName ()));
 	setConnState (CONN_AUTH_PENDING);
 }
 
-
-void
-Rts2ConnClient::setKey (int in_key)
+void Rts2ConnClient::setKey (int in_key)
 {
 	Rts2Conn::setKey (in_key);
 	if (isConnState (CONN_AUTH_PENDING))
@@ -123,16 +115,12 @@ Rts2ConnClient::setKey (int in_key)
 	}
 }
 
-
-Rts2ConnClient *
-Rts2Client::createClientConnection (int _centrald_num, char *_deviceName)
+Rts2ConnClient * Rts2Client::createClientConnection (int _centrald_num, char *_deviceName)
 {
 	return new Rts2ConnClient (this, _centrald_num, _deviceName);
 }
 
-
-Rts2Conn *
-Rts2Client::createClientConnection (Rts2Address * in_addr)
+Rts2Conn * Rts2Client::createClientConnection (Rts2Address * in_addr)
 {
 	Rts2ConnClient *conn;
 	conn = createClientConnection (in_addr->getCentraldNum (), in_addr->getName ());
@@ -140,16 +128,12 @@ Rts2Client::createClientConnection (Rts2Address * in_addr)
 	return conn;
 }
 
-
-int
-Rts2Client::willConnect (Rts2Address * in_addr)
+int Rts2Client::willConnect (Rts2Address * in_addr)
 {
 	return 1;
 }
 
-
-Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc,
-in_argv)
+Rts2Client::Rts2Client (int in_argc, char **in_argv):Rts2Block (in_argc, in_argv)
 {
 	central_host = "localhost";
 	central_port = CENTRALD_PORT;
@@ -162,14 +146,11 @@ in_argv)
 	addOption (OPT_PORT, "port", 1, "port of centrald server");
 }
 
-
 Rts2Client::~Rts2Client (void)
 {
 }
 
-
-int
-Rts2Client::processOption (int in_opt)
+int Rts2Client::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -185,18 +166,14 @@ Rts2Client::processOption (int in_opt)
 	return 0;
 }
 
-
-Rts2ConnCentraldClient *
-Rts2Client::createCentralConn ()
+Rts2ConnCentraldClient * Rts2Client::createCentralConn ()
 {
 	return new Rts2ConnCentraldClient (this, getCentralLogin (),
 		getCentralPassword (), getCentralHost (),
 		getCentralPort ());
 }
 
-
-int
-Rts2Client::init ()
+int Rts2Client::init ()
 {
 	int ret;
 
@@ -222,9 +199,7 @@ Rts2Client::init ()
 	return 0;
 }
 
-
-int
-Rts2Client::run ()
+int Rts2Client::run ()
 {
 	int ret;
 	ret = init ();
@@ -240,15 +215,12 @@ Rts2Client::run ()
 	return 0;
 }
 
-
 std::string Rts2Client::getMasterStateString ()
 {
 	return Rts2CentralState (getMasterStateFull ()).getString ();
 }
 
-
-Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):
-Rts2Conn (in_master)
+Rts2ConnCentraldClient::Rts2ConnCentraldClient (Rts2Block * in_master, const char *in_login, const char *in_password, const char *in_master_host, const char *in_master_port):Rts2Conn (in_master)
 {
 	master_host = in_master_host;
 	master_port = in_master_port;
@@ -259,9 +231,7 @@ Rts2Conn (in_master)
 	setOtherType (DEVICE_TYPE_SERVERD);
 }
 
-
-int
-Rts2ConnCentraldClient::init ()
+int Rts2ConnCentraldClient::init ()
 {
 	int ret;
 	struct addrinfo hints;
@@ -277,9 +247,7 @@ Rts2ConnCentraldClient::init ()
 		std::cerr << gai_strerror (ret) << "\n";
 		return ret;
 	}
-	sock =
-		socket (master_addr->ai_family, master_addr->ai_socktype,
-		master_addr->ai_protocol);
+	sock = socket (master_addr->ai_family, master_addr->ai_socktype, master_addr->ai_protocol);
 	if (sock == -1)
 	{
 		return -1;
@@ -294,9 +262,7 @@ Rts2ConnCentraldClient::init ()
 	return 0;
 }
 
-
-int
-Rts2ConnCentraldClient::command ()
+int Rts2ConnCentraldClient::command ()
 {
 	// centrald-specific command processing
 	if (isCommand ("logged_as"))
@@ -326,17 +292,13 @@ Rts2ConnCentraldClient::command ()
 	return Rts2Conn::command ();
 }
 
-
-void
-Rts2ConnCentraldClient::setState (int in_value)
+void Rts2ConnCentraldClient::setState (int in_value, char * msg)
 {
-	Rts2Conn::setState (in_value);
-	master->setMasterState (in_value);
+	Rts2Conn::setState (in_value, msg);
+	master->setMasterState (this, in_value);
 }
 
-
-Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login, const char *in_password):Rts2Command
-(in_master)
+Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login, const char *in_password):Rts2Command (in_master)
 {
 	std::ostringstream _os;
 	login = in_login;
@@ -346,9 +308,7 @@ Rts2CommandLogin::Rts2CommandLogin (Rts2Block * in_master, const char *in_login,
 	state = LOGIN_SEND;
 }
 
-
-int
-Rts2CommandLogin::commandReturnOK (Rts2Conn * conn)
+int Rts2CommandLogin::commandReturnOK (Rts2Conn * conn)
 {
 	std::ostringstream _os;
 	switch (state)

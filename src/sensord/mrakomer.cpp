@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 #define OPT_HEAT_ON     OPT_LOCAL + 343
 #define OPT_HEAT_DUR    OPT_LOCAL + 344
@@ -34,9 +34,23 @@ namespace rts2sensord
  */
 class Mrakomer: public SensorWeather
 {
+	public:
+		Mrakomer (int in_argc, char **in_argv);
+		virtual ~Mrakomer (void);
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int init ();
+
+		virtual int info ();
+
+		virtual int idle ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		char *device_file;
-		Rts2ConnSerial *mrakConn;
+		rts2core::ConnSerial *mrakConn;
 
 		Rts2ValueDoubleStat *tempDiff;
 		Rts2ValueDoubleStat *tempIn;
@@ -63,27 +77,13 @@ class Mrakomer: public SensorWeather
 		 * Read sensor values.
 		 */
 		int readSensor ();
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int init ();
-
-		virtual int info ();
-
-		virtual int idle ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-	public:
-		Mrakomer (int in_argc, char **in_argv);
-		virtual ~Mrakomer (void);
 };
 
 };
 
 using namespace rts2sensord;
 
-int
-Mrakomer::readSensor ()
+int Mrakomer::readSensor ()
 {
 	int ret;
 	char buf[51];
@@ -116,9 +116,7 @@ Mrakomer::readSensor ()
 	return 0;
 }
 
-
-int
-Mrakomer::processOption (int in_opt)
+int Mrakomer::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -143,16 +141,14 @@ Mrakomer::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Mrakomer::init ()
+int Mrakomer::init ()
 {
 	int ret;
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
 
-	mrakConn = new Rts2ConnSerial (device_file, this, BS2400, C8, NONE, 30);
+	mrakConn = new rts2core::ConnSerial (device_file, this, rts2core::BS2400, rts2core::C8, rts2core::NONE, 30);
 	ret = mrakConn->init ();
 	if (ret)
 		return ret;
@@ -160,21 +156,19 @@ Mrakomer::init ()
 	mrakConn->flushPortIO ();
 
 	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false);
+		setWeatherState (false, "TRIGGOOD value unspecified");
 
 	return 0;
 }
 
-
-int
-Mrakomer::info ()
+int Mrakomer::info ()
 {
 	int ret;
 	ret = readSensor ();
 	if (ret)
 	{
 		if (getLastInfoTime () > 60)
-			setWeatherTimeout (60);
+			setWeatherTimeout (60, "cannot get values for last 60 seconds");
 		return -1;
 	}
 	if (tempDiff->getNumMes () >= numVal->getValueInteger ())
@@ -188,7 +182,7 @@ Mrakomer::info ()
 					<< " trigger: " << triggerBad->getValueDouble ()
 					<< sendLog;
 			}
-			setWeatherTimeout (300);
+			setWeatherTimeout (300, "gets bellow bad trigger point");
 		}
 		else if (tempDiff->getValueDouble () >= triggerGood->getValueDouble ())
 		{
@@ -199,15 +193,17 @@ Mrakomer::info ()
 					<< sendLog;
 			}
 		}
+		else if (getWeatherState () == false)
+		{
+			setWeatherTimeout (300, "in gray period - between TRIGBAD and TRIGGOOD");
+		}
 	}
 	// record last value
 	lastTempDiff = tempDiff->getValueDouble ();
 	return SensorWeather::info ();
 }
 
-
-int
-Mrakomer::idle ()
+int Mrakomer::idle ()
 {
 	if (heatInterval->getValueInteger () > 0 && heatDuration->getValueInteger () > 0)
 	{
@@ -240,14 +236,8 @@ Mrakomer::idle ()
 	return SensorWeather::idle ();
 }
 
-
-int
-Mrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Mrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-	if (old_value == heater || old_value == triggerBad || old_value == triggerGood)
-	{
-		return 0;
-	}
 	if (old_value == heatInterval || old_value == heatDuration)
 	{
 		if (new_value->getValueInteger () <= 0)
@@ -258,7 +248,6 @@ Mrakomer::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	return SensorWeather::setValue (old_value, new_value);
 }
-
 
 Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -271,24 +260,24 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (numVal, "num_stat", "number of measurements for weather statistic", false);
 	numVal->setValueInteger (20);
 
-	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", false);
-	triggerBad->setValueDouble (nan ("f"));
+	createValue (triggerBad, "TRIGBAD", "if temp diff drops bellow this value, set bad weather", false, RTS2_VALUE_WRITABLE);
+	triggerBad->setValueDouble (rts2_nan ("f"));
 
-	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", false);
-	triggerGood->setValueDouble (nan ("f"));
+	createValue (triggerGood, "TRIGGOOD", "if temp diff gets above this value, drop bad weather flag", false, RTS2_VALUE_WRITABLE);
+	triggerGood->setValueDouble (rts2_nan ("f"));
 
-	createValue (heater, "HEATER", "heater state", false);
+	createValue (heater, "HEATER", "heater state", false, RTS2_VALUE_WRITABLE);
 
 	createValue (numberMes, "number_mes", "number of measurements", false);
 	createValue (mrakStatus, "status", "device status", false, RTS2_DT_HEX);
 
 	createValue (heatStateChangeTime, "heat_state_change_time", "turn heater on until this time", false);
-	heatStateChangeTime->setValueDouble (nan("f"));
+	heatStateChangeTime->setValueDouble (rts2_nan("f"));
 
-	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false);
+	createValue (heatInterval, "heat_interval", "turn heater on after this amount of time", false, RTS2_VALUE_WRITABLE);
 	heatInterval->setValueInteger (-1);
 
-	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false);
+	createValue (heatDuration, "heat_duration", "time duration during which heater remain on", false, RTS2_VALUE_WRITABLE);
 	heatDuration->setValueInteger (-1);
 
 	addOption ('f', NULL, 1, "serial port with cloud sensor");
@@ -301,15 +290,12 @@ Mrakomer::Mrakomer (int argc, char **argv):SensorWeather (argc, argv)
 	setIdleInfoInterval (20);
 }
 
-
 Mrakomer::~Mrakomer (void)
 {
 	delete mrakConn;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Mrakomer device = Mrakomer (argc, argv);
 	return device.run ();

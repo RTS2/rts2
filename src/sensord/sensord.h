@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef __RTS2_CRYOCON__
-#define __RTS2_CRYOCON__
+#ifndef __RTS2_SENSORD__
+#define __RTS2_SENSORD__
 
 #include "../utils/rts2device.h"
 
@@ -75,9 +75,9 @@ class SensorWeather:public Sensor
 			return nextGoodWeather->getValueDouble ();
 		}
 
-		void setWeatherTimeout (time_t wait_time);
+		void setWeatherTimeout (time_t wait_time, const char *msg);
 };
 
 };
 
-#endif							 /* !__RTS2_CRYOCON__ */
+#endif							 /* !__RTS2_SENSORD__ */

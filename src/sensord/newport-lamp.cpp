@@ -19,7 +19,7 @@
 
 #include "sensord.h"
 
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2sensord
 {
@@ -31,9 +31,19 @@ namespace rts2sensord
  */
 class NewportLamp: public Sensor
 {
+	public:
+		NewportLamp (int in_argc, char **in_argv);
+		virtual ~NewportLamp (void);
+
+	protected:
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+		virtual int processOption (int in_opt);
+		virtual int init ();
+		virtual int info ();
+
 	private:
 		char *lampDev;
-		Rts2ConnSerial *lampSerial;
+		rts2core::ConnSerial *lampSerial;
 
 		Rts2ValueBool *on;
 
@@ -56,24 +66,13 @@ class NewportLamp: public Sensor
 		template < typename T > int readValue (const char *valueName, T & val);
 		int getStatus (const char *valueName, Rts2ValueInteger *val);
 		int readStatus (const char *valueName, Rts2ValueInteger *val);
-
-	protected:
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual int info ();
-
-	public:
-		NewportLamp (int in_argc, char **in_argv);
-		virtual ~NewportLamp (void);
 };
 
 };
 
 using namespace rts2sensord;
 
-int
-NewportLamp::writeCommand (const char *cmd)
+int NewportLamp::writeCommand (const char *cmd)
 {
 	int ret;
 	ret = lampSerial->writePort (cmd, strlen (cmd));
@@ -85,9 +84,7 @@ NewportLamp::writeCommand (const char *cmd)
 	return getStatus ("ESR", esr);
 }
 
-
-int
-NewportLamp::writeValue (const char *valueName, float val)
+int NewportLamp::writeValue (const char *valueName, float val)
 {
 	std::ostringstream _os;
 	_os.precision (1);
@@ -98,9 +95,7 @@ NewportLamp::writeValue (const char *valueName, float val)
 	return getStatus ("ESR", esr);
 }
 
-
-int
-NewportLamp::writeValue (const char *valueName, int val)
+int NewportLamp::writeValue (const char *valueName, int val)
 {
 	std::ostringstream _os;
 	_os << valueName << '=' << val << '\r';
@@ -110,9 +105,7 @@ NewportLamp::writeValue (const char *valueName, int val)
 	return getStatus ("ESR", esr);
 }
 
-
-template < typename T > int
-NewportLamp::readValue (const char *valueName, T & val)
+template < typename T > int NewportLamp::readValue (const char *valueName, T & val)
 {
 	int ret;
 	char buf[50];
@@ -128,9 +121,7 @@ NewportLamp::readValue (const char *valueName, T & val)
 	return val->setValueCharArr (buf);
 }
 
-
-int
-NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
+int NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
 {
 	int ret;
 	char buf[50];
@@ -147,8 +138,7 @@ NewportLamp::getStatus (const char *valueName, Rts2ValueInteger *val)
 	return val->setValueInteger (strtol (buf + strlen (valueName), NULL, 16));
 }
 
-int
-NewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
+int NewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
 {
 	int ret;
 	ret = lampSerial->writePort (valueName, strlen (valueName));
@@ -160,12 +150,11 @@ NewportLamp::readStatus (const char *valueName, Rts2ValueInteger *val)
 	return getStatus (valueName, val);
 }
 
-
 NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 {
 	lampSerial = NULL;
 
-	createValue (on, "ON", "lamp on", true);
+	createValue (on, "ON", "lamp on", true, RTS2_VALUE_WRITABLE);
 
 	createValue (status, "status", "power supply status", false, RTS2_DT_HEX);
 	createValue (esr, "esr", "power supply error register", false, RTS2_DT_HEX);
@@ -173,8 +162,8 @@ NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 	createValue (amps, "AMPS", "Amps as displayed on front panel", true);
 	createValue (volts, "VOLTS", "Volts as displayed on front panel", true);
 	createValue (watts, "WATTS", "Watts as displayed on front panel", true);
-	createValue (apreset, "A_PRESET", "Current preset", true);
-	createValue (ppreset, "P_PRESET", "Power preset", true);
+	createValue (apreset, "A_PRESET", "Current preset", true, RTS2_VALUE_WRITABLE);
+	createValue (ppreset, "P_PRESET", "Power preset", true, RTS2_VALUE_WRITABLE);
 	createValue (alim, "A_LIM", "Current limit", true);
 	createValue (plim, "P_LIM", "Power limit", true);
 
@@ -184,14 +173,12 @@ NewportLamp::NewportLamp (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "/dev/ttyS entry of the lamp serial port");
 }
 
-
 NewportLamp::~NewportLamp ()
 {
 	delete lampSerial;
 }
 
-int
-NewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int NewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int ret;
 	if (old_value == on)
@@ -213,9 +200,7 @@ NewportLamp::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Sensor::setValue (old_value, new_value);
 }
 
-
-int
-NewportLamp::processOption (int in_opt)
+int NewportLamp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -228,8 +213,7 @@ NewportLamp::processOption (int in_opt)
 	return 0;
 }
 
-int
-NewportLamp::init ()
+int NewportLamp::init ()
 {
 	int ret;
 
@@ -237,7 +221,7 @@ NewportLamp::init ()
 	if (ret)
 		return ret;
 	
-	lampSerial = new Rts2ConnSerial (lampDev, this, BS9600, C8, NONE, 100);
+	lampSerial = new rts2core::ConnSerial (lampDev, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 100);
 	ret = lampSerial->init ();
 	if (ret)
 	  	return ret;
@@ -257,9 +241,7 @@ NewportLamp::init ()
 	return info ();
 }
 
-
-int
-NewportLamp::info ()
+int NewportLamp::info ()
 {
 	int ret;
 	ret = readStatus ("STB", status);
@@ -299,9 +281,7 @@ NewportLamp::info ()
 	return Sensor::info (); 
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	NewportLamp device = NewportLamp (argc, argv);
 	return device.run ();

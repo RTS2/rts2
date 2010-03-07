@@ -26,9 +26,9 @@
 #include "../utils/connopentpl.h"
 
 #define BLIND_SIZE            1.0
-#define OPT_CHECK_POWER       OPT_LOCAL + 1
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
 #define OPT_PARK_POS          OPT_LOCAL + 4
+#define OPT_POWEOFF_STANDBY   OPT_LOCAL + 5
 
 namespace rts2teld
 {
@@ -48,8 +48,6 @@ class OpenTPL:public Telescope
 		void checkErrors ();
 		void checkCover ();
 		void checkPower ();
-
-		bool doCheckPower;
 
 		void getCover ();
 		void initCoverState ();
@@ -78,7 +76,6 @@ class OpenTPL:public Telescope
 
 		int infoModel ();
 
-		struct ln_equ_posn target;
 		int irTracking;
 
 		Rts2ValueDouble *modelQuality;
@@ -87,6 +84,8 @@ class OpenTPL:public Telescope
 		// modeling offsets
 		Rts2ValueRaDec *om_radec;
 		Rts2ValueAltAz *om_altaz;
+
+		Rts2ValueBool *standbyPoweroff;
 
 		double derOff;
 
@@ -108,6 +107,9 @@ class OpenTPL:public Telescope
 		virtual int idle ();
 
 		Rts2ValueDouble *derotatorOffset;
+
+		void powerOn ();
+		void powerOff ();
 
 		int coverClose ();
 		int coverOpen ();
@@ -155,8 +157,47 @@ using namespace rts2teld;
 
 #define DEBUG_EXTRA
 
-int
-OpenTPL::coverClose ()
+void OpenTPL::powerOn ()
+{
+	checkPower ();
+}
+
+void OpenTPL::powerOff ()
+{
+	int status = TPL_OK;
+	opentplConn->setDebug ();
+	opentplConn->set ("CABINET.POWER", 0, &status);
+	// check that it powered off..
+	double power_state;
+	logStream (MESSAGE_DEBUG) << "powerOff: waiting for power state off";
+	for (int i = 0; i < 60; i++)
+	{
+		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+		if (status)
+		{
+			logStream (MESSAGE_ERROR) << "powerOff: power_state " << status << sendLog;
+			opentplConn->setDebug (false);
+			return;
+		}
+		sleep (3);
+		if (power_state == 0)
+		{
+			logStream (MESSAGE_DEBUG) << "powerOff: power_state is 0" << sendLog;
+			cabinetPower->setValueBool (false);
+			cabinetPowerState->setValueFloat (power_state);
+			sendValueAll (cabinetPower);
+			sendValueAll (cabinetPowerState);
+			opentplConn->setDebug (false);
+			return;
+		}
+	}
+	opentplConn->setDebug (false);
+	cabinetPowerState->setValueFloat (power_state);
+	sendValueAll (cabinetPowerState);
+	logStream (MESSAGE_ERROR) << "powerOff: timeouted waiting for sucessfull poweroff" << sendLog;
+}
+
+int OpenTPL::coverClose ()
 {
 	if (cover == NULL)
 		return 0;
@@ -173,9 +214,7 @@ OpenTPL::coverClose ()
 	return status;
 }
 
-
-int
-OpenTPL::coverOpen ()
+int OpenTPL::coverOpen ()
 {
 	if (cover == NULL)
 		return 0;
@@ -189,9 +228,7 @@ OpenTPL::coverOpen ()
 	return status;
 }
 
-
-int
-OpenTPL::setTelescopeTrack (int new_track)
+int OpenTPL::setTelescopeTrack (int new_track)
 {
 	int status = TPL_OK;
 	int old_track;
@@ -206,45 +243,35 @@ OpenTPL::setTelescopeTrack (int new_track)
 	return status;
 }
 
-
-int
-OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	int status = TPL_OK;
 	if (old_value == cabinetPower)
 	{
-		status =
-			opentplConn->set ("CABINET.POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-			&status);
+	  	opentplConn->setDebug ();
+		status = opentplConn->set ("CABINET.POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
+	  	opentplConn->setDebug (false);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorOffset)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (),
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].OFFSET", -1 * new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorCurrpos)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (),
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].TARGETPOS", new_value->getValueDouble (), &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
 	}
 	if (old_value == derotatorPower)
 	{
-		status =
-			opentplConn->set ("DEROTATOR[3].POWER",
-			((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0,
-			&status);
+		status = opentplConn->set ("DEROTATOR[3].POWER", ((Rts2ValueBool *) new_value)->getValueBool ()? 1 : 0, &status);
 		if (status != TPL_OK)
 			return -2;
 		return 0;
@@ -296,21 +323,15 @@ OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 			return -2;
 		return 0;
 	}
-	if (old_value == goodSep)
-		return 0;
 
 	return Telescope::setValue (old_value, new_value);
 }
 
-
-OpenTPL::OpenTPL (int in_argc, char **in_argv)
-:Telescope (in_argc, in_argv)
+OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
 	openTPLServer = NULL;
 
 	opentplConn = NULL;
-
-	doCheckPower = false;
 
 	irTracking = 4;
 
@@ -321,51 +342,48 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv)
 
 	cover = NULL;
 
-	createValue (cabinetPower, "cabinet_power", "power of cabinet", false);
+	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
 
 	createValue (targetDist, "target_dist", "distance in degrees to target", false, RTS2_DT_DEG_DIST);
 	createValue (targetTime, "target_time", "reach target time in seconds", false);
 
-	createValue (mountTrack, "TRACK", "mount track");
+	createValue (mountTrack, "TRACK", "mount track", true, RTS2_VALUE_WRITABLE);
 
 	strcpy (telType, "BOOTES_IR");
 
 	createValue (modelQuality, "model_quality", "quality of model data", false);
-	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST);
+	createValue (goodSep, "good_sep", "targetdistance bellow this value is on target", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 	// 2.7 arcsec
 	goodSep->setValueDouble (0.00075);
 
 	createValue (parkPos, "park_position", "mount park position", false);
 	parkPos->setValueAltAz (70, 0);
 
+	createValue (standbyPoweroff, "standby_poweroff", "power off at standby (power on at ready night, dusk or dawn)", false, RTS2_VALUE_WRITABLE);
+	standbyPoweroff->setValueBool (false);
+
 	addOption (OPT_OPENTPL_SERVER, "opentpl", 1, "OpenTPL server TCP/IP address and port (separated by :)");
-	addOption (OPT_CHECK_POWER, "check power", 0, "whenever to check for power state != 0 (currently depreciated)");
 
 	addOption (OPT_ROTATOR_OFFSET, "rotator_offset", 1, "rotator offset, default to 0");
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
+	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
 
 	cover_state = CLOSED;
 }
-
 
 OpenTPL::~OpenTPL (void)
 {
 	delete opentplConn;
 }
 
-
-int
-OpenTPL::processOption (int in_opt)
+int OpenTPL::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case OPT_OPENTPL_SERVER:
 			openTPLServer = new HostString (optarg, "65432");
-			break;
-		case OPT_CHECK_POWER:
-			doCheckPower = true;
 			break;
 		case OPT_ROTATOR_OFFSET:
 			derOff = atof (optarg);
@@ -390,15 +408,16 @@ OpenTPL::processOption (int in_opt)
 				parkPos->setValueAltAz (palt, paz);
 			}
 			break;
+		case OPT_POWEOFF_STANDBY:
+			standbyPoweroff->setValueBool (true);
+			break;
 		default:
 			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
 
-
-int
-OpenTPL::initOpenTplDevice ()
+int OpenTPL::initOpenTplDevice ()
 {
 	std::string ir_ip;
 	int ir_port = 0;
@@ -437,9 +456,7 @@ OpenTPL::initOpenTplDevice ()
 	return 0;
 }
 
-
-int
-OpenTPL::init ()
+int OpenTPL::init ()
 {
 	int ret;
 	ret = Telescope::init ();
@@ -453,9 +470,7 @@ OpenTPL::init ()
 	return 0;
 }
 
-
-int
-OpenTPL::initValues ()
+int OpenTPL::initValues ()
 {
 	int status = TPL_OK;
 	std::string serial;
@@ -475,21 +490,21 @@ OpenTPL::initValues ()
 	{
 		setPointingModel (POINTING_RADEC);
 
-		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
+		createValue (om_radec, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
-		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "doff", "[deg] model hour angle encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "hoff", "[deg] model declination encoder offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "hoff", "[deg] model declination encoder offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "me", "[deg] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "me", "[deg] model polar axis misalignment in elevation", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ma", "[deg] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ma", "[deg] model polar axis misalignment in azimuth", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "nphd", "[deg] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "nphd", "[deg] model HA and DEC axis not perpendicularity", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ch", "[deg] model east-west colimation error", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ch", "[deg] model east-west colimation error", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
 	}
 	else if (config_mount == "AZ-ZD")
@@ -506,21 +521,21 @@ OpenTPL::initValues ()
  */
 		setPointingModel (POINTING_ALTAZ);
 
-		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES);
+		createValue (om_altaz, "MO", "[deg] target pointing correction", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
 
-		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "aoff", "[deg] model azimuth offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "zoff", "[deg] model zenith offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "zoff", "[deg] model zenith offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ae", "[deg] azimuth equator? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ae", "[deg] azimuth equator? offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "an", "[deg] azimuth nadir? offset", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "an", "[deg] azimuth nadir? offset", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "npae", "[deg] not polar adjusted equator?", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "npae", "[deg] not polar adjusted equator?", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "ca", "[deg] model ca parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "ca", "[deg] model ca parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
-		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST);
+		createValue (modelP, "flex", "[deg] model flex parameter", false, RTS2_DT_DEG_DIST | RTS2_VALUE_WRITABLE);
 		modelParams.push_back (modelP);
 	}
 	else
@@ -529,7 +544,7 @@ OpenTPL::initValues ()
 		return -1;
 	}
 
-	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true);
+	createValue (model_recordcount, "RECORDCOUNT", "number of observations in model", true, RTS2_VALUE_WRITABLE);
 
 	status = opentplConn->getValueDouble ("LOCAL.LATITUDE", telLatitude, &status);
 	status = opentplConn->getValueDouble ("LOCAL.LONGITUDE", telLongitude, &status);
@@ -545,16 +560,16 @@ OpenTPL::initValues ()
 
 	if (opentplConn->haveModule ("COVER"))
 	{
-		createValue (cover, "cover", "cover state (1 = opened)", false);
+		createValue (cover, "cover", "cover state (1 = opened)", false, RTS2_VALUE_WRITABLE);
 		initCoverState ();
 	}
 
 	// nasmith derotator
 	if (opentplConn->haveModule ("DEROTATOR[3]"))
 	{
-		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG, 0, true);
-		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES);
-		createValue (derotatorPower, "derotatorPower", "derotator power setting", false);
+		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE, 0, true);
+		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
+		createValue (derotatorPower, "derotatorPower", "derotator power setting", false, RTS2_VALUE_WRITABLE);
 	}
 
 	// infoModel
@@ -568,9 +583,7 @@ OpenTPL::initValues ()
 	return Telescope::initValues ();
 }
 
-
-void
-OpenTPL::checkErrors ()
+void OpenTPL::checkErrors ()
 {
 	int status = TPL_OK;
 	std::string list;
@@ -604,12 +617,12 @@ OpenTPL::checkErrors ()
 					zd << " (" << status << ")" << sendLog;
 			}
 		}
+		if (status == TPL_OK)
+			errorList = "";
 	}
 }
 
-
-void
-OpenTPL::checkCover ()
+void OpenTPL::checkCover ()
 {
 	int status = TPL_OK;
 	switch (cover_state)
@@ -620,8 +633,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "checkCover opened " << status <<
-					sendLog;
+				logStream (MESSAGE_DEBUG) << "checkCover opened " << status << sendLog;
 			#endif
 				cover_state = OPENED;
 				break;
@@ -634,8 +646,7 @@ OpenTPL::checkCover ()
 			{
 				opentplConn->set ("COVER.POWER", 0, &status);
 			#ifdef DEBUG_EXTRA
-				logStream (MESSAGE_DEBUG) << "checkCover closed " << status <<
-					sendLog;
+				logStream (MESSAGE_DEBUG) << "checkCover closed " << status << sendLog;
 			#endif
 				cover_state = CLOSED;
 				break;
@@ -648,73 +659,78 @@ OpenTPL::checkCover ()
 	}
 }
 
-
-void
-OpenTPL::checkPower ()
+void OpenTPL::checkPower ()
 {
 	int status = TPL_OK;
 	double power_state;
 	double referenced;
+	opentplConn->setDebug ();
 	status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 	if (status)
 	{
-		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status <<
-			sendLog;
+		logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+		opentplConn->setDebug (false);
 		return;
 	}
 
-	if (!doCheckPower)
+	if (power_state == 1)
 		return;
 
-	if (power_state == 0)
+ 	while (!(power_state == 0 || power_state == 1))
 	{
-		status = opentplConn->set ("CABINET.POWER", 1, &status);
+		sleep (5);
 		status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower set power ot 1 ret " <<
-				status << sendLog;
+			logStream (MESSAGE_ERROR) << "checkPower tpl_ret " << status << sendLog;
+			opentplConn->setDebug (false);
 			return;
 		}
-		while (power_state == 0.5)
+	}
+	// sometime we can reach 1..
+	if (power_state == 0)
+	{
+		status = opentplConn->set ("CABINET.POWER", 1, &status);
+		sleep (5);
+		do
 		{
-			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" <<
-				sendLog;
-			sleep (5);
 			status = opentplConn->get ("CABINET.POWER_STATE", power_state, &status);
+			logStream (MESSAGE_DEBUG) << "checkPower waiting for power up" << sendLog;
+			sleep (5);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower power_state ret " <<
-					status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower power_state ret " << status << sendLog;
+				opentplConn->setDebug (false);
 				return;
 			}
 		}
+		while (power_state < 1);
 	}
+
 	while (true)
 	{
 		status = opentplConn->get ("CABINET.REFERENCED", referenced, &status);
 		if (status)
 		{
-			logStream (MESSAGE_ERROR) << "checkPower get referenced " <<
-				status << sendLog;
+			logStream (MESSAGE_ERROR) << "checkPower get referenced " << status << sendLog;
+			opentplConn->setDebug (false);
 			return;
 		}
+		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced << sendLog;
+		sleep (5);
 		if (referenced == 1)
 			break;
-		logStream (MESSAGE_DEBUG) << "checkPower referenced " << referenced
-			<< sendLog;
-		if (referenced == 0)
+/*		if (referenced == 0)
 		{
 			status = opentplConn->set ("CABINET.REINIT", 1, &status);
 			if (status)
 			{
-				logStream (MESSAGE_ERROR) << "checkPower reinit " <<
-					status << sendLog;
+				logStream (MESSAGE_ERROR) << "checkPower reinit " << status << sendLog;
 				return;
 			}
-		}
-		sleep (1);
+		} */
 	}
+	opentplConn->setDebug (false);
 	if (cover)
 	{
 		// force close of cover..
@@ -733,9 +749,7 @@ OpenTPL::checkPower ()
 	}
 }
 
-
-void
-OpenTPL::getCover ()
+void OpenTPL::getCover ()
 {
 	double cor_tmp;
 	int status = TPL_OK;
@@ -745,9 +759,7 @@ OpenTPL::getCover ()
 	cover->setValueDouble (cor_tmp);
 }
 
-
-void
-OpenTPL::initCoverState ()
+void OpenTPL::initCoverState ()
 {
 	getCover ();
 	if (cover->getValueDouble () == 0)
@@ -758,9 +770,7 @@ OpenTPL::initCoverState ()
 		cover_state = CLOSING;
 }
 
-
-int
-OpenTPL::infoModel ()
+int OpenTPL::infoModel ()
 {
 	int status = TPL_OK;
 
@@ -789,9 +799,7 @@ OpenTPL::infoModel ()
 	return 0;
 }
 
-
-int
-OpenTPL::startMoveReal (double ra, double dec)
+int OpenTPL::startMoveReal (double ra, double dec)
 {
 	int status = TPL_OK;
 	if (targetChangeFromLastResync ())
@@ -804,7 +812,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 	if (derotatorOffset && !getDerotatorPower ())
 	{
 		status = opentplConn->set ("DEROTATOR[3].POWER", 1, &status);
-		status = opentplConn->set ("CABINET.POWER", 1, &status);
+		// status = opentplConn->set ("CABINET.POWER", 1, &status);
 	}
 
 	double offset;
@@ -857,9 +865,7 @@ OpenTPL::startMoveReal (double ra, double dec)
 	return status;
 }
 
-
-int
-OpenTPL::idle ()
+int OpenTPL::idle ()
 {
 	// check for errors..
 	checkErrors ();
@@ -868,9 +874,7 @@ OpenTPL::idle ()
 	return Telescope::idle ();
 }
 
-
-void
-OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
+void OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 {
 	int status = TPL_OK;
 	switch (getPointingModel ())
@@ -888,9 +892,7 @@ OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 	}
 }
 
-
-int
-OpenTPL::info ()
+int OpenTPL::info ()
 {
 	double zd, az;
 	#ifdef DEBUG_EXTRA
@@ -904,8 +906,10 @@ OpenTPL::info ()
 	int cab_power;
 	double cab_power_state;
 
+	opentplConn->setDebug ();
 	status = opentplConn->get ("CABINET.POWER", cab_power, &status);
 	status = opentplConn->get ("CABINET.POWER_STATE", cab_power_state, &status);
+	opentplConn->setDebug (false);
 	if (status != TPL_OK)
 		return -1;
 	cabinetPower->setValueBool (cab_power == 1);
@@ -924,6 +928,10 @@ OpenTPL::info ()
 		switch (getPointingModel ())
 		{
 			case POINTING_ALTAZ:
+				status = opentplConn->get ("AZ.CURRPOS", az, &status);
+				status = opentplConn->get ("ZD.CURRPOS", zd, &status);
+				if (status != TPL_OK)
+					return -1;
 				hrz.az = az;
 				hrz.alt = 90 - fabs (zd);
 				observer.lng = telLongitude->getValueDouble ();
@@ -1036,9 +1044,7 @@ OpenTPL::info ()
 	return Telescope::info ();
 }
 
-
-int
-OpenTPL::saveModel ()
+int OpenTPL::saveModel ()
 {
 	int ret;
 	ret = infoModel ();
@@ -1094,9 +1100,7 @@ OpenTPL::loadModel ()
 	return infoModel ();
 }
 
-
-int
-OpenTPL::resetMount ()
+int OpenTPL::resetMount ()
 {
 	int status = TPL_OK;
 	int power = 0;
@@ -1136,6 +1140,11 @@ OpenTPL::startResync ()
 {
 	int status = 0;
 	double sep;
+
+	struct ln_equ_posn target;
+
+	if (standbyPoweroff->getValueBool () == true)
+		checkPower ();
 
 	getTarget (&target);
 
@@ -1190,16 +1199,12 @@ OpenTPL::startResync ()
 	return 0;
 }
 
-
-int
-OpenTPL::isMoving ()
+int OpenTPL::isMoving ()
 {
 	return moveCheck (false);
 }
 
-
-int
-OpenTPL::stopMove ()
+int OpenTPL::stopMove ()
 {
 	int status = 0;
 	double zd;
@@ -1228,9 +1233,7 @@ OpenTPL::stopMove ()
 	return 0;
 }
 
-
-int
-OpenTPL::startPark ()
+int OpenTPL::startPark ()
 {
 	int status = TPL_OK;
 	status = TPL_OK;
@@ -1238,6 +1241,9 @@ OpenTPL::startPark ()
 	struct ln_hrz_posn hrzPark;
 	struct ln_equ_posn equPark;
 	struct ln_lnlat_posn observer;
+
+	if (standbyPoweroff->getValueBool () == true)
+		checkPower ();
 
 	switch (getPointingModel ())
 	{
@@ -1256,7 +1262,7 @@ OpenTPL::startPark ()
 
 			setTarget (equPark.ra, equPark.dec);
 
-			sleep (4);
+			sleep (15);
 			break;
 		case POINTING_ALTAZ:
 			status = opentplConn->set ("AZ.TARGETPOS", parkPos->getAz (), &status);
@@ -1274,9 +1280,7 @@ OpenTPL::startPark ()
 	return 0;
 }
 
-
-int
-OpenTPL::moveCheck (bool park)
+int OpenTPL::moveCheck (bool park)
 {
 	int status = TPL_OK;
 	int track;
@@ -1331,24 +1335,21 @@ OpenTPL::moveCheck (bool park)
 	return USEC_SEC / 100;
 }
 
-
-int
-OpenTPL::isParking ()
+int OpenTPL::isParking ()
 {
 	return moveCheck (true);
 }
 
-
-int
-OpenTPL::endPark ()
+int OpenTPL::endPark ()
 {
 	setTelescopeTrack (0);
+	sleep (5);
+	if (standbyPoweroff->getValueBool () == true)
+		powerOff ();
 	return 0;
 }
 
-
-int
-OpenTPL::startWorm ()
+int OpenTPL::startWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (irTracking);
@@ -1357,9 +1358,7 @@ OpenTPL::startWorm ()
 	return 0;
 }
 
-
-int
-OpenTPL::stopWorm ()
+int OpenTPL::stopWorm ()
 {
 	int status = TPL_OK;
 	status = setTelescopeTrack (0);
@@ -1368,15 +1367,14 @@ OpenTPL::stopWorm ()
 	return 0;
 }
 
-
-int
-OpenTPL::changeMasterState (int new_state)
+int OpenTPL::changeMasterState (int new_state)
 {
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
 		case SERVERD_DUSK:
 		case SERVERD_NIGHT:
 		case SERVERD_DAWN:
+			powerOn ();
 			coverOpen ();
 			break;
 		default:
@@ -1386,9 +1384,7 @@ OpenTPL::changeMasterState (int new_state)
 	return Telescope::changeMasterState (new_state);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	OpenTPL device = OpenTPL (argc, argv);
 	return device.run ();

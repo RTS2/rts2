@@ -20,8 +20,8 @@
 #ifndef __RTS2_EXECCLI__
 #define __RTS2_EXECCLI__
 
-#include "rts2script.h"
-#include "rts2devscript.h"
+#include "script.h"
+#include "devscript.h"
 
 #include "../writers/rts2devcliimg.h"
 #include "../utils/rts2event.h"
@@ -65,12 +65,14 @@ class GuidingParams
 		}
 };
 
-class Rts2DevClientCameraExec:public Rts2DevClientCameraImage,
-public Rts2DevScript
+using namespace rts2script;
+
+class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 {
 	private:
 		Rts2ValueString *expandPath;
 	protected:
+		ScriptPtr exposureScript;
 		virtual void unblockWait ()
 		{
 			Rts2DevClientCameraImage::unblockWait ();
@@ -151,15 +153,4 @@ class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 		virtual void moveFailed (int status);
 };
 
-class Rts2DevClientMirrorExec:public Rts2DevClientMirror
-{
-	protected:
-		virtual void mirrorA ();
-		virtual void mirrorB ();
-	public:
-		Rts2DevClientMirrorExec (Rts2Conn * in_connection);
-		virtual void postEvent (Rts2Event * event);
-
-		virtual void moveFailed (int status);
-};
 #endif							 /*! __RTS2_EXECCLI__ */

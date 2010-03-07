@@ -20,7 +20,7 @@
  */
 
 #include "sensord.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 
 namespace rts2sensord
 {
@@ -33,19 +33,19 @@ class Pixy;
  * As pixy sensor put character on port every second (=it is not polled), we
  * have to prepare special connection, which will handle processLine its own way..
  */
-class Rts2ConnPixy:public Rts2ConnSerial
+class Rts2ConnPixy:public rts2core::ConnSerial
 {
+	public:
+		Rts2ConnPixy (const char *in_devName, Pixy * in_master, rts2core::bSpeedT in_baudSpeed = rts2core::BS9600, rts2core::cSizeT in_cSize = rts2core::C8, rts2core::parityT in_parity = rts2core::NONE, int in_vTime = 40);
+
+	protected:
+		virtual int receive (fd_set *set);
+
 	private:
 		/**
 		 * Last value from the connection.
 		 */
 		char lastVal;
-	protected:
-		virtual int receive (fd_set *set);
-	public:
-		Rts2ConnPixy (const char *in_devName, Pixy * in_master,
-			bSpeedT in_baudSpeed = BS9600, cSizeT in_cSize = C8,
-			parityT in_parity = NONE, int in_vTime = 40);
 };
 
 /**
@@ -55,6 +55,15 @@ class Rts2ConnPixy:public Rts2ConnSerial
  */
 class Pixy:public Sensor
 {
+	public:
+		Pixy (int argc, char **argv);
+		virtual ~Pixy (void);
+
+		/**
+		 * Called when PIXY receives some data..
+		 */
+		void pixyReceived (char lastVal);
+
 	private:
 		char *device_port;
 		Rts2ConnPixy *pixyConn;
@@ -64,22 +73,13 @@ class Pixy:public Sensor
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int info ();
-	public:
-		Pixy (int argc, char **argv);
-		virtual ~Pixy (void);
-
-		/**
-		 * Called when PIXY receives some data..
-		 */
-		void pixyReceived (char lastVal);
 };
 
 };
 
 using namespace rts2sensord;
 
-int
-Rts2ConnPixy::receive (fd_set *set)
+int Rts2ConnPixy::receive (fd_set *set)
 {
 	if (sock < 0 || !FD_ISSET (sock, set))
 	 	return 0;
@@ -92,17 +92,11 @@ Rts2ConnPixy::receive (fd_set *set)
 	return 1;
 }
 
-
-Rts2ConnPixy::Rts2ConnPixy (const char *in_devName, Pixy * in_master,
-			bSpeedT in_baudSpeed, cSizeT in_cSize,
-			parityT in_parity, int in_vTime)
-:Rts2ConnSerial (in_devName, in_master, in_baudSpeed, in_cSize, in_parity, in_vTime)
+Rts2ConnPixy::Rts2ConnPixy (const char *in_devName, Pixy * in_master, rts2core::bSpeedT in_baudSpeed, rts2core::cSizeT in_cSize, rts2core::parityT in_parity, int in_vTime):ConnSerial (in_devName, in_master, in_baudSpeed, in_cSize, in_parity, in_vTime)
 {
 }
 
-
-int
-Pixy::processOption (int in_opt)
+int Pixy::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -115,15 +109,14 @@ Pixy::processOption (int in_opt)
 	return 0;
 }
 
-int
-Pixy::init ()
+int Pixy::init ()
 {
 	int ret;
 	ret = Sensor::init ();
 	if (ret)
 		return ret;
 	
-	pixyConn = new Rts2ConnPixy (device_port, this, BS19200, C8, NONE, 20);
+	pixyConn = new Rts2ConnPixy (device_port, this, rts2core::BS19200, rts2core::C8, rts2core::NONE, 20);
 	addConnection (pixyConn);
 	ret = pixyConn->init ();
 	if (ret)
@@ -131,14 +124,11 @@ Pixy::init ()
 	return 0;
 }
 
-
-int
-Pixy::info ()
+int Pixy::info ()
 {
 	// do not set infotime
 	return 0;
 }
-
 
 Pixy::Pixy (int argc, char **argv):Sensor (argc, argv)
 {
@@ -149,23 +139,18 @@ Pixy::Pixy (int argc, char **argv):Sensor (argc, argv)
 	addOption ('f', NULL, 1, "device port (default to /dev/ttyS0");
 }
 
-
 Pixy::~Pixy (void)
 {
 }
 
-
-void
-Pixy::pixyReceived (char lastVal)
+void Pixy::pixyReceived (char lastVal)
 {
 	lightening->setValueInteger (lastVal - '0');
 	sendValueAll (lightening);
 	updateInfoTime ();
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Pixy device = Pixy (argc, argv);
 	return device.run ();

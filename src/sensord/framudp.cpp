@@ -24,21 +24,20 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 using namespace rts2sensord;
 
-ConnFramWeather::ConnFramWeather (int _weather_port, int _weather_timeout, FramWeather * _master)
-:Rts2ConnNoSend (_master)
+ConnFramWeather::ConnFramWeather (int _weather_port, int _weather_timeout, FramWeather * _master):Rts2ConnNoSend (_master)
 {
 	master = _master;
 	weather_port = _weather_port;
 }
 
-
-int
-ConnFramWeather::init ()
+int ConnFramWeather::init ()
 {
 	struct sockaddr_in bind_addr;
 	int ret;
@@ -70,9 +69,7 @@ ConnFramWeather::init ()
 	return ret;
 }
 
-
-int
-ConnFramWeather::receive (fd_set * set)
+int ConnFramWeather::receive (fd_set * set)
 {
 	int ret;
 	char Wbuf[100];
@@ -112,9 +109,9 @@ ConnFramWeather::receive (fd_set * set)
 			if (ret != 1)
 			{
 				logStream (MESSAGE_ERROR) << "invalid timeout specified in weather timeout" << sendLog;
-				master->setWeatherTimeout (wtimeout);
+				master->setWeatherTimeout (wtimeout, "cannot parse weatherTimeout");
 			}
-			master->setWeatherTimeout (wtimeout);
+			master->setWeatherTimeout (wtimeout, "cannot parse packet from weather station");
 			logStream (MESSAGE_DEBUG) << "Weathertimeout " << wtimeout << sendLog;
 			// ack message
 			ret = sendto (sock, "Ack", 3, 0, (struct sockaddr *) &from, sizeof (from));

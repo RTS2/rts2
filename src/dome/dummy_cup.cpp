@@ -38,6 +38,7 @@ class Dummy:public Cupola
 		virtual int moveStart ()
 		{
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return Cupola::moveStart ();
 		}
 		virtual int moveEnd ()
@@ -52,15 +53,8 @@ class Dummy:public Cupola
 			if (mcount->getValueInteger () >= moveCountTop->getValueInteger ())
 				return -2;
 			mcount->inc ();
+			sendValueAll (mcount);
 			return USEC_SEC;
-		}
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value)
-		{
-			if (old_value == moveCountTop)
-			{
-				return 0;
-			}
-			return Cupola::setValue (old_value, new_value);
 		}
 
 		virtual int startOpen ()
@@ -68,11 +62,14 @@ class Dummy:public Cupola
 			if ((getState () & DOME_DOME_MASK) == DOME_OPENING)
 				return 0;
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return 0;
 		}
 
 		virtual long isOpened ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
+				return 0;
 			return isMoving ();
 		}
 
@@ -86,11 +83,14 @@ class Dummy:public Cupola
 			if ((getState () & DOME_DOME_MASK) == DOME_CLOSING)
 				return 0;
 			mcount->setValueInteger (0);
+			sendValueAll (mcount);
 			return 0;
 		}
 
 		virtual long isClosed ()
 		{
+			if ((getState () & DOME_DOME_MASK) == DOME_OPENED)
+				return 0;
 		 	if ((getState () & DOME_DOME_MASK) == DOME_CLOSED)
 				return -2;
 			return isMoving ();
@@ -105,7 +105,7 @@ class Dummy:public Cupola
 		Dummy (int argc, char **argv):Cupola (argc, argv)
 		{
 			createValue (mcount, "mcount", "moving count", false);
-			createValue (moveCountTop, "moveCountTop", "move count top", false);
+			createValue (moveCountTop, "moveCountTop", "move count top", false, RTS2_VALUE_WRITABLE);
 			moveCountTop->setValueInteger (100);
 		}
 
@@ -123,9 +123,8 @@ class Dummy:public Cupola
 
 }
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }

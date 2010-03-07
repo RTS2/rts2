@@ -22,6 +22,7 @@
 #include "../utils/conntcp.h"
 
 #include <map>
+#include <string.h>
 
 #define OPT_MINB_TIME      OPT_LOCAL + 122
 
@@ -35,9 +36,6 @@ namespace rts2sensord
 	 */
 	class ConnApcUps: public rts2core::ConnTCP
 	{
-		private:
-			std::map <std::string, std::string> values;
-
 		public:
 			/**
 			 * Create new connection to APC UPS daemon.
@@ -63,6 +61,9 @@ namespace rts2sensord
 			float getTemp (const char *val);
 			int getTime (const char *val);
 			time_t getDate (const char *val);
+
+		private:
+			std::map <std::string, std::string> values;
 	};
 
 	/**
@@ -72,6 +73,17 @@ namespace rts2sensord
 	 */
 	class ApcUps:public SensorWeather
 	{
+		public:
+			ApcUps (int argc, char **argv);
+			virtual ~ApcUps (void);
+
+			virtual int info ();
+
+		protected:
+			virtual int processOption (int opt);
+
+			virtual int init ();
+
 		private:
 			HostString *host;
 
@@ -91,32 +103,17 @@ namespace rts2sensord
 
 			Rts2ValueTime *xOnBatt;
 			Rts2ValueTime *xOffBatt;
-
-		protected:
-			virtual int processOption (int opt);
-			virtual int info ();
-
-			virtual int init ();
-
-		public:
-			ApcUps (int argc, char **argv);
-			virtual ~ApcUps (void);
 	};
 
 }
 
-
 using namespace rts2sensord;
 
-
-ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port)
-:rts2core::ConnTCP (_master, _hostname, _port)
+ConnApcUps::ConnApcUps (Rts2Block *_master, const char *_hostname, int _port):rts2core::ConnTCP (_master, _hostname, _port)
 {
 }
 
-
-int
-ConnApcUps::command (const char *cmd)
+int ConnApcUps::command (const char *cmd)
 {
 	uint16_t len = htons (strlen (cmd));
 	while (true)
@@ -165,9 +162,7 @@ ConnApcUps::command (const char *cmd)
 	}
 }
 
-
-const char*
-ConnApcUps::getString (const char *val)
+const char* ConnApcUps::getString (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -175,9 +170,7 @@ ConnApcUps::getString (const char *val)
 	return (*iter).second.c_str ();
 }
 
-
-float
-ConnApcUps::getPercents (const char *val)
+float ConnApcUps::getPercents (const char *val)
 {
 	std::map <std::string, std::string>::iterator iter = values.find (val);
 	if (values.find (val) == values.end ())
@@ -185,9 +178,7 @@ ConnApcUps::getPercents (const char *val)
 	return atof ((*iter).second.c_str());
 }
 
-
-float
-ConnApcUps::getTemp (const char *val)
+float ConnApcUps::getTemp (const char *val)
 {
 	const char *v = getString (val);
 	if (strchr (v, 'C') == NULL)
@@ -195,9 +186,7 @@ ConnApcUps::getTemp (const char *val)
 	return atof (v);
 }
 
-
-int
-ConnApcUps::getTime (const char *val)
+int ConnApcUps::getTime (const char *val)
 {
 	const char *v = getString (val);
 	if (strcasestr (v, "hours") != NULL)
@@ -209,9 +198,7 @@ ConnApcUps::getTime (const char *val)
 	throw rts2core::ConnError (this, "Cannot convert time");
 }
 
-
-time_t
-ConnApcUps::getDate (const char *val)
+time_t ConnApcUps::getDate (const char *val)
 {
 	const char *v = getString (val);
 	struct tm _tm;
@@ -227,9 +214,7 @@ ConnApcUps::getDate (const char *val)
 	return mktime (&_tm);
 }
 
-
-int
-ApcUps::processOption (int opt)
+int ApcUps::processOption (int opt)
 {
 	switch (opt)
 	{
@@ -245,9 +230,7 @@ ApcUps::processOption (int opt)
 	return 0;
 }
 
-
-int
-ApcUps::init ()
+int ApcUps::init ()
 {
   	int ret;
 	ret = SensorWeather::init ();
@@ -261,9 +244,7 @@ ApcUps::init ()
 	return 0;
 }
 
-
-int
-ApcUps::info ()
+int ApcUps::info ()
 {
 	int ret;
 	ConnApcUps *connApc = new ConnApcUps (this, host->getHostname (), host->getPort ());
@@ -273,8 +254,8 @@ ApcUps::info ()
 		ret = connApc->command ("status");
 		if (ret)
 		{
-			logStream (MESSAGE_WARNING) << "cannot retrieve informations from apcups, putting UPS to bad weather state" << sendLog;
-			setWeatherTimeout (120);
+			logStream (MESSAGE_WARNING) << "cannot retrieve data from apcups, putting UPS to bad weather state" << sendLog;
+			setWeatherTimeout (120, "cannot retrieve data from UPS");
 			return ret;
 		}
 		model->setValueString (connApc->getString ("MODEL"));
@@ -291,7 +272,7 @@ ApcUps::info ()
 	catch (rts2core::ConnError er)
 	{
 		logStream (MESSAGE_ERROR) << er << sendLog;
-		setWeatherTimeout (120);
+		setWeatherTimeout (120, er.what ());
 		return -1;
 	}
 
@@ -299,35 +280,34 @@ ApcUps::info ()
 
 	if (tonbatt->getValueInteger () > battimeout->getValueInteger ())
 	{
-		logStream (MESSAGE_WARNING) <<  "too long on batteries: " << tonbatt->getValueInteger () << sendLog;
-		setWeatherTimeout (battimeout->getValueInteger () + 60);
+		logStream (MESSAGE_WARNING) <<  "running for too long on batteries: " << tonbatt->getValueInteger () << sendLog;
+		setWeatherTimeout (battimeout->getValueInteger () + 60, "running for too long on batteries");
 	}
 
 	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low battery charge");
 	}
 
 	if (timeleft->getValueInteger () < mintimeleft->getValueInteger ())
 	{
 	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << timeleft->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
-		setWeatherTimeout (1200);
+		setWeatherTimeout (1200, "low minimal baterry time");
 
 	}
 
 	// if there is any UPS error, set big timeout..
 	if (strcmp (status->getValue (), "ONLINE") && strcmp (status->getValue (), "ONBATT"))
 	{
-		logStream (MESSAGE_WARNING) <<  "unknow status " << status->getValue () << sendLog;
-		setWeatherTimeout (1200);
+		logStream (MESSAGE_WARNING) <<  "unknown status " << status->getValue () << sendLog;
+		setWeatherTimeout (1200, "unknown status");
 	}
 
 	delete connApc;
 	
 	return 0;
 }
-
 
 ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 {
@@ -342,26 +322,23 @@ ApcUps::ApcUps (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (xOnBatt, "xonbatt", "time of last on battery event", false);
 	createValue (xOffBatt, "xoffbatt", "time of last off battery event", false);
 
-	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false);
+	createValue (battimeout, "battery_timeout", "shorter then those onbatt interruptions will be ignored", false, RTS2_VALUE_WRITABLE);
 	battimeout->setValueInteger (60);
 
-	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false);
+	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false, RTS2_VALUE_WRITABLE);
 	minbcharge->setValueFloat (50);
-	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false);
+	createValue (mintimeleft, "min_tleft", "minimal time left for UPS operation", false, RTS2_VALUE_WRITABLE);
 	mintimeleft->setValueInteger (1200);
 
 	addOption ('a', NULL, 1, "hostname[:port] of apcupds");
 	addOption (OPT_MINB_TIME, "min-btime", 1, "minimal battery run time");
 }
 
-
 ApcUps::~ApcUps (void)
 {
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	ApcUps device = ApcUps (argc, argv);
 	return device.run ();

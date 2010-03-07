@@ -31,12 +31,40 @@ namespace rts2sensord
 
 class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 {
+	public:
+		virtual void gpibWriteBuffer (const char *cmd, int _len);
+		virtual void gpibRead (void *cmd, int &blen);
+		virtual void gpibWriteRead (const char *cmd, char *reply, int blen);
+
+		virtual void gpibWaitSRQ ();
+
+		virtual void initGpib ();
+
+		virtual void devClear ();
+
+		virtual float gettmo () { return timeout; };
+		virtual void settmo (float _sec);
+
+		/**
+		 * Sets EOT flag - whenever end characters are send.
+		 */
+		void setEot (int _eot)
+		{
+			eot = _eot;
+		}
+
+		ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad);
+		virtual ~ ConnGpibEnet (void);
+
+		virtual void setDebug (bool _debug = true) { rts2core::ConnTCP::setDebug (_debug); }
+
 	private:
 		int sad;
 		int pad;
 		int eot;
 		int eos;
-		int tmo;
+
+		float timeout;
 
 		uint16_t sta;
 		uint16_t err;
@@ -60,25 +88,6 @@ class ConnGpibEnet:public ConnGpib, public rts2core::ConnTCP
 		 * - unless ret_buf is NULL.
 		 */
 		void sresp (char **ret_buf = NULL);
-	public:
-		virtual void gpibWrite (const char *cmd);
-		virtual void gpibRead (void *cmd, int &blen);
-		virtual void gpibWriteRead (const char *cmd, char *reply, int blen);
-
-		virtual void gpibWaitSRQ ();
-
-		virtual void initGpib ();
-
-		/**
-		 * Sets EOT flag - whenever end characters are send.
-		 */
-		void setEot (int _eot)
-		{
-			eot = _eot;
-		}
-
-		ConnGpibEnet (Rts2Block *_master, const char *_address, int _port, int _pad);
-		virtual ~ ConnGpibEnet (void);
 };
 
 };

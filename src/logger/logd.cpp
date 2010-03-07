@@ -22,25 +22,23 @@
 
 class Rts2Logd:public Rts2Device, public Rts2LoggerBase
 {
-	private:
-		Rts2ValueString * logConfig;
-		Rts2ValueString *logFile;
-		int setLogConfig (const char *new_config);
-		int setLogFile (const char *new_file);
+	public:
+		Rts2Logd (int in_argc, char **in_argv);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 	protected:
 		virtual int processOption (int in_opt);
 		virtual int init ();
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 		virtual int processArgs (const char *arg);
 		virtual int willConnect (Rts2Address * in_addr);
-	public:
-		Rts2Logd (int in_argc, char **in_argv);
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+	private:
+		Rts2ValueString * logConfig;
+		Rts2ValueString *logFile;
+		int setLogConfig (const char *new_config);
+		int setLogFile (const char *new_file);
 };
 
-Rts2Logd::Rts2Logd (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
+Rts2Logd::Rts2Logd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
 {
 	setTimeout (USEC_SEC);
 
@@ -48,13 +46,11 @@ Rts2Device (in_argc, in_argv, DEVICE_TYPE_LOGD, "LOGD")
 		"specify config file with logged device, timeouts and values");
 	addOption ('o', NULL, 1, "output log file expression");
 
-	createValue (logConfig, "config", "logging configuration file", false);
-	createValue (logFile, "output", "logging file", false);
+	createValue (logConfig, "config", "logging configuration file", false, RTS2_VALUE_WRITABLE);
+	createValue (logFile, "output", "logging file", false, RTS2_VALUE_WRITABLE);
 }
 
-
-int
-Rts2Logd::setLogConfig (const char *new_config)
+int Rts2Logd::setLogConfig (const char *new_config)
 {
 	std::ifstream * istream = new std::ifstream (new_config);
 	int ret = readDevices (*istream);
@@ -102,9 +98,7 @@ Rts2Logd::init ()
 	return 0;
 }
 
-
-int
-Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == logConfig)
 	{
@@ -117,25 +111,19 @@ Rts2Logd::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Rts2Device::setValue (old_value, new_value);
 }
 
-
-int
-Rts2Logd::processArgs (const char *arg)
+int Rts2Logd::processArgs (const char *arg)
 {
 	return setLogConfig (arg);
 }
 
-
-int
-Rts2Logd::willConnect (Rts2Address * in_addr)
+int Rts2Logd::willConnect (Rts2Address * in_addr)
 {
 	return Rts2LoggerBase::willConnect (in_addr);
 }
 
-
-Rts2DevClient *
-Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
-	Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
+	rts2core::Rts2DevClient *cli = Rts2LoggerBase::createOtherType (conn, other_device_type);
 	if (cli)
 	{
 		cli->postEvent (new Rts2Event (EVENT_SET_LOGFILE, (void*) logFile->getValue ()));
@@ -144,10 +132,8 @@ Rts2Logd::createOtherType (Rts2Conn * conn, int other_device_type)
 	return Rts2Device::createOtherType (conn, other_device_type);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2Logd logd = Rts2Logd (argc, argv);
+	Rts2Logd logd (argc, argv);
 	return logd.run ();
 }

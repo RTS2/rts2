@@ -22,7 +22,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
 #include "../utils/rts2askchoice.h"
-#include "simbad/rts2simbadtarget.h"
+#include "simbad/simbadtarget.h"
 
 #include "rts2targetapp.h"
 

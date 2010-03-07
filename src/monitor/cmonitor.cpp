@@ -18,7 +18,7 @@ class Rts2CMonitorConnection:public Rts2ConnClient
 		:Rts2ConnClient (_master, _centrald_num, _name)
 		{
 		}
-		virtual void commandReturn (Rts2Command * command, int cmd_status);
+		virtual void commandReturn (rts2core::Rts2Command * command, int cmd_status);
 };
 
 void
@@ -43,7 +43,7 @@ Rts2CMonitorConnection::printStatus ()
 
 
 void
-Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
+Rts2CMonitorConnection::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 {
 	// if command failed..
 	if (cmd_status)
@@ -64,18 +64,18 @@ Rts2CMonitorConnection::commandReturn (Rts2Command * cmd, int cmd_status)
 }
 
 
-class CommandInfo:public Rts2Command
+class CommandInfo:public rts2core::Rts2Command
 {
 
 	public:
-		CommandInfo (Rts2Block * in_owner):Rts2Command (in_owner, "info")
+		CommandInfo (Rts2Block * in_owner):rts2core::Rts2Command (in_owner, "info")
 		{
 		}
 		virtual int commandReturnOK (Rts2Conn * conn)
 		{
 			owner->queAll ("base_info");
 			owner->queAll ("info");
-			return Rts2Command::commandReturnOK (conn);
+			return rts2core::Rts2Command::commandReturnOK (conn);
 		}
 };
 

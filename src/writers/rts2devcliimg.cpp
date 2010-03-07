@@ -23,8 +23,7 @@
 #include "../utils/rts2config.h"
 #include "../utils/timestamp.h"
 
-Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rts2DevClientCamera
-(in_connection)
+Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):rts2core::Rts2DevClientCamera (in_connection)
 {
 	chipNumbers = 0;
 	saveImage = 1;
@@ -55,15 +54,11 @@ Rts2DevClientCameraImage::Rts2DevClientCameraImage (Rts2Conn * in_connection):Rt
 	expNum = 0;
 }
 
-
 Rts2DevClientCameraImage::~Rts2DevClientCameraImage (void)
 {
 }
 
-
-Rts2Image *
-Rts2DevClientCameraImage::setImage (Rts2Image * old_img,
-Rts2Image * new_image)
+Rts2Image * Rts2DevClientCameraImage::setImage (Rts2Image * old_img, Rts2Image * new_image)
 {
 	for (CameraImages::iterator iter = images.begin (); iter != images.end (); iter++)
 	{
@@ -77,23 +72,21 @@ Rts2Image * new_image)
 	return NULL;
 }
 
-
-void
-Rts2DevClientCameraImage::postEvent (Rts2Event * event)
+void Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
 		case EVENT_INFO_DEVCLI_OK:
-			images.infoOK (this, (Rts2DevClient *) event->getArg ());
+			images.infoOK (this, (rts2core::Rts2DevClient *) event->getArg ());
 			// check also actualImage
 			if (actualImage)
-				actualImage->waitingFor ((Rts2DevClient *) event->getArg ());
+				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
 			break;
 		case EVENT_INFO_DEVCLI_FAILED:
-			images.infoFailed (this, (Rts2DevClient *) event->getArg ());
+			images.infoFailed (this, (rts2core::Rts2DevClient *) event->getArg ());
 			// check also actualImage
 			if (actualImage)
-				actualImage->waitingFor ((Rts2DevClient *) event->getArg ());
+				actualImage->waitingFor ((rts2core::Rts2DevClient *) event->getArg ());
 			break;
 		case EVENT_NUMBER_OF_IMAGES:
 			*((int *)event->getArg ()) += images.size ();
@@ -101,12 +94,10 @@ Rts2DevClientCameraImage::postEvent (Rts2Event * event)
 				*((int *)event->getArg ()) += 1;
 			break;
 	}
-	Rts2DevClientCamera::postEvent (event);
+	rts2core::Rts2DevClientCamera::postEvent (event);
 }
 
-
-void
-Rts2DevClientCameraImage::writeFilter (Rts2Image *img)
+void Rts2DevClientCameraImage::writeFilter (Rts2Image *img)
 {
 	int camFilter = img->getFilterNum ();
 	char imageFilter[4];
@@ -115,9 +106,7 @@ Rts2DevClientCameraImage::writeFilter (Rts2Image *img)
 	img->setFilter (imageFilter);
 }
 
-
-void
-Rts2DevClientCameraImage::newDataConn (int data_conn)
+void Rts2DevClientCameraImage::newDataConn (int data_conn)
 {
 	if (!actualImage)
 	{
@@ -128,9 +117,7 @@ Rts2DevClientCameraImage::newDataConn (int data_conn)
 	actualImage = NULL;
 }
 
-
-void
-Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
+void Rts2DevClientCameraImage::fullDataReceived (int data_conn, rts2core::DataAbstractRead *data)
 {
 	CameraImages::iterator iter = images.find (data_conn);
 	if (iter != images.end ())
@@ -149,62 +136,61 @@ Rts2DevClientCameraImage::fullDataReceived (int data_conn, Rts2DataRead *data)
 	}
 	else
 	{
-		logStream (MESSAGE_DEBUG) << "getTopImage is NULL" << sendLog;
+		logStream (MESSAGE_DEBUG) << "invalid data_conn: " << data_conn << sendLog;
 	}
 }
 
-
-Rts2Image *
-Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
+Rts2Image * Rts2DevClientCameraImage::createImage (const struct timeval *expStart)
 {
 	return new Rts2Image ("%c_%y%m%d-%H%M%S-%s.fits", getExposureNumber (), expStart, connection);
 }
 
-
-void
-Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
+void Rts2DevClientCameraImage::processCameraImage (CameraImages::iterator cis)
 {
 	CameraImage *ci = (*cis).second;
-	// create new image of requsted type
-	beforeProcess (ci->image);
-	if (saveImage)
+	try
 	{
-		writeFilter (ci->image);
-		// set filter..
-		// save us to the disk..
-		ci->image->saveImage ();
+		// create new image of requsted type
+		beforeProcess (ci->image);
+		if (saveImage)
+		{
+			writeFilter (ci->image);
+			// set filter..
+			// save us to the disk..
+			ci->image->saveImage ();
+		}
+		// do basic processing
+		imageProceRes res = processImage (ci->image);
+		if (res == IMAGE_KEEP_COPY)
+		{
+			setImage (ci->image, NULL);
+		}
+		// remove us
+		#ifdef DEBUG_EXTRA
+		logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
+		#endif						 /* DEBUG_EXTRA */
 	}
-	// do basic processing
-	imageProceRes res = processImage (ci->image);
-	if (res == IMAGE_KEEP_COPY)
+	catch (rts2core::Error ex)
 	{
-		setImage (ci->image, NULL);
+		logStream (MESSAGE_WARNING) << "Cannot save image " << ci->image->getAbsoluteFileName () << " " << ex << sendLog;
 	}
-	// remove us
-	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Erase image " << ci << sendLog;
-	#endif						 /* DEBUG_EXTRA */
+
 	if (lastImage == ci->image)
 		lastImage = NULL;
 	delete ci;
 	images.erase (cis);
 }
 
-
-void
-Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
+void Rts2DevClientCameraImage::beforeProcess (Rts2Image * image)
 {
 }
-
 
 imageProceRes Rts2DevClientCameraImage::processImage (Rts2Image * image)
 {
 	return IMAGE_DO_BASIC_PROCESSING;
 }
 
-
-void
-Rts2DevClientCameraImage::exposureStarted ()
+void Rts2DevClientCameraImage::exposureStarted ()
 {
 	double exposureTime = getConnection ()->getValueDouble ("exposure");
 	struct timeval expStart;
@@ -222,7 +208,7 @@ Rts2DevClientCameraImage::exposureStarted ()
 
 	image->setEnvironmentalValues ();
 
-	if (image->getTargetType () == TYPE_TERESTIAL
+	if (image->getTargetType (false) == TYPE_TERESTIAL
 		&& !isnan (ter_xoa) && !isnan (ter_yoa))
 	{
 		image->setXoA (ter_xoa);
@@ -246,12 +232,10 @@ Rts2DevClientCameraImage::exposureStarted ()
 
 	lastImage = image;
 	connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE, actualImage));
-	Rts2DevClientCamera::exposureStarted ();
+	rts2core::Rts2DevClientCamera::exposureStarted ();
 }
 
-
-void
-Rts2DevClientCameraImage::exposureEnd ()
+void Rts2DevClientCameraImage::exposureEnd ()
 {
 	logStream (MESSAGE_DEBUG) << "exposureEnd " << connection->getName () << sendLog;
 
@@ -261,18 +245,14 @@ Rts2DevClientCameraImage::exposureEnd ()
 		connection->postMaster (new Rts2Event (EVENT_WRITE_TO_IMAGE_ENDS, actualImage));
 	}
 
-	Rts2DevClientCamera::exposureEnd ();
+	rts2core::Rts2DevClientCamera::exposureEnd ();
 }
 
-
-Rts2DevClientTelescopeImage::Rts2DevClientTelescopeImage (Rts2Conn * in_connection):Rts2DevClientTelescope
-(in_connection)
+Rts2DevClientTelescopeImage::Rts2DevClientTelescopeImage (Rts2Conn * in_connection):rts2core::Rts2DevClientTelescope (in_connection)
 {
 }
 
-
-void
-Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
+void Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 {
 	struct ln_equ_posn *change;	 // change in degrees
 	CameraImage * ci;
@@ -292,8 +272,7 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			getObs (&obs);
 			image->writeConn (getConnection (), EXPOSURE_START);
 			infotime = getConnection ()->getValueDouble ("infotime");
-			image->setValue ("MNT_INFO", infotime,
-				"time when mount informations were collected");
+			image->setValue ("MNT_INFO", infotime, "time when mount informations were collected");
 
 			image->setMountFlip (getMountFlip ());
 			ln_get_solar_equ_coords (image->getExposureJD (), &suneq);
@@ -310,16 +289,14 @@ Rts2DevClientTelescopeImage::postEvent (Rts2Event * event)
 			break;
 		case EVENT_MOUNT_CHANGE:
 			change = (struct ln_equ_posn *) event->getArg ();
-			queCommand (new Rts2CommandChange (this, change->ra, change->dec));
+			queCommand (new rts2core::Rts2CommandChange (this, change->ra, change->dec));
 			break;
 	}
 
-	Rts2DevClientTelescope::postEvent (event);
+	rts2core::Rts2DevClientTelescope::postEvent (event);
 }
 
-
-void
-Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
+void Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 {
 	Rts2ValueRaDec *vradec = (Rts2ValueRaDec *) getConnection ()->getValue ("TAR");
 	if (!vradec)
@@ -329,55 +306,41 @@ Rts2DevClientTelescopeImage::getEqu (struct ln_equ_posn *tel)
 	tel->dec = vradec->getDec ();
 }
 
-
-void
-Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
+void Rts2DevClientTelescopeImage::getEquTel (struct ln_equ_posn *tel)
 {
 	tel->ra = getConnection ()->getValueDouble ("MNT_RA");
 	tel->dec = getConnection ()->getValueDouble ("MNT_DEC");
 }
 
-
-void
-Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
+void Rts2DevClientTelescopeImage::getEquTar (struct ln_equ_posn *tar)
 {
 	tar->ra = getConnection ()->getValueDouble ("RASC");
 	tar->dec = getConnection ()->getValueDouble ("DECL");
 }
 
-
-int
-Rts2DevClientTelescopeImage::getMountFlip ()
+int Rts2DevClientTelescopeImage::getMountFlip ()
 {
 	return getConnection ()->getValueInteger ("MNT_FLIP");
 }
 
-
-void
-Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
+void Rts2DevClientTelescopeImage::getObs (struct ln_lnlat_posn *obs)
 {
 	obs->lng = getConnection ()->getValueDouble ("LONGITUD");
 	obs->lat = getConnection ()->getValueDouble ("LATITUDE");
 }
 
-
-double
-Rts2DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
+double Rts2DevClientTelescopeImage::getDistance (struct ln_equ_posn *in_pos)
 {
 	struct ln_equ_posn tel;
 	getEqu (&tel);
 	return ln_get_angular_separation (&tel, in_pos);
 }
 
-
-Rts2DevClientFocusImage::Rts2DevClientFocusImage (Rts2Conn * in_connection):Rts2DevClientFocus
-(in_connection)
+Rts2DevClientFocusImage::Rts2DevClientFocusImage (Rts2Conn * in_connection):rts2core::Rts2DevClientFocus (in_connection)
 {
 }
 
-
-void
-Rts2DevClientFocusImage::postEvent (Rts2Event * event)
+void Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 {
 	CameraImage * ci;
 	Rts2Image *image;
@@ -399,18 +362,14 @@ Rts2DevClientFocusImage::postEvent (Rts2Event * event)
 			ci->image->writeConn (getConnection (), EXPOSURE_END);
 			break;
 	}
-	Rts2DevClientFocus::postEvent (event);
+	rts2core::Rts2DevClientFocus::postEvent (event);
 }
 
-
-Rts2DevClientWriteImage::Rts2DevClientWriteImage (Rts2Conn * in_connection):Rts2DevClient
-(in_connection)
+Rts2DevClientWriteImage::Rts2DevClientWriteImage (Rts2Conn * in_connection):rts2core::Rts2DevClient (in_connection)
 {
 }
 
-
-void
-Rts2DevClientWriteImage::postEvent (Rts2Event * event)
+void Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 {
 	CameraImage *ci;
 	switch (event->getType ())
@@ -421,7 +380,7 @@ Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 			// and check if we should trigger info call
 			if (connection->existWriteType (RTS2_VWHEN_BEFORE_END))
 			{
-				queCommand (new Rts2CommandInfo (getMaster ()));
+				queCommand (new rts2core::Rts2CommandInfo (getMaster ()));
 				ci->waitForDevice (this, getMaster ()->getNow ());
 			}
 			break;
@@ -433,40 +392,33 @@ Rts2DevClientWriteImage::postEvent (Rts2Event * event)
 	Rts2DevClient::postEvent (event);
 }
 
-
-void
-Rts2DevClientWriteImage::infoOK ()
+void Rts2DevClientWriteImage::infoOK ()
 {
 	// see if somebody cares..
 	connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_OK, this));
 }
 
-
-void
-Rts2DevClientWriteImage::infoFailed ()
+void Rts2DevClientWriteImage::infoFailed ()
 {
 	connection->postMaster (new Rts2Event (EVENT_INFO_DEVCLI_FAILED, this));
 }
 
 
-Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):Rts2Command (in_owner)
+Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_image " << image->getFileName ();
 	setCommand (_os);
 }
 
-
-Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image):Rts2Command
-(in_owner)
+Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
 	_os << "que_flat " << image->getFileName ();
 	setCommand (_os);
 }
 
-Rts2CommandQueObs::Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId):
-Rts2Command (in_owner)
+Rts2CommandQueObs::Rts2CommandQueObs (Rts2Block * in_owner, int in_obsId):rts2core::Rts2Command (in_owner)
 {
 	std::ostringstream _os;
 	_os << "que_obs " << in_obsId;

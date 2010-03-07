@@ -26,8 +26,7 @@
 
 using namespace rts2core;
 
-ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port)
-:Rts2ConnNoSend (_master)
+ConnTCP::ConnTCP (Rts2Block *_master, const char *_hostname, int _port):Rts2ConnNoSend (_master)
 {
 	hostname = _hostname;
 	port = _port;
@@ -121,7 +120,7 @@ void ConnTCP::sendData (const void *data, int len, bool binary)
 		if (binary)
 			ls.logArrAsHex ((char *) data, len);
 		else
-		  	ls << data;
+		  	ls << (char *) data;
 		ls << sendLog;
 	}
 }
@@ -176,7 +175,6 @@ void ConnTCP::receiveData (void *data, size_t len, int wtime, bool binary)
 		ls << sendLog;
 	}
 }
-
 
 void ConnTCP::receiveData (std::istringstream **_is, int wtime, char end_char)
 {

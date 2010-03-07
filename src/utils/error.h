@@ -1,6 +1,6 @@
 /* 
  * Top error class. Its descendats are thrown when some HW error occurs.
- * Copyright (C) 2009 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,29 +34,18 @@ namespace rts2core
 class Error:public std::exception
 {
 	public:
-		explicit Error (): std::exception ()
-		{
-		}
+		explicit Error (): std::exception () {}
 
-		explicit Error (const char *_msg): std::exception ()
-		{
-			msg = std::string (_msg);
-		}
+		explicit Error (const char *_msg): std::exception () { msg = std::string (_msg); }
 
-		explicit Error (std::string _msg): std::exception ()
-		{
-			msg = _msg;
-		}
+		explicit Error (std::string _msg): std::exception () { msg = _msg; }
 
 		virtual ~Error() throw() {};
 
 		/**
 		 * Returns message associated with the error.
 		 */
-		virtual const char* what () const throw ()
-		{
-			return msg.c_str ();
-		}
+		virtual const char* what () const throw () { return msg.c_str (); }
 
 		friend std::ostream & operator << (std::ostream &_os, Error _err)
 		{
@@ -65,10 +54,7 @@ class Error:public std::exception
 		}
 
 	protected:
-		void setMsg (std::string _msg)
-		{
-			msg = _msg;
-		}
+		void setMsg (std::string _msg) { msg = _msg; }
 
 	private:
 		std::string msg;

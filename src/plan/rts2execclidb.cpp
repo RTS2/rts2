@@ -26,6 +26,7 @@ Rts2Image *
 Rts2DevClientCameraExecDb::createImage (const struct timeval *expStart)
 {
 	imgCount++;
+	exposureScript = getScript ();
 	if (currentTarget)
 		// create image based on target type and shutter state
 		return new Rts2ImageDb (currentTarget, this, expStart);

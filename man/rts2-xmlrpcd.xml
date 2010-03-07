@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2008</year>
+      <year>2008-2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -141,7 +141,21 @@
   </refsect1> 
   <refsect1>
     <title>Event actions</title>
-     
+
+    <para>
+      RTS2 currently supports two actions, which can be executed on value
+      change. They are <emphasis>record</emphasis>  and <emphasis>command</emphasis>.
+    </para>
+
+    <refsect2>
+      <title>record</title>
+      <para>
+	Records value change to database. This of course works only if RTS2 was
+	compiled with database support. Values are recorded to various record_
+	tables.
+      </para>
+    </refsect2>
+
     <refsect2>
       <title>command</title>
       <para>
@@ -152,7 +166,12 @@
 	what can be printed out (booleans as true/false string, double numbers
 	in readable form, RA and DEC in sexadecimal notation,..).
       </para>
-
+      <para>
+	Centrald state and variables are added as
+	<emphasis>centraldN_name</emphasis>, where N is number from 1. This is
+	to distinguish between posibly different centrald XMLRPC can be
+	connected. You will usually use N = 1.
+      </para>
       <para>
 	Moreover, device state is also present in environment, as device name
 	joined with _state. Let's suppose we have a device S1, with variable
@@ -176,6 +195,7 @@ S1_state=1
 #!/bin/bash
 
 echo "Hi, dome end switches values: $DOME_end_switch_open $DOME_end_switch_close
+centrald1 sun_alt: $centrald1_sun_alt
 
 Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 ]]>
@@ -252,9 +272,12 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
 	<listitem>
 	  <para>
 	    Record any changes of CCD_SET value from C0 device. But the changes
-	    will be recorded only every 60 seconds. This means - if the value
-	    changed within 60 seconds, it will be recorded (with proper time).
-	    If it changes more then once within those 60 seconds,
+	    will be recorded only every 60 seconds. This means following: if
+	    the value changed within 60 seconds, it will be recorded (with
+	    proper time).  If it changes more then once within those 60
+	    seconds, only last value will be recorded. Remember that even then,
+	    only changes are recorded - so if there wasn't any change to the
+	    value within 60 seconds, database record wouldn't be created.
 	  </para>
 	</listitem>
       </itemizedlist>

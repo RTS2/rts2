@@ -78,8 +78,7 @@ class Alta:public Camera
 
 using namespace rts2camd;
 
-void
-Alta::setBitDepth (int newBit)
+void Alta::setBitDepth (int newBit)
 {
 	switch (newBit)
 	{
@@ -90,9 +89,7 @@ Alta::setBitDepth (int newBit)
 	}
 }
 
-
-int
-Alta::initChips ()
+int Alta::initChips ()
 {
 	setSize (alta->read_RoiPixelsH (), alta->read_RoiPixelsV (), 0, 0);
 	setBinning (1, 1);
@@ -103,9 +100,7 @@ Alta::initChips ()
 	return Camera::initChips ();
 }
 
-
-void
-Alta::initBinnings ()
+void Alta::initBinnings ()
 {
 	addBinning2D (1,1);
 	addBinning2D (2,2);
@@ -123,9 +118,7 @@ Alta::initBinnings ()
 	addBinning2D (20,20);
 }
 
-
-int
-Alta::setBinning (int in_vert, int in_hori)
+int Alta::setBinning (int in_vert, int in_hori)
 {
 	alta->write_RoiBinningH (in_hori);
 	alta->write_RoiBinningV (in_vert);
@@ -133,9 +126,7 @@ Alta::setBinning (int in_vert, int in_hori)
 	return ret;
 }
 
-
-int
-Alta::startExposure ()
+int Alta::startExposure ()
 {
 	int ret;
 
@@ -152,9 +143,7 @@ Alta::startExposure ()
 	return 0;
 }
 
-
-long
-Alta::isExposing ()
+long Alta::isExposing ()
 {
 	long ret;
 	Apn_Status status;
@@ -175,18 +164,14 @@ Alta::isExposing ()
 	return -2;
 }
 
-
-int
-Alta::stopExposure ()
+int Alta::stopExposure ()
 {
 	// we need to digitize image:(
 	alta->StopExposure (true);
 	return Camera::stopExposure ();
 }
 
-
-int
-Alta::doReadout ()
+int Alta::doReadout ()
 {
 	int ret;
 
@@ -203,9 +188,7 @@ Alta::doReadout ()
 	return -2;
 }
 
-
-int
-Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == bitDepth)
 	{
@@ -226,9 +209,7 @@ Alta::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Camera::setValue (old_value, new_value);
 }
 
-
-Alta::Alta (int in_argc, char **in_argv):
-Camera (in_argc, in_argv)
+Alta::Alta (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempAir ();
 	createTempCCD ();
@@ -246,13 +227,13 @@ Camera (in_argc, in_argv)
 	coolerStatus->addSelVal ("AT_MIN");
 	coolerStatus->addSelVal ("AT_SETPOINT");
 
-	createValue (coolerEnabled, "COOL_ENA", "if cooler is enabled", true);
+	createValue (coolerEnabled, "COOL_ENA", "if cooler is enabled", true, RTS2_VALUE_WRITABLE);
 
-	createValue (bitDepth, "BITDEPTH", "bit depth", true, 0, CAM_WORKING);
+	createValue (bitDepth, "BITDEPTH", "bit depth", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	bitDepth->addSelVal ("16 bit");
 	bitDepth->addSelVal ("12 bit");
 
-	createValue (fanMode, "FAN", "fan mode", true);
+	createValue (fanMode, "FAN", "fan mode", true, RTS2_VALUE_WRITABLE);
 	fanMode->addSelVal ("OFF");
 	fanMode->addSelVal ("LOW");
 	fanMode->addSelVal ("MEDIUM");
@@ -263,7 +244,6 @@ Camera (in_argc, in_argv)
 	addOption ('c', NULL, 1, "night cooling temperature");
 }
 
-
 Alta::~Alta (void)
 {
 	if (alta)
@@ -273,9 +253,7 @@ Alta::~Alta (void)
 	}
 }
 
-
-int
-Alta::processOption (int in_opt)
+int Alta::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -291,9 +269,7 @@ Alta::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Alta::init ()
+int Alta::init ()
 {
 	int ret;
 	ret = Camera::init ();
@@ -329,9 +305,7 @@ Alta::init ()
 	return initChips ();
 }
 
-
-int
-Alta::info ()
+int Alta::info ()
 {
 	coolerStatus->setValueInteger (alta->read_CoolerStatus ());
 	coolerEnabled->setValueBool (alta->read_CoolerEnable ());
@@ -342,16 +316,12 @@ Alta::info ()
 	return Camera::info ();
 }
 
-
-int
-Alta::camChipInfo (int chip)
+int Alta::camChipInfo (int chip)
 {
 	return 0;
 }
 
-
-int
-Alta::setCoolTemp (float new_temp)
+int Alta::setCoolTemp (float new_temp)
 {
 	alta->write_CoolerEnable (true);
 	alta->write_FanMode (Apn_FanMode_High);
@@ -359,18 +329,14 @@ Alta::setCoolTemp (float new_temp)
 	return 0;
 }
 
-
-void
-Alta::afterNight ()
+void Alta::afterNight ()
 {
 	alta->write_CoolerEnable (false);
 	alta->write_FanMode (Apn_FanMode_Low);
 	alta->write_CoolerSetPoint (100);
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Alta device = Alta (argc, argv);
 	return device.run ();

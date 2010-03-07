@@ -28,7 +28,7 @@
 
 #include "teld.h"
 #include "hms.h"
-#include "../utils/rts2connserial.h"
+#include "../utils/connserial.h"
 #include "../utils/rts2config.h"
 #include "../utils/utilsfunc.h"
 
@@ -60,8 +60,38 @@ namespace rts2teld
 
 class Gemini:public Telescope
 {
-	private:
+	public:
+		Gemini (int argc, char **argv);
+		virtual ~ Gemini (void);
+		virtual int init ();
+		virtual int changeMasterState (int new_state);
+		virtual int info ();
+		virtual int startResync ();
+		virtual int isMoving ();
+		virtual int endMove ();
+		virtual int stopMove ();
+		//		virtual int startMoveFixed (double tar_ha, double tar_dec);
+		//		virtual int isMovingFixed ();
+		//		virtual int endMoveFixed ();
+		virtual int startPark ();
+		virtual int isParking ();
+		virtual int endPark ();
+		int setTo (double set_ra, double set_dec, int appendModel);
+		virtual int setTo (double set_ra, double set_dec);
+		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
+		virtual int saveModel ();
+		virtual int loadModel ();
+		virtual int stopWorm ();
+		virtual int startWorm ();
+		virtual int resetMount ();
+		virtual int getFlip ();
 
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int initValues ();
+		virtual int idle ();
+
+	private:
 		const char *device_file;
 
 		Rts2ValueTime *telLocalTime;
@@ -75,7 +105,7 @@ class Gemini:public Telescope
 
 		const char *geminiConfig;
 
-		Rts2ConnSerial *tel_conn;
+		rts2core::ConnSerial *tel_conn;
 		int tel_write_read (const char *buf, int wcount, char *rbuf, int rcount);
 
 		/**
@@ -356,50 +386,13 @@ class Gemini:public Telescope
 		bool forceLatLon;
 
 		const char *getGemType (int gem_type);
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int initValues ();
-		virtual int idle ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-	public:
-		Gemini (int argc, char **argv);
-		virtual ~ Gemini (void);
-		virtual int init ();
-		virtual int changeMasterState (int new_state);
-		virtual int info ();
-		virtual int startResync ();
-		virtual int isMoving ();
-		virtual int endMove ();
-		virtual int stopMove ();
-		//		virtual int startMoveFixed (double tar_ha, double tar_dec);
-		//		virtual int isMovingFixed ();
-		//		virtual int endMoveFixed ();
-		virtual int startPark ();
-		virtual int isParking ();
-		virtual int endPark ();
-		int setTo (double set_ra, double set_dec, int appendModel);
-		virtual int setTo (double set_ra, double set_dec);
-		int correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec);
-		virtual int saveModel ();
-		virtual int loadModel ();
-		virtual int stopWorm ();
-		virtual int startWorm ();
-		virtual int resetMount ();
-		virtual int startGuide (char dir, double dir_dist);
-		virtual int stopGuide (char dir);
-		virtual int stopGuideAll ();
-		virtual int getFlip ();
 };
 
 }
 
 using namespace rts2teld;
 
-int
-Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
+int Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 {
 	int ret;
 	ret = tel_conn->writeRead (buf, wcount, rbuf, rcount);
@@ -412,9 +405,7 @@ Gemini::tel_write_read (const char *buf, int wcount, char *rbuf, int rcount)
 	return ret;
 }
 
-
-int
-Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
+int Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcount)
 {
 	int tmp_rcount = tel_conn->writeRead (wbuf, wcount, rbuf, rcount, '#');
 	if (tmp_rcount < 0)
@@ -427,9 +418,7 @@ Gemini::tel_write_read_hash (const char *wbuf, int wcount, char *rbuf, int rcoun
 	return tmp_rcount;
 }
 
-
-int
-Gemini::readDate (struct tm *_tm, const char *command)
+int Gemini::readDate (struct tm *_tm, const char *command)
 {
 	char wbuf[11];
 	int ret;
@@ -448,9 +437,7 @@ Gemini::readDate (struct tm *_tm, const char *command)
 	return 0;
 }
 
-
-int
-Gemini::readHMS (double *hmsptr, const char *command)
+int Gemini::readHMS (double *hmsptr, const char *command)
 {
 	char wbuf[11];
 	if (tel_write_read_hash (command, strlen (command), wbuf, 10) < 6)
@@ -461,9 +448,7 @@ Gemini::readHMS (double *hmsptr, const char *command)
 	return 0;
 }
 
-
-unsigned char
-Gemini::tel_gemini_checksum (const char *buf)
+unsigned char Gemini::tel_gemini_checksum (const char *buf)
 {
 	unsigned char checksum = 0;
 	for (; *buf; buf++)
@@ -473,9 +458,7 @@ Gemini::tel_gemini_checksum (const char *buf)
 	return checksum;
 }
 
-
-int
-Gemini::tel_gemini_setch (int id, char *in_buf)
+int Gemini::tel_gemini_setch (int id, char *in_buf)
 {
 	int len;
 	char *buf;
@@ -493,9 +476,7 @@ Gemini::tel_gemini_setch (int id, char *in_buf)
 	return ret;
 }
 
-
-int
-Gemini::tel_gemini_set (int id, int32_t val)
+int Gemini::tel_gemini_set (int id, int32_t val)
 {
 	char buf[15];
 	int len;
@@ -508,9 +489,7 @@ Gemini::tel_gemini_set (int id, int32_t val)
 	return tel_conn->writePort (buf, len);
 }
 
-
-int
-Gemini::tel_gemini_set (int id, double val)
+int Gemini::tel_gemini_set (int id, double val)
 {
 	char buf[15];
 	int len;
@@ -523,9 +502,7 @@ Gemini::tel_gemini_set (int id, double val)
 	return tel_conn->writePort (buf, len);
 }
 
-
-int
-Gemini::tel_gemini_getch (int id, char *buf)
+int Gemini::tel_gemini_getch (int id, char *buf)
 {
 	char *ptr;
 	unsigned char checksum, cal;
@@ -556,9 +533,7 @@ Gemini::tel_gemini_getch (int id, char *buf)
 	return 0;
 }
 
-
-int
-Gemini::tel_gemini_get (int id, int32_t & val)
+int Gemini::tel_gemini_get (int id, int32_t & val)
 {
 	char buf[9], *ptr, checksum;
 	int len, ret;
@@ -588,9 +563,7 @@ Gemini::tel_gemini_get (int id, int32_t & val)
 	return 0;
 }
 
-
-int
-Gemini::tel_gemini_get (int id, double &val)
+int Gemini::tel_gemini_get (int id, double &val)
 {
 	char buf[9], *ptr, checksum;
 	int len, ret;
@@ -620,9 +593,7 @@ Gemini::tel_gemini_get (int id, double &val)
 	return 0;
 }
 
-
-int
-Gemini::tel_gemini_get (int id, int &val1, int &val2)
+int Gemini::tel_gemini_get (int id, int &val1, int &val2)
 {
 	char buf[20], *ptr;
 	int ret;
@@ -640,9 +611,7 @@ Gemini::tel_gemini_get (int id, int &val1, int &val2)
 	return 0;
 }
 
-
-int
-Gemini::tel_gemini_reset ()
+int Gemini::tel_gemini_reset ()
 {
 	char rbuf[50];
 
@@ -723,9 +692,7 @@ Gemini::matchTime ()
 	return 0;
 }
 
-
-int
-Gemini::tel_read_ra ()
+int Gemini::tel_read_ra ()
 {
 	double t_telRa;
 	if (readHMS (&t_telRa, ":GR#"))
@@ -735,9 +702,7 @@ Gemini::tel_read_ra ()
 	return 0;
 }
 
-
-int
-Gemini::tel_read_dec ()
+int Gemini::tel_read_dec ()
 {
 	double t_telDec;
 	if (readHMS (&t_telDec, ":GD#"))
@@ -746,9 +711,7 @@ Gemini::tel_read_dec ()
 	return 0;
 }
 
-
-int
-Gemini::getLocaltime ()
+int Gemini::getLocaltime ()
 {
 	double t_telLocalTime;
 	struct tm _tm;
@@ -763,9 +726,7 @@ Gemini::getLocaltime ()
 	return 0;
 }
 
-
-int
-Gemini::tel_read_longtitude ()
+int Gemini::tel_read_longtitude ()
 {
 	int ret;
 	double t_telLongitude;
@@ -776,9 +737,7 @@ Gemini::tel_read_longtitude ()
 	return ret;
 }
 
-
-int
-Gemini::tel_read_latitude ()
+int Gemini::tel_read_latitude ()
 {
 	double t_telLatitude;
 	if (readHMS (&t_telLatitude, ":Gt#"))
@@ -787,9 +746,7 @@ Gemini::tel_read_latitude ()
 	return 0;
 }
 
-
-int
-Gemini::tel_rep_write (char *command)
+int Gemini::tel_rep_write (char *command)
 {
 	int count;
 	char retstr;
@@ -814,9 +771,7 @@ Gemini::tel_rep_write (char *command)
 	return 0;
 }
 
-
-void
-Gemini::tel_normalize (double *ra, double *dec)
+void Gemini::tel_normalize (double *ra, double *dec)
 {
 	*ra = ln_range_degrees (*ra);
 	if (*dec < -90)
@@ -826,9 +781,7 @@ Gemini::tel_normalize (double *ra, double *dec)
 		*dec = *dec - floor (*dec / 90) * 90;
 }
 
-
-int
-Gemini::tel_write_ra (double ra)
+int Gemini::tel_write_ra (double ra)
 {
 	char command[14];
 	int h, m, s;
@@ -839,9 +792,7 @@ Gemini::tel_write_ra (double ra)
 	return tel_rep_write (command);
 }
 
-
-int
-Gemini::tel_write_dec (double dec)
+int Gemini::tel_write_dec (double dec)
 {
 	char command[15];
 	struct ln_dms dh;
@@ -859,14 +810,12 @@ Gemini::tel_write_dec (double dec)
 	return tel_rep_write (command);
 }
 
-
-Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc,
-in_argv)
+Gemini::Gemini (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 {
 	createValue (telLocalTime, "localtime", "telescope local time", false);
 	createValue (telGuidingSpeed, "guiding_speed", "telescope guiding speed", false);
 
-	createValue (resetState, "next_reset", "next reset state", false);
+	createValue (resetState, "next_reset", "next reset state", false, RTS2_VALUE_WRITABLE);
 	resetState->addSelVal ("RESTART");
 	resetState->addSelVal ("WARM_START");
 	resetState->addSelVal ("COLD_START");
@@ -933,14 +882,11 @@ in_argv)
 	guideLimit->setValueDouble (5.0 / 60.0);
 }
 
-
 Gemini::~Gemini ()
 {
 }
 
-
-int
-Gemini::processOption (int in_opt)
+int Gemini::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -987,9 +933,7 @@ Gemini::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-Gemini::geminiInit ()
+int Gemini::geminiInit ()
 {
 	char rbuf[10];
 	int ret;
@@ -1029,9 +973,7 @@ Gemini::geminiInit ()
 	return 0;
 }
 
-
-int
-Gemini::readRatiosInter (int startId)
+int Gemini::readRatiosInter (int startId)
 {
 	int32_t t;
 	int res = 1;
@@ -1047,9 +989,7 @@ Gemini::readRatiosInter (int startId)
 	return res;
 }
 
-
-int
-Gemini::readRatios ()
+int Gemini::readRatios ()
 {
 	raRatio = 0;
 	decRatio = 0;
@@ -1078,9 +1018,7 @@ Gemini::readRatios ()
 	return 0;
 }
 
-
-int
-Gemini::readLimits ()
+int Gemini::readLimits ()
 {
 	// TODO read from 221 and 222
 	haMinusLimit = -94;
@@ -1088,9 +1026,7 @@ Gemini::readLimits ()
 	return 0;
 }
 
-
-int
-Gemini::setCorrection ()
+int Gemini::setCorrection ()
 {
 	if (gem_version < 4)
 		return 0;
@@ -1106,9 +1042,7 @@ Gemini::setCorrection ()
 	return -1;
 }
 
-
-int
-Gemini::init ()
+int Gemini::init ()
 {
 	int ret;
 
@@ -1116,7 +1050,7 @@ Gemini::init ()
 	if (ret)
 		return ret;
 
-	tel_conn = new Rts2ConnSerial (device_file, this, BS9600, C8, NONE, 90);
+	tel_conn = new rts2core::ConnSerial (device_file, this, rts2core::BS9600, rts2core::C8, rts2core::NONE, 90);
 	tel_conn->setDebug ();
 
 	ret = tel_conn->init ();
@@ -1148,9 +1082,7 @@ Gemini::init ()
 	return 0;
 }
 
-
-const char *
-Gemini::getGemType (int gem_type)
+const char * Gemini::getGemType (int gem_type)
 {
 	switch (gem_type)
 	{
@@ -1170,9 +1102,7 @@ Gemini::getGemType (int gem_type)
 	return "UNK";
 }
 
-
-int
-Gemini::initValues ()
+int Gemini::initValues ()
 {
 	int32_t gem_type;
 	char buf[5];
@@ -1252,9 +1182,7 @@ Gemini::initValues ()
 	return Telescope::initValues ();
 }
 
-
-int
-Gemini::idle ()
+int Gemini::idle ()
 {
 	int ret;
 	tel_gemini_get (130, worm);
@@ -1336,26 +1264,13 @@ Gemini::idle ()
 	return Telescope::idle ();
 }
 
-
-int
-Gemini::setValue (Rts2Value * old_value, Rts2Value * new_value)
-{
-	if (old_value == resetState)
-		return 0;
-	return Telescope::setValue (old_value, new_value);
-}
-
-
-int
-Gemini::changeMasterState (int new_state)
+int Gemini::changeMasterState (int new_state)
 {
 	matchCount = 0;
 	return Telescope::changeMasterState (new_state);
 }
 
-
-void
-Gemini::getAxis ()
+void Gemini::getAxis ()
 {
 	int feature;
 	tel_gemini_get (311, feature);
@@ -1363,9 +1278,7 @@ Gemini::getAxis ()
 	telFlip->setValueInteger ((feature & 2) ? 1 : 0);
 }
 
-
-int
-Gemini::info ()
+int Gemini::info ()
 {
 	telFlip->setValueInteger (0);
 
@@ -1383,18 +1296,14 @@ Gemini::info ()
 	return Telescope::info ();
 }
 
-
-int
-Gemini::tel_set_rate (char new_rate)
+int Gemini::tel_set_rate (char new_rate)
 {
 	char command[6];
 	sprintf (command, ":R%c#", new_rate);
 	return tel_conn->writePort (command, 5);
 }
 
-
-int
-Gemini::telescope_start_move (char direction)
+int Gemini::telescope_start_move (char direction)
 {
 	char command[6];
 	// start worm if moving in RA DEC..
@@ -1419,9 +1328,7 @@ Gemini::telescope_start_move (char direction)
 	//  stopWorm ();
 }
 
-
-int
-Gemini::telescope_stop_move (char direction)
+int Gemini::telescope_stop_move (char direction)
 {
 	char command[6];
 	sprintf (command, ":Q%c#", direction);
@@ -1433,9 +1340,7 @@ Gemini::telescope_stop_move (char direction)
 	return tel_conn->writePort (command, 5);
 }
 
-
-void
-Gemini::telescope_stop_goto ()
+void Gemini::telescope_stop_goto ()
 {
 	tel_gemini_get (99, lastMotorState);
 	tel_conn->writePort (":Q#", 3);
@@ -1447,9 +1352,7 @@ Gemini::telescope_stop_goto ()
 	worm_move_needed = 0;
 }
 
-
-int
-Gemini::tel_start_move ()
+int Gemini::tel_start_move ()
 {
 	char retstr;
 	char buf[55];
@@ -1474,9 +1377,7 @@ Gemini::tel_start_move ()
 	return -1;
 }
 
-
-int
-Gemini::startResync ()
+int Gemini::startResync ()
 {
 	int newFlip = telFlip->getValueInteger ();
 	bool willFlip = false;
@@ -1493,22 +1394,22 @@ Gemini::startResync ()
 
 	tel_normalize (&pos.ra, &pos.dec);
 
-	ra_diff = ln_range_degrees (getTelRa () - pos.ra);
+	ra_diff = ln_range_degrees (getTelTargetRa () - pos.ra);
 	if (ra_diff > 180.0)
 		ra_diff -= 360.0;
 
-	dec_diff = getTelDec () - pos.dec;
+	dec_diff = getTelTargetDec () - pos.dec;
 
 	// get diff when we flip..
 	ra_diff_flip =
-		ln_range_degrees (180 + getTelRa () - pos.ra);
+		ln_range_degrees (180 + getTelTargetRa () - pos.ra);
 	if (ra_diff_flip > 180.0)
 		ra_diff_flip -= 360.0;
 
 	if (telLatitude->getValueDouble () > 0)
-		dec_diff_flip = (90 - getTelDec () + 90 - pos.dec);
+		dec_diff_flip = (90 - getTelTargetDec () + 90 - pos.dec);
 	else
-		dec_diff_flip = (getTelDec () - 90 + pos.dec - 90);
+		dec_diff_flip = (getTelTargetDec () - 90 + pos.dec - 90);
 
 	// decide which path is closer
 
@@ -1564,7 +1465,7 @@ Gemini::startResync ()
 	logStream (MESSAGE_DEBUG) << "Losmandy start move ha " << ha
 		<< " ra_diff " << ra_diff
 		<< " lastMoveRa " << lastMoveRa
-		<< " telRa " << getTelRa ()
+		<< " telRa " << getTelTargetRa ()
 		<< " newFlip  " << newFlip
 		<< " willFlip " << willFlip
 		<< sendLog;
@@ -1601,7 +1502,7 @@ Gemini::startResync ()
 	startWorm ();
 
 	struct ln_equ_posn telPos;
-	getTelRaDec (&telPos);
+	getTelTargetRaDec (&telPos);
 
 	double sep = ln_get_angular_separation (&pos, &telPos);
 	#ifdef DEBUG_EXTRA
@@ -1627,9 +1528,7 @@ Gemini::startResync ()
 	return tel_start_move ();
 }
 
-
-int
-Gemini::isMoving ()
+int Gemini::isMoving ()
 {
 	struct timeval now;
 	if (telMotorState != TEL_OK)
@@ -1706,9 +1605,7 @@ Gemini::isMoving ()
 	return -2;
 }
 
-
-int
-Gemini::endMove ()
+int Gemini::endMove ()
 {
 	int32_t track;
 	#ifdef L4_GUIDE
@@ -1728,9 +1625,7 @@ Gemini::endMove ()
 	return Telescope::endMove ();
 }
 
-
-int
-Gemini::stopMove ()
+int Gemini::stopMove ()
 {
 	telescope_stop_goto ();
 	#ifdef L4_GUIDE
@@ -1773,8 +1668,7 @@ Gemini::startMoveFixedReal ()
 */
 
 /*
-int
-Gemini::startMoveFixed (double tar_ha, double tar_dec)
+int Gemini::startMoveFixed (double tar_ha, double tar_dec)
 {
 	int32_t ra_ind;
 	int32_t dec_ind;
@@ -1851,8 +1745,7 @@ Gemini::startMoveFixed (double tar_ha, double tar_dec)
 	return ret;
 }
 
-int
-Gemini::isMovingFixed ()
+int Gemini::isMovingFixed ()
 {
 	int ret;
 	ret = isMoving ();
@@ -1886,8 +1779,7 @@ Gemini::isMovingFixed ()
 	return ret;
 }
 
-int
-Gemini::endMoveFixed ()
+int Gemini::endMoveFixed ()
 {
 	int32_t track;
 	stopWorm ();
@@ -1899,9 +1791,7 @@ Gemini::endMoveFixed ()
 }
 */
 
-
-int
-Gemini::isParking ()
+int Gemini::isParking ()
 {
 	char buf = '3';
 	if (telMotorState != TEL_OK)
@@ -1924,9 +1814,7 @@ Gemini::isParking ()
 	}
 }
 
-
-int
-Gemini::endPark ()
+int Gemini::endPark ()
 {
 	if (getMasterState () != SERVERD_NIGHT)
 		matchTime ();
@@ -1934,9 +1822,7 @@ Gemini::endPark ()
 	return stopWorm ();
 }
 
-
-int
-Gemini::setTo (double set_ra, double set_dec, int appendModel)
+int Gemini::setTo (double set_ra, double set_dec, int appendModel)
 {
 	char readback[101];
 
@@ -1966,17 +1852,12 @@ Gemini::setTo (double set_ra, double set_dec, int appendModel)
 	return 0;
 }
 
-
-int
-Gemini::setTo (double set_ra, double set_dec)
+int Gemini::setTo (double set_ra, double set_dec)
 {
 	return setTo (set_ra, set_dec, 0);
 }
 
-
-int
-Gemini::correctOffsets (double cor_ra, double cor_dec,
-double real_ra, double real_dec)
+int Gemini::correctOffsets (double cor_ra, double cor_dec, double real_ra, double real_dec)
 {
 	int32_t v205;
 	int32_t v206;
@@ -1994,7 +1875,6 @@ double real_ra, double real_dec)
 	return 0;
 }
 
-
 #ifdef L4_GUIDE
 bool Gemini::isGuiding (struct timeval * now)
 {
@@ -2011,9 +1891,7 @@ bool Gemini::isGuiding (struct timeval * now)
 	return true;
 }
 
-
-int
-Gemini::guide (char direction, unsigned int val)
+int Gemini::guide (char direction, unsigned int val)
 {
 	// convert to arcsec
 	char buf[20];
@@ -2023,9 +1901,7 @@ Gemini::guide (char direction, unsigned int val)
 	return tel_conn->writePort (buf, len);
 }
 
-
-int
-Gemini::changeDec ()
+int Gemini::changeDec ()
 {
 	char direction;
 	struct timeval chng_time;
@@ -2048,9 +1924,7 @@ Gemini::changeDec ()
 	return 0;
 }
 
-
-int
-Gemini::change_real (double chng_ra, double chng_dec)
+int Gemini::change_real (double chng_ra, double chng_dec)
 {
 	char direction;
 	struct timeval chng_time;
@@ -2189,9 +2063,7 @@ int Gemini::change_ra (double chng_ra)
 	return ret;
 }
 
-
-int
-Gemini::change_dec (double chng_dec)
+int Gemini::change_dec (double chng_dec)
 {
 	char direction;
 	long u_sleep;
@@ -2239,9 +2111,7 @@ Gemini::change_dec (double chng_dec)
 	return ret;
 }
 
-
-int
-Gemini::change_real (double chng_ra, double chng_dec)
+int Gemini::change_real (double chng_ra, double chng_dec)
 {
 	int ret;
 	// center rate
@@ -2265,9 +2135,7 @@ Gemini::change_real (double chng_ra, double chng_dec)
 }
 #endif
 
-
-int
-Gemini::startPark ()
+int Gemini::startPark ()
 {
 	int ret;
 	fixed_ha = nan ("f");
@@ -2280,7 +2148,6 @@ Gemini::startPark ()
 	sleep (1);
 	return 0;
 }
-
 
 static int save_registers[] =
 {
@@ -2315,8 +2182,8 @@ static int save_registers[] =
 	412,						 // DEC tracking divisor
 	-1
 };
-int
-Gemini::saveModel ()
+
+int Gemini::saveModel ()
 {
 	int *reg = save_registers;
 	char buf[20];
@@ -2347,9 +2214,7 @@ Gemini::saveModel ()
 	return 0;
 }
 
-
-extern int
-Gemini::loadModel ()
+extern int Gemini::loadModel ()
 {
 	FILE *config_file;
 	char *line;
@@ -2389,25 +2254,19 @@ Gemini::loadModel ()
 	return 0;
 }
 
-
-int
-Gemini::stopWorm ()
+int Gemini::stopWorm ()
 {
 	worm = 135;
 	return tel_gemini_set (135, 1);
 }
 
-
-int
-Gemini::startWorm ()
+int Gemini::startWorm ()
 {
 	worm = 131;
 	return tel_gemini_set (131, 1);
 }
 
-
-int
-Gemini::parkBootesSensors ()
+int Gemini::parkBootesSensors ()
 {
 	int ret;
 	char direction;
@@ -2461,9 +2320,7 @@ Gemini::parkBootesSensors ()
 	return 0;
 }
 
-
-int
-Gemini::resetMount ()
+int Gemini::resetMount ()
 {
 	int ret;
 	if ((resetState->getValueInteger () == 1 || resetState->getValueInteger () == 2)
@@ -2478,59 +2335,7 @@ Gemini::resetMount ()
 	return Telescope::resetMount ();
 }
 
-
-int
-Gemini::startGuide (char dir, double dir_dist)
-{
-	int ret;
-	switch (dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			tel_set_rate (RATE_GUIDE);
-			// set smallest rate..
-			tel_gemini_set (GEMINI_CMD_RATE_GUIDE, 0.2);
-			telGuidingSpeed->setValueDouble (0.2);
-			ret = telescope_start_move (dir);
-			if (ret)
-				return ret;
-			return Telescope::startGuide (dir, dir_dist);
-	}
-	return -2;
-}
-
-
-int
-Gemini::stopGuide (char dir)
-{
-	int ret;
-	switch (dir)
-	{
-		case DIR_EAST:
-		case DIR_WEST:
-		case DIR_NORTH:
-		case DIR_SOUTH:
-			ret = telescope_stop_move (dir);
-			if (ret)
-				return ret;
-			return Telescope::stopGuide (dir);
-	}
-	return -2;
-}
-
-
-int
-Gemini::stopGuideAll ()
-{
-	telescope_stop_goto ();
-	return Telescope::stopGuideAll ();
-}
-
-
-int
-Gemini::getFlip ()
+int Gemini::getFlip ()
 {
 	int32_t raTick, decTick;
 	int ret;
@@ -2551,9 +2356,7 @@ Gemini::getFlip ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
 	Gemini device = Gemini (argc, argv);
 	return device.run ();

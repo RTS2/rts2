@@ -64,8 +64,7 @@ class ScriptExec:public Rts2Client, public Rts2ScriptInterface
 
 		virtual int findScript (std::string deviceName, std::string & buf);
 
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn,
-			int other_device_type);
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 
 		virtual void postEvent (Rts2Event * event);
 

@@ -18,18 +18,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "config.h"
-#include <deque>
+#include "xmlrpcd.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/recvals.h"
 #include "../utilsdb/records.h"
 #include "../utilsdb/recordsavg.h"
 #include "../utilsdb/rts2devicedb.h"
-#include "../utilsdb/rts2imgset.h"
+#include "../utilsdb/imageset.h"
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2messagedb.h"
-#include "../utilsdb/rts2targetset.h"
+#include "../utilsdb/targetset.h"
 #include "../utilsdb/rts2user.h"
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
@@ -48,23 +47,26 @@ using namespace Magick;
 #include "../utils/timestamp.h"
 #include "../utils/error.h"
 #include "../writers/rts2image.h"
-#include "xmlrpc++/XmlRpc.h"
 #include "xmlstream.h"
-#include "session.h"
-#include "events.h"
+#include "augerreq.h"
+#include "nightreq.h"
+#include "obsreq.h"
+#include "targetreq.h"
+#include "imgpreview.h"
+#include "devicesreq.h"
+#include "planreq.h"
 
 #include "r2x.h"
 
-#include <dirent.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #define OPT_STATE_CHANGE        OPT_LOCAL + 76
+#define OPT_NO_EMAILS           OPT_LOCAL + 77
 
 using namespace XmlRpc;
-using namespace rts2xml;
 
 /**
  * @file
@@ -78,152 +80,32 @@ using namespace rts2xml;
  */
 XmlRpcServer xmlrpc_server;
 
-namespace rts2xmlrpc
-{
-
-/**
- * XML-RPC client class. Provides functions for XML-RPCd to react on state
- * and value changes.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- *
- * @addgroup XMLRPC
- */
-class XmlDevClient:public Rts2DevClient
-{
-	public:
-		XmlDevClient (Rts2Conn *conn):Rts2DevClient (conn)
-		{
-
-		}
-
-		virtual void stateChanged (Rts2ServerState * state);
-
-		virtual void valueChanged (Rts2Value * value);
-};
-
-
-/**
- * XML-RPC daemon class.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- *
- * @addgroup XMLRPC
- */
-#ifdef HAVE_PGSQL
-class XmlRpcd:public Rts2DeviceDb
-#else
-class XmlRpcd:public Rts2Device
-#endif
-{
-	private:
-		int rpcPort;
-		const char *stateChangeFile;
-		std::map <std::string, Session*> sessions;
-
-		std::deque <Rts2Message> messages;
-
-		Events events;
-
-#ifndef HAVE_PGSQL
-		const char *config_file;
-#endif
-
-		std::string page_prefix;
-
-	protected:
-#ifndef HAVE_PGSQL
-		virtual int willConnect (Rts2Address * _addr);
-#endif
-		virtual int processOption (int in_opt);
-		virtual int init ();
-		virtual void addSelectSocks ();
-		virtual void selectSuccess ();
-
-		virtual void signaledHUP ();
-
-	public:
-		XmlRpcd (int argc, char **argv);
-		virtual ~XmlRpcd ();
-
-		virtual Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-
-		void stateChangedEvent (Rts2Conn *conn, Rts2ServerState *new_state);
-
-		void valueChangedEvent (Rts2Conn *conn, Rts2Value *new_value);
-
-		virtual void message (Rts2Message & msg);
-
-		/**
-		 * Create new session for given user.
-		 *
-		 * @param _username  Name of the user.
-		 * @param _timeout   Timeout in seconds for session validity.
-		 *
-		 * @return String with session ID.
-		 */
-		std::string addSession (std::string _username, time_t _timeout);
-
-
-		/**
-		 * Returns true if session with a given sessionId exists.
-		 *
-		 * @param sessionId  Session ID.
-		 *
-		 * @return True if session with a given session ID exists.
-		 */
-		bool existsSession (std::string sessionId);
-
-		/**
-		 * Returns messages buffer.
-		 */
-		std::deque <Rts2Message> & getMessages ()
-		{
-			return messages;
-		}
-
-		/**
-		 * Return prefix for generated pages - usefull for pages behind proxy.
-		 */
-		const char* getPagePrefix ()
-		{
-			return page_prefix.c_str ();
-		}
-
-};
-
-};
-
 using namespace rts2xmlrpc;
 
-void
-XmlDevClient::stateChanged (Rts2ServerState * state)
+void XmlDevClient::stateChanged (Rts2ServerState * state)
 {
 	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
-	Rts2DevClient::stateChanged (state);
+	rts2core::Rts2DevClient::stateChanged (state);
 }
 
-void
-XmlDevClient::valueChanged (Rts2Value * value)
+void XmlDevClient::valueChanged (Rts2Value * value)
 {
 	((XmlRpcd *)getMaster ())->valueChangedEvent (getConnection (), value);
-	Rts2DevClient::valueChanged (value);
+	rts2core::Rts2DevClient::valueChanged (value);
 }
 
 #ifndef HAVE_PGSQL
-int
-XmlRpcd::willConnect (Rts2Address *_addr)
+int XmlRpcd::willConnect (Rts2Address *_addr)
 {
-       if (_addr->getType () < getDeviceType ()
-                || (_addr->getType () == getDeviceType ()
-                && strcmp (_addr->getName (), getDeviceName ()) < 0))
-                return 1;
-        return 0;
+	if (_addr->getType () < getDeviceType ()
+		|| (_addr->getType () == getDeviceType ()
+		&& strcmp (_addr->getName (), getDeviceName ()) < 0))
+		return 1;
+	return 0;
 }
 #endif
 
-int
-XmlRpcd::processOption (int in_opt)
+int XmlRpcd::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -232,6 +114,9 @@ XmlRpcd::processOption (int in_opt)
 			break;
 		case OPT_STATE_CHANGE:
 			stateChangeFile = optarg;
+			break;
+		case OPT_NO_EMAILS:
+			send_emails->setValueBool (false);
 			break;
 #ifdef HAVE_PGSQL
 		default:
@@ -247,9 +132,7 @@ XmlRpcd::processOption (int in_opt)
 	return 0;
 }
 
-
-int
-XmlRpcd::init ()
+int XmlRpcd::init ()
 {
 	int ret;
 #ifdef HAVE_PGSQL
@@ -280,6 +163,9 @@ XmlRpcd::init ()
 		}
 	}
 
+	for (std::vector <DirectoryMapping>::iterator iter = events.dirs.begin (); iter != events.dirs.end (); iter++)
+		directories.push_back (new Directory (iter->getTo (), iter->getPath (), &xmlrpc_server));
+
 	setMessageMask (MESSAGE_MASK_ALL);
 
 #ifndef HAVE_PGSQL
@@ -293,9 +179,7 @@ XmlRpcd::init ()
 	return ret;
 }
 
-
-void
-XmlRpcd::addSelectSocks ()
+void XmlRpcd::addSelectSocks ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::addSelectSocks ();
@@ -305,9 +189,7 @@ XmlRpcd::addSelectSocks ()
 	xmlrpc_server.addToFd (&read_set, &write_set, &exp_set);
 }
 
-
-void
-XmlRpcd::selectSuccess ()
+void XmlRpcd::selectSuccess ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
@@ -317,9 +199,7 @@ XmlRpcd::selectSuccess ()
 	xmlrpc_server.checkFd (&read_set, &write_set, &exp_set);
 }
 
-
-void
-XmlRpcd::signaledHUP ()
+void XmlRpcd::signaledHUP ()
 {
 #ifdef HAVE_PGSQL
 	Rts2DeviceDb::selectSuccess ();
@@ -334,13 +214,17 @@ XmlRpcd::signaledHUP ()
 }
 
 #ifdef HAVE_PGSQL
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2DeviceDb (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #else
-XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SOAP, "XMLRPC")
+XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XMLRPC, "XMLRPC"), events (this)
 #endif
 {
 	rpcPort = 8889;
 	stateChangeFile = NULL;
+
+	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
+	send_emails->setValueBool (true);
+
 #ifndef HAVE_PGSQL
 	config_file = NULL;
 
@@ -348,12 +232,16 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_SO
 #endif
 	addOption ('p', NULL, 1, "XML-RPC port. Default to 8889");
 	addOption (OPT_STATE_CHANGE, "event-file", 1, "event changes file, list commands which are executed on state change");
+	addOption (OPT_NO_EMAILS, "no-emails", 0, "do not send emails");
 	XmlRpc::setVerbosity (0);
 }
 
 
 XmlRpcd::~XmlRpcd ()
 {
+	for (std::vector <Directory *>::iterator id = directories.begin (); id != directories.end (); id++)
+		delete *id;
+
 	for (std::map <std::string, Session *>::iterator iter = sessions.begin (); iter != sessions.end (); iter++)
 	{
 		delete (*iter).second;
@@ -361,16 +249,12 @@ XmlRpcd::~XmlRpcd ()
 	sessions.clear ();
 }
 
-
-Rts2DevClient *
-XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient * XmlRpcd::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	return new XmlDevClient (conn);
 }
 
-
-void
-XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
+void XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -384,9 +268,7 @@ XmlRpcd::stateChangedEvent (Rts2Conn * conn, Rts2ServerState * new_state)
 	}
 }
 
-
-void
-XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
+void XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 {
 	double now = getNow ();
 	// look if there is some state change command entry, which match us..
@@ -398,7 +280,7 @@ XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 		{
 			try
 			{
-				vc->run (this, new_value, now);
+				vc->run (new_value, now);
 				vc->runSuccessfully (now);
 			}
 			catch (rts2core::Error err)
@@ -409,9 +291,7 @@ XmlRpcd::valueChangedEvent (Rts2Conn * conn, Rts2Value * new_value)
 	}
 }
 
-
-void
-XmlRpcd::message (Rts2Message & msg)
+void XmlRpcd::message (Rts2Message & msg)
 {
 // log message to DB, if database is present
 #ifdef HAVE_PGSQL
@@ -429,18 +309,14 @@ XmlRpcd::message (Rts2Message & msg)
 	messages.push_back (msg);
 }
 
-
-std::string
-XmlRpcd::addSession (std::string _username, time_t _timeout)
+std::string XmlRpcd::addSession (std::string _username, time_t _timeout)
 {
 	Session *s = new Session (_username, time(NULL) + _timeout);
 	sessions[s->getSessionId()] = s;
 	return s->getSessionId ();
 }
 
-
-bool
-XmlRpcd::existsSession (std::string sessionId)
+bool XmlRpcd::existsSession (std::string sessionId)
 {
 	std::map <std::string, Session*>::iterator iter = sessions.find (sessionId);
 	if (iter == sessions.end ())
@@ -449,7 +325,6 @@ XmlRpcd::existsSession (std::string sessionId)
 	}
 	return true;
 }
-
 
 /**
  * Return session ID for user, if login is allowed.
@@ -490,196 +365,6 @@ class Login: public XmlRpcServerMethod
 			return std::string ("Return session ID for user if logged properly");
 		}
 } login(&xmlrpc_server);
-
-class GetRequestAuthorized: public XmlRpcServerGetRequest
-{
-	public:
-		GetRequestAuthorized (const char* prefix, XmlRpcServer* s):XmlRpcServerGetRequest (prefix, s)
-		{
-		}
-
-		virtual void execute (const char* path, int &http_code, const char* &response_type, char* &response, int &response_length)
-		{
-
-			if (getUsername () == std::string ("session_id"))
-			{
-				if (((XmlRpcd *) getMasterApp ())->existsSession (getPassword ()) == false)
-				{
-					authorizePage (http_code, response_type, response, response_length);
-					return;
-				}
-			}
-
-#ifdef HAVE_PGSQL
-			if (verifyUser (getUsername (), getPassword ()) == false)
-			{
-				authorizePage (http_code, response_type, response, response_length);
-				return;
-			}
-#else
-			if (! (getUsername() ==  std::string ("petr") && getPassword() == std::string ("test")))
-			{
-				authorizePage (http_code, response_type, response, response_length);
-				return;
-			}
-#endif /* HAVE_PGSQL */
-			http_code = HTTP_OK;
-
-			authorizedExecute (path, response_type, response, response_length);
-		}
-
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length) = 0;
-};
-
-
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
-
-class JpegImageRequest: public GetRequestAuthorized
-{
-	public:
-		JpegImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s)
-		{
-		}
-
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
-		{
-			response_type = "image/jpeg";
-			Rts2Image image (path, false, true);
-			Blob blob;
-			Magick::Image mimage = image.getMagickImage ();
-			mimage.fillColor (Magick::Color (0, 0, 0));
-			mimage.draw (Magick::DrawableRectangle (5, image.getHeight () - 30, image.getWidth () - 10, image.getHeight () - 5));
-
-			mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-			mimage.draw (Magick::DrawableText (10, image.getHeight () - 10, image.expand ("%Y-%m-%d %H:%M:%S @OBJECT")));
-
-			mimage.write (&blob, "jpeg");
-			response_length = blob.length();
-			response = new char[response_length];
-			memcpy (response, blob.data(), response_length);
-		}
-} jpegRequest ("/jpeg", &xmlrpc_server);
-
-class JpegPreview:public GetRequestAuthorized
-{
-	public:
-		JpegPreview (const char* prefix, XmlRpcServer *s):GetRequestAuthorized (prefix, s)
-		{
-		}
-
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
-		{
-			// if it is a fits file..
-			if (strstr (path + strlen (path) - 6, ".fits") != NULL)
-			{
-				response_type = "image/jpeg";
-
-				Rts2Image image (path, false, true);
-				Blob blob;
-				Magick::Image mimage = image.getMagickImage ();
-				mimage.zoom (Magick::Geometry (128, 128));
-				mimage.fillColor (Magick::Color (0, 0, 0));
-				mimage.fontPointsize (10);
-				mimage.draw (Magick::DrawableRectangle (0, 116, 128, 128));
-
-				mimage.fillColor (Magick::Color (MaxRGB, MaxRGB, MaxRGB));
-				mimage.draw (Magick::DrawableText (1, 126, image.expand ("%Y-%m-%d %H:%M:%S")));
-
-				mimage.write (&blob, "jpeg");
-				response_length = blob.length();
-				response = new char[response_length];
-				memcpy (response, blob.data(), response_length);
-				return;
-			}
-			std::ostringstream _os;
-			_os << "<html><head><title>Preview of " << path << "</title></head><body>";
-
-			struct dirent **namelist;
-			int n;
-
-			int ret = chdir (path);
-			if (ret)
-			{
-			  	throw XmlRpcException ("Invalid directory");
-			}
-			n = scandir (".", &namelist, 0, alphasort);
-			if (n < 0)
-			{
-				throw XmlRpcException ("Cannot open directory");
-			}
-
-			// first show directories..
-			_os << "<p>";
-			for (int i = 0; i < n; i++)
-			{
-				char *fname = namelist[i]->d_name;
-				struct stat sbuf;
-				ret = stat (fname, &sbuf);
-				if (ret)
-					continue;
-				if (S_ISDIR (sbuf.st_mode) && strcmp (fname, ".") != 0)
-				{
-					_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/preview" << path << fname << "/'>" << fname << "</a> ";
-				}
-			}
-
-			_os << "</p><p/>\n";
-
-			for (int i = 0; i < n; i++)
-			{
-				char *fname = namelist[i]->d_name;
-				if (strstr (fname + strlen (fname) - 6, ".fits") == NULL)
-					continue;
-				std::string fpath = std::string (path) + '/' + fname;
-				_os << "<a href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg" << fpath 
-				  << "'><img width='128' height='128' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "'/></a>&nbsp;";
-				//<a href='/fits" << fpath
-				//	<< "'>FITS</a>&nbsp;<a href='/jpeg" << fpath << "'>JPEG</a></li>";
-			}
-
-			_os << "</body></html>";
-
-			response_type = "text/html";
-			response_length = _os.str ().length ();
-			response = new char[response_length];
-			memcpy (response, _os.str ().c_str (), response_length);
-		}
-} jpegPreview ("/preview", &xmlrpc_server);
-
-#endif // HAVE_LIBJPEG
-
-class FitsImageRequest:public GetRequestAuthorized
-{
-	public:
-		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s)
-		{
-		}
-
-		virtual void authorizedExecute (const char* path, const char* &response_type, char* &response, int &response_length)
-		{
-			response_type = "image/fits";
-			int f = open (path, O_RDONLY);
-			if (f == -1)
-			{
-				throw XmlRpcException ("Cannot open file");
-			}
-			struct stat st;
-			if (fstat (f, &st) == -1)
-			{
-				throw XmlRpcException ("Cannot get file properties");
-			}
-			response_length = st.st_size;
-			response = new char[response_length];
-			int ret;
-			ret = read (f, response, response_length);
-			if (ret != response_length)
-			{
-				delete[] response;
-				throw XmlRpcException ("Cannot read data");
-			}
-			close (f);
-		}
-} fitsRequest ("/fits", &xmlrpc_server);
 
 /**
  * Represents session methods. Those must be executed either with user name and
@@ -807,6 +492,32 @@ class DeviceType: public SessionMethod
 
 } deviceType (&xmlrpc_server);
 
+/**
+ * Execute command on device.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ *
+ * @addgroup XMLRPC
+ */
+class DeviceCommand: public SessionMethod
+{
+	public:
+		DeviceCommand (XmlRpcServer* s): SessionMethod (R2X_DEVICE_COMMAND, s)
+		{
+		}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue &result)
+		{
+			if (params.size () != 2)
+				throw XmlRpcException ("Device name and command (as single parameter) expected");
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+			if (conn == NULL)
+				throw XmlRpcException ("Cannot get device with name " + (std::string)params[0]);
+			conn->queCommand (new rts2core::Rts2Command (serv, ((std::string)params[1]).c_str()));
+		}
+
+} deviceCommand (&xmlrpc_server);
 
 /**
  * List device status.
@@ -815,10 +526,10 @@ class DeviceType: public SessionMethod
  *
  * @addgroup XMLRPC
  */
-class DevicesStatus: public SessionMethod
+class DeviceState: public SessionMethod
 {
 	public:
-		DevicesStatus (XmlRpcServer* s) : SessionMethod (R2X_DEVICES_STATUS, s)
+		DeviceState (XmlRpcServer* s) : SessionMethod (R2X_DEVICE_STATE, s)
 		{
 		}
 
@@ -930,7 +641,10 @@ class ListValuesDevice: public ListValues
 			// print results for single device..
 			if (params.size() == 1)
 			{
-				conn = serv->getOpenConnection (((std::string)params[0]).c_str());
+				if (((std::string) params[0]).length () == 0)
+					conn = serv->getSingleCentralConn ();
+				else
+					conn = serv->getOpenConnection (((std::string)params[0]).c_str());
 				if (!conn)
 				{
 					throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
@@ -1042,7 +756,15 @@ class GetValue: public SessionMethod
 			std::string devName = params[0];
 			std::string valueName = params[1];
 			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			Rts2Conn *conn;
+			if (devName.length () == 0)
+			{
+				conn = serv->getSingleCentralConn ();
+			}
+			else
+			{
+				conn = serv->getOpenConnection (devName.c_str ());
+			}
 			if (!conn)
 			{
 				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
@@ -1080,31 +802,23 @@ class GetValue: public SessionMethod
 		}
 } getValue (&xmlrpc_server);
 
-class SetValue: public SessionMethod
+class SessionMethodValue:public SessionMethod
 {
-	public:
-		SetValue (XmlRpcServer* s) : SessionMethod (R2X_VALUE_SET, s) {}
+	protected:
+		SessionMethodValue (const char *method, XmlRpcServer *s):SessionMethod (method, s) {}
 
-		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		void setXmlValutRts2 (Rts2Conn *conn, std::string valueName, XmlRpcValue &x_val)
 		{
-			std::string devName = params[0];
-			std::string valueName = params[1];
-			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
-			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
-			if (!conn)
-			{
-				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
-			}
-			Rts2Value *val = conn->getValue (valueName.c_str ());
-			if (!val)
-			{
-				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (devName) + "'.");
-			}
-
 			int i_val;
 			double d_val;
 			std::string s_val;
-			XmlRpcValue x_val = params[2];
+
+			Rts2Value *val = conn->getValue (valueName.c_str ());
+			if (!val)
+			{
+				throw XmlRpcException ("Cannot find value '" + std::string (valueName) + "' on device '" + std::string (conn->getName ()) + "'.");
+			}
+
 			switch (val->getValueBaseType ())
 			{
 				case RTS2_VALUE_INTEGER:
@@ -1118,7 +832,7 @@ class SetValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						i_val = atoi (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', i_val));
 					break;
 				case RTS2_VALUE_DOUBLE:
 					if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -1130,7 +844,7 @@ class SetValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						d_val = atof (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', d_val));
 					break;
 
 				case RTS2_VALUE_FLOAT:
@@ -1143,15 +857,34 @@ class SetValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						d_val = atof (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (float) d_val));
 					break;
 				case RTS2_VALUE_STRING:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2])));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val)));
 					break;
 				default:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (params[2]), true));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '=', (std::string) (x_val), true));
 					break;
 			}
+		}
+};
+
+class SetValue: public SessionMethodValue
+{
+	public:
+		SetValue (XmlRpcServer* s) : SessionMethodValue (R2X_VALUE_SET, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			std::string devName = params[0];
+			std::string valueName = params[1];
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			Rts2Conn *conn = serv->getOpenConnection (devName.c_str ());
+			if (!conn)
+			{
+				throw XmlRpcException ("Cannot find connection '" + std::string (devName) + "'.");
+			}
+			setXmlValutRts2 (conn, valueName, params[2]);
 		}
 
 		std::string help ()
@@ -1160,6 +893,35 @@ class SetValue: public SessionMethod
 		}
 
 } setValue (&xmlrpc_server);
+
+class SetValueByType: public SessionMethodValue
+{
+	public:
+		SetValueByType (XmlRpcServer* s) : SessionMethodValue (R2X_VALUE_BY_TYPE_SET, s) {}
+
+		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
+		{
+			int devType = params[0];
+			std::string valueName = params[1];
+			XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
+			connections_t::iterator iter = serv->getConnections ()->begin ();
+			serv->getOpenConnectionType (devType, iter);
+			if (iter == serv->getConnections ()->end ())
+			{
+				throw XmlRpcException ("Cannot find connection of given type");
+			}
+			for (; iter != serv->getConnections ()->end (); serv->getOpenConnectionType (devType, ++iter))
+			{
+				setXmlValutRts2 (*iter, valueName, params[2]);
+			}
+		}
+
+		std::string help ()
+		{
+			return std::string ("Set RTS2 value for device by type");
+		}
+
+} setValueByType (&xmlrpc_server);
 
 class IncValue: public SessionMethod
 {
@@ -1199,7 +961,7 @@ class IncValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						i_val = atoi (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', i_val));
 					break;
 				case RTS2_VALUE_DOUBLE:
 					if (x_val.getType () == XmlRpcValue::TypeDouble)
@@ -1211,7 +973,7 @@ class IncValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						d_val = atof (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', d_val));
 					break;
 
 				case RTS2_VALUE_FLOAT:
@@ -1224,13 +986,13 @@ class IncValue: public SessionMethod
 						s_val = (std::string) (x_val);
 						d_val = atof (s_val.c_str ());
 					}
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (float) d_val));
 					break;
 				case RTS2_VALUE_STRING:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2])));
 					break;
 				default:
-					conn->queCommand (new Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
+					conn->queCommand (new rts2core::Rts2CommandChangeValue (conn->getOtherDevClient (), valueName, '+', (std::string) (params[2]), true));
 					break;
 			}
 		}
@@ -1269,6 +1031,19 @@ class GetMessages: public SessionMethod
 		}
 } getMessages (&xmlrpc_server);
 
+#ifdef HAVE_LIBJPEG
+
+JpegImageRequest jpegRequest ("/jpeg", &xmlrpc_server);
+
+JpegPreview jpegPreview ("/preview", "/", &xmlrpc_server);
+
+DownloadRequest downloadRequest ("/download", &xmlrpc_server);
+
+CurrentPosition current ("/current", &xmlrpc_server);
+
+#endif /* HAVE_LIBJPEG */
+
+FitsImageRequest fitsRequest ("/fits", &xmlrpc_server);
 
 #ifdef HAVE_PGSQL
 /*
@@ -1281,12 +1056,14 @@ class ListTargets: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
-			Rts2TargetSet *tar_set = new Rts2TargetSet ();
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
+			tar_set->load ();
+
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
 				Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
@@ -1332,12 +1109,16 @@ class ListTargetsByType: public SessionMethod
 				target_types[j] = *(((std::string)params[j]).c_str());
 			target_types[j] = '\0';
 
-			Rts2TargetSet *tar_set = new Rts2TargetSet (target_types);
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet (target_types);
+			tar_set->load ();
+
 			double value;
 			int i = 0;
 			XmlRpcValue retVar;
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
+			double JD = ln_get_julian_from_sys ();
+
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++, i++)
 			{
 				Target *tar = (*tar_iter).second;
 				retVar["id"] = tar->getTargetID ();
@@ -1355,9 +1136,13 @@ class ListTargetsByType: public SessionMethod
 				value = tar->getLastObs();
 				retVar["last_obs"] = value;
 				struct ln_equ_posn pos;
-				tar->getPosition (&pos, ln_get_julian_from_sys ());
+				tar->getPosition (&pos, JD);
 				retVar["ra"] = pos.ra;
 				retVar["dec"] = pos.dec;
+				struct ln_hrz_posn hrz;
+				tar->getAltAz (&hrz, JD);
+				retVar["alt"] = hrz.alt;
+				retVar["az"] = hrz.az;
 				result[i++] = retVar;
 			}
 		}
@@ -1385,12 +1170,12 @@ class TargetInfo: public SessionMethod
 			for (i = 0; i < params.size(); i++)
 				targets.push_back (params[i]);
 
-			Rts2TargetSet *tar_set;
-			tar_set = new Rts2TargetSet (targets);
+			rts2db::TargetSet *tar_set = new rts2db::TargetSet ();
+			tar_set->load (targets);
 
 			i = 0;
 
-			for (Rts2TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
+			for (rts2db::TargetSet::iterator tar_iter = tar_set->begin(); tar_iter != tar_set->end (); tar_iter++)
 			{
 				JD = ln_get_julian_from_sys ();
 
@@ -1400,10 +1185,10 @@ class TargetInfo: public SessionMethod
 				xs << *tar;
 
 				// observations
-				rts2db::ObservationSet *obs_set;
-				obs_set = new rts2db::ObservationSet (tar->getTargetID ());
+				rts2db::ObservationSet obs_set;
+				obs_set.loadTarget (tar->getTargetID ());
 				int j = 0;
-				for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, j++)
+				for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, j++)
 				{
 					retVar["observation"][j]["obsid"] =  (*obs_iter).getObsId();
 					retVar["observation"][j]["images"] = (*obs_iter).getNumberOfImages();
@@ -1425,9 +1210,9 @@ class TargetAltitude: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size () != 4)
-			{
 				throw XmlRpcException ("Invalid number of parameters");
-			}
+			if (((int) params[0]) < 0)
+				throw XmlRpcException ("Target id < 0");
 			Target *tar = createTarget ((int) params[0], Rts2Config::instance()->getObserver ());
 			if (tar == NULL)
 			{
@@ -1468,11 +1253,11 @@ class ListTargetObservations: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
-			rts2db::ObservationSet *obs_set;
-			obs_set = new rts2db::ObservationSet ((int)params[0]);
+			rts2db::ObservationSet obs_set;
+			obs_set.loadTarget ((int)params[0]);
 			int i = 0;
 			time_t t;
-			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
 				retVar["obs_ra"] = (*obs_iter).getObsRa();
@@ -1501,12 +1286,19 @@ class ListMonthObservations: public SessionMethod
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
+			int y = params[0];
+			int m = params[1];
+
 			XmlRpcValue retVar;
-			rts2db::ObservationSet *obs_set;
-			obs_set = new rts2db::ObservationSet ((int)params[0], (int)params[1]);
+			rts2db::ObservationSet obs_set;
+
+			time_t from = Rts2Config::instance ()->getNight (y, m, 1);
+			time_t to = Rts2Config::instance ()->getNight (y, m + 1, 1);
+			obs_set.loadTime (&from, &to);
+
 			int i = 0;
 			time_t t;
-			for (rts2db::ObservationSet::iterator obs_iter = obs_set->begin(); obs_iter != obs_set->end(); obs_iter++, i++)
+			for (rts2db::ObservationSet::iterator obs_iter = obs_set.begin(); obs_iter != obs_set.end(); obs_iter++, i++)
 			{
 				retVar["id"] = (*obs_iter).getObsId();
 				retVar["tar_id"] = (*obs_iter).getTargetId ();
@@ -1537,13 +1329,13 @@ class ListImages: public SessionMethod
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			XmlRpcValue retVar;
-			Rts2Obs *obs;
-			obs = new Rts2Obs ((int)params[0]);
+			rts2db::Observation *obs;
+			obs = new rts2db::Observation ((int)params[0]);
 			if (obs->loadImages ())
 				return;
-			Rts2ImgSet *img_set = obs->getImageSet();
+			rts2db::ImageSet *img_set = obs->getImageSet();
 			int i = 0;
-			for (Rts2ImgSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
+			for (rts2db::ImageSet::iterator img_iter = img_set->begin(); img_iter != img_set->end(); img_iter++)
 			{
 				double eRa, eDec, eRad;
 				eRa = eDec = eRad = nan ("f");
@@ -1695,6 +1487,28 @@ class RecordsAverage: public SessionMethod
 		}
 } recordAverage (&xmlrpc_server);
 
+#ifdef HAVE_LIBJPEG
+
+Graph graph ("/graph", &xmlrpc_server);
+
+// Bind to URL /altaz class AltAzTarget to plot all ALT-AZ targets
+// Please see httpreq.[h|cpp] for its implementation
+//
+AltAzTarget altAzTarget ("/altaz", &xmlrpc_server);
+
+#endif /* HAVE_LIBJPEG */
+
+Auger auger ("/auger", &xmlrpc_server);
+
+Night night ("/nights", &xmlrpc_server);
+
+Observation observation ("/observations", &xmlrpc_server);
+
+Targets targets ("/targets", &xmlrpc_server);
+
+AddTarget addTarget ("/addtarget", &xmlrpc_server);
+
+Plan plan ("/plan", &xmlrpc_server);
 
 class UserLogin: public XmlRpcServerMethod
 {
@@ -1712,8 +1526,9 @@ class UserLogin: public XmlRpcServerMethod
 
 #endif /* HAVE_PGSQL */
 
-int
-main (int argc, char **argv)
+Devices devices ("/devices", &xmlrpc_server);
+
+int main (int argc, char **argv)
 {
 	XmlRpcd device = XmlRpcd (argc, argv);
 	return device.run ();

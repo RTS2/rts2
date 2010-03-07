@@ -1,5 +1,82 @@
+0.8.0
+=====
+
+2010-03-07
+ * 0.8.0 released
+
+2010-02-25
+ * added lib directory
+ * camera experimetal shared memory transport
+
+2010-02-20
+ * Replaced SOAP library with own simple Simbad support
+
+2010-02-17
+ * HTTP client support, -u option for rts2-xmlrclient
+
+2010-02-16
+ * added centraldN_ variables to commands excuted from XMLRPCD
+
+2010-02-06
+ * Support for MI CCD devices
+ * Added exposure_end notification to script being executed
+
+2010-01-31
+ * Flats are set with now - mitigate waiting for script ends
+
+2010-01-30
+ * Time diff is editable in rts2-mon with selection box (for selecting for how long in future should new time be)
+
+2010-01-18
+ * MPEC target field for telescope - telescope is able to calculate solar system bodies orbits
+
+2009-12-05
+ * add W for writeable values, edit only writable values
+
 0.7.5
 =====
+
+2009-11-29
+ * added gbm_enabled_above_error grbd parameter
+
+2009-11-07
+ * Added ROOT config check, rts2-fit-focus
+
+2009-11-06
+ * Support for Astronomical Research Cameras (Leech controllers)
+
+2009-11-03
+ * TRIAX monochromator support
+
+2009-11-01
+ * Check script before it is added to database
+ * Plot date ticks on graphs
+
+2009-10-24
+ * Added Markus script for focusing - rts2-autofocus
+
+2009-10-22
+ * added night statistic in imgproc - night_good,..
+ * added last good image to imgproc
+
+2009-09-22
+ * simplified the heating algorith of aag cloud/rain sensor
+ * updated the man page
+
+2009-09-13
+ * do {} while loops
+ * preview paging
+
+2009-09-12
+ * added gbm_record_above_error and gbm_error_limit parameters to rts2.ini configuration file
+ * fixed error in Rts2CameraDevClient - properly call readoutEnd
+ * added while_idle and while scripting elements
+
+2009-09-11
+ * removed scripting M (mirror) and F (filter) commands, as they are replaced with value changes
+
+2009-09-05
+ * Added after_exposure_cmd, after_exposure_cmd_timoout and after_exposure_cmd_arg parameters
 
 2009-08-10
  * XML-RPC server supports access to the images

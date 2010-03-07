@@ -1,6 +1,6 @@
 /* 
  * Utilities for data connection.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,8 +20,9 @@
 #include "rts2conn.h"
 #include "rts2data.h"
 
-int
-Rts2DataRead::readDataSize (Rts2Conn *conn)
+using namespace rts2core;
+
+int DataRead::readDataSize (Rts2Conn *conn)
 {
 	return conn->paramNextLong (&binaryReadChunkSize);
 }

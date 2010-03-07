@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='ISO-8859-1'?>
+<?xml version='1.0' encoding='UTF-8'?>
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
 "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
 
@@ -80,12 +80,17 @@
 
   </refsect1>
   <refsect1>
-    <title>IMPORTNAT NOTE ABOUT MULTIPLE SERVERS</title>
+    <title>IMPORTANT NOTE ABOUT MULTIPLE SERVERS</title>
     <para>
       You can specify multiple central servers using --server option. That is
       perfectly legal, but be aware, that if such device will ask central
       server for blocking information (before executing exposure, moving
-      mount,..), it will ask only the first central server.
+      mount,..), it will ask only the first central server. This is only for
+      blocking - weather and other informations will be still broadcasted to
+      all connected centrald. The first central server is the server specified
+      as the first one on command line (with --server option). If you are
+      unsure which server is it, please consult output of ps -Af or similar
+      command of your system.
     </para>
   </refsect1>
   <refsect1>
