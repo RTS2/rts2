@@ -31,7 +31,9 @@
 #include "../writers/rts2image.h"
 #include "../writers/rts2devcliimg.h"
 
+#ifdef HAVE_PGSQL
 #include "../db/simbad/simbadtarget.h"
+#endif
 
 #include "rts2nlayout.h"
 #include "rts2daemonwindow.h"
