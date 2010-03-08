@@ -110,11 +110,8 @@ DoorVermes::updateDoorStatus ()
   case DS_STOPPED_UNDEF:
     maskState (DOME_DOME_MASK, DOME_UNKNOW, "dome state is stopped, undefined") ;
     break;
-  case DS_EMERGENCY_ENDSWITCH_OPENED:
-    maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch opened is ON") ;
-    break;
-  case DS_EMERGENCY_ENDSWITCH_CLOSED:
-    maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch closed is ON") ;
+  case DS_EMERGENCY_ENDSWITCH:
+    maskState (DOME_DOME_MASK, DOME_UNKNOW, "emergency end switch opened or closed is ON") ;
     break;
   }
 }
@@ -144,11 +141,8 @@ DoorVermes::updateDoorStatusMessage ()
   case DS_RUNNING_CLOSE_UNDEFINED:
     doorStateMessage->setValueString("closing, undefined") ;
     break;
-  case DS_EMERGENCY_ENDSWITCH_OPENED:
-    doorStateMessage->setValueString("emergency end switch opened ON") ;
-    break;
-  case DS_EMERGENCY_ENDSWITCH_CLOSED:
-    doorStateMessage->setValueString("emergency end switch closed ON") ;
+  case DS_EMERGENCY_ENDSWITCH:
+    doorStateMessage->setValueString("emergency end switch ON") ;
     break;
   default:
     char msg[256] ;
@@ -258,6 +252,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE ;
+	logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: opening" << sendLog ;
 	}
       } else {
 	block_door->setValueBool(true) ;
@@ -477,6 +472,7 @@ DoorVermes::startOpen ()
 	updateDoorStatus() ;
       } else { // the real thing
 	doorEvent= EVNT_DOOR_CMD_OPEN ;
+	logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN, doorState="<<doorState<<" should be "<<DS_STOPPED_CLOSED << sendLog ;
       }
       open_door->setValueBool(true) ;
       return 0 ;

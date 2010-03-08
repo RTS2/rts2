@@ -46,8 +46,7 @@ void *move_door( void *value);
 #define DS_RUNNING_CLOSE               5
 #define DS_RUNNING_CLOSE_UNDEFINED     6
 #define DS_RUNNING_UNDEF               7
-#define DS_EMERGENCY_ENDSWITCH_OPENED  8
-#define DS_EMERGENCY_ENDSWITCH_CLOSED  9
+#define DS_EMERGENCY_ENDSWITCH         8
 
 // Oak sensor state
 #define EVNT_DS_OPEN_SENSOR           20
