@@ -259,7 +259,9 @@ Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in
 	old_lines = 0;
 	old_cols = 0;
 
+#ifdef HAVE_PGSQL
 	tarArg = NULL;
+#endif
 
 	addOption ('c', NULL, 0, "don't use colors");
 
@@ -288,7 +290,9 @@ Rts2NMonitor::~Rts2NMonitor (void)
 
 	delete masterLayout;
 
+#ifdef HAVE_PGSQL
 	delete tarArg;
+#endif
 }
 
 int Rts2NMonitor::repaint ()
@@ -420,12 +424,14 @@ Rts2ConnClient * Rts2NMonitor::createClientConnection (int _centrald_num, char *
 rts2core::Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	rts2core::Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
+#ifdef HAVE_PGSQL
 	if (other_device_type == DEVICE_TYPE_MOUNT && tarArg)
 	{
 		struct ln_equ_posn tarPos;
 		tarArg->getPosition (&tarPos);
 		conn->queCommand (new rts2core::Rts2CommandMove (this, (rts2core::Rts2DevClientTelescope *) retC, tarPos.ra, tarPos.dec));
 	}
+#endif
 	return retC;
 }
 

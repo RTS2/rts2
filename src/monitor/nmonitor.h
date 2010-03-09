@@ -154,8 +154,9 @@ class Rts2NMonitor:public Rts2Client
 
 		void sendCommand ();
 
+#ifdef HAVE_PGSQL
 		rts2db::SimbadTarget *tarArg;
-
+#endif
 		/**
 		 * Return connection at given number.
 		 *
