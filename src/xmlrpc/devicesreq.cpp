@@ -67,7 +67,12 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 		throw rts2core::Error ("Cannot find specified device");
 	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		_os << "<tr><td>" << (*iter)->getName () << "</td><td>" << (*iter)->getDisplayValue () << "</td></tr>\n";
+		_os << "<tr><td>";
+		if ((*iter)->isWritable ())
+			_os << "W";
+		if ((*iter)->getWriteToFits ())
+			_os << "r";
+		_os << "</td><td>" << (*iter)->getName () << "</td><td>" << (*iter)->getDisplayValue () << "</td></tr>\n";
 	}
 
 	_os << "\n</table></body></html>";
