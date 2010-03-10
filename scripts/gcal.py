@@ -129,7 +129,7 @@ def main():
 
   # parse command line options
   try:
-    opts, args = getopt.getopt(sys.argv[1:], "", ["user=", "pw=", "delete="])
+    opts, args = getopt.getopt(sys.argv[1:], "", ["user=", "pw=", "title=", "event=", "place=", "end="])
   except getopt.error, msg:
     print ('python calendarExample.py --user [username] --pw [password] ' + 
         '--title [title] --event [event] --place [place] --end [end date]')
@@ -158,15 +158,15 @@ def main():
     elif o == "--place":
       place = a
     elif o == "--end":
-      end = a
+      end = time.gmtime(time.time() + int(a))
 
-  if user == '' or pw == '' or tilte == '' or event == '' or place == '' or end == '':
+  if user == '' or pw == '' or title == '' or event == '' or place == '' or end == '':
     print ('python calendarExample.py --user [username] --pw [password] ' + 
         '--title [title] --event [event] --place [place] -- end [end date]')
     sys.exit(2)
 
   sample = CalendarExample(user, pw)
-  see = self._InsertSingleEvent(title, event, place, start, end)
+  see = sample._InsertSingleEvent(title, event, place, time.strftime('%Y-%m-%dT%H:%M:%S.000Z', start), time.strftime('%Y-%m-%dT%H:%M:%S.000Z', end))
 
 if __name__ == '__main__':
   main()
