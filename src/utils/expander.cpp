@@ -248,7 +248,7 @@ std::string Expander::expand (std::string expression)
 				// that one enables to copy values from image header to expr
 			case '@':
 				exp = "";
-				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-' || (*iter) == '.'); iter++)
+				for (iter++; iter != expression.end () && (isalnum (*iter) || (*iter) == '_' || (*iter) == '-'); iter++)
 					exp += *iter;
 				iter--;
 				ret += expandVariable (exp);
