@@ -234,16 +234,22 @@ int Fram::getWDCTemp (int id)
 int Fram::changeMasterState (int new_state)
 {
 
-	if ((new_state & SERVERD_STANDBY_MASK) == SERVERD_STANDBY
-		|| (new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF
-		|| (new_state & SERVERD_STANDBY_MASK) == SERVERD_HARD_OFF)
+	if ((new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
 	{
-		if (extraSwitch)
-			extraSwitch->ZAP (SWITCH_BATBACK);
+		switch (new_state & SERVERD_STATUS_MASK)
+		{
+			case SERVERD_DUSK:
+			case SERVERD_NIGHT:
+			case SERVERD_DAWN:
+				if (extraSwitch)
+					extraSwitch->VYP (SWITCH_BATBACK);
+				return Sensor::changeMasterState (new_state);
+			default:
+				break;
+		}
 	}
-	else
-		if (extraSwitch)
-			extraSwitch->VYP (SWITCH_BATBACK);
+	if (extraSwitch)
+		extraSwitch->ZAP (SWITCH_BATBACK);
 	return Sensor::changeMasterState (new_state);
 }
 
@@ -281,7 +287,7 @@ int Fram::init ()
 
 		extraSwitch->VYP (SWITCH_BATBACK);
 
-		createValue (switchBatBack, "bat_backup", "state of batter backup switch", false, RTS2_VALUE_WRITABLE);
+		createValue (switchBatBack, "bat_backup", "state of batery backup switch", false, RTS2_VALUE_WRITABLE);
 		switchBatBack->setValueBool (false);
 
 		createValue (plug1, "plug_1", "1st plug", false, RTS2_VALUE_WRITABLE);

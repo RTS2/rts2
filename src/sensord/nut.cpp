@@ -38,7 +38,6 @@ namespace rts2sensord
 		private:
 			std::string upsName;
 
-			template <typename t> void getVal (const char *var, t &val);
 		public:
 			/**
 			 * Create new connection to NUT UPS daemon.
@@ -63,6 +62,8 @@ namespace rts2sensord
 
 			void getValue (const char *var, Rts2ValueInteger *value);
 			void getValue (const char *var, Rts2ValueString *value);
+
+			template <typename t> void getVal (const char *var, t &val);
 	};
 
 	/**
@@ -234,11 +235,11 @@ int NUT::processOption (int opt)
 	return 0;
 }
 
-
-int
-NUT::init ()
+int NUT::init ()
 {
   	int ret;
+	int vi;
+	float vf;
 	ret = SensorWeather::init ();
 	if (ret)
 		return ret;
@@ -253,6 +254,27 @@ NUT::init ()
 	
 	connNUT->getValue ("ups.model", model);
 
+	try {
+		connNUT->getVal ("ups.load", vf);
+		createValue (loadpct, "ups.load", "UPS load", false);
+	} catch (rts2core::Error er) {
+		logStream (MESSAGE_DEBUG) << "ups.load value does not exist" << sendLog;
+	}
+
+	try {
+		connNUT->getVal ("battery.charge", vf);
+		createValue (bcharge, "battery.charge", "battery charge", false);
+	} catch (rts2core::Error er) {
+		logStream (MESSAGE_DEBUG) << "battery.charge value does not exist" << sendLog;
+	}
+
+	try {
+		connNUT->getVal ("battery.runtime", vi);
+		createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
+	} catch (rts2core::Error er) {
+		logStream (MESSAGE_DEBUG) << "battery.runtime value does not exist" << sendLog;
+	}
+
 	setIdleInfoInterval (10);
 	return 0;
 }
@@ -261,9 +283,12 @@ int NUT::info ()
 {
 	try
 	{
-		connNUT->getValue ("ups.load", loadpct);
-		connNUT->getValue ("battery.charge", bcharge);
-		connNUT->getValue ("battery.runtime", bruntime);
+		if (loadpct)
+			connNUT->getValue ("ups.load", loadpct);
+		if (bcharge)
+			connNUT->getValue ("battery.charge", bcharge);
+		if (bruntime)
+			connNUT->getValue ("battery.runtime", bruntime);
 		connNUT->getValue ("ups.status", upsstatus);
 	}
 	catch (rts2core::ConnError err)
@@ -274,13 +299,13 @@ int NUT::info ()
 
 	// perform variable checks..
 	
-	if (bcharge->getValueFloat () < minbcharge->getValueFloat ())
+	if (bcharge && bcharge->getValueFloat () < minbcharge->getValueFloat ())
 	{
 	 	logStream (MESSAGE_WARNING) << "battery charge too low: " << bcharge->getValueFloat () << " < " << minbcharge->getValueFloat () << sendLog;
 		setWeatherTimeout (1200, "low battery charge");
 	}
 
-	if (bruntime->getValueInteger () < mintimeleft->getValueInteger ())
+	if (bruntime && bruntime->getValueInteger () < mintimeleft->getValueInteger ())
 	{
 	 	logStream (MESSAGE_WARNING) << "minimal battery time too low: " << bruntime->getValueInteger () << " < " << mintimeleft->getValueInteger () << sendLog;
 		setWeatherTimeout (1200, "low minimal battery time");
@@ -317,14 +342,14 @@ NUT::NUT (int argc, char **argv):SensorWeather (argc, argv)
 	upsName = NULL;
 	connNUT = NULL;
 
+	loadpct = NULL;
+	bcharge = NULL;
+	bruntime = NULL;
+
   	createValue (model, "ups.model", "UPS mode", false);
-	createValue (loadpct, "ups.load", "UPS load", false);
-	createValue (bcharge, "battery.charge", "battery charge", false);
-	createValue (bruntime, "battery.runtime", "time left for on-UPS operations", false);
+	createValue (upsstatus, "ups.status", "UPS status", false);
 
 	createValue (onbatterytimeout, "on_battery", "Till this time we are allowed to run even on battery", false);
-
-	createValue (upsstatus, "ups.status", "UPS status", false);
 
 	createValue (minbcharge, "min_bcharge", "minimal battery charge for opening", false, RTS2_VALUE_WRITABLE);
 	minbcharge->setValueFloat (50);
