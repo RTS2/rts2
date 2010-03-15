@@ -248,11 +248,6 @@ int NUT::init ()
 	ret = connNUT->init ();
 	if (ret)
 		return ret;
-	ret = info ();
-	if (ret)
-		return ret;
-	
-	connNUT->getValue ("ups.model", model);
 
 	try {
 		connNUT->getVal ("ups.load", vf);
@@ -274,6 +269,12 @@ int NUT::init ()
 	} catch (rts2core::Error er) {
 		logStream (MESSAGE_DEBUG) << "battery.runtime value does not exist" << sendLog;
 	}
+
+	connNUT->getValue ("ups.model", model);
+
+	ret = info ();
+	if (ret)
+		return ret;
 
 	setIdleInfoInterval (10);
 	return 0;
