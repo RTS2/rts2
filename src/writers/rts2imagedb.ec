@@ -479,6 +479,7 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 		}
 		catch (rts2core::Error &er)
 		{
+			logStream (MESSAGE_ERROR) << "cannot update calibration table: " << er << sendLog;
 		}
 	}
 }
