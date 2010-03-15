@@ -447,12 +447,12 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
 
       <varlistentry>
 	<term>
-      <option>FITS_DIRECTORY, file name, "/scratch/incomming/Focusing-2009-10-15"</option>
+      <option>FITS_DIRECTORY, file name, "/scratch/focus/"</option>
           </term>
 	<listitem>
 	  <para>
-             For all operations the fits files are stored and/or read from
-             FITS_DIRECTORY. In online mode make sure that the directory is empty.
+             In offline mode FITS_DIRECTORY denotes the path to the fits files to be analyzed. In online mode it is the
+             base path where subdirectories will be created of the form date/filter, e.g. 2010-03-15T17:54:01/U.
           </para>
 	</listitem>
       </varlistentry>
@@ -855,7 +855,7 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   <para>If root is installed rts2-fit-focus will be compiled and installed.</para>
   </varlistentry>
   <varlistentry>
-  <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted 
+  <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted, File::Path 
   </term>
   </varlistentry>
   <varlistentry>
