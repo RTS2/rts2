@@ -130,7 +130,14 @@ template <typename t> void ConnNUT::getVal (const char *var, t &val)
 	if (var_str != "VAR")
 	{
 		delete _is;
-		throw rts2core::ConnError (this, (std::string ("Error getting ") + var + " " + var_str).c_str ());
+		if (var_str == "ERR")
+		{
+			throw rts2core::Error ("cannot retrieve value");
+		}
+		else
+		{
+			throw rts2core::ConnError (this, (std::string ("Error getting ") + var + " " + var_str).c_str ());
+		}
 	}
 	
 	*_is >> ups_name >> var_name >> ap >> val >> ap;
