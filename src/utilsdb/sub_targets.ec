@@ -35,23 +35,17 @@ ConstTarget::ConstTarget () : Target ()
 {
 }
 
-
-ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):
-Target (in_tar_id, in_obs)
+ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
 }
 
-
-ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):
-Target (in_tar_id, in_obs)
+ConstTarget::ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos):Target (in_tar_id, in_obs)
 {
 	position.ra = pos->ra;
 	position.dec = pos->dec;
 }
 
-
-int
-ConstTarget::load ()
+int ConstTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_ra;
@@ -81,9 +75,7 @@ ConstTarget::load ()
 	return Target::load ();
 }
 
-
-int
-ConstTarget::save (bool overwrite, int tar_id)
+int ConstTarget::save (bool overwrite, int tar_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_tar_ra;
@@ -121,16 +113,12 @@ ConstTarget::save (bool overwrite, int tar_id)
 	return 0;
 }
 
-
-void
-ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void ConstTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = position;
 }
 
-
-int
-ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
 
@@ -138,9 +126,7 @@ ConstTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
-
-int
-ConstTarget::selectedAsGood ()
+int ConstTarget::selectedAsGood ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
@@ -169,18 +155,14 @@ ConstTarget::selectedAsGood ()
 	return Target::selectedAsGood ();
 }
 
-
-int
-ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
+int ConstTarget::compareWithTarget (Target * in_target, double in_sep_limit)
 {
 	struct ln_equ_posn other_position;
 	in_target->getPosition (&other_position);
 	return (getDistance (&other_position) < in_sep_limit);
 }
 
-
-void
-ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
+void ConstTarget::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 }
@@ -222,15 +204,12 @@ moveType DarkTarget::startSlew (struct ln_equ_posn *position)
 	return OBS_DONT_MOVE;
 }
 
-
 FlatTarget::FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 	setTargetName ("flat target");
 }
 
-
-void
-FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
+void FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn hrz;
@@ -241,9 +220,7 @@ FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
 
-
-int
-FlatTarget::getScript (const char *deviceName, std::string &buf)
+int FlatTarget::getScript (const char *deviceName, std::string &buf)
 {
 	int ret;
 	ret = ConstTarget::getDBScript (deviceName, buf);
@@ -254,12 +231,10 @@ FlatTarget::getScript (const char *deviceName, std::string &buf)
 	return 0;
 }
 
-
 // we will try to find target, that is among empty fields, and is at oposite location from sun
 // that target will then become our target_id, so entries in observation log
 // will refer to that id, not to generic flat target_id
-int
-FlatTarget::load ()
+int FlatTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_tar_ra;
@@ -335,9 +310,7 @@ FlatTarget::load ()
 	return ConstTarget::load ();
 }
 
-
-void
-FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	// we were loaded, or we aren't generic flat target
 	if (obs_target_id > 0 || getTargetID () != TARGET_FLAT)
@@ -346,9 +319,7 @@ FlatTarget::getPosition (struct ln_equ_posn *pos, double JD)
 	getAntiSolarPos (pos, JD);
 }
 
-
-int
-FlatTarget::considerForObserving (double JD)
+int FlatTarget::considerForObserving (double JD)
 {
 	// get new position..when new is available..
 	load ();
@@ -356,9 +327,7 @@ FlatTarget::considerForObserving (double JD)
 	return ConstTarget::considerForObserving (JD);
 }
 
-
-void
-FlatTarget::printExtra (Rts2InfoValStream & _os, double JD)
+void FlatTarget::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	ConstTarget::printExtra (_os, JD);
 	struct ln_equ_posn antisol;
@@ -370,7 +339,6 @@ FlatTarget::printExtra (Rts2InfoValStream & _os, double JD)
 		<< std::endl;
 }
 
-
 CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 	airmassPosition.ra = airmassPosition.dec = 0;
@@ -378,12 +346,10 @@ CalibrationTarget::CalibrationTarget (int in_tar_id, struct ln_lnlat_posn *in_ob
 	needUpdate = 1;
 }
 
-
 // the idea is to cover uniformly whole sky.
 // in airmass_cal_images table we have recorded previous observations
 // for frames with astrometry which contains targeted airmass
-int
-CalibrationTarget::load ()
+int CalibrationTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		double d_airmass_start;
@@ -583,9 +549,7 @@ CalibrationTarget::load ()
 	return -1;
 }
 
-
-int
-CalibrationTarget::beforeMove ()
+int CalibrationTarget::beforeMove ()
 {
 	// as calibration target can change between time we select it, let's reload us
 	if (getTargetID () == TARGET_CALIBRATION && needUpdate)
@@ -593,17 +557,13 @@ CalibrationTarget::beforeMove ()
 	return ConstTarget::beforeMove ();
 }
 
-
-int
-CalibrationTarget::endObservation (int in_next_id)
+int CalibrationTarget::endObservation (int in_next_id)
 {
 	needUpdate = 1;
 	return ConstTarget::endObservation (in_next_id);
 }
 
-
-void
-CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (obs_target_id <= 0)
 	{
@@ -613,18 +573,14 @@ CalibrationTarget::getPosition (struct ln_equ_posn *pos, double JD)
 	*pos = airmassPosition;
 }
 
-
-int
-CalibrationTarget::considerForObserving (double JD)
+int CalibrationTarget::considerForObserving (double JD)
 {
 	// load (possibly new target) before considering us..
 	load ();
 	return ConstTarget::considerForObserving (JD);
 }
 
-
-float
-CalibrationTarget::getBonus (double JD)
+float CalibrationTarget::getBonus (double JD)
 {
 	time_t now;
 	time_t t_diff;
@@ -647,14 +603,11 @@ CalibrationTarget::getBonus (double JD)
 	return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
 }
 
-
-int
-FocusingTarget::getScript (const char *device_name, std::string &buf)
+int FocusingTarget::getScript (const char *device_name, std::string &buf)
 {
 	buf = std::string (COMMAND_FOCUSING);
 	return 0;
 }
-
 
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
@@ -662,9 +615,7 @@ ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarg
 	Rts2Config::instance ()->getInteger ("observatory", "model_step_type", modelStepType);
 }
 
-
-int
-ModelTarget::load ()
+int ModelTarget::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = getTargetID ();
@@ -740,14 +691,11 @@ ModelTarget::load ()
 	return ConstTarget::load ();
 }
 
-
 ModelTarget::~ModelTarget (void)
 {
 }
 
-
-int
-ModelTarget::writeStep ()
+int ModelTarget::writeStep ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = getTargetID ();
@@ -770,9 +718,7 @@ ModelTarget::writeStep ()
 	return 0;
 }
 
-
-int
-ModelTarget::getNextPosition ()
+int ModelTarget::getNextPosition ()
 {
 	switch (modelStepType)
 	{
@@ -794,9 +740,7 @@ ModelTarget::getNextPosition ()
 	return calPosition ();
 }
 
-
-int
-ModelTarget::calPosition ()
+int ModelTarget::calPosition ()
 {
 	double m_alt;
 	switch (modelStepType)
@@ -831,18 +775,14 @@ ModelTarget::calPosition ()
 	return 0;
 }
 
-
-int
-ModelTarget::beforeMove ()
+int ModelTarget::beforeMove ()
 {
 	endObservation (-1);		 // we will not observe same model target twice
 	nullAcquired ();
 	return getNextPosition ();
 }
 
-
-moveType
-ModelTarget::afterSlewProcessed ()
+moveType ModelTarget::afterSlewProcessed ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
@@ -874,18 +814,14 @@ ModelTarget::afterSlewProcessed ()
 	return OBS_MOVE;
 }
 
-
-int
-ModelTarget::endObservation (int in_next_id)
+int ModelTarget::endObservation (int in_next_id)
 {
 	if (getObsId () > 0)
 		writeStep ();
 	return ConstTarget::endObservation (in_next_id);
 }
 
-
-void
-ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (equ_poz.ra < -10)
 	{
@@ -902,15 +838,12 @@ ModelTarget::getPosition (struct ln_equ_posn *pos, double JD)
 	*pos = equ_poz;
 }
 
-
 // pick up some opportunity target; don't pick it too often
 OportunityTarget::OportunityTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 }
 
-
-float
-OportunityTarget::getBonus (double JD)
+float OportunityTarget::getBonus (double JD)
 {
 	double retBonus = 0;
 	struct ln_hrz_posn hrz;
@@ -941,34 +874,26 @@ OportunityTarget::getBonus (double JD)
 	return ConstTarget::getBonus (JD) + retBonus;
 }
 
-
 // will pickup the Moon
 LunarTarget::LunarTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
 }
 
-
-void
-LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
+void LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	ln_get_lunar_equ_coords (JD, pos);
 }
 
-
-int
-LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	return ln_get_body_rst_horizon (JD, observer, ln_get_lunar_equ_coords, horizon, rst);
 }
 
-
-int
-LunarTarget::getScript (const char *deviceName, std::string &buf)
+int LunarTarget::getScript (const char *deviceName, std::string &buf)
 {
 	buf = std::string ("E 1");
 	return 0;
 }
-
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
@@ -983,16 +908,13 @@ TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Tar
 	swiftLastTarName = NULL;
 }
 
-
 TargetSwiftFOV::~TargetSwiftFOV (void)
 {
 	delete[] swiftName;
 	delete[] swiftLastTarName;
 }
 
-
-int
-TargetSwiftFOV::load ()
+int TargetSwiftFOV::load ()
 {
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
@@ -1110,16 +1032,12 @@ TargetSwiftFOV::load ()
 	return 0;
 }
 
-
-void
-TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetSwiftFOV::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = swiftFovCenter;
 }
 
-
-int
-TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
 
@@ -1127,9 +1045,7 @@ TargetSwiftFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
-
-moveType
-TargetSwiftFOV::afterSlewProcessed ()
+moveType TargetSwiftFOV::afterSlewProcessed ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
@@ -1157,9 +1073,7 @@ TargetSwiftFOV::afterSlewProcessed ()
 	return OBS_MOVE;
 }
 
-
-int
-TargetSwiftFOV::considerForObserving (double JD)
+int TargetSwiftFOV::considerForObserving (double JD)
 {
 	// find pointing
 	int ret;
@@ -1203,9 +1117,7 @@ TargetSwiftFOV::considerForObserving (double JD)
 	return selectedAsGood ();
 }
 
-
-int
-TargetSwiftFOV::beforeMove ()
+int TargetSwiftFOV::beforeMove ()
 {
 	// are we still the best swiftId on planet?
 	load ();
@@ -1214,9 +1126,7 @@ TargetSwiftFOV::beforeMove ()
 	return 0;
 }
 
-
-float
-TargetSwiftFOV::getBonus (double JD)
+float TargetSwiftFOV::getBonus (double JD)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
@@ -1244,9 +1154,7 @@ TargetSwiftFOV::getBonus (double JD)
 	return getTargetPriority ();
 }
 
-
-int
-TargetSwiftFOV::isContinues ()
+int TargetSwiftFOV::isContinues ()
 {
 	double ret;
 	load ();
@@ -1259,9 +1167,7 @@ TargetSwiftFOV::isContinues ()
 	return 1;
 }
 
-
-void
-TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
+void TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	double now = timetFromJD (JD);
@@ -1294,7 +1200,6 @@ TargetSwiftFOV::printExtra (Rts2InfoValStream &_os, double JD)
 	}
 }
 
-
 TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
 {
 	target_id = TARGET_INTEGRAL_FOV;
@@ -1303,14 +1208,11 @@ TargetIntegralFOV::TargetIntegralFOV (int in_tar_id, struct ln_lnlat_posn *in_ob
 	integralOnBonus = 0;
 }
 
-
 TargetIntegralFOV::~TargetIntegralFOV (void)
 {
 }
 
-
-int
-TargetIntegralFOV::load ()
+int TargetIntegralFOV::load ()
 {
 	struct ln_hrz_posn testHrz;
 	struct ln_equ_posn testEqu;
@@ -1391,16 +1293,12 @@ TargetIntegralFOV::load ()
 	return 0;
 }
 
-
-void
-TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetIntegralFOV::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	*pos = integralFovCenter;
 }
 
-
-int
-TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	struct ln_equ_posn pos;
 
@@ -1408,9 +1306,7 @@ TargetIntegralFOV::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return ln_get_object_next_rst_horizon (JD, observer, &pos, horizon, rst);
 }
 
-
-moveType
-TargetIntegralFOV::afterSlewProcessed ()
+moveType TargetIntegralFOV::afterSlewProcessed ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_obs_id;
@@ -1438,9 +1334,7 @@ TargetIntegralFOV::afterSlewProcessed ()
 	return OBS_MOVE;
 }
 
-
-int
-TargetIntegralFOV::considerForObserving (double JD)
+int TargetIntegralFOV::considerForObserving (double JD)
 {
 	// find pointing
 	int ret;
@@ -1473,9 +1367,7 @@ TargetIntegralFOV::considerForObserving (double JD)
 	return selectedAsGood ();
 }
 
-
-int
-TargetIntegralFOV::beforeMove ()
+int TargetIntegralFOV::beforeMove ()
 {
 	// are we still the best swiftId on planet?
 	load ();
@@ -1484,9 +1376,7 @@ TargetIntegralFOV::beforeMove ()
 	return 0;
 }
 
-
-float
-TargetIntegralFOV::getBonus (double JD)
+float TargetIntegralFOV::getBonus (double JD)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_tar_id = target_id;
@@ -1514,9 +1404,7 @@ TargetIntegralFOV::getBonus (double JD)
 	return 1;
 }
 
-
-int
-TargetIntegralFOV::isContinues ()
+int TargetIntegralFOV::isContinues ()
 {
 	double ret;
 	load ();
@@ -1529,9 +1417,7 @@ TargetIntegralFOV::isContinues ()
 	return 1;
 }
 
-
-void
-TargetIntegralFOV::printExtra (Rts2InfoValStream &_os, double JD)
+void TargetIntegralFOV::printExtra (Rts2InfoValStream &_os, double JD)
 {
 	Target::printExtra (_os, JD);
 	_os
@@ -1539,14 +1425,11 @@ TargetIntegralFOV::printExtra (Rts2InfoValStream &_os, double JD)
 		<< std::endl;
 }
 
-
 TargetGps::TargetGps (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
 
-
-float
-TargetGps::getBonus (double JD)
+float TargetGps::getBonus (double JD)
 {
 	// get our altitude..
 	struct ln_hrz_posn hrz;
@@ -1571,14 +1454,11 @@ TargetGps::getBonus (double JD)
 	return ConstTarget::getBonus (JD) + 20 * (hrz.alt / (90 - observer->lat + curr.dec)) + gal_ctr / 9 - numobs * 10 - numobs2 * 5;
 }
 
-
 TargetSkySurvey::TargetSkySurvey (int in_tar_id, struct ln_lnlat_posn *in_obs): ConstTarget (in_tar_id, in_obs)
 {
 }
 
-
-float
-TargetSkySurvey::getBonus (double JD)
+float TargetSkySurvey::getBonus (double JD)
 {
 	time_t now;
 	time_t start_t;
@@ -1590,22 +1470,17 @@ TargetSkySurvey::getBonus (double JD)
 	return ConstTarget::getBonus (JD) - numobs * 10;
 }
 
-
 TargetTerestial::TargetTerestial (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
 {
 }
 
-
-int
-TargetTerestial::considerForObserving (double JD)
+int TargetTerestial::considerForObserving (double JD)
 {
 	// we can obsere it any time..
 	return selectedAsGood ();
 }
 
-
-float
-TargetTerestial::getBonus (double JD)
+float TargetTerestial::getBonus (double JD)
 {
 	time_t now;
 	time_t start_t;
@@ -1639,13 +1514,10 @@ TargetTerestial::getBonus (double JD)
 	return 1;
 }
 
-
-moveType
-TargetTerestial::afterSlewProcessed ()
+moveType TargetTerestial::afterSlewProcessed ()
 {
 	return OBS_MOVE_FIXED;
 }
-
 
 TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (in_tar_id, in_obs)
 {
@@ -1656,7 +1528,6 @@ TargetPlan::TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs) : Target (i
 	nextTargetRefresh = 0;
 }
 
-
 TargetPlan::~TargetPlan (void)
 {
 	delete selectedPlan;
@@ -1665,8 +1536,7 @@ TargetPlan::~TargetPlan (void)
 
 
 // refresh next time..
-void
-TargetPlan::refreshNext ()
+void TargetPlan::refreshNext ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_next_plan_id;
@@ -1729,16 +1599,12 @@ TargetPlan::refreshNext ()
 	return;
 }
 
-
-int
-TargetPlan::load ()
+int TargetPlan::load ()
 {
 	return load (ln_get_julian_from_sys ());
 }
 
-
-int
-TargetPlan::load (double JD)
+int TargetPlan::load (double JD)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_cur_plan_id;
@@ -1873,18 +1739,14 @@ TargetPlan::load (double JD)
 	return 0;
 }
 
-
-int
-TargetPlan::getDBScript (const char *camera_name, std::string &script)
+int TargetPlan::getDBScript (const char *camera_name, std::string &script)
 {
 	if (selectedPlan)
 		return selectedPlan->getTarget()->getScript (camera_name, script);
 	return Target::getDBScript (camera_name, script);
 }
 
-
-void
-TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
+void TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	if (selectedPlan)
 	{
@@ -1898,9 +1760,7 @@ TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)
 	}
 }
 
-
-int
-TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
+int TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	if (selectedPlan)
 		return selectedPlan->getTarget()->getRST (rst, JD, horizon);
@@ -1908,18 +1768,14 @@ TargetPlan::getRST (struct ln_rst_time *rst, double JD, double horizon)
 	return 1;
 }
 
-
-int
-TargetPlan::getObsTargetID ()
+int TargetPlan::getObsTargetID ()
 {
 	if (selectedPlan)
 		return selectedPlan->getTarget()->getObsTargetID ();
 	return Target::getObsTargetID ();
 }
 
-
-int
-TargetPlan::considerForObserving (double JD)
+int TargetPlan::considerForObserving (double JD)
 {
 	int ret;
 	ret = load (JD);
@@ -1928,9 +1784,7 @@ TargetPlan::considerForObserving (double JD)
 	return Target::considerForObserving (JD);
 }
 
-
-float
-TargetPlan::getBonus (double JD)
+float TargetPlan::getBonus (double JD)
 {
 	// we have something to observe
 	if (selectedPlan)
@@ -1938,9 +1792,7 @@ TargetPlan::getBonus (double JD)
 	return 0;
 }
 
-
-int
-TargetPlan::isContinues ()
+int TargetPlan::isContinues ()
 {
 	time_t now;
 	refreshNext ();
@@ -1953,18 +1805,14 @@ TargetPlan::isContinues ()
 	return 0;
 }
 
-
-int
-TargetPlan::beforeMove ()
+int TargetPlan::beforeMove ()
 {
 	if (selectedPlan)
 		selectedPlan->getTarget ()->beforeMove ();
 	return Target::beforeMove ();
 }
 
-
-moveType
-TargetPlan::startSlew (struct ln_equ_posn *pos)
+moveType TargetPlan::startSlew (struct ln_equ_posn *pos)
 {
 	moveType ret;
 	if (selectedPlan)
@@ -1976,9 +1824,7 @@ TargetPlan::startSlew (struct ln_equ_posn *pos)
 	return Target::startSlew (pos);
 }
 
-
-void
-TargetPlan::printExtra (Rts2InfoValStream & _os, double JD)
+void TargetPlan::printExtra (Rts2InfoValStream & _os, double JD)
 {
 	Target::printExtra (_os, JD);
 	if (selectedPlan)
