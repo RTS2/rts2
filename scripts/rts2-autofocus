@@ -27,6 +27,8 @@
 use strict;
 use Getopt::Long qw(:config no_ignore_case) ;
 use Statistics::Descriptive::Weighted ;
+use File::Path ;
+use POSIX qw(strftime);
 #
 use constant TRUE_STR                   => "TRUE" ;
 use constant FALSE_STR                  => "FALSE" ;
@@ -503,6 +505,7 @@ sub get_fits_files
     my $include_auto_focus_run  = shift @_ ;
     my $auto_focus_run_extension= AUTO_FOCUS_RUN_EXTENSION ;;
 
+    $directory= "." ;
     opendir(DIR, $directory) || die "get_fits_files: can't opendir $directory: $!";
 
     my @raw_fits_files ;
@@ -640,7 +643,6 @@ sub get_fits_files
 sub get_fitted_focus
 {
     my $fltr            = shift @_ ;
-    my $fits_dir        = shift @_ ;
     my $cfg             = shift @_ ;
     my $param           = shift @_ ;
     my $reference_param = shift @_ ;
@@ -675,17 +677,16 @@ sub get_fitted_focus
     if( $fits_file_reference eq FALSE_STR)
     {
 	    print "get_fitted_focus: could not define reference fits file\n" ;
-	    exit 1 ;
+	    # NO exit 1 ;
+	    return FALSE_VAL ;
     }
     $number_of_reference_objects= analyse_catalogue( $tmp_sky_list_file_name) ;
     if( $number_of_reference_objects== 0)
     {
 	print "get_fitted_focus: no reference objects found in $fits_file_reference, see output $tmp_sky_list_file_name\n" ;
-	exit 1 ;
+	# NO treat the rest if there exit 1 ;
+	return FALSE_VAL ;
     }
-
-
-
 
     $date= $date_reference ; # ToDo: what's that
     $ret_ret= retrieve_data( $fltr, $cfg, $param, $reference_param, $sky_list, $cat, $date, $date_reference, $ds9_region_file, $find_focus,  $fits_file_reference, \%data_points) ;
@@ -972,7 +973,6 @@ sub analyse_catalogue
 sub get_foc_pos_at_maximum_number_of_objects
 {
     my $fltr                = shift @_ ;
-    my $fits_dir            = shift @_ ;
     my $cfg                 = shift @_ ;
     my $param_reference     = shift @_ ;
     my $rename              = shift @_ ;
@@ -1882,9 +1882,6 @@ unless ( -e $sexreference_param)
     print "$scriptname: not found $sexreference_param\n" ;
     exit 1;
 }
-# change to the working directory ev. write and get the list of fits files
-#
-chdir $fits_directory or die "$scriptname: can not change to directory $fits_directory: $!" ;
 
 if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
 {
@@ -2037,6 +2034,10 @@ if( $check_rts2_configuration eq TRUE_STR)
 my $fits_file_reference= FALSE_STR ;
 if( $take_data eq FALSE_STR) # offline analysis
 {
+# change to the working directory ev. write and get the list of fits files
+#
+    chdir $fits_directory or die "$scriptname: can not change to directory $fits_directory: $!" ;
+
     foreach my $filter (@filters)
     {
 	my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_auto_focus_run) ;
@@ -2046,29 +2047,42 @@ if( $take_data eq FALSE_STR) # offline analysis
 	   
 	    if( $find_focus eq TRUE_STR)
 	    {
-		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, FALSE_STR)) eq FALSE_STR) 
+		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $sexcfg, $sexreference_param, FALSE_STR)) eq FALSE_STR) 
 		{
 		    print "$scriptname: no rough focus found, exiting\n" ;
 		    exit 1 ;
 		}
 	    }
-	    $fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $find_focus, $fits_file_reference) ;
+	    $fit_focus= get_fitted_focus( $filter, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $find_focus, $fits_file_reference) ;
 	}
 	undef %fits_files ;
     }
 }
 elsif( $take_data eq TRUE_STR) # online analysis
 {
+# create and change to the working directory ev. write and get the list of fits files
+#
+    my $now_string = strftime "%Y-%m-%d-T%H:%M:%S", gmtime;
+    $fits_directory = $fits_directory . "/" . $now_string ;
+    unless ( -e $fits_directory)
+    {
+	print "$scriptname: creating path $fits_directory\n" ;
+	mkpath $fits_directory ;
+    }
+    chdir $fits_directory or die "$scriptname: can not change to directory $fits_directory: $!" ;
+
     printf( "$scriptname: data taking with devices: %s, %s, %s and filter(s): ", $rts2_device_focusd, $rts2_device_filterd, $rts2_device_camd_from_centrald) ;
     foreach my $filter (  @filters)
     {
 	printf( "$filter ") ;
+	mkpath $fits_directory . "/" . $filter;
     }
     printf( "\n") ;
 
 # ok everything is present, take data
     foreach my $filter ( @filters)
     {
+        chdir $filter ;
 	my $number_steps= 0 ;
 	if( $filter_focus_properties{$filter}[IND_STEP_SIZE] > 0)
 	{
@@ -2124,7 +2138,7 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	    if( $ret_get_fits== TRUE_VAL)
 	    {
 # the global $filter_focus_properties{$fltr}[IND_FOC_DEF] is updated
-		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $fits_directory, $sexcfg, $sexreference_param, TRUE_STR)) ne FALSE_STR ) 
+		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $sexcfg, $sexreference_param, TRUE_STR)) ne FALSE_STR ) 
 		{
 		    print "$scriptname: reference for rough focus created\n" ;
 		}
@@ -2161,9 +2175,11 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_auto_focus_run) ; # took a while
 	if( $ret_get_fits== TRUE_VAL)
 	{
-	    $fit_focus= get_fitted_focus( $filter, $fits_directory, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $find_focus, $fits_file_reference) ;
+	    $fit_focus= get_fitted_focus( $filter, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $find_focus, $fits_file_reference) ;
 	}
 	undef %fits_files ;
+
+        chdir "../" ;
     }
 }
 else
