@@ -91,9 +91,6 @@ int ConnFramWeather::receive (fd_set * set)
 			return 1;
 		}
 		Wbuf[data_size] = 0;
-		logStream (MESSAGE_DEBUG) << "readed: " << data_size << " " << Wbuf
-			<< " from " << inet_ntoa (from.sin_addr) << " " << ntohs (from.sin_port)
-			<< sendLog;
 		// parse weather info
 		ret = sscanf (Wbuf,
 			"windspeed=%f km/h rain=%i date=%i-%u-%u time=%u:%u:%lfZ status=%s",
@@ -102,13 +99,12 @@ int ConnFramWeather::receive (fd_set * set)
 			&statDate.seconds, Wstatus);
 		if (ret != 9)
 		{
-			logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret
-				<< sendLog;
+			logStream (MESSAGE_ERROR) << "sscanf on udp data returned: " << ret << sendLog;
 			int wtimeout = 3600;
 			ret = sscanf (Wbuf, "weatherTimeout=%i", &wtimeout);
 			if (ret != 1)
 			{
-				logStream (MESSAGE_ERROR) << "invalid timeout specified in weather timeout" << sendLog;
+				logStream (MESSAGE_ERROR) << "invalid timeout specified in weather timeout, invalid data" << Wbuf << sendLog;
 				master->setWeatherTimeout (wtimeout, "cannot parse weatherTimeout");
 			}
 			master->setWeatherTimeout (wtimeout, "cannot parse packet from weather station");
@@ -118,9 +114,6 @@ int ConnFramWeather::receive (fd_set * set)
 			master->infoAll ();
 			return data_size;
 		}
-		logStream (MESSAGE_DEBUG) << "windspeed: " << windspeed << " rain: " << rain
-			<< " date: " << LibnovaDate (&statDate) << " status: " << Wstatus
-			<< sendLog;
 		master->setWeather (windspeed, rain, Wstatus, &statDate);
 
 		// ack message
