@@ -232,8 +232,8 @@ Rts2ImageSkyDb::updateDB ()
 	strncpy (d_img_filter.arr, getFilter(), d_img_filter.len);
 
 	d_img_exposure = getExposureLength ();
-	getValue ("ALT", d_img_alt);
-	getValue ("AZ", d_img_az);
+	getValue ("TEL_ALT", d_img_alt);
+	getValue ("TEL_AZ", d_img_az);
 
 	getValueInd ("CCD_TEMP", d_img_temperature, d_img_temperature_ind);
 	getValueInd ("FWHM", d_img_fwhm, d_img_fwhm_ind);
@@ -426,7 +426,7 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 	{
 		try
 		{
-			getValue ("ALT", img_alt);
+			getValue ("TEL_ALT", img_alt);
 			db_airmass = ln_get_airmass (img_alt, 750.0);
 			db_air_last_image = getExposureSec ();
 			// delete - unset our old references (if any exists..)
