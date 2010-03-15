@@ -1,20 +1,22 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+# Copyright (C) 2007 Google Inc.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+__author__ = 'api.rboyd@gmail.com (Ryan Boyd)'
+
 
 try:
   from xml.etree import ElementTree
@@ -31,30 +33,85 @@ import string
 import time
 import os
 
-class Rts2GoogleCalendar
+
+class CalendarExample:
 
   def __init__(self, email, password):
-    """Creates a CalendarService and provides ClientLogin auth details to it."""
+    """Creates a CalendarService and provides ClientLogin auth details to it.
+    The email and password are required arguments for ClientLogin.  The 
+    CalendarService automatically sets the service to be 'cl', as is 
+    appropriate for calendar.  The 'source' defined below is an arbitrary 
+    string, but should be used to reference your name or the name of your
+    organization, the app name and version, with '-' between each of the three
+    values.  The account_type is specified to authenticate either 
+    Google Accounts or Google Apps accounts.  See gdata.service or 
+    http://code.google.com/apis/accounts/AuthForInstalledApps.html for more
+    info on ClientLogin.  NOTE: ClientLogin should only be used for installed 
+    applications and not for multi-user web applications."""
+
     self.cal_client = gdata.calendar.service.CalendarService()
     self.cal_client.email = email
     self.cal_client.password = password
     self.cal_client.source = 'RTS2-0.8'
     self.cal_client.ProgrammaticLogin()
 
-  def _Rts2Event(self, title, content, where, start_time, end_time):
-    """Inserts new RTS2 event. Returns event reference, which can be used
-    for modification of the event."""
+  def _InsertEvent(self, title='Tennis with Beth', 
+      content='Meet for a quick lesson', where='On the courts',
+      start_time=None, end_time=None, recurrence_data=None):
+    """Inserts a basic event using either start_time/end_time definitions
+    or gd:recurrence RFC2445 icalendar syntax.  Specifying both types of
+    dates is not valid.  Note how some members of the CalendarEventEntry
+    class use arrays and others do not.  Members which are allowed to occur
+    more than once in the calendar or GData "kinds" specifications are stored
+    as arrays.  Even for these elements, Google Calendar may limit the number
+    stored to 1.  The general motto to use when working with the Calendar data
+    API is that functionality not available through the GUI will not be 
+    available through the API.  Please see the GData Event "kind" document:
+    http://code.google.com/apis/gdata/elements.html#gdEventKind
+    for more information"""
+    
     event = gdata.calendar.CalendarEventEntry()
     event.title = atom.Title(text=title)
     event.content = atom.Content(text=content)
     event.where.append(gdata.calendar.Where(value_string=where))
-    event.when.append(gdata.calendar.When(start_time=start_time, end_time=end_time))
-    new_event = self.cal_client.InsertEvent(event, '/calendar/feeds/default/private/full')
+
+    if recurrence_data is not None:
+      # Set a recurring event
+      event.recurrence = gdata.calendar.Recurrence(text=recurrence_data)
+    else:
+      if start_time is None:
+        # Use current time for the start_time and have the event last 1 hour
+        start_time = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+        end_time = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', 
+            time.gmtime(time.time() + 3600))
+      event.when.append(gdata.calendar.When(start_time=start_time, 
+          end_time=end_time))
+    
+    new_event = self.cal_client.InsertEvent(event, 
+        '/calendar/feeds/default/private/full')
+    
     return new_event
    
-  def _Rts2Observation(self, target_name, target_id, observation_id, start_time):
-    """Insert new observation with link to observation preview."""
-    
+  def _InsertSingleEvent(self, title='One-time Tennis with Beth',
+      content='Meet for a quick lesson', where='On the courts',
+      start_time=None, end_time=None):
+    """Uses the _InsertEvent helper method to insert a single event which
+    does not have any recurrence syntax specified."""
+
+    new_event = self._InsertEvent(title, content, where, start_time, end_time, 
+        recurrence_data=None)
+
+    print 'New single event inserted: %s' % (new_event.id.text,)
+    print '\tEvent edit URL: %s' % (new_event.GetEditLink().href,)
+    print '\tEvent HTML URL: %s' % (new_event.GetHtmlLink().href,)
+
+    return new_event
+
+  def _InsertSimpleWebContentEvent(self):
+    """Creates a WebContent object and embeds it in a WebContentLink.
+    The WebContentLink is appended to the existing list of links in the event
+    entry.  Finally, the calendar client inserts the event."""
+
     # Create a WebContent object
     url = 'http://www.google.com/logos/worldcup06.gif'
     web_content = gdata.calendar.WebContent(url=url, width='276', height='120')
@@ -102,25 +159,6 @@ class Rts2GoogleCalendar
     new_event = self.cal_client.InsertEvent(event,
         '/calendar/feeds/default/private/full')
     return new_event
-
-  def _UpdateTitle(self, event, new_title='Updated event title'):
-    """Updates the title of the specified event with the specified new_title.
-    Note that the UpdateEvent method (like InsertEvent) returns the 
-    CalendarEventEntry object based upon the data returned from the server
-    after the event is inserted.  This represents the 'official' state of
-    the event on the server.  The 'edit' link returned in this event can
-    be used for future updates.  Due to the use of the 'optimistic concurrency'
-    method of version control, most GData services do not allow you to send 
-    multiple update requests using the same edit URL.  Please see the docs:
-    http://code.google.com/apis/gdata/reference.html#Optimistic-concurrency
-    """
-
-    previous_title = event.title.text
-    event.title.text = new_title
-    print 'Updating title of event from:\'%s\' to:\'%s\'' % (
-        previous_title, event.title.text,) 
-    return self.cal_client.UpdateEvent(event.GetEditLink().href, event)
-
 
 def main():
   """Runs the CalendarExample application with the provided username and
