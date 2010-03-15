@@ -39,6 +39,10 @@ EXTRA_DIST = \
     rts2-autofocus.xml \
     rts2-talker.xml
 
+CLEANFILES = *.1 *.5 *.7
+
+if HAVE_DB2MAN
+
 man_MANS = \
     rts2.7 \
     rts2.ini.5 \
@@ -78,20 +82,9 @@ man_MANS = \
     rts2-autofocus.1 \
     rts2-talker.1
 
-doc_FOP = \
-    rts2-man.fop \
-    rts2-book.fop
-
-doc_PDF = \
-    rts2-man.pdf \
-    rts2-book.pdf
-
 XP=xsltproc --nonet
 
 DB2MAN=@DB2MAN@
-
-DB2FOP=@DB2FOP@
-FOP=fop
 
 %.1: %.xml
 	$(XP) $(DB2MAN) $<
@@ -102,7 +95,20 @@ FOP=fop
 %.7: %.xml
 	$(XP) $(DB2MAN) $<
 
-# now FOP & related activites..
+endif
+
+if HAVE_DB2FOP
+
+doc_FOP = \
+    rts2-man.fop \
+    rts2-book.fop
+
+DB2FOP=@DB2FOP@
+FOP=fop
+
+doc_PDF = \
+    rts2-man.pdf \
+    rts2-book.pdf
 
 rts2-man.fop: rts2-mon.xml
 	$(XP) $(DB2FOP) $< > $@
@@ -116,4 +122,4 @@ rts2-book.fop: rts2-book.xml
 rts2-book.pdf: rts2-book.fop
 	$(FOP) $< $@
 
-CLEANFILES = *.1 *.5 *.7
+endif

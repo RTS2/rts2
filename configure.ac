@@ -642,6 +642,9 @@ fi
 
 AM_CONDITIONAL(PGSQL, test x$psql = xyes)
 
+DB2MAN=no
+DB2FOP=no
+
 # Ubuntu docbook localization
 AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/manpages/docbook.xsl,[])
 AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl,[])
@@ -650,8 +653,15 @@ AC_CHECK_FILE([/usr/share/sgml/docbook/stylesheet/xsl/nwalsh/fo/docbook.xsl],DB2
 AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl],DB2MAN=/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl,[])
 AC_CHECK_FILE([/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl],DB2FOP=/usr/share/sgml/docbook/xsl-stylesheets/manpages/fo/docbook.xsl,[])
 
+# SUSE docbook localization
+AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl],DB2MAN=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/docbook.xsl,[])
+AC_CHECK_FILE([/usr/share/xml/docbook/stylesheet/nwalsh/current/fo/docbook.xsl],DB2FOP=/usr/share/xml/docbook/stylesheet/nwalsh/current/manpages/fo/docbook.xsl,[])
+
 AC_SUBST(DB2MAN)
 AC_SUBST(DB2FOP)
+
+AM_CONDITIONAL(HAVE_DB2MAN, test x$DB2MAN != xno)
+AM_CONDITIONAL(HAVE_DB2FOP, test x$DB2FOP != xno)
 
 AC_CONFIG_SRCDIR(src)
 AC_CONFIG_HEADER(include/config.h)
@@ -751,6 +761,10 @@ SENSOR's:
 
   lock prefix   ${LOCK_PREFIX}
   centrald port	${CENTRALD_PORT}
+
+DocBook stylesheets:
+  DB2MAN        ${DB2MAN}
+  DB2FOP        ${DB2FOP}
 
 ***************************************
 
