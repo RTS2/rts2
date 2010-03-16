@@ -1,6 +1,6 @@
 /* 
  * libnova C++ extension.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -705,16 +705,13 @@ std::ostream & operator << (std::ostream & _os, LibnovaDate l_date)
 	return _os;
 }
 
-
 std::istream & operator >> (std::istream & _is, LibnovaDate & l_date)
 {
 	char ch;
-	_is >> l_date.date.years >> ch >> l_date.date.months >> ch >> l_date.date.
-		days >> l_date.date.hours >> ch >> l_date.date.
-		minutes >> ch >> l_date.date.seconds;
+	_is >> l_date.date.years >> ch >> l_date.date.months >> ch >> l_date.date.days
+		>> l_date.date.hours >> ch >> l_date.date.minutes >> ch >> l_date.date.seconds;
 	return _is;
 }
-
 
 Rts2Night::Rts2Night (struct ln_date * ln_night, struct ln_lnlat_posn * obs)
 {

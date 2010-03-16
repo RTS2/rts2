@@ -604,6 +604,13 @@ class LibnovaDate
 			ln_get_timet_from_julian (ln_get_julian_day (&date), t);
 		}
 
+		double getDateDouble ()
+		{
+			time_t t;
+			ln_get_timet_from_julian (ln_get_julian_day (&date), &t);
+			return t + (date.seconds - ceil (date.seconds));
+		}
+
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
 		friend std::istream & operator >> (std::istream & _is,
 			LibnovaDate & l_date);
