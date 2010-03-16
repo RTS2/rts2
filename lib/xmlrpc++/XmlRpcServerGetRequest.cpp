@@ -3,9 +3,11 @@
 #include "urlencoding.h"
 #include "XmlRpcServerGetRequest.h"
 #include "XmlRpcServer.h"
+#include "../../src/utils/libnova_cpp.h"
 
 #include "string.h"
 #include <stdlib.h>
+#include <sstream>
 #include <algorithm>
 
 namespace XmlRpc
@@ -42,6 +44,17 @@ namespace XmlRpc
 		if (*v != '\0' && *err == '\0')
 			return r;
 		return def_val;
+	}
+
+	double HttpParams::getDate (const char *_name, double def_val)
+	{
+		const char *v = getString (_name, NULL);
+		if (v == NULL)
+			return def_val;
+		LibnovaDate date = LibnovaDate ();
+		std::istringstream is (v);
+		is >> date;
+		return date.getDateDouble ();
 	}
 
 	void HttpParams::parseParam (const std::string& ps)

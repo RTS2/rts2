@@ -51,6 +51,16 @@ namespace XmlRpc
 			int getInteger (const char *_name, int def_val);
 			double getDouble (const char *_name, double def_val);
 
+			/** 
+			 * Return date as double ctime.
+			 * 
+			 * @param _name  name of variable which will be returned.
+			 * @param def_val default value. You can use time(NULL) to use current time.
+			 * 
+			 * @return 
+			 */
+			double getDate (const char *_name, double def_val);
+
 			void parseParam (const std::string& ps);
 			void parse (const std::string &ps);
 	};
