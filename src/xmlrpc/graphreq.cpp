@@ -76,7 +76,7 @@ void Graph::printDevices (const char* &response_type, char* &response, size_t &r
 	{
 		_os << std::endl << "<tr><form name='fg" << i << "' action='"
 			<< iter->getDevice () << "/" << iter->getValueName () << "'><td>" << iter->getDevice () << "</td><td>"
-			<< iter->getValueName () << "</td><td><select name='t'><option value='A'>Auto</option><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='text' name='from' onfocus='showCalendarControl(this);'></td><td><input type='submit' value='Plot'/></td><td>"
+			<< iter->getValueName () << "</td><td><select name='t'><option value='A'>Auto</option><option value='c'>Cross</option><option value='l'>Lines</option><option value='L'>Sharp Lines</option></select></td><td><input type='text' name='from' onfocus='showCalendarControl(this);'/></td><td><input type='text' name='to' onfocus='showCalendarControl(this);'/></td><td><input type='submit' value='Plot'/></td><td>"
 			<< LibnovaDateDouble (iter->getFrom ()) << "</td><td>"
 			<< LibnovaDateDouble (iter->getTo ()) << "</td></form></tr>";
 	}
@@ -132,8 +132,8 @@ void Graph::plotValue (const char *device, const char *value, double from, doubl
 	
 	Magick::Geometry size (params->getInteger ("w", 800), params->getInteger ("h", 600));
 
-	from = params->getDouble ("from", from);
-	to = params->getDouble ("to", to);
+	from = params->getDate ("from", from);
+	to = params->getDate ("to", to);
 
 	if (from < 0 && to == 0)
 	{
