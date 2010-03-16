@@ -55,6 +55,8 @@ using namespace Magick;
 #include "imgpreview.h"
 #include "devicesreq.h"
 #include "planreq.h"
+#include "graphreq.h"
+#include "libjavascript.h"
 
 #include "r2x.h"
 
@@ -1044,6 +1046,8 @@ CurrentPosition current ("/current", &xmlrpc_server);
 #endif /* HAVE_LIBJPEG */
 
 FitsImageRequest fitsRequest ("/fits", &xmlrpc_server);
+
+LibJavaScript javaScriptRequests ("/js", &xmlrpc_server);
 
 #ifdef HAVE_PGSQL
 /*

@@ -1,5 +1,5 @@
-/*
- * Classes for generating pages for planning/scheduling.
+/* 
+ * JavaScript libraries for AJAX web access.
  * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
@@ -17,28 +17,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "httpreq.h"
+#ifndef __RTS2_LIBJAVASCRIPT__
+#define __RTS2_LIBJAVASCRIPT__
 
-#ifdef HAVE_PGSQL
+#include "httpreq.h"
 
 namespace rts2xmlrpc
 {
 
 /**
- * Add, modify and review scheduling.
+ * Pages with various JavaScripts.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Plan: public GetRequestAuthorized
+class LibJavaScript: public GetRequestAuthorized
 {
 	public:
-		Plan (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
+		LibJavaScript (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-	private:
-		void printScheduling (char* &response, size_t &response_length);
-		void selectNext (char* &response, size_t &response_length);
 };
 
 }
 
-#endif
+#endif // !__RTS2_LIBJAVASCRIPT__

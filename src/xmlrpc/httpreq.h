@@ -45,7 +45,13 @@ namespace rts2xmlrpc
 {
 
 /**
- * Abstract class for authorized requests.
+ * Abstract class for authorized requests. Acts similarly
+ * to servelets under JSP container. The class have method
+ * to reply to requests arriving on the incoming connection.
+ *
+ * The most important is GetRequestAuthorized::authorizedExecute method.  This
+ * is called after user properly authorised agains setup authorization
+ * mechanism.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -56,6 +62,21 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 
 		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
+		/** 
+		 * Executed after user is properly authorized.
+		 *
+		 * @brief 
+		 * 
+		 * @param path called path on server (stripped from prefix, which resulted in this object called)
+		 * @param params HTTP parameters received from client
+		 * @param response_type MIME type of the response
+		 * @param response response buffer. It must be allocated (XmlRpcServerGetRequest will free it)
+		 * @param response_length length of response buffer
+		 *
+		 * @throw rts2core::Error and its descendands
+		 *
+		 * @see GetRequestAuthorized::execute
+		 */
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
 };
 
@@ -93,24 +114,6 @@ class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
 #ifdef HAVE_PGSQL
 
 #ifdef HAVE_LIBJPEG
-
-/**
- * Draw graph of variables.
- *
- * @author Petr Kubanek <petr@kubanek.net>
- */
-class Graph: public GetRequestAuthorized
-{
-	public:
-		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
-
-		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-
-	private:
-		void printDevices (const char* &response_type, char* &response, size_t &response_length);
-
-		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
-};
 
 /**
  * Plot targets on the alt-az graph.

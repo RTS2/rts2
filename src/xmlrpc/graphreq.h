@@ -1,6 +1,6 @@
-/*
- * Classes for generating pages for planning/scheduling.
- * Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
+/* 
+ * Classes to plot graph interface.
+ * Copyright (C) 2009-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,26 +19,29 @@
 
 #include "httpreq.h"
 
-#ifdef HAVE_PGSQL
+#ifdef HAVE_LIBJPEG
 
 namespace rts2xmlrpc
 {
 
 /**
- * Add, modify and review scheduling.
+ * Draw graph of variables.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Plan: public GetRequestAuthorized
+class Graph: public GetRequestAuthorized
 {
 	public:
-		Plan (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
+		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
 	private:
-		void printScheduling (char* &response, size_t &response_length);
-		void selectNext (char* &response, size_t &response_length);
+		void printDevices (const char* &response_type, char* &response, size_t &response_length);
+
+		void plotValue (const char *device, const char *value, double from, double to, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
 }
 
-#endif
+#endif // HAVE_LIBJPEG
