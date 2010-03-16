@@ -57,6 +57,7 @@ using namespace Magick;
 #include "planreq.h"
 #include "graphreq.h"
 #include "libjavascript.h"
+#include "libcss.h"
 
 #include "r2x.h"
 
@@ -1048,6 +1049,8 @@ CurrentPosition current ("/current", &xmlrpc_server);
 FitsImageRequest fitsRequest ("/fits", &xmlrpc_server);
 
 LibJavaScript javaScriptRequests ("/js", &xmlrpc_server);
+
+LibCSS cssRequests ("/css", &xmlrpc_server);
 
 #ifdef HAVE_PGSQL
 /*
