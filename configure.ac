@@ -709,7 +709,6 @@ AC_OUTPUT([Makefile
 	   src/teld/Makefile
 	   src/teld/model/Makefile
 	   src/utils/Makefile
-           src/wcs/Makefile
 	   src/writers/Makefile
 	   src/utilsdb/Makefile
 	   src/db/Makefile

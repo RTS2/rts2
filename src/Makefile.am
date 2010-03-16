@@ -6,7 +6,6 @@ SUBDIRS = \
 	dome	\
 	focusd  \
 	mirror  \
-	wcs \
 	utilsdb \
 	writers \
 	plan \
