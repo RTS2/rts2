@@ -460,6 +460,9 @@ class Camera:public Rts2ScriptDevice
 		// temperature and others; all in deg Celsius
 		Rts2ValueFloat *tempAir;
 		Rts2ValueFloat *tempCCD;
+		Rts2ValueDoubleStat *tempCCDHistory;
+		Rts2ValueInteger *tempCCDHistoryInterval;
+		Rts2ValueInteger *tempCCDHistorySize;
 		Rts2ValueFloat *tempSet;
 
 		// night cooling temperature
@@ -656,6 +659,28 @@ class Camera:public Rts2ScriptDevice
 		 * Create value for CCD temperature sensor.
 		 */
 		void createTempCCD () { createValue (tempCCD, "CCD_TEMP", "CCD temperature"); }
+
+		/**
+		 * Create statistics value to hold array of temperatures histories.
+		 */
+		void createTempCCDHistory () {
+			createValue (tempCCDHistory, "ccd_temp_history", "history of ccd temperatures", false);
+			createValue (tempCCDHistoryInterval, "ccd_temp_interval", "interval in seconds between repeative queries of CCD temperature", false);
+			createValue (tempCCDHistorySize, "ccd_temp_size", "interval in seconds between repeative queries of CCD temperature", false);
+
+			tempCCDHistoryInterval->setValueInteger (2);
+			tempCCDHistorySize->setValueInteger (20);
+		}
+
+		/**
+		 * Add temperature to temprature history.
+		 */
+		void addTempCCDHistory (float temp);
+
+		/**
+		 * Method called every tempCCDHistoryInterval seconds to check CCD temperature.
+		 */
+		virtual void temperatureCheck () {};
 
 		/**
 		 * Create CCD target temperature. Used for devices which can

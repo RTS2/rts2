@@ -31,11 +31,13 @@
 #include "cliwheel.h"
 #include "clifocuser.h"
 
-#define OPT_FLIP     OPT_LOCAL + 401
-#define OPT_PLATE    OPT_LOCAL + 402
-#define OPT_FOCUS    OPT_LOCAL + 403
-#define OPT_WHEEL    OPT_LOCAL + 404
-#define OPT_WITHSHM  OPT_LOCAL + 405
+#define OPT_FLIP          OPT_LOCAL + 401
+#define OPT_PLATE         OPT_LOCAL + 402
+#define OPT_FOCUS         OPT_LOCAL + 403
+#define OPT_WHEEL         OPT_LOCAL + 404
+#define OPT_WITHSHM       OPT_LOCAL + 405
+
+#define EVENT_TEMP_CHECK  RTS2_LOCAL_EVENT + 676
 
 using namespace rts2camd;
 
@@ -267,6 +269,9 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	tempAir = NULL;
 	tempCCD = NULL;
+	tempCCDHistory = NULL;
+	tempCCDHistoryInterval = NULL;
+	tempCCDHistorySize = NULL;
 	tempSet = NULL;
 	nightCoolTemp = NULL;
 	ccdType[0] = '\0';
@@ -433,6 +438,9 @@ int Camera::killAll ()
 
 	waitingForNotBop->setValueBool (false);
 	sendValueAll (waitingForNotBop);
+
+	quedExpNumber->setValueInteger (0);
+	sendValueAll (quedExpNumber);
 
 	if (isExposing ())
 		stopExposure ();
@@ -675,6 +683,11 @@ int Camera::initValues ()
 		focusingHeader = (struct imghdr *) malloc (sizeof (struct imghdr));
 	}
 
+	if (tempCCDHistory != NULL)
+	{
+		addTimer (tempCCDHistoryInterval->getValueInteger (), new Rts2Event (EVENT_TEMP_CHECK));
+	}
+
 	return Rts2ScriptDevice::initValues ();
 }
 
@@ -807,6 +820,13 @@ void Camera::valueChanged (Rts2Value *changed_value)
 	}
 }
 
+void Camera::addTempCCDHistory (float temp)
+{
+	tempCCDHistory->addValue (temp, tempCCDHistorySize->getValueInteger ());
+	sendValueAll (tempCCDHistory);
+	tempCCD->setValueFloat (tempCCDHistory->getValueFloat ());
+}
+
 void Camera::deviceReady (Rts2Conn * conn)
 {
 	// if that's filter wheel
@@ -834,6 +854,10 @@ void Camera::postEvent (Rts2Event * event)
 			// update info about FW
 			infoAll ();
 			break;
+		case EVENT_TEMP_CHECK:
+			temperatureCheck ();
+			addTimer (tempCCDHistoryInterval->getValueInteger (), event);
+			return;
 	}
 	Rts2ScriptDevice::postEvent (event);
 }

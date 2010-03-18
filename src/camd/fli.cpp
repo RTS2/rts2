@@ -48,8 +48,6 @@ class Fli:public Camera
 
 		virtual int init ();
 
-		virtual int info ();
-
 		virtual int camChipInfo (int chip);
 
 		virtual int setCoolTemp (float new_temp);
@@ -76,12 +74,17 @@ class Fli:public Camera
 
 		}
 
+		virtual int info ();
+
+		virtual void temperatureCheck ();
+
 		virtual int startExposure ();
 		virtual long isExposing ();
 		virtual int stopExposure ();
 		virtual int doReadout ();
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
 	private:
 		Rts2ValueSelection *fliShutter;
 
@@ -427,13 +430,27 @@ int Fli::init ()
 
 int Fli::info ()
 {
+  	if (!isIdle ())
+		return Camera::info ();
 	LIBFLIAPI ret;
 	double fliTemp;
 	ret = FLIGetTemperature (dev, &fliTemp);
 	if (ret)
 		return -1;
-	tempCCD->setValueDouble (fliTemp);
 	return Camera::info ();
+}
+
+void Fli::temperatureCheck ()
+{
+	if (!isIdle ())
+		return;
+
+	LIBFLIAPI ret;
+	double fliTemp;
+	ret = FLIGetTemperature (dev, &fliTemp);
+	if (ret)
+		return;
+	addTempCCDHistory (fliTemp);
 }
 
 int Fli::camChipInfo (int chip)
