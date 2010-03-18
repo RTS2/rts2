@@ -240,21 +240,6 @@ std::string Rts2Conn::getStateString ()
 				default:
 					_os << " | shutter unknow";
 			}
-			switch (real_state & CAM_MASK_COOLING)
-			{
-				case CAM_COOL_OFF:
-					_os << " | COOLING_OFF ";
-					break;
-				case CAM_COOL_FAN:
-					_os << " | COOLING_FAN ";
-					break;
-				case CAM_COOL_PWR:
-					_os << " | COOLING_ON_SET_POWER ";
-					break;
-				case CAM_COOL_TEMP:
-					_os << " | COOLING_ON_SET_TEMP ";
-					break;
-			}
 			break;
 		case DEVICE_TYPE_DOME:
 		case DEVICE_TYPE_CUPOLA:
