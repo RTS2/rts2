@@ -29,6 +29,110 @@
  */
 class Rts2SchedBag:public std::vector <Rts2Schedule *>
 {
+	public:
+		/**
+		 * Construct emtpy schedule bag.
+		 */
+		Rts2SchedBag (double _JDstart, double _JDend);
+
+		/**
+		 * Delete schedules contained in schedule bag.
+		 */
+		~Rts2SchedBag (void);
+
+		/**
+		 * Return size of the elite population.
+		 *
+		 * @return Size of the elite population, 0 if elitism shall not be used.
+		 */
+		unsigned int getEliteSize () { return eliteSize; }
+
+		/**
+		 * Construct schedules and add them to schedule bag.
+		 *
+		 * @param num Number of schedules.
+		 *
+		 * @return -1 on error, 0 on success.
+		 */
+		int constructSchedules (int num);
+
+		/**
+		 * Construct schedule from observation set around given night.
+		 *
+		 * @param  num       Number of schedules.
+		 * @param  obsNight  Night for which schedule will be constructed.
+		 * @return -1 on error, 0 on success.
+		 */
+		int constructSchedulesFromObsSet (int num, struct ln_date *obsNight);
+
+		/**
+		 * Return min, average and max fittness of population.
+		 *
+		 * @param _min Population minimal fittness.
+		 * @param _avg Population average fittness.
+		 * @param _max Population maximal fittness.
+		 * @param _type Statistict type - function which will be evaluated. Please 
+		 * 	see objFunc enumaration for possible values.
+		 *
+		 * @see objFunc
+		 */
+		void getStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
+
+		/**
+		 * Return min, average and max fittness of the best NSGA-II population.
+		 *
+		 * @param _min The best NSGA-II population minimal fittness.
+		 * @param _avg The best NSGA-II population average fittness.
+		 * @param _max The best NSGA-II population maximal fittness.
+		 * @param _type Statistict type - function which will be evaluated. Please 
+		 * 	see objFunc enumaration for possible values.
+		 *
+		 * @see objFunc
+		 */
+		void getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
+
+		void getNSGAIIAverageDistance (double &_min, double &_avg, double &_max);
+
+		/**
+		 * Return number of given constraint violation
+		 *
+		 * @param _type  Type of constraint violation which will be tested.
+		 *
+		 * @return 0 if all schedules in bag does not violate any constraint, otherwise number of constraint violated.
+		 */
+		unsigned int constraintViolation (constraintFunc _type);
+
+		/**
+		 * Do one step of a simple GA.
+		 */
+		void doGAStep ();
+
+		/**
+		 * Calculate ranks of the entire population. Ranks are assigned to schedule
+		 * with setNSGARank function.
+		 */
+		void calculateNSGARanks ();
+
+		/** 
+		 * Do one step of NSGA-II algorithm.
+		 */
+		void doNSGAIIStep ();
+
+		/**
+		 * Return population size with given rank.
+		 *
+		 * @param  _rank  NSGA rank which is queried.
+		 *
+		 * @return Size of population with getNSGARank == _rank.
+		 */
+		int getNSGARankSize (int _rank);
+
+		/**
+		 * Return NSGAII objectives.
+		 */
+		std::list <objFunc> &getObjectives () { return objectives; }
+
+		// private functions used for NSGA-II
 	private:
 		int mutationNum;
 		unsigned int popSize;
@@ -86,10 +190,7 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @param sched1 Index of the 1st schedule to cross.
 		 * @param sched2 Index of the 2nd schedule to croos.
 		 */
-		void cross (int sched1, int sched2)
-		{
-		 	cross ((*this)[sched1], (*this)[sched2]);
-		}
+		void cross (int sched1, int sched2) { cross ((*this)[sched1], (*this)[sched2]); }
 
 		/**
 		 * Do crossing of two schedules. This method calculate crossing
@@ -105,96 +206,10 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 *
 		 * @param _size Elite size.
 		 */
-		void pickElite (unsigned int _size)
-		{
-			pickElite (_size, begin (), end ());
-		}
+		void pickElite (int _size) { pickElite (_size, begin (), end ()); }
 		
-		void pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end);
-	public:
-		/**
-		 * Construct emtpy schedule bag.
-		 */
-		Rts2SchedBag (double _JDstart, double _JDend);
+		void pickElite (int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end);
 
-		/**
-		 * Delete schedules contained in schedule bag.
-		 */
-		~Rts2SchedBag (void);
-
-		/**
-		 * Return size of the elite population.
-		 *
-		 * @return Size of the elite population, 0 if elitism shall not be used.
-		 */
-		unsigned int getEliteSize ()
-		{
-			return eliteSize;
-		}
-
-		/**
-		 * Construct schedules and add them to schedule bag.
-		 *
-		 * @param num Number of schedules.
-		 *
-		 * @return -1 on error, 0 on success.
-		 */
-		int constructSchedules (int num);
-
-		/**
-		 * Construct schedule from observation set around given night.
-		 *
-		 * @param  num       Number of schedules.
-		 * @param  obsNight  Night for which schedule will be constructed.
-		 * @return -1 on error, 0 on success.
-		 */
-		int constructSchedulesFromObsSet (int num, struct ln_date *obsNight);
-
-		/**
-		 * Return min, average and max fittness of population.
-		 *
-		 * @param _min Population minimal fittness.
-		 * @param _avg Population average fittness.
-		 * @param _max Population maximal fittness.
-		 * @param _type Statistict type - function which will be evaluated. Please 
-		 * 	see objFunc enumaration for possible values.
-		 *
-		 * @see objFunc
-		 */
-		void getStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
-
-		/**
-		 * Return min, average and max fittness of the best NSGA-II population.
-		 *
-		 * @param _min The best NSGA-II population minimal fittness.
-		 * @param _avg The best NSGA-II population average fittness.
-		 * @param _max The best NSGA-II population maximal fittness.
-		 * @param _type Statistict type - function which will be evaluated. Please 
-		 * 	see objFunc enumaration for possible values.
-		 *
-		 * @see objFunc
-		 */
-		void getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type = SINGLE);
-
-		void getNSGAIIAverageDistance (double &_min, double &_avg, double &_max);
-
-		/**
-		 * Return number of given constraint violation
-		 *
-		 * @param _type  Type of constraint violation which will be tested.
-		 *
-		 * @return 0 if all schedules in bag does not violate any constraint, otherwise number of constraint violated.
-		 */
-		unsigned int constraintViolation (constraintFunc _type);
-
-
-		/**
-		 * Do one step of a simple GA.
-		 */
-		void doGAStep ();
-
-		// private functions used for NSGA-II
-	private:
 		// objectives which are used
 		std::list <objFunc> objectives;
 
@@ -225,7 +240,6 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 */
 		void calculateNSGACrowdingDistance (unsigned int f);
 
-
 		/**
 		 * Binary tournament selection for NSGA-II. This function uses
 		 * rank and crowding distance to select a better schedule.
@@ -236,34 +250,4 @@ class Rts2SchedBag:public std::vector <Rts2Schedule *>
 		 * @return Better schedule.
 		 */
 		Rts2Schedule *tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2);
-	
-	public:
-		/**
-		 * Calculate ranks of the entire population. Ranks are assigned to schedule
-		 * with setNSGARank function.
-		 */
-		void calculateNSGARanks ();
-
-
-		/** 
-		 * Do one step of NSGA-II algorithm.
-		 */
-		void doNSGAIIStep ();
-
-		/**
-		 * Return population size with given rank.
-		 *
-		 * @param  _rank  NSGA rank which is queried.
-		 *
-		 * @return Size of population with getNSGARank == _rank.
-		 */
-		int getNSGARankSize (int _rank);
-
-		/**
-		 * Return NSGAII objectives.
-		 */
-		std::list <objFunc> &getObjectives ()
-		{
-			return objectives;
-		}
 };

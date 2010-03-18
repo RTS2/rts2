@@ -25,8 +25,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-void
-Rts2SchedBag::mutateObs (Rts2Schedule * sched)
+void Rts2SchedBag::mutateObs (Rts2Schedule * sched)
 {
 	int gen = randomNumber (0, sched->size () - 1);
 
@@ -37,8 +36,7 @@ Rts2SchedBag::mutateObs (Rts2Schedule * sched)
 	(*sched)[gen] = sched->randomSchedObs (JD, dur);
 }
 
-void
-Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
+void Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
 {
 	if (sched->size () == 1)
 	{
@@ -96,9 +94,7 @@ Rts2SchedBag::mutateDuration (Rts2Schedule * sched)
 	sched->repairStartTimes ();
 }
 
-
-void
-Rts2SchedBag::mutateDelete (Rts2Schedule * sched)
+void Rts2SchedBag::mutateDelete (Rts2Schedule * sched)
 {
 	// pick random schedule..
 	int rs = randomNumber (0, sched->size () - 1);
@@ -125,8 +121,7 @@ Rts2SchedBag::mutateDelete (Rts2Schedule * sched)
 	sched->repairStartTimes (); 
 }
 
-void
-Rts2SchedBag::mutate (Rts2Schedule * sched)
+void Rts2SchedBag::mutate (Rts2Schedule * sched)
 {
 	int rn = randomNumber (0, 100);
 	if (rn < mutateDurationRatio * 100 || sched->size () == 1)
@@ -143,8 +138,7 @@ Rts2SchedBag::mutate (Rts2Schedule * sched)
 	}
 }
 
-void
-Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
+void Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
 {
 	// select crossing point - second in schedule
 	unsigned int crossPoint = randomNumber (minObsDuration, (JDend - JDstart) * 86400 - 2 * minObsDuration);
@@ -156,7 +150,6 @@ Rts2SchedBag::cross (Rts2Schedule *parent1, Rts2Schedule *parent2)
 	push_back (child1);
 	push_back (child2);
 }
-
 
 /**
  * Class for elite sorting. Compares schedules based on a result of
@@ -173,10 +166,7 @@ class objectiveFunctionSort
 		 *
 		 * @param _objective  Objective on which comparsion will be based.
 		 */
-		objectiveFunctionSort (objFunc _objective)
-		{
-			objective = _objective;
-		}
+		objectiveFunctionSort (objFunc _objective) { objective = _objective; }
 	
 		/**
 		 * Operator to compare schedules.
@@ -186,14 +176,10 @@ class objectiveFunctionSort
 		 *
 		 * @return True if singleOptimum function of the first schedule is higher then second.
 		 */
-		bool operator () (Rts2Schedule *sched1, Rts2Schedule * sched2)
-		{
-			return sched1->getObjectiveFunction (objective) > sched2->getObjectiveFunction (objective);	
-		}
+		bool operator () (Rts2Schedule *sched1, Rts2Schedule * sched2) { return sched1->getObjectiveFunction (objective) > sched2->getObjectiveFunction (objective); }
 };
 
-void
-Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end)
+void Rts2SchedBag::pickElite (int _size, Rts2SchedBag::iterator _begin, Rts2SchedBag::iterator _end)
 {
 	// check if we can do it..
 	if (_end - _begin < _size)
@@ -213,7 +199,6 @@ Rts2SchedBag::pickElite (unsigned int _size, Rts2SchedBag::iterator _begin, Rts2
 	// remove deleted members..
 	erase (_end - _size, _end);
 }
-
 
 Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 {
@@ -250,7 +235,6 @@ Rts2SchedBag::Rts2SchedBag (double _JDstart, double _JDend)
 	constraints.push_back (CONSTR_OBS_NUM);
 }
 
-
 Rts2SchedBag::~Rts2SchedBag (void)
 {
 	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
@@ -263,9 +247,7 @@ Rts2SchedBag::~Rts2SchedBag (void)
 	delete tarSet;
 }
 
-
-int
-Rts2SchedBag::constructSchedules (int num)
+int Rts2SchedBag::constructSchedules (int num)
 {
 	struct ln_lnlat_posn *observer = Rts2Config::instance ()->getObserver ();
 
@@ -293,9 +275,7 @@ Rts2SchedBag::constructSchedules (int num)
 	return 0;
 }
 
-
-int
-Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
+int Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
 {
   	Rts2Night night = Rts2Night (obsNight, Rts2Config::instance ()->getObserver ());
 
@@ -343,9 +323,7 @@ Rts2SchedBag::constructSchedulesFromObsSet (int num, struct ln_date *obsNight)
 	return 0;
 }
 
-
-void
-Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _type)
+void Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _type)
 {
 	_min = 1000000;
 	_max = -1000000;
@@ -362,9 +340,7 @@ Rts2SchedBag::getStatistics (double &_min, double &_avg, double &_max, objFunc _
 	_avg /= size ();
 }
 
-
-void
-Rts2SchedBag::getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type)
+void Rts2SchedBag::getNSGAIIBestStatistics (double &_min, double &_avg, double &_max, objFunc _type)
 {
 	_min = 1000000;
 	_max = -1000000;
@@ -385,9 +361,7 @@ Rts2SchedBag::getNSGAIIBestStatistics (double &_min, double &_avg, double &_max,
 	_avg /= s;
 }
 
-
-void
-Rts2SchedBag::getNSGAIIAverageDistance (double &_min, double &_avg, double &_max)
+void Rts2SchedBag::getNSGAIIAverageDistance (double &_min, double &_avg, double &_max)
 {
 	_min = 1000000;
 	_max = -1000000;
@@ -408,9 +382,7 @@ Rts2SchedBag::getNSGAIIAverageDistance (double &_min, double &_avg, double &_max
 	_avg /= s;
 }
 
-
-unsigned int
-Rts2SchedBag::constraintViolation (constraintFunc _type)
+unsigned int Rts2SchedBag::constraintViolation (constraintFunc _type)
 {
 	unsigned int ret = 0;
 	for (Rts2SchedBag::iterator iter = begin (); iter != end (); iter++)
@@ -420,9 +392,7 @@ Rts2SchedBag::constraintViolation (constraintFunc _type)
 	return ret;
 }
 
-
-void
-Rts2SchedBag::doGAStep ()
+void Rts2SchedBag::doGAStep ()
 {
 	Rts2SchedBag::iterator iter;
 
@@ -482,9 +452,7 @@ Rts2SchedBag::doGAStep ()
 	}
 }
 
-
-int
-Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
+int Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 {
 	// check for constraints
 	bool dom1 = false;
@@ -523,9 +491,7 @@ Rts2SchedBag::dominatesNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 	return 0;
 }
 
-
-void
-Rts2SchedBag::calculateNSGARanks ()
+void Rts2SchedBag::calculateNSGARanks ()
 {
 	// temporary structure which holds informations about ranks.
 	// Indexed by population (=schedule) number
@@ -587,7 +553,6 @@ Rts2SchedBag::calculateNSGARanks ()
 	}
 }
 
-
 // temporary operator for sorting based on crowding distance
 struct crowdingComp {
 	bool operator () (Rts2Schedule *sched1, Rts2Schedule *sched2)
@@ -596,9 +561,7 @@ struct crowdingComp {
 	};
 };
 
-
-void
-Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
+void Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 {
 	std::vector <Rts2Schedule *>::iterator iter;
 
@@ -644,9 +607,7 @@ Rts2SchedBag::calculateNSGACrowdingDistance (unsigned int f)
 	}
 }
 
-
-Rts2Schedule *
-Rts2SchedBag::tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
+Rts2Schedule * Rts2SchedBag::tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 {
 	if (sched1->getNSGARank () < sched2->getNSGARank ())
 		return sched1;
@@ -655,9 +616,7 @@ Rts2SchedBag::tournamentNSGA (Rts2Schedule *sched1, Rts2Schedule *sched2)
 	return (randomNumber (0, 100) > 50) ? sched1 : sched2;
 }
 
-
-void
-Rts2SchedBag::doNSGAIIStep ()
+void Rts2SchedBag::doNSGAIIStep ()
 {
 	// we hold pointers to both parent and child population used/produced by previous step
 	calculateNSGARanks ();
@@ -753,9 +712,7 @@ Rts2SchedBag::doNSGAIIStep ()
 	}
 }
 
-
-int
-Rts2SchedBag::getNSGARankSize (int _rank)
+int Rts2SchedBag::getNSGARankSize (int _rank)
 {
 	try
 	{

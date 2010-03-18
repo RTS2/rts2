@@ -21,8 +21,7 @@
 
 #include <stdlib.h>
 
-unsigned int
-randomNumber (unsigned int _min, unsigned int _max)
+unsigned int randomNumber (unsigned int _min, unsigned int _max)
 {
 	return (unsigned int) (_min + (_max - _min) * (double) random () / RAND_MAX);	
 }

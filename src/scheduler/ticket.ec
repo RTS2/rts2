@@ -30,7 +30,6 @@ Ticket::Ticket (int _schedTicketId)
 	target = NULL;
 }
 
-
 Ticket::Ticket (int _schedTicketId, Target *_target, int _accountId,
 unsigned int _obs_num, double _sched_from, double _sched_to,
 double _sched_interval_min, double _sched_interval_max)
@@ -45,9 +44,7 @@ double _sched_interval_min, double _sched_interval_max)
 	sched_interval_max = _sched_interval_max;
 }
 
-
-void
-Ticket::load ()
+void Ticket::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int d_schedticket_id;
@@ -122,9 +119,7 @@ Ticket::load ()
 		sched_interval_max = d_sched_interval_max;
 }
 
-
-bool
-Ticket::violateSchedule (double _from, double _to)
+bool Ticket::violateSchedule (double _from, double _to)
 {
 	if (isnan (sched_from))
 	{

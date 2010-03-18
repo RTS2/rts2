@@ -42,7 +42,6 @@ Rts2Schedule::Rts2Schedule (double _JDstart, double _JDend, double _minObsDurati
 	nanLazyMerits ();
 }
 
-
 Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned int crossPoint)
 {
 	// fill in parameters..
@@ -118,7 +117,6 @@ Rts2Schedule::Rts2Schedule (Rts2Schedule *sched1, Rts2Schedule *sched2, unsigned
 	}
 }
 
-
 Rts2Schedule::~Rts2Schedule (void)
 {
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
@@ -126,9 +124,7 @@ Rts2Schedule::~Rts2Schedule (void)
 	clear ();
 }
 
-
-bool
-Rts2Schedule::isScheduled (Ticket *_ticket)
+bool Rts2Schedule::isScheduled (Ticket *_ticket)
 {
 	for (Rts2Schedule::iterator iter = begin (); iter != end (); iter++)
 	{
@@ -138,9 +134,7 @@ Rts2Schedule::isScheduled (Ticket *_ticket)
 	return false;
 }
 
-
-Ticket *
-Rts2Schedule::randomTicket ()
+Ticket * Rts2Schedule::randomTicket ()
 {
 	int rn = randomNumber (0, ticketSet->size ());
 	TicketSet::iterator iter = ticketSet->begin ();
@@ -153,27 +147,21 @@ Rts2Schedule::randomTicket ()
 	return (*iter).second;
 }
 
-
-Rts2SchedObs *
-Rts2Schedule::randomSchedObs (double JD)
+Rts2SchedObs * Rts2Schedule::randomSchedObs (double JD)
 {
 	nanLazyMerits ();
 	// perform for a randon number of seconds - not less then 60, but no more then 3600
 	return new Rts2SchedObs (randomTicket (), JD, randomNumber (60, 3600));
 }
 
-
-Rts2SchedObs *
-Rts2Schedule::randomSchedObs (double JD, double dur)
+Rts2SchedObs * Rts2Schedule::randomSchedObs (double JD, double dur)
 {
 	nanLazyMerits ();
 	// perform for a randon number of seconds - not less then 60, but no more then 3600
 	return new Rts2SchedObs (randomTicket (), JD, dur);
 }
 
-
-int
-Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
+int Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 {
 	ticketSet = _ticketSet;
 	double JD = JDstart;
@@ -193,9 +181,7 @@ Rts2Schedule::constructSchedule (TicketSet *_ticketSet)
 	return 0;
 }
 
-
-void
-Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
+void Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 {
 	if ((*schedIter)->getTotalDuration () + _sec > minObsDuration)
 	{
@@ -234,9 +220,7 @@ Rts2Schedule::adjustDuration (Rts2Schedule::iterator schedIter, double _sec)
 	}
 }
 
-
-void
-Rts2Schedule::repairStartTimes ()
+void Rts2Schedule::repairStartTimes ()
 {
 	// now repair observations start times
 	Rts2Schedule::iterator iter = begin ();
@@ -271,9 +255,7 @@ Rts2Schedule::repairStartTimes ()
 	}
 }
 
-
-Rts2Schedule::iterator
-Rts2Schedule::findShortest ()
+Rts2Schedule::iterator Rts2Schedule::findShortest ()
 {
 	Rts2Schedule::iterator ret = begin ();
 	double min = (*ret)->getTotalDuration ();
@@ -288,9 +270,7 @@ Rts2Schedule::findShortest ()
 	return ret;
 }
 
-
-double
-Rts2Schedule::visibilityRatio ()
+double Rts2Schedule::visibilityRatio ()
 {
 	if (!isnan (visRatio))
 		return visRatio;
@@ -309,9 +289,7 @@ Rts2Schedule::visibilityRatio ()
 	return visRatio;
 }
 
-
-double
-Rts2Schedule::altitudeMerit ()
+double Rts2Schedule::altitudeMerit ()
 {
 	if (!isnan (altMerit))
 		return altMerit;
@@ -325,9 +303,7 @@ Rts2Schedule::altitudeMerit ()
 	return altMerit;
 }
 
-
-double
-Rts2Schedule::accountMerit ()
+double Rts2Schedule::accountMerit ()
 {
 	if (!isnan (accMerit))
 		return accMerit;
@@ -366,9 +342,7 @@ Rts2Schedule::accountMerit ()
 	return accMerit;
 }
 
-
-double
-Rts2Schedule::distanceMerit ()
+double Rts2Schedule::distanceMerit ()
 {
 	if (!isnan (distMerit))
 		return distMerit;
@@ -404,9 +378,7 @@ Rts2Schedule::distanceMerit ()
 	return distMerit;
 }
 
-
-double
-Rts2Schedule::averageDistance ()
+double Rts2Schedule::averageDistance ()
 {
 	double ret = 0;
 	if (size () <= 1)
@@ -429,9 +401,7 @@ Rts2Schedule::averageDistance ()
 	return ret / size ();
 }
 
-
-double
-Rts2Schedule::diversityTargetMerit ()
+double Rts2Schedule::diversityTargetMerit ()
 {
 	if (!isnan (divTargetMerit))
 		return divTargetMerit;
@@ -451,16 +421,12 @@ Rts2Schedule::diversityTargetMerit ()
 	return divTargetMerit;
 }
 
-
-double
-Rts2Schedule::diversityObservationMerit ()
+double Rts2Schedule::diversityObservationMerit ()
 {
 	return size ();
 }
 
-
-unsigned int
-Rts2Schedule::violateSchedule ()
+unsigned int Rts2Schedule::violateSchedule ()
 {
 	if (violatedSch != UINT_MAX)
 		return violatedSch;
@@ -476,9 +442,7 @@ Rts2Schedule::violateSchedule ()
 	return violatedSch;
 }
 
-
-unsigned int
-Rts2Schedule::unobservedSchedules ()
+unsigned int Rts2Schedule::unobservedSchedules ()
 {
 	if (unobservedSch != UINT_MAX)
 		return unobservedSch;
@@ -495,9 +459,7 @@ Rts2Schedule::unobservedSchedules ()
 	return unobservedSch;
 }
 
-
-unsigned int
-Rts2Schedule::violatedObsNum ()
+unsigned int Rts2Schedule::violatedObsNum ()
 {
 	if (violatedObsN != UINT_MAX)
 		return violatedObsN;
@@ -514,9 +476,7 @@ Rts2Schedule::violatedObsNum ()
 	return violatedObsN;
 }
 
-
-std::ostream &
-operator << (std::ostream & _os, Rts2Schedule & schedule)
+std::ostream & operator << (std::ostream & _os, Rts2Schedule & schedule)
 {
 	for (Rts2Schedule::iterator iter = schedule.begin (); iter != schedule.end (); iter++)
 	{
