@@ -823,6 +823,7 @@ void Camera::valueChanged (Rts2Value *changed_value)
 void Camera::addTempCCDHistory (float temp)
 {
 	tempCCDHistory->addValue (temp, tempCCDHistorySize->getValueInteger ());
+	tempCCDHistory->calculate ();
 	sendValueAll (tempCCDHistory);
 	tempCCD->setValueFloat (tempCCDHistory->getValueFloat ());
 }
