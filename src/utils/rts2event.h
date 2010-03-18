@@ -70,7 +70,8 @@
 // rts2devclifoc.h         500-549
 // rts2devclicop.h         550-599
 // grbd.h                  600-649
-// rts2devcliwheel.h       650-699
+// rts2devcliwheel.h       650-675
+// camd.h                  676-699
 // augershooter.h          700-749
 // rts2devclifocuser.h     750-799
 // rts2loggerbase.h        800-849
