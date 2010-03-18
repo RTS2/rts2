@@ -13,6 +13,8 @@ class Rts2Comm:
 		self.morningFilters = self.eveningFilters[:] # filters for morning - reverse of evening filters - deep copy them first
 		self.morningFilters.reverse ()
 
+		self.filter = None
+
 		self.MaxExpT = 10   # Maximum exposure time that we allow
 		# if self.MaxExpT is changed, adjust self.expTimes = range(1,20) below
 		self.MinExpT = 0.5  # Minimum exposure time that we allow)
@@ -136,7 +138,7 @@ class Rts2Comm:
 			self.delete(img) #otherwise it is not useful and we delete it
 		self.exptime = self.optimalExpTime(avrg)
 
-		self.log('I',"run avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,filter,self.exptime))
+		self.log('I',"run avrg %f ngood %d filter %s next exptime %f" % (avrg,self.Ngood,self.filter,self.exptime))
 
 	
 	def executeEvening(self):
@@ -158,8 +160,8 @@ class Rts2Comm:
 	def runEvening(self):
 		self.exptime = self.startExpTime
 
-		for filter in self.eveningFilters: # starting from the bluest and ending with the redest
-			self.setValue('filter',filter)
+		for self.filter in self.eveningFilters: # starting from the bluest and ending with the redest
+			self.setValue('filter',self.filter)
 			self.executeEvening()
 
 	def executeMorning(self):
@@ -181,8 +183,8 @@ class Rts2Comm:
 	def runMorning(self):
 		self.exptime = self.startExpTime
 
-		for filter in self.morningFilters: # starting from the redest and ending with the bluest
-			self.setValue('filter',filter)
+		for self.filter in self.morningFilters: # starting from the redest and ending with the bluest
+			self.setValue('filter',self.filter)
 			self.executeMorning()
 
 	def run(self):
