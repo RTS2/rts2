@@ -355,9 +355,7 @@ void Executor::postEvent (Rts2Event * event)
 			{
 				// get us lover priority to prevent moves to such dangerous
 				// position
-				currentTarget->changePriority (-100,
-					ln_get_julian_from_sys () +
-					12 * (1.0 / 1440.0));
+				currentTarget->changePriority (-100, ln_get_julian_from_sys () + 12 * (1.0 / 1440.0));
 			}
 			updateScriptCount ();
 			if (scriptCount->getValueInteger () == 0)
