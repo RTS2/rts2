@@ -237,6 +237,7 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 {
 	createTempSet ();
 	createTempCCD ();
+	createTempCCDHistory ();
 	createExpType ();
 
 	createValue (fliShutter, "FLISHUT", "FLI shutter state", true, RTS2_VALUE_WRITABLE);
