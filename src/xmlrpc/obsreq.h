@@ -34,7 +34,7 @@ namespace rts2xmlrpc
 class Observation: public GetRequestAuthorized
 {
 	public:
-		Observation (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		Observation (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "observations by observation IDs", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

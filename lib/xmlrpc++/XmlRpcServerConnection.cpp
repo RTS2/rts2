@@ -430,8 +430,33 @@ void XmlRpcServerConnection::executeGet()
 	XmlRpcServerGetRequest* request = _server->findGetRequest(_get);
 	if (request == NULL)
 	{
-		XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
-		http_code = HTTP_BAD_REQUEST;
+	  	// if we are on top page, generate list of pages..
+		if (_get == "/" || _get == "")
+		{
+			std::ostringstream oss;
+			oss << "<html><head><title>List of path available on the server</title></head>"
+				<< std::endl << "<body><p>Those requests are available on the server:</p>";
+
+			for (RequestMap::const_iterator riter = _server->requestsBegin (); riter != _server->requestsEnd (); riter++)
+			{
+				if (riter->second->getDescription () != NULL)
+					oss << "<a href='" << riter->second->getPrefix () << "/'>" << riter->second->getDescription () << "</a><br>" << std::endl;
+			}
+
+			oss << std::endl << "</body></html>";
+			
+			response_type = "text/html";
+			_get_response_length = oss.str ().length ();
+			_get_response = new char[_get_response_length];
+			memcpy (_get_response, oss.str ().c_str (), _get_response_length);
+
+			http_code = HTTP_OK;
+		}
+		else
+		{
+			XmlRpcUtil::log(2, "XmlRpcServerConnection::executeGet: cannot find request for prefix %s", _get.c_str());
+			http_code = HTTP_BAD_REQUEST;
+		}
 	}
 	else
 	{

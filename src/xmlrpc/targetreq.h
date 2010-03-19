@@ -46,7 +46,7 @@ namespace rts2xmlrpc
 class Targets: public GetRequestAuthorized
 {
 	public:
-		Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
@@ -70,7 +70,7 @@ class Targets: public GetRequestAuthorized
 class AddTarget: public GetRequestAuthorized
 {
 	public:
-		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		AddTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "add new target", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

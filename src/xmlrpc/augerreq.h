@@ -34,7 +34,7 @@ namespace rts2xmlrpc
 class Auger: public GetRequestAuthorized
 {
 	public:
-		Auger (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		Auger (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "access to auger shower data", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:

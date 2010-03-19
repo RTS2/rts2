@@ -59,7 +59,7 @@ class Previewer
 class JpegImageRequest: public GetRequestAuthorized
 {
 	public:
-		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, "JPEG image access", s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -67,7 +67,7 @@ class JpegImageRequest: public GetRequestAuthorized
 class JpegPreview:public GetRequestAuthorized
 {
 	public:
-		JpegPreview (const char* prefix, const char *_dirPath, XmlRpcServer *s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
+		JpegPreview (const char* prefix, const char *_dirPath, XmlRpcServer *s):GetRequestAuthorized (prefix, "JPEG image preview", s) { dirPath = _dirPath; }
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
@@ -79,7 +79,7 @@ class JpegPreview:public GetRequestAuthorized
 class FitsImageRequest:public GetRequestAuthorized
 {
 	public:
-		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, "raw FITS access", s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -88,10 +88,10 @@ class DownloadRequest:public GetRequestAuthorized
 {
 	public:
 #ifdef HAVE_LIBARCHIVE
-		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) { buf = NULL; buf_size = 0; }
+		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) { buf = NULL; buf_size = 0; }
 		virtual ~DownloadRequest () { if (buf) free (buf); }
 #else
-		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+		DownloadRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 #endif
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

@@ -32,7 +32,7 @@ namespace rts2xmlrpc
 class Plan: public GetRequestAuthorized
 {
 	public:
-		Plan (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
+		Plan (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "observing plan management", s) {}
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printScheduling (char* &response, size_t &response_length);

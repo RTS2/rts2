@@ -31,6 +31,9 @@ namespace XmlRpc
 	// Class representing argument and result values
 	class XmlRpcValue;
 
+	// collection of get processors. String is prefix of the request
+	typedef std::map< std::string, XmlRpcServerGetRequest* > RequestMap;
+
 	//! A class to handle XML RPC requests
 	class XmlRpcServer : public XmlRpcSource
 	{
@@ -63,6 +66,12 @@ namespace XmlRpc
 
 			//! Lookup a get request by prefix
 			XmlRpcServerGetRequest* findGetRequest(const std::string& prefix) const;
+
+			//! Return begin iterator of request map.
+			RequestMap::const_iterator requestsBegin () { return _requests.begin (); }
+
+			//! Return end iterator of request map.
+			RequestMap::const_iterator requestsEnd () { return _requests.end (); }
 
 			//! Create a socket, bind to the specified port, and
 			//! set it in listen mode to make it available for clients.
@@ -112,8 +121,6 @@ namespace XmlRpc
 			typedef std::map< std::string, XmlRpcServerMethod* > MethodMap;
 			MethodMap _methods;
 
-			// collection of get processors. String is prefix of the request
-			typedef std::map< std::string, XmlRpcServerGetRequest* > RequestMap;
 			RequestMap _requests;
 
 			// system methods

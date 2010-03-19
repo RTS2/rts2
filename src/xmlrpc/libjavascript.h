@@ -33,7 +33,7 @@ namespace rts2xmlrpc
 class LibJavaScript: public GetRequestAuthorized
 {
 	public:
-		LibJavaScript (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+		LibJavaScript (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };

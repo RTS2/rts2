@@ -70,12 +70,14 @@ namespace XmlRpc
 	{
 		public:
 			//! Constructor
-			XmlRpcServerGetRequest(std::string const& prefix, XmlRpcServer* server = 0);
+			XmlRpcServerGetRequest(std::string const& prefix, const char *description = NULL, XmlRpcServer* server = 0);
 			//! Destructor
 			virtual ~XmlRpcServerGetRequest();
 
 			//! Returns the name of the method
 			std::string& getPrefix() { return _prefix; }
+
+			const char* getDescription () { return _description; }
 
 			//! Set authentification string..
 			void setAuthorization(std::string authorization);
@@ -94,11 +96,13 @@ namespace XmlRpc
 			void setConnection (XmlRpcServerConnection *_connection) { connection = _connection; }
 
 		protected:
-			std::string _prefix;
 			XmlRpcServer* _server;
 
 			void addExtraHeader (const char *name, const char *value) { connection->addExtraHeader (name, value); }
 		private:
+			std::string _prefix;
+			const char *_description;
+
 			std::string _username;
 			std::string _password;
 

@@ -32,7 +32,7 @@ namespace rts2xmlrpc
 class Graph: public GetRequestAuthorized
 {
 	public:
-		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		Graph (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "plot graphs of recorded system values", s) {};
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 

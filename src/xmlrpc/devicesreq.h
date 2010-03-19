@@ -31,7 +31,7 @@ namespace rts2xmlrpc
 class Devices: public GetRequestAuthorized
 {
 	public:
-		Devices (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {}
+		Devices (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "access to devices present in the observatory", s) {}
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	private:
 		void printList (char* &response, size_t &response_length);

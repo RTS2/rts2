@@ -33,7 +33,7 @@ namespace rts2xmlrpc
 class LibCSS: public GetRequestAuthorized
 {
 	public:
-		LibCSS (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) {}
+		LibCSS (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };

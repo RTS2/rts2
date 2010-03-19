@@ -58,22 +58,21 @@ namespace rts2xmlrpc
 class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
-		GetRequestAuthorized (const char* prefix, XmlRpc::XmlRpcServer* s):XmlRpcServerGetRequest (prefix, s) {}
+		GetRequestAuthorized (const char* prefix, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s) {}
 
 		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
-		/** 
-		 * Executed after user is properly authorized.
+		/**
+		 * Received exact path and HTTP params. Returns response - MIME
+		 * type, its data and length. This request is password
+		 * protected - pasword protection can be removed by listing
+		 * path in public section of XML-RPC config file.
 		 *
-		 * @brief 
-		 * 
-		 * @param path called path on server (stripped from prefix, which resulted in this object called)
-		 * @param params HTTP parameters received from client
-		 * @param response_type MIME type of the response
-		 * @param response response buffer. It must be allocated (XmlRpcServerGetRequest will free it)
-		 * @param response_length length of response buffer
-		 *
-		 * @throw rts2core::Error and its descendands
+		 * @param path            exact path of the request, excluding prefix part
+		 * @param params          HTTP parameters. Please see xmlrpc++/XmlRpcServerGetRequest.h for allowed methods.
+		 * @param response_type   MIME type of response. Ussually you will put there something like "text/html" or "image/jpeg".
+		 * @param response        response data. Must be allocated, preferably by new char[]. They will be deleted by calling code
+		 * @param response_length response lenght in bytes
 		 *
 		 * @see GetRequestAuthorized::execute
 		 */
@@ -88,7 +87,7 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 class Directory: public GetRequestAuthorized
 {
 	public:
-		Directory (const char* prefix, const char *_dirPath, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, s) { dirPath = _dirPath; }
+		Directory (const char* prefix, const char *_dirPath, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, _dirPath, s) { dirPath = _dirPath; }
 
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 
@@ -104,7 +103,7 @@ class Directory: public GetRequestAuthorized
 class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
-		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, s) {};
+		CurrentPosition (const char *prefix, XmlRpc::XmlRpcServer *s):XmlRpc::XmlRpcServerGetRequest (prefix, "current telescope position", s) {};
 
 		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -123,20 +122,8 @@ class CurrentPosition:public XmlRpc::XmlRpcServerGetRequest
 class AltAzTarget: public GetRequestAuthorized
 {
 	public:
-		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, s) {};
+		AltAzTarget (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "altitude target graph", s) {};
 
-		/**
-		 * Received exact path and HTTP params. Returns response - MIME
-		 * type, its data and length. This request is password
-		 * protected - pasword protection can be removed by listing
-		 * path in public section of XML-RPC config file.
-		 *
-		 * @param path            Exact path of the request, excluding prefix part.
-		 * @param params          HTTP parameters. Please see xmlrpc++/XmlRpcServerGetRequest.h for allowed methods.
-		 * @param response_type   MIME type of response. Ussually you will put there something like "text/html" or "image/jpeg".
-		 * @param response        Response data. Must be allocated, preferably by new char[]. They will be deleted by calling code.
-		 * @param response_length Response lenght in bytes. 
-		 */
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
 
