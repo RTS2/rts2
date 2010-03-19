@@ -15,6 +15,9 @@ Instalation from SVN
    libcfitsio3-dev libnova-dev libecpg-dev gcc g++ libncurses5-dev
    libgraphicsmagick++1-dev libx11-dev docbook-xsl xsltproc libxml2-dev libarchive-dev
 
+   Please note that postgresql-server-dev is actually postgresql-server-dev-8.3
+   on Ubuntu 9.04 and postgresql-server-dev-8.4 on 9.10.
+
    WCS libraries are needed for database and for rts2-f2j binary. If you wish
    to use them, you must manually install WCS using folowing steps:
 
