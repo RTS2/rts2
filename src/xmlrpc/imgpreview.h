@@ -59,7 +59,7 @@ class Previewer
 class JpegImageRequest: public GetRequestAuthorized
 {
 	public:
-		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, "JPEG image access", s) {}
+		JpegImageRequest (const char* prefix, XmlRpc::XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
@@ -79,7 +79,7 @@ class JpegPreview:public GetRequestAuthorized
 class FitsImageRequest:public GetRequestAuthorized
 {
 	public:
-		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, "raw FITS access", s) {}
+		FitsImageRequest (const char* prefix, XmlRpcServer* s):GetRequestAuthorized (prefix, NULL, s) {}
 
 		virtual void authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 };
