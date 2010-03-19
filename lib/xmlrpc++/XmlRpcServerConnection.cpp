@@ -440,7 +440,7 @@ void XmlRpcServerConnection::executeGet()
 			for (RequestMap::const_iterator riter = _server->requestsBegin (); riter != _server->requestsEnd (); riter++)
 			{
 				if (riter->second->getDescription () != NULL)
-					oss << "<a href='" << riter->second->getPrefix () << "/'>" << riter->second->getDescription () << "</a><br>" << std::endl;
+					oss << "<a href='" << riter->second->getPrefix ().substr (1) << "/'>" << riter->second->getDescription () << "</a><br>" << std::endl;
 			}
 
 			oss << std::endl << "</body></html>";
