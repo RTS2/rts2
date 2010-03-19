@@ -223,7 +223,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 			}
 		}
 
-		std::string newPath = imgPath.substr (0, i - 1) + std::string ("/bad/") + imgPath.substr (i + 1);
+		std::string newPath = imgPath.substr (0, i) + std::string ("/bad/") + imgPath.substr (i + 1);
 
 		int ret = mkpath (newPath.c_str (), 0777);
 		if (ret)
