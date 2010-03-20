@@ -718,6 +718,26 @@ current analysis based in the maximum of objects detected.
     </listitem>
     </varlistentry>
 
+    <varlistentry>
+    <term>
+    <option>TAKE_PROOF, boolean, TRUE</option>
+    </term>
+    <listitem>
+    <para> If TRUE <command>&dhpackage;</command> takes a proof image at fitted focus position.
+    </para>
+    </listitem>
+    </varlistentry>
+
+      <varlistentry>
+	<term>
+      <option>VARIABLE_FOCUSER_STEPS, boolean, to be defined</option>
+          </term>
+	<listitem>
+	  <para> ToDo: planned feature not yet there.
+          </para>
+	</listitem>
+      </varlistentry>
+
       <varlistentry>
 	<term>
       <option>VARIABLE_FOCUSER_STEPS, boolean, to be defined</option>
