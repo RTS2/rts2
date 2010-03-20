@@ -70,15 +70,16 @@ use vars qw(
 # if TAKE_DATA == TRUE then data taking with rts2 devices
 # consistency checks are performed on the devices defined in /etc/rts2/devices
 # execution is aborted if any mismatch is detected
-'C_TAKE_DATA'  => FALSE_STR,               # TRUE: data taking, FALSE: offline analysis
+'C_TAKE_DATA'  => FALSE_STR,              # TRUE: data taking, FALSE: offline analysis
+'C_TAKE_PROOF' => TRUE_STR,               # TRUE: taka a proof image at fitted foc_pos
 'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
 'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
 'C_CCD_BINNING'=> 0    ,                  # 0: 1x1, 1: 2x2,.... see your drver
 'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
-'C_AUTO_FOCUS'             => TRUE_STR,  # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
-'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR, # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
+'C_AUTO_FOCUS'             => TRUE_STR,   # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
+'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR,  # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
 #                                           images extension .fits is renamed to .fitsAUTO_FOCUS_RUN_EXTENSION (see below)
-'C_NUMBER_OF_AUTO_FOCUS_IMAGES'=> 10,    # used if TAKE_DATA == (TRUE)
+'C_NUMBER_OF_AUTO_FOCUS_IMAGES'=> 10,     # used if TAKE_DATA == (TRUE)
 'C_FOCAL_RATIO' => 7 ,                    # telescope's focal ratio
 # data taking, files
 #
@@ -1810,6 +1811,7 @@ else
 my $fits_directory     = $default_configuration{C_FITS_DIRECTORY};
 my $set_focus          = $default_configuration{C_SET_FOCUS}; 
 my $take_data          = $default_configuration{C_TAKE_DATA};
+my $take_proof         = $default_configuration{C_TAKE_PROOF};
 my $rts2_device_file   = $default_configuration{C_RTS2_DEVICES} ;
 my $find_focus         = $default_configuration{C_AUTO_FOCUS} ;
 my $sexcfg             = $default_configuration{C_SEXCFG} ;
@@ -2121,7 +2123,7 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	    $middle=~ s/\.[0-9]+$// ; # truncate
 	    print "$scriptname: FOC_DEF: $middle\n" ;
 	    set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
-#ToDo: issue a warning and exit if the FITS_DIRECTORY is not empty
+
 	    my $FOC_TOFF= -($middle-$focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}) ;
 	    print "$scriptname: FOC_TOFF: $FOC_TOFF\n" ;
 	    print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null\n" ;
@@ -2179,6 +2181,24 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	}
 	undef %fits_files ;
 
+
+	if( $take_proof eq TRUE_STR)
+	{
+# set FOC_DEF and take a proof image
+#
+	    if( $fit_focus != FALSE_VAL) 
+	    {
+		set_rts2_fit_focus_position( $rts2_device_focusd, $fit_focus) ;
+		get_rts2_focus( $rts2_device_focusd, $fit_focus) ;
+# rts2-scriptexec -d CD -s ' CD.binning=0 FC.FOC_TOFF=0 E exp_time_filter '
+		print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=0 E $filter_focus_properties{$filter}[IND_EXP_TIME] ' 2>/dev/null\n" ;
+ 
+		open( PROOF_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=0 E $filter_focus_properties{$filter}[IND_EXP_TIME] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+		close(PROOF_FOCUS) ;
+# if usefull make a quick analysis of the FWHM
+
+	    }
+	}
         chdir "../" ;
     }
 }
