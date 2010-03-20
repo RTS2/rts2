@@ -512,7 +512,7 @@ class Camera:public Rts2ScriptDevice
 		void setSize (int in_width, int in_height, int in_x, int in_y)
 		{
 			chipSize->setInts (in_x, in_y, in_width, in_height);
-			chipUsedReadout->setInts (0, 0, in_width, in_height);
+			chipUsedReadout->setInts (in_x, in_y, in_width, in_height);
 		}
 
 		/**
@@ -592,14 +592,14 @@ class Camera:public Rts2ScriptDevice
 		 *
 		 * @return Chip top X corner chip coordinate.
 		 */
-		const int chipTopX () { return chipSize->getXInt () + chipUsedReadout->getXInt (); }
+		const int chipTopX () { return chipUsedReadout->getXInt (); }
 
 		/**
 		 * Get Y of top corner in chip coordinates.
 		 *
 		 * @return Chip top Y corner chip coordinate.
 		 */
-		const int chipTopY () { return chipSize->getYInt () + chipUsedReadout->getYInt (); }
+		const int chipTopY () { return chipUsedReadout->getYInt (); }
 
 		virtual int setBinning (int in_vert, int in_hori);
 
