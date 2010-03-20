@@ -91,6 +91,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->toFlat ();
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 			delete *iter;
 			images.erase (iter);
 		}
@@ -103,6 +104,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->toArchive ();
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 			delete *iter;
 			images.erase (iter);
 		}
@@ -115,6 +117,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->toTrash ();
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 			delete *iter;
 			images.erase (iter);
 		}
@@ -127,6 +130,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->renameImageExpand (expandPath);
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 			delete *iter;
 			images.erase (iter);
 		}
@@ -139,6 +143,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->copyImageExpand (expandPath);
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 		}
 	}
 	else if (!strcmp (cmd, "delete"))
@@ -254,7 +259,6 @@ void ConnExecute::processLine ()
 
 void ConnExecute::exposureEnd ()
 {
-	std::cout << "exposure_end" << std::endl;
 	writeToProcess ("exposure_end");
 }
 
