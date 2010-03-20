@@ -465,6 +465,10 @@ int Camera::scriptEnds ()
 	binning->setValueInteger (0);
 	sendValueAll (binning);
 
+	// set exposure to light
+	if (expType)
+		expType->setValueInteger (0);
+
 	return Rts2ScriptDevice::scriptEnds ();
 }
 
