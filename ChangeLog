@@ -1,3 +1,7 @@
+2010-03-20
+ * FLI uses reported serial numbers
+ * Various other FLI improvements. You will need to use FLI library from RTS2 repository.
+
 2010-03-19
  * entry page with list of requests available on the server
 

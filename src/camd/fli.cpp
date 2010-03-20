@@ -1,6 +1,6 @@
 /*
  * Driver for FLI CCDs.
- * Copyright (C) 2005-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2005-2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,6 +87,8 @@ class Fli:public Camera
 
 	private:
 		Rts2ValueSelection *fliShutter;
+		Rts2ValueBool *useBgFlush;
+		Rts2ValueSelection *fliMode;
 
 		flidomain_t deviceDomain;
 
@@ -230,6 +232,10 @@ int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return FLISetNFlushes (dev, new_value->getValueInteger ()) ? -2 : 0;
 	}
+	if (old_value == useBgFlush)
+	{
+		return FLIControlBackgroundFlush (dev, ((Rts2ValueBool *) new_value)->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP) ? -2 : 0;
+	}
 	return Camera::setValue (old_value, new_value);
 }
 
@@ -247,18 +253,23 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	fliShutter->addSelVal ("EXTERNAL TRIGGER LOW");
 	fliShutter->addSelVal ("EXTERNAL TRIGGER HIGH");
 
+	createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
+	useBgFlush->setValueBool (false);
+
 	deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
 	hwRev = -1;
-	camNum = -1;
+	camNum = 0;
 	createValue (nflush, "nflush", "number of flushes before exposure", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	nflush->setValueInteger (-1);
 
-	addOption ('D', "domain", 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
-	addOption ('R', "HW revision", 1, "find camera by HW revision");
-	addOption ('b', "fli_debug", 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
-	addOption ('n', "number", 1, "Camera number (in FLI list)");
-	addOption ('l', "flush", 1, "Number of CCD flushes");
+	addOption ('D', NULL, 1, "CCD Domain (default to USB; possible values: USB|LPT|SERIAL|INET)");
+	addOption ('R', NULL, 1, "find camera by HW revision");
+	addOption ('B', NULL, 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
+	addOption ('n', NULL, 1, "Camera number (in FLI list)");
+	addOption ('N', NULL, 1, "Camera serail number");
+	addOption ('b', NULL, 0, "use background flush");
+	addOption ('l', NULL, 1, "Number of CCD flushes");
 }
 
 Fli::~Fli (void)
@@ -286,7 +297,7 @@ int Fli::processOption (int in_opt)
 		case 'R':
 			hwRev = atol (optarg);
 			break;
-		case 'b':
+		case 'B':
 			switch (atoi (optarg))
 			{
 				case 1:
@@ -305,8 +316,14 @@ int Fli::processOption (int in_opt)
 		case 'n':
 			camNum = atoi (optarg);
 			break;
+		case 'N':
+			camNum = -1 * atoi (optarg);
+			break;
 		case 'l':
 			nflush->setValueCharArr (optarg);
+			break;
+		case 'b':
+			useBgFlush->setValueBool (true);
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -323,7 +340,7 @@ int Fli::init ()
 	char *nam_sep;
 	char **nam;					 // current name
 
-	//long serno = 0;
+	long serno = 0;
 
 	ret_c = Camera::init ();
 	if (ret_c)
@@ -342,8 +359,34 @@ int Fli::init ()
 		return -1;
 	}
 
+	// find device based on serial number..
+	if (camNum < 0)
+	{
+		nam = names;
+		while (*nam)
+		{
+			// separate semicolon
+			nam_sep = strchr (*nam, ';');
+			if (nam_sep)
+				*nam_sep = '\0';
+			ret = FLIOpen (&dev, *nam, deviceDomain);
+			if (ret)
+			{
+				nam++;
+				continue;
+			}
+			ret = FLIGetSerialNum (dev, &serno);
+			if (!ret && camNum == -1 * serno)
+			{
+				break;
+			}
+			// skip to next camera
+			FLIClose (dev);
+			nam++;
+		}
+	}
 	// find device based on hw revision..
-	if (hwRev > 0)
+	else if (hwRev > 0)
 	{
 		nam = names;
 		while (*nam)
@@ -369,6 +412,7 @@ int Fli::init ()
 			nam++;
 		}
 	}
+	// find camera by camera number
 	else if (camNum > 0)
 	{
 		nam = names;
@@ -409,9 +453,8 @@ int Fli::init ()
 		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
-	// FLIGetSerialNum (dev, &serno);
-
-	// snprintf (serialNumber, 64, "%li", serno);
+	FLIGetSerialNum (dev, &serno);
+	snprintf (serialNumber, 64, "%li", serno);
 
 	long hwrev;
 	long fwrev;
@@ -425,6 +468,18 @@ int Fli::init ()
 	if (ret)
 		return -1;
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
+
+	ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
+	if (ret)
+		return -1;
+
+	// get mode..
+	createValue (fliMode, "MODE", "readout mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	// discover available modes..
+	flimode_t m = 0;
+	char mode[50];
+	while ((ret = FLIGetCameraModeString (dev, m, mode, 50)) == 0)
+		fliMode->addSelVal (mode);
 
 	return initChips ();
 }

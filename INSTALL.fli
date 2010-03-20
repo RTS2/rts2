@@ -2,8 +2,8 @@ Instructions to install FLI devices
 ===================================
 
 For FLI (Finger Lake Instruments inc.) devices, you will need FLI drivers. You
-can either get them from http://www.fli-cam.com, or from RTS2 SVN. RTS2 svn
-packages are patched for few know problems in SDK.
+can get them from RTS2 SVN. RTS2 svn packages are patched for few know problems
+in official FLI SDK and provides FLIGetSerialNum function.
 
 To get SVN version, run:
 
