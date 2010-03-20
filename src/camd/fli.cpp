@@ -479,7 +479,10 @@ int Fli::init ()
 	flimode_t m = 0;
 	char mode[50];
 	while ((ret = FLIGetCameraModeString (dev, m, mode, 50)) == 0)
+	{
 		fliMode->addSelVal (mode);
+		m++;
+	}
 
 	return initChips ();
 }
