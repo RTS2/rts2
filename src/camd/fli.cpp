@@ -30,6 +30,9 @@
 
 #include "libfli.h"
 
+#define FLIUSB_CAM_ID      0x02
+#define FLIUSB_PROLINE_ID  0x0a
+
 namespace rts2camd
 {
 
@@ -89,6 +92,8 @@ class Fli:public Camera
 		Rts2ValueSelection *fliShutter;
 		Rts2ValueBool *useBgFlush;
 		Rts2ValueSelection *fliMode;
+
+		int bgFlush;
 
 		flidomain_t deviceDomain;
 
@@ -253,8 +258,8 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	fliShutter->addSelVal ("EXTERNAL TRIGGER LOW");
 	fliShutter->addSelVal ("EXTERNAL TRIGGER HIGH");
 
-	createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
-	useBgFlush->setValueBool (false);
+	bgFlush = -1;
+	useBgFlush = NULL;
 
 	deviceDomain = FLIDEVICE_CAMERA | FLIDOMAIN_USB;
 	fliDebug = FLIDEBUG_NONE;
@@ -323,7 +328,7 @@ int Fli::processOption (int in_opt)
 			nflush->setValueCharArr (optarg);
 			break;
 		case 'b':
-			useBgFlush->setValueBool (true);
+			bgFlush = 1;
 			break;
 		default:
 			return Camera::processOption (in_opt);
@@ -469,9 +474,20 @@ int Fli::init ()
 		return -1;
 	sprintf (ccdType, "FLI %li.%li", hwrev, fwrev);
 
-	ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
+	long devid;
+	ret = FLIGetDeviceID (dev, &devid);
 	if (ret)
-		return -1;
+	  	return -1;
+
+	if (devid == FLIUSB_PROLINE_ID || bgFlush != -1)
+	{
+		createValue (useBgFlush, "BGFLUSH", "use BG flush", true, RTS2_VALUE_WRITABLE);
+		useBgFlush->setValueBool (bgFlush == 1);
+		ret = FLIControlBackgroundFlush (dev, useBgFlush->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP);
+		if (ret)
+			return -1;
+	}
+
 
 	// get mode..
 	createValue (fliMode, "MODE", "readout mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
