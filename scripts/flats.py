@@ -188,6 +188,8 @@ class Rts2Comm:
 			self.executeMorning()
 
 	def run(self):
+		# make sure we are taking light images..
+		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
 		if (self.isEvening()):
 			return self.runEvening()
