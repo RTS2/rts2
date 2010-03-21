@@ -37,19 +37,65 @@ using namespace rts2xmlrpc;
 void Previewer::script (std::ostringstream& _os, const char *label_encoded)
 {
 	_os  << "<style type='text/css'>.normal { border: 5px solid white; } .hig { border: 5px solid navy; }</style></head><body>"
-	<< "<script language='javascript'>\n function highlight (name, path) {\n if (document.forms['download'].elements['act'][1].checked)\n { var files = document.getElementById('files'); nc='hig';\n if (document.images[name].className == 'hig')\n { nc='normal'; var i; for (i = files.length - 1; i >=0; i--) { if (files.options[i].value == path) { files.remove(i); i = -1; } } }\nelse\n{\nvar o = document.createElement('option');\no.selected=1;\no.text=path;\no.value=path;\ntry { files.add(o,files.options[0]);\n} catch (ex) { files.add(o,0); }\n }\ndocument.images[name].className=nc;\n }\n else\n { w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + path + '?lb=" << label_encoded << "', 'Preview'); w2.focus (); }\n }</script>" << std::endl;
+	<< "<script language='javascript'>\n"
+"function high_off(files,name) {"
+  "var i; for (i = files.length - 1; i >=0; i--)"
+  "{\n"
+    "if (files.options[i].value == name) { files.remove(i); i = -1; }\n"
+  "}\n"
+  "document.images[name].className='normal';\n"
+"}\n"
+
+"function high_on(files,name) {"
+  "var o = document.createElement('option');\n"
+  "o.selected=1;\n"
+  "o.text=name;\n"
+  "o.value=name;\n"
+  "try { files.add(o,files.options[0]);} catch (ex) { files.add(o,0); }\n"
+  "document.images[name].className='hig';\n"
+"}\n"
+
+"function highlight(name) {\n"
+  "if (document.forms['download'].elements['act'][1].checked)\n"
+  "{ var files = document.getElementById('files');\n"
+    "if (document.images[name].className == 'hig') {"
+      "high_off(files,name);\n"
+    "} else\n"
+    "{\n"
+      "high_on(files,name);\n"
+    "}\n"
+  "}\n"
+  "else\n"
+  "{ w2 = window.open('" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/jpeg' + name + '?lb=" << label_encoded << "', 'Preview');\n"
+    "w2.focus ();"
+  "}\n"
+"}\n"
+
+"function select_all()"
+"{"
+   "var files = document.getElementById('files');\n"
+   "var but = document.getElementById('selectAll');\n"
+   "var on = (but.innerHTML == 'Select all');\n"
+   "for each (img in document.images) {\n"
+     "if (img.name && img.name[0] == '/')\n"
+       "if (on && img.className == 'normal') { high_on(files,img.name);}\n"
+       "if (!on && img.className == 'hig') { high_off(files,img.name);}\n"
+   "}\n"
+   "if (on) { but.innerHTML = 'Unselect all'; } else { but.innerHTML = 'Select all'; }\n"
+"}</script>" << std::endl;
 }
 
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const char *label)
 {
 	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
-	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'/></form><br/>\n"
-	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "'/><input type='hidden' name='ps' value='" << ps << "'/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/></form>\n";
+	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'/></form>\n"
+	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "'/><input type='hidden' name='ps' value='" << ps << "'/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/>&nbsp;\n"
+        << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
 void Previewer::imageHref (std::ostringstream& _os, int i, const char *fpath, int prevsize, const char *label)
 {
-	_os << "<img class='normal' name='p" << i << "' onClick='highlight (\"p" << i << "\", \"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "&lb=" << label << "'/>" << std::endl;
+	_os << "<img class='normal' name='" << fpath << "' onClick='highlight (\"" << fpath << "\")' width='" << prevsize << "' height='" << prevsize << "' src='" << ((XmlRpcd *)getMasterApp())->getPagePrefix () << "/preview" << fpath << "?ps=" << prevsize << "&lb=" << label << "'/>" << std::endl;
 }
 
 void Previewer::pageLink (std::ostringstream& _os, int i, int pagesiz, int prevsize, const char *label, bool selected)
