@@ -35,7 +35,7 @@
 #include <time.h>
 #include <time.h>
 #include <errno.h>
-
+#include <libnova/libnova.h>
 // wildi ToDo: must go aay
 #define TEST_OAK 1
 #define NO_TEST_OAK 0
@@ -67,6 +67,9 @@ int checkOakCall(EOakStatus status, const char *file, int line, const char* func
 #include "ssd650v_comm_vermes.h"
 
 
+char date_time[256] ;
+char *lastMotorStop_str= date_time ;
+
 int oak_thread_state= THREAD_STATE_UNDEFINED ;
 int oakDiginHandle;
 DeviceInfo devInfo;      // structure holding oak digital input device informations
@@ -93,6 +96,8 @@ connectOakDiginDevice(int connecting)
   char oakDiginDevice[]="/dev/door_switch" ;
 
   if (connecting== OAKDIGIN_CMD_CONNECT) {
+
+    strcpy( date_time, "undefined") ;
     oak_stat = oak_digin_setup(&oakDiginHandle, oakDiginDevice);
     
     if (oak_stat == 0) {
@@ -307,7 +312,7 @@ oak_digin_thread(void * args)
       // let the motor open the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
 
-    } else if((( bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_STOPPED_OPENED) || ( doorState== DS_RUNNING_CLOSE)))  {
+    } else if((( bits & OAK_MASK_OPENED) > 0) && (( doorState== DS_STOPPED_OPENED) || ( doorState== DS_RUNNING_CLOSE) || ( doorState== DS_RUNNING_CLOSE_UNDEFINED)))  {
       // let the motor close the door
       stop_motor= STOP_MOTOR_UNDEFINED ;
 
@@ -363,6 +368,10 @@ oak_digin_thread(void * args)
       }
       fprintf( stderr, "oak_digin_thread: motor stopped\n") ;
       stop_motor= STOP_MOTOR_UNDEFINED ;
+      struct ln_date utm;
+      ln_get_date_from_sys( &utm) ;
+      sprintf( date_time, "%4d-%02d-%02dT%02d:%02d:%02d", utm.years, utm.months, utm.days, utm.hours, utm.minutes, (int) utm.seconds) ;
+
     }
 
     // door status

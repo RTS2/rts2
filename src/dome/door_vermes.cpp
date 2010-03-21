@@ -37,6 +37,8 @@ extern int doorState;
 extern int doorEvent ;
 extern useconds_t sleep_max ;
 extern int oak_digin_thread_heart_beat ;
+extern char *lastMotorStop_str ;
+
 int last_oak_digin_thread_heart_beat ;
 extern pthread_t  move_door_id;
 
@@ -59,6 +61,7 @@ namespace rts2dome {
     Rts2ValueBool *close_door_undefined;
     Rts2ValueBool *simulate_door;
     time_t nextDeadCheck; // wildi ToDo: clarify what happens!
+    Rts2ValueString *lastMotorStop ;  
 
     /**
      * Update status messages.
@@ -182,10 +185,10 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
       close_door->setValueBool(false) ;
       close_door_undefined->setValueBool(false) ;
       stop_door->setValueBool(false) ; // in order that it can be repeated faster
-      doorState= DS_UNDEF ;
       updateDoorStatus () ;
 
       if( simulate_door->getValueBool()){
+	doorState= DS_UNDEF ;
       } else {
 	// turning off the motor has to be done here since move_door opens,closes it during a sleep
 	// stop the motor first, then kill the thread
@@ -203,7 +206,6 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	  }
 	}
 	pthread_kill( move_door_id, SIGUSR2);
-	doorState= DS_STOPPED_UNDEF ;
       }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged use TRUE to stop motor" << sendLog ;
@@ -226,6 +228,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_OPEN ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_OPEN: opening" << sendLog ;
 	}
       } else {
 	block_door->setValueBool(true) ;
@@ -252,7 +255,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE ;
-	logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: opening" << sendLog ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: closing" << sendLog ;
 	}
       } else {
 	block_door->setValueBool(true) ;
@@ -279,6 +282,7 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE: closing undefined" << sendLog ;
 	}
       } else {
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
@@ -431,7 +435,7 @@ DoorVermes::info ()
   }
   updateDoorStatus() ;
   updateDoorStatusMessage() ;
-
+  lastMotorStop-> setValueString ( lastMotorStop_str) ; 
   return Dome::info ();
 }
 
@@ -604,6 +608,7 @@ DoorVermes::startClose ()
 
       } else { // the real thing
 	doorEvent= EVNT_DOOR_CMD_CLOSE ;
+	logStream (MESSAGE_INFO) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE: closing" << sendLog ;
       }
       close_door->setValueBool(true) ;
       return 0 ;
@@ -619,12 +624,33 @@ DoorVermes::startClose ()
 
   } else {
 
-    logStream (MESSAGE_ERROR) << "DoorVermes::startClose closing door, doorState " << doorState << sendLog ;
+    logStream (MESSAGE_INFO) << "DoorVermes::startClose closing door, doorState " << doorState << sendLog ;
     if( oak_thread_state== THREAD_STATE_RUNNING) {
       if( simulate_door->getValueBool()){
       
       } else {
+
+	if( doorState == DS_RUNNING_OPEN) {
+	  // turning off the motor has to be done here since move_door opens,closes it during a sleep
+	  // stop the motor first, then kill the thread
+	  int ret ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+	
+	  while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
+	    fprintf( stderr, "DoorVermes::valueChanged: can not turn motor off\n") ;
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	  }
+	  pthread_kill( move_door_id, SIGUSR2);
+	  logStream (MESSAGE_INFO) << "DoorVermes::startClose was doorState== DS_RUNNING_OPEN: stopped motor" << sendLog ;
+	}
 	doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE ;
+	logStream (MESSAGE_INFO) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE: closing" << sendLog ;
       }
     } else {
       logStream (MESSAGE_ERROR) << "DoorVermes::startClose oak_digin_thread died" << sendLog ;
@@ -740,6 +766,7 @@ DoorVermes::idle ()
 
 DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
 {
+  createValue( lastMotorStop,        "LASTSTOP", "date and time, when motor was last stopped by Oak sensors", false) ;
   createValue (doorStateMessage,     "DOORSTATE", "door state as clear text", false);
   createValue (block_door,           "BLOCK_DOOR", "true inhibits rts2-centrald initiated door movements", false, RTS2_VALUE_WRITABLE);
   block_door->setValueBool (false); 
