@@ -209,7 +209,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 	catch (rts2core::Error &er)
 	{
 		logStream (MESSAGE_ERROR) << "Processing " << imgPath << ": " << er << sendLog;
-		delete image;
+		//delete image;
 		// move file to bad directory..
 
 		int i = 0;
