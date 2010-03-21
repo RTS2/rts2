@@ -202,4 +202,12 @@
  * New user. Provides all user parameters (login, email, password,..), out true/false - true if OK
  */
 #define R2X_USER_TELMA_NEW            "rts2.user.telma.new"
+
+/**
+ * Update BB record about observatory.
+ *
+ * @param observatory  name of observatory which record will be updated
+ * @param data Observarory data. Has of devices followed by variables.
+ */
+#define R2X_BB_UPDATE_OBSERVATORY     "rts2-bb.update-observatory"
 #endif							 /* ! __RTS2_R2X__ */

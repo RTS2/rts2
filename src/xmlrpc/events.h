@@ -22,6 +22,7 @@
 
 #include "stateevents.h"
 #include "valueevents.h"
+#include "bbserver.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -164,6 +165,7 @@ class Events
 	public:
 		StateCommands stateCommands;
 		ValueCommands valueCommands;
+		BBServers bbServers;
 
 		std::vector <std::string> publicPaths;
 		std::vector <std::string> allskyPaths;
@@ -192,6 +194,7 @@ class Events
 
 		void parseHttp (xmlNodePtr ev);
 		void parseEvents (xmlNodePtr ev);
+		void parseBB (xmlNodePtr ev);
 
 		void parseState (xmlNodePtr event, std::string deviceName);
 		void parseValue (xmlNodePtr event, std::string deviceName);

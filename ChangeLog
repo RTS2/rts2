@@ -1,3 +1,6 @@
+2010-03-21
+ * Big Brother support (configuration entry in events.xsd, support in xmlrpcd)
+
 2010-03-20
  * Various other FLI improvements. You will need to use FLI library from RTS2 repository.
  * FLI uses reported serial numbers

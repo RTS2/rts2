@@ -215,6 +215,16 @@ void Events::parseEvents (xmlNodePtr ev)
 	}
 }
 
+void Events::parseBB (xmlNodePtr ev)
+{
+	if (ev == NULL)
+		throw XmlMissingElement (ev, "server for BB");
+
+	if (!xmlStrEqual (ev->name, (xmlChar *) "server"))
+		throw XmlUnexpectedNode (ev);
+	bbServers.push_back (BBServer ((char *) ev->children->content));
+}
+
 void Events::load (const char *file)
 {
 	stateCommands.clear ();
@@ -257,6 +267,10 @@ void Events::load (const char *file)
 		else if (xmlStrEqual (ev->name, (xmlChar *) "events"))
 		{
 			parseEvents (ev->children);
+		}
+		else if (xmlStrEqual (ev->name, (xmlChar *) "bb"))
+		{
+			parseBB (ev->children);
 		}
 		else
 		{

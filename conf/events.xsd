@@ -119,10 +119,19 @@
     </xs:sequence>
   </xs:complexType>
 
+  <xs:complexType name="bb">
+    <xs:sequence>
+      <xs:element name="server" minOccurs="1" maxOccurs="1" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
   <xs:complexType name="config">
     <xs:sequence>
       <xs:element name="http" type="http" minOccurs="0" maxOccurs="1"/>
       <xs:element name="events" type="events" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="bb" type="bb" minOccurs="0" maxOccurs="unbounded">
+      	<xs:annotation><xs:documentation>Big Brother server</xs:documentation></xs:annotation>
+      </xs:element>
     </xs:sequence>
   </xs:complexType>
 

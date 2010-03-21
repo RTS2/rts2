@@ -46,4 +46,7 @@
       </value>
     </device>
   </events>
+  <bb>
+    <server>example.com:8001</server>
+  </bb>
 </config>

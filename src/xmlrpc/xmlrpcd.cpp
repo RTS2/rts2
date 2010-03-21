@@ -85,6 +85,60 @@ XmlRpcServer xmlrpc_server;
 
 using namespace rts2xmlrpc;
 
+/**
+ * Transform connection values to XMLRPC.
+ */
+void connectionValuesToXmlRpc (Rts2Conn *conn, XmlRpcValue& result)
+{
+	int i = 0;
+	for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
+	{
+		XmlRpcValue retVar;
+		retVar["name"] = (*variter)->getName ();
+		retVar["flags"] = (*variter)->getFlags ();
+
+		Rts2Value *val = *variter;
+
+		switch (val->getValueBaseType ())
+		{
+			case RTS2_VALUE_INTEGER:
+				int int_val;
+				int_val = (*variter)->getValueInteger ();
+				retVar["value"] = int_val;
+				break;
+			case RTS2_VALUE_DOUBLE:
+				double dbl_value;
+				dbl_value = (*variter)->getValueDouble ();
+				retVar["value"] = dbl_value;
+				break;
+			case RTS2_VALUE_FLOAT:
+				float float_val;
+				float_val = (*variter)->getValueFloat ();
+				retVar["value"] = float_val;
+				break;
+			case RTS2_VALUE_BOOL:
+				bool bool_val;
+				bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
+				retVar["value"] = bool_val;
+				break;
+			case RTS2_VALUE_LONGINT:
+				int_val = (*variter)->getValueLong ();
+				retVar["value"] = int_val;
+				break;
+			case RTS2_VALUE_TIME:
+				struct tm tm_s;
+				long usec;
+				((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
+				retVar["value"] = XmlRpcValue (&tm_s);
+				break;
+			default:
+				retVar["value"] = (*variter)->getValue ();
+				break;
+		}
+		result[i] = retVar;
+	}
+}
+
 void XmlDevClient::stateChanged (Rts2ServerState * state)
 {
 	((XmlRpcd *)getMaster ())->stateChangedEvent (getConnection (), state);
@@ -170,6 +224,9 @@ int XmlRpcd::init ()
 		directories.push_back (new Directory (iter->getTo (), iter->getPath (), &xmlrpc_server));
 
 	setMessageMask (MESSAGE_MASK_ALL);
+
+	if (events.bbServers.size () != 0)
+		addTimer (5, new Rts2Event (EVENT_XMLRPC_BB));
 
 #ifndef HAVE_PGSQL
 	ret = Rts2Config::instance ()->loadFile (config_file);
@@ -329,6 +386,39 @@ bool XmlRpcd::existsSession (std::string sessionId)
 	return true;
 }
 
+void XmlRpcd::postEvent (Rts2Event *event)
+{
+	switch (event->getType ())
+	{
+		case EVENT_XMLRPC_BB:
+			sendBB ();
+			addTimer (60, event);
+			return;
+	}
+#ifdef HAVE_PGSQL
+	Rts2DeviceDb::postEvent (event);
+#else
+	Rts2Device::postEvent (event);
+#endif
+}
+
+void XmlRpcd::sendBB ()
+{
+	// construct data..
+	XmlRpcValue data;
+
+	connections_t::iterator iter;
+
+	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
+	{
+		XmlRpcValue connData;
+		connectionValuesToXmlRpc (*iter, connData);
+		data[(*iter)->getName ()] = connData;
+	}
+
+	events.bbServers.sendUpdate (&data);
+}
+
 /**
  * Return session ID for user, if login is allowed.
  *
@@ -421,9 +511,7 @@ class SessionMethod: public XmlRpcServerMethod
 class DeviceCount: public SessionMethod
 {
 	public:
-		DeviceCount (XmlRpcServer* s) : SessionMethod ("DeviceCount", s)
-		{
-		}
+		DeviceCount (XmlRpcServer* s) : SessionMethod ("DeviceCount", s) {}
 
 		void sessionExecute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -652,52 +740,7 @@ class ListValuesDevice: public ListValues
 				{
 					throw XmlRpcException ("Cannot get device " + (std::string) params[0]);
 				}
-				for (Rts2ValueVector::iterator variter = conn->valueBegin (); variter != conn->valueEnd (); variter++, i++)
-				{
-					XmlRpcValue retVar;
-					retVar["name"] = (*variter)->getName ();
-					retVar["flags"] = (*variter)->getFlags ();
-
-					Rts2Value *val = *variter;
-
-					switch (val->getValueBaseType ())
-					{
-						case RTS2_VALUE_INTEGER:
-							int int_val;
-							int_val = (*variter)->getValueInteger ();
-							retVar["value"] = int_val;
-							break;
-						case RTS2_VALUE_DOUBLE:
-							double dbl_value;
-							dbl_value = (*variter)->getValueDouble ();
-							retVar["value"] = dbl_value;
-							break;
-						case RTS2_VALUE_FLOAT:
-							float float_val;
-							float_val = (*variter)->getValueFloat ();
-							retVar["value"] = float_val;
-							break;
-						case RTS2_VALUE_BOOL:
-							bool bool_val;
-							bool_val = ((Rts2ValueBool*)(*variter))->getValueBool ();
-							retVar["value"] = bool_val;
-							break;
-						case RTS2_VALUE_LONGINT:
-							int_val = (*variter)->getValueLong ();
-							retVar["value"] = int_val;
-							break;
-						case RTS2_VALUE_TIME:
-							struct tm tm_s;
-							long usec;
-							((Rts2ValueTime*) (*variter))->getStructTm (&tm_s, &usec);
-							retVar["value"] = XmlRpcValue (&tm_s);
-							break;
-						default:
-							retVar["value"] = (*variter)->getValue ();
-							break;
-					}
-					result[i] = retVar;
-				}
+				connectionValuesToXmlRpc (conn, result);
 			}
 			// print from all
 			else

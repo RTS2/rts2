@@ -39,6 +39,7 @@
 #define OPT_STATE_CHANGE            OPT_LOCAL + 76
 
 #define EVENT_XMLRPC_VALUE_TIMER    RTS2_LOCAL_EVENT + 850
+#define EVENT_XMLRPC_BB             RTS2_LOCAL_EVENT + 851
 
 using namespace XmlRpc;
 
@@ -120,6 +121,8 @@ class XmlRpcd:public Rts2Device
 		 */
 		bool sendEmails () { return send_emails->getValueBool (); }
 
+		virtual void postEvent (Rts2Event *event);
+
 		/**
 		 * Returns messages buffer.
 		 */
@@ -164,6 +167,8 @@ class XmlRpcd:public Rts2Device
 #endif
 
 		std::string page_prefix;
+
+		void sendBB ();
 };
 
 };
