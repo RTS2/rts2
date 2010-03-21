@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2009-12-13</date>">
+  <!ENTITY dhdate      "<date>2010-03-20</date>">
   <!ENTITY dhsection   "<manvolnum>5</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.8.4</productnumber>
+    <productnumber>0.8.0</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -551,11 +551,11 @@
     <para>
       If you use <emphasis>exe</emphasis> command in scripting, the script
       should communicate with RTS2 through standart input and outputs. The
-      protocol is simple, text oriented, with lines ending with line feed.
+      protocol is simple, text oriented, with lines ending with \n (end of line).
       It is possible to write observing script using shell echo and read
       commands, as is demonstrated in example bellow. But for higher
-      interaction, some higher language is prefered - based on preferences,
-      any of Python, PHP, Perl, TCL or any other language capable to read and
+      interaction, some higher language is prefered - based on user preferences,
+      any of Python, PHP, Perl, TCL or other language capable to read and
       write to file descriptor will work.
     </para>
     <variablelist>
@@ -582,11 +582,13 @@
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	  for details of the expression. Bellow is an example, which start
 	  exposure, waits for image and rename image to given location.
+	  Returns new image name.
 	</para><literallayout>
 echo exposure
 read exposure_end # is notified of exposure end
 read image imagename  # $image will hold "image" string
 echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standard image pattern}	
+read new_name # reads new image name to $new_name
 	</literallayout></listitem>
       </varlistentry>
       <varlistentry>
@@ -595,6 +597,7 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	  Copy image to path given by an expression. Please see
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>
 	  for details of the expression. See rename command for an example.
+	  Returns new image name.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -609,6 +612,7 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	<listitem><para>
 	  Move given image to sky flat destination, configured in
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  Returns new image name.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -616,6 +620,7 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	<listitem><para>
 	  Move given image to raw dark destination, configured in
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  Returns new image name.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -623,6 +628,7 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	<listitem><para>
 	  Move given image to raw dark destination, configured in
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  Returns new image name.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -630,6 +636,7 @@ echo rename $imagename /foo/bar/%f  # renames acquired image to /foo/bar/{standa
 	<listitem><para>
 	  Move given image to trash destination, configured in
 	  <citerefentry><refentrytitle>rts2.ini</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+	  Returns new image name.
 	</para></listitem>
       </varlistentry>
       <varlistentry>
@@ -762,7 +769,8 @@ for x in 1 2; do
 	echo "V T0 WOFFS += 0.01 0.01"
 	read x y
 	echo "rename $y %b/test/%f"
-	echo "log E renaming $y"
+	read renamed
+	echo "log E renamed $y to $renamed"
 	echo "? infotime"
 	read x
 	echo "G centrald sun_az"
