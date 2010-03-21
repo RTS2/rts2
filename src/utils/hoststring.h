@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef __RTS2_HOSTSTRING__
+#define __RTS2_HOSTSTRING__
+
 #include <config.h>
 
 /**
@@ -48,3 +51,5 @@ class HostString
 			return port;
 		}
 };
+
+#endif // !__RTS2_HOSTSTRING__
