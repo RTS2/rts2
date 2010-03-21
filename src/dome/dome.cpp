@@ -134,7 +134,7 @@ int Dome::init ()
 	// check for presense of state-master
 	if (getCentraldConns ()->size () > 1)
 	{
- 		if (stateMaster->getValueString ().length () == 0)
+ 		if (stateMaster == NULL || stateMaster->getValueString ().length () == 0)
 		{
 			logStream (MESSAGE_ERROR) << "multiple central server specified, but none identified as master - please add state-master option" << sendLog;
 			return -1;
