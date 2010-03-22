@@ -28,3 +28,5 @@ librts2xmlrpc_a_SOURCES = \
 	XmlRpcSource.cpp \
 	XmlRpcUtil.cpp \
 	XmlRpcValue.cpp
+
+librts2xmlrpc_a_CXXFLAGS = @NOVA_CFLAGS@
