@@ -241,6 +241,10 @@ int Fli::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		return FLIControlBackgroundFlush (dev, ((Rts2ValueBool *) new_value)->getValueBool () ? FLI_BGFLUSH_START : FLI_BGFLUSH_STOP) ? -2 : 0;
 	}
+	if (old_value == fliMode)
+	{
+		return FLISetCameraMode (dev, new_value->getValueInteger ()) ? -2 : 0;
+	}
 	return Camera::setValue (old_value, new_value);
 }
 
