@@ -511,9 +511,9 @@ AAG::info ()
     {
 	if (getWeatherState () == false)
 	{
-	    logStream (MESSAGE_DEBUG) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
-				     << " trigger: " << triggerGood->getValueDouble ()
-				     << sendLog;
+	    //logStream (MESSAGE_DEBUG) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
+	//			     << " trigger: " << triggerGood->getValueDouble ()
+	//			     << sendLog;
 	}
     }
     else 
@@ -554,7 +554,7 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (pwmValue,         "PWM",          "pwm value", false);
 	createValue (ldrResistance,    "LDR_RES",      "pullup resistancetrue", false);
 	createValue (intVoltage,       "INT_VOLT",     "internal voltage", false);
-	createValue (triggerGood,      "TRIGGOOD", "if rain frequency gets above this value, drop bad weather flag", false);
+	createValue (triggerGood,      "TRIGGOOD", "if rain frequency gets above this value, weather is not bad", false, RTS2_VALUE_WRITABLE);
 	triggerGood->setValueDouble (rts2_nan ("f"));
 
 	addOption ('f', NULL, 1, "serial port AAG cloud sensor");
