@@ -101,6 +101,7 @@ class Fli:public Camera
 
 		long hwRev;
 		int camNum;
+		char *camName;
 
 		int fliDebug;
 		Rts2ValueInteger *nflush;
@@ -269,6 +270,8 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	fliDebug = FLIDEBUG_NONE;
 	hwRev = -1;
 	camNum = 0;
+	camName = NULL;
+
 	createValue (nflush, "nflush", "number of flushes before exposure", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	nflush->setValueInteger (-1);
 
@@ -276,7 +279,7 @@ Fli::Fli (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 	addOption ('R', NULL, 1, "find camera by HW revision");
 	addOption ('B', NULL, 1, "FLI debug level (1, 2 or 3; 3 will print most error message to stdout)");
 	addOption ('n', NULL, 1, "Camera number (in FLI list)");
-	addOption ('N', NULL, 1, "Camera serail number");
+	addOption ('N', NULL, 1, "Camera serial number (string, device name)");
 	addOption ('b', NULL, 0, "use background flush");
 	addOption ('l', NULL, 1, "Number of CCD flushes");
 }
@@ -326,7 +329,7 @@ int Fli::processOption (int in_opt)
 			camNum = atoi (optarg);
 			break;
 		case 'N':
-			camNum = -1 * atoi (optarg);
+			camName = optarg;
 			break;
 		case 'l':
 			nflush->setValueCharArr (optarg);
@@ -349,7 +352,7 @@ int Fli::init ()
 	char *nam_sep;
 	char **nam;					 // current name
 
-	long serno = 0;
+	const char *devnam;
 
 	ret_c = Camera::init ();
 	if (ret_c)
@@ -369,7 +372,7 @@ int Fli::init ()
 	}
 
 	// find device based on serial number..
-	if (camNum < 0)
+	if (camName != NULL)
 	{
 		nam = names;
 		while (*nam)
@@ -384,8 +387,8 @@ int Fli::init ()
 				nam++;
 				continue;
 			}
-			ret = FLIGetSerialNum (dev, &serno);
-			if (!ret && camNum == -1 * serno)
+			ret = FLIGetDeviceName (dev, &devnam);
+			if (!ret && !strcmp (devnam, camName))
 			{
 				break;
 			}
@@ -462,8 +465,8 @@ int Fli::init ()
 		logStream (MESSAGE_DEBUG) << "fli init set Nflush to " << nflush->getValueInteger () <<	sendLog;
 	}
 
-	FLIGetSerialNum (dev, &serno);
-	snprintf (serialNumber, 64, "%li", serno);
+	FLIGetDeviceName (dev, &devnam);
+	strncpy (serialNumber, devnam, 64);
 
 	long hwrev;
 	long fwrev;
