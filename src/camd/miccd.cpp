@@ -88,7 +88,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
 
-	createValue (mode, "mode", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (mode, "rdoutm", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	mode->addSelVal ("NORMAL");
 	mode->addSelVal ("LOW NOISE");
 	mode->addSelVal ("ULTRA LOW NOISE");
@@ -133,6 +133,13 @@ int MICCD::init ()
 		logStream (MESSAGE_ERROR) << "cannot set requested camera mode " << mode->getValueInteger () << sendLog;
 		return -1;
 	}
+
+	camFilterVal->addSelVal ("C");
+	camFilterVal->addSelVal ("B");
+	camFilterVal->addSelVal ("V");
+	camFilterVal->addSelVal ("R");
+	camFilterVal->addSelVal ("I");
+
 	return 0;
 }
 
@@ -142,6 +149,10 @@ int MICCD::initValues ()
 	ret = miccd_info (&camera, &cami);
 	if (ret)
 		return -1;
+
+	cami.description[10] = '\0';
+	cami.serial[10] = '\0';
+	cami.chip[10] = '\0';
 
 	addConstValue ("DESCRIPTION", "camera descriptio", cami.description);
 	addConstValue ("SERIAL", "camera serial number", cami.serial);
@@ -173,6 +184,7 @@ int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 {
 	if (oldValue == mode)
 		return miccd_mode (&camera, newValue->getValueInteger ()) == 0 ? 0 : -2;
+	return Camera::setValue (oldValue, newValue);
 }
 
 int MICCD::setCoolTemp (float new_temp)
