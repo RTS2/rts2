@@ -494,7 +494,7 @@ int Fli::init ()
 
 
 	// get mode..
-	createValue (fliMode, "MODE", "readout mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (fliMode, "RDOUTM", "readout mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	// discover available modes..
 	flimode_t m = 0;
 	char mode[50];
