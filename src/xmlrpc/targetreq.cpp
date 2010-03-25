@@ -46,7 +46,7 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 
 	if (vals.size () == 0)
 	{
-		listTargets (response_type, response, response_length);
+		listTargets (params, response_type, response, response_length);
 	}
 	else
 	{
@@ -96,12 +96,24 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 	}
 }
 
-void Targets::listTargets (const char* &response_type, char* &response, size_t &response_length)
+void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 	_os << "<html><head><title>List of targets</title></head><body><form action='form' method='post'><table>\n";
 
-	rts2db::TargetSet ts = rts2db::TargetSet ();
+	const char *t = params->getString ("t", NULL);
+
+	rts2db::TargetSet ts;
+
+	if (t != NULL)
+	{
+		ts = rts2db::TargetSet (t);
+	}
+	else
+	{
+		ts = rts2db::TargetSet ();
+	}
+
 	ts.load ();
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)

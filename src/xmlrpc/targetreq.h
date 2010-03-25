@@ -51,7 +51,7 @@ class Targets: public GetRequestAuthorized
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
-		void listTargets (const char* &response_type, char* &response, size_t &response_length);
+		void listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void processForm (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 		void printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length);
 		void printTargetImages (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
