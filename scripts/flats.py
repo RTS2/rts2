@@ -27,6 +27,9 @@ class Rts2Comm:
 		self.sleepTime = 1 # number of seconds to wait for optimal flat conditions
 		self.startExpTime = 1 # starting exposure time
 
+		self.eveningMultiply = 1 # evening multiplying - good for cameras with long readout times
+		self.morningMultiply = 1 # morning multiplying
+
 		self.shiftRa = 10.0 / 3600  # shift after every flat in RA [degrees]
 		self.shiftDec = 10.0 / 3600 # shift after every flat in DEC [degrees]
 
@@ -154,6 +157,14 @@ class Rts2Comm:
 		avrg = self.getValueFloat('average') # Calculate average of image (can be just the central 100x100pix if you want to speed up)
 		ratio = (avrg - self.BiasLevel) / self.OptimalFlat
 		ret = None
+		expMulti = 1
+
+		if (not (self.isSubWindow())):
+			if (self.isEvening()):
+				expMulti = self.eveningMultiply
+			else:
+				expMulti = self.morningMultiply
+
 		if (abs(1.0 - ratio) <= self.optimalRange): # Images within optimalRange of the optimal flux value
 			ret = 0
 		  	if (self.isSubWindow):
@@ -181,9 +192,12 @@ class Rts2Comm:
 				ret = -1
 
 		self.exptime = self.optimalExpTime(ratio)
+		self.exptime *= expMulti
 
-		# if the image falls within reasonable boundaries, try again
+		# if the image falls within reasonable boundaries, took full image
 		if (self.exptime > self.expTimes[0] and self.exptime < self.expTimes[-1]):
+			if (self.isSubWindow):
+				self.fullWindow()
 			ret = 0
 
 		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %i" % (ratio,avrg,self.Ngood[self.filter],self.filter,self.exptime,ret))
