@@ -81,6 +81,7 @@ using namespace rts2camd;
 
 MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 {
+	createExpType ();
 	createTempAir ();
 	createTempCCD ();
 	createTempSet ();
@@ -207,7 +208,10 @@ int MICCD::startExposure ()
 	ret = miccd_hclear (&camera);
 	if (ret)
 		return -1;
-	ret = miccd_open_shutter (&camera);
+	if (getExpType () == 1)
+		ret = miccd_close_shutter (&camera);
+	else
+		ret = miccd_open_shutter (&camera);
 	if (ret)
 		return -1;
 	return 0;
