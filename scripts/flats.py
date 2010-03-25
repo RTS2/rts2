@@ -182,6 +182,10 @@ class Rts2Comm:
 
 		self.exptime = self.optimalExpTime(ratio)
 
+		# if the image falls within reasonable boundaries, try again
+		if (self.exptime > self.expTimes[0] and self.exptime < self.expTimes[-1]):
+			ret = 0
+
 		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %i" % (ratio,avrg,self.Ngood[self.filter],self.filter,self.exptime,ret))
 		return ret
 	
