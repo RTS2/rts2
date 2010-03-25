@@ -875,7 +875,7 @@ https://azug.minpet.unibas.ch/wikiobsvermes/index.php
   <para>If root is installed rts2-fit-focus will be compiled and installed.</para>
   </varlistentry>
   <varlistentry>
-  <term> Getopt::Long, Statistics::Descriptivae, Statistics::Descriptive::Weighted, File::Path 
+  <term> Getopt::Long, Statistics::Descriptive, Statistics::Descriptive::Weighted, File::Path 
   </term>
   </varlistentry>
   <varlistentry>
