@@ -117,20 +117,23 @@ void Night::printAllImages (int year, int month, int day, XmlRpc::HttpParams *pa
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Observations";
+	std::ostringstream title;
+	title << "Observations";
 
 	if (year > 0)
 	{
-		_os << " for " << year;
+		title << " for " << year;
 		if (month > 0)
 		{
-			_os << "-" << month;
+			title << "-" << month;
 			if (day > 0)
 			{
-				_os << "-" << day;
+				title << "-" << day;
 			}
 		}
 	}
+
+	printHeader (_os, title.str ().c_str ());
 
 	int pageno = params->getInteger ("p", 1);
 	int pagesiz = params->getInteger ("s", 40);
@@ -311,7 +314,9 @@ void Night::printTable (int year, int month, int day, char* &response, size_t &r
 
 	}
 
-	_os << "</table><p></body></html>";
+	_os << "</table><p>";
+	
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];

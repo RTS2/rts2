@@ -42,7 +42,7 @@ void Plan::printScheduling (char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Planning</title></head><body>";
+	printHeader (_os, "Planning");
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	Rts2Conn * conn = serv->getOpenConnection (DEVICE_TYPE_EXECUTOR);
@@ -58,7 +58,7 @@ void Plan::printScheduling (char* &response, size_t &response_length)
 
 	_os << "<a href='next'>Select next target</a>";
 
-	_os << "</body></html>";
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];
@@ -68,7 +68,7 @@ void Plan::printScheduling (char* &response, size_t &response_length)
 void Plan::selectNext (char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	_os << "<html><head><title>Devices list</title></head><body><table>\n";
+	printHeader (_os, "Observing plan");
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	for (connections_t::iterator iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
@@ -76,7 +76,9 @@ void Plan::selectNext (char* &response, size_t &response_length)
 		_os << "<tr><td><a href='" << (*iter)->getName () << "/'>" << (*iter)->getName () << "</a></td></tr>\n";
 	}
 
-	_os << "\n</table></body></html>";
+	_os << "\n</table>";
+	
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];

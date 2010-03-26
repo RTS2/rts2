@@ -73,6 +73,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 				printTarget (tar, response_type, response, response_length);
 				break;
 			case 2:
+				if (vals[1] == "info")
+				{
+					printTargetInfo (tar, response_type, response, response_length);
+					break;
+				}
 				if (vals[1] == "images")
 				{
 					printTargetImages (tar, params, response_type, response, response_length);
@@ -99,7 +104,9 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	_os << "<html><head><title>List of targets</title></head><body><form action='form' method='post'><table>\n";
+	printHeader (_os, "List of targets");
+
+	_os << "<form action='form' method='post'><table>\n";
 
 	const char *t = params->getString ("t", NULL);
 
@@ -127,7 +134,9 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 #ifdef HAVE_LIBJPEG
 	_os << "<input type='submit' value='Plot' name='plot'/>";
 #endif // HAVE_LIBJPEG
-	_os << "</form></body></html>";
+	_os << "</form>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -189,9 +198,14 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
-	std::ostringstream _os;
 
-	_os << "<html><head><base href='/targets/" << tar->getTargetID () << "/'/><title>Target " << tar->getTargetName () << "</title></head><body>";
+}
+
+void Targets::printTargetInfo (Target *tar, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+	
+	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
 	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a>&nbsp;<a href='altplot/'>altitude plot</a></p>";
 
@@ -201,7 +215,9 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	Rts2InfoValOStream ivos (&_os);
 	tar->sendInfo (ivos, JD);
 
-	_os << "</pre></body></html>";
+	_os << "</pre>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -229,12 +245,13 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	XmlRpc::urlencode (lb);
 	const char * label_encoded = lb.c_str ();
 
-	_os << "<html><head><title>Images of target " << tar->getTargetName () << "</title>";
-	
 	Previewer preview = Previewer ();
+
+	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
+	
 	preview.script (_os, label_encoded);
 		
-	_os << "</head><body><p>";
+	_os << "<p>";
 
 	preview.form (_os, pageno, prevsize, pagesiz, label);
 	
@@ -271,7 +288,9 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
-	_os << "</p></body></html>";
+	_os << "</p>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -283,7 +302,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Observations of target " << tar->getTargetName () << "</title></head><body>";
+	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str ());
 
 	rts2db::ObservationSet os = rts2db::ObservationSet ();
 	os.loadTarget (tar->getTargetID ());
@@ -304,7 +323,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 		_os << "<p>There isn't any observation for target " << tar->getTargetName ();
 	}
 
-	_os << "</body></html>";
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -385,23 +404,17 @@ void AddTarget::askForTarget (const char* &response_type, char* &response, size_
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Add new target</title></head><body>";
+	printHeader (_os, "Add new target");
 
-	_os << "<p>Please provide anything which can be used to identify what you would like to observer. Valid inputs are:<ul>";
-
-	_os << "<li>RA DEC in various formats. DEC must be divided with + or - sign. Those are valid inputs<ul><li>300 +24</li> <li>10:20 +33:12</li> <li>10:20:30 -12:34:59</li></ul></li>";
-
-	_os << "<li>SIMBAD resolvable name</li>";
-
-	_os << "<li>any target from RTS2 target database</li>";
-
-	_os << "<li>any Minor planet name resolvable by MPEC</li>";
-
-	_os << "<li>one line MPEC</li>";
-
-	_os << "</ul></p><form name='add_target' action='confirm' method='get'><input type='text' textwidth='20' name='target'/><input type='submit' value='Add'/></form>";
-
-	_os << "</body></html>";
+	_os << "<p>Please provide anything which can be used to identify what you would like to observer. Valid inputs are:<ul>"
+		"<li>RA DEC in various formats. DEC must be divided with + or - sign. Those are valid inputs<ul><li>300 +24</li> <li>10:20 +33:12</li> <li>10:20:30 -12:34:59</li></ul></li>"
+		"<li>SIMBAD resolvable name</li>"
+		"<li>any target from RTS2 target database</li>"
+		"<li>any Minor planet name resolvable by MPEC</li>"
+		"<li>one line MPEC</li>"
+		"</ul></p><form name='add_target' action='confirm' method='get'><input type='text' textwidth='20' name='target'/><input type='submit' value='Add'/></form>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -415,12 +428,11 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 
 	if (strlen (tar) == 0)
 	{
-		
-		_os << "<html><head><title>Invalid target</title></head></body><p>Please specify valid target name - it must contain at least one character.</p></body></html>";
+		throw XmlRpc::XmlRpcException ("Invalid target - valid targer name must contain at least one character.");
 	}
 	else
 	{
-		_os << "<html><head><title>Confirm target</title></head><body>";
+		printHeader (_os, "Confirm target");
 
 		struct ln_equ_posn pos;
 
@@ -480,7 +492,7 @@ void AddTarget::confimTarget (const char *tar, const char* &response_type, char*
 				<< tar << "'/><br/>Optional target ID - left blank for autogenerated<input type='text' name='tarid' value=' '/><br/><input type='submit' value='Create target'/></form></p>";
 		}
 
-		_os << "</body></html>";
+		printFooter (_os);
 	}
 
 	response_type = "text/html";
@@ -508,9 +520,13 @@ void AddTarget::newTarget (const char *oriname, const char *name, int tarid, dou
 	if (ret)
 		throw XmlRpcException ("Target with given ID already exists");
 
-	_os << "<html><head><title>Created new target.</title></head><body><p>Target with name " << name << " and ID " << constTarget->getTargetID ()
+	printHeader (_os, "Create new target");
+	
+	_os << "<p>Target with name " << name << " and ID " << constTarget->getTargetID ()
 		<< " sucessfully created. Please click <a href='schedule?tarid=" << constTarget->getTargetID ()
-		<< "'>here</a> to continue with scheduling the target.</p></body></html>";
+		<< "'>here</a> to continue with scheduling the target.</p>";
+		
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();
@@ -527,10 +543,13 @@ void AddTarget::schedule (int tarid, const char* &response_type, char* &response
 	if (tar == NULL)
 		throw XmlRpcException ("Cannot find target with given ID!");
 
-	_os << "<html><head><title>Scheduling target " << tar->getTargetName ()
-		<< "</title></head><body><p>Please choose how your observations should be scheduled and peformed:<form name=''";
+	printHeader (_os, (std::string ("Scheduling target ") + tar->getTargetName ()).c_str ());
+	
+	_os << "<p>Please choose how your observations should be scheduled and peformed:<form name=''";
 
-	_os << "</p></body></html>";
+	_os << "</p>";
+
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();

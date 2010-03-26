@@ -41,7 +41,8 @@ void Devices::authorizedExecute (std::string path, XmlRpc::HttpParams *params, c
 void Devices::printList (char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	_os << "<html><head><title>Devices list</title></head><body><table>\n";
+	printHeader (_os, "Devices listing");
+	_os << "<table>\n";
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	for (connections_t::iterator iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
@@ -49,7 +50,8 @@ void Devices::printList (char* &response, size_t &response_length)
 		_os << "<tr><td><a href='" << (*iter)->getName () << "/'>" << (*iter)->getName () << "</a></td></tr>\n";
 	}
 
-	_os << "\n</table></body></html>";
+	_os << "\n</table>";
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];
@@ -59,7 +61,8 @@ void Devices::printList (char* &response, size_t &response_length)
 void Devices::printDevice (const char *device, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	_os << "<html><head><title>Value list for " << device << "</title></head><body><table>\n";
+	printHeader (_os, (std::string ("Value list for ") + device).c_str ());
+	_os << "<table>\n";
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	Rts2Conn *conn = serv->getOpenConnection (device);
@@ -75,7 +78,8 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 		_os << "</td><td>" << (*iter)->getName () << "</td><td>" << (*iter)->getDisplayValue () << "</td></tr>\n";
 	}
 
-	_os << "\n</table></body></html>";
+	_os << "\n</table>";
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];

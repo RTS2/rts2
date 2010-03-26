@@ -73,11 +73,29 @@ void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &h
 	authorizedExecute (path, params, response_type, response, response_length);
 }
 
+void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, const char *css, const char *cssLink)
+{
+	os << "<html><head><title>" << title << "</title>";
+	
+	if (css)
+		os << "<style type='text/css'>" << css << "</style>";
+
+	if (cssLink)
+		os << "<link href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << cssLink << "' rel='stylesheet' type='text/css'/>";
+
+	os << "</head><body>";
+}
+
+void GetRequestAuthorized::printFooter (std::ostream &os)
+{
+	os << "</body></html>";
+}
+
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
 
-	_os << "<html><head><title>" << path << "</title></head><body>";
+	printHeader (_os, path.c_str ());
 
 	struct dirent **namelist;
 	int n;
@@ -125,7 +143,8 @@ void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params,
 		}
 	}
 
-	_os << "</p></body></html>";
+	_os << "</p>";
+	printFooter (_os);
 
 	for (i = 0; i < n; i++)
 	{

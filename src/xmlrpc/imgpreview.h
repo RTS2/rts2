@@ -33,6 +33,12 @@ class Previewer
 {
 	public:
 		Previewer () {};
+
+		/**
+		 * Returns additional style which is needed for JavaScript.
+		 */
+		const char *style ();
+
 		/**
 		 * Add script entry for image manipulation. This should be
 		 * included in head section.

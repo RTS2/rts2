@@ -128,26 +128,29 @@ void Auger::printTable (int year, int month, int day, char* &response, size_t &r
 	bool do_list = false;
 	std::ostringstream _os;
 
-	_os << "<html><head><title>Auger showers";
+	std::ostringstream title;
+	title << "Auger showers";
 
 	if (year > 0)
 	{
-		_os << " for " << year;
+		title << " for " << year;
 		if (month > 0)
 		{
-			_os << "-" << month;
+			title << "-" << month;
 			if (day > 0)
 			{
-				_os << "-" << day;
+				title << "-" << day;
 				do_list = true;
 			}
 		}
 	}
 
+	printHeader (_os, title.str ().c_str ());
+
 	if (year == 0 || month == 0 || day == 0)
 		do_list = true;
 
-	_os << "</title></head><body><p><table>";
+	_os << "<p><table>";
 
 	if (do_list == true)
 	{
@@ -165,7 +168,9 @@ void Auger::printTable (int year, int month, int day, char* &response, size_t &r
 
 	}
 
-	_os << "</table><p></body></html>";
+	_os << "</table>";
+	
+	printFooter (_os);
 
 	response_length = _os.str ().length ();
 	response = new char[response_length];

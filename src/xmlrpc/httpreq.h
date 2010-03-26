@@ -77,6 +77,24 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 * @see GetRequestAuthorized::execute
 		 */
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length) = 0;
+
+	protected:
+		/**
+		 * Prints document header.
+		 *
+		 * @param os      output stream
+		 * @param title   document title
+		 * @param css     optional CSS styles
+		 * @param cssLink optional link to external CSS
+		 */
+		void printHeader (std::ostream &os, const char *title, const char *css = NULL, const char *cssLink = NULL);
+
+		/**
+		 * Prints document footer.
+		 *
+		 * @param os    output stream
+		 */
+		void printFooter (std::ostream &os);
 };
 
 /**

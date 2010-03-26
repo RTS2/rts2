@@ -34,10 +34,14 @@
 
 using namespace rts2xmlrpc;
 
+const char *Previewer::style ()
+{
+	return ".normal { border: 5px solid white; } .hig { border: 5px solid navy; }";
+}
+
 void Previewer::script (std::ostringstream& _os, const char *label_encoded)
 {
-	_os  << "<style type='text/css'>.normal { border: 5px solid white; } .hig { border: 5px solid navy; }</style></head><body>"
-	<< "<script language='javascript'>\n"
+	_os << "<script language='javascript'>\n"
 "function high_off(files,name) {"
   "var i; for (i = files.length - 1; i >=0; i--)"
   "{\n"
@@ -172,12 +176,13 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		pageno = 1;
 
 	std::ostringstream _os;
-	_os << "<html><head><title>Preview of " << path << "</title>";
-
 	Previewer preview = Previewer ();
+
+	printHeader (_os, (std::string ("Preview of ") + path).c_str (), preview.style() );
+
 	preview.script (_os, label_encoded);
 
-	_os << "</head><body><p>";
+	_os << "<p>";
 
 	preview.form (_os, pageno, prevsize, pagesiz, label);
 	
@@ -261,7 +266,9 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
-	_os << "</p></body></html>";
+	_os << "</p>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();

@@ -72,12 +72,16 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	const char * label_encoded = lb.c_str ();
 
 	std::ostringstream _os;
-	_os << "<html><head><title>Images for observation " << obs.getObsId () << " of " << obs.getTargetName () << "</title>";
+	std::ostringstream _title;
+	_title << "Images for observation " << obs.getObsId () << " of " << obs.getTargetName ();
 
 	Previewer preview = Previewer ();
+
+	printHeader (_os, _title.str ().c_str (), preview.style ());
+
 	preview.script (_os, label_encoded);
 
-	_os << "</head><body><p>";
+	_os << "<p>";
 
 	preview.form (_os, pageno, prevsize, pagesiz, label);
 
@@ -99,7 +103,9 @@ void Observation::printObs (int obs_id, XmlRpc::HttpParams *params, const char* 
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
 	if (in % pagesiz)
 	 	preview.pageLink (_os, i, pagesiz, prevsize, label_encoded, i == pageno);
-	_os << "</p></body></html>";
+	_os << "</p>";
+	
+	printFooter (_os);
 
 	response_type = "text/html";
 	response_length = _os.str ().length ();

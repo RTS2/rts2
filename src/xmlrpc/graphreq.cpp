@@ -69,8 +69,8 @@ void Graph::printDevices (const char* &response_type, char* &response, size_t &r
 	rts2db::RecvalsSet rs = rts2db::RecvalsSet ();
 	rs.load ();
 	std::ostringstream _os;
-	_os << "<html><head><title>Record value list</title><link href='"
-		<< ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/css/calendar.css' rel='stylesheet' type='text/css'/></head><body><script type='text/javascript' src='"
+	printHeader (_os, "Record value list", NULL, "/css/calendar.css");
+	_os << "script type='text/javascript' src='"
 		<< ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/js/date.js'></script>\n<table>";
 	int i = 1;
 	for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++, i++)
@@ -82,6 +82,8 @@ void Graph::printDevices (const char* &response_type, char* &response, size_t &r
 			<< LibnovaDateDouble (iter->getTo ()) << "</td></form></tr>";
 	}
 	_os << std::endl << "</table>";
+	printFooter (_os);
+
 	response_type = "text/html";
 	response_length = _os.str ().length ();
 	response = new char[response_length];
