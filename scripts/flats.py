@@ -159,7 +159,7 @@ class Rts2Comm:
 		ret = None
 		expMulti = 1
 
-		if (not (self.isSubWindow())):
+		if (not (self.isSubWindow)):
 			if (self.isEvening()):
 				expMulti = self.eveningMultiply
 			else:
