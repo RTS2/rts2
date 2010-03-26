@@ -18,6 +18,8 @@
  */
 
 #include "libjavascript.h"
+#include "../utils/utilsfunc.h"
+#include "../utils/error.h"
 
 using namespace rts2xmlrpc;
 
