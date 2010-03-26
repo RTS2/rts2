@@ -89,7 +89,9 @@ use vars qw(
 'C_SEXCFG'            => "/etc/rts2/autofocus/sex-autofocus.cfg" ,
 'C_SEXPARAM'          => "/etc/rts2/autofocus/sex-autofocus.param" ,
 'C_SEXREFERENCE_PARAM'=> "/etc/rts2/autofocus/sex-autofocus-reference.param" ,
-'C_OBJECT_SEPARATION' => 10. , # [pixel]
+'C_OBJECT_SEPARATION' => 10. ,     # [pixel]
+'C_ELLIPTICITY'           => .1 ,  # 0.05 ...0.3     
+'C_ELLIPTICITY_REFERENCE' => .1 ,  # 0.05 ...0.3 depending on the exposure time (if short inspect seeing on the images!)       
 # set new limits after sanity checks on data, makes the fit interval symmetric with respect to $foc_pos_minimum
 #
 'C_SET_LIMITS_ON_SANITY_CHECKS'=> TRUE_STR ,
@@ -188,7 +190,7 @@ sub raw_analysis(\@)
     {
 	return NOT_FLAGS_REF ;
     }
-    if( $items[ELLIPTICITY_REF]> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
+    if( $items[ELLIPTICITY_REF]> $default_configuration{C_ELLIPTICITY}) # 0.05 ...0.3, matter of taste, ELLIPTICITY
     {
 	return NOT_ELLIPTICITY_REF ;
     }
@@ -842,6 +844,8 @@ sub get_fitted_focus
 	{
 	    print "get_fitted_focus: NO SUCCESS $mean_focus[0]- $mean_focus[1] > $focuser_properties{FOCUSER_RESOLUTION}\n" ;
 	    printf ("get_fitted_focus: NO SUCCESS $mean_focus[0]- $mean_focus[1]= %f > $focuser_properties{FOCUSER_RESOLUTION}\n", $mean_focus[0]- $mean_focus[1]) ;
+# preliminary: use chi2 to decide which value to be returned
+	    return $mean_focus[0] ;
 	}
     }
     else
@@ -958,13 +962,10 @@ sub analyse_catalogue
       $line=~ s/^[ ]+//g ;
       my @items= split(/[ ]+/, $line) ;
 # select the objects in a similar way like raw_analysis() 
-      if( $items[FLAGS] != 0)    
+
+      if( check_properties( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED)
       {
 	  goto  NEXT_OBJECT;
-      }
-      if( $items[ELLIPTICITY]> .1)
-      {
-	  goto NEXT_OBJECT ;
       }
       $number_of_objects++ ;
   }
@@ -1182,7 +1183,7 @@ sub cleanup_catalogue
 	$line=~ s/^[ ]+//g ;
 	my @items= split(/[ ]+/, $line) ;#
 	    
-	if( catalogue_analysis( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
+	if( check_properties( $items[FLAGS], $items[ELLIPTICITY]) != SELECTED) 
 	{
 	    if( $verbose eq TRUE_STR)
 	    {
@@ -1214,7 +1215,7 @@ sub cleanup_catalogue
     return ;
 }
 #ToDo: make it uniform with the raw_analysis subroutine
-sub catalogue_analysis
+sub check_properties
 {
     my $flags       = shift @_  ;
     my $ellipticity = shift @_  ;
@@ -1223,7 +1224,7 @@ sub catalogue_analysis
     {
 	return NOT_FLAGS ;
     }
-    if(  $ellipticity> .1)# 0.05 ...0.3, matter of taste, ELLIPTICITY
+    if(  $ellipticity>  $default_configuration{C_ELLIPTICITY_REFERENCE})
     {
 	return NOT_ELLIPTICITY ;
     }
@@ -1711,11 +1712,17 @@ sub read_configuration
 	    }
 	    $focuser_properties{$identifier}= $value ;	
 	}
-	elsif( defined $filter_focus_properties{$identifier})
+## NO: do not know the filter names!:	elsif( defined $filter_focus_properties{$identifier})
+	else
 	{
 	    $value=~s/(\[|\])//g ;
 	    my @values= split(/,/, $value) ;
 
+	    if( $#values  < 5) # ToDo hope that is enough
+	    {
+		print "read_configuration: error no valid identifier: $identifier on line $configuration_file_line_number\n" ;
+		exit 1 ;
+	    }
 	    if( $#values  != 5) # 6-1
 	    {
 		print "read_configuration: missing or extra filter focus properties: $value, on line $configuration_file_line_number\n" ; 
@@ -1735,11 +1742,6 @@ sub read_configuration
 	        }
 	        print "\n" ;
 	    }
-	}
-	else
-	{
-	    print "read_configuration: error no valid identifier: $identifier on line $configuration_file_line_number\n" ;
-	    exit 1
 	}
 	$configuration_file_line_number++ ;
     }
