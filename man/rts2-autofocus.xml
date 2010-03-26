@@ -369,7 +369,7 @@ nearest focuser position is taken as the reference image. </para>
     <option>CLEANUP_REFERENCE_CATALOGUE, boolean,  TRUE</option>
     </term>
     <listitem>
-    <para>If set TRUE objects which do not have SExtracgtor`s FLAG equal 0 and
+    <para>If set TRUE objects which do not have SExtractor`s FLAG equal 0 and
 ELLIPTICITY smaller  than 0.1 are removed from the reference catalogue as well as
 objects which are closer than OBJECT_SEPARATION. 
     </para>
@@ -430,6 +430,26 @@ execute the file with the postfix .bash, e.g.  /tmp/ds9-autofocus-B-2009-11-13T1
     </para>
     </listitem>
     </varlistentry>
+
+      <varlistentry>
+	<term>
+      <option>ELLIPTICITY, float, .1 </option>
+          </term>
+	<listitem>
+	  <para> ELLIPTICITY defines the upper limit of the ellipticity of objects on all images (see ELLIPTICITY_REFERENCE). 
+          </para>
+	</listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>
+      <option>ELLIPTICITY_REFERENCE, float, .1 </option>
+          </term>
+	<listitem>
+	  <para> ELLIPTICITY_REFERENCE defines the upper limit of the ellipticity of objects in the reference catalogue. If exposure times are short and/or the seeing is bad increase the value. Recommended interval [0.05...0.3]. 
+          </para>
+	</listitem>
+      </varlistentry>
 
       <varlistentry>
 	<term>
@@ -544,7 +564,7 @@ additional extension AUTO_FOCUS_RUN_EXTENSION (not a parameter),
     <option>MINIMUM_OBJECTS, int, 5</option>
     </term>
     <listitem>
-    <para> This is the minimal number of objects which must be identified in all images.
+    <para> This is the minimal number of objects which must be identified on all images.
     </para>
     </listitem>
     </varlistentry>
@@ -810,7 +830,7 @@ configure ~/.rts2 in your home directory (create a copy of /etc/rts2/rts2.ini).
 <para>
 A focus run may fail due to various reasons. The more images
 are taken, specially far off the extrema, the fewer objects
-are present in all images. Although a sensible result can be
+are present on all images. Although a sensible result can be
 obtained with a single object it is recommended to have a reasonable
 number spread over the whole image.  Limit the chosen images
 with the parameters ANALYSIS_LOWER_LIMIT and ANALYSIS_UPPER_LIMIT to a narrower
