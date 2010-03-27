@@ -215,7 +215,7 @@ void FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 	struct ln_hrz_posn hrz;
 	ln_get_solar_equ_coords (JD, &eq_sun);
 	ln_get_hrz_from_equ (&eq_sun, observer, JD, &hrz);
-	hrz.alt = 40;
+	hrz.alt = 60;
 	hrz.az = ln_range_degrees (hrz.az + 180);
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
