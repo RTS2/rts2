@@ -1093,7 +1093,7 @@ sub create_reference_catalogue
 #
     if( $verbose eq TRUE_STR)
     {
-	print "create_reference_catalogue: >>$fits_file_reference<<, if empty error\n" ;
+	print "create_reference_catalogue from fits file: >>$fits_file_reference<<, if empty error\n" ;
     }
     open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
     while(<CREATELIST>){}
@@ -1174,7 +1174,7 @@ sub cleanup_catalogue
     
 # clean up the rest
 # this has to be done afterwards since overlapping of any object has to be avoided
-    for( my $l=  $#list_lines- 1 ; $l>  $number_of_comment_lines-1 ; $l--)
+    for( my $l=  $#list_lines ; $l>  $number_of_comment_lines-1 ; $l--)
     {
 	next if( ($list_lines[$#list_lines])=~ m/^#/) ;
 	    
@@ -1356,7 +1356,7 @@ sub retrieve_data
 	    {
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
-	    printf("(sel./ref.): %6.3f, %4d, %4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects) ;
+	    printf("(sel./ref.): %6.3f, %4d, %4d, sex.obj.:%4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects, $number_of_objects) ;
 # check mutiplicity	    
 #	    foreach my $object ( sort keys  %mutiplicity_of_reference_objects)
 #	    {
@@ -1412,7 +1412,7 @@ sub retrieve_data
 			printf( DS9REGION "image\n") ; # not physical
 			foreach my $reference_object_number (sort keys %{$objects_all{$fits_file}})
 			{
-			    if($objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL )
+			    if( ! ($objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS] != FALSE_VAL))
 			    {
 				my $region_radius= 2.+ 1. * $objects_all{$fits_file}{$reference_object_number}[IND_SEL_DATA][0] ;
 				printf( DS9REGION "circle\(%f,%f,%f\) # text = {%10d %d}\n", $objects_all{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE],$objects_all{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE], $region_radius, $objects_all{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS], $reference_object_number) ;
