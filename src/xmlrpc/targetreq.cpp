@@ -73,6 +73,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 				printTarget (tar, response_type, response, response_length);
 				break;
 			case 2:
+				if (vals[1] == "main")
+				{
+					printTarget (tar, response_type, response, response_length);
+					break;
+				}
 				if (vals[1] == "info")
 				{
 					printTargetInfo (tar, response_type, response, response_length);
@@ -125,7 +130,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
-		_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/'>" << iter->first
+		_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/main/'>" << iter->first
 			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
 	}
 
@@ -196,9 +201,45 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 #endif // HAVE_LIBJPEG
 }
 
+void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
+{
+	std::ostringstream prefix;
+	prefix << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/targets/" << tar_id << "/";
+	_os << "<p><a href='" << prefix.str ()
+		<< "main/'>main page</a>&nbsp;<a href='" << prefix.str ()
+		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
+		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
+		<< "altplot/'>altitude plot</a></p>";
+}
+
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
 {
+	std::ostringstream _os;
 
+	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
+
+	printTargetHeader (tar->getTargetID (), _os);
+
+	// javascript to send requests..
+
+	struct ln_equ_posn tradec;
+
+	tar->getPosition (&tradec);
+
+	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
+		<< "<div><a href='?slew'>slew to target</a></div>"
+		<< "<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
+		<< (tar->getTargetEnabled () ? "yes" : "no")
+		<< "'/></div>"
+		<< "</p>";
+
+
+	printFooter (_os);
+
+	response_type = "text/html";
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
 }
 
 void Targets::printTargetInfo (Target *tar, const char* &response_type, char* &response, size_t &response_length)
@@ -207,7 +248,7 @@ void Targets::printTargetInfo (Target *tar, const char* &response_type, char* &r
 	
 	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
 
-	_os << "<p><a href='images/'>images</a>&nbsp;<a href='obs/'>observations</a>&nbsp;<a href='altplot/'>altitude plot</a></p>";
+	printTargetHeader (tar->getTargetID (), _os);
 
 	_os << "<pre>";
 
@@ -248,6 +289,8 @@ void Targets::printTargetImages (Target *tar, HttpParams *params, const char* &r
 	Previewer preview = Previewer ();
 
 	printHeader (_os, (std::string ("Images of target ") + tar->getTargetName ()).c_str (), preview.style ());
+
+	printTargetHeader (tar->getTargetID (), _os);
 	
 	preview.script (_os, label_encoded);
 		
@@ -303,6 +346,7 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 	std::ostringstream _os;
 
 	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str ());
+	printTargetHeader (tar->getTargetID (), _os);
 
 	rts2db::ObservationSet os = rts2db::ObservationSet ();
 	os.loadTarget (tar->getTargetID ());
