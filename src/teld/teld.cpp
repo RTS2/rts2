@@ -407,6 +407,8 @@ void Telescope::incMoveNum ()
 
 	moveNum->inc ();
 
+	ignoreCorrection->setValueDouble (0);
+
 	corrImgId->setValueInteger (0);
 	wCorrImgId->setValueInteger (0);
 }
@@ -792,7 +794,6 @@ int Telescope::scriptEnds ()
 {
 	corrImgId->setValueInteger (0);
 	woffsRaDec->setValueRaDec (0, 0);
-	ignoreCorrection->setValueDouble (0);
 	return Rts2Device::scriptEnds ();
 }
 
