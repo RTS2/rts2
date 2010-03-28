@@ -66,7 +66,7 @@ and are found between  the lines "begin default configuration" and "end default
 configuration". Parameters outside these limits should normally not be changed. 
     </para>
   </refsect1>
-  <refsect1><title>Status</title>  <para>This man page applies to svn revision r6556.</para>
+  <refsect1><title>Status</title>  <para>This man page applies to svn revision r7121.</para>
     <para> <command>&dhpackage;</command> has been tested in three online data tacking
           and numerous offline analysis. </para>
 <para>
@@ -114,7 +114,7 @@ The essential results are
 printed to the terminal in both modes.
  </para> <para>
 If <command>&dhpackage;</command> takes data in online mode it steers the 
-CCD_CAMERA and its associated focuser and filter wheel. If only one filter is specified 
+CCD_CAMERA and its associated focuser and filter wheel if it is present. If only one filter is specified 
 the focuser is set according to the result if SET_FOCUS==TRUE. 
 </para><para>
 Depending on the argument of AUTO_FOCUS, it can be either FALSE or TRUE, a one
@@ -240,8 +240,19 @@ to ASSOCiate</para><para>The base name is SEXSKY_LIST (.list)</para>
  </varlistentry> 
 </variablelist>
 <para>
-    Do not forget to killall rts2-executor before start.
+    Do not forget to disable EXECutor before start.
     </para>
+
+<refsect1>
+<title>Image location</title>
+ <para>
+ In online mode <command>&dhpackage;</command> stores the acquired images below BASE_DIRECTORY/date-time/filter.
+ In offline mode BASE_DIRECTORY must include date-time, e.g. if the online BASE_DIRECTORY was
+    /scratch/focus then the offline BASE_DIRECTORY has the form  /scratch/focus/2010-03-15T17:54:01. Beneath
+    this location the images are stored in subdirectory named after the used filter.
+ </para>
+</refsect1>
+
 </refsect1>
   <refsect1 id="values">
     <title>PARAMETERS, VALUES</title>
@@ -254,7 +265,7 @@ default value is used. The format of the following list is parameter name, "data
     <option>%filter_focus_properties</option>
     </term>
     <listitem>
-    <para>The following properties are defined for U, B, V, R, I, X and Y: </para>
+    <para>The following properties are defined for U, B, V, R, I, X, Y and NOFILTER as defaults: </para>
       <varlistentry>
 	<term>FILTER_VALUE, int, 0,1,3,4,5,6
          </term>
@@ -295,7 +306,12 @@ for focuser position if TAKE_DATA == TRUE.</para>
 	<listitem><para>Exposure time used if TAKE_DATA == TRUE.</para>
         </listitem>
  </varlistentry> 
- </listitem> </varlistentry>
+ </listitem> 
+<para> NOFILTER is a special entry for the case where no filter wheel is present. It's
+properties are defined in the same way as described above.
+</para>
+</varlistentry>
+
        <varlistentry>
 	<term><option>ANALYSIS_LOWER_LIMIT, int,  0 [ticks]</option>
          </term>
@@ -321,6 +337,17 @@ taken centered around the mean while in offline modus the image with the
 nearest focuser position is taken as the reference image. </para>
         </listitem>
  </varlistentry>
+      <varlistentry>
+	<term>
+      <option>BASE_DIRECTORY, file name, "/scratch/focus/"</option>
+          </term>
+	<listitem>
+	  <para>
+             In offline mode BASE_DIRECTORY denotes the path to the subdirectories where the fits files were stored in the form BASE_DIRECTORY/filter. In online mode it is the
+             base path where subdirectories of the form date-time/filter, e.g. 2010-03-15T17:54:01/U, will be created.
+          </para>
+	</listitem>
+      </varlistentry>
 
     <varlistentry>
     <term>
@@ -464,18 +491,18 @@ is specified in RTS2_DEVICES valid subsets are "U" or "V:I" etc.
            </para>
           </listitem>
         </varlistentry>
-
       <varlistentry>
 	<term>
-      <option>FITS_DIRECTORY, file name, "/scratch/focus/"</option>
+      <option>FITS_IN_BASE_DIRECTORY, boolean, FALSE</option>
           </term>
 	<listitem>
 	  <para>
-             In offline mode FITS_DIRECTORY denotes the path to the fits files to be analyzed. In online mode it is the
-             base path where subdirectories will be created of the form date/filter, e.g. 2010-03-15T17:54:01/U.
+             If TRUE the fits files are searched in directory BASE_DIRECTORY in offline mode. Setting
+             this parameter to TRUE enables the analysis of legacy data or data not acquired with <command>&dhpackage;</command>.
           </para>
 	</listitem>
       </varlistentry>
+
 
      <varlistentry>
     <term>
@@ -584,7 +611,7 @@ FOCUSER_ABSOLUTE_LOWER_LIMIT)/NUMBER_OF_AUTO_FOCUS_IMAGES beginning at FOCUSER_A
 
     <varlistentry>
     <term>
-    <option>OBJECT_SEPARATION, boolean, 20 [pixel]"</option>
+    <option>OBJECT_SEPARATION, boolean, 20 [pixel]</option>
     </term>
     <listitem>
     <para>If CLEANUP_REFERENCE_CATALOGUE==TRUE only pairs of stars which have a
@@ -610,6 +637,8 @@ distance larger than OBJECT_SEPARATION are accepted as reference objects.
     <listitem>
     <para><command>&dhpackage;</command> reads RTS2_DEVICES and selects CCD_CAMERA and
 if defined its associated devices focuser and filter wheel. All devices must be present.
+     </para>
+     <para> If a relative path is specified it is relative to BASE_DIRECTORY.
      </para>
     </listitem>
     </varlistentry>
@@ -669,6 +698,9 @@ well". E.g. the values of FWHM_IMAGE drop for images taken far from data extremu
     <listitem>
     <para>The SExtractor configuration file.
     </para>
+     <para> If a relative path is specified it is relative to BASE_DIRECTORY.
+     </para>
+
     </listitem>
     </varlistentry>
 
@@ -681,6 +713,9 @@ well". E.g. the values of FWHM_IMAGE drop for images taken far from data extremu
 is identical with SEXREFERENCE_PARAM beside the last two entries VECTOR_ASSOC(14)
 NUMBER_ASSOC.
     </para>
+     <para> If a relative path is specified it is relative to BASE_DIRECTORY.
+     </para>
+
     </listitem>
     </varlistentry>
     <varlistentry>
@@ -699,8 +734,11 @@ NUMBER_ASSOC.
     <option>SEXREFERENCE_PARAM, file name, "/etc/rts2/autofocus/sex-autofocus-reference.param"</option>
     </term>
     <listitem>
-    <para>The default SExtractor parameter file for image analysis. 
+    <para>The SExtractor parameter file for image analysis. 
     </para>
+     <para> If a relative path is specified it is relative to BASE_DIRECTORY.
+     </para>
+
     </listitem>
     </varlistentry>
 
