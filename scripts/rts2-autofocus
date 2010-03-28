@@ -49,7 +49,7 @@ use vars qw(
   $number_of_objects_found_in_all_files
   $number_of_reference_objects
   %focuser_properties
-  $fits_directory
+  $base_directory
   );
 %default_configuration= (
 # programs
@@ -60,7 +60,10 @@ use vars qw(
 'C_FOCROOTB'=> "rts2-fit-focus 0" ,       # "batch"  
 # constants
 #
-'C_FITS_DIRECTORY'=> "/tmp" ,             # the data directory
+'C_BASE_DIRECTORY'=> "/tmp" ,             # the base directory, data are in subdirectories named after the filters
+#                                           unless C_FITS_DRECTORY= TRUE_STR is specified
+'C_FITS_IN_BASE_DIRECTORY'=> "FALSE_STR" ,# if TRUE_STR is specified, data are stored in C_BASE_DIRECTORY, everything else
+#                                           means data are stored in subdirectories named after the filters
 'C_FILTERS'       => "U:B:V:R:I:X:Y",     # "U:B:V:R:I:X:Y" # filters to analyse or to use if TAKE_DATA == TRUE
 'C_SELECT_RATIO'  => 0.05,                # this a threshold to avoid matching images from completely different focus runs.
 #                                           $number_of_selected_objects/$number_of_reference_objects 
@@ -74,8 +77,8 @@ use vars qw(
 'C_TAKE_PROOF' => TRUE_STR,               # TRUE: taka a proof image at fitted foc_pos
 'C_SET_FOCUS'  => FALSE_STR,              # set the focus position if only one filter is defined
 'C_CCD_CAMERA' => "CD" ,                  # this CCD and its associate devices are used if TAKE_DATA == TRUE
-'C_CCD_BINNING'=> 0    ,                  # 0: 1x1, 1: 2x2,.... see your drver
-'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is useable, test connection to rts2-centrald and exit.
+'C_CCD_BINNING'=> 0    ,                  # 0: 1x1, 1: 2x2,.... see your driver
+'C_CHECK_RTS2_CONFIGURATION'=> FALSE_STR, # Check if the RTS2 configuration is usable, test connection to rts2-centrald and exit.
 'C_AUTO_FOCUS'             => TRUE_STR,   # auto focus, nothing is known about focus position, valid for TAKE_DATA == (TRUE|FALSE)
 'C_INCLUDE_AUTO_FOCUS_RUN' => FALSE_STR,  # rough focus run images are ev. far off the extrema, valid for TAKE_DATA == (TRUE|FALSE) 
 #                                           images extension .fits is renamed to .fitsAUTO_FOCUS_RUN_EXTENSION (see below)
@@ -100,7 +103,7 @@ use vars qw(
 'C_SEXSKY_LIST'      => "/tmp/sex-autofocus-assoc-sky.list" ,
 'C_SEXCATALOGUE'     => "/tmp/sex-autofocus.cat" ,
 'C_SEX_TMP_CATALOGUE'=> "/tmp/sex-autofocus-tmp.cat" ,
-'C_CLEANUP_REFERENCE_CATALOGUE' => TRUE_STR, # remove any two stars wich are closer than C_OBJECT_SEPARATION, and check sub cleanup_catalogue
+'C_CLEANUP_REFERENCE_CATALOGUE' => TRUE_STR, # remove any two stars which are closer than C_OBJECT_SEPARATION, and check sub cleanup_catalogue
 'C_FIT_RESULT_FILE'  => "/tmp/fit-autofocus.dat" ,
 #
 'C_DS9_REFERENCE'    => TRUE_STR,         # create reference region file (green circles) and the DS9 command file
@@ -126,6 +129,7 @@ use constant IND_EXP_TIME     =>  5 ; # exposure time used if TAKE_DATA == TRUE
 'I' => [4, 4700, -1500, 1500, 100, 20],
 'X' => [5, 3270, -1500, 1500, 100, 10],
 'Y' => [6, 3446, -1500, 1500, 100, 10],
+'NOFILTER' => [6, 3446, -1500, 1500, 109, 19], # this entry must be present
  ) ;
 #
 %focuser_properties=(
@@ -194,7 +198,7 @@ sub raw_analysis(\@)
     {
 	return NOT_ELLIPTICITY_REF ;
     }
-# be carefull with this
+# be careful with this
 #    if( $items[ELLIPTICITY]> .3)# 0.05 ...0.3, matter of taste, ELLIPTICITY
 #    {
 #	return NOT_ELLIPTICITY ;
@@ -209,7 +213,7 @@ sub raw_analysis(\@)
 use constant TOO_FEW_FITS_FILES       => 10 ;
 use constant SLEEP_WHILE_WAITING      =>  5 ;
 use constant FOCUS_DIFFERENCE_TICKS   =>  5 ;
-# indicees %fits_files
+# indices %fits_files
 use constant IND_FILTER_FILE          =>  0 ;
 use constant IND_FOC_POS_FILE         =>  1 ;
 use constant IND_BINNING_FILE         =>  2 ;
@@ -217,12 +221,12 @@ use constant IND_NAXIS1_FILE          =>  3 ;
 use constant IND_NAXIS2_FILE          =>  4 ;
 use constant IND_ORIRA_FILE           =>  5 ;
 use constant IND_ORIDEC_FILE          =>  6 ;
-# indicees %objects_selected
+# indices %objects_selected
 use constant IND_SEL_FOC_POS          =>  0 ;
 use constant IND_SEL_DATA             =>  1 ;
 use constant IND_SEL_X_IMAGE          =>  2 ; 
 use constant IND_SEL_Y_IMAGE          =>  3 ; 
-# indicees %objects
+# indices %objects
 use constant IND_OBJ_FOC_POS          =>  0 ;
 use constant IND_OBJ_DATA             =>  1 ;
 use constant IND_OBJ_X_IMAGE          =>  2 ; 
@@ -231,7 +235,7 @@ use constant IND_OBJ_Y_IMAGE          =>  3 ;
 use constant LOWER => 10 ;
 use constant UPPER => 11 ;
 use constant AUTO_FOCUS_RUN_EXTENSION => "_auto_focus_run" ;
-use constant CCD_TEMPERATURE => 100 ;
+use constant CCD_TEMPERATURE => 999 ;
 
 $scriptname = $0;
 $scriptname =~ s/.*\///g;     # remove directory path from script file path
@@ -271,7 +275,7 @@ sub get_rts2_centrald
 #_failed_devices=CD MET
 # get the list of the required devices from rts2-centrald
     my @required_devices ;
-    open( READREQUIRED, "rts2-xmlrpcclient -g .required_devices|") or die "Can't open rts2-xmlrpcclient -g .required_devices: $!" ;
+    open( READREQUIRED, "rts2-xmlrpcclient -g .required_devices|") or die "get_rts2_centrald: Can't open rts2-xmlrpcclient -g .required_devices: $!" ;
     while( my $response= <READREQUIRED>)
     {
 	chomp $response ;
@@ -286,7 +290,7 @@ sub get_rts2_centrald
     close( READREQUIRED) ;
 # get the list of failed devices
     my @failed_devices ;
-    open( READFAILED, "rts2-xmlrpcclient -g .failed_devices|") or die "Can't open rts2-xmlrpcclient -g .failed_devices: $!" ;
+    open( READFAILED, "rts2-xmlrpcclient -g .failed_devices|") or die "get_rts2_centrald: Can't open rts2-xmlrpcclient -g .failed_devices: $!" ;
     while( my $response= <READFAILED>)
     {
 	chomp $response ;
@@ -328,10 +332,10 @@ sub get_rts2_ccd_property
     my $property = shift @_ ;
 
     my $property_value= CCD_TEMPERATURE ;
-    open( READCCD, "rts2-xmlrpcclient -g $camd.$property|") or die "Can't open rts2-xmlrpcclient -g $camd.$property: $!" ;
+    open( READCCD, "rts2-xmlrpcclient -g $camd.$property|") or die "get_rts2_ccd_property: Can't open rts2-xmlrpcclient -g $camd.$property: $!" ;
     while( my $response= <READCCD>)
     {
-	if( $response=~ m/$camd(.|_)$property=([0-9]+\.[0-9]+)/)
+	if( $response=~ m/$camd(.|_)$property=([\-\+0-9]+\.[0-9]+|[\-\+0-9]+\.|[\-\+0-9]+)/)
 	{
 	    $property_value= $2 ;
 	    last ;
@@ -352,7 +356,7 @@ sub get_rts2_filter
 # ToDo: does not work: chaining of arguments rts2-xmlrpcclient -G FC.FOC_DEF FW.filter
 #
 	my $number_filterd ;
-	open( READFILTER, "rts2-xmlrpcclient -g $fltrd.filter|") or die "Can't open rts2-xmlrpcclient -g $fltrd.filter: $!" ;
+	open( READFILTER, "rts2-xmlrpcclient -g $fltrd.filter|") or die "get_rts2_filter: Can't open rts2-xmlrpcclient -g $fltrd.filter: $!" ;
 	while( my $response= <READFILTER>)
 	{
 	    if( $response=~ m/$fltrd(.|_)filter=([0-9]+)/)
@@ -377,7 +381,7 @@ sub get_rts2_filter
 	}
 	else
 	{
-	    print "get_rts2_filter: sleeping ev. no response fom centrald\n" ;
+	    print "get_rts2_filter: sleeping ev. no response from centrald\n" ;
 	    sleep(SLEEP_WHILE_WAITING) ;
 	}
     }
@@ -427,7 +431,7 @@ sub get_rts2_focus
 	}
 	else
 	{
-	    print "get_rts2_focus: sleeping ev. no response fom centrald\n" ;
+	    print "get_rts2_focus: sleeping ev. no response from centrald\n" ;
 	    sleep(SLEEP_WHILE_WAITING) ;
 	}
     }
@@ -500,26 +504,25 @@ sub set_rts2_fit_focus_position
     }
     return TRUE_VAL ;
 }
-# select all fits files in a given directory for a given filter
+# select all fits files in a given directory for a given filter, or all if no filter wheel is present
 sub get_fits_files
 {
-    my $fltr                     = shift @_ ;
-    my $directory                = shift @_ ;
+    my $fltr                    = shift @_ ;
+    my $directory               = shift @_ ; # not nice: we are already here, needed to write error messages
     my $include_auto_focus_run  = shift @_ ;
     my $auto_focus_run_extension= AUTO_FOCUS_RUN_EXTENSION ;;
-
-    $directory= "." ;
-    opendir(DIR, $directory) || die "get_fits_files: can't opendir $directory: $!";
+       
+    opendir(DIR, ".") || die "get_fits_files: can't opendir $directory: $!";
 
     my @raw_fits_files ;
 
     if( $include_auto_focus_run eq TRUE_STR)
     {
-	@raw_fits_files = grep { /(fits|$auto_focus_run_extension)$/ && -f "$directory/$_" } readdir(DIR);
+	@raw_fits_files = grep { /(fits|$auto_focus_run_extension)$/ && -f "./$_" } readdir(DIR);
     }
     else
     {
-	@raw_fits_files = grep { /fits$/ && -f "$directory/$_" } readdir(DIR);
+	@raw_fits_files = grep { /fits$/ && -f "./$_" } readdir(DIR);
     }
 
     closedir DIR;
@@ -533,7 +536,6 @@ sub get_fits_files
 	    print "get_fits_files: including raw $fits_file\n" ;
 	}
 # extract filter and focus position from fits
-# ToDo: use cpan Astro::FITS::CFITSIO, instead imhead
 # 
 	my $fltr_from_file   ="" ;
 	my $foc_pos_from_file="" ;
@@ -547,10 +549,19 @@ sub get_fits_files
 	while(<RTS2IMAGE>){
 # parse output
 # U 6121 2x2 2048 2048 0. 0.
+# or
+# @FILTER 6121 1x1 1 1 112.344 26.1231
 #
 	    my @items= split(/[ ]+/, $_) ;
 
-	    $fltr_from_file   =$items[0] ;
+	    if(( $items[0] eq "\@FILTER") || ( $items[0]=~ m/UNK/))
+	    {
+		$fltr_from_file   = "NOFILTER" ;
+	    } 
+	    else 
+	    {
+		$fltr_from_file   =$items[0] ;
+	    }
 	    $foc_pos_from_file=$items[1] ;
 	    $binning_from_file=$items[2] ;
 	    $naxis1_from_file =$items[3] ;
@@ -559,8 +570,6 @@ sub get_fits_files
 	    $oridec_from_file =$items[6] ;
 	}
 	close(RTS2IMAGE) ;
-
-
 # ToDo: docu me!!
 # during data tacking we know nothing
 	if( $default_configuration{C_TAKE_DATA} ne TRUE_STR )
@@ -583,6 +592,8 @@ sub get_fits_files
 	    $fits_files{$fits_file}[IND_ORIRA_FILE]  = $orira_from_file ;
 	    $fits_files{$fits_file}[IND_ORIDEC_FILE] = $oridec_from_file ;
 	    $number_of_images_at_foc_pos{$foc_pos_from_file}++ ;
+	} else {
+	    print "NO good $fltr_from_file/$fltr, $foc_pos_from_file \n" ;
 	}
     }
     if( $verbose eq TRUE_STR)
@@ -883,7 +894,7 @@ sub write_data_files
     {
  	if(($foc_pos>= $lower_lmt)&&($foc_pos<= $upper_lmt))
 	{
-	    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalize 
+	    printf( DATA "%04d    %e\n", $foc_pos, ${$_[0]}{$foc_pos}[$qty]/$cosmetics ) ; # ToDo: normalise 
 	    $number_of_lines++ ;
 
 	    if( $verbose eq TRUE_STR)
@@ -1027,7 +1038,7 @@ sub get_foc_pos_at_maximum_number_of_objects
     }
     if( $maximum_objects> 0)
     {
-# create later the reference catalog at the position near mean
+# create later the reference catalogue at the position near mean
 # calculate the weighted mean and compare it with the objects 
 # maximum and set only $filter_focus_properties{$fltr}[IND_FOC_DEF] 
 # 
@@ -1095,8 +1106,13 @@ sub create_reference_catalogue
     {
 	print "create_reference_catalogue from fits file: >>$fits_file_reference<<, if empty error\n" ;
     }
-    open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "Can't start $default_configuration{C_SEXPRG}: $!";
-    while(<CREATELIST>){}
+    open(CREATELIST, $default_configuration{C_SEXPRG}." $fits_file_reference -c $cfg -CATALOG_NAME $tmp_sky_list_file_name -PARAMETERS_NAME $reference_param|") or die "create_reference_catalogue: Can't start $default_configuration{C_SEXPRG}: $!";
+    while(<CREATELIST>){ 
+	if( $verbose eq TRUE_STR)
+	{
+	    print $_; # remove >2 to get the full output
+	}
+    }
     close(CREATELIST) ;
     if( $default_configuration{C_CLEANUP_REFERENCE_CATALOGUE} eq TRUE_STR)
     {
@@ -1117,7 +1133,7 @@ sub cleanup_catalogue
 # - are close together
 # - do not full fill selection criteria
 # The selection on the second criteria has to be carried out afterwards in order to find all neighbours
-    open(READLIST, "<$catalogue_file_name") or die "Can not open $catalogue_file_name: $!";
+    open(READLIST, "<$catalogue_file_name") or die "cleanup_catalogue: Can not open $catalogue_file_name: $!";
 
     my @list_lines ;
     my $removed_objects_distance= 0 ;
@@ -1201,7 +1217,7 @@ sub cleanup_catalogue
 	}
     }
 # over write the list
-    open(WRITELIST, ">$catalogue_file_name") or die "Can not open $catalogue_file_name: $!";
+    open(WRITELIST, ">$catalogue_file_name") or die "cleanup_catalogue: Can not open $catalogue_file_name: $!";
 
     for( my $l= 0 ; $l< $#list_lines+ 1 ; $l++)
     {
@@ -1263,7 +1279,7 @@ sub retrieve_data
 # write ds9 region file: reference objects
 #
     my %objects_selected ;
-    my %objects_all ; # used to calculte the distances from the refrences objects
+    my %objects_all ; # used to calculate the distances from the references objects
     foreach my $fits_file ( sort by_foc_pos keys %fits_files)
     {
 # receive results from SExtractor
@@ -1282,7 +1298,7 @@ sub retrieve_data
 
 #define the multiplicity...
 	my $reference_object_number ;
-	my %mutiplicity_of_reference_objects ;
+	my %multiplicity_of_reference_objects ;
 	while(my $line=<SEXINPUT>)
 	{
 	    next if( $line=~ m/^#/) ; 
@@ -1291,7 +1307,7 @@ sub retrieve_data
 	    my @items= split(/[ ]+/, $line) ;
 
 	    $reference_object_number= $items[NUMBER_REF];
-	    $mutiplicity_of_reference_objects{$reference_object_number}++ ;
+	    $multiplicity_of_reference_objects{$reference_object_number}++ ;
 	}
 	close SEXINPUT ;
 # ...and read it again.
@@ -1315,7 +1331,7 @@ sub retrieve_data
 
 	    $reference_object_number= $items[NUMBER_REF];
 # do not analyse objects which belong to the same reference object
-	    next if( $mutiplicity_of_reference_objects{$reference_object_number} > 1) ;
+	    next if( $multiplicity_of_reference_objects{$reference_object_number} > 1) ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_FOC_POS]= FALSE_VAL ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_X_IMAGE]= FALSE_VAL ;
 	    $objects_selected{$fits_file}{$reference_object_number}[IND_SEL_Y_IMAGE]= FALSE_VAL ;
@@ -1357,12 +1373,12 @@ sub retrieve_data
 		printf("%5d%s", $event_scalers[$reason], ($reason < $#event_scalers )? ", ": ", ") ; # lazy
 	    }
 	    printf("(sel./ref.): %6.3f, %4d, %4d, sex.obj.:%4d\n", $number_of_selected_objects/$number_of_reference_objects, $number_of_selected_objects, $number_of_reference_objects, $number_of_objects) ;
-# check mutiplicity	    
-#	    foreach my $object ( sort keys  %mutiplicity_of_reference_objects)
+# check multiplicity	    
+#	    foreach my $object ( sort keys  %multiplicity_of_reference_objects)
 #	    {
-#		if( $mutiplicity_of_reference_objects{$object} > 1)
+#		if( $multiplicity_of_reference_objects{$object} > 1)
 #		{
-#		    print "retrieve_data: reference_object $object counted $mutiplicity_of_reference_objects{$object} times\n" ;
+#		    print "retrieve_data: reference_object $object counted $multiplicity_of_reference_objects{$object} times\n" ;
 #		}
 #	    }
 
@@ -1420,7 +1436,7 @@ sub retrieve_data
 			}
 		    }
 		    close( DS9REGION) ;
-		    $ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY} . "/" . $fits_file . " -region " . $ds9_fits_file_name . " -region " . $ds9_reference_file_name . "\\\n"; 
+		    $ds9_command= $ds9_command . " " . $default_configuration{C_BASE_DIRECTORY} . "/" . $fits_file . " -region " . $ds9_fits_file_name . " -region " . $ds9_reference_file_name . "\\\n"; 
 		}
 	    }
 	}
@@ -1527,7 +1543,7 @@ sub retrieve_data
     if( $default_configuration{C_DS9_REFERENCE} eq TRUE_STR)
     {
 
-	open(DS9REGION, ">$ds9_reference_file_name") or die "Can't write $ds9_reference_file_name: $!" ;
+	open(DS9REGION, ">$ds9_reference_file_name") or die "retrieve_data: Can't write $ds9_reference_file_name: $!" ;
 	printf( DS9REGION "# Region file format: DS9 version 4.0\n") ;
 	printf( DS9REGION "# Filter: $fltr, $date\n") ;
 	printf( DS9REGION "global color=green font=\"helvetica 10 normal\" select=1 highlite=1 edit=1 move=1 delete=1 include=1 fixed=0 source\n") ;
@@ -1551,7 +1567,7 @@ sub retrieve_data
 	    }
 	}
 	close(DS9REGION) ;
- 	$ds9_command= $ds9_command . " " . $default_configuration{C_FITS_DIRECTORY}  . "/"  . $fits_file_reference . " -region ". $ds9_reference_file_name  ; 
+ 	$ds9_command= $ds9_command . " " . $default_configuration{C_BASE_DIRECTORY}  . "/"  . $fits_file_reference . " -region ". $ds9_reference_file_name  ; 
     }
     if(( $default_configuration{C_DS9_REFERENCE} eq TRUE_STR) || ( $default_configuration{C_DS9_MATCHED} eq TRUE_STR))
     {
@@ -1559,7 +1575,7 @@ sub retrieve_data
 # 
 	$ds9_command=  $ds9_command . " -single -blink\n" ;
 
-	open(DS9COMMAND, ">$ds9_reference_file_name.bash") or die "Can't write $ds9_reference_file_name.bash: $!" ;
+	open(DS9COMMAND, ">$ds9_reference_file_name.bash") or die "retrieve_data: Can't write $ds9_reference_file_name.bash: $!" ;
 	print ( DS9COMMAND "#!/bin/bash\n") ;
 	printf( DS9COMMAND  $ds9_command) ;
 	close( DS9COMMAND) ;
@@ -1810,7 +1826,7 @@ else
   exit 1 ;
 }
 
-my $fits_directory     = $default_configuration{C_FITS_DIRECTORY};
+my $base_directory     = $default_configuration{C_BASE_DIRECTORY};
 my $set_focus          = $default_configuration{C_SET_FOCUS}; 
 my $take_data          = $default_configuration{C_TAKE_DATA};
 my $take_proof         = $default_configuration{C_TAKE_PROOF};
@@ -1866,25 +1882,46 @@ if(( $set_focus eq TRUE_STR) && ($#filters>0))
 }
 # check presence of the config files, devices, *.cfg, *.param, and the reference *.param
 #
-unless ( -e $rts2_device_file)
+chdir $base_directory ; # in case it is a relative path
+my $currDir = `pwd`; # get the absolute path
+chomp $currDir; 
+$base_directory=  $currDir ;
+
+unless ( -e $rts2_device_file) # eventually absolute or relative path
 {
     print "$scriptname: not found $rts2_device_file\n" ;
     exit 1;
+}
+if( ! ( $rts2_device_file=~ /^\//)) 
+{
+    $rts2_device_file= $base_directory."/".$rts2_device_file ;
 }
 unless ( -e $sexcfg)
 {
     print "$scriptname: not found $sexcfg\n" ;
     exit 1;
 }
+if( ! ( $sexcfg=~ /^\//)) 
+{
+    $sexcfg= $base_directory."/".$sexcfg ;
+}
 unless ( -e $sexparam)
 {
     print "$scriptname: not found $sexparam\n" ;
     exit 1;
 }
+if( ! ( $sexparam=~ /^\//)) 
+{
+    $sexparam= $base_directory."/".$sexparam ;
+}
 unless ( -e $sexreference_param)
 {
     print "$scriptname: not found $sexreference_param\n" ;
     exit 1;
+}
+if( ! ( $sexreference_param=~ /^\//)) 
+{
+    $sexreference_param= $base_directory."/".$sexreference_param ;
 }
 
 if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
@@ -1956,11 +1993,36 @@ if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
 	print "$scriptname: ccd devices $rts2_device_camd not present, can not take data\n" ;
 	exit 1 ;
     }
-    if(!(($rts2_device_camd_present== TRUE_VAL ) && ($rts2_device_filterd_present== TRUE_VAL) && ($rts2_device_focusd_present== TRUE_VAL)))
+# only ccd and focuser are mandatory
+    if(!(($rts2_device_camd_present== TRUE_VAL ) && ($rts2_device_focusd_present== TRUE_VAL)))
     {
 	print "$scriptname: not all devices present, can not take data\n" ;
+	if( $rts2_device_camd_present != TRUE_VAL) 
+	{
+	    print "$scriptname: missing CCD\n" ;
+	}
+	if( $rts2_device_focusd_present != TRUE_VAL) 
+	{
+	    print "$scriptname: missing focuser\n" ;
+	}
 	exit 1 ;
     }
+    if($rts2_device_filterd_present != TRUE_VAL)
+    {
+	print "$scriptname: no filter wheel present\n" ;
+	print "$scriptname: removing filters: " ;
+	foreach my $filter (@filters)
+	{
+	    if( $filter ne "NOFILTER") {
+		print "$filter " ;
+	    } 
+	}
+	print "\n" ;
+	undef @filters ;
+	push ( @filters, "NOFILTER") ;
+	print "$scriptname: using filter: $filters[0]\n" ;
+    }
+
 # Compare the to camd related devices with the arguments
 #
     if(!(($rts2_device_camd_focusd eq $rts2_device_focusd) && ( $rts2_device_camd_filterd eq $rts2_device_filterd)))
@@ -1968,35 +2030,43 @@ if(( $take_data eq TRUE_STR) || ($check_rts2_configuration eq TRUE_STR))
 	print "$scriptname: device mismatch, can not take data $rts2_device_camd_focusd eq $rts2_device_focusd, $rts2_device_camd_filterd eq $rts2_device_filterd\n" ;
 	exit 1 ;
     }
+    if($rts2_device_filterd_present== TRUE_VAL)
+    {
 # Compare the to filterd related filters with the arguments
 #
-    my $found= 0 ;
-    foreach my $filter (@filters)
-    {
-	foreach my $rts2_filterd_filter (@rts2_filterd_filters)
+	my $found= 0 ;
+	foreach my $filter (@filters)
 	{
-	    if ( $filter eq $rts2_filterd_filter)
+	    foreach my $rts2_filterd_filter (@rts2_filterd_filters)
 	    {
-		$found++ ;
-		last ;
+		if ( $filter eq $rts2_filterd_filter)
+		{
+		    $found++ ;
+		    last ;
+		}
 	    }
 	}
-    }
-    if( $found!= $#filters+1)
-    {
-	print "$scriptname: not all filters present, can not take data $found!= $#filters+1 (see e.g. FILTERS)\n" ;
-        print "$scriptname: filters present: " ;
-	foreach my $filter (  @filters)
+	if( $found!= $#filters+1)
 	{
-	    printf( "$filter ") ;
+	    print "$scriptname: not all filters present, can not take data $found!= $#filters+1 (see e.g. FILTERS)\n" ;
+	    print "$scriptname: filters present: " ;
+	    foreach my $filter (  @filters)
+	    {
+		printf( "$filter ") ;
+	    }
+	    printf( "\n") ;
+	    exit 1 ;
 	}
-	printf( "\n") ;
-        exit 1 ;
+    }
+    if($check_rts2_configuration eq TRUE_STR)
+    {
+	print "$scriptname: rts2 configuration is valid and devices are present, exiting\n" ;
+	exit 0 ;
     }
 }
 # check if rts2-centrald and the devices are present
 #
-if( $check_rts2_configuration eq TRUE_STR)
+if( $take_data eq TRUE_STR)
 {
 # test rts2-centrald, required and failed devices
 # 
@@ -2017,22 +2087,22 @@ if( $check_rts2_configuration eq TRUE_STR)
     }
     else
     {
-	print "$scriptname: ccd  $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
+	print "$scriptname: CCD device $rts2_device_camd_from_centrald, temperature $ccd_temperature\n" ;
     }
+    if($rts2_device_filterd_present== TRUE_VAL)
+    {
 # test filter device    
-    my @filter_names= keys %filter_focus_properties ;
-    set_rts2_filter($rts2_device_filterd, $filter_names[0]) ;
-    get_rts2_filter($rts2_device_filterd, $filter_names[0]) ; 
+	my @filter_names= keys %filter_focus_properties ;
+	set_rts2_filter($rts2_device_filterd, $filter_names[0]) ;
+	get_rts2_filter($rts2_device_filterd, $filter_names[0]) ; 
+    }
 # test focuser device
-    my $middle= $focuser_properties{absolute_lower_limit}+ ($focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}- $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}) / 2 ;
+    my $middle= $focuser_properties{ FOCUSER_ABSOLUTE_LOWER_LIMIT}  + ($focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}- $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}) / 2 ;
     $middle=~ s/\.[0-9]+$// ; # truncate
-
     set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
     get_rts2_focus( $rts2_device_focusd, $middle) ;
-
-    print "$scriptname: rts2 configuration is valid and devices are present, exiting\n" ;
-    exit 0 ;
 }
+
 # offline analysis, data taking
 #
 my $fits_file_reference= FALSE_STR ;
@@ -2040,15 +2110,23 @@ if( $take_data eq FALSE_STR) # offline analysis
 {
 # change to the working directory ev. write and get the list of fits files
 #
-    chdir $fits_directory or die "$scriptname: can not change to directory $fits_directory: $!" ;
-
     foreach my $filter (@filters)
     {
-	my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_auto_focus_run) ;
+	my $ret_get_fits= FALSE_VAL ;
+	my $tmp_directory= "" ;
+	if( $default_configuration{C_FITS_IN_BASE_DIRECTORY} eq TRUE_STR) 
+	{
+	    $tmp_directory= $base_directory ;
+	}
+	else
+	{
+	    $tmp_directory= $base_directory."/".$filter ;
+	}
+	chdir $tmp_directory  or die "$scriptname: can not change to directory $tmp_directory: $!" ;
+	$ret_get_fits= get_fits_files( $filter, $base_directory."/".$filter, $include_auto_focus_run) ;
 	if( $ret_get_fits== TRUE_VAL)
 	{
 	    my $foc_pos_maximum_objects= FALSE_VAL ;
-	   
 	    if( $find_focus eq TRUE_STR)
 	    {
 		if(( $fits_file_reference= get_foc_pos_at_maximum_number_of_objects($filter, $sexcfg, $sexreference_param, FALSE_STR)) eq FALSE_STR) 
@@ -2067,22 +2145,29 @@ elsif( $take_data eq TRUE_STR) # online analysis
 # create and change to the working directory ev. write and get the list of fits files
 #
     my $now_string = strftime "%Y-%m-%d-T%H:%M:%S", gmtime;
-    $fits_directory = $fits_directory . "/" . $now_string ;
-    unless ( -e $fits_directory)
+    $base_directory = $base_directory."/".$now_string ;
+    unless ( -e $base_directory)
     {
-	print "$scriptname: creating path $fits_directory\n" ;
-	mkpath $fits_directory ;
+	print "$scriptname: creating path $base_directory\n" ;
+	mkpath $base_directory ;
     }
-    chdir $fits_directory or die "$scriptname: can not change to directory $fits_directory: $!" ;
+    chdir $base_directory or die "$scriptname: can not change to directory $base_directory: $!" ;
 
-    printf( "$scriptname: data taking with devices: %s, %s, %s and filter(s): ", $rts2_device_focusd, $rts2_device_filterd, $rts2_device_camd_from_centrald) ;
-    foreach my $filter (  @filters)
+    if($rts2_device_filterd_present != TRUE_VAL)
     {
-	printf( "$filter ") ;
-	mkpath $fits_directory . "/" . $filter;
+	printf( "$scriptname: data taking with devices: %s, %s\n", $rts2_device_camd_from_centrald, $rts2_device_focusd) ;
+	mkpath $base_directory."/".$filters[0];
+    } 
+    else
+    {
+	printf( "$scriptname: data taking with devices: %s, %s, %s and filter(s): ", $rts2_device_camd_from_centrald, $rts2_device_focusd, $rts2_device_filterd) ;
+	foreach my $filter (  @filters)
+	{
+	    printf( "$filter ") ;
+	    mkpath $base_directory."/".$filter;
+	}
+	printf( "\n") ;
     }
-    printf( "\n") ;
-
 # ok everything is present, take data
     foreach my $filter ( @filters)
     {
@@ -2098,9 +2183,12 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	    print "$scriptname: define a sensible step size for filter $filter, values: $filter_focus_properties{$filter}[IND_LOWER_LIMIT], $filter_focus_properties{$filter}[IND_UPPER_LIMIT], $filter_focus_properties{$filter}[IND_STEP_SIZE]\n" ;
 	    exit 1 ;
 	}
+	if($rts2_device_filterd_present== TRUE_VAL)
+	{
 # set and get filter
-	set_rts2_filter($rts2_device_filterd, $filter) ;
-	get_rts2_filter($rts2_device_filterd, $filter) ; 
+	    set_rts2_filter($rts2_device_filterd, $filter) ;
+	    get_rts2_filter($rts2_device_filterd, $filter) ; 
+	}
 # find rough focus
 	if( $find_focus eq TRUE_STR)
 	{
@@ -2130,15 +2218,15 @@ elsif( $take_data eq TRUE_STR) # online analysis
 	    print "$scriptname: FOC_TOFF: $FOC_TOFF\n" ;
 	    print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null\n" ;
  
-	    open( FIND_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
-# ToDo: perl says reading fom not open file handle
+	    open( FIND_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$FOC_TOFF for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$size_step } ' 2>/dev/null|") or die "$scriptname: Can not rts2-scriptexec: $!" ;
+# ToDo: perl says reading from not open file handle
 #	    while( my $response= <FIND_FOCUS>)
 #	    {
 #		print "$scriptname: rough focus:$response" ;
 #	    }
 	    close(FIND_FOCUS) ;
 
-	    my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_auto_focus_run) ;
+	    my $ret_get_fits= get_fits_files( $filter, $base_directory."/".$filter, $include_auto_focus_run) ;
 	    if( $ret_get_fits== TRUE_VAL)
 	    {
 # the global $filter_focus_properties{$fltr}[IND_FOC_DEF] is updated
@@ -2170,13 +2258,13 @@ elsif( $take_data eq TRUE_STR) # online analysis
 # after rts2-scriptexec returns, all files are in the working directory
 #
 	print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s '  $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null\n" ;
-	open( CREATEFITS, "rts2-scriptexec -d$rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+	open( CREATEFITS, "rts2-scriptexec -d$rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=$filter_focus_properties{$filter}[IND_LOWER_LIMIT] for $number_steps { E $filter_focus_properties{$filter}[IND_EXP_TIME] $rts2_device_focusd.FOC_TOFF+=$filter_focus_properties{$filter}[IND_STEP_SIZE] } ' 2>/dev/null|") or die "$scriptname: Can not rts2-scriptexec: $!" ;
 	while( my $response= <CREATEFITS>)
 	{
 	    print "$scriptname:$response" ;
 	}
 	close( CREATEFITS) ;
-	my $ret_get_fits= get_fits_files( $filter, $fits_directory, $include_auto_focus_run) ; # took a while
+	my $ret_get_fits= get_fits_files( $filter, $base_directory."/".$filter, $include_auto_focus_run) ; # took a while
 	if( $ret_get_fits== TRUE_VAL)
 	{
 	    $fit_focus= get_fitted_focus( $filter, $sexcfg, $sexparam, $sexreference_param, $sexsky_list, $sexcat, $fitprg, $fit_result_file, $ds9_region_file, $set_limits_on_sanity_checks, $find_focus, $fits_file_reference) ;
@@ -2195,9 +2283,9 @@ elsif( $take_data eq TRUE_STR) # online analysis
 # rts2-scriptexec -d CD -s ' CD.binning=0 FC.FOC_TOFF=0 E exp_time_filter '
 		print "$scriptname: rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=0 E $filter_focus_properties{$filter}[IND_EXP_TIME] ' 2>/dev/null\n" ;
  
-		open( PROOF_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=0 E $filter_focus_properties{$filter}[IND_EXP_TIME] } ' 2>/dev/null|") or die "Can not rts2-scriptexec: $!" ;
+		open( PROOF_FOCUS, "rts2-scriptexec -d $rts2_device_camd_from_centrald -s ' $rts2_device_camd_from_centrald.binning=$ccd_binning $rts2_device_focusd.FOC_TOFF=0 E $filter_focus_properties{$filter}[IND_EXP_TIME] } ' 2>/dev/null|") or die "$scriptname: Can not rts2-scriptexec: $!" ;
 		close(PROOF_FOCUS) ;
-# if usefull make a quick analysis of the FWHM
+# if useful make a quick analysis of the FWHM
 
 	    }
 	}
