@@ -70,7 +70,7 @@ void Graph::printDevices (const char* &response_type, char* &response, size_t &r
 	rs.load ();
 	std::ostringstream _os;
 	printHeader (_os, "Record value list", NULL, "/css/calendar.css");
-	_os << "script type='text/javascript' src='"
+	_os << "<script type='text/javascript' src='"
 		<< ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/js/date.js'></script>\n<table>";
 	int i = 1;
 	for (rts2db::RecvalsSet::iterator iter = rs.begin (); iter != rs.end (); iter++, i++)

@@ -216,7 +216,23 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 {
 	std::ostringstream _os;
 
-	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str ());
+	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str (), NULL, NULL, "altAzTimer ();");
+
+	includeJavaScript (_os, "equ.js");
+
+	_os << "<script type='text/javascript'>\n"
+	"var c=0;\n"
+	"var t;\n"
+	"var timer_is_on=0;\n"
+
+	"function altAzTimer()\n"
+	"{\n"
+		"document.getElementById('altaz').innerHTML=ln_get_julian_from_sys();\n"
+		"c=c+1;\n"
+		"t=setTimeout('altAzTimer()',500);\n"
+	"}\n"
+
+	"</script>\n";
 
 	printTargetHeader (tar->getTargetID (), _os);
 
@@ -227,12 +243,12 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	tar->getPosition (&tradec);
 
 	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
-		<< "<div><a href='?slew'>slew to target</a></div>"
-		<< "<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
+		"<div>ALT AZ <span id='altaz'/></div>"
+		"<div><a href='?slew'>slew to target</a></div>"
+		"<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")
 		<< "'/></div>"
-		<< "</p>";
-
+		"</p>";
 
 	printFooter (_os);
 

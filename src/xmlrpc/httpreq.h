@@ -86,8 +86,9 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 * @param title   document title
 		 * @param css     optional CSS styles
 		 * @param cssLink optional link to external CSS
+		 * @param onLoad  on load script
 		 */
-		void printHeader (std::ostream &os, const char *title, const char *css = NULL, const char *cssLink = NULL);
+		void printHeader (std::ostream &os, const char *title, const char *css = NULL, const char *cssLink = NULL, const char *onLoad = NULL);
 
 		/**
 		 * Prints document footer.
@@ -95,6 +96,8 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		 * @param os    output stream
 		 */
 		void printFooter (std::ostream &os);
+
+		void includeJavaScript (std::ostream &os, const char *name);
 };
 
 /**

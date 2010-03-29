@@ -73,7 +73,7 @@ void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &h
 	authorizedExecute (path, params, response_type, response, response_length);
 }
 
-void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, const char *css, const char *cssLink)
+void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, const char *css, const char *cssLink, const char *onLoad)
 {
 	os << "<html><head><title>" << title << "</title>";
 	
@@ -81,14 +81,24 @@ void GetRequestAuthorized::printHeader (std::ostream &os, const char *title, con
 		os << "<style type='text/css'>" << css << "</style>";
 
 	if (cssLink)
-		os << "<link href='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << cssLink << "' rel='stylesheet' type='text/css'/>";
+		os << "<link href='" << ((rts2xmlrpc::XmlRpcd *)getMasterApp ())->getPagePrefix () << cssLink << "' rel='stylesheet' type='text/css'/>";
 
-	os << "</head><body>";
+	os << "</head><body";
+	
+	if (onLoad)
+		os << " onload='" << onLoad << "'";
+	
+	os << ">";
 }
 
 void GetRequestAuthorized::printFooter (std::ostream &os)
 {
 	os << "</body></html>";
+}
+
+void GetRequestAuthorized::includeJavaScript (std::ostream &os, const char *name)
+{
+	os << "<script type='text/javascript' src='" << ((rts2xmlrpc::XmlRpcd *)getMasterApp ())->getPagePrefix () << "/js/" << name << "'></script>\n";
 }
 
 void Directory::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)

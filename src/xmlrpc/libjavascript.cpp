@@ -24,11 +24,84 @@
 using namespace rts2xmlrpc;
 
 static const char *equScript = 
+"function ln_range_degrees (deg) {\n"
+  "var temp;\n"
+    
+  "if (angle >= 0.0 && angle < 360.0)\n"
+    "return angle;\n"
+ 
+  "temp = Math.floor(angle / 360);\n"
+  "if (angle < 0.0)\n"
+    "temp = temp - 1;\n"
+  "temp = temp * 360;\n"
+  "return angle - temp;\n"
+"}\n"
+
+"function ln_get_julian_from_sys() {\n"
+  "var ld = new Date();\n"
+  /* check for month = January or February */
+  "var lY = ld.getUTCFullYear();\n"
+  "var lM = ld.getUTCMonth();\n"
+  "var lD = ld.getUTCDay();\n"
+
+  "if (ld.getUTCMonth() < 2 ) {\n"
+    "lY--;\n"
+    "lM += 12;\n"
+  "}\n"
+
+  "a = lY / 100;\n"
+
+  /* check for Julian or Gregorian calendar (starts Oct 4th 1582) */
+  "if (lY > 1582 || (lY == 1582 && (lM > 10 || (lM == 10 && lD >= 4)))) {\n"
+  /* Gregorian calendar */    
+    "b = 2 - a + (a / 4);\n"
+  "} else {\n"
+  /* Julian calendar */
+    "b = 0;\n"
+  "}\n"
+	
+  /* add a fraction of hours, minutes and secs to days*/
+  "days = lD + ld.getUTCHours() / 24.0 + ld.getUTCMinutes() / 1440.0 + ld.getUTCSeconds() /  86400.0;\n"
+
+  /* now get the JD */
+  "JD = Math.floor(365.25 * (lY + 4716)) + Math.floor(30.6001 * (lM + 1)) + days + b - 1524.5;\n"
+
+  "return JD;\n"
+"}\n"
+
+"function ln_get_mean_sidereal_time (JD) {\n"
+  "var sidereal;\n"
+  "var T;\n"
+
+  /* calc mean angle */
+  "T = (JD - 2451545.0) / 36525.0;\n"
+
+  "sidereal = 280.46061837 + (360.98564736629 * (JD - 2451545.0)) + (0.000387933 * T * T) - (T * T * T / 38710000.0);\n"
+  /* add a convenient multiple of 360 degrees */
+    
+  "sidereal = ln_range_degrees (sidereal);\n"
+    
+   /* change to hours */
+  "return sidereal * 24.0 / 360.0;\n"
+"}\n"
+
+"function AltAz () {\n"
+  "this.alt = Infinity;\n"
+  "this.az = Infinity;\n"
+"}\n"
+
+"function LnLat (ln, lat) {\n"
+  "this.ln = ln;\n"
+  "this.lat = lat;\n"
+"}\n"
+
 "function RaDec (ra, dec) {\n"
-" this.ra = ra;\n"
-" this.dec = dec;\n"
-" this.alt = function () {\n"
-"  return _alt;\n"
+  "this.ra = ra;\n"
+  "this.dec = dec;\n"
+  "this.altaz = function (altaz) {\n"
+    "sidereal = ln_get_mean_sidereal_time (ln_get_julian_from_sys());\n"
+    "ln_get_hrz_from_equ_sidereal_time (this, LnLat(15,30), sidereal, altaz);\n"
+  "}\n"
 "}\n";
 
 static const char *dateScript = 
