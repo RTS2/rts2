@@ -220,14 +220,20 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	includeJavaScript (_os, "equ.js");
 
+	struct ln_equ_posn tradec;
+
+	tar->getPosition (&tradec);
+
 	_os << "<script type='text/javascript'>\n"
 	"var c=0;\n"
 	"var t;\n"
 	"var timer_is_on=0;\n"
+	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ");\n"
 
 	"function altAzTimer()\n"
 	"{\n"
-		"document.getElementById('altaz').innerHTML=ln_get_julian_from_sys();\n"
+		"altaz = radec.altaz ();\n"
+		"document.getElementById('altaz').innerHTML = altaz.alt + ' ' + altaz.az;\n"
 		"c=c+1;\n"
 		"t=setTimeout('altAzTimer()',500);\n"
 	"}\n"
@@ -237,10 +243,6 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	printTargetHeader (tar->getTargetID (), _os);
 
 	// javascript to send requests..
-
-	struct ln_equ_posn tradec;
-
-	tar->getPosition (&tradec);
 
 	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
 		"<div>ALT AZ <span id='altaz'/></div>"

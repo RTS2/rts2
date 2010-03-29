@@ -24,7 +24,7 @@
 using namespace rts2xmlrpc;
 
 static const char *equScript = 
-"function ln_range_degrees (deg) {\n"
+"function ln_range_degrees (angle) {\n"
   "var temp;\n"
     
   "if (angle >= 0.0 && angle < 360.0)\n"
@@ -36,6 +36,10 @@ static const char *equScript =
   "temp = temp * 360;\n"
   "return angle - temp;\n"
 "}\n"
+
+"function ln_deg_to_rad(deg) { return deg * 1.7453292519943295769e-2; }\n"
+
+"function ln_rad_to_deg(rad) { return rad * 5.7295779513082320877e1; }\n"
 
 "function ln_get_julian_from_sys() {\n"
   "var ld = new Date();\n"
@@ -85,22 +89,77 @@ static const char *equScript =
   "return sidereal * 24.0 / 360.0;\n"
 "}\n"
 
+"function ln_get_hrz_from_equ_sidereal_time(object,observer,sidereal,position) {\n"
+  "var H, ra, latitude, declination, A, Ac, As, h, Z, Zs;\n"
+
+  /* change sidereal_time from hours to radians*/
+  "sidereal *= 2.0 * Math.PI / 24.0;\n"
+
+  /* calculate hour angle of object at observers position */
+  "ra = ln_deg_to_rad (object.ra);\n"
+  "H = sidereal + ln_deg_to_rad (observer.lng) - ra;\n"
+
+  /* hence formula 12.5 and 12.6 give */
+  /* convert to radians - hour angle, observers latitude, object declination */
+  "latitude = ln_deg_to_rad (observer.lat);\n"
+  "declination = ln_deg_to_rad (object.dec);\n"
+
+  /* formula 12.6 *; missuse of A (you have been warned) */
+  "A = Math.sin(latitude) * Math.sin(declination) + Math.cos(latitude) * Math.cos(declination) * Math.cos(H);\n"
+  "h = Math.asin(A);\n"
+
+  /* convert back to degrees */
+  "position.alt = ln_rad_to_deg(h);\n"
+
+  /* zenith distance, Telescope Control 6.8a */
+  "Z = Math.acos(A);\n"
+
+  /* is'n there better way to compute that? */
+  "Zs = Math.sin (Z);\n"
+
+  /* sane check for zenith distance; don't try to divide by 0 */
+  "if (Math.abs(Zs) < 1e-5) { \n"
+    "if (object.dec > 0) { position.az = 180; }	else { position.az = 0; }\n"
+    "if ((object.dec > 0 && observer.lat > 0) || (object.dec < 0 && observer.lat < 0))\n"
+      "{ position.alt = 90; }\n"
+    "else { position.alt = -90; }\n"
+    "return;\n"
+  "}\n"
+
+  /* formulas TC 6.8d Taff 1991, pp. 2 and 13 - vector transformations */
+  "As = (Math.cos(declination)* Math.sin (H))/Zs;\n"
+  "Ac = (Math.sin(latitude)*Math.cos(declination)*Math.cos(H)-Math.cos(latitude)*Math.sin(declination))/Zs;\n"
+
+  // don't blom at atan2
+  "if (Ac == 0 && As == 0) {\n"
+    "if (object.dec > 0) { position.az = 180.0; }\n"
+    "else { position.az = 0.0; }\n"
+    "return;\n"
+  "}\n"
+  "A = Math.atan2(As,Ac);\n"
+
+  /* convert back to degrees */
+  "position.az = ln_range_degrees(ln_rad_to_deg (A));\n"
+"}\n"
+
 "function AltAz () {\n"
   "this.alt = Infinity;\n"
   "this.az = Infinity;\n"
 "}\n"
 
-"function LnLat (ln, lat) {\n"
-  "this.ln = ln;\n"
+"function LngLat (lng, lat) {\n"
+  "this.lng = lng;\n"
   "this.lat = lat;\n"
 "}\n"
 
 "function RaDec (ra, dec) {\n"
   "this.ra = ra;\n"
   "this.dec = dec;\n"
-  "this.altaz = function (altaz) {\n"
+  "this.altaz = function () {\n"
     "sidereal = ln_get_mean_sidereal_time (ln_get_julian_from_sys());\n"
-    "ln_get_hrz_from_equ_sidereal_time (this, LnLat(15,30), sidereal, altaz);\n"
+    "altaz = new AltAz();\n"
+    "ln_get_hrz_from_equ_sidereal_time (this, new LngLat(15,30), sidereal, altaz);\n"
+    "return altaz;\n"
   "}\n"
 "}\n";
 
