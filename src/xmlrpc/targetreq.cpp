@@ -229,14 +229,17 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ");\n"
 	"hAlt = new DMS();\n"
 	"hAz = new DMS();\n"
+	"hSt = new DMS();\n"
 
-	"function altAzTimer()\n"
-	"{\n"
+	"function altAzTimer() {\n"
 		"altaz = radec.altaz ();\n"
 		"ln_deg_to_dms(altaz.alt,hAlt);\n"
 		"ln_deg_to_dms(altaz.az,hAz);\n"
+		"var st = ln_get_mean_sidereal_time(ln_get_julian_from_sys());\n"
+		"ln_deg_to_dms(st,hSt);\n"
+//ln_get_mean_sidereal_time(ln_get_julian_from_sys()),hSt);\n"
 		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
-		//altaz.alt + ' ' + altaz.az;\n"
+		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + st;\n"
 		"setTimeout('altAzTimer()',2000);\n"
 	"}\n"
 
@@ -248,6 +251,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
 		"<div>ALT AZ <span id='altaz'/></div>"
+		"<div>Sidereal Time <span id='st'/></div>"
 		"<div><a href='?slew'>slew to target</a></div>"
 		"<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")

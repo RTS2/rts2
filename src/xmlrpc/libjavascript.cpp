@@ -46,7 +46,7 @@ static const char *equScript =
   "this.degrees = Infinity;\n"
   "this.minutes = Infinity;\n"
   "this.seconds = Infinity;\n"
-  "this.toString = function () { return (this.neg ? '+' : '-') + this.degrees + '&deg;' + this.minutes + '\\'' + (Math.ceil(this.seconds * 100)/100).toPrecision(4) + '\"'; }\n"
+  "this.toString = function () { return (this.neg ? '-' : '+') + this.degrees + '&deg;' + this.minutes + '\\'' + (Math.ceil(this.seconds * 100)/100).toPrecision(4) + '\"'; }\n"
 "}\n"
 
 /* convert degrees to dms */
@@ -194,7 +194,7 @@ static const char *equScript =
   "this.altaz = function () {\n"
     "sidereal = ln_get_mean_sidereal_time (ln_get_julian_from_sys());\n"
     "altaz = new AltAz();\n"
-    "ln_get_hrz_from_equ_sidereal_time (this, new LngLat(15,30), sidereal, altaz);\n"
+    "ln_get_hrz_from_equ_sidereal_time (this, new LngLat(-4.0410,36.7592), sidereal, altaz);\n"
     "return altaz;\n"
   "}\n"
 "}\n";
