@@ -41,6 +41,42 @@ static const char *equScript =
 
 "function ln_rad_to_deg(rad) { return rad * 5.7295779513082320877e1; }\n"
 
+"function DMS() {\n"
+  "this.neg = 0;\n"
+  "this.degrees = Infinity;\n"
+  "this.minutes = Infinity;\n"
+  "this.seconds = Infinity;\n"
+  "this.toString = function () { return (this.neg ? '+' : '-') + this.degrees + '&deg;' + this.minutes + '\\'' + (Math.ceil(this.seconds * 100)/100).toPrecision(4) + '\"'; }\n"
+"}\n"
+
+/* convert degrees to dms */
+"function ln_deg_to_dms (degrees,dms) {\n"
+  "var dtemp;\n"
+
+  "if (degrees >= 0) { dms.neg = 0; }\n"
+  "else { dms.neg = 1; }\n"
+
+  "degrees = Math.abs(degrees);\n"
+  "dms.degrees = Math.floor(degrees);\n"
+	
+  /* multiply remainder by 60 to get minutes */
+  "dtemp = 60*(degrees - dms.degrees);\n"
+  "dms.minutes = Math.floor(dtemp);\n"
+    
+  /* multiply remainder by 60 to get seconds */
+  "dms.seconds = 60*(dtemp - dms.minutes);\n"
+    
+  /* catch any overflows */
+  "if (dms.seconds > 59) {\n"
+    "dms.seconds = 0;\n"
+    "dms.minutes++;\n"
+  "}\n"
+  "if (dms.minutes > 59) {\n"
+    "dms.minutes = 0;\n"
+    "dms.degrees ++;\n"
+  "}\n"
+"}\n"
+
 "function ln_get_julian_from_sys() {\n"
   "var ld = new Date();\n"
   /* check for month = January or February */

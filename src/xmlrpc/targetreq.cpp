@@ -225,17 +225,18 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	tar->getPosition (&tradec);
 
 	_os << "<script type='text/javascript'>\n"
-	"var c=0;\n"
-	"var t;\n"
-	"var timer_is_on=0;\n"
 	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ");\n"
+	"hAlt = new DMS();\n"
+	"hAz = new DMS();\n"
 
 	"function altAzTimer()\n"
 	"{\n"
 		"altaz = radec.altaz ();\n"
-		"document.getElementById('altaz').innerHTML = altaz.alt + ' ' + altaz.az;\n"
-		"c=c+1;\n"
-		"t=setTimeout('altAzTimer()',500);\n"
+		"ln_deg_to_dms(altaz.alt,hAlt);\n"
+		"ln_deg_to_dms(altaz.az,hAz);\n"
+		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
+		//altaz.alt + ' ' + altaz.az;\n"
+		"setTimeout('altAzTimer()',2000);\n"
 	"}\n"
 
 	"</script>\n";
