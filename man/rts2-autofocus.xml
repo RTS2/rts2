@@ -66,7 +66,7 @@ and are found between  the lines "begin default configuration" and "end default
 configuration". Parameters outside these limits should normally not be changed. 
     </para>
   </refsect1>
-  <refsect1><title>Status</title>  <para>This man page applies to svn revision r7121.</para>
+  <refsect1><title>Status</title>  <para>This man page applies to svn revision r7130.</para>
     <para> <command>&dhpackage;</command> has been tested in three online data tacking
           and numerous offline analysis. </para>
 <para>
@@ -664,6 +664,19 @@ different focus runs.
     <listitem>
     <para> IF TRUE and <command>&dhpackage;</command> yields a valid focuser
 position it is set if TAKE_DATA==TRUE.
+    </para>
+    </listitem>
+    </varlistentry>
+
+    <varlistentry>
+    <term>
+    <option>SET_LIMITS_ON_FILTER_FOCUS, boolean, TRUE</option>
+    </term>
+    <listitem>
+    <para>If TRUE the resulting fit is performed limited on the interval defined in %filter_focus_properties. This
+    behavior is default in online mode. In offline mode this parameter can be used to narrow the interval to exclude 
+    bad data points close to the edges. If SET_LIMITS_ON_SANITY_CHECKS is set TRUE the applied interval limits are
+    set to a value which is closest to the extrema (either defined by SET_LIMITS_ON_FILTER_FOCUS or by SET_LIMITS_ON_SANITY_CHECKS).
     </para>
     </listitem>
     </varlistentry>
