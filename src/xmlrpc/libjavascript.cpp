@@ -89,7 +89,7 @@ static const char *equScript =
     "lM += 12;\n"
   "}\n"
 
-  "a = lY / 100;\n"
+  "a = Math.floor(lY / 100);\n"
 
   /* check for Julian or Gregorian calendar (starts Oct 4th 1582) */
   "if (lY > 1582 || (lY == 1582 && (lM > 10 || (lM == 10 && lD >= 4)))) {\n"
@@ -101,12 +101,10 @@ static const char *equScript =
   "}\n"
 	
   /* add a fraction of hours, minutes and secs to days*/
-  "var days = lD + ld.getUTCHours() / 24 + ld.getUTCMinutes() / 1440 + ld.getUTCSeconds() / 86400;\n"
+  "var days = lD + ld.getUTCHours() / 24 + ld.getUTCMinutes() / 1440 + ld.getUTCSeconds() / 86400 + ld.getUTCMilliseconds() / 86400000;\n"
 
   /* now get the JD */
-  "JD = Math.floor(365.25 * (lY + 4716)) + Math.floor(30.6001 * (lM + 1)) + days + b - 1524.5;\n"
-
-  "return JD;\n"
+  "return Math.floor(365.25 * (lY + 4716)) + Math.floor(30.6001 * (lM + 1)) + days + b - 1524.5;\n"
 "}\n"
 
 "function ln_get_mean_sidereal_time (JD) {\n"

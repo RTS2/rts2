@@ -242,7 +242,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
 		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + (2/4) + ' ' + st;\n"
 		"document.getElementById('jd').innerHTML = jd;\n"
-		"setTimeout('altAzTimer()',2000);\n"
+		"setTimeout('altAzTimer()',100);\n"
 	"}\n"
 
 	"</script>\n";
