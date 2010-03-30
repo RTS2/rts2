@@ -81,10 +81,10 @@ static const char *equScript =
   "var ld = new Date();\n"
   /* check for month = January or February */
   "var lY = ld.getUTCFullYear();\n"
-  "var lM = ld.getUTCMonth();\n"
-  "var lD = ld.getUTCDay();\n"
+  "var lM = ld.getUTCMonth() + 1;\n"
+  "var lD = ld.getUTCDate();\n"
 
-  "if (ld.getUTCMonth() < 2 ) {\n"
+  "if (lM < 3 ) {\n"
     "lY--;\n"
     "lM += 12;\n"
   "}\n"
@@ -101,7 +101,7 @@ static const char *equScript =
   "}\n"
 	
   /* add a fraction of hours, minutes and secs to days*/
-  "days = lD + ld.getUTCHours() / 24.0 + ld.getUTCMinutes() / 1440.0 + ld.getUTCSeconds() /  86400.0;\n"
+  "var days = lD + ld.getUTCHours() / 24 + ld.getUTCMinutes() / 1440 + ld.getUTCSeconds() / 86400;\n"
 
   /* now get the JD */
   "JD = Math.floor(365.25 * (lY + 4716)) + Math.floor(30.6001 * (lM + 1)) + days + b - 1524.5;\n"

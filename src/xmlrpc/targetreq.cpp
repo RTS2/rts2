@@ -235,11 +235,13 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 		"altaz = radec.altaz ();\n"
 		"ln_deg_to_dms(altaz.alt,hAlt);\n"
 		"ln_deg_to_dms(altaz.az,hAz);\n"
-		"var st = ln_get_mean_sidereal_time(ln_get_julian_from_sys());\n"
+		"var jd = ln_get_julian_from_sys();\n"
+		"var st = ln_get_mean_sidereal_time(jd);\n"
 		"ln_deg_to_dms(st,hSt);\n"
 //ln_get_mean_sidereal_time(ln_get_julian_from_sys()),hSt);\n"
 		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
-		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + st;\n"
+		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + (2/4) + ' ' + st;\n"
+		"document.getElementById('jd').innerHTML = jd;\n"
 		"setTimeout('altAzTimer()',2000);\n"
 	"}\n"
 
@@ -251,7 +253,8 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
 		"<div>ALT AZ <span id='altaz'/></div>"
-		"<div>Sidereal Time <span id='st'/></div>"
+		"<div>Sidereal Time " << ln_get_mean_sidereal_time(ln_get_julian_from_sys()) << "<span id='st'/></div>"
+		"<div>JD " << ln_get_julian_from_sys () << " <span id='jd'/></div>"
 		"<div><a href='?slew'>slew to target</a></div>"
 		"<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")
