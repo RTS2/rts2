@@ -189,13 +189,13 @@ int main(int argc, char* argv[])
   //fit_fwhm-> SetParameters(0., 1., 1.);
   //fit_fwhm-> SetParNames("p0","p1", "p2");
   //gr1-> Fit(fit_fwhm,"q") ;
-  gr1-> Fit("pol2","q");
+  gr1-> Fit("pol4","q");
 
   mg-> Add(gr1);
 
   // read the results
   // ToDo: integrate at least chi2 into rts2-autofocus
-  TF1 *fit_fwhm = gr1-> GetFunction("pol2");
+  TF1 *fit_fwhm = gr1-> GetFunction("pol4");
   fit_fwhm_global = fit_fwhm ; // in root there is no method accepting a function pointer
  
   Double_t fwhm_chi2   = fit_fwhm-> GetChisquare();
@@ -226,8 +226,8 @@ int main(int argc, char* argv[])
   gr2-> SetMarkerColor(kRed);
   gr2-> SetMarkerStyle(20);
   TF1 *fit_flux = new TF1("one_over_fwhm",one_over_fwhm, 0., 10000., 5);
-  fit_flux-> SetParameters(100., fwhm_MinimumX, 0.5, 0.072, 1., 100. *fwhm_at_minimum); // a little bit of magic here
-  fit_flux-> SetParNames("constant","offset", "exponent", "tan(alpha)", "fwhm_at_minimum");
+  fit_flux-> SetParameters(100.,      fwhm_MinimumX, 2.5,        0.072,         100. * fwhm_at_minimum); // a little bit of magic here
+  fit_flux-> SetParNames(  "constant","offset",      "exponent", "tan(alpha)", "fwhm_at_minimum");
   gr2-> Fit(fit_flux,"q");
 
   mg-> Add(gr2);
