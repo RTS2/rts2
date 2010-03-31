@@ -74,6 +74,7 @@
 // bit mask for rain ignore
 #define ZI_IGNORE_RAIN   0x8000
 
+#define OPT_BATTERY      OPT_LOCAL + 501
 
 namespace rts2dome
 {
@@ -164,8 +165,8 @@ class Zelio:public Dome
 		Rts2ValueBool *Q8;
 		Rts2ValueBool *QA;
 
-		Rts2ValueInteger *battery;
-		Rts2ValueInteger *batteryMin;
+		Rts2ValueFloat *battery;
+		Rts2ValueFloat *batteryMin;
 
 		Rts2ValueInteger *humidity;
 
@@ -247,9 +248,9 @@ int Zelio::startOpen ()
 			return -1;
 		}
 
-		if (haveBatteryLevel && battery->getValueInteger () < batteryMin->getValueInteger ())
+		if (haveBatteryLevel && battery->getValueFloat () < batteryMin->getValueFloat ())
 		{
-			logStream (MESSAGE_WARNING) << "current battery level (" << battery->getValueInteger () << ") is bellow minimal level (" << batteryMin->getValueInteger () << sendLog;
+			logStream (MESSAGE_WARNING) << "current battery level (" << battery->getValueFloat () << ") is bellow minimal level (" << batteryMin->getValueFloat () << sendLog;
 		}
 
 		zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
@@ -291,7 +292,7 @@ bool Zelio::isGoodWeather ()
 	}
 	if (haveBatteryLevel)
 	{
-		battery->setValueInteger (reg3);
+		battery->setValueFloat (reg3 * 24.0f / 255.0f);
 		sendValueAll (battery);
 	}
 	if (haveHumidityOutput)
@@ -308,7 +309,7 @@ bool Zelio::isGoodWeather ()
 		return false;
 	}
 	// battery too weak
-	if (haveBatteryLevel && reg3 < batteryMin->getValueInteger ())
+	if (haveBatteryLevel && battery->getValueFloat () < batteryMin->getValueFloat ())
 	{
 		setWeatherTimeout (300, "battery level too low");
 		return false;
@@ -427,6 +428,9 @@ int Zelio::processOption (int in_opt)
 		case 'z':
 			host = new HostString (optarg, "502");
 			break;
+		case OPT_BATTERY:
+			batteryMin->setValueCharArr (optarg);
+			break;
 		default:
 			return Dome::processOption (in_opt);
 	}
@@ -494,6 +498,7 @@ Zelio::Zelio (int argc, char **argv):Dome (argc, argv)
 	QA = NULL;
 
 	addOption ('z', NULL, 1, "Zelio TCP/IP address and port (separated by :)");
+	addOption (OPT_BATTERY, "min-battery", 1, "minimal battery level [V])");
 }
 
 Zelio::~Zelio (void)
@@ -563,7 +568,7 @@ int Zelio::info ()
 
 	if (haveBatteryLevel)
 	{
-		battery->setValueInteger (regs[6]);
+		battery->setValueFloat (regs[6] * 24.0f / 255.0f);
 	}
 
 	if (haveHumidityOutput)
@@ -743,8 +748,9 @@ void Zelio::createZelioValues ()
 
 	if (haveBatteryLevel)
 	{
-		createValue (battery, "battery", "Battery level", false);
-		createValue (batteryMin, "battery_min", "Battery minimal level for good weather", false, RTS2_VALUE_WRITABLE);
+		createValue (battery, "battery", "[V] battery level", false);
+		createValue (batteryMin, "battery_min", "[V] battery minimal level for good weather", false, RTS2_VALUE_WRITABLE);
+		batteryMin->setValueFloat (0);
 	}
 
 	if (haveHumidityOutput)
