@@ -960,7 +960,9 @@ int Rts2Daemon::setValue (Rts2Conn * conn, bool overwriteSaved)
 	// value change was qued
 	if (ret == -1)
 	{
-		conn->sendCommandEnd (DEVDEM_I_QUED, "value change was qued");
+		std::ostringstream os;
+		os << "value " << old_value_cond->getValue()->getName () << " change was queued";
+		conn->sendCommandEnd (DEVDEM_I_QUED, os.str ().c_str ());
 	}
 	return ret;
 
