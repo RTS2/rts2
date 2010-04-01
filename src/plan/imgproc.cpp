@@ -321,6 +321,18 @@ int ImageProc::changeMasterState (int new_state)
 			}
 			reprocessingPossible = 0;
 			break;
+
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
+			nightGoodImages->setValueInteger (0);
+			nightTrashImages->setValueInteger (0);
+			nightBadImages->setValueInteger (0);
+			
+			sendValueAll (nightGoodImages);
+			sendValueAll (nightTrashImages);
+			sendValueAll (nightBadImages);
+			break;
+
 		default:
 			reprocessingPossible = 1;
 			if (!runningImage && imagesQue.size () == 0)
