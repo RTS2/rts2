@@ -1548,9 +1548,10 @@ int Rts2Conn::sendCommandEnd (int num, const char *in_msg)
 		setCommandInProgress (false);
 		processBuffer ();
 	}
-	if (num != 0)
-		logStream (MESSAGE_ERROR) << "command end with error " << num
-			<< " description: " << in_msg << sendLog;
+	if (num < 0)
+		logStream (MESSAGE_ERROR) << "command end with error " << num << " description: " << in_msg << sendLog;
+	else if (num > 0)
+		logStream (MESSAGE_DEBUG) << "command end with note " << num << " description: " << in_msg << sendLog;
 	return 0;
 }
 
