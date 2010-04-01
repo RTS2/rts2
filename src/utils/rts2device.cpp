@@ -745,6 +745,7 @@ Rts2Conn * Rts2Device::createClientConnection (Rts2Address * in_addres)
 void Rts2Device::checkQueChanges (int fakeState)
 {
 	int ret;
+	bool changed = false;
 	for (Rts2ValueQueVector::iterator iter = queValues.begin (); iter != queValues.end ();)
 	{
 		Rts2ValueQue *queVal = *iter;
@@ -778,11 +779,16 @@ void Rts2Device::checkQueChanges (int fakeState)
 			}
 			delete queVal;
 			iter = queValues.erase (iter);
+			changed = true;
 		}
 		else
 		{
 			iter++;
 		}
+	}
+	if (changed)
+	{
+		setFullBopState (fakeState);
 	}
 }
 
