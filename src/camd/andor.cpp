@@ -156,6 +156,7 @@ class Andor:public Camera
 		int setHSSpeed (int in_amp, int in_hsspeed);
 		int setVSSpeed (int in_vsspeed);
 		int setFTShutter (bool force);
+		int setUseFT (bool force);
 		int setAcquisitionMode (int mode);
 
 		int printInfo ();
@@ -514,6 +515,17 @@ int Andor::setFTShutter (bool force)
 	return 0;
 }
 
+int Andor::setUseFT (bool force)
+{
+	int status;
+	if (!(cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER))
+		return -2;
+	status = SetFrameTransferMode (force ? 1 : 0);
+	if (status != DRV_SUCCESS)
+		return -1;
+	return 0;
+}
+
 int Andor::setAcquisitionMode (int mode)
 {
 	if (SetAcquisitionMode (mode) != DRV_SUCCESS)
@@ -635,6 +647,32 @@ int Andor::scriptEnds ()
 {
 	if (!isnan (defaultGain) && gain)
 		setGain (defaultGain);
+
+	// set default values..
+	setVSSpeed (1);
+	VSpeed->setValueInteger (1);
+
+	sendValueAll (VSpeed);
+
+	setHSSpeed (false, 1);
+	EMOn->setValueBool (false);
+	HSpeed->setValueInteger (1);
+
+	sendValueAll (EMOn);
+	sendValueAll (HSpeed);
+
+	createValue (FTShutter, "FTSHUT", "Use shutter, even with FT", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	FTShutter->setValueBool (false);
+
+	sendValueAll (FTShutter);
+
+	setUseFT (true);
+	useFT->setValueBool (true);
+	sendValueAll (useFT);
+
+	useRunTillAbort->setValueBool (false);
+	sendValueAll (useRunTillAbort);
+
 	//	closeShutter ();
 	return Camera::scriptEnds ();
 }
@@ -658,15 +696,7 @@ int Andor::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == FTShutter)
 		return setFTShutter (((Rts2ValueBool *) new_value)->getValueBool ()) ==	0 ? 0 : -2;
 	if (old_value == useFT)
-	{
-		int status;
-		if (!(cap.ulAcqModes & AC_ACQMODE_FRAMETRANSFER))
-			return -2;
-		status = SetFrameTransferMode (((Rts2ValueBool *) new_value)->getValueBool () ? 1 : 0);
-		if (status != DRV_SUCCESS)
-			return -2;
-		return 0;
-	}
+	  	return setUseFT (((Rts2ValueBool *) new_value)->getValueBool ()) == 0 ? 0 : -2;
 	if (old_value == useRunTillAbort)
 		return 0;
 	if (old_value == outputAmp)
