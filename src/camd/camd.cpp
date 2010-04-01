@@ -463,11 +463,18 @@ int Camera::scriptEnds ()
 	sendValueAll (chipUsedReadout);
 
 	binning->setValueInteger (0);
+
+	Binning2D *bin = (Binning2D *) binning->getData ();
+	setBinning (bin->horizontal, bin->vertical);
+
 	sendValueAll (binning);
 
 	// set exposure to light
 	if (expType)
+	{
 		expType->setValueInteger (0);
+		sendValueAll (expType);
+	}
 
 	return Rts2ScriptDevice::scriptEnds ();
 }
@@ -791,7 +798,7 @@ int Camera::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	}
 	if (old_value == camFilterVal)
 	{
-		return setFilterNum (new_value->getValueInteger ()) == 0 ? 1 : -2;
+		return setFilterNum (new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	if (old_value == tempSet)
 	{

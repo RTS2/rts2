@@ -808,7 +808,10 @@ class Camera:public Rts2ScriptDevice
 		int camStartExposure ();
 		int camStartExposureWithoutCheck ();
 
+	protected:
 		Rts2ValueSelection *camFilterVal;
+	
+	private:
 		Rts2ValueInteger *camFocVal;
 		Rts2ValueDouble *rotang;
 
