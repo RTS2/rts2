@@ -186,7 +186,7 @@ class Rts2Daemon:public Rts2Block
 
 		Rts2ValueQueVector queValues;
 
-		Rts2Value *getValue (const char *v_name);
+		Rts2Value *getOwnValue (const char *v_name);
 
 		/**
 		 * Return conditional value entry for given value name.

@@ -524,7 +524,7 @@ class Rts2Block: public Rts2App
 		 * @return Pointer to Rts2Value object holding the value, or NULL if device or value with given name
 		 * does not exists.
 		 */
-		Rts2Value *getValue (const char *device_name, const char *value_name);
+		virtual Rts2Value *getValue (const char *device_name, const char *value_name);
 
 		virtual void endRunLoop ()
 		{

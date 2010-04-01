@@ -60,6 +60,7 @@ class ConnExecute:public rts2core::ConnFork
 
 		std::list <Rts2Image *>::iterator findImage (const char *path);
 
+		bool isCentraldName (const char *_name) { return !strcmp (_name, ".") || !strcmp (_name, "centrald"); }
 		Rts2Conn *getConnectionForScript (const char *name);
 };
 

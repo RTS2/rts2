@@ -617,7 +617,7 @@ int Rts2Device::setMode (int new_mode, bool defaultValues)
 	// setup values
 	for (Rts2ConfigSection::iterator iter = sect->begin ();	iter != sect->end (); iter++)
 	{
-		Rts2Value *val = getValue ((*iter).getValueName ().c_str ());
+		Rts2Value *val = getOwnValue ((*iter).getValueName ().c_str ());
 		if (val == NULL)
 		{
 			logStream (MESSAGE_ERROR)
@@ -921,6 +921,13 @@ void Rts2Device::setFullBopState (int new_state)
 		endDeviceStatusCommand ();
 	}
 	fullBopState = new_state;
+}
+
+Rts2Value * Rts2Device::getValue (const char *_device_name, const char *value_name)
+{
+	if (!strcmp (_device_name, getDeviceName ()))
+		return getOwnValue (value_name);
+	return Rts2Daemon::getValue (_device_name, value_name);
 }
 
 int Rts2Device::maskQueValueBopState (int new_state, int valueQueCondition)

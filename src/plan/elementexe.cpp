@@ -215,19 +215,25 @@ void ConnExecute::processLine ()
 	}
 	else if (!strcmp (cmd, "G"))
 	{
-		if (paramNextString (&device) || paramNextString (&value))
+		if (paramNextString (&device) || paramNextString (&value) || master == NULL)
 			return;
-		Rts2Conn *conn = getConnectionForScript (device);
-		if (conn)
+
+		Rts2Value *val = NULL;
+
+		if (isCentraldName (device))
+			val = master->getSingleCentralConn ()->getValue (value);
+		else
+			val = master->getValue (device, value);
+
+		if (val)
 		{
-			Rts2Value *val = conn->getValue (value);
-			if (val)
-			{
-				writeToProcess (val->getValue ());
-				return;
-			}
+			writeToProcess (val->getValue ());
+			return;
 		}
-		writeToProcess ("ERR");
+		else
+		{
+			writeToProcess ("ERR");
+		}
 	}
 	else if (!strcmp (cmd, "log"))
 	{
@@ -288,7 +294,7 @@ std::list <Rts2Image *>::iterator ConnExecute::findImage (const char *path)
 
 Rts2Conn *ConnExecute::getConnectionForScript (const char *_name)
 {
-	if (!strcmp (_name, ".") || !strcmp (_name, "centrald"))
+	if (isCentraldName (_name))
 		return getMaster ()->getSingleCentralConn ();
 	return getMaster ()->getOpenConnection (_name);
 }

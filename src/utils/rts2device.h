@@ -374,6 +374,8 @@ class Rts2Device:public Rts2Daemon
 		 */
 		virtual void setFullBopState (int new_state);
 
+		virtual Rts2Value *getValue (const char *_device_name, const char *value_name);
+
 		/**
 		 * Hook called to mask device BOP state with possible blocking values from que.
 		 *

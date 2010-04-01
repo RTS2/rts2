@@ -104,7 +104,7 @@ int System::info ()
 		}
 		else
 		{
-			Rts2Value *val = getValue ((*iter).c_str ());
+			Rts2Value *val = getOwnValue ((*iter).c_str ());
 			if (val)
 				((Rts2ValueDouble *) val)->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
 		}
@@ -165,10 +165,10 @@ void System::storePaths ()
 	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
 	{
 		os << *iter;
-		Rts2ValueDouble *dv = (Rts2ValueDouble*) getValue (iter->c_str ());
-		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((*iter + "_history").c_str ());
-		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((*iter + "_night").c_str ());
-		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((*iter + "_expected").c_str ());
+		Rts2ValueDouble *dv = (Rts2ValueDouble*) getOwnValue (iter->c_str ());
+		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getOwnValue ((*iter + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getOwnValue ((*iter + "_night").c_str ());
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getOwnValue ((*iter + "_expected").c_str ());
 		addHistoryValue (ds, nfree, bytesNight, dv->getValueDouble ());
 		for (std::deque <double>::iterator miter = ds->valueBegin (); miter != ds->valueEnd (); miter++)
 		{
@@ -198,9 +198,9 @@ void System::loadPaths ()
 		is >> ipath;
 		if (is.fail ())
 			return;
-		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getValue ((ipath + "_history").c_str ());
-		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getValue ((ipath + "_night").c_str ());
-		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getValue ((ipath + "_expected").c_str ());
+		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getOwnValue ((ipath + "_history").c_str ());
+		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getOwnValue ((ipath + "_night").c_str ());
+		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getOwnValue ((ipath + "_expected").c_str ());
 		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL || nfree == NULL)
 		{
 			logStream (MESSAGE_ERROR) << "Cannot get variable for path " << ipath << sendLog;

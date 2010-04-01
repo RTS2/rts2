@@ -89,7 +89,7 @@ void ConnTCP::sendData (const void *data, int len, bool binary)
 {
 	int rest = len;
 	if (sock < 0)
-		throw ConnError (this, "socked does not exists");
+		throw ConnError (this, "socket does not exists");
 
 	while (rest > 0)
 	{

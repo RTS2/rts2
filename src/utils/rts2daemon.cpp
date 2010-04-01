@@ -516,7 +516,7 @@ void Rts2Daemon::addValue (Rts2Value * value, int queCondition, bool save_value)
 	values.push_back (new Rts2CondValue (value, queCondition, save_value));
 }
 
-Rts2Value * Rts2Daemon::getValue (const char *v_name)
+Rts2Value * Rts2Daemon::getOwnValue (const char *v_name)
 {
 	Rts2CondValue *c_val = getCondValue (v_name);
 	if (c_val == NULL)
