@@ -1,6 +1,6 @@
 /* 
  * Filter base class.
- * Copyright (C) 2003-2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,26 +37,6 @@ namespace rts2filterd
  */
 class Filterd:public Rts2Device
 {
-	private:
-		/**
-		 * Set filter names from space separated argument list.
-		 *
-		 * @return -1 on error, otherwise 0.
-		 */
-		int setFilters (char *filters);
-		int setFilterNumMask (int new_filter);
-	protected:
-		Rts2ValueSelection *filter;
-
-		virtual int processOption (int in_opt);
-
-		virtual int initValues ();
-
-		virtual int getFilterNum (void);
-		virtual int setFilterNum (int new_filter);
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
 	public:
 		Filterd (int in_argc, char **in_argv);
 		virtual ~ Filterd (void);
@@ -68,6 +48,27 @@ class Filterd:public Rts2Device
 		virtual int homeFilter ();
 
 		virtual int commandAuthorized (Rts2Conn * conn);
+
+	protected:
+		virtual int processOption (int in_opt);
+
+		virtual int initValues ();
+
+		virtual int getFilterNum (void);
+		virtual int setFilterNum (int new_filter);
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+	private:
+		Rts2ValueSelection *filter;
+
+		/**
+		 * Set filter names from space separated argument list.
+		 *
+		 * @return -1 on error, otherwise 0.
+		 */
+		int setFilters (char *filters);
+		int setFilterNumMask (int new_filter);
 };
 
 };
