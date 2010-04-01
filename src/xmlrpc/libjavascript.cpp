@@ -24,16 +24,27 @@
 using namespace rts2xmlrpc;
 
 static const char *equScript = 
-"function ln_range_degrees (angle) {\n"
+
+// format number
+// nd - pl - places (before .); nd - number of decimals (after .)
+"Number.prototype.format = function(pl,nd) {\n"
+  "if (nd == undefined) nd = 2;\n"
+  "var ret = this.toFixed(nd);\n"
+  "var i = ret.indexOf('.');\n"
+  "if (i == -1) i = ret.length;\n"
+  "for (;i < pl;i++) ret = '0' + ret;\n"
+  "return ret;\n"
+"}\n"
+
+"function ln_range_degrees(angle) {\n"
   "var temp;\n"
-    
+
   "if (angle >= 0.0 && angle < 360.0)\n"
     "return angle;\n"
  
   "temp = Math.floor(angle / 360);\n"
-  "if (angle < 0.0)\n"
-    "temp = temp - 1;\n"
   "temp = temp * 360;\n"
+
   "return angle - temp;\n"
 "}\n"
 
@@ -46,7 +57,7 @@ static const char *equScript =
   "this.degrees = Infinity;\n"
   "this.minutes = Infinity;\n"
   "this.seconds = Infinity;\n"
-  "this.toString = function () { return (this.neg ? '-' : '+') + this.degrees + '&deg;' + this.minutes + '\\'' + (Math.ceil(this.seconds * 100)/100).toPrecision(4) + '\"'; }\n"
+  "this.toString = function () { return (this.neg ? '-' : '+') + this.degrees.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 100)/100).format(2) + '\"'; }\n"
 "}\n"
 
 /* convert degrees to dms */
@@ -164,7 +175,7 @@ static const char *equScript =
   "As = (Math.cos(declination)* Math.sin (H))/Zs;\n"
   "Ac = (Math.sin(latitude)*Math.cos(declination)*Math.cos(H)-Math.cos(latitude)*Math.sin(declination))/Zs;\n"
 
-  // don't blom at atan2
+  // don't bloom at atan2
   "if (Ac == 0 && As == 0) {\n"
     "if (object.dec > 0) { position.az = 180.0; }\n"
     "else { position.az = 0.0; }\n"
