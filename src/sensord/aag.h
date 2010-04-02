@@ -25,6 +25,10 @@
 
 
 #endif
+#define OPT_AAG_DEVICE          OPT_LOCAL + 53
+#define OPT_AAG_RAIN_TRIGGER    OPT_LOCAL + 54
+#define OPT_AAG_SKY_TRIGGER     OPT_LOCAL + 55
+#define OPT_AAG_NO_SNOW_TRIGGER OPT_LOCAL + 56
 
 enum AAGC_SETTINGS { IMP_DELTA, IMP_MIN, IMP_DURATION_WET, IMP_DURATION_RAIN, IMP_CYCLE_WET, IMP_CYCLE_RAIN } ;
 
@@ -51,7 +55,7 @@ enum AAGC_SETTINGS { IMP_DELTA, IMP_MIN, IMP_DURATION_WET, IMP_DURATION_RAIN, IM
 #define HEAT_FACTOR_DROP_WHILE_DRY .99  /* [0.,1.], if the rain sensor is dry, sometimes temperature suddenly drops*/
 #define THRESHOLD_DROP_WHILE_DRY -10.
 #define THRESHOLD_MAX  2065.            /* arb. units, do not cook */
-#define THRESHOLD_DRY  2035.           
+#define THRESHOLD_DRY  2025.           
 #define THRESHOLD_WET  1960.
 #define IS_MAX  1
 #define IS_DRY  2
@@ -65,8 +69,8 @@ enum AAGC_SETTINGS { IMP_DELTA, IMP_MIN, IMP_DURATION_WET, IMP_DURATION_RAIN, IM
 
 /* define the clound states, not yet implemented */
 
-#define THRESHOLD_CLEAR -25. /* deg C */
-#define THRESHOLD_CLOUDY -5. /* deg C */
+#define THRESHOLD_CLEAR  -25. /* deg C */
+#define THRESHOLD_CLOUDY -12. /* deg C */
 #define THRESHOLD_NO_SNOW 5. /* deg C, if snow lies on the detector and ambient temperature (tempIRSensor) is below THRESHOLD_CLOUDY it is considered as bad weather (to be on the safe side)*/
 #define IS_CLEAR  1
 #define IS_CLOUDY  2  

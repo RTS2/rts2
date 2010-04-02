@@ -41,7 +41,9 @@ class AAG: public SensorWeather
                 Rts2ValueDouble *tempRain ;
                 Rts2ValueDouble *rainFrequency ;
                 Rts2ValueDouble* pwmValue ;
-		Rts2ValueDouble *triggerGood;
+		Rts2ValueDouble *triggerRain;
+		Rts2ValueDouble *triggerSky;
+		Rts2ValueDouble *triggerNoSnow;
 		/*
 		 * Read sensor values and caculate.
 		 */
@@ -421,11 +423,17 @@ AAG::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
-		case 'f':
+		case OPT_AAG_DEVICE:
 			device_file = optarg;
 			break;
-		case 'g':
-			triggerGood->setValueCharArr (optarg);
+		case OPT_AAG_RAIN_TRIGGER:
+			triggerRain->setValueCharArr (optarg);
+			break;
+		case OPT_AAG_SKY_TRIGGER:
+			triggerSky->setValueCharArr (optarg);
+			break;
+		case OPT_AAG_NO_SNOW_TRIGGER:
+			triggerNoSnow->setValueCharArr (optarg);
 			break;
 		default:
 			return SensorWeather::processOption (in_opt);
@@ -448,8 +456,12 @@ AAG::init ()
 	aagConn->flushPortIO ();
         //aagConn->setDebug() ;
 	//aagConn->setLogAsHex(true) ; //ToDo ?it works after a restart of centrald?
-	if (!isnan (triggerGood->getValueDouble ()))
-		setWeatherState (false, "TRIGGOOD unspecified");
+	if (!isnan (triggerRain->getValueDouble ()))
+		setWeatherState (false, "rain trigger unspecified");
+	if (!isnan (triggerSky->getValueDouble ()))
+		setWeatherState (false, "cloud trigger unspecified");
+	if (!isnan (triggerNoSnow->getValueDouble ()))
+		setWeatherState (false, "no snow trigger unspecified");
 
 	return 0;
 }
@@ -507,24 +519,60 @@ AAG::info ()
 
 	return -1 ;
     }
-    if ((rainFrequency->getValueDouble () >= triggerGood->getValueDouble ()) &&( abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())> THRESHOLD_NO_SNOW )&& ((tempSky->getValueDouble() < THRESHOLD_CLOUDY)||(tempSkyCorrected->getValueDouble() < THRESHOLD_CLOUDY)))
+    // check the state of the rain sensor
+    int weather_is_bad_rain   = false ; //true: bad weather
+    int weather_is_bad_sky    = false ;
+    int weather_is_bad_no_snow= false ;
+    if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) 
     {
-	if (getWeatherState () == false)
-	{
-	    //logStream (MESSAGE_DEBUG) << "setting weather to good. rainFrequency: " << rainFrequency->getValueDouble ()
-	//			     << " trigger: " << triggerGood->getValueDouble ()
-	//			     << sendLog;
-	}
+      weather_is_bad_rain= true ;
     }
-    else 
+    // check the state of the cloud sensor
+    if ((tempSky->getValueDouble() > triggerSky->getValueDouble ())||(tempSkyCorrected->getValueDouble() > triggerSky->getValueDouble ()))
     {
-	if (getWeatherState () == true)
-	{
-	    logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
-				     << " trigger: " << triggerGood->getValueDouble ()
-				     << sendLog;
-	}
-	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining, temp.>(THR.|THR.NO.SNOW)");
+      weather_is_bad_sky= true ;
+    }
+    if ( abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())< triggerNoSnow->getValueDouble() )
+    {
+      weather_is_bad_no_snow= true ;
+    }
+// set the results, the absence of bad weather is good weather
+    if (getWeatherState () == true) // true: good weather, if now bad, switch it to bad
+    {
+      if( weather_is_bad_rain && weather_is_bad_sky) 
+      {
+	logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
+				 << " trigger: " << triggerRain->getValueDouble ()
+	                         << " sky temperature: " << tempSky->getValueDouble ()
+				 << " trigger: " << triggerSky->getValueDouble ()
+				 << sendLog;
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining, sky temperature, no snow");
+      }
+      else if(  weather_is_bad_rain) // message rain is more important than ...
+      {
+	logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
+				 << " trigger: " << triggerRain->getValueDouble ()
+				 << sendLog;
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
+      }
+      else if(  weather_is_bad_sky) // ...message sky temperature than ...
+      {
+	logStream (MESSAGE_INFO) << "setting weather to bad, sky temperature: " << tempSky->getValueDouble ()
+				 << " trigger: " << triggerSky->getValueDouble ()
+				 << sendLog;
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "sky temperature");
+      }
+      else if(  weather_is_bad_no_snow) //... message snow.
+      {
+	logStream (MESSAGE_INFO) << "setting weather to bad, no snow : " << abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())
+				 << " trigger: " << triggerNoSnow->getValueDouble ()
+				 << sendLog;
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "snow on sensor");
+      }
+      else
+      {
+	//logStream (MESSAGE_DEBUG) << "setting weather to good" << sendLog;
+      }
     }
     return SensorWeather::info ();
 }
@@ -536,10 +584,6 @@ AAG::idle ()
 int
 AAG::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
-// 	if (old_value == triggerGood)
-// 	{
-// 		return 0;
-// 	}
 	return SensorWeather::setValue (old_value, new_value);
 }
 AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
@@ -554,13 +598,19 @@ AAG::AAG (int argc, char **argv):SensorWeather (argc, argv)
 	createValue (pwmValue,         "PWM",          "pwm value", false);
 	createValue (ldrResistance,    "LDR_RES",      "pullup resistancetrue", false);
 	createValue (intVoltage,       "INT_VOLT",     "internal voltage", false);
-	createValue (triggerGood,      "TRIGGOOD", "if rain frequency gets above this value, weather is not bad", false, RTS2_VALUE_WRITABLE);
-	triggerGood->setValueDouble (rts2_nan ("f"));
+	createValue (triggerRain,      "RAIN_TRIGGER", "if rain frequency gets above this value, weather is not bad [a.u.]", false, RTS2_VALUE_WRITABLE);
+	createValue (triggerSky,       "SKY_TRIGGER",  "if sky temperature gets below this value, weather is not bad [deg C]", false, RTS2_VALUE_WRITABLE);
+	createValue (triggerNoSnow,    "NO_SNOW",      "difference (TEMP_SKY- TEMP_IRS), if larger, assume that there is no snow on sensor [abs deg C]", false, RTS2_VALUE_WRITABLE);
+	triggerRain->setValueDouble (THRESHOLD_DRY);
+	triggerSky->setValueDouble (THRESHOLD_CLOUDY);
+	triggerNoSnow->setValueDouble (THRESHOLD_NO_SNOW);
 
-	addOption ('f', NULL, 1, "serial port AAG cloud sensor");
-	addOption ('g', NULL, 1, "good trigger point");
+	addOption (OPT_AAG_DEVICE, "device", 1, "serial port AAG cloud sensor");
+	addOption (OPT_AAG_RAIN_TRIGGER, "rain", 1, "rain trigger point [a.u.]");
+	addOption (OPT_AAG_SKY_TRIGGER, "cloud", 1, "cloud trigger point [deg C]");
+	addOption (OPT_AAG_NO_SNOW_TRIGGER, "no_snow", 1, "no snow on sensor trigger point [deg C]");
 
-	setIdleInfoInterval ( AAG_POLLING_TIME); // best choice for AAG
+	setIdleInfoInterval (AAG_POLLING_TIME); // best choice for AAG
 }
 AAG::~AAG (void)
 {
