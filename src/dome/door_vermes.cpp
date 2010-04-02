@@ -38,6 +38,7 @@ extern int doorEvent ;
 extern useconds_t sleep_max ;
 extern int oak_digin_thread_heart_beat ;
 extern char *lastMotorStop_str ;
+extern int motorState ;
 
 int last_oak_digin_thread_heart_beat ;
 extern pthread_t  move_door_id;
@@ -229,6 +230,26 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_OPEN ;
 	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_OPEN: opening" << sendLog ;
+	  int ret ;
+	  int j ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+
+	  for( j= 0 ; j < 6 ; j++) {
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	    if( motorState== SSD650V_MS_RUNNING) {
+	      logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_OPEN: motor running" << sendLog ;
+	      break ;
+	    }
+	  }
+	  if( j== 6) {
+	    logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_OPEN: failed" << sendLog ;
+	  }
 	}
       } else {
 	block_door->setValueBool(true) ;
@@ -256,6 +277,26 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE ;
 	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: closing" << sendLog ;
+	  int ret ;
+	  int j ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+	
+	  for( j= 0 ; j < 6 ; j++) {
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	    if( motorState== SSD650V_MS_RUNNING) {
+	      logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: motor running" << sendLog ;
+	      break ;
+	    }
+	  }
+	  if( j== 6) {
+	    logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE: failed" << sendLog ;
+	  }
 	}
       } else {
 	block_door->setValueBool(true) ;
@@ -283,6 +324,26 @@ DoorVermes::valueChanged (Rts2Value * changed_value)
 	} else { // the real thing
 	  doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE ;
 	  logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE: closing undefined" << sendLog ;
+	  int ret ;
+	  int j ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+
+	  for( j= 0 ; j < 6 ; j++) {
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	    if( motorState== SSD650V_MS_RUNNING) {
+	      logStream (MESSAGE_INFO) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE: motor running" << sendLog ;
+	      break ;
+	    }
+	  }
+	  if( j== 6) {
+	    logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged doorEvent= EVNT_DOOR_CMD_CLOSE_IF_UNDEFINED_STATE: failed" << sendLog ;
+	  }
 	}
       } else {
 	logStream (MESSAGE_ERROR) << "DoorVermes::valueChanged oak_digin_thread died" << sendLog ;
@@ -475,11 +536,42 @@ DoorVermes::startOpen ()
 	doorState= DS_RUNNING_OPEN ;
 	updateDoorStatus() ;
       } else { // the real thing
-	doorEvent= EVNT_DOOR_CMD_OPEN ;
-	logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN, doorState="<<doorState<<" should be "<<DS_STOPPED_CLOSED << sendLog ;
+
+	int k = 0 ;
+	do {
+	  doorEvent= EVNT_DOOR_CMD_OPEN ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN, doorState="<<doorState<<" should be "<<DS_STOPPED_CLOSED << sendLog ;
+	  int ret ;
+	  int j ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+
+	  for( j= 0 ; j < 6 ; j++) {
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	    if( motorState== SSD650V_MS_RUNNING) {
+	      logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN: motor running" << sendLog ;
+	      break ;
+	    }
+	  }
+	  if( j== 6) {
+	    logStream (MESSAGE_ERROR) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN: failed" << sendLog ;
+	  }
+	} while(( motorState != SSD650V_MS_RUNNING) && ( k < 3)) ;
+
+	if( k== 3) {
+	  logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN: returning failiure (-1)" << sendLog ;
+	  return -1 ;
+	} else {  
+	  open_door->setValueBool(true) ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::startOpen doorEvent= EVNT_DOOR_CMD_OPEN: returning succes" << sendLog ;
+	  return 0 ;
+	}
       }
-      open_door->setValueBool(true) ;
-      return 0 ;
     } else {
       block_door->setValueBool(true) ;
       logStream (MESSAGE_ERROR) << "DoorVermes::startOpen oak_digin_thread died" << sendLog ;
@@ -607,11 +699,41 @@ DoorVermes::startClose ()
 	updateDoorStatus() ;
 
       } else { // the real thing
-	doorEvent= EVNT_DOOR_CMD_CLOSE ;
-	logStream (MESSAGE_INFO) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE: closing" << sendLog ;
+	int k = 0 ;
+	do {
+	  doorEvent= EVNT_DOOR_CMD_CLOSE ;
+	  logStream (MESSAGE_INFO) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE: closing" << sendLog ;
+
+	  int ret ;
+	  int j ;
+	  struct timespec sl ;
+	  struct timespec rsl ;
+	  sl.tv_sec= 0. ;
+	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
+
+	  for( j= 0 ; j < 6 ; j++) {
+	    ret= nanosleep( &sl, &rsl) ;
+	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
+	      fprintf( stderr, "Error in nanosleep\n") ;
+	    }
+	    if( motorState== SSD650V_MS_RUNNING) {
+	      logStream (MESSAGE_INFO) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE: motor running" << sendLog ;
+	      break ;
+	    }
+	  }
+	  if( j== 6) {
+	    logStream (MESSAGE_ERROR) << "DoorVermes::startClose doorEvent= EVNT_DOOR_CMD_CLOSE: failed" << sendLog ;
+	  }
+	  k++ ;
+	} while(( motorState != SSD650V_MS_RUNNING) && ( k < 3)) ;
+
+	if( k== 3) {
+	  return -1 ;
+	} else {  
+	  close_door->setValueBool(true) ;
+	  return 0 ;
+	}
       }
-      close_door->setValueBool(true) ;
-      return 0 ;
     } else {
       block_door->setValueBool(true) ;
       logStream (MESSAGE_ERROR) << "DoorVermes::startClose oak_digin_thread died" << sendLog ;
@@ -640,7 +762,7 @@ DoorVermes::startClose ()
 	  sl.tv_nsec= REPEAT_RATE_NANO_SEC; 
 	
 	  while(( ret= motor_off()) != SSD650V_MS_STOPPED) { // 
-	    fprintf( stderr, "DoorVermes::valueChanged: can not turn motor off\n") ;
+	    fprintf( stderr, "DoorVermes::startClose: can not turn motor off\n") ;
 	    ret= nanosleep( &sl, &rsl) ;
 	    if((ret== EFAULT) || ( ret== EINTR)||( ret== EINVAL ))  {
 	      fprintf( stderr, "Error in nanosleep\n") ;
@@ -779,7 +901,7 @@ DoorVermes::DoorVermes (int argc, char **argv): Dome (argc, argv)
   createValue (close_door_undefined, "CLOSE_UDFD", "true closes door", false, RTS2_VALUE_WRITABLE);
   close_door_undefined->setValueBool (false);
   createValue (simulate_door, "SIMULATION", "true simulation door movements", false, RTS2_VALUE_WRITABLE);
-  simulate_door->setValueBool (true);
+  simulate_door->setValueBool (false);
 }
 
 DoorVermes::~DoorVermes ()
