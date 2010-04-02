@@ -18,10 +18,12 @@
  */
 
 #include "../utilsdb/rts2appdb.h"
-#include "../utilsdb/rts2userset.h"
+#include "../utilsdb/userset.h"
 
 #include "../utils/rts2askchoice.h"
 #include "../utils/rts2target.h"
+
+using namespace rts2db;
 
 /**
  * Application for user management.
@@ -34,7 +36,7 @@ class Rts2UserApp:public Rts2AppDb
 		enum {NOT_SET, LIST_USER, NEW_USER, USER_PASSWORD, USER_EMAIL, TYPES_EMAIL}
 		op;
 		const char *user;
-		Rts2User r2user;
+		User r2user;
 
 		int listUser ();
 		int newUser ();
@@ -58,8 +60,7 @@ class Rts2UserApp:public Rts2AppDb
 		virtual ~Rts2UserApp (void);
 };
 
-void
-Rts2UserApp::usage ()
+void Rts2UserApp::usage ()
 {
 	std::cout << "\t" << getAppName () << " -l" << std::endl
 		<< "\t" << getAppName () << "-a <user_name>" << std::endl
@@ -68,8 +69,7 @@ Rts2UserApp::usage ()
 		<< "\t" << getAppName () << "-m <user_name>" << std::endl;
 }
 
-int
-Rts2UserApp::processOption (int in_opt)
+int Rts2UserApp::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -114,7 +114,7 @@ Rts2UserApp::processOption (int in_opt)
 int
 Rts2UserApp::listUser ()
 {
-	Rts2UserSet userSet = Rts2UserSet ();
+	UserSet userSet = UserSet ();
 	std::cout << userSet;
 	return 0;
 }
@@ -293,7 +293,7 @@ Rts2UserApp::editType ()
 	if (askForChr ("Enter type which you would like to edit", type))
 		return -1;
 
-	Rts2TypeUser *typeUser;
+	TypeUser *typeUser;
 	
 	// selected flags
 	typeUser = r2user.getFlags (type);
@@ -368,7 +368,7 @@ Rts2UserApp::Rts2UserApp (int in_argc, char **in_argv): Rts2AppDb (in_argc, in_a
 	op = NOT_SET;
 	user = NULL;
 
-	r2user = Rts2User ();
+	r2user = User ();
 
 	// construct menu for flags solution
 	flagsChoice = new Rts2AskChoice (this);

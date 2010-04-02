@@ -17,27 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2user.h"
+#include "user.h"
 #include "../utils/rts2app.h"
-#include "../utils/rts2target.h"
 
-#include <iomanip>
+using namespace rts2db;
 
-Rts2TypeUser::Rts2TypeUser (char in_type, int in_eventMask)
+TypeUser::TypeUser (char in_type, int in_eventMask)
 {
 	type = in_type;
 	eventMask = in_eventMask;
 }
 
-
-Rts2TypeUser::~Rts2TypeUser (void)
+TypeUser::~TypeUser (void)
 {
 
 }
 
-
-int
-Rts2TypeUser::updateFlags (int id, int newFlags)
+int TypeUser::updateFlags (int id, int newFlags)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id = id;
@@ -67,19 +63,7 @@ Rts2TypeUser::updateFlags (int id, int newFlags)
 	return 0;
 }
 
-
-std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr)
-{
-	_os << usr.type << " "
-		<< std::hex << std::setw (4) << usr.eventMask << " ";
-	printEventMask (usr.eventMask, _os);
-	_os << std::endl;
-	return _os;
-}
-
-
-int
-Rts2TypeUserSet::load (int usr_id)
+int TypeUserSet::load (int usr_id)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_usr_id = usr_id;
@@ -107,11 +91,11 @@ Rts2TypeUserSet::load (int usr_id)
 				:db_eventMask;
 		if (sqlca.sqlcode)
 			break;
-		push_back (Rts2TypeUser (db_type, db_eventMask));
+		push_back (TypeUser (db_type, db_eventMask));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2TypeUserSet::load cannot load user set " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "TypeUserSet::load cannot load user set " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -119,23 +103,19 @@ Rts2TypeUserSet::load (int usr_id)
 	return 0;
 }
 
-
-Rts2TypeUserSet::Rts2TypeUserSet (int usr_id)
+TypeUserSet::TypeUserSet (int usr_id)
 {
 	load (usr_id);
 }
 
-
-Rts2TypeUserSet::~Rts2TypeUserSet (void)
+TypeUserSet::~TypeUserSet (void)
 {
 
 }
 
-
-Rts2TypeUser *
-Rts2TypeUserSet::getFlags (char type)
+TypeUser * TypeUserSet::getFlags (char type)
 {
-	for (Rts2TypeUserSet::iterator iter = begin (); iter != end (); iter++)
+	for (TypeUserSet::iterator iter = begin (); iter != end (); iter++)
 	{
 		if ((*iter).isType (type))
 			return &(*iter);
@@ -143,9 +123,7 @@ Rts2TypeUserSet::getFlags (char type)
 	return NULL;
 }
 
-
-int
-Rts2TypeUserSet::addNewTypeFlags (int id, char type, int flags)
+int TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
         char db_type_id = type;
@@ -172,15 +150,13 @@ Rts2TypeUserSet::addNewTypeFlags (int id, char type, int flags)
 		return -1;
 	}
 
-	push_back (Rts2TypeUser (type, flags));
+	push_back (TypeUser (type, flags));
 
 	EXEC SQL COMMIT;
 	return 0;
 }
 
-
-int
-Rts2TypeUserSet::removeType (int id, char type)
+int TypeUserSet::removeType (int id, char type)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id = id;
@@ -204,23 +180,13 @@ Rts2TypeUserSet::removeType (int id, char type)
 	return 0;
 }
 
-
-std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usrSet)
-{
-	for (Rts2TypeUserSet::iterator iter = usrSet.begin (); iter != usrSet.end (); iter++)
-		_os << "   - " << (*iter);
-	return _os;
-}
-
-
-Rts2User::Rts2User ()
+User::User ()
 {
  	id = -1;
 	types = NULL;
 }
 
-
-Rts2User::Rts2User (int in_id, std::string in_login, std::string in_email)
+User::User (int in_id, std::string in_login, std::string in_email)
 {
 	id = in_id;
 	login = in_login;
@@ -229,15 +195,12 @@ Rts2User::Rts2User (int in_id, std::string in_login, std::string in_email)
 	types = NULL;
 }
 
-
-Rts2User::~Rts2User (void)
+User::~User (void)
 {
 	delete types;
 }
 
-
-int
-Rts2User::load (const char * in_login)
+int User::load (const char * in_login)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int db_id;
@@ -278,18 +241,14 @@ Rts2User::load (const char * in_login)
 	return loadTypes ();
 }
 
-
-int
-Rts2User::loadTypes ()
+int User::loadTypes ()
 {
 	delete types;
-	types = new Rts2TypeUserSet (id);
+	types = new TypeUserSet (id);
 	return 0;
 }
 
-
-int
-Rts2User::setPassword (std::string newPass)
+int User::setPassword (std::string newPass)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
@@ -327,9 +286,7 @@ Rts2User::setPassword (std::string newPass)
 	return 0;
 }
 
-
-int
-Rts2User::setEmail (std::string newEmail)
+int User::setEmail (std::string newEmail)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
@@ -367,21 +324,7 @@ Rts2User::setEmail (std::string newEmail)
 	return 0;
 }
 
-
-std::ostream & operator << (std::ostream & _os, Rts2User &usr)
-{
-	_os << std::left << std::setw (5) << usr.id
-		<< " " << std::setw (25) << usr.login << std::right
-		<< " " << usr.email
-		<< std::endl;
-	// print user set
-	_os << (*(usr.types));
-	return _os;
-}
-
-
-bool
-verifyUser (std::string username, std::string pass)
+bool verifyUser (std::string username, std::string pass)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		VARCHAR db_username[25];

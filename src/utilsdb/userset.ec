@@ -17,11 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "rts2userset.h"
+#include "userset.h"
 #include "../utils/rts2app.h"
 
-int
-Rts2UserSet::load ()
+using namespace rts2db;
+
+int UserSet::load ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_id;
@@ -51,11 +52,11 @@ Rts2UserSet::load ()
 				:db_email;
 		if (sqlca.sqlcode)
 			break;
-		push_back (Rts2User (db_id, std::string (db_login.arr), std::string (db_email.arr)));
+		push_back (User (db_id, std::string (db_login.arr), std::string (db_email.arr)));
 	}
 	if (sqlca.sqlcode != ECPG_NOT_FOUND)
 	{
-		logStream (MESSAGE_ERROR) << "Rts2UserSet::load cannot load user set " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		logStream (MESSAGE_ERROR) << "UserSet::load cannot load user set " << sqlca.sqlerrm.sqlerrmc << sendLog;
 		EXEC SQL ROLLBACK;
 		return -1;
 	}
@@ -63,7 +64,7 @@ Rts2UserSet::load ()
 	EXEC SQL COMMIT;
 
 	// load types
-	for (Rts2UserSet::iterator iter = begin (); iter != end (); iter++)
+	for (UserSet::iterator iter = begin (); iter != end (); iter++)
 	{
 		int ret = (*iter).loadTypes ();
 		if (ret)
@@ -73,20 +74,16 @@ Rts2UserSet::load ()
 	return 0;
 }
 
-
-Rts2UserSet::Rts2UserSet ()
+UserSet::UserSet ()
 {
 	load ();
 }
 
-
-Rts2UserSet::~Rts2UserSet (void)
+UserSet::~UserSet (void)
 {
 }
 
-
-int
-createUser (std::string login, std::string password, std::string email)
+int createUser (std::string login, std::string password, std::string email)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR db_login[25];
@@ -144,14 +141,4 @@ createUser (std::string login, std::string password, std::string email)
 
 	EXEC SQL COMMIT;
 	return 0;
-}
-
-
-std::ostream & operator << (std::ostream & _os, Rts2UserSet & userSet)
-{
-	for (Rts2UserSet::iterator iter = userSet.begin (); iter != userSet.end (); iter++)
-	{
-		_os << (*iter);
-	}
-	return _os;
 }

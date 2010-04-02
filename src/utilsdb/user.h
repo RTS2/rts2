@@ -20,23 +20,29 @@
 #ifndef __RTS2_USER__
 #define __RTS2_USER__
 
+#include "../utils/rts2target.h"
+
 #include <string>
 #include <ostream>
 #include <list>
+#include <iomanip>
+
+namespace rts2db
+{
 
 /**
  * Represents type which user have subscribed for receiving events.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2TypeUser
+class TypeUser
 {
 	private:
 		char type;
 		int eventMask;
 	public:
-		Rts2TypeUser (char type, int event_mask);
-		~Rts2TypeUser (void);
+		TypeUser (char type, int event_mask);
+		~TypeUser (void);
 
 		/**
 		 * Return event mask for this entry.
@@ -69,13 +75,16 @@ class Rts2TypeUser
 		 */
 		int updateFlags (int id, int newFlags);
 
-
-		friend std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr);
+		friend std::ostream & operator << (std::ostream & _os, TypeUser & usr)
+		{
+			_os << usr.type << " " << std::hex << std::setw (4) << usr.eventMask << " ";
+			printEventMask (usr.eventMask, _os);
+			_os << std::endl;
+			return _os;
+		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2TypeUser & usr);
-
-class Rts2TypeUserSet: public std::list <Rts2TypeUser>
+class TypeUserSet: public std::list <TypeUser>
 {
 	private:
 		int load (int usr_id);
@@ -83,16 +92,16 @@ class Rts2TypeUserSet: public std::list <Rts2TypeUser>
 		/**
 		 * Load type-user map for given user ID.
 		 */
-		Rts2TypeUserSet (int usr_id);
-		~Rts2TypeUserSet (void);
+		TypeUserSet (int usr_id);
+		~TypeUserSet (void);
 
 		/**
-		 * Return Rts2TypeUser entry for given observation type.
+		 * Return TypeUser entry for given observation type.
 		 *
 		 * @param type Observation type.
-		 * @return Pointer to Rts2TypeUser object holding type flags, or NULL if type flags cannot be find.
+		 * @return Pointer to TypeUser object holding type flags, or NULL if type flags cannot be find.
 		 */
-		Rts2TypeUser *getFlags (char type);
+		TypeUser *getFlags (char type);
 
 		/**
 		 * Add to user new entry about which events he/she
@@ -113,30 +122,35 @@ class Rts2TypeUserSet: public std::list <Rts2TypeUser>
 		 * @return -1 on error, 0 on sucess.
 		 */
 		int removeType (int id, char type);
-};
 
-std::ostream & operator << (std::ostream & _os, Rts2TypeUserSet & usr);
+		friend std::ostream & operator << (std::ostream & _os, TypeUserSet & usrSet)
+		{
+			for (TypeUserSet::iterator iter = usrSet.begin (); iter != usrSet.end (); iter++)
+				_os << "   - " << (*iter);
+			return _os;
+		}
+};
 
 /**
  * Represents user from database.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2User
+class User
 {
 	private:
 		int id;
 		std::string login;
 		std::string email;
 
-		Rts2TypeUserSet *types;
+		TypeUserSet *types;
 
 	public:
 		/**
 		 * Construct empty user object.
 		 * You should call some load method to load data from database.
 		 */
-		Rts2User ();
+		User ();
 
 		/**
 		 * Construct user from database entry.
@@ -147,8 +161,8 @@ class Rts2User
 		 * @param in_login  User login.
 		 * @param in_email  User email.
 		 */
-		Rts2User (int in_id, std::string in_login, std::string in_email);
-		~Rts2User (void);
+		User (int in_id, std::string in_login, std::string in_email);
+		~User (void);
 
 		/**
 		 * Return user ID.
@@ -176,12 +190,12 @@ class Rts2User
 		int loadTypes ();
 
 		/**
-		 * Return Rts2TypeUser entry for given observation type.
+		 * Return TypeUser entry for given observation type.
 		 *
 		 * @param type Observation type.
-		 * @return Pointer to Rts2TypeUser object holding type flags, or NULL if type flags cannot be find.
+		 * @return Pointer to TypeUser object holding type flags, or NULL if type flags cannot be find.
 		 */
-		Rts2TypeUser *getFlags (char type)
+		TypeUser *getFlags (char type)
 		{
 			return types->getFlags (type);
 		}
@@ -229,16 +243,25 @@ class Rts2User
 
 
 		/**
-		 * Prints Rts2User object to a stream.
+		 * Prints User object to a stream.
 		 *
 		 * @param _os  Stream to which object will be printed.
 		 * @param user User which will be printed.
 		 * @return Stream with printed user.
 		 */
-		friend std::ostream & operator << (std::ostream & _os, Rts2User & user);
+		friend std::ostream & operator << (std::ostream & _os, User & user)
+		{
+			_os << std::left << std::setw (5) << user.id
+				<< " " << std::setw (25) << user.login << std::right
+				<< " " << user.email
+				<< std::endl;
+			// print user set
+			_os << (*(user.types));
+			return _os;
+		}
 };
 
-std::ostream & operator << (std::ostream & _os, Rts2User & user);
+}
 
 /**
  * Verify username and password combination.
@@ -249,4 +272,5 @@ std::ostream & operator << (std::ostream & _os, Rts2User & user);
  * @return True if login and password is correct, false otherwise.
  */
 bool verifyUser (std::string username, std::string pass);
+
 #endif							 /* !__RTS2_USER__ */

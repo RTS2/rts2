@@ -27,7 +27,7 @@
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/imageset.h"
-#include "../utilsdb/rts2user.h"
+#include "../utilsdb/user.h"
 #include "../utilsdb/targetset.h"
 #endif /* HAVE_PGSQL */
 

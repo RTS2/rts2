@@ -29,7 +29,7 @@
 #include "../utilsdb/observationset.h"
 #include "../utilsdb/rts2messagedb.h"
 #include "../utilsdb/targetset.h"
-#include "../utilsdb/rts2user.h"
+#include "../utilsdb/user.h"
 #include "../utilsdb/sqlerror.h"
 #include "../scheduler/ticket.h"
 #include "../writers/rts2imagedb.h"

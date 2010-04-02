@@ -20,16 +20,19 @@
 #ifndef __RTS2_USERSET__
 #define __RTS2_USERSET__
 
-#include "rts2user.h"
+#include "user.h"
 #include <list>
 #include <ostream>
 
+namespace rts2db
+{
+
 /**
- * Set of Rts2User classes.
+ * Set of User classes.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2UserSet: public std::list <Rts2User>
+class UserSet: public std::list <User>
 {
 	private:
 		/**
@@ -41,9 +44,18 @@ class Rts2UserSet: public std::list <Rts2User>
 		/**
 		 * Create user set from database.
 		 */
-		Rts2UserSet ();
-		~Rts2UserSet (void);
+		UserSet ();
+		~UserSet (void);
+
+		friend std::ostream & operator << (std::ostream & _os, UserSet & userSet)
+		{
+			for (UserSet::iterator iter = userSet.begin (); iter != userSet.end (); iter++)
+				_os << (*iter);
+			return _os;
+		}
 };
+
+}
 
 /**
  * Create new user.
@@ -55,5 +67,5 @@ class Rts2UserSet: public std::list <Rts2User>
  */
 int createUser (std::string login, std::string password, std::string email);
 
-std::ostream & operator << (std::ostream & _os, Rts2UserSet & userSet);
+
 #endif							 /* !__RTS2_USERSET__ */
