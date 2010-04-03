@@ -125,7 +125,7 @@ void ConnImgProcess::connectionError (int last_data_size)
 	{
 		image = new Rts2Image (imgPath.c_str ());
 #endif
-		if (image->getImageType () == IMGTYPE_FLAT)
+		if (image->getImageType () == IMGTYPE_FLAT || image->getImageType () == IMGTYPE_DARK)
 		{
 			// just return..
 			delete image;
