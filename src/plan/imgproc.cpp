@@ -68,6 +68,7 @@ class ImageProc:public Rts2Device
 		int queImage (const char *_path);
 		int doImage (const char *_path);
 
+		int queDark (const char *_path);
 		int queFlat (const char *_path);
 
 		int queObs (int obsId);
@@ -504,6 +505,13 @@ int ImageProc::doImage (const char *_path)
 	return 0;
 }
 
+int ImageProc::queDark (const char *_path)
+{
+	ConnImgProcess *newImageConn;
+	newImageConn = new ConnImgProcess (this, defaultDarkProcess.c_str (), _path, Rts2Config::instance ()->getAstrometryTimeout ());
+	return que (newImageConn);
+}
+
 int ImageProc::queFlat (const char *_path)
 {
 	ConnImgProcess *newImageConn;
@@ -578,6 +586,13 @@ int ImageProc::commandAuthorized (Rts2Conn * conn)
 		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
 			return -2;
 		return doImage (in_imageName);
+	}
+	else if (conn->isCommand ("que_dark"))
+	{
+		char *in_imageName;
+		if (conn->paramNextString (&in_imageName) || !conn->paramEnd ())
+			return -2;
+		return queDark (in_imageName);
 	}
 	else if (conn->isCommand ("que_flat"))
 	{
