@@ -26,10 +26,12 @@
 #include <fcntl.h>
 #include <time.h>
 #include <errno.h>
+#include <iomanip>
 
 #include "camd.h"
 #include "cliwheel.h"
 #include "clifocuser.h"
+#include "../utils/timestamp.h"
 
 #define OPT_FLIP          OPT_LOCAL + 401
 #define OPT_PLATE         OPT_LOCAL + 402
@@ -183,6 +185,13 @@ int Camera::deleteConnection (Rts2Conn * conn)
 
 int Camera::endReadout ()
 {
+	TimeDiff td (timeReadoutStart, getNow ());
+	pixelsSecond->setValueDouble (readoutPixels / td.getTimeDiff ());
+	sendValueAll (pixelsSecond);
+
+	logStream (MESSAGE_INFO) << "readout " <<  readoutPixels << " pixels in " << td
+		<< " (" << std::setiosflags (std::ios_base::fixed) << pixelsSecond->getValueFloat () << " pixels per second)" << sendLog;
+
 	clearReadout ();
 	if (currentImageData == -2 && exposureConn)
 	{
@@ -278,6 +287,8 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	ccdRealType = ccdType;
 	serialNumber[0] = '\0';
 
+	timeReadoutStart = rts2_nan ("f");
+
 	pixelX = rts2_nan ("f");
 	pixelY = rts2_nan ("f");
 
@@ -337,6 +348,8 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	setDefaultFlip (1);
 
 	sendOkInExposure = false;
+
+	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false);
 
 	createValue (subExposure, "subexposure", "current subexposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
@@ -922,6 +935,9 @@ int Camera::camStartExposureWithoutCheck ()
 	infoAll ();
 	maskStateChip (0, CAM_MASK_EXPOSE, CAM_EXPOSING, BOP_TEL_MOVE, BOP_TEL_MOVE, "exposure chip started");
 
+	logStream (MESSAGE_INFO) << "exposing for '"
+		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
+
 	exposureEnd->setValueDouble (getNow () + exposure->getValueDouble ());
 	sendValueAll (exposureEnd);
 
@@ -946,11 +962,8 @@ int Camera::camStartExposureWithoutCheck ()
 	if (sendOkInExposure && exposureConn)
 	{
 		sendOkInExposure = false;
-		exposureConn->sendCommandEnd (DEVDEM_OK, "Executing exposure from queue");
+		exposureConn->sendCommandEnd (DEVDEM_OK, "executing exposure from queue");
 	}
-
-	logStream (MESSAGE_INFO) << "exposing for '"
-		<< (exposureConn ? exposureConn->getName () : "null") << "'" << sendLog;
 
 	return 0;
 }
@@ -1064,6 +1077,8 @@ int Camera::camReadout (Rts2Conn * conn)
 
 	if (currentImageData != -1 || calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 	{
+		readoutPixels = getUsedHeightBinned () * getUsedWidthBinned ();
+		timeReadoutStart = getNow ();
 		return readoutStart ();
 	}
 	maskStateChip (0, DEVICE_ERROR_MASK | CAM_MASK_READING, DEVICE_ERROR_HW | CAM_NOTREADING, 0, 0, "chip readout failed");

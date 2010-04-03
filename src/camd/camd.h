@@ -280,6 +280,8 @@ class Camera:public Rts2ScriptDevice
 		 */
 		void nullExposureConn () { exposureConn = NULL; }
 
+		Rts2ValueDouble *pixelsSecond;
+
 		Rts2ValueDouble *subExposure;
 
 		//! number of connection waiting to be executed
@@ -728,7 +730,8 @@ class Camera:public Rts2ScriptDevice
 		int getCamFilterNum () { return camFilterVal->getValueInteger (); }
 
 	private:
-		time_t readout_started;
+		long readoutPixels;
+		double timeReadoutStart;
 
 		// connection which requries data to be send after end of exposure
 		Rts2Conn *exposureConn;
