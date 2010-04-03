@@ -128,10 +128,21 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 	}
 
+	Rts2Value *val;
+
+	if (nextComd->getBopMask () & BOP_TEL_MOVE)
+	{
+		// if command cannot be executed while we are exposing (blocking telescope movement),
+		// check if que_exp_num is not null - to send command when last exposure finished
+		val = getConnection ()->getValue ("que_exp_num");
+		if (val && val->getValueInteger () != 0)
+			return;
+	}
+
 	if (nextComd->getBopMask () & BOP_WHILE_STATE)
 	{
 		// if there are queued exposures, do not execute command
-		Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+		val = getConnection ()->getValue ("que_exp_num");
 		if (val && val->getValueInteger () != 0)
 			return;
 		// if there are commands in queue, do not execute command

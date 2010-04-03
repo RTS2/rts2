@@ -356,6 +356,7 @@ int ElementChangeValue::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 	else
 	{
 		*new_command = new Rts2CommandChangeValue (client, valName, op, _os.str(), rawString);
+		(*new_command)->setBopMask (BOP_TEL_MOVE);
 	}
 	getDevice (new_device);
 	return 0;
