@@ -417,15 +417,13 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 		return 0;
 	}
 	ret = nextPreparedCommand ();
-	Rts2Value *queExpNum = script_connection->getValue ("que_exp_num");
 	// only end when we do not have any commands in que
-	if (ret < 0 && script_connection->queEmptyForOriginator (devClient) && (queExpNum == NULL || queExpNum->getValueInteger () == 0))
+	if (ret < 0 && script_connection->queEmptyForOriginator (devClient) && canEndScript ())
 	{
 		deleteScript ();
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "For connection " << script_connection->getName ()
 			<< " ret " << ret
-			<< " que_exp_num " << (queExpNum ? queExpNum->getValueInteger () : -1)
 			<< sendLog;
 		#endif					 /* DEBUG_EXTRA */
 		startTarget ();

@@ -123,6 +123,8 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 		virtual void startTarget ();
 
 		virtual int getNextCommand ();
+
+		virtual bool canEndScript ();
 	public:
 		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
 		virtual ~ Rts2DevClientCameraExec (void);

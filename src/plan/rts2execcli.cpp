@@ -108,6 +108,16 @@ int Rts2DevClientCameraExec::getNextCommand ()
 	}
 }
 
+bool Rts2DevClientCameraExec::canEndScript ()
+{
+	Rts2Value *queExpNum = getConnection ()->getValue ("que_exp_num");
+	if (queExpNum && queExpNum->getValueInteger () != 0)
+		return false;
+	if (isExposing ())
+		return false;
+	return DevScript::canEndScript ();
+}
+
 void Rts2DevClientCameraExec::nextCommand ()
 {
 	int ret;
@@ -179,8 +189,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 	}
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " <<
-		nextComd->getText () << sendLog;
+	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " << nextComd->getText () << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 	queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted
