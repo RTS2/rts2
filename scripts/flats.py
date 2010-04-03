@@ -121,8 +121,8 @@ class Rts2Comm:
 		sun_az = self.getValueFloat('sun_az','centrald')
 		return sun_az < 180.0
 
-	def optimalExpTime(self,ratio):
-		exptime = self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
+	def optimalExpTime(self,ratio,expMulti):
+		exptime = expMulti * self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
 		if (exptime < self.expTimes[0]):
 			if (ratio > (1.0 - self.optimalRange - self.allowedOptimalDeviation)):
 				return self.startExpTime
@@ -191,8 +191,7 @@ class Rts2Comm:
 			else:
 				ret = -1
 
-		self.exptime = self.optimalExpTime(ratio)
-		self.exptime *= expMulti
+		self.exptime = self.optimalExpTime(ratio,expMulti)
 
 		# if the image falls within reasonable boundaries, took full image
 		if (self.exptime > self.expTimes[0] and self.exptime < self.expTimes[-1]):
