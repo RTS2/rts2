@@ -33,14 +33,11 @@ Rts2ImageDb::initDbImage ()
 {
 }
 
-
-void
-Rts2ImageDb::reportSqlError (const char *msg)
+void Rts2ImageDb::reportSqlError (const char *msg)
 {
 	logStream (MESSAGE_ERROR) << "SQL error #" << sqlca.sqlcode << " text " << sqlca.sqlerrm.sqlerrmc << " (in " <<
 		msg << ")" << sendLog;
 }
-
 
 void Rts2ImageDb::getValueInd (const char *name, double &value, int &ind, char *comment)
 {
@@ -69,11 +66,9 @@ void Rts2ImageDb::getValueInd (const char *name, float &value, int &ind, char *c
 	}
 }
 
-
 Rts2ImageDb::Rts2ImageDb (Rts2Image * in_image): Rts2Image (in_image)
 {
 }
-
 
 Rts2ImageDb::Rts2ImageDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
 Rts2Image (currTarget, camera, expStart)
@@ -112,9 +107,7 @@ Rts2ImageDb::Rts2ImageDb (long in_img_date, int in_img_usec, float in_img_exposu
 {
 }
 
-
-int
-Rts2ImageDb::getOKCount ()
+int Rts2ImageDb::getOKCount ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_obs_id = getObsId ();
@@ -136,17 +129,13 @@ Rts2ImageDb::getOKCount ()
 	return db_count;
 }
 
-
-int
-Rts2ImageDb::saveImage ()
+int Rts2ImageDb::saveImage ()
 {
 	updateDB ();
 	return Rts2Image::saveImage ();
 }
 
-
-int
-Rts2ImageDb::renameImage (const char *new_filename)
+int Rts2ImageDb::renameImage (const char *new_filename)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
@@ -157,6 +146,10 @@ Rts2ImageDb::renameImage (const char *new_filename)
 	int ret = Rts2Image::renameImage (new_filename);
 	if (ret)
 		return ret;
+
+	// flats and darks are not kept in database
+	if (getImageType () == IMGTYPE_FLAT || getImageType () == IMGTYPE_DARK)
+		return 0;
 
 	strncpy (d_img_path.arr, getAbsoluteFileName (), 100);
 	d_img_path.len = strlen (getAbsoluteFileName ()) > 100 ? 100: strlen (getAbsoluteFileName ());
@@ -177,22 +170,18 @@ Rts2ImageDb::renameImage (const char *new_filename)
 	return 0;
 }
 
-
 std::ostream & operator << (std::ostream &_os, Rts2ImageDb &img_db)
 {
 	img_db.print (_os);
 	return _os;
 }
 
-
 /*********************************************************************
  *
  * Rts2ImageSkyDb class
  *
  ********************************************************************/
-
-int
-Rts2ImageSkyDb::updateDB ()
+int Rts2ImageSkyDb::updateDB ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	VARCHAR d_img_path[100];
@@ -319,9 +308,7 @@ Rts2ImageSkyDb::updateDB ()
 	return updateAstrometry ();
 }
 
-
-int
-Rts2ImageSkyDb::updateAstrometry ()
+int Rts2ImageSkyDb::updateAstrometry ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_obs_id = getObsId ();
@@ -392,25 +379,19 @@ Rts2ImageSkyDb::updateAstrometry ()
 	return 0;
 }
 
-
-void
-Rts2ImageSkyDb::initDbImage ()
+void Rts2ImageSkyDb::initDbImage ()
 {
 	processBitfiedl = 0;
 	getValue ("PROC", processBitfiedl);
 }
 
-
-int
-Rts2ImageSkyDb::isCalibrationImage ()
+int Rts2ImageSkyDb::isCalibrationImage ()
 {
 	return (getTargetType () == TYPE_CALIBRATION
 		|| getTargetType () == TYPE_PHOTOMETRIC);
 }
 
-
-void
-Rts2ImageSkyDb::updateCalibrationDb ()
+void Rts2ImageSkyDb::updateCalibrationDb ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int db_air_last_image;
@@ -484,36 +465,27 @@ Rts2ImageSkyDb::updateCalibrationDb ()
 	}
 }
 
-
-Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart) :
-Rts2ImageDb (currTarget, camera, expStart)
+Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Target *currTarget, rts2core::Rts2DevClientCamera * camera, const struct timeval *expStart):Rts2ImageDb (currTarget, camera, expStart)
 {
 	initDbImage ();
 }
-
 
 Rts2ImageSkyDb::Rts2ImageSkyDb (const char *in_filename) : Rts2ImageDb (in_filename)
 {
 	initDbImage ();
 }
 
-
 Rts2ImageSkyDb::Rts2ImageSkyDb (Rts2Image * in_image): Rts2ImageDb (in_image)
 {
 	initDbImage ();
 }
-
 
 Rts2ImageSkyDb::Rts2ImageSkyDb (int in_obs_id, int in_img_id) : Rts2ImageDb (in_obs_id, in_img_id)
 {
 	initDbImage ();
 }
 
-
-Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec,
-float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name,
-const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec,
-double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
+Rts2ImageSkyDb::Rts2ImageSkyDb (int in_tar_id, int in_obs_id, int in_img_id, char in_obs_subtype, long in_img_date, int in_img_usec, float in_img_exposure, float in_img_temperature, const char *in_img_filter, float in_img_alt, float in_img_az, const char *in_camera_name, const char *in_mount_name, bool in_delete_flag, int in_process_bitfield, double in_img_err_ra, double in_img_err_dec, double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_usec, in_img_exposure)
 {
 	setTargetHeaders (in_tar_id, in_obs_id, in_img_id, in_obs_subtype);
 	cameraName = new char[strlen (in_camera_name) + 1];
@@ -536,14 +508,11 @@ double in_img_err, const char *_img_path) : Rts2ImageDb (in_img_date, in_img_use
 	setFileName (_img_path);
 }
 
-
 Rts2ImageSkyDb::~Rts2ImageSkyDb ()
 {
 }
 
-
-int
-Rts2ImageSkyDb::toArchive ()
+int Rts2ImageSkyDb::toArchive ()
 {
 	int ret;
 
@@ -559,9 +528,7 @@ Rts2ImageSkyDb::toArchive ()
 	return 0;
 }
 
-
-int
-Rts2ImageSkyDb::toTrash ()
+int Rts2ImageSkyDb::toTrash ()
 {
 	int ret;
 
@@ -575,11 +542,8 @@ Rts2ImageSkyDb::toTrash ()
 	return 0;
 }
 
-
 // write changes of image to DB..
-
-int
-Rts2ImageSkyDb::saveImage ()
+int Rts2ImageSkyDb::saveImage ()
 {
 	if (!shouldSaveImage())
 		return 0;
@@ -591,9 +555,7 @@ Rts2ImageSkyDb::saveImage ()
 	return 0;
 }
 
-
-int
-Rts2ImageSkyDb::deleteImage ()
+int Rts2ImageSkyDb::deleteImage ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 	int d_img_id = getImgId ();
@@ -621,9 +583,7 @@ Rts2ImageSkyDb::deleteImage ()
 	return Rts2Image::deleteImage ();
 }
 
-
-std::string
-Rts2ImageSkyDb::getFileNameString ()
+std::string Rts2ImageSkyDb::getFileNameString ()
 {
 	std::ostringstream out;
 	printFileName (out);
