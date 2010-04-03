@@ -16,6 +16,8 @@ class Rts2Comm:
 
 		self.doDarks = True
 
+		self.unusableExpression = None # rename images which are useless for skyflats to this path
+
 		self.filter = None
 
 		self.SaturationLevel = 65536 # should be 16bit for the nonEM and 14bit for EM)
@@ -107,11 +109,11 @@ class Rts2Comm:
 
 	def toTrash(self,imagename):
 		return self.__imageAction("trash",imagename)
-
+	
 	def delete(self,imagename):
 		print "delete",imagename
 		sys.stdout.flush()
-
+	
 	def log(self,level,text):
 		print "log",level,text
 		sys.stdout.flush()
@@ -150,6 +152,12 @@ class Rts2Comm:
 		self.setValue('WINDOW','-1 -1 -1 -1')
 		self.isSubWindow = False
 
+	def unusableImage(self,imgname):
+		"""Properly dispose image which cannot be used for flats."""
+		if (self.unusableExpression is None):
+			return self.delete(imgname)
+		return self.rename(imgname,self.unusableExpression)
+
 	def acquireImage(self):
 		"""Acquires images for flats. Return 0 if image was added to flats, 1 if it was too brigth, -1 if it was too dark."""
 		self.setValue('exposure',self.exptime)
@@ -169,7 +177,7 @@ class Rts2Comm:
 			ret = 0
 		  	if (self.isSubWindow):
 				self.fullWindow()
-				self.delete(img)
+				self.unusableImage(img)
 			else:
 				self.toFlat(img)
 				self.Ngood[self.filter] += 1
@@ -181,11 +189,11 @@ class Rts2Comm:
 		elif (abs(1.0 - ratio) < (self.optimalRange + self.allowedOptimalDeviation)):
 			if (self.isSubWindow):
 				self.fullWindow()
-			self.delete(img)
+			self.unusableImage(img)
 			# we believe that the next image will be good one..
 			ret = 0
 		else:
-			self.delete(img) #otherwise it is not useful and we delete it
+			self.unusableImage(img) #otherwise it is not useful and we get rid of it
 			if (ratio > 1.0):
 				ret = 1
 			else:
