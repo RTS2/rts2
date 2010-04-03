@@ -37,8 +37,8 @@ Rts2Config::getSpecialValues ()
 	// load horizont file..
 	getString ("observatory", "horizon", horizon_file, "");
 
-	getStringVector ("observatory", "required_devices", obs_requiredDevices);
-	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices);
+	getStringVector ("observatory", "required_devices", obs_requiredDevices, false);
+	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
 
 	getString ("observatory", "que_path", obs_quePath, "%b/que/%c/%f");
 	getString ("observatory", "acq_path", obs_acqPath, "%b/acqusition/%t/%c/%f");
