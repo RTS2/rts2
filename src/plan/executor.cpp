@@ -85,8 +85,8 @@ class Executor:public Rts2DeviceDb
 		std::vector < Target * >targetsQue;
 		struct ln_lnlat_posn *observer;
 
-		double grb_sep_limit;
-		double grb_min_sep;
+		Rts2ValueDouble *grb_sep_limit;
+		Rts2ValueDouble *grb_min_sep;
 
 		Rts2ValueBool *enabled;
 
@@ -128,9 +128,6 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (scriptCount, "script_count", "number of running scripts", false);
 	scriptCount->setValueInteger (-1);
 
-	grb_sep_limit = -1;
-	grb_min_sep = 0;
-
 	waitState = 0;
 
 	createValue (enabled, "enabled", "if false, executor will not perform its duties, thus enabling problem-free full manual controll", false, RTS2_VALUE_WRITABLE);
@@ -164,6 +161,12 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (ignoreDay, "ignore_day", "whenever executor should run in daytime", false, RTS2_VALUE_WRITABLE);
 	ignoreDay->setValueBool (false);
 
+	createValue (grb_sep_limit, "grb_sep_limit", "[deg] when GRB distane is above grb_sep_limit degrees from current position, telescope will be immediatelly slewed to new position", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+	grb_sep_limit->setValueDouble (-1);
+
+	createValue (grb_min_sep, "grb_min_sep", "[deg] when GRB is bellow grb_min_sep degrees from current position, telescope will not be slewed");
+	grb_min_sep->setValueDouble (0);
+
 	addOption (OPT_IGNORE_DAY, "ignore-day", 0, "observe even during daytime");
 	addOption (OPT_DONT_DARK, "no-dark", 0, "do not take on its own dark frames");
 }
@@ -195,14 +198,21 @@ int Executor::processOption (int in_opt)
 int Executor::reloadConfig ()
 {
 	int ret;
+	double f;
 	Rts2Config *config;
 	ret = Rts2DeviceDb::reloadConfig ();
 	if (ret)
 		return ret;
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();
-	config->getDouble ("grbd", "seplimit", grb_sep_limit);
-	config->getDouble ("grbd", "minsep", grb_min_sep);
+	f = -1;
+	config->getDouble ("grbd", "seplimit", f);
+	grb_sep_limit->setValueDouble (f);
+
+	f = 0;
+	config->getDouble ("grbd", "minsep", f);
+	grb_min_sep->setValueDouble (f);
+
 	return 0;
 }
 
@@ -494,8 +504,7 @@ int Executor::queueTarget (int tarId)
 	}
 	if (nt->getTargetType () == TYPE_FLAT && currentTarget != NULL && currentTarget->getTargetType () != TYPE_FLAT)
 	{
-		delete nt;
-		setNow (tarId);
+		setNow (nt);
 		return 0;
 	}
 	nextTargets.push_back (nt);
@@ -591,13 +600,13 @@ int Executor::setGrb (int grbId)
 		return setNow (grbTarget);
 	}
 	// it's not same..
-	ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit);
+	ret = grbTarget->compareWithTarget (currentTarget, grb_sep_limit->getValueDouble ());
 	if (ret == 0)
 	{
 		return setNow (grbTarget);
 	}
 	// if that's only few arcsec update, don't change
-	ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep);
+	ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep->getValueDouble ());
 	if (ret == 1)
 	{
 		return 0;
