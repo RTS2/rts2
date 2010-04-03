@@ -128,6 +128,10 @@ void ConnImgProcess::connectionError (int last_data_size)
 		if (image->getImageType () == IMGTYPE_FLAT || image->getImageType () == IMGTYPE_DARK)
 		{
 			// just return..
+			if (image->getImageType () == IMGTYPE_FLAT)
+				astrometryStat = FLAT;
+			else
+			  	astrometryStat = DARK;
 			delete image;
 			rts2core::ConnFork::connectionError (last_data_size);
 			return;
