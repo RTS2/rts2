@@ -102,6 +102,9 @@ class ImageProc:public Rts2Device
 		Rts2ValueInteger *trashImages;
 		Rts2ValueInteger *badImages;
 
+		Rts2ValueInteger *darkImages;
+		Rts2ValueInteger *flatImages;
+
 		Rts2ValueInteger *queSize;
 
 		Rts2ValueTime *lastGood;
@@ -110,6 +113,9 @@ class ImageProc:public Rts2Device
 		Rts2ValueInteger *nightGoodImages;
 		Rts2ValueInteger *nightTrashImages;
 		Rts2ValueInteger *nightBadImages;
+
+		Rts2ValueInteger *nightDarks;
+		Rts2ValueInteger *nightFlats;
 
 		int sendStop;			 // if stop running astrometry with stop signal; it ussually doesn't work, so we will use FIFO
 
@@ -150,15 +156,23 @@ ImageProc::ImageProc (int _argc, char **_argv)
 	createValue (badImages, "bad_images", "number of bad images (in queue under bad directory)", false);
 	badImages->setValueInteger (0);
 
+	createValue (darkImages, "dark_images", "number of darks", false);
+	darkImages->setValueInteger (0);
+	createValue (flatImages, "flat_images", "number of flats", false);
+	flatImages->setValueInteger (0);
+
 	createValue (queSize, "queue_size", "number of images waiting for processing", false);
 	queSize->setValueInteger (0);
 
 	createValue (lastGood, "last_good", "last good image (with correct astrometry)", false);
 	createValue (lastTrash, "last_trash", "last trash image (processed, but without correct astrometry)", false);
 
-	createValue (nightGoodImages, "night_good", "number of good images during night", false);
-	createValue (nightTrashImages, "night_trash", "number of trash images during current night", false);
-	createValue (nightBadImages, "night_bad", "number of bad images during current night", false);
+	createValue (nightGoodImages, "night_good", "number of good images taken during night", false);
+	createValue (nightTrashImages, "night_trash", "number of trash images taken during current night", false);
+	createValue (nightBadImages, "night_bad", "number of bad images taken during current night", false);
+
+	createValue (nightDarks, "night_darks", "number of dark images taken during night", false);
+	createValue (nightFlats, "night_flats", "number of flat images taken during night", false);
 
 	imageGlob.gl_pathc = 0;
 	imageGlob.gl_offs = 0;
@@ -302,13 +316,23 @@ int ImageProc::changeMasterState (int new_state)
 	{
 		case SERVERD_DUSK:
 		case SERVERD_DUSK | SERVERD_STANDBY_MASK:
+		case SERVERD_SOFT_OFF:
+		case SERVERD_HARD_OFF:
 			nightGoodImages->setValueInteger (0);
 			nightTrashImages->setValueInteger (0);
 			nightBadImages->setValueInteger (0);
+			nightDarks->setValueInteger (0);
+			nightFlats->setValueInteger (0);
 			
 			sendValueAll (nightGoodImages);
 			sendValueAll (nightTrashImages);
 			sendValueAll (nightBadImages);
+			sendValueAll (nightDarks);
+			sendValueAll (nightFlats);
+
+			if ((new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)) == SERVERD_SOFT_OFF
+				|| (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK)) == SERVERD_HARD_OFF)
+				break;
 
 		case SERVERD_NIGHT:
 		case SERVERD_NIGHT | SERVERD_STANDBY_MASK:
@@ -321,17 +345,6 @@ int ImageProc::changeMasterState (int new_state)
 				globC = 0;
 			}
 			reprocessingPossible = 0;
-			break;
-
-		case SERVERD_SOFT_OFF:
-		case SERVERD_HARD_OFF:
-			nightGoodImages->setValueInteger (0);
-			nightTrashImages->setValueInteger (0);
-			nightBadImages->setValueInteger (0);
-			
-			sendValueAll (nightGoodImages);
-			sendValueAll (nightTrashImages);
-			sendValueAll (nightBadImages);
 			break;
 
 		default:
@@ -396,6 +409,18 @@ int ImageProc::deleteConnection (Rts2Conn * conn)
 				nightBadImages->inc ();
 				sendValueAll (badImages);
 				sendValueAll (nightBadImages);
+				break;
+			case FLAT:
+				flatImages->inc ();
+				nightFlats->inc ();
+				sendValueAll (flatImages);
+				sendValueAll (nightFlats);
+				break;
+			case DARK:
+				darkImages->inc ();
+				nightDarks->inc ();
+				sendValueAll (darkImages);
+				sendValueAll (nightDarks);
 				break;
 			default:
 				logStream (MESSAGE_ERROR) << "wrong image state: " << runningImage->getAstrometryStat () << sendLog;
