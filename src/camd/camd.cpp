@@ -294,7 +294,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	currentImageData = -1;
 
-	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE);
+	createValue (calculateStatistics, "calculate_stat", "if statistics values should be calculated", false, RTS2_VALUE_WRITABLE, true);
 	calculateStatistics->addSelVal ("yes");
 	calculateStatistics->addSelVal ("only statistics");
 	calculateStatistics->addSelVal ("no");
@@ -325,9 +325,9 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 	waitingForNotBop->setValueBool (false);
 
 	createValue (chipSize, "SIZE", "chip size", true, RTS2_VALUE_INTEGER);
-	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (chipUsedReadout, "WINDOW", "used chip subframe", true, RTS2_VALUE_INTEGER | RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 
-	createValue (binning, "binning", "chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (binning, "binning", "chip binning", true, RTS2_VALUE_WRITABLE, CAM_WORKING, true);
 	createValue (dataType, "data_type", "used data type", false, 0, CAM_WORKING, true);
 
 	createValue (exposure, "exposure", "current exposure time", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
@@ -455,19 +455,6 @@ int Camera::scriptEnds ()
 
 	scriptExposureNum->setValueLong (0);
 	sendValueAll (scriptExposureNum);
-
-	calculateStatistics->setValueInteger (STATISTIC_YES);
-	sendValueAll (calculateStatistics);
-
-	chipUsedReadout->setFromValue (chipSize);
-	sendValueAll (chipUsedReadout);
-
-	binning->setValueInteger (0);
-
-	Binning2D *bin = (Binning2D *) binning->getData ();
-	setBinning (bin->horizontal, bin->vertical);
-
-	sendValueAll (binning);
 
 	// set exposure to light
 	if (expType)
