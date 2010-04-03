@@ -23,6 +23,8 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+#define EVENT_TE_RAMP	RTS2_LOCAL_EVENT + 677
+
 namespace rts2camd
 {
 /**
@@ -35,6 +37,8 @@ class MICCD:public Camera
 	public:
 		MICCD (int argc, char **argv);
 		virtual ~MICCD ();
+
+		virtual void postEvent (Rts2Event *event);
 	protected:
 		virtual int processOption (int opt);
 		virtual int init ();
@@ -71,6 +75,9 @@ class MICCD:public Camera
 	private:
 		Rts2ValueLong *id;
 		Rts2ValueSelection *mode;
+		Rts2ValueFloat *tempRamp;
+		Rts2ValueFloat *tempTarget;
+
 		camera_t camera;
 		camera_info_t cami;
 };
@@ -86,10 +93,15 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createTempCCD ();
 	createTempSet ();
 
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping");
+	tempRamp->setValueFloat (1.0);
+
+	createValue (tempTarget, "TETAR", "[C] current target temperature");
+
 	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
 
-	createValue (mode, "rdoutm", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (mode, "RDOUTM", "camera mode", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	mode->addSelVal ("NORMAL");
 	mode->addSelVal ("LOW NOISE");
 	mode->addSelVal ("ULTRA LOW NOISE");
@@ -102,6 +114,29 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 MICCD::~MICCD ()
 {
 	miccd_close (&camera);
+}
+
+void MICCD::postEvent (Rts2Event *event)
+{
+	float change = 0;
+	switch (event->getType ())
+	{
+		case EVENT_TE_RAMP:
+			if (tempTarget->getValueFloat () < tempSet->getValueFloat ())
+				change = tempRamp->getValueFloat ();
+			else if (tempTarget->getValueFloat ())
+				change = -1 * tempRamp->getValueFloat ();
+			if (change != 0)
+			{
+				tempTarget->setValueFloat (tempTarget->getValueFloat () + change);
+				if (miccd_set_cooltemp (&camera, tempTarget->getValueFloat ()))
+					logStream (MESSAGE_ERROR) << "cannot set target temperature" << sendLog;
+				addTimer (60, event);
+				return;
+			}
+			break;
+	}
+	Camera::postEvent (event);
 }
 
 int MICCD::processOption (int opt)
@@ -190,7 +225,9 @@ int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 
 int MICCD::setCoolTemp (float new_temp)
 {
-	return miccd_set_cooltemp (&camera, new_temp) ? -1 : 0;
+	deleteTimers (EVENT_TE_RAMP);
+	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
+	return 0;
 }
 
 int MICCD::setFilterNum (int new_filter)
