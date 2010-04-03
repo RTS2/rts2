@@ -197,15 +197,19 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 void Rts2DevClientCameraExec::queImage (Rts2Image * image)
 {
-	// if unknow type, don't process image..
-	if (image->getShutter () != SHUT_OPENED)
-		return;
-
 	// find image processor with lowest que number..
 	Rts2Conn *minConn = getMaster ()->getMinConn ("queue_size");
 	if (!minConn)
 		return;
+
 	image->saveImage ();
+
+	// if it is dark image..
+	if (image->getShutter () != SHUT_OPENED || image->getImageType () == IMGTYPE_DARK)
+	{
+		minConn->queCommand (new Rts2CommandQueDark (getMaster (), image));
+		return;
+	}
 
 	// try immediately processing..
 	std::string after_command;
