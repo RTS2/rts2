@@ -71,6 +71,15 @@ class DevScript
 
 		virtual int getNextCommand () = 0;
 		int nextPreparedCommand ();
+
+		/**
+		 * Check if script execution can be ended. Return true if device
+		 * is in proper state to allow next script to take over.
+		 *
+		 * @return true if next script excecution can started, false if next script execution must wait for device to reach other state
+		 */
+		virtual bool canEndScript () { return true; }
+
 		/**
 		 * Entry point for script execution.
 		 *
