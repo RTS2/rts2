@@ -904,6 +904,7 @@ int Rts2Device::killAll ()
 int Rts2Device::scriptEnds ()
 {
 	loadValues ();
+	logStream (MESSAGE_DEBUG) << "executed script ends, all values changed to defaults" << sendLog;
 	return 0;
 }
 
