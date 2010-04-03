@@ -164,7 +164,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 			nextComd->setBopMask (BOP_TEL_MOVE);
 
 			// do not execute if there are some exposures in queue
-			Rts2Value *val = getConnection ()->getValue ("que_exp_num");
+			val = getConnection ()->getValue ("que_exp_num");
 			if (val && val->getValueInteger () > 0)
 			{
 				return;
