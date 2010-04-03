@@ -411,6 +411,13 @@ Rts2CommandQueImage::Rts2CommandQueImage (Rts2Block * in_owner, Rts2Image * imag
 	setCommand (_os);
 }
 
+Rts2CommandQueDark::Rts2CommandQueDark (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
+{
+  	std::ostringstream _os;
+	_os << "que_dark " << image->getFileName ();
+	setCommand (_os);
+}
+
 Rts2CommandQueFlat::Rts2CommandQueFlat (Rts2Block * in_owner, Rts2Image * image):rts2core::Rts2Command (in_owner)
 {
   	std::ostringstream _os;
