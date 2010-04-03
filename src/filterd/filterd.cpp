@@ -120,7 +120,7 @@ int Filterd::setFilterNumMask (int new_filter)
 		maskState (DEVICE_ERROR_MASK | FILTERD_MASK | BOP_EXPOSURE, DEVICE_ERROR_HW | FILTERD_IDLE, "filter movement failed");
 		return ret;
 	}
-	logStream (MESSAGE_INFO) << "filter set to #" << new_filter << " (" << filter->getSelName () << ")" << sendLog;
+	logStream (MESSAGE_INFO) << "filter moved to #" << new_filter << " (" << filter->getSelName () << ")" << sendLog;
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_IDLE);
 	return ret;
 }
