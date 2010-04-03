@@ -112,6 +112,7 @@ int Filterd::setFilterNumMask (int new_filter)
 {
 	int ret;
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_MOVE | BOP_EXPOSURE, "filter move started");
+	logStream (MESSAGE_INFO) << "moving filter from #" << filter->getValueInteger () << " (" << filter->getSelName () << ")" << " to #" << new_filter << sendLog;
 	ret = setFilterNum (new_filter);
 	infoAll ();
 	if (ret == -1)
@@ -119,7 +120,7 @@ int Filterd::setFilterNumMask (int new_filter)
 		maskState (DEVICE_ERROR_MASK | FILTERD_MASK | BOP_EXPOSURE, DEVICE_ERROR_HW | FILTERD_IDLE, "filter movement failed");
 		return ret;
 	}
-	logStream (MESSAGE_INFO) << "filter set to " << new_filter << filter->getSelName () << sendLog;
+	logStream (MESSAGE_INFO) << "filter set to #" << new_filter << " (" << filter->getSelName () << ")" << sendLog;
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_IDLE);
 	return ret;
 }
