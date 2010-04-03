@@ -63,9 +63,26 @@ void Rts2DevClientExecutorSel::lastReadout ()
 	rts2core::Rts2DevClientExecutor::lastReadout ();
 }
 
-
 class Rts2SelectorDev:public Rts2DeviceDb
 {
+	public:
+		Rts2SelectorDev (int argc, char **argv);
+		virtual ~ Rts2SelectorDev (void);
+		virtual int idle ();
+
+		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
+		virtual void postEvent (Rts2Event * event);
+		virtual int changeMasterState (int new_state);
+
+		int selectNext ();		 // return next observation..
+		int updateNext ();
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+	protected:
+		virtual int processOption (int in_opt);
+		virtual int reloadConfig ();
+
 	private:
 		Rts2Selector * sel;
 
@@ -80,23 +97,6 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		Rts2ValueDouble *flatSunMax;
 
 		Rts2ValueString *nightDisabledTypes;
-
-	protected:
-		virtual int processOption (int in_opt);
-		virtual int reloadConfig ();
-	public:
-		Rts2SelectorDev (int argc, char **argv);
-		virtual ~ Rts2SelectorDev (void);
-		virtual int idle ();
-
-		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
-		virtual void postEvent (Rts2Event * event);
-		virtual int changeMasterState (int new_state);
-
-		int selectNext ();		 // return next observation..
-		int updateNext ();
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
 };
 
 Rts2SelectorDev::Rts2SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
