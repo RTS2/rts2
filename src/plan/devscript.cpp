@@ -72,9 +72,7 @@ void DevScript::startTarget ()
 	setScript (sc);
 
 	clearFailedCount ();
-	queCommandFromScript (new
-		Rts2CommandScriptEnds (script_connection->
-		getMaster ()));
+	queCommandFromScript (new Rts2CommandScriptEnds (script_connection->getMaster ()));
 
 	scriptBegin ();
 
@@ -87,8 +85,7 @@ void DevScript::startTarget ()
 		getObsTargetID () << sendLog;
 	#endif
 
-	script_connection->getMaster ()->
-		postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
+	script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_SCRIPT_STARTED));
 }
 
 void DevScript::postEvent (Rts2Event * event)
@@ -451,9 +448,7 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 								 // some telescope command..
 	if (!strcmp (cmd_device, "TX"))
 	{
-		script_connection->getMaster ()->
-			postEvent (new
-			Rts2Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
+		script_connection->getMaster ()->postEvent (new Rts2Event (EVENT_TEL_SCRIPT_CHANGE, (void *) nextComd));
 		// postEvent have to create copy (in case we will serve more devices) .. so we have to delete command
 		delete nextComd;
 		nextComd = NULL;
