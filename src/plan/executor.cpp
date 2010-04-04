@@ -148,7 +148,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	createValue (autoLoop, "auto_loop", "if enabled, observation will loop on its own after current script ends", false, RTS2_VALUE_WRITABLE);
 	autoLoop->setValueBool (true);
 
-	createValue (next_id, "next", "ID of next target", false);
+	createValue (next_id, "next", "ID of next target", false, RTS2_VALUE_WRITABLE);
 	createValue (next_name, "next_name", "name of next target", false);
 	createValue (next_ids, "next_ids", "IDs of next target(s)", false);
 	createValue (next_names, "next_names", "name of next target(s)", false);
@@ -222,6 +222,10 @@ int Executor::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 	{
 		stop ();
 		return 0;
+	}
+	if (oldValue == next_id)
+	{
+		return setNext (newValue->getValueInteger ()) ? 0 : -2;
 	}
 	return Rts2DeviceDb::setValue (oldValue, newValue);
 }
