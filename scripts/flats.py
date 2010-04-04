@@ -218,7 +218,7 @@ class Rts2Comm:
 			ret = 0
 
 		# from ret to brightness
-		brightnes = 'OK'
+		brightness = 'OK'
 		if (ret < 0):
 			brightness = 'dim'
 		elif (ret > 0):
