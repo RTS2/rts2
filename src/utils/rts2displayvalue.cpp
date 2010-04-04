@@ -25,7 +25,8 @@ std::string getDisplayValue (Rts2Value * value)
 {
 	std::ostringstream _os;
 	const char *tmp_val;
-	const char *sunits[] = {"B", "K", "M", "G", "T", "P"};
+	const char sunits[] = {'B', 'K', 'M', 'G', 'T', 'P'};
+	const char munits[] = {' ', 'k', 'M', 'G', 'T', 'P'};
 	int sind = 0;
 	double sval;
 	switch (value->getValueDisplayType ())
@@ -56,6 +57,15 @@ std::string getDisplayValue (Rts2Value * value)
 				sind++;
 			}
 			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << sunits[sind];
+			break;
+		case RTS2_DT_KMG:
+			sval = value->getValueDouble ();
+			while (sval > 1.5 * 1000)
+			{
+				sval /= 1000;
+				sind++;
+			}
+			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << munits[sind];
 			break;
 		default:
 			tmp_val = value->getDisplayValue ();
