@@ -349,7 +349,7 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	sendOkInExposure = false;
 
-	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false);
+	createValue (pixelsSecond, "pixels_second", "[pixels/second] average readout speed", false, RTS2_DT_KMG);
 
 	createValue (subExposure, "subexposure", "current subexposure", false, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	createValue (camFilterVal, "filter", "used filter number", false, RTS2_VALUE_WRITABLE, CAM_EXPOSING);
