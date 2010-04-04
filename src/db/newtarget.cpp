@@ -115,6 +115,13 @@ int Rts2NewTarget::saveTarget ()
 		{
 			n_tar_id = INT_MIN;
 			askForInt ("Target ID (1 to 49999)", n_tar_id);
+			if (n_tar_id >= 50000)
+			{
+				std::string reply;
+				askForString ("You are requesting target ID above 50000. This will affect GRB autonomously addeed targets. Please confirm you decision by typing: I know that asking for ID above 50000 will do harm to GRBs!", reply);
+				if (reply == std::string ("I know that asking for ID above 50000 will do harm to GRBs!"))
+					break;
+			}
 		}
 		while (n_tar_id >= 50000 || n_tar_id <= 0);
 	}
