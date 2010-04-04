@@ -41,8 +41,29 @@ void Devices::authorizedExecute (std::string path, XmlRpc::HttpParams *params, c
 void Devices::printList (char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	printHeader (_os, "Devices listing");
-	_os << "<table>\n";
+	printHeader (_os, "Devices listing", NULL, NULL, "statusTimer();");
+	_os << "<script type='text/javascript'>\n"
+
+	"function statusTimer () {\n"
+		"var status = {};\n"
+		"var http_request = new XMLHttpRequest();\n"
+		"http_request.open( 'GET', '/api/', true );\n"
+		"http_request.onreadystatechange = function () {\n"
+		 	"if ( http_request.readyState == 4 && http_request.status == 200 ) {\n"
+				"status = JSON.parse( http_request.responseText );\n"
+				"var str;"
+				"for (var i in status) {\n"
+					"str += i + ':' + status[i] + ',';\n"
+				"}\n"
+				"document.getElementById('masterState').innerHTML = str;\n"
+				"setTimeout('statusTimer()',1000);\n"
+			"}\n"
+		"};\n"
+		"http_request.send(null);\n"
+	"}\n"
+        "</script>\n"
+	"<span id='masterState'></span>\n"
+	"<table>\n";
 
 	XmlRpcd *serv = (XmlRpcd *) getMasterApp ();
 	for (connections_t::iterator iter = serv->getConnections ()->begin (); iter != serv->getConnections ()->end (); iter++)
