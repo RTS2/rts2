@@ -6,26 +6,33 @@
 import sys
 import time
 
+class Flat:
+	def __init__(self,filter,binning=None,ngood=None,window=None):
+		self.filter = filter
+		self.binning = binning
+		self.ngood = ngood
+		self.window = window
+
 class Rts2Comm:
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
-		self.eveningFilters = ['Y','B','b','g','r','i','z'] # filters for evening, we will use reverse for morning
+		self.eveningFlats = [Flat('Y'),Flat('B'),Flat('b'),Flat('g'),Flat('r'),Flat('i'),Flat('z')] # filters for evening, we will use reverse for morning
 
-		self.morningFilters = self.eveningFilters[:] # filters for morning - reverse of evening filters - deep copy them first
-		self.morningFilters.reverse ()
+		self.morningFlats = self.eveningFlats[:] # filters for morning - reverse of evening filters - deep copy them first
+		self.morningFlats.reverse ()
 
 		self.doDarks = True
 
 		self.unusableExpression = None # rename images which are useless for skyflats to this path
 
-		self.filter = None
+		self.flat = None
 
 		self.SaturationLevel = 65536 # should be 16bit for the nonEM and 14bit for EM)
 		self.OptimalFlat = self.SaturationLevel / 3
 		self.optimalRange = 0.3 # range of allowed divertion from OptimalFlat. 0.3 means 30%
 		self.allowedOptimalDeviation = 0.1 # deviation allowed from optimalRange to start real flats
 		self.BiasLevel = 390 # although this could be set to 0 and should not make much difference
-		self.NumberFlats = 10 # Number of flats that we want to obtain
+		self.defaultNumberFlats = 10 # Number of flats that we want to obtain
 		self.sleepTime = 1 # number of seconds to wait for optimal flat conditions
 		self.startExpTime = 1 # starting exposure time
 
@@ -149,7 +156,10 @@ class Rts2Comm:
 			self.incrementValue("OFFS",self.shiftRa.__str__() + ' ' + self.shiftDec.__str__(),"T0")
 
 	def fullWindow(self):
-		self.setValue('WINDOW','-1 -1 -1 -1')
+		if (self.flat.window is None):
+			self.setValue('WINDOW','-1 -1 -1 -1')
+		else:
+			self.setValue('WINDOW',self.flat.window)
 		self.isSubWindow = False
 
 	def unusableImage(self,imgname):
@@ -180,7 +190,7 @@ class Rts2Comm:
 				self.unusableImage(img)
 			else:
 				self.toFlat(img)
-				self.Ngood[self.filter] += 1
+				self.Ngood[self.flat.filter] += 1
 				# add used exposure time - if it does not exists
 				try:
 					self.usedExpTimes.index(self.exptime)
@@ -207,18 +217,36 @@ class Rts2Comm:
 				self.fullWindow()
 			ret = 0
 
-		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %i" % (ratio,avrg,self.Ngood[self.filter],self.filter,self.exptime,ret))
+		# from ret to brightness
+		brightnes = 'OK'
+		if (ret < 0):
+			brightness = 'dim'
+		elif (ret > 0):
+			brightness = 'bright'
+
+		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %s" % (ratio,avrg,self.Ngood[self.flat.filter],self.flat.filter,self.exptime,brightness))
 		return ret
+
+	def setConfiguration(self):
+		self.setValue('filter',self.flat.filter)
+		if (self.flat.binning != None):
+			self.setValue('binning',self.flat.binning)
+		else:
+			self.setValue('binning',0)
+		if (self.flat.ngood != None):
+			self.numberFlats = self.flat.ngood
+		else:
+			self.numberFlats = self.defaultNumberFlats
 	
 	def executeEvening(self):
-		self.Ngood[self.filter] = 0 # Number of good images
+		self.Ngood[self.flat.filter] = 0 # Number of good images
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
 			self.isSubWindow = True
 			self.setValue('WINDOW',self.waitingSubWindow)
 
-		while (self.Ngood[self.filter] < self.NumberFlats): # We continue until we have enough flats
+		while (self.Ngood[self.flat.filter] < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (imgstatus == -1):
 				# too dim image..
@@ -228,19 +256,19 @@ class Rts2Comm:
 			# 0 mean good image, just continue..
 	
 	def runEvening(self):
-		for self.filter in self.eveningFilters: # starting from the bluest and ending with the redest
-			self.setValue('filter',self.filter)
+		for self.flat in self.eveningFlats: # starting from the bluest and ending with the redest
+			self.setConfiguration()
 			self.executeEvening()
 
 	def executeMorning(self):
-		self.Ngood[self.filter] = 0 # Number of good images
+		self.Ngood[self.flat.filter] = 0 # Number of good images
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
 			self.isSubWindow = True
 			self.setValue('WINDOW',self.waitingSubWindow)
 
-		while (self.Ngood[self.filter] < self.NumberFlats): # We continue until we have enough flats
+		while (self.Ngood[self.flat.filter] < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (imgstatus == 1):
 				# too bright image
@@ -250,8 +278,8 @@ class Rts2Comm:
 			# good image, just continue as usuall
 
 	def runMorning(self):
-		for self.filter in self.morningFilters: # starting from the redest and ending with the bluest
-			self.setValue('filter',self.filter)
+		for self.flat in self.morningFlats: # starting from the redest and ending with the bluest
+			self.setConfiguration(self.flat)
 			self.executeMorning()
 
 	def takeDarks(self):
