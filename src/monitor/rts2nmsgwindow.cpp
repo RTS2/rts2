@@ -34,21 +34,27 @@ Rts2NMsgWindow::draw ()
 			maxrow++;
 			continue;
 		}
+		char mt;
 		switch (msg.getType ())
 		{
 			case MESSAGE_CRITICAL:
+				mt = 'C';
 				wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
 				break;
 			case MESSAGE_ERROR:
+				mt = 'E';
 				wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
 				break;
 			case MESSAGE_WARNING:
+				mt = 'W';
 				wcolor_set (getWriteWindow (), CLR_WARNING, NULL);
 				break;
 			case MESSAGE_INFO:
+				mt = 'i';
 				wcolor_set (getWriteWindow (), CLR_OK, NULL);
 				break;
 			case MESSAGE_DEBUG:
+				mt = 'd';
 				wcolor_set (getWriteWindow (), CLR_TEXT, NULL);
 				break;
 		}
@@ -56,9 +62,9 @@ Rts2NMsgWindow::draw ()
 		time_t t = msg.getMessageTimeSec ();
 		localtime_r (&t, &tmesg);
 
-		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %3.3s %i %s",
+		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %3.3s %c %s",
 			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
-			msg.getMessageOName (), msg.getType (), msg.getMessageString ());
+			msg.getMessageOName (), mt, msg.getMessageString ());
 
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		maxrow++;
