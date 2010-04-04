@@ -115,10 +115,11 @@ class Rts2Message
 			}
 		}
 
-		double getMessageTime ()
-		{
-			return messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;
-		}
+		double getMessageTime () { return messageTime.tv_sec + (double) messageTime.tv_usec / USEC_SEC;	}
+
+		time_t getMessageTimeSec () { return messageTime.tv_sec; }
+
+		int getMessageTimeUSec () { return messageTime.tv_usec; }
 };
 
 std::ostream & operator << (std::ostream & _of, Rts2Message & msg);
