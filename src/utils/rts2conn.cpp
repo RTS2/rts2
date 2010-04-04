@@ -1116,11 +1116,13 @@ int Rts2Conn::command ()
 	// as it can fails (V without value), not with else
 	if (isCommand (PROTO_VALUE))
 		return -1;
+	std::ostringstream ss;
+	ss << "unknow command " << getCommand ();
 	logStream (MESSAGE_DEBUG) <<
 		"Rts2Conn::command unknow command: getCommand " << getCommand () <<
 		" state: " << conn_state << " type: " << getType () << " name: " <<
 		getName () << sendLog;
-	sendCommandEnd (-4, "Unknow command");
+	sendCommandEnd (-4, ss.str ().c_str ());
 	return -4;
 }
 
