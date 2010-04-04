@@ -62,7 +62,7 @@ Rts2NMsgWindow::draw ()
 		time_t t = msg.getMessageTimeSec ();
 		localtime_r (&t, &tmesg);
 
-		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %3.3s %c %s",
+		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %-3.3s %c %s",
 			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
 			msg.getMessageOName (), mt, msg.getMessageString ());
 
