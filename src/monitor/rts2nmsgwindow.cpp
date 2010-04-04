@@ -36,6 +36,9 @@ Rts2NMsgWindow::draw ()
 		}
 		switch (msg.getType ())
 		{
+			case MESSAGE_CRITICAL:
+				wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
+				break;
 			case MESSAGE_ERROR:
 				wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
 				break;
@@ -49,8 +52,14 @@ Rts2NMsgWindow::draw ()
 				wcolor_set (getWriteWindow (), CLR_TEXT, NULL);
 				break;
 		}
-		mvwprintw (getWriteWindow (), maxrow, 0, "%s",
-			msg.toString ().c_str ());
+		struct tm tmesg;
+		time_t t = msg.getMessageTimeSec ();
+		localtime_r (&t, &tmesg);
+
+		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%3i %3.3s %i %s",
+			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
+			msg.getMessageOName (), msg.getType (), msg.getMessageString ());
+
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		maxrow++;
 	}
