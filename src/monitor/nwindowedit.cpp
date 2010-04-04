@@ -18,13 +18,13 @@
  */
 
 #include "nmonitor.h"
-#include "rts2nwindowedit.h"
+#include "nwindowedit.h"
 
 #include <ctype.h>
 
 #define MIN(x,y) ((x < y) ? x : y)
 
-Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindow (_x, _y, w, h, border)
+NWindowEdit::NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindow (_x, _y, w, h, border)
 {
 	ex = _ex;
 	ey = _ey;
@@ -33,17 +33,17 @@ Rts2NWindowEdit::Rts2NWindowEdit (int _x, int _y, int w, int h, int _ex, int _ey
 	comwin = newpad (_eh, _ew);
 }
 
-Rts2NWindowEdit::~Rts2NWindowEdit (void)
+NWindowEdit::~NWindowEdit (void)
 {
 	delwin (comwin);
 }
 
-bool Rts2NWindowEdit::passKey (int key)
+bool NWindowEdit::passKey (int key)
 {
 	return isalnum (key) || isspace (key) || key == '.'  || key == ',';
 }
 
-keyRet Rts2NWindowEdit::injectKey (int key)
+keyRet NWindowEdit::injectKey (int key)
 {
 	switch (key)
 	{
@@ -84,15 +84,15 @@ keyRet Rts2NWindowEdit::injectKey (int key)
 				}
 				return RKEY_HANDLED;
 			}
-			return Rts2NWindow::injectKey (key);
+			return NWindow::injectKey (key);
 	}
 	return RKEY_HANDLED;
 }
 
-void Rts2NWindowEdit::refresh ()
+void NWindowEdit::refresh ()
 {
 	int w, h;
-	Rts2NWindow::refresh ();
+	NWindow::refresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	// window coordinates
@@ -113,7 +113,7 @@ void Rts2NWindowEdit::refresh ()
 	}
 }
 
-bool Rts2NWindowEdit::setCursor ()
+bool NWindowEdit::setCursor ()
 {
 	getbegyx (getWriteWindow (), y, x);
 	x += getCurX ();
@@ -122,18 +122,18 @@ bool Rts2NWindowEdit::setCursor ()
 	return true;
 }
 
-Rts2NWindowEditIntegers::Rts2NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+NWindowEditIntegers::NWindowEditIntegers (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 
-bool Rts2NWindowEditIntegers::passKey (int key)
+bool NWindowEditIntegers::passKey (int key)
 {
 	if (isdigit (key) || key == '+' || key == '-')
 		return true;
 	return false;
 }
 
-int Rts2NWindowEditIntegers::getValueInteger ()
+int NWindowEditIntegers::getValueInteger ()
 {
 	char buf[200];
 	char *endptr;
@@ -147,18 +147,18 @@ int Rts2NWindowEditIntegers::getValueInteger ()
 	return tval;
 }
 
-Rts2NWindowEditDigits::Rts2NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):Rts2NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
+NWindowEditDigits::NWindowEditDigits (int _x, int _y, int w, int h, int _ex, int _ey, int _ew, int _eh, bool border):NWindowEdit (_x, _y, w, h, _ex, _ey, _ew, _eh, border)
 {
 }
 
-bool Rts2NWindowEditDigits::passKey (int key)
+bool NWindowEditDigits::passKey (int key)
 {
 	if (isdigit (key) || key == '.' || key == ',' || key == '+' || key == '-')
 		return true;
 	return false;
 }
 
-double Rts2NWindowEditDigits::getValueDouble ()
+double NWindowEditDigits::getValueDouble ()
 {
 	char buf[200];
 	char *endptr;

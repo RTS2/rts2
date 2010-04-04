@@ -1,18 +1,41 @@
+/* 
+ * Windowing class build on ncurses
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+
 #ifndef __RTS2_NWINDOW__
 #define __RTS2_NWINDOW__
 
 #include <curses.h>
 
-#include "rts2nlayout.h"
+#include "nlayout.h"
 
-typedef enum
-{ RKEY_ENTER, RKEY_ESC, RKEY_HANDLED, RKEY_NOT_HANDLED }
-keyRet;
+typedef enum { RKEY_ENTER, RKEY_ESC, RKEY_HANDLED, RKEY_NOT_HANDLED } keyRet;
+
+namespace rts2ncurses
+{
 
 /**
  * Basic class for NCurser windows.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
-class Rts2NWindow:public Rts2NLayout
+class NWindow:public Layout
 {
 	private:
 		bool _haveBox;
@@ -21,8 +44,8 @@ class Rts2NWindow:public Rts2NLayout
 		WINDOW * window;
 		void errorMove (const char *op, int y, int x, int h, int w);
 	public:
-		Rts2NWindow (int x, int y, int w, int h, bool border = true);
-		virtual ~ Rts2NWindow (void);
+		NWindow (int x, int y, int w, int h, bool border = true);
+		virtual ~ NWindow (void);
 		/**
 		 * Handles key pressed event. Return values has following meaning:
 		 * RKEY_ENTER - enter key was pressed, we should do some action and possibly exit the window
@@ -128,4 +151,6 @@ class Rts2NWindow:public Rts2NLayout
 			return active;
 		}
 };
+
+}
 #endif							 /* !__RTS2_NWINDOW__ */

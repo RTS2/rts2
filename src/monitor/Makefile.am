@@ -2,11 +2,11 @@
 
 bin_PROGRAMS = rts2-mon rts2-cmon rts2-talker
 
-noinst_HEADERS = nmonitor.h rts2nwindow.h rts2daemonwindow.h rts2nmenu.h rts2nmsgbox.h rts2nmsgwindow.h rts2nstatuswindow.h \
-	rts2ncomwin.h rts2nlayout.h rts2nvaluebox.h rts2ndevicewindow.h rts2nwindowedit.h
+noinst_HEADERS = nmonitor.h nwindow.h daemonwindow.h nmenu.h nmsgbox.h nmsgwindow.h nstatuswindow.h \
+	ncomwin.h nlayout.h nvaluebox.h ndevicewindow.h nwindowedit.h
 
-rts2_mon_SOURCES = nmonitor.cpp rts2nwindow.cpp rts2daemonwindow.cpp rts2nmenu.cpp rts2nmsgbox.cpp rts2nmsgwindow.cpp \
-	rts2nstatuswindow.cpp rts2ncomwin.cpp rts2nlayout.cpp rts2nvaluebox.cpp rts2ndevicewindow.cpp rts2nwindowedit.cpp
+rts2_mon_SOURCES = nmonitor.cpp nwindow.cpp daemonwindow.cpp nmenu.cpp nmsgbox.cpp nmsgwindow.cpp \
+	nstatuswindow.cpp ncomwin.cpp nlayout.cpp nvaluebox.cpp ndevicewindow.cpp nwindowedit.cpp
 
 if PGSQL
 

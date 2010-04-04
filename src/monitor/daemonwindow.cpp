@@ -1,9 +1,30 @@
+/* 
+ * NCurses layout engine
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "nmonitor.h"
-#include "rts2daemonwindow.h"
+#include "daemonwindow.h"
 
 #include <iostream>
 
-Rts2NSelWindow::Rts2NSelWindow (int x, int y, int w, int h, int border, int sw, int sh):Rts2NWindow (x, y, w, h, border)
+using namespace rts2ncurses;
+
+NSelWindow::NSelWindow (int x, int y, int w, int h, int border, int sw, int sh):NWindow (x, y, w, h, border)
 {
 	selrow = 0;
 	maxrow = 0;
@@ -13,12 +34,12 @@ Rts2NSelWindow::Rts2NSelWindow (int x, int y, int w, int h, int border, int sw, 
 	lineOffset = 1;
 }
 
-Rts2NSelWindow::~Rts2NSelWindow (void)
+NSelWindow::~NSelWindow (void)
 {
 	delwin (scrolpad);
 }
 
-keyRet Rts2NSelWindow::injectKey (int key)
+keyRet NSelWindow::injectKey (int key)
 {
 	switch (key)
 	{
@@ -67,12 +88,12 @@ keyRet Rts2NSelWindow::injectKey (int key)
 			}
 			break;
 		default:
-			return Rts2NWindow::injectKey (key);
+			return NWindow::injectKey (key);
 	}
 	return RKEY_HANDLED;
 }
 
-void Rts2NSelWindow::refresh ()
+void NSelWindow::refresh ()
 {
 	int x, y;
 	int w, h;
@@ -93,7 +114,7 @@ void Rts2NSelWindow::refresh ()
 			mvwchgat (scrolpad, maxrow - 1, 0, w, A_REVERSE, 0, NULL);
 		}
 	}
-	Rts2NWindow::refresh ();
+	NWindow::refresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	// normalize selrow
@@ -109,18 +130,18 @@ void Rts2NSelWindow::refresh ()
 		pnoutrefresh (scrolpad, padoff_y, padoff_x, y, x, y + h - 1, x + w - 1);
 }
 
-Rts2NDevListWindow::Rts2NDevListWindow (Rts2Block * in_block):Rts2NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
+NDevListWindow::NDevListWindow (Rts2Block * in_block):NSelWindow (0, 1, 10, LINES - 20, 1, 50, 300)
 {
 	block = in_block;
 }
 
-Rts2NDevListWindow::~Rts2NDevListWindow (void)
+NDevListWindow::~NDevListWindow (void)
 {
 }
 
-void Rts2NDevListWindow::draw ()
+void NDevListWindow::draw ()
 {
-	Rts2NWindow::draw ();
+	NWindow::draw ();
 	werase (scrolpad);
 	maxrow = 0;
 	connections_t::iterator iter;
@@ -140,7 +161,7 @@ void Rts2NDevListWindow::draw ()
 	refresh ();
 }
 
-void Rts2NCentraldWindow::printState (Rts2Conn * conn)
+void NCentraldWindow::printState (Rts2Conn * conn)
 {
 	if (conn->getErrorState ())
 		wcolor_set (getWriteWindow (), CLR_FAILURE, NULL);
@@ -149,25 +170,25 @@ void Rts2NCentraldWindow::printState (Rts2Conn * conn)
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 }
 
-void Rts2NCentraldWindow::drawDevice (Rts2Conn * conn)
+void NCentraldWindow::drawDevice (Rts2Conn * conn)
 {
 	printState (conn);
 	maxrow++;
 }
 
-Rts2NCentraldWindow::Rts2NCentraldWindow (Rts2Client * in_client):Rts2NSelWindow (10, 1, COLS - 10, LINES - 25, 1, 300, 300)
+NCentraldWindow::NCentraldWindow (Rts2Client * in_client):NSelWindow (10, 1, COLS - 10, LINES - 25, 1, 300, 300)
 {
 	client = in_client;
 	draw ();
 }
 
-Rts2NCentraldWindow::~Rts2NCentraldWindow (void)
+NCentraldWindow::~NCentraldWindow (void)
 {
 }
 
-void Rts2NCentraldWindow::draw ()
+void NCentraldWindow::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	maxrow = 0;
 	connections_t::iterator iter;

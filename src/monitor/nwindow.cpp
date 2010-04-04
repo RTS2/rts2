@@ -1,10 +1,30 @@
+/* 
+ * Windowing class build on ncurses
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #include "nmonitor.h"
-#include "rts2nwindow.h"
+#include "nwindow.h"
 
 #include <iostream>
 
-Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, bool border)
-:Rts2NLayout ()
+using namespace rts2ncurses;
+
+NWindow::NWindow (int x, int y, int w, int h, bool border):Layout ()
 {
 	if (h <= 0)
 		h = 0;
@@ -21,22 +41,17 @@ Rts2NWindow::Rts2NWindow (int x, int y, int w, int h, bool border)
 	active = false;
 }
 
-
-Rts2NWindow::~Rts2NWindow (void)
+NWindow::~NWindow (void)
 {
 	delwin (window);
 }
 
-
-keyRet
-Rts2NWindow::injectKey (int key)
+keyRet NWindow::injectKey (int key)
 {
 	return RKEY_NOT_HANDLED;
 }
 
-
-void
-Rts2NWindow::draw ()
+void NWindow::draw ()
 {
 	werase (window);
 	if (haveBox ())
@@ -53,63 +68,49 @@ Rts2NWindow::draw ()
 	}
 }
 
-
-int
-Rts2NWindow::getX ()
+int NWindow::getX ()
 {
 	int x, y;
 	getbegyx (window, y, x);
 	return x;
 }
 
-
-int
-Rts2NWindow::getY ()
+int NWindow::getY ()
 {
 	int x, y;
 	getbegyx (window, y, x);
 	return y;
 }
 
-
-int
-Rts2NWindow::getCurX ()
+int NWindow::getCurX ()
 {
 	int x, y;
 	getyx (getWriteWindow (), y, x);
 	return x;
 }
 
-
-int
-Rts2NWindow::getCurY ()
+int NWindow::getCurY ()
 {
 	int x, y;
 	getyx (getWriteWindow (), y, x);
 	return y;
 }
 
-
-int
-Rts2NWindow::getWidth ()
+int NWindow::getWidth ()
 {
 	int w, h;
 	getmaxyx (window, h, w);
 	return w;
 }
 
-
-int
-Rts2NWindow::getHeight ()
+int NWindow::getHeight ()
 {
 	int w, h;
 	getmaxyx (window, h, w);
 	return h;
 }
 
-
-int
-Rts2NWindow::getWriteWidth ()
+int NWindow::getWriteWidth ()
 {
 	int ret = getWidth ();
 	if (haveBox ())
@@ -117,9 +118,7 @@ Rts2NWindow::getWriteWidth ()
 	return ret;
 }
 
-
-int
-Rts2NWindow::getWriteHeight ()
+int NWindow::getWriteHeight ()
 {
 	int ret = getHeight ();
 	if (haveBox ())
@@ -127,9 +126,7 @@ Rts2NWindow::getWriteHeight ()
 	return ret;
 }
 
-
-void
-Rts2NWindow::errorMove (const char *op, int y, int x, int h, int w)
+void NWindow::errorMove (const char *op, int y, int x, int h, int w)
 {
 	endwin ();
 	std::cout << "Cannot perform ncurses operation " << op
@@ -141,9 +138,7 @@ Rts2NWindow::errorMove (const char *op, int y, int x, int h, int w)
 	exit (EXIT_FAILURE);
 }
 
-
-void
-Rts2NWindow::move (int x, int y)
+void NWindow::move (int x, int y)
 {
 	int _x, _y;
 	getbegyx (window, _y, _x);
@@ -153,18 +148,14 @@ Rts2NWindow::move (int x, int y)
 		errorMove ("mvwin", y, x, -1, -1);
 }
 
-
-void
-Rts2NWindow::resize (int x, int y, int w, int h)
+void NWindow::resize (int x, int y, int w, int h)
 {
 	if (wresize (window, h, w) == ERR)
 		errorMove ("wresize", 0, 0, h, w);
 	move (x, y);
 }
 
-
-void
-Rts2NWindow::grow (int max_w, int h_dif)
+void NWindow::grow (int max_w, int h_dif)
 {
 	int x, y, w, h;
 	getbegyx (window, y, x);
@@ -174,30 +165,22 @@ Rts2NWindow::grow (int max_w, int h_dif)
 	resize (x, y, w, h + h_dif);
 }
 
-
-void
-Rts2NWindow::refresh ()
+void NWindow::refresh ()
 {
 	wnoutrefresh (window);
 }
 
-
-void
-Rts2NWindow::enter ()
+void NWindow::enter ()
 {
 	active = true;
 }
 
-
-void
-Rts2NWindow::leave ()
+void NWindow::leave ()
 {
 	active = false;
 }
 
-
-bool
-Rts2NWindow::setCursor ()
+bool NWindow::setCursor ()
 {
 	return false;
 }

@@ -23,11 +23,11 @@
 #include "../utils/rts2value.h"
 #include "../utils/rts2valuerectangle.h"
 
-#include "rts2nwindow.h"
-#include "rts2nwindowedit.h"
-#include "rts2daemonwindow.h"
+#include "nwindow.h"
+#include "nwindowedit.h"
+#include "daemonwindow.h"
 
-namespace rts2ncur
+namespace rts2ncurses
 {
 
 /**
@@ -36,7 +36,7 @@ namespace rts2ncur
 class ValueBox
 {
 	private:
-		Rts2NWindow * topWindow;
+		NWindow * topWindow;
 		Rts2Value * val;
 	protected:
 		Rts2Value * getValue ()
@@ -44,7 +44,7 @@ class ValueBox
 			return val;
 		}
 	public:
-		ValueBox (Rts2NWindow * top, Rts2Value * _val);
+		ValueBox (NWindow * top, Rts2Value * _val);
 		virtual ~ValueBox (void);
 		virtual keyRet injectKey (int key) = 0;
 		virtual void draw () = 0;
@@ -55,10 +55,10 @@ class ValueBox
 /**
  * Holds edit box for boolean value.
  */
-class ValueBoxBool:public ValueBox, Rts2NSelWindow
+class ValueBoxBool:public ValueBox, NSelWindow
 {
 	public:
-		ValueBoxBool (Rts2NWindow * top, Rts2ValueBool * _val, int _x, int _y);
+		ValueBoxBool (NWindow * top, Rts2ValueBool * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -68,10 +68,10 @@ class ValueBoxBool:public ValueBox, Rts2NSelWindow
 /**
  * Holds edit box for string value.
  */
-class ValueBoxString:public ValueBox, Rts2NWindowEdit
+class ValueBoxString:public ValueBox, NWindowEdit
 {
 	public:
-		ValueBoxString (Rts2NWindow * top, Rts2Value * _val, int _x, int _y);
+		ValueBoxString (NWindow * top, Rts2Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -81,10 +81,10 @@ class ValueBoxString:public ValueBox, Rts2NWindowEdit
 /**
  * Holds edit box for integer value.
  */
-class ValueBoxInteger:public ValueBox, Rts2NWindowEditIntegers
+class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 {
 	public:
-		ValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * _val, int _x, int _y);
+		ValueBoxInteger (NWindow * top, Rts2ValueInteger * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -94,10 +94,10 @@ class ValueBoxInteger:public ValueBox, Rts2NWindowEditIntegers
 /**
  * Holds edit box for long integer value.
  */
-class ValueBoxLongInteger:public ValueBox, Rts2NWindowEditIntegers
+class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 {
 	public:
-		ValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * _val, int _x, int _y);
+		ValueBoxLongInteger (NWindow * top, Rts2ValueLong * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
@@ -107,10 +107,10 @@ class ValueBoxLongInteger:public ValueBox, Rts2NWindowEditIntegers
 /**
  * Holds edit box for float value.
  */
-class ValueBoxFloat:public ValueBox, Rts2NWindowEditDigits
+class ValueBoxFloat:public ValueBox, NWindowEditDigits
 {
 	public:
-		ValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * _val, int _x, int _y);
+		ValueBoxFloat (NWindow * top, Rts2ValueFloat * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -121,10 +121,10 @@ class ValueBoxFloat:public ValueBox, Rts2NWindowEditDigits
 /**
  * Holds edit box for double value.
  */
-class ValueBoxDouble:public ValueBox, Rts2NWindowEditDigits
+class ValueBoxDouble:public ValueBox, NWindowEditDigits
 {
 	public:
-		ValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * _val, int _x, int _y);
+		ValueBoxDouble (NWindow * top, Rts2ValueDouble * _val, int _x, int _y);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -137,10 +137,10 @@ class ValueBoxDouble:public ValueBox, Rts2NWindowEditDigits
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class AbstractBoxSelection:public ValueBox, public Rts2NSelWindow
+class AbstractBoxSelection:public ValueBox, public NSelWindow
 {
 	public:
-		AbstractBoxSelection (Rts2NWindow * top, Rts2Value * _val, int _x, int _y);
+		AbstractBoxSelection (NWindow * top, Rts2Value * _val, int _x, int _y);
 		virtual keyRet injectKey (int key);
 		virtual bool setCursor ();
 	protected:
@@ -155,7 +155,7 @@ class AbstractBoxSelection:public ValueBox, public Rts2NSelWindow
 class ValueBoxSelection:public AbstractBoxSelection
 {
 	public:
-		ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y);
+		ValueBoxSelection (NWindow * top, Rts2ValueSelection * _val, int _x, int _y);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 };
@@ -168,7 +168,7 @@ class ValueBoxSelection:public AbstractBoxSelection
 class ValueBoxTimeDiff:public AbstractBoxSelection
 {
 	public:
-		ValueBoxTimeDiff (Rts2NWindow * top, Rts2ValueTime *_val, int _x, int _y);
+		ValueBoxTimeDiff (NWindow * top, Rts2ValueTime *_val, int _x, int _y);
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 };
@@ -176,13 +176,13 @@ class ValueBoxTimeDiff:public AbstractBoxSelection
 /**
  * Provides edit box for editting rectangle (4 numbers)
  */
-class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
+class ValueBoxRectangle:public ValueBox, NWindowEdit
 {
 	private:
-		Rts2NWindowEditIntegers * edt[4];
+		NWindowEditIntegers * edt[4];
 		int edtSelected;
 	public:
-		ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
+		ValueBoxRectangle (NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
 		virtual ~ValueBoxRectangle ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -195,13 +195,13 @@ class ValueBoxRectangle:public ValueBox, Rts2NWindowEdit
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class ValueBoxRaDec:public ValueBox, Rts2NWindowEdit
+class ValueBoxRaDec:public ValueBox, NWindowEdit
 {
 	private:
-		Rts2NWindowEditDigits * edt[2];
+		NWindowEditDigits * edt[2];
 		int edtSelected;
 	public:
-		ValueBoxRaDec (Rts2NWindow * top, Rts2ValueRaDec * _val, int _x, int _y);
+		ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y);
 		virtual ~ValueBoxRaDec ();
 		virtual keyRet injectKey (int key);
 		virtual void draw ();

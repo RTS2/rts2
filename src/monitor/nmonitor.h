@@ -35,14 +35,14 @@
 #include "../db/simbad/simbadtarget.h"
 #endif
 
-#include "rts2nlayout.h"
-#include "rts2daemonwindow.h"
-#include "rts2ndevicewindow.h"
-#include "rts2nmenu.h"
-#include "rts2nmsgbox.h"
-#include "rts2nmsgwindow.h"
-#include "rts2nstatuswindow.h"
-#include "rts2ncomwin.h"
+#include "nlayout.h"
+#include "daemonwindow.h"
+#include "ndevicewindow.h"
+#include "nmenu.h"
+#include "nmsgbox.h"
+#include "nmsgwindow.h"
+#include "nstatuswindow.h"
+#include "ncomwin.h"
 
 // colors used in monitor
 #define CLR_DEFAULT          1
@@ -71,20 +71,21 @@
 #define MENU_DEBUG_LIMITED  12
 #define MENU_DEBUG_FULL     13
 
-enum messageAction
-{ SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
+enum messageAction { SWITCH_OFF, SWITCH_STANDBY, SWITCH_ON };
+
+using namespace rts2ncurses;
 
 /**
- *
  * This class hold "root" window of display,
  * takes care about displaying it's connection etc..
  *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
-class Rts2NMonitor:public Rts2Client
+class NMonitor:public Rts2Client
 {
 	public:
-		Rts2NMonitor (int argc, char **argv);
-		virtual ~ Rts2NMonitor (void);
+		NMonitor (int argc, char **argv);
+		virtual ~ NMonitor (void);
 
 		virtual int init ();
 		virtual int idle ();
@@ -113,21 +114,21 @@ class Rts2NMonitor:public Rts2Client
 
 	private:
 		WINDOW * cursesWin;
-		Rts2NLayout *masterLayout;
-		Rts2NLayoutBlock *daemonLayout;
-		Rts2NDevListWindow *deviceList;
-		Rts2NWindow *daemonWindow;
-		Rts2NMsgWindow *msgwindow;
-		Rts2NComWin *comWindow;
-		Rts2NMenu *menu;
+		Layout *masterLayout;
+		LayoutBlock *daemonLayout;
+		NDevListWindow *deviceList;
+		NWindow *daemonWindow;
+		NMsgWindow *msgwindow;
+		NComWin *comWindow;
+		NMenu *menu;
 
-		Rts2NMsgBox *msgBox;
+		NMsgBox *msgBox;
 
-		Rts2NStatusWindow *statusWindow;
+		NStatusWindow *statusWindow;
 
 		rts2core::Rts2Command *oldCommand;
 
-		std::list < Rts2NWindow * >windowStack;
+		std::list < NWindow * >windowStack;
 
 		int cmd_col;
 		char cmd_buf[CMD_BUF_LEN];
@@ -143,13 +144,13 @@ class Rts2NMonitor:public Rts2Client
 		void menuPerform (int code);
 		void leaveMenu ();
 
-		void changeActive (Rts2NWindow * new_active);
+		void changeActive (NWindow * new_active);
 		void changeListConnection ();
 
 		int old_lines;
 		int old_cols;
 
-		Rts2NWindow *getActiveWindow () { return *(--windowStack.end ()); }
+		NWindow *getActiveWindow () { return *(--windowStack.end ()); }
 		void setXtermTitle (const std::string &title) { std::cout << "\033]2;" << title << "\007"; }
 
 		void sendCommand ();
@@ -178,10 +179,10 @@ class Rts2NMonitor:public Rts2Client
 /**
  * Make sure that update of connection state is notified in monitor.
  */
-class Rts2NMonConn:public Rts2ConnClient
+class NMonConn:public Rts2ConnClient
 {
 	public:
-		Rts2NMonConn (Rts2NMonitor * _master, int _centrald_num, char *_name):Rts2ConnClient (_master, _centrald_num, _name)
+		NMonConn (NMonitor * _master, int _centrald_num, char *_name):Rts2ConnClient (_master, _centrald_num, _name)
 		{
 			master = _master;
 		}
@@ -192,16 +193,16 @@ class Rts2NMonConn:public Rts2ConnClient
 			return Rts2ConnClient::commandReturn (cmd, in_status);
 		}
 	private:
-		Rts2NMonitor * master;
+		NMonitor * master;
 };
 
 /**
  * Make sure that command end is properly reflected
  */
-class Rts2NMonCentralConn:public Rts2ConnCentraldClient
+class NMonCentralConn:public Rts2ConnCentraldClient
 {
 	public:
-		Rts2NMonCentralConn (Rts2NMonitor * in_master,
+		NMonCentralConn (NMonitor * in_master,
 			const char *in_login,
 			const char *in_password,
 			const char *in_master_host,
@@ -221,6 +222,6 @@ class Rts2NMonCentralConn:public Rts2ConnCentraldClient
 			Rts2ConnCentraldClient::commandReturn (cmd, in_status);
 		}
 	private:
-		Rts2NMonitor * master;
+		NMonitor * master;
 };
 #endif							 /* !__RTS2_NMONITOR__ */

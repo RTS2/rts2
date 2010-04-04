@@ -32,7 +32,9 @@
 char *XCursesProgramName = "rts2-mon";
 #endif
 
-void Rts2NMonitor::sendCommand ()
+using namespace rts2ncurses;
+
+void NMonitor::sendCommand ()
 {
 	int curX = comWindow->getCurX ();
 	char command[curX + 1];
@@ -68,7 +70,7 @@ void Rts2NMonitor::sendCommand ()
 	}
 }
 
-int Rts2NMonitor::processOption (int in_opt)
+int NMonitor::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -81,7 +83,7 @@ int Rts2NMonitor::processOption (int in_opt)
 	return 0;
 }
 
-int Rts2NMonitor::processArgs (const char *arg)
+int NMonitor::processArgs (const char *arg)
 {
 #ifdef HAVE_PGSQL
 	tarArg = new rts2db::SimbadTarget (arg);
@@ -102,21 +104,21 @@ int Rts2NMonitor::processArgs (const char *arg)
 #endif
 }
 
-void Rts2NMonitor::addSelectSocks ()
+void NMonitor::addSelectSocks ()
 {
 	// add stdin for ncurses input
 	FD_SET (1, &read_set);
 	Rts2Client::addSelectSocks ();
 }
 
-Rts2ConnCentraldClient * Rts2NMonitor::createCentralConn ()
+Rts2ConnCentraldClient * NMonitor::createCentralConn ()
 {
-	return new Rts2NMonCentralConn (this, getCentralLogin (),
+	return new NMonCentralConn (this, getCentralLogin (),
 		getCentralPassword (), getCentralHost (),
 		getCentralPort ());
 }
 
-void Rts2NMonitor::selectSuccess ()
+void NMonitor::selectSuccess ()
 {
 	Rts2Client::selectSuccess ();
 	while (1)
@@ -128,18 +130,18 @@ void Rts2NMonitor::selectSuccess ()
 	}
 }
 
-void Rts2NMonitor::messageBox (const char *query, messageAction action)
+void NMonitor::messageBox (const char *query, messageAction action)
 {
 	const static char *buts[] = { "Yes", "No" };
 	if (msgBox)
 		return;
 	msgAction = action;
-	msgBox = new Rts2NMsgBox (query, buts, 2);
+	msgBox = new NMsgBox (query, buts, 2);
 	msgBox->draw ();
 	windowStack.push_back (msgBox);
 }
 
-void Rts2NMonitor::messageBoxEnd ()
+void NMonitor::messageBoxEnd ()
 {
 	if (msgBox->exitState == 0)
 	{
@@ -167,7 +169,7 @@ void Rts2NMonitor::messageBoxEnd ()
 	windowStack.pop_back ();
 }
 
-void Rts2NMonitor::menuPerform (int code)
+void NMonitor::menuPerform (int code)
 {
 	switch (code)
 	{
@@ -199,22 +201,22 @@ void Rts2NMonitor::menuPerform (int code)
 	}
 }
 
-void Rts2NMonitor::leaveMenu ()
+void NMonitor::leaveMenu ()
 {
 	menu->leave ();
 	windowStack.pop_back ();
 }
 
-void Rts2NMonitor::changeActive (Rts2NWindow * new_active)
+void NMonitor::changeActive (NWindow * new_active)
 {
-	Rts2NWindow *activeWindow = *(--windowStack.end ());
+	NWindow *activeWindow = *(--windowStack.end ());
 	windowStack.pop_back ();
 	activeWindow->leave ();
 	windowStack.push_back (new_active);
 	new_active->enter ();
 }
 
-void Rts2NMonitor::changeListConnection ()
+void NMonitor::changeListConnection ()
 {
 	Rts2Conn *conn = connectionAt (deviceList->getSelRow ());
 	if (conn)
@@ -225,21 +227,21 @@ void Rts2NMonitor::changeListConnection ()
 		connections_t::iterator iter;
 		for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
 			if (conn == (*iter))
-				daemonWindow = new Rts2NDeviceCentralWindow (conn);
+				daemonWindow = new NDeviceCentralWindow (conn);
 
 		if (daemonWindow == NULL)
-			daemonWindow = new Rts2NDeviceWindow (conn);
+			daemonWindow = new NDeviceWindow (conn);
 	}
 	else
 	{
 		delete daemonWindow;
-		daemonWindow = new Rts2NCentraldWindow (this);
+		daemonWindow = new NCentraldWindow (this);
 	}
 	daemonLayout->setLayoutA (daemonWindow);
 	resize ();
 }
 
-Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
+NMonitor::NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in_argv)
 {
 	masterLayout = NULL;
 	daemonLayout = NULL;
@@ -275,8 +277,7 @@ Rts2NMonitor::Rts2NMonitor (int in_argc, char **in_argv):Rts2Client (in_argc, in
 	setXtermTitle (_os.str ());
 }
 
-
-Rts2NMonitor::~Rts2NMonitor (void)
+NMonitor::~NMonitor (void)
 {
 	erase ();
 	refresh ();
@@ -295,7 +296,7 @@ Rts2NMonitor::~Rts2NMonitor (void)
 #endif
 }
 
-int Rts2NMonitor::repaint ()
+int NMonitor::repaint ()
 {
 	curs_set (0);
 	if (LINES != old_lines || COLS != old_cols)
@@ -313,7 +314,7 @@ int Rts2NMonitor::repaint ()
 	if (msgBox)
 		msgBox->draw ();
 
-	Rts2NWindow *activeWindow = getActiveWindow ();
+	NWindow *activeWindow = getActiveWindow ();
 	if (!activeWindow->setCursor ())
 		comWindow->setCursor ();
 	curs_set (1);
@@ -321,7 +322,7 @@ int Rts2NMonitor::repaint ()
 	return 0;
 }
 
-int Rts2NMonitor::init ()
+int NMonitor::init ()
 {
 	int ret;
 	ret = Rts2Client::init ();
@@ -347,21 +348,21 @@ int Rts2NMonitor::init ()
 	ESCDELAY = 0;
 
 	// create & init menu
-	menu = new Rts2NMenu ();
-	Rts2NSubmenu *sub = new Rts2NSubmenu ("System");
+	menu = new NMenu ();
+	NSubmenu *sub = new NSubmenu ("System");
 	sub->createAction ("Off", MENU_OFF);
 	sub->createAction ("Standby", MENU_STANDBY);
 	sub->createAction ("On", MENU_ON);
 	sub->createAction ("Exit", MENU_EXIT);
 	menu->addSubmenu (sub);
 
-	sub = new Rts2NSubmenu ("Debug");
+	sub = new NSubmenu ("Debug");
 	sub->createAction ("Basic", MENU_DEBUG_BASIC);
 	sub->createAction ("Limited", MENU_DEBUG_LIMITED);
 	sub->createAction ("Full", MENU_DEBUG_FULL);
 	menu->addSubmenu (sub);
 
-	sub = new Rts2NSubmenu ("Help");
+	sub = new NSubmenu ("Help");
 	sub->createAction ("About", MENU_ABOUT);
 	menu->addSubmenu (sub);
 
@@ -384,18 +385,18 @@ int Rts2NMonitor::init ()
 	}
 
 	// init windows
-	deviceList = new Rts2NDevListWindow (this);
-	comWindow = new Rts2NComWin ();
-	msgwindow = new Rts2NMsgWindow ();
+	deviceList = new NDevListWindow (this);
+	comWindow = new NComWin ();
+	msgwindow = new NMsgWindow ();
 	windowStack.push_back (deviceList);
 	deviceList->enter ();
-	statusWindow = new Rts2NStatusWindow (comWindow, this);
-	daemonWindow = new Rts2NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
+	statusWindow = new NStatusWindow (comWindow, this);
+	daemonWindow = new NDeviceCentralWindow (*(getCentraldConns ()->begin ()));
 
 	// init layout
-	daemonLayout = new Rts2NLayoutBlockFixedB (daemonWindow, comWindow, false, 3);
-	masterLayout = new Rts2NLayoutBlock (deviceList, daemonLayout, true, 10);
-	masterLayout = new Rts2NLayoutBlock (masterLayout, msgwindow, false, 75);
+	daemonLayout = new LayoutBlockFixedB (daemonWindow, comWindow, false, 3);
+	masterLayout = new LayoutBlock (deviceList, daemonLayout, true, 8);
+	masterLayout = new LayoutBlock (masterLayout, msgwindow, false, 75);
 
 	connections_t::iterator iter;
 	for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
@@ -408,7 +409,7 @@ int Rts2NMonitor::init ()
 	return repaint ();
 }
 
-int Rts2NMonitor::idle ()
+int NMonitor::idle ()
 {
 	int ret = Rts2Client::idle ();
 	repaint ();
@@ -416,12 +417,12 @@ int Rts2NMonitor::idle ()
 	return ret;
 }
 
-Rts2ConnClient * Rts2NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
+Rts2ConnClient * NMonitor::createClientConnection (int _centrald_num, char *_deviceName)
 {
-	return new Rts2NMonConn (this, _centrald_num, _deviceName);
+	return new NMonConn (this, _centrald_num, _deviceName);
 }
 
-rts2core::Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient * NMonitor::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	rts2core::Rts2DevClient *retC = Rts2Client::createOtherType (conn, other_device_type);
 #ifdef HAVE_PGSQL
@@ -435,7 +436,7 @@ rts2core::Rts2DevClient * Rts2NMonitor::createOtherType (Rts2Conn * conn, int ot
 	return retC;
 }
 
-int Rts2NMonitor::deleteConnection (Rts2Conn * conn)
+int NMonitor::deleteConnection (Rts2Conn * conn)
 {
 	if (conn == connectionAt (deviceList->getSelRow ()))
 	{
@@ -445,12 +446,12 @@ int Rts2NMonitor::deleteConnection (Rts2Conn * conn)
 	return Rts2Client::deleteConnection (conn);
 }
 
-void Rts2NMonitor::message (Rts2Message & msg)
+void NMonitor::message (Rts2Message & msg)
 {
 	*msgwindow << msg;
 }
 
-void Rts2NMonitor::resize ()
+void NMonitor::resize ()
 {
 	menu->resize (0, 0, COLS, 1);
 	statusWindow->resize (0, LINES - 1, COLS, 1);
@@ -460,9 +461,9 @@ void Rts2NMonitor::resize ()
 	old_cols = COLS;
 }
 
-void Rts2NMonitor::processKey (int key)
+void NMonitor::processKey (int key)
 {
-	Rts2NWindow *activeWindow = getActiveWindow ();
+	NWindow *activeWindow = getActiveWindow ();
 	keyRet ret = RKEY_HANDLED;
 	switch (key)
 	{
@@ -572,7 +573,7 @@ void Rts2NMonitor::processKey (int key)
 	}
 	else if (activeWindow == menu && ret != RKEY_HANDLED)
 	{
-		Rts2NAction *action;
+		NAction *action;
 		action = menu->getSelAction ();
 		if (action)
 		{
@@ -586,7 +587,7 @@ void Rts2NMonitor::processKey (int key)
 	}
 }
 
-void Rts2NMonitor::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
+void NMonitor::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 {
 	if (oldCommand == cmd)
 		comWindow->commandReturn (cmd, cmd_status);
@@ -594,6 +595,6 @@ void Rts2NMonitor::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 
 int main (int argc, char **argv)
 {
-	Rts2NMonitor monitor = Rts2NMonitor (argc, argv);
+	NMonitor monitor = NMonitor (argc, argv);
 	return monitor.run ();
 }

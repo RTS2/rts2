@@ -20,16 +20,17 @@
 #ifndef __RTS2_NDEVICEWINDOW__
 #define __RTS2_NDEVICEWINDOW__
 
-#include "rts2daemonwindow.h"
-#include "rts2nvaluebox.h"
+#include "daemonwindow.h"
+#include "nvaluebox.h"
 
-using namespace rts2ncur;
+namespace rts2ncurses
+{
 
-class Rts2NDeviceWindow:public Rts2NSelWindow
+class NDeviceWindow:public NSelWindow
 {
 	public:
-		Rts2NDeviceWindow (Rts2Conn * in_connection);
-		virtual ~ Rts2NDeviceWindow (void);
+		NDeviceWindow (Rts2Conn * in_connection);
+		virtual ~ NDeviceWindow (void);
 
 		virtual keyRet injectKey (int key);
 		virtual void draw ();
@@ -99,11 +100,11 @@ class FutureStateChange
 /**
  * Class used to display extra centrald values, which are calculated on client side.
  */
-class Rts2NDeviceCentralWindow:public Rts2NDeviceWindow
+class NDeviceCentralWindow:public NDeviceWindow
 {
 	public:
-		Rts2NDeviceCentralWindow (Rts2Conn * in_connection);
-		virtual ~ Rts2NDeviceCentralWindow (void);
+		NDeviceCentralWindow (Rts2Conn * in_connection);
+		virtual ~ NDeviceCentralWindow (void);
 
 	protected:
 		virtual void drawValuesList ();
@@ -113,4 +114,6 @@ class Rts2NDeviceCentralWindow:public Rts2NDeviceWindow
 
 		void printValues ();
 };
+
+}
 #endif							 /* ! __RTS2_NDEVICEWINDOW__ */

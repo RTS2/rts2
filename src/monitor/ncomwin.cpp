@@ -1,21 +1,40 @@
-#include "nmonitor.h"
-#include "rts2ncomwin.h"
+/* 
+ * RTS2 communication window
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-Rts2NComWin::Rts2NComWin ():Rts2NWindow (11, LINES - 24, COLS - 12, 3, 0)
+#include "nmonitor.h"
+#include "ncomwin.h"
+
+using namespace rts2ncurses;
+
+NComWin::NComWin ():NWindow (11, LINES - 24, COLS - 12, 3, 0)
 {
 	comwin = newpad (1, 300);
 	statuspad = newpad (2, 300);
 }
 
-
-Rts2NComWin::~Rts2NComWin (void)
+NComWin::~NComWin (void)
 {
 	delwin (comwin);
 	delwin (statuspad);
 }
 
-
-keyRet Rts2NComWin::injectKey (int key)
+keyRet NComWin::injectKey (int key)
 {
 	int
 		x,
@@ -33,24 +52,19 @@ keyRet Rts2NComWin::injectKey (int key)
 		default:
 			waddch (comwin, key);
 	}
-	return Rts2NWindow::injectKey (key);
+	return NWindow::injectKey (key);
 }
 
-
-void
-Rts2NComWin::draw ()
+void NComWin::draw ()
 {
-	Rts2NWindow::draw ();
+	NWindow::draw ();
 	refresh ();
 }
-
-
-void
-Rts2NComWin::refresh ()
+void NComWin::refresh ()
 {
 	int x, y;
 	int w, h;
-	Rts2NWindow::refresh ();
+	NWindow::refresh ();
 	getbegyx (window, y, x);
 	getmaxyx (window, h, w);
 	if (pnoutrefresh (comwin, 0, 0, y, x, y + 1, x + w - 1) == ERR)
@@ -59,7 +73,7 @@ Rts2NComWin::refresh ()
 		errorMove ("pnoutrefresh statuspad", y + 1, x, y + h - 1, x + w - 1);
 }
 
-bool Rts2NComWin::setCursor ()
+bool NComWin::setCursor ()
 {
 	int x, y;
 	getyx (comwin, y, x);
@@ -69,7 +83,7 @@ bool Rts2NComWin::setCursor ()
 	return true;
 }
 
-void Rts2NComWin::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
+void NComWin::commandReturn (rts2core::Rts2Command * cmd, int cmd_status)
 {
 	if (cmd_status == 0)
 		wcolor_set (statuspad, CLR_OK, NULL);

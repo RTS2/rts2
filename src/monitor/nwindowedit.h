@@ -20,12 +20,17 @@
 #ifndef __RTS2_NWINDOWEDIT__
 #define __RTS2_NWINDOWEDIT__
 
-#include "rts2nwindow.h"
+#include "nwindow.h"
+
+namespace rts2ncurses
+{
 
 /**
- * This is window with single edit box to edit values
+ * Window with single edit box to edit values.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
-class Rts2NWindowEdit:public Rts2NWindow
+class NWindowEdit:public NWindow
 {
 	private:
 		WINDOW * comwin;
@@ -50,9 +55,9 @@ class Rts2NWindowEdit:public Rts2NWindow
 		 * @param ex, ey, ew and eh are position of (single) edit box within this window.
 		 * @param border  True if border will be presented.
 		 */
-		Rts2NWindowEdit (int _x, int _y, int w, int h,
+		NWindowEdit (int _x, int _y, int w, int h,
 			int _ex, int _ey, int _ew, int _eh, bool border = true);
-		virtual ~ Rts2NWindowEdit (void);
+		virtual ~ NWindowEdit (void);
 
 		virtual keyRet injectKey (int key);
 		virtual void refresh ();
@@ -66,14 +71,16 @@ class Rts2NWindowEdit:public Rts2NWindow
 };
 
 /**
- * This is window with edit box for integers
+ * Window with edit box for integers.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
-class Rts2NWindowEditIntegers:public Rts2NWindowEdit
+class NWindowEditIntegers:public NWindowEdit
 {
 	protected:
 		virtual bool passKey (int key);
 	public:
-		Rts2NWindowEditIntegers (int _x, int _y, int w, int h,
+		NWindowEditIntegers (int _x, int _y, int w, int h,
 			int _ex, int _ey, int _ew, int _eh, bool border = true);
 		
 		/**
@@ -91,14 +98,16 @@ class Rts2NWindowEditIntegers:public Rts2NWindowEdit
 };
 
 /**
- * This is window with edit box for digits..
+ * Window with edit box for digits..
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
-class Rts2NWindowEditDigits:public Rts2NWindowEdit
+class NWindowEditDigits:public NWindowEdit
 {
 	protected:
 		virtual bool passKey (int key);
 	public:
-		Rts2NWindowEditDigits (int _x, int _y, int w, int h,
+		NWindowEditDigits (int _x, int _y, int w, int h,
 			int _ex, int _ey, int _ew, int _eh, bool border = true);
 
 		/**
@@ -115,4 +124,6 @@ class Rts2NWindowEditDigits:public Rts2NWindowEdit
 		double getValueDouble ();
 
 };
+
+}
 #endif							 /* !__RTS2_NWINDOWEDIT__ */

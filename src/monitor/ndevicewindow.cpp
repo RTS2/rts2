@@ -18,13 +18,15 @@
  */
 
 #include "nmonitor.h"
-#include "rts2ndevicewindow.h"
+#include "ndevicewindow.h"
 
 #include "../utils/timestamp.h"
 #include "../utils/rts2displayvalue.h"
 #include "../utils/riseset.h"
 
-Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow (10, 1, COLS - 10, LINES - 25)
+using namespace rts2ncurses;
+
+NDeviceWindow::NDeviceWindow (Rts2Conn * in_connection):NSelWindow (10, 1, COLS - 10, LINES - 25)
 {
 	connection = in_connection;
 	connection->resetInfoTime ();
@@ -33,11 +35,11 @@ Rts2NDeviceWindow::Rts2NDeviceWindow (Rts2Conn * in_connection):Rts2NSelWindow (
 	draw ();
 }
 
-Rts2NDeviceWindow::~Rts2NDeviceWindow ()
+NDeviceWindow::~NDeviceWindow ()
 {
 }
 
-void Rts2NDeviceWindow::printState ()
+void NDeviceWindow::printState ()
 {
 	wattron (window, A_REVERSE);
 	if (connection->getErrorState ())
@@ -47,12 +49,12 @@ void Rts2NDeviceWindow::printState ()
 	wattroff (window, A_REVERSE);
 }
 
-void Rts2NDeviceWindow::printValue (const char *name, const char *value, bool writeable)
+void NDeviceWindow::printValue (const char *name, const char *value, bool writeable)
 {
 	wprintw (getWriteWindow (), "%c %-20s %30s\n", (writeable ? 'W' : ' '), name, value);
 }
 
-void Rts2NDeviceWindow::printValue (Rts2Value * value)
+void NDeviceWindow::printValue (Rts2Value * value)
 {
 	// customize value display
 	std::ostringstream _os;
@@ -125,7 +127,7 @@ void Rts2NDeviceWindow::printValue (Rts2Value * value)
 	}
 }
 
-void Rts2NDeviceWindow::drawValuesList ()
+void NDeviceWindow::drawValuesList ()
 {
 	gettimeofday (&tvNow, NULL);
 	now = tvNow.tv_sec + tvNow.tv_usec / USEC_SEC;
@@ -139,7 +141,7 @@ void Rts2NDeviceWindow::drawValuesList ()
 	}
 }
 
-Rts2Value * Rts2NDeviceWindow::getSelValue ()
+Rts2Value * NDeviceWindow::getSelValue ()
 {
 	int s = getSelRow ();
 	if (s >= 0)
@@ -147,7 +149,7 @@ Rts2Value * Rts2NDeviceWindow::getSelValue ()
 	return NULL;
 }
 
-void Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
+void NDeviceWindow::printValueDesc (Rts2Value * val)
 {
 	wattron (window, A_REVERSE);
 	mvwprintw (window, getHeight () - 1, 2, "D: \"%s\"",
@@ -155,13 +157,13 @@ void Rts2NDeviceWindow::printValueDesc (Rts2Value * val)
 	wattroff (window, A_REVERSE);
 }
 
-void Rts2NDeviceWindow::endValueBox ()
+void NDeviceWindow::endValueBox ()
 {
 	delete valueBox;
 	valueBox = NULL;
 }
 
-void Rts2NDeviceWindow::createValueBox ()
+void NDeviceWindow::createValueBox ()
 {
 	int s = getSelRow ();
 	if (s < 0)
@@ -216,7 +218,7 @@ void Rts2NDeviceWindow::createValueBox ()
 	}
 }
 
-keyRet Rts2NDeviceWindow::injectKey (int key)
+keyRet NDeviceWindow::injectKey (int key)
 {
 	keyRet
 		ret;
@@ -245,17 +247,17 @@ keyRet Rts2NDeviceWindow::injectKey (int key)
 		}
 		return ret;
 	}
-	return Rts2NSelWindow::injectKey (key);
+	return NSelWindow::injectKey (key);
 }
 
-void Rts2NDeviceWindow::draw ()
+void NDeviceWindow::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	drawValuesList ();
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE, (maxrow > getHeight ()? maxrow + 1: getHeight ()));
+	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,	(maxrow > getHeight ()? maxrow + 1 : getHeight ()));
 	mvwaddch (window, 0, valueBegins + 1, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
 
@@ -266,29 +268,29 @@ void Rts2NDeviceWindow::draw ()
 	refresh ();
 }
 
-void Rts2NDeviceWindow::refresh ()
+void NDeviceWindow::refresh ()
 {
-	Rts2NSelWindow::refresh ();
+	NSelWindow::refresh ();
 	if (valueBox)
 		valueBox->draw ();
 }
 
-bool Rts2NDeviceWindow::setCursor ()
+bool NDeviceWindow::setCursor ()
 {
 	if (valueBox)
 		return valueBox->setCursor ();
-	return Rts2NSelWindow::setCursor ();
+	return NSelWindow::setCursor ();
 }
 
-Rts2NDeviceCentralWindow::Rts2NDeviceCentralWindow (Rts2Conn * in_connection):Rts2NDeviceWindow (in_connection)
+NDeviceCentralWindow::NDeviceCentralWindow (Rts2Conn * in_connection):NDeviceWindow (in_connection)
 {
 }
 
-Rts2NDeviceCentralWindow::~Rts2NDeviceCentralWindow (void)
+NDeviceCentralWindow::~NDeviceCentralWindow (void)
 {
 }
 
-void Rts2NDeviceCentralWindow::printValues ()
+void NDeviceCentralWindow::printValues ()
 {
 	// print statusChanges
 
@@ -305,9 +307,9 @@ void Rts2NDeviceCentralWindow::printValues ()
 	}
 }
 
-void Rts2NDeviceCentralWindow::drawValuesList ()
+void NDeviceCentralWindow::drawValuesList ()
 {
-	Rts2NDeviceWindow::drawValuesList ();
+	NDeviceWindow::drawValuesList ();
 
 	if (!getConnection ()->infoTimeChanged ())
 	{

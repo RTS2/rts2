@@ -1,24 +1,41 @@
-#include "nmonitor.h"
-#include "rts2nmsgwindow.h"
+/* 
+ * RTS2 messages window.
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-Rts2NMsgWindow::Rts2NMsgWindow ():Rts2NSelWindow (0, LINES - 19, COLS,
-18, 1, 300, 500)
+#include "nmonitor.h"
+#include "nmsgwindow.h"
+
+using namespace rts2ncurses;
+
+NMsgWindow::NMsgWindow ():NSelWindow (0, LINES - 19, COLS, 18, 1, 300, 500)
 {
 	msgMask = 0x07;
 	setLineOffset (0);
 	setSelRow (-1);
 }
 
-
-Rts2NMsgWindow::~Rts2NMsgWindow (void)
+NMsgWindow::~NMsgWindow (void)
 {
 }
 
-
-void
-Rts2NMsgWindow::draw ()
+void NMsgWindow::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	maxrow = 0;
 	int i = 0;
@@ -83,20 +100,11 @@ Rts2NMsgWindow::draw ()
 	refresh ();
 }
 
-
-void
-Rts2NMsgWindow::add (Rts2Message & msg)
+void NMsgWindow::add (Rts2Message & msg)
 {
 	for (int tr = 0; tr < ((int) messages.size () - getScrollHeight ()); tr++)
 	{
 		messages.pop_front ();
 	}
 	messages.push_back (msg);
-}
-
-
-Rts2NMsgWindow & operator << (Rts2NMsgWindow & msgwin, Rts2Message & msg)
-{
-	msgwin.add (msg);
-	return msgwin;
 }

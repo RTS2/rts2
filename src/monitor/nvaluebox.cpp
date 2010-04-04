@@ -18,11 +18,11 @@
  */
 
 #include "nmonitor.h"
-#include "rts2nvaluebox.h"
+#include "nvaluebox.h"
 
-using namespace rts2ncur;
+using namespace rts2ncurses;
 
-ValueBox::ValueBox (Rts2NWindow * top, Rts2Value * _val)
+ValueBox::ValueBox (NWindow * top, Rts2Value * _val)
 {
 	topWindow = top;
 	val = _val;
@@ -33,7 +33,7 @@ ValueBox::~ValueBox (void)
 
 }
 
-ValueBoxBool::ValueBoxBool (Rts2NWindow * top, Rts2ValueBool * _val, int _x, int _y):ValueBox (top, _val),Rts2NSelWindow (top->getX () + _x, top->getY () + _y, 10, 4)
+ValueBoxBool::ValueBoxBool (NWindow * top, Rts2ValueBool * _val, int _x, int _y):ValueBox (top, _val),NSelWindow (top->getX () + _x, top->getY () + _y, 10, 4)
 {
 	maxrow = 2;
 	setLineOffset (0);
@@ -52,12 +52,12 @@ keyRet ValueBoxBool::injectKey (int key)
 		case K_ESC:
 			return RKEY_ESC;
 	}
-	return Rts2NSelWindow::injectKey (key);
+	return NSelWindow::injectKey (key);
 }
 
 void ValueBoxBool::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	mvwprintw (getWriteWindow (), 0, 1, "true");
 	mvwprintw (getWriteWindow (), 1, 1, "false");
@@ -76,19 +76,19 @@ bool ValueBoxBool::setCursor ()
 	return false;
 }
 
-ValueBoxString::ValueBoxString (Rts2NWindow * top, Rts2Value * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxString::ValueBoxString (NWindow * top, Rts2Value * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
 	wprintw (getWriteWindow (), "%s", _val->getValue ());
 }
 
 keyRet ValueBoxString::injectKey (int key)
 {
-	return Rts2NWindowEdit::injectKey (key);
+	return NWindowEdit::injectKey (key);
 }
 
 void ValueBoxString::draw ()
 {
-	Rts2NWindowEdit::draw ();
+	NWindowEdit::draw ();
 	refresh ();
 }
 
@@ -105,22 +105,22 @@ void ValueBoxString::sendValue (Rts2Conn * connection)
 
 bool ValueBoxString::setCursor ()
 {
-	return Rts2NWindowEdit::setCursor ();
+	return NWindowEdit::setCursor ();
 }
 
-ValueBoxInteger::ValueBoxInteger (Rts2NWindow * top, Rts2ValueInteger * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxInteger::ValueBoxInteger (NWindow * top, Rts2ValueInteger * _val, int _x, int _y):ValueBox (top, _val),NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
 	setValueInteger (_val->getValueInteger ());
 }
 
 keyRet ValueBoxInteger::injectKey (int key)
 {
-	return Rts2NWindowEditIntegers::injectKey (key);
+	return NWindowEditIntegers::injectKey (key);
 }
 
 void ValueBoxInteger::draw ()
 {
-	Rts2NWindowEditIntegers::draw ();
+	NWindowEditIntegers::draw ();
 	refresh ();
 }
 
@@ -133,22 +133,22 @@ void ValueBoxInteger::sendValue (Rts2Conn * connection)
 
 bool ValueBoxInteger::setCursor ()
 {
-	return Rts2NWindowEditIntegers::setCursor ();
+	return NWindowEditIntegers::setCursor ();
 }
 
-ValueBoxLongInteger::ValueBoxLongInteger (Rts2NWindow * top, Rts2ValueLong * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxLongInteger::ValueBoxLongInteger (NWindow * top, Rts2ValueLong * _val, int _x, int _y):ValueBox (top, _val),NWindowEditIntegers (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
 	wprintw (getWriteWindow (), "%li", _val->getValueLong ());
 }
 
 keyRet ValueBoxLongInteger::injectKey (int key)
 {
-	return Rts2NWindowEditIntegers::injectKey (key);
+	return NWindowEditIntegers::injectKey (key);
 }
 
 void ValueBoxLongInteger::draw ()
 {
-	Rts2NWindowEditIntegers::draw ();
+	NWindowEditIntegers::draw ();
 	refresh ();
 }
 
@@ -170,22 +170,22 @@ void ValueBoxLongInteger::sendValue (Rts2Conn * connection)
 
 bool ValueBoxLongInteger::setCursor ()
 {
-	return Rts2NWindowEditIntegers::setCursor ();
+	return NWindowEditIntegers::setCursor ();
 }
 
-ValueBoxFloat::ValueBoxFloat (Rts2NWindow * top, Rts2ValueFloat * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxFloat::ValueBoxFloat (NWindow * top, Rts2ValueFloat * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
 	wprintw (getWriteWindow (), "%f", _val->getValueFloat ());
 }
 
 keyRet ValueBoxFloat::injectKey (int key)
 {
-	return Rts2NWindowEditDigits::injectKey (key);
+	return NWindowEditDigits::injectKey (key);
 }
 
 void ValueBoxFloat::draw ()
 {
-	Rts2NWindowEditDigits::draw ();
+	NWindowEditDigits::draw ();
 	refresh ();
 }
 
@@ -211,22 +211,22 @@ void ValueBoxFloat::sendValue (Rts2Conn * connection)
 
 bool ValueBoxFloat::setCursor ()
 {
-	return Rts2NWindowEditDigits::setCursor ();
+	return NWindowEditDigits::setCursor ();
 }
 
-ValueBoxDouble::ValueBoxDouble (Rts2NWindow * top, Rts2ValueDouble * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
+ValueBoxDouble::ValueBoxDouble (NWindow * top, Rts2ValueDouble * _val, int _x, int _y):ValueBox (top, _val),NWindowEditDigits (top->getX () + _x, top->getY () + _y, 20, 3, 1, 1, 300, 1)
 {
 	wprintw (getWriteWindow (), "%f", _val->getValueDouble ());
 }
 
 keyRet ValueBoxDouble::injectKey (int key)
 {
-	return Rts2NWindowEditDigits::injectKey (key);
+	return NWindowEditDigits::injectKey (key);
 }
 
 void ValueBoxDouble::draw ()
 {
-	Rts2NWindowEditDigits::draw ();
+	NWindowEditDigits::draw ();
 	refresh ();
 }
 
@@ -248,10 +248,10 @@ void ValueBoxDouble::sendValue (Rts2Conn * connection)
 
 bool ValueBoxDouble::setCursor ()
 {
-	return Rts2NWindowEditDigits::setCursor ();
+	return NWindowEditDigits::setCursor ();
 }
 
-AbstractBoxSelection::AbstractBoxSelection (Rts2NWindow * top, Rts2Value * _val, int _x, int _y):ValueBox (top, _val),Rts2NSelWindow (top->getX () + _x, top->getY () + _y, 15, 5)
+AbstractBoxSelection::AbstractBoxSelection (NWindow * top, Rts2Value * _val, int _x, int _y):ValueBox (top, _val),NSelWindow (top->getX () + _x, top->getY () + _y, 15, 5)
 {
 	maxrow = 0;
 	setLineOffset (0);
@@ -268,7 +268,7 @@ keyRet AbstractBoxSelection::injectKey (int key)
 		case K_ESC:
 			return RKEY_ESC;
 	}
-	return Rts2NSelWindow::injectKey (key);
+	return NSelWindow::injectKey (key);
 }
 
 bool AbstractBoxSelection::setCursor ()
@@ -281,14 +281,14 @@ void AbstractBoxSelection::drawRow (const char *_text)
 	mvwprintw (getWriteWindow (), maxrow++, 1, _text);
 }
 
-ValueBoxSelection::ValueBoxSelection (Rts2NWindow * top, Rts2ValueSelection * _val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
+ValueBoxSelection::ValueBoxSelection (NWindow * top, Rts2ValueSelection * _val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
 {
 	setSelRow (_val->getValueInteger ());
 }
 
 void ValueBoxSelection::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	Rts2ValueSelection *vals = (Rts2ValueSelection *) getValue ();
 	maxrow = 0;
@@ -306,13 +306,13 @@ void ValueBoxSelection::sendValue (Rts2Conn * connection)
 	connection->queCommand (new rts2core::Rts2CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', getSelRow ()));
 }
 
-ValueBoxTimeDiff::ValueBoxTimeDiff (Rts2NWindow * top, Rts2ValueTime *_val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
+ValueBoxTimeDiff::ValueBoxTimeDiff (NWindow * top, Rts2ValueTime *_val, int _x, int _y):AbstractBoxSelection (top, _val, _x, _y)
 {
 }
 
 void ValueBoxTimeDiff::draw ()
 {
-	Rts2NSelWindow::draw ();
+	NSelWindow::draw ();
 	werase (getWriteWindow ());
 	for (maxrow = 0; maxrow < 5;)
 	{
@@ -330,15 +330,15 @@ void ValueBoxTimeDiff::sendValue (Rts2Conn * connection)
 	connection->queCommand (new rts2core::Rts2CommandChangeValue (connection->getOtherDevClient (), getValue ()->getName (), '=', time (NULL) + (getSelRow () + 1) * 120));
 }
 
-ValueBoxRectangle::ValueBoxRectangle (Rts2NWindow * top, Rts2ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
+ValueBoxRectangle::ValueBoxRectangle (NWindow * top, Rts2ValueRectangle * _val, int _x, int _y):ValueBox (top, _val), NWindowEdit (top->getX () + _x, top->getY () + _y, 29, 4, 1, 1, 300, 2)
 {
-	edt[0] = new Rts2NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1,
+	edt[0] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 1,
 		10, 1, 0, 0, 300, 1, false);
-	edt[1] = new Rts2NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 1,
+	edt[1] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 1,
 		10, 1, 0, 0, 300, 1, false);
-	edt[2] = new Rts2NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 2,
+	edt[2] = new NWindowEditIntegers (top->getX () + _x + 3, top->getY () + _y + 2,
 		10, 1, 0, 0, 300, 1, false);
-	edt[3] = new Rts2NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 2,
+	edt[3] = new NWindowEditIntegers (top->getX () + _x + 16, top->getY () + _y + 2,
 		10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueInteger (_val->getXInt ());
@@ -388,7 +388,7 @@ keyRet ValueBoxRectangle::injectKey (int key)
 void ValueBoxRectangle::draw ()
 {
 	// draw border..
-	Rts2NWindowEdit::draw ();
+	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
 	for (int i = 0; i < 4; i++)
@@ -421,11 +421,11 @@ bool ValueBoxRectangle::setCursor ()
 	return edt[edtSelected]->setCursor ();
 }
 
-ValueBoxRaDec::ValueBoxRaDec (Rts2NWindow * top, Rts2ValueRaDec * _val, int _x, int _y):ValueBox (top, _val),Rts2NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
+ValueBoxRaDec::ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y):ValueBox (top, _val),NWindowEdit (top->getX () + _x, top->getY () + _y, 35, 3, 1, 1, 300, 1)
 {
-	edt[0] = new Rts2NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1,
+	edt[0] = new NWindowEditDigits (top->getX () + _x + 5, top->getY () + _y + 1,
 		10, 1, 0, 0, 300, 1, false);
-	edt[1] = new Rts2NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1,
+	edt[1] = new NWindowEditDigits (top->getX () + _x + 20, top->getY () + _y + 1,
 		10, 1, 0, 0, 300, 1, false);
 
 	edt[0]->setValueDouble (_val->getRa ());
@@ -467,7 +467,7 @@ keyRet ValueBoxRaDec::injectKey (int key)
 void ValueBoxRaDec::draw ()
 {
 	// draw border..
-	Rts2NWindowEdit::draw ();
+	NWindowEdit::draw ();
 	werase (getWriteWindow ());
 	// draws entry boxes..
 	for (int i = 0; i < 2; i++)
