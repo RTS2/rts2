@@ -432,7 +432,9 @@ void Camera::checkQueChanges (int fakeState)
 			if (exposureConn)
 			{
 				quedExpNumber->inc ();
+				sendValueAll (quedExpNumber);
 				waitingForNotBop->setValueBool (true);
+				sendValueAll (waitingForNotBop);
 				connections_t::iterator iter;
 				// ask all centralds for possible blocking devices
 				for (iter = getCentraldConns ()->begin (); iter != getCentraldConns ()->end (); iter++)
