@@ -292,7 +292,8 @@ class Rts2Comm:
 				if (sun_alt >= -0.5 or not (next == 2 or next == -1)):
 					self.setValue('SHUTTER','LIGHT')
 					return
-				dark = self.exposure(exp)
+				self.setValue('exposure',exp)
+				dark = self.exposure()
 				self.toDark(dark)
 			return
 
