@@ -62,13 +62,24 @@ Rts2NMsgWindow::draw ()
 		time_t t = msg.getMessageTimeSec ();
 		localtime_r (&t, &tmesg);
 
-		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %-3.3s %c %s",
+		mvwprintw (getWriteWindow (), maxrow, 0, "%02i:%02i:%02i.%03i %c %s %s",
 			tmesg.tm_hour, tmesg.tm_min, tmesg.tm_sec, (int) (msg.getMessageTimeUSec () / 1000),
-			msg.getMessageOName (), mt, msg.getMessageString ());
+			mt, msg.getMessageOName (), msg.getMessageString ());
 
 		wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
 		maxrow++;
 	}
+
+	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
+	mvwvline (getWriteWindow (), 0, 12, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
+	mvwaddch (window, 0, 13, ACS_TTEE);
+	mvwaddch (window, getHeight () - 1, 13, ACS_BTEE);
+
+	mvwvline (getWriteWindow (), 0, 14, ACS_VLINE, (maxrow > getHeight ()? maxrow : getHeight ()));
+	mvwaddch (window, 0, 15, ACS_TTEE);
+	mvwaddch (window, getHeight () - 1, 15, ACS_BTEE);
+
+
 	refresh ();
 }
 

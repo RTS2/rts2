@@ -255,8 +255,7 @@ void Rts2NDeviceWindow::draw ()
 	drawValuesList ();
 
 	wcolor_set (getWriteWindow (), CLR_DEFAULT, NULL);
-	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE,
-		(maxrow > getHeight ()? maxrow : getHeight ()));
+	mvwvline (getWriteWindow (), 0, valueBegins, ACS_VLINE, (maxrow > getHeight ()? maxrow + 1: getHeight ()));
 	mvwaddch (window, 0, valueBegins + 1, ACS_TTEE);
 	mvwaddch (window, getHeight () - 1, valueBegins + 1, ACS_BTEE);
 
