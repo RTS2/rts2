@@ -110,7 +110,14 @@ int Rts2NewTarget::saveTarget ()
 	int ret;
 
 	if (n_tar_id == INT_MIN)
-		askForInt ("Target ID", n_tar_id);
+	{
+		do
+		{
+			n_tar_id = INT_MIN;
+			askForInt ("Target ID (1 to 49999)", n_tar_id);
+		}
+		while (n_tar_id >= 50000 || n_tar_id <= 0);
+	}
 	// create target if we don't create it..
 	if (n_tar_name == NULL)
 	{
