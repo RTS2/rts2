@@ -584,6 +584,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 				break;
 		}
 		computedPix->setValueLong (computedPix->getValueLong () + totPix);
+		pixelsSecond->setValueDouble (computedPix->getValueLong () / (getNow () - timeReadoutStart));
 		average->setValueDouble (sum->getValueDouble () / computedPix->getValueLong ());
 
 		sendValueAll (average);
@@ -591,6 +592,7 @@ int Camera::sendReadoutData (char *data, size_t dataSize)
 		sendValueAll (min);
 		sendValueAll (sum);
 		sendValueAll (computedPix);
+		sendValueAll (pixelsSecond);
 	}
 	if (calculateStatistics->getValueInteger () == STATISTIC_ONLY)
 		calculateDataSize -= dataSize;
