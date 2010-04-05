@@ -273,16 +273,25 @@ void TargetInfo::printTargetInfo ()
 {
 	if (!(printImages & DISPLAY_FILENAME))
 	{
-		Rts2InfoValOStream ivos (&std::cout);
+		Rts2CamList::iterator cam_names;
 		if (printExtended == 0)
 		{
 			target->printShortInfo (std::cout, JD);
 			std::cout << std::endl;
+			for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
+			{
+				const char *cam_name = (*cam_names).c_str ();
+				int ret;
+				std::string script_buf;
+				ret = target->getScript (cam_name, script_buf);
+				std::cout << "       " << cam_name << " : " << script_buf << " : " << (ret ? "failed" : "OK") << std::endl;
+			}
+
 			return;
 		}
+		Rts2InfoValOStream ivos (&std::cout);
 		target->sendInfo (ivos, JD);
 		// print scripts..
-		Rts2CamList::iterator cam_names;
 		if (printExtended > 1)
 		{
 			for (int i = 0; i < 10; i++)
@@ -294,8 +303,7 @@ void TargetInfo::printTargetInfo ()
 				target->sendPositionInfo (ivos, JD);
 			}
 		}
-		for (cam_names = cameras.begin (); cam_names != cameras.end ();
-			cam_names++)
+		for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
 		{
 			const char *cam_name = (*cam_names).c_str ();
 			int ret;
