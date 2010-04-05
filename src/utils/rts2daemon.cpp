@@ -466,16 +466,13 @@ void Rts2Daemon::deleteSaveValue (Rts2CondValue * val)
 void Rts2Daemon::loadValues ()
 {
 	int ret;
-	for (Rts2ValueVector::iterator iter = savedValues.begin ();
-		iter != savedValues.end ();)
+	for (Rts2ValueVector::iterator iter = savedValues.begin (); iter != savedValues.end ();)
 	{
 		Rts2Value *new_val = *iter;
 		Rts2CondValue *old_val = getCondValue (new_val->getName ().c_str ());
 		if (old_val == NULL)
 		{
-			logStream (MESSAGE_ERROR) <<
-				"Rts2Daemon::loadValues cannot get value " << new_val->
-				getName () << sendLog;
+			logStream (MESSAGE_ERROR) << "Rts2Daemon::loadValues cannot get value " << new_val->getName () << sendLog;
 		}
 		// we don't need to save this one
 		else if (old_val->ignoreLoad ())
