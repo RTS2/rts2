@@ -39,22 +39,17 @@ ObjectCheck::ObjectCheck (const char *horizon_file)
 	load_horizon (horizon_file);
 }
 
-
 ObjectCheck::~ObjectCheck (void)
 {
 	horizon.clear ();
 }
 
-
-bool
-RAcomp (HorizonEntry hor1, HorizonEntry hor2)
+bool RAcomp (HorizonEntry hor1, HorizonEntry hor2)
 {
 	return hor1.hrz.az < hor2.hrz.az;
 }
 
-
-int
-ObjectCheck::load_horizon (const char *horizon_file)
+int ObjectCheck::load_horizon (const char *horizon_file)
 {
 	std::ifstream inf;
 
@@ -71,7 +66,7 @@ ObjectCheck::load_horizon (const char *horizon_file)
 
 	if (inf.fail ())
 	{
-		std::cerr << "Cannot open horizon file " << horizon_file << std::endl;
+		std::cerr << "cannot open horizon file '" << horizon_file << "'" << std::endl;
 		return -1;
 	}
 
@@ -163,17 +158,12 @@ ObjectCheck::load_horizon (const char *horizon_file)
 	return 0;
 }
 
-
-int
-ObjectCheck::is_good (const struct ln_hrz_posn *hrz, int hardness)
+int ObjectCheck::is_good (const struct ln_hrz_posn *hrz, int hardness)
 {
 	return hrz->alt > getHorizonHeight (hrz, hardness);
 }
 
-
-double
-ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1,
-horizon_t::iterator iter2)
+double ObjectCheck::getHorizonHeightAz (double az, horizon_t::iterator iter1, horizon_t::iterator iter2)
 {
 	double az1;
 	if ((*iter1).hrz.az > (*iter2).hrz.az)
@@ -185,9 +175,7 @@ horizon_t::iterator iter2)
 		((*iter2).hrz.az - az1);
 }
 
-
-double
-ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
+double ObjectCheck::getHorizonHeight (const struct ln_hrz_posn *hrz, int hardness)
 {
 	if (horizon.size () == 0)
 		return 0;

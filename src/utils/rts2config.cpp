@@ -34,8 +34,8 @@ Rts2Config::getSpecialValues ()
 	ret += getDouble ("observatory", "longitude", observer.lng);
 	ret += getDouble ("observatory", "latitude", observer.lat);
 	ret += getDouble ("observatory", "altitude", observatoryAltitude, nan("f"));
-	// load horizont file..
-	getString ("observatory", "horizon", horizon_file, "");
+	// load horizon file..
+	getString ("observatory", "horizon", horizon_file, "-");
 
 	getStringVector ("observatory", "required_devices", obs_requiredDevices, false);
 	getStringVector ("imgproc", "astrometry_devices", imgproc_astrometryDevices, false);
