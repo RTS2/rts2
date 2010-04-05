@@ -196,8 +196,7 @@ int ElementWaitAcquire::defnextCommand (Rts2DevClient * client, Rts2Command ** n
 {
 	AcquireQuery ac = AcquireQuery (tar_id);
 	// detect is somebody plans to run A command..
-	script->getMaster ()->
-		postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
+	script->getMaster ()->postEvent (new Rts2Event (EVENT_ACQUIRE_QUERY, (void *) &ac));
 	//#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG)
 		<< "ElementWaitAcquire::defnextCommand " << ac.count
