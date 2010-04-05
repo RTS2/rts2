@@ -428,9 +428,7 @@ int Rts2ConfigRaw::getStringVector (const char *section, const char *valueName, 
 	return 0;
 }
 
-
-int
-Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value)
+int Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -450,22 +448,19 @@ Rts2ConfigRaw::getInteger (const char *section, const char *valueName, int &valu
 	return 0;
 }
 
-
 int Rts2ConfigRaw::getIntegerDefault (const char *section, const char *valueName, int defVal)
 {
 	int ret;
 	int value;
 	clearVerboseEntry ();
 	ret = getInteger (section, valueName, value);
+	setVerboseEntry ();
 	if (ret)
 		return defVal;
-	setVerboseEntry ();
 	return value;
 }
 
-
-int
-Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value)
+int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value)
 {
 	std::string valbuf;
 	char *retv;
@@ -489,9 +484,7 @@ Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &valu
 	return 0;
 }
 
-
-int
-Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value, float defVal)
+int Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &value, float defVal)
 {
 	int ret;
 	clearVerboseEntry ();
@@ -504,18 +497,17 @@ Rts2ConfigRaw::getFloat (const char *section, const char *valueName, float &valu
 	return ret;
 }
 
-
 double Rts2ConfigRaw::getDoubleDefault (const char *section, const char *valueName, double val)
 {
-	std::string valbuf;
-	char *retv;
 	int ret;
-	ret = getString (section, valueName, valbuf);
+	double value;
+	clearVerboseEntry ();
+	ret = getDouble (section, valueName, value);
+	setVerboseEntry ();
 	if (ret)
 		return val;
-	return strtod (valbuf.c_str (), &retv);
+	return value;
 }
-
 
 int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value)
 {
@@ -537,9 +529,7 @@ int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double
 	return 0;
 }
 
-
-int
-Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value, double defVal)
+int Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &value, double defVal)
 {
   	int ret;
 	clearVerboseEntry ();
@@ -552,9 +542,7 @@ Rts2ConfigRaw::getDouble (const char *section, const char *valueName, double &va
 	return ret;
 }
 
-
-bool
-Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool def)
+bool Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool def)
 {
 	std::string valbuf;
 	int ret;
@@ -572,9 +560,7 @@ Rts2ConfigRaw::getBoolean (const char *section, const char *valueName, bool def)
 	return def;
 }
 
-
-const bool
-Rts2ConfigRaw::blockDevice (const char *device_name, const char *querying_device)
+const bool Rts2ConfigRaw::blockDevice (const char *device_name, const char *querying_device)
 {
 	Rts2ConfigSection *sect = getSection (device_name, false);
 	if (!sect)
