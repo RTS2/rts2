@@ -81,7 +81,7 @@ class TargetInfo:public Rts2AppDb
 		void printTargetInfoGNUBonus (double jd_start, double pbeg, double pend, double step);
 		void printTargetInfoDS9 ();
 		bool printSelectable;
-		bool printExtendet;
+		int printExtended;
 		bool printCalTargets;
 		bool printObservations;
 		int printImages;
@@ -117,7 +117,7 @@ TargetInfo::TargetInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv
 {
 	obs = NULL;
 	printSelectable = false;
-	printExtendet = false;
+	printExtended = 0;
 	printCalTargets = false;
 	printObservations = false;
 	printImages = 0;
@@ -143,7 +143,7 @@ TargetInfo::TargetInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv
 	addOption ('c', NULL, 0, "print recommended calibration targets");
 	addOption ('o', NULL, 2, "print observations (in given time range)");
 	addOption ('i', NULL, 2, "print images (in given time range)");
-	addOption ('I', NULL, 0, "print image summary row");
+	addOption ('I', NULL, 0, "print images summary row");
 	addOption ('l', NULL, 0, "list images filenames");
 	addOption ('p', NULL, 2, "print counts (in given format)");
 	addOption ('P', NULL, 0, "print counts summary row");
@@ -169,7 +169,7 @@ int TargetInfo::processOption (int in_opt)
 			printSelectable = true;
 			break;
 		case 'e':
-			printExtendet = true;
+			printExtended++;
 			break;
 		case 'g':
 			if (optarg)
@@ -274,10 +274,16 @@ void TargetInfo::printTargetInfo ()
 	if (!(printImages & DISPLAY_FILENAME))
 	{
 		Rts2InfoValOStream ivos (&std::cout);
+		if (printExtended == 0)
+		{
+			target->printShortInfo (std::cout, JD);
+			std::cout << std::endl;
+			return;
+		}
 		target->sendInfo (ivos, JD);
 		// print scripts..
 		Rts2CamList::iterator cam_names;
-		if (printExtendet)
+		if (printExtended > 1)
 		{
 			for (int i = 0; i < 10; i++)
 			{
@@ -297,7 +303,7 @@ void TargetInfo::printTargetInfo ()
 			int failedCount;
 			ret = target->getScript (cam_name, script_buf);
 			std::
-				cout << "Script for camera " << cam_name << ":'" << script_buf <<
+				cout << "script for camera " << cam_name << ":'" << script_buf <<
 				"' ret (" << ret << ")" << std::endl;
 			// try to parse it..
 			rts2script::Script script = rts2script::Script ();

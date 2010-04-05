@@ -50,20 +50,11 @@ class LibnovaRa
 		void toHms (struct ln_hms *ra_hms);
 		void fromHms (struct ln_hms *ra_hms);
 	public:
-		LibnovaRa ()
-		{
-			ra = nan ("f");
-		}
+		LibnovaRa () { ra = nan ("f"); }
 
-		LibnovaRa (double in_ra)
-		{
-			ra = in_ra;
-		}
+		LibnovaRa (double in_ra) { ra = in_ra; }
 		
-		double getRa ()
-		{
-			return ra;
-		}
+		double getRa () { return ra; }
 
 		/**
 		 * Flip by 12 hours.
@@ -84,12 +75,8 @@ class LibnovaRa
 class LibnovaRaJ2000:public LibnovaRa
 {
 	public:
-		LibnovaRaJ2000 ():LibnovaRa ()
-		{
-		}
-		LibnovaRaJ2000 (double in_ra):LibnovaRa (in_ra)
-		{
-		}
+		LibnovaRaJ2000 ():LibnovaRa () {}
+		LibnovaRaJ2000 (double in_ra):LibnovaRa (in_ra) {}
 		friend std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
 };
 
@@ -103,14 +90,24 @@ class LibnovaRaJ2000:public LibnovaRa
 class LibnovaHaM:public LibnovaRa
 {
 	public:
-		LibnovaHaM ():LibnovaRa ()
-		{
-		}
-		LibnovaHaM (double in_ha):LibnovaRa (in_ha)
-		{
-		}
+		LibnovaHaM ():LibnovaRa () {}
+		LibnovaHaM (double in_ha):LibnovaRa (in_ha) {}
 		friend std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM);
 		friend std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
+};
+
+/**
+ * Prints pretty formated hour angle.
+ *
+ * @author Petr Kubanek
+ */
+class LibnovaHA:public LibnovaRa
+{
+	public:
+		LibnovaHA ():LibnovaRa () {}
+		LibnovaHA (double in_ha):LibnovaRa (in_ha) {}
+		friend std::ostream & operator << (std::ostream & _os, LibnovaHA l_ha);
+		friend std::istream & operator >> (std::istream & _is, LibnovaHA & l_ha);
 };
 
 /**
@@ -123,12 +120,8 @@ class LibnovaHaM:public LibnovaRa
 class LibnovaRaComp:public LibnovaRa
 {
 	public:
-		LibnovaRaComp ():LibnovaRa ()
-		{
-		}
-		LibnovaRaComp (double in_ra):LibnovaRa (in_ra)
-		{
-		}
+		LibnovaRaComp ():LibnovaRa () {}
+		LibnovaRaComp (double in_ra):LibnovaRa (in_ra) {}
 		friend std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 };
 
@@ -153,22 +146,10 @@ class LibnovaDeg
 		void toDms (struct ln_dms *deg_dms);
 		void fromDms (struct ln_dms *deg_dms);
 	public:
-		LibnovaDeg ()
-		{
-			deg = nan ("f");
-		}
-		LibnovaDeg (double in_deg)
-		{
-			deg = in_deg;
-		}
-		LibnovaDeg (struct ln_dms *deg_dms)
-		{
-			fromDms (deg_dms);
-		}
-		double getDeg ()
-		{
-			return deg;
-		}
+		LibnovaDeg () { deg = nan ("f"); }
+		LibnovaDeg (double in_deg) { deg = in_deg; }
+		LibnovaDeg (struct ln_dms *deg_dms) { fromDms (deg_dms); }
+		double getDeg () { return deg; }
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 		/**
 		 * Input operator. Accept inputs in following forms:
@@ -197,12 +178,8 @@ class LibnovaDeg
 class LibnovaDeg90:public LibnovaDeg
 {
 	public:
-		LibnovaDeg90 ():LibnovaDeg ()
-		{
-		}
-		LibnovaDeg90 (double in_deg):LibnovaDeg (in_deg)
-		{
-		}
+		LibnovaDeg90 ():LibnovaDeg () {}
+		LibnovaDeg90 (double in_deg):LibnovaDeg (in_deg) {}
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90 l_deg);
 };
@@ -217,12 +194,8 @@ class LibnovaDeg90:public LibnovaDeg
 class LibnovaDeg360:public LibnovaDeg
 {
 	public:
-		LibnovaDeg360 ():LibnovaDeg ()
-		{
-		}
-		LibnovaDeg360 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg))
-		{
-		}
+		LibnovaDeg360 ():LibnovaDeg () {}
+		LibnovaDeg360 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg)) {}
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg360 l_deg);
 };
@@ -237,12 +210,8 @@ class LibnovaDeg360:public LibnovaDeg
 class LibnovaDeg180:public LibnovaDeg
 {
 	public:
-		LibnovaDeg180 ():LibnovaDeg ()
-		{
-		}
-		LibnovaDeg180 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg))
-		{
-		}
+		LibnovaDeg180 ():LibnovaDeg () {}
+		LibnovaDeg180 (double in_deg):LibnovaDeg (ln_range_degrees (in_deg)) {}
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg180 l_deg);
 };
@@ -257,16 +226,9 @@ class LibnovaDeg180:public LibnovaDeg
 class LibnovaDec:public LibnovaDeg90
 {
 	public:
-		LibnovaDec ():LibnovaDeg90 ()
-		{
-		}
-		LibnovaDec (double in_deg):LibnovaDeg90 (in_deg)
-		{
-		}
-		double getDec ()
-		{
-			return getDeg ();
-		}
+		LibnovaDec ():LibnovaDeg90 () {}
+		LibnovaDec (double in_deg):LibnovaDeg90 (in_deg) {}
+		double getDec () { return getDeg (); }
 
 		void flip (struct ln_lnlat_posn *obs);
 
@@ -283,15 +245,10 @@ class LibnovaDec:public LibnovaDeg90
 class LibnovaDecJ2000:public LibnovaDec
 {
 	public:
-		LibnovaDecJ2000 ():LibnovaDec ()
-		{
-		}
-		LibnovaDecJ2000 (double in_deg):LibnovaDec (in_deg)
-		{
-		}
+		LibnovaDecJ2000 ():LibnovaDec () {}
+		LibnovaDecJ2000 (double in_deg):LibnovaDec (in_deg) {}
 
-		friend std::ostream & operator << (std::ostream & _os,
-			LibnovaDecJ2000 l_dec);
+		friend std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec);
 };
 
 /**
@@ -304,15 +261,10 @@ class LibnovaDecJ2000:public LibnovaDec
 class LibnovaDeg90Comp:public LibnovaDeg90
 {
 	public:
-		LibnovaDeg90Comp ():LibnovaDeg90 ()
-		{
-		}
-		LibnovaDeg90Comp (double in_deg):LibnovaDeg90 (in_deg)
-		{
-		}
+		LibnovaDeg90Comp ():LibnovaDeg90 () {}
+		LibnovaDeg90Comp (double in_deg):LibnovaDeg90 (in_deg) {}
 
-		friend std::ostream & operator << (std::ostream & _os,
-			LibnovaDeg90Comp l_deg);
+		friend std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg);
 };
 
 /**
@@ -325,15 +277,10 @@ class LibnovaDeg90Comp:public LibnovaDeg90
 class LibnovaDegArcMin:public LibnovaDeg
 {
 	public:
-		LibnovaDegArcMin ():LibnovaDeg ()
-		{
-		}
-		LibnovaDegArcMin (double in_deg):LibnovaDeg (in_deg)
-		{
-		}
+		LibnovaDegArcMin ():LibnovaDeg () {}
+		LibnovaDegArcMin (double in_deg):LibnovaDeg (in_deg) {}
 
-		friend std::ostream & operator << (std::ostream & _os,
-			LibnovaDegArcMin l_deg);
+		friend std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg);
 };
 
 /**
@@ -346,18 +293,11 @@ class LibnovaDegArcMin:public LibnovaDeg
 class LibnovaDegDist:public LibnovaDeg
 {
 	public:
-		LibnovaDegDist ():LibnovaDeg ()
-		{
-		}
+		LibnovaDegDist ():LibnovaDeg () {}
+		LibnovaDegDist (double in_deg):LibnovaDeg (in_deg) {}
 
-		LibnovaDegDist (double in_deg):LibnovaDeg (in_deg)
-		{
-		}
-
-		friend std::ostream & operator << (std::ostream & _os,
-			LibnovaDegDist l_deg);
-		friend std::istream & operator >> (std::istream & _is,
-			LibnovaDegDist & l_deg);
+		friend std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg);
+		friend std::istream & operator >> (std::istream & _is, LibnovaDegDist & l_deg);
 };
 
 /**
@@ -460,10 +400,8 @@ class LibnovaRaDec
 		 */
 		void flip (struct ln_lnlat_posn *obs);
 
-		friend std::ostream & operator << (std::ostream & _os,
-			LibnovaRaDec l_radec);
-		friend std::istream & operator >> (std::istream & _is,
-			LibnovaRaDec & l_radec);
+		friend std::ostream & operator << (std::ostream & _os, LibnovaRaDec l_radec);
+		friend std::istream & operator >> (std::istream & _is, LibnovaRaDec & l_radec);
 
 		/**
 		 * Get Ra and Dec from string.
@@ -557,24 +495,13 @@ class LibnovaDate
 	protected:
 		struct ln_date date;
 		// don't intialize value
-		LibnovaDate (bool sysinit)
-		{
-		}
+		LibnovaDate (bool sysinit) {}
 	public:
-		LibnovaDate ()
-		{
-			ln_get_date_from_sys (&date);
-		}
+		LibnovaDate () { ln_get_date_from_sys (&date); }
 
-		LibnovaDate (double JD)
-		{
-			ln_get_date (JD, &date);
-		}
+		LibnovaDate (double JD) { ln_get_date (JD, &date); }
 
-		LibnovaDate (time_t * t)
-		{
-			ln_get_date_from_timet (t, &date);
-		}
+		LibnovaDate (time_t * t) { ln_get_date_from_timet (t, &date); }
 
 		LibnovaDate (struct ln_date *_date)
 		{
@@ -599,10 +526,7 @@ class LibnovaDate
 			date.seconds = _date->tm_sec;
 		}
 
-		void getTimeT (time_t * t)
-		{
-			ln_get_timet_from_julian (ln_get_julian_day (&date), t);
-		}
+		void getTimeT (time_t * t) { ln_get_timet_from_julian (ln_get_julian_day (&date), t); }
 
 		double getDateDouble ()
 		{
@@ -612,8 +536,7 @@ class LibnovaDate
 		}
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaDate l_date);
-		friend std::istream & operator >> (std::istream & _is,
-			LibnovaDate & l_date);
+		friend std::istream & operator >> (std::istream & _is, LibnovaDate & l_date);
 };
 
 /**
@@ -663,25 +586,13 @@ class Rts2Night
 		Rts2Night (struct ln_date *ln_night, struct ln_lnlat_posn *obs);
 		Rts2Night (double JD, struct ln_lnlat_posn *obs);
 
-		time_t *getFrom ()
-		{
-			return &from;
-		}
+		time_t *getFrom () { return &from; }
 
-		double getJDFrom ()
-		{
-			return ln_get_julian_from_timet (&from);
-		}
+		double getJDFrom () { return ln_get_julian_from_timet (&from); }
 
-		time_t *getTo ()
-		{
-			return &to;
-		}
+		time_t *getTo () { return &to; }
 
-		double getJDTo ()
-		{
-			return ln_get_julian_from_timet (&to);
-		}
+		double getJDTo () { return ln_get_julian_from_timet (&to); }
 
 		friend std::ostream & operator << (std::ostream & _os, Rts2Night night);
 };
@@ -709,14 +620,8 @@ class LibnovaPos
 			pos.lat = in_lat;
 		}
 
-		double getLongitude ()
-		{
-			return pos.lng;
-		}
-		double getLatitude ()
-		{
-			return pos.lat;
-		}
+		double getLongitude () { return pos.lng; }
+		double getLatitude () { return pos.lat; }
 
 		friend std::ostream & operator << (std::ostream & _os, LibnovaPos l_pos);
 };
@@ -754,6 +659,8 @@ std::istream & operator >> (std::istream & _os, LibnovaRa & l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM);
 std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM);
+std::ostream & operator << (std::ostream & _os, LibnovaHA l_ha);
+std::istream & operator >> (std::istream & _is, LibnovaHA & l_ha);
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra);
 std::ostream & operator << (std::ostream & _os, LibnovaDeg l_deg);
 std::istream & operator >> (std::istream & _is, LibnovaDeg & l_deg);

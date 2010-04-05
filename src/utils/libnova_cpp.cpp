@@ -25,31 +25,25 @@
 #include <iomanip>
 #include <sstream>
 
-double
-timetFromJD (double JD)
+double timetFromJD (double JD)
 {
 	time_t t;
 	ln_get_timet_from_julian (JD, &t);
 	return t;
 }
 
-
-void
-LibnovaRa::toHms (struct ln_hms *ra_hms)
+void LibnovaRa::toHms (struct ln_hms *ra_hms)
 {
 	ln_deg_to_hms (ra, ra_hms);
 }
 
-
-void
-LibnovaRa::fromHms (struct ln_hms *ra_hms)
+void LibnovaRa::fromHms (struct ln_hms *ra_hms)
 {
 	ra = ln_hms_to_deg (ra_hms);
 }
 
 
-void
-LibnovaRa::flip ()
+void LibnovaRa::flip ()
 {
 	ra = ln_range_degrees (ra + 180);
 }
@@ -85,7 +79,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaRa l_ra)
 	return _os;
 }
 
-
 std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra)
 {
 	struct ln_hms hms;
@@ -93,7 +86,6 @@ std::istream & operator >> (std::istream & _is, LibnovaRa & l_ra)
 	l_ra.fromHms (&hms);
 	return _is;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
 {
@@ -108,7 +100,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaRaJ2000 l_ra)
 	_os << l_ra.getRa () << " (" << LibnovaRa (l_ra) << ")";
 	return _os;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM)
 {
@@ -131,6 +122,50 @@ std::ostream & operator << (std::ostream & _os, LibnovaHaM l_haM)
 	return _os;
 }
 
+std::istream & operator >> (std::istream & _is, LibnovaHA & l_ha)
+{
+	struct ln_hms hms;
+	_is >> hms.hours >> hms.seconds;
+	hms.minutes = (unsigned short int) floor (hms.seconds);
+	hms.seconds -= hms.minutes;
+	hms.seconds *= 60.0;
+	l_ha.fromHms (&hms);
+	return _is;
+}
+
+std::ostream & operator << (std::ostream & _os, LibnovaHA l_ha)
+{
+	if (formatPureNumbers (_os))
+	{
+		_os.setf (std::ios_base::fixed, std::ios_base::floatfield);
+		_os.precision (6);
+		_os << l_ha.ra;
+		return _os;
+	}
+
+	struct ln_hms hms;
+	bool neg = false;
+	double t = l_ha.ra;
+	if (t > 180)
+	{
+		neg = true;
+		t = 360 - t;
+	}
+	if (t < 0)
+	{
+		neg = true;
+		t = fabs (t);
+	}
+
+	ln_deg_to_hms (t, &hms);
+	int old_precison = _os.precision (3);
+	char old_fill = _os.fill ('0');
+	_os << (neg ? '-' : '+') << std::setw (2) << hms.hours << ":"
+		<< std::setw (2) << hms.minutes;
+	_os.fill (old_fill);
+	_os.precision (old_precison);
+	return _os;
+}
 
 std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM)
 {
@@ -142,7 +177,6 @@ std::istream & operator >> (std::istream & _is, LibnovaHaM & l_haM)
 	l_haM.fromHms (&hms);
 	return _is;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaRaComp l_ra)
 {

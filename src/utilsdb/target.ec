@@ -1075,18 +1075,14 @@ Target::getAirmass (double JD)
 	return ln_get_airmass (hrz.alt, airmassScale);
 }
 
-
-double
-Target::getZenitDistance (double JD)
+double Target::getZenitDistance (double JD)
 {
 	struct ln_hrz_posn hrz;
 	getAltAz (&hrz, JD);
 	return 90.0 - hrz.alt;
 }
 
-
-double
-Target::getHourAngle (double JD)
+double Target::getHourAngle (double JD)
 {
 	double lst;
 	double ha;
@@ -1094,12 +1090,12 @@ Target::getHourAngle (double JD)
 	lst = ln_get_mean_sidereal_time (JD) * 15.0 + observer->lng;
 	getPosition (&pos);
 	ha = ln_range_degrees (lst - pos.ra);
+	if (ha > 180)
+		ha -= 360;
 	return ha;
 }
 
-
-double
-Target::getDistance (struct ln_equ_posn *in_pos, double JD)
+double Target::getDistance (struct ln_equ_posn *in_pos, double JD)
 {
 	struct ln_equ_posn object;
 	getPosition (&object, JD);
@@ -1574,9 +1570,7 @@ Target::printExtra (Rts2InfoValStream &_os, double JD)
 		<< std::endl;
 }
 
-
-void
-Target::printShortInfo (std::ostream & _os, double JD)
+void Target::printShortInfo (std::ostream & _os, double JD)
 {
 	struct ln_equ_posn pos;
 	struct ln_hrz_posn hrz;
@@ -1586,14 +1580,23 @@ Target::printShortInfo (std::ostream & _os, double JD)
 	getAltAz (&hrz, JD);
 	LibnovaRaDec raDec (&pos);
 	LibnovaHrz hrzP (&hrz);
+	double h = getHourAngle (JD);
+	LibnovaHA ha (h);
 	_os
 		<< std::setw (5) << getTargetID () << SEP
 		<< getTargetType () << SEP
-		<< std::left << std::setw (40) << (name ? name :  "null") << std::right << SEP
-		<< raDec << SEP;
+		<< std::left << std::setw (25) << (name ? name :  "null") << std::right << SEP
+		<< raDec << SEP << ha << SEP;
 	writeAirmass (_os, JD);
-	_os
-		<< SEP << hrzP;
+	_os << SEP << hrzP << SEP;
+	if (h < -30)
+		_os << "rising    ";
+	else if (h > 30)
+		_os << "setting   ";
+	else
+		_os << "transiting";
+
+	_os << SEP;
 	_os.precision (old_prec);
 }
 
