@@ -23,8 +23,7 @@
 
 using namespace rts2focusd;
 
-Focusd::Focusd (int in_argc, char **in_argv):
-Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
+Focusd::Focusd (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_FOCUS, "F0")
 {
 	temperature = NULL;
 
@@ -70,12 +69,14 @@ void Focusd::checkState ()
 			infoAll ();
 			setTimeout (USEC_SEC);
 			if (ret)
-				maskState (DEVICE_ERROR_MASK | FOC_MASK_FOCUSING | BOP_EXPOSURE,
-					DEVICE_ERROR_HW | FOC_SLEEPING,
-					"focusing finished with error");
+			{
+				maskState (DEVICE_ERROR_MASK | FOC_MASK_FOCUSING | BOP_EXPOSURE, DEVICE_ERROR_HW | FOC_SLEEPING, "focusing finished with error");
+			}
 			else
-				maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_SLEEPING,
-					"focusing finished without errror");
+			{
+				maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_SLEEPING, "focusing finished without errror");
+				logStream (MESSAGE_INFO) << "focuser moved to " << position->getValueInteger () << sendLog;
+			}
 		}
 	}
 }
@@ -107,13 +108,14 @@ int Focusd::setPosition (int num)
 	int ret;
 	target->setValueInteger (num);
 	sendValueAll (target);
+	logStream (MESSAGE_INFO) << "changing focuser position to " << num << sendLog;
 	ret = setTo (num);
 	if (ret)
 	{
-		logStream (MESSAGE_ERROR) << "Cannot set focuser to " << num << sendLog;
+		logStream (MESSAGE_ERROR) << "cannot set focuser to " << num << sendLog;
 		return ret;
 	}
-	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focusing started");
+	maskState (FOC_MASK_FOCUSING | BOP_EXPOSURE, FOC_FOCUSING | BOP_EXPOSURE, "focus change started");
 	return ret;
 }
 
