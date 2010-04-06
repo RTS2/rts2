@@ -520,59 +520,37 @@ AAG::info ()
 	return -1 ;
     }
     // check the state of the rain sensor
-    int weather_is_bad_rain   = false ; //true: bad weather
-    int weather_is_bad_sky    = false ;
-    int weather_is_bad_no_snow= false ;
-    if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) 
-    {
-      weather_is_bad_rain= true ;
-    }
-    // check the state of the cloud sensor
-    if ((tempSky->getValueDouble() > triggerSky->getValueDouble ())||(tempSkyCorrected->getValueDouble() > triggerSky->getValueDouble ()))
-    {
-      weather_is_bad_sky= true ;
-    }
     if ( abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())< triggerNoSnow->getValueDouble() )
     {
-      weather_is_bad_no_snow= true ;
+	if (getWeatherState () == true) // true: good weather, if now bad, notify
+	{
+
+	    logStream (MESSAGE_DEBUG) << "setting weather to bad, no snow : " << abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())
+				      << " trigger: " << triggerNoSnow->getValueDouble ()
+				      << sendLog;
+	}
+	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "snow on sensor"); // set to bad now
     }
-// set the results, the absence of bad weather is good weather
-    if (getWeatherState () == true) // true: good weather, if now bad, switch it to bad
+    else if (rainFrequency->getValueDouble () < triggerRain->getValueDouble ()) 
     {
-      if( weather_is_bad_rain && weather_is_bad_sky) 
-      {
-	logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
-				 << " trigger: " << triggerRain->getValueDouble ()
-	                         << " sky temperature: " << tempSky->getValueDouble ()
-				 << " trigger: " << triggerSky->getValueDouble ()
-				 << sendLog;
-	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining, sky temperature, no snow");
-      }
-      else if(  weather_is_bad_rain) // message rain is more important than ...
-      {
-	logStream (MESSAGE_INFO) << "setting weather to bad. rainFrequency: " << rainFrequency->getValueDouble ()
-				 << " trigger: " << triggerRain->getValueDouble ()
-				 << sendLog;
+	if (getWeatherState () == true) 
+	{
+	    logStream (MESSAGE_DEBUG) << "setting weather to bad, rainFrequency: " << rainFrequency->getValueDouble ()
+				      << " trigger: " << triggerRain->getValueDouble ()
+				      << sendLog;
+	}
 	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "raining");
-      }
-      else if(  weather_is_bad_sky) // ...message sky temperature than ...
-      {
-	logStream (MESSAGE_INFO) << "setting weather to bad, sky temperature: " << tempSky->getValueDouble ()
-				 << " trigger: " << triggerSky->getValueDouble ()
-				 << sendLog;
+    }
+    // check the state of the cloud sensor
+    else if ((tempSky->getValueDouble() > triggerSky->getValueDouble ()) && (tempSkyCorrected->getValueDouble() > triggerSky->getValueDouble ()))
+    {
+	if (getWeatherState () == true) 
+	{
+	    logStream (MESSAGE_DEBUG) << "setting weather to bad, sky temperature: " << tempSky->getValueDouble ()
+				      << " trigger: " << triggerSky->getValueDouble ()
+				      << sendLog;
+	}
 	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "sky temperature");
-      }
-      else if(  weather_is_bad_no_snow) //... message snow.
-      {
-	logStream (MESSAGE_INFO) << "setting weather to bad, no snow : " << abs(tempSky->getValueDouble()- tempIRSensor->getValueDouble())
-				 << " trigger: " << triggerNoSnow->getValueDouble ()
-				 << sendLog;
-	setWeatherTimeout (AAG_WEATHER_TIMEOUT_BAD, "snow on sensor");
-      }
-      else
-      {
-	//logStream (MESSAGE_DEBUG) << "setting weather to good" << sendLog;
-      }
     }
     return SensorWeather::info ();
 }
