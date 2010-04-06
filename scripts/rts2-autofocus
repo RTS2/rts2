@@ -458,6 +458,26 @@ sub set_rts2_focus_default_position
 	print "set_rts2_focus_default_position: do not set out of bounds focuser position: $foc, $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}, $focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}\n" ;
     }
 }
+sub set_rts2_focus_foff_position
+{
+    my $focusd= shift @_ ;
+    my $foc   = shift @_ ;
+
+    open( SETFOC, "rts2-xmlrpcclient -s $focusd.FOC_FOFF $foc|") or die "set_rts2_focus_toff_position: can't open rts2-xmlrpcclient -s $focusd.FOC_FOFF $foc: $!" ;
+    while( <SETFOC>){}
+    close( SETFOC) ;
+    return TRUE_VAL ;
+}
+sub set_rts2_focus_toff_position
+{
+    my $focusd= shift @_ ;
+    my $foc   = shift @_ ;
+
+    open( SETFOC, "rts2-xmlrpcclient -s $focusd.FOC_TOFF $foc|") or die "set_rts2_focus_toff_position: can't open rts2-xmlrpcclient -s $focusd.FOC_TOFF $foc: $!" ;
+    while( <SETFOC>){}
+    close( SETFOC) ;
+    return TRUE_VAL ;
+}
 sub set_rts2_focus_target_position
 {
     my $focusd= shift @_ ;
@@ -2138,6 +2158,8 @@ if( $take_data eq TRUE_STR)
 # test focuser device
     my $middle= $focuser_properties{ FOCUSER_ABSOLUTE_LOWER_LIMIT}  + ($focuser_properties{FOCUSER_ABSOLUTE_UPPER_LIMIT}- $focuser_properties{FOCUSER_ABSOLUTE_LOWER_LIMIT}) / 2 ;
     $middle=~ s/\.[0-9]+$// ; # truncate
+    set_rts2_focus_toff_position( $rts2_device_focusd, 0.) ;
+    set_rts2_focus_foff_position( $rts2_device_focusd, 0.) ;
     set_rts2_focus_default_position( $rts2_device_focusd, $middle) ;
     get_rts2_focus( $rts2_device_focusd, $middle) ;
 }
