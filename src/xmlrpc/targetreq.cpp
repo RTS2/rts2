@@ -24,6 +24,7 @@
 #include "imgpreview.h"
 #include "xmlrpc++/urlencoding.h"
 #include "../db/simbad/simbadtarget.h"
+#include "../utils/rts2command.h"
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/observationset.h"
@@ -54,6 +55,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 			processForm (params, response_type, response, response_length);
 			return;
 		}
+		if (vals[0] == "api")
+		{
+			processAPI (params, response_type, response, response_length);
+			return;
+		}
 		// get target id..
 		char *endptr;
 		int tar_id = strtol (vals[0].c_str (), &endptr, 10);
@@ -72,6 +78,11 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 				printTarget (tar, response_type, response, response_length);
 				break;
 			case 2:
+				if (vals[1] == "api")
+				{
+					callAPI (tar, params, response_type, response, response_length);
+					break;
+				}
 				if (vals[1] == "main")
 				{
 					printTarget (tar, response_type, response, response_length);
@@ -108,32 +119,61 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	std::ostringstream _os;
-	printHeader (_os, "List of targets");
+	printHeader (_os, "List of targets", NULL, NULL, "refreshTargets();");
 
-	_os << "<form action='form' method='post'><table>\n";
+	//	_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/main/'>" << iter->first
+	  //		<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
+	includeJavaScript (_os, "equ.js");
 
-	const char *t = params->getString ("t", NULL);
+	_os << "<script type='text/javascript'>\n"
+		"var targets = [];\n"
+		"function refreshTargets() {\n"
+			"var hr = new XMLHttpRequest();\n"
+			"hr.open('GET','api/',true);\n"
+			"hr.onreadystatechange = function() {\n"
+				"if (hr.readyState == 4 && hr.status == 200) {\n"
+					"targets = JSON.parse(hr.responseText);\n"
+					"var e = document.getElementById('targets');\n"
+					"var str = '<table>';\n"
+					"for (var i in targets) {\n"
+						"var t = targets[i];\n"
+						"str += '<tr><td><input type=\"checkbox\" name=\"tarid\" value=\"' + t[0] + '\"/></td>';\n"
+						"for (var j in t) {\n"
+							"str += '<td>' + t[j] + '</td>';\n"
+						"}\n"
+						"str += '<td id=\"alt_' + i + '\"></td><td id=\"az_' + i + '\"></td>';\n"
+						"str += '</tr>';\n"
+					"}\n"
+					"str += '</table>';\n"
+					"e.innerHTML = str;\n"
+					"updateTable(targets);\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+		"}\n"
 
-	rts2db::TargetSet ts;
+		"function updateTable() {\n"
+			"var jd = ln_get_julian_from_sys();\n"
+			"var st = ln_get_mean_sidereal_time(jd);\n"
+			"hAz = new DMS();\n"
+			"hAlt = new DMS();\n"
+			"for (var i in targets) {\n"
+				"var t = targets[i];\n"
+				"var radec = new RaDec(targets[i][2],targets[i][3]);\n"
+				"var altaz = radec.altaz();\n"
+				"t[4] = altaz.alt;\n"
+				"t[5] = altaz.az;\n"
+				"ln_deg_to_dms(altaz.alt,hAlt);\n"
+				"ln_deg_to_dms(altaz.az,hAz);\n"
+				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
+				"document.getElementById('az_' + i).innerHTML = hAz.toString ();\n"
+			"}\n"
+			"setTimeout('updateTable()',2000);\n"
+		"}\n"
 
-	if (t != NULL)
-	{
-		ts = rts2db::TargetSet (t);
-	}
-	else
-	{
-		ts = rts2db::TargetSet ();
-	}
+		"</script>\n";
 
-	ts.load ();
-
-	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
-	{
-		_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/main/'>" << iter->first
-			<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
-	}
-
-	_os << "</table>";
+	_os << "<form action='form' method='post'><div id='targets'>Loading...</div>\n";
 
 #ifdef HAVE_LIBJPEG
 	_os << "<input type='submit' value='Plot' name='plot'/>";
@@ -200,6 +240,47 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 #endif // HAVE_LIBJPEG
 }
 
+void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	response_type = "application/json";
+	std::ostringstream _os;
+
+	const char *t = params->getString ("t", NULL);
+
+	double JD = params->getDouble ("jd", ln_get_julian_from_sys ());
+
+	rts2db::TargetSet ts;
+
+	if (t != NULL)
+		ts = rts2db::TargetSet (t);
+	else
+		ts = rts2db::TargetSet ();
+	ts.load ();
+
+	_os << "[";
+
+	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
+	{
+		struct ln_equ_posn pos;
+		struct ln_hrz_posn hrz;
+		iter->second->getPosition (&pos, JD);
+		iter->second->getAltAz (&hrz, JD);
+		if (iter != ts.begin ())
+			_os << ",";
+		_os << "[" << iter->second->getTargetID () << ",\"" << iter->second->getTargetName () << "\",";
+		if (isnan (pos.ra) || isnan (pos.dec) || isnan (hrz.alt) || isnan (hrz.az))
+			_os << "0,0,0,0]";
+		else
+			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az << "]";
+	}
+
+	_os << "]";
+
+	response_length = _os.str ().length ();
+	response = new char[response_length];
+	memcpy (response, _os.str ().c_str (), response_length);
+}
+
 void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 {
 	std::ostringstream prefix;
@@ -210,6 +291,47 @@ void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
 		<< "images/'>images</a>&nbsp;<a href='" << prefix.str () 
 		<< "obs/'>observations</a>&nbsp;<a href='" << prefix.str ()
 		<< "altplot/'>altitude plot</a></p>";
+}
+
+void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	if (!canExecute ())
+		throw XmlRpcException ("you do not have permission to change anything");
+	const char *e = params->getString ("e", NULL);
+	if (e != NULL)
+	{
+		tar->setTargetEnabled (!strcmp (e, "true"), true);
+		tar->save (true);
+		returnJSON ("1", response_type, response, response_length);
+		return;
+	}
+	e = params->getString ("slew", NULL);
+	if (e != NULL)
+	{
+		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+		connections_t::iterator iter = master->getConnections ()->begin ();
+		master->getOpenConnectionType (DEVICE_TYPE_MOUNT, iter);
+		if (iter == master->getConnections ()->end ())
+		  	throw XmlRpcException ("Telescope is not connected");
+		struct ln_equ_posn pos;
+		tar->getPosition (&pos);
+		(*iter)->queCommand (new rts2core::Rts2CommandMove (master, NULL, pos.ra, pos.dec));
+
+		// return status..
+		Rts2ValueRaDec *telRaDec = (Rts2ValueRaDec *) ((*iter)->getValue ("TEL"));
+		Rts2ValueAltAz *telAltAz = (Rts2ValueAltAz *) ((*iter)->getValue ("TEL_"));
+		Rts2ValueRaDec *tarRaDec = (Rts2ValueRaDec *) ((*iter)->getValue ("TAR"));
+
+		std::ostringstream os;
+		os << "{\"remaining\":" << ((*iter)->getValueDouble ("move_end") - ((XmlRpcd *)getMasterApp ())->getNow ())
+			<< ", \"tel\": {\"ra\":" << telRaDec->getRa () << ", \"dec\":" << telRaDec->getDec ()
+			<< ", \"alt\":" << telAltAz->getAlt () << ", \"az\":" << telAltAz->getAz ()
+			<< "}, \"tar\": {\"ra\":" << tarRaDec->getRa () << ", \"dec\":" << tarRaDec->getDec ()
+			<< "} }";
+		returnJSON (os.str ().c_str (), response_type, response, response_length);
+		return;
+	}
+	throw XmlRpcException ("invalid API request");
 }
 
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
@@ -228,7 +350,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ");\n"
 	"hAlt = new DMS();\n"
 	"hAz = new DMS();\n"
-	"hSt = new DMS();\n"
+	"hSt = new HMS();\n"
 
 	"function altAzTimer() {\n"
 		"altaz = radec.altaz ();\n"
@@ -236,15 +358,62 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 		"ln_deg_to_dms(altaz.az,hAz);\n"
 		"var jd = ln_get_julian_from_sys();\n"
 		"var st = ln_get_mean_sidereal_time(jd);\n"
-		"ln_deg_to_dms(st,hSt);\n"
+		"ln_deg_to_hms(st,hSt);\n"
 //ln_get_mean_sidereal_time(ln_get_julian_from_sys()),hSt);\n"
 		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
 		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + (2/4) + ' ' + st;\n"
 		"document.getElementById('jd').innerHTML = jd;\n"
 		"setTimeout('altAzTimer()',100);\n"
-	"}\n"
+	"}\n";
 
-	"</script>\n";
+	if (canExecute ())
+	{
+		//enable target
+		_os << "function tar_enable (enable) {\n"
+			"var status;\n"
+			"var hr = new XMLHttpRequest();\n"
+			"hr.open('GET','api?e=' + enable);\n"
+			"hr.onreadystatechange = function () {\n"
+				"if (hr.readyState == 4 && hr.status == 200 ) {\n"
+					"status = JSON.parse(hr.responseText);\n"
+					"document.getElementById('tar_enable').checked = enable;\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+			"return false;\n"
+		"}\n"
+
+		"function tar_slew () {\n"
+			"var status = {};\n"
+			"var hr = new XMLHttpRequest();\n"
+			"document.getElementById('slew').innerHTML = '<div id=\"slew_message\">requesting slew..</div><div><span id=\"slew_tar_ra\"></span>&nbsp;<span id=\"slew_tar_dec\"></span></div><div><span id=\"slew_tel_ra\"></span>&nbsp;<span id=\"slew_tel_dec\"></span></div><div><span id=\"slew_tel_alt\"></span>&nbsp;<span id=\"slew_tel_az\"></span></div>';\n"
+			"document.getElementById('slew').style.display = '';\n"
+			"hr.open('GET','api?slew=yes');\n"
+			"hr.onreadystatechange = function () {\n"
+				"if (hr.readyState == 4 && hr.status == 200 ) {\n"
+					"status = JSON.parse(hr.responseText);\n"
+					"var d = new DMS();\n"
+					"var h = new HMS();\n"
+					"document.getElementById('slew_message').innerHTML = 'slewing ' + status.remaining;\n"
+					"ln_deg_to_hms(status.tar.ra,h);\n"
+					"ln_deg_to_dms(status.tar.dec,d);\n"
+					"document.getElementById('slew_tar_ra').innerHTML = h.toString ();\n"
+					"document.getElementById('slew_tar_dec').innerHTML = d.toString ();\n"
+					"ln_deg_to_hms(status.tel.ra,h);\n"
+					"ln_deg_to_dms(status.tel.dec,d);\n"
+					"document.getElementById('slew_tel_ra').innerHTML = h.toString ();\n"
+					"document.getElementById('slew_tel_dec').innerHTML = d.toString ();\n"
+					"ln_deg_to_hms(status.tel.az,d);\n"
+					"document.getElementById('slew_tel_az').innerHTML = d.toString ();\n"
+					"ln_deg_to_dms(status.tel.alt,d);\n"
+					"document.getElementById('slew_tel_alt').innerHTML = d.toString ();\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+		"}\n";
+	}
+
+	_os << "</script>\n";
 
 	printTargetHeader (tar->getTargetID (), _os);
 
@@ -253,12 +422,21 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
 		"<div>ALT AZ <span id='altaz'/></div>"
 		"<div>Sidereal Time " << ln_get_mean_sidereal_time(ln_get_julian_from_sys()) << "<span id='st'/></div>"
-		"<div>JD " << ln_get_julian_from_sys () << " <span id='jd'/></div>"
-		"<div><a href='?slew'>slew to target</a></div>"
-		"<div>Enabled: <input type='checkbox' onclick='alert(\"checked \" + this.checked);' name='enabled' checked='"
+		"<div>JD " << ln_get_julian_from_sys () << " <span id='jd'/></div>";
+	if (canExecute ())
+	{
+		_os << "<div><button type='button' onclick='tar_slew();'>slew to target</a></div>"
+		"<div id='slew' style='display:none'>not slewing</div>"
+		"<div>Enabled: <input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")
-		<< "'/></div>"
-		"</p>";
+		<< "'/></div>";
+	}
+	else
+	{
+	  	_os << "<div>Enabled: " << (tar->getTargetEnabled () ? "yes" : "no") << "</div>";
+	}
+
+	_os << "</p>";
 
 	printFooter (_os);
 

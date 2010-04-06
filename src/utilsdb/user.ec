@@ -324,12 +324,12 @@ int User::setEmail (std::string newEmail)
 	return 0;
 }
 
-bool verifyUser (std::string username, std::string pass)
+bool verifyUser (std::string username, std::string pass, bool &executePermission)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		VARCHAR db_username[25];
 		VARCHAR db_pass[25];
-		int d_ret;
+		bool d_executePermission;
 	EXEC SQL END DECLARE SECTION;
 	db_username.len = username.length ();
 	db_username.len = db_username.len > 25 ? 25 : db_username.len;
@@ -339,17 +339,28 @@ bool verifyUser (std::string username, std::string pass)
 	db_pass.len = db_pass.len > 25 ? 25 : db_pass.len;
 	strncpy (db_pass.arr, pass.c_str (), db_pass.len);
 
-	EXEC SQL SELECT
-		count (*)
-		INTO
-			:d_ret
+	EXEC SQL BEGIN TRANSACTION;
+
+	EXEC SQL DECLARE verify_cur CURSOR FOR
+		SELECT
+			usr_execute_permission
 		FROM
 			users
 		WHERE
 			usr_login = :db_username
 		AND usr_passwd = :db_pass;
 
-	EXEC SQL COMMIT;
+	EXEC SQL OPEN verify_cur;
 
-	return d_ret == 1;
+	EXEC SQL FETCH next FROM verify_cur INTO :d_executePermission;
+
+	if (sqlca.sqlcode == 0)
+	{
+		executePermission = d_executePermission;
+		EXEC SQL ROLLBACK;
+		return true;
+	}
+	executePermission = false;
+	EXEC SQL ROLLBACK;
+	return false;
 }

@@ -88,6 +88,44 @@ static const char *equScript =
   "}\n"
 "}\n"
 
+"function HMS() {\n"
+  "this.neg = 0;\n"
+  "this.hours = Infinity;\n"
+  "this.minutes = Infinity;\n"
+  "this.seconds = Infinity;\n"
+  "this.toString = function () { return (this.neg ? '-' : '') + this.hours.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 1000)/1000).format(3) + '\"'; }\n"
+"}\n"
+
+/* convert degrees to hms */
+"function ln_deg_to_hms (degrees,hms) {\n"
+  "var dtemp;\n"
+
+  "degrees /= 15.0;\n"
+
+  "if (degrees >= 0) { hms.neg = 0; }\n"
+  "else { hms.neg = 1; }\n"
+
+  "degrees = Math.abs(degrees);\n"
+  "hms.hours = Math.floor(degrees);\n"
+	
+  /* multiply remainder by 60 to get minutes */
+  "dtemp = 60*(degrees - hms.hours);\n"
+  "hms.minutes = Math.floor(dtemp);\n"
+    
+  /* multiply remainder by 60 to get seconds */
+  "hms.seconds = 60*(dtemp - hms.minutes);\n"
+    
+  /* catch any overflows */
+  "if (hms.seconds > 59) {\n"
+    "hms.seconds = 0;\n"
+    "hms.minutes++;\n"
+  "}\n"
+  "if (hms.minutes > 59) {\n"
+    "hms.minutes = 0;\n"
+    "hms.hours ++;\n"
+  "}\n"
+"}\n"
+
 "function ln_get_julian_from_sys() {\n"
   "var ld = new Date();\n"
   /* check for month = January or February */

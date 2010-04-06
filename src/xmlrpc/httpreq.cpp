@@ -56,7 +56,7 @@ void GetRequestAuthorized::execute (std::string path, HttpParams *params, int &h
 	}
 
 #ifdef HAVE_PGSQL
-	if (verifyUser (getUsername (), getPassword ()) == false)
+	if (verifyUser (getUsername (), getPassword (), executePermission) == false)
 	{
 		authorizePage (http_code, response_type, response, response_length);
 		return;

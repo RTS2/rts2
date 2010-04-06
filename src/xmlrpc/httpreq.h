@@ -58,7 +58,7 @@ namespace rts2xmlrpc
 class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 {
 	public:
-		GetRequestAuthorized (const char* prefix, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s) {}
+		GetRequestAuthorized (const char* prefix, const char *description = NULL, XmlRpc::XmlRpcServer* s = 0):XmlRpcServerGetRequest (prefix, description, s) { executePermission = false; }
 
 		virtual void execute (std::string path, XmlRpc::HttpParams *params, int &http_code, const char* &response_type, char* &response, size_t &response_length);
 
@@ -98,6 +98,29 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		void printFooter (std::ostream &os);
 
 		void includeJavaScript (std::ostream &os, const char *name);
+
+		/**
+		 * Return true if user can execute commands (make changes, set next targets, ..).
+		 *
+		 * @return true if user has usr_execute_permission set
+		 */
+		bool canExecute () { return executePermission; }
+
+		/**
+		 * Return JSON.
+		 *
+		 * @param 
+		 */
+		void returnJSON (const char *msg, const char* &response_type, char* &response, size_t &response_length)
+		{
+			response_type = "application/json";
+			response_length = strlen (msg);
+			response = new char[response_length];
+			memcpy (response, msg, response_length);
+		}
+
+	private:
+		bool executePermission;
 };
 
 /**

@@ -266,11 +266,12 @@ class User
 /**
  * Verify username and password combination.
  *
- * @param username   User login name.
- * @param pass       User password.
+ * @param username            user login name
+ * @param pass                user password
+ * @param executePermission   return value - true if user has execute permission
  *
  * @return True if login and password is correct, false otherwise.
  */
-bool verifyUser (std::string username, std::string pass);
+bool verifyUser (std::string username, std::string pass, bool &executePermission);
 
 #endif							 /* !__RTS2_USER__ */

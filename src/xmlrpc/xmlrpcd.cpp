@@ -430,9 +430,7 @@ void XmlRpcd::sendBB ()
 class Login: public XmlRpcServerMethod
 {
 	public:
-		Login (XmlRpcServer* s): XmlRpcServerMethod (R2X_LOGIN, s)
-		{
-		}
+		Login (XmlRpcServer* s): XmlRpcServerMethod (R2X_LOGIN, s) { executePermission = false; }
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -442,7 +440,7 @@ class Login: public XmlRpcServerMethod
 			}
 
 #ifdef HAVE_PGSQL
-			if (verifyUser (params[0], params[1]) == false)
+			if (verifyUser (params[0], params[1], executePermission) == false)
 			{
 				throw XmlRpcException ("Invalid login or password");
 			}
@@ -458,6 +456,8 @@ class Login: public XmlRpcServerMethod
 		{
 			return std::string ("Return session ID for user if logged properly");
 		}
+	private:
+		bool executePermission;
 } login(&xmlrpc_server);
 
 /**
@@ -471,9 +471,7 @@ class Login: public XmlRpcServerMethod
 class SessionMethod: public XmlRpcServerMethod
 {
 	public:
-		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s)
-		{
-		}
+		SessionMethod (const char *method, XmlRpcServer* s): XmlRpcServerMethod (method, s) { executePermission = false; }
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
@@ -486,7 +484,7 @@ class SessionMethod: public XmlRpcServerMethod
 			}
 
 #ifdef HAVE_PGSQL
-			if (verifyUser (getUsername (), getPassword ()) == false)
+			if (verifyUser (getUsername (), getPassword (), executePermission) == false)
 			{
 				throw XmlRpcException ("Invalid login or password");
 			}
@@ -499,6 +497,8 @@ class SessionMethod: public XmlRpcServerMethod
 		}
 
 		virtual void sessionExecute (XmlRpcValue& params, XmlRpcValue& result) = 0;
+	private:
+		bool executePermission;
 };
 
 
@@ -1566,15 +1566,17 @@ Plan plan ("/plan", &xmlrpc_server);
 class UserLogin: public XmlRpcServerMethod
 {
 	public:
-		UserLogin (XmlRpcServer* s) : XmlRpcServerMethod (R2X_USER_LOGIN, s) {}
+		UserLogin (XmlRpcServer* s) : XmlRpcServerMethod (R2X_USER_LOGIN, s) { executePermission = false; }
 
 		void execute (XmlRpcValue& params, XmlRpcValue& result)
 		{
 			if (params.size() != 2)
 				throw XmlRpcException ("Invalid number of parameters");
 
-			result = verifyUser (params[0], params[1]);
+			result = verifyUser (params[0], params[1], executePermission);
 		}
+	private:
+		bool executePermission;
 } userLogin (&xmlrpc_server);
 
 #endif /* HAVE_PGSQL */
