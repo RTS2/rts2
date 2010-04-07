@@ -93,7 +93,7 @@ static const char *equScript =
   "this.hours = Infinity;\n"
   "this.minutes = Infinity;\n"
   "this.seconds = Infinity;\n"
-  "this.toString = function () { return (this.neg ? '-' : '') + this.hours.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 1000)/1000).format(3) + '\"'; }\n"
+  "this.toString = function () { return (this.neg ? '-' : '') + this.hours.format(2,0) + ':' + this.minutes.format(2,0) + ':' + (Math.ceil(this.seconds * 1000)/1000).format(3); }\n"
 "}\n"
 
 /* convert degrees to hms */
