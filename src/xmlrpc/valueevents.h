@@ -53,12 +53,8 @@ class ValueChange:public Rts2Object
 		{
 			if (deviceName == _deviceName.c_str () && valueName == _valueName.c_str () && (cadency < 0 || lastTime + cadency < infoTime))
 			{
-				if (test)
-				{
-					std::cout << std::endl << "evaluating to " << test->evaluate () << std::endl;
-					if (test->evaluate () == 0)
+				if (test && test->evaluate () == 0)
 						return false;
-				}
 				return true;
 			}
 			return false;
