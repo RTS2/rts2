@@ -21,12 +21,15 @@
 #define __RTS2__VALUEEVENTS__
 
 #include "../utils/rts2value.h"
+#include "../utils/expression.h"
 
 #include "emailaction.h"
 
 #include <map>
 #include <list>
 #include <string>
+
+using namespace rts2expression;
 
 namespace rts2xmlrpc
 {
@@ -37,7 +40,7 @@ namespace rts2xmlrpc
 class ValueChange:public Rts2Object
 {
 	public:
-		ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency);
+		ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *test);
 
 		/**
 		 * Catch EVENT_XMLRPC_VALUE_TIMER events.
@@ -48,7 +51,17 @@ class ValueChange:public Rts2Object
 
 		bool isForValue (std::string _deviceName, std::string _valueName, double infoTime)
 		{
-			return deviceName == _deviceName && valueName == _valueName && (cadency < 0 || lastTime + cadency < infoTime);
+			if (deviceName == _deviceName.c_str () && valueName == _valueName.c_str () && (cadency < 0 || lastTime + cadency < infoTime))
+			{
+				if (test)
+				{
+					std::cout << std::endl << "evaluating to " << test->evaluate () << std::endl;
+					if (test->evaluate () == 0)
+						return false;
+				}
+				return true;
+			}
+			return false;
 		}
 
 		/**
@@ -67,12 +80,13 @@ class ValueChange:public Rts2Object
 	protected:
 		XmlRpcd *master;
 
-		std::string deviceName;
-		std::string valueName;
+		ci_string deviceName;
+		ci_string valueName;
 
 	private:
 		double lastTime;
 		float cadency;
+		Expression *test;
 };
 
 /**
@@ -84,9 +98,7 @@ class ValueChange:public Rts2Object
 class ValueChangeRecord: public ValueChange
 {
 	public:
-		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_master, _deviceName, _valueName, _cadency)
-		{
-		}
+		ValueChangeRecord (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test) {}
 
 		virtual void run (Rts2Value *val, double validTime);
 #ifdef HAVE_PGSQL
@@ -107,7 +119,7 @@ class ValueChangeRecord: public ValueChange
 class ValueChangeCommand: public ValueChange
 {
 	public:
-		ValueChangeCommand (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, std::string _commandName):ValueChange (_master, _deviceName, _valueName, _cadency)
+		ValueChangeCommand (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test, std::string _commandName):ValueChange (_master, _deviceName, _valueName, _cadency, _test)
 		{
 			commandName = _commandName;
 		}
@@ -125,9 +137,7 @@ class ValueChangeCommand: public ValueChange
 class ValueChangeEmail: public ValueChange, public EmailAction
 {
 	public:
-		ValueChangeEmail (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):ValueChange (_master, _deviceName, _valueName, _cadency), EmailAction ()
-		{
-		}
+		ValueChangeEmail (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):ValueChange (_master, _deviceName, _valueName, _cadency, _test), EmailAction () {}
 
 		virtual void run (Rts2Value *val, double validTime);
 };

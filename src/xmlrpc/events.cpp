@@ -108,22 +108,25 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 	float cadency = -1;
 	if (cadencyPtr != NULL)
 		cadency = atof ((char *) cadencyPtr->children->content);
+	xmlAttrPtr testPtr = xmlHasProp (event, (xmlChar *) "test");
+	Expression *test = NULL;
+	if (testPtr != NULL)
+	  	test = parseExpression ((char *) testPtr->children->content);
 
 	xmlNodePtr action = event->children;
 	for (; action != NULL; action = action->next)
 	{
 		if (xmlStrEqual (action->name, (xmlChar *) "record"))
 		{
-			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency));
+			valueCommands.push_back (new ValueChangeRecord (master, deviceName, std::string ((char *) valueName->children->content), cadency, test));
 		}
 		else if (xmlStrEqual (action->name, (xmlChar *) "command"))
 		{
-			valueCommands.push_back (new ValueChangeCommand (master, deviceName, std::string ((char *) valueName->children->content), cadency,
-				std::string ((char *) action->children->content)));
+			valueCommands.push_back (new ValueChangeCommand (master, deviceName, std::string ((char *) valueName->children->content), cadency, test, std::string ((char *) action->children->content)));
 		}
 		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
 		{
-			ValueChangeEmail *email = new ValueChangeEmail (master, deviceName, std::string ((char *) valueName->children->content), cadency);
+			ValueChangeEmail *email = new ValueChangeEmail (master, deviceName, std::string ((char *) valueName->children->content), cadency, test);
 			email->parse (action);
 			// add to, subject, body,..
 			valueCommands.push_back (email);

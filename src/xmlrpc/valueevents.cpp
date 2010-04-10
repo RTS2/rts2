@@ -24,14 +24,15 @@
 
 using namespace rts2xmlrpc;
 
-ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency):Rts2Object ()
+ValueChange::ValueChange (XmlRpcd *_master, std::string _deviceName, std::string _valueName, float _cadency, Expression *_test):Rts2Object ()
 {
 	master = _master;
-	deviceName = _deviceName;
-	valueName = _valueName;
+	deviceName = ci_string (_deviceName.c_str ());
+	valueName = ci_string (_valueName.c_str ());
 			
 	lastTime = 0;
 	cadency = _cadency;
+	test = _test;
 
 	if (cadency > 0)
 		master->addTimer (cadency, new Rts2Event (EVENT_XMLRPC_VALUE_TIMER, this));

@@ -36,6 +36,7 @@ class Devices: public GetRequestAuthorized
 	private:
 		void printList (char* &response, size_t &response_length);
 		void printDevice (const char *device, char* &response, size_t &response_length);
+		void callDeviceAPI (const char *device, XmlRpc::HttpParams *params, const char * &response_type, char * &response, size_t &response_length);
 };
 
 }

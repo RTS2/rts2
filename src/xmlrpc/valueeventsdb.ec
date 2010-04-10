@@ -143,7 +143,7 @@ void ValueChangeRecord::run (Rts2Value *val, double validTime)
 			recordValueBoolean (getRecvalId (NULL, RTS2_VALUE_BOOL), ((Rts2ValueBool *) val)->getValueBool (), validTime);
 			break;
 		default:
-			_os << "Cannot record value " << valueName;
+			_os << "Cannot record value " << valueName.c_str ();
 			throw rts2core::Error (_os.str ());
 	}
 	EXEC SQL COMMIT;

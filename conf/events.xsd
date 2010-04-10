@@ -78,9 +78,10 @@
     <xs:complexContent>
       <xs:extension base="action">
         <xs:attribute name="name" type="xs:string" use="required"/>
+	<xs:attribute name="test" type="xs:string" default=""/>
         <xs:attribute name="cadency" type="xs:integer" default="-1">
           <xs:annotation><xs:documentation>
-             Defines how often will be value changed recorded.
+             Defines time interval (in seconds) between successive value change records.
           </xs:documentation></xs:annotation>
         </xs:attribute>
      </xs:extension>

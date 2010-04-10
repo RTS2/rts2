@@ -106,3 +106,8 @@ void Devices::printDevice (const char *device, char* &response, size_t &response
 	response = new char[response_length];
 	memcpy (response, _os.str ().c_str (), response_length);
 }
+
+void Devices::callDeviceAPI (const char *device, XmlRpc::HttpParams *params, const char * &response_type, char * &response, size_t &response_length)
+{
+	
+}

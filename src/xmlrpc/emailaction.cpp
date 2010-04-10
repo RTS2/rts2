@@ -23,6 +23,26 @@
 
 using namespace rts2xmlrpc;
 
+ExpandStringDevice::ExpandStringDevice (const char *_deviceName)
+{
+	deviceName = new char[strlen (_deviceName) + 1];
+	strcpy (deviceName, _deviceName);
+}
+
+void ExpandStringDevice::writeTo (std::ostream &os)
+{
+	Rts2Conn *conn = ((Rts2Block *) getMasterApp ())->getOpenConnection (deviceName);
+	if (conn == NULL)
+	{
+		os << "unknow device " << deviceName << std::endl;
+		return;
+	}
+	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
+	{
+		os << (*iter)->getName () << "=" << (*iter)->getDisplayValue () << std::endl;
+	}
+}
+
 ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valueName)
 {
 	deviceName = new char[strlen (_deviceName) + 1];
@@ -31,12 +51,15 @@ ExpandStringValue::ExpandStringValue (const char *_deviceName, const char *_valu
 	strcpy (valueName, _valueName);
 }
 
-const char *ExpandStringValue::getString ()
+void ExpandStringValue::writeTo (std::ostream &os)
 {
 	Rts2Value *val = ((Rts2Block *) getMasterApp ())->getValue (deviceName, valueName);
 	if (val == NULL)
-		return "unknow value";
-	return val->getDisplayValue ();
+	{
+		os << "unknow value " << deviceName << "." << valueName;
+		return;
+	}
+	os << val->getDisplayValue ();
 }
 
 void ExpandStrings::expandXML (xmlNodePtr ptr)
@@ -55,6 +78,10 @@ void ExpandStrings::expandXML (xmlNodePtr ptr)
 				throw XmlMissingAttribute (ptr, "device");
 		  	push_back (new ExpandStringValue ((char *) deviceName->children->content, (char *) ptr->children->content));
 		}
+		else if (xmlStrEqual (ptr->name, (xmlChar *) "device"))
+		{
+
+		}
 		else
 		{
 			throw XmlUnexpectedNode (ptr);
@@ -64,10 +91,10 @@ void ExpandStrings::expandXML (xmlNodePtr ptr)
 
 std::string ExpandStrings::getString ()
 {
-	std::string ret;
+	std::ostringstream os;
 	for (ExpandStrings::iterator iter = begin (); iter != end (); iter++)
-		ret += (*iter)->getString ();
-	return ret;
+		(*iter)->writeTo (os);
+	return os.str ();
 }
 
 void EmailAction::parse (xmlNodePtr emailNode)

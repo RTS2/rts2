@@ -34,7 +34,7 @@ class ExpandString
 {
 	public:
 		ExpandString () {}
-		virtual const char *getString () = 0;
+		virtual void writeTo (std::ostream &os) = 0;
 };
 
 class ExpandStringString:public ExpandString
@@ -42,9 +42,20 @@ class ExpandStringString:public ExpandString
 	public:
 		ExpandStringString (const char * chrt) { str = new char[strlen (chrt) + 1]; strcpy (str, chrt); }
 		~ExpandStringString () { delete []str; }
-		const char *getString () { return str; }
+		virtual void writeTo (std::ostream &os) { os << str; }
 	private:
 		char *str;
+};
+
+class ExpandStringDevice:public ExpandString
+{
+	public:
+		ExpandStringDevice (const char *_deviceName);
+		~ExpandStringDevice () { delete []deviceName; }
+		virtual void writeTo (std::ostream &os);
+
+	private:
+		char *deviceName;
 };
 
 class ExpandStringValue:public ExpandString
@@ -52,7 +63,7 @@ class ExpandStringValue:public ExpandString
 	public:
 		ExpandStringValue (const char *_deviceName, const char *_valueName);
 		~ExpandStringValue () { delete []deviceName; delete []valueName; }
-		const char *getString ();
+		virtual void writeTo (std::ostream &os);
 
 	private:
 		char *deviceName;

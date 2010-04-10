@@ -41,12 +41,10 @@
       </value>
     </device>
     <device name="SD">
-      <value name="test_int" cadency="600" if="$test_int &lt; 20">
+      <value name="test_int" cadency="3" test="$SD.test_int &lt; 20">
         <record/>
+	<command>/etc/rts2/event.d/sd</command>
       </value>
     </device>
   </events>
-  <bb>
-    <server>example.com:8001</server>
-  </bb>
 </config>
