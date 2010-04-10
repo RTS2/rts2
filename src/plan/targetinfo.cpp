@@ -134,7 +134,7 @@ TargetInfo::TargetInfo (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv
 	airmd = rts2_nan ("f");
 
 	addOption ('s', NULL, 0, "print only selectable targets");
-	addOption ('e', NULL, 1, "print extended informations (visibility prediction,..)");
+	addOption ('e', NULL, 0, "print extended informations (visibility prediction,..)");
 	addOption ('g', NULL, 2, "print in GNU plot format, optionaly followed by output type (x11 | ps | png)");
 	addOption ('b', NULL, 0, "gnuplot bonus of the target");
 	addOption ('B', NULL, 0, "gnuplot bonus and altitude of the target");
