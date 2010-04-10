@@ -42,8 +42,11 @@ class Rts2GenFocClient:public Rts2Client
 		// to take darks images, set that to true
 		bool darks;
 
-		int centerHeight;
-		int centerWidth;
+		int xOffset;
+		int yOffset;
+
+		int imageHeight;
+		int imageWidth;
 
 		int autoDark;
 		int query;

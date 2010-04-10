@@ -26,6 +26,8 @@
 #include <vector>
 
 #define OPT_CHANGE_FILTER   OPT_LOCAL + 50
+#define OPT_SKIP_FILTER     OPT_LOCAL + 51
+#define OPT_PHOTOMETER_TIME OPT_LOCAL + 52
 
 Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient * in_master):Rts2DevClientCameraFoc (in_connection, in_master->getExePath ())
 {
@@ -42,8 +44,7 @@ Rts2GenFocCamera::Rts2GenFocCamera (Rts2Conn * in_connection, Rts2GenFocClient *
 Rts2GenFocCamera::~Rts2GenFocCamera (void)
 {
 	std::list < fwhmData * >::iterator fwhm_iter;
-	for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end ();
-		fwhm_iter++)
+	for (fwhm_iter = fwhmDatas.begin (); fwhm_iter != fwhmDatas.end (); fwhm_iter++)
 	{
 		fwhmData *dat;
 		dat = *fwhm_iter;
@@ -92,9 +93,7 @@ Rts2Image *Rts2GenFocCamera::createImage (const struct timeval *expStart)
 	return image;
 }
 
-
-imageProceRes
-Rts2GenFocCamera::processImage (Rts2Image * image)
+imageProceRes Rts2GenFocCamera::processImage (Rts2Image * image)
 {
 	imageProceRes res = Rts2DevClientCameraFoc::processImage (image);
 	std::cout << "Camera " << getName () << " image_type:";
@@ -114,9 +113,7 @@ Rts2GenFocCamera::processImage (Rts2Image * image)
 	return res;
 }
 
-
-void
-Rts2GenFocCamera::printFWHMTable ()
+void Rts2GenFocCamera::printFWHMTable ()
 {
 	std::list < fwhmData * >::iterator dat;
 	std::cout << "=======================" << std::endl;
@@ -131,9 +128,7 @@ Rts2GenFocCamera::printFWHMTable ()
 	std::cout << "=======================" << std::endl;
 }
 
-
-void
-Rts2GenFocCamera::focusChange (Rts2Conn * focus)
+void Rts2GenFocCamera::focusChange (Rts2Conn * focus)
 {
 	if (getActualImage()->sexResultNum)
 	{
@@ -197,8 +192,10 @@ Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_
 	defCenter = 0;
 	defBin = -1;
 
-	centerWidth = -1;
-	centerHeight = -1;
+	xOffset = -1;
+	yOffset = -1;
+	imageWidth = -1;
+	imageHeight = -1;
 
 	autoSave = 0;
 
@@ -217,38 +214,31 @@ Rts2GenFocClient::Rts2GenFocClient (int in_argc, char **in_argv):Rts2Client (in_
 
 	addOption (OPT_CONFIG, "config", 1, "configuration file");
 
-	addOption ('d', "device", 1,
-		"camera device name(s) (multiple for multiple cameras)");
-	addOption ('e', "exposure", 1, "exposure (defaults to 10 sec)");
+	addOption ('d', NULL, 1, "camera device name(s) (multiple for multiple cameras)");
+	addOption ('e', NULL, 1, "exposure (defaults to 10 sec)");
 	addOption ('a', "dark", 0, "create dark images");
-	addOption ('c', "center", 0, "takes only center images");
-	addOption ('b', "binning", 1,
-		"default binning (ussually 1, depends on camera setting)");
-	addOption ('Q', "query", 0,
-		"query after image end to user input (changing focusing etc..");
-	addOption ('R', "ra", 1, "target ra (must come with dec - -d)");
-	addOption ('D', "dec", 1, "target dec (must come with ra - -r)");
-	addOption ('W', "width", 1, "center width");
-	addOption ('H', "height", 1, "center height");
-	addOption ('F', "imageprocess", 1,
-		"image processing script (default to NULL - no image processing will be done");
-	addOption ('o', "output", 1, "save results to given file");
-	addOption ('T', "photometer_time", 1,
-		"photometer integration time (in seconds); default to 1 second");
-	addOption (OPT_CHANGE_FILTER, "change_filter", 1,
-		"change filter on photometer after taking n counts; default to 0 (don't change)");
-	addOption ('K', "skip_filter", 1, "Skip that filter number");
+	addOption ('c', NULL, 0, "takes only center images");
+	addOption ('b', NULL, 1, "default binning (ussually 1, depends on camera setting)");
+	addOption ('Q', NULL, 0, "query after image end to user input (changing focusing etc..");
+	addOption ('R', NULL, 1, "target ra (must come with dec - -D)");
+	addOption ('D', NULL, 1, "target dec (must come with ra - -R)");
+	addOption ('X', NULL, 1, "x pixel offset");
+	addOption ('Y', NULL, 1, "y pixel offset");
+	addOption ('W', NULL, 1, "image width");
+	addOption ('H', NULL, 1, "image height");
+	addOption ('F', NULL, 1, "image processing script (default to NULL - no image processing will be done");
+	addOption ('o', NULL, 1, "save results to given file");
+	addOption (OPT_PHOTOMETER_TIME, "photometer_time", 1, "photometer integration time (in seconds); default to 1 second");
+	addOption (OPT_CHANGE_FILTER, "change_filter", 1, "change filter on photometer after taking n counts; default to 0 (don't change)");
+	addOption (OPT_SKIP_FILTER, "skip_filter", 1, "Skip that filter number");
 }
-
 
 Rts2GenFocClient::~Rts2GenFocClient (void)
 {
 
 }
 
-
-int
-Rts2GenFocClient::processOption (int in_opt)
+int Rts2GenFocClient::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
@@ -276,11 +266,17 @@ Rts2GenFocClient::processOption (int in_opt)
 		case 'D':
 			tarDec = atof (optarg);
 			break;
+		case 'X':
+			xOffset = atoi (optarg);
+			break;
+		case 'Y':
+			yOffset = atoi (optarg);
+			break;
 		case 'W':
-			centerWidth = atoi (optarg);
+			imageWidth = atoi (optarg);
 			break;
 		case 'H':
-			centerHeight = atoi (optarg);
+			imageHeight = atoi (optarg);
 			break;
 		case 'c':
 			defCenter = 1;
@@ -291,13 +287,13 @@ Rts2GenFocClient::processOption (int in_opt)
 		case 'o':
 			photometerFile = optarg;
 			break;
-		case 'T':
+		case OPT_PHOTOMETER_TIME:
 			photometerTime = atof (optarg);
 			break;
 		case OPT_CHANGE_FILTER:
 			photometerFilterChange = atoi (optarg);
 			break;
-		case 'K':
+		case OPT_SKIP_FILTER:
 			skipFilters.push_back (atoi (optarg));
 			break;
 		default:
@@ -306,13 +302,10 @@ Rts2GenFocClient::processOption (int in_opt)
 	return 0;
 }
 
-
-Rts2GenFocCamera *
-Rts2GenFocClient::createFocCamera (Rts2Conn * conn)
+Rts2GenFocCamera * Rts2GenFocClient::createFocCamera (Rts2Conn * conn)
 {
 	return new Rts2GenFocCamera (conn, this);
 }
-
 
 Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 {
@@ -320,7 +313,11 @@ Rts2GenFocCamera *Rts2GenFocClient::initFocCamera (Rts2GenFocCamera * cam)
 	cam->setSaveImage (autoSave || focExe);
 	if (defCenter)
 	{
-		cam->center (centerWidth, centerHeight);
+		cam->center (imageWidth, imageHeight);
+	}
+	else if (xOffset >= 0 || yOffset >= 0 || imageWidth >= 0 || imageHeight >= 0)
+	{
+		cam->queCommand (new rts2core::Rts2CommandBox (cam, xOffset, yOffset, imageWidth, imageHeight));
 	}
 	if (!isnan (defExposure))
 	{
@@ -370,9 +367,7 @@ rts2core::Rts2DevClient *Rts2GenFocClient::createOtherType (Rts2Conn * conn, int
 	}
 }
 
-
-int
-Rts2GenFocClient::init ()
+int Rts2GenFocClient::init ()
 {
 	Rts2Config *config;
 	int ret;
