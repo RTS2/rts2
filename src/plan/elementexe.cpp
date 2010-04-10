@@ -313,7 +313,7 @@ Execute::~Execute ()
 	if (connExecute)
 	{
 		connExecute->nullMasterElement ();
-		delete connExecute;
+		connExecute->endConnection ();
 		connExecute = NULL;
 	}
 	client = NULL;
