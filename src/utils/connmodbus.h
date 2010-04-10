@@ -156,12 +156,24 @@ class ConnModbus: public ConnTCP
 		/**
 		 * Write value to a register.
 		 *
-		 * @param reg  Register address.
-		 * @param val  New register value.
+		 * @param reg  register address
+		 * @param val  new register value
 		 *
 		 * @throw            ConnError on error.
 		 */
 		void writeHoldingRegister (int16_t reg, int16_t val);
+
+		/**
+		 * Write masked value to a register. Actually read register,
+		 * mask out mask values, or with masked val, and write it back.
+		 *
+		 * @param reg  register address
+		 * @param mask mask (only bits with this mask will be written).
+		 * @param val  new register value.
+		 *
+		 * @throw            ConnError on error.
+		 */
+		void writeHoldingRegisterMask (int16_t reg, int16_t mask, int16_t val);
 };
 
 }

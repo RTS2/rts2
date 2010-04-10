@@ -24,16 +24,13 @@
 
 using namespace rts2core;
 
-ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port)
-:ConnTCP (_master, _hostname, _port)
+ConnModbus::ConnModbus (Rts2Block * _master, const char *_hostname, int _port):ConnTCP (_master, _hostname, _port)
 {
 	transId = 1;
 	unitId = 0;
 }
 
-
-void
-ConnModbus::callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size)
+void ConnModbus::callFunction (char func, const void *data, size_t data_size, void *reply, size_t reply_size)
 {
 	char send_data[8 + data_size];
 	// fill header
@@ -76,9 +73,7 @@ ConnModbus::callFunction (char func, const void *data, size_t data_size, void *r
 	}
 }
 
-
-void
-ConnModbus::callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size)
+void ConnModbus::callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t reply_size)
 {
 	int16_t req_data[2];
 	req_data[0] = htons (p1);
@@ -87,9 +82,7 @@ ConnModbus::callFunction (char func, int16_t p1, int16_t p2, void *reply, size_t
 	callFunction (func, req_data, 4, reply, reply_size);
 }
 
-
-void
-ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty)
+void ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_data, int16_t qty)
 {
 	int reply_size = 1 + qty * 2;
 	char reply[reply_size];
@@ -110,9 +103,7 @@ ConnModbus::callFunction (char func, int16_t p1, int16_t p2, uint16_t *reply_dat
 	}
 }
 
-
-void
-ConnModbus::readCoils (int16_t start, int16_t size)
+void ConnModbus::readCoils (int16_t start, int16_t size)
 {
 	int reply_size = 1 + (size / 8) + ((size % 8) == 0 ? 0 : 1);
 	char reply_data[reply_size];
@@ -120,9 +111,7 @@ ConnModbus::readCoils (int16_t start, int16_t size)
 	callFunction (0x01, start, size, reply_data, reply_size);
 }
 
-
-void
-ConnModbus::readDiscreteInputs (int16_t start, int16_t size)
+void ConnModbus::readDiscreteInputs (int16_t start, int16_t size)
 {
 	int reply_size = 1 + (size / 8) + ((size % 8) == 0 ? 0 : 1);
 	char reply_data[reply_size];
@@ -130,22 +119,27 @@ ConnModbus::readDiscreteInputs (int16_t start, int16_t size)
 	callFunction (0x02, start, size, reply_data, reply_size);
 }
 
-
-void
-ConnModbus::readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
+void ConnModbus::readHoldingRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
 {
 	callFunction (0x03, start, qty, reply_data, qty);
 }
 
-void
-ConnModbus::readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
+void ConnModbus::readInputRegisters (int16_t start, int16_t qty, uint16_t *reply_data)
 {
 	callFunction (0x04, start, qty, reply_data, qty);
 }
 
-void
-ConnModbus::writeHoldingRegister (int16_t reg, int16_t val)
+void ConnModbus::writeHoldingRegister (int16_t reg, int16_t val)
 {
   	int16_t reply[2];
 	callFunction (0x06, reg, val, reply, 4);
+}
+
+void ConnModbus::writeHoldingRegisterMask (int16_t reg, int16_t mask, int16_t val)
+{
+	uint16_t old_value;
+	readHoldingRegisters (reg, 1, &old_value);
+	old_value &= ~mask;
+	old_value |= (val & mask);
+	writeHoldingRegister (reg, old_value);
 }

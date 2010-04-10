@@ -62,6 +62,8 @@
 #define ZS_EMERGENCY_B   0x4000
 #define ZS_DEADMAN       0x8000
 
+// dead man timeout
+#define ZI_DEADMAN_MASK  0x007f
 // emergency button reset
 #define ZI_EMMERGENCY_R  0x2000
 // bit for Q9 - remote switch
@@ -168,7 +170,7 @@ class Zelio:public Dome
 		Rts2ValueFloat *battery;
 		Rts2ValueFloat *batteryMin;
 
-		Rts2ValueInteger *humidity;
+		Rts2ValueFloat *humidity;
 
 		Rts2ValueInteger *J1XT1;
 		Rts2ValueInteger *J2XT1;
@@ -186,7 +188,7 @@ class Zelio:public Dome
 
 		void createZelioValues ();
 
-		int getHumidity (int vout) { return vout; } // return (int) round ((((float) vout) / 5.0 - 0.16) / 0.0062); }
+		float getHumidity (int vout) { return ((0.8 + ((float) vout) * 10.0f / 255.0f ) / 5.0f - 0.16) / 0.0062; }
 };
 
 }
@@ -198,12 +200,12 @@ int Zelio::setBitsInput (uint16_t reg, uint16_t mask, bool value)
 	uint16_t oldValue;
 	try
 	{
-		zelioConn->readHoldingRegisters (ZREG_J1XT1, 1, &oldValue);
+		zelioConn->readHoldingRegisters (reg, 1, &oldValue);
 		// switch mask..
 		oldValue &= ~mask;
 		if (value)
 			oldValue |= mask;
-		zelioConn->writeHoldingRegister (ZREG_J1XT1, oldValue);
+		zelioConn->writeHoldingRegister (reg, oldValue);
 	}
 	catch (rts2core::ConnError err)
 	{
@@ -253,7 +255,7 @@ int Zelio::startOpen ()
 			logStream (MESSAGE_WARNING) << "current battery level (" << battery->getValueFloat () << ") is bellow minimal level (" << batteryMin->getValueFloat () << sendLog;
 		}
 
-		zelioConn->writeHoldingRegister (ZREG_J1XT1, deadTimeout->getValueInteger ());
+		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, deadTimeout->getValueInteger ());
 		zelioConn->writeHoldingRegister (ZREG_J2XT1, 0);
 		zelioConn->writeHoldingRegister (ZREG_J2XT1, 1);
 	}
@@ -297,7 +299,7 @@ bool Zelio::isGoodWeather ()
 	}
 	if (haveHumidityOutput)
 	{
-		humidity->setValueInteger (getHumidity (reg3));
+		humidity->setValueFloat (getHumidity (reg3));
 		sendValueAll (humidity);
 	}
 	weather->setValueBool (reg & ZS_WEATHER);
@@ -365,7 +367,7 @@ int Zelio::startClose ()
 	try
 	{
 		uint16_t reg;
-		zelioConn->writeHoldingRegister (ZREG_J1XT1, 0);
+		zelioConn->writeHoldingRegisterMask (ZREG_J1XT1, ZI_DEADMAN_MASK, 0);
 		// update automode status..
 		zelioConn->readHoldingRegisters (ZREG_O4XT1, 1, &reg);
 		automode->setValueBool (reg & ZS_SW_AUTO);
@@ -573,7 +575,7 @@ int Zelio::info ()
 
 	if (haveHumidityOutput)
 	{
-		humidity->setValueInteger (getHumidity (regs[6]));
+		humidity->setValueFloat (getHumidity (regs[6]));
 	}
 
 	J1XT1->setValueInteger (regs[0]);
