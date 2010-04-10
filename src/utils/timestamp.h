@@ -105,9 +105,7 @@ class TimeDiff
 	private:
 		double time_1, time_2;
 	public:
-		TimeDiff ()
-		{
-		}
+		TimeDiff () {}
 
 		TimeDiff (double in_time)
 		{
