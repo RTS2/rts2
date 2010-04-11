@@ -16,13 +16,12 @@ First some hints:
 Creating and populating /etc/rts2 directory
 ===========================================
 
-First of all, you need to create /etc/rts2 directory. This directory holds RTS2
-configuration files. At beginning, we need only rts2.ini in this directory.  As
-root. issue following commands:
+First of all, you need to create and populate /etc/rts2 directory. This
+directory holds RTS2 configuration files. At beginning. As root. issue
+following commands:
 
-root@host:$ mkdir /etc/rts2  # or some other directory, if you specify it during ./configure
 root@host:$ cd rts2
-root@host:rts2$ cp rts2.ini /etc/rts2/
+root@host:rts2$ ./rts2-init
 
 Now you need to edit /etc/rts2/rts2.ini and provide values for your
 installation (they are marked with xxxx, so just search for that and replace
@@ -59,16 +58,7 @@ Try the database with:
 
 user@host: rts2-targetinfo 1
 
-1 is dark frame target. It should produce some warnings, but should print something like:
-
-ID                  1
-SEL_ID              1
-NAME                Dark frames
-TYPE                100
-RA                  00:00:00.000
-DEC                 +000 00 00.00
-
-etc..
+1 is dark frame target. It shoudl print something like:
 
 If it does not print that out, there is something wrong. Please investigate it,
 try to fix it, or write me.

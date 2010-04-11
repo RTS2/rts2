@@ -10,7 +10,7 @@ Then run from RTS2 code (see generic instructions in INSTALL file):
 
 user@host:~/rts2$ ./configure --without-wcs --with-paralib=$HOME/paracl
 
-This will tell buidl system to build with paramount libraries.
+This will tell build system to build with paramount libraries.
 
 Then run make and (as root) make install. Please see RUN file for details on
 that.
