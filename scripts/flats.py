@@ -279,7 +279,7 @@ class Rts2Comm:
 
 	def runMorning(self):
 		for self.flat in self.morningFlats: # starting from the redest and ending with the bluest
-			self.setConfiguration(self.flat)
+			self.setConfiguration()
 			self.executeMorning()
 
 	def takeDarks(self):
