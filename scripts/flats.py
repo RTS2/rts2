@@ -133,13 +133,13 @@ class Rts2Comm:
 	def optimalExpTime(self,ratio,expMulti):
 		exptime = expMulti * self.exptime / ratio # We adjust the exposure time for the next exposure, so that it is close to the optimal value
 		if (exptime < self.expTimes[0]):
-			if (ratio > (1.0 - self.optimalRange - self.allowedOptimalDeviation)):
+			if (self.isEvening ()):
 				return self.startExpTime
 			return self.expTimes[0]
 		if (exptime > self.expTimes[-1]):
-			if (ratio < (1.0 + self.optimalRange + self.allowedOptimalDeviation)):
-				return self.startExpTime
-		  	return self.expTimes[-1]
+			if (self.isEvening ()):
+		  		return self.expTimes[-1]
+			return self.startExpTime
 
 		lastE = self.expTimes[0]
 		for e in self.expTimes:
