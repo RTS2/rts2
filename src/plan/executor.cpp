@@ -485,8 +485,8 @@ int Executor::setNext (int nextId)
 {
 	if (nextTargets.size() != 0)
 	{
-		if (nextTargets.front ()->getTargetID () == nextId)
-			// we observe the same target..
+		if (nextTargets.front ()->getTargetID () == nextId && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
+			// asked for same target
 			return 0;
 		clearNextTargets ();
 	}
@@ -508,8 +508,11 @@ int Executor::queueTarget (int tarId)
 	}
 	if (nt->getTargetType () == TYPE_FLAT && currentTarget != NULL && currentTarget->getTargetType () != TYPE_FLAT)
 	{
-		setNow (nt);
-		return 0;
+		return setNow (nt);
+	}
+	if (currentTarget && (currentTarget->getTargetType () == TYPE_FLAT || currentTarget->getTargetType () == TYPE_DARK) && nt->getTargetType () != currentTarget->getTargetType ())
+	{
+		return setNow (nt);
 	}
 	nextTargets.push_back (nt);
 	if (!currentTarget)
