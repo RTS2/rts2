@@ -266,7 +266,8 @@ class Rts2Centrald:public Rts2Daemon
 		Rts2ValueDouble *moonAlt;
 		Rts2ValueDouble *moonAz;
 
-		Rts2ValueDouble *moonPhase;
+		Rts2ValueDouble *lunarPhase;
+		Rts2ValueDouble *lunarLimb;
 
 		Rts2ValueTime *moonRise;
 		Rts2ValueTime *moonSet;

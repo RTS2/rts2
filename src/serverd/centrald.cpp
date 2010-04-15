@@ -413,13 +413,14 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVE
 	createValue (sunAlt, "sun_alt", "Sun altitude", false, RTS2_DT_DEC);
 	createValue (sunAz, "sun_az", "Sun azimuth", false, RTS2_DT_DEGREES);
 
-	createValue (sunRise, "sun_rise", "Sun rise", false);
-	createValue (sunSet, "sun_set", "Sun set", false);
+	createValue (sunRise, "sun_rise", "sun rise", false);
+	createValue (sunSet, "sun_set", "sun set", false);
 
-	createValue (moonAlt, "moon_alt", "Moon altitude", false, RTS2_DT_DEC);
-	createValue (moonAz, "moon_az", "Moon azimuth", false, RTS2_DT_DEGREES);
+	createValue (moonAlt, "moon_alt", "[deg] moon altitude", false, RTS2_DT_DEC);
+	createValue (moonAz, "moon_az", "[deg] moon azimuth", false, RTS2_DT_DEGREES);
 
-	createValue (moonPhase, "moon_phase", "Moon phase", false, RTS2_DT_PERCENTS);
+	createValue (lunarPhase, "lunar_phase", "[deg] lunar phase angle (sun-earth-moon)", false, RTS2_DT_DEGREES);
+	createValue (lunarLimb, "lunar_limb", "[deg] lunar bright limb", false, RTS2_DT_DEGREES);
 
 	createValue (moonRise, "moon_rise", "Moon rise", false);
 	createValue (moonSet, "moon_set", "Moon set", false);
@@ -648,8 +649,8 @@ int Rts2Centrald::changeState (int new_state, const char *user)
 int Rts2Centrald::info ()
 {
 	struct ln_equ_posn pos, parallax;
-	struct ln_hrz_posn hrz;
 	struct ln_rst_time rst;
+	struct ln_hrz_posn hrz;
 	double JD = ln_get_julian_from_sys ();
 
 	ln_get_solar_equ_coords (JD, &pos);
@@ -661,11 +662,6 @@ int Rts2Centrald::info ()
 	sunAlt->setValueDouble (hrz.alt);
 	sunAz->setValueDouble (hrz.az);
 
-	ln_get_solar_rst (JD, observer, &rst);
-
-	sunRise->setValueDouble (timetFromJD (rst.rise));
-	sunSet->setValueDouble (timetFromJD (rst.set));
-
 	ln_get_lunar_equ_coords (JD, &pos);
 	ln_get_parallax (&pos, ln_get_earth_solar_dist (JD), observer, 1700, JD, &parallax);
 	pos.ra += parallax.ra;
@@ -675,7 +671,13 @@ int Rts2Centrald::info ()
 	moonAlt->setValueDouble (hrz.alt);
 	moonAz->setValueDouble (hrz.az);
 
-	moonPhase->setValueDouble (ln_get_lunar_phase (JD) / 1.8);
+	ln_get_solar_rst (JD, observer, &rst);
+
+	sunRise->setValueDouble (timetFromJD (rst.rise));
+	sunSet->setValueDouble (timetFromJD (rst.set));
+
+	lunarPhase->setValueDouble (ln_get_lunar_phase (JD));
+	lunarLimb->setValueDouble (ln_get_lunar_bright_limb (JD));
 
 	ln_get_lunar_rst (JD, observer, &rst);
 
