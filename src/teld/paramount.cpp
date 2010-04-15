@@ -42,20 +42,15 @@
 #define PARK_AXIS0      0
 #define PARK_AXIS1      0
 
-typedef enum
-{ T16, T32 }
-para_t;
+typedef enum { T16, T32 } para_t;
 
 /**
- * Holds paramount constant values
+ * Holds paramount constant values.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
  */
 class ParaVal
 {
-	private:
-		const char *name;
-		para_t type;
-		int id;
-
 	public:
 		ParaVal (const char *in_name, para_t in_type, int in_id)
 		{
@@ -71,6 +66,11 @@ class ParaVal
 
 		int writeAxis (std::ostream & _os, const MKS3Id & axis);
 		int readAxis (std::istream & _is, const MKS3Id & axis);
+
+	private:
+		const char *name;
+		para_t type;
+		int id;
 };
 
 int ParaVal::writeAxis (std::ostream & _os, const MKS3Id & axis)
@@ -132,6 +132,44 @@ namespace rts2teld
 
 class Paramount:public GEM
 {
+	public:
+		Paramount (int in_argc, char **in_argv);
+		virtual ~ Paramount (void);
+
+		virtual int idle ();
+
+		virtual int info ();
+
+	protected:
+		virtual int init ();
+		virtual int initValues ();
+
+		virtual int processOption (int in_opt);
+		virtual int isMoving ();
+		virtual int isParking ();
+
+		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
+
+		virtual int updateLimits ();
+
+		virtual void updateTrack ();
+
+		// returns actual home offset
+		virtual int getHomeOffset (int32_t & off);
+
+		virtual int startResync ();
+		virtual int endMove ();
+		virtual int stopMove ();
+
+		virtual int startPark ();
+		virtual int endPark ();
+
+		// save and load gemini informations
+		virtual int saveModel ();
+		virtual int loadModel ();
+
+		virtual bool haveDiffTrack () { return true; }
+
 	private:
 		MKS3Id axis0;
 		MKS3Id axis1;
@@ -148,6 +186,9 @@ class Paramount:public GEM
 
 		Rts2ValueInteger *statusRa;
 		Rts2ValueInteger *statusDec;
+
+		Rts2ValueLong *baseRa;
+		Rts2ValueLong *baseDec;
 
 		Rts2ValueBool *tracking;
 
@@ -176,40 +217,10 @@ class Paramount:public GEM
 		struct timeval track_next;
 		MKS3ObjTrackInfo *track0;
 		MKS3ObjTrackInfo *track1;
-	protected:
-		virtual int init ();
-		virtual int initValues ();
 
-		virtual int processOption (int in_opt);
-		virtual int isMoving ();
-		virtual int isParking ();
-
-		virtual int setValue (Rts2Value *oldValue, Rts2Value *newValue);
-
-		virtual int updateLimits ();
-
-		virtual void updateTrack ();
-
-		// returns actual home offset
-		virtual int getHomeOffset (int32_t & off);
-
-		virtual int startResync ();
-		virtual int endMove ();
-		virtual int stopMove ();
-
-		virtual int startPark ();
-		virtual int endPark ();
-
-		// save and load gemini informations
-		virtual int saveModel ();
-		virtual int loadModel ();
-	public:
-		Paramount (int in_argc, char **in_argv);
-		virtual ~ Paramount (void);
-
-		virtual int idle ();
-
-		virtual int info ();
+		// return RA and DEC value pair
+		int getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec);
+		int setParamountValue32 (int id, Rts2Value *vRa, Rts2Value *vDec);
 };
 
 };
@@ -443,6 +454,9 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv)
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
+	createValue (baseRa, "BR_RA", "[counts/sec] RA axis base rate", true, RTS2_VALUE_WRITABLE);
+	createValue (baseDec, "BR_DEC", "[counts/sec] DEC axis base rate", true, RTS2_VALUE_WRITABLE);
+
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
 
@@ -462,12 +476,9 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv)
 	device_name = "/dev/ttyS0";
 	paramount_cfg = "/etc/rts2/paramount.cfg";
 	addOption ('f', "device_name", 1, "device file (default /dev/ttyS0");
-	addOption ('P', "paramount_cfg", 1,
-		"paramount config file (default /etc/rts2/paramount.cfg");
-	addOption ('R', "recalculate", 1,
-		"track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
-	addOption ('t', "set indices", 0,
-		"if we need to load indices as first operation");
+	addOption ('P', "paramount_cfg", 1, "paramount config file (default /etc/rts2/paramount.cfg");
+	addOption ('R', "recalculate", 1, "track update interval in sec; < 0 to disable track updates; defaults to 1 sec");
+	addOption ('t', "set indices", 0, "if we need to load indices as first operation");
 
 	addOption ('D', "dec_park", 1, "DEC park position");
 	// in degrees! 30 for south, -30 for north hemisphere
@@ -708,20 +719,11 @@ void Paramount::updateTrack ()
 	sky2counts (&corr_pos, ac, dc, JD, 0);
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " <<
-		track_delta << sendLog;
+	logStream (MESSAGE_DEBUG) << "Track ac " << ac << " dc " << dc << " " << track_delta << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
-	ret0 =
-		MKS3ObjTrackPointAdd (axis0, track0,
-		track_delta +
-		track0->prevPointTimeTicks / track0->sampleFreq,
-		(CWORD32) (ac + (track_delta * 10000)), &stat0);
-	ret1 =
-		MKS3ObjTrackPointAdd (axis1, track1,
-		track_delta +
-		track1->prevPointTimeTicks / track1->sampleFreq,
-		(CWORD32) (dc + (track_delta * 10000)), &stat1);
+	ret0 = MKS3ObjTrackPointAdd (axis0, track0, track_delta + track0->prevPointTimeTicks / track0->sampleFreq, (CWORD32) (ac + (track_delta * 10000)), &stat0);
+	ret1 = 	MKS3ObjTrackPointAdd (axis1, track1, track_delta + track1->prevPointTimeTicks / track1->sampleFreq, (CWORD32) (dc + (track_delta * 10000)), &stat1);
 	checkRet ();
 }
 
@@ -806,6 +808,9 @@ int Paramount::info ()
 	setTelDec (t_telDec);
 	axRa->setValueLong (ac);
 	axDec->setValueLong (dc);
+	if (ret)
+		return ret;
+  	ret = getParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 	if (ret)
 		return ret;
 	return GEM::info ();
@@ -896,8 +901,7 @@ int Paramount::startResync ()
 	moveState = TEL_SLEW;
 
 	#ifdef DEBUG_EXTRA
-	logStream (MESSAGE_DEBUG) << "Paramount::startResync " << ac <<
-		" " << dc << sendLog;
+	logStream (MESSAGE_DEBUG) << "Paramount::startResync " << ac << " " << dc << sendLog;
 	#endif						 /* DEBUG_EXTRA */
 
 	ret0 = MKS3PosTargetSet (axis0, (long) ac);
@@ -916,7 +920,12 @@ int Paramount::startResync ()
 		moveState |= TEL_FORCED_HOMING1;
 		setParkTimeNow ();
 	}
-	return checkRet ();
+	ret = checkRet ();
+	if (ret)
+		return ret;
+	if (setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec))
+	  	return -1;
+	return 0;
 }
 
 int Paramount::isMoving ()
@@ -986,9 +995,12 @@ int Paramount::endMove ()
 	#endif // DEBUG_EXTRA */
 	// 1 sec sleep to get time to settle down
 	sleep (1);
-	if (!ret)
-		return GEM::endMove ();
-	return ret;
+	if (ret)
+		return ret;
+	ret = setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
+	if (ret)
+	  	return ret;
+	return GEM::endMove ();
 }
 
 int Paramount::stopMove ()
@@ -1080,6 +1092,14 @@ int Paramount::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 			MKS3MotorOff (axis0);
 		return 0;
 
+	}
+	if (oldValue == baseRa)
+	{
+		return setParamountValue32 (CMD_VAL32_BASERATE, newValue, baseDec) ? -2 : 0;
+	}
+	if (oldValue == baseDec)
+	{
+		return setParamountValue32 (CMD_VAL32_BASERATE, baseRa, newValue) ? -2 : 0;
 	}
 	return Telescope::setValue (oldValue, newValue);
 }
@@ -1214,6 +1234,35 @@ int Paramount::loadModel ()
 	ret = checkRet ();
 	if (ret)
 		return -1;
+	return 0;
+}
+
+int Paramount::getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec)
+{
+  	CWORD32 _ra,_dec;
+	ret0 = _MKS3DoGetVal32 (axis0, id, &_ra);
+	ret1 = _MKS3DoGetVal32 (axis1, id, &_dec);
+	if (checkRet ())
+	{
+		logStream (MESSAGE_ERROR) << "cannot get 32 bit value with ID " << id << sendLog;
+		return -1;
+	}
+	vRa->setValueLong (_ra);
+	vDec->setValueLong (_dec);
+	return 0;
+}
+
+int Paramount::setParamountValue32 (int id, Rts2Value *vRa, Rts2Value *vDec)
+{
+	CWORD32 _ra = vRa->getValueLong ();
+	CWORD32 _dec = vDec->getValueLong ();
+	ret0 = _MKS3DoSetVal32 (axis0, id, _ra);
+	ret1 = _MKS3DoSetVal32 (axis1, id, _dec);
+	if (checkRet ())
+	{
+		logStream (MESSAGE_ERROR) << "cannot set 32 bit value with ID " << id << sendLog;
+		return -1;
+	}
 	return 0;
 }
 
