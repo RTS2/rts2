@@ -332,6 +332,36 @@ void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_ty
 		returnJSON (os.str ().c_str (), response_type, response, response_length);
 		return;
 	}
+	e = params->getString ("next", NULL);
+	if (e != NULL)
+	{
+		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+		connections_t::iterator iter = master->getConnections ()->begin ();
+		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
+		if (iter == master->getConnections ()->end ())
+		  	throw XmlRpcException ("Executor is not running");
+		(*iter)->queCommand (new rts2core::Rts2CommandExecNext (master, tar->getTargetID ()));
+
+		std::ostringstream os;
+		os << "{\"status\": 0 }";
+		returnJSON (os.str ().c_str (), response_type, response, response_length);
+		return;
+	}
+	e = params->getString ("now", NULL);
+	if (e != NULL)
+	{
+		XmlRpcd *master = (XmlRpcd *) getMasterApp ();
+		connections_t::iterator iter = master->getConnections ()->begin ();
+		master->getOpenConnectionType (DEVICE_TYPE_EXECUTOR, iter);
+		if (iter == master->getConnections ()->end ())
+		  	throw XmlRpcException ("Executor is not running");
+		(*iter)->queCommand (new rts2core::Rts2CommandExecNow (master, tar->getTargetID ()));
+
+		std::ostringstream os;
+		os << "{\"status\": 0 }";
+		returnJSON (os.str ().c_str (), response_type, response, response_length);
+		return;
+	}
 	throw XmlRpcException ("invalid API request");
 }
 
@@ -411,7 +441,38 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 				"}\n"
 			"}\n"
 			"hr.send(null);\n"
+		"}\n"
+
+		"function tar_next () {\n"
+			"var status = {};\n"
+			"var hr = new XMLHttpRequest();\n"
+			"document.getElementById('next').innerHTML = '<div id=\"next_message\">requesting next..</div>';\n"
+			"document.getElementById('next').style.display = '';\n"
+			"hr.open('GET','api?next=yes');\n"
+			"hr.onreadystatechange = function () {\n"
+				"if (hr.readyState == 4 && hr.status == 200 ) {\n"
+					"status = JSON.parse(hr.responseText);\n"
+					"document.getElementById('next_message').innerHTML = 'queued';\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+		"}\n"
+
+		"function tar_now () {\n"
+			"var status = {};\n"
+			"var hr = new XMLHttpRequest();\n"
+			"document.getElementById('now').innerHTML = '<div id=\"now_message\">requesting now..</div>';\n"
+			"document.getElementById('now').style.display = '';\n"
+			"hr.open('GET','api?now=yes');\n"
+			"hr.onreadystatechange = function () {\n"
+				"if (hr.readyState == 4 && hr.status == 200 ) {\n"
+					"status = JSON.parse(hr.responseText);\n"
+					"document.getElementById('now_message').innerHTML = 'executed';\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
 		"}\n";
+
 	}
 
 	_os << "</script>\n";
@@ -428,6 +489,10 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	{
 		_os << "<div><button type='button' onclick='tar_slew();'>slew to target</a></div>"
 		"<div id='slew' style='display:none'>not slewing</div>"
+		"<div><button type='button' onclick='tar_next();'>next target</a></div>"
+		"<div id='next' style='display:none'>nothing</div>"
+		"<div><button type='button' onclick='tar_now();'>now (immediate) target</a></div>"
+		"<div id='now' style='display:none'>nothing</div>"
 		"<div>Enabled: <input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")
 		<< "'/></div>";
