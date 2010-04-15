@@ -69,9 +69,18 @@ class Observation;
 class DeviceMissingExcetion:public rts2core::Error
 {
 	public:
-		DeviceMissingExcetion (const char *cameraName):rts2core::Error ()
+		DeviceMissingExcetion (const char *deviceName):rts2core::Error ()
 		{
-			setMsg (std::string ("camera ") + cameraName + " default script cannot be found in device list.");
+			setMsg (std::string ("default script of device ") + deviceName + " cannot be found in RTS2 configuration file.");
+		}
+};
+
+class CameraMissingExcetion:public rts2core::Error
+{
+	public:
+		CameraMissingExcetion (const char *cameraName):rts2core::Error ()
+		{
+			setMsg (std::string ("camera ") + cameraName + " cannot be found in cameras table.");
 		}
 };
 
@@ -127,7 +136,7 @@ class Target:public Rts2Target
 		 * @throw CameraMissingExcetion when script was not specified and camera cannot be found in rts2.ini
 		 */
 		virtual bool getScript (const char *device_name, std::string & buf);
-		int setScript (const char *device_name, const char *buf);
+		void setScript (const char *device_name, const char *buf);
 		struct ln_lnlat_posn *getObserver () { return observer; }
 
 		// return target semi-diameter, in degrees

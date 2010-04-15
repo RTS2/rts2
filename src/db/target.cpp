@@ -287,10 +287,17 @@ Rts2TargetApp::doProcessing ()
 				std::cerr << "PARSING of script '" << iter->script << "' FAILED!!! AT " << failedCount << std::endl
 					<< std::string (iter->script).substr (0, failedCount + 1) << std::endl;
 				for (; failedCount > 0; failedCount--)
-					std::cout << ' ';
-				std::cout << "^ here" << std::endl;
+					std::cerr << ' ';
+				std::cerr << "^ here" << std::endl;
 			}
-			target_set->setTargetScript (iter->cameraName, iter->script);
+			try
+			{
+				target_set->setTargetScript (iter->cameraName, iter->script);
+			}
+			catch (rts2db::CameraMissingExcetion &ex)
+			{
+				std::cerr << "Missing camera " << iter->cameraName << ". Is it filled in \"cameras\" database table?" << std::endl;
+			}
 		}
 	}
 	if (op & OP_NEXT_OBSER)

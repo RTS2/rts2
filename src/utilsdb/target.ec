@@ -870,12 +870,12 @@ bool Target::getScript (const char *device_name, std::string &buf)
 	throw rts2db::DeviceMissingExcetion (device_name);
 }
 
-int Target::setScript (const char *device_name, const char *buf)
+void Target::setScript (const char *device_name, const char *buf)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		VARCHAR d_camera_name[8];
-		VARCHAR d_script[2000];
-		int d_tar_id = getTargetID ();
+	VARCHAR d_camera_name[8];
+	VARCHAR d_script[2000];
+	int d_tar_id = getTargetID ();
 	EXEC SQL END DECLARE SECTION;
 
 	d_camera_name.len = strlen (device_name);
@@ -914,18 +914,16 @@ int Target::setScript (const char *device_name, const char *buf)
 			AND tar_id = :d_tar_id;
 		if (sqlca.sqlcode)
 		{
-			logMsgDb ("Target::setScript", MESSAGE_ERROR);
+			if (sqlca.sqlcode == ECPG_NOT_FOUND)
+				throw rts2db::CameraMissingExcetion (device_name);
 			EXEC SQL ROLLBACK;
-			return -1;
+			throw rts2db::SqlError ();
 		}
 	}
 	EXEC SQL COMMIT;
-	return 0;
 }
 
-
-void
-Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
+void Target::getAltAz (struct ln_hrz_posn *hrz, double JD)
 {
 	struct ln_equ_posn object;
 
