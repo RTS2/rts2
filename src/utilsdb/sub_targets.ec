@@ -177,13 +177,19 @@ DarkTarget::~DarkTarget ()
 {
 }
 
-int DarkTarget::getScript (const char *deviceName, std::string &buf)
+bool DarkTarget::getScript (const char *deviceName, std::string &buf)
 {
-	if (getDBScript (deviceName, buf) == 0)
-		return 0;
+ 	try
+	{
+		getDBScript (deviceName, buf);
+		return false;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 	// otherwise, take bias frames
 	buf = std::string ("D 0");
-	return 0;
+	return false;
 }
 
 void DarkTarget::getPosition (struct ln_equ_posn *pos, double JD)
@@ -220,15 +226,19 @@ void FlatTarget::getAntiSolarPos (struct ln_equ_posn *pos, double JD)
 	ln_get_equ_from_hrz (&hrz, observer, JD, pos);
 }
 
-int FlatTarget::getScript (const char *deviceName, std::string &buf)
+bool FlatTarget::getScript (const char *deviceName, std::string &buf)
 {
-	int ret;
-	ret = ConstTarget::getDBScript (deviceName, buf);
-	if (!ret)
-		return ret;
+	try
+	{
+		ConstTarget::getDBScript (deviceName, buf);
+		return false;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 	// default string
 	buf = std::string ("E 1");
-	return 0;
+	return false;
 }
 
 // we will try to find target, that is among empty fields, and is at oposite location from sun
@@ -603,10 +613,10 @@ float CalibrationTarget::getBonus (double JD)
 	return minBonus + ((maxBonus - minBonus) * t_diff / (maxDelay - validTime));
 }
 
-int FocusingTarget::getScript (const char *device_name, std::string &buf)
+bool FocusingTarget::getScript (const char *device_name, std::string &buf)
 {
 	buf = std::string (COMMAND_FOCUSING);
-	return 0;
+	return false;
 }
 
 ModelTarget::ModelTarget (int in_tar_id, struct ln_lnlat_posn *in_obs):ConstTarget (in_tar_id, in_obs)
@@ -887,12 +897,6 @@ void LunarTarget::getPosition (struct ln_equ_posn *pos, double JD)
 int LunarTarget::getRST (struct ln_rst_time *rst, double JD, double horizon)
 {
 	return ln_get_body_rst_horizon (JD, observer, ln_get_lunar_equ_coords, horizon, rst);
-}
-
-int LunarTarget::getScript (const char *deviceName, std::string &buf)
-{
-	buf = std::string ("E 1");
-	return 0;
 }
 
 TargetSwiftFOV::TargetSwiftFOV (int in_tar_id, struct ln_lnlat_posn *in_obs):Target (in_tar_id, in_obs)
@@ -1739,11 +1743,11 @@ int TargetPlan::load (double JD)
 	return 0;
 }
 
-int TargetPlan::getDBScript (const char *camera_name, std::string &script)
+bool TargetPlan::getScript (const char *camera_name, std::string &script)
 {
 	if (selectedPlan)
 		return selectedPlan->getTarget()->getScript (camera_name, script);
-	return Target::getDBScript (camera_name, script);
+	return Target::getScript (camera_name, script);
 }
 
 void TargetPlan::getPosition (struct ln_equ_posn *pos, double JD)

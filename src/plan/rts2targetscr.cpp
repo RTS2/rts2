@@ -19,83 +19,62 @@
 
 #include "rts2targetscr.h"
 
-Rts2TargetScr::Rts2TargetScr (Rts2ScriptInterface * in_master)
-:Rts2Target ()
+Rts2TargetScr::Rts2TargetScr (Rts2ScriptInterface * in_master):Rts2Target ()
 {
 	master = in_master;
 	target_id = 1;
 	moveEnded ();
 }
 
-
 Rts2TargetScr::~Rts2TargetScr (void)
 {
 }
 
-
-int
-Rts2TargetScr::getScript (const char *device_name, std::string & buf)
+bool Rts2TargetScr::getScript (const char *device_name, std::string & buf)
 {
 	int ret = master->findScript (std::string (device_name), buf);
 	if (ret >= 0)
-		return ret;
-
-	buf = std::string ("");
-	return -1;
+		return ret > 0;
+	
+	throw rts2core::Error (std::string ("script for device ") + device_name + " is missing.");
 }
 
-
-void
-Rts2TargetScr::getPosition (struct ln_equ_posn *pos, double JD)
+void Rts2TargetScr::getPosition (struct ln_equ_posn *pos, double JD)
 {
 	master->getPosition (pos, JD);
 }
 
-
-int
-Rts2TargetScr::setNextObservable (time_t * time_ch)
+int Rts2TargetScr::setNextObservable (time_t * time_ch)
 {
 	return 0;
 }
 
-
-void
-Rts2TargetScr::setTargetBonus (float new_bonus, time_t * new_time)
+void Rts2TargetScr::setTargetBonus (float new_bonus, time_t * new_time)
 {
 
 }
 
-
-int
-Rts2TargetScr::save (bool overwrite)
+int Rts2TargetScr::save (bool overwrite)
 {
 	return 0;
 }
 
-
-int
-Rts2TargetScr::save (bool overwrite, int tar_id)
+int Rts2TargetScr::save (bool overwrite, int tar_id)
 {
 	return 0;
 }
 
-
-moveType
-Rts2TargetScr::startSlew (struct ln_equ_posn * position)
+moveType Rts2TargetScr::startSlew (struct ln_equ_posn * position)
 {
 	position->ra = position->dec = 0;
 	return OBS_MOVE_FAILED;
 }
 
-
-int
-Rts2TargetScr::startObservation (Rts2Block * in_master)
+int Rts2TargetScr::startObservation (Rts2Block * in_master)
 {
 	return -1;
 }
 
-
-void
-Rts2TargetScr::writeToImage (Rts2Image * image, double JD)
+void Rts2TargetScr::writeToImage (Rts2Image * image, double JD)
 {
 }

@@ -25,6 +25,7 @@
 #include "observation.h"
 #include "observationset.h"
 #include "targetset.h"
+#include "sqlerror.h"
 
 #include "../utils/infoval.h"
 #include "../utils/rts2app.h"
@@ -46,9 +47,7 @@ Target::logMsgDb (const char *message, messageType_t msgType)
 		sqlca.sqlerrm.sqlerrmc << " (at " << message << ")" << sendLog;
 }
 
-
-void
-Target::getTargetSubject (std::string &subj)
+void Target::getTargetSubject (std::string &subj)
 {
 	std::ostringstream _os;
 	_os
@@ -58,39 +57,7 @@ Target::getTargetSubject (std::string &subj)
 	subj = _os.str();
 }
 
-
-void
-Target::sendTargetMail (int eventMask, const char *subject_text, Rts2Block *master)
-{
-/*	std::string mails;
-
-	int count;
-	// send mails
-	mails = getUsersEmail (eventMask, count);
-	if (count > 0)
-	{
-		std::ostringstream os;
-		std::ostringstream subject;
-		std::string tars;
-		getTargetSubject (tars);
-		subject << "TARGET " << tars << " "
-			<< subject_text << " obs #" << getObsId ();
-		// lazy observation init
-		if (observation == NULL)
-		{
-			observation = new Observation (getObsId ());
-			observation->load ();
-			observation->setPrintImages (DISPLAY_ALL | DISPLAY_SUMMARY);
-			observation->setPrintCounts (DISPLAY_ALL | DISPLAY_SUMMARY);
-		}
-		os << (*this) << std::endl << *observation;
-		master->sendMailTo (subject.str().c_str(), os.str().c_str(), mails.c_str());
-	} */
-}
-
-
-void
-Target::writeAirmass (std::ostream & _os, double jd)
+void Target::writeAirmass (std::ostream & _os, double jd)
 {
 	double am = getAirmass (jd);
 	if (am > 9)
@@ -99,9 +66,7 @@ Target::writeAirmass (std::ostream & _os, double jd)
 		_os << std::setw (3) << getAirmass (jd);
 }
 
-
-void
-Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
+void Target::printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step, bool header)
 {
 	double i;
 	struct ln_hrz_posn hrz;
@@ -292,7 +257,6 @@ Rts2Target ()
 	target_type = TYPE_UNKNOW;
 	target_name = NULL;
 	target_comment = NULL;
-	targetUsers = NULL;
 
 	startCalledNum = 0;
 
@@ -318,7 +282,6 @@ Target::Target ()
 	target_type = TYPE_UNKNOW;
 	target_name = NULL;
 	target_comment = NULL;
-	targetUsers = NULL;
 
 	startCalledNum = 0;
 
@@ -343,7 +306,6 @@ Target::~Target (void)
 	endObservation (-1);
 	delete[] target_name;
 	delete[] target_comment;
-	delete targetUsers;
 	delete observation;
 }
 
@@ -442,8 +404,6 @@ Target::loadTarget (int in_tar_id)
 
 	setTargetEnabled (d_tar_enabled, false);
 
-	// load target users for events..
-	targetUsers = new Rts2TarUser (getTargetID (), getTargetType ());
 	return 0;
 }
 
@@ -724,20 +684,15 @@ Target::startObservation (Rts2Block *master)
 		}
 		EXEC SQL COMMIT;
 		obsStarted ();
-
-		sendTargetMail (SEND_START_OBS, "START OBSERVATION", master);
 	}
 	return 0;
 }
 
-
-int
-Target::endObservation (int in_next_id, Rts2Block *master)
+int Target::endObservation (int in_next_id, Rts2Block *master)
 {
 	int old_obs_id = getObsId ();
 
 	int ret = endObservation (in_next_id);
-	sendTargetMail (SEND_END_OBS, "END OF OBSERVATION", master);
 
 	// check if that was the last observation..
 	Observation out_observation = Observation (old_obs_id);
@@ -859,18 +814,7 @@ Target::postprocess ()
 	return 0;
 }
 
-
-/**
- * Return script for camera exposure.
- *
- * @param target        target id
- * @param camera_name   name of the camera
- * @param script        script
- *
- * return -1 on error, 0 on success
- */
-int
-Target::getDBScript (const char *camera_name, std::string &script)
+void Target::getDBScript (const char *camera_name, std::string &script)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int tar_id = getTargetID ();
@@ -893,42 +837,40 @@ Target::getDBScript (const char *camera_name, std::string &script)
 			tar_id = :tar_id
 		AND camera_name = :d_camera_name;
 	if (sqlca.sqlcode == ECPG_NOT_FOUND)
-		return -1;
-	if (sqlca.sqlcode)
-		goto err;
-	if (sc_indicator < 0)
-		goto err;
+		throw rts2db::SqlError ();
+
+	if (sqlca.sqlcode || sc_indicator < 0)
+	{
+		logStream (MESSAGE_ERROR) << "while loading script for device " << camera_name << " and target " << tar_id << " : " << sqlca.sqlerrm.sqlerrmc << sendLog;
+		throw rts2db::SqlError ();
+	}
+
 	sc_script.arr[sc_script.len] = '\0';
 	script = std::string (sc_script.arr);
-	return 0;
-	err:
-	logMsgDb ("err db_get_script", MESSAGE_DEBUG);
-	script = std::string ("");
-	return -1;
 }
 
-int Target::getScript (const char *device_name, std::string &buf)
+bool Target::getScript (const char *device_name, std::string &buf)
 {
 	int ret;
 	Rts2Config *config;
 	config = Rts2Config::instance ();
 
-	ret = getDBScript (device_name, buf);
-	if (!ret)
-		return 0;
+	try
+	{
+		getDBScript (device_name, buf);
+		return false;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 
 	ret = config->getString (device_name, "script", buf);
 	if (!ret)
-		return 0;
-
-	// default is empty script
-	buf = std::string ("");
-	return -1;
+		return false;
+	throw rts2db::DeviceMissingExcetion (device_name);
 }
 
-
-int
-Target::setScript (const char *device_name, const char *buf)
+int Target::setScript (const char *device_name, const char *buf)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		VARCHAR d_camera_name[8];
@@ -1486,17 +1428,6 @@ Target::getLastObsTime ()
 	}
 	return d_time_diff;
 }
-
-
-std::string
-Target::getUsersEmail (int in_event_mask, int &count)
-{
-	if (targetUsers)
-		return targetUsers->getUsers (in_event_mask, count);
-	count = 0;
-	return std::string ("");
-}
-
 
 double
 Target::getFirstObs ()

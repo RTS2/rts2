@@ -94,6 +94,10 @@ class Script:public Rts2Object
 		virtual ~ Script (void);
 
 		/**
+		 * Parse target script.
+		 */
+		void parseScript (Rts2Target *target, struct ln_equ_posn *target_pos);
+		/**
 		 * Get script from target, create vector of script elements and
 		 * script string, which will be put to FITS header.
 		 *

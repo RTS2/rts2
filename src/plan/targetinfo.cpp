@@ -76,6 +76,7 @@ class TargetInfo:public Rts2AppDb
 		Rts2CamList cameras;
 		Target *target;
 		struct ln_lnlat_posn *obs;
+		void printScripts (const char *pref);
 		void printTargetInfo ();
 		void printTargetInfoGNUplot (double jd_start, double pbeg, double pend, double step);
 		void printTargetInfoGNUBonus (double jd_start, double pbeg, double pend, double step);
@@ -269,24 +270,48 @@ int TargetInfo::processArgs (const char *arg)
 	return 0;
 }
 
+void TargetInfo::printScripts (const char *pref)
+{
+	Rts2CamList::iterator cam_names;
+	for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
+	{
+		const char *cam_name = (*cam_names).c_str ();
+		std::string script_buf;
+		int failedCount;
+		std::cout << pref << cam_name << ":'";
+		try
+		{
+			target->getScript (cam_name, script_buf);
+			std::cout << script_buf << std::endl;
+		}
+		catch (rts2core::Error &er)
+		{
+			std::cout << " error : " << er << std::endl;
+		}
+		// try to parse it..
+		rts2script::Script script = rts2script::Script ();
+		script.setTarget (cam_name, target);
+		failedCount = script.getFaultLocation ();
+		if (failedCount != -1)
+		{
+			std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
+				<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
+			for (; failedCount > 0; failedCount--)
+				std::cout << " ";
+			std::cout << "^ here" << std::endl;
+		}
+	}
+}
+
 void TargetInfo::printTargetInfo ()
 {
 	if (!(printImages & DISPLAY_FILENAME))
 	{
-		Rts2CamList::iterator cam_names;
 		if (printExtended == 0)
 		{
 			target->printShortInfo (std::cout, JD);
 			std::cout << std::endl;
-			for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
-			{
-				const char *cam_name = (*cam_names).c_str ();
-				int ret;
-				std::string script_buf;
-				ret = target->getScript (cam_name, script_buf);
-				std::cout << "       " << cam_name << " : " << script_buf << " : " << (ret ? "failed" : "OK") << std::endl;
-			}
-
+			printScripts ("       ");
 			return;
 		}
 		Rts2InfoValOStream ivos (&std::cout);
@@ -303,29 +328,7 @@ void TargetInfo::printTargetInfo ()
 				target->sendPositionInfo (ivos, JD);
 			}
 		}
-		for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
-		{
-			const char *cam_name = (*cam_names).c_str ();
-			int ret;
-			std::string script_buf;
-			int failedCount;
-			ret = target->getScript (cam_name, script_buf);
-			std::
-				cout << "script for camera " << cam_name << ":'" << script_buf <<
-				"' ret (" << ret << ")" << std::endl;
-			// try to parse it..
-			rts2script::Script script = rts2script::Script ();
-			script.setTarget (cam_name, target);
-			failedCount = script.getFaultLocation ();
-			if (failedCount != -1)
-			{
-				std::cout << "PARSING of script '" << script_buf << "' FAILED!!! AT " << failedCount << std::endl
-					<< script.getWholeScript ().substr (0, failedCount + 1) << std::endl;
-				for (; failedCount > 0; failedCount--)
-					std::cout << " ";
-				std::cout << "^ here" << std::endl;
-			}
-		}
+		printScripts ("script for camera ");
 	}
 	// print recomended calibrations targets
 	if (printCalTargets)

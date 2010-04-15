@@ -147,9 +147,67 @@ Script::~Script (void)
 	delete[] cmdBuf;
 }
 
+void Script::parseScript (Rts2Target *target, struct ln_equ_posn *target_pos)
+{
+	char *comment = NULL;
+	Element *element;
+	// find any possible comment and mark it
+	cmdBufTop = cmdBuf;
+	while (*cmdBufTop && *cmdBufTop != '#')
+		cmdBufTop++;
+	if (*cmdBufTop == '#')
+	{
+		*cmdBufTop = '\0';
+		cmdBufTop++;
+		while (*cmdBufTop && isspace (*cmdBufTop))
+			cmdBufTop++;
+		comment = cmdBufTop;
+	}
+
+	// if we are adding and last character is not space, add space
+
+	if (wholeScript.length () != 0 && wholeScript[wholeScript.length () - 1] != ' ')
+	{
+		lineOffset++;
+		wholeScript += std::string (" ");
+	}
+
+	wholeScript += std::string (cmdBuf);
+
+	cmdBufTop = cmdBuf;
+	commandStart = cmdBuf;
+	while (1)
+	{
+		element = parseBuf (target, target_pos);
+		if (!element)
+			break;
+		element->setLen (cmdBufTop - commandStart);
+		lineOffset += cmdBufTop - commandStart;
+		elements.push_back (element);
+	}
+
+	// add comment if there was one
+	if (comment)
+	{
+		element = new ElementComment (this, comment, commentNumber);
+		std::ostringstream ws;
+		ws << "#" << commentNumber << " ";
+		if (wholeScript.length () > 0)
+		{
+			wholeScript += " ";
+			lineOffset++;
+		}
+		wholeScript += ws.str ();
+		commentNumber++;
+
+		element->setLen (2);
+		lineOffset += 3;
+		elements.push_back (element);
+	}
+}
+
 int Script::setTarget (const char *cam_name, Rts2Target * target)
 {
-	Element *element;
 	std::string scriptText;
 	struct ln_equ_posn target_pos;
 
@@ -160,76 +218,24 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	wholeScript = std::string ("");
 
 	int ret = 1;
-	// offset on scripts over one line
 	do
 	{
 		delete[] cmdBuf;
 
-		ret = target->getScript (cam_name, scriptText);
-		if (ret == -1)
+		try
 		{
+			ret = target->getScript (cam_name, scriptText);
+		}
+		catch (rts2core::Error &er)
+		{
+			logStream (MESSAGE_ERROR) << "cannot load script for device " << cam_name << " and target " << target->getTargetName () << "(# " << target->getTargetID () << sendLog;
 			el_iter = elements.begin ();
 			return -1;
 		}
 
-		char *comment = NULL;
-		int offset = 0;
 		cmdBuf = new char[scriptText.length () + 1];
 		strcpy (cmdBuf, scriptText.c_str ());
-		// find any possible comment and mark it
-		cmdBufTop = cmdBuf;
-		while (*cmdBufTop && *cmdBufTop != '#')
-			cmdBufTop++;
-		if (*cmdBufTop == '#')
-		{
-			*cmdBufTop = '\0';
-			cmdBufTop++;
-			while (*cmdBufTop && isspace (*cmdBufTop))
-				cmdBufTop++;
-			comment = cmdBufTop;
-		}
-
-		// if we are adding and last character is not space, add space
-
-		if (wholeScript.length () != 0 && wholeScript[wholeScript.length () - 1] != ' ')
-		{
-			lineOffset++;
-			wholeScript += std::string (" ");
-		}
-
-		wholeScript += std::string (cmdBuf);
-
-		cmdBufTop = cmdBuf;
-		commandStart = cmdBuf;
-		while (1)
-		{
-			element = parseBuf (target, &target_pos);
-			if (!element)
-				break;
-			element->setLen (cmdBufTop - commandStart);
-			offset += cmdBufTop - commandStart;
-			elements.push_back (element);
-		}
-
-		// add comment if there was one
-		if (comment)
-		{
-			element = new ElementComment (this, comment, commentNumber);
-			std::ostringstream ws;
-			ws << "#" << commentNumber << " ";
-			if (wholeScript.length () > 0)
-			{
-				wholeScript += " ";
-				offset++;
-			}
-			wholeScript += ws.str ();
-			commentNumber++;
-
-			element->setLen (2);
-			offset += 3;
-			elements.push_back (element);
-		}
-		lineOffset += offset;
+		parseScript (target, &target_pos);
 		// ret == 0 if this was the last (or only) line of the script - see target->getScript call comments.
 	} while (ret == 1);
 
@@ -237,8 +243,7 @@ int Script::setTarget (const char *cam_name, Rts2Target * target)
 	currElement = NULL;
 	for (el_iter = elements.begin (); el_iter != elements.end (); el_iter++)
 	{
-		element = *el_iter;
-		element->beforeExecuting ();
+		(*el_iter)->beforeExecuting ();
 	}
 	el_iter = elements.begin ();
 	return 0;

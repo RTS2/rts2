@@ -39,7 +39,7 @@ class Rts2TargetScr:public Rts2Target
 		virtual ~ Rts2TargetScr (void);
 
 		// target manipulation functions
-		virtual int getScript (const char *device_name, std::string & buf);
+		virtual bool getScript (const char *device_name, std::string & buf);
 
 		// return target position at given julian date
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);

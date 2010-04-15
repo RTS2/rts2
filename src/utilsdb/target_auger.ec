@@ -553,7 +553,7 @@ void TargetAuger::addShowerOffset (struct ln_equ_posn &pos)
 	showerOffsets.push_back (pos);
 }
 
-int TargetAuger::getScript (const char *device_name, std::string &buf)
+bool TargetAuger::getScript (const char *device_name, std::string &buf)
 {
 	if (showerOffsets.size () == 0)
 		updateShowerFields ();
@@ -569,10 +569,10 @@ int TargetAuger::getScript (const char *device_name, std::string &buf)
 			_os << "E 10 ";
 		}
 		buf = _os.str ();
-		return 0;
+		return false;
 	}
 	buf = std::string ("E 5");
-	return 0;
+	return false;
 }
 
 float TargetAuger::getBonus (double JD)

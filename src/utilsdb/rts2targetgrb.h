@@ -26,26 +26,6 @@ class ConstTarget;
 
 class TargetGRB:public ConstTarget
 {
-	private:
-		double grbDate;
-		double lastUpdate;
-		int gcnPacketType;		 // gcn packet from last update
-		int gcnGrbId;
-		bool grb_is_grb;
-		int shouldUpdate;
-		int gcnPacketMin;		 // usefull for searching for packet class
-		int gcnPacketMax;
-
-		int maxBonusTimeout;
-		int dayBonusTimeout;
-		int fiveBonusTimeout;
-
-		struct ln_equ_posn grb;
-		double errorbox;
-
-		const char *getSatelite ();
-	protected:
-		virtual int getDBScript (const char *camera_name, std::string & script);
 	public:
 		TargetGRB (int in_tar_id, struct ln_lnlat_posn *in_obs,
 			int in_maxBonusTimeout, int in_dayBonusTimeout,
@@ -53,7 +33,7 @@ class TargetGRB:public ConstTarget
 		virtual int load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int compareWithTarget (Target * in_target, double grb_sep_limit);
-		virtual int getScript (const char *deviceName, std::string & buf);
+		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual int beforeMove ();
 		virtual float getBonus (double JD);
 		virtual double getMinObsAlt ()
@@ -97,5 +77,27 @@ class TargetGRB:public ConstTarget
 		void printGrbList (std::ostream & _os);
 
 		virtual void writeToImage (Rts2Image * image, double JD);
+
+	protected:
+		virtual void getDBScript (const char *camera_name, std::string & script);
+
+	private:
+		double grbDate;
+		double lastUpdate;
+		int gcnPacketType;		 // gcn packet from last update
+		int gcnGrbId;
+		bool grb_is_grb;
+		int shouldUpdate;
+		int gcnPacketMin;		 // usefull for searching for packet class
+		int gcnPacketMax;
+
+		int maxBonusTimeout;
+		int dayBonusTimeout;
+		int fiveBonusTimeout;
+
+		struct ln_equ_posn grb;
+		double errorbox;
+
+		const char *getSatelite ();
 };
 #endif							 /* !__RTS2_TARGETGRB__ */

@@ -19,6 +19,7 @@
 
 #include "../plan/script.h"
 #include "../utilsdb/rts2appdb.h"
+#include "../utilsdb/target.h"
 #include "../utilsdb/targetset.h"
 #include "../utils/rts2askchoice.h"
 #include "../utils/rts2config.h"
@@ -90,8 +91,7 @@ Rts2AppDb (in_argc, in_argv)
 	camera = NULL;
 
 	addOption ('e', NULL, 0, "enable given targets");
-	addOption ('d', NULL, 0,
-		"disable given targets (they will not be picked up by selector");
+	addOption ('d', NULL, 0, "disable given targets (they will not be picked up by selector");
 	addOption ('p', NULL, 1, "set target (fixed) priority");
 	addOption ('b', NULL, 1, "set target bonus to this value");
 	addOption ('t', NULL, 1, "set target bonus time to this value");
@@ -275,18 +275,19 @@ Rts2TargetApp::doProcessing ()
 	}
 	if (op & OP_SCRIPT)
 	{
-		for (std::list < CamScript >::iterator iter = new_scripts.begin ();
-			iter != new_scripts.end (); iter++)
+		for (std::list < CamScript >::iterator iter = new_scripts.begin (); iter != new_scripts.end (); iter++)
 		{
 			rts2script::Script script = rts2script::Script (iter->script);
-			script.setTarget (iter->cameraName, (Rts2Target *) (target_set->begin ()->second));
+			struct ln_equ_posn target_pos;
+			target_set->begin ()->second->getPosition (&target_pos);
+			script.parseScript (((Rts2Target *) target_set->begin ()->second), &target_pos);
 			int failedCount = script.getFaultLocation ();
 			if (failedCount != -1)
 			{
 				std::cerr << "PARSING of script '" << iter->script << "' FAILED!!! AT " << failedCount << std::endl
 					<< std::string (iter->script).substr (0, failedCount + 1) << std::endl;
 				for (; failedCount > 0; failedCount--)
-					std::cout << " ";
+					std::cout << ' ';
 				std::cout << "^ here" << std::endl;
 			}
 			target_set->setTargetScript (iter->cameraName, iter->script);

@@ -18,6 +18,7 @@
  */
 
 #include "rts2targetgrb.h"
+#include "sqlerror.h"
 
 #include "../utils/rts2config.h"
 #include "../utils/libnova_cpp.h"
@@ -207,23 +208,24 @@ TargetGRB::checkValidity ()
 	}
 }
 
-
-int
-TargetGRB::getDBScript (const char *camera_name, std::string &script)
+void TargetGRB::getDBScript (const char *camera_name, std::string &script)
 {
 	EXEC SQL BEGIN DECLARE SECTION;
-		int d_post_sec;
-		int d_pos_ind;
-		VARCHAR sc_script[2000];
-		VARCHAR d_camera_name[8];
+	int d_post_sec;
+	int d_pos_ind;
+	VARCHAR sc_script[2000];
+	VARCHAR d_camera_name[8];
 	EXEC SQL END DECLARE SECTION;
 
-	int ret;
-
 	// use target script, if such exist..
-	ret = ConstTarget::getDBScript (camera_name, script);
-	if (!ret)
-		return ret;
+	try
+	{
+		ConstTarget::getDBScript (camera_name, script);
+		return;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 
 	d_camera_name.len = strlen (camera_name);
 	strncpy (d_camera_name.arr, camera_name, d_camera_name.len);
@@ -257,30 +259,29 @@ TargetGRB::getDBScript (const char *camera_name, std::string &script)
 	}
 	if (sqlca.sqlcode)
 	{
-		logMsgDb ("TargetGRB::getDBScript database error", MESSAGE_ERROR);
-		script = std::string ("");
 		EXEC SQL CLOSE find_grb_script;
 		EXEC SQL ROLLBACK;
-		return -1;
+		throw rts2db::SqlError ();
 	}
 	sc_script.arr[sc_script.len] = '\0';
 	script = std::string (script);
 	EXEC SQL CLOSE find_grb_script;
 	EXEC SQL COMMIT;
-	return 0;
 }
 
-
-int
-TargetGRB::getScript (const char *deviceName, std::string &buf)
+bool TargetGRB::getScript (const char *deviceName, std::string &buf)
 {
-	int ret;
 	time_t now;
 
 	// try to find values first in DB..
-	ret = getDBScript (deviceName, buf);
-	if (!ret)
-		return ret;
+	try
+	{
+		getDBScript (deviceName, buf);
+		return false;
+	}
+	catch (rts2core::Error &er)
+	{
+	}
 
 	time (&now);
 
@@ -297,7 +298,7 @@ TargetGRB::getScript (const char *deviceName, std::string &buf)
 	{
 		buf = std::string ("for 4 { E 20 } ");
 	}
-	return 0;
+	return false;
 }
 
 

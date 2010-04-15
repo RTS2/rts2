@@ -34,7 +34,6 @@
 #include "../utils/rts2device.h"
 #include "../utils/rts2target.h"
 
-#include "rts2taruser.h"
 #include "targetset.h"
 
 #include "scriptcommands.h"
@@ -61,6 +60,21 @@
 
 namespace rts2db {
 class Observation;
+
+/**
+ * Exception raised when default device script cannot be found in configuration file.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
+class DeviceMissingExcetion:public rts2core::Error
+{
+	public:
+		DeviceMissingExcetion (const char *cameraName):rts2core::Error ()
+		{
+			setMsg (std::string ("camera ") + cameraName + " default script cannot be found in device list.");
+		}
+};
+
 }
 
 class Rts2Image;
@@ -86,42 +100,6 @@ class Rts2Image;
  */
 class Target:public Rts2Target
 {
-	private:
-		// holds current target observation
-		rts2db::Observation * observation;
-
-		int type;				 // light, dark, flat, flat_dark
-		std::string tar_info;
-
-		int startCalledNum;		 // how many times startObservation was called - good to know for targets
-		double airmassScale;
-
-		time_t observationStart;
-
-		Rts2TarUser *targetUsers;
-
-		// which changes behaviour based on how many times we called them before
-
-								 // send mail to users..
-		void sendTargetMail (int eventMask, const char *subject_text, Rts2Block * master);
-
-		double minObsAlt;
-
-		float tar_priority;
-		float tar_bonus;
-		time_t tar_bonus_time;
-		time_t tar_next_observable;
-
-		void writeAirmass (std::ostream & _os, double jd);
-
-	protected:
-		char *target_comment;
-		struct ln_lnlat_posn *observer;
-
-		virtual int getDBScript (const char *camera_name, std::string & script);
-
-								 // get called when target was selected to update bonuses etc..
-		virtual int selectedAsGood ();
 	public:
 		Target (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		// create new target. Save will save it to the database..
@@ -146,20 +124,14 @@ class Target:public Rts2Target
 		 * @param device_name script device
 		 * @param buf buffer script
 		 * 
-		 * @return 0 on success, < 0 on error
+		 * @throw CameraMissingExcetion when script was not specified and camera cannot be found in rts2.ini
 		 */
-		virtual int getScript (const char *device_name, std::string & buf);
+		virtual bool getScript (const char *device_name, std::string & buf);
 		int setScript (const char *device_name, const char *buf);
-		struct ln_lnlat_posn *getObserver ()
-		{
-			return observer;
-		}
+		struct ln_lnlat_posn *getObserver () { return observer; }
 
 		// return target semi-diameter, in degrees
-		double getSDiam ()
-		{
-			return getSDiam (ln_get_julian_from_sys ());
-		}
+		double getSDiam () { return getSDiam (ln_get_julian_from_sys ()); }
 
 		virtual double getSDiam (double JD)
 		{
@@ -174,10 +146,7 @@ class Target:public Rts2Target
 		 *
 		 * @return 0 if coordinates can be calculated.
 		 */
-		void getAltAz (struct ln_hrz_posn *hrz)
-		{
-			getAltAz (hrz, ln_get_julian_from_sys ());
-		}
+		void getAltAz (struct ln_hrz_posn *hrz) { getAltAz (hrz, ln_get_julian_from_sys ()); }
 
 		/**
 		 * Return target horizontal coordinates for given date.
@@ -205,20 +174,14 @@ class Target:public Rts2Target
 		 *
 		 * @return Minimal target observational altitude in degrees.
 		 */
-		virtual double getMinObsAlt ()
-		{
-			return minObsAlt;
-		}
+		virtual double getMinObsAlt () { return minObsAlt; }
 
 		/**
 		 * Returns galactic coordinates of the target at actual date.
 		 *
 		 * @param gal Returned galactic coordinates of the target.
 		 */
-		void getGalLng (struct ln_gal_posn *gal)
-		{
-			getGalLng (gal, ln_get_julian_from_sys ());
-		}
+		void getGalLng (struct ln_gal_posn *gal) { getGalLng (gal, ln_get_julian_from_sys ()); }
 
 		/**
 		 * Returns galactic coordinates of the target at give Julian day.
@@ -233,10 +196,7 @@ class Target:public Rts2Target
 		 *
 		 * @return Angular distance to galactic center.
 		 */
-		double getGalCenterDist ()
-		{
-			return getGalCenterDist (ln_get_julian_from_sys ());
-		}
+		double getGalCenterDist () { return getGalCenterDist (ln_get_julian_from_sys ()); }
 
 		/**
 		 * Returns angular distance to galactic center.
@@ -247,26 +207,17 @@ class Target:public Rts2Target
 		 */
 		double getGalCenterDist (double JD);
 
-		double getAirmass ()
-		{
-			return getAirmass (ln_get_julian_from_sys ());
-		}
+		double getAirmass () { return getAirmass (ln_get_julian_from_sys ()); }
 		virtual double getAirmass (double JD);
 
-		double getZenitDistance ()
-		{
-			return getZenitDistance (ln_get_julian_from_sys ());
-		}
+		double getZenitDistance () { return getZenitDistance (ln_get_julian_from_sys ()); }
 
 		double getZenitDistance (double JD);
 
 		/**
 		 * Returns target hour angle in arcdeg at actual time.
 		 */
-		double getHourAngle ()
-		{
-			return getHourAngle (ln_get_julian_from_sys ());
-		}
+		double getHourAngle () { return getHourAngle (ln_get_julian_from_sys ()); }
 
 		/**
 		 * Returns target hour angle in arcdeg at given Julian day.
@@ -284,10 +235,7 @@ class Target:public Rts2Target
 		 *
 		 * @return Angular distance to given position at system time in arcdeg.
 		 */
-		double getDistance (struct ln_equ_posn *in_pos)
-		{
-			return getDistance (in_pos, ln_get_julian_from_sys ());
-		}
+		double getDistance (struct ln_equ_posn *in_pos) { return getDistance (in_pos, ln_get_julian_from_sys ()); }
 
 		/**
 		 * Returns angular distance of the target at a given Julian date to a given position.
@@ -299,74 +247,44 @@ class Target:public Rts2Target
 		 */
 		double getDistance (struct ln_equ_posn *in_pos, double JD);
 
-		double getRaDistance (struct ln_equ_posn *in_pos)
-		{
-			return getRaDistance (in_pos, ln_get_julian_from_sys ());
-		}
+		double getRaDistance (struct ln_equ_posn *in_pos) { return getRaDistance (in_pos, ln_get_julian_from_sys ()); }
 
 		double getRaDistance (struct ln_equ_posn *in_pos, double JD);
 
 		/**
 		 * Returns degree distance of the target to Sun center.
 		 */
-		double getSolarDistance ()
-		{
-			return getSolarDistance (ln_get_julian_from_sys ());
-		}
+		double getSolarDistance () { return getSolarDistance (ln_get_julian_from_sys ()); }
 
 		double getSolarDistance (double JD);
 
-		double getSolarRaDistance ()
-		{
-			return getSolarRaDistance (ln_get_julian_from_sys ());
-		}
+		double getSolarRaDistance () { return getSolarRaDistance (ln_get_julian_from_sys ()); }
 
 		double getSolarRaDistance (double JD);
 
-		double getLunarDistance ()
-		{
-			return getLunarDistance (ln_get_julian_from_sys ());
-		}
+		double getLunarDistance () { return getLunarDistance (ln_get_julian_from_sys ()); }
 
 		double getLunarDistance (double JD);
 
-		double getLunarRaDistance ()
-		{
-			return getLunarRaDistance (ln_get_julian_from_sys ());
-		}
+		double getLunarRaDistance () { return getLunarRaDistance (ln_get_julian_from_sys ()); }
 
 		double getLunarRaDistance (double JD);
 
-		double getMeridianDistance ()
-		{
-			return fabs (getHourAngle ());
-		}
+		double getMeridianDistance () { return fabs (getHourAngle ()); }
 
-		double getMeridianDistance (double JD)
-		{
-			return fabs (getHourAngle (JD));
-		}
+		double getMeridianDistance (double JD) { return fabs (getHourAngle (JD)); }
 
 		// time in seconds to object set/rise/meridian pass (if it's visible, otherwise -1 (for
 		// circumpolar & not visible objects)
-		int secToObjectSet ()
-		{
-			return secToObjectSet (ln_get_julian_from_sys ());
-		}
+		int secToObjectSet () { return secToObjectSet (ln_get_julian_from_sys ()); }
 
 		int secToObjectSet (double JD);
 
-		int secToObjectRise ()
-		{
-			return secToObjectRise (ln_get_julian_from_sys ());
-		}
+		int secToObjectRise () { return secToObjectRise (ln_get_julian_from_sys ()); }
 
 		int secToObjectRise (double JD);
 
-		int secToObjectMeridianPass ()
-		{
-			return secToObjectMeridianPass (ln_get_julian_from_sys ());
-		}
+		int secToObjectMeridianPass () { return secToObjectMeridianPass (ln_get_julian_from_sys ()); }
 
 		int secToObjectMeridianPass (double JD);
 
@@ -375,20 +293,11 @@ class Target:public Rts2Target
 		 *
 		 * @param _tar_info New target info parameter.
 		 */
-		void setTargetInfo (std::string _tar_info)
-		{
-			tar_info = _tar_info;
-		}
+		void setTargetInfo (std::string _tar_info) { tar_info = _tar_info; }
 
-		const char *getTargetInfo ()
-		{
-			return tar_info.c_str ();
-		}
+		const char *getTargetInfo () { return tar_info.c_str (); }
 
-		const char *getTargetComment ()
-		{
-			return target_comment;
-		}
+		const char *getTargetComment () { return target_comment; }
 		void setTargetComment (const char *in_target_comment)
 		{
 			delete target_comment;
@@ -396,25 +305,13 @@ class Target:public Rts2Target
 			strcpy (target_comment, in_target_comment);
 		}
 
-		float getTargetPriority ()
-		{
-			return tar_priority;
-		}
+		float getTargetPriority () { return tar_priority; }
 
-		void setTargetPriority (float new_priority)
-		{
-			tar_priority = new_priority;
-		}
+		void setTargetPriority (float new_priority) { tar_priority = new_priority; }
 
-		float getTargetBonus ()
-		{
-			return tar_bonus;
-		}
+		float getTargetBonus () { return tar_bonus; }
 
-		const time_t *getTargetBonusTime ()
-		{
-			return &tar_bonus_time;
-		}
+		const time_t *getTargetBonusTime () { return &tar_bonus_time; }
 
 		virtual void setTargetBonus (float new_bonus, time_t * new_time = NULL)
 		{
@@ -423,15 +320,9 @@ class Target:public Rts2Target
 				setTargetBonusTime (new_time);
 		}
 
-		void setTargetBonusTime (time_t * new_time)
-		{
-			tar_bonus_time = *new_time;
-		}
+		void setTargetBonusTime (time_t * new_time) { tar_bonus_time = *new_time; }
 
-		int getRST (struct ln_rst_time *rst)
-		{
-			return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON);
-		}
+		int getRST (struct ln_rst_time *rst) { return getRST (rst, ln_get_julian_from_sys (), LN_STAR_STANDART_HORIZON); }
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon) = 0;
 
 		// returns 1 when we are almost the same target, so
@@ -475,10 +366,7 @@ class Target:public Rts2Target
 		 */
 		virtual int considerForObserving (double JD);
 		virtual int dropBonus ();
-		float getBonus ()
-		{
-			return getBonus (ln_get_julian_from_sys ());
-		}
+		float getBonus () { return getBonus (ln_get_julian_from_sys ()); }
 		virtual float getBonus (double JD);
 		virtual int changePriority (int pri_change, time_t * time_ch);
 		int changePriority (int pri_change, double validJD);
@@ -489,15 +377,9 @@ class Target:public Rts2Target
 		int getNumObs (time_t * start_time, time_t * end_time);
 		double getLastObsTime ();// return time in seconds to last observation of same target
 
-		int getCalledNum ()
-		{
-			return startCalledNum;
-		}
+		int getCalledNum () { return startCalledNum; }
 
-		double getAirmassScale ()
-		{
-			return airmassScale;
-		}
+		double getAirmassScale () { return airmassScale; }
 
 		/**
 		 * Returns time of first observation, or nan if no observation.
@@ -526,8 +408,7 @@ class Target:public Rts2Target
 		 * @param h_step    Step in hours. Default to 1 hour step.
 		 * @param header    If this routine should print header
 		 */
-		void printAltTable (std::ostream & _os, double jd_start, double h_start,
-			double h_end, double h_step = 1.0, bool header = true);
+		void printAltTable (std::ostream & _os, double jd_start, double h_start, double h_end, double h_step = 1.0, bool header = true);
 
 		/**
 		 * Prints target altitude informations.
@@ -543,10 +424,7 @@ class Target:public Rts2Target
 		 *
 		 * @param _os Stream which will receive target informations.
 		 */
-		void printShortInfo (std::ostream & _os)
-		{
-			printShortInfo (_os, ln_get_julian_from_sys ());
-		}
+		void printShortInfo (std::ostream & _os) { printShortInfo (_os, ln_get_julian_from_sys ()); }
 
 		/**
 		 * Prints short target information to given date.
@@ -560,17 +438,11 @@ class Target:public Rts2Target
 		 * Prints one-line info with bonus inforamtions
 		 */
 
-		void printShortBonusInfo (std::ostream & _os)
-		{
-			printShortBonusInfo (_os, ln_get_julian_from_sys ());
-		}
+		void printShortBonusInfo (std::ostream & _os) { printShortBonusInfo (_os, ln_get_julian_from_sys ()); }
 
 		virtual void printShortBonusInfo (std::ostream & _os, double JD);
 
-		void printDS9Reg (std::ostream & _os)
-		{
-			printDS9Reg (_os, ln_get_julian_from_sys ());
-		}
+		void printDS9Reg (std::ostream & _os) { printDS9Reg (_os, ln_get_julian_from_sys ()); }
 
 		virtual void printDS9Reg (std::ostream & _os, double JD);
 
@@ -581,52 +453,33 @@ class Target:public Rts2Target
 		 * @param JD date for which to print info
 		 */
 		virtual void sendPositionInfo (Rts2InfoValStream & _os, double JD);
-		void sendInfo (Rts2InfoValStream & _os)
-		{
-			sendInfo (_os, ln_get_julian_from_sys ());
-		}
+		void sendInfo (Rts2InfoValStream & _os) { sendInfo (_os, ln_get_julian_from_sys ()); }
 		virtual void sendInfo (Rts2InfoValStream & _os, double JD);
 
-		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i,
-			double step);
-
-		std::string getUsersEmail (int in_event_mask, int &count);
+		void printAltTableSingleCol (std::ostream & _os, double jd_start, double i, double step);
 
 		/**
 		 * Print observations at current target postion around given position.
-		 *
 		 */
-		int printObservations (double radius, std::ostream & _os)
-		{
-			return printObservations (radius, ln_get_julian_from_sys (), _os);
-		}
+		int printObservations (double radius, std::ostream & _os) { return printObservations (radius, ln_get_julian_from_sys (), _os); }
 
 		int printObservations (double radius, double JD, std::ostream & _os);
 
 		rts2db::TargetSet getTargets (double radius);
 		rts2db::TargetSet getTargets (double radius, double JD);
 
-		int printTargets (double radius, std::ostream & _os)
-		{
-			return printTargets (radius, ln_get_julian_from_sys (), _os);
-		}
+		int printTargets (double radius, std::ostream & _os) { return printTargets (radius, ln_get_julian_from_sys (), _os); }
 
 		int printTargets (double radius, double JD, std::ostream & _os);
 
-		int printImages (std::ostream & _os, int flags = DISPLAY_ALL)
-		{
-			return printImages (ln_get_julian_from_sys (), _os, flags);
-		}
+		int printImages (std::ostream & _os, int flags = DISPLAY_ALL) { return printImages (ln_get_julian_from_sys (), _os, flags); }
 
 		int printImages (double JD, std::ostream & _os, int flags = DISPLAY_ALL);
 
 		/**
 		 * Return calibration targets for given target
 		 */
-		rts2db::TargetSet *getCalTargets ()
-		{
-			return getCalTargets (ln_get_julian_from_sys ());
-		}
+		rts2db::TargetSet *getCalTargets () { return getCalTargets (ln_get_julian_from_sys ()); }
 
 		virtual rts2db::TargetSet *getCalTargets (double JD, double minaird = rts2_nan ("f"));
 
@@ -637,21 +490,54 @@ class Target:public Rts2Target
 		 * @param JD    Date for which metadata will be written.
 		 */
 		virtual void writeToImage (Rts2Image * image, double JD);
+
+	protected:
+		char *target_comment;
+		struct ln_lnlat_posn *observer;
+
+		/**
+		 * Return script for camera exposure.
+		 *
+		 * @param camera_name   name of the camera
+		 * @param script        script
+		 *
+		 * @throw rts2core::Error on an error
+		 */
+		virtual void getDBScript (const char *camera_name, std::string & script);
+
+		// get called when target was selected to update bonuses etc..
+		virtual int selectedAsGood ();
+
+	private:
+		// holds current target observation
+		rts2db::Observation * observation;
+
+		int type;				 // light, dark, flat, flat_dark
+		std::string tar_info;
+
+		int startCalledNum;		 // how many times startObservation was called - good to know for targets
+		double airmassScale;
+
+		time_t observationStart;
+
+		// which changes behaviour based on how many times we called them before
+
+		double minObsAlt;
+
+		float tar_priority;
+		float tar_bonus;
+		time_t tar_bonus_time;
+		time_t tar_next_observable;
+
+		void writeAirmass (std::ostream & _os, double jd);
 };
 
 class ConstTarget:public Target
 {
-	private:
-		struct ln_equ_posn position;
-	protected:
-
-								 // get called when target was selected to update bonuses, target position etc..
-		virtual int selectedAsGood ();
 	public:
 		ConstTarget ();
 		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs,
-			struct ln_equ_posn *pos);
+		ConstTarget (int in_tar_id, struct ln_lnlat_posn *in_obs, struct ln_equ_posn *pos);
 		virtual int load ();
 		virtual int save (bool overwrite, int tar_id);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
@@ -664,6 +550,11 @@ class ConstTarget:public Target
 			position.ra = ra;
 			position.dec = dec;
 		}
+	protected:
+		// get called when target was selected to update bonuses, target position etc..
+		virtual int selectedAsGood ();
+	private:
+		struct ln_equ_posn position;
 };
 
 class DarkTarget:public Target
@@ -673,34 +564,25 @@ class DarkTarget:public Target
 	public:
 		DarkTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ DarkTarget (void);
-		virtual int getScript (const char *deviceName, std::string & buf);
+		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
-		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon)
-		{
-			return 1;
-		}
+		virtual int getRST (struct ln_rst_time *rst, double JD, double horizon) { return 1; }
 		virtual moveType startSlew (struct ln_equ_posn * position);
-		virtual int isContinues ()
-		{
-			return 1;
-		}
+		virtual int isContinues () { return 1; }
 };
 
 class FlatTarget:public ConstTarget
 {
-	private:
-		void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
 	public:
 		FlatTarget (int in_tar_id, struct ln_lnlat_posn *in_obs);
-		virtual int getScript (const char *deviceName, std::string & buf);
+		virtual bool getScript (const char *deviceName, std::string & buf);
 		virtual int load ();
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int considerForObserving (double JD);
-		virtual int isContinues ()
-		{
-			return 1;
-		}
+		virtual int isContinues () { return 1; }
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
+	private:
+		void getAntiSolarPos (struct ln_equ_posn *pos, double JD);
 };
 
 // possible calibration target
@@ -773,7 +655,7 @@ class FocusingTarget:public ConstTarget
 			in_obs)
 		{
 		};
-		virtual int getScript (const char *deviceName, std::string & buf);
+		virtual bool getScript (const char *deviceName, std::string & buf);
 };
 
 class ModelTarget:public ConstTarget
@@ -828,7 +710,6 @@ class LunarTarget:public Target
 {
 	public:
 		LunarTarget (int in_tar_id, struct ln_lnlat_posn * in_obs);
-		virtual int getScript (const char *deviceName, std::string & buf);
 		virtual void getPosition (struct ln_equ_posn *pos, double JD);
 		virtual int getRST (struct ln_rst_time *rst, double jd, double horizon);
 };
@@ -924,17 +805,6 @@ class Rts2Plan;
 
 class TargetPlan:public Target
 {
-	private:
-		Rts2Plan * selectedPlan;
-		Rts2Plan *nextPlan;
-
-		// how long to look back for previous plan
-		float hourLastSearch;
-		float hourConsiderPlans;
-		time_t nextTargetRefresh;
-		void refreshNext ();
-	protected:
-		virtual int getDBScript (const char *camera_name, std::string & script);
 	public:
 		TargetPlan (int in_tar_id, struct ln_lnlat_posn *in_obs);
 		virtual ~ TargetPlan (void);
@@ -951,6 +821,19 @@ class TargetPlan:public Target
 		virtual moveType startSlew (struct ln_equ_posn *position);
 
 		virtual void printExtra (Rts2InfoValStream & _os, double JD);
+
+	protected:
+		virtual bool getScript (const char *camera_name, std::string & script);
+
+	private:
+		Rts2Plan * selectedPlan;
+		Rts2Plan *nextPlan;
+
+		// how long to look back for previous plan
+		float hourLastSearch;
+		float hourConsiderPlans;
+		time_t nextTargetRefresh;
+		void refreshNext ();
 };
 
 /**

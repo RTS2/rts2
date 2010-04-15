@@ -52,7 +52,7 @@ class TargetAuger:public ConstTarget
 		 * @param auger_id  Auger id.
 		 */
 		int load (int auger_id);
-		virtual int getScript (const char *device_name, std::string & buf);
+		virtual bool getScript (const char *device_name, std::string & buf);
 		virtual float getBonus (double JD);
 		virtual moveType afterSlewProcessed ();
 		virtual int considerForObserving (double JD);
