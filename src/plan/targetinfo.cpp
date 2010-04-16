@@ -312,23 +312,25 @@ void TargetInfo::printTargetInfo ()
 			target->printShortInfo (std::cout, JD);
 			std::cout << std::endl;
 			printScripts ("       ");
-			return;
 		}
-		Rts2InfoValOStream ivos (&std::cout);
-		target->sendInfo (ivos, JD);
-		// print scripts..
-		if (printExtended > 1)
+		else
 		{
-			for (int i = 0; i < 10; i++)
+			Rts2InfoValOStream ivos (&std::cout);
+			target->sendInfo (ivos, JD);
+			// print scripts..
+			if (printExtended > 1)
 			{
-				JD += 10;
+				for (int i = 0; i < 10; i++)
+				{
+					JD += 10;
 
-				std::cout << "==================================" << std::
-					endl << "Date: " << LibnovaDate (JD) << std::endl;
-				target->sendPositionInfo (ivos, JD);
+					std::cout << "==================================" << std::
+						endl << "Date: " << LibnovaDate (JD) << std::endl;
+					target->sendPositionInfo (ivos, JD);
+				}
 			}
+			printScripts ("script for camera ");
 		}
-		printScripts ("script for camera ");
 	}
 	// print recomended calibrations targets
 	if (printCalTargets)
