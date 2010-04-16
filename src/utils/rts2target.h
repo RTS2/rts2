@@ -158,14 +158,16 @@ class Rts2Target
 		}
 
 		/**
-		 * Retrieve script for target.
+		 * Retrieve script for target. Throw an error if script cannot be found.
 		 *
 		 * @param device_name Name of the device.
 		 * @param buf  Buffer with (part) of script.
 		 *
-		 * @return -1 on error, 0 when string represent last part of script, 1 when script can continue.
+		 * @retun true if script continues (next line,..), otherwise false
+		 *
+		 * @throw rts2core::Error if some error is encountered
 		 */
-		virtual int getScript (const char *device_name, std::string & buf) = 0;
+		virtual bool getScript (const char *device_name, std::string & buf) = 0;
 
 		/**
 		 * Return target position at actual time.

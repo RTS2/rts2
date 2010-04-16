@@ -57,8 +57,7 @@ class Rts2Object
 		 * Ussuall implementation looks like:
 		 *
 		@code
-		void
-		MyObject::postEvent (Rts2Event * event)
+		void MyObject::postEvent (Rts2Event * event)
 		{
 		// test for event type..
 		switch (event->getType ())
