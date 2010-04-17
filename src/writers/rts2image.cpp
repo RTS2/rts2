@@ -503,26 +503,33 @@ int Rts2Image::closeFile ()
 {
 	if ((flags & IMAGE_SAVE) && getFitsFile ())
 	{
-		// save astrometry error
-		if (!isnan (ra_err) && !isnan (dec_err))
+		try
 		{
-			setValue ("RA_ERR", ra_err, "RA error in position");
-			setValue ("DEC_ERR", dec_err, "DEC error in position");
-			setValue ("POS_ERR", getAstrometryErr (), "error in position");
+			// save astrometry error
+			if (!isnan (ra_err) && !isnan (dec_err))
+			{
+				setValue ("RA_ERR", ra_err, "RA error in position");
+				setValue ("DEC_ERR", dec_err, "DEC error in position");
+				setValue ("POS_ERR", getAstrometryErr (), "error in position");
+			}
+			if (!isnan (total_rotang))
+			{
+				setValue ("ROTANG", total_rotang, "Image rotang over X axis");
+			}
+			// save array data
+			for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
+			{
+				writeConnArray (iter->second.first.c_str (), iter->second.second);
+				for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
+					delete *ci;
+				arrayGroups.erase (iter++);
+			}
+			setCreationDate ();
 		}
-		if (!isnan (total_rotang))
+		catch (rts2core::Error &er)
 		{
-			setValue ("ROTANG", total_rotang, "Image rotang over X axis");
+			logStream (MESSAGE_WARNING) << "error saving " << getAbsoluteFileName () << ":" << er << sendLog;
 		}
-		// save array data
-		for (std::map <int, std::pair <std::string, std::list <ColumnData *> > >::iterator iter = arrayGroups.begin (); iter != arrayGroups.end ();)
-		{
-			writeConnArray (iter->second.first.c_str (), iter->second.second);
-			for (std::list <ColumnData *>::iterator ci = iter->second.second.begin (); ci != iter->second.second.end (); ci = iter->second.second.erase (ci))
-				delete *ci;
-			arrayGroups.erase (iter++);
-		}
-		setCreationDate ();
 	}
 	return Rts2FitsFile::closeFile ();
 }
@@ -778,8 +785,7 @@ int Rts2Image::saveImageData (const char *save_filename, unsigned short *in_data
 
 int Rts2Image::writeExposureStart ()
 {
-	setValue ("CTIME", getCtimeSec (),
-		"exposure start (seconds since 1.1.1970)");
+	setValue ("CTIME", getCtimeSec (), "exposure start (seconds since 1.1.1970)");
 	setValue ("USEC", getCtimeUsec (), "exposure start micro seconds");
 	time_t tim = getCtimeSec ();
 	setValue ("JD", getExposureJD (), "exposure JD");
