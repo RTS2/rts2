@@ -317,7 +317,7 @@ int ConnFork::init ()
 		for (citer = conns->begin (); citer != conns->end (); citer++, i++)
 		{
 	  		std::ostringstream _os;
-			_os << "centarld" << i;
+			_os << "centrald" << i;
 			fillConnectionEnv (*citer, _os.str ().c_str ());
 		}
 
