@@ -48,11 +48,15 @@ class System:public Sensor
 		virtual int init ();
 		virtual int info ();
 	private:
-		std::vector <std::string> paths;
 		Rts2ValueTime *lastWrite;
 
-		int addPath (const char *path);
-		void addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val);
+		Rts2ValueString *path;
+		Rts2ValueDouble *freeSize;
+		Rts2ValueDoubleStat *history;
+		Rts2ValueFloat *nfree;
+		Rts2ValueLong *bytesNight;
+
+		void addHistoryValue (double val);
 
 		const char *storageFile;
 		void storePaths ();
@@ -69,7 +73,8 @@ int System::processOption (int opt)
 	switch (opt)
 	{
 		case 'p':
-			return addPath (optarg);
+			path->setValueCharArr (optarg);
+			return 0;
 		case OPT_STORAGE:
 			storageFile = optarg;
 			return 0;
@@ -84,6 +89,11 @@ int System::init ()
 	int ret = Sensor::init ();
 	if (ret)
 		return ret;
+	if (path->getValueString ().length () == 0)
+	{
+		logStream (MESSAGE_ERROR) << "you must specify -p parameter for path which will be checked" << sendLog;
+		return -1;
+	}
 	if (storageFile)
 	{
 		loadPaths ();
@@ -95,59 +105,38 @@ int System::init ()
 
 int System::info ()
 {
-	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
+	struct statvfs sf;
+	if (statvfs (path->getValue (), &sf))
 	{
-		struct statvfs sf;
-		if (statvfs ((*iter).c_str (), &sf))
-		{
-			logStream (MESSAGE_ERROR) << "Cannot get status for " << (*iter) << ". Error " << strerror (errno) << sendLog;
-		}
-		else
-		{
-			Rts2Value *val = getOwnValue ((*iter).c_str ());
-			if (val)
-				((Rts2ValueDouble *) val)->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
-		}
+		logStream (MESSAGE_ERROR) << "cannot call stat on " << path->getValue () << ". Error " << strerror (errno) << sendLog;
+	}
+	else
+	{
+		freeSize->setValueDouble ((long double) sf.f_bavail * sf.f_bsize);	
 	}
 	return Sensor::info ();
 }
 
-int System::addPath (const char *path)
+void System::addHistoryValue (double val)
 {
-	Rts2ValueDouble *val;
-	Rts2ValueDoubleStat *da;
-	Rts2ValueFloat *nfree;
-	Rts2ValueLong *bytesNight;
-
-	createValue (val, path, (std::string ("free disk space on ") + std::string (path)).c_str (), false, RTS2_DT_BYTESIZE);
-	createValue (da, (std::string (path) + "_history").c_str (), "history of free bytes (every 24h)", false); // , RTS2_DT_BYTESIZE);
-	createValue (nfree, (std::string (path) + "_night").c_str (), "number of expected nights till disk will get full", false);
-	createValue (bytesNight, (std::string (path) + "_expected").c_str (), "expected number of bytes per night (maximum from night diferences from last 10 nights)", false, RTS2_DT_BYTESIZE);
-	paths.push_back (path);
-
-	return 0;
-}
-
-void System::addHistoryValue (Rts2ValueDoubleStat *ds, Rts2ValueFloat *nfree, Rts2ValueLong *expected, double val)
-{
-	ds->addValue (val);
-	ds->calculate ();
+	history->addValue (val);
+	history->calculate ();
 	// recalculate _expected
-	expected->setValueLong (-1);
-	std::deque <double>::iterator iter = ds->valueBegin ();
-	if (iter != ds->valueEnd ())
+	bytesNight->setValueLong (-1);
+	std::deque <double>::iterator iter = history->valueBegin ();
+	if (iter != history->valueEnd ())
 	{
 		double hist = *iter;
 		iter++;
-		for (; iter != ds->valueEnd (); iter++)
+		for (; iter != history->valueEnd (); iter++)
 		{
-			if (hist - *iter > expected->getValueDouble ())
-				expected->setValueLong (hist - *iter);
+			if (hist - *iter > bytesNight->getValueDouble ())
+				bytesNight->setValueLong (hist - *iter);
 		}
 	}
-	nfree->setValueFloat (val / expected->getValueLong ());
+	nfree->setValueFloat (val / bytesNight->getValueLong ());
 	sendValueAll (nfree);
-	sendValueAll (expected);
+	sendValueAll (bytesNight);
 }
 
 void System::storePaths ()
@@ -162,20 +151,13 @@ void System::storePaths ()
 	}
 	os.setf (std::ios_base::fixed, std::ios_base::floatfield);
 	os << lastWrite->getValueDouble () << std::endl;
-	for (std::vector <std::string>::iterator iter = paths.begin (); iter != paths.end (); iter++)
+	os << path->getValue ();
+	addHistoryValue (freeSize->getValueDouble ());
+	for (std::deque <double>::iterator miter = history->valueBegin (); miter != history->valueEnd (); miter++)
 	{
-		os << *iter;
-		Rts2ValueDouble *dv = (Rts2ValueDouble*) getOwnValue (iter->c_str ());
-		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getOwnValue ((*iter + "_history").c_str ());
-		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getOwnValue ((*iter + "_night").c_str ());
-		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getOwnValue ((*iter + "_expected").c_str ());
-		addHistoryValue (ds, nfree, bytesNight, dv->getValueDouble ());
-		for (std::deque <double>::iterator miter = ds->valueBegin (); miter != ds->valueEnd (); miter++)
-		{
-			os << " " << *miter;
-		}
-		os << std::endl;
+		os << " " << *miter;
 	}
+	os << std::endl;
 	os.close ();
 	sendValueAll (lastWrite);
 }
@@ -198,14 +180,9 @@ void System::loadPaths ()
 		is >> ipath;
 		if (is.fail ())
 			return;
-		Rts2ValueDoubleStat *ds = (Rts2ValueDoubleStat*) getOwnValue ((ipath + "_history").c_str ());
-		Rts2ValueFloat *nfree = (Rts2ValueFloat*) getOwnValue ((ipath + "_night").c_str ());
-		Rts2ValueLong *bytesNight = (Rts2ValueLong*) getOwnValue ((ipath + "_expected").c_str ());
-		if (ds == NULL || !(ds->getValueType () & (RTS2_VALUE_STAT | RTS2_VALUE_DOUBLE)) || bytesNight == NULL || nfree == NULL)
+		if (ipath != path->getValue ())
 		{
-			logStream (MESSAGE_ERROR) << "Cannot get variable for path " << ipath << sendLog;
-			is.ignore (2000, '\n');
-			continue;
+			logStream (MESSAGE_ERROR) << "Invalid path value specified in history file: " << ipath << " expected " << path->getValue () << sendLog;
 		}
 		std::string line;
 		getline (is, line);
@@ -215,7 +192,7 @@ void System::loadPaths ()
 			iss >> dv;
 			if (iss.fail ())
 				break;
-			addHistoryValue (ds, nfree, bytesNight, dv);
+			addHistoryValue (dv);
 		}
 	}
 	is.close ();	
@@ -234,9 +211,15 @@ System::System (int argc, char **argv):Sensor (argc, argv)
 {
 	storageFile = NULL;
 
+	createValue (path, "path", "path being monitored", false);
+	createValue (freeSize, "free", "free disk space on ", false, RTS2_DT_BYTESIZE);
+	createValue (history, "history", "history of free bytes (every 24h)", false); // , RTS2_DT_BYTESIZE);
+	createValue (nfree, "night", "number of expected nights till disk will get full", false);
+	createValue (bytesNight, "expected", "expected number of bytes per night (maximum from night diferences from last 10 nights)", false, RTS2_DT_BYTESIZE);
+
 	createValue (lastWrite, "last_write", "time of last write of system usage statistics", false);
 
-	addOption ('p', NULL, 1, "add this path to paths being monitored");
+	addOption ('p', NULL, 1, "specifyed path being monitored");
 	addOption (OPT_STORAGE, "save", 1, "save data to given file");
 
 	setIdleInfoInterval (300);
