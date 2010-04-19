@@ -401,8 +401,8 @@ Rts2Centrald::Rts2Centrald (int argc, char **argv):Rts2Daemon (argc, argv, SERVE
 	createConstValue (observerLng, "longitude", "observatory longitude", false, RTS2_DT_DEGREES);
 	createConstValue (observerLat, "latitude", "observatory latitude", false, RTS2_DT_DEC);
 
-	createConstValue (nightHorizon, "night_horizon", "observatory night horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
-	createConstValue (dayHorizon, "day_horizon", "observatory day horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
+	createValue (nightHorizon, "night_horizon", "observatory night horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
+	createValue (dayHorizon, "day_horizon", "observatory day horizon", false, RTS2_DT_DEC | RTS2_VALUE_WRITABLE);
 
 	createValue (eveningTime, "evening_time", "time needed to cool down cameras", false, RTS2_VALUE_WRITABLE);
 	createValue (morningTime, "morning_time", "time needed to heat up cameras", false, RTS2_VALUE_WRITABLE);
