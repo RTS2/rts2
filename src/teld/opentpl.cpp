@@ -906,10 +906,8 @@ int OpenTPL::info ()
 	int cab_power;
 	double cab_power_state;
 
-	opentplConn->setDebug ();
 	status = opentplConn->get ("CABINET.POWER", cab_power, &status);
 	status = opentplConn->get ("CABINET.POWER_STATE", cab_power_state, &status);
-	opentplConn->setDebug (false);
 	if (status != TPL_OK)
 		return -1;
 	cabinetPower->setValueBool (cab_power == 1);
