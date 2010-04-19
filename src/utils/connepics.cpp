@@ -22,8 +22,7 @@
 using namespace rts2core;
 
 
-EpicsVal *
-ConnEpics::findValue (Rts2Value *value)
+EpicsVal * ConnEpics::findValue (Rts2Value *value)
 {
 	for (std::list <EpicsVal>::iterator iter = channels.begin (); iter != channels.end (); iter++)
 	{
@@ -33,8 +32,7 @@ ConnEpics::findValue (Rts2Value *value)
 	throw ConnEpicsError ("value not found", ECA_NORMAL);
 }
 
-ConnEpics::ConnEpics (Rts2Block *_master)
-:Rts2ConnNoSend (_master)
+ConnEpics::ConnEpics (Rts2Block *_master):Rts2ConnNoSend (_master)
 {
 	setConnTimeout (5);
 }
@@ -44,9 +42,7 @@ ConnEpics::~ConnEpics ()
 	ca_context_destroy ();
 }
 
-
-int
-ConnEpics::init ()
+int ConnEpics::init ()
 {
 	int res;
 	res = ca_context_create (ca_disable_preemptive_callback);
@@ -57,17 +53,13 @@ ConnEpics::init ()
 	return 0;
 }
 
-
-void
-ConnEpics::addRts2Value (Rts2Value *value, const char *pvname)
+void ConnEpics::addRts2Value (Rts2Value *value, const char *pvname)
 {
   	chid pchid = createChannel (pvname);
 	channels.push_back (EpicsVal (value, pchid));
 }
 
-
-chid
-ConnEpics::createChannel (const char *pvname)
+chid ConnEpics::createChannel (const char *pvname)
 {
  	chid pchid;
 	int result;
@@ -79,8 +71,7 @@ ConnEpics::createChannel (const char *pvname)
 	return pchid;
 }
 
-void
-ConnEpics::deleteChannel (chid _ch)
+void ConnEpics::deleteChannel (chid _ch)
 {
 	int result = ca_clear_channel (_ch);
 	if (result != ECA_NORMAL)
@@ -89,9 +80,7 @@ ConnEpics::deleteChannel (chid _ch)
 	}
 }
 
-
-void
-ConnEpics::get (chid _ch, double *val)
+void ConnEpics::get (chid _ch, double *val)
 {
 	int result = ca_array_get (DBR_DOUBLE, 1, _ch, val);
 	if (result != ECA_NORMAL)
@@ -100,9 +89,7 @@ ConnEpics::get (chid _ch, double *val)
 	}
 }
 
-
-void
-ConnEpics::queueGetValue (Rts2Value *value)
+void ConnEpics::queueGetValue (Rts2Value *value)
 {
 	int result;
 	chtype pchtype;
@@ -139,9 +126,7 @@ ConnEpics::queueGetValue (Rts2Value *value)
 	}
 }
 
-
-void
-ConnEpics::queueSetValue (Rts2Value *value)
+void ConnEpics::queueSetValue (Rts2Value *value)
 {
 	int result;
 	chtype pchtype;
@@ -180,9 +165,7 @@ ConnEpics::queueSetValue (Rts2Value *value)
 	}
 }
 
-
-void
-ConnEpics::queueSet (chid _vchid, int value)
+void ConnEpics::queueSet (chid _vchid, int value)
 {
 	int result;
 	result = ca_array_put (DBR_INT, 1, _vchid, &value);
@@ -192,9 +175,7 @@ ConnEpics::queueSet (chid _vchid, int value)
 	}
 }
 
-
-void
-ConnEpics::queueSet (chid _vchid, double value)
+void ConnEpics::queueSet (chid _vchid, double value)
 {
 	int result;
 	result = ca_array_put (DBR_DOUBLE, 1, _vchid, &value);
@@ -204,9 +185,7 @@ ConnEpics::queueSet (chid _vchid, double value)
 	}
 }
 
-
-void
-ConnEpics::queueSetEnum (chid _vchid, int value)
+void ConnEpics::queueSetEnum (chid _vchid, int value)
 {
 	int result;
 	double val = value;
@@ -217,8 +196,7 @@ ConnEpics::queueSetEnum (chid _vchid, int value)
 	}
 }
 
-void
-ConnEpics::callPendIO ()
+void ConnEpics::callPendIO ()
 {
 	int result;
 	result = ca_pend_io (getConnTimeout ());
