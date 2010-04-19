@@ -25,13 +25,16 @@
 #include "../utilsdb/rts2appdb.h"
 #include "../utilsdb/target.h"
 
+namespace rts2plan
+{
+
 /**
  * Select next target. Traverse list of targets which are enabled and select
  * target with biggest priority.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
-class Rts2Selector
+class Selector
 {
 	private:
 		std::list < Target * >possibleTargets;
@@ -59,8 +62,8 @@ class Rts2Selector
 		}
 
 	public:
-		Rts2Selector (struct ln_lnlat_posn *in_observer);
-		virtual ~ Rts2Selector (void);
+		Selector (struct ln_lnlat_posn *in_observer);
+		virtual ~ Selector (void);
 								 // return next observation..
 		int selectNext (int masterState);
 		int selectNextNight (int in_bonusLimit = 0);
@@ -88,4 +91,6 @@ class Rts2Selector
 		 */
 		int setNightDisabledTypes (const char *types);
 };
+
+}
 #endif							 /* !__RTS2_SELECTOR__ */

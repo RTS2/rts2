@@ -63,11 +63,11 @@ void Rts2DevClientExecutorSel::lastReadout ()
 	rts2core::Rts2DevClientExecutor::lastReadout ();
 }
 
-class Rts2SelectorDev:public Rts2DeviceDb
+class SelectorDev:public Rts2DeviceDb
 {
 	public:
-		Rts2SelectorDev (int argc, char **argv);
-		virtual ~ Rts2SelectorDev (void);
+		SelectorDev (int argc, char **argv);
+		virtual ~ SelectorDev (void);
 		virtual int idle ();
 
 		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
@@ -84,7 +84,7 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		virtual int reloadConfig ();
 
 	private:
-		Rts2Selector * sel;
+		rts2plan::Selector * sel;
 
 		time_t last_selected;
 
@@ -99,7 +99,7 @@ class Rts2SelectorDev:public Rts2DeviceDb
 		Rts2ValueString *nightDisabledTypes;
 };
 
-Rts2SelectorDev::Rts2SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
+SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
 	sel = NULL;
 	next_id = -1;
@@ -119,12 +119,12 @@ Rts2SelectorDev::Rts2SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, arg
 	addOption (OPT_IDLE_SELECT, "idle_select", 1, "selection timeout (reselect every I seconds)");
 }
 
-Rts2SelectorDev::~Rts2SelectorDev (void)
+SelectorDev::~SelectorDev (void)
 {
 	delete sel;
 }
 
-int Rts2SelectorDev::processOption (int in_opt)
+int SelectorDev::processOption (int in_opt)
 {
 	int t_idle;
 	switch (in_opt)
@@ -139,7 +139,7 @@ int Rts2SelectorDev::processOption (int in_opt)
 	return 0;
 }
 
-int Rts2SelectorDev::reloadConfig ()
+int SelectorDev::reloadConfig ()
 {
 	int ret;
 	struct ln_lnlat_posn *observer;
@@ -154,7 +154,7 @@ int Rts2SelectorDev::reloadConfig ()
 
 	delete sel;
 
-	sel = new Rts2Selector (observer);
+	sel = new rts2plan::Selector (observer);
 
 	flatSunMin->setValueDouble (sel->getFlatSunMin ());
 	flatSunMax->setValueDouble (sel->getFlatSunMax ());
@@ -164,7 +164,7 @@ int Rts2SelectorDev::reloadConfig ()
 	return 0;
 }
 
-int Rts2SelectorDev::idle ()
+int SelectorDev::idle ()
 {
 	time_t now;
 	time (&now);
@@ -176,7 +176,7 @@ int Rts2SelectorDev::idle ()
 	return Rts2DeviceDb::idle ();
 }
 
-rts2core::Rts2DevClient *Rts2SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
+rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
 {
 	rts2core::Rts2DevClient *ret;
 	switch (other_device_type)
@@ -194,7 +194,7 @@ rts2core::Rts2DevClient *Rts2SelectorDev::createOtherType (Rts2Conn * conn, int 
 	}
 }
 
-void Rts2SelectorDev::postEvent (Rts2Event * event)
+void SelectorDev::postEvent (Rts2Event * event)
 {
 	switch (event->getType ())
 	{
@@ -205,12 +205,12 @@ void Rts2SelectorDev::postEvent (Rts2Event * event)
 	Rts2DeviceDb::postEvent (event);
 }
 
-int Rts2SelectorDev::selectNext ()
+int SelectorDev::selectNext ()
 {
 	return sel->selectNext (getMasterState ());
 }
 
-int Rts2SelectorDev::updateNext ()
+int SelectorDev::updateNext ()
 {
 	Rts2Conn *exec;
 	next_id = selectNext ();
@@ -226,7 +226,7 @@ int Rts2SelectorDev::updateNext ()
 	return -1;
 }
 
-int Rts2SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
+int SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 {
 	if (old_value == flatSunMin)
 	{
@@ -247,7 +247,7 @@ int Rts2SelectorDev::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Rts2DeviceDb::setValue (old_value, new_value);
 }
 
-int Rts2SelectorDev::changeMasterState (int new_master_state)
+int SelectorDev::changeMasterState (int new_master_state)
 {
 	switch (new_master_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
@@ -264,6 +264,6 @@ int Rts2SelectorDev::changeMasterState (int new_master_state)
 
 int main (int argc, char **argv)
 {
-	Rts2SelectorDev selector (argc, argv);
+	SelectorDev selector (argc, argv);
 	return selector.run ();
 }

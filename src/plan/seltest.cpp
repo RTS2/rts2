@@ -8,41 +8,37 @@
 
 #include <iostream>
 
-class Rts2SelectorApp:public Rts2AppDb
+class SelectorApp:public Rts2AppDb
 {
 	public:
-		Rts2SelectorApp (int argc, char **argv);
-		virtual ~ Rts2SelectorApp (void);
+		SelectorApp (int argc, char **argv);
+		virtual ~ SelectorApp (void);
 		virtual int doProcessing ();
 };
 
-Rts2SelectorApp::Rts2SelectorApp (int in_argc, char **in_argv):
-Rts2AppDb (in_argc, in_argv)
+SelectorApp::SelectorApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
 {
 }
 
-
-Rts2SelectorApp::~Rts2SelectorApp (void)
+SelectorApp::~SelectorApp (void)
 {
 }
 
-
-int
-Rts2SelectorApp::doProcessing ()
+int SelectorApp::doProcessing ()
 {
 	int next_tar;
 
 	Rts2Config *config;
 	struct ln_lnlat_posn *observer;
 
-	Rts2Selector *sel;
+	rts2plan::Selector *sel;
 
 	Target *tar;
 
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();
 
-	sel = new Rts2Selector (observer);
+	sel = new rts2plan::Selector (observer);
 
 	next_tar = sel->selectNextNight ();
 
@@ -64,10 +60,8 @@ Rts2SelectorApp::doProcessing ()
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Rts2SelectorApp selApp = Rts2SelectorApp (argc, argv);
+	SelectorApp selApp = SelectorApp (argc, argv);
 	return selApp.run ();
 }

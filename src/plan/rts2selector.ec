@@ -23,7 +23,9 @@
 
 #include <libnova/libnova.h>
 
-Rts2Selector::Rts2Selector (struct ln_lnlat_posn * in_observer)
+using namespace rts2plan;
+
+Selector::Selector (struct ln_lnlat_posn * in_observer)
 {
 	int ret;
 	Rts2Config *config;
@@ -55,8 +57,7 @@ Rts2Selector::Rts2Selector (struct ln_lnlat_posn * in_observer)
 	}
 }
 
-
-Rts2Selector::~Rts2Selector (void)
+Selector::~Selector (void)
 {
 	for (std::list < Target * >::iterator target_list =
 		possibleTargets.begin (); target_list != possibleTargets.end ();
@@ -68,9 +69,7 @@ Rts2Selector::~Rts2Selector (void)
 	possibleTargets.clear ();
 }
 
-
-int
-Rts2Selector::selectNext (int masterState)
+int Selector::selectNext (int masterState)
 {
 	struct ln_equ_posn eq_sun;
 	struct ln_hrz_posn sun_hrz;
@@ -106,9 +105,7 @@ Rts2Selector::selectNext (int masterState)
 	return -1;					 // we don't have any target to take observation..
 }
 
-
-void
-Rts2Selector::considerTarget (int consider_tar_id, double JD)
+void Selector::considerTarget (int consider_tar_id, double JD)
 {
 	std::list < Target * >::iterator target_list;
 	Target *newTar;
@@ -141,10 +138,8 @@ Rts2Selector::considerTarget (int consider_tar_id, double JD)
 	possibleTargets.push_back (newTar);
 }
 
-
 // enable targets which become observable
-void
-Rts2Selector::checkTargetObservability ()
+void Selector::checkTargetObservability ()
 {
 	EXEC SQL
 		UPDATE
@@ -156,10 +151,8 @@ Rts2Selector::checkTargetObservability ()
 	EXEC SQL COMMIT;
 }
 
-
 // drop old priorities..
-void
-Rts2Selector::checkTargetBonus ()
+void Selector::checkTargetBonus ()
 {
 	EXEC SQL
 		UPDATE
@@ -173,9 +166,7 @@ Rts2Selector::checkTargetBonus ()
 	EXEC SQL COMMIT;
 }
 
-
-void
-Rts2Selector::findNewTargets ()
+void Selector::findNewTargets ()
 {
 	EXEC SQL BEGIN DECLARE SECTION;
 		int consider_tar_id;
@@ -262,8 +253,7 @@ Rts2Selector::findNewTargets ()
 	EXEC SQL CLOSE findnewtargets;
 };
 
-int
-Rts2Selector::selectNextNight (int in_bonusLimit)
+int Selector::selectNextNight (int in_bonusLimit)
 {
 	// search for new observation targets..
 	int maxId;
@@ -299,23 +289,17 @@ Rts2Selector::selectNextNight (int in_bonusLimit)
 	return maxId;
 }
 
-
-int
-Rts2Selector::selectFlats ()
+int Selector::selectFlats ()
 {
 	return TARGET_FLAT;
 }
 
-
-int
-Rts2Selector::selectDarks ()
+int Selector::selectDarks ()
 {
 	return TARGET_DARK;
 }
 
-
-std::string
-Rts2Selector::getNightDisabledTypes ()
+std::string Selector::getNightDisabledTypes ()
 {
 	std::string ret;
 	for (std::vector <char>::iterator iter = nightDisabledTypes.begin (); iter != nightDisabledTypes.end (); iter++)
@@ -326,8 +310,7 @@ Rts2Selector::getNightDisabledTypes ()
 	return ret;
 }
 
-int
-Rts2Selector::setNightDisabledTypes (const char *types)
+int Selector::setNightDisabledTypes (const char *types)
 {
 	nightDisabledTypes = Str2CharVector (types);
 	return 0;
