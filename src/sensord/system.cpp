@@ -130,7 +130,7 @@ void System::addHistoryValue (double val)
 		iter++;
 		for (; iter != history->valueEnd (); iter++)
 		{
-			if (hist - *iter > bytesNight->getValueDouble ())
+			if (hist - *iter > bytesNight->getValueLong ())
 				bytesNight->setValueLong (hist - *iter);
 			hist = *iter;
 		}
