@@ -85,7 +85,7 @@ void Events::parseState (xmlNodePtr event, std::string deviceName)
 		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
 		{
 			StateChangeEmail *email = new StateChangeEmail (deviceName, changeMask, newStateValue);
-			email->parse (action);
+			email->parse (action, deviceName.c_str ());
 			// add to, subject, body,..
 			stateCommands.push_back (email);
 		}
@@ -127,7 +127,7 @@ void Events::parseValue (xmlNodePtr event, std::string deviceName)
 		else if (xmlStrEqual (action->name, (xmlChar *) "email"))
 		{
 			ValueChangeEmail *email = new ValueChangeEmail (master, deviceName, std::string ((char *) valueName->children->content), cadency, test);
-			email->parse (action);
+			email->parse (action, deviceName.c_str ());
 			// add to, subject, body,..
 			valueCommands.push_back (email);
 		}

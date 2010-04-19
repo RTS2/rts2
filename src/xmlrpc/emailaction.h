@@ -75,7 +75,7 @@ class ExpandStrings:public std::list <ExpandString *>
 	public:
 		ExpandStrings () {};
 		~ExpandStrings () { for (ExpandStrings::iterator iter = begin (); iter != end (); iter++) delete *iter; clear (); }
-		void expandXML (xmlNodePtr ptr);
+		void expandXML (xmlNodePtr ptr, const char *defaultDeviceName);
 		std::string getString ();
 };
 
@@ -84,7 +84,7 @@ class EmailAction
 	public:
 		EmailAction () {}
 
-		void parse (xmlNodePtr emailNode);
+		void parse (xmlNodePtr emailNode, const char *defaultDeviceName);
 
 		virtual void run (XmlRpcd *_master, Rts2Conn *_conn, int validTime);
 

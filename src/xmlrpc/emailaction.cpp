@@ -62,7 +62,7 @@ void ExpandStringValue::writeTo (std::ostream &os)
 	os << val->getDisplayValue ();
 }
 
-void ExpandStrings::expandXML (xmlNodePtr ptr)
+void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
 {
 	clear ();
 	for (; ptr != NULL; ptr = ptr->next)
@@ -74,11 +74,18 @@ void ExpandStrings::expandXML (xmlNodePtr ptr)
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "value"))
 		{
 			xmlAttrPtr deviceName = xmlHasProp (ptr, (xmlChar *) "device");
+			const char *devName;
 			if (deviceName == NULL)
-				throw XmlMissingAttribute (ptr, "device");
+			{
+			  	devName = defaultDeviceName;
+			}
+			else
+			{
+				devName = (const char *) deviceName->children->content;
+			}
 			if (ptr->children == NULL)
 			  	throw XmlEmptyNode (ptr);
-		  	push_back (new ExpandStringValue ((char *) deviceName->children->content, (char *) ptr->children->content));
+		  	push_back (new ExpandStringValue (devName, (char *) ptr->children->content));
 		}
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "device"))
 		{
@@ -101,7 +108,7 @@ std::string ExpandStrings::getString ()
 	return os.str ();
 }
 
-void EmailAction::parse (xmlNodePtr emailNode)
+void EmailAction::parse (xmlNodePtr emailNode, const char *defaultDeviceName)
 {
 	if (emailNode->children == NULL)
 		throw XmlEmptyNode (emailNode);
@@ -118,9 +125,9 @@ void EmailAction::parse (xmlNodePtr emailNode)
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "bcc"))
 			bcc.push_back (std::string ((char *) ptr->children->content));
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "subject"))
-		  	subject.expandXML (ptr->children);
+		  	subject.expandXML (ptr->children, defaultDeviceName);
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "body"))
-		  	body.expandXML (ptr->children);
+		  	body.expandXML (ptr->children, defaultDeviceName);
 		else
 			throw XmlUnexpectedNode (ptr);
 	}
