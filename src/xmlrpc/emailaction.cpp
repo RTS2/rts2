@@ -76,11 +76,15 @@ void ExpandStrings::expandXML (xmlNodePtr ptr)
 			xmlAttrPtr deviceName = xmlHasProp (ptr, (xmlChar *) "device");
 			if (deviceName == NULL)
 				throw XmlMissingAttribute (ptr, "device");
+			if (ptr->children == NULL)
+			  	throw XmlEmptyNode (ptr);
 		  	push_back (new ExpandStringValue ((char *) deviceName->children->content, (char *) ptr->children->content));
 		}
 		else if (xmlStrEqual (ptr->name, (xmlChar *) "device"))
 		{
-
+			if (ptr->children == NULL)
+				throw XmlEmptyNode (ptr);
+			push_back (new ExpandStringDevice ((char *)ptr->children->content));
 		}
 		else
 		{
@@ -145,7 +149,7 @@ void EmailAction::run (XmlRpcd *_master, Rts2Conn *_conn, int validTime)
 	if (_master->sendEmails ())
 	{
 		int ret;
-		rts2core::ConnFork *cf = new rts2core::ConnFork (_master, Rts2Config::instance ()->getStringDefault ("xmlrpcd", "mail", "/usr/bin/mail"), true, false, 100);
+		rts2core::ConnFork *cf = new rts2core::ConnFork (_master, Rts2Config::instance ()->getStringDefault ("xmlrpcd", "mail", "/usr/bin/mail"), true, true, 100);
 		std::list <std::string>::iterator iter;
 		if (bcc.size () != 0)
 		{
