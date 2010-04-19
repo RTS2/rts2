@@ -132,10 +132,14 @@ void System::addHistoryValue (double val)
 		{
 			if (hist - *iter > bytesNight->getValueDouble ())
 				bytesNight->setValueLong (hist - *iter);
+			hist = *iter;
 		}
 	}
-	nfree->setValueFloat (val / bytesNight->getValueLong ());
-	sendValueAll (nfree);
+	if (bytesNight->getValueLong () > 0)
+	{
+		nfree->setValueFloat (val / bytesNight->getValueLong ());
+		sendValueAll (nfree);
+	}
 	sendValueAll (bytesNight);
 }
 
