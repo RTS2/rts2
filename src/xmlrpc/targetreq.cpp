@@ -158,9 +158,10 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 			"var st = ln_get_mean_sidereal_time(jd);\n"
 			"hAz = new DMS();\n"
 			"hAlt = new DMS();\n"
+			"observer = new LngLat(" << Rts2Config::instance ()->getObserver ()->lng << "," << Rts2Config::instance ()->getObserver ()->lat << ")\n;"
 			"for (var i in targets) {\n"
 				"var t = targets[i];\n"
-				"var radec = new RaDec(targets[i][2],targets[i][3]);\n"
+				"var radec = new RaDec(targets[i][2],targets[i][3], observer);\n"
 				"var altaz = radec.altaz();\n"
 				"t[4] = altaz.alt;\n"
 				"t[5] = altaz.az;\n"
@@ -378,7 +379,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	tar->getPosition (&tradec);
 
 	_os << "<script type='text/javascript'>\n"
-	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ");\n"
+	"radec = new RaDec(" << tradec.ra << "," << tradec.dec << ", new LngLat(" << Rts2Config::instance ()->getObserver ()->lng << "," << Rts2Config::instance ()->getObserver ()->lat << "));\n"
 	"hAlt = new DMS();\n"
 	"hAz = new DMS();\n"
 	"hSt = new HMS();\n"

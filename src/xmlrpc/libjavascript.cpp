@@ -235,13 +235,14 @@ static const char *equScript =
   "this.lat = lat;\n"
 "}\n"
 
-"function RaDec (ra, dec) {\n"
+"function RaDec (ra, dec, observer) {\n"
   "this.ra = ra;\n"
   "this.dec = dec;\n"
+  "this.observer = observer;\n"
   "this.altaz = function () {\n"
     "sidereal = ln_get_mean_sidereal_time (ln_get_julian_from_sys());\n"
     "altaz = new AltAz();\n"
-    "ln_get_hrz_from_equ_sidereal_time (this, new LngLat(-4.0410,36.7592), sidereal, altaz);\n"
+    "ln_get_hrz_from_equ_sidereal_time (this, this.observer, sidereal, altaz);\n"
     "return altaz;\n"
   "}\n"
 "}\n";
