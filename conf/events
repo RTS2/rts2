@@ -20,7 +20,7 @@
           <cc>name.surname@example.com</cc>
           <bcc>name_surname@sub_domain.example.com</bcc>
           <subject>Hey, you are exposing!</subject>
-          <body>It's my pleasure to inform <device>D1</device> you, <device>D2</device> that the camera is exposing! Juhuu! Exposure is <value device="D1">V1</value></body>
+          <body>It's my pleasure to inform <device>D1</device> you, <device>D2</device> that the camera is exposing! Juhuu! Exposure is <value device="D1">V1</value> <value>device_value</value></body>
         </email>
       </value>
     </device>
