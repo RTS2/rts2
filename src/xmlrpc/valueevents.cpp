@@ -60,7 +60,7 @@ void ValueChange::postEvent (Rts2Event *event)
 
 void ValueChangeRecord::run (Rts2Value *val, double validTime)
 {
-	std::cout << Timestamp (validTime) << " value: " << deviceName << " " << valueName << val->getDisplayValue () << std::endl;
+	std::cout << Timestamp (validTime) << " value: " << deviceName.c_str () << " " << valueName.c_str () << val->getDisplayValue () << std::endl;
 }
 
 #endif /* ! HAVE_PGSQL */

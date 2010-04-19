@@ -40,6 +40,7 @@
 #include "xmlrpc++/XmlRpc.h"
 
 #include "../utils/libnova_cpp.h"
+#include <string.h>
 
 namespace rts2xmlrpc
 {
