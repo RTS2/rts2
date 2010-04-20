@@ -37,6 +37,14 @@
 
 #include "imghdr.h"
 
+//* Null terminated list of names for different device types.
+const char *type_names[] = 
+{
+  "UNKNOWN", "SERVERD", "MOUNT", "CCD", "DOME", "WEATHER", "ARCH", "PHOT", "PLAN", "GRB", "FOCUS", // 10
+  "MIRROR", "CUPOLA", "FILTER", "AUGERSH", "SENSOR", "UNKNOWN", "UNKNOWN", "UNKNOWN", "UNKNOWN" // 20
+  "EXEC", "IMGP", "SELECTOR", "XMLRPC", "INDI", "LOGD", "SCRIPTOR", NULL
+};
+
 using namespace rts2core;
 
 Rts2Block::Rts2Block (int in_argc, char **in_argv):Rts2App (in_argc, in_argv)

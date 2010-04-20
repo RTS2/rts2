@@ -461,18 +461,9 @@ class Rts2ValueInteger:public Rts2Value
 		}
 		virtual int doOpValue (char op, Rts2Value * old_value);
 		virtual const char *getValue ();
-		virtual double getValueDouble ()
-		{
-			return value;
-		}
-		virtual float getValueFloat ()
-		{
-			return value;
-		}
-		virtual int getValueInteger ()
-		{
-			return value;
-		}
+		virtual double getValueDouble () { return value; }
+		virtual float getValueFloat () { return value; }
+		virtual int getValueInteger () { return value; }
 		int inc ()
 		{
 		 	changed ();
@@ -498,8 +489,7 @@ class Rts2ValueDouble:public Rts2Value
 		double value;
 	public:
 		Rts2ValueDouble (std::string in_val_name);
-		Rts2ValueDouble (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		virtual int setValue (Rts2Conn * connection);
 		virtual int setValueCharArr (const char *in_value);
 		virtual int setValueInteger (int in_value);
@@ -514,14 +504,8 @@ class Rts2ValueDouble:public Rts2Value
 		}
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual double getValueDouble ()
-		{
-			return value;
-		}
-		virtual float getValueFloat ()
-		{
-			return value;
-		}
+		virtual double getValueDouble () { return value; }
+		virtual float getValueFloat () { return value; }
 		virtual int getValueInteger ()
 		{
 			if (isnan (value))
@@ -608,14 +592,8 @@ class Rts2ValueFloat:public Rts2Value
 		}
 		virtual const char *getValue ();
 		virtual const char *getDisplayValue ();
-		virtual double getValueDouble ()
-		{
-			return value;
-		}
-		virtual float getValueFloat ()
-		{
-			return value;
-		}
+		virtual double getValueDouble () { return value; }
+		virtual float getValueFloat () { return value; }
 		virtual int getValueInteger ()
 		{
 			if (isnan (value))

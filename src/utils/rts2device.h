@@ -400,4 +400,5 @@ class Rts2Device:public Rts2Daemon
 
 		virtual void signaledHUP ();
 };
+
 #endif							 /* !__RTS2_DEVICE__ */
