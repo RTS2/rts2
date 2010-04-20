@@ -128,7 +128,7 @@ class Dummy:public Telescope
 
 };
 
-};
+}
 
 using namespace rts2teld;
 
@@ -141,28 +141,23 @@ Dummy::Dummy (int argc, char **argv):Telescope (argc,argv)
 	dummyPos.ra = 0;
 	dummyPos.dec = 0;
 }
-int
-Dummy::processOption (int in_opt)
+
+int Dummy::processOption (int in_opt)
 {
 	switch (in_opt)
 	{
 		case OPT_MOVE_FAST:
-		    if( !strcmp( "fast", optarg)) {
-			move_fast->setValueBool ( true );
-		    } else {
-		      move_fast->setValueBool ( false );
-		    }
-		    break;
+			if (!strcmp( "fast", optarg)) move_fast->setValueBool ( true );
+				else move_fast->setValueBool ( false );
+			break;
 		default:
 			return Telescope::processOption (in_opt);
 	}
 	return 0;
 }
 
-
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }
