@@ -22,6 +22,14 @@
 namespace rts2sensord
 {
 
+//* Event number for timer event.
+#define EVENT_TIMER_TEST     RTS2_LOCAL_EVENT + 5060
+
+/**
+ * Simple dummy sensor. It is an excelent example how to use mechanism inside RTS2.
+ *
+ * @author Petr Kubánek <petr@kubanek.net>
+ */
 class Dummy:public Sensor
 {
 	private:
@@ -33,6 +41,19 @@ class Dummy:public Sensor
 		Rts2ValueDoubleStat *statTest5;
 		Rts2ValueDoubleMinMax *minMaxTest;
 		Rts2ValueBool *hwError;
+
+		Rts2ValueBool *timerEnabled;
+		Rts2ValueLong *timerCount;
+	protected:
+		virtual int init ()
+		{
+			int ret = Sensor::init ();
+			if (ret)
+				return ret;
+			// initialize timer
+			addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+			return 0;
+		}
 	public:
 		Dummy (int argc, char **argv):Sensor (argc, argv)
 		{
@@ -48,6 +69,36 @@ class Dummy:public Sensor
 			createValue (statTest5, "test_stat_5", "test stat value with 5 entries", true);
 			createValue (minMaxTest, "test_minmax", "test minmax value", true, RTS2_VALUE_WRITABLE);
 			createValue (hwError, "hw_error", "device current hardware error", false, RTS2_VALUE_WRITABLE);
+
+			createValue (timerEnabled, "timer_enabled", "enable timer every 5 seconds", false, RTS2_VALUE_WRITABLE);
+			timerEnabled->setValueBool (true);
+			createValue (timerCount, "timer_count", "timer count - increased every 5 seconds if timer_enabled is true", false, RTS2_VALUE_WRITABLE);
+			timerCount->setValueInteger (0);
+		}
+
+		/**
+		 * Handles event send by RTS2 core. We use it there only to catch timer messages.
+		 */
+		virtual void postEvent (Rts2Event *event)
+		{
+			switch (event->getType ())
+			{
+				case EVENT_TIMER_TEST:
+					if (timerEnabled->getValueBool () == true)
+					{
+						// increas value
+						timerCount->inc ();
+						// send out value to all connections
+						sendValueAll (timerCount);
+						// reschedule us and return - ascending up to Sensor::postEvent will delete event object, we would like to avoid this
+						addTimer (5, event);
+						if (timerCount->getValueLong () % 12 == 0)
+							logStream (MESSAGE_INFO) << "60 seconds timer: " << timerCount->getValueLong () << sendLog;
+						return;
+					}
+					break;
+			}
+			Sensor::postEvent (event);
 		}
 
 		virtual int setValue (Rts2Value * old_value, Rts2Value * newValue)
@@ -60,6 +111,15 @@ class Dummy:public Sensor
 			if (old_value == goodWeather)
 			{
 			  	setWeatherState (((Rts2ValueBool *)newValue)->getValueBool (), "weather state set from goodWeather value");
+				return 0;
+			}
+			if (old_value == timerEnabled)
+			{
+				if (((Rts2ValueBool *) newValue)->getValueBool () == true)
+				{
+					deleteTimers (EVENT_TIMER_TEST);
+					addTimer (5, new Rts2Event (EVENT_TIMER_TEST));
+				}
 				return 0;
 			}
 			return Sensor::setValue (old_value, newValue);
@@ -88,13 +148,13 @@ class Dummy:public Sensor
 		}
 };
 
-};
+}
 
 using namespace rts2sensord;
 
 int
 main (int argc, char **argv)
 {
-	Dummy device = Dummy (argc, argv);
+	Dummy device (argc, argv);
 	return device.run ();
 }
