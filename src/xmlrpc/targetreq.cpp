@@ -121,33 +121,80 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 	std::ostringstream _os;
 	printHeader (_os, "List of targets", NULL, NULL, "refreshTargets();");
 
-	//	_os << "<tr><td><input type='checkbox' name='tarid' value='" << iter->first << "'/></td><td><a href='" << iter->first << "/main/'>" << iter->first
-	  //		<< "</a></td><td><a href='" << iter->first << "/'>" << iter->second->getTargetName () << "</a></td></tr>\n";
 	includeJavaScript (_os, "equ.js");
 
 	_os << "<script type='text/javascript'>\n"
 		"var targets = [];\n"
-		"function refreshTargets() {\n"
+		"var sortcol = 0;\n"
+		"var asc = true;\n"
+		"function sort_table(a, b) {\n"
+			"if (asc) { return a[sortcol] - b[sortcol]; }\n"
+			"else { return b[sortcol] - a[sortcol]; }\n"
+		"}\n"
+
+		"function fillTD(td,data,header,i){\n"
+			"switch(header.t){\n"
+				"case 'r':\n"
+					"td.innerHTML = (new HMS(data)).toString();\n"
+					"break;\n"
+				"case 'd':\n"
+					"td.innerHTML = (new DMS(data)).toString();\n"
+					"break;\n"
+				"case 'Alt':\n"
+					"td.id = 'alt_' + i;\n"
+					"break;"
+				"case 'Az':\n"
+					"td.id = 'az_' + i;\n"
+					"break;"
+				"default:\n"
+					"td.innerHTML = data;\n"
+			"}\n"
+		"}\n"
+		"function fillTR(tr,t,i,h){\n"
+			"for (var j in t){\n"
+				"var td = tr.insertCell(-1);\n"
+				"fillTD(td,t[j],h[j],i);\n"
+			"}\n"
+		"}\n"
+		"function fillTable(tab){\n"
+			"targets.sort(sort_table);\n"
+			"for (var i in targets) {\n"
+				"tr = tab.insertRow(-1);\n"
+				"fillTR (tr,targets[i],i,t.h);\n"
+			"}\n"
+		"}\n"
+		"function resortTable(tabid,col){\n"
+			"sortcol = col;\n"
+			"var e = document.getElementById(tabid);\n"
+			"var l = e.rows.length;\n"
+			"for (var i = 1; i < l; i++){\n"
+				"e.deleteRow(1);}\n"
+			"fillTable(e);\n"
+			"updateTable();\n"
+		"}\n"
+		"function refreshTargets(){\n"
 			"var hr = new XMLHttpRequest();\n"
 			"hr.open('GET','api/',true);\n"
 			"hr.onreadystatechange = function() {\n"
 				"if (hr.readyState == 4 && hr.status == 200) {\n"
-					"targets = JSON.parse(hr.responseText);\n"
-					"var e = document.getElementById('targets');\n"
-					"var str = '<table>';\n"
-					"for (var i in targets) {\n"
-						"var t = targets[i];\n"
-						"str += '<tr><td><input type=\"checkbox\" name=\"tarid\" value=\"' + t[0] + '\"/></td>';\n"
-						"str += '<td>' + t[0] + '</td><td><a href=\"' + t[0] + '/\">' + t[1] + '</a></td>';\n"
-						"var h = new HMS(); var d = new DMS ();\n"
-						"ln_deg_to_hms(t[2],h); ln_deg_to_dms(t[3],d);\n"
-						"str += '<td>' + h.toString() + '</td><td>' + d.toString() + '</td>';\n"
-						"str += '<td id=\"alt_' + i + '\"></td><td id=\"az_' + i + '\"></td>';\n"
-						"str += '</tr>';\n"
+					"t = JSON.parse(hr.responseText);\n"
+					"targets = t.d;\n"
+					"var tab = document.createElement('table');\n"
+					"tab.id = 'tartab';\n"
+					// write header
+					"var th = tab.createTHead();\n"
+					"var tr = th.insertRow(0);\n"
+					"for (var h in t.h) {\n"
+						"var td = tr.insertCell(-1);\n"
+						"td.innerHTML = t.h[h].n;\n"
+						"td.setAttribute('onclick', 'resortTable(\"tartab\",' + h + '); return true;');\n"
 					"}\n"
-					"str += '</table>';\n"
-					"e.innerHTML = str;\n"
-					"updateTable(targets);\n"
+					"fillTable(tab);\n"
+					"var e = document.getElementById('targets');\n"
+					"e.innerHTML = '';\n"
+					"e.appendChild(tab);\n"
+					"updateTable();\n"
+					"setTimeout('updateTable()',2000);\n"
 				"}\n"
 			"}\n"
 			"hr.send(null);\n"
@@ -170,7 +217,6 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
 				"document.getElementById('az_' + i).innerHTML = hAz.toString ();\n"
 			"}\n"
-			"setTimeout('updateTable()',2000);\n"
 		"}\n"
 
 		"</script>\n";
@@ -259,7 +305,14 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 		ts = rts2db::TargetSet ();
 	ts.load ();
 
-	_os << "[";
+	_os << "{\"h\":["
+		"{\"n\":\"ID\",\"t\":\"n\"},"
+		"{\"n\":\"Target name\",\"t\":\"s\"},"
+		"{\"n\":\"RA\",\"t\":\"r\"},"
+		"{\"n\":\"DEC\",\"t\":\"d\"},"
+		"{\"n\":\"Alt\",\"t\":\"Alt\"},"
+		"{\"n\":\"Az\",\"t\":\"Az\"}],"
+		"\"d\" : [";
 
 	for (rts2db::TargetSet::iterator iter = ts.begin (); iter != ts.end (); iter++)
 	{
@@ -276,11 +329,9 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 			_os << pos.ra << "," << pos.dec << "," << hrz.alt << "," << hrz.az << "]";
 	}
 
-	_os << "]";
+	_os << "] }";
 
-	response_length = _os.str ().length ();
-	response = new char[response_length];
-	memcpy (response, _os.str ().c_str (), response_length);
+	returnJSON (_os, response_type, response, response_length);
 }
 
 void Targets::printTargetHeader (int tar_id, std::ostringstream &_os)
@@ -482,7 +533,9 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 
 	// javascript to send requests..
 
-	_os << "<p><div>RA DEC " << LibnovaRaDec (&tradec) << " </div>"
+	
+	_os << "<p><div>Name " << tar->getTargetName () << "</div>"
+		"<div>RA DEC " << LibnovaRaDec (&tradec) << "</div>"
 		"<div>ALT AZ <span id='altaz'/></div>"
 		"<div>Sidereal Time " << ln_get_mean_sidereal_time(ln_get_julian_from_sys()) << "<span id='st'/></div>"
 		"<div>JD " << ln_get_julian_from_sys () << " <span id='jd'/></div>";
