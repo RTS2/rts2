@@ -139,7 +139,7 @@ class Rts2Comm:
 		if (exptime > self.expTimes[-1]):
 			if (self.isEvening ()):
 		  		return self.expTimes[-1]
-			return self.startExpTime
+			return self.exptime  # the caller decides on exptime whether to continue or to stop
 
 		lastE = self.expTimes[0]
 		for e in self.expTimes:
@@ -215,7 +215,7 @@ class Rts2Comm:
 		if (self.exptime > self.expTimes[0] and self.exptime < self.expTimes[-1]):
 			if (self.isSubWindow):
 				self.fullWindow()
-			ret = 0
+			# do not overide status here 
 
 		# from ret to brightness
 		brightness = 'OK'
@@ -311,3 +311,5 @@ class Rts2Comm:
 
 a = Rts2Comm()
 a.run()
+
+#  LocalWords:  wheter
