@@ -29,6 +29,7 @@
 #define OPT_ROTATOR_OFFSET    OPT_LOCAL + 2
 #define OPT_PARK_POS          OPT_LOCAL + 4
 #define OPT_POWEOFF_STANDBY   OPT_LOCAL + 5
+#define OPT_GOOD_SEP          OPT_LOCAL + 6
 
 namespace rts2teld
 {
@@ -369,6 +370,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
 	addOption ('t', NULL, 1, "tracking (1, 2, 3 or 4 - read OpenTCI doc; default 4");
 	addOption (OPT_PARK_POS, "park", 1, "parking position (alt, az separated by :)");
 	addOption (OPT_POWEOFF_STANDBY, "standby-poweroff", 0, "poweroff at standby");
+	addOption (OPT_GOOD_SEP, "good-sep", 1, "minimal good separation (in degrees)");
 
 	cover_state = CLOSED;
 }
@@ -410,6 +412,9 @@ int OpenTPL::processOption (int in_opt)
 			break;
 		case OPT_POWEOFF_STANDBY:
 			standbyPoweroff->setValueBool (true);
+			break;
+		case OPT_GOOD_SEP:
+			goodSep->setValueCharArr (optarg);
 			break;
 		default:
 			return Telescope::processOption (in_opt);
