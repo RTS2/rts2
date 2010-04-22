@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2009-06-20</date>">
+  <!ENTITY dhdate      "<date>2010-04-19</date>">
   <!ENTITY dhsection   "<manvolnum>7</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.8.0</productnumber>
+    <productnumber>0.8.1</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -205,14 +205,16 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
   <refsect1>
     <title>Event trigger configuration file</title>
     <para>
-      This is description of event triggering file. It is the XML file
+      This section describes event triggering file. It is the XML file
       specified with <emphasis>--event-file</emphasis> option. Event
       configuration file can be validated with provided XML schema file.
     </para>
-    <para>
-      To start with, there is a sample configuration file.
-    </para>
-    <programlisting>
+    <refsect2>
+      <title>Example event triggering configuration file</title>
+      <para>
+        To start with, there is an example configuration file.
+      </para>
+      <programlisting>
 <![CDATA[
 <events xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:events.xsd">
   <device name="C0">
@@ -238,50 +240,77 @@ Regards, Telescope (the)" | mail -s 'DOME end switches' observer@example.com
   </device>
 </events>
 ]]>
-    </programlisting>
-    <para>
-      This event file, when passed to rts2-xmlrpcd with --event-file option, will:
-      <itemizedlist>
-        <listitem>
-	  <para>
-	    execute <command>/etc/rts2/event.d/c0_reading</command> when camera C0 start reading of the chip (switch from second state bit from 0 to 1).
-	  </para>
-	</listitem>
-	<listitem>
-	  <para>
-	    execute <command>/etc/rts2/event.d/dome_opened</command> when dome
-	    device with name DOME changes third bit (0x04) from 0 to 1, e.g. when it switched to opened state.
-	  </para>
-	</listitem>
-	<listitem>
-	  <para>
-	    execute <command>/etc/rts2/event.d/dome_closed</command> when dome
-	    device with name DOME changes first bit (0x01) from 0 to 1, e.g. when it switched to opened state.
-	  </para>
-	</listitem>
-	<listitem>
-	  <para>
-	    Record any changes to CCD_TEMP value from C0 device. The changes
-	    are recorded as soon as they are transmited to XML-RPCD. Ussully
-	    all RTS2 devices reguarly send updates on their values to all
-	    connected clients, so this should work reasonably well. Please note
-	    that only when value changes, its new value is recorded - if value
-	    stays the same, it is not recorded.
-	  </para>
-	</listitem>
-	<listitem>
-	  <para>
-	    Record any changes of CCD_SET value from C0 device. But the changes
-	    will be recorded only every 60 seconds. This means following: if
-	    the value changed within 60 seconds, it will be recorded (with
-	    proper time).  If it changes more then once within those 60
-	    seconds, only last value will be recorded. Remember that even then,
-	    only changes are recorded - so if there wasn't any change to the
-	    value within 60 seconds, database record wouldn't be created.
-	  </para>
-	</listitem>
-      </itemizedlist>
-    </para>
+      </programlisting>
+      <para>
+        This event file, when passed to rts2-xmlrpcd with --event-file option, will:
+        <itemizedlist>
+          <listitem>
+  	    <para>
+	      execute <command>/etc/rts2/event.d/c0_reading</command> when camera C0 start reading of the chip (switch from second state bit from 0 to 1).
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      execute <command>/etc/rts2/event.d/dome_opened</command> when dome
+	      device with name DOME changes third bit (0x04) from 0 to 1, e.g. when it switched to opened state.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      execute <command>/etc/rts2/event.d/dome_closed</command> when dome
+	      device with name DOME changes first bit (0x01) from 0 to 1, e.g. when it switched to opened state.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      Record any changes to CCD_TEMP value from C0 device. The changes
+	      are recorded as soon as they are transmited to XML-RPCD. Ussully
+	      all RTS2 devices reguarly send updates on their values to all
+	      connected clients, so this should work reasonably well. Please note
+	      that only when value changes, its new value is recorded - if value
+	      stays the same, it is not recorded.
+	    </para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	      Record any changes of CCD_SET value from C0 device. But the changes
+	      will be recorded only every 60 seconds. This means following: if
+	      the value changed within 60 seconds, it will be recorded (with
+	      proper time).  If it changes more then once within those 60
+	      seconds, only last value will be recorded. Remember that even then,
+	      only changes are recorded - so if there wasn't any change to the
+	      value within 60 seconds, database record wouldn't be created.
+	    </para>
+	  </listitem>
+        </itemizedlist>
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>events section</title>
+      <para>
+	The section contains entries for response to events on various devices.
+	It contains multiple device nodes. Device to which the node applies is
+	identified by name attribute. The node contains child nodes applying
+	trigger either on value or device state change.
+      </para>
+      <para>
+	Value change expects name of the value being specified as node "name"
+	attribute. The actions specified are executed every time the variable
+	value is changed and its match an optional test. Test is specified as
+	an node attribute called "test".
+      </para>
+      <para>
+      </para>
+    </refsect2>
+    <refsect2>
+      <title>command action</title>
+    </refsect2>
+    <refsect2>
+      <title>record action</title>
+    </refsect2>
+    <refsect2>
+      <title>email action</title>
+    </refsect2>
   </refsect1>
   <refsect1>
     <title>Configuration file options</title>
