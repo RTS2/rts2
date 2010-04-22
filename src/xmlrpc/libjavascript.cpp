@@ -52,14 +52,6 @@ static const char *equScript =
 
 "function ln_rad_to_deg(rad) { return rad * 5.7295779513082320877e1; }\n"
 
-"function DMS() {\n"
-  "this.neg = 0;\n"
-  "this.degrees = Infinity;\n"
-  "this.minutes = Infinity;\n"
-  "this.seconds = Infinity;\n"
-  "this.toString = function () { return (this.neg ? '-' : '+') + this.degrees.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 100)/100).format(2) + '\"'; }\n"
-"}\n"
-
 /* convert degrees to dms */
 "function ln_deg_to_dms (degrees,dms) {\n"
   "var dtemp;\n"
@@ -88,12 +80,13 @@ static const char *equScript =
   "}\n"
 "}\n"
 
-"function HMS() {\n"
+"function DMS(deg) {\n"
   "this.neg = 0;\n"
-  "this.hours = Infinity;\n"
+  "this.degrees = Infinity;\n"
   "this.minutes = Infinity;\n"
   "this.seconds = Infinity;\n"
-  "this.toString = function () { return (this.neg ? '-' : '') + this.hours.format(2,0) + ':' + this.minutes.format(2,0) + ':' + (Math.ceil(this.seconds * 1000)/1000).format(3); }\n"
+  "ln_deg_to_dms(deg,this);\n"
+  "this.toString = function () { return (this.neg ? '-' : '+') + this.degrees.format(2,0) + '&deg;' + this.minutes.format(2,0) + '\\'' + (Math.ceil(this.seconds * 100)/100).format(2) + '\"'; }\n"
 "}\n"
 
 /* convert degrees to hms */
@@ -124,6 +117,15 @@ static const char *equScript =
     "hms.minutes = 0;\n"
     "hms.hours ++;\n"
   "}\n"
+"}\n"
+
+"function HMS(hour){\n"
+  "this.neg = 0;\n"
+  "this.hours = Infinity;\n"
+  "this.minutes = Infinity;\n"
+  "this.seconds = Infinity;\n"
+  "ln_deg_to_hms(hour,this);\n"
+  "this.toString = function () { return (this.neg ? '-' : '') + this.hours.format(2,0) + ':' + this.minutes.format(2,0) + ':' + (Math.ceil(this.seconds * 1000)/1000).format(3); }\n"
 "}\n"
 
 "function ln_get_julian_from_sys() {\n"
@@ -497,11 +499,9 @@ static const char *dateScript =
 "\n"
 "    return table;\n"
 "  }\n"
-"\n"
 "  this.show = show;\n"
 "  function show(field) {\n"
 "    can_hide = 0;\n"
-"  \n"
 "    // If the calendar is visible and associated with\n"
 "    // this field do not do anything.\n"
 "    if (dateField == field) {\n"
@@ -509,7 +509,6 @@ static const char *dateScript =
 "    } else {\n"
 "      dateField = field;\n"
 "    }\n"
-"\n"
 "    if(dateField) {\n"
 "      try {\n"
 "        var dateString = new String(dateField.value);\n"
@@ -520,7 +519,6 @@ static const char *dateScript =
 "        selectedDay = parseInt(dateParts[2],10);\n"
 "      } catch(e) {}\n"
 "    }\n"
-"\n"
 "    if (!(selectedYear && selectedMonth && selectedDay)) {\n"
 "      selectedMonth = getCurrentMonth();\n"
 "      selectedDay = getCurrentDay();\n"
@@ -607,6 +605,39 @@ static const char *dateScript =
 "document.write(\"<iframe id='CalendarControlIFrame' src='javascript:false;' frameBorder='0' scrolling='no'></iframe>\");\n"
 "document.write(\"<div id='CalendarControl'></div>\");\n";
 
+const char *targetEditScript = 
+// exposure script object
+"function Exposure (num, filter, length)\n"
+"{\n"
+"  this.num = num;\n"
+"  this.filter = filter;\n"
+"  this.length = length;\n"
+"  this.toScript = function()\n"
+"  {\n"
+"    if (this.num > 1) return 'for ' + this.num + ' { E ' + this.length + ' } ';\n"
+"    else return 'E ' + this.length;\n"
+"  };\n"
+"}\n"
+"\n"
+"var script = new Array ();\n"
+"\n"
+"function addScript (formID)\n"
+"{\n"
+"  var se = document.getElementById(formID);\n"
+"  var fi = se.filter.selectedIndex;\n"
+"  var ex = new Exposure (se.num.value,se.filter.options[fi].value,se.exposure.value);\n"
+"  script.push (ex);\n"
+"  var o = document.createElement('option');\n"
+"  o.text = ex.toScript ();\n"
+"  o.value = '1';\n"
+"\n"
+"  try {\n"
+"    se.script.add (o,se.script.options[se.script.options.length]);\n"
+"  } catch (exep) {\n"
+"    se.script.add (o,se.script.options.length);\n"
+"  }\n"
+"}\n";
+
 void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	const char *reply = NULL;
@@ -619,6 +650,8 @@ void LibJavaScript::authorizedExecute (std::string path, XmlRpc::HttpParams *par
 		reply = equScript;
 	else if (vals[0] == "date.js")
 		reply = dateScript;
+	else if (vals[0] == "targetedit.js")
+	  	reply = targetEditScript;
 	else 
 		throw rts2core::Error ("JavaScript not found");
 
