@@ -20,6 +20,7 @@
 #include "xmlrpcd.h"
 
 #include "../utils/connfork.h"
+#include "../utils/rts2displayvalue.h"
 
 using namespace rts2xmlrpc;
 
@@ -39,7 +40,7 @@ void ExpandStringDevice::writeTo (std::ostream &os)
 	}
 	for (Rts2ValueVector::iterator iter = conn->valueBegin (); iter != conn->valueEnd (); iter++)
 	{
-		os << (*iter)->getName () << "=" << (*iter)->getDisplayValue () << std::endl;
+		os << (*iter)->getName () << "=" << getDisplayValue (*iter) << std::endl;
 	}
 }
 
@@ -59,7 +60,7 @@ void ExpandStringValue::writeTo (std::ostream &os)
 		os << "unknow value " << deviceName << "." << valueName;
 		return;
 	}
-	os << val->getDisplayValue ();
+	os << getDisplayValue (val);
 }
 
 void ExpandStrings::expandXML (xmlNodePtr ptr, const char *defaultDeviceName)
