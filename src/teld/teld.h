@@ -382,7 +382,6 @@ class Telescope:public Rts2Device
 			out_tar->dec = tarRaDec->getDec ();
 		}
 
-
 		/**
 		 * Returns true if target was changed from the last
 		 * sucessfull move command. Target position is position which includes
@@ -597,6 +596,21 @@ class Telescope:public Rts2Device
 
 		double getTargetReached () { return targetReached->getValueDouble (); }
 
+		/**
+		 * Returs mount differential tracking capability.
+		 *
+		 * @return true if mount can do differential tracking
+		 */
+		virtual bool haveDiffTrack () { return false; }
+
+		/**
+		 * Set differential tracking values. All inputs is in degrees / hour.
+		 *
+		 * @param dra  differential tracking in RA
+		 * @param ddec differential tracking in DEC
+		 */
+		virtual void setDiffTrack (double dra, double ddec) {}
+
 	private:
 		Rts2Conn * move_connection;
 		int moveInfoCount;
@@ -643,6 +657,8 @@ class Telescope:public Rts2Device
 		 * Offsets which should be applied from last movement.
 		 */
 		Rts2ValueRaDec *woffsRaDec;
+
+		Rts2ValueRaDec *diffTrackRaDec;
 
 		/**
 		 * Real coordinates of the object, after offsets are applied.

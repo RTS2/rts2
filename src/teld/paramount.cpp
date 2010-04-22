@@ -170,6 +170,8 @@ class Paramount:public GEM
 
 		virtual bool haveDiffTrack () { return true; }
 
+		virtual void setDiffTrack (double dra, double ddec);
+
 	private:
 		MKS3Id axis0;
 		MKS3Id axis1;
@@ -481,14 +483,14 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv)
 	addOption ('t', "set indices", 0, "if we need to load indices as first operation");
 
 	addOption ('D', "dec_park", 1, "DEC park position");
-	// in degrees! 30 for south, -30 for north hemisphere
+	// in degrees! 30 for south, -30 for north hemisphere; S swap is done later
 	// it's (lst - ra(home))
-	// haZero and haCpd is handled in ::init, after we get latitude from config file
+	// haZero and haCpd S swap are handled in ::init, after we get latitude from config file
 	haZero = -30.0;
 	decZero = 0;
 
 	// how many counts per degree
-	haCpd = -32000.0;			 // - for N hemisphere, + for S hemisphere
+	haCpd = -32000.0;	 // - for N hemisphere, + for S hemisphere; S swap is done later
 	decCpd = -20883.33333333333;
 
 	acMargin = 10000;
@@ -923,8 +925,6 @@ int Paramount::startResync ()
 	ret = checkRet ();
 	if (ret)
 		return ret;
-	if (setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec))
-	  	return -1;
 	return 0;
 }
 
@@ -1235,6 +1235,18 @@ int Paramount::loadModel ()
 	if (ret)
 		return -1;
 	return 0;
+}
+
+void Paramount::setDiffTrack (double dra, double ddec)
+{
+	// calculate diff track..
+	dra = (-dra * haCpd);
+	ddec = (ddec * decCpd);
+	if (getFlip ())
+		ddec *= -1;
+	baseRa->setValueLong (dra);
+	baseDec->setValueLong (ddec);
+	setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 }
 
 int Paramount::getParamountValue32 (int id, Rts2ValueLong *vRa, Rts2ValueLong *vDec)

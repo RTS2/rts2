@@ -56,6 +56,16 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
+	if (haveDiffTrack ())
+	{
+		createValue (diffTrackRaDec, "DTRA", "[deg/sec] differential tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+		diffTrackRaDec->setValueRaDec (0, 0);
+	}
+	else
+	{
+		diffTrackRaDec = NULL;
+	}
+
 	createValue (objRaDec, "OBJ", "telescope FOV center position (J200) - with offsets applied", true);
 
 	createValue (tarRaDec, "TAR", "target position (J2000)", true);
@@ -94,8 +104,15 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (mpec_angle, "mpec_angle", "timespan from which MPEC ra_diff and dec_diff will be computed", false, RTS2_VALUE_WRITABLE);
 	mpec_angle->setValueDouble (3600);
 
-	createValue (diffRaDec, "different", "[degrees/hour] differential tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES);
-	diffRaDec->setValueRaDec (0, 0);
+	if (haveDiffTrack ())
+	{
+		createValue (diffRaDec, "different", "[degrees/hour] differential tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES, TEL_MOVING);
+		diffRaDec->setValueRaDec (0, 0);
+	}
+	else
+	{
+		diffRaDec = NULL;
+	}
 
 	createConstValue (telLatitude, "LATITUDE", "observatory latitude", true, RTS2_DT_DEGREES);
 	createConstValue (telLongitude, "LONGITUD", "observatory longitude", true, RTS2_DT_DEGREES);
@@ -333,7 +350,12 @@ int Telescope::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	{
 		std::string desc;
 		if (LibnovaEllFromMPC (&mpec_orbit, desc, new_value->getValue ()))
-			return -1;
+			return -2;
+	}
+	if (old_value == diffTrackRaDec)
+	{
+	  	setDiffTrack (((Rts2ValueRaDec *)new_value)->getRa (), ((Rts2ValueRaDec *)new_value)->getDec ());
+		return 0;
 	}
 	return Rts2Device::setValue (old_value, new_value);
 }
@@ -389,6 +411,11 @@ void Telescope::applyRefraction (struct ln_equ_posn *pos, double JD)
 
 void Telescope::incMoveNum ()
 {
+	if (diffTrackRaDec)
+	{
+		diffTrackRaDec->setValueRaDec (0, 0);
+	  	setDiffTrack (0,0);
+	}
 	// reset offsets
 	offsRaDec->setValueRaDec (0, 0);
 	offsRaDec->resetValueChanged ();
