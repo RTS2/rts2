@@ -31,7 +31,7 @@
       </author>
     </authorgroup>
     <copyright>
-      <year>2007</year>
+      <year>2007,2010</year>
       <holder>&dhusername;</holder>
     </copyright>
     <legalnotice>
@@ -78,7 +78,18 @@
 
   <refsect1 id="description">
     <title>DESCRIPTION</title>
-
+    <para>
+      <command>rts2-mon</command> is n-curses based tool for manipulating
+      devices available in RTS2 system. You can read and modify variables of
+      every device connected to the system. It allows fully interactive work with the system.
+    </para>
+    <para>
+      You cannot take images with <command>rts2-mon</command>. To take images,
+      please see <command>rts2-focusc</command>,
+      <command>rts2-xfocusc</command> or <command>rts2-scriptexec</command>
+      commands. To take images autonomously, use either
+      <command>rts2-executor</command> or <command>rts2-scriptor</command>.
+    </para>
   </refsect1>
   <refsect1 id="basic_operation">
     <title>BASIC OPERATION</title>
@@ -106,7 +117,7 @@
     <title>RTS2-MON SCREEN</title>
 
     <para>
-      When you run rts2-mon, screen is divided into four principal
+      When you run <command>rts2-mon</command>, screen is divided into four principal
       areas - menu bar, device list and status display, RTS2 messages
       space and status bar at bottom.
     </para>
@@ -234,7 +245,7 @@
       <title>Movement keys</title>
 
       <para>
-        As text which should be displayed in rts2-mon windows must
+        As text which should be displayed in <command>rts2-mon</command> windows must
         not necessary fit inside windows where it should be
 	displayed, following keys can be used to shift text.
       </para>
@@ -291,7 +302,7 @@
       <title>rts2-mon functions keys</title>
     
       <para>
-	Those are keys, which execute rts2-mon functions:
+	Those are keys, which execute <command>rts2-mon</command> functions.
       </para>
 
       <variablelist>
@@ -330,7 +341,7 @@
 	    <option>F10</option>
 	  </term>
 	  <listitem>
-	    <para>Exit from rts2-mon.</para>
+	    <para>Exit from <command>rts2-mon</command>.</para>
 	  </listitem>
 	</varlistentry>
       </variablelist>
