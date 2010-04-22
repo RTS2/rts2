@@ -108,9 +108,12 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 		bool canExecute () { return executePermission; }
 
 		/**
-		 * Return JSON.
+		 * Return JSON page.
 		 *
-		 * @param 
+		 * @param msg             null terminated char array which will be returned
+		 * @param response_type   response type (will be filled with application/json)
+		 * @param response        response text (output)
+		 * @param response_length response length in bytes
 		 */
 		void returnJSON (const char *msg, const char* &response_type, char* &response, size_t &response_length)
 		{
@@ -118,6 +121,14 @@ class GetRequestAuthorized: public XmlRpc::XmlRpcServerGetRequest
 			response_length = strlen (msg);
 			response = new char[response_length];
 			memcpy (response, msg, response_length);
+		}
+
+		void returnJSON (std::ostringstream &_os, const char* &response_type, char* &response, size_t &response_length)
+		{
+			response_type = "application/json";
+			response_length = _os.str ().length ();
+			response = new char[response_length];
+			memcpy (response, _os.str ().c_str (), response_length);
 		}
 
 	private:
