@@ -4,7 +4,7 @@
 
   <!ENTITY dhfirstname "<firstname>Petr</firstname>">
   <!ENTITY dhsurname   "<surname>Kubanek</surname>">
-  <!ENTITY dhdate      "<date>2007-05-17</date>">
+  <!ENTITY dhdate      "<date>2010-04-22</date>">
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
   <!ENTITY dhemail     "<email>petr@kubanek.net</email>">
   <!ENTITY dhusername  "Petr Kubanek">
@@ -18,7 +18,7 @@
   <refentryinfo>
     <title>&dhpackage;</title>
     <productname>rts2</productname>
-    <productnumber>0.7.0</productnumber>
+    <productnumber>0.8.1</productnumber>
     &dhdate;
     <authorgroup>
       <author>
@@ -141,9 +141,20 @@
 	  <term>variable list</term>
 	  <listitem>
 	    <para>
-	      The center and left part of the screen holds information about
+	      The center and right part of the screen holds information about
 	      RTS2 device variables, or device states. For central server, list
-	      of devices and their states will be shown.
+	      of devices and their states will be shown. "status" shows state
+	      of all available devices.
+	    </para>
+	    <para>
+	      Variables which can be changed have W (for Writable) before their
+	      name. Selecting them with movement keys and pressing enter (or
+	      F6) shows a dialog box, where user can edit their value.
+	    </para>
+	    <para>
+	      Variables which will be recorded to FITS headers of acquired
+	      files are on color terminals show in blue color. Variables which
+	      will not be recorded are show in black.
 	    </para>
 	  </listitem>
 	</varlistentry>
@@ -262,6 +273,17 @@
 	    <para>Shift text left or right, so part which cannot be visible becomes visible.</para>
 	  </listitem>
 	</varlistentry>
+	<varlistentry>
+	  <term>
+	    <option>tab</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Moves active window. Active window is marked with black window
+	      border. You can switch between devices, values and log area.
+	    </para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
 
@@ -283,10 +305,24 @@
 	</varlistentry>
 	<varlistentry>
 	  <term>
+	    <option>Enter</option>
+	    <option>F6</option>
+	  </term>
+	  <listitem>
+	    <para>
+	      Edit variable when variable window is active. You can change only
+	      variables with W (as Writable) before variable name. If you are
+	      in device selection window, hit tabulator key to move to activate
+	      value window.
+	    </para>
+	  </listitem>
+	</varlistentry>
+	<varlistentry>
+	  <term>
 	    <option>F9</option>
 	  </term>
 	  <listitem>
-	    <para>Enter to menu.</para>
+	    <para>Enter menu.</para>
 	  </listitem>
 	</varlistentry>
 	<varlistentry>
