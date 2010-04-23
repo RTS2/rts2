@@ -679,7 +679,10 @@ void OpenTPL::checkPower ()
 	}
 
 	if (power_state == 1)
+	{
+		opentplConn->setDebug (false);
 		return;
+	}
 
  	while (!(power_state == 0 || power_state == 1))
 	{
