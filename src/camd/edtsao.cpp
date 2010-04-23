@@ -52,8 +52,9 @@ const SplitConf splitConf[] =
 typedef enum {A_plus, A_minus, B, C, D} edtAlgoType;
 
 /**
- * Special variable for EDT-SAO registers. It holds information
- * about which registers the variable represents.
+ * Variable for EDT-SAO registers. It holds information
+ * about which register the variable represents and which
+ * algorithm is used to convert it to register hex value.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -61,15 +62,23 @@ class ValueEdt: public Rts2ValueDoubleMinMax
 {
 	public:
 		ValueEdt (std::string in_val_name);
-		ValueEdt (std::string in_val_name, std::string in_description,
-			bool writeToFits = true, int32_t flags = 0);
+		ValueEdt (std::string in_val_name, std::string in_description, bool writeToFits = true, int32_t flags = 0);
 		~ValueEdt (void);
 
-		// init EDT part of variable
+		/**
+		 * Initialize EDT part of variable.
+		 *
+		 * @param in_reg   register prefix
+		 * @param in_algo  type of algorithm used to convert float value to register value
+		 */
 		void initEdt (long in_reg, edtAlgoType in_algo);
 
 		/**
-		 * @return -1 on error, otherwise hex value.
+		 * Convert float value to register value.
+		 *
+		 * @param in_v float value which will be converted
+		 *
+		 * @return hex value of in_v
 		 */
 		long getHexValue (float in_v);
 	private:
@@ -79,7 +88,7 @@ class ValueEdt: public Rts2ValueDoubleMinMax
 		edtAlgoType algo;
 };
 
-};
+}
 
 using namespace rts2camd;
 
@@ -258,6 +267,12 @@ class EdtSao:public Camera
 				return edtwrite (SAO_UNI_ON);
 			return edtwrite (SAO_UNI_OFF);
 		}
+
+		/**
+		 * Setup D/A controller. This takes system defaults. It is
+		 * called only if camera reset was specified on command line,
+		 * as one of the parameters.
+		 */
 		int setDAC ();
 
 		void probe ();
@@ -282,6 +297,9 @@ class EdtSao:public Camera
 		int setGrayScale (bool _grayScale);
 
 		// registers
+		ValueEdt *vhi;
+		ValueEdt *vlo;
+
 		ValueEdt *phi;
 		ValueEdt *plo;
 
@@ -407,21 +425,6 @@ int EdtSao::setDAC ()
 	int ret;
 	unsigned long edtVal[] =
 	{
-		0xa0384732,				 // RD = 9
-		0x00000001,				 // sleep 1
-		0xa0080800,				 // Vhi = 5
-		0xa0084333,				 // Phi = 2
-		0xa00887ff,				 // Rhi = 5
-		0xa008c4cc,				 // Shi = 3
-		0xa0180b32,				 // Slo = -7
-		0xa0184e65,				 // Plo = -9
-		0xa0188000,				 // Vlo = 0
-		0xa018c7ff,				 // Rlo = -5
-		0xa0288b32,				 // OG2 = -2
-		0xa028cfff,				 // OG1 = -5
-		0xa0380bfe,				 // DD = 15
-		0xa0388ccc,				 // OD2 = 20
-		0xa038cccc,				 // OD1 = 20
 		0x30080100,				 // a/d offset channel 1
 		0x30180100,				 // a/d offset channel 2
 		0x30280200,				 // a/d offset channel 3
@@ -452,7 +455,7 @@ int EdtSao::setDAC ()
 		valp++;
 	}
 
-	setEdtValue (rd, 9);
+/*	setEdtValue (rd, 9);
 	sleep (1);
 
 	setEdtValue (phi, 2);
@@ -470,7 +473,7 @@ int EdtSao::setDAC ()
 	setEdtValue (og1r, -5);
 	setEdtValue (og2l, -2);
 
-	setEdtValue (dd, 15);
+	setEdtValue (dd, 15); */
 
 	return 0;
 }
@@ -1217,6 +1220,12 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	grayScale = NULL;
 
+	createValue (vhi, "VHI", "V high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	vhi->initEdt (0xA0080, A_plus);
+
+	createValue (vlo, "VLO", "V low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	vlo->initEdt (0xA0188, A_minus);
+
 	createValue (phi, "PHI", "P high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
@@ -1311,7 +1320,11 @@ int EdtSao::setEdtValue (ValueEdt * old_value, float new_value)
 
 int EdtSao::setEdtValue (ValueEdt * old_value, Rts2Value * new_value)
 {
-	return edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
+	int ret = edtwrite (old_value->getHexValue (new_value->getValueFloat ()));
+	logStream (MESSAGE_INFO) << "setting "<< old_value->getName () << " to " << new_value->getValueFloat () << sendLog;
+	if (old_value == rd)
+		sleep (1);
+	return ret;
 }
 
 int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
@@ -1326,7 +1339,9 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 		setSize (new_value->getValueInteger (), chipHeight->getValueInteger (), 0, 0);
 		return 0;
 	}
-	if (old_value == phi
+	if (old_value == vhi
+	  	|| old_value == vlo
+	  	|| old_value == phi
 		|| old_value == plo
 		|| old_value == shi
 		|| old_value == slo
