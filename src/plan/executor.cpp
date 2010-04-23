@@ -255,6 +255,7 @@ void Executor::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_SLEW_TO_TARGET:
+		case EVENT_SLEW_TO_TARGET_NOW:
 			maskState (EXEC_STATE_MASK, EXEC_MOVE);
 			break;
 		case EVENT_OBSERVE:
@@ -322,7 +323,7 @@ void Executor::postEvent (Rts2Event * event)
 					&& (nextTargets.size () == 0 || nextTargets.front()->getTargetID () == currentTarget->getTargetID ())
 					)
 				{
-					// wait, if we are in stop..don't que it again..
+					// wait, if we are in stop..don't queue it again..
 					if ((getState () & EXEC_MASK_END) != EXEC_END)
 						event->setArg ((void *) currentTarget);
 					// that will eventually hit devclient which post that message, which
@@ -474,7 +475,7 @@ int Executor::changeMasterState (int new_state)
 			break;
 		default:
 			// we need to stop observation that is continuus
-			// that will guarantie that in isContinues call, we will not que our target again
+			// that will guarantie that in isContinues call, we will not queue our target again
 			stop ();
 			break;
 	}
@@ -557,7 +558,7 @@ int Executor::setNow (Target * newTarget)
 	queAll (new Rts2CommandKillAll (this));
 
 	postEvent (new Rts2Event (EVENT_SET_TARGET, (void *) currentTarget));
-	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET));
+	postEvent (new Rts2Event (EVENT_SLEW_TO_TARGET_NOW));
 
 	infoAll ();
 
@@ -597,7 +598,7 @@ int Executor::setGrb (int grbId)
 	if (grbTarget->getTargetEnabled () == false)
 	{
 		logStream (MESSAGE_INFO)
-			<< "Ignored execution request for GRB target " << grbTarget->
+			<< "ignored execution request for GRB target " << grbTarget->
 			getTargetName () << " (# " << grbTarget->
 			getObsTargetID () << ") because this target is disabled" << sendLog;
 		return -2;
@@ -715,7 +716,7 @@ void Executor::doSwitch ()
 			nextId = (*nextTargets.begin ())->getTargetID ();
 			ret = currentTarget->endObservation (nextId);
 			if (!(ret == 1 && nextId == currentTarget->getTargetID ()))
-				// don't que only in case nextTarget and currentTarget are
+				// don't queue only in case nextTarget and currentTarget are
 				// same and endObservation returns 1
 			{
 				processTarget (currentTarget);

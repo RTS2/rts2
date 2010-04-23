@@ -335,10 +335,11 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 			currentTarget = (Target *) event->getArg ();
 			break;
 		case EVENT_SLEW_TO_TARGET:
+		case EVENT_SLEW_TO_TARGET_NOW:
 			if (currentTarget)
 			{
 				currentTarget->beforeMove ();
-				ret = syncTarget ();
+				ret = syncTarget (event->getType () == EVENT_SLEW_TO_TARGET_NOW);
 				switch (ret)
 				{
 					case OBS_DONT_MOVE:
@@ -401,7 +402,7 @@ void Rts2DevClientTelescopeExec::postEvent (Rts2Event * event)
 	Rts2DevClientTelescopeImage::postEvent (event);
 }
 
-int Rts2DevClientTelescopeExec::syncTarget ()
+int Rts2DevClientTelescopeExec::syncTarget (bool now)
 {
 	struct ln_equ_posn coord;
 	int ret;
@@ -409,15 +410,16 @@ int Rts2DevClientTelescopeExec::syncTarget ()
 		return -1;
 	getEqu (&coord);
 	ret = currentTarget->startSlew (&coord);
+	int bopTel = now ? 0 : BOP_TEL_MOVE;
 	switch (ret)
 	{
 		case OBS_MOVE:
 			currentTarget->moveStarted ();
-			queCommand (new Rts2CommandMove (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
+			queCommand (new Rts2CommandMove (getMaster (), this, coord.ra, coord.dec), bopTel);
 			break;
 		case OBS_MOVE_UNMODELLED:
 			currentTarget->moveStarted ();
-			queCommand (new Rts2CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
+			queCommand (new Rts2CommandMoveUnmodelled (getMaster (), this, coord.ra, coord.dec), bopTel);
 			break;
 		case OBS_MOVE_FIXED:
 			currentTarget->moveStarted ();
@@ -432,12 +434,12 @@ int Rts2DevClientTelescopeExec::syncTarget ()
 			#ifdef DEBUG_EXTRA
 				logStream (MESSAGE_DEBUG)<< "Rts2DevClientTelescopeExec::syncTarget resync offsets: ra " << fixedOffset.ra << " dec " << fixedOffset.dec << sendLog;
 			#endif
-				queCommand (new Rts2CommandChange (this, fixedOffset.ra, fixedOffset.dec), BOP_TEL_MOVE);
+				queCommand (new Rts2CommandChange (this, fixedOffset.ra, fixedOffset.dec), bopTel);
 				fixedOffset.ra = 0;
 				fixedOffset.dec = 0;
 				break;
 			}
-			queCommand (new Rts2CommandResyncMove (getMaster (), this, coord.ra, coord.dec), BOP_TEL_MOVE);
+			queCommand (new Rts2CommandResyncMove (getMaster (), this, coord.ra, coord.dec), bopTel);
 			break;
 		case OBS_DONT_MOVE:
 			break;

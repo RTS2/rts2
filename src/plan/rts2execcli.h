@@ -53,6 +53,9 @@
 
 #define EVENT_SCRIPT_RUNNING_QUESTION      RTS2_LOCAL_EVENT+67
 
+// slew to target, and do not wait for clearing of the block state
+#define EVENT_SLEW_TO_TARGET_NOW           RTS2_LOCAL_EVENT+68
+
 class GuidingParams
 {
 	public:
@@ -145,7 +148,7 @@ class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage
 
 		struct ln_equ_posn fixedOffset;
 
-		int syncTarget ();
+		int syncTarget (bool now = false);
 		void checkInterChange ();
 	protected:
 		virtual void moveEnd ();
