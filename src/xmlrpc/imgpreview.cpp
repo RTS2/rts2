@@ -126,6 +126,8 @@ void JpegImageRequest::authorizedExecute (std::string path, HttpParams *params, 
 
 	Magick::Image mimage = image.getMagickImage (label);
 
+	cacheMaxAge (86400);
+
 	mimage.write (&blob, "jpeg");
 	response_length = blob.length();
 	response = new char[response_length];
@@ -160,6 +162,8 @@ void JpegPreview::authorizedExecute (std::string path, HttpParams *params, const
 		mimage.zoom (Magick::Geometry (prevsize, prevsize));
 
 		image.writeLabel (mimage, 1, prevsize - 2, 10, label);
+
+		cacheMaxAge (86400);
 
 		mimage.write (&blob, "jpeg");
 		response_length = blob.length();

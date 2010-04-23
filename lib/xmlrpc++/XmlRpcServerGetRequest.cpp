@@ -7,7 +7,6 @@
 
 #include "string.h"
 #include <stdlib.h>
-#include <sstream>
 #include <algorithm>
 
 namespace XmlRpc

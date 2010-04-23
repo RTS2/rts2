@@ -3,6 +3,7 @@
 #define _XMLRPCSERVERGETREQUEST_H_
 //
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
+//          Copyright (c) 2009-2010 by Petr Kubanek
 //
 #if defined(_MSC_VER)
 # pragma warning(disable:4786)	 // identifier was truncated in debug info
@@ -12,6 +13,8 @@
 # include <string>
 # include <vector>
 #endif
+
+#include <sstream>
 
 #include "XmlRpcServerConnection.h"
 
@@ -99,6 +102,18 @@ namespace XmlRpc
 			XmlRpcServer* _server;
 
 			void addExtraHeader (const char *name, const char *value) { connection->addExtraHeader (name, value); }
+			/**
+			 * Specify max age in seconds. For this time cached response will be valid. This method
+			 * is provide for convinient setting of cache timeout.
+			 *
+			 * @param maxage cache control max-age value (in seconds)
+			 */
+			void cacheMaxAge (long maxage)
+			{
+				std::ostringstream _os;
+				_os << "max-age=" << maxage;
+				connection->addExtraHeader ("Cache-Control", _os.str ().c_str ());
+			}
 		private:
 			std::string _prefix;
 			const char *_description;

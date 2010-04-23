@@ -54,6 +54,7 @@ namespace XmlRpc
 
 			/**
 			 * Add extra header among HTTP headers sent to client.
+			 *
 			 * @param name  Name of extra header
 			 * @param value Extra header value
 			 */

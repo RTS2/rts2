@@ -2,6 +2,7 @@
 #define _XMLRPC_H_
 //
 // XmlRpc++ Copyright (c) 2002-2003 by Chris Morley
+//          Copyright (c) 2009-2010 by Petr Kubanek
 // This library is free software; you can redistribute it and/or
 // modify it under the terms of the GNU Lesser General Public
 // License as published by the Free Software Foundation; either
