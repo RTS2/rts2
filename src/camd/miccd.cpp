@@ -129,11 +129,14 @@ void MICCD::postEvent (Rts2Event *event)
 		case EVENT_TE_RAMP:
 			if (tempTarget->getValueFloat () < tempSet->getValueFloat ())
 				change = tempRamp->getValueFloat ();
-			else if (tempTarget->getValueFloat ())
+			else if (tempTarget->getValueFloat () > tempSet->getValueFloat ())
 				change = -1 * tempRamp->getValueFloat ();
 			if (change != 0)
 			{
 				tempTarget->setValueFloat (tempTarget->getValueFloat () + change);
+				if (fabs (tempTarget->getValueFloat () - tempSet->getValueFloat ()) < fabs (change))
+					tempTarget->setValueFloat (tempSet->getValueFloat ());
+				sendValueAll (tempTarget);
 				if (miccd_set_cooltemp (&camera, tempTarget->getValueFloat ()))
 					logStream (MESSAGE_ERROR) << "cannot set target temperature" << sendLog;
 				addTimer (60, event);
@@ -240,6 +243,7 @@ int MICCD::setValue (Rts2Value *oldValue, Rts2Value *newValue)
 int MICCD::setCoolTemp (float new_temp)
 {
 	deleteTimers (EVENT_TE_RAMP);
+	tempTarget->setValueFloat (tempCCD->getValueFloat ());
 	addTimer (1, new Rts2Event (EVENT_TE_RAMP));
 	return 0;
 }
