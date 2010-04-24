@@ -50,6 +50,7 @@
 #define IMAGEOP_MODEL     0x0800
 #define IMAGEOP_JPEG      0x0800
 #define IMAGEOP_STAT      0x1000
+#define IMAGEOP_DISTANCE  0x2000
 
 #define OPT_ADDDATE   OPT_LOCAL + 5
 #define OPT_EVERY     OPT_LOCAL + 6
@@ -64,28 +65,8 @@ class AppImage:public Rts2AppDbImage
 class AppImage:public Rts2AppImage
 #endif							 /* HAVE_PGSQL */
 {
-	private:
-		int operation;
-
-		void printOffset (double x, double y, Rts2Image * image);
-
-		int addDate (Rts2Image * image);
-	#ifdef HAVE_PGSQL
-		int insert (Rts2ImageDb * image);
-	#endif
-		void testImage (Rts2Image * image);
-		void testEval (Rts2Image * image);
-		void createWCS (Rts2Image * image);
-		void printModel (Rts2Image * image);
-		void printStat (Rts2Image * image);
-
-		double off_x, off_y;
-
-		const char* print_expr;
-		const char* copy_expr;
-		const char* link_expr;
-		const char* move_expr;
-		const char* jpeg_expr;
+	public:
+		AppImage (int in_argc, char **in_argv, bool in_readOnly);
 	protected:
 		virtual int processOption (int in_opt);
 	#ifdef HAVE_PGSQL
@@ -97,11 +78,34 @@ class AppImage:public Rts2AppImage
 	#endif						 /* HAVE_PGSQL */
 
 		virtual void usage ();
-	public:
-		AppImage (int in_argc, char **in_argv, bool in_readOnly);
+	private:
+		int operation;
+
+		void printOffset (double x, double y, Rts2Image * image);
+
+		int addDate (Rts2Image * image);
+	#ifdef HAVE_PGSQL
+		int insert (Rts2ImageDb * image);
+	#endif
+		void testImage (Rts2Image * image);
+		void pointDistance (Rts2Image * image);
+		void testEval (Rts2Image * image);
+		void createWCS (Rts2Image * image);
+		void printModel (Rts2Image * image);
+		void printStat (Rts2Image * image);
+
+		double off_x, off_y;
+		double d_x1, d_y1, d_x2, d_y2;
+
+		const char* print_expr;
+		const char* copy_expr;
+		const char* distance_expr;
+		const char* link_expr;
+		const char* move_expr;
+		const char* jpeg_expr;
 };
 
-};
+}
 
 using namespace rts2image;
 
@@ -188,6 +192,17 @@ void AppImage::testImage (Rts2Image * image)
 	printOffset (152, 150, image);
 }
 
+void AppImage::pointDistance (Rts2Image * image)
+{
+	double ra, dec, sep;
+	int ret;
+
+	ret = image->getOffset (d_x1, d_y1, d_x2, d_y2, ra, dec, sep);
+	if (ret)
+		return;
+	std::cout << LibnovaDegArcMin (ra) << " " << LibnovaDegArcMin (dec) << std::endl;
+}
+
 void AppImage::testEval (Rts2Image * image)
 {
 	float value, error;
@@ -202,7 +217,7 @@ void AppImage::createWCS (Rts2Image * image)
 	int ret = image->createWCS (off_x, off_y);
 
 	if (ret)
-		std::cerr << "Create WCS returned with error " << ret << std::endl;
+		std::cerr << "create WCS returned with error " << ret << std::endl;
 }
 
 void AppImage::printModel (Rts2Image *image)
@@ -237,10 +252,14 @@ int AppImage::processOption (int in_opt)
 	switch (in_opt)
 	{
 		case 'p':
+			if (print_expr)
+				return -1;
 			operation |= IMAGEOP_PRINT;
 			print_expr = optarg;
 			break;
 		case 'P':
+			if (print_expr)
+				return -1;
 			operation |= IMAGEOP_FPRINT;
 			print_expr = optarg;
 			break;
@@ -254,8 +273,21 @@ int AppImage::processOption (int in_opt)
 			std::cout << pureNumbers;
 			break;
 		case 'c':
+			if (copy_expr)
+				return -1;
 			operation |= IMAGEOP_COPY;
 			copy_expr = optarg;
+			break;
+		case 'd':
+			if (distance_expr)
+				return -1;
+			operation |= IMAGEOP_DISTANCE;
+			distance_expr = optarg;
+			if (sscanf (distance_expr, "%lf:%lf-%lf:%lf", &d_x1, &d_y1, &d_x2, &d_y2) != 4)
+			{
+				std::cerr << "cannot parse distancei argument: " << distance_expr << std::endl;
+				return -1;
+			}
 			break;
 		case OPT_ADDDATE:
 			operation |= IMAGEOP_ADDDATE;
@@ -271,10 +303,14 @@ int AppImage::processOption (int in_opt)
 			break;
 		#endif					 /* HAVE_PGSQL */
 		case 'm':
+			if (move_expr)
+				return -1;
 			operation |= IMAGEOP_MOVE;
 			move_expr = optarg;
 			break;
 		case 'l':
+			if (link_expr)
+				return -1;
 			operation |= IMAGEOP_SYMLINK;
 			link_expr = optarg;
 			break;
@@ -305,6 +341,8 @@ int AppImage::processOption (int in_opt)
 			break;
 		#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
 		case 'j':
+			if (jpeg_expr)
+				return -1;
 			operation |= IMAGEOP_JPEG;
 			jpeg_expr = optarg;
 			break;
@@ -360,6 +398,8 @@ int AppImage::processImage (Rts2Image * image)
 	  	printStat (image);
 	if (operation & IMAGEOP_COPY)
 		image->copyImageExpand (copy_expr);
+	if (operation & IMAGEOP_DISTANCE)
+	  	pointDistance (image);
 	if (operation & IMAGEOP_MOVE)
 		image->renameImageExpand (move_expr);
 	if (operation & IMAGEOP_SYMLINK)
@@ -380,7 +420,8 @@ void AppImage::usage ()
 	std::cout 
 		<< "  rts2-image -w 123.fits                     .. write WCS to file 123, based on information stored by RTS2 in the file"	<< std::endl
 		<< "  rts2-image -w -o 20.12:10.56 123.fits      .. same as above, but add X offset of 20.12 pixels and Y offset of 10.56 pixels to WCS" << std::endl
-		<< "  rts2-image -P @DATE_OBS/@POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl;
+		<< "  rts2-image -P @DATE_OBS/@POS_ERR 123.fits  .. prints DATE_OBS and POS_ERR keywords" << std::endl
+		<< "  rts2-image -d 10:15-20:25 123.fits         .. prints RA DEC distance between pixel (10,15) and (20,25)" << std::endl;
 }
 
 AppImage::AppImage (int in_argc, char **in_argv, bool in_readOnly):
@@ -395,12 +436,20 @@ Rts2AppImage (in_argc, in_argv, in_readOnly)
 	off_x = 0;
 	off_y = 0;
 
+	print_expr = NULL;
+	copy_expr = NULL;
+	distance_expr = NULL;
+	link_expr = NULL;
+	move_expr = NULL;
+	jpeg_expr = NULL;
+
 	addOption ('p', NULL, 1, "print image expression");
 	addOption ('P', NULL, 1, "print filename followed by expression");
 	addOption ('r', NULL, 0, "print referencig status - usefull for modelling checks");
 	addOption ('s', NULL, 0, "print image statistics - average, median, min & max values,...");
 	addOption ('n', NULL, 0, "print numbers only - do not pretty print degrees,..");
 	addOption ('c', NULL, 1, "copy image(s) to path expression given as argument");
+	addOption ('d', NULL, 1, "print distance in RA and DEC degrees between two points, specified as X1:Y1-X2:Y2");
 	addOption (OPT_ADDDATE, "add-date", 0, "add DATE-OBS to image header");
 	addOption (OPT_ADDHELIO, "add-heliocentric", 0, "add JD_HELIO to image header (contains heliocentrict time)");
 	addOption ('i', NULL, 0, "insert/update image(s) in the database");

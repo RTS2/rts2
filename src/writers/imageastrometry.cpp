@@ -24,14 +24,7 @@
 
 using namespace rts2image;
 
-/*
- *
- * Most probably will converge to WCS class solution (or even WCSlib incorporation) in future.
- *
- * @author Petr Kubanek <pkubanek@asu.cas.cz>
- */
-int
-Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
+int Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 {
 	double ra_t, dec_t;
 	double rotang;
@@ -60,23 +53,15 @@ Rts2Image::getRaDec (double x, double y, double &ra, double &dec)
 	return 0;
 }
 
-
-int
-Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec,
-double &sep_angle)
+int Rts2Image::getOffset (double x, double y, double &chng_ra, double &chng_dec, double &sep_angle)
 {
 	return getOffset (x, y, getXoA (), getYoA (), chng_ra, chng_dec, sep_angle);
 }
 
-
-int
-Rts2Image::getOffset (double x1, double y1, double x2, double y2,
-double &chng_ra, double &chng_dec, double &sep_angle)
+int Rts2Image::getOffset (double x1, double y1, double x2, double y2, double &chng_ra, double &chng_dec, double &sep_angle)
 {
 	int ret;
 	struct ln_equ_posn pos1, pos2;
-	logStream (MESSAGE_DEBUG) << "Rts2Image::getOffset " << x1 << " " << y1 <<
-		" " << x2 << " " << y2 << sendLog;
 	ret = getRaDec (x1, y1, pos1.ra, pos1.dec);
 	if (ret)
 		return ret;
@@ -86,45 +71,32 @@ double &chng_ra, double &chng_dec, double &sep_angle)
 	chng_ra = pos1.ra - pos2.ra;
 	chng_dec = pos1.dec - pos2.dec;
 	sep_angle = ln_get_angular_separation (&pos1, &pos2);
-	logStream (MESSAGE_DEBUG) << "Rts2Image::getOffset " <<
-		pos1.ra << " " << pos1.dec << " " << pos2.ra << " " << pos2.
-		dec << " change " << chng_ra << " " << chng_dec << " sep " << sep_angle <<
-		sendLog;
 	return ret;
 }
 
-
-double
-Rts2Image::getXoA ()
+double Rts2Image::getXoA ()
 {
 	return xoa;
 }
 
-
-double
-Rts2Image::getYoA ()
+double Rts2Image::getYoA ()
 {
 	return yoa;
 }
 
-
-void
-Rts2Image::setXoA (double in_xoa)
+void Rts2Image::setXoA (double in_xoa)
 {
 	xoa = in_xoa;
 	setValue ("CAM_XOA", in_xoa,
 		"center in X axis (divide by binning (BIN_H)!)");
 }
 
-
-void
-Rts2Image::setYoA (double in_yoa)
+void Rts2Image::setYoA (double in_yoa)
 {
 	yoa = in_yoa;
 	setValue ("CAM_YOA", in_yoa,
 		"center in Y axis (divide by binning (BIN_V)!)");
 }
-
 
 double Rts2Image::getRotang ()
 {
@@ -141,7 +113,6 @@ double Rts2Image::getRotang ()
 	return ln_deg_to_rad (val);
 }
 
-
 double Rts2Image::getCenterRa ()
 {
 	double val = 0;
@@ -155,7 +126,6 @@ double Rts2Image::getCenterRa ()
 	}
 	return val;
 }
-
 
 double Rts2Image::getCenterDec ()
 {
@@ -171,7 +141,6 @@ double Rts2Image::getCenterDec ()
 	return val;
 }
 
-
 double Rts2Image::getXPlate ()
 {
 	double val = 0;
@@ -185,7 +154,6 @@ double Rts2Image::getXPlate ()
 	}
 	return val / 3600.0;
 }
-
 
 double Rts2Image::getYPlate ()
 {
@@ -201,12 +169,10 @@ double Rts2Image::getYPlate ()
 	return val / 3600.0;
 }
 
-
 int Rts2Image::getMountFlip ()
 {
 	return mnt_flip;
 }
-
 
 int Rts2Image::getFlip ()
 {
@@ -222,14 +188,12 @@ int Rts2Image::getFlip ()
 	return val;
 }
 
-
 void Rts2Image::getCoord (struct ln_equ_posn &radec, const char *ra_name, const char *dec_name)
 {
  	
 	getValue (ra_name, radec.ra, true);
 	getValue (dec_name, radec.dec, true);
 }
-
 
 LibnovaRaDec Rts2Image::getCoord (const char *prefix)
 {
@@ -241,30 +205,25 @@ LibnovaRaDec Rts2Image::getCoord (const char *prefix)
 	return LibnovaRaDec (pos.ra, pos.dec);
 }
 
-
 void Rts2Image::getCoordObject (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "OBJRA", "OBJDEC");
 }
-
 
 void Rts2Image::getCoordTarget (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "TARRA", "TARDEC");
 }
 
-
 void Rts2Image::getCoordAstrometry (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "CRVAL1", "CRVAL2");
 }
 
-
 void Rts2Image::getCoordMount (struct ln_equ_posn &radec)
 {
 	getCoord (radec, "TELRA", "TELDEC");
 }
-
 
 void Rts2Image::getCoordBest (struct ln_equ_posn &radec)
 {
@@ -292,12 +251,10 @@ void Rts2Image::getCoord (LibnovaRaDec & radec, const char *ra_name, const char 
 	radec.setPos (&pos);
 }
 
-
 void Rts2Image::getCoordTarget (LibnovaRaDec & radec)
 {
 	getCoord (radec, "TARRA", "TARDEC");
 }
-
 
 void Rts2Image::getCoordAstrometry (LibnovaRaDec & radec)
 {
@@ -309,7 +266,6 @@ void Rts2Image::getCoordMount (LibnovaRaDec & radec)
 {
 	getCoord (radec, "TELRA", "TELDEC");
 }
-
 
 void Rts2Image::getCoordBest (LibnovaRaDec & radec)
 {
@@ -323,9 +279,7 @@ void Rts2Image::getCoordBest (LibnovaRaDec & radec)
 	}
 }
 
-
-int
-Rts2Image::createWCS (double x_off, double y_off)
+int Rts2Image::createWCS (double x_off, double y_off)
 {
 	LibnovaRaDec radec;
 

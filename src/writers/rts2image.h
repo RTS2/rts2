@@ -490,6 +490,17 @@ class Rts2Image:public Rts2FitsFile
 		// return offset & flux of the brightest star in field
 		int getBrightestOffset (double &x, double &y, float &flux);
 
+		/**
+		 * Computes RA DEC of given pixel. Uses telescope information. This method does not use WCS,
+		 * point RA DEC is computed from telescope coordinates recorded at image headers.
+		 *
+		 * @param x    X coordinate of the pixel
+		 * @param y    Y coordinate of the pixel
+		 * @param ra   resulted RA
+		 * @param dec  resulted DEC
+		 *
+		 * @return -1 on errror, 0 on success
+		 */
 		int getRaDec (double x, double y, double &ra, double &dec);
 
 		// get xoa and yoa coeficients
