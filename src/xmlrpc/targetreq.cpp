@@ -39,6 +39,10 @@ using namespace rts2xmlrpc;
 
 #ifdef HAVE_PGSQL
 
+Targets::Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s)
+{
+}
+
 void Targets::authorizedExecute (std::string path, HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
 	// get path and possibly date range
@@ -156,6 +160,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 					"var o = document.createElement('input');\n"
 					"o.type = 'checkbox';\n"
 					"o.checked = row[header.c];\n"
+					"o.setAttribute('disabled','');\n"
 					"td.appendChild(o);\n"
 					"break;\n"
 				"case 'Alt':\n"
@@ -240,7 +245,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 				"ln_deg_to_dms(altaz.alt,hAlt);\n"
 				"ln_deg_to_dms(altaz.az,hAz);\n"
 				"document.getElementById('alt_' + i).innerHTML = hAlt.toString ();\n"
-				"document.getElementById('az_' + i).innerHTML = hAz.toString ();\n"
+				"document.getElementById('az_' + i).innerHTML = hAz.toStringSigned (false);\n"
 			"}\n"
 			"if (settimer) setTimeout('updateTable(true)',2000);\n"
 		"}\n"
@@ -441,9 +446,15 @@ void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_ty
 		  	throw XmlRpcException ("Executor is not running");
 		(*iter)->queCommand (new rts2core::Rts2CommandExecNow (master, tar->getTargetID ()));
 
-		std::ostringstream os;
-		os << "{\"status\": 0 }";
-		returnJSON (os.str ().c_str (), response_type, response, response_length);
+		returnJSON ("{\"status\":0}", response_type, response, response_length);
+		return;
+	}
+	e = params->getString ("script", NULL);
+	const char *c = params->getString ("camera", NULL);
+	if (e != NULL && c != NULL)
+	{
+		tar->setScript (c, e);
+		returnJSON ("{\"status\": 0}", response_type, response, response_length);
 		return;
 	}
 	throw XmlRpcException ("invalid API request");
@@ -453,7 +464,7 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 {
 	std::ostringstream _os;
 
-	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str (), NULL, NULL, "altAzTimer ();");
+	printHeader (_os, (std::string ("Target ") + tar->getTargetName ()).c_str (), ".b_left { float: left; width:50%; } .b_right {float: left; width: 50%;} ", NULL, "altAzTimer ();");
 
 	includeJavaScript (_os, "equ.js");
 
@@ -473,10 +484,10 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 		"ln_deg_to_dms(altaz.az,hAz);\n"
 		"var jd = ln_get_julian_from_sys();\n"
 		"var st = ln_get_mean_sidereal_time(jd);\n"
-		"ln_deg_to_hms(st,hSt);\n"
+		"ln_deg_to_hms(st * 15.0,hSt);\n"
 //ln_get_mean_sidereal_time(ln_get_julian_from_sys()),hSt);\n"
-		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toString();\n"
-		"document.getElementById('st').innerHTML = hSt.toString() + ' ' + (2/4) + ' ' + st;\n"
+		"document.getElementById('altaz').innerHTML = hAlt.toString() + ' ' + hAz.toStringSigned(false);\n"
+		"document.getElementById('st').innerHTML = hSt.toString();\n"
 		"document.getElementById('jd').innerHTML = jd;\n"
 		"setTimeout('altAzTimer()',100);\n"
 	"}\n";
@@ -542,16 +553,31 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 			"hr.send(null);\n"
 		"}\n"
 
-		"function tar_now () {\n"
+		"function tar_now (){\n"
 			"var status = {};\n"
 			"var hr = new XMLHttpRequest();\n"
 			"document.getElementById('now').innerHTML = '<div id=\"now_message\">requesting now..</div>';\n"
 			"document.getElementById('now').style.display = '';\n"
 			"hr.open('GET','api?now=yes');\n"
-			"hr.onreadystatechange = function () {\n"
+			"hr.onreadystatechange = function(){\n"
 				"if (hr.readyState == 4 && hr.status == 200 ) {\n"
 					"status = JSON.parse(hr.responseText);\n"
 					"document.getElementById('now_message').innerHTML = 'executed';\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+		"}\n"
+
+		"function updateScript(){\n"
+			"var status;\n"
+			"var hr = new XMLHttpRequest();\n"
+			"var st = scriptToText('scriptedit');\n"
+			"hr.open('GET','api?script=' + encodeURIComponent(st) + '&camera=' + encodeURI(document.getElementById('cam').value));\n"
+			"hr.onreadystatechange = function (){\n"
+				"if (hr.readyState == 4){\n"
+					"if (hr.status == 200) status = 'Updated to ' + st;\n"
+						"else status = 'Failed to update';\n"
+					"document.getElementById('scriptlog').innerHTML += status + '<br/>';\n"
 				"}\n"
 			"}\n"
 			"hr.send(null);\n"
@@ -564,31 +590,92 @@ void Targets::printTarget (Target *tar, const char* &response_type, char* &respo
 	printTargetHeader (tar->getTargetID (), _os);
 
 	// javascript to send requests..
-
 	
-	_os << "<p><div>Name " << tar->getTargetName () << "</div>"
-		"<div>RA DEC " << LibnovaRaDec (&tradec) << "</div>"
-		"<div>ALT AZ <span id='altaz'/></div>"
-		"<div>Sidereal Time " << ln_get_mean_sidereal_time(ln_get_julian_from_sys()) << "<span id='st'/></div>"
-		"<div>JD " << ln_get_julian_from_sys () << " <span id='jd'/></div>";
+	_os << "<div id='info' class='b_left'><table><tr><td>Name</td><td>" << tar->getTargetName () << "</td></tr>"
+		"<tr><td>RA DEC</td><td>" << LibnovaRaDec (&tradec) << "</td></tr>"
+		"<tr><td>ALT AZ</td><td><span id='altaz'/></td></tr>"
+		"<tr><td>Bonus</td><td>" << tar->getBonus () << "</td></tr>"
+		"<tr><td>Priority</td><td>" << tar->getTargetPriority () << "</td></tr>"
+		"<tr><td>Sidereal Time</td><td><span id='st'/></td></tr>"
+		"<tr><td>JD</td><td><span id='jd'/></td></tr>";
 	if (canExecute ())
 	{
-		_os << "<div><button type='button' onclick='tar_slew();'>slew to target</a></div>"
-		"<div id='slew' style='display:none'>not slewing</div>"
-		"<div><button type='button' onclick='tar_next();'>next target</a></div>"
-		"<div id='next' style='display:none'>nothing</div>"
-		"<div><button type='button' onclick='tar_now();'>now (immediate) target</a></div>"
-		"<div id='now' style='display:none'>nothing</div>"
-		"<div>Enabled: <input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='"
+		_os << "<tr><td cellspan='2'><button type='button' onclick='tar_slew();'>slew to target</button><div id='slew' style='display:none'>not slewing</div></td></tr>"
+		"<tr><td cellspan='2'><button type='button' onclick='tar_next();'>next target</button><div id='next' style='display:none'>nothing</div></td></tr>"
+		"<tr><td cellspan='2'><button type='button' onclick='tar_now();'>now (immediate) target</button><div id='now' style='display:none'>nothing</div></td></tr>"
+		"<tr><td>Enabled</td><td><input type='checkbox' id='tar_enable' onclick='tar_enable (this.checked);' checked='"
 		<< (tar->getTargetEnabled () ? "yes" : "no")
-		<< "'/></div>";
+		<< "'/></td></tr>";
 	}
 	else
 	{
-	  	_os << "<div>Enabled: " << (tar->getTargetEnabled () ? "yes" : "no") << "</div>";
+	  	_os << "<tr><td>Enabled</td><td>" << (tar->getTargetEnabled () ? "yes" : "no") << "</td></tr>";
 	}
 
-	_os << "</p>";
+	_os << "</table></div>";
+	
+	if (canExecute ())
+	{
+		_os << "<div id='scripteditor'i class='b_right'>";
+		includeJavaScript (_os, "targetedit.js");
+		_os << "<form id='scriptedit' name='se'>\n"
+			"<div><select name='script' size='10' multiple='multiple' style='width: 200px'></select></div>"
+  			"<div>Number of exposures: <input type='text' name='num' value='1'/></div>"
+  			"<div>Exposure length (s): <input type='text' name='exposure' value='30'/></div>"
+  			"<div>Filter: <select name='filter'>"
+				"<option value='R'>Johnson R</option>"
+				"<option value='I'>Johnson I</option>"
+				"<option value='z'>SDSS z</option>"
+			"</select></div>"
+			"<div><button type='button' onclick='addScript(\"scriptedit\");document.getElementById(\"genscript\").innerHTML = scriptToText(\"scriptedit\");'>Add script</button></div>"
+			"<div><button type='button' onclick='removeScripts(\"scriptedit\");document.getElementById(\"genscript\").innerHTML = scriptToText(\"scriptedit\");'>Remove</button></div>"
+			"<div id='genscript'></div>"
+			"<div>Camera: <select id='cam'>";
+
+		connections_t::iterator camiter = ((Rts2Block *) getMasterApp ())->getConnections ()->begin ();
+
+		while (true)
+		{
+			((Rts2Block *) getMasterApp ())->getOpenConnectionType (DEVICE_TYPE_CCD, camiter);
+			if (camiter == ((Rts2Block *) getMasterApp ())->getConnections ()->end ())
+				break;
+			const char *n = (*camiter)->getName ();
+			_os << "<option value='" << n << "'>" << n << "</option>";
+			camiter++;
+		}
+	
+		_os << "</select></div>"
+			"<div><button type='button' onclick='updateScript();'>Update</button></div>"
+			"<div id='scriptlog'></div>"
+			"</form></div>";
+	}
+	else
+	{
+		_os << "<div id='scripts'>";
+
+		if (cameras.empty ())
+			cameras.load ();
+
+		Rts2CamList::iterator cam_names;
+		for (cam_names = cameras.begin (); cam_names != cameras.end (); cam_names++)
+		{
+			const char *cam_name = (*cam_names).c_str ();
+			_os << "<div>Camera " << cam_name << ":";
+			std::string script_buf;
+			try
+			{
+				tar->getScript (cam_name, script_buf);
+				_os << script_buf;
+			}
+			catch (rts2core::Error &er)
+			{
+				_os << " error : " << er;
+			}
+			_os << "</div>";
+		}
+
+		_os << "</div>";
+	}
 
 	printFooter (_os);
 

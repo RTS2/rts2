@@ -25,7 +25,8 @@
 
 #ifdef HAVE_PGSQL
 #include "../utilsdb/targetset.h"
-#if defined(HAVE_LIBJPEG) && HAVE_LIBJPEG == 1
+#include "../utilsdb/rts2camlist.h"
+#if defined(HAVE_LIBJPEG)
 #include <Magick++.h>
 #endif // HAVE_LIBJPEG
 #include "../utils/rts2config.h"
@@ -46,8 +47,7 @@ namespace rts2xmlrpc
 class Targets: public GetRequestAuthorized
 {
 	public:
-		Targets (const char *prefix, XmlRpc::XmlRpcServer *s):GetRequestAuthorized (prefix, "target list", s) {};
-
+		Targets (const char *prefix, XmlRpc::XmlRpcServer *s);
 		virtual void authorizedExecute (std::string path, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
 	
 	private:
@@ -62,6 +62,8 @@ class Targets: public GetRequestAuthorized
 		void printTargetObservations (Target *tar, const char* &response_type, char* &response, size_t &response_length);
 #ifdef HAVE_LIBJPEG
 		void plotTarget (Target *tar, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length);
+
+		Rts2CamList cameras;
 #endif /* HAVE_LIBJPEG */
 };
 
