@@ -17,8 +17,13 @@ class GuideScript (rts2comm.Rts2Comm):
 		self.big_w = 1210
 		self.big_h = 955
 
-		self.x_sensitivity = 1
-		self.y_sensitivity = 1
+		# 1/4 pixelu NF
+		self.x_sensitivity = 0.15
+		self.y_sensitivity = 0.15
+	
+		# how much of the detected offset to apply (to dump resonance)
+		self.ra_aggresivity = 0.7
+		self.dec_aggresivity = 0.7
 
 	def runProgrammeGetArray(self,command):
 		sb=subprocess.Popen(command,stdout=subprocess.PIPE)
@@ -57,16 +62,17 @@ class GuideScript (rts2comm.Rts2Comm):
 			y = float(values[1])
 
 			if (abs(x - 15) < self.x_sensitivity and abs (y - 15) < self.y_sensitivity):
-				self.log('I','autoguiding bellow sensitivity %f %f' % (x,y))
+				self.log('I','autoguiding below sensitivity %f %f' % (x,y))
 				self.delete(image)
 				continue
 
 			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-15:15' % (x,y), image])
-			ch_ra = float(change[0])
-			ch_dec = float(change[1])
+			ch_ra = float(change[0]) * self.ra_aggresivity
+			ch_dec = float(change[1]) * self.dec_aggresivity
 
-			self.log('I','values in autoguiding loop %f %f change %f %f' % (x,y,ch_ra,ch_dec))
+			self.log('I','autoguiding values loop %f %f change %f %f (%.1f %.1f)' % (x,y,ch_ra,ch_dec,ch_ra*3600,ch_dec*3600))
 			self.incrementValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
+			self.log('I','autoguiding move finished')
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
 
