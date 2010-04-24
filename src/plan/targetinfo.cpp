@@ -282,7 +282,7 @@ void TargetInfo::printScripts (const char *pref)
 		try
 		{
 			target->getScript (cam_name, script_buf);
-			std::cout << script_buf << std::endl;
+			std::cout << script_buf << '\'' << std::endl;
 		}
 		catch (rts2core::Error &er)
 		{
