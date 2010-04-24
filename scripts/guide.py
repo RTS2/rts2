@@ -5,6 +5,7 @@
 
 import sys
 import subprocess
+import os
 import rts2comm
 
 class GuideScript (rts2comm.Rts2Comm):
@@ -16,8 +17,11 @@ class GuideScript (rts2comm.Rts2Comm):
 		self.big_w = 1210
 		self.big_h = 955
 
+		self.x_sensitivity = 1
+		self.y_sensitivity = 1
+
 	def runProgrammeGetArray(self,command):
-		sb=subprocess.Popen([self.detect4g,image],stdout=subprocess.PIPE)
+		sb=subprocess.Popen(command,stdout=subprocess.PIPE)
 		sb.wait()
 		return sb.stdout.readline().split();
 
@@ -52,14 +56,18 @@ class GuideScript (rts2comm.Rts2Comm):
 			x = float(values[0])
 			y = float(values[1])
 
-			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d 15:15-%f:%f' % (x,y), image])
+			if (abs(x - 15) < self.x_sensitivity and abs (y - 15) < self.y_sensitivity):
+				self.log('I','autoguiding bellow sensitivity %f %f' % (x,y))
+				continue
+
+			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-15:15' % (x,y), image])
 			ch_ra = float(change[0])
 			ch_dec = float(change[1])
 
 			self.log('I','values in autoguding loop %f %f change %f %f' % (x,y,ch_ra,ch_dec))
-			self.setValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
-			os.system ('cat %s | xpaset ds9 fits' % (image))
-			self.delete(img)
+			self.incrementValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
+			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
+			self.delete(image)
 
 	def run(self):
 		# First we should do target centering
@@ -72,6 +80,9 @@ class GuideScript (rts2comm.Rts2Comm):
 		self.setValue('SHUTTER','LIGHT')
 				
 		self.setValue('exposure',2) # how long exposure...? We could auto-adjust this...
+
+		self.setValue('OFFS','0 0', 'T0')
+
 		image = self.exposure()
 
 		values = self.runProgrammeGetArray([self.detect4g,image])
