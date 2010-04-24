@@ -58,13 +58,14 @@ class GuideScript (rts2comm.Rts2Comm):
 
 			if (abs(x - 15) < self.x_sensitivity and abs (y - 15) < self.y_sensitivity):
 				self.log('I','autoguiding bellow sensitivity %f %f' % (x,y))
+				self.delete(image)
 				continue
 
 			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-15:15' % (x,y), image])
 			ch_ra = float(change[0])
 			ch_dec = float(change[1])
 
-			self.log('I','values in autoguding loop %f %f change %f %f' % (x,y,ch_ra,ch_dec))
+			self.log('I','values in autoguiding loop %f %f change %f %f' % (x,y,ch_ra,ch_dec))
 			self.incrementValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
