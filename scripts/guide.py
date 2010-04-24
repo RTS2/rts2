@@ -11,6 +11,15 @@ class GuideScript (rts2comm.Rts2Comm):
 	"""Class for communicating with RTS2 in exe command."""
 	def __init__(self):
 		self.detect4g = "/home/mates/detect4g"
+		self.big_x = 324
+		self.big_y = 69
+		self.big_w = 1210
+		self.big_h = 955
+
+	def runProgrammeGetArray(self,command):
+		sb=subprocess.Popen([self.detect4g,image],stdout=subprocess.PIPE)
+		sb.wait()
+		return sb.stdout.readline().split();
 
 	def doGuiding(self,x,y):
 		"""Guide the star to X,Y."""
@@ -39,20 +48,18 @@ class GuideScript (rts2comm.Rts2Comm):
 			image = self.exposure()
 
 			# now run sextractor to get the star center
-
-			# i have this written in bash, so I'll call it, no haste in turning it into python, it's a sex wrapper anyway
-			sb=subprocess.Popen([self.detect4g,image],stdout=subprocess.PIPE)
-			sb.wait()
-			values=sb.stdout.readline().split();
+			values = self.runProgrammeGetArray([self.detect4g,image])
 			x = float(values[0])
 			y = float(values[1])
 
-			self.log('I','values in autoguding loop %f %f' % (x,y))
-				
-			# & move the telescope 
-				
+			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d 15:15-%f:%f' % (x,y), image])
+			ch_ra = float(change[0])
+			ch_dec = float(change[1])
 
-#			self.delete(img)
+			self.log('I','values in autoguding loop %f %f change %f %f' % (x,y,ch_ra,ch_dec))
+			self.setValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
+			os.system ('cat %s | xpaset ds9 fits' % (image))
+			self.delete(img)
 
 	def run(self):
 		# First we should do target centering
@@ -60,18 +67,16 @@ class GuideScript (rts2comm.Rts2Comm):
 		# And when it is centered, do the guiding itself		
 
 		# 1536x1024 => 324 69 1210 955 (50% of the chip)
-		self.setValue('WINDOW','324 69 1210 955')
+		self.setValue('WINDOW','%d %d %d %d' % (self.big_x, self.big_y, self.big_w, self.big_h))
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 				
 		self.setValue('exposure',2) # how long exposure...? We could auto-adjust this...
 		image = self.exposure()
 
-		sb=subprocess.Popen([self.detect4g,image],stdout=subprocess.PIPE);
-		sb.wait()
-		values=sb.stdout.readline().split()
-		x = int(float(values[0])) + 324
-		y = int(float(values[1])) + 69
+		values = self.runProgrammeGetArray([self.detect4g,image])
+		x = int(float(values[0])) + self.big_x
+		y = int(float(values[1])) + self.big_y
 		self.log('I','values for autoguiding %d %d' % (x, y))
 				
 		# while we are current target
