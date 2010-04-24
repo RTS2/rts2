@@ -77,6 +77,8 @@ class MICCD:public Camera
 		Rts2ValueSelection *mode;
 		Rts2ValueFloat *tempRamp;
 		Rts2ValueFloat *tempTarget;
+		Rts2ValueInteger *power;
+		Rts2ValueInteger *gain;
 
 		camera_t camera;
 		camera_info_t cami;
@@ -93,10 +95,12 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	createTempCCD ();
 	createTempSet ();
 
-	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping");
+	createValue (tempRamp, "TERAMP", "[C/min] temperature ramping", false, RTS2_VALUE_WRITABLE);
 	tempRamp->setValueFloat (1.0);
 
-	createValue (tempTarget, "TETAR", "[C] current target temperature");
+	createValue (tempTarget, "TETAR", "[C] current target temperature", false);
+	createValue (power, "TEMPPWR", "[%] utilization of cooling power", true);
+	createValue (gain, "GAIN", "[e-ADU] gain", true);
 
 	createValue (id, "product_id", "camera product identification", true);
 	id->setValueInteger (0);
@@ -107,6 +111,7 @@ MICCD::MICCD (int argc, char **argv):Camera (argc, argv)
 	mode->addSelVal ("ULTRA LOW NOISE");
 
 	mode->setValueInteger (1);
+
 
 	addOption ('p', NULL, 1, "MI CCD product ID");
 }
@@ -205,6 +210,7 @@ int MICCD::info ()
 {
 	int ret;
 	float val;
+	uint16_t ival;
 	ret = miccd_chip_temperature (&camera, &val);
 	if (ret)
 		return -1;
@@ -213,6 +219,14 @@ int MICCD::info ()
 	if (ret)
 		return -1;
 	tempAir->setValueFloat (val);
+	ret = miccd_power_voltage (&camera, &ival);
+	if (ret)
+		return -1;
+	power->setValueInteger (ival);
+	ret = miccd_gain (&camera, &ival);
+	if (ret)
+		return -1;
+	gain->setValueInteger (ival);
 	return Camera::info ();
 }
 
