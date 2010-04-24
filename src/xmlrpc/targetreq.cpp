@@ -160,7 +160,7 @@ void Targets::listTargets (XmlRpc::HttpParams *params, const char* &response_typ
 					"var o = document.createElement('input');\n"
 					"o.type = 'checkbox';\n"
 					"o.checked = row[header.c];\n"
-					"o.setAttribute('disabled','');\n"
+					"o.disabled = true;\n"
 					"td.appendChild(o);\n"
 					"break;\n"
 				"case 'Alt':\n"
