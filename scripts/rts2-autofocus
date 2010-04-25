@@ -2206,6 +2206,7 @@ elsif( $take_data eq TRUE_STR) # online analysis
 {
 # create and change to the working directory ev. write and get the list of fits files
 #
+    $path_to_filter=  "" ; # just initialize it
     my $now_string = strftime "%Y-%m-%d-T%H:%M:%S", gmtime;
     $base_directory = $base_directory."/".$now_string ;
     unless ( -e $base_directory)
