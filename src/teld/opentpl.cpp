@@ -41,6 +41,63 @@ namespace rts2teld
  */
 class OpenTPL:public Telescope
 {
+	public:
+		OpenTPL (int argc, char **argv);
+		virtual ~ OpenTPL (void);
+
+		virtual int info ();
+		virtual int saveModel ();
+		virtual int loadModel ();
+		virtual int resetMount ();
+
+		virtual int startResync ();
+		virtual int isMoving ();
+		virtual int stopMove ();
+
+		virtual int stopWorm ();
+		virtual int startWorm ();
+
+		virtual int startPark ();
+		int moveCheck (bool park);
+		virtual int isParking ();
+		virtual int endPark ();
+
+		virtual int changeMasterState (int new_state);
+
+	protected:
+		rts2core::OpenTpl *opentplConn;
+
+		Rts2ValueInteger *model_recordcount;
+
+		time_t timeout;
+
+		virtual int processOption (int in_opt);
+
+		virtual int init ();
+		virtual int initValues ();
+		virtual int idle ();
+
+		Rts2ValueDouble *derotatorOffset;
+
+		void powerOn ();
+		void powerOff ();
+
+		int coverClose ();
+		int coverOpen ();
+
+		int domeOpen ();
+		int domeClose ();
+
+		int setTelescopeTrack (int new_track);
+
+		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
+
+		bool getDerotatorPower () { return derotatorPower->getValueBool (); }
+		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
+
+		virtual bool haveDiffTrack () { return true; }
+		virtual void setDiffTrack (double dra, double ddec);
+
 	private:
 		HostString *openTPLServer;
 
@@ -93,66 +150,9 @@ class OpenTPL:public Telescope
 		int initOpenTplDevice ();
 
 		int startMoveReal (double ra, double dec);
-
-	protected:
-		rts2core::OpenTpl *opentplConn;
-
-		Rts2ValueInteger *model_recordcount;
-
-		time_t timeout;
-
-		virtual int processOption (int in_opt);
-
-		virtual int init ();
-		virtual int initValues ();
-		virtual int idle ();
-
-		Rts2ValueDouble *derotatorOffset;
-
-		void powerOn ();
-		void powerOff ();
-
-		int coverClose ();
-		int coverOpen ();
-
-		int domeOpen ();
-		int domeClose ();
-
-		int setTelescopeTrack (int new_track);
-
-		virtual int setValue (Rts2Value * old_value, Rts2Value * new_value);
-
-		bool getDerotatorPower ()
-		{
-			return derotatorPower->getValueBool ();
-		}
-		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
-
-	public:
-		OpenTPL (int argc, char **argv);
-		virtual ~ OpenTPL (void);
-
-		virtual int info ();
-		virtual int saveModel ();
-		virtual int loadModel ();
-		virtual int resetMount ();
-
-		virtual int startResync ();
-		virtual int isMoving ();
-		virtual int stopMove ();
-
-		virtual int stopWorm ();
-		virtual int startWorm ();
-
-		virtual int startPark ();
-		int moveCheck (bool park);
-		virtual int isParking ();
-		virtual int endPark ();
-
-		virtual int changeMasterState (int new_state);
 };
 
-};
+}
 
 using namespace rts2teld;
 
@@ -898,6 +898,16 @@ void OpenTPL::getTelAltAz (struct ln_hrz_posn *hrz)
 			hrz->az = ln_range_degrees (hrz->az + 180);
 			break;
 	}
+}
+
+void OpenTPL::setDiffTrack (double dra, double ddec)
+{
+	int status = TPL_OK;
+	status = opentplConn->set ("POINTING.TARGET.RA_V", dra, &status);
+	status = opentplConn->set ("POINTING.TARGET.DEC_V", ddec, &status);
+
+	if (status != TPL_OK)
+		logStream (MESSAGE_ERROR) << "cannot set differential tracking " << status << sendLog;
 }
 
 int OpenTPL::info ()

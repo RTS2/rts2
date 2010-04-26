@@ -473,7 +473,10 @@ void Telescope::recalculateMpecDIffs ()
 		pos_diffs[i].dec = pos[i].dec - pos[i+1].dec;
 	}
 
-	diffRaDec->setValueRaDec (pos_diffs[1].ra, pos_diffs[1].dec);
+	if (haveDiffTrack ())
+	{
+		diffRaDec->setValueRaDec (pos_diffs[1].ra, pos_diffs[1].dec);
+	}
 }
 
 void Telescope::applyModel (struct ln_equ_posn *pos, struct ln_equ_posn *model_change, int flip, double JD)
