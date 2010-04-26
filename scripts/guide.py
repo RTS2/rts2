@@ -1,7 +1,14 @@
 #!/usr/bin/python
 
-# Guiding script
+# Guiding script.
 # (C) 2010 Martin Jelinek & Petr Kubanek
+#
+# rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
+# same location as this script, or include it in PYTHONPATH.
+#
+# As with all scripts intended to be called by RTS2 exe script command, you can
+# test this script by calling it and verifiing that it prints something what
+# does not look like error message on standard output.
 
 import sys
 import subprocess
@@ -9,15 +16,23 @@ import os
 import rts2comm
 
 class GuideScript (rts2comm.Rts2Comm):
-	"""Class for communicating with RTS2 in exe command."""
+	"""Guiding script."""
 	def __init__(self):
 		self.detect4g = "/home/mates/detect4g"
+		# size of big window - taken at the beginning of guiding to find bright star for guiding
 		self.big_x = 324
 		self.big_y = 69
 		self.big_w = 1210
 		self.big_h = 955
 
-		# 1/4 pixelu NF
+		# exposure time
+		self.exptime = 2
+
+		# size of small guiding subwindow
+		self.w = 30
+		self.h = 30
+
+		# offsets bellow this size will be ignored
 		self.x_sensitivity = 0.15
 		self.y_sensitivity = 0.15
 	
@@ -26,19 +41,19 @@ class GuideScript (rts2comm.Rts2Comm):
 		self.dec_aggresivity = 0.7
 
 	def runProgrammeGetArray(self,command):
+		"""Execute programme, wait for its one-line output, assume it is space separated list of values, and return them as array."""
 		sb=subprocess.Popen(command,stdout=subprocess.PIPE)
 		sb.wait()
 		return sb.stdout.readline().split();
 
 	def doGuiding(self,x,y):
-		"""Guide the star to X,Y."""
+		"""Guide the star on position x,y."""
 		self.setValue('SHUTTER','LIGHT')
 
-		winfmt="%d %d %d %d" % (x-16,y-16,30,30)
-		self.log('I','WINDOW ' + winfmt)
+		winfmt="%d %d %d %d" % (x-int(self.w / 2),y-int(self.h / 2),self.w,self.h)
+		self.log('I','guiding in CCD window ' + winfmt)
 		self.setValue('WINDOW',winfmt)
 			
-		exp=2
 		tar_SNR=10;  # target star errorbar in magnitude (for exposure optimization)
 
 		current = self.getValueInteger('current','EXEC')
@@ -51,9 +66,7 @@ class GuideScript (rts2comm.Rts2Comm):
 				self.setValue('SHUTTER','LIGHT')
 				return
 				
-
-			# how long exposure...? We could auto-adjust this...
-			self.setValue('exposure',exp) 
+			self.setValue('exposure',self.exptime) 
 			image = self.exposure()
 
 			# now run sextractor to get the star center
@@ -66,13 +79,12 @@ class GuideScript (rts2comm.Rts2Comm):
 				self.delete(image)
 				continue
 
-			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-15:15' % (x,y), image])
+			change = self.runProgrammeGetArray(['rts2-image', '-n', '-d %f:%f-%f:%f' % (x,y,self.w / 2, self.h / 2), image])
 			ch_ra = float(change[0]) * self.ra_aggresivity
 			ch_dec = float(change[1]) * self.dec_aggresivity
 
-			self.log('I','autoguiding values loop %f %f change %f %f (%.1f %.1f)' % (x,y,ch_ra,ch_dec,ch_ra*3600,ch_dec*3600))
+			self.log('I','guiding * center %f %f change %.1f %.1f (%f %f)' % (x,y,ch_ra*3600,ch_dec*3600,ch_ra,ch_dec))
 			self.incrementValue('OFFS','%f %f' % (ch_ra, ch_dec), 'T0')
-			self.log('I','autoguiding move finished')
 			# os.system ('cat %s | su petr -c "xpaset ds9 fits"' % (image))
 			self.delete(image)
 
@@ -86,7 +98,7 @@ class GuideScript (rts2comm.Rts2Comm):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 				
-		self.setValue('exposure',2) # how long exposure...? We could auto-adjust this...
+		self.setValue('exposure',self.exptime)
 
 		self.setValue('OFFS','0 0', 'T0')
 

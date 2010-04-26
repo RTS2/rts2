@@ -1,7 +1,14 @@
 #!/usr/bin/python
 
-# Flat taking script.
+# Script for obtaining twilight skyflats.
 # (C) 2009,2010 Antonio de Ugarte & Petr Kubanek
+#
+# rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
+# same location as this script, or include it in PYTHONPATH.
+#
+# As with all scripts intended to be called by RTS2 exe script command, you can
+# test this script by calling it and verifiing that it prints something what
+# does not look like error message on standard output.
 
 import sys
 import time
