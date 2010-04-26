@@ -80,7 +80,8 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded)
    "var files = document.getElementById('files');\n"
    "var but = document.getElementById('selectAll');\n"
    "var on = (but.innerHTML == 'Select all');\n"
-   "for each (img in document.images) {\n"
+   "for (var i in document.images) {\n"
+     "var img = document.images[i];\n"
      "if (img.name && img.name[0] == '/')\n"
        "if (on && img.className == 'normal') { high_on(files,img.name);}\n"
        "if (!on && img.className == 'hig') { high_off(files,img.name);}\n"
@@ -92,8 +93,8 @@ void Previewer::script (std::ostringstream& _os, const char *label_encoded)
 void Previewer::form (std::ostringstream &_os, int page, int ps, int s, const char *label)
 {
 	_os << "<form name='download' method='post' action='" << ((XmlRpcd *)getMasterApp ())->getPagePrefix () << "/download'><input type='radio' name='act' value='v' checked='checked'>View</input><input type='radio' name='act' value='d'>Download</input>" << std::endl
-	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'/></form>\n"
-	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'/><input type='hidden' name='p' value='" << page << "'/><input type='hidden' name='ps' value='" << ps << "'/><input type='hidden' name='s' value='" << s << "'/><input type='submit' value='Label'/>&nbsp;\n"
+	<< "<select id='files' name='files' size='10' multiple='multiple' style='display:none'></select><input type='submit' value='Download'></input></form>\n"
+	<< "<form name='label' method='get' action='./'><input type='text' textwidth='20' name='lb' value='" << label << "'></input><input type='hidden' name='p' value='" << page << "'></input><input type='hidden' name='ps' value='" << ps << "'></input><input type='hidden' name='s' value='" << s << "'></input><input type='submit' value='Label'></input>&nbsp;\n"
         << "<button type='button' id='selectAll' onclick='select_all();'>Select all</button></form>\n";
 }
 
