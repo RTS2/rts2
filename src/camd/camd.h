@@ -476,8 +476,6 @@ class Camera:public Rts2ScriptDevice
 
 		virtual void checkQueChanges (int fakeState);
 
-		Rts2ValueDouble *rnoise;
-
 		void initCameraChip ();
 		void initCameraChip (int in_width, int in_height, double in_pixelX, double in_pixelY);
 
@@ -828,6 +826,10 @@ class Camera:public Rts2ScriptDevice
 
 		// when chip exposure will end
 		Rts2ValueTime *exposureEnd;
+
+		// filter wheel is moving
+		Rts2ValueBool *filterMoving;
+		Rts2ValueBool *focuserMoving;
 
 		// set chipUsedSize size
 		int box (int _x, int _y, int _width, int _height, Rts2ValueRectangle *retv = NULL);
