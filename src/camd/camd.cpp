@@ -909,7 +909,7 @@ int Camera::camStartExposure ()
 {
 	// check if we aren't blocked
 	if ((!expType || expType->getValueInteger () == 0)
-		&& (getDeviceBopState () & BOP_EXPOSURE))
+		&& ((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)))
 	{
 		quedExpNumber->inc ();
 		sendValueAll (quedExpNumber);
