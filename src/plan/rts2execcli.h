@@ -72,48 +72,31 @@ using namespace rts2script;
 
 class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 {
-	private:
-		Rts2ValueString *expandPath;
+	public:
+		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
+		virtual ~ Rts2DevClientCameraExec (void);
+		virtual Rts2Image *createImage (const struct timeval *expStart);
+		virtual void postEvent (Rts2Event * event);
+		virtual void nextCommand ();
+		void queImage (Rts2Image * image);
+		virtual imageProceRes processImage (Rts2Image * image);
+		virtual void exposureFailed (int status);
 	protected:
 		ScriptPtr exposureScript;
-		virtual void unblockWait ()
-		{
-			Rts2DevClientCameraImage::unblockWait ();
-		}
-		virtual void unsetWait ()
-		{
-			Rts2DevClientCameraImage::unsetWait ();
-		}
+		virtual void unblockWait () { Rts2DevClientCameraImage::unblockWait (); }
+		virtual void unsetWait () { Rts2DevClientCameraImage::unsetWait (); }
 
-		virtual void clearWait ()
-		{
-			Rts2DevClientCameraImage::clearWait ();
-		}
+		virtual void clearWait () { Rts2DevClientCameraImage::clearWait (); }
 
-		virtual int isWaitMove ()
-		{
-			return Rts2DevClientCameraImage::isWaitMove ();
-		}
+		virtual int isWaitMove () { return Rts2DevClientCameraImage::isWaitMove (); }
 
-		virtual void setWaitMove ()
-		{
-			Rts2DevClientCameraImage::setWaitMove ();
-		}
+		virtual void setWaitMove () { Rts2DevClientCameraImage::setWaitMove (); }
 
-		virtual void queCommandFromScript (Rts2Command * com)
-		{
-			queCommand (com);
-		}
+		virtual void queCommandFromScript (Rts2Command * com) { queCommand (com); }
 
-		virtual int getFailedCount ()
-		{
-			return Rts2DevClient::getFailedCount ();
-		}
+		virtual int getFailedCount () { return Rts2DevClient::getFailedCount (); }
 
-		virtual void clearFailedCount ()
-		{
-			Rts2DevClient::clearFailedCount ();
-		}
+		virtual void clearFailedCount () { Rts2DevClient::clearFailedCount (); }
 
 		virtual void idle ();
 
@@ -128,15 +111,9 @@ class Rts2DevClientCameraExec:public Rts2DevClientCameraImage, public DevScript
 		virtual int getNextCommand ();
 
 		virtual bool canEndScript ();
-	public:
-		Rts2DevClientCameraExec (Rts2Conn * in_connection, Rts2ValueString * in_expandPath = NULL);
-		virtual ~ Rts2DevClientCameraExec (void);
-		virtual Rts2Image *createImage (const struct timeval *expStart);
-		virtual void postEvent (Rts2Event * event);
-		virtual void nextCommand ();
-		void queImage (Rts2Image * image);
-		virtual imageProceRes processImage (Rts2Image * image);
-		virtual void exposureFailed (int status);
+	private:
+		Rts2ValueString *expandPath;
+		bool waitForExposure;
 };
 
 class Rts2DevClientTelescopeExec:public Rts2DevClientTelescopeImage

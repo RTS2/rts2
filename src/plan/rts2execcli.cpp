@@ -30,6 +30,7 @@
 Rts2DevClientCameraExec::Rts2DevClientCameraExec (Rts2Conn * _connection, Rts2ValueString *_expandPath):Rts2DevClientCameraImage (_connection), DevScript (_connection)
 {
 	expandPath = _expandPath;
+	waitForExposure = false;
 	imgCount = 0;
 }
 
@@ -140,7 +141,7 @@ void Rts2DevClientCameraExec::nextCommand ()
 
 	Rts2Value *val;
 
-	if (nextComd->getBopMask () & (BOP_WHILE_STATE | BOP_TEL_MOVE))
+	if (nextComd->getBopMask () & BOP_WHILE_STATE)
 	{
 		// if there are queued exposures, do not execute command
 		val = getConnection ()->getValue ("que_exp_num");
@@ -148,6 +149,16 @@ void Rts2DevClientCameraExec::nextCommand ()
 			return;
 		// if there are commands in queue, do not execute command
 		if (!connection->queEmptyForOriginator (this))
+			return;
+	}
+
+	if (nextComd->getBopMask () & BOP_TEL_MOVE)
+	{
+		// if there are queued exposures, do not execute command
+		val = getConnection ()->getValue ("que_exp_num");
+		if (val && val->getValueInteger () != 0)
+			return;
+		if (waitForExposure)
 			return;
 	}
 
@@ -162,26 +173,28 @@ void Rts2DevClientCameraExec::nextCommand ()
 				return;
 			}
 
-			nextComd->setBopMask (BOP_TEL_MOVE);
-
 			// do not execute if there are some exposures in queue
 			val = getConnection ()->getValue ("que_exp_num");
 			if (val && val->getValueInteger () > 0)
 			{
 				return;
 			}
+
+			nextComd->setBopMask (nextComd->getBopMask () & ~BOP_TEL_MOVE);
 		}
 
 		// execute command
 		// when it returns, we can execute next command
 		cmdConn->queCommand (nextComd);
 		nextComd = NULL;
+		waitForExposure = false;
 		return;
 	}
 
 	#ifdef DEBUG_EXTRA
 	logStream (MESSAGE_DEBUG) << "For " << getName () << " queueing " << nextComd->getText () << sendLog;
 	#endif						 /* DEBUG_EXTRA */
+	waitForExposure = nextComd->getBopMask () & BOP_EXPOSURE;
 	queCommand (nextComd);
 	nextComd = NULL;			 // after command execute, it will be deleted
 }
@@ -248,7 +261,7 @@ imageProceRes Rts2DevClientCameraExec::processImage (Rts2Image * image)
 		{
 			return IMAGE_DO_BASIC_PROCESSING;
 		}
-		// otherwise que image processing
+		// otherwise queue image processing
 	}
 	queImage (image);
 	return IMAGE_DO_BASIC_PROCESSING;
@@ -267,6 +280,13 @@ void Rts2DevClientCameraExec::exposureStarted ()
 {
 	if (nextComd && (nextComd->getBopMask () & BOP_WHILE_STATE))
 		nextCommand ();
+	
+	if (waitForExposure)
+	{
+		waitForExposure = false;
+		if (nextComd && (nextComd->getBopMask () & BOP_TEL_MOVE))
+			nextCommand ();
+	}
 
 	Rts2DevClientCameraImage::exposureStarted ();
 }
