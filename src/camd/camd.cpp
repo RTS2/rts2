@@ -367,7 +367,11 @@ Camera::Camera (int in_argc, char **in_argv):Rts2ScriptDevice (in_argc, in_argv,
 
 	exposureConn = NULL;
 
-	createValue (rnoise, "RNOISE", "CCD readout noise");
+	createValue (filterMoving, "fw_moving", "if filter wheel is moving", false);
+	filterMoving->setValueBool (false);
+
+	createValue (focuserMoving, "foc_moving", "if focuser is moving", false);
+	focuserMoving->setValueBool (false);
 
 	// other options..
 	addOption (OPT_FOCUS, "focdev", 1, "name of focuser device, which will be granted to do exposures without priority");
@@ -866,6 +870,12 @@ void Camera::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
+			filterMoving->setValueBool (false);
+			/// check for exposure..
+			if (quedExpNumber->getValueInteger () > 0)
+				camExpose (exposureConn, getStateChip (0), false);
+			infoAll ();
+			break;
 		case EVENT_FOCUSER_END_MOVE:
 			// update info about FW
 			infoAll ();
@@ -908,9 +918,16 @@ int Camera::changeMasterState (int new_state)
 int Camera::camStartExposure ()
 {
 	// check if we aren't blocked
+	// we can allow this test as camStartExposure is called only after quedExpNumber was decreased
 	if ((!expType || expType->getValueInteger () == 0)
-		&& ((getDeviceBopState () & BOP_EXPOSURE) || (getMasterStateFull () & BOP_EXPOSURE)))
+		&& (
+			(getDeviceBopState () & BOP_EXPOSURE)
+			|| (getMasterStateFull () & BOP_EXPOSURE)
+			|| filterMoving->getValueBool () == true
+			|| focuserMoving->getValueBool () == true
+		))
 	{
+		// no conflict, as when we are called, quedExpNumber will already be decreased
 		quedExpNumber->inc ();
 		sendValueAll (quedExpNumber);
 
@@ -1102,6 +1119,8 @@ int Camera::setFilterNum (int new_filter)
 		// filter move will be performed
 		if (fs.filter == -1)
 		{
+			filterMoving->setValueBool (true);
+			sendValueAll (filterMoving);
 			ret = 0;
 		}
 		else
