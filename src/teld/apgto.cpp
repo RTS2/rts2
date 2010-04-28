@@ -1336,22 +1336,8 @@ APGTO::tel_slew_to (double ra, double dec)
     }
     return -1;
   }
+
   logStream (MESSAGE_INFO) << "APGTO::tel_slew_to cleared geometry  slewing ra " << target_equ.ra << " target_equ.dec " << dec  << sendLog;
-
-  // (re-)enable tracking
-  // in case the mount detected a collision, tracking and any motion is stopped
-  // but:
-  // if target position is ok, mount can track again
-  if( ! mount_tracking->getValueBool()) {
-    if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
-      return -1;
-    } else {
-      logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
-    }
-  }
-
-
 
   if (( ret=tel_write_ra (target_equ.ra)) < 0) {
     logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to, not slewing, tel_write_ra return value was " << ret << sendLog ;
@@ -1382,6 +1368,18 @@ APGTO::tel_slew_to (double ra, double dec)
 	return -1;
       }
       logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to stop motion #:Q# and tracking due to wrong declination axis orentation" << sendLog;
+    }
+    // (re-)enable tracking
+    // in case the mount detected a collision, tracking and any motion is stopped
+    // but:
+    // if target position is ok, mount can track again
+    if( ! mount_tracking->getValueBool()) {
+      if ( selectAPTrackingMode(TRACK_MODE_SIDEREAL) < 0 ) { 
+	logStream (MESSAGE_ERROR) << "APGTO::tel_slew_to set track mode sidereal failed." << sendLog;
+	return -1;
+      } else {
+	logStream (MESSAGE_DEBUG) << "APGTO::tel_slew_to set track mode sidereal (re-)enabled." << sendLog;
+      }
     }
     on_set_HA= target_HA ; // used for defining state transition while tracking
     return 0;
