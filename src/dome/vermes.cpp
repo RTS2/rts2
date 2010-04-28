@@ -58,7 +58,7 @@ namespace rts2dome
   {
   private:
     Rts2Config *config ;
-    Rts2ValueDouble  *traget_azimut_cupola ;
+    Rts2ValueDouble  *target_azimut_cupola ;
     Rts2ValueInteger *barcode_reader_state ;
     Rts2ValueDouble  *azimut_difference ;
     Rts2ValueString  *ssd650v_state ;
@@ -210,7 +210,7 @@ int Vermes::info ()
   barcode_reader_state->setValueInteger( barcodereader_state) ; 
   setCurrentAz (barcodereader_az);
   setTargetAz(target_az) ;
-  traget_azimut_cupola->setValueDouble( target_az) ;
+  target_azimut_cupola->setValueDouble( target_az) ;
   azimut_difference->setValueDouble(( barcodereader_az- getTargetAz())) ;
   ssd650v_current->setValueDouble(current_percentage) ;
   if( ssd650v_current->getValueDouble() > CURRENT_MAX_PERCENT) {
@@ -277,7 +277,7 @@ int Vermes::initValues ()
 Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv) 
 {
   // since this driver is Obs. Vermes specific no options are really required
-  createValue (traget_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES  );
+  createValue (target_azimut_cupola, "TargetAZ",        "target AZ calculated within driver", false, RTS2_DT_DEGREES  );
   createValue (azimut_difference,    "AZdiff",          "(cupola - target) AZ reading",       false, RTS2_DT_DEGREES  );
   createValue (cupola_tracking,      "Tracking",        "telescope tracking (true: enabled, false:motor off)", false, RTS2_VALUE_WRITABLE);
   createValue (barcode_reader_state, "BCRstate",        "barcodereader status (0: CUP_AZ valid, 1:invalid)", false);
@@ -295,11 +295,9 @@ Vermes::Vermes (int in_argc, char **in_argv):Cupola (in_argc, in_argv)
   curMaxSetPoint= ssd650v_max_setpoint->getValueDouble();
 
   barcode_reader_state->setValueInteger( -1) ; 
-
 }
 int main (int argc, char **argv)
 {
 	Vermes device (argc, argv);
 	return device.run ();
 }
-
