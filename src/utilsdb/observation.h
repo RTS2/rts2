@@ -134,6 +134,14 @@ class Observation
 			return obs_id;
 		}
 
+		/**
+		 * Return time when telescope started slewing to observation location.
+		 */
+		double getObsSlew ()
+		{
+			return obs_slew;
+		}
+
 		double getObsStart ()
 		{
 			return obs_start;
