@@ -114,6 +114,12 @@ void Targets::authorizedExecute (std::string path, HttpParams *params, const cha
 					break;
 				}
 #endif /* HAVE_LIBJPEG */
+			case 3:
+				if (vals[1] == "api")
+				{
+					callTargetAPI (tar, vals[2], params, response_type, response, response_length);
+					break;
+				}
 			default:
 				throw rts2core::Error ("Invalid path!");
 		}
@@ -254,7 +260,6 @@ void Targets::processForm (XmlRpc::HttpParams *params, const char* &response_typ
 
 void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
 {
-	response_type = "application/json";
 	std::ostringstream _os;
 
 	const char *t = params->getString ("t", NULL);
@@ -387,10 +392,53 @@ void Targets::callAPI (Target *tar, HttpParams *params, const char* &response_ty
 	if (e != NULL && c != NULL)
 	{
 		tar->setScript (c, e);
-		returnJSON ("{\"status\": 0}", response_type, response, response_length);
+		returnJSON ("{\"statu,s\": 0}", response_type, response, response_length);
 		return;
 	}
 	throw XmlRpcException ("invalid API request");
+}
+
+
+void Targets::callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpParams *params, const char* &response_type, char* &response, size_t &response_length)
+{
+	std::ostringstream _os;
+	if (req == "obs")
+	{
+
+		rts2db::ObservationSet os = rts2db::ObservationSet ();
+		os.loadTarget (tar->getTargetID ());
+
+		_os << "{\"h\":["
+			"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
+			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
+			"{\"n\":\"DEC\",\"t\":\"t\",\"c\":2},"
+			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
+			"{\"n\":\"Start\",\"t\":\"t\",\"c\":4},"
+			"{\"n\":\"End\",\"t\":\"t\",\"c\":5},"
+			"{\"n\":\"Images\",\"t\":\"n\",\"c\":6},"
+			"{\"n\":\"Good images\",\"t\":\"n\",\"c\":7}],"
+			"\"d\" : [";
+
+		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
+		{
+			if (iter != os.begin ())
+				_os << ",";
+			_os << "[" << iter->getObsId () << "," 
+				<< iter->getObsRa () << ","
+				<< iter->getObsDec () << ",\""
+				<< LibnovaDateDouble (iter->getObsSlew ()) << "\",\""
+				<< LibnovaDateDouble (iter->getObsStart ()) << "\",\""
+				<< LibnovaDateDouble (iter->getObsEnd ()) << "\","
+				<< iter->getNumberOfImages () << ","
+				<< iter->getNumberOfGoodImages () << "]";
+		}
+
+		_os << "]}";
+
+		returnJSON (_os, response_type, response, response_length);
+		return;
+	}
+	throw XmlRpcException ("invalid API call");
 }
 
 void Targets::printTarget (Target *tar, const char* &response_type, char* &response, size_t &response_length)
@@ -721,27 +769,54 @@ void Targets::printTargetObservations (Target *tar, const char* &response_type, 
 {
 	std::ostringstream _os;
 
-	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str ());
+	printHeader (_os, (std::string ("Observations of target ") + tar->getTargetName ()).c_str (), NULL, NULL, "refreshObservations();");
 	printTargetHeader (tar->getTargetID (), _os);
 
-	rts2db::ObservationSet os = rts2db::ObservationSet ();
-	os.loadTarget (tar->getTargetID ());
+	_os << "<h1>Observations of target " << tar->getTargetName () << "</h1>\n";
 
-	if (os.size () > 0)
-	{
-		_os << "<table>";
+	includeJavaScript (_os, "equ.js");
+	includeJavaScript (_os, "table.js");
 
-		for (rts2db::ObservationSet::iterator iter = os.begin (); iter != os.end (); iter++)
-		{
-			_os << "<tr><td>" << iter->getObsId () << "</td><td>" << iter->getTargetName () << "</td></tr>";
-		}
+	_os << "<script type='text/javascript'>\n"
+		"var targets = [];\n"
+		"function refreshObservations(){\n"
+			"var hr = new XMLHttpRequest();\n"
+			"hr.open('GET','../api/obs',true);\n"
+			"hr.onreadystatechange = function() {\n"
+				"if (hr.readyState == 4 && hr.status == 200) {\n"
+					"t = JSON.parse(hr.responseText);\n"
+					"targets = t.d;\n"
+					"var tab = document.createElement('table');\n"
+					"tab.id = 'tartab';\n"
+					// write header
+					"var th = tab.createTHead();\n"
+					"var tr = th.insertRow(0);\n"
+					"for (var h in t.h) {\n"
+						"var td = tr.insertCell(-1);\n"
+						"td.innerHTML = t.h[h].n;\n"
+						"switch(t.h[h].t){\n"
+							"case 't':\n"
+							"case 'a':\n"
+								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_str); return true;');\n"
+								"break;\n"
+							"default:\n"
+								"td.setAttribute('onclick', 'resortTable(\"tartab\",' + t.h[h].c + ',sort_num); return true;');\n"
+						"}\n"
+					"}\n"
+					"fillTable(tab);\n"
+					"var e = document.getElementById('observations');\n"
+					"e.innerHTML = '';\n"
+					"e.appendChild(tab);\n"
+				"}\n"
+			"}\n"
+			"hr.send(null);\n"
+		"}\n"
 
-		_os << "</table>";
-	}
-	else
-	{
-		_os << "<p>There isn't any observation for target " << tar->getTargetName ();
-	}
+		"function updateTable(addTimer){\n"
+		"}\n"
+
+		"</script>\n"
+		"<div id='observations'>Loading..</div>\n";
 
 	printFooter (_os);
 
