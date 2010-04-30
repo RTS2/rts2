@@ -276,7 +276,7 @@ void Targets::processAPI (XmlRpc::HttpParams *params, const char* &response_type
 
 	_os << "{\"h\":["
 		"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
-		"{\"n\":\"Target name\",\"t\":\"a\",\"href\":0,\"c\":1},"
+		"{\"n\":\"Target name\",\"t\":\"a\",\"prefix\":\"\",\"href\":0,\"c\":1},"
 		"{\"n\":\"Priority\",\"t\":\"n\",\"c\":6},"
 		"{\"n\":\"Bonus\",\"t\":\"n\",\"c\":7},"
 		"{\"n\":\"Enabled\",\"t\":\"b\",\"c\":8},"
@@ -409,7 +409,7 @@ void Targets::callTargetAPI (Target *tar, const std::string &req, XmlRpc::HttpPa
 		os.loadTarget (tar->getTargetID ());
 
 		_os << "{\"h\":["
-			"{\"n\":\"ID\",\"t\":\"n\",\"c\":0},"
+			"{\"n\":\"ID\",\"t\":\"a\",\"prefix\":\"../../..//observations/\",\"href\":0,\"c\":0},"
 			"{\"n\":\"RA\",\"t\":\"r\",\"c\":1},"
 			"{\"n\":\"DEC\",\"t\":\"t\",\"c\":2},"
 			"{\"n\":\"Slew\",\"t\":\"t\",\"c\":3},"
