@@ -66,9 +66,8 @@ try to fix it, or write me.
 Creating targets of your choice
 ===============================
 
-Probably the best way how to create a target is using rts2-newtarget. In order
-for it to work properly, you will need gsoap installed before you started the
-build. There is sample session:
+Probably the best way how to create a target is using rts2-newtarget. There is
+a sample session:
 
 user@host:$ rts2-newtarget 
 Default values are written at []..
