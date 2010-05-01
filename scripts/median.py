@@ -27,6 +27,26 @@ def median(of,files):
 	m = numpy.median(d,axis=0)
 	i = pyfits.PrimaryHDU(data=m)
 	f.append(i)
+	print 'of mean: %f std: %f median: %f' % (numpy.mean(m), numpy.std(m), numpy.median(numpy.median(m)))
 	f.close()
 
-median(sys.argv[1],sys.argv[2:])
+def filtersort(of,files):
+	# sort by filters..
+	flats = {}
+	for x in files:
+	  	f = pyfits.fitsopen(x)
+		filt = f[0].header['FILTER']
+		try:
+			flats[filt].append(x)
+		except KeyError:
+			flats[filt] = [x]
+		print '\rflats ',
+		for y in flats.keys():
+		  	print y, ': ', len(flats[y]),
+
+	for x in flats.keys():
+		print ''
+		print 'creating ' + of + x +'.fits'
+		median(of + x + '.fits', flats[x])
+
+filtersort(sys.argv[1],sys.argv[2:])
