@@ -176,8 +176,7 @@ int Dome::checkOpening ()
 		{
 			endOpen ();
 			infoAll ();
-			maskState (DOME_DOME_MASK, DOME_OPENED,
-				"opening finished with error");
+			maskState (DOME_DOME_MASK, DOME_OPENED, "opening finished with error");
 		}
 		if (ret == -2)
 		{
@@ -185,8 +184,7 @@ int Dome::checkOpening ()
 			infoAll ();
 			if (ret)
 			{
-				maskState (DOME_DOME_MASK, DOME_OPENED,
-					"dome opened with error");
+				maskState (DOME_DOME_MASK, DOME_OPENED, "dome opened with error");
 			}
 			else
 			{
@@ -207,8 +205,7 @@ int Dome::checkOpening ()
 		{
 			endClose ();
 			infoAll ();
-			maskState (DOME_DOME_MASK, DOME_CLOSED,
-				"closing finished with error");
+			maskState (DOME_DOME_MASK, DOME_CLOSED, "closing finished with error");
 		}
 		if (ret == -2)
 		{
@@ -216,8 +213,7 @@ int Dome::checkOpening ()
 			infoAll ();
 			if (ret)
 			{
-				maskState (DOME_DOME_MASK, DOME_CLOSED,
-					"dome closed with error");
+				maskState (DOME_DOME_MASK, DOME_CLOSED, "dome closed with error");
 			}
 			else
 			{
