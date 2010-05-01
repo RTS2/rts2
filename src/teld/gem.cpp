@@ -1,6 +1,6 @@
 /* 
  * Abstract class for GEMs.
- * Copyright (C) 2007-2008 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007-2008,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,8 +24,7 @@
 
 using namespace rts2teld;
 
-int
-GEM::sky2counts (int32_t & ac, int32_t & dc)
+int GEM::sky2counts (int32_t & ac, int32_t & dc)
 {
 	double JD;
 	int32_t homeOff;
@@ -43,9 +42,7 @@ GEM::sky2counts (int32_t & ac, int32_t & dc)
 	return sky2counts (&pos, ac, dc, JD, homeOff);
 }
 
-
-int
-GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
+int GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff)
 {
 	double ls, ra, dec;
 	struct ln_hrz_posn hrz;
@@ -155,9 +152,7 @@ GEM::sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD,
 	return 0;
 }
 
-
-int
-GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
+int GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 {
 	double JD, ls;
 	int32_t homeOff;
@@ -210,15 +205,12 @@ GEM::counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec)
 	return 0;
 }
 
-
-GEM::GEM (int in_argc, char **in_argv):
-Telescope (in_argc, in_argv)
+GEM::GEM (int in_argc, char **in_argv, bool diffTrack):Telescope (in_argc, in_argv, diffTrack)
 {
 	haZero = decZero = haCpd = decCpd = nan("f");
 
 	ra_ticks = dec_ticks = 0;
 }
-
 
 GEM::~GEM (void)
 {

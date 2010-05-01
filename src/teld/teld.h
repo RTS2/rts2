@@ -88,7 +88,7 @@ namespace rts2teld
 class Telescope:public Rts2Device
 {
 	public:
-		Telescope (int argc, char **argv);
+		Telescope (int argc, char **argv, bool diffTrack = false);
 		virtual ~ Telescope (void);
 
 		virtual void postEvent (Rts2Event * event);
@@ -595,13 +595,6 @@ class Telescope:public Rts2Device
 		virtual double estimateTargetTime ();
 
 		double getTargetReached () { return targetReached->getValueDouble (); }
-
-		/**
-		 * Returs mount differential tracking capability.
-		 *
-		 * @return true if mount can do differential tracking
-		 */
-		virtual bool haveDiffTrack () { return false; }
 
 		/**
 		 * Set differential tracking values. All inputs is in degrees / hour.

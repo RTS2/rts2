@@ -39,7 +39,7 @@
 
 using namespace rts2teld;
 
-Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
+Telescope::Telescope (int in_argc, char **in_argv, bool diffTrack):Rts2Device (in_argc, in_argv, DEVICE_TYPE_MOUNT, "T0")
 {
 	for (int i = 0; i < 4; i++)
 	{
@@ -56,9 +56,9 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	woffsRaDec->setValueRaDec (0, 0);
 	woffsRaDec->resetValueChanged ();
 
-	if (haveDiffTrack ())
+	if (diffTrack)
 	{
-		createValue (diffTrackRaDec, "DTRA", "[deg/sec] differential tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
+		createValue (diffTrackRaDec, "DTRA", "[deg/hour] differential tracking", true, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 		diffTrackRaDec->setValueRaDec (0, 0);
 	}
 	else
@@ -104,9 +104,9 @@ Telescope::Telescope (int in_argc, char **in_argv):Rts2Device (in_argc, in_argv,
 	createValue (mpec_angle, "mpec_angle", "timespan from which MPEC ra_diff and dec_diff will be computed", false, RTS2_VALUE_WRITABLE);
 	mpec_angle->setValueDouble (3600);
 
-	if (haveDiffTrack ())
+	if (diffTrack)
 	{
-		createValue (diffRaDec, "different", "[degrees/hour] differential tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES, TEL_MOVING);
+		createValue (diffRaDec, "different", "[degrees/hour] MPEC differential tracking", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEGREES, TEL_MOVING);
 		diffRaDec->setValueRaDec (0, 0);
 	}
 	else
@@ -473,7 +473,7 @@ void Telescope::recalculateMpecDIffs ()
 		pos_diffs[i].dec = pos[i].dec - pos[i+1].dec;
 	}
 
-	if (haveDiffTrack ())
+	if (diffRaDec)
 	{
 		diffRaDec->setValueRaDec (pos_diffs[1].ra, pos_diffs[1].dec);
 	}

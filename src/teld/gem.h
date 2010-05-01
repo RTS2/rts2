@@ -63,7 +63,7 @@ class GEM: public Telescope
 		int sky2counts (struct ln_equ_posn *pos, int32_t & ac, int32_t & dc, double JD, int32_t homeOff);
 		int counts2sky (int32_t & ac, int32_t dc, double &ra, double &dec);
 	public:
-		GEM (int in_argc, char **in_argv);
+		GEM (int in_argc, char **in_argv, bool diffTrack = false);
 		virtual ~GEM (void);
 };
 

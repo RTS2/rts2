@@ -95,7 +95,6 @@ class OpenTPL:public Telescope
 		bool getDerotatorPower () { return derotatorPower->getValueBool (); }
 		virtual void getTelAltAz (struct ln_hrz_posn *hrz);
 
-		virtual bool haveDiffTrack () { return true; }
 		virtual void setDiffTrack (double dra, double ddec);
 
 	private:
@@ -328,7 +327,7 @@ int OpenTPL::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	return Telescope::setValue (old_value, new_value);
 }
 
-OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv)
+OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true)
 {
 	openTPLServer = NULL;
 

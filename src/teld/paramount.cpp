@@ -1,7 +1,7 @@
 /* 
  * Driver for Paramount. You need ParaLib to make that work, please ask petr@kubanek.net
  * for details.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -167,8 +167,6 @@ class Paramount:public GEM
 		// save and load gemini informations
 		virtual int saveModel ();
 		virtual int loadModel ();
-
-		virtual bool haveDiffTrack () { return true; }
 
 		virtual void setDiffTrack (double dra, double ddec);
 
@@ -445,7 +443,7 @@ int Paramount::updateLimits ()
 	return 0;
 }
 
-Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv)
+Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 {
 	createValue (tracking, "tracking", "if RA worm is enabled", false, RTS2_VALUE_WRITABLE);
 	tracking->setValueBool (true);
