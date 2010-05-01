@@ -46,7 +46,7 @@ def filtersort(of,files):
 			flats[filt] = [x]
 		print '\rflats ',
 		for y in flats.keys():
-		  	print y, ': ', len(flats[y]),
+		  	print '%s : %03d' % (y,len(flats[y])),
 
 	for x in flats.keys():
 		print ''
