@@ -877,6 +877,10 @@ void Camera::postEvent (Rts2Event * event)
 			infoAll ();
 			break;
 		case EVENT_FOCUSER_END_MOVE:
+			focuserMoving->setValueBool (false);
+			/// check for exposure..
+			if (quedExpNumber->getValueInteger () > 0)
+				camExpose (exposureConn, getStateChip (0), false);
 			// update info about FW
 			infoAll ();
 			break;
@@ -1167,6 +1171,8 @@ int Camera::setFocuser (int new_set)
 	postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
+	focuserMoving->setValueBool (true);
+	sendValueAll (focuserMoving);
 	return 0;
 }
 
