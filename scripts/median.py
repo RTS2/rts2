@@ -2,6 +2,11 @@
 #
 # Calculates median from files suplied as arguments. Median
 # is saved to file specified as first argument.
+#
+# You will need numpy and pyfits packages. Those are available from python-numpy
+# and python-pyfits Debian/Ubuntu packages.
+#
+# Copyright (C) 2010 Petr Kubanek <petr@kubanek.net>
 
 import sys
 import numpy
