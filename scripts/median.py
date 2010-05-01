@@ -25,9 +25,13 @@ def median(of,files):
 		os.unlink(of)
 	f = pyfits.open(of,mode='append')
 	m = numpy.median(d,axis=0)
+	max = numpy.max(d)
+	print 'maximal value: %f' % (max)
+	# normalize
+	m = m / max
 	i = pyfits.PrimaryHDU(data=m)
 	f.append(i)
-	print 'of mean: %f std: %f median: %f' % (numpy.mean(m), numpy.std(m), numpy.median(numpy.median(m)))
+	print 'writing %s of mean: %f std: %f median: %f' % (of,numpy.mean(m), numpy.std(m), numpy.median(numpy.median(m)))
 	f.close()
 
 def filtersort(of,files):
@@ -46,7 +50,7 @@ def filtersort(of,files):
 
 	for x in flats.keys():
 		print ''
-		print 'creating ' + of + x +'.fits'
+		print 'processing filter %s with %d images' % (x,len(flats[x]))
 		median(of + x + '.fits', flats[x])
 
 filtersort(sys.argv[1],sys.argv[2:])
