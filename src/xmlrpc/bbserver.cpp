@@ -40,8 +40,8 @@ void BBServer::sendUpdate (XmlRpcValue *data)
 	XmlRpcValue result;
 
 	int ret = xmlClient->execute (R2X_BB_UPDATE_OBSERVATORY, send, result);
-	if (ret)
-		logStream (MESSAGE_ERROR) << "Error calling " R2X_BB_UPDATE_OBSERVATORY << sendLog;
+	if (!ret)
+		logStream (MESSAGE_ERROR) << "error calling " R2X_BB_UPDATE_OBSERVATORY << sendLog;
 }
 
 void BBServers::sendUpdate (XmlRpcValue *values)
