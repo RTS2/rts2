@@ -6,6 +6,9 @@
 # rts2comm.py is included in RTS2 distribution. You must eithert copy it to the
 # same location as this script, or include it in PYTHONPATH.
 #
+# If you would like to process images, you need to have numpy and pyfits
+# installaed. Please see median.py in RTS2/scripts for more details.
+#
 # As with all scripts intended to be called by RTS2 exe script command, you can
 # test this script by calling it and verifiing that it prints something what
 # does not look like error message on standard output.
@@ -15,23 +18,46 @@ import time
 import rts2comm
 
 class Flat:
+	"""Flat class. It holds system configuration for skyflats."""
 	def __init__(self,filter,binning=None,ngood=None,window=None):
 		self.filter = filter
 		self.binning = binning
 		self.ngood = ngood
 		self.window = window
 
-class FlatScript (rts2comm.Rts2Comm):
-	"""Class for communicating with RTS2 in exe command."""
-	def __init__(self):
-		self.eveningFlats = [Flat('Y'),Flat('B'),Flat('b'),Flat('g'),Flat('r'),Flat('i'),Flat('z')] # filters for evening, we will use reverse for morning
+	def signature(self):
+		"""Return signature string of given flat image configuration."""
+		if (self.binning == None and self.window == None):
+			return self.filter
+		return '%s_%s_%s' % (self.filter,self.binning,self.window)
 
-		self.morningFlats = self.eveningFlats[:] # filters for morning - reverse of evening filters - deep copy them first
+class FlatScript (rts2comm.Rts2Comm):
+	"""Class for taking and processing skyflats."""
+	def __init__(self):
+		# Configuration (filters, binning, ..) for evening, we will use
+		# reverse for morning. You fill array with Flat objects, which
+		# describes configuration. If you do not have filters, use None
+		# for filter name.  self.eveningFlats = [Flat(None)] #
+		# configuration for camera without filters
+		self.eveningFlats = [Flat('Y'),Flat('B'),Flat('b'),Flat('g'),Flat('r'),Flat('i'),Flat('z')]
+		
+		# Filters for morning - reverse of evening filters - deep copy them first.
+		self.morningFlats = self.eveningFlats[:]
+		
+		# If you would like to take different filters/setting during
+		# morning, replace this reverse with definition similar to what
+		# was set for self.eveningFlats.
 		self.morningFlats.reverse ()
 
+		# If dark exposures for acquired filters should be taken.
 		self.doDarks = True
 
-		self.unusableExpression = None # rename images which are useless for skyflats to this path
+		# rename images which are useless for skyflats to this path.
+		# Fill in something (preferably with %f at the end - see man
+		# rts2.ini) if you would like to keep copy of images which does
+		# not met flat requirements. This is particularly usefull for
+		# debugging.
+		self.unusableExpression = None 
 
 		self.flat = None
 
@@ -51,13 +77,14 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.shiftDec = 10.0 / 3600 # shift after every flat in DEC [degrees]
 
 		# self.waitingSubWindow = '100 100 200 200' # x y w h of subwindow while waiting for good flat level
-		self.waitingSubWindow = None # do not use subwidnow to wait for flats
+		self.waitingSubWindow = None # do not use subwindow to wait for flats
 		self.isSubWindow = False
 
 		self.expTimes = range(1,20) # allowed exposure times
 		self.expTimes = map(lambda x: x/2.0, self.expTimes)
 
-		self.Ngood = {}
+		self.flatNum = 0
+		self.flatImages = []
 		self.usedExpTimes = []
 
 	def optimalExpTime(self,ratio,expMulti):
@@ -119,8 +146,8 @@ class FlatScript (rts2comm.Rts2Comm):
 				self.fullWindow()
 				self.unusableImage(img)
 			else:
-				self.toFlat(img)
-				self.Ngood[self.flat.filter] += 1
+				flatName = self.toFlat(img)
+				self.flatImages[self.flatNum].append(flatName)
 				# add used exposure time - if it does not exists
 				try:
 					self.usedExpTimes.index(self.exptime)
@@ -154,11 +181,12 @@ class FlatScript (rts2comm.Rts2Comm):
 		elif (ret > 0):
 			brightness = 'bright'
 
-		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %s" % (ratio,avrg,self.Ngood[self.flat.filter],self.flat.filter,self.exptime,brightness))
+		self.log('I',"run ratio %f avrg %f ngood %d filter %s next exptime %f ret %s" % (ratio,avrg,len(self.flatImages[self.flatNum]),self.flat.filter,self.exptime,brightness))
 		return ret
 
 	def setConfiguration(self):
-		self.setValue('filter',self.flat.filter)
+		if (self.flat.filter != None):
+			self.setValue('filter',self.flat.filter)
 		if (self.flat.binning != None):
 			self.setValue('binning',self.flat.binning)
 		else:
@@ -169,14 +197,14 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.numberFlats = self.defaultNumberFlats
 	
 	def executeEvening(self):
-		self.Ngood[self.flat.filter] = 0 # Number of good images
+		self.flatImages[self.flatNum] = []
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
 			self.isSubWindow = True
 			self.setValue('WINDOW',self.waitingSubWindow)
 
-		while (self.Ngood[self.flat.filter] < self.numberFlats): # We continue until we have enough flats
+		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (imgstatus == -1):
 				# too dim image..
@@ -186,19 +214,20 @@ class FlatScript (rts2comm.Rts2Comm):
 			# 0 mean good image, just continue..
 	
 	def runEvening(self):
-		for self.flat in self.eveningFlats: # starting from the bluest and ending with the redest
+		for self.flatNum in range(0,len(self.eveningFlats)): # starting from the bluest and ending with the redest
+		  	self.flat = self.eveningFlats[self.flatNum]
 			self.setConfiguration()
 			self.executeEvening()
 
 	def executeMorning(self):
-		self.Ngood[self.flat.filter] = 0 # Number of good images
+		self.flatImages[self.flatNum] = []
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
 			self.isSubWindow = True
 			self.setValue('WINDOW',self.waitingSubWindow)
 
-		while (self.Ngood[self.flat.filter] < self.numberFlats): # We continue until we have enough flats
+		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
 			if (imgstatus == 1):
 				# too bright image
@@ -208,7 +237,8 @@ class FlatScript (rts2comm.Rts2Comm):
 			# good image, just continue as usuall
 
 	def runMorning(self):
-		for self.flat in self.morningFlats: # starting from the redest and ending with the bluest
+		for self.flatNum in range(0,len(self.morningFlats)): # starting from the redest and ending with the bluest
+		  	self.flat = self.morningFlats[self.flatNum]
 			self.setConfiguration()
 			self.executeMorning()
 
@@ -225,19 +255,52 @@ class FlatScript (rts2comm.Rts2Comm):
 				self.setValue('exposure',exp)
 				dark = self.exposure()
 				self.toDark(dark)
-			return
+
+	def createMasterFits(self,of,files):
+		"""Process acquired flat images."""
+		import numpy
+		import os
+		import pyfits
+
+		f = pyfits.fitsopen(files[0])
+		d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
+		d[0] = f[0].data
+		for x in range(1,len(files)):
+		  	f = pyfits.fitsopen(files[x])
+			d[x] = f[0].data
+		if (os.path.exists(of)):
+	  		self.log('I',"removing %s" % (of))
+			os.unlink(of)
+		f = pyfits.open(of,mode='append')
+		m = numpy.median(d,axis=0)
+		max = numpy.max(d)
+		# normalize
+		m = m / max
+		i = pyfits.PrimaryHDU(data=m)
+		f.append(i)
+		self.log ('writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
+		f.close()
 
 	def run(self):
 		# make sure we are taking light images..
 		self.setValue('SHUTTER','LIGHT')
 		# choose filter sequence..
 		if (self.isEvening()):
+		  	self.usedFlats = self.eveningFlats
 			self.runEvening()
 		else:
+		  	self.usedFlats = self.morningFlats
 			self.runMorning()
+
 
 		if (self.doDarks):
 			self.takeDarks()
+
+		# basic processing of taken flats..
+		for i in range(0,self.flatNum):
+		  	if (len(self.flatImages[i]) >= 3):
+			  	self.log('I',"creating master flat for %s" % (self.usedFlats[i].signature()))
+				createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
 
 a = FlatScript()
 a.run()
