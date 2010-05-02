@@ -14,6 +14,7 @@ import pyfits
 import os
 
 def median(of,files):
+	"""Computes normalized median of files."""
 	f = pyfits.fitsopen(files[0])
 	d = numpy.empty([len(files),len(f[0].data),len(f[0].data[0])])
 	d[0] = f[0].data
@@ -52,5 +53,6 @@ def filtersort(of,files):
 		print ''
 		print 'processing filter %s with %d images' % (x,len(flats[x]))
 		median(of + x + '.fits', flats[x])
+
 
 filtersort(sys.argv[1],sys.argv[2:])
