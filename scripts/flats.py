@@ -197,7 +197,6 @@ class FlatScript (rts2comm.Rts2Comm):
 			self.numberFlats = self.defaultNumberFlats
 	
 	def executeEvening(self):
-		self.flatImages[self.flatNum] = []
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
@@ -216,11 +215,11 @@ class FlatScript (rts2comm.Rts2Comm):
 	def runEvening(self):
 		for self.flatNum in range(0,len(self.eveningFlats)): # starting from the bluest and ending with the redest
 		  	self.flat = self.eveningFlats[self.flatNum]
+			self.flatImages.append([])
 			self.setConfiguration()
 			self.executeEvening()
 
 	def executeMorning(self):
-		self.flatImages[self.flatNum] = []
 		self.exptime = self.startExpTime
 
 		if (not ((self.waitingSubWindow is None) or (self.isSubWindow))):
@@ -239,6 +238,7 @@ class FlatScript (rts2comm.Rts2Comm):
 	def runMorning(self):
 		for self.flatNum in range(0,len(self.morningFlats)): # starting from the redest and ending with the bluest
 		  	self.flat = self.morningFlats[self.flatNum]
+			self.flatImages.append([])
 			self.setConfiguration()
 			self.executeMorning()
 
