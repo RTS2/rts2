@@ -221,11 +221,28 @@ void Events::parseEvents (xmlNodePtr ev)
 void Events::parseBB (xmlNodePtr ev)
 {
 	if (ev == NULL)
-		throw XmlMissingElement (ev, "server for BB");
+		throw XmlMissingElement (ev, "server description for BB");
+	
+	char *sn = NULL;
+	char *on = NULL;
 
-	if (!xmlStrEqual (ev->name, (xmlChar *) "server"))
-		throw XmlUnexpectedNode (ev);
-	bbServers.push_back (BBServer ((char *) ev->children->content));
+	for (xmlNodePtr chil = ev->children; chil; chil = chil->next)
+	{
+		if (xmlStrEqual (chil->name, (xmlChar *) "server"))
+		{
+			sn = (char *)chil->children->content;
+		}
+		else if (xmlStrEqual (chil->name, (xmlChar *) "observatory"))
+		{
+			on = (char *)chil->children->content;
+		}
+		else throw XmlUnexpectedNode (chil);
+	}
+	if (sn == NULL)
+		throw XmlMissingElement (ev, "server name");
+	if (on == NULL)
+		throw XmlMissingElement (ev, "observatory name");
+	bbServers.push_back (BBServer (sn,on));
 }
 
 void Events::load (const char *file)
@@ -273,7 +290,7 @@ void Events::load (const char *file)
 		}
 		else if (xmlStrEqual (ev->name, (xmlChar *) "bb"))
 		{
-			parseBB (ev->children);
+			parseBB (ev);
 		}
 		else
 		{

@@ -123,6 +123,7 @@
   <xs:complexType name="bb">
     <xs:sequence>
       <xs:element name="server" minOccurs="1" maxOccurs="1" type="xs:string"/>
+      <xs:element name="observatory" minOccurs="1" maxOccurs="1" type="xs:string"/>
     </xs:sequence>
   </xs:complexType>
 

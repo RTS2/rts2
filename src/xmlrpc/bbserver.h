@@ -38,7 +38,7 @@ namespace rts2xmlrpc
 class BBServer
 {
 	public:
-		BBServer (char *serverName):_serverName (serverName) {xmlClient = NULL; }
+		BBServer (char *serverName, const char *observatoryName):_serverName (serverName), _observatoryName(observatoryName) {xmlClient = NULL; }
 		~BBServer () {}
 
 		/**
@@ -50,6 +50,7 @@ class BBServer
 
 	private:
 		std::string _serverName;
+		std::string _observatoryName;
 		XmlRpcClient* xmlClient;
 };
 

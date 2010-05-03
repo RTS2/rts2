@@ -34,7 +34,7 @@ void BBServer::sendUpdate (XmlRpcValue *data)
 	}
 
 	XmlRpcValue send;
-	send["observatory"] = "BOOTES";
+	send["observatory"] = _observatoryName;
 	send["data"] = *data;
 
 	XmlRpcValue result;
