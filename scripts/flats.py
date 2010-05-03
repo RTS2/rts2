@@ -205,8 +205,8 @@ class FlatScript (rts2comm.Rts2Comm):
 
 		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
-			if (imgstatus == -1):
-				# too dim image..
+			if (imgstatus == -1 and self.exptime >= self.expTimes[-1]):
+				# too dim image and exposure time change cannot correct it
 				return
 			elif (imgstatus == 1):
 				time.sleep(self.sleepTime)
@@ -228,8 +228,8 @@ class FlatScript (rts2comm.Rts2Comm):
 
 		while (len(self.flatImages[self.flatNum]) < self.numberFlats): # We continue until we have enough flats
 			imgstatus = self.acquireImage()
-			if (imgstatus == 1):
-				# too bright image
+			if (imgstatus == 1 and self.exptime <= self.expTimes[0]):
+				# too bright image and exposure time change cannot correct it
 				return
 			elif (imgstatus == -1):
 				time.sleep(self.sleepTime) # WAIT sleepTime seconds (we would wait to until the sky is a bit brighter
@@ -248,8 +248,8 @@ class FlatScript (rts2comm.Rts2Comm):
 		while (True):
 			for exp in self.usedExpTimes:
 				sun_alt = self.getValueFloat('sun_alt','centrald')
-				next = self.getValueInteger('next','EXEC')
-				if (sun_alt >= -0.5 or not (next == 2 or next == -1)):
+				next_t = self.getValueInteger('next','EXEC')
+				if (sun_alt >= -0.5 or not (next_t == 2 or next_t == -1)):
 					self.setValue('SHUTTER','LIGHT')
 					return
 				self.setValue('exposure',exp)
@@ -273,12 +273,12 @@ class FlatScript (rts2comm.Rts2Comm):
 			os.unlink(of)
 		f = pyfits.open(of,mode='append')
 		m = numpy.median(d,axis=0)
-		max = numpy.max(d)
+		flat_max = numpy.max(d)
 		# normalize
-		m = m / max
+		m = m / flat_max
 		i = pyfits.PrimaryHDU(data=m)
 		f.append(i)
-		self.log ('writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
+		self.log ('writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),flat_max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
 	def run(self):
