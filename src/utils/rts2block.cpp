@@ -511,7 +511,8 @@ int Rts2Block::setMasterState (Rts2Conn *_conn, int new_state)
 	{
 		if ((new_state & SERVERD_STATUS_MASK) != SERVERD_HARD_OFF && (new_state & WEATHER_MASK) != BAD_WEATHER && (new_state & SERVERD_STANDBY_MASK) != SERVERD_STANDBY)
 		{
-			logStream (MESSAGE_DEBUG) << "ignoring state change, as it does not arrive from master connection" << sendLog;
+			if ((old_state & ~BOP_MASK) != (new_state & ~BOP_MASK))
+				logStream (MESSAGE_DEBUG) << "ignoring state change, as it does not arrive from master connection" << sendLog;
 			return 0;
 		}
 		// ignore request from non-master server asking us to switch to standby, when we are in hard off
