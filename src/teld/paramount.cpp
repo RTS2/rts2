@@ -187,6 +187,7 @@ class Paramount:public GEM
 		Rts2ValueInteger *statusRa;
 		Rts2ValueInteger *statusDec;
 
+		Rts2ValueLong *hourRa;
 		Rts2ValueLong *baseRa;
 		Rts2ValueLong *baseDec;
 
@@ -454,8 +455,12 @@ Paramount::Paramount (int in_argc, char **in_argv):GEM (in_argc, in_argv, true)
 	createValue (statusRa, "status_ra", "RA axis status", false, RTS2_DT_HEX);
 	createValue (statusDec, "status_dec", "DEC axis status", false, RTS2_DT_HEX);
 
-	createValue (baseRa, "BR_RA", "[counts/sec] RA axis base rate", true, RTS2_VALUE_WRITABLE);
-	createValue (baseDec, "BR_DEC", "[counts/sec] DEC axis base rate", true, RTS2_VALUE_WRITABLE);
+	createValue (hourRa, "HR_RA", "[???] RA axis tracking rate", true);
+	hourRa->setValueLong (43067265);
+	createValue (baseRa, "BR_RA", "[???] RA axis base rate", true, RTS2_VALUE_WRITABLE);
+	baseRa->setValueLong (hourRa->getValueLong ());
+	createValue (baseDec, "BR_DEC", "[???] DEC axis base rate", true, RTS2_VALUE_WRITABLE);
+	baseDec->setValueLong (0);
 
 	axis0.unitId = 0x64;
 	axis0.axisId = 0;
@@ -1242,7 +1247,7 @@ void Paramount::setDiffTrack (double dra, double ddec)
 	ddec = (ddec * decCpd);
 	if (getFlip ())
 		ddec *= -1;
-	baseRa->setValueLong (dra);
+	baseRa->setValueLong (dra + hourRa->getValueLong ());
 	baseDec->setValueLong (ddec);
 	setParamountValue32 (CMD_VAL32_BASERATE, baseRa, baseDec);
 }
