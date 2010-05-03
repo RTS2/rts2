@@ -1720,69 +1720,7 @@ Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs)
 	return retTarget;
 }
 
-
-void
-sendEndMails (const time_t *t_from, const time_t *t_to, int printImages, int printCounts, struct ln_lnlat_posn *in_obs, Rts2App *master)
-{
-/*
-	EXEC SQL BEGIN DECLARE SECTION;
-		long db_from = (long) *t_from;
-		long db_end = (long) *t_to;
-		int db_tar_id;
-	EXEC SQL END DECLARE SECTION;
-
-	double JD;
-	JD = ln_get_julian_from_sys ();
-
-	EXEC SQL DECLARE tar_obs_cur CURSOR FOR
-		SELECT
-			targets.tar_id
-		FROM
-			targets,
-			observations
-		WHERE
-			targets.tar_id = observations.tar_id
-		AND observations.obs_slew >= to_timestamp (:db_from)
-		AND observations.obs_end <= to_timestamp (:db_end);
-
-	EXEC SQL OPEN tar_obs_cur;
-
-	while (1)
-	{
-		Target *tar;
-		EXEC SQL FETCH next FROM tar_obs_cur INTO
-				:db_tar_id;
-		if (sqlca.sqlcode)
-			break;
-		tar = createTarget (db_tar_id, in_obs);
-		if (tar)
-		{
-			int count;
-			std::string mails = tar->getUsersEmail (SEND_END_NIGHT, count);
-			if (count > 0)
-			{
-				std::string subject_text = std::string ("END OF NIGHT, TARGET #");
-				ObservationSet obsset = ObservationSet (db_tar_id, t_from, t_to);
-				tar->getTargetSubject (subject_text);
-				std::ostringstream os;
-				obsset.printImages (printImages);
-				obsset.printCounts (printCounts);
-				Rts2InfoValOStream ivos = Rts2InfoValOStream (&os);
-				tar->sendInfo (ivos, JD);
-				tar->printExtra (ivos, JD);
-				os << obsset;
-				master->sendMailTo (subject_text.c_str(), os.str().c_str(), mails.c_str());
-			}
-			delete tar;
-		}
-	}
-	EXEC SQL CLOSE tar_obs_cur;
-	EXEC SQL COMMIT; */
-}
-
-
-void
-Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
+void Target::sendPositionInfo (Rts2InfoValStream &_os, double JD)
 {
 	struct ln_hrz_posn hrz;
 	struct ln_gal_posn gal;

@@ -42,8 +42,7 @@ class Rts2SqlQuery
 		virtual ~ Rts2SqlQuery (void);
 
 		void addColumn (Rts2SqlColumn * add_column);
-		void addColumn (const char *in_sql, const char *in_name, int in_order =
-			UNORDER);
+		void addColumn (const char *in_sql, const char *in_name, int in_order = UNORDER);
 		void addWhere (const char *in_where);
 		char *genSql ();
 		void display ();

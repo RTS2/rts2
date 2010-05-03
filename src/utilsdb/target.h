@@ -855,11 +855,6 @@ class TargetPlan:public Target
  */
 Target *createTarget (int _tar_id, struct ln_lnlat_posn *_obs);
 
-// send end mails
-void sendEndMails (const time_t * t_from, const time_t * t_to,
-int printImages, int printCounts,
-struct ln_lnlat_posn *in_obs, Rts2App * master);
-
 // print target information to stdout..
 std::ostream & operator << (std::ostream & _os, Target & target);
 Rts2InfoValStream & operator << (Rts2InfoValStream & _os, Target & target);
