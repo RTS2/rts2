@@ -5,15 +5,12 @@ if PGSQL
 AM_CXXFLAGS = @LIBPG_CFLAGS@ @NOVA_CFLAGS@ @CFITSIO_CFLAGS@ @JPEG_CFLAGS@
 AM_LDFLAGS = @LIBPG_LIBS@ @LIB_ECPG@ @LIB_NOVA@ @LIB_CFITSIO@ @LIB_JPEG@
 
-bin_PROGRAMS = rts2-nightreport rts2-nightmails rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo
+bin_PROGRAMS = rts2-nightreport rts2-targetlist rts2-target rts2-tpm rts2-obsinfo rts2-user rts2-newtarget rts2-simbadinfo
 
 noinst_HEADERS = rts2targetapp.h
 
 rts2_nightreport_SOURCES = nightreport.cpp
 rts2_nightreport_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
-
-rts2_nightmails_SOURCES = nightmails.cpp
-rts2_nightmails_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
 
 rts2_targetlist_SOURCES = targetlist.cpp
 rts2_targetlist_LDFLAGS = ../utilsdb/librts2blockdb.a ../writers/librts2imagedb.a ../utils/librts2block.a $(AM_LDFLAGS)
