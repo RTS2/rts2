@@ -162,7 +162,7 @@ Executor::Executor (int in_argc, char **in_argv):Rts2DeviceDb (in_argc, in_argv,
 	ignoreDay->setValueBool (false);
 
 	createValue (grb_sep_limit, "grb_sep_limit", "[deg] when GRB distane is above grb_sep_limit degrees from current position, telescope will be immediatelly slewed to new position", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
-	grb_sep_limit->setValueDouble (-1);
+	grb_sep_limit->setValueDouble (0);
 
 	createValue (grb_min_sep, "grb_min_sep", "[deg] when GRB is bellow grb_min_sep degrees from current position, telescope will not be slewed", false, RTS2_VALUE_WRITABLE | RTS2_DT_DEG_DIST);
 	grb_min_sep->setValueDouble (0);
@@ -562,6 +562,11 @@ int Executor::setNow (Target * newTarget)
 
 	infoAll ();
 
+	struct ln_equ_posn pos;
+	currentTarget->getPosition (&pos);
+
+	logStream (MESSAGE_INFO) << "executing now target " << currentTarget->getTargetName () << " at RA DEC "
+		<< LibnovaRaDec (&pos) << "." << sendLog;
 	return 0;
 }
 
@@ -576,8 +581,7 @@ int Executor::setGrb (int grbId)
 		|| getMasterState () == SERVERD_DUSK
 		|| getMasterState () == SERVERD_DAWN))
 	{
-		logStream (MESSAGE_DEBUG) << "Executor::setGrb daylight GRB ignored"
-			<< sendLog;
+		logStream (MESSAGE_DEBUG) << "daylight / not on state GRB ignored" << sendLog;
 		return -2;
 	}
 
@@ -588,9 +592,9 @@ int Executor::setGrb (int grbId)
 		return -2;
 	}
 	grbTarget->getAltAz (&grbHrz);
-	logStream (MESSAGE_DEBUG) << "Rts2Executor::setGrb grbHrz alt:" << grbHrz.alt << sendLog;
 	if (grbHrz.alt < 0)
 	{
+		logStream (MESSAGE_DEBUG) << "GRB is bellow horizon and is ignored. GRB altitude " << grbHrz.alt << sendLog;
 		delete grbTarget;
 		return -2;
 	}
@@ -598,9 +602,8 @@ int Executor::setGrb (int grbId)
 	if (grbTarget->getTargetEnabled () == false)
 	{
 		logStream (MESSAGE_INFO)
-			<< "ignored execution request for GRB target " << grbTarget->
-			getTargetName () << " (# " << grbTarget->
-			getObsTargetID () << ") because this target is disabled" << sendLog;
+			<< "ignored execution request for GRB target " << grbTarget->getTargetName ()
+			<< " (# " << grbTarget->getObsTargetID () << ") because this target is disabled" << sendLog;
 		return -2;
 	}
 	if (!currentTarget)
@@ -617,6 +620,11 @@ int Executor::setGrb (int grbId)
 	ret = grbTarget->compareWithTarget (currentTarget, grb_min_sep->getValueDouble ());
 	if (ret == 1)
 	{
+		logStream (MESSAGE_INFO) << "GRB update for target " << grbTarget->getTargetName () << " (#"
+			<< grbTarget->getObsTargetID () << ") ignored, as its distance from current target "
+			<< currentTarget->getTargetName () << " (#" << currentTarget->getObsTargetID ()
+			<< ") is bellow separation limit of " << LibnovaDegDist (grb_min_sep->getValueDouble ())
+			<< "." << sendLog;
 		return 0;
 	}
 	// otherwise set us as next target
@@ -630,8 +638,7 @@ int Executor::setShower ()
 	// is during night and ready?
 	if (!(getMasterState () == SERVERD_NIGHT))
 	{
-		logStream (MESSAGE_DEBUG) <<
-			"Executor::setShower daylight shower ignored" << sendLog;
+		logStream (MESSAGE_DEBUG) << "daylight shower ignored" << sendLog;
 		return -2;
 	}
 
@@ -656,6 +663,7 @@ void Executor::clearNextTargets ()
 		delete *iter;
 	}
 	nextTargets.clear ();
+	logStream (MESSAGE_DEBUG) << "cleared list of next targets" << sendLog;
 }
 
 void Executor::queDarks ()
@@ -813,6 +821,7 @@ void Executor::processTarget (Target * in_target)
 			acqusitionFailed++;
 			break;
 	}
+	logStream (MESSAGE_INFO) << "observation # " << in_target->getObsId () << " of target " << in_target->getTargetName () << " ended." << sendLog;
 	ret = in_target->postprocess ();
 	if (!ret)
 		targetsQue.push_back (in_target);
