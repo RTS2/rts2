@@ -205,7 +205,7 @@ int Executor::reloadConfig ()
 		return ret;
 	config = Rts2Config::instance ();
 	observer = config->getObserver ();
-	f = -1;
+	f = 0;
 	config->getDouble ("grbd", "seplimit", f);
 	grb_sep_limit->setValueDouble (f);
 
