@@ -304,5 +304,14 @@ class FlatScript (rts2comm.Rts2Comm):
 			  	self.log('I',"creating master flat for %s" % (self.usedFlats[i].signature()))
 				createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
 
+		self.log('I','flat scripts finished, waiting for change of next target')
+		while (True):
+			sun_alt = self.getValueFloat('sun_alt','centrald')
+			next_t = self.getValueInteger('next','EXEC')
+			if (sun_alt >= -0.5 or not (next_t == 2 or next_t == -1)):
+				self.setValue('SHUTTER','LIGHT')
+				return
+			time.sleep(10)
+
 a = FlatScript()
 a.run()
