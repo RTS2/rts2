@@ -420,6 +420,7 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 	// only end when we do not have any commands in que
 	if (ret < 0 && script_connection->queEmptyForOriginator (devClient) && canEndScript ())
 	{
+	  	logStream (MESSAGE_DEBUG) << "ending script" << script_connection->getState () << sendLog;
 		deleteScript ();
 		#ifdef DEBUG_EXTRA
 		logStream (MESSAGE_DEBUG) << "For connection " << script_connection->getName ()

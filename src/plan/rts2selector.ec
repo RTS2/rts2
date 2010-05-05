@@ -96,7 +96,7 @@ int Selector::selectNext (int masterState)
 			ln_get_hrz_from_equ (&eq_sun, observer, JD, &sun_hrz);
 			if (sun_hrz.alt >= flat_sun_min && sun_hrz.alt <= flat_sun_max)
 				return selectFlats ();
-			// don't break..
+			// don't break, select darks
 		case SERVERD_DAWN | SERVERD_STANDBY:
 		case SERVERD_DUSK | SERVERD_STANDBY:
 			return selectDarks ();
