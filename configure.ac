@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.C
-AC_INIT(rts2, 0.8.0-1, petr@kubanek.net)
+AC_INIT(rts2, 0.8.0-2, petr@kubanek.net)
 
 AC_CANONICAL_BUILD
 
@@ -562,6 +562,11 @@ EOF
 fi
 
 if test "x$epics" != "xno"; then
+	AC_CHECK_LIB([readline],[readline],,[cat << EOF
+**** You do not have readline library. For some reasons, it is
+**** needed if you build with EPICS. Please install readline-dev package.
+EOF
+		exit 1])
   	if test "x$epics" != "xyes"; then
 		if test "x$EPICS_HOST_ARCH" = "x"; then
 		  	cat << EOF
