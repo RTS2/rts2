@@ -278,7 +278,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		m = m / flat_max
 		i = pyfits.PrimaryHDU(data=m)
 		f.append(i)
-		self.log ('writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),flat_max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
+		self.log('I','writing %s of min: %f max: %f mean: %f std: %f median: %f' % (of,numpy.min(m),flat_max,numpy.mean(m),numpy.std(m),numpy.median(numpy.median(m))))
 		f.close()
 
 	def run(self):
@@ -292,9 +292,11 @@ class FlatScript (rts2comm.Rts2Comm):
 		  	self.usedFlats = self.morningFlats
 			self.runMorning()
 
-
 		if (self.doDarks):
+			self.log('I','finished flats, taking calibration darks')
 			self.takeDarks()
+
+		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
 		for i in range(0,self.flatNum):
