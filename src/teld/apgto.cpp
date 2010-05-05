@@ -137,6 +137,8 @@ namespace rts2teld
     int setAPMotionStop() ;
 
     // helper
+    double siderealTime() ;
+    int checkSiderealTime() ;
     int setBasicData();
     void ParkDisconnect() ;
     // regular LX200 protocol (RTS2)
@@ -1104,8 +1106,8 @@ APGTO::tel_check_declination_axis ()
       if( transition_while_tracking->getValueBool()) {
 	// the mount is allowed to transit the meridian while tracking
       } else {
-	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", West), severe error, blocking any sync and moves" << sendLog;
 	block_sync_move->setValueBool(true) ;
+	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", West), severe error, blocking any sync and moves" << sendLog;
 	// can not exit here because if HA>0, West the telecope must be manually "rot e" to the East
       }
     }
@@ -1116,7 +1118,6 @@ APGTO::tel_check_declination_axis ()
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, exiting." << sendLog;
 	exit(1); // yes, this is the end
       } else {
-
 	block_sync_move->setValueBool(true) ;
 	logStream (MESSAGE_ERROR) << "APGTO::tel_check_declination_axis sign of declination and optical axis is wrong (HA=" << HA_str<<", East), severe error, sync manually, blocking any sync and moves" << sendLog;
       }
@@ -1882,33 +1883,49 @@ APGTO::commandAuthorized (Rts2Conn *conn)
   }
   return Telescope::commandAuthorized (conn);
 }
-
+#define ERROR_IN_INFO 1
 int
 APGTO::info ()
 {
   int ret ;
   int flip= -1 ;
+  int error= -1 ;
 
-  if (tel_read_ra () || tel_read_dec ())
-    return -1;
-  if(( ret= tel_read_local_time()) != 0)
-    return -1 ;
-  if(( ret= tel_read_sidereal_time()) != 0)
-    return -1 ;
-  if(( ret= tel_read_declination_axis()) != 0)
-    return -1 ;
+  if (tel_read_ra () || tel_read_dec ()) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve ra, dec  " << sendLog;
+  }
+
+  if(( ret= tel_read_local_time()) != 0) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve localtime  " << sendLog;
+  }
+  if(( ret= tel_read_sidereal_time()) != 0) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve sidereal time  " << sendLog;
+  }
+  if(( ret= tel_read_declination_axis()) != 0) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve position of declination axis  " << sendLog;
+  }
+
   if( !( strcmp( "West", DECaxis_HAcoordinate->getValue()))) {
     flip = 1 ;
   } else if( !( strcmp( "East", DECaxis_HAcoordinate->getValue()))) {
     flip= 0 ;
   } else {
+    error = ERROR_IN_INFO ;
     logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve angle (declination axis, hour axis), exiting  " << sendLog;
-    exit(1) ;
   }
+  
   telFlip->setValueInteger (flip);
-  if (tel_read_azimuth () || tel_read_altitude ())
-    return -1;
-
+  if (tel_read_azimuth () || tel_read_altitude ()) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve  azimuth altitude " << sendLog;
+  }
+  if( error== ERROR_IN_INFO) {
+    return -1 ;
+  }
   // while the telecope is tracking Astro-Phycis controller does not
   // carry out any checks, meaning that it turns for ever
   // 
@@ -2048,11 +2065,11 @@ APGTO::info ()
     ln_date_to_zonedate(&utm, &ltm, 3600); // Adds "only" offset to JD and converts back (see DST below)
 
     if(( ret= setAPLocalTime(ltm.hours, ltm.minutes, (int) ltm.seconds) < 0)) {
-      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local time failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::info setting local time failed" << sendLog;
       return -1;
     }
     if (( ret= setCalenderDate(ltm.days, ltm.months, ltm.years) < 0) ) {
-      logStream (MESSAGE_ERROR) << "APGTO::setBasicData setting local date failed" << sendLog;
+      logStream (MESSAGE_ERROR) << "APGTO::info setting local date failed" << sendLog;
       return -1;
     }
     sprintf( date_time, "%4d-%02d-%02dT%02d:%02d:%02d", ltm.years, ltm.months, ltm.days, ltm.hours, ltm.minutes, (int) ltm.seconds) ;
@@ -2108,6 +2125,35 @@ APGTO::idle ()
 
   return Telescope::idle() ;
 }
+double
+APGTO::siderealTime() {
+  double JD  = ln_get_julian_from_sys ();
+  double lng = telLongitude->getValueDouble ();
+  return fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
+ }
+int
+APGTO::checkSiderealTime() 
+{
+  int ret ;
+  int error= -1 ;
+  // Check if the sidereal time read from the mount is correct 
+  double local_sidereal_time= siderealTime() ;
+
+  if(( ret= tel_read_sidereal_time()) != 0) {
+    error = ERROR_IN_INFO ;
+    logStream (MESSAGE_ERROR) << "APGTO::info could not retrieve sidereal time  " << sendLog;
+  }
+  logStream (MESSAGE_DEBUG) << "APGTO::checkSiderealTime  local sidereal time, calculated time " 
+			    << local_sidereal_time << " mount: "
+			    << APlocal_sidereal_time->getValueDouble() 
+			    << " difference ----------" << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
+	
+  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./8. ) { // 30 time seconds
+    logStream (MESSAGE_INFO) << "APGTO::checkSiderealTime AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << sendLog;
+    return -1 ;
+  } 
+  return 0 ;
+}
 int 
 APGTO::setBasicData()
 {
@@ -2115,6 +2161,16 @@ APGTO::setBasicData()
   struct ln_date utm;
   struct ln_zonedate ltm;
 
+
+  if(! ( strcmp(initialization, "warm"))) {
+    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing an option specified warm start" << sendLog;
+    return 0;
+  }
+  // if the sidereal time read from the mount is correct then consider it as a warm start 
+  if( (ret= checkSiderealTime()) == 0 ) {
+    logStream (MESSAGE_DEBUG) << "APGTO::setBasicData performing warm start due to correct sidereal time" << sendLog;
+    return 0 ;
+  }
   if(setAPClearBuffer() < 0) {
     logStream (MESSAGE_ERROR) << "APGTO::setBasicData clearing the buffer failed" << sendLog;
     return -1;
@@ -2316,21 +2372,18 @@ APGTO::initValues ()
     return -1 ;
   if(( ret= tel_read_sidereal_time()) != 0)
     return -1 ;
+  if (tel_read_ra () || tel_read_dec ())
+    return -1;
 
   // Check if the sidereal time read from the mount is correct 
-  double JD  = ln_get_julian_from_sys ();
-  double lng = telLongitude->getValueDouble ();
-  double local_sidereal_time= fmod((ln_get_mean_sidereal_time( JD) * 15. + lng + 360.), 360.);  // longitude positive to the East
-  
-  logStream (MESSAGE_DEBUG) << "APGTO::initValues  local sidereal time, calculated time " 
-			    << local_sidereal_time << " mount: "
-			    << APlocal_sidereal_time->getValueDouble() 
-			    << " difference " << local_sidereal_time- APlocal_sidereal_time->getValueDouble()<<sendLog;
-	
-  if( fabs(local_sidereal_time- APlocal_sidereal_time->getValueDouble()) > 1./8. ) { // 30 time seconds
-    logStream (MESSAGE_INFO) << "APGTO::initValues AP sidereal time off by " << local_sidereal_time- APlocal_sidereal_time->getValueDouble() << ", exiting" << sendLog;
+  if( (ret= checkSiderealTime()) != 0 ) {
     exit (1) ; // do not go beyond, at least for the moment
-  } 
+  }
+  logStream (MESSAGE_DEBUG) << "APGTO::initValues ra "
+                            << getTelRa() << " dec " 
+                            << getTelDec ()
+                            << sendLog;
+
 
   if(( ret= tel_read_declination_axis()) != 0)
     return -1 ;
@@ -2365,7 +2418,7 @@ APGTO::initValues ()
     object.ra = fmod((getTelRa() + 360.), 360.);
     object.dec= fmod(getTelDec(), 90.) ;
 
-    park_position.ra = fmod(( PARK_POSITION_RA + local_sidereal_time) + 360., 360.);
+    park_position.ra = fmod(( PARK_POSITION_RA + siderealTime()) + 360., 360.);
     park_position.dec= PARK_POSITION_DEC  ;
 
     double diff_ra = fabs(fmod(( park_position.ra - object.ra) + 360., 360.));
