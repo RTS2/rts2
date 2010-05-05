@@ -25,6 +25,8 @@
 
 #define OPT_IDLE_SELECT         OPT_LOCAL + 5
 
+#define EVENT_SELECT_NEXT       RTS2_LOCAL_EVENT + 5077
+
 class Rts2DevClientTelescopeSel:public rts2core::Rts2DevClientTelescope
 {
 	protected:
@@ -68,7 +70,6 @@ class SelectorDev:public Rts2DeviceDb
 	public:
 		SelectorDev (int argc, char **argv);
 		virtual ~ SelectorDev (void);
-		virtual int idle ();
 
 		virtual rts2core::Rts2DevClient *createOtherType (Rts2Conn * conn, int other_device_type);
 		virtual void postEvent (Rts2Event * event);
@@ -86,11 +87,11 @@ class SelectorDev:public Rts2DeviceDb
 	private:
 		rts2plan::Selector * sel;
 
-		time_t last_selected;
-
-		int next_id;
+		Rts2ValueInteger *next_id;
 
 		Rts2ValueInteger *idle_select;
+		Rts2ValueInteger *night_idle_select;
+
 		Rts2ValueBool *selEnabled;
 
 		Rts2ValueDouble *flatSunMin;
@@ -102,11 +103,15 @@ class SelectorDev:public Rts2DeviceDb
 SelectorDev::SelectorDev (int argc, char **argv):Rts2DeviceDb (argc, argv, DEVICE_TYPE_SELECTOR, "SEL")
 {
 	sel = NULL;
-	next_id = -1;
-	time (&last_selected);
 
-	createValue (idle_select, "idle_select", "time in seconds in which at least one selection will be performed", false, RTS2_VALUE_WRITABLE);
+	createValue (next_id, "next_id", "ID of next target for selection", false);
+	next_id->setValueInteger (-1);
+
+	createValue (idle_select, "idle_select", "interval in seconds in which for selection of next target", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
 	idle_select->setValueInteger (300);
+
+	createValue (night_idle_select, "night_idle_select", "interval in seconds for selection of next target during night", false, RTS2_VALUE_WRITABLE | RTS2_DT_INTERVAL);
+	night_idle_select->setValueInteger (300);
 
 	createValue (selEnabled, "selector_enabled", "if selector should select next targets", false, RTS2_VALUE_WRITABLE);
 	selEnabled->setValueBool (true);
@@ -126,12 +131,11 @@ SelectorDev::~SelectorDev (void)
 
 int SelectorDev::processOption (int in_opt)
 {
-	int t_idle;
 	switch (in_opt)
 	{
 		case OPT_IDLE_SELECT:
-			t_idle = atoi (optarg);
-			idle_select->setValueInteger (t_idle);
+			idle_select->setValueCharArr (optarg);
+			night_idle_select->setValueCharArr (optarg);
 			break;
 		default:
 			return Rts2DeviceDb::processOption (in_opt);
@@ -161,19 +165,10 @@ int SelectorDev::reloadConfig ()
 
 	nightDisabledTypes->setValueCharArr (sel->getNightDisabledTypes ().c_str ());
 
-	return 0;
-}
+	deleteTimers (EVENT_SELECT_NEXT);
+	addTimer (idle_select->getValueInteger (), new Rts2Event (EVENT_SELECT_NEXT));
 
-int SelectorDev::idle ()
-{
-	time_t now;
-	time (&now);
-	if (now > last_selected + idle_select->getValueInteger ())
-	{
-		updateNext ();
-		time (&last_selected);
-	}
-	return Rts2DeviceDb::idle ();
+	return 0;
 }
 
 rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int other_device_type)
@@ -186,8 +181,8 @@ rts2core::Rts2DevClient *SelectorDev::createOtherType (Rts2Conn * conn, int othe
 		case DEVICE_TYPE_EXECUTOR:
 			ret = Rts2DeviceDb::createOtherType (conn, other_device_type);
 			updateNext ();
-			if (next_id > 0 && selEnabled->getValueBool ())
-				conn->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
+			if (next_id->getValueInteger () > 0 && selEnabled->getValueBool ())
+				conn->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
 			return ret;
 		default:
 			return Rts2DeviceDb::createOtherType (conn, other_device_type);
@@ -201,6 +196,10 @@ void SelectorDev::postEvent (Rts2Event * event)
 		case EVENT_IMAGE_OK:
 			updateNext ();
 			break;
+		case EVENT_SELECT_NEXT:
+			updateNext ();
+			addTimer (idle_select->getValueInteger (), event);
+			return;
 	}
 	Rts2DeviceDb::postEvent (event);
 }
@@ -213,13 +212,13 @@ int SelectorDev::selectNext ()
 int SelectorDev::updateNext ()
 {
 	Rts2Conn *exec;
-	next_id = selectNext ();
-	if (next_id > 0)
+	next_id->setValueInteger (selectNext ());
+	if (next_id->getValueInteger () > 0)
 	{
 		exec = getOpenConnection ("EXEC");
 		if (exec && selEnabled->getValueBool ())
 		{
-			exec->queCommand (new rts2core::Rts2CommandExecNext (this, next_id));
+			exec->queCommand (new rts2core::Rts2CommandExecNext (this, next_id->getValueInteger ()));
 		}
 		return 0;
 	}
@@ -251,11 +250,20 @@ int SelectorDev::changeMasterState (int new_master_state)
 {
 	switch (new_master_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
+		case SERVERD_DAWN:
+		case SERVERD_DUSK:
+			// low latency select to catch right moment for flats
+			idle_select->setValueInteger (30);
+			sendValueAll (idle_select);
 		case SERVERD_MORNING:
 		case SERVERD_MORNING | SERVERD_STANDBY:
 		case SERVERD_SOFT_OFF:
 		case SERVERD_HARD_OFF:
 			selEnabled->setValueBool (true);
+			break;
+		case SERVERD_NIGHT:
+			idle_select->setValueInteger (night_idle_select->getValueInteger ());
+			sendValueAll (idle_select);
 			break;
 	}
 	updateNext ();
