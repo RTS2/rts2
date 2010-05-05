@@ -451,9 +451,13 @@ int Executor::changeMasterState (int new_state)
 
 	switch (new_state & (SERVERD_STATUS_MASK | SERVERD_STANDBY_MASK))
 	{
+		case SERVERD_NIGHT:
+		case SERVERD_MORNING:
+			// switch target if current is flats..
+			if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nextTargets.size () != 0)
+				queueTarget (nextTargets.front ()->getTargetID ());
 		case SERVERD_EVENING:
 		case SERVERD_DAWN:
-		case SERVERD_NIGHT:
 		case SERVERD_DUSK:
 			// unblock stop state
 			if ((getState () & EXEC_MASK_END) == EXEC_END)
@@ -507,7 +511,12 @@ int Executor::queueTarget (int tarId)
 		delete nt;
 		return 0;
 	}
-	if (currentTarget && (currentTarget->getTargetType () == TYPE_FLAT || currentTarget->getTargetType () == TYPE_DARK) && nt->getTargetType () != currentTarget->getTargetType ())
+	if (currentTarget && currentTarget->getTargetType () == TYPE_FLAT && nt->getTargetType () != currentTarget->getTargetType ()
+		 && (getMasterState () == SERVERD_NIGHT || getMasterState () == SERVERD_MORNING))
+	{
+		return setNow (nt);
+	}
+	if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != currentTarget->getTargetType ())
 	{
 		return setNow (nt);
 	}
