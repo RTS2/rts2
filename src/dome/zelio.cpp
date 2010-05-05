@@ -382,7 +382,7 @@ int Zelio::startClose ()
 	 	return -1;
 	}
 	// 20 minutes timeout..
-	setWeatherTimeout (1200, "closed, timeout for opening (motor speed)");
+	setWeatherTimeout (1200, "closed, timeout for opening (to allow dissipate motor heat)");
 	return 0;
 }
 
