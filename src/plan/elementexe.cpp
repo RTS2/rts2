@@ -79,6 +79,7 @@ void ConnExecute::processLine ()
 		if (iter != images.end ())
 		{
 			(*iter)->toDark ();
+			writeToProcess ((*iter)->getAbsoluteFileName ());
 			((Rts2DevClientCameraExec *) masterElement->getClient ())->queImage (*iter);
 			images.erase (iter);
 		}
