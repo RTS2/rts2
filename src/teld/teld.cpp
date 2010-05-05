@@ -1066,8 +1066,11 @@ int Telescope::startPark (Rts2Conn * conn)
 	}
 	else
 	{
+		tarRaDec->setValueRaDec (rts2_nan("f"), rts2_nan("f"));
 		tarRaDec->resetValueChanged ();
+		telTargetRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
 		telTargetRaDec->resetValueChanged ();
+		oriRaDec->setValueRaDec (rts2_nan("f"),rts2_nan("f"));
 		oriRaDec->resetValueChanged ();
 		offsRaDec->resetValueChanged ();
 		corrRaDec->resetValueChanged ();
