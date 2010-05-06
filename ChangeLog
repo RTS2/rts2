@@ -1,3 +1,6 @@
+2010-05-06
+ * Change in B (BOP) message (central server comm) - adds server state
+
 2010-03-21
  * Big Brother support (configuration entry in events.xsd, support in xmlrpcd)
 
