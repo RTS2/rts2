@@ -169,6 +169,8 @@ class XmlRpcd:public Rts2Device
 		std::string page_prefix;
 
 		void sendBB ();
+
+		Rts2ValueInteger *bbCadency;
 };
 
 };

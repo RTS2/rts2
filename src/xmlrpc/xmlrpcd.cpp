@@ -227,7 +227,7 @@ int XmlRpcd::init ()
 	setMessageMask (MESSAGE_MASK_ALL);
 
 	if (events.bbServers.size () != 0)
-		addTimer (5, new Rts2Event (EVENT_XMLRPC_BB));
+		addTimer (30, new Rts2Event (EVENT_XMLRPC_BB));
 
 #ifndef HAVE_PGSQL
 	ret = Rts2Config::instance ()->loadFile (config_file);
@@ -285,6 +285,9 @@ XmlRpcd::XmlRpcd (int argc, char **argv): Rts2Device (argc, argv, DEVICE_TYPE_XM
 
 	createValue (send_emails, "send_email", "if XML-RPC is allowed to send emails", false, RTS2_VALUE_WRITABLE);
 	send_emails->setValueBool (true);
+
+	createValue (bbCadency, "bb_cadency", "cadency (in seconds) of upstream BB messages", false, RTS2_VALUE_WRITABLE);
+	bbCadency->setValueInteger (60);
 
 #ifndef HAVE_PGSQL
 	config_file = NULL;
@@ -393,7 +396,7 @@ void XmlRpcd::postEvent (Rts2Event *event)
 	{
 		case EVENT_XMLRPC_BB:
 			sendBB ();
-			addTimer (60, event);
+			addTimer (bbCadency->getValueInteger (), event);
 			return;
 	}
 #ifdef HAVE_PGSQL
