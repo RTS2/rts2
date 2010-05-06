@@ -1,6 +1,6 @@
 /* 
  * Dialog boxes for setting values.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,18 +31,12 @@ namespace rts2ncurses
 {
 
 /**
- * Holds edit box for value.
+ * Abstract class represening edit box for a value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBox
 {
-	private:
-		NWindow * topWindow;
-		Rts2Value * val;
-	protected:
-		Rts2Value * getValue ()
-		{
-			return val;
-		}
 	public:
 		ValueBox (NWindow * top, Rts2Value * _val);
 		virtual ~ValueBox (void);
@@ -50,10 +44,17 @@ class ValueBox
 		virtual void draw () = 0;
 		virtual void sendValue (Rts2Conn * connection) = 0;
 		virtual bool setCursor () = 0;
+	protected:
+		Rts2Value * getValue () { return val; }
+	private:
+		NWindow * topWindow;
+		Rts2Value * val;
 };
 
 /**
- * Holds edit box for boolean value.
+ * Edit box for boolean value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxBool:public ValueBox, NSelWindow
 {
@@ -66,7 +67,9 @@ class ValueBoxBool:public ValueBox, NSelWindow
 };
 
 /**
- * Holds edit box for string value.
+ * Edit box for string value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxString:public ValueBox, NWindowEdit
 {
@@ -79,7 +82,9 @@ class ValueBoxString:public ValueBox, NWindowEdit
 };
 
 /**
- * Holds edit box for integer value.
+ * Edit box for integer value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 {
@@ -92,7 +97,9 @@ class ValueBoxInteger:public ValueBox, NWindowEditIntegers
 };
 
 /**
- * Holds edit box for long integer value.
+ * Edit box for long integer value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 {
@@ -105,7 +112,9 @@ class ValueBoxLongInteger:public ValueBox, NWindowEditIntegers
 };
 
 /**
- * Holds edit box for float value.
+ * Edit box for float value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxFloat:public ValueBox, NWindowEditDigits
 {
@@ -119,7 +128,9 @@ class ValueBoxFloat:public ValueBox, NWindowEditDigits
 };
 
 /**
- * Holds edit box for double value.
+ * Edit box for double value.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxDouble:public ValueBox, NWindowEditDigits
 {
@@ -148,7 +159,7 @@ class AbstractBoxSelection:public ValueBox, public NSelWindow
 };
 
 /**
- * Holds edit box for selection value.
+ * Edit box for selection value.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
@@ -174,13 +185,12 @@ class ValueBoxTimeDiff:public AbstractBoxSelection
 };
 
 /**
- * Provides edit box for editting rectangle (4 numbers)
+ * Edit box for editting rectangle (4 numbers)
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxRectangle:public ValueBox, NWindowEdit
 {
-	private:
-		NWindowEditIntegers * edt[4];
-		int edtSelected;
 	public:
 		ValueBoxRectangle (NWindow * top, Rts2ValueRectangle * _val, int _x, int _y);
 		virtual ~ValueBoxRectangle ();
@@ -188,18 +198,18 @@ class ValueBoxRectangle:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 		virtual bool setCursor ();
+	private:
+		NWindowEditIntegers * edt[4];
+		int edtSelected;
 };
 
 /**
- * Provides edit box for editting  RA DeC
+ * Edit box for editting  RA Dec.
  *
  * @author Petr Kubanek <petr@kubanek.net>
  */
 class ValueBoxRaDec:public ValueBox, NWindowEdit
 {
-	private:
-		NWindowEditDigits * edt[2];
-		int edtSelected;
 	public:
 		ValueBoxRaDec (NWindow * top, Rts2ValueRaDec * _val, int _x, int _y);
 		virtual ~ValueBoxRaDec ();
@@ -207,6 +217,9 @@ class ValueBoxRaDec:public ValueBox, NWindowEdit
 		virtual void draw ();
 		virtual void sendValue (Rts2Conn * connection);
 		virtual bool setCursor ();
+	private:
+		NWindowEditDigits * edt[2];
+		int edtSelected;
 };
 
 }

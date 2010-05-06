@@ -1,6 +1,6 @@
 /* 
  * Dialog boxes for setting values.
- * Copyright (C) 2007 Petr Kubanek <petr@kubanek.net>
+ * Copyright (C) 2007,2010 Petr Kubanek <petr@kubanek.net>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,8 +59,16 @@ void ValueBoxBool::draw ()
 {
 	NSelWindow::draw ();
 	werase (getWriteWindow ());
-	mvwprintw (getWriteWindow (), 0, 1, "true");
-	mvwprintw (getWriteWindow (), 1, 1, "false");
+	if (getValue ()->getValueDisplayType () & RTS2_DT_ONOFF)
+	{
+		mvwprintw (getWriteWindow (), 0, 1, "on");
+		mvwprintw (getWriteWindow (), 1, 1, "off");
+	}
+	else
+	{
+		mvwprintw (getWriteWindow (), 0, 1, "true");
+		mvwprintw (getWriteWindow (), 1, 1, "false");
+	}
 	refresh ();
 }
 
