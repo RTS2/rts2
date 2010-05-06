@@ -807,8 +807,7 @@ void Rts2Device::sendStateInfo (Rts2Conn * conn)
 
 void Rts2Device::sendFullStateInfo (Rts2Conn * conn)
 {
-	sendStateInfo (conn);
-	sendBopMessage (fullBopState, conn);
+	sendBopMessage (getState (), fullBopState, conn);
 }
 
 int Rts2Device::init ()
@@ -921,7 +920,7 @@ void Rts2Device::setFullBopState (int new_state)
 		new_state = maskQueValueBopState (new_state, (*iter)->getStateCondition ());
 	}
 	// send new BOP state to all connected clients
-	sendBopMessage (new_state);
+	sendBopMessage (getState (), new_state);
 	if (deviceStatusCommand)
 	{
 		// we get what we waited for..

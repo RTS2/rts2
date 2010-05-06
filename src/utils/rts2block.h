@@ -243,7 +243,7 @@ class Rts2Block: public Rts2App
 		 *
 		 * @see PROTO_BOP_STATE
 		 */
-		void sendBopMessage (int bop_state);
+		void sendBopMessage (int state, int bop_state);
 
 		/**
 		 * Send BOP message to a single connection.
@@ -255,7 +255,7 @@ class Rts2Block: public Rts2App
 		 *
 		 * @see PROTO_BOP_STATE
 		 */
-		void sendBopMessage (int bop_state, Rts2Conn *conn);
+		void sendBopMessage (int state, int bop_state, Rts2Conn *conn);
 
 		/**
 		 * Send message to all connections.

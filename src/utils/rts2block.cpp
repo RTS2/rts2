@@ -231,9 +231,7 @@ Rts2Block::sendMessageAll (Rts2Message & msg)
 		(*iter)->sendMessage (msg);
 }
 
-
-void
-Rts2Block::sendStatusMessage (int state, const char * msg)
+void Rts2Block::sendStatusMessage (int state, const char * msg)
 {
 	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
@@ -242,33 +240,26 @@ Rts2Block::sendStatusMessage (int state, const char * msg)
 	sendAll (_os);
 }
 
-
-void
-Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
+void Rts2Block::sendStatusMessage (int state, Rts2Conn * conn)
 {
  	std::ostringstream _os;
 	_os << PROTO_STATUS << " " << state;
 	conn->sendMsg (_os);
 }
 
-
-void
-Rts2Block::sendBopMessage (int state)
+void Rts2Block::sendBopMessage (int state, int bopState)
 {
 	std::ostringstream _os;
-	_os << PROTO_BOP_STATE << " " << state;
+	_os << PROTO_BOP_STATE << " " << state << " " << bopState;
 	sendAll (_os);
 }
 
-
-void
-Rts2Block::sendBopMessage (int state, Rts2Conn * conn)
+void Rts2Block::sendBopMessage (int state, int bopState, Rts2Conn * conn)
 {
 	std::ostringstream _os;
-	_os << PROTO_BOP_STATE << " " << state;
+	_os << PROTO_BOP_STATE << " " << state << " " << bopState;
 	conn->sendMsg (_os);
 }
-
 
 int
 Rts2Block::idle ()

@@ -108,10 +108,7 @@ class Rts2Daemon:public Rts2Block
 		 *
 		 * @return Block state.
 		 */
-		int getState ()
-		{
-			return state;
-		}
+		int getState () { return state; }
 
 	protected:
 		/**

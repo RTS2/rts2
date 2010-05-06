@@ -141,8 +141,7 @@ void Rts2ConnCentrald::updateStatusWait (Rts2Conn * conn)
 			return;
 	}
 
-	master->sendStatusMessage (master->getState (), this);
-	master->sendBopMessage (master->getStateForConnection (this), this);
+	master->sendBopMessage (master->getState (), master->getStateForConnection (this), this);
 	sendCommandEnd (DEVDEM_OK, "OK");
 	statusCommandRunning--;
 }
@@ -838,13 +837,13 @@ void Rts2Centrald::bopMaskChanged ()
 {
 	int bopState = 0;
 	connections_t::iterator iter;
+	maskState (BOP_MASK, bopState, "changed BOP state");
 	for (iter = getConnections ()->begin (); iter != getConnections ()->end (); iter++)
 	{
 		bopState |= (*iter)->getBopState ();
 		if ((*iter)->getType () == DEVICE_SERVER)
-			sendBopMessage (getStateForConnection (*iter), *iter);
+			sendBopMessage (getState (), getStateForConnection (*iter), *iter);
 	}
-	maskState (BOP_MASK, bopState, "changed BOP state");
 	sendStatusMessage (getState ());
 }
 

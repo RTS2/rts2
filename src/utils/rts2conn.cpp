@@ -1138,10 +1138,12 @@ int Rts2Conn::status ()
 
 int Rts2Conn::bopStatus ()
 {
-	int value;
-	if (paramNextInteger (&value) || !paramEnd ())
+	int masterStatus;
+	int masterBopState;
+	if (paramNextInteger (&masterStatus) || paramNextInteger (&masterBopState) || !paramEnd ())
 		return -2;
-	setBopState (value);
+	setState (masterStatus, NULL);
+	setBopState (masterBopState);
 	return -1;
 }
 
