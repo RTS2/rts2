@@ -342,7 +342,7 @@ OpenTPL::OpenTPL (int in_argc, char **in_argv):Telescope (in_argc, in_argv, true
 
 	cover = NULL;
 
-	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE);
+	createValue (cabinetPower, "cabinet_power", "power of cabinet", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	createValue (cabinetPowerState, "cabinet_power_state", "power state of cabinet", false);
 
 	createValue (targetDist, "target_dist", "distance in degrees to target", false, RTS2_DT_DEG_DIST);
@@ -573,7 +573,7 @@ int OpenTPL::initValues ()
 	{
 		createValue (derotatorOffset, "DER_OFF", "derotator offset", true, RTS2_DT_ROTANG | RTS2_VALUE_WRITABLE, 0, true);
 		createValue (derotatorCurrpos, "DER_CUR", "derotator current position", true, RTS2_DT_DEGREES | RTS2_VALUE_WRITABLE);
-		createValue (derotatorPower, "derotatorPower", "derotator power setting", false, RTS2_VALUE_WRITABLE);
+		createValue (derotatorPower, "derotatorPower", "derotator power setting", false, RTS2_VALUE_WRITABLE | RTS2_DT_ONOFF);
 	}
 
 	// infoModel
