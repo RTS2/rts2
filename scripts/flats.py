@@ -302,7 +302,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		for i in range(0,self.flatNum):
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (self.usedFlats[i].signature()))
-				createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
+				self.createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
 
 		self.log('I','flat scripts finished, waiting for change of next target')
 		while (True):
