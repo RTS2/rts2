@@ -423,7 +423,7 @@ rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_dev
 
 void Camera::checkQueChanges (int fakeState)
 {
-	// do not check if we have qued exposures
+	// do not check if we have queud exposures
 	if (quedExpNumber->getValueInteger () > 0)
 		return;
 	Rts2ScriptDevice::checkQueChanges (fakeState);
