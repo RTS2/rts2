@@ -795,7 +795,7 @@ void Rts2Device::checkQueChanges (int fakeState)
 void Rts2Device::stateChanged (int new_state, int old_state, const char *description)
 {
 	Rts2Daemon::stateChanged (new_state, old_state, description);
-	// try to wake-up qued changes..
+	// try to wake-up queued changes..
 	checkQueChanges (new_state);
 	sendStatusMessage (getState (), description);
 }

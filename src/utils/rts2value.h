@@ -180,6 +180,7 @@
 #define RTS2_DT_BYTESIZE              0x00080000
 #define RTS2_DT_KMG                   0x00090000
 #define RTS2_DT_INTERVAL              0x000a0000
+#define RTS2_DT_ONOFF                 0x000b0000
 
 /**
  * Sets when value was modified and needs to be send during infoAll call.

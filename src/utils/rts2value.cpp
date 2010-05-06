@@ -46,7 +46,6 @@ Rts2Value::Rts2Value (std::string _val_name)
 	rts2Type = 0;
 }
 
-
 Rts2Value::Rts2Value (std::string _val_name, std::string _description, bool writeToFits, int32_t flags)
 {
 	valueName = _val_name;
@@ -57,9 +56,7 @@ Rts2Value::Rts2Value (std::string _val_name, std::string _description, bool writ
 	setValueFlags (flags);
 }
 
-
-int
-Rts2Value::doOpValue (char op, Rts2Value * old_value)
+int Rts2Value::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -72,9 +69,7 @@ Rts2Value::doOpValue (char op, Rts2Value * old_value)
 	}
 }
 
-
-int
-Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
+int Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
 {
 	std::ostringstream _os;
 	_os
@@ -84,9 +79,7 @@ Rts2Value::sendTypeMetaInfo (Rts2Conn * connection)
 	return connection->sendMsg (_os.str ());
 }
 
-
-int
-Rts2Value::sendMetaInfo (Rts2Conn * connection)
+int Rts2Value::sendMetaInfo (Rts2Conn * connection)
 {
 	int ret;
 	ret = sendTypeMetaInfo (connection);
@@ -97,23 +90,17 @@ Rts2Value::sendMetaInfo (Rts2Conn * connection)
 	return 0;
 }
 
-
-void
-Rts2Value::send (Rts2Conn * connection)
+void Rts2Value::send (Rts2Conn * connection)
 {
 	connection->sendValueRaw (getName (), getValue ());
 }
 
-
-Rts2ValueString::Rts2ValueString (std::string in_val_name):
-Rts2Value (in_val_name)
+Rts2ValueString::Rts2ValueString (std::string in_val_name): Rts2Value (in_val_name)
 {
 	rts2Type |= RTS2_VALUE_STRING;
 }
 
-
-Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueString::Rts2ValueString (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	rts2Type |= RTS2_VALUE_STRING;
 }
@@ -132,9 +119,7 @@ int Rts2ValueString::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueString::setValueCharArr (const char *_value)
+int Rts2ValueString::setValueCharArr (const char *_value)
 {
 	if (_value == NULL)
 	{
@@ -147,9 +132,7 @@ Rts2ValueString::setValueCharArr (const char *_value)
 	return 0;
 }
 
-
-int
-Rts2ValueString::setValueInteger (int in_value)
+int Rts2ValueString::setValueInteger (int in_value)
 {
 	std::ostringstream _os;
 	_os << in_value;
@@ -158,56 +141,42 @@ Rts2ValueString::setValueInteger (int in_value)
 	return 0;
 }
 
-
-void
-Rts2ValueString::send (Rts2Conn * connection)
+void Rts2ValueString::send (Rts2Conn * connection)
 {
 	connection->sendValue (getName (), getValue ());
 }
 
-
-void
-Rts2ValueString::setFromValue (Rts2Value * newValue)
+void Rts2ValueString::setFromValue (Rts2Value * newValue)
 {
 	setValueCharArr (newValue->getValue ());
 }
 
-
-bool
-Rts2ValueString::isEqual (Rts2Value *other_value)
+bool Rts2ValueString::isEqual (Rts2Value *other_value)
 {
 	if (getValue () == NULL || other_value->getValue () == NULL)
 		return getValue () == other_value->getValue ();
 	return strcmp (getValue (), other_value->getValue ()) == 0;
 }
 
-
-Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name):
-Rts2Value (in_val_name)
+Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name): Rts2Value (in_val_name)
 {
 	value = 0;
 	rts2Type |= RTS2_VALUE_INTEGER;
 }
 
-
-Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueInteger::Rts2ValueInteger (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	value = 0;
 	rts2Type |= RTS2_VALUE_INTEGER;
 }
 
-
-const char *
-Rts2ValueInteger::getValue ()
+const char * Rts2ValueInteger::getValue ()
 {
 	sprintf (buf, "%i", value);
 	return buf;
 }
 
-
-int
-Rts2ValueInteger::setValue (Rts2Conn * connection)
+int Rts2ValueInteger::setValue (Rts2Conn * connection)
 {
 	int new_value;
 	if (connection->paramNextInteger (&new_value) || !connection->paramEnd ())
@@ -218,16 +187,12 @@ Rts2ValueInteger::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueInteger::setValueCharArr (const char *in_value)
+int Rts2ValueInteger::setValueCharArr (const char *in_value)
 {
 	return setValueInteger (atoi (in_value));
 }
 
-
-int
-Rts2ValueInteger::doOpValue (char op, Rts2Value * old_value)
+int Rts2ValueInteger::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -243,47 +208,35 @@ Rts2ValueInteger::doOpValue (char op, Rts2Value * old_value)
 	return Rts2Value::doOpValue (op, old_value);
 }
 
-
-void
-Rts2ValueInteger::setFromValue (Rts2Value * newValue)
+void Rts2ValueInteger::setFromValue (Rts2Value * newValue)
 {
 	setValueInteger (newValue->getValueInteger ());
 }
 
-
-bool
-Rts2ValueInteger::isEqual (Rts2Value * other_value)
+bool Rts2ValueInteger::isEqual (Rts2Value * other_value)
 {
 	return getValueInteger () == other_value->getValueInteger ();
 }
 
-
-Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value
-(in_val_name)
+Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name):Rts2Value (in_val_name)
 {
 	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
-
-Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueDouble::Rts2ValueDouble (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_DOUBLE;
 }
 
-
-const char *
-Rts2ValueDouble::getValue ()
+const char * Rts2ValueDouble::getValue ()
 {
 	sprintf (buf, "%.20le", value);
 	return buf;
 }
 
-
-const char *
-Rts2ValueDouble::getDisplayValue ()
+const char * Rts2ValueDouble::getDisplayValue ()
 {
 	double absv = fabs (value);
 	if ((absv > 10e-3 && absv < 10e+8) || absv == 0)
@@ -293,9 +246,7 @@ Rts2ValueDouble::getDisplayValue ()
 	return buf;
 }
 
-
-int
-Rts2ValueDouble::setValue (Rts2Conn * connection)
+int Rts2ValueDouble::setValue (Rts2Conn * connection)
 {
 	double new_value;
 	if (connection->paramNextDouble (&new_value) || !connection->paramEnd ())
@@ -306,25 +257,19 @@ Rts2ValueDouble::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueDouble::setValueCharArr (const char *in_value)
+int Rts2ValueDouble::setValueCharArr (const char *in_value)
 {
 	setValueDouble (atof (in_value));
 	return 0;
 }
 
-
-int
-Rts2ValueDouble::setValueInteger (int in_value)
+int Rts2ValueDouble::setValueInteger (int in_value)
 {
 	setValueDouble (in_value);
 	return 0;
 }
 
-
-int
-Rts2ValueDouble::doOpValue (char op, Rts2Value * old_value)
+int Rts2ValueDouble::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -340,37 +285,27 @@ Rts2ValueDouble::doOpValue (char op, Rts2Value * old_value)
 	return 0;
 }
 
-
-void
-Rts2ValueDouble::setFromValue (Rts2Value * newValue)
+void Rts2ValueDouble::setFromValue (Rts2Value * newValue)
 {
 	setValueDouble (newValue->getValueDouble ());
 }
 
-
-bool
-Rts2ValueDouble::isEqual (Rts2Value *other_value)
+bool Rts2ValueDouble::isEqual (Rts2Value *other_value)
 {
 	return getValueDouble () == other_value->getValueDouble ();
 }
 
-
-Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble
-(in_val_name)
+Rts2ValueTime::Rts2ValueTime (std::string in_val_name):Rts2ValueDouble (in_val_name)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-
-Rts2ValueTime::Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
+Rts2ValueTime::Rts2ValueTime (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2ValueDouble (in_val_name, in_description, writeToFits, flags)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_TIME;
 }
 
-
-const char *
-Rts2ValueTime::getDisplayValue ()
+const char * Rts2ValueTime::getDisplayValue ()
 {
 	struct timeval infot;
 	gettimeofday (&infot, NULL);
@@ -383,59 +318,45 @@ Rts2ValueTime::getDisplayValue ()
 	return buf;
 }
 
-
-void
-Rts2ValueTime::setNow ()
+void Rts2ValueTime::setNow ()
 {
 	struct timeval t_val;
 	gettimeofday (&t_val, NULL);
 	setValueDouble (t_val.tv_sec + ((double) t_val.tv_usec) / USEC_SEC);
 }
 
-
-void
-Rts2ValueTime::getStructTm (struct tm *tm_s, long *usec)
+void Rts2ValueTime::getStructTm (struct tm *tm_s, long *usec)
 {
 	time_t t_val = (time_t) getValueLong ();
 	gmtime_r (&t_val, tm_s);
 	*usec = (long) ((getValueDouble () - getValueLong ()) * USEC_SEC);
 }
 
-
-void
-Rts2ValueTime::getValueTime (struct timeval &tv)
+void Rts2ValueTime::getValueTime (struct timeval &tv)
 {
 	tv.tv_sec = (time_t) (floor (getValueDouble ()));
 	tv.tv_usec = (long) ((getValueDouble () - tv.tv_sec) * USEC_SEC);
 }
 
-
-Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name):
-Rts2Value (in_val_name)
+Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name): Rts2Value (in_val_name)
 {
 	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
-
-Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueFloat::Rts2ValueFloat (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	value = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_FLOAT;
 }
 
-
-const char *
-Rts2ValueFloat::getValue ()
+const char * Rts2ValueFloat::getValue ()
 {
 	sprintf (buf, "%.20e", value);
 	return buf;
 }
 
-
-const char *
-Rts2ValueFloat::getDisplayValue ()
+const char * Rts2ValueFloat::getDisplayValue ()
 {
 	double absv = fabs (value);
 	if ((absv > 10e-3 && absv < 10e+5) || absv == 0)
@@ -445,9 +366,7 @@ Rts2ValueFloat::getDisplayValue ()
 	return buf;
 }
 
-
-int
-Rts2ValueFloat::setValue (Rts2Conn * connection)
+int Rts2ValueFloat::setValue (Rts2Conn * connection)
 {
 	float new_value;
 	if (connection->paramNextFloat (&new_value) || !connection->paramEnd ())
@@ -458,25 +377,19 @@ Rts2ValueFloat::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueFloat::setValueCharArr (const char *in_value)
+int Rts2ValueFloat::setValueCharArr (const char *in_value)
 {
 	setValueDouble (atof (in_value));
 	return 0;
 }
 
-
-int
-Rts2ValueFloat::setValueInteger (int in_value)
+int Rts2ValueFloat::setValueInteger (int in_value)
 {
 	setValueDouble (in_value);
 	return 0;
 }
 
-
-int
-Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
+int Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -492,40 +405,29 @@ Rts2ValueFloat::doOpValue (char op, Rts2Value * old_value)
 	return 0;
 }
 
-
-void
-Rts2ValueFloat::setFromValue (Rts2Value * newValue)
+void Rts2ValueFloat::setFromValue (Rts2Value * newValue)
 {
 	setValueFloat (newValue->getValueFloat ());
 }
 
-
-bool
-Rts2ValueFloat::isEqual (Rts2Value * other_value)
+bool Rts2ValueFloat::isEqual (Rts2Value * other_value)
 {
 	return getValueFloat () == other_value->getValueFloat ();
 }
 
-
-Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger
-(in_val_name)
+Rts2ValueBool::Rts2ValueBool (std::string in_val_name):Rts2ValueInteger (in_val_name)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 	setValueInteger (2);
 }
 
-
-Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description,
-writeToFits,
-flags)
+Rts2ValueBool::Rts2ValueBool (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description, writeToFits, flags)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_BOOL;
 	setValueInteger (2);
 }
 
-
-int
-Rts2ValueBool::setValue (Rts2Conn * connection)
+int Rts2ValueBool::setValue (Rts2Conn * connection)
 {
 	char *new_value;
 	int ret;
@@ -537,9 +439,7 @@ Rts2ValueBool::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueBool::setValueCharArr (const char *in_value)
+int Rts2ValueBool::setValueCharArr (const char *in_value)
 {
 	if (!strcasecmp (in_value, "ON") || !strcasecmp (in_value, "TRUE")
 		|| !strcasecmp (in_value, "YES") || !strcmp (in_value, "1"))
@@ -552,37 +452,29 @@ Rts2ValueBool::setValueCharArr (const char *in_value)
 	return 0;
 }
 
-
-const char *
-Rts2ValueBool::getDisplayValue ()
+const char * Rts2ValueBool::getDisplayValue ()
 {
+	if (getValueDisplayType () & RTS2_DT_ONOFF)
+		return getValueBool ()? "on" : "off";
 	return getValueBool ()? "true" : "false";
 }
 
-
-Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueInteger
-(in_val_name)
+Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name):Rts2ValueInteger (in_val_name)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
 }
 
-
-Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description,
-writeToFits,
-flags)
+Rts2ValueSelection::Rts2ValueSelection (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2ValueInteger (in_val_name, in_description, writeToFits, flags)
 {
 	rts2Type = (~RTS2_VALUE_MASK & rts2Type) | RTS2_VALUE_SELECTION;
 }
-
 
 Rts2ValueSelection::~Rts2ValueSelection ()
 {
 	values.clear ();
 }
 
-
-void
-Rts2ValueSelection::deleteValues ()
+void Rts2ValueSelection::deleteValues ()
 {
 	for (std::vector <SelVal>::iterator iter=selBegin (); iter!= selEnd (); iter++)
 	{
@@ -591,9 +483,7 @@ Rts2ValueSelection::deleteValues ()
 	values.clear ();
 }
 
-
-int
-Rts2ValueSelection::setValue (Rts2Conn * connection)
+int Rts2ValueSelection::setValue (Rts2Conn * connection)
 {
 	char *new_value;
 	if (connection->paramNextString (&new_value) || !connection->paramEnd ())
@@ -606,9 +496,7 @@ Rts2ValueSelection::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueSelection::setValueCharArr (const char *in_value)
+int Rts2ValueSelection::setValueCharArr (const char *in_value)
 {
 	char *end;
 	int ret = strtol (in_value, &end, 10);
@@ -622,9 +510,7 @@ Rts2ValueSelection::setValueCharArr (const char *in_value)
 	return setValueInteger (ret);
 }
 
-
-int
-Rts2ValueSelection::doOpValue (char op, Rts2Value * old_value)
+int Rts2ValueSelection::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -640,9 +526,7 @@ Rts2ValueSelection::doOpValue (char op, Rts2Value * old_value)
 	return Rts2ValueInteger::doOpValue (op, old_value);
 }
 
-
-int
-Rts2ValueSelection::getSelIndex (std::string in_val)
+int Rts2ValueSelection::getSelIndex (std::string in_val)
 {
 	int i = 0;
 	for (std::vector < SelVal >::iterator iter = selBegin (); iter != selEnd (); iter++, i++)
@@ -653,9 +537,7 @@ Rts2ValueSelection::getSelIndex (std::string in_val)
 	return -2;
 }
 
-
-void
-Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
+void Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
 {
 	for (std::vector < SelVal >::iterator iter = sel->selBegin (); iter != sel->selEnd (); iter++)
 	{
@@ -663,9 +545,7 @@ Rts2ValueSelection::copySel (Rts2ValueSelection * sel)
 	}
 }
 
-
-void
-Rts2ValueSelection::addSelVals (const char **vals)
+void Rts2ValueSelection::addSelVals (const char **vals)
 {
 	while (*vals != NULL)
 	{
@@ -674,9 +554,7 @@ Rts2ValueSelection::addSelVals (const char **vals)
 	}
 }
 
-
-int
-Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
+int Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 {
 	int ret;
 	ret = Rts2ValueInteger::sendTypeMetaInfo (connection);
@@ -695,9 +573,7 @@ Rts2ValueSelection::sendTypeMetaInfo (Rts2Conn * connection)
 	return connection->sendMsg (_os.str ());
 }
 
-
-void
-Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
+void Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
 {
 	deleteValues ();
 	for (std::vector < SelVal >::iterator iter = otherValue->selBegin (); iter != otherValue->selEnd (); iter++)
@@ -706,33 +582,26 @@ Rts2ValueSelection::duplicateSelVals (Rts2ValueSelection * otherValue)
 	}
 }
 
-
-Rts2ValueLong::Rts2ValueLong (std::string in_val_name):
-Rts2Value (in_val_name)
+Rts2ValueLong::Rts2ValueLong (std::string in_val_name): Rts2Value (in_val_name)
 {
 	value = 0;
 	rts2Type |= RTS2_VALUE_LONGINT;
 }
 
 
-Rts2ValueLong::Rts2ValueLong (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):
-Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueLong::Rts2ValueLong (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags): Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	value = 0;
 	rts2Type |= RTS2_VALUE_LONGINT;
 }
 
-
-const char *
-Rts2ValueLong::getValue ()
+const char * Rts2ValueLong::getValue ()
 {
 	sprintf (buf, "%li", value);
 	return buf;
 }
 
-
-int
-Rts2ValueLong::setValue (Rts2Conn * connection)
+int Rts2ValueLong::setValue (Rts2Conn * connection)
 {
 	long int new_value;
 	if (connection->paramNextLong (&new_value) || !connection->paramEnd ())
@@ -743,23 +612,17 @@ Rts2ValueLong::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueLong::setValueCharArr (const char *in_value)
+int Rts2ValueLong::setValueCharArr (const char *in_value)
 {
 	return setValueLong (atol (in_value));
 }
 
-
-int
-Rts2ValueLong::setValueInteger (int in_value)
+int Rts2ValueLong::setValueInteger (int in_value)
 {
 	return setValueLong (in_value);
 }
 
-
-int
-Rts2ValueLong::doOpValue (char op, Rts2Value * old_value)
+int Rts2ValueLong::doOpValue (char op, Rts2Value * old_value)
 {
 	switch (op)
 	{
@@ -773,42 +636,31 @@ Rts2ValueLong::doOpValue (char op, Rts2Value * old_value)
 	return Rts2Value::doOpValue (op, old_value);
 }
 
-
-void
-Rts2ValueLong::setFromValue (Rts2Value * newValue)
+void Rts2ValueLong::setFromValue (Rts2Value * newValue)
 {
 	setValueLong (newValue->getValueLong ());
 }
 
-
-bool
-Rts2ValueLong::isEqual (Rts2Value * other_value)
+bool Rts2ValueLong::isEqual (Rts2Value * other_value)
 {
 	return getValueLong () == other_value->getValueLong ();
 }
 
-
-Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name)
-:Rts2Value (in_val_name)
+Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name):Rts2Value (in_val_name)
 {
 	ra = rts2_nan ("f");
 	decl = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
-
-Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_description,
-bool writeToFits, int32_t flags)
-:Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueRaDec::Rts2ValueRaDec (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	ra = rts2_nan ("f");
 	decl = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_RADEC;
 }
 
-
-int
-Rts2ValueRaDec::setValue (Rts2Conn * connection)
+int Rts2ValueRaDec::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&ra))
 		return -2;
@@ -823,9 +675,7 @@ Rts2ValueRaDec::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueRaDec::setValueCharArr (const char *in_value)
+int Rts2ValueRaDec::setValueCharArr (const char *in_value)
 {
 	double v_ra, v_dec;
 	if (parseRaDec (in_value, v_ra, v_dec))
@@ -834,9 +684,7 @@ Rts2ValueRaDec::setValueCharArr (const char *in_value)
 	return 0;
 }
 
-
-int
-Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
+int Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
 {
 	switch (old_value->getValueType ())
 	{
@@ -879,9 +727,7 @@ Rts2ValueRaDec::doOpValue (char op, Rts2Value *old_value)
 	}
 }
 
-
-const char *
-Rts2ValueRaDec::getValue ()
+const char * Rts2ValueRaDec::getValue ()
 {
 	std::ostringstream _os;
 	_os << getRa () << " " << getDec ();
@@ -891,9 +737,7 @@ Rts2ValueRaDec::getValue ()
 	return buf;
 }
 
-
-void
-Rts2ValueRaDec::setFromValue (Rts2Value * newValue)
+void Rts2ValueRaDec::setFromValue (Rts2Value * newValue)
 {
 	if (newValue->getValueType () == RTS2_VALUE_RADEC)
 	{
@@ -906,9 +750,7 @@ Rts2ValueRaDec::setFromValue (Rts2Value * newValue)
 	}
 }
 
-
-bool
-Rts2ValueRaDec::isEqual (Rts2Value *other_value)
+bool Rts2ValueRaDec::isEqual (Rts2Value *other_value)
 {
 	if (other_value->getValueType () == RTS2_VALUE_RADEC)
 	{
@@ -918,28 +760,21 @@ Rts2ValueRaDec::isEqual (Rts2Value *other_value)
 	return false;
 }
 
-
-Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name)
-:Rts2Value (in_val_name)
+Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name):Rts2Value (in_val_name)
 {
 	alt = rts2_nan ("f");
 	az = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 
-
-Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name, std::string in_description,
-bool writeToFits, int32_t flags)
-:Rts2Value (in_val_name, in_description, writeToFits, flags)
+Rts2ValueAltAz::Rts2ValueAltAz (std::string in_val_name, std::string in_description, bool writeToFits, int32_t flags):Rts2Value (in_val_name, in_description, writeToFits, flags)
 {
 	alt = rts2_nan ("f");
 	az = rts2_nan ("f");
 	rts2Type |= RTS2_VALUE_ALTAZ;
 }
 
-
-int
-Rts2ValueAltAz::setValue (Rts2Conn * connection)
+int Rts2ValueAltAz::setValue (Rts2Conn * connection)
 {
 	if (connection->paramNextDouble (&alt))
 		return -2;
@@ -954,9 +789,7 @@ Rts2ValueAltAz::setValue (Rts2Conn * connection)
 	return 0;
 }
 
-
-int
-Rts2ValueAltAz::setValueCharArr (const char *in_value)
+int Rts2ValueAltAz::setValueCharArr (const char *in_value)
 {
 	double v_alt, v_az;
 	if (parseRaDec (in_value, v_alt, v_az))
@@ -965,9 +798,7 @@ Rts2ValueAltAz::setValueCharArr (const char *in_value)
 	return 0;
 }
 
-
-int
-Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
+int Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
 {
 	switch (old_value->getValueType ())
 	{
@@ -1010,9 +841,7 @@ Rts2ValueAltAz::doOpValue (char op, Rts2Value *old_value)
 	}
 }
 
-
-const char *
-Rts2ValueAltAz::getValue ()
+const char * Rts2ValueAltAz::getValue ()
 {
 	std::ostringstream _os;
 	_os << getAlt () << " " << getAz ();
@@ -1022,9 +851,7 @@ Rts2ValueAltAz::getValue ()
 	return buf;
 }
 
-
-void
-Rts2ValueAltAz::setFromValue (Rts2Value * newValue)
+void Rts2ValueAltAz::setFromValue (Rts2Value * newValue)
 {
 	if (newValue->getValueType () == RTS2_VALUE_ALTAZ)
 	{
@@ -1037,9 +864,7 @@ Rts2ValueAltAz::setFromValue (Rts2Value * newValue)
 	}
 }
 
-
-bool
-Rts2ValueAltAz::isEqual (Rts2Value *other_value)
+bool Rts2ValueAltAz::isEqual (Rts2Value *other_value)
 {
 	if (other_value->getValueType () == RTS2_VALUE_ALTAZ)
 	{
@@ -1048,7 +873,6 @@ Rts2ValueAltAz::isEqual (Rts2Value *other_value)
 	}
 	return false;
 }
-
 
 Rts2Value *newValue (int rts2Type, std::string name, std::string desc)
 {

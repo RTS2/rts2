@@ -67,6 +67,9 @@ std::string getDisplayValue (Rts2Value * value)
 			}
 			_os << std::setiosflags (std::ios_base::fixed) << std::setprecision (2) << sval << munits[sind];
 			break;
+		case RTS2_DT_ONOFF:
+			_os << (value->getValueInteger () == 1 ? "on" : "off");
+			break;
 		default:
 			tmp_val = value->getDisplayValue ();
 			if (tmp_val)

@@ -474,7 +474,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDecJ2000 l_dec)
 	return _os;
 }
 
-
 std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 {
 	if (formatPureNumbers (_os))
@@ -504,7 +503,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDeg90Comp l_deg)
 	_os.fill (old_fill);
 	return _os;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 {
@@ -544,7 +542,6 @@ std::ostream & operator << (std::ostream & _os, LibnovaDegArcMin l_deg)
 	_os.setf (old_settings);
 	return _os;
 }
-
 
 std::ostream & operator << (std::ostream & _os, LibnovaDegDist l_deg)
 {

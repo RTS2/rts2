@@ -121,7 +121,7 @@ int Rts2Daemon::checkLockFile (const char *_lock_fname)
 	umask (old_mask);
 	if (lock_file == -1)
 	{
-		logStream (MESSAGE_ERROR) << "cannot create lock file " << lock_fname
+		logStream (MESSAGE_ERROR) << "cannot create lock file " << lock_fname << ": "
 			<< strerror (errno) << " - do you have correct permission? Try to run daemon as root (sudo,..)"
 			<< sendLog;
 		return -1;
