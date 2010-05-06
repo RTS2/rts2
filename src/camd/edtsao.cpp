@@ -275,6 +275,14 @@ class EdtSao:public Camera
 		 */
 		int setDAC ();
 
+		/**
+		 * Set A/D offset of given channel.
+		 *
+		 * @param ch      channel number
+		 * @param offset  offset value
+		 */
+		int setADOffset (int ch, int offset);
+
 		void probe ();
 
 		int fclr (int num);
@@ -317,6 +325,9 @@ class EdtSao:public Camera
 		ValueEdt *og2l;
 
 		ValueEdt *dd;
+
+		Rts2ValueInteger *offset1;
+		Rts2ValueInteger *offset2;
 
 		int setEdtValue (ValueEdt * old_value, float new_value);
 		int setEdtValue (ValueEdt * old_value, Rts2Value * new_value);
@@ -423,19 +434,19 @@ int EdtSao::setDAC ()
 {
 	// values taken from ccdsetup script
 	int ret;
-	unsigned long edtVal[] =
+	uint32_t edtVal[] =
 	{
 		0x30080100,				 // a/d offset channel 1
 		0x30180100,				 // a/d offset channel 2
-		0x30280200,				 // a/d offset channel 3
-		0x30380200,				 // a/d offset channel 4
+		0x30280100,				 // a/d offset channel 3
+		0x30380100,				 // a/d offset channel 4
 		0x51000040,				 // ioram channel order
 		0x51000141,
 		0x51000202,
 		0x51008303,
 		0x00000000
 	};							 // end
-	unsigned long *valp = edtVal;
+	uint32_t *valp = edtVal;
 	while (*valp != 0x00000000)
 	{
 		if (*valp == 0x000000001)
@@ -476,6 +487,23 @@ int EdtSao::setDAC ()
 	setEdtValue (dd, 15); */
 
 	return 0;
+}
+
+int EdtSao::setADOffset (int ch, int offset)
+{
+	if (offset < 0 || offset > 0xfff)
+	{
+		logStream (MESSAGE_ERROR) << "A/D offset of channel " << ch << " is outside allowed range (0-0xfff) : " << offset << sendLog;
+		return -1;
+	}
+
+	uint32_t o = 0x30080000;
+	o |= (ch << 20);
+	o |= (offset);
+	if (edtwrite (o))
+		return -1;
+
+	logStream (MESSAGE_INFO) << "setting A/D offset on channel " << ch << " to " << offset << sendLog;
 }
 
 void EdtSao::probe ()
@@ -1220,47 +1248,52 @@ EdtSao::EdtSao (int in_argc, char **in_argv):Camera (in_argc, in_argv)
 
 	grayScale = NULL;
 
-	createValue (vhi, "VHI", "V high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (vhi, "VHI", "[V] V high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	vhi->initEdt (0xA0080, A_plus);
 
-	createValue (vlo, "VLO", "V low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (vlo, "VLO", "[V] V low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	vlo->initEdt (0xA0188, A_minus);
 
-	createValue (phi, "PHI", "P high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (phi, "PHI", "[V] P high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	phi->initEdt (0xA0084, A_plus);
 
-	createValue (plo, "PLO", "P low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (plo, "PLO", "[V] P low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	plo->initEdt (0xA0184, A_minus);
 
-	createValue (shi, "SHI", "S high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (shi, "SHI", "[V] S high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	shi->initEdt (0xA008C, A_plus);
 
-	createValue (slo, "SLO", "S low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (slo, "SLO", "[V] S low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	slo->initEdt (0xA0180, A_minus);
 
-	createValue (rhi, "RHI", "R high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rhi, "RHI", "[V] R high", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rhi->initEdt (0xA0088, A_plus);
 
-	createValue (rlo, "RLO", "R low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rlo, "RLO", "[V] R low", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rlo->initEdt (0xA018C, A_minus);
 
-	createValue (rd, "RD", "RD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (rd, "RD", "[V] RD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	rd->initEdt (0xA0384, C);
 
-	createValue (od1r, "OD1_R", "OD 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (od1r, "OD1_R", "[V] OD 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	od1r->initEdt (0xA0388, D);
 
-	createValue (od2l, "OD2_L", "OD 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (od2l, "OD2_L", "[V] OD 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	od2l->initEdt (0xA038C, D);
 
-	createValue (og1r, "OG1_R", "OG 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (og1r, "OG1_R", "[V] OG 1 right", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	og1r->initEdt (0xA0288, B);
 
-	createValue (og2l, "OG2_L", "OG 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (og2l, "OG2_L", "[V] OG 2 left", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	og2l->initEdt (0xA028C, B);
 
-	createValue (dd, "DD", "DD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	createValue (dd, "DD", "[V] DD", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
 	dd->initEdt (0xA0380, C);
+
+	createValue (offset1, "DAO_1", "[ADU] D/A offset on 1st channel", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	offset1->setValueInteger (0x100);
+	createValue (offset2, "DAO_2", "[ADU} D/A offset on 2nd channel", true, RTS2_VALUE_WRITABLE, CAM_WORKING);
+	offset2->setValueInteger (0x100);
 
 	// init last used modes - for writePattern
 	lastSkipLines = lastX = lastY = lastW = lastH = lastSplitMode = lastPartialReadout = -1;
@@ -1368,6 +1401,14 @@ int EdtSao::setValue (Rts2Value * old_value, Rts2Value * new_value)
 	if (old_value == grayScale)
 	{
 		return (setGrayScale (((Rts2ValueBool *) new_value)->getValueBool ())) == 0 ? 0 : -2;
+	}
+	if (old_value == offset1)
+	{
+		return setADOffset (0, new_value->getValueInteger ()) == 0 ? 0 : -2;
+	}
+	if (old_value == offset2)
+	{
+		return setADOffset (1, new_value->getValueInteger ()) == 0 ? 0 : -2;
 	}
 	return Camera::setValue (old_value, new_value);
 }
