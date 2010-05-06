@@ -112,7 +112,7 @@ int Filterd::setFilterNumMask (int new_filter)
 {
 	int ret;
 	maskState (FILTERD_MASK | BOP_EXPOSURE, FILTERD_MOVE | BOP_EXPOSURE, "filter move started");
-	logStream (MESSAGE_INFO) << "moving filter from #" << filter->getValueInteger () << " (" << filter->getSelName () << ")" << " to #" << new_filter << sendLog;
+	logStream (MESSAGE_INFO) << "moving filter from #" << filter->getValueInteger () << " (" << filter->getSelName () << ")" << " to #" << new_filter << "(" << filter->getSelName (new_filter) << ")" << sendLog;
 	ret = setFilterNum (new_filter);
 	infoAll ();
 	if (ret == -1)
