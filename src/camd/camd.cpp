@@ -423,7 +423,7 @@ rts2core::Rts2DevClient *Camera::createOtherType (Rts2Conn * conn, int other_dev
 
 void Camera::checkQueChanges (int fakeState)
 {
-	// do not check if we have queud exposures
+	// do not check if we have queued exposures
 	if (quedExpNumber->getValueInteger () > 0)
 		return;
 	Rts2ScriptDevice::checkQueChanges (fakeState);
@@ -432,6 +432,7 @@ void Camera::checkQueChanges (int fakeState)
 		if (waitingForEmptyQue->getValueBool () == true)
 		{
 			waitingForEmptyQue->setValueBool (false);
+			sendValueAll (waitingForEmptyQue);
 			sendOkInExposure = true;
 			if (exposureConn)
 			{
@@ -458,8 +459,8 @@ int Camera::killAll ()
 	waitingForNotBop->setValueBool (false);
 	sendValueAll (waitingForNotBop);
 
-	quedExpNumber->setValueInteger (0);
-	sendValueAll (quedExpNumber);
+	waitingForEmptyQue->setValueBool (false);
+	sendValueAll (waitingForEmptyQue);
 
 	if (isExposing ())
 		stopExposure ();
@@ -870,19 +871,31 @@ void Camera::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			filterMoving->setValueBool (false);
-			/// check for exposure..
-			if (quedExpNumber->getValueInteger () > 0)
-				camExpose (exposureConn, getStateChip (0), false);
-			infoAll ();
+			if (filterMoving->getValueBool ())
+			{
+				filterMoving->setValueBool (false);
+				/// check for exposure..
+				if (quedExpNumber->getValueInteger () > 0)
+				{
+					quedExpNumber->dec ();
+					camExpose (exposureConn, getStateChip (0), false);
+				}
+				infoAll ();
+			}
 			break;
 		case EVENT_FOCUSER_END_MOVE:
-			focuserMoving->setValueBool (false);
-			/// check for exposure..
-			if (quedExpNumber->getValueInteger () > 0)
-				camExpose (exposureConn, getStateChip (0), false);
-			// update info about FW
-			infoAll ();
+			if (focuserMoving->getValueBool ())
+			{
+				focuserMoving->setValueBool (false);
+				/// check for exposure..
+				if (quedExpNumber->getValueInteger () > 0)
+				{
+					quedExpNumber->dec ();
+					camExpose (exposureConn, getStateChip (0), false);
+				}
+				// update info about FW
+				infoAll ();
+			}
 			break;
 		case EVENT_TEMP_CHECK:
 			temperatureCheck ();
