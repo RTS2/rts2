@@ -1,22 +1,48 @@
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+/* 
+ * Performs selection and print out next target scheduled for observation.
+ * Copyright (C) 2003-2007,2010 Petr Kubanek <petr@kubanek.net>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
-#include "../utilsdb/rts2appdb.h"
-#include "../utils/rts2config.h"
+#include "printtarget.h"
 #include "rts2selector.h"
 
-#include <iostream>
+namespace rts2plan
+{
 
-class SelectorApp:public Rts2AppDb
+/**
+ * Selector test application class.
+ *
+ * @author Petr Kubanek <petr@kubanek.net>
+ */
+class SelectorApp:public PrintTarget
 {
 	public:
 		SelectorApp (int argc, char **argv);
 		virtual ~ SelectorApp (void);
+
+	protected:
 		virtual int doProcessing ();
 };
 
-SelectorApp::SelectorApp (int in_argc, char **in_argv):Rts2AppDb (in_argc, in_argv)
+}
+
+using namespace rts2plan;
+
+SelectorApp::SelectorApp (int in_argc, char **in_argv):PrintTarget (in_argc, in_argv)
 {
 }
 
@@ -42,12 +68,10 @@ int SelectorApp::doProcessing ()
 
 	next_tar = sel->selectNextNight ();
 
-	std::cout << "Next target:" << next_tar << std::endl;
-
 	tar = createTarget (next_tar, observer);
 	if (tar)
 	{
-		std::cout << *tar << std::endl;
+		printTarget (tar);
 	}
 	else
 	{
