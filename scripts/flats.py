@@ -299,7 +299,7 @@ class FlatScript (rts2comm.Rts2Comm):
 		self.log('I','producing master flats')
 
 		# basic processing of taken flats..
-		for i in range(0,self.flatNum):
+		for i in range(0,len(self.flatImages)):
 		  	if (len(self.flatImages[i]) >= 3):
 			  	self.log('I',"creating master flat for %s" % (self.usedFlats[i].signature()))
 				self.createMasterFits('/tmp/master_%s.fits' % (self.usedFlats[i].signature()), self.flatImages[i])
