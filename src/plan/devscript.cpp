@@ -422,11 +422,6 @@ int DevScript::haveNextCommand (Rts2DevClient *devClient)
 	{
 	  	logStream (MESSAGE_DEBUG) << "ending script on connection " << script_connection->getName () << sendLog;
 		deleteScript ();
-		#ifdef DEBUG_EXTRA
-		logStream (MESSAGE_DEBUG) << "For connection " << script_connection->getName ()
-			<< " ret " << ret
-			<< sendLog;
-		#endif					 /* DEBUG_EXTRA */
 		startTarget ();
 		if (script.get () == 0)
 		{

@@ -516,6 +516,12 @@ int Executor::queueTarget (int tarId)
 	{
 		return setNow (nt);
 	}
+	// switch immediately to flats..
+	if (nt->getTargetType () == TYPE_FLAT && currentTarget->getTargetType () != TYPE_FLAT)
+	{
+		return setNow (nt);
+	}
+	// overwrite darks with something usefull..
 	if (currentTarget && currentTarget->getTargetType () == TYPE_DARK && nt->getTargetType () != currentTarget->getTargetType ())
 	{
 		return setNow (nt);
