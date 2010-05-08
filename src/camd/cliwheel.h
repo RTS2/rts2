@@ -33,20 +33,23 @@ struct filterStart
 {
 	char *filterName;
 	int filter;
+	void *arg;
 };
 
 class ClientFilterCamera:public rts2core::Rts2DevClientFilter
 {
-	protected:
-		virtual void filterMoveEnd ();
 	public:
 		ClientFilterCamera (Rts2Conn * conn);
 		virtual ~ ClientFilterCamera (void);
 		virtual void filterMoveFailed (int status);
 		virtual void postEvent (Rts2Event * event);
 		virtual void valueChanged (Rts2Value * value);
+	protected:
+		virtual void filterMoveEnd ();
+	private:
+		void *activeConn;
 };
 
-};
+}
 
 #endif							 /* !__RTS2_DEVCLI_CAM_WHEEL__ */

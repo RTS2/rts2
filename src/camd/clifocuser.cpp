@@ -24,10 +24,13 @@ using namespace rts2camd;
 
 ClientFocusCamera::ClientFocusCamera (Rts2Conn * in_connection):rts2core::Rts2DevClientFocus (in_connection)
 {
+	activeConn = NULL;
 }
 
 ClientFocusCamera::~ClientFocusCamera (void)
 {
+	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
+	activeConn = NULL;
 }
 
 void ClientFocusCamera::postEvent (Rts2Event * event)
@@ -46,6 +49,7 @@ void ClientFocusCamera::postEvent (Rts2Event * event)
 					connection->queCommand (new rts2core::Rts2CommandChangeFocus (this, fm->value));
 				// we process message
 				fm->focuserName = NULL;
+				activeConn = fm->conn;
 			}
 			break;
 		case EVENT_FOCUSER_GET:
@@ -61,12 +65,13 @@ void ClientFocusCamera::postEvent (Rts2Event * event)
 
 void ClientFocusCamera::focusingEnd ()
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
+	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
 	rts2core::Rts2DevClientFocus::focusingEnd ();
 }
 
 void ClientFocusCamera::focusingFailed (int status)
 {
-	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE));
+	getMaster ()->postEvent (new Rts2Event (EVENT_FOCUSER_END_MOVE, activeConn));
+	activeConn = NULL;
 	rts2core::Rts2DevClientFocus::focusingFailed (status);
 }

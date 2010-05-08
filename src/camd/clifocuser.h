@@ -34,19 +34,22 @@ struct focuserMove
 {
 	char *focuserName;
 	int value;
+	void *conn;
 };
 
 class ClientFocusCamera:public rts2core::Rts2DevClientFocus
 {
-	protected:
-		virtual void focusingEnd ();
 	public:
 		ClientFocusCamera (Rts2Conn * in_connection);
 		virtual ~ ClientFocusCamera (void);
 		virtual void postEvent (Rts2Event * event);
 		virtual void focusingFailed (int status);
+	protected:
+		virtual void focusingEnd ();
+	private:
+		void *activeConn;
 };
 
-};
+}
 
 #endif							 /*! __RTS2_DEVCLI_FOCUSER__ */

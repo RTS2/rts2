@@ -871,7 +871,7 @@ void Camera::postEvent (Rts2Event * event)
 	switch (event->getType ())
 	{
 		case EVENT_FILTER_MOVE_END:
-			if (filterMoving->getValueBool ())
+			if (event->getArg () == this && filterMoving->getValueBool ())
 			{
 				filterMoving->setValueBool (false);
 				/// check for exposure..
@@ -884,7 +884,7 @@ void Camera::postEvent (Rts2Event * event)
 			}
 			break;
 		case EVENT_FOCUSER_END_MOVE:
-			if (focuserMoving->getValueBool ())
+			if (event->getArg () == this && focuserMoving->getValueBool ())
 			{
 				focuserMoving->setValueBool (false);
 				/// check for exposure..
@@ -1132,6 +1132,7 @@ int Camera::setFilterNum (int new_filter)
 		struct filterStart fs;
 		fs.filterName = wheelDevice;
 		fs.filter = new_filter;
+		fs.arg = this;
 		postEvent (new Rts2Event (EVENT_FILTER_START_MOVE, (void *) &fs));
 		// filter move will be performed
 		if (fs.filter == -1)
@@ -1181,6 +1182,7 @@ int Camera::setFocuser (int new_set)
 	struct focuserMove fm;
 	fm.focuserName = focuserDevice;
 	fm.value = new_set;
+	fm.conn = this;
 	postEvent (new Rts2Event (EVENT_FOCUSER_SET, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
@@ -1198,6 +1200,7 @@ int Camera::stepFocuser (int step_count)
 	struct focuserMove fm;
 	fm.focuserName = focuserDevice;
 	fm.value = step_count;
+	fm.conn = this;
 	postEvent (new Rts2Event (EVENT_FOCUSER_STEP, (void *) &fm));
 	if (fm.focuserName)
 		return -1;
