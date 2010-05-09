@@ -517,7 +517,7 @@ int Executor::queueTarget (int tarId)
 		return setNow (nt);
 	}
 	// switch immediately to flats..
-	if (nt->getTargetType () == TYPE_FLAT && currentTarget->getTargetType () != TYPE_FLAT)
+	if (nt->getTargetType () == TYPE_FLAT && (!currentTarget || currentTarget->getTargetType () != TYPE_FLAT))
 	{
 		return setNow (nt);
 	}
