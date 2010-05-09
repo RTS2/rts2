@@ -289,7 +289,7 @@ int Andor::doReadout ()
 			<< getDataType () << " return " << ret << sendLog;
 		return -1;
 	}
-	ret = sendReadoutData (dataBuffer, dataBufferSize);
+	ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 	if (ret < 0)
 		return -1;
 	if (getWriteBinaryDataSize () == 0)

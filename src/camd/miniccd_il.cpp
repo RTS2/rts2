@@ -526,7 +526,7 @@ MiniccdIl::doReadout ()
 			doBinning ((uint16_t *) (row[0]), (uint16_t *) (row[1]));
 			slaveState = SENDING;
 		case SENDING:
-			ret = sendReadoutData (dataBuffer, dataBufferSize);
+			ret = sendReadoutData (dataBuffer, getWriteBinaryDataSize ());
 			if (ret < 0)
 			{
 				slaveState = NO_ACTION;
